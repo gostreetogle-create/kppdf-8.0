@@ -1,0 +1,137 @@
+═══════════════════════════════════════════════════════════════
+TZ-33: UX Power Features (Cmd+K Palette / Keyboard Shortcuts / Density Toggle)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Developer
+
+ЗАВИСИМОСТИ: TZ-31 (Core UI Primitives) ✅
+
+LAYER: 5 (Frontend)
+
+CONFLICT KEYS:
+- frontend/src/app/core/services/** (command.service.ts, density.service.ts)
+- frontend/src/app/shared/components/command-palette/ (new)
+- frontend/src/app/shared/components/keyboard-shortcuts-overlay/ (new)
+- frontend/src/app/layout/topbar.component.ts (Cmd+K trigger, density toggle)
+- frontend/src/styles.css (--spacing-unit CSS var)
+- frontend/src/app/app.config.ts (keyboard event listener provider)
+
+═══════════════════════════════════════════════════════════════
+КОНТЕКСТ
+═══════════════════════════════════════════════════════════════
+
+В проекте 65 страниц (через /p/:id роутинг) — пользователю нужны быстрые способы навигации. Из UI Kit спека "WHAT BETTER MEANS":
+1. **Command palette (Cmd+K)** — instant navigation к любой странице или quick action
+2. **Keyboard shortcut overlay (?)** — discoverability shortcuts
+3. **Density toggle (compact/comfortable/spacious)** — accessibility для разных предпочтений
+4. **Section search** — внутри command palette
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+### 1. Command Service (`core/services/command.service.ts`)
+- Signal-based реестр команд: `commands = signal<Command[]>([])`
+- Каждая Command: `{ id, label, icon, shortcut?, group, action, keywords? }`
+- Built-in команды:
+  - **Navigation:** «Перейти к Контрагенты», «Перейти к Продукты», ... (все 65 страниц из `pages.config.ts`, сгенерировано автоматически)
+  - **Quick actions:** «Создать контрагента» (открывает FormDialog на /p/counterparty), «Создать продукт», «Открыть Dashboard», «Открыть Task Panel»
+  - **System:** «Переключить тему», «Переключить плотность», «Показать горячие клавиши», «Выйти»
+- Fuzzy search через встроенный substring matching + ранжирование (label match > keyword match)
+
+### 2. Command Palette Component (`shared/components/command-palette/`)
+- `command-palette.component.ts` — модальное окно поверх CDK Overlay
+- Заголовок: «Быстрый поиск и команды...» (placeholder)
+- Top input: search field (autofocus on open)
+- Список результатов: group headers (Навигация / Действия / Система) + items
+- Каждый item: icon + label + shortcut badge (если есть) + keyboard hint (↑↓ Enter)
+- Footer: hint с текущими шорткатами
+- Keyboard nav: ↑/↓ между items, Enter execute, Esc close
+- Анимация: fade + scale 200ms
+- Закрытие: Esc, клик на backdrop, выполнение команды
+
+### 3. Keyboard Listener Service (`core/services/keyboard.service.ts`)
+- Глобальный `keydown` listener на `document`
+- Распознаёт:
+  - `Cmd+K` (Mac) / `Ctrl+K` (Win/Linux) → открыть Command Palette
+  - `?` (Shift+/) → открыть Keyboard Shortcuts Overlay
+  - `g + d` (последовательность) → перейти на Dashboard
+  - `g + t` → Task Panel
+  - `g + p` → open first page (Counterparty)
+- Игнорирует events когда фокус на `<input>`, `<textarea>`, `[contenteditable]`
+- Через `inject(DOCUMENT)` для SSR-safety
+
+### 4. Keyboard Shortcuts Overlay (`shared/components/keyboard-shortcuts-overlay/`)
+- Модальное окно с категориями шорткатов:
+  - **Navigation:** Cmd+K (palette), g d (dashboard), g t (task panel)
+  - **Actions:** n (new record на текущей странице), / (search в CrudPage), e (edit selected row)
+  - **View:** ? (this overlay), Esc (close any modal), Cmd+\ (toggle sidebar)
+  - **Theme:** d (dark mode toggle), 1/2/3 (density)
+- Каждая строка: `<kbd>` элемент с стилем (border, rounded, bg-muted) + описание
+- Закрытие: Esc, клик на backdrop, кнопка «Закрыть»
+
+### 5. Density Service (`core/services/density.service.ts`)
+- Signal: `density = signal<'compact' | 'comfortable' | 'spacious'>('comfortable')`
+- Persistence: `localStorage.getItem('kppdf-density')` + init
+- Применяет CSS var `--spacing-unit` на `<html>`:
+  - compact: 0.75rem (12px)
+  - comfortable: 1rem (16px) — default
+  - spacious: 1.25rem (20px)
+- Все компоненты используют `var(--spacing-unit)` для padding/gap (где уместно)
+
+### 6. Topbar Updates (`layout/topbar.component.ts`)
+- Добавить кнопку «⌘K» (как trigger для command palette) — Lucide Search icon + cmd badge
+- Добавить Density Cycle кнопку (icon: LayoutDensity / Rows3)
+- Существующий dark mode toggle остаётся
+
+### 7. CSS Var Integration
+- `styles.css`:
+  ```css
+  :root {
+    --spacing-unit: 1rem; /* comfortable default */
+  }
+  html[data-density="compact"] { --spacing-unit: 0.75rem; }
+  html[data-density="comfortable"] { --spacing-unit: 1rem; }
+  html[data-density="spacious"] { --spacing-unit: 1.25rem; }
+  ```
+- Применить к `.btn-*`, `.card`, `.input`, FormDialog padding
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ СОЗДАНИЯ / ОБНОВЛЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+Создать:
+- `frontend/src/app/core/services/command.service.ts`
+- `frontend/src/app/core/services/keyboard.service.ts`
+- `frontend/src/app/core/services/density.service.ts`
+- `frontend/src/app/shared/components/command-palette/command-palette.component.ts`
+- `frontend/src/app/shared/components/keyboard-shortcuts-overlay/keyboard-shortcuts-overlay.component.ts`
+
+Обновить:
+- `frontend/src/app/layout/topbar.component.ts` (+2 кнопки)
+- `frontend/src/app/app.config.ts` (provideDensity, provideCommandService, provideKeyboard)
+- `frontend/src/app/app.ts` (mount CommandPalette + ShortcutsOverlay глобально)
+- `frontend/src/styles.css` (--spacing-unit, html[data-density])
+- `frontend/tailwind.config.js` (kbd стили если нужны)
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm run build` — 0 errors, 0 warnings.
+2. На любой странице нажатие `Cmd+K` (или `Ctrl+K`) открывает Command Palette.
+3. В палитре: ввод «контр» фильтрует список, показывает «Контрагенты» / «Создать контрагента».
+4. Enter на команде — выполняет (navigate / open dialog / toggle theme).
+5. `?` открывает Keyboard Shortcuts Overlay с категориями.
+6. Density toggle в topbar циклически переключает compact/comfortable/spacious, persistence через localStorage.
+7. При density=compact padding в формах/кнопках визуально уменьшается.
+8. Все 65 страниц появляются в Command Palette автоматически (генерируются из `pages.config.ts`).
+9. **ГЛАВНОЕ:** файл `tasks/TZ-33.md` УДАЛЁН из `tasks/` после завершения.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+1. Записать в `progress.md`: дата, TZ-33, краткое описание.
+2. Переместить `tasks/TZ-33.md` в `tasks/_archive/TZ-33.md.done`.
+3. **Удалить `tasks/TZ-33.md`** (финальный сигнал).

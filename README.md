@@ -82,17 +82,94 @@ kppdf-8.0/
 
 ## 🚀 Quickstart
 
-Проект в стадии **«доменная модель определена, код не написан»**. Для перехода к разработке:
+### ⚡ Запустить локально одной командой
 
-### 1. Прочитать модель
+**Из корня проекта** (любая ОС, Node 20+, Docker Desktop, pnpm 8+):
+
 ```bash
-# Краткий обзор — в этом README, выше
-# Полное описание 89 сущностей:
-cat docs/data-model.md
+# ── Прямой вызов (всегда работает):
+node start.mjs                # полный запуск (Mongo в Docker + backend + frontend + browser)
+node start.mjs --tail         # TUI-режим: live-логи в одном TTY-окне
+node start.mjs --check        # только pre-flight проверки
+node start.mjs --stop         # остановить backend + frontend
+node start.mjs --reset        # полный сброс: docker down -v + rm node_modules
+node start.mjs --no-browser   # без авто-открытия браузера
+node start.mjs --help         # справка
+
+# ── npm-скрипты (из корня, где есть package.json):
+npm start                     # = node start.mjs --check (безопасный preflight, не висит)
+npm run start:all             # = node start.mjs (полный запуск, висит пока работает)
+npm run start:tail            # = node start.mjs --tail (TUI-режим)
+npm run check:start           # = node start.mjs --check
+npm run stop:start            # = node start.mjs --stop
+npm run reset:start           # = node start.mjs --reset
+npm run start:no-browser      # = node start.mjs --no-browser
+
+# ── ENV-переменные:
+NO_TUI=1 node start.mjs       # отключить TUI (для CI / пайп-режима), даже если передан --tail
+NO_COLOR=1 node start.mjs     # отключить ANSI-цвета
+
+# ── Платформенные обёртки (chmod +x start.sh на Unix):
+./start.sh --check            # bash: работает из любой директории
+.\start.cmd --check           # Windows cmd: ОБЯЗАТЕЛЬНО префикс .\ иначе Windows путает с built-in `start`
 ```
 
-### 2. Запустить kit (уже сделано)
-Kit уже инициализирован: `OrchestratorKit/`, `STACK.md`, `progress.md`, `ARCHITECTURE.md` на месте.
+**Что делает `start.mjs`:**
+1. ✅ Pre-flight: Node 20+, pnpm 8+, Docker daemon, `.env` (hard-fail на занятых 3000/4200)
+2. ✅ `docker compose up -d mongo` (replica set rs0) — **бэкенд локально** (обход Dockerfile pnpm blocker из TZ-18)
+3. ✅ Ждёт `rs.status().ok === 1`
+4. ✅ `pnpm install` в `backend/` и `frontend/` (если нужно)
+5. ✅ `pnpm start:dev` для backend на :3000
+6. ✅ `pnpm start` для frontend на :4200
+7. ✅ Polls /api/health + GET /, парсит body, измеряет латентность
+8. ✅ **TUI-режим (`--tail`)** — рисует 3 строки статуса с in-place обновлением + ring buffer логов (последние 5 строк на сервис)
+9. ✅ Финальная "Ready" панель с латентностями /api/health и / для backend/frontend
+10. ✅ Открывает браузер на http://localhost:4200
+11. ✅ Ctrl+C → чистая остановка backend + frontend (Mongo остаётся работать)
+
+**Endpoints после старта:**
+- Backend: http://localhost:3000/api/health
+- Frontend: http://localhost:4200
+- Login: `admin@kppdf.local` / `admin`
+- UI Kit showcase: http://localhost:4200/p/showcase (TZ-31..40)
+
+**Требования:** Node 20+, pnpm 8+, Docker Desktop.
+
+**Кросс-платформенность:** Windows 10+ (cmd/PowerShell/Git Bash), macOS, Linux.
+
+**⚠️ Важно для Windows:** не вводите `start --check` без `.\` — Windows путает с built-in командой `start` (для открытия файлов). Используйте `.\start.cmd --check` или `node start.mjs --check` или `npm run start:check`.
+
+### 🛠️ Под капотом
+
+Архитектура проекта:
+- Backend: NestJS 10 + Mongoose 8 + MongoDB Replica Set — 18 модулей, 65+ entities (TZ-02..TZ-18)
+- Frontend: Angular 20 + TailwindCSS + AG Grid + CDK — 35+ UI Kit компонентов (TZ-19..TZ-40)
+- Auth: JWT (access+refresh), bcrypt, RBAC, 30+ permission keys (TZ-04)
+- Audit: все мутации автоматически логируются в AuditLog (TZ-05)
+
+### 📂 Структура репозитория
+
+```
+kppdf-8.0/
+├── start.mjs                     ← ⚡ ЕДИНЫЙ СТАРТЕР (Node 20+)
+├── docker-compose.yml            ← Mongo + mongo-init (бэк локально)
+├── .env                          ← переменные окружения (не в git)
+├── docs/                         ← data-model.md, data-model-audit.md
+├── tasks/                        ← текущие TZ-NN.md (агент удаляет после выполнения)
+│   └── _archive/                 ← завершённые TZ
+├── backend/                      ← NestJS приложение
+├── frontend/                     ← Angular приложение
+├── OrchestratorKit/              ← 🔒 kit для AI-агентов (TZ-flow, скрипты, шаблоны)
+├── STACK.md / progress.md / ARCHITECTURE.md  ← сгенерированы kit-ом
+└── mimo.exe                      ← CLI-агент (не в git)
+```
+
+### 🛑 Остановить всё
+
+```bash
+node start.mjs --stop   # убивает backend + frontend
+docker compose down      # убивает Mongo (если нужно)
+```
 
 ### 3. 📂 Рабочий цикл — `tasks/` = твоя папка, `OrchestratorKit/` = моя закрытая
 

@@ -1,0 +1,122 @@
+═══════════════════════════════════════════════════════════════
+TZ-38: Advanced Overlays (Popover / ContextMenu / HoverCard / BottomSheet)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Developer
+
+ЗАВИСИМОСТИ: TZ-31 (Core UI Primitives: Dialog/Sheet) ✅
+
+LAYER: 5 (Frontend)
+
+CONFLICT KEYS:
+- frontend/src/app/shared/components/popover/ (новый)
+- frontend/src/app/shared/components/context-menu/ (новый)
+- frontend/src/app/shared/components/hover-card/ (новый)
+- frontend/src/app/shared/components/bottom-sheet/ (новый)
+
+═══════════════════════════════════════════════════════════════
+КОНТЕКСТ
+═══════════════════════════════════════════════════════════════
+
+TZ-31 дал Dialog/Sheet/Tooltip. UI Kit спек (Section 6) добавляет 4 ADVANCED overlay-примитива:
+- **Popover** — позиционируемый контент относительно trigger (rich content, не tooltip)
+- **ContextMenu** — right-click menu
+- **HoverCard** — preview card на mouse enter с delay
+- **BottomSheet** — mobile-style sheet, slides снизу (для мобильных и action menus)
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+### 1. Popover (`shared/components/popover/`)
+- `popover.component.ts` + `popover-trigger.directive.ts` + `popover-content.component.ts`
+- API: `<button [hlmPopoverTrigger]="myContent">Click me</button> <ng-template #myContent>...</ng-template>`
+- Использует CDK Overlay (FlexibleConnectedPositionStrategy)
+- 4 позиции: top / right / bottom / left + auto-flip
+- Offset: 8px от trigger
+- Click outside close, Esc close
+- Focus trap (a11y)
+- Не закрывается при hover (в отличие от HoverCard)
+- Анимация: scale 0.95→1 + fade 150ms
+
+### 2. ContextMenu (`shared/components/context-menu/`)
+- `context-menu.component.ts` + `context-menu-trigger.directive.ts` + `context-menu-content.component.ts`
+- API: `<div [hlmContextMenuTrigger]="menuTpl">Right-click me</div> <ng-template #menuTpl>...menu items...</ng-template>`
+- Right-click (`contextmenu` event) → открывает в позиции курсора
+- CDK Overlay с `GlobalPositionStrategy` (по координатам клика)
+- Menu items: `<hlm-context-menu-item (click)="...">Label</hlm-context-menu-item>`
+- Variants: default / destructive (red text + icon)
+- Separators: `<hlm-context-menu-separator />`
+- Keyboard: ↑/↓ навигация, Enter select, Esc close
+- Disabled items: muted, click noop
+- Checkbox items (optional): `<hlm-context-menu-checkbox [(checked)]="..." />`
+
+### 3. HoverCard (`shared/components/hover-card/`)
+- `hover-card.component.ts` + `hover-card-trigger.directive.ts` + `hover-card-content.component.ts`
+- API: `<a [hlmHoverCardTrigger]="cardTpl">Hover me</a> <ng-template #cardTpl>...rich preview...</ng-template>`
+- Open: mouseenter после 200ms delay
+- Close: mouseleave после 100ms delay (или move >100px away)
+- CDK Overlay, position: top по умолчанию
+- Ширина: 320px фиксированная
+- Контент: card layout (image/avatar + title + description + actions)
+- Анимация: fade + translateY 4px
+- Mobile fallback: tap to toggle (touchstart)
+
+### 4. BottomSheet (`shared/components/bottom-sheet/`)
+- `bottom-sheet.component.ts` + `bottom-sheet.service.ts`
+- API: аналогично Sheet из TZ-31, но slide снизу вверх
+- `dialogService.openBottomSheet({ content: MyComponent })`
+- CDK Overlay с позицией снизу экрана
+- Backdrop с blur, ESC close
+- Drag-to-close handle вверху (touch): pointer down → drag → release >threshold close, <threshold snap back
+- Используется для: action menus, mobile filters, share sheets
+- Height: max 50vh или auto
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ СОЗДАНИЯ
+═══════════════════════════════════════════════════════════════
+
+```
+frontend/src/app/shared/components/
+├── popover/
+│   ├── popover.component.ts
+│   ├── popover-trigger.directive.ts
+│   └── popover-content.component.ts
+├── context-menu/
+│   ├── context-menu.component.ts
+│   ├── context-menu-trigger.directive.ts
+│   ├── context-menu-content.component.ts
+│   ├── context-menu-item.component.ts
+│   └── context-menu-separator.component.ts
+├── hover-card/
+│   ├── hover-card.component.ts
+│   ├── hover-card-trigger.directive.ts
+│   └── hover-card-content.component.ts
+└── bottom-sheet/
+    ├── bottom-sheet.component.ts
+    └── bottom-sheet.service.ts
+```
+
+Обновить:
+- `frontend/src/app/core/services/dialog.service.ts` (+openBottomSheet method)
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm run build` — 0 errors, 0 warnings.
+2. **Popover:** 4 позиции с auto-flip; click outside / Esc close; focus trap.
+3. **ContextMenu:** right-click открывает в координатах курсора; ↑/↓ навигация; destructive variant; separators.
+4. **HoverCard:** 200ms open delay, 100ms close delay, position top, ширина 320px.
+5. **BottomSheet:** slide снизу вверх; drag handle для close; max-height 50vh.
+6. Все используют CDK Overlay (accessible, focus management).
+7. Используют ТОЛЬКО Tailwind токены.
+8. **ГЛАВНОЕ:** файл `tasks/TZ-38.md` УДАЛЁН из `tasks/` после завершения.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+1. Записать в `progress.md`: дата, TZ-38, краткое описание.
+2. Переместить `tasks/TZ-38.md` в `tasks/_archive/TZ-38.md.done`.
+3. **Удалить `tasks/TZ-38.md`** (финальный сигнал).

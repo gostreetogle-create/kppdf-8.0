@@ -1,0 +1,354 @@
+═══════════════════════════════════════════════════════════════
+TZ-41: Health Check Panel + Log TUI Mode
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Backend Developer (DevTools / Start Orchestrator)
+
+ЗАВИСИМОСТИ: нет
+  - start.mjs уже существует и работает (TZ-40 area)
+  - /api/health endpoint уже есть (TZ-02 NestJS Foundation + HealthCheck + MongooseHealthIndicator)
+  - UI Kit (TZ-31..40) дал нам /p/showcase для проверки финального состояния
+  - Никакие новые npm-пакеты не требуются (чистый Node.js, как и весь start.mjs)
+
+LAYER: 4   ← ОБЯЗАТЕЛЬНО (dev infrastructure / backend tooling; до 2 параллельно)
+  (start.mjs — это dev-инфраструктура, не frontend UI и не backend domain logic.
+   Layer 4 выбран как ближайший: backend infra tooling, не трогает код приложения.)
+
+CONFLICT KEYS: ← ОБЯЗАТЕЛЬНО
+  - start.mjs
+  - package.json
+  - README.md
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. `D:\kppdf-8.0\start.mjs` — кросс-платформенный (~330 строк) Node 20+ ESM starter.
+   Умеет: preflight (Node/pnpm/Docker/.env/ports), Mongo up + RS wait, deps install,
+   spawn backend (`pnpm start:dev`) + frontend (`pnpm start`) detached, polling endpoints,
+   browser open, SIGINT/SIGTERM cleanup. Использует ANSI-цвета через объект `c`.
+
+2. `D:\kppdf-8.0\backend\src\health.controller.ts` — NestJS HealthCheck с MongoDB ping.
+   Endpoints:
+   - GET /api/health        → full check (mongo ping + uptime + timestamp)
+   - GET /api/health/ready  → readiness probe
+   - GET /api/health/live   → quick liveness probe (без mongo)
+
+3. Проблемы / неточности текущего состояния:
+   - Стартовый лог плоский: 6 шагов идут последовательно plain-текстом, и если backend
+     долго компилируется (60-90s cold start, особенно Windows), пользователь не понимает
+     что происходит — просто лог stdout/stderr двух процессов мешаниной.
+   - Нет визуального индикатора, что `/api/health` реально отвечает (сейчас только
+     "ready after Xs" в финальной строке после успешного HTTP-пинга).
+   - Если backend/frontend упадут через N минут после старта — нет способа увидеть
+     live logs без открытия отдельного терминала и `docker logs`/process inspector.
+   - В `--stop` режиме непонятно, что именно остановилось (а что нет).
+   - В preflight 6 строк одинакового формата — нет визуального summary "✅ всё ок".
+
+4. Контекст (внешние зависимости, conventions, нюансы):
+   - start.mjs уже использует ANSI-цвета через объект `c` (c.green/red/yellow/cyan/blue/
+     magenta/bold/dim/reset). На Windows 10+ ANSI работает в cmd и PowerShell.
+   - Stdout/stderr от spawned процессов уже пайпятся в основной stdout с префиксом
+     `[backend]` / `[frontend]` через `spawnDetached()`.
+   - `stdout.isTTY` доступен через `import { stdout } from 'node:process'`.
+   - ENV `NO_COLOR=1` уже обрабатывается (отключает ANSI).
+   - `shell: isWin` уже добавлен в spawnDetached — children корректно стартуют
+     на Windows.
+   - Существующий ring buffer логики нет — нужно создать новый state.
+   - На non-TTY (CI, пайп в файл) TUI не работает, нужен graceful fallback на plain log.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Добавить функцию `checkHealth(url)` с парсингом JSON
+
+  Под-шаг 1.1: Новая функция `checkHealth(url, timeoutMs = 2000)` — делает HTTP GET,
+               парсит body как JSON.
+  Под-шаг 1.2: Возвращает `{ ok: boolean, status: number, body: object|null,
+               latencyMs: number, error: string|null }`.
+  Под-шаг 1.3: Используется в `waitFor()` ПОСЛЕ успешного HTTP-пинга — чтобы получить
+               реальный health body (mongo ping result, uptime, timestamp) и убедиться,
+               что не только порт открыт, но и приложение реально отвечает корректно.
+
+  Пример:
+  ```js
+  async function checkHealth(url, timeoutMs = 2000) {
+    const start = Date.now();
+    return new Promise((resolve) => {
+      const req = http.get(url, { timeout: timeoutMs }, (res) => {
+        let body = '';
+        res.on('data', (c) => (body += c));
+        res.on('end', () => {
+          let parsed = null;
+          try { parsed = JSON.parse(body); } catch {}
+          resolve({
+            ok: res.statusCode >= 200 && res.statusCode < 300,
+            status: res.statusCode,
+            body: parsed,
+            latencyMs: Date.now() - start,
+            error: null,
+          });
+        });
+      });
+      req.on('error', (e) =>
+        resolve({ ok: false, status: 0, body: null, latencyMs: Date.now() - start, error: e.message }),
+      );
+      req.on('timeout', () => {
+        req.destroy();
+        resolve({ ok: false, status: 0, body: null, latencyMs: Date.now() - start, error: 'timeout' });
+      });
+    });
+  }
+  ```
+
+ШАГ 2: Добавить `flags.tail` и глобальный объект `state.services` для трекинга
+
+  Под-шаг 2.1: В args parsing: `tail: args.includes('--tail')`.
+  Под-шаг 2.2: Создать объект `state` (на уровне модуля, не внутри main):
+               ```js
+               const state = {
+                 services: {
+                   mongo:    { status: 'pending', log: [], startedAt: null, readyAt: null, health: null },
+                   backend:  { status: 'pending', log: [], startedAt: null, readyAt: null, health: null },
+                   frontend: { status: 'pending', log: [], startedAt: null, readyAt: null, health: null },
+                 },
+                 tuiActive: false,
+               };
+               ```
+  Под-шаг 2.3: Создать helper `pushLog(service, line)` — push в ring buffer
+               (макс. 5 строк на сервис, FIFO). Strip ANSI из line для чистого вывода.
+
+ШАГ 3: Модифицировать `spawnDetached()` чтобы сохранять логи в state и опционально
+        НЕ дублировать в stdout (в TUI режиме логи идут в state, в stdout рисуется
+        только renderStatus)
+
+  Под-шаг 3.1: Добавить параметр `serviceName` в `spawnDetached(cmd, args, cwd, name, envExtra)`.
+  Под-шаг 3.2: В data handler'ах:
+    ```js
+    const onChunk = (b) => {
+      const line = b.toString().replace(/\r/g, '').trimEnd();
+      pushLog(name, line);
+      if (!flags.tail) {
+        // non-TUI: passthrough as before
+        const prefix = `[${name}] `;
+        process.stdout.write(prefix + line + '\n');
+      } else {
+        // TUI: re-render in-place
+        renderStatus();
+      }
+    };
+    child.stdout.on('data', onChunk);
+    child.stderr.on('data', onChunk);
+    ```
+  Под-шаг 3.3: При старте сервиса: `state.services[name].startedAt = Date.now()`.
+
+ШАГ 4: Создать функцию `renderStatus()` — рисует 3 строки in-place через `\r` + `\x1b[K`
+
+  Под-шаг 4.1: Активируется ТОЛЬКО когда `flags.tail && stdout.isTTY && !env.NO_TUI`.
+  Под-шаг 4.2: При первом вызове — `state.tuiActive = true`, рисует header + 3 строки.
+  Под-шаг 4.3: При последующих — использует `\r\x1b[2A` (cursor up 2 lines) или
+               пересчитывает позицию и переписывает все 3 строки.
+  Под-шаг 4.4: Каждая строка формата:
+               `[icon] [name.padEnd(8)] [status.padEnd(12)] [latency.padStart(7)] | [last log]`
+               Пример:
+               ```
+               ⏳ Mongo     starting…                 |
+               ✔ Backend   ready  (1247ms)           | Nest application successfully started
+               ⏵ Frontend  starting…                 | ** Angular Live Development Server is listening
+               ```
+  Под-шаг 4.5: Иконки: ⏳ pending, ⏵ starting, ✔ ready, ✖ failed, ⚠ degraded
+  Под-шаг 4.6: Цвета: green для ready, yellow для pending/starting, red для failed,
+               cyan для имён, dim для логов.
+  Под-шаг 4.7: Терминалы разной ширины — обрезать log справа до `stdout.columns - 50`
+               (оставить место под статус + латентность).
+
+ШАГ 5: Обновить `waitFor()` чтобы использовать checkHealth и обновлять state
+
+  Под-шаг 5.1: После успешного HTTP-пинга (statusCode < 500) — вызвать `checkHealth(url)`.
+  Под-шаг 5.2: Сохранить в `state.services[name].health`.
+  Под-шаг 5.3: Для `/api/health` (backend) — `ok = healthRes.body?.status === 'ok' || healthRes.body?.info?.mongo?.status === 'up'`.
+  Под-шаг 5.4: Для `/` (frontend) — `ok = healthRes.status === 200`.
+  Под-шаг 5.5: Если сервис ready — `state.services[name].status = 'ready'`, `readyAt = Date.now()`.
+  Под-шаг 5.6: В TUI режиме — `renderStatus()` после изменения.
+
+ШАГ 6: Добавить финальный "Ready" экран с health-check панелью
+
+  Под-шаг 6.1: После успешного старта всех 3 сервисов — вывести панель (примерно):
+  ```
+  ┌─ kppdf-8.0 Ready ─────────────────────────────────────────────┐
+  │ Mongo    ✔  ready  (3.2s)                                      │
+  │ Backend  ✔  ready  (45.1s)   /api/health  200  (1247ms)        │
+  │ Frontend ✔  ready  (62.3s)   /            200  (234ms)         │
+  ├────────────────────────────────────────────────────────────────┤
+  │ Frontend →  http://localhost:4200                              │
+  │ Backend  →  http://localhost:3000/api/health                   │
+  │ Login    →  admin@kppdf.local / admin                          │
+  │ Showcase →  http://localhost:4200/p/showcase                   │
+  └────────────────────────────────────────────────────────────────┘
+  ```
+  Под-шаг 6.2: В TUI режиме — сначала `process.stdout.write('\n\n\n')` чтобы "освободить"
+               TUI-зону, потом `\x1b[?25h` (show cursor), потом финальная панель.
+  Под-шаг 6.3: В non-TTY/non-TUI — та же панель как обычные строки (без cursor escapes).
+
+ШАГ 7: npm scripts + документация
+
+  Под-шаг 7.1: В `package.json` (root) добавить `"start:tail": "node start.mjs --tail"`.
+  Под-шаг 7.2: В `start.mjs --help` — добавить описание `--tail` и пример TUI-режима.
+  Под-шаг 7.3: В `README.md` обновить quickstart-секцию:
+    - Добавить `npm run start:tail` в таблицу команд
+    - Добавить ENV `NO_TUI=1` для CI режима
+    - Упомянуть визуальные улучшения (цветные счётчики, health-check панель)
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- start.mjs                [добавить checkHealth(), state, renderStatus(), pushLog(),
+                             --tail флаг, обновить waitFor() и spawnDetached(),
+                             обновить --help текст]
+- package.json             [добавить "start:tail" script]
+- README.md                [обновить quickstart — добавить --tail / start:tail,
+                             упомянуть TUI, health-check panel, NO_TUI env]
+
+НЕ ИЗМЕНЯТЬ:
+- start.cmd, start.sh     [уже форвардят все аргументы через %* / "$@"]
+- backend/*                [health endpoint уже есть из TZ-02, не трогать]
+- frontend/*               [не нужно трогать]
+- _templates/*             [служебные файлы kit-а]
+- progress.md, ARCHITECTURE.md  [обновляются через TZF-00 ПОСЛЕ выполнения этого TZ]
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `node --check start.mjs` — синтаксис OK (exit 0).
+2. `node start.mjs --check` показывает 6 строк preflight с цветными иконками
+   (✔/✖/⚠), как минимум для Node/pnpm/Docker/daemon/.env/structure.
+3. `node start.mjs --help` упоминает --tail в usage и приводит пример.
+4. `node start.mjs` в TTY-терминале (Windows Terminal / iTerm / gnome-terminal):
+   - Рисует 3 строки статуса для Mongo/Backend/Frontend
+   - Строки обновляются in-place через `\r` (не "прыгают" хаотично)
+   - Латентность показывается рядом со статусом (ms после успешного health check)
+5. `node start.mjs --no-browser --tail` запускает стек, ждёт готовности всех 3,
+   рисует финальную панель с health-check, но НЕ открывает браузер.
+6. После успешного старта финальная панель содержит:
+   - ✔ для всех 3 сервисов
+   - Латентность /api/health (число в ms, например "1247ms")
+   - Латентность GET / для frontend (число в ms)
+   - Иконки работают в обеих ориентациях (TUI/non-TUI)
+7. `npm run start:tail` работает идентично `node start.mjs --tail`.
+8. `node start.mjs` в non-TTY (например `node start.mjs > log.txt 2>&1`) НЕ ломает
+   вывод — TUI отключается автоматически (или когда `NO_TUI=1`), остаётся plain log
+   с префиксами `[backend]` / `[frontend]`.
+9. `node start.mjs --stop` корректно убивает оба процесса, TUI cleanup не мешает
+   (cursor visible restored, \n в конце).
+10. Если /api/health возвращает 200, но body содержит `status: 'error'` (mongo ping
+    fail) — backend помечается как ⚠ degraded, не ✔. Это forward-compat для будущих
+    сценариев (например, если mongo упал после старта).
+11. Cold start (60-90s backend compile) — TUI обновляется минимум раз в 2-3 секунды,
+    не "виснет", последняя строка логов от процесса видна (хотя бы в ring buffer
+    при `pushLog()`).
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ (для параллельных запусков)
+═══════════════════════════════════════════════════════════════
+
+Этот TZ трогает только:
+- start.mjs (dev orchestrator)
+- package.json (root)
+- README.md (root)
+
+Если в `tasks/` появится параллельный TZ, который тоже трогает start.mjs /
+package.json / README.md — DEFER (скопировать себя в `tasks/_archive/<YYYY-MM>/TZ-41.deferred.txt`).
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+После завершения работы по этому TZ вы ОБЯЗАНЫ применить TZF-00
+(лежит в `OrchestratorKit/_templates/TZF-00.txt`):
+
+1. Самопроверка по 11 критериям приёмки выше.
+2. `node --check start.mjs` (синтаксис) и `node start.mjs --help` (usage) проходят.
+3. `node start.mjs --check` показывает preflight с иконками.
+4. `npm run start:tail` (или `node start.mjs --tail`) запускает TUI в реальном
+   терминале, логи и статус обновляются корректно.
+5. Запись в progress.md (по формату TZF-00 § 3).
+6. Обновлён ARCHITECTURE.md (если есть секция про dev tooling / start.mjs).
+7. Создан .mimocode/locks/TZ-41-*.lock (только для DONE).
+8. Копия TZ ушла в `tasks/_archive/2026-07/TZ-41.done.txt` с ARCHIVE_MARKER.
+9. Удалить `tasks/TZ-41.md` (сигнал "выполнено").
+10. STATUS.md обновлён: TZ-41 в ✅ DONE.
+11. verify-status.sh возвращает PASS.
+12. Финальный отчёт PO в формате:
+    «Задача TZ-41 выполнена и проверена. Запись добавлена в progress.md,
+    документация актуализирована. TZ архивирован в
+    _archive/2026-07/TZ-41.done.txt (или .failed.txt). Критичные файлы:
+    [start.mjs, package.json, README.md]. Задача закрыта.»
+
+═══════════════════════════════════════════════════════════════
+ПОДСКАЗКИ ДЛЯ PO
+═══════════════════════════════════════════════════════════════
+
+— Этот TZ-файл — задача для Агента (Backend Developer). Агент прочитает и
+  выполнит по критериям. Прямой реализации кода от PO не требуется.
+
+— Не запускайте параллельно с другими TZ, которые трогают start.mjs /
+  package.json / README.md — будет конфликт CONFLICT KEYS.
+
+— TUI логика: используйте ANSI escape codes (НЕ blessed/ink), тестируйте в
+  Windows Terminal / iTerm / gnome-terminal. \r для in-place update, \x1b[K
+  для очистки до конца строки, \x1b[?25h/l для cursor visibility.
+
+— Если хотите отключить TUI (например, в CI или при пайпе в файл) — либо
+  не используйте --tail, либо установите `NO_TUI=1 node start.mjs`.
+
+— Существующая `--no-browser` опция должна работать в комбинации с `--tail`:
+  `node start.mjs --no-browser --tail` (или через новый `npm run start:tail`
+  + явный флаг --no-browser).
+
+— Не забудьте протестировать fallback: `node start.mjs --check | cat` должен
+  давать plain-текст без escape-последовательностей, ломающих вывод.
+
+— `pushLog()` ring buffer хранит последние 5 строк на сервис — этого достаточно
+  для понимания "что последнее сказал backend перед тем как зависнуть".
+  Полные логи по-прежнему идут в stdout (если не TUI).
+
+— Health endpoint уже есть в backend (TZ-02). Этот TZ НЕ требует изменений в
+  backend или frontend коде. Это чисто dev-tooling улучшение start.mjs.
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ARCHIVE_MARKER                                                │
+│ outcome: DONE                                                  │
+│ closed_at: 2026-07-05                                         │
+│ closed_by: Backend Developer (DevTools / Start Orchestrator)  │
+│ protected_files:                                               │
+│   - start.mjs                                                  │
+│   - package.json (root)                                        │
+│   - README.md                                                  │
+│ affected_areas:                                                │
+│   - start.mjs (full rewrite ~330 → ~500 lines)                 │
+│   - package.json (+start:tail script)                          │
+│   - README.md (+TUI section, --tail, NO_TUI)                   │
+│ verification:                                                  │
+│   - node --check start.mjs: PASS                               │
+│   - node start.mjs --help: PASS (mentions --tail)              │
+│   - node start.mjs --check: PASS (preflight clean)            │
+│   - node start.mjs --tail --check: PASS (TUI suppressed)       │
+│   - NO_TUI=1 node start.mjs --check: PASS                      │
+│   - non-TTY piped: PASS (plain log, no escape sequences)       │
+│   - acceptance criteria (11 items from TZ-41): PASS            │
+│   - progress.md entry: ADDED                                   │
+│   - architecture.md update: DONE (+Dev Tooling section)        │
+│   - lock file: CREATED (.mimocode/locks/TZ-41-start-mjs-tail.lock) │
+│   - code-review (code-reviewer-minimax-m3): no blocking issues │
+│ notes:                                                         │
+│   - Minor non-blocking fix applied: log.step restored leading  │
+│     \n for visual separator between sections in non-TUI mode.  │
+│   - DEP0190 DeprecationWarning on shell:true (Node 22+) noted  │
+│     but not fixed (security OK with hardcoded commands).       │
+│   - pnpm install output suppressed in TUI mode (stdio:pipe)    │
+│     to keep in-place redraw stable.                            │
+└─────────────────────────────────────────────────────────────────┘

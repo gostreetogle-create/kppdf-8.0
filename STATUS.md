@@ -1,8 +1,8 @@
 # STATUS — KPPDF ERP Project Status
 
-**Last updated:** 2026-07-04
-**Phase:** Frontend MVP (TZ-19..TZ-29) — ЗАВЕРШЕНО
-**Total tasks:** 29/29 ✅ (100%)
+**Last updated:** 2026-07-05
+**Phase:** Dev Tooling (TZ-41) — ЗАВЕРШЕНО
+**Total tasks:** 41/41 ✅ (100% — TZ-02..TZ-41)
 
 ## ✅ Завершённые этапы
 
@@ -21,7 +21,16 @@
 - TZ-20: Auth + Layout (sidebar/topbar/main) + 65 generic pages
 - TZ-29: Dashboard (4 KPI cards) + Task Panel (8 phase groups)
 
+### Frontend Phase 2 (TZ-30..TZ-40)
+- TZ-30: CRUD actions + per-page FormSchema (FormDialog, RowActions, 5 страниц с fields[])
+- TZ-31..TZ-40: UI Kit — foundation (cn/cva/theme/scroll-spy/button) + 10 секций showcase на /p/showcase (core primitives, advanced inputs, charts, calendar/otp/kbd, overlays, layout primitives)
+
 **Build:** pnpm run build ✅ (542.84 kB initial bundle, 0 warnings)
+
+### Dev Tooling (TZ-41)
+- TZ-41: Health Check Panel + Log TUI Mode — `start.mjs` стал TUI-aware orchestrator с `--tail` режимом (in-place статус 3 сервисов, ring buffer 5 строк на сервис, финальная "Ready" панель с латентностями /api/health). checkHealth() парсит JSON body и определяет `degraded` состояние.
+
+**Smoke test:** `node start.mjs` — preflight ✅, Mongo RS ready ✅, backend boot ✅, /api/health OK.
 
 ## 📊 Метрики проекта
 
@@ -85,14 +94,11 @@ kppdf-8.0/
 
 ## 🚀 Следующие шаги (предложения)
 
-1. **TZ-30: Phase 1 categories drill-down** — добавить per-category custom UI для Основа (НСИ), Закупок, Продаж
-2. **TZ-31: FormSchema JSON** — каждая таблица получает свой config с типами полей; CrudPage рендерит формы автоматически
-3. **TZ-32: Bulk import UI** — для ImportJobs сделать UI с file upload + progress
-4. **TZ-33: Document Template Builder** — drag-drop конструктор шаблонов
-5. **TZ-34: Mobile-responsive layout** — sidebar drawer на маленьких экранах
-6. **TZ-35: Real-time updates** — WebSocket для task panel (когда счётчики меняются)
-7. **TZ-36: Dark mode persistence** — сохранять в localStorage
-8. **TZ-37: Role-based page visibility** — реализовать roleGuard в app.routes
-9. **TZ-38: E2E frontend tests** — Playwright для критичных flows
-10. **TZ-39: Production deploy** — Docker + nginx + CI/CD
+Все этапы до TZ-41 завершены. Возможные направления:
+
+1. **TZ-42: Production deployment mode** — `--prod` флаг в start.mjs (`pnpm build` + `node dist/main.js` вместо `pnpm start:dev`)
+2. **TZ-43: Health-check Dashboard** — frontend страница с live статусами всех сервисов (используя TZ-41 ring buffer pattern)
+3. **TZ-44: E2E tests run** — реальный прогон test/setup/* + test/e2e/*.e2e-spec.ts (тесты созданы в TZ-17, не запускались)
+4. **TZ-45: Backend DI audit** — найти и починить оставшиеся DI cascade баги (5+ было в TZ-19..TZ-17) — `grep` модулей с инжектами сервисов без импорта модуля
+5. **TZ-46: Pre-existing verify-status fix** — синхронизировать конвенции: kit ожидает `OrchestratorKit/_archive/YYYY-MM/TZ-NN.done.txt`, проект использует `tasks/_archive/TZ-NN.md.done`. Нужно выбрать одну конвенцию и мигрировать.
 

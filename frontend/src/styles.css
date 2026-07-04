@@ -13,24 +13,24 @@
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
+    --primary: 262 83% 58%;           /* violet-600: #7c3aed */
     --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
+    --secondary: 188 95% 43%;         /* cyan-500: #06b6d4 */
+    --secondary-foreground: 0 0% 98%;
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
+    --accent: 262 83% 96%;
+    --accent-foreground: 262 83% 18%;
+    --destructive: 0 72% 51%;         /* rose-600 */
     --destructive-foreground: 0 0% 98%;
-    --success: 142 71% 45%;
+    --success: 142 71% 36%;           /* emerald-600 */
     --success-foreground: 0 0% 98%;
-    --warning: 38 92% 50%;
+    --warning: 38 92% 50%;            /* amber-500 */
     --warning-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
-    --radius: 0.5rem;
+    --ring: 262 83% 58%;
+    --radius: 0.75rem;
   }
 
   .dark {
@@ -40,23 +40,23 @@
     --card-foreground: 0 0% 98%;
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
+    --primary: 262 83% 65%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 188 95% 50%;
     --secondary-foreground: 0 0% 98%;
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
+    --accent: 262 83% 20%;
     --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 98%;
-    --success: 142 71% 35%;
+    --success: 142 71% 45%;
     --success-foreground: 0 0% 98%;
-    --warning: 38 92% 40%;
-    --warning-foreground: 0 0% 98%;
+    --warning: 38 92% 55%;
+    --warning-foreground: 0 0% 0%;
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --ring: 262 83% 65%;
   }
 
   * {
@@ -72,21 +72,47 @@
   body {
     height: 100%;
   }
+
+  /* Typography scale (TZ-34) */
+  .text-display { @apply text-6xl font-black tracking-tight leading-none; }
+  .text-h1 { @apply text-5xl font-bold leading-tight; }
+  .text-h2 { @apply text-4xl font-bold leading-tight; }
+  .text-h3 { @apply text-3xl font-semibold leading-snug; }
+  .text-h4 { @apply text-2xl font-semibold leading-snug; }
+  .text-h5 { @apply text-xl font-semibold leading-normal; }
+  .text-h6 { @apply text-lg font-semibold leading-normal; }
+  .text-lead { @apply text-xl text-muted-foreground leading-relaxed; }
+  .text-body { @apply text-base leading-relaxed; }
+  .text-small { @apply text-sm leading-normal; }
+  .text-caption { @apply text-xs text-muted-foreground; }
+  .text-overline { @apply text-xs tracking-widest uppercase font-medium; }
+  .text-code { @apply font-mono bg-muted px-1.5 py-0.5 rounded text-sm; }
+
+  /* Kbd component (TZ-37) */
+  kbd, .kbd {
+    @apply pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground;
+  }
+
+  /* Global focus ring (TZ-34) */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
 }
 
 @layer components {
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium
-      transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
-      focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+      transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+      focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50
+      active:scale-[0.97];
   }
 
   .btn-primary {
-    @apply btn bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2;
+    @apply btn bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md h-10 px-4 py-2;
   }
 
   .btn-secondary {
-    @apply btn bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2;
+    @apply btn bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:shadow-md h-10 px-4 py-2;
   }
 
   .btn-outline {
@@ -98,7 +124,11 @@
   }
 
   .btn-destructive {
-    @apply btn bg-destructive text-destructive-foreground hover:bg-destructive/90 h-10 px-4 py-2;
+    @apply btn bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:shadow-md h-10 px-4 py-2;
+  }
+
+  .btn-link {
+    @apply btn text-primary underline-offset-4 hover:underline h-auto px-0 py-0;
   }
 
   .btn-sm {
@@ -110,7 +140,7 @@
   }
 
   .card {
-    @apply rounded-lg border bg-card text-card-foreground shadow-sm;
+    @apply rounded-xl border bg-card text-card-foreground shadow-sm transition-shadow duration-200 hover:shadow-md;
   }
 
   .card-header {

@@ -1,0 +1,149 @@
+═══════════════════════════════════════════════════════════════
+TZ-32: Advanced Inputs (Combobox / Rating / Stepper / Progress / Avatar / AvatarGroup)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Developer
+
+ЗАВИСИМОСТИ: TZ-31 (Core UI Primitives) ✅
+
+LAYER: 5 (Frontend)
+
+CONFLICT KEYS:
+- frontend/src/app/shared/components/** (6 новых компонентов)
+- frontend/src/app/shared/components/form-dialog/ (интеграция Combobox в FormDialog)
+
+═══════════════════════════════════════════════════════════════
+КОНТЕКСТ
+═══════════════════════════════════════════════════════════════
+
+TZ-31 добавил базовые примитивы. Теперь нужны ADVANCED INPUTS для конкретных CRM-сценариев:
+- **Combobox** — для searchable selects с большим списком (categories, products, counterparties)
+- **Rating** — оценки продуктов/поставщиков (5-звёздочный, half-star, hover preview)
+- **Stepper** — multi-step wizards (создание заказа, импорт CSV, оформление КП)
+- **Progress** — для import jobs (TZ-16), длительных операций (build, generate)
+- **Avatar** — отображение пользователей/контрагентов в списках, comment headers
+- **AvatarGroup** — для отображения команды/участников (5+ stacked с +N overflow)
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+### 1. Combobox (`shared/components/combobox/`)
+- `combobox.component.ts` + `combobox.service.ts`
+- Standalone компонент с CDK Overlay для dropdown
+- API: `<hlm-combobox [options]="items" [displayKey]="'name'" [valueKey]="'_id'" [(value)]="selected" [placeholder]="'Поиск...'" />`
+- Single + multi-select variant (multi: chips внутри input)
+- Searchable: фильтрация через signal computed
+- Keyboard: ↑/↓ навигация, Enter select, Esc close, Backspace удаляет последний chip
+- Empty state: «Ничего не найдено»
+- Loading state: spinner в правом углу
+
+**Интеграция в FormDialog (TZ-30):** добавить `type: 'combobox'` в FormFieldSpec. CrudPage перед открытием формы резолвит options через endpoint, передаёт в combobox.
+
+### 2. Rating (`shared/components/rating/`)
+- `rating.component.ts`
+- `<hlm-rating [value]="signal(0)" [max]="5" [allowHalf]="true" (valueChange)="..." />`
+- Lucide Star иконки (filled / outlined)
+- Hover preview: при наведении показывает preview rating до клика
+- 3 размера: sm (16px) / md (20px) / lg (24px)
+- Read-only mode (без кликов) для отображения
+- Keyboard: ←/→ между звёздами, Enter submit, 0..9 number keys (0 = clear, 1-5 = set)
+
+### 3. Stepper (`shared/components/stepper/`)
+- `stepper.component.ts` + `step.component.ts`
+- Vertical (4 шага: Create account / Verify email / Set profile / Done) + Horizontal (3 шага)
+- API: `<hlm-stepper [steps]="['Step 1', 'Step 2', ...]" [(activeIndex)]="signal(0)">`
+- Каждый step имеет icon (lucide CheckCircle2 / Circle / Loader2) + label + optional description
+- States: completed (зелёная галочка) / active (primary ring) / pending (muted)
+- Continue / Back кнопки в footer
+- Click на completed step возвращает на него
+- Linear mode: нельзя перепрыгнуть шаги
+
+### 4. Progress (`shared/components/progress/`)
+- `progress.component.ts` (linear) + `circular-progress.component.ts`
+- Linear:
+  - `<hlm-progress [value]="70" [max]="100" />` (determinate)
+  - `<hlm-progress [indeterminate]="true" />` (animated bar)
+  - Variants: default / secondary / destructive / success
+  - 4px height default, 2px thin / 8px thick variants
+- Circular:
+  - Custom SVG, 4 значения showcase: 25 / 50 / 75 / 100
+  - Центр: % label (text-2xl font-bold)
+  - Цвет: primary по умолчанию, variants через `[color]`
+  - 4 размера: sm (48px) / md (64px) / lg (96px) / xl (128px)
+
+### 5. Avatar (`shared/components/avatar/`)
+- `avatar.component.ts`
+- 3 варианта:
+  - Image: `<hlm-avatar [src]="url" />` (с fallback на letter)
+  - Letter: `<hlm-avatar [name]="'Иван Петров'" />` (auto-initials + auto-color from hash)
+  - Icon: `<hlm-avatar><lucide-user /></hlm-avatar>`
+- 3 размера: sm (32px) / md (40px) / lg (56px)
+- 3 формы: circle (default) / rounded / square
+- 4 color variants для letter bg: violet / cyan / emerald / amber
+- Status indicator (опциональный): online/offline dot в правом нижнем углу
+
+### 6. AvatarGroup (`shared/components/avatar-group/`)
+- `avatar-group.component.ts`
+- API: `<hlm-avatar-group [avatars]="users" [max]="4" />`
+- Stack с -ml-2 (overlap)
+- Если `avatars.length > max`: последний avatar показывает `+N` (например +3)
+- 2 размера: sm / md (синхронизированы с Avatar)
+- Tooltip на каждом avatar с полным именем (использует Tooltip из TZ-31)
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ СОЗДАНИЯ
+═══════════════════════════════════════════════════════════════
+
+```
+frontend/src/app/shared/components/
+├── combobox/
+│   ├── combobox.component.ts
+│   └── combobox.service.ts
+├── rating/
+│   └── rating.component.ts
+├── stepper/
+│   ├── stepper.component.ts
+│   └── step.component.ts
+├── progress/
+│   ├── progress.component.ts
+│   └── circular-progress.component.ts
+├── avatar/
+│   └── avatar.component.ts
+└── avatar-group/
+    └── avatar-group.component.ts
+```
+
+Также:
+- `frontend/src/app/shared/components/form-dialog/form-dialog.component.ts` — добавить `type: 'combobox'`
+- `frontend/src/app/shared/components/index.ts` — добавить в barrel
+
+Также установить `lucide-angular` (если ещё нет):
+```bash
+cd frontend && pnpm add lucide-angular
+```
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm run build` — 0 errors, 0 warnings.
+2. Все 6 компонентов — standalone, OnPush, signals.
+3. Combobox: single + multi; search фильтрует; ↑/↓/Enter/Esc keyboard.
+4. Combobox интегрирован в FormDialog (новый `type: 'combobox'` в FormFieldSpec).
+5. Rating: 5 звёзд; half-star; hover preview; keyboard nav; 3 размера.
+6. Stepper: vertical 4-step + horizontal 3-step; Continue/Back; click completed step.
+7. Progress linear: determinate (70%) + indeterminate + 4 variants.
+8. Progress circular: SVG; 25/50/75/100; % в центре; 4 размера.
+9. Avatar: 3 варианта (image/letter/icon) + 3 размера + 3 формы + 4 color variants + status dot.
+10. AvatarGroup: stack -ml-2, +N overflow, Tooltip на каждом.
+11. Используют ТОЛЬКО Tailwind токены (`bg-primary`, `text-muted-foreground`, `border-border`).
+12. **ГЛАВНОЕ:** файл `tasks/TZ-32.md` УДАЛЁН из `tasks/` после завершения.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+1. Записать в `progress.md`: дата, TZ-32, краткое описание (6 advanced inputs).
+2. Переместить `tasks/TZ-32.md` в `tasks/_archive/TZ-32.md.done`.
+3. **Удалить `tasks/TZ-32.md`** (финальный сигнал).

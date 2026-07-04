@@ -1,0 +1,194 @@
+═══════════════════════════════════════════════════════════════
+TZ-34: Visual Polish (Color Palette / Typography Scale / Micro-animations)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Developer
+
+ЗАВИСИМОСТИ: TZ-19 (Frontend Foundation) ✅
+
+LAYER: 5 (Frontend)
+
+CONFLICT KEYS:
+- frontend/tailwind.config.js
+- frontend/src/styles.css
+- frontend/src/app/shared/components/** (мелкие правки hover/focus states)
+
+═══════════════════════════════════════════════════════════════
+КОНТЕКСТ
+═══════════════════════════════════════════════════════════════
+
+TZ-19 создал shadcn-style design tokens с дефолтной палитрой (gray/slate). UI Kit спек требует BOLDER палитру с violet (#7c3aed) и cyan (#06b6d4) акцентами + чёткую typography scale + micro-animations.
+
+Текущее состояние: `tailwind.config.js` имеет палитру shadcn (background/foreground/primary/etc), но primary — дефолтный (slate). Typography: только стандартные Tailwind классы (`text-xl`, `font-bold`). Animations: только `fade-in` и `slide-up` (TZ-19).
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+### 1. Color Palette Refresh (`tailwind.config.js` + `styles.css`)
+
+Обновить HSL значения в `styles.css`:
+```css
+:root {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  --primary: 262 83% 58%;           /* violet-600: #7c3aed */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 188 95% 43%;         /* cyan-500: #06b6d4 */
+  --secondary-foreground: 0 0% 100%;
+  --destructive: 0 72% 51%;         /* rose-600 */
+  --destructive-foreground: 0 0% 100%;
+  --success: 142 76% 36%;           /* emerald-600 */
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 50%;            /* amber-500 */
+  --warning-foreground: 0 0% 0%;
+  --muted: 240 5% 96%;
+  --muted-foreground: 240 4% 46%;
+  --accent: 262 83% 96%;            /* violet-50 для subtle backgrounds */
+  --accent-foreground: 262 83% 18%;
+  --border: 240 6% 90%;
+  --input: 240 6% 90%;
+  --ring: 262 83% 58%;              /* matches primary */
+  --radius: 0.75rem;                /* xl */
+}
+
+.dark {
+  --background: 240 10% 4%;
+  --foreground: 0 0% 98%;
+  --primary: 262 83% 65%;           /* чуть светлее для dark mode */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 188 95% 50%;
+  --secondary-foreground: 0 0% 100%;
+  --destructive: 0 72% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 142 76% 45%;
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 55%;
+  --warning-foreground: 0 0% 0%;
+  --muted: 240 4% 16%;
+  --muted-foreground: 240 5% 65%;
+  --accent: 262 83% 20%;
+  --accent-foreground: 0 0% 98%;
+  --border: 240 4% 16%;
+  --input: 240 4% 16%;
+  --ring: 262 83% 65%;
+}
+```
+
+Добавить в `tailwind.config.js`:
+```js
+theme: {
+  extend: {
+    colors: {
+      success: { DEFAULT: 'hsl(var(--success))', foreground: 'hsl(var(--success-foreground))' },
+      warning: { DEFAULT: 'hsl(var(--warning))', foreground: 'hsl(var(--warning-foreground))' },
+      // primary/secondary/destructive/muted/accent/border/input/ring — уже есть из TZ-19
+    },
+    borderRadius: { xl: '0.75rem', lg: '0.5rem' },
+  },
+}
+```
+
+### 2. Typography Scale (`styles.css` + `tailwind.config.js`)
+
+Добавить в `@layer base`:
+```css
+@layer base {
+  .text-display { @apply text-6xl font-black tracking-tight leading-none; }
+  .text-h1 { @apply text-5xl font-bold leading-tight; }
+  .text-h2 { @apply text-4xl font-bold leading-tight; }
+  .text-h3 { @apply text-3xl font-semibold leading-snug; }
+  .text-h4 { @apply text-2xl font-semibold leading-snug; }
+  .text-h5 { @apply text-xl font-semibold leading-normal; }
+  .text-h6 { @apply text-lg font-semibold leading-normal; }
+  .text-lead { @apply text-xl text-muted-foreground leading-relaxed; }
+  .text-body { @apply text-base leading-relaxed; }
+  .text-small { @apply text-sm leading-normal; }
+  .text-caption { @apply text-xs text-muted-foreground; }
+  .text-overline { @apply text-xs tracking-widest uppercase font-medium; }
+  .text-code { @apply font-mono bg-muted px-1.5 py-0.5 rounded text-sm; }
+}
+```
+
+Опционально добавить Inter font через Google Fonts (CDN link в `index.html`).
+
+### 3. Micro-animations
+
+Добавить в `tailwind.config.js`:
+```js
+keyframes: {
+  'fade-in': { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+  'slide-up': { '0%': { opacity: '0', transform: 'translateY(8px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+  'slide-down': { '0%': { opacity: '0', transform: 'translateY(-8px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+  'scale-in': { '0%': { opacity: '0', transform: 'scale(0.95)' }, '100%': { opacity: '1', transform: 'scale(1)' } },
+  shimmer: { '100%': { transform: 'translateX(100%)' } },
+},
+animation: {
+  'fade-in': 'fade-in 200ms ease-out',
+  'slide-up': 'slide-up 200ms ease-out',
+  'slide-down': 'slide-down 200ms ease-out',
+  'scale-in': 'scale-in 150ms ease-out',
+  shimmer: 'shimmer 1.5s infinite',
+},
+```
+
+В `styles.css` обновить button/card компоненты:
+```css
+@layer components {
+  .btn-primary { 
+    @apply bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium
+           transition-all duration-150
+           hover:bg-primary/90 hover:shadow-md
+           active:scale-[0.97] active:shadow-sm
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary disabled:hover:shadow-none;
+  }
+  .card {
+    @apply bg-card text-card-foreground rounded-xl border shadow-sm
+           transition-all duration-200
+           hover:shadow-md;
+  }
+}
+```
+
+(аналогично для .btn-secondary, .btn-outline, .btn-ghost, .btn-destructive, .btn-link, .input, .label, .badge-*)
+
+### 4. Focus Rings (Accessibility)
+
+Глобально в `@layer base`:
+```css
+*:focus-visible {
+  @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+}
+```
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ОБНОВЛЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+- `frontend/tailwind.config.js` (palette extend + animations + keyframes)
+- `frontend/src/styles.css` (HSL vars + typography scale + button/card refinements)
+- `frontend/src/index.html` (Inter font через Google Fonts — optional)
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm run build` — 0 errors, 0 warnings.
+2. Visual: primary buttons теперь violet (#7c3aed), secondary — cyan (#06b6d4).
+3. Dark mode: те же токены с чуть светлее оттенками для контраста.
+4. Typography: классы `.text-display`/`.text-h1..h6`/`.text-lead`/`.text-body`/`.text-small`/`.text-caption`/`.text-overline`/`.text-code` доступны и работают.
+5. Micro-animations:
+   - `active:scale-[0.97]` на всех кнопках (визуально ощутимо при нажатии)
+   - `hover:shadow-md` на card (приподнимается)
+   - `animate-fade-in` / `animate-slide-up` / `animate-scale-in` работают
+6. Focus rings: Tab по форме — видно чёткий ring на каждом focusable элементе.
+7. **ГЛАВНОЕ:** файл `tasks/TZ-34.md` УДАЛЁН из `tasks/` после завершения.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+1. Записать в `progress.md`: дата, TZ-34, краткое описание.
+2. Переместить `tasks/TZ-34.md` в `tasks/_archive/TZ-34.md.done`.
+3. **Удалить `tasks/TZ-34.md`** (финальный сигнал).

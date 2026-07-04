@@ -8,6 +8,7 @@ import {
   CostCalculation,
   CostCalculationSchema,
 } from '../cost-calculation/cost-calculation.schema';
+import { ProductionOrderModule } from '../production-order/production-order.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import {
       { name: ActualCost.name, schema: ActualCostSchema },
       { name: CostCalculation.name, schema: CostCalculationSchema },
     ]),
+    ProductionOrderModule,
   ],
   controllers: [ActualCostController, CostComparisonController],
   providers: [ActualCostService],

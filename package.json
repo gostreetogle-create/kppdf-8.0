@@ -1,0 +1,28 @@
+{
+  "name": "kppdf-8.0",
+  "version": "0.1.0",
+  "private": true,
+  "description": "kppdf-8.0 — ERP-система (NestJS backend + Angular frontend). Local dev orchestrator.",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "start": "node start.mjs --check",
+    "start:all": "node start.mjs",
+    "start:tail": "node start.mjs --tail",
+    "check:start": "node start.mjs --check",
+    "stop:start": "node start.mjs --stop",
+    "reset:start": "node start.mjs --reset",
+    "start:no-browser": "node start.mjs --no-browser"
+  },
+  "comments": {
+    "start": "Default: pre-flight checks only (safe, exits cleanly). Use `npm run start:all` to actually start everything.",
+    "start:all": "Полный запуск: Mongo + backend + frontend + browser. Делегирует к start.mjs.",
+    "start:tail": "TUI-режим: live-логи в одном TTY-окне (--tail). 3 строки статуса с in-place обновлением, ring buffer последних 5 строк на сервис.",
+    "check:start": "Только pre-flight проверки. Не запускает ничего.",
+    "stop:start": "Останавливает backend + frontend.",
+    "reset:start": "Полный сброс: docker down -v + rm node_modules.",
+    "start:no-browser": "Запуск без авто-открытия браузера."
+  }
+}

@@ -6,6 +6,7 @@ import { ImportJobsController } from './import-jobs.controller';
 import { Material, MaterialSchema } from '../material/material.schema';
 import { Product, ProductSchema } from '../product/product.schema';
 import { Counterparty, CounterpartySchema } from '../counterparty/counterparty.schema';
+import { CounterModule } from '../counter/counter.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { Counterparty, CounterpartySchema } from '../counterparty/counterparty.s
       { name: Product.name, schema: ProductSchema },
       { name: Counterparty.name, schema: CounterpartySchema },
     ]),
+    CounterModule,
   ],
   controllers: [ImportJobsController],
   providers: [ImportJobsService],

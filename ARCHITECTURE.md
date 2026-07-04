@@ -19,6 +19,27 @@
 
 ---
 
+## Dev Tooling — Local Starter (TZ-41)
+- **`D:\kppdf-8.0\start.mjs`** — кросс-платформенный Node 20+ ESM starter (~500 строк, без внешних deps).
+- **Режимы:** `--check` (preflight only), `--tail` (TUI), `--stop` (kill pids), `--reset` (down -v + rm node_modules), `--no-browser`, `--help`.
+- **Pre-flight:** Node 20+, pnpm 8+, Docker daemon, `.env`, project structure, ports 3000/4200 (hard-fail) / 27017 (warn).
+- **Mongo:** `docker compose up -d mongo mongo-init` (НЕ backend service — Dockerfile pnpm blocker), wait `rs.status().ok === 1` до 120s.
+- **Deps:** `pnpm install --prefer-offline` если `node_modules` отсутствует.
+- **Spawn:** `pnpm start:dev` (backend :3000) + `pnpm start` (frontend :4200) detached. `shell: isWin` на Windows для PATHEXT resolution (.cmd/.ps1).
+- **Health-check:** `checkHealth()` GET + JSON parse + latency; для `/api/health` проверяет `body.status !== 'error' && body.info.mongo.status !== 'down'` (терминус формат).
+- **TUI mode (`--tail`):** TTY-only, рисует 3 строки статуса Mongo/Backend/Frontend in-place через `\x1b[3A` + `\r` + `\x1b[K\n`. Ring buffer 5 строк на сервис. Иконки: ⏳ pending, ⏵ starting, ✔ ready, ✖ failed, ⚠ degraded.
+- **TUI-aware log:** `tuiPrint()` вставляет строку ниже TUI, затем redraw. `log` объект (step/ok/warn/err) все стали TUI-aware.
+- **Subprocess output suppression:** в TUI режиме `startMongo`/`installDeps`/`spawnDetached` используют `stdio: 'pipe'` чтобы не ломать in-place update.
+- **Cleanup:** SIGINT/SIGTERM → `taskkill /T /F` (Win) / `process.kill(-pid, SIGTERM)` (Unix) для process group. PID-файл `.start.pids.json`.
+- **Browser open:** `open` (Mac) / `cmd /c start` (Win) / `xdg-open` (Linux) с `shell: isWin` для Windows built-in `start`.
+- **Final panel:** латентности /api/health + GET /, ✔/⚠/✖ иконки, frontend/backend/login/showcase URLs.
+- **ENV vars:** `NO_TUI=1` (force plain log), `NO_COLOR=1` (disable ANSI).
+- **npm-скрипты (root `package.json`):** `start` (--check), `start:all` (full), `start:tail` (--tail), `check:start` (--check), `stop:start` (--stop), `reset:start` (--reset), `start:no-browser` (--no-browser).
+- **Platform wrappers:** `start.cmd` (Windows native, `node start.mjs %*`), `start.sh` (bash, `cd $SCRIPT_DIR && exec node start.mjs "$@"` — работает из любой CWD).
+- **Smoke test results (pre-TZ-41):** 2 бага найдено (Windows pnpm spawn ENOENT, ImportJobsModule DI cascade) — оба исправлены до TZ-41.
+
+---
+
 (будет пополняться)
 
 Test arch row

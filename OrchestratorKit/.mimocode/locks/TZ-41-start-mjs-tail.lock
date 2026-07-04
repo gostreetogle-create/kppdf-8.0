@@ -1,0 +1,10 @@
+# Lock file
+Locked as of 2026-07-05 — TZ-41: Health Check Panel + Log TUI Mode.
+
+Owner: Backend Developer (DevTools / Start Orchestrator)
+Protected files:
+- start.mjs
+- package.json (root)
+- README.md (root)
+
+Unlock: only via orchestrator approval (новое TZ-NN с пометкой «successor»).

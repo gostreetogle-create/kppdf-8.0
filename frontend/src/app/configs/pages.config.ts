@@ -21,7 +21,7 @@ export interface PageConfig {
   icon: string;
   category: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
   /** Lower = fill first. Phase 1 = foundation, Phase 11 = system. */
-  priority: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
+  priority: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
   roles?: string[];
   description?: string;
   /** Form fields for create/edit dialog. If omitted, page is read-only. */
@@ -259,4 +259,10 @@ export const PAGES: PageConfig[] = [
   { id: 'rate-limit', title: 'Rate Limit', endpoint: '/rate-limits', icon: '⏱', category: 8, priority: 11, roles: ['admin'] },
   { id: 'interaction', title: 'Взаимодействия', endpoint: '/interactions', icon: '🤝', category: 8, priority: 11 },
   { id: 'feature-flag-list', title: 'Флаги функций', endpoint: '/feature-flags', icon: '🚩', category: 8, priority: 11, roles: ['admin'] },
+
+  // === Special: UI Kit Showcase (TZ-35) — uses custom page, not CrudPage ===
+  // Note: page-renderer falls back to CrudPage for entries with endpoint, but showcase
+  // is a custom page handled via a special id in main-layout / app.routes.
+  // The endpoint below is a placeholder — actual content comes from ShowcasePage.
+  { id: 'showcase', title: 'UI Kit Showcase', endpoint: '/showcase', icon: '🎨', category: 8, priority: 12, description: 'Living showcase of all UI primitives (TZ-35)' },
 ];

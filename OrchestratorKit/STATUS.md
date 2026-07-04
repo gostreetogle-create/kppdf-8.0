@@ -39,10 +39,9 @@ bash OrchestratorKit/make-tz.sh "My first feature"
 
 ## ✅ DONE (в `_archive/<YYYY-MM>/TZ-NN.done.txt`)
 
-*Пусто — никаких TZ завершённых.*
-
 | № | Дата | Название | Файл архива |
 |---|------|----------|-------------|
+| TZ-41 | 2026-07-05 | Health Check Panel + Log TUI Mode | tasks/_archive/2026-07/TZ-41.md.done |
 | TZ-06 | 2026-07-04 | Organizations & Contacts | _archive/2026-07/TZ-06.done.txt |
 | TZ-07 | Catalog Core | 2026-07-04 | DONE |
 | TZ-08 | EAV & Product Meta | 2026-07-04 | DONE |

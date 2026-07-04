@@ -1,0 +1,135 @@
+═══════════════════════════════════════════════════════════════
+TZ-36: Charts (Line / Bar / Area / Donut / Pie)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Developer
+
+ЗАВИСИМОСТИ: TZ-34 (Visual Polish — design tokens) ✅
+
+LAYER: 5 (Frontend)
+
+CONFLICT KEYS:
+- frontend/src/app/shared/components/charts/ (новый)
+- frontend/package.json (+chart.js +ng2-charts)
+
+═══════════════════════════════════════════════════════════════
+КОНТЕКСТ
+═══════════════════════════════════════════════════════════════
+
+В kppdf-8.0 есть backend модули с аналитикой (FinancialReport, CostCalculation, ProductionOrder), но фронт не имеет способа ВИЗУАЛИЗИРОВАТЬ данные. UI Kit спек (Section 9) требует 5 типов чартов с реальными статическими данными, tooltips и theme через CSS variables.
+
+Понадобится для:
+- Dashboard (TZ-29) — KPI тренды
+- FinancialReport (TZ-15) — income/expense чарты
+- ProductionOrder — план/факт графики
+- Inventory — stock levels
+- AuditLog — activity timeline
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+### Установка
+```bash
+cd frontend && pnpm add chart.js ng2-charts
+```
+
+### Структура `shared/components/charts/`
+
+Каждый чарт — standalone Angular компонент, тонкая обёртка над `BaseChartDirective` из ng2-charts.
+
+1. **`line-chart.component.ts`** — `<hlm-line-chart [data]="data" [options]="options" />`
+   - Multi-series support
+   - Smooth curves (tension: 0.4)
+   - Точки на hover, custom tooltips
+   - Showcase: «Monthly revenue» с 2 сериями (income/expenses) за 12 месяцев
+
+2. **`bar-chart.component.ts`** — `<hlm-bar-chart [data]="data" [orientation]="'vertical'|'horizontal'" />`
+   - Vertical + horizontal orientation
+   - Stacked + grouped variants
+   - Showcase: «Category comparison» (sales by product category)
+
+3. **`area-chart.component.ts`** — `<hlm-area-chart [data]="data" [stacked]="true" />`
+   - Filled area под линией
+   - Stacked area для cumulative
+   - Showcase: «Cumulative revenue growth» за 12 месяцев
+
+4. **`donut-chart.component.ts`** — `<hlm-donut-chart [data]="data" [centerText]="'Total'" />`
+   - Donut (hole 60%)
+   - Center text overlay (сигнал-управляемый)
+   - Legend справа
+   - Showcase: «Revenue distribution by category» (5-6 сегментов)
+
+5. **`pie-chart.component.ts`** — `<hlm-pie-chart [data]="data" />`
+   - Solid pie (no hole)
+   - Showcase: «Order status distribution»
+
+### Theme integration (важно!)
+
+Все цвета чартов берутся из CSS variables (через `getComputedStyle(document.documentElement).getPropertyValue('--primary')`).
+
+Создать `charts/chart-theme.service.ts`:
+- `getColor(token: string): string` — конвертирует HSL var в hex/rgba для Chart.js
+- `getChartColors(count: number): string[]` — генерирует палитру из tokens (--primary, --secondary, --success, --warning, --destructive, --accent)
+- Слушает `themeService.theme` signal, обновляет при смене темы (через `effect()` или `MutationObserver` на `html.dark`)
+
+### Chart data fixtures
+
+`charts/fixtures/chart-data.ts` — статические данные для showcase:
+```typescript
+export const MONTHLY_REVENUE = {
+  labels: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+  income:  [1200, 1350, 1100, 1500, 1700, 1900, 2100, 1950, 2200, 2400, 2300, 2600],
+  expenses:[ 800,  900,  850,  1000, 1100, 1200, 1300, 1250, 1400, 1500, 1450, 1600],
+};
+// ... category, cumulative, distribution, status fixtures
+```
+
+### Tooltips
+- Chart.js встроенные tooltips стилизованные через CSS variables
+- Custom tooltip template (опционально): через `plugins/tooltip` callback
+
+### Responsive
+- `maintainAspectRatio: false` + `[style.height.px]="300"` на контейнере
+- ResizeObserver на контейнере → chart.resize()
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ СОЗДАНИЯ
+═══════════════════════════════════════════════════════════════
+
+```
+frontend/src/app/shared/components/charts/
+├── line-chart.component.ts
+├── bar-chart.component.ts
+├── area-chart.component.ts
+├── donut-chart.component.ts
+├── pie-chart.component.ts
+├── chart-theme.service.ts
+└── fixtures/
+    └── chart-data.ts
+```
+
+Обновить:
+- `frontend/package.json` (+chart.js, +ng2-charts)
+- `frontend/src/app/shared/components/index.ts`
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm run build` — 0 errors, 0 warnings.
+2. Все 5 чартов рендерятся в showcase-режиме с mock-данными.
+3. Цвета чартов соответствуют текущей теме (light/dark) — проверено переключением темы.
+4. Tooltips работают на каждом чарте.
+5. Resize: при resize окна чарт пересчитывает ширину.
+6. Multi-series для line/bar работает (легенда различает серии).
+7. Используют ТОЛЬКО CSS variable токены (не hardcoded colors).
+8. **ГЛАВНОЕ:** файл `tasks/TZ-36.md` УДАЛЁН из `tasks/` после завершения.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+1. Записать в `progress.md`: дата, TZ-36, краткое описание (5 chart types).
+2. Переместить `tasks/TZ-36.md` в `tasks/_archive/TZ-36.md.done`.
+3. **Удалить `tasks/TZ-36.md`** (финальный сигнал).

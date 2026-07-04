@@ -1,0 +1,123 @@
+═══════════════════════════════════════════════════════════════
+TZ-37: Premium Inputs (Calendar / OtpInput / Kbd / Real Form Demo)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Developer
+
+ЗАВИСИМОСТИ: TZ-31 (Core UI Primitives) ✅, TZ-32 (Advanced Inputs) ✅
+
+LAYER: 5 (Frontend)
+
+CONFLICT KEYS:
+- frontend/src/app/shared/components/calendar/ (новый)
+- frontend/src/app/shared/components/otp-input/ (новый)
+- frontend/src/app/shared/components/kbd/ (новый)
+- frontend/src/app/shared/components/showcase-form/ (новый, demo)
+
+═══════════════════════════════════════════════════════════════
+КОНТЕКСТ
+═══════════════════════════════════════════════════════════════
+
+TZ-31..TZ-32 дали базовые примитивы. UI Kit спек (Sections 3-4) добавляет 4 премиум-компонента:
+- **Calendar** — date picker с popover (критичен для всех date-полей: dueDate, birthDate, expiry)
+- **OtpInput** — 6-digit input для верификации (email/SMS коды)
+- **Kbd** — стилизованная клавиша (для шорткат-документации, tooltip, command palette)
+- **Real Form Demo** — полноценная форма с Reactive Forms + Zod-style валидацией
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+### 1. Calendar / DatePicker (`shared/components/calendar/`)
+- `calendar.component.ts` — кастомный календарь БЕЗ сторонних библиотек
+- `<hlm-calendar [value]="signal<Date|null>(null)" [min]="..." [max]="..." (valueChange)="..." />`
+- CDK Overlay для popover
+- Месячный grid view (7×6) с prev/next month кнопками
+- Today highlight, selected highlight, disabled dates (min/max)
+- Keyboard: ←/→ день, ↑/↓ неделя, PgUp/PgDn месяц, Home/End начало/конец недели
+- i18n: locale через `LOCALE_ID` токен, по умолчанию `ru` (понедельник первый)
+- `date-picker.component.ts` — input + popover trigger
+  - `<hlm-date-picker [(value)]="signal()" placeholder="Выберите дату" />`
+  - Открывает calendar в popover (CDK Overlay)
+  - Format display: `dd.MM.yyyy` (ru) или `MM/dd/yyyy` (en)
+  - Manual input: parse yyyy-MM-dd / dd.MM.yyyy / MM/dd/yyyy
+  - Clear button (×) когда value есть
+
+### 2. OtpInput (`shared/components/otp-input/`)
+- `otp-input.component.ts` — `<hlm-otp-input [length]="6" [(value)]="signal('')" [autoFocus]="true" />`
+- N отдельных `<input>` элементов (one per digit)
+- Auto-focus next на input (только digit chars)
+- Auto-focus prev на Backspace
+- Paste support: распределяет "123456" по 6 полям
+- Keyboard: ←/→ между полями, Home/End к первому/последнему
+- Single read-only string binding (`value: string`)
+- Visual: monospace font, центрирование, focus ring на активном поле
+- Disabled state: все поля disabled, единый стиль
+
+### 3. Kbd (`shared/components/kbd/`)
+- `kbd.component.ts` — `<hlm-kbd>⌘</hlm-kbd>` или `<hlm-kbd>Enter</hlm-kbd>`
+- Стилизация через Tailwind: `bg-muted text-foreground border border-border rounded px-1.5 py-0.5 text-xs font-mono`
+- Variants:
+  - `default` (light bg) — для обычных клавиш
+  - `active` (primary bg + primary-foreground) — для текущей нажатой
+  - `combo` (separator +) — `<hlm-kbd>⌘</hlm-kbd><hlm-kbd>+</hlm-kbd><hlm-kbd>K</hlm-kbd>`
+- Использовать в: KeyboardShortcutsOverlay (TZ-33), Tooltip hints, command palette footer
+- Поддержка стандартных имён: `Enter`, `Tab`, `Esc`, `Cmd/Ctrl`, `Shift`, `↑/↓/←/→`, `Space`
+
+### 4. Real Form Demo (`shared/components/showcase-form/`)
+- `create-account-form.component.ts` — НЕ production компонент, это DEMO для showcase
+- Reactive Forms с class-validator:
+  - FormGroup: `{ name, email, password, confirmPassword, birthDate, role, agreeToTerms }`
+  - Validators:
+    - name: required, minLength(2)
+    - email: required, email
+    - password: required, minLength(8), pattern (1 letter + 1 digit)
+    - confirmPassword: required, must match password
+    - birthDate: must be in past, user must be 18+
+    - role: required (radio: Customer/Admin/Manager)
+    - agreeToTerms: requiredTrue
+- Error display под каждым полем (`text-destructive text-xs`)
+- Submit button disabled пока форма invalid
+- Submit: показать toast «Аккаунт создан» + reset form
+- Использует ВСЕ ранее созданные компоненты: Input, Select, Checkbox, Switch, RadioGroup, DatePicker, Button
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ СОЗДАНИЯ
+═══════════════════════════════════════════════════════════════
+
+```
+frontend/src/app/shared/components/
+├── calendar/
+│   ├── calendar.component.ts
+│   └── date-picker.component.ts
+├── otp-input/
+│   └── otp-input.component.ts
+├── kbd/
+│   └── kbd.component.ts
+└── showcase-form/
+    └── create-account-form.component.ts
+```
+
+Обновить:
+- `frontend/src/app/shared/components/index.ts`
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm run build` — 0 errors, 0 warnings.
+2. **Calendar:** месячный grid с prev/next, today/selected/disabled states, keyboard nav. ru-locale: понедельник первый.
+3. **DatePicker:** открывает calendar в CDK popover; manual input парсит yyyy-MM-dd / dd.MM.yyyy; clear button работает.
+4. **OtpInput:** 6 полей; ввод цифры → auto-focus next; Backspace → auto-focus prev; paste "123456" заполняет все 6.
+5. **Kbd:** визуально стилизован (bg-muted, border, rounded); variants default/active/combo; работает в KeyboardShortcutsOverlay.
+6. **Real Form:** все 7 полей с валидацией; submit disabled пока invalid; submit показывает toast + reset.
+7. Используют ТОЛЬКО Tailwind токены.
+8. **ГЛАВНОЕ:** файл `tasks/TZ-37.md` УДАЛЁН из `tasks/` после завершения.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+1. Записать в `progress.md`: дата, TZ-37, краткое описание.
+2. Переместить `tasks/TZ-37.md` в `tasks/_archive/TZ-37.md.done`.
+3. **Удалить `tasks/TZ-37.md`** (финальный сигнал).

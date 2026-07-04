@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { ThemeService } from '../../core/services/theme.service';
 import { PAGES } from '../../configs/pages.config';
 
 @Component({
@@ -40,8 +41,13 @@ import { PAGES } from '../../configs/pages.config';
         }
       </div>
 
-      <button class="btn-ghost btn-icon" (click)="toggleDark()" [title]="isDark() ? 'Light' : 'Dark'">
-        {{ isDark() ? '☀️' : '🌙' }}
+      <button
+        class="btn-ghost btn-icon"
+        (click)="theme.toggle()"
+        [title]="theme.theme() === 'dark' ? 'Light' : 'Dark'"
+        [attr.aria-label]="'Toggle theme, currently ' + theme.theme()"
+      >
+        {{ theme.theme() === 'dark' ? '☀️' : '🌙' }}
       </button>
 
       <select class="input w-20" [ngModel]="lang()" (ngModelChange)="setLang($event)">
@@ -59,11 +65,11 @@ import { PAGES } from '../../configs/pages.config';
 })
 export class TopbarComponent {
   readonly auth = inject(AuthService);
+  readonly theme = inject(ThemeService);
   private readonly router = inject(Router);
 
   readonly query = signal('');
   readonly showResults = signal(false);
-  readonly isDark = signal(false);
   readonly lang = signal<'ru' | 'en'>('ru');
 
   readonly results = signal(PAGES.filter((p) => this.auth.hasRole(p.roles)).slice(0, 5));
@@ -92,14 +98,8 @@ export class TopbarComponent {
     setTimeout(() => this.showResults.set(false), 200);
   }
 
-  toggleDark(): void {
-    this.isDark.update((v) => !v);
-    document.documentElement.classList.toggle('dark', this.isDark());
-  }
-
   setLang(l: 'ru' | 'en'): void {
     this.lang.set(l);
-    // i18n will be wired in TZ-22+
     document.documentElement.lang = l;
   }
 }

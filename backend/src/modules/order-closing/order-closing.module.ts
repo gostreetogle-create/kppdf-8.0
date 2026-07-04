@@ -4,6 +4,7 @@ import { OrderClosing, OrderClosingSchema } from './order-closing.schema';
 import { OrderClosingService } from './order-closing.service';
 import { OrderClosingController } from './order-closing.controller';
 import { OrderTask, OrderTaskSchema } from '../order-task/order-task.schema';
+import { ProductionOrderModule } from '../production-order/production-order.module';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { OrderTask, OrderTaskSchema } from '../order-task/order-task.schema';
       { name: OrderClosing.name, schema: OrderClosingSchema },
       { name: OrderTask.name, schema: OrderTaskSchema },
     ]),
+    ProductionOrderModule,
   ],
   controllers: [OrderClosingController],
   providers: [OrderClosingService],

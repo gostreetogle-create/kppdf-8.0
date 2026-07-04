@@ -1,0 +1,135 @@
+═══════════════════════════════════════════════════════════════
+TZ-39: Layout Primitives (ResizablePanel / ScrollArea / AspectRatio / Collapsible / Carousel)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Developer
+
+ЗАВИСИМОСТИ: TZ-31 (Core UI Primitives) ✅
+
+LAYER: 5 (Frontend)
+
+CONFLICT KEYS:
+- frontend/src/app/shared/components/resizable/ (новый)
+- frontend/src/app/shared/components/scroll-area/ (новый)
+- frontend/src/app/shared/components/aspect-ratio/ (новый)
+- frontend/src/app/shared/components/collapsible/ (новый)
+- frontend/src/app/shared/components/carousel/ (новый)
+- frontend/src/styles.css (custom scrollbar)
+
+═══════════════════════════════════════════════════════════════
+КОНТЕКСТ
+═══════════════════════════════════════════════════════════════
+
+UI Kit спек (Section 8) описывает 5 layout-примитивов, которых нет в проекте:
+- **ResizablePanel** — split-view с drag handle (для dashboard, IDE-like interfaces)
+- **ScrollArea** — кастомный scrollbar (для Sidebar overflow, таблиц)
+- **AspectRatio** — сохранение пропорций (для изображений продуктов, video preview)
+- **Collapsible** — animated height (для FAQ, settings groups)
+- **Carousel** — touch-swipeable (для product gallery, onboarding)
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+### 1. ResizablePanelGroup (`shared/components/resizable/`)
+- `resizable-panel-group.component.ts` + `resizable-panel.component.ts` + `resizable-handle.component.ts`
+- API: `<hlm-resizable-group direction="horizontal"> <hlm-resizable-panel [defaultSize]="50">...</hlm-resizable-panel> <hlm-resizable-handle /> <hlm-resizable-panel>...</hlm-resizable-panel> </hlm-resizable-group>`
+- `direction: 'horizontal' | 'vertical'`
+- Drag handle между panels (CDK Drag)
+- Visual: 4px hover-area, 1px visible divider, blue-500 cursor при hover
+- Sizes хранятся в `signal<number[]>([50, 50])` — relative percentages
+- Min/max size per panel: `[minSize]="20" [maxSize]="80"`
+- On resize: emit `(sizesChange)` event
+- Persistence: `key` prop → `localStorage.setItem(`kppdf-resizable-${key}`, JSON.stringify(sizes))`
+- Auto-save with debounce 500ms
+
+### 2. ScrollArea (`shared/components/scroll-area/`)
+- `scroll-area.component.ts` — wrapper div с кастомным scrollbar
+- `styles.css`:
+  ```css
+  .hlm-scroll-area { overflow-y: auto; }
+  .hlm-scroll-area::-webkit-scrollbar { width: 8px; }
+  .hlm-scroll-area::-webkit-scrollbar-track { background: transparent; }
+  .hlm-scroll-area::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.3); border-radius: 4px; }
+  .hlm-scroll-area::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
+  /* Firefox */
+  .hlm-scroll-area { scrollbar-width: thin; scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent; }
+  ```
+- API: `<hlm-scroll-area [maxHeight]="'400px'">...</hlm-scroll-area>`
+- Variants: default / always-visible scrollbar / hover-only
+
+### 3. AspectRatio (`shared/components/aspect-ratio/`)
+- `aspect-ratio.component.ts` — обёртка с CSS `aspect-ratio`
+- API: `<hlm-aspect-ratio [ratio]="16/9"> <img src="..." /> </hlm-aspect-ratio>`
+- Default ratio: 16/9
+- Использует `aspect-ratio: ${ratio}` CSS property
+- Fallback для старых браузеров: padding-bottom hack (но не критично, target современные)
+
+### 4. Collapsible (`shared/components/collapsible/`)
+- `collapsible.component.ts` + `collapsible-trigger.directive.ts` + `collapsible-content.component.ts`
+- API: `<hlm-collapsible [(open)]="signal(false)"> <button hlmCollapsibleTrigger>Toggle</button> <div hlmCollapsibleContent>...</div> </hlm-collapsible>`
+- Angular Animations: `animate('200ms ease', style({ height: '*' }))` / `style({ height: 0 })`
+- Auto-detect content height (offsetHeight → '0' or '*')
+- Lazy content: `@ContentChild` + `*ngIf="open()"` (но сначала отрендерить для измерения)
+- ChevronRight icon rotates 90deg при open
+
+### 5. Carousel (`shared/components/carousel/`)
+- `carousel.component.ts` — touch-swipeable carousel на CDK
+- API: `<hlm-carousel [items]="myItems" [autoPlay]="true" [interval]="5000"> <ng-template let-item>...render item...</ng-template> </hlm-carousel>`
+- CDK Drag для swipe
+- Touch: pointer down → drag → release с threshold 100px
+- Mouse: drag with cursor: grab/grabbing
+- Auto-play (опционально, pauses on hover)
+- Dots navigation (clickable)
+- Prev/Next кнопки
+- Keyboard: ←/→ (когда focus внутри)
+- `[(activeIndex)]` signal двусторонний
+- Transition: transform 300ms ease-out
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ СОЗДАНИЯ
+═══════════════════════════════════════════════════════════════
+
+```
+frontend/src/app/shared/components/
+├── resizable/
+│   ├── resizable-panel-group.component.ts
+│   ├── resizable-panel.component.ts
+│   └── resizable-handle.component.ts
+├── scroll-area/
+│   └── scroll-area.component.ts
+├── aspect-ratio/
+│   └── aspect-ratio.component.ts
+├── collapsible/
+│   ├── collapsible.component.ts
+│   ├── collapsible-trigger.directive.ts
+│   └── collapsible-content.component.ts
+└── carousel/
+    └── carousel.component.ts
+```
+
+Обновить:
+- `frontend/src/app/shared/components/index.ts`
+- `frontend/src/styles.css` (+custom scrollbar)
+- `frontend/src/app/layout/sidebar.component.ts` (использовать ScrollArea для overflow)
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm run build` — 0 errors, 0 warnings.
+2. **ResizablePanel:** drag работает; min/max size enforced; persistence в localStorage.
+3. **ScrollArea:** кастомный scrollbar 8px шириной, hover effect на thumb, Firefox scrollbar-color.
+4. **AspectRatio:** любой ratio сохраняет пропорции контента.
+5. **Collapsible:** animated height (200ms), chevron rotates, lazy content works.
+6. **Carousel:** touch swipe работает; dots clickable; auto-play pauses on hover; keyboard ←/→.
+7. Используют ТОЛЬКО Tailwind токены (где применимо).
+8. **ГЛАВНОЕ:** файл `tasks/TZ-39.md` УДАЛЁН из `tasks/` после завершения.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+1. Записать в `progress.md`: дата, TZ-39, краткое описание.
+2. Переместить `tasks/TZ-39.md` в `tasks/_archive/TZ-39.md.done`.
+3. **Удалить `tasks/TZ-39.md`** (финальный сигнал).

@@ -1,0 +1,182 @@
+═══════════════════════════════════════════════════════════════
+TZ-35: UI Kit Showcase Page (/p/showcase)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Developer
+
+ЗАВИСИМОСТИ: TZ-31 ✅, TZ-32 ✅, TZ-33 ✅, TZ-34 ✅
+
+LAYER: 5 (Frontend)
+
+CONFLICT KEYS:
+- frontend/src/app/pages/showcase/ (новый)
+- frontend/src/app/configs/pages.config.ts (+запись showcase)
+- frontend/src/app/shared/components/code-viewer/ (новый)
+
+═══════════════════════════════════════════════════════════════
+КОНТЕКСТ
+═══════════════════════════════════════════════════════════════
+
+TZ-31..TZ-34 добавили 14+ новых компонентов, design system polish, и UX power features. Теперь нужен SHOWCASE PAGE — `/p/showcase` — который демонстрирует ВСЕ компоненты в действии, служит как:
+- Документация для разработчиков
+- QA страница для проверки visual regressions
+- Демо для stakeholders
+
+Из UI Kit спека: 7 секций (Colors / Typography / Buttons / Inputs / Data Display / Feedback / Navigation), sidebar навигация, View Code drawer с подсветкой, copy-to-clipboard.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+### 1. Code Viewer Component (`shared/components/code-viewer/`)
+- `code-viewer.component.ts` — drawer/sheet (использует Sheet из TZ-31) с подсветкой кода
+- Установить highlight.js: `pnpm add highlight.js @types/highlight.js`
+- API: `<hlm-code-viewer [code]="snippet" [language]="'typescript' | 'html' | 'css'" (openChange)="..." />`
+- Кнопка «View code» в верхнем правом углу каждого showcase секции
+- Drawer показывает:
+  - Header: language label + copy button (Lucide Copy icon)
+  - Body: code с подсветкой через highlight.js (тема: github / github-dark по data-theme)
+  - Footer: «Скопировано!» toast на 2 сек
+- Кнопка copy в каждом showcase блоке (отдельно от drawer) — копирует snippet в clipboard
+
+### 2. Showcase Page Structure
+
+`frontend/src/app/pages/showcase/showcase.page.ts` — route `/p/showcase` (через PageRenderer → CrudPage НЕ подходит, нужен dedicated page).
+
+Лучше создать dedicated route:
+- `frontend/src/app/pages/showcase/showcase.component.ts` — главный layout
+- `frontend/src/app/pages/showcase/sections/colors.section.ts`
+- `frontend/src/app/pages/showcase/sections/typography.section.ts`
+- `frontend/src/app/pages/showcase/sections/buttons.section.ts`
+- `frontend/src/app/pages/showcase/sections/inputs.section.ts`
+- `frontend/src/app/pages/showcase/sections/data-display.section.ts`
+- `frontend/src/app/pages/showcase/sections/feedback.section.ts`
+- `frontend/src/app/pages/showcase/sections/navigation.section.ts`
+
+Каждая section — standalone Angular component.
+
+### 3. Layout
+- **Header** (sticky top): "UI Kit Showcase" + "v0.1.0" badge + density toggle + theme toggle
+- **Sidebar** (left, 240px): 7 секций с lucide иконками
+  - Colors (Palette icon)
+  - Typography (Type icon)
+  - Buttons (MousePointerClick)
+  - Inputs (FormInput)
+  - Data Display (LayoutGrid)
+  - Feedback (MessageSquare)
+  - Navigation (Compass)
+- Active section: bg-primary text-primary-foreground rounded-lg
+- Click → scroll-smooth к секции
+- Sticky scrollspy: IntersectionObserver обновляет active section в sidebar
+- **Main content**: max-w-5xl mx-auto, padding 6, каждая секция с hero strip (bg-gradient-to-r from-violet-500/10 to-cyan-500/10 rounded-xl p-4 mb-6)
+- Mobile (< 768px): sidebar → bottom nav (горизонтальный scroll) ИЛИ hamburger drawer
+
+### 4. Section Content (7 секций)
+
+**Colors section:**
+- 8 групп swatches: Primary / Secondary / Destructive / Success / Warning / Muted / Accent / Neutral
+- Каждый swatch: 3 строки (light / DEFAULT / dark), height 48px, rounded-lg, hover:scale-1.04
+- Tooltip на hover с HSL/hex
+- Copy-to-clipboard на click (toast «Скопировано!»)
+
+**Typography section:**
+- Table layout: левая колонка (monospace muted) — variant name; правая — live example
+- 12 variants из TZ-34: Display, H1..H6, Lead, Body, Small, Caption, Overline, Code
+- Каждый row: border-b border-border
+
+**Buttons section:**
+- Variants: Default / Destructive / Outline / Secondary / Ghost / Link
+- Sizes: sm / default / lg (side by side)
+- Icon buttons: square lucide icons (Plus, Edit, Trash, Download)
+- With icons: startIcon/endIcon (Send, Download, ArrowRight)
+- Button groups: 3 buttons grouped (no gap)
+- Loading state: spinner inside button
+- Color matrix: 6 columns × 3 rows ([Default/Outline/Ghost] × [Primary/Destructive/Secondary])
+- Disabled: все варианты в disabled
+
+**Inputs section:**
+- Text inputs: default / placeholder / leading icon / trailing icon (password toggle) / email / error / disabled
+- Textarea: 4 rows, resize-y
+- Select: 4 options
+- Combobox (TZ-32): 6 film titles, single + multi
+- Checkbox: 4 states (checked/unchecked/indeterminate/disabled)
+- Radio group: 3 options horizontal
+- Switch: 4 states (active/inactive/secondary/disabled)
+- Slider: continuous / range / stepped
+- Rating (TZ-32): 5-star с half-star и hover
+
+**Data Display section:**
+- Cards: media (gradient header) / profile (avatar) / stat (icon + value)
+- Avatars: letter (4 colors) / image fallback / size variants
+- AvatarGroup (TZ-32): 5 stacked + +N
+- Badges: 6 variants (default/secondary/outline/destructive/success/warning) + with icon + deletable
+- Tooltip (TZ-31): 4 trigger elements, 4 positions
+- Table: 5×5 sample data, sortable headers, alternating rows
+- Shadows: 8 boxes (shadow-none → shadow-2xl)
+
+**Feedback section:**
+- Alerts: 4 severity (success/info/warning/destructive), default + filled variants
+- Toast: 3 кнопки (Success / Error / Loading)
+- Progress linear (TZ-32): indeterminate + 70% determinate + secondary variant
+- Progress circular (TZ-32): 25/50/75/100 с % в центре
+- Skeleton: media card + list with avatars
+- Dialog: open with form + cancel/confirm
+- Sheet: open from right с mini settings form
+
+**Navigation section:**
+- Tabs (TZ-31): 4 default + scrollable 6+
+- Breadcrumb (TZ-31): 2 примера из спека
+- Pagination (TZ-31): 3 styles
+- Stepper (TZ-32): vertical 4-step + horizontal 3-step с Continue/Back
+- Accordion (TZ-31): 3 items, first expanded
+- List: icon list (Inbox/Drafts/Sent/Starred) + avatar list (3 contacts)
+
+### 5. Add to pages.config.ts
+- Запись: `{ id: 'showcase', title: 'UI Kit Showcase', endpoint: '/showcase', icon: '🎨', category: 8, priority: 0, roles: ['admin', 'manager', 'user'] }`
+- (Но route будет /p/showcase через dedicated route, не через CrudPage)
+
+### 6. Routes
+- `frontend/src/app/app.routes.ts` — добавить `path: 'p/showcase'` → loadComponent: ShowcaseComponent
+- (опционально: скрыть из TaskPanel — priority: 0 не подходит, использовать filter)
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ СОЗДАНИЯ / ОБНОВЛЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+Создать:
+- `frontend/src/app/shared/components/code-viewer/code-viewer.component.ts`
+- `frontend/src/app/pages/showcase/showcase.component.ts` (layout + scrollspy)
+- `frontend/src/app/pages/showcase/sections/colors.section.ts`
+- `frontend/src/app/pages/showcase/sections/typography.section.ts`
+- `frontend/src/app/pages/showcase/sections/buttons.section.ts`
+- `frontend/src/app/pages/showcase/sections/inputs.section.ts`
+- `frontend/src/app/pages/showcase/sections/data-display.section.ts`
+- `frontend/src/app/pages/showcase/sections/feedback.section.ts`
+- `frontend/src/app/pages/showcase/sections/navigation.section.ts`
+
+Обновить:
+- `frontend/src/app/app.routes.ts` (+ dedicated route)
+- `frontend/src/app/configs/pages.config.ts` (+ showcase entry)
+- `frontend/package.json` (+ highlight.js)
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm run build` — 0 errors, 0 warnings.
+2. `http://localhost:4200/p/showcase` (или `/#/p/showcase` если hash routing) — страница загружается.
+3. Sidebar с 7 секциями; click на секцию — smooth scroll к ней; scroll обновляет active sidebar item.
+4. Каждая секция содержит все элементы из спека (смотри список выше).
+5. Кнопка «View code» в каждой секции — открывает drawer с подсвеченным кодом.
+6. Copy-to-clipboard работает на swatches (Colors) и code blocks.
+7. Tooltip виден на 4 позициях (top/right/bottom/left).
+8. Mobile (< 768px): sidebar → bottom nav (горизонтальный scroll) или hamburger.
+9. **ГЛАВНОЕ:** файл `tasks/TZ-35.md` УДАЛЁН из `tasks/` после завершения.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+1. Записать в `progress.md`: дата, TZ-35, краткое описание.
+2. Переместить `tasks/TZ-35.md` в `tasks/_archive/TZ-35.md.done`.
+3. **Удалить `tasks/TZ-35.md`** (финальный сигнал).

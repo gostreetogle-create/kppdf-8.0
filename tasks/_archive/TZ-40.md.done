@@ -1,0 +1,237 @@
+═══════════════════════════════════════════════════════════════
+TZ-40: Foundation Patterns (CVA + clsx + tailwind-merge / ScrollSpy / Enhanced Services / Dark-first)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Developer
+
+ЗАВИСИМОСТИ: TZ-19 (Frontend Foundation) ✅, TZ-34 (Visual Polish) ✅
+
+LAYER: 5 (Frontend)
+
+CONFLICT KEYS:
+- frontend/package.json (+cva, +clsx, +tailwind-merge)
+- frontend/src/app/core/utils/cn.ts (новый)
+- frontend/src/app/core/services/theme.service.ts (улучшить)
+- frontend/src/app/core/services/toast.service.ts (улучшить)
+- frontend/src/app/core/directives/scroll-spy.directive.ts (новый)
+- frontend/src/styles.css (dark-first default)
+
+═══════════════════════════════════════════════════════════════
+КОНТЕКСТ
+═══════════════════════════════════════════════════════════════
+
+UI Kit спек требует:
+1. **CVA (class-variance-authority)** — для variant management в компонентах (вместо inline conditional classes)
+2. **clsx + tailwind-merge** — для правильного merge Tailwind классов
+3. **ScrollSpy directive** — для showcase sidebar nav (IntersectionObserver-based)
+4. **Theme service enhancement** — dark-first default (вместо light-first)
+5. **Toast service** — улучшить signal pattern (есть, но спек хочет конкретный API)
+
+Всё это INFRASTRUCTURE — не компоненты, а паттерны и утилиты. Применяется КО ВСЕМ будущим компонентам (TZ-31..39 и далее).
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+### 1. Установка утилит
+```bash
+cd frontend && pnpm add class-variance-authority clsx tailwind-merge
+```
+
+### 2. cn() utility (`core/utils/cn.ts`)
+```typescript
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+export function cn(...inputs: ClassValue[]): string {
+  return twMerge(clsx(inputs));
+}
+```
+
+### 3. CVA examples (для будущих компонентов, НЕ переписывать всё сейчас)
+
+Документировать в `core/utils/cva.example.ts` (комментарий + 1-2 примера):
+```typescript
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from './cn';
+
+const buttonVariants = cva(
+  'inline-flex items-center justify-center rounded-lg font-medium transition-all focus-visible:outline-none focus-visible:ring-2 disabled:opacity-50',
+  {
+    variants: {
+      variant: {
+        default: 'bg-primary text-primary-foreground hover:bg-primary/90',
+        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+        outline: 'border border-input bg-background hover:bg-accent',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+        ghost: 'hover:bg-accent hover:text-accent-foreground',
+        link: 'text-primary underline-offset-4 hover:underline',
+      },
+      size: {
+        default: 'h-10 px-4 py-2',
+        sm: 'h-9 px-3 text-sm',
+        lg: 'h-11 px-6 text-base',
+        icon: 'h-10 w-10',
+      },
+    },
+    defaultVariants: { variant: 'default', size: 'default' },
+  }
+);
+
+export type ButtonVariants = VariantProps<typeof buttonVariants>;
+```
+
+Применить CVA к Button (`shared/components/button/button.component.ts`) — переписать `.btn-primary`/`.btn-secondary`/etc. CSS классов в компонент с CVA variants. Это рефакторинг, не новый компонент. Остальные компоненты (TZ-31..39) будут использовать CVA с самого начала.
+
+### 4. ScrollSpy Directive (`core/directives/scroll-spy.directive.ts`)
+```typescript
+@Directive({ selector: '[hlmScrollSpy]', standalone: true })
+export class ScrollSpyDirective implements AfterViewInit, OnDestroy {
+  readonly activeId = output<string>(); // emits section id that is currently in view
+  
+  // Принимает container (список section headers с id) — обычно родительский scroll container
+  // IntersectionObserver: rootMargin '-40% 0px -40% 0px' (триггерит когда секция в центре viewport)
+  // emit id секции которая больше всего в viewport
+  
+  ngAfterViewInit() {
+    this.observer = new IntersectionObserver(entries => {
+      // найти entry с largest intersectionRatio
+      // emit activeId.emit(entry.target.id)
+    }, { rootMargin: '-40% 0px -40% 0px', threshold: [0, 0.5, 1] });
+    
+    // observe все элементы с id внутри host
+  }
+}
+```
+
+Showcase page (TZ-35) использует: `<main hlmScrollSpy (activeId)="activeSection.set($event)">`
+
+### 5. Theme Service Enhancement (`core/services/theme.service.ts`)
+
+Текущий: topbar использует свой switcher. Спек требует dedicated service.
+
+```typescript
+@Injectable({ providedIn: 'root' })
+export class ThemeService {
+  readonly theme = signal<'light' | 'dark'>('dark'); // DARK-FIRST default
+  
+  constructor() {
+    // On init: read localStorage → if not, use 'dark' (спек)
+    // OR check prefers-color-scheme → if no preference, use 'dark'
+    const stored = localStorage.getItem('kppdf-theme');
+    if (stored === 'light' || stored === 'dark') {
+      this.theme.set(stored);
+    } else {
+      // Default to dark per spec
+      this.theme.set('dark');
+    }
+    this.applyTheme(this.theme());
+  }
+  
+  toggle() {
+    const next = this.theme() === 'dark' ? 'light' : 'dark';
+    this.setTheme(next);
+  }
+  
+  setTheme(theme: 'light' | 'dark') {
+    this.theme.set(theme);
+    localStorage.setItem('kppdf-theme', theme);
+    this.applyTheme(theme);
+  }
+  
+  private applyTheme(theme: 'light' | 'dark') {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }
+}
+```
+
+`index.html` добавить (чтобы избежать FOUC):
+```html
+<script>
+  (function() {
+    var t = localStorage.getItem('kppdf-theme');
+    if (t === 'light') {} else { document.documentElement.classList.add('dark'); }
+  })();
+</script>
+```
+
+### 6. Toast Service Enhancement (`core/services/toast.service.ts`)
+
+Текущий: signal<Toast[]>, setTimeout dismiss. Спек требует тот же API + улучшения:
+- Auto-dismiss: yes (через setTimeout)
+- Manual close: yes (X button)
+- Stacking: yes (top-right, newest on top)
+- Types: success/error/warning/info (4 типа)
+- Title + description (2 lines): add `title?: string` field
+- Action button: add `action?: { label: string, onClick: () => void }`
+- Position: top-right (fixed)
+- Animation: slide-in from right, slide-out to right
+- Max 5 visible, older auto-queue
+
+```typescript
+export interface Toast {
+  id: number;
+  type: 'success' | 'error' | 'warning' | 'info';
+  title?: string;
+  message: string;
+  duration: number; // ms, 0 = no auto-dismiss
+  action?: { label: string; onClick: () => void };
+}
+```
+
+### 7. Dark-first CSS
+
+`styles.css`:
+```css
+:root {
+  /* light tokens (current) */
+}
+.dark {
+  /* dark tokens (current) */
+}
+
+/* Default to dark if no class set on <html> */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) { /* dark tokens */ }
+}
+```
+
+(На самом деле просто меняем default в ThemeService с light на dark + добавляем инлайн-скрипт в index.html.)
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ СОЗДАНИЯ / ОБНОВЛЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+Создать:
+- `frontend/src/app/core/utils/cn.ts`
+- `frontend/src/app/core/utils/cva.example.ts`
+- `frontend/src/app/core/directives/scroll-spy.directive.ts`
+- `frontend/src/app/shared/components/button/button.component.ts` (рефактор: CVA)
+
+Обновить:
+- `frontend/package.json` (+cva, +clsx, +tailwind-merge)
+- `frontend/src/app/core/services/theme.service.ts` (улучшить, dark-first)
+- `frontend/src/app/core/services/toast.service.ts` (расширить API)
+- `frontend/src/app/layout/topbar.component.ts` (использовать ThemeService.toggle)
+- `frontend/src/index.html` (anti-FOUC script)
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm run build` — 0 errors, 0 warnings.
+2. `cn('p-4', condition && 'bg-primary', 'text-white')` правильно merge'ит Tailwind классы (последний выигрывает).
+3. ScrollSpy directive: на showcase странице (когда будет в TZ-35) sidebar active item меняется при scroll.
+4. ThemeService: default `dark`; toggle работает; localStorage persists; anti-FOUC скрипт предотвращает вспышку.
+5. ToastService: success/error/warning/info; title + description; action button; max 5 stacking; slide-in animation.
+6. Button компонент (рефактор): использует CVA; variants default/secondary/outline/ghost/destructive/link; sizes sm/default/lg/icon; loading state с spinner.
+7. Topbar: dark-mode toggle использует ThemeService (а не local state).
+8. **ГЛАВНОЕ:** файл `tasks/TZ-40.md` УДАЛЁН из `tasks/` после завершения.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+1. Записать в `progress.md`: дата, TZ-40, краткое описание (5 foundation patterns).
+2. Переместить `tasks/TZ-40.md` в `tasks/_archive/TZ-40.md.done`.
+3. **Удалить `tasks/TZ-40.md`** (финальный сигнал).

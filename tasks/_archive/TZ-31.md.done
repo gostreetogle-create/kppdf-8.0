@@ -1,0 +1,157 @@
+═══════════════════════════════════════════════════════════════
+TZ-31: Core UI Primitives (Tooltip / Switch / Slider / Tabs / Breadcrumb / Accordion / Sheet / Pagination)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Developer
+
+ЗАВИСИМОСТИ: TZ-19 (Frontend Foundation) ✅, TZ-20 (Auth + Layout) ✅
+
+LAYER: 5 (Frontend)
+
+CONFLICT KEYS:
+- frontend/src/app/shared/components/** (8 новых компонентов)
+- frontend/src/styles.css (утилитарные классы при необходимости)
+- frontend/tailwind.config.js (если нужны новые токены)
+
+═══════════════════════════════════════════════════════════════
+КОНТЕКСТ
+═══════════════════════════════════════════════════════════════
+
+TZ-19..TZ-29 создали базовый набор: Badge, Card, ConfirmDialog, CrudPage, EmptyState, FormDialog, RowActions, Skeleton + Tailwind shadcn-style токены.
+
+Из UI Kit спека отсутствуют 8 примитивов, которые нужны ПО ВСЕМУ приложению:
+- **Tooltip** — для иконок-кнопок (RowActions ✎/🗑), хинтов в формах
+- **Switch/Toggle** — для Settings (TZ-05), FeatureFlag UI, dark mode в topbar
+- **Slider** — для фильтров, диапазонов цен, настроек
+- **Tabs** — для детальных страниц (Product detail: «Общее»/«Спецификация»/«Файлы»/«История»)
+- **Breadcrumb** — для вложенной навигации (Главная > Закупки > Заказы > PO-2026-001)
+- **Accordion** — для FAQ, Settings разделов, длинных форм
+- **Sheet/Drawer** — для боковых панелей (быстрый просмотр заказа, mini-settings)
+- **Pagination** — для не-AG Grid списков (Task Panel, Audit Log, Activity Feed)
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+Для КАЖДОГО компонента — standalone Angular 20, OnPush, signals, Tailwind токены, accessibility (ARIA, keyboard nav), нулевые external deps кроме @angular/cdk (overlay).
+
+### 1. Tooltip (`shared/components/tooltip/`)
+- `hlm-tooltip.directive.ts` — атрибутная директива `[hlmTooltip]="text" [hlmTooltipPosition]="'top'|'right'|'bottom'|'left'"`
+- Использует CDK Overlay (без сторонних tooltip-библиотек)
+- 200ms delay, fade+scale анимация
+- 4 позиции + auto-flip при выходе за viewport
+- Темная/светлая тема через CSS vars
+
+### 2. Switch (`shared/components/switch/`)
+- `hlm-switch.component.ts` — `<hlm-switch [checked]="signal()" (change)="..." [disabled]="..." />`
+- 4 состояния: active / inactive / secondary (color) / disabled
+- Лукообразный toggle, focus ring, transition 150ms
+- Использует `<button role="switch" aria-checked>` для a11y
+
+### 3. Slider (`shared/components/slider/`)
+- `hlm-slider.component.ts` — single + range variant
+- Continuous 0-100 + stepped (1-5 с marks) + range (2 thumbs)
+- Live value display через signal
+- Keyboard: ←/→/Home/End/PageUp/PageDown
+- Touch + mouse drag support
+
+### 4. Tabs (`shared/components/tabs/`)
+- `hlm-tabs.component.ts` + `hlm-tabs-list` + `hlm-tabs-trigger` + `hlm-tabs-content`
+- Pattern через `<hlm-tabs [value]="signal()">` + `(valueChange)`
+- Default: 4 таба (Overview / Analytics / Reports / Settings)
+- Scrollable variant: 6+ табов с overflow-x-auto
+- Active tab: underline + primary color
+
+### 5. Breadcrumb (`shared/components/breadcrumb/`)
+- `hlm-breadcrumb.component.ts` + `hlm-breadcrumb-list` + `hlm-breadcrumb-item` + `hlm-breadcrumb-link` + `hlm-breadcrumb-separator`
+- 2 примера: Home › Products › Design Systems / MUI / Components / Navigation / Breadcrumbs
+- Lucide House иконка для Home
+- ChevronRight separator
+
+### 6. Accordion (`shared/components/accordion/`)
+- `hlm-accordion.component.ts` + `hlm-accordion-item` + `hlm-accordion-trigger` + `hlm-accordion-content`
+- Single + multi open mode
+- Animated expand/collapse (height + opacity, 200ms)
+- Keyboard: Tab/Shift+Tab, Enter/Space toggle, ↑/↓ navigate
+- Первый item expanded by default в showcase
+
+### 7. Sheet/Drawer (`shared/components/sheet/`)
+- `hlm-sheet.component.ts` + `hlm-sheet-content` + `hlm-sheet-header` + `hlm-sheet-footer`
+- Поверх CDK Overlay (аналог Dialog, но slide-in)
+- Стороны: right (default) / left / top / bottom
+- Backdrop с blur, ESC close, focus trap
+- Mini-settings form внутри (3 input + Save)
+
+### 8. Pagination (`shared/components/pagination/`)
+- `hlm-pagination.component.ts` — 3 стиля:
+  - filled (default shadcn)
+  - outlined (variant="outline")
+  - compact (First/Prev/1/2/3/Next/Last buttons)
+- `[(page)]` signal двусторонний binding
+- Disabled prev/next на границах
+- Items count: `« 1 2 [3] 4 5 »`
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ СОЗДАНИЯ
+═══════════════════════════════════════════════════════════════
+
+```
+frontend/src/app/shared/components/
+├── tooltip/
+│   ├── tooltip.directive.ts
+│   └── tooltip.component.ts
+├── switch/
+│   └── switch.component.ts
+├── slider/
+│   └── slider.component.ts
+├── tabs/
+│   ├── tabs.component.ts
+│   ├── tabs-list.component.ts
+│   ├── tabs-trigger.component.ts
+│   └── tabs-content.component.ts
+├── breadcrumb/
+│   ├── breadcrumb.component.ts
+│   ├── breadcrumb-list.component.ts
+│   ├── breadcrumb-item.component.ts
+│   ├── breadcrumb-link.component.ts
+│   └── breadcrumb-separator.component.ts
+├── accordion/
+│   ├── accordion.component.ts
+│   ├── accordion-item.component.ts
+│   ├── accordion-trigger.component.ts
+│   └── accordion-content.component.ts
+├── sheet/
+│   ├── sheet.component.ts
+│   └── sheet.service.ts
+└── pagination/
+    └── pagination.component.ts
+```
+
+Также:
+- `frontend/src/app/shared/components/index.ts` (barrel export)
+- `frontend/src/app/core/services/dialog.service.ts` — расширить методом `openSheet()`
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm run build` в `frontend/` — 0 errors, 0 warnings.
+2. Каждый из 8 компонентов — standalone, OnPush, signals, доступен через `import { ... } from '@shared/components'`.
+3. Tooltip работает на 4 позициях с auto-flip; 200ms delay; fade+scale анимация.
+4. Switch имеет 4 состояния, keyboard nav (Space toggle), ARIA `role="switch"`.
+5. Slider поддерживает single + range + stepped; keyboard ←/→/Home/End.
+6. Tabs: default 4 таба + scrollable 6+; active state visible; keyboard nav.
+7. Breadcrumb: 2 примера из спека, lucide House icon.
+8. Accordion: animated expand/collapse; первый item default open; keyboard nav.
+9. Sheet: slide-in с right стороны; backdrop; ESC close; focus trap.
+10. Pagination: 3 стиля (filled/outlined/compact); `[(page)]` signal binding; disabled на границах.
+11. Все компоненты используют ТОЛЬКО существующие Tailwind токены (`bg-primary`, `text-muted-foreground`, etc.) — никаких hardcoded colors.
+12. **ГЛАВНОЕ:** файл `tasks/TZ-31.md` УДАЛЁН из `tasks/` после завершения.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+1. Записать в `progress.md`: дата, TZ-31, краткое описание (8 компонентов, ~15 файлов).
+2. Переместить `tasks/TZ-31.md` в `tasks/_archive/TZ-31.md.done`.
+3. **Удалить `tasks/TZ-31.md`** (финальный сигнал).

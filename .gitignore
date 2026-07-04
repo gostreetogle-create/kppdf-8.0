@@ -58,3 +58,4 @@ coverage/
 
 # Local helper binaries
 mimo.exe
+ .start.pids.json

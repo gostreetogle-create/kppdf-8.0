@@ -1,6 +1,16 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
+@Schema({ _id: false })
+class StorageDimensionsSchema {
+  @Prop() length?: number;
+  @Prop() width?: number;
+  @Prop() height?: number;
+  @Prop() unit?: string;
+}
+
+const StorageDimensionsSchemaFactory = SchemaFactory.createForClass(StorageDimensionsSchema);
+
 export type StorageItemDocument = HydratedDocument<StorageItem>;
 
 @Schema({ collection: 'storageitems', timestamps: true })
@@ -26,7 +36,7 @@ export class StorageItem {
   @Prop()
   weightKg?: number;
 
-  @Prop()
+  @Prop({ type: StorageDimensionsSchemaFactory })
   dimensions?: { length?: number; width?: number; height?: number; unit?: string };
 
   @Prop({ default: true, index: true })
