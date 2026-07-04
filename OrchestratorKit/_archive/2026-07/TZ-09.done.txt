@@ -1,0 +1,148 @@
+═══════════════════════════════════════════════════════════════
+TZ-09: Production Dictionaries
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Backend Developer
+
+ЗАВИСИМОСТИ: TZ-06
+
+LAYER: 4
+
+CONFLICT KEYS: backend/src/modules/work-center/**; backend/src/modules/work-type/**; backend/src/modules/routing-step/**; backend/src/modules/worker/**; backend/src/modules/tech-process/**
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. TZ-06 завершён: Person/Organization/Interaction работают.
+2. Production домен — справочники (**5 entity**, консолидация Employees+Worker, **добавлена RoutingStep**):
+   - **WorkCenter** (станок/линия/участок): name, type, description, isActive, capacity.
+   - **WorkType** (справочник операций): name, section, description, isActive, department, defaultDurationHours, workCenterId, hourlyRate.
+   - **Worker** (TZ-09, консолидация Employee+Worker): lastName, firstName, patronymic, grade, ratePerHour, workTypeIds[] (M2M → WorkType), isActive, phone, personId? (→ Person из TZ-06), createdAt/updatedAt.
+   - **TechProcess** (TZ-09, без id в исходнике — добавить id): productId, totalDuration, isActive, operations[].
+   - **RoutingStep** (TZ-09, бывш. `Operation` per docs/data-model-audit.md §1.1 — переименована чтобы избежать путаницы с `WorkType`): number, name, workshop, duration, costPerHour, isActive. **Функционально отличается от WorkType**: RoutingStep — это КОНКРЕТНЫЙ шаг в маршруте (routing) с workshop и стоимостью часа; WorkType — это СПРАВОЧНИК типов работ (сварка, покраска). Связь: `WorkOrderOperation.operationId → RoutingStep` (TZ-10), `RoutingStep.workTypeId? → WorkType` (опционально, для классификации).
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: WorkCenter (справочник)
+
+- `GET /work-centers`, `GET /work-centers/:id`, `POST`, `PATCH`, `DELETE` (стандартный CRUD).
+- Дополнительно: `GET /work-centers/:id/work-types` — все WorkType, привязанные к этому центру.
+
+ШАГ 2: WorkType (справочник операций)
+
+- Стандартный CRUD.
+- Дополнительно: `GET /work-types?workCenterId=...` — фильтр по центру.
+- `POST /work-types/:id/workers` — привязать Worker через массив `workTypeIds`.
+
+ШАГ 3: Worker (консолидация Employee+Worker)
+
+**Канонические поля:**
+```typescript
+{
+  lastName: string;
+  firstName: string;
+  patronymic?: string;
+  grade?: string;            // разряд
+  ratePerHour: number;
+  workTypeIds: ObjectId[];  // → WorkType
+  isActive: boolean;
+  phone?: string;
+  personId?: ObjectId;       // → Person (если есть запись в Person из TZ-06)
+  department?: string;       // legacy
+}
+```
+
+- Стандартный CRUD.
+- `GET /workers?workTypeId=...&isActive=true` — фильтр.
+- `POST /workers/:id/work-types` — привязать WorkType.
+- При создании Worker: опционально создать/привязать Person (если передано `personData: {lastName, firstName, phone, email, position}`).
+- **Миграция (опционально):** если в БД есть документы из legacy `Employee` (не применимо для нового проекта — skip).
+
+ШАГ 4: RoutingStep (бывш. Operation)
+
+```typescript
+{
+  number: string;          // номер шага в маршруте (например "10", "20", "30")
+  name: string;            // "Сварка шва №1", "Покраска в камере №2"
+  workshop: string;        // цех/участок выполнения
+  duration: number;        // плановое время выполнения (часы)
+  costPerHour: number;     // ставка для этого шага
+  isActive: boolean;
+  workTypeId?: ObjectId;   // → WorkType (опциональная классификация)
+}
+```
+
+- Стандартный CRUD.
+- `GET /routing-steps?workshop=...&workTypeId=...&isActive=true` — фильтр.
+- `GET /routing-steps/:id/expanded` — populate workType.
+- **Связь с TZ-10:** `WorkOrderOperation.operationId → RoutingStep` (FK, теперь валидна).
+
+ШАГ 5: TechProcess (технологический процесс)
+
+```typescript
+{
+  productId: ObjectId;       // → Product
+  totalDuration: number;     // часы (calculated)
+  isActive: boolean;
+  operations: Array<{
+    sequence: number;
+    workTypeId: ObjectId;
+    durationHours: number;
+    workCenterId: ObjectId;
+  }>;
+}
+```
+
+- `POST /products/:id/tech-processes` — создать (с операциями).
+- `GET /products/:id/tech-processes` — список (могут быть несколько версий).
+- `POST /tech-processes/:id/activate` — активировать.
+- При `totalDuration` — вычислять как sum(durationHours).
+- `GET /tech-processes/:id/expanded` — populate workType, workCenter.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+СОЗДАТЬ (4 модуля):
+- `backend/src/modules/work-center/`
+- `backend/src/modules/work-type/`
+- `backend/src/modules/worker/`
+- `backend/src/modules/tech-process/`
+
+ОБНОВИТЬ:
+- `backend/src/app.module.ts`
+
+НЕ ТРОГАТЬ:
+- `src/modules/person/`, `src/modules/organization/`, `src/modules/product/`, и т.п.
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm run build` без ошибок.
+2. `POST /work-centers {name: "Линия сварки 1", type: "line", capacity: 50}` → 201.
+3. `POST /work-types {name: "Сварка MIG", section: "Сварка", department: "Цех №1", defaultDurationHours: 2, workCenterId, hourlyRate: 800}` → 201.
+4. `POST /workers {lastName: "Иванов", firstName: "Пётр", patronymic: "Сергеевич", grade: "5", ratePerHour: 1200, workTypeIds: [<welding-id>]}` → 201.
+5. `GET /workers?workTypeId=<welding-id>&isActive=true` возвращает Иванова.
+6. `POST /products/:id/tech-processes {operations: [{sequence: 1, workTypeId: <welding>, durationHours: 2, workCenterId}]}` → 201, `totalDuration: 2`.
+7. `POST /tech-processes/:id/activate` → 200, при `GET /products/:id/tech-processes` — только один `isActive: true`.
+8. **Консолидация:** в БД нет коллекции `employees` (только `workers`).
+9. **ГЛАВНОЕ:** файл `tasks/TZ-09.md` УДАЛЁН из `tasks/`.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ФИНАЛИЗАЦИЯ (ОБЯЗАТЕЛЬНО)
+═══════════════════════════════════════════════════════════════
+
+После прохождения всех критериев приёмки:
+
+1. Записать в `progress.md` (по формату TZF-00 §3): дата, TZ-09, краткое описание.
+2. Обновить `ARCHITECTURE.md` (по TZF-00 §4): см. Production dictionaries (WorkCenter, WorkType, Worker, TechProcess, RoutingStep) ниже.
+3. Скопировать `tasks/TZ-09.md` в `OrchestratorKit/_archive/<YYYY-MM>/TZ-09.done.txt` с маркером `ARCHIVE_MARKER`.
+4. Обновить `OrchestratorKit/STATUS.md`: TZ-09 → ✅ DONE.
+5. Запустить `bash OrchestratorKit/verify-status.sh` — должен быть PASS.
+6. Создать `OrchestratorKit/.mimocode/locks/TZ-09-<slug>.lock`.
+7. **Удалить `tasks/TZ-09.md`** (финальный сигнал Buffy что можно генерировать следующую TZ).
+ARCHIVE_MARKER: TZ-09 closed 2026-07-04T22:17:36+03:00

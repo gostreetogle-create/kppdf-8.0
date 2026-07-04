@@ -1,0 +1,13 @@
+TZ_ID: TZ-11
+NAME: Warehouse Engine
+STATUS: done
+CLOSED_AT: 2026-07-04
+FILES_CREATED: ~25
+MODULES:
+  - Warehouse (inventory/movements/zones sub-queries)
+  - StorageItem (partialFilterExpression unique index, /adjust transaction)
+  - StockMovement (in/out/transfer transactions, summary aggregation)
+  - Reservation (create/release/fulfill with availability check)
+  - Inventory (computed views: /low-stock)
+BUG_FIXES: 3 (StorageItem unique index, adjust type='adjust', Reservation.fulfill nested transaction)
+BUILD: OK (exit 0)

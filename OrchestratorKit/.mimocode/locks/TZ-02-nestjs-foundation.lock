@@ -1,0 +1,17 @@
+# Lock file
+Locked as of 2026-07-04 — TZ-02: NestJS Foundation.
+
+Owner: Backend Developer (Buffy)
+Protected files:
+- backend/package.json
+- backend/tsconfig.json
+- backend/nest-cli.json
+- backend/src/main.ts
+- backend/src/app.module.ts
+- backend/src/config/
+- backend/src/common/
+- backend/Dockerfile
+- docker-compose.yml
+- .env.example
+
+Unlock: only via orchestrator approval (новое TZ-NN с пометкой «successor»).

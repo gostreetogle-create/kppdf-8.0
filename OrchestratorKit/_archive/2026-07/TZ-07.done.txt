@@ -1,0 +1,120 @@
+═══════════════════════════════════════════════════════════════
+TZ-07: Catalog Core
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Backend Developer
+
+ЗАВИСИМОСТИ: TZ-06
+
+LAYER: 4
+
+CONFLICT KEYS: backend/src/modules/category/**; backend/src/modules/material/**; backend/src/modules/product/**; backend/src/modules/product-photo/**; backend/src/modules/product-component/**; backend/src/modules/product-module/**; backend/src/modules/photos/**; backend/src/modules/bom/**
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. TZ-06 завершён: Organizations/Persons/Interactions работают.
+2. Products & Materials — самый большой домен (18 entity, консолидируются в 7):
+   - **MaterialCategory** + **ProductCategory** + **Category** (TZ-07) — консолидировать в один `Category` с полем `type: 'material' | 'product' | 'general'`.
+   - **Material** (TZ-07): name, article, sku, unit, categoryId, description, price, pricePerUnit, priceCurrency, dimensions, fixedDimensions, image, photoIds, supplierId, notes.
+   - **Product** (TZ-07): name, sku, kind, unit, categoryId, subcategory, status, listPrice, basePrice, costPrice, defaultMarkupPercent, stockQty, description, notes, photoIds, dimensions, materials, material, installation, purpose, ralCode, hasPassport, hasDrawing, copiedFromProductId, productModuleIds, isActive, weight/weightKg (консолидировать), cost (legacy → дропнуть).
+   - **ProductPhoto** (TZ-07): productId, url, caption, isMain, sortOrder.
+   - **ProductComponent** (TZ-07): productId, name, quantityPerProduct, unit, description, drawingUrl, materials, material, workTypeId.
+   - **ProductModule** + **Modules** (TZ-07) — консолидировать в `ProductModule` (canonical). Поля: productId, name, article, width, height, depth, weight, image, sortOrder.
+   - **ModuleWorkType** (TZ-07): moduleId, workTypeId, estimatedHours, sortOrder.
+   - **ModuleMaterial** (TZ-07): moduleId, name, quantity, unit, isPurchased.
+   - **Bom** (TZ-07): productId, version, isActive, components.
+   - **Photos** (TZ-07) — централизованное хранилище: storageUrl, originalFilename, variant, mimeType, sizeBytes, widthPx, heightPx, parentPhotoId, linkedPhotoId.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Category (унифицированная, 3 типа)
+
+```typescript
+{ name: string; slug: string; type: 'material' | 'product' | 'general'; parentId?: ObjectId → Category; fullPath?: string; sortOrder: number; isActive: boolean; description?: string; prefix?: string }
+```
+
+- `GET /categories?type=material` — фильтр по типу.
+- Древовидная структура через `parentId` (Materialized Path опционально — для быстрого `find({fullPath: /^Materials\/Metals\/Steel/})`).
+- `GET /categories/tree?type=material` — рекурсивный build дерева.
+
+ШАГ 2: Photos (централизованное хранилище)
+
+- `POST /photos` — загрузить файл (multipart через `@nestjs/platform-express` + `multer`), сохранить в `backend/uploads/photos/<uuid>.<ext>`, создать документ `Photo` с metadata.
+- Variants: при загрузке создавать thumb/medium/full (через `sharp` — `pnpm add sharp`).
+- `GET /photos/:id/file?variant=thumb` — отдать binary.
+- `DELETE /photos/:id` — soft-delete + удаление файлов.
+
+ШАГ 3: Material, Product, ProductPhoto, ProductComponent, ProductModule, ModuleWorkType, ModuleMaterial, Bom
+
+Каждый — стандартный CRUD модуль (как TZ-06).
+
+Специфика:
+- **Product.createDto**: `name, sku, kind, unit, categoryId, listPrice, basePrice, costPrice, defaultMarkupPercent, description, weightKg, dimensions, material, ralCode, hasPassport, hasDrawing, status, isActive`.
+- **Product.updateDto**: `PartialType(CreateProductDto)`.
+- **Product.queryDto**: `?categoryId&status&isActive&search&page&limit&sortBy&sortOrder`.
+- При `POST /products` — автогенерация `sku` если пустой: `${category.prefix}-${Counter.next('Product', ...)}`.
+- При `POST /products/:id/photos` — привязать `photoId` к продукту.
+- При `POST /products/:id/modules` — создать ProductModule + ModuleMaterial/ModuleWorkType.
+- При `GET /products/:id` — populate всех FK (category, photos, modules, components).
+
+Bom:
+- `POST /products/:id/boms` — создать новую версию BOM.
+- `GET /products/:id/boms` — список версий.
+- `POST /boms/:id/activate` — сделать активной (деактивировать другие).
+- `GET /boms/:id/expanded` — полное дерево (BOM → components → materials с quantities и prices).
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+СОЗДАТЬ (8 модулей, по 4-6 файлов в каждом = ~40 файлов):
+- `backend/src/modules/category/`
+- `backend/src/modules/material/`
+- `backend/src/modules/product/`
+- `backend/src/modules/product-photo/`
+- `backend/src/modules/product-component/`
+- `backend/src/modules/product-module/` + `module-work-type/` + `module-material/`
+- `backend/src/modules/photos/` (с multer + sharp)
+- `backend/src/modules/bom/`
+
+ОБНОВИТЬ:
+- `backend/src/app.module.ts`
+- `backend/package.json` (добавить `multer`, `sharp`)
+
+НЕ ТРОГАТЬ:
+- `src/modules/organization/`, `src/modules/person/`, `src/modules/auth/`, и т.п.
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm run build` без ошибок.
+2. `POST /categories {name: "Steel", slug: "steel", type: "material", parentId: <metal-cat-id>}` → 201.
+3. `GET /categories/tree?type=material` возвращает иерархическое дерево.
+4. `POST /materials {name: "Steel sheet 3mm", article: "S-3", unit: "m2", pricePerUnit: 1500, categoryId}` → 201.
+5. `POST /photos` (multipart) — загружает файл, создаёт 3 варианта (thumb/medium/full), возвращает `photoId`.
+6. `POST /products {name: "Корпус 500x300", kind: "good", unit: "шт", listPrice: 5000, categoryId, weightKg: 2.5, dimensions: {l: 500, w: 300, h: 100}, ralCode: "9005"}` → 201, `sku` сгенерирован.
+7. `POST /products/:id/photos {photoId}` → привязка работает.
+8. `POST /products/:id/modules {name: "Модуль 1", workTypeIds, materialIds}` → создаётся ProductModule + ModuleWorkType + ModuleMaterial.
+9. `POST /products/:id/boms {version: "1.0", components: [{materialId, quantity}]}` → 201, при `GET /boms/:id/expanded` — полное дерево с ценами.
+10. `GET /products/:id` возвращает populated документ (category.name, photos[].url, modules[].name).
+11. **ГЛАВНОЕ:** файл `tasks/TZ-07.md` УДАЛЁН из `tasks/`.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ФИНАЛИЗАЦИЯ (ОБЯЗАТЕЛЬНО)
+═══════════════════════════════════════════════════════════════
+
+После прохождения всех критериев приёмки:
+
+1. Записать в `progress.md` (по формату TZF-00 §3): дата, TZ-07, краткое описание.
+2. Обновить `ARCHITECTURE.md` (по TZF-00 §4): см. Catalog (Category, Product, Material, Bom) + Photos storage ниже.
+3. Скопировать `tasks/TZ-07.md` в `OrchestratorKit/_archive/<YYYY-MM>/TZ-07.done.txt` с маркером `ARCHIVE_MARKER`.
+4. Обновить `OrchestratorKit/STATUS.md`: TZ-07 → ✅ DONE.
+5. Запустить `bash OrchestratorKit/verify-status.sh` — должен быть PASS.
+6. Создать `OrchestratorKit/.mimocode/locks/TZ-07-<slug>.lock`.
+7. **Удалить `tasks/TZ-07.md`** (финальный сигнал Buffy что можно генерировать следующую TZ).
+ARCHIVE_MARKER: TZ-07 closed 2026-07-04T22:07:52+03:00

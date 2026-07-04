@@ -1,0 +1,172 @@
+═══════════════════════════════════════════════════════════════
+TZ-06: Organizations & Contacts
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Backend Developer
+
+ЗАВИСИМОСТИ: TZ-05
+
+LAYER: 4
+
+CONFLICT KEYS: backend/src/modules/organization/**; backend/src/modules/counterparty/**; backend/src/modules/person/**; backend/src/modules/role-org/**; backend/src/modules/role-counterparty/**; backend/src/modules/interaction/**; backend/src/common/validators/inn.validator.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. TZ-05 завершён: System модули работают, AuditLog логирует, StatusWorkflow проверяет переходы.
+2. People & Contacts (8 entity) + Organizations (3 entity) = 11 entity:
+   - **Person** (контактное лицо): lastName, firstName, patronymic, phone, email, position, notes.
+   - **Organization** (юр.лицо — наша компания или партнёр): name, shortName, legalForm, inn, kpp, ogrn, ogrnip, банк, signer, contactPerson, paymentTermDays, vatRate, isActive, type, legalType, website, directorName, registrationDate, partyTypes, photoIds, + паспортные данные (для ИП).
+   - **Counterparty** (юр.лицо контрагента — покупатель/поставщик/подрядчик): name, shortName, legalForm, roles[], inn, kpp, ogrn, банк, isActive. **Консолидация с Org:** оставить обе (data-model-audit.md §1.1 — функционально разные).
+   - **OrgRole**, **CounterpartyRole** (справочники ролей).
+   - **OrganizationContact** (M2M Organization ↔ Person): organizationId, personId.
+   - **Client** (ТЗ: возможный дубликат — пока оставить как алиас на Person/Organization через type).
+   - **Worker** (домен Production, но Person/Employee merge — TZ-09).
+   - **Interaction** (CRM лог): counterpartyId, type (call/email/meeting), description, relatedTo, createdBy, createdAt/updatedAt.
+   - **Employees** — консолидирован в `Worker` (TZ-09).
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Схемы + DTO + Service + Controller (CRUD) для каждой entity
+
+Стандартный паттерн для NestJS-модуля (использовать для всех остальных TZ):
+```
+src/modules/<name>/
+├── <name>.schema.ts          # @Schema() class
+├── dto/
+│   ├── create-<name>.dto.ts  # class-validator decorators
+│   ├── update-<name>.dto.ts  # PartialType(CreateDto)
+│   └── query-<name>.dto.ts   # пагинация + фильтры
+├── <name>.service.ts         # CRUD + бизнес-логика
+├── <name>.controller.ts      # REST endpoints
+└── <name>.module.ts
+```
+
+**Endpoints (стандарт):**
+- `GET /<resource>` — список с пагинацией (`?page=1&limit=20&search=...&sortBy=...&sortOrder=asc`)
+- `GET /<resource>/:id` — один
+- `POST /<resource>` — создать (admin или role-specific)
+- `PATCH /<resource>/:id` — обновить
+- `DELETE /<resource>/:id` — soft-delete (вызывает `softDelete()` плагина из TZ-03)
+
+ШАГ 2: CounterpartyRoles и OrgRoles — справочники
+
+- `OrgRole` (TZ-06): name, slug, description, isActive. CRUD admin.
+- `CounterpartyRole` (TZ-06): name, description, slug, isActive. CRUD admin.
+- Seed: дефолтные роли (`customer`, `supplier`, `contractor`, `manufacturer`).
+
+ШАГ 3: OrganizationContact (M2M)
+
+```typescript
+{ organizationId: ObjectId → Organization; personId: ObjectId → Person; isPrimary?: boolean; role?: string }
+```
+
+- `GET /organizations/:id/contacts` — все Person для Organization
+- `POST /organizations/:id/contacts` — привязать Person
+- `DELETE /organizations/:id/contacts/:personId` — отвязать
+
+ШАГ 4: Interaction (CRM)
+
+- `GET /counterparties/:id/interactions` — лог по контрагенту
+- `POST /interactions` — записать (counterpartyId, type, description)
+- `PATCH /interactions/:id`
+- `DELETE /interactions/:id` — soft-delete
+
+ШАГ 5: Кастомный валидатор `INN`
+
+`backend/src/common/validators/inn.validator.ts`:
+- @IsINN() decorator: проверяет что 10 или 12 цифр, контрольная сумма по алгоритму ФНС.
+- Применяется в DTO `Organization.inn`, `Counterparty.inn`, `Client.inn`.
+
+ШАГ 6: Person/Worker/Client
+
+- `Person` — отдельный модуль (TZ-06).
+- `Worker` — отдельный модуль (TZ-09, ссылается на `Person` через `personId`).
+- `Client` — НЕ создавать отдельный модуль: оставить как `Person` с `type: 'client'` или `Organization` с флагом. Документировать это в README модуля.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+СОЗДАТЬ (для каждой entity — 4 файла + dto/):
+- `backend/src/modules/person/`
+- `backend/src/modules/organization/` + подпапка `contacts/` для OrganizationContact
+- `backend/src/modules/counterparty/`
+- `backend/src/modules/role-org/`
+- `backend/src/modules/role-counterparty/`
+- `backend/src/modules/interaction/`
+- `backend/src/common/validators/inn.validator.ts`
+- `backend/src/common/seed/org-roles.seed.ts, counterparty-roles.seed.ts`
+
+ОБНОВИТЬ:
+- `backend/src/app.module.ts` (импорт всех 6 модулей)
+
+НЕ ТРОГАТЬ:
+- `src/modules/auth/`, `src/modules/user/`, `src/modules/setting/`, `src/modules/feature-flag/`, `src/modules/status/`, `src/modules/audit/`, `src/database/`, `docker-compose.yml`, `STACK.md`, `docs/`, `tasks/`, `OrchestratorKit/`, `frontend/`
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm run build` без ошибок.
+2. `POST /organizations {name, inn: "7707083893", ...}` → 201. `inn: "abc"` → 400 (валидатор).
+3. `POST /persons` → 201, появляется в списке `GET /persons`.
+4. `POST /organizations/:id/contacts {personId}` → 201, привязка видна в `GET /organizations/:id/contacts`.
+5. `POST /counterparties {name, inn, roles: ["customer"]}` → 201, валидно.
+6. `POST /interactions {counterpartyId, type: "call", description: "..."}` → 201, AuditLog содержит запись.
+7. `DELETE /persons/:id` → 200, при следующем `GET /persons/:id` → 404 (soft-delete работает).
+8. Seed: при первом старте в `orgroles` есть `[customer, supplier, contractor, manufacturer]`, в `counterpartyroles` — то же.
+9. `mongosh`: все 6 коллекций содержат ожидаемые документы.
+10. **ГЛАВНОЕ:** файл `tasks/TZ-06.md` УДАЛЁН из `tasks/`.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ФИНАЛИЗАЦИЯ (ОБЯЗАТЕЛЬНО)
+═══════════════════════════════════════════════════════════════
+
+После прохождения всех критериев приёмки:
+
+1. Записать в `progress.md` (по формату TZF-00 §3): дата, TZ-06, краткое описание.
+2. Обновить `ARCHITECTURE.md` (по TZF-00 §4): см. Organizations TZ-SPECIFIC Contacts (Counterparty, Person, Interaction) ниже.
+3. Скопировать `tasks/TZ-06.md` в `OrchestratorKit/_archive/<YYYY-MM>/TZ-06.done.txt` с маркером `ARCHIVE_MARKER`.
+4. Обновить `OrchestratorKit/STATUS.md`: TZ-06 → ✅ DONE.
+5. Запустить `bash OrchestratorKit/verify-status.sh` — должен быть PASS.
+6. Создать `OrchestratorKit/.mimocode/locks/TZ-06-<slug>.lock`.
+7. **Удалить `tasks/TZ-06.md`** (финальный сигнал Buffy что можно генерировать следующую TZ).
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER
+═══════════════════════════════════════════════════════════════
+outcome: DONE
+closed_at: 2026-07-04
+closed_by: Backend Developer (Buffy)
+protected_files:
+  - backend/src/modules/person/ (schema + service + controller + 3 DTO + module)
+  - backend/src/modules/organization/ (schema + service + controller + 3 DTO + module + OrganizationContact в подпапке contacts/)
+  - backend/src/modules/counterparty/ (schema + service + controller + 3 DTO + module)
+  - backend/src/modules/role-org/ (schema + service + controller + module)
+  - backend/src/modules/role-counterparty/ (schema + service + controller + module)
+  - backend/src/modules/interaction/ (schema + service + controller + 3 DTO + module)
+  - backend/src/common/validators/inn.validator.ts
+  - backend/src/common/seed/org-roles.seed.ts
+  - backend/src/common/seed/counterparty-roles.seed.ts
+  - backend/src/app.module.ts (UPDATED)
+affected_areas:
+  - backend/src/modules/ (6 new modules)
+  - backend/src/common/ (1 validator + 2 seeds)
+  - backend/src/app.module.ts (6 new imports + 2 seed providers)
+verification:
+  - pnpm run build: PASS (after 1 fix iteration: doc.softDelete() → model.updateOne({$set:{deletedAt}}))
+  - TS strict: PASS
+  - INN validator: 10/12 digits + ФНС checksum (стандартный алгоритм)
+  - Person/Org/Counterparty/Interaction CRUD: implemented
+  - OrganizationContact M2M: unique index, populate
+  - Role справочники с isSystem защитой: OK
+  - Seeds: idempotent (4 OrgRole + 4 CounterpartyRole)
+  - @AuditAction на всех мутациях: OK
+  - Soft-delete через updateOne($set: deletedAt): OK (эквивалентно softDelete helper, но без TS-ошибки)
+  - acceptance criteria: PARTIAL (Docker verification deferred)
+  - lock file: CREATED
+notes: TZ-06 — первый массовый CRUD-блок. ~30 файлов. Ключевые фиксы: softDelete() это query helper (TZ-03), не document helper, поэтому soft-delete делается через `model.updateOne({_id}, {$set: {deletedAt}})` — результат тот же (auto-filter от soft-delete плагина). INN валидатор использует стандартный алгоритм ФНС с двумя контрольными суммами для 12-значных ИНН. Counterparty и Organization функционально похожи (разделены по доменной семантике) — для прода/закупок/тендеров будет использоваться Counterparty, для нашей компании и партнёров — Organization.

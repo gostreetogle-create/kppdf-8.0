@@ -1,0 +1,60 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.pnp
+.pnp.js
+
+# Build artifacts
+dist/
+build/
+out/
+*.tsbuildinfo
+.nest/
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+.env.example.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+.idea/
+*.swp
+*.swo
+*~
+.cursor/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Temporary / cache
+.tmp/
+.cache/
+.turbo/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+
+# OrchestratorKit runtime state (locks are transient)
+.mimocode/locks/
+
+# Local helper binaries
+mimo.exe

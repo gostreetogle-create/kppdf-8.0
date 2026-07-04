@@ -1,0 +1,14 @@
+# Lock file
+Locked as of 2026-07-04 — TZ-05: System & Workflow.
+
+Owner: Backend Developer (Buffy)
+Protected files:
+- backend/src/modules/setting/ (Setting schema + service + controller + DTO + module)
+- backend/src/modules/feature-flag/ (FeatureFlag schema + service + controller + module)
+- backend/src/modules/status/ (EntityStatus + StatusWorkflow schemas + service + controller + module)
+- backend/src/modules/audit/ (AuditLog schema + service + controller + module)
+- backend/src/common/interceptors/audit.interceptor.ts (global APP_INTERCEPTOR)
+- backend/src/common/seed/{settings,feature-flags,statuses}.seed.ts
+- backend/src/app.module.ts (4 new modules + 1 APP_INTERCEPTOR + 3 seed providers)
+
+Unlock: only via orchestrator approval (новое TZ-NN с пометкой «successor»).

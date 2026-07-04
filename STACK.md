@@ -6,7 +6,7 @@
 
 ## Summary
 
-** ** (frontend) + ** ** (backend).
+** ** (frontend) + ** ** (backend) + Docker Compose.
 
 > 💡 Этот файл сгенерирован автоматически. Для обновления: `bash OrchestratorKit/kit-stack.sh --force`.
 
@@ -88,7 +88,20 @@ npm test                 # vitest
 
 
 
-## 3. Cross-cutting
+## 3. Infrastructure
+
+### Docker services
+
+| Service | Image / Source | Port | Notes |
+|---------|----------------|------|-------|
+| (обнаружен docker-compose; конкретные сервисы добавь вручную) | — | — | — |
+
+**Compose file:** `docker-compose.yml`
+
+(дополни файлы добавь вручную)
+
+
+## 4. Cross-cutting
 
 - **Runtime:** Node.js 22+ (>=22.0.0)
 - **Package manager:**  
@@ -97,7 +110,7 @@ npm test                 # vitest
 
 ---
 
-## 4. Module Map
+## 5. Module Map
 
 Список модулей/страниц, обнаруженных автоматически. Дополняй вручную по мере развития проекта.
 
@@ -116,7 +129,7 @@ npm test                 # vitest
 
 ---
 
-## 5. Quickstart
+## 6. Quickstart
 
 ### One-liner (если есть start.sh)
 
@@ -140,7 +153,7 @@ npm test           # запустить тесты
 
 ---
 
-## 6. Архитектурные решения
+## 7. Архитектурные решения
 
 | Решение | Статус / Дата |
 |---------|---------------|
@@ -152,7 +165,7 @@ npm test           # запустить тесты
 
 ---
 
-## 7. Testing
+## 8. Testing
 
 | Уровень | Инструмент | Покрывает |
 |---------|------------|-----------|
@@ -161,7 +174,7 @@ npm test           # запустить тесты
 
 ---
 
-## 8. Окружение
+## 9. Окружение
 
 ### Env vars
 
@@ -180,7 +193,7 @@ npm test           # запустить тесты
 
 ---
 
-## 9. Что это НЕ
+## 10. Что это НЕ
 
 - **НЕ** task tracker — для этого используй `OrchestratorKit/STATUS.md` (TZ-flow).
 - **НЕ** changelog / release notes — история изменений живёт в git-коммитах и тегах.

@@ -1,0 +1,128 @@
+═══════════════════════════════════════════════════════════════
+TZ-08: EAV & Product Meta
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Backend Developer
+
+ЗАВИСИМОСТИ: TZ-07
+
+LAYER: 4
+
+CONFLICT KEYS: backend/src/modules/attribute-definition/**; backend/src/modules/entity-attribute-value/**; backend/src/modules/certificate/**; backend/src/modules/compliance-rule/**; backend/src/modules/product-passport/**; backend/src/modules/inventor-file/**
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. TZ-07 завершён: Catalog (Category, Material, Product, Bom) работает.
+2. EAV (Entity-Attribute-Value) для кастомных атрибутов + метаданные продуктов:
+   - **AttributeDefinition**: entityType, categoryId?, name, label, type ('string'|'number'|'date'|'enum'|'boolean'), unit?, options? (для enum), required, sortOrder, isActive.
+   - **EntityAttributeValue**: entityType, entityId, attributeId, value, createdAt, updatedAt.
+   - **Certificate**: productIds[], productNames[] (кэш), number, certType, status, issuedBy/issuer (консолидировать), issueDate, expiryDate/expiresAt (консолидировать), fileUrl, notes/title.
+   - **ComplianceRule**: name, description, sourceType, targetType, field, fieldLabel, operator, expectedValue, expectedValueMax, tolerance, unit, severity, isActive, sortOrder.
+   - **ProductPassport**: productId, passportNumber, productCode, warrantyCode, date, name, category, article, height, length, width, weight, description, installationSite, supplier, photo, isActive.
+   - **InventorFile**: productId, productName, productSku, fileName, fileType, sizeKb, version, author, url, description, notes.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: AttributeDefinition + EntityAttributeValue (EAV)
+
+**`AttributeDefinition` CRUD:**
+- `GET /attribute-definitions?entityType=Product&categoryId=...` — список атрибутов.
+- `POST /attribute-definitions` — создать (admin).
+- `PATCH /attribute-definitions/:id` — обновить.
+- `DELETE /attribute-definitions/:id` — soft-delete.
+
+**`EntityAttributeValue` CRUD:**
+- `GET /<entityType>/:entityId/attributes` — все значения атрибутов для entity.
+- `PUT /<entityType>/:entityId/attributes/:attributeId` — установить значение.
+- `POST /<entityType>/:entityId/attributes/bulk` — пакетное обновление.
+- `DELETE /<entityType>/:entityId/attributes/:attributeId` — удалить значение.
+
+**Helper service `EavService`:**
+```typescript
+// Загружает все AttributeDefinition для entity, валидирует value по type (string/number/date/enum/boolean),
+// upsert EntityAttributeValue. Возвращает map { attributeName: value }.
+async resolveAttributes(entityType: string, entityId: ObjectId, raw: Record<string, any>): Promise<Record<string, any>>
+```
+
+**Использование в Product:**
+- `POST /products` принимает `attributes: { attrKey: value }` → EavService.resolveAttributes.
+- `GET /products/:id` возвращает `attributes: { ... }` помимо обычных полей.
+
+ШАГ 2: Certificate (консолидация `issuedBy`/`issuer`, `expiryDate`/`expiresAt`)
+
+- Канонические имена: `issuedBy`, `expiresAt`. Алиасы — дропнуть.
+- `POST /certificates` — `{productIds, number, certType, status, issuedBy, issueDate, expiresAt, fileUrl, notes}`.
+- `GET /certificates?productId=...` — фильтр по продукту.
+- `GET /certificates/expiring?days=30` — истекающие в ближайшие N дней.
+
+ШАГ 3: ComplianceRule (валидация между сущностями)
+
+- `POST /compliance-rules` — `{name, sourceType, targetType, field, operator, expectedValue, tolerance, severity}`.
+- Service: `validate(entity, relatedEntity)` — проверяет правило, бросает `BadRequestException` если violated.
+- Использование: при `POST /purchase-orders` валидировать что цена не превышает `expectedValue` и т.п. (в TZ-12).
+
+ШАГ 4: ProductPassport + InventorFile
+
+**`ProductPassport`:**
+- `POST /products/:id/passport` — создать паспорт (требует `hasPassport: true` на Product).
+- `GET /products/:id/passport` — получить.
+- `GET /passports` — список (фильтр по product, date range).
+
+**`InventorFile`:**
+- `POST /products/:id/inventor-files` (multipart) — загрузить чертёж, сохранить в `backend/uploads/inventor/<uuid>.<ext>`, создать документ.
+- `GET /inventor-files/:id/download` — отдать binary.
+- `GET /products/:id/inventor-files` — список файлов продукта.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+СОЗДАТЬ (6 модулей):
+- `backend/src/modules/attribute-definition/`
+- `backend/src/modules/entity-attribute-value/`
+- `backend/src/modules/certificate/`
+- `backend/src/modules/compliance-rule/`
+- `backend/src/modules/product-passport/`
+- `backend/src/modules/inventor-file/` (с multer)
+
+ОБНОВИТЬ:
+- `backend/src/app.module.ts`
+- `backend/src/modules/product/product.service.ts` (интеграция EavService)
+
+НЕ ТРОГАТЬ:
+- `src/modules/category/`, `src/modules/material/`, `src/modules/photos/`, и т.п.
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm run build` без ошибок.
+2. `POST /attribute-definitions {entityType: "Product", name: "warrantyMonths", label: "Гарантия (мес)", type: "number", required: false}` → 201.
+3. `POST /products/:id/attributes {warrantyMonths: 24, color: "black"}` → значения сохранены, валидация по type работает.
+4. `GET /products/:id` возвращает `attributes: {warrantyMonths: 24, color: "black"}` (merged).
+5. `POST /certificates {productIds: [...], number: "RU.C-CN.АБ01.В.01234", certType: "declaration", issuedBy: "РосТест", issueDate: "2026-01-15", expiresAt: "2029-01-14"}` → 201.
+6. `GET /certificates/expiring?days=30` → пусто (т.к. только что созданный истекает через 3 года).
+7. `POST /products/:id/passport {passportNumber: "PP-001", productCode: "K-500"}` → 201, `GET /products/:id/passport` возвращает.
+8. `POST /products/:id/inventor-files` (multipart с PDF) → 201, файл сохранён в `backend/uploads/inventor/`.
+9. `POST /compliance-rules {name: "Цена не выше КП", sourceType: "PurchaseOrder", targetType: "Proposal", field: "total", operator: "<=", severity: "error"}` → 201.
+10. `EavService.resolveAttributes` правильно валидирует (например, `warrantyMonths: "abc"` → 400).
+11. **ГЛАВНОЕ:** файл `tasks/TZ-08.md` УДАЛЁН из `tasks/`.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ФИНАЛИЗАЦИЯ (ОБЯЗАТЕЛЬНО)
+═══════════════════════════════════════════════════════════════
+
+После прохождения всех критериев приёмки:
+
+1. Записать в `progress.md` (по формату TZF-00 §3): дата, TZ-08, краткое описание.
+2. Обновить `ARCHITECTURE.md` (по TZF-00 §4): см. EAV (AttributeDefinition, EntityAttributeValue) + Product meta ниже.
+3. Скопировать `tasks/TZ-08.md` в `OrchestratorKit/_archive/<YYYY-MM>/TZ-08.done.txt` с маркером `ARCHIVE_MARKER`.
+4. Обновить `OrchestratorKit/STATUS.md`: TZ-08 → ✅ DONE.
+5. Запустить `bash OrchestratorKit/verify-status.sh` — должен быть PASS.
+6. Создать `OrchestratorKit/.mimocode/locks/TZ-08-<slug>.lock`.
+7. **Удалить `tasks/TZ-08.md`** (финальный сигнал Buffy что можно генерировать следующую TZ).
+ARCHIVE_MARKER: TZ-08 closed 2026-07-04T22:14:37+03:00

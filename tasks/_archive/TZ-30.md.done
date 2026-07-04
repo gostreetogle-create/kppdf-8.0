@@ -1,0 +1,148 @@
+═══════════════════════════════════════════════════════════════
+TZ-30: CRUD actions + per-page FormSchema
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Developer
+
+ЗАВИСИМОСТИ: TZ-20 (Auth + Layout) ✅, TZ-04 (Backend auth/RBAC) ✅
+
+LAYER: 5 (Frontend)
+
+CONFLICT KEYS:
+- frontend/src/app/configs/pages.config.ts
+- frontend/src/app/shared/components/form-dialog/form-dialog.component.ts
+- frontend/src/app/shared/components/crud-page/crud-page.component.ts
+
+═══════════════════════════════════════════════════════════════
+КОНТЕКСТ
+═══════════════════════════════════════════════════════════════
+
+TZ-19..TZ-29 создали Frontend MVP:
+- 65 generic-страниц через `PageRenderer` → `CrudPageComponent`
+- `FormDialog` поддерживает 7 generic-типов (text/number/email/date/textarea/select/boolean)
+- `ConfirmDialog` для destructive actions
+- AG Grid 32 для отображения таблиц
+
+ПРОБЛЕМА: `CrudPage.onCreate()` показывает toast-плейсхолдер, нет Edit/Delete actions.
+65 страниц — read-only. Чтобы страницы работали по-настоящему, нужны:
+- Edit/Delete в AG Grid (action column)
+- Create/Edit через `FormDialog`
+- FK relations (relation type с async-loaded options)
+- Подтверждение удаления через `ConfirmDialog`
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Расширить FormFieldSpec
+
+```typescript
+// frontend/src/app/shared/components/form-dialog/form-dialog.component.ts
+export interface FormFieldSpec {
+  key: string;
+  label: string;
+  type: 'text' | 'number' | 'email' | 'date' | 'textarea' | 'select' | 'boolean' | 'relation';
+  required?: boolean;
+  options?: { value: string; label: string }[];   // для 'select' и 'relation'
+  placeholder?: string;
+}
+```
+
+Добавить @case ('relation') в template FormDialog — рендерит `<select>` с options[].
+
+ШАГ 2: Расширить PageConfig
+
+```typescript
+// frontend/src/app/configs/pages.config.ts
+export interface PageFieldSpec extends FormFieldSpec {
+  /** Endpoint для загрузки options (например '/categories') — только для type='relation' */
+  endpoint?: string;
+  /** Ключ поля-лейбла в option-объекте (default: 'name') */
+  labelKey?: string;
+  /** Ключ поля-значения в option-объекте (default: '_id') */
+  valueKey?: string;
+}
+
+export interface PageConfig {
+  // ...существующие поля...
+  /** Конфиг полей формы create/edit */
+  fields?: PageFieldSpec[];
+}
+```
+
+ШАГ 3: Заполнить fields[] для 5 ключевых страниц
+
+| Страница | Поля |
+|----------|------|
+| counterparty | name, shortName, inn, kpp, legalAddress, type (select: customer/supplier/contractor/manufacturer), legalType (select), notes |
+| organization | name, shortName, inn, kpp, legalForm, type (select: ООО/ОАО/ЗАО/ИП/ПАО), partyTypes, directorName, website |
+| person | lastName, firstName, patronymic, phone, email, position, notes |
+| product | name, sku, category (relation → /categories), unit, listPrice, isActive, description |
+| material | name, sku, unit, pricePerUnit, isActive, description |
+
+ШАГ 4: Создать RowActionsComponent (AG Grid cell renderer)
+
+```typescript
+// frontend/src/app/shared/components/row-actions/row-actions.component.ts
+// Standalone Angular component, implements ICellRendererAngularComp
+// Кнопки: ✎ (Edit), 🗑 (Delete)
+// Параметры из params: { onEdit: (row) => void, onDelete: (row) => void }
+```
+
+ШАГ 5: Обновить CrudPageComponent
+
+- `onCreate()`: 
+  - загрузить options для relation-полей через `loadRelationOptions(fields)`
+  - открыть `DialogService.openForm({ title, fields: prepared, initial: {} })`
+  - на result: `http.post(endpoint, values)`, при успехе — `reload()` + toast.success
+- `onEdit(row)`:
+  - подготовить initial: ObjectId→string (для [ngValue] binding), Date→yyyy-MM-dd (для date inputs)
+  - открыть FormDialog с initial
+  - на result: `http.patch(\`${endpoint}/${row._id}\`, values)`, при успехе — `reload()` + toast.success
+- `onDelete(row)`:
+  - `DialogService.confirm({ title, message, variant: 'destructive' })`
+  - на confirm: `http.delete(\`${endpoint}/${row._id}\`)`, при успехе — `reload()` + toast.success
+- `columnDefs()`: добавить actions column в конец (pinned right, width 100, использует `RowActionsComponent` как `cellRenderer`)
+- `onGridReady`: прокинуть `onEdit` и `onDelete` callbacks в cellRenderer params
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ОБНОВИТЬ:
+- `frontend/src/app/shared/components/form-dialog/form-dialog.component.ts` (+relation type)
+- `frontend/src/app/configs/pages.config.ts` (+fields для 5 страниц)
+- `frontend/src/app/shared/components/crud-page/crud-page.component.ts` (+edit/delete + create через FormDialog)
+
+СОЗДАТЬ:
+- `frontend/src/app/shared/components/row-actions/row-actions.component.ts` (AG Grid cell renderer)
+
+НЕ ТРОГАТЬ:
+- backend/** (бэк уже поддерживает POST/PATCH/DELETE + soft-delete + audit)
+- auth/, guards/, services/ (TZ-20)
+- layout/, dashboard/, task-panel/
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm run build` (в `frontend/`) — без ошибок, без warningов.
+2. На странице /p/counterparty:
+   - видны кнопки ✎ и 🗑 в каждой строке AG Grid
+   - клик на ✎ открывает FormDialog с полями из PageConfig
+   - relation-поля (type/roles) рендерятся как select с options
+   - сохранение → POST /counterparties, toast.success, таблица обновляется
+   - клик на 🗑 открывает ConfirmDialog; подтверждение → DELETE, toast.success, таблица обновляется
+3. Страницы /p/organization, /p/person, /p/product, /p/material — аналогично работают.
+4. Страницы БЕЗ fields[] (например /p/permission, /p/audit) — продолжают работать в read-only (fallback на текущее поведение, без кнопок).
+5. Все мутации попадают в AuditLog на бэке (TZ-05).
+6. **ГЛАВНОЕ:** файл `tasks/TZ-30.md` УДАЛЁН из `tasks/` после завершения.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ФИНАЛИЗАЦИЯ (ОБЯЗАТЕЛЬНО)
+═══════════════════════════════════════════════════════════════
+
+После прохождения всех критериев приёмки:
+1. Записать в `progress.md`: дата, TZ-30, краткое описание.
+2. Переместить `tasks/TZ-30.md` в `tasks/_archive/TZ-30.md.done`.
+3. **Удалить `tasks/TZ-30.md`** (финальный сигнал).

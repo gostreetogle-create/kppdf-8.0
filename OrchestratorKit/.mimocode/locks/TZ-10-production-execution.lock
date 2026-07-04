@@ -1,0 +1,16 @@
+TZ_ID: TZ-10
+NAME: Production Execution
+STATUS: done
+CLOSED_AT: 2026-07-04
+FILES_CREATED: ~45
+MODULES:
+  - ProductionOrder (session.withTransaction creates OrderTasks from TechProcess+Bom)
+  - OrderTask (M2M dependsOnTaskIds, /ready with actual dep check)
+  - WorkOrder
+  - WorkOrderOperation
+  - CostCalculation (auto-calc totals from Bom+TechProcess, /:id/activate)
+  - ActualCost (cost-comparison: planned/actual/variance)
+  - OrderClosing (sets order.status=closed on create)
+TS_FIXES: 4 (IsObjectId x6, DTO fields, Bom field names, module imports)
+BUG_FIXES: 3 (costComparison filter, findReady dep check, OrderClosing.close)
+BUILD: OK (exit 0)

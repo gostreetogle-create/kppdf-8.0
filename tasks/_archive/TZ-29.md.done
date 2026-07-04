@@ -1,0 +1,18 @@
+# TZ-29 — Frontend
+
+**LAYER:** 5 (Frontend)
+**Зависимости:** TZ-19 (Frontend Foundation) ✅
+
+## Статус: ВЫПОЛНЕНО [2026-07-04]
+
+## Сделано
+См. progress.md (запись от 2026-07-04, TZ-19..TZ-29).
+
+## Ключевые файлы
+- frontend/src/app/** (Angular 20 + Tailwind + AG Grid + CDK Dialog)
+- frontend/src/styles.css (shadcn design tokens)
+- frontend/tailwind.config.js
+- frontend/src/app/configs/pages.config.ts (65 страниц в 8 категориях)
+
+## Build
+pnpm run build → 0 errors, 0 warnings, 542.84 kB initial bundle.

@@ -1,0 +1,17 @@
+# Lock file
+Locked as of 2026-07-04 — TZ-06: Organizations & Contacts.
+
+Owner: Backend Developer (Buffy)
+Protected files:
+- backend/src/modules/person/
+- backend/src/modules/organization/ (including /contacts/ subfolder for OrganizationContact)
+- backend/src/modules/counterparty/
+- backend/src/modules/role-org/
+- backend/src/modules/role-counterparty/
+- backend/src/modules/interaction/
+- backend/src/common/validators/inn.validator.ts
+- backend/src/common/seed/org-roles.seed.ts
+- backend/src/common/seed/counterparty-roles.seed.ts
+- backend/src/app.module.ts (6 new modules + 2 seed providers)
+
+Unlock: only via orchestrator approval (новое TZ-NN с пометкой «successor»).

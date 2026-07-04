@@ -1,0 +1,13 @@
+TZ_ID: TZ-09
+NAME: Production Dictionaries
+STATUS: done
+CLOSED_AT: 2026-07-04
+FILES_CREATED: ~30
+MODULES:
+  - WorkCenter
+  - WorkType
+  - Worker
+  - RoutingStep
+  - TechProcess (totalDuration auto-calc, activate deactivate others)
+TS_FIXES: 1 (IsObjectId duplicate)
+BUILD: OK (exit 0)

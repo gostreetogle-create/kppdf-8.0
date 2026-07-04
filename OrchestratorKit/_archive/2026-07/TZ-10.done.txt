@@ -1,0 +1,136 @@
+═══════════════════════════════════════════════════════════════
+TZ-10: Production Execution
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Backend Developer
+
+ЗАВИСИМОСТИ: TZ-07, TZ-09
+
+LAYER: 4
+
+CONFLICT KEYS: backend/src/modules/production-order/**; backend/src/modules/order-task/**; backend/src/modules/work-order/**; backend/src/modules/work-order-operation/**; backend/src/modules/cost-calculation/**; backend/src/modules/actual-cost/**; backend/src/modules/order-closing/**
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. TZ-07 + TZ-09 завершены: Product/Bom/TechProcess/WorkCenter/WorkType/Worker работают.
+2. Production Execution — 7 entity:
+   - **ProductionOrder** (заказ на производство): number, title, contractId? (→ Contract из TZ-13), proposalId? (→ Quotation из TZ-13), productId, productName (кэш), productSku, quantity, status, priority, ralCode, plannedStart/End, actualStart/End, workTypeId, workCenterId, packageTag, notes.
+   - **OrderTask** (этап): orderId/productionOrderId (один канонический), componentId, componentName, workTypeId, workTypeName, workerId, workCenterId, title/description/notes, status, estimatedHours/plannedHours (один), actualHours, plannedStartDate/End, actualStartDate/End, dependsOnTaskIds[], sortOrder.
+   - **WorkOrder** (наряд): number, orderId, productId, qty, statusId (→ EntityStatus), startDate, endDate, assignedTo, notes, isActive.
+   - **WorkOrderOperation** (операция наряда): workOrderId, operationId (→ Operation из TZ-09? — нет, Operation оставлена в TZ-09, здесь FK на workTypeId), order, plannedDuration, actualDuration, statusId, startedAt, completedAt, completedBy.
+   - **CostCalculation** (плановая себестоимость): productId, bomId, bomVersion, isActive, materials[], totalMaterialCost, totalLaborCost, overheadPercent, overheadCost, totalCost, calculatedAt, notes.
+   - **ActualCost** (фактические затраты): orderId, type, amount, description, sourceRef, date, createdBy.
+   - **OrderClosing** (закрытие заказа): productionOrderId, orderNumber, closingType, number, date, amount/totalAmount, organizationId, status, fileUrl, notes.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: ProductionOrder (с транзакционным созданием OrderTask)
+
+**Создание (`POST /production-orders`):**
+- Вход: `{productId, quantity, plannedStartDate, plannedEndDate, ralCode?, workCenterId?, contractId?, proposalId?}`.
+- **Транзакция (session.withTransaction):**
+  1. Сгенерировать `number` через `Counter.next('ProductionOrder', 'PO')`.
+  2. Создать `ProductionOrder` документ.
+  3. Загрузить `TechProcess` (active) + `Bom` (active) для `productId`.
+  4. Для каждой операции из `TechProcess.operations` — создать `OrderTask` с `productionOrderId`, `workTypeId`, `workCenterId`, `estimatedHours`, `plannedStartDate` (с учётом cumulative duration), `dependsOnTaskIds` (предыдущая задача).
+  5. Для каждого component из `Bom.components` — создать `OrderTask` с `componentId`, `material` (если есть в БД).
+  6. Обновить `ProductionOrder.status` → 'planned'.
+- `GET /production-orders` с populate: tasks, product, contract, proposal.
+- `GET /production-orders/:id/tasks` — все задачи с зависимостями.
+- `POST /production-orders/:id/start` — переводит в статус 'in_progress' (через StatusWorkflow из TZ-05), `actualStart = new Date()`.
+- `POST /production-orders/:id/close` — OrderClosing flow (см. ШАГ 7).
+
+ШАГ 2: OrderTask (CRUD + зависимости)
+
+- `GET /order-tasks?productionOrderId=...&status=...`.
+- `PATCH /order-tasks/:id` — обновить status, actualHours, actualStartDate/End.
+- `POST /order-tasks/:id/complete` — отметить выполненной, обновить `actualEndDate`, проверить что все `dependsOnTaskIds` тоже complete.
+- `GET /order-tasks/ready?workerId=...` — задачи готовые к выполнению (зависимости выполнены, worker назначен).
+
+ШАГ 3: WorkOrder (наряд)
+
+- Создаётся на основе OrderTask (через `POST /order-tasks/:id/work-order {qty, assignedTo, startDate, endDate}`).
+- При создании — генерирует `WorkOrderOperation[]` на основе WorkType.
+- `GET /work-orders/:id` с populate operations, order, product, assignedTo.
+- `POST /work-orders/:id/complete` — отмечает все операции как done.
+
+ШАГ 4: WorkOrderOperation (CRUD)
+
+- `POST /work-order-operations/:id/start` — `startedAt = new Date()`.
+- `POST /work-order-operations/:id/complete {actualDuration}` — `completedAt`, `actualDuration`.
+
+ШАГ 5: CostCalculation (плановая себестоимость)
+
+- `POST /products/:id/cost-calculations` — рассчитать из активного Bom:
+  - `totalMaterialCost` = sum(material.pricePerUnit × bom.components[i].quantity)
+  - `totalLaborCost` = sum(workType.hourlyRate × techProcess.operations[i].durationHours)
+  - `overheadCost` = totalMaterialCost × overheadPercent / 100
+  - `totalCost` = totalMaterialCost + totalLaborCost + overheadCost
+- `GET /products/:id/cost-calculations?isActive=true` — последняя активная.
+- `POST /cost-calculations/:id/activate`.
+
+ШАГ 6: ActualCost (фактические затраты)
+
+- `POST /production-orders/:id/actual-costs` — `{type, amount, description, sourceRef, date}`.
+- `GET /production-orders/:id/actual-costs` — список.
+- `GET /production-orders/:id/cost-comparison` — `{planned: CostCalculation.totalCost, actual: sum(ActualCost.amount), variance: actual - planned}`.
+
+ШАГ 7: OrderClosing (закрытие заказа)
+
+- `POST /production-orders/:id/close {closingType, number, date, amount, organizationId, fileUrl?}`.
+- Проверить: все OrderTask → status='completed' (через StatusWorkflow).
+- Создать `OrderClosing` документ.
+- `GET /production-orders/:id/closing` — получить.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+СОЗДАТЬ (7 модулей):
+- `backend/src/modules/production-order/` (с транзакционной логикой в service)
+- `backend/src/modules/order-task/`
+- `backend/src/modules/work-order/`
+- `backend/src/modules/work-order-operation/`
+- `backend/src/modules/cost-calculation/` (с автоматическим расчётом)
+- `backend/src/modules/actual-cost/`
+- `backend/src/modules/order-closing/`
+
+ОБНОВИТЬ:
+- `backend/src/app.module.ts`
+
+НЕ ТРОГАТЬ:
+- `src/modules/contract/`, `src/modules/quotation/` (TZ-13), `src/modules/tech-process/`, `src/modules/bom/`
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm run build` без ошибок.
+2. `POST /production-orders {productId, quantity: 10, plannedStartDate, plannedEndDate, workCenterId}` → 201, **транзакционно** создаются OrderTask для каждой операции TechProcess + каждого component Bom.
+3. `GET /production-orders/:id/tasks` — все tasks с `dependsOnTaskIds` корректно связаны.
+4. `POST /order-tasks/:id/complete` → если есть незавершённые `dependsOnTaskIds` → 400.
+5. `POST /products/:id/cost-calculations` — возвращает `{totalMaterialCost, totalLaborCost, overheadCost, totalCost}` с реальными цифрами из Bom+TechProcess.
+6. `POST /production-orders/:id/actual-costs {type: "material", amount: 5000, ...}` → 201.
+7. `GET /production-orders/:id/cost-comparison` → `{planned: 10000, actual: 5000, variance: -5000}`.
+8. `POST /production-orders/:id/close` — если есть незавершённые tasks → 400, иначе → 201, OrderClosing создан.
+9. `GET /production-orders/:id` — populate всех FK (product, tasks, workCenter, contract, proposal).
+10. **ГЛАВНОЕ:** файл `tasks/TZ-10.md` УДАЛЁН из `tasks/`.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ФИНАЛИЗАЦИЯ (ОБЯЗАТЕЛЬНО)
+═══════════════════════════════════════════════════════════════
+
+После прохождения всех критериев приёмки:
+
+1. Записать в `progress.md` (по формату TZF-00 §3): дата, TZ-10, краткое описание.
+2. Обновить `ARCHITECTURE.md` (по TZF-00 §4): см. Production execution (ProductionOrder, WorkOrder, CostCalculation, ActualCost, OrderClosing) ниже.
+3. Скопировать `tasks/TZ-10.md` в `OrchestratorKit/_archive/<YYYY-MM>/TZ-10.done.txt` с маркером `ARCHIVE_MARKER`.
+4. Обновить `OrchestratorKit/STATUS.md`: TZ-10 → ✅ DONE.
+5. Запустить `bash OrchestratorKit/verify-status.sh` — должен быть PASS.
+6. Создать `OrchestratorKit/.mimocode/locks/TZ-10-<slug>.lock`.
+7. **Удалить `tasks/TZ-10.md`** (финальный сигнал Buffy что можно генерировать следующую TZ).
+ARCHIVE_MARKER: TZ-10 closed 2026-07-04T22:25:30+03:00

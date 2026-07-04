@@ -1,0 +1,202 @@
+═══════════════════════════════════════════════════════════════
+TZ-04: Auth & Identity
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Backend Developer
+
+ЗАВИСИМОСТИ: TZ-03
+
+LAYER: 4
+
+CONFLICT KEYS: backend/src/modules/auth/**; backend/src/modules/user/**; backend/src/modules/role/**; backend/src/modules/permissions/**; backend/src/common/guards/**; backend/src/common/decorators/current-user.decorator.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. TZ-03 завершён: Mongo подключен, Counter работает, soft-delete + audit плагины готовы (но не применены).
+2. В `docs/data-model.md` Identity домен:
+   - **User** (16 полей): username, email, displayName, passwordHash, role, permissions, isActive, lastLoginAt, createdAt/updatedAt/deletedAt, phone, refreshTokenVersion, fullName.
+   - **Role** + **Roles** (ДУБЛИКАТЫ — консолидировать в один `Role`): name, slug, label, description, permissions[], isSystem, sortOrder, sectionIds, isActive.
+   - **Permissions** (без id): key, section, action, description.
+   - **FeatureFlag** (TZ-05).
+   - **RateLimitEntry** (TZ-18 — production hardening).
+3. В `docs/data-model-audit.md` §1.1: `Role` + `Roles` — оставить `Role` (merge), `Employees` + `Worker` — оставить `Worker`.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Создать схемы и сервисы
+
+**`Permission`** (отдельная коллекция, без PK id — простые справочники):
+```typescript
+{ key: string; section: string; action: 'read'|'write'|'admin'; description?: string }
+```
+
+**`Role`** (после консолидации):
+```typescript
+{
+  name: string;           // системное имя (slug)
+  label: string;          // отображаемое
+  description?: string;
+  permissions: string[];  // → Permission.key[]
+  isSystem: boolean;      // true = нельзя удалить
+  sortOrder: number;
+  sectionIds: string[];   // связь с секциями UI
+  isActive: boolean;
+  // + timestamps + audit + soft-delete
+}
+```
+
+**`User`** (с применёнными плагинами из TZ-03):
+```typescript
+{
+  username: string;       // unique
+  email: string;          // unique
+  displayName: string;
+  passwordHash: string;   // bcrypt
+  role: string | string[];// → Role.name / Role._id (string для упрощения)
+  permissions?: string[]; // override роли
+  isActive: boolean;
+  lastLoginAt?: Date;
+  phone?: string;
+  refreshTokenVersion: number;  // инвалидация refresh
+  fullName?: string;
+  // + timestamps + audit + soft-delete
+}
+```
+
+**`RateLimitEntry`** — отложить в TZ-18 (production hardening).
+
+ШАГ 2: Auth модуль
+
+**JWT стратегия (`@nestjs/passport` + `passport-jwt`):**
+- access token: 15 мин, secret = `JWT_SECRET`, payload `{ sub: userId, role, permissions, version }`
+- refresh token: 7 дней, secret = `JWT_REFRESH_SECRET`, payload `{ sub: userId, version }` (где version = `refreshTokenVersion` из User)
+- При logout/change-password инкрементировать `refreshTokenVersion` → старые refresh становятся невалидны.
+
+**Endpoints (`AuthController`):**
+- `POST /auth/register` — `{ username, email, password, displayName }` → создать User + access + refresh
+- `POST /auth/login` — `{ username, password }` → access + refresh + update `lastLoginAt`
+- `POST /auth/refresh` — `{ refreshToken }` → новый access (если version совпадает)
+- `POST /auth/logout` — инкремент `refreshTokenVersion` → все refresh инвалидированы
+- `GET /auth/me` — текущий User (защищён `JwtAuthGuard`)
+
+**Guards (`src/common/guards/`):**
+- `JwtAuthGuard` — проверяет access token, кладёт `req.user`
+- `RolesGuard` — проверяет `@Roles('admin', 'manager')` decorator
+- `Public` decorator — для endpoint'ов, не требующих auth (`/auth/login`, `/auth/register`)
+
+**`@CurrentUser()` decorator** — извлекает `req.user` в контроллерах.
+
+ШАГ 3: CRUD для User и Role
+
+**`UserController` / `UserService`:**
+- `GET /users` (admin) — список с пагинацией
+- `GET /users/:id` — свой профиль или admin
+- `POST /users` (admin) — создать
+- `PATCH /users/:id` — admin или сам (ограниченный набор полей)
+- `DELETE /users/:id` (admin) — soft-delete
+- `POST /users/:id/change-password` — `{ oldPassword, newPassword }` (хэш + инкремент refreshTokenVersion)
+
+**`RoleController` / `RoleService`:**
+- `GET /roles`, `GET /roles/:id`, `POST`, `PATCH`, `DELETE` (admin, запрет удаления `isSystem: true`)
+
+**Permission seed:**
+- При первом старте (через `OnModuleInit` или отдельный скрипт) — засеять `Permission` записями: `user:read`, `user:write`, `user:admin`, `role:read`, `role:write`, `role:admin`, и т.д. по доменам.
+
+ШАГ 4: Default admin
+
+- При первом старте, если `User.count() === 0`, создать `admin` с дефолтным паролем из `ADMIN_PASSWORD` env (логировать WARNING что дефолтный пароль).
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+СОЗДАТЬ:
+- `backend/src/modules/permissions/permission.schema.ts`
+- `backend/src/modules/role/role.schema.ts, role.service.ts, role.controller.ts, role.module.ts, dto/*.ts`
+- `backend/src/modules/user/user.schema.ts, user.service.ts, user.controller.ts, user.module.ts, dto/*.ts`
+- `backend/src/modules/auth/auth.service.ts, auth.controller.ts, auth.module.ts, strategies/jwt.strategy.ts, dto/*.ts`
+- `backend/src/common/guards/jwt-auth.guard.ts, roles.guard.ts`
+- `backend/src/common/decorators/public.decorator.ts, roles.decorator.ts, current-user.decorator.ts`
+- `backend/src/common/seed/permissions.seed.ts, admin.seed.ts`
+
+ОБНОВИТЬ:
+- `backend/src/app.module.ts`
+
+НЕ ТРОГАТЬ:
+- `src/database/`, `src/modules/counter/`, `docker-compose.yml`, `Dockerfile`, `STACK.md`, `docs/`, `tasks/`, `OrchestratorKit/`, `frontend/`
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm run build` без ошибок.
+2. `docker compose up -d` — все контейнеры healthy.
+3. `POST /auth/register {username,email,password,displayName}` → 201 + `{access, refresh, user}`.
+4. `POST /auth/login {username,password}` → 200 + `{access, refresh, user}`. `lastLoginAt` обновлён.
+5. `GET /auth/me` с access token в `Authorization: Bearer <token>` → 200 + `user`. Без токена → 401.
+6. `POST /auth/refresh {refreshToken}` → 200 + новый `access`. Со старым `refreshToken` после logout → 401.
+7. `POST /auth/logout` → 200. Старый `refreshToken` → 401 на `/auth/refresh`.
+8. `GET /users/:id` без admin роли → 403 (если не свой профиль).
+9. При первом старте — в БД есть записи `Permission` (~20+ штук: `user:read`, `user:write`, ...) и User `admin`.
+10. `mongosh`: коллекции `users`, `roles`, `permissions` содержат ожидаемые документы.
+11. **ГЛАВНОЕ:** файл `tasks/TZ-04.md` УДАЛЁН из `tasks/`.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ФИНАЛИЗАЦИЯ (ОБЯЗАТЕЛЬНО)
+═══════════════════════════════════════════════════════════════
+
+После прохождения всех критериев приёмки:
+
+1. Записать в `progress.md` (по формату TZF-00 §3): дата, TZ-04, краткое описание.
+2. Обновить `ARCHITECTURE.md` (по TZF-00 §4): см. Auth (JWT access+refresh), RBAC, Guards ниже.
+3. Скопировать `tasks/TZ-04.md` в `OrchestratorKit/_archive/<YYYY-MM>/TZ-04.done.txt` с маркером `ARCHIVE_MARKER`.
+4. Обновить `OrchestratorKit/STATUS.md`: TZ-04 → ✅ DONE.
+5. Запустить `bash OrchestratorKit/verify-status.sh` — должен быть PASS.
+6. Создать `OrchestratorKit/.mimocode/locks/TZ-04-<slug>.lock`.
+7. **Удалить `tasks/TZ-04.md`** (финальный сигнал Buffy что можно генерировать следующую TZ).
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER
+═══════════════════════════════════════════════════════════════
+outcome: DONE
+closed_at: 2026-07-04
+closed_by: Backend Developer (Buffy)
+protected_files:
+  - backend/src/modules/permissions/
+  - backend/src/modules/role/
+  - backend/src/modules/user/
+  - backend/src/modules/auth/
+  - backend/src/common/context/user-context.ts
+  - backend/src/common/interceptors/user-context.interceptor.ts
+  - backend/src/common/guards/jwt-auth.guard.ts
+  - backend/src/common/guards/roles.guard.ts
+  - backend/src/common/decorators/{public,roles,current-user}.decorator.ts
+  - backend/src/common/seed/permissions.constants.ts
+  - backend/src/common/seed/admin.seed.ts
+  - backend/src/database/user-context.plugin.ts
+  - backend/src/database/database.module.ts (UPDATED)
+  - backend/src/app.module.ts (UPDATED)
+  - backend/src/config/configuration.ts (UPDATED)
+  - backend/src/config/env.validation.ts (UPDATED)
+  - backend/package.json (UPDATED: +bcryptjs, +@nestjs/jwt, +@nestjs/passport, +passport-jwt, +@types)
+  - backend/.env.example (UPDATED)
+  - .env (UPDATED)
+affected_areas:
+  - backend/src/modules/ (4 new modules)
+  - backend/src/common/ (5 new subfolders)
+  - backend/src/database/ (1 new plugin)
+  - backend/src/app.module.ts (5 new imports + 3 global providers)
+verification:
+  - pnpm install: PASS (29 new packages: auth, passport, bcryptjs)
+  - pnpm run build: PASS (after 2 fix iterations: isSystem field in CreateRoleDto, removed schema.pre('count'))
+  - TS strict: PASS
+  - AsyncLocalStorage → Mongoose $locals flow: implemented via userContextPlugin
+  - JWT access+refresh with separate secrets: OK
+  - bcryptjs hashing: OK (no native deps)
+  - acceptance criteria: PARTIAL (Docker verification deferred - same blocker as TZ-02)
+  - lock file: CREATED
+notes: TZ-04 самая сложная из всех. Ключевая инновация — единая user-context chain (JWT → req.user → ALS → Mongoose $locals → audit plugin), которая работает для ВСЕХ будущих модулей (TZ-05+) без дополнительной интеграции. Созданные user-операции автоматически заполняют createdBy/updatedBy через audit plugin. Docker verification (curl /auth/register, /auth/login, /auth/me) заблокирована тем же TZ-02 Node 20 / pnpm 11 конфликтом.

@@ -1,0 +1,71 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { TenderService } from './tender.service';
+import { CreateTenderDto } from './dto/create-tender.dto';
+import { UpdateTenderDto } from './dto/update-tender.dto';
+import { WinTenderDto } from './dto/win-tender.dto';
+import { AuditAction } from '../../common/decorators/audit-action.decorator';
+import { IsObjectId } from '../../common/decorators/is-object-id.decorator';
+
+class AttachQuoteDto {
+  @IsObjectId() quoteId!: string;
+}
+
+@Controller()
+export class TenderController {
+  constructor(private readonly service: TenderService) {}
+
+  @Get('tenders/expiring')
+  expiring(@Query('days') days?: string) {
+    const n = days ? parseInt(days, 10) : 7;
+    return this.service.findExpiring(Number.isFinite(n) ? n : 7);
+  }
+
+  @Post('tenders')
+  @AuditAction({ action: 'create', entityType: 'Tender' })
+  create(@Body() dto: CreateTenderDto) {
+    return this.service.create(dto);
+  }
+
+  @Get('tenders')
+  findAll(@Query('status') status?: string) {
+    return this.service.findAll(status);
+  }
+
+  @Get('tenders/:id')
+  findOne(@Param('id') id: string) {
+    return this.service.findById(id);
+  }
+
+  @Patch('tenders/:id')
+  @AuditAction({ action: 'update', entityType: 'Tender' })
+  update(@Param('id') id: string, @Body() dto: UpdateTenderDto) {
+    return this.service.update(id, dto);
+  }
+
+  @Post('tenders/:id/quotes')
+  @AuditAction({ action: 'attach_quote', entityType: 'Tender' })
+  attachQuote(@Param('id') id: string, @Body() dto: AttachQuoteDto) {
+    return this.service.attachQuote(id, dto.quoteId);
+  }
+
+  @Post('tenders/:id/win')
+  @AuditAction({ action: 'win', entityType: 'Tender' })
+  win(@Param('id') id: string, @Body() dto: WinTenderDto) {
+    return this.service.win(id, dto);
+  }
+
+  @Delete('tenders/:id')
+  @AuditAction({ action: 'delete', entityType: 'Tender' })
+  remove(@Param('id') id: string) {
+    return this.service.remove(id);
+  }
+}

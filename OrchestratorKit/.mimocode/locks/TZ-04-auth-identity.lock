@@ -1,0 +1,24 @@
+# Lock file
+Locked as of 2026-07-04 — TZ-04: Auth & Identity.
+
+Owner: Backend Developer (Buffy)
+Protected files:
+- backend/src/modules/permissions/ (Permission schema + service + module)
+- backend/src/modules/role/ (Role schema + service + controller + DTOs + module)
+- backend/src/modules/user/ (User schema + service + controller + DTOs + module)
+- backend/src/modules/auth/ (Auth service + controller + module + 2 strategies + DTOs)
+- backend/src/common/context/user-context.ts (AsyncLocalStorage)
+- backend/src/common/interceptors/user-context.interceptor.ts
+- backend/src/common/guards/jwt-auth.guard.ts
+- backend/src/common/guards/roles.guard.ts
+- backend/src/common/decorators/{public,roles,current-user}.decorator.ts
+- backend/src/common/seed/permissions.constants.ts
+- backend/src/common/seed/admin.seed.ts
+- backend/src/database/user-context.plugin.ts
+- backend/src/database/database.module.ts (registers userContextPlugin globally)
+- backend/src/app.module.ts (APP_GUARD/APPS_INTERCEPTOR + 4 new modules + AdminSeed)
+- backend/src/config/configuration.ts (jwt.refreshSecret, admin.*)
+- backend/src/config/env.validation.ts (JWT_REFRESH_SECRET, ADMIN_PASSWORD, ADMIN_USERNAME)
+- backend/package.json (+@nestjs/jwt, +@nestjs/passport, +passport-jwt, +bcryptjs, +types)
+
+Unlock: only via orchestrator approval (новое TZ-NN с пометкой «successor»).

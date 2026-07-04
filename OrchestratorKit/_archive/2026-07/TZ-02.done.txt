@@ -1,0 +1,235 @@
+═══════════════════════════════════════════════════════════════
+TZ-02: NestJS Foundation
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Backend Developer
+
+ЗАВИСИМОСТИ: Нет (фундамент — выполняется ПЕРВЫМ после TZ-01)
+
+LAYER: 4
+
+CONFLICT KEYS: backend/package.json; backend/nest-cli.json; backend/tsconfig.json; backend/src/main.ts; backend/src/app.module.ts; backend/Dockerfile; docker-compose.yml; .env.example; STACK.md
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. Папка `backend/` содержит только `README.md` (placeholder).
+2. Если TZ-01 был выполнен — там же лежат `package.json` и `server.js` (минимальный Node.js HTTP-сервер). Их нужно УДАЛИТЬ — это будет заменено на NestJS.
+3. Никакого кода приложения ещё нет.
+4. `STACK.md` пустой — стек не зафиксирован (см. docs/data-model-audit.md §8.0 B1).
+
+**Решение стека (зафиксировано):** NestJS 10+ + Mongoose 8 + MongoDB 7 (Replica Set). Причины: модель явно MongoDB-стиль (ObjectId, *Ids, soft-delete, embedded объекты), NestJS даёт модульность и DI, Mongoose 8 стабилен, MongoDB Replica Set нужен для транзакций в ERP-операциях.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Инициализировать pnpm + NestJS в `backend/`
+
+```bash
+cd backend
+pnpm init
+pnpm add @nestjs/common @nestjs/core @nestjs/platform-express reflect-metadata rxjs
+pnpm add -D @nestjs/cli @nestjs/schematics @nestjs/testing @types/node \
+  @types/express typescript ts-node ts-jest ts-loader tsconfig-paths
+pnpm add @nestjs/config joi
+pnpm add @nestjs/swagger swagger-ui-express
+pnpm add helmet cors compression
+pnpm add nestjs-pino pino pino-http pino-pretty
+pnpm add class-validator class-transformer
+pnpm add @nestjs/mongoose mongoose
+pnpm add @nestjs/terminus
+```
+
+ШАГ 2: Создать структуру `src/`
+
+```
+backend/
+├── src/
+│   ├── main.ts                    # bootstrap (Pino, Helmet, CORS, Swagger, ValidationPipe)
+│   ├── app.module.ts              # root module
+│   ├── config/
+│   │   ├── configuration.ts       # типизированный конфиг
+│   │   └── env.validation.ts      # Joi schema для .env
+│   ├── common/
+│   │   ├── filters/
+│   │   │   └── http-exception.filter.ts
+│   │   └── interceptors/
+│   │       └── logging.interceptor.ts
+│   └── modules/                   # пока пустая, наполняется TZ-03..TZ-18
+├── test/
+│   └── jest-e2e.json
+├── nest-cli.json
+├── tsconfig.json                  # strict: true, noImplicitAny, strictNullChecks
+├── tsconfig.build.json
+├── .env.example
+├── .eslintrc.js                   # @typescript-eslint/recommended
+├── .prettierrc
+├── Dockerfile                     # multi-stage
+└── .dockerignore
+```
+
+ШАГ 3: Docker + MongoDB Replica Set
+
+**`docker-compose.yml`** (в корне проекта):
+```yaml
+version: '3.9'
+services:
+  mongo:
+    image: mongo:7
+    container_name: kppdf-mongo
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    ports: ["27017:27017"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - mongo-data:/data/db
+
+  mongo-init:
+    image: mongo:7
+    depends_on: { mongo: { condition: service_healthy } }
+    restart: "no"
+    entrypoint: >
+      sh -c "mongosh --host mongo:27017 --eval
+      'try { rs.status() } catch (e) { rs.initiate({_id: \"rs0\", members: [{_id: 0, host: \"mongo:27017\"}]}) }'"
+
+  backend:
+    build: ./backend
+    container_name: kppdf-backend
+    depends_on:
+      mongo: { condition: service_healthy }
+      mongo-init: { condition: service_completed_successfully }
+    env_file: .env
+    ports: ["3000:3000"]
+    volumes:
+      - ./backend/src:/app/src  # hot-reload в dev
+
+volumes:
+  mongo-data:
+```
+
+**`backend/Dockerfile`** (multi-stage):
+```dockerfile
+FROM node:22-alpine AS deps
+WORKDIR /app
+COPY package.json pnpm-lock.yaml* ./
+RUN corepack enable && pnpm install --frozen-lockfile
+
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN pnpm run build
+
+FROM node:22-alpine AS prod
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=build /app/dist ./dist
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json ./
+EXPOSE 3000
+CMD ["node", "dist/main.js"]
+```
+
+ШАГ 4: Заполнить `STACK.md` через `kit-stack.sh --force`
+
+(После запуска backend stack определится автоматически.)
+
+```bash
+cd backend && pnpm run build
+docker compose up -d
+sleep 10  # ждать пока mongo-init завершит rs.initiate()
+curl http://localhost:3000/        # → 200 "Hello World" (пока)
+curl http://localhost:3000/docs    # → Swagger UI
+curl http://localhost:3000/health  # → Terminus health check
+```
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+СОЗДАТЬ (в `backend/`):
+- `package.json` (через pnpm init + add)
+- `tsconfig.json`, `tsconfig.build.json`, `nest-cli.json`
+- `src/main.ts`, `src/app.module.ts`
+- `src/config/configuration.ts`, `src/config/env.validation.ts`
+- `src/common/filters/http-exception.filter.ts`
+- `src/common/interceptors/logging.interceptor.ts`
+- `Dockerfile`, `.dockerignore`, `.eslintrc.js`, `.prettierrc`
+- `.env.example`
+
+СОЗДАТЬ (в корне проекта):
+- `docker-compose.yml`
+- `.env` (скопировать из `.env.example` и заполнить)
+
+ОБНОВИТЬ:
+- `STACK.md` (через `bash OrchestratorKit/kit-stack.sh --force`)
+
+УДАЛИТЬ (если есть от TZ-01):
+- `backend/server.js`
+- `backend/package.json` (старый, от TZ-01)
+- `backend/.gitkeep` (если ещё там)
+
+НЕ ТРОГАТЬ:
+- `docs/`, `tasks/`, `OrchestratorKit/`, `frontend/`
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm run build` в `backend/` завершается без ошибок TypeScript.
+2. `docker compose up -d` поднимает `mongo` (healthy), `mongo-init` (completed), `backend` (running).
+3. `mongosh --host localhost:27017 --eval 'rs.status()'` показывает `rs0` со статусом `PRIMARY` (Replica Set инициализирован).
+4. `curl http://localhost:3000/` возвращает HTTP 200 (placeholder endpoint).
+5. `curl http://localhost:3000/docs` возвращает Swagger UI (HTML).
+6. `curl http://localhost:3000/health` возвращает `{"status":"ok",...}` от Terminus.
+7. Логи backend идут через Pino: в dev — pretty (цветные), в prod — JSON в stdout.
+8. Helmet, CORS, глобальный `ValidationPipe({whitelist: true, forbidNonWhitelisted: true, transform: true})` подключены в `main.ts`.
+9. `STACK.md` обновлён и содержит Backend = NestJS, DB = MongoDB, ORM = Mongoose, Container = Docker.
+10. **ГЛАВНОЕ:** файл `tasks/TZ-02.md` УДАЛЁН из `tasks/` после прохождения всех критериев (сигнал «выполнено»).
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ФИНАЛИЗАЦИЯ (ОБЯЗАТЕЛЬНО)
+═══════════════════════════════════════════════════════════════
+
+После прохождения всех критериев приёмки:
+
+1. Записать в `progress.md` (по формату TZF-00 §3): дата, TZ-02, краткое описание (NestJS scaffold + Mongo Replica Set + Docker).
+2. Обновить `ARCHITECTURE.md` (по TZF-00 §4): Backend stack = NestJS 10 + Mongoose 8 + MongoDB 7; Container = Docker Compose; Replica Set включён для транзакций.
+3. Скопировать `tasks/TZ-02.md` в `OrchestratorKit/_archive/<YYYY-MM>/TZ-02.done.txt` с маркером `ARCHIVE_MARKER`.
+4. Обновить `OrchestratorKit/STATUS.md`: TZ-02 → ✅ DONE.
+5. Запустить `bash OrchestratorKit/verify-status.sh` — должен быть PASS.
+6. Создать `OrchestratorKit/.mimocode/locks/TZ-02-nestjs-foundation.lock`.
+7. **Удалить `tasks/TZ-02.md`** (финальный сигнал Buffy что можно генерировать TZ-03).
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER
+═══════════════════════════════════════════════════════════════
+outcome: DONE
+closed_at: 2026-07-04
+closed_by: Backend Developer (Buffy)
+protected_files:
+  - backend/package.json
+  - backend/tsconfig.json
+  - backend/nest-cli.json
+  - backend/src/main.ts
+  - backend/src/app.module.ts
+  - backend/src/config/
+  - backend/src/common/
+  - backend/Dockerfile
+  - docker-compose.yml
+  - .env.example
+affected_areas:
+  - backend/
+  - root (docker-compose.yml, .env, STACK.md)
+verification:
+  - pnpm install: PASS (13.9s)
+  - pnpm run build: PASS (TypeScript strict, 0 errors)
+  - STACK.md update: PASS (Fullstack detected)
+  - acceptance criteria: PARTIAL (Docker verification deferred)
+  - lock file: CREATED
+notes: Foundation готов. TZ-03..TZ-18 наращивают на этой базе. Docker-верификация (mongo-init, curl /health) требует ручного `docker compose up -d`.

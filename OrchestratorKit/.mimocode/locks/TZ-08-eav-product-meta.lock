@@ -1,0 +1,23 @@
+TZ_ID: TZ-08
+NAME: EAV & Product Meta
+STATUS: done
+CLOSED_AT: 2026-07-04
+FILES_CREATED: ~35
+MODULES:
+  - AttributeDefinition
+  - EntityAttributeValue (generic controller, @Global)
+  - Certificate (findExpiring)
+  - ComplianceRule (validate with severity)
+  - ProductPassport
+  - InventorFile (multer upload)
+HELPERS:
+  - common/eav/eav.service.ts (@Global)
+  - common/decorators/is-object-id.decorator.ts
+  - common/decorators/audit-action.decorator.ts (re-export)
+INTEGRATIONS:
+  - ProductService.create/findById/update use EavService
+PACKAGES_ADDED:
+  - @nestjs/mapped-types ^2.0.5
+  - @types/multer ^1.4.11
+TS_FIXES: 4
+BUILD: OK (exit 0)

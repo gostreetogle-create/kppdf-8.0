@@ -1,0 +1,116 @@
+═══════════════════════════════════════════════════════════════
+TZ-11: Warehouse Engine
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Backend Developer
+
+ЗАВИСИМОСТИ: TZ-07
+
+LAYER: 4
+
+CONFLICT KEYS: backend/src/modules/warehouse/**; backend/src/modules/storage-item/**; backend/src/modules/stock-movement/**; backend/src/modules/reservation/**
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. TZ-07 завершён: Material/Product/Bom работают.
+2. Warehouse & Inventory домен (6 entity, консолидация InventoryMovement+StockMovement):
+   - **Warehouse**: name, address, type, isActive, zoneNames[] (legacy), roleIds[] (→ Role).
+   - **StorageItem** (конкретный продукт на конкретном складе): warehouseId, productId, name, description, photos, weightKg, dimensions, isActive, quantity, reservedQty, minQuantity.
+   - **InventoryItem** (агрегированный view): warehouseId, zoneName, entityType, entityId, entityName, entitySku, entityUnit, quantity, minQuantity, updatedAt. **Реализация:** НЕ отдельная коллекция, а computed view через `GET /warehouses/:id/inventory` (aggregate по StorageItem).
+   - **StockMovement** (консолидация InventoryMovement+StockMovement): type ('in'|'out'|'transfer'), date, productId, warehouseId, toWarehouseId (для transfer), zoneName/toZoneName, qty, cost, orderId, documentRef, createdBy.
+   - **Reservation** (резерв под заказ): orderId, isActive.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Warehouse (CRUD)
+
+- Стандартный CRUD.
+- `GET /warehouses/:id/inventory` — агрегированный список StorageItem.
+- `GET /warehouses/:id/movements?from=...&to=...` — движения за период.
+- `GET /warehouses/:id/zones` — список зон (из `zoneNames` или динамически).
+
+ШАГ 2: StorageItem (CRUD + auto-create on product)
+
+- Стандартный CRUD.
+- `POST /products/:id/storage-items` — `{warehouseId, zoneName?, quantity, minQuantity}`.
+- `GET /storage-items?warehouseId=...&productId=...&lowStock=true` — фильтр (lowStock: `quantity < minQuantity`).
+- `PATCH /storage-items/:id/adjust` — `{delta: number, reason: string}` — ручная корректировка (создаёт StockMovement).
+
+ШАГ 3: StockMovement (транзакционные движения)
+
+**`POST /stock-movements` (транзакция):**
+- Вход: `{type, productId, warehouseId, toWarehouseId?, zoneName?, toZoneName?, qty, cost?, orderId?, documentRef?}`.
+- **Транзакция (session.withTransaction):**
+  1. Найти или создать `StorageItem` для `(warehouseId, productId, zoneName)`.
+  2. Если `type === 'in'`: `storageItem.quantity += qty`.
+  3. Если `type === 'out'`: проверить `storageItem.quantity >= qty` (иначе 400), `storageItem.quantity -= qty`, `storageItem.reservedQty -= min(qty, storageItem.reservedQty)`.
+  4. Если `type === 'transfer'`: уменьшить в source, увеличить в destination (если нужно создать StorageItem).
+  5. Создать `StockMovement` документ.
+- `GET /stock-movements?warehouseId=...&productId=...&type=...&from=...&to=...`.
+
+ШАГ 4: Reservation (резерв)
+
+- `POST /reservations {orderId, productId, warehouseId, qty}`:
+  - Проверить `StorageItem.quantity - StorageItem.reservedQty >= qty` (иначе 400).
+  - `StorageItem.reservedQty += qty`.
+  - Создать Reservation документ.
+- `POST /reservations/:id/release` — `StorageItem.reservedQty -= reservation.qty`, `reservation.isActive = false`.
+- `POST /reservations/:id/fulfill` — конвертировать резерв в `out` StockMovement, освободить резерв.
+
+ШАГ 5: Inventory view (computed)
+
+- `GET /warehouses/:id/inventory` — aggregation по StorageItem с фильтром зон.
+- `GET /inventory/low-stock` — все StorageItem с `quantity < minQuantity` (для уведомлений).
+- `GET /inventory/movements/summary?period=month` — `{type, totalQty, totalAmount}`.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+СОЗДАТЬ (4 модуля):
+- `backend/src/modules/warehouse/`
+- `backend/src/modules/storage-item/`
+- `backend/src/modules/stock-movement/` (с транзакциями)
+- `backend/src/modules/reservation/`
+
+ОБНОВИТЬ:
+- `backend/src/app.module.ts`
+
+НЕ ТРОГАТЬ:
+- `src/modules/product/`, `src/modules/material/` (TZ-07), `src/modules/order/` (TZ-13)
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm run build` без ошибок.
+2. `POST /warehouses {name: "Склад 1", type: "main", address: "..."}` → 201.
+3. `POST /products/:id/storage-items {warehouseId, quantity: 100, minQuantity: 10}` → 201.
+4. `POST /stock-movements {type: "in", productId, warehouseId, qty: 50}` → 201, StorageItem.quantity = 150.
+5. `POST /stock-movements {type: "out", productId, warehouseId, qty: 30}` → 201, StorageItem.quantity = 120.
+6. `POST /stock-movements {type: "out", productId, warehouseId, qty: 200}` → 400 (недостаточно).
+7. `POST /stock-movements {type: "transfer", productId, warehouseId: <w1>, toWarehouseId: <w2>, qty: 20}` → 201, оба StorageItem обновлены транзакционно.
+8. `POST /reservations {orderId, productId, warehouseId, qty: 30}` → 201, StorageItem.reservedQty = 30.
+9. `POST /reservations/:id/fulfill` → 200, StockMovement (type=out) создан, reservedQty -= 30.
+10. `GET /inventory/low-stock` возвращает товары с `quantity < minQuantity`.
+11. `GET /warehouses/:id/inventory` — агрегированный view.
+12. **ГЛАВНОЕ:** файл `tasks/TZ-11.md` УДАЛЁН из `tasks/`.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ФИНАЛИЗАЦИЯ (ОБЯЗАТЕЛЬНО)
+═══════════════════════════════════════════════════════════════
+
+После прохождения всех критериев приёмки:
+
+1. Записать в `progress.md` (по формату TZF-00 §3): дата, TZ-11, краткое описание.
+2. Обновить `ARCHITECTURE.md` (по TZF-00 §4): см. Warehouse (StockMovement transactions, Reservations) ниже.
+3. Скопировать `tasks/TZ-11.md` в `OrchestratorKit/_archive/<YYYY-MM>/TZ-11.done.txt` с маркером `ARCHIVE_MARKER`.
+4. Обновить `OrchestratorKit/STATUS.md`: TZ-11 → ✅ DONE.
+5. Запустить `bash OrchestratorKit/verify-status.sh` — должен быть PASS.
+6. Создать `OrchestratorKit/.mimocode/locks/TZ-11-<slug>.lock`.
+7. **Удалить `tasks/TZ-11.md`** (финальный сигнал Buffy что можно генерировать следующую TZ).
+ARCHIVE_MARKER: TZ-11 closed 2026-07-04T22:32:41+03:00

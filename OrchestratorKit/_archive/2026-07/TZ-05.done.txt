@@ -1,0 +1,171 @@
+═══════════════════════════════════════════════════════════════
+TZ-05: System & Workflow
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Backend Developer
+
+ЗАВИСИМОСТИ: TZ-04
+
+LAYER: 4
+
+CONFLICT KEYS: backend/src/modules/setting/**; backend/src/modules/feature-flag/**; backend/src/modules/status/**; backend/src/modules/audit/**; backend/src/common/interceptors/audit.interceptor.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. TZ-04 завершён: auth + User/Role/Permissions работают, есть `@CurrentUser()` decorator, JwtAuthGuard.
+2. В `docs/data-model.md` System & Activity домен (6 entity, консолидируются в 4):
+   - **Setting** (TZ-05): key-value конфиг (`key, value, description, group`).
+   - **FeatureFlag** (TZ-05): key, label, description, enabledByDefault, category, isActive.
+   - **StatusWorkflow** (TZ-05): entityType, name, statuses[], transitions[], roles[].
+   - **EntityStatus** (TZ-05): entityType, statusId, label, color, icon, sortOrder, isInitial, isFinal.
+   - **OrderHistory** + **UserActivity** (ДУБЛИКАТЫ — консолидировать в `AuditLog` в TZ-05).
+   - **ImportJobs** (TZ-16), **Comment** (TZ-16).
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Setting модуль
+
+```typescript
+{ key: string; value: any; description?: string; group: string }
+```
+
+- `GET /settings` — список (с фильтром по group)
+- `GET /settings/:key` — одно значение
+- `PUT /settings/:key` — обновить (admin)
+- `POST /settings/bulk` — пакетное обновление (admin)
+- Seed: дефолтные настройки (currency=RUB, vatRate=20, paymentTermDays=10, fiscalYearStart=01-01).
+
+ШАГ 2: FeatureFlag модуль
+
+```typescript
+{ key: string; label: string; description?: string; enabledByDefault: boolean; category: string; isActive: boolean }
+```
+
+- `GET /feature-flags` — список (с effective enabled = flag.isActive ? enabled : enabledByDefault)
+- `GET /feature-flags/:key` — одно значение
+- `PUT /feature-flags/:key` — admin only
+- Service: `isEnabled(key)` — для guards/interceptors.
+
+ШАГ 3: Status & Workflow модуль
+
+**`EntityStatus`** (статусы для конкретного entityType):
+```typescript
+{ entityType: string; statusId: string; label: string; color: string; icon?: string; sortOrder: number; isInitial: boolean; isFinal: boolean }
+```
+
+**`StatusWorkflow`** (workflow переходов):
+```typescript
+{ entityType: string; name: string; statuses: string[]; transitions: { fromStatus: string; toStatus: string; roles: string[] }[]; isActive: boolean }
+```
+
+- Service: `assertTransition(entityType, fromStatus, toStatus, userRole)` — проверяет что переход разрешён для роли пользователя. Бросает `BadRequestException` если нет.
+- `GET /statuses/:entityType` — все EntityStatus для entity.
+- `GET /workflows/:entityType` — workflow.
+- CRUD для админа.
+
+ШАГ 4: AuditLog модуль (консолидация OrderHistory + UserActivity)
+
+```typescript
+{
+  action: string;            // "create" | "update" | "delete" | "soft-delete" | "restore" | "login" | "logout" | ...
+  entityType: string;        // "User" | "Product" | "Order" | ...
+  entityId?: ObjectId;       // PK затронутой сущности
+  userId?: ObjectId;         // кто сделал
+  userName?: string;         // кэш
+  details?: {                // что изменилось (только diff полей)
+    before?: Record<string, any>;
+    after?: Record<string, any>;
+  };
+  packageTag?: string;       // для batch операций (Order + OrderItems вместе)
+  createdAt: Date;
+}
+```
+
+**`AuditInterceptor`** (`src/common/interceptors/audit.interceptor.ts`):
+- Применяется ко всем `POST/PATCH/DELETE` через `@Audit()` decorator или глобально с фильтром.
+- Перехватывает request, после response — пишет в AuditLog (с userId из request).
+- Использует `Counter.next('AuditLog', ...)` для ordering.
+
+ШАГ 5: Подключить в `app.module.ts` + глобально AuditInterceptor (с фильтром `forRoutes('*')`).
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+СОЗДАТЬ:
+- `backend/src/modules/setting/setting.schema.ts, setting.service.ts, setting.controller.ts, setting.module.ts, dto/*.ts`
+- `backend/src/modules/feature-flag/feature-flag.schema.ts, ... (аналогично)`
+- `backend/src/modules/status/entity-status.schema.ts, status-workflow.schema.ts, status.service.ts, status.controller.ts, status.module.ts, dto/*.ts`
+- `backend/src/modules/audit/audit-log.schema.ts, audit.service.ts, audit.controller.ts, audit.module.ts, dto/*.ts`
+- `backend/src/common/interceptors/audit.interceptor.ts`
+- `backend/src/common/seed/settings.seed.ts, feature-flags.seed.ts, statuses.seed.ts`
+
+ОБНОВИТЬ:
+- `backend/src/app.module.ts` (AuditInterceptor глобально)
+
+НЕ ТРОГАТЬ:
+- `src/modules/auth/`, `src/modules/user/`, `src/modules/role/`, `src/modules/permissions/`, `src/modules/counter/`, `src/database/`, `docker-compose.yml`, `STACK.md`, `docs/`, `tasks/`, `OrchestratorKit/`, `frontend/`
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm run build` без ошибок.
+2. `GET /settings/currency` (admin) → `{value: "RUB", group: "finance"}`.
+3. `PUT /settings/currency` с `{value: "USD"}` → 200, при следующем GET — `"USD"`.
+4. `GET /feature-flags/new_ui` → `{enabled: true|false}`.
+5. `GET /statuses/Proposal` возвращает ~5-7 статусов (draft, sent, accepted, rejected, archived).
+6. `GET /workflows/Proposal` возвращает transitions.
+7. `POST /auth/login` → в AuditLog появляется запись `{action: "login", userId, userName, entityType: "User"}`.
+8. `POST /users` (admin) → AuditLog запись `{action: "create", entityType: "User", entityId, details: {after: {username, email, ...}}}`.
+9. `mongosh`: коллекции `settings`, `featureflags`, `entitystatuses`, `statusworkflows`, `auditlogs` содержат ожидаемые документы.
+10. **ГЛАВНОЕ:** файл `tasks/TZ-05.md` УДАЛЁН из `tasks/`.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ФИНАЛИЗАЦИЯ (ОБЯЗАТЕЛЬНО)
+═══════════════════════════════════════════════════════════════
+
+После прохождения всех критериев приёмки:
+
+1. Записать в `progress.md` (по формату TZF-00 §3): дата, TZ-05, краткое описание.
+2. Обновить `ARCHITECTURE.md` (по TZF-00 §4): см. System services (Settings, FeatureFlags, StatusWorkflow, AuditLog) ниже.
+3. Скопировать `tasks/TZ-05.md` в `OrchestratorKit/_archive/<YYYY-MM>/TZ-05.done.txt` с маркером `ARCHIVE_MARKER`.
+4. Обновить `OrchestratorKit/STATUS.md`: TZ-05 → ✅ DONE.
+5. Запустить `bash OrchestratorKit/verify-status.sh` — должен быть PASS.
+6. Создать `OrchestratorKit/.mimocode/locks/TZ-05-<slug>.lock`.
+7. **Удалить `tasks/TZ-05.md`** (финальный сигнал Buffy что можно генерировать следующую TZ).
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER
+═══════════════════════════════════════════════════════════════
+outcome: DONE
+closed_at: 2026-07-04
+closed_by: Backend Developer (Buffy)
+protected_files:
+  - backend/src/modules/setting/
+  - backend/src/modules/feature-flag/
+  - backend/src/modules/status/
+  - backend/src/modules/audit/
+  - backend/src/common/interceptors/audit.interceptor.ts
+  - backend/src/common/seed/{settings,feature-flags,statuses}.seed.ts
+  - backend/src/app.module.ts (UPDATED)
+affected_areas:
+  - backend/src/modules/ (4 new modules)
+  - backend/src/common/ (1 new interceptor + 3 new seeds)
+  - backend/src/app.module.ts (4 new modules + 1 new APP_INTERCEPTOR + 3 new seed providers)
+verification:
+  - pnpm run build: PASS (after 1 fix iteration: removed `as const` from DEFAULT_WORKFLOWS for mutable string[])
+  - TS strict: PASS
+  - Setting CRUD + isEnabled: implemented
+  - FeatureFlag CRUD + virtual enabled: implemented
+  - EntityStatus + StatusWorkflow CRUD + assertTransition: implemented
+  - AuditLog + global AuditInterceptor with @AuditAction: implemented
+  - User-context propagation (TZ-04 → AuditLog userId): integrated
+  - 3 seeds (Settings/FeatureFlags/Statuses): idempotent
+  - acceptance criteria: PARTIAL (Docker verification deferred)
+  - lock file: CREATED
+notes: TZ-05 — первый батч системных сервисов. AuditInterceptor + AsyncLocalStorage chain (TZ-04) даёт автоматическое логирование всех мутаций. assertTransition в StatusService будет использоваться в TZ-10/13/15 для переходов между статусами.

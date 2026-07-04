@@ -1,0 +1,16 @@
+TZ_ID: TZ-07
+NAME: Catalog Core
+STATUS: done
+CLOSED_AT: 2026-07-04
+FILES_CREATED: ~45
+MODULES:
+  - Category (with buildTree)
+  - Material
+  - Product (+subroutes)
+  - ProductPhoto
+  - ProductComponent
+  - ProductModule
+  - Photos
+  - Bom
+TS_FIXES: 2 (CategoryNode interface + materials defaults)
+BUILD: OK (exit 0)

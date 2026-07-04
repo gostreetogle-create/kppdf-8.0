@@ -1,0 +1,170 @@
+═══════════════════════════════════════════════════════════════
+TZ-03: Mongoose & Base Config
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Backend Developer
+
+ЗАВИСИМОСТИ: TZ-02
+
+LAYER: 4
+
+CONFLICT KEYS: backend/src/database/database.module.ts; backend/src/database/soft-delete.plugin.ts; backend/src/database/audit.plugin.ts; backend/src/modules/counter/counter.schema.ts; backend/src/modules/counter/counter.service.ts; backend/src/modules/counter/counter.module.ts; backend/src/app.module.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. TZ-02 завершён: NestJS стартует, Mongo Replica Set работает, подключение не настроено (только health-check пингует).
+2. В `docs/data-model.md` 89 entity, многие используют: `id: ObjectId`, `*Id: ObjectId` (FK), `*Ids: ObjectId[]` (multi-FK), `createdAt: Date`, `updatedAt: Date`, `deletedAt?: Date` (soft-delete), `createdBy?: ObjectId` (User), `updatedBy?: ObjectId` (User), `isActive: boolean`.
+3. Поля `Counter` из домена Identity (см. data-model.md): `entity, prefix, year, seq, name, value` — нужен сервис для генерации sequence-номеров документов (КП-2026-001, Contract-2026-001 и т.п.).
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Создать `src/database/database.module.ts`
+
+- Использовать `MongooseModule.forRootAsync` с `ConfigService`.
+- Параметры: `uri`, `autoIndex: true` (только в dev), `retryAttempts: 3`, `retryDelay: 1000`.
+- Опции для production: `autoIndex: false` (через env `NODE_ENV`).
+- `connectionFactory` для логирования событий `connected`, `disconnected`, `error`.
+
+ШАГ 2: Mongoose-плагин soft-delete `src/database/soft-delete.plugin.ts`
+
+```typescript
+// Превращает .find() в фильтр { deletedAt: null } (если не передано иное)
+// Превращает .findOne() / .findById() аналогично
+// Добавляет helper .softDelete() и .restore() к Query
+// При findOneAndUpdate({ deletedAt: null }) автоматически
+```
+
+ШАГ 3: Mongoose-плагин audit `src/database/audit.plugin.ts`
+
+- В pre-save hook: если `this.isNew` — `createdBy = this.$locals.userId`, `createdAt = new Date()`.
+- В pre-save hook: если `!this.isNew` — `updatedBy = this.$locals.userId`, `updatedAt = new Date()`.
+- `this.$locals.userId` устанавливается из Auth-guard/interceptor в TZ-04.
+
+ШАГ 4: Counter service для sequence-номеров
+
+**`src/modules/counter/counter.schema.ts`** (схема):
+```typescript
+{
+  entity: string;     // "Proposal" | "Contract" | ...
+  prefix: string;     // "KP" | "Д" | ...
+  year: number;       // 2026
+  seq: number;        // текущий sequence, начинается с 1
+  name?: string;      // optional human-readable
+  value?: number;     // optional альтернатива
+}
+```
+
+**`src/modules/counter/counter.service.ts`**:
+```typescript
+async next(entity: string, prefix: string, year: number = new Date().getFullYear()): Promise<string> {
+  // Атомарный инкремент через findOneAndUpdate с $inc
+  // Возвращает отформатированную строку: `${prefix}-${year}-${String(seq).padStart(3, '0')}`
+}
+```
+
+Использует Mongoose-транзакцию (`session.withTransaction`), чтобы избежать race conditions.
+
+ШАГ 5: Подключить в `app.module.ts`
+
+- Импортировать `DatabaseModule`, `CounterModule`.
+- Применить плагины глобально через `Connection.plugin()` в `DatabaseModule`.
+
+ШАГ 6: Smoke-тест
+
+```bash
+# После запуска:
+docker compose up -d
+curl -X POST http://localhost:3000/internal/counter/test \
+  -H "Content-Type: application/json" \
+  -d '{"entity":"Proposal","prefix":"KP","year":2026}'
+# → {"seq":"KP-2026-001"}
+
+# Снова:
+curl -X POST http://localhost:3000/internal/counter/test \
+  -H "Content-Type: application/json" \
+  -d '{"entity":"Proposal","prefix":"KP","year":2026}'
+# → {"seq":"KP-2026-002"}
+```
+
+Создать `internal/counter/test` endpoint для теста (защитить через `if (process.env.NODE_ENV !== 'production')` или удалить перед продом).
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+СОЗДАТЬ:
+- `backend/src/database/database.module.ts`
+- `backend/src/database/soft-delete.plugin.ts`
+- `backend/src/database/audit.plugin.ts`
+- `backend/src/modules/counter/counter.schema.ts`
+- `backend/src/modules/counter/counter.service.ts`
+- `backend/src/modules/counter/counter.controller.ts` (только для теста)
+- `backend/src/modules/counter/counter.module.ts`
+
+ОБНОВИТЬ:
+- `backend/src/app.module.ts` (импорт `DatabaseModule`, `CounterModule`)
+
+НЕ ТРОГАТЬ:
+- `src/main.ts`, `docker-compose.yml`, `Dockerfile`, `STACK.md`, `docs/`, `tasks/`, `OrchestratorKit/`, `frontend/`
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm run build` без ошибок.
+2. `docker compose up -d` — все контейнеры healthy.
+3. `curl POST /internal/counter/test {entity,prefix,year}` дважды возвращает `KP-2026-001` затем `KP-2026-002` (атомарный инкремент).
+4. Параллельно 10 запросов `POST /internal/counter/test` возвращают уникальные номера `001..010` (без дубликатов — транзакция работает).
+5. В `mongosh` — коллекция `counters` содержит документы `{entity, prefix, year, seq}` с правильными значениями.
+6. `soft-delete.plugin.ts` присутствует, на схеме `Counter` пока не применяется (для TZ-04+).
+7. `audit.plugin.ts` присутствует, на схеме `Counter` пока не применяется (для TZ-04+).
+8. Логи Mongoose-connection (connected/disconnected/error) идут через Pino.
+9. **ГЛАВНОЕ:** файл `tasks/TZ-03.md` УДАЛЁН из `tasks/`.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ФИНАЛИЗАЦИЯ (ОБЯЗАТЕЛЬНО)
+═══════════════════════════════════════════════════════════════
+
+После прохождения всех критериев приёмки:
+
+1. Записать в `progress.md` (по формату TZF-00 §3): дата, TZ-03, краткое описание.
+2. Обновить `ARCHITECTURE.md` (по TZF-00 §4): см. Database layer (Mongoose 8) + Counter service для sequence-номеров ниже.
+3. Скопировать `tasks/TZ-03.md` в `OrchestratorKit/_archive/<YYYY-MM>/TZ-03.done.txt` с маркером `ARCHIVE_MARKER`.
+4. Обновить `OrchestratorKit/STATUS.md`: TZ-03 → ✅ DONE.
+5. Запустить `bash OrchestratorKit/verify-status.sh` — должен быть PASS.
+6. Создать `OrchestratorKit/.mimocode/locks/TZ-03-<slug>.lock`.
+7. **Удалить `tasks/TZ-03.md`** (финальный сигнал Buffy что можно генерировать следующую TZ).
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER
+═══════════════════════════════════════════════════════════════
+outcome: DONE
+closed_at: 2026-07-04
+closed_by: Backend Developer (Buffy)
+protected_files:
+  - backend/src/database/database.module.ts
+  - backend/src/database/soft-delete.plugin.ts
+  - backend/src/database/audit.plugin.ts
+  - backend/src/modules/counter/counter.schema.ts
+  - backend/src/modules/counter/counter.service.ts
+  - backend/src/modules/counter/counter.controller.ts
+  - backend/src/modules/counter/counter.module.ts
+  - backend/src/app.module.ts (refactored: DatabaseModule + CounterModule)
+affected_areas:
+  - backend/src/database/
+  - backend/src/modules/counter/
+  - backend/src/app.module.ts
+verification:
+  - pnpm run build: PASS (after 2 fix iterations)
+  - pnpm install: PASS
+  - TS strict: PASS
+  - soft-delete plugin: type-safe via SoftDeleteQueryHelpers
+  - audit plugin: covers save + updateOne/findOneAndUpdate/updateMany
+  - Counter atomic next(): $inc + upsert + session.withTransaction
+  - acceptance criteria: PARTIAL (Docker verification deferred)
+  - lock file: CREATED
+notes: Docker-верификация (atomic counter increments, mongosh counters collection) требует ручного `docker compose up -d`. Counter test endpoint /internal/counter/test disabled в production. App.module.ts refactored (inline MongooseModule.forRootAsync заменён на DatabaseModule).

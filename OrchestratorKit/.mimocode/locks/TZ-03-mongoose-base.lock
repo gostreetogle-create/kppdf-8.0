@@ -1,0 +1,15 @@
+# Lock file
+Locked as of 2026-07-04 — TZ-03: Mongoose & Base Config.
+
+Owner: Backend Developer (Buffy)
+Protected files:
+- backend/src/database/database.module.ts
+- backend/src/database/soft-delete.plugin.ts
+- backend/src/database/audit.plugin.ts
+- backend/src/modules/counter/counter.schema.ts
+- backend/src/modules/counter/counter.service.ts
+- backend/src/modules/counter/counter.controller.ts
+- backend/src/modules/counter/counter.module.ts
+- backend/src/app.module.ts (uses DatabaseModule + CounterModule)
+
+Unlock: only via orchestrator approval (новое TZ-NN с пометкой «successor»).

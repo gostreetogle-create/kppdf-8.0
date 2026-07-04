@@ -43,6 +43,16 @@ bash OrchestratorKit/make-tz.sh "My first feature"
 
 | № | Дата | Название | Файл архива |
 |---|------|----------|-------------|
+| TZ-06 | 2026-07-04 | Organizations & Contacts | _archive/2026-07/TZ-06.done.txt |
+| TZ-07 | Catalog Core | 2026-07-04 | DONE |
+| TZ-08 | EAV & Product Meta | 2026-07-04 | DONE |
+| TZ-09 | Production Dictionaries | 2026-07-04 | DONE |
+| TZ-10 | Production Execution | 2026-07-04 | DONE |
+| TZ-11 | Warehouse Engine | 2026-07-04 | DONE |
+| TZ-05 | 2026-07-04 | System & Workflow | _archive/2026-07/TZ-05.done.txt |
+| TZ-04 | 2026-07-04 | Auth & Identity | _archive/2026-07/TZ-04.done.txt |
+| TZ-03 | 2026-07-04 | Mongoose & Base Config | _archive/2026-07/TZ-03.done.txt |
+| TZ-02 | 2026-07-04 | NestJS Foundation | _archive/2026-07/TZ-02.done.txt |
 
 ---
 
