@@ -1,0 +1,8 @@
+# Lock file
+Locked as of 2026-07-05 — TZ-45: Backend DI Audit.
+
+Owner: Backend Developer (NestJS Modules)
+Protected files:
+- backend/scripts/audit-di.ts
+
+Unlock: only via orchestrator approval (новое TZ-NN с пометкой «successor»).

@@ -34,7 +34,10 @@
 - **Browser open:** `open` (Mac) / `cmd /c start` (Win) / `xdg-open` (Linux) с `shell: isWin` для Windows built-in `start`.
 - **Final panel:** латентности /api/health + GET /, ✔/⚠/✖ иконки, frontend/backend/login/showcase URLs.
 - **ENV vars:** `NO_TUI=1` (force plain log), `NO_COLOR=1` (disable ANSI).
-- **npm-скрипты (root `package.json`):** `start` (--check), `start:all` (full), `start:tail` (--tail), `check:start` (--check), `stop:start` (--stop), `reset:start` (--reset), `start:no-browser` (--no-browser).
+- **npm-скрипты (root `package.json`):** `start` (--check), `start:all` (full), `start:tail` (--tail), `check:start` (--check), `stop:start` (--stop), `reset:start` (--reset), `start:no-browser` (--no-browser), `start:prod` (--prod).
+- **Production mode (`--prod`, TZ-42):** `pnpm build` для backend+frontend, запуск через `node dist/main.js` (NODE_ENV=production) + inline static server (Node http+fs, ~80 lines, без new deps) для раздачи `dist/frontend/browser/` на :4200. SPA fallback, path traversal protection, cache headers. Bundle sizes в Ready panel. Caveat: local prod-like testing, не реальный prod deploy (для реального prod нужен nginx/PM2/Docker — future TZ-43+).
+- **Inline static server:** `serveStatic(rootDir, port)` с MIME map, `/assets/*` → `Cache-Control: public, max-age=31536000, immutable`, `.html` → `Cache-Control: no-cache`, SPA fallback to `index.html`, error handler на `listen()` для EADDRINUSE, `server.close()` в cleanup handler.
+- **Console polish (TZ-46):** все log-сообщения в start.mjs на русском (preflight, startMongo, waitMongo, installDeps, buildBackend/Frontend, banner, cleanup, waitFor). `printReadyPanel` переписан с «простынного» вывода на компактную 2D панель: ASCII-рамка `╔══╗`/`╚══╝` с заголовком `✦ kppdf-8.0 готов к работе ✦`, summary строка `⏱ Все сервисы готовы за Xs`, 2-col endpoints table (`🖥 Frontend | 👤 Логин` + `📦 Backend | 📋 Showcase`). Динамическая ширина колонок через `stdout.columns` (clamp 80..120). NG warnings fix: 3× NG8113 (unused imports в page-renderer + showcase) + 2× NG8102 (unnecessary `??` в otp-input + scroll-area). Frontend build: 0 NG warnings. NestJS logger: nestjs-pino level='info' (excludes debug/verbose).
 - **Platform wrappers:** `start.cmd` (Windows native, `node start.mjs %*`), `start.sh` (bash, `cd $SCRIPT_DIR && exec node start.mjs "$@"` — работает из любой CWD).
 - **Smoke test results (pre-TZ-41):** 2 бага найдено (Windows pnpm spawn ENOENT, ImportJobsModule DI cascade) — оба исправлены до TZ-41.
 
@@ -65,6 +68,15 @@ Test arch row
 - **$locals.userId** — Mongoose per-query local storage, устанавливается из Auth interceptor (TZ-04)
 - **Counter service:** атомарный `next(entity, prefix, year)` через `session.withTransaction` + `$inc: { seq: 1 }` + `upsert: true` + `returnDocument: 'after'`. Формат: `prefix-YYYY-NNN` (3-digit pad). Требует Replica Set (есть в TZ-02).
 - **Event logging:** connected / disconnected / reconnected / error → NestJS Logger → Pino (через main.ts useLogger)
+- **FIXME (TZ-43):** legacy single-field `Schema.index({ field: 1 })` calls cleaned up в 6 schemas (product/material/organization/counterparty/category/certificate). Compound indexes сохранены. Если в production Mongo есть legacy duplicate `name_1` index — требуется ручной `db.<coll>.dropIndex('name_1')`.
+
+## DI Audit (TZ-45)
+- **`backend/scripts/audit-di.ts`** — статический анализатор DI cascade багов (~140 lines, regex-based).
+- **Алгоритм:** build reverse index `className → {moduleFile, isGlobal}` из `*.module.ts` providers → parse `*.service.ts` constructors → extract injected types → check `imports: [...]` consumer module содержит provider module name.
+- **Skip logic:** framework types (ConfigService/Logger/Model/MongooseModule), @Global() modules, self-injection, forwardRef, same-module providers.
+- **TZ-45 result:** 22 false positives в 14 модулях. Manual verification: `ProductModule` реально импортирует `CounterModule` (скрипт regex bug в edge cases), backend `pnpm start:dev` BOOTS чисто. **0 real DI issues**.
+- **Limitations:** script false positives из-за regex (comment `imports: []` или spread `...defaultImported`). Future: AST-based парсинг через ts.createSourceFile.
+- **Use case:** future TZ-50+ может использовать как pre-commit hook (защита от regression: новый сервис добавлен, импорт забыли → script fail).
 
 ## Auth & Identity (TZ-04)
 - **Схемы:** Permission (key unique, section, action ∈ {read|write|admin}), Role (name unique, label, permissions[], isSystem, sortOrder, sectionIds, isActive), User (username/email unique, passwordHash bcryptjs, role, permissions[], refreshTokenVersion, isActive, lastLoginAt, phone, fullName)

@@ -1,0 +1,253 @@
+═══════════════════════════════════════════════════════════════
+TZ-43: Fix Mongoose Duplicate Indexes
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Backend Developer (Mongoose Schemas)
+
+ЗАВИСИМОСТИ: нет
+  - Бага найдена в smoke test TZ-41 (backend startup логи)
+  - 6 schemas имеют duplicate `index: true` declarations
+  - Никаких новых npm-пакетов не требуется
+
+LAYER: 4   ← ОБЯЗАТЕЛЬНО (backend)
+  (правка Mongoose schemas — это backend domain logic fix)
+
+CONFLICT KEYS: ← ОБЯЗАТЕЛЬНО
+  - backend/src/modules/product/product.schema.ts
+  - backend/src/modules/material/material.schema.ts
+  - backend/src/modules/organization/organization.schema.ts
+  - backend/src/modules/counterparty/counterparty.schema.ts
+  - backend/src/modules/category/category.schema.ts
+  - backend/src/modules/certificate/certificate.schema.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. **Баг найден в smoke test `node start.mjs`** (TZ-41 validation phase):
+   ```
+   (node:3644) [MONGOOSE] Warning: Duplicate schema index on {"name":1} found.
+   (node:3644) [MONGOOSE] Warning: Duplicate schema index on {"name":1} found.
+   (node:3644) [MONGOOSE] Warning: Duplicate schema index on {"fullPath":1} found.
+   (node:3644) [MONGOOSE] Warning: Duplicate schema index on {"name":1} found.
+   (node:3644) [MONGOOSE] Warning: Duplicate schema index on {"name":1} found.
+   (node:3644) [MONGOOSE] Warning: Duplicate schema index on {"productIds":1} found.
+   ```
+   Итого: **6 duplicate index warnings** на startup (5 уникальных schemas — `name` встречается 4 раза).
+
+2. **Паттерн бага:** в схеме есть И `@Prop({ ..., index: true })` на поле, И отдельный
+   `SchemaName.index({ <field>: 1 })` после определения схемы. Mongoose видит
+   обе декларации одного и того же индекса и warn'ит.
+
+3. **6 affected schemas** (найдено через `code_searcher`):
+
+   | Schema | Field | `@Prop` line | `Schema.index` line | Содержимое |
+   |--------|-------|--------------|---------------------|------------|
+   | `product.schema.ts` | `name` | L20: `@Prop({ required: true, index: true })` | L97: `ProductSchema.index({ name: 1 })` | `{ name: 1 }` |
+   | `material.schema.ts` | `name` | L20: `@Prop({ required: true, index: true })` | L74: `MaterialSchema.index({ name: 1 })` | `{ name: 1 }` |
+   | `organization.schema.ts` | `name` | L8: `@Prop({ required: true, index: true })` | L103: `OrganizationSchema.index({ name: 1 })` | `{ name: 1 }` |
+   | `counterparty.schema.ts` | `name` | L8: `@Prop({ required: true, index: true })` | L85: `CounterpartySchema.index({ name: 1 })` | `{ name: 1 }` |
+   | `category.schema.ts` | `fullPath` | L21: `@Prop({ ..., index: true })` | L39: `CategorySchema.index({ fullPath: 1 })` | `{ fullPath: 1 }` |
+   | `certificate.schema.ts` | `productIds` | L10: `@Prop({ type: [Types.ObjectId], ref: 'Product', default: [], index: true })` | L46: `CertificateSchema.index({ productIds: 1 })` | `{ productIds: 1 }` |
+
+4. **Контекст:**
+   - Schema-level `Schema.index()` остаётся полезным для **compound indexes** (несколько полей),
+     например `Schema.index({ counterpartyId: 1, date: -1 })` — их нельзя выразить в `@Prop`.
+     Эти НЕ трогаем.
+   - Для **single-field** дубликатов — `Schema.index({ field: 1 })` после `@Prop({ index: true })`
+     — это явный leftover от старого кода, который был перенесён из старого проекта.
+   - Fix: удалить **только** дублирующие `Schema.index({...})` calls (Option A) — идиоматичнее,
+     field+index остаются рядом в @Prop.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Удалить `Schema.index({ name: 1 })` в product.schema.ts (L97)
+
+  Под-шаг 1.1: Прочитать файл `backend/src/modules/product/product.schema.ts` целиком
+               для контекста (убедиться, что рядом нет compound index, использующего `name`).
+  Под-шаг 1.2: Удалить строку L97: `ProductSchema.index({ name: 1 });`
+  Под-шаг 1.3: Проверить, что остальные `ProductSchema.index({...})` calls (compound) сохранены:
+               - L98: `ProductSchema.index({ status: 1, isActive: 1 });` — compound, НЕ трогаем
+
+ШАГ 2: Удалить `Schema.index({ name: 1 })` в material.schema.ts (L74)
+
+  Под-шаг 2.1: Прочитать файл.
+  Под-шаг 2.2: Удалить L74: `MaterialSchema.index({ name: 1 });`
+  Под-шаг 2.3: Других `MaterialSchema.index()` calls нет (L74 — единственная).
+
+ШАГ 3: Удалить `Schema.index({ name: 1 })` в organization.schema.ts (L103)
+
+  Под-шаг 3.1: Прочитать файл.
+  Под-шаг 3.2: Удалить L103: `OrganizationSchema.index({ name: 1 });`
+  Под-шаг 3.3: Других Schema.index() calls в файле нет.
+
+ШАГ 4: Удалить `Schema.index({ name: 1 })` в counterparty.schema.ts (L85)
+
+  Под-шаг 4.1: Прочитать файл.
+  Под-шаг 4.2: Удалить L85: `CounterpartySchema.index({ name: 1 });`
+  Под-шаг 4.3: Других Schema.index() calls нет.
+
+ШАГ 5: Удалить `Schema.index({ fullPath: 1 })` в category.schema.ts (L39)
+
+  Под-шаг 5.1: Прочитать файл.
+  Под-шаг 5.2: Удалить L39: `CategorySchema.index({ fullPath: 1 });`
+  Под-шаг 5.3: Другие Schema.index() calls:
+               - L38: `CategorySchema.index({ type: 1, slug: 1 }, { unique: true });` — compound UNIQUE, НЕ трогаем
+
+ШАГ 6: Удалить `Schema.index({ productIds: 1 })` в certificate.schema.ts (L46)
+
+  Под-шаг 6.1: Прочитать файл.
+  Под-шаг 6.2: Удалить L46: `CertificateSchema.index({ productIds: 1 });`
+  Под-шаг 6.3: Другие Schema.index() calls:
+               - L45: `CertificateSchema.index({ expiresAt: 1, status: 1 });` — compound, НЕ трогаем
+
+ШАГ 7: Опционально — добавить pre-commit hook (будущее улучшение, НЕ блокер)
+
+  Под-шаг 7.1: Создать `.githooks/pre-commit` (или husky config) который запускает:
+               `grep -rn "Schema\\.index" backend/src/ | grep -v "Schema\\.index({ [a-zA-Z]*: [0-9-]*, [a-zA-Z]*: " || true`
+  Под-шаг 7.2: Если найден single-field Schema.index — fail commit с понятной ошибкой.
+  Под-шаг 7.3: ОТЛОЖЕНО (TZ-43 фокусируется только на фиксе существующих 6 дублей).
+               Упомянуть в followup TZ-44 или TZ-50.
+
+ШАГ 8: Верификация
+
+  Под-шаг 8.1: `cd backend && pnpm run typecheck` — 0 errors.
+  Под-шаг 8.2: `cd backend && pnpm run build` — 0 errors.
+  Под-шаг 8.3: Запустить backend с `pnpm start:dev` + проверить stdout на наличие
+               "Duplicate schema index" warning — должно быть 0 (было 6).
+  Под-шаг 8.4: Mongo collection indexes можно проверить через `mongosh`:
+               `use kppdf; db.products.getIndexes()` — должен быть ровно 1 индекс
+               на поле `name` (а не 2).
+  Под-шаг 8.5: Smoke test `node start.mjs` — фоновые логи backend не должны содержать
+               "Duplicate schema index".
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- backend/src/modules/product/product.schema.ts        [удалить L97: ProductSchema.index({ name: 1 })]
+- backend/src/modules/material/material.schema.ts      [удалить L74: MaterialSchema.index({ name: 1 })]
+- backend/src/modules/organization/organization.schema.ts  [удалить L103: OrganizationSchema.index({ name: 1 })]
+- backend/src/modules/counterparty/counterparty.schema.ts  [удалить L85: CounterpartySchema.index({ name: 1 })]
+- backend/src/modules/category/category.schema.ts      [удалить L39: CategorySchema.index({ fullPath: 1 })]
+- backend/src/modules/certificate/certificate.schema.ts  [удалить L46: CertificateSchema.index({ productIds: 1 })]
+
+НЕ ИЗМЕНЯТЬ (явно):
+- compound Schema.index() в этих же файлах (НЕ трогать — это не дубли):
+  - ProductSchema.index({ status: 1, isActive: 1 })         // product.schema.ts L98
+  - CategorySchema.index({ type: 1, slug: 1 }, { unique: true })  // category.schema.ts L38
+  - CertificateSchema.index({ expiresAt: 1, status: 1 })    // certificate.schema.ts L45
+- @Prop({ index: true }) на полях name/fullPath/productIds — оставить (это идиоматичный способ)
+- Другие 55 schemas (в них нет duplicate pattern)
+- progress.md, ARCHITECTURE.md, STATUS.md — обновляются через TZF-00
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm run typecheck` в `backend/` — 0 errors.
+2. `pnpm run build` в `backend/` — 0 errors.
+3. `cd backend && pnpm start:dev` — в stdout/stderr 0 строк "Duplicate schema index"
+   (было 6, должно быть 0).
+4. `mongosh` -> `use kppdf` -> `db.products.getIndexes()` — ровно один индекс на
+   `name` (а не два: `{name:1}` + `{name:1}` duplicate).
+5. Аналогично для `db.materials.getIndexes()`, `db.organizations.getIndexes()`,
+   `db.counterparties.getIndexes()`, `db.categories.getIndexes()`,
+   `db.certificates.getIndexes()` — single `name`/`fullPath`/`productIds` index.
+6. `node start.mjs` (TZ-41 starter) — backend boot лог не содержит
+   "Duplicate schema index" (можно `grep -c "Duplicate schema index" /tmp/start.log` = 0).
+7. Compound indexes сохранены и работают:
+   - `db.products.find({ status, isActive })` — использует `{ status: 1, isActive: 1 }`
+   - `db.categories.find({ type, slug })` — использует `{ type: 1, slug: 1 }` UNIQUE
+   - `db.certificates.find({ expiresAt, status })` — использует `{ expiresAt: 1, status: 1 }`
+8. Никаких изменений в API/контроллерах/services — только schemas.
+9. Total changes: 6 lines removed, 0 added. Diff: 6 deletions.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ (для параллельных запусков)
+═══════════════════════════════════════════════════════════════
+
+Этот TZ трогает ТОЛЬКО 6 schema файлов в `backend/src/modules/`.
+Если параллельный TZ тоже трогает один из этих 6 файлов — DEFER.
+Все 6 файлов — независимые друг от друга, можно фиксить параллельно
+(но не одновременно с другим TZ, который трогает тот же файл).
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+После завершения:
+
+1. Самопроверка по 9 критериям приёмки выше.
+2. `pnpm run typecheck` и `pnpm run build` PASS.
+3. Backend startup 0 "Duplicate schema index" warnings.
+4. Запись в progress.md (по формату TZF-00 § 3).
+5. ARCHITECTURE.md (секция "Database Layer (TZ-03)" — добавить "FIXME: legacy
+   single-field Schema.index() calls cleaned up in TZ-43").
+6. Создан .mimocode/locks/TZ-43-mongoose-dup-index.lock (стабилизирует schemas).
+7. Копия TZ ушла в `tasks/_archive/2026-07/TZ-43.md.done` с ARCHIVE_MARKER.
+8. Удалить `tasks/TZ-43.md`.
+9. STATUS.md (root) обновлён: TZ-43 в ✅ DONE.
+10. OrchestratorKit/STATUS.md обновлён: TZ-43 в ✅ DONE.
+11. Финальный отчёт PO:
+    «Задача TZ-43 выполнена и проверена. Запись добавлена в progress.md,
+    документация актуализирована. TZ архивирован в
+    _archive/2026-07/TZ-43.md.done. Критичные файлы:
+    [6 schema files]. Задача закрыта.»
+
+═══════════════════════════════════════════════════════════════
+ПОДСКАЗКИ ДЛЯ PO
+═══════════════════════════════════════════════════════════════
+
+— Этот TZ-файл — задача для Агента (Backend Developer). Агент прочитает и
+  выполнит по критериям.
+
+— Не запускайте параллельно с TZ, которые трогают те же 6 schema файлов.
+
+— Fix тривиальный: 6 удалений по 1 строке. Агент может сделать за 5 минут
+  включая верификацию.
+
+— Compound indexes (L38/L45/L98 и т.п.) НЕ ТРОГАТЬ — они НЕ дубликаты, это
+  multi-field индексы которые @Prop выразить не может.
+
+— Pre-commit hook (ШАГ 7) — ОТЛОЖЕН в TZ-44/50. Не блокер.
+
+— После фикса: при первом запуске Mongo создаст индексы (если не существуют)
+  с правильными именами. Если БД уже имеет duplicate индексы (с разными
+  именами, но одним содержимым) — Mongo проигнорирует дубликат при создании.
+  Для production cleanup старых дублей: `db.collection.dropIndex('name_1')`
+  если есть (опциональная миграция, не в scope этого TZ).
+
+— Код-ревью: TZ-43 не имеет рисков — только удаление избыточных деклараций.
+  Compound indexes остаются нетронутыми.
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ARCHIVE_MARKER                                                │
+│ outcome: DONE                                                  │
+│ closed_at: 2026-07-05                                         │
+│ closed_by: Backend Developer (Mongoose Schemas)                │
+│ protected_files:                                               │
+│   - backend/src/modules/product/product.schema.ts              │
+│   - backend/src/modules/material/material.schema.ts            │
+│   - backend/src/modules/organization/organization.schema.ts    │
+│   - backend/src/modules/counterparty/counterparty.schema.ts    │
+│   - backend/src/modules/category/category.schema.ts            │
+│   - backend/src/modules/certificate/certificate.schema.ts      │
+│ affected_areas:                                                │
+│   - 6 Mongoose schemas (6 lines removed, 0 added)             │
+│ verification:                                                  │
+│   - pnpm run typecheck: PASS                                  │
+│   - pnpm run build: PASS                                      │
+│   - compound indexes preserved: YES (L98 product, L38 category,│
+│     L45 certificate)                                           │
+│   - progress.md entry: ADDED                                  │
+│   - architecture.md update: DONE                              │
+│   - lock file: CREATED                                        │
+│   - code-review: no blocking issues                           │
+│ notes:                                                         │
+│   - Production migration needed if Mongo has legacy duplicate  │
+│     indexes (e.g. db.products.dropIndex('name_1'))            │
+└─────────────────────────────────────────────────────────────────┘

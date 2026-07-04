@@ -29,7 +29,7 @@ import {
           [attr.aria-label]="'Digit ' + (i + 1)"
           [attr.maxlength]="1"
           [class]="cellClass()"
-          [value]="digits()[i] ?? ''"
+          [value]="digits()[i]"
           (input)="onInput(i, $event)"
           (paste)="onPaste($event)"
           (keydown)="onKey($event, i)"

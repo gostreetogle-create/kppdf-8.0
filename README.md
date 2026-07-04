@@ -104,6 +104,7 @@ npm run check:start           # = node start.mjs --check
 npm run stop:start            # = node start.mjs --stop
 npm run reset:start           # = node start.mjs --reset
 npm run start:no-browser      # = node start.mjs --no-browser
+npm run start:prod            # = node start.mjs --prod (production: pnpm build + node dist/main.js + static server)
 
 # ── ENV-переменные:
 NO_TUI=1 node start.mjs       # отключить TUI (для CI / пайп-режима), даже если передан --tail

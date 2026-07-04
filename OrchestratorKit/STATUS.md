@@ -42,6 +42,11 @@ bash OrchestratorKit/make-tz.sh "My first feature"
 | № | Дата | Название | Файл архива |
 |---|------|----------|-------------|
 | TZ-41 | 2026-07-05 | Health Check Panel + Log TUI Mode | tasks/_archive/2026-07/TZ-41.md.done |
+| TZ-43 | 2026-07-05 | Fix Mongoose Duplicate Indexes | tasks/_archive/2026-07/TZ-43.md.done |
+| TZ-44 | 2026-07-05 | DEP0190 Fix — shell:true → execFile | tasks/_archive/2026-07/TZ-44.md.done |
+| TZ-45 | 2026-07-05 | Backend DI Audit | tasks/_archive/2026-07/TZ-45.md.done |
+| TZ-42 | 2026-07-05 | Production Deployment Mode (--prod) | tasks/_archive/2026-07/TZ-42.md.done |
+| TZ-46 | 2026-07-05 | Clean Launch Console (Russian + ASCII panel + NG fix) | tasks/_archive/2026-07/TZ-46.md.done |
 | TZ-06 | 2026-07-04 | Organizations & Contacts | _archive/2026-07/TZ-06.done.txt |
 | TZ-07 | Catalog Core | 2026-07-04 | DONE |
 | TZ-08 | EAV & Product Meta | 2026-07-04 | DONE |

@@ -10,7 +10,6 @@ import { FormsModule } from '@angular/forms';
 
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
-import { CardComponent } from '../../shared/components/card/card.component';
 import { SwitchComponent } from '../../shared/components/switch/switch.component';
 import { SliderComponent } from '../../shared/components/slider/slider.component';
 import { TabsComponent } from '../../shared/components/tabs/tabs.component';
@@ -32,7 +31,7 @@ import { ShortcutsComponent } from '../../shared/components/shortcuts/shortcuts.
 import { ChartComponent } from '../../shared/components/chart/chart.component';
 import { CalendarComponent } from '../../shared/components/calendar/calendar.component';
 import { OtpInputComponent } from '../../shared/components/otp-input/otp-input.component';
-import { KbdComponent, KbdGroupComponent } from '../../shared/components/kbd/kbd.component';
+import { KbdComponent } from '../../shared/components/kbd/kbd.component';
 import { PopoverComponent } from '../../shared/components/popover/popover.component';
 import { ContextMenuComponent, ContextMenuItem } from '../../shared/components/context-menu/context-menu.component';
 import { HoverCardComponent } from '../../shared/components/hover-card/hover-card.component';
@@ -64,7 +63,6 @@ interface Section {
     FormsModule,
     ButtonComponent,
     BadgeComponent,
-    CardComponent,
     SwitchComponent,
     SliderComponent,
     TabsComponent,
@@ -89,7 +87,6 @@ interface Section {
     CalendarComponent,
     OtpInputComponent,
     KbdComponent,
-    KbdGroupComponent,
     PopoverComponent,
     ContextMenuComponent,
     HoverCardComponent,

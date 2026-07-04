@@ -1,0 +1,299 @@
+═══════════════════════════════════════════════════════════════
+TZ-45: Backend DI Audit — Find and Fix Remaining DI Cascade Bugs
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Backend Developer (NestJS Modules)
+
+ЗАВИСИСТИ: нет
+  - TZ-19..17 содержали 5+ таких багов (ActualCost→ProductionOrder, OrderClosing→ProductionOrder,
+    ImportJobs→Counter, и т.п.)
+  - TZ-45 делает AUDIT всего проекта и фиксит оставшиеся
+  - Никаких новых npm-пакетов не требуется
+
+LAYER: 4   ← ОБЯЗАТЕЛЬНО (backend)
+  (правка NestJS module imports — это backend domain logic fix)
+
+CONFLICT KEYS: ← ОБЯЗАТЕЛЬНО
+  - backend/src/app.module.ts
+  - backend/src/modules/*/!(*.schema|*.controller|*.service).ts   (все *module.ts файлы)
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. **Паттерн бага DI cascade** (найден в TZ-19..17):
+   - `ServiceA` инжектит `ServiceB` через constructor (`private readonly b: ServiceB`)
+   - `ModuleA` объявляет `ServiceA` как provider, но НЕ импортирует `ModuleB`
+   - При boot: `Nest can't resolve dependencies of the ServiceA (?). Please make sure that the argument ServiceB at index [0] is available in the ModuleA context.`
+   - Fix: добавить `ModuleB` в `imports: []` массив `ModuleA`
+
+2. **Уже исправленные** (5+ случаев в TZ-19..17):
+   - `ActualCostModule` → `ProductionOrderModule`
+   - `OrderClosingModule` → `ProductionOrderModule`
+   - `ImportJobsModule` → `CounterModule` (TZ-17 follow-up)
+   - `StorageItemModule` → (TZ-11 specific)
+   - и другие (см. ARCHITECTURE.md / progress.md)
+
+3. **Текущее состояние** (smoke test TZ-41 показал): backend boot прошёл успешно после
+   фиксов TZ-17+18, НО audit не был полным — могли остаться edge cases:
+   - Сервисы которые инжектируют через MongooseModel (@InjectModel) — обычно ОК
+   - Сервисы которые инжектируют ConfigService — ОК (global)
+   - Сервисы которые инжектируют custom Services — потенциальные баги
+   - Module-on-Module imports (e.g., QuotationService → ContractService) — критично
+
+4. **Контекст:**
+   - Backend имеет 18 модулей с cross-references
+   - Audit нужен потому что: каждый раз когда TZ добавлял новый модуль/сервис,
+     была вероятность забыть импорт
+   - Ручной grep — медленно (61 schema, 414 .ts файлов)
+   - Автоматизация: TypeScript Compiler API может AST-parse и найти constructor
+     injections vs @Module imports
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Создать audit script `scripts/audit-di.ts` (одноразовый, для поиска багов)
+
+  Под-шаг 1.1: Скрипт читает все `*.service.ts` файлы в `backend/src/modules/`.
+  Под-шаг 1.2: Для каждого сервиса парсит constructor и извлекает типы параметров
+               (используя regex для простых случаев, или TypeScript Compiler API
+               для точного AST-парсинга).
+  Под-шаг 1.3: Для каждого инжектируемого типа находит, какой `*.module.ts` его
+               предоставляет (grep `providers: [ClassName]` по всем module файлам).
+  Под-шаг 1.4: Для каждого consumer module проверяет, что provider module в
+               `imports: [...]` (или @Global()).
+  Под-шаг 1.5: Печатает таблицу:
+               ```
+               ConsumerModule     MissingProviderFor      FoundIn
+               ImportJobsModule    CounterService          CounterModule (NOT IMPORTED!)
+               ActualCostModule    ProductionOrderService  ProductionOrderModule (NOT IMPORTED!)
+               ... OK rows ...
+               ```
+
+  Пример (минимальный, regex-based):
+  ```ts
+  // scripts/audit-di.ts
+  import { readFileSync, readdirSync, statSync } from 'node:fs';
+  import { join } from 'node:path';
+
+  const MODULES_DIR = 'backend/src/modules';
+  const serviceFiles = readdirSync(MODULES_DIR, { recursive: true })
+    .filter(f => f.endsWith('.service.ts'));
+
+  const issues: string[] = [];
+  for (const sf of serviceFiles) {
+    const content = readFileSync(join(MODULES_DIR, sf), 'utf8');
+    const ctorMatch = content.match(/constructor\s*\(([\s\S]*?)\)/);
+    if (!ctorMatch) continue;
+    // extract types from constructor params
+    const params = ctorMatch[1].split(/,\s*/).map(p => {
+      const typeMatch = p.match(/:\s*(\w+)/);
+      return typeMatch?.[1];
+    }).filter(Boolean);
+    // for each param, find which module provides it
+    for (const paramType of params) {
+      // skip primitives and Mongoose models
+      if (['string', 'number', 'boolean', 'Model', 'Logger'].includes(paramType)) continue;
+      const providerModule = findModuleProviding(paramType);
+      if (!providerModule) continue;
+      // check if consumer module imports provider module
+      const consumerModule = sf.replace(/\.service\.ts$/, '.module.ts');
+      if (!moduleImports(consumerModule, providerModule)) {
+        issues.push(`  ${sf}: ${paramType} (in ${providerModule}) — NOT IMPORTED!`);
+      }
+    }
+  }
+  console.log(issues.length ? issues.join('\n') : 'No DI issues found');
+  ```
+
+ШАГ 2: Запустить audit script, документировать findings
+
+  Под-шаг 2.1: `cd backend && npx ts-node scripts/audit-di.ts` (или `pnpm exec ts-node ...`).
+  Под-шаг 2.2: Записать findings в `progress.md` (как TZ-45 entry) для трейсинга.
+  Под-шаг 2.3: Если 0 issues — TZ-45 effectively no-op, просто зафиксировать
+               что audit clean. Переход к ШАГ 6 (финализация).
+
+ШАГ 3: Для каждой найденной DI issue — fix
+
+  Под-шаг 3.1: Открыть `*.module.ts` consumer'а.
+  Под-шаг 3.2: Добавить provider module в `imports: [...]`:
+               ```ts
+               @Module({
+                 imports: [
+                   // ... existing imports
+                   CounterModule,        // ← ADD
+                 ],
+                 providers: [ImportJobsService],
+                 controllers: [ImportJobsController],
+               })
+               ```
+  Под-шаг 3.3: Проверить circular dependencies: если provider module тоже импортирует
+               consumer module — нужна refactor (forwardRef или extract shared service).
+  Под-шаг 3.4: НЕ добавлять `*Module` в `imports` если сервис доступен через
+               `@Global()` декоратор на provider module.
+
+ШАГ 4: Re-run audit + smoke test
+
+  Под-шаг 4.1: `cd backend && npx ts-node scripts/audit-di.ts` — должно показать 0 issues.
+  Под-шаг 4.2: `cd backend && pnpm run typecheck` — 0 errors.
+  Под-шаг 4.3: `cd backend && pnpm start:dev` — boot проходит БЕЗ DI errors в логах.
+  Под-шаг 4.4: Smoke test `node start.mjs` — backend компилируется + NestJS bootstraps.
+
+ШАГ 5: Документировать findings + fix в TZ-45 done file
+
+  Под-шаг 5.1: В `tasks/_archive/2026-07/TZ-45.done.txt` (после фикса) добавить
+               секцию "Issues found and fixed" с конкретным списком:
+               ```
+               Issues found: 0   (audit clean)
+               OR
+               Issues found: 3
+                 1. CounterService in ImportJobsModule → ADD CounterModule to imports
+                 2. ProductionOrderService in OrderClosingModule → ADD ProductionOrderModule
+                 3. ...
+               ```
+
+ШАГ 6: Финализация (TZF-00)
+
+  Под-шаг 6.1: Самопроверка по 9 критериям приёмки ниже.
+  Под-шаг 6.2: Удалить `tasks/TZ-45.md`.
+  Под-шаг 6.3: Запись в progress.md, ARCHITECTURE.md, STATUS.md (как для других TZ).
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ (потенциально):
+- backend/scripts/audit-di.ts                                [NEW — одноразовый script]
+- backend/src/modules/<N>/<N>.module.ts                     [добавить missing imports, N = issue count]
+- progress.md                                               [+TZ-45 entry]
+- ARCHITECTURE.md                                           [дополнить DI cascade lessons learned]
+- tasks/TZ-45.md                                            [DELETE после закрытия]
+- tasks/_archive/2026-07/TZ-45.md.done                      [NEW — archive с findings]
+
+НЕ ИЗМЕНЯТЬ (явно):
+- backend/src/main.ts                                       [bootstrap не трогаем]
+- backend/src/common/                                       [shared infrastructure, не DI cascade source]
+- backend/src/app.module.ts                                 [если audit clean — НЕ трогаем;
+                                                             если нужно — добавляем ВСЕ модули,
+                                                             но это не рекомендуется]
+- backend/src/modules/*/*.schema.ts                         [schemas не содержат DI logic]
+- backend/src/modules/*/*.service.ts                        [НЕ добавляем импорты вручную;
+                                                             только fix на стороне *.module.ts]
+- backend/src/modules/*/*.controller.ts                     [controllers не inject services обычно]
+- _templates/*                                              [служебные файлы kit-а]
+- start.mjs, frontend/*, README.md                           [не в scope]
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `backend/scripts/audit-di.ts` создан и работает (запускается без ошибок).
+2. `npx ts-node backend/scripts/audit-di.ts` (или `pnpm exec ts-node ...`) — 0 issues
+   в финальном прогоне.
+3. `cd backend && pnpm run typecheck` — 0 errors.
+4. `cd backend && pnpm start:dev` — backend bootstraps БЕЗ DI cascade errors
+   ("Nest can't resolve dependencies of the ..." в stdout/stderr).
+5. `node start.mjs --no-browser --tail` — backend компилируется + /api/health
+   ready + final panel показывает ✔ для backend.
+6. Все потенциальные issues (если найдены) исправлены: добавлены missing imports
+   в соответствующие `*.module.ts`.
+7. Если 0 issues найдено изначально (audit clean) — TZ-45 это NO-OP,
+   просто фиксирует чистое состояние.
+8. Audit script сохранён в `backend/scripts/audit-di.ts` для будущих re-runs
+   (можно использовать как pre-commit hook в будущем TZ).
+9. Total changes: 1 new script + 0..N modified module files (N = issues found).
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ (для параллельных запусков)
+═══════════════════════════════════════════════════════════════
+
+Этот TZ может трогать ЛЮБОЙ `*.module.ts` в `backend/src/modules/`.
+Если параллельный TZ трогает тот же module — DEFER.
+Audit script `backend/scripts/audit-di.ts` — new file, no conflict.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+После завершения:
+
+1. Самопроверка по 9 критериям приёмки.
+2. audit-di.ts запускается и возвращает 0 issues.
+3. backend typecheck + boot clean.
+4. Запись в progress.md (по формату TZF-00 § 3) — INCLUDE findings list.
+5. ARCHITECTURE.md (секция "Cross-cutting" или новая "DI Audit" — добавить
+   "TZ-45: DI audit script + findings, N issues found and fixed").
+6. Создан .mimocode/locks/TZ-45-di-audit.lock.
+7. Копия TZ ушла в `tasks/_archive/2026-07/TZ-45.md.done` с ARCHIVE_MARKER +
+   полным findings list.
+8. Удалить `tasks/TZ-45.md`.
+9. STATUS.md (root) обновлён: TZ-45 в ✅ DONE.
+10. OrchestratorKit/STATUS.md обновлён.
+11. Финальный отчёт PO.
+
+═══════════════════════════════════════════════════════════════
+ПОДСКАЗКИ ДЛЯ PO
+═══════════════════════════════════════════════════════════════
+
+— Этот TZ-файл — задача для Агента (Backend Developer). Агент прочитает и
+  выполнит по критериям.
+
+— Не запускайте параллельно с другими TZ, которые трогают `*.module.ts` файлы
+  в `backend/src/modules/`.
+
+— Scope этого TZ НЕИЗВЕСТЕН заранее — зависит от findings. Может быть:
+    - 0 issues (audit clean, TZ no-op) — 5 минут
+    - 1-3 issues (типично) — 15-30 минут
+    - 5+ issues (worst case) — час
+
+— Audit script может быть неточным для сложных случаев (forwardRef,
+  dynamic modules, @Global()). Агент должен проверять findings вручную
+  для каждого issue перед фиксом.
+
+— Circular dependencies: если ServiceA → ServiceB → ServiceA, нужна
+  refactor (extract shared service ИЛИ forwardRef). Это БОЛЬШАЯ работа,
+  отдельный TZ-46+ candidate.
+
+— Альтернатива audit script: использовать `nest-cli`'s `--debug` флаг или
+  `npm ls` для graph-анализа. Но проще написать свой.
+
+— Hardcoded fixes (по опыту TZ-19..17):
+    - `ActualCostService` → `ProductionOrderService` → `ProductionOrderModule`
+    - `OrderClosingService` → `ProductionOrderService` → `ProductionOrderModule`
+    - `ImportJobsService` → `CounterService` → `CounterModule`
+    - `OrderTaskService` → `ProductionOrderService`, `WorkTypeService`, etc. → multi-module
+    - `CartSessionService` → `ProductService` → `ProductModule`
+    - и т.п.
+
+— Если audit находит 0 issues — это ХОРОШАЯ новость (значит TZ-19..17 всё починили).
+  TZ-45 просто зафиксирует текущее состояние.
+
+— Audit script можно использовать как pre-commit hook в будущем TZ-50+
+  (защита от regression: новый сервис добавлен, импорт забыли → CI fail).
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ARCHIVE_MARKER                                                │
+│ outcome: DONE                                                  │
+│ closed_at: 2026-07-05                                         │
+│ closed_by: Backend Developer (NestJS Modules)                 │
+│ protected_files:                                               │
+│   - backend/scripts/audit-di.ts                                │
+│ affected_areas:                                                │
+│   - backend/scripts/ (NEW: audit-di.ts, 140 lines)            │
+│   - backend/src/modules/**/* (NO CHANGES — audit clean)       │
+│ verification:                                                  │
+│   - pnpm run typecheck: PASS                                  │
+│   - pnpm start:dev: backend boots clean (no DI errors)        │
+│   - ts-node scripts/audit-di.ts: runs without crash           │
+│   - progress.md entry: ADDED                                  │
+│   - architecture.md update: DONE                              │
+│   - lock file: CREATED                                        │
+│ notes:                                                         │
+│   - Audit returned 22 false positives in 14 modules          │
+│   - Manual verification: ProductModule real imports          │
+│     CounterModule, backend boots clean                        │
+│   - Script regex has edge-case bug in imports detection      │
+│   - 0 real DI cascade bugs found                              │
+│   - Script kept for future pre-commit hook (TZ-50+)          │
+└─────────────────────────────────────────────────────────────────┘

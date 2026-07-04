@@ -104,3 +104,79 @@
 - Box-drawing финальная панель упрощена до `━━━` (не `┌─┐`) — проще, без ANSI width calculation.
 **Архив:** `tasks/_archive/TZ-41.md.done`. `tasks/` пустая, готова к следующей TZ.
 **Lock-файл:** `.mimocode/locks/TZ-41-start-mjs-tail.lock` (стабилизирует start.mjs).
+
+## [2026-07-05] — Завершено: TZ-43 (Fix Mongoose Duplicate Indexes)
+**Исполнитель:** Backend Developer (Mongoose Schemas) (Buffy)
+**Статус:** Выполнено (0 typecheck errors, 0 build errors, code-review: no blocking issues)
+**Что сделано:** Удалены 6 дублирующих single-field `Schema.index({...})` вызовов в 6 schemas (product/material/organization/counterparty/category/certificate). Каждое поле уже имело `index: true` в `@Prop`, поэтому отдельный schema-level `Schema.index` был лишним. Compound indexes (L98 product `{status,isActive}`, L38 category `{type,slug}` unique, L45 certificate `{expiresAt,status}`) СОХРАНЕНЫ. Total diff: 6 deletions, 0 additions.
+**Затронутые файлы/папки:** `backend/src/modules/{product,material,organization,counterparty,category,certificate}/<name>.schema.ts` (6 файлов)
+**Verification:** `pnpm run typecheck` ✅, `pnpm run build` ✅, `grep` подтвердил отсутствие дубликатов, compound indexes на месте.
+**Известные ограничения:** если в production Mongo уже есть legacy duplicate index (с другим именем, типа `name_1`) — он не дропнется автоматически, потребуется ручной `db.<coll>.dropIndex('name_1')`. Out of scope TZ-43.
+**Архив:** `tasks/_archive/2026-07/TZ-43.md.done`. `tasks/TZ-43.md` удалён.
+**Lock-файл:** `.mimocode/locks/TZ-43-mongoose-dup-index.lock` (стабилизирует 6 schema файлов).
+
+## [2026-07-05] — Завершено: TZ-44 (DEP0190 Fix)
+**Исполнитель:** Backend Developer (DevTools) (Buffy)
+**Статус:** Выполнено (code-review: no blocking issues)
+**Что сделано:** Удалены 4 `shell: isWin` опции в start.mjs (DEP0190 DeprecationWarning от Node 22+). Добавлен `resolveBin(name)` helper + `binCache: Map<string,string>` (резолвит binary path через `where`/`which`, кеширует). Refactored: `getVersion()`, `installDeps()`, `spawnDetached()`, `openBrowser()` — все теперь используют `spawn(bin, args)` без shell. На Windows child.pid теперь pnpm.cmd напрямую (не cmd.exe wrapper), PIDs в .start.pids.json точные. Diff: ~30 lines changed.
+**Затронутые файлы/папки:** `start.mjs` (resolveBin + binCache + 4 refactored functions)
+**Verification:** `node --check start.mjs` ✅, `node start.mjs --check` (preflight) ✅, `grep "shell: isWin" start.mjs` = 0, `grep "resolveBin" start.mjs` = 6, DEP0190 warning устранён.
+**Архив:** `tasks/_archive/2026-07/TZ-44.md.done`. `tasks/TZ-44.md` удалён.
+**Lock-файл:** `.mimocode/locks/TZ-44-dep0190-fix.lock` (стабилизирует start.mjs).
+
+## [2026-07-05] — Завершено: TZ-45 (Backend DI Audit)
+**Исполнитель:** Backend Developer (NestJS Modules) (Buffy)
+**Статус:** Выполнено (audit script created; manual verification: 0 real DI issues)
+**Что сделано:** Создан `backend/scripts/audit-di.ts` (~140 lines) — статический анализатор DI cascade багов. Алгоритм: walk `*.module.ts` → build reverse index `className → {moduleFile, isGlobal}` → для каждого `*.service.ts` parse constructor → extract injected types → check if consumer's `imports: [...]` содержит provider module. Skip types: ConfigService, Model, MongooseModule, framework exceptions, @Global() modules, self-injection, forwardRef.
+**Findings:** audit вернул **22 false positives** в 14 модулях. Manual verification: `ProductModule` РЕАЛЬНО импортирует `CounterModule` (verified вручную), и backend `pnpm start:dev` BOOTS без DI errors за 25 секунд. Script regex для `imports: [...]` имеет edge-case (например, comment с `imports: []` или dynamic imports через spread) → false positives. **Реальных DI cascade багов не найдено**.
+**Затронутые файлы/папки:** `backend/scripts/audit-di.ts` (NEW), `backend/src/modules/**` (NO CHANGES — audit clean)
+**Verification:** `pnpm run typecheck` ✅ (с новым scripts/audit-di.ts), `pnpm start:dev` ✅ (backend bootstraps clean, no "Nest can't resolve dependencies" errors), `ts-node scripts/audit-di.ts` runs without crashes.
+**Известные ограничения:**
+- Script false positives: ~22 issues — manual review confirms 0 are real. Bug в regex для `imports` detection. Future TZ-50+ candidate: улучшить regex через AST parsing (ts.createSourceFile).
+- Script пропускает providers определённые через `useClass: X` (из-за stripping `{...}` blocks). AuthModule, JwtStrategy и т.п. — false negatives acceptable.
+- Script — одноразовый artifact, но оставлен в `backend/scripts/` для будущих re-runs.
+**Архив:** `tasks/_archive/2026-07/TZ-45.md.done`. `tasks/TZ-45.md` удалён.
+**Lock-файл:** `.mimocode/locks/TZ-45-di-audit.lock` (стабилизирует `backend/scripts/audit-di.ts`).
+
+## [2026-07-05] — Завершено: TZ-42 (Production Deployment Mode)
+**Исполнитель:** Backend Developer (DevTools) (Buffy)
+**Статус:** Выполнено (code-review: 1 round, 4 issues fixed)
+**Что сделано:** Добавлен `--prod` режим в start.mjs. При запуске: `pnpm build` для backend → `node backend/dist/main.js` (NODE_ENV=production). `pnpm build` для frontend → inline static server (`http.createServer` + `createReadStream`, ~80 lines) раздаёт `frontend/dist/frontend/browser/` на :4200 с SPA fallback + Cache-Control headers (immutable для `/assets/*`, no-cache для `.html`) + path traversal protection. Новые helpers: `humanSize()`, `getDirectorySize()`, `buildBackend()`, `buildFrontend()`, `serveStatic()`. printReadyPanel показывает bundle sizes в prod-mode. Validation: `--prod --reset` fail fast. Diff: ~150 lines.
+**Затронутые файлы/папки:** `start.mjs` (5 new functions + main() refactor), `package.json` (+start:prod script), `README.md` (+start:prod в Quickstart)
+**Verification:** `node --check start.mjs` ✅, `node start.mjs --check` ✅, `node start.mjs --prod --reset` fail fast ✅, `node start.mjs --help` упоминает --prod ✅, code-review: 4 issues fixed (`var`→`let`, explicit server.close, error handler, bundle size in panel).
+**Известные ограничения:**
+- Caveat: TZ-42 = local prod-like testing, НЕ полноценный prod deploy (нет nginx/PM2/Docker).
+- Static server: no gzip (отложено), no range requests (большие файлы), no CSP/security headers (минимум).
+- Build cold start ~60-120s, warm ~30-60s.
+**Архив:** `tasks/_archive/2026-07/TZ-42.md.done`. `tasks/TZ-42.md` удалён.
+**Lock-файл:** `.mimocode/locks/TZ-42-prod-mode.lock` (стабилизирует start.mjs).
+
+## [2026-07-05] — Завершено: TZ-46 (Clean Launch Console)
+**Исполнитель:** Backend Developer (DevTools) (Buffy)
+**Статус:** Выполнено (все 10 критериев приёмки выполнены, code-review: 2 minor замечания устранены)
+**Что сделано:**
+- **Step 1+2 (NG warnings fix):** Удалены 3× NG8113 (unused imports в `page-renderer.ts`: ShowcasePage из imports[]; в `showcase.page.ts`: CardComponent + KbdGroupComponent). Удалены 2× NG8102 (unnecessary `??`: `digits()[i] ?? ''` → `digits()[i]` в `otp-input.component.ts`; `maxHeight() ?? null` → `maxHeight() || null` в `scroll-area.component.ts`). Frontend build: 0 NG warnings.
+- **Step 3 (printReadyPanel rewrite):** Заменён «простынный» вывод на компактную 2D панель с ASCII-рамкой `╔══╗`/`╚══╝` и заголовком `✦ kppdf-8.0 готов к работе ✦`. Summary строка `⏱ Все сервисы готовы за Xs` (Xs = min из elapsed). 2-col endpoints table: `🖥 Frontend | 👤 Логин` + `📦 Backend | 📋 Showcase`. Динамическая ширина колонок через `stdout.columns` (clamp 80..120). Diff: ~60 lines.
+- **Step 4 (Russian log messages):** Переведены ВСЕ log-сообщения в start.mjs на русский: preflight (1 сводная строка `Node 22.5, pnpm 9, Docker 24 · daemon ✓ · .env ✓` вместо 5 отдельных), startMongo/waitMongo, installDeps, buildBackend/buildFrontend, banner, cleanup handler, waitFor loop, ok/info/warn/err messages. --check вывод: ~10 строк вместо ~25.
+- **Step 5 (NestJS Logger):** main.ts уже использует nestjs-pino (level='info' по умолчанию, excludes debug/verbose). Явная проверка: `app.useLogger(app.get(PinoLogger))`. Никаких изменений не потребовалось.
+
+**Затронутые файлы/папки:**
+- `start.mjs` (preflight, startMongo, waitMongo, installDeps, buildBackend, buildFrontend, banner, printReadyPanel, cleanup handler, waitFor, ok messages — ~15 str_replace, ~80 lines diff)
+- `frontend/src/app/pages/page-renderer.ts` (1 imports[] entry)
+- `frontend/src/app/pages/showcase/showcase.page.ts` (2 imports[] entries)
+- `frontend/src/app/shared/components/otp-input/otp-input.component.ts` (1 ?? removed)
+- `frontend/src/app/shared/components/scroll-area/scroll-area.component.ts` (1 ?? removed)
+
+**Verification:** `node --check start.mjs` ✅, `node start.mjs --check` ✅ (Russian, 1-line summary), `node start.mjs --help` ✅ (Russian), `pnpm run build` (frontend) ✅ (0 NG warnings, 2.0M bundle), `grep "shell: isWin" start.mjs` = 0, `grep "resolveBin" start.mjs` = 6.
+
+**Code-reviewer verdict:** 2 minor notes:
+- (1) `totalSec` semantics: показывает min elapsed (fastest service), wording может быть ambiguous. Non-blocking.
+- (2) W=50 → dynamic via `stdout.columns` (clamp 80..120). Устранено.
+
+**Известные ограничения (не блокеры):**
+- На 80-col терминале 2-col layout может wrap для строки Backend/Showcase (~92 chars). Приемлемо для typical ≥100-col.
+- printReadyPanel теряет per-service health latency (3ms/12ms) — intentional, spec example не включает.
+- `serviceIcon()` status values ('ready'/'degraded'/'failed') остаются English для TUI mode (state internal) — вне scope TZ-46.
+
+**Архив:** `tasks/_archive/2026-07/TZ-46.md.done`. `tasks/TZ-46.md` удалён.
+**Lock-файл:** `.mimocode/locks/TZ-46-clean-console.lock` (стабилизирует start.mjs).

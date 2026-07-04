@@ -1,8 +1,8 @@
 # STATUS — KPPDF ERP Project Status
 
 **Last updated:** 2026-07-05
-**Phase:** Dev Tooling (TZ-41) — ЗАВЕРШЕНО
-**Total tasks:** 41/41 ✅ (100% — TZ-02..TZ-41)
+**Phase:** Dev Tooling (TZ-41..TZ-46 + TZ-42) — ЗАВЕРШЕНО
+**Total tasks:** 47/47 ✅ (100% — TZ-02..TZ-46, TZ-42)
 
 ## ✅ Завершённые этапы
 
@@ -27,10 +27,15 @@
 
 **Build:** pnpm run build ✅ (542.84 kB initial bundle, 0 warnings)
 
-### Dev Tooling (TZ-41)
+### Dev Tooling (TZ-41..TZ-46)
 - TZ-41: Health Check Panel + Log TUI Mode — `start.mjs` стал TUI-aware orchestrator с `--tail` режимом (in-place статус 3 сервисов, ring buffer 5 строк на сервис, финальная "Ready" панель с латентностями /api/health). checkHealth() парсит JSON body и определяет `degraded` состояние.
+- TZ-43: Fix Mongoose Duplicate Indexes — удалены 6 дублирующих single-field `Schema.index({...})` в 6 schemas (product/material/organization/counterparty/category/certificate). Compound indexes сохранены. Diff: 6 deletions, 0 additions.
+- TZ-44: DEP0190 Fix — заменены 4 `shell: isWin` на `execFile(resolveBin(...))` в start.mjs (getVersion, installDeps, spawnDetached, openBrowser). DEP0190 warning устранён. На Windows child.pid теперь pnpm.cmd (не cmd.exe wrapper). Diff: ~30 lines.
+- TZ-45: Backend DI Audit — создан `backend/scripts/audit-di.ts` (статический анализатор, ~140 lines). Audit вернул 22 false positives; manual verification: 0 real DI cascade багов (backend boots clean). Script оставлен для future pre-commit hook.
+- TZ-42: Production Deployment Mode — добавлен `--prod` флаг в start.mjs: `pnpm build` для backend+frontend, `node dist/main.js` (NODE_ENV=production) + inline static server (Node http+fs, ~80 lines, без new deps) раздаёт `dist/frontend/browser/` на :4200. SPA fallback, path traversal protection, cache headers. `npm run start:prod` алиас. Bundle sizes в Ready panel. Caveat: local prod-like testing, НЕ полноценный prod deploy.
+- TZ-46: Clean Launch Console — все log-сообщения start.mjs на русском (preflight, mongo, deps, build, banner, cleanup, waitFor). `printReadyPanel` переписан с длинного «простынного» вывода на компактную 2D панель: ASCII-рамка `╔══╗`/`╚══╝` с заголовком `✦ kppdf-8.0 готов к работе ✦`, summary `⏱ Все сервисы готовы за Xs`, 2-col endpoints (`🖥 Frontend | 👤 Логин` + `📦 Backend | 📋 Showcase`). Динамическая ширина колонок через `stdout.columns` (clamp 80..120). NG warnings fix: 3× NG8113 (unused imports в page-renderer + showcase) + 2× NG8102 (unnecessary `??` в otp-input + scroll-area) → frontend build 0 warnings. NestJS logger: nestjs-pino level='info' (excludes debug/verbose). Console clean: 0 warnings, 0 deprecations.
 
-**Smoke test:** `node start.mjs` — preflight ✅, Mongo RS ready ✅, backend boot ✅, /api/health OK.
+**Smoke test:** `node start.mjs` — preflight ✅, Mongo RS ready ✅, backend boot ✅, /api/health OK, 0 Mongoose "Duplicate schema index" warnings, 0 DEP0190, 0 DI cascade errors.
 
 ## 📊 Метрики проекта
 
@@ -94,7 +99,7 @@ kppdf-8.0/
 
 ## 🚀 Следующие шаги (предложения)
 
-Все этапы до TZ-41 завершены. Возможные направления:
+Все этапы до TZ-46 завершены. Возможные направления:
 
 1. **TZ-42: Production deployment mode** — `--prod` флаг в start.mjs (`pnpm build` + `node dist/main.js` вместо `pnpm start:dev`)
 2. **TZ-43: Health-check Dashboard** — frontend страница с live статусами всех сервисов (используя TZ-41 ring buffer pattern)

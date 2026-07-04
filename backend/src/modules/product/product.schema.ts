@@ -94,5 +94,4 @@ export class Product {
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
-ProductSchema.index({ name: 1 });
 ProductSchema.index({ status: 1, isActive: 1 });

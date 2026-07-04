@@ -43,4 +43,3 @@ export class Certificate {
 
 export const CertificateSchema = SchemaFactory.createForClass(Certificate);
 CertificateSchema.index({ expiresAt: 1, status: 1 });
-CertificateSchema.index({ productIds: 1 });

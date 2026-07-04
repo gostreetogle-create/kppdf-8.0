@@ -71,4 +71,3 @@ export class Material {
 }
 
 export const MaterialSchema = SchemaFactory.createForClass(Material);
-MaterialSchema.index({ name: 1 });

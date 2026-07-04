@@ -100,4 +100,3 @@ export class Organization {
 }
 
 export const OrganizationSchema = SchemaFactory.createForClass(Organization);
-OrganizationSchema.index({ name: 1 });

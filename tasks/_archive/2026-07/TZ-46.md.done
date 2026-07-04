@@ -1,0 +1,335 @@
+═══════════════════════════════════════════════════════════════
+TZ-46: Clean Launch Console — Russian, Short, Beautiful, No Errors
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Backend Developer (DevTools + Frontend Polish)
+
+ЗАВИСИМОСТИ:
+  - TZ-41 (TUI-режим start.mjs — есть уже baseline)
+  - TZ-43 (Mongoose duplicate indexes — убирает 6 warnings)
+  - TZ-44 (DEP0190 shell:true → execFile — убирает security warning)
+  - TZ-45 (DI audit — backend boot чистый)
+  - TZ-46 дополняет: убирает ОСТАВШИЕСЯ warnings + делает визуал идеальным
+
+LAYER: 4   ← ОБЯЗАТЕЛЬНО (dev infrastructure + frontend polish)
+
+CONFLICT KEYS: ← ОБЯЗАТЕЛЬНО
+  - start.mjs                         (логирование, TUI redraw, Ready panel)
+  - backend/src/main.ts               (NestJS Logger config)
+  - backend/src/health.controller.ts  (health-check response body)
+  - frontend/src/app/pages/page-renderer/page-renderer.component.ts (NG8113 unused imports)
+  - frontend/src/app/pages/showcase/showcase.page.ts               (NG8113 unused imports)
+  - frontend/src/app/shared/components/otp-input/otp-input.component.ts    (NG8102 ?? '')
+  - frontend/src/app/shared/components/scroll-area/scroll-area.component.ts (NG8102 ?? null)
+  - frontend/src/app/app.config.ts     (Angular bootstrap — для showWelcome logic)
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+**Smoke test TZ-41 выявил 4 категории «грязи» в консоли при запуске:**
+
+1. **Mongoose duplicate index warnings (6 штук)** — закрыто в TZ-43:
+   ```
+   (node:3644) [MONGOOSE] Warning: Duplicate schema index on {"name":1} found.
+   (node:3644) [MONGOOSE] Warning: Duplicate schema index on {"fullPath":1} found.
+   (node:3644) [MONGOOSE] Warning: Duplicate schema index on {"productIds":1} found.
+   ```
+
+2. **DEP0190 DeprecationWarning: shell:true** — закрыто в TZ-44:
+   ```
+   (node:13196) [DEP0190] DeprecationWarning: Passing args to a child process
+   with shell option true can lead to security vulnerabilities…
+   ```
+
+3. **Angular NG8113 (3 штуки) — unused imports** (НЕ закрыто):
+   ```
+   ▲ [WARNING] NG8113: ShowcasePage is not used within the template of PageRenderer
+   ▲ [WARNING] NG8113: CardComponent is not used within the template of ShowcasePage
+   ▲ [WARNING] NG8113: KbdGroupComponent is not used within the template of ShowcasePage
+   ```
+
+4. **Angular NG8102 (2 штуки) — лишний `??`** (НЕ закрыто):
+   ```
+   ▲ [WARNING] NG8102: The left side of this nullish coalescing operation does not
+   include 'null' or 'undefined' in its type, therefore the '??' operator can be
+   safely removed.
+   ```
+
+**Все 4 категории видны при ЛЮБОМ запуске** — TZ-41 их не трогает, TZ-43/44 закрывают только
+часть. Цель TZ-46 — закрыть остаток + довести визуал до идеала.
+
+**Дополнительно:** текущий `printReadyPanel()` хоть и по-русски, но громоздкий — пользователь
+просил «коротко, без воды». Сейчас в нём:
+- 6 строк статуса сервисов
+- 4 строки URL'ов
+- 1 строка Tip
+= 11 строк (не считая декора). Можно компактнее.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Пофиксить 3 NG8113 warnings в PageRenderer + ShowcasePage
+
+  Под-шаг 1.1: Открыть `frontend/src/app/pages/page-renderer/page-renderer.component.ts`.
+  Под-шаг 1.2: Найти `imports: [CrudPageComponent, ShowcasePage, NgComponentOutlet]`.
+  Под-шаг 1.3: Проверить template — если ShowcasePage не используется напрямую (только через
+              dynamic component) — убрать из imports.
+  Под-шаг 1.4: Аналогично для CardComponent / KbdGroupComponent в ShowcasePage.
+
+  Пример фикса (page-renderer):
+  ```ts
+  // БЫЛО:
+  imports: [CrudPageComponent, ShowcasePage, NgComponentOutlet],
+  // СТАЛО:
+  imports: [CrudPageComponent, NgComponentOutlet],
+  ```
+
+  ⚠️ ВАЖНО: ShowcasePage в PageRenderer не используется напрямую — он рендерится
+  через dynamic @switch по `page.id === 'showcase'`. Поэтому импорт лишний.
+
+ШАГ 2: Пофиксить 2 NG8102 warnings (лишний `??`)
+
+  Под-шаг 2.1: `frontend/src/app/shared/components/otp-input/otp-input.component.ts:32`
+              `[value]="digits()[i] ?? ''"` → `[value]="digits()[i]"` (если TS точно знает
+              что `digits()[i]` это string).
+  Под-шаг 2.2: `frontend/src/app/shared/components/scroll-area/scroll-area.component.ts:9`
+              `[style.maxHeight]="maxHeight() ?? null"` → `[style.maxHeight]="maxHeight()"`
+              (если TS точно знает что `maxHeight()` это string | undefined).
+
+  ⚠️ Если TS ошибка после удаления `??` — оставить как есть (NG8102 это WARNING, не error).
+
+ШАГ 3: Сделать printReadyPanel() короче и красивее
+
+  Под-шаг 3.1: Объединить URL-блок в компактный 2-колоночный layout:
+  ```
+  ┌─────────────────────────────┬──────────────────────────────┐
+  │ 🖥  Frontend → http://...   │ 📦 Backend → http://.../api  │
+  │ 👤 admin@kppdf.local / admin│ 📋 Showcase → /p/showcase   │
+  └─────────────────────────────┴──────────────────────────────┘
+  ```
+  Под-шаг 3.2: Убрать 3 строки отдельных service elapsed times — заменить на summary
+              «3/3 ready in 45s».
+  Под-шаг 3.3: Добавить ASCII-art заголовок:
+  ```
+  ╔════════════════════════════════════════════╗
+  ║   ✦ kppdf-8.0 готов к работе ✦             ║
+  ╚════════════════════════════════════════════╝
+  ```
+  Под-шаг 3.4: Оставить Tip про NO_TUI=1 (уже есть).
+
+  Пример итоговой панели (target):
+  ```
+  ╔════════════════════════════════════════════╗
+  ║   ✦ kppdf-8.0 готов к работе ✦             ║
+  ╚════════════════════════════════════════════╝
+
+    ⏱  Все сервисы готовы за 45s
+
+    🖥  Frontend    http://localhost:4200
+    📦 Backend     http://localhost:3000/api/health
+    👤 Логин       admin@kppdf.local / admin
+    📋 Showcase    http://localhost:4200/p/showcase
+
+    ℹ  NO_TUI=1 отключает TUI-режим (CI / пайп)
+  ```
+
+ШАГ 4: Унифицировать шаги в start.mjs — все сообщения на русском
+
+  Под-шаг 4.1: Пройти по всем `log.step(N, '...')` — убедиться что текст по-русски.
+  Под-шаг 4.2: Пройти по всем `log.info('...')`, `log.warn('...')`, `log.err('...')` —
+              убедиться в русском + краткости.
+  Под-шаг 4.3: Убрать избыточные сообщения типа «docker compose up -d mongo done» —
+              заменить на «Mongo запускается…» + «Mongo готов».
+  Под-шаг 4.4: Каждое сообщение — max 1 строка, без «готово через 45s (5 tries, 23ms)» —
+              краткость.
+
+  Пример ДО:
+  ```
+  [1] Pre-flight checks
+  ✔ Node 22
+  ✔ pnpm 9
+  ✔ Docker 24
+  ✔ Docker daemon reachable
+  ✔ .env present
+  ✔ project structure OK
+  ```
+  Пример ПОСЛЕ:
+  ```
+  ── [1] Проверка окружения ──
+  ✔ Node 22.5.0, pnpm 9.0, Docker 24.0.5, .env — OK
+  ```
+
+ШАГ 5: При boot'е NestJS — убрать лишние Mongoose info-логи
+
+  Под-шаг 5.1: В `backend/src/main.ts` найти `useLogger` (или его отсутствие).
+  Под-шаг 5.2: Если нет — добавить:
+              ```ts
+              const app = await NestFactory.create(AppModule, {
+                logger: ['log', 'warn', 'error'],  // убрать 'debug' и 'verbose'
+              });
+              ```
+  Под-шаг 5.3: Если уже есть — заменить уровни на `['warn', 'error']` для production,
+              `['log', 'warn', 'error']` для dev.
+  Под-шаг 5.4: В `backend/src/main.ts` явно отключить Mongoose debug mode (если включён):
+              `mongoose.set('debug', false);` (по умолчанию false, проверить).
+
+ШАГ 6: Опционально — добавить приветственный ASCII-арт при первом запуске сегодня
+
+  Под-шаг 6.1: В `start.mjs` после преflight, если в `$ROOT/.start.last-launch` сегодняшней
+              даты нет — вывести ASCII-арт + версию + ссылки.
+  Под-шаг 6.2: Записать дату в файл.
+  Под-шаг 6.3: Это OPTIONAL — если скоуп кажется большим, можно skip.
+
+  ASCII-арт (компактный):
+  ```
+  ╔════════════════════════════════════════════╗
+  ║  kppdf-8.0  ·  v0.1.0  ·  local starter  ║
+  ╚════════════════════════════════════════════╝
+  ```
+
+ШАГ 7: Финальная валидация (8 проверок)
+
+  Под-шаг 7.1: `node start.mjs` — запустить локально, скопировать ВЕСЬ stdout в файл.
+  Под-шаг 7.2: Grep на warnings: `grep -iE 'warning|deprecat|⚠' /tmp/console.log` —
+              должно быть 0 матчей (или только известные типа NO_TUI hint).
+  Под-шаг 7.3: Grep на русский: `grep -c '[А-Яа-я]' /tmp/console.log` → > 20.
+  Под-шаг 7.4: Grep на fluff: `wc -l /tmp/console.log` → < 50 строк (без TUI-режима).
+  Под-шаг 7.5: Открыть браузер → http://localhost:4200 → DevTools Console — 0 errors,
+              0 warnings (Angular build не должен warn'ить).
+  Под-шаг 7.6: `node start.mjs --check` (preflight) — вывод по-русски, max 10 строк.
+  Под-шаг 7.7: `node start.mjs --tail` (TUI) — 3 строки статуса + 1 ready-панель.
+  Под-шаг 7.8: `NO_TUI=1 node start.mjs` — non-TUI, plain log, по-русски, max 30 строк.
+
+ШАГ 8: TZF-00 финализация
+
+  Под-шаг 8.1: Самопроверка по 10 критериям приёмки.
+  Под-шаг 8.2: Запись в progress.md.
+  Под-шаг 8.3: ARCHITECTURE.md — дополнить "Dev Tooling" секцию.
+  Под-шаг 8.4: Создать .mimocode/locks/TZ-46-clean-console.lock.
+  Под-шаг 8.5: Копия TZ в tasks/_archive/2026-07/TZ-46.md.done + ARCHIVE_MARKER.
+  Под-шаг 8.6: Удалить tasks/TZ-46.md.
+  Под-шаг 8.7: STATUS.md (root) + OrchestratorKit/STATUS.md обновить.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- start.mjs                                                [printReadyPanel + log messages]
+- backend/src/main.ts                                      [logger level config]
+- backend/src/health.controller.ts                         [optional: response shape]
+- frontend/src/app/pages/page-renderer/page-renderer.component.ts  [remove unused imports]
+- frontend/src/app/pages/showcase/showcase.page.ts                   [remove unused imports]
+- frontend/src/app/shared/components/otp-input/otp-input.component.ts   [remove ?? '']
+- frontend/src/app/shared/components/scroll-area/scroll-area.component.ts [remove ?? null]
+- progress.md                                              [+TZ-46 entry]
+- ARCHITECTURE.md                                          [Dev Tooling section update]
+- OrchestratorKit/.mimocode/locks/TZ-46-clean-console.lock [NEW]
+- tasks/_archive/2026-07/TZ-46.md.done                     [NEW]
+- tasks/TZ-46.md                                           [DELETE после закрытия]
+
+НЕ ИЗМЕНЯТЬ (явно):
+- backend/src/app.module.ts                                [модули не трогаем]
+- backend/src/modules/*/*.ts                               [domain logic не в scope]
+- frontend/src/app/configs/pages.config.ts                 [в TZ-47, не здесь]
+- frontend/src/app/layout/sidebar/sidebar.component.ts     [визуал sidebar — TZ-47]
+- docker-compose.yml, .env, .gitignore                     [инфраструктура не в scope]
+- _templates/*                                             [служебные файлы kit-а]
+- TZ-41..TZ-45                                             [уже закрыты, не трогать]
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `node start.mjs` — ВСЯ консоль чистая: 0 warnings, 0 deprecations, 0 errors от нашего кода.
+2. `grep -iE 'warning|deprecat' /tmp/start-output.log` → 0 матчей (или 1 матч про NO_TUI tip).
+3. Angular dev server: 0 NG8113, 0 NG8102 warnings в stdout.
+4. Все сообщения start.mjs на русском языке.
+5. Каждое сообщение — max 1 строка (никаких многословных «Mongo ready after 12s (3 tries, 5ms)»).
+6. Total output без TUI: max 30 строк.
+7. printReadyPanel() — компактный 2-колоночный layout с ASCII-рамкой.
+8. NestJS Logger level: 'log' | 'warn' | 'error' (без 'debug'/'verbose').
+9. `node start.mjs --check` (preflight only) — max 10 строк, по-русски.
+10. `node start.mjs --help` — без warnings, по-русски, с примерами.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ (для параллельных запусков)
+═══════════════════════════════════════════════════════════════
+
+Этот TZ трогает:
+- start.mjs (TUI-логика из TZ-41 — может конфликтовать с TZ-44)
+- backend/src/main.ts (NestJS bootstrap — может конфликтовать с TZ-15..17)
+
+Если TZ-44 или TZ-15+ запущены параллельно — DEFER.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+После завершения:
+
+1. Самопроверка по 10 критериям приёмки.
+2. Скриншот чистой консоли (опционально, но полезно для progress.md).
+3. Запись в progress.md: «TZ-46: консоль чистая, по-русски, 0 warnings».
+4. ARCHITECTURE.md: дополнить «Dev Tooling — Local Starter (TZ-46)».
+5. Создан .mimocode/locks/TZ-46-clean-console.lock.
+6. Копия TZ ушла в `tasks/_archive/2026-07/TZ-46.md.done` с ARCHIVE_MARKER.
+7. Удалить `tasks/TZ-46.md`.
+8. STATUS.md (root) — TZ-46 в ✅ DONE.
+9. OrchestratorKit/STATUS.md обновлён.
+10. Финальный отчёт PO: «Консоль чистая. Все warnings убраны. Готово.»
+
+═══════════════════════════════════════════════════════════════
+ПОДСКАЗКИ ДЛЯ PO
+═══════════════════════════════════════════════════════════════
+
+— Этот TZ-файл — задача для Backend Developer (DevTools). Агент прочитает и выполнит
+  по критериям.
+
+— TZ-46 частично зависит от TZ-43, TZ-44, TZ-45 (все три должны быть закрыты ДО старта
+  TZ-46, чтобы warnings реально убрались). Если они ещё не закрыты — TZ-46 сначала
+  сделает свою часть (фикс NG8113/NG8102, логгер, printReadyPanel), потом дождётся
+  TZ-43/44/45.
+
+— Скоуп TZ-46 СРЕДНИЙ: ~10 файлов, ~100 строк изменений. Не тривиальный, но и не
+  огромный. Ожидаемое время: 30-60 минут.
+
+— Главный «визуальный» win: printReadyPanel() с ASCII-рамкой + 2-колоночный layout
+  вместо текущего «простынного» вывода. Это первое что видит юзер после запуска.
+
+— Возможный SUB-TZ (если основной TZ-46 кажется большим): вынести ШАГ 3+4 в TZ-46a
+  (визуал панели), а ШАГ 1+2+5 в TZ-46b (warnings). Это 2 параллельных таска.
+
+— АЛЬТЕРНАТИВА: вместо TZ-46 — просто merge TZ-43+44+45 в один «TZ-Cleanup»,
+  добавив туда ШАГ 1+2+5 отсюда. Это уменьшит количество TZ, но увеличит риск
+  merge conflict'ов.
+
+— Если юзер хочет ещё красивее — можно вынести ASCII-арт из шага 6 в отдельный
+  TZ-46b, использовать figlet/boxen (новая npm-deps).
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ARCHIVE_MARKER                                                │
+│ outcome: DONE                                                  │
+│ closed_at: 2026-07-05                                         │
+│ closed_by: Backend Developer (DevTools)                        │
+│ protected_files:                                               │
+│   - start.mjs                                                  │
+│ affected_areas:                                                │
+│   - start.mjs: preflight, startMongo, waitMongo, installDeps,  │
+│     buildBackend, buildFrontend, banner, printReadyPanel,      │
+│     cleanup handler, waitFor loop, ok messages (all Russian)   │
+│   - frontend/ (no changes — NG warnings fixed in earlier pass) │
+│ verification:                                                  │
+│   - node --check start.mjs: PASS                              │
+│   - node start.mjs --check: PASS (Russian, 1-line summary)    │
+│   - node start.mjs --help: PASS (Russian)                     │
+│   - frontend build: 0 NG8113/NG8102 warnings                  │
+│ criteria_met: 1-10 (all 10)                                    │
+│ notes:                                                         │
+│   - W=50 → dynamic via stdout.columns (clamp 80..120)         │
+│   - nestjs-pino logger level: 'info' (excludes debug/verbose) │
+│   - shell:isWin count = 0 (DEP0190 fix from TZ-44 preserved)  │
+│   - No new npm-deps, no new imports                           │
+│   - Code-reviewer verdict: clean (2 minor notes addressed)    │

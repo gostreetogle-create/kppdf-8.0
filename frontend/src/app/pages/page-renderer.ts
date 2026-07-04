@@ -9,7 +9,7 @@ import { ShowcasePage } from './showcase/showcase.page';
 @Component({
   selector: 'app-page-renderer',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CrudPageComponent, ShowcasePage, NgComponentOutlet],
+  imports: [CrudPageComponent, NgComponentOutlet],
   template: `
     @if (customComponent(); as c) {
       <ng-container [ngComponentOutlet]="c" />

@@ -6,7 +6,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   template: `
     <div
       [class]="'relative overflow-y-auto overflow-x-hidden scrollbar-thin ' + class_()"
-      [style.maxHeight]="maxHeight() ?? null"
+      [style.maxHeight]="maxHeight() || null"
     >
       <ng-content></ng-content>
     </div>

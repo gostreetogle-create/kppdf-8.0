@@ -82,4 +82,3 @@ export class Counterparty {
 }
 
 export const CounterpartySchema = SchemaFactory.createForClass(Counterparty);
-CounterpartySchema.index({ name: 1 });

@@ -1,0 +1,13 @@
+# Lock file
+Locked as of 2026-07-05 — TZ-43: Fix Mongoose Duplicate Indexes.
+
+Owner: Backend Developer (Mongoose Schemas)
+Protected files:
+- backend/src/modules/product/product.schema.ts
+- backend/src/modules/material/material.schema.ts
+- backend/src/modules/organization/organization.schema.ts
+- backend/src/modules/counterparty/counterparty.schema.ts
+- backend/src/modules/category/category.schema.ts
+- backend/src/modules/certificate/certificate.schema.ts
+
+Unlock: only via orchestrator approval (новое TZ-NN с пометкой «successor»).

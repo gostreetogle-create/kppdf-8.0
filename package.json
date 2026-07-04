@@ -14,7 +14,8 @@
     "check:start": "node start.mjs --check",
     "stop:start": "node start.mjs --stop",
     "reset:start": "node start.mjs --reset",
-    "start:no-browser": "node start.mjs --no-browser"
+    "start:no-browser": "node start.mjs --no-browser",
+    "start:prod": "node start.mjs --prod"
   },
   "comments": {
     "start": "Default: pre-flight checks only (safe, exits cleanly). Use `npm run start:all` to actually start everything.",

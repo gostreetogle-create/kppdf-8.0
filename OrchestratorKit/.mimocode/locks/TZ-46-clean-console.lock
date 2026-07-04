@@ -1,0 +1,26 @@
+TZ-46: Clean Launch Console
+closed_at: 2026-07-05
+closed_by: Backend Developer (DevTools)
+protected_files:
+  - start.mjs
+affected_areas:
+  - start.mjs: preflight, startMongo, waitMongo, installDeps, buildBackend,
+    buildFrontend, banner, printReadyPanel, cleanup handler, waitFor,
+    ok/info/err messages (all translated to Russian)
+  - frontend/ (no changes in final pass — NG warnings fixed earlier)
+criteria_met:
+  - 1. console clean: 0 warnings, 0 deprecations, 0 errors
+  - 2. grep -iE 'warning|deprecat' /tmp/start-output.log: 0 matches
+  - 3. Angular dev server: 0 NG8113, 0 NG8102
+  - 4. all messages in Russian
+  - 5. each message max 1 line
+  - 6. total output without TUI: ~20-25 lines
+  - 7. printReadyPanel: compact 2-col layout with ASCII box
+  - 8. NestJS logger: 'log' | 'warn' | 'error' (Pino level 'info')
+  - 9. --check: ~10 lines, Russian
+  - 10. --help: Russian, with examples
+notes:
+  - W=50 → dynamic via stdout.columns (clamp 80..120)
+  - shell:isWin count = 0 (TZ-44 fix preserved)
+  - No new npm-deps, no new imports
+  - Code-reviewer verdict: clean
