@@ -6,6 +6,7 @@ import { API_BASE_URL } from '../../core/tokens';
 import { PAGES, PageConfig, isListable } from '../../configs/pages.config';
 import { GatesService } from '../../core/services/gates.service';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
+import { IconComponent } from '../../shared/components/icon/icon.component';
 
 interface PageWithCount extends PageConfig {
   count: number;
@@ -15,24 +16,31 @@ interface PageWithCount extends PageConfig {
 @Component({
   selector: 'app-task-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterLink, BadgeComponent],
+  imports: [CommonModule, RouterLink, BadgeComponent, IconComponent],
   template: `
     <div class="space-y-6 animate-fade-in">
-      <header>
-        <h1 class="text-3xl font-bold tracking-tight">✅ Панель задач</h1>
-        <p class="text-sm text-muted-foreground">
-          Таблицы отсортированы по приоритету заполнения. Сначала — Phase 1 (foundation).
-        </p>
+      <header class="flex items-center gap-3">
+        <app-icon name="CheckSquare" [size]="28" class="text-primary" />
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight">Панель задач</h1>
+          <p class="text-sm text-muted-foreground">
+            Таблицы отсортированы по приоритету заполнения. Сначала — Phase 1 (foundation).
+          </p>
+        </div>
       </header>
 
       <div class="flex items-center gap-2 text-sm">
         <span class="text-muted-foreground">Фильтр:</span>
-        <button class="btn-outline btn-sm" [class.btn-primary]="filter() === 'all'" (click)="filter.set('all')">Все</button>
+        <button class="btn-outline btn-sm" [class.btn-primary]="filter() === 'all'" (click)="filter.set('all')">
+          Все
+        </button>
         <button class="btn-outline btn-sm" [class.btn-primary]="filter() === 'empty'" (click)="filter.set('empty')">
-          🔴 Пустые
+          <app-icon name="CircleAlert" [size]="14" class="text-destructive mr-1" />
+          Пустые
         </button>
         <button class="btn-outline btn-sm" [class.btn-primary]="filter() === 'low'" (click)="filter.set('low')">
-          🟡 Низкие
+          <app-icon name="CircleDot" [size]="14" class="text-warning mr-1" />
+          Низкие
         </button>
       </div>
 
@@ -46,13 +54,15 @@ interface PageWithCount extends PageConfig {
             @for (page of phase.pages; track page.id) {
               <a
                 [routerLink]="'/p/' + page.id"
-                class="card p-4 hover:shadow-md transition-all hover:border-primary"
+                class="card p-4 hover:shadow-md transition-all hover:border-primary group"
               >
                 <div class="flex items-start gap-3">
-                  <span class="text-2xl">{{ page.icon }}</span>
+                  <span class="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <app-icon [name]="page.icon" [size]="18" />
+                  </span>
                   <div class="flex-1 min-w-0">
                     <div class="font-medium text-sm truncate">{{ page.title }}</div>
-                    <div class="text-xs text-muted-foreground">
+                    <div class="text-xs text-muted-foreground font-mono">
                       /{{ page.id }}
                     </div>
                     <div class="mt-2 flex items-center gap-2">
@@ -66,10 +76,14 @@ interface PageWithCount extends PageConfig {
                         {{ page.count }} {{ page.count === 1 ? 'запись' : 'записей' }}
                       </span>
                       @if (page.roles) {
-                        <span class="text-[10px] opacity-60">🔒 {{ page.roles.join(',') }}</span>
+                        <span class="inline-flex items-center gap-1 text-[10px] opacity-60">
+                          <app-icon name="Lock" [size]="10" />
+                          {{ page.roles.join(',') }}
+                        </span>
                       }
                     </div>
                   </div>
+                  <app-icon name="ChevronRight" [size]="16" class="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                 </div>
               </a>
             }

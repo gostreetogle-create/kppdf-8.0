@@ -6,18 +6,24 @@ import { AuthService } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { GatesService } from '../../core/services/gates.service';
 import { PAGES, PageConfig } from '../../configs/pages.config';
+import { IconComponent } from '../../shared/components/icon/icon.component';
 
 @Component({
   selector: 'app-topbar',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent],
   template: `
     <header class="border-b bg-card px-4 h-14 flex items-center gap-3">
       <div class="flex-1 max-w-xl relative">
+        <app-icon
+          name="Search"
+          [size]="16"
+          class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+        />
         <input
           type="search"
-          placeholder="🔍 Поиск по таблицам..."
-          class="input w-full"
+          placeholder="Поиск по таблицам..."
+          class="input w-full pl-9"
           [ngModel]="query()"
           (ngModelChange)="onSearch($event)"
           (focus)="showResults.set(true)"
@@ -33,7 +39,7 @@ import { PAGES, PageConfig } from '../../configs/pages.config';
                 (click)="clear()"
                 class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent"
               >
-                <span>{{ page.icon }}</span>
+                <app-icon [name]="page.icon" [size]="14" />
                 <span class="flex-1">{{ page.title }}</span>
                 <span class="text-xs text-muted-foreground">{{ page.category }}</span>
               </a>
@@ -48,7 +54,11 @@ import { PAGES, PageConfig } from '../../configs/pages.config';
         [title]="theme.theme() === 'dark' ? 'Light' : 'Dark'"
         [attr.aria-label]="'Toggle theme, currently ' + theme.theme()"
       >
-        {{ theme.theme() === 'dark' ? '☀️' : '🌙' }}
+        @if (theme.theme() === 'dark') {
+          <app-icon name="Sun" [size]="18" />
+        } @else {
+          <app-icon name="Moon" [size]="18" />
+        }
       </button>
 
       <select class="input w-20" [ngModel]="lang()" (ngModelChange)="setLang($event)">

@@ -6,16 +6,20 @@ import { API_BASE_URL } from '../../core/tokens';
 import { CATEGORIES, PAGES, PageConfig, isListable } from '../../configs/pages.config';
 import { GatesService } from '../../core/services/gates.service';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
+import { IconComponent } from '../../shared/components/icon/icon.component';
 
 @Component({
   selector: 'app-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterLink, BadgeComponent],
+  imports: [CommonModule, RouterLink, BadgeComponent, IconComponent],
   template: `
     <div class="space-y-6 animate-fade-in">
-      <header>
-        <h1 class="text-3xl font-bold tracking-tight">📊 Дашборд</h1>
-        <p class="text-sm text-muted-foreground">Обзор системы и приоритеты заполнения</p>
+      <header class="flex items-center gap-3">
+        <app-icon name="LayoutDashboard" [size]="28" class="text-primary" />
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight">Дашборд</h1>
+          <p class="text-sm text-muted-foreground">Обзор системы и приоритеты заполнения</p>
+        </div>
       </header>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -45,10 +49,12 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         @for (cat of CATEGORIES; track cat.id) {
-          <a [routerLink]="'/p/' + getFirstPage(cat.id)" class="card p-4 hover:shadow-md transition-shadow">
+          <a [routerLink]="'/p/' + getFirstPage(cat.id)" class="card p-4 hover:shadow-md hover:border-primary transition-all">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
-                <span class="text-3xl">{{ cat.icon }}</span>
+                <span class="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                  <app-icon [name]="cat.icon" [size]="20" />
+                </span>
                 <div>
                   <div class="font-semibold">{{ cat.title }}</div>
                   <div class="text-xs text-muted-foreground">

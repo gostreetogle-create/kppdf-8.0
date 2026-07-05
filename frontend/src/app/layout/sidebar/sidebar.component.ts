@@ -4,11 +4,12 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CATEGORIES, PageConfig, PAGES } from '../../configs/pages.config';
 import { GatesService } from '../../core/services/gates.service';
 import { AuthService } from '../../core/services/auth.service';
+import { IconComponent } from '../../shared/components/icon/icon.component';
 
 @Component({
   selector: 'app-sidebar',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive, IconComponent],
   template: `
     <aside class="w-64 border-r bg-card flex flex-col h-full">
       <div class="p-4 border-b">
@@ -32,14 +33,16 @@ import { AuthService } from '../../core/services/auth.service';
           [routerLinkActiveOptions]="{ exact: true }"
           class="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground"
         >
-          <span>📊</span> Дашборд
+          <app-icon name="LayoutDashboard" [size]="18" />
+          Дашборд
         </a>
         <a
           routerLink="/task-panel"
           routerLinkActive="bg-accent text-accent-foreground"
           class="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground"
         >
-          <span>✅</span> Панель задач
+          <app-icon name="CheckSquare" [size]="18" />
+          Панель задач
         </a>
 
         @if (auth.hasRole(['admin'])) {
@@ -48,7 +51,8 @@ import { AuthService } from '../../core/services/auth.service';
             routerLinkActive="bg-accent text-accent-foreground"
             class="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground"
           >
-            <span>⚙️</span> Гейты
+            <app-icon name="Settings" [size]="18" />
+            Гейты
           </a>
         }
 
@@ -61,11 +65,15 @@ import { AuthService } from '../../core/services/auth.service';
               (click)="toggle(cat.id)"
             >
               <span class="flex items-center gap-1.5">
-                <span>{{ cat.icon }}</span>
+                <app-icon [name]="cat.icon" [size]="14" />
                 <span>{{ cat.title }}</span>
                 <span class="text-[10px] opacity-60">({{ getPagesFor(cat.id).length }})</span>
               </span>
-              <span class="text-[10px]">{{ isOpen(cat.id) ? '▾' : '▸' }}</span>
+              <app-icon
+                [name]="isOpen(cat.id) ? 'ChevronDown' : 'ChevronRight'"
+                [size]="12"
+                class="opacity-60"
+              />
             </button>
             @if (isOpen(cat.id)) {
               <div class="ml-2 space-y-0.5">
@@ -75,7 +83,7 @@ import { AuthService } from '../../core/services/auth.service';
                     routerLinkActive="bg-accent text-accent-foreground font-medium"
                     class="flex items-center gap-2 px-2 py-1.5 text-xs rounded-md hover:bg-accent hover:text-accent-foreground border-b border-dashed mb-1"
                   >
-                    <span class="text-sm">📊</span>
+                    <app-icon name="LayoutDashboard" [size]="14" />
                     <span class="flex-1 truncate font-medium">Обзор категории</span>
                   </a>
                 }
@@ -85,10 +93,10 @@ import { AuthService } from '../../core/services/auth.service';
                     routerLinkActive="bg-accent text-accent-foreground font-medium"
                     class="flex items-center gap-2 px-2 py-1.5 text-xs rounded-md hover:bg-accent hover:text-accent-foreground"
                   >
-                    <span class="text-sm">{{ page.icon }}</span>
+                    <app-icon [name]="page.icon" [size]="14" />
                     <span class="flex-1 truncate">{{ page.title }}</span>
                     @if (page.roles) {
-                      <span class="text-[9px] opacity-50">🔒</span>
+                      <app-icon name="Lock" [size]="10" class="opacity-50" />
                     }
                   </a>
                 }
@@ -108,7 +116,9 @@ import { AuthService } from '../../core/services/auth.service';
               <div class="truncate text-foreground font-medium text-sm">{{ user.email }}</div>
               <div class="text-[10px] opacity-70">{{ user.role }}</div>
             </div>
-            <button class="btn-ghost btn-sm" (click)="auth.logout()" title="Выйти">⏻</button>
+            <button class="btn-ghost btn-sm" (click)="auth.logout()" title="Выйти" aria-label="Выйти">
+              <app-icon name="Power" [size]="14" />
+            </button>
           </div>
         }
       </div>

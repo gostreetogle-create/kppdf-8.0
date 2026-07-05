@@ -5,23 +5,27 @@ import { GatesService, GateView } from '../../core/services/gates.service';
 import { ToastService } from '../../core/services/toast.service';
 import { CATEGORIES, PAGES, PageConfig } from '../../configs/pages.config';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
+import { IconComponent } from '../../shared/components/icon/icon.component';
 
 type Filter = 'all' | 'enabled' | 'disabled' | 'overridden';
 
 @Component({
   selector: 'app-gates-admin',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterLink, BadgeComponent],
+  imports: [CommonModule, RouterLink, BadgeComponent, IconComponent],
   template: `
     <div class="space-y-6 animate-fade-in">
-      <header>
-        <h1 class="text-3xl font-bold tracking-tight">⚙️ Гейты (admin)</h1>
-        <p class="text-sm text-muted-foreground">
-          Включение / отключение таблиц в Sidebar, Topbar, Dashboard, TaskPanel и в
-          прямом доступе <code class="bg-muted px-1 py-0.5 rounded">/p/:id</code>.
-          Override хранится в backend <code class="bg-muted px-1 py-0.5 rounded">featureflags</code> под
-          ключом <code class="bg-muted px-1 py-0.5 rounded">gate:&lt;pageId&gt;</code>.
-        </p>
+      <header class="flex items-center gap-3">
+        <app-icon name="Settings" [size]="28" class="text-primary" />
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight">Гейты (admin)</h1>
+          <p class="text-sm text-muted-foreground">
+            Включение / отключение таблиц в Sidebar, Topbar, Dashboard, TaskPanel и в
+            прямом доступе <code class="bg-muted px-1 py-0.5 rounded">/p/:id</code>.
+            Override хранится в backend <code class="bg-muted px-1 py-0.5 rounded">featureflags</code> под
+            ключом <code class="bg-muted px-1 py-0.5 rounded">gate:&lt;pageId&gt;</code>.
+          </p>
+        </div>
       </header>
 
       <!-- Stats -->
@@ -59,19 +63,23 @@ type Filter = 'all' | 'enabled' | 'disabled' | 'overridden';
           Все ({{ stats().total }})
         </button>
         <button class="btn-outline btn-sm" [class.btn-primary]="filter() === 'enabled'" (click)="filter.set('enabled')">
-          🟢 Включённые ({{ stats().enabled }})
+          <app-icon name="CircleCheck" [size]="14" class="text-success mr-1" />
+          Включённые ({{ stats().enabled }})
         </button>
         <button class="btn-outline btn-sm" [class.btn-primary]="filter() === 'disabled'" (click)="filter.set('disabled')">
-          🔴 Скрытые ({{ stats().disabled }})
+          <app-icon name="CircleAlert" [size]="14" class="text-destructive mr-1" />
+          Скрытые ({{ stats().disabled }})
         </button>
         <button class="btn-outline btn-sm" [class.btn-primary]="filter() === 'overridden'" (click)="filter.set('overridden')">
-          ✏ С override ({{ stats().overridden }})
+          <app-icon name="Pencil" [size]="14" class="text-warning mr-1" />
+          С override ({{ stats().overridden }})
         </button>
 
         <div class="flex-1"></div>
 
         <button class="btn-outline btn-sm" (click)="reload()" [disabled]="gates.loading()">
-          🔄 Обновить
+          <app-icon name="RefreshCw" [size]="14" class="mr-1" />
+          Обновить
         </button>
       </div>
 
@@ -79,7 +87,7 @@ type Filter = 'all' | 'enabled' | 'disabled' | 'overridden';
       @for (cat of categoriesWithEntries(); track cat.id) {
         <section class="card p-4">
           <h2 class="text-lg font-semibold flex items-center gap-2 mb-3">
-            <span>{{ cat.icon }}</span>
+            <app-icon [name]="cat.icon" [size]="18" />
             <span>{{ cat.title }}</span>
             <app-badge [label]="cat.entries.length + ' / ' + cat.totalInCategory" variant="secondary" />
           </h2>
@@ -89,12 +97,17 @@ type Filter = 'all' | 'enabled' | 'disabled' | 'overridden';
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
             @for (row of cat.entries; track row.id) {
               <div class="rounded-lg border p-3 flex items-start gap-3 hover:border-primary transition-colors">
-                <span class="text-2xl shrink-0">{{ row.icon }}</span>
+                <span class="w-9 h-9 rounded-md bg-muted flex items-center justify-center shrink-0">
+                  <app-icon [name]="row.icon" [size]="18" />
+                </span>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 flex-wrap">
                     <a [routerLink]="'/p/' + row.id" class="font-medium hover:underline">{{ row.title }}</a>
                     @if (row.roles && row.roles.length) {
-                      <app-badge [label]="'🔒 ' + row.roles.join(',')" variant="outline" />
+                      <span class="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <app-icon name="Lock" [size]="10" />
+                        {{ row.roles.join(',') }}
+                      </span>
                     }
                     @if (row.hasOverride) {
                       <app-badge label="override" variant="warning" />
@@ -104,16 +117,22 @@ type Filter = 'all' | 'enabled' | 'disabled' | 'overridden';
                 </div>
                 <button
                   type="button"
-                  class="btn-sm shrink-0"
+                  class="btn-sm shrink-0 inline-flex items-center gap-1.5"
                   [class.btn-primary]="row.effective"
                   [class.btn-outline]="!row.effective"
                   (click)="toggle(row.id, !row.effective)"
                   [disabled]="busy().has(row.id)"
                   [title]="row.effective ? 'Скрыть таблицу' : 'Показать таблицу'"
                 >
-                  @if (busy().has(row.id)) { ⏳ }
-                  @else if (row.effective) { 🟢 ВКЛ }
-                  @else { 🔴 ВЫКЛ }
+                  @if (busy().has(row.id)) {
+                    <app-icon name="Loader" [size]="14" class="animate-spin" />
+                  } @else if (row.effective) {
+                    <app-icon name="CircleCheck" [size]="14" />
+                    ВКЛ
+                  } @else {
+                    <app-icon name="CircleAlert" [size]="14" />
+                    ВЫКЛ
+                  }
                 </button>
               </div>
             }
@@ -166,11 +185,10 @@ export class GatesAdminPage {
       const inCat = filtered
         .filter((g) => this.catalog.get(g.id)?.category === cat.id)
         .map((g) => {
-          const src = this.catalog.get(g.id);
-          return {
+          const src = this.catalog.get(g.id);            return {
             id: g.id,
             title: src?.title ?? g.id,
-            icon: src?.icon ?? '❔',
+            icon: src?.icon ?? 'CircleHelp',
             endpoint: src?.endpoint ?? `gate:${g.id}`,
             roles: src?.roles,
             effective: g.effective,
