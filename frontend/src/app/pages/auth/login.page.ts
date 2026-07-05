@@ -24,15 +24,16 @@ import { ToastService } from '../../core/services/toast.service';
 
         <form class="space-y-3" (ngSubmit)="onSubmit()">
           <div class="space-y-1">
-            <label class="label" for="email">Email</label>
+            <label class="label" for="username">Имя пользователя</label>
             <input
-              id="email"
-              name="email"
-              type="email"
+              id="username"
+              name="username"
+              type="text"
               class="input"
-              placeholder="admin@kppdf.local"
-              [(ngModel)]="email"
+              placeholder="admin"
+              [(ngModel)]="username"
               required
+              autocomplete="username"
             />
           </div>
           <div class="space-y-1">
@@ -48,18 +49,18 @@ import { ToastService } from '../../core/services/toast.service';
             />
           </div>
 
-          @if (errorMessage()) {
-            <p class="text-sm text-destructive">{{ errorMessage() }}</p>
-          }
+        @if (errorMessage()) {
+          <p class="text-sm text-destructive">{{ errorMessage() }}</p>
+        }
 
-          <button type="submit" class="btn-primary w-full" [disabled]="loading()">
-            @if (loading()) { Вход... } @else { Войти }
-          </button>
-        </form>
+        <button type="submit" class="btn-primary w-full" [disabled]="loading()">
+          @if (loading()) { Вход... } @else { Войти }
+        </button>
+      </form>
 
-        <p class="text-xs text-center text-muted-foreground">
-          Дефолт: <code class="bg-muted px-1 py-0.5 rounded">admin&#64;kppdf.local</code> / admin
-        </p>
+      <p class="text-xs text-center text-muted-foreground">
+        Дефолт: <code class="bg-muted px-1 py-0.5 rounded">admin</code> / admin
+      </p>
       </div>
     </div>
   `,
@@ -69,22 +70,22 @@ export class LoginPage {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
 
-  email = 'admin@kppdf.local';
+  username = 'admin';
   password = 'admin';
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
 
   onSubmit(): void {
-    if (!this.email || !this.password) return;
+    if (!this.username || !this.password) return;
     this.loading.set(true);
     this.errorMessage.set(null);
-    this.auth.login(this.email, this.password).subscribe({
+    this.auth.login(this.username, this.password).subscribe({
       next: () => {
         this.toast.success('Добро пожаловать!');
         void this.router.navigate(['/dashboard']);
       },
       error: (err) => {
-        this.errorMessage.set(err?.error?.message ?? 'Неверный email или пароль');
+        this.errorMessage.set(err?.error?.message ?? 'Неверное имя пользователя или пароль');
         this.loading.set(false);
       },
       complete: () => this.loading.set(false),

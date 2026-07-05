@@ -50,9 +50,9 @@ export class AuthService {
     return this.tokenSignal();
   }
 
-  login(email: string, password: string): Observable<AuthResponse> {
+  login(username: string, password: string): Observable<AuthResponse> {
     return this.http
-      .post<AuthResponse>(`${this.baseUrl}/auth/login`, { email, password })
+      .post<AuthResponse>(`${this.baseUrl}/auth/login`, { username, password })
       .pipe(tap((res) => this.applyAuth(res)));
   }
 
