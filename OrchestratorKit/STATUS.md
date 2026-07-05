@@ -52,9 +52,9 @@
 | ~~TZ-77~~ | ~~Theme Editor (OKLCH live sliders, non-destructive overrides)~~ | DONE 2026-07-05 | TZ-32 + TZ-33 • TZ-67 |
 | ~~TZ-78~~ | ~~Live Code Preview (highlight.js)~~ | DONE 2026-07-05 (fallback) | TZ-68 + TZ-69..74 |
 | ~~TZ-79~~ | ~~Print stylesheet + axe-core a11y audit~~ | DONE 2026-07-05 (@media print only) | TZ-31..32 • TZ-67..78 |
-| ~~TZ-80~~ | ~~SSR / hydration + Lighthouse ≥95 config~~ | DEFERRED 2026-07-05 | TZ-30 • TZ-67 + TZ-69..74 |
-| ~~TZ-81~~ | ~~README + docs (Russian editorial)~~ | DONE 2026-07-05 | TZ-30..80 |
-| ~~TZ-82~~ | ~~Browser-use smoke test~~ | DEFERRED 2026-07-05 | TZ-67 + TZ-69..74 + TZ-79..80 • TZ-81 |
+| TZ-80 | ~~SSR / hydration + Lighthouse ≥95 config~~ | **REJECTED 2026-07-05** (out of project scope) | TZ-30 • TZ-67 + TZ-69..74 |
+| ~~TZ-81~~ | ~~README + docs (Russian editorial)~~ | DONE 2026-07-05 | TZ-30..79 |
+| ~~TZ-82~~ | ~~Browser-use smoke test~~ | pending | TZ-67 + TZ-69..74 • TZ-79 |
 
 ### Параллелизм (max 4–5 по запросу PO)
 
@@ -64,7 +64,7 @@ Kit правила: **Layer 2 ≤ 2 одновременно · Layer 3 = СТР
 - **WAVE A** (Display primitives, фундамент работы): TZ-61 + TZ-62 в параллель · TZ-63 + TZ-64 в параллель · TZ-65 alone (стилей touch) · TZ-66 alone (нужен `pnpm add ngx-charts`).
 - **WAVE B** (Layout + page primitives, Layer 3 SERIAL): TZ-67 → TZ-68.
 - **WAVE C** (6 pages, разные папки — параллель ок): TZ-69 + TZ-70 + TZ-71 + TZ-72 → TZ-73 + TZ-74.
-- **WAVE D** (Cross-cutting, mixed): TZ-75 + TZ-76 + TZ-81 в параллель (нет shared conflict keys) · TZ-77 alone (routes + theme runtime) · TZ-78 + TZ-79 в параллель (оба touch styles.css, но разные блоки) · TZ-80 alone (angular.json/packge.json mass change) · **TZ-82 LAST** (зависит от всего).
+- **WAVE D** (Cross-cutting, mixed): TZ-75 + TZ-76 + TZ-81 в параллель (нет shared conflict keys) · TZ-77 alone (routes + theme runtime)  · TZ-78 + TZ-79 в параллель (оба touch styles.css, но разные блоки) · **TZ-80 REMOVED** (rejected, out of scope) · **TZ-82** — independent smoke runner against dev :4200 (no SSR dependency).
 
 ---
 
@@ -108,9 +108,9 @@ Kit правила: **Layer 2 ≤ 2 одновременно · Layer 3 = СТР
 | TZ-77 | 2026-07-05 | Theme Editor (OKLCH live sliders, non-destructive overrides) | _archive/2026-07/TZ-77.done.txt |
 | TZ-81 | 2026-07-05 | README + docs (Russian editorial) | _archive/2026-07/TZ-81.done.txt |
 | TZ-78 | 2026-07-05 | Live Code Preview (fallback: plain “pre”, no highlight.js — pnpm install FAILED) | _archive/2026-07/TZ-78.done.txt |
-| TZ-79 | 2026-07-05 | Print stylesheet (DEFERRED axe-core; @media print only) | _archive/2026-07/TZ-79.done.txt |
-| TZ-80 | 2026-07-05 | SSR / hydration (DEFERRED — multi-file + @angular/ssr install FAILED) | _archive/2026-07/TZ-80.done.txt |
-| TZ-82 | 2026-07-05 | Smoke test (DEFERRED — depends on TZ-80 SSR) | _archive/2026-07/TZ-82.done.txt |
+| TZ-79 | 2026-07-05 | Print stylesheet + axe-core a11y audit (DONE — 0 serious/critical on 7 routes) | _archive/2026-07/TZ-79.done.txt |
+| TZ-80 | 2026-07-05 | ~~SSR / hydration~~ REJECTED — out of project scope | _archive/2026-07/TZ-80.done.txt |
+| TZ-82 | 2026-07-05 | Smoke test (PENDING — runs against :4200 dev server, INDEPENDENT of TZ-80) | _archive/2026-07/TZ-82.done.txt |
 
 ---
 
@@ -177,11 +177,12 @@ TZ-64 ─┤                              │
 TZ-65 ─┤   (kit-layout + page-prims)  │
 TZ-66 ─┘                              ├─→ TZ-75 → TZ-82
                                      │   TZ-76
-                                     │   TZ-77
-                       TZ-70 ──┐     │   TZ-78
+                                     │   TZ-77                        TZ-70 ──┐     │   TZ-78
                        TZ-71 ──┼─→ TZ-72   TZ-79
-                       TZ-73   │   TZ-74    TZ-80
+                       TZ-73   │   TZ-74
                                   TZ-81
+                                  (TZ-80 rejected; TZ-82 stands alone)
+                                                              TZ-82
 ```
 
 **Edges-legend:**

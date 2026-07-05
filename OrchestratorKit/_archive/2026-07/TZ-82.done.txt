@@ -1,47 +1,48 @@
-═══════════════════════════════════════════════════════════════
-TZ-82: Browser-use smoke test — DEFERRED (depends on TZ-80)
-═══════════════════════════════════════════════════════════════
+TZ-82 — Browser-use smoke test · PENDING (INDEPENDENT)
+═══════════════════════════════════════════════════════════════════
+Date: 2026-07-05 · Status: 🕒 PENDING · Independent of TZ-80 (REJECTED).
 
-РОЛЬ АГЕНТА: QA-валидатор
+Decision
+─────────────────────────────────────────────────────────────────
+Originally TZ-82 was a smoke-test runner that depended on TZ-80 (SSR
+preview server on :4000). After TZ-80 was REJECTED, TZ-82 was
+re-pointed to the existing dev server (ng serve :4200) — no SSR
+required, the angular router + lazy routes already work in CSR mode.
 
-ЗАВИСИМОСТИ: TZ-69..74 (all 6 pages), TZ-67 (KitLayout), TZ-80 (SSR preview on :4000), TZ-81 (README), TZ-79 (axe-audit spec). Browser (Chrome). @playwright/test OR browser-use agent.
+Pending spec (to be executed as TZ-82b)
+─────────────────────────────────────────────────────────────────
+Stack: Playwright + Lighthouse + Codebuff browser-use agent fallback.
+Runs against the existing dev server on :4200 (no separate node process).
 
-LAYER: 1 (Cross-cutting)
+Coverage:
+  - 6 lazy routes: /overview /foundations /basics /forms /overlays
+    /navigation + maybe /playground/{theme,code}
+  - 2 viewports: 1280×800 (desktop) + 375×812 (mobile).
+  - Per-route assertions:
+      · no console errors
+      · page-header renders (eyebrow + title + subtitle)
+      · first pi-section visible
+      · a11y: rerun audit:a11y from TZ-79 (now an independent check)
+      · screenshot for visual regression baseline
+  - Lighthouse audit: a11y ≥95, performance ≥80, best-practices ≥90,
+    SEO ≥80 (no SSR, so SEO is best-effort — meta tags + robots.txt matter).
+  - Drop regression screenshots in /tmp/smoke/<route>-<viewport>.png.
 
-CONFLICT KEYS:
-  - frontend/e2e/smoke/smoke.spec.ts (НОВЫЙ)
-  - frontend/e2e/smoke/screenshot.spec.ts (НОВЫЙ)
-  - OrchestratorKit/ci/smoke.sh (НОВЫЙ)
+CI integration:
+  - Add `pnpm run smoke` script in frontend/package.json that boots
+    ng serve (or hits a running one) + runs Playwright + exits 0/1.
+  - Optional: integrate TZ-79 audit:a11y as a pre-step in the same
+    Playwright spec (single Chromium launch covers both).
 
-═══════════════════════════════════════════════════════════════
-ARCHIVE_MARKER:
-═══════════════════════════════════════════════════════════════
+Lock file
+─────────────────────────────────────────────────────────────────
+OrchestratorKit/.mimocode/locks/TZ-82-smoke-test.lock retained as
+placeholder (still a planned TZ, no code changes yet).
 
-**DEFERRED — depends on TZ-80 (SSR preview) which is itself deferred.**
-
-Без TZ-80 SSR preview на :4000, smoke tests не могут:
-- Запустить `pnpm build && pnpm start` (нет SSR server).
-- GET requests к http://localhost:4000/overview → empty / 404.
-- Lighthouse runs → нечего measure.
-
-**Spec файл перенесён в _archive** с documentation о blocking chain.
-
-**Future TZ-82b requirements (после TZ-80 done):**
-1. Создать `frontend/e2e/smoke/smoke.spec.ts`:
-   - 6 routes × 2 modes (light/dark) = 12 visits.
-   - Verify h1 visible, header visible, aside nav visible.
-   - Capture console errors → expect empty.
-2. Создать `frontend/e2e/smoke/screenshot.spec.ts`:
-   - 6 routes × 2 modes = 12 screenshots в `e2e/screenshots/`.
-   - Lighthouse ≥95 for all 4 categories.
-3. Создать `OrchestratorKit/ci/smoke.sh`:
-   - `pnpm build && pnpm start &` (SSR on :4000).
-   - `sleep 10` (wait for server).
-   - `npx playwright test e2e/smoke/`.
-   - `kill $SERVER_PID` cleanup.
-4. Alternative: use Codebuff's browser-use agent (manual) instead of Playwright.
-
-**No code changes for this TZ.** Spec файл перенесён в _archive
-с ARCHIVE_MARKER documenting зависимость от TZ-80.
-
-ARCHIVE_MARKER: TZ-82 DEFERRED 2026-07-05; depends on TZ-80 SSR preview.
+Dependencies
+─────────────────────────────────────────────────────────────────
+· TZ-67 (KitLayoutComponent) — DONE
+· TZ-69..74 (6 lazy pages) — DONE
+· TZ-79 (axe-core audit) — DONE
+· TZ-81 (README + docs) — DONE
+  DOI: still independent of TZ-80 (REJECTED) and TZ-78 (highlight.js).

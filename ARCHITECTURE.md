@@ -460,27 +460,32 @@ Uses `zeroY()` computed = `padding.top + yScale()(0)`. For non-negative data, eq
 
 ---
 
-## SSR / Hydration (TZ-80 — DEFERRED)
+## SSR / Hydration (TZ-80 — REJECTED)
 
-**DEFERRED — @angular/ssr install FAILED** (`pnpm add @angular/ssr@^20 express` → ERR_PNPM_PUBLIC_HOIST_PATTERN_DIFF).
+**REJECTED 2026-07-05 — out of project scope.** SSR-pretendering exits in
+the project: no `@angular/ssr`, no `express`, no server build, no
+hydration. Angular 20 SPA ships client-side rendered from `dist/frontend/browser/`
+served by the inline static server in `start.mjs` (TZ-42).
 
-Future TZ-80b:
-- `pnpm install` reconcile.
-- `pnpm add @angular/ssr@^20 express`.
-- Создать main.server.ts + server.ts (Express listener).
-- Update main.ts (conditional bootstrap) + app.config.ts (provideClientHydration).
-- Update angular.json (server build target) + package.json.
-- `pnpm build` → dist/frontend/{browser,server}.
-- Lighthouse ≥95 across 4 categories.
+If a future Load Test or SEO need arrives:
+- Treat it as a brand-new TZ (don’t reopen TZ-80). It will need
+  fresh `pnpm add` (after lockfile reconcile) + multi-file setup
+  (main.server.ts + server.ts + app.config.ts provider + new
+  angular.json server target). Not a quick win — at least half a day.
+- Or consider static prerender (`ng build --prerender`) as a lighter
+  alternative — gives HTML-first render without a node server.
+- Nothing in the existing TZ-30..82 chain assumes SSR. State stays clean.
 
-**Lock-файл:** `OrchestratorKit/.mimocode/locks/TZ-80-ssr-hydration.lock` (placeholder, no code changes).
+**Lock-файл:** N/A (rejected; no placeholder retained).
 
 ---
 
-## Browser-use smoke test (TZ-82 — DEFERRED)
+## Browser-use smoke test (TZ-82 — INDEPENDENT)
 
-**DEFERRED — depends on TZ-80 (SSR preview) which is itself deferred.**
-
-Без SSR preview на :4000, smoke tests не могут быть запущены. Future TZ-82b (после TZ-80 done): Playwright + Lighthouse + browser-use agent fallback.
+**INDEPENDENT — runs against dev server :4200 (`ng serve`).** No SSR
+required; smoke tests target the angular router + lazy routes that already
+work in CSR mode. Stack: Playwright + Lighthouse + Codebuff `browser-use`
+agent fallback. See `OrchestratorKit/_archive/2026-07/TZ-82.done.txt`
+(when implemented) for runbook.
 
 **Lock-файл:** `OrchestratorKit/.mimocode/locks/TZ-82-smoke-test.lock` (placeholder, no code changes).

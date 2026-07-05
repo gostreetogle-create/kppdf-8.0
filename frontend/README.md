@@ -59,7 +59,7 @@ frontend/src/app/
 | @angular/cdk | ^20 | (опционально, не используется) |
 | lucide-angular | ^0.460 | Hairline iconography (1.5px stroke) |
 | highlight.js | ^11 | Live code preview (опционально) |
-| @angular/ssr | ^20 | SSR + hydration (опционально) |
+| @angular/ssr | — | (NOT in project — SSR rejected 2026-07-05) |
 
 ## Архитектурные решения
 

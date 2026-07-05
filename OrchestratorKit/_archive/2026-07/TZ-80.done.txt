@@ -1,58 +1,41 @@
-═══════════════════════════════════════════════════════════════
-TZ-80: SSR / hydration + Lighthouse ≥95 — DEFERRED
-═══════════════════════════════════════════════════════════════
+TZ-80 — SSR / Hydration · REJECTED
+═══════════════════════════════════════════════════════════════════
+Date: 2026-07-05 · Status: ❌ REJECTED · Not deferred, not planned.
 
-РОЛЬ АГЕНТА: Frontend Architect (SSR specialist)
+Decision
+─────────────────────────────────────────────────────────────────
+SSR is OUT of the project scope. The Angular 20 frontend ships as
+a standard CSR-only SPA from `dist/frontend/browser/`, served by the
+inline static server in `start.mjs` (TZ-42). No `@angular/ssr`,
+no express, no server build target, no hydration providers.
 
-ЗАВИСИМОСТИ: TZ-30 (deps), TZ-31, TZ-32, TZ-67, TZ-69..74.
+What this means
+─────────────────────────────────────────────────────────────────
+· frontend/package.json: NO @angular/ssr, no express, no @nguniversal.
+· No `main.server.ts` / `server.ts`. No `provideClientHydration()` in
+  app.config.ts. No `server` block in angular.json. No `pnpm build`
+  emitting `dist/frontend/server`.
+· Existing code that mentions "SSR-safe" (e.g. isPlatformBrowser
+  guards in TZ-56 toast, TZ-75 ⌘K palette, TZ-77 Theme Editor) is
+  RETAINED as defensive scaffolding — those plugins wouldn't crash
+  IF SSR got enabled later. The guards cost nothing to keep.
+· TZ-79 (axe-core a11y audit) runs against dev :4200 in CSR mode
+  and remains independent of this rejection.
+· TZ-82 (smoke test) runs against dev :4200 in CSR mode and is
+  INDEPENDENT of TZ-80 — see TZ-82.done.txt for new spec.
 
-LAYER: 1 (Cross-cutting)
+lock file
+─────────────────────────────────────────────────────────────────
+OrchestratorKit/.mimocode/locks/TZ-80-ssr-hydration.lock was deleted
+when the rejection was filed (2026-07-05). No placeholder retained.
 
-CONFLICT KEYS:
-  - frontend/src/main.ts (требует SSR bootstrap)
-  - frontend/src/main.server.ts (НОВЫЙ)
-  - frontend/src/server.ts (НОВЫЙ)
-  - frontend/src/app/app.config.ts (provideClientHydration)
-  - frontend/angular.json (SSR build target)
-  - frontend/package.json (+ @angular/ssr, express)
-
-═══════════════════════════════════════════════════════════════
-ARCHIVE_MARKER:
-═══════════════════════════════════════════════════════════════
-
-**DEFERRED — multi-factor блокеров:**
-
-1. **`pnpm add @angular/ssr@^20 express` FAILED** с
-   `ERR_PNPM_PUBLIC_HOIST_PATTERN_DIFF` (тот же pnpm config blocker,
-   что и TZ-66/78/79). Без @angular/ssr package — SSR bootstrap невозможен.
-
-2. **Multi-file changes required:**
-   - main.ts — bootstrapApplication conditional (browser vs server)
-   - main.server.ts — NEW server entrypoint
-   - server.ts — NEW express listener
-   - app.config.ts — provideClientHydration() + withEventReplay()
-   - angular.json — add server build target
-   - package.json — +@angular/ssr, +express, scripts
-
-3. **Risk assessment:** SSR + hydration в Angular 20 имеет высокий
-   edge-case risk (DI в server context, browser-only APIs в
-   components, async rendering). Без итеративного testing
-   (`pnpm build && node dist/.../server.mjs`) — high chance regression.
-
-4. **Lighthouse ≥95:** нельзя measure без running SSR preview.
-
-**Future TZ-80b requirements:**
-- `pnpm install` reconcile (fix public-hoist-pattern).
-- `pnpm add @angular/ssr@^20 express`.
-- Создать main.server.ts + server.ts.
-- Update main.ts + app.config.ts.
-- Update angular.json + package.json.
-- `pnpm build` → dist/frontend/{browser,server}.
-- `node dist/frontend/server/server.mjs` → listening on :4000.
-- Lighthouse audit (Performance / Accessibility / Best Practices / SEO ≥95).
-- axe-core integration (links TZ-79).
-
-**No code changes for this TZ.** Spec файл перенесён в _archive
-с ARCHIVE_MARKER documenting блокер + future steps.
-
-ARCHIVE_MARKER: TZ-80 DEFERRED 2026-07-05; @angular/ssr install FAILED; multi-file SSR config postponed.
+Future (out of project scope unless reopens)
+─────────────────────────────────────────────────────────────────
+If SEO/Lighthouse needs ever arrive:
+  - Treat as brand-new TZ, not a TZ-80 reopen.
+  - Two paths:
+      a) full @angular/ssr (as originally specced) — at least half
+         a day of multi-file plumbing + lockfile reconcile first.
+      b) static prerender (`ng build --prerender`) — 1 TZ worth,
+         smaller surface, no node server.
+  - Either path does NOT depend on TZ-30..79. Just TZ-30 (foundation).
