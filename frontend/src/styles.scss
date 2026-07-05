@@ -1,0 +1,42 @@
+@use '@angular/material' as mat;
+
+// Material 3 (MD3) theme — uses the modern mat.theme() mixin that emits
+// CSS custom properties (--mat-sys-*) used by all Material components.
+// Tweak palette + typography here for a global re-skin.
+html {
+  color-scheme: light;
+
+  @include mat.theme(
+    (
+      color: (
+        theme-type: light,
+        primary: mat.$violet-palette,
+        tertiary: mat.$orange-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
+
+  // Use the modern Material Symbols (filled) icon font instead of legacy
+  // Material Icons. Components like <mat-icon> pick this up automatically.
+  .mat-icon {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+}
+
+// Material Symbols are loaded with `font-display: block` by default,
+// which can produce a brief FOUT. We override to `swap` for nicer UX.
+@font-face {
+  font-family: 'Material Symbols Outlined';
+  font-display: swap;
+  src: local('Material Symbols Outlined');
+}

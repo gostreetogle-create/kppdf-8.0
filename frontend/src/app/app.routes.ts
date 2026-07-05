@@ -1,43 +1,21 @@
 import { Routes } from '@angular/router';
-import { authGuard, roleGuard } from './core/guards/auth.guard';
+import { authGuard, publicOnlyGuard } from './core/auth.guard';
 
 export const routes: Routes = [
   {
     path: 'login',
-    loadComponent: () => import('./pages/auth/login.page').then((m) => m.LoginPage),
+    canMatch: [publicOnlyGuard],
+    loadComponent: () =>
+      import('./features/auth/login.page').then((m) => m.LoginPage),
+    title: 'KPPDF — Вход',
   },
   {
-    path: '',
-    canActivate: [authGuard],
-    loadComponent: () => import('./layout/main-layout.component').then((m) => m.MainLayoutComponent),
-    children: [
-      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
-      {
-        path: 'dashboard',
-        loadComponent: () =>
-          import('./pages/dashboard/dashboard.page').then((m) => m.DashboardPage),
-      },      { path: 'task-panel',
-        loadComponent: () =>
-          import('./pages/task-panel/task-panel.page').then((m) => m.TaskPanelPage),
-      },
-      {
-        // ⚠️ Must be registered BEFORE 'p/:id' so the static path wins the route match.
-        path: 'p/products',
-        loadComponent: () =>
-          import('./pages/products-overview/products-overview.page').then((m) => m.ProductsOverviewPage),
-      },
-      {
-        path: 'p/:id',
-        loadComponent: () =>
-          import('./pages/page-renderer').then((m) => m.PageRenderer),
-      },
-      {
-        path: 'admin/gates',
-        canActivate: [roleGuard(['admin'])],
-        loadComponent: () =>
-          import('./pages/admin/gates.admin.page').then((m) => m.GatesAdminPage),
-      },
-    ],
+    path: 'home',
+    canMatch: [authGuard],
+    loadComponent: () =>
+      import('./features/home/home.page').then((m) => m.HomePage),
+    title: 'KPPDF — Главная',
   },
-  { path: '**', redirectTo: '' },
+  { path: '', redirectTo: '/home', pathMatch: 'full' },
+  { path: '**', redirectTo: '/home' },
 ];
