@@ -969,7 +969,9 @@ async function main() {
   if (flags.prod) {
     const nodeBin = resolveBin('node');
     if (!nodeBin) throw new Error('node not found in PATH');
-    backend = spawnDetached(nodeBin, [prodBackend.entry], BACKEND_DIR, 'backend', { NODE_ENV: 'production' });
+    backend = spawnDetached(nodeBin, [prodBackend.entry], BACKEND_DIR, 'backend', {
+      NODE_ENV: 'production',
+    });
   } else {
     backend = spawnDetached('pnpm', ['start:dev'], BACKEND_DIR, 'backend');
   }

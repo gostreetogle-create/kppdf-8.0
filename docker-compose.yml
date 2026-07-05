@@ -19,9 +19,17 @@ services:
       mongo:
         condition: service_healthy
     restart: "no"
+    # NOTE: two different hostnames are intentional.
+    # - `mongosh --host mongo:27017` lets the init container reach the mongo service via Docker DNS.
+    # - `host: "127.0.0.1:27017"` is the member hostname stored in rs.conf() and read by clients.
+    #
+    # Works for: HOST backend (docker port forward 27017→27017 makes host's 127.0.0.1:27017 reach mongo).
+    # Does NOT work for: sibling containers (their own 127.0.0.1 = themselves, not mongo).
+    # If you dockerize the backend later, switch the stored member hostname to `kppdf-mongo:27017`
+    # (container_name) and accept that host-based dev tools won't reach the same hostname.
     entrypoint: >-
       sh -c "mongosh --host mongo:27017 --eval
-      'try { rs.status() } catch (e) { rs.initiate({_id: \"rs0\", members: [{_id: 0, host: \"mongo:27017\"}]}) }'"
+      'try { rs.status() } catch (e) { rs.initiate({_id: \"rs0\", members: [{_id: 0, host: \"127.0.0.1:27017\"}]}) }'"
 
   backend:
     build: ./backend
