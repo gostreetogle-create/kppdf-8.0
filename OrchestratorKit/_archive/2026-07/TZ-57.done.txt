@@ -1,0 +1,119 @@
+═══════════════════════════════════════════════════════════════
+TZ-57: Toast (ngx-sonner wrapper, top-right corner, hairline)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-30 (deps: ngx-sonner@^0.20 уже в package.json),
+           TZ-31 (Tailwind v4), TZ-32 (OKLCH).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/toast/pi-toast.component.ts
+  - frontend/src/app/shared/ui/toast/pi-toast.service.ts
+  - frontend/src/app/shared/ui/toast/toast.tokens.ts
+  - frontend/src/app/app.ts           (mount <pi-toast-host />)
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+ngx-sonner — Angular-порт sonner. Default-тема светлая, скруглённая,
+с тенью. Paper & Ink требует:
+- top-right corner (НЕ bottom).
+- hairline border, NO shadow.
+- ink-on-paper (light) / paper-on-ink (dark).
+- Шрифт body (Plus Jakarta Sans), НЕ mono — но eyebrow пометка сверху.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: `toast/pi-toast.service.ts`:
+    ```ts
+    export type ToastVariant = 'default' | 'success' | 'error' | 'warning';
+    @Injectable({ providedIn: 'root' })
+    export class PiToastService {
+      show(message: string, opts?: { description?: string;
+                                       variant?: ToastVariant;
+                                       duration?: number; }): string;
+      success(message: string, opts?: object): string;
+      error(message: string, opts?: object): string;
+      dismiss(id?: string): void;
+    }
+    ```
+    Singleton wrapper над `NgxSonnerToastService.show()` с
+    Paper & Ink defaults (position='top-right', expand=true).
+
+ШАГ 2: `toast/pi-toast.component.ts` (он же <pi-toast-host/>):
+  Standalone компонент-обёртка `ngx-sonner-toast`:
+    ```html
+    <ngx-sonner-toaster
+      position="top-right"
+      theme="light"                <!-- theme пере-управляется в TZ-33 service -->
+      [expand]="true"
+      [richColors]="false"          <!-- Paper & Ink: NO colored blobs, только hairline border-color -->
+      [closeButton]="true"
+      [toastOptions]="{ duration: 4000 }"
+    />
+    ```
+
+ШАГ 3: `toast/toast.tokens.ts`:
+    ```ts
+    export const PI_TOAST_HOST = new InjectionToken<...>('PI_TOAST_HOST');
+    ```
+
+ШАГ 4: `app.ts` — добавить `<pi-toast-host />` в root template (тот
+  уровень, где `<router-outlet />`). Это единственный раз host
+  рендерится — остальные компоненты просто вызывают service.
+
+ШАГ 5: Variants цвета — задать в styles.css в @layer components:
+    ```css
+    [data-sonner-toast][data-type='success'] { border-color: var(--color-ink); }
+    [data-sonner-toast][data-type='error']   { border-color: var(--color-destructive); }
+    ```
+    НЕ colored fill, только border line.
+
+ШАГ 6: Reduced motion (TZ-32) — duration анимации = 0 для prefers-
+  reduced-motion (через [toastOptions] динамически).
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/toast/pi-toast.component.ts
+  + frontend/src/app/shared/ui/toast/pi-toast.service.ts
+  + frontend/src/app/shared/ui/toast/toast.tokens.ts
+  ~ frontend/src/app/app.ts (добавить <pi-toast-host />)
+  ~ frontend/src/styles.css (sonner variants border-color)
+  ~ frontend/src/app/shared/ui/index.ts
+
+НЕ ИЗМЕНЯТЬ:
+  - backend/**
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `PiToastService.show('Hello')` — toast появляется в top-right corner.
+2. Variants: success / error — visually distinguished только цветом hairline.
+3. NO shadow / NO лиловый blur / NO colored fills.
+4. Auto-dismiss через 4s; close button работает.
+5. App.ts содержит `<pi-toast-host />` в root template.
+6. `pnpm exec tsc --noEmit` exit 0; `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Трогает `app.ts` (root component) — это shared-app boundary.
+Параллельно с ТОЛЬКО Layer-1 TZ. Не параллелить с TZ-67
+(KitLayoutComponent) которые тоже правит app.ts/layout.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Архивировать: `mv tasks/TZ-57.md OrchestratorKit/_archive/2026-07/TZ-57.done.txt`.

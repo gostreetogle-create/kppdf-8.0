@@ -1,0 +1,125 @@
+═══════════════════════════════════════════════════════════════
+TZ-50: Sheet (side drawer, anchor r/l/t/b)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-48 (Dialog + CDK overlay + focus trap), TZ-31 (Tailwind
+           v4), TZ-32 (OKLCH tokens).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/pi-sheet.component.ts
+  - frontend/src/app/shared/ui/pi-sheet.service.ts
+  - frontend/src/app/shared/ui/index.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+Dialog (TZ-48) — centered modal. Sheet = Slide-in panel от края viewport
+(как print-spread в журнале). Используется для: редактирования формы,
+side-cart, дополнительной навигации. Off-canvas variant Material
+не подходит — нужен hairline-only look.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: `pi-sheet.service.ts` — clone Dialog service, но с
+  PositionStrategy GLOBAL по выбранной стороне.
+
+  Inputs через config:
+  ```ts
+  export interface SheetConfig {
+    anchor: 'right' | 'left' | 'top' | 'bottom';  // default 'right'
+    size: 'sm' | 'md' | 'lg';                    // width для r/l, height для t/b
+    dismissOnBackdropClick?: boolean;             // default true
+    dismissOnEscape?: boolean;                    // default true
+  }
+  ```
+
+  Width/height sm/md/lg = 320/480/640px.
+  Backdrop dimmer = тот же `pi-overlay-backdrop` как в Dialog.
+
+ШАГ 2: `pi-sheet.component.ts` (standalone, OnPush).
+
+  Шаг 2.1: Inputs:
+    ```ts
+    title    = input<string>('');
+    anchor   = input<'right' | 'left' | 'top' | 'bottom'>('right');
+    size     = input<'sm' | 'md' | 'lg'>('md');
+    showClose = input<boolean>(true);
+    ```
+    Output: `close = output<void>()`.
+
+  Шаг 2.2: Container классы:
+    ```html
+    <div role="dialog"
+         [attr.aria-label]="title()"
+         class="bg-paper flex flex-col h-full
+                {{ anchor() === 'right' || anchor() === 'left' ? 'border-' + (anchor() === 'left' ? 'r' : 'l') + ' hairline border-rule w-[var(--sheet-w)]' : 'border-b border-t hairline border-rule h-[var(--sheet-h)]' }}">
+      @if (title()) {
+        <header class="px-5 py-3 border-b hairline border-rule flex items-center justify-between">
+          <h2 class="font-display text-lg tracking-tight">{{ title() }}</h2>
+          @if (showClose()) {
+            <button app-pi-icon-btn variant="ghost" (click)="close.emit()" aria-label="Закрыть">
+              <lucide-angular [img]="xIcon" size="16" />
+            </button>
+          }
+        </header>
+      }
+      <div class="flex-1 overflow-auto px-5 py-4 text-sm">
+        <ng-content />
+      </div>
+    </div>
+    ```
+
+  Шаг 2.3: CSS `.pi-overlay-panel` в styles.css — width/height через
+    inline style attr `style="--sheet-w: 480px; --sheet-h: 360px"` (в
+    зависимости от size).
+
+ШАГ 3: Animation — slide-in transition через CDK Overlay Defaults
+  `enterDuration: 220ms` + `easeOutQuint`. Без fade-in (sharp slide).
+  Respect `prefers-reduced-motion` (TZ-32 утилиты скидывают transition
+  duration до 0 если стоит reduced motion — наследуется автоматически).
+
+ШАГ 4: Exports в index.ts.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/pi-sheet.component.ts
+  + frontend/src/app/shared/ui/pi-sheet.service.ts
+  ~ frontend/src/app/shared/ui/index.ts
+  ~ frontend/src/styles.css (может доп. .pi-sheet-handle
+
+НЕ ИЗМЕНЯТЬ: backend/**, pages/** (Sheet используется в pages позже).
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. Service открывает Sheet через CDK Overlay с правильной стороной.
+2. При anchor='right' panel выезжает справа, ширина sm/md/lg = 320/480/640.
+3. ESC + backdrop click + close-кнопка закрывают.
+4. `pnpm exec tsc --noEmit` exit 0; `pnpm build` exit 0.
+5. Никаких shadow/blur в template или styles.
+6. Reduced-motion respected (animation 0ms).
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Новые файлы + barrel + minor styles.css touch. Параллельно с
+TZ-51/52 — нормально. Не запускать параллельно с TZ-48 (тот же
+styles.css touch).
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Архивировать: `mv tasks/TZ-50.md OrchestratorKit/_archive/2026-07/TZ-50.done.txt`.

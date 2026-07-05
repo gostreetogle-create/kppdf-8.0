@@ -1,0 +1,13 @@
+@import 'tailwindcss';
+
+/* Paper & Ink overlay styles (used by PiDialogService via @angular/cdk/overlay). */
+@layer components {
+  .pi-overlay-backdrop {
+    background: oklch(from var(--color-ink) l c h / 0.30);
+    backdrop-filter: none; /* intentionally no blur — editorial dimmer only */
+  }
+  .pi-overlay-panel {
+    /* Native overlay wrapper. Paper & Ink dialog component handles its own panel visuals. */
+    pointer-events: auto;
+  }
+}

@@ -1,0 +1,205 @@
+═══════════════════════════════════════════════════════════════
+TZ-32: OKLCH @theme inline tokens + custom utilities
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend CSS Architect
+
+ЗАВИСИМОСТИ: TZ-31 (Tailwind v4 + font imports готовы).
+
+LAYER: 1
+
+CONFLICT KEYS:
+  - frontend/src/styles.css
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. `frontend/src/styles.css` имеет `@import 'tailwindcss';` после
+   font imports, но НЕТ @theme inline tokens.
+2. НЕТ `.eyebrow`, `.hairline`, `.grid-paper` utilities.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: В `frontend/src/styles.css` ПОСЛЕ `@import 'tailwindcss';`
+  добавить @theme inline token map:
+  ```css
+  @theme inline {
+    /* === Palette (OKLCH @theme inline is CANONICAL source of truth) ===
+       Override layer pattern (TZ-77 ↔ TZ-32 coupling):
+       documentElement.style.setProperty('--color-X-override', oklch(...))
+       устанавливает dynamic override; var() fallback preserves base OKLCH
+       if override absent. Single source of truth НЕ НАРУШАЕТСЯ — база
+       всегда readable в styles.css, runtime override НЕ мутирует @theme. */
+    --color-paper:       var(--color-paper-override,       oklch(0.972 0.008 85));   /* #f5f3ee warm off-white */
+    --color-paper-2:     var(--color-paper-2-override,     oklch(0.925 0.009 80));   /* secondary surface */
+    --color-ink:         var(--color-ink-override,         oklch(0.145 0 0));         /* near-black */
+    --color-rule:        var(--color-rule-override,        oklch(0.85  0.006 80));   /* hairline border */
+    --color-muted:       var(--color-muted-override,       oklch(0.43  0.01  80));   /* muted foreground */
+    --color-destructive: var(--color-destructive-override, oklch(0.5   0.18  27));
+    --color-accent-warm: var(--color-accent-warm-override, oklch(0.7   0.15  60));
+    --color-accent-cool: var(--color-accent-cool-override, oklch(0.55  0.10 230));
+
+    /* === Typography === */
+    --font-display: 'Syne', 'Helvetica Neue', sans-serif;
+    --font-body:    'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-mono:    ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+    /* === Shape (sharp, not pill) === */
+    --radius: 0.375rem;
+    --radius-sm: 0.25rem;
+
+    /* === Border weights === */
+    --border-width-hairline: 1px;
+  }
+  ```
+
+  ВАЖНО: `--color-X` в Tailwind v4 @theme inline автоматически
+  генерирует utility classes `bg-paper`, `text-ink`, `border-rule` и
+  т. д. Никакого custom config НЕ нужно.
+
+ШАГ 2: Override Tailwind defaults НИЖЕ @theme — чтобы выключить
+  drop shadows / большие radii по умолчанию:
+  ```css
+  @layer base {
+    /* Drop shadows off by default — typography + whitespace create hierarchy. */
+    * { box-shadow: none !important; }
+    /* Force sharp corners — override .rounded-3xl, .rounded-2xl, .rounded-xl */
+    .rounded-xl,.rounded-2xl,.rounded-3xl { border-radius: var(--radius) !important; }
+    /* Set default body font + bg. */
+    html, body {
+      background-color: var(--color-paper);
+      color: var(--color-ink);
+      font-family: var(--font-body);
+      font-feature-settings: 'ss01', 'cv11';
+    }
+  }
+  ```
+
+  ВАЖНО: `!important` оправдан здесь — это глобальный запрет для
+  editorial aesthetic.
+
+ШАГ 3: Custom @utility для editorial sugar:
+  ```css
+  @utility eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--color-muted);
+  }
+
+  @utility hairline {
+    /* 1px border using --rule token. */
+    border: 1px solid var(--color-rule);
+  }
+
+  @utility hairline-t {
+    border-top: 1px solid var(--color-rule);
+  }
+  @utility hairline-b {
+    border-bottom: 1px solid var(--color-rule);
+  }
+  @utility hairline-r {
+    border-right: 1px solid var(--color-rule);
+  }
+  @utility hairline-l {
+    border-left: 1px solid var(--color-rule);
+  }
+
+  @utility grid-paper {
+    background-color: var(--color-paper);
+    background-image:
+      linear-gradient(to right, color-mix(in oklch, var(--color-rule) 40%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklch, var(--color-rule) 40%, transparent) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: 0 0;
+  }
+  ```
+
+  → Использование: `<div class="grid-paper">…</div>`,
+     `<div class="hairline-b pt-4">…</div>`,
+     `<span class="eyebrow">01 · обзор</span>`.
+
+ШАГ 4: Глобальные prefers-reduced-motion:
+  ```css
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+  ```
+  Эта строчка часть TZ-32, но TZ-79 её повторно проверит.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- frontend/src/styles.css    [@theme inline + @layer base (kill shadows/rounded-3xl) + @utility (eyebrow, hairline*, grid-paper) + prefers-reduced-motion]
+
+НЕ ИЗМЕНЯТЬ:
+- Компоненты (TZ-34+)
+- Пакеты (TZ-31)
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `grep '@theme inline' frontend/src/styles.css` → 1 hit.
+2. `grep 'var(\-\-color-paper-override, oklch(0.972' frontend/src/styles.css`
+   → 1 hit (paper consumes override через CSS var() fallback — TZ-77 ↔ TZ-32 coupling).
+3. `grep 'var(\-\-color-ink-override, oklch(0.145' frontend/src/styles.css`
+   → 1 hit (ink consumes override; same pattern applied to 6 цветов).
+4. `grep '@utility eyebrow' frontend/src/styles.css` → 1 hit.
+5. `grep '@utility grid-paper' frontend/src/styles.css` → 1 hit.
+6. `grep '@utility hairline' frontend/src/styles.css` → ≥ 5 hits
+   (hairline + 4 модификатора стороны).
+7. `grep 'prefers-reduced-motion' frontend/src/styles.css` → 1 hit.
+8. `grep 'box-shadow:' frontend/src/styles.css` → 1 hit (только
+   объявление запрета). В остальных файлах не должно появиться.
+9. `pnpm exec tsc -p tsconfig.app.json --noEmit` exit 0.
+10. `pnpm build` exit 0.
+11. На любой странице DevTools → Computed → `background-image`
+    у элемента с `.grid-paper` показывает `linear-gradient(...)`.
+12. **TZ-77 ↔ TZ-32 coupling verification (RE-FETCH после mutation,
+    чтобы избежать false-positive от snapshot-capture):**
+    ```ts
+    // Apply override — verify reactive propagation.
+    document.documentElement.style.setProperty(
+      '--color-ink-override', 'oklch(70% 0.1 80)');
+    expect(getComputedStyle(document.body).color).toMatch(/oklch\(0\.7/);
+
+    // Remove override — re-fetch getComputedStyle, verify fallback к
+    // canonical @theme OKLCH literal.
+    document.documentElement.style.removeProperty('--color-ink-override');
+    expect(getComputedStyle(document.body).color).toMatch(/oklch\(0\.145/);
+    ```
+    Override применяется без перезаписи @theme base. После remove —
+    автоматический fallback на original `oklch(0.145 0 0)` без
+    дополнительных хуков (CSS `var()` fallback syntax).
+
+    **Важно:** НЕ использовать captured `const c = ...` перед
+    `removeProperty` — JS variable — это snapshot, не reactive; assertion
+    будет проходить с override-значением дважды без валидации fallback.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Трогает ТОЛЬКО `styles.css`. Параллельно с TZ-33 НЕЛЬЗЯ (оба
+правят styles.css). TZ-33 запускать строго ПОСЛЕ TZ-32.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Стандартный TZF-00. progress.md: `TZ-32 (Token layer + utilities)`.
+ARCHITECTURE.md: раздел `## Paper & Ink Tokens (TZ-32)` —
+перечисление 8 цветов + 3 font + 2 radius + 5 hairline utilities +
+grid-paper 24×24px.

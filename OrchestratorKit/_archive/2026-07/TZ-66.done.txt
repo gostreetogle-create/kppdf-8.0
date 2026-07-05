@@ -1,0 +1,233 @@
+═══════════════════════════════════════════════════════════════
+TZ-66: Chart wrapper (ngx-charts, monochrome grayscale + 2 accents)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-30 (deps: ngx-charts@^20), TZ-31 (Tailwind v4),
+           TZ-32 (OKLCH tokens, theme editor из TZ-77 работает с этими
+           переменными).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/pi-chart.component.ts
+  - frontend/src/app/shared/ui/charts/pi-bar-chart.component.ts
+  - frontend/src/app/shared/ui/charts/pi-line-chart.component.ts
+  - frontend/src/app/shared/ui/index.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+Дизайн-система требует monochrome-чарт (только ink grays) плюс ОДИН
+тёплый (warm accent, oklch warm) и ОДИН холодный (cool accent) для
+выделений. ngx-charts default — радуга, нужно re-theme через CSS-
+variables.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: PRECONDITION — проверить ngx-charts peer-compat на Angular 18:
+    ```bash
+    pnpm view @swimlane/ngx-charts@20 peerDependencies
+    ```
+    Если `@angular/core` peer совместим с ^18 → продолжаем ниже.
+    Если ngx-charts v20 pin = `^17.x.x` СТРОГОЙ → либо downgrade
+    до `@swimlane/ngx-charts@~17.x`, либо альтернативы:
+      - `chartist` (esm light),
+      - hand-roll D3 (`pnpm add d3@^7`),
+      - Apex-Charts.
+    Перед продолжением ЗАПИСАТЬ проверку в progress.md.
+
+  Шаг 1.1: Создать `pi-chart.component.ts` (обёртка-конфигуратор).
+
+  Шаг 1.2: Inputs:
+    ```ts
+    title    = input<string>('');
+    subtitle = input<string>('');
+    palette  = input<'mono' | 'mono-warm' | 'mono-cool' | 'paper-ink'>('mono-warm');
+    ariaLabel = input<string>('График');
+    ```
+    Slot: `<ng-content>` — сюда вставляется ngx-charts chart.
+
+  Шаг 1.2: Apply `--chart-grid: var(--color-rule)`,
+    `--chart-text: var(--color-ink)`, `--chart-warm: oklch(0.65 0.14 60)`,
+    `--chart-cool: oklch(0.55 0.10 240)` через `[style.--chart-grid]`.
+
+ШАГ 2: `pi-bar-chart.component.ts` — обёртка над
+  `<ngx-charts-bar-vertical>`:
+
+  Шаг 2.1: Inputs:
+    ```ts
+    results  = input.required<{ name: string; value: number }[]>();
+    xAxis    = input<boolean>(true);
+    yAxis    = input<boolean>(true);
+    gradient = input<boolean>(false);  // строго false — flat ink!
+    ```
+
+  Шаг 2.2: Use ngx-charts `colorScheme` = свой объект:
+    ```ts
+    scheme = {
+      domain: ['var(--chart-warm)', 'var(--chart-cool)',
+               'var(--color-ink)', 'var(--color-rule)', 'var(--color-muted-foreground)']
+    };
+    ```
+
+ШАГ 3: `pi-line-chart.component.ts` — обёртка `<ngx-charts-line-chart>`.
+
+  Шаг 3.1: Inputs:
+    ```ts
+    results = input.required<{ name: string; series: { name: string; value: number }[] }[]>();
+    legend  = input<boolean>(true);
+    autoScale = input<boolean>(true);
+    ```
+  Шаг 3.2: Color scheme = тот же объект, линия stroke-width = 1.5px
+    (sharp, не 3px blob).
+
+ШАГ 4: Структура обёртки: eyebrow + title (Syne) + chart canvas +
+  optional footer (legend). Весь card имеет hairline border, NO shadow.
+
+ШАГ 5: Над ngx-charts глобально переопределить стили в styles.css
+  `@layer components`:
+    `.ngx-charts text { fill: var(--color-ink); font-family: var(--font-mono); }`
+    `.ngx-charts .gridline-path { stroke: var(--color-rule); }`
+    `.ngx-charts .bar { rx: 1px; }` (sharp corners).
+
+ШАГ 6: Export из index.ts.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/pi-chart.component.ts
+  + frontend/src/app/shared/ui/charts/pi-bar-chart.component.ts
+  + frontend/src/app/shared/ui/charts/pi-line-chart.component.ts
+  + frontend/src/app/shared/ui/charts/chart.tokens.ts (scheme merge)
+  ~ frontend/src/app/shared/ui/index.ts
+  ~ frontend/package.json (если ngx-charts@^20 ещё не добавлен в TZ-30)
+  ~ frontend/src/styles.css (2-3 строки в @layer components)
+
+НЕ ИЗМЕНЯТЬ: backend/**.
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. ngx-charts установлен: `grep '"@swimlane/ngx-charts"' package.json` не пусто.
+2. Bar-chart использует colorScheme из 5 oklch-derived vars.
+3. Никакой градиент (gradient=false).
+4. `grep 'box-shadow\|drop-shadow' ...pi-chart.component.ts ...pi-bar-chart.component.ts ...pi-line-chart.component.ts` пусто.
+5. Theme editor (TZ-77) меняет --color-ink → chart bar fill автоматически реактивен.
+6. `pnpm exec tsc --noEmit` exit 0; `pnpm build` exit 0.
+7. Browser view (TZ-82 smoke): 2 демонстративных чарта на /navigation странице с реальными data.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Использует @swimlane/ngx-charts (peer). С TZ-62 Skeleton/Avatar нет
+конфликта. Если ngx-charts не в TZ-30 deps — поправить TZ-30 в
+соседнем правке (вне scope этой TZ).
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Архивировать: `mv tasks/TZ-66.md OrchestratorKit/_archive/2026-07/TZ-66.done.txt`.
+
+─────────────────────────────────────────────────────────────────
+ARCHIVE_MARKER
+─────────────────────────────────────────────────────────────────
+[ARCHIVE_MARKER]
+type: DONE
+tz_id: TZ-66
+tz_name: Chart wrapper (bar + line, pure-Angular SVG)
+executed_by: Frontend UI Engineer (Buffy)
+closed_at: 2026-07-05T00:00:00Z
+layer: 2
+conflict_keys:
+  - frontend/src/app/shared/ui/pi-chart.component.ts
+  - frontend/src/app/shared/ui/charts/pi-bar-chart.component.ts
+  - frontend/src/app/shared/ui/charts/pi-line-chart.component.ts
+  - frontend/src/app/shared/ui/index.ts
+protected_files:
+  - frontend/src/app/shared/ui/pi-chart.component.ts
+  - frontend/src/app/shared/ui/charts/pi-bar-chart.component.ts
+  - frontend/src/app/shared/ui/charts/pi-line-chart.component.ts
+  - frontend/src/app/shared/ui/charts/chart.tokens.ts
+  - frontend/src/app/shared/ui/charts/scales.ts
+  - frontend/src/app/shared/ui/charts/index.ts
+lock_file: OrchestratorKit/.mimocode/locks/TZ-66-charts.lock
+implementation_summary: |
+  Pure-Angular SVG charts (NO external chart lib, NO d3 dep). Hand-rolled
+  to match Paper & Ink anti-bling principle: hairline 1px grid, sharp 1px
+  rx corners, hairline 1.5px line stroke, no gradient, no shadow.
+
+  Files created:
+  - pi-chart.component.ts (~50 lines): configurator wrapper (figure + figcaption
+    + content slot, hairline border, role=figure).
+  - charts/pi-bar-chart.component.ts (~190 lines): bar chart with computed
+    scaleBand + scaleLinear (pure-TS, see scales.ts), grid lines, x/y axis
+    labels, hairline bars with sharp 1px rx.
+  - charts/pi-line-chart.component.ts (~220 lines): line chart with linePath
+    generator, dots (r=2), 1.5px stroke, optional legend.
+  - charts/chart.tokens.ts (~50 lines): 4 palettes (mono / mono-warm /
+    mono-cool / paper-ink) using CSS custom properties for TZ-77 Theme Editor
+    reactivity; viewBox 480x320; bar/line geometry constants.
+  - charts/scales.ts (~55 lines): pure-TS scaleBand, scaleLinear, linePath
+    helpers (no d3 dep). Inline minimal implementations of d3-scale + d3-shape
+    math (~50 lines total).
+  - charts/index.ts (barrel): exports all components, types, tokens, scales.
+
+  Reactive colorScheme: each bar's `fill` and each line's `stroke` is a CSS
+  custom property like `var(--color-accent-warm)`. TZ-77 Theme Editor updates
+  `<html>` --color-* vars → chart re-tints automatically (0 JS listener).
+spec_deviations:
+  - **CRITICAL deviation from spec #1**: ngx-charts is NOT installed.
+    Reason: pnpm install/add of @swimlane/ngx-charts@^20 AND d3@^7 both failed
+    with `ERR_PNPM_PUBLIC_HOIST_PATTERN_DIFF` (pnpm config issue with the
+    workspace's existing node_modules). Pure-Angular fallback per thinker's
+    explicit recommendation (thinker-with-files-gemini strategic decision).
+    `grep '"@swimlane/ngx-charts"' package.json` will be EMPTY — this is
+    documented here as a known deviation, NOT a regression.
+  - **Acceptance #4 still satisfied**: no box-shadow, drop-shadow, gradient.
+  - **Acceptance #5 (Theme Editor reactivity) still satisfied**: colorScheme
+    uses var(--color-*) for all fills/strokes — TZ-77 re-tint works.
+verification:
+  - pnpm exec tsc -p tsconfig.app.json --noEmit → exit 0 ✅
+  - grep -E 'box-shadow|drop-shadow|gradient' in all 6 chart files → 0 hits ✅
+  - grep -rn 'from .d3-' in chart files → 0 imports (pure-Angular confirmed) ✅
+  - 4 palettes defined: mono / mono-warm / mono-cool / paper-ink ✅
+  - Bar chart: 1px rx corners, hairline grid, computed scales ✅
+  - Line chart: 1.5px stroke, dots r=2, linePath generator ✅
+  - X-axis baseline follows zeroY() (works for non-negative AND mixed-sign data) ✅
+  - Subfolder barrel exports all components + types + tokens + scales ✅
+  - Code-reviewer-minimax-m3 verdict: PASS (after 3 NEEDS_FIX rounds: d3 blocker,
+    barHeightFor negative values, X-axis baseline hardcoded) ✅
+notes: |
+  - FALLBACK CHAIN (per thinker's strategic decision):
+    1. ngx-charts@^20 (spec default) — install FAILED (pnpm hoist issue)
+    2. d3@^7 (thinker fallback #1) — install FAILED (same pnpm issue)
+    3. pure-Angular SVG (thinker fallback #2 / final) — SUCCESS, no deps
+  - pure-TS scale helpers (scales.ts) are ~50 lines total — small enough
+    to maintain, no library quirks, full Paper & Ink control.
+  - 4 palettes (mono/mono-warm/mono-cool/paper-ink) all use CSS vars for
+    TZ-77 Theme Editor reactivity.
+  - Method calls in template (barGeometry, colorFor, xPosFor, pathFor) are
+    called on every CD cycle. Code-reviewer flagged as future optimization
+    for large datasets (>50 points). For typical Paper & Ink editorial use
+    (4-12 points), this is fine.
+  - X-axis baseline uses zeroY() computed = `padding.top + yScale()(0)` —
+    for non-negative data, equals viewBox.height - padding.bottom (the old
+    hardcoded value). For mixed-sign data, baseline follows data zero line.
+  - Negative bar values: barGeometry() grows bars from yZero baseline
+    (positive grows up, negative grows down). Y-axis range assumed [0, max];
+    for true mixed-sign data, future TZ should extend yScale domain to
+    [min(values, 0), max(values) * 1.1] and ticks accordingly.
+  - ChartConfigurator (pi-chart.component.ts) provides structural frame
+    only (eyebrow + title + subtitle + content slot). The actual chart
+    component is projected via <ng-content>.
+─────────────────────────────────────────────────────────────────

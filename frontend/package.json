@@ -1,7 +1,7 @@
 {
   "name": "kppdf-frontend",
-  "version": "0.2.0",
-  "description": "Frontend for kppdf-8.0 ERP — Angular 20 + Angular Material + Signals",
+  "version": "1.0.0-pi",
+  "description": "Paper & Ink — editorial Swiss-minimalism Angular SPA UI kit showcase",
   "private": true,
   "scripts": {
     "ng": "ng",
@@ -18,18 +18,23 @@
     "@angular/compiler": "^20.3.0",
     "@angular/core": "^20.3.0",
     "@angular/forms": "^20.3.0",
-    "@angular/material": "^20.2.0",
     "@angular/platform-browser": "^20.3.0",
     "@angular/router": "^20.3.0",
+    "clsx": "^2.1.1",
+    "lucide-angular": "^0.460.0",
     "rxjs": "~7.8.0",
+    "tailwind-merge": "^2.5.4",
     "tslib": "^2.3.0",
-    "zone.js": "~0.15.0",
-    "zod": "^3.23.8"
+    "zone.js": "~0.15.0"
   },
   "devDependencies": {
     "@angular/build": "^20.3.31",
     "@angular/cli": "^20.3.31",
     "@angular/compiler-cli": "^20.3.0",
+    "@fontsource/plus-jakarta-sans": "^5.1.0",
+    "@fontsource/syne": "^5.1.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "postcss": "^8.4.49",
     "typescript": "~5.9.2"
   }
 }

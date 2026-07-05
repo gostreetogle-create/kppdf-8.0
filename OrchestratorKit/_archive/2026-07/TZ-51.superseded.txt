@@ -1,0 +1,143 @@
+═══════════════════════════════════════════════════════════════
+═══ SUPERSEDED by Paper & Ink set (TZ-30..39, TZ-75..82) ═══
+═══ Этот MD3-era TZ (docs/smoke устарел вместе с TZ-40..48)
+═══ заменён на P&I-версии в active TZ-30..39 + будущих TZ-75..82.
+═══════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════
+TZ-51: Браузерный smoke-test + QA-валидация
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: QA-валидатор
+
+ЗАВИСИМОСТИ: TZ-48 (все миграции должны быть DONE, иначе QA неполон),
+             TZ-50 (docs, опционально для понимания reference).
+
+LAYER: 1 (QA-only; no code changes)
+
+CONFLICT KEYS:
+  (НЕТ — QA-only: не трогает ни один source файл)
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. Все TZs-TZ-48 должны быть DONE. Приложение собрано через
+   `pnpm build` (frontend prod build → 0 ошибок), backend через
+   `pnpm start:dev` готов к запросам.
+
+2. Проблемы:
+   - Browser-only регрессии (CSS не отрендерился, contrast
+     проблемы, console errors, theme-switch фризы) могут проскочить
+     мимо tsc + ng build.
+
+3. Контекст: Запустить нужно `pnpm start` (frontend dev:4200) +
+   `pnpm start:dev` (backend:3000) + `docker compose up -d mongo
+   mongo-init` (mongo replica set). Затем browser-use прогон.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Запустить приложение.
+
+  Под-шаг 1.1: docker compose up -d mongo (Replica Set rs0).
+  Под-шаг 1.2: backend: cd backend && pnpm install && pnpm start:dev
+    (default http://localhost:3000).
+  Под-шаг 1.3: frontend: cd frontend && pnpm install && pnpm start
+    (default http://localhost:4200).
+  Под-шаг 1.4: Если есть DOCKER issue — обратиться к TZ-41 troubleshooting.
+
+ШАГ 2: Browser-use smoke прогон.
+
+  Под-шаг 1 (через browser-use agent):
+    - Open http://localhost:4200/login.
+    - Screenshot страницы login (для `/tmp/kppdf-9.0-smoke-01-login.png`).
+    - Login с admin/admin123 (или дефолтный seed admin credentials).
+    - Confirm: редирект на /home.
+    - Screenshot /home (light theme).
+    - Click theme-toggle button в topbar.
+    - Screenshot /home (dark theme).
+    - Navigate /materials.
+    - Open Create Material dialog.
+    - Screenshot dialog (light + dark).
+    - Close dialog.
+    - Toggle theme back.
+    - Screenshot /units, /currencies (light theme).
+    - Проверить: на каждой странице НЕТ console.error / console.warn
+      (кроме известных NG8011 content-projection в unit-form.dialog,
+      который pre-existing и out-of-scope для TZ-51).
+    - Сделать screenshot full-page на каждой странице в light и dark.
+
+  Под-шаг 2 (через basher):
+    - grep -c 'Материалы' /tmp/kppdf-9.0-smoke-01-login.png (через
+      OCR? нет — руками).
+    - Альтернативно: visual diff: `python -c "from PIL import Image;
+      Image.open('/tmp/...').save('/tmp/...-small.png')"`.
+
+ШАГ 3: WCAG AA contrast check.
+
+  - На странице /materials открыть DevTools → Accessibility →
+    Contrast Ratio для body text → должен быть ≥ 4.5:1.
+  - В dark theme проверить contrast (большинство текстов должно
+    быть ≥ 7:1 для AAA, минимум 4.5:1 для AA).
+  - Если < 4.5:1 — пометить FAIL в отчёте.
+
+ШАГ 4: Финальный отчёт.
+
+  Создать `OrchestratorKit/_archive/2026-07/TZ-51.smoke-report.md` с:
+    - список screenshots (paths),
+    - список страниц проверенных в light и dark,
+    - результат contrast check (PASS/FAIL для каждой страницы),
+    - список console errors observed (если есть),
+    - вердикт overall: SHIP-READY / NEEDS-FIX.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- OrchestratorKit/_archive/2026-07/TZ-51.smoke-report.md  [создать]
+
+НЕ ИЗМЕНЯТЬ:
+- frontend/src/***           (QA НЕ правит код)
+- backend/src/***            (QA НЕ правит код)
+- package.json               (QA НЕ устанавливает deps)
+
+ВАЖНО: если smoke обнаружит баг — создать НОВЫЙ TZ (TZ-52+),
+отдельный file с конкретным scope. НЕ править код прямо здесь.
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. Smoke report создан (`OrchestratorKit/_archive/2026-07/
+   TZ-51.smoke-report.md`).
+2. Screenshot коллекция: ≥ 6 screenshots (login, home, materials,
+   units, currencies, materials-create-dialog) в light + dark.
+   Итого ≥ 12 файлов PNG в `/tmp/`.
+3. Контраст WCAG AA на /materials и /units PROХОДИТ (≥ 4.5:1).
+4. Console errors на любой странице — 0 (кроме pre-existing
+   NG8011 в unit-form.dialog).
+5. Theme switch работает БЕЗ flash-of-unstyled-content (мгновенно,
+   либо с макс 50ms тёмного фона до render).
+6. Create Flow на /materials: открыть, заполнить name+code,
+   submit → ToastService success в top-right → закрытие dialog
+   → строка появилась в таблице.
+7. Report содержит вердикт overall + список issues (если есть).
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Этот TZ не трогает source файлы. Параллельно с TZ-50 (doc-only)
+безопасно.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Стандартный TZF-00 + progress.md (TZ-51 smoke report) + STATUS
+обновлён + verify-status PASS. If FAIL в smoke — НЕ ставить ✅ DONE,
+а создать TZ-52 для каждого найденного бага и deferred-archive
+TZ-51 как `.partial.txt`.

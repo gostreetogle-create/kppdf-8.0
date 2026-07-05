@@ -1,0 +1,91 @@
+═══════════════════════════════════════════════════════════════
+TZ-54: HoverCard (hover-triggered preview, как Popover)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-53 (Popover — HoverCard это Popover с другим
+           trigger и без auto-dismiss).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/pi-hover-card.component.ts
+  - frontend/src/app/shared/ui/pi-hover-card.directive.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+HoverCard = popover, который открывается по hover (НЕ click) +
+keyboard focus. Triggered-by-delay (openDelay/closeDelay) для
+accidental-pass protection. Используется для preview карточек
+(например, на странице `/forms` рядом с input имени клика — показать
+последние 3 заказа этого клиента).
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: `pi-hover-card.directive.ts`:
+    ```ts
+    piHoverCard   = input.required<TemplateRef>();
+    position      = input<'top' | 'bottom' | 'left' | 'right'>('top');
+    openDelay     = input<number>(250);
+    closeDelay    = input<number>(200);
+    ariaLabel     = input<string>('');
+    ```
+
+  Триггеры:
+    - mouseenter → start openDelay timer → open
+    - mouseleave → start closeDelay timer → close
+    - focus → open мгновенно (без delay для keyboard a11y)
+    - blur → close мгновенно
+
+ШАГ 2: `pi-hover-card.component.ts` (тот же template, что Popover):
+    ```html
+    <div role="tooltip"
+         [attr.aria-label]="ariaLabel()"
+         class="bg-paper border hairline border-rule rounded-sm
+                px-4 py-3 max-w-[320px] text-sm">
+      <ng-content />
+    </div>
+    ```
+
+  Reuse ConnectedPositionStrategy от CDK Overlay. NO backdrop. NO
+  focus trap (НЕ modal — это tooltip-grade preview).
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/pi-hover-card.component.ts
+  + frontend/src/app/shared/ui/pi-hover-card.directive.ts
+  ~ frontend/src/app/shared/ui/index.ts
+
+НЕ ИЗМЕНЯТЬ:
+  - styles.css
+  - backend/**
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. Hover trigger открывает через 250ms; leave закрывает через 200ms.
+2. Keyboard focus открывает МГНОВЕННО (a11y).
+3. `aria-describedby` (НЕ `aria-controls`) на trigger.
+4. Никаких hardcoded color / shadow / hex.
+5. `pnpm exec tsc --noEmit` exit 0; `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Новые файлы. Конфликтов с TZ-55..60 нет.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Архивировать: `mv tasks/TZ-54.md OrchestratorKit/_archive/2026-07/TZ-54.done.txt`.

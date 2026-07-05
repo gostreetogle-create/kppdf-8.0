@@ -1,0 +1,1 @@
+TZ-65 LOCK: scroll-area (themed scrollbar, max-height) — paper-and-ink hairline 4px scrollbar; protected files: frontend/src/app/shared/ui/scroll-area/{pi-scroll-area.component.ts,index.ts} + frontend/src/styles.css (@layer components .pi-scroll-area block); created 2026-07-05 by TZF-00 STEP 5

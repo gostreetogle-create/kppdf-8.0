@@ -1,0 +1,58 @@
+═══════════════════════════════════════════════════════════════
+TZ-80: SSR / hydration + Lighthouse ≥95 — DEFERRED
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Architect (SSR specialist)
+
+ЗАВИСИМОСТИ: TZ-30 (deps), TZ-31, TZ-32, TZ-67, TZ-69..74.
+
+LAYER: 1 (Cross-cutting)
+
+CONFLICT KEYS:
+  - frontend/src/main.ts (требует SSR bootstrap)
+  - frontend/src/main.server.ts (НОВЫЙ)
+  - frontend/src/server.ts (НОВЫЙ)
+  - frontend/src/app/app.config.ts (provideClientHydration)
+  - frontend/angular.json (SSR build target)
+  - frontend/package.json (+ @angular/ssr, express)
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER:
+═══════════════════════════════════════════════════════════════
+
+**DEFERRED — multi-factor блокеров:**
+
+1. **`pnpm add @angular/ssr@^20 express` FAILED** с
+   `ERR_PNPM_PUBLIC_HOIST_PATTERN_DIFF` (тот же pnpm config blocker,
+   что и TZ-66/78/79). Без @angular/ssr package — SSR bootstrap невозможен.
+
+2. **Multi-file changes required:**
+   - main.ts — bootstrapApplication conditional (browser vs server)
+   - main.server.ts — NEW server entrypoint
+   - server.ts — NEW express listener
+   - app.config.ts — provideClientHydration() + withEventReplay()
+   - angular.json — add server build target
+   - package.json — +@angular/ssr, +express, scripts
+
+3. **Risk assessment:** SSR + hydration в Angular 20 имеет высокий
+   edge-case risk (DI в server context, browser-only APIs в
+   components, async rendering). Без итеративного testing
+   (`pnpm build && node dist/.../server.mjs`) — high chance regression.
+
+4. **Lighthouse ≥95:** нельзя measure без running SSR preview.
+
+**Future TZ-80b requirements:**
+- `pnpm install` reconcile (fix public-hoist-pattern).
+- `pnpm add @angular/ssr@^20 express`.
+- Создать main.server.ts + server.ts.
+- Update main.ts + app.config.ts.
+- Update angular.json + package.json.
+- `pnpm build` → dist/frontend/{browser,server}.
+- `node dist/frontend/server/server.mjs` → listening on :4000.
+- Lighthouse audit (Performance / Accessibility / Best Practices / SEO ≥95).
+- axe-core integration (links TZ-79).
+
+**No code changes for this TZ.** Spec файл перенесён в _archive
+с ARCHIVE_MARKER documenting блокер + future steps.
+
+ARCHIVE_MARKER: TZ-80 DEFERRED 2026-07-05; @angular/ssr install FAILED; multi-file SSR config postponed.

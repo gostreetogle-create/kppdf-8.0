@@ -1,0 +1,142 @@
+═══════════════════════════════════════════════════════════════
+TZ-48: Dialog (modal overlay, CDK, ESC + light-dismiss)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer (CDK overlay specialist)
+
+ЗАВИСИМОСТИ: TZ-30 (standalone + `@angular/cdk@^18`), TZ-31 (Tailwind
+           v4), TZ-32 (OKLCH tokens), TZ-49 (AlertDialog extends Dialog).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/dialog/pi-dialog.component.ts
+  - frontend/src/app/shared/ui/dialog/pi-dialog.service.ts
+  - frontend/src/app/shared/ui/dialog/dialog.tokens.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+В kppdf-8.0 использовался `MatDialog` — стандартная Material modal с
+тенью и скруглением 4-8px. Paper & Ink диктует: hand-roll на
+@angular/cdk/overlay + @angular/cdk/a11y (focus trap) без зависимости
+на Material theme.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Создать `dialog/pi-dialog.service.ts` (providedIn: 'root').
+
+  Шаг 1.1: Инжектим `Overlay` + `Injector` + `DialogConfig` интерфейс:
+    ```ts
+    export interface DialogConfig<TResult = unknown, TData = unknown> {
+      width?: string;     // '480px' | 'sm' | 'md' | 'lg'
+      height?: string;
+      dismissOnBackdropClick?: boolean;   // default true
+      dismissOnEscape?: boolean;          // default true
+      data?: TData;
+      ariaLabel?: string;
+    }
+    export type DialogRef<T = unknown> = {
+      readonly closed: Signal<T | undefined>;
+      close: (v?: T) => void;
+    };
+    ```
+
+  Шаг 1.2: `open<T,R>(component, cfg?)` — создаёт ComponentPortal,
+    attaches to overlay с глобальной PositionStrategy 'center',
+    backdropClass = 'pi-overlay-backdrop' (semi-transparent paper+
+    ink blend), panelClass = 'pi-overlay-panel'.
+    Возвращает реактивный DialogRef.
+
+  Шаг 1.3: backdropClass CSS в `frontend/src/styles.css`
+    TZ-31/32 — opaque ink @ 30% opacity для light, paper @ 30% для
+    dark mode (НЕ blur — это не glassmorphism, просто dimmer).
+
+ШАГ 2: Создать `pi-dialog.component.ts` (reusable shell).
+
+  Шаг 2.1: Standalone OnPush. Inputs:
+    ```ts
+    title  = input<string>('');
+    width  = input<'sm' | 'md' | 'lg' | string>('md');
+    showClose = input<boolean>(true);
+    ```
+    Outputs: `close = output<void>()`.
+    Slots через `<ng-content select="[body]">`, `<ng-content select="[footer]">`.
+
+  Шаг 2.2: Шаблон (NO shadow, hairline rule border):
+    ```html
+    <div role="dialog" [attr.aria-label]="title() || ariaLabel()"
+         class="bg-paper border hairline border-rule rounded-sm overflow-hidden"
+         [class.w-[360px]]="width() === 'sm'"
+         [class.w-[480px]]="width() === 'md'"
+         [class.w-[640px]]="width() === 'lg'">
+      @if (title() || showClose()) {
+        <header class="flex items-center justify-between border-b hairline border-rule px-5 py-3">
+          <h2 class="font-display text-lg tracking-tight">{{ title() }}</h2>
+          @if (showClose()) {
+            <button app-pi-icon-btn size="sm" variant="ghost"
+                    (click)="close.emit()" aria-label="Закрыть">
+              <lucide-angular [img]="xIcon" size="16" />
+            </button>
+          }
+        </header>
+      }
+      <div class="px-5 py-4 text-sm">
+        <ng-content select="[body]" />
+      </div>
+      <footer class="border-t hairline border-rule px-5 py-3 flex justify-end gap-2">
+        <ng-content select="[footer]" />
+      </footer>
+    </div>
+    ```
+
+ШАГ 3: `dialog/dialog.tokens.ts` — DI tokens `PI_DIALOG_DATA`,
+  `PI_DIALOG_REF` для передачи config.
+
+ШАГ 4: Focus trap — в service.open() attach FocusTrap из
+  `@angular/cdk/a11y` на панель, restore focus при close.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/dialog/pi-dialog.component.ts (СОЗДАТЬ)
+  + frontend/src/app/shared/ui/dialog/pi-dialog.service.ts (СОЗДАТЬ)
+  + frontend/src/app/shared/ui/dialog/dialog.tokens.ts (СОЗДАТЬ)
+  ~ frontend/src/app/shared/ui/index.ts (export 3 файла)
+  ~ frontend/src/styles.css (@layer components — добавить
+    .pi-overlay-backdrop/.pi-overlay-panel, NO box-shadow)
+
+НЕ ИЗМЕНЯТЬ:
+  - @angular/material/** (НЕ использовать)
+  - backend/**
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. Service.open() возвращает DialogRef с signal `closed` и методом `close(v)`.
+2. `grep 'box-shadow\|drop-shadow' frontend/src/styles.css frontend/src/app/shared/ui/dialog/*.ts` — должно быть ПУСТО.
+3. `grep '#\|bg-white\|text-white\|bg-black' ...pi-dialog.component.ts` — пусто.
+4. Focus trap работает (Tab/Shift+Tab циркулирует внутри).
+5. ESC закрывает (если dismissOnEscape=true).
+6. Backdrop click закрывает (если dismissOnBackdropClick=true).
+7. `pnpm exec tsc --noEmit` exit 0; `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Создаёт новую директорию `shared/ui/dialog/`. Параллельно с TZ-46,
+TZ-47 нормально. Не запускать параллельно с TZ-49 (AlertDialog
+extends Dialog — нужна последовательность: 48 → 49).
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Архивировать: `mv tasks/TZ-48.md OrchestratorKit/_archive/2026-07/TZ-48.done.txt`.

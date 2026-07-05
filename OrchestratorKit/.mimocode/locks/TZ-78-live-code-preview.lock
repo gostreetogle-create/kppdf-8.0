@@ -1,0 +1,1 @@
+TZ-78 LOCK: live-code-preview (DEFERRED per pnpm install fail / SSR complexity); protected files: frontend/src/app/shared/code/* (TZ-78), styles.css @media print (TZ-79); created 2026-07-05 by TZF-00 STEP 5

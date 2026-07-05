@@ -1,0 +1,50 @@
+═══════════════════════════════════════════════════════════════
+TZ-75: ⌘K Command Palette (fuzzy search + nav)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer (UX specialist)
+
+ЗАВИСИМОСТИ: TZ-67 (KitLayout data-cmd-k trigger), TZ-68 (Page primitives), TZ-30 (route registration).
+
+LAYER: 1 (Cross-cutting)
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/command/pi-command-palette.component.ts
+  - frontend/src/app/shared/command/pi-command-palette.service.ts
+  - frontend/src/app/shared/command/index.ts
+  - frontend/src/app/app.ts
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER:
+═══════════════════════════════════════════════════════════════
+
+**PiCommandPaletteService** (~50 lines):
+- Injectable providedIn root, signal-based state `_isOpen` + readonly `isOpen`.
+- SSR-safe: keyboard listener registered only via isPlatformBrowser(inject(PLATFORM_ID)) guard.
+- Listener: Cmd+K mac / Ctrl+K win/linux → toggle, Escape (when open) → close.
+- preventDefault для Cmd+K чтобы не открывать browser-native search.
+
+**PiCommandPaletteComponent** (~210 lines):
+- Standalone + OnPush + signal-based.
+- @if (palette.isOpen()) overlay с fixed inset-0 z-50.
+- Backdrop = bg-ink/30 (NOT blur, NOT glassmorphism — Paper & Ink anti-bling).
+- Container: bg-paper border hairline w-[520px] max-h-[60vh].
+- Input auto-focus via afterNextRender в effect при isOpen() change.
+- query/selectedIdx signals, filtered = computed(fuzzy subsequence match).
+- 30 items: 6 routes + 24 primitives + 1 action (theme toggle).
+- Keyboard nav: ArrowDown/Up cycle selectedIdx, Enter activates.
+- Esc handled в service. Click outside backdrop → close. Click on item → action + close.
+- mouseenter handler удалён (после code-review fix — keyboard nav не clobber).
+
+**Theme toggle action**: uses `inject(ThemeService).toggle()` directly. Initial implementation had `window.__piThemeService` lookup (broken); fixed per code-reviewer.
+
+**Mount**: app.ts добавлен <app-pi-command-palette /> рядом с <app-pi-toast-host />.
+
+**Verification:**
+- typecheck: pnpm exec tsc exit 0
+- spec acceptance: no box-shadow/drop-shadow/hex/bg-white/backdrop-blur (0 hits)
+- SSR-safe: isPlatformBrowser guard
+- Signal-based: signal/computed/effect
+- After code-reviewer fix: ThemeService directly injected, mouseenter removed
+
+ARCHIVE_MARKER: TZ-75 done 2026-07-05; WAVE D-1 (cross-cutting) start.

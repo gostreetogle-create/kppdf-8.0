@@ -1,0 +1,133 @@
+═══════════════════════════════════════════════════════════════
+═══ SUPERSEDED by Paper & Ink set (TZ-30..39) ═══
+═══ этот Material MD3 TZ-план заменён 2026-07-05 на editorial
+═══ Swiss-minimalism направление (Paper & Ink, OKLCH paper+ink,
+═══ Tailwind v4, Syne+Plus Jakarta Sans, lucide-angular, output()).
+═══ Канонический план теперь в tasks/TZ-30..TZ-82.
+═══ Оригинал этого файла был в tasks/TZ-45.md до архивации.
+═══════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════
+TZ-45: Миграция Materials List Page на ui-card / ui-btn / ui-alert
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-30, TZ-32, TZ-35 (ui-card), TZ-34 (ui-btn),
+             TZ-33 (ui-alert), TZ-37 (ui-icon-btn),
+             TZ-44c (TZ-44c должен быть DONE, иначе покажется
+             разнобой между list-page и dialog)
+
+LAYER: 3
+
+CONFLICT KEYS:
+  - frontend/src/app/features/materials/materials-list.page.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. Текущий код: <app-ui-page-header>, <mat-card> filter-card,
+   inline mat-card error-card, mat-card table-card, mat-spinner
+   empty-state, mat-icon-button actions.
+
+2. Проблемы:
+   - filter-card / error-card / table-card — тяжёлый mat-card. ui-card
+     variant="filter" / "info" / "table" легче и стилизован под
+     токены.
+   - submit/create button — mat-flat-button → ui-btn primary,
+     reload button — mat-stroked-button → ui-btn ghost.
+   - search clear — mat-icon-button → ui-icon-btn.
+
+3. Контекст: TZ-47/46 для units/currencies — одинаковая миграция,
+   разные файлы. Эти TZ ДОЛЖНЫ быть sequential.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Filter card:
+  - `<mat-card appearance="outlined" class="filter-card">`
+    → `<ui-card variant="filter">`.
+  - Inputs/buttons внутри сохранить, но: mat-form-field
+    → ui-field (label + input). mat-stroked-button reload
+    → ui-btn ghost.
+
+ШАГ 2: Search clear button:
+  - `<button matSuffix mat-icon-button type="button" aria-label="...">`
+    → `<ui-icon-btn variant="default" size="sm"
+    icon="close" ariaLabel="Очистить" (onClick)="clearSearch()">`.
+
+ШАГ 3: Error card:
+  - `<mat-card appearance="outlined" class="error-card">`
+    → `<ui-alert variant="error" size="md">` с контентом +
+    retry-кнопкой `<ui-btn variant="ghost" (click)="reload()">Повторить</ui-btn>`.
+  - Однако <ui-alert> не поддерживает кнопку-action slot без TZ-33
+    расширения. Альтернатива: оставить <mat-card> ТОЛЬКО для
+    error-card. Миграция не критична.
+
+ШАГ 4: Table card:
+  - `<mat-card appearance="outlined" class="table-card">`
+    → `<ui-card variant="table">`.
+  - Внутри `<div class="table-wrapper">` остаётся без изменений.
+
+ШАГ 5: Action buttons:
+  - `<button mat-icon-button matTooltip="Редактировать"
+    (click)="openEdit(m)">` → обернуть в
+    `<app-ui-table-row-actions>` (если применяем stagger reveal) ИЛИ
+    просто ОСТАВИТЬ `<button mat-icon-button>`. В TZ-04 не решено —
+    выбрать простой вариант: оставить inline buttons.
+
+ШАГ 6: Empty state:
+  - Внутри <tr class="mat-row" *matNoDataRow> уже используется
+    <app-ui-empty-state>. Оставить.
+
+ШАГ 7: Create button:
+  - <button actions mat-flat-button color="primary"> внутри
+    <app-ui-page-header> → <button actions ui-btn variant="primary"
+    type="button" class="ui-btn" (click)="openCreate()">.
+  - Если TZ-34 ui-btn exported как standalone, можно <ui-btn>
+    напрямую: `<ui-btn actions variant="primary" (onClick)="
+    openCreate()"><mat-icon>add</mat-icon>Создать материал</ui-btn>`.
+  - Способ зависит от того, как TZ-34 реализовал [actions] slot —
+    на усмотрение агента.
+
+ШАГ 8: Удалить лишние MatCard/MatFormField imports.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- frontend/src/app/features/materials/materials-list.page.ts
+
+НЕ ИЗМЕНЯТЬ:
+- TZ-44c dialog (уже сделал)
+- service (MaterialService)
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `grep -c 'mat-card' materials-list.page.ts` → 0 (или только импорт,
+   если MatCard всё ещё нужен где-то).
+2. `grep -cE 'ui-card|ui-btn|ui-alert|ui-icon-btn|ui-field'
+   materials-list.page.ts` ≥ 1.
+3. UI demo: /materials открывается, фильтр, empty state,
+   create dialog (TZ-44c) flow work end-to-end.
+4. Theme switch работает (dark/light).
+5. pnpm tsc + build → exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Этот TZ единственный трогает materials-list.page.ts. После TZ-44c.
+Параллельно с TZ-46 (units) — TZ-46 трогает свой файл, безопасны.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Стандартный TZF-00 + ARCHITECTURE.md (отметка о миграции materials
+list page под TZ-45).

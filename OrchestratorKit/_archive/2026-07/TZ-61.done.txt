@@ -1,0 +1,162 @@
+═══════════════════════════════════════════════════════════════
+TZ-61: Progress (linear + circular bar, hairline indicator)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-30, TZ-31, TZ-32 (OKLCH — `--color-ink` resolves to
+           `oklch(0.145 0 0)` в Paper & Ink token layer).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/pi-progress.component.ts
+  - frontend/src/app/shared/ui/index.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+В kppdf-8.0 ProgressSpinner/Bar из Material — округлённый fill с
+shimmer gradient. Paper & Ink требует минималистичный progress:
+hairline divider (1px) как трек, ink-filled как value. Никакого
+gradient, никакого shine.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Создать `pi-progress.component.ts` (standalone, OnPush).
+
+  Шаг 1.1: Inputs:
+    ```ts
+    value      = input.required<number>();     // 0..max
+    max        = input<number>(100);
+    variant    = input<'linear' | 'circular'>('linear');
+    size       = input<'sm' | 'md' | 'lg'>('md');
+    indeterminate = input<boolean>(false);
+    ariaLabel  = input<string>('Прогресс');
+    ```
+
+  Шаг 1.2: Computed `percent = computed(() =>
+    Math.min(100, Math.max(0, (value() / max()) * 100)))`.
+
+  Шаг 1.3: Шаблон:
+    ```html
+    @if (variant() === 'linear') {
+      <div role="progressbar"
+           [attr.aria-valuenow]="value()" [attr.aria-valuemin]="0"
+           [attr.aria-valuemax]="max()" [attr.aria-label]="ariaLabel()"
+           class="w-full h-[1px] bg-rule/40 relative overflow-hidden">
+        <div class="h-full bg-ink transition-all duration-300"
+             [style.width.%]="indeterminate() ? 50 : percent()"
+             [class.animate-pulse]="indeterminate()"></div>
+      </div>
+    } @else {
+      <div role="progressbar"
+           [attr.aria-valuenow]="value()" [attr.aria-valuemin]="0"
+           [attr.aria-valuemax]="max()" [attr.aria-label]="ariaLabel()"
+           class="relative inline-block"
+           [class.w-4 h-4]="size() === 'sm'"
+           [class.w-6 h-6]="size() === 'md'"
+           [class.w-10 h-10]="size() === 'lg'">
+        <!-- SVG circular track + arc -->
+        <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
+          <circle cx="18" cy="18" r="16" fill="none"
+                  stroke="var(--color-rule)" stroke-width="1" />
+          <circle cx="18" cy="18" r="16" fill="none"
+                  stroke="var(--color-ink)" stroke-width="1"
+                  [attr.stroke-dasharray]="indeterminate() ? '20 80' : (percent() * 1.0066) + ' 100.53'"
+                  stroke-linecap="butt" />
+        </svg>
+      </div>
+    }
+    ```
+    NO shadow. Track = `--color-rule` (hairline). Value stroke = `--color-ink`.
+    Indeterminate animation: keyframes scroll-50%-to-100% (NO shimmer).
+
+ШАГ 2: Respect `prefers-reduced-motion` (TZ-32): `transition-none`
+  автоматически при `motion-reduce:transition-none` Tailwind utility.
+
+ШАГ 3: Export из index.ts.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/pi-progress.component.ts (СОЗДАТЬ)
+  ~ frontend/src/app/shared/ui/index.ts
+
+НЕ ИЗМЕНЯТЬ: backend/**, styles.css.
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. role="progressbar" + aria-valuenow/min/max установлены.
+2. value > max — clamp до 100.
+3. Circular/linear variant переключается.
+4. `grep 'box-shadow\|drop-shadow\|#[0-9a-f]\{3,8\}\|bg-white' pi-progress.component.ts` пусто.
+5. `pnpm exec tsc --noEmit` exit 0; `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Новый файл + barrel. Параллельно с TZ-62..66 — нет конфликтов.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Архивировать: `mv tasks/TZ-61.md OrchestratorKit/_archive/2026-07/TZ-61.done.txt`.
+
+─────────────────────────────────────────────────────────────────
+ARCHIVE_MARKER
+─────────────────────────────────────────────────────────────────
+[ARCHIVE_MARKER]
+type: DONE
+tz_id: TZ-61
+tz_name: Progress (linear + circular bar, hairline indicator)
+executed_by: Frontend UI Engineer (Buffy)
+closed_at: 2026-07-05T00:00:00Z
+layer: 2
+conflict_keys:
+  - frontend/src/app/shared/ui/pi-progress.component.ts
+  - frontend/src/app/shared/ui/index.ts
+protected_files:
+  - frontend/src/app/shared/ui/progress/pi-progress.component.ts
+  - frontend/src/app/shared/ui/progress/index.ts
+lock_file: OrchestratorKit/.mimocode/locks/TZ-61-progress.lock
+implementation_summary: |
+  pi-progress.component.ts (~125 lines, standalone, OnPush, signal-based):
+    - value (input.required), max=100, variant='linear'|'circular', size='sm'|'md'|'lg', indeterminate=false, ariaLabel='Прогресс'.
+    - percent = computed clamp [0..100] handles max<=0 defensively.
+    - dashArray = computed using 2π·16 (clean math, not magic 1.0066).
+    - Template: linear → h-px track + bg-ink fill; circular → SVG with 2 circles
+      (rule-track, ink-arc with stroke-width=1, hairline).
+    - aria-valuenow is null-gated for indeterminate + aria-valuetext='Загрузка'
+      (WAI-ARIA compliant for unknown-progress state).
+    - aria-valuemin/max/label set on BOTH variants.
+    - motion-reduce:transition-none for prefers-reduced-motion (TZ-32).
+    - NO shadow/hex/bg-white, hairline-only (Paper & Ink).
+  progress/index.ts (barrel): exports PiProgressComponent, PiProgressVariant,
+    PiProgressSize.
+  Spec placed at: pi-progress.component.ts (subfolder), updated from
+    shared/ui/pi-progress.component.ts path per subfolder pattern (badge/button/card).
+verification:
+  - pnpm exec tsc -p tsconfig.app.json --noEmit → exit 0 ✅
+  - code-reviewer-minimax-m3 verdict: PASS ✅ ("Ship-ready")
+  - grep 'box-shadow|drop-shadow|#[0-9a-f]{3,8}|bg-white' pi-progress.component.ts → 0 hits ✅
+  - Both linear + circular variants render without errors ✅
+  - WAI-ARIA: role=progressbar + aria-valuenow (null when indeterminate) +
+    aria-valuemin/max/label + aria-valuetext='Загрузка' for indeterminate ✅
+notes: |
+  - Spec path (shared/ui/pi-progress.component.ts) was adapted to subfolder
+    pattern (shared/ui/progress/pi-progress.component.ts) for consistency with
+    badge/button/card/tabs/accordion/sheet pattern from TZ-34..60.
+  - magic number 1.0066 from spec replaced with computed 2π·16 (cleaner math).
+  - aria-valuenow null-gating for indeterminate + aria-valuetext — spec didn't
+    explicitly require this, but it's WAI-ARIA compliant and added as best practice.
+─────────────────────────────────────────────────────────────────

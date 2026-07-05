@@ -1,0 +1,78 @@
+═══════════════════════════════════════════════════════════════
+═══ SUPERSEDED by Paper & Ink set (TZ-30..39) ═══
+═══ этот Material MD3 TZ-план заменён 2026-07-05 на editorial
+═══ Swiss-minimalism направление (Paper & Ink, OKLCH paper+ink,
+═══ Tailwind v4, Syne+Plus Jakarta Sans, lucide-angular, output()).
+═══ Канонический план теперь в tasks/TZ-30..TZ-82.
+═══ Оригинал этого файла был в tasks/TZ-47.md до архивации.
+═══════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════
+TZ-47: Миграция Currencies List Page на ui-card / ui-btn / ui-alert
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-30, TZ-32, TZ-35, TZ-34, TZ-33, TZ-37,
+             TZ-44a
+
+LAYER: 3
+
+CONFLICT KEYS:
+  - frontend/src/app/features/currencies/currencies-list.page.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. Текущий код: <app-ui-page-header>, <mat-card> filter/error/table,
+   <app-ui-badge> статусы, mat-icon-button actions.
+
+2. Проблемы: те же — mat-card вместо ui-card.
+
+3. Контекст: цена-формат вроде <span class="symbol-cell"> уже
+   глобально мигрирован. Оставить.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1..ШАГ 8: По образцу TZ-46 (units-list page) — почти identical
+  (тот же layout, разные entity-имена).
+
+  - Filter card → <ui-card variant="filter">
+  - Error card → <ui-alert variant="error">
+  - Table card → <ui-card variant="table">
+  - Create button → <ui-btn variant="primary">
+  - Reload button → <ui-btn variant="ghost">
+  - Search clear → <ui-icon-btn>
+  - Action buttons в row-actions cell → оставить <button mat-icon-button>
+    (или обернуть в <app-ui-table-row-actions> для staggered reveal).
+  - "Системную валюту нельзя удалить" disabled: [disabled]="c.isSystem".
+
+ШАГ 9: Удалить лишние импорты MatCard и др.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- frontend/src/app/features/currencies/currencies-list.page.ts
+
+НЕ ИЗМЕНЯТЬ:
+- TZ-44a dialog
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `grep -c 'mat-card' currencies-list.page.ts` → 0.
+2. ui-card/btn/alert/icon-btn присутствуют.
+3. UI demo: /currencies работает end-to-end.
+4. pnpm tsc + build → exit 0.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Стандартный TZF-00 + ARCHITECTURE.md (currencies page migrated).

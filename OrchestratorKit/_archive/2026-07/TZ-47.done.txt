@@ -1,0 +1,138 @@
+═══════════════════════════════════════════════════════════════
+TZ-47: Pagination (numbered + prev/next)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-30 (standalone), TZ-31 (Tailwind v4), TZ-32 (OKLCH).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/pi-pagination.component.ts
+  - frontend/src/app/shared/ui/index.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+В kppdf-8.0 pagination рендерилась через MatPaginatorModule из
+Angular Material (синие кнопки, тень, скругление 4px). Paper & Ink
+требует hairline-нумерации в стиле печатного журнала: < 1 / 11 / 12
+/ 13 ... 47 >, активная страница = solid ink-blok с paper-текстом.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Создать `pi-pagination.component.ts` (standalone, OnPush).
+
+  Шаг 1.1: Сигналы:
+    ```ts
+    total    = input.required<number>();  // всего записей
+    pageSize = input<number>(20);
+    currentPage = input<number>(1);        // 1-индексация
+    siblingCount = input<number>(1);
+    ariaLabel = input<string>('Пагинация');
+
+    pageChange = output<number>();         // новая страница (1-indexed)
+    ```
+
+  Шаг 1.2: Computed `totalPages = Math.max(1, Math.ceil(total() / pageSize()))`.
+    Computed `pageList` — массив items типа `'page' | 'gap'`:
+    ```
+    const pages = [];
+    const total = totalPages();
+    const current = currentPage();
+    const sibl = siblingCount();
+    const includeLeft = current - sibl > 2;
+    const includeRight = current + sibl < total - 1;
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) pages.push({ type: 'page', n: i });
+    } else {
+      pages.push({ type: 'page', n: 1 });
+      if (current > 4) pages.push({ type: 'gap', n: current - sibl - 1 });
+      const start = Math.max(2, current - sibl);
+      const end = Math.min(total - 1, current + sibl);
+      for (let i = start; i <= end; i++) pages.push({ type: 'page', n: i });
+      if (current < total - 3) pages.push({ type: 'gap', n: current + sibl + 1 });
+      pages.push({ type: 'page', n: total });
+    }
+    ```
+
+  Шаг 1.3: Шаблон (NO shadows, hairline rules):
+    ```html
+    <nav role="navigation" [attr.aria-label]="ariaLabel()"
+         class="flex items-center gap-1 mono text-xs">
+      <button app-pi-btn variant="ghost" size="sm"
+              [disabled]="currentPage() === 1"
+              (click)="goTo(currentPage() - 1)"
+              aria-label="Предыдущая страница">
+        ‹
+      </button>
+      @for (item of pageList(); track item.n) {
+        @if (item.type === 'page') {
+          <button app-pi-btn
+                  [variant]="item.n === currentPage() ? 'default' : 'ghost'"
+                  size="sm"
+                  [attr.aria-current]="item.n === currentPage() ? 'page' : null"
+                  (click)="goTo(item.n)">
+            {{ item.n }}
+          </button>
+        } @else {
+          <span class="px-2 text-muted-foreground">…</span>
+        }
+      }
+      <button app-pi-btn variant="ghost" size="sm"
+              [disabled]="currentPage() === totalPages()"
+              (click)="goTo(currentPage() + 1)"
+              aria-label="Следующая страница">
+        ›
+      </button>
+    </nav>
+    ```
+
+  Шаг 1.4: `goTo(n)` — clamp в [1, totalPages()], emit через
+    `pageChange.emit(n)`.
+
+ШАГ 2: Export из `index.ts`.
+
+ШАГ 3: Добавить опциональный `<ng-content select="[caption]">` для
+  подписи вида «Показано 1–20 из 47».
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/pi-pagination.component.ts (СОЗДАТЬ)
+  ~ frontend/src/app/shared/ui/index.ts (добавить export)
+
+НЕ ИЗМЕНЯТЬ: backend/**, frontend/styles.css.
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. ChangeDetectionStrategy.OnPush установлен.
+2. Inputs/outputs через `input()`/`output()` (no decorators).
+3. `pnpm exec tsc --noEmit` exit 0.
+4. `pnpm build` exit 0.
+5. Никаких hex/white/black в шаблоне — `grep -E '#[0-9a-fA-F]{3,8}|bg-white|bg-black|text-white|text-black'` пустой.
+6. Active page использует `bg-ink text-paper` — нет box-shadow, нет rounded-full.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Новый файл + barrel-index export. Параллельно с TZ-46 (Table wants
+Pagination) возможен, но Table TZ ссылается на Pagination через
+`<app-pi-pagination footer>` — обе компоненты нужны к моменту
+сборки страницы `/forms`. До 2 Layer-2 в параллели: можно с TZ-48.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Архивировать в `OrchestratorKit/_archive/2026-07/TZ-47.done.txt` после
+выполнения.

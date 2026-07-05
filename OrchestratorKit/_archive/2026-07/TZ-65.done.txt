@@ -1,0 +1,165 @@
+═══════════════════════════════════════════════════════════════
+TZ-65: ScrollArea (themed scrollbar, max-height)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-30, TZ-31, TZ-32 (OKLCH), minor styles.css touch.
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/pi-scroll-area.component.ts
+  - frontend/src/styles.css (минимальный scrollbar style)
+  - frontend/src/app/shared/ui/index.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+В kppdf-8.0 ScrollArea эмулировался через CSS `overflow:auto` с
+дефолтным браузерным скроллбаром (часто Webkit — голубоватый/серый,
+конфликтует с editorial palette). Paper & Ink требует hairline-themed
+scrollbar: ручка = 1px paper-2, трек = transparent. Тонкий, НЕ
+overlay-macOS-blur.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: `pi-scroll-area.component.ts` (standalone, OnPush).
+
+  Шаг 1.1: Inputs:
+    ```ts
+    maxHeight   = input<string>('320px');
+    orientation = input<'vertical' | 'horizontal' | 'both'>('vertical');
+    ariaLabel   = input<string>('Прокручиваемая область');
+    ```
+
+  Шаг 1.2: Шаблон:
+    ```html
+    <div role="region"
+         [attr.aria-label]="ariaLabel()"
+         class="overflow-auto {{ orientationClasses() }}"
+         [style.max-height]="maxHeight()">
+      <ng-content />
+    </div>
+    ```
+
+  Где `orientationClasses`:
+    - 'vertical'   → 'overflow-x-hidden overflow-y-auto'
+    - 'horizontal' → 'overflow-x-auto overflow-y-hidden'
+    - 'both'       → 'overflow-auto'.
+
+ШАГ 2: styles.css `@layer components` — глобальный themed scrollbar:
+    ```css
+    .pi-scroll-area, .pi-scroll-area * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--color-rule) transparent;
+    }
+    .pi-scroll-area::-webkit-scrollbar,
+    .pi-scroll-area *::-webkit-scrollbar { width: 4px; height: 4px; }
+    .pi-scroll-area::-webkit-scrollbar-track,
+    .pi-scroll-area *::-webkit-scrollbar-track { background: transparent; }
+    .pi-scroll-area::-webkit-scrollbar-thumb,
+    .pi-scroll-area *::-webkit-scrollbar-thumb {
+      background: var(--color-rule);
+      border: 0;
+    }
+    ```
+
+ШАГ 3: A11y — role="region" + tabindex="0" (для keyboard-tab focus).
+
+ШАГ 4: Export из index.ts.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/pi-scroll-area.component.ts (СОЗДАТЬ)
+  ~ frontend/src/styles.css (добавить блок themed scrollbar в @layer components)
+  ~ frontend/src/app/shared/ui/index.ts
+
+НЕ ИЗМЕНЯТЬ: backend/**.
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. maxHeight применяется через inline style.
+2. Webkit scrollbar = 4px width, color-rule fill.
+3. role="region" + tabindex="0".
+4. Page может keyboard-focus scroller и скроллить arrow-keys (default browser behavior).
+5. `grep 'box-shadow\|#[0-9a-f]\{3,8\}' styles.css pi-scroll-area.component.ts` пусто.
+6. `pnpm exec tsc --noEmit` exit 0; `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+styles.css touch — single-owner правило: ТОЛЬКО TZ-65 трогает
+`.pi-scroll-area*`. Не запускать параллельно с TZ-48 (тот же
+styles.css, блок `.pi-overlay-*`).
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Архивировать: `mv tasks/TZ-65.md OrchestratorKit/_archive/2026-07/TZ-65.done.txt`.
+
+─────────────────────────────────────────────────────────────────
+ARCHIVE_MARKER
+─────────────────────────────────────────────────────────────────
+[ARCHIVE_MARKER]
+type: DONE
+tz_id: TZ-65
+tz_name: ScrollArea (themed scrollbar, max-height)
+executed_by: Frontend UI Engineer (Buffy)
+closed_at: 2026-07-05T00:00:00Z
+layer: 2
+conflict_keys:
+  - frontend/src/app/shared/ui/pi-scroll-area.component.ts
+  - frontend/src/styles.css (минимальный scrollbar style)
+  - frontend/src/app/shared/ui/index.ts
+protected_files:
+  - frontend/src/app/shared/ui/scroll-area/pi-scroll-area.component.ts
+  - frontend/src/app/shared/ui/scroll-area/index.ts
+  - frontend/src/styles.css (scrollbar @layer components block)
+lock_file: OrchestratorKit/.mimocode/locks/TZ-65-scroll-area.lock
+implementation_summary: |
+  pi-scroll-area.component.ts (~40 lines, standalone, OnPush, signal-based):
+    - Inputs: maxHeight='320px', orientation='vertical'|'horizontal'|'both' (default 'vertical'),
+      ariaLabel='Прокручиваемая область'.
+    - Computed orientationClass: maps orientation → overflow class pair
+      (vertical: overflow-x-hidden overflow-y-auto, horizontal: vice versa, both: overflow-auto).
+    - Computed computedClass: 'pi-scroll-area ' + orientationClass (combined for single [class] binding).
+    - Template: <div role="region" tabindex="0" aria-label="..." [class]="computedClass()" [style.max-height]="maxHeight()">
+      <ng-content /></div>.
+  scroll-area/index.ts (barrel): exports PiScrollAreaComponent, type PiScrollOrientation.
+  styles.css (added @layer components block):
+    .pi-scroll-area, .pi-scroll-area * { scrollbar-width: thin; scrollbar-color: var(--color-rule) transparent; }
+    .pi-scroll-area::-webkit-scrollbar [width/height: 4px]
+    .pi-scroll-area::-webkit-scrollbar-track { background: transparent; }
+    .pi-scroll-area::-webkit-scrollbar-thumb { background: var(--color-rule); border: 0; }
+verification:
+  - pnpm exec tsc -p tsconfig.app.json --noEmit → exit 0 ✅
+  - role="region" + tabindex="0" on host div ✅
+  - [style.max-height] binding ✅
+  - 3 orientations: vertical/horizontal/both via ORIENTATION_CLASS map ✅
+  - ::-webkit-scrollbar 4px + Firefox scrollbar-color: --color-rule ✅
+  - NO box-shadow/hex/bg-white introduced ✅
+  - styles.css @layer components placement correct ✅
+  - Code-reviewer-minimax-m3 verdict: PASS (after fix) ✅
+notes: |
+  - Code-reviewer caught one issue: initial template had static `class="pi-scroll-area"` AND
+    dynamic `[class]="orientationClass()"` — Angular merge is brittle. Fix: removed static
+    class, use single `[class]="computedClass()"` that combines 'pi-scroll-area' + orientationClass.
+    This matches peer badge/button/card pattern (single [class] binding with full class string).
+  - styles.css existing `box-shadow: none !important` in @layer base is intentional global
+    reset (TZ-31 paper-and-ink anti-shadow principle) — NOT a violation of TZ-65 spec #5.
+  - Path adapted to subfolder pattern (scroll-area/) for consistency with peer
+    badge/button/card/skeleton/avatar/separator from TZ-34..64.
+  - Spec path conflict: shared/ui/pi-scroll-area.component.ts adapted to
+    subfolder (shared/ui/scroll-area/pi-scroll-area.component.ts).
+─────────────────────────────────────────────────────────────────

@@ -1,0 +1,112 @@
+═══════════════════════════════════════════════════════════════
+TZ-51: Drawer (bottom sheet, для mobile / quick actions)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-48 (CDK overlay + focus trap), TZ-31 (Tailwind v4),
+           TZ-32 (OKLCH), TZ-50 (Sheet — общий CDK-overlay паттерн).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/pi-drawer.component.ts
+  - frontend/src/app/shared/ui/pi-drawer.service.ts
+  - frontend/src/app/shared/ui/index.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+Sheet (TZ-50) — боковая панель. Drawer — это НАВЕРХ spring-bottom
+panel до 85vh, появляется после tap на mobile-bottom-bar action.
+Drag-handle = горизонтальная hairline-separator pill ~40×4px сверху.
+Использует тот же CDK Overlay что Sheet, но scroll-lock другой
+(только body bottom padding).
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: `pi-drawer.service.ts` — clone Sheet service с
+  фиксированным `anchor: 'bottom'`, `maxHeight: '85%'`.
+
+ШАГ 2: `pi-drawer.component.ts` (standalone, OnPush).
+
+  Шаг 2.1: Inputs:
+    ```ts
+    title = input<string>('');
+    showHandle = input<boolean>(true);
+    maxHeight = input<string>('85vh');
+    ```
+    Output: `close = output<void>()`.
+
+  Шаг 2.2: Шаблон:
+    ```html
+    <div role="dialog"
+         [attr.aria-label]="title()"
+         class="bg-paper border-t hairline border-rule rounded-t-sm
+                w-full h-full max-h-[{{ maxHeight() }}] flex flex-col">
+      @if (showHandle()) {
+        <div class="flex justify-center pt-2 pb-1" aria-hidden="true">
+          <span class="block w-10 h-[3px] bg-rule/80 rounded-full"></span>
+        </div>
+      }
+      @if (title()) {
+        <header class="px-5 py-3 border-b hairline border-rule flex items-center justify-between">
+          <h2 class="font-display text-lg tracking-tight">{{ title() }}</h2>
+          <button app-pi-icon-btn variant="ghost" (click)="close.emit()" aria-label="Закрыть">
+            <lucide-angular [img]="xIcon" size="16" />
+          </button>
+        </header>
+      }
+      <div class="overflow-auto px-5 py-4 text-sm">
+        <ng-content />
+      </div>
+    </div>
+    ```
+    Drag-handle: 40×3 пикселя sub-rule pill, центрирована.
+    `bg-rule/80` допустим — это var(--color-rule) с 80% opacity
+    через Tailwind opacity utility (НЕ hardcoded rgba).
+
+  Шаг 2.3: Tap-outside-to-dismiss — на backdrop в service.attach
+    listener `pointerdown` через @angular/cdk/overlay.
+
+ШАГ 3: Export из index.ts.
+
+ШАГ 4: Optional — drag-down-to-close через touchstart/touchmove DeltaY
+  (вне scope TZ-51, в TZ-79 accessibility-pass добавим если время).
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/pi-drawer.component.ts
+  + frontend/src/app/shared/ui/pi-drawer.service.ts
+  ~ frontend/src/app/shared/ui/index.ts
+  ~ frontend/src/styles.css (если drag-handle CSS — minor).
+
+НЕ ИЗМЕНЯТЬ: backend/**.
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. Drawer открывается с anchor=bottom, max-height=85vh.
+2. Drag-handle visible если `showHandle=true`.
+3. ESC + tap outside закрывают (если cfg разрешает).
+4. `pnpm exec tsc --noEmit` exit 0; `pnpm build` exit 0.
+5. Никаких hardcoded color/shadow.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Новые файлы. Конфликтов с TZ-46..52 нет.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Архивировать: `mv tasks/TZ-51.md OrchestratorKit/_archive/2026-07/TZ-51.done.txt`.

@@ -1,0 +1,221 @@
+═══════════════════════════════════════════════════════════════
+═══ SUPERSEDED by Paper & Ink set (TZ-30..39, TZ-75..82) ═══
+═══ Этот MD3-era TZ (docs/smoke устарел вместе с TZ-40..48)
+═══ заменён на P&I-версии в active TZ-30..39 + будущих TZ-75..82.
+═══════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════
+TZ-50: Обновление документации (STACK.md + ARCHITECTURE.md)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Technical Writer
+
+ЗАВИСИМОСТИ: TZ-48 (все миграции должны быть DONE, чтобы документация
+             отражала финальное состояние, а не промежуточное).
+
+LAYER: 1 (doc-only)
+
+CONFLICT KEYS:
+  - STACK.md
+  - ARCHITECTURE.md
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. Текущий код:
+   - `STACK.md` отражает текущее состояние (Angular 20, MD3, 4 ui-kit
+     компоненты из `shared/ui-kit/`).
+   - `ARCHITECTURE.md` содержит раздел «Frontend UI Kit (shared/ui-kit/
+     — 2026-07-05 rework)» с описанием 4 обёрток.
+
+2. Проблемы:
+   - После TZ-30..TZ-48 ui-kit ВЫРОС с 4 до 10+ компонентов (alert /
+     btn / card / field / icon-btn / spinner / toast в новом
+     `shared/ui/`, плюс старые `ui-page-header / ui-empty-state /
+     ui-badge / ui-table-row-actions` в `shared/ui-kit/`).
+   - Появились: design tokens (`src/styles/tokens.scss`), theme
+     switcher (`src/styles/theme.scss`), atomic utilities (`src/styles/
+     utilities.scss`), ThemeService (`src/app/core/theme.service.ts`),
+     ToastService (`src/app/shared/ui/toast.service.ts`).
+   - Тёмная тема (TZ-31) — НОВАЯ возможность, не описана.
+   - mat-card в page chrome → ui-card migration уже сделана, но
+     doc этого не отражает.
+
+3. Контекст: TZ-50 — финальный doc-pass. Все TZs-TZ-48 DONE, теперь
+   задокументировать в одном обновлённом срезе.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: STACK.md.
+
+  1.1. Обновить Summary ->
+    «Angular 20 + Material MD3 + custom design tokens (TZ-30) +
+    dark/light theme (TZ-31) + 10-component ui-kit (ui-alert,
+    ui-btn, ui-card, ui-field, ui-icon-btn, ui-page-header,
+    ui-empty-state, ui-badge, ui-table-row-actions, ui-toast) +
+    ToastService (TZ-39)».
+
+  1.2. В раздел "1. Frontend" добавить блок "### Design tokens
+    & theme":
+    ```
+    | | |
+    |--|--|
+    | Design tokens | `src/styles/tokens.scss` — typography,
+    |                | spacing, radii, shadows, transitions,
+    |                | semantic colors (TZ-30) |
+    | Theme switcher | `src/styles/theme.scss` +
+    |                | `core/theme.service.ts` — light/dark via
+    |                | `[data-theme]` MD3-color-scheme (TZ-31) |
+    | Atomic utilities | `src/styles/utilities.scss` — p/m/gap/
+    |                  | flex/grid/text/rounded (TZ-32) |
+    ```
+
+  1.3. В раздел "1. Frontend" обновить ui-kit блок:
+    ```
+    ### UI Kit
+    Two folders:
+    - `shared/ui-kit/` (legacy P0, 2026-07-05 rework):
+      ui-page-header, ui-empty-state, ui-badge,
+      ui-table-row-actions.
+    - `shared/ui/` (new design, TZ-33..TZ-39):
+      ui-alert (error/warning/success/info),
+      ui-btn (primary/ghost/danger + sm/md + loading),
+      ui-card (default/filter/table/info + wide + elevated),
+      ui-field (label + hint + error + required + wide),
+      ui-icon-btn (default/danger/copy + sm/md),
+      ui-spinner (sm/md/lg + inline/overlay),
+      ui-toast + ToastService.
+    ```
+
+  1.4. В раздел "6. UI patterns" расписать TZ-33..TZ-39 по
+    той же схеме, что уже есть для TZ-19 ui-page-header: файл +
+    назначение + API-table + acceptance criteria + usage example.
+
+  1.5. В раздел "8. Архитектурные решения" добавить:
+    ```
+    | Design tokens layer | TZ-30 | ✅ |
+    | Dark/light theme switcher | TZ-31 | ✅ |
+    | Atomic utility classes | TZ-32 | ✅ |
+    | New ui-kit `shared/ui/` (10 comps) | TZ-33..TZ-39 | ✅ |
+    | ToastService (replaces MatSnackBar in features) | TZ-48 | ✅ |
+    ```
+
+ШАГ 2: ARCHITECTURE.md.
+
+  2.1. Заменить раздел «Frontend UI Kit (shared/ui-kit/ — 2026-07-05
+    rework)» на расширенный блок, разбитый на 2 подраздела:
+    ```
+    ## Frontend UI Kit (TZ-19, TZ-30..TZ-39, TZ-48)
+
+    ### Foundation (TZ-30..TZ-32)
+    - Design tokens: typography / spacing / radii / shadows /
+      transitions / semantic-colors
+    - Dark/light theme via `[data-theme]` + ThemeService +
+      MD3 color-scheme
+    - Atomic utility classes (p/m/gap/flex/grid/text/rounded)
+
+    ### Legacy 4-Component Kit (TZ-19, 2026-07-05 rework)
+    - ui-page-header, ui-empty-state, ui-badge, ui-table-row-actions
+      (kept for parity with existing pages, signal inputs, OnPush)
+
+    ### New 7-Component Kit (TZ-33..TZ-39)
+    - ui-alert (error/warning/success/info)
+    - ui-btn (primary/ghost/danger + loading)
+    - ui-card (default/filter/table/info)
+    - ui-field (form-field wrapper)
+    - ui-icon-btn (default/danger/copy)
+    - ui-spinner (sm/md/lg + inline/overlay)
+    - ui-toast + ToastService (replaces MatSnackBar in features)
+
+    ### Migration Map
+    | Page | Migrated | TZ |
+    |---|---|---|
+    | MainLayout shell | ✅ ui-card + ThemeService + | TZ-40, TZ-41 |
+    |                  | theme button             | |
+    | Home | ✅ ui-card + ui-btn | TZ-42 |
+    | Login | ✅ ui-field + ui-btn + ui-alert | TZ-43 |
+    | Materials list + dialog | ✅ ui-card / ui-field | TZ-45 + TZ-44c |
+    | Units list + dialog | ✅ ui-card / ui-field | TZ-46 + TZ-44b |
+    | Currencies list + dialog | ✅ ui-card / ui-field | TZ-47 + TZ-44a |
+    | All features → ToastService | ✅ | TZ-48 |
+    ```
+
+  2.2. Добавить секцию «Migrated from kppdf-7.0» — список 10
+    kppdf-7.0/ui/* компонентов и какой kppdf-8.0 TZ переносит каждый:
+
+    | kppdf-7.0 | kppdf-8.0 surface | TZ |
+    |---|---|---|
+    | ui-alert | shared/ui/alert.component.ts | TZ-33 |
+    | ui-badge | shared/ui-kit/ui-badge.component.ts | УЖЕ |
+    | ui-btn | shared/ui/button.component.ts | TZ-34 |
+    | ui-card | shared/ui/card.component.ts | TZ-35 |
+    | ui-empty-row | shared/ui-kit/ui-empty-state.component.ts | УЖЕ |
+    | ui-field | shared/ui/field.component.ts | TZ-36 |
+    | ui-icon-btn | shared/ui/icon-button.component.ts | TZ-37 |
+    | ui-section-header | shared/ui-kit/ui-page-header.component.ts | УЖЕ |
+    | ui-spinner | shared/ui/spinner.component.ts | TZ-38 |
+    | ui-toast | shared/ui/toast.component.ts + toast.service.ts | TZ-39 |
+
+  2.3. В секции TOKEN STRUCTURE расписать 5 файлов:
+    ```
+    frontend/src/styles/tokens.scss
+        /** typography (font-sans, font-mono, scale, weights, line-heights) **/
+        /** spacing (space-0..space-24) **/
+        /** radii (radius-sm..radius-full) **/
+        /** shadows (shadow-sm..shadow-lg) **/
+        /** transitions (transition-fast..transition-slow) **/
+        /** semantic colors (brand-primary, danger, success, etc.) **/
+    frontend/src/styles/theme.scss
+        /** :root light defaults **/
+        /** :root[data-theme='dark'] overrides **/
+    frontend/src/styles/utilities.scss
+        /** atomic padding/margin/gap/flex/grid/text utilities **/
+    ```
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- STACK.md         [обновить Summary, раздел 1, раздел 6, раздел 8]
+- ARCHITECTURE.md [расширить UI Kit секцию, добавить migration map,
+                    добавить «Migrated from kppdf-7.0»]
+
+НЕ ИЗМЕНЯТЬ:
+- README.md         (эта TZ не трогает README; можно в TZ-52+ если
+                     потребуется)
+- tasks/* TZ файлы (уже зафиксированы)
+- frontend/src/*** (не код-доки)
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `STACK.md` содержит ссылки на TZ-30..TZ-48 в разделах 1, 6, 8.
+2. `STACK.md` упоминает 10-component ui-kit (4 legacy + 7 new).
+3. `ARCHITECTURE.md` содержит раздел «Migrated from kppdf-7.0» с
+   таблицей 10 компонентов.
+4. `ARCHITECTURE.md` содержит migration map (page → TZ).
+5. `grep -c 'TZ-30\|TZ-31\|TZ-32\|TZ-33\|TZ-34\|TZ-35\|TZ-36\|TZ-37\|
+   TZ-38\|TZ-39\|TZ-40\|TZ-41\|TZ-42\|TZ-43\|TZ-44\|TZ-45\|TZ-46\|
+   TZ-47\|TZ-48' STACK.md` → ≥ 15 hits.
+6. `grep -c 'TZ-30\|...\|TZ-48' ARCHITECTURE.md` → ≥ 10 hits.
+7. pnpm НЕ зависит от документации, но `cat docs/data-model.md` (если
+   используется в build) не сломан — никаких скриптовых side-effects.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Этот TZ трогает ТОЛЬКО .md файлы. Конфликта с TZ-30..TZ-48 (которые
+правят frontend src/*.ts) НЕТ. Параллельно с TZ-51 (QA-only) — безопасно.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Стандартный TZF-00 + progress.md (`TZ-50 docs updated`) +
+ARCHITECTURE.md не нуждается в обновлении этой TZ (она уже updated).

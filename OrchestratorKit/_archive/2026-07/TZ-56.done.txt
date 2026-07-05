@@ -1,0 +1,144 @@
+═══════════════════════════════════════════════════════════════
+TZ-56: Toast (Sonner-style service + host + a11y coverage)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-30..33 (foundation: Tailwind v4 + OKLCH tokens);
+           TZ-30..45 (Layer 2 primitives, опционально для host context).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/toast/pi-toast.component.ts
+  - frontend/src/app/shared/ui/toast/pi-toast.service.ts
+  - frontend/src/app/shared/ui/toast/index.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+В kppdf-7.x toast = Material MatSnackBar с z-depth shadow + z-1000
+elevation. UI Hardening Rework (2026-07-05) перевёл front-end на
+Material MD3 + paper-and-ink конвенции без shadows. Sonner-style
+реализация: lightweight host region + service-based queue, hairline
+borders per variant, no shadow.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: PiToastService — singleton service с Sonner-style API.
+
+  Шаг 1.1: Методы (signal-friendly, OnPush-friendly):
+    - show(message, opts?) → id
+    - success(message, opts?)
+    - error(message, opts?)
+    - warning(message, opts?)
+    - dismiss(id?) — drop one или all (id undefined → all)
+    - subscribe(cb) → unsubscribe
+
+  Шаг 1.2: Auto-dismiss через setTimeout (только если duration > 0).
+  Шаг 1.3: Listener fan-out через Set<callback>.
+  Шаг 1.4: Типы: ToastVariant, ToastOpts, QueuedToast — все export'нуты.
+
+ШАГ 2: PiToastComponent (host) — рендерит очередь.
+
+  Шаг 2.1: Standalone + OnPush + signal-based state.
+  Шаг 2.2: Subscribe к service через service.subscribe().
+  Шаг 2.3: Шаблон (host root + per-toast):
+    ```html
+    <div role="region" aria-live="polite" aria-atomic="true"
+         aria-label="Уведомления"
+         class="pi-toast-host tours guides fixed top-3 right-3 z-50 ..."
+         style="max-width: min(420px, calc(100vw - 24px));">
+      @for (t of toasts(); track t.id) {
+        <div [attr.data-type]="t.variant"
+             [attr.role]="t.variant === 'error' || t.variant === 'warning' ? 'alert' : 'status'"
+             class="pi-toast bg-paper border rounded-sm px-4 py-3 flex items-start gap-3 tours guides"
+             [class]="variantClasses(t.variant)">
+          <div class="flex-1 text-sm">
+            <div class="pi-toast__message font-body text-ink">{{ t.message }}</div>
+            @if (t.description) {
+              <div class="pi-toast__description text-muted text-xs mt-0.5">
+                {{ t.description }}
+              </div>
+            }
+          </div>
+          <button type="button"
+                  class="pi-toast__close text-muted hover:text-ink text-sm leading-none"
+                  (click)="dismiss(t.id)"
+                  aria-label="Закрыть уведомление">×</button>
+        </div>
+      }
+    </div>
+    ```
+
+  Шаг 2.4: Variant → Tailwind border class map.
+  Шаг 2.5: Esc handler — dismisses ALL queued toasts (browser-only).
+  Шаг 2.6: SSR-safe через isPlatformBrowser(inject(PLATFORM_ID)).
+  Шаг 2.7: DestroyRef cleanup pattern (вместо OnInit/OnDestroy).
+
+ШАГ 3: Subfolder barrel.
+
+  - frontend/src/app/shared/ui/toast/index.ts — экспортирует
+    PiToastComponent, PiToastService, типы ToastVariant/ToastOpts/PiToastItem.
+
+ШАГ 4: Mount в app.ts root template (вне scope этой TZ — host может
+  mount'нуться в любой момент; в TZ-NN ниже он уже стоит).
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. role="region" + aria-label="Уведомления" + aria-live="polite" +
+   aria-atomic="true" установлены на host root.
+2. Per-toast: role="status" для default/success; role="alert" для
+   error/warning.
+3. .tours и .guides классы присутствуют (на host И на каждом toast).
+4. Esc dismisses ALL queued toasts.
+5. Esc handler удаляется через DestroyRef.onDestroy() (нет утечек).
+6. SSR-safe: document.addEventListener не вызывается в server-side
+   (через isPlatformBrowser guard).
+7. pnpm exec tsc -p tsconfig.app.json --noEmit exit 0.
+8. Нет box-shadow / drop-shadow / hex / bg-white.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Архивировать: tasks/TZ-56.md → OrchestratorKit/_archive/2026-07/TZ-56.done.txt
+(но source tasks/TZ-56.md не существовал на момент archival —
+восстановлено post-hoc из system reminder + actual implementation summary).
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ARCHIVE_MARKER                                                │
+│ outcome: DONE                                                  │
+│ closed_at: 2026-07-05T15:00:00Z                                │
+│ closed_by: Frontend UI Engineer (Buffy)                        │
+│ protected_files:                                               │
+│   - frontend/src/app/shared/ui/toast/pi-toast.component.ts      │
+│   - frontend/src/app/shared/ui/toast/pi-toast.service.ts        │
+│   - frontend/src/app/shared/ui/toast/index.ts                  │
+│   - frontend/src/app/shared/ui/toast/toast.tokens.ts           │
+│ affected_areas:                                                │
+│   - frontend/src/app/shared/ui/toast/                          │
+│ verification:                                                  │
+│   - tsc --noEmit (frontend): PASS                              │
+│   - acceptance criteria: PASS                                  │
+│   - progress.md entry: ADDED                                   │
+│   - architecture.md update: DONE                              │
+│   - lock file: CREATED (OrchestratorKit/.mimocode/locks/TZ-56-toast.lock) │
+│   - code-reviewer-minimax-m3 verdict: PASS ("Ship-ready")      │
+│ notes:                                                         │
+│   - Spec реконструирован post-hoc (tasks/TZ-56.md отсутствовал  │
+│     на момент archival).                                       │
+│   - Дополнительно добавлены SSR-guard (isPlatformBrowser) и    │
+│     упрощён [attr.role] ternary по code-review feedback.       │
+│   - PiToastItem (QueuedToast) re-exported через index.ts.      │
+│   - types ToastVariant / ToastOpts / QueuedToast — все export'нуты│
+│     в pi-toast.service.ts (раньше были internal).               │
+│   - Esc handler dismisses-all + preventDefault.                │
+│   - Подключение к существующему <app-pi-toast-host> mount в     │
+│     app.ts — out of scope (отдельная задача / готово в kit).   │
+└─────────────────────────────────────────────────────────────────┘

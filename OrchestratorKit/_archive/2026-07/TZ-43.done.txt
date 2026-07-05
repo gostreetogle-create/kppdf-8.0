@@ -1,0 +1,79 @@
+═══════════════════════════════════════════════════════════════
+TZ-43: RadioGroup + RadioItem (Paper & Ink)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Component Engineer
+
+ЗАВИСИМОСТИ: TZ-32, TZ-40, TZ-42 (Checkbox pattern).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/radio/radio-group.component.ts
+  - frontend/src/app/shared/ui/radio/radio-item.component.ts
+  - frontend/src/app/shared/ui/radio/index.ts
+
+═══════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+════════════════════════════════════════════════════════
+
+1. Текущий kppdf-8.0 frontend использует Angular Material
+   (`mat-flat-button`, `mat-card`, `mat-input` и т.д.) —
+   SaaS-look со shadow, rounded-3xl и gradient fills.
+2. Paper & Ink требует hand-rolled примитив с hairline 1px
+   border + OKLCH tokens из TZ-32 + signal inputs/outputs API
+   (`input()` / `output()`, НЕ `@Input` / `@Output` decorator'ы).
+3. Директория `frontend/src/app/shared/ui/radio/` пуста или со-
+   держит deprecated stub из ранних TZ — в этой TZ удалить и
+   заменить на новый standalone OnPush signal-based компонент.
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+1. `<app-pi-radio-group>` (container, signal value):
+   - value: model<string|null>(null),
+   - name: string (для accessibility, обязателен),
+   - disabled: boolean = false,
+   - ariaLabel?: string (для group).
+
+   Inputs проксируются на CdkRadioGroup из CDK.
+
+2. `<app-pi-radio-item>` (single option):
+   - value: input.required<string>() (unique),
+   - label?: string,
+   - disabled?: boolean.
+
+3. Outputs (на group):
+   - valueChange = output<string|null>().
+
+4. Стили: container = flex flex-col gap-2. Item = кружок 20×20 с
+   border-rule, при checked — inner dot bg-ink 8×8 (центрирован).
+   Active label accent (text-ink). Focus-visible:ring вокруг item.
+   NO shadows.
+
+═══════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/radio/radio-group.component.ts (СОЗДАТЬ)
+  + frontend/src/app/shared/ui/radio/radio-item.component.ts (СОЗДАТЬ)
+  + frontend/src/app/shared/ui/radio/index.ts (СОЗДАТЬ — barrel export)
+
+НЕ ИЗМЕНЯТЬ:
+  - frontend/src/styles.css (только token utility classes из TZ-32).
+  - backend/** (никаких изменений backend в этой TZ).
+  - другие ui-primitives (TZ-NN ≠ этот TZ) — не трогать.
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. 2 файла (group + item), суммарно ≥ 80 строк.
+2. Keyboard nav (стрелки + Tab).
+3. ARIA radiogroup + role=radio per item.
+4. Selected визуально отличим.
+5. `pnpm exec tsc` + `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+TZF-00 ФИНАЛИЗАЦИЯ
+Стандартный.

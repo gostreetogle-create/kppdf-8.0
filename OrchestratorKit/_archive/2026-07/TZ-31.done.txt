@@ -1,0 +1,140 @@
+═══════════════════════════════════════════════════════════════
+TZ-31: Tailwind v4 + @fontsource (Syne/Jakarta)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend CSS Architect
+
+ЗАВИСИМОСТИ: TZ-30 (package.json + paths готовы).
+
+LAYER: 1
+
+CONFLICT KEYS:
+  - frontend/package.json
+  - frontend/postcss.config.js
+  - frontend/tailwind.config.ts
+  - frontend/src/styles.css
+  - frontend/src/styles.scss         (legacy — УДАЛИТЬ)
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. `frontend/package.json` содержит legacy Material 3 deps от TZ-30.
+   В нём НЕТ `tailwindcss@4`, `@tailwindcss/postcss`, `@fontsource/syne`,
+   `@fontsource/plus-jakarta-sans`.
+2. `frontend/src/styles.scss` — большой legacy-файл (MD3 theme +
+   ui-kit утилиты из Пре-Paper-Ink дизайна). TZ-31 УДАЛЯЕТ его.
+3. `frontend/src/styles.css` — пустой / отсутствует.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Установить зависимости (`pnpm add`, ровно эти версии):
+   ```
+   pnpm add -D tailwindcss@^4.0.0 @tailwindcss/postcss@^4.0.0 postcss@^8.4
+   pnpm add @fontsource/syne@^5.1.0
+   pnpm add @fontsource/plus-jakarta-sans@^5.1.0
+   ```
+   Явно НЕ добавлять daisyui / shadcn-react — нет: мы ручной kit.
+
+ШАГ 2: Создать `frontend/postcss.config.js`:
+   ```js
+   module.exports = {
+     plugins: { '@tailwindcss/postcss': {} }
+   };
+   ```
+
+ШАГ 3: Создать `frontend/tailwind.config.ts` (можно минимально —
+   основная конфигурация делается inline в `styles.css` через
+   `@theme`):
+   ```ts
+   import type { Config } from 'tailwindcss';
+   export default {
+     content: ['./src/**/*.{html,ts}'],
+   } satisfies Config;
+   ```
+   Tailwind v4 поддерживает pure-CSS конфигурацию; этот файл — для
+   IDE-интеграции (Tailwind IntelliSense), не строго обязателен.
+
+ШАГ 4: Создать `frontend/src/styles.css` (НОВЫЙ, заменяет
+   `styles.scss`):
+   ```css
+   /* Font imports MUST come before `@import "tailwindcss";` so tokens
+      below can reference them. */
+   @import '@fontsource/syne/400.css';
+   @import '@fontsource/syne/600.css';
+   @import '@fontsource/syne/700.css';
+   @import '@fontsource/syne/800.css';
+   @import '@fontsource/plus-jakarta-sans/400.css';
+   @import '@fontsource/plus-jakarta-sans/500.css';
+   @import '@fontsource/plus-jakarta-sans/600.css';
+   @import '@fontsource/plus-jakarta-sans/700.css';
+
+   @import 'tailwindcss';
+
+   /* TZ-32 adds @theme inline tokens here. */
+   ```
+   Этот порядок важен: шрифты ПЕРЕД `@import "tailwindcss";`,
+   иначе `--font-display: 'Syne'` не подхватится на момент компиляции.
+
+ШАГ 5: УДАЛИТЬ `frontend/src/styles.scss`. Если `angular.json`
+   ссылается на него — поменять CSS-ссылку в `angular.json` на
+   `styles.css`.
+
+ШАГ 6: Подтвердить, что `frontend/src/index.html` и любые tsx
+   импорты НЕ ссылаются на старые SCSS-классы (`.page-shell`,
+   `.muted`, `.num-cell` и др.) — TZ-32 и далее заменят их на
+   Tailwind utility classes.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- frontend/package.json               [добавить tailwindcss@^4, @tailwindcss/postcss, tailwind-merge (если не было), @fontsource/{syne, plus-jakarta-sans}]
+- frontend/postcss.config.js          [создать]
+- frontend/tailwind.config.ts         [создать]
+- frontend/src/styles.css             [создать с font imports + @import tailwindcss]
+- frontend/angular.json               [заменить styles.scss → styles.css в architect.build.options.styles]
+- frontend/src/styles.scss            [УДАЛИТЬ]
+
+НЕ ИЗМЕНЯТЬ:
+- backend/**
+- TZ-30 зафиксировал routing + bootstrap
+- Компоненты с templateUrl/stylesUrl <mat-card> — там удаление
+  будет идти в TZ-34..TZ-66 постепенно
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm install` exit 0.
+2. `grep '@fontsource/syne' frontend/src/styles.css` > 0 hits.
+3. `grep '@fontsource/plus-jakarta-sans' frontend/src/styles.css` > 0 hits.
+4. `frontend/src/styles.css` начинается с font imports, потом
+   `@import 'tailwindcss';`.
+5. `frontend/src/styles.scss` НЕ существует (УДАЛЁН).
+6. `frontend/angular.json` ссылается на `styles.css`, НЕ `styles.scss`.
+7. `pnpm exec tsc -p tsconfig.app.json --noEmit` exit 0.
+8. `pnpm build` exit 0.
+9. На dev-сервере (`pnpm start`) в DevTools → Computed → font-family
+   показывает `Syne` для `.font-display` class (если он где-то
+   уже используется) — это значит font loading OK.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+CONFLICT KEYS пересекается с TZ-30 по `package.json` (ТОЛЬКО при
+параллельном запуске — TZ-31 строго после TZ-30).
+CONFLICT KEYS пересекается с TZ-32/TZ-33 по `styles.css` — TZ-31
+идёт ПЕРВЫМ, TZ-32 + TZ-33 ПОСЛЕ.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Стандартный TZF-00. progress.md: `TZ-31 (Tailwind v4 + fonts)`.
+ARCHITECTURE.md: добавить `## Stack: Tailwind v4 (TZ-31)` —
+version-pinned, font import order, no legacy SCSS.

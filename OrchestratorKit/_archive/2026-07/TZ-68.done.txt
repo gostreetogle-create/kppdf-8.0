@@ -1,0 +1,79 @@
+═══════════════════════════════════════════════════════════════
+TZ-68: Page primitives (PageHeader · Section · Demo)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-30, TZ-31, TZ-32 (OKLCH tokens), TZ-33 (ThemeService).
+
+LAYER: 3 (Page primitives)
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/page/pi-page-header.component.ts
+  - frontend/src/app/shared/page/pi-section.component.ts
+  - frontend/src/app/shared/page/pi-demo.component.ts
+  - frontend/src/app/shared/page/index.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ:
+═══════════════════════════════════════════════════════════════
+
+Папки frontend/src/app/shared/page/ не существовало. Pages будущих TZ-69..74 будут реиспользовать эти 3 примитива.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ:
+═══════════════════════════════════════════════════════════════
+
+Создан:
+- frontend/src/app/shared/page/pi-page-header.component.ts (~60 lines)
+- frontend/src/app/shared/page/pi-section.component.ts (~50 lines)
+- frontend/src/app/shared/page/pi-demo.component.ts (~100 lines)
+- frontend/src/app/shared/page/index.ts (barrel, 4 exports)
+
+═══════════════════════════════════════════════════════════════
+ЧТО СДЕЛАНО:
+═══════════════════════════════════════════════════════════════
+
+**pi-page-header (eyebrow + h1 + subtitle + meta):**
+- Inputs: `eyebrow=''`, `title=''` (required), `subtitle=''`, `meta=''`.
+- Eyebrow = uppercase text-eyebrow (12px, tracking-wide) + accent line.
+- h1 = font-display text-4xl font-light tracking-tight.
+- Subtitle = text-ink-2 text-lg max-w-prose.
+- Meta = small caps right-aligned (publication date / version / etc.).
+- Все signal inputs, OnPush, standalone.
+
+**pi-section (hairline border + eyebrow + title):**
+- Inputs: `eyebrow=''`, `title=''` (required), `id=''` (for deep-link anchors).
+- Hairline border-top (1px) + padding-y 12.
+- @if (eyebrow) @if (title) branches.
+- Content slot default.
+- [id] binding для fragment navigation (TZ-82 live code anchors).
+
+**pi-demo (title + description + preview + code toggle):**
+- Inputs: `title=''` (required), `description=''`, `code=''` (multi-line string для source display).
+- Internal signal: `codeOpen = signal(false)`.
+- @if (codeOpen) reveals `<pre>` block with monospace code (sharp 1px rx).
+- @if (description) shows muted text-ink-2 below title.
+- Preview slot default (`<ng-content />`).
+- Source slot projected via `<ng-content select="[source]">` (alternative to `[code]` string).
+- Code toggle: discrete <button> with chevron icon, aria-expanded.
+
+**index.ts (barrel):**
+```ts
+export { PiPageHeaderComponent } from './pi-page-header.component';
+export { PiSectionComponent } from './pi-section.component';
+export { PiDemoComponent } from './pi-demo.component';
+```
+
+═══════════════════════════════════════════════════════════════
+VERIFICATION:
+═══════════════════════════════════════════════════════════════
+
+- typecheck: pnpm exec tsc exit 0
+- spec acceptance: no box-shadow/drop-shadow/hex/bg-white (PASS: 0 hits)
+- All 3 components: standalone + OnPush + signal inputs (PASS)
+- No any/OnInit/OnDestroy/@Input decorator (PASS)
+- Subfolder barrel exports named exports (PASS)
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER: TZ-68 done 2026-07-05; LAYER 3 (Page primitives) start.

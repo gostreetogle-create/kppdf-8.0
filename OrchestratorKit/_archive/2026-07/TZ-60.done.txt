@@ -1,0 +1,129 @@
+═══════════════════════════════════════════════════════════════
+TZ-60: Accordion (single/multiple expand, with mono timestamp)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-30, TZ-31, TZ-32 (OKLCH), ANGULAR CDK Accordion
+           (`@angular/cdk/accordion`) для ARIA pattern.
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/pi-accordion.component.ts
+  - frontend/src/app/shared/ui/pi-accordion-item.component.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+В MatAccordion (Material) — panelы с expand animation, ripple и
+закруглением. Paper & Ink требует: print-accordion —
+горизонтальная hairline между items, текст слева, mono timestamp
+или '##01' счётчик справа, chevron-up/down indicator.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: `pi-accordion-item.component.ts` (standalone, OnPush):
+  Inputs:
+    ```ts
+    title    = input.required<string>();
+    index    = input<string>('');        // '01', '02', ...
+    meta     = input<string>('');        // '0.1s · getting started'
+    expanded = input<boolean>(false);
+    disabled = input<boolean>(false);
+    ```
+  Outputs:
+    ```ts
+    expandedChange = output<boolean>();
+    ```
+
+  Шаблон:
+    ```html
+    <div class="border-b hairline border-rule">
+      <button role="button"
+              [attr.aria-expanded]="expanded()"
+              [disabled]="disabled()"
+              (click)="expandedChange.emit(!expanded())"
+              class="w-full text-left flex items-center justify-between gap-4
+                     py-4 px-1 hover:bg-paper-2 transition-colors
+                     disabled:opacity-40">
+        <div class="flex items-baseline gap-3">
+          @if (index()) {
+            <span class="font-display text-sm tracking-tight min-w-[2.5rem]">{{ index() }}</span>
+          }
+          <span class="font-display text-lg tracking-tight">{{ title() }}</span>
+        </div>
+        <div class="flex items-center gap-3">
+          @if (meta()) {
+            <span class="mono text-[11px] text-muted-foreground uppercase tracking-[0.18em]">{{ meta() }}</span>
+          }
+          <lucide-angular [img]="expanded() ? chevronUpIcon : chevronDownIcon"
+                          size="16" aria-hidden="true" />
+        </div>
+      </button>
+      @if (expanded()) {
+        <div role="region" class="px-1 pb-4 text-sm">
+          <ng-content />
+        </div>
+      }
+    </div>
+    ```
+
+ШАГ 2: `pi-accordion.component.ts` — wrapper над CDK Accordion:
+    ```ts
+    multi = input<boolean>(false);
+    ```
+    CDK Accordion (CdkAccordion) handles single/multi state management.
+
+  Шаблон:
+    ```html
+    <cdk-accordion [multi]="multi()" class="block">
+      <ng-content />
+    </cdk-accordion>
+    ```
+
+ШАГ 3: A11y: ARIA Disclosure pattern — `<button aria-expanded>`
+  + `<div role="region">`. Optional: id связь через aria-controls.
+
+ШАГ 4: Animation: просто display: none ↔ block (CDK Accordion
+  handles transition). Без easing fade (sharp on/off — print-style).
+
+ШАГ 5: Export из index.ts.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/pi-accordion.component.ts
+  + frontend/src/app/shared/ui/pi-accordion-item.component.ts
+  ~ frontend/src/app/shared/ui/index.ts
+
+НЕ ИЗМЕНЯТЬ:
+  - backend/**
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. Click header toggles expanded.
+2. ARIA `aria-expanded` toggled корректно.
+3. multi=true: можно expand несколько; multi=false: только один.
+4. Index ("01"), meta ("0.1s · getting started") header-right работает.
+5. Нет ripple / shadow / hex.
+6. `pnpm exec tsc --noEmit` exit 0; `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Новые файлы. Параллельно с TZ-53..59 — нет конфликтов.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Архивировать: `mv tasks/TZ-60.md OrchestratorKit/_archive/2026-07/TZ-60.done.txt`.

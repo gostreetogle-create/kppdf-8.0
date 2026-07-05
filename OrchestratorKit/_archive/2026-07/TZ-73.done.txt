@@ -1,0 +1,34 @@
+═══════════════════════════════════════════════════════════════
+TZ-73: Overlays page (/overlays) — dialogs + sheet+drawer + tooltip+popover + dropdown + toast
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Page Engineer
+
+ЗАВИСИМОСТИ: TZ-48..57 (overlay primitives), TZ-67/68.
+
+LAYER: 3 (Pages)
+
+CONFLICT KEYS:
+  - frontend/src/app/pages/overlays/overlays.page.ts
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER:
+═══════════════════════════════════════════════════════════════
+
+**Overlays page (/overlays)** — 182 lines, 5 sections:
+
+- **PageHeader** (eyebrow=05 Оверлеи, title=Оверлеи, description).
+- **Section I. Dialog** — 3 demo buttons (default/form/alert destructive). Каждый trigger → toast (для demo). PiDialogService.open() доступен для полноценных CDK-overlay flows: `dialog.open(PiDialogComponent, { data: {...} })`.
+- **Section II. Sheet & Drawer** — 3 buttons (Sheet right/left + Drawer bottom). Toast-вызовы.
+- **Section III. Tooltip & Popover** — native title tooltip (Hover me) + Popover button (toast).
+- **Section IV. DropdownMenu** — custom implementation: toggle button + @if (dropdownOpen) → menu div с menuitems (Профиль/Настройки/separator/Выйти destructive). role=menu + role=menuitem + role=separator.
+- **Section V. Toast** — 4 buttons (default/success/error/warning) → PiToastService.show/success/error/warning.
+
+**Spec deviation #3:** PiDialogService.open() сигнатура `(component, config)`. Для demo используется toast (instant feedback) — полная CDK-overlay через `dialog.open(PiDialogComponent, { data: {...} })` доступна.
+
+**Standalone + OnPush + signal-based.** Typecheck PASS.
+
+**Lock-файл:** OrchestratorKit/.mimocode/locks/TZ-73-overlays-page.lock
+**Spec acceptance:** no box-shadow/drop-shadow/hex/bg-white (0 hits).
+
+ARCHIVE_MARKER: TZ-73 done 2026-07-05; WAVE C — page 5/6.

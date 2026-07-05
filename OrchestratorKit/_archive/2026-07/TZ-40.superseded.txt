@@ -1,0 +1,126 @@
+═══════════════════════════════════════════════════════════════
+═══ SUPERSEDED by Paper & Ink set (TZ-30..39) ═══
+═══ этот Material MD3 TZ-план заменён 2026-07-05 на editorial
+═══ Swiss-minimalism направление (Paper & Ink, OKLCH paper+ink,
+═══ Tailwind v4, Syne+Plus Jakarta Sans, lucide-angular, output()).
+═══ Канонический план теперь в tasks/TZ-30..TZ-82.
+═══ Оригинал этого файла был в tasks/TZ-40.md до архивации.
+═══════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════
+TZ-40: Кнопка переключения темы в Main Layout (topbar)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-31 (ThemeService), TZ-37 (ui-icon-btn).
+             НЕ ЗАВИСИТ ОТ TZ-41 — эта TZ идёт ПЕРВОЙ для shell;
+             TZ-41 выполнится ПОСЛЕ по цепочке (TZ-41 явно зависит
+             от этой TZ).
+
+LAYER: 3
+
+CONFLICT KEYS:
+  - frontend/src/app/layouts/main-layout.component.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. Текущий код:
+   `frontend/src/app/layouts/main-layout.component.ts` — topbar
+   содержит `shell-brand` (слева) + `shell-user` (user meta + logout
+   button, справа). Никакого theme switcher button нет.
+
+2. Проблемы:
+   - В kppdf-7.0 была маленькая иконка-кнопка между user-meta и
+     logout для переключения тёмной темы. Здесь её нет — пользователь
+     может жить только на жёстко-зашитой LIGHT-теме.
+   - ThemeService (TZ-31) уже создан, но consumer отсутствует.
+
+3. Контекст:
+   - TZ-31 создал ThemeService с сигналами mode + isDark + toggle().
+   - TZ-37 создал <ui-icon-btn>.
+   - Референс: kppdf-7.0 имел glyph dark_mode ↔ light_mode, круглый
+     outline button справа от user-meta.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Внедрить ThemeService в main-layout:
+  ```ts
+  import { ThemeService } from '../core/theme.service';
+  // ...
+  protected readonly theme = inject(ThemeService);
+  ```
+  Импортировать `UiIconBtn` из `'../shared/ui/icon-button.component'`.
+
+ШАГ 2: В template (.shell-user) добавить ТОЛЬКО theme-switcher
+  button МЕЖДУ `<span class="user-meta">` И `<button mat-stroked-button
+  type="button" (click)="logout()">`:
+  ```html
+  <ui-icon-btn
+    variant="default"
+    size="sm"
+    [icon]="theme.isDark() ? 'light_mode' : 'dark_mode'"
+    [tooltip]="theme.isDark() ? 'Светлая тема' : 'Тёмная тема'"
+    ariaLabel="Переключить тему"
+    (pressed)="theme.toggle()"
+  ></ui-icon-btn>
+  ```
+  ВАЖНО: TZ-37 провозглашает `pressed = output<MouseEvent>()` —
+  bind (как `(pressed)="…"`). Event не пробрасывается если button
+  disabled.
+
+ШАГ 3: В imports компонента добавить:
+  `imports: [RouterOutlet, RouterLink, MatIconModule, MatButtonModule,
+  UiPageHeader, UiIconBtn]`.
+
+ШАГ 4: tsc + build green. Без migrate brand-styling (это TZ-41).
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- frontend/src/app/layouts/main-layout.component.ts
+    [добавить ThemeService inject + <ui-icon-btn> theme toggle в
+     .shell-user]
+
+НЕ ИЗМЕНЯТЬ:
+- frontend/src/app/core/theme.service.ts (TZ-31 зафиксировал)
+- frontend/src/styles.scss
+- другие layout / pages
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. Template main-layout содержит `<ui-icon-btn>` для theme toggle.
+2. click на new button вызывает `theme.toggle()` — `data-theme`
+   атрибут на `<html>` меняется с `light` ↔ `dark` мгновенно.
+3. Иконка меняется `dark_mode` ↔ `light_mode` в зависимости от
+   текущего режима (через `theme.isDark()`).
+4. Tooltip работает при hover.
+5. `pnpm exec tsc -p tsconfig.app.json --noEmit` → exit 0.
+6. `pnpm build` → exit 0.
+7. НА СТРАНИЦАХ визуально ничего не сломано: shell topbar выглядит
+   идентично до TZ-41 (никакой миграции layout — только кнопка
+   добавлена).
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Этот TZ единственный трогает `main-layout.component.ts`. Параллельно
+с другими TZ безопасен (TZ-41 будет после этой).
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Стандартный TZF-00. progress.md: `## [2026-07-05] — TZ-40
+(Theme switcher button)`. ARCHITECTURE.md: секция
+`## Theme Switcher (TZ-40)` с описанием button placement +
+api reference.

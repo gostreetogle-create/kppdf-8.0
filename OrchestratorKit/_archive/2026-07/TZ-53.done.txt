@@ -1,0 +1,100 @@
+═══════════════════════════════════════════════════════════════
+TZ-53: Popover (positioned click-overlay)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer (CDK overlay specialist)
+
+ЗАВИСИМОСТИ: TZ-48 (Dialog cdk.overlay pattern), TZ-31 (Tailwind v4),
+           TZ-32 (OKLCH).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/pi-popover.component.ts
+  - frontend/src/app/shared/ui/pi-popover.directive.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+Tooltip (TZ-52) = hover/focus мини-флажок (1 строка). Popover = полно-
+размерное позиционированное окно по клику, с произвольным контентом
+(формы, списки, карточки). Переиспользует CDK Overlay как Dialog,
+но БЕЗ backdrop + с auto-reposition strategy.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: `pi-popover.directive.ts`:
+    ```ts
+    piPopover      = input.required<TemplateRef>();
+    position       = input<'top' | 'bottom' | 'left' | 'right'>('bottom');
+    offset         = input<number>(8);
+    showArrow      = input<boolean>(false);  // default false — Paper & Ink без стрелок
+    ariaLabel      = input<string>('');
+    dismissOnOutside = input<boolean>(true);
+    ```
+    Trigger: click (НЕ hover) + keyboard (Enter / Space).
+
+ШАГ 2: `pi-popover.component.ts` (standalone, OnPush):
+    ```ts
+    selector: 'app-pi-popover';
+    @Component({
+      template: `
+        <div role="dialog"
+             [attr.aria-label]="ariaLabel()"
+             class="bg-paper border hairline border-rule rounded-sm
+                    px-4 py-3 max-w-[360px] text-sm">
+          <ng-content />
+        </div>
+      `,
+    })
+    ```
+    НЕТ backdrop (NO dimmer — это click-overlay, не modal).
+    Outside-click handler через `document:pointerdown` listener
+    IF `dismissOnOutside=true`.
+
+ШАГ 3: Auto-flip через ConnectedPositionStrategy с 4 preferred
+  positions + auto-reposition на scroll.
+
+ШАГ 4: A11y — focus trap НЕ нужен (это не modal), но trigger
+  получает `aria-expanded` (signal `isOpen`) + `aria-controls` (id
+  панели).
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/pi-popover.component.ts
+  + frontend/src/app/shared/ui/pi-popover.directive.ts
+  ~ frontend/src/app/shared/ui/index.ts
+
+НЕ ИЗМЕНЯТЬ:
+  - styles.css
+  - backend/**
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. Click trigger открывает / клик вне / ESC закрывает.
+2. NO backdrop (verify в DOM: документ НЕТ дополнительного overlay
+   backdrop element при открытии popover).
+3. Auto-flip работает (поповер рядом с viewport edge разворачивается).
+4. `aria-expanded` toggled на trigger.
+5. `grep 'box-shadow\|#[0-9a-f]\{3,8\}\|bg-white' pi-popover.*.ts` пусто.
+6. `pnpm exec tsc --noEmit` exit 0; `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Новые файлы. Параллельно с TZ-54..60 — нет конфликтов (разные файлы).
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Архивировать: `mv tasks/TZ-53.md OrchestratorKit/_archive/2026-07/TZ-53.done.txt`.

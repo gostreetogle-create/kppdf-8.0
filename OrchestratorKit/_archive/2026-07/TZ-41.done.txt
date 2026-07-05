@@ -1,0 +1,80 @@
+═══════════════════════════════════════════════════════════════
+TZ-41: Select (Paper & Ink — CDK listbox headless)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Component Engineer
+
+ЗАВИСИМОСТИ: TZ-32, TZ-40 (FormField wrapper).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/select/select.component.ts
+  - frontend/src/app/shared/ui/select/select-trigger.component.ts
+  - frontend/src/app/shared/ui/select/select-option.component.ts
+  - frontend/src/app/shared/ui/select/index.ts
+
+═══════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+════════════════════════════════════════════════════════
+
+1. Текущий kppdf-8.0 frontend использует Angular Material
+   (`mat-flat-button`, `mat-card`, `mat-input` и т.д.) —
+   SaaS-look со shadow, rounded-3xl и gradient fills.
+2. Paper & Ink требует hand-rolled примитив с hairline 1px
+   border + OKLCH tokens из TZ-32 + signal inputs/outputs API
+   (`input()` / `output()`, НЕ `@Input` / `@Output` decorator'ы).
+3. Директория `frontend/src/app/shared/ui/select/` пуста или со-
+   держит deprecated stub из ранних TZ — в этой TZ удалить и
+   заменить на новый standalone OnPush signal-based компонент.
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+1. Реализация на `@angular/cdk/listbox` (headless, a11y-ready).
+   Три компонента: `<app-pi-select>` (host, signal value),
+   `<app-pi-select-trigger>` (button), `<app-pi-select-option>`
+   (item). Использовать CdkListbox + CdkOption из CDK.
+
+2. signal inputs на app-pi-select:
+   - value: model<string|null>(null),
+   - placeholder: 'Выберите значение' (rus default),
+   - disabled: boolean = false,
+   - size: 'sm'|'md' (default 'md').
+
+3. Outputs:
+   - valueChange = output<string|null>().
+
+4. Стили hairline: trigger = bg-paper border-rule, options multi-row
+   bg-paper hairline-b между, hover: bg-paper-2.
+   Selected option: bg-ink text-paper.
+   НЕТ shadows. NO rounded-3xl.
+
+═══════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/select/select.component.ts (СОЗДАТЬ)
+  + frontend/src/app/shared/ui/select/select-trigger.component.ts (СОЗДАТЬ)
+  + frontend/src/app/shared/ui/select/select-option.component.ts (СОЗДАТЬ)
+  + frontend/src/app/shared/ui/select/index.ts (СОЗДАТЬ — barrel export)
+
+НЕ ИЗМЕНЯТЬ:
+  - frontend/src/styles.css (только token utility classes из TZ-32).
+  - backend/** (никаких изменений backend в этой TZ).
+  - другие ui-primitives (TZ-NN ≠ этот TZ) — не трогать.
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. Файл/ы ≥ 80 строк суммарно (3 компонента).
+2. Keyboard navigation через CDK listbox (↑↓ + Enter).
+3. valueChange emit'ит выбранное значение.
+4. disabled state работает.
+5. NO shadows, hairline-b между options.
+6. `pnpm exec tsc` + `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+TZF-00 ФИНАЛИЗАЦИЯ
+Стандартный.

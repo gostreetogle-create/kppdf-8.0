@@ -22,6 +22,8 @@ import { RoleOrgModule } from './modules/role-org/role-org.module';
 import { RoleCounterpartyModule } from './modules/role-counterparty/role-counterparty.module';
 import { InteractionModule } from './modules/interaction/interaction.module';
 import { CategoryModule } from './modules/category/category.module';
+import { UnitModule } from './modules/unit/unit.module';
+import { CurrencyModule } from './modules/currency/currency.module';
 import { MaterialModule } from './modules/material/material.module';
 import { ProductModule } from './modules/product/product.module';
 import { ProductPhotoModule } from './modules/product-photo/product-photo.module';
@@ -85,6 +87,8 @@ import { FeatureFlagsSeed } from './common/seed/feature-flags.seed';
 import { StatusesSeed } from './common/seed/statuses.seed';
 import { OrgRolesSeed } from './common/seed/org-roles.seed';
 import { CounterpartyRolesSeed } from './common/seed/counterparty-roles.seed';
+import { UnitsSeed } from './common/seed/units.seed';
+import { CurrenciesSeed } from './common/seed/currencies.seed';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -126,6 +130,8 @@ import { HealthController } from './health.controller';
     RoleCounterpartyModule,
     InteractionModule,
     CategoryModule,
+    UnitModule,
+    CurrencyModule,
     MaterialModule,
     ProductModule,
     ProductPhotoModule,
@@ -196,6 +202,8 @@ import { HealthController } from './health.controller';
     StatusesSeed,
     OrgRolesSeed,
     CounterpartyRolesSeed,
+    UnitsSeed,
+    CurrenciesSeed,
   ],
 })
 export class AppModule {}

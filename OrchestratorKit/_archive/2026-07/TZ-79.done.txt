@@ -1,0 +1,41 @@
+═══════════════════════════════════════════════════════════════
+TZ-79: Print stylesheet (@media print) + axe-core DEFERRED
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend QA-валидатор
+
+ЗАВИСИМОСТИ: TZ-31 (Tailwind v4), TZ-32 (OKLCH), TZ-67 (KitLayout), TZ-68 (page primitives).
+
+LAYER: 1 (Cross-cutting)
+
+CONFLICT KEYS:
+  - frontend/src/styles.css (@media print block)
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER:
+═══════════════════════════════════════════════════════════════
+
+**Spec deviation:** `pnpm add -D axe-core@^4.10` FAILED с
+`ERR_PNPM_PUBLIC_HOIST_PATTERN_DIFF` (тот же pnpm config blocker).
+Spec file `frontend/e2e/a11y/axe-audit.spec.ts` DEFERRED.
+Future TZ-79b: re-attempt after pnpm reconcile.
+
+**styles.css @media print block** (added):
+- `:root` overrides: paper → white, ink → black, rule → #ccc (print-friendly).
+- Hide chrome: `aside, header[role='banner'], footer, app-pi-command-palette, app-pi-toast-host` → display none.
+- `main { padding: 0 !important; max-width: 100% !important }`.
+- `section { break-inside: avoid }` — page-break-friendly.
+- Typography: h1 22pt, h2 14pt, h3 12pt.
+- `*, *::before, *::after { animation: none !important; transition: none !important; box-shadow: none !important }` — print anti-bling.
+- `a[href]:not([href^='#']):after { content: ' (' attr(href) ')'; ... }` — show link URLs after text.
+
+**No new dependencies required** для @media print block.
+
+**Verification:**
+- typecheck: pnpm exec tsc exit 0
+- spec acceptance: no rgb() in @media print block (explicit white/black/#ccc overrides only)
+- @media print block at line 163
+- break-inside: avoid at line 186
+- box-shadow: none at line 197
+
+ARCHIVE_MARKER: TZ-79 done 2026-07-05 (print block only); axe-core a11y audit DEFERRED.

@@ -1,0 +1,83 @@
+═══════════════════════════════════════════════════════════════
+TZ-35: Badge (Paper & Ink)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Component Engineer
+
+ЗАВИСИМОСТИ: TZ-32 (tokens).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/badge/badge.component.ts
+  - frontend/src/app/shared/ui/badge/index.ts
+
+═══════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+════════════════════════════════════════════════════════
+
+1. Текущий kppdf-8.0 frontend использует Angular Material
+   (`mat-flat-button`, `mat-card`, `mat-input` и т.д.) —
+   SaaS-look со shadow, rounded-3xl и gradient fills.
+2. Paper & Ink требует hand-rolled примитив с hairline 1px
+   border + OKLCH tokens из TZ-32 + signal inputs/outputs API
+   (`input()` / `output()`, НЕ `@Input` / `@Output` decorator'ы).
+3. Директория `frontend/src/app/shared/ui/badge/` пуста или со-
+   держит deprecated stub из ранних TZ — в этой TZ удалить и
+   заменить на новый standalone OnPush signal-based компонент.
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+1. Standalone, OnPush, signal inputs:
+   - variant: 'default'|'secondary'|'outline'|'destructive' (default 'default').
+   - size: 'sm'|'md' (default 'sm' — badges в Paper & Ink миниатюрны).
+   - icon?: string — Lucide icon name (если задан, рендер слева).
+   - dot?: boolean — пульсирующая точка (для статусов).
+
+2. Layout:
+   ```html
+   <span [class]="computedClass()">
+     @if (icon()) { <lucide-icon [name]="icon()" [size]="14"/> }
+     @if (dot())  { <span class="block w-1.5 h-1.5 rounded-sm bg-current opacity-80"></span> }
+     <ng-content/>
+   </span>
+   ```
+
+3. Variants:
+   - default: bg-ink, text-paper. (Active status — solid.)
+   - secondary: bg-paper-2, text-ink. (Neutral.)
+   - outline: bg-transparent, hairline border, text-ink.
+   - destructive: bg-destructive, text-paper.
+   Font-mono 11px, uppercase, tracking 0.08em, rounded-sm.
+
+4. Sizes:
+   - sm: px-1.5 py-0.5, text-[10px].
+   - md: px-2 py-1, text-xs.
+   No drop shadow.
+
+═══════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/badge/badge.component.ts (СОЗДАТЬ)
+  + frontend/src/app/shared/ui/badge/index.ts (СОЗДАТЬ — barrel export)
+
+НЕ ИЗМЕНЯТЬ:
+  - frontend/src/styles.css (только token utility classes из TZ-32).
+  - backend/** (никаких изменений backend в этой TZ).
+  - другие ui-primitives (TZ-NN ≠ этот TZ) — не трогать.
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. Файл существует ≥ 60 строк.
+2. 4 variants × 2 sizes.
+3. dot / icon mode визуально видны (нужен отдельный page-тест).
+4. НЕТ hex в template — только token classes (`bg-ink`, `bg-paper-2`).
+5. `pnpm exec tsc` + `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+TZF-00 ФИНАЛИЗАЦИЯ
+Стандартный. progress.md (TZ-35 Badge).

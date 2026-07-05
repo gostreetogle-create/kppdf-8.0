@@ -1,0 +1,120 @@
+═══════════════════════════════════════════════════════════════
+TZ-55: DropdownMenu (contextual menu по click на trigger)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-53 (Popover CDK overlay pattern),
+           `@angular/cdk/menu` для keyboard nav (Arrow up/down).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/menu/pi-dropdown-menu.component.ts
+  - frontend/src/app/shared/ui/menu/pi-menu-item.component.ts
+  - frontend/src/app/shared/ui/menu/pi-menu-trigger.directive.ts
+  - frontend/src/app/shared/ui/menu/pi-menu.service.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+В Paper & Ink dropdown menu — это вертикальный список из 3-7
+пунктов. В kppdf-7.0 использовался MatMenu с ripple-эффектом.
+Paper & Ink диктует: статичные пункты (NO ripple), sharp corners,
+hairline divider между группами. Keyboard nav = ▲/▼ + Enter + ESC.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: `menu/pi-menu-trigger.directive.ts`:
+  Атрибутная директива `piDropdownTrigger` — на click trigger открывает
+  menu; на Enter / Space / ▼ — открывает и focus первый item.
+  ```ts
+  piDropdownTrigger = input.required<PiDropdownMenu>();
+  ```
+
+ШАГ 2: `menu/pi-dropdown-menu.component.ts` (standalone, OnPush):
+  Inputs:
+    ```ts
+    position    = input<'bottom-start' | 'bottom-end' | 'top-start' | 'top-end'>('bottom-start');
+    ariaLabel   = input<string>('Меню');
+    ```
+  Slot: `<ng-content select="[item]">` для пунктов.
+  ```html
+  <div role="menu"
+       [attr.aria-label]="ariaLabel()"
+       class="bg-paper border hairline border-rule rounded-sm
+              min-w-[200px] py-1">
+    <ng-content select="[item]" />
+  </div>
+  ```
+
+ШАГ 3: `menu/pi-menu-item.component.ts`:
+  ```ts
+  selected    = input<boolean>(false);
+  disabled    = input<boolean>(false);
+  type        = input<'default' | 'destructive' | 'separator'>('default');
+  select      = output<void>();
+  ```
+  Template:
+    - `default`: `<button role="menuitem" class="w-full text-left px-3 py-1.5
+      text-sm hover:bg-paper-2 transition-colors
+      disabled:opacity-40 disabled:cursor-not-allowed">`
+    - `destructive`: тот же, но `text-destructive`.
+    - `separator`: `<div role="separator" class="border-t hairline border-rule my-1" />`
+  Selected item получает `aria-checked="true"` (для toggle-menu).
+
+ШАГ 4: Keyboard nav:
+  - ▲/▼ — move focus между items.
+  - Enter / Space — select item.
+  - ESC — close menu + restore focus на trigger.
+  - Tab — close и forward focus.
+
+  Использовать `@angular/cdk/menu` MenuStack или собственный
+  FocusKeyManager.
+
+ШАГ 5: Outside-click — close menu.
+
+ШАГ 6: Export из index.ts.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/menu/pi-dropdown-menu.component.ts
+  + frontend/src/app/shared/ui/menu/pi-menu-item.component.ts
+  + frontend/src/app/shared/ui/menu/pi-menu-trigger.directive.ts
+  ~ frontend/src/app/shared/ui/index.ts
+
+НЕ ИЗМЕНЯТЬ:
+  - styles.css
+  - backend/**
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. Click trigger → open menu; outside click → close.
+2. ▲/▼ навигация работает (focus cikl между items).
+3. Enter / Space → вызывает `select.emit()` на focused item.
+4. ESC → close + focus trigger.
+5. role="menuitem" / aria-checked (для selected).
+6. НИКАКОГО ripple / shadow / hex.
+7. `pnpm exec tsc --noEmit` exit 0; `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Создаёт поддиректорию `menu/`. Параллельно с TZ-56 (ContextMenu
+shares `menu/pi-menu-item.component.ts` — CONFLICT! Нужна последо-
+вательность 55 → 56.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Архивировать: `mv tasks/TZ-55.md OrchestratorKit/_archive/2026-07/TZ-55.done.txt`.

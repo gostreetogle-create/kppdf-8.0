@@ -1,0 +1,133 @@
+═══════════════════════════════════════════════════════════════
+═══ SUPERSEDED by Paper & Ink set (TZ-30..39) ═══
+═══ этот Material MD3 TZ-план заменён 2026-07-05 на editorial
+═══ Swiss-minimalism направление (Paper & Ink, OKLCH paper+ink,
+═══ Tailwind v4, Syne+Plus Jakarta Sans, lucide-angular, output()).
+═══ Канонический план теперь в tasks/TZ-30..TZ-82.
+═══ Оригинал этого файла был в tasks/TZ-48.md до архивации.
+═══════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════
+TZ-48: Миграция глобального сервиса уведомлений (MatSnackBar → ToastService)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Architect
+
+ЗАВИСИМОСТИ: TZ-39 (ToastService + ui-toast глобально смонтирован),
+             TZ-45, TZ-46, TZ-47 (TZ-48 вызывается уже после
+             миграции всех 3 list-pages, чтобы избежать partial state).
+
+LAYER: 3
+
+CONFLICT KEYS:
+  - frontend/src/app/features/units/units-list.page.ts
+  - frontend/src/app/features/materials/materials-list.page.ts
+  - frontend/src/app/features/currencies/currencies-list.page.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. Текущий код: 3 list-pages инжектят `MatSnackBar`
+   и вызывают:
+   - `this.snack.open('Изменения сохранены', 'OK', { duration: 2500 });`
+   - `this.snack.open('Единица создана', 'OK', { duration: 2500 });`
+   - `this.snack.open('Материал удалён', 'OK', { duration: 2500 });`
+   - `this.snack.open('Системную единицу нельзя удалить', 'OK', { duration: 3000 });`
+   - `this.snack.open('error', 'OK', ...)` для ошибок.
+
+2. Проблемы:
+   - Каждый page руками знает про MatSnackBar.
+   - Нет глобального канала — если в core/service появится
+     уведомление, оно не пройдёт через UI.
+   - Toast variant (success / error / warning / info) не
+     нормализован → все snack-сообщения выглядят одинаково (Material blue).
+
+3. Контекст:
+   - TZ-39 установил `<ui-toast />` в `app.ts` (глобальный listener).
+   - ToastService доступен через DI (`inject(ToastService)`).
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: В `units-list.page.ts`:
+  - Удалить `import { MatSnackBar } from '@angular/material/snack-bar';`.
+  - Inject `private readonly toast = inject(ToastService);`.
+  - В `persist()`:
+    ```ts
+    if (result) {
+      this.toast.success(isEdit ? 'Изменения сохранены' : 'Единица создана');
+    }
+    ```
+  - В `confirmDelete()`:
+    ```ts
+    if (unit.isSystem) {
+      this.toast.warning('Системную единицу нельзя удалить');
+      return;
+    }
+    // ...
+    if (success) this.toast.success('Единица удалена');
+    ```
+  - Удалить `MatSnackBar` из constructor inject.
+
+ШАГ 2: В `materials-list.page.ts` — то же самое:
+  - 'Изменения сохранены' / 'Материал создан' → success.
+  - 'Материал удалён' → success.
+  - Если есть error-cases → `toast.error('текст')`.
+
+ШАГ 3: В `currencies-list.page.ts` — то же.
+
+ШАГ 4: В catch блоках dialogs (44a/b/c) — НЕ ТРОГАТЬ dialog
+  error-msg signal (это inline <ui-alert> в dialog-footer). Но
+  при ДОПОЛНИТЕЛЬНЫХ messages в action confirm / cancel — если
+  были, мигрировать на toast.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- frontend/src/app/features/units/units-list.page.ts
+- frontend/src/app/features/materials/materials-list.page.ts
+- frontend/src/app/features/currencies/currencies-list.page.ts
+
+НЕ ИЗМЕНЯТЬ:
+- dialogs (.ts) — их inline errorMsg signal НЕ мигрируется
+- TZ-39 toast.service / toast.component / app.ts (зафиксированы)
+- TZ-45/46/47 list-page migration (не должно быть конфликта,
+  но TZ-48 всё равно после них по DEPENDENCIES)
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `grep -rn 'MatSnackBar' frontend/src/app/features/`
+   → 0 (включая imports).
+2. `grep -rn 'this.snack' frontend/src/app/features/` → 0.
+3. `grep -rn 'this.toast' frontend/src/app/features/`
+   совпадает с числом бывших `this.snack` calls.
+4. UI demo:
+   - Создать unit → toast success "Единица создана" появляется в
+     top-right через 0 ms, исчезает через 2500 ms.
+   - Попытка удалить системную → toast warning «Системную единицу
+     нельзя удалить».
+5. pnpm exec tsc → exit 0.
+6. pnpm build → exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Этот TZ трогает 3 РАЗНЫХ list-page файла одновременно. CONFLICT KEYS
+явно их перечисляют. Параллельно с любыми TZ-ами, которые ТОЖЕ
+трогают эти 3 файла — ЗАПРЕЩЕНО. Если TZ-45/46/47 не DONE,
+скопировать TZ-48 в `_archive/<YYYY-MM>/TZ-48.deferred.txt`.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Стандартный TZF-00 + ARCHITECTURE.md (секция «Notification System
+(TZ-48)» — ToastService is now global, MatSnackBar deprecated для
+features/*).

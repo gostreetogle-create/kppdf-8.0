@@ -1,0 +1,111 @@
+═══════════════════════════════════════════════════════════════
+TZ-59: Breadcrumb (chevron separator, current page = ink, drop mono)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-30, TZ-31, TZ-32 (OKLCH), lucide-angular (chevron-right).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/pi-breadcrumb.component.ts
+  - frontend/src/app/shared/ui/pi-breadcrumb-item.component.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+В kppdf-7.0 breadcrumb рендерился как плоский список через `›` /
+mat-icon `chevron_right`. Paper & Ink требует: lucide chevron-
+right моно 12px, текущий (последний) item = ink bold, остальные =
+muted-foreground, mono font для печатной точности. Drop иерархии
+строго вертикальный (не dropdown-style).
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: `pi-breadcrumb.component.ts` (standalone, OnPush):
+  Inputs:
+    ```ts
+    ariaLabel = input<string>('Навигация');
+    ```
+  Шаблон:
+    ```html
+    <nav role="navigation"
+         [attr.aria-label]="ariaLabel()"
+         class="flex items-center gap-1 mono text-[11px] uppercase tracking-[0.18em]">
+      <ng-content />
+    </nav>
+    ```
+
+ШАГ 2: `pi-breadcrumb-item.component.ts`:
+  Inputs:
+    ```ts
+    href      = input<string>('');
+    current   = input<boolean>(false);
+    ```
+  Шаблон:
+    ```html
+    @if (current()) {
+      <span role="link"
+            [attr.aria-current]="'page'"
+            class="text-ink font-medium">{{ projectedLabel }}</span>
+    } @else {
+      <a [href]="href()"
+         class="text-muted-foreground hover:text-ink underline-offset-4
+                hover:underline transition-colors">{{ projectedLabel }}</a>
+      <lucide-angular [img]="chevronRightIcon"
+                       size="11"
+                       class="text-muted-foreground mx-1"
+                       aria-hidden="true" />
+    }
+    ```
+
+  Slot: `<ng-content />` для текста label.
+
+ШАГ 3: A11y: aria-current="page" на последнем item, role="link"
+  на ссылках, aria-label на chevron = "следующий уровень" (через
+  aria-hidden).
+
+ШАГ 4: Responsive — `truncate` Tailwind utility если items > 4:
+  средние items заменяются на `<span class="text-muted-foreground">…</span>`.
+
+ШАГ 5: Export из index.ts.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/pi-breadcrumb.component.ts
+  + frontend/src/app/shared/ui/pi-breadcrumb-item.component.ts
+  ~ frontend/src/app/shared/ui/index.ts
+
+НЕ ИЗМЕНЯТЬ:
+  - backend/**
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. aria-current="page" на последнем item.
+2. Chevron визуально моно 11px (lucide chevron-right).
+3. Mono font + uppercase + tracking-[0.18em].
+4. Current item НЕ chevron после.
+5. > 4 items: средние заменены на `…`.
+6. `grep 'box-shadow\|#[0-9a-f]\{3,8\}\|bg-white' pi-breadcrumb*.ts` пусто.
+7. `pnpm exec tsc --noEmit` exit 0; `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Новые файлы. Параллельно с TZ-58/60 — нет конфликтов.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Архивировать: `mv tasks/TZ-59.md OrchestratorKit/_archive/2026-07/TZ-59.done.txt`.

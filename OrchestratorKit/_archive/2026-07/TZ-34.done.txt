@@ -1,0 +1,104 @@
+═══════════════════════════════════════════════════════════════
+TZ-34: Button (Paper & Ink editorial)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Component Engineer
+
+ЗАВИСИМОСТИ: TZ-32 (tokens), TZ-33 (далеко по времени — но Button не
+             зависит от ThemeService сигналов напрямую).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/button/button.component.ts
+  - frontend/src/app/shared/ui/button/button.variants.ts
+  - frontend/src/app/shared/ui/button/index.ts      (barrel)
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+В Paper & Ink наборе нет Button. Использовался бы `<button
+mat-flat-button>` / `<a mat-stroked-button>` — НЕЛЬЗЯ: материал
+по-прежнему ЗАПРЕЩЁН (no Mat theme, no shadows, no purple).
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+1. Создать `frontend/src/app/shared/ui/button/button.component.ts`:
+   - standalone, OnPush, changeDetection.
+   - signal inputs: variant: 'default'|'secondary'|'outline'|'ghost'|'link'|'destructive' (default 'default'),
+     size: 'sm'|'md'|'lg'|'icon' (default 'md'),
+     disabled = false,
+     type: 'button'|'submit'|'reset' (default 'button').
+   - output: pressed = output<MouseEvent>() (см. важность ниже).
+   - Variant-class через `tailwind-variants` (или ручной clsx +
+     tailwind-merge).
+
+2. ВАРИАНТЫ — hard rules:
+   - default: bg-ink, text-paper, hover: opacity-90.
+   - secondary: bg-paper-2, text-ink, hover: bg-paper.
+   - outline: bg-transparent, hairline border, hover: bg-paper-2.
+   - ghost: bg-transparent, no border, hover: bg-paper-2.
+   - link: bg-transparent, underline, text-ink, hover: underline ink.
+   - destructive: bg-destructive, text-paper, hover: opacity-90.
+   Все — `rounded-sm` (НЕ pill, НЕ rounded-3xl). Никаких shadow.
+
+3. SIZES (HEIGHTS):
+   - sm: h-7,  px-3, text-xs.
+   - md: h-9,  px-4, text-sm.
+   - lg: h-11, px-6, text-base.
+   - icon: h-9 w-9 (square).
+   Font-body 500.
+
+4. СТИЛИ через utility classes:
+   ```html
+   <button
+     [type]="type()"
+     [disabled]="disabled()"
+     [class]="computedClass()"
+     (click)="onClick($event)"
+   ><ng-content/></button>
+   ```
+   Где `computedClass()` возвращает строку через tv().
+
+5. Tag-agnostic опиц.: когда `[href]` задан — рендер `<a>` вместо
+   `<button>`, иначе `<button>`.
+
+6. ИКОНКА slot: `<ng-content select="[pi-icon]" />` для опциональной
+   иконки (lucide-angular).
+
+7. output pressed: `output<MouseEvent>()`. Внутренний handler
+   `onClick` который swallow если disabled, иначе `pressed.emit($event)`.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ: только новые файлы.
+НЕ ИЗМЕНЯТЬ: TZ-30..TZ-33 зафиксировали фундамент.
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `frontend/src/app/shared/ui/button/button.component.ts` существует, ≥ 80 строк.
+2. 6 variants × 4 sizes рендерятся визуально правильно.
+3. `grep 'rounded-3xl\|shadow-lg\|box-shadow' frontend/src/app/shared/ui/button/`
+   → 0 (sharp corners, no shadow).
+4. Disabled state opacity-50 + click swallowed.
+5. `pressed = output<MouseEvent>()` bindable из parent.
+6. `pnpm exec tsc -p tsconfig.app.json --noEmit` exit 0.
+7. `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+CONFLICT KEYS unique. Параллельно с TZ-35..TZ-66 — безопасно, разные файлы.
+
+═════════════════════════════════════════════════════════════════
+TZF-00 ФИНАЛИЗАЦИЯ
+Стандартный. progress.md (TZ-34 Button). ARCHITECTURE.md (секция
+Button API с таблицей variants × sizes).

@@ -1,0 +1,180 @@
+═══════════════════════════════════════════════════════════════
+TZ-33: Dark Mode (class="dark" + ThemeService + localStorage)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Architect
+
+ЗАВИСИМОСТИ: TZ-32 (tokens уже в @theme; нужны для dark overrides).
+
+LAYER: 1
+
+CONFLICT KEYS:
+  - frontend/src/styles.css
+  - frontend/src/app/core/theme.service.ts
+  - frontend/src/main.ts                (bootstrap через provideAppInitializer)
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. `frontend/src/styles.css` имеет light-only tokens (TZ-32). НЕТ
+   `.dark` overrides.
+2. `frontend/src/app/core/theme.service.ts` ОТСУТСТВУЕТ.
+3. `frontend/src/main.ts` НЕ регистрирует ThemeService.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: В `frontend/src/styles.css` ПОСЛЕ `@theme inline {...}`
+   добавить блок `.dark` — инвертировать paper↔ink для нейтральной
+   dark-темы (без синего оттенка, true neutral grays):
+   ```css
+   @layer base {
+     .dark {
+       --color-paper:       oklch(0.16  0.005 80);  /* deep warm ink */
+       --color-paper-2:     oklch(0.22  0.006 80);
+       --color-ink:         oklch(0.95  0.005 80);  /* near-white text */
+       --color-rule:        oklch(0.30  0.005 80);  /* hairline inversion */
+       --color-muted:       oklch(0.7   0.01  80);
+       --color-destructive: oklch(0.65  0.18  27);
+       --color-accent-warm: oklch(0.75 0.13 60);
+       --color-accent-cool: oklch(0.7  0.09 230);
+     }
+   }
+   ```
+   ВАЖНО: НЕ ИСПОЛЬЗОВАТЬ `body.dark` или `:root.dark` — placement
+   именно `.dark` (без родителя) → selector specificity работает,
+   class ставится на `<html>`. Hue остаётся нейтральным (значение
+   hue = 80 — warm), чтобы не синить.
+
+ШАГ 2: Создать `frontend/src/app/core/theme.service.ts` (файл
+   ShouldExist до того, как TZ-67 подключит toggle button):
+   ```ts
+   import { Injectable, signal, computed, effect, inject, PLATFORM_ID } from '@angular/core';
+   import { isPlatformBrowser, DOCUMENT } from '@angular/common';
+
+   export type ThemeMode = 'light' | 'dark';
+   const STORAGE_KEY = 'pi.theme';
+   const htmlEl = (doc: Document) => doc.documentElement;
+
+   @Injectable({ providedIn: 'root' })
+   export class ThemeService {
+     private readonly doc = inject(DOCUMENT);
+     private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+     private readonly _mode = signal<ThemeMode>(this.detectInitial());
+     readonly mode = this._mode.asReadonly();
+     readonly isDark = computed(() => this._mode() === 'dark');
+
+     constructor() {
+       effect(() => {
+         const m = this._mode();
+         if (this.isBrowser) {
+           htmlEl(this.doc).classList.toggle('dark', m === 'dark');
+           try { localStorage.setItem(STORAGE_KEY, m); } catch {}
+         }
+       });
+     }
+
+     toggle(): void { this._mode.update(m => m === 'dark' ? 'light' : 'dark'); }
+     set(mode: ThemeMode): void { this._mode.set(mode); }
+
+     private detectInitial(): ThemeMode {
+       if (typeof window === 'undefined') return 'light';
+       try {
+         const stored = localStorage.getItem(STORAGE_KEY);
+         if (stored === 'dark' || stored === 'light') return stored;
+       } catch {}
+       return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+     }
+
+     /** Called ONCE in main.ts bootstrap (SSR-safe pre-paint). */
+     applyEarlyHint(): void {
+       if (!this.isBrowser) return;
+       const m = this.detectInitial();
+       htmlEl(this.doc).classList.toggle('dark', m === 'dark');
+     }
+   }
+   ```
+   Effect автоматически синхронизирует DOM attribute + localStorage
+   при любом изменении сигнала. `applyEarlyHint()` для bootstrap
+   pre-paint (без FOUC).
+
+ШАГ 3 (ФИНАЛЬНАЯ ВЕРСИЯ — единый вариант): в `frontend/src/main.ts`
+   поставить IIFE-блок ДО `bootstrapApplication(...)`. Никаких
+   DI-обёрток, никаких `applyEarlyHint()` — просто прямой
+   localStorage read + `classList.toggle`:
+   ```ts
+   import { bootstrapApplication } from '@angular/platform-browser';
+   import { App } from './app/app';
+   import { appConfig } from './app/app.config';
+
+   // Pre-paint theme hint — must run BEFORE Angular bootstraps so
+   // there's no flash-of-light-content on reload when user prefers dark.
+   if (typeof document !== 'undefined') {
+     let mode: 'light' | 'dark' = 'light';
+     try {
+       const stored = localStorage.getItem('pi.theme');
+       if (stored === 'dark' || stored === 'light') mode = stored;
+       else if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) mode = 'dark';
+     } catch {}
+     document.documentElement.classList.toggle('dark', mode === 'dark');
+   }
+
+   bootstrapApplication(App, appConfig).catch(err => console.error(err));
+   ```
+   ThemeService (signal + effect) подхватит initial theme при первом
+   inject и далее поддерживает sync с localStorage при toggle().
+
+ШАГ 4 (ОПЦИОНАЛЬНО): TZ-30 уже добавил в `app.config.ts`
+   `provideAppInitializer(...)`. Этот TZ НЕ меняет app.config.ts —
+   см. TZ-30 для деталей initialization chain.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- frontend/src/styles.css                  [.dark блок]
+- frontend/src/app/core/theme.service.ts   [создать]
+- frontend/src/main.ts                     [pre-paint в bootstrap]
+
+НЕ ИЗМЕНЯТЬ:
+- TZ-30 routing — TZ-33 ничего не правит в routes.
+- Компоненты страниц / UI kit (TZ-34+).
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `grep '.dark {' frontend/src/styles.css` → 1 hit (block start).
+2. `frontend/src/app/core/theme.service.ts` существует ≥ 30 строк.
+3. `pnpm start` → DevTools на любой странице:
+   - в Local Storage есть ключ `pi.theme` со значением `light` или `dark`.
+   - на `<html>` присутствует или отсутствует `class="dark"` в
+     зависимости от значения.
+4. Программно: `inject(ThemeService).toggle()` меняет
+   `class="dark"` на `<html>` МГНОВЕННО (визуально).
+5. Стили в `.dark` блоке фон `--color-paper` инвертирован для
+   body (warm ink ≈ #181613) и text-ink near-white — проверяется
+   в DevTools Computed style.
+6. Hue остаётся нейтральным (warm, ~80) — НЕ синит даже в dark.
+7. `pnpm exec tsc -p tsconfig.app.json --noEmit` exit 0.
+8. `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Трогает `styles.css` + `theme.service.ts` + `main.ts`. Параллельно
+с TZ-32 ЗАПРЕЩЕНО (styles.css). TZ-34..TZ-66 можно параллелить
+(theme.service.ts и main.ts эти TZ не трогают).
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Стандартный TZF-00. progress.md: `TZ-33 (Dark mode)`.
+ARCHITECTURE.md: секция `## Theme Toggle (TZ-33)` — class="dark" на
+<html> + ThemeService signal + localStorage + pre-paint bootstrap.

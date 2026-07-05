@@ -1,0 +1,41 @@
+═══════════════════════════════════════════════════════════════
+TZ-76: Prop Playground for Button + Badge (live signal-driven controls)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-34 (Button 6×4 variants), TZ-35 (Badge 4×2 variants), TZ-68 (Demo wrapper).
+
+LAYER: 1 (Cross-cutting)
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/playground/pi-playground-button.component.ts
+  - frontend/src/app/shared/playground/pi-playground-badge.component.ts
+  - frontend/src/app/shared/playground/index.ts
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER:
+═══════════════════════════════════════════════════════════════
+
+**PiPlaygroundButtonComponent** (~150 lines):
+- Standalone + OnPush + signal-based.
+- Split view: live preview (grid-paper canvas) + controls panel.
+- Signals: variant (6 options), size (4 options), disabled, loading, hasLeadingIcon, label.
+- Loading state: inline spinner span с animate-spin (Tailwind).
+- 6 button variants × 4 sizes × 2 states + label editor.
+
+**PiPlaygroundBadgeComponent** (~110 lines):
+- Standalone + OnPush + signal-based.
+- Same split view pattern.
+- Signals: variant (4 options), size (2 options), dot, text.
+- 4 badge variants × 2 sizes + dot toggle + text editor.
+
+**Barrel** (`shared/playground/index.ts`) — exports components + types.
+
+**Verification:**
+- typecheck: pnpm exec tsc exit 0
+- spec acceptance: no box-shadow/drop-shadow/hex/bg-white (0 hits)
+- signal-based: signal/computed (no @Input decorator)
+- Standalone + OnPush
+
+ARCHIVE_MARKER: TZ-76 done 2026-07-05; WAVE D-2 (Playground) complete.

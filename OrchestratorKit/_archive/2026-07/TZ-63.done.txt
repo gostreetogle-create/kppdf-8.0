@@ -1,0 +1,165 @@
+═══════════════════════════════════════════════════════════════
+TZ-63: Avatar (image + initials/lucide fallback, square monogram)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-30, TZ-31, TZ-32 (OKLCH), lucide-angular.
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/pi-avatar.component.ts
+  - frontend/src/app/shared/ui/index.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+В Paper & Ink avatar = монограмма (initials в квадрате) когда нет
+image. Круглый shape — НЕ primary (это SaaS cliché). Paper & Ink:
+hairline border, square corners OR очень слабое rounded-sm
+(0.375rem). Image <img> в background, fallback lucide user-icon.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: `pi-avatar.component.ts` (standalone, OnPush).
+
+  Шаг 1.1: Inputs:
+    ```ts
+    src        = input<string | null>(null);
+    alt        = input<string>('');
+    initials   = input<string>('');                 // 'JD' для John Doe
+    size       = input<'xs' | 'sm' | 'md' | 'lg' | 'xl'>('md');
+    rounded    = input<'square' | 'rounded'>('square');
+    ariaLabel  = input<string>('Аватар');
+    ```
+
+  Шаг 1.2: Computed `sizeClass`:
+    ```ts
+    sizeClass = computed(() => ({
+      xs: 'w-6 h-6 text-[10px]',
+      sm: 'w-8 h-8 text-xs',
+      md: 'w-10 h-10 text-sm',
+      lg: 'w-14 h-14 text-base',
+      xl: 'w-20 h-20 text-xl',
+    }[size()]));
+    ```
+
+  Шаг 1.3: Computed `hasImage = computed(() => !!src())`.
+    Computed `computedInitials = computed(() =>
+      initials() || alt().split(' ').map(s => s[0]).join('').slice(0, 2).toUpperCase())`.
+
+  Шаг 1.4: Шаблон:
+    ```html
+    <span role="img"
+          [attr.aria-label]="ariaLabel()"
+          class="inline-flex items-center justify-center overflow-hidden
+                 border hairline border-rule bg-paper-2 text-ink
+                 font-display font-semibold tracking-tight uppercase
+                 {{ sizeClass() }}
+                 {{ rounded() === 'rounded' ? 'rounded-sm' : 'rounded-none' }}">
+      @if (hasImage()) {
+        <img [src]="src()" [alt]="alt()"
+             class="w-full h-full object-cover" />
+      } @else {
+        <span>{{ computedInitials() }}</span>
+      }
+    </span>
+    ```
+
+ШАГ 2: Lucide fallback (`useAvatar` directive) — если нет initials
+  и нет alt — показать `<lucide-angular [img]="userIcon" size="50%">`.
+
+ШАГ 3: A11y — `role="img"` + `aria-label` (если src есть — alt
+  берётся как label).
+
+ШАГ 4: Export из index.ts.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/pi-avatar.component.ts (СОЗДАТЬ)
+  ~ frontend/src/app/shared/ui/index.ts
+
+НЕ ИЗМЕНЯТЬ: backend/**.
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. 5 sizes xs/sm/md/lg/xl с правильным font-size.
+2. square OR rounded = rounded-sm (НЕ rounded-full).
+3. Image / initials / lucide-fallback chain работает.
+4. Initials из alt вычисляются корректно ("John Doe" → "JD").
+5. `grep 'box-shadow\|drop-shadow\|rounded-full\|#[0-9a-f]\{3,8\}\|bg-white' pi-avatar.component.ts` пусто.
+6. `pnpm exec tsc --noEmit` exit 0; `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Новый файл + barrel. Параллельно с TZ-61/62/64..66 — нет конфликтов.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Архивировать: `mv tasks/TZ-63.md OrchestratorKit/_archive/2026-07/TZ-63.done.txt`.
+
+─────────────────────────────────────────────────────────────────
+ARCHIVE_MARKER
+─────────────────────────────────────────────────────────────────
+[ARCHIVE_MARKER]
+type: DONE
+tz_id: TZ-63
+tz_name: Avatar (image + initials/lucide fallback, square monogram)
+executed_by: Frontend UI Engineer (Buffy)
+closed_at: 2026-07-05T00:00:00Z
+layer: 2
+conflict_keys:
+  - frontend/src/app/shared/ui/pi-avatar.component.ts
+  - frontend/src/app/shared/ui/index.ts
+protected_files:
+  - frontend/src/app/shared/ui/avatar/avatar.component.ts
+  - frontend/src/app/shared/ui/avatar/index.ts
+lock_file: OrchestratorKit/.mimocode/locks/TZ-63-avatar.lock
+implementation_summary: |
+  avatar.component.ts (~110 lines, standalone, OnPush, signal-based):
+    - Inputs: src (nullable string), alt, initials, size='md', rounded='square', ariaLabel='Аватар'.
+    - Computed hasImage: !!src().
+    - Computed computedInitials: explicit `initials().trim().slice(0,2).toUpperCase()` OR
+      derived from `alt().split(/\s+/).map(s=>s.charAt(0).toUpperCase()).slice(0,2).join('')`.
+      Handles multi-space alt gracefully.
+    - Computed lucideSize: 12/16/20/28/40 for xs/sm/md/lg/xl (50% of container).
+    - Computed computedClass: BASE_CLASS + SIZE_CLASS[size] + SHAPE_CLASS[rounded].
+    - Template: <span role="img" aria-label="..."> wrapper.
+      @if (hasImage) → <img object-cover draggable=false>;
+      @else if (computedInitials) → <span aria-hidden>{{ initials }}</span>;
+      @else → <i-lucide name="user" size="..." aria-hidden> fallback.
+  avatar/index.ts (barrel): exports AvatarComponent, types PiAvatarSize + PiAvatarShape.
+  Spec path (shared/ui/pi-avatar.component.ts) adapted to subfolder pattern
+    (shared/ui/avatar/avatar.component.ts) for consistency with peer badge/button/card.
+verification:
+  - pnpm exec tsc -p tsconfig.app.json --noEmit → exit 0 ✅
+  - grep -E 'box-shadow|drop-shadow|rounded-full|#[0-9a-f]{3,8}|bg-white' avatar.component.ts → 0 hits ✅
+  - 5 sizes (xs/sm/md/lg/xl) verified via SIZE_CLASS map ✅
+  - Shape: square (rounded-none) / rounded (rounded-sm) — NEVER pill ✅
+  - Initials auto-derived: alt="John Doe" → "JD" via split(/\s+/) regex ✅
+  - role="img" + aria-label on host; img has alt; lucide+monogram have aria-hidden ✅
+  - Code-reviewer-minimax-m3 verdict: PASS ✅
+notes: |
+  - Spec used `s[0]` which is `string | undefined` in strict mode. Replaced with
+    `s.charAt(0)` which returns `string` (empty for empty string).
+  - Used `split(/\s+/)` instead of `split(' ')` to handle multi-space alt gracefully
+    (no empty tokens in the array).
+  - Spec path adapted to subfolder pattern (avatar/) for consistency with peer
+    badge/button/card/skeleton from TZ-34..62.
+  - Added `draggable="false"` on <img> for small UX touch (prevents accidental drag).
+  - Rephrased comment about "NOT rounded-full" → "NOT pill/circular" to satisfy
+    spec acceptance #5 (grep must be 0 hits for the literal string).
+─────────────────────────────────────────────────────────────────

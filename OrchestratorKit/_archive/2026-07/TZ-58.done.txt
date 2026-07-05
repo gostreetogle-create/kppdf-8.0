@@ -1,0 +1,130 @@
+═══════════════════════════════════════════════════════════════
+TZ-58: Tabs (underline indicator, ROving Tabindex WAI-APG pattern)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-30, TZ-31, TZ-32 (OKLCH), Roving Tabindex WAI-APG
+           pattern для keyboard навигации между tabs.
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/pi-tabs.component.ts
+  - frontend/src/app/shared/ui/pi-tab.component.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+Tabs в kppdf-7.0 = MatTabs с ripple-эффектом и pill-indicator.
+Paper & Ink требует: типографский underline — активный tab = solid
+hairline под текстом (НЕ pill, НЕ shadow). Tab labels в body font.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: `pi-tabs.component.ts` (standalone, OnPush):
+  Inputs:
+    ```ts
+    value       = input<string>('');           // активный tab
+    ariaLabel   = input<string>('Вкладки');
+    orientation = input<'horizontal' | 'vertical'>('horizontal');
+    ```
+  Output: `valueChange = output<string>()`.
+
+  Шаблон:
+    ```html
+    <div role="tablist"
+         [attr.aria-orientation]="orientation()"
+         [attr.aria-label]="ariaLabel()"
+         class="flex border-b hairline border-rule">
+      <ng-content />                <!-- pi-tab children -->
+    </div>
+    ```
+
+  Template-driven (НЕ content projection с [@switch]); каждый
+  <pi-tab value="x" label="X"> рендерит триггер. Children
+  pi-tab-panelHandle вкладку через scrollIntoView или через
+  `@switch` внутри pi-tabs.
+
+ШАГ 2: `pi-tab.component.ts`:
+  Inputs:
+    ```ts
+    value    = input.required<string>();
+    label    = input.required<string>();
+    disabled = input<boolean>(false);
+    ```
+  Output: `activated = output<string>()` (на click/Enter).
+  Шаблон:
+    ```html
+    <button role="tab"
+            [id]="tabId()"
+            [attr.aria-selected]="isActive()"
+            [attr.aria-controls]="panelId()"
+            [disabled]="disabled()"
+            (click)="activated.emit(value())"
+            class="px-4 py-2 text-sm font-body border-b hairline
+                   transition-colors
+                   aria-selected:border-ink aria-selected:text-ink
+                   hover:text-ink disabled:opacity-40 disabled:cursor-not-allowed">
+      {{ label() }}
+    </button>
+    ```
+
+ШАГ 3: Контент панелей — через `@switch (value())` ВНУТРИ <app-pi-tabs>:
+    ```html
+    <app-pi-tabs [(value)]="activeTab">
+      <app-pi-tab value="overview" label="Обзор" />
+      <app-pi-tab value="details" label="Детали" />
+    </app-pi-tabs>
+    <div role="tabpanel" [id]="panelIdFor(activeTab)">
+      @switch (activeTab) {
+        @case ('overview') { <overview-panel /> }
+        @case ('details')    { <details-panel /> }
+      }
+    </div>
+    ```
+
+ШАГ 4: Roving Tabindex — focusable только selected tab (tabindex=0)
+  всё остальное tabindex=-1. ArrowLeft/Right меняют focus через
+  keyboard + Emit `valueChange`.
+
+ШАГ 5: Export из index.ts.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/pi-tabs.component.ts
+  + frontend/src/app/shared/ui/pi-tab.component.ts
+  ~ frontend/src/app/shared/ui/index.ts
+
+НЕ ИЗМЕНЯТЬ:
+  - backend/**
+  - styles.css
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. Click / Enter на tab → `valueChange.emit(value)`.
+2. ▲/▼ / ◄/► на tab-ах → focus cycle + emit.
+3. role="tablist" / role="tab" / role="tabpanel" правильные.
+4. aria-selected toggled правильно.
+5. Active tab = border-ink underline (НЕ pill, НЕ shadow).
+6. `pnpm exec tsc --noEmit` exit 0; `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Новые файлы. Параллельно с TZ-59/60 — нет конфликтов.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Архивировать: `mv tasks/TZ-58.md OrchestratorKit/_archive/2026-07/TZ-58.done.txt`.

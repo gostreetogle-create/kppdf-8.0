@@ -1,0 +1,125 @@
+═══════════════════════════════════════════════════════════════
+═══ SUPERSEDED by Paper & Ink set (TZ-30..39) ═══
+═══ этот Material MD3 TZ-план заменён 2026-07-05 на editorial
+═══ Swiss-minimalism направление (Paper & Ink, OKLCH paper+ink,
+═══ Tailwind v4, Syne+Plus Jakarta Sans, lucide-angular, output()).
+═══ Канонический план теперь в tasks/TZ-30..TZ-82.
+═══ Оригинал этого файла был в tasks/TZ-42.md до архивации.
+═══════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════
+TZ-42: Миграция Home Page на ui-card и ui-btn
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-30, TZ-32, TZ-35 (ui-card), TZ-34 (ui-btn)
+
+LAYER: 3
+
+CONFLICT KEYS:
+  - frontend/src/app/features/home/home.page.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. Текущий код:
+   `home.page.ts` использует `<mat-card appearance="outlined"
+   class="home-card">` + `<a mat-flat-button>` + `<a mat-stroked-button>`
+   + inline `code { ... }` стиль (уже глобально, дублируется).
+
+2. Проблемы:
+   - Кнопки «разбегающиеся»: 3 quick-links используют разные button
+     type (mat-flat + mat-stroked + mat-stroked). kppdf-7.0 имел
+     стандартный шаблон: одна primary кнопка + 2 ghost.
+   - inline `.home-card { max-width: 640px; }` — урезает визуальную
+     ширину, мешает token-based layout.
+   - `home-card` стили не используют TZ-30 tokens.
+
+3. Контекст:
+   - TZ-35 уже создал <ui-card>; TZ-34 создал <ui-btn variant=ghost>.
+   - Агент должен перейти на эти компоненты, убрав mat-flat-button /
+     mat-stroked-button.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Заменить `<mat-card appearance="outlined" class="home-card">`
+   на `<ui-card variant="info" icon="dashboard" title="Главная"
+   subtitle="...">` (или просто `<ui-card>` + ручной header).
+
+ШАГ 2: Quick-links `<a mat-flat-button>` / `<a mat-stroked-button>`
+   заменить на `<a ui-btn variant="primary">` / `<a ui-btn variant="ghost">`.
+   ВАЖНО: <ui-btn> рендерит `<button>` — для routerLink нужно
+   обернуть `<a>` вручную через `<a ui-btn routerLink="...">` ИЛИ
+   использовать `[attr.href]="..."` (предпочтительно routerLink: без
+   native form-submit).
+
+  В TZ-34 НЕ указано routerLink support; если ui-btn это native
+  `<button>` без routerLink — использовать `[attr.href]` через
+  строковый литерал:
+  ```html
+  <a routerLink="/materials" class="ui-btn ui-btn--primary">
+    <mat-icon>inventory_2</mat-icon> Материалы
+  </a>
+  ```
+  Т.е. применять классы `.ui-btn` руками к routerLink-anchor +
+  положиться на CSS-селекторы в `frontend/src/styles/utilities.scss`
+  для стилей.
+
+  Альтернатива: в TZ-34 был сделан host-элемент `button`. Для
+  `<a>` tag должен работать тот же CSS (`.ui-btn` селектор НЕ
+  привязан к tag). Просто добавить `<a class="ui-btn ui-btn--primary"
+  routerLink="...">...</a>`.
+
+ШАГ 3: Удалить inline стили `.home-card`, `.greeting`, `p`,
+   `.hint`, `.code`, `.quick-links` — перейти на tokens и
+   utility classes из TZ-32. `.quick-links` → заменить на
+   `<nav class="flex flex-wrap gap-3 mt-4 pt-4"
+   style="border-top: 1px solid var(--border-subtle)">`.
+
+ШАГ 4: Animation/transition на `.quick-links a` → hover
+   opacity-brightness (TZ-34 уже покрывает в CSS).
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- frontend/src/app/features/home/home.page.ts
+    [mat-card → ui-card, mat-X-button → ui-btn class on <a>,
+     удалить inline duplicate code/.home-card/.quick-links]
+
+НЕ ИЗМЕНЯТЬ:
+- shell (TZ-41 сделал)
+- auth/login (TZ-43 сделает)
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `grep -c 'mat-card\|mat-flat-button\|mat-stroked-button'
+   frontend/src/app/features/home/home.page.ts` → 0 (или только в
+   imports которых нет необходимости — оставлять mat-flat-button
+   import удалённым полностью).
+2. `grep -cE '\\bbg-red|#[0-9a-fA-F]{6}|max-width: \\d' home.page.ts`
+   → 0 (все magic numbers и hex заменены на tokens/utility).
+3. UI demo: /home открывается, quick-links кликабельны.
+4. pnpm exec tsc → exit 0.
+5. pnpm build → exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Этот TZ единственный трогает `home.page.ts` после TZ-41.
+Параллельно с TZ-43 (login) и TZ-45..47 (list-pages) — все разные
+файлы, безопасно.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Стандартный TZF-00 + ARCHITECTURE.md (отметка о миграции home page).

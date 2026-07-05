@@ -1,0 +1,90 @@
+═══════════════════════════════════════════════════════════════
+═══ SUPERSEDED by Paper & Ink set (TZ-30..39) ═══
+═══ этот Material MD3 TZ-план заменён 2026-07-05 на editorial
+═══ Swiss-minimalism направление (Paper & Ink, OKLCH paper+ink,
+═══ Tailwind v4, Syne+Plus Jakarta Sans, lucide-angular, output()).
+═══ Канонический план теперь в tasks/TZ-30..TZ-82.
+═══ Оригинал этого файла был в tasks/TZ-46.md до архивации.
+═══════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════
+TZ-46: Миграция Units List Page на ui-card / ui-btn / ui-alert
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-30, TZ-32, TZ-35, TZ-34, TZ-33, TZ-37,
+             TZ-44b
+
+LAYER: 3
+
+CONFLICT KEYS:
+  - frontend/src/app/features/units/units-list.page.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. Текущий код: <app-ui-page-header>, <mat-card> filter/error/table,
+   <app-ui-badge> для status indicators, mat-icon-button actions.
+
+2. Проблемы:
+   - mat-card вместо ui-card.
+   - "Системную единицу нельзя удалить" inline `<button mat-icon-button
+     color="warn" [disabled]="u.isSystem">` — лучше через
+     <ui-icon-btn variant="danger" [disabled]="u.isSystem">.
+
+3. Контекст: badge already migrated to <app-ui-badge>; только
+   filter/error/table card нужно migrate.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Filter card → <ui-card variant="filter">.
+ШАГ 2: Error card → <ui-alert variant="error"> (или оставить mat-card).
+ШАГ 3: Table card → <ui-card variant="table">.
+ШАГ 4: Create button → <ui-btn variant="primary" (onClick).
+ШАГ 5: Reload button → <ui-btn variant="ghost">.
+ШАГ 6: Search clear → <ui-icon-btn>.
+ШАГ 7: Action buttons в row-actions cell:
+  - `<button mat-icon-button matTooltip="Редактировать">` →
+    `<button mat-icon-button>` (без изменений, или обернуть в
+    <app-ui-table-row-actions>).
+  - `<button mat-icon-button matTooltip="Удалить" color="warn"
+    [disabled]="u.isSystem">` →
+    `<button mat-icon-button color="warn" [disabled]="u.isSystem">`.
+
+ШАГ 8: Удалить лишние импорты.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- frontend/src/app/features/units/units-list.page.ts
+
+НЕ ИЗМЕНЯТЬ:
+- TZ-44b dialog (уже сделал)
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `grep -c 'mat-card' units-list.page.ts` → 0 или ≥ 1 только
+   если всё ещё требуется.
+2. ui-card / ui-btn / ui-alert / ui-icon-btn присутствуют.
+3. UI demo: /units работает, системный delete disabled.
+4. pnpm tsc + build → exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Аналогично TZ-45, разные файлы.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Стандартный TZF-00 + ARCHITECTURE.md (миграция units list).

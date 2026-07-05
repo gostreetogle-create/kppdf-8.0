@@ -1,0 +1,31 @@
+═══════════════════════════════════════════════════════════════
+TZ-70: Foundations page (/foundations) — палитра + типографика + spacing + grid
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Page Engineer
+
+ЗАВИСИМОСТИ: TZ-30 (routes), TZ-32 (OKLCH tokens), TZ-67/68.
+
+LAYER: 3 (Pages)
+
+CONFLICT KEYS:
+  - frontend/src/app/pages/foundations/foundations.page.ts
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER:
+═══════════════════════════════════════════════════════════════
+
+**Foundations page (/foundations)** — 152 lines, 4 sections:
+
+- **PageHeader** (eyebrow=02 Основы, title=Основы, subtitle, hint=0.1s).
+- **Section I. Палитра** — 8 OKLCH swatches в grid-cols-2 md:grid-cols-4. Каждый swatch показывает paper/paper-2/ink/rule/muted-fg/destructive/accent-warm/accent-cool с oklch-value строкой в mono font.
+- **Section II. Типографика** — 4 samples (Display 5xl/3xl Syne + Body base Jakarta + mono eyebrow).
+- **Section III. Spacing & Radius** — 8 spacing values (4/8/12/16/24/32/48/64 px) + radius scale (0/sm/md) + hairline border demo (3 варианта).
+- **Section IV. Grid** — grid-paper utility demo (24×24px subtle pattern via linear-gradient).
+
+**Standalone + OnPush + signal-based.** Typecheck PASS.
+
+**Lock-файл:** OrchestratorKit/.mimocode/locks/TZ-70-foundations-page.lock
+**Spec acceptance:** no box-shadow/drop-shadow/hex/bg-white (0 hits).
+
+ARCHIVE_MARKER: TZ-70 done 2026-07-05; WAVE C — page 2/6.

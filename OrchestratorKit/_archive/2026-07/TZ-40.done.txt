@@ -1,0 +1,83 @@
+═══════════════════════════════════════════════════════════════
+TZ-40: FormField (Paper & Ink form-field wrapper)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Component Engineer
+
+ЗАВИСИМОСТИ: TZ-32 (tokens), TZ-37 (Input), TZ-38 (Textarea),
+             TZ-39 (Label).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/form-field/form-field.component.ts
+  - frontend/src/app/shared/ui/form-field/index.ts
+
+═══════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+════════════════════════════════════════════════════════
+
+1. Текущий kppdf-8.0 frontend использует Angular Material
+   (`mat-flat-button`, `mat-card`, `mat-input` и т.д.) —
+   SaaS-look со shadow, rounded-3xl и gradient fills.
+2. Paper & Ink требует hand-rolled примитив с hairline 1px
+   border + OKLCH tokens из TZ-32 + signal inputs/outputs API
+   (`input()` / `output()`, НЕ `@Input` / `@Output` decorator'ы).
+3. Директория `frontend/src/app/shared/ui/form-field/` пуста или со-
+   держит deprecated stub из ранних TZ — в этой TZ удалить и
+   заменить на новый standalone OnPush signal-based компонент.
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+1. Standalone, OnPush, signal inputs:
+   - label?: string — отображается как Label (TZ-39) сверху.
+   - hint?: string — подсказка под полем.
+   - error?: string — если непусто, ЗАМЕНЯЕТ hint и подсвечивает destructive.
+   - required?: boolean — рендерит asterisk.
+   - htmlFor?: string — пробрасывается на <label>.
+
+2. Layout (3 named slots + label/hint/error):
+   ```html
+   <div [class]="computedClass()">
+     @if (label()) {
+       <app-pi-label [variant]="required() ? 'required' : 'default'"
+                     [htmlFor]="htmlFor()">{{ label() }}</app-pi-label>
+     }
+     <div class="block"><ng-content/></div>
+     @if (error()) {
+       <span class="text-xs text-destructive mt-1">{{ error() }}</span>
+     } @else if (hint()) {
+       <span class="text-xs text-muted mt-1">{{ hint() }}</span>
+     }
+   </div>
+   ```
+
+3. Classes: `flex flex-col gap-1`. НЕТ box-shadow.
+
+═══════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/form-field/form-field.component.ts (СОЗДАТЬ)
+  + frontend/src/app/shared/ui/form-field/index.ts (СОЗДАТЬ — barrel export)
+
+НЕ ИЗМЕНЯТЬ:
+  - frontend/src/styles.css (только token utility classes из TZ-32).
+  - backend/** (никаких изменений backend в этой TZ).
+  - другие ui-primitives (TZ-NN ≠ этот TZ) — не трогать.
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. Файл ≥ 40 строк.
+2. error slot перекрывает hint когда задан.
+3. required asterisk виден при required=true.
+4. `<ng-content/>` вмещает любой input/select/textarea.
+5. NO shadows.
+6. `pnpm exec tsc` + `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+TZF-00 ФИНАЛИЗАЦИЯ
+Стандартный.

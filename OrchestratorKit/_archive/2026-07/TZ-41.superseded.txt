@@ -1,0 +1,120 @@
+═══════════════════════════════════════════════════════════════
+═══ SUPERSEDED by Paper & Ink set (TZ-30..39) ═══
+═══ этот Material MD3 TZ-план заменён 2026-07-05 на editorial
+═══ Swiss-minimalism направление (Paper & Ink, OKLCH paper+ink,
+═══ Tailwind v4, Syne+Plus Jakarta Sans, lucide-angular, output()).
+═══ Канонический план теперь в tasks/TZ-30..TZ-82.
+═══ Оригинал этого файла был в tasks/TZ-41.md до архивации.
+═══════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════
+TZ-41: Миграция shell под новые токены и dark/light bg
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Layout Engineer
+
+ЗАВИСИМОСТИ: TZ-30, TZ-32, TZ-40 (theme button должен быть на месте,
+             иначе миграция bg сделает её невидимой).
+
+LAYER: 3
+
+CONFLICT KEYS:
+  - frontend/src/app/layouts/main-layout.component.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. Текущий код:
+   `frontend/src/app/layouts/main-layout.component.ts` и styles:
+   :host { background: var(--mat-sys-surface-container-low); }
+   .shell-topbar { background: var(--mat-sys-surface); border-bottom:
+   1px solid var(--mat-sys-outline-variant; }
+   .shell-main { ... padding: 24px; gap: 24px; }
+
+2. Проблемы:
+   - Фоны hardcoded под MD3 (light-only). В dark-режиме
+     `--mat-sys-surface-container-low` дефолтно не переопределяется
+     theme.scss дорабатывал только семантические custom-vars.
+   - Padding 24px не вписывается в spacing scale TZ-30
+     (`--space-6 = 24px` — OK, но в TZ-31 уже есть).
+
+3. Контекст:
+   - TZ-40 добавил theme-toggle button. TZ-41 мигрирует ВСЕ
+     стили shell на tokens из TZ-30 + theme-aware поверх MD3.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Удалить из styles блока всё, что ссылается на
+   `--mat-sys-*` напрямую — заменить на семантические токены
+   TZ-30 (`--surface`, `--surface-container`,
+   `--border-default`, `--text-primary`, `--space-N`).
+
+  Конкретные замены:
+  - `background: var(--mat-sys-surface-container-low);`
+    → `background: var(--surface-alt);`
+  - `background: var(--mat-sys-surface);` →
+    `background: var(--surface);`
+  - `border-bottom: 1px solid var(--mat-sys-outline-variant);` →
+    `border-bottom: 1px solid var(--border-subtle);`
+  - `color: var(--mat-sys-on-surface);` →
+    `color: var(--text-primary);`
+  - `color: var(--mat-sys-on-surface-variant);` →
+    `color: var(--text-muted);`
+  - `padding: 24px` → `padding: var(--space-6)` (где magic numbers)
+  - `gap: 24px` → `gap: var(--space-6)`
+  - Класс `.brand-icon`: border-radius 10px → var(--radius-lg);
+    padding: 6px → var(--space-2); font-size: 22px → 1.5rem (через
+    tokens TS-30:--text-xl).
+
+ШАГ 2: Сохранить `<app-ui-page-header>` и `<ui-icon-btn>` из TZ-40
+   на тех же местах в template. НЕ удалять theme toggle button.
+
+ШАГ 3: Responsive @media (max-width: 720px) мигрировать padding'и
+   на tokens (--space-4 и --space-6).
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- frontend/src/app/layouts/main-layout.component.ts
+    [styles: заменить MD3 tokens на семантические TZ-30;
+     мигрировать hex / magic numbers на переменные]
+
+НЕ ИЗМЕНЯТЬ:
+- core/theme.service.ts
+- pages (миграция в TZ-42..47)
+- TZ-40 theme button остаётся нетронутой
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `grep -c 'var(--mat-sys-' frontend/src/app/layouts/main-layout.component.ts`
+   → 0 (внутри styles block; вне styles.block template может
+   ссылаться, но лучше 0).
+2. `grep -cE '#[0-9a-fA-F]{3,6}|\\b(6|8|10|12|14|16|20|24)(px|rem)\\b'
+   frontend/src/app/layouts/main-layout.component.ts` →
+   только `--space-N` / `--text-*` остаются, штучные magic-числа
+   заменены на tokens.
+3. Theme switch кнопкой переключение работает визуально без поломок
+   shell.
+4. `pnpm exec tsc -p tsconfig.app.json --noEmit` → exit 0.
+5. `pnpm build` → exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Этот TZ единственный трогает `main-layout.component.ts` после
+TZ-40. Параллельно безопасен.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Стандартный TZF-00 + ARCHITECTURE.md (секция `## Shell Tokens (TZ-41)`
+с таблицей md3→tokens mapping).

@@ -1,0 +1,11 @@
+[ARCHIVE_MARKER]
+type: SUPERSEDED_legacy
+outcome: SUPERSEDED
+closed_at: 2026-07-05
+supersede_reason: TZ was created under stale Paper & Ink plan pre-2026-07-05 UI Hardening Rework.
+Code artifacts MAY still exist (TZ-30..33 styles.css/main.ts are baseline; TZ-34..60 reused/refreshed by rework).
+This marker only documents the prior execution as superseded by the post-rework reality.
+preserved_at: OrchestratorKit/_archive/2026-07/TZ-NN.done.txt
+lock_cleared: TRUE (TZ-30..60 staleLock cleared at archive pass)
+notes: TZ-30..33 still foundation-of-truth; TZ-34..60 primitives ARE in src/ but considered "stale-install" until re-validated.
+TZ-67 layout/kit-layout.component.ts and TZ-34..60 primitives are FRESH-BUILT under current paper-and-ink decision.

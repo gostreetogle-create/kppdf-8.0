@@ -1,0 +1,112 @@
+═══════════════════════════════════════════════════════════════
+TZ-52: Tooltip (hover/focus, 4 positions, NO arrow, NO shadow)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-30 (standalone), TZ-31 (Tailwind v4), TZ-32 (OKLCH).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/pi-tooltip.component.ts
+  - frontend/src/app/shared/ui/pi-tooltip.directive.ts
+  - frontend/src/app/shared/ui/index.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+В kppdf-8.0 tooltip рендерился через MatTooltip — серая плашка с
+тенью и закруглением 4px + стрелка. Paper & Ink требует:
+inverse ink-on-paper (or paper-on-ink в dark mode), БЕЗ тени, БЕЗ
+стрелки, маленькая (12px mono), размещается 4px от trigger.
+Trigger: hover или keyboard focus.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: `pi-tooltip.directive.ts` — атрибутная директива с
+  сигнал-inputs:
+    ```ts
+    piTooltip       = input.required<string>();
+    position        = input<'top' | 'bottom' | 'left' | 'right'>('top');
+    delay           = input<number>(200);
+    closeDelay      = input<number>(100);
+    ariaLabel       = input<string>(''); // для screen-reader дубля
+    ```
+    Использует CDK Overlay (`@angular/cdk/overlay`) для позиционирования,
+    flexiblePositionStrategy по умолчанию (auto-flip если нет места).
+
+ШАГ 2: `pi-tooltip.component.ts` — micro-component для контента.
+
+  Шаг 2.1: Inputs:
+    ```ts
+    text    = input.required<string>();
+    position = input<'top' | 'bottom' | 'left' | 'right'>('top');
+    ```
+    Output: `hide = output<void>()`.
+
+  Шаг 2.2: Шаблон:
+    ```html
+    <div role="tooltip"
+         [attr.aria-hidden]="false"
+         class="bg-ink text-paper px-2 py-1 rounded-sm
+                mono text-[11px] leading-tight
+                max-w-[240px] whitespace-nowrap overflow-hidden text-ellipsis">
+      {{ text() }}
+    </div>
+    ```
+    NO arrow, NO border, NO shadow.
+
+ШАГ 3: Директива создаёт overlay с pi-tooltip-компонентом, attach
+  на trigger.focus / mouseenter, dettach на focusout / mouseleave +
+  closeDelay.
+
+ШАГ 4: A11y — trigger получает `aria-describedby` с id тултипа
+  (динамический id из `inject(DOCUMENT)` + uuid v4).
+
+ШАГ 5: Reduced motion — без анимации (появляется мгновенно; fade
+  убран в Paper & Ink — печатный kit, никакого opacity-blur).
+
+ШАГ 6: Export из index.ts.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/pi-tooltip.component.ts
+  + frontend/src/app/shared/ui/pi-tooltip.directive.ts
+  ~ frontend/src/app/shared/ui/index.ts
+
+НЕ ИЗМЕНЯТЬ:
+  - styles.css (НЕ нужно — все utilities из TZ-32).
+  - backend/**
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. Hover trigger показывает тултип через 200ms.
+2. Auto-flip если места нет (top → bottom, left → right).
+3. Keyboard focus показывает тултип; blur убирает.
+4. `aria-describedby` на trigger + `role="tooltip"` на content.
+5. `grep 'box-shadow\|drop-shadow\|shadow-' pi-tooltip*.{ts,component.ts}` пусто.
+6. `grep '#\|rgb(' pi-tooltip*.{ts,component.ts}` пусто.
+7. OnPush + signal inputs.
+8. `pnpm exec tsc --noEmit` exit 0; `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Новые файлы. Параллельно с TZ-46..51 — нет конфликтов. С TZ-53
+(Popover) — нет, разные файлы.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Архивировать: `mv tasks/TZ-52.md OrchestratorKit/_archive/2026-07/TZ-52.done.txt`.

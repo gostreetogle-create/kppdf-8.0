@@ -1,0 +1,116 @@
+═══════════════════════════════════════════════════════════════
+═══ SUPERSEDED by Paper & Ink set (TZ-30..39) ═══
+═══ этот Material MD3 TZ-план заменён 2026-07-05 на editorial
+═══ Swiss-minimalism направление (Paper & Ink, OKLCH paper+ink,
+═══ Tailwind v4, Syne+Plus Jakarta Sans, lucide-angular, output()).
+═══ Канонический план теперь в tasks/TZ-30..TZ-82.
+═══ Оригинал этого файла был в tasks/TZ-44a.md до архивации.
+═══════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════
+TZ-44a: Миграция Currency Dialog на ui-field + ui-alert
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-36 (ui-field), TZ-33 (ui-alert)
+
+LAYER: 3
+
+CONFLICT KEYS:
+  - frontend/src/app/features/currencies/currency-form.dialog.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. Текущий код: `<mat-form-field>` x 5 (code / label / symbol /
+   sortOrder / isActive) в grid `.dialog-form`, `<mat-checkbox>` для
+   isActive, `<mat-flat-button>` для submit.
+
+2. Проблемы: Те же, что login.page — Material 3 floating label +
+   inline error banner.
+
+3. Контекст: ui-field имеет max 3 layouts — обычный, with-hint,
+   with-error. Для currency: 4 коротких поля (code / label / symbol /
+   sortOrder) + checkbox isActive. Grid: 2 колонки с gap.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Заменить все 5 mat-form-field wrappers на:
+   ```html
+   <ui-field label="Код (ISO 4217)" required [error]="form.controls.code.touched && form.controls.code.invalid ? 'Заполните код' : null">
+     <input matInput formControlName="code" maxlength="3" />
+   </ui-field>
+   ```
+   или (без matInput — обычный input внутри ui-field):
+   ```html
+   <ui-field label="Код (ISO 4217)" required [error]="...">
+     <input formControlName="code" maxlength="3" />
+   </ui-field>
+   ```
+   ВАЖНО: ui-field имеет свой класс `.ui-field__control` с padding
+   — input внутри стилизуется СВОИМИ правилами, не matInput.
+
+ШАГ 2: Checkbox isActive остаётся в диалоге — заменить на
+   `<ui-checkbox>` если TZ-34/36 его нет, иначе оставить inline
+   `<mat-checkbox>` (этот TZ не покрывает миграцию mat-checkbox).
+   Просто перенести в `.dialog-form` grid, оставить как `<mat-checkbox>`.
+
+ШАГ 3: Submit button (`<button mat-flat-button color="primary"
+   type="submit">`) → `<ui-btn variant="primary" type="submit"
+   [loading]="submitting()">Сохранить</ui-btn>`.
+
+ШАГ 4: Error banner:
+   - `<span class="error-banner" role="alert">{{ msg }}</span>`
+     → `<ui-alert variant="error" size="sm">{{ msg }}</ui-alert>`.
+   - Сохранить flex:1 placement (error идёт СЛЕВА от actions).
+
+ШАГ 5: h2[mat-dialog-title] оставить как есть (TZ-50 docs его
+   покроет, если потребуется).
+
+ШАГ 6: `.dialog-form` глобальный CSS сохранить; НЕ переопределять
+   в styles блоке компонента.
+
+ШАГ 7: Удалить импорты MatFormFieldModule, MatInputModule из
+   imports компонента (если ui-field не требует matInput).
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- frontend/src/app/features/currencies/currency-form.dialog.ts
+    [5 mat-form-field → ui-field; submit → ui-btn;
+     error-banner → ui-alert; убрать лишние imports]
+
+НЕ ИЗМЕНЯТЬ:
+- service (currency.service.ts) — не мигрируется
+- list page — TZ-47 мигрирует
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `grep -c 'mat-form-field' currency-form.dialog.ts` → 0.
+2. `grep -c '<ui-field' currency-form.dialog.ts` → 5.
+3. `grep -c '<ui-btn' currency-form.dialog.ts` → 1 (submit) +
+   ≥1 если dialog-actions имеет cancel.
+4. UI demo: валюта create/edit работает, валидация работает.
+5. pnpm exec tsc → exit 0.
+6. pnpm build → exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Этот TZ единственный трогает `currency-form.dialog.ts`. Параллельно
+с TZ-44b (unit), TZ-44c (material) — все разные файлы, безопасно.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Стандартный TZF-00. ARCHITECTURE.md: отметка на dialogs page.

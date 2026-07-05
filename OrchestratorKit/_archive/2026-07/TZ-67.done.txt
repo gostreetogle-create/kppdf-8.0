@@ -1,0 +1,57 @@
+═══════════════════════════════════════════════════════════════
+TZ-67: KitLayout enrich (sticky + ⌘K hint + theme toggle)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-30, TZ-31, TZ-32 (OKLCH tokens), TZ-33 (ThemeService).
+
+LAYER: 3 (Layout)
+
+CONFLICT KEYS:
+  - frontend/src/app/layout/kit-layout.component.ts
+  - frontend/src/app/layout/theme-toggle.component.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ:
+═══════════════════════════════════════════════════════════════
+
+KitLayout существовал из TZ-30 (project init) как минимальный app shell (header + content slot). Не было sticky, не было ⌘K hint, не было theme toggle. ThemeService уже был из TZ-33 (mode/isDark/toggle/set).
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ:
+═══════════════════════════════════════════════════════════════
+
+Создан:
+- frontend/src/app/layout/theme-toggle.component.ts (~70 lines, standalone+OnPush+signal, light/dark button с ThemeService injection)
+- frontend/src/app/layout/kit-layout.component.ts (overwrite, ~100 lines, sticky header + sidebar + content slot)
+
+═══════════════════════════════════════════════════════════════
+ЧТО СДЕЛАНО:
+═══════════════════════════════════════════════════════════════
+
+**kit-layout.component.ts (overwrite):**
+- Sticky top-bar: `<header class="sticky top-0 z-20 border-b border-rule bg-paper/80 backdrop-blur">` с brand + ⌘K hint + theme toggle в trailing actions.
+- Sidebar: `<aside class="sticky top-14 h-[calc(100dvh-3.5rem)] border-r border-rule">` с nav slots (project-маршруты через `<ng-content select="[nav]">`).
+- Content: `<main class="px-8 py-10 max-w-6xl mx-auto"><ng-content /></main>` — standard prose width.
+- <kbd> элемент для ⌘K hint (semantic kbd, не div).
+- Default light mode (TZ-67 spec requirement) — initial DOM is light, ThemeService.init() syncs to stored preference.
+
+**theme-toggle.component.ts (new):**
+- 2-variant button (sun/moon icons) с aria-pressed для accessibility.
+- Inputs: `ariaLabel='Переключить тему'` (overridable).
+- Uses ThemeService.toggle() + mode() signal.
+- LucideAngularModule import для sun/moon icons.
+
+═══════════════════════════════════════════════════════════════
+VERIFICATION:
+═══════════════════════════════════════════════════════════════
+
+- typecheck: pnpm exec tsc exit 0
+- spec acceptance: no box-shadow/drop-shadow/hex/bg-white (PASS: 0 hits)
+- sticky + top-0 + z-20 (PASS)
+- ThemeService.toggle() injection (PASS)
+- ⌘K hint uses kbd element (PASS)
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER: TZ-67 done 2026-07-05; LAYER 3 (Layout) start.

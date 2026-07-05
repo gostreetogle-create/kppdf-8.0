@@ -1,0 +1,92 @@
+═══════════════════════════════════════════════════════════════
+TZ-37: Input (Paper & Ink)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Component Engineer
+
+ЗАВИСИМОСТИ: TZ-32, TZ-40 (FormField wrapper — Input использует его
+             под капотом; может идти параллельно).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/input/input.component.ts
+  - frontend/src/app/shared/ui/input/index.ts
+
+═══════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+════════════════════════════════════════════════════════
+
+1. Текущий kppdf-8.0 frontend использует Angular Material
+   (`mat-flat-button`, `mat-card`, `mat-input` и т.д.) —
+   SaaS-look со shadow, rounded-3xl и gradient fills.
+2. Paper & Ink требует hand-rolled примитив с hairline 1px
+   border + OKLCH tokens из TZ-32 + signal inputs/outputs API
+   (`input()` / `output()`, НЕ `@Input` / `@Output` decorator'ы).
+3. Директория `frontend/src/app/shared/ui/input/` пуста или со-
+   держит deprecated stub из ранних TZ — в этой TZ удалить и
+   заменить на новый standalone OnPush signal-based компонент.
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+1. Standalone, OnPush, signal inputs:
+   - value: input<string>('') (model()).
+   - placeholder?: string.
+   - disabled?: boolean.
+   - invalid?: boolean — для error border.
+   - type: 'text'|'email'|'password'|'number'|'tel'|'url'|'search'
+     (default 'text').
+   - size: 'sm'|'md' (default 'md').
+   - ariaLabel?: string.
+
+2. Outputs: valueChange = output<string>().
+
+3. Layout:
+   ```html
+   <input
+     [type]="type()"
+     [value]="value()"
+     [placeholder]="placeholder()"
+     [disabled]="disabled()"
+     [attr.aria-label]="ariaLabel()"
+     [class]="computedClass()"
+     (input)="onInput($event)"
+   />
+   ```
+   Internal `onInput`: emit output + update signal.
+
+4. Стили utility classes:
+   - bg-paper, text-ink, hairline border, rounded-sm.
+   - px-3 py-2 (md) / px-2 py-1 (sm), text-sm / text-xs.
+   - focus: ring-2 ring-ink outline-none.
+   - invalid: border-destructive.
+   - disabled: opacity-50 cursor-not-allowed.
+
+═══════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/input/input.component.ts (СОЗДАТЬ)
+  + frontend/src/app/shared/ui/input/index.ts (СОЗДАТЬ — barrel export)
+
+НЕ ИЗМЕНЯТЬ:
+  - frontend/src/styles.css (только token utility classes из TZ-32).
+  - backend/** (никаких изменений backend в этой TZ).
+  - другие ui-primitives (TZ-NN ≠ этот TZ) — не трогать.
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. Файл ≥ 50 строк.
+2. 7 input types работают.
+3. Value+input event корректно emit'ятся.
+4. focus ring uses `--color-ink` (verify via DevTools).
+5. invalid state меняет border на destructive.
+6. NO shadows.
+7. `pnpm exec tsc` + `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+TZF-00 ФИНАЛИЗАЦИЯ
+Стандартный.

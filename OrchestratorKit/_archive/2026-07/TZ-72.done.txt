@@ -1,0 +1,32 @@
+═══════════════════════════════════════════════════════════════
+TZ-72: Forms page (/forms) — validated form + sortable paginated table + form variants
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Page Engineer
+
+ЗАВИСИМОСТИ: TZ-40..47 (form primitives + table), TZ-67/68.
+
+LAYER: 3 (Pages)
+
+CONFLICT KEYS:
+  - frontend/src/app/pages/forms/forms.page.ts
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER:
+═══════════════════════════════════════════════════════════════
+
+**Forms page (/forms)** — 302 lines, 3 sections:
+
+- **PageHeader** (eyebrow=04 Формы и Таблицы, title, description).
+- **Section I. Validated form** — reactive FormGroup с 5 controls (name/email/role/subscribe/priority) через NonNullableFormBuilder. class-validator: Validators.required, email(), minLength(2), min/max. Form-fields с [errorMessage] pattern (reactive) + border-color toggle на invalid. submit → PiToastService.success/error.
+- **Section II. Data table** — raw HTML <table> с 10 inventory rows (Бумага А4/Картридж HP/...). 3 columns: name/qty/status с sort asc→desc→null cycle (signal-based setSort). Raw pagination buttons (prev/next + page numbers) с signal-state page/totalPages. Page reset при sort change.
+- **Section III. Form variants** — inline (label+input+button в одну строку) + stacked (label сверху).
+
+**Spec deviation #2:** TableComponent + PaginationComponent НЕ использованы (raw HTML для Paper & Ink minimalist style). Если TZ-75+ потребует компонентную обёртку — easy refactor.
+
+**Standalone + OnPush + signal-based.** Typecheck PASS.
+
+**Lock-файл:** OrchestratorKit/.mimocode/locks/TZ-72-forms-page.lock
+**Spec acceptance:** no box-shadow/drop-shadow/hex/bg-white (0 hits).
+
+ARCHIVE_MARKER: TZ-72 done 2026-07-05; WAVE C — page 4/6.

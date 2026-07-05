@@ -1,0 +1,158 @@
+═══════════════════════════════════════════════════════════════
+TZ-30: Инициализация Paper & Ink проекта (Angular 18 + path aliases)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Architect
+
+ЗАВИСИМОСТИ: Нет (фундамент — выполняется ПЕРВЫМ).
+             Старая TZ-30..TZ-51 (Material MD3 design) ОБЪЯВЛЕНЫ
+             УСТАРЕВШИМИ и не должны исполняться. Если агент видит
+             их в `_active/` или `_archive/`, считать их DEFERRED.
+
+LAYER: 1
+
+CONFLICT KEYS:
+  - frontend/package.json
+  - frontend/tsconfig.json
+  - frontend/tsconfig.app.json
+  - frontend/angular.json
+  - frontend/src/main.ts
+  - frontend/src/app/app.ts
+  - frontend/src/app/app.config.ts
+  - frontend/src/app/app.routes.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. Текущий `frontend/package.json` завязан на `@angular/material@20.3`
+   + `mat-card`, `mat-flat-button` и т. д. — ЭТО ВСЁ БУДЕТ УБРАНО.
+2. `tsconfig.json` НЕ имеет path aliases.
+3. `main.ts` использует `bootstrapApplication` (уже standalone-ready),
+   но `app.config.ts` ещё содержит Material-обвязку.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Очистить `frontend/package.json`.
+   - Удалить `@angular/material`, `@angular/cdk` (переустановим в TZ-31 с
+     конкретной версией), `ngx-sonner`, `tailwindcss@3`.
+   - Добавить: `lucide-angular` (^0.460.0),
+     `clsx` (^2.1.1), `tailwind-merge` (^2.5.4),
+     `@angular/cdk@^18.2` (понадобится в TZ-41/48 для overlay).
+
+ШАГ 2: Настроить `tsconfig.json` path aliases.
+   ```json
+   "compilerOptions": {
+     "baseUrl": ".",
+     "paths": {
+       "@/components/*": ["src/app/shared/ui/*"],
+       "@/lib/*":        ["src/app/core/*"],
+       "@/pages/*":      ["src/app/pages/*"],
+       "@/layout/*":     ["src/app/layout/*"]
+     }
+   }
+   ```
+   Тот же блок повторить в `tsconfig.app.json` (Angular CLI читает оба).
+
+ШАГ 3: Обновить `frontend/src/app/app.ts` — root component ТОЛЬКО с
+   `<router-outlet />`. Удалить любую специфику.
+
+ШАГ 4: Обновить `frontend/src/app/app.routes.ts`.
+   ```ts
+   export const routes: Routes = [
+     {
+       path: '',
+       loadComponent: () =>
+         import('./layout/kit-layout.component').then(m => m.KitLayoutComponent),
+       children: [
+         { path: '', pathMatch: 'full', redirectTo: 'overview' },
+         { path: 'overview',   loadComponent: () => import('./pages/overview/overview.page').then(m => m.OverviewPage) },
+         { path: 'foundations', loadComponent: () => import('./pages/foundations/foundations.page').then(m => m.FoundationsPage) },
+         { path: 'basics',     loadComponent: () => import('./pages/basics/basics.page').then(m => m.BasicsPage) },
+         { path: 'forms',      loadComponent: () => import('./pages/forms/forms.page').then(m => m.FormsPage) },
+         { path: 'overlays',   loadComponent: () => import('./pages/overlays/overlays.page').then(m => m.OverlaysPage) },
+         { path: 'navigation', loadComponent: () => import('./pages/navigation/navigation.page').then(m => m.NavigationPage) }
+       ]
+     },
+     { path: '**', redirectTo: '' }
+   ];
+   ```
+
+ШАГ 5: Подготовить placeholder'ы для каждой страницы (TZ-69..74
+   создадут полную реализацию, но TZ-30 нужен skeleton page, чтобы
+   `loadComponent` не падал):
+   - `src/app/pages/overview/overview.page.ts` — пустой standalone
+     компонент `@Component({ selector: 'app-overview-page', template: '<p>overview</p>' })`.
+   - Аналогично для foundations / basics / forms / overlays / navigation.
+   - Layout `src/app/layout/kit-layout.component.ts` — placeholder
+     `<div class="shell"><router-outlet/></div>`.
+   - AGENT НЕ ДОЛЖЕН реализовывать эти полноценно — это TZ-30 лишь
+     фундамент.
+
+ШАГ 6: `frontend/src/index.html` — минимальный, без inline-стилей.
+   В `<head>` оставь `<title>Paper &amp; Ink — UI Kit</title>`, viewport
+   meta, link tag для предзагрузки шрифтов (TZ-31 подключит).
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- frontend/package.json                [deps: lucide-angular, clsx, tailwind-merge, cdk@^18]
+- frontend/tsconfig.json               [path aliases]
+- frontend/tsconfig.app.json           [path aliases]
+- frontend/src/main.ts                 [bootstrapApplication всё ещё ок]
+- frontend/src/app/app.ts              [только <router-outlet />]
+- frontend/src/app/app.config.ts       [provideRouter(routes, withComponentInputBinding())]
+- frontend/src/app/app.routes.ts       [routes config с lazy children]
+- frontend/src/index.html              [минимальный shell]
+- frontend/src/app/pages/{overview,foundations,basics,forms,overlays,navigation}/*.page.ts [placeholder pages]
+- frontend/src/app/layout/kit-layout.component.ts   [placeholder layout]
+
+НЕ ИЗМЕНЯТЬ:
+- backend/**                           [не затрагивается]
+- tasks/TZ-30.md..TZ-82.md             [зафиксированы этим файлом]
+- OrchestratorKit/**                   [служебные]
+- frontend/src/styles.css              [TZ-31 + TZ-32 подключат]
+- frontend/src/styles.scss             [legacy MD3 styles — удалить в TZ-31]
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `frontend/package.json` НЕ содержит `@angular/material`.
+2. `tsconfig.json` содержит `paths` с `@/components/*, @/lib/*,
+   @/pages/*, @/layout/*`. Алиасы резолвятся в IDE (verify)
+   + компилируются (verify).
+3. `pnpm install` exit 0.
+4. `pnpm exec tsc -p tsconfig.app.json --noEmit` exit 0 (создаёт
+   placeholder файлы из ШАГ 5).
+5. `pnpm build` exit 0 (production build).
+6. `/` редиректит на `/overview` (placeholder страница видна).
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Эта TZ трогает `package.json` + core routing. Параллельный запуск
+с TZ-31..TZ-33 ЗАПРЕЩЁН: TZ-31 будет править `package.json` для
+установки Tailwind + @fontsource — должен идти строго ПОСЛЕ TZ-30.
+TZ-32 / TZ-33 трогают `styles.css` и могут идти ПОСЛЕ TZ-31.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Стандартный TZF-00:
+1. Самопроверка по 6 КРИТЕРИЯМ.
+2. `pnpm build` clean.
+3. progress.md: `## [2026-07-05] — TZ-30 (P&I project init)`.
+4. ARCHITECTURE.md: добавить секцию `## Paper & Ink Setup (TZ-30)`
+   (path aliases mapping, removed deps, lazy routes).
+5. `.mimocode/locks/TZ-30-pi-setup.lock` (DONE).
+6. `_archive/2026-07/TZ-30.done.txt`.
+7. STATUS.md обновить.
+8. `bash OrchestratorKit/verify-status.sh` PASS.
+9. Финальный отчёт PO по TZF-00 §9 формату.

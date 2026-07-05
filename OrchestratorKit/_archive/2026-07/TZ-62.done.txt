@@ -1,0 +1,159 @@
+═══════════════════════════════════════════════════════════════
+TZ-62: Skeleton (loader placeholder, hairline blocks)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-30, TZ-31, TZ-32 (OKLCH `--color-rule`).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/pi-skeleton.component.ts
+  - frontend/src/app/shared/ui/index.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+Стандартный shimmer-skeleton = lightwave gradient swept по блокам.
+Paper & Ink требует статичный блок `--color-rule` (40% opacity) без
+анимации, или ОЧЕНЬ медленный opacity breath (8s loop). Уважение
+prefers-reduced-motion обязательно (summed в TZ-32 фундаменте).
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: `pi-skeleton.component.ts` (standalone, OnPush).
+
+  Шаг 1.1: Inputs:
+    ```ts
+    width    = input<string>('100%');
+    height   = input<string>('1rem');
+    variant  = input<'text' | 'circle' | 'rect'>('text');
+    count    = input<number>(1);
+    ariaLabel = input<string>('Загрузка');
+    ```
+
+  Шаг 1.2: Computed `lines = computed(() => Array.from(
+    { length: count() }, (_, i) => i)`.
+
+  Шаг 1.3: Шаблон:
+    ```html
+    <div role="status"
+         [attr.aria-label]="ariaLabel()"
+         [attr.aria-live]="'polite'"
+         class="block">
+      @for (i of lines(); track i) {
+        <span
+          [class.block]="true"
+          [class.bg-rule]="true"
+          [class.bg-opacity-40]="true"
+          [style.width]="width()"
+          [style.height]="height()"
+          [class.rounded-full]="variant() === 'circle'"
+          [class.rounded-none]="variant() !== 'circle'"
+          [class.mb-2]="variant() === 'text' && i < lines().length - 1">
+        </span>
+      }
+    </div>
+    ```
+    NO shimmer, NO pulse. Просто статичный `--color-rule` block.
+    Reduced-motion автоматически неактивен (нет анимации).
+
+ШАГ 2: Variants:
+  - `text`: line-block (одиночная строка). Если count > 1 → несколько
+    строк, последняя 60% width (Tailwind `last:w-3/5` через
+    `[class.last\:w-3\/5]="true"`).
+  - `circle`: width=height, fully round.
+  - `rect`: width × height блок.
+
+ШАГ 3: A11y — `role="status"` + `aria-live="polite"` (читается
+  screen-reader'ом как "Загрузка").
+
+ШАГ 4: Export из index.ts.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/pi-skeleton.component.ts (СОЗДАТЬ)
+  ~ frontend/src/app/shared/ui/index.ts
+
+НЕ ИЗМЕНЯТЬ: backend/**.
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. count=N рендерит N строк.
+2. Последняя строка text-variant = 60% width.
+3. role="status" + aria-live="polite" есть.
+4. Никаких shimmer / pulse / shadow.
+5. `pnpm exec tsc --noEmit` exit 0; `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Новый файл + barrel. Параллельно с TZ-61/63..66 — нет конфликтов.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Архивировать: `mv tasks/TZ-62.md OrchestratorKit/_archive/2026-07/TZ-62.done.txt`.
+
+─────────────────────────────────────────────────────────────────
+ARCHIVE_MARKER
+─────────────────────────────────────────────────────────────────
+[ARCHIVE_MARKER]
+type: DONE
+tz_id: TZ-62
+tz_name: Skeleton (loader placeholder, hairline blocks)
+executed_by: Frontend UI Engineer (Buffy)
+closed_at: 2026-07-05T00:00:00Z
+layer: 2
+conflict_keys:
+  - frontend/src/app/shared/ui/pi-skeleton.component.ts
+  - frontend/src/app/shared/ui/index.ts
+protected_files:
+  - frontend/src/app/shared/ui/skeleton/pi-skeleton.component.ts
+  - frontend/src/app/shared/ui/skeleton/index.ts
+lock_file: OrchestratorKit/.mimocode/locks/TZ-62-skeleton.lock
+implementation_summary: |
+  pi-skeleton.component.ts (~75 lines, standalone, OnPush, signal-based):
+    - Inputs: width='100%', height='1rem', variant='text'|'circle'|'rect',
+      count=1, ariaLabel='Загрузка'.
+    - lines = computed Math.max(0, count()) → Array.from(_, i => i) for @for.
+    - Template: <div role="status" aria-live="polite" aria-busy="true"> wraps
+      <span> per index. Span: bg-rule + opacity-40 (40% opacity static block,
+      NO shimmer, NO pulse, NO shadow).
+    - last:w-3/5 Tailwind variant via [class.last\:w-3\/5] binding (CSS-only
+      :last-child selection — Tailwind pseudo-class handles it).
+    - rounded-full for circle variant, rounded-none for text/rect.
+    - mb-2 between text lines (not on last) via i < lines().length - 1.
+  skeleton/index.ts (barrel): exports PiSkeletonComponent, type PiSkeletonVariant.
+  Spec path (shared/ui/pi-skeleton.component.ts) adapted to subfolder pattern
+    (shared/ui/skeleton/...) for consistency with badge/button/card/tabs/skeleton
+    pattern from TZ-34..60.
+verification:
+  - pnpm exec tsc -p tsconfig.app.json --noEmit → exit 0 ✅
+  - grep 'box-shadow|drop-shadow|animate-pulse|animate-' pi-skeleton.component.ts → 0 hits ✅
+  - role="status" + aria-live="polite" + aria-busy="true" on host root ✅
+  - count() defensively clamped to Math.max(0, …) ✅
+  - last:w-3/5 binding for text variant (CSS-only selection) ✅
+  - Subfolder barrel (skeleton/index.ts) exports component + type ✅
+notes: |
+  - Spec used deprecated `bg-opacity-40` (Tailwind v3 syntax); codebase is on
+    Tailwind v4, so substituted `opacity-40` (modern v4 syntax). v4 removed
+    `bg-opacity-*` utilities in favor of generic `opacity-*`.
+  - Added `aria-busy="true"` to host root for stronger loading state signal
+    (WAI-ARIA complementary to role="status" + aria-live="polite").
+  - last:w-3/5 applied to ALL spans — Tailwind `last:` pseudo-class handles
+    per-element selection via CSS. This is the canonical Paper & Ink pattern
+    (CSS-only, no JS for last-item branching).
+  - Path adapted to subfolder convention (skeleton/) to match peer pattern.
+─────────────────────────────────────────────────────────────────

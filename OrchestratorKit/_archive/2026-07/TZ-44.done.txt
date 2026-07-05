@@ -1,0 +1,81 @@
+═══════════════════════════════════════════════════════════════
+TZ-44: Switch (Paper & Ink — toggle row)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Component Engineer
+
+ЗАВИСИМОСТИ: TZ-32.
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/switch/switch.component.ts
+  - frontend/src/app/shared/ui/switch/index.ts
+
+═══════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+════════════════════════════════════════════════════════
+
+1. Текущий kppdf-8.0 frontend использует Angular Material
+   (`mat-flat-button`, `mat-card`, `mat-input` и т.д.) —
+   SaaS-look со shadow, rounded-3xl и gradient fills.
+2. Paper & Ink требует hand-rolled примитив с hairline 1px
+   border + OKLCH tokens из TZ-32 + signal inputs/outputs API
+   (`input()` / `output()`, НЕ `@Input` / `@Output` decorator'ы).
+3. Директория `frontend/src/app/shared/ui/switch/` пуста или со-
+   держит deprecated stub из ранних TZ — в этой TZ удалить и
+   заменить на новый standalone OnPush signal-based компонент.
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+1. Standalone, OnPush, signal inputs:
+   - checked: model<boolean>(false),
+   - disabled?: boolean,
+   - size: 'sm'|'md' (default 'md'),
+   - ariaLabel?: string.
+
+2. Outputs:
+   - checkedChange = output<boolean>().
+
+3. Layout `<button role="switch">`:
+   ```html
+   <button type="button" role="switch"
+     [attr.aria-checked]="checked()"
+     [class]="computedClass()"
+     (click)="onClick()">
+     <span class="switch-thumb"></span>
+   </button>
+   ```
+   Track 36×20 (md) / 28×16 (sm), border-rule. ON state: bg-ink,
+   thumb (translate 16px X) bg-paper.
+
+4. Disabled: opacity-50 cursor-not-allowed.
+5. NO shadows. focus-visible:ring-2 ring-ink ring-offset-2 ring-offset-paper.
+
+═══════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/switch/switch.component.ts (СОЗДАТЬ)
+  + frontend/src/app/shared/ui/switch/index.ts (СОЗДАТЬ — barrel export)
+
+НЕ ИЗМЕНЯТЬ:
+  - frontend/src/styles.css (только token utility classes из TZ-32).
+  - backend/** (никаких изменений backend в этой TZ).
+  - другие ui-primitives (TZ-NN ≠ этот TZ) — не трогать.
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. Файл ≥ 50 строк.
+2. on/off визуально отличимы.
+3. role=switch + aria-checked корректны.
+4. Touch target ≥ 36px (a11y).
+5. NO shadows.
+6. `pnpm exec tsc` + `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+TZF-00 ФИНАЛИЗАЦИЯ
+Стандартный.

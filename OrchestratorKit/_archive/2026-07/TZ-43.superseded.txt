@@ -1,0 +1,118 @@
+═══════════════════════════════════════════════════════════════
+═══ SUPERSEDED by Paper & Ink set (TZ-30..39) ═══
+═══ этот Material MD3 TZ-план заменён 2026-07-05 на editorial
+═══ Swiss-minimalism направление (Paper & Ink, OKLCH paper+ink,
+═══ Tailwind v4, Syne+Plus Jakarta Sans, lucide-angular, output()).
+═══ Канонический план теперь в tasks/TZ-30..TZ-82.
+═══ Оригинал этого файла был в tasks/TZ-43.md до архивации.
+═══════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════
+TZ-43: Миграция Login Page на ui-field + ui-btn + ui-alert
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-30, TZ-32, TZ-36 (ui-field), TZ-34 (ui-btn),
+             TZ-33 (ui-alert)
+
+LAYER: 3
+
+CONFLICT KEYS:
+  - frontend/src/app/features/auth/login.page.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. Текущий код:
+   `login.page.ts` использует `<mat-card>` для shell, `<mat-form-field>`
+   для username/password inputs, `<button mat-icon-button>` для
+   show/hide password toggle, `<button mat-flat-button>` для submit,
+   `.login-error` inline div для сообщений ошибки.
+
+2. Проблемы:
+   - Floating matLabel Material 3 не вписывается в kppdf-7.0 визуал
+     (там static label сверху).
+   - Кнопка submit имеет loading через inline mat-spinner.
+   - error-сообщение использует `.login-error` inline стиль.
+
+3. Контекст:
+   - TZ-36 <ui-field> имеет label / hint / required / error input
+     semantics. Это ZAMENA mat-form-field для login.
+   - TZ-34 <ui-btn> имеет loading state.
+   - TZ-33 <ui-alert variant="error"> — для error сообщений.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Заменить `.login-card` (mat-card) на `<ui-card>`.
+
+ШАГ 2: Каждый `<mat-form-field>` + `<input matInput>` обернуть в
+   `<ui-field [label]="..." [required]="true" [error]="...">
+   <input .../>  </ui-field>`.
+   Сохранить autocomplete, formControlName, type. hint — на
+   ui-field hint input.
+
+ШАГ 3: Show/hide password:
+   - Использовать `<ui-icon-btn>` (TZ-37) ВНУТРИ ui-field (через
+     `[actions]` slot в ui-field для button-trailing).
+     Если ui-field не имеет actions-slot — упростить: оставить
+     icon-button вне ui-field, справа.
+
+ШАГ 4: Submit button:
+   - `<button mat-flat-button color="primary"
+     type="submit">` → `<ui-btn variant="primary" type="submit"
+     [loading]="loading()" size="md" fullWidth>`.
+   - Текст «Входим…» сохранить.
+
+ШАГ 5: Error message:
+   - `<div class="login-error" role="alert">{{ msg }}</div>`
+     → `<ui-alert variant="error" size="md">{{ msg }}</ui-alert>`.
+   - Удалить `.login-error { ... }` стили.
+
+ШАГ 6: Удалить импорты MatCardModule, MatFormFieldModule,
+   MatInputModule, MatButtonModule, MatProgressSpinnerModule из
+   imports (если остался MatIconModule для <mat-icon> в login-shell —
+   сохранить).
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- frontend/src/app/features/auth/login.page.ts
+    [mat-form-field → ui-field; mat-flat-button → ui-btn;
+     .login-error → ui-alert variant=error; убрать лишние imports]
+
+НЕ ИЗМЕНЯТЬ:
+- backend Service (TZ-04 сделал)
+- shell (TZ-41 сделал)
+- zod-схема `loginSchema` (она про data-validation, не UI)
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `grep -c 'mat-card\|mat-form-field\|mat-flat-button'
+   login.page.ts` → 0.
+2. UI demo: /login открывается, оба input внутри <ui-field>,
+   submit кнопка — <ui-btn>, error показывается <ui-alert>.
+3. Form validation по-прежнему работает (RequiredError,
+   minLengthError, server 401 → ui-alert error).
+4. `pnpm exec tsc -p tsconfig.app.json --noEmit` → exit 0.
+5. `pnpm build` → exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Этот TZ единственный трогает `login.page.ts`. Параллелизм с TZ-44
+(dialogs) — разные файлы, безопасно (один LAYER 3 пул).
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Стандартный TZF-00 + ARCHITECTURE.md (отметка о миграции login page).

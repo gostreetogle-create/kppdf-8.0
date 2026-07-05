@@ -1,0 +1,89 @@
+═══════════════════════════════════════════════════════════════
+TZ-38: Textarea (Paper & Ink)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Component Engineer
+
+ЗАВИСИМОСТИ: TZ-32, TZ-37 (разделяет базовый css-паттерн Input).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/textarea/textarea.component.ts
+  - frontend/src/app/shared/ui/textarea/index.ts
+
+═══════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+════════════════════════════════════════════════════════
+
+1. Текущий kppdf-8.0 frontend использует Angular Material
+   (`mat-flat-button`, `mat-card`, `mat-input` и т.д.) —
+   SaaS-look со shadow, rounded-3xl и gradient fills.
+2. Paper & Ink требует hand-rolled примитив с hairline 1px
+   border + OKLCH tokens из TZ-32 + signal inputs/outputs API
+   (`input()` / `output()`, НЕ `@Input` / `@Output` decorator'ы).
+3. Директория `frontend/src/app/shared/ui/textarea/` пуста или со-
+   держит deprecated stub из ранних TZ — в этой TZ удалить и
+   заменить на новый standalone OnPush signal-based компонент.
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+1. Standalone, OnPush, signal inputs (идентично Input shape):
+   - value: input<string>('').
+   - placeholder?, disabled?, invalid?, size?: 'sm'|'md' (default 'md').
+   - rows?: number (default 4).
+   - maxLength?: number (если задан — показать counter).
+   - ariaLabel?: string.
+
+2. Outputs:
+   - valueChange = output<string>().
+
+3. Layout:
+   ```html
+   <div class="block">
+     <textarea
+       [value]="value()"
+       [placeholder]="placeholder()"
+       [disabled]="disabled()"
+       [rows]="rows()"
+       [attr.maxlength]="maxLength()"
+       [attr.aria-label]="ariaLabel()"
+       [class]="computedClass()"
+       (input)="onInput($event)"
+     ></textarea>
+     @if (maxLength()) {
+       <div class="eyebrow mt-1 text-right">{{ value().length }} / {{ maxLength() }}</div>
+     }
+   </div>
+   ```
+
+4. Стили: same как Input, но `min-h-24 resize-none focus:ring-2`.
+   Counter в .eyebrow class (font-mono, 11px uppercase).
+
+═══════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/textarea/textarea.component.ts (СОЗДАТЬ)
+  + frontend/src/app/shared/ui/textarea/index.ts (СОЗДАТЬ — barrel export)
+
+НЕ ИЗМЕНЯТЬ:
+  - frontend/src/styles.css (только token utility classes из TZ-32).
+  - backend/** (никаких изменений backend в этой TZ).
+  - другие ui-primitives (TZ-NN ≠ этот TZ) — не трогать.
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. Файл ≥ 50 строк.
+2. Counter показывает `N / maxLength` корректно.
+3. Rows default = 4.
+4. Value+input events.
+5. NO shadows. Hairline border.
+6. `pnpm exec tsc` + `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+TZF-00 ФИНАЛИЗАЦИЯ
+Стандартный.

@@ -1,0 +1,96 @@
+═══════════════════════════════════════════════════════════════
+═══ SUPERSEDED by Paper & Ink set (TZ-30..39) ═══
+═══ этот Material MD3 TZ-план заменён 2026-07-05 на editorial
+═══ Swiss-minimalism направление (Paper & Ink, OKLCH paper+ink,
+═══ Tailwind v4, Syne+Plus Jakarta Sans, lucide-angular, output()).
+═══ Канонический план теперь в tasks/TZ-30..TZ-82.
+═══ Оригинал этого файла был в tasks/TZ-44b.md до архивации.
+═══════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════
+TZ-44b: Миграция Unit Dialog на ui-field + ui-alert
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-36 (ui-field), TZ-33 (ui-alert)
+
+LAYER: 3
+
+CONFLICT KEYS:
+  - frontend/src/app/features/units/unit-form.dialog.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. Текущий код: 5 mat-form-field (key / label / symbol / category /
+   sortOrder) + mat-checkbox isActive + mat-flat-button submit +
+   system-chip indicator.
+
+2. Проблемы: те же что currency — Material 3 floating label.
+
+3. Контекст: system-chip (mat-icon + span «системная») ОСТАЁТСЯ
+   внутри `<h2 mat-dialog-title>` — это козырёк, не трогаем.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Заменить 5 mat-form-field на ui-field (см. TZ-44a шаг 1).
+
+  Для поля `key` с паттерном `Validators.pattern(/^[a-z0-9_-]+$/i)`
+  error:
+  ```html
+  <ui-field label="Ключ (slug)" required
+    [error]="
+      form.controls.key.touched && form.controls.key.hasError('required')   ? 'Введите ключ' :
+      form.controls.key.touched && form.controls.key.hasError('pattern')    ? 'Допустимы латиница, цифры и спец-символы' :
+      null">
+    <input formControlName="key" maxlength="32" />
+  </ui-field>
+  ```
+
+ШАГ 2: Submit mat-flat-button → <ui-btn variant="primary" loading.
+
+ШАГ 3: Cancel button (mat-button) → <ui-btn variant="ghost">.
+
+ШАГ 4: Error banner → <ui-alert variant="error">.
+
+ШАГ 5: Сохранить `<span class="system-chip">` системный chip.
+
+ШАГ 6: Удалить лишние MatFormField/MatInput/MatButton imports.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- frontend/src/app/features/units/unit-form.dialog.ts
+
+НЕ ИЗМЕНЯТЬ:
+- service (UnitService)
+- list page (TZ-46)
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `grep -c 'mat-form-field' unit-form.dialog.ts` → 0.
+2. `grep -c '<ui-field' unit-form.dialog.ts` → 5.
+3. `<ui-btn>` submit + cancel present.
+4. system-chip сохранён.
+5. UI demo работает.
+6. pnpm tsc + build → exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Аналогично TZ-44a — параллелизм с TZ-44a/c безопасен.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Стандартный TZF-00.

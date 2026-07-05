@@ -1,0 +1,183 @@
+═══════════════════════════════════════════════════════════════
+TZ-46: Table (sortable / row-select / paginated slot)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-30 (standalone + aliases), TZ-31 (Tailwind v4), TZ-32
+           (OKLCH tokens), TZ-47 (Pagination — рендерится в footer таблицы).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/pi-table.component.ts
+  - frontend/src/app/shared/ui/index.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. В kppdf-8.0 пока нет табличного компонента — список материалов
+   рисовался `<table mat-table>` из Angular Material. Paper & Ink
+   требует hand-rolled таблицу на hairline-бордерах.
+2. Нужен sortable header (click toggle asc → desc → null), row click
+   `output<Row>`, мульти-селект через чекбокс-колонку, footer-slot для
+   `<app-pi-pagination>`.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Создать `pi-table.component.ts` (standalone, OnPush).
+
+  Шаг 1.1: Тип колонки (TS выше компонента):
+    ```ts
+    export type SortDirection = 'asc' | 'desc' | null;
+    export interface ColumnDef<T> {
+      key: keyof T & string;
+      label: string;
+      sortable?: boolean;
+      align?: 'left' | 'right' | 'center';
+      width?: string; // CSS-значение: '120px' | '12%'
+      format?: (row: T) => string;
+      cellClass?: string;
+    }
+    ```
+
+  Шаг 1.2: Сигналы компонента:
+    ```ts
+    data    = input<T[]>([]);
+    columns = input.required<ColumnDef<T>[]>();
+    selectionMode = input<'none' | 'single' | 'multi'>('none');
+    pageSize = input<number>(20);
+    ariaLabel = input<string>('Таблица');
+    expandedRow = input<TemplateRef<{ $implicit: T }> | null>(null);
+
+    // outputs
+    rowClick    = output<T>();
+    sortChange  = output<{ key: string; dir: SortDirection }>();
+    selectionChange = output<T[]>();
+    ```
+
+  Шаг 1.3: Internal state — `sortKey`/`sortDir` signals; computed
+    `sortedData` через `.slice().sort((a,b) => …)`; `selectedKeys`
+    Set<keyof T & string>; computed `isAllSelected` /
+    `isSomeSelected`.
+
+  Шаг 1.4: Шаблон (use Tailwind utilities, NO shadow, hairline 1px
+    border-rule):
+    ```html
+    <table role="table" [attr.aria-label]="ariaLabel()" class="w-full border-collapse text-[var(--font-body)]">
+      <thead class="border-b hairline border-rule">
+        <tr>
+          @if (selectionMode() !== 'none') {
+            <th class="w-10 py-3 px-3">
+              @if (selectionMode() === 'multi') {
+                <input type="checkbox"
+                       [checked]="isAllSelected()"
+                       [indeterminate]="isSomeSelected() && !isAllSelected()"
+                       (change)="toggleAll($event)"
+                       aria-label="Выбрать всё" />
+              }
+            </th>
+          }
+          @for (col of columns(); track col.key) {
+            <th class="text-left py-3 px-3 eyebrow cursor-pointer select-none"
+                [class.cursor-pointer]="col.sortable"
+                (click)="col.sortable && onSort(col.key)">
+              <span>{{ col.label }}</span>
+              @if (col.sortable) {
+                <span class="ml-1 mono text-[10px]">
+                  {{ sortKey() === col.key ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}
+                </span>
+              }
+            </th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of sortedData(); track row.id ?? $index) {
+          <tr class="border-b hairline border-rule hover:bg-paper-2 transition-colors"
+              [class.cursor-pointer]="true"
+              (click)="onRowClick(row)">
+            @if (selectionMode() !== 'none') {
+              <td class="py-3 px-3">
+                <input type="checkbox"
+                       [checked]="isRowSelected(row)"
+                       (change)="toggleRow(row, $event)"
+                       (click)="$event.stopPropagation()" />
+              </td>
+            }
+            @for (col of columns(); track col.key) {
+              <td class="py-3 px-3 text-sm" [class]="col.cellClass ?? ''"
+                  [class.text-right]="col.align === 'right'">
+                {{ col.format ? col.format(row) : row[col.key] }}
+              </td>
+            }
+          </tr>
+          @if (expandedRow()) {
+            <tr><td [attr.colspan]="columns().length + (selectionMode() !== 'none' ? 1 : 0)"
+                   class="bg-paper-2 p-0">
+              <ng-container *ngTemplateOutlet="expandedRow()!; context: { $implicit: row }" />
+            </td></tr>
+          }
+        }
+        @if (sortedData().length === 0) {
+          <tr><td [attr.colspan]="columns().length + (selectionMode() !== 'none' ? 1 : 0)">
+            <app-pi-empty-state eyebrow="00" title="Пусто"
+              description="Нет данных для отображения." />
+          </td></tr>
+        }
+      </tbody>
+    </table>
+    ```
+
+  Шаг 1.5: Pagination slot через `<ng-content select="[footer]">` —
+    принимает `<app-pi-pagination footer>` внутри родителя.
+
+ШАГ 2: Экспорт через index.ts barrel:
+  ```ts
+  export * from './pi-table.component';
+  ```
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/pi-table.component.ts (СОЗДАТЬ)
+  ~ frontend/src/app/shared/ui/index.ts (добавить export)
+
+НЕ ИЗМЕНЯТЬ:
+  - frontend/src/**/*.scss (только Tailwind utilities, NO hex)
+  - backend/** (никаких изменений)
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `grep -c 'border-rule\|hairline' src/app/shared/ui/pi-table.component.ts | grep -v ':0'` — минимум 2 упоминания hairline.
+2. `grep -n 'box-shadow\|drop-shadow' src/app/shared/ui/pi-table.component.ts` — должно быть ПУСТО (NO shadow).
+3. `grep -n '#[0-9a-fA-F]\{3,8\}\|bg-white\|bg-black\|text-white\|text-black' src/app/shared/ui/pi-table.component.ts` — должно быть ПУСТО (только токены).
+4. Все инпуты через `input()`, все выходы через `output()` — никаких `@Input`/`@Output` decorators.
+5. ChangeDetectionStrategy.OnPush установлен.
+6. Selectors в @Component: пустой `selector: 'app-pi-table'`.
+7. `pnpm exec tsc --noEmit` exit 0.
+8. `pnpm build` exit 0, `pnpm build` НЕ выводит warnings про Circular dep или Missing selector.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+CONFLICT KEYS уникальны (только новый файл + barrel-index). Параллельно
+с TZ-47..TZ-66 — конфликтов НЕТ если они пишут разные файлы в
+shared/ui/. До 2-х TZ Layer 2 параллельно: можно запускать вместе
+с TZ-47 (Pagination) или TZ-52 (Tooltip).
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Архивировать в `OrchestratorKit/_archive/2026-07/TZ-46.done.txt` СРАЗУ
+после выполнения (НЕ оставлять в `tasks/`). Шаблон архива — см.
+TZ-19.done.txt в `_templates/_archive/`.

@@ -1,0 +1,55 @@
+═══════════════════════════════════════════════════════════════
+TZ-81: README + docs (Russian editorial)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Architect (technical writer)
+
+ЗАВИСИМОСТИ: TZ-30..TZ-80 (docs pass после всех TZ).
+
+LAYER: 1 (Cross-cutting)
+
+CONFLICT KEYS:
+  - frontend/README.md (overwrite)
+  - docs/paper-and-ink.md (create)
+  - docs/add-new-page.md (create)
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER:
+═══════════════════════════════════════════════════════════════
+
+**frontend/README.md** (~120 lines):
+- Overwrite Angular CLI default README.
+- Paper & Ink branding (НЕ "Angular CLI").
+- pnpm-команды (НЕ yarn/npm).
+- Структура директорий (layout/pages/shared/core).
+- Технологии: Angular 20, Tailwind v4, lucide-angular, highlight.js (optional), @angular/ssr (optional).
+- Архитектурные решения (таблица с TZ-ссылками).
+- License MIT © 2026 + Author.
+
+**docs/paper-and-ink.md** (~110 lines):
+- Design rationale на русском.
+- OKLCH вместо hex — почему perceptually uniform.
+- L=0.972 для paper (тёплый off-white).
+- L=0.145 для ink (почти-чёрный с тёплым подтоном).
+- Hairline вместо shadow — print editorial tradition.
+- Lucide вместо Material Symbols Outline — 1.5px stroke consistency.
+- 6 variants × 4 sizes для Button — minimal viable set.
+- rounded-sm vs rounded-none — когда что.
+- Цитаты: Werkplaats Typografie, Kinfolk, Monocole.
+- Когда НЕ использовать Paper & Ink.
+
+**docs/add-new-page.md** (~80 lines):
+- 5-шаговый tutorial.
+- mkdir → page component → route → sidebar link → verify.
+- pnpm-команды (не yarn/npm).
+- Paper & Ink compliance checklist (standalone, OnPush, signals, no shadow, etc).
+- Что НЕ нужно делать (no .module.ts, no manual subscriptions, no *ngIf).
+
+**Verification:**
+- README.md содержит "Paper & Ink" (НЕ "Angular CLI").
+- pnpm-команды корректны.
+- docs/paper-and-ink.md объясняет OKLCH + hairline rationale.
+- docs/add-new-page.md walkthrough компилируется (5 шагов → страница видна).
+- Russian editorial tone (НЕ SaaS copywriter).
+
+ARCHIVE_MARKER: TZ-81 done 2026-07-05; WAVE D-4 (docs) complete.

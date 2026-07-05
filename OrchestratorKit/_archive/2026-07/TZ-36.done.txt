@@ -1,0 +1,101 @@
+═══════════════════════════════════════════════════════════════
+TZ-36: Card (Paper & Ink)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Component Engineer
+
+ЗАВИСИМОСТИ: TZ-32.
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/card/card.component.ts
+  - frontend/src/app/shared/ui/card/index.ts
+
+═══════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+════════════════════════════════════════════════════════
+
+1. Текущий kppdf-8.0 frontend использует Angular Material
+   (`mat-flat-button`, `mat-card`, `mat-input` и т.д.) —
+   SaaS-look со shadow, rounded-3xl и gradient fills.
+2. Paper & Ink требует hand-rolled примитив с hairline 1px
+   border + OKLCH tokens из TZ-32 + signal inputs/outputs API
+   (`input()` / `output()`, НЕ `@Input` / `@Output` decorator'ы).
+3. Директория `frontend/src/app/shared/ui/card/` пуста или со-
+   держит deprecated stub из ранних TZ — в этой TZ удалить и
+   заменить на новый standalone OnPush signal-based компонент.
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+1. Standalone, OnPush, signal inputs:
+   - eyebrow?: string — top mono small text (TZ-32 .eyebrow utility).
+   - title?: string — h3 заголовок (Syne 600).
+   - description?: string — p muted (дополнительная поясниловка).
+   - interactive?: boolean — hover state (border → ink).
+   - href?: string — если задан, рендер `<a>` вместо `<div>`.
+   - arrow?: boolean — Lucide ArrowUpRight в углу при interactive.
+
+2. SELECTOR CONVENTION (явный, для избежания collisions при barrel):
+   - Селектор компонента: `app-pi-card` (Angular convention: префикс `app-` + namespace `pi-` для Paper & Ink).
+   - ВСЕ Paper & Ink примитивы используют префикс `app-pi-`:
+     Button → `app-pi-button`, Badge → `app-pi-badge`,
+     Input → `app-pi-input`, Dialog → `app-pi-dialog`, и т. д.
+   - При barrel exports через `@/components/*` selector'ы остаются
+     уникальными; конфликтов между 27+ примитивами нет.
+   - В TZ-30 routing этот selector НЕ фигурирует напрямую (используются
+     `loadComponent`-lazy-классы), но в TZ-67+ НЕ должны быть
+     конфликты.
+
+3. Layout:
+   ```html
+   @if (href()) {
+     <a [href]="href()" class="card-link">
+       <ng-container *ngTemplateOutlet="cardBody"/>
+     </a>
+   } @else {
+     <ng-container *ngTemplateOutlet="cardBody"/>
+   }
+   <ng-template #cardBody>
+     <article [class]="computedClass()">
+       @if (eyebrow()) { <div class="eyebrow">{{ eyebrow() }}</div> }
+       @if (title())    { <h3 class="text-xl font-display">{{ title() }}</h3> }
+       @if (description()) { <p class="text-sm text-muted">{{ description() }}</p> }
+       <ng-content/>
+       @if (arrow() && interactive()) { <lucide-icon name="arrow-up-right" class="card-arrow"/> }
+     </article>
+   </ng-template>
+   ```
+
+4. Classes:
+   - default: bg-paper, hairline border, rounded-sm, p-6.
+   - interactive:hover: border-ink (solid black вместо --rule).
+   - `.card-arrow` absolute top-right, transition.
+   - НИКАКИХ drop-shadow (только border).
+
+═══════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/card/card.component.ts (СОЗДАТЬ)
+  + frontend/src/app/shared/ui/card/index.ts (СОЗДАТЬ — barrel export)
+
+НЕ ИЗМЕНЯТЬ:
+  - frontend/src/styles.css (только token utility classes из TZ-32).
+  - backend/** (никаких изменений backend в этой TZ).
+  - другие ui-primitives (TZ-NN ≠ этот TZ) — не трогать.
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. Файл существует ≥ 60 строк.
+2. eyebrow + title + description + content slots работают.
+3. interactive card при hover меняет border на ink solid.
+4. NO `box-shadow|shadow-xl|rounded-3xl` в styles.
+5. `pnpm exec tsc` + `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+TZF-00 ФИНАЛИЗАЦИЯ
+Стандартный.

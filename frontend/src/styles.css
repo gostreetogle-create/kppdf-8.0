@@ -1,0 +1,206 @@
+/* =============================================================================
+ * Paper & Ink — global stylesheet (TZ-31 + TZ-32 + TZ-33).
+ *
+ * Order matters:
+ *   1) Font @import (must come BEFORE `@import 'tailwindcss'` so `--font-*`
+ *      tokens resolve correctly during compilation).
+ *   2) `@import 'tailwindcss'` brings in Tailwind v4 core.
+ *   3) `@theme inline {...}` declares 8 OKLCH palette tokens + typography +
+ *      shape. Override-fallback syntax `var(--color-X-override, oklch(...))`
+ *      keeps TZ-77 Theme Editor non-destructive: a future editor can set
+ *      `--color-ink-override` runtime and Tailwind utilities pick it up
+ *      without rewriting the @theme base.
+ *   4) `@layer base` overrides Tailwind defaults (no shadows, sharper radii).
+ *   5) `@utility` registrations add editorial primitives (eyebrow, hairline-).
+ *   6) `prefers-reduced-motion` global safety net.
+ *   7) `@layer base .dark` block — TZ-33 dark mode vars, applied via
+ *      <html class="dark">.
+ * ============================================================================= */
+
+@import '@fontsource/syne/400.css';
+@import '@fontsource/syne/600.css';
+@import '@fontsource/syne/700.css';
+@import '@fontsource/syne/800.css';
+@import '@fontsource/plus-jakarta-sans/400.css';
+@import '@fontsource/plus-jakarta-sans/500.css';
+@import '@fontsource/plus-jakarta-sans/600.css';
+@import '@fontsource/plus-jakarta-sans/700.css';
+
+@import 'tailwindcss';
+
+@theme inline {
+  /* === Palette (OKLCH @theme inline is CANONICAL source of truth) ===
+     TZ-77 ↔ TZ-32 coupling: override layer pattern implemented via
+     `var(--color-X-override, oklch(...))` fallback. Runtime setProperty
+     on <html> of `--color-X-override` adjusts utilities without
+     overwriting @theme base. */
+  --color-paper:       var(--color-paper-override,       oklch(0.972 0.008 85));
+  --color-paper-2:     var(--color-paper-2-override,     oklch(0.925 0.009 80));
+  --color-ink:         var(--color-ink-override,         oklch(0.145 0       0));
+  --color-rule:        var(--color-rule-override,        oklch(0.85  0.006 80));
+  --color-muted:       var(--color-muted-override,       oklch(0.43  0.01  80));
+  --color-destructive: var(--color-destructive-override, oklch(0.5   0.18  27));
+  --color-accent-warm: var(--color-accent-warm-override, oklch(0.7   0.15  60));
+  --color-accent-cool: var(--color-accent-cool-override, oklch(0.55  0.10 230));
+
+  /* === Typography === */
+  --font-display: 'Syne', 'Helvetica Neue', sans-serif;
+  --font-body:    'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono:    ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  /* === Shape (sharp, not pill) === */
+  --radius: 0.375rem;
+  --radius-sm: 0.25rem;
+
+  /* === Border weights === */
+  --border-width-hairline: 1px;
+}
+
+@layer base {
+  /* Drop shadows off by default — typography + whitespace create hierarchy. */
+  * { box-shadow: none !important; }
+  /* Force sharp corners — override .rounded-3xl, .rounded-2xl, .rounded-xl. */
+  .rounded-xl, .rounded-2xl, .rounded-3xl {
+    border-radius: var(--radius) !important;
+  }
+  /* Set default body font + bg + fg using OKLCH tokens. */
+  html, body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-feature-settings: 'ss01', 'cv11';
+  }
+
+  /* TZ-33 dark overrides — invert paper↔ink, neutral warm hue.
+     Applied via <html class="dark">. NEVER use body.dark or :root.dark. */
+  .dark {
+    --color-paper:       oklch(0.16 0.005 80);
+    --color-paper-2:     oklch(0.22 0.006 80);
+    --color-ink:         oklch(0.95 0.005 80);
+    --color-rule:        oklch(0.30 0.005 80);
+    --color-muted:       oklch(0.7  0.01  80);
+    --color-destructive: oklch(0.65 0.18  27);
+    --color-accent-warm: oklch(0.75 0.13  60);
+    --color-accent-cool: oklch(0.7  0.09 230);
+  }
+}
+
+@utility eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--color-muted);
+}
+
+@utility hairline {
+  border: 1px solid var(--color-rule);
+}
+
+@utility hairline-t {
+  border-top: 1px solid var(--color-rule);
+}
+@utility hairline-b {
+  border-bottom: 1px solid var(--color-rule);
+}
+@utility hairline-r {
+  border-right: 1px solid var(--color-rule);
+}
+@utility hairline-l {
+  border-left: 1px solid var(--color-rule);
+}
+
+@utility grid-paper {
+  background-color: var(--color-paper);
+  background-image:
+    linear-gradient(to right, color-mix(in oklch, var(--color-rule) 40%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklch, var(--color-rule) 40%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: 0 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── TZ-65 themed scrollbar (Paper & Ink: hairline 4px, --color-rule fill, transparent track) ── */
+@layer components {
+  .pi-scroll-area,
+  .pi-scroll-area * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-rule) transparent;
+  }
+  .pi-scroll-area::-webkit-scrollbar,
+  .pi-scroll-area *::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  .pi-scroll-area::-webkit-scrollbar-track,
+  .pi-scroll-area *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .pi-scroll-area::-webkit-scrollbar-thumb,
+  .pi-scroll-area *::-webkit-scrollbar-thumb {
+    background: var(--color-rule);
+    border: 0;
+  }
+}
+
+/* ── TZ-79 print stylesheet (Paper & Ink: clean monochrome spec sheet) ──
+   Trigger: window.print() из любой page → user получает print-friendly
+   preview (chrome hidden, sections page-break friendly, no animations,
+   no shadows, link hrefs visible). NO new deps required.
+
+   Spec deviation: axe-core a11y audit (`/e2e/a11y/axe-audit.spec.ts`)
+   is DEFERRED — `pnpm add axe-core@^4.10` failed with
+   ERR_PNPM_PUBLIC_HOIST_PATTERN_DIFF. Future TZ-79b: re-attempt after
+   pnpm config reconcile. */
+@media print {
+  :root {
+    --color-paper: white;
+    --color-ink: black;
+    --color-rule: #ccc;
+  }
+
+  /* Hide chrome (gallery-shell); route content visible */
+  aside,
+  header[role='banner'],
+  footer,
+  app-pi-command-palette,
+  app-pi-toast-host {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Each pi-section becomes page-break-friendly */
+  section {
+    break-inside: avoid;
+  }
+
+  h1 { font-size: 22pt; }
+  h2 { font-size: 14pt; break-after: avoid; }
+  h3 { font-size: 12pt; break-after: avoid; }
+
+  /* Remove transitions/animations/shadows */
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Show link URLs after link text */
+  a[href]:not([href^='#']):after {
+    content: ' (' attr(href) ')';
+    font-size: 90%;
+    color: #666;
+  }
+}

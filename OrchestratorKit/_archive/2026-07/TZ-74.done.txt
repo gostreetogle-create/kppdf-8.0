@@ -1,0 +1,36 @@
+═══════════════════════════════════════════════════════════════
+TZ-74: Navigation page (/navigation) — tabs + breadcrumb + accordion + charts + separator + scrollarea
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Page Engineer
+
+ЗАВИСИМОСТИ: TZ-58..60 (Tabs/Breadcrumb/Accordion), TZ-61..66 (Display), TZ-67/68.
+
+LAYER: 3 (Pages)
+
+CONFLICT KEYS:
+  - frontend/src/app/pages/navigation/navigation.page.ts
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER:
+═══════════════════════════════════════════════════════════════
+
+**Navigation page (/navigation)** — 203 lines, 7 sections:
+
+- **PageHeader** (eyebrow=06 Навигация и Данные, title, description).
+- **Section I. Tabs** — <app-pi-tabs> с 3 panels (Обзор/Метрики/Документы) + <app-pi-tab> children. @switch (activeTab()) renders content panel.
+- **Section II. Breadcrumb** — <app-pi-breadcrumb> + 3 <app-pi-breadcrumb-item> (Обзор→Формы→Редактирование [current]).
+- **Section III. Accordion** — <app-pi-accordion [multi]="false"> + 3 <app-pi-accordion-item>.
+- **Section IV. Progress · Skeleton · Avatar** — 3 progress bars (linear determinate, circular, linear indeterminate) + skeleton text/circle + 3 avatars (initials/initials/anonymous).
+- **Section V. Charts** — bar chart (Q1-Q4 revenue) + line chart (12-month active users time-series).
+- **Section VI. Separator** — 3 styles (plain hr / with label "или" / vertical inline).
+- **Section VII. ScrollArea** — 30 lines clamped to 200px maxHeight с themed hairline scrollbar.
+
+**Spec deviation #4:** <app-pi-breadcrumb-item href="/overview"> — href prop на custom component рендерит native <a href>. Для SPA nav может потребоваться [routerLink] — easy upgrade.
+
+**Standalone + OnPush + signal-based.** Typecheck PASS.
+
+**Lock-файл:** OrchestratorKit/.mimocode/locks/TZ-74-navigation-page.lock
+**Spec acceptance:** no box-shadow/drop-shadow/hex/bg-white (0 hits).
+
+ARCHIVE_MARKER: TZ-74 done 2026-07-05; WAVE C (6 lazy pages) BATCH COMPLETE.

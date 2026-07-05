@@ -1,0 +1,147 @@
+═══════════════════════════════════════════════════════════════
+TZ-64: Separator (hr OR label-on-line, hairline)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-30, TZ-31, TZ-32 (OKLCH).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/pi-separator.component.ts
+  - frontend/src/app/shared/ui/index.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+Стандартный `<hr>` рендерится с дефолтным border, иногда с inset
+shadow. Paper & Ink требует hairline 1px `--color-rule`, либо
+hairline на обе стороны от текстового label (Print-style bookmark).
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: `pi-separator.component.ts` (standalone, OnPush).
+
+  Шаг 1.1: Inputs:
+    ```ts
+    orientation = input<'horizontal' | 'vertical'>('horizontal');
+    label       = input<string>('');
+    ariaLabel   = input<string>('Разделитель');
+    ```
+
+  Шаг 1.2: Шаблон:
+    ```html
+    @if (orientation() === 'horizontal') {
+      @if (label()) {
+        <div role="separator"
+             [attr.aria-orientation]="'horizontal'"
+             [attr.aria-label]="label()"
+             class="flex items-center gap-3 my-6">
+          <span class="h-px flex-1 bg-rule"></span>
+          <span class="eyebrow text-base">{{ label() }}</span>
+          <span class="h-px flex-1 bg-rule"></span>
+        </div>
+      } @else {
+        <hr class="border-0 border-t hairline border-rule my-6" />
+      }
+    } @else {
+      <span role="separator"
+            [attr.aria-orientation]="'vertical'"
+            [attr.aria-label]="ariaLabel()"
+            class="inline-block w-px h-full bg-rule mx-3"></span>
+    }
+    ```
+
+ШАГ 2: Default — `<hr>` без shadow, hairline `--color-rule`.
+
+ШАГ 3: A11y — role="separator" + aria-orientation.
+
+ШАГ 4: Export из index.ts.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/pi-separator.component.ts (СОЗДАТЬ)
+  ~ frontend/src/app/shared/ui/index.ts
+
+НЕ ИЗМЕНЯТЬ: backend/**, styles.css.
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. role="separator" + aria-orientation="horizontal|vertical".
+2. С label — две hairline + ⟨label⟩ в центре.
+3. Без label — single hairline via `<hr>`.
+4. Никаких shadow / hex / border-style:dashed.
+5. `pnpm exec tsc --noEmit` exit 0; `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ
+═══════════════════════════════════════════════════════════════
+
+Новый файл + barrel. Параллельно с TZ-61..63/65/66 — нет конфликтов.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+Архивировать: `mv tasks/TZ-64.md OrchestratorKit/_archive/2026-07/TZ-64.done.txt`.
+
+─────────────────────────────────────────────────────────────────
+ARCHIVE_MARKER
+─────────────────────────────────────────────────────────────────
+[ARCHIVE_MARKER]
+type: DONE
+tz_id: TZ-64
+tz_name: Separator (hr OR label-on-line, hairline)
+executed_by: Frontend UI Engineer (Buffy)
+closed_at: 2026-07-05T00:00:00Z
+layer: 2
+conflict_keys:
+  - frontend/src/app/shared/ui/pi-separator.component.ts
+  - frontend/src/app/shared/ui/index.ts
+protected_files:
+  - frontend/src/app/shared/ui/separator/pi-separator.component.ts
+  - frontend/src/app/shared/ui/separator/index.ts
+lock_file: OrchestratorKit/.mimocode/locks/TZ-64-separator.lock
+implementation_summary: |
+  pi-separator.component.ts (~50 lines, standalone, OnPush, signal-based):
+    - Inputs: orientation='horizontal'|'vertical' (default 'horizontal'),
+      label='' (optional Print-style bookmark text), ariaLabel='Разделитель'.
+    - Three render branches:
+      1. horizontal + label: <div role="separator" aria-orientation="horizontal"
+         aria-label="<label>" class="flex items-center gap-3 my-6">
+           <span class="h-px flex-1 bg-rule" aria-hidden="true"></span>
+           <span class="eyebrow text-base">{{ label() }}</span>
+           <span class="h-px flex-1 bg-rule" aria-hidden="true"></span>
+         </div>
+      2. horizontal + no label: <hr role="separator" aria-orientation="horizontal"
+         aria-label="<ariaLabel()>" class="border-0 border-t hairline border-rule my-6">
+      3. vertical: <span role="separator" aria-orientation="vertical"
+         aria-label="<ariaLabel()>" class="inline-block w-px h-full bg-rule mx-3"></span>
+  separator/index.ts (barrel): exports PiSeparatorComponent, type PiSeparatorOrientation.
+verification:
+  - pnpm exec tsc -p tsconfig.app.json --noEmit → exit 0 ✅
+  - grep -E 'box-shadow|drop-shadow|#[0-9a-f]{3,8}|bg-white|border-dashed' pi-separator.component.ts → 0 hits ✅
+  - role="separator" + aria-orientation on ALL 3 branches ✅
+  - Label branch: 2 hairlines (h-px flex-1 bg-rule) + eyebrow text centered ✅
+  - No-label branch: <hr> с border-top hairline ✅
+  - Vertical: w-px h-full bg-rule ✅
+  - Decorative hairlines помечены aria-hidden="true" (parent has role+aria-label) ✅
+  - Subfolder barrel exports PiSeparatorComponent + PiSeparatorOrientation type ✅
+notes: |
+  - Spec path adapted to subfolder pattern (separator/) for consistency with
+    peer badge/button/card/skeleton/avatar from TZ-34..63.
+  - Decorative hairlines в label branch помечены aria-hidden="true" — small
+    a11y improvement (parent role+aria-label announces the section).
+  - ariaLabel() applied to no-label horizontal + vertical modes (default
+    "Разделитель"); label() mode использует сам label как aria-label
+    (semantic section name, e.g. "Foundations").
+─────────────────────────────────────────────────────────────────

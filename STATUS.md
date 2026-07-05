@@ -14,7 +14,7 @@
 - TZ-17: E2E tests (7 suites)
 - TZ-18: Production Hardening (Rate Limit, Helmet, CORS, Health)
 
-**Build:** pnpm run build ✅ (280+ файлов, 65 entities)
+**Build:** pnpm run build ✅ (280+ файлов, 65 entities). **Frontend build:** pnpm run build ✅ (0 warnings) — см. UI Hardening Rework ниже.
 
 ### Frontend (TZ-19..TZ-29)
 - TZ-19: Frontend Foundation (Angular 20 + Tailwind + AG Grid)
@@ -26,6 +26,17 @@
 - TZ-31..TZ-40: UI Kit — foundation (cn/cva/theme/scroll-spy/button) + 10 секций showcase на /p/showcase (core primitives, advanced inputs, charts, calendar/otp/kbd, overlays, layout primitives)
 
 **Build:** pnpm run build ✅ (542.84 kB initial bundle, 0 warnings)
+
+### UI Hardening Rework (2026-07-05)
+- **Material MD3 + custom shared/ui-kit wrappers + density -3 глобально** — свёрнутый стек UI под реальные нужды проекта (а не 35+ generic shadcn-style компонентов из TZ-31..TZ-40).
+- **`@angular/material@20.2`** — оставлен как единственный UI-кит (даёт MD3 tokens `--mat-sys-*` + accessibility + density mixins).
+- **3 кастомные обёртки** в `frontend/src/app/shared/ui-kit/` — закрывают повторяющиеся паттерны, для которых в Material нет готового:
+  - `<app-ui-page-header>` — заголовок страницы (icon + title + subtitle + back-link + action slot).
+  - `<app-ui-empty-state>` — empty-state для `*matNoDataRow` / пустых filter-results / «нет данных».
+  - `<app-ui-badge>` — status / isActive / isSystem indicator (variant × size × dot × icon).
+- **Глобальный compact-mode**: `@include mat.all-component-densities(-3)` в `frontend/src/styles.scss` (после `mat.theme()`) → table rows ≈36px, inputs/chips/paginator ≈36px без per-page правок. Per-component opt-out: `@include mat.table-density(0)`, `mat.form-field-density(0)`, etc.
+- **Migrated**: `materials-list.page.ts`, `units-list.page.ts`, `currencies-list.page.ts` → ui-kit обёртки. Acceptance: `grep '<header class="page-header">' src/app/features/` = 0, `grep '<span class="chip">' src/app/features/` = 0.
+- **Подробности:** см. `STACK.md §6 (UI patterns)` + `§6.4 (Global density)` + `progress.md` entry этого rework (2026-07-05).
 
 ### Dev Tooling (TZ-41..TZ-46)
 - TZ-41: Health Check Panel + Log TUI Mode — `start.mjs` стал TUI-aware orchestrator с `--tail` режимом (in-place статус 3 сервисов, ring buffer 5 строк на сервис, финальная "Ready" панель с латентностями /api/health). checkHealth() парсит JSON body и определяет `degraded` состояние.
@@ -61,12 +72,12 @@
 - Jest + Supertest (E2E)
 
 ### Frontend
-- Angular 20.3 (standalone, signals, new control flow)
-- TailwindCSS 3.4 (shadcn-style design system)
-- AG Grid 32 (data tables)
-- @angular/cdk/dialog (modals)
-- ngx-translate 17 (i18n ready)
-- date-fns 4, zod 3
+- **Angular 20.3** (standalone, signals, new control flow)
+- **@angular/material@20.2** (Material Design 3 — единственный UI-кит; tokens `--mat-sys-*` + density mixins)
+- **zod 3** (валидация в FormDialog)
+- **shared/ui-kit wrappers** (3 обёртки для page-header / empty-state / badge — см. `STACK.md §6`)
+- **Density -3 глобально** (см. `STACK.md §6.4`)
+- date-fns 4 (даты/форматирование в dialog'ах)
 
 ## 📁 Структура
 
@@ -99,9 +110,10 @@ kppdf-8.0/
 
 ## 🚀 Следующие шаги (предложения)
 
-Все этапы до TZ-46 завершены. Возможные направления:
+Все этапы до TZ-46 завершены + UI Hardening Rework 2026-07-05 (Material MD3 + 3 ui-kit обёртки + density -3). Возможные направления:
 
-1. **TZ-42: Production deployment mode** — `--prod` флаг в start.mjs (`pnpm build` + `node dist/main.js` вместо `pnpm start:dev`)
+1. **Migrate все CRUD-страницы на ui-kit обёртки** — `/categories`, `/products`, `/orders`, `/quotations`, `/bom`, `/tech-process`, `/warehouse` и т.д. (сейчас только `/materials`, `/units`, `/currencies` используют `<app-ui-page-header>` / `<app-ui-empty-state>` / `<app-ui-badge>`)
+2. **TZ-47: SettingsSeed StrictModeError fix** — `FeatureFlag` schema должна принимать `deletedAt` поле от soft-delete plugin; либо seed lite skip stale поля через `$setOnInsert`. Blockер полного boot `/api/health` HTTP 200 (обнаружен в TZ-46 hotfix v3 verification).
 2. **TZ-43: Health-check Dashboard** — frontend страница с live статусами всех сервисов (используя TZ-41 ring buffer pattern)
 3. **TZ-44: E2E tests run** — реальный прогон test/setup/* + test/e2e/*.e2e-spec.ts (тесты созданы в TZ-17, не запускались)
 4. **TZ-45: Backend DI audit** — найти и починить оставшиеся DI cascade баги (5+ было в TZ-19..TZ-17) — `grep` модулей с инжектами сервисов без импорта модуля

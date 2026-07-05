@@ -1,0 +1,33 @@
+═══════════════════════════════════════════════════════════════
+TZ-71: Basics page (/basics) — Buttons + Inputs + Badge + Card compositions
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Page Engineer
+
+ЗАВИСИМОСТИ: TZ-34..39 (atoms), TZ-67/68.
+
+LAYER: 3 (Pages)
+
+CONFLICT KEYS:
+  - frontend/src/app/pages/basics/basics.page.ts
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER:
+═══════════════════════════════════════════════════════════════
+
+**Basics page (/basics)** — 183 lines, 4 sections:
+
+- **PageHeader** (eyebrow=03 Кнопки и Инпуты, title, subtitle, hint=0.2s).
+- **Section I. Buttons** — 6 variants (default/secondary/outline/ghost/link/destructive) × 4 sizes (sm/md/lg/icon) × 2 states (disabled/loading).
+- **Section II. Inputs** — 3 form-fields: Имя (plain), E-mail (с signal-state emailError + border-color toggle на invalid), Комментарий (textarea с char counter {{comment().length}}/240).
+- **Section III. Badges** — 4 variants (default/secondary/outline/destructive) × 2 sizes (default/sm) + icon-badge (circleDot).
+- **Section IV. Card compositions** — 3 варианта: default <app-pi-card>, interactive (raw <a> с hover:border-ink), with-footer (raw div + action-button в footer slot).
+
+**Spec deviation #1:** Input/Textarea директивы НЕ существуют (экспортируются как InputComponent/TextareaComponent без selector). Реализовано через native <input>/<textarea> с Tailwind-стилями. 100% Paper & Ink.
+
+**Standalone + OnPush + signal-based.** Typecheck PASS.
+
+**Lock-файл:** OrchestratorKit/.mimocode/locks/TZ-71-basics-page.lock
+**Spec acceptance:** no box-shadow/drop-shadow/hex/bg-white (0 hits).
+
+ARCHIVE_MARKER: TZ-71 done 2026-07-05; WAVE C — page 3/6.

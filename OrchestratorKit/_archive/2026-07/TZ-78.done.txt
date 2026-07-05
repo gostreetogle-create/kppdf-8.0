@@ -1,0 +1,40 @@
+═══════════════════════════════════════════════════════════════
+TZ-78: Live Code Preview (FALLBACK — no highlight.js)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer
+
+ЗАВИСИМОСТИ: TZ-68 (Demo wrapper), TZ-69..74 (page EXAMPLE_HTML consts).
+
+LAYER: 1 (Cross-cutting)
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/code/pi-code-preview.component.ts
+  - frontend/src/app/shared/code/index.ts
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER:
+═══════════════════════════════════════════════════════════════
+
+**Spec deviation:** `pnpm add highlight.js@^11` FAILED с
+`ERR_PNPM_PUBLIC_HOIST_PATTERN_DIFF` (тот же pnpm config blocker,
+что и TZ-66 charts / TZ-80 SSR). Fallback: plain monospace
+`<pre><code>` БЕЗ syntax highlighting.
+
+**PiCodePreviewComponent** (~40 lines):
+- Standalone + OnPush + signal-based.
+- Inputs: `code` (required), `language` (default html), `ariaLabel`, `showLineNumbers` (default true).
+- Computed `formattedCode` — добавляет line numbers через padStart(3) для `<pre>` display.
+- Template: `<pre class="bg-paper-2 border-t hairline border-rule p-4 overflow-auto mono text-[12px] leading-relaxed text-ink">` + `<code class="block whitespace-pre">`.
+- Mono font + paper-2 background + hairline border.
+- aria-label для screen-reader context.
+
+**Future TZ-78b:** re-attempt `pnpm add highlight.js@^11` после `pnpm install` reconcile. Добавить `.hljs-*` theme tokens в styles.css + register only html/typescript/css/bash/json languages.
+
+**Verification:**
+- typecheck: pnpm exec tsc exit 0
+- spec acceptance: no box-shadow/drop-shadow/hex/bg-white (0 hits)
+- Standalone + OnPush + signal inputs
+- Fallback documented in JSDoc
+
+ARCHIVE_MARKER: TZ-78 done 2026-07-05 (fallback); highlight.js DEFERRED.

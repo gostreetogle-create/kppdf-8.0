@@ -1,0 +1,90 @@
+═══════════════════════════════════════════════════════════════
+TZ-42: Checkbox (Paper & Ink)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Component Engineer
+
+ЗАВИСИМОСТИ: TZ-32, TZ-40 (FormField).
+
+LAYER: 2
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/ui/checkbox/checkbox.component.ts
+  - frontend/src/app/shared/ui/checkbox/index.ts
+
+═══════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+════════════════════════════════════════════════════════
+
+1. Текущий kppdf-8.0 frontend использует Angular Material
+   (`mat-flat-button`, `mat-card`, `mat-input` и т.д.) —
+   SaaS-look со shadow, rounded-3xl и gradient fills.
+2. Paper & Ink требует hand-rolled примитив с hairline 1px
+   border + OKLCH tokens из TZ-32 + signal inputs/outputs API
+   (`input()` / `output()`, НЕ `@Input` / `@Output` decorator'ы).
+3. Директория `frontend/src/app/shared/ui/checkbox/` пуста или со-
+   держит deprecated stub из ранних TZ — в этой TZ удалить и
+   заменить на новый standalone OnPush signal-based компонент.
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+1. Standalone, OnPush, signal inputs:
+   - checked: model<boolean>(false),
+   - indeterminate: boolean = false,
+   - disabled?: boolean,
+   - ariaLabel?: string.
+
+2. Outputs:
+   - checkedChange = output<boolean>().
+
+3. Layout (lucide Check / Minus icon):
+   ```html
+   <button
+     type="button"
+     role="checkbox"
+     [attr.aria-checked]="checked()"
+     [attr.aria-label]="ariaLabel()"
+     [attr.aria-disabled]="disabled()"
+     [disabled]="disabled()"
+     [class]="computedClass()"
+     (click)="onClick()"
+   >
+     @if (indeterminate()) {
+       <lucide-icon name="minus" [size]="14"/>
+     } @else if (checked()) {
+       <lucide-icon name="check" [size]="14"/>
+     }
+   </button>
+   ```
+
+4. Variants 16x16 (sm) / 20x20 (md). Border 1px rule. Checked:
+   bg-ink text-paper. Indeterminate: bg-ink text-paper (icon minus).
+   НЕТ shadows. focus-visible:ring-2 ring-ink ring-offset-2 ring-offset-paper.
+
+═══════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+  + frontend/src/app/shared/ui/checkbox/checkbox.component.ts (СОЗДАТЬ)
+  + frontend/src/app/shared/ui/checkbox/index.ts (СОЗДАТЬ — barrel export)
+
+НЕ ИЗМЕНЯТЬ:
+  - frontend/src/styles.css (только token utility classes из TZ-32).
+  - backend/** (никаких изменений backend в этой TZ).
+  - другие ui-primitives (TZ-NN ≠ этот TZ) — не трогать.
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. Файл ≥ 50 строк.
+2. checked / indeterminate / unchecked states визуально отличимы.
+3. Keyboard: Space переключает.
+4. ARIA: aria-checked = 'true'|'false'|'mixed'.
+5. Focus ring ink visible.
+6. `pnpm exec tsc` + `pnpm build` exit 0.
+
+═══════════════════════════════════════════════════════════════
+TZF-00 ФИНАЛИЗАЦИЯ
+Стандартный.

@@ -1,0 +1,59 @@
+═══════════════════════════════════════════════════════════════
+TZ-77: Theme Editor (live CSS-variable mutation через sliders)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend UI Engineer (CSS specialist)
+
+ЗАВИСИМОСТИ: TZ-32 (OKLCH tokens source of truth), TZ-33 (ThemeService), TZ-67 (KitLayout).
+
+LAYER: 1 (Cross-cutting)
+
+CONFLICT KEYS:
+  - frontend/src/app/shared/theme/theme-editor.service.ts
+  - frontend/src/app/shared/theme/pi-theme-editor.component.ts
+  - frontend/src/app/shared/theme/index.ts
+  - frontend/src/app/pages/playground/theme-editor.page.ts
+  - frontend/src/app/app.routes.ts
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER:
+═══════════════════════════════════════════════════════════════
+
+**ThemeEditorService** (~110 lines):
+- Injectable providedIn root.
+- SSR-safe: isPlatformBrowser guard для apply/persist/loadFromStorage.
+- Signal-based state: _ink / _paper / _rule (OklchOverride objects).
+- 3 setter methods: setInk / setPaper / setRule (mutate signal).
+- apply() — non-destructive: TZ-32 base @theme inline intact. Applies via
+  `root.style.setProperty('--color-X-override', oklch(L% C H))`.
+- persist() — localStorage `pi.theme-overrides` (JSON).
+- commit() — apply + persist together.
+- reset() — restore defaults via single commit() (DRY, post code-reviewer fix).
+- loadFromStorage() — constructor reads localStorage if available.
+- Methods: setInk / setPaper / setRule / reset / apply / persist / commit.
+
+**PiThemeEditorComponent** (~120 lines):
+- Standalone + OnPush + 9 sliders (3 groups × 3 dimensions L/C/H).
+- Imports: ButtonComponent, CardComponent, BadgeComponent, DecimalPipe.
+- | number: '1.0-2' pipe для value display (DecimalPipe import — post code-reviewer fix).
+- 3 slider groups: ink (L 0-50), paper (L 80-100), rule (L 50-95).
+- Each input → group.onChange → svc.commit() (apply + persist).
+- Live preview section: card + sample text + badges + button.
+- Reset button → svc.reset().
+
+**ThemeEditorPage** (~50 lines):
+- Full-bleed route /playground/theme.
+- PageHeader + Section I. Sliders + Section II. Reset explanation.
+- Uses PiPageHeaderComponent + PiSectionComponent (TZ-68).
+
+**Route** — app.routes.ts +/playground/theme lazy-loaded.
+
+**Verification:**
+- typecheck: pnpm exec tsc exit 0
+- SSR-safe: isPlatformBrowser guard
+- NON-DESTRUCTIVE: TZ-32 base @theme inline preserved
+- Signal-based: signal<OklchOverride>
+- DecimalPipe import present
+- 2 code-reviewer fixes: DecimalPipe import + reset() DRY
+
+ARCHIVE_MARKER: TZ-77 done 2026-07-05; WAVE D-3 (Theme Editor) complete.

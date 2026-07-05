@@ -1,0 +1,47 @@
+═══════════════════════════════════════════════════════════════
+TZ-82: Browser-use smoke test — DEFERRED (depends on TZ-80)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: QA-валидатор
+
+ЗАВИСИМОСТИ: TZ-69..74 (all 6 pages), TZ-67 (KitLayout), TZ-80 (SSR preview on :4000), TZ-81 (README), TZ-79 (axe-audit spec). Browser (Chrome). @playwright/test OR browser-use agent.
+
+LAYER: 1 (Cross-cutting)
+
+CONFLICT KEYS:
+  - frontend/e2e/smoke/smoke.spec.ts (НОВЫЙ)
+  - frontend/e2e/smoke/screenshot.spec.ts (НОВЫЙ)
+  - OrchestratorKit/ci/smoke.sh (НОВЫЙ)
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER:
+═══════════════════════════════════════════════════════════════
+
+**DEFERRED — depends on TZ-80 (SSR preview) which is itself deferred.**
+
+Без TZ-80 SSR preview на :4000, smoke tests не могут:
+- Запустить `pnpm build && pnpm start` (нет SSR server).
+- GET requests к http://localhost:4000/overview → empty / 404.
+- Lighthouse runs → нечего measure.
+
+**Spec файл перенесён в _archive** с documentation о blocking chain.
+
+**Future TZ-82b requirements (после TZ-80 done):**
+1. Создать `frontend/e2e/smoke/smoke.spec.ts`:
+   - 6 routes × 2 modes (light/dark) = 12 visits.
+   - Verify h1 visible, header visible, aside nav visible.
+   - Capture console errors → expect empty.
+2. Создать `frontend/e2e/smoke/screenshot.spec.ts`:
+   - 6 routes × 2 modes = 12 screenshots в `e2e/screenshots/`.
+   - Lighthouse ≥95 for all 4 categories.
+3. Создать `OrchestratorKit/ci/smoke.sh`:
+   - `pnpm build && pnpm start &` (SSR on :4000).
+   - `sleep 10` (wait for server).
+   - `npx playwright test e2e/smoke/`.
+   - `kill $SERVER_PID` cleanup.
+4. Alternative: use Codebuff's browser-use agent (manual) instead of Playwright.
+
+**No code changes for this TZ.** Spec файл перенесён в _archive
+с ARCHIVE_MARKER documenting зависимость от TZ-80.
+
+ARCHIVE_MARKER: TZ-82 DEFERRED 2026-07-05; depends on TZ-80 SSR preview.

@@ -1,0 +1,1 @@
+TZ-66 LOCK: chart wrapper (bar + line) — paper-and-ink pure-Angular SVG; protected files: frontend/src/app/shared/ui/{pi-chart.component.ts,charts/{pi-bar-chart,pi-line-chart,chart.tokens,scales,index}.ts}; created 2026-07-05 by TZF-00 STEP 5

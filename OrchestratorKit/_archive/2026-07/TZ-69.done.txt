@@ -1,0 +1,31 @@
+═══════════════════════════════════════════════════════════════
+TZ-69: Overview page (/) — hero + 4 sections + Sonner toast test panel
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Page Engineer
+
+ЗАВИСИМОСТИ: TZ-30 (routes), TZ-67 (KitLayout), TZ-68 (PageHeader/Section/Demo).
+
+LAYER: 3 (Pages)
+
+CONFLICT KEYS:
+  - frontend/src/app/pages/overview/overview.page.ts
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER:
+═══════════════════════════════════════════════════════════════
+
+**Overview page (/)** — 240 lines, 4 sections:
+
+- **PageHeader** (eyebrow=01 Обзор, title=Paper & Ink, subtitle=Редакторский UI-кит для Angular 20, description, version=v0.1).
+- **Section I. Быстрый старт** — 3 demo-cards (Установка/Документация/Playground) с <app-pi-demo> + <app-pi-button>.
+- **Section II. Что внутри** — 5 section-cards (link to /foundations, /basics, /forms, /overlays, /navigation) с tag-chips + arrow-nudge на hover.
+- **Section III. Принципы** — 3 Roman-numerated манифеста (I Токены, II Плоская иерархия, III Гарнитура).
+- **Section IV. Sonner Toast test panel** — 4 trigger buttons (default/success/error/warning) с data-toast-trigger attributes для browser-use smoke test (TZ-56 target).
+
+**Standalone + OnPush + signal-based.** Typecheck PASS.
+
+**Lock-файл:** OrchestratorKit/.mimocode/locks/TZ-69-overview-page.lock
+**Spec acceptance:** no box-shadow/drop-shadow/hex/bg-white (0 hits).
+
+ARCHIVE_MARKER: TZ-69 done 2026-07-05; WAVE C (6 lazy pages) batch — page 1/6.
