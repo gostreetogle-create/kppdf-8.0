@@ -9,7 +9,8 @@
     "build": "ng build",
     "build:dev": "ng build --configuration development",
     "watch": "ng build --watch --configuration development",
-    "typecheck": "tsc -p tsconfig.app.json --noEmit"
+    "typecheck": "tsc -p tsconfig.app.json --noEmit",
+    "audit:a11y": "tsx scripts/audit-a11y.ts"
   },
   "dependencies": {
     "@angular/animations": "^20.3.0",
@@ -35,7 +36,10 @@
     "@fontsource/plus-jakarta-sans": "^5.1.0",
     "@fontsource/syne": "^5.1.0",
     "@tailwindcss/postcss": "^4.0.0",
+    "axe-core": "^4.10",
     "postcss": "^8.4.49",
+    "puppeteer": "^23",
+    "tsx": "^4",
     "typescript": "~5.9.2"
   }
 }

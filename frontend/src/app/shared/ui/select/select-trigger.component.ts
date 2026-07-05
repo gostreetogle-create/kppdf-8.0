@@ -6,13 +6,22 @@ import { SelectSize } from './select.component';
  * Pure visual; reads selection through `<ng-content selected-label>` projection
  * from parent Select. Pressing the trigger is handled by SelectComponent's
  * native `listbox` div.
+ *
+ * A11y: `aria-haspopup="listbox"` declares the popup pattern. `aria-label`
+ * is propagated from the parent SelectComponent so the trigger has an
+ * accessible name when no visible text is rendered yet (no option selected).
  */
 @Component({
   selector: 'app-pi-select-trigger',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <button type="button" [class]="computedClass()" aria-haspopup="listbox">
+    <button
+      type="button"
+      [class]="computedClass()"
+      aria-haspopup="listbox"
+      [attr.aria-label]="ariaLabel()"
+    >
       <span class="truncate flex-1 text-left text-ink">
         <ng-content />
       </span>
@@ -22,6 +31,9 @@ import { SelectSize } from './select.component';
 })
 export class SelectTriggerComponent {
   readonly size = input<SelectSize>('md');
+  /** Accessible name for the trigger button (axe button-name). Falls through
+   *  from parent <app-pi-select ariaLabel="...">. */
+  readonly ariaLabel = input<string | null>(null);
 
   readonly computedClass = computed(() => {
     const isMd = this.size() === 'md';

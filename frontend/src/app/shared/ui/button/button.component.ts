@@ -57,6 +57,7 @@ const BASE_CLASS =
     @if (href()) {
       <a
         [attr.href]="href()"
+        [attr.aria-label]="ariaLabel()"
         [attr.aria-disabled]="disabled() ? 'true' : null"
         [class]="computedClass()"
         (click)="onClick($event)"
@@ -68,6 +69,7 @@ const BASE_CLASS =
       <button
         [type]="type()"
         [disabled]="disabled()"
+        [attr.aria-label]="ariaLabel()"
         [attr.aria-disabled]="disabled() ? 'true' : null"
         [class]="computedClass()"
         (click)="onClick($event)"
@@ -84,6 +86,9 @@ export class ButtonComponent {
   readonly disabled = input<boolean>(false);
   readonly type = input<'button' | 'submit' | 'reset'>('button');
   readonly href = input<string | null>(null);
+  /** Accessible name for icon-only buttons. Set when content is purely icon
+   *  (e.g. <app-pi-button size="icon" ariaLabel="Settings">). */
+  readonly ariaLabel = input<string | null>(null);
 
   readonly pressed = output<MouseEvent>();
 
