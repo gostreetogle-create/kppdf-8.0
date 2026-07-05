@@ -30,7 +30,7 @@ import { ToastService } from '../../core/services/toast.service';
               name="username"
               type="text"
               class="input"
-              placeholder="admin"
+              placeholder="Из .env: ADMIN_USERNAME"
               [(ngModel)]="username"
               required
               autocomplete="username"
@@ -43,9 +43,10 @@ import { ToastService } from '../../core/services/toast.service';
               name="password"
               type="password"
               class="input"
-              placeholder="••••••••"
+              placeholder="Из .env: ADMIN_PASSWORD"
               [(ngModel)]="password"
               required
+              autocomplete="current-password"
             />
           </div>
 
@@ -59,7 +60,10 @@ import { ToastService } from '../../core/services/toast.service';
       </form>
 
       <p class="text-xs text-center text-muted-foreground">
-        Дефолт: <code class="bg-muted px-1 py-0.5 rounded">admin</code> / admin
+        Креды берутся из <code class="bg-muted px-1 py-0.5 rounded">.env</code> →
+        <code class="bg-muted px-1 py-0.5 rounded">ADMIN_USERNAME</code> /
+        <code class="bg-muted px-1 py-0.5 rounded">ADMIN_PASSWORD</code>.
+        На production смените пароль сразу после первого входа.
       </p>
       </div>
     </div>
@@ -70,8 +74,8 @@ export class LoginPage {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
 
-  username = 'admin';
-  password = 'admin';
+  username = '';
+  password = '';
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
 
