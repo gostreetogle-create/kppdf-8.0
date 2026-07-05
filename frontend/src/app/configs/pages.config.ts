@@ -26,6 +26,37 @@ export interface PageConfig {
   description?: string;
   /** Form fields for create/edit dialog. If omitted, page is read-only. */
   fields?: PageFieldSpec[];
+  /**
+   * Skip on Dashboard `fetchCounts` and TaskPanel. Use for entities that:
+   *   - have no list-all endpoint (sub-resources, e.g. `/products/:id/components`)
+   *   - have no backend at all (e.g. showcase)
+   *   - the controller's GET list is not implemented (e.g. counter test endpoint only)
+   *
+   * The flag is also enforced defensively by `isListable()` — a path with `:`
+   * (a parent-id placeholder) is automatically treated as non-listable even
+   * without this flag.
+   */
+  skipCount?: boolean;
+}
+
+/**
+ * A page is "listable" if the backend exposes a flat `GET <path>` for it.
+ *
+ * Two ways a page becomes non-listable:
+ *  1. Explicit `skipCount: true` in the config (no backend, or sub-resource
+ *     we already know about — e.g. `entity-attribute-values` requires
+ *     `:entityType/:entityId/attributes`).
+ *  2. Endpoint contains a parent-id placeholder (`:`) — after stripping, the
+ *     resolved URL is not a real list endpoint (defensive guard).
+ *
+ * Used by Dashboard (`fetchCounts`) and TaskPanel (`fetchCounts`) to avoid
+ * issuing `?limit=0` requests against non-existent paths (which produce
+ * noisy 404s in the console).
+ */
+export function isListable(p: PageConfig): boolean {
+  if (p.skipCount) return false;
+  if (p.endpoint.includes(':')) return false;
+  return true;
 }
 
 export const CATEGORIES: { id: PageConfig['category']; title: string; icon: string }[] = [
@@ -145,11 +176,11 @@ export const PAGES: PageConfig[] = [
   },
   { id: 'user', title: 'Пользователи', endpoint: '/users', icon: '👥', category: 1, priority: 1, roles: ['admin'] },
   { id: 'role', title: 'Роли', endpoint: '/roles', icon: '🔑', category: 1, priority: 1, roles: ['admin'] },
-  { id: 'permissions', title: 'Права', endpoint: '/permissions', icon: '🛡', category: 1, priority: 1, roles: ['admin'] },
-  { id: 'role-org', title: 'Роли в организациях', endpoint: '/role-orgs', icon: '🪪', category: 1, priority: 1, roles: ['admin'] },
-  { id: 'role-counterparty', title: 'Роли в контрагентах', endpoint: '/role-counterparties', icon: '🪪', category: 1, priority: 1, roles: ['admin'] },
+  { id: 'permissions', title: 'Права', endpoint: '/permissions', icon: '🛡', category: 1, priority: 1, roles: ['admin'], skipCount: true },
+  { id: 'role-org', title: 'Роли в организациях', endpoint: '/org-roles', icon: '🪪', category: 1, priority: 1, roles: ['admin'] },
+  { id: 'role-counterparty', title: 'Роли в контрагентах', endpoint: '/counterparty-roles', icon: '🪪', category: 1, priority: 1, roles: ['admin'] },
   { id: 'category', title: 'Категории', endpoint: '/categories', icon: '🗂', category: 1, priority: 1 },
-  { id: 'status', title: 'Статусы', endpoint: '/statuses', icon: '🚦', category: 1, priority: 1 },
+  { id: 'status', title: 'Статусы', endpoint: '/statuses', icon: '🚦', category: 1, priority: 1, skipCount: true },
   { id: 'setting', title: 'Настройки', endpoint: '/settings', icon: '⚙', category: 1, priority: 1, roles: ['admin'] },
   { id: 'feature-flag', title: 'Feature Flags', endpoint: '/feature-flags', icon: '🚩', category: 1, priority: 1, roles: ['admin'] },
 
@@ -195,13 +226,13 @@ export const PAGES: PageConfig[] = [
       { key: 'description', label: 'Описание', type: 'textarea' },
     ],
   },
-  { id: 'product-component', title: 'Компоненты продуктов', endpoint: '/product-components', icon: '🧩', category: 2, priority: 2 },
+  { id: 'product-component', title: 'Компоненты продуктов', endpoint: '/product-components', icon: '🧩', category: 2, priority: 2, skipCount: true },
   { id: 'product-module', title: 'Модули продуктов', endpoint: '/product-modules', icon: '🧬', category: 2, priority: 2 },
   { id: 'photo', title: 'Фотографии', endpoint: '/photos', icon: '🖼', category: 2, priority: 2 },
-  { id: 'bom', title: 'Спецификации (BOM)', endpoint: '/products/:id/boms', icon: '📋', category: 2, priority: 8 },
+  { id: 'bom', title: 'Спецификации (BOM)', endpoint: '/products/:id/boms', icon: '📋', category: 2, priority: 8, skipCount: true },
   { id: 'attribute-definition', title: 'Атрибуты (определения)', endpoint: '/attribute-definitions', icon: '🏷', category: 2, priority: 8 },
-  { id: 'entity-attribute-value', title: 'Значения атрибутов', endpoint: '/entity-attribute-values', icon: '💎', category: 2, priority: 8 },
-  { id: 'product-passport', title: 'Паспорта продуктов', endpoint: '/product-passports', icon: '📘', category: 2, priority: 8 },
+  { id: 'entity-attribute-value', title: 'Значения атрибутов', endpoint: '/entity-attribute-values', icon: '💎', category: 2, priority: 8, skipCount: true },
+  { id: 'product-passport', title: 'Паспорта продуктов', endpoint: '/passports', icon: '📘', category: 2, priority: 8 },
   { id: 'inventor-file', title: 'Файлы изобретателей', endpoint: '/inventor-files', icon: '📁', category: 2, priority: 8 },
   { id: 'certificate', title: 'Сертификаты', endpoint: '/certificates', icon: '📜', category: 2, priority: 8 },
   { id: 'compliance-rule', title: 'Правила соответствия', endpoint: '/compliance-rules', icon: '⚖', category: 2, priority: 8 },
@@ -217,7 +248,7 @@ export const PAGES: PageConfig[] = [
   { id: 'work-order', title: 'Рабочие задания', endpoint: '/work-orders', icon: '📋', category: 3, priority: 7 },
   { id: 'work-order-operation', title: 'Операции рабочих заданий', endpoint: '/work-order-operations', icon: '🔧', category: 3, priority: 7 },
   { id: 'cost-calculation', title: 'Калькуляции себестоимости', endpoint: '/cost-calculations', icon: '💰', category: 3, priority: 8 },
-  { id: 'actual-cost', title: 'Фактические затраты', endpoint: '/actual-costs', icon: '💸', category: 3, priority: 8 },
+  { id: 'actual-cost', title: 'Фактические затраты', endpoint: '/actual-costs', icon: '💸', category: 3, priority: 8, skipCount: true },
   { id: 'order-closing', title: 'Закрытие заказов', endpoint: '/order-closings', icon: '🔒', category: 3, priority: 7 },
 
   // === Category 4: Склад (priority 3) ===
@@ -233,14 +264,14 @@ export const PAGES: PageConfig[] = [
   { id: 'invoice', title: 'Счета', endpoint: '/invoices', icon: '🧾', category: 5, priority: 5 },
   { id: 'tender', title: 'Тендеры', endpoint: '/tenders', icon: '📢', category: 5, priority: 5 },
   { id: 'rpp', title: 'РПП (реестр)', endpoint: '/rpps', icon: '📋', category: 5, priority: 5 },
-  { id: 'counter', title: 'Счётчики номеров', endpoint: '/counters', icon: '🔢', category: 5, priority: 9, roles: ['admin'] },
+  { id: 'counter', title: 'Счётчики номеров', endpoint: '/counters', icon: '🔢', category: 5, priority: 9, roles: ['admin'], skipCount: true },
 
   // === Category 6: Продажи (priority 6) ===
   { id: 'quotation', title: 'Коммерческие предложения', endpoint: '/quotations', icon: '💼', category: 6, priority: 6 },
   { id: 'contract', title: 'Договоры', endpoint: '/contracts', icon: '📃', category: 6, priority: 6 },
   { id: 'order', title: 'Заказы клиентов', endpoint: '/orders', icon: '🛍', category: 6, priority: 6 },
   { id: 'shipment', title: 'Отгрузки', endpoint: '/shipments', icon: '🚚', category: 6, priority: 10 },
-  { id: 'cart-session', title: 'Корзины (сессии)', endpoint: '/cart-sessions', icon: '🛒', category: 6, priority: 10 },
+  { id: 'cart-session', title: 'Корзины (сессии)', endpoint: '/cart-sessions', icon: '🛒', category: 6, priority: 10, skipCount: true },
   { id: 'cart-item', title: 'Позиции корзины', endpoint: '/cart-items', icon: '🛍', category: 6, priority: 10 },
 
   // === Category 7: Документы + Финансы (priority 9-10) ===
@@ -258,11 +289,11 @@ export const PAGES: PageConfig[] = [
   { id: 'import-jobs', title: 'Импорт (задачи)', endpoint: '/import-jobs', icon: '📥', category: 8, priority: 11, roles: ['admin'] },
   { id: 'rate-limit', title: 'Rate Limit', endpoint: '/rate-limits', icon: '⏱', category: 8, priority: 11, roles: ['admin'] },
   { id: 'interaction', title: 'Взаимодействия', endpoint: '/interactions', icon: '🤝', category: 8, priority: 11 },
-  { id: 'feature-flag-list', title: 'Флаги функций', endpoint: '/feature-flags', icon: '🚩', category: 8, priority: 11, roles: ['admin'] },
+  { id: 'feature-flag-list', title: 'Флаги функций', endpoint: '/feature-flags', icon: '🚩', category: 8, priority: 11, roles: ['admin'], skipCount: true },
 
   // === Special: UI Kit Showcase (TZ-35) — uses custom page, not CrudPage ===
   // Note: page-renderer falls back to CrudPage for entries with endpoint, but showcase
   // is a custom page handled via a special id in main-layout / app.routes.
   // The endpoint below is a placeholder — actual content comes from ShowcasePage.
-  { id: 'showcase', title: 'UI Kit Showcase', endpoint: '/showcase', icon: '🎨', category: 8, priority: 12, description: 'Living showcase of all UI primitives (TZ-35)' },
+  { id: 'showcase', title: 'UI Kit Showcase', endpoint: '/showcase', icon: '🎨', category: 8, priority: 12, skipCount: true, description: 'Living showcase of all UI primitives (TZ-35)' },
 ];

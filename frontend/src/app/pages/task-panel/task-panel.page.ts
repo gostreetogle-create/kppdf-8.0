@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } 
 import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { API_BASE_URL } from '../../core/tokens';
-import { PAGES, PageConfig } from '../../configs/pages.config';
+import { PAGES, PageConfig, isListable } from '../../configs/pages.config';
 import { GatesService } from '../../core/services/gates.service';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
 
@@ -109,7 +109,13 @@ export class TaskPanelPage implements OnInit {
   }
 
   private fetchCounts(): void {
-    const promises = this.gates.filterEnabled(PAGES).map((p) =>
+    // Skip pages without a list-all endpoint (sub-resources, backend-less
+    // stubs, or paths with parent-id placeholders). Otherwise we'd issue
+    // `?limit=0` against non-existent paths and pollute the console with
+    // 404 noise. See `isListable()` in pages.config.ts for the exact rule.
+    const listable = this.gates.filterEnabled(PAGES).filter(isListable);
+
+    const promises = listable.map((p) =>
       this.http
         .get<unknown[]>(`${this.baseUrl}${this.resolveEndpoint(p.endpoint)}`, {
           params: { limit: '0' },

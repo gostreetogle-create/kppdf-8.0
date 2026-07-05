@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, OnInit, s
 import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { API_BASE_URL } from '../../core/tokens';
-import { CATEGORIES, PAGES, PageConfig } from '../../configs/pages.config';
+import { CATEGORIES, PAGES, PageConfig, isListable } from '../../configs/pages.config';
 import { GatesService } from '../../core/services/gates.service';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
 
@@ -80,7 +80,12 @@ export class DashboardPage {
     this.gates.filterEnabled(PAGES),
   );
 
-  readonly counts = signal<Record<string, number>>({});
+  /**
+   * Per-page record count. `null` = list-all endpoint is unavailable
+   * (skipCount or sub-resource), `number` = the actual count fetched
+   * from the backend (0 = empty, >0 = populated).
+   */
+  readonly counts = signal<Record<string, number | null>>({});
 
   constructor() {
     // Re-fetch counts whenever gate visibility changes.
@@ -90,7 +95,10 @@ export class DashboardPage {
   }
 
   private fetchCounts(visible: PageConfig[]): void {
-    const promises = visible.map((p) =>
+    const listable = visible.filter(isListable);
+    const skipped = new Set(visible.filter((p) => !isListable(p)).map((p) => p.id));
+
+    const promises = listable.map((p) =>
       this.http
         .get<unknown[]>(`${this.baseUrl}${this.resolveEndpoint(p.endpoint)}`, {
           params: { limit: '0' },
@@ -103,23 +111,32 @@ export class DashboardPage {
         .catch(() => [p.id, 0] as const),
     );
     Promise.all(promises).then((entries) => {
-      this.counts.set(Object.fromEntries(entries));
+      // Mark skipped pages as `null` so the UI can distinguish "unknown" from "0".
+      const result: Record<string, number | null> = Object.fromEntries(entries);
+      skipped.forEach((id) => { result[id] = null; });
+      this.counts.set(result);
     });
   }
 
+  /**
+   * Resolves a possibly-templated endpoint to the parent list URL.
+   * `'/products/:id/boms'` → `'/products/:id'`. Used so dashboard can fetch
+   * a list endpoint when the path contains a parent-id placeholder.
+   */
   private resolveEndpoint(endpoint: string): string {
     if (endpoint.includes(':')) return endpoint.split('/:')[0];
     return endpoint;
   }
 
   emptyCount(): number {
-    return Object.values(this.counts()).filter((c) => c === 0).length;
+    // Only count listable pages — skip nulls (unknown/skipped).
+    return Object.entries(this.counts()).filter(([, c]) => c === 0).length;
   }
   lowCount(): number {
-    return Object.values(this.counts()).filter((c) => c > 0 && c < 5).length;
+    return Object.values(this.counts()).filter((c): c is number => typeof c === 'number' && c > 0 && c < 5).length;
   }
   okCount(): number {
-    return Object.values(this.counts()).filter((c) => c >= 5).length;
+    return Object.values(this.counts()).filter((c): c is number => typeof c === 'number' && c >= 5).length;
   }
   getPagesFor(catId: number): PageConfig[] {
     return this.visiblePages().filter((p) => p.category === catId);
@@ -129,6 +146,6 @@ export class DashboardPage {
   }
   getEmptyFor(catId: number): number {
     const c = this.counts();
-    return this.getPagesFor(catId).filter((p) => (c[p.id] ?? 0) === 0).length;
+    return this.getPagesFor(catId).filter((p) => c[p.id] === 0).length;
   }
 }
