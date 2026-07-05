@@ -58,4 +58,6 @@ coverage/
 
 # Local helper binaries
 mimo.exe
- .start.pids.json
+
+# Runtime PID tracker from start.mjs (kept on disk; not tracked in git)
+.start.pids.json
