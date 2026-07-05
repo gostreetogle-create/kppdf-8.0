@@ -4,6 +4,10 @@ import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.componen
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
+import { SelectComponent } from '../../shared/ui/select/select.component';
+import { SelectOptionComponent } from '../../shared/ui/select/select-option.component';
+import { CheckboxComponent } from '../../shared/ui/checkbox/checkbox.component';
+import { SliderComponent } from '../../shared/ui/slider/slider.component';
 import { PiToastService } from '../../shared/ui/toast';
 
 interface InventoryRow {
@@ -32,6 +36,10 @@ type SortDir = 'asc' | 'desc';
     PiSectionComponent,
     ButtonComponent,
     FormFieldComponent,
+    SelectComponent,
+    SelectOptionComponent,
+    CheckboxComponent,
+    SliderComponent,
   ],
   template: `
     <app-pi-page-header
@@ -71,34 +79,21 @@ type SortDir = 'asc' | 'desc';
         </app-pi-form-field>
 
         <app-pi-form-field label="Роль" [required]="true">
-          <select
-            formControlName="role"
-            class="w-full border hairline border-rule rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none focus:border-ink transition-colors"
-          >
-            <option value="admin">Admin</option>
-            <option value="manager">Manager</option>
-            <option value="user">User</option>
-          </select>
+          <app-pi-select formControlName="role" placeholder="Выберите роль">
+            <app-pi-select-option value="admin">Admin</app-pi-select-option>
+            <app-pi-select-option value="manager">Manager</app-pi-select-option>
+            <app-pi-select-option value="user">User</app-pi-select-option>
+          </app-pi-select>
         </app-pi-form-field>
 
         <app-pi-form-field label="Приоритет" hint="0–100">
-          <input
-            type="range"
-            formControlName="priority"
-            min="0"
-            max="100"
-            class="w-full accent-ink"
-          />
+          <app-pi-slider formControlName="priority" [min]="0" [max]="100" [showValue]="true" />
         </app-pi-form-field>
 
-        <label class="flex items-center gap-2 text-sm cursor-pointer">
-          <input
-            type="checkbox"
-            formControlName="subscribe"
-            class="border hairline border-rule accent-ink"
-          />
-          Подписаться на обновления
-        </label>
+        <div class="flex items-center gap-2">
+          <app-pi-checkbox formControlName="subscribe" ariaLabel="Подписаться на обновления" />
+          <span class="text-sm">Подписаться на обновления</span>
+        </div>
 
         <div class="flex gap-2 pt-2">
           <app-pi-button type="submit" variant="default" [disabled]="form.invalid">

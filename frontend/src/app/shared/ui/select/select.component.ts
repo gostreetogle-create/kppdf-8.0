@@ -4,6 +4,7 @@ import {
   Component,
   ElementRef,
   computed,
+  forwardRef,
   inject,
   input,
   model,
@@ -11,6 +12,7 @@ import {
   signal,
   viewChildren,
 } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { SelectOptionComponent } from './select-option.component';
 import { SelectTriggerComponent } from './select-trigger.component';
 
@@ -28,6 +30,13 @@ export type SelectSize = 'sm' | 'md';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [SelectTriggerComponent],
+  providers: [
+    {
+      provide: NG_VALUE_ACCESSOR,
+      multi: true,
+      useExisting: forwardRef(() => SelectComponent),
+    },
+  ],
   template: `
     <div
       [attr.aria-label]="ariaLabel()"
@@ -49,7 +58,7 @@ export type SelectSize = 'sm' | 'md';
     </div>
   `,
 })
-export class SelectComponent implements AfterViewInit {
+export class SelectComponent implements AfterViewInit, ControlValueAccessor {
   readonly value = model<string | null>(null);
   readonly placeholder = input<string>('Выберите значение');
   readonly disabled = input<boolean>(false);
@@ -61,6 +70,27 @@ export class SelectComponent implements AfterViewInit {
   private readonly hostEl = inject(ElementRef<HTMLElement>);
   readonly options = viewChildren(SelectOptionComponent);
   private readonly focusedIndex = signal<number>(-1);
+
+  // ─── ControlValueAccessor ───
+  private onChange: (value: string | null) => void = () => {};
+  private onTouched: () => void = () => {};
+  protected readonly isDisabledFromForm = signal<boolean>(false);
+
+  writeValue(value: string | null): void {
+    this.value.set(value);
+  }
+
+  registerOnChange(fn: (value: string | null) => void): void {
+    this.onChange = fn;
+  }
+
+  registerOnTouched(fn: () => void): void {
+    this.onTouched = fn;
+  }
+
+  setDisabledState(isDisabled: boolean): void {
+    this.isDisabledFromForm.set(isDisabled);
+  }
 
   ngAfterViewInit(): void {
     queueMicrotask(() => this.focusInitial());
@@ -75,8 +105,10 @@ export class SelectComponent implements AfterViewInit {
   }
 
   selectOption(value: string): void {
-    if (this.disabled()) return;
+    if (this.disabled() || this.isDisabledFromForm()) return;
     this.value.set(value);
+    this.onChange(value);
+    this.onTouched();
     this.valueChange.emit(value);
   }
 

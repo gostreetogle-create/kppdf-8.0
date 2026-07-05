@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, forwardRef, input, model, output, signal } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 /**
  * Slider — single-thumb range primitive for Paper & Ink.
@@ -9,6 +10,13 @@ import { ChangeDetectionStrategy, Component, computed, input, model, output } fr
   selector: 'app-pi-slider',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [
+    {
+      provide: NG_VALUE_ACCESSOR,
+      multi: true,
+      useExisting: forwardRef(() => SliderComponent),
+    },
+  ],
   template: `
     <div class="block w-full">
       <input
@@ -64,7 +72,7 @@ import { ChangeDetectionStrategy, Component, computed, input, model, output } fr
     input[type='range']:disabled { opacity: 0.5; cursor: not-allowed; }
   `],
 })
-export class SliderComponent {
+export class SliderComponent implements ControlValueAccessor {
   readonly value = model<number>(0);
   readonly min = input<number>(0);
   readonly max = input<number>(100);
@@ -77,11 +85,34 @@ export class SliderComponent {
 
   readonly computedClass = computed(() => 'block w-full h-1');
 
+  // ─── ControlValueAccessor ───
+  private onChange: (value: number) => void = () => {};
+  private onTouched: () => void = () => {};
+  protected readonly isDisabledFromForm = signal<boolean>(false);
+
+  writeValue(value: number | null): void {
+    this.value.set(value ?? this.min());
+  }
+
+  registerOnChange(fn: (value: number) => void): void {
+    this.onChange = fn;
+  }
+
+  registerOnTouched(fn: () => void): void {
+    this.onTouched = fn;
+  }
+
+  setDisabledState(isDisabled: boolean): void {
+    this.isDisabledFromForm.set(isDisabled);
+  }
+
   onInput(event: Event): void {
     const target = event.target as HTMLInputElement;
     const num = Number(target.value);
     if (!Number.isNaN(num)) {
       this.value.set(num);
+      this.onChange(num);
+      this.onTouched();
       this.valueChange.emit(num);
     }
   }

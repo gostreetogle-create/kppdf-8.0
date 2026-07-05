@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, forwardRef, input, model, output, signal } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 
 export type CheckboxSize = 'sm' | 'md';
@@ -21,6 +22,13 @@ export type CheckboxSize = 'sm' | 'md';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideAngularModule],
+  providers: [
+    {
+      provide: NG_VALUE_ACCESSOR,
+      multi: true,
+      useExisting: forwardRef(() => CheckboxComponent),
+    },
+  ],
   template: `
     <button
       type="button"
@@ -40,7 +48,7 @@ export type CheckboxSize = 'sm' | 'md';
     </button>
   `,
 })
-export class CheckboxComponent {
+export class CheckboxComponent implements ControlValueAccessor {
   readonly checked = model<boolean>(false);
   readonly indeterminate = input<boolean>(false);
   readonly disabled = input<boolean>(false);
@@ -54,6 +62,27 @@ export class CheckboxComponent {
   readonly ariaCheckedValue = computed<string>(() =>
     this.indeterminate() ? 'mixed' : this.checked() ? 'true' : 'false',
   );
+
+  // ─── ControlValueAccessor ───
+  private onChange: (value: boolean) => void = () => {};
+  private onTouched: () => void = () => {};
+  protected readonly isDisabledFromForm = signal<boolean>(false);
+
+  writeValue(value: boolean | null): void {
+    this.checked.set(!!value);
+  }
+
+  registerOnChange(fn: (value: boolean) => void): void {
+    this.onChange = fn;
+  }
+
+  registerOnTouched(fn: () => void): void {
+    this.onTouched = fn;
+  }
+
+  setDisabledState(isDisabled: boolean): void {
+    this.isDisabledFromForm.set(isDisabled);
+  }
 
   readonly computedClass = computed(() => {
     const isMd = this.size() === 'md';
@@ -74,9 +103,11 @@ export class CheckboxComponent {
   });
 
   onToggle(): void {
-    if (this.disabled()) return;
+    if (this.disabled() || this.isDisabledFromForm()) return;
     const next = this.indeterminate() ? false : !this.checked();
     this.checked.set(next);
+    this.onChange(next);
+    this.onTouched();
     this.checkedChange.emit(next);
   }
 }
