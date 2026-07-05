@@ -16,11 +16,15 @@ export const routes: Routes = [
         path: 'dashboard',
         loadComponent: () =>
           import('./pages/dashboard/dashboard.page').then((m) => m.DashboardPage),
-      },
-      {
-        path: 'task-panel',
+      },      { path: 'task-panel',
         loadComponent: () =>
           import('./pages/task-panel/task-panel.page').then((m) => m.TaskPanelPage),
+      },
+      {
+        // ⚠️ Must be registered BEFORE 'p/:id' so the static path wins the route match.
+        path: 'p/products',
+        loadComponent: () =>
+          import('./pages/products-overview/products-overview.page').then((m) => m.ProductsOverviewPage),
       },
       {
         path: 'p/:id',

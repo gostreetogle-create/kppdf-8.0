@@ -37,6 +37,13 @@ export interface PageConfig {
    * without this flag.
    */
   skipCount?: boolean;
+  /**
+   * Hide from Sidebar, TaskPanel, and Dashboard entirely. Use for entities
+   * that exist in the backend but are noise for the current UX surface
+   * (overlap with another entity, deprecated, or replaced by a dashboard).
+   * The backend data is NOT deleted — this is a UI-only flag.
+   */
+  hidden?: boolean;
 }
 
 /**
@@ -59,9 +66,17 @@ export function isListable(p: PageConfig): boolean {
   return true;
 }
 
-export const CATEGORIES: { id: PageConfig['category']; title: string; icon: string }[] = [
+export interface CategoryConfig {
+  id: PageConfig['category'];
+  title: string;
+  icon: string;
+  /** Optional path to a category-overview page, e.g. '/p/products'. Showcased as a top tile in the sidebar. */
+  dashboardPath?: string;
+}
+
+export const CATEGORIES: CategoryConfig[] = [
   { id: 1, title: 'Основные', icon: '🗂' },
-  { id: 2, title: 'Продукция', icon: '📦' },
+  { id: 2, title: 'Продукция', icon: '📦', dashboardPath: '/p/products' },
   { id: 3, title: 'Производство', icon: '⚙️' },
   { id: 4, title: 'Склад', icon: '🏭' },
   { id: 5, title: 'Закупки', icon: '🛒' },
@@ -226,16 +241,16 @@ export const PAGES: PageConfig[] = [
       { key: 'description', label: 'Описание', type: 'textarea' },
     ],
   },
-  { id: 'product-component', title: 'Компоненты продуктов', endpoint: '/product-components', icon: '🧩', category: 2, priority: 2, skipCount: true },
+  { id: 'product-component', title: 'Компоненты продуктов', endpoint: '/product-components', icon: '🧩', category: 2, priority: 2, skipCount: true, hidden: true },
   { id: 'product-module', title: 'Модули продуктов', endpoint: '/product-modules', icon: '🧬', category: 2, priority: 2 },
   { id: 'photo', title: 'Фотографии', endpoint: '/photos', icon: '🖼', category: 2, priority: 2 },
   { id: 'bom', title: 'Спецификации (BOM)', endpoint: '/products/:id/boms', icon: '📋', category: 2, priority: 8, skipCount: true },
-  { id: 'attribute-definition', title: 'Атрибуты (определения)', endpoint: '/attribute-definitions', icon: '🏷', category: 2, priority: 8 },
-  { id: 'entity-attribute-value', title: 'Значения атрибутов', endpoint: '/entity-attribute-values', icon: '💎', category: 2, priority: 8, skipCount: true },
+  { id: 'attribute-definition', title: 'Атрибуты (определения)', endpoint: '/attribute-definitions', icon: '🏷', category: 2, priority: 8, hidden: true },
+  { id: 'entity-attribute-value', title: 'Значения атрибутов', endpoint: '/entity-attribute-values', icon: '💎', category: 2, priority: 8, skipCount: true, hidden: true },
   { id: 'product-passport', title: 'Паспорта продуктов', endpoint: '/passports', icon: '📘', category: 2, priority: 8 },
   { id: 'inventor-file', title: 'Файлы изобретателей', endpoint: '/inventor-files', icon: '📁', category: 2, priority: 8 },
   { id: 'certificate', title: 'Сертификаты', endpoint: '/certificates', icon: '📜', category: 2, priority: 8 },
-  { id: 'compliance-rule', title: 'Правила соответствия', endpoint: '/compliance-rules', icon: '⚖', category: 2, priority: 8 },
+  { id: 'compliance-rule', title: 'Правила соответствия', endpoint: '/compliance-rules', icon: '⚖', category: 2, priority: 8, hidden: true },
 
   // === Category 3: Производство (priority 4) ===
   { id: 'work-center', title: 'Рабочие центры', endpoint: '/work-centers', icon: '🏗', category: 3, priority: 4 },

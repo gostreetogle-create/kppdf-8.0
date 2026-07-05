@@ -69,6 +69,16 @@ import { AuthService } from '../../core/services/auth.service';
             </button>
             @if (isOpen(cat.id)) {
               <div class="ml-2 space-y-0.5">
+                @if (cat.dashboardPath) {
+                  <a
+                    [routerLink]="cat.dashboardPath"
+                    routerLinkActive="bg-accent text-accent-foreground font-medium"
+                    class="flex items-center gap-2 px-2 py-1.5 text-xs rounded-md hover:bg-accent hover:text-accent-foreground border-b border-dashed mb-1"
+                  >
+                    <span class="text-sm">📊</span>
+                    <span class="flex-1 truncate font-medium">Обзор категории</span>
+                  </a>
+                }
                 @for (page of getPagesFor(cat.id); track page.id) {
                   <a
                     [routerLink]="'/p/' + page.id"
@@ -118,6 +128,7 @@ export class SidebarComponent {
     // Read gates.effectiveMap() so the computed re-runs when overrides change.
     const visible = this.gates.filterEnabled(PAGES);
     for (const page of visible) {
+      if (page.hidden) continue; // UI-only flag — hide from Sidebar/TaskPanel/Dashboard.
       if (this.auth.hasRole(page.roles)) {
         grouped[page.category]?.push(page);
       }
