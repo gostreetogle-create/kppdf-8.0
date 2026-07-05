@@ -3,7 +3,7 @@ import { HydratedDocument } from 'mongoose';
 
 export type CounterDocument = HydratedDocument<Counter>;
 
-@Schema({ collection: 'counters', timestamps: true })
+@Schema({ collection: 'counters', timestamps: true, softDelete: false })
 export class Counter {
   @Prop({ required: true, index: true })
   entity!: string;

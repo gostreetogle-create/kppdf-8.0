@@ -3,7 +3,7 @@ import { HydratedDocument, Schema as MongooseSchema } from 'mongoose';
 
 export type SettingDocument = HydratedDocument<Setting>;
 
-@Schema({ collection: 'settings', timestamps: true })
+@Schema({ collection: 'settings', timestamps: true, softDelete: false })
 export class Setting {
   @Prop({ required: true, unique: true, index: true })
   key!: string;

@@ -3,7 +3,7 @@ import { HydratedDocument } from 'mongoose';
 
 export type RateLimitEntryDocument = HydratedDocument<RateLimitEntry>;
 
-@Schema({ collection: 'rate_limit_entries', timestamps: true })
+@Schema({ collection: 'rate_limit_entries', timestamps: true, softDelete: false })
 export class RateLimitEntry {
   @Prop({ required: true, unique: true, index: true })
   key!: string;

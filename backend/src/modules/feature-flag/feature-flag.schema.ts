@@ -3,7 +3,7 @@ import { HydratedDocument } from 'mongoose';
 
 export type FeatureFlagDocument = HydratedDocument<FeatureFlag>;
 
-@Schema({ collection: 'featureflags', timestamps: true })
+@Schema({ collection: 'featureflags', timestamps: true, softDelete: false })
 export class FeatureFlag {
   @Prop({ required: true, unique: true, index: true })
   key!: string;
@@ -27,7 +27,7 @@ export class FeatureFlag {
 export const FeatureFlagSchema = SchemaFactory.createForClass(FeatureFlag);
 
 FeatureFlagSchema.virtual('enabled').get(function (this: FeatureFlagDocument) {
-  return this.isActive ? this.enabledByDefault : this.enabledByDefault;
+  return this.isActive ? this.enabledByDefault : false;
 });
 
 FeatureFlagSchema.set('toJSON', { virtuals: true });

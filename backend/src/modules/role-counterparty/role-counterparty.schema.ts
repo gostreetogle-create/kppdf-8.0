@@ -3,7 +3,7 @@ import { HydratedDocument } from 'mongoose';
 
 export type RoleCounterpartyDocument = HydratedDocument<RoleCounterparty>;
 
-@Schema({ collection: 'counterpartyroles', timestamps: true })
+@Schema({ collection: 'counterpartyroles', timestamps: true, softDelete: false })
 export class RoleCounterparty {
   @Prop({ required: true })
   name!: string;

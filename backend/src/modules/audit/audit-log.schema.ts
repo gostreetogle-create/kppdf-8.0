@@ -3,7 +3,7 @@ import { HydratedDocument, Schema as MongooseSchema, Types } from 'mongoose';
 
 export type AuditLogDocument = HydratedDocument<AuditLog>;
 
-@Schema({ collection: 'auditlogs', timestamps: { createdAt: true, updatedAt: false } })
+@Schema({ collection: 'auditlogs', timestamps: { createdAt: true, updatedAt: false }, softDelete: false })
 export class AuditLog {
   @Prop({ required: true, index: true })
   action!: string;
