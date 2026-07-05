@@ -1,40 +1,72 @@
 ═══════════════════════════════════════════════════════════════
-TZ-78: Live Code Preview (FALLBACK — no highlight.js)
+TZ-78: Live Code Preview (DONE — highlight.js v11)
 ═══════════════════════════════════════════════════════════════
 
 РОЛЬ АГЕНТА: Frontend UI Engineer
 
-ЗАВИСИМОСТИ: TZ-68 (Demo wrapper), TZ-69..74 (page EXAMPLE_HTML consts).
+ЗАВИСИМОСТИ: TZ-68 (Demo wrapper), TZ-69..74 (page EXAMPLE constants).
 
 LAYER: 1 (Cross-cutting)
 
 CONFLICT KEYS:
   - frontend/src/app/shared/code/pi-code-preview.component.ts
   - frontend/src/app/shared/code/index.ts
+  - frontend/src/app/pages/playground/code-preview.page.ts (NEW)
+  - frontend/src/app/app.routes.ts (+ /playground/code lazy route)
+  - frontend/src/app/layout/kit-layout.component.ts (+ Playground nav group)
 
 ═══════════════════════════════════════════════════════════════
-ARCHIVE_MARKER:
+Реализация (2026-07-05 update):
 ═══════════════════════════════════════════════════════════════
 
-**Spec deviation:** `pnpm add highlight.js@^11` FAILED с
-`ERR_PNPM_PUBLIC_HOIST_PATTERN_DIFF` (тот же pnpm config blocker,
-что и TZ-66 charts / TZ-80 SSR). Fallback: plain monospace
-`<pre><code>` БЕЗ syntax highlighting.
+**pnpm blocker resolved:** regenerated lockfile с нуля
+(`rm pnpm-lock.yaml && rm -rf node_modules && pnpm install`).
+Original `ERR_PNPM_PUBLIC_HOIST_PATTERN_DIFF` came from hidden
+`.npmrc` setting out of sync with lockfile-recorded defaults.
+After regeneration `pnpm add highlight.js@^11` succeeded with
+highlight.js@11.11.1.
 
-**PiCodePreviewComponent** (~40 lines):
+**PiCodePreviewComponent** (~140 lines):
 - Standalone + OnPush + signal-based.
-- Inputs: `code` (required), `language` (default html), `ariaLabel`, `showLineNumbers` (default true).
-- Computed `formattedCode` — добавляет line numbers через padStart(3) для `<pre>` display.
-- Template: `<pre class="bg-paper-2 border-t hairline border-rule p-4 overflow-auto mono text-[12px] leading-relaxed text-ink">` + `<code class="block whitespace-pre">`.
-- Mono font + paper-2 background + hairline border.
-- aria-label для screen-reader context.
+- Tree-shake imports: highlight.js/lib/core + 5 languages (bash/css/json/typescript/xml).
+- 'xml' aliased to 'html' (hljs convention).
+- **Single registration** via `afterNextRender({ once: true })` —
+  languages registered ONCE per app load (not per component instance),
+  avoids 5× define() calls per page mount.
+- SSR-safe: hljs.highlight() is sync + DOM-free; afterNextRender never
+  fires on server; highlight() with unregistered language falls back to
+  escapeHtml() (prevents XSS via [innerHTML] binding).
+- Inputs: code (required), language (html|typescript|css|bash|json),
+  ariaLabel, showLineNumbers (default true), showCaption (default true),
+  fileName (optional), **captionTitle (new — custom caption override)**.
+- Computed highlightedCode → safe HTML from hljs.highlight() with
+  ignoreIllegals: true. Fallback to escapeHtml for unregistered langs.
+- Computed lineNumbers → array of 1..N for sidebar gutter.
+- Template: <figure> + optional figcaption (captionTitle ?? language() +
+  fileName) + flex layout (line-numbers sidebar + highlighted <pre><code>).
+- **Paper & Ink highlight.js theme SCOPED inside component** via `:host ::ng-deep`
+  selectors — keywords → --color-accent-cool, strings → --color-accent-warm,
+  comments → --color-muted (italic), titles → --color-ink bold,
+  numbers → --color-ink, deletions → --color-destructive. NO #hex, NO box-shadow.
 
-**Future TZ-78b:** re-attempt `pnpm add highlight.js@^11` после `pnpm install` reconcile. Добавить `.hljs-*` theme tokens в styles.css + register only html/typescript/css/bash/json languages.
+**CodePreviewPage** (~85 lines, NEW):
+- 5 sections × 5 languages: HTML, TypeScript, CSS, Bash, JSON.
+- Each sample is realistic editorial code (button HTML, PiSelect CVA TS,
+  tokens CSS, dev-server bash, package.json JSON).
+- Wired to /playground/code lazy route.
 
-**Verification:**
-- typecheck: pnpm exec tsc exit 0
-- spec acceptance: no box-shadow/drop-shadow/hex/bg-white (0 hits)
-- Standalone + OnPush + signal inputs
-- Fallback documented in JSDoc
+**KitlayoutComponent NAV_GROUPS** (+1 group):
+- New "Playground" group added: { theme, code } links (separate from
+  Начало / Компоненты groups so playground is discoverable from sidebar,
+  not just deep URL).
 
-ARCHIVE_MARKER: TZ-78 done 2026-07-05 (fallback); highlight.js DEFERRED.
+═══════════════════════════════════════════════════════════════
+Verification:
+═══════════════════════════════════════════════════════════════
+- pnpm build: PASS (exit 0)
+- typecheck: pnpm exec tsc PASS
+- Browser smoke test (planned): /playground/code 5 sections render
+  with syntax highlighting + line numbers + Paper & Ink colors
+
+ARCHIVE_MARKER: TZ-78 done 2026-07-05; highlight.js v11 live code preview
+delivered; pnpm blocker resolved via lockfile regeneration.

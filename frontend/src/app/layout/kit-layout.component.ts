@@ -47,6 +47,13 @@ const NAV_GROUPS: NavGroup[] = [
       { path: '/navigation', label: 'Навигация' },
     ],
   },
+  {
+    label: 'Playground',
+    links: [
+      { path: '/playground/theme', label: 'Theme' },
+      { path: '/playground/code', label: 'Code' },
+    ],
+  },
 ];
 
 /**

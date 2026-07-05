@@ -61,6 +61,14 @@ export const routes: Routes = [
           ),
         title: 'Paper & Ink — Theme Editor',
       },
+      {
+        path: 'playground/code',
+        loadComponent: () =>
+          import('./pages/playground/code-preview.page').then(
+            (m) => m.CodePreviewPage,
+          ),
+        title: 'Paper & Ink — Code Preview',
+      },
     ],
   },
   { path: '**', redirectTo: '' },
