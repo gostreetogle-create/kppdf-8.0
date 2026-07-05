@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
-import { PAGES } from '../../configs/pages.config';
+import { PAGES, PageConfig } from '../../configs/pages.config';
+import { getEnabledPages } from '../../configs/gates.config';
 
 @Component({
   selector: 'app-topbar',
@@ -72,19 +73,20 @@ export class TopbarComponent {
   readonly showResults = signal(false);
   readonly lang = signal<'ru' | 'en'>('ru');
 
-  readonly results = signal(PAGES.filter((p) => this.auth.hasRole(p.roles)).slice(0, 5));
+  private readonly visiblePages = (): PageConfig[] =>
+    getEnabledPages(PAGES).filter((p) => this.auth.hasRole(p.roles));
+
+  readonly results = signal(this.visiblePages().slice(0, 5));
 
   onSearch(q: string): void {
     this.query.set(q);
     const lower = q.toLowerCase().trim();
     if (!lower) {
-      this.results.set(PAGES.filter((p) => this.auth.hasRole(p.roles)).slice(0, 5));
+      this.results.set(this.visiblePages().slice(0, 5));
     } else {
       this.results.set(
-        PAGES.filter(
-          (p) =>
-            this.auth.hasRole(p.roles) &&
-            (p.title.toLowerCase().includes(lower) || p.id.includes(lower)),
+        this.visiblePages().filter(
+          (p) => p.title.toLowerCase().includes(lower) || p.id.includes(lower),
         ).slice(0, 10),
       );
     }

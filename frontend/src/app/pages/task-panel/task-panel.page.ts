@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { API_BASE_URL } from '../../core/tokens';
 import { PAGES, PageConfig } from '../../configs/pages.config';
+import { getEnabledPages } from '../../configs/gates.config';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
 
 interface PageWithCount extends PageConfig {
@@ -107,7 +108,7 @@ export class TaskPanelPage implements OnInit {
   }
 
   private fetchCounts(): void {
-    const promises = PAGES.map((p) =>
+    const promises = getEnabledPages(PAGES).map((p) =>
       this.http
         .get<unknown[]>(`${this.baseUrl}${this.resolveEndpoint(p.endpoint)}`, {
           params: { limit: '0' },

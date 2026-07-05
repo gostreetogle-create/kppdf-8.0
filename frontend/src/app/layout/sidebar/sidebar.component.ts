@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CATEGORIES, PageConfig, PAGES } from '../../configs/pages.config';
+import { getEnabledPages } from '../../configs/gates.config';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
@@ -103,7 +104,7 @@ export class SidebarComponent {
   readonly pagesByCategory = computed(() => {
     const grouped: Record<number, PageConfig[]> = {};
     for (const cat of this.categories) grouped[cat.id] = [];
-    for (const page of PAGES) {
+    for (const page of getEnabledPages(PAGES)) {
       if (this.auth.hasRole(page.roles)) {
         grouped[page.category]?.push(page);
       }

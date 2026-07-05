@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { API_BASE_URL } from '../../core/tokens';
 import { CATEGORIES, PAGES } from '../../configs/pages.config';
+import { getEnabledPages } from '../../configs/gates.config';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
 
 @Component({
@@ -20,7 +21,7 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="card p-6">
           <div class="text-sm text-muted-foreground">Всего таблиц</div>
-          <div class="text-3xl font-bold mt-1">{{ PAGES.length }}</div>
+          <div class="text-3xl font-bold mt-1">{{ visiblePages.length }}</div>
           <div class="text-xs text-muted-foreground mt-1">в {{ CATEGORIES.length }} категориях</div>
         </div>
         <div class="card p-6 border-l-4 border-l-destructive">
@@ -72,6 +73,7 @@ export class DashboardPage implements OnInit {
 
   readonly PAGES = PAGES;
   readonly CATEGORIES = CATEGORIES;
+  readonly visiblePages = getEnabledPages(PAGES);
 
   readonly counts = signal<Record<string, number>>({});
 
@@ -80,7 +82,7 @@ export class DashboardPage implements OnInit {
   }
 
   private fetchCounts(): void {
-    const promises = PAGES.map((p) =>
+    const promises = getEnabledPages(PAGES).map((p) =>
       this.http
         .get<unknown[]>(`${this.baseUrl}${this.resolveEndpoint(p.endpoint)}`, {
           params: { limit: '0' },
@@ -112,7 +114,7 @@ export class DashboardPage implements OnInit {
     return Object.values(this.counts()).filter((c) => c >= 5).length;
   }
   getPagesFor(catId: number): typeof PAGES {
-    return PAGES.filter((p) => p.category === catId);
+    return getEnabledPages(PAGES).filter((p) => p.category === catId);
   }
   getFirstPage(catId: number): string {
     return this.getPagesFor(catId)[0]?.id ?? 'dashboard';
