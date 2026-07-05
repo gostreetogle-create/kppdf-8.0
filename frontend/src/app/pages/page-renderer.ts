@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { NgComponentOutlet } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, ParamMap } from '@angular/router';
 import { PAGES, PageConfig } from '../configs/pages.config';
-import { isPageEnabled } from '../configs/gates.config';
+import { GatesService } from '../core/services/gates.service';
 import { CrudPageComponent } from '../shared/components/crud-page/crud-page.component';
 import { AuthService } from '../core/services/auth.service';
 import { ShowcasePage } from './showcase/showcase.page';
@@ -37,18 +38,25 @@ import { ShowcasePage } from './showcase/showcase.page';
 export class PageRenderer {
   private readonly route = inject(ActivatedRoute);
   private readonly auth = inject(AuthService);
+  private readonly gates = inject(GatesService);
+
+  /** Reactive route param — picks up /p/:id changes without component re-creation. */
+  private readonly id = toSignal(
+    this.route.paramMap,
+    { initialValue: this.route.snapshot.paramMap as ParamMap },
+  );
 
   readonly config = computed<PageConfig | null>(() => {
-    const id = this.route.snapshot.paramMap.get('id') ?? '';
+    const id = this.id()?.get('id') ?? '';
     const page = PAGES.find((p) => p.id === id);
     if (!page) return null;
-    if (!isPageEnabled(id)) return null;
+    if (!this.gates.isPageEnabled(id)) return null;
     if (!this.auth.hasRole(page.roles)) return null;
     return page;
   });
 
   readonly pageExists = computed<boolean>(() => {
-    const id = this.route.snapshot.paramMap.get('id') ?? '';
+    const id = this.id()?.get('id') ?? '';
     return PAGES.some((p) => p.id === id);
   });
 

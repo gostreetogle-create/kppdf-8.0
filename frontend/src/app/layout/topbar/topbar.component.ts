@@ -1,11 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { GatesService } from '../../core/services/gates.service';
 import { PAGES, PageConfig } from '../../configs/pages.config';
-import { getEnabledPages } from '../../configs/gates.config';
 
 @Component({
   selector: 'app-topbar',
@@ -67,29 +67,30 @@ import { getEnabledPages } from '../../configs/gates.config';
 export class TopbarComponent {
   readonly auth = inject(AuthService);
   readonly theme = inject(ThemeService);
+  readonly gates = inject(GatesService);
   private readonly router = inject(Router);
 
   readonly query = signal('');
   readonly showResults = signal(false);
   readonly lang = signal<'ru' | 'en'>('ru');
 
-  private readonly visiblePages = (): PageConfig[] =>
-    getEnabledPages(PAGES).filter((p) => this.auth.hasRole(p.roles));
+  /** Reactive visible pages — picks up gate overrides on signal change. */
+  private readonly visiblePages = computed<PageConfig[]>(() =>
+    this.gates.filterEnabled(PAGES).filter((p) => this.auth.hasRole(p.roles)),
+  );
 
-  readonly results = signal(this.visiblePages().slice(0, 5));
+  /** Reactive search results — picks up query, visibility, gate overrides, role. */
+  readonly results = computed<PageConfig[]>(() => {
+    const q = this.query().toLowerCase().trim();
+    const all = this.visiblePages();
+    if (!q) return all.slice(0, 5);
+    return all
+      .filter((p) => p.title.toLowerCase().includes(q) || p.id.includes(q))
+      .slice(0, 10);
+  });
 
   onSearch(q: string): void {
     this.query.set(q);
-    const lower = q.toLowerCase().trim();
-    if (!lower) {
-      this.results.set(this.visiblePages().slice(0, 5));
-    } else {
-      this.results.set(
-        this.visiblePages().filter(
-          (p) => p.title.toLowerCase().includes(lower) || p.id.includes(lower),
-        ).slice(0, 10),
-      );
-    }
   }
 
   clear(): void {

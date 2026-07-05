@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { API_BASE_URL } from '../../core/tokens';
-import { CATEGORIES, PAGES } from '../../configs/pages.config';
-import { getEnabledPages } from '../../configs/gates.config';
+import { CATEGORIES, PAGES, PageConfig } from '../../configs/pages.config';
+import { GatesService } from '../../core/services/gates.service';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
 
 @Component({
@@ -21,7 +21,7 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="card p-6">
           <div class="text-sm text-muted-foreground">Всего таблиц</div>
-          <div class="text-3xl font-bold mt-1">{{ visiblePages.length }}</div>
+          <div class="text-3xl font-bold mt-1">{{ visiblePages().length }}</div>
           <div class="text-xs text-muted-foreground mt-1">в {{ CATEGORIES.length }} категориях</div>
         </div>
         <div class="card p-6 border-l-4 border-l-destructive">
@@ -67,22 +67,30 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
     </div>
   `,
 })
-export class DashboardPage implements OnInit {
+export class DashboardPage {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
+  private readonly gates = inject(GatesService);
 
   readonly PAGES = PAGES;
   readonly CATEGORIES = CATEGORIES;
-  readonly visiblePages = getEnabledPages(PAGES);
+
+  /** Reactive list — picks up gate overrides / role changes. */
+  readonly visiblePages = computed<PageConfig[]>(() =>
+    this.gates.filterEnabled(PAGES),
+  );
 
   readonly counts = signal<Record<string, number>>({});
 
-  ngOnInit(): void {
-    this.fetchCounts();
+  constructor() {
+    // Re-fetch counts whenever gate visibility changes.
+    effect(() => {
+      this.fetchCounts(this.visiblePages());
+    });
   }
 
-  private fetchCounts(): void {
-    const promises = getEnabledPages(PAGES).map((p) =>
+  private fetchCounts(visible: PageConfig[]): void {
+    const promises = visible.map((p) =>
       this.http
         .get<unknown[]>(`${this.baseUrl}${this.resolveEndpoint(p.endpoint)}`, {
           params: { limit: '0' },
@@ -113,8 +121,8 @@ export class DashboardPage implements OnInit {
   okCount(): number {
     return Object.values(this.counts()).filter((c) => c >= 5).length;
   }
-  getPagesFor(catId: number): typeof PAGES {
-    return getEnabledPages(PAGES).filter((p) => p.category === catId);
+  getPagesFor(catId: number): PageConfig[] {
+    return this.visiblePages().filter((p) => p.category === catId);
   }
   getFirstPage(catId: number): string {
     return this.getPagesFor(catId)[0]?.id ?? 'dashboard';

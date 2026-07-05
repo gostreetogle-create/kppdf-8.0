@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CATEGORIES, PageConfig, PAGES } from '../../configs/pages.config';
-import { getEnabledPages } from '../../configs/gates.config';
+import { GatesService } from '../../core/services/gates.service';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
@@ -41,6 +41,16 @@ import { AuthService } from '../../core/services/auth.service';
         >
           <span>✅</span> Панель задач
         </a>
+
+        @if (auth.hasRole(['admin'])) {
+          <a
+            routerLink="/admin/gates"
+            routerLinkActive="bg-accent text-accent-foreground"
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground"
+          >
+            <span>⚙️</span> Гейты
+          </a>
+        }
 
         <div class="my-2 border-t"></div>
 
@@ -97,6 +107,7 @@ import { AuthService } from '../../core/services/auth.service';
 })
 export class SidebarComponent {
   readonly auth = inject(AuthService);
+  readonly gates = inject(GatesService);
   readonly categories = CATEGORIES;
 
   private readonly openIds = signal(new Set<number>([1, 2, 3]));
@@ -104,7 +115,9 @@ export class SidebarComponent {
   readonly pagesByCategory = computed(() => {
     const grouped: Record<number, PageConfig[]> = {};
     for (const cat of this.categories) grouped[cat.id] = [];
-    for (const page of getEnabledPages(PAGES)) {
+    // Read gates.effectiveMap() so the computed re-runs when overrides change.
+    const visible = this.gates.filterEnabled(PAGES);
+    for (const page of visible) {
       if (this.auth.hasRole(page.roles)) {
         grouped[page.category]?.push(page);
       }

@@ -27,6 +27,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/page-renderer').then((m) => m.PageRenderer),
       },
+      {
+        path: 'admin/gates',
+        canActivate: [roleGuard(['admin'])],
+        loadComponent: () =>
+          import('./pages/admin/gates.admin.page').then((m) => m.GatesAdminPage),
+      },
     ],
   },
   { path: '**', redirectTo: '' },
