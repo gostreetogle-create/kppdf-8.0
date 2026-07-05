@@ -56,8 +56,9 @@ type SortDir = 'asc' | 'desc';
         class="max-w-xl space-y-5"
         data-test="validated-form"
       >
-        <app-pi-form-field label="Имя" [required]="true" [error]="form.controls.name.invalid && form.controls.name.touched ? 'Минимум 2 символа' : ''">
+        <app-pi-form-field label="Имя" htmlFor="form-name" [required]="true" [error]="form.controls.name.invalid && form.controls.name.touched ? 'Минимум 2 символа' : ''">
           <input
+            id="form-name"
             type="text"
             formControlName="name"
             placeholder="Иван"
@@ -67,8 +68,9 @@ type SortDir = 'asc' | 'desc';
           />
         </app-pi-form-field>
 
-        <app-pi-form-field label="E-mail" [required]="true" [error]="form.controls.email.invalid && form.controls.email.touched ? 'Невалидный e-mail' : ''">
+        <app-pi-form-field label="E-mail" htmlFor="form-email" [required]="true" [error]="form.controls.email.invalid && form.controls.email.touched ? 'Невалидный e-mail' : ''">
           <input
+            id="form-email"
             type="email"
             formControlName="email"
             placeholder="you@example.com"
@@ -79,15 +81,11 @@ type SortDir = 'asc' | 'desc';
         </app-pi-form-field>
 
         <app-pi-form-field label="Роль" [required]="true">
-          <app-pi-select formControlName="role" placeholder="Выберите роль">
+          <app-pi-select formControlName="role" placeholder="Выберите роль" ariaLabel="Роль">
             <app-pi-select-option value="admin">Admin</app-pi-select-option>
             <app-pi-select-option value="manager">Manager</app-pi-select-option>
             <app-pi-select-option value="user">User</app-pi-select-option>
           </app-pi-select>
-        </app-pi-form-field>
-
-        <app-pi-form-field label="Приоритет" hint="0–100">
-          <app-pi-slider formControlName="priority" [min]="0" [max]="100" [showValue]="true" />
         </app-pi-form-field>
 
         <div class="flex items-center gap-2">
@@ -177,28 +175,31 @@ type SortDir = 'asc' | 'desc';
         <div>
           <p class="eyebrow mb-3">Inline (label · input · button в одну строку)</p>
           <div class="flex items-end gap-3">
-            <app-pi-form-field label="Поиск" class="flex-1">
-              <input
-                type="search"
-                placeholder="Найти…"
-                class="w-full border hairline border-rule rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none focus:border-ink transition-colors"
-              />
-            </app-pi-form-field>
+        <app-pi-form-field label="Поиск" htmlFor="form-search" class="flex-1">
+          <input
+            id="form-search"
+            type="search"
+            placeholder="Найти…"
+            class="w-full border hairline border-rule rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none focus:border-ink transition-colors"
+          />
+        </app-pi-form-field>
             <app-pi-button variant="default">Найти</app-pi-button>
           </div>
         </div>
         <div>
           <p class="eyebrow mb-3">Stacked (label сверху)</p>
           <div class="space-y-3">
-            <app-pi-form-field label="Город">
+            <app-pi-form-field label="Город" htmlFor="form-city">
               <input
+                id="form-city"
                 type="text"
                 placeholder="Москва"
                 class="w-full border hairline border-rule rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none focus:border-ink transition-colors"
               />
             </app-pi-form-field>
-            <app-pi-form-field label="Индекс">
+            <app-pi-form-field label="Индекс" htmlFor="form-zip">
               <input
+                id="form-zip"
                 type="text"
                 placeholder="101000"
                 class="w-full border hairline border-rule rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none focus:border-ink transition-colors"
