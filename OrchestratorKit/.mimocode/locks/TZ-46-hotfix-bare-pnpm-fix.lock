@@ -1,0 +1,31 @@
+TZ-46 hotfix: bare-pnpm-fix
+closed_at: 2026-07-05
+closed_by: Backend Developer (DevTools)
+protected_files:
+  - start.mjs
+summary: >
+  Critical post-TZ-46 fix for Windows spawn() ENOENT regression. TZ-44's
+  resolveBin() helper picked `C:\Users\user\AppData\Roaming\npm\pnpm` (bare name
+  file created by npm for *nix compat) instead of `pnpm.cmd` (real Windows
+  shim). Spawn of bare pnpm -> ENOENT, breaking entire dev mode boot.
+affected_areas:
+  - start.mjs: resolveBin() — added PATHEXT-extension preference in 4-step
+    fallback chain. New needsShell() helper detects .cmd/.bat binaries on
+    Windows that require shell:true per CVE-2024-27980. Applied shell:true
+    to 5 spawn/spawnSync call sites (getVersion/installDeps/spawnDetached/
+    buildBackend/buildFrontend) — args are all hardcoded whitelisted strings
+    so shell injection risk is 0.
+verification:
+  - node --check start.mjs: PASS
+  - node start.mjs --check (preflight): shows "pnpm 9.15" (was "pnpm null")
+  - 220s boot: crashes only at step 6 with Mongo ENOTFOUND (NOT ENOENT) —
+    original step 5 TZ-44 regression is COMPLETELY RESOLVED.
+  - Code-reviewer: PASS ("Ship it. The 4-step precedence correctly handles
+    npm-on-Windows case where `where pnpm` returns both bare pnpm and pnpm.cmd")
+notes: >
+  Discovery: a SEPARATE issue surfaced during verification — backend fails
+  to connect to Mongo with "getaddrinfo ENOTFOUND mongo". This is a .env
+  configuration issue (MONGODB_URI uses Docker service name `mongo` which
+  only resolves inside Docker network; from host dev mode it should be
+  `localhost:27017`). This is OUT OF SCOPE of this fix and tracked as
+  followup (probably TZ-48 or a one-line .env patch).

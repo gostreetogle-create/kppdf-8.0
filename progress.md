@@ -180,3 +180,47 @@
 
 **Архив:** `tasks/_archive/2026-07/TZ-46.md.done`. `tasks/TZ-46.md` удалён.
 **Lock-файл:** `.mimocode/locks/TZ-46-clean-console.lock` (стабилизирует start.mjs).
+
+## [2026-07-05] — Завершено: TZ-46 hotfix (bare-pnpm-fix)
+**Исполнитель:** Backend Developer (DevTools) (Buffy)
+**Статус:** Выполнено (TZ-44 regression полностью устранён; обнаружена отдельная issue с .env)
+**Что сделано:**
+
+**Проблема (обнаружена в smoke test после коммита `66e5b6b`):**
+- `node start.mjs` падал с `Error: spawn C:\Users\user\AppData\Roaming\npm\pnpm ENOENT` на step 5 (spawn pnpm start:dev).
+- Root cause: TZ-44's `resolveBin()` берёт ПЕРВЫЙ путь из `where pnpm`, который:
+  - На Windows возвращает **два файла**: `pnpm` (bare, npm создаёт для *nix compat — НЕ executable на Windows) И `pnpm.cmd` (стандартный shim).
+  - Без проверки PATHEXT-расширения, bin = bare `pnpm`, spawn() → ENOENT.
+- Дополнительный failure mode: `spawn('.cmd')` на Node 20+ возвращает **EINVAL** (CVE-2024-27980 mitigation, требует `shell:true` для .cmd/.bat shims).
+
+**Fix (2 улучшения):**
+
+1. **`resolveBin()` rewrite** (4-step fallback chain):
+   - Step 1: Windows — предпочитаем путь С PATHEXT-расширением (.cmd/.exe/.bat) существующий как файл.
+   - Step 2: fallback — любой файл из `where`/`which`.
+   - Step 3: Windows fallback — добавляем PATHEXT-расширения к первому кандидату (`pnpm` → `pnpm.cmd`).
+   - Step 4: ultimate fallback — первый line.
+   - Импортирует `extname` уже из `node:path` (использовался в TZ-42 для static server).
+
+2. **`needsShell(bin)` helper + `shell: true` для .cmd/.bat**:
+   - На Node 20+ `spawn('.cmd')` без shell:true → EINVAL. Аргументы во всех наших вызовах spawn — hardcoded whitelist → shell injection risk = 0.
+   - Применён в 5 call sites: `getVersion()`, `installDeps()`, `spawnDetached()`, `buildBackend()`, `buildFrontend()`.
+
+**Затронутые файлы/папки:**
+- `start.mjs` (resolveBin rewrite + needsShell + 5 call site updates, ~40 строк)
+
+**Verification:**
+- `node --check start.mjs` ✅
+- `node start.mjs --check` (preflight): показывает `pnpm 9.15` (вместо `pnpm null`) ✅
+- 220s boot test: **ENOENT count = 0** ✅ — оригинальный crash устранён
+- Code-reviewer: PASS («Ship it. The 4-step precedence correctly handles the npm-on-Windows case»)
+
+**Discovered SEPARATE issue (не блокирует эту фикс, out of scope):**
+- При boot доходит до step 6: `MongooseServerSelectionError: getaddrinfo ENOTFOUND mongo`
+- Backend (host pnpm start:dev) пытается подключиться к хосту `mongo` (Docker service name), который резолвится только внутри Docker network.
+- Вероятная причина: в `.env` стоит `MONGODB_URI=mongodb://mongo:27017/...`. Для host dev mode должно быть `mongodb://localhost:27017/...`. 
+- Tracked как followup (TZ-48 candidates или однострочный patch).
+
+**Архив:** НЕТ (это unplanned hotfix, не плановый TZ).
+**Lock-файл:** `OrchestratorKit/.mimocode/locks/TZ-46-hotfix-bare-pnpm-fix.lock`.
+**Commit:** будет отдельный commit после этого коммита (если юзер скажет).

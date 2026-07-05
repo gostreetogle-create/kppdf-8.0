@@ -236,22 +236,85 @@ const binCache = new Map();
  * Резолвит путь к binary через `where` (Win) / `which` (Unix).
  * Возвращает полный путь или null (если не найден).
  * Без shell:true — DEP0190 fix (TZ-44).
+ *
+ * Windows quirk (TZ-47a fix): `where pnpm` может вернуть сразу несколько путей,
+ * каждый из которых — файл (например, `pnpm` (без расширения, npm создаёт
+ * для совместимости с *nix) И `pnpm.cmd` — стандартный Windows shim). Bare-name
+ * file НЕ является executable на Windows без shell:true. Поэтому:
+ * - Предпочитаем пути с PATHEXT-расширением (.exe, .cmd, .bat) над bare paths.
+ * - Используем `statSync().isFile()` для подтверждения файла.
+ * - Fallback: добавляем PATHEXT-расширения к первому кандидату.
+ *
+ * Дополнительно: spawn('.cmd'/'.bat') на Windows требует shell:true (CVE-2024-27980).
+ * См. `needsShell()` ниже.
  */
 function resolveBin(name) {
   if (binCache.has(name)) return binCache.get(name);
   const r = spawnSync(isWin ? 'where' : 'which', [name], { encoding: 'utf8' });
   if (r.status !== 0) return null;
-  const found = r.stdout.split(/\r?\n/)[0].trim();
-  if (!found) return null;
+  const lines = r.stdout.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  if (lines.length === 0) return null;
+
+  // Кешируем множество PATHEXT-расширений для приоритизации.
+  const pathExts = isWin
+    ? new Set((env.PATHEXT || '.COM;.EXE;.BAT;.CMD;.VBS;.JS;.WS;.MSC')
+        .split(';').filter(Boolean).map((s) => s.toLowerCase()))
+    : null;
+
+  let found = null;
+
+  // 1) Windows: предпочитаем путь С PATHEXT-расширением, который существует как файл.
+  //    (`where pnpm` возвращает `...\pnpm` (bare) И `...\pnpm.cmd`; .cmd предпочтительнее).
+  if (isWin && pathExts) {
+    for (const line of lines) {
+      const ext = extname(line).toLowerCase();
+      if (pathExts.has(ext)) {
+        try { if (statSync(line).isFile()) { found = line; break; } } catch { /* not found */ }
+      }
+    }
+  }
+
+  // 2) Fallback: любой существующий файл из `where`/`which` output.
+  if (!found) {
+    for (const line of lines) {
+      try { if (statSync(line).isFile()) { found = line; break; } } catch { /* not found */ }
+    }
+  }
+
+  // 3) Windows fallback: добавляем PATHEXT-расширения к первому кандидату
+  //    (`where pnpm` может вернуть `...\pnpm` без .cmd, файл — `...\pnpm.cmd`).
+  if (!found && isWin && pathExts) {
+    for (const ext of pathExts) {
+      const candidate = lines[0] + ext;
+      try { if (statSync(candidate).isFile()) { found = candidate; break; } } catch {}
+    }
+  }
+
+  // 4) Ultimate fallback: первый line (will surface error at spawn time).
+  if (!found) found = lines[0];
   binCache.set(name, found);
   return found;
+}
+
+/**
+ * Определяет, нужен ли `shell: true` для spawn() данного binary.
+ * Node 20+ refuses spawn('.cmd'/'.bat') без shell:true (CVE-2024-27980 mitigation).
+ * Аргументы во всех наших вызовах spawn — hardcoded whitelisted strings
+ * (`['install', '--prefer-offline']`, `['start:dev']`, etc.), no user input →
+ * shell injection risk = 0. Поэтому смело включаем shell:true ТОЛЬКО для .cmd/.bat.
+ */
+function needsShell(bin) {
+  return isWin && /\.(cmd|bat)$/i.test(bin);
 }
 
 function getVersion(cmd, args = ['--version']) {
   try {
     const bin = resolveBin(cmd);
     if (!bin) return null;
-    const r = spawnSync(bin, args, { encoding: 'utf8' });
+    const r = spawnSync(bin, args, {
+      encoding: 'utf8',
+      ...(needsShell(bin) ? { shell: true } : {}),
+    });
     if (r.status !== 0) return null;
     const v = (r.stdout || r.stderr || '').trim();
     const m = v.match(/(\d+)\.(\d+)/);
@@ -558,6 +621,7 @@ function installDeps(dir, name) {
     cwd: dir,
     stdio,
     encoding: 'utf8',
+    ...(needsShell(pnpmBin) ? { shell: true } : {}),
   });
   if (r.status !== 0) throw new Error(`pnpm install failed in ${name}`);
   log.ok(`${name}: зависимости установлены`);
@@ -571,13 +635,16 @@ function spawnDetached(cmd, args, cwd, name, envExtra = {}) {
     log.err(`${cmd} not found in PATH`);
     throw new Error(`${cmd} binary not found`);
   }
-  // DEP0190 fix (TZ-44): без shell, child.pid — pnpm.cmd напрямую (не cmd.exe wrapper).
+  // DEP0190 fix (TZ-44): без shell для .exe бинарей. Для .cmd/.bat (pnpm.cmd,
+  // npm.cmd и т.п.) добавляем shell:true — Node 20+ требует этого по CVE-2024-27980.
+  // Args hardcoded — shell injection risk = 0.
   const child = spawn(bin, args, {
     cwd,
     env: { ...env, ...envExtra, FORCE_COLOR: '1' },
     stdio: ['ignore', 'pipe', 'pipe'],
     detached: !isWin,
     windowsHide: true,
+    ...(needsShell(bin) ? { shell: true } : {}),
   });
   // Трекаем в state
   if (name && state.services[name]) {
@@ -639,6 +706,7 @@ function buildBackend() {
       cwd: BACKEND_DIR,
       stdio: useTui() ? 'pipe' : 'inherit',
       encoding: 'utf8',
+      ...(needsShell(pnpmBin) ? { shell: true } : {}),
     });
     if (r.status !== 0) throw new Error('backend pnpm build failed');
   }
@@ -661,6 +729,7 @@ function buildFrontend() {
       cwd: FRONTEND_DIR,
       stdio: useTui() ? 'pipe' : 'inherit',
       encoding: 'utf8',
+      ...(needsShell(pnpmBin) ? { shell: true } : {}),
     });
     if (r.status !== 0) throw new Error('frontend pnpm build failed');
   }
