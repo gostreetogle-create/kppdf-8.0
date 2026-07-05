@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -17,7 +17,7 @@ import { AuthService } from '../../core/auth.service';
 @Component({
   selector: 'app-home',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatCardModule, MatButtonModule, MatIconModule],
+  imports: [MatCardModule, MatButtonModule, MatIconModule, RouterLink],
   template: `
     <div class="home-shell">
       <mat-card appearance="outlined" class="home-card">
@@ -48,6 +48,12 @@ import { AuthService } from '../../core/auth.service';
             Текущая сессия хранится в <code>localStorage</code> под ключами
             <code>kppdf.access</code> и <code>kppdf.refresh</code>.
           </p>
+          <nav class="quick-links" aria-label="Быстрые разделы">
+            <a mat-flat-button color="primary" routerLink="/materials">
+              <mat-icon>inventory_2</mat-icon>
+              Материалы
+            </a>
+          </nav>
         </mat-card-content>
 
         <mat-card-actions align="end">
@@ -90,6 +96,20 @@ import { AuthService } from '../../core/auth.service';
       padding: 1px 6px;
       border-radius: 4px;
       font-size: 12px;
+    }
+
+    .quick-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--mat-sys-outline-variant);
+    }
+
+    .quick-links a mat-icon {
+      margin-right: 6px;
+      vertical-align: middle;
     }
   `,
 })

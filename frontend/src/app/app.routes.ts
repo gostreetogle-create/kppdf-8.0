@@ -16,6 +16,15 @@ export const routes: Routes = [
       import('./features/home/home.page').then((m) => m.HomePage),
     title: 'KPPDF — Главная',
   },
+  {
+    path: 'materials',
+    canMatch: [authGuard],
+    loadComponent: () =>
+      import('./features/materials/materials-list.page').then(
+        (m) => m.MaterialsListPage,
+      ),
+    title: 'KPPDF — Материалы',
+  },
   { path: '', redirectTo: '/home', pathMatch: 'full' },
   { path: '**', redirectTo: '/home' },
 ];
