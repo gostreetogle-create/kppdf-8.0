@@ -349,10 +349,6 @@ export class MaterialsPage implements OnInit {
     return this.sortKey() === key;
   }
 
-  protected isSortedBy(key: Exclude<SortKey, null>): boolean {
-    return this.sortKey() === key;
-  }
-
   protected formatPrice(row: Material): string {
     if (row.pricePerUnit == null) return '';
     return `${row.pricePerUnit.toFixed(2)} ₽`;
