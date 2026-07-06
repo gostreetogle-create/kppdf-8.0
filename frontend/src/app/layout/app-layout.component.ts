@@ -52,9 +52,9 @@ const NAV_LINKS: NavLink[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule],
   template: `
-    <div class="min-h-screen flex flex-col bg-paper text-ink font-body">
+    <div class="min-h-screen bg-paper text-ink font-body">
       <div
-        class="w-full max-w-[1400px] mx-auto flex flex-col flex-1
+        class="w-full max-w-[1400px] mx-auto
                px-6 sm:px-10 lg:px-16"
       >
         <header
@@ -134,7 +134,7 @@ const NAV_LINKS: NavLink[] = [
         </main>
 
         <footer
-          class="border-t hairline border-sunrise-warm mt-auto py-section
+          class="border-t hairline border-sunrise-warm mt-12 py-section
                  font-mono text-[11px] uppercase tracking-[0.18em]
                  text-muted flex flex-wrap justify-between gap-3"
         >
