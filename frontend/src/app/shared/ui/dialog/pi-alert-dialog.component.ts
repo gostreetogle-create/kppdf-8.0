@@ -31,7 +31,7 @@ export type AlertDialogVariant = 'default' | 'destructive';
       [attr.aria-describedby]="descId()"
       class="bg-paper border hairline border-rule rounded-sm w-[440px] overflow-hidden"
     >
-      <header class="px-5 pt-5">
+      <header class="px-6 pt-6 pb-2">
         <h2 [id]="titleId()" class="font-display text-lg tracking-tight text-ink">
           {{ title() }}
         </h2>
@@ -41,7 +41,7 @@ export type AlertDialogVariant = 'default' | 'destructive';
           </p>
         }
       </header>
-      <footer class="px-5 py-4 flex justify-end gap-2 border-t hairline border-rule mt-4">
+      <footer class="px-6 py-4 flex justify-end gap-3 border-t hairline border-rule">
         <app-pi-button
           variant="ghost"
           size="sm"

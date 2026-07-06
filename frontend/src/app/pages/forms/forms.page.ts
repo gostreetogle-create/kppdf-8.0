@@ -53,7 +53,7 @@ type SortDir = 'asc' | 'desc';
       <form
         [formGroup]="form"
         (ngSubmit)="onSubmit()"
-        class="max-w-xl space-y-5"
+        class="max-w-xl space-y-form-field"
         data-test="validated-form"
       >
         <app-pi-form-field label="Имя" htmlFor="form-name" [required]="true" [error]="form.controls.name.invalid && form.controls.name.touched ? 'Минимум 2 символа' : ''">
@@ -62,7 +62,7 @@ type SortDir = 'asc' | 'desc';
             type="text"
             formControlName="name"
             placeholder="Иван"
-            class="w-full border hairline rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none transition-colors"
+            class="w-full border hairline rounded-sm px-control-x py-control-y bg-paper text-sm font-body focus:outline-none transition-colors"
             [class.border-rule]="!form.controls.name.invalid || !form.controls.name.touched"
             [class.border-destructive]="form.controls.name.invalid && form.controls.name.touched"
           />
@@ -74,7 +74,7 @@ type SortDir = 'asc' | 'desc';
             type="email"
             formControlName="email"
             placeholder="you@example.com"
-            class="w-full border hairline rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none transition-colors"
+            class="w-full border hairline rounded-sm px-control-x py-control-y bg-paper text-sm font-body focus:outline-none transition-colors"
             [class.border-rule]="!form.controls.email.invalid || !form.controls.email.touched"
             [class.border-destructive]="form.controls.email.invalid && form.controls.email.touched"
           />
@@ -111,7 +111,7 @@ type SortDir = 'asc' | 'desc';
           <thead class="border-b hairline border-rule">
             <tr>
               <th
-                class="text-left py-2 px-4 font-display font-semibold cursor-pointer hover:text-accent-warm"
+                class="text-left py-3 px-4 font-display font-semibold cursor-pointer hover:text-accent-warm"
                 (click)="setSort('name')"
               >Название {{ sortIndicator('name') }}</th>
               <th
@@ -119,7 +119,7 @@ type SortDir = 'asc' | 'desc';
                 (click)="setSort('qty')"
               >Кол-во {{ sortIndicator('qty') }}</th>
               <th
-                class="text-left py-2 px-4 font-display font-semibold cursor-pointer hover:text-accent-warm"
+                class="text-left py-3 px-4 font-display font-semibold cursor-pointer hover:text-accent-warm"
                 (click)="setSort('status')"
               >Статус {{ sortIndicator('status') }}</th>
             </tr>
@@ -127,9 +127,9 @@ type SortDir = 'asc' | 'desc';
           <tbody>
             @for (row of pagedRows(); track row.id) {
               <tr class="border-b hairline border-rule last:border-0 hover:bg-paper-2 transition-colors">
-                <td class="py-2 px-4">{{ row.name }}</td>
-                <td class="py-2 px-4 text-right mono text-xs">{{ row.qty }}</td>
-                <td class="py-2 px-4">
+                <td class="py-3 px-4">{{ row.name }}</td>
+                <td class="py-3 px-4 text-right mono text-xs whitespace-nowrap">{{ row.qty }}</td>
+                <td class="py-3 px-4">
                   <span class="eyebrow text-[10px]">{{ statusLabel(row.status) }}</span>
                 </td>
               </tr>
@@ -137,7 +137,7 @@ type SortDir = 'asc' | 'desc';
           </tbody>
         </table>
 
-        <div class="flex items-center justify-between px-4 py-3 border-t hairline border-rule">
+        <div class="flex items-center justify-between px-4 py-form-field border-t hairline border-rule">
           <span class="text-xs text-muted-foreground">
             Page {{ page() }} / {{ totalPages() }} · {{ data().length }} rows
           </span>
@@ -174,7 +174,7 @@ type SortDir = 'asc' | 'desc';
       <div class="space-y-6 max-w-2xl">
         <div>
           <p class="eyebrow mb-3">Inline (label · input · button в одну строку)</p>
-          <div class="flex items-end gap-3">
+          <div class="flex items-end gap-form-field">
         <app-pi-form-field label="Поиск" htmlFor="form-search" class="flex-1">
           <input
             id="form-search"
@@ -188,7 +188,7 @@ type SortDir = 'asc' | 'desc';
         </div>
         <div>
           <p class="eyebrow mb-3">Stacked (label сверху)</p>
-          <div class="space-y-3">
+          <div class="space-y-form-field">
             <app-pi-form-field label="Город" htmlFor="form-city">
               <input
                 id="form-city"

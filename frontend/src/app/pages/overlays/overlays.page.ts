@@ -34,7 +34,7 @@ import { LucideAngularModule, User, ChevronDown } from 'lucide-angular';
 
     <!-- ───── Section I. Dialog + AlertDialog ───── -->
     <app-pi-section title="Dialog" hint="3 примера · CDK Overlay" eyebrow="I">
-      <div class="flex flex-wrap gap-3">
+      <div class="flex flex-wrap gap-form-field">
         <app-pi-button variant="default" (click)="demoDefaultDialog()">
           Default dialog
         </app-pi-button>
@@ -45,7 +45,7 @@ import { LucideAngularModule, User, ChevronDown } from 'lucide-angular';
           AlertDialog (destructive)
         </app-pi-button>
       </div>
-      <p class="text-xs text-muted-foreground mt-3">
+      <p class="text-xs text-muted-foreground mt-form-row">
         Demo: каждый trigger показывает toast-confirmation.
         PiDialogService.open() доступен для полноценных CDK-overlay flows.
       </p>
@@ -53,7 +53,7 @@ import { LucideAngularModule, User, ChevronDown } from 'lucide-angular';
 
     <!-- ───── Section II. Sheet + Drawer ───── -->
     <app-pi-section title="Sheet &amp; Drawer" hint="right · left · bottom" eyebrow="II">
-      <div class="flex flex-wrap gap-3">
+      <div class="flex flex-wrap gap-form-field">
         <app-pi-button variant="outline" (click)="demoSheetRight()">Sheet right</app-pi-button>
         <app-pi-button variant="outline" (click)="demoSheetLeft()">Sheet left</app-pi-button>
         <app-pi-button variant="outline" (click)="demoDrawerBottom()">Drawer bottom</app-pi-button>
@@ -62,15 +62,14 @@ import { LucideAngularModule, User, ChevronDown } from 'lucide-angular';
 
     <!-- ───── Section III. Tooltip + Popover ───── -->
     <app-pi-section title="Tooltip &amp; Popover" hint="hover · click" eyebrow="III">
-      <div class="flex flex-wrap gap-3">
-        <button
-          type="button"
-          aria-label="Сохранить документ"
-          title="Сохранить документ"
-          class="hairline-b border border-rule px-4 py-2 text-sm hover:bg-paper-2 transition-colors"
-        >
-          Hover me (native title tooltip)
-        </button>
+      <div class="flex flex-wrap gap-form-field">
+            <app-pi-button
+              variant="outline"
+              ariaLabel="Сохранить документ"
+              title="Сохранить документ"
+            >
+              Hover me (native title tooltip)
+            </app-pi-button>
         <app-pi-button variant="outline" (click)="demoPopover()">
           <lucide-angular [img]="userIcon" size="14" />
           Open Popover
@@ -87,26 +86,26 @@ import { LucideAngularModule, User, ChevronDown } from 'lucide-angular';
         </app-pi-button>
         @if (dropdownOpen()) {
           <div
-            class="absolute top-full left-0 mt-1 min-w-[180px] border hairline border-rule rounded-sm bg-paper z-30"
+            class="absolute top-full left-0 mt-1 min-w-[180px] border hairline border-rule rounded-sm bg-paper z-30 p-1"
             role="menu"
             aria-label="Меню"
           >
             <button
               type="button"
-              class="w-full text-left px-3 py-2 text-sm hover:bg-paper-2 transition-colors"
+              class="w-full text-left min-h-touch px-control-x py-control-y text-sm hover:bg-paper-2 transition-colors rounded-sm"
               role="menuitem"
               (click)="onMenuItem('profile')"
             >Профиль</button>
             <button
               type="button"
-              class="w-full text-left px-3 py-2 text-sm hover:bg-paper-2 transition-colors"
+              class="w-full text-left min-h-touch px-control-x py-control-y text-sm hover:bg-paper-2 transition-colors rounded-sm"
               role="menuitem"
               (click)="onMenuItem('settings')"
             >Настройки</button>
             <div class="border-t hairline border-rule my-1" role="separator"></div>
             <button
               type="button"
-              class="w-full text-left px-3 py-2 text-sm text-destructive hover:bg-paper-2 transition-colors"
+              class="w-full text-left min-h-touch px-control-x py-control-y text-sm text-destructive hover:bg-paper-2 transition-colors rounded-sm"
               role="menuitem"
               (click)="onMenuItem('logout')"
             >Выйти</button>
@@ -117,7 +116,7 @@ import { LucideAngularModule, User, ChevronDown } from 'lucide-angular';
 
     <!-- ───── Section V. Toast ───── -->
     <app-pi-section title="Toast" hint="Sonner-style" eyebrow="V">
-      <div class="flex flex-wrap gap-3">
+      <div class="flex flex-wrap gap-form-field">
         <app-pi-button variant="default" (click)="toast.show('Привет')">
           Default
         </app-pi-button>
