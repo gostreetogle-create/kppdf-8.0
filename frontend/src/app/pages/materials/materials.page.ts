@@ -93,9 +93,6 @@ type SortDir = 'asc' | 'desc';
         <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
           ← Таблица широкая — прокручивайте горизонтально →
         </p>
-        <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
-          ← Таблица широкая — прокручивайте горизонтально →
-        </p>
         <table class="w-full text-sm min-w-[1280px]">
           <thead class="border-b hairline border-rule">
             <tr>

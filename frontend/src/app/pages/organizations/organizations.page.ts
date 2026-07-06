@@ -36,7 +36,7 @@ type SortDir = 'asc' | 'desc';
       description="Юр. лица и ИП — покупатели, поставщики, подрядчики. Один контрагент может совмещать несколько ролей."
     />
 
-    <div class="px-page-x py-page-y flex items-center gap-form-field flex-wrap">
+    <div class="px-page-x pt-0 pb-6 flex items-center gap-form-field flex-wrap">
       <input
         type="search"
         [value]="searchQuery()"
@@ -44,7 +44,7 @@ type SortDir = 'asc' | 'desc';
         placeholder="Поиск по названию или ИНН…"
         aria-label="Поиск организаций"
         data-test="search-input"
-        class="border hairline border-rule rounded-sm px-4 py-2.5 bg-paper text-sm font-body focus:outline-none focus:border-ink w-72 transition-colors"
+        class="border hairline border-rule rounded-sm px-control-x py-control-y bg-paper text-sm font-body focus:outline-none focus:border-ink w-72 transition-colors"
       />
       <app-pi-button
         variant="default"

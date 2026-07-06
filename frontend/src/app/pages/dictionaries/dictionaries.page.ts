@@ -60,7 +60,7 @@ import { Unit, UnitsService } from './units.service';
       <form
         [formGroup]="form"
         (ngSubmit)="onAdd()"
-        class="mb-6 p-5 border hairline border-rule rounded-sm bg-paper-2/30"
+        class="mb-section p-4 border hairline border-rule rounded-sm bg-paper-2/30"
         data-test="add-unit-form"
       >
         <p class="eyebrow mb-3">Новая единица</p>
