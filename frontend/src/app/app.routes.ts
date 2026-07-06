@@ -110,6 +110,22 @@ export const routes: Routes = [
           ),
         title: 'KPPDF — Материалы',
       },
+      {
+        path: 'organizations',
+        loadComponent: () =>
+          import('./pages/organizations/organizations.page').then(
+            (m) => m.OrganizationsPage,
+          ),
+        title: 'KPPDF — Организации',
+      },
+      {
+        path: 'dictionaries',
+        loadComponent: () =>
+          import('./pages/dictionaries/dictionaries.page').then(
+            (m) => m.DictionariesPage,
+          ),
+        title: 'KPPDF — Справочники',
+      },
     ],
   },
   { path: '**', redirectTo: '' },

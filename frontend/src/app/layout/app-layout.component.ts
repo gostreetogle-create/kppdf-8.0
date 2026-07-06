@@ -17,7 +17,8 @@ interface NavLink {
 
 const NAV_LINKS: NavLink[] = [
   { path: '/materials', label: 'Материалы' },
-  { path: '/counterparties', label: 'Контрагенты', disabled: true },
+  { path: '/organizations', label: 'Организации' },
+  { path: '/dictionaries', label: 'Справочники' },
   { path: '/products', label: 'Продукция', disabled: true },
   { path: '/orders', label: 'Заказы', disabled: true },
 ];

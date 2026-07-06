@@ -17,7 +17,7 @@ export class MaterialService {
     return this.model.create(dto);
   }
 
-  async findAll(q: { page?: number; limit?: number; search?: string; categoryId?: string } = {}) {
+  async findAll(q: { page?: number; limit?: number; search?: string; categoryId?: string; supplierId?: string } = {}) {
     const page = Math.max(1, q.page ?? 1);
     const limit = Math.min(100, Math.max(1, q.limit ?? 20));
     const filter: Record<string, unknown> = {};
@@ -26,10 +26,12 @@ export class MaterialService {
       filter.$or = [{ name: re }, { article: re }, { sku: re }];
     }
     if (q.categoryId) filter.categoryId = new Types.ObjectId(q.categoryId);
+    if (q.supplierId) filter.supplierId = new Types.ObjectId(q.supplierId);
     const [items, total] = await Promise.all([
       this.model.find(filter)
         .populate('categoryId')
         .populate('photoIds')
+        .populate('mainPhotoId')
         .populate('supplierId')
         .sort({ name: 1 })
         .skip((page - 1) * limit)
@@ -45,6 +47,7 @@ export class MaterialService {
     const doc = await this.model.findById(id)
       .populate('categoryId')
       .populate('photoIds')
+      .populate('mainPhotoId')
       .populate('supplierId')
       .exec();
     if (!doc) throw new NotFoundException(`Material ${id} not found`);

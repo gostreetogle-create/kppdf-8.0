@@ -1,15 +1,19 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger as PinoLogger } from 'nestjs-pino';
 import helmet from 'helmet';
 import compression from 'compression';
+import { join } from 'path';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ThrottlerBehindAuthGuard } from './common/guards/throttler-behind-auth.guard';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bufferLogs: true,
+  });
 
   app.useLogger(app.get(PinoLogger));
 
@@ -27,6 +31,11 @@ async function bootstrap() {
       hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
     }),
   );
+
+  // Static serve for uploaded photos at /uploads/* → ./uploads/
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/uploads/',
+  });
 
   // Compression
   app.use(compression());

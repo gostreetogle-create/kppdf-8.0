@@ -35,6 +35,12 @@ type Result = Material | null | undefined;
  *
  * Standalone, OnPush, signal-based. Reactive form (class-validator) for
  * required/optional field enforcement matching `CreateMaterialDto`.
+ *
+ * Note: `priceCurrency` field removed — по политике «Всегда RUB»
+ * (см. docs/data-model.md). Цена в `pricePerUnit` всегда в рублях,
+ * UI отображает символ «₽» рядом с числом.
+ *
+ * Note: supplier/photos/dimensions UI — следующая фаза (см. followups).
  */
 @Component({
   selector: 'app-material-form-dialog',
@@ -129,7 +135,7 @@ type Result = Material | null | undefined;
           </app-pi-form-field>
 
           <app-pi-form-field
-            label="Цена за единицу"
+            label="Цена за единицу, ₽"
             htmlFor="mat-price"
             [error]="errorFor('pricePerUnit')"
           >
@@ -141,22 +147,6 @@ type Result = Material | null | undefined;
               formControlName="pricePerUnit"
               class="w-full h-9 px-4 text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors text-right"
               [class.border-destructive]="hasError('pricePerUnit')"
-            />
-          </app-pi-form-field>
-
-          <app-pi-form-field
-            label="Валюта"
-            htmlFor="mat-currency"
-            [error]="errorFor('priceCurrency')"
-          >
-            <input
-              id="mat-currency"
-              type="text"
-              formControlName="priceCurrency"
-              maxlength="8"
-              autocomplete="off"
-              class="w-full h-9 px-4 text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
-              [class.border-destructive]="hasError('priceCurrency')"
             />
           </app-pi-form-field>
 
@@ -251,7 +241,6 @@ export class MaterialFormDialogComponent implements OnInit {
     unit: this.fb.control('', [Validators.required, Validators.maxLength(32)]),
     sku: this.fb.control<string | null>(null),
     pricePerUnit: this.fb.control<number | null>(null, [Validators.min(0)]),
-    priceCurrency: this.fb.control('RUB', [Validators.minLength(3), Validators.maxLength(8)]),
     stockQty: this.fb.control<number>(0, [Validators.min(0)]),
     description: this.fb.control<string | null>(null, [Validators.maxLength(2000)]),
     notes: this.fb.control<string | null>(null, [Validators.maxLength(2000)]),
@@ -265,7 +254,6 @@ export class MaterialFormDialogComponent implements OnInit {
         unit: this.data.unit,
         sku: this.data.sku ?? null,
         pricePerUnit: this.data.pricePerUnit ?? null,
-        priceCurrency: this.data.priceCurrency ?? 'RUB',
         stockQty: this.data.stockQty ?? 0,
         description: this.data.description ?? null,
         notes: this.data.notes ?? null,
@@ -301,8 +289,7 @@ export class MaterialFormDialogComponent implements OnInit {
       return;
     }
     const v = this.form.getRawValue();
-    // Build payload: drop nulls/empty strings to avoid backend validation
-    // noise ("priceCurrency minLength 3" when we send '').
+    // Build payload: drop nulls/empty strings to avoid backend validation noise.
     const payload: Partial<Material> = {
       name: v.name,
       unit: v.unit,
@@ -310,7 +297,6 @@ export class MaterialFormDialogComponent implements OnInit {
     if (v.article) payload.article = v.article;
     if (v.sku) payload.sku = v.sku;
     if (v.pricePerUnit != null) payload.pricePerUnit = v.pricePerUnit;
-    if (v.priceCurrency) payload.priceCurrency = v.priceCurrency;
     if (v.stockQty != null) payload.stockQty = v.stockQty;
     if (v.description) payload.description = v.description;
     if (v.notes) payload.notes = v.notes;

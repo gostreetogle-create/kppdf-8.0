@@ -2,6 +2,7 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
+  IsIn,
   IsMongoId,
   IsNumber,
   IsOptional,
@@ -11,13 +12,28 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-class DimensionsDto {
-  @IsOptional() @IsNumber() @Min(0) length?: number;
-  @IsOptional() @IsNumber() @Min(0) width?: number;
-  @IsOptional() @IsNumber() @Min(0) height?: number;
-  @IsOptional() @IsNumber() @Min(0) thickness?: number;
-  @IsOptional() @IsNumber() @Min(0) diameter?: number;
-  @IsOptional() @IsString() unit?: string;
+const DIMENSION_TYPES = [
+  'length',
+  'width',
+  'height',
+  'thickness',
+  'diameter',
+  'depth',
+] as const;
+
+export class DimensionDto {
+  @IsIn(DIMENSION_TYPES, {
+    message: `type должен быть одним из: ${DIMENSION_TYPES.join(', ')}`,
+  })
+  type!: (typeof DIMENSION_TYPES)[number];
+
+  @IsNumber()
+  @Min(0)
+  value!: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isImmutable?: boolean;
 }
 
 export class CreateMaterialDto {
@@ -25,32 +41,56 @@ export class CreateMaterialDto {
   @Length(1, 256)
   name!: string;
 
-  @IsOptional() @IsString() @Length(0, 64) article?: string;
+  @IsOptional()
+  @IsString()
+  @Length(0, 64)
+  article?: string;
 
   @IsString()
   @Length(1, 32)
   unit!: string;
 
-  @IsOptional() @IsMongoId() categoryId?: string;
-  @IsOptional() @IsString() @Length(0, 2000) description?: string;
-
-  @IsOptional() @IsNumber() @Min(0) pricePerUnit?: number;
-  @IsOptional() @IsString() @Length(3, 8) priceCurrency?: string;
-  @IsOptional() @IsNumber() @Min(0) stockQty?: number;
+  @IsOptional()
+  @IsMongoId()
+  categoryId?: string;
 
   @IsOptional()
-  @ValidateNested()
-  @Type(() => DimensionsDto)
-  dimensions?: DimensionsDto;
+  @IsString()
+  @Length(0, 2000)
+  description?: string;
 
-  @IsOptional() @IsBoolean() fixedDimensions?: boolean;
-  @IsOptional() @IsString() image?: string;
+  /** Цена за единицу. Всегда в RUB — поле валюты отсутствует. */
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  pricePerUnit?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  stockQty?: number;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DimensionDto)
+  dimensions?: DimensionDto[];
 
   @IsOptional()
   @IsArray()
   @IsMongoId({ each: true })
   photoIds?: string[];
 
-  @IsOptional() @IsMongoId() supplierId?: string;
-  @IsOptional() @IsString() @Length(0, 2000) notes?: string;
+  @IsOptional()
+  @IsMongoId()
+  mainPhotoId?: string;
+
+  @IsOptional()
+  @IsMongoId()
+  supplierId?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 2000)
+  notes?: string;
 }

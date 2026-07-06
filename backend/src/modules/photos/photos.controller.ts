@@ -7,7 +7,10 @@ import {
   HttpStatus,
   Param,
   Post,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CreatePhotoDto, PhotosService } from './photos.service';
@@ -28,6 +31,7 @@ export class PhotosController {
     return this.service.findById(id);
   }
 
+  /** JSON-эндпоинт для регистрации уже загруженного URL (legacy). */
   @Post()
   @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'Photo' })
@@ -36,22 +40,38 @@ export class PhotosController {
   }
 
   /**
-   * TODO: multipart file upload via @nestjs/platform-express + multer.
-   * For now, clients POST pre-uploaded URLs (e.g. from S3 / external CDN).
+   * Multipart upload. Поле формы: `file`. Сохраняет в ./uploads/{uuid}.{ext},
+   * создаёт Photo запись со storageUrl `/uploads/{filename}`.
    */
   @Post('upload')
   @Roles('admin', 'manager')
-  upload() {
-    return {
-      error: 'Not implemented yet. POST JSON to /photos with pre-uploaded storageUrl.',
-    };
+  @UseInterceptors(FileInterceptor('file'))
+  @AuditAction({ action: 'create', entityType: 'Photo' })
+  async upload(
+    @UploadedFile() file: {
+      filename: string;
+      originalname: string;
+      mimetype: string;
+      size: number;
+    },
+  ) {
+    if (!file) {
+      throw new Error('No file uploaded (field name must be "file")');
+    }
+    return this.service.create({
+      storageUrl: `/uploads/${file.filename}`,
+      originalFilename: file.originalname,
+      mimeType: file.mimetype,
+      sizeBytes: file.size,
+      variant: 'original',
+    });
   }
 
   @Delete(':id')
   @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'Photo', idParam: 'id' })
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  async remove(@Param('id') id: string) {
+    await this.service.remove(id);
   }
 }

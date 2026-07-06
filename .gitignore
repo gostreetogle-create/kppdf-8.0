@@ -61,3 +61,7 @@ mimo.exe
 
 # Runtime PID tracker from start.mjs (kept on disk; not tracked in git)
 .start.pids.json
+
+# Uploaded files (runtime)
+backend/uploads/*
+!backend/uploads/.gitkeep

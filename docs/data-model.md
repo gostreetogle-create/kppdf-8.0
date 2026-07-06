@@ -17,6 +17,12 @@
 - Прочие типы указаны вручную (по контексту)
 - ⚠️ = потенциальная проблема (см. секцию «Дубликаты и аномалии»)
 
+## Политики
+
+### Валюта — всегда RUB
+
+Поле `priceCurrency` в `Material` (и любых других сущностях) **удалено**. В системе ровно одна валюта — российский рубль (₽, ISO-4217: RUB). Символ `₽` подставляется на уровне UI при форматировании цены. Если в будущем потребуется multi-currency, поле будет добавлено обратно с миграцией. На дату 2026-07-06 модуль `Currency` удалён из backend, seed `CurrenciesSeed` удалён, контроллер `/currencies` отключён.
+
 ## Карта по доменам
 
 | #  | Домен                       | Кол-во | Ключевые сущности                              |
@@ -375,17 +381,38 @@
 | `categoryId` | `ObjectId` | FK → `MaterialCategory` |
 | `description` | `string` | — |
 | `price` | `number` | Цена (legacy) |
-| `pricePerUnit` | `number` | Цена за единицу |
-| `priceCurrency` | `string` | Валюта |
-| `dimensions` | `object` | Габариты |
-| `fixedDimensions` | `boolean` | Фиксированные размеры |
-| `image` | `string` | Главное фото URL |
+| `pricePerUnit` | `number` | Цена за единицу. Всегда в **RUB** — поле валюты отсутствует (см. политику ниже). |
+| `dimensions` | `Dimension[]` | Габариты (см. `Dimension`). Массив, не объект. |
+| `mainPhotoId` | `ObjectId?` | FK → `Photo`. Главное фото (используется в карточках). Выбирается галочкой из `photoIds[]`. |
 | `photoIds` | `ObjectId[]` | FK → `Photos` |
-| `supplierId` | `ObjectId` | FK → `Counterparty` |
+| `supplierId` | `ObjectId?` | FK → `Organization` (только организации с флагом `type: 'supplier'`) |
 | `notes` | `string` | — |
 | `createdAt` | `Date` | — |
 | `updatedAt` | `Date` | — |
 | `deletedAt` | `Date?` | soft delete |
+
+#### Подсхема `Dimension` (внутри `Material.dimensions[]`)
+
+**Массив габаритов материала. Каждый элемент описывает ОДИН измеряемый параметр (длина / ширина / высота / толщина / диаметр / глубина) с признаком неизменяемости.**
+
+| Поле | Тип | Комментарий |
+|------|-----|-------------|
+| `type` | `string` | Вид размера: `length` / `width` / `height` / `thickness` / `diameter` / `depth` |
+| `value` | `number` | Числовое значение в мм |
+| `isImmutable` | `boolean` | Если `true` — размер **нельзя изменить** downstream (например, толщина листа металла). При создании продукции/модуля это поле блокируется на редактирование. |
+
+**Семантика `isImmutable`:**
+- `true` — параметр **жёстко привязан** к материалу (толщина листа 2 мм — её нельзя «раскатать»).
+- `false` — параметр можно менять downstream (длина и ширина листа могут резаться под нужный модуль).
+
+**Пример (лист металла 2×3 м, толщина 2 мм):**
+```
+dimensions: [
+  { type: 'length',    value: 3000, isImmutable: false },
+  { type: 'width',     value: 2000, isImmutable: false },
+  { type: 'thickness', value: 2,    isImmutable: true  }
+]
+```
 
 ### `MaterialCategory` (Категория материалов)
 

@@ -3,6 +3,21 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../../core/api.tokens';
 
+export type MaterialDimensionType =
+  | 'length'
+  | 'width'
+  | 'height'
+  | 'thickness'
+  | 'diameter'
+  | 'depth';
+
+export interface MaterialDimension {
+  type: MaterialDimensionType;
+  value: number;
+  /** true = downstream не может менять (например, толщина листа). */
+  isImmutable?: boolean;
+}
+
 export interface Material {
   _id: string;
   name: string;
@@ -11,20 +26,12 @@ export interface Material {
   unit: string;
   categoryId?: string;
   description?: string;
+  /** Цена за единицу. Всегда в RUB — поле валюты отсутствует (политика). */
   pricePerUnit?: number;
-  priceCurrency?: string;
   stockQty?: number;
-  dimensions?: {
-    length?: number;
-    width?: number;
-    height?: number;
-    thickness?: number;
-    diameter?: number;
-    unit?: string;
-  };
-  fixedDimensions?: boolean;
-  image?: string;
+  dimensions?: MaterialDimension[];
   photoIds?: string[];
+  mainPhotoId?: string;
   supplierId?: string;
   notes?: string;
   createdAt?: string;

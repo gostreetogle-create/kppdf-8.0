@@ -14,34 +14,14 @@ import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../shared/ui/toast';
-import { Material, MaterialsService } from './materials.service';
-import { MaterialFormDialogComponent } from './material-form-dialog.component';
+import { Organization, OrganizationsService } from './organizations.service';
+import { OrganizationFormDialogComponent } from './organization-form-dialog.component';
 
-type SortKey =
-  | 'name'
-  | 'article'
-  | 'sku'
-  | 'unit'
-  | 'pricePerUnit'
-  | 'stockQty'
-  | null;
+type SortKey = 'name' | 'inn' | 'shortName' | null;
 type SortDir = 'asc' | 'desc';
 
-/**
- * TZ-NEW MaterialsPage (CRUD edition) — site landing with full
- * create / read / update / delete + search.
- *
- * Uses an inline custom HTML table (NOT PiTableComponent) so we can
- * render per-row action buttons (Edit / Delete) — PiTable supports
- * sortable columns but not template cells. The table style mirrors
- * the PiTable aesthetic (border hairline, font-display headers,
- * hover bg) and the canonical example in `forms.page.ts`.
- *
- * Standalone, OnPush, signal-based. Debounced search (300ms) hits
- * /api/materials?search=<q> on the server.
- */
 @Component({
-  selector: 'app-materials-page',
+  selector: 'app-organizations-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FormsModule,
@@ -51,9 +31,9 @@ type SortDir = 'asc' | 'desc';
   ],
   template: `
     <app-pi-page-header
-      eyebrow="раздел · каталог"
-      title="Материалы"
-      description="Справочник материалов: номенклатура, единицы, цены, остатки."
+      eyebrow="раздел · партнёры"
+      title="Организации"
+      description="Юр. лица и ИП — покупатели, поставщики, подрядчики. Один контрагент может совмещать несколько ролей."
     />
 
     <div class="px-5 pt-8 flex items-center gap-4 flex-wrap">
@@ -61,10 +41,10 @@ type SortDir = 'asc' | 'desc';
         type="search"
         [value]="searchQuery()"
         (input)="onSearchInput($event)"
-        placeholder="Поиск по названию…"
-        aria-label="Поиск материалов"
+        placeholder="Поиск по названию или ИНН…"
+        aria-label="Поиск организаций"
         data-test="search-input"
-        class="border hairline border-rule rounded-sm px-4 py-2.5 bg-paper text-sm font-body focus:outline-none focus:border-ink w-64 transition-colors"
+        class="border hairline border-rule rounded-sm px-4 py-2.5 bg-paper text-sm font-body focus:outline-none focus:border-ink w-72 transition-colors"
       />
       <app-pi-button
         variant="default"
@@ -86,7 +66,9 @@ type SortDir = 'asc' | 'desc';
         >
           {{ error() }}
         </div>
-      }          <div class="border hairline border-rule rounded-sm overflow-hidden">
+      }
+
+      <div class="border hairline border-rule rounded-sm overflow-hidden">
         <table class="w-full text-sm">
           <thead class="border-b hairline border-rule">
             <tr>
@@ -98,34 +80,17 @@ type SortDir = 'asc' | 'desc';
               </th>
               <th
                 class="text-left py-3 px-4 eyebrow cursor-pointer select-none"
-                (click)="setSort('article')"
+                (click)="setSort('shortName')"
               >
-                Артикул {{ sortIcon('article') }}
+                Краткое {{ sortIcon('shortName') }}
               </th>
               <th
                 class="text-left py-3 px-4 eyebrow cursor-pointer select-none"
-                (click)="setSort('sku')"
+                (click)="setSort('inn')"
               >
-                Код {{ sortIcon('sku') }}
+                ИНН {{ sortIcon('inn') }}
               </th>
-              <th
-                class="text-left py-3 px-4 eyebrow cursor-pointer select-none"
-                (click)="setSort('unit')"
-              >
-                Ед. {{ sortIcon('unit') }}
-              </th>
-              <th
-                class="text-right py-3 px-4 eyebrow cursor-pointer select-none"
-                (click)="setSort('pricePerUnit')"
-              >
-                Цена {{ sortIcon('pricePerUnit') }}
-              </th>
-              <th
-                class="text-right py-3 px-4 eyebrow cursor-pointer select-none"
-                (click)="setSort('stockQty')"
-              >
-                Остаток {{ sortIcon('stockQty') }}
-              </th>
+              <th class="text-left py-3 px-4 eyebrow">Типы</th>
               <th class="text-right py-3 px-4 eyebrow w-32">Действия</th>
             </tr>
           </thead>
@@ -133,17 +98,23 @@ type SortDir = 'asc' | 'desc';
             @for (row of sortedRows(); track row._id) {
               <tr
                 class="border-b hairline border-rule last:border-0 hover:bg-sunrise-soft transition-colors"
-                [attr.data-test]="'material-row-' + row._id"
+                [attr.data-test]="'org-row-' + row._id"
               >
-                <td class="py-3 px-4 align-top">{{ row.name }}</td>
-                <td class="py-3 px-4 align-top">{{ row.article || '—' }}</td>
-                <td class="py-3 px-4 align-top">{{ row.sku || '—' }}</td>
-                <td class="py-3 px-4 align-top">{{ row.unit }}</td>
-                <td class="py-3 px-4 text-right align-top">
-                  {{ formatPrice(row) }}
+                <td class="py-3 px-4 align-top font-medium">{{ row.name }}</td>
+                <td class="py-3 px-4 align-top text-muted">
+                  {{ row.shortName || '—' }}
                 </td>
-                <td class="py-3 px-4 text-right align-top">
-                  {{ row.stockQty ?? 0 }}
+                <td class="py-3 px-4 align-top mono text-xs">
+                  {{ row.inn }}
+                </td>
+                <td class="py-3 px-4 align-top">
+                  <div class="flex flex-wrap gap-1">
+                    @for (t of (row.type || []); track t) {
+                      <span class="eyebrow text-[9px] px-1.5 py-0.5 border hairline border-rule rounded-sm">
+                        {{ t }}
+                      </span>
+                    }
+                  </div>
                 </td>
                 <td class="py-3 px-4 text-right align-top">
                   <div class="flex items-center justify-end gap-2">
@@ -171,14 +142,11 @@ type SortDir = 'asc' | 'desc';
             }
             @if (sortedRows().length === 0 && !loading()) {
               <tr>
-                <td
-                  colspan="7"
-                  class="py-12 px-4 text-center text-muted"
-                >
+                <td colspan="5" class="py-12 px-4 text-center text-muted">
                   <div class="flex flex-col items-center gap-1">
                     <span class="eyebrow text-sunrise-warm">00</span>
                     <span class="text-sm">
-                      {{ searchQuery() ? 'Ничего не найдено.' : 'Нет материалов. Нажмите «Создать», чтобы добавить первый.' }}
+                      {{ searchQuery() ? 'Ничего не найдено.' : 'Нет организаций. Нажмите «Создать», чтобы добавить первую.' }}
                     </span>
                   </div>
                 </td>
@@ -186,7 +154,7 @@ type SortDir = 'asc' | 'desc';
             }
             @if (loading() && sortedRows().length === 0) {
               <tr>
-                <td colspan="7" class="py-12 px-4 text-center text-muted">
+                <td colspan="5" class="py-12 px-4 text-center text-muted">
                   Загрузка…
                 </td>
               </tr>
@@ -197,12 +165,12 @@ type SortDir = 'asc' | 'desc';
     </app-pi-section>
   `,
 })
-export class MaterialsPage implements OnInit {
-  private readonly service = inject(MaterialsService);
+export class OrganizationsPage implements OnInit {
+  private readonly service = inject(OrganizationsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
 
-  protected readonly data = signal<Material[]>([]);
+  protected readonly data = signal<Organization[]>([]);
   protected readonly total = signal<number>(0);
   protected readonly loading = signal<boolean>(true);
   protected readonly error = signal<string | null>(null);
@@ -211,7 +179,7 @@ export class MaterialsPage implements OnInit {
   protected readonly sortKey = signal<SortKey>('name');
   protected readonly sortDir = signal<SortDir>('asc');
 
-  protected readonly sortedRows = computed<Material[]>(() => {
+  protected readonly sortedRows = computed<Organization[]>(() => {
     const rows = this.data().slice();
     const k = this.sortKey();
     if (!k) return rows;
@@ -222,9 +190,6 @@ export class MaterialsPage implements OnInit {
       if (av == null && bv == null) return 0;
       if (av == null) return -1 * sign;
       if (bv == null) return 1 * sign;
-      if (typeof av === 'number' && typeof bv === 'number') {
-        return (av - bv) * sign;
-      }
       return String(av).localeCompare(String(bv), 'ru') * sign;
     });
   });
@@ -235,12 +200,6 @@ export class MaterialsPage implements OnInit {
     this.reload();
   }
 
-  /**
-   * Bridge a DialogRef's `closed` signal to a one-shot subscription.
-   * Signal is `TResult | undefined` (undefined before close); `first(v !== undefined)`
-   * takes only the value set by ref.close(v). We reload only if the
-   * user actually saved (v truthy) — not on cancel.
-   */
   private refreshOnDialogClose<TResult>(ref: DialogRef<TResult>): void {
     toObservable(ref.closed)
       .pipe(first((v) => v !== undefined))
@@ -273,51 +232,46 @@ export class MaterialsPage implements OnInit {
     return this.sortDir() === 'asc' ? '↑' : '↓';
   }
 
-  protected formatPrice(row: Material): string {
-    if (row.pricePerUnit == null) return '—';
-    return `${row.pricePerUnit.toFixed(2)} ₽`;
-  }
-
   protected totalLabel(n: number): string {
     const mod10 = n % 10;
     const mod100 = n % 100;
-    if (mod10 === 1 && mod100 !== 11) return 'материал';
+    if (mod10 === 1 && mod100 !== 11) return 'организация';
     if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
-      return 'материала';
+      return 'организации';
     }
-    return 'материалов';
+    return 'организаций';
   }
 
   protected openCreate(): void {
-    const ref = this.dialog.open(MaterialFormDialogComponent, {
+    const ref = this.dialog.open(OrganizationFormDialogComponent, {
       data: null,
       width: 'lg',
     });
     this.refreshOnDialogClose(ref);
   }
 
-  protected openEdit(material: Material): void {
-    const ref = this.dialog.open(MaterialFormDialogComponent, {
-      data: material,
+  protected openEdit(org: Organization): void {
+    const ref = this.dialog.open(OrganizationFormDialogComponent, {
+      data: org,
       width: 'lg',
     });
     this.refreshOnDialogClose(ref);
   }
 
-  protected onDelete(row: Material): void {
+  protected onDelete(row: Organization): void {
     const ok = window.confirm(
-      `Удалить материал «${row.name}»?\n\nЭто действие нельзя отменить.`,
+      `Удалить организацию «${row.name}»?\n\nЭто действие нельзя отменить.`,
     );
     if (!ok) return;
     this.service.remove(row._id).subscribe({
       next: () => {
-        this.toast.success('Материал удалён');
+        this.toast.success('Организация удалена');
         this.reload();
       },
       error: (err: unknown) => {
         const e = err as { error?: { message?: string }; message?: string };
         this.toast.error(
-          e?.error?.message ?? e?.message ?? 'Не удалось удалить материал.',
+          e?.error?.message ?? e?.message ?? 'Не удалось удалить организацию.',
         );
       },
     });
@@ -338,14 +292,10 @@ export class MaterialsPage implements OnInit {
         error: (err: unknown) => {
           const e = err as { error?: { message?: string }; message?: string };
           this.error.set(
-            e?.error?.message ?? e?.message ?? 'Не удалось загрузить материалы.',
+            e?.error?.message ?? e?.message ?? 'Не удалось загрузить организации.',
           );
           this.loading.set(false);
         },
       });
   }
-
-  /**
-   * (No more setInterval polling — moved to refreshOnDialogClose above.)
-   */
 }
