@@ -5,7 +5,9 @@ import {
   MongooseHealthIndicator,
   HealthIndicatorResult,
 } from '@nestjs/terminus';
+import { Public } from './common/decorators/public.decorator';
 
+@Public()
 @Controller('health')
 export class HealthController {
   private readonly startedAt = Date.now();

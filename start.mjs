@@ -108,7 +108,7 @@ Production mode (--prod):
 Endpoints:
   Backend:  http://localhost:3000/api/health
   Frontend: http://localhost:4200
-  Login:    admin@kppdf.local / admin (default)
+  Login:    admin@kppdf.local / admin123 (default from .env ADMIN_PASSWORD)
   Showcase: http://localhost:4200/p/showcase (UI Kit — TZ-31..40)
 `);
   exit(0);
@@ -855,7 +855,7 @@ function printReadyPanel() {
     [`${c.cyan}📦${c.reset}  Backend`,  `${HOSTS.backend}/api/health`],
   ];
   const right = [
-    [`${c.cyan}👤${c.reset}  Логин`,    `admin@kppdf.local / admin`],
+    [`${c.cyan}👤${c.reset}  Логин`,    `admin@kppdf.local / admin123`],
     [`${c.cyan}📋${c.reset}  Showcase`, `${HOSTS.frontend}/p/showcase`],
   ];
   // Динамическая ширина: используем ширину терминала, но не менее 80 и не более 120
