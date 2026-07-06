@@ -37,7 +37,7 @@ export class SelectTriggerComponent {
 
   readonly computedClass = computed(() => {
     const isMd = this.size() === 'md';
-    const sizeCls = isMd ? 'px-3 py-2 text-sm' : 'px-2 py-1 text-xs';
+    const sizeCls = isMd ? 'h-10 px-control-x text-sm' : 'h-8 px-3 text-xs';
     return [
       'inline-flex',
       'items-center',

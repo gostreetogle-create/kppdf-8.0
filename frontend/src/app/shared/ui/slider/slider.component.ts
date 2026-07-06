@@ -83,7 +83,7 @@ export class SliderComponent implements ControlValueAccessor {
 
   readonly valueChange = output<number>();
 
-  readonly computedClass = computed(() => 'block w-full h-1');
+  readonly computedClass = computed(() => 'block w-full h-2 py-control-y');
 
   // ─── ControlValueAccessor ───
   private onChange: (value: number) => void = () => {};

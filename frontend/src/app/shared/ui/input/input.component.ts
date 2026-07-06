@@ -31,8 +31,8 @@ const BASE_CLASS =
   'disabled:opacity-50 disabled:cursor-not-allowed';
 
 const SIZE_CLASS: Record<PiInputSize, string> = {
-  sm: 'h-7 px-2 text-xs',
-  md: 'h-9 px-3 text-sm',
+  sm: 'h-8 px-3 text-xs',
+  md: 'h-10 px-control-x text-sm',
 };
 
 /**

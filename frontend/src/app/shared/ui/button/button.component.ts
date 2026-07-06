@@ -31,9 +31,9 @@ const VARIANT_CLASS: Record<PiButtonVariant, string> = {
 };
 
 const SIZE_CLASS: Record<PiButtonSize, string> = {
-  sm: 'h-7 px-3 text-xs',
-  md: 'h-9 px-4 text-sm',
-  lg: 'h-11 px-6 text-base',
+  sm: 'h-8 px-3 text-xs',
+  md: 'h-10 px-4 text-sm',
+  lg: 'h-12 px-6 text-base',
   icon: 'h-9 w-9 p-0',
 };
 

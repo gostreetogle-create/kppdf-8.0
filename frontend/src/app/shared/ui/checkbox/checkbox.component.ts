@@ -92,6 +92,7 @@ export class CheckboxComponent implements ControlValueAccessor {
       'inline-flex',
       'items-center',
       'justify-center',
+      'shrink-0',
       dim,
       'border',
       'hairline',

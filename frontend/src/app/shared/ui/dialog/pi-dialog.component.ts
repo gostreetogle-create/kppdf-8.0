@@ -34,7 +34,7 @@ import type { DialogRef } from './pi-dialog.service';
           }
         </header>
       }
-      <div class="px-6 py-5 text-sm text-ink">
+      <div class="px-6 py-6 text-sm text-ink">
         <ng-content select="[body]" />
       </div>
       <footer

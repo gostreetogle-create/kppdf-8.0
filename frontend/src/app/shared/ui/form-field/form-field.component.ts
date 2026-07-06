@@ -14,7 +14,7 @@ import { LabelComponent } from '../label/label.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LabelComponent],
   template: `
-    <div class="flex flex-col gap-1.5">
+    <div class="flex flex-col gap-form-row">
       @if (label()) {
         <app-pi-label
           [variant]="required() ? 'required' : 'default'"
