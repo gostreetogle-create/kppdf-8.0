@@ -180,15 +180,9 @@ type SortDir = 'asc' | 'desc';
                 <td class="py-2.5 px-4 align-top empty-cell">{{ row.article }}</td>
                 <td class="py-2.5 px-4 align-top empty-cell">{{ row.sku }}</td>
                 <td class="py-2.5 px-4 align-top whitespace-nowrap">{{ row.unit }}</td>
-                <td class="py-2.5 px-4 align-top empty-cell">
-                  {{ supplierNameOf(row) }}
-                </td>
-                <td class="py-2.5 px-4 align-top mono text-xs whitespace-nowrap empty-cell">
-                  {{ dimensionsSummary(row) }}
-                </td>
-                <td class="py-2.5 px-4 text-right align-top whitespace-nowrap empty-cell">
-                  {{ formatPrice(row) }}
-                </td>
+                <td class="py-2.5 px-4 align-top empty-cell">{{ supplierNameOf(row) }}</td>
+                <td class="py-2.5 px-4 align-top mono text-xs whitespace-nowrap empty-cell">{{ dimensionsSummary(row) }}</td>
+                <td class="py-2.5 px-4 text-right align-top whitespace-nowrap empty-cell">{{ formatPrice(row) }}</td>
                 <td class="py-2.5 px-4 text-right align-top whitespace-nowrap">
                   {{ row.stockQty ?? 0 }}
                 </td>
