@@ -19,7 +19,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <header class="pt-12 pb-8 px-page-x border-b hairline border-rule">
+    <header class="pt-2 pb-6 px-page-x border-b hairline border-rule">
       <p class="eyebrow mb-4">{{ eyebrow() }}</p>
       <h1 class="font-display font-bold text-5xl tracking-tight leading-[1.05]">
         {{ title() }}

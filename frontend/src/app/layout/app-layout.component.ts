@@ -134,7 +134,7 @@ const NAV_LINKS: NavLink[] = [
         </main>
 
         <footer
-          class="border-t hairline border-sunrise-warm mt-auto py-footer-y
+          class="border-t hairline border-sunrise-warm mt-8 py-section
                  font-mono text-[11px] uppercase tracking-[0.18em]
                  text-muted flex flex-wrap justify-between gap-3"
         >

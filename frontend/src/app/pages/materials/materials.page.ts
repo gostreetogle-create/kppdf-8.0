@@ -54,7 +54,7 @@ type SortDir = 'asc' | 'desc';
       description="Справочник материалов: номенклатура, поставщики, габариты, фото, цены, остатки."
     />
 
-    <div class="px-page-x pt-6 pb-8 flex items-center gap-3 flex-wrap">
+    <div class="px-page-x pt-0 pb-6 flex items-center gap-3 flex-wrap">
       <input
         type="search"
         [value]="searchQuery()"
