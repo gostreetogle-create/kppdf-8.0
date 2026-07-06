@@ -129,7 +129,7 @@ import { Unit, UnitsService } from './units.service';
         <table class="w-full text-sm">
           <thead class="border-b hairline border-rule">
             <tr>
-              <th class="text-left py-3 px-4 eyebrow w-24">Ключ</th>
+              <th class="text-left py-3 px-4 eyebrow w-24 whitespace-nowrap">Ключ</th>
               <th class="text-left py-3 px-4 eyebrow">Название</th>
               <th class="text-left py-3 px-4 eyebrow w-20">Символ</th>
               <th class="text-left py-3 px-4 eyebrow w-32">Категория</th>
@@ -145,7 +145,7 @@ import { Unit, UnitsService } from './units.service';
                 [class.opacity-50]="!u.isActive"
                 [attr.data-test]="'unit-row-' + u.key"
               >
-                <td class="py-3 px-4 align-top mono text-xs font-medium">{{ u.key }}</td>
+                <td class="py-3 px-4 align-top mono text-xs font-medium whitespace-nowrap">{{ u.key }}</td>
                 <td class="py-3 px-4 align-top">{{ u.label }}</td>
                 <td class="py-3 px-4 align-top text-muted">{{ u.symbol || '—' }}</td>
                 <td class="py-3 px-4 align-top text-muted text-xs">{{ u.category || '—' }}</td>

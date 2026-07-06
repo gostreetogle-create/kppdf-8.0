@@ -73,7 +73,7 @@ type SortDir = 'asc' | 'desc';
       >
         + Создать
       </app-pi-button>
-      <span class="eyebrow text-sunrise-warm ml-auto">
+      <span class="eyebrow text-sunrise-warm">
         {{ total() }} {{ totalLabel(total()) }}
       </span>
     </div>
@@ -86,8 +86,8 @@ type SortDir = 'asc' | 'desc';
         >
           {{ error() }}
         </div>
-      }      <div class="overflow-hidden">
-        <table class="w-full text-sm">
+      }      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[960px]">
           <thead class="border-b hairline border-rule">
             <tr>
               <th
@@ -109,24 +109,24 @@ type SortDir = 'asc' | 'desc';
                 Код {{ sortIcon('sku') }}
               </th>
               <th
-                class="text-left py-3 px-4 eyebrow cursor-pointer select-none"
+                class="text-left py-3 px-4 eyebrow cursor-pointer select-none min-w-24 whitespace-nowrap"
                 (click)="setSort('unit')"
               >
                 Ед. {{ sortIcon('unit') }}
               </th>
               <th
-                class="text-right py-3 px-4 eyebrow cursor-pointer select-none"
+                class="text-right py-3 px-4 eyebrow cursor-pointer select-none min-w-32 whitespace-nowrap"
                 (click)="setSort('pricePerUnit')"
               >
                 Цена {{ sortIcon('pricePerUnit') }}
               </th>
               <th
-                class="text-right py-3 px-4 eyebrow cursor-pointer select-none"
+                class="text-right py-3 px-4 eyebrow cursor-pointer select-none min-w-24 whitespace-nowrap"
                 (click)="setSort('stockQty')"
               >
                 Остаток {{ sortIcon('stockQty') }}
               </th>
-              <th class="text-right py-3 px-4 eyebrow w-32">Действия</th>
+              <th class="text-right py-3 px-4 eyebrow w-40">Действия</th>
             </tr>
           </thead>
           <tbody>
@@ -138,11 +138,11 @@ type SortDir = 'asc' | 'desc';
                 <td class="py-3 px-4 align-top">{{ row.name }}</td>
                 <td class="py-3 px-4 align-top">{{ row.article || '—' }}</td>
                 <td class="py-3 px-4 align-top">{{ row.sku || '—' }}</td>
-                <td class="py-3 px-4 align-top">{{ row.unit }}</td>
-                <td class="py-3 px-4 text-right align-top">
+                <td class="py-3 px-4 align-top whitespace-nowrap">{{ row.unit }}</td>
+                <td class="py-3 px-4 text-right align-top whitespace-nowrap">
                   {{ formatPrice(row) }}
                 </td>
-                <td class="py-3 px-4 text-right align-top">
+                <td class="py-3 px-4 text-right align-top whitespace-nowrap">
                   {{ row.stockQty ?? 0 }}
                 </td>
                 <td class="py-3 px-4 text-right align-top">

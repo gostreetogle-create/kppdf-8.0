@@ -20,9 +20,9 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section class="py-12">
+    <section class="pt-12 pb-6">
       <header
-        class="mb-6 flex items-baseline gap-3 border-b hairline border-rule pb-3"
+        class="mb-form-field flex items-end gap-3 border-b hairline border-rule pb-3"
       >
         @if (indexRoman()) {
           <span class="font-display text-2xl tracking-tight text-muted">

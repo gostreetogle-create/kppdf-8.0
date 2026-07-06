@@ -36,7 +36,7 @@ type SortDir = 'asc' | 'desc';
       description="Юр. лица и ИП — покупатели, поставщики, подрядчики. Один контрагент может совмещать несколько ролей."
     />
 
-    <div class="px-5 pt-8 flex items-center gap-4 flex-wrap">
+    <div class="px-page-x py-page-y flex items-center gap-form-field flex-wrap">
       <input
         type="search"
         [value]="searchQuery()"
@@ -53,7 +53,7 @@ type SortDir = 'asc' | 'desc';
       >
         + Создать
       </app-pi-button>
-      <span class="eyebrow text-sunrise-warm ml-auto">
+      <span class="eyebrow text-sunrise-warm">
         {{ total() }} {{ totalLabel(total()) }}
       </span>
     </div>
@@ -68,8 +68,8 @@ type SortDir = 'asc' | 'desc';
         </div>
       }
 
-      <div class="border hairline border-rule rounded-sm overflow-hidden">
-        <table class="w-full text-sm">
+      <div class="border hairline border-rule rounded-sm overflow-x-auto">
+        <table class="w-full text-sm min-w-[640px]">
           <thead class="border-b hairline border-rule">
             <tr>
               <th
@@ -91,7 +91,7 @@ type SortDir = 'asc' | 'desc';
                 ИНН {{ sortIcon('inn') }}
               </th>
               <th class="text-left py-3 px-4 eyebrow">Типы</th>
-              <th class="text-right py-3 px-4 eyebrow w-32">Действия</th>
+              <th class="text-right py-3 px-4 eyebrow w-40">Действия</th>
             </tr>
           </thead>
           <tbody>
@@ -104,7 +104,7 @@ type SortDir = 'asc' | 'desc';
                 <td class="py-3 px-4 align-top text-muted">
                   {{ row.shortName || '—' }}
                 </td>
-                <td class="py-3 px-4 align-top mono text-xs">
+                <td class="py-3 px-4 align-top mono text-xs whitespace-nowrap">
                   {{ row.inn }}
                 </td>
                 <td class="py-3 px-4 align-top">
