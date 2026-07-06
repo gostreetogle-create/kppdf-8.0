@@ -111,25 +111,25 @@ type SortDir = 'asc' | 'desc';
           <thead class="border-b hairline border-rule">
             <tr>
               <th
-                class="text-left py-3 px-4 font-display font-semibold cursor-pointer hover:text-accent-warm"
+                class="text-left py-2.5 px-4 font-display font-semibold cursor-pointer group"
                 (click)="setSort('name')"
-              >Название {{ sortIndicator('name') }}</th>
+              >Название <span [class.text-sunrise-warm]="isSortedBy('name')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIndicator('name') }}</span></th>
               <th
-                class="text-right py-2 px-4 font-display font-semibold cursor-pointer hover:text-accent-warm"
+                class="text-right py-2.5 px-4 font-display font-semibold cursor-pointer group"
                 (click)="setSort('qty')"
-              >Кол-во {{ sortIndicator('qty') }}</th>
+              >Кол-во <span [class.text-sunrise-warm]="isSortedBy('qty')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIndicator('qty') }}</span></th>
               <th
-                class="text-left py-3 px-4 font-display font-semibold cursor-pointer hover:text-accent-warm"
+                class="text-left py-2.5 px-4 font-display font-semibold cursor-pointer group"
                 (click)="setSort('status')"
-              >Статус {{ sortIndicator('status') }}</th>
+              >Статус <span [class.text-sunrise-warm]="isSortedBy('status')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIndicator('status') }}</span></th>
             </tr>
           </thead>
           <tbody>
             @for (row of pagedRows(); track row.id) {
-              <tr class="border-b hairline border-rule last:border-0 hover:bg-paper-2 transition-colors">
-                <td class="py-3 px-4">{{ row.name }}</td>
-                <td class="py-3 px-4 text-right mono text-xs whitespace-nowrap">{{ row.qty }}</td>
-                <td class="py-3 px-4">
+              <tr class="border-b hairline border-rule last:border-0 odd:bg-paper-2/30 hover:bg-sunrise-soft transition-colors">
+                <td class="py-2.5 px-4">{{ row.name }}</td>
+                <td class="py-2.5 px-4 text-right mono text-xs whitespace-nowrap">{{ row.qty }}</td>
+                <td class="py-2.5 px-4">
                   <span class="eyebrow text-[10px]">{{ statusLabel(row.status) }}</span>
                 </td>
               </tr>
@@ -275,6 +275,10 @@ export class FormsPage {
   protected sortIndicator(key: 'name' | 'qty' | 'status'): string {
     if (this.sortKey() !== key) return '';
     return this.sortDir() === 'asc' ? '↑' : '↓';
+  }
+
+  protected isSortedBy(key: 'name' | 'qty' | 'status'): boolean {
+    return this.sortKey() === key;
   }
 
   protected statusLabel(s: InventoryRow['status']): string {
