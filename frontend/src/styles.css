@@ -28,6 +28,48 @@
 
 @import 'tailwindcss';
 
+/* =============================================================================
+ * SEMANTIC SPACING TOKENS (TZ-AUDIT)
+ *
+ * 8px base grid (Apple HIG-style) with 4px sub-unit for hairline
+ * refinements. 12px is intentional for `control-x` (input/button
+ * horizontal padding) — 8 + 4 sub-unit, common across Material
+ * and Carbon. Touch targets step on 8px (32 / 40 / 44).
+ *
+ * These tokens are exposed BOTH as raw CSS variables (for JS / inline
+ * styles) AND as Tailwind utility classes via `@theme inline` below
+ * (so developers can write `p-control-x`, `min-h-touch` etc).
+ * ============================================================================= */
+:root {
+  /* Sub-units (4px base) */
+  --space-1:  4px;
+  --space-2:  8px;    /* sm */
+  --space-3:  12px;   /* md — control-x baseline */
+  --space-4:  16px;   /* lg */
+  --space-6:  24px;   /* xl — page-x, section gap */
+  --space-8:  32px;   /* 2xl — page-y, touch min */
+  --space-10: 40px;   /* touch comfortable */
+  --space-12: 48px;   /* 3xl */
+  --space-16: 64px;   /* 4xl — footer top margin */
+
+  /* Semantic aliases (single source of truth) */
+  --space-control-x: 12px;     /* input/button horizontal padding */
+  --space-control-y: 8px;      /* input/button vertical (small) */
+  --space-control-y-md: 10px;  /* input/button vertical (medium-large) */
+  --space-form-field: 16px;    /* gap between form fields */
+  --space-form-row: 8px;       /* gap label→input inside a field */
+  --space-section: 24px;       /* gap between page sections */
+  --space-page-x: 24px;        /* page horizontal padding */
+  --space-page-y: 32px;        /* page top padding */
+  --space-header-y: 32px;      /* page-header vertical padding */
+  --space-footer-y: 48px;      /* footer vertical padding */
+
+  /* Touch targets (Apple HIG 44 / Material 48 / Web 32 minimum) */
+  --touch-min: 32px;           /* w-8 h-8 — minimum click target */
+  --touch-comfortable: 40px;   /* w-10 h-10 */
+  --touch-a11y: 44px;          /* iOS HIG */
+}
+
 @theme inline {
   /* === Palette (OKLCH @theme inline is CANONICAL source of truth) ===
      TZ-77 ↔ TZ-32 coupling: override layer pattern implemented via
@@ -70,6 +112,9 @@
   --color-sunrise-glow:  var(--color-sunrise-glow-override,  oklch(0.72 0.18  60));
   --color-sunrise-mist:  var(--color-sunrise-mist-override,  oklch(0.965 0.025 80));
 
+  /* === Muted foreground (secondary text) === */
+  --color-muted-foreground: var(--color-muted-foreground-override, oklch(0.55 0.01 80));
+
   /* === Typography === */
   --font-display: 'Syne', 'Helvetica Neue', sans-serif;
   --font-body:    'Plus Jakarta Sans', system-ui, sans-serif;
@@ -81,6 +126,40 @@
 
   /* === Border weights === */
   --border-width-hairline: 1px;
+
+  /* === Spacing scale (4px base grid, with semantic aliases below) === */
+  --spacing-0: 0px;
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --spacing-10: 40px;
+  --spacing-12: 48px;
+  --spacing-16: 64px;
+
+  /* === Semantic spacing utility tokens (TZ-AUDIT) ===
+     These auto-generate Tailwind utility classes:
+       p-control-x  → padding-left/right: 12px
+       py-page-y    → padding-top/bottom: 32px
+       gap-form     → gap: 16px
+       min-h-touch  → min-height: 32px
+       etc. */
+  --spacing-control-x: var(--space-control-x);
+  --spacing-control-y: var(--space-control-y);
+  --spacing-control-y-md: var(--space-control-y-md);
+  --spacing-form-field: var(--space-form-field);
+  --spacing-form-row: var(--space-form-row);
+  --spacing-section: var(--space-section);
+  --spacing-page-x: var(--space-page-x);
+  --spacing-page-y: var(--space-page-y);
+  --spacing-header-y: var(--space-header-y);
+  --spacing-footer-y: var(--space-footer-y);
+  --spacing-touch: var(--touch-min);
+  --spacing-touch-comfortable: var(--touch-comfortable);
+  --spacing-touch-a11y: var(--touch-a11y);
 }
 
 @layer base {
@@ -114,6 +193,7 @@
     --color-sunrise-warm: oklch(0.72 0.08  55);
     --color-sunrise-glow: oklch(0.82 0.16  60);
     --color-sunrise-mist: oklch(0.24 0.025 80);
+    --color-muted-foreground: oklch(0.60 0.01 80);
   }
 }
 
