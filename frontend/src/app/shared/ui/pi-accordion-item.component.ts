@@ -15,7 +15,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
         [attr.aria-expanded]="expanded()"
         [disabled]="disabled()"
         (click)="expandedChange.emit(!expanded())"
-        class="w-full text-left flex items-center justify-between gap-4 py-4 px-1 hover:bg-paper-2 transition-colors disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
+        class="w-full text-left flex items-center justify-between gap-4 min-h-touch py-control-y px-control-x hover:bg-paper-2 transition-colors disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
       >
         <div class="flex items-baseline gap-3">
           @if (index()) {
@@ -33,7 +33,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
         </div>
       </button>
       @if (expanded()) {
-        <div class="px-1 pb-4 text-sm text-ink">
+        <div class="px-control-x pb-4 text-sm text-ink">
           <ng-content />
         </div>
       }

@@ -20,13 +20,14 @@ export type SwitchSize = 'sm' | 'md';
       [attr.aria-disabled]="disabled()"
       [disabled]="disabled()"
       [class]="computedClass()"
+      [style.--switch-thumb-offset]="thumbOffset()"
       (click)="onToggle()"
     >
       <span class="switch-thumb" aria-hidden="true"></span>
     </button>
   `,
   styles: [`
-    :host { display: inline-flex; }
+    :host { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; min-width: 32px; }
     .switch-track {
       position: relative;
       display: inline-block;
@@ -45,7 +46,7 @@ export type SwitchSize = 'sm' | 'md';
       transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
                   background-color 150ms ease;
     }
-    .switch-track.is-on .switch-thumb { background: var(--color-paper); transform: translate(16px, -50%); }
+    .switch-track.is-on .switch-thumb { background: var(--color-paper); transform: translate(var(--switch-thumb-offset, 16px), -50%); }
   `],
 })
 export class SwitchComponent {
@@ -68,6 +69,8 @@ export class SwitchComponent {
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper',
     ].filter(Boolean).join(' ');
   });
+
+  readonly thumbOffset = computed(() => this.size() === 'md' ? '16px' : '12px');
 
   onToggle(): void {
     if (this.disabled()) return;

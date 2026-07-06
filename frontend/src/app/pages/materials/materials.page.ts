@@ -15,6 +15,8 @@ import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { Material, MaterialsService } from './materials.service';
+import { Photo, PhotosService } from './photos.service';
+import { Organization, OrganizationsService } from '../organizations/organizations.service';
 import { MaterialFormDialogComponent } from './material-form-dialog.component';
 
 type SortKey =
@@ -28,17 +30,13 @@ type SortKey =
 type SortDir = 'asc' | 'desc';
 
 /**
- * TZ-NEW MaterialsPage (CRUD edition) — site landing with full
- * create / read / update / delete + search.
+ * MaterialsPage — list with supplier/photo/dimensions columns.
  *
- * Uses an inline custom HTML table (NOT PiTableComponent) so we can
- * render per-row action buttons (Edit / Delete) — PiTable supports
- * sortable columns but not template cells. The table style mirrors
- * the PiTable aesthetic (border hairline, font-display headers,
- * hover bg) and the canonical example in `forms.page.ts`.
+ * Lookup tables:
+ *  - suppliersById: orgId → Organization (for Поставщик column)
+ *  - photosById: photoId → Photo (for thumbnail + Фото column)
  *
- * Standalone, OnPush, signal-based. Debounced search (300ms) hits
- * /api/materials?search=<q> on the server.
+ * Standalone + OnPush + signal-based.
  */
 @Component({
   selector: 'app-materials-page',
@@ -53,7 +51,7 @@ type SortDir = 'asc' | 'desc';
     <app-pi-page-header
       eyebrow="раздел · каталог"
       title="Материалы"
-      description="Справочник материалов: номенклатура, единицы, цены, остатки."
+      description="Справочник материалов: номенклатура, поставщики, габариты, фото, цены, остатки."
     />
 
     <div class="px-page-x pt-6 pb-8 flex items-center gap-3 flex-wrap">
@@ -78,7 +76,11 @@ type SortDir = 'asc' | 'desc';
       </span>
     </div>
 
-    <app-pi-section title="Каталог" hint="сортировка · клик по заголовку" eyebrow="I">
+    <app-pi-section
+      title="Каталог"
+      hint="сортировка · клик по заголовку · габариты: L=Длина W=Ширина H=Высота T=Толщина Ø=Диаметр D=Глубина"
+      eyebrow="I"
+    >
       @if (error()) {
         <div
           role="alert"
@@ -86,10 +88,18 @@ type SortDir = 'asc' | 'desc';
         >
           {{ error() }}
         </div>
-      }      <div class="overflow-x-auto">
-        <table class="w-full text-sm min-w-[960px]">
+      }
+      <div class="overflow-x-auto">
+        <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
+          ← Таблица широкая — прокручивайте горизонтально →
+        </p>
+        <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
+          ← Таблица широкая — прокручивайте горизонтально →
+        </p>
+        <table class="w-full text-sm min-w-[1280px]">
           <thead class="border-b hairline border-rule">
             <tr>
+              <th class="text-left py-3 px-4 eyebrow w-16">Фото</th>
               <th
                 class="text-left py-3 px-4 eyebrow cursor-pointer select-none"
                 (click)="setSort('name')"
@@ -114,6 +124,8 @@ type SortDir = 'asc' | 'desc';
               >
                 Ед. {{ sortIcon('unit') }}
               </th>
+              <th class="text-left py-3 px-4 eyebrow min-w-40">Поставщик</th>
+              <th class="text-left py-3 px-4 eyebrow min-w-40">Габариты</th>
               <th
                 class="text-right py-3 px-4 eyebrow cursor-pointer select-none min-w-32 whitespace-nowrap"
                 (click)="setSort('pricePerUnit')"
@@ -135,10 +147,33 @@ type SortDir = 'asc' | 'desc';
                 class="border-b hairline border-rule last:border-0 hover:bg-sunrise-soft transition-colors"
                 [attr.data-test]="'material-row-' + row._id"
               >
-                <td class="py-3 px-4 align-top">{{ row.name }}</td>
+                <td class="py-2 px-4 align-top">
+                  @if (mainPhotoOf(row); as mp) {
+                    <img
+                      [src]="mp.storageUrl"
+                      [alt]="mp.originalFilename || row.name"
+                      class="block w-12 h-12 object-cover border hairline border-rule rounded-sm"
+                      loading="lazy"
+                    />
+                  } @else {
+                    <div
+                      class="w-12 h-12 border hairline border-rule rounded-sm bg-paper-2 flex items-center justify-center"
+                      aria-hidden="true"
+                    >
+                      <span class="text-muted text-xs">—</span>
+                    </div>
+                  }
+                </td>
+                <td class="py-3 px-4 align-top font-medium">{{ row.name }}</td>
                 <td class="py-3 px-4 align-top">{{ row.article || '—' }}</td>
                 <td class="py-3 px-4 align-top">{{ row.sku || '—' }}</td>
                 <td class="py-3 px-4 align-top whitespace-nowrap">{{ row.unit }}</td>
+                <td class="py-3 px-4 align-top">
+                  {{ supplierNameOf(row) || '—' }}
+                </td>
+                <td class="py-3 px-4 align-top mono text-xs whitespace-nowrap">
+                  {{ dimensionsSummary(row) || '—' }}
+                </td>
                 <td class="py-3 px-4 text-right align-top whitespace-nowrap">
                   {{ formatPrice(row) }}
                 </td>
@@ -172,7 +207,7 @@ type SortDir = 'asc' | 'desc';
             @if (sortedRows().length === 0 && !loading()) {
               <tr>
                 <td
-                  colspan="7"
+                  colspan="10"
                   class="py-12 px-4 text-center text-muted"
                 >
                   <div class="flex flex-col items-center gap-1">
@@ -186,7 +221,7 @@ type SortDir = 'asc' | 'desc';
             }
             @if (loading() && sortedRows().length === 0) {
               <tr>
-                <td colspan="7" class="py-12 px-4 text-center text-muted">
+                <td colspan="10" class="py-12 px-4 text-center text-muted">
                   Загрузка…
                 </td>
               </tr>
@@ -201,6 +236,8 @@ export class MaterialsPage implements OnInit {
   private readonly service = inject(MaterialsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
+  private readonly orgs = inject(OrganizationsService);
+  private readonly photosService = inject(PhotosService);
 
   protected readonly data = signal<Material[]>([]);
   protected readonly total = signal<number>(0);
@@ -210,6 +247,10 @@ export class MaterialsPage implements OnInit {
   protected readonly searchQuery = signal<string>('');
   protected readonly sortKey = signal<SortKey>('name');
   protected readonly sortDir = signal<SortDir>('asc');
+
+  // Lookup tables for supplier/photo rendering
+  protected readonly suppliersById = signal<Record<string, Organization>>({});
+  protected readonly photosById = signal<Record<string, Photo>>({});
 
   protected readonly sortedRows = computed<Material[]>(() => {
     const rows = this.data().slice();
@@ -232,20 +273,54 @@ export class MaterialsPage implements OnInit {
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   ngOnInit(): void {
+    this.loadLookups();
     this.reload();
   }
 
-  /**
-   * Bridge a DialogRef's `closed` signal to a one-shot subscription.
-   * Signal is `TResult | undefined` (undefined before close); `first(v !== undefined)`
-   * takes only the value set by ref.close(v). We reload only if the
-   * user actually saved (v truthy) — not on cancel.
-   */
+  private loadLookups(): void {
+    this.orgs.list({ limit: 200 }).subscribe({
+      next: (res) => {
+        const map: Record<string, Organization> = {};
+        for (const o of res.items ?? []) map[o._id] = o;
+        this.suppliersById.set(map);
+      },
+    });
+    this.photosService.list().subscribe({
+      next: (all) => {
+        const map: Record<string, Photo> = {};
+        for (const p of all) map[p._id] = p;
+        this.photosById.set(map);
+      },
+    });
+  }
+
+  protected mainPhotoOf(row: Material): Photo | null {
+    if (!row.mainPhotoId) return null;
+    return this.photosById()[row.mainPhotoId] ?? null;
+  }
+
+  protected supplierNameOf(row: Material): string | null {
+    if (!row.supplierId) return null;
+    return this.suppliersById()[row.supplierId]?.shortName
+      ?? this.suppliersById()[row.supplierId]?.name
+      ?? null;
+  }
+
+  protected dimensionsSummary(row: Material): string {
+    if (!row.dimensions || row.dimensions.length === 0) return '';
+    return row.dimensions
+      .map((d) => `${typeLetter(d.type)} ${formatVal(d.value)}`)
+      .join(' × ');
+  }
+
   private refreshOnDialogClose<TResult>(ref: DialogRef<TResult>): void {
     toObservable(ref.closed)
       .pipe(first((v) => v !== undefined))
       .subscribe((v) => {
-        if (v) this.reload();
+        if (v) {
+          this.reload();
+          this.loadLookups();
+        }
       });
   }
 
@@ -344,8 +419,22 @@ export class MaterialsPage implements OnInit {
         },
       });
   }
+}
 
-  /**
-   * (No more setInterval polling — moved to refreshOnDialogClose above.)
-   */
+// ─── Local helpers (no need to export) ───
+function typeLetter(t: string): string {
+  switch (t) {
+    case 'length': return 'L';
+    case 'width': return 'W';
+    case 'height': return 'H';
+    case 'thickness': return 'T';
+    case 'diameter': return 'Ø';
+    case 'depth': return 'D';
+    default: return t;
+  }
+}
+
+function formatVal(n: number): string {
+  if (n >= 1) return `${n}мм`;
+  return `${(n * 1000).toFixed(0)}мкм`;
 }

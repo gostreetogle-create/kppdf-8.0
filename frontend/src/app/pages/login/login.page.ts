@@ -22,12 +22,12 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
   imports: [FormsModule, LucideAngularModule, ButtonComponent, FormFieldComponent],
   template: `
     <div
-      class="min-h-screen bg-paper text-ink font-body flex items-center justify-center px-6 py-16"
+      class="min-h-screen bg-paper text-ink font-body flex items-center justify-center px-6"
     >
       <div
-        class="w-full max-w-sm border hairline border-sunrise-warm rounded-sm p-8 bg-paper"
+        class="w-full max-w-sm border hairline border-sunrise-warm rounded-sm px-10 py-12 bg-paper box-border overflow-hidden"
       >
-        <div class="flex items-center gap-2 mb-8">
+        <div class="flex items-center gap-2 mb-10">
           <span
             class="block w-[10px] h-[10px] bg-ink shrink-0"
             aria-hidden="true"
@@ -37,7 +37,7 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
           </span>
         </div>
 
-        <h1 class="font-display text-2xl font-semibold mb-2">
+        <h1 class="font-display text-2xl font-semibold mb-3">
           С возвращением.
         </h1>
         <p class="text-sm text-muted mb-8">
@@ -101,7 +101,7 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
           </app-pi-button>
         </form>
 
-        <p class="eyebrow text-[10px] text-muted mt-8 text-center">
+        <p class="eyebrow text-[10px] text-muted mt-10 text-center">
           kppdf-8.0 · 2026
         </p>
       </div>
