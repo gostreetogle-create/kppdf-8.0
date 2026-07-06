@@ -26,13 +26,19 @@ const NAV_LINKS: NavLink[] = [
  * TZ-NEW AppLayoutComponent — the operational site shell.
  *
  * Replaces KitLayoutComponent as the default landing layout. Hosts
- * the editorial site (auth-guarded, /, /materials, future
+ * the operational site (auth-guarded, /, /materials, future
  * /counterparties, /products, …). The UI-Kit itself is preserved
  * at /kit/* for site-building work but is NOT shown in this nav.
  *
  * Layout:
+ *  - Centred max-width container (max-w-[1600px] mx-auto) with
+ *    generous responsive horizontal padding (px-6 sm:px-10 lg:px-16
+ *    ≈ 64px on desktop, ~24px on mobile) — keeps content from
+ *    touching the screen edge on any viewport width.
  *  - Sticky header: brand block ("KPPDF · 8.0") + horizontal nav
- *    + user/logout on the right.
+ *    + user/logout on the right. The header bleeds to the screen
+ *    edge via negative margin (sticky background looks correct)
+ *    and re-applies the same padding internally.
  *  - Main: <router-outlet /> for the page content.
  *  - Footer: copyright + tech credits.
  *
@@ -46,89 +52,95 @@ const NAV_LINKS: NavLink[] = [
   imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule],
   template: `
     <div class="min-h-screen bg-paper text-ink font-body flex flex-col">
-      <header
-        class="sticky top-0 z-30 border-b hairline border-rule
-               bg-paper/95 supports-[backdrop-filter]:backdrop-blur-[2px]"
+      <div
+        class="w-full max-w-[1600px] mx-auto flex flex-col flex-1
+               px-6 sm:px-10 lg:px-16"
       >
-        <div class="px-5 h-14 flex items-center justify-between gap-3">
-          <a
-            routerLink="/"
-            class="flex items-center gap-2 min-w-0"
-            aria-label="На главную"
-          >
-            <span
-              class="block w-[10px] h-[10px] bg-ink shrink-0"
-              aria-hidden="true"
-            ></span>
-            <span class="font-display font-bold tracking-tight truncate">
-              KPPDF · 8.0
-            </span>
-          </a>
-
-          <nav
-            class="flex items-center gap-1 flex-1 justify-center"
-            aria-label="Главная навигация"
-          >
-            @for (link of navLinks; track link.path) {
-              @if (link.disabled) {
-                <span
-                  class="px-3 py-1.5 text-sm text-muted rounded-sm cursor-not-allowed"
-                  [attr.aria-disabled]="true"
-                  [title]="link.label + ' — скоро'"
-                >
-                  {{ link.label }}
-                </span>
-              } @else {
-                <a
-                  [routerLink]="link.path"
-                  routerLinkActive="bg-ink text-paper"
-                  class="px-3 py-1.5 text-sm hover:bg-paper-2 transition-colors rounded-sm"
-                >
-                  {{ link.label }}
-                </a>
-              }
-            }
-          </nav>
-
-          <div class="flex items-center gap-3 shrink-0">
-            @if (user(); as u) {
-              <span class="text-sm text-muted hidden sm:inline">
-                {{ u.displayName || u.username }}
+        <header
+          class="sticky top-0 z-30 border-b hairline border-rule
+                 bg-paper/95 supports-[backdrop-filter]:backdrop-blur-[2px]
+                 -mx-6 sm:-mx-10 lg:-mx-16 px-6 sm:px-10 lg:px-16"
+        >
+          <div class="h-14 flex items-center justify-between gap-3">
+            <a
+              routerLink="/"
+              class="flex items-center gap-2 min-w-0"
+              aria-label="На главную"
+            >
+              <span
+                class="block w-[10px] h-[10px] bg-ink shrink-0"
+                aria-hidden="true"
+              ></span>
+              <span class="font-display font-bold tracking-tight truncate">
+                KPPDF · 8.0
               </span>
-              <button
-                type="button"
-                class="inline-flex items-center gap-1 px-2 h-8
-                       border hairline border-rule rounded-sm
-                       hover:bg-paper-2 transition-colors"
-                aria-label="Выйти"
-                (click)="onLogout()"
-              >
-                <lucide-angular
-                  [img]="logOutIcon"
-                  [size]="12"
-                  aria-hidden="true"
-                />
-                <span class="font-mono text-[10px] tracking-wider">
-                  Выйти
+            </a>
+
+            <nav
+              class="flex items-center gap-1 flex-1 justify-center"
+              aria-label="Главная навигация"
+            >
+              @for (link of navLinks; track link.path) {
+                @if (link.disabled) {
+                  <span
+                    class="px-3 py-1.5 text-sm text-muted rounded-sm cursor-not-allowed"
+                    [attr.aria-disabled]="true"
+                    [title]="link.label + ' — скоро'"
+                  >
+                    {{ link.label }}
+                  </span>
+                } @else {
+                  <a
+                    [routerLink]="link.path"
+                    routerLinkActive="bg-ink text-paper"
+                    class="px-3 py-1.5 text-sm hover:bg-paper-2 transition-colors rounded-sm"
+                  >
+                    {{ link.label }}
+                  </a>
+                }
+              }
+            </nav>
+
+            <div class="flex items-center gap-3 shrink-0">
+              @if (user(); as u) {
+                <span class="text-sm text-muted hidden sm:inline">
+                  {{ u.displayName || u.username }}
                 </span>
-              </button>
-            }
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1 px-2 h-8
+                         border hairline border-rule rounded-sm
+                         hover:bg-paper-2 transition-colors"
+                  aria-label="Выйти"
+                  (click)="onLogout()"
+                >
+                  <lucide-angular
+                    [img]="logOutIcon"
+                    [size]="12"
+                    aria-hidden="true"
+                  />
+                  <span class="font-mono text-[10px] tracking-wider">
+                    Выйти
+                  </span>
+                </button>
+              }
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main class="flex-1 min-w-0">
-        <router-outlet />
-      </main>
+        <main class="flex-1 min-w-0">
+          <router-outlet />
+        </main>
 
-      <footer
-        class="border-t hairline border-rule mt-12 px-5 py-6
-               font-mono text-[11px] uppercase tracking-[0.18em]
-               text-muted flex flex-wrap justify-between gap-3"
-      >
-        <span>© 2026 KPPDF · 8.0</span>
-        <span>Paper &amp; Ink · Syne · Plus Jakarta Sans</span>
-      </footer>
+        <footer
+          class="border-t hairline border-rule mt-12 py-6
+                 font-mono text-[11px] uppercase tracking-[0.18em]
+                 text-muted flex flex-wrap justify-between gap-3"
+        >
+          <span>© 2026 KPPDF · 8.0</span>
+          <span>Paper &amp; Ink · Syne · Plus Jakarta Sans</span>
+        </footer>
+      </div>
     </div>
   `,
 })
