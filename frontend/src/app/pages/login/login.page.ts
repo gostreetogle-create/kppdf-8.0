@@ -62,8 +62,7 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
               autocomplete="username"
               required
               [(ngModel)]="username"
-              class="w-full border hairline rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none transition-colors"
-              [class.border-rule]="!error()"
+              class="w-full h-9 px-4 text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
               [class.border-destructive]="!!error()"
             />
           </app-pi-form-field>
@@ -80,8 +79,7 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
               autocomplete="current-password"
               required
               [(ngModel)]="password"
-              class="w-full border hairline rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none transition-colors"
-              [class.border-rule]="!error()"
+              class="w-full h-9 px-4 text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
               [class.border-destructive]="!!error()"
             />
           </app-pi-form-field>

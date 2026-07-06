@@ -71,7 +71,7 @@ import { LucideAngularModule, ArrowUpRight, CircleDot } from 'lucide-angular';
         @for (card of sectionCards; track card.href) {
           <a
             [routerLink]="[card.href]"
-            class="group block p-5 border hairline border-rule rounded-sm transition-colors hover:border-ink"
+            class="group block p-4 border hairline border-rule rounded-sm transition-colors hover:border-ink"
           >
             <div class="flex items-start justify-between">
               <span class="eyebrow text-[10px]">{{ card.eyebrow }}</span>
@@ -120,25 +120,25 @@ import { LucideAngularModule, ArrowUpRight, CircleDot } from 'lucide-angular';
         <button
           type="button"
           data-toast-trigger="default"
-          class="hairline-b border border-rule px-4 py-2 text-sm hover:bg-paper-2 transition-colors"
+          class="inline-flex items-center justify-center h-9 px-4 text-sm border hairline border-rule rounded-sm bg-paper text-ink hover:bg-paper-2 transition-colors"
           (click)="triggerDefault()"
         >Show default</button>
         <button
           type="button"
           data-toast-trigger="success"
-          class="hairline-b border border-ink px-4 py-2 text-sm hover:bg-paper-2 transition-colors"
+          class="inline-flex items-center justify-center h-9 px-4 text-sm border hairline border-ink rounded-sm bg-paper text-ink hover:bg-paper-2 transition-colors"
           (click)="triggerSuccess()"
         >Show success</button>
         <button
           type="button"
           data-toast-trigger="error"
-          class="hairline-b border border-destructive px-4 py-2 text-sm hover:bg-paper-2 transition-colors"
+          class="inline-flex items-center justify-center h-9 px-4 text-sm border hairline border-destructive rounded-sm bg-paper text-destructive hover:bg-paper-2 transition-colors"
           (click)="triggerError()"
         >Show error</button>
         <button
           type="button"
           data-toast-trigger="warning"
-          class="hairline-b border border-destructive px-4 py-2 text-sm hover:bg-paper-2 transition-colors"
+          class="inline-flex items-center justify-center h-9 px-4 text-sm border hairline border-destructive rounded-sm bg-paper text-destructive hover:bg-paper-2 transition-colors"
           (click)="triggerWarning()"
         >Show warning</button>
       </div>

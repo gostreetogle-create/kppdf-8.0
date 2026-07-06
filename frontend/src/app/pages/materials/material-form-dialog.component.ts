@@ -71,8 +71,7 @@ type Result = Material | null | undefined;
               formControlName="name"
               maxlength="256"
               autocomplete="off"
-              class="w-full border hairline rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none transition-colors"
-              [class.border-rule]="!hasError('name')"
+              class="w-full h-9 px-4 text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
               [class.border-destructive]="hasError('name')"
             />
           </app-pi-form-field>
@@ -88,8 +87,7 @@ type Result = Material | null | undefined;
               formControlName="article"
               maxlength="64"
               autocomplete="off"
-              class="w-full border hairline rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none transition-colors"
-              [class.border-rule]="!hasError('article')"
+              class="w-full h-9 px-4 text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
               [class.border-destructive]="hasError('article')"
             />
           </app-pi-form-field>
@@ -103,8 +101,7 @@ type Result = Material | null | undefined;
             <select
               id="mat-unit"
               formControlName="unit"
-              class="w-full border hairline rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none transition-colors"
-              [class.border-rule]="!hasError('unit')"
+              class="w-full h-9 px-4 text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
               [class.border-destructive]="hasError('unit')"
             >
               <option value="" disabled>— выберите —</option>
@@ -126,8 +123,7 @@ type Result = Material | null | undefined;
               type="text"
               formControlName="sku"
               autocomplete="off"
-              class="w-full border hairline rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none transition-colors"
-              [class.border-rule]="!hasError('sku')"
+              class="w-full h-9 px-4 text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
               [class.border-destructive]="hasError('sku')"
             />
           </app-pi-form-field>
@@ -143,8 +139,7 @@ type Result = Material | null | undefined;
               step="0.01"
               min="0"
               formControlName="pricePerUnit"
-              class="w-full border hairline rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none transition-colors text-right"
-              [class.border-rule]="!hasError('pricePerUnit')"
+              class="w-full h-9 px-4 text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors text-right"
               [class.border-destructive]="hasError('pricePerUnit')"
             />
           </app-pi-form-field>
@@ -160,8 +155,7 @@ type Result = Material | null | undefined;
               formControlName="priceCurrency"
               maxlength="8"
               autocomplete="off"
-              class="w-full border hairline rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none transition-colors"
-              [class.border-rule]="!hasError('priceCurrency')"
+              class="w-full h-9 px-4 text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
               [class.border-destructive]="hasError('priceCurrency')"
             />
           </app-pi-form-field>
@@ -177,8 +171,7 @@ type Result = Material | null | undefined;
               step="1"
               min="0"
               formControlName="stockQty"
-              class="w-full border hairline rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none transition-colors text-right"
-              [class.border-rule]="!hasError('stockQty')"
+              class="w-full h-9 px-4 text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors text-right"
               [class.border-destructive]="hasError('stockQty')"
             />
           </app-pi-form-field>
@@ -194,8 +187,7 @@ type Result = Material | null | undefined;
             formControlName="description"
             rows="2"
             maxlength="2000"
-            class="w-full border hairline rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none transition-colors resize-none"
-            [class.border-rule]="!hasError('description')"
+            class="w-full min-h-16 px-4 py-3 text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors resize-none"
             [class.border-destructive]="hasError('description')"
           ></textarea>
         </app-pi-form-field>
@@ -210,8 +202,7 @@ type Result = Material | null | undefined;
             formControlName="notes"
             rows="2"
             maxlength="2000"
-            class="w-full border hairline rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none transition-colors resize-none"
-            [class.border-rule]="!hasError('notes')"
+            class="w-full min-h-16 px-4 py-3 text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors resize-none"
             [class.border-destructive]="hasError('notes')"
           ></textarea>
         </app-pi-form-field>
