@@ -1,22 +1,44 @@
 import { Routes } from '@angular/router';
+import { authGuard, publicOnlyGuard } from './core/auth.guard';
 
 /**
- * Paper & Ink editorial SPA — 6 lazy routes under KitLayoutComponent.
- * TZ-30: foundation routing. TZ-69..74 will populate each page with real
- * content (color/typography tokens, primitives showcase, forms, overlays,
- * navigation/menus). TZ-67 kit-layout hosts the sticky sidebar + header.
+ * TZ-NEW (split-shell routing) — Paper & Ink + KPPDF site.
+ *
+ * Two top-level layouts, three top-level entry points:
+ *
+ *   /login        — public, publicOnlyGuard bounces authed users to /
+ *   /kit/*        — UI-Kit (KitLayoutComponent). Hidden from main nav;
+ *                   preserved for site-building work and design review.
+ *   /*            — the operational site (AppLayoutComponent).
+ *                   authGuard: unauthed users → /login.
+ *                   `''` redirects to /materials (the first listed
+ *                   resource — the user's stated landing).
+ *
+ * The `**` wildcard redirects unknown URLs to /, which authGuard
+ * then decides between /login and the home.
  */
 export const routes: Routes = [
   {
-    path: '',
+    path: 'login',
+    canMatch: [publicOnlyGuard],
     loadComponent: () =>
-      import('./layout/kit-layout.component').then((m) => m.KitLayoutComponent),
+      import('./pages/login/login.page').then((m) => m.LoginPage),
+    title: 'KPPDF — Вход',
+  },
+  {
+    path: 'kit',
+    loadComponent: () =>
+      import('./layout/kit-layout.component').then(
+        (m) => m.KitLayoutComponent,
+      ),
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'overview' },
       {
         path: 'overview',
         loadComponent: () =>
-          import('./pages/overview/overview.page').then((m) => m.OverviewPage),
+          import('./pages/overview/overview.page').then(
+            (m) => m.OverviewPage,
+          ),
         title: 'Paper & Ink — Обзор',
       },
       {
@@ -42,7 +64,9 @@ export const routes: Routes = [
       {
         path: 'overlays',
         loadComponent: () =>
-          import('./pages/overlays/overlays.page').then((m) => m.OverlaysPage),
+          import('./pages/overlays/overlays.page').then(
+            (m) => m.OverlaysPage,
+          ),
         title: 'Paper & Ink — Оверлеи',
       },
       {
@@ -68,6 +92,23 @@ export const routes: Routes = [
             (m) => m.CodePreviewPage,
           ),
         title: 'Paper & Ink — Code Preview',
+      },
+    ],
+  },
+  {
+    path: '',
+    canMatch: [authGuard],
+    loadComponent: () =>
+      import('./layout/app-layout.component').then((m) => m.AppLayoutComponent),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'materials' },
+      {
+        path: 'materials',
+        loadComponent: () =>
+          import('./pages/materials/materials.page').then(
+            (m) => m.MaterialsPage,
+          ),
+        title: 'KPPDF — Материалы',
       },
     ],
   },

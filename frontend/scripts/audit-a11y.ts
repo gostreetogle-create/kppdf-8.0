@@ -47,14 +47,18 @@ interface AxeRunResult {
   violations?: AxeViolation[];
 }
 
+// TZ-NEW: UI-Kit routes moved to /kit/* — the site landing (/, /materials)
+// is auth-gated (authGuard) and is not covered by this dev-server a11y
+// audit (which runs without a real session). The /kit/* paths preserve
+// the original 7-route coverage.
 const ROUTES = [
-  '/overview',
-  '/foundations',
-  '/basics',
-  '/forms',
-  '/overlays',
-  '/navigation',
-  '/playground/code',
+  '/kit/overview',
+  '/kit/foundations',
+  '/kit/basics',
+  '/kit/forms',
+  '/kit/overlays',
+  '/kit/navigation',
+  '/kit/playground/code',
 ] as const;
 
 const BASE = process.env['AUDIT_BASE'] ?? 'http://localhost:4200';

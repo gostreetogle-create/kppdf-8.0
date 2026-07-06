@@ -1,0 +1,148 @@
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet,
+} from '@angular/router';
+import { LucideAngularModule, LogOut } from 'lucide-angular';
+import { AuthService } from '../core/auth.service';
+
+interface NavLink {
+  path: string;
+  label: string;
+  /** disabled = route not yet built; rendered muted + non-clickable. */
+  disabled?: boolean;
+}
+
+const NAV_LINKS: NavLink[] = [
+  { path: '/materials', label: 'Материалы' },
+  { path: '/counterparties', label: 'Контрагенты', disabled: true },
+  { path: '/products', label: 'Продукция', disabled: true },
+  { path: '/orders', label: 'Заказы', disabled: true },
+];
+
+/**
+ * TZ-NEW AppLayoutComponent — the operational site shell.
+ *
+ * Replaces KitLayoutComponent as the default landing layout. Hosts
+ * the editorial site (auth-guarded, /, /materials, future
+ * /counterparties, /products, …). The UI-Kit itself is preserved
+ * at /kit/* for site-building work but is NOT shown in this nav.
+ *
+ * Layout:
+ *  - Sticky header: brand block ("KPPDF · 8.0") + horizontal nav
+ *    + user/logout on the right.
+ *  - Main: <router-outlet /> for the page content.
+ *  - Footer: copyright + tech credits.
+ *
+ * Standalone + OnPush + signal-based, matching the rest of the
+ * Paper & Ink codebase.
+ */
+@Component({
+  selector: 'app-app-layout',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule],
+  template: `
+    <div class="min-h-screen bg-paper text-ink font-body flex flex-col">
+      <header
+        class="sticky top-0 z-30 border-b hairline border-rule
+               bg-paper/95 supports-[backdrop-filter]:backdrop-blur-[2px]"
+      >
+        <div class="px-5 h-14 flex items-center justify-between gap-3">
+          <a
+            routerLink="/"
+            class="flex items-center gap-2 min-w-0"
+            aria-label="На главную"
+          >
+            <span
+              class="block w-[10px] h-[10px] bg-ink shrink-0"
+              aria-hidden="true"
+            ></span>
+            <span class="font-display font-bold tracking-tight truncate">
+              KPPDF · 8.0
+            </span>
+          </a>
+
+          <nav
+            class="flex items-center gap-1 flex-1 justify-center"
+            aria-label="Главная навигация"
+          >
+            @for (link of navLinks; track link.path) {
+              @if (link.disabled) {
+                <span
+                  class="px-3 py-1.5 text-sm text-muted rounded-sm cursor-not-allowed"
+                  [attr.aria-disabled]="true"
+                  [title]="link.label + ' — скоро'"
+                >
+                  {{ link.label }}
+                </span>
+              } @else {
+                <a
+                  [routerLink]="link.path"
+                  routerLinkActive="bg-ink text-paper"
+                  class="px-3 py-1.5 text-sm hover:bg-paper-2 transition-colors rounded-sm"
+                >
+                  {{ link.label }}
+                </a>
+              }
+            }
+          </nav>
+
+          <div class="flex items-center gap-3 shrink-0">
+            @if (user(); as u) {
+              <span class="text-sm text-muted hidden sm:inline">
+                {{ u.displayName || u.username }}
+              </span>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 px-2 h-8
+                       border hairline border-rule rounded-sm
+                       hover:bg-paper-2 transition-colors"
+                aria-label="Выйти"
+                (click)="onLogout()"
+              >
+                <lucide-angular
+                  [img]="logOutIcon"
+                  [size]="12"
+                  aria-hidden="true"
+                />
+                <span class="font-mono text-[10px] tracking-wider">
+                  Выйти
+                </span>
+              </button>
+            }
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 min-w-0">
+        <router-outlet />
+      </main>
+
+      <footer
+        class="border-t hairline border-rule mt-12 px-5 py-6
+               font-mono text-[11px] uppercase tracking-[0.18em]
+               text-muted flex flex-wrap justify-between gap-3"
+      >
+        <span>© 2026 KPPDF · 8.0</span>
+        <span>Paper &amp; Ink · Syne · Plus Jakarta Sans</span>
+      </footer>
+    </div>
+  `,
+})
+export class AppLayoutComponent {
+  protected readonly logOutIcon = LogOut;
+  protected readonly navLinks = NAV_LINKS;
+
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+
+  protected readonly user = this.auth.user;
+
+  protected async onLogout(): Promise<void> {
+    await this.auth.logout();
+    await this.router.navigateByUrl('/login');
+  }
+}
