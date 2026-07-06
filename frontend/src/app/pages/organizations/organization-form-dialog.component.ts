@@ -122,13 +122,13 @@ type Result = Organization | null | undefined;
             @for (t of allTypes; track t) {
               <label
                 class="inline-flex items-center gap-2 min-h-touch px-control-x py-control-y border hairline border-rule rounded-sm cursor-pointer hover:bg-paper-2 transition-colors"
-                [class.bg-ink]="form.controls.type.value?.includes(t)"
-                [class.text-paper]="form.controls.type.value?.includes(t)"
-                [class.border-ink]="form.controls.type.value?.includes(t)"
+                [class.bg-ink]="form.controls.type.value.includes(t)"
+                [class.text-paper]="form.controls.type.value.includes(t)"
+                [class.border-ink]="form.controls.type.value.includes(t)"
               >
                 <input
                   type="checkbox"
-                  [checked]="form.controls.type.value?.includes(t)"
+                  [checked]="form.controls.type.value.includes(t)"
                   (change)="onTypeToggle(t, $any($event.target).checked)"
                   class="sr-only"
                 />
