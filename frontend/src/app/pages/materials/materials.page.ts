@@ -47,6 +47,15 @@ type SortDir = 'asc' | 'desc';
     PiSectionComponent,
     ButtonComponent,
   ],
+  styles: [`
+    /* TZ-AUDIT-3: muted em-dash placeholder for empty cells */
+    .empty-cell:empty::before {
+      content: '\\2014'; /* em dash */
+      color: var(--color-muted);
+      opacity: 0.4;
+      font-size: 0.875em;
+    }
+  `],
   template: `
     <app-pi-page-header
       eyebrow="раздел · каталог"
@@ -89,62 +98,68 @@ type SortDir = 'asc' | 'desc';
           {{ error() }}
         </div>
       }
-      <div class="overflow-x-auto">
+      <div class="overflow-x-auto border hairline border-rule rounded-sm">
         <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
           ← Таблица широкая — прокручивайте горизонтально →
         </p>
         <table class="w-full text-sm min-w-[1280px]">
           <thead class="border-b hairline border-rule">
             <tr>
-              <th class="text-left py-3 px-4 eyebrow w-16">Фото</th>
+              <th class="text-left py-2.5 px-4 eyebrow w-16">Фото</th>
               <th
-                class="text-left py-3 px-4 eyebrow cursor-pointer select-none"
+                class="text-left py-2.5 px-4 eyebrow cursor-pointer select-none group"
                 (click)="setSort('name')"
               >
-                Название {{ sortIcon('name') }}
+                Название
+                <span [class.text-sunrise-warm]="isSortedBy('name')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('name') }}</span>
               </th>
               <th
-                class="text-left py-3 px-4 eyebrow cursor-pointer select-none"
+                class="text-left py-2.5 px-4 eyebrow cursor-pointer select-none group"
                 (click)="setSort('article')"
               >
-                Артикул {{ sortIcon('article') }}
+                Артикул
+                <span [class.text-sunrise-warm]="isSortedBy('article')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('article') }}</span>
               </th>
               <th
-                class="text-left py-3 px-4 eyebrow cursor-pointer select-none"
+                class="text-left py-2.5 px-4 eyebrow cursor-pointer select-none group"
                 (click)="setSort('sku')"
               >
-                Код {{ sortIcon('sku') }}
+                Код
+                <span [class.text-sunrise-warm]="isSortedBy('sku')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('sku') }}</span>
               </th>
               <th
-                class="text-left py-3 px-4 eyebrow cursor-pointer select-none min-w-24 whitespace-nowrap"
+                class="text-left py-2.5 px-4 eyebrow cursor-pointer select-none min-w-24 whitespace-nowrap group"
                 (click)="setSort('unit')"
               >
-                Ед. {{ sortIcon('unit') }}
+                Ед.
+                <span [class.text-sunrise-warm]="isSortedBy('unit')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('unit') }}</span>
               </th>
-              <th class="text-left py-3 px-4 eyebrow min-w-40">Поставщик</th>
-              <th class="text-left py-3 px-4 eyebrow min-w-40">Габариты</th>
+              <th class="text-left py-2.5 px-4 eyebrow min-w-40">Поставщик</th>
+              <th class="text-left py-2.5 px-4 eyebrow min-w-40">Габариты</th>
               <th
-                class="text-right py-3 px-4 eyebrow cursor-pointer select-none min-w-32 whitespace-nowrap"
+                class="text-right py-2.5 px-4 eyebrow cursor-pointer select-none min-w-32 whitespace-nowrap group"
                 (click)="setSort('pricePerUnit')"
               >
-                Цена {{ sortIcon('pricePerUnit') }}
+                Цена
+                <span [class.text-sunrise-warm]="isSortedBy('pricePerUnit')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('pricePerUnit') }}</span>
               </th>
               <th
-                class="text-right py-3 px-4 eyebrow cursor-pointer select-none min-w-24 whitespace-nowrap"
+                class="text-right py-2.5 px-4 eyebrow cursor-pointer select-none min-w-24 whitespace-nowrap group"
                 (click)="setSort('stockQty')"
               >
-                Остаток {{ sortIcon('stockQty') }}
+                Остаток
+                <span [class.text-sunrise-warm]="isSortedBy('stockQty')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('stockQty') }}</span>
               </th>
-              <th class="text-right py-3 px-4 eyebrow w-40">Действия</th>
+              <th class="text-right py-2.5 px-4 eyebrow w-40">Действия</th>
             </tr>
           </thead>
           <tbody>
             @for (row of sortedRows(); track row._id) {
               <tr
-                class="border-b hairline border-rule last:border-0 hover:bg-sunrise-soft transition-colors"
+                class="border-b hairline border-rule last:border-0 odd:bg-paper-2/30 hover:bg-sunrise-soft transition-colors"
                 [attr.data-test]="'material-row-' + row._id"
               >
-                <td class="py-2 px-4 align-top">
+                <td class="py-1.5 px-4 align-top">
                   @if (mainPhotoOf(row); as mp) {
                     <img
                       [src]="mp.storageUrl"
@@ -161,23 +176,23 @@ type SortDir = 'asc' | 'desc';
                     </div>
                   }
                 </td>
-                <td class="py-3 px-4 align-top font-medium">{{ row.name }}</td>
-                <td class="py-3 px-4 align-top">{{ row.article || '—' }}</td>
-                <td class="py-3 px-4 align-top">{{ row.sku || '—' }}</td>
-                <td class="py-3 px-4 align-top whitespace-nowrap">{{ row.unit }}</td>
-                <td class="py-3 px-4 align-top">
-                  {{ supplierNameOf(row) || '—' }}
+                <td class="py-2.5 px-4 align-top font-medium">{{ row.name }}</td>
+                <td class="py-2.5 px-4 align-top empty-cell">{{ row.article }}</td>
+                <td class="py-2.5 px-4 align-top empty-cell">{{ row.sku }}</td>
+                <td class="py-2.5 px-4 align-top whitespace-nowrap">{{ row.unit }}</td>
+                <td class="py-2.5 px-4 align-top empty-cell">
+                  {{ supplierNameOf(row) }}
                 </td>
-                <td class="py-3 px-4 align-top mono text-xs whitespace-nowrap">
-                  {{ dimensionsSummary(row) || '—' }}
+                <td class="py-2.5 px-4 align-top mono text-xs whitespace-nowrap empty-cell">
+                  {{ dimensionsSummary(row) }}
                 </td>
-                <td class="py-3 px-4 text-right align-top whitespace-nowrap">
+                <td class="py-2.5 px-4 text-right align-top whitespace-nowrap empty-cell">
                   {{ formatPrice(row) }}
                 </td>
-                <td class="py-3 px-4 text-right align-top whitespace-nowrap">
+                <td class="py-2.5 px-4 text-right align-top whitespace-nowrap">
                   {{ row.stockQty ?? 0 }}
                 </td>
-                <td class="py-3 px-4 text-right align-top">
+                <td class="py-2.5 px-4 text-right align-top">
                   <div class="flex items-center justify-end gap-2">
                     <button
                       type="button"
@@ -345,8 +360,12 @@ export class MaterialsPage implements OnInit {
     return this.sortDir() === 'asc' ? '↑' : '↓';
   }
 
+  protected isSortedBy(key: Exclude<SortKey, null>): boolean {
+    return this.sortKey() === key;
+  }
+
   protected formatPrice(row: Material): string {
-    if (row.pricePerUnit == null) return '—';
+    if (row.pricePerUnit == null) return '';
     return `${row.pricePerUnit.toFixed(2)} ₽`;
   }
 

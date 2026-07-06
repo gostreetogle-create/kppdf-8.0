@@ -54,7 +54,7 @@ const NAV_LINKS: NavLink[] = [
   template: `
     <div class="min-h-screen flex flex-col bg-paper text-ink font-body">
       <div
-        class="w-full max-w-[1600px] mx-auto flex flex-col flex-1
+        class="w-full max-w-[1400px] mx-auto flex flex-col flex-1
                px-6 sm:px-10 lg:px-16"
       >
         <header
