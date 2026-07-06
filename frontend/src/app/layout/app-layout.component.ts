@@ -57,7 +57,7 @@ const NAV_LINKS: NavLink[] = [
                px-6 sm:px-10 lg:px-16"
       >
         <header
-          class="sticky top-0 z-30 border-b hairline border-rule
+          class="sticky top-0 z-30 border-b hairline border-sunrise-warm
                  bg-paper/95 supports-[backdrop-filter]:backdrop-blur-[2px]
                  -mx-6 sm:-mx-10 lg:-mx-16 px-6 sm:px-10 lg:px-16"
         >
@@ -133,7 +133,7 @@ const NAV_LINKS: NavLink[] = [
         </main>
 
         <footer
-          class="border-t hairline border-rule mt-12 py-6
+          class="border-t hairline border-sunrise-warm mt-12 py-6
                  font-mono text-[11px] uppercase tracking-[0.18em]
                  text-muted flex flex-wrap justify-between gap-3"
         >

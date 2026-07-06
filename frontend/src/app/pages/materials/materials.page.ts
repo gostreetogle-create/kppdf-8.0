@@ -73,7 +73,7 @@ type SortDir = 'asc' | 'desc';
       >
         + Создать
       </app-pi-button>
-      <span class="eyebrow text-muted ml-auto">
+      <span class="eyebrow text-sunrise-warm ml-auto">
         {{ total() }} {{ totalLabel(total()) }}
       </span>
     </div>
@@ -133,7 +133,7 @@ type SortDir = 'asc' | 'desc';
           <tbody>
             @for (row of sortedRows(); track row._id) {
               <tr
-                class="border-b hairline border-rule last:border-0 hover:bg-paper-2 transition-colors"
+                class="border-b hairline border-rule last:border-0 hover:bg-sunrise-soft transition-colors"
                 [attr.data-test]="'material-row-' + row._id"
               >
                 <td class="py-3 px-3 align-top">{{ row.name }}</td>
@@ -177,7 +177,7 @@ type SortDir = 'asc' | 'desc';
                   class="py-12 px-3 text-center text-muted"
                 >
                   <div class="flex flex-col items-center gap-1">
-                    <span class="eyebrow">00</span>
+                    <span class="eyebrow text-sunrise-warm">00</span>
                     <span class="text-sm">
                       {{ searchQuery() ? 'Ничего не найдено.' : 'Нет материалов. Нажмите «Создать», чтобы добавить первый.' }}
                     </span>
