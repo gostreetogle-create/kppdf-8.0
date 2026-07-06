@@ -48,10 +48,10 @@ type Result = Organization | null | undefined;
         body
         [formGroup]="form"
         (ngSubmit)="onSubmit()"
-        class="space-y-5"
+        class="space-y-form-field"
         data-test="organization-form"
       >
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
           <app-pi-form-field
             label="Полное наименование"
             htmlFor="org-name"
@@ -64,7 +64,7 @@ type Result = Organization | null | undefined;
               formControlName="name"
               maxlength="256"
               autocomplete="off"
-              class="w-full h-9 px-4 text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+              class="w-full h-10 px-control-x text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
               [class.border-destructive]="hasError('name')"
             />
           </app-pi-form-field>
@@ -80,7 +80,7 @@ type Result = Organization | null | undefined;
               formControlName="shortName"
               maxlength="128"
               autocomplete="off"
-              class="w-full h-9 px-4 text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+              class="w-full h-10 px-control-x text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
             />
           </app-pi-form-field>
 
@@ -96,7 +96,7 @@ type Result = Organization | null | undefined;
               formControlName="inn"
               maxlength="12"
               autocomplete="off"
-              class="w-full h-9 px-4 text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors mono"
+              class="w-full h-10 px-control-x text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors mono"
               [class.border-destructive]="hasError('inn')"
             />
           </app-pi-form-field>
@@ -112,7 +112,7 @@ type Result = Organization | null | undefined;
               formControlName="kpp"
               maxlength="16"
               autocomplete="off"
-              class="w-full h-9 px-4 text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors mono"
+              class="w-full h-10 px-control-x text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors mono"
             />
           </app-pi-form-field>
         </div>
@@ -121,7 +121,7 @@ type Result = Organization | null | undefined;
           <div class="flex flex-wrap gap-2">
             @for (t of allTypes; track t) {
               <label
-                class="inline-flex items-center gap-2 px-3 py-1.5 border hairline border-rule rounded-sm cursor-pointer hover:bg-paper-2 transition-colors"
+                class="inline-flex items-center gap-2 min-h-touch px-control-x py-control-y border hairline border-rule rounded-sm cursor-pointer hover:bg-paper-2 transition-colors"
                 [class.bg-ink]="form.controls.type.value?.includes(t)"
                 [class.text-paper]="form.controls.type.value?.includes(t)"
                 [class.border-ink]="form.controls.type.value?.includes(t)"
@@ -138,7 +138,7 @@ type Result = Organization | null | undefined;
           </div>
         </app-pi-form-field>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
           <app-pi-form-field
             label="Контактное лицо"
             htmlFor="org-signer"
@@ -148,7 +148,7 @@ type Result = Organization | null | undefined;
               type="text"
               formControlName="signerName"
               autocomplete="off"
-              class="w-full h-9 px-4 text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+              class="w-full h-10 px-control-x text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
             />
           </app-pi-form-field>
 
@@ -161,7 +161,7 @@ type Result = Organization | null | undefined;
               type="text"
               formControlName="signerPosition"
               autocomplete="off"
-              class="w-full h-9 px-4 text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+              class="w-full h-10 px-control-x text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
             />
           </app-pi-form-field>
 

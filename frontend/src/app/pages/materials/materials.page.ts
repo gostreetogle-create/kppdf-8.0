@@ -56,7 +56,7 @@ type SortDir = 'asc' | 'desc';
       description="Справочник материалов: номенклатура, единицы, цены, остатки."
     />
 
-    <div class="px-5 pt-8 flex items-center gap-4 flex-wrap">
+    <div class="px-page-x pt-6 pb-8 flex items-center gap-3 flex-wrap">
       <input
         type="search"
         [value]="searchQuery()"
@@ -64,7 +64,7 @@ type SortDir = 'asc' | 'desc';
         placeholder="Поиск по названию…"
         aria-label="Поиск материалов"
         data-test="search-input"
-        class="border hairline border-rule rounded-sm px-4 py-2.5 bg-paper text-sm font-body focus:outline-none focus:border-ink w-64 transition-colors"
+        class="border hairline border-rule rounded-sm px-control-x py-control-y bg-paper text-sm font-body focus:outline-none focus:border-ink w-64 transition-colors"
       />
       <app-pi-button
         variant="default"
@@ -86,7 +86,7 @@ type SortDir = 'asc' | 'desc';
         >
           {{ error() }}
         </div>
-      }          <div class="border hairline border-rule rounded-sm overflow-hidden">
+      }      <div class="overflow-hidden">
         <table class="w-full text-sm">
           <thead class="border-b hairline border-rule">
             <tr>
@@ -149,7 +149,7 @@ type SortDir = 'asc' | 'desc';
                   <div class="flex items-center justify-end gap-2">
                     <button
                       type="button"
-                      class="inline-flex items-center justify-center w-7 h-7 hairline border border-rule rounded-sm bg-paper hover:bg-paper-2 transition-colors text-sm"
+                      class="inline-flex items-center justify-center w-8 h-8 hairline border border-rule rounded-sm bg-paper hover:bg-paper-2 transition-colors text-sm"
                       [attr.aria-label]="'Редактировать ' + row.name"
                       [attr.data-test]="'edit-button-' + row._id"
                       (click)="openEdit(row)"
@@ -158,7 +158,7 @@ type SortDir = 'asc' | 'desc';
                     </button>
                     <button
                       type="button"
-                      class="inline-flex items-center justify-center w-7 h-7 hairline border border-rule rounded-sm bg-paper hover:bg-destructive hover:text-paper hover:border-destructive transition-colors text-sm"
+                      class="inline-flex items-center justify-center w-8 h-8 hairline border border-rule rounded-sm bg-paper hover:bg-destructive hover:text-paper hover:border-destructive transition-colors text-sm"
                       [attr.aria-label]="'Удалить ' + row.name"
                       [attr.data-test]="'delete-button-' + row._id"
                       (click)="onDelete(row)"

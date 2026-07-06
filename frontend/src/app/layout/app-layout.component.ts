@@ -129,12 +129,12 @@ const NAV_LINKS: NavLink[] = [
           </div>
         </header>
 
-        <main class="flex-1 min-w-0">
+        <main class="min-w-0">
           <router-outlet />
         </main>
 
         <footer
-          class="border-t hairline border-sunrise-warm mt-16 py-8
+          class="border-t hairline border-sunrise-warm mt-12 py-footer-y
                  font-mono text-[11px] uppercase tracking-[0.18em]
                  text-muted flex flex-wrap justify-between gap-3"
         >

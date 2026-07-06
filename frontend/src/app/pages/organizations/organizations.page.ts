@@ -110,7 +110,7 @@ type SortDir = 'asc' | 'desc';
                 <td class="py-3 px-4 align-top">
                   <div class="flex flex-wrap gap-1">
                     @for (t of (row.type || []); track t) {
-                      <span class="eyebrow text-[9px] px-1.5 py-0.5 border hairline border-rule rounded-sm">
+                      <span class="eyebrow text-[10px] px-2 py-1 border hairline border-rule rounded-sm">
                         {{ t }}
                       </span>
                     }
@@ -120,7 +120,7 @@ type SortDir = 'asc' | 'desc';
                   <div class="flex items-center justify-end gap-2">
                     <button
                       type="button"
-                      class="inline-flex items-center justify-center w-7 h-7 hairline border border-rule rounded-sm bg-paper hover:bg-paper-2 transition-colors text-sm"
+                      class="inline-flex items-center justify-center w-8 h-8 hairline border border-rule rounded-sm bg-paper hover:bg-paper-2 transition-colors text-sm"
                       [attr.aria-label]="'Редактировать ' + row.name"
                       [attr.data-test]="'edit-button-' + row._id"
                       (click)="openEdit(row)"
@@ -129,7 +129,7 @@ type SortDir = 'asc' | 'desc';
                     </button>
                     <button
                       type="button"
-                      class="inline-flex items-center justify-center w-7 h-7 hairline border border-rule rounded-sm bg-paper hover:bg-destructive hover:text-paper hover:border-destructive transition-colors text-sm"
+                      class="inline-flex items-center justify-center w-8 h-8 hairline border border-rule rounded-sm bg-paper hover:bg-destructive hover:text-paper hover:border-destructive transition-colors text-sm"
                       [attr.aria-label]="'Удалить ' + row.name"
                       [attr.data-test]="'delete-button-' + row._id"
                       (click)="onDelete(row)"

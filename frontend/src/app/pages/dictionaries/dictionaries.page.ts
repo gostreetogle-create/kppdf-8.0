@@ -64,7 +64,7 @@ import { Unit, UnitsService } from './units.service';
         data-test="add-unit-form"
       >
         <p class="eyebrow mb-3">Новая единица</p>
-        <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 items-end">
+        <div class="grid grid-cols-1 sm:grid-cols-5 gap-4 items-end">
           <label class="block">
             <span class="eyebrow block mb-1.5">Ключ <span class="text-destructive">*</span></span>
             <input
@@ -172,7 +172,7 @@ import { Unit, UnitsService } from './units.service';
                   <div class="flex items-center justify-end gap-2">
                     <button
                       type="button"
-                      class="inline-flex items-center justify-center w-7 h-7 hairline border border-rule rounded-sm bg-paper hover:bg-destructive hover:text-paper hover:border-destructive transition-colors text-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                      class="inline-flex items-center justify-center w-8 h-8 hairline border border-rule rounded-sm bg-paper hover:bg-destructive hover:text-paper hover:border-destructive transition-colors text-sm disabled:opacity-30 disabled:cursor-not-allowed"
                       [attr.aria-label]="'Удалить ' + u.label"
                       [attr.data-test]="'delete-button-' + u.key"
                       [disabled]="u.isSystem"
