@@ -151,6 +151,29 @@
   background-position: 0 0;
 }
 
+/* ── Number input spinners — OFF by default (TZ-NEW)
+   Spinner arrows (▲▼) clutter numeric fields in editorial layouts.
+   Strip them everywhere. To re-enable per-input, add class `has-spinners`. */
+@layer base {
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'].has-spinners {
+    -moz-appearance: auto;
+    appearance: auto;
+  }
+  input[type='number'].has-spinners::-webkit-outer-spin-button,
+  input[type='number'].has-spinners::-webkit-inner-spin-button {
+    -webkit-appearance: auto;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
