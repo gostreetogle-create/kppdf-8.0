@@ -1,26 +1,90 @@
-import { HttpInterceptorFn } from '@angular/common/http';
+import {
+  HttpContextToken,
+  HttpErrorResponse,
+  HttpInterceptorFn,
+} from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { catchError, from, switchMap, throwError } from 'rxjs';
+
 import { AuthService } from './auth.service';
 
 /**
- * Attaches a Bearer access token to every outgoing request that targets
- * the backend, EXCEPT the public auth endpoints (login / register /
- * refresh) — those don't have a token to begin with.
+ * Marker attached to a request that has already been replayed once after
+ * a successful refresh. If THAT replay also returns 401, we propagate the
+ * error instead of looping back into another refresh attempt.
  *
- * Functional interceptor (no DI class boilerplate) — Angular 15+ pattern.
+ * HttpContextToken is the Angular 15+ idiomatic way to pass cross-cutting
+ * metadata; it does not mutate headers and won't trigger CORS preflight.
+ */
+const IS_RETRY = new HttpContextToken<boolean>(() => false);
+
+/**
+ * Combined auth + auto-refresh interceptor.
+ *
+ * Request path:
+ *   1. If a token exists and the URL is not a public auth endpoint, attach
+ *      `Authorization: Bearer <access>`.
+ *
+ * Response path (only on 401):
+ *   - Skip refresh for /auth/{login,register,refresh} and /auth/me
+ *     (the latter so AuthService.bootstrap()'s failure path still works
+ *     without entering the refresh loop).
+ *   - Skip if the request is already a retry.
+ *   - Skip if we have no refresh token (no point).
+ *   - Otherwise call AuthService.refresh() (single-flight) and:
+ *       • on success: replay the original request with the new Bearer.
+ *       • on failure: clear state, navigate to /login (if not already
+ *         there), and re-throw the ORIGINAL 401 to the caller.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
-  const token = auth.accessToken();
+  const router = inject(Router);
 
-  if (!token) return next(req);
+  const isPublicAuth = /\/auth\/(login|register|refresh|me)\b/.test(req.url);
 
-  // Skip public auth endpoints — they don't expect Authorization headers.
-  if (/\/auth\/(login|register|refresh)\b/.test(req.url)) return next(req);
+  const access = auth.accessToken();
+  const authedReq =
+    access && !isPublicAuth
+      ? req.clone({ setHeaders: { Authorization: `Bearer ${access}` } })
+      : req;
 
-  return next(
-    req.clone({
-      setHeaders: { Authorization: `Bearer ${token}` },
+  return next(authedReq).pipe(
+    catchError((error: HttpErrorResponse) => {
+      // Anything other than 401 propagates immediately.
+      if (error.status !== 401) return throwError(() => error);
+
+      // Skip refresh-loop and bootstrap-loop endpoints.
+      if (isPublicAuth) return throwError(() => error);
+
+      // Already retried once after a successful refresh → give up.
+      if (req.context.get(IS_RETRY)) return throwError(() => error);
+
+      // No refresh token: nothing to do, propagate 401.
+      if (!auth.refreshToken()) return throwError(() => error);
+
+      // Single-flight: auth.refresh() returns the same Promise for any
+      // concurrent callers, so N parallel 401s trigger exactly one
+      // POST /auth/refresh.
+      return from(auth.refresh()).pipe(
+        switchMap((newAccess) =>
+          next(
+            req.clone({
+              setHeaders: { Authorization: `Bearer ${newAccess}` },
+              context: req.context.set(IS_RETRY, true),
+            }),
+          ),
+        ),
+        catchError(() => {
+          // Refresh failed: state was already cleared inside auth.refresh().
+          // Route to /login unless we're already on it (avoid push/pop churn).
+          if (!router.url.startsWith('/login')) {
+            void router.navigate(['/login']);
+          }
+          // Surface the original 401 to the caller (e.g. so it can show a toast).
+          return throwError(() => error);
+        }),
+      );
     }),
   );
 };

@@ -44,6 +44,16 @@ export class AuthService {
   readonly user = signal<AuthUser | null>(null);
   readonly isAuthenticated = computed(() => !!this.accessToken());
 
+  /**
+   * Single-flight: while a refresh is in progress, every concurrent caller
+   * (typically several failed requests in the same tick) gets the same
+   * Promise. Prevents thundering-herd of N parallel /auth/refresh calls
+   * when 5 requests all get 401 simultaneously.
+   *
+   * Reset in `finally` so a later failure can still trigger a new attempt.
+   */
+  private refreshInFlight: Promise<string> | null = null;
+
   // --- lifecycle ---
 
   /**
@@ -83,6 +93,52 @@ export class AuthService {
     } finally {
       this.clear();
     }
+  }
+
+  /**
+   * Exchanges the stored refresh token for a new access token.
+   *
+   * - Returns the new access token on success.
+   * - On failure clears local auth state and re-throws so the caller
+   *   (interceptor) can navigate to /login and propagate the original 401.
+   * - Single-flight: concurrent calls share one in-flight Promise.
+   *
+   * Backend contract (`POST /api/auth/refresh`):
+   *   - Authenticated by `AuthGuard('jwt-refresh')` which reads the
+   *     refresh token from the `Authorization: Bearer` header (NOT body).
+   *   - Body can be empty; `RefreshTokenDto` is a placeholder.
+   *   - Response: `{ access: string }`. Refresh token is NOT rotated.
+   */
+  refresh(): Promise<string> {
+    if (this.refreshInFlight) return this.refreshInFlight;
+
+    this.refreshInFlight = (async () => {
+      const refresh = this.refreshToken();
+      if (!refresh) {
+        this.clear();
+        throw new Error('No refresh token available');
+      }
+
+      try {
+        const res = await firstValueFrom(
+          this.http.post<{ access: string }>(
+            `${this.baseUrl}/auth/refresh`,
+            {},
+            { headers: { Authorization: `Bearer ${refresh}` } },
+          ),
+        );
+        // Keep the existing refresh token; only the access token rotates.
+        this.setTokens(res.access, refresh);
+        return res.access;
+      } catch (err) {
+        this.clear();
+        throw err;
+      } finally {
+        this.refreshInFlight = null;
+      }
+    })();
+
+    return this.refreshInFlight;
   }
 
   // --- helpers ---
