@@ -56,7 +56,7 @@ type SortDir = 'asc' | 'desc';
       description="Справочник материалов: номенклатура, единицы, цены, остатки."
     />
 
-    <div class="px-5 pt-6 flex items-center gap-3 flex-wrap">
+    <div class="px-5 pt-8 flex items-center gap-4 flex-wrap">
       <input
         type="search"
         [value]="searchQuery()"
@@ -64,7 +64,7 @@ type SortDir = 'asc' | 'desc';
         placeholder="Поиск по названию…"
         aria-label="Поиск материалов"
         data-test="search-input"
-        class="border hairline border-rule rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none focus:border-ink w-64 transition-colors"
+        class="border hairline border-rule rounded-sm px-4 py-2.5 bg-paper text-sm font-body focus:outline-none focus:border-ink w-64 transition-colors"
       />
       <app-pi-button
         variant="default"
@@ -82,52 +82,51 @@ type SortDir = 'asc' | 'desc';
       @if (error()) {
         <div
           role="alert"
-          class="mb-4 border hairline border-destructive rounded-sm px-3 py-2 text-sm text-destructive"
+          class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
         >
           {{ error() }}
         </div>
-      }
-      <div class="border hairline border-rule rounded-sm overflow-hidden">
+      }          <div class="border hairline border-rule rounded-sm overflow-hidden">
         <table class="w-full text-sm">
           <thead class="border-b hairline border-rule">
             <tr>
               <th
-                class="text-left py-3 px-3 eyebrow cursor-pointer select-none"
+                class="text-left py-3 px-4 eyebrow cursor-pointer select-none"
                 (click)="setSort('name')"
               >
                 Название {{ sortIcon('name') }}
               </th>
               <th
-                class="text-left py-3 px-3 eyebrow cursor-pointer select-none"
+                class="text-left py-3 px-4 eyebrow cursor-pointer select-none"
                 (click)="setSort('article')"
               >
                 Артикул {{ sortIcon('article') }}
               </th>
               <th
-                class="text-left py-3 px-3 eyebrow cursor-pointer select-none"
+                class="text-left py-3 px-4 eyebrow cursor-pointer select-none"
                 (click)="setSort('sku')"
               >
                 Код {{ sortIcon('sku') }}
               </th>
               <th
-                class="text-left py-3 px-3 eyebrow cursor-pointer select-none"
+                class="text-left py-3 px-4 eyebrow cursor-pointer select-none"
                 (click)="setSort('unit')"
               >
                 Ед. {{ sortIcon('unit') }}
               </th>
               <th
-                class="text-right py-3 px-3 eyebrow cursor-pointer select-none"
+                class="text-right py-3 px-4 eyebrow cursor-pointer select-none"
                 (click)="setSort('pricePerUnit')"
               >
                 Цена {{ sortIcon('pricePerUnit') }}
               </th>
               <th
-                class="text-right py-3 px-3 eyebrow cursor-pointer select-none"
+                class="text-right py-3 px-4 eyebrow cursor-pointer select-none"
                 (click)="setSort('stockQty')"
               >
                 Остаток {{ sortIcon('stockQty') }}
               </th>
-              <th class="text-right py-3 px-3 eyebrow w-32">Действия</th>
+              <th class="text-right py-3 px-4 eyebrow w-32">Действия</th>
             </tr>
           </thead>
           <tbody>
@@ -136,18 +135,18 @@ type SortDir = 'asc' | 'desc';
                 class="border-b hairline border-rule last:border-0 hover:bg-sunrise-soft transition-colors"
                 [attr.data-test]="'material-row-' + row._id"
               >
-                <td class="py-3 px-3 align-top">{{ row.name }}</td>
-                <td class="py-3 px-3 align-top">{{ row.article || '—' }}</td>
-                <td class="py-3 px-3 align-top">{{ row.sku || '—' }}</td>
-                <td class="py-3 px-3 align-top">{{ row.unit }}</td>
-                <td class="py-3 px-3 text-right align-top">
+                <td class="py-3 px-4 align-top">{{ row.name }}</td>
+                <td class="py-3 px-4 align-top">{{ row.article || '—' }}</td>
+                <td class="py-3 px-4 align-top">{{ row.sku || '—' }}</td>
+                <td class="py-3 px-4 align-top">{{ row.unit }}</td>
+                <td class="py-3 px-4 text-right align-top">
                   {{ formatPrice(row) }}
                 </td>
-                <td class="py-3 px-3 text-right align-top">
+                <td class="py-3 px-4 text-right align-top">
                   {{ row.stockQty ?? 0 }}
                 </td>
-                <td class="py-3 px-3 text-right align-top">
-                  <div class="flex items-center justify-end gap-1">
+                <td class="py-3 px-4 text-right align-top">
+                  <div class="flex items-center justify-end gap-2">
                     <button
                       type="button"
                       class="inline-flex items-center justify-center w-7 h-7 hairline border border-rule rounded-sm bg-paper hover:bg-paper-2 transition-colors text-sm"
@@ -174,7 +173,7 @@ type SortDir = 'asc' | 'desc';
               <tr>
                 <td
                   colspan="7"
-                  class="py-12 px-3 text-center text-muted"
+                  class="py-12 px-4 text-center text-muted"
                 >
                   <div class="flex flex-col items-center gap-1">
                     <span class="eyebrow text-sunrise-warm">00</span>
@@ -187,7 +186,7 @@ type SortDir = 'asc' | 'desc';
             }
             @if (loading() && sortedRows().length === 0) {
               <tr>
-                <td colspan="7" class="py-12 px-3 text-center text-muted">
+                <td colspan="7" class="py-12 px-4 text-center text-muted">
                   Загрузка…
                 </td>
               </tr>

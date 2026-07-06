@@ -19,13 +19,12 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <header class="pt-12 pb-8 border-b hairline border-rule">
-      <p class="eyebrow mb-3">{{ eyebrow() }}</p>
+    <header class="pt-16 pb-12 border-b hairline border-rule">
+      <p class="eyebrow mb-4">{{ eyebrow() }}</p>
       <h1 class="font-display font-bold text-5xl tracking-tight leading-[1.05]">
         {{ title() }}
       </h1>
-      @if (subtitle()) {
-        <p class="mt-3 font-display text-xl text-muted tracking-tight">
+      @if (subtitle()) {          <p class="mt-4 font-display text-xl text-muted tracking-tight">
           {{ subtitle() }}
         </p>
       }
@@ -35,7 +34,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         </p>
       }
       @if (version()) {
-        <span class="mt-4 inline-block eyebrow border hairline border-rule rounded-sm px-1.5 py-0.5">
+        <span class="mt-6 inline-block eyebrow border hairline border-rule rounded-sm px-2 py-1">
           {{ version() }}
         </span>
       }

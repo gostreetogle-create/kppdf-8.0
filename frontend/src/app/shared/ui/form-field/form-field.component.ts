@@ -14,7 +14,7 @@ import { LabelComponent } from '../label/label.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LabelComponent],
   template: `
-    <div class="flex flex-col gap-1">
+    <div class="flex flex-col gap-1.5">
       @if (label()) {
         <app-pi-label
           [variant]="required() ? 'required' : 'default'"
@@ -25,9 +25,9 @@ import { LabelComponent } from '../label/label.component';
         <ng-content />
       </div>
       @if (error()) {
-        <span class="text-xs text-destructive mt-1" role="alert">{{ error() }}</span>
+        <span class="text-xs text-destructive" role="alert">{{ error() }}</span>
       } @else if (hint()) {
-        <span class="text-xs text-muted mt-1">{{ hint() }}</span>
+        <span class="text-xs text-muted">{{ hint() }}</span>
       }
     </div>
   `,

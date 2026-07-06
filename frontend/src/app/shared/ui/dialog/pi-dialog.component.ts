@@ -20,12 +20,12 @@ import type { DialogRef } from './pi-dialog.service';
       [class]="panelClass()"
     >
       @if (title() || showClose()) {
-        <header class="flex items-center justify-between border-b hairline border-rule px-5 py-3">
+        <header class="flex items-center justify-between border-b hairline border-rule px-6 py-4">
           <h2 class="font-display text-lg tracking-tight text-ink">{{ title() }}</h2>
           @if (showClose()) {
             <button
               type="button"
-              class="inline-flex items-center justify-center w-7 h-7 rounded-sm hairline border border-rule bg-paper hover:bg-paper-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
+              class="inline-flex items-center justify-center w-8 h-8 rounded-sm hairline border border-rule bg-paper hover:bg-paper-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
               (click)="onUserClose()"
               aria-label="Закрыть"
             >
@@ -34,11 +34,11 @@ import type { DialogRef } from './pi-dialog.service';
           }
         </header>
       }
-      <div class="px-5 py-4 text-sm text-ink">
+      <div class="px-6 py-5 text-sm text-ink">
         <ng-content select="[body]" />
       </div>
       <footer
-        class="border-t hairline border-rule px-5 py-3 flex justify-end gap-2 items-center"
+        class="border-t hairline border-rule px-6 py-4 flex justify-end gap-3 items-center"
       >
         <ng-content select="[footer]" />
       </footer>

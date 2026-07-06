@@ -44,21 +44,31 @@
   --color-accent-cool: var(--color-accent-cool-override, oklch(0.42  0.18 230));
 
   /* === Sunrise palette (TZ-NEW)
-     A restrained warm-light trio applied as TASTEFUL ACCENTS on the
-     operational site (AppLayout + MaterialsPage). Not used in the UI-Kit
-     to preserve its editorial B&W aesthetic. Three roles:
-       - sunrise       — primary golden/dawn accent (text, focus rings,
-                         section eyebrows). Mid-lightness so it reads on
-                         paper without screaming.
-       - sunrise-soft  — very light warm cream (subtle row-hover, pill
-                         backgrounds). Just enough chroma to feel warm
-                         vs. neutral paper-2.
-       - sunrise-warm  — desaturated amber/light brown (secondary hairlines,
-                         muted warm text). Keeps the dawn-on-paper feel
-                         without competing with sunrise for attention. */
-  --color-sunrise:       var(--color-sunrise-override,       oklch(0.66 0.14 55));
+     Restrained warm-light family — applied as TASTEFUL ACCENTS on the
+     operational site (AppLayout + MaterialsPage + LoginPage). Not used
+     in the UI-Kit to preserve its editorial B&W aesthetic. Five roles:
+       - sunrise         — primary golden/dawn accent (text, focus rings,
+                           section eyebrows). Mid-lightness so it reads on
+                           paper without screaming.
+       - sunrise-soft    — very light warm cream (subtle row-hover, pill
+                           backgrounds). Just enough chroma to feel warm
+                           vs. neutral paper-2.
+       - sunrise-warm    — desaturated amber/light brown (secondary
+                           hairlines, muted warm text). Keeps the dawn-
+                           on-paper feel without competing with sunrise
+                           for attention.
+       - sunrise-glow    — brighter, more saturated golden for emphasis
+                           moments (call-to-attention dot, status pulse).
+                           Use sparingly — once per screen max.
+       - sunrise-mist    — extremely subtle warm haze for soft surface
+                           tints (login card backdrop, the welcome feel).
+                           Below perceptibility threshold so it never
+                           shouts — just adds warmth vs. neutral paper. */
+  --color-sunrise:       var(--color-sunrise-override,       oklch(0.66 0.14  55));
   --color-sunrise-soft:  var(--color-sunrise-soft-override,  oklch(0.94 0.045 75));
   --color-sunrise-warm:  var(--color-sunrise-warm-override,  oklch(0.50 0.07  55));
+  --color-sunrise-glow:  var(--color-sunrise-glow-override,  oklch(0.72 0.18  60));
+  --color-sunrise-mist:  var(--color-sunrise-mist-override,  oklch(0.965 0.025 80));
 
   /* === Typography === */
   --font-display: 'Syne', 'Helvetica Neue', sans-serif;
@@ -102,6 +112,8 @@
     --color-sunrise:      oklch(0.78 0.13  60);
     --color-sunrise-soft: oklch(0.28 0.04  70);
     --color-sunrise-warm: oklch(0.72 0.08  55);
+    --color-sunrise-glow: oklch(0.82 0.16  60);
+    --color-sunrise-mist: oklch(0.24 0.025 80);
   }
 }
 

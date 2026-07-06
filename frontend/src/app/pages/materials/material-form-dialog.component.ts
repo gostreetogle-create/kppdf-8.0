@@ -55,10 +55,10 @@ type Result = Material | null | undefined;
         body
         [formGroup]="form"
         (ngSubmit)="onSubmit()"
-        class="space-y-4"
+        class="space-y-5"
         data-test="material-form"
       >
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <app-pi-form-field
             label="Название"
             htmlFor="mat-name"
@@ -214,7 +214,7 @@ type Result = Material | null | undefined;
         }
       </form>
 
-      <div footer class="flex gap-2">
+      <div footer class="flex gap-3">
         <app-pi-button
           type="button"
           variant="default"

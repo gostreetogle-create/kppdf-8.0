@@ -22,12 +22,12 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
   imports: [FormsModule, LucideAngularModule, ButtonComponent, FormFieldComponent],
   template: `
     <div
-      class="min-h-screen bg-paper text-ink font-body flex items-center justify-center px-4 py-12"
+      class="min-h-screen bg-paper text-ink font-body flex items-center justify-center px-6 py-16"
     >
       <div
-        class="w-full max-w-sm border hairline border-rule rounded-sm p-6 bg-paper"
+        class="w-full max-w-sm border hairline border-sunrise-warm rounded-sm p-8 bg-paper"
       >
-        <div class="flex items-center gap-2 mb-6">
+        <div class="flex items-center gap-2 mb-8">
           <span
             class="block w-[10px] h-[10px] bg-ink shrink-0"
             aria-hidden="true"
@@ -37,16 +37,16 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
           </span>
         </div>
 
-        <h1 class="font-display text-2xl font-semibold mb-1">
+        <h1 class="font-display text-2xl font-semibold mb-2">
           С возвращением.
         </h1>
-        <p class="text-sm text-muted mb-6">
+        <p class="text-sm text-muted mb-8">
           Введите учётные данные для входа в систему.
         </p>
 
         <form
           (submit)="onSubmit($event)"
-          class="space-y-4"
+          class="space-y-5"
           autocomplete="on"
           data-test="login-form"
         >
@@ -101,7 +101,7 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
           </app-pi-button>
         </form>
 
-        <p class="eyebrow text-[10px] text-muted mt-6 text-center">
+        <p class="eyebrow text-[10px] text-muted mt-8 text-center">
           kppdf-8.0 · 2026
         </p>
       </div>

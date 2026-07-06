@@ -47,7 +47,7 @@ const VARIANT_CLASS: Record<QueuedToast['variant'], string> = {
         <div
           [attr.data-type]="t.variant"
           [attr.role]="t.variant === 'error' || t.variant === 'warning' ? 'alert' : 'status'"
-          class="pi-toast bg-paper border rounded-sm px-4 py-3 flex items-start gap-3 tours guides"
+          class="pi-toast bg-paper border rounded-sm px-5 py-4 flex items-start gap-3 tours guides"
           [class]="variantClasses(t.variant)"
         >
           <div class="flex-1 text-sm">

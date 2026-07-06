@@ -61,7 +61,7 @@ const NAV_LINKS: NavLink[] = [
                  bg-paper/95 supports-[backdrop-filter]:backdrop-blur-[2px]
                  -mx-6 sm:-mx-10 lg:-mx-16 px-6 sm:px-10 lg:px-16"
         >
-          <div class="h-14 flex items-center justify-between gap-3">
+          <div class="h-14 flex items-center justify-between gap-4">
             <a
               routerLink="/"
               class="flex items-center gap-2 min-w-0"
@@ -133,7 +133,7 @@ const NAV_LINKS: NavLink[] = [
         </main>
 
         <footer
-          class="border-t hairline border-sunrise-warm mt-12 py-6
+          class="border-t hairline border-sunrise-warm mt-16 py-8
                  font-mono text-[11px] uppercase tracking-[0.18em]
                  text-muted flex flex-wrap justify-between gap-3"
         >
