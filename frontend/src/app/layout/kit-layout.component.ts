@@ -176,7 +176,7 @@ const NAV_GROUPS: NavGroup[] = [
         </aside>
 
         <main class="flex-1 min-w-0">
-          <div class="max-w-[1400px] mx-auto">
+          <div class="max-w-[1400px] mx-auto px-5">
             <router-outlet />
           </div>
         </main>
