@@ -117,7 +117,7 @@ type Result = Material | null | undefined;
           </app-pi-form-field>
 
           <app-pi-form-field
-            label="SKU"
+            label="Код"
             htmlFor="mat-sku"
             [error]="errorFor('sku')"
           >

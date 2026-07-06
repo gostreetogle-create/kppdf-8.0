@@ -104,7 +104,7 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
         </form>
 
         <p class="eyebrow text-[10px] text-muted mt-6 text-center">
-          kppdf-8.0 · Paper &amp; Ink · 2026
+          kppdf-8.0 · 2026
         </p>
       </div>
     </div>

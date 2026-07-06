@@ -138,7 +138,7 @@ const NAV_LINKS: NavLink[] = [
                  text-muted flex flex-wrap justify-between gap-3"
         >
           <span>© 2026 KPPDF · 8.0</span>
-          <span>Paper &amp; Ink · Syne · Plus Jakarta Sans</span>
+          <span>Внутренний сервис · 2026</span>
         </footer>
       </div>
     </div>

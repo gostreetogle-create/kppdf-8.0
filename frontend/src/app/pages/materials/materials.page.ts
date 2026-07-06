@@ -51,7 +51,7 @@ type SortDir = 'asc' | 'desc';
   ],
   template: `
     <app-pi-page-header
-      eyebrow="site · каталог"
+      eyebrow="раздел · каталог"
       title="Материалы"
       description="Справочник материалов: номенклатура, единицы, цены, остатки."
     />
@@ -78,7 +78,7 @@ type SortDir = 'asc' | 'desc';
       </span>
     </div>
 
-    <app-pi-section title="Каталог" hint="sortable · click headers" eyebrow="I">
+    <app-pi-section title="Каталог" hint="сортировка · клик по заголовку" eyebrow="I">
       @if (error()) {
         <div
           role="alert"
@@ -107,7 +107,7 @@ type SortDir = 'asc' | 'desc';
                 class="text-left py-3 px-3 eyebrow cursor-pointer select-none"
                 (click)="setSort('sku')"
               >
-                SKU {{ sortIcon('sku') }}
+                Код {{ sortIcon('sku') }}
               </th>
               <th
                 class="text-left py-3 px-3 eyebrow cursor-pointer select-none"
