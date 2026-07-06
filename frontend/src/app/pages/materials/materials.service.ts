@@ -73,4 +73,19 @@ export class MaterialsService {
   findById(id: string): Observable<Material> {
     return this.http.get<Material>(`${this.baseUrl}/materials/${id}`);
   }
+
+  create(payload: Partial<Material>): Observable<Material> {
+    return this.http.post<Material>(`${this.baseUrl}/materials`, payload);
+  }
+
+  update(id: string, payload: Partial<Material>): Observable<Material> {
+    return this.http.patch<Material>(
+      `${this.baseUrl}/materials/${id}`,
+      payload,
+    );
+  }
+
+  remove(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/materials/${id}`);
+  }
 }

@@ -1,4 +1,4 @@
-import { Injectable, Injector, Signal, computed, inject, signal } from '@angular/core';
+import { Injectable, Injector, Signal, Type, computed, inject, signal } from '@angular/core';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { ConfigurableFocusTrapFactory } from '@angular/cdk/a11y';
@@ -37,7 +37,7 @@ export class PiDialogService {
   private activeFocusTrap: ReturnType<ConfigurableFocusTrapFactory['create']> | null = null;
 
   open<TResult = unknown, TData = unknown>(
-    component: typeof PiDialogComponent,
+    component: Type<unknown>,
     config: DialogConfig<TResult, TData> = {},
   ): DialogRef<TResult> {
     const overlayRef = this.overlay.create({
