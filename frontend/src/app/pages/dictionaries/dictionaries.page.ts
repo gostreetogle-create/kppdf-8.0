@@ -129,28 +129,28 @@ import { Unit, UnitsService } from './units.service';
         <table class="w-full text-sm">
           <thead class="border-b hairline border-rule">
             <tr>
-              <th class="text-left py-3 px-4 eyebrow w-24 whitespace-nowrap">Ключ</th>
-              <th class="text-left py-3 px-4 eyebrow">Название</th>
-              <th class="text-left py-3 px-4 eyebrow w-20">Символ</th>
-              <th class="text-left py-3 px-4 eyebrow w-32">Категория</th>
-              <th class="text-right py-3 px-4 eyebrow w-20">Сорт.</th>
-              <th class="text-center py-3 px-4 eyebrow w-20">Активен</th>
-              <th class="text-right py-3 px-4 eyebrow w-32">Действия</th>
+              <th class="text-left py-2.5 px-4 eyebrow w-24 whitespace-nowrap">Ключ</th>
+              <th class="text-left py-2.5 px-4 eyebrow">Название</th>
+              <th class="text-left py-2.5 px-4 eyebrow w-20">Символ</th>
+              <th class="text-left py-2.5 px-4 eyebrow w-32">Категория</th>
+              <th class="text-right py-2.5 px-4 eyebrow w-20">Сорт.</th>
+              <th class="text-center py-2.5 px-4 eyebrow w-20">Активен</th>
+              <th class="text-right py-2.5 px-4 eyebrow w-32">Действия</th>
             </tr>
           </thead>
           <tbody>
             @for (u of sortedUnits(); track u._id) {
               <tr
-                class="border-b hairline border-rule last:border-0 hover:bg-sunrise-soft transition-colors"
+                class="border-b hairline border-rule last:border-0 odd:bg-paper-2/30 hover:bg-sunrise-soft transition-colors"
                 [class.opacity-50]="!u.isActive"
                 [attr.data-test]="'unit-row-' + u.key"
               >
-                <td class="py-3 px-4 align-top mono text-xs font-medium whitespace-nowrap">{{ u.key }}</td>
-                <td class="py-3 px-4 align-top">{{ u.label }}</td>
-                <td class="py-3 px-4 align-top text-muted">{{ u.symbol || '—' }}</td>
-                <td class="py-3 px-4 align-top text-muted text-xs">{{ u.category || '—' }}</td>
-                <td class="py-3 px-4 align-top text-right mono text-xs">{{ u.sortOrder }}</td>
-                <td class="py-3 px-4 align-top text-center">
+                <td class="py-2.5 px-4 align-top mono text-xs font-medium whitespace-nowrap">{{ u.key }}</td>
+                <td class="py-2.5 px-4 align-top">{{ u.label }}</td>
+                <td class="py-2.5 px-4 align-top text-muted empty-cell">{{ u.symbol }}</td>
+                <td class="py-2.5 px-4 align-top text-muted text-xs empty-cell">{{ u.category }}</td>
+                <td class="py-2.5 px-4 align-top text-right mono text-xs">{{ u.sortOrder }}</td>
+                <td class="py-2.5 px-4 align-top text-center">
                   <button
                     type="button"
                     role="switch"
@@ -168,7 +168,7 @@ import { Unit, UnitsService } from './units.service';
                     ></span>
                   </button>
                 </td>
-                <td class="py-3 px-4 text-right align-top">
+                <td class="py-2.5 px-4 text-right align-top">
                   <div class="flex items-center justify-end gap-2">
                     <button
                       type="button"

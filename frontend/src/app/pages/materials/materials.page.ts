@@ -47,15 +47,6 @@ type SortDir = 'asc' | 'desc';
     PiSectionComponent,
     ButtonComponent,
   ],
-  styles: [`
-    /* TZ-AUDIT-3: muted em-dash placeholder for empty cells */
-    .empty-cell:empty::before {
-      content: '\\2014'; /* em dash */
-      color: var(--color-muted);
-      opacity: 0.4;
-      font-size: 0.875em;
-    }
-  `],
   template: `
     <app-pi-page-header
       eyebrow="раздел · каталог"
@@ -352,6 +343,10 @@ export class MaterialsPage implements OnInit {
   protected sortIcon(key: Exclude<SortKey, null>): string {
     if (this.sortKey() !== key) return '↕';
     return this.sortDir() === 'asc' ? '↑' : '↓';
+  }
+
+  protected isSortedBy(key: Exclude<SortKey, null>): boolean {
+    return this.sortKey() === key;
   }
 
   protected isSortedBy(key: Exclude<SortKey, null>): boolean {

@@ -265,6 +265,17 @@
 
 /* ── TZ-65 themed scrollbar (Paper & Ink: hairline 4px, --color-rule fill, transparent track) ── */
 @layer components {
+  /* TZ-AUDIT-3 — muted em-dash placeholder for empty cells.
+     Use: <td class="empty-cell">{{ value }}</td> (single-line, no whitespace).
+     When value is null/undefined/'', the cell is :empty and the pseudo-element
+     renders a muted em-dash (40% opacity, 0.875em size). */
+  .empty-cell:empty::before {
+    content: '\2014';
+    color: var(--color-muted);
+    opacity: 0.4;
+    font-size: 0.875em;
+  }
+
   .pi-scroll-area,
   .pi-scroll-area * {
     scrollbar-width: thin;

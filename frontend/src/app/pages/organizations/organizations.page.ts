@@ -73,41 +73,42 @@ type SortDir = 'asc' | 'desc';
           <thead class="border-b hairline border-rule">
             <tr>
               <th
-                class="text-left py-3 px-4 eyebrow cursor-pointer select-none"
+                class="text-left py-2.5 px-4 eyebrow cursor-pointer select-none group"
                 (click)="setSort('name')"
               >
-                Название {{ sortIcon('name') }}
+                Название
+                <span [class.text-sunrise-warm]="isSortedBy('name')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('name') }}</span>
               </th>
               <th
-                class="text-left py-3 px-4 eyebrow cursor-pointer select-none"
+                class="text-left py-2.5 px-4 eyebrow cursor-pointer select-none group"
                 (click)="setSort('shortName')"
               >
-                Краткое {{ sortIcon('shortName') }}
+                Краткое
+                <span [class.text-sunrise-warm]="isSortedBy('shortName')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('shortName') }}</span>
               </th>
               <th
-                class="text-left py-3 px-4 eyebrow cursor-pointer select-none"
+                class="text-left py-2.5 px-4 eyebrow cursor-pointer select-none group"
                 (click)="setSort('inn')"
               >
-                ИНН {{ sortIcon('inn') }}
+                ИНН
+                <span [class.text-sunrise-warm]="isSortedBy('inn')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('inn') }}</span>
               </th>
-              <th class="text-left py-3 px-4 eyebrow">Типы</th>
-              <th class="text-right py-3 px-4 eyebrow w-40">Действия</th>
+              <th class="text-left py-2.5 px-4 eyebrow">Типы</th>
+              <th class="text-right py-2.5 px-4 eyebrow w-40">Действия</th>
             </tr>
           </thead>
           <tbody>
             @for (row of sortedRows(); track row._id) {
               <tr
-                class="border-b hairline border-rule last:border-0 hover:bg-sunrise-soft transition-colors"
+                class="border-b hairline border-rule last:border-0 odd:bg-paper-2/30 hover:bg-sunrise-soft transition-colors"
                 [attr.data-test]="'org-row-' + row._id"
               >
-                <td class="py-3 px-4 align-top font-medium">{{ row.name }}</td>
-                <td class="py-3 px-4 align-top text-muted">
-                  {{ row.shortName || '—' }}
-                </td>
-                <td class="py-3 px-4 align-top mono text-xs whitespace-nowrap">
+                <td class="py-2.5 px-4 align-top font-medium">{{ row.name }}</td>
+                <td class="py-2.5 px-4 align-top text-muted empty-cell">{{ row.shortName }}</td>
+                <td class="py-2.5 px-4 align-top mono text-xs whitespace-nowrap">
                   {{ row.inn }}
                 </td>
-                <td class="py-3 px-4 align-top">
+                <td class="py-2.5 px-4 align-top">
                   <div class="flex flex-wrap gap-1">
                     @for (t of (row.type || []); track t) {
                       <span class="eyebrow text-[10px] px-2 py-1 border hairline border-rule rounded-sm">
@@ -116,7 +117,7 @@ type SortDir = 'asc' | 'desc';
                     }
                   </div>
                 </td>
-                <td class="py-3 px-4 text-right align-top">
+                <td class="py-2.5 px-4 text-right align-top">
                   <div class="flex items-center justify-end gap-2">
                     <button
                       type="button"
@@ -230,6 +231,10 @@ export class OrganizationsPage implements OnInit {
   protected sortIcon(key: Exclude<SortKey, null>): string {
     if (this.sortKey() !== key) return '↕';
     return this.sortDir() === 'asc' ? '↑' : '↓';
+  }
+
+  protected isSortedBy(key: Exclude<SortKey, null>): boolean {
+    return this.sortKey() === key;
   }
 
   protected totalLabel(n: number): string {
