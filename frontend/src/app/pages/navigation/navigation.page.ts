@@ -55,7 +55,7 @@ import { BreadcrumbItemComponent } from '../../shared/ui/pi-breadcrumb-item.comp
         <app-pi-tab value="tab-2" label="Метрики" />
         <app-pi-tab value="tab-3" label="Документы" />
       </app-pi-tabs>
-      <div role="tabpanel" class="px-4 py-6 border-b hairline border-rule">
+      <div role="tabpanel" class="px-page-x py-section border-b hairline border-rule">
         @switch (activeTab()) {
           @case ('tab-1') {
             <p class="text-sm">Контент обзора — здесь можно описать общую картину раздела.</p>

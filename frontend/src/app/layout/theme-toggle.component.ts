@@ -21,7 +21,7 @@ import { ThemeService } from '../core/theme.service';
     <button
       type="button"
       class="pi-theme-toggle inline-flex items-center justify-center
-             w-8 h-8 border hairline border-rule rounded-sm
+             w-8 h-8 hairline rounded-sm
              hover:bg-paper-2 transition-colors"
       [attr.aria-label]="ariaLabel()"
       [attr.aria-pressed]="theme.isDark()"

@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../../core/api.tokens';
+import { silentDelete, silentGet, silentPatch, silentPost, SilentResult } from '../../core/silent-http';
 
 export const ORG_TYPES = [
   'customer',
@@ -67,38 +68,43 @@ export interface OrganizationsListParams {
   type?: OrgType;
 }
 
+/**
+ * TZ-NEW OrganizationsService — wraps the org CRUD endpoints behind
+ * `SilentResult` so the observable never errors and consumers can
+ * handle success/failure with full type narrowing via the
+ * discriminated union.
+ *
+ * See `frontend/src/app/core/silent-http.ts` for the rationale.
+ */
 @Injectable({ providedIn: 'root' })
 export class OrganizationsService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
 
-  list(params: OrganizationsListParams = {}): Observable<OrganizationsListResponse> {
+  list(params: OrganizationsListParams = {}): Observable<SilentResult<OrganizationsListResponse>> {
     let httpParams = new HttpParams()
       .set('page', String(params.page ?? 1))
       .set('limit', String(params.limit ?? 50));
     if (params.search) httpParams = httpParams.set('search', params.search);
     if (params.type) httpParams = httpParams.set('type', params.type);
-    return this.http.get<OrganizationsListResponse>(`${this.baseUrl}/organizations`, {
+    return silentGet<OrganizationsListResponse>(this.http, `${this.baseUrl}/organizations`, {
       params: httpParams,
     });
   }
 
-  findById(id: string): Observable<Organization> {
-    return this.http.get<Organization>(`${this.baseUrl}/organizations/${id}`);
+  findById(id: string): Observable<SilentResult<Organization>> {
+    return silentGet<Organization>(this.http, `${this.baseUrl}/organizations/${id}`);
   }
 
-  create(payload: Partial<Organization>): Observable<Organization> {
-    return this.http.post<Organization>(`${this.baseUrl}/organizations`, payload);
+  create(payload: Partial<Organization>): Observable<SilentResult<Organization>> {
+    return silentPost<Organization>(this.http, `${this.baseUrl}/organizations`, payload);
   }
 
-  update(id: string, payload: Partial<Organization>): Observable<Organization> {
-    return this.http.patch<Organization>(
-      `${this.baseUrl}/organizations/${id}`,
-      payload,
-    );
+  update(id: string, payload: Partial<Organization>): Observable<SilentResult<Organization>> {
+    return silentPatch<Organization>(this.http, `${this.baseUrl}/organizations/${id}`, payload);
   }
 
-  remove(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/organizations/${id}`);
+  remove(id: string): Observable<SilentResult<void>> {
+    return silentDelete<void>(this.http, `${this.baseUrl}/organizations/${id}`);
   }
 }

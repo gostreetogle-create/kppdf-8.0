@@ -7,7 +7,6 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
 import { SelectComponent } from '../../shared/ui/select/select.component';
 import { SelectOptionComponent } from '../../shared/ui/select/select-option.component';
 import { CheckboxComponent } from '../../shared/ui/checkbox/checkbox.component';
-import { SliderComponent } from '../../shared/ui/slider/slider.component';
 import { PiToastService } from '../../shared/ui/toast';
 
 interface InventoryRow {
@@ -39,7 +38,6 @@ type SortDir = 'asc' | 'desc';
     SelectComponent,
     SelectOptionComponent,
     CheckboxComponent,
-    SliderComponent,
   ],
   template: `
     <app-pi-page-header
@@ -62,7 +60,7 @@ type SortDir = 'asc' | 'desc';
             type="text"
             formControlName="name"
             placeholder="Иван"
-            class="w-full border hairline rounded-sm px-control-x py-control-y bg-paper text-sm font-body focus:outline-none transition-colors"
+            class="pi-input w-full"
             [class.border-rule]="!form.controls.name.invalid || !form.controls.name.touched"
             [class.border-destructive]="form.controls.name.invalid && form.controls.name.touched"
           />
@@ -74,7 +72,7 @@ type SortDir = 'asc' | 'desc';
             type="email"
             formControlName="email"
             placeholder="you@example.com"
-            class="w-full border hairline rounded-sm px-control-x py-control-y bg-paper text-sm font-body focus:outline-none transition-colors"
+            class="pi-input w-full"
             [class.border-rule]="!form.controls.email.invalid || !form.controls.email.touched"
             [class.border-destructive]="form.controls.email.invalid && form.controls.email.touched"
           />
@@ -106,30 +104,30 @@ type SortDir = 'asc' | 'desc';
 
     <!-- ───── Section II. Data table ───── -->
     <app-pi-section title="Data table" hint="sortable · paginated · 10 rows" eyebrow="II">
-      <div class="border hairline border-rule rounded-sm overflow-hidden">
+      <div class="hairline rounded-sm overflow-hidden">
         <table class="w-full text-sm">
           <thead class="border-b hairline border-rule">
             <tr>
               <th
-                class="text-left py-2.5 px-4 font-display font-semibold cursor-pointer group"
+                class="pi-cell font-display font-semibold cursor-pointer group text-left"
                 (click)="setSort('name')"
               >Название <span [class.text-sunrise-warm]="isSortedBy('name')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIndicator('name') }}</span></th>
               <th
-                class="text-right py-2.5 px-4 font-display font-semibold cursor-pointer group"
+                class="pi-cell-numeric font-display font-semibold cursor-pointer group"
                 (click)="setSort('qty')"
               >Кол-во <span [class.text-sunrise-warm]="isSortedBy('qty')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIndicator('qty') }}</span></th>
               <th
-                class="text-left py-2.5 px-4 font-display font-semibold cursor-pointer group"
+                class="pi-cell font-display font-semibold cursor-pointer group text-left"
                 (click)="setSort('status')"
               >Статус <span [class.text-sunrise-warm]="isSortedBy('status')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIndicator('status') }}</span></th>
             </tr>
           </thead>
           <tbody>
             @for (row of pagedRows(); track row.id) {
-              <tr class="border-b hairline border-rule last:border-0 odd:bg-paper-2/30 hover:bg-sunrise-soft transition-colors">
-                <td class="py-2.5 px-4">{{ row.name }}</td>
-                <td class="py-2.5 px-4 text-right mono text-xs whitespace-nowrap">{{ row.qty }}</td>
-                <td class="py-2.5 px-4">
+              <tr class="pi-table-row pi-table-row-odd last:border-0">
+                <td class="pi-cell">{{ row.name }}</td>
+                <td class="pi-cell-numeric font-mono text-xs">{{ row.qty }}</td>
+                <td class="pi-cell">
                   <span class="eyebrow text-[10px]">{{ statusLabel(row.status) }}</span>
                 </td>
               </tr>
@@ -137,33 +135,30 @@ type SortDir = 'asc' | 'desc';
           </tbody>
         </table>
 
-        <div class="flex items-center justify-between px-4 py-form-field border-t hairline border-rule">
+        <div class="flex items-center justify-between px-4 py-form-field hairline-t">
           <span class="text-xs text-muted-foreground">
             Page {{ page() }} / {{ totalPages() }} · {{ data().length }} rows
           </span>
           <nav class="flex items-center gap-1" aria-label="Pagination">
-            <button
-              type="button"
-              class="px-2 py-1 text-xs border hairline border-rule rounded-sm hover:bg-paper-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            <app-pi-button
+              size="sm"
+              variant="outline"
               [disabled]="page() === 1"
               (click)="page.set(page() - 1)"
-            >‹ Prev</button>
+            >‹ Prev</app-pi-button>
             @for (p of pageNumbers(); track p) {
-              <button
-                type="button"
-                class="px-3 py-1 text-xs border hairline rounded-sm transition-colors"
-                [class.border-ink]="p === page()"
-                [class.bg-paper-2]="p === page()"
-                [class.border-rule]="p !== page()"
+              <app-pi-button
+                size="sm"
+                [variant]="p === page() ? 'default' : 'outline'"
                 (click)="page.set(p)"
-              >{{ p }}</button>
+              >{{ p }}</app-pi-button>
             }
-            <button
-              type="button"
-              class="px-2 py-1 text-xs border hairline border-rule rounded-sm hover:bg-paper-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            <app-pi-button
+              size="sm"
+              variant="outline"
               [disabled]="page() === totalPages()"
               (click)="page.set(page() + 1)"
-            >Next ›</button>
+            >Next ›</app-pi-button>
           </nav>
         </div>
       </div>
@@ -171,7 +166,7 @@ type SortDir = 'asc' | 'desc';
 
     <!-- ───── Section III. Form variants ───── -->
     <app-pi-section title="Form variants" hint="inline · stacked" eyebrow="III">
-      <div class="space-y-6 max-w-2xl">
+      <div class="space-y-section max-w-2xl">
         <div>
           <p class="eyebrow mb-3">Inline (label · input · button в одну строку)</p>
           <div class="flex items-end gap-form-field">
@@ -180,7 +175,7 @@ type SortDir = 'asc' | 'desc';
             id="form-search"
             type="search"
             placeholder="Найти…"
-            class="w-full border hairline border-rule rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none focus:border-ink transition-colors"
+            class="pi-input w-full"
           />
         </app-pi-form-field>
             <app-pi-button variant="default">Найти</app-pi-button>
@@ -194,7 +189,7 @@ type SortDir = 'asc' | 'desc';
                 id="form-city"
                 type="text"
                 placeholder="Москва"
-                class="w-full border hairline border-rule rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none focus:border-ink transition-colors"
+                class="pi-input w-full"
               />
             </app-pi-form-field>
             <app-pi-form-field label="Индекс" htmlFor="form-zip">
@@ -202,7 +197,7 @@ type SortDir = 'asc' | 'desc';
                 id="form-zip"
                 type="text"
                 placeholder="101000"
-                class="w-full border hairline border-rule rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none focus:border-ink transition-colors"
+                class="pi-input w-full"
               />
             </app-pi-form-field>
           </div>
@@ -220,7 +215,6 @@ export class FormsPage {
     email: this.fb.control('', [Validators.required, Validators.email]),
     role: this.fb.control<'admin' | 'manager' | 'user'>('user', [Validators.required]),
     subscribe: this.fb.control(false),
-    priority: this.fb.control(50),
   });
 
   protected readonly data = signal<InventoryRow[]>([

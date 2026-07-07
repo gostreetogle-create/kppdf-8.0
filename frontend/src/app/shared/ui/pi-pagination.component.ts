@@ -39,7 +39,7 @@ type PageItem = { type: 'page'; n: number } | { type: 'gap'; key: string };
             {{ item.n }}
           </button>
         } @else {
-          <span class="px-2 text-muted" aria-hidden="true">…</span>
+          <span class="px-2 text-muted-foreground" aria-hidden="true">…</span>
         }
       }
       <button

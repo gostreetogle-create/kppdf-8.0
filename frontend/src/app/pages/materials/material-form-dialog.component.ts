@@ -13,8 +13,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { forkJoin } from 'rxjs';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
@@ -23,6 +22,7 @@ import {
   PI_DIALOG_REF,
 } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
+import { extractErrorMessage } from '../../core/silent-http';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import {
   Material,
@@ -107,7 +107,7 @@ interface DimensionFormGroup extends FormGroup {
               formControlName="name"
               maxlength="256"
               autocomplete="off"
-              class="w-full h-10 px-control-x text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
               [class.border-destructive]="hasError('name')"
             />
           </app-pi-form-field>
@@ -123,7 +123,7 @@ interface DimensionFormGroup extends FormGroup {
               formControlName="article"
               maxlength="64"
               autocomplete="off"
-              class="w-full h-10 px-control-x text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
               [class.border-destructive]="hasError('article')"
             />
           </app-pi-form-field>
@@ -137,7 +137,7 @@ interface DimensionFormGroup extends FormGroup {
             <select
               id="mat-unit"
               formControlName="unit"
-              class="w-full h-10 px-control-x text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
               [class.border-destructive]="hasError('unit')"
             >
               <option value="" disabled>— выберите —</option>
@@ -159,7 +159,7 @@ interface DimensionFormGroup extends FormGroup {
               type="text"
               formControlName="sku"
               autocomplete="off"
-              class="w-full h-10 px-control-x text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
               [class.border-destructive]="hasError('sku')"
             />
           </app-pi-form-field>
@@ -175,7 +175,7 @@ interface DimensionFormGroup extends FormGroup {
               step="0.01"
               min="0"
               formControlName="pricePerUnit"
-              class="w-full h-10 px-control-x text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors text-right"
+              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors text-right"
               [class.border-destructive]="hasError('pricePerUnit')"
             />
           </app-pi-form-field>
@@ -191,7 +191,7 @@ interface DimensionFormGroup extends FormGroup {
               step="1"
               min="0"
               formControlName="stockQty"
-              class="w-full h-10 px-control-x text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors text-right"
+              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors text-right"
               [class.border-destructive]="hasError('stockQty')"
             />
           </app-pi-form-field>
@@ -206,7 +206,7 @@ interface DimensionFormGroup extends FormGroup {
           <select
             id="mat-supplier"
             formControlName="supplierId"
-            class="w-full h-10 px-control-x text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+            class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
           >
             <option [ngValue]="null">— не указан —</option>
             @for (s of suppliers(); track s._id) {
@@ -232,7 +232,7 @@ interface DimensionFormGroup extends FormGroup {
             </app-pi-button>
           </div>
           @if (dimensionsArray.controls.length === 0) {
-            <p class="text-xs text-muted">
+            <p class="text-xs text-muted-foreground">
               Нет габаритов. Нажмите «+ Добавить размер» для ввода длины, ширины, толщины и т.п.
             </p>
           }
@@ -244,12 +244,14 @@ interface DimensionFormGroup extends FormGroup {
             ) {
               <div
                 [formGroupName]="i"
-                class="grid grid-cols-12 gap-2 items-center p-2 border hairline border-rule rounded-sm bg-paper-2/30"
+                class="grid grid-cols-12 gap-2 items-center p-2 hairline rounded-sm bg-paper-2/30"
                 [attr.data-test]="'dimension-row-' + i"
               >
                 <select
+                  [attr.id]="'mat-dim-type-' + i"
+                  [attr.name]="'dim-type-' + i"
                   formControlName="type"
-                  class="col-span-4 h-9 px-control-x text-sm border hairline border-rule rounded-sm bg-paper"
+                  class="col-span-4 h-9 px-control-x text-sm hairline rounded-sm bg-paper"
                   [attr.aria-label]="'Тип габарита ' + (i + 1)"
                 >
                   @for (opt of DIMENSION_TYPES; track opt.value) {
@@ -257,18 +259,22 @@ interface DimensionFormGroup extends FormGroup {
                   }
                 </select>
                 <input
+                  [attr.id]="'mat-dim-value-' + i"
+                  [attr.name]="'dim-value-' + i"
                   type="number"
                   step="0.01"
                   min="0"
                   formControlName="value"
                   placeholder="Значение"
-                  class="col-span-3 h-9 px-control-x text-sm border hairline border-rule rounded-sm bg-paper text-right"
+                  class="col-span-3 h-9 px-control-x text-sm hairline rounded-sm bg-paper text-right"
                   [attr.aria-label]="'Значение ' + (i + 1)"
                 />
                 <label
                   class="col-span-4 inline-flex items-center gap-2 min-h-touch px-control-x text-sm cursor-pointer"
                 >
                   <input
+                    [attr.id]="'mat-dim-immutable-' + i"
+                    [attr.name]="'dim-immutable-' + i"
                     type="checkbox"
                     formControlName="isImmutable"
                     class="w-4 h-4"
@@ -278,7 +284,7 @@ interface DimensionFormGroup extends FormGroup {
                 </label>
                 <button
                   type="button"
-                  class="col-span-1 h-9 w-9 inline-flex items-center justify-center text-sm border hairline border-rule rounded-sm bg-paper hover:bg-destructive hover:text-paper hover:border-destructive transition-colors"
+                  class="col-span-1 h-9 w-9 inline-flex items-center justify-center text-sm hairline rounded-sm bg-paper hover:bg-destructive hover:text-paper hover:border-destructive transition-colors"
                   [attr.aria-label]="'Удалить габарит ' + (i + 1)"
                   (click)="removeDimension(i)"
                 >
@@ -287,7 +293,7 @@ interface DimensionFormGroup extends FormGroup {
               </div>
             }
           </div>
-          <p class="text-xs text-muted mt-2">
+          <p class="text-xs text-muted-foreground mt-2">
             <span class="eyebrow text-sunrise-warm">?</span>
             «Неизменяемый» — downstream не может менять (например, толщина листа).
           </p>
@@ -298,7 +304,7 @@ interface DimensionFormGroup extends FormGroup {
           <div class="flex items-baseline justify-between mb-form-row">
             <p class="eyebrow">Фотографии</p>
             <label
-              class="inline-flex items-center gap-1 min-h-touch px-control-x py-control-y text-xs border hairline border-rule rounded-sm bg-paper hover:bg-paper-2 cursor-pointer transition-colors"
+              class="inline-flex items-center gap-1 min-h-touch px-control-x py-control-y text-xs hairline rounded-sm bg-paper hover:bg-paper-2 cursor-pointer transition-colors"
             >
               <span>+ Загрузить</span>
               <input
@@ -313,19 +319,18 @@ interface DimensionFormGroup extends FormGroup {
           </div>
 
           @if (uploading()) {
-            <p class="text-xs text-muted">Загрузка…</p>
+            <p class="text-xs text-muted-foreground">Загрузка…</p>
           }
           @if (photos().length === 0 && !uploading()) {
-            <p class="text-xs text-muted">
+            <p class="text-xs text-muted-foreground">
               Нет фото. Можно загрузить несколько, выбрать «главное» (используется в карточках).
             </p>
           }
           <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
             @for (p of photos(); track p._id; let i = $index) {
               <div
-                class="relative border hairline border-rule rounded-sm overflow-hidden bg-paper-2"
+                class="relative hairline rounded-sm overflow-hidden bg-paper-2"
                 [class.border-ink]="p._id === mainPhotoId()"
-                [class.border-2]="p._id === mainPhotoId()"
                 [attr.data-test]="'photo-thumb-' + i"
               >
                 <img
@@ -333,7 +338,7 @@ interface DimensionFormGroup extends FormGroup {
                   [alt]="p.originalFilename || 'Фото материала'"
                   class="block w-full h-24 object-cover"
                 />
-                <div class="flex items-center justify-between p-1 border-t hairline border-rule">
+                <div class="flex items-center justify-between p-1 hairline-t">
                   <label
                     class="inline-flex items-center gap-1 text-[10px] cursor-pointer min-h-touch px-1"
                   >
@@ -371,7 +376,7 @@ interface DimensionFormGroup extends FormGroup {
             formControlName="description"
             rows="2"
             maxlength="2000"
-            class="w-full min-h-20 px-control-x py-control-y text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors resize-none"
+            class="w-full min-h-20 px-control-x py-control-y text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors resize-none"
             [class.border-destructive]="hasError('description')"
           ></textarea>
         </app-pi-form-field>
@@ -386,7 +391,7 @@ interface DimensionFormGroup extends FormGroup {
             formControlName="notes"
             rows="2"
             maxlength="2000"
-            class="w-full min-h-20 px-control-x py-control-y text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors resize-none"
+            class="w-full min-h-20 px-control-x py-control-y text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors resize-none"
             [class.border-destructive]="hasError('notes')"
           ></textarea>
         </app-pi-form-field>
@@ -487,12 +492,13 @@ export class MaterialFormDialogComponent implements OnInit {
   }
 
   private loadSuppliers(): void {
-    this.orgs
-      .list({ type: 'supplier', limit: 200 })
-      .pipe(catchError(() => of({ items: [], total: 0, page: 1, limit: 0 })))
-      .subscribe((res) => {
-        this.suppliers.set(res.items ?? []);
-      });
+    this.orgs.list({ type: 'supplier', limit: 200 }).subscribe((res) => {
+      if (res.ok) {
+        this.suppliers.set(res.data.items ?? []);
+      } else {
+        this.suppliers.set([]); // Empty dropdown on failure — non-critical.
+      }
+    });
   }
 
   private patchFromData(m: Material): void {
@@ -520,15 +526,22 @@ export class MaterialFormDialogComponent implements OnInit {
     // Photos
     const ids = m.photoIds ?? [];
     if (ids.length > 0) {
-      this.photosService.list().subscribe({
-        next: (all) => {
+      this.photosService.list().subscribe((res) => {
+        if (res.ok) {
+          const all = res.data;
           const mine = all.filter((p) => ids.includes(p._id));
           this.photos.set(mine);
-          this.mainPhotoId.set(m.mainPhotoId ?? (mine[0]?._id ?? null));
-        },
-        error: () => {
-          this.toast.error('Не удалось загрузить фото материала');
-        },
+          // Backend may auto-populate `mainPhotoId` as a `Photo` object
+          // instead of a string ID. Normalize to the string ID for the
+          // radio-button check `p._id === mainPhotoId()`.
+          const mainId =
+            m.mainPhotoId && typeof m.mainPhotoId === 'object'
+              ? m.mainPhotoId._id
+              : m.mainPhotoId;
+          this.mainPhotoId.set(mainId ?? (mine[0]?._id ?? null));
+        } else {
+          this.toast.error(extractErrorMessage(res.error));
+        }
       });
     }
   }
@@ -556,44 +569,38 @@ export class MaterialFormDialogComponent implements OnInit {
     const files = Array.from(input.files ?? []);
     if (files.length === 0) return;
     this.uploading.set(true);
-    forkJoin(
-      files.map((f) =>
-        this.photosService.upload(f).pipe(
-          catchError(() => of({ error: true, filename: f.name } as { error: true; filename: string })),
-        ),
-      ),
-    ).subscribe({
-      next: (results) => {
-        const uploaded: Photo[] = [];
-        const failed: string[] = [];
-        for (const r of results) {
-          if (isPhoto(r)) uploaded.push(r);
-          else if (r) failed.push(r.filename);
-        }
-        if (uploaded.length > 0) {
-          this.photos.update((cur) => [...cur, ...uploaded]);
-          this.newlyUploadedIds.update((cur) => [
-            ...cur,
-            ...uploaded.map((p) => p._id),
-          ]);
-          if (!this.mainPhotoId()) {
-            this.mainPhotoId.set(uploaded[0]._id);
-          }
-        }
-        this.uploading.set(false);
-        input.value = '';
-        if (failed.length > 0) {
-          this.toast.error(
-            `Не удалось загрузить: ${failed.join(', ')} (загружено ${uploaded.length})`,
-          );
+    // photosService.upload() returns Observable<SilentResult<Photo>> —
+    // never errors. So forkJoin always completes successfully and
+    // per-file failures are reported via res.ok === false.
+    forkJoin(files.map((f) => this.photosService.upload(f))).subscribe((results) => {
+      const uploaded: Photo[] = [];
+      const failed: string[] = [];
+      results.forEach((res, i) => {
+        if (res.ok) {
+          uploaded.push(res.data);
         } else {
-          this.toast.success(`Загружено фото: ${uploaded.length}`);
+          failed.push(files[i].name);
         }
-      },
-      error: () => {
-        this.uploading.set(false);
-        this.toast.error('Не удалось загрузить фото');
-      },
+      });
+      if (uploaded.length > 0) {
+        this.photos.update((cur) => [...cur, ...uploaded]);
+        this.newlyUploadedIds.update((cur) => [
+          ...cur,
+          ...uploaded.map((p) => p._id),
+        ]);
+        if (!this.mainPhotoId()) {
+          this.mainPhotoId.set(uploaded[0]._id);
+        }
+      }
+      this.uploading.set(false);
+      input.value = '';
+      if (failed.length > 0) {
+        this.toast.error(
+          `Не удалось загрузить: ${failed.join(', ')} (загружено ${uploaded.length})`,
+        );
+      } else {
+        this.toast.success(`Загружено фото: ${uploaded.length}`);
+      }
     });
   }
 
@@ -618,8 +625,11 @@ export class MaterialFormDialogComponent implements OnInit {
     const pending = this.pendingPhotoDeletions();
     if (pending.length === 0) return;
     pending.forEach((id) => {
-      this.photosService.remove(id).subscribe({
-        error: () => {/* best-effort; log via toast if needed */},
+      this.photosService.remove(id).subscribe((res) => {
+        if (!res.ok) {
+          // best-effort: log via toast
+          this.toast.error(extractErrorMessage(res.error));
+        }
       });
     });
     this.pendingPhotoDeletions.set([]);
@@ -685,23 +695,19 @@ export class MaterialFormDialogComponent implements OnInit {
     const obs = this.data
       ? this.service.update(this.data._id, payload)
       : this.service.create(payload);
-    obs.subscribe({
-      next: (saved) => {
+    obs.subscribe((res) => {
+      if (res.ok) {
         this.submitted = true;
         // Atomic: after material save succeeds, apply pending photo deletions.
         this.applyPendingPhotoDeletions();
         this.toast.success(
           this.isEdit() ? 'Материал обновлён' : 'Материал создан',
         );
-        this.ref.close(saved);
-      },
-      error: (err: unknown) => {
-        const e = err as { error?: { message?: string }; message?: string };
-        this.errorMessage.set(
-          e?.error?.message ?? e?.message ?? 'Не удалось сохранить.',
-        );
+        this.ref.close(res.data);
+      } else {
+        this.errorMessage.set(extractErrorMessage(res.error));
         this.submitting.set(false);
-      },
+      }
     });
   }
 
@@ -729,7 +735,3 @@ export class MaterialFormDialogComponent implements OnInit {
   }
 }
 
-// Type guard for upload result discrimination
-function isPhoto(r: Photo | { error: true; filename: string } | null): r is Photo {
-  return r !== null && '_id' in r;
-}

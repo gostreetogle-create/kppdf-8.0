@@ -36,7 +36,7 @@ interface SliderGroup {
           </div>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             @for (slider of group.values; track slider.key) {
-              <div class="border hairline border-rule rounded-sm p-4 bg-paper">
+              <div class="hairline rounded-sm p-4 bg-paper">
                 <div class="flex items-center justify-between mb-2">
                   <label class="eyebrow text-[10px]">{{ slider.label }}</label>
                   <span class="mono text-[11px]">
@@ -46,6 +46,8 @@ interface SliderGroup {
                 <input
                   type="range"
                   class="w-full accent-ink"
+                  [attr.id]="'theme-' + (group.label + '-' + slider.key).toLowerCase().replace(/[^a-z0-9]+/g, '-')"
+                  [attr.name]="'theme-' + (group.label + '-' + slider.key).toLowerCase().replace(/[^a-z0-9]+/g, '-')"
                   [min]="slider.min"
                   [max]="slider.max"
                   [step]="slider.step"
@@ -63,7 +65,7 @@ interface SliderGroup {
         <h3 class="font-display text-lg font-semibold mb-3">Live preview</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <app-pi-card title="Sample card" description="Reactive to ink/paper/rule sliders" />
-          <div class="p-5 border hairline border-rule rounded-sm space-y-3">
+          <div class="p-5 hairline rounded-sm space-y-3">
             <p class="text-sm">
               Этот текст и эта граница реактивно перекрашиваются при движении слайдеров.
             </p>

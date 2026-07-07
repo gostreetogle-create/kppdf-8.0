@@ -22,7 +22,7 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
   imports: [FormsModule, LucideAngularModule, ButtonComponent, FormFieldComponent],
   template: `
     <div
-      class="min-h-screen bg-paper text-ink font-body flex items-center justify-center px-6"
+      class="min-h-screen bg-paper text-ink font-body flex items-center justify-center px-page-x"
     >
       <div
         class="w-full max-w-sm border hairline border-sunrise-warm rounded-sm px-10 py-12 bg-paper box-border overflow-hidden"
@@ -40,7 +40,7 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
         <h1 class="font-display text-2xl font-semibold mb-3">
           С возвращением.
         </h1>
-        <p class="text-sm text-muted mb-8">
+        <p class="text-sm text-muted-foreground mb-8">
           Введите учётные данные для входа в систему.
         </p>
 
@@ -62,7 +62,7 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
               autocomplete="username"
               required
               [(ngModel)]="username"
-              class="w-full h-10 px-control-x text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+              class="pi-input w-full"
               [class.border-destructive]="!!error()"
             />
           </app-pi-form-field>
@@ -79,7 +79,7 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
               autocomplete="current-password"
               required
               [(ngModel)]="password"
-              class="w-full h-10 px-control-x text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+              class="pi-input w-full"
               [class.border-destructive]="!!error()"
             />
           </app-pi-form-field>
@@ -101,7 +101,7 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
           </app-pi-button>
         </form>
 
-        <p class="eyebrow text-[10px] text-muted mt-10 text-center">
+        <p class="eyebrow text-[10px] text-muted-foreground mt-10 text-center">
           kppdf-8.0 · 2026
         </p>
       </div>

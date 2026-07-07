@@ -13,7 +13,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
       role="dialog"
       [attr.aria-label]="title()"
       [attr.aria-modal]="true"
-      class="bg-paper border-t hairline border-rule rounded-t-sm w-full flex flex-col"
+      class="bg-paper hairline-t rounded-t-sm w-full flex flex-col"
       [style.maxHeight]="maxHeight()"
     >
       @if (showHandle()) {

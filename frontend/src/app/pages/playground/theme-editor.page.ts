@@ -30,7 +30,7 @@ import { PiThemeEditorComponent } from '../../shared/theme';
         Кнопка «Reset to defaults» восстанавливает base OKLCH values
         (paper 0.972/0.008/85, ink 0.145/0/0, rule 0.85/0.006/80).
         Non-destructive: source-of-truth в @theme inline не меняется,
-        overrides применяются через <code class="mono text-[11px]">var(--color-X-override, oklch(...))</code>
+        overrides применяются через <code class="font-mono text-[11px]">var(--color-X-override, oklch(...))</code>
         fallback syntax.
       </p>
     </app-pi-section>

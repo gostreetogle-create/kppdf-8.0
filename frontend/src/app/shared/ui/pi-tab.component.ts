@@ -58,7 +58,7 @@ export class TabComponent implements AfterViewInit {
       'border-b',
       'hairline',
       'transition-colors',
-      active ? 'border-ink text-ink' : 'border-transparent text-muted',
+      active ? 'border-ink text-ink' : 'border-transparent text-muted-foreground',
       'hover:text-ink',
       disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper',

@@ -1,19 +1,24 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  Injector,
   OnInit,
   computed,
   inject,
   signal,
 } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { first } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
+import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
+import { PiEmptyTileComponent } from '../../shared/ui/pi-empty-tile/pi-empty-tile.component';
+import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
+import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../shared/ui/toast';
+import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
+import { extractErrorMessage } from '../../core/silent-http';
 import { Material, MaterialsService } from './materials.service';
 import { Photo, PhotosService } from './photos.service';
 import { Organization, OrganizationsService } from '../organizations/organizations.service';
@@ -45,6 +50,10 @@ type SortDir = 'asc' | 'desc';
     FormsModule,
     PiPageHeaderComponent,
     PiSectionComponent,
+    PiToolbarComponent,
+    PiEmptyTileComponent,
+    PiEmptyStateComponent,
+    PiRowActionsComponent,
     ButtonComponent,
   ],
   template: `
@@ -54,15 +63,17 @@ type SortDir = 'asc' | 'desc';
       description="Справочник материалов: номенклатура, поставщики, габариты, фото, цены, остатки."
     />
 
-    <div class="px-page-x pt-0 pb-6 flex items-center gap-3 flex-wrap">
+    <app-pi-toolbar>
       <input
+        id="materials-search"
         type="search"
+        name="materials-search"
         [value]="searchQuery()"
         (input)="onSearchInput($event)"
         placeholder="Поиск по названию…"
         aria-label="Поиск материалов"
         data-test="search-input"
-        class="border hairline border-rule rounded-sm px-control-x py-control-y bg-paper text-sm font-body focus:outline-none focus:border-ink w-64 transition-colors"
+        class="pi-input w-64"
       />
       <app-pi-button
         variant="default"
@@ -71,10 +82,8 @@ type SortDir = 'asc' | 'desc';
       >
         + Создать
       </app-pi-button>
-      <span class="eyebrow text-sunrise-warm">
-        {{ total() }} {{ totalLabel(total()) }}
-      </span>
-    </div>
+      <span hint>{{ total() }} {{ totalLabel(total()) }}</span>
+    </app-pi-toolbar>
 
     <app-pi-section
       title="Каталог"
@@ -89,139 +98,117 @@ type SortDir = 'asc' | 'desc';
           {{ error() }}
         </div>
       }
-      <div class="overflow-x-auto border hairline border-rule rounded-sm">
+      <div class="overflow-x-auto hairline rounded-sm">
         <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
           ← Таблица широкая — прокручивайте горизонтально →
         </p>
         <table class="w-full text-sm min-w-[1280px]">
           <thead class="border-b hairline border-rule">
             <tr>
-              <th class="text-left py-2.5 px-4 eyebrow w-16">Фото</th>
+              <th class="pi-cell eyebrow w-20 text-left">Фото</th>
               <th
-                class="text-left py-2.5 px-4 eyebrow cursor-pointer select-none group"
+                class="pi-cell eyebrow cursor-pointer select-none group text-left"
                 (click)="setSort('name')"
               >
                 Название
                 <span [class.text-sunrise-warm]="isSortedBy('name')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('name') }}</span>
               </th>
               <th
-                class="text-left py-2.5 px-4 eyebrow cursor-pointer select-none group"
+                class="pi-cell eyebrow cursor-pointer select-none group text-left"
                 (click)="setSort('article')"
               >
                 Артикул
                 <span [class.text-sunrise-warm]="isSortedBy('article')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('article') }}</span>
               </th>
               <th
-                class="text-left py-2.5 px-4 eyebrow cursor-pointer select-none group"
+                class="pi-cell eyebrow cursor-pointer select-none group text-left"
                 (click)="setSort('sku')"
               >
                 Код
                 <span [class.text-sunrise-warm]="isSortedBy('sku')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('sku') }}</span>
               </th>
               <th
-                class="text-left py-2.5 px-4 eyebrow cursor-pointer select-none min-w-24 whitespace-nowrap group"
+                class="pi-cell eyebrow cursor-pointer select-none min-w-24 whitespace-nowrap text-left group"
                 (click)="setSort('unit')"
               >
                 Ед.
                 <span [class.text-sunrise-warm]="isSortedBy('unit')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('unit') }}</span>
               </th>
-              <th class="text-left py-2.5 px-4 eyebrow min-w-40">Поставщик</th>
-              <th class="text-left py-2.5 px-4 eyebrow min-w-40">Габариты</th>
+              <th class="pi-cell eyebrow min-w-40 text-left">Поставщик</th>
+              <th class="pi-cell eyebrow min-w-40 text-left">Габариты</th>
               <th
-                class="text-right py-2.5 px-4 eyebrow cursor-pointer select-none min-w-32 whitespace-nowrap group"
+                class="pi-cell-numeric eyebrow cursor-pointer select-none min-w-32 group"
                 (click)="setSort('pricePerUnit')"
               >
                 Цена
                 <span [class.text-sunrise-warm]="isSortedBy('pricePerUnit')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('pricePerUnit') }}</span>
               </th>
               <th
-                class="text-right py-2.5 px-4 eyebrow cursor-pointer select-none min-w-24 whitespace-nowrap group"
+                class="pi-cell-numeric eyebrow cursor-pointer select-none min-w-24 group"
                 (click)="setSort('stockQty')"
               >
                 Остаток
                 <span [class.text-sunrise-warm]="isSortedBy('stockQty')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('stockQty') }}</span>
               </th>
-              <th class="text-right py-2.5 px-4 eyebrow w-40">Действия</th>
+              <th class="pi-cell eyebrow w-40 text-right">Действия</th>
             </tr>
           </thead>
           <tbody>
             @for (row of sortedRows(); track row._id) {
               <tr
-                class="border-b hairline border-rule last:border-0 odd:bg-paper-2/30 hover:bg-sunrise-soft transition-colors"
+                class="pi-table-row pi-table-row-odd last:border-0"
                 [attr.data-test]="'material-row-' + row._id"
               >
-                <td class="py-1.5 px-4 align-top">
+                <td class="pi-cell align-top">
                   @if (mainPhotoOf(row); as mp) {
                     <img
                       [src]="mp.storageUrl"
                       [alt]="mp.originalFilename || row.name"
-                      class="block w-12 h-12 object-cover border hairline border-rule rounded-sm"
+                      class="block w-20 h-20 object-cover hairline rounded-sm"
                       loading="lazy"
                     />
                   } @else {
-                    <div
-                      class="w-12 h-12 border hairline border-rule rounded-sm bg-paper-2 flex items-center justify-center"
-                      aria-hidden="true"
-                    >
-                      <span class="text-muted text-xs">—</span>
-                    </div>
+                    <app-pi-empty-tile [sizePx]="80" />
                   }
                 </td>
-                <td class="py-2.5 px-4 align-top font-medium">{{ row.name }}</td>
-                <td class="py-2.5 px-4 align-top empty-cell">{{ row.article }}</td>
-                <td class="py-2.5 px-4 align-top empty-cell">{{ row.sku }}</td>
-                <td class="py-2.5 px-4 align-top whitespace-nowrap">{{ row.unit }}</td>
-                <td class="py-2.5 px-4 align-top empty-cell">{{ supplierNameOf(row) }}</td>
-                <td class="py-2.5 px-4 align-top mono text-xs whitespace-nowrap empty-cell">{{ dimensionsSummary(row) }}</td>
-                <td class="py-2.5 px-4 text-right align-top whitespace-nowrap empty-cell">{{ formatPrice(row) }}</td>
-                <td class="py-2.5 px-4 text-right align-top whitespace-nowrap">
+                <td class="pi-cell align-top font-medium">{{ row.name }}</td>
+                <td class="pi-cell align-top empty-cell">{{ row.article }}</td>
+                <td class="pi-cell align-top empty-cell">{{ row.sku }}</td>
+                <td class="pi-cell align-top whitespace-nowrap">{{ row.unit }}</td>
+                <td class="pi-cell align-top empty-cell">{{ supplierNameOf(row) }}</td>
+                <td class="pi-cell align-top font-mono text-xs whitespace-nowrap empty-cell">{{ dimensionsSummary(row) }}</td>
+                <td class="pi-cell-numeric align-top empty-cell">{{ formatPrice(row) }}</td>
+                <td class="pi-cell-numeric align-top">
                   {{ row.stockQty ?? 0 }}
                 </td>
-                <td class="py-2.5 px-4 text-right align-top">
-                  <div class="flex items-center justify-end gap-2">
-                    <button
-                      type="button"
-                      class="inline-flex items-center justify-center w-8 h-8 hairline border border-rule rounded-sm bg-paper hover:bg-paper-2 transition-colors text-sm"
-                      [attr.aria-label]="'Редактировать ' + row.name"
-                      [attr.data-test]="'edit-button-' + row._id"
-                      (click)="openEdit(row)"
-                    >
-                      <span aria-hidden="true">✎</span>
-                    </button>
-                    <button
-                      type="button"
-                      class="inline-flex items-center justify-center w-8 h-8 hairline border border-rule rounded-sm bg-paper hover:bg-destructive hover:text-paper hover:border-destructive transition-colors text-sm"
-                      [attr.aria-label]="'Удалить ' + row.name"
-                      [attr.data-test]="'delete-button-' + row._id"
-                      (click)="onDelete(row)"
-                    >
-                      <span aria-hidden="true">×</span>
-                    </button>
-                  </div>
+                <td class="pi-cell align-top">
+                  <app-pi-row-actions
+                    [row]="row"
+                    [editLabel]="'Редактировать ' + row.name"
+                    [deleteLabel]="'Удалить ' + row.name"
+                    [dataTestEdit]="'edit-button-' + row._id"
+                    [dataTestDelete]="'delete-button-' + row._id"
+                    (edit)="openEdit($event)"
+                    (delete)="onDelete($event)"
+                  />
                 </td>
               </tr>
             }
             @if (sortedRows().length === 0 && !loading()) {
-              <tr>
-                <td
-                  colspan="10"
-                  class="py-12 px-4 text-center text-muted"
-                >
-                  <div class="flex flex-col items-center gap-1">
-                    <span class="eyebrow text-sunrise-warm">00</span>
-                    <span class="text-sm">
-                      {{ searchQuery() ? 'Ничего не найдено.' : 'Нет материалов. Нажмите «Создать», чтобы добавить первый.' }}
-                    </span>
-                  </div>
-                </td>
-              </tr>
+              <app-pi-empty-state
+                [colspan]="10"
+                [message]="searchQuery()
+                  ? 'Ничего не найдено.'
+                  : 'Нет материалов. Нажмите «Создать», чтобы добавить первый.'"
+                state="empty"
+              />
             }
             @if (loading() && sortedRows().length === 0) {
-              <tr>
-                <td colspan="10" class="py-12 px-4 text-center text-muted">
-                  Загрузка…
-                </td>
-              </tr>
+              <app-pi-empty-state
+                [colspan]="10"
+                message="Загрузка…"
+                state="loading"
+              />
             }
           </tbody>
         </table>
@@ -235,6 +222,7 @@ export class MaterialsPage implements OnInit {
   private readonly toast = inject(PiToastService);
   private readonly orgs = inject(OrganizationsService);
   private readonly photosService = inject(PhotosService);
+  private readonly injector = inject(Injector);
 
   protected readonly data = signal<Material[]>([]);
   protected readonly total = signal<number>(0);
@@ -275,24 +263,27 @@ export class MaterialsPage implements OnInit {
   }
 
   private loadLookups(): void {
-    this.orgs.list({ limit: 200 }).subscribe({
-      next: (res) => {
-        const map: Record<string, Organization> = {};
-        for (const o of res.items ?? []) map[o._id] = o;
-        this.suppliersById.set(map);
-      },
+    this.orgs.list({ limit: 200 }).subscribe((res) => {
+      if (!res.ok) return; // Silently ignore — lookup tables are non-critical; data falls back to ID-only.
+      const map: Record<string, Organization> = {};
+      for (const o of res.data.items ?? []) map[o._id] = o;
+      this.suppliersById.set(map);
     });
-    this.photosService.list().subscribe({
-      next: (all) => {
-        const map: Record<string, Photo> = {};
-        for (const p of all) map[p._id] = p;
-        this.photosById.set(map);
-      },
+    this.photosService.list().subscribe((res) => {
+      if (!res.ok) return; // Silently ignore — thumbnails fall back to the empty tile.
+      const all = res.data;
+      const map: Record<string, Photo> = {};
+      for (const p of all) map[p._id] = p;
+      this.photosById.set(map);
     });
   }
 
   protected mainPhotoOf(row: Material): Photo | null {
     if (!row.mainPhotoId) return null;
+    // Backend auto-populates `mainPhotoId` as a `Photo` object. If it's
+    // already populated, use it directly. Otherwise look it up in the
+    // photos lookup table by its string ID.
+    if (typeof row.mainPhotoId !== 'string') return row.mainPhotoId;
     return this.photosById()[row.mainPhotoId] ?? null;
   }
 
@@ -310,15 +301,35 @@ export class MaterialsPage implements OnInit {
       .join(' × ');
   }
 
-  private refreshOnDialogClose<TResult>(ref: DialogRef<TResult>): void {
-    toObservable(ref.closed)
-      .pipe(first((v) => v !== undefined))
-      .subscribe((v) => {
-        if (v) {
-          this.reload();
-          this.loadLookups();
-        }
-      });
+  private refreshOnDialogClose(ref: DialogRef<unknown>): void {
+    onDialogCloseOnce(ref, this.injector, (saved: unknown) => {
+      // Dialog's onSubmit always closes with `ref.close(saved)` where
+      // saved: Material. Cancel/ESC/backdrop close with null/undefined,
+      // which the `if (v)` check in `onDialogCloseOnce` filters out, so
+      // any non-null value reaching here is a Material. Narrow + cast.
+      if (saved && typeof saved === 'object' && '_id' in saved) {
+        const material = saved as Material;
+        // Optimistic update: add (create) or replace (edit) the saved
+        // material in the local data signal synchronously, so the table
+        // reflects it immediately. The server has already confirmed the
+        // save (we have the returned Material with _id), so this is a
+        // local reconciliation of an already-committed change — not a
+        // guess. `reload()` below resyncs in case other rows changed.
+        const isUpdate = this.data().some((m) => m._id === material._id);
+        this.data.update((cur) => {
+          const idx = cur.findIndex((m) => m._id === material._id);
+          if (idx >= 0) {
+            const next = cur.slice();
+            next[idx] = material;
+            return next;
+          }
+          return [...cur, material];
+        });
+        if (!isUpdate) this.total.update((n) => n + 1);
+      }
+      this.loadLookups();
+      this.reload();
+    });
   }
 
   protected onSearchInput(event: Event): void {
@@ -385,17 +396,13 @@ export class MaterialsPage implements OnInit {
       `Удалить материал «${row.name}»?\n\nЭто действие нельзя отменить.`,
     );
     if (!ok) return;
-    this.service.remove(row._id).subscribe({
-      next: () => {
+    this.service.remove(row._id).subscribe((res) => {
+      if (res.ok) {
         this.toast.success('Материал удалён');
         this.reload();
-      },
-      error: (err: unknown) => {
-        const e = err as { error?: { message?: string }; message?: string };
-        this.toast.error(
-          e?.error?.message ?? e?.message ?? 'Не удалось удалить материал.',
-        );
-      },
+      } else {
+        this.toast.error(extractErrorMessage(res.error));
+      }
     });
   }
 
@@ -405,19 +412,15 @@ export class MaterialsPage implements OnInit {
     const search = this.searchQuery().trim();
     this.service
       .list({ page: 1, limit: 50, search: search || undefined })
-      .subscribe({
-        next: (res) => {
-          this.data.set(res.items ?? []);
-          this.total.set(res.total ?? res.items?.length ?? 0);
+      .subscribe((res) => {
+        if (res.ok) {
+          this.data.set(res.data.items ?? []);
+          this.total.set(res.data.total ?? res.data.items?.length ?? 0);
           this.loading.set(false);
-        },
-        error: (err: unknown) => {
-          const e = err as { error?: { message?: string }; message?: string };
-          this.error.set(
-            e?.error?.message ?? e?.message ?? 'Не удалось загрузить материалы.',
-          );
+        } else {
+          this.error.set(extractErrorMessage(res.error));
           this.loading.set(false);
-        },
+        }
       });
   }
 }

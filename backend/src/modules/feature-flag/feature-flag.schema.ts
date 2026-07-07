@@ -22,6 +22,19 @@ export class FeatureFlag {
 
   @Prop({ default: true })
   isActive!: boolean;
+
+  /**
+   * Soft-delete marker. Added defensively to allow-list the `deletedAt`
+   * key in case any plugin or middleware injects it into an upsert
+   * filter — the global `softDeletePlugin` opt-out above
+   * (`softDelete: false`) SHOULD prevent its pre-hook from firing on
+   * this schema, but we keep this field as a belt-and-braces guard
+   * against Mongoose's strict-mode check (`Path "deletedAt" is not in
+   * schema`) on the seed upsert. This field does NOT enable soft-delete
+   * semantics on this collection.
+   */
+  @Prop({ type: Date, default: null })
+  deletedAt?: Date | null;
 }
 
 export const FeatureFlagSchema = SchemaFactory.createForClass(FeatureFlag);

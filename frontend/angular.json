@@ -28,7 +28,13 @@
                 { "type": "initial", "maximumWarning": "1.5mB", "maximumError": "3mB" },
                 { "type": "anyComponentStyle", "maximumWarning": "8kB", "maximumError": "16kB" }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "fileReplacements": [
+                {
+                  "replace": "src/app/core/api.tokens.ts",
+                  "with": "src/app/core/api.tokens.prod.ts"
+                }
+              ]
             },
             "development": {
               "optimization": false,
@@ -40,6 +46,9 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "proxyConfig": "proxy.conf.json"
+          },
           "configurations": {
             "production": { "buildTarget": "kppdf-frontend:build:production" },
             "development": { "buildTarget": "kppdf-frontend:build:development" }

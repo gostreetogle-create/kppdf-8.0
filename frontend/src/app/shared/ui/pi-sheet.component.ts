@@ -60,6 +60,6 @@ export class SheetComponent {
     if (anchor === 'right') return 'bg-paper flex flex-col h-full border-l hairline border-rule';
     if (anchor === 'left') return 'bg-paper flex flex-col h-full border-r hairline border-rule';
     if (anchor === 'top') return 'bg-paper flex flex-col w-full border-b hairline border-rule';
-    return 'bg-paper flex flex-col w-full border-t hairline border-rule';
+    return 'bg-paper flex flex-col w-full hairline-t';
   }
 }

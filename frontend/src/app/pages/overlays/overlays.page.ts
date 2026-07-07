@@ -86,26 +86,26 @@ import { LucideAngularModule, User, ChevronDown } from 'lucide-angular';
         </app-pi-button>
         @if (dropdownOpen()) {
           <div
-            class="absolute top-full left-0 mt-1 min-w-[180px] border hairline border-rule rounded-sm bg-paper z-30 p-1"
+            class="absolute top-full left-0 mt-1 min-w-[180px] hairline rounded-sm bg-paper z-30 p-1"
             role="menu"
             aria-label="Меню"
           >
             <button
               type="button"
-              class="w-full text-left min-h-touch px-control-x py-control-y text-sm hover:bg-paper-2 transition-colors rounded-sm"
+              class="pi-menu-item"
               role="menuitem"
               (click)="onMenuItem('profile')"
             >Профиль</button>
             <button
               type="button"
-              class="w-full text-left min-h-touch px-control-x py-control-y text-sm hover:bg-paper-2 transition-colors rounded-sm"
+              class="pi-menu-item"
               role="menuitem"
               (click)="onMenuItem('settings')"
             >Настройки</button>
-            <div class="border-t hairline border-rule my-1" role="separator"></div>
+            <div class="hairline-t my-1" role="separator"></div>
             <button
               type="button"
-              class="w-full text-left min-h-touch px-control-x py-control-y text-sm text-destructive hover:bg-paper-2 transition-colors rounded-sm"
+              class="pi-menu-item pi-menu-item-destructive"
               role="menuitem"
               (click)="onMenuItem('logout')"
             >Выйти</button>

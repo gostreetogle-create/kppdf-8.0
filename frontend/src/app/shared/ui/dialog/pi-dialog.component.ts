@@ -38,7 +38,7 @@ import type { DialogRef } from './pi-dialog.service';
         <ng-content select="[body]" />
       </div>
       <footer
-        class="border-t hairline border-rule px-6 py-4 flex justify-end gap-3 items-center"
+        class="hairline-t px-6 py-4 flex justify-end gap-3 items-center"
       >
         <ng-content select="[footer]" />
       </footer>

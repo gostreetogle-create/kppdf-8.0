@@ -20,12 +20,12 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section class="pt-0 pb-section">
+    <section class="pt-section pb-section">
       <header
         class="mb-form-field flex items-end gap-3 border-b hairline border-rule pb-2"
       >
         @if (indexRoman()) {
-          <span class="font-display text-2xl tracking-tight text-muted">
+          <span class="font-display text-2xl tracking-tight text-muted-foreground">
             {{ indexRoman() }}
           </span>
         }
@@ -34,7 +34,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         </h2>
         @if (hint()) {
           <span
-            class="ml-auto font-mono text-[11px] uppercase tracking-[0.18em] text-muted"
+            class="ml-auto font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground"
           >
             {{ hint() }}
           </span>

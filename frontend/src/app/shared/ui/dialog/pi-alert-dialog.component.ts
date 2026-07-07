@@ -29,19 +29,19 @@ export type AlertDialogVariant = 'default' | 'destructive';
       role="alertdialog"
       [attr.aria-labelledby]="titleId()"
       [attr.aria-describedby]="descId()"
-      class="bg-paper border hairline border-rule rounded-sm w-[440px] overflow-hidden"
+      class="bg-paper hairline rounded-sm w-[440px] overflow-hidden"
     >
       <header class="px-6 pt-6 pb-2">
         <h2 [id]="titleId()" class="font-display text-lg tracking-tight text-ink">
           {{ title() }}
         </h2>
         @if (description()) {
-          <p [id]="descId()" class="text-sm text-muted mt-2">
+          <p [id]="descId()" class="text-sm text-muted-foreground mt-2">
             {{ description() }}
           </p>
         }
       </header>
-      <footer class="px-6 py-4 flex justify-end gap-3 border-t hairline border-rule">
+      <footer class="px-6 py-4 flex justify-end gap-3 hairline-t">
         <app-pi-button
           variant="ghost"
           size="sm"

@@ -118,7 +118,7 @@ export class PopoverDirective {
     <div
       role="dialog"
       [attr.aria-label]="ariaLabel()"
-      class="bg-paper border hairline border-rule rounded-sm px-4 py-3 max-w-[360px] text-sm"
+      class="bg-paper hairline rounded-sm px-4 py-3 max-w-[360px] text-sm"
     >
       <ng-content />
     </div>

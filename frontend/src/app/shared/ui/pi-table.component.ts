@@ -56,6 +56,7 @@ export type SelectionMode = 'none' | 'single' | 'multi';
                   [checked]="isAllSelected()"
                   [indeterminate]="isSomeSelected() && !isAllSelected()"
                   (change)="toggleAll($event)"
+                  name="table-select-all"
                   aria-label="Выбрать всё"
                   class="align-middle"
                 />
@@ -74,7 +75,7 @@ export type SelectionMode = 'none' | 'single' | 'multi';
             >
               <span>{{ col.label }}</span>
               @if (col.sortable) {
-                <span class="ml-1 font-mono text-[10px] text-muted" aria-hidden="true">
+                <span class="ml-1 font-mono text-[10px] text-muted-foreground" aria-hidden="true">
                   {{ sortIcon(col.key) }}
                 </span>
               }
@@ -92,6 +93,8 @@ export type SelectionMode = 'none' | 'single' | 'multi';
               <td class="py-3 px-3 align-middle" (click)="$event.stopPropagation()">
                 <input
                   type="checkbox"
+                  [attr.id]="'table-select-' + rowKeyOf(row, $index)"
+                  [attr.name]="'table-select-' + rowKeyOf(row, $index)"
                   [checked]="isRowSelected(row)"
                   (change)="toggleRow(row, $event)"
                   aria-label="Выбрать строку"
@@ -126,7 +129,7 @@ export type SelectionMode = 'none' | 'single' | 'multi';
           <tr>
             <td
               [attr.colspan]="columns().length + (selectionMode() !== 'none' ? 1 : 0)"
-              class="py-12 px-3 text-center text-muted"
+              class="py-12 px-3 text-center text-muted-foreground"
             >
               <div class="flex flex-col items-center gap-1">
                 <span class="eyebrow">00</span>
@@ -137,8 +140,8 @@ export type SelectionMode = 'none' | 'single' | 'multi';
         }
       </tbody>
     </table>
-    <div class="border-t hairline border-rule px-3 py-3 flex items-center justify-between gap-2">
-      <div class="text-xs text-muted">
+    <div class="hairline-t px-3 py-3 flex items-center justify-between gap-2">
+      <div class="text-xs text-muted-foreground">
         <ng-content select="[caption]" />
       </div>
       <div class="flex items-center gap-2">

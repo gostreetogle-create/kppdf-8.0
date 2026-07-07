@@ -13,7 +13,7 @@ export type MenuItemType = 'default' | 'destructive' | 'separator';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (type() === 'separator') {
-      <div role="separator" class="border-t hairline border-rule my-1"></div>
+      <div role="separator" class="hairline-t my-1"></div>
     } @else {
       <button
         type="button"

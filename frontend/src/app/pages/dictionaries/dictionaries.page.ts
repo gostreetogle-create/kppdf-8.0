@@ -13,8 +13,11 @@ import {
 } from '@angular/forms';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
+import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
+import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiToastService } from '../../shared/ui/toast';
+import { extractErrorMessage } from '../../core/silent-http';
 import { Unit, UnitsService } from './units.service';
 
 /**
@@ -33,6 +36,8 @@ import { Unit, UnitsService } from './units.service';
     ReactiveFormsModule,
     PiPageHeaderComponent,
     PiSectionComponent,
+    PiEmptyStateComponent,
+    PiRowActionsComponent,
     ButtonComponent,
   ],
   template: `
@@ -60,11 +65,11 @@ import { Unit, UnitsService } from './units.service';
       <form
         [formGroup]="form"
         (ngSubmit)="onAdd()"
-        class="mb-section p-4 border hairline border-rule rounded-sm bg-paper-2/30"
+        class="mb-section p-4 hairline rounded-sm bg-paper-2/30"
         data-test="add-unit-form"
       >
         <p class="eyebrow mb-3">Новая единица</p>
-        <div class="grid grid-cols-1 sm:grid-cols-5 gap-4 items-end">
+        <div class="grid grid-cols-1 sm:grid-cols-5 gap-form-field items-end">
           <label class="block">
             <span class="eyebrow block mb-1.5">Ключ <span class="text-destructive">*</span></span>
             <input
@@ -74,7 +79,7 @@ import { Unit, UnitsService } from './units.service';
               placeholder="m, mm, km…"
               maxlength="32"
               autocomplete="off"
-              class="w-full h-9 px-3 text-sm border hairline border-rule rounded-sm bg-paper focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors mono"
+              class="pi-input w-full mono"
             />
           </label>
           <label class="block">
@@ -86,7 +91,7 @@ import { Unit, UnitsService } from './units.service';
               placeholder="Метр"
               maxlength="128"
               autocomplete="off"
-              class="w-full h-9 px-3 text-sm border hairline border-rule rounded-sm bg-paper focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+              class="pi-input w-full"
             />
           </label>
           <label class="block">
@@ -98,7 +103,7 @@ import { Unit, UnitsService } from './units.service';
               placeholder="м"
               maxlength="16"
               autocomplete="off"
-              class="w-full h-9 px-3 text-sm border hairline border-rule rounded-sm bg-paper focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+              class="pi-input w-full"
             />
           </label>
           <label class="block">
@@ -110,7 +115,7 @@ import { Unit, UnitsService } from './units.service';
               placeholder="length / mass / volume…"
               maxlength="32"
               autocomplete="off"
-              class="w-full h-9 px-3 text-sm border hairline border-rule rounded-sm bg-paper focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+              class="pi-input w-full"
             />
           </label>
           <app-pi-button
@@ -125,32 +130,32 @@ import { Unit, UnitsService } from './units.service';
       </form>
 
       <!-- ───── Таблица существующих ───── -->
-      <div class="border hairline border-rule rounded-sm overflow-hidden">
+      <div class="hairline rounded-sm overflow-hidden">
         <table class="w-full text-sm">
           <thead class="border-b hairline border-rule">
             <tr>
-              <th class="text-left py-2.5 px-4 eyebrow w-24 whitespace-nowrap">Ключ</th>
-              <th class="text-left py-2.5 px-4 eyebrow">Название</th>
-              <th class="text-left py-2.5 px-4 eyebrow w-20">Символ</th>
-              <th class="text-left py-2.5 px-4 eyebrow w-32">Категория</th>
-              <th class="text-right py-2.5 px-4 eyebrow w-20">Сорт.</th>
-              <th class="text-center py-2.5 px-4 eyebrow w-20">Активен</th>
-              <th class="text-right py-2.5 px-4 eyebrow w-32">Действия</th>
+              <th class="pi-cell eyebrow w-24 whitespace-nowrap text-left">Ключ</th>
+              <th class="pi-cell eyebrow text-left">Название</th>
+              <th class="pi-cell eyebrow w-20 text-left">Символ</th>
+              <th class="pi-cell eyebrow w-32 text-left">Категория</th>
+              <th class="pi-cell eyebrow w-20 text-right">Сорт.</th>
+              <th class="pi-cell eyebrow w-20 text-center">Активен</th>
+              <th class="pi-cell eyebrow w-32 text-right">Действия</th>
             </tr>
           </thead>
           <tbody>
             @for (u of sortedUnits(); track u._id) {
               <tr
-                class="border-b hairline border-rule last:border-0 odd:bg-paper-2/30 hover:bg-sunrise-soft transition-colors"
+                class="pi-table-row pi-table-row-odd last:border-0"
                 [class.opacity-50]="!u.isActive"
                 [attr.data-test]="'unit-row-' + u.key"
               >
-                <td class="py-2.5 px-4 align-top mono text-xs font-medium whitespace-nowrap">{{ u.key }}</td>
-                <td class="py-2.5 px-4 align-top">{{ u.label }}</td>
-                <td class="py-2.5 px-4 align-top text-muted empty-cell">{{ u.symbol }}</td>
-                <td class="py-2.5 px-4 align-top text-muted text-xs empty-cell">{{ u.category }}</td>
-                <td class="py-2.5 px-4 align-top text-right mono text-xs">{{ u.sortOrder }}</td>
-                <td class="py-2.5 px-4 align-top text-center">
+                <td class="pi-cell align-top font-mono text-xs font-medium whitespace-nowrap">{{ u.key }}</td>
+                <td class="pi-cell align-top">{{ u.label }}</td>
+                <td class="pi-cell align-top text-muted-foreground empty-cell">{{ u.symbol }}</td>
+                <td class="pi-cell align-top text-muted-foreground text-xs empty-cell">{{ u.category }}</td>
+                <td class="pi-cell align-top text-right font-mono text-xs">{{ u.sortOrder }}</td>
+                <td class="pi-cell align-top text-center">
                   <button
                     type="button"
                     role="switch"
@@ -168,37 +173,32 @@ import { Unit, UnitsService } from './units.service';
                     ></span>
                   </button>
                 </td>
-                <td class="py-2.5 px-4 text-right align-top">
-                  <div class="flex items-center justify-end gap-2">
-                    <button
-                      type="button"
-                      class="inline-flex items-center justify-center w-8 h-8 hairline border border-rule rounded-sm bg-paper hover:bg-destructive hover:text-paper hover:border-destructive transition-colors text-sm disabled:opacity-30 disabled:cursor-not-allowed"
-                      [attr.aria-label]="'Удалить ' + u.label"
-                      [attr.data-test]="'delete-button-' + u.key"
-                      [disabled]="u.isSystem"
-                      [title]="u.isSystem ? 'Системный юнит — нельзя удалить' : 'Удалить'"
-                      (click)="onDelete(u)"
-                    >
-                      <span aria-hidden="true">×</span>
-                    </button>
-                  </div>
+                <td class="pi-cell align-top">
+                  <app-pi-row-actions
+                    [row]="u"
+                    editLabel="Не применимо (системный справочник)"
+                    [deleteLabel]="'Удалить ' + u.label"
+                    [deleteTitle]="u.isSystem ? 'Системный юнит — нельзя удалить' : 'Удалить'"
+                    [deleteDisabled]="u.isSystem"
+                    [dataTestDelete]="'delete-button-' + u.key"
+                    (delete)="onDelete($event)"
+                  />
                 </td>
               </tr>
             }
             @if (sortedUnits().length === 0 && !loading()) {
-              <tr>
-                <td colspan="7" class="py-12 px-4 text-center text-muted">
-                  <div class="flex flex-col items-center gap-1">
-                    <span class="eyebrow text-sunrise-warm">00</span>
-                    <span class="text-sm">Нет единиц. Добавьте первую.</span>
-                  </div>
-                </td>
-              </tr>
+              <app-pi-empty-state
+                [colspan]="7"
+                message="Нет единиц. Добавьте первую."
+                state="empty"
+              />
             }
             @if (loading() && sortedUnits().length === 0) {
-              <tr>
-                <td colspan="7" class="py-12 px-4 text-center text-muted">Загрузка…</td>
-              </tr>
+              <app-pi-empty-state
+                [colspan]="7"
+                message="Загрузка…"
+                state="loading"
+              />
             }
           </tbody>
         </table>
@@ -251,35 +251,29 @@ export class DictionariesPage implements OnInit {
         sortOrder: 100,
         isActive: true,
       })
-      .subscribe({
-        next: () => {
+      .subscribe((res) => {
+        if (res.ok) {
           this.toast.success(`Единица «${v.label}» добавлена`);
           this.form.reset({ key: '', label: '', symbol: '', category: '' });
           this.adding.set(false);
           this.reload();
-        },
-        error: (err: unknown) => {
-          const e = err as { error?: { message?: string }; message?: string };
-          this.error.set(
-            e?.error?.message ?? e?.message ?? 'Не удалось добавить единицу.',
-          );
+        } else {
+          this.error.set(extractErrorMessage(res.error));
           this.adding.set(false);
-        },
+        }
       });
   }
 
   protected onToggleActive(u: Unit): void {
-    this.service.update(u.key, { isActive: !u.isActive }).subscribe({
-      next: () => {
+    this.service.update(u.key, { isActive: !u.isActive }).subscribe((res) => {
+      if (res.ok) {
         this.toast.success(
           u.isActive ? `«${u.label}» деактивирована` : `«${u.label}» активирована`,
         );
         this.reload();
-      },
-      error: (err: unknown) => {
-        const e = err as { error?: { message?: string }; message?: string };
-        this.toast.error(e?.error?.message ?? e?.message ?? 'Не удалось обновить.');
-      },
+      } else {
+        this.toast.error(extractErrorMessage(res.error));
+      }
     });
   }
 
@@ -287,33 +281,27 @@ export class DictionariesPage implements OnInit {
     if (u.isSystem) return;
     const ok = window.confirm(`Удалить единицу «${u.label}» (${u.key})?`);
     if (!ok) return;
-    this.service.remove(u.key).subscribe({
-      next: () => {
+    this.service.remove(u.key).subscribe((res) => {
+      if (res.ok) {
         this.toast.success(`Единица «${u.label}» удалена`);
         this.reload();
-      },
-      error: (err: unknown) => {
-        const e = err as { error?: { message?: string }; message?: string };
-        this.toast.error(e?.error?.message ?? e?.message ?? 'Не удалось удалить.');
-      },
+      } else {
+        this.toast.error(extractErrorMessage(res.error));
+      }
     });
   }
 
   protected reload(): void {
     this.loading.set(true);
     this.error.set(null);
-    this.service.list({ page: 1, limit: 100 }).subscribe({
-      next: (res) => {
-        this.data.set(res.items ?? []);
+    this.service.list({ page: 1, limit: 100 }).subscribe((res) => {
+      if (res.ok) {
+        this.data.set(res.data.items ?? []);
         this.loading.set(false);
-      },
-      error: (err: unknown) => {
-        const e = err as { error?: { message?: string }; message?: string };
-        this.error.set(
-          e?.error?.message ?? e?.message ?? 'Не удалось загрузить справочник.',
-        );
+      } else {
+        this.error.set(extractErrorMessage(res.error));
         this.loading.set(false);
-      },
+      }
     });
   }
 }

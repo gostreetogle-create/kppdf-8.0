@@ -27,7 +27,7 @@ const SIZE_OPTIONS: { value: BadgeSize; label: string }[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [BadgeComponent],
   template: `
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border hairline border-rule rounded-sm overflow-hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 hairline rounded-sm overflow-hidden">
       <!-- Live preview -->
       <div
         class="p-10 flex items-center justify-center bg-[linear-gradient(var(--color-rule)_1px,transparent_1px),linear-gradient(90deg,var(--color-rule)_1px,transparent_1px)] bg-[size:24px_24px]"
@@ -45,7 +45,7 @@ const SIZE_OPTIONS: { value: BadgeSize; label: string }[] = [
         <div>
           <label class="eyebrow text-[10px] block mb-1">Variant</label>
           <select
-            class="w-full border hairline border-rule rounded-sm px-3 py-1.5 bg-paper text-sm font-body focus:outline-none focus:border-ink"
+            class="w-full hairline rounded-sm px-3 py-1.5 bg-paper text-sm font-body focus:outline-none focus:border-ink"
             [value]="variant()"
             (change)="variant.set($any($event.target).value)"
             aria-label="Variant"
@@ -59,7 +59,7 @@ const SIZE_OPTIONS: { value: BadgeSize; label: string }[] = [
         <div>
           <label class="eyebrow text-[10px] block mb-1">Size</label>
           <select
-            class="w-full border hairline border-rule rounded-sm px-3 py-1.5 bg-paper text-sm font-body focus:outline-none focus:border-ink"
+            class="w-full hairline rounded-sm px-3 py-1.5 bg-paper text-sm font-body focus:outline-none focus:border-ink"
             [value]="size()"
             (change)="size.set($any($event.target).value)"
             aria-label="Size"
@@ -73,7 +73,7 @@ const SIZE_OPTIONS: { value: BadgeSize; label: string }[] = [
         <label class="flex items-center gap-2 text-sm cursor-pointer">
           <input
             type="checkbox"
-            class="border hairline border-rule"
+            class="hairline"
             [checked]="dot()"
             (change)="dot.set($any($event.target).checked)"
           />
@@ -84,7 +84,7 @@ const SIZE_OPTIONS: { value: BadgeSize; label: string }[] = [
           <label class="eyebrow text-[10px] block mb-1">Text</label>
           <input
             type="text"
-            class="w-full border hairline border-rule rounded-sm px-3 py-1.5 bg-paper text-sm font-body focus:outline-none focus:border-ink"
+            class="w-full hairline rounded-sm px-3 py-1.5 bg-paper text-sm font-body focus:outline-none focus:border-ink"
             [value]="text()"
             (input)="text.set($any($event.target).value)"
             aria-label="Text"

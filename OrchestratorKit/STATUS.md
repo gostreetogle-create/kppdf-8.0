@@ -111,6 +111,8 @@ Kit правила: **Layer 2 ≤ 2 одновременно · Layer 3 = СТР
 | TZ-79 | 2026-07-05 | Print stylesheet + axe-core a11y audit (DONE — 0 serious/critical on 7 routes) | _archive/2026-07/TZ-79.done.txt |
 | TZ-80 | 2026-07-05 | ~~SSR / hydration~~ REJECTED — out of project scope | _archive/2026-07/TZ-80.done.txt |
 | TZ-82 | 2026-07-05 | Smoke test (PENDING — runs against :4200 dev server, INDEPENDENT of TZ-80) | _archive/2026-07/TZ-82.done.txt |
+| TZ-AUDIT-9 | 2026-07-07 | Warm Paper Palette Rebrand (hue 70, chroma 0.015-0.025) | tasks/_archive/2026-07/TZ-AUDIT-9.md.done |
+| TZ-AUDIT-9.1 | 2026-07-07 | Dark Mode L Bump (perceptual density: paper 0.18→0.21, paper-2 0.24→0.27) | tasks/_archive/2026-07/TZ-AUDIT-9.md.done (sub-iteration) |
 
 ---
 

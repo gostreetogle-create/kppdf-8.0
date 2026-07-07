@@ -71,7 +71,7 @@ import { LucideAngularModule, ArrowUpRight, CircleDot } from 'lucide-angular';
         @for (card of sectionCards; track card.href) {
           <a
             [routerLink]="[card.href]"
-            class="group block p-4 border hairline border-rule rounded-sm transition-colors hover:border-ink"
+            class="group block p-4 hairline rounded-sm transition-colors hover:border-ink"
           >
             <div class="flex items-start justify-between">
               <span class="eyebrow text-[10px]">{{ card.eyebrow }}</span>
@@ -112,7 +112,7 @@ import { LucideAngularModule, ArrowUpRight, CircleDot } from 'lucide-angular';
     <app-pi-section title="Toast (Sonner-style)" hint="smoke test panel" eyebrow="IV">
       <p class="text-sm text-muted-foreground mb-4">
         Нажмите любую кнопку чтобы отправить toast в очередь. Press
-        <kbd class="font-mono text-xs px-1 border hairline border-rule rounded-sm">Esc</kbd>
+        <kbd class="font-mono text-xs px-1 hairline rounded-sm">Esc</kbd>
         чтобы закрыть все.
       </p>
 
@@ -120,25 +120,25 @@ import { LucideAngularModule, ArrowUpRight, CircleDot } from 'lucide-angular';
         <button
           type="button"
           data-toast-trigger="default"
-          class="inline-flex items-center justify-center h-9 px-4 text-sm border hairline border-rule rounded-sm bg-paper text-ink hover:bg-paper-2 transition-colors"
+          class="pi-outline-btn"
           (click)="triggerDefault()"
         >Show default</button>
         <button
           type="button"
           data-toast-trigger="success"
-          class="inline-flex items-center justify-center h-9 px-4 text-sm border hairline border-ink rounded-sm bg-paper text-ink hover:bg-paper-2 transition-colors"
+          class="pi-outline-btn"
           (click)="triggerSuccess()"
         >Show success</button>
         <button
           type="button"
           data-toast-trigger="error"
-          class="inline-flex items-center justify-center h-9 px-4 text-sm border hairline border-destructive rounded-sm bg-paper text-destructive hover:bg-paper-2 transition-colors"
+          class="pi-outline-btn pi-outline-btn-destructive"
           (click)="triggerError()"
         >Show error</button>
         <button
           type="button"
           data-toast-trigger="warning"
-          class="inline-flex items-center justify-center h-9 px-4 text-sm border hairline border-destructive rounded-sm bg-paper text-destructive hover:bg-paper-2 transition-colors"
+          class="pi-outline-btn pi-outline-btn-destructive"
           (click)="triggerWarning()"
         >Show warning</button>
       </div>

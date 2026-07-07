@@ -12,7 +12,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
     <div
       role="tooltip"
       [attr.aria-label]="ariaLabel()"
-      class="bg-paper border hairline border-rule rounded-sm px-4 py-3 max-w-[320px] text-sm"
+      class="bg-paper hairline rounded-sm px-4 py-3 max-w-[320px] text-sm"
     >
       <ng-content />
     </div>

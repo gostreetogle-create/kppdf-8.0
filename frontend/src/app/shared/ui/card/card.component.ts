@@ -23,7 +23,7 @@ import { LucideAngularModule } from 'lucide-angular';
         <h3 class="font-display text-lg tracking-tight mt-1 text-ink">{{ title() }}</h3>
       }
       @if (description()) {
-        <p class="text-sm text-muted mt-1">{{ description() }}</p>
+        <p class="text-sm text-muted-foreground mt-1">{{ description() }}</p>
       }
       <ng-content />
       @if (interactive() && arrow()) {

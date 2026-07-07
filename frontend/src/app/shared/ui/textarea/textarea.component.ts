@@ -48,7 +48,7 @@ const SIZE_CLASS: Record<PiTextareaSize, string> = {
         (input)="onInput($any($event.target).value)"
       ></textarea>
       @if (maxLength()) {
-        <div class="eyebrow mt-1 text-right text-muted">
+        <div class="eyebrow mt-1 text-right text-muted-foreground">
           {{ value().length }} / {{ maxLength() }}
         </div>
       }

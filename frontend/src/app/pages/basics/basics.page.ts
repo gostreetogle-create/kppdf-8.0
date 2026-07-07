@@ -73,12 +73,14 @@ import { LucideAngularModule, Settings, CircleDot } from 'lucide-angular';
 
     <!-- ───── Section II. Inputs (form pattern) ───── -->
     <app-pi-section title="Inputs" hint="form-field + native input/textarea + signal-state" eyebrow="II">
-      <div class="max-w-xl space-y-6">
+      <div class="max-w-xl space-y-section">
         <app-pi-form-field label="Имя клиента" hint="Как в паспорте">
           <input
+            id="basic-name"
             type="text"
+            name="name"
             placeholder="Иван Иванов"
-            class="w-full border hairline border-rule rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none focus:border-ink transition-colors"
+            class="pi-input w-full"
             [value]="name()"
             (input)="name.set($any($event.target).value)"
           />
@@ -86,9 +88,11 @@ import { LucideAngularModule, Settings, CircleDot } from 'lucide-angular';
 
         <app-pi-form-field label="E-mail" [required]="true" [error]="emailError()">
           <input
+            id="basic-email"
             type="email"
+            name="email"
             placeholder="you@example.com"
-            class="w-full border hairline rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none transition-colors"
+            class="pi-input w-full"
             [class.border-rule]="!emailError()"
             [class.border-destructive]="!!emailError()"
             [value]="email()"
@@ -98,14 +102,16 @@ import { LucideAngularModule, Settings, CircleDot } from 'lucide-angular';
 
         <app-pi-form-field label="Комментарий" hint="До 240 символов">
           <textarea
+            id="basic-comment"
+            name="comment"
             rows="4"
             maxlength="240"
             placeholder="Ваш комментарий…"
-            class="w-full border hairline border-rule rounded-sm px-3 py-2 bg-paper text-sm font-body focus:outline-none focus:border-ink transition-colors resize-none"
+            class="pi-input w-full h-auto py-control-y resize-none"
             [value]="comment()"
             (input)="comment.set($any($event.target).value)"
           ></textarea>
-          <span class="mono text-[10px] text-muted-foreground block mt-1">
+          <span class="font-mono text-[10px] text-muted-foreground block mt-1">
             {{ comment().length }} / 240
           </span>
         </app-pi-form-field>
@@ -142,7 +148,7 @@ import { LucideAngularModule, Settings, CircleDot } from 'lucide-angular';
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <app-pi-card title="Default" description="Eyebrow + title + body" />
 
-        <a class="block p-5 border hairline border-rule rounded-sm hover:border-ink transition-colors">
+        <a class="block p-5 hairline rounded-sm hover:border-ink transition-colors">
           <p class="eyebrow text-[10px]">02</p>
           <h3 class="font-display text-lg font-semibold mt-2">Interactive</h3>
           <p class="text-sm text-muted-foreground mt-1">
@@ -150,13 +156,13 @@ import { LucideAngularModule, Settings, CircleDot } from 'lucide-angular';
           </p>
         </a>
 
-        <div class="p-5 border hairline border-rule rounded-sm">
+        <div class="p-5 hairline rounded-sm">
           <p class="eyebrow text-[10px]">03</p>
           <h3 class="font-display text-lg font-semibold mt-2">With footer</h3>
           <p class="text-sm text-muted-foreground mt-1">
             Контент сверху, action-button снизу.
           </p>
-          <div class="mt-4 pt-3 border-t hairline border-rule">
+          <div class="mt-4 pt-3 hairline-t">
             <app-pi-button size="sm" variant="outline">Действие</app-pi-button>
           </div>
         </div>

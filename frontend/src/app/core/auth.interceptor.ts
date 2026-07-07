@@ -41,11 +41,29 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
-  const isPublicAuth = /\/auth\/(login|register|refresh|me)\b/.test(req.url);
+  // Two distinct concerns were previously conflated under a single
+  // `isPublicAuth` flag, which left /auth/me broken in production
+  // (the access token was never attached, so the backend's jwt guard
+  // would always 401 the session-validation call). Split into:
+  //   - skipToken: requests that should NOT receive the access token
+  //     (login/register have no token yet; /auth/refresh uses the
+  //     refresh token, which AuthService.refresh() sets manually
+  //     via the per-request `headers` option — the interceptor must
+  //     not overwrite that header with the access token).
+  //   - skipRefresh: requests where a 401 must NOT trigger the
+  //     auto-refresh loop. /auth/me is included here because
+  //     AuthService.bootstrap() handles its own refresh-and-retry
+  //     (see the docstring there) and a second refresh attempt from
+  //     the interceptor would cause an infinite loop.
+  const skipToken = /\/auth\/(login|register|refresh)\b/.test(req.url);
+  const skipRefresh = /\/auth\/(login|register|refresh|me)\b/.test(req.url);
 
   const access = auth.accessToken();
+  // Attach the access token to every request except the three
+  // skipToken endpoints. /auth/me is intentionally NOT in this list —
+  // it needs the access token to validate the session.
   const authedReq =
-    access && !isPublicAuth
+    access && !skipToken
       ? req.clone({ setHeaders: { Authorization: `Bearer ${access}` } })
       : req;
 
@@ -54,8 +72,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       // Anything other than 401 propagates immediately.
       if (error.status !== 401) return throwError(() => error);
 
-      // Skip refresh-loop and bootstrap-loop endpoints.
-      if (isPublicAuth) return throwError(() => error);
+      // Skip refresh for /auth/{login,register,refresh,me}.
+      if (skipRefresh) return throwError(() => error);
 
       // Already retried once after a successful refresh → give up.
       if (req.context.get(IS_RETRY)) return throwError(() => error);

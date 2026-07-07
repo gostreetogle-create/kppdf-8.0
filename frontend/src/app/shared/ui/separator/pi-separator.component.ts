@@ -43,7 +43,7 @@ export type PiSeparatorOrientation = 'horizontal' | 'vertical';
           role="separator"
           aria-orientation="horizontal"
           [attr.aria-label]="ariaLabel()"
-          class="border-0 border-t hairline border-rule my-6"
+          class="hairline-t my-6"
         />
       }
     } @else {

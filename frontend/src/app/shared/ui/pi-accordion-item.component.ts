@@ -27,7 +27,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
           @if (meta()) {
             <span class="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.18em]">{{ meta() }}</span>
           }
-          <span aria-hidden="true" class="text-muted text-sm leading-none">
+          <span aria-hidden="true" class="text-muted-foreground text-sm leading-none">
             {{ expanded() ? '−' : '+' }}
           </span>
         </div>

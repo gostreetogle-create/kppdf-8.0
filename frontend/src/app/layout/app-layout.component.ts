@@ -31,17 +31,21 @@ const NAV_LINKS: NavLink[] = [
  * /counterparties, /products, …). The UI-Kit itself is preserved
  * at /kit/* for site-building work but is NOT shown in this nav.
  *
- * Layout:
- *  - Centred max-width container (max-w-[1600px] mx-auto) with
- *    generous responsive horizontal padding (px-6 sm:px-10 lg:px-16
- *    ≈ 64px on desktop, ~24px on mobile) — keeps content from
- *    touching the screen edge on any viewport width.
- *  - Sticky header: brand block ("KPPDF · 8.0") + horizontal nav
- *    + user/logout on the right. The header bleeds to the screen
- *    edge via negative margin (sticky background looks correct)
- *    and re-applies the same padding internally.
- *  - Main: <router-outlet /> for the page content.
- *  - Footer: copyright + tech credits.
+ * Layout (TZ-AUDIT-5 — visual coherence w/ KitLayout):
+ *  - `.pi-page-frame` container owns the max-width and responsive
+ *    horizontal padding (24/40/64px). One source of truth.
+ *  - Sticky header uses `.pi-edge-bleed` to bleed to viewport
+ *    edges without a `-mx-6 -mx-10 -mx-16 px-6 px-10 px-16`
+ *    bleed hack. Inner padding mirrors the page-frame automatically.
+ *  - Header border is `border-rule` (neutral hairline) — the same
+ *    color the kit-layout, page-header and section headers use.
+ *    This kills the "warm-bar / cold-bar / cold-bar" stutter that
+ *    made the top of the page look disconnected.
+ *  - Main uses `pt-page-y` = 32px breathing room below the sticky
+ *    header so the first page-header has room to land.
+ *  - Footer keeps the warm sunrise-warm accent for warmth — but
+ *    it is the ONLY warm border in the layout now, anchored to
+ *    a footer-only job: the sign-off, not the navigation.
  *
  * Standalone + OnPush + signal-based, matching the rest of the
  * Paper & Ink codebase.
@@ -53,14 +57,10 @@ const NAV_LINKS: NavLink[] = [
   imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule],
   template: `
     <div class="min-h-screen bg-paper text-ink font-body">
-      <div
-        class="w-full max-w-[1400px] mx-auto
-               px-6 sm:px-10 lg:px-16"
-      >
+      <div class="pi-page-frame">
         <header
-          class="sticky top-0 z-30 border-b hairline border-sunrise-warm
-                 bg-paper/95 supports-[backdrop-filter]:backdrop-blur-[2px]
-                 -mx-6 sm:-mx-10 lg:-mx-16 px-6 sm:px-10 lg:px-16"
+          class="sticky top-0 z-30 bg-paper/95 supports-[backdrop-filter]:backdrop-blur-sm
+                 border-b hairline border-rule pi-edge-bleed"
         >
           <div class="h-14 flex items-center justify-between gap-4">
             <a
@@ -84,7 +84,7 @@ const NAV_LINKS: NavLink[] = [
               @for (link of navLinks; track link.path) {
                 @if (link.disabled) {
                   <span
-                    class="px-3 py-1.5 text-sm text-muted rounded-sm cursor-not-allowed"
+                    class="px-3 py-1.5 text-sm text-muted-foreground rounded-sm cursor-not-allowed"
                     [attr.aria-disabled]="true"
                     [title]="link.label + ' — скоро'"
                   >
@@ -104,14 +104,12 @@ const NAV_LINKS: NavLink[] = [
 
             <div class="flex items-center gap-3 shrink-0">
               @if (user(); as u) {
-                <span class="text-sm text-muted hidden sm:inline">
+                <span class="text-sm text-muted-foreground hidden sm:inline">
                   {{ u.displayName || u.username }}
                 </span>
                 <button
                   type="button"
-                  class="inline-flex items-center gap-1 px-2 h-8
-                         border hairline border-rule rounded-sm
-                         hover:bg-paper-2 transition-colors"
+                  class="pi-icon-btn gap-1 px-2 w-auto pi-focus-ring"
                   aria-label="Выйти"
                   (click)="onLogout()"
                 >
@@ -129,14 +127,14 @@ const NAV_LINKS: NavLink[] = [
           </div>
         </header>
 
-        <main class="min-w-0">
+        <main class="min-w-0 pt-page-y">
           <router-outlet />
         </main>
 
         <footer
-          class="border-t hairline border-sunrise-warm mt-12 py-section
+          class="border-t hairline border-sunrise-warm mt-footer-y py-footer-y
                  font-mono text-[11px] uppercase tracking-[0.18em]
-                 text-muted flex flex-wrap justify-between gap-3"
+                 text-muted-foreground flex flex-wrap justify-between gap-3"
         >
           <span>© 2026 KPPDF · 8.0</span>
           <span>Внутренний сервис · 2026</span>

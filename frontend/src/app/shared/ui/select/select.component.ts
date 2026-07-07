@@ -52,7 +52,7 @@ export type SelectSize = 'sm' | 'md';
         <ng-content select="[selected-label]" />
       </app-pi-select-trigger>
       <div
-        class="bg-paper border hairline border-rule rounded-sm overflow-hidden max-h-60 overflow-y-auto p-1"
+        class="bg-paper hairline rounded-sm overflow-hidden max-h-60 overflow-y-auto p-1"
         role="listbox"
         [attr.aria-label]="ariaLabel()"
       >

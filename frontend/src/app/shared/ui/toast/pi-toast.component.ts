@@ -53,14 +53,14 @@ const VARIANT_CLASS: Record<QueuedToast['variant'], string> = {
           <div class="flex-1 text-sm">
             <div class="pi-toast__message font-body text-ink">{{ t.message }}</div>
             @if (t.description) {
-              <div class="pi-toast__description text-muted text-xs mt-1">
+              <div class="pi-toast__description text-muted-foreground text-xs mt-1">
                 {{ t.description }}
               </div>
             }
           </div>
           <button
             type="button"
-            class="pi-toast__close inline-flex items-center justify-center w-8 h-8 shrink-0 text-muted hover:text-ink text-sm leading-none rounded-sm transition-colors"
+            class="pi-toast__close inline-flex items-center justify-center w-8 h-8 shrink-0 text-muted-foreground hover:text-ink text-sm leading-none rounded-sm transition-colors"
             (click)="dismiss(t.id)"
             aria-label="Закрыть уведомление"
           >×</button>

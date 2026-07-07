@@ -92,15 +92,13 @@ const NAV_GROUPS: NavGroup[] = [
     <div class="min-h-screen bg-paper text-ink font-body flex flex-col">
       <header
         class="sticky top-0 z-30 border-b hairline border-rule
-               bg-paper/95 supports-[backdrop-filter]:backdrop-blur-[2px]"
+               bg-paper/95 supports-[backdrop-filter]:backdrop-blur-sm pi-edge-bleed"
       >
-        <div class="px-5 h-14 flex items-center justify-between gap-3">
+        <div class="px-page-x sm:px-10 lg:px-16 h-14 flex items-center justify-between gap-3">
           <div class="flex items-center gap-3 min-w-0">
             <button
               type="button"
-              class="md:hidden inline-flex items-center justify-center
-                     w-8 h-8 border hairline border-rule rounded-sm
-                     hover:bg-paper-2 transition-colors"
+              class="md:hidden pi-icon-btn pi-focus-ring"
               [attr.aria-label]="isSidebarOpen() ? 'Закрыть меню' : 'Открыть меню'"
               [attr.aria-expanded]="isSidebarOpen()"
               (click)="isSidebarOpen.set(!isSidebarOpen())"
@@ -127,9 +125,7 @@ const NAV_GROUPS: NavGroup[] = [
             <app-theme-toggle />
             <button
               type="button"
-              class="inline-flex items-center gap-1 px-2 h-8
-                     border hairline border-rule rounded-sm
-                     hover:bg-paper-2 transition-colors"
+              class="pi-icon-btn gap-1 px-2 w-auto pi-focus-ring"
               aria-label="Открыть командную палитру (⌘K)"
               title="Открыть командную палитру (⌘K)"
               data-cmd-k
@@ -175,17 +171,17 @@ const NAV_GROUPS: NavGroup[] = [
           </nav>
         </aside>
 
-        <main class="flex-1 min-w-0">
-          <div class="max-w-[1400px] mx-auto px-5">
+        <main class="flex-1 min-w-0 pt-page-y">
+          <div class="pi-page-frame">
             <router-outlet />
           </div>
         </main>
       </div>
 
       <footer
-        class="border-t hairline border-rule mt-12 px-5 py-6
+        class="hairline-t mt-footer-y px-page-x sm:px-10 lg:px-16 py-footer-y
                font-mono text-[11px] uppercase tracking-[0.18em]
-               text-muted flex flex-wrap justify-between gap-3"
+               text-muted-foreground flex flex-wrap justify-between gap-3"
       >
         <span>© 2026 Paper &amp; Ink</span>
         <span>Syne · Plus Jakarta Sans · ngx-charts · ngx-sonner · @angular/cdk</span>

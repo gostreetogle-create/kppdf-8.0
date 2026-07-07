@@ -1,8 +1,10 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { firstValueFrom, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 
 import { API_BASE_URL } from './api.tokens';
+import { silentPost } from './silent-http';
 
 export interface AuthUser {
   id: string;
@@ -58,41 +60,99 @@ export class AuthService {
 
   /**
    * Called once via `provideAppInitializer`. If a token is present in
-   * localStorage, validate it against /auth/me; clear state on 401.
+   * localStorage, validate it against /auth/me. If the access token has
+   * expired (401) but a refresh token is still valid, transparently
+   * refresh and retry /auth/me — long-lived sessions survive access-
+   * token expiry without forcing re-login. On any unrecoverable error
+   * clear state and let the AuthGuard redirect to /login.
+   *
+   * Note: the `authInterceptor` deliberately skips its own refresh
+   * handling for /auth/me (see its docstring) to avoid an infinite
+   * loop, so the refresh logic lives here.
+   *
+   * Error-handling note: 401/400 from /auth/me and /auth/refresh are
+   * EXPECTED at bootstrap with no valid session — this is normal first-
+   * load behaviour, not an error condition. We still log them via
+   * Chrome's network panel (browser-level, unavoidable) but suppress
+   * RxJS's default "unhandled error in observable" log + the zone.js
+   * stack trace that follows it, by catching at the Observable level
+   * with `catchError` and converting errors to plain values. The
+   * bootstrap flow then inspects the status code and acts accordingly.
    */
   async bootstrap(): Promise<void> {
     if (!this.accessToken()) return;
-    try {
-      const user = await firstValueFrom(
-        this.http.get<AuthUser>(`${this.baseUrl}/auth/me`),
-      );
-      this.user.set(user);
-    } catch {
-      this.clear();
+
+    // Suppress RxJS global error log: catch at the Observable level
+    // and convert to a plain `{ ok, status }` value. The HTTP call may
+    // still log its 4xx via the browser's network panel (unavoidable),
+    // but the rxjs+zone.js stack trace that previously followed it is
+    // gone.
+    const meResult = await firstValueFrom(
+      this.http.get<AuthUser>(`${this.baseUrl}/auth/me`).pipe(
+        map((user) => ({ ok: true as const, user })),
+        catchError((err: unknown) => {
+          const status = err instanceof HttpErrorResponse ? err.status : 0;
+          return of({ ok: false as const, status });
+        }),
+      ),
+    );
+
+    if (meResult.ok) {
+      this.user.set(meResult.user);
+      return;
     }
+
+    // 401 with a refresh token → try to refresh, then retry /auth/me.
+    // Any other status (400, 403, 5xx, network) → give up and clear.
+    if (meResult.status === 401 && this.refreshToken()) {
+      try {
+        await this.refresh();
+        // refresh() updated the access token signal; retry /auth/me
+        // with the same silent-error pattern.
+        const retry = await firstValueFrom(
+          this.http.get<AuthUser>(`${this.baseUrl}/auth/me`).pipe(
+            catchError(() => of(null as AuthUser | null)),
+          ),
+        );
+        if (retry) {
+          this.user.set(retry);
+          return;
+        }
+      } catch {
+        // refresh() clears on its own failure; nothing else to do.
+      }
+    }
+
+    this.clear();
   }
 
   async login(username: string, password: string): Promise<void> {
+    // Use silentPost so the observable never errors and RxJS's global
+    // unhandled-error log is suppressed. On failure we throw the
+    // HttpErrorResponse so the caller (LoginPage.onSubmit) can show
+    // a toast via its existing try/catch — this preserves the user-
+    // visible error UX (bad credentials, etc.) while keeping the
+    // console clean.
     const res = await firstValueFrom(
-      this.http.post<LoginResponse>(`${this.baseUrl}/auth/login`, {
+      silentPost<LoginResponse>(this.http, `${this.baseUrl}/auth/login`, {
         username,
         password,
       }),
     );
-    this.setTokens(res.access, res.refresh);
-    this.user.set(res.user);
+    if (!res.ok) {
+      throw res.error;
+    }
+    this.setTokens(res.data.access, res.data.refresh);
+    this.user.set(res.data.user);
   }
 
   async logout(): Promise<void> {
-    try {
-      await firstValueFrom(
-        this.http.post(`${this.baseUrl}/auth/logout`, {}),
-      );
-    } catch {
-      // network error — still clear local state so we don't get stuck
-    } finally {
-      this.clear();
-    }
+    // silentPost never errors, so no try/catch needed — the network
+    // call is fire-and-forget. The observable emits a SilentResult
+    // value (which we ignore) and then completes; RxJS's global
+    // unhandled-error log is suppressed.
+    await firstValueFrom(silentPost(this.http, `${this.baseUrl}/auth/logout`, {}));
+    this.clear();
   }
 
   /**
@@ -119,24 +179,53 @@ export class AuthService {
         throw new Error('No refresh token available');
       }
 
-      try {
-        const res = await firstValueFrom(
-          this.http.post<{ access: string }>(
+      // Same silent-error pattern as bootstrap(): convert Observable
+      // errors to a plain `{ ok, access }` value so RxJS's global
+      // unhandled-error log (and its zone.js stack trace) doesn't
+      // fire on the expected 4xx. We re-throw on failure so callers
+      // (interceptor's catchError, bootstrap's await) can handle it.
+      const res = await firstValueFrom(
+        this.http
+          .post<{ access: string }>(
             `${this.baseUrl}/auth/refresh`,
             {},
             { headers: { Authorization: `Bearer ${refresh}` } },
+          )
+          .pipe(
+            map((data) => ({ ok: true as const, access: data.access })),
+            catchError((err: unknown) => of({ ok: false as const, error: err })),
           ),
-        );
-        // Keep the existing refresh token; only the access token rotates.
-        this.setTokens(res.access, refresh);
-        return res.access;
-      } catch (err) {
+      );
+
+      if (!res.ok) {
         this.clear();
-        throw err;
-      } finally {
-        this.refreshInFlight = null;
+        // Runtime + type guard: refresh() in practice always rejects
+        // with an HttpErrorResponse (the only source is the http.post
+        // observable whose catchError sees HttpErrorResponse errors).
+        // The fallback wraps any unexpected error in an HttpErrorResponse-
+        // shaped error so the async function's throw type stays uniform
+        // (`HttpErrorResponse`, not a 2-way union) — this keeps the
+        // interceptor's `catchError((error: HttpErrorResponse) => …)`
+        // parameter narrow without a type assertion. `status: 0` is the
+        // conventional sentinel for "unknown / non-HTTP error" and the
+        // interceptor's `if (error.status !== 401)` check correctly
+        // propagates it as-is.
+        if (res.error instanceof HttpErrorResponse) {
+          throw res.error;
+        }
+        throw new HttpErrorResponse({
+          status: 0,
+          statusText: 'Unknown',
+          error: res.error,
+        });
       }
-    })();
+
+      // Keep the existing refresh token; only the access token rotates.
+      this.setTokens(res.access, refresh);
+      return res.access;
+    })().finally(() => {
+      this.refreshInFlight = null;
+    });
 
     return this.refreshInFlight;
   }

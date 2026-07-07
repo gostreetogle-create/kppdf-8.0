@@ -1,8 +1,8 @@
 # STATUS — KPPDF ERP Project Status
 
-**Last updated:** 2026-07-05
-**Phase:** Dev Tooling (TZ-41..TZ-46 + TZ-42) — ЗАВЕРШЕНО
-**Total tasks:** 47/47 ✅ (100% — TZ-02..TZ-46, TZ-42)
+**Last updated:** 2026-07-07
+**Phase:** Dev Tooling (TZ-41..TZ-46 + TZ-42) + TZ-AUDIT-9 + TZ-AUDIT-9.1 — ЗАВЕРШЕНО
+**Total tasks:** 47/47 ✅ (100% — TZ-02..TZ-46, TZ-42) + TZ-AUDIT-9 + 9.1 (palette rebrand + dark mode L bump)
 
 ## ✅ Завершённые этапы
 
@@ -47,6 +47,25 @@
 - TZ-46: Clean Launch Console — все log-сообщения start.mjs на русском (preflight, mongo, deps, build, banner, cleanup, waitFor). `printReadyPanel` переписан с длинного «простынного» вывода на компактную 2D панель: ASCII-рамка `╔══╗`/`╚══╝` с заголовком `✦ kppdf-8.0 готов к работе ✦`, summary `⏱ Все сервисы готовы за Xs`, 2-col endpoints (`🖥 Frontend | 👤 Логин` + `📦 Backend | 📋 Showcase`). Динамическая ширина колонок через `stdout.columns` (clamp 80..120). NG warnings fix: 3× NG8113 (unused imports в page-renderer + showcase) + 2× NG8102 (unnecessary `??` в otp-input + scroll-area) → frontend build 0 warnings. NestJS logger: nestjs-pino level='info' (excludes debug/verbose). Console clean: 0 warnings, 0 deprecations.
 
 **Smoke test:** `node start.mjs` — preflight ✅, Mongo RS ready ✅, backend boot ✅, /api/health OK, 0 Mongoose "Duplicate schema index" warnings, 0 DEP0190, 0 DI cascade errors.
+
+### TZ-AUDIT-9 + TZ-AUDIT-9.1 (2026-07-07) — Warm Paper Palette Rebrand
+- **Мотивация (от пользователя):** «исправить чёрно-серые цвета, сайт мрачный». Pre-Audit-9 палитра: hue ~80 + chroma 0.005-0.01 (почти desaturated), ink = pure black `oklch(0.145 0 0)`. Всё читалось холодно/безлико. Sunrise-палитра существовала, но UI-Kit оставался в B&W → акценты «выскакивали» как чужеродные.
+- **TZ-AUDIT-9 — изменения:**
+  - Base palette (8 токенов, light mode): hue 80→**70 (golden-beige)**, chroma 0.005-0.01→**0.015-0.025**, ink `oklch(0.145 0 0)` → **deep espresso `oklch(0.180 0.015 70)`**. Paper → warm cream, rule → warm gray, muted-foreground → warm medium.
+  - Accent-cool: hue 230 (cyan) → **hue 250 (indigo)** — убрана вибрация с тёплой базой.
+  - Dark mode: cold charcoal + cold white → **warm espresso (`oklch(0.21 0.015 70)`)** + **warm cream text (`oklch(0.95 0.015 70)`)**.
+  - Sunrise палитра **UNCHANGED** (hue 55-80 уже внутри базы 70) — теперь естественно перетекает.
+  - **JSDoc конвенции** (TZ-AUDIT-8): HAIRLINE-FIRST BORDER (66+ `border hairline border-rule` → `hairline` + 13× `border-t...` → `hairline-t`), SECONDARY TEXT (40× `text-muted` → `text-muted-foreground`), WCAG note на `text-muted-foreground` (~3:1, AA Large only) с DON'T-list.
+  - **Defensive longhand**: 5 utility classes (`hairline`, `hairline-t/b/r/l`, `pi-input`, `pi-icon-btn`, `.pi-outline-btn`) converted — `border-ink` / `border-destructive` overrides ВСЕГДА выигрывают в cascade.
+  - FoundationsPage swatches (6/8) обновлены; hairline border demo переработан (3 thin variants: rule / ink / destructive).
+- **TZ-AUDIT-9.1 — изменения:** Dark mode L bump. Reviewer: «warm dark reads denser than cool dark». `--color-paper` (dark) L **0.18 → 0.21**, `--color-paper-2` (dark) L **0.24 → 0.27**. Hue/chroma UNCHANGED. JSDoc: «higher L gives the surface breathing room».
+- **Visual verification** (browser-use через /kit/* public route prefix): 12 screenshots (6 pages × 2 modes), 0 console errors, warm-paper feel confirmed, dark mode warm espresso с visible card separation.
+- **3 review rounds, 4 MINORs closed:** (1) Stale Sunrise JSDoc, (2) `text-muted-foreground` WCAG note placement + 3.1:1 wording, (3) Dark mode L=0.18 too dark (deferred to TZ-AUDIT-9.1), (4) TZ-AUDIT-9b naming → TZ-AUDIT-9.1.
+- **Discovery:** /kit/* routes уже PUBLIC (no authGuard) — same page components, different layout shell. Это спасло от 1-line route config change для visual verification. Operational pages (/materials, /organizations, /dictionaries) still blocked — dev proxy broken (Angular dev server не проксирует /api/* на backend :3000), требует отдельного fix.
+- **Затронутые файлы:** `frontend/src/styles.css` (palette tokens + JSDoc + 5 utility longhand), `frontend/src/app/pages/foundations/foundations.page.ts` (6 swatches), + pre-Audit-9 cleanup (27 файлов `text-muted` → `text-muted-foreground`, 34 файла `border hairline border-rule` → `hairline`, `forms.page.ts` NG8113 fix).
+- **Verification:** 166/166 tests passing, typecheck exit 0, code-reviewer approved (3 rounds), 12 browser-use screenshots, no console errors.
+- **Известные ограничения (не блокеры):** `text-muted-foreground` ~3:1 contrast (AA Large only, fails AA Standard) — JSDoc note + DON'T-list покрывают. Operational pages blocked от visual verification (dev proxy issue). Dark mode L=0.21 может быть bumped back в 0.20-0.22 range если пользователь предпочитает темнее.
+- **Архив:** `tasks/_archive/2026-07/TZ-AUDIT-9.md.done` (с comprehensive ARCHIVE_MARKER).
 
 ## 📊 Метрики проекта
 

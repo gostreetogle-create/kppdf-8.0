@@ -19,6 +19,7 @@ import {
 } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
+import { extractErrorMessage } from '../../core/silent-http';
 import {
   Organization,
   OrganizationsService,
@@ -64,7 +65,7 @@ type Result = Organization | null | undefined;
               formControlName="name"
               maxlength="256"
               autocomplete="off"
-              class="w-full h-10 px-control-x text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
               [class.border-destructive]="hasError('name')"
             />
           </app-pi-form-field>
@@ -80,7 +81,7 @@ type Result = Organization | null | undefined;
               formControlName="shortName"
               maxlength="128"
               autocomplete="off"
-              class="w-full h-10 px-control-x text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
             />
           </app-pi-form-field>
 
@@ -96,7 +97,7 @@ type Result = Organization | null | undefined;
               formControlName="inn"
               maxlength="12"
               autocomplete="off"
-              class="w-full h-10 px-control-x text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors mono"
+              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors mono"
               [class.border-destructive]="hasError('inn')"
             />
           </app-pi-form-field>
@@ -112,7 +113,7 @@ type Result = Organization | null | undefined;
               formControlName="kpp"
               maxlength="16"
               autocomplete="off"
-              class="w-full h-10 px-control-x text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors mono"
+              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors mono"
             />
           </app-pi-form-field>
         </div>
@@ -121,13 +122,14 @@ type Result = Organization | null | undefined;
           <div class="flex flex-wrap gap-2">
             @for (t of allTypes; track t) {
               <label
-                class="inline-flex items-center gap-2 min-h-touch px-control-x py-control-y border hairline border-rule rounded-sm cursor-pointer hover:bg-paper-2 transition-colors"
+                class="inline-flex items-center gap-2 min-h-touch px-control-x py-control-y hairline rounded-sm cursor-pointer hover:bg-paper-2 transition-colors"
                 [class.bg-ink]="form.controls.type.value.includes(t)"
                 [class.text-paper]="form.controls.type.value.includes(t)"
                 [class.border-ink]="form.controls.type.value.includes(t)"
               >
                 <input
                   type="checkbox"
+                  [attr.name]="'org-type-' + t"
                   [checked]="form.controls.type.value.includes(t)"
                   (change)="onTypeToggle(t, $any($event.target).checked)"
                   class="sr-only"
@@ -148,7 +150,7 @@ type Result = Organization | null | undefined;
               type="text"
               formControlName="signerName"
               autocomplete="off"
-              class="w-full h-10 px-control-x text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
             />
           </app-pi-form-field>
 
@@ -161,7 +163,7 @@ type Result = Organization | null | undefined;
               type="text"
               formControlName="signerPosition"
               autocomplete="off"
-              class="w-full h-10 px-control-x text-sm border hairline border-rule rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
             />
           </app-pi-form-field>
 
@@ -275,20 +277,16 @@ export class OrganizationFormDialogComponent implements OnInit {
     const obs = this.data
       ? this.service.update(this.data._id, payload)
       : this.service.create(payload);
-    obs.subscribe({
-      next: (saved) => {
+    obs.subscribe((res) => {
+      if (res.ok) {
         this.toast.success(
           this.isEdit() ? 'Организация обновлена' : 'Организация создана',
         );
-        this.ref.close(saved);
-      },
-      error: (err: unknown) => {
-        const e = err as { error?: { message?: string }; message?: string };
-        this.errorMessage.set(
-          e?.error?.message ?? e?.message ?? 'Не удалось сохранить.',
-        );
+        this.ref.close(res.data);
+      } else {
+        this.errorMessage.set(extractErrorMessage(res.error));
         this.submitting.set(false);
-      },
+      }
     });
   }
 

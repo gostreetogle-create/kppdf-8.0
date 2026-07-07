@@ -22,7 +22,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <article class="border hairline border-rule rounded-sm overflow-hidden bg-paper">
+    <article class="hairline rounded-sm overflow-hidden bg-paper">
       <div
         class="flex items-center justify-between border-b hairline border-rule
                px-4 py-2 bg-paper-2"
@@ -32,7 +32,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
           <button
             type="button"
             class="inline-flex items-center justify-center
-                   w-7 h-7 border hairline border-rule rounded-sm
+                   w-7 h-7 hairline rounded-sm
                    hover:bg-paper transition-colors"
             aria-label="Показать исходник"
             title="Показать исходник (TZ-78)"
@@ -45,12 +45,12 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         <ng-content select="[preview]" />
       </div>
       @if (title() || description()) {
-        <div class="border-t hairline border-rule px-4 py-3">
+        <div class="hairline-t px-4 py-3">
           <h3 class="font-display text-base font-semibold tracking-tight">
             {{ title() }}
           </h3>
           @if (description()) {
-            <p class="text-sm text-muted mt-1">{{ description() }}</p>
+            <p class="text-sm text-muted-foreground mt-1">{{ description() }}</p>
           }
           <ng-content select="[info]" />
         </div>

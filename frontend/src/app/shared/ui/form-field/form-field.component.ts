@@ -27,7 +27,7 @@ import { LabelComponent } from '../label/label.component';
       @if (error()) {
         <span class="text-xs text-destructive" role="alert">{{ error() }}</span>
       } @else if (hint()) {
-        <span class="text-xs text-muted">{{ hint() }}</span>
+        <span class="text-xs text-muted-foreground">{{ hint() }}</span>
       }
     </div>
   `,

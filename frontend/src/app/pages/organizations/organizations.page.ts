@@ -1,19 +1,23 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  Injector,
   OnInit,
   computed,
   inject,
   signal,
 } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { first } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
+import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
+import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
+import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../shared/ui/toast';
+import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
+import { extractErrorMessage } from '../../core/silent-http';
 import { Organization, OrganizationsService } from './organizations.service';
 import { OrganizationFormDialogComponent } from './organization-form-dialog.component';
 
@@ -27,6 +31,9 @@ type SortDir = 'asc' | 'desc';
     FormsModule,
     PiPageHeaderComponent,
     PiSectionComponent,
+    PiToolbarComponent,
+    PiEmptyStateComponent,
+    PiRowActionsComponent,
     ButtonComponent,
   ],
   template: `
@@ -36,15 +43,17 @@ type SortDir = 'asc' | 'desc';
       description="Юр. лица и ИП — покупатели, поставщики, подрядчики. Один контрагент может совмещать несколько ролей."
     />
 
-    <div class="px-page-x pt-0 pb-6 flex items-center gap-form-field flex-wrap">
+    <app-pi-toolbar>
       <input
+        id="organizations-search"
         type="search"
+        name="organizations-search"
         [value]="searchQuery()"
         (input)="onSearchInput($event)"
         placeholder="Поиск по названию или ИНН…"
         aria-label="Поиск организаций"
         data-test="search-input"
-        class="border hairline border-rule rounded-sm px-control-x py-control-y bg-paper text-sm font-body focus:outline-none focus:border-ink w-72 transition-colors"
+        class="pi-input w-72"
       />
       <app-pi-button
         variant="default"
@@ -53,10 +62,8 @@ type SortDir = 'asc' | 'desc';
       >
         + Создать
       </app-pi-button>
-      <span class="eyebrow text-sunrise-warm">
-        {{ total() }} {{ totalLabel(total()) }}
-      </span>
-    </div>
+      <span hint>{{ total() }} {{ totalLabel(total()) }}</span>
+    </app-pi-toolbar>
 
     <app-pi-section title="Каталог" hint="сортировка · клик по заголовку" eyebrow="I">
       @if (error()) {
@@ -68,97 +75,83 @@ type SortDir = 'asc' | 'desc';
         </div>
       }
 
-      <div class="border hairline border-rule rounded-sm overflow-x-auto">
+      <div class="hairline rounded-sm overflow-x-auto">
         <table class="w-full text-sm min-w-[640px]">
           <thead class="border-b hairline border-rule">
             <tr>
               <th
-                class="text-left py-2.5 px-4 eyebrow cursor-pointer select-none group"
+                class="pi-cell eyebrow cursor-pointer select-none group text-left"
                 (click)="setSort('name')"
               >
                 Название
                 <span [class.text-sunrise-warm]="isSortedBy('name')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('name') }}</span>
               </th>
               <th
-                class="text-left py-2.5 px-4 eyebrow cursor-pointer select-none group"
+                class="pi-cell eyebrow cursor-pointer select-none group text-left"
                 (click)="setSort('shortName')"
               >
                 Краткое
                 <span [class.text-sunrise-warm]="isSortedBy('shortName')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('shortName') }}</span>
               </th>
               <th
-                class="text-left py-2.5 px-4 eyebrow cursor-pointer select-none group"
+                class="pi-cell eyebrow cursor-pointer select-none group text-left"
                 (click)="setSort('inn')"
               >
                 ИНН
                 <span [class.text-sunrise-warm]="isSortedBy('inn')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('inn') }}</span>
               </th>
-              <th class="text-left py-2.5 px-4 eyebrow">Типы</th>
-              <th class="text-right py-2.5 px-4 eyebrow w-40">Действия</th>
+              <th class="pi-cell eyebrow text-left">Типы</th>
+              <th class="pi-cell eyebrow w-40 text-right">Действия</th>
             </tr>
           </thead>
           <tbody>
             @for (row of sortedRows(); track row._id) {
               <tr
-                class="border-b hairline border-rule last:border-0 odd:bg-paper-2/30 hover:bg-sunrise-soft transition-colors"
+                class="pi-table-row pi-table-row-odd last:border-0"
                 [attr.data-test]="'org-row-' + row._id"
               >
-                <td class="py-2.5 px-4 align-top font-medium">{{ row.name }}</td>
-                <td class="py-2.5 px-4 align-top text-muted empty-cell">{{ row.shortName }}</td>
-                <td class="py-2.5 px-4 align-top mono text-xs whitespace-nowrap">
+                <td class="pi-cell align-top font-medium">{{ row.name }}</td>
+                <td class="pi-cell align-top text-muted-foreground empty-cell">{{ row.shortName }}</td>
+                <td class="pi-cell align-top font-mono text-xs whitespace-nowrap">
                   {{ row.inn }}
                 </td>
-                <td class="py-2.5 px-4 align-top">
+                <td class="pi-cell align-top">
                   <div class="flex flex-wrap gap-1">
                     @for (t of (row.type || []); track t) {
-                      <span class="eyebrow text-[10px] px-2 py-1 border hairline border-rule rounded-sm">
+                      <span class="eyebrow text-[10px] px-2 py-1 hairline rounded-sm">
                         {{ t }}
                       </span>
                     }
                   </div>
                 </td>
-                <td class="py-2.5 px-4 text-right align-top">
-                  <div class="flex items-center justify-end gap-2">
-                    <button
-                      type="button"
-                      class="inline-flex items-center justify-center w-8 h-8 hairline border border-rule rounded-sm bg-paper hover:bg-paper-2 transition-colors text-sm"
-                      [attr.aria-label]="'Редактировать ' + row.name"
-                      [attr.data-test]="'edit-button-' + row._id"
-                      (click)="openEdit(row)"
-                    >
-                      <span aria-hidden="true">✎</span>
-                    </button>
-                    <button
-                      type="button"
-                      class="inline-flex items-center justify-center w-8 h-8 hairline border border-rule rounded-sm bg-paper hover:bg-destructive hover:text-paper hover:border-destructive transition-colors text-sm"
-                      [attr.aria-label]="'Удалить ' + row.name"
-                      [attr.data-test]="'delete-button-' + row._id"
-                      (click)="onDelete(row)"
-                    >
-                      <span aria-hidden="true">×</span>
-                    </button>
-                  </div>
+                <td class="pi-cell align-top">
+                  <app-pi-row-actions
+                    [row]="row"
+                    [editLabel]="'Редактировать ' + row.name"
+                    [deleteLabel]="'Удалить ' + row.name"
+                    [dataTestEdit]="'edit-button-' + row._id"
+                    [dataTestDelete]="'delete-button-' + row._id"
+                    (edit)="openEdit($event)"
+                    (delete)="onDelete($event)"
+                  />
                 </td>
               </tr>
             }
             @if (sortedRows().length === 0 && !loading()) {
-              <tr>
-                <td colspan="5" class="py-12 px-4 text-center text-muted">
-                  <div class="flex flex-col items-center gap-1">
-                    <span class="eyebrow text-sunrise-warm">00</span>
-                    <span class="text-sm">
-                      {{ searchQuery() ? 'Ничего не найдено.' : 'Нет организаций. Нажмите «Создать», чтобы добавить первую.' }}
-                    </span>
-                  </div>
-                </td>
-              </tr>
+              <app-pi-empty-state
+                [colspan]="5"
+                [message]="searchQuery()
+                  ? 'Ничего не найдено.'
+                  : 'Нет организаций. Нажмите «Создать», чтобы добавить первую.'"
+                state="empty"
+              />
             }
             @if (loading() && sortedRows().length === 0) {
-              <tr>
-                <td colspan="5" class="py-12 px-4 text-center text-muted">
-                  Загрузка…
-                </td>
-              </tr>
+              <app-pi-empty-state
+                [colspan]="5"
+                message="Загрузка…"
+                state="loading"
+              />
             }
           </tbody>
         </table>
@@ -170,6 +163,7 @@ export class OrganizationsPage implements OnInit {
   private readonly service = inject(OrganizationsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
+  private readonly injector = inject(Injector);
 
   protected readonly data = signal<Organization[]>([]);
   protected readonly total = signal<number>(0);
@@ -202,11 +196,7 @@ export class OrganizationsPage implements OnInit {
   }
 
   private refreshOnDialogClose<TResult>(ref: DialogRef<TResult>): void {
-    toObservable(ref.closed)
-      .pipe(first((v) => v !== undefined))
-      .subscribe((v) => {
-        if (v) this.reload();
-      });
+    onDialogCloseOnce(ref, this.injector, () => this.reload());
   }
 
   protected onSearchInput(event: Event): void {
@@ -268,17 +258,13 @@ export class OrganizationsPage implements OnInit {
       `Удалить организацию «${row.name}»?\n\nЭто действие нельзя отменить.`,
     );
     if (!ok) return;
-    this.service.remove(row._id).subscribe({
-      next: () => {
+    this.service.remove(row._id).subscribe((res) => {
+      if (res.ok) {
         this.toast.success('Организация удалена');
         this.reload();
-      },
-      error: (err: unknown) => {
-        const e = err as { error?: { message?: string }; message?: string };
-        this.toast.error(
-          e?.error?.message ?? e?.message ?? 'Не удалось удалить организацию.',
-        );
-      },
+      } else {
+        this.toast.error(extractErrorMessage(res.error));
+      }
     });
   }
 
@@ -288,19 +274,15 @@ export class OrganizationsPage implements OnInit {
     const search = this.searchQuery().trim();
     this.service
       .list({ page: 1, limit: 50, search: search || undefined })
-      .subscribe({
-        next: (res) => {
-          this.data.set(res.items ?? []);
-          this.total.set(res.total ?? res.items?.length ?? 0);
+      .subscribe((res) => {
+        if (res.ok) {
+          this.data.set(res.data.items ?? []);
+          this.total.set(res.data.total ?? res.data.items?.length ?? 0);
           this.loading.set(false);
-        },
-        error: (err: unknown) => {
-          const e = err as { error?: { message?: string }; message?: string };
-          this.error.set(
-            e?.error?.message ?? e?.message ?? 'Не удалось загрузить организации.',
-          );
+        } else {
+          this.error.set(extractErrorMessage(res.error));
           this.loading.set(false);
-        },
+        }
       });
   }
 }

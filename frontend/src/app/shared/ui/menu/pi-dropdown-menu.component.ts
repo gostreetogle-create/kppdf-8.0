@@ -14,7 +14,7 @@ export type DropdownMenuPosition = 'bottom-start' | 'bottom-end' | 'top-start' |
     <div
       role="menu"
       [attr.aria-label]="ariaLabel()"
-      class="bg-paper border hairline border-rule rounded-sm min-w-[200px] py-1"
+      class="bg-paper hairline rounded-sm min-w-[200px] py-1"
     >
       <ng-content select="[item]" />
     </div>

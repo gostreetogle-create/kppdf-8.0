@@ -851,3 +851,139 @@
 - TZ-75..82: Cross-cutting (Wave D) — 6/8 DONE, 2/8 DEFERRED
 
 **Final batch: 0 outstanding READY tasks. 2 DEFERRED tasks documented with future TZ-XXb instructions.**
+
+## [2026-07-07] — Завершено: TZ-AUDIT-9 + TZ-AUDIT-9.1 (Warm Paper Palette Rebrand)
+**Исполнитель:** Frontend / Design System (Buffy)
+**Статус:** Выполнено (3 review rounds, 4 MINORs closed, 14/14 acceptance criteria PASS)
+**Мотивация:** Пользователь: «исправить чёрно-серые цвета, сайт мрачный». Pre-Audit-9 палитра использовала hue ~80 + chroma 0.005-0.01 (почти desaturated), ink был pure black (`oklch(0.145 0 0)`). Всё читалось холодно/безлико. Sunrise-палитра существовала, но UI-Kit оставался в B&W → акценты «выскакивали» как чужеродные.
+
+**TZ-AUDIT-9 — что сделано:**
+- **Base palette** (light mode, 8 токенов): hue 80→**70 (golden-beige)**, chroma 0.005-0.01→**0.015-0.025**, ink с pure black `oklch(0.145 0 0)` → **deep espresso `oklch(0.180 0.015 70)`**. Paper → warm cream. Rule → warm gray. Muted-foreground → warm medium.
+- **Accent-cool**: hue 230 (cyan) → **hue 250 (indigo)** — убрана вибрация с тёплой базой.
+- **Dark mode**: cold charcoal + cold white → **warm espresso (`oklch(0.21 0.015 70)`)** + **warm cream text (`oklch(0.95 0.015 70)`)**.
+- **Sunrise палитра UNCHANGED** (hue 55-80 уже сидит внутри базы 70) — теперь естественно перетекает с базой.
+- **JSDoc конвенции добавлены** (TZ-AUDIT-8): HAIRLINE-FIRST BORDER (66+ `border hairline border-rule` → `hairline` + 13× `border-t...` → `hairline-t`), SECONDARY TEXT (40× `text-muted` → `text-muted-foreground`), WCAG note на `text-muted-foreground` (~3:1, AA Large only, НЕ AA Standard) с DON'T-list (form labels, required markers, errors, button text, navigation, table headers).
+- **Defensive longhand**: 5 utility classes (`hairline`, `hairline-t/b/r/l`, `pi-input`, `pi-icon-btn`, `.pi-outline-btn`) converted с shorthand на longhand — `border-ink` / `border-destructive` color overrides ВСЕГДА выигрывают в cascade независимо от Tailwind v4 utility ordering.
+- **FoundationsPage swatches** (6/8): paper, paper-2, ink, rule, muted-fg, accent-cool — value strings обновлены. Hairline border demo: 2px вариант удалён, добавлен hairline destructive (3 thin variants: rule / ink / destructive).
+- **Pre-Audit-9 cleanup** (в рамках TZ-AUDIT-8): NG8113 fix в `forms.page.ts` (removed unused `SliderComponent` import + orphan `priority` form control).
+
+**TZ-AUDIT-9.1 — что сделано (dark mode L bump):**
+- Reviewer заметил: «warm dark colors read perceptually denser than cool dark».
+- `--color-paper` (dark): L **0.18 → 0.21** (+17%, middle of 0.20-0.22 range).
+- `--color-paper-2` (dark): L **0.24 → 0.27** (+12.5%, middle of 0.26-0.28 range).
+- Hue (70) и chroma (0.015/0.020) UNCHANGED.
+- JSDoc updated: «higher L gives the surface breathing room».
+- Микро-фикс: TZ-AUDIT-9b → TZ-AUDIT-9.1 (соответствует 2-digit TZ convention файла).
+
+**Visual verification** (browser-use через /kit/* public route prefix):
+- /kit/foundations, /kit/overview, /kit/basics, /kit/forms, /kit/overlays, /login — 12 screenshots (6 pages × 2 modes), 0 console errors.
+- Warm coffee feel confirmed, NOT muddy/toast/sepia.
+- Dark mode после L bump — warm espresso с visible card separation (paper-2 vs paper).
+
+**3 review rounds, 4 MINORs closed:**
+1. Stale Sunrise JSDoc («B&W aesthetic» reference) → FIXED
+2. `text-muted-foreground` WCAG note placement + 3.1:1 too specific → FIXED (moved adjacent к токену, softened to «~3:1» + AA Standard threshold)
+3. Dark mode L=0.18 too dark → DEFERRED to TZ-AUDIT-9.1 → FIXED
+4. TZ-AUDIT-9b naming inconsistent → FIXED (renamed to TZ-AUDIT-9.1)
+
+**Discovery (важное):** /kit/* routes уже PUBLIC (no authGuard) — same page components, different layout shell (KitLayoutComponent). Это спасло от 1-line route config change планировавшегося изначально для visual verification protected pages. Operational pages (/materials, /organizations, /dictionaries) still blocked от visual verification — dev proxy broken (Angular dev server не проксирует /api/* на backend :3000). Требует отдельного fix.
+
+**Затронутые файлы:**
+- `frontend/src/styles.css` (palette tokens light+dark, JSDoc, 5 utility longhand conversions)
+- `frontend/src/app/pages/foundations/foundations.page.ts` (6 swatch values + hairline demo)
+- 27 files (pre-Audit-9 `text-muted` → `text-muted-foreground` migration)
+- 34 files (pre-Audit-9 `border hairline border-rule` → `hairline` migration)
+- forms.page.ts (NG8113 fix — removed unused SliderComponent import + priority form control)
+
+**Verification:** 166/166 tests passing, typecheck exit 0, code-reviewer approved (3 rounds, 4 MINORs closed), 12 browser-use screenshots no console errors, warm-paper feel confirmed.
+
+**Известные ограничения (не блокеры):**
+- `text-muted-foreground` (L=0.55 on L=0.972 paper) = ~3:1 contrast — passes AA Large only, fails AA Standard. Резервирован для non-essential captions. JSDoc note + DON'T-list в styles.css.
+- Operational pages (/materials, /organizations, /dictionaries) — still blocked от visual verification (dev proxy issue). /kit/* pages достаточно для palette verification (глобальный CSS).
+- Dark mode L=0.21 perceptually correct for warm, but если пользователь предпочитает ещё темнее — можно bump до 0.20 или 0.19 (back into 0.20-0.22 range).
+
+**Архив:** `tasks/_archive/2026-07/TZ-AUDIT-9.md.done` (с comprehensive ARCHIVE_MARKER: initial state, what was done, /kit/* discovery, files changed, 14 criteria, 3 review rounds, conflict-checklist, TZF-00 finalization).
+**Lock-файлы:** НЕТ (TZ-AUDIT-* — audits, не numbered tasks; lock-файлы для code zones не нужны).
+
+## [2026-07-07] — Завершено: TZ-WARMUP-100 (Soft-Warm Palette Pivot + Sunrise Family в /foundations)
+**Исполнитель:** Frontend Developer (Buffy)
+**Статус:** Выполнено (3 code-review rounds, 1 MINOR closed — grid 4+4+2 → 2×5, 4/4 acceptance criteria PASS)
+**Мотивация:** Пользователь (recurring): «и сколько раз говорить чтобы серые и чёрные цвета кроме текстов и рамок убрались? лучше поменялись на позитивные». TZ-AUDIT-9 уже pivot базовых 8 OKLCH-токенов к hue 70 / chroma 0.015-0.025 (warm cream paper), НО `--color-paper-2` оставался на chroma 0.025 (читался как «серый» под hovers и zebra-полосах), а `--color-sunrise-soft` / `--color-sunrise-mist` оставались бледными. Воспринимаемо: «noticeably warmer than neutral, but subtle» + «тёмные ink-чёрные плиты (active nav / primary button / badge default) на тёплом креме выглядят как контрастная чернота».
+
+**Выбранный вариант: «Мягко-тёплый» (conservative) + «Да, симметрично» для dark mode.** Reasoning: editorial paper-and-ink система должна остаться сдержанной, НО при этом warm cream surfaces должны быть ЗАМЕТНЫ warm (chroma ×1.7-2.2), а не почти-neutral. ink/rule/paper/destructive UNCHANGED — text/borders остаются глубокими/нейтральными, как просил юзер.
+
+**Что сделано (4 раунда, 2 файла):**
+
+**Раунд 1 — palette pivot (3 light + 3 dark OKLCH значений):**
+- `--color-paper-2`:
+  - light: `oklch(0.930 0.025 70)` → `oklch(0.930 0.045 80)` (chroma ×1.8, hue 70→80)
+  - dark: `oklch(0.27 0.020 70)` → `oklch(0.27 0.040 80)` (chroma ×2, hue 70→80)
+- `--color-sunrise-soft`:
+  - light: `oklch(0.94 0.045 75)` → `oklch(0.94 0.055 80)`
+  - dark: `oklch(0.28 0.04 70)` → `oklch(0.28 0.050 80)`
+- `--color-sunrise-mist`:
+  - light: `oklch(0.965 0.025 80)` → `oklch(0.965 0.040 80)`
+  - dark: `oklch(0.24 0.025 70)` → `oklch(0.24 0.040 80)`
+- L (lightness) values STRICTLY preserved → WCAG AA contrast against ink UNCHANGED.
+- TZ-AUDIT-9 docstring: `restrained chroma (0.015-0.025) throughout` → `(0.015-0.055) throughout` (range updated).
+- `foundations.page.ts` `paper-2` spec string updated to new value.
+
+**Раунд 2 — sunrise-soft + sunrise-mist в /foundations swatches:**
+- 2 new entries в `palette` array: `sunrise-soft` (`oklch(0.94 0.055 80)`) + `sunrise-mist` (`oklch(0.965 0.040 80)`).
+- Hint: «8 OKLCH swatches» → «10 OKLCH swatches».
+- Code-reviewer MINOR: grid `md:grid-cols-4` с 10 items = 4+4+2 (unbalanced last row).
+
+**Раунд 3 — remaining 3 sunrise variants в /foundations:**
+- 3 new entries: `sunrise` (`oklch(0.66 0.14 55)`), `sunrise-warm` (`oklch(0.50 0.07 55)`), `sunrise-glow` (`oklch(0.72 0.18 60)`) — скопированы byte-equal из `styles.css` `@theme inline`.
+- Hint: «10 OKLCH swatches» → «13 OKLCH swatches».
+
+**Раунд 4 — grid 4+4+2 → balanced 2×5 (reviewer MINOR):**
+- `md:grid-cols-4` → `md:grid-cols-5` (one class change, 0 других правок).
+- 13 items: 5+5+3 layout (last row 3, left-aligned — приемлемо, не blocker).
+
+**Cascade effect (auto-applied via `@theme inline` + `var(--color-X-override, oklch(...))` fallback):**
+- `bg-paper-2` → warm cream во всех `.pi-icon-btn:hover`, `.pi-menu-item:hover`, `.pi-outline-btn:hover`, zebra-полосах таблиц, `app-pi-empty-tile` (тот самый серый квадрат для missing photos).
+- `.pi-table-row:hover` → ещё теплее (sunrise-soft, chroma ×1.22 от paper-2).
+- Все `bg-ink` остались чёрными (intentional — active nav / primary button / badge default / checkbox checked / command palette selected).
+
+**Visual verification (browser-use):**
+- Light mode: `--color-paper-2` = `oklch(0.93 0.045 80)` → «warm cream rather than clinical gray» (perceived, not clinical).
+- Dark mode: `body` = `oklch(0.21 0.015 70)` (roasted espresso), `bg-paper-2` = warm umber/sepia. «good, consistent warm-dark experience, no perceptible olive/cold greenish lean». Юзер не запросил hue 80→75 или chroma 0.040→0.050 → FIX OK AS-IS.
+- 8 screenshots сохранены в `/tmp/`: warmup-audit-{materials,foundations,organizations}-light.png, warmup-audit-dark-{materials,foundations,organizations}.png.
+- Theme-toggle корректно возвращал в light после каждого dark-аудита (cleanup).
+
+**НЕ сделано (осознанные «нет»):**
+- `--color-accent-warm` / `--color-accent-cool` / `--color-destructive` / `--color-sunrise` / `--color-sunrise-warm` / `--color-sunrise-glow` — UNCHANGED. Юзер выбрал «мягко-тёплый» (conservative), не «тёплый акцент» (active nav → sunrise-warm brown) и не «полный позитив» (всё в золоте). Эскалация доступна как 1-line patch в `styles.css` если потребуется.
+- `--color-paper`, `--color-ink`, `--color-rule` — UNCHANGED (юзер явно: «кроме текстов и рамок»).
+
+**3 code-review rounds, 1 MINOR closed:**
+1. **Round 1 reviewer:** «docstring update FAILED в first attempt» (str_replace escape) + «theme-editor.DEFAULT_PAPER может быть stale» + «playground/code-preview.page.ts hardcodes old cool-neutral OKLCH». LATER: (1) docstring зафикшен узкой правкой, (2) DEFAULT_PAPER относится к base paper (не paper-2, не менялось — false positive), (3) code-preview.css sample = STRING literal в syntax-highlight demo, не live CSS (false positive).
+2. **Round 2 reviewer:** VERDICT approved + MINOR: «4+4+2 grid → `md:grid-cols-5` для 2×5 balance». CLOSED в Round 4.
+3. **Round 3 reviewer:** VERDICT approved (3 array entries + 1 hint text, OKLCH byte-equal).
+4. **Round 4 reviewer:** VERDICT approved (1-class change, mobile layout sensible).
+
+**Затронутые файлы (2):**
+- `frontend/src/styles.css` — 6 OKLCH значений (paper-2, sunrise-soft, sunrise-mist в light + dark), 1 docstring number update.
+- `frontend/src/app/pages/foundations/foundations.page.ts` — 5 array entries (sunrise-soft, sunrise-mist, sunrise, sunrise-warm, sunrise-glow) + 3 hint text updates (8→10→13) + 1 grid class change (`md:grid-cols-4` → `md:grid-cols-5`).
+
+**Verification:**
+- `pnpm exec tsc -p tsconfig.app.json --noEmit` → exit 0 ✅ (все 4 раунда)
+- `CI=true npx jest --config jest.config.js` → 166/166 passed ✅ (все 4 раунда)
+- Browser-use visual audit → light «warm cream rather than clinical gray» + dark «good, consistent warm-dark experience, no olive/cold lean» ✅
+- Code-reviewer-minimax-m3 → 3 rounds, 1 MINOR closed ✅
+
+**Известные ограничения (не блокеры):**
+- Активный nav / primary button / badge default / checkbox checked / command palette selected остаются `bg-ink` (deep espresso). Юзер выбрал conservative вариант; эскалация до «Тёплый акцент» (active nav → sunrise-warm) доступна как 1-line patch.
+- 13 swatches в 5-column grid = 5+5+3 layout (last row 3 items, left-aligned). Можно разбить на 2 подсекции «Base palette» (8) + «Sunrise family» (5) с отдельными eyebrow II/III — polish, не blocker.
+- `.dark` warm umber perceptually может lean olive на некоторых мониторах (зависит от display calibration) — в текущем тестировании на dev-машине не наблюдалось. Если юзер увидит — hue 80→75 или chroma 0.040→0.050 фикс доступен.
+- `theme-editor.service.ts DEFAULT_PAPER` (light: hue 85, chroma 0.008) = для base paper (не paper-2, не менялся). Hue 85 vs 70 в CSS — minor drift, не regression. Future polish: привести к hue 70 для consistency.
+
+**Связанные TZ:**
+- **Предшественники:** TZ-AUDIT-9 (warm paper direction, hue 70, base palette 8 tokens) + TZ-AUDIT-9.1 (dark L bump 0.18→0.21) + TZ-NEW (sunrise palette введена).
+- **Эскалация доступна:** «Тёплый акцент» — active nav / primary / badge / checkbox → sunrise-warm. «Полный позитив» — все surfaces sunrise-glow. Out of scope TZ-WARMUP-100.
+
+**Cross-reference:** см. также `docs/paper-and-ink.md` — обновлён указатель на TZ-WARMUP-100 в «Recent palette changes» секции (round 1 of docs cross-ref).
+
+**Архив:** НЕТ (audit-style, не numbered task; для future reference живёт в `progress.md`).
+**Lock-файлы:** НЕТ.
+

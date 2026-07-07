@@ -1,5 +1,5 @@
 /* =============================================================================
- * Paper & Ink — global stylesheet (TZ-31 + TZ-32 + TZ-33).
+ * Paper & Ink — global stylesheet (TZ-31 + TZ-PALETTE-32 + TZ-THEME-33).
  *
  * Order matters:
  *   1) Font @import (must come BEFORE `@import 'tailwindcss'` so `--font-*`
@@ -7,13 +7,13 @@
  *   2) `@import 'tailwindcss'` brings in Tailwind v4 core.
  *   3) `@theme inline {...}` declares 8 OKLCH palette tokens + typography +
  *      shape. Override-fallback syntax `var(--color-X-override, oklch(...))`
- *      keeps TZ-77 Theme Editor non-destructive: a future editor can set
+ *      keeps TZ-EDITOR-77 Theme Editor non-destructive: a future editor can set
  *      `--color-ink-override` runtime and Tailwind utilities pick it up
  *      without rewriting the @theme base.
  *   4) `@layer base` overrides Tailwind defaults (no shadows, sharper radii).
  *   5) `@utility` registrations add editorial primitives (eyebrow, hairline-).
  *   6) `prefers-reduced-motion` global safety net.
- *   7) `@layer base .dark` block — TZ-33 dark mode vars, applied via
+ *   7) `@layer base .dark` block — TZ-THEME-33 dark mode vars, applied via
  *      <html class="dark">.
  * ============================================================================= */
 
@@ -27,6 +27,56 @@
 @import '@fontsource/plus-jakarta-sans/700.css';
 
 @import 'tailwindcss';
+
+/* =============================================================================
+ * HAIRLINE-FIRST BORDER CONVENTION (TZ-AUDIT-8)
+ *
+ * Every border in this app is 1px (`hairline`). The dark-`ink` and
+ * `destructive` color variants provide emphasis through COLOR, not weight.
+ * Avoid `border-2`, `border-4`, `border-[2px]`, etc. — if a control
+ * needs more visual weight, swap the color (`border-ink`) or use a
+ * `bg-sunrise-soft` tint, do NOT thicken the line.
+ *
+ * Canonical utilities (all 1px, all in `var(--color-rule)` unless a
+ * color override is appended):
+ *   hairline       → border: 1px solid var(--color-rule)   (all 4 sides)
+ *   hairline-t/b/l/r → single-side variant (border-top/bottom/left/right)
+ *   border-ink     → color override: 1px solid var(--color-ink)
+ *   border-destructive → color override: 1px solid var(--color-destructive)
+ *
+ * The verbose `border hairline border-rule` pattern was a leftover from
+ * the v1 prototype where `hairline` and `border-rule` were new utilities
+ * and `border` was kept as a defensive default. After TZ-AUDIT-8, just
+ * use `hairline` (or `hairline-t` etc.) — the `hairline` utility IS the
+ * full shorthand, so surrounding `border` + `border-rule` are redundant.
+ *
+ * SECONDARY TEXT CONVENTION (TZ-AUDIT-8):
+ *   Use `text-muted-foreground` (oklch 0.55 — lighter, shadcn-style)
+ *   for ALL body-caption secondary text (descriptions, help text,
+ *   empty states, line numbers, captions). The darker `text-muted`
+ *   token (oklch 0.30) is reserved for internal utility use only
+ *   (e.g. `.eyebrow` utility sets `color: var(--color-muted)`) and
+ *   should NOT be referenced directly from templates. This unifies
+ *   the design language — previously `text-muted` and
+ *   `text-muted-foreground` were mixed inconsistently across pages.
+ * ============================================================================= */
+
+/* =============================================================================
+ * PAPER & INK — V2 LAYOUT TOKENS (TZ-AUDIT-5)
+ *
+ * Single source of truth for page widths, header heights, and content
+ * padding. Adding these here kills per-layout magic numbers (px-5 vs
+ * px-6 sm:px-10 lg:px-16), so changing "design width" updates every
+ * page in one place.
+ * ============================================================================= */
+:root {
+  /* Screen max-width — applied via .pi-page-frame utility. */
+  --screen-max: 1400px;
+  /* Sticky header height — also drives `--header-h` for inner offsets. */
+  --header-h: 56px;
+  /* Sticky app-header background translucency timeout. */
+  --header-bg: 95%;
+}
 
 /* =============================================================================
  * SEMANTIC SPACING TOKENS (TZ-AUDIT)
@@ -52,6 +102,27 @@
   --space-12: 48px;   /* 3xl */
   --space-16: 64px;   /* 4xl — footer top margin */
 
+  /* Focus-ring (TZ-AUDIT-6 — single source of truth).
+     2px paper gap + 4px ink ring, identical for every interactive
+     control (pi-input, pi-icon-btn, .pi-focus-ring opt-in). The
+     `:focus-visible` rules below all reference this variable so
+     adding `.pi-focus-ring` to a `.pi-input` never produces a
+     double-up box-shadow — both rules resolve to the same value. */
+  --focus-ring-shadow:
+    0 0 0 2px var(--color-paper),
+    0 0 0 4px var(--color-ink);
+
+  /* Hover-state tokens for `.pi-icon-btn` (TZ-AUDIT-6 — kill
+     duplication of `background-color / color / border-color`
+     between the default and danger variants). The `:hover` rule
+     below applies all three; default values mean fg/border stay
+     `inherit` for the base variant, and the `.pi-icon-btn-danger`
+     override flips them to destructive. Single hover rule,
+     variant-specific token values. */
+  --pi-btn-hover-bg: var(--color-paper-2);
+  --pi-btn-hover-fg: inherit;
+  --pi-btn-hover-border: inherit;
+
   /* Semantic aliases (single source of truth) */
   --space-control-x: 12px;     /* input/button horizontal padding */
   --space-control-y: 8px;      /* input/button vertical (small) */
@@ -71,24 +142,34 @@
 }
 
 @theme inline {
-  /* === Palette (OKLCH @theme inline is CANONICAL source of truth) ===
-     TZ-77 ↔ TZ-32 coupling: override layer pattern implemented via
-     `var(--color-X-override, oklch(...))` fallback. Runtime setProperty
-     on <html> of `--color-X-override` adjusts utilities without
-     overwriting @theme base. */
-  --color-paper:       var(--color-paper-override,       oklch(0.972 0.008 85));
-  --color-paper-2:     var(--color-paper-2-override,     oklch(0.925 0.009 80));
-  --color-ink:         var(--color-ink-override,         oklch(0.145 0       0));
-  --color-rule:        var(--color-rule-override,        oklch(0.85  0.006 80));
-  --color-muted:       var(--color-muted-override,       oklch(0.30  0.01  80));
+  /* === Palette (OKLCH @theme inline is CANONICAL source of truth) ===\r
+     TZ-EDITOR-77 ↔ TZ-PALETTE-32 coupling: override layer pattern implemented via\r
+     `var(--color-X-override, oklch(...))` fallback. Runtime setProperty\r
+     on <html> of `--color-X-override` adjusts utilities without\r
+     overwriting @theme base.\r
+\r
+     TZ-AUDIT-9 — WARM PAPER DIRECTION: hue 70 (golden beige) with\r
+     restrained chroma (0.015-0.055) throughout the base palette. This\r
+     replaces the v1 cool-neutral B&W (hue 80, chroma ~0.008) which read\r
+     as \"bleached/clinical\". The new direction feels like printed-on-warm-\r
+     paper: cream background, deep-espresso ink, warm-gray rules. The\r
+     existing Sunrise palette (hue 55-80) now flows as a natural extension\r
+     of the base instead of an accent that \"pops in\". */
+  --color-paper:       var(--color-paper-override,       oklch(0.972 0.015 70));
+  --color-paper-2:     var(--color-paper-2-override,     oklch(0.930 0.045 80));
+  --color-ink:         var(--color-ink-override,         oklch(0.180 0.015 70));
+  --color-rule:        var(--color-rule-override,        oklch(0.850 0.020 70));
+  --color-muted:       var(--color-muted-override,       oklch(0.400 0.020 70));
   --color-destructive: var(--color-destructive-override, oklch(0.5   0.18  27));
   --color-accent-warm: var(--color-accent-warm-override, oklch(0.50  0.18  60));
-  --color-accent-cool: var(--color-accent-cool-override, oklch(0.42  0.18 230));
+  --color-accent-cool: var(--color-accent-cool-override, oklch(0.45  0.14 250));
 
-  /* === Sunrise palette (TZ-NEW)
-     Restrained warm-light family — applied as TASTEFUL ACCENTS on the
-     operational site (AppLayout + MaterialsPage + LoginPage). Not used
-     in the UI-Kit to preserve its editorial B&W aesthetic. Five roles:
+  /* === Sunrise palette (TZ-NEW + TZ-AUDIT-9)
+     Restrained warm-light family — hue 55-80 sits inside the base
+     palette's hue 70, so the sunrise accents now flow as a natural
+     extension of the warm-paper base instead of "popping in" against
+     a cool-neutral B&W background. Usable across the UI-Kit without
+     disrupting the editorial feel. Five roles:
        - sunrise         — primary golden/dawn accent (text, focus rings,
                            section eyebrows). Mid-lightness so it reads on
                            paper without screaming.
@@ -107,13 +188,21 @@
                            Below perceptibility threshold so it never
                            shouts — just adds warmth vs. neutral paper. */
   --color-sunrise:       var(--color-sunrise-override,       oklch(0.66 0.14  55));
-  --color-sunrise-soft:  var(--color-sunrise-soft-override,  oklch(0.94 0.045 75));
+  --color-sunrise-soft:  var(--color-sunrise-soft-override,  oklch(0.94 0.055 80));
   --color-sunrise-warm:  var(--color-sunrise-warm-override,  oklch(0.50 0.07  55));
   --color-sunrise-glow:  var(--color-sunrise-glow-override,  oklch(0.72 0.18  60));
-  --color-sunrise-mist:  var(--color-sunrise-mist-override,  oklch(0.965 0.025 80));
+  --color-sunrise-mist:  var(--color-sunrise-mist-override,  oklch(0.965 0.040 80));
 
-  /* === Muted foreground (secondary text) === */
-  --color-muted-foreground: var(--color-muted-foreground-override, oklch(0.55 0.01 80));
+  /* === Muted foreground (secondary text) — TZ-AUDIT-9 warm ===
+     Accessibility: contrast on paper is below the 4.5:1 AA Standard for
+     body text (~3:1, passes AA Large only). Reserved for NON-ESSENTIAL
+     captions (descriptions, help text, metadata, placeholders).
+
+     DO NOT use for: form labels, required-field markers (`*`), error
+     messages, button text, navigation links, table headers, or any
+     text the user MUST read to complete a task. For required body
+     text, use the `text-ink` primary token (~12:1). */
+  --color-muted-foreground: var(--color-muted-foreground-override, oklch(0.55 0.025 70));
 
   /* === Typography === */
   --font-display: 'Syne', 'Helvetica Neue', sans-serif;
@@ -160,6 +249,68 @@
   --spacing-touch: var(--touch-min);
   --spacing-touch-comfortable: var(--touch-comfortable);
   --spacing-touch-a11y: var(--touch-a11y);
+  --spacing-screen-max: var(--screen-max);
+}
+
+/* =============================================================================
+ * PAGE FRAME & EDGE BLEED (TZ-AUDIT-5)
+ *
+ * The previous AppLayout kludge `-mx-6 sm:-mx-10 lg:-mx-16 px-6 sm:px-10
+ * lg:px-16` was duplicated three times to make the sticky header bleed
+ * edge-to-edge. Now:
+ *    .pi-page-frame       — gives every page a max-width container
+ *                            with the SAME responsive horizontal padding,
+ *                            so layouts agree.
+ *    .pi-edge-bleed       — child element that needs to bleed to the
+ *                            viewport edge (sticky header / full-width
+ *                            background) without a negative-margin hack.
+ *
+ * Using these two together means "the visual width" is owned by ONE
+ * utility, not 6 magic-number breakpoints per layout.
+ * ============================================================================= */
+@layer components {
+  .pi-page-frame {
+    width: 100%;
+    max-width: var(--screen-max);
+    margin-inline: auto;
+    padding-inline: var(--space-page-x);
+  }
+  @media (min-width: 640px) {
+    .pi-page-frame { padding-inline: 40px; }
+  }
+  @media (min-width: 1024px) {
+    .pi-page-frame { padding-inline: 64px; }
+  }
+
+  /* Edge-bleed stickies (app-header) without the negative-margin trick. */
+  .pi-edge-bleed {
+    margin-inline: calc(-1 * var(--space-page-x));
+    padding-inline: var(--space-page-x);
+  }
+  @media (min-width: 640px) {
+    .pi-edge-bleed {
+      margin-inline: -40px;
+      padding-inline: 40px;
+    }
+  }
+  @media (min-width: 1024px) {
+    .pi-edge-bleed {
+      margin-inline: -64px;
+      padding-inline: 64px;
+    }
+  }
+
+  /* Universal focus-ring shared by every interactive control. Replaces
+     the inline-duplicated `focus-visible:ring-2 ring-ink ring-offset-2
+     ring-offset-paper` string that was hand-pasted across components.
+     Both `.pi-focus-ring` (opt-in utility) and `.pi-input` /
+     `.pi-icon-btn` (built-in focus semantics) reference the
+     `--focus-ring-shadow` token above — same value, no cascade
+     conflict if a consumer adds multiple of these classes. */
+  .pi-focus-ring:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring-shadow);
+  }
 }
 
 @layer base {
@@ -177,23 +328,28 @@
     font-feature-settings: 'ss01', 'cv11';
   }
 
-  /* TZ-33 dark overrides — invert paper↔ink, neutral warm hue.
+  /* TZ-THEME-33 dark overrides — WARM ESPRESSO inversion (TZ-AUDIT-9).
+     Hue 70 preserved across light↔dark for thermal consistency. Dark
+     paper is roasted espresso (not charcoal); dark ink is warm cream
+     (not pure white). L values bumped (paper 0.18→0.21, paper-2 0.24→0.27)
+     in TZ-AUDIT-9.1 because warm dark reads perceptually denser than
+     cool dark — the higher L gives the surface breathing room.
      Applied via <html class="dark">. NEVER use body.dark or :root.dark. */
   .dark {
-    --color-paper:       oklch(0.16 0.005 80);
-    --color-paper-2:     oklch(0.22 0.006 80);
-    --color-ink:         oklch(0.95 0.005 80);
-    --color-rule:        oklch(0.30 0.005 80);
-    --color-muted:       oklch(0.7  0.01  80);
+    --color-paper:       oklch(0.21 0.015 70);
+    --color-paper-2:     oklch(0.27 0.040 80);
+    --color-ink:         oklch(0.95 0.015 70);
+    --color-rule:        oklch(0.32 0.020 70);
+    --color-muted:       oklch(0.70 0.020 70);
     --color-destructive: oklch(0.65 0.18  27);
     --color-accent-warm: oklch(0.75 0.13  60);
-    --color-accent-cool: oklch(0.7  0.09 230);
+    --color-accent-cool: oklch(0.70 0.12 250);
     --color-sunrise:      oklch(0.78 0.13  60);
-    --color-sunrise-soft: oklch(0.28 0.04  70);
+    --color-sunrise-soft: oklch(0.28 0.050 80);
     --color-sunrise-warm: oklch(0.72 0.08  55);
     --color-sunrise-glow: oklch(0.82 0.16  60);
-    --color-sunrise-mist: oklch(0.24 0.025 80);
-    --color-muted-foreground: oklch(0.60 0.01 80);
+    --color-sunrise-mist: oklch(0.24 0.040 80);
+    --color-muted-foreground: oklch(0.62 0.025 70);
   }
 }
 
@@ -206,20 +362,259 @@
 }
 
 @utility hairline {
-  border: 1px solid var(--color-rule);
+  /* Use longhands (not the `border` shorthand) so that color-override
+     utilities like `border-ink` / `border-destructive` always win in
+     the cascade regardless of Tailwind v4's utility-ordering. With the
+     shorthand, the order in the generated CSS would determine which
+     color shows — longhands guarantee correctness. */
+  border-style: solid;
+  border-width: 1px;
+  border-color: var(--color-rule);
 }
 
+/* Longhand (not `border-top: 1px solid ...` shorthand) for the same
+   reason as `hairline` above: color-override utilities like
+   `border-t-ink` must always win in the cascade. */
 @utility hairline-t {
-  border-top: 1px solid var(--color-rule);
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: var(--color-rule);
 }
 @utility hairline-b {
-  border-bottom: 1px solid var(--color-rule);
+  border-bottom-style: solid;
+  border-bottom-width: 1px;
+  border-bottom-color: var(--color-rule);
 }
 @utility hairline-r {
-  border-right: 1px solid var(--color-rule);
+  border-right-style: solid;
+  border-right-width: 1px;
+  border-right-color: var(--color-rule);
 }
 @utility hairline-l {
-  border-left: 1px solid var(--color-rule);
+  border-left-style: solid;
+  border-left-width: 1px;
+  border-left-color: var(--color-rule);
+}
+
+/* =============================================================================
+ * SHARED STYLE UTILITIES (TZ-AUDIT-5 + TZ-AUDIT-6 fix)
+ *
+ * One source of truth for the three patterns that were previously
+ * copy-pasted across Materials / Organizations / Dictionaries pages:
+ *   - `pi-input`   — search box + form field shared shell
+ *   - `pi-cell`    — table cell padding/typography shared shell
+ *   - `pi-icon-btn`— small 32×32 hairline-bordered editorial action button
+ *
+ * Apply with: <input class="pi-input"> OR <td class="pi-cell">.
+ *
+ * IMPORTANT — TZ-AUDIT-6 fix: Tailwind v4 `@utility` only accepts base
+ * utility names (alphanumeric, lowercase, must start with a letter).
+ * Pseudo-classes / pseudo-elements like `:hover`, `:focus-visible`,
+ * `::placeholder` cannot be defined as `@utility` names — they must
+ * live in a regular CSS layer. The base utilities stay as `@utility`,
+ * the modifier styles below them are plain CSS rules in `@layer
+ * components` (or the top-level cascade). Attempting to write
+ * `@utility pi-input:focus-visible` was rejected by Tailwind's parser
+ * and broke the entire bundle (the @error that surfaced on dev-server
+ * startup).
+ * ============================================================================= */
+@utility pi-input {
+  height: 36px;
+  padding-inline: var(--space-control-x);
+  font-family: var(--font-body);
+  font-size: 14px;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  /* Longhand so `border-ink` / `border-destructive` color overrides win
+     in the cascade — see `hairline` rationale. */
+  border-style: solid;
+  border-width: 1px;
+  border-color: var(--color-rule);
+  border-radius: var(--radius-sm);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  outline: none;
+}
+
+@utility pi-cell {
+  padding-block: 10px;
+  padding-inline: 16px;
+  font-size: 14px;
+  vertical-align: top;
+}
+@utility pi-cell-numeric {
+  padding-block: 10px;
+  padding-inline: 16px;
+  font-size: 14px;
+  text-align: right;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+@utility pi-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  /* Longhand so `border-ink` / `border-destructive` color overrides win
+     in the cascade — see `hairline` rationale. */
+  border-style: solid;
+  border-width: 1px;
+  border-color: var(--color-rule);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  transition: background-color 150ms ease, color 150ms ease,
+              border-color 150ms ease, box-shadow 150ms ease;
+}
+
+/* Universal "row-hover + odd-stripe" table row treatment that
+   appears on every catalog page. Single utility, no per-page
+   copy-paste. */
+@utility pi-table-row {
+  border-bottom: 1px solid var(--color-rule);
+  transition: background-color 120ms ease;
+}
+@utility pi-table-row-odd {
+  background-color: color-mix(in oklch, var(--color-paper-2) 30%, transparent);
+}
+
+/* ---- pi-input modifiers (focus, placeholder) ---- */
+@layer components {
+  .pi-input:focus-visible {
+    border-color: var(--color-ink);
+    /* Same ring as `.pi-focus-ring` — see `--focus-ring-shadow`
+       in :root. Adding `pi-focus-ring` to a pi-input is a no-op
+       visually (identical box-shadow), which is the desired
+       defensive behaviour. */
+    box-shadow: var(--focus-ring-shadow);
+  }
+  .pi-input::placeholder {
+    color: var(--color-muted);
+  }
+
+  /* ---- pi-icon-btn modifiers (hover, danger hover, focus) ----
+     TZ-AUDIT-6: hover rule is declared ONCE. The danger variant
+     just overrides the three `--pi-btn-hover-*` tokens; no
+     duplication of `background-color / color / border-color`
+     between the two. */
+  .pi-icon-btn:hover {
+    background-color: var(--pi-btn-hover-bg);
+    color: var(--pi-btn-hover-fg);
+    border-color: var(--pi-btn-hover-border);
+  }
+  .pi-icon-btn-danger {
+    --pi-btn-hover-bg: var(--color-destructive);
+    --pi-btn-hover-fg: var(--color-paper);
+    --pi-btn-hover-border: var(--color-destructive);
+  }
+  .pi-icon-btn:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring-shadow);
+  }
+
+  /* ---- pi-table-row hover (not allowed inside @utility) ---- */
+  .pi-table-row:hover {
+    background-color: var(--color-sunrise-soft);
+  }
+
+  /* ---- pi-menu-item (TZ-AUDIT-7) — dropdown / context menu row.
+     Replaces the inline `w-full text-left min-h-touch px-control-x
+     py-control-y text-sm hover:bg-paper-2 transition-colors rounded-sm`
+     pattern that was copy-pasted across overlays & navigation pages.
+     Apply to native <button> (so data-* attrs / role=menuitem are
+     preserved for smoke-test selectors) OR to <a>. */
+  .pi-menu-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: var(--touch-min);
+    padding-inline: var(--space-control-x);
+    padding-block: var(--space-control-y);
+    font-size: 14px;
+    text-align: left;
+    color: var(--color-ink);
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-sm);
+    transition: background-color 120ms ease, color 120ms ease;
+    cursor: pointer;
+  }
+  .pi-menu-item:hover {
+    background-color: var(--color-paper-2);
+  }
+  .pi-menu-item:focus-visible {
+    background-color: var(--color-paper-2);
+    outline: none;
+    /* TZ-AUDIT-6 unification: same focus-ring as .pi-input /
+       .pi-icon-btn. Keyboard users see identical cue across all
+       interactive controls. */
+    box-shadow: var(--focus-ring-shadow);
+  }
+  .pi-menu-item-destructive {
+    color: var(--color-destructive);
+  }
+  .pi-menu-item-destructive:hover {
+    background-color: var(--color-paper-2);
+    /* color / border stay destructive via base rule — no
+       redundant re-declaration. */
+  }
+  .pi-menu-item-destructive:focus-visible {
+    background-color: var(--color-paper-2);
+    box-shadow: var(--focus-ring-shadow);
+  }
+
+  /* ---- pi-outline-btn (TZ-AUDIT-7) — small editorial outline button
+     for smoke-test triggers / non-PiButton contexts. Differs from
+     <app-pi-button variant="outline" size="md"> only by height
+     (h-9 vs h-10) and absence of focus-ring (deliberate: smoke-test
+     triggers shouldn't trap keyboard focus from the parent). Apply
+     to native <button> when data-* attrs / role= attrs are required. */
+  .pi-outline-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    padding-inline: 16px;
+    font-size: 14px;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    /* Longhand (not `border: 1px solid ...`) so `border-ink` /
+       `border-destructive` color overrides win in the cascade —
+       see `hairline` rationale. */
+    border-style: solid;
+    border-width: 1px;
+    border-color: var(--color-rule);
+    border-radius: var(--radius-sm);
+    transition: background-color 150ms ease, color 150ms ease,
+                border-color 150ms ease;
+    cursor: pointer;
+  }
+  .pi-outline-btn:hover {
+    background-color: var(--color-paper-2);
+  }
+  .pi-outline-btn:focus-visible {
+    outline: none;
+    /* Same ring as pi-input / pi-icon-btn (TZ-AUDIT-6 unification).
+       Toast triggers DO receive keyboard focus (panel is a normal
+       content area, not a modal trap), so a visible indicator is
+       required for a11y. */
+    box-shadow: var(--focus-ring-shadow);
+  }
+  .pi-outline-btn-destructive {
+    color: var(--color-destructive);
+    border-color: var(--color-destructive);
+  }
+  .pi-outline-btn-destructive:hover {
+    /* fg/border stay destructive via base rule — danger affordance
+       preserved through hover. */
+    background-color: var(--color-paper-2);
+  }
+  .pi-outline-btn-destructive:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring-shadow);
+  }
 }
 
 @utility grid-paper {
@@ -263,7 +658,7 @@
   }
 }
 
-/* ── TZ-65 themed scrollbar (Paper & Ink: hairline 4px, --color-rule fill, transparent track) ── */
+/* ── Themed scrollbar (TZ-SCROLLBAR-65 — Paper & Ink: hairline 4px, --color-rule fill, transparent track) ── */
 @layer components {
   /* TZ-AUDIT-3 — muted em-dash placeholder for empty cells.
      Use: <td class="empty-cell">{{ value }}</td> (single-line, no whitespace).
@@ -274,7 +669,10 @@
     color: var(--color-muted);
     opacity: 0.4;
     font-size: 0.875em;
-  }
+  }   /* Native scrollbar (auto-applied to body) bypasses the special
+      scrollbar styling — keeps TZ-SCROLLBAR-65 reserved for opt-in
+      `.pi-scroll-area` blocks. */
+  html { scrollbar-gutter: stable; }
 
   .pi-scroll-area,
   .pi-scroll-area * {
@@ -297,7 +695,7 @@
   }
 }
 
-/* ── TZ-79 print stylesheet (Paper & Ink: clean monochrome spec sheet) ──
+/* ── TZ-PRINT-79 print stylesheet (Paper & Ink: clean monochrome spec sheet) ──
    Trigger: window.print() из любой page → user получает print-friendly
    preview (chrome hidden, sections page-break friendly, no animations,
    no shadows, link hrefs visible). NO new deps required.

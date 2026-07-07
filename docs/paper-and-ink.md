@@ -149,3 +149,21 @@ Material Design 3 рекомендует **4 variants × 3 sizes**. Paper & Ink:
 - Детские приложения — нужны rounded-3xl, emoji, bright colors.
 
 Paper & Ink — это **editorial / dashboard / docs / settings** — не everything app.
+
+## Recent palette changes
+
+Палитра постепенно сдвигается от cool-neutral B&W (v1) к warm cream + sunrise accents (v2). Полная история в `progress.md` (найдите по дате).
+
+**TZ-WARMUP-100 (2026-07-07) — soft-warm palette pivot:**
+- `--color-paper-2`: light `oklch(0.930 0.025 70)` → `oklch(0.930 0.045 80)`; dark `oklch(0.27 0.020 70)` → `oklch(0.27 0.040 80)`. Hue 70→80 (теплее), chroma ×1.8-2.
+- `--color-sunrise-soft`: light `oklch(0.94 0.045 75)` → `oklch(0.94 0.055 80)`; dark `oklch(0.28 0.04 70)` → `oklch(0.28 0.050 80)`. (Hover для `.pi-table-row`.)
+- `--color-sunrise-mist`: light `oklch(0.965 0.025 80)` → `oklch(0.965 0.040 80)`; dark `oklch(0.24 0.025 70)` → `oklch(0.24 0.040 80)`. (Subtle warm panel tint.)
+- `--color-paper`, `--color-ink`, `--color-rule`, `--color-destructive` — **UNCHANGED**. Text + borders остаются глубокими/нейтральными по дизайн-контракту.
+- `--color-accent-warm` / `--color-accent-cool` / `--color-sunrise` / `--color-sunrise-warm` / `--color-sunrise-glow` — **UNCHANGED**. Sunrise-семейство уже сидит внутри hue 80 base, естественно перетекает.
+- **L (lightness) values строго preserved** → WCAG AA contrast against ink UNCHANGED (>10:1).
+- **Cascade effect:** `bg-paper-2` в `.pi-icon-btn:hover`, `.pi-menu-item:hover`, `.pi-outline-btn:hover`, zebra-полосах таблиц, `app-pi-empty-tile` теперь warm cream (НЕ «clinical gray»). `.pi-table-row:hover` ещё теплее (sunrise-soft).
+- **/foundations styleguide** обновлён: 13 swatches в 2×5 grid (5 base + 5 sunrise + 3 misc), hint «13 OKLCH swatches».
+
+**Предшественники:** TZ-AUDIT-9 (warm paper direction, hue 70, base palette 8 tokens) + TZ-AUDIT-9.1 (dark L bump 0.18→0.21).
+
+**Эскалация доступна** (если soft-warm покажется бледным): «Тёплый акцент» — active nav / primary button / badge default / checkbox checked → `sunrise-warm` (тёплый коричневый) вместо `bg-ink` (deep espresso). 1-line patch в `styles.css`.

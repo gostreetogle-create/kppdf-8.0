@@ -22,7 +22,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
     <figure
       role="figure"
       [attr.aria-label]="ariaLabel()"
-      class="pi-chart border hairline border-rule rounded-sm p-4 bg-paper"
+      class="pi-chart hairline rounded-sm p-4 bg-paper"
     >
       @if (eyebrow() || title() || subtitle()) {
         <figcaption class="pi-chart__caption mb-3">
@@ -33,7 +33,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
             <h3 class="font-display text-lg tracking-tight mt-1 text-ink">{{ title() }}</h3>
           }
           @if (subtitle()) {
-            <p class="text-sm text-muted mt-1">{{ subtitle() }}</p>
+            <p class="text-sm text-muted-foreground mt-1">{{ subtitle() }}</p>
           }
         </figcaption>
       }

@@ -25,7 +25,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       >
         <ng-content />
       </a>
-      <span aria-hidden="true" class="text-muted mx-1">›</span>
+      <span aria-hidden="true" class="text-muted-foreground mx-1">›</span>
     }
   `,
 })

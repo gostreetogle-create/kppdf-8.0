@@ -32,12 +32,14 @@ export type CommandItem = {
         (click)="palette.close()"
       >
         <div
-          class="bg-paper border hairline border-rule rounded-sm w-[520px] max-h-[60vh] overflow-hidden flex flex-col"
+          class="bg-paper hairline rounded-sm w-[520px] max-h-[60vh] overflow-hidden flex flex-col"
           (click)="$event.stopPropagation()"
         >
           <input
             #search
+            id="command-palette-search"
             type="text"
+            name="command-palette-search"
             placeholder="Поиск компонента, раздела или действия…"
             class="w-full px-4 py-3 text-base border-b hairline border-rule bg-paper text-ink font-body focus:outline-none"
             [value]="query()"
