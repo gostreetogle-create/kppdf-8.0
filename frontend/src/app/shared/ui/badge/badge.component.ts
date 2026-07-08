@@ -5,9 +5,9 @@ export type PiBadgeVariant = 'default' | 'secondary' | 'outline' | 'destructive'
 export type PiBadgeSize = 'sm' | 'md';
 
 const VARIANT_CLASS: Record<PiBadgeVariant, string> = {
-  default: 'bg-ink text-paper',
+  default: 'bg-sunrise-warm text-paper',
   secondary: 'bg-paper-2 text-ink',
-  outline: 'bg-transparent border border-rule text-ink',
+  outline: 'bg-transparent hairline text-ink',
   destructive: 'bg-destructive text-paper',
 };
 

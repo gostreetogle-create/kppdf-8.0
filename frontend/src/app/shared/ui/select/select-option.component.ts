@@ -36,7 +36,7 @@ import { SelectComponent } from './select.component';
       cursor: pointer;
     }
     button[aria-selected='true'] {
-      background: var(--color-ink);
+      background: var(--color-sunrise-warm);
       color: var(--color-paper);
     }
   `],
@@ -59,7 +59,7 @@ export class SelectOptionComponent {
       'px-3',
       'py-2',
       'text-sm',
-      isOn ? 'bg-ink text-paper' : 'bg-paper text-ink hover:bg-paper-2',
+      isOn ? 'bg-sunrise-warm text-paper' : 'bg-paper text-ink hover:bg-paper-2',
       'focus-visible:outline-none',
       'focus-visible:ring-2',
       'focus-visible:ring-ink',

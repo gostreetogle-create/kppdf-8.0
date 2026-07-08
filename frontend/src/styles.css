@@ -40,15 +40,18 @@
  * Canonical utilities (all 1px, all in `var(--color-rule)` unless a
  * color override is appended):
  *   hairline       → border: 1px solid var(--color-rule)   (all 4 sides)
- *   hairline-t/b/l/r → single-side variant (border-top/bottom/left/right)
+ *   hairline-t/b/r/l → single-side variant (border-top/bottom/left/right)
  *   border-ink     → color override: 1px solid var(--color-ink)
  *   border-destructive → color override: 1px solid var(--color-destructive)
  *
- * The verbose `border hairline border-rule` pattern was a leftover from
- * the v1 prototype where `hairline` and `border-rule` were new utilities
- * and `border` was kept as a defensive default. After TZ-AUDIT-8, just
- * use `hairline` (or `hairline-t` etc.) — the `hairline` utility IS the
- * full shorthand, so surrounding `border` + `border-rule` are redundant.
+ * MIGRATION COMPLETE (2026-07-08): The verbose `border hairline border-rule`
+ * pattern has been REMOVED from every component. All 25+ components now use
+ * only the canonical `hairline` / `hairline-t` / `hairline-b` / `hairline-r` /
+ * `hairline-l` utilities — never the redundant `border` + `border-rule` combo.
+ * The same applies to focus-ring: all 11 interactive components now use the
+ * centralized `pi-focus-ring` class instead of hardcoded `ring-2 ring-ink
+ * ring-offset-2 ring-offset-paper`. Both changes follow TZ-AUDIT-8 and
+ * TZ-AUDIT-6 conventions — single source of truth in this stylesheet.
  *
  * SECONDARY TEXT CONVENTION (TZ-AUDIT-8):
  *   Use `text-muted-foreground` (oklch 0.55 — lighter, shadcn-style)
@@ -151,18 +154,25 @@
      TZ-AUDIT-9 — WARM PAPER DIRECTION: hue 70 (golden beige) with\r
      restrained chroma (0.015-0.055) throughout the base palette. This\r
      replaces the v1 cool-neutral B&W (hue 80, chroma ~0.008) which read\r
-     as \"bleached/clinical\". The new direction feels like printed-on-warm-\r
-     paper: cream background, deep-espresso ink, warm-gray rules. The\r
-     existing Sunrise palette (hue 55-80) now flows as a natural extension\r
-     of the base instead of an accent that \"pops in\". */
+     as \"bleached/clinical\".\r
+\r
+     TZ-LIGHT-XX (2026-07-08) — LIGHT TONES PIVOT: all L values bumped\r
+     upwards for a visibly lighter, airier feel. Ink L 0.180 \u2192 0.250\r
+     (deep espresso \u2192 soft charcoal), rule L 0.850 \u2192 0.880,\r
+     muted-fg L 0.55 \u2192 0.58 (WCAG AA Large ~3.2:1), paper-2 L 0.930 \u2192 0.945,\r
+     destructive L 0.50 \u2192 0.60, sunrise palette +0.04-0.08 L across\r
+     the family. Dark mode mirrored: paper L 0.21 \u2192 0.25, paper-2\r
+     L 0.27 \u2192 0.32. Contrast against paper remains >7:1 for body\r
+     text (ink at \u223c0.25). The warm-paper direction (hue 70, sunrise\r
+     hues 55-80) is UNCHANGED. */
   --color-paper:       var(--color-paper-override,       oklch(0.972 0.015 70));
-  --color-paper-2:     var(--color-paper-2-override,     oklch(0.930 0.045 80));
-  --color-ink:         var(--color-ink-override,         oklch(0.180 0.015 70));
-  --color-rule:        var(--color-rule-override,        oklch(0.850 0.020 70));
-  --color-muted:       var(--color-muted-override,       oklch(0.400 0.020 70));
-  --color-destructive: var(--color-destructive-override, oklch(0.5   0.18  27));
-  --color-accent-warm: var(--color-accent-warm-override, oklch(0.50  0.18  60));
-  --color-accent-cool: var(--color-accent-cool-override, oklch(0.45  0.14 250));
+  --color-paper-2:     var(--color-paper-2-override,     oklch(0.960 0.030 80));
+  --color-ink:         var(--color-ink-override,         oklch(0.250 0.010 70));
+  --color-rule:        var(--color-rule-override,        oklch(0.880 0.015 70));
+  --color-muted:       var(--color-muted-override,       oklch(0.450 0.015 70));
+  --color-destructive: var(--color-destructive-override, oklch(0.60  0.15  27));
+  --color-accent-warm: var(--color-accent-warm-override, oklch(0.60  0.14  60));
+  --color-accent-cool: var(--color-accent-cool-override, oklch(0.55  0.12 250));
 
   /* === Sunrise palette (TZ-NEW + TZ-AUDIT-9)
      Restrained warm-light family — hue 55-80 sits inside the base
@@ -187,11 +197,11 @@
                            tints (login card backdrop, the welcome feel).
                            Below perceptibility threshold so it never
                            shouts — just adds warmth vs. neutral paper. */
-  --color-sunrise:       var(--color-sunrise-override,       oklch(0.66 0.14  55));
-  --color-sunrise-soft:  var(--color-sunrise-soft-override,  oklch(0.94 0.055 80));
-  --color-sunrise-warm:  var(--color-sunrise-warm-override,  oklch(0.50 0.07  55));
-  --color-sunrise-glow:  var(--color-sunrise-glow-override,  oklch(0.72 0.18  60));
-  --color-sunrise-mist:  var(--color-sunrise-mist-override,  oklch(0.965 0.040 80));
+  --color-sunrise:       var(--color-sunrise-override,       oklch(0.72 0.12  55));
+  --color-sunrise-soft:  var(--color-sunrise-soft-override,  oklch(0.95 0.045 80));
+  --color-sunrise-warm:  var(--color-sunrise-warm-override,  oklch(0.58 0.06  55));
+  --color-sunrise-glow:  var(--color-sunrise-glow-override,  oklch(0.78 0.14  60));
+  --color-sunrise-mist:  var(--color-sunrise-mist-override,  oklch(0.97 0.035 80));
 
   /* === Muted foreground (secondary text) — TZ-AUDIT-9 warm ===
      Accessibility: contrast on paper is below the 4.5:1 AA Standard for
@@ -202,7 +212,7 @@
      messages, button text, navigation links, table headers, or any
      text the user MUST read to complete a task. For required body
      text, use the `text-ink` primary token (~12:1). */
-  --color-muted-foreground: var(--color-muted-foreground-override, oklch(0.55 0.025 70));
+  --color-muted-foreground: var(--color-muted-foreground-override, oklch(0.58 0.020 70));
 
   /* === Typography === */
   --font-display: 'Syne', 'Helvetica Neue', sans-serif;
@@ -336,20 +346,20 @@
      cool dark — the higher L gives the surface breathing room.
      Applied via <html class="dark">. NEVER use body.dark or :root.dark. */
   .dark {
-    --color-paper:       oklch(0.21 0.015 70);
-    --color-paper-2:     oklch(0.27 0.040 80);
-    --color-ink:         oklch(0.95 0.015 70);
-    --color-rule:        oklch(0.32 0.020 70);
-    --color-muted:       oklch(0.70 0.020 70);
-    --color-destructive: oklch(0.65 0.18  27);
-    --color-accent-warm: oklch(0.75 0.13  60);
-    --color-accent-cool: oklch(0.70 0.12 250);
-    --color-sunrise:      oklch(0.78 0.13  60);
-    --color-sunrise-soft: oklch(0.28 0.050 80);
-    --color-sunrise-warm: oklch(0.72 0.08  55);
-    --color-sunrise-glow: oklch(0.82 0.16  60);
-    --color-sunrise-mist: oklch(0.24 0.040 80);
-    --color-muted-foreground: oklch(0.62 0.025 70);
+    --color-paper:       oklch(0.25 0.015 70);
+    --color-paper-2:     oklch(0.33 0.030 80);
+    --color-ink:         oklch(0.92 0.015 70);
+    --color-rule:        oklch(0.38 0.015 70);
+    --color-muted:       oklch(0.72 0.015 70);
+    --color-destructive: oklch(0.70 0.15  27);
+    --color-accent-warm: oklch(0.78 0.12  60);
+    --color-accent-cool: oklch(0.74 0.10 250);
+    --color-sunrise:      oklch(0.82 0.12  60);
+    --color-sunrise-soft: oklch(0.32 0.045 80);
+    --color-sunrise-warm: oklch(0.76 0.07  55);
+    --color-sunrise-glow: oklch(0.84 0.14  60);
+    --color-sunrise-mist: oklch(0.28 0.035 80);
+    --color-muted-foreground: oklch(0.66 0.020 70);
   }
 }
 

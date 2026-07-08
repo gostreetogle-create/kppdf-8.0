@@ -65,7 +65,7 @@ type Result = Organization | null | undefined;
               formControlName="name"
               maxlength="256"
               autocomplete="off"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors"
               [class.border-destructive]="hasError('name')"
             />
           </app-pi-form-field>
@@ -81,7 +81,7 @@ type Result = Organization | null | undefined;
               formControlName="shortName"
               maxlength="128"
               autocomplete="off"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors"
             />
           </app-pi-form-field>
 
@@ -97,7 +97,7 @@ type Result = Organization | null | undefined;
               formControlName="inn"
               maxlength="12"
               autocomplete="off"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors mono"
+              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors mono"
               [class.border-destructive]="hasError('inn')"
             />
           </app-pi-form-field>
@@ -113,7 +113,7 @@ type Result = Organization | null | undefined;
               formControlName="kpp"
               maxlength="16"
               autocomplete="off"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors mono"
+              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors mono"
             />
           </app-pi-form-field>
         </div>
@@ -123,7 +123,7 @@ type Result = Organization | null | undefined;
             @for (t of allTypes; track t) {
               <label
                 class="inline-flex items-center gap-2 min-h-touch px-control-x py-control-y hairline rounded-sm cursor-pointer hover:bg-paper-2 transition-colors"
-                [class.bg-ink]="form.controls.type.value.includes(t)"
+                [class.bg-sunrise-warm]="form.controls.type.value.includes(t)"
                 [class.text-paper]="form.controls.type.value.includes(t)"
                 [class.border-ink]="form.controls.type.value.includes(t)"
               >
@@ -150,7 +150,7 @@ type Result = Organization | null | undefined;
               type="text"
               formControlName="signerName"
               autocomplete="off"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors"
             />
           </app-pi-form-field>
 
@@ -163,7 +163,7 @@ type Result = Organization | null | undefined;
               type="text"
               formControlName="signerPosition"
               autocomplete="off"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors"
             />
           </app-pi-form-field>
 

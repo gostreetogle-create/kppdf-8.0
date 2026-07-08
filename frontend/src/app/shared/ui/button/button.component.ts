@@ -22,9 +22,9 @@ export type PiButtonVariant =
 export type PiButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 
 const VARIANT_CLASS: Record<PiButtonVariant, string> = {
-  default: 'bg-ink text-paper hover:opacity-90',
+  default: 'bg-sunrise-warm text-paper hover:opacity-90',
   secondary: 'bg-paper-2 text-ink hover:bg-paper',
-  outline: 'bg-transparent border border-rule text-ink hover:bg-paper-2',
+  outline: 'bg-transparent hairline text-ink hover:bg-paper-2',
   ghost: 'bg-transparent text-ink hover:bg-paper-2',
   link: 'bg-transparent text-ink underline underline-offset-4 hover:text-ink',
   destructive: 'bg-destructive text-paper hover:opacity-90',
@@ -40,8 +40,7 @@ const SIZE_CLASS: Record<PiButtonSize, string> = {
 const BASE_CLASS =
   'inline-flex items-center justify-center gap-2 font-medium font-body ' +
   'rounded-sm transition-colors ' +
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink ' +
-  'focus-visible:ring-offset-2 focus-visible:ring-offset-paper ' +
+  'pi-focus-ring ' +
   'disabled:opacity-50 disabled:cursor-not-allowed';
 
 /**

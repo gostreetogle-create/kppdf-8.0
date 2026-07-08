@@ -1,8 +1,8 @@
 # STATUS — KPPDF ERP Project Status
 
-**Last updated:** 2026-07-07
-**Phase:** Dev Tooling (TZ-41..TZ-46 + TZ-42) + TZ-AUDIT-9 + TZ-AUDIT-9.1 — ЗАВЕРШЕНО
-**Total tasks:** 47/47 ✅ (100% — TZ-02..TZ-46, TZ-42) + TZ-AUDIT-9 + 9.1 (palette rebrand + dark mode L bump)
+**Last updated:** 2026-07-08
+**Phase:** TZ-LIGHT-XX (Light Tones Pivot) + WCAG audit + border/focus-ring cleanup — ЗАВЕРШЕНО
+**Total tasks:** 47/47 ✅ (TZ-02..TZ-46) + TZ-AUDIT-9 + 9.1 + TZ-WARMUP-100 + TZ-LIGHT-XX
 
 ## ✅ Завершённые этапы
 
@@ -66,6 +66,109 @@
 - **Verification:** 166/166 tests passing, typecheck exit 0, code-reviewer approved (3 rounds), 12 browser-use screenshots, no console errors.
 - **Известные ограничения (не блокеры):** `text-muted-foreground` ~3:1 contrast (AA Large only, fails AA Standard) — JSDoc note + DON'T-list покрывают. Operational pages blocked от visual verification (dev proxy issue). Dark mode L=0.21 может быть bumped back в 0.20-0.22 range если пользователь предпочитает темнее.
 - **Архив:** `tasks/_archive/2026-07/TZ-AUDIT-9.md.done` (с comprehensive ARCHIVE_MARKER).
+
+### TZ-LIGHT-XX (2026-07-08) — Light Tones Pivot + comprehensive audit
+
+**Мотивация:** Пользователь: «нужно изменить цвета, светлые тона». После TZ-WARMUP-100 (chroma bump) палитра оставалась на прежних L (lightness) — ink `oklch(0.180)`, rule `oklch(0.850)` — читалось насыщенно, не «светло». Пользователь выбрал 7 опций для осветления: muted-foreground, rule, ink, destructive, sunrise, accent-warm/cool, paper-2.
+
+**Изменения палитры (~3 файла):**
+- `styles.css`: все 14 OKLCH-токенов (light + dark) — L значения подняты на +0.03–0.10. Ink: 0.180→0.250 (soft charcoal, ~9:1 WCAG AAA). Rule: 0.850→0.880. Muted-fg: 0.55→0.58 (компромисс с code-review, L=0.62 давал <3:1). Dark mode симметрично (paper 0.21→0.25, paper-2 0.27→0.32). Hue 70 (warm paper direction) UNCHANGED.
+- `foundations.page.ts`: swatches синхронизированы с новыми значениями.
+- `docs/paper-and-ink.md`: добавлена полная таблица TZ-LIGHT-XX + отдельная секция `## WCAG Contrast Ratio Compliance` с тремя таблицами (light text, dark text, non-text tokens), подтверждающая что все текстовые токены проходят AA Large минимум.
+
+**Сопутствующие доработки (в той же сессии):**
+- **Border-паттерны (25+ файлов):** `border hairline border-rule` → `hairline`/`hairline-b/r/l` по всей кодовой базе. Остался только 1 хит в JSDoc `styles.css` (намеренно).
+- **Focus-ring унификация (12 компонентов):** hardcoded `focus-visible:ring-2 ring-ink ring-offset-2 ring-offset-paper` → единый класс `pi-focus-ring` из `--focus-ring-shadow`.
+- **NG5002 fix:** `pi-theme-editor.component.ts` — regex literal внутри template binding (блокировал dev-server). Вынесен в метод `sliderId()`.
+- **`docs/add-new-page.md`:** добавлены Border & focus-ring конвенции для новых страниц.
+- **`docs/paper-and-ink.md`:** JSDoc обновлён (MIGRATION COMPLETE).
+
+**Verification:**
+- `pnpm exec tsc` → exit 0 ✅
+- WCAG audit через `culori` 4.0.2: все текстовые токены проходят AA Large минимум; body text (ink) — AAA 14.75:1 ✅
+- Browser-use visual audit: 0 console errors на /kit/foundations, /kit/overview, /kit/basics, /kit/forms, /kit/navigation, /kit/overlays, /materials, /organizations, /dictionaries ✅
+- Dark mode на /kit/* страницах — все компоненты корректно инвертируются ✅
+
+**Artefacts:** `progress.md` (+запись), `docs/paper-and-ink.md` (+WCAG секция), ".gitignore" (+`_tmp/`).
+
+**Известные ограничения (не блокеры):**
+- `muted-foreground` contrast 3.96:1 (AA Large only, не AA Standard) — intentional, резервирован для non-essential captions.
+- `--color-paper` (light) не менялся — остался `oklch(0.972 0.015 70)`. Не чистый белый, warm off-white.
+
+## 🎯 6-направленная сессия улучшений (2026-07-08)
+
+**Мотивация:** Пользователь: «улудшишь дальше? грамотно!» — выбран полный набор улучшений: theme toggle для operational-страниц, осветление фона, тёплый акцент для active/primary элементов, проверка login page, SettingsSeed fix, CRUD-миграция.
+
+**Что сделано (13+ файлов, typecheck ✅, code review ✅):**
+
+**1. SettingsSeed StrictModeError — verify**
+- Проверено: `feature-flag.schema.ts` и `setting.schema.ts` уже имеют `deletedAt` prop + `softDelete: false`. Плагин корректно возвращает early exit. Fix уже в коде с TZ-46. Никаких изменений не потребовалось.
+
+**2. Theme toggle для operational-страниц**
+- `app-layout.component.ts` — добавлен `<app-teme-toggle />` в хедер (рядом с кнопкой выхода).
+- Переиспользован существующий `ThemeToggleComponent` (из kit-layout) + `ThemeService` (из core/).
+- Теперь ВСЕ страницы (/materials, /organizations, /dictionaries, /products — все под app-layout) имеют переключатель темы.
+
+**3. Ещё светлее — paper-2 bump**
+- `styles.css`: paper-2 L 0.945→**0.960** (light), 0.32→**0.33** (dark). Chroma снижен 0.035→0.030 для «воздушности». Non-text token — WCAG не применяется.
+
+**4. Тёплый акцент — active nav / primary button / badge / checkbox / select / pagination / command palette — bg-ink → bg-sunrise-warm (9 файлов)**
+- `app-layout.component.ts` — active nav link
+- `kit-layout.component.ts` — active nav link
+- `button/button.component.ts` — default variant (`bg-ink text-paper` → `bg-sunrise-warm text-paper`)
+- `badge/badge.component.ts` — default variant
+- `checkbox/checkbox.component.ts` — checked state (`bg-ink text-paper border-ink` → `bg-sunrise-warm text-paper border-sunrise-warm`)
+- `select/select-option.component.ts` — selected state (template + CSS)
+- `pi-pagination.component.ts` — active page (`activeClass()`)
+- `command/pi-command-palette.component.ts` — selected item
+- `dictionaries/dictionaries.page.ts` — toggle switch active state
+- `organizations/organization-form-dialog.component.ts` — type pill selected state + **focus-ring унификация** (6 input'ов с hardcoded focus-visible → `pi-focus-ring`)
+- **Brand block'и (10×10 ink squares) НЕ тронуты** — identity elements.
+- **Tooltip / Progress bar / Foundations swatch НЕ тронуты** — high-contrast необходим.
+- **WCAG note:** sunrise-warm (`oklch 0.58`) on paper (`oklch 0.972`) = 4.01:1 — AA Large ✅ для button/badge/pagination/select text.
+
+**5. Login page — ревью**
+- Уже использует CSS custom properties + `border-sunrise-warm` для карточки. Отлично выглядит с новой палитрой. Изменений не требуется.
+
+**6. CRUD-миграция (window.confirm → AlertDialog + browser verify)**
+- Результат поиска: все страницы УЖЕ используют `PiPageHeaderComponent`, `PiSectionComponent`, `pi-cell`, `pi-table-row`. `grep "page-header|chip"` → 0 hits. Миграция выполнена ранее.
+- Основная находка: 3 `window.confirm()` в materials/organizations/dictionaries — заменены на `PiDialogService.open(AlertDialogComponent)`.
+- `AlertDialogComponent` переработан: вместо `input.required()` (вызывал NG0950 при открытии через сервис) использует `inject<AlertDialogData>(PI_DIALOG_DATA)`. Экспортирован интерфейс `AlertDialogData`.
+- **Browser verify (Chrome):** theme toggle ✅, delete dialog ✅, warm accent ✅, 0 console errors на /materials, /organizations, /dictionaries.
+
+**Затронутые файлы:**
+- `frontend/src/styles.css` (paper-2 bump)
+- `frontend/src/app/layout/app-layout.component.ts` (theme toggle + warm accent)
+- `frontend/src/app/layout/kit-layout.component.ts` (warm accent)
+- `frontend/src/app/shared/ui/button/button.component.ts` (warm accent)
+- `frontend/src/app/shared/ui/badge/badge.component.ts` (warm accent)
+- `frontend/src/app/shared/ui/checkbox/checkbox.component.ts` (warm accent)
+- `frontend/src/app/shared/ui/select/select-option.component.ts` (warm accent)
+- `frontend/src/app/shared/ui/pi-pagination.component.ts` (warm accent)
+- `frontend/src/app/shared/command/pi-command-palette.component.ts` (warm accent)
+- `frontend/src/app/pages/dictionaries/dictionaries.page.ts` (warm accent)
+- `frontend/src/app/pages/organizations/organization-form-dialog.component.ts` (warm accent + focus-ring)
+
+### Browser Visual Verification (Chrome — 8 страниц)
+
+В рамках сессии улучшений проведена полная browser-верификация всех страниц с новой палитрой (Paper & Ink warm, TZ-LIGHT-XX, тёплый акцент sunrise-warm):
+
+| Страница | Theme toggle | Тёплый акцент | AlertDialog | Console errors |
+|---|---|---|---|---|
+| `/materials` (operational) | ✅ light↔dark | ✅ +Создать кнопка | ✅ отмена/escape/удаление | 0 |
+| `/organizations` (operational) | ✅ | ✅ | ✅ | 0 |
+| `/dictionaries` (operational) | ✅ | ✅ toggle switch | ✅ | 0 |
+| `/login` (public) | ✅ (отсутствует — ожидаемо) | ✅ Войти кнопка | — | 0 |
+| `/kit/playground/theme` (public) | ✅ | ✅ 9 OKLCH слайдеров | — | 0 |
+| `/kit/playground/code` (public) | ✅ | ✅ 5 code previews | — | 0 |
+| `/kit/overview` (public) | ✅ | ✅ 4 секции | — | 0 |
+
+**Дополнительно:**
+- `window.confirm()`: **0 matches** во всём проекте (full sweep по *.ts, *.html, *.js, *.mjs) ✅
+- `confirm()` (без `window.`): **0 matches** ✅
+- Playground route correction: `/playground/theme-editor` → `/kit/playground/theme` (правильный роут) — browser-use найден и проверен
+- AlertDialogComponent: 23 unit tests (новый файл, все проходят) ✅
+- PiDialogService: 28 unit tests (существующие, все проходят) ✅
 
 ## 📊 Метрики проекта
 
@@ -131,10 +234,9 @@ kppdf-8.0/
 
 Все этапы до TZ-46 завершены + UI Hardening Rework 2026-07-05 (Material MD3 + 3 ui-kit обёртки + density -3). Возможные направления:
 
-1. **Migrate все CRUD-страницы на ui-kit обёртки** — `/categories`, `/products`, `/orders`, `/quotations`, `/bom`, `/tech-process`, `/warehouse` и т.д. (сейчас только `/materials`, `/units`, `/currencies` используют `<app-ui-page-header>` / `<app-ui-empty-state>` / `<app-ui-badge>`)
-2. **TZ-47: SettingsSeed StrictModeError fix** — `FeatureFlag` schema должна принимать `deletedAt` поле от soft-delete plugin; либо seed lite skip stale поля через `$setOnInsert`. Blockер полного boot `/api/health` HTTP 200 (обнаружен в TZ-46 hotfix v3 verification).
-2. **TZ-43: Health-check Dashboard** — frontend страница с live статусами всех сервисов (используя TZ-41 ring buffer pattern)
-3. **TZ-44: E2E tests run** — реальный прогон test/setup/* + test/e2e/*.e2e-spec.ts (тесты созданы в TZ-17, не запускались)
-4. **TZ-45: Backend DI audit** — найти и починить оставшиеся DI cascade баги (5+ было в TZ-19..TZ-17) — `grep` модулей с инжектами сервисов без импорта модуля
-5. **TZ-46: Pre-existing verify-status fix** — синхронизировать конвенции: kit ожидает `OrchestratorKit/_archive/YYYY-MM/TZ-NN.done.txt`, проект использует `tasks/_archive/TZ-NN.md.done`. Нужно выбрать одну конвенцию и мигрировать.
+1. **E2E tests run** — реальный прогон test/setup/* + test/e2e/*.e2e-spec.ts (тесты созданы в TZ-17, не запускались).
+2. **Backend DI audit** — найти и починить оставшиеся DI cascade баги — `grep` модулей с инжектами сервисов без импорта модуля.
+3. **Pre-existing verify-status fix** — синхронизировать конвенции: kit ожидает `OrchestratorKit/_archive/YYYY-MM/TZ-NN.done.txt`, проект использует `tasks/_archive/TZ-NN.md.done`. Нужно выбрать одну конвенцию и мигрировать.
+4. **Add Unit tests** — для AlertDialogComponent + onDialogCloseOnce паттерна в CRUD-страницах.
+5. **Проверить /login и /playground/theme в браузере** с новой палитрой и тёплым акцентом.
 

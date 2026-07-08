@@ -7,6 +7,7 @@ import {
 } from '@angular/router';
 import { LucideAngularModule, LogOut } from 'lucide-angular';
 import { AuthService } from '../core/auth.service';
+import { ThemeToggleComponent } from './theme-toggle.component';
 
 interface NavLink {
   path: string;
@@ -54,13 +55,13 @@ const NAV_LINKS: NavLink[] = [
   selector: 'app-app-layout',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule, ThemeToggleComponent],
   template: `
     <div class="min-h-screen bg-paper text-ink font-body">
       <div class="pi-page-frame">
         <header
           class="sticky top-0 z-30 bg-paper/95 supports-[backdrop-filter]:backdrop-blur-sm
-                 border-b hairline border-rule pi-edge-bleed"
+                 hairline-b pi-edge-bleed"
         >
           <div class="h-14 flex items-center justify-between gap-4">
             <a
@@ -93,7 +94,7 @@ const NAV_LINKS: NavLink[] = [
                 } @else {
                   <a
                     [routerLink]="link.path"
-                    routerLinkActive="bg-ink text-paper"
+                    routerLinkActive="bg-sunrise-warm text-paper"
                     class="px-3 py-1.5 text-sm hover:bg-paper-2 transition-colors rounded-sm"
                   >
                     {{ link.label }}
@@ -103,6 +104,7 @@ const NAV_LINKS: NavLink[] = [
             </nav>
 
             <div class="flex items-center gap-3 shrink-0">
+              <app-theme-toggle />
               @if (user(); as u) {
                 <span class="text-sm text-muted-foreground hidden sm:inline">
                   {{ u.displayName || u.username }}

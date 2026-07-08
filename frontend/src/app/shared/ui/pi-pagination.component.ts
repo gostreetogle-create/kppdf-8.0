@@ -20,7 +20,7 @@ type PageItem = { type: 'page'; n: number } | { type: 'gap'; key: string };
     >
       <button
         type="button"
-        class="px-2 h-7 inline-flex items-center justify-center rounded-sm hairline border border-rule bg-paper hover:bg-paper-2 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
+        class="px-2 h-7 inline-flex items-center justify-center rounded-sm hairline bg-paper hover:bg-paper-2 disabled:opacity-40 disabled:cursor-not-allowed pi-focus-ring"
         [disabled]="currentPage() === 1"
         (click)="goTo(currentPage() - 1)"
         aria-label="Предыдущая страница"
@@ -44,7 +44,7 @@ type PageItem = { type: 'page'; n: number } | { type: 'gap'; key: string };
       }
       <button
         type="button"
-        class="px-2 h-7 inline-flex items-center justify-center rounded-sm hairline border border-rule bg-paper hover:bg-paper-2 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
+        class="px-2 h-7 inline-flex items-center justify-center rounded-sm hairline bg-paper hover:bg-paper-2 disabled:opacity-40 disabled:cursor-not-allowed pi-focus-ring"
         [disabled]="currentPage() === totalPages()"
         (click)="goTo(currentPage() + 1)"
         aria-label="Следующая страница"
@@ -110,13 +110,9 @@ export class PaginationComponent {
       'items-center',
       'justify-center',
       'rounded-sm',
-      'bg-ink',
+      'bg-sunrise-warm',
       'text-paper',
-      'focus-visible:outline-none',
-      'focus-visible:ring-2',
-      'focus-visible:ring-ink',
-      'focus-visible:ring-offset-2',
-      'focus-visible:ring-offset-paper',
+      'pi-focus-ring',
     ].join(' ');
   }
 
@@ -129,16 +125,10 @@ export class PaginationComponent {
       'items-center',
       'justify-center',
       'rounded-sm',
-      'border',
       'hairline',
-      'border-rule',
       'bg-paper',
       'hover:bg-paper-2',
-      'focus-visible:outline-none',
-      'focus-visible:ring-2',
-      'focus-visible:ring-ink',
-      'focus-visible:ring-offset-2',
-      'focus-visible:ring-offset-paper',
+      'pi-focus-ring',
     ].join(' ');
   }
 }

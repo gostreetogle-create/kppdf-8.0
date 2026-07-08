@@ -15,6 +15,7 @@ import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-s
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
+import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
 import { PiToastService } from '../../shared/ui/toast';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
@@ -77,7 +78,7 @@ type SortDir = 'asc' | 'desc';
 
       <div class="hairline rounded-sm overflow-x-auto">
         <table class="w-full text-sm min-w-[640px]">
-          <thead class="border-b hairline border-rule">
+          <thead class="hairline-b">
             <tr>
               <th
                 class="pi-cell eyebrow cursor-pointer select-none group text-left"
@@ -254,17 +255,25 @@ export class OrganizationsPage implements OnInit {
   }
 
   protected onDelete(row: Organization): void {
-    const ok = window.confirm(
-      `Удалить организацию «${row.name}»?\n\nЭто действие нельзя отменить.`,
-    );
-    if (!ok) return;
-    this.service.remove(row._id).subscribe((res) => {
-      if (res.ok) {
-        this.toast.success('Организация удалена');
-        this.reload();
-      } else {
-        this.toast.error(extractErrorMessage(res.error));
-      }
+    const ref = this.dialog.open(AlertDialogComponent, {
+      data: {
+        title: 'Удалить организацию?',
+        description: `Удалить «${row.name}»? Это действие нельзя отменить.`,
+        confirmLabel: 'Удалить',
+        variant: 'destructive',
+      },
+      width: 'sm',
+    });
+    onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
+      if (!confirmed) return;
+      this.service.remove(row._id).subscribe((res) => {
+        if (res.ok) {
+          this.toast.success('Организация удалена');
+          this.reload();
+        } else {
+          this.toast.error(extractErrorMessage(res.error));
+        }
+      });
     });
   }
 

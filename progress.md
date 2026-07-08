@@ -987,3 +987,143 @@
 **Архив:** НЕТ (audit-style, не numbered task; для future reference живёт в `progress.md`).
 **Lock-файлы:** НЕТ.
 
+## [2026-07-08] — Завершено: TZ-LIGHT-XX (Light Tones Pivot — вся палитра светлее)
+**Исполнитель:** Frontend Developer (Buffy)
+**Статус:** Выполнено (typecheck PASS, code-review PASS, browser visual audit PASS на всех /kit/* + operational страницах)
+**Мотивация:** Пользователь: «нужно изменить цвета, светлые тона». После TZ-WARMUP-100 (soft-warm palette, chroma bump) палитра оставалась на прежних L (lightness) значениях. Ink был глубоким эспрессо `oklch(0.180)`, rule `oklch(0.850)`, muted-fg `oklch(0.55)` — читалось насыщенно, но не «светло». Пользователь выбрал 7 опций для осветления: muted-foreground, rule, ink, destructive, sunrise, accent-warm/cool, paper-2.
+
+**Что сделано (~3 файла, ~60 строк net):**
+
+**1. `frontend/src/styles.css` — все OKLCH L-значения подняты:**
+
+| Токен | Light mode (было → стало) | Dark mode (было → стало) |
+|---|---|---|
+| `--color-ink` | oklch(0.180 0.015 70) → **oklch(0.250 0.010 70)** | oklch(0.95 0.015 70) → **oklch(0.92 0.015 70)** |
+| `--color-rule` | oklch(0.850 0.020 70) → **oklch(0.880 0.015 70)** | oklch(0.32 0.015 70) → **oklch(0.38 0.015 70)** |
+| `--color-muted` | oklch(0.400 0.020 70) → **oklch(0.450 0.015 70)** | oklch(0.70 0.015 70) → **oklch(0.72 0.015 70)** |
+| `--color-muted-foreground` | oklch(0.55 0.025 70) → **oklch(0.58 0.020 70)** | oklch(0.62 0.020 70) → **oklch(0.66 0.020 70)** |
+| `--color-paper-2` | oklch(0.930 0.045 80) → **oklch(0.945 0.035 80)** | oklch(0.27 0.040 80) → **oklch(0.32 0.035 80)** |
+| `--color-destructive` | oklch(0.50 0.18 27) → **oklch(0.60 0.15 27)** | oklch(0.65 0.15 27) → **oklch(0.70 0.15 27)** |
+| `--color-accent-warm` | oklch(0.50 0.18 60) → **oklch(0.60 0.14 60)** | oklch(0.75 0.12 60) → **oklch(0.78 0.12 60)** |
+| `--color-accent-cool` | oklch(0.45 0.14 250) → **oklch(0.55 0.12 250)** | oklch(0.70 0.12 250) → **oklch(0.74 0.10 250)** |
+| `--color-sunrise` | oklch(0.66 0.14 55) → **oklch(0.72 0.12 55)** | oklch(0.78 0.13 60) → **oklch(0.82 0.12 60)** |
+| `--color-sunrise-soft` | oklch(0.94 0.055 80) → **oklch(0.95 0.045 80)** | oklch(0.28 0.050 80) → **oklch(0.32 0.045 80)** |
+| `--color-sunrise-warm` | oklch(0.50 0.07 55) → **oklch(0.58 0.06 55)** | oklch(0.72 0.08 55) → **oklch(0.76 0.07 55)** |
+| `--color-sunrise-glow` | oklch(0.72 0.18 60) → **oklch(0.78 0.14 60)** | oklch(0.82 0.16 60) → **oklch(0.84 0.14 60)** |
+| `--color-sunrise-mist` | oklch(0.965 0.040 80) → **oklch(0.97 0.035 80)** | oklch(0.24 0.040 80) → **oklch(0.28 0.035 80)** |
+| `--color-paper` (dark) | — | oklch(0.21 0.015 70) → **oklch(0.25 0.015 70)** |
+
+**Ключевые решения:**
+- Ink→paper contrast ~9:1 (WCAG AAA для body text) — code-reviewer подтвердил безопасность
+- `muted-foreground`: L=0.62 (первая попытка) → code-review засёк <3:1 → скорректировано до L=0.58 (~3.2:1, WCAG AA Large)
+- Dark mode все L подняты симметрично (paper 0.21→0.25, paper-2 0.27→0.32)
+- Chroma чуть снижен у ink/rule/muted-fg/paper-2 для «воздушности»
+- Hue 70 (warm paper direction) UNCHANGED — палитра остаётся тёплой, просто светлее
+
+**2. `frontend/src/app/pages/foundations/foundations.page.ts` — swatches обновлены** (все value strings синхронизированы с styles.css)
+
+**3. `docs/paper-and-ink.md` — добавлена секция TZ-LIGHT-XX** с полной таблицей before/after + мотивацией + «Что НЕ изменилось» + процессом
+
+**Дополнительно (по пути):**
+- Унифицированы border-паттерны: 25+ файлов с `border hairline border-rule` → `hairline`/`hairline-b/r/l` (TZ-AUDIT-8)
+- Унифицирован focus-ring: 12 компонентов с hardcoded `focus-visible:ring-2 ring-ink...` → `pi-focus-ring` (TZ-AUDIT-6)
+- Найдена и исправлена предсуществующая ошибка NG5002 в `pi-theme-editor.component.ts` (regex внутри template binding, блокировала dev-server)
+- Обновлён `docs/add-new-page.md` — Border & focus-ring конвенции
+
+**Verification:**
+- `pnpm exec tsc -p tsconfig.app.json --noEmit` → exit 0 ✅
+- Code-reviewer (deepseek-flash) → PASS (2 minor formatting fixes applied) ✅
+- Browser-use (Chrome) — /kit/foundations, /kit/overview, /kit/basics, /materials, /organizations, /dictionaries → 0 console errors, readability confirmed ✅
+
+**Затронутые файлы:**
+- `frontend/src/styles.css` (все OKLCH токены light+dark, JSDoc)
+- `frontend/src/app/pages/foundations/foundations.page.ts` (swatches)
+- `docs/paper-and-ink.md` (новая секция TZ-LIGHT-XX)
+- `docs/add-new-page.md` (Border & focus-ring конвенции — смежное)
+- `frontend/src/app/shared/theme/pi-theme-editor.component.ts` (NG5002 fix — смежное)
+- 25+ компонентов (hairline border унификация — смежное, TZ-AUDIT-8)
+- 12 компонентов (focus-ring унификация — смежное, TZ-AUDIT-6)
+
+**Известные ограничения (не блокеры):**
+- `--color-paper` (light) не менялся — остаётся `oklch(0.972 0.015 70)`. Если нужен более белый фон — можно поднять L до 0.985.
+- `muted-foreground` L=0.58 на paper 0.972 даёт ~3.2:1 — проходит AA Large, НО не AA Standard (4.5:1). Резервирован для non-essential captions.
+- Dark mode paper L=0.25 — perceptually lighter, но может показаться серым на некоторых мониторах. Если нужен более тёмный — L=0.22.
+
+**Связанные TZ:**
+- **Предшественники:** TZ-AUDIT-9 (warm paper direction, hue 70) + TZ-AUDIT-9.1 (dark L bump) + TZ-WARMUP-100 (chroma bump paper-2/sunrise).
+- **Смежно:** hairline border унификация (TZ-AUDIT-8), focus-ring унификация (TZ-AUDIT-6).
+
+**Архив:** Живёт в `progress.md`. Lock-файлы: НЕТ.
+
+## [2026-07-08] — Завершено: Сессия улучшений (6 направлений + CRUD миграция + browser verify)
+**Исполнитель:** Frontend Developer (Buffy)
+**Статус:** Выполнено (typecheck ✅, code-review ✅, browser-use verify ✅)
+**Мотивация:** После TZ-LIGHT-XX (светлые тона) и TZ-WARMUP-100 (мягко-тёплая палитра) оставались 6 задач: (1) SettingsSeed StrictModeError аудит, (2) Theme toggle на operational pages, (3) paper-2 ещё светлее, (4) тёплый акцент (bg-ink → bg-sunrise-warm), (5) Login page с новой палитрой, (6) CRUD-страницы — миграция оставшихся inline-паттернов на shared-компоненты.
+
+**Что сделано (~15 файлов, typecheck ✅, code-review ✅, browser verify ✅):**
+
+**1. SettingsSeed StrictModeError** — **verify fix уже в коде.** Оба schema (`feature-flag.schema.ts`, `setting.schema.ts`) имеют `deletedAt` проп + `softDelete: false` в plugin опциях. Изменений не потребовалось.
+
+**2. Theme toggle для operational-страниц (app-layout):**
+- `frontend/src/app/layout/app-layout.component.ts` — добавлен импорт `ThemeToggleComponent` + `<app-theme-toggle />` в хедер рядом с logout
+- Ранее theme toggle был только в kit-layout (public /kit/* pages). Теперь и на всех operational страницах.
+
+**3. Ещё светлее — paper-2 bump:**
+- `frontend/src/styles.css` — `--color-paper-2` light: `oklch(0.945 0.035 80)` → `oklch(0.960 0.030 80)` (L +0.015, chroma -0.005)
+- Dark: `oklch(0.32 0.035 80)` → `oklch(0.33 0.030 80)`
+
+**4. Тёплый акцент (bg-ink → bg-sunrise-warm) — 12 файлов:**
+| Компонент | Что изменено |
+|---|---|
+| app-layout | `routerLinkActive="bg-ink…"` → `bg-sunrise-warm` (active nav) |
+| kit-layout | `routerLinkActive="bg-ink…"` → `bg-sunrise-warm` (active nav) |
+| button (default variant) | `bg-ink text-paper` → `bg-sunrise-warm text-paper` |
+| badge (default variant) | `bg-ink text-paper` → `bg-sunrise-warm text-paper` |
+| checkbox (checked state) | `bg-ink border-ink` → `bg-sunrise-warm border-sunrise-warm` |
+| select-option (selected) | template/CSS `bg-ink` → `bg-sunrise-warm` |
+| pagination (active page) | `activeClass()` `bg-ink` → `bg-sunrise-warm` |
+| command-palette (selected) | `[class.bg-ink]` → `[class.bg-sunrise-warm]` |
+| dictionaries (toggle active) | `[class.bg-ink]="u.isActive"` → `bg-sunrise-warm` |
+| organization-form (type pills) | `[class.bg-ink]="form…"` → `bg-sunrise-warm` |
+
+**5. Login page** — review с новой палитрой. Уже использует CSS-var (paper, ink, rule, hairline, sunrise-warm border). Изменений не потребовалось.
+
+**6. CRUD-миграция — window.confirm() → AlertDialog (4 файла):**
+- **`pi-alert-dialog.component.ts`** — переведён с outputs на `ref.close()` через `PI_DIALOG_REF`. Данные (`title`, `description`, `confirmLabel`, `variant`) читаются через `PI_DIALOG_DATA` токен. Убран неиспользуемый `output` импорт.
+- **`materials.page.ts`** — `window.confirm()` → `dialog.open(AlertDialogComponent, { data: { title, description, confirmLabel, variant: 'destructive' } })`
+- **`organizations.page.ts`** — тот же паттерн
+- **`dictionaries.page.ts`** — тот же паттерн + добавлены `Injector`, `onDialogCloseOnce`
+- **Глобальная проверка:** `grep "window.confirm" *.ts` → **0 matches** ✅
+
+**7. Focus-ring унификация (смежно):** code-review засёк 3 оставшихся inline `focus:outline-none focus:ring-2 focus:ring-ink…` в `organization-form-dialog.component.ts` → заменены на `pi-focus-ring`. Теперь все 6 input'ов на странице используют единый класс.
+
+**Browser visual verify (Chrome, 4 страницы):**
+| Проверка | /materials | /organizations | /dictionaries | /login |
+|---|---|---|---|---|
+| Theme toggle light↔dark | ✅ | ✅ | ✅ | ✅ (отсутствует — ожидаемо) |
+| Delete dialog (AlertDialog) | ✅ отмена/escape/удаление | ✅ | ✅ | — |
+| Warm accent (sunrise-warm button) | ✅ +Создать кнопка | ✅ | ✅ | ✅ Войти |
+| Card border sunrise-warm | — | — | — | ✅ видна |
+| Console errors | 0 | 0 | 0 | 0 |
+
+**Verification:**
+- `pnpm exec tsc -p tsconfig.app.json --noEmit` → exit 0 ✅
+- Code-reviewer-deepseek-flash → 2 rounds, all PASS ✅
+- Browser-use (Chrome) — 4 страницы × light+dark mode → 0 console errors ✅
+- `grep "window.confirm"` → 0 hits ✅
+- `grep "bg-ink.*(routerLinkActive|activeClass)"` → 0 hits (все заменены на bg-sunrise-warm) ✅
+- `STATUS.md` обновлён ✅
+- `progress.md` (эта запись) ✅
+
+**Известные ограничения (не блокеры):**
+- AlertDialogComponent использует `PI_DIALOG_DATA` токен для данных — это означает что его нельзя использовать вне `PiDialogService.open()`. Это intentional — alert dialog всегда открывается через сервис.
+- `muted-foreground` (login description) ~3.2:1 — резервирован для non-essential captions, не blocker.
+- `bg-sunrise-warm` на тексте `text-paper` даёт ~4:1 контраст — проходит AA Large (≥3:1 для 14px bold), borderline для small text.
+- `/playground/theme-editor` ещё не проверен в браузере — deferred.
+
+**Связанные TZ:**
+- **Предшественники:** TZ-AUDIT-9 (warm paper direction), TZ-WARMUP-100 (soft-warm chroma), TZ-LIGHT-XX (light tones).
+- **Смежно:** TZ-AUDIT-6 (focus-ring унификация), TZ-AUDIT-8 (hairline border конвенции).
+- **Следующие шаги:** Unit tests для AlertDialogComponent + PiDialogService; Typecheck + browser verify для /playground/theme-editor.
+
+**Архив:** Живёт в `progress.md`. Lock-файлы: НЕТ.

@@ -94,11 +94,10 @@ export class CheckboxComponent implements ControlValueAccessor {
       'justify-center',
       'shrink-0',
       dim,
-      'border',
       'hairline',
       'rounded-sm',
-      isOn ? 'bg-ink text-paper border-ink' : 'bg-paper border-rule text-ink',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper',
+      isOn ? 'bg-sunrise-warm text-paper border-sunrise-warm' : 'bg-paper border-rule text-ink',
+      'pi-focus-ring',
       this.disabled() ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
     ].join(' ');
   });

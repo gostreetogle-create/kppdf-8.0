@@ -41,7 +41,7 @@ export type CommandItem = {
             type="text"
             name="command-palette-search"
             placeholder="Поиск компонента, раздела или действия…"
-            class="w-full px-4 py-3 text-base border-b hairline border-rule bg-paper text-ink font-body focus:outline-none"
+            class="w-full px-4 py-3 text-base hairline-b bg-paper text-ink font-body focus:outline-none"
             [value]="query()"
             (input)="query.set($any($event.target).value)"
             (keydown)="onKeyDown($event)"
@@ -55,7 +55,7 @@ export type CommandItem = {
                 <button
                   type="button"
                   class="w-full text-left px-4 py-2 flex items-center justify-between text-sm transition-colors"
-                  [class.bg-ink]="i === selectedIdx()"
+                  [class.bg-sunrise-warm]="i === selectedIdx()"
                   [class.text-paper]="i === selectedIdx()"
                   [class.hover:bg-paper-2]="i !== selectedIdx()"
                   (click)="select(item)"

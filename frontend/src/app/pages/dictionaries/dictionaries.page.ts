@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  Injector,
   OnInit,
   computed,
   inject,
@@ -16,7 +17,10 @@ import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
 import { PiToastService } from '../../shared/ui/toast';
+import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
 import { Unit, UnitsService } from './units.service';
 
@@ -132,7 +136,7 @@ import { Unit, UnitsService } from './units.service';
       <!-- ───── Таблица существующих ───── -->
       <div class="hairline rounded-sm overflow-hidden">
         <table class="w-full text-sm">
-          <thead class="border-b hairline border-rule">
+          <thead class="hairline-b">
             <tr>
               <th class="pi-cell eyebrow w-24 whitespace-nowrap text-left">Ключ</th>
               <th class="pi-cell eyebrow text-left">Название</th>
@@ -162,7 +166,7 @@ import { Unit, UnitsService } from './units.service';
                     [attr.aria-checked]="u.isActive"
                     (click)="onToggleActive(u)"
                     class="inline-flex items-center justify-center w-9 h-5 rounded-full transition-colors"
-                    [class.bg-ink]="u.isActive"
+                    [class.bg-sunrise-warm]="u.isActive"
                     [class.bg-rule]="!u.isActive"
                     [attr.aria-label]="(u.isActive ? 'Деактивировать ' : 'Активировать ') + u.label"
                   >
@@ -208,7 +212,9 @@ import { Unit, UnitsService } from './units.service';
 })
 export class DictionariesPage implements OnInit {
   private readonly service = inject(UnitsService);
+  private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
+  private readonly injector = inject(Injector);
   private readonly fb = inject(NonNullableFormBuilder);
 
   protected readonly data = signal<Unit[]>([]);
@@ -279,15 +285,25 @@ export class DictionariesPage implements OnInit {
 
   protected onDelete(u: Unit): void {
     if (u.isSystem) return;
-    const ok = window.confirm(`Удалить единицу «${u.label}» (${u.key})?`);
-    if (!ok) return;
-    this.service.remove(u.key).subscribe((res) => {
-      if (res.ok) {
-        this.toast.success(`Единица «${u.label}» удалена`);
-        this.reload();
-      } else {
-        this.toast.error(extractErrorMessage(res.error));
-      }
+    const ref = this.dialog.open(AlertDialogComponent, {
+      data: {
+        title: 'Удалить единицу?',
+        description: `Удалить «${u.label}» (${u.key})? Это действие нельзя отменить.`,
+        confirmLabel: 'Удалить',
+        variant: 'destructive',
+      },
+      width: 'sm',
+    });
+    onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
+      if (!confirmed) return;
+      this.service.remove(u.key).subscribe((res) => {
+        if (res.ok) {
+          this.toast.success(`Единица «${u.label}» удалена`);
+          this.reload();
+        } else {
+          this.toast.error(extractErrorMessage(res.error));
+        }
+      });
     });
   }
 

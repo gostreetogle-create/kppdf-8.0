@@ -91,7 +91,7 @@ const NAV_GROUPS: NavGroup[] = [
   template: `
     <div class="min-h-screen bg-paper text-ink font-body flex flex-col">
       <header
-        class="sticky top-0 z-30 border-b hairline border-rule
+        class="sticky top-0 z-30 hairline-b
                bg-paper/95 supports-[backdrop-filter]:backdrop-blur-sm pi-edge-bleed"
       >
         <div class="px-page-x sm:px-10 lg:px-16 h-14 flex items-center justify-between gap-3">
@@ -143,7 +143,7 @@ const NAV_GROUPS: NavGroup[] = [
           [class.hidden]="!isSidebarOpen() && isMobile()"
           [class.md:block]="true"
           class="w-[220px] shrink-0 sticky top-14 self-start
-                 h-[calc(100vh-3.5rem)] border-r hairline border-rule
+                 h-[calc(100vh-3.5rem)] hairline-r
                  overflow-y-auto"
           aria-label="Навигация"
         >
@@ -156,7 +156,7 @@ const NAV_GROUPS: NavGroup[] = [
                     <li>
                       <a
                         [routerLink]="link.path"
-                        routerLinkActive="bg-ink text-paper"
+                        routerLinkActive="bg-sunrise-warm text-paper"
                         [routerLinkActiveOptions]="{ exact: link.path === '/overview' }"
                         class="block px-2 py-1.5 text-sm
                                hover:bg-paper-2 transition-colors rounded-sm"
@@ -184,7 +184,7 @@ const NAV_GROUPS: NavGroup[] = [
                text-muted-foreground flex flex-wrap justify-between gap-3"
       >
         <span>© 2026 Paper &amp; Ink</span>
-        <span>Syne · Plus Jakarta Sans · ngx-charts · ngx-sonner · @angular/cdk</span>
+        <span>Syne · Plus Jakarta Sans · Lucide Angular · @angular/cdk</span>
       </footer>
     </div>
   `,
