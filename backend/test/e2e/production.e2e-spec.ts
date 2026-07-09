@@ -4,7 +4,7 @@ import { createTestApp, TestContext, clearCollections } from '../setup/test-db';
 import { loginAsAdmin, authHeader } from '../setup/test-auth';
 
 describe('Production flow (e2e)', () => {
-  let ctx: TestContext;
+  let ctx: TestContext | undefined;
   let app: INestApplication;
   let token: string;
   let productId: string;
@@ -17,11 +17,11 @@ describe('Production flow (e2e)', () => {
   });
 
   afterAll(async () => {
-    await ctx.cleanup();
+    await ctx?.cleanup();
   });
 
   beforeEach(async () => {
-    await clearCollections(ctx.connection, [
+    await clearCollections(ctx!.connection, [
       'products', 'techprocesses', 'productionorders', 'ordertasks',
       'workorders', 'workorderoperations', 'costcalculations', 'actualcosts', 'orderclosings', 'boms',
     ]);

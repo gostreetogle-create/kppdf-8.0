@@ -4,15 +4,16 @@ import type { INestApplication } from '@nestjs/common';
 export interface AuthTokens {
   access: string;
   refresh: string;
-  user: { id: string; email: string; role: string };
+  user: { id: string; username: string; email: string; role: string };
 }
 
 export async function loginAsAdmin(app: INestApplication): Promise<AuthTokens> {
   const username = process.env.ADMIN_USERNAME ?? 'admin';
-  const password = process.env.ADMIN_PASSWORD ?? 'admin';
+  // Must match the password set in test-db.ts createTestApp()
+  const password = process.env.ADMIN_PASSWORD ?? 'admin123456';
   const res = await request(app.getHttpServer())
     .post('/api/auth/login')
-    .send({ email: `${username}@kppdf.local`, password })
+    .send({ username, password })
     .expect((r) => {
       if (r.status !== 200 && r.status !== 201) {
         throw new Error(`Login failed: ${r.status} ${JSON.stringify(r.body)}`);

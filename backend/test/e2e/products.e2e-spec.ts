@@ -4,7 +4,7 @@ import { createTestApp, TestContext, clearCollections } from '../setup/test-db';
 import { loginAsAdmin, authHeader } from '../setup/test-auth';
 
 describe('Products (e2e)', () => {
-  let ctx: TestContext;
+  let ctx: TestContext | undefined;
   let app: INestApplication;
   let token: string;
 
@@ -16,11 +16,11 @@ describe('Products (e2e)', () => {
   });
 
   afterAll(async () => {
-    await ctx.cleanup();
+    await ctx?.cleanup();
   });
 
   beforeEach(async () => {
-    await clearCollections(ctx.connection, ['products', 'categories', 'boms']);
+    await clearCollections(ctx!.connection, ['products', 'categories', 'boms']);
   });
 
   it('POST /products — admin creates product with auto sku', async () => {
@@ -45,10 +45,10 @@ describe('Products (e2e)', () => {
       .get('/api/products?search=bolt')
       .set(authHeader(token));
     expect(res.status).toBe(200);
-    expect(res.body.length).toBeGreaterThan(0);
+    expect(res.body.items.length).toBeGreaterThan(0);
   });
 
-  it('POST /products/:id/boms — creates Bom with components', async () => {
+  it('POST /boms — creates Bom with components', async () => {
     const p = await request(app.getHttpServer())
       .post('/api/products')
       .set(authHeader(token))
@@ -58,9 +58,13 @@ describe('Products (e2e)', () => {
       .set(authHeader(token))
       .send({ name: 'Steel', unit: 'кг' });
     const res = await request(app.getHttpServer())
-      .post(`/api/products/${p.body._id}/boms`)
+      .post('/api/boms')
       .set(authHeader(token))
-      .send({ components: [{ materialId: m.body._id, quantity: 1.5 }] });
+      .send({
+        productId: p.body._id,
+        version: '1.0',
+        components: [{ productComponentId: m.body._id, quantity: 1.5 }],
+      });
     expect([200, 201]).toContain(res.status);
     expect(res.body.components.length).toBe(1);
   });

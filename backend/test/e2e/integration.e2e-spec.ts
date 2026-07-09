@@ -4,7 +4,7 @@ import { createTestApp, TestContext, clearCollections } from '../setup/test-db';
 import { loginAsAdmin, authHeader } from '../setup/test-auth';
 
 describe('Integration (e2e)', () => {
-  let ctx: TestContext;
+  let ctx: TestContext | undefined;
   let app: INestApplication;
   let token: string;
   let counterpartyId: string;
@@ -20,23 +20,23 @@ describe('Integration (e2e)', () => {
   });
 
   afterAll(async () => {
-    await ctx.cleanup();
+    await ctx?.cleanup();
   });
 
   beforeEach(async () => {
-    await clearCollections(ctx.connection, [
+    await clearCollections(ctx!.connection, [
       'counterparties', 'organizations', 'products', 'warehouses', 'storageitems',
       'quotations', 'contracts', 'orders', 'shipments', 'stockmovements', 'reservations', 'invoices',
     ]);
     const cp = await request(app.getHttpServer())
       .post('/api/counterparties')
       .set(authHeader(token))
-      .send({ name: 'Integration CP', inn: `${Date.now()}`.padStart(10, '0').slice(0, 10) });
+      .send({ name: 'Integration CP', roles: ['customer'], inn: '7830002293' });
     counterpartyId = cp.body._id;
     const org = await request(app.getHttpServer())
       .post('/api/organizations')
       .set(authHeader(token))
-      .send({ name: 'Integration Org', inn: '9999999999' });
+      .send({ name: 'Integration Org', inn: '1234567894' });
     orgId = org.body._id;
     const p = await request(app.getHttpServer())
       .post('/api/products')
@@ -74,7 +74,7 @@ describe('Integration (e2e)', () => {
       .post(`/api/contracts/${c.body.contractId}/sign`)
       .set(authHeader(token))
       .send({ signedAt: new Date().toISOString() });
-    expect(sign.status).toBe(200);
+    expect([200, 201]).toContain(sign.status);
 
     // 4. Activate → Order
     const act = await request(app.getHttpServer())

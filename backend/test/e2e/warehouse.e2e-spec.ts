@@ -4,7 +4,7 @@ import { createTestApp, TestContext, clearCollections } from '../setup/test-db';
 import { loginAsAdmin, authHeader } from '../setup/test-auth';
 
 describe('Warehouse (e2e)', () => {
-  let ctx: TestContext;
+  let ctx: TestContext | undefined;
   let app: INestApplication;
   let token: string;
   let productId: string;
@@ -19,11 +19,11 @@ describe('Warehouse (e2e)', () => {
   });
 
   afterAll(async () => {
-    await ctx.cleanup();
+    await ctx?.cleanup();
   });
 
   beforeEach(async () => {
-    await clearCollections(ctx.connection, ['warehouses', 'storageitems', 'stockmovements', 'products']);
+    await clearCollections(ctx!.connection, ['warehouses', 'storageitems', 'stockmovements', 'products']);
     const prod = await request(app.getHttpServer())
       .post('/api/products')
       .set(authHeader(token))

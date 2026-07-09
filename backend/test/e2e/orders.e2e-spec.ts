@@ -4,7 +4,7 @@ import { createTestApp, TestContext, clearCollections } from '../setup/test-db';
 import { loginAsAdmin, authHeader } from '../setup/test-auth';
 
 describe('Orders (e2e)', () => {
-  let ctx: TestContext;
+  let ctx: TestContext | undefined;
   let app: INestApplication;
   let token: string;
   let counterpartyId: string;
@@ -19,17 +19,17 @@ describe('Orders (e2e)', () => {
   });
 
   afterAll(async () => {
-    await ctx.cleanup();
+    await ctx?.cleanup();
   });
 
   beforeEach(async () => {
-    await clearCollections(ctx.connection, [
+    await clearCollections(ctx!.connection, [
       'orders', 'counterparties', 'products', 'warehouses', 'storageitems', 'reservations', 'shipments',
     ]);
     const cp = await request(app.getHttpServer())
       .post('/api/counterparties')
       .set(authHeader(token))
-      .send({ name: 'CP', inn: `${Date.now()}` });
+      .send({ name: 'CP', roles: ['customer'], inn: '7710000015' });
     counterpartyId = cp.body._id;
     const prod = await request(app.getHttpServer())
       .post('/api/products')
