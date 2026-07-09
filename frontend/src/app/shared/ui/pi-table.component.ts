@@ -46,7 +46,7 @@ export type SelectionMode = 'none' | 'single' | 'multi';
       [attr.aria-label]="ariaLabel()"
       class="w-full border-collapse text-sm"
     >
-      <thead class="border-b hairline border-rule">
+      <thead class="hairline-b">
         <tr>
           @if (selectionMode() !== 'none') {
             <th class="w-10 py-3 px-3 text-left">
@@ -86,7 +86,7 @@ export type SelectionMode = 'none' | 'single' | 'multi';
       <tbody>
         @for (row of sortedData(); track rowKeyOf(row, $index)) {
           <tr
-            class="border-b hairline border-rule hover:bg-paper-2 transition-colors cursor-pointer"
+            class="hairline-b hover:bg-paper-2 transition-colors cursor-pointer"
             (click)="onRowClick(row)"
           >
             @if (selectionMode() !== 'none') {
@@ -116,7 +116,7 @@ export type SelectionMode = 'none' | 'single' | 'multi';
             <tr>
               <td
                 [attr.colspan]="columns().length + (selectionMode() !== 'none' ? 1 : 0)"
-                class="bg-paper-2 p-0 border-b hairline border-rule"
+                class="bg-paper-2 p-0 hairline-b"
               >
                 <ng-container
                   *ngTemplateOutlet="expandedRow()!; context: { $implicit: row }"

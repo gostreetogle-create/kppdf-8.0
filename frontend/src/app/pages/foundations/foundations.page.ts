@@ -138,18 +138,18 @@ import { CardComponent } from '../../shared/ui/card/card.component';
 export class FoundationsPage {
   protected readonly palette = [
     { name: 'paper', token: '--color-paper', value: 'oklch(0.972 0.015 70)', cssVar: 'var(--color-paper)' },
-    { name: 'paper-2', token: '--color-paper-2', value: 'oklch(0.930 0.045 80)', cssVar: 'var(--color-paper-2)' },
-    { name: 'ink', token: '--color-ink', value: 'oklch(0.180 0.015 70)', cssVar: 'var(--color-ink)' },
-    { name: 'rule', token: '--color-rule', value: 'oklch(0.850 0.020 70)', cssVar: 'var(--color-rule)' },
-    { name: 'muted fg', token: '--color-muted-foreground', value: 'oklch(0.55 0.025 70)', cssVar: 'var(--color-muted-foreground)' },
-    { name: 'destructive', token: '--color-destructive', value: 'oklch(0.5 0.18 27)', cssVar: 'var(--color-destructive)' },
-    { name: 'accent-warm', token: '--color-accent-warm', value: 'oklch(0.50 0.18 60)', cssVar: 'var(--color-accent-warm)' },
-    { name: 'accent-cool', token: '--color-accent-cool', value: 'oklch(0.45 0.14 250)', cssVar: 'var(--color-accent-cool)' },
-    { name: 'sunrise-soft', token: '--color-sunrise-soft', value: 'oklch(0.94 0.055 80)', cssVar: 'var(--color-sunrise-soft)' },
-    { name: 'sunrise-mist', token: '--color-sunrise-mist', value: 'oklch(0.965 0.040 80)', cssVar: 'var(--color-sunrise-mist)' },
-    { name: 'sunrise', token: '--color-sunrise', value: 'oklch(0.66 0.14 55)', cssVar: 'var(--color-sunrise)' },
-    { name: 'sunrise-warm', token: '--color-sunrise-warm', value: 'oklch(0.50 0.07 55)', cssVar: 'var(--color-sunrise-warm)' },
-    { name: 'sunrise-glow', token: '--color-sunrise-glow', value: 'oklch(0.72 0.18 60)', cssVar: 'var(--color-sunrise-glow)' },
+    { name: 'paper-2', token: '--color-paper-2', value: 'oklch(0.945 0.035 80)', cssVar: 'var(--color-paper-2)' },
+    { name: 'ink', token: '--color-ink', value: 'oklch(0.250 0.010 70)', cssVar: 'var(--color-ink)' },
+    { name: 'rule', token: '--color-rule', value: 'oklch(0.880 0.015 70)', cssVar: 'var(--color-rule)' },
+    { name: 'muted fg', token: '--color-muted-foreground', value: 'oklch(0.58 0.020 70)', cssVar: 'var(--color-muted-foreground)' },
+    { name: 'destructive', token: '--color-destructive', value: 'oklch(0.60 0.15 27)', cssVar: 'var(--color-destructive)' },
+    { name: 'accent-warm', token: '--color-accent-warm', value: 'oklch(0.60 0.14 60)', cssVar: 'var(--color-accent-warm)' },
+    { name: 'accent-cool', token: '--color-accent-cool', value: 'oklch(0.55 0.12 250)', cssVar: 'var(--color-accent-cool)' },
+    { name: 'sunrise-soft', token: '--color-sunrise-soft', value: 'oklch(0.95 0.045 80)', cssVar: 'var(--color-sunrise-soft)' },
+    { name: 'sunrise-mist', token: '--color-sunrise-mist', value: 'oklch(0.97 0.035 80)', cssVar: 'var(--color-sunrise-mist)' },
+    { name: 'sunrise', token: '--color-sunrise', value: 'oklch(0.72 0.12 55)', cssVar: 'var(--color-sunrise)' },
+    { name: 'sunrise-warm', token: '--color-sunrise-warm', value: 'oklch(0.58 0.06 55)', cssVar: 'var(--color-sunrise-warm)' },
+    { name: 'sunrise-glow', token: '--color-sunrise-glow', value: 'oklch(0.78 0.14 60)', cssVar: 'var(--color-sunrise-glow)' },
   ];
 
   protected readonly spacing = [4, 8, 12, 16, 24, 32, 48, 64];

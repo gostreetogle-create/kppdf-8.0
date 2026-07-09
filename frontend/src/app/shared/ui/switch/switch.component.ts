@@ -66,7 +66,7 @@ export class SwitchComponent {
       this.checked() ? 'is-on' : '',
       this.disabled() ? 'is-disabled' : '',
       sizeCls,
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper',
+      'pi-focus-ring',
     ].filter(Boolean).join(' ');
   });
 

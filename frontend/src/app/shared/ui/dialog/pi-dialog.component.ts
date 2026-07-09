@@ -20,12 +20,12 @@ import type { DialogRef } from './pi-dialog.service';
       [class]="panelClass()"
     >
       @if (title() || showClose()) {
-        <header class="flex items-center justify-between border-b hairline border-rule px-6 py-4">
+        <header class="flex items-center justify-between hairline-b px-6 py-4">
           <h2 class="font-display text-lg tracking-tight text-ink">{{ title() }}</h2>
           @if (showClose()) {
             <button
               type="button"
-              class="inline-flex items-center justify-center w-8 h-8 rounded-sm hairline border border-rule bg-paper hover:bg-paper-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
+              class="inline-flex items-center justify-center w-8 h-8 rounded-sm hairline bg-paper hover:bg-paper-2 pi-focus-ring"
               (click)="onUserClose()"
               aria-label="Закрыть"
             >
@@ -70,9 +70,7 @@ export class PiDialogComponent {
       w === 'sm' ? 'w-[360px]' : w === 'lg' ? 'w-[640px]' : 'w-[480px]';
     return [
       'bg-paper',
-      'border',
       'hairline',
-      'border-rule',
       'rounded-sm',
       'overflow-hidden',
       'flex',

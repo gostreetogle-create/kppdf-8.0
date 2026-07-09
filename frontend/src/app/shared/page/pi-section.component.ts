@@ -22,7 +22,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   template: `
     <section class="pt-section pb-section">
       <header
-        class="mb-form-field flex items-end gap-3 border-b hairline border-rule pb-2"
+        class="mb-form-field flex items-end gap-3 hairline-b pb-2"
       >
         @if (indexRoman()) {
           <span class="font-display text-2xl tracking-tight text-muted-foreground">

@@ -35,8 +35,8 @@ export class TabsComponent {
 
   listClass(): string {
     return this.orientation() === 'horizontal'
-      ? 'flex border-b hairline border-rule'
-      : 'flex flex-col border-r hairline border-rule w-fit';
+      ? 'flex hairline-b'
+      : 'flex flex-col hairline-r w-fit';
   }
 
   onKeydown(event: KeyboardEvent): void {

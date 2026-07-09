@@ -21,12 +21,12 @@ export type SheetSize = 'sm' | 'md' | 'lg';
       [class]="containerClass()"
     >
       @if (title()) {
-        <header class="px-5 py-3 border-b hairline border-rule flex items-center justify-between">
+        <header class="px-5 py-3 hairline-b flex items-center justify-between">
           <h2 class="font-display text-lg tracking-tight text-ink">{{ title() }}</h2>
           @if (showClose()) {
             <button
               type="button"
-              class="inline-flex items-center justify-center w-7 h-7 rounded-sm hairline border border-rule bg-paper hover:bg-paper-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
+              class="inline-flex items-center justify-center w-7 h-7 rounded-sm hairline bg-paper hover:bg-paper-2 pi-focus-ring"
               (click)="close.emit()"
               aria-label="Закрыть"
             >
@@ -57,9 +57,9 @@ export class SheetComponent {
 
   containerClass(): string {
     const anchor = this.anchor();
-    if (anchor === 'right') return 'bg-paper flex flex-col h-full border-l hairline border-rule';
-    if (anchor === 'left') return 'bg-paper flex flex-col h-full border-r hairline border-rule';
-    if (anchor === 'top') return 'bg-paper flex flex-col w-full border-b hairline border-rule';
+    if (anchor === 'right') return 'bg-paper flex flex-col h-full hairline-l';
+    if (anchor === 'left') return 'bg-paper flex flex-col h-full hairline-r';
+    if (anchor === 'top') return 'bg-paper flex flex-col w-full hairline-b';
     return 'bg-paper flex flex-col w-full hairline-t';
   }
 }

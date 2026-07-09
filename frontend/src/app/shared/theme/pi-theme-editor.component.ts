@@ -46,8 +46,8 @@ interface SliderGroup {
                 <input
                   type="range"
                   class="w-full accent-ink"
-                  [attr.id]="'theme-' + (group.label + '-' + slider.key).toLowerCase().replace(/[^a-z0-9]+/g, '-')"
-                  [attr.name]="'theme-' + (group.label + '-' + slider.key).toLowerCase().replace(/[^a-z0-9]+/g, '-')"
+                  [attr.id]="sliderId(group.label, slider.key)"
+                  [attr.name]="sliderId(group.label, slider.key)"
                   [min]="slider.min"
                   [max]="slider.max"
                   [step]="slider.step"
@@ -91,6 +91,11 @@ interface SliderGroup {
 })
 export class PiThemeEditorComponent {
   protected readonly svc = inject(ThemeEditorService);
+
+  /** Generate a kebab-case ID for a slider input, safe for Angular template expressions. */
+  protected sliderId(label: string, key: string): string {
+    return 'theme-' + (label + '-' + key).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '');
+  }
 
   protected format(v: { lightness: number; chroma: number; hue: number }): string {
     return `oklch(${v.lightness.toFixed(1)}% ${v.chroma.toFixed(2)} ${v.hue.toFixed(0)})`;

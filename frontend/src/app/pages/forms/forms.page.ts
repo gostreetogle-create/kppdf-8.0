@@ -106,7 +106,7 @@ type SortDir = 'asc' | 'desc';
     <app-pi-section title="Data table" hint="sortable · paginated · 10 rows" eyebrow="II">
       <div class="hairline rounded-sm overflow-hidden">
         <table class="w-full text-sm">
-          <thead class="border-b hairline border-rule">
+          <thead class="hairline-b">
             <tr>
               <th
                 class="pi-cell font-display font-semibold cursor-pointer group text-left"

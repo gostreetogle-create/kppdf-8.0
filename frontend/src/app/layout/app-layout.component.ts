@@ -20,8 +20,9 @@ const NAV_LINKS: NavLink[] = [
   { path: '/materials', label: 'Материалы' },
   { path: '/organizations', label: 'Организации' },
   { path: '/dictionaries', label: 'Справочники' },
-  { path: '/products', label: 'Продукция', disabled: true },
-  { path: '/orders', label: 'Заказы', disabled: true },
+  { path: '/products', label: 'Продукция' },
+  { path: '/orders', label: 'Заказы' },
+  { path: '/contracts', label: 'Договоры' },
 ];
 
 /**

@@ -51,7 +51,7 @@ hljs.registerLanguage('html', xml);
     <figure class="hairline rounded-sm overflow-hidden bg-paper-2">
       @if (showCaption()) {
         <figcaption
-          class="px-4 py-2 border-b hairline border-rule flex items-center justify-between"
+          class="px-4 py-2 hairline-b flex items-center justify-between"
         >
           <span class="eyebrow">{{ captionTitle() || language() }}</span>
           @if (fileName()) {
@@ -64,7 +64,7 @@ hljs.registerLanguage('html', xml);
       <div class="flex">
         @if (showLineNumbers()) {
           <div
-            class="px-3 py-4 border-r hairline border-rule font-mono text-[11px] text-muted-foreground select-none text-right"
+            class="px-3 py-4 hairline-r font-mono text-[11px] text-muted-foreground select-none text-right"
             aria-hidden="true"
           >
             @for (n of lineNumbers(); track n) {

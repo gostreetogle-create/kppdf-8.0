@@ -26,8 +26,7 @@ export type PiInputSize = 'sm' | 'md';
 const BASE_CLASS =
   'flex w-full bg-paper text-ink border rounded-sm outline-none ' +
   'transition-colors ' +
-  'focus-visible:ring-2 focus-visible:ring-ink ' +
-  'focus-visible:ring-offset-2 focus-visible:ring-offset-paper ' +
+  'pi-focus-ring ' +
   'disabled:opacity-50 disabled:cursor-not-allowed';
 
 const SIZE_CLASS: Record<PiInputSize, string> = {

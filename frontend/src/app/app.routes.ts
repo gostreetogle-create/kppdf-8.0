@@ -126,6 +126,28 @@ export const routes: Routes = [
           ),
         title: 'KPPDF — Справочники',
       },
+      {
+        path: 'products',
+        loadComponent: () =>
+          import('./pages/products/products.page').then(
+            (m) => m.ProductsPage,
+          ),
+        title: 'KPPDF — Продукция',
+      },
+      {
+        path: 'orders',
+        loadComponent: () =>
+          import('./pages/orders/orders.page').then((m) => m.OrdersPage),
+        title: 'KPPDF — Заказы',
+      },
+      {
+        path: 'contracts',
+        loadComponent: () =>
+          import('./pages/contracts/contracts.page').then(
+            (m) => m.ContractsPage,
+          ),
+        title: 'KPPDF — Договоры',
+      },
     ],
   },
   { path: '**', redirectTo: '' },

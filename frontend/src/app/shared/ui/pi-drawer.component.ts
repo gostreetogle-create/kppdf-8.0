@@ -23,11 +23,11 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
         </div>
       }
       @if (title()) {
-        <header class="px-5 py-3 border-b hairline border-rule flex items-center justify-between">
+        <header class="px-5 py-3 hairline-b flex items-center justify-between">
           <h2 class="font-display text-lg tracking-tight text-ink">{{ title() }}</h2>
           <button
             type="button"
-            class="inline-flex items-center justify-center w-7 h-7 rounded-sm hairline border border-rule bg-paper hover:bg-paper-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
+            class="inline-flex items-center justify-center w-7 h-7 rounded-sm hairline bg-paper hover:bg-paper-2 pi-focus-ring"
             (click)="close.emit()"
             aria-label="Закрыть"
           >

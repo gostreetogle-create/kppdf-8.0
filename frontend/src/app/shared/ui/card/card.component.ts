@@ -60,9 +60,7 @@ export class CardComponent {
       'p-4',
       'bg-paper',
       interactive ? 'cursor-pointer transition-colors hover:bg-paper-2' : '',
-      'border',
       'hairline',
-      'border-rule',
       'rounded-sm',
     ].filter(Boolean).join(' ');
   });

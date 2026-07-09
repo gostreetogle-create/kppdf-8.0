@@ -24,7 +24,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   template: `
     <article class="hairline rounded-sm overflow-hidden bg-paper">
       <div
-        class="flex items-center justify-between border-b hairline border-rule
+        class="flex items-center justify-between hairline-b
                px-4 py-2 bg-paper-2"
       >
         <span class="eyebrow">Preview</span>

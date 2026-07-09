@@ -9,13 +9,13 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="border-b hairline border-rule">
+    <div class="hairline-b">
       <button
         type="button"
         [attr.aria-expanded]="expanded()"
         [disabled]="disabled()"
         (click)="expandedChange.emit(!expanded())"
-        class="w-full text-left flex items-center justify-between gap-4 min-h-touch py-control-y px-control-x hover:bg-paper-2 transition-colors disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
+        class="w-full text-left flex items-center justify-between gap-4 min-h-touch py-control-y px-control-x hover:bg-paper-2 transition-colors disabled:opacity-40 pi-focus-ring"
       >
         <div class="flex items-baseline gap-3">
           @if (index()) {
