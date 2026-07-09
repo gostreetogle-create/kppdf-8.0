@@ -2,8 +2,13 @@ import { IsDateString, IsIn, IsNumber, IsOptional, IsString, Min } from 'class-v
 import { IsObjectId } from '../../../common/decorators/is-object-id.decorator';
 
 export class CreateActualCostDto {
-  @IsObjectId()
-  orderId!: string;
+  /**
+   * Optional in the request body — the ActualCostController merges
+   * `orderId` from the URL param (`production-orders/:orderId/actual-costs`).
+   * Marked @IsOptional() so the ValidationPipe doesn't reject the body
+   * before the controller has a chance to inject it.
+   */
+  @IsOptional() @IsObjectId() orderId?: string;
 
   @IsIn(['material', 'labor', 'overhead', 'other'])
   type!: 'material' | 'labor' | 'overhead' | 'other';

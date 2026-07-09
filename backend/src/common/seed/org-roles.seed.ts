@@ -22,8 +22,12 @@ export class OrgRolesSeed implements OnApplicationBootstrap {
     for (const r of DEFAULT_ORG_ROLES) {
       const exists = await this.roles.findBySlug(r.slug);
       if (exists) continue;
-      await this.roles.create({ ...r, isActive: true });
-      this.logger.log(`OrgRole seeded: ${r.slug}`);
+      try {
+        await this.roles.create({ ...r, isActive: true });
+        this.logger.log(`OrgRole seeded: ${r.slug}`);
+      } catch (err) {
+        this.logger.warn(`Could not seed OrgRole ${r.slug}: ${(err as Error).message}`);
+      }
     }
   }
 }

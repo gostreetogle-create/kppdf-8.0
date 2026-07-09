@@ -50,8 +50,12 @@ export class SettingsSeed implements OnApplicationBootstrap {
         .findAll(s.group)
         .then((arr) => arr.find((d) => d.key === s.key));
       if (existing) continue;
-      await this.settings.set(s.key, s.value, s.group, s.description);
-      this.logger.log(`Default setting seeded: ${s.key}`);
+      try {
+        await this.settings.set(s.key, s.value, s.group, s.description);
+        this.logger.log(`Default setting seeded: ${s.key}`);
+      } catch (err) {
+        this.logger.warn(`Could not seed setting ${s.key}: ${(err as Error).message}`);
+      }
     }
   }
 }

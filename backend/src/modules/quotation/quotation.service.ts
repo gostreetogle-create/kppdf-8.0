@@ -172,11 +172,23 @@ export class QuotationService {
     });
   }
 
+  /** Find by ID without populate — returns raw ObjectIds for refs. */
+  private async findByIdRaw(id: string): Promise<QuotationDocument> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new NotFoundException(`Quotation ${id} not found`);
+    }
+    const doc = await this.model.findById(id).exec();
+    if (!doc) throw new NotFoundException(`Quotation ${id} not found`);
+    return doc;
+  }
+
   async convertToContract(
     id: string,
     title?: string,
   ): Promise<{ quotation: QuotationDocument; contractId: string }> {
-    const q = await this.findById(id);
+    // Use unpopulated query so organizationId / counterpartyId are raw
+    // ObjectIds (populate can set them to null if the ref was deleted).
+    const q = await this.findByIdRaw(id);
     if (q.status === 'converted') {
       throw new NotFoundException(`Quotation already converted`);
     }
@@ -206,7 +218,8 @@ export class QuotationService {
     deliveryAddress?: string,
     managerId?: string,
   ): Promise<{ quotation: QuotationDocument; orderId: string }> {
-    const q = await this.findById(id);
+    // Use unpopulated query so counterpartyId is a raw ObjectId.
+    const q = await this.findByIdRaw(id);
     if (q.status === 'converted') {
       throw new NotFoundException(`Quotation already converted`);
     }

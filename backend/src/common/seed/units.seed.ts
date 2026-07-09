@@ -32,16 +32,20 @@ export class UnitsSeed implements OnApplicationBootstrap {
       try {
         await this.units.findByKey(u.key);
       } catch {
-        await this.units.create({
-          key: u.key,
-          label: u.label,
-          symbol: u.symbol,
-          category: u.category,
-          sortOrder: u.sortOrder,
-          isActive: true,
-          isSystem: true,
-        });
-        this.logger.log(`Unit seeded: ${u.key}`);
+        try {
+          await this.units.create({
+            key: u.key,
+            label: u.label,
+            symbol: u.symbol,
+            category: u.category,
+            sortOrder: u.sortOrder,
+            isActive: true,
+            isSystem: true,
+          });
+          this.logger.log(`Unit seeded: ${u.key}`);
+        } catch (err) {
+          this.logger.warn(`Could not seed unit ${u.key}: ${(err as Error).message}`);
+        }
       }
     }
   }

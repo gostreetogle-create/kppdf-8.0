@@ -22,8 +22,12 @@ export class CounterpartyRolesSeed implements OnApplicationBootstrap {
     for (const r of DEFAULT_COUNTERPARTY_ROLES) {
       const exists = await this.roles.findBySlug(r.slug);
       if (exists) continue;
-      await this.roles.create({ ...r, isActive: true });
-      this.logger.log(`CounterpartyRole seeded: ${r.slug}`);
+      try {
+        await this.roles.create({ ...r, isActive: true });
+        this.logger.log(`CounterpartyRole seeded: ${r.slug}`);
+      } catch (err) {
+        this.logger.warn(`Could not seed CounterpartyRole ${r.slug}: ${(err as Error).message}`);
+      }
     }
   }
 }

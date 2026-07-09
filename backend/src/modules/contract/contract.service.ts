@@ -83,6 +83,16 @@ export class ContractService {
     return doc;
   }
 
+  /** Find by ID without populate — returns raw ObjectIds for refs. */
+  private async findByIdRaw(id: string): Promise<ContractDocument> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new NotFoundException(`Contract ${id} not found`);
+    }
+    const doc = await this.model.findById(id).exec();
+    if (!doc) throw new NotFoundException(`Contract ${id} not found`);
+    return doc;
+  }
+
   async update(id: string, dto: UpdateContractDto): Promise<ContractDocument> {
     const doc = await this.findById(id);
     if (dto.title !== undefined) doc.title = dto.title;
@@ -112,7 +122,8 @@ export class ContractService {
   }
 
   async activate(id: string): Promise<{ contract: ContractDocument; orderId: string }> {
-    const doc = await this.findById(id);
+    // Use unpopulated query so customerId is a raw ObjectId.
+    const doc = await this.findByIdRaw(id);
     if (doc.status !== 'signed') {
       throw new NotFoundException(`Contract must be signed first (current: ${doc.status})`);
     }

@@ -85,6 +85,16 @@ export class OrderService {
     return doc;
   }
 
+  /** Find by ID without populate — returns raw ObjectIds for refs. */
+  private async findByIdRaw(id: string): Promise<OrderDocument> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new NotFoundException(`Order ${id} not found`);
+    }
+    const doc = await this.model.findById(id).exec();
+    if (!doc) throw new NotFoundException(`Order ${id} not found`);
+    return doc;
+  }
+
   async update(id: string, dto: UpdateOrderDto): Promise<OrderDocument> {
     const doc = await this.findById(id);
     if (dto.notes !== undefined) doc.notes = dto.notes;
@@ -128,7 +138,8 @@ export class OrderService {
     warehouseId?: string,
     driverInfo?: string,
   ): Promise<{ order: OrderDocument; shipmentId: string }> {
-    const order = await this.findById(id);
+    // Use unpopulated query so counterpartyId is a raw ObjectId.
+    const order = await this.findByIdRaw(id);
     if (order.status === 'cancelled' || order.status === 'shipped' || order.status === 'delivered') {
       throw new NotFoundException(`Cannot ship order in status ${order.status}`);
     }

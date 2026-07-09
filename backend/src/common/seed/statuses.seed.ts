@@ -81,8 +81,12 @@ export class StatusesSeed implements OnApplicationBootstrap {
         .findStatuses(s.entityType)
         .then((arr) => arr.find((d) => d.statusId === s.statusId));
       if (existing) continue;
-      await this.status.createStatus({ ...s });
-      this.logger.log(`Status seeded: ${s.entityType}/${s.statusId}`);
+      try {
+        await this.status.createStatus({ ...s });
+        this.logger.log(`Status seeded: ${s.entityType}/${s.statusId}`);
+      } catch (err) {
+        this.logger.warn(`Could not seed Status ${s.entityType}/${s.statusId}: ${(err as Error).message}`);
+      }
     }
 
     for (const w of DEFAULT_WORKFLOWS) {
@@ -90,8 +94,12 @@ export class StatusesSeed implements OnApplicationBootstrap {
         .findWorkflows(w.entityType)
         .then((arr) => arr.find((d) => d.name === w.name));
       if (existing) continue;
-      await this.status.createWorkflow({ ...w });
-      this.logger.log(`Workflow seeded: ${w.entityType}/${w.name}`);
+      try {
+        await this.status.createWorkflow({ ...w });
+        this.logger.log(`Workflow seeded: ${w.entityType}/${w.name}`);
+      } catch (err) {
+        this.logger.warn(`Could not seed Workflow ${w.entityType}/${w.name}: ${(err as Error).message}`);
+      }
     }
   }
 }

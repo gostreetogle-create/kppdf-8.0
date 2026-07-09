@@ -52,14 +52,18 @@ export class FeatureFlagsSeed implements OnApplicationBootstrap {
         .findAll()
         .then((arr) => arr.find((d) => d.key === f.key));
       if (exists) continue;
-      await this.flags.upsert(f.key, {
-        label: f.label,
-        description: f.description,
-        enabledByDefault: f.enabledByDefault,
-        category: f.category,
-        isActive: f.isActive,
-      });
-      this.logger.log(`FeatureFlag seeded: ${f.key}`);
+      try {
+        await this.flags.upsert(f.key, {
+          label: f.label,
+          description: f.description,
+          enabledByDefault: f.enabledByDefault,
+          category: f.category,
+          isActive: f.isActive,
+        });
+        this.logger.log(`FeatureFlag seeded: ${f.key}`);
+      } catch (err) {
+        this.logger.warn(`Could not seed FeatureFlag ${f.key}: ${(err as Error).message}`);
+      }
     }
   }
 }

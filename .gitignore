@@ -3,6 +3,11 @@ node_modules/
 .pnpm-store/
 .pnp
 .pnp.js
+# Root npm lockfile. backend + frontend use pnpm; root has no deps of its
+# own (`pnpm-lock.yaml` lives in each subproject). If `npm install` ever
+# runs at repo root, this empty lockfile regenerates — ignored so it
+# cannot pollute commits.
+package-lock.json
 
 # Build artifacts
 dist/
@@ -29,6 +34,7 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 desktop.ini
+nul
 
 # Editor
 .vscode/
@@ -47,6 +53,7 @@ coverage/
 
 # Temporary / cache
 .tmp/
+_tmp/
 .cache/
 .turbo/
 .parcel-cache/
