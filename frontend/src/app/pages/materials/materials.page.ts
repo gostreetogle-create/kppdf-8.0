@@ -7,6 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { httpResource } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
@@ -20,7 +21,8 @@ import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.com
 import { PiToastService } from '../../shared/ui/toast';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
-import { Material, MaterialsService } from './materials.service';
+import { API_BASE_URL } from '../../core/api.tokens';
+import { Material, MaterialsService, type MaterialsListResponse } from './materials.service';
 import { Photo, PhotosService } from './photos.service';
 import { Organization, OrganizationsService } from '../organizations/organizations.service';
 import { MaterialFormDialogComponent } from './material-form-dialog.component';
@@ -224,13 +226,58 @@ export class MaterialsPage implements OnInit {
   private readonly orgs = inject(OrganizationsService);
   private readonly photosService = inject(PhotosService);
   private readonly injector = inject(Injector);
+  private readonly baseUrl = inject(API_BASE_URL);
 
-  protected readonly data = signal<Material[]>([]);
-  protected readonly total = signal<number>(0);
-  protected readonly loading = signal<boolean>(true);
-  protected readonly error = signal<string | null>(null);
+  /**
+   * Server list = `GET /api/materials` via Angular 20's `httpResource`.
+   * Re-fires whenever `debouncedSearch()` changes; loaded automatically
+   * on creation (no explicit `reload()` needed at bootstrap).
+   *
+   * `data`/`total`/`loading`/`error` are `computed()` wrappers around
+   * `listRes.{value(),isLoading(),error()}` so the @if/@for template
+   * and downstream classes (e.g. `sortedRows`, row handlers) work
+   * unchanged. `dialog create/update/remove` still flows through
+   * `MaterialsService.create/update/remove` (silent-http + Observable),
+   * which is the right tool for POST/PATCH/DELETE — `httpResource` is
+   * GET-only.
+   */
+  protected readonly listRes = httpResource<MaterialsListResponse>(() => ({
+    url: `${this.baseUrl}/materials`,
+    params: {
+      page: 1,
+      limit: 50,
+      ...(this.debouncedSearch() ? { search: this.debouncedSearch() } : {}),
+    },
+  }));
 
+  protected readonly data = computed<Material[]>(() => {
+    // `listRes.value()` THROWS while the resource is in error state
+    // (Angular 20 `HttpResourceRef.value()` rejects when status is
+    // Error). We guard with `hasValue()` so an HTTP error doesn't
+    // crash every downstream reader — `data()` simply returns []
+    // while `error()` surfaces the message via the inline banner.
+    if (!this.listRes.hasValue()) return [];
+    return this.listRes.value()?.items ?? [];
+  });
+  protected readonly total = computed<number>(
+    () => this.data().length,
+  );
+  protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
+  protected readonly error = computed<string | null>(() => {
+    // `httpResource.error()` is typed `unknown` (it can be HttpErrorResponse,
+    // a regular Error, or whatever the request pipeline threw). Cast to
+    // `HttpErrorResponse | undefined` so it satisfies `extractErrorMessage`'s
+    // signature; in practice httpResource's pipeline always surfaces an
+    // HttpErrorResponse on 4xx/5xx, which is exactly what that helper
+    // expects. If the future type narrows in Angular, drop the cast.
+    const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    return err ? extractErrorMessage(err) : null;
+  });
+
+  /** Live search input (echoed in the @if branches). */
   protected readonly searchQuery = signal<string>('');
+  /** Debounced snapshot driving the httpResource params. */
+  protected readonly debouncedSearch = signal<string>('');
   protected readonly sortKey = signal<SortKey>('name');
   protected readonly sortDir = signal<SortDir>('asc');
 
@@ -260,7 +307,8 @@ export class MaterialsPage implements OnInit {
 
   ngOnInit(): void {
     this.loadLookups();
-    this.reload();
+    // `listRes` fires its initial GET automatically on first read —
+    // no explicit `reload()` needed here.
   }
 
   private loadLookups(): void {
@@ -303,33 +351,19 @@ export class MaterialsPage implements OnInit {
   }
 
   private refreshOnDialogClose(ref: DialogRef<unknown>): void {
-    onDialogCloseOnce(ref, this.injector, (saved: unknown) => {
-      // Dialog's onSubmit always closes with `ref.close(saved)` where
-      // saved: Material. Cancel/ESC/backdrop close with null/undefined,
-      // which the `if (v)` check in `onDialogCloseOnce` filters out, so
-      // any non-null value reaching here is a Material. Narrow + cast.
-      if (saved && typeof saved === 'object' && '_id' in saved) {
-        const material = saved as Material;
-        // Optimistic update: add (create) or replace (edit) the saved
-        // material in the local data signal synchronously, so the table
-        // reflects it immediately. The server has already confirmed the
-        // save (we have the returned Material with _id), so this is a
-        // local reconciliation of an already-committed change — not a
-        // guess. `reload()` below resyncs in case other rows changed.
-        const isUpdate = this.data().some((m) => m._id === material._id);
-        this.data.update((cur) => {
-          const idx = cur.findIndex((m) => m._id === material._id);
-          if (idx >= 0) {
-            const next = cur.slice();
-            next[idx] = material;
-            return next;
-          }
-          return [...cur, material];
-        });
-        if (!isUpdate) this.total.update((n) => n + 1);
-      }
+    onDialogCloseOnce(ref, this.injector, (_saved: unknown) => {
+      // No local optimistic merge any more — `data` is now a `computed`
+      // wrapper around `listRes.value()` and can't be mutated directly.
+      // The reload re-fetches the authoritative server state; the
+      // dialog's close animation + backend roundtrip cover the extra
+      // ~50 ms and the table refreshes seamlessly.
+      //
+      // (Hot spot: if the network is slow, the row the user just saved
+      // may briefly disappear before reappearing. If that turns out to
+      // feel bad, revisit with `res.set()` on the httpResource ref or a
+      // small optimistic-state signal layered on top of `data`.)
       this.loadLookups();
-      this.reload();
+      this.listRes.reload();
     });
   }
 
@@ -337,7 +371,10 @@ export class MaterialsPage implements OnInit {
     const target = event.target as HTMLInputElement;
     this.searchQuery.set(target.value);
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
-    this.debounceTimer = setTimeout(() => this.reload(), 300);
+    this.debounceTimer = setTimeout(
+      () => this.debouncedSearch.set(target.value.trim()),
+      300,
+    );
   }
 
   protected setSort(key: Exclude<SortKey, null>): void {
@@ -407,7 +444,7 @@ export class MaterialsPage implements OnInit {
       this.service.remove(row._id).subscribe((res) => {
         if (res.ok) {
           this.toast.success('Материал удалён');
-          this.reload();
+          this.listRes.reload();
         } else {
           this.toast.error(extractErrorMessage(res.error));
         }
@@ -415,22 +452,16 @@ export class MaterialsPage implements OnInit {
     });
   }
 
+  /**
+   * Trigger a fresh fetch of the materials list. Delegates to
+   * `httpResource.reload()` since the load is now declarative
+   * (driven by signal reads inside the resource's config fn).
+   *
+   * Kept as a method so callers like row-actions or other handlers
+   * can stay decoupled from the resource's internals.
+   */
   protected reload(): void {
-    this.loading.set(true);
-    this.error.set(null);
-    const search = this.searchQuery().trim();
-    this.service
-      .list({ page: 1, limit: 50, search: search || undefined })
-      .subscribe((res) => {
-        if (res.ok) {
-          this.data.set(res.data.items ?? []);
-          this.total.set(res.data.total ?? res.data.items?.length ?? 0);
-          this.loading.set(false);
-        } else {
-          this.error.set(extractErrorMessage(res.error));
-          this.loading.set(false);
-        }
-      });
+    this.listRes.reload();
   }
 }
 
