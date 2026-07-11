@@ -133,7 +133,11 @@ const ALIGN_OPTIONS: Array<{ key: 'left' | 'center' | 'right'; label: string }> 
                       <span class="eyebrow text-muted-foreground">Выравнивание:</span>
                       @for (a of alignOptions; track a.key) {
                         <label class="flex items-center gap-1 cursor-pointer">
-                          <input type="radio" [value]="a.key" [name]="'align-' + i" formControlName="align" />
+                          <!-- No name binding: per-row radio isolation flows from
+                               formGroupName scoping the formControlName. A static
+                               name="align" would globally group all radios across
+                               rows (broken UX). See the value-independence spec. -->
+                          <input type="radio" [value]="a.key" formControlName="align" />
                           <span>{{ a.label }}</span>
                         </label>
                       }
