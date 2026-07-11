@@ -131,8 +131,8 @@ NO_COLOR=1 node start.mjs     # отключить ANSI-цвета
 **Endpoints после старта:**
 - Backend: http://localhost:3000/api/health
 - Frontend: http://localhost:4200
-- Login: `admin` / `admin` (admin user seeded by `AdminSeed`; email is `admin@kppdf.local` but **login uses `username` field**, not email — see `LoginDto`)
-- UI Kit showcase: http://localhost:4200/p/showcase (TZ-31..40)
+- Login: `admin` / `admin-change-me-immediately-in-production` (admin user seeded by `AdminSeed`)
+- UI Kit showcase: http://localhost:4200/kit ( хедер → кнопка "🎨 UI Kit")
 
 **Требования:** Node 20+, pnpm 8+, Docker Desktop.
 
@@ -171,6 +171,41 @@ kppdf-8.0/
 node start.mjs --stop   # убивает backend + frontend
 docker compose down      # убивает Mongo (если нужно)
 ```
+
+### 🎨 UI Kit (Paper & Ink)
+
+Кастомный UI Kit на базе TailwindCSS + Lucide Angular. Доступен по ссылке **http://localhost:4200/kit** (кнопка в хедере).
+
+**Структура компонентов:**
+```
+frontend/src/app/shared/ui/
+├── button/          — PiButton (6 variants × 4 sizes)
+├── badge/           — PiBadge (status indicators)
+├── form-field/      — PiFormField (input wrapper)
+├── dialog/          — PiDialog + PiAlertDialog
+├── toast/           — PiToast notifications
+├── pi-tabs/         — PiTabs
+├── pi-accordion/    — PiAccordion
+├── pi-drawer/       — PiDrawer (side panel)
+├── pi-empty-state/  — PiEmptyState
+├── pi-empty-tile/   — PiEmptyTile (placeholder)
+├── pi-row-actions/  — PiRowActions (table row buttons)
+├── select/          — PiSelect dropdown
+├── switch/          — PiSwitch toggle
+├── textarea/        — PiTextarea
+├── input/           — PiInput
+├── label/           — PiLabel
+├── separator/       — PiSeparator
+├── skeleton/        — PiSkeleton (loading)
+├── progress/        — PiProgress bar
+├── scroll-area/     — PiScrollArea
+├── slider/          — PiSlider
+├── radio/           — PiRadio
+├── charts/          — PiBarChart, PiLineChart
+└── menu/            — PiNavDropdown, PiContextMenu
+```
+
+**Kit страницы:** overview, foundations (tokens), basics, forms, overlays, navigation, playground (theme editor, code preview)
 
 ### 3. 📂 Рабочий цикл — `tasks/` = твоя папка, `OrchestratorKit/` = моя закрытая
 
