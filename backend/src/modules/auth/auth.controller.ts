@@ -84,8 +84,15 @@ export class AuthController {
     return { ok: true };
   }
 
+  /**
+   * TZ-92 Phase 1: GET /auth/me now routes through `AuthService.getMe` which
+   * returns the safe `AuthUserPayload` projection (id, username, email,
+   * displayName, role, permissions) — NOT the full UserDocument. This closes
+   * HIGH QA-01:1.4 (refreshTokenVersion / passwordHash / soft-delete fields
+   * no longer leak through this endpoint).
+   */
   @Get('me')
   async me(@CurrentUser() me: AuthenticatedUser) {
-    return this.users.findById(me.id);
+    return this.auth.getMe(me.id);
   }
 }

@@ -48,15 +48,23 @@ describe('Auth (e2e)', () => {
     expect(res.status).toBe(401);
   });
 
-  it('GET /auth/me — with valid token returns 200', async () => {
+  it('GET /auth/me — with valid token returns 200 (TZ-92: safe projection)', async () => {
     // TZ-95 Phase 1: use canonical loginAsAdmin fixture (was raw supertest with
     // hardcoded credentials — drift-prone).
+    // TZ-92 Phase 1: response must NOT contain refreshTokenVersion, passwordHash,
+    // soft-delete fields, etc — only safe AuthUserPayload projection.
     const { access } = await loginAsAdmin(app);
     const res = await request(app.getHttpServer())
       .get('/api/auth/me')
       .set(authHeader(access));
     expect(res.status).toBe(200);
     expect(res.body.username).toBe(TEST_ADMIN_USERNAME);
+    expect(res.body.role).toBe('admin');
+    // TZ-92 §1 HIGH QA-01:1.4 — these fields must be absent from the response.
+    expect(res.body.refreshTokenVersion).toBeUndefined();
+    expect(res.body.passwordHash).toBeUndefined();
+    expect(res.body.password).toBeUndefined();
+    expect(res.body.deletedAt).toBeUndefined();
   });
 
   it('POST /auth/refresh — with valid refresh returns new tokens', async () => {

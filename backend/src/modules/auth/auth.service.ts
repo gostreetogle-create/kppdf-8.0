@@ -73,6 +73,34 @@ export class AuthService {
     return { access };
   }
 
+  /**
+   * TZ-92 Phase 1: safe projection for the /auth/me endpoint.
+   *
+   * Previously the GET /me controller returned UserService.findById(me.id) —
+   * a full `UserDocument` including `passwordHash`, `refreshTokenVersion`, and
+   * any other internal fields. This was HIGH severity QA-01:1.4: any
+   * authenticated user could read their own `refreshTokenVersion`, and the
+   * value would have leaked in a cross-user read too (admin viewing user).
+   *
+   * Fix: re-use the existing private `toAuthUser` projection which strips the
+   * sensitive fields. Returns `AuthUserPayload` — the same shape the
+   * `register` + `login` endpoints return in their `user:` response slot.
+   *
+   * Notes:
+   * - `findById` + `isActive` check here duplicates the `refresh` method's
+   *   safety net. Kept intentionally: GET /me is a user-visible surface
+   *   so we don't want to return a ghost user record.
+   * - Security: throws 401 if user is missing/inactive rather than 404
+   *   to avoid fingerprinting ("user exists but is disabled" leaks).
+   */
+  async getMe(userId: string): Promise<AuthUserPayload> {
+    const user = await this.users.findById(userId);
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('User not found or inactive');
+    }
+    return this.toAuthUser(user);
+  }
+
   async logout(userId: string): Promise<void> {
     await this.users.incrementRefreshVersion(userId);
     this.logger.log(`User logged out (id=${userId})`);
