@@ -24,7 +24,12 @@ import {
   ProductModule,
   ProductModulesService,
 } from '../../shared/services/pi-product-modules.service';
+import {
+  CostCalculation,
+  CostCalculationsService,
+} from '../../shared/services/pi-cost-calculations.service';
 import { ProductModulePickerDialogComponent } from './product-module-picker-dialog.component';
+import { CostCalculationDetailDialogComponent } from './cost-calculation-detail-dialog.component';
 import { Photo } from '../materials/photos.service';
 
 /**
@@ -165,6 +170,74 @@ import { Photo } from '../materials/photos.service';
           </table>
         </div>
       </app-pi-section>
+
+      <!-- V. Себестоимость -->
+      <app-pi-section
+        title="Себестоимость"
+        eyebrow="V"
+        hint="снимки расчёта: материалы × кол-во + работы × часы + накладные"
+      >
+        <div class="flex justify-end mb-2">
+          <app-pi-button variant="default" type="button" (click)="recalculate()" [disabled]="recalculating()" data-test="recalculate-button">
+            {{ recalculating() ? 'Расчёт…' : 'Пересчитать' }}
+          </app-pi-button>
+        </div>
+
+        @if (costList().length > 0) {
+          <div class="hairline rounded-sm overflow-x-auto">
+            <table class="w-full text-sm min-w-[640px]">
+              <thead class="hairline-b">
+                <tr>
+                  <th class="pi-cell eyebrow text-left">Дата</th>
+                  <th class="pi-cell-numeric eyebrow w-32">Материалы</th>
+                  <th class="pi-cell-numeric eyebrow w-32">Работы</th>
+                  <th class="pi-cell-numeric eyebrow w-32">Накладные</th>
+                  <th class="pi-cell-numeric eyebrow w-40">Итого</th>
+                  <th class="pi-cell eyebrow w-24">Статус</th>
+                  <th class="pi-cell eyebrow w-32 text-right">Действия</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (cc of costList(); track cc._id) {
+                  <tr class="pi-table-row pi-table-row-odd last:border-0"
+                      [class.bg-sunrise-warm/10]="cc.isActive">
+                    <td class="pi-cell align-top">{{ formatDate(cc.calculatedAt || cc.createdAt) }}</td>
+                    <td class="pi-cell-numeric align-top font-mono">{{ formatRuble(cc.totalMaterialCost) }}</td>
+                    <td class="pi-cell-numeric align-top font-mono">{{ formatRuble(cc.totalLaborCost) }}</td>
+                    <td class="pi-cell-numeric align-top font-mono text-muted-foreground">
+                      {{ cc.overheadPercent }}% → {{ formatRuble(cc.overheadCost) }}
+                    </td>
+                    <td class="pi-cell-numeric align-top font-mono font-medium">{{ formatRuble(cc.totalCost) }}</td>
+                    <td class="pi-cell align-top">
+                      @if (cc.isActive) {
+                        <span class="inline-flex items-center gap-1 text-xs font-medium text-sunrise-warm">● Активен</span>
+                      } @else {
+                        <span class="text-xs text-muted-foreground">—</span>
+                      }
+                    </td>
+                    <td class="pi-cell align-top text-right">
+                      <button type="button" (click)="openBreakdown(cc)"
+                        class="eyebrow text-ink hover:text-sunrise-warm mr-3">Детали</button>
+                      @if (!cc.isActive) {
+                        <button type="button" (click)="activateSnapshot(cc)"
+                          class="eyebrow text-muted-foreground hover:text-ink mr-3">Активировать</button>
+                      }
+                      <button type="button" (click)="onDeleteCalc(cc)"
+                        class="eyebrow text-destructive hover:underline">Удалить</button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <app-pi-empty-state
+            [colspan]="7"
+            message="Нет расчётов себестоимости. Нажмите «Пересчитать»."
+            state="empty"
+          />
+        }
+      </app-pi-section>
     }
   `,
 })
@@ -175,6 +248,7 @@ export class ProductDetailPage implements OnInit {
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
   private readonly modulesSvc = inject(ProductModulesService);
+  private readonly costSvc = inject(CostCalculationsService);
   private readonly baseUrl = inject(API_BASE_URL);
 
   private readonly id = toSignal(this.route.paramMap, {
@@ -229,18 +303,19 @@ export class ProductDetailPage implements OnInit {
   protected readonly attachedModules = computed<ProductModule[]>(() => {
     const p = this.product();
     if (!p?.productModuleIds) return [];
-    // TZ-83 Review #3 fix: tighter type guard. После backend nested-populate
-    // (product.service.ts findById) все элементы — populated ProductModule
-    // объекты, но массив гетерогенный по дизайну (string | ProductModule).
-    // Принимаем только хорошо сформированные объекты с _id (валидный ObjectId
-    // — 24-char hex).
     return p.productModuleIds.filter((m): m is ProductModule =>
       typeof m === 'object' && m !== null && '_id' in m && typeof (m as { _id: unknown })._id === 'string',
     );
   });
 
+  protected readonly costRes = httpResource<CostCalculation[]>(() => ({
+    url: `${this.baseUrl}/products/${this.idString()}/cost-calculations`,
+  }));
+  protected readonly costList = computed<CostCalculation[]>(() => this.costRes.value() ?? []);
+  protected readonly recalculating = signal<boolean>(false);
+
   ngOnInit(): void {
-    // productRes auto-fire;
+    // productRes + costRes auto-fire;
   }
 
   protected onBack(): void {
@@ -296,5 +371,77 @@ export class ProductDetailPage implements OnInit {
         }
       });
     });
+  }
+
+  // ── TZ-85 Phase C: Себестоимость ──────────────────────────────────────
+
+  protected recalculate(): void {
+    const pid = this.idString();
+    if (!pid || this.recalculating()) return;
+    this.recalculating.set(true);
+    this.costSvc.create(pid).subscribe((res) => {
+      this.recalculating.set(false);
+      if (res.ok) {
+        this.toast.success('Себестоимость рассчитана');
+        this.costRes.reload();
+      } else {
+        this.toast.error(extractErrorMessage(res.error));
+      }
+    });
+  }
+
+  protected openBreakdown(cc: CostCalculation): void {
+    this.dialog.open(CostCalculationDetailDialogComponent, {
+      data: { costCalculation: cc },
+      width: 'lg',
+    });
+  }
+
+  protected activateSnapshot(cc: CostCalculation): void {
+    this.costSvc.activate(cc._id).subscribe((res) => {
+      if (res.ok) {
+        this.toast.success('Снимок активирован');
+        this.costRes.reload();
+      } else {
+        this.toast.error(extractErrorMessage(res.error));
+      }
+    });
+  }
+
+  protected onDeleteCalc(cc: CostCalculation): void {
+    const ref = this.dialog.open(AlertDialogComponent, {
+      data: {
+        title: 'Удалить расчёт?',
+        description: `Удалить расчёт от ${this.formatDate(cc.calculatedAt || cc.createdAt)}? Это действие нельзя отменить.`,
+        confirmLabel: 'Удалить',
+        variant: 'destructive',
+      },
+      width: 'sm',
+    });
+    onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
+      if (!confirmed) return;
+      this.costSvc.remove(cc._id).subscribe((res) => {
+        if (res.ok) {
+          this.toast.success('Расчёт удалён');
+          this.costRes.reload();
+        } else {
+          this.toast.error(extractErrorMessage(res.error));
+        }
+      });
+    });
+  }
+
+  protected formatDate(dateStr: string): string {
+    return new Date(dateStr).toLocaleDateString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
+  protected formatRuble(amount: number): string {
+    return amount.toLocaleString('ru-RU', { style: 'currency', currency: 'RUB' });
   }
 }
