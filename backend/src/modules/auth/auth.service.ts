@@ -62,10 +62,7 @@ export class AuthService {
    * current user version.
    */
   async refresh(userId: string, version: number): Promise<AccessTokenResponse> {
-    const user = await this.users.findById(userId);
-    if (!user || !user.isActive) {
-      throw new UnauthorizedException('User not found or inactive');
-    }
+    const user = await this.findActiveUserOrThrow(userId);
     if (user.refreshTokenVersion !== version) {
       throw new UnauthorizedException('Refresh token revoked');
     }
@@ -84,20 +81,15 @@ export class AuthService {
    *
    * Fix: re-use the existing private `toAuthUser` projection which strips the
    * sensitive fields. Returns `AuthUserPayload` — the same shape the
-   * `register` + `login` endpoints return in their `user:` response slot.
+   * `register` + `login` endpoints return in their `user:` response slot,
+   * enriched with optional `phone` + `fullName` per TZ-92.1.
    *
-   * Notes:
-   * - `findById` + `isActive` check here duplicates the `refresh` method's
-   *   safety net. Kept intentionally: GET /me is a user-visible surface
-   *   so we don't want to return a ghost user record.
-   * - Security: throws 401 if user is missing/inactive rather than 404
-   *   to avoid fingerprinting ("user exists but is disabled" leaks).
+   * Security: throws 401 if user is missing/inactive rather than 404
+   * to avoid fingerprinting ("user exists but is disabled" leaks), via
+   * the shared `findActiveUserOrThrow` helper.
    */
   async getMe(userId: string): Promise<AuthUserPayload> {
-    const user = await this.users.findById(userId);
-    if (!user || !user.isActive) {
-      throw new UnauthorizedException('User not found or inactive');
-    }
+    const user = await this.findActiveUserOrThrow(userId);
     return this.toAuthUser(user);
   }
 
@@ -107,6 +99,26 @@ export class AuthService {
   }
 
   // --- helpers ---
+
+  /**
+   * TZ-92.1 helper-extraction: pattern (`users.findById(id)` + `isActive`
+   * check + throw `UnauthorizedException`) was duplicated in `refresh` and
+   * `getMe`. Folded into a single private helper so future endpoints (e.g.
+   * change-password, profile update) reuse the same fingerprinting-safe
+   * lookup.
+   *
+   * Returns the FULL `UserDocument` (still has passwordHash etc.) — callers
+   * are responsible for projecting via `toAuthUser` before returning to
+   * the client. The helper exists ONLY to centralize the existence +
+   * active-check, not the projection decision.
+   */
+  private async findActiveUserOrThrow(userId: string): Promise<UserDocument> {
+    const user = await this.users.findById(userId);
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('User not found or inactive');
+    }
+    return user;
+  }
 
   private async buildAuthResponse(user: UserDocument): Promise<AuthResponse> {
     const [access, refresh] = await Promise.all([
@@ -154,6 +166,11 @@ export class AuthService {
       displayName: user.displayName,
       role: user.role,
       permissions: user.permissions ?? [],
+      // TZ-92.1: optional fields preserved from UserDocument. Null is the
+      // pre-TZ-92.1 default for users created before phone/fullName fields
+      // were added to RegisterDto.
+      phone: user.phone ?? null,
+      fullName: user.fullName ?? null,
     };
   }
 }

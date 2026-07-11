@@ -49,10 +49,13 @@ describe('Auth (e2e)', () => {
   });
 
   it('GET /auth/me — with valid token returns 200 (TZ-92: safe projection)', async () => {
-    // TZ-95 Phase 1: use canonical loginAsAdmin fixture (was raw supertest with
-    // hardcoded credentials — drift-prone).
-    // TZ-92 Phase 1: response must NOT contain refreshTokenVersion, passwordHash,
-    // soft-delete fields, etc — only safe AuthUserPayload projection.
+    // TZ-95.1: canonical loginAsAdmin fixture (no hardcoded credentials).
+    // TZ-92.1: response must NOT contain refreshTokenVersion / passwordHash /
+    // soft-delete fields — only safe AuthUserPayload projection.
+    // TZ-92.1: use .not.toHaveProperty() (tighter than .toBeUndefined():
+    // asserts the key is genuinely absent from the JSON envelope, not
+    // present-but-undefined which Mongoose can produce if a schema field
+    // accidentally leaks).
     const { access } = await loginAsAdmin(app);
     const res = await request(app.getHttpServer())
       .get('/api/auth/me')
@@ -61,10 +64,13 @@ describe('Auth (e2e)', () => {
     expect(res.body.username).toBe(TEST_ADMIN_USERNAME);
     expect(res.body.role).toBe('admin');
     // TZ-92 §1 HIGH QA-01:1.4 — these fields must be absent from the response.
-    expect(res.body.refreshTokenVersion).toBeUndefined();
-    expect(res.body.passwordHash).toBeUndefined();
-    expect(res.body.password).toBeUndefined();
-    expect(res.body.deletedAt).toBeUndefined();
+    expect(res.body).not.toHaveProperty('refreshTokenVersion');
+    expect(res.body).not.toHaveProperty('passwordHash');
+    expect(res.body).not.toHaveProperty('password');
+    expect(res.body).not.toHaveProperty('deletedAt');
+    // TZ-92.1: legitimate user-visible fields ARE present.
+    expect(res.body).toHaveProperty('phone'); // empty/null OK, key must exist
+    expect(res.body).toHaveProperty('fullName'); // empty/null OK, key must exist
   });
 
   it('POST /auth/refresh — with valid refresh returns new tokens', async () => {
