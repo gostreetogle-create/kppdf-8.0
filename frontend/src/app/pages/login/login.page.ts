@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, isDevMode, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { LucideAngularModule, LogIn, Eye, EyeOff } from 'lucide-angular';
+import { LucideAngularModule, LogIn, Eye, EyeOff, KeyRound } from 'lucide-angular';
 import { AuthService } from '../../core/auth.service';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
@@ -114,6 +114,20 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
             <lucide-angular [img]="logInIcon" [size]="13" aria-hidden="true" />
             {{ submitting() ? 'Входим…' : 'Войти' }}
           </app-pi-button>
+
+          @if (isDev) {
+            <button
+              type="button"
+              (click)="fillDemoCredentials()"
+              data-test="fill-demo-button"
+              [attr.aria-label]="'Заполнить демо-данные для входа'"
+              title="Заполнит поля: admin / AdminPass123"
+              class="w-full inline-flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground hover:text-ink py-1 transition-colors pi-focus-ring"
+            >
+              <lucide-angular [img]="keyIcon" [size]="12" aria-hidden="true" />
+              <span>Заполнить демо-данные</span>
+            </button>
+          }
         </form>
 
         <p class="eyebrow text-[10px] text-muted-foreground mt-10 text-center">
@@ -130,6 +144,27 @@ export class LoginPage {
   protected readonly logInIcon = LogIn;
   protected readonly eyeIcon = Eye;
   protected readonly eyeOffIcon = EyeOff;
+  protected readonly keyIcon = KeyRound;
+
+  /**
+   * Dev-only flag (Angular's `isDevMode()`): the autofill button is only
+   * visible when this is true, and Angular's tree-shaker strips the
+   * `@if (isDev) { ... }` branch from production bundles.
+   */
+  protected readonly isDev = isDevMode();
+
+  /**
+   * Dev helper: fills the form with the seeded admin credentials so a
+   * developer never has to retype them (root cause of repeated 401s).
+   *
+   * Credentials must match the backend seed in
+   * `backend/scripts/.../seed.ts` and the `reset-password.js` helper.
+   * If the seed is changed, update both places.
+   */
+  protected fillDemoCredentials(): void {
+    this.username = 'admin';
+    this.password = 'AdminPass123';
+  }
 
   /**
    * Show/hide password in the field (TZ-NEW visual-feedback).
