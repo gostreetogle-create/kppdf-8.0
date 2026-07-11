@@ -15,8 +15,10 @@ import {
   groupBy,
   mergeMap,
   switchMap,
+  tap,
+  timer,
 } from 'rxjs';
-import { LucideAngularModule, FileText, Plus, RefreshCw } from 'lucide-angular';
+import { LucideAngularModule, FileText, Plus, RefreshCw, Check, AlertCircle, Loader2 } from 'lucide-angular';
 import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
 import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
 import { extractErrorMessage, SilentResult } from '../../../core/silent-http';
@@ -41,26 +43,32 @@ import { BuilderCanvasComponent } from './builder-canvas.component';
 import { BuilderInspectorComponent } from './builder-inspector.component';
 
 /**
- * TZ-86 Phase D.1 — `BuilderPage` (3-pane shell, state orchestrator).
+ * TZ-86 Phase D.1 + D.2 — `BuilderPage` (3-pane shell, state orchestrator).
  *
- * Layout (320 + 1fr + 320):
+ * Layout (280 + 1fr + 320):
  *   ┌──────────┬──────────────────────────┬──────────────┐
  *   │ Tool     │ Canvas                   │ Inspector    │
- *   │ Pane     │ (cdkDropList)            │              │
+ *   │ Pane     │ (cdkDropList id=…)       │              │
  *   │ 280px    │ flex-1                   │ 320px        │
  *   └──────────┴──────────────────────────┴──────────────┘
  *
- * State model:
- *   - `templateId` = route param :id (or null → empty picker state)
- *   - `blocks` = signal<TemplateBlock[]>  — canonical in-memory list
- *   - `selectedId` = signal<string | null>  — drives canvas outline + Inspector
+ * Phase D.2 additions:
+ *   1. **Background image** — `template` signal holds the full DocumentTemplate
+ *      (with `backgroundImage[]`). Re-fetched on upload. Passed to
+ *      BuilderCanvas as `backgroundImages` input → rendered as absolute-
+ *      positioned bg layer (opacity 0.4, pointer-events none).
+ *   2. **Drag-from-palette** — ToolPane wraps palette items in `cdkDropList`
+ *      with `cdkDropListConnectedTo: ['canvas-droplist']`. When a palette
+ *      item is dropped on the canvas, BuilderCanvas emits `(dropAdd)` with
+ *      `{ payload, insertIndex }`. BuilderPage optimistic-inserts at index
+ *      + POSTs add + triggers reorder to lock position server-side.
+ *   3. **Last-saved indicator** — `saveStatus` signal tracks 'idle' | 'saving'
+ *      | 'saved' | 'error'. Piped into save$ via `tap` (set saving) +
+ *      result handler (set saved→idle after 2s, or error). Rendered as
+ *      small chip in PiPageHeader next to Reload button.
  *
- * Auto-save architecture:
+ * Auto-save architecture (unchanged from D.1):
  *   Subject<{_id, patch}> → groupBy(_id) → debounceTime(1500) → switchMap → service.update()
- *
- * Reorder: optimistic update → atomic POST /reorder → on error roll back.
- *
- * Empty state (no :id): template-list picker → navigate to /doc-constructor/builder/:id.
  */
 @Component({
   selector: 'app-builder-page',
@@ -81,17 +89,35 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
       title="Конструктор документов"
       [subtitle]="headerSubtitle()"
     >
-      @if (templateId()) {
-        <pi-button
-          variant="ghost"
-          size="sm"
-          (click)="onReload()"
-          ariaLabel="Перезагрузить блоки"
-        >
-          <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon>
-          Обновить
-        </pi-button>
-      }
+      <div class="header-actions">
+        @if (saveStatus() === 'saving') {
+          <span class="status-chip status-chip--saving" aria-live="polite">
+            <lucide-icon [img]="LoaderIcon" [size]="12"></lucide-icon>
+            Сохранение…
+          </span>
+        } @else if (saveStatus() === 'saved') {
+          <span class="status-chip status-chip--saved" aria-live="polite">
+            <lucide-icon [img]="CheckIcon" [size]="12"></lucide-icon>
+            Сохранено
+          </span>
+        } @else if (saveStatus() === 'error') {
+          <span class="status-chip status-chip--error" aria-live="polite">
+            <lucide-icon [img]="AlertIcon" [size]="12"></lucide-icon>
+            Ошибка
+          </span>
+        }
+        @if (templateId()) {
+          <pi-button
+            variant="ghost"
+            size="sm"
+            (click)="onReload()"
+            ariaLabel="Перезагрузить блоки"
+          >
+            <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon>
+            Обновить
+          </pi-button>
+        }
+      </div>
     </pi-page-header>
 
     @if (!templateId()) {
@@ -119,13 +145,18 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
       </pi-section>
     } @else {
       <div class="builder-shell">
-        <app-builder-tool-pane (addBlock)="onAddBlock($event)" />
+        <app-builder-tool-pane
+          (addBlock)="onAddBlock($event)"
+          (uploadBackground)="onBackgroundUpload($event)"
+        />
 
         <app-builder-canvas
           [blocks]="blocks()"
           [selectedId]="selectedId()"
+          [backgroundImages]="backgroundImages()"
           (select)="onSelect($event)"
           (reorder)="onReorder($event)"
+          (dropAdd)="onDropAdd($event)"
         />
 
         <app-builder-inspector
@@ -150,6 +181,42 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
         flex: 1;
         min-height: 0;
         border-top: 1px solid oklch(var(--color-rule));
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .status-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 2px 8px;
+        border: 1px solid oklch(var(--color-rule));
+        border-radius: 2px;
+      }
+
+      .status-chip--saving {
+        color: oklch(var(--color-muted));
+        background: oklch(var(--color-paper-2));
+      }
+
+      .status-chip--saved {
+        color: oklch(var(--color-ink));
+        background: oklch(var(--color-sunrise-soft));
+        border-color: oklch(var(--color-sunrise-warm));
+      }
+
+      .status-chip--error {
+        color: oklch(var(--color-destructive));
+        background: oklch(var(--color-paper-2));
+        border-color: oklch(var(--color-destructive));
       }
 
       .empty-state {
@@ -183,15 +250,28 @@ export class BuilderPage {
   protected readonly FileTextIcon = FileText;
   protected readonly PlusIcon = Plus;
   protected readonly RefreshIcon = RefreshCw;
+  protected readonly CheckIcon = Check;
+  protected readonly AlertIcon = AlertCircle;
+  protected readonly LoaderIcon = Loader2;
 
   // State
   protected readonly templateId = signal<string | null>(null);
+  protected readonly template = signal<DocumentTemplate | null>(null);
   protected readonly blocks = signal<TemplateBlock[]>([]);
   protected readonly selectedId = signal<string | null>(null);
   protected readonly isLoading = signal<boolean>(false);
+  protected readonly saveStatus = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   // Auto-save Subject — grouped by _id, debounced per group.
   private readonly save$ = new Subject<{ _id: string; patch: Partial<TemplateBlock> }>();
+
+  // D.2.3 nit (code-reviewer): monotonic counter for the 2s 'saved'→'idle'
+  // timer revert. Without this guard, a stale timer from an earlier 'saved'
+  // state could revert a NEW 'saved' state set by a more recent save cycle
+  // that completed within the 2s window. `++savedTick` returns the new value;
+  // each timer callback captures its own `myTick` and only reverts if no
+  // newer save has started.
+  private savedTick = 0;
 
   // Selected block derived
   protected readonly selectedBlock = computed<TemplateBlock | null>(() => {
@@ -206,6 +286,9 @@ export class BuilderPage {
     const count = this.blocks().length;
     return `Шаблон ${id.slice(-6)} · ${count} ${pluralBlocks(count)}`;
   });
+
+  /** D.2.1: derived background images from template (read by BuilderCanvas). */
+  protected readonly backgroundImages = computed<string[]>(() => this.template()?.backgroundImage ?? []);
 
   // httpResource for the template picker (only used when no :id).
   protected readonly templateListRes = httpResource<DocumentTemplate[]>(
@@ -224,9 +307,12 @@ export class BuilderPage {
   });
 
   constructor() {
-    // 1) Initialize save$ pipeline (groupBy _id → debounce 1500 → switchMap)
+    // 1) Initialize save$ pipeline (groupBy _id → debounce 1500 → switchMap).
+    //    D.2.3: `tap` before switchMap to set 'saving'; success path sets
+    //    'saved' (auto-revert to 'idle' after 2s via timer), failure sets 'error'.
     this.save$
       .pipe(
+        tap(() => this.saveStatus.set('saving')),
         groupBy((p) => p._id),
         mergeMap((group$) =>
           group$.pipe(
@@ -240,21 +326,50 @@ export class BuilderPage {
       )
       .subscribe((res) => this.handleSaveResult(res));
 
-    // 2) Watch route param :id → set templateId → fetch blocks
+    // 2) Watch route param :id + query params (Phase E.3: ?source + ?sourceId).
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const id = params.get('id');
       this.templateId.set(id);
       this.blocks.set([]);
+      this.template.set(null);
       this.selectedId.set(null);
+      this.saveStatus.set('idle');
       if (id) this.loadBlocks(id);
     });
+
+    // Phase E.3: read ?source + ?sourceId query params (preserved across
+    // template-pick navigation). Logged for future use; binding logic is
+    // out of scope until the doc-template service supports pre-binding.
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((qp) => {
+        const source = qp.get('source');
+        const sourceId = qp.get('sourceId');
+        if (source && sourceId) {
+          this.sourceContext.set({ source, sourceId });
+        } else {
+          this.sourceContext.set(null);
+        }
+      });
   }
 
+  /** Phase E.3: source context (order/contract ID pre-binding for future expansion). */
+  protected readonly sourceContext = signal<{ source: string; sourceId: string } | null>(null);
+
   // ─────────────────────────────────────────────────────────────
-  // Initial load
+  // Initial load — fetches BOTH blocks AND template (D.2.1 needs template).
   // ─────────────────────────────────────────────────────────────
   private loadBlocks(id: string): void {
     this.isLoading.set(true);
+    // Fetch template first (lightweight); blocks second.
+    this.templatesSvc.findById(id).subscribe({
+      next: (tRes) => {
+        if (tRes.ok) this.template.set(tRes.data);
+      },
+      error: () => {
+        // Non-fatal — canvas can still render without bg images.
+      },
+    });
     this.blocksSvc.listByTemplate(id).subscribe({
       next: (res) => {
         this.isLoading.set(false);
@@ -272,53 +387,115 @@ export class BuilderPage {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Tool pane → add block
+  // D.2.1: Background upload
+  // ─────────────────────────────────────────────────────────────
+  protected onBackgroundUpload(file: File): void {
+    const tid = this.templateId();
+    if (!tid) return;
+    // Client-side validation (defense in depth — backend enforces too).
+    const ALLOWED = ['image/png', 'image/jpeg', 'image/webp'];
+    if (!ALLOWED.includes(file.type)) {
+      this.toast.error('Допустимы только PNG, JPEG, WebP');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      this.toast.error('Файл больше 5 МБ');
+      return;
+    }
+    this.saveStatus.set('saving');
+    this.templatesSvc.uploadBackground(tid, file).subscribe({
+      next: (res) => {
+        if (res.ok) {
+          this.template.update((t) => (t ? { ...t, backgroundImage: res.data.backgroundImage } : t));
+          this.toast.success('Фон загружен');
+          this.saveStatus.set('saved');
+          const myTick = ++this.savedTick;
+          timer(2000).subscribe(() => {
+            if (myTick === this.savedTick) this.saveStatus.set('idle');
+          });
+        } else {
+          this.toast.error(extractErrorMessage(res.error));
+          this.saveStatus.set('error');
+        }
+      },
+      error: (err: HttpErrorResponse) => {
+        this.toast.error(extractErrorMessage(err));
+        this.saveStatus.set('error');
+      },
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Tool pane → add block (Phase D.1) / drop from palette (D.2.2)
   // ─────────────────────────────────────────────────────────────
   protected onAddBlock(payload: AddBlockPayload): void {
+    return this.insertBlock(payload, this.blocks().length);
+  }
+
+  /** D.2.2: drag-from-palette handler — adds block at the dropped index. */
+  protected onDropAdd(event: { payload: AddBlockPayload; insertIndex: number }): void {
+    const idx = Math.max(0, Math.min(event.insertIndex, this.blocks().length));
+    this.insertBlock(event.payload, idx);
+  }
+
+  private insertBlock(payload: AddBlockPayload, insertIndex: number): void {
     const tid = this.templateId();
     if (!tid) {
       this.toast.error('Сначала выберите шаблон');
       return;
     }
-    const newBlock = this.buildBlockFromPayload(tid, payload, this.blocks().length);
-    // Optimistic insert (prepend; new blocks appear at the top)
-    this.blocks.update((arr) => [newBlock, ...arr]);
+    const order = insertIndex; // temporary; server will reassign on reorder
+    const newBlock = this.buildBlockFromPayload(tid, payload, order);
+    // Optimistic insert at index.
+    this.blocks.update((arr) => {
+      const next = [...arr];
+      next.splice(insertIndex, 0, newBlock);
+      return next;
+    });
     this.selectedId.set(blockKey(newBlock));
 
-    if (!newBlock._id) {
-      this.blocksSvc
-        .add(tid, {
-          type: newBlock.type,
-          order: newBlock.order,
-          title: newBlock.title,
-          content: newBlock.content,
-          height: newBlock.height,
-          showLine: newBlock.showLine,
-          settings: newBlock.settings,
-          dataBinding: newBlock.dataBinding,
-          isActive: newBlock.isActive,
-        })
-        .subscribe({
-          next: (res) => {
-            // Early return on failure so the success branch narrows `res`
-            // to `{ok: true, data: TemplateBlock}` before accessing res.data.
-            if (!res.ok) {
-              this.toast.error(extractErrorMessage(res.error));
-              this.blocks.update((arr) => arr.filter((b) => b.tempId !== newBlock.tempId));
-              return;
-            }
-            // Success branch — swap tempId for server _id
-            this.blocks.update((arr) =>
-              arr.map((b) => (b.tempId === newBlock.tempId ? res.data : b)),
-            );
-            this.selectedId.set(res.data._id ?? null);
-          },
-          error: (err: HttpErrorResponse) => {
-            this.toast.error(extractErrorMessage(err));
+    this.blocksSvc
+      .add(tid, {
+        type: newBlock.type,
+        order: newBlock.order,
+        title: newBlock.title,
+        content: newBlock.content,
+        height: newBlock.height,
+        showLine: newBlock.showLine,
+        settings: newBlock.settings,
+        dataBinding: newBlock.dataBinding,
+        isActive: newBlock.isActive,
+      })
+      .subscribe({
+        next: (res) => {
+          if (!res.ok) {
+            this.toast.error(extractErrorMessage(res.error));
             this.blocks.update((arr) => arr.filter((b) => b.tempId !== newBlock.tempId));
-          },
-        });
-    }
+            return;
+          }
+          // Swap tempId for server _id at the same index.
+          this.blocks.update((arr) =>
+            arr.map((b) => (b.tempId === newBlock.tempId ? res.data : b)),
+          );
+          this.selectedId.set(res.data._id ?? null);
+          // If inserted mid-list (not at end), fire atomic reorder to lock the
+          // server-side position — POST /add appends, not inserts at index.
+          if (insertIndex < this.blocks().length - 1) {
+            const ids = this.blocks()
+              .filter((b) => b._id)
+              .map((b) => b._id!);
+            this.blocksSvc.reorder(tid, { blockIds: ids }).subscribe({
+              next: (r) => {
+                if (!r.ok) this.toast.error(extractErrorMessage(r.error));
+              },
+            });
+          }
+        },
+        error: (err: HttpErrorResponse) => {
+          this.toast.error(extractErrorMessage(err));
+          this.blocks.update((arr) => arr.filter((b) => b.tempId !== newBlock.tempId));
+        },
+      });
   }
 
   /**
@@ -439,15 +616,29 @@ export class BuilderPage {
     if (tid) this.loadBlocks(tid);
   }
 
+  /**
+   * Phase E.3: preserve ?source + ?sourceId query params when navigating
+   * from the empty-state picker to a specific /builder/:id route.
+   */
   protected onTemplatePick(value: string | string[]): void {
     const id = Array.isArray(value) ? value[0] : value;
-    if (id) this.router.navigate(['/doc-constructor/builder', id]);
+    if (!id) return;
+    const ctx = this.sourceContext();
+    if (ctx) {
+      this.router.navigate(['/doc-constructor/builder', id], {
+        queryParams: { source: ctx.source, sourceId: ctx.sourceId },
+      });
+    } else {
+      this.router.navigate(['/doc-constructor/builder', id]);
+    }
   }
 
   /**
    * Auto-save result handler. Uses early-return on `!res.ok` so TypeScript
    * narrows the SilentResult<TemplateBlock> discriminated union to
    * `{ok: false, error: HttpErrorResponse}` before accessing `res.error`.
+   * D.2.3: also updates `saveStatus` signal — 'saved' for 2s then 'idle',
+   * or 'error' indefinitely.
    */
   private handleSaveResult(res: SilentResult<TemplateBlock>): void {
     if (!res.ok) {
@@ -457,11 +648,19 @@ export class BuilderPage {
       } else {
         this.toast.error(`Ошибка сохранения: ${extractErrorMessage(res.error)}`);
       }
+      this.saveStatus.set('error');
       return;
     }
     this.blocks.update((arr) =>
       arr.map((b) => (b._id === res.data._id ? res.data : b)),
     );
+    this.saveStatus.set('saved');
+    // Monotonic-counter guard (see `savedTick` field JSDoc): only revert if
+    // no newer save has started in the 2s window.
+    const myTick = ++this.savedTick;
+    timer(2000).subscribe(() => {
+      if (myTick === this.savedTick) this.saveStatus.set('idle');
+    });
   }
 }
 

@@ -7,7 +7,16 @@ import {
   signal,
 } from '@angular/core';
 import { HttpErrorResponse, httpResource } from '@angular/common/http';
-import { LucideAngularModule, Database, FileText, Table as TableIcon, Plus } from 'lucide-angular';
+import { CdkDrag, CdkDropList } from '@angular/cdk/drag-drop';
+import {
+  LucideAngularModule,
+  Database,
+  FileText,
+  Table as TableIcon,
+  Plus,
+  Image as ImageIcon,
+  Upload,
+} from 'lucide-angular';
 import { RegistryService } from '../../../shared/services/pi-registry.service';
 import { TextBlocksService } from '../../../shared/services/pi-text-blocks.service';
 import { TableTemplatesService } from '../../../shared/services/pi-table-templates.service';
@@ -18,41 +27,35 @@ import {
   type BlockType,
 } from '../../../shared/template-block/template-block.types';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
+import { CANVAS_DROPLIST_ID } from './builder-canvas.component';
 import type { TextBlock } from '../../../shared/services/pi-text-blocks.service';
 import type { TableTemplate } from '../../../shared/services/pi-table-templates.service';
 
 /**
- * TZ-86 Phase D.1 — `BuilderToolPane` (left pane).
+ * TZ-86 Phase D.1 + D.2 — `BuilderToolPane` (left pane).
  *
- * Three collapsible accordion-tabs:
+ * Five collapsible accordion-tabs:
+ *   1. **Структура** — 5 buttons «+» per BlockType.
+ *   2. **Тексты** — list TextBlock items via httpResource.
+ *   3. **Таблицы** — list TableTemplate items via httpResource.
+ *   4. **Данные** — DataSourceDescriptor groups from registry.
+ *   5. **Декорации** (Phase D.2.1) — file input for background image upload
+ *      (≤ 5 MB, png|jpeg|webp). Emits `(uploadBackground)` with the
+ *      selected File; parent BuilderPage calls DocumentTemplatesService.
  *
- *   1. **Структура** (built-in) — 5 buttons «+» per BlockType. Clicking
- *      emits `(addBlock)` with a NEW ephemeral block (tempId only, no _id).
- *      Parent BuilderPage adds it to the in-memory list, fires auto-save
- *      debounce, and on response swaps `tempId` for the server `_id`.
+ * Phase D.2.2 (drag-from-palette): each palette list is wrapped in
+ * `cdkDropList` with `[cdkDropListConnectedTo]="['canvas-droplist']"`. Each
+ * item is a `cdkDrag` with `[cdkDragData]="<AddBlockPayload>"`. Dropping
+ * an item on the canvas (which has matching id) triggers BuilderCanvas's
+ * `(dropAdd)` output, which routes back to BuilderPage.
  *
- *   2. **Тексты** (text-blocks) — list of saved TextBlocks from backend.
- *      Each item has a «+» button that emits `(addBlock)` with type='text'
- *      AND pre-fills `content` with the TextBlock content + `title` with
- *      TextBlock name. dataBinding is set to `{source: 'static', value: ...}`
- *      (the text-block is static markdown content; future TZ: dedicated
- *      TextBlock source enum).
- *
- *   3. **Таблицы** (table-templates) — list of saved TableTemplates. Click
- *      emits `(addBlock)` with type='table' + `settings: { tableTemplateId }`.
- *
- *   4. **Данные** (registry) — list of DataSourceDescriptor groups; clicking
- *      a FIELD inserts a NEW block with that source.field binding
- *      (placeholder content «[organization.name]»).
- *
- * State: local signals for which tab is open + injected httpResource for
- * text-blocks / table-templates / data-sources lists.
+ * Pattern fidelity: same OnPush + signals + httpResource as Phase D.1.
  */
 @Component({
   selector: 'app-builder-tool-pane',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideAngularModule, ButtonComponent],
+  imports: [LucideAngularModule, ButtonComponent, CdkDropList, CdkDrag],
   template: `
     <aside class="tool-pane" aria-label="Палитра блоков">
       <header class="tool-pane__header">
@@ -60,7 +63,7 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         <p class="tool-pane__subtitle">Перетащите блок на холст или нажмите «+»</p>
       </header>
 
-      <!-- Section 1: Block types -->
+      <!-- Section 1: Block types (drag-enabled) -->
       <section class="tool-pane__section" [class.is-open]="isOpen('blocks')">
         <button
           type="button"
@@ -71,9 +74,18 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
           <span class="tool-pane__section-title">Блоки</span>
         </button>
         @if (isOpen('blocks')) {
-          <ul class="tool-pane__list">
+          <ul
+            cdkDropList
+            [cdkDropListData]="blockTypeItems"
+            [cdkDropListConnectedTo]="canvasDroplistId"
+            class="tool-pane__list"
+          >
             @for (item of blockTypeItems; track item.type) {
-              <li class="tool-pane__item">
+              <li
+                cdkDrag
+                [cdkDragData]="{ source: 'block-type', type: item.type }"
+                class="tool-pane__item"
+              >
                 <div class="tool-pane__item-text">
                   <span class="tool-pane__item-label">{{ item.label }}</span>
                   <span class="tool-pane__item-hint">{{ item.hint }}</span>
@@ -93,7 +105,7 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         }
       </section>
 
-      <!-- Section 2: Text-blocks -->
+      <!-- Section 2: Text-blocks (drag-enabled) -->
       <section class="tool-pane__section" [class.is-open]="isOpen('texts')">
         <button
           type="button"
@@ -110,9 +122,18 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
           } @else if (textsRes.error()) {
             <p class="tool-pane__error">{{ textErrorMessage() }}</p>
           } @else if (textsRes.value() && textsRes.value()!.length > 0) {
-            <ul class="tool-pane__list">
+            <ul
+              cdkDropList
+              [cdkDropListData]="textsRes.value() ?? []"
+              [cdkDropListConnectedTo]="canvasDroplistId"
+              class="tool-pane__list"
+            >
               @for (t of textsRes.value() ?? []; track t._id) {
-                <li class="tool-pane__item">
+                <li
+                  cdkDrag
+                  [cdkDragData]="{ source: 'text-block', textBlock: t }"
+                  class="tool-pane__item"
+                >
                   <div class="tool-pane__item-text">
                     <span class="tool-pane__item-label">{{ t.name }}</span>
                     @if (t.category) {
@@ -137,7 +158,7 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         }
       </section>
 
-      <!-- Section 3: Table templates -->
+      <!-- Section 3: Table templates (drag-enabled) -->
       <section class="tool-pane__section" [class.is-open]="isOpen('tables')">
         <button
           type="button"
@@ -154,9 +175,18 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
           } @else if (tablesRes.error()) {
             <p class="tool-pane__error">{{ tableErrorMessage() }}</p>
           } @else if (tablesRes.value() && tablesRes.value()!.length > 0) {
-            <ul class="tool-pane__list">
+            <ul
+              cdkDropList
+              [cdkDropListData]="tablesRes.value() ?? []"
+              [cdkDropListConnectedTo]="canvasDroplistId"
+              class="tool-pane__list"
+            >
               @for (t of tablesRes.value() ?? []; track t._id) {
-                <li class="tool-pane__item">
+                <li
+                  cdkDrag
+                  [cdkDragData]="{ source: 'table-template', tableTemplate: t }"
+                  class="tool-pane__item"
+                >
                   <div class="tool-pane__item-text">
                     <span class="tool-pane__item-label">{{ t.name }}</span>
                     @if (t.description) {
@@ -181,7 +211,7 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         }
       </section>
 
-      <!-- Section 4: Data sources (registry) -->
+      <!-- Section 4: Data sources (registry, drag-enabled) -->
       <section class="tool-pane__section" [class.is-open]="isOpen('data')">
         <button
           type="button"
@@ -201,9 +231,18 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
             @for (src of registryRes.value()!.sources; track src.key) {
               <div class="tool-pane__subgroup">
                 <h4 class="tool-pane__subgroup-title">{{ src.label }}</h4>
-                <ul class="tool-pane__list">
+                <ul
+                  cdkDropList
+                  [cdkDropListData]="src.fields"
+                  [cdkDropListConnectedTo]="canvasDroplistId"
+                  class="tool-pane__list"
+                >
                   @for (f of src.fields; track f.key) {
-                    <li class="tool-pane__item">
+                    <li
+                      cdkDrag
+                      [cdkDragData]="{ source: 'data-binding', dataSource: src.key, field: f }"
+                      class="tool-pane__item"
+                    >
                       <div class="tool-pane__item-text">
                         <span class="tool-pane__item-label">{{ f.label }}</span>
                         <span class="tool-pane__item-hint">{{ f.type }}</span>
@@ -223,6 +262,39 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
               </div>
             }
           }
+        }
+      </section>
+
+      <!-- Section 5: Decorations (D.2.1) — background image upload -->
+      <section class="tool-pane__section" [class.is-open]="isOpen('decorations')">
+        <button
+          type="button"
+          class="tool-pane__section-toggle pi-focus-ring"
+          (click)="toggle('decorations')"
+          [attr.aria-expanded]="isOpen('decorations')"
+        >
+          <lucide-icon [img]="ImageIconSvg" [size]="14"></lucide-icon>
+          <span class="tool-pane__section-title">Декорации</span>
+        </button>
+        @if (isOpen('decorations')) {
+          <div class="tool-pane__decorations">
+            <p class="tool-pane__hint">
+              Загрузите фоновое изображение (PNG, JPEG, WebP, до 5 МБ)
+            </p>
+            <label class="tool-pane__upload">
+              <input
+                #fileInput
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                class="tool-pane__file-input"
+                (change)="onFileChange($event)"
+              />
+              <span class="tool-pane__upload-button pi-focus-ring">
+                <lucide-icon [img]="UploadIcon" [size]="14"></lucide-icon>
+                Загрузить фон
+              </span>
+            </label>
+          </div>
         }
       </section>
     </aside>
@@ -300,10 +372,15 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         gap: 8px;
         padding: 6px 16px;
         transition: background 100ms ease;
+        cursor: grab;
       }
 
       .tool-pane__item:hover {
         background: oklch(var(--color-sunrise-soft) / 0.4);
+      }
+
+      .tool-pane__item:active {
+        cursor: grabbing;
       }
 
       .tool-pane__item-text {
@@ -366,7 +443,8 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
 
       .tool-pane__loading,
       .tool-pane__error,
-      .tool-pane__empty {
+      .tool-pane__empty,
+      .tool-pane__hint {
         padding: 8px 16px;
         font-size: 12px;
         color: oklch(var(--color-muted));
@@ -376,12 +454,67 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
       .tool-pane__error {
         color: oklch(var(--color-destructive));
       }
+
+      .tool-pane__decorations {
+        padding: 8px 16px 16px;
+      }
+
+      .tool-pane__upload {
+        display: block;
+        margin-top: 8px;
+      }
+
+      .tool-pane__file-input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      .tool-pane__upload-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        background: oklch(var(--color-paper-2));
+        color: oklch(var(--color-ink));
+        border: 1px solid oklch(var(--color-rule));
+        border-radius: 2px;
+        cursor: pointer;
+        transition: all 100ms ease;
+      }
+
+      .tool-pane__upload-button:hover {
+        background: oklch(var(--color-ink));
+        color: oklch(var(--color-paper));
+        border-color: oklch(var(--color-ink));
+      }
+
+      /* CDK drag preview for palette items */
+      .cdk-drag-preview {
+        box-sizing: border-box;
+        background: oklch(var(--color-paper));
+        border: 1px solid oklch(var(--color-ink));
+        opacity: 0.9;
+        padding: 6px 16px;
+        font-size: 13px;
+        color: oklch(var(--color-ink));
+      }
     `,
   ],
 })
 export class BuilderToolPaneComponent {
   // Outputs
   readonly addBlock = output<AddBlockPayload>();
+  /** D.2.1: emitted when user picks a file in the Decorations tab. */
+  readonly uploadBackground = output<File>();
 
   // DI
   private readonly textBlocks = inject(TextBlocksService);
@@ -393,6 +526,12 @@ export class BuilderToolPaneComponent {
   protected readonly FileTextIcon = FileText;
   protected readonly TableIconSvg = TableIcon;
   protected readonly PlusIcon = Plus;
+  protected readonly ImageIconSvg = ImageIcon;
+  protected readonly UploadIcon = Upload;
+
+  // D.2.2: cdkDropListConnectedTo target — imported from builder-canvas so
+  // the id string is single-sourced (see code-reviewer nit 2 on D.2).
+  protected readonly canvasDroplistId = [CANVAS_DROPLIST_ID];
 
   // Tab state
   private readonly open = signal<Record<string, boolean>>({
@@ -400,6 +539,7 @@ export class BuilderToolPaneComponent {
     texts: false,
     tables: false,
     data: false,
+    decorations: false,
   });
   protected readonly isOpen = (k: string): boolean => this.open()[k] === true;
   protected readonly toggle = (k: string): void => {
@@ -426,9 +566,7 @@ export class BuilderToolPaneComponent {
   protected readonly registryRes = httpResource(() => '/api/registry/data-sources');
 
   // Error extraction — runtime null guard: httpResource.error() returns
-  // `unknown` and may be null on a successful or pending request. The
-  // computed returns '' when no error is present (caller-side render
-  // shows nothing in that case via the `@else if (textsRes.error())` branch).
+  // `unknown` and may be null on a successful or pending request.
   protected readonly textErrorMessage = computed<string>(() => {
     const err = this.textsRes.error() as HttpErrorResponse | null;
     return err ? extractErrorMessage(err) : '';
@@ -461,11 +599,22 @@ export class BuilderToolPaneComponent {
   ): void {
     this.addBlock.emit({ source: 'data-binding', dataSource: sourceKey, field });
   }
+
+  /** D.2.1: file picker handler — emit the chosen File to BuilderPage. */
+  protected onFileChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.uploadBackground.emit(file);
+    // Reset input so the same file can be re-selected later.
+    input.value = '';
+  }
 }
 
 /**
  * Discriminated union of the 4 ways a user can add a block from the tool pane.
  * BuilderPage handles the union and creates the appropriate TemplateBlock.
+ * Phase D.2.2: this is also the `cdkDragData` carried by palette items.
  */
 export type AddBlockPayload =
   | { source: 'block-type'; type: BlockType }
