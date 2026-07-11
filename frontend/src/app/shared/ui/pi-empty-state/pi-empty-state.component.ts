@@ -9,17 +9,9 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
  * (some had `loading` variant, some had `error` variant, the eyebrow
  * text was hardcoded "00" everywhere). One utility = one source.
  *
- * TZ-94 — the inner content is wrapped in `<div class="max-w-sm
- * mx-auto p-6 pi-dashed-panel">`. The `.pi-dashed-panel` utility
- * (introduced in TZ-93) gives the empty state an intentional
- * "dropzone" feel — a centered, dashed-bordered panel rather than
- * loose text floating in a table cell. `max-w-sm` (24rem) constrains
- * the visual treatment so wider tables center the panel instead of
- * stretching it. The outer `<tr><td colspan>` structure is preserved
- * to avoid table border-collapse collision.
- *
  * Visual contract (TZ-AUDIT-3 — em-dash + '00' eyebrow established,
- * TZ-94 — pi-dashed-panel wrapper adopted):
+ * TZ-94 — pi-dashed-panel wrapper adopted for a centered "dropzone"
+ * feel via the TZ-93 utility):
  *  - `<tr><td colspan={colspan}>` with `py-12 px-4 text-center`
  *  - Inner wrapper: `max-w-sm mx-auto p-6 pi-dashed-panel flex
  *    flex-col items-center gap-1` (centered dashed dropzone)
