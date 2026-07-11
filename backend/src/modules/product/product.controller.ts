@@ -71,4 +71,42 @@ export class ProductController {
   remove(@Param('id') id: string) {
     return this.service.remove(id);
   }
+
+  /**
+   * TZ-83 Фаза D.3: atomic attachModule / detachModule endpoints.
+   * Используют MongoDB $addToSet / $pull — race-condition-safe,
+   * в отличие от naive PATCH с заменой всего массива productModuleIds.
+   *
+   * Нюанс маршрутизации: Express позволяет коллизию `:id` и `:moduleId`,
+   * поэтому detachModule объявлен ПОСЛЕ `findOne` (NestJS роутит по pathname,
+   * не по method) — порядок важен для матчинга.
+   */
+  @Post(':productId/modules')
+  @Roles('admin', 'manager')
+  @AuditAction({
+    action: 'attach-module',
+    entityType: 'Product',
+    idParam: 'productId',
+  })
+  attachModule(
+    @Param('productId') productId: string,
+    @Body() body: { moduleId: string },
+  ) {
+    return this.service.attachModule(productId, body.moduleId);
+  }
+
+  @Delete(':productId/modules/:moduleId')
+  @Roles('admin', 'manager')
+  @AuditAction({
+    action: 'detach-module',
+    entityType: 'Product',
+    idParam: 'productId',
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  detachModule(
+    @Param('productId') productId: string,
+    @Param('moduleId') moduleId: string,
+  ) {
+    return this.service.detachModule(productId, moduleId);
+  }
 }

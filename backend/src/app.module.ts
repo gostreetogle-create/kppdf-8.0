@@ -26,8 +26,8 @@ import { UnitModule } from './modules/unit/unit.module';
 import { MaterialModule } from './modules/material/material.module';
 import { ProductModule } from './modules/product/product.module';
 import { ProductPhotoModule } from './modules/product-photo/product-photo.module';
-import { ProductComponentModule } from './modules/product-component/product-component.module';
 import { ProductModuleModule } from './modules/product-module/product-module.module';
+import { ProductModulePhotoModule } from './modules/product-module-photo/product-module-photo.module';
 import { PhotosModule } from './modules/photos/photos.module';
 import { BomModule } from './modules/bom/bom.module';
 import { WorkCenterModule } from './modules/work-center/work-center.module';
@@ -132,8 +132,8 @@ import { HealthController } from './health.controller';
     MaterialModule,
     ProductModule,
     ProductPhotoModule,
-    ProductComponentModule,
     ProductModuleModule,
+    ProductModulePhotoModule, // TZ-83 Фаза A.7: новая entity
     PhotosModule,
     BomModule,
     WorkCenterModule,

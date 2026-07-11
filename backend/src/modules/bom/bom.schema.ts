@@ -3,7 +3,16 @@ import { HydratedDocument, Types } from 'mongoose';
 
 @Schema({ _id: false })
 class BomComponentSchema {
-  @Prop({ type: Types.ObjectId, ref: 'ProductComponent', required: true })
+  // TZ-83 cross-module side-effect: ProductComponent удалён в TZ-83 Фазе A.
+  // BOM по смыслу ссылается на "продуктовую штуку" — теперь это ProductModule.
+  // ref переключен на 'ProductModule'; имя поля `productComponentId` оставлено
+  // чтобы не трогать DTO / frontend.
+  //
+  // TODO: existing boms в БД могут содержать СТАРЫЕ ObjectId из удалённой
+  //       коллекции `productcomponents` — populate вернёт null. Миграция
+  //       через fuzzy name-resolve в новые `productmodules` — отдельный TZ.
+  //       Триггер: первое появление живых BOM-записей с реальными данными.
+  @Prop({ type: Types.ObjectId, ref: 'ProductModule', required: true })
   productComponentId!: Types.ObjectId;
 
   @Prop({ default: 1 })
