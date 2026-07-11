@@ -1,15 +1,19 @@
-# TZ-93 — Brutalist Architectural UI Foundations lock
-# TZF-00 § 5: protects files modified by this TZ from accidental edits.
-# Phase 1 of 3-phase plan. Phase 2 (TZ-94) and Phase 3 (TZ-95) will extend this lock.
+# TZ-93 + TZ-93.1 — Brutalist Architectural UI Foundations lock
+# TZF-00 § 5: protects files modified by these TZs from accidental edits.
+# TZ-93: 2 utilities (Phase 1). TZ-93.1: rolled back .pi-corner-marks (1990s-terminal risk).
+# Phase 2 (TZ-94) and Phase 3 (TZ-95) will extend this lock.
 
-protected:                                                                # files actually modified by TZ-93
-  - frontend/src/styles.css                                                # TZ-93: 3 new @utility + @layer components (pi-tech-label, pi-dashed-panel, pi-corner-marks)
-  - frontend/src/app/pages/playground/theme-editor.page.ts                  # TZ-93: Section III fixture (3 demo cards)
+protected:                                                                # files actually modified by TZ-93 + TZ-93.1
+  - frontend/src/styles.css                                                # TZ-93: 2 new @utility (pi-tech-label, pi-dashed-panel); TZ-93.1: -1 @layer components block (.pi-corner-marks removed), JSDoc updated "3→2 utilities"
+  - frontend/src/app/pages/playground/theme-editor.page.ts                  # TZ-93: Section III fixture; TZ-93.1: 3 cards → 2 cards, grid-cols-3 → grid-cols-2
 
 related_locks:
   - TZ-90-dialog-system.lock          # TZ-90 establishes the @utility + @layer components token discipline
   - TZ-91-security-hardening.lock      # No overlap (auth/RBAC, unrelated zone)
 
+modifications:
+  - TZ-93.1 (commit e5d25fe, 2026-07-12): rollback .pi-corner-marks utility due to 1990s-terminal aesthetic risk. See tasks/TZ-93.1.md (pending archival to tasks/_archive/2026-07/TZ-93.1.md.done).
+
 future_extensions:
-  - TZ-94: 12 components adoption (PiEmptyState, PiBadge, PiTable, form labels) — Layer 3 SERIAL
+  - TZ-94: 5 components adoption (PiEmptyState, PiBadge, PiTable, PiLabel, PiFormField) — Layer 3 SERIAL, 4 atomic commits
   - TZ-95: /kit/* showcase + docs/paper-and-ink.md + docs/add-new-page.md updates — Layer 1
