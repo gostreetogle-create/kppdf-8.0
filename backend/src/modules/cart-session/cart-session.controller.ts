@@ -5,6 +5,7 @@ import {
   Param,
   Post,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { CartSessionService } from './cart-session.service';
 import { CreateCartSessionDto } from './dto/create-cart-session.dto';
 import { AuditAction } from '../../common/decorators/audit-action.decorator';
@@ -24,6 +25,7 @@ export class CartSessionController {
   constructor(private readonly service: CartSessionService) {}
 
   @Post()
+  @Roles('admin', 'manager')
   create(@Body() dto: CreateCartSessionDto) {
     return this.service.create(dto);
   }
@@ -39,6 +41,7 @@ export class CartSessionController {
   }
 
   @Post(':sessionId/checkout')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'checkout', entityType: 'CartSession' })
   checkout(@Param('sessionId') sessionId: string, @Body() dto: CheckoutDto) {
     return this.service.checkout(sessionId, dto.organizationId, dto.counterpartyId);

@@ -12,6 +12,7 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { memoryStorage } from 'multer';
@@ -65,6 +66,7 @@ export class DocumentTemplateController {
    * via parallel Mongoose lookups before delegating to existing renderHtml.
    */
   @Post(':id/build')
+  @Roles('admin', 'manager')
   async build(
     @Param('id') id: string,
     @Body() dto: BuildDocumentDto,
@@ -99,6 +101,7 @@ export class DocumentTemplateController {
    * main.ts's `useStaticAssets` exposes those URLs at `/uploads/*`.
    */
   @Post(':id/upload-background')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'upload_background', entityType: 'DocumentTemplate' })
   @UseInterceptors(
     FileInterceptor('file', {
@@ -128,24 +131,28 @@ export class DocumentTemplateController {
   }
 
   @Post()
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'DocumentTemplate' })
   create(@Body() dto: CreateDocumentTemplateDto) {
     return this.service.create(dto);
   }
 
   @Patch(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'DocumentTemplate' })
   update(@Param('id') id: string, @Body() dto: UpdateDocumentTemplateDto) {
     return this.service.update(id, dto);
   }
 
   @Post(':id/duplicate')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'duplicate', entityType: 'DocumentTemplate' })
   duplicate(@Param('id') id: string) {
     return this.service.duplicate(id);
   }
 
   @Post(':id/set-default')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'set_default', entityType: 'DocumentTemplate' })
   setDefault(@Param('id') id: string) {
     return this.service.setDefault(id);
@@ -163,6 +170,7 @@ export class DocumentTemplateController {
   }
 
   @Delete(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'DocumentTemplate' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

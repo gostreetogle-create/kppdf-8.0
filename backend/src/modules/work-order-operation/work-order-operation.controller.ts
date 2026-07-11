@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { WorkOrderOperationService } from './work-order-operation.service';
 import { CreateWorkOrderOperationDto } from './dto/create-work-order-operation.dto';
 import { UpdateWorkOrderOperationDto } from './dto/update-work-order-operation.dto';
@@ -28,24 +29,28 @@ export class WorkOrderOperationController {
   }
 
   @Post()
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'WorkOrderOperation' })
   create(@Body() dto: CreateWorkOrderOperationDto) {
     return this.service.create(dto);
   }
 
   @Patch(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'WorkOrderOperation' })
   update(@Param('id') id: string, @Body() dto: UpdateWorkOrderOperationDto) {
     return this.service.update(id, dto);
   }
 
   @Post(':id/start')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'start', entityType: 'WorkOrderOperation' })
   start(@Param('id') id: string) {
     return this.service.start(id);
   }
 
   @Post(':id/complete')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'complete', entityType: 'WorkOrderOperation' })
   complete(
     @Param('id') id: string,
@@ -55,6 +60,7 @@ export class WorkOrderOperationController {
   }
 
   @Delete(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'WorkOrderOperation' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

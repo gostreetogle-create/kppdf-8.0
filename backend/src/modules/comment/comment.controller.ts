@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import type { Request } from 'express';
 import { CommentService } from './comment.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -26,6 +27,7 @@ export class CommentController {
   }
 
   @Post()
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'Comment' })
   create(@Body() dto: CreateCommentDto, @Req() req: Request) {
     const user = (req as unknown as { user?: { sub: string; email?: string } }).user;
@@ -35,6 +37,7 @@ export class CommentController {
   }
 
   @Patch(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'Comment' })
   update(@Param('id') id: string, @Body() dto: UpdateCommentDto, @Req() req: Request) {
     const user = (req as unknown as { user?: { sub: string; role?: string } }).user;
@@ -44,12 +47,14 @@ export class CommentController {
   }
 
   @Post(':id/archive')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'archive', entityType: 'Comment' })
   archive(@Param('id') id: string) {
     return this.service.archive(id);
   }
 
   @Delete(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'Comment' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

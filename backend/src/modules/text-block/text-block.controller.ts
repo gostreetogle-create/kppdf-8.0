@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { AuditAction } from '../../common/decorators/audit-action.decorator';
 import { TextBlockService } from './text-block.service';
 import { CreateTextBlockDto } from './dto/create-text-block.dto';
@@ -45,18 +46,21 @@ export class TextBlockController {
   }
 
   @Post()
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'TextBlock' })
   create(@Body() dto: CreateTextBlockDto) {
     return this.service.create(dto);
   }
 
   @Patch(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'TextBlock' })
   update(@Param('id') id: string, @Body() dto: UpdateTextBlockDto) {
     return this.service.update(id, dto);
   }
 
   @Delete(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'TextBlock' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

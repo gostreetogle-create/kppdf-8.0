@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { WorkerService } from './worker.service';
 import { CreateWorkerDto } from './dto/create-worker.dto';
 import { UpdateWorkerDto } from './dto/update-worker.dto';
@@ -33,18 +34,21 @@ export class WorkerController {
   }
 
   @Post()
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'Worker' })
   create(@Body() dto: CreateWorkerDto) {
     return this.service.create(dto);
   }
 
   @Patch(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'Worker' })
   update(@Param('id') id: string, @Body() dto: UpdateWorkerDto) {
     return this.service.update(id, dto);
   }
 
   @Delete(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'Worker' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

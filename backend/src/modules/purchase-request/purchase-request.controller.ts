@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { PurchaseRequestService } from './purchase-request.service';
 import { CreatePurchaseRequestDto } from './dto/create-purchase-request.dto';
 import { UpdatePurchaseRequestDto } from './dto/update-purchase-request.dto';
@@ -37,24 +38,28 @@ export class PurchaseRequestController {
   }
 
   @Post()
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'PurchaseRequest' })
   create(@Body() dto: CreatePurchaseRequestDto) {
     return this.service.create(dto);
   }
 
   @Patch(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'PurchaseRequest' })
   update(@Param('id') id: string, @Body() dto: UpdatePurchaseRequestDto) {
     return this.service.update(id, dto);
   }
 
   @Post(':id/convert-to-purchase-order')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'convert', entityType: 'PurchaseRequest' })
   convert(@Param('id') id: string, @Body() dto: ConvertDto) {
     return this.service.convertToPurchaseOrder(id, dto.supplierId, dto.title);
   }
 
   @Delete(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'PurchaseRequest' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

@@ -7,6 +7,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { OrderClosingService } from './order-closing.service';
 import { CreateOrderClosingDto } from './dto/create-order-closing.dto';
 import { AuditAction } from '../../common/decorators/audit-action.decorator';
@@ -16,6 +17,7 @@ export class OrderClosingController {
   constructor(private readonly service: OrderClosingService) {}
 
   @Post('production-orders/:productionOrderId/closing')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'OrderClosing' })
   createForOrder(
     @Param('productionOrderId') productionOrderId: string,
@@ -40,6 +42,7 @@ export class OrderClosingController {
   }
 
   @Delete('order-closings/:id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'OrderClosing' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { TableTemplateService } from './table-template.service';
 import { CreateTableTemplateDto } from './dto/create-table-template.dto';
 import { UpdateTableTemplateDto } from './dto/update-table-template.dto';
@@ -38,18 +39,21 @@ export class TableTemplateController {
   }
 
   @Post()
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'TableTemplate' })
   create(@Body() dto: CreateTableTemplateDto) {
     return this.service.create(dto);
   }
 
   @Patch(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'TableTemplate' })
   update(@Param('id') id: string, @Body() dto: UpdateTableTemplateDto) {
     return this.service.update(id, dto);
   }
 
   @Delete(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'TableTemplate' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

@@ -14,6 +14,7 @@ import {
   CurrentUser,
 } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -78,6 +79,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @Roles('admin', 'manager', 'user')
   @HttpCode(HttpStatus.OK)
   async logout(@CurrentUser() me: AuthenticatedUser) {
     await this.auth.logout(me.id);

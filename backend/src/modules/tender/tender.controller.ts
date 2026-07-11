@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { TenderService } from './tender.service';
 import { CreateTenderDto } from './dto/create-tender.dto';
 import { UpdateTenderDto } from './dto/update-tender.dto';
@@ -30,6 +31,7 @@ export class TenderController {
   }
 
   @Post('tenders')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'Tender' })
   create(@Body() dto: CreateTenderDto) {
     return this.service.create(dto);
@@ -46,24 +48,28 @@ export class TenderController {
   }
 
   @Patch('tenders/:id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'Tender' })
   update(@Param('id') id: string, @Body() dto: UpdateTenderDto) {
     return this.service.update(id, dto);
   }
 
   @Post('tenders/:id/quotes')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'attach_quote', entityType: 'Tender' })
   attachQuote(@Param('id') id: string, @Body() dto: AttachQuoteDto) {
     return this.service.attachQuote(id, dto.quoteId);
   }
 
   @Post('tenders/:id/win')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'win', entityType: 'Tender' })
   win(@Param('id') id: string, @Body() dto: WinTenderDto) {
     return this.service.win(id, dto);
   }
 
   @Delete('tenders/:id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'Tender' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

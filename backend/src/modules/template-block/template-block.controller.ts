@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { TemplateBlockService } from './template-block.service';
 import { CreateTemplateBlockDto } from './dto/create-template-block.dto';
 import { UpdateTemplateBlockDto } from './dto/update-template-block.dto';
@@ -20,24 +21,28 @@ export class TemplateBlockController {
   }
 
   @Post('document-templates/:id/blocks')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'TemplateBlock' })
   add(@Param('id') templateId: string, @Body() dto: Omit<CreateTemplateBlockDto, 'templateId'>) {
     return this.service.create({ ...dto, templateId });
   }
 
   @Post('document-templates/:id/blocks/reorder')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'reorder', entityType: 'TemplateBlock' })
   reorder(@Param('id') templateId: string, @Body() dto: ReorderBlocksDto) {
     return this.service.reorder(templateId, dto.blockIds);
   }
 
   @Patch('template-blocks/:id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'TemplateBlock' })
   update(@Param('id') id: string, @Body() dto: UpdateTemplateBlockDto) {
     return this.service.update(id, dto);
   }
 
   @Delete('template-blocks/:id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'TemplateBlock' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

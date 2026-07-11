@@ -59,6 +59,7 @@ export class UserController {
    * Admin can update anyone and can additionally change role, isActive, permissions.
    */
   @Patch(':id')
+  @Roles('admin', 'manager', 'user')
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateUserDto,
@@ -84,6 +85,7 @@ export class UserController {
   }
 
   @Post(':id/change-password')
+  @Roles('admin', 'manager', 'user')
   changePassword(
     @Param('id') id: string,
     @Body() dto: ChangePasswordDto,

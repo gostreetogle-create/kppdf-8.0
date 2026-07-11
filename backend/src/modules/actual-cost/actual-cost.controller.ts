@@ -6,6 +6,7 @@ import {
   Param,
   Post,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { ActualCostService } from './actual-cost.service';
 import { CreateActualCostDto } from './dto/create-actual-cost.dto';
 import { AuditAction } from '../../common/decorators/audit-action.decorator';
@@ -20,6 +21,7 @@ export class ActualCostController {
   }
 
   @Post()
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'ActualCost' })
   create(
     @Param('orderId') orderId: string,
@@ -29,6 +31,7 @@ export class ActualCostController {
   }
 
   @Delete(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'ActualCost' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

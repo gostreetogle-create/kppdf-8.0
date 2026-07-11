@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { WorkCenterService } from './work-center.service';
 import { CreateWorkCenterDto } from './dto/create-work-center.dto';
 import { UpdateWorkCenterDto } from './dto/update-work-center.dto';
@@ -27,18 +28,21 @@ export class WorkCenterController {
   }
 
   @Post()
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'WorkCenter' })
   create(@Body() dto: CreateWorkCenterDto) {
     return this.service.create(dto);
   }
 
   @Patch(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'WorkCenter' })
   update(@Param('id') id: string, @Body() dto: UpdateWorkCenterDto) {
     return this.service.update(id, dto);
   }
 
   @Delete(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'WorkCenter' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

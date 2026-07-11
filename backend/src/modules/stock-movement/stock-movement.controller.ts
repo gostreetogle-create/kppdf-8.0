@@ -7,6 +7,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { StockMovementService } from './stock-movement.service';
 import { CreateStockMovementDto } from './dto/create-stock-movement.dto';
 import { AuditAction } from '../../common/decorators/audit-action.decorator';
@@ -16,6 +17,7 @@ export class StockMovementController {
   constructor(private readonly service: StockMovementService) {}
 
   @Post('stock-movements')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'StockMovement' })
   create(@Body() dto: CreateStockMovementDto) {
     return this.service.create(dto);
@@ -44,6 +46,7 @@ export class StockMovementController {
   }
 
   @Delete('stock-movements/:id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'StockMovement' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

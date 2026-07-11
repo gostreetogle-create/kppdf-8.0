@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { ContractService } from './contract.service';
 import { CreateContractDto } from './dto/create-contract.dto';
 import { UpdateContractDto } from './dto/update-contract.dto';
@@ -39,30 +40,35 @@ export class ContractController {
   }
 
   @Post()
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'Contract' })
   create(@Body() dto: CreateContractDto) {
     return this.service.create(dto);
   }
 
   @Patch(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'Contract' })
   update(@Param('id') id: string, @Body() dto: UpdateContractDto) {
     return this.service.update(id, dto);
   }
 
   @Post(':id/sign')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'sign', entityType: 'Contract' })
   sign(@Param('id') id: string, @Body() dto: SignContractDto) {
     return this.service.sign(id, dto.signedAt);
   }
 
   @Post(':id/activate')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'activate', entityType: 'Contract' })
   activate(@Param('id') id: string) {
     return this.service.activate(id);
   }
 
   @Delete(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'Contract' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

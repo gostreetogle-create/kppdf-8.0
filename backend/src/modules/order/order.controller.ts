@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
@@ -33,24 +34,28 @@ export class OrderController {
   }
 
   @Post()
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'Order' })
   create(@Body() dto: CreateOrderDto) {
     return this.service.create(dto);
   }
 
   @Patch(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'Order' })
   update(@Param('id') id: string, @Body() dto: UpdateOrderDto) {
     return this.service.update(id, dto);
   }
 
   @Post(':id/reserve-stock')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'reserve_stock', entityType: 'Order' })
   reserveStock(@Param('id') id: string, @Body() dto: ReserveStockDto) {
     return this.service.reserveStock(id, dto.warehouseId, dto.zoneName);
   }
 
   @Post(':id/ship')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'ship', entityType: 'Order' })
   ship(
     @Param('id') id: string,
@@ -60,12 +65,14 @@ export class OrderController {
   }
 
   @Post(':id/cancel')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'cancel', entityType: 'Order' })
   cancel(@Param('id') id: string) {
     return this.service.cancel(id);
   }
 
   @Delete(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'Order' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

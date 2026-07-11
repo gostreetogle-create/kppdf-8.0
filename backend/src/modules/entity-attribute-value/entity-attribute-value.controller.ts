@@ -14,6 +14,7 @@ import { BulkAttributesDto } from './dto/bulk-attributes.dto';
 import { Types } from 'mongoose';
 import { AuditAction } from '../../common/decorators/audit-action.decorator';
 import { BadRequestException } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 /**
  * Generic per-entity EAV endpoint: GET/PUT/POST/DELETE under
@@ -55,6 +56,7 @@ export class EntityAttributeValueController {
   }
 
   @Put(':entityType/:entityId/attributes')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'set_attribute', entityType: 'EntityAttributeValue' })
   async bulkSet(
     @Param('entityType') entityType: string,
@@ -73,6 +75,7 @@ export class EntityAttributeValueController {
   }
 
   @Put(':entityType/:entityId/attributes/:attributeId')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'set_attribute', entityType: 'EntityAttributeValue' })
   async setOne(
     @Param('entityType') entityType: string,
@@ -94,6 +97,7 @@ export class EntityAttributeValueController {
   }
 
   @Delete(':entityType/:entityId/attributes/:attributeId')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete_attribute', entityType: 'EntityAttributeValue' })
   async remove(
     @Param('entityType') entityType: string,

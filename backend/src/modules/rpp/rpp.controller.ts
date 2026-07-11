@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { RppService } from './rpp.service';
 import { CreateRppDto } from './dto/create-rpp.dto';
 import { UpdateRppDto } from './dto/update-rpp.dto';
@@ -24,6 +25,7 @@ export class RppController {
   }
 
   @Post('rpps')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'Rpp' })
   create(@Body() dto: CreateRppDto) {
     return this.service.create(dto);
@@ -40,12 +42,14 @@ export class RppController {
   }
 
   @Patch('rpps/:id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'Rpp' })
   update(@Param('id') id: string, @Body() dto: UpdateRppDto) {
     return this.service.update(id, dto);
   }
 
   @Delete('rpps/:id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'Rpp' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

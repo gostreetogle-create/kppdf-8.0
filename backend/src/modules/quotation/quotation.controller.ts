@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { QuotationService } from './quotation.service';
 import { CreateQuotationDto } from './dto/create-quotation.dto';
 import { UpdateQuotationDto } from './dto/update-quotation.dto';
@@ -38,30 +39,35 @@ export class QuotationController {
   }
 
   @Post()
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'Quotation' })
   create(@Body() dto: CreateQuotationDto) {
     return this.service.create(dto);
   }
 
   @Patch(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'Quotation' })
   update(@Param('id') id: string, @Body() dto: UpdateQuotationDto) {
     return this.service.update(id, dto);
   }
 
   @Post(':id/duplicate')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'duplicate', entityType: 'Quotation' })
   duplicate(@Param('id') id: string) {
     return this.service.duplicate(id);
   }
 
   @Post(':id/convert-to-contract')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'convert_to_contract', entityType: 'Quotation' })
   convertToContract(@Param('id') id: string, @Body() body: { title?: string }) {
     return this.service.convertToContract(id, body?.title);
   }
 
   @Post(':id/convert-to-order')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'convert_to_order', entityType: 'Quotation' })
   convertToOrder(
     @Param('id') id: string,
@@ -71,6 +77,7 @@ export class QuotationController {
   }
 
   @Delete(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'Quotation' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

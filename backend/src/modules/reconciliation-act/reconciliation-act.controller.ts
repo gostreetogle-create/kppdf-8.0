@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { ReconciliationActService } from './reconciliation-act.service';
 import { CreateReconciliationActDto } from './dto/create-reconciliation-act.dto';
 import { UpdateReconciliationActDto } from './dto/update-reconciliation-act.dto';
@@ -28,24 +29,28 @@ export class ReconciliationActController {
   }
 
   @Post()
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'ReconciliationAct' })
   create(@Body() dto: CreateReconciliationActDto) {
     return this.service.create(dto);
   }
 
   @Patch(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'ReconciliationAct' })
   update(@Param('id') id: string, @Body() dto: UpdateReconciliationActDto) {
     return this.service.update(id, dto);
   }
 
   @Post(':id/sign')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'sign', entityType: 'ReconciliationAct' })
   sign(@Param('id') id: string, @Body() dto: SignActDto) {
     return this.service.sign(id, dto);
   }
 
   @Delete(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'ReconciliationAct' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

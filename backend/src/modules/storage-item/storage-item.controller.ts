@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { StorageItemService } from './storage-item.service';
 import { CreateStorageItemDto } from './dto/create-storage-item.dto';
 import { UpdateStorageItemDto } from './dto/update-storage-item.dto';
@@ -19,6 +20,7 @@ export class StorageItemController {
   constructor(private readonly service: StorageItemService) {}
 
   @Post('products/:productId/storage-items')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'StorageItem' })
   createForProduct(
     @Param('productId') productId: string,
@@ -46,18 +48,21 @@ export class StorageItemController {
   }
 
   @Patch('storage-items/:id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'StorageItem' })
   update(@Param('id') id: string, @Body() dto: UpdateStorageItemDto) {
     return this.service.update(id, dto);
   }
 
   @Post('storage-items/:id/adjust')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'adjust', entityType: 'StorageItem' })
   adjust(@Param('id') id: string, @Body() dto: AdjustStorageItemDto) {
     return this.service.adjust(id, dto);
   }
 
   @Delete('storage-items/:id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'StorageItem' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

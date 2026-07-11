@@ -10,6 +10,7 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { promises as fs } from 'fs';
@@ -23,6 +24,7 @@ export class InventorFileController {
 
   @Post('products/:productId/inventor-files')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 50 * 1024 * 1024 } }))
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'upload', entityType: 'InventorFile' })
   async upload(
     @Param('productId') productId: string,
@@ -54,6 +56,7 @@ export class InventorFileController {
   }
 
   @Delete('inventor-files/:id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'InventorFile' })
   async remove(@Param('id') id: string) {
     await this.service.remove(id);

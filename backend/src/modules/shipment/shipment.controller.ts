@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { ShipmentService } from './shipment.service';
 import { CreateShipmentDto } from './dto/create-shipment.dto';
 import { UpdateShipmentDto } from './dto/update-shipment.dto';
@@ -33,30 +34,35 @@ export class ShipmentController {
   }
 
   @Post()
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'Shipment' })
   create(@Body() dto: CreateShipmentDto) {
     return this.service.create(dto);
   }
 
   @Patch(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'Shipment' })
   update(@Param('id') id: string, @Body() dto: UpdateShipmentDto) {
     return this.service.update(id, dto);
   }
 
   @Post(':id/dispatch')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'dispatch', entityType: 'Shipment' })
   dispatch(@Param('id') id: string) {
     return this.service.dispatch(id);
   }
 
   @Post(':id/add-doc')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'add_doc', entityType: 'Shipment' })
   addDoc(@Param('id') id: string, @Body() dto: AddDocDto) {
     return this.service.addDoc(id, dto);
   }
 
   @Delete(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'Shipment' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

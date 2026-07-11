@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { ProductPassportService } from './product-passport.service';
 import { CreateProductPassportDto } from './dto/create-product-passport.dto';
 import { UpdateProductPassportDto } from './dto/update-product-passport.dto';
@@ -23,6 +24,7 @@ export class ProductPassportController {
   }
 
   @Post('products/:productId/passport')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'ProductPassport' })
   createForProduct(
     @Param('productId') productId: string,
@@ -46,12 +48,14 @@ export class ProductPassportController {
   }
 
   @Patch('passports/:id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'ProductPassport' })
   update(@Param('id') id: string, @Body() dto: UpdateProductPassportDto) {
     return this.service.update(id, dto);
   }
 
   @Delete('passports/:id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'ProductPassport' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

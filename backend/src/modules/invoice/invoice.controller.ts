@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { InvoiceService } from './invoice.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
@@ -24,6 +25,7 @@ export class InvoiceController {
   }
 
   @Post('invoices')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'Invoice' })
   create(@Body() dto: CreateInvoiceDto) {
     return this.service.create(dto);
@@ -52,18 +54,21 @@ export class InvoiceController {
   }
 
   @Patch('invoices/:id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'Invoice' })
   update(@Param('id') id: string, @Body() dto: UpdateInvoiceDto) {
     return this.service.update(id, dto);
   }
 
   @Post('invoices/:id/mark-paid')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'mark_paid', entityType: 'Invoice' })
   markPaid(@Param('id') id: string, @Body() dto: MarkPaidDto) {
     return this.service.markPaid(id, dto);
   }
 
   @Delete('invoices/:id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'Invoice' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

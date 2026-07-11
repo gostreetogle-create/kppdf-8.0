@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { RoutingStepService } from './routing-step.service';
 import { CreateRoutingStepDto } from './dto/create-routing-step.dto';
 import { UpdateRoutingStepDto } from './dto/update-routing-step.dto';
@@ -39,18 +40,21 @@ export class RoutingStepController {
   }
 
   @Post()
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'RoutingStep' })
   create(@Body() dto: CreateRoutingStepDto) {
     return this.service.create(dto);
   }
 
   @Patch(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'RoutingStep' })
   update(@Param('id') id: string, @Body() dto: UpdateRoutingStepDto) {
     return this.service.update(id, dto);
   }
 
   @Delete(':id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'RoutingStep' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

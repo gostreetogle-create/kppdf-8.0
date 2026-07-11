@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { CostCalculationService } from './cost-calculation.service';
 import { CreateCostCalculationDto } from './dto/create-cost-calculation.dto';
 import { UpdateCostCalculationDto } from './dto/update-cost-calculation.dto';
@@ -18,6 +19,7 @@ export class CostCalculationController {
   constructor(private readonly service: CostCalculationService) {}
 
   @Post('products/:productId/cost-calculations')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'CostCalculation' })
   createForProduct(
     @Param('productId') productId: string,
@@ -49,18 +51,21 @@ export class CostCalculationController {
   }
 
   @Post('cost-calculations/:id/activate')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'activate', entityType: 'CostCalculation' })
   activate(@Param('id') id: string) {
     return this.service.activate(id);
   }
 
   @Patch('cost-calculations/:id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'CostCalculation' })
   update(@Param('id') id: string, @Body() dto: UpdateCostCalculationDto) {
     return this.service.update(id, dto);
   }
 
   @Delete('cost-calculations/:id')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'CostCalculation' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);
