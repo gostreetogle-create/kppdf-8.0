@@ -1425,3 +1425,47 @@
 - `ADMIN_PASSWORD < 8` → WARN + skip (admin НЕ создаётся) per spec §2 Decision 3. Manual `.env` setup required для fresh DB.
 - `audit-roles-coverage.ts` failed в CI test env (node version mismatch) — local invocation confirmed `missingCount: 0`. Env issue, not logical bug.
 - 24/27 pre-existing `verify-status.sh` FAILs останутся (TZ-30-40 + TZ-47-60 missing from kit's `OrchestratorKit/_archive/`) — это convention mismatch (project uses `tasks/`, kit scans `OrchestratorKit/`), не regression от этого архива.
+## [2026-07-11] — Завершено: TZ-90 Phase A + B (Dialog System foundation + polymorphic wrapper)
+
+**Исполнитель:** Frontend Architect (TZ-90A: CSS foundation, TZ-90B: polymorphic wrapper)
+
+**Статус:** ✅ DONE (Phase A + B). Phase C/D/E deferred to TZ-90C/D/E sub-tasks.
+
+**Что сделано (2 atomic commits, ahead of origin/main):**
+
+- **Phase A — CSS foundation** (`frontend/src/styles.css`):
+  - 6 new tokens: `--dialog-bg` (paper), `--dialog-text` (ink), `--dialog-shadow` (24% light / 48% dark), `--dialog-radius` (8px), `--overlay-bg` (50% oklch + 50% rgb fallback)
+  - CDK overlay overrides: `.pi-overlay-backdrop` (50% opacity, 2-layer fallback), `.pi-overlay-panel` (paper bg + 8px radius + shadow + overflow rules from TZ-DIALOG-OVERFLOW-FIX rounds 1-5)
+  - Animation: `.pi-dialog-host-open` keyframes (fade-in + scale 0.96→1.0, 180ms ease-out, respects `prefers-reduced-motion`)
+
+- **Phase B — polymorphic wrapper + service** (commit `818946c`):
+  - `pi-dialog.component.ts`: 4 templates (alert/form/content/destructive) × 4 widths (sm/md/lg/xl) per spec §B.1
+  - 5 computed signals: panelClass, headerClass, bodyClass, footerClass, effectiveLabel
+  - Fallback table for unsupported combos (e.g. alert × md → alert × sm)
+  - 8px radius (rounded-lg) matches `--dialog-radius` token
+  - Content variant: sticky footer + bg-paper on header+footer (prevents body bleed-through)
+  - `pi-dialog.service.ts`: `DialogConfig.modal` field (default true), `hasBackdrop: config.modal !== false`, `panelEl.classList.add('pi-dialog-host-open')` triggers animation
+  - `.gitignore`: extended pattern to `tmp/tz9*-{commit,arch}-*.txt`
+
+**Затронутые файлы:**
+- `frontend/src/styles.css` (TZ-90A: 6 tokens + overrides + animation)
+- `frontend/src/app/shared/ui/dialog/pi-dialog.component.ts` (TZ-90B: polymorphic wrapper)
+- `frontend/src/app/shared/ui/dialog/pi-dialog.service.ts` (TZ-90B: modal config + animation trigger)
+- `OrchestratorKit/.mimocode/locks/TZ-90-dialog-system.lock` (NEW, 6 protected files)
+- `.gitignore` (TZ-90B: tmp pattern extended)
+
+**Verification:**
+- Frontend typecheck: 0 errors
+- Code-reviewer: 3 rounds, all nits closed (sticky-footer bg-paper, effectiveLabel computed, content header bg)
+- Atomic commits: 2 (Phase B implementation + gitignore cleanup)
+- Branch state: ahead of origin/main, NOT pushed (user auth required)
+
+**Известные ограничения (deferred):**
+- 12 operational dialogs still use ad-hoc styles → **TZ-90C** (Layer 3 SERIAL migration)
+- AlertDialog 2px radius + hardcoded 440px → TZ-90C § alert-migration
+- /kit/overlays Section V showcase not updated → **TZ-90D** (Phase D)
+- TZ-85D cost-calculation-detail-dialog wiring → TZ-90D
+- Docs sync (paper-and-ink.md, add-new-page.md) → **TZ-90E** (Phase E)
+- Spec test for polymorphic 4×4 fallback table → future test-infra work
+
+**Lock file:** `OrchestratorKit/.mimocode/locks/TZ-90-dialog-system.lock` (6 protected files, 2 future_extensions)

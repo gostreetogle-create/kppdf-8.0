@@ -622,3 +622,39 @@ Spec-only commit. Source-build codebase-memory-mcp на Linux/macOS/Windows-from
 
 **Code-reviewer verdict on archival:** (per parallel code-reviewer-minimax-m3 call).
 
+
+### TZ-90 Phase A + B (2026-07-11) — Dialog System foundation + polymorphic wrapper
+
+**Scope:** TZ-90 spec (5 phases, 18 CONFLICT KEYS) split into sub-tasks. This commit covers Phase A (CSS tokens + CDK overlay + animation) + Phase B (polymorphic 4-template × 4-width wrapper + service animation trigger). Phase C (12 dialogs migration), Phase D (/kit/overlays + TZ-85D wiring), Phase E (docs sync) deferred to TZ-90C/D/E.
+
+**Phase A — CSS foundation** (`frontend/src/styles.css`):
+- 6 new tokens: `--dialog-bg` (paper), `--dialog-text` (ink), `--dialog-shadow` (24% light / 48% dark per TZ-AUDIT L-bump), `--dialog-radius` (8px), `--overlay-bg` (50% oklch + 50% rgb fallback for Baz layer)
+- CDK overlay overrides: `.pi-overlay-backdrop` (50% opacity, 2-layer fallback), `.pi-overlay-panel` (paper bg + 8px radius + shadow + overflow rules from TZ-DIALOG-OVERFLOW-FIX rounds 1-5)
+- Animation: `.pi-dialog-host-open` keyframes (fade-in + scale 0.96→1.0, 180ms ease-out, respects `prefers-reduced-motion`)
+
+**Phase B — polymorphic wrapper** (commit `818946c`):
+- `pi-dialog.component.ts`: 4 templates (alert/form/content/destructive) × 4 widths (sm/md/lg/xl) per spec §B.1
+- 5 computed signals: panelClass, headerClass, bodyClass, footerClass, effectiveLabel
+- Fallback table for unsupported combos (e.g. alert × md → alert × sm)
+- 8px radius (rounded-lg) matches `--dialog-radius` token
+- Content variant: sticky footer + bg-paper on header+footer (prevents body bleed-through)
+- Destructive variant: ⚠ icon prefix in header
+- `pi-dialog.service.ts`: `DialogConfig.modal` field (default true), `hasBackdrop: config.modal !== false`, `panelEl.classList.add('pi-dialog-host-open')` triggers animation
+- `.gitignore`: extended pattern to `tmp/tz9*-{commit,arch}-*.txt`
+
+**NOT TOUCHED (deferred to TZ-90C/D/E):**
+- `pi-alert-dialog.component.ts` — still uses own `w-[440px]` + `rounded-sm` structure (intentional T1 one-off, TZ-90C will migrate)
+- 12 operational dialogs in `pages/` — Phase C migration
+- `/kit/overlays` Section V — Phase D
+- TZ-85D `cost-calculation-detail-dialog` — Phase D wiring
+- Docs (`paper-and-ink.md`, `add-new-page.md`) — Phase E
+
+**Code-reviewer verdict:** 🟢 Ship-ready. 3 rounds, all nits closed (sticky-footer bg-paper, effectiveLabel computed, content header bg).
+
+**Затронутые файлы:** `frontend/src/styles.css`, `frontend/src/app/shared/ui/dialog/pi-dialog.component.ts`, `frontend/src/app/shared/ui/dialog/pi-dialog.service.ts`, `OrchestratorKit/.mimocode/locks/TZ-90-dialog-system.lock` (NEW), `.gitignore`.
+
+**Verification:** frontend typecheck 0 errors, code-reviewer approved, atomic commits, branch ahead of origin/main (NOT pushed, user auth required).
+
+**Известные ограничения:** see "NOT TOUCHED" above. Phase C/D/E will extend `TZ-90-dialog-system.lock` with their own protected files.
+
+**Lock file:** `OrchestratorKit/.mimocode/locks/TZ-90-dialog-system.lock` (6 protected files, 2 future_extensions).

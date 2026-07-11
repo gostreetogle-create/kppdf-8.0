@@ -1,0 +1,28 @@
+# TZ-90 — Dialog System Standardization lock
+# TZF-00 § 5: protects files modified by this TZ from accidental edits.
+# Layer 2 cross-cutting change: CSS tokens + polymorphic wrapper + service.
+# Phase C/D/E (TZ-90C/D/E) will EXTEND this lock with their own protected files.
+
+protected:                                                                # files actually modified by TZ-90A + TZ-90B
+  - frontend/src/styles.css                                                # TZ-90A: 6 dialog tokens + CDK overlay overrides + animation
+  - frontend/src/app/shared/ui/dialog/pi-dialog.component.ts              # TZ-90B: polymorphic 4-template x 4-width wrapper
+  - frontend/src/app/shared/ui/dialog/pi-dialog.service.ts                # TZ-90B: modal-by-default + animation trigger
+  - .gitignore                                                              # TZ-90B: tmp/tz9*-{commit,arch}-*.txt pattern
+
+read_by:                                                                  # imported by polymorphic component, modify cautiously
+  - frontend/src/app/shared/ui/dialog/dialog.tokens.ts                    # PI_DIALOG_DATA/REF/CONFIG tokens — shape changes break the polymorphic wrapper
+
+related_locks:
+  - TZ-85-cost-calculation.lock          # TZ-85D cost-calculation-detail-dialog will be wired to polymorphic in TZ-90D
+  - TZ-91-security-hardening.lock        # No overlap (auth/RBAC, unrelated zone)
+
+future_extensions:
+  - TZ-90C: 12 operational dialogs migration (Layer 3 SERIAL)
+  - TZ-90D: /kit/overlays Section V + TZ-85D wiring (Layer 3 SERIAL)
+  - TZ-90E: docs sync (paper-and-ink.md, add-new-page.md)
+
+  # Files NOT modified by TZ-90B but reserved for upcoming sub-tasks.
+  # Move these into `protected:` (or a dedicated `reserved:` block) when
+  # the corresponding sub-TZ actually edits them.
+  reserved:
+    - frontend/src/app/shared/ui/dialog/pi-alert-dialog.component.ts        # TZ-90C § alert-migration: 2px → 8px radius, w-[440px] → polymorphic
