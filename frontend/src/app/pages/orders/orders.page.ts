@@ -7,7 +7,9 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { httpResource } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
@@ -20,6 +22,7 @@ import { PiToastService } from '../../shared/ui/toast';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
 import { Counterparty, CounterpartyService } from '../../shared/services/pi-counterparty.service';
+import { API_BASE_URL } from '../../core/api.tokens';
 import { Order, OrdersService } from './orders.service';
 import { OrderFormDialogComponent } from './order-form-dialog.component';
 
@@ -166,10 +169,13 @@ const PRIORITY_LABELS: Record<NonNullable<Order['priority']>, string> = {
                 <td class="pi-cell align-top">
                   <app-pi-row-actions
                     [row]="row"
+                    [documentLabel]="'Создать документ для заказа ' + row.number"
+                    [dataTestDocument]="'document-button-' + row._id"
                     [editLabel]="'Редактировать заказ ' + row.number"
                     [deleteLabel]="'Удалить заказ ' + row.number"
                     [dataTestEdit]="'edit-button-' + row._id"
                     [dataTestDelete]="'delete-button-' + row._id"
+                    (document)="onCreateDocument($event)"
                     (edit)="openEdit($event)"
                     (delete)="onDelete($event)"
                   />
@@ -202,10 +208,38 @@ export class OrdersPage implements OnInit {
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
+  private readonly baseUrl = inject(API_BASE_URL);
+  // TZ-86 Phase E.1: per-row «Создать документ» navigates to the builder's
+  // empty-state picker with `?source=order&sourceId=<row._id>`. The builder
+  // (builder.page.ts, Phase D.2 plumbing) reads the query params, shows the
+  // template picker, and preserves them when the user picks a template.
+  private readonly router = inject(Router);
 
-  protected readonly data = signal<Order[]>([]);
-  protected readonly loading = signal<boolean>(true);
-  protected readonly error = signal<string | null>(null);
+  /**
+   * Server list = `GET /api/orders` via Angular 20's `httpResource`.
+   *
+   * Backend caveat: GET /orders returns a FLAT ARRAY (not the canonical
+   * `{items, total, page, limit}` envelope). Search is client-side
+   * over the loaded array, so no `search` query param is sent (and
+   * accordingly no `debouncedSearch` signal — `searchQuery` is what
+   * the input box echoes back). When backend gains real pagination,
+   * switch this to the envelope shape and add `debouncedSearch` like
+   * materials/products do.
+   *
+   * `data` is a `computed()` over `listRes.value() ?? []`; `filteredRows`
+   * (search) tracks `data()` and `counterpartiesById()` — both via
+   * signal reads, so they re-run automatically when either changes.
+   */
+  protected readonly listRes = httpResource<Order[]>(() => ({
+    url: `${this.baseUrl}/orders`,
+  }));
+
+  protected readonly data = computed<Order[]>(() => this.listRes.value() ?? []);
+  protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
+  protected readonly error = computed<string | null>(() => {
+    const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    return err ? extractErrorMessage(err) : null;
+  });
 
   protected readonly searchQuery = signal<string>('');
   protected readonly sortKey = signal<SortKey>('date');
@@ -255,7 +289,7 @@ export class OrdersPage implements OnInit {
 
   ngOnInit(): void {
     this.loadCounterparties();
-    this.reload();
+    // `listRes` auto-fires its initial GET — no explicit `reload()`.
   }
 
   private loadCounterparties(): void {
@@ -341,7 +375,7 @@ export class OrdersPage implements OnInit {
       data: null,
       width: 'lg',
     });
-    onDialogCloseOnce(ref, this.injector, () => this.reload());
+    onDialogCloseOnce(ref, this.injector, () => this.listRes.reload());
   }
 
   protected openEdit(order: Order): void {
@@ -349,7 +383,7 @@ export class OrdersPage implements OnInit {
       data: order,
       width: 'lg',
     });
-    onDialogCloseOnce(ref, this.injector, () => this.reload());
+    onDialogCloseOnce(ref, this.injector, () => this.listRes.reload());
   }
 
   protected onDelete(row: Order): void {
@@ -367,7 +401,7 @@ export class OrdersPage implements OnInit {
       this.service.remove(row._id).subscribe((res) => {
         if (res.ok) {
           this.toast.success('Заказ удалён');
-          this.reload();
+          this.listRes.reload();
         } else {
           this.toast.error(extractErrorMessage(res.error));
         }
@@ -375,19 +409,25 @@ export class OrdersPage implements OnInit {
     });
   }
 
-  protected reload(): void {
-    this.loading.set(true);
-    this.error.set(null);
-    this.service.list().subscribe((res) => {
-      if (res.ok) {
-        const arr = Array.isArray(res.data) ? res.data : [];
-        this.data.set(arr);
-        this.loading.set(false);
-      } else {
-        this.error.set(extractErrorMessage(res.error));
-        this.loading.set(false);
-      }
+  /**
+   * TZ-86 Phase E.1: navigate to the document constructor's empty-state
+   * picker with `?source=order&sourceId=<row._id>` query params. The
+   * builder (D.2 plumbing) reads these and shows the template picker
+   * preserving the params; after the user picks a template, the params
+   * are forwarded to `/doc-constructor/builder/:id`.
+   *
+   * Future TZ-XX: the builder will use `sourceId` to pre-bind dataBinding
+   * sources from the order (customer, products, dates, total). Out of
+   * scope for this PR — the routing plumbing ships here.
+   */
+  protected onCreateDocument(row: Order): void {
+    this.router.navigate(['/doc-constructor/builder'], {
+      queryParams: { source: 'order', sourceId: row._id },
     });
+  }
+
+  protected reload(): void {
+    this.listRes.reload();
   }
 }
 

@@ -7,7 +7,9 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { httpResource } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
@@ -23,6 +25,7 @@ import {
   Counterparty,
   CounterpartyService,
 } from '../../shared/services/pi-counterparty.service';
+import { API_BASE_URL } from '../../core/api.tokens';
 import { Contract, ContractsService, ContractStatus } from './contracts.service';
 import { Organization, OrganizationsService } from '../organizations/organizations.service';
 import { ContractFormDialogComponent } from './contract-form-dialog.component';
@@ -161,10 +164,13 @@ const CONTRACT_STATUS_LABELS: Record<ContractStatus, string> = {
                 <td class="pi-cell align-top">
                   <app-pi-row-actions
                     [row]="row"
+                    [documentLabel]="'Создать документ для договора ' + row.number"
+                    [dataTestDocument]="'document-button-' + row._id"
                     [editLabel]="'Редактировать договор ' + row.number"
                     [deleteLabel]="'Удалить договор ' + row.number"
                     [dataTestEdit]="'edit-button-' + row._id"
                     [dataTestDelete]="'delete-button-' + row._id"
+                    (document)="onCreateDocument($event)"
                     (edit)="openEdit($event)"
                     (delete)="onDelete($event)"
                   />
@@ -198,10 +204,40 @@ export class ContractsPage implements OnInit {
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
+  private readonly baseUrl = inject(API_BASE_URL);
+  // TZ-86 Phase E.2: per-row «Создать документ» navigates to the builder's
+  // empty-state picker with `?source=contract&sourceId=<row._id>`. See
+  // OrdersPage.onCreateDocument for the full pattern explanation.
+  private readonly router = inject(Router);
 
-  protected readonly data = signal<Contract[]>([]);
-  protected readonly loading = signal<boolean>(true);
-  protected readonly error = signal<string | null>(null);
+  /**
+   * Server list = `GET /api/contracts` via Angular 20's `httpResource`.
+   *
+   * Same flat-array caveat as orders: backend doesn't paginate yet,
+   * search is client-side, so no `search` query params and no
+   * `debouncedSearch` signal. When backend pagination lands, switch
+   * to the envelope shape and add `debouncedSearch` like
+   * materials/products do.
+   *
+   * The `filteredRows` computed reads `data()` (from the resource)
+   * plus the lookup-table signals, and feeds both
+   * `counterpartiesById` and `organizationsById` into the search
+   * haystack. Lookup tables are still populated via the legacy
+   * HttpClient+Observable path (one-shot, error-tolerant) because
+   * they are non-critical: a 500 on orgs just falls back to raw IDs.
+   */
+  protected readonly listRes = httpResource<Contract[]>(() => ({
+    url: `${this.baseUrl}/contracts`,
+  }));
+
+  protected readonly data = computed<Contract[]>(
+    () => this.listRes.value() ?? [],
+  );
+  protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
+  protected readonly error = computed<string | null>(() => {
+    const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    return err ? extractErrorMessage(err) : null;
+  });
 
   protected readonly searchQuery = signal<string>('');
   protected readonly sortKey = signal<SortKey>('number');
@@ -255,7 +291,7 @@ export class ContractsPage implements OnInit {
 
   ngOnInit(): void {
     this.loadLookups();
-    this.reload();
+    // `listRes` auto-fires its initial GET — no explicit `reload()`.
   }
 
   private loadLookups(): void {
@@ -351,7 +387,7 @@ export class ContractsPage implements OnInit {
       data: null,
       width: 'lg',
     });
-    onDialogCloseOnce(ref, this.injector, () => this.reload());
+    onDialogCloseOnce(ref, this.injector, () => this.listRes.reload());
   }
 
   protected openEdit(contract: Contract): void {
@@ -359,7 +395,7 @@ export class ContractsPage implements OnInit {
       data: contract,
       width: 'lg',
     });
-    onDialogCloseOnce(ref, this.injector, () => this.reload());
+    onDialogCloseOnce(ref, this.injector, () => this.listRes.reload());
   }
 
   protected onDelete(row: Contract): void {
@@ -377,7 +413,7 @@ export class ContractsPage implements OnInit {
       this.service.remove(row._id).subscribe((res) => {
         if (res.ok) {
           this.toast.success('Договор удалён');
-          this.reload();
+          this.listRes.reload();
         } else {
           this.toast.error(extractErrorMessage(res.error));
         }
@@ -385,19 +421,19 @@ export class ContractsPage implements OnInit {
     });
   }
 
-  protected reload(): void {
-    this.loading.set(true);
-    this.error.set(null);
-    this.service.list().subscribe((res) => {
-      if (res.ok) {
-        const arr = Array.isArray(res.data) ? res.data : [];
-        this.data.set(arr);
-        this.loading.set(false);
-      } else {
-        this.error.set(extractErrorMessage(res.error));
-        this.loading.set(false);
-      }
+  /**
+   * TZ-86 Phase E.2: navigate to the document constructor's empty-state
+   * picker with `?source=contract&sourceId=<row._id>`. See
+   * OrdersPage.onCreateDocument for the full pattern explanation.
+   */
+  protected onCreateDocument(row: Contract): void {
+    this.router.navigate(['/doc-constructor/builder'], {
+      queryParams: { source: 'contract', sourceId: row._id },
     });
+  }
+
+  protected reload(): void {
+    this.listRes.reload();
   }
 }
 
