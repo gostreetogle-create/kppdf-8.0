@@ -440,6 +440,33 @@ kppdf-8.0/
 
 **Lock-файлы:** N/A (chore commit, no code zone to lock).
 
+## ⏳ Готовые к запуску (READY)
+
+### TZ-90 (2026-07-11) — Dialog system standardization (4 templates · 50% backdrop · 8px radius · shadow tokens · migration of 11+ existing dialogs)
+
+**Мотивация:** Спека фиксирует единый стандарт для ВСЕХ модальных/диалоговых окон, чтобы они ощущались как «зрелое десктопное приложение» (явный запрос PO 2026-07-11). Разрозненные ad-hoc лейауты (30% editorial backdrop, разные radius, разные header-плотности) заменяются на 4 templates × 4 widths через polymorphic `<app-pi-dialog variant="...">`.
+
+**Зафиксированные решения (9):** ровно 4 templates (Alert + Form + Content + Destructive — новый шаблон только через отдельный TZ); backdrop 50% вместо editorial 30%; shadow = `0 8px 32px rgba(0,0,0,0.24)` light / 0.48 dark через `--dialog-shadow` токен; radius 8px глобально; modal by default; animation = fade-in + scale 0.96→1.0 за 180ms с disabled@`prefers-reduced-motion`; padding 24px в body контента + 16px между sections; audit table обязательна; **polymorphic wrapper** (один `<app-pi-dialog variant>` вместо 4 отдельных компонентов).
+
+**Audit Table (`tasks/TZ-90.md` §3) — verified 2026-07-11:**
+- T1 Alert (sm): 1 dialog — `pi-alert-dialog.component.ts`
+- T2 Form (lg): 8 dialogs — `module-form-dialog`, `work-type-form-dialog`, `product-form-dialog`, `contract-form-dialog`, `material-form-dialog`, `order-form-dialog`, `organization-form-dialog`, `module-materials-form-dialog`
+- T3 Content (xl): 3 dialogs — `product-module-picker-dialog`, `text-block-dialog`, `table-template-dialog`
+- T3 Content (xl): 1 dialog — `cost-calculation-detail-dialog` ⏳ pending TZ-85D
+- T4 Destructive (md): 1 future dialog — `pi-confirm-destructive-dialog` (deferred per TZ-90 §7)
+- **13/13 dialogs ↔ reality match verified via filesystem enumeration** (no expansion, no merge, no rename needed).
+
+**Phases A → E:** A (Layer 1: tokens + shadow/animation CSS), B (Layer 2: polymorphic wrapper + animation trigger), C (Layer 3 SERIAL: migration existing 11+ dialogs), D (Layer 3 SERIAL: `/kit/overlays` Section V showcase + TZ-85D wiring), E (Layer 1: docs sync).
+
+**Must-NOT-regress (spec §8 cross-references):**
+- **TZ-83 ✅** operational pages (где живут диалоги).
+- **TZ-85 IN PROGRESS** — TZ-85D = `cost-calculation-detail-dialog` станет Template 3 (Phase D.2 conditional logic готов).
+- **TZ-DIALOG-OVERFLOW-FIX rounds 1-5 ✅** — `max-height: 90vh !important; overflow-x: clip !important; overflow-y: auto !important;` сохраняются в `.pi-overlay-panel`.
+- **TZ-DIALOG-VISIBILITY-FIX round 5 ✅** — `background-color: var(--color-paper)` сохраняется; backdrop RGB fallback chain сохраняется.
+- TZ-AUDIT-6 (focus-ring), TZ-AUDIT-8 (hairline-first borders), TZ-AUDIT-9 (warm-paper palette) — TZ-90 их НЕ ломает (только потребляет).
+
+**STATUS:** ⏳ READY — spec committed, execution pending.
+
 ## 🚀 Следующие шаги (предложения)
 
 Все этапы до TZ-46 завершены + Paper & Ink editorial SPA rework (TZ-30..82) + палитра (TZ-AUDIT-9, TZ-WARMUP-100, TZ-LIGHT-XX) + 6-направленная сессия улучшений. Возможные направления:
