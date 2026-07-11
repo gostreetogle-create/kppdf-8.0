@@ -7,6 +7,14 @@ import {
 } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { LucideAngularModule, ChevronDown } from 'lucide-angular';
+
+/**
+ * Lucide icon structural type — `lucide-angular@0.460.0` keeps `LucideIconData`
+ * internal (private), so we capture the literal shape via `typeof ChevronDown`.
+ * All ~2000 lucide icons share this same shape — therefore any icon
+ * (`Package`, `Briefcase`, `BookOpen`, …) is assignable to this type.
+ */
+type LucideIcon = typeof ChevronDown;
 import { DropdownMenuComponent } from './pi-dropdown-menu.component';
 import { MenuTriggerDirective } from './pi-menu-trigger.directive';
 
@@ -113,14 +121,14 @@ export interface PiNavDropdownItem {
 })
 export class PiNavDropdownComponent {
   readonly label = input.required<string>();
-  /** Lucide icon reference — passed in by the layout. */
-  readonly icon = input.required<unknown>();
+  /** Lucide icon reference — passed in by the layout (e.g. `Package`, `Briefcase`). */
+  readonly icon = input.required<LucideIcon>();
   readonly items = input.required<readonly PiNavDropdownItem[]>();
   /** When true, trigger is highlighted bg-sunrise-warm text-paper. */
   readonly active = input<boolean>(false);
   readonly ariaLabel = input<string>('');
 
-  protected readonly chevronIcon = ChevronDown;
+  protected readonly chevronIcon: LucideIcon = ChevronDown;
 
   private readonly router = inject(Router);
   private readonly trigger = viewChild(MenuTriggerDirective);

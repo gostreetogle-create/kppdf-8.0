@@ -18,6 +18,14 @@ import {
   Briefcase,
   BookOpen,
 } from 'lucide-angular';
+
+/**
+ * Lucide icon structural type — `lucide-angular@0.460.0` keeps `LucideIconData`
+ * internal (private), so we capture the literal shape via `typeof Package`.
+ * All ~2000 lucide icons share this same shape — therefore any icon
+ * (`Package`, `Briefcase`, `BookOpen`, …) is assignable to this type.
+ */
+type LucideIcon = typeof Package;
 import { AuthService } from '../core/auth.service';
 import { ThemeToggleComponent } from './theme-toggle.component';
 import {
@@ -28,7 +36,7 @@ import {
 interface NavCategory {
   id: string;
   label: string;
-  icon: unknown;
+  icon: LucideIcon;
   items: PiNavDropdownItem[];
 }
 
