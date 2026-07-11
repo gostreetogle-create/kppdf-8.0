@@ -1,8 +1,8 @@
 # STATUS — KPPDF ERP Project Status
 
-**Last updated:** 2026-07-08
-**Phase:** TZ-LIGHT-XX (Light Tones Pivot) + WCAG audit + border/focus-ring cleanup — ЗАВЕРШЕНО
-**Total tasks:** 47/47 ✅ (TZ-02..TZ-46) + TZ-AUDIT-9 + 9.1 + TZ-WARMUP-100 + TZ-LIGHT-XX
+**Last updated:** 2026-07-11
+**Phase:** TZ-83 (Модульная иерархия Товар→Модуль→Материал+Вид работ) — ЗАВЕРШЕНО
+**Total tasks:** 48/48 ✅ (TZ-02..TZ-46) + TZ-AUDIT-9 + 9.1 + TZ-WARMUP-100 + TZ-LIGHT-XX + TZ-83
 
 ## ✅ Завершённые этапы
 
@@ -61,10 +61,10 @@
 - **TZ-AUDIT-9.1 — изменения:** Dark mode L bump. Reviewer: «warm dark reads denser than cool dark». `--color-paper` (dark) L **0.18 → 0.21**, `--color-paper-2` (dark) L **0.24 → 0.27**. Hue/chroma UNCHANGED. JSDoc: «higher L gives the surface breathing room».
 - **Visual verification** (browser-use через /kit/* public route prefix): 12 screenshots (6 pages × 2 modes), 0 console errors, warm-paper feel confirmed, dark mode warm espresso с visible card separation.
 - **3 review rounds, 4 MINORs closed:** (1) Stale Sunrise JSDoc, (2) `text-muted-foreground` WCAG note placement + 3.1:1 wording, (3) Dark mode L=0.18 too dark (deferred to TZ-AUDIT-9.1), (4) TZ-AUDIT-9b naming → TZ-AUDIT-9.1.
-- **Discovery:** /kit/* routes уже PUBLIC (no authGuard) — same page components, different layout shell. Это спасло от 1-line route config change для visual verification. Operational pages (/materials, /organizations, /dictionaries) still blocked — dev proxy broken (Angular dev server не проксирует /api/* на backend :3000), требует отдельного fix.
+- **Discovery:** /kit/* routes уже PUBLIC (no authGuard) — same page components, different layout shell. Это спасло от 1-line route config change для visual verification. Operational pages (/materials, /organizations, /dictionaries) — dev proxy работает (proxy.conf.json проксирует /api/* и /uploads/* на backend :3000).
 - **Затронутые файлы:** `frontend/src/styles.css` (palette tokens + JSDoc + 5 utility longhand), `frontend/src/app/pages/foundations/foundations.page.ts` (6 swatches), + pre-Audit-9 cleanup (27 файлов `text-muted` → `text-muted-foreground`, 34 файла `border hairline border-rule` → `hairline`, `forms.page.ts` NG8113 fix).
 - **Verification:** 166/166 tests passing, typecheck exit 0, code-reviewer approved (3 rounds), 12 browser-use screenshots, no console errors.
-- **Известные ограничения (не блокеры):** `text-muted-foreground` ~3:1 contrast (AA Large only, fails AA Standard) — JSDoc note + DON'T-list покрывают. Operational pages blocked от visual verification (dev proxy issue). Dark mode L=0.21 может быть bumped back в 0.20-0.22 range если пользователь предпочитает темнее.
+- **Известные ограничения (не блокеры):** `text-muted-foreground` ~3:1 contrast (AA Large only, fails AA Standard) — JSDoc note + DON'T-list покрывают. Dark mode L=0.21 может быть bumped back в 0.20-0.22 range если пользователь предпочитает темнее.
 - **Архив:** `tasks/_archive/2026-07/TZ-AUDIT-9.md.done` (с comprehensive ARCHIVE_MARKER).
 
 ### TZ-LIGHT-XX (2026-07-08) — Light Tones Pivot + comprehensive audit
@@ -94,6 +94,52 @@
 **Известные ограничения (не блокеры):**
 - `muted-foreground` contrast 3.96:1 (AA Large only, не AA Standard) — intentional, резервирован для non-essential captions.
 - `--color-paper` (light) не менялся — остался `oklch(0.972 0.015 70)`. Не чистый белый, warm off-white.
+
+### TZ-83 (2026-07-11) — Модульная иерархия Товар→Модуль→Материал+Вид работ
+
+**Мотивация:** Бизнес-схема: товар = комбинация модулей (корпус, дверца, фурнитура); модуль = набор материалов (с возможностью override-габаритов) + норма-часов по видам работ. Из этого считается себестоимость. До TZ-83 данные лежали в legacy `ProductComponent` (snapshot `name` поля), что теряло связь с актуальным Material. После TZ-83 — нормальный relational M:N + персистентный override + отдельный photo entity.
+
+**Полный объём (5 фаз, ~25 файлов):**
+
+**Phase A — Backend cleanup (5 review rounds PASS):**
+- `ProductComponent` удалён (папка + регистрация в `app.module.ts`).
+- `ProductModule.materials[]` мигрирован со snapshot-`name` на `materialId: ObjectId (ref)` + `overrideDimensions?: { length?, width?, height?, unit? }` subdoc.
+- `ProductModule.productId` + `image` — удалены (M:N чистая через `Product.productModuleIds[]`; gallery вынесена в отдельную entity).
+- Индексы перестроены: `{productId, sortOrder}` (баг — `_id` всегда уникален и не фильтруется) → `{sortOrder}` + `{name: 'text'}` для full-text search.
+- `ProductController` — atomic `POST /products/:id/modules` (`$addToSet`) + `DELETE /products/:id/modules/:moduleId` (`$pull`). Race-condition-safe при concurrent edit. `@Roles('admin','manager')` + `@AuditAction`.
+- `ProductService.findById` — nested populate (workTypes + materials) + existence-check для attach (защита от dangling ObjectId).
+- `bom.schema.ts` — `ref: 'ProductComponent'` → `ref: 'ProductModule'` + TODO миграция existing BOM.
+- `ProductModulePhoto` — НОВАЯ entity (schema/service/controller/module). Schema-level validator `photoId || url`. Atomic `setMain(id)` (findOneAndUpdate + all others false).
+- `backend/scripts/tz83-drop-stale-productcomponents.ts` — idempotent cleanup-скрипт, env-overridable (`MONGO_URI`), reviewed safe.
+
+**Phase B — Frontend data + WorkTypes dictionary:**
+- 3 shared services: `pi-work-types.service.ts`, `pi-product-modules.service.ts`, `pi-product-module-photos.service.ts` — все на `silent-http` + signals + `SilentResult<T>`.
+- `pages/work-types/` — новая dictionary секция (canonical pattern materials/units/currencies).
+- `app.routes.ts` — `/work-types` lazy route.
+- `app-layout.component.ts` — nav-link «Виды работ».
+
+**Phase C — `/modules` list + `/modules/:id` detail (4 sections):**
+- `pages/modules/modules.page.ts` — list с photo-thumb, артикулом, габаритами, counts, search/sort, row→detail.
+- `pages/modules/module-detail.page.ts` — 4 sections: Основное / Фотогалерея / Материалы / Виды работ.
+- `pages/modules/module-form-dialog.component.ts` — basics + dimensions + workTypes FormArray.
+- `pages/modules/module-materials-form-dialog.component.ts` — FormArray + conditional override-габариты UI.
+
+**Phase D — `/products/:id` detail + integration:**
+- `pages/products/product-detail.page.ts` (NEW) — 4 sections + секция «Модули» с attach/detach через picker.
+- `pages/products/product-module-picker-dialog.component.ts` (NEW) — lookup всех модулей, multi-select через atomic endpoint.
+- `pages/products/products.page.ts` — clickable rows (RouterLink) + колонка «Модулей: N».
+
+**Phase E — Tests:**
+- 3 backend e2e specs: `product-modules.e2e-spec.ts`, `product-module-photos.e2e-spec.ts`, `products-attach-modules.e2e-spec.ts`. Canonical `.expect(201)` (NestJS POST default).
+- 3 frontend unit specs: `pi-work-types.service.spec.ts` (3), `pi-product-modules.service.spec.ts` (4), `pi-product-module-photos.service.spec.ts` (4). TestBed + provideHttpClientTesting + API_BASE_URL.
+- **11/11 новых unit-тестов passing** ✅ + 3 e2e specs готовы к запуску.
+
+**Verification:** Backend typecheck exit 0 ✅ · Frontend typecheck exit 0 ✅ · 11/11 unit tests pass ✅ · Code-reviewer approval: Phase A (5 rounds), Phases B–E (multi-round bugfixes).
+
+**Известные ограничения (не блокеры):**
+- `bom.schema.ts` всё ещё требует data-migration existing BOM к новому `ProductModule._id` (deleted `ProductComponent._id` references). Отдельный TZ.
+- Photo upload UI /modules/:id → только URL-fallback через `PhotoService`. File-picker UI отложен до TZ-87.
+- Mobile responsive не тестировался на detail pages (TZ-83 scope = desktop first).
 
 ## 🎯 6-направленная сессия улучшений (2026-07-08)
 
@@ -174,15 +220,16 @@
 
 | Слой | Метрика | Значение |
 |------|---------|----------|
-| Backend | Entities | 65 |
-| Backend | Modules | 18 |
-| Backend | Files | ~280 |
+| Backend | Entities | 65 (TZ-83: −ProductComponent, +ProductModulePhoto → нетто 0, остаётся 65) |
+| Backend | Modules | 19 (+`ProductModulePhoto`) |
+| Backend | Files | ~285 |
 | Backend | Build time | ~10s |
-| Frontend | Pages (router) | 4 (login, dashboard, task-panel, dynamic /p/:id) |
-| Frontend | Tables rendered | 65 (через единый PageRenderer) |
-| Frontend | Categories | 8 (sidebar groups) |
+| Frontend | Pages (router) | 19 (login + 6 operational + 8 /kit/* showcase + /work-types + /modules + /modules/:id + /products/:id) |
+| Frontend | UI components | 24+ (Paper & Ink primitives) |
+| Frontend | Unit tests | 242 (21 suites — TZ-83 +11 specs) |
 | Frontend | Bundle size | 542.84 kB initial / ~155 kB transfer |
 | Frontend | Build time | ~2s |
+| Backend | E2E specs | 10 (7 baseline + 3 TZ-83) |
 
 ## 🎯 Стек
 
@@ -194,12 +241,13 @@
 - Jest + Supertest (E2E)
 
 ### Frontend
-- **Angular 20.3** (standalone, signals, new control flow)
-- **@angular/material@20.2** (Material Design 3 — единственный UI-кит; tokens `--mat-sys-*` + density mixins)
-- **zod 3** (валидация в FormDialog)
-- **shared/ui-kit wrappers** (3 обёртки для page-header / empty-state / badge — см. `STACK.md §6`)
-- **Density -3 глобально** (см. `STACK.md §6.4`)
-- date-fns 4 (даты/форматирование в dialog'ах)
+- **Angular 20.3** (standalone, signals, new control flow `@if`/`@for`/`@switch`)
+- **TailwindCSS v4** (`@import 'tailwindcss'`, `@theme inline`, `@utility` API)
+- **Paper & Ink design system** (OKLCH палитра, hairline borders, no shadows, `pi-focus-ring`)
+- **24+ кастомных UI-компонентов** (Button, Badge, Card, Input, Dialog, Sheet, Drawer, Tooltip, Popover, HoverCard, DropdownMenu, ContextMenu, Toast, Tabs, Breadcrumb, Accordion, Progress, Skeleton, Avatar, Separator, ScrollArea, Charts, Select, Checkbox, Switch, Radio, Slider, Label, FormField, Table, Pagination)
+- **Lucide Angular** (editorial 1.5px stroke icons)
+- **CDK Overlay** (Dialog, Sheet, Drawer, Tooltip, Popover, HoverCard, Menu)
+- **⌘K Command Palette** + **Live OKLCH Theme Editor**
 
 ## 📁 Структура
 
@@ -208,35 +256,75 @@ kppdf-8.0/
 ├── backend/              # NestJS API (TZ-01..TZ-18)
 │   ├── src/
 │   │   ├── main.ts       # Bootstrap + Helmet + CORS + Throttler
-│   │   ├── app.module.ts # Root module
-│   │   ├── common/       # Guards, filters, decorators
-│   │   └── modules/      # 18 feature modules
+│   │   ├── app.module.ts # Root module (18 feature modules)
+│   │   ├── common/       # Guards, interceptors, decorators, seeds
+│   │   ├── database/     # Connection, plugins (softDelete, audit, userContext)
+│   │   └── modules/      # 18 feature modules (65+ entities)
 │   └── test/             # E2E test suites
-├── frontend/             # Angular 20 SPA (TZ-19..TZ-29)
+├── frontend/             # Angular 20 SPA (Paper & Ink editorial)
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── core/     # Auth, interceptors, services, guards
-│   │   │   ├── shared/   # Skeleton, EmptyState, Badge, Card, CrudPage, FormDialog
-│   │   │   ├── layout/   # Sidebar, Topbar, MainLayout
-│   │   │   ├── configs/  # pages.config.ts (65 tables registry)
-│   │   │   └── pages/    # auth/login, dashboard, task-panel, page-renderer
-│   │   ├── styles.css    # shadcn tokens + Tailwind layers
+│   │   │   ├── core/     # Auth, interceptors, services, guards, tokens
+│   │   │   ├── layout/   # AppLayout (operational), KitLayout (UI showcase)
+│   │   │   ├── pages/    # login, materials, organizations, dictionaries, /kit/*
+│   │   │   └── shared/   # ui/ (24+ Paper & Ink primitives), page/, command/, theme/, code/, playground/
+│   │   ├── styles.css    # OKLCH palette + Tailwind v4 @theme + hairline utils
 │   │   └── index.html
-│   └── tailwind.config.js
+│   ├── proxy.conf.json   # Dev proxy: /api/* → :3000
+│   └── angular.json
+├── docs/                 # data-model.md, add-new-page.md, paper-and-ink.md
 ├── OrchestratorKit/      # Task orchestration (kit-init, make-tz, etc)
-├── tasks/                # TZ-*.md specifications
-│   └── _archive/         # Completed TZ files
+├── start.mjs             # Cross-platform dev orchestrator (Node 20+)
+├── docker-compose.yml    # MongoDB Replica Set
+├── ARCHITECTURE.md       # Architecture document
+├── STACK.md              # Technology stack
 ├── progress.md           # Chronological progress log
 └── STATUS.md             # This file
 ```
 
+## 🆕 Recent atomic commits (2026-07-11)
+
+### TZ-83 (5 atomic commits — A/B/C/D/E)
+
+**Сводка:** ~25 files / +1800 / -400; ~3 backend modules + 4 new pages + 3 services + 6 specs.
+
+- `chore(backend): TZ-83A — drop ProductComponent + ProductModule ref+override + ProductModulePhoto entity + atomic attach/detach endpoints + drop-stale script` (5 review rounds PASS).
+- `feat(frontend): TZ-83B — services + WorkTypes dictionary page + nav-link "Виды работ"`.
+- `feat(frontend): TZ-83C — /modules list + /modules/:id 4-section detail + 2 dialogs (incl. override-dimensions UI)`.
+- `feat(frontend): TZ-83D — /products/:id detail с модулями + picker dialog + clickable list rows + atomic attach endpoint на backend`.
+- `test: TZ-83E — 3 backend e2e specs + 3 frontend unit specs (11 tests)`.
+
+**Verification:** backend + frontend typecheck exit 0, 11/11 new unit tests pass.
+
+### `b78c1c0` — `chore(cleanup): atomic defensive cleanup batch`
+
+**Сводка:** 12 files / +116 / -52; commit hash `b78c1c0`.
+
+**Backend defensive hardening (8 файлов):**
+- `backend/src/common/validators/inn.validator.ts` — `checkInn10` (drop 2-stage bug; single weighted sum mod 11 mod 10 is correct, position 9 is the check digit) + `checkInn12` (drop dead `w3`/`d12_check`).
+- 6 seed files (counterparty-roles, feature-flags, org-roles, settings, statuses, units) — defensive `try/catch` вокруг `findBy/upsert` чтобы один битый seed не валил `OnApplicationBootstrap`.
+- 3 services (contract, order, quotation) — добавлен private `findByIdRaw()` helper (Mongoose `.findById` без `.populate` возвращает raw `ObjectId` refs; нужно напр. для `contract.activate` который создаёт Order по `customerId`).
+- `backend/src/modules/actual-cost/dto/create-actual-cost.dto.ts` — `orderId` стал `@IsOptional()` с JSDoc (ActualCostController мержит orderId из URL param POST `/production-orders/:orderId/actual-costs`, раньше ValidationPipe реджектил body до controller injection).
+
+**Root purge (1 файл):**
+- `.gitignore` — добавлен `package-lock.json` guard с inline rationale comment. Root `package.json` не имеет `dependencies`; `node_modules/` в корне больше не нужен.
+
+**Cross-references:**
+- **TZ-46 hotfix follow-up:** defensive try/catch pattern для seed files mirrors TZ-46's principle «1 битый seed не должен валить bootstrap». Предыдущее поведение: один exception в seed → 25-секундный boot loop → 500 на /api/health. Теперь seed log warn, продолжение bootstrap.
+- **INN validator fix:** original implementation в TZ-03, this commit корректирует баг в `checkInn10` (был 2-stage weighted sum с двумя разными weight-массивами; правильно — 1 weighted sum mod 11 mod 10 = check digit at position 9). И drop dead `w3`/`d12_check` в `checkInn12` (third-stage sum был never used, оставлен после рефакторинга).
+- **Seed StrictModeError treat:** defensive try/catch вокруг `create/upsert` handles the case где seed и schema out of sync. TZ-05 ввёл `deletedAt: null` requirement на schema; если seed присылает поле которого schema не ожидает, StrictModeError fail. Try/catch оборачивает regression gracefully.
+
+**Verification:** backend + frontend typecheck exit 0, E2E baseline 7 suites / 22 tests / 26s passing.
+
+**Lock-файлы:** N/A (chore commit, no code zone to lock).
+
 ## 🚀 Следующие шаги (предложения)
 
-Все этапы до TZ-46 завершены + UI Hardening Rework 2026-07-05 (Material MD3 + 3 ui-kit обёртки + density -3). Возможные направления:
+Все этапы до TZ-46 завершены + Paper & Ink editorial SPA rework (TZ-30..82) + палитра (TZ-AUDIT-9, TZ-WARMUP-100, TZ-LIGHT-XX) + 6-направленная сессия улучшений. Возможные направления:
 
-1. **E2E tests run** — реальный прогон test/setup/* + test/e2e/*.e2e-spec.ts (тесты созданы в TZ-17, не запускались).
-2. **Backend DI audit** — найти и починить оставшиеся DI cascade баги — `grep` модулей с инжектами сервисов без импорта модуля.
-3. **Pre-existing verify-status fix** — синхронизировать конвенции: kit ожидает `OrchestratorKit/_archive/YYYY-MM/TZ-NN.done.txt`, проект использует `tasks/_archive/TZ-NN.md.done`. Нужно выбрать одну конвенцию и мигрировать.
-4. **Add Unit tests** — для AlertDialogComponent + onDialogCloseOnce паттерна в CRUD-страницах.
-5. **Проверить /login и /playground/theme в браузере** с новой палитрой и тёплым акцентом.
+1. **Нарастить operational pages** — products, orders, contracts, warehouse, production. Канон: materials/organizations/dictionaries (AppLayout + authGuard + service + dialog).
+2. **E2E tests run** — реальный прогон test/setup/* + test/e2e/*.e2e-spec.ts (тесты созданы в TZ-17, не запускались регулярно).
+3. **Консолидация data model** — 16 пар дублирующих сущностей (Proposal/Quotation, SupplierOrder/PurchaseOrder, Role/Roles и др.). Документированы в `docs/data-model.md`.
+4. **highlight.js + axe-core** — повторить pnpm install после lockfile reconcile (TZ-78 fallback, TZ-79 deferred).
+5. **Browser-use smoke test** — TZ-82 independent, можно запустить через `ng serve` без SSR.
 

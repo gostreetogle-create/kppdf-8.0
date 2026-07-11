@@ -1,21 +1,120 @@
-# Architecture — <название проекта>
+# Architecture — kppdf-8.0
 
 > Корневой архитектурный документ.
 
 ## 1. Общая схема
-<!-- пусто -->
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Browser                                │
+│   http://localhost:4200 (dev) / :4200 (prod static server)   │
+└──────────┬──────────────────────────────┬────────────────────┘
+           │ Angular 20 SPA                 │ proxy.conf.json (dev)
+           │ standalone + signals + OnPush  │ /api/* → :3000
+           │ Paper & Ink design system      │ /uploads/* → :3000
+           ▼                                ▼
+┌──────────────────────┐   ┌──────────────────────────────────┐
+│  Frontend (Angular)  │   │  Backend (NestJS 10)             │
+│  src/app/            │   │  src/                             │
+│  ├── core/           │   │  ├── app.module.ts (18 modules)   │
+│  │   auth, guard,    │   │  ├── common/ (guards, interceptors│
+│  │   interceptor     │   │  │   plugins, decorators, seeds)  │
+│  ├── layout/         │   │  ├── config/ (env validation)     │
+│  │   app-layout,     │   │  ├── database/ (connectionFactory,│
+│  │   kit-layout      │   │  │   softDelete, audit, userContext)│
+│  ├── pages/          │   │  ├── health.controller.ts         │
+│  │   materials,      │   │  └── modules/ (65+ entities)      │
+│  │   organizations,  │   │      auth, product, material,     │
+│  │   dictionaries,   │   │      order, warehouse, tender,    │
+│  │   login,          │   │      document-template, ...       │
+│  │   overview,       │   └──────────────────────────────────┘
+│  │   foundations, ...│               │
+│  ├── shared/         │               ▼
+│  │   ui/ (24+ comps) │   ┌──────────────────────────────────┐
+│  │   page/ (header,  │   │  MongoDB 7 (Replica Set rs0)     │
+│  │   section, demo)  │   │  docker compose up -d mongo       │
+│  │   command/ (⌘K)   │   │  port 27017                       │
+│  │   theme/ (editor) │   └──────────────────────────────────┘
+│  │   code/ (preview) │
+│  │   playground/     │
+│  └── app.routes.ts   │
+│      /login (public) │
+│      /kit/* (public) │
+│      /* (auth)       │
+└──────────────────────┘
+```
+
+**Технологии:**
+- Backend: NestJS 10 + Mongoose 8 + MongoDB 7 Replica Set
+- Frontend: Angular 20 standalone + TailwindCSS v4 + Lucide icons
+- Design system: Paper & Ink (OKLCH, hairline borders, no shadows)
+- Auth: JWT (access 15m + refresh 7d), bcryptjs, RBAC
+- Infra: Docker Compose (Mongo), `start.mjs` (cross-platform orchestrator)
 
 ## 2. Конвенции
-<!-- пусто -->
+
+### Frontend (Angular 20)
+- **Standalone-only:** `standalone: true`, никаких `*.module.ts`
+- **ChangeDetection:** `ChangeDetectionStrategy.OnPush` на всех компонентах
+- **Inputs:** `input<T>()` / `input.required<T>()` (signal-based, НЕ `@Input()`)
+- **DI:** `inject()` везде (НЕ constructor injection)
+- **Control flow:** `@if` / `@for` / `@switch` (НЕ `*ngIf` / `*ngFor`)
+- **State:** `signal()` / `computed()` / `effect()` (НЕ manual subscriptions)
+- **Запрещено:** `any`, `OnInit`/`OnDestroy`, `box-shadow`, `drop-shadow`, `#[hex]`, `bg-white`, `border-dashed`
+- **Borders:** hairline-first — `hairline` / `hairline-b/r/l/t` (1px, цвет через оверрайды)
+- **Focus-ring:** единый класс `pi-focus-ring` через `--focus-ring-shadow`
+- **Селекторы:** `app-<name>-page` (kebab), классы `<Name>Page` (PascalCase)
+- **Page template:** `<pi-page-header>` + `<pi-section>` (TZ-68 primitives)
+
+### Backend (NestJS 10)
+- **Паттерн:** Module → Controller → Service → Mongoose Schema
+- **DTOs:** `class-validator` + `class-transformer` (whitelist + forbidNonWhitelisted)
+- **Guards (global):** JwtAuthGuard (APP_GUARD), RolesGuard (APP_GUARD)
+- **Interceptors (global):** UserContextInterceptor, AuditInterceptor
+- **Soft-delete:** Mongoose plugin (auto-filter `deletedAt: null`), `@Schema({ softDelete: false })` для system schemas
+- **Audit:** AsyncLocalStorage → Mongoose `$locals.userId` → auditPlugin (createdBy/updatedBy)
+- **Replica Set обязателен:** Counter service использует `session.withTransaction`
+- **Validation:** joi для env, ValidationPipe глобальный
+
+### Cross-cutting
+- **Package manager:** pnpm (НЕ npm/yarn)
+- **i18n:** все API тексты на русском, UI локализация через token'ы
+- **Тестирование:** Jest (frontend **242** unit tests, **21** suites — TZ-83 +11; backend **10** e2e suites — TZ-83 +3)
+- **TypeScript:** strict mode, `noPropertyAccessFromIndexSignature` (frontend)
+- **Документация:** docs/ — `add-new-page.md`, `data-model.md`, `paper-and-ink.md`
 
 ## 3. Зоны ответственности агентов
 
-| Зона | Файлы | Агент-владелец |
-|------|-------|----------------|
-<!-- пусто -->
+| Зона | Файлы | Описание |
+|------|-------|----------|
+| Backend API | `backend/src/modules/` | 18 feature modules, CRUD endpoints |
+| Backend common | `backend/src/common/` | Guards, interceptors, decorators, seeds |
+| Backend database | `backend/src/database/` | Connection, plugins (softDelete, audit, userContext) |
+| Backend scripts | `backend/scripts/` | `audit-di.ts` — DI cascade analyzer |
+| Frontend core | `frontend/src/app/core/` | Auth, interceptors, services, guards, tokens |
+| Frontend layout | `frontend/src/app/layout/` | AppLayout (operational), KitLayout (UI showcase) |
+| Frontend pages | `frontend/src/app/pages/` | Login, materials, organizations, dictionaries, products, orders, contracts, work-types, modules, modules/:id, products/:id, /kit/* showcase |
+| Frontend shared/ui | `frontend/src/app/shared/ui/` | 24+ Paper & Ink primitives (button, card, dialog, table, ...) |
+| Frontend shared/page | `frontend/src/app/shared/page/` | PageHeader, Section, Demo wrappers |
+| Frontend shared/command | `frontend/src/app/shared/command/` | ⌘K command palette |
+| Frontend shared/theme | `frontend/src/app/shared/theme/` | Live OKLCH theme editor |
+| Frontend styles | `frontend/src/styles.css` | OKLCH palette, hairline utils, spacing tokens, dark mode |
+| Dev tooling | `start.mjs`, `docker-compose.yml` | Cross-platform starter, Mongo replica set |
+| Docs | `docs/`, `STACK.md`, `STATUS.md`, `progress.md` | Architecture, data model, design rationale |
+| OrchestratorKit | `OrchestratorKit/` | TZ workflow automation, templates, archives |
 
 ## 4. Открытые вопросы / отложенные задачи
-<!-- пусто -->
+
+| # | Вопрос | Статус | Контекст |
+|---|--------|--------|---------|
+| 1 | Дубликаты в data model (16 пар) | 📋 Документированы | `docs/data-model.md` § «Дубликаты». Proposal/Quotation, SupplierOrder/PurchaseOrder, Role/Roles и др. требуют консолидации. |
+| 2 | Operational pages — растут | 📋 В работе | Реализованы **8 фич × 10 routes**: materials, organizations, dictionaries, products [+ TZ-83 detail], orders, contracts + **TZ-83**: work-types, modules [+ detail]. В плане: warehouse, production, procurement — каждая как list+detail. |
+| 3 | E2E тесты не запускались | 📋 Отложено | 7 suites созданы (TZ-17), но не запускались регулярно. Нужен CI pipeline. |
+| 4 | SSR / hydration | ❌ REJECTED | TZ-80 — out of scope. SPA CSR через `start.mjs --prod` static server. |
+| 5 | Browser-use smoke test | ⏳ DEFERRED | TZ-82 — зависит от dev server. Можно запустить независимо через `ng serve`. |
+| 6 | highlight.js install | ⏳ DEFERRED | TZ-78 fallback — pnpm `ERR_PNPM_PUBLIC_HOIST_PATTERN_DIFF`. Plain mono `<pre>` без подсветки. |
+| 7 | axe-core a11y audit | ⏳ DEFERRED | TZ-79 — pnpm install blocker. @media print готов. |
+| 8 | `nul` файлы (Windows artifact) | ✅ Fixed | Удалены, добавлены в `.gitignore` (OS section). |
 
 ---
 
@@ -42,22 +141,6 @@
 - **Smoke test results (pre-TZ-41):** 2 бага найдено (Windows pnpm spawn ENOENT, ImportJobsModule DI cascade) — оба исправлены до TZ-41.
 
 ---
-
-(будет пополняться)
-
-Test arch row
-
-Test arch row
-
-Test arch row
-
-Test arch row
-
-Test arch row
-
-Test arch row
-
-Test arch row
 
 ## Database Layer (TZ-03)
 - **Mongoose 8** с autoIndex=true в dev, autoIndex=false в production

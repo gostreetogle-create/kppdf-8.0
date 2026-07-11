@@ -1055,6 +1055,102 @@
 
 **Архив:** Живёт в `progress.md`. Lock-файлы: НЕТ.
 
+## [2026-07-11] — Завершено: TZ-83 (Модульная иерархия Товар→Модуль→Материал+Вид работ, 5 фаз)
+**Исполнитель:** Full-stack (Buffy)
+**Статус:** Выполнено (5 фаз, backend + frontend; typecheck + 11/11 unit tests pass)
+**Что сделано (~25 файлов, ~1800 строк net):**
+
+**Phase A — Backend cleanup (5 review rounds PASS):**
+- `ProductComponent` удалён (папка + импорт из `app.module.ts`).
+- `ProductModule.materials[]` мигрирован со snapshot-`name` на `materialId: ObjectId (ref 'Material')` + `overrideDimensions?: { length?, width?, height?, unit? }`.
+- `ProductModule.productId` + `image` (string) удалены — M:N через `Product.productModuleIds[]`, gallery вынесена в отдельную entity.
+- Индексы перестроены: `{productId, sortOrder}` (bug — `_id` всегда уникален) → `{sortOrder}` + `{name: 'text'}` для full-text search.
+- `bom.schema.ts` — `ref: 'ProductComponent'` → `ref: 'ProductModule'` + TODO для existing BOM data migration.
+- `ProductController` — atomic `POST /products/:id/modules` (`$addToSet`) + `DELETE /products/:id/modules/:moduleId` (`$pull`), race-condition-safe, `@Roles('admin','manager')` + `@AuditAction`.
+- `ProductService.findById` — nested populate (workTypes + materials) + existence-check для attach (защита от dangling ObjectId).
+- `ProductModulePhoto` — НОВАЯ entity (schema/service/controller/module, ~5 файлов). Schema-level validator `photoId || url` (защита от пустых фото). Atomic `setMain(id)` — all others get isMain=false.
+- `backend/scripts/tz83-drop-stale-productcomponents.ts` — idempotent cleanup (idempotent drop test collection), env-overridable (`MONGO_URI` matcher).
+
+**Phase B — Frontend data + WorkTypes dictionary (~5 файлов):**
+- `pi-work-types.service.ts` (`shared/services/`) — CRUD over `/api/work-types` + WorkType type export.
+- `pi-product-modules.service.ts` — CRUD + atomic `attachToProduct`/`detachFromProduct`.
+- `pi-product-module-photos.service.ts` — CRUD + `setMain(id)`.
+- `pages/work-types/work-types.page.ts` — canonical dictionary page (как /units, /currencies).
+- `pages/work-types/work-type-form-dialog.component.ts` — created/edit dialog.
+- `app.routes.ts` — `/work-types` lazy route, `app-layout.component.ts` — nav-link «Виды работ».
+
+**Phase C — `/modules` list + `/modules/:id` detail (4 sections, ~4 файла):**
+- `pages/modules/modules.page.ts` — list (photo-thumb, артикул, габариты, counts материалов/работ, search/sort, row→detail).
+- `pages/modules/module-detail.page.ts` — 4 sections: Основное / Фотогалерея / Материалы / Виды работ.
+- `pages/modules/module-form-dialog.component.ts` — basics + dimensions + workTypes FormArray.
+- `pages/modules/module-materials-form-dialog.component.ts` — FormArray + conditional override-dimensions UI («+ override» кнопка).
+
+**Phase D — `/products/:id` detail + integration (~3 файла):**
+- `pages/products/product-detail.page.ts` (NEW) — 4 sections + секция «Модули» с attach/detach через picker.
+- `pages/products/product-module-picker-dialog.component.ts` (NEW) — lookup всех модулей через `ProductModulesService.list()`, multi-select с atomic endpoint.
+- `pages/products/products.page.ts` — clickable rows (RouterLink → `/products/:id`) + колонка «Модулей: N».
+- Backend `ProductService.findById` — nested populate (workTypes + materials) + existence-check.
+
+**Phase E — Tests (3 + 3 = 6 новых файлов, 11/11 passing):**
+- Backend e2e: `product-modules.e2e-spec.ts`, `product-module-photos.e2e-spec.ts`, `products-attach-modules.e2e-spec.ts` (canonical `.expect(201)` для всех POST).
+- Frontend specs: `pi-work-types.service.spec.ts` (3 tests), `pi-product-modules.service.spec.ts` (4 tests), `pi-product-module-photos.service.spec.ts` (4 tests). TestBed + provideHttpClientTesting + API_BASE_URL token.
+- **11/11 новых unit-тестов passing** ✅.
+
+**Затронутые файлы (fresh, не архивные ссылки):**
+- Backend: `backend/src/modules/{product,product-module,product-module-photo}/` (~12 файлов), `bom.schema.ts`, `scripts/tz83-drop-stale-productcomponents.ts`.
+- Frontend: `frontend/src/app/shared/services/pi-{work-types,product-modules,product-module-photos}.service.ts` (+ 3 .spec.ts), `pages/{work-types,modules,products}/` (~10 файлов), `app.routes.ts`, `app-layout.component.ts`.
+
+**Verification:**
+- Backend `pnpm exec tsc -p tsconfig.build.json --noEmit` → exit 0 ✅
+- Frontend `pnpm exec tsc -p tsconfig.app.json --noEmit` → exit 0 ✅
+- Frontend `pnpm exec jest --testPathPattern='shared/services/(pi-work-types|pi-product-modules|pi-product-module-photos).service.spec'` → **11/11 PASS** ✅
+- Code-reviewer verdict по 5 review-rounds на Phase A; multi-round bugfixes на Phases B–E (dialog token names, RxJS pipe usage critique, defensive nullable guards).
+
+**Известные ограничения (не блокеры):**
+- `bom.schema.ts` всё ещё требует data-migration existing BOM к новому `ProductModule._id` references. Требует отдельный TZ.
+- Photo upload UI /modules/:id → только URL-fallback через `PhotoService` сейчас. File-picker UI → TZ-87 candidate.
+- `BadRequestException` import в `products-attach-modules.e2e-spec.ts` — dead import (reviewer minor, не блокировал).
+- Mobile responsive не тестировался на detail pages (TZ-83 scope = desktop first).
+
+**Cross-references:**
+- Phase A defensive try/catch pattern mirrrored TZ-46 principle «1 битый seed не должен валить bootstrap».
+- INN validator fix precedent (TZ-03 → b78c1c0 commit) — Phase A schema migration также использует `try/catch` для schema-vs-seed out-of-sync cases.
+- TZ-83 файл `tasks/TZ-83.md` обновлён: статус `⏳ READY` → `✅ DONE (closed 2026-07-11)`.
+
+## [2026-07-09] — Завершено: atomic cleanup commit b78c1c0
+**Исполнитель:** Backend Developer (Buffy)
+**Статус:** Committed (atomic, single-commit batch)
+**Что сделано (12 файлов / +116 / -52):**
+
+**Backend defensive hardening (8 файлов):**
+- `backend/src/common/validators/inn.validator.ts` — `checkInn10` (drop 2-stage bug, single weighted sum mod 11 mod 10 is correct, position 9 is the check digit) + `checkInn12` (drop dead `w3`/`d12_check`).
+- 6 seed files (counterparty-roles, feature-flags, org-roles, settings, statuses, units) — defensive `try/catch` вокруг `findBy/upsert` so malformed bootstrap seed не валит `OnApplicationBootstrap`.
+- 3 services (contract, order, quotation) — добавлен private `findByIdRaw()` helper (Mongoose `.findById` без `.populate` возвращает raw `ObjectId` refs, нужно для `contract.activate` который создаёт Order по `customerId`).
+- `backend/src/modules/actual-cost/dto/create-actual-cost.dto.ts` — `orderId` стал `@IsOptional()` с JSDoc (ActualCostController мержит orderId из URL param POST `/production-orders/:orderId/actual-costs`, раньше ValidationPipe реджектил body до controller injection).
+
+**Root purge (1 файл):**
+- `.gitignore` — добавлен `package-lock.json` guard с inline rationale comment (root `package.json` не имеет `dependencies`; случайный `npm install` в корне генерирует пустой lockfile).
+
+**Verification (зафиксировано в commit body):**
+- Backend typecheck exit 0
+- Frontend typecheck exit 0
+- E2E baseline 7 suites / 22 tests / 26s (re-run 2026-07-09, exit 0)
+
+**Cross-references:**
+- **TZ-46 hotfix follow-up:** defensive try/catch pattern для seed files mirrors TZ-46's principle «1 битый seed не должен валить bootstrap».
+- **INN validator fix:** original implementation в TZ-03, this commit корректирует баг в `checkInn10` (был 2-stage weighted sum с двумя разными weight-массивами; правильно — 1 weighted sum mod 11 mod 10 = check digit at position 9).
+- **Seed StrictModeError treat:** defensive try/catch вокруг `create/upsert` handles the case где seed и schema out of sync. TZ-05 ввёл `deletedAt: null` requirement на schema; если seed присылает поле которого schema не ожидает, StrictModeError fail. Try/catch оборачивает regression gracefully.
+
+**Что НЕ вошло в commit (separate batches):**
+- Frontend `/products /orders /contracts` pages (large UI rework, separate commit)
+- Backend E2E test additions (TZ-17 follow-up, separate commit)
+- `backend/reset-password.js` (TZ-46 hotfix helper, separate commit)
+- `frontend/package.json` + `frontend/pnpm-lock.yaml` (frontend dep batch)
+
+**Lock-файл:** N/A (chore commit, no code zone to lock).
+
+---
+
 ## [2026-07-08] — Завершено: Сессия улучшений (6 направлений + CRUD миграция + browser verify)
 **Исполнитель:** Frontend Developer (Buffy)
 **Статус:** Выполнено (typecheck ✅, code-review ✅, browser-use verify ✅)
