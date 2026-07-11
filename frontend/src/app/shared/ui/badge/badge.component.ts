@@ -5,10 +5,10 @@ export type PiBadgeVariant = 'default' | 'secondary' | 'outline' | 'destructive'
 export type PiBadgeSize = 'sm' | 'md';
 
 const VARIANT_CLASS: Record<PiBadgeVariant, string> = {
-  default: 'bg-sunrise-warm text-paper',
-  secondary: 'bg-paper-2 text-ink',
-  outline: 'bg-transparent hairline text-ink',
-  destructive: 'bg-destructive text-paper',
+  default: 'bg-transparent hairline border-sunrise-warm text-sunrise-warm',
+  secondary: 'bg-transparent hairline border-rule text-ink',
+  outline: 'bg-transparent hairline border-rule text-muted-foreground',
+  destructive: 'bg-transparent hairline border-destructive text-destructive',
 };
 
 const SIZE_CLASS: Record<PiBadgeSize, string> = {
@@ -26,6 +26,14 @@ const BASE_CLASS =
  * and pulsing dot. `icon` is default '' (never null) so the template
  * binding [name]="icon()" stays string-compatible with i-lucide's input
  * type without nullable coercion.
+ *
+ * TZ-94 §C.2 alignment: all 4 variants use `bg-transparent hairline`
+ * (no solid fills). The variant color decides emphasis through BORDER +
+ * TEXT color, never through solid fill — this matches the hairline-first
+ * convention (TZ-AUDIT-8) and editorial restraint. See `tasks/TZ-94.md`
+ * for the full architectural rationale + variant merge decision
+ * (`outline` and `secondary` are visually merged by design; `outline`
+ * is kept as an API alias for backward compatibility).
  */
 @Component({
   selector: 'app-pi-badge',
