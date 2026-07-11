@@ -22,12 +22,15 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthResponse> {
+    // TZ-91 §4 Phase A.1: dto.role is `@IsOptional @IsIn(['user','manager'])` — defaults to 'user'
+    // if not provided. 'user' is the safest default (lowest privilege, defence-in-depth: admin/manager
+    // accounts MUST be created through admin-invite-flow or admin.seed, never via /register).
     const user = await this.users.create({
       username: dto.username,
       email: dto.email,
       displayName: dto.displayName,
       password: dto.password,
-      role: dto.role,
+      role: dto.role ?? 'user',
       permissions: dto.permissions ?? [],
       isActive: dto.isActive ?? true,
       phone: dto.phone,
