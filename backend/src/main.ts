@@ -41,11 +41,10 @@ async function bootstrap() {
   // Compression
   app.use(compression());
 
-  // CORS whitelist via env (CORS_ORIGINS, comma-separated)
-  const corsOrigins = (process.env.CORS_ORIGINS ?? 'http://localhost:3000,http://localhost:4200')
-    .split(',')
-    .map((o) => o.trim())
-    .filter(Boolean);
+  // TZ-91 §4 Phase A.6: CORS multi-origin — read CORS_ORIGIN (preferred, new convention) or
+  // CORS_ORIGINS (legacy, deprecated). Comma-separated list, trimmed, empty handlers dropped.
+  const corsEnv = process.env.CORS_ORIGIN ?? process.env.CORS_ORIGINS ?? 'http://localhost:3000,http://localhost:4200';
+  const corsOrigins = corsEnv.split(',').map((o) => o.trim()).filter(Boolean);
   app.enableCors({
     origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
     credentials: true,

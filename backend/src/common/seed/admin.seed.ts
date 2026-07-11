@@ -94,7 +94,16 @@ export class AdminSeed implements OnApplicationBootstrap {
     }
 
     const username = this.config.get<string>('admin.username') ?? 'admin';
+    // TZ-91 §4 Phase A.4: warn + skip if ADMIN_PASSWORD < 8 chars (avoid weak admin on fresh bootstrap).
     const password = this.config.get<string>('admin.password') ?? '';
+    if (!password || password.length < 8) {
+      this.logger.warn(
+        `[ADMIN-SEED] ADMIN_PASSWORD too short or unset (${password?.length ?? 0} chars, need >= 8). ` +
+        `Admin user NOT created. Set ADMIN_PASSWORD in .env (>= 8 chars) then restart. ` +
+        `Bootstrap CONTINUES — app will run without admin until password is fixed.`,
+      );
+      return;
+    }
 
     try {
       await this.users.create({
