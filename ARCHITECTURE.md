@@ -198,6 +198,47 @@
 
 ---
 
+## Cost Calculation (TZ-85)
+
+**Files:** `backend/src/modules/cost-calculation/{schema,service,controller,module}.ts` + `dto/create-cost-calculation.dto.ts` + `backend/test/e2e/cost-calculation.e2e-spec.ts` + `frontend/src/app/shared/services/pi-cost-calculations.service.{ts,spec.ts}` + `frontend/src/app/pages/products/cost-calculation-detail-dialog.component.ts` + `frontend/src/app/pages/products/product-detail.page.ts` (Section V).
+
+### Cost formula
+
+`total = Σ(Material.pricePerUnit × ModuleMaterial.quantity) + Σ(WorkType.hourlyRate × WorkType.estimatedHours) × (1 + overheadPercent/100)`
+
+### Backend (NestJS)
+
+- **Schema** (`cost-calculation.schema.ts`): `_id`, `productId` (ref), `name`, `isActive` (default true), `overheadPercent` (0-100), `notes`, `totalCost` (computed cached), `breakdown: { materials: [...], labor: [...] }`, `createdBy/updatedBy/createdAt/updatedAt`, `softDelete` plugin.
+- **Service** (`cost-calculation.service.ts`): `create/findAll/findById/update/activate/remove`. `activate` snapshots current `productId` configuration into `breakdown` (prevents later changes to ProductModule from affecting historical cost calculations). Uses `ProductModule` hierarchy for source data (no Bom/TechProcess — those were dropped in Phase A rewrite).
+- **Controller** (`cost-calculation.controller.ts`): `POST /api/products/:productId/cost-calculations` — controller merges `productId` from URL param into DTO (DTO `productId` is `@IsOptional`, validated by ValidationPipe whitelist).
+- **DTO** (`create-cost-calculation.dto.ts`): `productId?` + `name?` + `overheadPercent?` (0-100) + `notes?` + `breakdown?` (raw material/labor list as alternative to automatic computation from ProductModule). All optional — defaults applied in service.
+
+### Frontend (Angular 20)
+
+- **Service** (`pi-cost-calculations.service.ts`): `list/findById/create/update/activate/remove` returning `SilentResult<T>` per project convention.
+- **Breakdown dialog** (`cost-calculation-detail-dialog.component.ts`): polymorphic ui-component showing `Material` rows + `WorkType` rows + total + overhead%. Used in Section V of product-detail.page.
+- **Section V** (`product-detail.page.ts`): new section "Себестоимость" showing cost calculation history + create button + activation controls.
+- **Unit tests** (`pi-cost-calculations.service.spec.ts`): covers silent-http error paths per project convention.
+
+### E2E test (Phase E.1)
+
+- **`backend/test/e2e/cost-calculation.e2e-spec.ts`** (242 lines): 7-step scenario —
+  1. Create 2 Materials (ЛДСП 16мм + Кромка ПВХ) with `pricePerUnit: 1000/500`
+  2. Create WorkType (Раскрой на ЧПУ) with `hourlyRate: 2000`
+  3. Create ProductModule (Корпус шкафа) with materials[] + workTypes[]
+  4. Create Product + attach module
+  5. POST `/products/:id/cost-calculations` → verify total = `(1000*4 + 500*12) + (2000*2.5) × (1+overhead/100)`
+  6. Activate snapshot → verify `isActive` switching
+  7. Delete snapshot → verify 204
+
+### Cross-references
+
+- **TZ-83 (ProductModule hierarchy):** cost-calculation source data is `Product.modules[].materials[] + workTypes[]`. Without TZ-83, this TZ has no source.
+- **TZ-86 (Document Constructor):** polymorphic ui-component pattern reference for `cost-calculation-detail-dialog`.
+- **TZ-91B.2 RBAC:** cost-calculation endpoints have `@Roles('admin','manager')` per TZ-91B.2 sweep.
+
+---
+
 ## Database Layer (TZ-03)
 - **Mongoose 8** с autoIndex=true в dev, autoIndex=false в production
 - **Connection:** retryAttempts 3, retryDelay 1000, replicaSet rs0

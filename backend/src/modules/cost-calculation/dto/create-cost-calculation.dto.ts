@@ -2,8 +2,7 @@ import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 import { IsObjectId } from '../../../common/decorators/is-object-id.decorator';
 
 export class CreateCostCalculationDto {
-  @IsObjectId()
-  productId!: string;
+  @IsOptional() @IsObjectId() productId?: string;
 
   @IsOptional() @IsObjectId() bomId?: string;
   @IsOptional() @IsString() bomVersion?: string;

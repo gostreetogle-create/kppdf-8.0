@@ -1401,3 +1401,9 @@
 **Исполнитель:** Backend Developer (DevTools + Infra)
 **Статус:** Spec-only / Проверено / 4-round Code-reviewer 🟢 Ship-ready
 **Что сделано кратко:** Spec для source-build `codebase-memory-mcp` на Linux/macOS/Windows-from-source через `https://github.com/DeusData/codebase-memory-mcp` (public MIT repo, `scripts/build.sh --with-ui`). Включает per-OS `.mcp.<os>.json` (linux/macos/windows) + `cp` switcher, `scripts/build-mcp.mjs` orchestrator с cross-FS-safe atomic-move, SIGINT handler, ENOSPC disk-space pre-check (3-OS branches), progress feedback, AUR alternative для Arch
+## 2026-07-11 — Завершено: TZ-85 (Расчёт себестоимости поверх модульной иерархии)
+**Исполнитель:** Backend Developer + Frontend Engineer
+**Статус:** Выполнено / Проверено / 5 phases shipped
+**Что сделано кратко:** Полный 5-phase cost calculation. Phase A — CostCalculationService rewrite (drop Bom/TechProcess, use ProductModule hierarchy). Phase B — frontend pi-cost-calculations service. Phase C — Section V на /products/:id. Phase D — breakdown dialog. Phase E — e2e test + DTO hardening (@IsOptional productId — controller merges from URL param) + doc sync.
+**Затронутые файлы/папки:** backend/src/modules/cost-calculation/* (5 файлов), backend/test/e2e/cost-calculation.e2e-spec.ts (NEW, 242 lines), frontend/src/app/shared/services/pi-cost-calculations.service.{ts,spec.ts}, frontend/src/app/pages/products/cost-calculation-detail-dialog.component.ts, frontend/src/app/pages/products/product-detail.page.ts (Section V), ARCHITECTURE.md
+**Известные ограничения:** overrideDimensions НЕ влияет на стоимость (Material.pricePerUnit × ModuleMaterial.quantity, линейная формула). Macros для per-dimension pricing — out of scope TZ-85.

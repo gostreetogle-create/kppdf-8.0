@@ -587,3 +587,18 @@ HTTP UI port :9749 verified empirically (binary v0.9.0 log scrape). ARCHITECTURE
 Spec-only commit. Source-build codebase-memory-mcp на Linux/macOS/Windows-from-source через https://github.com/DeusData/codebase-memory-mcp (public MIT, scripts/build.sh --with-ui). Per-OS .mcp.<os>.json + cp switcher, scripts/build-mcp.mjs orchestrator с cross-FS-safe atomic-move, SIGINT handler, ENOSPC disk-space pre-check (3-OS branches via df -BG / df -g / fs.statfsSync), AUR alternative для Arch. 4-round code-review hardening complete. Implementation deferred to future TZ-NN.
 
 ---
+---
+
+## TZ-85: Cost Calculation (Расчёт себестоимости поверх модульной иерархии)
+
+### TZ-85: Cost Calculation (5 phases, DONE 2026-07-11)
+
+- Phase A: feat(TZ-85A): CostCalculationService rewrite — drop Bom/TechProcess, use ProductModule hierarchy (commit ea184df)
+- Phase B-D: feat(TZ-85): Phase B-D — cost calculation frontend (service + Section V + breakdown dialog) (commit 111ca90)
+- Phase E: feat(cost-calc): TZ-85 Phase E — e2e tests + DTO hardening + doc sync (Phase E commit)
+- Archive: tasks/_archive/2026-07/TZ-85.md.done
+- Lock: OrchestratorKit/.mimocode/locks/TZ-85-cost-calculation.lock
+
+Расчёт себестоимости через ProductModule hierarchy — Material.pricePerUnit × quantity + WorkType.hourlyRate × hours + overhead%. 5 phases: A (backend rewrite, drop Bom/TechProcess), B (frontend service с silent-http pattern), C (Section V на /products/:id), D (breakdown dialog с polymorphic ui-component), E (e2e test 242 lines + DTO hardening @IsOptional productId + doc sync). 1 e2e test (cost-calculation.e2e-spec.ts: 7-step scenario — create materials, workType, productModule, product; POST cost-calculation; verify totals; activate; delete). Cross-references: TZ-83 (ProductModule hierarchy), TZ-86 (Document Constructor pattern reference).
+
+---
