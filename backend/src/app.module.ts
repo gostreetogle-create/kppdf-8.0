@@ -61,6 +61,7 @@ import { CartItemModule } from './modules/cart-item/cart-item.module';
 import { DocTypeModule } from './modules/doc-type/doc-type.module';
 import { DocumentTemplateModule } from './modules/document-template/document-template.module';
 import { TemplateBlockModule } from './modules/template-block/template-block.module';
+import { TextBlockModule } from './modules/text-block/text-block.module';
 import { TableTemplateModule } from './modules/table-template/table-template.module';
 import { DocumentTableTypeModule } from './modules/document-table-type/document-table-type.module';
 import { ReconciliationActModule } from './modules/reconciliation-act/reconciliation-act.module';
@@ -167,6 +168,7 @@ import { HealthController } from './health.controller';
     DocTypeModule,
     DocumentTemplateModule,
     TemplateBlockModule,
+    TextBlockModule, // TZ-86 Фаза A.1: новая entity для reusable text snippets
     TableTemplateModule,
     DocumentTableTypeModule,
     ReconciliationActModule,
