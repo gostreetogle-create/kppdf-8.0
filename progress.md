@@ -1517,3 +1517,24 @@
 - 1px solid black borders → kept warm `var(--color-rule)` (L=0.880, not pure black)
 - JetBrains Mono everywhere → `--font-mono` только для tech-label, IDs, numeric cells
 - Charcoal primary → kept `--color-ink` (warm espresso L=0.250)
+
+### TZ-93.1 (2026-07-12) — Brutalist Architectural UI Refinement: Rollback .pi-corner-marks
+
+**Сводка:** 2 atomic commits / ~150 LoC delta; commit hash `e5d25fe` (impl) + this archival commit.
+
+**Scope decision:** User selected Option C (drop `.pi-corner-marks`) over Options A (`pi-tabular-nums`, redundant vs Tailwind v4 built-in) and B (`pi-status-pill`, redundant vs existing `bg-transparent hairline border-X text-X` pattern in BadgeComponent).
+
+**Rollback rationale:** `.pi-corner-marks` (8px L-shapes) read as "1990s hacker terminal" rather than editorial architectural precision. JSDoc gates in TZ-93 werent enough — the visual vocabulary itself conflicted with Paper & Inks editorial direction.
+
+**Scope reduction:** 3 → 2 utilities (`.pi-tech-label`, `.pi-dashed-panel` survive). TZ-94 spec updated: C.2 PiEmptyTile retired, C.1 wrapper simplified, commit order 5 → 4.
+
+**Affected files:**
+- `frontend/src/styles.css` — `@layer components { .pi-corner-marks }` block removed (29 lines); JSDoc updated "3 → 2 utilities" with rollback rationale in REJECTED-bullet.
+- `frontend/src/app/pages/playground/theme-editor.page.ts` — Section III 3 cards → 2 cards (Dashed Panel + Tech Label); grid-cols-3 → grid-cols-2.
+- `tasks/TZ-94.md` — 13 str_replace edits (C.2 retired, C.1 simplified, commit order 5→4, C-numbering clarification).
+- `tasks/TZ-93.1.md` (NEW) — Follow-up spec; archived to `tasks/_archive/2026-07/TZ-93.1.md.done` per TZF-00 § 6.
+- `OrchestratorKit/.mimocode/locks/TZ-93-brutalist-architectural-ui.lock` — `modifications:` section added; `future_extensions` updated to reflect TZ-94s 5 components / 4 commits.
+
+**Verification:** frontend typecheck 0 errors, 2 atomic commits (impl + archival), code-reviewer 2 rounds (round 1: scope decision + impl; round 2: cleanup nits), browser-use STILL blocked by authGuard.
+
+**Lock-файлы:** TZ-93-brutalist-architectural-ui.lock updated in place (TZ-93.1 modifies same 2 files; no separate lock needed).

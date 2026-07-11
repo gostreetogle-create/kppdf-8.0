@@ -697,3 +697,20 @@ Spec-only commit. Source-build codebase-memory-mcp на Linux/macOS/Windows-from
 - DEFERRED-to-TZ-95: `/kit/*` showcase + `docs/paper-and-ink.md` + `docs/add-new-page.md` — Layer 1
 
 **Lock file:** `OrchestratorKit/.mimocode/locks/TZ-93-brutalist-architectural-ui.lock` (2 protected files, 2 future_extensions: TZ-94, TZ-95).
+
+### TZ-93.1 (2026-07-12) — Rollback .pi-corner-marks
+
+**Сводка:** Mid-flight scope adjustment per user. 3 → 2 utilities; `.pi-corner-marks` rolled back due to "1990s hacker terminal" aesthetic risk.
+
+**Scope decision:** User selected **Option C** (drop `.pi-corner-marks`) over Options A (`pi-tabular-nums`, redundant vs Tailwind v4 built-in) and B (`pi-status-pill`, redundant vs existing direct-usage pattern in BadgeComponent). Analysis: spawn_agents/thinker-with-files-gemini + ask_user confirmation.
+
+**Что изменилось:**
+- `styles.css` — `@layer components { .pi-corner-marks }` block removed (29 lines, 5 nested selectors); JSDoc updated "3 → 2 utilities" with rollback rationale in REJECTED-bullet.
+- `theme-editor.page.ts` — Section III 3 cards → 2 cards (Dashed Panel + Tech Label); grid-cols-3 → grid-cols-2; intro paragraph mentions the rollback.
+- `tasks/TZ-94.md` — C.2 PiEmptyTile retired (~~C.2~~ marker); C.1 wrapper simplified; commit order 5 → 4; C-numbering clarification note added; Section 6 auth wall ref disambiguated from TZ-93.1.
+- `tasks/TZ-93.1.md` (NEW) — Follow-up spec; archived to `tasks/_archive/2026-07/TZ-93.1.md.done`.
+- Lock file — `modifications:` section added documenting TZ-93.1 (e5d25fe); `future_extensions` updated to 5 components / 4 commits.
+
+**Verification:** 2 atomic commits (impl + archival); frontend typecheck 0 errors; code-reviewer 2 rounds.
+
+**Архив:** `tasks/_archive/2026-07/TZ-93.1.md.done` (per TZF-00 § 6).
