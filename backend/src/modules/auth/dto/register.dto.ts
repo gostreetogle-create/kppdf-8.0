@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -37,8 +37,15 @@ export class RegisterDto {
    *
    * TZ-91 §2 Decision 1 + §4 Phase A.1. DTO-level constraint is defense-in-depth:
    * even if controller-level guard is missing, no admin account can be created via /register.
+   *
+   * TZ-95 §4: @Transform applies the schema-boundary default ('user') BEFORE
+   * class-validator runs. This makes the default explicit at the validation
+   * layer (not magic in service-side `?? 'user'`). If the caller doesn't pass
+   * `role`, the DTO fills in 'user' and IsIn(['user','manager']) passes.
+   * If the caller passes a non-whitelisted role, IsIn rejects with 400.
    */
   @IsOptional()
+  @Transform(({ value }: { value: unknown }): string => (value == null ? 'user' : (value as string)))
   @IsIn(['user', 'manager'])
   role?: string;
 

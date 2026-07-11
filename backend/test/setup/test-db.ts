@@ -3,6 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { MongooseModule, getConnectionToken } from '@nestjs/mongoose';
 import { Connection, connect, type Mongoose } from 'mongoose';
 import { AppModule } from '../../src/app.module';
+import { TEST_ADMIN_PASSWORD } from './admin.fixture';
 
 export interface TestContext {
   app: INestApplication;
@@ -40,7 +41,9 @@ export async function createTestApp(): Promise<TestContext> {
   // Use a test-specific password that satisfies Joi min(8) validation.
   // The .env default 'admin-change-me-immediately-in-production' is too
   // long for tests; 'admin' (5 chars) fails Joi validation.
-  process.env.ADMIN_PASSWORD = 'admin123456';
+  // Imported from admin.fixture (TZ-95) — single source of truth for the
+  // 5 places that previously hardcoded this literal.
+  process.env.ADMIN_PASSWORD = TEST_ADMIN_PASSWORD;
 
   // --- Pre-init: clear all collections so seeds run fresh ---
   const mongoUri =

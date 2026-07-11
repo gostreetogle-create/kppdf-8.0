@@ -1,5 +1,6 @@
 import request from 'supertest';
 import type { INestApplication } from '@nestjs/common';
+import { TEST_ADMIN_PASSWORD, TEST_ADMIN_USERNAME } from './admin.fixture';
 
 export interface AuthTokens {
   access: string;
@@ -8,9 +9,9 @@ export interface AuthTokens {
 }
 
 export async function loginAsAdmin(app: INestApplication): Promise<AuthTokens> {
-  const username = process.env.ADMIN_USERNAME ?? 'admin';
+  const username = process.env.ADMIN_USERNAME ?? TEST_ADMIN_USERNAME;
   // Must match the password set in test-db.ts createTestApp()
-  const password = process.env.ADMIN_PASSWORD ?? 'admin123456';
+  const password = process.env.ADMIN_PASSWORD ?? TEST_ADMIN_PASSWORD;
   const res = await request(app.getHttpServer())
     .post('/api/auth/login')
     .send({ username, password })
