@@ -473,6 +473,54 @@ kppdf-8.0/
 
 **Lock-файлы:** N/A (chore commit, no code zone to lock).
 
+### `0db6e79` — `chore(sec): TZ-91 Phase B.2 RBAC coverage sweep + audit script`
+
+**Сводка:** 47 files / +211 inserts / 0 deletes; commit hash `0db6e79`. Closes TZ-91 §1 HIGH finding «RBAC не на write endpoints = 1 из 3 CRITICAL».
+
+**Stratification:**
+- 45 auto-patched controllers (batched script + per-path guard via `fs.existsSync`)
+- 1 `product/product.controller.ts` (canonical nested-controller)
+- 1 `product/product-subroutes.controller.ts` (3-level depth test)
+- 1 `organization/contacts/organization-contact.controller.ts` (3-level depth test)
+- 1 `auth/auth.controller.ts` (MANUAL: Roles import + `@Roles('admin','manager','user')` on logout)
+- 1 `user/user.controller.ts` (MANUAL: `@Roles('admin','manager','user')` on update + changePassword)
+
+**Convention applied:** `@Verb → @Roles('admin','manager') → @AuditAction` (matches canonical MaterialController).
+
+**Self-service endpoints (manual @Roles with user tuple):**
+- `auth.controller.logout` (self-service, calls `this.auth.logout(me.id)`)
+- `user.controller.update` (self-service, has internal `if (me.role !== 'admin' && me.id !== id)` guard)
+- `user.controller.changePassword` (self-service, same guard pattern)
+
+**Insertion strategies:**
+1. Batched script (`backend/scripts/_patch-roles-batch.ts`, deleted post-batches): depth-aware import path computation (`../../common/decorators/roles.decorator` for 2-level, `../../../common/...` for 3-level), per-path `fs.existsSync()` guard before write, idempotency via `Roles` import detection, `@Roles` insertion after `@Verb` and before `@AuditAction` via `Math.max(verbLineRel + 1, auditLineRel)` trick.
+2. Manual edits (4 `str_replace` total): auth + user for self-service role tuples.
+
+**5-batch execution:** counter + actual-cost..counter (10) → doc-type..order-closing (10) → order-task..routing-step (10) → rpp..warehouse (10) → work-center..worker (7) + manual auth/user. Per-batch verification: `pnpm exec tsc -p tsconfig.build.json --noEmit` (0 errors) + regenerated audit JSON (`missingCount` decrements) + `pnpm exec jest --testPathPattern=auth.e2e-spec.ts` (5/5 PASS).
+
+**Verification at final state:**
+- `pnpm exec tsc -p tsconfig.build.json --noEmit` → 0 errors ✅
+- `pnpm exec ts-node scripts/audit-roles-coverage.ts` → `missingCount: 0`, `publicTempCount: 3` (unchanged at register/login/refresh), `okCount: 226` ✅
+- `tmp/audit-roles-coverage.json` regenerated (gitignored per TZ-91D) ✅
+
+**Forward-deferrals (NOT in this commit):**
+- Audit script regex → ts-morph AST upgrade (TZ-91D) — line-based regex parser could miss unusual decorator patterns.
+- Pre-existing TS2345 in `backend/src/database/soft-delete.plugin.ts(27,18)` (`'softDelete'` not a key of Mongoose `SchemaOptions`) — NOT introduced by this commit (last touched in `7fffd37` «bulk project health fixes from z.txt audit»); out of TZ-91B.2 scope; forward-deferred alongside audit-interceptor cleanup in TZ-91D.
+- LazyModuleLoader + bootstrap timeout observability (TZ-94) — unblocks e2e full-suite parallel runs.
+- Hardcoded test `ADMIN_PASSWORD` → env-var-driven fixture (TZ-95.2).
+
+**Cross-references:**
+- TZ-91 §1 original HIGH/Critical finding («@Public registration + RBAC not on write endpoints = 1 of 3 CRITICAL») → this commit closes the RBAC half. @Public deferral on `/register` is still TZ-91 §2 Decision 1 (waits for TZ-91-extension invite-flow).
+- TZ-91A (commit `4a2d6bd`): register-AdminDto role gate still active.
+- TZ-91 Phase C (`d8df374`): Swagger prod gating + `start.mjs` JWT dev-warning unaffected.
+- TZ-92: Roles payloads (id, username, email, displayName, role, permissions) preserved through `auth.getMe`.
+
+**Run auditor:** `cd backend && pnpm exec ts-node scripts/audit-roles-coverage.ts` (WARN+exit 0 if any MISSING persists).
+
+**Code-reviewer verdict:** 🟢 Ship-ready — sampled invoice/order/rate-limit all show canonical `@Verb → @Roles → @AuditAction`; self-service 'user' tuple preserves internal authorization checks; admin-only endpoints (user.create/remove `@Roles('admin')`, user.list `@Roles('admin','manager')`) correctly retain stricter tuples unchanged.
+
+**Lock-файлы:** N/A (chore commit, no code zone to lock).
+
 ## ⏳ Готовые к запуску (READY)
 
 ### TZ-90 (2026-07-11) — Dialog system standardization (4 templates · 50% backdrop · 8px radius · shadow tokens · migration of 11+ existing dialogs)
