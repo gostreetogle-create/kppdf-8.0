@@ -75,7 +75,19 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('docs', app, document);
+  // TZ-91 §4 Phase C.1: Swagger gated by NODE_ENV !== 'production'.
+  // Escape hatch: SWAGGER_ENABLED='true' for prod-debug scenarios only.
+  // Strict `=== 'true'` (no truthy coercion) avoids accidental enabling
+  // via SWAGGER_ENABLED=1 or SWAGGER_ENABLED=yes (both intentionally rejected
+  // — code-reviewer MINOR cross-cutting decision).
+  const swaggerEnabled =
+    process.env.NODE_ENV !== 'production' ||
+    process.env.SWAGGER_ENABLED === 'true';
+  if (swaggerEnabled) {
+    SwaggerModule.setup('docs', app, document);
+  } else {
+    Logger.log('Swagger UI disabled in production (set SWAGGER_ENABLED=true to override)', 'Bootstrap');
+  }
 
   // Graceful shutdown
   app.enableShutdownHooks();

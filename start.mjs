@@ -36,6 +36,7 @@
 import { spawn, spawnSync, execSync } from 'node:child_process';
 import { createServer } from 'node:http';
 import { existsSync, statSync, rmSync, readFileSync, writeFileSync, createReadStream, readdirSync } from 'node:fs';
+import { readFile as readFileAsync } from 'node:fs/promises';
 import { platform, exit, argv, env, stdout, stderr } from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, extname, normalize, sep } from 'node:path';
@@ -477,6 +478,28 @@ async function preflight() {
     ok = false;
   } else {
     detected.push(`Node ${nodeVer}`);
+  }
+
+  // TZ-91 §4 Phase C.3: dev-secret hygiene warning.
+  // Reads .env manually because start.mjs doesn't load it into process.env
+  // until dotenv is invoked by the backend's NestJS bootstrap (post-preflight).
+  // Strict substring check against only `dev` + `do-not-use` to avoid false
+  // positives in production (TZ-91 §5 risk row: "false positive if secret
+  // contains dev substring случайно" - acceptable since warning is non-blocking).
+  try {
+    const envContent = await readFileAsync(path.join(ROOT, '.env'), 'utf8');
+    const jwtSecretMatch = envContent.match(/^JWT_SECRET=(.+)$/m);
+    const jwtRefreshMatch = envContent.match(/^JWT_REFRESH_SECRET=(.+)$/m);
+    const suspicious = (v) => v && (v.includes('dev') || v.includes('do-not-use'));
+    if (suspicious(jwtSecretMatch?.[1]) || suspicious(jwtRefreshMatch?.[1])) {
+      log.warn(
+        'JWT_SECRET или JWT_REFRESH_SECRET выглядит как development value. ' +
+        'Сгенерируйте продакшен-secret: openssl rand -hex 32'
+      );
+    }
+  } catch {
+    // .env not present yet or unreadable - skip warning (startup will
+    // surface missing .env separately in preflight below).
   }
 
   // pnpm
