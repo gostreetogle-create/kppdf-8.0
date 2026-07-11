@@ -17,6 +17,7 @@ import {
   Package,
   Briefcase,
   BookOpen,
+  FileText,
 } from 'lucide-angular';
 
 /**
@@ -41,7 +42,7 @@ interface NavCategory {
 }
 
 /**
- * TZ-CategoriesNav — AppLayout top-panel nav grouped into 3 dropdowns:
+ * TZ-CategoriesNav — AppLayout top-panel nav grouped into 4 dropdowns:
  *
  *   Каталог       ← Продукция · Модули · Материалы · Виды работ
  *     (Package)   — TZ-83 product → module → material hierarchy
@@ -51,6 +52,9 @@ interface NavCategory {
  *
  *   Справочники   ← Справочники
  *     (BookOpen)  — meta-catalog umbrella route
+ *
+ *   Документы     ← Конструктор · Текстовые блоки · Шаблоны таблиц
+ *     (FileText)  — TZ-86 Phase D.1 document constructor sub-system
  *
  * Active-category algorithm: when ANY sub-route is active (e.g. /products/:id),
  * the parent category trigger is highlighted via bg-sunrise-warm. Boundary
@@ -88,6 +92,21 @@ const NAV_CATEGORIES: NavCategory[] = [
     icon: BookOpen,
     items: [
       { path: '/dictionaries', label: 'Все справочники' },
+    ],
+  },
+  {
+    // TZ-86 Phase D.1 — 4-я категория «Документы»: текстовые блоки,
+    // шаблоны таблиц и 3-pane builder canvas. FileText иконка
+    // (lucide-angular@0.460). Active-category algorithm в
+    // PiNavDropdownComponent использует path === url || url.startsWith(path + '/'),
+    // поэтому /doc-constructor/builder/:id матчится по '/doc-constructor/builder'.
+    id: 'docs',
+    label: 'Документы',
+    icon: FileText,
+    items: [
+      { path: '/doc-constructor/builder', label: 'Конструктор' },
+      { path: '/doc-constructor/texts', label: 'Текстовые блоки' },
+      { path: '/doc-constructor/tables', label: 'Шаблоны таблиц' },
     ],
   },
 ];

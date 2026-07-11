@@ -198,6 +198,28 @@ export const routes: Routes = [
           ),
         title: 'KPPDF — Конструктор: Таблицы',
       },
+      {
+        // TZ-86 Phase D.1 — builder canvas (3-pane) picker state.
+        // No :id → shows template-list picker; selecting navigates to
+        // /doc-constructor/builder/:id (see BuilderPage empty state).
+        path: 'doc-constructor/builder',
+        loadComponent: () =>
+          import('./pages/doc-constructor/builder/builder.page').then(
+            (m) => m.BuilderPage,
+          ),
+        title: 'KPPDF — Конструктор: Сборка',
+      },
+      {
+        // TZ-86 Phase D.1 — builder canvas with a specific template id.
+        // Longest-prefix match in Angular 20 wins over the bare /builder
+        // route above, so :id takes precedence for non-empty ids.
+        path: 'doc-constructor/builder/:id',
+        loadComponent: () =>
+          import('./pages/doc-constructor/builder/builder.page').then(
+            (m) => m.BuilderPage,
+          ),
+        title: 'KPPDF — Конструктор',
+      },
     ],
   },
   { path: '**', redirectTo: '' },
