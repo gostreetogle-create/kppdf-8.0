@@ -24,7 +24,7 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
     <div
       class="min-h-screen bg-paper text-ink font-body flex items-center justify-center px-page-x"
     >
-      <div
+      <main
         class="w-full max-w-sm border hairline border-sunrise-warm rounded-sm px-10 py-12 bg-paper box-border overflow-hidden"
       >
         <div class="flex items-center gap-2 mb-10">
@@ -119,7 +119,7 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
         <p class="eyebrow text-[10px] text-muted-foreground mt-10 text-center">
           kppdf-8.0 · 2026
         </p>
-      </div>
+      </main>
     </div>
   `,
 })
