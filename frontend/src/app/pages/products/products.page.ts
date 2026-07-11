@@ -7,7 +7,9 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { httpResource } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
@@ -19,7 +21,8 @@ import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.com
 import { PiToastService } from '../../shared/ui/toast';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
-import { Product, ProductsService } from './products.service';
+import { API_BASE_URL } from '../../core/api.tokens';
+import { Product, ProductsService, type ProductsListResponse } from './products.service';
 import { ProductFormDialogComponent } from './product-form-dialog.component';
 
 type SortKey = 'name' | 'sku' | 'listPrice' | null;
@@ -51,6 +54,7 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FormsModule,
+    RouterLink,
     PiPageHeaderComponent,
     PiSectionComponent,
     PiToolbarComponent,
@@ -135,7 +139,14 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
                 class="pi-table-row pi-table-row-odd last:border-0"
                 [attr.data-test]="'product-row-' + row._id"
               >
-                <td class="pi-cell align-top font-medium">{{ row.name }}</td>
+                <td class="pi-cell align-top font-medium">
+                  <a
+                    [routerLink]="['/products', row._id]"
+                    class="text-ink hover:text-sunrise-warm hover:underline"
+                    [attr.aria-label]="'Открыть ' + row.name"
+                    data-test="open-row-link"
+                  >{{ row.name }}</a>
+                </td>
                 <td class="pi-cell align-top font-mono text-xs empty-cell">{{ row.sku }}</td>
                 <td class="pi-cell align-top text-muted-foreground empty-cell">{{ kindLabel(row.kind) }}</td>
                 <td class="pi-cell align-top whitespace-nowrap">{{ row.unit }}</td>
@@ -180,13 +191,50 @@ export class ProductsPage implements OnInit {
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
+  private readonly baseUrl = inject(API_BASE_URL);
 
-  protected readonly data = signal<Product[]>([]);
-  protected readonly total = signal<number>(0);
-  protected readonly loading = signal<boolean>(true);
-  protected readonly error = signal<string | null>(null);
+  /**
+   * TZ-83 Review #2 fix: вместо `(click)` на <tr> используем `<a routerLink>`
+   * в первой колонке. Это устраняет bubbling с PiRowActionsComponent
+   * (раньше клик на «Редактировать» на /products одновременно навигировал
+   * в /products/:id и открывал dialog). routerNavigate через RouterLink —
+   * canonical click-nav паттерн, не требует stopPropagation хаков.
 
+  /**
+   * Server list = `GET /api/products` via Angular 20's `httpResource`.
+   * Same shape as materials/organizations: paginated envelope
+   * `{items, total, page, limit}`, debounced search, sortBy/sortOrder
+   * forwarded to backend. `error` cast handles `httpResource.error()`
+   * being typed `unknown`.
+   */
+  protected readonly listRes = httpResource<ProductsListResponse>(() => ({
+    url: `${this.baseUrl}/products`,
+    params: {
+      page: 1,
+      limit: 50,
+      ...(this.debouncedSearch() ? { search: this.debouncedSearch() } : {}),
+      ...(this.sortKey()
+        ? { sortBy: this.sortKey()!, sortOrder: this.sortDir() }
+        : {}),
+    },
+  }));
+
+  protected readonly data = computed<Product[]>(
+    () => this.listRes.value()?.items ?? [],
+  );
+  protected readonly total = computed<number>(
+    () => this.listRes.value()?.total ?? this.data().length,
+  );
+  protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
+  protected readonly error = computed<string | null>(() => {
+    const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    return err ? extractErrorMessage(err) : null;
+  });
+
+  /** Live search input (echoed in @if branches). */
   protected readonly searchQuery = signal<string>('');
+  /** Debounced snapshot driving the httpResource params. */
+  protected readonly debouncedSearch = signal<string>('');
   protected readonly sortKey = signal<SortKey>('name');
   protected readonly sortDir = signal<SortDir>('asc');
 
@@ -211,7 +259,7 @@ export class ProductsPage implements OnInit {
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   ngOnInit(): void {
-    this.reload();
+    // `listRes` auto-fires its initial GET — no explicit `reload()`.
   }
 
   protected kindLabel(kind: Product['kind']): string {
@@ -241,7 +289,10 @@ export class ProductsPage implements OnInit {
     const target = event.target as HTMLInputElement;
     this.searchQuery.set(target.value);
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
-    this.debounceTimer = setTimeout(() => this.reload(), 300);
+    this.debounceTimer = setTimeout(
+      () => this.debouncedSearch.set(target.value.trim()),
+      300,
+    );
   }
 
   protected setSort(key: Exclude<SortKey, null>): void {
@@ -270,7 +321,7 @@ export class ProductsPage implements OnInit {
       data: null,
       width: 'lg',
     });
-    onDialogCloseOnce(ref, this.injector, () => this.reload());
+    onDialogCloseOnce(ref, this.injector, () => this.listRes.reload());
   }
 
   protected openEdit(product: Product): void {
@@ -278,7 +329,7 @@ export class ProductsPage implements OnInit {
       data: product,
       width: 'lg',
     });
-    onDialogCloseOnce(ref, this.injector, () => this.reload());
+    onDialogCloseOnce(ref, this.injector, () => this.listRes.reload());
   }
 
   protected onDelete(row: Product): void {
@@ -296,7 +347,7 @@ export class ProductsPage implements OnInit {
       this.service.remove(row._id).subscribe((res) => {
         if (res.ok) {
           this.toast.success('Продукт удалён');
-          this.reload();
+          this.listRes.reload();
         } else {
           this.toast.error(extractErrorMessage(res.error));
         }
@@ -305,27 +356,6 @@ export class ProductsPage implements OnInit {
   }
 
   protected reload(): void {
-    this.loading.set(true);
-    this.error.set(null);
-    const search = this.searchQuery().trim();
-    const sortKey = this.sortKey();
-    this.service
-      .list({
-        page: 1,
-        limit: 50,
-        search: search || undefined,
-        sortBy: sortKey ?? undefined,
-        sortOrder: sortKey ? this.sortDir() : undefined,
-      })
-      .subscribe((res) => {
-        if (res.ok) {
-          this.data.set(res.data.items ?? []);
-          this.total.set(res.data.total ?? res.data.items?.length ?? 0);
-          this.loading.set(false);
-        } else {
-          this.error.set(extractErrorMessage(res.error));
-          this.loading.set(false);
-        }
-      });
+    this.listRes.reload();
   }
 }

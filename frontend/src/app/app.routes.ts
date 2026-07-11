@@ -12,14 +12,11 @@ import { authGuard, publicOnlyGuard } from './core/auth.guard';
  *              `''` → /materials (user's stated landing).
  *   **       → redirect to /, then authGuard decides login vs home.
  *
- * TZ-83 routes added (rollout order per phase commits):
- *   Phase B (commit TZ-83B):
- *     /work-types — work types catalogue (CRUD: нормы, ставки, центр)
- *   Phase C (commit TZ-83C):
- *     /modules      — module catalogue (list, search, sort)
- *     /modules/:id  — module detail с 4 секциями (основное / фото / материалы / работы)
- *   Phase D (commit TZ-83D):
- *     /products/:id — product detail с секцией «Модули» + attach/detach
+ * TZ-83 routes (rollout per phase commits — TZ-83A→B→C→D):
+ *   /work-types   — work types catalogue       (Phase B)
+ *   /modules      — module catalogue list      (Phase C)
+ *   /modules/:id  — module detail (4 sections) (Phase C)
+ *   /products/:id — product detail + modules   (Phase D)
  */
 export const routes: Routes = [
   {
@@ -129,6 +126,18 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/products/products.page').then((m) => m.ProductsPage),
         title: 'KPPDF — Продукция',
+      },
+      {
+        // TZ-83 Phase D: product detail с секцией «Модули» + attach/detach.
+        // Динамический :id без children — отдельный top-level route под
+        // AppLayout (не вложенный в ProductsPage). Angular 20 матчит по
+        // longest-prefix; /products/:id выигрывает у /products для непустых id.
+        path: 'products/:id',
+        loadComponent: () =>
+          import('./pages/products/product-detail.page').then(
+            (m) => m.ProductDetailPage,
+          ),
+        title: 'KPPDF — Товар',
       },
       {
         // TZ-83 Phase C: список модулей продукции.
