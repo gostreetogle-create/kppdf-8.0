@@ -1,7 +1,13 @@
 # TZ-90 — Диалоговая система: единый стандарт из 4 шаблонов с токенами и миграцией существующих диалогов
 
+> ⚠️ **PARTIAL ARCHIVE — Phases A + B only.** This file is the working spec for TZ-90; Phase A (CSS foundation) and Phase B (polymorphic wrapper + service animation trigger) shipped. **Phases C, D, E are still open** and tracked in dedicated sub-tasks:
+> - **TZ-90C** — 12 operational dialogs migration to polymorphic wrapper (Layer 3 SERIAL)
+> - **TZ-90D** — `/kit/overlays` Section V + TZ-85D `cost-calculation-detail-dialog` wiring (Layer 3 SERIAL)
+> - **TZ-90E** — docs sync (`paper-and-ink.md` dialog section, `add-new-page.md` dialog convention) (Layer 1)
+>
+> The `TZ-90-dialog-system.lock` file's `future_extensions` block lists reserved files for the sub-tasks.
 **Дата:** 2026-07-11
-**Статус:** ⏳ READY (ждёт агента-исполнителя)
+**Статус:** ✅ DONE (Phase A + B; Phase C/D/E → TZ-90C/D/E)
 **Тип:** cross-cutting (UI standards + tokens + migration 11+ existing dialogs)
 **Приоритет:** высокий (явный запрос PO 2026-07-11: «строим продукт, который должен ощущаться как зрелое десктопное приложение»)
 **Phases:** A (tokens + shadow/animation) → B (polymorphic wrapper + animation trigger) → C (migration существующих 11+ диалогов) → D (`/kit/overlays` showcase) → E (docs sync)
@@ -415,3 +421,49 @@
 ---
 
 > ❌ **DUPLICATE Audit Table removed** — этот второй audit table (post-completion mirror) был legacy от original spec и оставлен overlapping. TZ-90 §3 теперь содержит canonical версию с Phase C ID column. Status row 13 сохранён (⏳ pending TZ-85D зеркалит §3 row 13).
+
+---
+
+## ARCHIVE_MARKER (TZF-00 § 6)
+
+```
+outcome: DONE
+closed_at: 2026-07-11
+closed_by: Frontend Architect / Security Agent
+protected_files:
+  - frontend/src/styles.css                            (TZ-90A: 6 dialog tokens + CDK overlay overrides + animation keyframes)
+  - frontend/src/app/shared/ui/dialog/pi-dialog.component.ts   (TZ-90B: polymorphic 4-template x 4-width wrapper)
+  - frontend/src/app/shared/ui/dialog/pi-dialog.service.ts     (TZ-90B: modal-by-default + animation trigger)
+  - frontend/src/app/shared/ui/dialog/pi-alert-dialog.component.ts   (NOT TOUCHED, kept as T1 one-off, TZ-90C will migrate)
+  - .gitignore                                          (TZ-90B: tmp/tz9*-{commit,arch}-*.txt pattern)
+affected_areas:
+  - Phase A (TZ-90A, commit TBD): CSS tokens + panel/backdrop overrides + animation
+  - Phase B (TZ-90B, commit 818946c): polymorphic wrapper + service animation trigger
+  - Phases C/D/E: DEFERRED to TZ-90C, TZ-90D, TZ-90E
+verification:
+  - Frontend typecheck: 0 errors (tsconfig.app.json --noEmit)
+  - Backend typecheck: not affected (frontend-only TZ)
+  - Code-reviewer: 3 rounds, all nits closed (sticky-footer bg-paper, effectiveLabel computed, content header bg)
+  - Atomic commits: 1 (Phase B) + 1 gitignore cleanup = 2 commits
+  - Branch state: ahead of origin/main, NOT pushed (user auth required)
+criteria_met:
+  - QA-01: polymorphic wrapper supports 4 templates x 4 widths per spec §B.1
+  - QA-02: 8px radius matches --dialog-radius token (rounded-lg)
+  - QA-03: 50% backdrop opacity (--overlay-bg, decision 2)
+  - QA-04: modal-by-default (config.modal !== false, decision 5)
+  - QA-05: animation 180ms ease-out + scale 0.96->1.0 (decision 6)
+  - QA-06: prefers-reduced-motion respected (TZ-90A keyframes)
+  - QA-07: border/focus-ring conventions preserved (hairline + pi-focus-ring)
+  - QA-08: a11y: role="dialog", aria-modal="true", aria-label chain (title -> ariaLabel -> 'Диалог')
+notes:
+  - DEFERRED-to-TZ-90C: 12 operational dialogs migration to polymorphic wrapper
+  - DEFERRED-to-TZ-90C: AlertDialog 2px radius + hardcoded 440px (T1 migration)
+  - DEFERRED-to-TZ-90D: /kit/overlays Section V showcase + TZ-85D cost-calculation-detail-dialog wiring
+  - DEFERRED-to-TZ-90E: docs sync (paper-and-ink.md dialog section, add-new-page.md dialog convention)
+  - DEFERRED-to-test-infra: spec test for polymorphic 4x4 fallback table (16 cases)
+  - userClose output is documented as user-initiated-only channel (separate from ref.closed signal)
+  - The polymorphic component uses 'app-pi-dialog' selector (unchanged from before) so existing callers continue to work
+  - The TZ-90 spec itself remains as tasks/TZ-90.md until all phases complete; this ARCHIVE_MARKER only marks TZ-90A+B
+```
+
+**Status:** ✅ DONE (Phase A + B). TZ-90 spec retained at `tasks/TZ-90.md` with this marker until TZ-90C/D/E complete.

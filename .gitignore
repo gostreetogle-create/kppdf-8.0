@@ -81,3 +81,4 @@ vendor/codebase-memory-mcp/.codebase-memory/
 backend/uploads/*
 !backend/uploads/.gitkeep
 tmp/
+tmp/tz9*-{commit,arch}-*.txt
