@@ -1309,3 +1309,5 @@
 **Архив:** `tasks/TZ-86.md` + `tasks/TZ-86.checklist.md` → `tasks/_archive/2026-07/TZ-86.md.done` + `tasks/_archive/2026-07/TZ-86.checklist.md.done` (с ARCHIVE_MARKER).
 **Lock-файлы:** нет (TZ-86 — feature task, не code-zone lock).
 
+## [2026-07-11] — Завершено: TZ-86 F.6 follow-up (Ang
+</content>

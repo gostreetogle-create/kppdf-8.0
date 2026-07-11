@@ -5,7 +5,9 @@ Status: ✅ DONE (closed 2026-07-11)
 Archived: 2026-07-11 (per TZ-86 F.5: move completed TZ to _archive/)
 [ARCHIVED 2026-07-11 → tasks/_archive/2026-07/TZ-86.md.done]
 
-Phases delivered: A (backend registry + new entities) + B (frontend data layer) + C (texts + tables sub-pages) + D.1 (3-pane builder canvas) + D.2 (background + drag-from-palette + last-saved indicator) + E (cross-feature integration) + F.1 (5 e2e specs) + F.4 (docs sync) + F.5 (archive) — 6/6 phases + 3 sub-phases done.
+Phases delivered: A (backend registry + new entities) + B (frontend data layer) + C (texts + tables sub-pages) + D.1 (3-pane builder canvas) + D.2 (background + drag-from-palette + last-saved indicator) + E (cross-feature integration) + F.1 (5 e2e specs) + F.4 (docs sync) + F.5 (archive) + **F.6 (post-archive template-binding bugfix follow-up)** — 6/6 phases + 4 sub-phases done.
+
+**F.6 ADDENDUM (2026-07-11):** Atomic commit `28daca6` на `origin/main` — seven doc-constructor файлов (builder-inspector, builder.page, builder-tool-pane, builder-canvas, block-renderer, texts.page, tables.page) систематически исправлены в 3 фазах (selector renames `<pi-X>` → `<app-pi-X>`, Select/PiPageHeader API corrections, orphan reference cleanup). Unblocks F.3 browser visual verification by fixing `ng serve` compile errors. Verification gates all green: ng build --configuration=production (3.357s, 0 warnings), frontend + backend tsc exit 0, 5/5 e2e suites 34/34 PASSED в 18.7s, code-reviewer PASS-WITH-2-CRITICAL (both критики addressed: atomic-history clear + end-to-end verified). Cross-references в commit body: TZ-78 (orig-warning), TZ-AUDIT-6, TZ-AUDIT-8.
 
 F.3 (browser-use visual verification) DEFERRED to TZ-87 backlog alongside TZ-78/79/80/82 deferred items. TZ-86 ships with all functional acceptance criteria ✅.
 

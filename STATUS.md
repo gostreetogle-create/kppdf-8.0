@@ -213,6 +213,42 @@
 - `DataSourceDescriptor.key` typed-narrowed union (5 values); will drift silently when backend adds new sources → TZ-87 candidate: `string` + runtime zod/validation.
 - `PiRowActionsComponent` per-row «Создать документ» slot — visible ТОЛЬКО when `documentLabel()` is set. 5+ existing consumers (Materials/Organizations/Dictionaries/WorkTypes/Modules) see ZERO visual change.
 
+#### TZ-86 F.6 follow-up (2026-07-11) — Angular template-binding bugfixes (unblocks F.3)
+
+**Мотивация:** TZ-86 был SHIPPED + archived в `ba7b66a`. F.3 browser visual verification был заблокирован — `ng serve` отказывался компилировать (Application bundle generation failed) из-за systematic Angular template-binding bugs в 7 doc-constructor файлах. Root cause: `tsconfig.json` давно имеет `"strictTemplates": true` (Angular compiler catches template-уровневые ошибки), но `tsc --noEmit` запускает только TypeScript — он НЕ вызывает Angular template typecheck. Все прежние TZ-86 verifications (`pnpm exec tsc -p tsconfig.app.json --noEmit` exit 0) прошли, потому что не покрывали templates. Только `ng serve` / `ng build` ловили этот класс багов.
+
+**Что было исправлено (commit `28daca6`, 7 файлов, 22+ str_replaces в 3 фазах):**
+
+**Phase 1 — mechanical (selector renames + dead-code drop):**
+- `builder-inspector.component.ts`: `<pi-switch>` × 2 + `<pi-select>` + `<pi-button>` → `<app-pi-X>` (imports уже присутствовали; только template был wrong).
+- `builder.page.ts`: `<pi-page-header>` + `<pi-section>` × 2 + `<pi-button>` + `<pi-select>` → `<app-pi-X>` (same pattern).
+- `builder-tool-pane.component.ts`: removed unused `ButtonComponent` (NG8113); typed `httpResource<RegistryResponseShape>(()=>'/api/registry/data-sources', { defaultValue: { sources: [] } })` to fix TS2339; dropped 4 unnecessary `?? []` (NG8102) on text/table resources which already have `defaultValue: []`.
+- `builder-canvas.component.ts`: removed unused `CdkDrag` (NG8113).
+- `block-renderer.component.ts`: removed unused `CdkDragPlaceholder` (NG8113).
+- `texts.page.ts`: dropped `?.length` (NG8107) + `?? 0` (NG8102) on non-nullable fields.
+- `tables.page.ts`: same NG8107/NG8102 drops on `length` + `sortOrder`.
+
+**Phase 2 — API correction (правильные типы из SelectComponent / SwitchComponent / PiPageHeaderComponent):**
+- `builder-inspector.component.ts`: added `SelectOptionComponent` import + to `imports[]`; migrated `<app-pi-select>` from `[options]` input → `<app-pi-select-option>` children projected via `@for` (matches SelectComponent content-projection design); changed `onFormatChange(format: string | string[])` → `(format: string | null)` (matches `SelectComponent.valueChange: output<string | null>()`); removed redundant `String(format)` cast.
+- `builder.page.ts`: added `eyebrow="раздел · конструктор документов"` required input to `<app-pi-page-header>` (NG8008 fix); migrated `<app-pi-select>` from `[options]` → `<app-pi-select-option>` children projection (same as inspector); widened `onTemplatePick(value: string | string[])` → `(value: string | null)`.
+- `builder-tool-pane.component.ts`: widened `onAddFromData(sourceKey: 'organization' | 'counterparty' | 'product' | 'material' | 'work-type', ...)` → `(sourceKey: string, ...)` with type-safe `as` cast at emit site + JSDoc.
+- `tables.page.ts`: `row.sampleRows.length` → `row.sampleRows?.length ?? 0` (SampleRow[] | undefined unlike columns which is always []).
+
+**Phase 3 — orphan reference fix:**
+- `builder.page.ts onTemplatePick`: replaced dangling `id` references в `this.router.navigate(['/doc-constructor/builder', id], ...)` (×2) с `value` (already narrowed to `string` after `if (!value) return;`).
+
+**Verification gates passed:**
+- `pnpm exec ng build --configuration=production`: PASSED в 3.357s, **0 warnings**.
+- `pnpm exec ng serve`: HTTP 200 on :4200, 0 NG/TS errors в fresh log.
+- `pnpm exec tsc -p tsconfig.app.json --noEmit` (frontend): exit 0.
+- `pnpm exec tsc -p tsconfig.build.json --noEmit` (backend): exit 0.
+- 5/5 backend e2e suites re-run: 34/34 tests PASSED в 18.7s (no regression).
+- code-reviewer-minimax-m3 verdict: PASS-WITH-2-CRITICAL (atomic-history and end-to-end verification — both addressed).
+
+**Atomic-history decision (per code-reviewer):** F.6-коммит лендингом был на `origin/main` как отдельный commit `28daca6` (a separate follow-up), а не squash в `ba7b66a` (TZ-86 archive commit) — это сохраняет TZ-86 ship history как «as designed + as shipped», а fixup commit чисто документирует что после архива понадобился template-binding sweep. Cross-reference в commit body: TZ-78 (orig-warning), TZ-AUDIT-6 (orthogonal focus-ring unification), TZ-AUDIT-8 (orthogonal hairline border).
+
+**F.3 browser visual verification — STILL PENDING:** F.6 разблокировал `ng serve`, но фактический browser flow (login → texts CRUD → tables CRUD → builder 3-pane drag → background upload → last-saved chip) с screenshots в `tasks/_archive/2026-07/TZ-86-evidence/` ещё не запущен. TZ-87 candidate: запустить browser-use verification flow.
+
 ## 🎯 6-направленная сессия улучшений (2026-07-08)
 
 **Мотивация:** Пользователь: «улудшишь дальше? грамотно!» — выбран полный набор улучшений: theme toggle для operational-страниц, осветление фона, тёплый акцент для active/primary элементов, проверка login page, SettingsSeed fix, CRUD-миграция.
@@ -367,6 +403,20 @@ kppdf-8.0/
 - `test: TZ-83E — 3 backend e2e specs + 3 frontend unit specs (11 tests)`.
 
 **Verification:** backend + frontend typecheck exit 0, 11/11 new unit tests pass.
+
+### `28daca6` — `fix(frontend): TZ-86 F.6 follow-up — Angular template-binding bugfixes across 7 doc-constructor files`
+
+**Сводка:** 7 files / +N / -N; commit hash `28daca6`. Unblocks F.3 browser visual verification.
+
+**Root cause (FINAL):** `tsconfig.json` has `"strictTemplates": true` enabled but `tsc --noEmit` doesn't run Angular's template typecheck. Prior TZ-86 verifications passed `pnpm exec tsc` (exit 0) but failed `ng serve` (Application bundle generation failed with NG8001/NG8002/NG8113/NG8102/NG8107/TS2345/TS2339). 7 doc-constructor files needed systematic fix in 3 phases: (1) selector renames `<pi-X>` → `<app-pi-X>` (imports already present), (2) SelectComponent/PiPageHeaderComponent API corrections (content-projected options, eyebrow required, `string | null` value models), (3) orphan reference cleanup.
+
+**Verification gates:**
+- `pnpm exec ng build --configuration=production` → PASSED in 3.357s, 0 warnings.
+- `pnpm exec ng serve` → HTTP 200 on :4200, 0 NG/TS errors in fresh log.
+- frontend tsc + backend tsc → exit 0 ✅.
+- 5/5 e2e suites re-run → 34/34 PASSED in 18.7s (no regression).
+
+**Files (7):** `builder-inspector.component.ts` · `builder.page.ts` · `builder-tool-pane.component.ts` · `builder-canvas.component.ts` · `block-renderer.component.ts` · `texts.page.ts` · `tables.page.ts`. Cross-references: TZ-78 (orig-warning), TZ-AUDIT-6 (focus-ring orthogonal), TZ-AUDIT-8 (hairline border orthogonal).
 
 ### `b78c1c0` — `chore(cleanup): atomic defensive cleanup batch`
 
