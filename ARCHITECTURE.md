@@ -100,6 +100,7 @@
 | Frontend shared/theme | `frontend/src/app/shared/theme/` | Live OKLCH theme editor |
 | Frontend styles | `frontend/src/styles.css` | OKLCH palette, hairline utils, spacing tokens, dark mode |
 | Dev tooling | `start.mjs`, `docker-compose.yml` | Cross-platform starter, Mongo replica set |
+| MCP integration | `.mcp.json`, `vendor/codebase-memory-mcp/`, `package.json` (`mcp:start`) | Project-local MCP server (codebase-memory v0.9.0) via stdio transport |
 | Docs | `docs/`, `STACK.md`, `STATUS.md`, `progress.md` | Architecture, data model, design rationale |
 | OrchestratorKit | `OrchestratorKit/` | TZ workflow automation, templates, archives |
 
@@ -139,6 +140,61 @@
 - **Console polish (TZ-46):** все log-сообщения в start.mjs на русском (preflight, startMongo, waitMongo, installDeps, buildBackend/Frontend, banner, cleanup, waitFor). `printReadyPanel` переписан с «простынного» вывода на компактную 2D панель: ASCII-рамка `╔══╗`/`╚══╝` с заголовком `✦ kppdf-8.0 готов к работе ✦`, summary строка `⏱ Все сервисы готовы за Xs`, 2-col endpoints table (`🖥 Frontend | 👤 Логин` + `📦 Backend | 📋 Showcase`). Динамическая ширина колонок через `stdout.columns` (clamp 80..120). NG warnings fix: 3× NG8113 (unused imports в page-renderer + showcase) + 2× NG8102 (unnecessary `??` в otp-input + scroll-area). Frontend build: 0 NG warnings. NestJS logger: nestjs-pino level='info' (excludes debug/verbose).
 - **Platform wrappers:** `start.cmd` (Windows native, `node start.mjs %*`), `start.sh` (bash, `cd $SCRIPT_DIR && exec node start.mjs "$@"` — работает из любой CWD).
 - **Smoke test results (pre-TZ-41):** 2 бага найдено (Windows pnpm spawn ENOENT, ImportJobsModule DI cascade) — оба исправлены до TZ-41.
+
+---
+
+## MCP Integration (TZ-92)
+
+**Files:** `.mcp.json` (project root) + `vendor/codebase-memory-mcp/` + `package.json` (`mcp:start` script).
+
+### Why MCP
+
+Семантический поиск по коду для AI-агентов (Claude Code / Cursor / Cline / Continue) — symbol extraction + dependency navigation between 47 controllers (TZ-91B.2 patched) + 4 NestJS Document Constructor modules (TZ-86) + Paper & Ink UI primitives. Полезно для reviewers и для navigation по M:N связям / nested populate chains в Mongoose schemas.
+
+### Architecture pattern
+
+- **Vendor pattern (project-local):** бинарь (262 MB) живёт в `vendor/codebase-memory-mcp/bin/`, **gitignored** (clone-size management). На свежем клоне нужно re-extract из исходного ZIP (см. `vendor/codebase-memory-mcp/README.md` § Установка на свежем клоне).
+- **MCP config:** `.mcp.json` (project-local, RFC 8259-compliant without `_comment`). Single MCP entry: `codebase-memory` → `vendor/codebase-memory-mcp/bin/codebase-memory-mcp.exe` (forward-slash path, Node-native, works on Windows).
+- **No new npm deps:** MCP — это external executable, не library. `start.mjs` и frontend builds НЕ зависят от MCP.
+- **Tracked files:** `vendor/codebase-memory-mcp/README.md` (install/run/troubleshooting in Russian, ~150 строк), `vendor/codebase-memory-mcp/doc/LICENSE` (MIT), `vendor/codebase-memory-mcp/doc/THIRD_PARTY_NOTICES.md` (Tree-sitter + 159 parsers), `vendor/codebase-memory-mcp/bin/install.ps1` (⚠️ ⚠️ ⚠️ НЕ ЗАПУСКАТЬ — alien installer, alien downloader, silently overwrites vendored binary).
+- **Gitignored:** `vendor/codebase-memory-mcp/bin/*.exe` (262 MB), `vendor/codebase-memory-mcp/index/` (runtime index, can grow >1 GB), `vendor/codebase-memory-mcp/cache/` (runtime cache), `.codebase-memory/` (alternate runtime artifact dir).
+
+### start.mjs deliberate non-spawn
+
+`start.mjs` **не** поднимает MCP автоматически. Это сознательное решение:
+- MCP-сервер индексирует 285+ файлов backend+frontend → добавляет 30-60 s к startup time.
+- AI-агенты типа Claude Code / Cursor поднимают MCP сами при открытии сессии (читают `.mcp.json` автоматически).
+- Manual override: `pnpm run mcp:start` (standalone stdio-server для proxy-тестирования).
+
+### pnpm script
+
+`package.json`:
+```json
+"mcp:start": "vendor/codebase-memory-mcp/bin/codebase-memory-mcp.exe"
+```
+
+**Not in package.json:** `mcp:cli` (CLI passthrough) — отвергнут по code-reviewer verdict (dead-code narrative; CLI tools не документированы в binary v0.9.0).
+
+### Transport + UI port
+
+- **Transport:** stdio (JSON-RPC). `.mcp.json` НЕ указывает `args` или `env` — бинарь работает в default stdio mode.
+- **HTTP UI port (verified 2026-07-11):** `:9749`. Бинарь авто-стартует HTTP UI server при любом запуске (`./codebase-memory-mcp.exe` или `./codebase-memory-mcp.exe --ui`). Открой `http://127.0.0.1:9749` после `pnpm run mcp:start` (нужно держать окно открытым).
+- **Override port:** НЕ предусмотрен в binary v0.9.0. Если порт занят — user responsibility (close other process on :9749).
+
+### Platform support (TZ-92b)
+
+| Платформа | Статус |
+|---|---|
+| Windows AMD64 | ✅ `codebase-memory-mcp-ui-windows-amd64.zip` (текущий vendored bundle) |
+| Windows ARM64 | ❌ Не выпущен DeusData |
+| Linux / macOS | ❌ Source build из DeusData repo — future TZ (TZ-92b-ux) |
+
+### Cross-references
+
+- **TZ-91B.2:** MCP symbol navigation полезен для review `@Roles('admin','manager','user')` tuples in 47 patched controllers.
+- **TZ-86 Document Constructor:** MCP может assist с `dataBinding` subdoc editing и `{{placeholder}}` substitution format checks.
+- **TZ-83 ProductModule hierarchy:** Mongoose populate chains между Product ↔ WorkType ↔ Module — MCP symbol graph помогает с traverse.
+- **TZ-92b:** http UI port documentation refinement + Linux/macOS source-build plan (deliverable of this TZ).
 
 ---
 
