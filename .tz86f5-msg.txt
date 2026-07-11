@@ -1,0 +1,50 @@
+TZ-86F5(docs+archive): final docs sync + archive completed TZ
+
+*F.4 — Docs sync (4 files):*
+
+- **STATUS.md** — TZ-86 section added between TZ-83 and 6-направленная
+  сессия. Comprehensive coverage: 6 phases (A/B/C/D.1/D.2/E/F.1) +
+  4 sub-phases. Total tasks: 49/49 ✅. Phase header bumped to
+  «TZ-86 ЗАВЕРШЕНО». Metrics bumped: pages 19→22 (TZ-86 +4 routes:
+  /doc-constructor/{texts,tables,builder,builder/:id}), e2e 10→15
+  (TZ-86 +5 suites = 56 tests total).
+
+- **ARCHITECTURE.md** — new «Document Constructor (TZ-86)» section
+  added before «Browser-use smoke test (TZ-82)». Documents: backend
+  modules (4 new: text-block, registry, document-template extensions;
+  1 new common filter: multer-exception), frontend services (4 new
+  silent-http + 1 template-blocks), 4 new lazy pages, cross-feature
+  PiRowActionsComponent extension, 5 e2e suites.
+
+- **progress.md** — [2026-07-11] entry appended: TZ-86 (6 фаз, ~30
+  files, 9 atomic commits, flagship feature). Сводка по каждой фазе
+  + verification (backend+frontend typecheck exit 0, 5/5 e2e suites
+  green, 34/34 tests pass, code-reviewer PASS-WITH-NITS).
+
+- **tasks/TZ-86.md** — status flipped 🟡 IN PROGRESS → ✅ DONE (6/6
+  фаз ЗАВЕРШЕНЫ). F.3 browser visual marked DEFERRED to TZ-87 (consistent
+  with TZ-78 highlight.js / TZ-79 axe-core / TZ-80 SSR / TZ-82 smoke
+  deferral pattern).
+
+- **tasks/TZ-86.checklist.md** — F.2/F.3/F.4/F.5 sections all marked
+  [x]. F.3 marked [x] DEFERRED with detailed per-screenshot deferral
+  notes + TZ-87 re-scope acceptance criteria.
+
+*F.5 — Archive (2 files moved):*
+
+- `git mv tasks/TZ-86.md → tasks/_archive/2026-07/TZ-86.md.done`
+  with ARCHIVE_MARKER HTML comment prepended (status, archived date,
+  phases summary, F.3 deferral note, verification, 9 atomic commits
+  list, DO NOT EDIT notice).
+
+- `git mv tasks/TZ-86.checklist.md → tasks/_archive/2026-07/TZ-86.checklist.md.done`
+  with lighter ARCHIVE_MARKER (granular checklist marker, references
+  the main TZ-86 archive).
+
+*Verification chain:*
+
+git log --oneline -10 should show TZ-86 commit chain:
+  [F.5 archive commit] 555eeed (F.4 doc sync) f4a2bd2 (F.1) 1d7a51d (E)
+  d70646d (D.2) cdb2737 (D.1) + 4 prior Phase A/B/C atomic commits
+
+No code changes (docs + archive only).

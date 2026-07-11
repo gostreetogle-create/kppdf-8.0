@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { LucideAngularModule, LogIn } from 'lucide-angular';
+import { LucideAngularModule, LogIn, Eye, EyeOff } from 'lucide-angular';
 import { AuthService } from '../../core/auth.service';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
@@ -72,16 +72,31 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
             htmlFor="login-password"
             [required]="true"
           >
-            <input
-              id="login-password"
-              type="password"
-              name="password"
-              autocomplete="current-password"
-              required
-              [(ngModel)]="password"
-              class="pi-input w-full"
-              [class.border-destructive]="!!error()"
-            />
+            <div class="relative">
+              <input
+                id="login-password"
+                [type]="passwordVisible() ? 'text' : 'password'"
+                name="password"
+                autocomplete="current-password"
+                required
+                [(ngModel)]="password"
+                class="pi-input w-full pr-9"
+                [class.border-destructive]="!!error()"
+              />
+              <button
+                type="button"
+                (click)="passwordVisible.set(!passwordVisible())"
+                [attr.aria-label]="passwordVisible() ? 'Скрыть пароль' : 'Показать пароль'"
+                [attr.aria-pressed]="passwordVisible()"
+                class="absolute right-1 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-7 h-7 rounded-sm text-muted-foreground hover:text-ink hover:bg-paper-2 transition-colors pi-focus-ring"
+              >
+                <lucide-angular
+                  [img]="passwordVisible() ? eyeOffIcon : eyeIcon"
+                  [size]="14"
+                  aria-hidden="true"
+                />
+              </button>
+            </div>
           </app-pi-form-field>
 
           @if (error()) {
@@ -113,6 +128,17 @@ export class LoginPage {
   private readonly router = inject(Router);
 
   protected readonly logInIcon = LogIn;
+  protected readonly eyeIcon = Eye;
+  protected readonly eyeOffIcon = EyeOff;
+
+  /**
+   * Show/hide password in the field (TZ-NEW visual-feedback).
+   * Defaults to `false` — type="password" is the safer default.
+   * Toggle is intentionally trivial: not persisted across reloads
+   * (password managers don't read the field while it's plain text
+   * either, but UX-wise keep it ephemeral — sessions are short).
+   */
+  protected readonly passwordVisible = signal(false);
 
   // Two-way-bound to <input> via ngModel — keep as plain string
   // properties (not signals) for ergonomic [(ngModel)] two-way binding.

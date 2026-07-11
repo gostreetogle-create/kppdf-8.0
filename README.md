@@ -131,7 +131,7 @@ NO_COLOR=1 node start.mjs     # отключить ANSI-цвета
 **Endpoints после старта:**
 - Backend: http://localhost:3000/api/health
 - Frontend: http://localhost:4200
-- Login: `admin@kppdf.local` / `admin`
+- Login: `admin` / `admin` (admin user seeded by `AdminSeed`; email is `admin@kppdf.local` but **login uses `username` field**, not email — see `LoginDto`)
 - UI Kit showcase: http://localhost:4200/p/showcase (TZ-31..40)
 
 **Требования:** Node 20+, pnpm 8+, Docker Desktop.

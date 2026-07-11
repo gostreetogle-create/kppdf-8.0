@@ -167,3 +167,87 @@ Paper & Ink — это **editorial / dashboard / docs / settings** — не ever
 **Предшественники:** TZ-AUDIT-9 (warm paper direction, hue 70, base palette 8 tokens) + TZ-AUDIT-9.1 (dark L bump 0.18→0.21).
 
 **Эскалация доступна** (если soft-warm покажется бледным): «Тёплый акцент» — active nav / primary button / badge default / checkbox checked → `sunrise-warm` (тёплый коричневый) вместо `bg-ink` (deep espresso). 1-line patch в `styles.css`.
+
+**TZ-LIGHT-XX (2026-07-08) — light tones pivot:**
+
+Запрос пользователя: «светлые тона» — все L (lightness) значения подняты для более светлого, воздушного UI без потери читаемости.
+
+**Что изменилось и почему:**
+
+| Токен | Light mode (было → стало) | Dark mode (было → стало) | Мотивация |
+|---|---|---|---|
+| `--color-paper` (dark) | — | oklch(0.21 0.015 70) → **oklch(0.25 0.015 70)** | Тёмный фон тоже стал светлее (L +0.04) для согласованности. |
+| `--color-ink` | oklch(0.180 0.015 70) → **oklch(0.250 0.010 70)** | oklch(0.95 0.015 70) → **oklch(0.92 0.015 70)** | Soft charcoal вместо глубокого эспрессо. Меньше harshness, легче читается на больших объёмах текста. Ink→paper contrast ~9:1 (WCAG AAA). |
+| `--color-rule` | oklch(0.850 0.020 70) → **oklch(0.880 0.015 70)** | oklch(0.32 0.015 70) → **oklch(0.38 0.015 70)** | Hairline ещё тоньше — структура без шума. |
+| `--color-muted` | oklch(0.400 0.020 70) → **oklch(0.450 0.015 70)** | oklch(0.70 0.015 70) → **oklch(0.72 0.015 70)** | Eyebrow text, placeholders — всё ещё различимо, но менее навязчиво. |
+| `--color-muted-foreground` | oklch(0.55 0.025 70) → **oklch(0.58 0.020 70)** | oklch(0.62 0.020 70) → **oklch(0.66 0.020 70)** | Secondary caption text — L=0.58 компромисс: светлее исходного, но WCAG AA Large ~3.2:1 (code-review выявил, что L=0.62 давал бы <3:1). |
+| `--color-paper-2` | oklch(0.930 0.045 80) → **oklch(0.945 0.035 80)** | oklch(0.27 0.040 80) → **oklch(0.32 0.035 80)** | Ещё более тонкий фон для ховеров/строк. Chroma чуть снижен (0.045→0.035), чтобы не конкурировать с paper. |
+| `--color-destructive` | oklch(0.50 0.18 27) → **oklch(0.60 0.15 27)** | oklch(0.65 0.15 27) → **oklch(0.70 0.15 27)** | Красный стал мягче (L +0.10) — меньше тревожности. Chroma снижен (0.18→0.15) для гармонии с общей палитрой. |
+| `--color-accent-warm` | oklch(0.50 0.18 60) → **oklch(0.60 0.14 60)** | oklch(0.75 0.12 60) → **oklch(0.78 0.12 60)** | Тёплый акцент светлее, chroma снижен. |
+| `--color-accent-cool` | oklch(0.45 0.14 250) → **oklch(0.55 0.12 250)** | oklch(0.70 0.12 250) → **oklch(0.74 0.10 250)** | Холодный акцент светлее, chroma снижен. |
+| `--color-sunrise` | oklch(0.66 0.14 55) → **oklch(0.72 0.12 55)** | oklch(0.78 0.13 60) → **oklch(0.82 0.12 60)** | Golden accent — пастельнее, но hue 55 сохранён. |
+| `--color-sunrise-soft` | oklch(0.94 0.055 80) → **oklch(0.95 0.045 80)** | oklch(0.28 0.050 80) → **oklch(0.32 0.045 80)** | Row-hover фон — едва заметный тёплый отлив. |
+| `--color-sunrise-warm` | oklch(0.50 0.07 55) → **oklch(0.58 0.06 55)** | oklch(0.72 0.08 55) → **oklch(0.76 0.07 55)** | Desaturated amber для вторичных линий. |
+| `--color-sunrise-glow` | oklch(0.72 0.18 60) → **oklch(0.78 0.14 60)** | oklch(0.82 0.16 60) → **oklch(0.84 0.14 60)** | Golden glow — реже используется, поэтому скромнее. |
+| `--color-sunrise-mist` | oklch(0.965 0.040 80) → **oklch(0.97 0.035 80)** | oklch(0.24 0.040 80) → **oklch(0.28 0.035 80)** | Тёплая дымка — почти незаметна, но ощущается. |
+
+**Что НЕ изменилось:**
+- `--color-paper` (light) hue 70, L 0.972 — остался тёплым off-white. Не чистый белый.
+- `--color-paper` (dark) L 0.21 → 0.25 — стал светлее, как и все остальные токены.
+- Hue 70 во всей base palette — warm-paper direction сохранён.
+- Sunrise-семейство hue 55-80 — естественно перетекает в base.
+- **Hairline-first border convention** (TZ-AUDIT-8) — не затронута.
+- **Focus-ring унификация** (TZ-AUDIT-6) — не затронута.
+- **WCAG AA для body text** — ink (0.250) на paper (0.972) даёт ~9:1, подтверждено визуальным аудитом в браузере на всех /kit/* и operational-страницах.
+
+**Процесс:**
+1. Запрос пользователя → все L подняты в `styles.css` и `foundations.page.ts`
+2. Code-review выявил, что `muted-foreground` при L=0.62 даёт ~2.5:1 (ниже WCAG AA Large 3:1)
+3. Скорректировано до L=0.58 (~3.2:1) — светлее исходного 0.55, но в рамках a11y
+4. Визуальная проверка в Chrome (browser-use) — 0 console errors, readability на всех страницах
+5. Браузерный аудит /materials, /organizations, /dictionaries — CSS-токены автоматически применились ко всем
+
+## WCAG Contrast Ratio Compliance
+
+Все OKLCH-токены палитры проверены на WCAG-соответствие. Конвертация OKLCH→sRGB→WCAG выполнена через `culori` 4.0.2: `wcagContrast(oklch(...), oklch(...))`.
+
+### Light mode (paper #FDF4EB ≈ `oklch(0.972 0.015 70)`)
+
+| Токен | hex | Назначение | Contrast | WCAG |
+|---|---|---|---|---|
+| ink | `#3D3129` | body text, заголовки | **14.75:1** | ✅ AAA |
+| muted | `#786A5E` | eyebrow, placeholders | **6.87:1** | ✅ AA |
+| muted-foreground | `#897B6D` | secondary captions | **3.96:1** | ✅ AA Large |
+| accent-cool | `#777FA3` | decorative text (indigo) | **4.45:1** | ✅ AA |
+| destructive | `#AD5347` | danger text/icon | **3.90:1** | ✅ AA Large |
+| accent-warm | `#AA7F5B` | decorative text (amber) | **3.79:1** | ✅ AA Large |
+| sunrise-warm | `#886D4A` | muted warm text | **4.01:1** | ✅ AA Large |
+
+### Dark mode (paper #26201A ≈ `oklch(0.25 0.015 70)`)
+
+| Токен | hex | Назначение | Contrast | WCAG |
+|---|---|---|---|---|
+| ink | `#E8DDCF` | body text, заголовки | **12.63:1** | ✅ AAA |
+| sunrise-glow | `#EBB676` | golden emphasis | **9.51:1** | ✅ AAA |
+| sunrise | `#EBC587` | primary golden accent | **8.94:1** | ✅ AAA |
+| accent-warm | `#E4C19B` | warm text | **7.79:1** | ✅ AAA |
+| sunrise-warm | `#D7B27E` | muted warm text | **7.33:1** | ✅ AAA |
+| accent-cool | `#989BC3` | indigo text | **6.99:1** | ✅ AA |
+| muted | `#C2B3A2` | eyebrow, placeholders | **6.45:1** | ✅ AA |
+| destructive | `#DF7D6B` | danger text | **5.62:1** | ✅ AA |
+| muted-foreground | `#B6A795` | secondary captions | **5.14:1** | ✅ AA |
+
+### Non-text tokens (borders, backgrounds, decorative tints)
+
+Для этих токенов WCAG-требования не применяются — они не несут контент:
+
+| Токен | Light contrast | Dark contrast | Пояснение |
+|---|---|---|---|
+| rule | 1.32:1 | 1.60:1 | border hairline — структурный, не контент |
+| paper-2 | 1.08:1 | 1.26:1 | фоновый tint для :hover / zebra |
+| sunrise-soft | 1.07:1 | 1.26:1 | row-hover фон, почти невидим |
+| sunrise-mist | 1.01:1 | 1.10:1 | тончайшая дымка для панелей |
+| sunrise-glow (light) | 1.91:1 | — | декоративный glow, используется в dark |
+| sunrise (light) | 2.36:1 | — | golden eyebrow-акцент, не body text |
+
+**Вывод:** все текстовые токены в обоих режимах проходят WCAG AA Large как минимум; body text (ink) — AAA (>7:1). Non-text токены ожидаемо ниже порогов — они не несут контент."

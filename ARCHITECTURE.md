@@ -563,6 +563,63 @@ If a future Load Test or SEO need arrives:
 
 ---
 
+## Document Constructor (TZ-86 — 2026-07-11, flagship feature)
+
+**Файлы:** комплексная зона — backend modules (4 new + 4 extended) + frontend pages (4 new routes) + 4 frontend services + 5 e2e specs + extended row-actions component.
+
+### Backend modules (NestJS)
+
+- **`backend/src/modules/text-block/`** (NEW, TZ-86A.1) — schema/service/controller/module/DTOs. Fields: name, slug (Russian transliteration), content (markdown), tags[], category, sortOrder, isActive. Slug uniqueness via Mongo unique index + 11000→409 catch.
+- **`backend/src/modules/table-template/`** (EXTENDED, TZ-86A.2) — ColumnColumn gains `type: ColumnType` (text|number|date|currency|bool); TableTemplate gains `category?` (5 enum), `sortOrder`, `sampleRows?: unknown[][]`, `dataSource?`. `GET /:id/preview` endpoint.
+- **`backend/src/modules/template-block/`** (EXTENDED, TZ-86A.3) — schema gains `dataBinding?: { source, field?, value?, format? }` subdoc (`_id: false`).
+- **`backend/src/modules/document-template/`** (EXTENDED, TZ-86A.4 + A.6) — `build(id, dto)` service method + `POST /:id/build` controller endpoint. `uploadBackground(id, file)` method + `POST /:id/upload-background` controller endpoint. Module imports 5 new modules (Organization/Counterparty/Product/Material/WorkType) for `resolveSourceIds` parallel lookups.
+- **`backend/src/modules/registry/`** (NEW, TZ-86A.5) — controller/service/module. `GET /api/registry/data-sources` lists 5 entity types + `{key, label, type}` field metadata.
+- **`backend/src/common/filters/multer-exception.filter.ts`** (NEW, TZ-86A.6) — `@Catch(MulterError)` maps `LIMIT_FILE_SIZE` → 413 + other MulterErrors → 400 + Russian human-readable messages.
+
+### Frontend services (silent-http + signals)
+
+- **`frontend/src/app/shared/services/pi-text-blocks.service.ts`** — `list/findById/create/update/remove`.
+- **`frontend/src/app/shared/services/pi-table-templates.service.ts`** — `list/findById/create/update/remove/preview` (preview silentWrap text).
+- **`frontend/src/app/shared/services/pi-document-templates.service.ts`** — `list/findById/create/update/remove/build/uploadBackground` (build silentWrap text; uploadBackground FormData multipart).
+- **`frontend/src/app/shared/services/pi-registry.service.ts`** — `getDataSources` (static catalogue).
+- **`frontend/src/app/shared/services/pi-template-blocks.service.ts`** — list/create/update/reorder/remove for template blocks consumed by BuilderPage.
+
+### Frontend pages (4 new lazy routes)
+
+- **`/doc-constructor/texts`** — list with search/sort + create button + EditDialog `text-block-dialog.component.ts` (190 LoC, side-by-side markdown preview via marked@18).
+- **`/doc-constructor/tables`** — list with columns preview + EditDialog `table-template-dialog.component.ts` (290 LoC, FormArray<TableColumnForm> with add/up/down/remove + JSON sampleRows + server-side preview).
+- **`/doc-constructor/builder`** — empty-state picker (no `:id`): shows template-list dropdown → navigate to `/builder/:id` or accepts `?source=order&sourceId=X` query params (cross-feature wiring from /orders + /contracts).
+- **`/doc-constructor/builder/:id`** — 3-pane canvas (280 / flex-1 / 320):
+  - **Left tool pane** (4 sections + Decorations tab): Blocks (5 blockType «+» buttons) · Texts (list from `pi-text-blocks`) · Tables (list from `pi-table-templates`) · Data (DataSourceDescriptor groups from `pi-registry`) · Decorations (background image upload via `pi-document-templates.uploadBackground`).
+  - **Center canvas**: `<pi-canvas-page>` (A4 paper wrapper, OKLCH paper + 1px hairline + 32px padding) + `<pi-canvas-block-handle>` (cdkDragHandle GripVertical, hover-only) + `cdkDropList` for reorder.
+  - **Right inspector**: block config (type, content, dataBinding, font-size, alignment, color, padding) when block selected; empty state otherwise.
+  - **Auto-save 1500ms debounce** (Subject piped through groupBy+debounceTime+switchMap, per-block debounce so editing block A doesn't reset block B's timer).
+  - **Last-saved indicator** (small chip in `PiPageHeader`): «✓ Сохранено» / «Сохранение…» / «⚠ Ошибка» via `saveStatus: signal<'idle'|'saving'|'saved'|'error'>`.
+  - **Drag-from-palette:** `cdkDrag` on all 4 tool-pane palette lists + `cdkDropListConnectedTo: [CANVAS_DROPLIST_ID]` linking them to the canvas `cdkDropList`. `CANVAS_DROPLIST_ID` exported from `builder-canvas.component.ts` (single source of truth).
+
+### Cross-feature integration (TZ-86E)
+
+- **`PiRowActionsComponent`** extended with optional 3rd slot: `documentLabel: input<string|null>(null)` + `dataTestDocument: input<string|null>(null)` + `document: output<T>()`. Template renders the new `<button>` BEFORE the Edit button (Document → Edit → Delete; destructive-at-edge UX convention). Wrapped in `@if (documentLabel())` so the 5+ existing consumers (Materials/Organizations/Dictionaries/WorkTypes/Modules) see **ZERO visual change** (backwards-compat).
+- **`OrdersPage` + `ContractsPage`** — `Router` inject + `[documentLabel]`/`[dataTestDocument]` bindings + `(document)="onCreateDocument($event)"` handler. Navigation to `/doc-constructor/builder?source=order&sourceId=X` (or `source=contract`).
+- **Simplification from original spec:** Original assumed `/orders/:id` and `/contracts/:id` DETAIL pages; **they do not exist** (only list pages). Per-row action in list pages is the pragmatic pivot.
+
+### Tests (TZ-86F.1, 5 NEW e2e suites, 34 tests)
+
+- `backend/test/e2e/text-blocks.e2e-spec.ts` (7 tests) — CRUD + slug uniqueness (409) + Russian transliteration auto-slug + soft-delete.
+- `backend/test/e2e/table-templates.e2e-spec.ts` (8 tests) — CRUD + `/preview` HTML + `Intl.NumberFormat` ru-RU/RUB currency + softDelete.
+- `backend/test/e2e/document-templates-build.e2e-spec.ts` (5 tests) — `{{organization.name}}` substitution + static dataBinding Mongoose bypass + empty placeholder fallback + invalid templateId 400.
+- `backend/test/e2e/registry.e2e-spec.ts` (7 tests) — 5 data sources + `{key, label, type}` field metadata.
+- `backend/test/e2e/document-templates-upload-background.e2e-spec.ts` (7 tests) — multer whitelist (png/jpeg/webp) + 5MB cap + 5-image limit + URL return.
+- **Pattern:** uses `createTestApp()` + `loginAsAdmin()` from `test/setup/` (the e2e baseline from TZ-17/46). HTTP for most operations; Mongoose direct only for the static dataBinding bypass (legitimate test pattern when `CreateTemplateBlockDto` lacks `dataBinding` field + global `ValidationPipe whitelist: true` strips unknowns).
+
+### Verification
+
+- Backend `pnpm exec tsc -p tsconfig.build.json --noEmit` → exit 0 ✅
+- Frontend `pnpm exec tsc -p tsconfig.app.json --noEmit` → exit 0 ✅
+- 5/5 e2e suites green, 34/34 tests pass (~26s total) ✅
+- Code-reviewer: PASS-WITH-NITS (4 TZ-87 followups logged)
+- 9 atomic commits on origin/main: `cdb2737` (D.1) → `d70646d` (D.2) → `1d7a51d` (E) → `f4a2bd2` (F.1) → `555eeed` (F.4 doc sync) + 4 prior Phase A/B/C atomic commits
+
 ## Browser-use smoke test (TZ-82 — INDEPENDENT)
 
 **INDEPENDENT — runs against dev server :4200 (`ng serve`).** No SSR

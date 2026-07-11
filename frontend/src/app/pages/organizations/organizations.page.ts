@@ -7,6 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { httpResource } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
@@ -19,7 +20,12 @@ import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.com
 import { PiToastService } from '../../shared/ui/toast';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
-import { Organization, OrganizationsService } from './organizations.service';
+import { API_BASE_URL } from '../../core/api.tokens';
+import {
+  Organization,
+  OrganizationsService,
+  type OrganizationsListResponse,
+} from './organizations.service';
 import { OrganizationFormDialogComponent } from './organization-form-dialog.component';
 
 type SortKey = 'name' | 'inn' | 'shortName' | null;
@@ -165,13 +171,40 @@ export class OrganizationsPage implements OnInit {
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
+  private readonly baseUrl = inject(API_BASE_URL);
 
-  protected readonly data = signal<Organization[]>([]);
-  protected readonly total = signal<number>(0);
-  protected readonly loading = signal<boolean>(true);
-  protected readonly error = signal<string | null>(null);
+  /**
+   * Server list = `GET /api/organizations` via Angular 20's `httpResource`.
+   * Same pattern as `materials.page.ts`. Re-fires whenever
+   * `debouncedSearch()` changes; auto-fires on creation so no explicit
+   * `reload()` in `ngOnInit`. `error` cast is required because
+   * `httpResource.error()` is typed `unknown`.
+   */
+  protected readonly listRes = httpResource<OrganizationsListResponse>(() => ({
+    url: `${this.baseUrl}/organizations`,
+    params: {
+      page: 1,
+      limit: 50,
+      ...(this.debouncedSearch() ? { search: this.debouncedSearch() } : {}),
+    },
+  }));
 
+  protected readonly data = computed<Organization[]>(
+    () => this.listRes.value()?.items ?? [],
+  );
+  protected readonly total = computed<number>(
+    () => this.listRes.value()?.total ?? this.data().length,
+  );
+  protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
+  protected readonly error = computed<string | null>(() => {
+    const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    return err ? extractErrorMessage(err) : null;
+  });
+
+  /** Live search input (echoed in @if branches). */
   protected readonly searchQuery = signal<string>('');
+  /** Debounced snapshot driving the httpResource params. */
+  protected readonly debouncedSearch = signal<string>('');
   protected readonly sortKey = signal<SortKey>('name');
   protected readonly sortDir = signal<SortDir>('asc');
 
@@ -193,18 +226,21 @@ export class OrganizationsPage implements OnInit {
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   ngOnInit(): void {
-    this.reload();
+    // `listRes` auto-fires its initial GET — no explicit `reload()`.
   }
 
   private refreshOnDialogClose<TResult>(ref: DialogRef<TResult>): void {
-    onDialogCloseOnce(ref, this.injector, () => this.reload());
+    onDialogCloseOnce(ref, this.injector, () => this.listRes.reload());
   }
 
   protected onSearchInput(event: Event): void {
     const target = event.target as HTMLInputElement;
     this.searchQuery.set(target.value);
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
-    this.debounceTimer = setTimeout(() => this.reload(), 300);
+    this.debounceTimer = setTimeout(
+      () => this.debouncedSearch.set(target.value.trim()),
+      300,
+    );
   }
 
   protected setSort(key: Exclude<SortKey, null>): void {
@@ -269,7 +305,7 @@ export class OrganizationsPage implements OnInit {
       this.service.remove(row._id).subscribe((res) => {
         if (res.ok) {
           this.toast.success('Организация удалена');
-          this.reload();
+          this.listRes.reload();
         } else {
           this.toast.error(extractErrorMessage(res.error));
         }
@@ -278,20 +314,6 @@ export class OrganizationsPage implements OnInit {
   }
 
   protected reload(): void {
-    this.loading.set(true);
-    this.error.set(null);
-    const search = this.searchQuery().trim();
-    this.service
-      .list({ page: 1, limit: 50, search: search || undefined })
-      .subscribe((res) => {
-        if (res.ok) {
-          this.data.set(res.data.items ?? []);
-          this.total.set(res.data.total ?? res.data.items?.length ?? 0);
-          this.loading.set(false);
-        } else {
-          this.error.set(extractErrorMessage(res.error));
-          this.loading.set(false);
-        }
-      });
+    this.listRes.reload();
   }
 }

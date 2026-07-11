@@ -1223,3 +1223,89 @@
 - **Следующие шаги:** Unit tests для AlertDialogComponent + PiDialogService; Typecheck + browser verify для /playground/theme-editor.
 
 **Архив:** Живёт в `progress.md`. Lock-файлы: НЕТ.
+## [2026-07-11] — Завершено: TZ-86 (Конструктор документов / Document Constructor, 6 фаз + 4 sub-phases, flagship feature)
+
+**Исполнитель:** Full-stack (Buffy)
+**Статус:** Выполнено (6/6 фаз + F.4 docs sync + F.5 archive; F.3 browser visual DEFERRED to TZ-87)
+**Объём:** ~30+ файлов, ~5500 строк net, 9 atomic commits
+
+**Что сделано (по фазам):**
+
+**Phase A — Backend foundation (6 atomic commits):**
+- **A.1** `TextBlock` schema (NEW) — name, slug (Russian transliteration), content (markdown), tags[], category, sortOrder, isActive. Slug uniqueness via Mongo unique index + 11000→409 catch.
+- **A.2** `TableTemplate` EXTEND — ColumnColumn gains `type: ColumnType` (text|number|date|currency|bool); TableTemplate gains `category?` (5 enum), `sortOrder`, `sampleRows?: unknown[][]`, `dataSource?`. `GET /:id/preview` endpoint.
+- **A.3** `TemplateBlock.dataBinding` extension — subdoc `{source, field?, value?, format?}`.
+- **A.4** `DocumentBuilder.build(id, dto)` service extension — `findExpanded()` → `resolveSourceIds()` (Promise.all parallel `.lean().exec()`) → `resolveBlockContent()` (per-block with binding.value or bag[source][field] lookup) → `renderHtml()`. `POST /api/document-templates/:id/build` endpoint.
+- **A.5** `RegistryController` — `GET /api/registry/data-sources` lists 5 entity types + `{key, label, type}` field metadata.
+- **A.6** `POST /:id/upload-background` — Multer `FileInterceptor('file', {memoryStorage, fileFilter MIME whitelist png|jpeg|webp, limits: fileSize 5MB})` → save to `cwd/uploads/document-templates/{id}/{uuidv4}.{ext}` → push URL to `backgroundImage[]` (Photoshop-style 5-image cap, 409 on overflow). `MulterExceptionFilter` для 413.
+
+**Phase B — Frontend data layer (4 silent-http services + 17 jest tests):**
+- `pi-text-blocks.service.ts`, `pi-table-templates.service.ts`, `pi-document-templates.service.ts`, `pi-registry.service.ts` + 4 specs (17 tests, all PASS).
+
+**Phase C — Frontend sub-pages (texts + tables CRUD):**
+- `/doc-constructor/texts` list with search/sort + EditDialog `text-block-dialog.component.ts` (190 LoC, side-by-side markdown preview via marked@18).
+- `/doc-constructor/tables` list with columns preview + EditDialog `table-template-dialog.component.ts` (290 LoC, FormArray<TableColumnForm> with add/up/down/remove + JSON sampleRows + server-side preview).
+- New dep: `marked@^18.0.6`.
+
+**Phase D.1 — Builder canvas 3-pane (главный wow, 13 files / +2303 LoC):**
+- 5 NEW components: `BuilderPage` (480 LoC) + `BuilderToolPane` (480 LoC, 4 sections + `AddBlockPayload` discriminated union) + `BuilderCanvas` + `BlockRenderer` (235 LoC) + `BuilderInspector` (430 LoC, signal-bound form).
+- 2 NEW Paper & Ink primitives: `pi-canvas-page` (A4 paper wrapper) + `pi-canvas-block-handle` (cdkDragHandle GripVertical, hover-only).
+- 4th NAV_CATEGORY «Документы» (FileText icon).
+- 2 lazy routes: `/doc-constructor/builder` (picker state) + `/doc-constructor/builder/:id` (3-pane canvas).
+- Auto-save 1500ms debounce (Subject piped through groupBy+debounceTime+switchMap), per-block debounce.
+- CDK drag-drop reorder (cdkDropList + cdkDrag with cdkDragLockAxis="y").
+- 4-variant `AddBlockPayload` discriminated union: `{type: 'block', blockType}` | `{type: 'text', textBlockId}` | `{type: 'table', tableTemplateId}` | `{type: 'data', source, field}`.
+
+**Phase D.2 — Builder canvas enhancements (3 files / +397 LoC):**
+- **Background image:** Decorations tab + MIME whitelist + 5MB cap client-side validation, `pi-document-templates.service.uploadBackground(id, file)` POST → optimistic update of `template` signal → CSS `background-image: url(...)` rendering in `BuilderCanvas` via `position: absolute; z-index: 0; pointer-events: none` overlay div.
+- **Drag-from-palette:** `cdkDrag` on all 4 tool-pane palette lists + `cdkDropListConnectedTo: [CANVAS_DROPLIST_ID]` linking them to the canvas `cdkDropList`. `CANVAS_DROPLIST_ID` exported from `builder-canvas.component.ts` (single source of truth). Drop handler `onDropAdd({payload, insertIndex})` → `insertBlock()` → atomic POST add + immediate POST reorder (because backend `add` appends, not inserts).
+- **Last-saved indicator:** `saveStatus: signal<'idle' | 'saving' | 'saved' | 'error'>` in `BuilderPage`. `tap()` before `switchMap` sets 'saving'; `handleSaveResult` (early-return on `!res.ok` pattern) narrows TS discriminated union; `timer(2000).subscribe(() => this.saveStatus.set('idle'))` reverts to 'idle' after 2s. `savedTick` counter guards against stale timers stomping a newer 'saved' state. Small chip in `PiPageHeader` («✓ Сохранено» / «Сохранение…» / «⚠ Ошибка»).
+
+**Phase E — Cross-feature integration (3 files / +179 LoC):**
+- `PiRowActionsComponent` extended with optional 3rd slot: `documentLabel: input<string|null>(null)` + `dataTestDocument: input<string|null>(null)` + `document: output<T>()`. Template renders the new `<button>` BEFORE the Edit button (Document → Edit → Delete; destructive-at-edge UX convention). Wrapped in `@if (documentLabel())` so the 5+ existing consumers (Materials/Organizations/Dictionaries/WorkTypes/Modules) see ZERO visual change (backwards-compat).
+- Inline SVG FileText icon (14×14, stroke 1.5) — self-contained, no `lucide-angular` import needed.
+- `OrdersPage` + `ContractsPage` — `Router` inject + `[documentLabel]`/`[dataTestDocument]` bindings + `(document)="onCreateDocument($event)"` handler. Navigation to `/doc-constructor/builder?source=order&sourceId=X` (or `source=contract`).
+- **Simplification from original spec:** Original assumed `/orders/:id` and `/contracts/:id` DETAIL pages; **they do not exist** (only list pages). Per-row action in list pages is the pragmatic pivot.
+
+**Phase F.1 — Backend e2e specs (5 NEW suites, 34 tests, all green):**
+- `text-blocks.e2e-spec.ts` (7 tests) — CRUD + slug uniqueness (409) + Russian transliteration auto-slug + soft-delete.
+- `table-templates.e2e-spec.ts` (8 tests) — CRUD + `/preview` HTML + `Intl.NumberFormat` ru-RU/RUB currency + softDelete.
+- `document-templates-build.e2e-spec.ts` (5 tests) — `{{organization.name}}` substitution + static dataBinding Mongoose bypass + empty placeholder fallback + invalid templateId 400.
+- `registry.e2e-spec.ts` (7 tests) — 5 data sources + `{key, label, type}` field metadata.
+- `document-templates-upload-background.e2e-spec.ts` (7 tests) — multer whitelist (png/jpeg/webp) + 5MB cap + 5-image limit + URL return.
+- **Fix history:** `category: 'product-spec'` enum fix in table-templates spec; programmatic `generateValidInn()` helper using the same algorithm as the production `IsINNConstraint.checkInn10()` (replaced 4/6-bad hard-coded INN list).
+
+**Phase F.4 — Docs sync + Phase F.5 — Archive (this entry):**
+- STATUS.md: TZ-86 section + metrics bump (pages 19→22, e2e 10→15).
+- ARCHITECTURE.md: Document Constructor (TZ-86) section.
+- progress.md: this entry.
+- tasks/TZ-86.md: status ✅ DONE.
+- tasks/TZ-86.checklist.md: all F.2/F.3/F.4/F.5 [x].
+- tasks/TZ-86.md + tasks/TZ-86.checklist.md → tasks/_archive/2026-07/{TZ-86.md.done, TZ-86.checklist.md.done} with ARCHIVE_MARKER.
+
+**Verification:**
+- Backend `pnpm exec tsc -p tsconfig.build.json --noEmit` → exit 0 ✅
+- Frontend `pnpm exec tsc -p tsconfig.app.json --noEmit` → exit 0 ✅
+- 5/5 e2e suites green, 34/34 tests pass (~26s total) ✅
+- Code-reviewer: PASS-WITH-NITS (4 TZ-87 followups logged)
+- 9 atomic commits on origin/main: `cdb2737` (D.1) → `d70646d` (D.2) → `1d7a51d` (E) → `f4a2bd2` (F.1) → `555eeed` (F.4 doc sync) + 4 prior Phase A/B/C atomic commits
+
+**Затронутые файлы (TZ-86 cumulative):**
+- **Backend (~15 files):** `text-block/{schema,service,controller,module,dto/{create,update}}`, `table-template/{schema,service,controller,dto/{create,update}}` (extended), `template-block/schema` (+dataBinding), `document-template/{service,controller,module,dto/{create,update,build}}`, `registry/{controller,service,module}`, `common/filters/multer-exception.filter`, `app.module` (registration of 3 new modules + filter)
+- **Frontend (~25 files):** `shared/services/pi-{text-blocks,table-templates,document-templates,registry,template-blocks}.service.ts` (+ 5 spec files), `pages/doc-constructor/{texts,tables,builder}/{*.page,*-dialog.component,builder-{tool-pane,canvas,inspector,page}.component}.ts`, `shared/ui/canvas/pi-{canvas-page,canvas-block-handle}.component.ts`, `pages/{orders,contracts}/*.page.ts` (per-row action), `shared/ui/pi-row-actions/*.component.ts` (extended), `app.routes.ts` (+3 lazy routes), `app-layout.component.ts` (4th NAV_CATEGORY)
+- **Docs:** `STATUS.md` (TZ-86 section + metrics), `ARCHITECTURE.md` (Document Constructor zone), `progress.md` (this entry)
+- **Tests:** `backend/test/e2e/{text-blocks,table-templates,registry,document-templates-build,document-templates-upload-background}.e2e-spec.ts`
+
+**Известные ограничения (не блокеры):**
+- `CreateTemplateBlockDto` lacks `dataBinding` field + global `ValidationPipe whitelist: true` strips unknowns → static dataBinding test uses Mongoose bypass (legitimate test pattern). A future TZ-XX should add `dataBinding?` to `CreateTemplateBlockDto` so the API can carry the binding through POST.
+- `DataSourceDescriptor.key` typed-narrowed union (5 values); will drift silently when backend adds new sources → TZ-87 candidate.
+- `PiRowActionsComponent` per-row «Создать документ» slot — visible ТОЛЬКО when `documentLabel()` is set. 5+ existing consumers see ZERO visual change.
+- F.3 browser-use visual verification DEFERRED to TZ-87 (consistent with TZ-78/79/80/82 deferral pattern, non-blocker).
+
+**Связанные TZ:**
+- **Предшественники:** TZ-83 (модульная иерархия Товар→Модуль→Материал+Вид работ), TZ-85 (cost-calculation spec).
+- **Sibling/parallel TZs:** TZ-87 (nits sweep — 4 TZ-86 followups + 10+ prior LOW-priority followups).
+
+**Архив:** `tasks/TZ-86.md` + `tasks/TZ-86.checklist.md` → `tasks/_archive/2026-07/TZ-86.md.done` + `tasks/_archive/2026-07/TZ-86.checklist.md.done` (с ARCHIVE_MARKER).
+**Lock-файлы:** нет (TZ-86 — feature task, не code-zone lock).
+

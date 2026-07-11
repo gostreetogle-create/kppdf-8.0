@@ -7,6 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { httpResource } from '@angular/common/http';
 import {
   NonNullableFormBuilder,
   ReactiveFormsModule,
@@ -22,7 +23,8 @@ import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.com
 import { PiToastService } from '../../shared/ui/toast';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
-import { Unit, UnitsService } from './units.service';
+import { API_BASE_URL } from '../../core/api.tokens';
+import { Unit, UnitsService, type UnitsListResponse } from './units.service';
 
 /**
  * TZ-NEW DictionariesPage — каталог единиц измерения (Units).
@@ -216,11 +218,32 @@ export class DictionariesPage implements OnInit {
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly baseUrl = inject(API_BASE_URL);
 
-  protected readonly data = signal<Unit[]>([]);
-  protected readonly loading = signal<boolean>(true);
+  /**
+   * Server list = `GET /api/units` via Angular 20's `httpResource`.
+   * No search/filter on this page (the only "filter" is "system vs
+   * non-system" which is rendered, not filtered server-side), so the
+   * resource's params are static. Same pattern as `materials.page.ts`
+   * and `organizations.page.ts`. `adding` stays as a separate manual
+   * signal — it's about form submit state, not list fetch state.
+   */
+  protected readonly listRes = httpResource<UnitsListResponse>(() => ({
+    url: `${this.baseUrl}/units`,
+    params: { page: 1, limit: 100 },
+  }));
+
+  protected readonly data = computed<Unit[]>(
+    () => this.listRes.value()?.items ?? [],
+  );
+  protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
+  protected readonly error = computed<string | null>(() => {
+    const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    return err ? extractErrorMessage(err) : null;
+  });
+
+  /** Form-submit state — separate from list fetch state. */
   protected readonly adding = signal<boolean>(false);
-  protected readonly error = signal<string | null>(null);
 
   protected readonly sortedUnits = computed<Unit[]>(() => {
     return this.data().slice().sort((a, b) => {
@@ -237,7 +260,7 @@ export class DictionariesPage implements OnInit {
   });
 
   ngOnInit(): void {
-    this.reload();
+    // `listRes` auto-fires its initial GET — no explicit `reload()`.
   }
 
   protected onAdd(): void {
@@ -247,7 +270,9 @@ export class DictionariesPage implements OnInit {
     }
     const v = this.form.getRawValue();
     this.adding.set(true);
-    this.error.set(null);
+    // (No `this.error.set(null)` — `error` is a `computed()` over
+    // `listRes.error()`. Form-submit failures already go to toast and
+    // auto-dismiss there; nothing to clear on the fetch banner side.)
     this.service
       .create({
         key: v.key,
@@ -262,9 +287,9 @@ export class DictionariesPage implements OnInit {
           this.toast.success(`Единица «${v.label}» добавлена`);
           this.form.reset({ key: '', label: '', symbol: '', category: '' });
           this.adding.set(false);
-          this.reload();
+          this.listRes.reload();
         } else {
-          this.error.set(extractErrorMessage(res.error));
+          this.toast.error(extractErrorMessage(res.error));
           this.adding.set(false);
         }
       });
@@ -276,7 +301,7 @@ export class DictionariesPage implements OnInit {
         this.toast.success(
           u.isActive ? `«${u.label}» деактивирована` : `«${u.label}» активирована`,
         );
-        this.reload();
+        this.listRes.reload();
       } else {
         this.toast.error(extractErrorMessage(res.error));
       }
@@ -299,7 +324,7 @@ export class DictionariesPage implements OnInit {
       this.service.remove(u.key).subscribe((res) => {
         if (res.ok) {
           this.toast.success(`Единица «${u.label}» удалена`);
-          this.reload();
+          this.listRes.reload();
         } else {
           this.toast.error(extractErrorMessage(res.error));
         }
@@ -308,16 +333,6 @@ export class DictionariesPage implements OnInit {
   }
 
   protected reload(): void {
-    this.loading.set(true);
-    this.error.set(null);
-    this.service.list({ page: 1, limit: 100 }).subscribe((res) => {
-      if (res.ok) {
-        this.data.set(res.data.items ?? []);
-        this.loading.set(false);
-      } else {
-        this.error.set(extractErrorMessage(res.error));
-        this.loading.set(false);
-      }
-    });
+    this.listRes.reload();
   }
 }
