@@ -12,10 +12,14 @@ import { authGuard, publicOnlyGuard } from './core/auth.guard';
  *              `''` → /materials (user's stated landing).
  *   **       → redirect to /, then authGuard decides login vs home.
  *
- * TZ-83 Phase B (commit TZ-83B):
- *   /work-types — work types catalogue (CRUD: нормы, ставки, центр)
- * Other TZ-83 routes (/modules, /modules/:id, /products/:id)
- * committed through separate atomic commits in Phases C and D.
+ * TZ-83 routes added (rollout order per phase commits):
+ *   Phase B (commit TZ-83B):
+ *     /work-types — work types catalogue (CRUD: нормы, ставки, центр)
+ *   Phase C (commit TZ-83C):
+ *     /modules      — module catalogue (list, search, sort)
+ *     /modules/:id  — module detail с 4 секциями (основное / фото / материалы / работы)
+ *   Phase D (commit TZ-83D):
+ *     /products/:id — product detail с секцией «Модули» + attach/detach
  */
 export const routes: Routes = [
   {
@@ -125,6 +129,24 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/products/products.page').then((m) => m.ProductsPage),
         title: 'KPPDF — Продукция',
+      },
+      {
+        // TZ-83 Phase C: список модулей продукции.
+        path: 'modules',
+        loadComponent: () =>
+          import('./pages/modules/modules.page').then((m) => m.ModulesPage),
+        title: 'KPPDF — Модули',
+      },
+      {
+        // TZ-83 Phase C: детальная страница модуля (4 секции).
+        // Объявлена ПОСЛЕ '/modules' (Angular 20 router матчит по
+        // longest-prefix; :id без children — sibling, не child).
+        path: 'modules/:id',
+        loadComponent: () =>
+          import('./pages/modules/module-detail.page').then(
+            (m) => m.ModuleDetailPage,
+          ),
+        title: 'KPPDF — Модуль',
       },
       {
         // TZ-83 Phase B: отдельный top-level справочник «Виды работ».
