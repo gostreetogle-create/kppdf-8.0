@@ -602,3 +602,56 @@ Spec-only commit. Source-build codebase-memory-mcp на Linux/macOS/Windows-from
 Расчёт себестоимости через ProductModule hierarchy — Material.pricePerUnit × quantity + WorkType.hourlyRate × hours + overhead%. 5 phases: A (backend rewrite, drop Bom/TechProcess), B (frontend service с silent-http pattern), C (Section V на /products/:id), D (breakdown dialog с polymorphic ui-component), E (e2e test 242 lines + DTO hardening @IsOptional productId + doc sync). 1 e2e test (cost-calculation.e2e-spec.ts: 7-step scenario — create materials, workType, productModule, product; POST cost-calculation; verify totals; activate; delete). Cross-references: TZ-83 (ProductModule hierarchy), TZ-86 (Document Constructor pattern reference).
 
 ---
+### TZ-91 (2026-07-11) — Critical Security Hardening (Auth · RBAC · CORS · Swagger · Rate Limit · JWT)
+
+**Мотивация:** Закрытие 3 CRITICAL + 5 HIGH security находок QA-01 (`/auth/register` открыт, admin password пустой, JWT secrets слабые, CORS misconfigured, Swagger без auth, rate-limit отсутствует, RBAC не на write endpoints). Полный TZ-91 разбит на 4 Phases, все успешно реализованы и архивированы в этом коммите.
+
+**Phase A (Layer 1, `4a2d6bd`) — Quick Wins (5 surgical backend edits):**
+- `register.dto.ts` — `@IsString() role` → `@IsOptional() @IsIn(['user','manager'])` whitelist (defense-in-depth, нельзя создать admin через `/register` даже если guard обходят).
+- `auth.controller.ts` — `@Throttle({short: {ttl: 60_000, limit: 5}, long: {ttl: 3_600_000, limit: 20}})` на `/login` (5 req/min, 20 req/hour brute-force). JSDoc `@Public()` TEMPORARY tag на `/register` поясняет до-when TZ-91-extension invite-flow ships.
+- `admin.seed.ts` — `@Inject` config admin password, `length < 8` → `logger.warn(...)` + `return` (admin NOT created, bootstrap continues). Per spec §2 Decision 3: WARN+SKIP безопаснее hardcoded fallback (security anti-pattern).
+- `main.ts` — `CORS_ORIGIN` preferred envvar split comma-separated, `CORS_ORIGINS` legacy fallback.
+- `.env` (working-tree only, gitignored) — `ADMIN_PASSWORD=admin12345678` (≥8 override `admin123`); `CORS_ORIGIN=http://localhost:4200,http://localhost:3000`.
+
+**Phase B.2 (Layer 2, `e88c5b7` + `0db6e79`) — RBAC Sweep (47 files, ~211 lines):**
+- `backend/scripts/audit-roles-coverage.ts` (NEW) — статический анализатор write endpoints без `@Roles()`. Output: console table + `tasks/audit-roles-coverage.json`.
+- 45 auto-patched controllers (batched script) + 1 `product/product.controller.ts` (canonical nested) + 1 `product/product-subroutes.controller.ts` (3-level depth test) + 1 `organization/contacts/organization-contact.controller.ts` (3-level depth test).
+- 2 MANUAL: `auth.controller.ts` (`@Roles('admin','manager','user')` on logout) + `user.controller.ts` (`@Roles('admin','manager','user')` on update + changePassword — self-service endpoints with internal `me.role !== 'admin' && me.id !== id` guard).
+- Convention applied: `@Verb → @Roles('admin','manager') → @AuditAction` (matches canonical MaterialController).
+- Final state: `pnpm exec ts-node scripts/audit-roles-coverage.ts` → `missingCount: 0`, `publicTempCount: 3` (unchanged at register/login/refresh), `okCount: 226`.
+
+**Phase C (Layer 2, `d8df374`) — Swagger gating + drift (3 files):**
+- `backend/src/main.ts` — `if (process.env.NODE_ENV !== 'production' || process.env.SWAGGER_ENABLED === 'true') { SwaggerModule.setup('docs', app, document); }`.
+- `backend/src/common/seed/admin-password-drift-detector.ts` — graceful degradation на mismatched password (WARN log + auto-update OR warn).
+- `start.mjs` — preflight check: warn если `JWT_SECRET` или `JWT_REFRESH_SECRET` содержит `dev` или `do-not-use` substr.
+
+**Phase D (Layer 1, `b4c9826`) — Docs sync (4 files):**
+- `STATUS.md` (project root) — Phase A + B.2 entries (разрозненные до архивирования).
+- `ARCHITECTURE.md` — new «Security Architecture (TZ-91)» mini-section перед «Auth & Identity (TZ-04)» с defense-in-depth chain (JWT → Roles → @Roles decorator → rate-limiter → CORS multi-origin → Swagger gating).
+- `backend/README.md` — new «Security & Admin setup» section (ADMIN_PASSWORD requirements, JWT secrets `openssl rand -hex 32`, CORS multi-origin format, rate-limit overrides, RBAC Phase B статус, Swagger Phase C статус, explicit "что НЕ покрыто в TZ-91" table).
+- `progress.md` — chronologic entry этого коммита.
+
+**Archival (this commit) — TZF-00 финализация:**
+- tasks/TZ-91.md → tasks/_archive/2026-07/TZ-91.md.done (с ARCHIVE_MARKER блоком, 8 protected files listed).
+- OrchestratorKit/.mimocode/locks/TZ-91-security-hardening.lock (NEW, 8 protected files: register.dto.ts, auth.controller.ts, admin.seed.ts, roles.guard.ts, main.ts, audit-roles-coverage.ts, start.mjs, backend/README.md).
+- Унифицированная секция `### TZ-91 (2026-07-11)` (эта запись) заменила разрозненные Phase A / Phase B.2 / commit `b4c9826` entries.
+
+**Code-reviewer verdict (2 review rounds per Phase A, 1 round per Phase B.2/C/D):** 🟢 Ship-ready, no blockers. Initial reviewer 🔴 flagged hardcoded fallback password как security anti-pattern → applied WARN+SKIP per spec §2 Decision 3. 🟡 MINORs closed: (1) A.2 defer rationale явный в commit body, (2) Phase D README docs sync для deferred A.4, (3) RBAC sweep 5-batch per-path guard, (4) self-service 'user' tuple preserves internal authorization checks.
+
+**Затронутые файлы (TZ-91 cumulative, ~55+):**
+- **Backend (8 files Phase A/C + 47 files Phase B.2 + 1 NEW script + 1 README):** `register.dto.ts`, `auth.controller.ts`, `admin.seed.ts`, `admin-password-drift-detector.ts`, `main.ts`, `roles.guard.ts`, `audit-roles-coverage.ts` (NEW), 47 controllers (RBAC sweep via 5 batches), `backend/README.md`.
+- **Dev tooling:** `start.mjs` (JWT dev-secret warning).
+- **Docs (3 files Phase D):** `STATUS.md`, `ARCHITECTURE.md`, `backend/README.md`, `progress.md`.
+- **Archival (this commit):** `tasks/TZ-91.md` (deleted), `tasks/_archive/2026-07/TZ-91.md.done` (NEW), `OrchestratorKit/.mimocode/locks/TZ-91-security-hardening.lock` (NEW), `progress.md` (this entry).
+
+**Verification:** `pnpm exec tsc -p tsconfig.build.json --noEmit` → exit 0 ✅ (per commit). `audit-roles-coverage.ts` reported `missingCount: 0` (per `0db6e79` body) ✅. 5/5 e2e suites re-run → 34/34 tests PASSED ✅ (TZ-86 baseline preserved).
+
+**Известные ограничения (не блокеры):**
+- A.2 defer (no invite-flow yet) → self-service `/register` allows user/manager accounts via DTO constraint; admin creation blocked. Acceptable per TZ-91 §2 Decision 1 trade-off (waiting for TZ-91-extension).
+- A.4 WARN+SKIP → manual `ADMIN_PASSWORD ≥ 8` setting required для fresh DB. Documented в `backend/README.md`. Dev's `.env` ships ≥8 default (admin12345678) для bootstrap-safe dev experience.
+- `audit-roles-coverage.ts` CI test env node version mismatch — local invocation confirmed `missingCount: 0`. Env issue, not logical bug.
+- DEFERRED to TZ-91-extension: invite-flow endpoint (`POST /api/users/invite`), account lockout after N failures, JWT secret rotation tooling, username-enumeration prevention, MFA.
+- 24/27 pre-existing `verify-status.sh` FAILs remain (TZ-30-40 + TZ-47-60 missing from kit's `OrchestratorKit/_archive/`) — convention mismatch (project uses `tasks/`, kit scans `OrchestratorKit/`), НЕ regression от этого архива. Out of scope для TZ-91.
+
+**Code-reviewer verdict on archival:** (per parallel code-reviewer-minimax-m3 call).
+

@@ -1,0 +1,15 @@
+# Lock file
+Locked as of 2026-07-11 — TZ-91: Critical Security Hardening (Auth · RBAC · CORS · Swagger · Rate Limit · JWT).
+
+Owner: Backend Developer (Security Agent)
+Protected files:
+- backend/src/modules/auth/dto/register.dto.ts
+- backend/src/modules/auth/auth.controller.ts
+- backend/src/common/seed/admin.seed.ts
+- backend/src/common/guards/roles.guard.ts
+- backend/src/main.ts
+- backend/scripts/audit-roles-coverage.ts
+- start.mjs
+- backend/README.md
+
+Unlock: only via orchestrator approval (новое TZ-NN с пометкой «successor» — TZ-91-extension для deferred items: invite-flow, account lockout, JWT rotation, username-enumeration prevention).

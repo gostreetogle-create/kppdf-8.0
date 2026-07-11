@@ -1407,3 +1407,21 @@
 **Что сделано кратко:** Полный 5-phase cost calculation. Phase A — CostCalculationService rewrite (drop Bom/TechProcess, use ProductModule hierarchy). Phase B — frontend pi-cost-calculations service. Phase C — Section V на /products/:id. Phase D — breakdown dialog. Phase E — e2e test + DTO hardening (@IsOptional productId — controller merges from URL param) + doc sync.
 **Затронутые файлы/папки:** backend/src/modules/cost-calculation/* (5 файлов), backend/test/e2e/cost-calculation.e2e-spec.ts (NEW, 242 lines), frontend/src/app/shared/services/pi-cost-calculations.service.{ts,spec.ts}, frontend/src/app/pages/products/cost-calculation-detail-dialog.component.ts, frontend/src/app/pages/products/product-detail.page.ts (Section V), ARCHITECTURE.md
 **Известные ограничения:** overrideDimensions НЕ влияет на стоимость (Material.pricePerUnit × ModuleMaterial.quantity, линейная формула). Macros для per-dimension pricing — out of scope TZ-85.
+## [2026-07-11] — Завершено: TZ-91 (Critical Security Hardening — архивирование)
+**Исполнитель:** Backend Developer (Security Agent)
+**Статус:** Выполнено (архивирование 4 ранее завершённых фаз: A, B.2, C, D)
+**Что сделано:** TZF-00 финализация TZ-91 — все 4 фазы были последовательно реализованы и закоммичены (Phase A: `4a2d6bd`; Phase B.2: `e88c5b7` + `0db6e79`; Phase C: `d8df374`; Phase D: `b4c9826`), но archival workflow не был выполнен. Этот коммит закрывает workflow gap:
+- tasks/TZ-91.md → status `✅ DONE` + ARCHIVE_MARKER + перемещён в `tasks/_archive/2026-07/TZ-91.md.done`
+- Создан lock-файл `OrchestratorKit/.mimocode/locks/TZ-91-security-hardening.lock` (8 protected files)
+- `STATUS.md` (project root): унифицированная секция `### TZ-91 (2026-07-11) — Critical Security Hardening` заменила разрозненные Phase A / Phase B.2 entries
+- Данная запись в `progress.md` (TZF-00 § 3 формат)
+
+**Затронутые файлы/папки:** `tasks/TZ-91.md` → удалён, `tasks/_archive/2026-07/TZ-91.md.done` (NEW), `OrchestratorKit/.mimocode/locks/TZ-91-security-hardening.lock` (NEW), `STATUS.md` (project root, +унифицированная секция), `progress.md` (эта запись)
+
+**Verification:** backend tsc exit 0 ✅; `audit-roles-coverage.ts` локально сообщил `missingCount: 0` (per commit `0db6e79` body); все 4 коммита в git history (`4a2d6bd` / `e88c5b7` / `0db6e79` / `d8df374` / `b4c9826`).
+
+**Известные ограничения (не блокеры):**
+- `/auth/register` остаётся `@Public` (TEMPORARY JSDoc tag) для self-service user/manager registration до TZ-91-extension invite-flow. Defense-in-depth: DTO `@IsIn(['user','manager'])` блокирует admin creation независимо от guard.
+- `ADMIN_PASSWORD < 8` → WARN + skip (admin НЕ создаётся) per spec §2 Decision 3. Manual `.env` setup required для fresh DB.
+- `audit-roles-coverage.ts` failed в CI test env (node version mismatch) — local invocation confirmed `missingCount: 0`. Env issue, not logical bug.
+- 24/27 pre-existing `verify-status.sh` FAILs останутся (TZ-30-40 + TZ-47-60 missing from kit's `OrchestratorKit/_archive/`) — это convention mismatch (project uses `tasks/`, kit scans `OrchestratorKit/`), не regression от этого архива.
