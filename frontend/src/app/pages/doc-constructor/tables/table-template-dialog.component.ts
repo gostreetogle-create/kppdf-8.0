@@ -77,7 +77,7 @@ const ALIGN_OPTIONS: Array<{ key: 'left' | 'center' | 'right'; label: string }> 
       [width]="'lg'"
       [showClose]="true"
     >
-      <div body class="grid grid-cols-2 gap-6">
+      <div body class="grid grid-cols-2 gap-6" [formGroup]="form">
         <div class="space-y-4">
           <label class="block text-sm">
             <span class="eyebrow block mb-1.5 text-ink">Название</span>
