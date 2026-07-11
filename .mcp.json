@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "codebase-memory": {
+      "command": "vendor/codebase-memory-mcp/bin/codebase-memory-mcp.exe",
+      "args": [],
+      "env": {}
+    }
+  }
+}

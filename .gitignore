@@ -66,6 +66,14 @@ _tmp/
 # Local helper binaries
 mimo.exe
 
+# codebase-memory MCP server (TZ-deferred vendor-bundle)
+# Track metadata + runner script, exclude the large binary + runtime caches.
+# See vendor/codebase-memory-mcp/README.md for rationale + install steps on fresh clone.
+vendor/codebase-memory-mcp/bin/*.exe
+vendor/codebase-memory-mcp/index/
+vendor/codebase-memory-mcp/cache/
+vendor/codebase-memory-mcp/.codebase-memory/
+
 # Runtime PID tracker from start.mjs (kept on disk; not tracked in git)
 .start.pids.json
 
