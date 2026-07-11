@@ -249,39 +249,6 @@
 
 **F.3 browser visual verification — STILL PENDING:** F.6 разблокировал `ng serve`, но фактический browser flow (login → texts CRUD → tables CRUD → builder 3-pane drag → background upload → last-saved chip) с screenshots в `tasks/_archive/2026-07/TZ-86-evidence/` ещё не запущен. TZ-87 candidate: запустить browser-use verification flow.
 
-### TZ-91 Phase A (2026-07-11) — Critical Security Hardening (Layer 1, 1 of 4 phases)
-
-**Мотивация:** 3 CRITICAL + 5 HIGH security находок QA-01 в одном atomic TZ (`/auth/register` открыт, admin password пустой, JWT secrets слабые, CORS misconfigured, Swagger без auth, rate-limit отсутствует, RBAC не на write endpoints). Полный TZ-91 разбит на 4 Phases — **Phase A** (Layer 1 atomic commit `4a2d6bd`, ships в этом коммите), Phase B (RBAC sweep, Layer 2), Phase C (Swagger gating + drift, Layer 2), Phase D (docs sync — этот коммит).
-
-**Phase A — 5 surgical backend code edits:**
-- **`register.dto.ts`** — `@IsString() role` → `@IsOptional() @IsIn(['user','manager']) role?: string` whitelist (defense-in-depth, нельзя создать admin через `/register` даже если guard обходят).
-- **`auth.controller.ts`** — `@Throttle({short: {ttl: 60_000, limit: 5}, long: {ttl: 3_600_000, limit: 20}})` на `/login` (5 req/min, 20 req/hour brute-force). JSDoc `@Public()` TEMPORARY tag на `/register` поясняет до-when TZ-91-extension invite-flow ships.
-- **`admin.seed.ts`** — `@Inject` config admin password, `length < 8` → `logger.warn(...)` + `return` (admin NOT created, bootstrap continues). Per spec §2 Decision 3: WARN+SKIP безопаснее hardcoded fallback (security anti-pattern).
-- **`main.ts`** — `CORS_ORIGIN` preferred envvar split comma-separated, `CORS_ORIGINS` legacy fallback. `corsOrigins.length === 1` → sends single origin string (CORS-spec safe для credentials=true).
-- **`.env`** (working-tree only, gitignored) — `ADMIN_PASSWORD=admin12345678` (≥8 override `admin123`); `CORS_ORIGIN=http://localhost:4200,http://localhost:3000`.
-
-**DEFERRED sub-tasks (с явным JSDoc в коде):**
-- **A.2** (remove `@Public()` from `/register`) — DEFERRED до **TZ-91-extension** который добавит `POST /api/users/invite` (admin-invite-flow). Без invite-flow removing @Public создаст chicken-and-egg: admin needs admin token to create admin. Defense-in-depth: DTO `@IsIn(['user','manager'])` блокирует admin creation в любом случае.
-- **A.4 alignment:** WARN+SKIP → admin NOT created до того пока user ставит `ADMIN_PASSWORD ≥ 8 chars`. Bootstrap still works (WARN, continue), но admin login fails до fix → задокументировано в `backend/README.md` «Security & Admin setup» section (Phase D коммит).
-
-**Phase D (этот коммит) — docs sync:**
-- `STATUS.md` — TZ-91 Phase A row в «✅ Завершённые этапы» (эта секция).
-- `ARCHITECTURE.md` — new «Security Architecture (TZ-91)» mini-section перед «Auth & Identity (TZ-04)» с defense-in-depth chain.
-- `backend/README.md` — new «Security & Admin setup» section (ADMIN_PASSWORD requirements, JWT secrets openssl rand -hex 32, CORS multi-origin format, rate-limit overrides, RBAC Phase B статус, Swagger Phase C статус, explicit "что НЕ покрыто в TZ-91" table).
-- `progress.md` — chronologic entry этого коммита.
-
-**Code-reviewer verdict (2 review rounds):** 🟢 Ship-ready, no blockers. Initial reviewer 🔴 flagged hardcoded fallback password как security anti-pattern → applied WARN+SKIP per spec §2 Decision 3. 🟡 MINORs closed: (1) A.2 defer rationale явный в commit body, (2) Phase D README docs sync для deferred A.4.
-
-**Затронутые файлы (Phase A commit `4a2d6bd` + Phase D this коммит):** `backend/src/modules/auth/dto/register.dto.ts` (1) · `backend/src/modules/auth/auth.controller.ts` (1) · `backend/src/common/seed/admin.seed.ts` (1) · `backend/src/main.ts` (1) · `.env` (gitignored) · `STATUS.md` (this row) · `ARCHITECTURE.md` (new mini-section) · `backend/README.md` (new security section) · `progress.md` (entry).
-
-**Verification:** `pnpm exec tsc -p tsconfig.build.json --noEmit` → exit 0 ✅ (Phase A). Docs verified manually. Code-reviewer verdict по 2 review rounds → 🟢 Ship-ready.
-
-**Phase B (RBAC sweep) + Phase C (Swagger gating + drift) — next atomic commits (отдельные TZ).** Phase B создаёт `backend/scripts/audit-roles-coverage.ts` для статического analysis 73 controllers + manual apply `@Roles('admin','manager')` на write endpoints (1-2 commits Layer 2 SERIAL). Phase C: Swagger gate `if (NODE_ENV !== 'production' || SWAGGER_ENABLED='true')` + drift-detector graceful degradation + `start.mjs` dev-secret warning (1 commit Layer 2).
-
-**Известные ограничения (не блокеры):**
-- A.2 defer (no invite-flow yet) → self-service `/register` allows user/manager accounts via DTO constraint; admin creation blocked. Acceptable per TZ-91 §2 Decision 1 trade-off (waiting for TZ-91-extension).
-- A.4 WARN+SKIP → manual `ADMIN_PASSWORD` setting required для fresh DB. Documented в `backend/README.md`. Dev's `.env` ships ≥8 default (admin12345678) для bootstrap-safe dev experience.
-
 ## 🎯 6-направленная сессия улучшений (2026-07-08)
 
 **Мотивация:** Пользователь: «улудшишь дальше? грамотно!» — выбран полный набор улучшений: theme toggle для operational-страниц, осветление фона, тёплый акцент для active/primary элементов, проверка login page, SettingsSeed fix, CRUD-миграция.
