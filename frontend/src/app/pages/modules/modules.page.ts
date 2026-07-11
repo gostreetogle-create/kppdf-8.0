@@ -119,8 +119,8 @@ type SortDir = 'asc' | 'desc';
                 <td class="pi-cell align-top font-medium">{{ row.name }}</td>
                 <td class="pi-cell align-top font-mono text-xs empty-cell">{{ row.article }}</td>
                 <td class="pi-cell align-top font-mono text-xs whitespace-nowrap empty-cell">{{ moduleDimensions(row) }}</td>
-                <td class="pi-cell-numeric align-top">{{ row.materials?.length ?? 0 }}</td>
-                <td class="pi-cell-numeric align-top">{{ row.workTypes?.length ?? 0 }}</td>
+                <td class="pi-cell-numeric align-top">{{ row.materials.length }}</td>
+                <td class="pi-cell-numeric align-top">{{ row.workTypes.length }}</td>
                 <td class="pi-cell align-top">
                   <app-pi-row-actions
                     [row]="row"

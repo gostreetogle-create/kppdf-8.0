@@ -137,7 +137,7 @@ import { ModuleMaterialsFormDialogComponent } from './module-materials-form-dial
 
       <!-- III. Материалы -->
       <app-pi-section title="Материалы"
-        [hint]="m.materials?.length ? 'Override-габариты показаны курсивом' : ''"
+        [hint]="m.materials.length ? 'Override-габариты показаны курсивом' : ''"
         eyebrow="III">
         <div class="flex justify-end mb-2">
           <app-pi-button variant="default" type="button" (click)="openMaterialsEditor()" data-test="edit-materials">
@@ -156,7 +156,7 @@ import { ModuleMaterialsFormDialogComponent } from './module-materials-form-dial
               </tr>
             </thead>
             <tbody>
-              @for (m2 of m.materials ?? []; track $index) {
+              @for (m2 of m.materials; track $index) {
                 <tr class="pi-table-row pi-table-row-odd last:border-0">
                   <td class="pi-cell align-top">
                     {{ materialName(m2.materialId) }}
@@ -186,7 +186,7 @@ import { ModuleMaterialsFormDialogComponent } from './module-materials-form-dial
               </tr>
             </thead>
             <tbody>
-              @for (w of m.workTypes ?? []; track $index) {
+              @for (w of m.workTypes; track $index) {
                 <tr class="pi-table-row pi-table-row-odd last:border-0">
                   <td class="pi-cell align-top">{{ workTypeName(w.workTypeId) }}</td>
                   <td class="pi-cell-numeric align-top font-mono">{{ w.estimatedHours }}</td>

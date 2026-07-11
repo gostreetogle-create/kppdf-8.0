@@ -14,7 +14,6 @@ import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.componen
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
-import { PiEmptyTileComponent } from '../../shared/ui/pi-empty-tile/pi-empty-tile.component';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
 import { PiToastService } from '../../shared/ui/toast';
@@ -49,7 +48,6 @@ import { Photo } from '../materials/photos.service';
     PiPageHeaderComponent,
     PiSectionComponent,
     PiEmptyStateComponent,
-    PiEmptyTileComponent,
     ButtonComponent,
   ],
   template: `
@@ -149,8 +147,8 @@ import { Photo } from '../materials/photos.service';
                 <tr class="pi-table-row pi-table-row-odd last:border-0">
                   <td class="pi-cell align-top font-medium">{{ m.name }}</td>
                   <td class="pi-cell align-top font-mono text-xs empty-cell">{{ m.article ?? '—' }}</td>
-                  <td class="pi-cell-numeric align-top">{{ m.materials?.length ?? 0 }}</td>
-                  <td class="pi-cell-numeric align-top">{{ m.workTypes?.length ?? 0 }}</td>
+                  <td class="pi-cell-numeric align-top">{{ m.materials.length }}</td>
+                  <td class="pi-cell-numeric align-top">{{ m.workTypes.length }}</td>
                   <td class="pi-cell align-top text-right">
                     <button type="button" (click)="openModuleDetail(m)"
                       class="eyebrow text-ink hover:text-sunrise-warm mr-3">Открыть</button>

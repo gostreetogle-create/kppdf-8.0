@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import {
   FormArray,
   NonNullableFormBuilder,
@@ -200,7 +200,11 @@ export class ModuleFormDialogComponent {
     ),
   });
 
-  protected readonly workTypesArray = computed(() => this.form.controls.workTypes as FormArray);
+  // Plain getter (not computed) — we need the FormArray ref itself; @for {@for (ctrl of workTypesArray.controls; ...)}
+  // reads `.controls` from the FormArray, NOT from a Signal.
+  protected get workTypesArray(): FormArray {
+    return this.form.controls.workTypes as FormArray;
+  }
 
   constructor() {
     this.workTypes.list({ activeOnly: true }).subscribe((res) => {

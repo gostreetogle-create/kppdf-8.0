@@ -28,7 +28,7 @@ import {
         <select class="pi-input w-full" formControlName="moduleId" data-test="picker-select" size="10">
           @for (m of available(); track m._id) {
             <option [value]="m._id">
-              {{ m.name }} · {{ m.article ?? '—' }} · {{ m.materials?.length ?? 0 }} материалов
+              {{ m.name }} · {{ m.article ?? '—' }} · {{ m.materials.length }} материалов
             </option>
           } @empty {
             <option disabled>Нет доступных модулей.</option>
