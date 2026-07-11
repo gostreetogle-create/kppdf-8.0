@@ -1,0 +1,14 @@
+# Lock file
+Locked as of 2026-07-11 — TZ-92: codebase-memory MCP integration baseline (vendor + .mcp.json + mcp:start).
+
+Owner: Backend Developer (DevTools + Docs)
+Protected files:
+- .mcp.json
+- vendor/codebase-memory-mcp/README.md
+- vendor/codebase-memory-mcp/doc/LICENSE
+- vendor/codebase-memory-mcp/doc/THIRD_PARTY_NOTICES.md
+- vendor/codebase-memory-mcp/bin/install.ps1
+- .gitignore (vendor/codebase-memory-mcp/bin/*.exe + index/ + cache/ + .codebase-memory/ excludes)
+- package.json (mcp:start script)
+
+Unlock: only via orchestrator approval (новое TZ-NN с пометкой «successor»).

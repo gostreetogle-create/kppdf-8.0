@@ -558,3 +558,32 @@ kppdf-8.0/
 4. **highlight.js + axe-core** — повторить pnpm install после lockfile reconcile (TZ-78 fallback, TZ-79 deferred).
 5. **Browser-use smoke test** — TZ-82 independent, можно запустить через `ng serve` без SSR.
 
+---
+
+## TZ-92 series (2026-07-11) — MCP integration (3 sequential TZs)
+
+### TZ-92: codebase-memory MCP integration baseline
+
+- Commit: feat(mcp): TZ-92 baseline — vendor bundle + .mcp.json + mcp:start
+- Archive: tasks/_archive/2026-07/TZ-92.md.done
+- Lock: OrchestratorKit/.mimocode/locks/TZ-92-mcp-integration.lock
+
+Vendor-bundle codebase-memory-mcp v0.9.0 (DeusData 2025, MIT) — vendor/codebase-memory-mcp/{bin,doc,README.md} + .mcp.json (RFC 8259, no _comment) + package.json mcp:start script + 4 .gitignore excludes. install.ps1 помечен НЕ ЗАПУСКАТЬ (alien installer).
+
+### TZ-92b: MCP docs sync + HTTP UI port :9749 verified
+
+- Commit: docs(arch, mcp): TZ-92b baseline sync — UI port :9749 + Linux/macOS constraint + MCP Integration section
+- Archive: tasks/_archive/2026-07/TZ-92b.md.done
+- Lock: OrchestratorKit/.mimocode/locks/TZ-92b-mcp-docs.lock
+
+HTTP UI port :9749 verified empirically (binary v0.9.0 log scrape). ARCHITECTURE.md — новая секция MCP Integration (TZ-92) между TZ-41 (Dev Tooling) и TZ-03 (Database Layer) + Zone table row. vendor/README.md — Поддерживаемые платформы table (Win AMD64/ARM64/Linux/macOS) + Troubleshooting :9749 + auto-start hint. Stale :8765 reference заменён на verified :9749.
+
+### TZ-92b-ux: source-build spec (Linux + macOS + Win-from-source)
+
+- Commit: docs(tasks): TZ-92b-ux spec — source-build for Linux/macOS/Win-from-source
+- Archive: tasks/_archive/2026-07/TZ-92b-ux.md.done
+- Lock: OrchestratorKit/.mimocode/locks/TZ-92b-ux-mcp-source-build.lock
+
+Spec-only commit. Source-build codebase-memory-mcp на Linux/macOS/Windows-from-source через https://github.com/DeusData/codebase-memory-mcp (public MIT, scripts/build.sh --with-ui). Per-OS .mcp.<os>.json + cp switcher, scripts/build-mcp.mjs orchestrator с cross-FS-safe atomic-move, SIGINT handler, ENOSPC disk-space pre-check (3-OS branches via df -BG / df -g / fs.statfsSync), AUR alternative для Arch. 4-round code-review hardening complete. Implementation deferred to future TZ-NN.
+
+---

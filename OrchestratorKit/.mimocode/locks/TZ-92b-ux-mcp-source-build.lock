@@ -1,0 +1,10 @@
+# Lock file
+Locked as of 2026-07-11 — TZ-92b-ux: codebase-memory MCP — source-build (Linux + macOS + Win-from-source).
+
+Owner: Backend Developer (DevTools + Infra)
+Protected files:
+- tasks/TZ-92b-ux.md (spec for future implementation)
+- tasks/_archive/2026-07/TZ-92b-ux.md.done (archive copy)
+
+Unlock: only via orchestrator approval (новое TZ-NN с пометкой «successor»).
+Note: spec-only — actual build-mcp.mjs + 3 .mcp.<os>.json + package.json + vendor/README.md + ARCHITECTURE.md updates deferred to future TZ-NN (requires Linux/macOS dev to verify pnpm run mcp:build gates).

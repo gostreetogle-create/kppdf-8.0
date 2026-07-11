@@ -1382,3 +1382,22 @@
 ### Архив
 
 Финальный `tasks/_archive/2026-07/TZ-91.md.done` (с comprehensive ARCHIVE_MARKER + final state) будет создан после Phase B+C completion. Сейчас спецификация живёт в git history: `23d7793` (TZ-91 spec draft) + `4a2d6bd` (Phase A implementation) + `THIS` (Phase D docs sync).
+
+## 2026-07-11 — Завершено: TZ-92 (codebase-memory MCP integration baseline)
+**Исполнитель:** Backend Developer (DevTools + Docs)
+**Статус:** Выполнено / Проверено
+**Что сделано кратко:** Vendor-bundle codebase-memory MCP v0.9.0 (DeusData MIT) — `vendor/codebase-memory-mcp/{bin,doc,README.md}` + `.mcp.json` (RFC 8259, no `_comment`) + `package.json` `mcp:start` script + `.gitignore` excludes для 262 MB binary + runtime caches. install.ps1 помечен ⚠️ НЕ ЗАПУСКАТЬ (alien installer, silent-overwrite risk).
+**Затронутые файлы/папки:** `.gitignore`, `package.json`, `.mcp.json` (new), `vendor/codebase-memory-mcp/{README.md, doc/LICENSE, doc/THIRD_PARTY_NOTICES.md, bin/install.ps1}` (new), `tasks/TZ-92.md` (new, synthesized retroactive), `tasks/_archive/2026-07/TZ-92.md.done` (new), `OrchestratorKit/.mimocode/locks/TZ-92-mcp-integration.lock` (new)
+**Известные ограничения:** 262 MB binary NOT in git (gitignored) — fresh clone требует re-extract из исходного ZIP. Linux/macOS НЕ поддерживается исходным bundle (deferred в TZ-92b-ux).
+
+## 2026-07-11 — Завершено: TZ-92b (MCP docs sync + HTTP UI port :9749 verified)
+**Исполнитель:** Backend Developer (DevTools + Docs)
+**Статус:** Выполнено / Проверено / Code-reviewer 🟢 Ship-ready
+**Что сделано кратко:** HTTP UI port :9749 verified empirically (binary v0.9.0 log scrape `ui.serving url=http://127.0.0.1:9749`). `ARCHITECTURE.md` — новая секция `## MCP Integration (TZ-92)` между TZ-41 (Dev Tooling) и TZ-03 (Database Layer) + Zone table row. `vendor/README.md` — `## Поддерживаемые платформы` table + Troubleshooting `:9749` + auto-start hint. Stale `:8765` reference заменён на verified `:9749`. install.ps1 ⚠️ warning preserved.
+**Затронутые файлы/папки:** `ARCHITECTURE.md` (modified), `vendor/codebase-memory-mcp/README.md` (modified), `tasks/TZ-92b.md` (new), `tasks/_archive/2026-07/TZ-92b.md.done` (new), `OrchestratorKit/.mimocode/locks/TZ-92b-mcp-docs.lock` (new)
+**Известные ограничения:** HTTP UI port НЕ overridable в binary v0.9.0. Linux/macOS source-build deferred в TZ-92b-ux.
+
+## 2026-07-11 — Завершено: TZ-92b-ux (source-build spec for Linux/macOS/Windows)
+**Исполнитель:** Backend Developer (DevTools + Infra)
+**Статус:** Spec-only / Проверено / 4-round Code-reviewer 🟢 Ship-ready
+**Что сделано кратко:** Spec для source-build `codebase-memory-mcp` на Linux/macOS/Windows-from-source через `https://github.com/DeusData/codebase-memory-mcp` (public MIT repo, `scripts/build.sh --with-ui`). Включает per-OS `.mcp.<os>.json` (linux/macos/windows) + `cp` switcher, `scripts/build-mcp.mjs` orchestrator с cross-FS-safe atomic-move, SIGINT handler, ENOSPC disk-space pre-check (3-OS branches), progress feedback, AUR alternative для Arch

@@ -1,0 +1,9 @@
+# Lock file
+Locked as of 2026-07-11 — TZ-92b: codebase-memory MCP — HTTP UI port doc + Linux/macOS plan + ARCH sync.
+
+Owner: Backend Developer (DevTools + Docs)
+Protected files:
+- ARCHITECTURE.md (## MCP Integration (TZ-92) section + Zone table row)
+- vendor/codebase-memory-mcp/README.md (## Поддерживаемые платформы + Troubleshooting :9749 + auto-start hint)
+
+Unlock: only via orchestrator approval (новое TZ-NN с пометкой «successor»).
