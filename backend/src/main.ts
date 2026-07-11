@@ -8,6 +8,7 @@ import compression from 'compression';
 import { join } from 'path';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { MulterExceptionFilter } from './common/filters/multer-exception.filter';
 import { ThrottlerBehindAuthGuard } from './common/guards/throttler-behind-auth.guard';
 
 async function bootstrap() {
@@ -61,7 +62,11 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalFilters(new HttpExceptionFilter());
+  // TZ-86 Phase A.6 — Multer errors (LIMIT_FILE_SIZE etc.) get specific HTTP
+  // codes (413 for oversize, 400 for unexpected field) before falling through
+  // to HttpExceptionFilter for everything else. More-specific @Catch(MulterError)
+  // filter is registered first; the global catch-all backs it up.
+  app.useGlobalFilters(new MulterExceptionFilter(), new HttpExceptionFilter());
   app.setGlobalPrefix('api');
 
   const swaggerConfig = new DocumentBuilder()

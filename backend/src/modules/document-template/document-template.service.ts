@@ -1,6 +1,14 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { randomUUID } from 'node:crypto';
+import { join } from 'node:path';
+import { promises as fs } from 'node:fs';
 import { DocumentTemplate, DocumentTemplateDocument } from './document-template.schema';
 import { CreateDocumentTemplateDto } from './dto/create-document-template.dto';
 import { UpdateDocumentTemplateDto } from './dto/update-document-template.dto';
@@ -491,6 +499,92 @@ export class DocumentTemplateService {
       })
       .join('\n');
     return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${substitute(template.name)}</title>${css}</head><body>${body}</body></html>`;
+  }
+
+  // ── Phase A.6 — Upload background image (TZ-86 §2.6) ─────────────────────────────────
+
+  /**
+   * MVP-allowlist: 5 background images per template (Photoshop-style z-axis layers).
+   * 6th upload → 409 Conflict. Use a separate DELETE endpoint to remove.
+   * Adjust if user feedback changes the limit.
+   */
+  private static readonly MAX_BACKGROUND_IMAGES = 5;
+
+  /**
+   * MIME → extension mapping for generated filenames. NEVER trust
+   * `file.originalname` — only safe to derive extension from server-validated
+   * MIME (the controller's `fileFilter` enforces this whitelist).
+   */
+  private static readonly MIME_TO_EXT: Record<string, string> = {
+    'image/png': 'png',
+    'image/jpeg': 'jpg',
+    'image/webp': 'webp',
+  };
+
+  /**
+   * Persist a background image for this template.
+   *
+   * Flow:
+   *   1. `findById(id)` → validates ObjectId + soft-delete (throws 404 if missing).
+   *   2. Enforce 5-image cap (409 if over).
+   *   3. Derive safe filesystem path (no user input in filename — UUIDv4 + ext map).
+   *   4. Write buffer to disk before DB push — if save() fails we have something
+   *      concrete to unlink.
+   *   5. Push public URL to `backgroundImage[]` via `doc.save()` so the audit
+   *      plugin (`updatedBy` from AsyncLocalStorage) fires the same way as
+   *      update()/setDefault().
+   *   6. On save() failure → best-effort `fs.unlink()` of the orphan file +
+   *      re-throw so the client gets a real error and the disk stays clean.
+   *
+   * Storage: memoryStorage() upload from controller → `file.buffer` is in RAM.
+   * Filename: `${randomUUID()}.${ext}` — collision-free without coordination.
+   * URL: `/uploads/document-templates/{id}/{filename}` per main.ts useStaticAssets.
+   * Memory footprint: ≤ MAX_FILE_SIZE bytes transiently (5 MB).
+   */
+  async uploadBackground(
+    id: string,
+    file: Express.Multer.File,
+  ): Promise<string> {
+    const doc = await this.findById(id);
+
+    if ((doc.backgroundImage?.length ?? 0) >= DocumentTemplateService.MAX_BACKGROUND_IMAGES) {
+      throw new ConflictException(
+        `Превышен лимит фоновых изображений (макс. ${DocumentTemplateService.MAX_BACKGROUND_IMAGES}). Удалите одно из существующих, прежде чем добавлять новое.`,
+      );
+    }
+
+    const ext = DocumentTemplateService.MIME_TO_EXT[file.mimetype];
+    if (!ext) {
+      // Defense-in-depth: controller's fileFilter already rejects non-whitelisted MIME.
+      // Reaching here means someone bypassed the whitelist — fail loudly.
+      throw new BadRequestException(
+        `Недопустимый MIME-тип файла: ${file.mimetype}. Ожидается image/png | image/jpeg | image/webp.`,
+      );
+    }
+
+    const filename = `${randomUUID()}.${ext}`;
+    const dirPath = join(process.cwd(), 'uploads', 'document-templates', id);
+    const filePath = join(dirPath, filename);
+    const publicUrl = `/uploads/document-templates/${id}/${filename}`;
+
+    await fs.mkdir(dirPath, { recursive: true });
+    await fs.writeFile(filePath, file.buffer);
+
+    try {
+      doc.backgroundImage.push(publicUrl);
+      await doc.save();
+      return publicUrl;
+    } catch (err) {
+      // Best-effort cleanup of orphan file before surfacing the error.
+      await fs.unlink(filePath).catch((unlinkErr) => {
+        // Don't shadow the original error — log unlink warning separately.
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[uploadBackground] Failed to unlink orphan file ${filePath}: ${String(unlinkErr)}`,
+        );
+      });
+      throw err;
+    }
   }
 
   async remove(id: string): Promise<void> {

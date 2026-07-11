@@ -1,5 +1,20 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Res } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Res,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
+import { memoryStorage } from 'multer';
 import { DocumentTemplateService } from './document-template.service';
 import { CreateDocumentTemplateDto } from './dto/create-document-template.dto';
 import { UpdateDocumentTemplateDto } from './dto/update-document-template.dto';
@@ -58,6 +73,58 @@ export class DocumentTemplateController {
     const html = await this.service.build(id, dto);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(html);
+  }
+
+  /**
+   * TZ-86 Phase A.6 — Upload background image (5 MB max, png|jpeg|webp).
+   *
+   * Multipart contract:
+   *   - URL:    POST /api/document-templates/:id/upload-background
+   *   - Field:  `file` (mandatory; required by FileInterceptor)
+   *   - Limits: fileSize ≤ 5 MB, files ≤ 1, MIME ∈ {image/png, image/jpeg, image/webp}
+   *   - Body:   nothing else (Auth header carries JWT).
+   *
+   * Response: `{ url: '/uploads/...', backgroundImage: string[] }`.
+   *
+   * Validation:
+   *   - FileFilter rejects non-whitelisted MIMEs → BadRequestException → 400.
+   *   - limit.fileSize triggers MulterError('LIMIT_FILE_SIZE') → caught by
+   *     `MulterExceptionFilter` (registered in main.ts) → 413 Payload Too Large.
+   *   - Service enforces MAX_BACKGROUND_IMAGES=5 → 409 Conflict on overflow.
+   *   - Template not found → 404 (DocumentTemplateService.findById throws).
+   *
+   * Storage strategy: `memoryStorage()` so the buffer sits in RAM until the
+   * service has validated the template ID and 5-image cap. Then we write the
+   * file manually under `uploads/document-templates/{id}/{uuidv4}.{ext}` —
+   * main.ts's `useStaticAssets` exposes those URLs at `/uploads/*`.
+   */
+  @Post(':id/upload-background')
+  @AuditAction({ action: 'upload_background', entityType: 'DocumentTemplate' })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      fileFilter: (_req, file, cb) => {
+        const allowed = ['image/png', 'image/jpeg', 'image/webp'];
+        if (!allowed.includes(file.mimetype)) {
+          return cb(
+            new BadRequestException(
+              `Недопустимый MIME-тип файла: ${file.mimetype}. Разрешено: image/png | image/jpeg | image/webp.`,
+            ),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+      limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+    }),
+  )
+  async uploadBackground(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<{ url: string; backgroundImage: string[] }> {
+    const url = await this.service.uploadBackground(id, file);
+    const template = await this.service.findById(id);
+    return { url, backgroundImage: template.backgroundImage };
   }
 
   @Post()
