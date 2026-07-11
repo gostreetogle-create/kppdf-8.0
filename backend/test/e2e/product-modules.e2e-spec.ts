@@ -11,8 +11,9 @@
  */
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../../src/app.module';
+import { loginAsAdmin, authHeader } from '../setup/admin.fixture';
 
 describe('ProductModules (TZ-83 Phase E)', () => {
   let app: INestApplication;
@@ -23,15 +24,12 @@ describe('ProductModules (TZ-83 Phase E)', () => {
       imports: [AppModule],
     }).compile();
     app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: false, transform: true }));
     await app.init();
 
-    // login as seeded admin
-    const res = await request(app.getHttpServer())
-      .post('/api/auth/login')
-      .send({ username: 'admin', password: 'admin-change-me-immediately-in-production' })
-      .expect(200);
-    adminToken = res.body.accessToken ?? res.body.token;
+    const tokens = await loginAsAdmin(app);
+    adminToken = tokens.access;
   });
 
   afterAll(async () => {
@@ -46,7 +44,7 @@ describe('ProductModules (TZ-83 Phase E)', () => {
   it('CRUD round-trip preserves materials[] override', async () => {
     const create = await request(app.getHttpServer())
       .post('/api/product-modules')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set(authHeader(adminToken))
       .send({
         name: 'Test Module E2E',
         article: 'TEST-MOD-001',
@@ -61,21 +59,21 @@ describe('ProductModules (TZ-83 Phase E)', () => {
 
     const list = await request(app.getHttpServer())
       .get('/api/product-modules')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set(authHeader(adminToken))
       .expect(200);
     expect(Array.isArray(list.body)).toBe(true);
     expect(list.body.find((m: { _id: string }) => m._id === moduleId)).toBeDefined();
 
     const got = await request(app.getHttpServer())
       .get(`/api/product-modules/${moduleId}`)
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set(authHeader(adminToken))
       .expect(200);
     expect(got.body.name).toBe('Test Module E2E');
     expect(got.body.dimensions.unit).toBe('мм');
 
     await request(app.getHttpServer())
       .delete(`/api/product-modules/${moduleId}`)
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set(authHeader(adminToken))
       .expect(204);
   });
 
@@ -83,31 +81,31 @@ describe('ProductModules (TZ-83 Phase E)', () => {
     // создать 2 модуля, привязать к продукту, проверить фильтр
     const productRes = await request(app.getHttpServer())
       .post('/api/products')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set(authHeader(adminToken))
       .send({ name: 'E2E Test Product', kind: 'good', unit: 'шт', status: 'new', isActive: true })
       .expect(201);
     const productId = productRes.body._id;
 
     const m1 = await request(app.getHttpServer())
       .post('/api/product-modules')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set(authHeader(adminToken))
       .send({ name: 'E2E Fil 1', materials: [], workTypes: [] })
       .expect(201);
     const m2 = await request(app.getHttpServer())
       .post('/api/product-modules')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set(authHeader(adminToken))
       .send({ name: 'E2E Fil 2', materials: [], workTypes: [] })
       .expect(201);
 
     await request(app.getHttpServer())
       .post(`/api/products/${productId}/modules`)
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set(authHeader(adminToken))
       .send({ moduleId: m1.body._id })
       .expect(201);
 
     const filtered = await request(app.getHttpServer())
       .get(`/api/product-modules?productId=${productId}`)
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set(authHeader(adminToken))
       .expect(200);
     expect(filtered.body.length).toBe(1);
     expect(filtered.body[0]._id).toBe(m1.body._id);
@@ -115,19 +113,19 @@ describe('ProductModules (TZ-83 Phase E)', () => {
     // cleanup
     await request(app.getHttpServer())
       .delete(`/api/products/${productId}/modules/${m1.body._id}`)
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set(authHeader(adminToken))
       .expect(204);
     await request(app.getHttpServer())
       .delete(`/api/product-modules/${m1.body._id}`)
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set(authHeader(adminToken))
       .expect(204);
     await request(app.getHttpServer())
       .delete(`/api/product-modules/${m2.body._id}`)
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set(authHeader(adminToken))
       .expect(204);
     await request(app.getHttpServer())
       .delete(`/api/products/${productId}`)
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set(authHeader(adminToken))
       .expect(204);
   });
 });

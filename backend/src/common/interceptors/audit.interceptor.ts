@@ -64,12 +64,18 @@ export class AuditInterceptor implements NestInterceptor {
         const idFromResponse =
           (data as { _id?: string; id?: string } | undefined)?._id ??
           (data as { _id?: string; id?: string } | undefined)?.id;
+        // Read userId directly from req.user (set by JwtAuthGuard) instead
+        // of relying on AsyncLocalStorage which may have lost scope by the
+        // time this async tap() callback runs.
+        const reqUser = (req as RequestWithUser).user;
         await this.audit.log({
           action: meta.action,
           entityType: meta.entityType,
           entityId: entityId ?? idFromResponse,
           details: { after: this.safeSnapshot(data) },
           ipAddress: req.ip,
+          userId: reqUser?.id,
+          userName: reqUser?.username,
         });
       }),
     );

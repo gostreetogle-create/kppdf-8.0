@@ -15,6 +15,8 @@ export interface LogEntry {
   };
   packageTag?: string;
   ipAddress?: string;
+  userId?: string;
+  userName?: string;
 }
 
 @Injectable()
@@ -33,7 +35,11 @@ export class AuditService {
    */
   async log(entry: LogEntry): Promise<void> {
     try {
+      // Prefer explicitly passed userId/userName (from interceptor) over
+      // AsyncLocalStorage context (which may have lost scope in async tap()).
       const ctx = getCurrentUser();
+      const userId = entry.userId ?? ctx?.userId;
+      const userName = entry.userName ?? ctx?.username;
       await this.model.create({
         action: entry.action,
         entityType: entry.entityType,
@@ -41,8 +47,8 @@ export class AuditService {
           typeof entry.entityId === 'string'
             ? new Types.ObjectId(entry.entityId)
             : entry.entityId,
-        userId: ctx?.userId ? new Types.ObjectId(ctx.userId) : undefined,
-        userName: ctx?.username,
+        userId: userId ? new Types.ObjectId(userId) : undefined,
+        userName,
         details: entry.details,
         packageTag: entry.packageTag,
         ipAddress: entry.ipAddress,

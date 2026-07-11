@@ -34,24 +34,24 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Начало',
     links: [
-      { path: '/overview', label: 'Обзор' },
-      { path: '/foundations', label: 'Tokens' },
+      { path: '/kit/overview', label: 'Обзор' },
+      { path: '/kit/foundations', label: 'Tokens' },
     ],
   },
   {
     label: 'Компоненты',
     links: [
-      { path: '/basics', label: 'Базовые' },
-      { path: '/forms', label: 'Формы' },
-      { path: '/overlays', label: 'Оверлеи' },
-      { path: '/navigation', label: 'Навигация' },
+      { path: '/kit/basics', label: 'Базовые' },
+      { path: '/kit/forms', label: 'Формы' },
+      { path: '/kit/overlays', label: 'Оверлеи' },
+      { path: '/kit/navigation', label: 'Навигация' },
     ],
   },
   {
     label: 'Playground',
     links: [
-      { path: '/playground/theme', label: 'Theme' },
-      { path: '/playground/code', label: 'Code' },
+      { path: '/kit/playground/theme', label: 'Theme' },
+      { path: '/kit/playground/code', label: 'Code' },
     ],
   },
 ];
@@ -105,7 +105,7 @@ const NAV_GROUPS: NavGroup[] = [
             >
               <lucide-angular [img]="menuIcon" [size]="14" aria-hidden="true" />
             </button>
-            <a routerLink="/overview" class="flex items-center gap-2 min-w-0">
+            <a routerLink="/kit/overview" class="flex items-center gap-2 min-w-0">
               <span class="block w-[10px] h-[10px] bg-ink shrink-0" aria-hidden="true"></span>
               <span class="font-display font-bold tracking-tight truncate">
                 Paper &amp; Ink · UI Kit v0.1
@@ -157,7 +157,7 @@ const NAV_GROUPS: NavGroup[] = [
                       <a
                         [routerLink]="link.path"
                         routerLinkActive="bg-sunrise-warm text-paper"
-                        [routerLinkActiveOptions]="{ exact: link.path === '/overview' }"
+                        [routerLinkActiveOptions]="{ exact: link.path === '/kit/overview' }"
                         class="block px-2 py-1.5 text-sm
                                hover:bg-paper-2 transition-colors rounded-sm"
                       >

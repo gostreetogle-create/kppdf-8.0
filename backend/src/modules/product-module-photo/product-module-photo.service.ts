@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import {
@@ -25,6 +25,9 @@ export class ProductModulePhotoService {
   async upsert(
     dto: UpsertProductModulePhotoDto,
   ): Promise<ProductModulePhotoDocument> {
+    if (!dto.url && !dto.photoId) {
+      throw new BadRequestException('At least one of url or photoId is required');
+    }
     if (dto.isMain) {
       // Atomic: demote other mains for this module BEFORE inserting the new main.
       await this.model

@@ -7,6 +7,7 @@ import {
 import {
   NavigationEnd,
   Router,
+  RouterLink,
   RouterOutlet,
 } from '@angular/router';
 import { filter, map, startWith } from 'rxjs/operators';
@@ -18,6 +19,7 @@ import {
   Briefcase,
   BookOpen,
   FileText,
+  Palette,
 } from 'lucide-angular';
 
 /**
@@ -117,6 +119,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     RouterOutlet,
+    RouterLink,
     LucideAngularModule,
     ThemeToggleComponent,
     PiNavDropdownComponent,
@@ -159,6 +162,20 @@ const NAV_CATEGORIES: NavCategory[] = [
             </nav>
 
             <div class="flex items-center gap-3 shrink-0">
+              <a
+                routerLink="/kit"
+                class="pi-icon-btn gap-1 px-2 w-auto pi-focus-ring"
+                aria-label="UI Kit"
+              >
+                <lucide-angular
+                  [img]="paletteIcon"
+                  [size]="12"
+                  aria-hidden="true"
+                />
+                <span class="font-mono text-[10px] tracking-wider">
+                  UI Kit
+                </span>
+              </a>
               <app-theme-toggle />
               @if (user(); as u) {
                 <span class="text-sm text-muted-foreground hidden sm:inline">
@@ -202,6 +219,7 @@ const NAV_CATEGORIES: NavCategory[] = [
 })
 export class AppLayoutComponent {
   protected readonly logOutIcon = LogOut;
+  protected readonly paletteIcon = Palette;
   protected readonly navCategories = NAV_CATEGORIES;
 
   private readonly auth = inject(AuthService);

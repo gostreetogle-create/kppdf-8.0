@@ -12,8 +12,9 @@
  */
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../../src/app.module';
+import { loginAsAdmin, authHeader } from '../setup/admin.fixture';
 
 describe('ProductModulePhotos (TZ-83 Phase E)', () => {
   let app: INestApplication;
@@ -25,19 +26,16 @@ describe('ProductModulePhotos (TZ-83 Phase E)', () => {
       imports: [AppModule],
     }).compile();
     app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: false, transform: true }));
     await app.init();
 
-    const res = await request(app.getHttpServer())
-      .post('/api/auth/login')
-      .send({ username: 'admin', password: 'admin-change-me-immediately-in-production' })
-      .expect(200);
-    adminToken = res.body.accessToken ?? res.body.token;
+    const tokens = await loginAsAdmin(app);
+    adminToken = tokens.access;
 
-    // Создаём родительский модуль для всех тестов
     const m = await request(app.getHttpServer())
       .post('/api/product-modules')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set(authHeader(adminToken))
       .send({ name: 'E2E Photos Module', materials: [], workTypes: [] })
       .expect(201);
     testModuleId = m.body._id;
