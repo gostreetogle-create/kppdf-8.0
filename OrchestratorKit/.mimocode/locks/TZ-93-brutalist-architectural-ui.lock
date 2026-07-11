@@ -1,0 +1,15 @@
+# TZ-93 — Brutalist Architectural UI Foundations lock
+# TZF-00 § 5: protects files modified by this TZ from accidental edits.
+# Phase 1 of 3-phase plan. Phase 2 (TZ-94) and Phase 3 (TZ-95) will extend this lock.
+
+protected:                                                                # files actually modified by TZ-93
+  - frontend/src/styles.css                                                # TZ-93: 3 new @utility + @layer components (pi-tech-label, pi-dashed-panel, pi-corner-marks)
+  - frontend/src/app/pages/playground/theme-editor.page.ts                  # TZ-93: Section III fixture (3 demo cards)
+
+related_locks:
+  - TZ-90-dialog-system.lock          # TZ-90 establishes the @utility + @layer components token discipline
+  - TZ-91-security-hardening.lock      # No overlap (auth/RBAC, unrelated zone)
+
+future_extensions:
+  - TZ-94: 12 components adoption (PiEmptyState, PiBadge, PiTable, form labels) — Layer 3 SERIAL
+  - TZ-95: /kit/* showcase + docs/paper-and-ink.md + docs/add-new-page.md updates — Layer 1

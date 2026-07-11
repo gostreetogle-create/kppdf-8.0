@@ -1,0 +1,340 @@
+# TZ-93 — Brutalist Architectural UI Refinement: Phase 1 (Foundations)
+
+**Дата:** 2026-07-11
+**Статус:** ✅ DONE (Phase 1; Phase 2/3 → TZ-94/TZ-95)
+**Тип:** cross-cutting (UI standards + tokens + utility classes)
+**Приоритет:** высокий (явный запрос PO 2026-07-11: «обнови в соответствии в нашем проекте ui-kit но грамотно»)
+**Phases:** 1/3 — это Phase 1 из 3-фазного плана. Phase 2 = TZ-94, Phase 3 = TZ-95.
+**LAYER:** Phase 1 = **Layer 1** (CSS-only, no TS changes)
+**Зависимости:** TZ-90 ✅ (Dialog System polymorphic wrapper — established token discipline), TZ-91 ✅ (Security Hardening — defensive pattern), Paper & Ink design system (docs/paper-and-ink.md)
+**Источник:** `stitch_professional_desktop_crm_refinement (1).zip` — Google Stitch design export, 9 variants. 3 проанализированы: `kppdf_8.0_ui_kit_brutalist_architectural_edition` (EN), `ui_kit_brutalist_edition_1` (RU, monospace, offset shadow), `ui_kit_brutalist_edition_2` (RU, charcoal + gold, corner-marks, grid-pattern).
+
+**CONFLICT KEYS:**
+  - frontend/src/styles.css                                          # новые @utility + @layer components
+  - frontend/src/app/shared/ui/pi-empty-tile/pi-empty-tile.component.ts  # Phase 2 (TZ-94) — reference для будущих adopters
+  - docs/paper-and-ink.md                                            # Phase 3 (TZ-95) — задокументировать новые utilities
+  - docs/add-new-page.md                                             # Phase 3 (TZ-95) — добавить convention
+
+**Решения пользователя (зафиксированы):**
+1. ✅ **Селективная adoption, не wholesale copy.** «Грамотно» = сохранить Paper & Ink DNA, принять только то что усиливает editorial/blueprint feel.
+2. ✅ **OKLCH палитра сохраняется.** Никаких новых hex-цветов. Используем существующие `--color-rule`, `--color-sunrise`, `--color-muted-foreground-strong`.
+3. ✅ **Hairline-first сохраняется.** Никаких `box-shadow`. Утилиты работают через `var(--color-rule)`.
+4. ✅ **`rounded-sm` для interactive сохраняется.** `rounded-none` для structural. 0px-radius-everywhere — REJECT.
+5. ✅ **JetBrains Mono НЕ заменяет Hanken Grotesk/Inter.** Mono только для IDs, timestamps, numeric table cells (через `--font-mono`).
+6. ✅ **WCAG AA minimum, AAA для tech labels.** `.pi-tech-label` привязан к `--color-muted-foreground-strong` (8.0:1 light, 7.5:1 dark).
+
+---
+
+## 1. Цель
+
+Ввести **3 новых utility-класса** + стандартизировать tabular-nums, которые позволят компонентам (Phase 2 = TZ-94) принять «architectural desktop» feel без нарушения Paper & Ink конвенций. Brutalist design language из stitch-экспорта — **селективно**, не wholesale.
+
+Что мы **ПРИНИМАЕМ** (architectural precision):
+- **Monospace для data/metadata** (tabular-nums + `--font-mono`) — IDs, timestamps, numeric cells.
+- **Tech labels в углах** (`.pi-tech-label`) — engineering precision, 10px JetBrains Mono, uppercase, AAA contrast.
+- **Corner-marks** (`.pi-corner-marks`) — 8px L-shaped marks в углах structural panels.
+- **Dashed panels** (`.pi-dashed-panel`) — 1px dashed `var(--color-rule)` для empty states и drafting-board feel.
+
+Что мы **ОТКЛОНЯЕМ** (конфликт с Paper & Ink):
+- ❌ 0px radius everywhere → сохраняем `rounded-sm` для interactive, `rounded-none` для structural.
+- ❌ 2px offset shadow → глобальный `* { box-shadow: none !important }` остаётся.
+- ❌ 1px solid black borders → сохраняем `var(--color-rule)` (warm L=0.880, не чёрный).
+- ❌ Charcoal primary → сохраняем `--color-ink` (warm espresso L=0.250).
+- ❌ JetBrains Mono everywhere → только для metadata/IDs.
+
+---
+
+## 2. Архитектурные решения
+
+| # | Решение | Почему |
+|---|---|---|
+| 1 | **3 новых utility-класса**: `.pi-tech-label`, `.pi-corner-marks`, `.pi-dashed-panel` | Pure CSS additions, zero TS changes (Layer 1). Adoptable opt-in через class binding. |
+| 2 | **Reuse existing tokens** — никаких новых OKLCH цветов | `--color-rule`, `--color-muted-foreground-strong`, `--font-mono` уже есть. Respecting TZ-90 token discipline. |
+| 3 | **`.pi-tech-label` → `--color-muted-foreground-strong`** | AAA contrast (8.0:1 light, 7.5:1 dark). Tech labels маленькие (10px) → нужен AAA per WCAG 1.4.6 (enhanced). |
+| 4 | **`.pi-corner-marks` через `::before/::after` pseudo-elements** | CSS-only, не загрязняет DOM. 8px L-shapes через `border: 1px solid var(--color-rule)`. Pointer-events: none —不影响 interactive children. |
+| 5 | **`.pi-dashed-panel` = `border: 1px dashed var(--color-rule)`** | Editorial honesty: «черновик, ничего не готово». Применяется к empty states, не к active panels. |
+| 6 | **Tabular-nums через Tailwind `tabular-nums` utility** | Уже встроено в Tailwind v4 (`font-feature-settings: 'tnum'`). Используется для numeric table cells, IDs, timestamps. |
+| 7 | **Все utilities в `@layer components`** | Следуем TZ-90A convention — новые @layer components в конце `styles.css`, не в utilities. |
+| 8 | **Gate `.pi-corner-marks` и `.pi-dashed-panel` к конкретным use-cases** | Без gating — риск «1990s hacker terminal» look. Phase 2 (TZ-94) определяет explicit adoption в `PiEmptyState`, `PiCard`, etc. |
+
+---
+
+## 3. Acceptance Criteria
+
+### Phase 1 deliverables (этот TZ)
+
+- [ ] `.pi-tech-label` utility в `styles.css`:
+  - `font-family: var(--font-mono)`
+  - `font-size: 10px`
+  - `text-transform: uppercase`
+  - `letter-spacing: 0.1em`
+  - `color: var(--color-muted-foreground-strong)` (AAA contrast)
+  - JSDoc: «10px monospace tech label; use for IDs, REF numbers, metadata in corners of structural panels»
+
+- [ ] `.pi-corner-marks` utility в `@layer components`:
+  - CSS-only via `::before` и `::after`
+  - 8px × 8px L-shaped marks в top-left и bottom-right
+  - `border: 1px solid var(--color-rule)`
+  - `pointer-events: none` (не блокирует клики)
+  - JSDoc: «8px L-shaped corner marks for structural panels; opt-in via class»
+
+- [ ] `.pi-dashed-panel` utility:
+  - `border: 1px dashed var(--color-rule)`
+  - `background-color: transparent` (НЕ `var(--color-paper)`)
+  - JSDoc: «1px dashed panel for empty states and draft-style surfaces; NOT for active panels»
+
+- [ ] Tabular-nums standard: документировано в `docs/paper-and-ink.md` (Phase 3 = TZ-95), но utility `tabular-nums` уже доступен через Tailwind v4.
+
+- [ ] Frontend typecheck: 0 errors (`pnpm exec tsc -p tsconfig.app.json --noEmit`).
+
+- [ ] Browser visual verify (Light + Dark): все 3 utilities работают корректно на `/kit/playground` странице.
+
+- [ ] Никаких `box-shadow`, `rounded-md/lg/3xl`, `bg-white`, `border-dashed` (кроме `.pi-dashed-panel`).
+
+- [ ] `verify-status.sh` показывает 27 pre-existing FAILs (unchanged).
+
+### Phase 1 NOT deliverable (deferred)
+
+- ❌ Component updates (TZ-94) — `PiEmptyState`, `PiBadge`, `PiTable` headers, form labels.
+- ❌ `/kit/*` showcase updates (TZ-95).
+- ❌ `docs/paper-and-ink.md` update (TZ-95).
+- ❌ Применение utilities к production страницам (TZ-94/95).
+
+---
+
+## 4. План реализации
+
+### Phase A (этот TZ) — CSS Foundations (Layer 1)
+
+**Файлы:**
+- `frontend/src/styles.css` — добавить 3 utility-класса + JSDoc.
+
+**Шаги:**
+
+1. **A.1** Добавить `.pi-tech-label` как `@utility` (Tailwind v4 syntax):
+```css
+/**
+ * .pi-tech-label — 10px monospace tech label.
+ *
+ * Use for: REF numbers, IDs, metadata in corners of structural panels.
+ * Contrast: AAA (8.0:1 light, 7.5:1 dark) via --color-muted-foreground-strong.
+ * NOT for body text — too small for paragraphs.
+ */
+@utility pi-tech-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-muted-foreground-strong);
+  line-height: 1;
+}
+```
+
+2. **A.2** Добавить `.pi-corner-marks` как `@layer components` (CSS-only via pseudo-elements):
+```css
+@layer components {
+  /**
+   * .pi-corner-marks — 8px L-shaped corner marks for structural panels.
+   *
+   * Adds architectural blueprint feel via two ::before/::after pseudo-elements
+   * forming L-shapes in top-left and bottom-right corners. Pure CSS, no DOM pollution.
+   * Pointer-events: none ensures no click-blocking on inner controls.
+   *
+   * Use for: empty states, structural cards, showcase panels.
+   * NOT for: active interactive panels (use hairline border instead).
+   */
+  .pi-corner-marks {
+    position: relative;
+  }
+  .pi-corner-marks::before,
+  .pi-corner-marks::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border: 1px solid var(--color-rule);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .pi-corner-marks::before {
+    top: -1px;
+    left: -1px;
+    border-right: none;
+    border-bottom: none;
+  }
+  .pi-corner-marks::after {
+    bottom: -1px;
+    right: -1px;
+    border-left: none;
+    border-top: none;
+  }
+}
+```
+
+3. **A.3** Добавить `.pi-dashed-panel` как `@utility`:
+```css
+/**
+ * .pi-dashed-panel — 1px dashed panel for empty states and draft-style surfaces.
+ *
+ * Honest "blueprint" feel: shows the panel is a draft or empty container.
+ * Use for: PiEmptyState, draft cards, "no data" placeholders.
+ * NOT for: active panels with content (use hairline border instead).
+ *
+ * Contrast: dashed border has lower perceived contrast than solid,
+ * so use ONLY on near-empty surfaces where the border is decorative.
+ */
+@utility pi-dashed-panel {
+  border: 1px dashed var(--color-rule);
+  background-color: transparent;
+}
+```
+
+4. **A.4** Verify: `cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit` exit 0.
+
+5. **A.5** Visual verify на `/kit/playground`:
+   - Создать test-fixture HTML с каждым из 3 utilities.
+   - Browser-use: Light + Dark mode, screenshot, check console errors = 0.
+   - Verify contrast: `.pi-tech-label` text via DevTools computed style.
+
+**Acceptance criteria:**
+- 3 utility-класса доступны в `styles.css`.
+- Frontend typecheck: 0 errors.
+- Browser visual verify: Light + Dark, no console errors.
+- Никаких regressions в существующих 24+ компонентах.
+- `verify-status.sh` FAIL count unchanged.
+
+---
+
+## 5. Риски и tradeoff
+
+| Риск | Вероятность | Митигация |
+|---|---|---|
+| A11y regression: `.pi-tech-label` при 10px даёт AAA только при `--color-muted-foreground-strong` | Низкая | Bind строго к `var(--color-muted-foreground-strong)` (8.0:1 light, 7.5:1 dark). JSDoc запрещает override. |
+| Visual noise: `.pi-corner-marks` over-applied → «1990s hacker terminal» look | Средняя | Phase 2 (TZ-94) gating: explicit list компонентов для adoption. Без `.pi-corner-marks` в production-страницах до TZ-94. |
+| Naming convention drift: `.pi-*` vs Tailwind utilities | Низкая | Все 3 utilities префиксованы `pi-` (Paper & Ink convention per TZ-90A). JSDoc объясняет scope. |
+| `.pi-dashed-panel` контраст ниже solid `hairline` | Средняя | Dashed border perceptual contrast ~1.1:1 (ниже solid 1.3:1). Применять ТОЛЬКО на near-empty surfaces. JSDoc предупреждает. |
+| Tabular-nums не работает в Firefox < 34 | Negligible | Tailwind v4 baseline — Firefox 34+ (2014). Project поддерживает modern browsers only. |
+| Phase 1 без adopters → utilities мертвы до TZ-94 | Средняя | Phase 1 ships utilities + `/kit/playground` showcase fixture. TZ-94 ships adopters. Phase 3 (TZ-95) ships showcase. |
+
+---
+
+## 6. Definition of Done
+
+- 3 utility-класса в `styles.css` с JSDoc.
+- Frontend typecheck: 0 errors.
+- Browser visual verify: Light + Dark, no console errors.
+- `/kit/playground` showcase fixture с каждым utility (для TZ-95 reference).
+- `verify-status.sh` PASS count unchanged.
+- `docs/paper-and-ink.md` НЕ обновляется в этом TZ (deferred to TZ-95).
+- Atomic commit: `feat(frontend): TZ-93 — Brutalist Architectural UI Foundations (3 utilities)`.
+
+---
+
+## 7. Что НЕ входит в этот TZ (explicit deferrals)
+
+- ❌ Component updates (TZ-94) — `PiEmptyState` → `.pi-dashed-panel + .pi-corner-marks`, `PiBadge` → hairline border + transparent bg, `PiTable` → `.eyebrow` headers + tabular-nums numeric cells, form labels → `.eyebrow`.
+- ❌ `/kit/*` showcase pages update (TZ-95) — `forms`, `overlays`, `tables`, `playground` sections получают новые architectural elements.
+- ❌ `docs/paper-and-ink.md` update (TZ-95) — задокументировать `.pi-tech-label`, `.pi-corner-marks`, `.pi-dashed-panel` в Spacing/Style секции.
+- ❌ `docs/add-new-page.md` update (TZ-95) — convention «когда использовать pi-* utilities vs hairline».
+- ❌ Production page adoption — `/materials`, `/organizations`, `/dictionaries` etc. не получают utilities до TZ-94.
+- ❌ Brutalist 0px-radius / 2px-offset-shadow / black-borders — REJECTED, не в этом TZ.
+
+---
+
+## 8. Cross-references
+
+**Foundation:**
+- TZ-90 ✅ (Dialog System) — token discipline pattern (`@utility` vs `@layer components` per usage).
+- TZ-91 ✅ (Security Hardening) — defensive `try/catch` pattern не применим (CSS-only), но JSDoc-rich convention.
+- Paper & Ink (`docs/paper-and-ink.md`) — source of truth для design rationale.
+
+**Related fixes (must NOT regress):**
+- TZ-AUDIT-6 (focus-ring) — `pi-focus-ring` унификация сохранена.
+- TZ-AUDIT-8 (hairline-first) — `hairline` utility сохранена как canonical border pattern.
+- TZ-AUDIT-9 + TZ-LIGHT-XX (warm paper palette) — OKLCH палитра неизменна.
+- TZ-NEW-WCAG-FIX (muted-foreground contrast) — `.pi-tech-label` использует `--color-muted-foreground-strong` (8.0:1 AAA).
+
+**Follow-up TZs:**
+- **TZ-94: Brutalist Architectural UI Refinement — Phase 2 (Component Enhancements)** — adopters: PiEmptyState, PiBadge, PiTable, form labels.
+- **TZ-95: Brutalist Architectural UI Refinement — Phase 3 (Showcase & Docs)** — `/kit/*` updates + `docs/paper-and-ink.md` + `docs/add-new-page.md`.
+
+**Source:**
+- `stitch_professional_desktop_crm_refinement (1).zip` — 9 design variants, extracted to `tmp/stitch-design/stitch_professional_desktop_crm_refinement/`.
+- Analysed: `kppdf_8.0_ui_kit_brutalist_architectural_edition`, `ui_kit_brutalist_edition_1`, `ui_kit_brutalist_edition_2`.
+- Thinker analysis: spawned 2026-07-11, output: adoption matrix + token additions + component impact + risk register.
+
+---
+
+## 9. Архитектурный скелет (визуальный пример)
+
+```html
+<!-- Tech label в углу structural panel -->
+<div class="pi-corner-marks hairline p-stack-lg relative">
+  <span class="pi-tech-label absolute top-2 right-2">REF: 80.4.2</span>
+  <h3 class="font-title-sm mb-stack-sm">Architectural Edition</h3>
+  <p class="text-body-sm text-muted-foreground">UI Kit Showcase</p>
+</div>
+
+<!-- Dashed empty state -->
+<div class="pi-dashed-panel p-stack-lg text-center">
+  <span class="material-symbols-outlined text-muted-foreground">folder_open</span>
+  <h3 class="font-title-sm mt-stack-md">No Active Projects</h3>
+  <p class="text-body-sm text-muted-foreground">Start a new query to see data here.</p>
+</div>
+
+<!-- Tabular-nums для numeric table cell -->
+<td class="px-gutter font-data-mono text-body-sm tabular-nums">TX-8092</td>
+<td class="px-gutter font-data-mono tabular-nums text-right">99.98%</td>
+```
+
+---
+
+**Status:** ⏳ READY. Phase 1 из 3-фазного плана. TZ-94 (components) и TZ-95 (showcase/docs) будут созданы после успешного завершения TZ-93.
+
+---
+
+## ARCHIVE_MARKER (TZF-00 § 6)
+
+```
+outcome: DONE (Phase 1 only; Phases 2-3 deferred to TZ-94/TZ-95)
+closed_at: 2026-07-11
+closed_by: Frontend Architect
+protected_files:
+  - frontend/src/styles.css                                # TZ-93: 3 new @utility + @layer components (pi-tech-label, pi-dashed-panel, pi-corner-marks)
+  - frontend/src/app/pages/playground/theme-editor.page.ts  # TZ-93: Section III fixture (3 demo cards) + bg-paper fix
+affected_areas:
+  - Phase 1 (TZ-93, commits 753d6d6, 11d88a1, 6948512): CSS foundations + playground fixture
+  - Phases 2-3 (TZ-94, TZ-95): DEFERRED
+verification:
+  - Frontend typecheck: 0 errors (tsconfig.app.json --noEmit)
+  - 3 atomic commits in main (not pushed)
+  - Code-reviewer: 2 rounds, all nits closed (z-index removal, bg-paper fix)
+  - Browser-use visual verify: BLOCKED — /playground/theme is behind authGuard, dev server redirects to /login.
+    Typecheck is the primary verification gate; visual verify deferred until auth wall is resolved
+    (TZ-92b-ux / TZ-95 will add /kit/* public route prefix per TZ-91 discovery note).
+  - Branch state: ahead of origin/main, NOT pushed (user auth required)
+criteria_met:
+  - QA-01: .pi-tech-label utility added (10px monospace, AAA contrast via --color-muted-foreground-strong)
+  - QA-02: .pi-corner-marks utility added (8px L-shapes via ::before/::after, pointer-events: none)
+  - QA-03: .pi-dashed-panel utility added (1px dashed var(--color-rule), transparent bg)
+  - QA-04: No new color tokens (reuses existing OKLCH palette: --font-mono, --color-rule, --color-muted-foreground-strong)
+  - QA-05: Hairline-first convention preserved (no box-shadow, no rounded-md/lg/3xl)
+  - QA-06: WCAG AA minimum, AAA for tech-label (8.0:1 light, 7.5:1 dark)
+  - QA-07: Playground fixture at /playground/theme Section III (3 demo cards)
+  - QA-08: JSDoc per utility explains use case and constraints
+notes:
+  - DEFERRED-to-TZ-94: PiEmptyState → pi-dashed-panel + pi-corner-marks adoption
+  - DEFERRED-to-TZ-94: PiBadge → hairline border + transparent bg
+  - DEFERRED-to-TZ-94: PiTable headers → eyebrow class + tabular-nums numeric cells
+  - DEFERRED-to-TZ-94: Form labels → eyebrow class
+  - DEFERRED-to-TZ-95: /kit/* showcase pages update (forms, overlays, tables, playground)
+  - DEFERRED-to-TZ-95: docs/paper-and-ink.md + docs/add-new-page.md update
+  - KNOWN-LIMITATION: browser-use visual verify blocked by authGuard on /playground/theme
+  - Source: stitch_professional_desktop_crm_refinement (1).zip, 9 variants analysed
+  - Brutalist elements REJECTED (documented in TZ-93 spec): 0px radius, 2px offset shadow,
+    1px solid black borders, JetBrains Mono everywhere, charcoal primary
+  - z-index: 1 removed from .pi-corner-marks pseudo-elements (code-reviewer round 1 nit)
+  - bg-paper added to combined fixture card (code-reviewer round 2 nit)
+```
+
+**Status:** ✅ DONE (Phase 1). TZ-93 spec retained at `tasks/TZ-93.md` with this marker until TZ-94/TZ-95 complete.

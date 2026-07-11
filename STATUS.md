@@ -658,3 +658,42 @@ Spec-only commit. Source-build codebase-memory-mcp на Linux/macOS/Windows-from
 **Известные ограничения:** see "NOT TOUCHED" above. Phase C/D/E will extend `TZ-90-dialog-system.lock` with their own protected files.
 
 **Lock file:** `OrchestratorKit/.mimocode/locks/TZ-90-dialog-system.lock` (6 protected files, 2 future_extensions).
+
+### TZ-93 Phase 1 (2026-07-11) — Brutalist Architectural UI Foundations
+
+**Scope:** TZ-93 spec (3-phase plan, tasks/TZ-93.md). This commit covers Phase 1 only — CSS foundations (3 utility classes) + playground fixture. Phase 2 (TZ-94, 12 components adoption) and Phase 3 (TZ-95, /kit/* showcase + docs) deferred.
+
+**Phase 1 — CSS foundations** (`frontend/src/styles.css`, commit `753d6d6`):
+- 3 new utility classes adopted from `stitch_professional_desktop_crm_refinement`:
+  - `.pi-tech-label` (`@utility`) — 10px monospace tech label, uppercase, 0.1em letter-spacing, AAA contrast via `--color-muted-foreground-strong` (8.0:1 light, 7.5:1 dark)
+  - `.pi-dashed-panel` (`@utility`) — 1px dashed `var(--color-rule)`, transparent background
+  - `.pi-corner-marks` (`@layer components`) — 8px L-shaped marks in top-left and bottom-right corners via `::before/::after`, pure CSS, `pointer-events: none`
+- Никаких новых color tokens — reuse existing OKLCH palette (`--font-mono`, `--color-rule`, `--color-muted-foreground-strong`)
+- Respects Paper & Ink conventions: hairline-first, no `box-shadow`, no `rounded-md/lg/3xl`, warm OKLCH palette, WCAG AA minimum
+
+**Phase 1 — playground fixture** (`frontend/src/app/pages/playground/theme-editor.page.ts`, commits `11d88a1` + `6948512`):
+- New Section III «Architectural Utilities» with 3 demo cards
+- Card 1: `pi-corner-marks` + `pi-tech-label` (solid hairline border + corner marks + REF label)
+- Card 2: `pi-dashed-panel` alone (transparent background, dashed border)
+- Card 3: Combined (`pi-corner-marks` + `pi-dashed-panel` + `bg-paper` + `pi-tech-label`)
+- Code-reviewer nits closed: z-index removed from pseudo-elements (round 1), bg-paper added to combined card (round 2)
+
+**REJECTED from brutalist source** (documented in TZ-93 spec adoption matrix):
+- 0px radius everywhere → kept `rounded-sm` (interactive) / `rounded-none` (structural)
+- 2px offset shadow → global `* { box-shadow: none !important }` сохранён
+- 1px solid black borders → kept warm `var(--color-rule)` (L=0.880, not pure black)
+- JetBrains Mono everywhere → `--font-mono` только для tech-label, IDs, numeric cells
+- Charcoal primary → kept `--color-ink` (warm espresso L=0.250)
+
+**Code-reviewer verdict:** 🟢 Ship-ready. 2 rounds, all nits closed.
+
+**Затронутые файлы:** `frontend/src/styles.css`, `frontend/src/app/pages/playground/theme-editor.page.ts`, `OrchestratorKit/.mimocode/locks/TZ-93-brutalist-architectural-ui.lock` (NEW).
+
+**Verification:** frontend typecheck 0 errors, code-reviewer approved (2 rounds), 3 atomic commits, branch ahead of origin/main (NOT pushed, user auth required).
+
+**Known limitations:**
+- **Browser-use visual verify BLOCKED** — `/playground/theme` за authGuard, dev server redirects to `/login`. Typecheck — primary verification gate. Visual verify deferred до auth wall resolution.
+- DEFERRED-to-TZ-94: 12 components adoption (PiEmptyState, PiBadge, PiTable headers, form labels) — Layer 3 SERIAL
+- DEFERRED-to-TZ-95: `/kit/*` showcase + `docs/paper-and-ink.md` + `docs/add-new-page.md` — Layer 1
+
+**Lock file:** `OrchestratorKit/.mimocode/locks/TZ-93-brutalist-architectural-ui.lock` (2 protected files, 2 future_extensions: TZ-94, TZ-95).

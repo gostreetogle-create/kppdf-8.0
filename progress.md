@@ -1469,3 +1469,51 @@
 - Spec test for polymorphic 4×4 fallback table → future test-infra work
 
 **Lock file:** `OrchestratorKit/.mimocode/locks/TZ-90-dialog-system.lock` (6 protected files, 2 future_extensions)
+## [2026-07-11] — Завершено: TZ-93 Phase 1 (Brutalist Architectural UI Foundations)
+
+**Исполнитель:** Frontend Architect
+
+**Статус:** ✅ DONE (Phase 1). Phase 2 (TZ-94, components) и Phase 3 (TZ-95, showcase/docs) deferred.
+
+**Что сделано (3 atomic commits, ahead of origin/main):**
+
+- **CSS foundations** (`frontend/src/styles.css`, commit `753d6d6`):
+  - 3 новых utility-classes adopted from `stitch_professional_desktop_crm_refinement`:
+    - `.pi-tech-label` (`@utility`) — 10px monospace tech label, uppercase, 0.1em letter-spacing, AAA contrast via `--color-muted-foreground-strong` (8.0:1 light, 7.5:1 dark)
+    - `.pi-dashed-panel` (`@utility`) — 1px dashed `var(--color-rule)`, transparent background, для empty states
+    - `.pi-corner-marks` (`@layer components`) — 8px L-shaped marks в top-left и bottom-right via `::before/::after`, pure CSS, `pointer-events: none`
+  - Никаких новых color tokens — reuse existing OKLCH palette (`--font-mono`, `--color-rule`, `--color-muted-foreground-strong`)
+
+- **z-index fix + playground fixture** (`frontend/src/app/pages/playground/theme-editor.page.ts`, commit `11d88a1`):
+  - Удалён `z-index: 1` из `.pi-corner-marks::before/::after` (code-reviewer round 1 nit — мешал tooltips/dropdowns)
+  - Добавлен Section III «Architectural Utilities» с 3 demo cards (corner-marks, dashed-panel, combined)
+  - Card 3 (combined) получил `bg-paper` для symmetry (code-reviewer round 2 nit — чтобы pattern работал на non-paper surfaces)
+
+- **bg-paper nit fix** (commit `6948512`): follow-up fix для code-reviewer round 2.
+
+**Затронутые файлы:**
+- `frontend/src/styles.css` (TZ-93: 3 new @utility + @layer components)
+- `frontend/src/app/pages/playground/theme-editor.page.ts` (TZ-93: Section III fixture)
+- `OrchestratorKit/.mimocode/locks/TZ-93-brutalist-architectural-ui.lock` (NEW, 2 protected files)
+
+**Verification:**
+- Frontend typecheck: 0 errors (`tsconfig.app.json --noEmit`)
+- Code-reviewer: 2 rounds, все nits closed (z-index removal, bg-paper fix)
+- Atomic commits: 3 (CSS foundations + z-index/fixture + bg-paper nit)
+- Branch state: ahead of origin/main, NOT pushed (user auth required)
+
+**Известные ограничения:**
+- **Browser-use visual verify BLOCKED** — /playground/theme за authGuard, dev server redirects to /login. Typecheck — primary verification gate. Visual verify deferred до auth wall resolution (TZ-92b-ux / TZ-95 will add /kit/* public route prefix).
+- DEFERRED-to-TZ-94: PiEmptyState → pi-dashed-panel + pi-corner-marks; PiBadge → hairline border; PiTable headers → eyebrow + tabular-nums; form labels → eyebrow.
+- DEFERRED-to-TZ-95: /kit/* showcase pages + docs/paper-and-ink.md + docs/add-new-page.md updates.
+
+**Lock file:** `OrchestratorKit/.mimocode/locks/TZ-93-brutalist-architectural-ui.lock` (2 protected files, 2 future_extensions: TZ-94, TZ-95)
+
+**Source:** `stitch_professional_desktop_crm_refinement (1).zip` — 9 design variants, 3 проанализированы (`kppdf_8.0_ui_kit_brutalist_architectural_edition`, `ui_kit_brutalist_edition_1`, `ui_kit_brutalist_edition_2`).
+
+**REJECTED from brutalist source** (documented в `tasks/TZ-93.md` adoption matrix):
+- 0px radius everywhere → kept `rounded-sm` (interactive) / `rounded-none` (structural)
+- 2px offset shadow → global `* { box-shadow: none !important }` сохранён
+- 1px solid black borders → kept warm `var(--color-rule)` (L=0.880, not pure black)
+- JetBrains Mono everywhere → `--font-mono` только для tech-label, IDs, numeric cells
+- Charcoal primary → kept `--color-ink` (warm espresso L=0.250)
