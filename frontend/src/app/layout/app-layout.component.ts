@@ -1,66 +1,99 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+} from '@angular/core';
+import {
+  NavigationEnd,
   Router,
-  RouterLink,
-  RouterLinkActive,
   RouterOutlet,
 } from '@angular/router';
-import { LucideAngularModule, LogOut } from 'lucide-angular';
+import { filter, map, startWith } from 'rxjs/operators';
+import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  LucideAngularModule,
+  LogOut,
+  Package,
+  Briefcase,
+  BookOpen,
+} from 'lucide-angular';
 import { AuthService } from '../core/auth.service';
 import { ThemeToggleComponent } from './theme-toggle.component';
+import {
+  PiNavDropdownComponent,
+  type PiNavDropdownItem,
+} from '../shared/ui/menu/pi-nav-dropdown.component';
 
-interface NavLink {
-  path: string;
+interface NavCategory {
+  id: string;
   label: string;
-  /** disabled = route not yet built; rendered muted + non-clickable. */
-  disabled?: boolean;
+  icon: unknown;
+  items: PiNavDropdownItem[];
 }
 
-// TZ-83 Phases B+C: «Виды работ» + «Модули» добавлены как nav-link справочника/каталога.
-// «Товар» (product detail /products/:id) — добавляется в Phase D (отдельный commit).
-const NAV_LINKS: NavLink[] = [
-  { path: '/materials', label: 'Материалы' },
-  { path: '/organizations', label: 'Организации' },
-  { path: '/products', label: 'Продукция' },
-  { path: '/modules', label: 'Модули' },
-  { path: '/work-types', label: 'Виды работ' },
-  { path: '/dictionaries', label: 'Справочники' },
-  { path: '/orders', label: 'Заказы' },
-  { path: '/contracts', label: 'Договоры' },
+/**
+ * TZ-CategoriesNav — AppLayout top-panel nav grouped into 3 dropdowns:
+ *
+ *   Каталог       ← Продукция · Модули · Материалы · Виды работ
+ *     (Package)   — TZ-83 product → module → material hierarchy
+ *
+ *   Сделки        ← Организации · Договоры · Заказы
+ *     (Briefcase) — counterparty + commercial obligations
+ *
+ *   Справочники   ← Справочники
+ *     (BookOpen)  — meta-catalog umbrella route
+ *
+ * Active-category algorithm: when ANY sub-route is active (e.g. /products/:id),
+ * the parent category trigger is highlighted via bg-sunrise-warm. Boundary
+ * matching uses `path === url || url.startsWith(path + '/')` so that
+ * /orders does NOT accidentally match /orders-archive (if it ever exists).
+ *
+ * Standalone + OnPush + signal-based; signal `currentUrl` from Router
+ * NavigationEnd events is the source of truth.
+ */
+const NAV_CATEGORIES: NavCategory[] = [
+  {
+    id: 'catalog',
+    label: 'Каталог',
+    icon: Package,
+    items: [
+      { path: '/products', label: 'Продукция' },
+      { path: '/modules', label: 'Модули' },
+      { path: '/materials', label: 'Материалы' },
+      { path: '/work-types', label: 'Виды работ' },
+    ],
+  },
+  {
+    id: 'deals',
+    label: 'Сделки',
+    icon: Briefcase,
+    items: [
+      { path: '/organizations', label: 'Организации' },
+      { path: '/contracts', label: 'Договоры' },
+      { path: '/orders', label: 'Заказы' },
+    ],
+  },
+  {
+    id: 'reference',
+    label: 'Справочники',
+    icon: BookOpen,
+    items: [
+      { path: '/dictionaries', label: 'Все справочники' },
+    ],
+  },
 ];
 
-/**
- * TZ-NEW AppLayoutComponent — the operational site shell.
- *
- * Replaces KitLayoutComponent as the default landing layout. Hosts
- * the operational site (auth-guarded, /, /materials, future
- * /counterparties, /products, …). The UI-Kit itself is preserved
- * at /kit/* for site-building work but is NOT shown in this nav.
- *
- * Layout (TZ-AUDIT-5 — visual coherence w/ KitLayout):
- *  - `.pi-page-frame` container owns the max-width and responsive
- *    horizontal padding (24/40/64px). One source of truth.
- *  - Sticky header uses `.pi-edge-bleed` to bleed to viewport
- *    edges without a `-mx-6 -mx-10 -mx-16 px-6 px-10 px-16`
- *    bleed hack. Inner padding mirrors the page-frame automatically.
- *  - Header border is `border-rule` (neutral hairline) — the same
- *    color the kit-layout, page-header and section headers use.
- *    This kills the "warm-bar / cold-bar / cold-bar" stutter that
- *    made the top of the page look disconnected.
- *  - Main uses `pt-page-y` = 32px breathing room below the sticky
- *    header so the first page-header has room to land.
- *  - Footer keeps the warm sunrise-warm accent for warmth — but
- *    it is the ONLY warm border in the layout now, anchored to
- *    a footer-only job: the sign-off, not the navigation.
- *
- * Standalone + OnPush + signal-based, matching the rest of the
- * Paper & Ink codebase.
- */
 @Component({
   selector: 'app-app-layout',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule, ThemeToggleComponent],
+  imports: [
+    RouterOutlet,
+    LucideAngularModule,
+    ThemeToggleComponent,
+    PiNavDropdownComponent,
+  ],
   template: `
     <div class="min-h-screen bg-paper text-ink font-body">
       <div class="pi-page-frame">
@@ -87,24 +120,14 @@ const NAV_LINKS: NavLink[] = [
               class="flex items-center gap-1 flex-1 justify-center"
               aria-label="Главная навигация"
             >
-              @for (link of navLinks; track link.path) {
-                @if (link.disabled) {
-                  <span
-                    class="px-3 py-1.5 text-sm text-muted-foreground rounded-sm cursor-not-allowed"
-                    [attr.aria-disabled]="true"
-                    [title]="link.label + ' — скоро'"
-                  >
-                    {{ link.label }}
-                  </span>
-                } @else {
-                  <a
-                    [routerLink]="link.path"
-                    routerLinkActive="bg-sunrise-warm text-paper"
-                    class="px-3 py-1.5 text-sm hover:bg-paper-2 transition-colors rounded-sm"
-                  >
-                    {{ link.label }}
-                  </a>
-                }
+              @for (cat of navCategories; track cat.id) {
+                <app-pi-nav-dropdown
+                  [label]="cat.label"
+                  [icon]="cat.icon"
+                  [items]="cat.items"
+                  [active]="activeCategoryId() === cat.id"
+                  [ariaLabel]="cat.label"
+                />
               }
             </nav>
 
@@ -152,12 +175,40 @@ const NAV_LINKS: NavLink[] = [
 })
 export class AppLayoutComponent {
   protected readonly logOutIcon = LogOut;
-  protected readonly navLinks = NAV_LINKS;
+  protected readonly navCategories = NAV_CATEGORIES;
 
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
   protected readonly user = this.auth.user;
+
+  /** Source of truth: signal-mapped URL from Router NavigationEnd events. */
+  protected readonly currentUrl = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map((e) => e.urlAfterRedirects),
+      startWith(this.router.url),
+    ),
+    { initialValue: this.router.url },
+  );
+
+  /**
+   * Returns the id of the active category when ANY of its sub-paths is
+   * the current URL (with `/` boundary check). Null when on a route not
+   * covered by any nav category (e.g. `/login`).
+   */
+  protected readonly activeCategoryId = computed<string | null>(() => {
+    const url = this.currentUrl();
+    if (!url) return null;
+    for (const cat of NAV_CATEGORIES) {
+      for (const item of cat.items) {
+        if (url === item.path || url.startsWith(item.path + '/')) {
+          return cat.id;
+        }
+      }
+    }
+    return null;
+  });
 
   protected async onLogout(): Promise<void> {
     await this.auth.logout();
