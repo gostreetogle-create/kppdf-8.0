@@ -1,0 +1,17 @@
+# Lock file
+Locked as of 2026-07-11 — TZ-85: Расчёт себестоимости поверх модульной иерархии (Product→Module→Material+WorkType).
+
+Owner: Backend Developer + Frontend Engineer
+Protected files:
+- backend/src/modules/cost-calculation/schema.ts
+- backend/src/modules/cost-calculation/service.ts
+- backend/src/modules/cost-calculation/controller.ts
+- backend/src/modules/cost-calculation/dto/create-cost-calculation.dto.ts
+- backend/src/modules/cost-calculation/module.ts
+- backend/test/e2e/cost-calculation.e2e-spec.ts
+- frontend/src/app/shared/services/pi-cost-calculations.service.ts
+- frontend/src/app/shared/services/pi-cost-calculations.service.spec.ts
+- frontend/src/app/pages/products/cost-calculation-detail-dialog.component.ts
+- frontend/src/app/pages/products/product-detail.page.ts (Section V integration)
+
+Unlock: only via orchestrator approval (новое TZ-NN с пометкой «successor»).
