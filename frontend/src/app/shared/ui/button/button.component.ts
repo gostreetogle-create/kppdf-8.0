@@ -89,7 +89,15 @@ export class ButtonComponent {
    *  (e.g. <app-pi-button size="icon" ariaLabel="Settings">). */
   readonly ariaLabel = input<string | null>(null);
 
-  readonly pressed = output<MouseEvent>();
+  /**
+   * Click event emitted from the inner `<button>` / `<a>`.
+   * (Renamed from `pressed` 2026-07-11 fix #1: 23 template sites in pages/* and
+   * kit/* bind `(click)="fn($event)"` — Angular convention is to name mouse
+   * click Output `click`, not `pressed`. Zero `(pressed)` consumers existed
+   * pre-fix, so no consumers break. Public API is now: `<app-pi-button
+   * (click)="someHandler($event)">`.)
+   */
+  readonly click = output<MouseEvent>();
 
   readonly computedClass = computed(() =>
     cn(
@@ -102,6 +110,6 @@ export class ButtonComponent {
 
   onClick(event: MouseEvent): void {
     if (this.disabled()) return;
-    this.pressed.emit(event);
+    this.click.emit(event);
   }
 }

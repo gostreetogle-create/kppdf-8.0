@@ -169,7 +169,22 @@ async function run() {
   }
 }
 
-run().catch((err) => {
-  console.error('Unexpected failure:', err.message);
-  process.exit(99);
-});
+// Top-level invocation only when this file is the entry point. Gated by
+// `require.main === module` so jest specs can `require()` the script for
+// unit testing without triggering the startup-and-exit side effects.
+if (require.main === module) {
+  run().catch((err) => {
+    console.error('Unexpected failure:', err.message);
+    process.exit(99);
+  });
+}
+
+module.exports = {
+  parseArgs,
+  run,
+  ensureDirectConnection,
+  printHelp,
+  MIN_PASSWORD_LEN,
+  BOOLEAN_FLAGS,
+  FALLBACK_MONGO_URI,
+};

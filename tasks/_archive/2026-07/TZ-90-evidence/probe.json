@@ -1,0 +1,110 @@
+{
+  "_comment": "TZ-90 Phase A audit artifact. Light + dark theme getComputedStyle() expectations after the 5 CSS edits to frontend/src/styles.css shipped 2026-07-11. Computed values reflect what the CSS rules produce when correctly parsed by modern Chromium/Firefox/Safari. Cross-check with live browser via DevTools on /overlays to confirm parity.",
+  "tz": "TZ-90A",
+  "phase": "Phase A (tokens + shadow/animation)",
+  "date": "2026-07-11",
+  "verifier_agent": "Buffy (TZ-90A executor)",
+  "scope": "frontend/src/styles.css + tasks/_archive/2026-07/TZ-90-evidence/probe.json",
+  "themes": {
+    "light": {
+      "_html_class_required": "<html> (no .dark class)",
+      "_localStorage_pin": "localStorage.removeItem('pi.theme')",
+
+      "panel": {
+        "selector": ".cdk-overlay-pane.pi-overlay-panel",
+        "_probe_command": "getComputedStyle(document.querySelector('.cdk-overlay-pane.pi-overlay-panel'))",
+
+        "borderRadius": "8px",
+        "_expected_value_line": "var(--dialog-radius) :: 8px",
+
+        "boxShadow": "rgba(0, 0, 0, 0.24) 0px 8px 32px 0px",
+        "_expected_value_line": "var(--dialog-shadow) [light] :: 0 8px 32px rgba(0,0,0,0.24)",
+
+        "backgroundColor": "rgb(253, 244, 235)",
+        "_expected_value_line": "var(--dialog-bg) = var(--color-paper) [light] :: oklch(0.972 0.015 70) ≈ rgb(253,244,235)",
+
+        "color": "rgb(61, 49, 41)",
+        "_expected_value_line": "var(--dialog-text) = var(--color-ink) [light] :: oklch(0.250 0.010 70) ≈ rgb(61,49,41)",
+
+        "maxHeight": "90vh",
+        "_preserved_by": "TZ-DIALOG-OVERFLOW-FIX rounds 1-5 + always !important",
+
+        "overflowX": "clip",
+        "_preserved_by": "TZ-DIALOG-OVERFLOW-FIX round 3 — `clip` over `hidden`",
+
+        "overflowY": "auto",
+        "_preserved_by": "TZ-DIALOG-OVERFLOW-FIX round 1"
+      },
+
+      "backdrop": {
+        "selector": ".cdk-overlay-backdrop",
+        "_probe_command": "getComputedStyle(document.querySelector('.cdk-overlay-backdrop'))",
+
+        "backgroundColor": "rgba(0, 0, 0, 0.5)",
+        "_expected_value_line": "var(--overlay-bg) [light] :: oklch(0% 0 0 / 0.5) → rgba(0,0,0,0.5)",
+        "_previous_value_round5": "rgba(0,0,0,0.3) (30% editorial; replaced per TZ-90 user-spec)",
+        "_fallback_line": "var(--overlay-bg-fallback) :: rgb(0 0 0 / 0.5)"
+      },
+
+      "animation": {
+        "_phase_b_dependency": "Phase A ships keyframe + class; Phase B wires .pi-dialog-host-open via PiDialogService.open()",
+        "_scope_check": "<head> must contain `@keyframes pi-dialog-scale-in` for the animation to be applicable; verifiable via document.styleSheets inspection"
+      }
+    },
+
+    "dark": {
+      "_html_class_required": "<html class=\"dark\">",
+      "_localStorage_pin": "localStorage.setItem('pi.theme', 'dark'); document.documentElement.classList.add('dark')",
+
+      "panel": {
+        "selector": ".cdk-overlay-pane.pi-overlay-panel",
+
+        "borderRadius": "8px",
+        "_note": "var(--dialog-radius) overridden only by light; same 8px in dark",
+
+        "boxShadow": "rgba(0, 0, 0, 0.48) 0px 8px 32px 0px",
+        "_expected_value_line": "var(--dialog-shadow) [dark] :: 0 8px 32px rgba(0,0,0,0.48)",
+
+        "backgroundColor": "rgb(38, 32, 26)",
+        "_expected_value_line": "var(--dialog-bg) = var(--color-paper) [dark] :: oklch(0.25 0.015 70) ≈ rgb(38,32,26)",
+
+        "color": "rgb(232, 221, 207)",
+        "_expected_value_line": "var(--dialog-text) = var(--color-ink) [dark] :: oklch(0.92 0.015 70) ≈ rgb(232,221,207)",
+
+        "maxHeight": "90vh",
+        "overflowX": "clip",
+        "overflowY": "auto"
+      },
+
+      "backdrop": {
+        "backgroundColor": "rgba(0, 0, 0, 0.5)",
+        "_note": "var(--overlay-bg) override only by light; same 0.5 in dark"
+      },
+
+      "animation": {
+        "_phase_b_dependency": "Same as light — animation applied per open() call"
+      }
+    }
+  },
+
+  "preserved_rules": {
+    "TZ-DIALOG-OVERFLOW-FIX-rounds-1-5": [
+      "max-height: 90vh !important",
+      "overflow-x: clip !important",
+      "overflow-y: auto !important",
+      "@media print reset retained + ADDED box-shadow: none !important for paper rendering"
+    ],
+    "TZ-DIALOG-VISIBILITY-FIX-round-5": [
+      "background-color: oklch-from-var-primary path RETAINED via --overlay-bg token alias",
+      "RGB fallback RETAINED via --overlay-bg-fallback token alias",
+      "backdrop-filter: none (editorial no-blur)"
+    ]
+  },
+
+  "phase_b_dependency_note": "Phase A only SHIPS the @keyframes + .pi-dialog-host-open CSS. Phase B (TZ-90B) adds `variant` + `width=xl` to <app-pi-dialog>, and PiDialogService.open() will add .pi-dialog-host-open class to the dialog host element after attach(). Until Phase B runs, opening a dialog will NOT trigger the animation (no class binding yet). Browser-verification of animation should be deferred until B ships.",
+
+  "verified_locally": false,
+  "_verification_path": "Run live browser check on http://localhost:4200/overlays → open Section IV 'Алерты' button → run the probe commands → compare to this file's expected values for both themes. Mark verified_locally=true + add date when parity confirmed.",
+
+  "next_step_user_action": "Open http://localhost:4200/overlays in Chrome DevTools, toggle dark mode via localStorage('pi.theme','dark') + html.dark, open any dialog from Section IV, and run the probe commands in the console. Expected values should match this JSON byte-for-byte (within decimal rounding)."
+}

@@ -1,0 +1,113 @@
+# QA-04: Сводка проверки + план действий
+
+> Дата проверки: 2026-07-11
+> Сервисы: Frontend :4200 ✅ | Backend :3000 ✅ | MongoDB ✅
+
+---
+
+## Результаты проверки
+
+### Что работает хорошо ✅
+
+1. **Запуск:** `node start.mjs` корректно поднимает Mongo + backend + frontend
+2. **Auth flow:** Login → JWT access+refresh → auto-refresh при 401 — реализован грамотно, с single-flight protection
+3. **Silent HTTP:** Паттерн `catchError → of({ ok, error })` подавляет RxJS console errors — чистая консоль в DevTools
+4. **UI Kit:** Консистентный дизайн, TailwindCSS + кастомные компоненты, density -3 глобально
+5. **Audit interceptor:** 205 uses @AuditAction на 73 контроллера — отличное покрытие
+6. **Guards:** JWT + Roles guards глобально, `@Public()` для открытых эндпоинтов
+7. **Tests:** 257/259 frontend unit tests pass (99.2%)
+8. **Soft-delete:** Mongoose plugin с auto-filtering `deletedAt:null`
+9. **Swagger:** 223 эндпоинта задокументированы, доступны на `/docs`
+10. **Graceful shutdown:** Обработка SIGTERM/SIGINT
+11. **Build:** Frontend (3.47s) и Backend собираются без ошибок
+12. **OnPush:** 98/100 компонентов используют ChangeDetectionStrategy.OnPush
+13. **XSS:** 0 найдено innerHTML/bypassSecurity рисков
+
+---
+
+## Матрица приоритетов
+
+| # | Находка | Приоритет | Файл |
+|---|---------|-----------|------|
+| 1 | /register открыт без ограничений | 🔴 CRITICAL | QA-01:1.1 |
+| 2 | Пустой пароль admin по умолчанию | 🔴 CRITICAL | QA-01:1.2 |
+| 3 | Слабые JWT secrets | 🔴 CRITICAL | QA-01:1.3 |
+| 4 | /auth/me возвращаетpasswordHash | 🟠 HIGH | QA-01:1.4, QA-03:3.1 |
+| 5 | CORS на localhost:3000 | 🟠 HIGH | QA-01:1.5 |
+| 6 | Swagger доступен без auth | 🟠 HIGH | QA-01:1.6 |
+| 7 | Нет rate-limit на login | 🟠 HIGH | QA-01:1.7 |
+| 8 | Нет RBAC на write-эндпоинтах | 🟠 HIGH | QA-01:1.8 |
+| 9 | Пагинация отсутствует | 🟠 HIGH | QA-02:2.1, QA-03:3.2 |
+| 10 | Prod API URL захардкожен | 🟠 HIGH | QA-02:2.2 |
+| 11 | authGuard не проверяет валидность | 🟠 HIGH | QA-02:2.3 |
+| 12 | Audit не логируетuserId | 🟠 HIGH | QA-03:3.3 |
+| 13 | publicOnlyGuard → /home (нет такого) | 🟡 MEDIUM | QA-02:2.4 |
+| 14 | debounce timer не очищается | 🟡 MEDIUM | QA-02:2.5 |
+| 15 | Нет глобального error handler | 🟡 MEDIUM | QA-02:2.6 |
+| 16 | Дублирование кода list-pages | 🟡 MEDIUM | QA-02:2.7 |
+| 17 | Photo thumbnails не генерируются | 🟡 MEDIUM | QA-03:3.5 |
+| 18 | Orphan uploads не удаляются | 🟡 MEDIUM | QA-03:3.6 |
+| 19 | BOM невалидные ссылки | 🟡 MEDIUM | QA-03:3.7 |
+| 20 | Cost-calculation не учитывает материалы | 🟡 MEDIUM | QA-03:3.8 |
+| 21 | Нет favicon | 🔵 LOW | QA-02:2.8 |
+| 22 | Meta description на английском | 🔵 LOW | QA-02:2.9 |
+| 23 | Title страницы с артефактами | 🔵 LOW | QA-02:2.10 |
+| 24 | Swagger нет декораторов | 🔵 LOW | QA-03:3.9 |
+| 25 | Admin seed без дефолтных данных | 🔵 LOW | QA-03:3.10 |
+| 26 | E2e: сломан import supertest | 🟠 HIGH | QA-05:5.1 |
+| 27 | E2e: разные пароли admin | 🟠 HIGH | QA-05:5.2 |
+| 28 | .env пароль не совпадает с seeded | 🟡 MEDIUM | QA-05:5.3 |
+| 29 | Swagger: 0 @ApiTags | 🔵 LOW | QA-05:5.4 |
+| 30 | Button spec устарел (pressed→click) | 🔵 LOW | QA-05:5.5 |
+| 31 | Soft-delete: плагин не используется | 🟠 HIGH | QA-06:6.1 |
+| 32 | Bundle 13.33 MB (912 KB vendor) | 🟠 HIGH | QA-06:6.2 |
+| 33 | Нет .env.example | 🟡 MEDIUM | QA-06:6.3 |
+| 34 | 7 schemas без индексов | 🟡 MEDIUM | QA-06:6.4 |
+| 35 | module-detail subscription leak | 🟡 MEDIUM | QA-06:6.5 |
+| 36 | Admin password не обновляется в БД | 🟡 MEDIUM | QA-06:6.6 |
+| 37 | 0 транзакций в сервисах | 🔵 LOW | QA-06:6.7 |
+| 38 | Swagger: 0 @ApiTags | 🔵 LOW | QA-06:6.8 |
+
+---
+
+## План действий (рекомендуемый)
+
+### Этап 1: Безопасность (сейчас)
+- [ ] Ограничить /register (убрать @Public или ограничить роль)
+- [ ] Добавить проверку пароля admin seed (>= 8 символов)
+- [ ] Исправить CORS_ORIGIN → http://localhost:4200
+- [ ] Добавить rate-limit на /auth/login (5 req/min)
+- [ ] Очистить /auth/me отpasswordHash
+
+### Этап 2: Стабильность (на этой неделе)
+- [ ] Исправить supertest import в e2e (import * as → import default)
+- [ ] Выровнять пароли в e2e тестах (единый пароль из test-db.ts)
+- [ ] Добавить пагинацию на orders и contracts
+- [ ] Исправить prod API URL (environment-based)
+- [ ] Исправить authGuard — проверятьuser() а не токен
+- [ ] ДобавитьuserId в audit interceptor
+- [ ] Исправить publicOnlyGuard redirect → /
+
+### Этап 3: Качество (ближайший спринт)
+- [ ] Добавить глобальный ErrorHandler на фронте
+- [ ] Очистить debounce timer в ngOnDestroy
+- [ ] Рефакторинг list-pages (вынести общую логику)
+- [ ] Photo thumbnails через sharp
+- [ ] Orphan upload cleanup
+
+### Этап 4: Polish (потом)
+- [ ] Swagger documentation для key-эндпоинтов
+- [ ] Расширенный seed (единицы, категории, склады)
+- [ ] Favicon + meta title/description
+- [ ] BOM migration + cost-calculation fix
+
+---
+
+## Файлы с описанием
+
+- `tasks/QA-01-security.md` — Аудит безопасности (10 находок)
+- `tasks/QA-02-frontend.md` — Фронтенд замечания (10 находок)
+- `tasks/QA-03-backend.md` — Бэкенд замечания (10 находок)
+- `tasks/QA-04-summary.md` — Этот файл (сводка + матрица 38 находок)
+- `tasks/QA-05-build-tests.md` — Сборка, тесты, TypeScript, Swagger (5 находок)
+- `tasks/QA-06-deeper.md` — БД, производительность, консистентность (8 находок)

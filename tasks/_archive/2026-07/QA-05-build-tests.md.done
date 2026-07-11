@@ -1,0 +1,107 @@
+# QA-05: Сборка, тесты, TypeScript, Swagger
+
+> Дата проверки: 2026-07-11
+> Frontend build: ✅ (3.47s) | Backend build: ✅ | Frontend tests: 257/259 pass | Backend TS: 48 errors (e2e only)
+
+---
+
+## Найденные проблемы
+
+### 5.1 [HIGH] E2e тесты: сломан импорт supertest
+
+**Файлы:**
+- `backend/test/e2e/product-modules.e2e-spec.ts:14`
+- `backend/test/e2e/product-module-photos.e2e-spec.ts`
+
+```typescript
+import * as request from 'supertest';  // ← TS2349: not callable
+```
+
+**Проблема:** `supertest` v7+ экспортирует default export, а не namespace. `import * as request` создаёт объект, который не вызывается как функция. 48 ошибок TypeScript.
+
+**Рекомендация:** Заменить на:
+```typescript
+import request from 'supertest';
+```
+(как уже сделано в `auth.e2e-spec.ts:1`)
+
+---
+
+### 5.2 [HIGH] E2e тесты: разные пароли admin в разных файлах
+
+**Файлы:**
+- `backend/test/setup/test-db.ts:31` → `ADMIN_PASSWORD = 'admin123456'`
+- `backend/test/e2e/auth.e2e-spec.ts:27` → `password: 'admin123456'` ✅
+- `backend/test/e2e/product-modules.e2e-spec.ts:32` → `password: 'admin-change-me-immediately-in-production'`
+- `backend/test/e2e/product-module-photos.e2e-spec.ts:33` → `password: 'admin-change-me-immediately-in-production'`
+
+**Проблема:** `test-db.ts` устанавливает `ADMIN_PASSWORD = 'admin123456'`, но `product-modules` и `product-module-photos` e2e-тесты используют дефолтный пароль `admin-change-me-immediately-in-production`. Эти тесты будут падать, потому что в test DB admin создаётся с паролем `admin123456`.
+
+**Рекомендация:** Привести все e2e-тесты к единому паролю из `test-db.ts`:
+```typescript
+.send({ username: 'admin', password: 'admin123456' })
+```
+
+---
+
+### 5.3 [MEDIUM] .env vs реальный пароль admin: путаница
+
+**Файлы:**
+- `.env:12` → `ADMIN_PASSWORD=admin123`
+- `backend/src/config/defaults.ts:33` → `DEFAULT_ADMIN_PASSWORD = 'admin-change-me-immediately-in-production'`
+
+**Проблема:** `.env` задаёт `admin123`, но admin в БД создан с паролем `admin-change-me-immediately-in-production` ( потому что seed выполнился ДО добавления .env, или .env не читается). Пользователь не может войти с паролем из .env.
+
+**Рекомендация:**
+- Добавить в README чёткую инструкцию: "При первом запуске admin создаётся с паролем по умолчанию. Смените пароль через /api/users/{id}/change-password"
+- ИЛИ: при bootstrap проверять, совпадает ли пароль в .env с хешем в БД, и если нет — обновлять хеш
+
+---
+
+### 5.4 [MEDIUM] Swagger: 223 эндпоинта задокументированы, но 0 @ApiTags
+
+**Файл:** Все контроллеры (73 файла)
+
+**Проблема:** Swagger UI показывает все 223 эндпоинта в одном плоском списке без тегов/групп. Неудобно для навигации.
+
+**Рекомендация:** Добавить `@ApiTags('Materials')`, `@ApiTags('Auth')` и т.д. на каждый контроллер. Angular-like approach: один decorator на класс контроллера.
+
+---
+
+### 5.5 [LOW] Frontend unit test: button.component.spec.ts устарел
+
+**Файл:** `frontend/src/app/shared/ui/button/button.component.spec.ts:81-97`
+
+```typescript
+fixture.componentInstance.pressed.subscribe(pressedSpy);  // ← pressed не существует
+```
+
+**Проблема:** Output `pressed` был переименован в `click` (2026-07-11), но тест не обновлён. 2 теста падают.
+
+**Рекомендация:** Заменить `pressed` на `click` в тесте:
+```typescript
+fixture.componentInstance.click.subscribe(clickSpy);
+```
+
+---
+
+## Что работает хорошо ✅
+
+| Проверка | Результат |
+|----------|-----------|
+| Frontend build (ng build) | ✅ 3.47s, 0 ошибок |
+| Backend build (nest build) | ✅ 0 ошибок |
+| Frontend unit tests | 257/259 pass (99.2%) |
+| OnPush adoption | 98/100 компонентов (98%) |
+| @AuditAction покрытие | 205 usage / 73 controllers |
+| XSS (innerHTML) | 0 найдено |
+| Swagger документация | 223 эндпоинта |
+| Frontend proxy | корректно настроен |
+
+---
+
+## Рекомендуемый порядок исправления
+
+1. **Сейчас:** Исправить supertest import (5.1), выровнять пароли в e2e (5.2)
+2. **На этой неделе:** Разобраться с password drift (5.3), добавить @ApiTags (5.4)
+3. **Потом:** Исправить button spec (5.5)

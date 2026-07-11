@@ -1,0 +1,179 @@
+# QA-06: Дополнительные проверки (БД, производительность, консистентность)
+
+> Дата проверки: 2026-07-11
+
+---
+
+## Найденные проблемы
+
+### 6.1 [HIGH] Soft-delete: неиспользование плагина
+
+**Файл:** `backend/src/database/soft-delete.plugin.ts`
+
+**Проблема:** Плагин предоставляет `.softDelete()` и `.restore()` хелперы, но **ни один сервис их не использует** (0 вызовов). Все сервисы делают raw `$set: { deletedAt: new Date() }`. Это:
+- Обходит audit hook плагина (нет автоматического аудита удаления)
+- Неконсистентно: table-template.service.ts уже исправлен (комментарий в коде), остальные — нет
+- Причина: `.softDelete()` — query helper, работает через `Model.where().softDelete()`, а сервисы используют `model.updateOne()`
+
+**Рекомендация:**
+- Либо переписать сервисы на использование `.softDelete()`
+- Либо убрать плагин и оставить raw $set (проще, но теряем audit)
+- Минимум: исправить критические модули (stock-movement, reservation, order)
+
+---
+
+### 6.2 [HIGH] Frontend bundle: 13.33 MB dist
+
+**Файл:** `frontend/dist/kppdf-frontend/browser/`
+
+**Проблема:**
+- Общий размер: 13.33 MB (63 JS файлов)
+- Крупнейший chunk: 912 KB (вероятно shared vendor bundle)
+- 4 chunk'а > 200 KB
+
+**Рекомендация:**
+- Проверить, что tree-shaking работает корректно
+- Рассмотреть `@angular/material` tree-shaking (если используется не весь)
+- Добавить bundle analyzer: `ng build --stats-json` + `webpack-bundle-analyzer`
+
+---
+
+### 6.3 [MEDIUM] Нет .env.example
+
+**Проблема:** Нет шаблона `.env.example` для новых разработчиков. Единственный источник правды — сам `.env` (который в .gitignore) и README.
+
+**Рекомендация:** Создать `.env.example` с комментариями:
+```
+# MongoDB
+MONGO_URI=mongodb://localhost:27017/kppdf?replicaSet=rs0&directConnection=true
+MONGO_DB=kppdf
+
+# JWT (смените в продакшене!)
+JWT_SECRET=change-me-in-production
+JWT_REFRESH_SECRET=change-me-refresh-in-production
+
+# Admin (создаётся при первом запуске)
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=change-me-immediately
+```
+
+---
+
+### 6.4 [MEDIUM] Schemas без явных индексов (7 шт)
+
+**Файлы:**
+- `document-table-type.schema.ts`
+- `import-jobs.schema.ts`
+- `photo.schema.ts`
+- `routing-step.schema.ts`
+- `warehouse.schema.ts`
+- `work-center.schema.ts`
+- `work-type.schema.ts`
+
+**Проблема:** Эти схемы не имеют `.index()` или `unique` декораторов. Все они — маленькие справочники (< 100 записей), поэтому индексы не критичны. Но при росте данных ( warehouse с thousands of items) это станет проблемой.
+
+**Рекомендация:**
+- `warehouse.schema.ts`: добавить индекс на `name` (для поиска)
+- Остальные: пока OK, но пометить как TODO для масштабирования
+
+---
+
+### 6.5 [MEDIUM] module-detail.page: потенциальная утечка подписки
+
+**Файл:** `frontend/src/app/pages/modules/module-detail.page.ts:257`
+
+```typescript
+ngOnInit(): void {
+  this.reloadPhotos();
+}
+
+private reloadPhotos(): void {
+  this.photosSvc.list(mid).subscribe((res) => {  // ← нет отписки
+    if (res.ok) this.photos.set(res.data);
+  });
+}
+```
+
+**Проблема:** `subscribe()` в `reloadPhotos()` не имеет отписки. Если пользователь быстро переключается между страницами, подписка может сработать после уничтожения компонента.
+
+**Рекомендация:** Использовать `takeUntilDestroyed(this.destroyRef)`:
+```typescript
+import { DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+
+private destroyRef = inject(DestroyRef);
+
+private reloadPhotos(): void {
+  this.photosSvc.list(mid)
+    .pipe(takeUntilDestroyed(this.destroyRef))
+    .subscribe((res) => { ... });
+}
+```
+
+---
+
+### 6.6 [MEDIUM] .env пароль не обновляет хеш в БД
+
+**Файл:** `backend/src/common/seed/admin.seed.ts:91-95`
+
+```typescript
+const userCount = await this.users.count();
+if (userCount > 0) {
+  this.logger.debug('Users already exist; skipping admin seed');
+  return;  // ← пароль из .env ИГНОРИРУЕТСЯ
+}
+```
+
+**Проблема:** Admin seed создаёт пользователя только при пустой БД. Если вы меняете `ADMIN_PASSWORD` в `.env` — пароль в БД **не обновляется**. Пользователь не может войти с новым паролем.
+
+**Рекомендация:**
+- Либо: добавить проверку при bootstrap — если пароль в .env отличается от хеша в БД — обновить хеш
+- Либо: документировать в README: "Для смены пароля используйте `/api/users/{id}/change-password`"
+
+---
+
+### 6.7 [LOW] Нет транзакций в критических операциях
+
+**Файл:** Все сервисы
+
+**Проблема:** Ни один сервис не использует MongoDB сессии/транзакции (0 results для `session|Transaction`). Для операций типа "создать заказ + зарезервировать_stock" это может привести к inconsistent state.
+
+**Рекомендация:**
+- Добавить транзакции для: stock-movement, reservation, order+closing
+- Использовать `mongoose.startSession()` + `session.withTransaction()`
+
+---
+
+### 6.8 [LOW] Swagger: 0 @ApiTags decorators
+
+**Файл:** Все 73 контроллера
+
+**Проблема:** 223 эндпоинта задокументированы, но без тегов — все в плоском списке. Неудобно для навигации.
+
+**Рекомендация:** Добавить `@ApiTags('Auth')`, `@ApiTags('Materials')` и т.д. на каждый контроллер.
+
+---
+
+## Что проверено дополнительно
+
+| Область | Результат |
+|---------|-----------|
+| MongoDB индексы | 96 index definitions, 7 schemas без indexes |
+| Soft-delete плагин | Есть, но не используется сервисами (0 .softDelete() calls) |
+| Bundle size | 13.33 MB total, 912 KB largest chunk |
+| .env.example | Отсутствует |
+| Subscription cleanup | 1 реальная утечка (module-detail.page) |
+| Транзакции | 0 транзакций во всех сервисах |
+| DTO validation | 114/115 DTO имеют валидаторы |
+| Hardcoded secrets | Не найдено |
+| Logging sensitive data | Не найдено |
+| Missing await | Не найдено |
+
+---
+
+## Рекомендуемый порядок исправления
+
+1. **Сейчас:** Создать .env.example (6.3), документировать password drift (6.6)
+2. **На этой неделе:** Исправить module-detail subscription leak (6.5), начать использовать .softDelete() (6.1)
+3. **В ближайшем спринте:** Добавить транзакции на критические операции (6.7), оптимизировать bundle (6.2)
+4. **Потом:** Добавить @ApiTags (6.8), индексы на warehouse (6.4)

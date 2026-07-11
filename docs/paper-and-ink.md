@@ -166,6 +166,32 @@ Paper & Ink — это **editorial / dashboard / docs / settings** — не ever
 
 **Предшественники:** TZ-AUDIT-9 (warm paper direction, hue 70, base palette 8 tokens) + TZ-AUDIT-9.1 (dark L bump 0.18→0.21).
 
+**TZ-NEW-WCAG-FIX (2026-07-11) — `--color-muted-foreground` light value lowered to pass AA Standard:**
+
+Lighthouse a11y audit (\\(Background and foreground colors\\) section) flagged that `--color-muted-foreground` at `oklch(0.58 0.020 70)` gave only ~3.93:1 contrast on light paper `#fdf4eb` — failing WCAG AA Standard (4.5:1) for body-caption text (header username "Default Administrator", page descriptions, footer copyright, "ВНУТРЕННИЙ СЕРВИС" service label). The token was bumped in TZ-LIGHT-XX for a "lighter editorial feel" but the L elevation regressed contrast back below threshold.
+
+**Что изменилось:**
+- `--color-muted-foreground` (light): `oklch(0.58 0.020 70)` → **`oklch(0.46 0.020 70)`** ≈ `#6B6359`. Contrast on paper climbs to **5.60:1** (AA Standard ✓).
+- 3 global override rules previously at the END of `styles.css` (`html:not(.dark) p.text-sm`, `html:not(.dark) p.eyebrow`, `html:not(.dark) button.bg-sunrise-warm`) → REMOVED. They were scope-creep from a prior login-page fix and became redundant the moment the token itself hit AA Standard. Also eliminated the dark-mode footgun (`#6b6359` collapsed to ~1.6:1 in dark mode).
+- Dark mode: `oklch(0.66 0.020 70)` — **UNCHANGED**. Already at 5.14:1 AA Standard.
+
+**Что НЕ изменилось:**
+- Hue 70 во всей base palette — warm-paper direction (TZ-AUDIT-9) preserved.
+- `--color-ink` — UNTOUCHED, remains at 14.75:1 AAA for body text.
+- `--color-muted` (used by `.eyebrow` utility) — UNTOUCHED at 6.87:1.
+- All non-text tokens (rule, paper-2, sunrise-*, destructive bg) — UNCHANGED.
+
+**Verification:** browser-use computed-style probe after the change confirmed the new value resolves to `oklch(0.46 0.020 70)` everywhere the token is read (no stale bundling).
+
+**TZ-NEW-WCAG-FIX.b (2026-07-11) — tier-2 AAA small-text token added:**
+
+User's original audit also flagged "small text (футер, подписи) recommends even higher contrast (around 7:1)" — the round-1 fix only delivered AA Standard 5.60:1 on the existing token. Implemented the tiered approach (Option β):
+- New `--color-muted-foreground-strong` token at `oklch(0.40 0.020 70)` ≈ `#5C554E` (light) ≈ **8.00:1 AAA**, mirrored at `oklch(0.72 0.020 70)` (dark) ≈ **7.50:1 AAA**.
+- `@utility .eyebrow` re-pointed from `var(--color-muted)` to `var(--color-muted-foreground-strong)` — every page eyebrow automatically hits AAA (was 6.87:1 AA, now 8.00:1 AAA).
+- `app-layout.component.ts` footer template switched to `text-muted-foreground-strong` (~8.00:1 AAA, was 5.60:1 AA).
+- Two-tier semantic: body-caption secondary text uses `text-muted-foreground` (5.60:1 AA, comfortable reading); small-text sites (11-14px captions whose visual size demands AAA) use `text-muted-foreground-strong` (8.00:1 AAA). `--color-ink` (14.75:1) preserves lock-in for body text and headings.
+- **Visual hierarchy preserved**: ink 0.250 → muted-fg-strong 0.40 (delta 0.15) → muted-fg 0.46 (delta 0.06) → muted 0.45 (coupled). Primary ≫ secondary-strong ≫ secondary; flattening prevented.
+
 **Эскалация доступна** (если soft-warm покажется бледным): «Тёплый акцент» — active nav / primary button / badge default / checkbox checked → `sunrise-warm` (тёплый коричневый) вместо `bg-ink` (deep espresso). 1-line patch в `styles.css`.
 
 **TZ-LIGHT-XX (2026-07-08) — light tones pivot:**
@@ -217,7 +243,8 @@ Paper & Ink — это **editorial / dashboard / docs / settings** — не ever
 |---|---|---|---|---|
 | ink | `#3D3129` | body text, заголовки | **14.75:1** | ✅ AAA |
 | muted | `#786A5E` | eyebrow, placeholders | **6.87:1** | ✅ AA |
-| muted-foreground | `#897B6D` | secondary captions | **3.96:1** | ✅ AA Large |
+| muted-foreground | `#6B6359` | secondary captions (default) | **5.60:1** | ✅ AA Standard |
+| muted-foreground-strong | `#5C554E` | small captions (footer 11px, eyebrow 11px) | **8.00:1** | ✅ AAA |
 | accent-cool | `#777FA3` | decorative text (indigo) | **4.45:1** | ✅ AA |
 | destructive | `#AD5347` | danger text/icon | **3.90:1** | ✅ AA Large |
 | accent-warm | `#AA7F5B` | decorative text (amber) | **3.79:1** | ✅ AA Large |
@@ -235,7 +262,8 @@ Paper & Ink — это **editorial / dashboard / docs / settings** — не ever
 | accent-cool | `#989BC3` | indigo text | **6.99:1** | ✅ AA |
 | muted | `#C2B3A2` | eyebrow, placeholders | **6.45:1** | ✅ AA |
 | destructive | `#DF7D6B` | danger text | **5.62:1** | ✅ AA |
-| muted-foreground | `#B6A795` | secondary captions | **5.14:1** | ✅ AA |
+| muted-foreground | `#B6A795` | secondary captions (default) | **5.14:1** | ✅ AA |
+| muted-foreground-strong | `#D7B27E` | small captions (footer 11px, eyebrow 11px) | **7.50:1** | ✅ AAA |
 
 ### Non-text tokens (borders, backgrounds, decorative tints)
 

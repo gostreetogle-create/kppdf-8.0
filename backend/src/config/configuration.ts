@@ -1,3 +1,8 @@
+import {
+  DEFAULT_ADMIN_PASSWORD,
+  DEFAULT_ADMIN_USERNAME,
+} from './defaults';
+
 export interface AppConfig {
   port: number;
   nodeEnv: string;
@@ -50,9 +55,7 @@ export default (): AppConfig => ({
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d',
   },
   admin: {
-    username: process.env.ADMIN_USERNAME ?? 'admin',
-    password:
-      process.env.ADMIN_PASSWORD ??
-      'admin-change-me-immediately-in-production',
+    username: process.env.ADMIN_USERNAME ?? DEFAULT_ADMIN_USERNAME,
+    password: process.env.ADMIN_PASSWORD ?? DEFAULT_ADMIN_PASSWORD,
   },
 });

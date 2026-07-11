@@ -41,9 +41,19 @@ import { TemplatePortal } from '@angular/cdk/portal';
 })
 export class MenuTriggerDirective {
   /**
-   * Optional `<ng-template piDropdownContent>` projected inside the
-   * trigger's host element. Captured via contentChild() so the parent
-   * template can keep the menu HTML co-located with the trigger.
+   * Required `<ng-template piDropdownContent>` project INSIDE the trigger
+   * host element. The directive is applied on the host, and Angular's
+   * contentChild() pulls the projected template from the host's content.
+   *
+   * (One prior retry went off-piste: switched to `input<TemplateRef|null>`
+   * bound from consumer via `[menuTemplate]="menuTpl()"`. That approach
+   * failed at runtime because Angular's `viewChild<TemplateRef>('name')`
+   * signal API doesn't resolve string template-ref variables the way the
+   * old `@ViewChild('name')` decorator did — it kept returning undefined,
+   * so the directive's `open()` always early-exited on `if (!tpl) return;`.
+   * Reverting to the canonical contentChild pattern + restructuring the
+   * consumer template to nest the <ng-template> INSIDE the trigger
+   * <button> restores correctness without losing any UX.)
    */
   private readonly menuTpl = contentChild<TemplateRef<unknown>>('piDropdownContent');
 

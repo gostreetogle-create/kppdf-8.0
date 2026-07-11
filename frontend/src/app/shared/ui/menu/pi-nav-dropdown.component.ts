@@ -15,7 +15,6 @@ import { LucideAngularModule, ChevronDown } from 'lucide-angular';
  * (`Package`, `Briefcase`, `BookOpen`, …) is assignable to this type.
  */
 type LucideIcon = typeof ChevronDown;
-import { DropdownMenuComponent } from './pi-dropdown-menu.component';
 import { MenuTriggerDirective } from './pi-menu-trigger.directive';
 
 export interface PiNavDropdownItem {
@@ -57,7 +56,6 @@ export interface PiNavDropdownItem {
   imports: [
     RouterLink,
     LucideAngularModule,
-    DropdownMenuComponent,
     MenuTriggerDirective,
   ],
   template: `
@@ -86,37 +84,50 @@ export interface PiNavDropdownItem {
         class="opacity-60 ml-0.5"
         aria-hidden="true"
       />
-    </button>
-    <ng-template #piDropdownContent>
-      <app-pi-dropdown-menu [ariaLabel]="ariaLabel() || label()">
-        @for (item of items(); track item.path) {
-          @if (item.disabled) {
-            <span
-              item
-              role="menuitem"
-              [attr.aria-disabled]="true"
-              [title]="item.label + ' — скоро'"
-              class="block px-3 py-1.5 text-sm text-muted-foreground
-                     opacity-60 cursor-not-allowed select-none"
-            >
-              {{ item.label }}
-            </span>
-          } @else {
-            <a
-              item
-              role="menuitem"
-              [routerLink]="item.path"
-              class="block px-3 py-1.5 text-sm text-ink
-                     hover:bg-paper-2 focus-visible:outline-none
-                     focus-visible:bg-paper-2 transition-colors
-                     cursor-pointer"
-            >
-              {{ item.label }}
-            </a>
+      <ng-template #piDropdownContent>
+        <!--
+          Inline menu chrome — bypasses <app-pi-dropdown-menu> wrapper.
+          Reason: the previous design used <app-pi-dropdown-menu> with
+          <ng-content select="[item]" />, but Angular's CDK Overlay
+          TemplatePortal drops @for dynamic nodes across the <ng-content>
+          view boundary (browser-use iteration 3: panelCount=1,
+          menuItems=[]). Rendering the menu container + items inline in
+          the same template avoids the projection entirely; the rendered
+          DOM is identical, and MenuTriggerDirective's TemplatePortal
+          projects the whole tree atomically.
+        -->
+        <div
+          role="menu"
+          [attr.aria-label]="ariaLabel() || label()"
+          class="bg-paper hairline rounded-sm min-w-[200px] py-1"
+        >
+          @for (item of items(); track item.path) {
+            @if (item.disabled) {
+              <span
+                role="menuitem"
+                [attr.aria-disabled]="true"
+                [title]="item.label + ' — скоро'"
+                class="block px-3 py-1.5 text-sm text-muted-foreground
+                       opacity-60 cursor-not-allowed select-none"
+              >
+                {{ item.label }}
+              </span>
+            } @else {
+              <a
+                role="menuitem"
+                [routerLink]="item.path"
+                class="block px-3 py-1.5 text-sm text-ink
+                       hover:bg-paper-2 focus-visible:outline-none
+                       focus-visible:bg-paper-2 transition-colors pi-focus-ring
+                       cursor-pointer"
+              >
+                {{ item.label }}
+              </a>
+            }
           }
-        }
-      </app-pi-dropdown-menu>
-    </ng-template>
+        </div>
+      </ng-template>
+    </button>
   `,
 })
 export class PiNavDropdownComponent {

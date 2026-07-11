@@ -1,13 +1,135 @@
 @import 'tailwindcss';
 
 /* Paper & Ink overlay styles (used by PiDialogService via @angular/cdk/overlay). */
+
+/* TZ-90 Phase A — Dialog system design tokens (T-DIALOG-SYSTEM).
+   These tokens drive ALL dialog visuals (4 templates: Alert · Form · Content · Destructive).
+   The wrapper component (pi-dialog.component.ts) + service (pi-dialog.service.ts)
+   reference these via var(--...) — NEVER inline literal in component CSS. */
+:root {
+  --dialog-bg: var(--color-paper);             /* opaque panel surface */
+  --dialog-text: var(--color-ink);             /* AAA contrast on --dialog-bg (TZ-AUDIT-9) */
+  --dialog-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);  /* light-mode shadow (per user spec) */
+  --dialog-radius: 8px;                        /* consistent radius — 8px is desktop-app standard */
+  --overlay-bg: oklch(0% 0 0 / 0.50);          /* 50% dimmer (desktop-app, replaces editorial 30%) */
+  --overlay-bg-fallback: rgb(0 0 0 / 0.50);    /* CSS Color L4 fallback on L5 parse failure */
+  --spacing-md: 16px;                          /* section-to-section spacing */
+  --font-heading-dialog: 'display';
+}
+.dark {
+  /* Dark surfaces need a heavier shadow to visually detach from the muted backdrop. */
+  --dialog-shadow: 0 8px 32px rgba(0, 0, 0, 0.48);
+}
 @layer components {
   .pi-overlay-backdrop {
-    background: oklch(from var(--color-ink) l c h / 0.30);
+    /* Paper & Ink editorial dimmer — don't use `background` shorthand here:
+       some browsers resolve the oklch(from var()/0.30) color-mix in
+       shorthand path as fully transparent (Chrome DevTools measurement
+       showed rgba(0,0,0,0) on a live page; the live backdrop rendered
+       invisible and an h1.text-5xl "Тексты" bled through a form dialog).
+       Use explicit `background-color` with an RGB fallback so the dimmer
+       works reliably across: (a) strict color-mix implementations,
+       (b) the older RGB fallback path (Tailwind v4 / SSR contexts),
+       (c) DevTools measurement which sometimes doesn't resolve oklch()
+       from var() references. */
+    background-color: var(--overlay-bg);
+    background-color: var(--overlay-bg-fallback); /* CSS Color L4 fallback on L5 parse failure */
     backdrop-filter: none; /* intentionally no blur — editorial dimmer only */
   }
   .pi-overlay-panel {
     /* Native overlay wrapper. Paper & Ink dialog component handles its own panel visuals. */
     pointer-events: auto;
+    /* Opaque paper background — provides visual containment for ALL dialogs,
+       including wrapper-less ones (ModuleFormDialogComponent + WorkTypeFormDialogComponent
+       don't use <app-pi-dialog> and previously rendered the <form> on top
+       of a transparent panel, so an underlying h1.text-5xl "Тексты" would
+       bleed through the form. Wrapper-using dialogs already paint
+       background-color themselves via bg-paper class on inner element;
+       this rule acts as a defensive default so any future wrapper-less
+       dialog inherits a paper base for free. */
+    background-color: var(--dialog-bg);
+    color: var(--dialog-text);
+    border-radius: var(--dialog-radius);
+    box-shadow: var(--dialog-shadow);
+    /* Small-viewport safety: cap the panel at 90vh and let interior scroll
+       instead of overflow (CDK's block() scrollStrategy blocks page scroll,
+       so without this the dialog content would overflow off-screen on
+       short viewports — Chrome AI flagged this as a tail-risk; ModuleFormDialog
+       was the worst offender at 542px tall and ~600px on crowded forms).
+       Affects every dialog opened via PiDialogService.
+       `!important` is required: CDK assigns `max-height: 100%` and
+       `overflow: visible` to `.cdk-overlay-pane` at runtime — inline-style
+       specificity beats class rules, so without !important this entire
+       rule silently loses (browser-use verified pre-fix computed
+       styles still read maxHeight:100% / overflowY:visible). */
+    max-height: 90vh !important;
+    /* `overflow-x: clip` blocks accidental horizontal scrollbar when a
+       dialog child slightly exceeds panel width (CDK leaves overflow-x
+       at visible default; pairing with overflow-y:auto would otherwise
+       introduce a phantom horizontal scrollbar). `clip` is preferred
+       over `hidden` per code-review round 2: clip is the CSS-spec
+       semantic for "intentionally suppress scrollbar here" and is the
+       modern alternative (well-supported since 2022) that still lets
+       dev-tools surface any legitimate horizontal-overflow bug rather
+       than silently hiding it.
+       Browser-support floor: Chromium 90+, Firefox 81+, Safari 15.4+
+       (2022 baseline; safe for evergreen targets). */
+    overflow-x: clip !important;
+    overflow-y: auto !important;
   }
+
+  /* Print mode: dialogs shouldn't render with internal scrollbars on
+     paper (no scrollbars in print preview, no fluid viewport). Override
+     the runtime caps and let content flow naturally if a dialog is
+     somehow captured in a printed page. Code-review round 2 add;
+     longhand per-axis for symmetry with the main rule (round 3 add). */
+  @media print {
+    .pi-overlay-panel {
+      max-height: none !important;
+      overflow-x: visible !important;
+      overflow-y: visible !important;
+      box-shadow: none !important;       /* TZ-90 Phase A: paper doesn't carry shadow in print */
+    }
+  }
+}
+
+/* TZ-90 Phase A — Dialog open animation (fade-in + scale 0.96→1.0, 180ms ease-out).
+   Triggered from PiDialogService.open() (Phase B will wire the class binding).
+   Animation is OPT-OUT via `(prefers-reduced-motion: reduce)` per user spec.
+
+   ⚠️ PHASE B DEFENSIVE NOTE: the `.pi-dialog-host-open` class MUST be applied
+   to the INNER `[role="dialog"]` element of the <app-pi-dialog> wrapper.
+   NEVER apply it to `.cdk-overlay-pane` — that element carries CDK-injected
+   positioning as INLINE STYLES (top/left/transform for position strategy).
+   The `transform: scale(0.96)` keyframe here would OVERRIDE CDK's positioning
+   transform during the 180ms window, snapping the dialog to its `top:0 left:0`
+   "natural" position and visually jumping it to the upper-left of the screen
+   on every open. CDK re-applies positioning transform on EVERY dialog mount
+   (not just first render), so the regression is per-open, not one-time.
+   Phase B commits which accidentally apply this class at the wrong level will
+   manifest as a "flicker-then-snap" UX regression on every dialog open.
+   ⚠️ ANIMATION-NAME pre-warning: prefers-reduced-motion zeros animation-DURATION
+   but preserves animation-NAME. So the keyframe is COMPLETED instantly (user
+   sees final state immediately at opacity:1 + scale:1) — functionally correct.
+   If a Phase B contributor tightens the rule to `animation-name: none`, verify
+   the dialog remains visible (not locked at opacity:0 + scale:0.96 forever).
+
+   ⚠️ TRANSFORM-ORIGIN NOTE: this scale-in animation does NOT explicitly set
+   `transform-origin`, so browsers default to CENTER. Acceptable for centered
+   modal dialogs (the modal case). For future corner-anchored variants that
+   TZ-90 §7 may later add (alert-as-corner-toast etc.), set explicit origin:
+     - Top-right toast:        `transform-origin: top right`
+     - Bottom-right toast:     `transform-origin: bottom right`
+     - Bottom-center snackbar: `transform-origin: bottom center`
+   Apply on `.pi-dialog-host-open`. Document any override carefully to avoid
+   dialog-window-pivot that looks like a position bug. */
+.pi-dialog-host-open {
+  animation: pi-dialog-scale-in 180ms ease-out;
+}
+@keyframes pi-dialog-scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pi-dialog-host-open { animation-duration: 0s; }
 }

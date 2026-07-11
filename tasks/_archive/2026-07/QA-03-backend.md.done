@@ -1,0 +1,166 @@
+# QA-03: Бэкенд — замечания по архитектуре и коду
+
+> Дата проверки: 2026-07-11
+> Статус: Готово к исправлению
+
+---
+
+## Высокий приоритет
+
+### 3.1 [HIGH] /auth/me возвращает весь документ пользователя
+
+**Файл:** `backend/src/modules/auth/auth.controller.ts:66-69`
+
+```typescript
+@Get('me')
+async me(@CurrentUser() me: AuthenticatedUser) {
+  return this.users.findById(me.id);  // ← полный Mongoose документ
+}
+```
+
+**Проблема:** `findById()` возвращает `UserDocument` с `passwordHash`, `refreshTokenVersion`, и другими внутренними полями. Фронтенд их игнорирует, но они утекают в HTTP-ответе.
+
+**Рекомендация:**
+- Использовать проекцию: `this.users.findById(me.id).select('-passwordHash -refreshTokenVersion')`
+- Или вернуть `AuthService.toAuthUser(user)` (уже экспортирует нужные поля)
+
+---
+
+### 3.2 [HIGH] Нет пагинации на CRUD-эндпоинтах
+
+**Затронутые модули:** orders, contracts, products (частично), materials
+
+**Проблема:** Некоторые эндпоинты возвращают массивы без пагинации. При росте данных (>1000 записей) это будет проблемой.
+
+**Рекомендация:**
+- Добавить DTO `PaginationQueryDto` с `page`, `limit`, `search`
+- Реализовать в контроллерах: `findAll(@Query() query: PaginationQueryDto)`
+- Фронтенд уже поддерживает пагинацию (materials, products)
+
+---
+
+### 3.3 [HIGH] Audit interceptor не логирует userId
+
+**Файл:** `backend/src/common/interceptors/audit.interceptor.ts:62-75`
+
+```typescript
+return next.handle().pipe(
+  tap(async (data: unknown) => {
+    await this.audit.log({
+      action: meta.action,
+      entityType: meta.entityType,
+      entityId: entityId ?? idFromResponse,
+      details: { after: this.safeSnapshot(data) },
+      ipAddress: req.ip,
+      // ← userId не передаётся!
+    });
+  }),
+);
+```
+
+**Проблема:** Записи аудита не содержат `userId` — невозможно определить, кто совершил действие. `req.user` доступен, но не извлекается.
+
+**Рекомендация:**
+- Добавить `userId: req.user?.id` в объект `this.audit.log()`
+- Или: `userId: (req as any).user?.id` если типизация не позволяет
+
+---
+
+## Средний приоритет
+
+### 3.4 [MEDIUM] AdminPasswordDriftDetector может сломать запуск
+
+**Файл:** `backend/src/common/seed/admin-password-drift-detector.ts`
+
+**Проблема:** Если пароль в `.env` изменился по сравнению с тем, что в БД, детектор может заблокировать запуск или залогировать предупреждение. Непонятно, как он себя ведёт при первом запуске.
+
+**Рекомендация:** Проверить поведение при чистой БД. Убедиться, что детектор не мешает normal workflow.
+
+---
+
+### 3.5 [MEDIUM]的照片上传 не генерирует варианты (thumbnails)
+
+**Файл:** `backend/src/modules/photos/photo.schema.ts:41`
+
+```
+NOTE: file upload via multer + sharp variant generation is a TODO.
+```
+
+**Проблема:** Загруженные фото сохраняются в оригинальном размере. Нет thumbnails для列表. Это будет проблемой при большом количестве фото.
+
+**Рекомендация:**
+- Добавить `sharp` для генерации thumbnail (200x200) при загрузке
+- Сохранять thumbnail отдельно или как metadata в документе
+
+---
+
+### 3.6 [MEDIUM] orphan uploads не удаляются
+
+**Файл:** `backend/src/modules/photos/photos.service.ts:60`
+
+```
+// a follow-up `scripts/cleanup-orphan-uploads.ts` (TODO).
+```
+
+**Проблема:** При удалении фото/материалов файлы на диске остаются. Нет механизма очистки.
+
+**Рекомендация:**
+- При удалении фото — удалять файл с диска
+- ИЛИ: periodic cleanup script (cron job)
+
+---
+
+### 3.7 [MEDIUM] БОМ ссылки на удалённые ObjectId
+
+**Файл:** `backend/src/modules/bom/bom.schema.ts:11`
+
+```
+// TODO: existing boms в БД могут содержать СТАРЫЕ ObjectId из удалённой
+```
+
+**Проблема:** Старые записи BOM могут ссылаться на несуществующие materials/products. При populated query это может вызвать ошибки.
+
+**Рекомендация:**
+- Добавить migration script для очистки невалидных ссылок
+- ИЛИ: graceful handling в service — игнорировать невалидные ссылки
+
+---
+
+### 3.8 [MEDIUM] cost-calculation: Material lookup не подключён
+
+**Файл:** `backend/src/modules/cost-calculation/cost-calculation.service.ts:63`
+
+```
+because the Material lookup was never wired — see old `// TODO`
+```
+
+**Проблема:** Расчёт себестоимости не учитывает стоимость материалов (lookup не подключён).
+
+**Рекомендация:** Подключить MaterialService в CostCalculationService и добавить стоимость материалов в расчёт.
+
+---
+
+## Низкий приоритет
+
+### 3.9 [LOW] Swagger не документирует большинство эндпоинтов
+
+**Проблема:** В контроллерах нет `@ApiTags()`, `@ApiOperation()`, `@ApiResponse()` декораторов. Swagger UI показывает эндпоинты без описаний.
+
+**Рекомендация:** Добавить Swagger-декораторы постепенно, начиная с key-эндпоинтов (auth, materials, products).
+
+---
+
+### 3.10 [LOW] admin seed не создаёт дефолтные данные
+
+**Проблема:** После seed создаётся только admin user и роли. Нет дефолтных единиц измерения, категорий, складов — пользователь видит пустые списки.
+
+**Рекомендация:** Расширить seed: дефолтные единицы (шт, кг, м), базовые категории, хотя бы один склад.
+
+---
+
+## Рекомендуемый порядок исправления
+
+1. **Сейчас:** Исправить /auth/me (3.1), добавитьuserId в audit (3.3)
+2. **На этой неделе:** Пагинация на orders/contracts (3.2)
+3. **В ближайшем спринте:** Thumbnail генерация (3.5), orphan cleanup (3.6), BOM migration (3.7), cost-calculation fix (3.8)
+4. **Потом:** Swagger documentation (3.9), расширенный seed (3.10)

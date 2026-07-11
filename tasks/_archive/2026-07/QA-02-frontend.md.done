@@ -1,0 +1,164 @@
+# QA-02: Фронтенд — замечания по коду и UX
+
+> Дата проверки: 2026-07-11
+> Статус: Готово к исправлению
+
+---
+
+## Высокий приоритет
+
+### 2.1 [HIGH] Пагинация отсутствует на нескольких страницах
+
+**Файлы:**
+- `frontend/src/app/pages/orders/orders.page.ts:55`
+- `frontend/src/app/pages/contracts/contracts.page.ts:52`
+
+**Проблема:** Orders и Contracts загружают ВСЕ записи одним запросом и фильтруют на клиенте. При большом количестве записей (>500) это вызовет проблемы с производительностью.
+
+**Рекомендация:**
+- Бэкенд: добавить пагинацию (`?page=1&limit=50&search=...`) на `GET /orders` и `GET /contracts`
+- Фронтенд: перейти на `httpResource` с params (как в materials.page.ts)
+
+---
+
+### 2.2 [HIGH] Продакшн API URL захардкожен
+
+**Файл:** `frontend/src/app/core/api.tokens.prod.ts:17`
+
+```typescript
+factory: () => 'http://localhost:3000/api',
+```
+
+**Проблема:** В продакшене фронтенд будет обращаться на `localhost:3000` — это не будет работать на реальном сервере.
+
+**Рекомендация:**
+- Использовать `environment.production.apiUrl` из `angular.json` `fileReplacements`
+- Или reads from `<meta name="api-url">` тега
+
+---
+
+### 2.3 [HIGH] authGuard проверяет только наличие токена, не валидность
+
+**Файл:** `frontend/src/app/core/auth.guard.ts:9-14`
+
+```typescript
+export const authGuard: CanMatchFn = () => {
+  const auth = inject(AuthService);
+  if (auth.isAuthenticated()) return true;  // просто !!token
+  return router.parseUrl('/login');
+};
+```
+
+**Проблема:** Если токен просрочен, пользователь увидит страницу с ошибками 401 вместо редиректа на логин. `bootstrap()` проверяет валидность, но guard — нет.
+
+**Рекомендация:**
+- Guard должен проверять `auth.user()` ( установлен ли user после bootstrap)
+- ИЛИ: если `isAuthenticated()` но `user() === null` — редиректить на login
+
+---
+
+## Средний приоритет
+
+### 2.4 [MEDIUM] publicOnlyGuard редиректит на /home вместо /
+
+**Файл:** `frontend/src/app/core/auth.guard.ts:24`
+
+```typescript
+return router.parseUrl('/home');
+```
+
+**Проблема:** Маршрута `/home` не существует. Роутер перенаправит на `/` (via `** → ''`), затем `authGuard` направит на `/materials`. Работает, но лишний хоп.
+
+**Рекомендация:** Заменить на `return router.parseUrl('/');`
+
+---
+
+### 2.5 [MEDIUM] debounce timer не очищается при уничтожении компонента
+
+**Файл:** `frontend/src/app/pages/materials/materials.page.ts:306,373-378`
+
+```typescript
+private debounceTimer: ReturnType<typeof setTimeout> | null = null;
+// ...
+this.debounceTimer = setTimeout(() => ..., 300);
+```
+
+**Проблема:** Если пользователь уходит со страницы пока работает debounce — таймер сработает впустую. Мелочь, но нарушает чистоту кода.
+
+**Рекомендация:** Добавить `ngOnDestroy()` и `clearTimeout(this.debounceTimer)`. Или использовать Angular `DestroyRef` + `takeUntilDestroyed()`.
+
+---
+
+### 2.6 [MEDIUM] Нет глобального error handler для необработанных ошибок
+
+**Файл:** `frontend/src/app/` (отсутствует)
+
+**Проблема:** Если произойдёт неожиданная ошибка (например, битый JSON от сервера), пользователь увидит пустую страницу без объяснений.
+
+**Рекомендация:**
+- Добавить `ErrorHandler` через `provideErrorHandler()`
+- Показывать toast/snackbar с сообщением об ошибке
+
+---
+
+### 2.7 [MEDIUM] Дублирование кода между list-pages
+
+**Файлы:** Все страницы в `pages/` (materials, products, orders, contracts, organizations, ...)
+
+**Проблема:** Каждая страница содержит ~200 строк шаблонного кода: toolbar, search input, sort logic, row actions, empty state. Паттерн один и тот же.
+
+**Рекомендация:**
+- Создать абстрактный `ListPageBase` компонент или хук `useListPage()`
+- Или вынести общую логику (search, sort, pagination) в shared сервис
+
+---
+
+## Низкий приоритет
+
+### 2.8 [LOW] Нет favicon
+
+**Файл:** `frontend/src/index.html:9`
+
+```html
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,..."/>
+```
+
+**Проблема:** Placeholder favicon — пустой SVG. Браузер будет запрашивать `/favicon.ico` и получать 404.
+
+**Рекомендация:** Добавить реальный favicon (минимальный — иконка документа/PDF).
+
+---
+
+### 2.9 [LOW] meta description на английском
+
+**Файл:** `frontend/src/index.html:7`
+
+```html
+<meta name="description" content="Editorial Swiss-minimalism Angular SPA UI kit showcase."/>
+```
+
+**Проблема:** Описание на английском, хотя приложение на русском. Неконсистентно.
+
+**Рекомендация:** Заменить на русское описание: "KPPDF — ERP-система для управления коммерческими предложениями и производством"
+
+---
+
+### 2.10 [LOW] Title страницы смешивает языки
+
+**Файл:** `frontend/src/index.html:4`
+
+```html
+<title>Paper & Ink a?? UI Kit</title>
+```
+
+**Проблема:** `a??` — артефакт кодировки. Title должен быть "KPPDF" или "KPPDF — ERP".
+
+**Рекомендация:** Заменить на "KPPDF"
+
+---
+
+## Рекомендуемый порядок исправления
+
+1. **Сейчас:** Исправить title/meta (2.10, 2.9), publicOnlyGuard redirect (2.4)
+2. **На этой неделе:** Пагинация на orders/contracts (2.1), prod API URL (2.2), authGuard vалидность (2.3)
+3. **В ближайшем спринте:** Debounce cleanup (2.5), global error handler (2.6), рефакторинг list-pages (2.7)

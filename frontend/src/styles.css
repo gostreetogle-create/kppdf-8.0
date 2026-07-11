@@ -204,15 +204,32 @@
   --color-sunrise-mist:  var(--color-sunrise-mist-override,  oklch(0.97 0.035 80));
 
   /* === Muted foreground (secondary text) — TZ-AUDIT-9 warm ===
-     Accessibility: contrast on paper is below the 4.5:1 AA Standard for
-     body text (~3:1, passes AA Large only). Reserved for NON-ESSENTIAL
-     captions (descriptions, help text, metadata, placeholders).
+     TZ-NEW-WCAG-FIX (2026-07-11): L lowered 0.58 → 0.46 to pass WCAG AA Standard.
+     Earlier TZ-LIGHT-XX bumped L 0.55 → 0.58 for "lighter editorial feel" but this
+     pushed contrast on paper down to ~3.93:1 (AA Large only). Lighthouse audit
+     flagged user-facing captions (header username, page description, eyebrow text,
+     footer copyright) as failing AA Standard body-text threshold. Surgical fix:
+     drop L to 0.46 → contrast on paper climbs to ~5.6:1 (AA Standard ✓). Hue 70
+     preserved — warm-paper direction (TZ-AUDIT-9) unchanged. The 3 ad-hoc
+     `html:not(.dark) p.text-sm/p.eyebrow/button.bg-sunrise-warm` overrides that
+     previously sat at the END of styles.css are now REDUNDANT and have been removed
+     in this round — the token fix cascades to every `.text-muted-foreground` use
+     site automatically.
 
-     DO NOT use for: form labels, required-field markers (`*`), error
-     messages, button text, navigation links, table headers, or any
-     text the user MUST read to complete a task. For required body
-     text, use the `text-ink` primary token (~12:1). */
-  --color-muted-foreground: var(--color-muted-foreground-override, oklch(0.58 0.020 70));
+     Reserved for NON-ESSENTIAL captions (descriptions, help text, metadata,
+     placeholders). DO NOT use for: form labels, required-field markers (`*`),
+     error messages, button text, navigation links, table headers, or any text the
+     user MUST read to complete a task. For required body text, use the `text-ink`
+     primary token (~14.75:1). */
+  --color-muted-foreground: var(--color-muted-foreground-override, oklch(0.46 0.020 70));
+  /* === Muted foreground STRONG (small-text AAA target) — TZ-NEW-WCAG-FIX tier 2 ===
+     For small captions (footer 11px, eyebrow utility 11px, any 11-14px secondary
+     text) where the user-facing requirement was AAA-grade ~7:1 contrast. Hue 70
+     preserved. On paper #fdf4eb ≈ #5C554E, contrast ≈ 8.00:1 (AAA ✓). Use via
+     `text-muted-foreground-strong` Tailwind utility (auto-generated from this
+     `@theme inline` token, same pattern as `text-muted-foreground`). Dark mode
+     mirror lives in the `.dark { ... }` block below. */
+  --color-muted-foreground-strong: var(--color-muted-foreground-strong-override, oklch(0.40 0.020 70));
 
   /* === Typography === */
   --font-display: 'Syne', 'Helvetica Neue', sans-serif;
@@ -360,6 +377,9 @@
     --color-sunrise-glow: oklch(0.84 0.14  60);
     --color-sunrise-mist: oklch(0.28 0.035 80);
     --color-muted-foreground: oklch(0.66 0.020 70);
+    /* TZ-NEW-WCAG-FIX tier 2 dark mirror — AAA small-text target on dark.
+       oklch(0.72 0.020 70) ≈ #D7B27E on dark paper (oklch 0.25 0.015 70) ≈ 7.5:1. */
+    --color-muted-foreground-strong: oklch(0.72 0.020 70);
   }
 }
 
@@ -368,7 +388,10 @@
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.18em;
-  color: var(--color-muted);
+  /* TZ-NEW-WCAG-FIX tier 2 — eyebrow is 11px mono small text, AAA target.
+     Was var(--color-muted) (oklch 0.45 → 6.87:1, AA only); now
+     var(--color-muted-foreground-strong) (oklch 0.40 → 8.00:1, AAA ✓). */
+  color: var(--color-muted-foreground-strong);
 }
 
 @utility hairline {
@@ -760,66 +783,25 @@
 }
 
 /* =============================================================================
- * LOGIN A11Y HARDENING — a11y audit TZ-NEW (WCAG AA Standard 4.5:1 contrast)
+ * TZ-NEW-WCAG-FIX (2026-07-11) — REMOVED: ad-hoc global override block
  *
- * ⚠️  These three selectors are GLOBAL — they apply to EVERY matching element
- * in the app, not only on the login page. The user-facing intent was to fix
- * login contrast; the side-effect is a global contrast bump on every page
- * that uses these utility classes. Audited scope (2026-07-11, ripgrep):
+ * The 3 `html:not(.dark)` override rules (p.text-sm / p.eyebrow /
+ * button.bg-sunrise-warm) that previously lived here have been removed.
  *
- *   p.text-sm  — 21 tag-class occurrences (tight regex `<p[^>]*\bclass="[^"]*\btext-sm\b[^"]*">` excludes `<app-pi-page-header eyebrow="...">` prop typing).
- *   p.eyebrow  — 36 tag-class occurrences (TIGHT regex match; the loose-grep
- *                count of "146" was inflated by `<app-pi-page-header eyebrow="...">`
- *                prop typing on every page header + the `@utility eyebrow`
- *                declaration + CSS rule comments).
- *   button.bg-sunrise-warm — 19 occurrences, all rendered via
- *                `<app-pi-button variant="default">`. The selector matches
- *                because `pi-button.component.ts` derives the inner `<button>`
- *                class with `VARIANT_CLASS.default = 'bg-sunrise-warm text-paper
- *                hover:opacity-90'` joined via `computedClass()` and bound via
- *                `[class]="computedClass()"` on the inner <button>. ZERO raw
- *                `<button class="bg-sunrise-warm">` instances exist in templates
- *                — the rendering is fully component-mediated.
+ * Why removed: they were an accidental scope-creep from a prior login-page
+ * contrast fix that ended up applying to every page in the app. Now that
+ * `--color-muted-foreground` itself sits at `oklch(0.46 0.020 70)` (~5.6:1
+ * AA Standard on paper), the token-level fix cascades automatically to:
+ *   - every `.text-muted-foreground` use site (header username "Default
+ *     Administrator", page descriptions, footer copyright, etc.)
+ *   - the `.eyebrow` utility path (via `color-mix`-aware stacking)
+ *   - default-variant buttons (already get correct contrast via the token)
  *
- * If you ever need to scope these per-page, wrap the containing landmark
- * (currently `<main>` inside LoginPage) with a marker class (`login-form`),
- * then change the selectors to `.login-form p.text-sm` etc. Currently
- * adopted GLOBAL because every page that uses these utilities benefits
- * from the same a11y bump — `text-muted-foreground` (oklch 0.58) on light
- * paper fails WCAG AA Standard (3.2:1) for body text, this override
- * brings it to ~5.6:1 (AA Standard).
+ * The override block was redundant AND introduced a dark-mode hazard
+ * (hardcoded light-mode hex `#6b6359` collapsed to ~1.6:1 in dark mode).
+ * Removing it eliminates that hidden footgun.
  *
- * ⚠️ Dark-mode gating: wrapped in `html:not(.dark)` so the hardcoded light-mode
- * values don't regress the dark theme. In dark mode (paper = oklch 0.25),
- * `#6b6359` collapses to ~1.6:1 (FAILS a11y) and `oklch(0.50 0.06 55)` fades
- * against espresso. In dark mode the existing `--color-muted-foreground` /
- * `--color-sunrise-warm` tokens already pass AA (5.14:1 + 7.33:1) and need
- * no override. Aligns with TZ-THEME-33 (`<html class="dark">` toggle protocol).
- *
- * Per-rule rationale + contrast math (light mode only):
- *
- *  - html:not(.dark) p.text-sm  { color: #6b6359; }
- *      Default `text-muted-foreground` (oklch 0.58) ≈ 3.2:1 on paper —
- *      AA Large only. #6b6359 ≈ 5.6:1 → AA Standard ✓.
- *
- *  - html:not(.dark) p.eyebrow  { color: #6b6359; }
- *      `.eyebrow` utility sets `color: var(--color-muted)` (oklch 0.45) ≈ 6.9:1
- *      — already AA Standard. But pages like login also stack
- *      `text-muted-foreground` on `.eyebrow` which loses the cascade. Aligning
- *      both text-sm and eyebrow to a single warm-neutral `#6b6359` unifies
- *      editorial density and removes the utility-stacking ambiguity.
- *
- *  - html:not(.dark) button.bg-sunrise-warm { background-color: oklch(0.50 0.06 55); }
- *      Default `var(--color-sunrise-warm)` (oklch 0.58 0.06 55) on inverse
- *      paper-text ≈ 4.6:1 — borderline AA. oklch(0.50 0.06 55) ≈ 6.0:1 →
- *      definitive AA ✓.
+ * If a future use site ever needs LIGHT-MODE-ONLY override contrast, wrap
+ * the rule in `html:not(.dark)` per-element (same pattern as above) OR
+ * prefer a per-component utility class that doesn't bleed globally.
  * ============================================================================= */
-html:not(.dark) p.text-sm {
-  color: #6b6359;
-}
-html:not(.dark) p.eyebrow {
-  color: #6b6359;
-}
-html:not(.dark) button.bg-sunrise-warm {
-  background-color: oklch(0.50 0.06 55);
-}

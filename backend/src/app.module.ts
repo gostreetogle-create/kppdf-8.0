@@ -83,6 +83,7 @@ import { RolesGuard } from './common/guards/roles.guard';
 import { UserContextInterceptor } from './common/interceptors/user-context.interceptor';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { AdminSeed } from './common/seed/admin.seed';
+import { AdminPasswordDriftDetector } from './common/seed/admin-password-drift-detector';
 import { SettingsSeed } from './common/seed/settings.seed';
 import { FeatureFlagsSeed } from './common/seed/feature-flags.seed';
 import { StatusesSeed } from './common/seed/statuses.seed';
@@ -198,6 +199,7 @@ import { HealthController } from './health.controller';
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
     ThrottlerBehindAuthGuard,
     AdminSeed,
+    AdminPasswordDriftDetector,
     SettingsSeed,
     FeatureFlagsSeed,
     StatusesSeed,

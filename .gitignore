@@ -72,3 +72,4 @@ mimo.exe
 # Uploaded files (runtime)
 backend/uploads/*
 !backend/uploads/.gitkeep
+tmp/

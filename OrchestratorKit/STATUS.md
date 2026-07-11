@@ -55,6 +55,7 @@
 | TZ-80 | ~~SSR / hydration + Lighthouse ≥95 config~~ | **REJECTED 2026-07-05** (out of project scope) | TZ-30 • TZ-67 + TZ-69..74 |
 | ~~TZ-81~~ | ~~README + docs (Russian editorial)~~ | DONE 2026-07-05 | TZ-30..79 |
 | ~~TZ-82~~ | ~~Browser-use smoke test~~ | pending | TZ-67 + TZ-69..74 • TZ-79 |
+| TZ-90 | Диалоговая система (4 templates: Alert · Form · Content · Destructive) — токены + polymorphic wrapper + миграция 11+ существующих | styles.css · shared/ui/dialog/* · 13 component files · kits/overlays | TZ-83 (✓) · TZ-85 (IN PROGRESS, only TZ-85D dependency) · TZ-DIALOG-OVERFLOW-FIX rounds 1-5 (✓) |
 
 ### Параллелизм (max 4–5 по запросу PO)
 

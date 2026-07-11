@@ -191,7 +191,7 @@ const NAV_CATEGORIES: NavCategory[] = [
         <footer
           class="border-t hairline border-sunrise-warm mt-footer-y py-footer-y
                  font-mono text-[11px] uppercase tracking-[0.18em]
-                 text-muted-foreground flex flex-wrap justify-between gap-3"
+                 text-muted-foreground-strong flex flex-wrap justify-between gap-3"
         >
           <span>© 2026 KPPDF · 8.0</span>
           <span>Внутренний сервис · 2026</span>

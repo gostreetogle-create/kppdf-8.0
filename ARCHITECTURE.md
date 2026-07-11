@@ -161,6 +161,37 @@
 - **Limitations:** script false positives из-за regex (comment `imports: []` или spread `...defaultImported`). Future: AST-based парсинг через ts.createSourceFile.
 - **Use case:** future TZ-50+ может использовать как pre-commit hook (защита от regression: новый сервис добавлен, импорт забыли → script fail).
 
+## Security Architecture (TZ-91)
+
+**Defense-in-depth chain** для всех sensitive endpoints (TZ-91 Phase A ships A.1+A.3+A.4+A.6; Phase B+C planned):
+
+- **JWT validate** (`JwtAuthGuard`, global `APP_GUARD`): access token (15m, `JWT_SECRET`) + payload versioning через `user.refreshTokenVersion` — инвалидация по всему refresh-tree при password change / logout.
+- **Roles check** (`RolesGuard`, global `APP_GUARD`): проверяет `@Roles('admin', 'manager')` decorator на handler. Role hierarchy (TZ-91 §2 Decision 9): `admin` > `manager` > `user` — `@Roles('manager')` означает «admin OR manager», не только manager.
+- **Rate limit** (`@nestjs/throttler`, TZ-18 base + TZ-91A усилитель): глобально 10 req/s + 100 req/min per IP; sensitive endpoints (`/auth/login`) — `@Throttle({short: {ttl: 60_000, limit: 5}, long: {ttl: 3_600_000, limit: 20}})` → 5 req/min, 20 req/hour (brute-force protection).
+- **DTO whitelist** (`class-validator`): defense-in-depth даже если `@Public()` decorator убирается — DTO-level constraint catches admin-creation attempt (пример: `register.dto.ts` `@IsIn(['user','manager'])` блокирует `role: 'admin'` через публичный API независимо от guard state).
+- **Admin-password gate** (`admin.seed.ts`): `ADMIN_PASSWORD` envvar, `length < 8` → WARN+SKIP, admin NOT created. Bootstrap continues — но admin login fails до user manually sets ≥8-char password.
+- **CORS multi-origin** (TZ-91A6): `CORS_ORIGIN` envvar split comma-separated; `CORS_ORIGINS` legacy fallback. `corsOrigins.length === 1` → sends single origin string (CORS-spec safe для credentials=true).
+- **Swagger gating** (TZ-91 Phase C, planned): `if (process.env.NODE_ENV !== 'production' || process.env.SWAGGER_ENABLED === 'true')` — Swagger docs = API leak aggregation, default-off в prod, escape hatch через env flag.
+- **Audit trail** (`AsyncLocalStorage` → Mongoose `$locals.userId` → `auditPlugin`, TZ-05): `createdBy/createdAt` на insert, `updatedBy/updatedAt` на update. Sensitive поля (`passwordHash`, `password`, `refreshToken`) вырезаются из snapshot.
+
+**Endpoint touchpoints (post TZ-91A):**
+- `POST /auth/register` — `@Public()` TEMPORARY (TZ-91A1 + JSDoc, до TZ-91-extension invite-flow), DTO `@IsIn(['user','manager'])` блокирует admin via public API.
+- `POST /auth/login` — `@Public()` + `@Throttle(5/min, 20/hour)` (TZ-91A3).
+- `POST /auth/refresh` — `@Public()` + `JwtRefreshGuard` — refresh если `version` совпадает.
+- `POST /auth/logout` — auth-only, bumps `refreshTokenVersion`, invalidates все existing refresh tokens.
+- `POST /users/:id/change-password` — admin-only + bumps target user's `refreshTokenVersion`.
+- `GET/POST/PATCH/DELETE /users` — `@Roles('admin','manager')` на POST/PUT/PATCH/DELETE (TZ-91 **Phase B sweep — pending**).
+- `GET/POST/PATCH/DELETE /roles` — `@Roles('admin')` strict.
+
+**DEFERRED / OUT-OF-SCOPE (full TZ-91 spec §7):**
+- **A.2:** `@Public()` remove on `/register` — DEFERRED до TZ-91-extension создающего admin-invite-flow `POST /api/users/invite`. Без invite-flow → chicken-and-egg bootstrap.
+- **Account lockout** после N consecutive login failures — TZ-91-extension (после rate-limit baseline).
+- **Username enumeration prevention** — security deep-dive, future TZ. Сейчас `/login` возвращает разные errors для invalid-user vs wrong-password (информационный leak).
+
+**Phase B (RBAC sweep, planned):** `@Roles('admin','manager')` на всех write endpoints в 73 controllers (Article 3 §3 Audit Table). Генерируется `backend/scripts/audit-roles-coverage.ts` для статического analysis → manual apply per batch.
+
+**Phase C (Swagger + drift + start.mjs warning, planned):** Swagger gating `NODE_ENV !== 'production'`. Admin password drift-detector (`admin-password-drift-detector.ts`) graceful degradation. `start.mjs` preflight → warning если `JWT_SECRET` содержит `dev` / `do-not-use` substring.
+
 ## Auth & Identity (TZ-04)
 - **Схемы:** Permission (key unique, section, action ∈ {read|write|admin}), Role (name unique, label, permissions[], isSystem, sortOrder, sectionIds, isActive), User (username/email unique, passwordHash bcryptjs, role, permissions[], refreshTokenVersion, isActive, lastLoginAt, phone, fullName)
 - **JWT:**

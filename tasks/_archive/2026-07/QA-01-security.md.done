@@ -1,0 +1,163 @@
+# QA-01: Аудит безопасности (Critical / High)
+
+> Дата проверки: 2026-07-11
+> Статус: Готово к исправлению
+
+---
+
+## Критические находки
+
+### 1.1 [CRITICAL] Эндпоинт регистрации открыт без ограничений
+
+**Файл:** `backend/src/modules/auth/auth.controller.ts:34-38`
+
+```typescript
+@Public()
+@Post('register')
+@HttpCode(HttpStatus.CREATED)
+register(@Body() dto: RegisterDto) {
+  return this.auth.register(dto);
+}
+```
+
+**Проблема:** Любой анонимный пользователь может создать аккаунт с ролью `admin` и всеми правами. В `RegisterDto` поле `role` — просто `@IsString()`, без ограничений.
+
+**Рекомендация:**
+- Убрать `@Public()` с `/auth/register` (оставить только для invite-flow)
+- ИЛИ добавить `@Roles('admin')` + `@UseGuards(RolesGuard)` чтобы/register был доступен только админам
+- ИЛИ ограничить роль в DTO: `@IsIn(['user', 'manager'])` — запретить создание admin через公开API
+
+---
+
+### 1.2 [CRITICAL] Пустой пароль admin по умолчанию
+
+**Файл:** `backend/src/common/seed/admin.seed.ts:99`
+
+```typescript
+const password = this.config.get<string>('admin.password') ?? '';
+```
+
+**Проблема:** Если переменная `ADMIN_PASSWORD` не задана в `.env`, admin создаётся с пустым паролем. В `.env` сейчас `ADMIN_PASSWORD=admin123` — слабый пароль.
+
+**Рекомендация:**
+- Добавить проверку: если пароль пустой или < 8 символов — логировать WARN и не создавать admin (или генерировать случайный)
+- В README чётко документировать: "При первом запуске задайте ADMIN_PASSWORD в .env"
+
+---
+
+### 1.3 [CRITICAL] Слабые JWT secrets в .env
+
+**Файл:** `.env:8-10`
+
+```
+JWT_SECRET=dev-jwt-secret-do-not-use-in-production-please
+JWT_REFRESH_SECRET=dev-jwt-refresh-secret-different-from-access
+```
+
+**Проблема:** Предсказуемые секреты. Если `.env` попадёт в git — любой может подделать JWT.
+
+**Рекомендация:**
+- Убедиться что `.env` в `.gitignore` (сейчас он там есть ✅)
+- Добавить в `start.mjs` проверку: если JWT_SECRET содержит "dev" или "do-not-use" — вывести предупреждение
+- В README: "Для продакшена сгенерируйте случайные секреты: `openssl rand -hex 32`"
+
+---
+
+### 1.4 [HIGH] /auth/me возвращает чувствительные поля
+
+**Файл:** `backend/src/modules/user/user.service.ts` (findById)
+
+**Проблема:** `GET /auth/me` возвращает полный документ пользователя, включая `passwordHash`, `refreshTokenVersion`. Фронтенд это игнорирует (берёт только нужные поля), но данные утекают в сеть.
+
+**Рекомендация:**
+- В `UserService.findById()` или в `AuthService.toAuthUser()` исключить `passwordHash` и `refreshTokenVersion`
+- Или использовать Mongoose `select('-passwordHash -refreshTokenVersion')`
+
+---
+
+### 1.5 [HIGH] CORS настроен на localhost:3000 вместо 4200
+
+**Файл:** `.env:6`
+
+```
+CORS_ORIGIN=http://localhost:3000
+```
+
+**Проблема:** Бэкенд разрешает CORS для самого себя (`:3000`), но не для фронтенда (`:4200`). В dev-режиме это не проблема (proxy), но в production будет блокировать запросы.
+
+**Рекомендация:**
+- Исправить на `CORS_ORIGIN=http://localhost:4200`
+- Или добавить оба: `CORS_ORIGIN=http://localhost:3000,http://localhost:4200`
+
+---
+
+## Высокий приоритет
+
+### 1.6 [HIGH] Swagger UI доступен без аутентификации
+
+**Файл:** `backend/src/main.ts:79`
+
+```typescript
+SwaggerModule.setup('docs', app, document);
+```
+
+**Проблема:** `GET /docs` показывает всю документацию API без авторизации. В dev это удобно, в prod — утечка информации.
+
+**Рекомендация:**
+- В production отключать Swagger: `if (process.env.NODE_ENV !== 'production') { SwaggerModule.setup(...) }`
+- Или добавить basic auth на `/docs`
+
+---
+
+### 1.7 [HIGH] Нет rate-limiting на /auth/login
+
+**Файл:** `backend/src/modules/auth/auth.controller.ts:41-45`
+
+**Проблема:** Глобальный throttler настроен (`short: 10 req/s`, `long: 100 req/min`), но это общий лимит. Нет специального ограничения на попытки входа —_brute-force_ возможен.
+
+**Рекомендация:**
+- Добавить `@Throttle({ short: { ttl: 60000, limit: 5 } })` на `login()` — максимум 5 попыток в минуту
+- Или реализовать account lockout после N неудачных попыток
+
+---
+
+### 1.8 [HIGH] Нет RBAC на большинстве эндпоинтов
+
+**Файл:** Все контроллеры кроме auth
+
+**Проблема:** `RolesGuard` зарегистрирован глобально, но `@Roles()` декоратор почти нигде не используется. Любой авторизованный пользователь (даже с ролью `user`) может делать POST/PATCH/DELETE к любому ресурсу.
+
+**Рекомендация:**
+- Для каждого контроллера добавить `@Roles('admin', 'manager')` на write-операции
+- Минимум: `@Roles('admin')` на `/users`, `/roles`, `/permissions`
+
+---
+
+## Средний приоритет
+
+### 1.9 [MEDIUM] Admin seed не проверяет силу пароля
+
+**Файл:** `backend/src/common/seed/admin.seed.ts:101-111`
+
+**Рекомендация:** Добавить валидацию: пароль должен быть >= 8 символов, содержать букву и цифру. Если не проходит — логировать ошибку и не создавать пользователя.
+
+---
+
+### 1.10 [MEDIUM] RegisterDto не ограничивает роль
+
+**Файл:** `backend/src/modules/auth/dto/register.dto.ts:33`
+
+```typescript
+@IsString()
+role!: string;
+```
+
+**Рекомендация:** `@IsIn(['user', 'manager'])` или `@IsOptional() @IsIn(['user'])` — чтобы через公开API нельзя было создать admin.
+
+---
+
+## Рекомендуемый порядок исправления
+
+1. **Сразу:** Исправить CORS_ORIGIN, убрать公开/register или ограничить роль
+2. **На этой неделе:** Добавить rate-limit на login, скрытьSwagger в prod, очистить /auth/me от чувствительных полей
+3. **В ближайшем спринте:** Добавить @Roles на все write-эндпоинты, усилить admin seed
