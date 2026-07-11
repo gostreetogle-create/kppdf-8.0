@@ -2,20 +2,20 @@ import { Routes } from '@angular/router';
 import { authGuard, publicOnlyGuard } from './core/auth.guard';
 
 /**
- * TZ-NEW (split-shell routing) — Paper & Ink + KPPDF site.
+ * KPPDF site routing.
  *
- * Two top-level layouts, three top-level entry points:
+ * Layouts:
+ *   /login   — public, publicOnlyGuard bounces authed users to /
+ *   /kit/*   — UI-Kit (KitLayoutComponent). Hidden from main nav;
+ *              preserved for site-building work and design review.
+ *   /*       — operational site (AppLayoutComponent, authGuard).
+ *              `''` → /materials (user's stated landing).
+ *   **       → redirect to /, then authGuard decides login vs home.
  *
- *   /login        — public, publicOnlyGuard bounces authed users to /
- *   /kit/*        — UI-Kit (KitLayoutComponent). Hidden from main nav;
- *                   preserved for site-building work and design review.
- *   /*            — the operational site (AppLayoutComponent).
- *                   authGuard: unauthed users → /login.
- *                   `''` redirects to /materials (the first listed
- *                   resource — the user's stated landing).
- *
- * The `**` wildcard redirects unknown URLs to /, which authGuard
- * then decides between /login and the home.
+ * TZ-83 Phase B (commit TZ-83B):
+ *   /work-types — work types catalogue (CRUD: нормы, ставки, центр)
+ * Other TZ-83 routes (/modules, /modules/:id, /products/:id)
+ * committed through separate atomic commits in Phases C and D.
  */
 export const routes: Routes = [
   {
@@ -36,9 +36,7 @@ export const routes: Routes = [
       {
         path: 'overview',
         loadComponent: () =>
-          import('./pages/overview/overview.page').then(
-            (m) => m.OverviewPage,
-          ),
+          import('./pages/overview/overview.page').then((m) => m.OverviewPage),
         title: 'Paper & Ink — Обзор',
       },
       {
@@ -64,9 +62,7 @@ export const routes: Routes = [
       {
         path: 'overlays',
         loadComponent: () =>
-          import('./pages/overlays/overlays.page').then(
-            (m) => m.OverlaysPage,
-          ),
+          import('./pages/overlays/overlays.page').then((m) => m.OverlaysPage),
         title: 'Paper & Ink — Оверлеи',
       },
       {
@@ -105,9 +101,7 @@ export const routes: Routes = [
       {
         path: 'materials',
         loadComponent: () =>
-          import('./pages/materials/materials.page').then(
-            (m) => m.MaterialsPage,
-          ),
+          import('./pages/materials/materials.page').then((m) => m.MaterialsPage),
         title: 'KPPDF — Материалы',
       },
       {
@@ -129,10 +123,19 @@ export const routes: Routes = [
       {
         path: 'products',
         loadComponent: () =>
-          import('./pages/products/products.page').then(
-            (m) => m.ProductsPage,
-          ),
+          import('./pages/products/products.page').then((m) => m.ProductsPage),
         title: 'KPPDF — Продукция',
+      },
+      {
+        // TZ-83 Phase B: отдельный top-level справочник «Виды работ».
+        // Полноценный CRUD (normHours, rate, workCenterId) — не помещается
+        // в inline-форму dictionaries.page; вынесен в самостоятельный route.
+        path: 'work-types',
+        loadComponent: () =>
+          import('./pages/work-types/work-types.page').then(
+            (m) => m.WorkTypesPage,
+          ),
+        title: 'KPPDF — Виды работ',
       },
       {
         path: 'orders',
@@ -143,9 +146,7 @@ export const routes: Routes = [
       {
         path: 'contracts',
         loadComponent: () =>
-          import('./pages/contracts/contracts.page').then(
-            (m) => m.ContractsPage,
-          ),
+          import('./pages/contracts/contracts.page').then((m) => m.ContractsPage),
         title: 'KPPDF — Договоры',
       },
     ],

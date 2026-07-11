@@ -16,11 +16,14 @@ interface NavLink {
   disabled?: boolean;
 }
 
+// TZ-83 Phase B: «Виды работ» добавлен как nav-link справочника.
+// «Модули», «Товар», «Модуль» — добавляются в Phases C/D (отдельные commits).
 const NAV_LINKS: NavLink[] = [
   { path: '/materials', label: 'Материалы' },
   { path: '/organizations', label: 'Организации' },
-  { path: '/dictionaries', label: 'Справочники' },
   { path: '/products', label: 'Продукция' },
+  { path: '/work-types', label: 'Виды работ' },
+  { path: '/dictionaries', label: 'Справочники' },
   { path: '/orders', label: 'Заказы' },
   { path: '/contracts', label: 'Договоры' },
 ];
