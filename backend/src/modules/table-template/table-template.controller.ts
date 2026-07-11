@@ -4,6 +4,14 @@ import { CreateTableTemplateDto } from './dto/create-table-template.dto';
 import { UpdateTableTemplateDto } from './dto/update-table-template.dto';
 import { AuditAction } from '../../common/decorators/audit-action.decorator';
 
+/**
+ * TZ-86 Phase A.2 — TableTemplateController extended.
+ *
+ * New route: `GET /api/table-templates/:id/preview` returns inline HTML
+ * (text/html). Used by Phase C.2 picker preview pane + Phase D.3 canvas
+ * placeholder. No `@AuditAction` decoration — GET routes auto-skip the
+ * AuditInterceptor (it filters to POST/PATCH/PUT/DELETE).
+ */
 @Controller('table-templates')
 export class TableTemplateController {
   constructor(private readonly service: TableTemplateService) {}
@@ -16,6 +24,17 @@ export class TableTemplateController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.service.findById(id);
+  }
+
+  /**
+   * TZ-86 Phase A.2 — preview endpoint. Returns HTML string.
+   * For preview-pane usage, client should fetch and inject via
+   * `[innerHTML]` (after sanitisation on frontend side; service already
+   * escapes user-data cells).
+   */
+  @Get(':id/preview')
+  async preview(@Param('id') id: string): Promise<string> {
+    return this.service.preview(id);
   }
 
   @Post()
