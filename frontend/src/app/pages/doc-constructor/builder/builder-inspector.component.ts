@@ -17,6 +17,7 @@ import {
   type TemplateBlock,
 } from '../../../shared/template-block/template-block.types';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
+import { SelectOptionComponent } from '../../../shared/ui/select/select-option.component';
 import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
 import { SelectComponent } from '../../../shared/ui/select/select.component';
 
@@ -44,7 +45,7 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
   selector: 'app-builder-inspector',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideAngularModule, ButtonComponent, SwitchComponent, SelectComponent],
+  imports: [LucideAngularModule, ButtonComponent, SwitchComponent, SelectComponent, SelectOptionComponent],
   template: `
     <aside class="inspector" aria-label="Свойства блока">
       <header class="inspector__header">
@@ -78,13 +79,13 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
           <!-- isActive -->
           <label class="field field--row">
             <span class="field__label">Активен</span>
-            <pi-switch [checked]="isActive()" (checkedChange)="onIsActiveChange($event)" />
+            <app-pi-switch [checked]="isActive()" (checkedChange)="onIsActiveChange($event)" />
           </label>
 
           <!-- showLine -->
           <label class="field field--row">
             <span class="field__label">Показывать линию снизу</span>
-            <pi-switch [checked]="showLine()" (checkedChange)="onShowLineChange($event)" />
+            <app-pi-switch [checked]="showLine()" (checkedChange)="onShowLineChange($event)" />
           </label>
 
           @if (block()!.type === 'text' || block()!.type === 'header') {
@@ -143,11 +144,14 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
             </div>
             <label class="field">
               <span class="field__label">Формат</span>
-              <pi-select
-                [options]="formatOptions"
+              <app-pi-select
                 [value]="b.format ?? 'text'"
                 (valueChange)="onFormatChange($event)"
-              />
+              >
+                @for (opt of formatOptions; track opt.value) {
+                  <app-pi-select-option [value]="opt.value">{{ opt.label }}</app-pi-select-option>
+                }
+              </app-pi-select>
             </label>
             @if (b.source === 'static') {
               <label class="field">
@@ -163,14 +167,14 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
           }
 
           <div class="inspector__actions">
-            <pi-button
+            <app-pi-button
               variant="destructive"
               size="sm"
               (click)="onDelete()"
               ariaLabel="Удалить блок"
             >
               Удалить блок
-            </pi-button>
+            </app-pi-button>
           </div>
         </div>
       }
@@ -404,12 +408,12 @@ export class BuilderInspectorComponent {
     this.patch({ showLine: checked });
   }
 
-  protected onFormatChange(format: string | string[]): void {
+  protected onFormatChange(format: string | null): void {
     const b = this.block();
     if (!b?._id || !b.dataBinding) return;
     const next: DataBinding = {
       ...b.dataBinding,
-      format: String(format) as DataBindingFormat,
+      format: format as DataBindingFormat,
     };
     this.update.emit({ _id: b._id, dataBinding: next });
   }

@@ -26,7 +26,7 @@ import {
   BLOCK_TYPE_HINTS,
   type BlockType,
 } from '../../../shared/template-block/template-block.types';
-import { ButtonComponent } from '../../../shared/ui/button/button.component';
+// ButtonComponent removed: tool-pane uses inline `<button>` elements (tool-pane__add, tool-pane__upload-button) so no Paper & Ink Button import needed. (Was NG8113 unused import — fixed.)
 import { CANVAS_DROPLIST_ID } from './builder-canvas.component';
 import type { TextBlock } from '../../../shared/services/pi-text-blocks.service';
 import type { TableTemplate } from '../../../shared/services/pi-table-templates.service';
@@ -55,7 +55,7 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
   selector: 'app-builder-tool-pane',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideAngularModule, ButtonComponent, CdkDropList, CdkDrag],
+  imports: [LucideAngularModule, CdkDropList, CdkDrag],
   template: `
     <aside class="tool-pane" aria-label="Палитра блоков">
       <header class="tool-pane__header">
@@ -124,11 +124,11 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
           } @else if (textsRes.value() && textsRes.value()!.length > 0) {
             <ul
               cdkDropList
-              [cdkDropListData]="textsRes.value() ?? []"
+              [cdkDropListData]="textsRes.value()"
               [cdkDropListConnectedTo]="canvasDroplistId"
               class="tool-pane__list"
             >
-              @for (t of textsRes.value() ?? []; track t._id) {
+              @for (t of textsRes.value(); track t._id) {
                 <li
                   cdkDrag
                   [cdkDragData]="{ source: 'text-block', textBlock: t }"
@@ -177,11 +177,11 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
           } @else if (tablesRes.value() && tablesRes.value()!.length > 0) {
             <ul
               cdkDropList
-              [cdkDropListData]="tablesRes.value() ?? []"
+              [cdkDropListData]="tablesRes.value()"
               [cdkDropListConnectedTo]="canvasDroplistId"
               class="tool-pane__list"
             >
-              @for (t of tablesRes.value() ?? []; track t._id) {
+              @for (t of tablesRes.value(); track t._id) {
                 <li
                   cdkDrag
                   [cdkDragData]="{ source: 'table-template', tableTemplate: t }"
@@ -563,7 +563,13 @@ export class BuilderToolPaneComponent {
     () => '/api/table-templates?isActive=true',
     { defaultValue: [] },
   );
-  protected readonly registryRes = httpResource(() => '/api/registry/data-sources');
+  // Typed response (sources array of { key, label, type, fields[] }). Without
+  // an explicit generic + defaultValue, httpResource infers the result as `{}`
+  // and template access to `.sources` fails with TS2339.
+  protected readonly registryRes = httpResource<{ sources: Array<{ key: string; label: string; type: string; fields: Array<{ key: string; label: string; type: string }> }> }>(
+    () => '/api/registry/data-sources',
+    { defaultValue: { sources: [] } },
+  );
 
   // Error extraction — runtime null guard: httpResource.error() returns
   // `unknown` and may be null on a successful or pending request.
@@ -593,11 +599,23 @@ export class BuilderToolPaneComponent {
     this.addBlock.emit({ source: 'table-template', tableTemplate: t });
   }
 
+  /**
+   * `sourceKey` is widened to `string` because httpResource sources come back
+   * as plain strings (not the discriminated union). The backend API
+   * contractually returns only the 5 documented sources (organization,
+   * counterparty, product, material, work-type) — see RegistryService and
+   * the {@link AddBlockPayload} union definition — so a cast at emit site
+   * is type-safe by construction.
+   */
   protected onAddFromData(
-    sourceKey: 'organization' | 'counterparty' | 'product' | 'material' | 'work-type',
+    sourceKey: string,
     field: { key: string; label: string; type: string },
   ): void {
-    this.addBlock.emit({ source: 'data-binding', dataSource: sourceKey, field });
+    this.addBlock.emit({
+      source: 'data-binding',
+      dataSource: sourceKey as 'organization' | 'counterparty' | 'product' | 'material' | 'work-type',
+      field,
+    });
   }
 
   /** D.2.1: file picker handler — emit the chosen File to BuilderPage. */

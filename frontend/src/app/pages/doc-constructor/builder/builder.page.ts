@@ -34,6 +34,7 @@ import { PiPageHeaderComponent } from '../../../shared/page/pi-page-header.compo
 import { PiSectionComponent } from '../../../shared/page/pi-section.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { SelectComponent } from '../../../shared/ui/select/select.component';
+import { SelectOptionComponent } from '../../../shared/ui/select/select-option.component';
 import { PiToastService } from '../../../shared/ui/toast';
 import {
   AddBlockPayload,
@@ -80,12 +81,14 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
     PiSectionComponent,
     ButtonComponent,
     SelectComponent,
+    SelectOptionComponent,
     BuilderToolPaneComponent,
     BuilderCanvasComponent,
     BuilderInspectorComponent,
   ],
   template: `
-    <pi-page-header
+    <app-pi-page-header
+      eyebrow="раздел · конструктор документов"
       title="Конструктор документов"
       [subtitle]="headerSubtitle()"
     >
@@ -107,7 +110,7 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
           </span>
         }
         @if (templateId()) {
-          <pi-button
+          <app-pi-button
             variant="ghost"
             size="sm"
             (click)="onReload()"
@@ -115,13 +118,13 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
           >
             <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon>
             Обновить
-          </pi-button>
+          </app-pi-button>
         }
       </div>
-    </pi-page-header>
+    </app-pi-page-header>
 
     @if (!templateId()) {
-      <pi-section title="Выберите шаблон" description="Список доступных шаблонов для редактирования">
+      <app-pi-section title="Выберите шаблон" description="Список доступных шаблонов для редактирования">
         @if (templateListRes.isLoading()) {
           <p class="empty-state">Загрузка шаблонов…</p>
         } @else if (templateListRes.error()) {
@@ -130,19 +133,22 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
           </p>
         } @else if (templateListRes.value() && templateListRes.value()!.length > 0) {
           <div class="picker">
-            <pi-select
-              [options]="templateOptions()"
+            <app-pi-select
               [value]="''"
               (valueChange)="onTemplatePick($event)"
               placeholder="Выберите шаблон…"
-            />
+            >
+              @for (opt of templateOptions(); track opt.value) {
+                <app-pi-select-option [value]="opt.value">{{ opt.label }}</app-pi-select-option>
+              }
+            </app-pi-select>
           </div>
         } @else {
           <p class="empty-state">
             Нет шаблонов. Создайте шаблон в разделе «Документы» → «Шаблоны».
           </p>
         }
-      </pi-section>
+      </app-pi-section>
     } @else {
       <div class="builder-shell">
         <app-builder-tool-pane
@@ -620,16 +626,14 @@ export class BuilderPage {
    * Phase E.3: preserve ?source + ?sourceId query params when navigating
    * from the empty-state picker to a specific /builder/:id route.
    */
-  protected onTemplatePick(value: string | string[]): void {
-    const id = Array.isArray(value) ? value[0] : value;
-    if (!id) return;
+  protected onTemplatePick(value: string | null): void {
+    if (!value) return;
     const ctx = this.sourceContext();
-    if (ctx) {
-      this.router.navigate(['/doc-constructor/builder', id], {
-        queryParams: { source: ctx.source, sourceId: ctx.sourceId },
-      });
+    if (ctx) {this.router.navigate(['/doc-constructor/builder', value], {
+          queryParams: { source: ctx.source, sourceId: ctx.sourceId },
+        });
     } else {
-      this.router.navigate(['/doc-constructor/builder', id]);
+      this.router.navigate(['/doc-constructor/builder', value]);
     }
   }
 

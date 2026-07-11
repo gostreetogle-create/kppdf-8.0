@@ -108,9 +108,9 @@ type SortDir = 'asc' | 'desc';
               >
                 <td class="pi-cell align-top font-medium">{{ row.name }}</td>
                 <td class="pi-cell align-top text-muted-foreground empty-cell">{{ categoryLabel(row.category) }}</td>
-                <td class="pi-cell-numeric align-top font-mono text-xs empty-cell">{{ row.columns?.length ?? 0 }}</td>
+                <td class="pi-cell-numeric align-top font-mono text-xs empty-cell">{{ row.columns.length }}</td>
                 <td class="pi-cell-numeric align-top font-mono text-xs empty-cell">{{ row.sampleRows?.length ?? 0 }}</td>
-                <td class="pi-cell align-top text-muted-foreground font-mono text-xs empty-cell">{{ row.sortOrder ?? 0 }}</td>
+                <td class="pi-cell align-top text-muted-foreground font-mono text-xs empty-cell">{{ row.sortOrder }}</td>
                 <td class="pi-cell align-top text-center">
                   <button
                     type="button"

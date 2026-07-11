@@ -5,7 +5,7 @@ import {
   input,
   output,
 } from '@angular/core';
-import { CdkDrag, CdkDropList, CdkDragDrop } from '@angular/cdk/drag-drop';
+import { CdkDropList, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { BlockRendererComponent } from './block-renderer.component';
 import { PiCanvasPageComponent } from '../../../shared/ui/canvas/pi-canvas-page.component';
 import { blockKey, type TemplateBlock } from '../../../shared/template-block/template-block.types';
@@ -44,7 +44,7 @@ export const CANVAS_DROPLIST_ID = 'canvas-droplist';
   selector: 'app-builder-canvas',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CdkDropList, CdkDrag, BlockRendererComponent, PiCanvasPageComponent],
+  imports: [CdkDropList, BlockRendererComponent, PiCanvasPageComponent],
   template: `
     <pi-canvas-page [pageSize]="'A4'" [maxWidthPx]="720">
       <!-- D.2.1: background layers (z-index 0, pointer-events none). -->

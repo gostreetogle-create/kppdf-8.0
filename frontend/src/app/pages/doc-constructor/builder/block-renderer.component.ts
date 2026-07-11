@@ -5,7 +5,7 @@ import {
   input,
   output,
 } from '@angular/core';
-import { CdkDrag, CdkDragPlaceholder } from '@angular/cdk/drag-drop';
+import { CdkDrag } from '@angular/cdk/drag-drop';
 import { LucideAngularModule } from 'lucide-angular';
 import { PiCanvasBlockHandleComponent } from '../../../shared/ui/canvas/pi-canvas-block-handle.component';
 import {
@@ -44,7 +44,7 @@ import {
   selector: 'app-block-renderer',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CdkDrag, CdkDragPlaceholder, LucideAngularModule, PiCanvasBlockHandleComponent],
+  imports: [CdkDrag, LucideAngularModule, PiCanvasBlockHandleComponent],
   template: `
     <div
       cdkDrag

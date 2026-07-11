@@ -110,9 +110,9 @@ type SortDir = 'asc' | 'desc';
                 <td class="pi-cell align-top text-muted-foreground font-mono text-xs empty-cell">{{ row.slug }}</td>
                 <td class="pi-cell align-top text-muted-foreground empty-cell">{{ categoryLabel(row.category) }}</td>
                 <td class="pi-cell align-top text-muted-foreground text-xs empty-cell">
-                  {{ row.tags?.length ? row.tags.join(', ') : '—' }}
+                  {{ row.tags.length ? row.tags.join(', ') : '—' }}
                 </td>
-                <td class="pi-cell align-top text-muted-foreground font-mono text-xs empty-cell">{{ row.sortOrder ?? 0 }}</td>
+                <td class="pi-cell align-top text-muted-foreground font-mono text-xs empty-cell">{{ row.sortOrder }}</td>
                 <td class="pi-cell align-top text-center">
                   <button
                     type="button"
