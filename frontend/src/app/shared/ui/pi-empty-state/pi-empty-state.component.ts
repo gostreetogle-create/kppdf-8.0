@@ -9,9 +9,21 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
  * (some had `loading` variant, some had `error` variant, the eyebrow
  * text was hardcoded "00" everywhere). One utility = one source.
  *
- * Visual contract (TZ-AUDIT-3 — em-dash + '00' eyebrow established):
+ * TZ-94 — the inner content is wrapped in `<div class="max-w-sm
+ * mx-auto p-6 pi-dashed-panel">`. The `.pi-dashed-panel` utility
+ * (introduced in TZ-93) gives the empty state an intentional
+ * "dropzone" feel — a centered, dashed-bordered panel rather than
+ * loose text floating in a table cell. `max-w-sm` (24rem) constrains
+ * the visual treatment so wider tables center the panel instead of
+ * stretching it. The outer `<tr><td colspan>` structure is preserved
+ * to avoid table border-collapse collision.
+ *
+ * Visual contract (TZ-AUDIT-3 — em-dash + '00' eyebrow established,
+ * TZ-94 — pi-dashed-panel wrapper adopted):
  *  - `<tr><td colspan={colspan}>` with `py-12 px-4 text-center`
- *  - Inner flex column: `eyebrow text-sunrise-warm` ('00' by default)
+ *  - Inner wrapper: `max-w-sm mx-auto p-6 pi-dashed-panel flex
+ *    flex-col items-center gap-1` (centered dashed dropzone)
+ *  - Inner content: `eyebrow text-sunrise-warm` ('00' by default)
  *    + `text-sm text-muted-foreground` message
  *  - Spans the entire table so empty data sets feel intentional, not
  *    like a missing render
@@ -37,7 +49,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         [attr.aria-live]="state() === 'loading' ? 'polite' : null"
         class="py-12 px-4 text-center text-muted-foreground"
       >
-        <div class="flex flex-col items-center gap-1">
+        <div class="max-w-sm mx-auto p-6 pi-dashed-panel flex flex-col items-center gap-1">
           <span class="eyebrow text-sunrise-warm">{{ eyebrow() }}</span>
           <span class="text-sm">{{ message() }}</span>
         </div>
