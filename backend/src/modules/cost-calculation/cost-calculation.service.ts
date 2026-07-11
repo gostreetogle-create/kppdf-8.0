@@ -4,105 +4,177 @@ import { Model, Types } from 'mongoose';
 import {
   CostCalculation,
   CostCalculationDocument,
+  CostMaterial,
+  CostLabor,
 } from './cost-calculation.schema';
 import { CreateCostCalculationDto } from './dto/create-cost-calculation.dto';
 import { UpdateCostCalculationDto } from './dto/update-cost-calculation.dto';
-import { Bom, BomDocument } from '../bom/bom.schema';
+import { Product, ProductDocument } from '../product/product.schema';
 import {
-  TechProcess,
-  TechProcessDocument,
-} from '../tech-process/tech-process.schema';
-import {
-  WorkType,
-  WorkTypeDocument,
-} from '../work-type/work-type.schema';
+  ProductModule as ProductModuleEntity,
+  ProductModuleDocument,
+} from '../product-module/product-module.schema';
 import { Material, MaterialDocument } from '../material/material.schema';
+import { WorkType, WorkTypeDocument } from '../work-type/work-type.schema';
 
+/**
+ * TZ-85 Phase A: CostCalculationService.
+ *
+ * REWRITE rationale (TZ-85.md §2.1, decision #1): cost rollup is now driven
+ * exclusively by the ProductModule hierarchy (Product → ProductModule →
+ * {materials[], workTypes[]}) introduced in TZ-83. The legacy Bom/TechProcess
+ * schemas are kept as read-only historical artefacts (see TZ-83 §3) but no
+ * longer participate in the rollup algorithm.
+ *
+ * Snapshot architecture (TZ-85.md §2.2, decision #2): each call to `create()`
+ * persists a NEW `CostCalculation` document. The document is the immutable
+ * financial record of the rollup at calculation time — it is NOT recomputed
+ * on read. Material/WorkType price changes do NOT retroactively mutate
+ * historical snapshots (TZ-85.md §2.2, decision #3); the user re-runs the
+ * calculation explicitly to capture the new prices.
+ *
+ * Aggregation rule (TZ-85.md §2.2, decision #5): identical Material or
+ * WorkType ids appearing across different ProductModules are rolled up into
+ * a single `materials[]` / `labor[]` line (quantities and totals are summed).
+ * This keeps the breakdown UI clean: one row per logical "лист ЛДСП 16мм"
+ * instead of N duplicated rows.
+ *
+ * @see TZ-83 (foundation: 5 atomic commits at `752ace3`).
+ * @see TZ-85 §4.A.2 for the algorithm pseudocode.
+ */
 @Injectable()
 export class CostCalculationService {
   constructor(
     @InjectModel(CostCalculation.name)
     private readonly model: Model<CostCalculationDocument>,
-    @InjectModel(Bom.name) private readonly bomModel: Model<BomDocument>,
-    @InjectModel(TechProcess.name)
-    private readonly techProcessModel: Model<TechProcessDocument>,
-    @InjectModel(WorkType.name)
-    private readonly workTypeModel: Model<WorkTypeDocument>,
-    @InjectModel(Material.name)
-    private readonly materialModel: Model<MaterialDocument>,
+    // TZ-85A: single source for the rollup. The nested populate chain
+    // `productModuleIds → materials.materialId | workTypes.workTypeId` is the
+    // canonical pattern also used in `ProductService.findById` (TZ-83 Review #1).
+    @InjectModel(Product.name)
+    private readonly productModel: Model<ProductDocument>,
   ) {}
 
+  /**
+   * TZ-85A.2: rewrite of `create()` to walk the ProductModule hierarchy.
+   *
+   * Replaces the pre-TZ-85 implementation that pulled active Bom + active
+   * TechProcess and aggregated `bom.components[].productComponentId` +
+   * `techProcess.operations[].workTypeId` (which left `pricePerUnit = 0`
+   * because the Material lookup was never wired — see old `// TODO`).
+   *
+   * Defensive guards:
+   *  - `?? 0` on every numeric field (null safety vs Mongoose hydration).
+   *  - `if (!material) continue` for orphan `materialId` references (a
+   *    Material could have been hard-deleted while ProductModule.materials[]
+   *    still pointed at it). Orphan rows are filtered silently — the
+   *    alternative (throw) would block the entire recalculation on a single
+   *    stale reference.
+   *  - `mod.materials ?? []` (schema defaults to `[]`, but defensive against
+   *    legacy docs).
+   *
+   * Backwards compat (TZ-85.md §2.2, decision #6): `bomId` / `bomVersion`
+   * remain in `CreateCostCalculationDto` so legacy clients / e2e tests that
+   * POST with these fields keep validating. They are NOT written into the
+   * new snapshot — there is no longer a Bom source.
+   */
   async create(
     dto: CreateCostCalculationDto,
   ): Promise<CostCalculationDocument> {
     const productObjectId = new Types.ObjectId(dto.productId);
 
-    // Load active Bom and TechProcess
-    const [bom, techProcess] = await Promise.all([
-      dto.bomId
-        ? this.bomModel.findById(dto.bomId).exec()
-        : this.bomModel
-            .findOne({ productId: productObjectId, isActive: true })
-            .sort({ createdAt: -1 })
-            .exec(),
-      this.techProcessModel
-        .findOne({ productId: productObjectId, isActive: true })
-        .sort({ createdAt: -1 })
-        .exec(),
-    ]);
+    // TZ-85A.2: deep populate of the module tree. `select` keeps the
+    // payload tight — we only need name + pricePerUnit on Material and
+    // name + hourlyRate on WorkType. The `as unknown as` casts on the
+    // result handle Mongoose's loss of structural typing across the
+    // populate chain (same pattern as ProductService.attachModule).
+    const product = await this.productModel
+      .findById(productObjectId)
+      .populate({
+        path: 'productModuleIds',
+        populate: [
+          {
+            path: 'materials.materialId',
+            model: 'Material',
+            select: 'name pricePerUnit',
+          },
+          {
+            path: 'workTypes.workTypeId',
+            model: 'WorkType',
+            select: 'name hourlyRate',
+          },
+        ],
+      })
+      .exec();
+    if (!product) {
+      throw new NotFoundException(`Product ${dto.productId} not found`);
+    }
 
-    // Materials from Bom
-    const materials = bom?.components
-      ? bom.components
-          .filter((c) => c.productComponentId)
-          .map((c) => ({
-            materialId: c.productComponentId,
-            materialName: undefined,
-            quantity: c.quantity ?? 0,
-            unit: undefined,
-            pricePerUnit: 0, // TODO: load from Material catalog
-            total: 0,
-          }))
-      : [];
+    const matMap = new Map<string, CostMaterial>();
+    const laborMap = new Map<string, CostLabor>();
+    const modules =
+      (product.productModuleIds as unknown as ProductModuleDocument[]) ?? [];
 
-    const totalMaterialCost = materials.reduce((s, m) => s + (m.total ?? 0), 0);
+    for (const mod of modules) {
+      // ── materials: aggregate by materialId ──
+      for (const mat of mod.materials ?? []) {
+        const material = mat.materialId as unknown as MaterialDocument | null;
+        if (!material) continue; // orphan ref → skip silently (TZ-85A risk #1)
+        const id = material._id.toString();
+        const qty = mat.quantity ?? 0;
+        const lineTotal = (material.pricePerUnit ?? 0) * qty;
+        const prev = matMap.get(id);
+        if (prev) {
+          prev.quantity += qty;
+          prev.total += lineTotal;
+        } else {
+          matMap.set(id, {
+            materialId: material._id,
+            materialName: material.name,
+            quantity: qty,
+            unit: mat.unit,
+            pricePerUnit: material.pricePerUnit ?? 0,
+            total: lineTotal,
+          });
+        }
+      }
 
-    // Labor from TechProcess
-    const labor: { workTypeId: Types.ObjectId; workTypeName?: string; hours: number; hourlyRate: number; total: number }[] = [];
-    let totalLaborCost = 0;
-    if (techProcess && techProcess.operations.length > 0) {
-      const workTypeIds = techProcess.operations
-        .map((o) => o.workTypeId)
-        .filter(Boolean) as Types.ObjectId[];
-      const workTypes = await this.workTypeModel
-        .find({ _id: { $in: workTypeIds } })
-        .exec();
-      const wtMap = new Map(workTypes.map((w) => [w._id.toString(), w]));
-      for (const op of techProcess.operations) {
-        const wt = op.workTypeId ? wtMap.get(op.workTypeId.toString()) : undefined;
-        const hours = op.durationHours ?? 0;
-        const rate = wt?.hourlyRate ?? 0;
-        const total = hours * rate;
-        totalLaborCost += total;
-        labor.push({
-          workTypeId: op.workTypeId,
-          workTypeName: wt?.name,
-          hours,
-          hourlyRate: rate,
-          total,
-        });
+      // ── labor: aggregate by workTypeId ──
+      for (const wt of mod.workTypes ?? []) {
+        const workType = wt.workTypeId as unknown as WorkTypeDocument | null;
+        if (!workType) continue;
+        const id = workType._id.toString();
+        const hours = wt.estimatedHours ?? 0;
+        const lineTotal = (workType.hourlyRate ?? 0) * hours;
+        const prev = laborMap.get(id);
+        if (prev) {
+          prev.hours += hours;
+          prev.total += lineTotal;
+        } else {
+          laborMap.set(id, {
+            workTypeId: workType._id,
+            workTypeName: workType.name,
+            hours,
+            hourlyRate: workType.hourlyRate ?? 0,
+            total: lineTotal,
+          });
+        }
       }
     }
 
+    const materials = Array.from(matMap.values());
+    const labor = Array.from(laborMap.values());
+    const totalMaterialCost = materials.reduce((s, m) => s + m.total, 0);
+    const totalLaborCost = labor.reduce((s, l) => s + l.total, 0);
     const overheadPercent = dto.overheadPercent ?? 10;
     const overheadCost = (totalMaterialCost * overheadPercent) / 100;
     const totalCost = totalMaterialCost + totalLaborCost + overheadCost;
 
+    // `isActive` defaults to `false` per schema (no explicit write needed).
+    // `bomId` / `bomVersion` / `techProcessId` deliberately omitted — there
+    // is no longer a source for them. The schema keeps them as optional
+    // for legacy docs that pre-date TZ-85A.
     return this.model.create({
       productId: productObjectId,
-      bomId: bom?._id,
-      bomVersion: dto.bomVersion,
-      isActive: false,
       materials,
       totalMaterialCost,
       labor,
