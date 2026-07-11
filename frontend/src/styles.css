@@ -880,3 +880,57 @@
 @media (prefers-reduced-motion: reduce) {
   .pi-dialog-host-open { animation-duration: 0s; }
 }
+
+/* =============================================================================
+ * TZ-93 — Brutalist Architectural UI Foundations (2 utilities).
+ *
+ * Originally shipped 3 utilities (.pi-tech-label, .pi-corner-marks,
+ * .pi-dashed-panel). TZ-93.1 (2026-07-12) rolled back .pi-corner-marks
+ * due to "1990s hacker terminal" aesthetic risk — the 8px L-shapes read
+ * as cyberpunk / terminal chrome rather than editorial precision, and
+ * the perceived benefit (architectural anchoring) didn't outweigh the
+ * anti-editorial risk. The surviving 2 utilities deliver the full
+ * architectural feel (mono metadata + dashed empty states) without
+ * visual noise. TZ-94 was updated to remove corner-marks adopters
+ * (PiEmptyState, PiEmptyTile).
+ *
+ * Utilities for architectural precision (adopted from
+ * stitch_professional_desktop_crm_refinement, see
+ * tasks/_archive/2026-07/TZ-93.md.done + tasks/TZ-93.1.md):
+ *
+ *   .pi-tech-label     → 10px monospace tech label (REF: 80.4.2, ID: MN-01).
+ *                        AAA contrast via --color-muted-foreground-strong.
+ *   .pi-dashed-panel   → 1px dashed border for empty states and draft-style
+ *                        surfaces. Lower perceptual contrast than hairline —
+ *                        apply ONLY on near-empty surfaces.
+ *
+ * REJECTED from brutalist source (paper-and-ink.md § "Что НЕ использовать"):
+ *   - 0px radius everywhere → keeps rounded-sm (interactive) / rounded-none
+ *     (structural).
+ *   - 2px offset shadow → global `* { box-shadow: none !important }` rule
+ *     remains. Hairline-first hierarchy preserved.
+ *   - 1px solid black borders → keeps var(--color-rule) (warm L=0.880, not
+ *     pure black).
+ *   - JetBrains Mono everywhere → --font-mono used ONLY for tech-label,
+ *     IDs, numeric table cells (TZ-94).
+ *   - .pi-corner-marks (8px L-shapes) → rolled back in TZ-93.1; 1990s
+ *     terminal aesthetic risk outweighed the architectural benefit.
+ *
+ * Phase 2 (TZ-94) and Phase 3 (TZ-95) adopt the 2 surviving utilities in
+ * PiEmptyState (dashed-panel only), PiBadge, PiTable, form labels,
+ * /kit/* showcase pages.
+ * ============================================================================= */
+
+@utility pi-tech-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-muted-foreground-strong);
+  line-height: 1;
+}
+
+@utility pi-dashed-panel {
+  border: 1px dashed var(--color-rule);
+  background-color: transparent;
+}
