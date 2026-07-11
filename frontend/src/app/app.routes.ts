@@ -180,6 +180,24 @@ export const routes: Routes = [
           import('./pages/contracts/contracts.page').then((m) => m.ContractsPage),
         title: 'KPPDF — Договоры',
       },
+      {
+        // TZ-86 Phase C.1 — texts sub-page CRUD.
+        path: 'doc-constructor/texts',
+        loadComponent: () =>
+          import('./pages/doc-constructor/texts/texts.page').then(
+            (m) => m.TextsPage,
+          ),
+        title: 'KPPDF — Конструктор: Тексты',
+      },
+      {
+        // TZ-86 Phase C.3 — table-templates sub-page CRUD.
+        path: 'doc-constructor/tables',
+        loadComponent: () =>
+          import('./pages/doc-constructor/tables/tables.page').then(
+            (m) => m.TablesPage,
+          ),
+        title: 'KPPDF — Конструктор: Таблицы',
+      },
     ],
   },
   { path: '**', redirectTo: '' },
