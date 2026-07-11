@@ -9,6 +9,9 @@ import { PI_DIALOG_CONFIG, PI_DIALOG_DATA, PI_DIALOG_REF } from './dialog.tokens
 export interface DialogConfig<TResult = unknown, TData = unknown> {
   width?: 'sm' | 'md' | 'lg' | string;
   height?: string;
+  /** TZ-90B: default true (modal-by-default per spec Decision 5).
+   *  Set false explicitly for non-modal dialogs (e.g. companion panels). */
+  modal?: boolean;
   dismissOnBackdropClick?: boolean;
   dismissOnEscape?: boolean;
   data?: TData;
@@ -41,7 +44,7 @@ export class PiDialogService {
     config: DialogConfig<TResult, TData> = {},
   ): DialogRef<TResult> {
     const overlayRef = this.overlay.create({
-      hasBackdrop: true,
+      hasBackdrop: config.modal !== false, // TZ-90B: default modal=true (Decision 5)
       backdropClass: 'pi-overlay-backdrop',
       panelClass: 'pi-overlay-panel',
       positionStrategy: this.overlay
@@ -83,6 +86,11 @@ export class PiDialogService {
     ) as HTMLElement | null;
 
     if (panelEl) {
+      // TZ-90B: trigger fade-in + scale-up animation (180ms ease-out, keyframe
+      // defined in styles.css). The class is added after attach() so the
+      // animation starts immediately when the dialog appears. Respects
+      // @media (prefers-reduced-motion: reduce) globally.
+      panelEl.classList.add('pi-dialog-host-open');
       this.activeFocusTrap = this.focusTrapFactory.create(panelEl);
       this.activeFocusTrap.focusInitialElementWhenReady().catch(() => {});
     }
