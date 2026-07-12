@@ -7,138 +7,303 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { httpResource, HttpErrorResponse } from '@angular/common/http';
-import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Subject, switchMap } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PiPageHeaderComponent } from '../../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../../shared/page/pi-section.component';
-import { PiToolbarComponent } from '../../../shared/page/pi-toolbar.component';
 import { PiEmptyStateComponent } from '../../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { PiRowActionsComponent } from '../../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
-import { PiDialogService, type DialogRef } from '../../../shared/ui/dialog/pi-dialog.service';
+import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../../shared/ui/dialog/pi-alert-dialog.component';
 import { PiToastService } from '../../../shared/ui/toast';
 import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
 import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../../core/silent-http';
-import { API_BASE_URL } from '../../../core/api.tokens';
-import { TextBlock, TextBlockListResponse, TextBlocksService } from '../../../shared/services/pi-text-blocks.service';
-import { TextBlockFormDialogComponent } from './text-block-dialog.component';
+import {
+  TextBlock,
+  TextBlocksService,
+} from '../../../shared/services/pi-text-blocks.service';
+import { TextBlockEditorComponent } from './text-block-editor.component';
 
 type SortKey = 'name' | null;
 type SortDir = 'asc' | 'desc';
 
 /**
- * TZ-86 Phase C.1 — TextsPage.
+ * TZ-104.6 — TextsPage (split-panel).
  *
- * /doc-constructor/texts — sub-page для CRUD операций с text-блоками.
- * Источник блоков для Constructor canvas (Phase D — «Тексты» в tool pane).
+ * Left panel: list of saved text blocks (table).
+ * Right panel: visual editor for creating/editing blocks.
  *
- * Каноничный Paper & Ink list-page паттерн (mirror work-types.page.ts / TZ-83B):
- *   - OnPush + signal-based
- *   - httpResource для list-GET (auto-fire)
- *   - data/loading/error — computed wrappers
- *   - search через signal
- *   - CRUD через silent-http Observable<SilentResult<T>>
- *   - dialogs через onDialogCloseOnce
- *
- * Backend возвращает `{ items, total }` envelope (Phase B.1 service convention),
- * поэтому data() сразу идёт через .items без дополнительной обёртки.
+ * The inline editor replaces the old dialog-based approach.
  */
 @Component({
   selector: 'app-texts-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    FormsModule,
     PiPageHeaderComponent,
     PiSectionComponent,
-    PiToolbarComponent,
     PiEmptyStateComponent,
     PiRowActionsComponent,
     ButtonComponent,
     SwitchComponent,
+    TextBlockEditorComponent,
   ],
   template: `
     <app-pi-page-header
       eyebrow="раздел · конструктор документов"
-      title="Тексты"
-      description="Текстовые блоки — фрагменты содержимого, которые вставляются в шаблоны документов через конструктор. Вводятся в формате Markdown (лёгкая разметка)."
+      title="Текстовые блоки"
+      description="Создавайте текстовые блоки с форматированием и разбивкой на колонки. Готовые блоки можно вставлять в шаблоны документов через конструктор."
     />
 
-    <app-pi-toolbar>
-      <input
-        type="search"
-        name="texts-search"
-        [value]="searchQuery()"
-        (input)="onSearchInput($event)"
-        placeholder="Поиск по названию или содержимому…"
-        aria-label="Поиск текстовых блоков"
-        class="pi-input w-72"
-      />
-      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
-        + Создать
-      </app-pi-button>
-      <span hint>{{ data().length }} {{ totalLabel(data().length) }}</span>
-    </app-pi-toolbar>
-
-    <app-pi-section title="Каталог" eyebrow="I" hint="клик по заголовку — сортировка">
-      @if (error()) {
-        <div role="alert" class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive">
-          {{ error() }}
-        </div>
-      }
-      <div class="hairline rounded-sm overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="hairline-b">
-            <tr>
-              <th class="pi-cell eyebrow cursor-pointer select-none text-left" (click)="setSort('name')">
-                Название <span class="ml-1 opacity-40">{{ sortIcon('name') }}</span>
-              </th>
-              <th class="pi-cell eyebrow w-20 text-center">Активен</th>
-              <th class="pi-cell eyebrow w-40 text-right">Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of sortedRows(); track row._id) {
-              <tr class="pi-table-row pi-table-row-odd" [class.opacity-50]="!row.isActive" [attr.data-test]="'text-row-' + row._id">
-                <td class="pi-cell align-top font-medium">{{ row.name }}</td>
-                <td class="pi-cell align-top text-center">
-                  <app-pi-switch
-                    [checked]="row.isActive"
-                    [id]="'switch-' + row._id"
-                    [ariaLabel]="(row.isActive ? 'Деактивировать ' : 'Активировать ') + row.name"
-                    (checkedChange)="onToggleActive(row, $event)"
-                    data-test="active-switch"
-                  />
-                </td>
-                <td class="pi-cell align-top">
-                  <app-pi-row-actions
-                    [row]="row"
-                    [editLabel]="'Редактировать ' + row.name"
-                    [deleteLabel]="'Удалить ' + row.name"
-                    [dataTestEdit]="'edit-button-' + row._id"
-                    [dataTestDelete]="'delete-button-' + row._id"
-                    (edit)="openEdit($event)"
-                    (delete)="onDelete($event)"
-                  />
-                </td>
-              </tr>
-            }
-            @if (sortedRows().length === 0 && !loading()) {
-              <app-pi-empty-state
-                [colspan]="3"
-                [message]="searchQuery() ? 'Ничего не найдено.' : 'Нет текстовых блоков. Нажмите «Создать», чтобы добавить первый.'"
-                state="empty"
-              />
-            }
-            @if (loading() && sortedRows().length === 0) {
-              <app-pi-empty-state [colspan]="3" message="Загрузка…" state="loading" />
-            }
-          </tbody>
-        </table>
+    @if (error()) {
+      <div role="alert" class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive">
+        {{ error() }}
       </div>
-    </app-pi-section>
+    }
+
+    <div class="texts-shell">
+      <!-- LEFT PANEL: List -->
+      <aside class="texts-list" aria-label="Список текстовых блоков">
+        <div class="texts-list-header">
+          <input
+            type="search"
+            name="texts-search"
+            [value]="searchQuery()"
+            (input)="onSearchInput($event)"
+            placeholder="Поиск…"
+            aria-label="Поиск текстовых блоков"
+            class="pi-input w-full"
+          />
+          <app-pi-button variant="default" size="sm" (click)="openCreate()" data-test="create-button">
+            + Создать
+          </app-pi-button>
+        </div>
+
+        <span class="texts-list-count">{{ data().length }} {{ totalLabel(data().length) }}</span>
+
+        <div class="texts-list-scroll">
+          @if (loading() && data().length === 0) {
+            <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
+          } @else if (sortedRows().length === 0 && !loading()) {
+            <app-pi-empty-state
+              [colspan]="1"
+              [message]="searchQuery() ? 'Ничего не найдено.' : 'Пока нет блоков. Нажмите «Создать».'"
+              state="empty"
+            />
+          } @else {
+            <div class="texts-list-items">
+              @for (row of sortedRows(); track row._id) {
+                <div
+                  class="texts-list-item"
+                  [class.is-selected]="editingId() === row._id"
+                  [class.is-inactive]="!row.isActive"
+                  (click)="openEdit(row)"
+                  role="button"
+                  tabindex="0"
+                  (keydown.enter)="openEdit(row)"
+                  [attr.data-test]="'text-row-' + row._id"
+                >
+                  <div class="texts-list-item-body">
+                    <span class="texts-list-item-name">{{ row.name }}</span>
+                    <span class="texts-list-item-meta">
+                      @if (row.columns && row.columns.length > 0) {
+                        {{ row.columns.length }} кол.
+                      }
+                    </span>
+                  </div>
+                  <div class="texts-list-item-actions">
+                    <app-pi-switch
+                      [checked]="row.isActive"
+                      [id]="'switch-' + row._id"
+                      [ariaLabel]="(row.isActive ? 'Деактивировать ' : 'Активировать ') + row.name"
+                      (checkedChange)="onToggleActive(row, $event)"
+                      data-test="active-switch"
+                    />
+                    <app-pi-row-actions
+                      [row]="row"
+                      [editLabel]="'Редактировать ' + row.name"
+                      [deleteLabel]="'Удалить ' + row.name"
+                      [dataTestEdit]="'edit-button-' + row._id"
+                      [dataTestDelete]="'delete-button-' + row._id"
+                      (edit)="openEdit(row)"
+                      (delete)="onDelete(row)"
+                    />
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </aside>
+
+      <!-- RIGHT PANEL: Editor -->
+      <main class="texts-editor">
+        @if (editingBlock(); as editingBlock) {
+          <app-text-block-editor
+            [block]="editingBlock"
+            (save)="onEditorSaved($event)"
+            (cancel)="onEditorCancel()"
+          />
+        } @else if (creatingNew()) {
+          <app-text-block-editor
+            (save)="onEditorSaved($event)"
+            (cancel)="onEditorCancel()"
+          />
+        } @else {
+          <div class="texts-editor-empty">
+            <p class="texts-editor-empty-title">Выберите блок для редактирования</p>
+            <p class="texts-editor-empty-hint">
+              Или нажмите «Создать», чтобы добавить новый текстовый блок.
+            </p>
+          </div>
+        }
+      </main>
+    </div>
   `,
+  styles: [
+    `
+      :host {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .texts-shell {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+        gap: 24px;
+        overflow: hidden;
+      }
+
+      /* ── Left panel ── */
+      .texts-list {
+        width: 360px;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        border: 1px solid oklch(var(--color-rule));
+        border-radius: 2px;
+        background: oklch(var(--color-paper));
+        overflow: hidden;
+      }
+
+      .texts-list-header {
+        display: flex;
+        gap: 8px;
+        padding: 12px;
+        border-bottom: 1px solid oklch(var(--color-rule));
+      }
+
+      .texts-list-count {
+        font-size: 11px;
+        color: oklch(var(--color-muted));
+        padding: 0 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .texts-list-scroll {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0 0 8px;
+      }
+
+      .texts-list-items {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .texts-list-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        cursor: pointer;
+        border-left: 2px solid transparent;
+        transition: all 80ms ease;
+      }
+
+      .texts-list-item:hover {
+        background: oklch(var(--color-sunrise-soft) / 0.4);
+      }
+
+      .texts-list-item.is-selected {
+        background: oklch(var(--color-sunrise-soft));
+        border-left-color: oklch(var(--color-ink));
+      }
+
+      .texts-list-item.is-inactive {
+        opacity: 0.5;
+      }
+
+      .texts-list-item-body {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .texts-list-item-name {
+        display: block;
+        font-size: 13px;
+        font-weight: 500;
+        color: oklch(var(--color-ink));
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .texts-list-item-meta {
+        font-size: 10px;
+        color: oklch(var(--color-muted));
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .texts-list-item-actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+      }
+
+      /* ── Right panel ── */
+      .texts-editor {
+        flex: 1;
+        min-width: 0;
+        overflow-y: auto;
+        padding: 16px 20px;
+        border: 1px solid oklch(var(--color-rule));
+        border-radius: 2px;
+        background: oklch(var(--color-paper));
+      }
+
+      .texts-editor-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 300px;
+        text-align: center;
+        color: oklch(var(--color-muted));
+      }
+
+      .texts-editor-empty-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0 0 4px;
+      }
+
+      .texts-editor-empty-hint {
+        font-size: 12px;
+        margin: 0;
+        max-width: 280px;
+      }
+    `,
+  ],
 })
 export class TextsPage {
   private readonly service = inject(TextBlocksService);
@@ -146,24 +311,31 @@ export class TextsPage {
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly baseUrl = inject(API_BASE_URL);
 
-  /**
-   * GET /api/text-blocks через httpResource (Angular 20 signals-native).
-   * Backend возвращает raw TextBlock[] (Phase A.1 — список unpaginated);
-   * обёртка в {items,total} делается в TextBlocksService.list().
-   * Здесь data() готова к употреблению.
-   */
-  private readonly listRes = httpResource<TextBlockListResponse>(() => ({
-    url: `${this.baseUrl}/text-blocks`,
-  }));
+  // ── Data ──
 
-  protected readonly data = computed<TextBlock[]>(() => this.listRes.value()?.items ?? []);
-  protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
-  protected readonly error = computed<string | null>(() => {
-    const err = this.listRes.error() as HttpErrorResponse | undefined;
-    return err ? extractErrorMessage(err) : null;
+  private readonly reload$ = new Subject<void>();
+
+  private readonly listRes = this.reload$.pipe(
+    switchMap(() => this.service.list()),
+    takeUntilDestroyed(this.destroyRef),
+  ).subscribe((res) => {
+    if (res.ok) {
+      this.data.set(res.data.items);
+    } else {
+      this.error.set(extractErrorMessage(res.error));
+    }
+    this.loading.set(false);
   });
+
+  private readonly data = signal<TextBlock[]>([]);
+  protected readonly loading = signal<boolean>(false);
+  protected readonly error = signal<string | null>(null);
+
+  /** ID of block currently being edited. */
+  protected readonly editingId = signal<string | null>(null);
+  protected readonly editingBlock = signal<TextBlock | null>(null);
+  protected readonly creatingNew = signal<boolean>(false);
 
   protected readonly searchQuery = signal<string>('');
   protected readonly sortKey = signal<'name' | null>('name');
@@ -175,8 +347,7 @@ export class TextsPage {
     return this.data().filter(
       (b) =>
         b.name.toLowerCase().includes(q) ||
-        b.slug.toLowerCase().includes(q) ||
-        b.content.toLowerCase().includes(q),
+        (b.content ?? '').toLowerCase().includes(q),
     );
   });
 
@@ -191,31 +362,23 @@ export class TextsPage {
       if (av == null && bv == null) return 0;
       if (av == null) return -1 * sign;
       if (bv == null) return 1 * sign;
-      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * sign;
       return String(av).localeCompare(String(bv), 'ru') * sign;
     });
   });
 
+  constructor() {
+    this.reload();
+  }
+
+  private reload(): void {
+    this.loading.set(true);
+    this.error.set(null);
+    this.reload$.next();
+  }
+
   protected onSearchInput(event: Event): void {
     const target = event.target as HTMLInputElement;
     this.searchQuery.set(target.value);
-  }
-
-  protected setSort(key: Exclude<SortKey, null>): void {
-    if (this.sortKey() !== key) {
-      this.sortKey.set(key);
-      this.sortDir.set('asc');
-    } else if (this.sortDir() === 'asc') {
-      this.sortDir.set('desc');
-    } else {
-      this.sortKey.set(null);
-      this.sortDir.set('asc');
-    }
-  }
-
-  protected sortIcon(key: Exclude<SortKey, null>): string {
-    if (this.sortKey() !== key) return '↕';
-    return this.sortDir() === 'asc' ? '↑' : '↓';
   }
 
   protected totalLabel(n: number): string {
@@ -226,18 +389,31 @@ export class TextsPage {
     return 'блоков';
   }
 
+  // ── Actions ──
+
   protected openCreate(): void {
-    const ref = this.dialog.open(TextBlockFormDialogComponent, { data: null, width: 'lg', parentDestroyRef: this.destroyRef });
-    this.refreshOnDialogClose(ref);
+    this.editingBlock.set(null);
+    this.creatingNew.set(true);
+    this.editingId.set(null);
   }
 
   protected openEdit(block: TextBlock): void {
-    const ref = this.dialog.open(TextBlockFormDialogComponent, { data: block, width: 'lg', parentDestroyRef: this.destroyRef });
-    this.refreshOnDialogClose(ref);
+    this.editingBlock.set(block);
+    this.editingId.set(block._id);
+    this.creatingNew.set(false);
   }
 
-  private refreshOnDialogClose<TResult>(ref: DialogRef<TResult>): void {
-    onDialogCloseOnce(ref, this.injector, () => this.listRes.reload());
+  protected onEditorSaved(saved: TextBlock): void {
+    this.editingBlock.set(null);
+    this.editingId.set(null);
+    this.creatingNew.set(false);
+    this.reload();
+  }
+
+  protected onEditorCancel(): void {
+    this.editingBlock.set(null);
+    this.editingId.set(null);
+    this.creatingNew.set(false);
   }
 
   protected onToggleActive(block: TextBlock, checked: boolean): void {
@@ -246,7 +422,7 @@ export class TextsPage {
         this.toast.success(
           checked ? `«${block.name}» активирован` : `«${block.name}» деактивирован`,
         );
-        this.listRes.reload();
+        this.reload();
       } else {
         this.toast.error(extractErrorMessage(res.error));
       }
@@ -269,7 +445,7 @@ export class TextsPage {
       this.service.remove(block._id).subscribe((res) => {
         if (res.ok) {
           this.toast.success('Текстовый блок удалён');
-          this.listRes.reload();
+          this.reload();
         } else {
           this.toast.error(extractErrorMessage(res.error));
         }
@@ -277,5 +453,3 @@ export class TextsPage {
     });
   }
 }
-
-// httpResource is imported at top with @angular/common/http.

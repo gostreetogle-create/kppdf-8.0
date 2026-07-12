@@ -35,9 +35,10 @@ export class TextBlockService {
       return await this.model.create({
         name: dto.name,
         slug,
-        category: dto.category,
+        category: dto.category ?? 'custom',
         tags: sanitizedTags,
-        content: dto.content,
+        content: dto.content ?? '',
+        columns: dto.columns ?? [],
         isActive: dto.isActive ?? true,
         sortOrder: dto.sortOrder ?? 0,
       });
@@ -98,6 +99,7 @@ export class TextBlockService {
       doc.tags = dto.tags.map((t: string) => this.tagSanitize(t));
     }
     if (dto.content !== undefined) doc.content = dto.content;
+    if (dto.columns !== undefined) doc.columns = dto.columns as any;
     if (dto.isActive !== undefined) doc.isActive = dto.isActive;
     if (dto.sortOrder !== undefined) doc.sortOrder = dto.sortOrder;
     await doc.save();

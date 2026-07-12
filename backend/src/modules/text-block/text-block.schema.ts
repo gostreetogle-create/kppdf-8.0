@@ -2,16 +2,15 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
 /**
- * TZ-86 Phase A.1 — TextBlock.
+ * TZ-86 Phase A.1 — TextBlock (extended for visual constructor).
  *
- * Reusable free-text chunks composable into document templates via the
- * constructor canvas. Stored as CommonMark markdown; frontend parser renders
- * to HTML at consumption time (Phase C frontend).
+ * Reusable text chunks composable into document templates. Now supports
+ * both:
+ *   - **Simple** (legacy): `content` as HTML string
+ *   - **Multi-column** (new): `columns[]` array, each with its own HTML content
  *
- * Soft-delete via project plugin (autofilter `deletedAt: null`). Slug is the
- * canonical lookup key exposed to the frontend picker (used internally AND
- * as URL-stable id), so the unique index is critical. Category + sortOrder
- * are picker-listing ordering; tags are free-form kebab-cased strings.
+ * `slug` is auto-generated from name if omitted. `category`, `tags`,
+ * `sortOrder` are optional (the simplified UI no longer exposes them).
  */
 
 export type TextBlockCategory =
@@ -27,6 +26,12 @@ export const TEXT_BLOCK_CATEGORIES: TextBlockCategory[] = [
   'custom',
 ];
 
+export interface TextBlockColumn {
+  id: string;
+  content: string;
+  width: number;
+}
+
 export type TextBlockDocument = HydratedDocument<TextBlock>;
 
 @Schema({ collection: 'text_blocks', timestamps: true })
@@ -40,8 +45,8 @@ export class TextBlock {
 
   @Prop({
     type: String,
-    enum: TEXT_BLOCK_CATEGORIES,
-    required: true,
+    enum: [...TEXT_BLOCK_CATEGORIES],
+    default: 'custom',
     index: true,
   })
   category!: TextBlockCategory;
@@ -49,9 +54,27 @@ export class TextBlock {
   @Prop({ type: [String], default: [] })
   tags!: string[];
 
-  /** CommonMark markdown — render via marked.js or markdown-it at consumption. Max 10000 chars. */
-  @Prop({ required: true, maxlength: 10000 })
-  content!: string;
+  /**
+   * Content for simple blocks (HTML, previously CommonMark markdown).
+   * Optional — multi-column blocks use `columns` instead.
+   */
+  @Prop({ maxlength: 50000 })
+  content?: string;
+
+  /**
+   * Multi-column layout. Each column has id, HTML content, and width ratio.
+   * When non-empty, `content` should be ignored in favor of rendering columns.
+   */
+  @Prop({
+    type: [{
+      id: { type: String, required: true },
+      content: { type: String, default: '' },
+      width: { type: Number, default: 1 },
+    }],
+    default: [],
+    _id: false,
+  })
+  columns?: TextBlockColumn[];
 
   @Prop({ default: true, index: true })
   isActive!: boolean;

@@ -8,15 +8,32 @@ import {
   IsString,
   MaxLength,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { TEXT_BLOCK_CATEGORIES, type TextBlockCategory } from '../text-block.schema';
 
 /**
- * TZ-86 Phase A.1 — CreateTextBlockDto.
+ * CreateTextBlockDto — simplified.
  *
- * Convention: name + slug (optional/auto) + category + content (required);
- *  tags + isActive + sortOrder optional.
+ * Only `name` is required. `slug`, `category`, `tags`, `content`, `columns`
+ * are optional. For multi-column blocks, pass `columns[]` and omit `content`.
  */
+export class ColumnDto {
+  @IsString()
+  @IsNotEmpty()
+  id!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50000)
+  content?: string;
+
+  @IsOptional()
+  @IsNumber()
+  width?: number;
+}
+
 export class CreateTextBlockDto {
   @IsString()
   @IsNotEmpty()
@@ -28,23 +45,27 @@ export class CreateTextBlockDto {
   @IsString()
   @MinLength(1)
   @MaxLength(100)
-  /** Optional — service auto-generates from name if absent (kebab-case + Russian transliteration). */
   slug?: string;
 
+  @IsOptional()
   @IsIn(TEXT_BLOCK_CATEGORIES)
-  category!: TextBlockCategory;
+  category?: TextBlockCategory;
 
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  /** Free-form kebab-cased tags; sanitised in service layer (lowercase, dash-separated, ≤30 chars). */
   tags?: string[];
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  @MaxLength(10000)
-  /** CommonMark markdown content. */
-  content!: string;
+  @MaxLength(50000)
+  content?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ColumnDto)
+  columns?: ColumnDto[];
 
   @IsOptional()
   @IsBoolean()

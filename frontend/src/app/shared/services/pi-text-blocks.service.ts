@@ -11,29 +11,29 @@ import {
 } from '../../core/silent-http';
 
 /**
- * TZ-86 Phase B.1 — TextBlock mirror of backend `TextBlock` schema
- * (`backend/src/modules/text-block/text-block.schema.ts`).
+ * TZ-86 Phase C — TextBlock (extended for visual constructor).
  *
- * Reusable free-text chunks composable into document templates via the
- * constructor canvas. Stored as CommonMark markdown; frontend parser
- * (markdown-it or marked) renders content at consumption time in
- * `/doc-constructor/texts/:id` preview (Phase C).
- *
- * Backend enforces slug uniqueness via Mongo unique index; duplicate-key
- * throws HttpException 409 → consumers should map `error.status === 409`
- * to a friendly inline-slug-exists message.
+ * Supports both simple HTML content and multi-column layouts.
+ * `slug`, `category`, `tags`, `sortOrder` are optional (UI no longer exposes them).
  */
 export type TextBlockCategory = 'legal' | 'intro' | 'outro' | 'custom';
+
+export interface TextBlockColumn {
+  id: string;
+  content: string;
+  width: number;
+}
 
 export interface TextBlock {
   _id: string;
   name: string;
-  /** Unique kebab-case slug. Auto-generated if caller omits at create time. */
   slug: string;
   category: TextBlockCategory;
   tags: string[];
-  /** CommonMark markdown (max 10000 chars per backend). */
-  content: string;
+  /** Simple content (HTML) — used for single-column blocks. */
+  content?: string;
+  /** Multi-column layout — when set, render columns instead of content. */
+  columns?: TextBlockColumn[];
   isActive: boolean;
   sortOrder: number;
   createdAt?: string;
