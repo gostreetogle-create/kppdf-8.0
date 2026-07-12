@@ -53,15 +53,25 @@ const ALIGN_OPTIONS: Array<{ key: 'left' | 'center' | 'right'; label: string }> 
 ];
 
 /**
- * TZ-86 Phase C.4 — TableTemplateFormDialog.
+ * TZ-86 Phase C.7 — TableTemplateFormDialog.
  *
  * Form:
  *   - name (required)
  *   - description (optional)
- *   - category (radio: 5 options)
+ *   - category (radio: 5 options, pill style)
  *   - columns[] FormArray — each row: key, label, type (select), width (number), align (radio), format (optional text)
  *   - sampleRows JSON textarea — JSON array of arrays; parsed on save
- *   - sortOrder, isActive
+ *   - sortOrder, isActive (footer-strip)
+ *
+ * Phase C.7 layout: Lumina-style two-column body with sticky-left form column
+ * (400px, hairline-bordered) and the server-side preview on the right.
+ * Section headers in eyebrow style ("ОСНОВНАЯ ИНФОРМАЦИЯ", "СТРУКТУРА КОЛОНОК",
+ * "ОБРАЗЦЫ СТРОК", "СВОЙСТВА"). Pill radios via peer-checked. Visual:
+ * Paper & Ink (hairline, OKLCH warm, Lucide). Reference: Lumina Commerce
+ * Table Templates (see `docs/reference/lumina-table-template-dialog.html`).
+ *
+ * Phase C.8 (deferred): drag-cards with collapsed/expanded state, icon-based
+ * type picker, client-side live preview from sampleRowsJson.
  *
  * Sample preview:
  *   - показывает server-side preview только ПОСЛЕ успешного first save — endpoint требует существующий id.
@@ -74,35 +84,69 @@ const ALIGN_OPTIONS: Array<{ key: 'left' | 'center' | 'right'; label: string }> 
   template: `
     <app-pi-dialog
       [title]="data ? 'Редактировать шаблон таблицы' : 'Новый шаблон таблицы'"
-      [width]="'lg'"
+      [width]="'xl'"
       [showClose]="true"
     >
-      <div body class="grid grid-cols-2 gap-6" [formGroup]="form">
-        <div class="space-y-4">
-          <label class="block text-sm">
-            <span class="eyebrow block mb-1.5 text-ink">Название</span>
-            <input class="pi-input w-full" formControlName="name" name="name" placeholder="Спецификация товаров" data-test="name-input" />
-          </label>
+      <div body class="flex" [formGroup]="form">
+        <!-- LEFT: form column (Lumina layout — sticky 400px, hairline-bordered) -->
+        <div class="w-[400px] shrink-0 border-r border-rule pr-6 flex flex-col gap-6">
+          <section class="space-y-4">
+            <h3 class="eyebrow text-ink">Основная информация</h3>
 
-          <label class="block text-sm">
-            <span class="eyebrow block mb-1.5 text-ink">Описание</span>
-            <input class="pi-input w-full" formControlName="description" name="description" placeholder="Краткое описание назначения шаблона" />
-          </label>
+            <label class="block text-sm">
+              <span class="eyebrow block mb-1.5 text-ink">Название</span>
+              <input
+                class="pi-input w-full"
+                formControlName="name"
+                name="name"
+                placeholder="Спецификация товаров"
+                data-test="name-input"
+              />
+            </label>
 
-          <fieldset>
-            <legend class="eyebrow block mb-1.5 text-ink">Категория</legend>
-            <div class="grid grid-cols-2 gap-2">
-              @for (c of categoryOptions; track c.key) {
-                <label class="flex items-center gap-2 cursor-pointer hairline px-3 py-2 rounded-sm hover:bg-paper-2 transition-colors">
-                  <input type="radio" [value]="c.key" formControlName="category" name="category" />
-                  <span class="text-sm">{{ c.label }}</span>
-                </label>
-              }
+            <label class="block text-sm">
+              <span class="eyebrow block mb-1.5 text-ink">Описание</span>
+              <input
+                class="pi-input w-full"
+                formControlName="description"
+                name="description"
+                placeholder="Краткое описание назначения шаблона"
+              />
+            </label>
+
+            <div>
+              <span class="eyebrow block mb-2 text-ink">Категория</span>
+              <div class="flex flex-wrap gap-2">
+                @for (c of categoryOptions; track c.key) {
+                  <label class="cursor-pointer">
+                    <input
+                      type="radio"
+                      [value]="c.key"
+                      formControlName="category"
+                      name="category"
+                      class="sr-only peer"
+                    />
+                    <span
+                      class="inline-flex items-center px-3 py-1.5 rounded-sm text-sm font-medium bg-paper-2 text-ink hairline peer-checked:bg-ink peer-checked:text-paper transition-colors"
+                    >
+                      {{ c.label }}
+                    </span>
+                  </label>
+                }
+              </div>
             </div>
-          </fieldset>
+          </section>
 
-          <fieldset>
-            <legend class="eyebrow block mb-1.5 text-ink">Колонки</legend>
+          <section>
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="eyebrow text-ink">Структура колонок</h3>
+              <button
+                type="button"
+                class="text-xs text-ink underline underline-offset-2 hover:opacity-80 pi-focus-ring"
+                (click)="addColumn()"
+                data-test="add-column-button"
+              >+ Добавить</button>
+            </div>
             <div formArrayName="columns" class="space-y-2">
               @for (col of columnsArray.controls; track $index; let i = $index) {
                 <div [formGroupName]="i" class="hairline rounded-sm p-3 space-y-2">
@@ -172,16 +216,10 @@ const ALIGN_OPTIONS: Array<{ key: 'left' | 'center' | 'right'; label: string }> 
                 </div>
               }
             </div>
-            <button
-              type="button"
-              class="mt-3 pi-button pi-button-ghost text-sm"
-              (click)="addColumn()"
-              data-test="add-column-button"
-            >+ Добавить колонку</button>
-          </fieldset>
+          </section>
 
-          <label class="block text-sm">
-            <span class="eyebrow block mb-1.5 text-ink">Образцы строк (JSON-массив массивов)</span>
+          <section>
+            <h3 class="eyebrow text-ink mb-2">Образцы строк</h3>
             <textarea
               class="pi-input w-full font-mono text-xs"
               rows="6"
@@ -191,23 +229,25 @@ const ALIGN_OPTIONS: Array<{ key: 'left' | 'center' | 'right'; label: string }> 
               data-test="sample-rows-input"
             ></textarea>
             <span class="text-xs text-muted-foreground mt-1 block">каждая строка — массив значений в порядке колонок</span>
-          </label>
+          </section>
 
-          <div class="grid grid-cols-2 gap-4">
+          <!-- Footer-strip: sortOrder + isActive (Lumina pattern — moved out of form body) -->
+          <div class="mt-auto pt-6 hairline-t flex items-center gap-6">
             <label class="block text-sm">
               <span class="eyebrow block mb-1.5 text-ink">Порядок</span>
-              <input class="pi-input w-full" type="number" formControlName="sortOrder" name="sortOrder" />
+              <input class="pi-input w-20" type="number" formControlName="sortOrder" name="sortOrder" />
             </label>
-            <label class="flex items-center gap-2 mt-7 cursor-pointer">
+            <label class="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" formControlName="isActive" name="isActive" />
               <span class="text-sm">Активен</span>
             </label>
           </div>
         </div>
 
-        <div class="space-y-2">
+        <!-- RIGHT: preview column (Lumina layout — flex-1; server-side in Phase 1, client-side in Phase 2) -->
+        <div class="flex-1 pl-6 min-w-0 flex flex-col gap-2">
           <span class="eyebrow text-ink">Предпросмотр (server-side)</span>
-          <div class="hairline rounded-sm bg-paper-2 px-5 py-4 text-sm min-h-[24rem] overflow-x-auto">
+          <div class="hairline rounded-sm bg-paper-2 px-5 py-4 text-sm min-h-[24rem] flex-1 overflow-x-auto">
             @if (previewLoading()) {
               <p class="text-muted-foreground">Загрузка preview…</p>
             } @else if (previewHtml()) {
@@ -218,7 +258,7 @@ const ALIGN_OPTIONS: Array<{ key: 'left' | 'center' | 'right'; label: string }> 
           </div>
           <button
             type="button"
-            class="text-xs text-muted-foreground underline hover:text-ink"
+            class="text-xs text-muted-foreground underline hover:text-ink self-start"
             [disabled]="!data || previewLoading()"
             (click)="loadPreview()"
           >↻ Обновить preview</button>
