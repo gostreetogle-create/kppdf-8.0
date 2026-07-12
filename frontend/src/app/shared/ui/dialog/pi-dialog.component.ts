@@ -27,6 +27,7 @@ import type { DialogRef } from './pi-dialog.service';
       [attr.aria-label]="effectiveLabel()"
       [attr.aria-modal]="true"
       [class]="panelClass()"
+      [style.max-width]="maxWidth()"
       [class.pi-dialog-host-open]="animate()"
     >
       @if (title() || showClose()) {
@@ -78,6 +79,13 @@ export class PiDialogComponent {
   readonly title = input<string>('');
   readonly showClose = input<boolean>(true);
   readonly ariaLabel = input<string | null>(null);
+
+  /**
+   * Optional max-width override. When set, replaces the standard width
+   * for the dialog (e.g. '1000px' to make the text-block editor wider).
+   * Only applies to the form variant (T2).
+   */
+  readonly maxWidth = input<string | null>(null);
 
   /**
    * Animation opt-in (TZ-90 §A.5). PiDialogService.open() can override this
@@ -184,6 +192,14 @@ export class PiDialogComponent {
   private dimensionClass(): string {
     const v = this.variant();
     const w = this.width();
+    const mw = this.maxWidth();
+
+    // maxWidth is handled by [style.max-width] binding in template (Tailwind JIT-safe)
+    // If maxWidth is set, use w-full so the dialog fills the overlay pane; otherwise
+    // use the standard width from the variant/width table.
+    if (mw) {
+      return 'w-full'; // width controlled by [style.max-width]
+    }
 
     // === FORM (T2) — all 4 widths supported ===
     if (v === 'form') {

@@ -25,7 +25,7 @@ import { API_BASE_URL } from '../../../core/api.tokens';
 import { TextBlock, TextBlockListResponse, TextBlocksService } from '../../../shared/services/pi-text-blocks.service';
 import { TextBlockFormDialogComponent } from './text-block-dialog.component';
 
-type SortKey = 'name' | 'category' | 'sortOrder' | null;
+type SortKey = 'name' | null;
 type SortDir = 'asc' | 'desc';
 
 /**
@@ -62,7 +62,7 @@ type SortDir = 'asc' | 'desc';
     <app-pi-page-header
       eyebrow="раздел · конструктор документов"
       title="Тексты"
-      description="Переиспользуемые текстовые блоки (CommonMark markdown) — вставляются в шаблоны документов через конструктор. Группируются по категориям: юридические, вступление, заключение, прочее."
+      description="Текстовые блоки — фрагменты содержимого, которые вставляются в шаблоны документов через конструктор. Вводятся в формате Markdown (лёгкая разметка)."
     />
 
     <app-pi-toolbar>
@@ -94,14 +94,6 @@ type SortDir = 'asc' | 'desc';
               <th class="pi-cell eyebrow cursor-pointer select-none text-left" (click)="setSort('name')">
                 Название <span class="ml-1 opacity-40">{{ sortIcon('name') }}</span>
               </th>
-              <th class="pi-cell eyebrow cursor-pointer select-none text-left">Slug</th>
-              <th class="pi-cell eyebrow cursor-pointer select-none text-left" (click)="setSort('category')">
-                Категория <span class="ml-1 opacity-40">{{ sortIcon('category') }}</span>
-              </th>
-              <th class="pi-cell eyebrow text-left">Теги</th>
-              <th class="pi-cell eyebrow cursor-pointer select-none text-left w-28" (click)="setSort('sortOrder')">
-                Порядок <span class="ml-1 opacity-40">{{ sortIcon('sortOrder') }}</span>
-              </th>
               <th class="pi-cell eyebrow w-20 text-center">Активен</th>
               <th class="pi-cell eyebrow w-40 text-right">Действия</th>
             </tr>
@@ -110,12 +102,6 @@ type SortDir = 'asc' | 'desc';
             @for (row of sortedRows(); track row._id) {
               <tr class="pi-table-row pi-table-row-odd" [class.opacity-50]="!row.isActive" [attr.data-test]="'text-row-' + row._id">
                 <td class="pi-cell align-top font-medium">{{ row.name }}</td>
-                <td class="pi-cell align-top text-muted-foreground font-mono text-xs empty-cell">{{ row.slug }}</td>
-                <td class="pi-cell align-top text-muted-foreground empty-cell">{{ categoryLabel(row.category) }}</td>
-                <td class="pi-cell align-top text-muted-foreground text-xs empty-cell">
-                  {{ row.tags.length ? row.tags.join(', ') : '—' }}
-                </td>
-                <td class="pi-cell align-top text-muted-foreground font-mono text-xs empty-cell">{{ row.sortOrder }}</td>
                 <td class="pi-cell align-top text-center">
                   <app-pi-switch
                     [checked]="row.isActive"
@@ -140,13 +126,13 @@ type SortDir = 'asc' | 'desc';
             }
             @if (sortedRows().length === 0 && !loading()) {
               <app-pi-empty-state
-                [colspan]="7"
+                [colspan]="3"
                 [message]="searchQuery() ? 'Ничего не найдено.' : 'Нет текстовых блоков. Нажмите «Создать», чтобы добавить первый.'"
                 state="empty"
               />
             }
             @if (loading() && sortedRows().length === 0) {
-              <app-pi-empty-state [colspan]="7" message="Загрузка…" state="loading" />
+              <app-pi-empty-state [colspan]="3" message="Загрузка…" state="loading" />
             }
           </tbody>
         </table>
@@ -180,7 +166,7 @@ export class TextsPage {
   });
 
   protected readonly searchQuery = signal<string>('');
-  protected readonly sortKey = signal<SortKey>('name');
+  protected readonly sortKey = signal<'name' | null>('name');
   protected readonly sortDir = signal<SortDir>('asc');
 
   private readonly visible = computed<TextBlock[]>(() => {
@@ -230,10 +216,6 @@ export class TextsPage {
   protected sortIcon(key: Exclude<SortKey, null>): string {
     if (this.sortKey() !== key) return '↕';
     return this.sortDir() === 'asc' ? '↑' : '↓';
-  }
-
-  protected categoryLabel(c: TextBlock['category']): string {
-    return { legal: 'Юридическое', intro: 'Вступление', outro: 'Заключение', custom: 'Прочее' }[c] ?? c;
   }
 
   protected totalLabel(n: number): string {
