@@ -314,6 +314,129 @@ describe('TableComponent — TZ-104.3 Phase A', () => {
     });
   });
 
+  // ─── TZ-104.3 Phase B #1 cellTemplates ──────────────────────────────
+
+  describe('cellTemplates input (TZ-104.3 Phase B)', () => {
+    @Component({
+      standalone: true,
+      imports: [TableComponent],
+      template: `
+        <app-pi-table
+          [data]="data"
+          [columns]="columns"
+          [cellTemplates]="{ photo: photoTpl }"
+        >
+          <ng-template #photoTpl let-row>
+            <span data-test="photo-tpl" [attr.data-id]="row.id">PHOTO-{{ row.id }}</span>
+          </ng-template>
+        </app-pi-table>
+      `,
+    })
+    class CellTplHost {
+      data = sampleData;
+      columns: ColumnDef<TestRow>[] = [
+        { key: 'name', label: 'Name' },
+        { key: 'photo', label: 'Photo' },
+        { key: 'price', label: 'Price', numeric: true },
+      ];
+      @ViewChild('photoTpl', { static: true })
+      photoTpl!: TemplateRef<unknown>;
+    }
+
+    it('column with matching key renders via outlet ($implicit=row)', () => {
+      const fixture = TestBed.createComponent(CellTplHost);
+      fixture.detectChanges();
+      // Columns: [name, photo, price] → second <td> is the photo cell.
+      const photoCell = fixture.nativeElement.querySelector(
+        'tbody tr:first-child td:nth-child(2) [data-test="photo-tpl"]',
+      );
+      expect(photoCell).toBeTruthy();
+      expect(photoCell?.getAttribute('data-id')).toBe('1');
+    });
+
+    it('column WITHOUT cellTemplate entry falls back to formatCell text', () => {
+      @Component({
+        standalone: true,
+        imports: [TableComponent],
+        template: `<app-pi-table [data]="data" [columns]="columns" />`,
+      })
+      class FallbackHost {
+        data = sampleData; // [{id:1,name:'Widget',price:99.99}, {id:2,name:'Gadget',price:149.5}]
+        columns: ColumnDef<TestRow>[] = [
+          { key: 'name', label: 'Name' },
+          { key: 'price', label: 'Price', numeric: true },
+        ];
+      }
+      const fixture = TestBed.createComponent(FallbackHost);
+      fixture.detectChanges();
+      const priceCell = fixture.nativeElement.querySelector(
+        'tbody tr:first-child td:nth-child(2)',
+      );
+      expect(priceCell.textContent.trim()).toContain('99.99');
+    });
+  });
+
+  // ─── TZ-104.3 Phase B #2 localSort bypass ──────────────────────────
+
+  describe('localSort input (TZ-104.3 Phase B)', () => {
+    @Component({
+      standalone: true,
+      imports: [TableComponent],
+      template: `
+        <app-pi-table
+          [data]="data"
+          [columns]="columns"
+          [localSort]="localSort"
+          (sortChange)="emitSpy($event)"
+        />
+      `,
+    })
+    class LocalSortHost {
+      data: TestRow[] = [
+        { id: '2', name: 'Gadget', price: 200 },
+        { id: '1', name: 'Widget', price: 100 },
+      ];
+      columns: ColumnDef<TestRow>[] = [
+        { key: 'name', label: 'Name', sortable: true },
+      ];
+      localSort = true;
+      events: { key: string; dir: string | null }[] = [];
+      emitSpy(e: { key: string; dir: string | null }): void {
+        this.events.push(e);
+      }
+    }
+
+    it('localSort=false keeps data in passed-in order on header click', () => {
+      const fixture = TestBed.createComponent(LocalSortHost);
+      (fixture.componentInstance as LocalSortHost).localSort = false;
+      fixture.detectChanges();
+      // Click Name header — sortChange emits (header arrow flips
+      // visually) but the row order is preserved because sortedData()
+      // bypasses internal sort and returns data() unchanged.
+      const nameHeader =
+        fixture.nativeElement.querySelectorAll('thead th')[0] as HTMLElement;
+      nameHeader.click();
+      fixture.detectChanges();
+      const firstRow = fixture.nativeElement.querySelector(
+        'tbody tr:first-child td:first-child',
+      );
+      // Data was [Gadget, Widget] — stays that way under bypass.
+      expect(firstRow.textContent.trim()).toBe('Gadget');
+    });
+
+    it('localSort=false still emits sortChange for parent-side re-fetch', () => {
+      const fixture = TestBed.createComponent(LocalSortHost);
+      (fixture.componentInstance as LocalSortHost).localSort = false;
+      fixture.detectChanges();
+      const nameHeader =
+        fixture.nativeElement.querySelectorAll('thead th')[0] as HTMLElement;
+      nameHeader.click();
+      const host = fixture.componentInstance as LocalSortHost;
+      expect(host.events.length).toBe(1);
+      expect(host.events[0]).toEqual({ key: 'name', dir: 'asc' });
+    });
+  });
+
   // ─── TZ-104.3 #5 Empty state ──────────────────────────────────────
 
   describe('empty state', () => {

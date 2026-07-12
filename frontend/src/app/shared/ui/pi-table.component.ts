@@ -159,7 +159,11 @@ export type SelectionMode = 'none' | 'single' | 'multi';
                   [class.bg-paper]="col.sticky"
                   [class]="col.cellClass ?? ''"
                 >
-                  {{ formatCell(col, row) }}
+                  @if (cellTemplates()[col.key]; as tpl) {
+                    <ng-container *ngTemplateOutlet="tpl; context: { $implicit: row }" />
+                  } @else {
+                    {{ formatCell(col, row) }}
+                  }
                 </td>
               }
               @if (rowActions()) {
@@ -271,6 +275,50 @@ export class TableComponent<T extends Record<string, unknown>> {
    * Typical use: `<ng-template #rowActions let-row><app-pi-row-actions [row]="row" .../></ng-template>`.
    */
   readonly rowActions = input<TemplateRef<{ $implicit: T }> | null>(null);
+
+  /**
+   * TZ-104.3 Phase B — per-column rich-content templates.
+   * Map of `ColumnDef.key → TemplateRef<{ $implicit: T }>`. When a
+   * column has a matching entry, the cell is rendered via
+   * `*ngTemplateOutlet` with `{ $implicit: row }` instead of the
+   * textual `formatCell()` result.
+   *
+   * Use this for HTML-rich cells that can't be expressed as a string
+   * (e.g. `<img>` thumbnails, `<a [routerLink]>` row-open links,
+   * formatted dimension glyphs). Columns without an entry fall
+   * through to the existing textual render path — backward compat.
+   *
+   * Typical use:
+   * ```html
+   * <app-pi-table [columns]="cols" [cellTemplates]="tpls" ...>
+   *   <ng-template #photoTpl let-row>
+   *     <img [src]="row.thumbnailUrl" />
+   *   </ng-template>
+   * </app-pi-table>
+   * ```
+   * Where `tpls = { photo: photoTpl }` matches `cols[0].key = 'photo'`.
+   */
+  readonly cellTemplates = input<
+    Record<string, TemplateRef<{ $implicit: unknown }>>
+  >({});
+
+  /**
+   * TZ-104.3 Phase B — controls sort ownership.
+   *
+   * When `true` (default), pi-table sorts the visible `data()` array
+   * internally based on column clicks + initial null sort. Backward-
+   * compatible with existing consumers.
+   *
+   * When `false`, `sortedData()` returns `data()` unchanged — pi-table
+   * does NOT sort the visible rows. Header arrows still flip on click
+   * and `sortChange` still emits — but the data order is whatever the
+   * parent passed in. Use this for **server-side sort**: parent
+   * listens to `(sortChange)`, updates its own sort signals, and
+   * re-fetches via httpResource (Angular 20 auto-refires on signal
+   * deps). This avoids sorting only the current 50-row page while
+   * pretending the whole dataset is sorted.
+   */
+  readonly localSort = input<boolean>(true);
   /**
    * Total row count for server-side pagination. When 0 (default),
    * pagination footer is hidden. When > pageSize(), a minimal pager
@@ -391,6 +439,7 @@ export class TableComponent<T extends Record<string, unknown>> {
   });
 
   readonly sortedData = computed<T[]>(() => {
+    if (!this.localSort()) return this.data().slice();
     const data = this.data().slice();
     const key = this.sortKeySig();
     const dir = this.sortDirSig();
