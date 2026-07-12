@@ -1,0 +1,94 @@
+<!--
+  REFERENCE: Lumina Commerce — Table Templates dialog
+  Used as a UX/structural reference for the kppdf-8.0 doc-constructor dialogs.
+  Visual style (Material 3 / shadows / Material Symbols) is NOT adopted —
+  Paper & Ink (hairline / OKLCH warm / Lucide / no shadows) stays the design system.
+  Only structural patterns are borrowed: two-column layout, drag-cards with
+  expanded settings, live preview from data.json, footer-полоса.
+  See: docs/paper-and-ink.md for the project's design tokens.
+-->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Lumina Commerce - Table Templates</title>
+  <!-- Material Symbols, Hanken Grotesk, JetBrains Mono — reference only -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+  <style>
+    /* Ref only — full CSS omitted for brevity */
+    body { font-family: sans-serif; }
+  </style>
+</head>
+<body>
+  <!-- Modal overlay (fixed inset backdrop) -->
+  <div class="fixed inset-0 z-50 flex items-center justify-center">
+
+    <!-- Modal container: max-w-[1280px] h-[90vh] two-column layout -->
+    <div class="modal">
+
+      <!-- Header: title + subtitle + close -->
+      <div class="modal-header">
+        <h2>Создание шаблона таблицы</h2>
+        <p>Настройте структуру и отображение данных</p>
+        <button class="close">×</button>
+      </div>
+
+      <!-- Two-column body -->
+      <div class="modal-body">
+        <!-- LEFT: settings column (500px, scrollable) -->
+        <div class="left-col">
+          <section>
+            <h3>Основная информация</h3>
+            <!-- Name input -->
+            <!-- Description textarea -->
+            <!-- Category radios (5 options as pill buttons, peer-checked styles) -->
+          </section>
+
+          <section>
+            <div class="row-between">
+              <h3>Структура колонок</h3>
+              <button>+ Добавить</button>
+            </div>
+            <!-- Draggable column cards (with drag_indicator on left) -->
+            <!-- Each card: label + type-pill | key + width -->
+            <!-- Active card: expanded settings (align, format) -->
+          </section>
+
+          <div class="row-between">
+            <label>Порядок: <input type="number"/></label>
+            <label class="toggle">Активен</label>
+          </div>
+        </div>
+
+        <!-- RIGHT: preview column (flex-1) -->
+        <div class="right-col">
+          <!-- Top: code editor (h-[250px], dark #1e1e1e bg) -->
+          <div class="code-editor">
+            <div class="editor-header">
+              <span>data.json (Образцы строк)</span>
+              <button>▶ Обновить Preview</button>
+            </div>
+            <pre><code>[{ "sku": "A-001-BLK", ... }]</code></pre>
+          </div>
+
+          <!-- Bottom: live preview table -->
+          <div class="preview">
+            <div class="preview-header">
+              <h3>Live Preview</h3>
+              <span>Server-side Render</span>
+            </div>
+            <table>... real table with the data ...</table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer: Cancel + Save -->
+      <div class="modal-footer">
+        <button>Отмена</button>
+        <button>Сохранить</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
