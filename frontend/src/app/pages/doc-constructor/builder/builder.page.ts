@@ -8,10 +8,11 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { HttpErrorResponse, httpResource } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
 import {
   Subject,
   debounceTime,
+  forkJoin,
   groupBy,
   mergeMap,
   switchMap,
@@ -21,6 +22,7 @@ import {
 import { LucideAngularModule, FileText, Plus, RefreshCw, Check, AlertCircle, Loader2 } from 'lucide-angular';
 import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
 import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
+import { API_BASE_URL } from '../../../core/api.tokens';
 import { extractErrorMessage, SilentResult } from '../../../core/silent-http';
 import {
   blockKey,
@@ -265,6 +267,8 @@ export class BuilderPage {
   // DI
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly http = inject(HttpClient);
+  private readonly baseUrl = inject(API_BASE_URL);
   private readonly blocksSvc = inject(TemplateBlocksService);
   private readonly templatesSvc = inject(DocumentTemplatesService);
   private readonly toast = inject(PiToastService);
@@ -636,12 +640,38 @@ export class BuilderPage {
   // ─────────────────────────────────────────────────────────────
   // Misc handlers
   // ─────────────────────────────────────────────────────────────
-  /** TZ-87 B.2: Create a new template and navigate to the builder. */
+  /** TZ-87 B.2: Fetch first org + docType, then create template and navigate. */
   protected onCreateTemplate(): void {
     this.isCreating.set(true);
+    const org$ = this.http.get<{ items: { _id: string }[] }>(`${this.baseUrl}/organizations?limit=1`);
+    const dt$ = this.http.get<{ _id: string }[]>(`${this.baseUrl}/doc-types`);
+    forkJoin([org$, dt$])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+      next: ([orgRes, dtRes]) => {
+        const orgId = orgRes?.items?.[0]?._id;
+        const docTypeId = dtRes?.[0]?._id;
+        if (!orgId || !docTypeId) {
+          this.toast.error('Не найдены организация или тип документа. Сначала создайте их.');
+          this.isCreating.set(false);
+          return;
+        }
+        this.doCreateTemplate(orgId, docTypeId);
+      },
+      error: (err) => {
+        this.isCreating.set(false);
+        this.toast.error('Ошибка загрузки: ' + extractErrorMessage(err));
+      },
+    });
+  }
+
+  /** Actually create the template with resolved refs. */
+  private doCreateTemplate(orgId: string, docTypeId: string): void {
     this.templatesSvc
       .create({
         name: `Шаблон ${new Date().toLocaleDateString('ru-RU')}`,
+        organizationId: orgId,
+        docTypeId: docTypeId,
         pageSize: 'A4',
         isActive: true,
       })
