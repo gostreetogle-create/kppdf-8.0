@@ -50,13 +50,19 @@ export const DEFAULT_EXTENSIONS = [
           <div class="pi-rte-group">
             <button type="button" class="pi-rte-btn"
               [class.is-active]="activeStates().h1"
-              (click)="toggleHeading(1)" title="Заголовок 1">H<sub>1</sub></button>
+              (click)="toggleHeading(1)" title="Заголовок 1">
+              H<sub>1</sub>
+            </button>
             <button type="button" class="pi-rte-btn"
               [class.is-active]="activeStates().h2"
-              (click)="toggleHeading(2)" title="Заголовок 2">H<sub>2</sub></button>
+              (click)="toggleHeading(2)" title="Заголовок 2">
+              H<sub>2</sub>
+            </button>
             <button type="button" class="pi-rte-btn"
               [class.is-active]="activeStates().h3"
-              (click)="toggleHeading(3)" title="Заголовок 3">H<sub>3</sub></button>
+              (click)="toggleHeading(3)" title="Заголовок 3">
+              H<sub>3</sub>
+            </button>
           </div>
 
           <div class="pi-rte-sep"></div>
@@ -157,23 +163,31 @@ export const DEFAULT_EXTENSIONS = [
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 26px;
-      height: 24px;
-      padding: 0 3px;
+      min-width: 28px;
+      height: 26px;
+      padding: 0 4px;
       font-size: 11px;
       font-weight: 600;
       font-family: inherit;
       background: transparent;
       color: oklch(var(--color-ink));
       border: 1px solid transparent;
-      border-radius: 2px;
+      border-radius: 3px;
       cursor: pointer;
-      transition: all 80ms ease;
+      transition: all 100ms ease;
     }
-    .pi-rte-btn:hover { background: oklch(var(--color-sunrise-soft)); }
+    .pi-rte-btn:hover {
+      background: oklch(var(--color-sunrise-soft));
+      border-color: oklch(var(--color-rule));
+    }
     .pi-rte-btn.is-active {
       background: oklch(var(--color-ink));
       color: oklch(var(--color-paper));
+      border-color: oklch(var(--color-ink));
+      box-shadow: 0 0 0 1px oklch(var(--color-ink) / 0.3);
+    }
+    .pi-rte-btn:active {
+      transform: scale(0.95);
     }
     .pi-rte-btn--icon { font-size: 13px; }
     .pi-rte-btn sub { font-size: 8px; vertical-align: sub; line-height: 0; }

@@ -30,12 +30,10 @@ type SortKey = 'name' | null;
 type SortDir = 'asc' | 'desc';
 
 /**
- * TZ-104.6 — TextsPage (split-panel).
+ * TZ-104.6 — TextsPage (single-column layout).
  *
- * Left panel: list of saved text blocks (table).
- * Right panel: visual editor for creating/editing blocks.
- *
- * The inline editor replaces the old dialog-based approach.
+ * Top: full-width visual editor.
+ * Bottom: list of saved blocks for browsing/searching.
  */
 @Component({
   selector: 'app-texts-page',
@@ -61,103 +59,112 @@ type SortDir = 'asc' | 'desc';
       </div>
     }
 
-    <div class="texts-shell">
-      <!-- LEFT PANEL: List -->
-      <aside class="texts-list" aria-label="Список текстовых блоков">
-        <div class="texts-list-header">
-          <input
-            type="search"
-            name="texts-search"
-            [value]="searchQuery()"
-            (input)="onSearchInput($event)"
-            placeholder="Поиск…"
-            aria-label="Поиск текстовых блоков"
-            class="pi-input w-full"
-          />
-          <app-pi-button variant="default" size="sm" (click)="openCreate()" data-test="create-button">
-            + Создать
-          </app-pi-button>
-        </div>
+    <!-- ── Toolbar: search + create ── -->
+    <div class="texts-toolbar">
+      <div class="texts-toolbar-search">
+        <input
+          type="search"
+          name="texts-search"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          placeholder="Поиск блоков…"
+          aria-label="Поиск текстовых блоков"
+          class="pi-input"
+        />
+      </div>
+      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
+        + Создать
+      </app-pi-button>
+    </div>
 
+    <!-- ── Editor area (full-width) ── -->
+    <div class="texts-editor">
+      @if (editingBlock(); as editingBlock) {
+        <app-text-block-editor
+          [block]="editingBlock"
+          (save)="onEditorSaved($event)"
+          (cancel)="onEditorCancel()"
+        />
+      } @else if (creatingNew()) {
+        <app-text-block-editor
+          (save)="onEditorSaved($event)"
+          (cancel)="onEditorCancel()"
+        />
+      } @else {
+        <div class="texts-editor-empty">
+          <p class="texts-editor-empty-title">Выберите или создайте блок</p>
+          <p class="texts-editor-empty-hint">
+            Нажмите «Создать», чтобы добавить новый текстовый блок,<br />
+            или выберите готовый блок из списка ниже.
+          </p>
+        </div>
+      }
+    </div>
+
+    <!-- ── Saved blocks list ── -->
+    <div class="texts-list">
+      <div class="texts-list-header">
+        <span class="texts-list-title">Сохранённые блоки</span>
         <span class="texts-list-count">{{ data().length }} {{ totalLabel(data().length) }}</span>
+      </div>
 
-        <div class="texts-list-scroll">
-          @if (loading() && data().length === 0) {
-            <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
-          } @else if (sortedRows().length === 0 && !loading()) {
-            <app-pi-empty-state
-              [colspan]="1"
-              [message]="searchQuery() ? 'Ничего не найдено.' : 'Пока нет блоков. Нажмите «Создать».'"
-              state="empty"
-            />
-          } @else {
-            <div class="texts-list-items">
-              @for (row of sortedRows(); track row._id) {
-                <div
-                  class="texts-list-item"
-                  [class.is-selected]="editingId() === row._id"
-                  [class.is-inactive]="!row.isActive"
-                  (click)="openEdit(row)"
-                  role="button"
-                  tabindex="0"
-                  (keydown.enter)="openEdit(row)"
-                  [attr.data-test]="'text-row-' + row._id"
-                >
-                  <div class="texts-list-item-body">
-                    <span class="texts-list-item-name">{{ row.name }}</span>
-                    <span class="texts-list-item-meta">
-                      @if (row.columns && row.columns.length > 0) {
-                        {{ row.columns.length }} кол.
-                      }
-                    </span>
-                  </div>
-                  <div class="texts-list-item-actions">
-                    <app-pi-switch
-                      [checked]="row.isActive"
-                      [id]="'switch-' + row._id"
-                      [ariaLabel]="(row.isActive ? 'Деактивировать ' : 'Активировать ') + row.name"
-                      (checkedChange)="onToggleActive(row, $event)"
-                      data-test="active-switch"
-                    />
-                    <app-pi-row-actions
-                      [row]="row"
-                      [editLabel]="'Редактировать ' + row.name"
-                      [deleteLabel]="'Удалить ' + row.name"
-                      [dataTestEdit]="'edit-button-' + row._id"
-                      [dataTestDelete]="'delete-button-' + row._id"
-                      (edit)="openEdit(row)"
-                      (delete)="onDelete(row)"
-                    />
-                  </div>
-                </div>
-              }
-            </div>
-          }
+      @if (loading() && data().length === 0) {
+        <div class="texts-list-body">
+          <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
         </div>
-      </aside>
-
-      <!-- RIGHT PANEL: Editor -->
-      <main class="texts-editor">
-        @if (editingBlock(); as editingBlock) {
-          <app-text-block-editor
-            [block]="editingBlock"
-            (save)="onEditorSaved($event)"
-            (cancel)="onEditorCancel()"
+      } @else if (sortedRows().length === 0 && !loading()) {
+        <div class="texts-list-body">
+          <app-pi-empty-state
+            [colspan]="1"
+            [message]="searchQuery() ? 'Ничего не найдено.' : 'Пока нет блоков. Нажмите «Создать».'"
+            state="empty"
           />
-        } @else if (creatingNew()) {
-          <app-text-block-editor
-            (save)="onEditorSaved($event)"
-            (cancel)="onEditorCancel()"
-          />
-        } @else {
-          <div class="texts-editor-empty">
-            <p class="texts-editor-empty-title">Выберите блок для редактирования</p>
-            <p class="texts-editor-empty-hint">
-              Или нажмите «Создать», чтобы добавить новый текстовый блок.
-            </p>
+        </div>
+      } @else {
+        <div class="texts-list-body">
+          <div class="texts-list-items">
+            @for (row of sortedRows(); track row._id) {
+              <div
+                class="texts-list-item"
+                [class.is-selected]="editingId() === row._id"
+                [class.is-inactive]="!row.isActive"
+                (click)="openEdit(row)"
+                role="button"
+                tabindex="0"
+                (keydown.enter)="openEdit(row)"
+                [attr.data-test]="'text-row-' + row._id"
+              >
+                <div class="texts-list-item-body">
+                  <span class="texts-list-item-name">{{ row.name }}</span>
+                  <span class="texts-list-item-meta">
+                    @if (row.columns && row.columns.length > 0) {
+                      {{ row.columns.length }} кол.
+                    }
+                  </span>
+                </div>
+                <div class="texts-list-item-actions">
+                  <app-pi-switch
+                    [checked]="row.isActive"
+                    [id]="'switch-' + row._id"
+                    [ariaLabel]="(row.isActive ? 'Деактивировать ' : 'Активировать ') + row.name"
+                    (checkedChange)="onToggleActive(row, $event)"
+                    data-test="active-switch"
+                  />
+                  <app-pi-row-actions
+                    [row]="row"
+                    [editLabel]="'Редактировать ' + row.name"
+                    [deleteLabel]="'Удалить ' + row.name"
+                    [dataTestEdit]="'edit-button-' + row._id"
+                    [dataTestDelete]="'delete-button-' + row._id"
+                    (edit)="openEdit(row)"
+                    (delete)="onDelete(row)"
+                  />
+                </div>
+              </div>
+            }
           </div>
-        }
-      </main>
+        </div>
+      }
     </div>
   `,
   styles: [
@@ -167,23 +174,59 @@ type SortDir = 'asc' | 'desc';
         flex-direction: column;
         height: 100%;
         min-height: 0;
+        gap: 12px;
       }
 
-      .texts-shell {
+      /* ── Toolbar ── */
+      .texts-toolbar {
         display: flex;
-        flex: 1;
-        min-height: 0;
-        gap: 24px;
-        overflow: hidden;
+        align-items: center;
+        gap: 12px;
       }
 
-      /* ── Left panel ── */
-      .texts-list {
-        width: 360px;
-        flex-shrink: 0;
+      .texts-toolbar-search {
+        flex: 1;
+        max-width: 320px;
+      }
+
+      .texts-toolbar-search .pi-input {
+        width: 100%;
+      }
+
+      /* ── Editor area ── */
+      .texts-editor {
+        border: 1px solid oklch(var(--color-rule));
+        border-radius: 2px;
+        background: oklch(var(--color-paper));
+        padding: 16px 20px;
+      }
+
+      .texts-editor-empty {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        align-items: center;
+        justify-content: center;
+        min-height: 120px;
+        text-align: center;
+        color: oklch(var(--color-muted));
+        padding: 24px;
+      }
+
+      .texts-editor-empty-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0 0 4px;
+      }
+
+      .texts-editor-empty-hint {
+        font-size: 12px;
+        margin: 0;
+        max-width: 320px;
+        line-height: 1.5;
+      }
+
+      /* ── Saved blocks list ── */
+      .texts-list {
         border: 1px solid oklch(var(--color-rule));
         border-radius: 2px;
         background: oklch(var(--color-paper));
@@ -192,23 +235,31 @@ type SortDir = 'asc' | 'desc';
 
       .texts-list-header {
         display: flex;
-        gap: 8px;
-        padding: 12px;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        background: oklch(var(--color-paper-2));
         border-bottom: 1px solid oklch(var(--color-rule));
+      }
+
+      .texts-list-title {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: oklch(var(--color-ink));
       }
 
       .texts-list-count {
         font-size: 11px;
         color: oklch(var(--color-muted));
-        padding: 0 12px;
         text-transform: uppercase;
         letter-spacing: 0.05em;
       }
 
-      .texts-list-scroll {
-        flex: 1;
+      .texts-list-body {
+        max-height: 320px;
         overflow-y: auto;
-        padding: 0 0 8px;
       }
 
       .texts-list-items {
@@ -220,7 +271,7 @@ type SortDir = 'asc' | 'desc';
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 8px 12px;
+        padding: 8px 14px;
         cursor: pointer;
         border-left: 2px solid transparent;
         transition: all 80ms ease;
@@ -266,39 +317,6 @@ type SortDir = 'asc' | 'desc';
         align-items: center;
         gap: 4px;
         flex-shrink: 0;
-      }
-
-      /* ── Right panel ── */
-      .texts-editor {
-        flex: 1;
-        min-width: 0;
-        overflow-y: auto;
-        padding: 16px 20px;
-        border: 1px solid oklch(var(--color-rule));
-        border-radius: 2px;
-        background: oklch(var(--color-paper));
-      }
-
-      .texts-editor-empty {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 300px;
-        text-align: center;
-        color: oklch(var(--color-muted));
-      }
-
-      .texts-editor-empty-title {
-        font-size: 14px;
-        font-weight: 600;
-        margin: 0 0 4px;
-      }
-
-      .texts-editor-empty-hint {
-        font-size: 12px;
-        margin: 0;
-        max-width: 280px;
       }
     `,
   ],

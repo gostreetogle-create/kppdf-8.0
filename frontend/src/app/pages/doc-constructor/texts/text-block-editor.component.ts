@@ -8,17 +8,17 @@
  * │                                                             │
  * │ Колонок: [1] [2] [3] [4] [5] [6] [7] [8]                  │
  * │                                                             │
- * │ ┌─ Документ (рамка как в реальности) ────────────────────┐ │
- * │ │  ┌────────── Часть 1 ──────────┐ ┌── Часть 2 ───────┐ │ │
- * │ │  │ [B] [I] [U] | [≡] [≡] [≡]  │ │ [B] [I] [U] | …  │ │ │
- * │ │  │                             │ │                   │ │ │
- * │ │  │ Текст колонки 1...          │ │ Текст колонки 2.. │ │ │
- * │ │  │                             │ │                   │ │ │
- * │ │  └─────────────────────────────┘ └───────────────────┘ │ │
- * │ └────────────────────────────────────────────────────────┘ │
- * │                                                             │
- * │ [✓ Активен]                [Отмена] [Сохранить блок]       │
- * └─────────────────────────────────────────────────────────────┘
+ * │ ┌─ Документ ────────────────────────────────────────────┐ │
+ * │ │ ░░░░░░░░░░░░░░░░░░ (серый фон, чтобы рамки видны) ░░ │ │
+ * │ │  ┌────────── #1 ──────────┐ ┌────────── #2 ────────┐ │ │
+ * │ │  │ [B] [I] [U] | [≡] [≡] │ │ [B] [I] [U] | [≡] [≡]│ │ │
+ * │ │  │                       │ │                       │ │ │
+ * │ │  │ текст...              │ │ текст...              │ │ │
+ * │ │  └───────────────────────┘ └───────────────────────┘ │ │
+ * │ └──────────────────────────────────────────────────────┘ │
+ * │                                                           │
+ * │ [✓ Активен]              [Отмена] [Сохранить блок]       │
+ * └───────────────────────────────────────────────────────────┘
  */
 
 import {
@@ -77,7 +77,6 @@ import { extractErrorMessage } from '../../../core/silent-http';
       <!-- ── Document preview frame ── -->
       @if (columns().length > 0) {
         <div class="tbe-doc-frame">
-          <!-- Frame top bar (like paper header) -->
           <div class="tbe-doc-frame-bar">
             <span class="tbe-doc-frame-bar-label">{{ nameControl.value || 'Текстовый блок' }}</span>
             <span class="tbe-doc-frame-bar-cols">{{ columns().length }} колонк{{ columns().length === 1 ? 'а' : columns().length < 5 ? 'и' : 'ок' }}</span>
@@ -90,19 +89,20 @@ import { extractErrorMessage } from '../../../core/silent-http';
             >
               @for (col of columns(); track trackByColId($index, col); let idx = $index) {
                 <div class="tbe-block" [class.tbe-block--last]="idx === columns().length - 1">
-                  <!-- Mini-toolbar inside the block -->
                   <div class="tbe-block-toolbar">
                     <span class="tbe-block-toolbar-label">#{{ idx + 1 }}</span>
                     @if (columns().length > 1) {
-                      <button
-                        type="button"
-                        class="tbe-block-remove"
-                        (click)="removeColumn(idx)"
-                        title="Удалить колонку"
-                      >✕</button>
+                      <span class="tbe-block-remove-wrap">
+                        <button
+                          type="button"
+                          class="tbe-block-remove"
+                          (click)="removeColumn(idx)"
+                          title="Удалить колонку"
+                          aria-label="Удалить колонку {{ idx + 1 }}"
+                        >✕</button>
+                      </span>
                     }
                   </div>
-                  <!-- Rich-text editor (compact mode) -->
                   <app-pi-rich-text
                     [(value)]="col.content"
                     [placeholder]="'Колонка ' + (idx + 1) + '…'"
@@ -188,26 +188,30 @@ import { extractErrorMessage } from '../../../core/silent-http';
     }
 
     .tbe-col-btn {
-      width: 28px;
-      height: 28px;
+      width: 30px;
+      height: 30px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       font-size: 12px;
       font-weight: 600;
       font-family: inherit;
-      background: transparent;
+      background: oklch(var(--color-paper-2) / 0.4);
       color: oklch(var(--color-ink));
       border: 1px solid oklch(var(--color-rule));
-      border-radius: 2px;
+      border-radius: 4px;
       cursor: pointer;
-      transition: all 80ms ease;
+      transition: all 100ms ease;
     }
-    .tbe-col-btn:hover { background: oklch(var(--color-sunrise-soft)); }
+    .tbe-col-btn:hover {
+      background: oklch(var(--color-sunrise-soft));
+      border-color: oklch(var(--color-ink) / 0.4);
+    }
     .tbe-col-btn.is-active {
       background: oklch(var(--color-ink));
       color: oklch(var(--color-paper));
       border-color: oklch(var(--color-ink));
+      box-shadow: 0 0 0 2px oklch(var(--color-ink) / 0.25);
     }
 
     .tbe-columns-hint {
@@ -249,6 +253,7 @@ import { extractErrorMessage } from '../../../core/silent-http';
 
     .tbe-doc-frame-body {
       padding: 12px;
+      background: oklch(var(--color-paper-2) / 0.45);
     }
 
     .tbe-grid {
@@ -265,24 +270,25 @@ import { extractErrorMessage } from '../../../core/silent-http';
       border-right: none;
       background: oklch(var(--color-paper));
       overflow: hidden;
-      transition: border-color 120ms ease;
+      transition: border-color 120ms ease, box-shadow 120ms ease;
     }
     .tbe-block:hover {
-      border-color: oklch(var(--color-ink) / 0.35);
+      border-color: oklch(var(--color-ink) / 0.45);
+      box-shadow: inset 0 0 0 1px oklch(var(--color-ink) / 0.12);
     }
     .tbe-block--last {
       border-right: 1px solid oklch(var(--color-rule));
     }
     .tbe-block--last:hover {
-      border-right-color: oklch(var(--color-ink) / 0.35);
+      border-right-color: oklch(var(--color-ink) / 0.45);
     }
 
     .tbe-block-toolbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 3px 8px;
-      background: oklch(var(--color-paper-2) / 0.6);
+      padding: 4px 10px;
+      background: oklch(var(--color-paper-2) / 0.5);
       border-bottom: 1px solid oklch(var(--color-rule));
     }
 
@@ -294,26 +300,28 @@ import { extractErrorMessage } from '../../../core/silent-http';
       color: oklch(var(--color-muted));
     }
 
+    .tbe-block-remove-wrap {
+      display: flex;
+    }
+
     .tbe-block-remove {
-      width: 18px;
-      height: 18px;
+      width: 20px;
+      height: 20px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 10px;
+      font-size: 11px;
       background: transparent;
-      color: oklch(var(--color-muted));
+      color: oklch(var(--color-destructive) / 0.6);
       border: 1px solid transparent;
-      border-radius: 2px;
+      border-radius: 3px;
       cursor: pointer;
-      transition: all 80ms ease;
-      opacity: 0.5;
+      transition: all 100ms ease;
     }
-    .tbe-block:hover .tbe-block-remove { opacity: 1; }
     .tbe-block-remove:hover {
       color: oklch(var(--color-destructive));
-      background: oklch(var(--color-destructive) / 0.1);
-      opacity: 1;
+      background: oklch(var(--color-destructive) / 0.12);
+      border-color: oklch(var(--color-destructive) / 0.25);
     }
 
     /* ── Add column button ── */
