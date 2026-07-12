@@ -43,6 +43,9 @@ import { LucideAngularModule } from 'lucide-angular';
 export const DEFAULT_EXTENSIONS = [
   StarterKit.configure({
     heading: { levels: [1, 2, 3] },
+    // Underline is added explicitly below — disable from StarterKit to avoid
+    // TipTap's "Duplicate extension names" warning.
+    underline: false,
   }),
   Underline,
   TextStyle,
