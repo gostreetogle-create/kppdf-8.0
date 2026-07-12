@@ -1,9 +1,11 @@
 # pi-table Migration Recipe
 
-**Status:** ROUND-1 architect verdict · **Phase:** TZ-104 onboarding doc · **Owner:** Codex
+**Status:** ROUND-2 architect verdict (ground-truth corrected) · **Phase:** TZ-104 onboarding doc · **Owner:** Codex
 
 > **Read this before migrating any catalog list-page to `<app-pi-table>`.**
 > This is the canonical pattern extracted from `materials.page.ts` (envelope, server-side), `products.page.ts` (envelope, server-side, sort+paginate), and `orders.page.ts` (flat-array, client-side). The 3 commits `fc398a2` + `7f4e359` + `d331e22` shipped these. The TZ-104.4 commit `dd88b42` extended `<app-pi-table>` with the typed `initialSortKey`/`initialSortDir` inputs that drop the `any` escape hatch.
+>
+> **ROUND-2 amendments** (this version): added §4A Pattern A-mixed (for backends that paginate but don't accept `sortBy`) and §5 amendment (pseudo-envelope `data` extraction). Driven by the pre-flight basher+thinker run on 2026-07-12 which discovered that no current backend controller exposes `sortBy` for batch-2 domains. See `tasks/TZ-104.3-batch-2.md` for the ROUND-2 corrected inventory (5 Pattern B + 2 Pattern A-mixed + 0 Pattern A).
 
 **Depends on:**
 - `frontend/src/app/shared/ui/pi-table.component.ts` (the primitive — `TableComponent<T extends Record<string, unknown>>`).
@@ -70,14 +72,16 @@ head -60 frontend/src/app/<path>/<service>.ts
 grep -nE 'list\(.*\).*:|<X>ListResponse|SilentResult<' frontend/src/app/<path>/<service>.ts
 ```
 
-**Decision matrix:**
+**Decision matrix (ROUND-2 — 4 patterns, was 2):**
 
 | Backend returns | Use pattern | Key signals |
 |---|---|---|
-| `Observable<SilentResult<{ items: T[]; total: number; page: number; limit: number; }>>` or `httpResource<{ items, total, page, limit }>` | **Pattern A — Envelope** | `items` + `total` keys in the response shape |
-| `Observable<SilentResult<T[]>>` or `httpResource<T[]>` | **Pattern B — Flat-array** | Top-level array, no envelope wrapper |
+| `Observable<SilentResult<{ items, total, ... }>>` AND controller accepts `?sortBy=foo&sortOrder=asc` | **Pattern A — Envelope** | `items` + `total` + `sortBy` works server-side |
+| `Observable<SilentResult<{ items, total, ... }>>` BUT controller does NOT accept `sortBy` (only `page`/`limit`/`search`) | **Pattern A-mixed** (§4A) | envelope shape but sort must be client-side |
+| `Observable<SilentResult<{ items: T[]; total: number; ?page: number; ?limit: number }>>` where server **ignores** `?page`/`?limit` (fetches everything and wraps in pseudo-envelope) | **Pattern B-amendment** (§5 pseudo-envelope case) | envelope wrapper but pagination is client-side (`data = listRes.value()?.items`) |
+| `Observable<SilentResult<T[]>>` or `httpResource<T[]>` (top-level array, no envelope) | **Pattern B — Flat-array** | no envelope wrapper at all |
 
-**Don't trust the page name** — `organizations` could be either; the service decides. Inventory in `tasks/TZ-104.3-batch-2.md` §1 is best-effort and pages flagged `TBD` MUST be re-verified.
+**Don't trust the page name** — `organizations` could be any of these; the service decides. Inventory in `tasks/TZ-104.3-batch-2.md` §1 is best-effort and pages MUST be re-verified per AC-10 verify-before-write gate.
 
 ---
 
@@ -336,6 +340,105 @@ httpResource reads `this.listParams()` and auto-refires when any of the 4 signal
 
 ---
 
+## 4A. Pattern A-mixed — Envelope paginates, NO `sortBy`
+
+**Use when:** backend returns `{items, total, page, limit}` and accepts `?page=`, `?limit=`, `?search=` — **but does NOT accept `?sortBy=`**. Examples (batch-2 ground-truth, ROUND-2): `organizations`, `dictionaries/units`.
+
+**Sole option (option β — `localSort` within current page slice):** pi-table re-sorts the current 50-row server slice client-side on column click. UX trade-off: column click sorts visible rows but page 2 may show rows that alphabetically "would" be on page 1 under a true server-sort. Trade-off disclosed to user via mandatory §4A.5 UX hint.
+
+**OPTION α REDACTED (do NOT use).** ROUND-1 spec originally documented option α (\"disable sort headers entirely\"). Round-2 review found that pi-table's internal sort state still updates on click even with `[localSort]=\"false\"` + no `(sortChange)` binding — the arrows update visually but rows stay backend-ordered, producing misleading UX. Option α was REMOVED. A proper \"disable sort\" would require a new `[sortDisabled]` input on pi-table (out of TZ-104.3 scope; reserved for a future TZ-104.4.3 extension spec). Until then, option β is the only path.
+
+### 4A.1 Template — option β (canonical)
+
+```html
+<app-pi-table
+  [data]="data()"
+  [columns]="cols"
+  [loading]="loading()"
+  [total]="total()"
+  [page]="page()"
+  [pageSize]="pageSize"
+  [emptyMessage]="emptyMessage()"
+  [ariaLabel]="'Список <pluralized>'"
+  [cellTemplates]="cellTemplates"
+  [rowActions]="rowActionsTplBinding"
+  [localSort]="true"               <!-- pi-table re-sorts current server slice -->
+  [initialSortKey]="'<page-default-key>'"
+  [initialSortDir]="'asc'"
+  (pageChange)="onPageChange($event)"
+  (sortChange)="onSortChange($event)"
+>
+  <ng-template #cellTpl let-row>...</ng-template>
+  <ng-template #rowActionsTpl let-row>...</ng-template>
+</app-pi-table>
+```
+
+### 4A.2 Class wiring (option β)
+
+```ts
+type SortKey = 'name' | 'inn' | 'shortName';   // page-specific
+
+private readonly sortKeySig = signal<SortKey | null>('<page-default-key>');
+private readonly sortDirSig = signal<'asc' | 'desc' | null>('asc');
+
+// listParams (server-side paginate + search) — note: NEVER includes sortBy
+private readonly listParams = computed(() => ({
+  page: this.pageSig(),
+  limit: PAGE_SIZE,
+  ...(this.search.debouncedSearch() ? { search: this.search.debouncedSearch() } : {}),
+}));
+
+protected readonly listRes = httpResource<<Page>ListResponse>(() => ({
+  url: `${this.baseUrl}/<endpoint>`,
+  params: this.listParams(),
+}));
+
+protected readonly data = computed<<Row>[]>(() => this.listRes.value()?.items ?? []);
+protected readonly total = computed<number>(() => this.listRes.value()?.total ?? 0);
+
+protected onSortChange(event: { key: string; dir: SortDirection }): void {
+  // pi-table's `sortChange` is ONLY emitted when [localSort]="true" + sort
+  // headers are clicked. With option β, this handler is purely for UX
+  // (page doesn't refetch — pi-table re-sorts the current data() view).
+  this.sortKeySig.set(event.dir === null ? null : (event.key as SortKey));
+  this.sortDirSig.set(event.dir === null ? null : event.dir);
+  // NOTE: do NOT call this.pageSig.set(1) — localSort=true means user is
+  // re-sorting the SAME 50 rows (current server slice), not asking for a
+  // new server fetch. Resetting would lose the user's scroll position
+  // for a sort that doesn't move them across pages.
+}
+```
+
+### 4A.3 Cross-cutting
+
+- ViewChild + cellTemplates wiring: identical to Pattern A §4.2.
+- TS strictness: identical to Pattern A §4 — `@ViewChild` typed `TemplateRef<{ $implicit: <Row> }>`.
+- lifecycle: `ngOnInit` builds `cellTemplates` + `rowActionsTplBinding` AFTER ViewChild resolves.
+
+### 4A.4 UX disclosure (MANDATORY for every A-mixed page)
+
+Every A-mixed page MUST render a small `<p class=\"text-xs text-muted-foreground mt-stack-sm\">` hint **below** the `<app-pi-table>`, explaining the sort behavior. Template:
+
+```html
+<p class="text-xs text-muted-foreground mt-stack-sm" data-test="sort-disclosure">
+  «Сортировка применяется только к строкам текущей страницы»
+</p>
+```
+
+This keeps the UX honest. Without this hint users assume sort spans the full result set; with the hint they understand the limitation and don't get confused on page 2.
+
+### 4A.5 Forward-migration trigger (for A-mixed pages)
+
+If, in a future batch, the backend controller for any current A-mixed page is extended to accept `?sortBy=...&sortOrder=...`, the page MUST be migrated from A-mixed to Pattern A (server-side sort+pagination). The migration is mechanical:
+1. Drop `[localSort]=\"true\"`, change to `[localSort]=\"false\"`.
+2. Add `sortBy`+`sortOrder` to `listParams` computed.
+3. Drop the §4A.4 UX disclosure hint (the limitation is no longer present).
+4. Remove the onSortChange "do not reset page" comment, restore `this.pageSig.set(1)`.
+
+Trigger condition for migration: backend response includes `?sortBy=` param AND test coverage verifies correct ordering.
+
+---
+
 ## 5. Pattern B — Flat-array (client-side sort + filter + slice)
 
 **Use when:** backend returns a flat `T[]` (no envelope). The page owns sort, filter, and pagination. Examples: `orders`, `contracts`.
@@ -442,6 +545,27 @@ export class <Page>Page implements OnInit {
   }));
 
   protected readonly data = computed<<Row>[]>(() => this.listRes.value() ?? []);
+
+/**
+ * Pattern B amendment (pseudo-envelope): if backend wraps the array
+ * in `{items, total, ...}` but IGNORES `?page`/`?limit` params
+ * (server fetches everything), use this extraction instead:
+ *
+ *   protected readonly data = computed<<Row>[]>(
+ *     () => this.listRes.value()?.items ?? [],
+ *   );
+ *
+ * The rest of the pipeline (filteredRows → sortedRows → paginatedRows)
+ * is identical to the true flat-array case.
+ *
+ * Forward-migration trigger: if/when the backend controller is extended
+ * to honor `?page=` and/or `?sortBy=`, migrate this page to Pattern A
+ * (server-side paginate+sort). The mechanical steps:
+ *   1. Drop the `.items ?? []` extraction (use `?? []` directly).
+ *   2. Add `?page=&limit=&search=&sortBy=&sortOrder=` to listParams.
+ *   3. Move sort+filter+pagination to server-side (Pattern A).
+ *   4. Verify with a test that exercises sort across multiple pages.
+ */
   protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
   protected readonly error = computed<string | null>(() => {
     const err = this.listRes.error() as HttpErrorResponse | undefined;
@@ -700,9 +824,11 @@ filter + slice). Pattern mirror: docs/pi-table-migration-recipe.md
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-07-12 | (this doc) | ROUND-1 — initial extraction. Captures the post-TZ-104.4.2 canonical pattern. |
-| (pending) | TZ-104.3-batch-2-A.1 | First batch-2 page migrated against this recipe. Reveals any oversights. |
-| (pending) | TZ-104.3-batch-2-B.1 | First batch-2 flat-array page migrated. Reveals Pattern B oversights. |
+| 2026-07-12 | (recipe.md) | ROUND-1 — initial extraction. Captures the post-TZ-104.4.2 canonical pattern (Pattern A + Pattern B for true flat-array). |
+| 2026-07-12 | (recipe.md) | **ROUND-2** — added §4A Pattern A-mixed (2 options: α disabled-sort / β localSort-within-page) + §5 amendment (pseudo-envelope `data = listRes.value()?.items ?? []`). Triggered by pre-flight discovery that no current backend exposes `sortBy` for batch-2 domains. See `tasks/TZ-104.3-batch-2.md` ROUND-2 inventory. |
+| (pending) | TZ-104.3-batch-2-B-flat.1 | First batch-2 true flat-array page (modules or contracts). |
+| (pending) | TZ-104.3-batch-2-B-envelope.1 | First batch-2 pseudo-envelope page (work-types). |
+| (pending) | TZ-104.3-batch-2-A-mixed.1 | First batch-2 A-mixed page (organizations option β or dictionaries option α). |
 
 If batch-2 finds a gap in this recipe, update this doc in the same commit as the page that exposed the gap. Don't fork — converge.
 
