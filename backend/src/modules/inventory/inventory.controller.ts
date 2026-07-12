@@ -60,12 +60,18 @@ export class InventoryController {
         (i.quantity ?? 0) <= (i.minQuantity ?? 0),
     );
 
+    // Map warehouse names from the already-fetched allWarehouses array
+    const whNameMap = new Map<string, string>();
+    for (const wh of activeWarehouses) {
+      whNameMap.set(String(wh._id), wh.name);
+    }
+
     // Count items per warehouse using raw document data
     const whCounts = new Map<string, { name: string; count: number }>();
     for (const item of activeItems) {
       const raw = item as unknown as Record<string, unknown>;
       const whId = String(raw['warehouseId'] ?? '');
-      const whName = String(raw['warehouseName'] ?? whId);
+      const whName = whNameMap.get(whId) ?? whId;
       const entry = whCounts.get(whId) ?? { name: whName, count: 0 };
       entry.count++;
       whCounts.set(whId, entry);
@@ -91,11 +97,12 @@ export class InventoryController {
       .slice(0, 10)
       .map((i) => {
         const raw = i as unknown as Record<string, unknown>;
+        const dims = raw['dimensions'] as Record<string, unknown> | undefined;
         return {
           id: String(raw['_id'] ?? ''),
           name: String(raw['name'] ?? ''),
           qty: Number(raw['quantity'] ?? 0),
-          unit: String(raw['unit'] ?? ''),
+          unit: String(dims?.unit ?? ''),
           updatedAt: String(raw['updatedAt'] ?? ''),
         };
       });
