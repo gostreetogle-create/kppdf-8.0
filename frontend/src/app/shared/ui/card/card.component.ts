@@ -61,7 +61,8 @@ export class CardComponent {
       'bg-paper',
       interactive ? 'cursor-pointer transition-colors hover:bg-paper-2' : '',
       'hairline',
-      'rounded-sm',
+      'rounded-lg', /* TZ-96: design ref uses rounded-lg (0.25rem) for cards */
+      'executive-shadow', /* TZ-96: design ref shadow on cards */
     ].filter(Boolean).join(' ');
   });
 }

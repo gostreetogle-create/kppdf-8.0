@@ -46,6 +46,10 @@ describe('PiEmptyStateComponent', () => {
     return fixture.nativeElement.querySelector('td') as HTMLTableCellElement;
   }
 
+  function panel(fixture: ComponentFixture<PiEmptyStateComponent>): HTMLDivElement {
+    return fixture.nativeElement.querySelector('.pi-dashed-panel') as HTMLDivElement;
+  }
+
   function row(fixture: ComponentFixture<PiEmptyStateComponent>): HTMLTableRowElement {
     return fixture.nativeElement.querySelector('tr') as HTMLTableRowElement;
   }
@@ -100,6 +104,14 @@ describe('PiEmptyStateComponent', () => {
   it('emits no aria-live when state is "empty" (no screen-reader chatter)', async () => {
     const fixture = await createFixture();
     expect(cell(fixture).hasAttribute('aria-live')).toBe(false);
+  });
+
+  it('wraps content in a pi-dashed-panel div', async () => {
+    const fixture = await createFixture();
+    const p = panel(fixture);
+    expect(p).toBeTruthy();
+    expect(p.className).toContain('pi-dashed-panel');
+    expect(p.className).toContain('max-w-sm');
   });
 
   it('is a standalone component', async () => {

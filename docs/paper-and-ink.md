@@ -278,4 +278,24 @@ User's original audit also flagged "small text (футер, подписи) reco
 | sunrise-glow (light) | 1.91:1 | — | декоративный glow, используется в dark |
 | sunrise (light) | 2.36:1 | — | golden eyebrow-акцент, не body text |
 
-**Вывод:** все текстовые токены в обоих режимах проходят WCAG AA Large как минимум; body text (ink) — AAA (>7:1). Non-text токены ожидаемо ниже порогов — они не несут контент."
+**Вывод:** все текстовые токены в обоих режимах проходят WCAG AA Large как минимум; body text (ink) — AAA (>7:1). Non-text токены ожидаемо ниже порогов — они не несут контент.
+
+---
+
+## Pi-* Architectural Utilities
+
+2 utility-класса adopted from `stitch_professional_desktop_crm_refinement` (TZ-93):
+
+| Utility | Purpose | Use when |
+|---|---|---|
+| `pi-tech-label` | 10px monospace tech label (REF: 80.4.2, ID: MN-01). | Engineering metadata in corners of structural panels. AAA contrast (8.0:1 light, 7.5:1 dark). |
+| `pi-dashed-panel` | 2px dashed border for draft-style surfaces. | Empty states, draft cards, "no data" placeholders. NOT for active panels. |
+
+**Rejected from brutalist source:**
+- ❌ 0px radius everywhere → keeps `rounded-sm` (interactive) / `rounded-none` (structural).
+- ❌ 2px offset shadow → global `* { box-shadow: none !important }` rule was removed in TZ-96; `executive-shadow` utility used selectively on cards/panels.
+- ❌ 1px solid black borders → keeps `var(--color-rule)` (warm L=0.880).
+- ❌ JetBrains Mono everywhere → `--font-mono` only for tech-label, IDs, numeric cells.
+- ❌ `.pi-corner-marks` (8px L-shapes) → rolled back in TZ-93.1; 1990s terminal aesthetic risk outweighed the architectural benefit.
+
+**See:** `tasks/TZ-93.md` (full adoption matrix), `tasks/TZ-94.md` (component adopters), `tasks/TZ-96.md` (design reference alignment), `/kit/foundations` (Section V showcase).

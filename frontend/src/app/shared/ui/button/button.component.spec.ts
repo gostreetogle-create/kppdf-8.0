@@ -78,22 +78,22 @@ describe('ButtonComponent', () => {
     expect(btn.disabled).toBe(true);
   });
 
-  it('clicking emits the `pressed` output', async () => {
+  it('clicking emits the `click` output', async () => {
     const fixture = await createFixture();
-    const pressedSpy = jest.fn();
-    fixture.componentInstance.pressed.subscribe(pressedSpy);
+    const clickSpy = jest.fn();
+    fixture.componentInstance.click.subscribe(clickSpy);
 
     hostEl(fixture).querySelector('button')?.click();
-    expect(pressedSpy).toHaveBeenCalledTimes(1);
+    expect(clickSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('disabled=true blocks the `pressed` output', async () => {
+  it('disabled=true blocks the `click` output', async () => {
     const fixture = await createFixture({ disabled: true });
-    const pressedSpy = jest.fn();
-    fixture.componentInstance.pressed.subscribe(pressedSpy);
+    const clickSpy = jest.fn();
+    fixture.componentInstance.click.subscribe(clickSpy);
 
     hostEl(fixture).querySelector('button')?.click();
-    expect(pressedSpy).not.toHaveBeenCalled();
+    expect(clickSpy).not.toHaveBeenCalled();
   });
 
   describe('variants (apply different class sets)', () => {

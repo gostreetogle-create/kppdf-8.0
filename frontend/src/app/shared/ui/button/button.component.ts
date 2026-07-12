@@ -22,12 +22,13 @@ export type PiButtonVariant =
 export type PiButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 
 const VARIANT_CLASS: Record<PiButtonVariant, string> = {
-  default: 'bg-sunrise-warm text-paper hover:opacity-90',
-  secondary: 'bg-paper-2 text-ink hover:bg-paper',
-  outline: 'bg-transparent hairline text-ink hover:bg-paper-2',
+  /* TZ-96: Design Reference — gold primary, grey bg (user request), executive-shadow */
+  default: 'bg-[oklch(0.55_0.007_260)] text-white border border-gold executive-shadow hover:brightness-110',
+  secondary: 'bg-tertiary text-white hover:brightness-110',
+  outline: 'bg-transparent border border-rule text-ink hover:bg-paper-2',
   ghost: 'bg-transparent text-ink hover:bg-paper-2',
   link: 'bg-transparent text-ink underline underline-offset-4 hover:text-ink',
-  destructive: 'bg-destructive text-paper hover:opacity-90',
+  destructive: 'bg-destructive text-white hover:brightness-110',
 };
 
 const SIZE_CLASS: Record<PiButtonSize, string> = {
@@ -38,8 +39,9 @@ const SIZE_CLASS: Record<PiButtonSize, string> = {
 };
 
 const BASE_CLASS =
-  'inline-flex items-center justify-center gap-2 font-medium font-body ' +
-  'rounded-sm transition-colors ' +
+  'inline-flex items-center justify-center gap-2 font-medium font-mono ' + /* TZ-96: JetBrains Mono uppercase */
+  'uppercase tracking-wider ' +
+  'rounded-sm transition-all ' +
   'pi-focus-ring ' +
   'disabled:opacity-50 disabled:cursor-not-allowed';
 

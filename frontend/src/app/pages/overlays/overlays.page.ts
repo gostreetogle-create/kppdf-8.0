@@ -131,6 +131,21 @@ import { LucideAngularModule, User, ChevronDown } from 'lucide-angular';
         </app-pi-button>
       </div>
     </app-pi-section>
+
+    <!-- ───── Section VI. Empty State (TZ-95) ───── -->
+    <app-pi-section title="Empty State" hint="TZ-94/95 · pi-dashed-panel" eyebrow="VI">
+      <div class="pi-dashed-panel p-stack-lg bg-paper max-w-md text-center">
+        <span class="pi-tech-label">REF: EMPTY.02</span>
+        <h4 class="font-title-sm text-ink mb-stack-sm mt-2">Empty State (Architectural)</h4>
+        <p class="text-sm text-muted-foreground">
+          The <code class="font-mono text-[11px]">PiEmptyState</code> component wraps content
+          in a centered, max-384px panel with 2px dashed border. Used inside
+          <code class="font-mono text-[11px]">&lt;tbody&gt;</code> when a list is empty.
+        </p>
+        <div class="pi-tech-label mt-stack-sm">Eyebrow: 00</div>
+        <div class="text-sm text-muted-foreground">Нет данных для отображения.</div>
+      </div>
+    </app-pi-section>
   `,
 })
 export class OverlaysPage {

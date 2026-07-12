@@ -14,11 +14,12 @@ interface SeedUnit {
 }
 
 const DEFAULT_UNITS: readonly SeedUnit[] = [
-  { key: 'm2',   label: 'Квадратный метр', symbol: 'м²',  category: 'area',   sortOrder: 10 },
-  { key: 'm3',   label: 'Кубический метр', symbol: 'м³',  category: 'volume', sortOrder: 20 },
-  { key: 'kg',   label: 'Килограмм',       symbol: 'кг', category: 'mass',   sortOrder: 30 },
-  { key: 'sheet',label: 'Лист',            symbol: 'л.',  category: 'count',  sortOrder: 40 },
-  { key: 'pcs',  label: 'Штука',           symbol: 'шт', category: 'count',  sortOrder: 50 },
+  { key: 'pcs',  label: 'Штука',           symbol: 'шт', category: 'count',  sortOrder: 10 },
+  { key: 'kg',   label: 'Килограмм',       symbol: 'кг', category: 'mass',   sortOrder: 20 },
+  { key: 'm',    label: 'Метр',            symbol: 'м',  category: 'length', sortOrder: 30 },
+  { key: 'm2',   label: 'Квадратный метр', symbol: 'м²',  category: 'area',   sortOrder: 40 },
+  { key: 'm3',   label: 'Кубический метр', symbol: 'м³',  category: 'volume', sortOrder: 50 },
+  { key: 'sheet',label: 'Лист',            symbol: 'л.',  category: 'count',  sortOrder: 60 },
 ] as const;
 
 @Injectable()

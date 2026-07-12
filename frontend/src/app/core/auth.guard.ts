@@ -15,11 +15,11 @@ export const authGuard: CanMatchFn = () => {
 
 /**
  * Allow only UNAUTHENTICATED users. Used by /login — if you already have
- * a session, this kicks you to /home instead of showing the login form.
+ * a session, this kicks you to / (materials) instead of showing the login form.
  */
 export const publicOnlyGuard: CanMatchFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   if (!auth.isAuthenticated()) return true;
-  return router.parseUrl('/home');
+  return router.parseUrl('/');
 };

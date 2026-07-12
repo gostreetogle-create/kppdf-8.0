@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   Injector,
   OnInit,
   computed,
@@ -227,6 +228,7 @@ export class MaterialsPage implements OnInit {
   private readonly photosService = inject(PhotosService);
   private readonly injector = inject(Injector);
   private readonly baseUrl = inject(API_BASE_URL);
+  private readonly destroyRef = inject(DestroyRef);
 
   /**
    * Server list = `GET /api/materials` via Angular 20's `httpResource`.
@@ -307,6 +309,10 @@ export class MaterialsPage implements OnInit {
 
   ngOnInit(): void {
     this.loadLookups();
+    // Cleanup debounce timer on component destroy (QA-02:2.5)
+    this.destroyRef.onDestroy(() => {
+      if (this.debounceTimer) clearTimeout(this.debounceTimer);
+    });
     // `listRes` fires its initial GET automatically on first read —
     // no explicit `reload()` needed here.
   }

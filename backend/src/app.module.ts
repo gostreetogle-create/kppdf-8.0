@@ -90,6 +90,8 @@ import { StatusesSeed } from './common/seed/statuses.seed';
 import { OrgRolesSeed } from './common/seed/org-roles.seed';
 import { CounterpartyRolesSeed } from './common/seed/counterparty-roles.seed';
 import { UnitsSeed } from './common/seed/units.seed';
+import { CategoriesSeed } from './common/seed/categories.seed';
+import { WarehouseSeed } from './common/seed/warehouse.seed';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -206,6 +208,8 @@ import { HealthController } from './health.controller';
     OrgRolesSeed,
     CounterpartyRolesSeed,
     UnitsSeed,
+    CategoriesSeed,
+    WarehouseSeed,
   ],
 })
 export class AppModule {}

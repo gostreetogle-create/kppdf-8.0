@@ -97,6 +97,38 @@ describe('BadgeComponent', () => {
         expect(span(fixture)).toBeTruthy();
       });
     }
+
+    it('variant="default" uses semi-transparent gold bg + border tint (TZ-96)', async () => {
+      const fixture = await createFixture({ variant: 'default' });
+      const cls = span(fixture).className;
+      expect(cls).toContain('bg-gold/10');
+      expect(cls).toContain('border-gold/20');
+      expect(cls).toContain('text-gold');
+    });
+
+    it('variant="destructive" uses semi-transparent error bg + border tint (TZ-96)', async () => {
+      const fixture = await createFixture({ variant: 'destructive' });
+      const cls = span(fixture).className;
+      expect(cls).toContain('bg-destructive/10');
+      expect(cls).toContain('border-destructive/20');
+      expect(cls).toContain('text-destructive');
+    });
+
+    it('variant="outline" uses surface-container bg + rule border (TZ-96)', async () => {
+      const fixture = await createFixture({ variant: 'outline' });
+      const cls = span(fixture).className;
+      expect(cls).toContain('bg-surface-container');
+      expect(cls).toContain('border-rule');
+      expect(cls).toContain('text-muted-foreground');
+    });
+
+    it('variant="secondary" uses semi-transparent green bg + border tint (TZ-96)', async () => {
+      const fixture = await createFixture({ variant: 'secondary' });
+      const cls = span(fixture).className;
+      expect(cls).toContain('bg-green-500/10');
+      expect(cls).toContain('border-green-500/20');
+      expect(cls).toContain('text-green-700');
+    });
   });
 
   describe('sizes (2 total)', () => {

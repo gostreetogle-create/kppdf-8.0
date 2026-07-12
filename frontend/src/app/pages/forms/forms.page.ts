@@ -165,7 +165,7 @@ type SortDir = 'asc' | 'desc';
     </app-pi-section>
 
     <!-- ───── Section III. Form variants ───── -->
-    <app-pi-section title="Form variants" hint="inline · stacked" eyebrow="III">
+    <app-pi-section title="Form variants" hint="inline · stacked · architectural" eyebrow="III">
       <div class="space-y-section max-w-2xl">
         <div>
           <p class="eyebrow mb-3">Inline (label · input · button в одну строку)</p>
@@ -200,6 +200,22 @@ type SortDir = 'asc' | 'desc';
                 class="pi-input w-full"
               />
             </app-pi-form-field>
+          </div>
+        </div>
+        <!-- TZ-95: Architectural form field demo -->
+        <div>
+          <p class="eyebrow mb-3">Architectural (pi-dashed-panel + pi-tech-label)</p>
+          <div class="pi-dashed-panel p-stack-lg bg-paper max-w-md">
+            <span class="pi-tech-label absolute top-2 right-2">REF: FORM.04</span>
+            <h4 class="font-title-sm text-ink mb-stack-sm">Form Field (Architectural)</h4>
+            <div class="space-y-form-field">
+              <app-pi-form-field label="Email" hint="Используется для уведомлений" [required]="true">
+                <input type="email" placeholder="user@company.ru" class="pi-input w-full" />
+              </app-pi-form-field>
+              <app-pi-form-field label="Пароль" [required]="true">
+                <input type="password" class="pi-input w-full" />
+              </app-pi-form-field>
+            </div>
           </div>
         </div>
       </div>

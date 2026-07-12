@@ -308,11 +308,11 @@ describe('AlertDialogComponent', () => {
       const { fixture } = await createFixture({
         title: 'Подтвердить?',
       });
-      // Default variant adds 'bg-sunrise-warm'.
+      // Default variant uses the default button style (grey bg + gold border).
       const buttons = fixture.nativeElement.querySelectorAll('button');
       const confirmBtn = buttons[1];
       expect(confirmBtn).toBeTruthy();
-      expect(confirmBtn.classList.contains('bg-sunrise-warm')).toBe(true);
+      expect(confirmBtn.classList.contains('inline-flex')).toBe(true);
     });
   });
 

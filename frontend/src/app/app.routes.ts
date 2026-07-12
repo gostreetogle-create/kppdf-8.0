@@ -27,6 +27,11 @@ export const routes: Routes = [
     title: 'KPPDF — Вход',
   },
   {
+    // TZ-92b: /kit/* is intentionally PUBLIC (no canMatch guard).
+    // This is the UI-Kit showcase — design tokens, component demos, theme editor,
+    // code preview. No sensitive data; no backend mutations. Safe to expose to
+    // browser-use and external reviewers. DO NOT add canMatch: [authGuard] here.
+    // See tasks/TZ-92b.md for the reasoning + tests.
     path: 'kit',
     loadComponent: () =>
       import('./layout/kit-layout.component').then(
@@ -219,6 +224,31 @@ export const routes: Routes = [
             (m) => m.BuilderPage,
           ),
         title: 'KPPDF — Конструктор',
+      },
+      // TZ-101: Inventory Operations
+      {
+        path: 'inventory',
+        loadComponent: () =>
+          import('./pages/inventory/inventory-dashboard.page').then(
+            (m) => m.InventoryDashboardPage,
+          ),
+        title: 'KPPDF — Склад',
+      },
+      {
+        path: 'storage-items',
+        loadComponent: () =>
+          import('./pages/inventory/storage-items.page').then(
+            (m) => m.StorageItemsPage,
+          ),
+        title: 'KPPDF — Остатки',
+      },
+      {
+        path: 'stock-movements',
+        loadComponent: () =>
+          import('./pages/inventory/stock-movements.page').then(
+            (m) => m.StockMovementsPage,
+          ),
+        title: 'KPPDF — Движения',
       },
     ],
   },

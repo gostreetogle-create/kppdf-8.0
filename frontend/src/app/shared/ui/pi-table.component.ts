@@ -20,6 +20,8 @@ export interface ColumnDef<T> {
   format?: (row: T) => string;
   cellClass?: string;
   accessor?: (row: T) => unknown;
+  /** Applies `tabular-nums` to `<td>` for monospace numeric alignment. */
+  numeric?: boolean;
 }
 
 export type SelectionMode = 'none' | 'single' | 'multi';
@@ -104,6 +106,7 @@ export type SelectionMode = 'none' | 'single' | 'multi';
             @for (col of columns(); track col.key) {
               <td
                 class="py-3 px-3 align-top"
+                [class.tabular-nums]="col.numeric"
                 [class.text-right]="col.align === 'right'"
                 [class.text-center]="col.align === 'center'"
                 [class]="col.cellClass ?? ''"

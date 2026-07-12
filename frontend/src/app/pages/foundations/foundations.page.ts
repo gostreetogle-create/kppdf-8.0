@@ -133,6 +133,40 @@ import { CardComponent } from '../../shared/ui/card/card.component';
         </div>
       </app-pi-demo>
     </app-pi-section>
+
+    <!-- ───── Section V. Pi-* Utilities (TZ-95) ───── -->
+    <app-pi-section title="Pi-* Utilities" hint="TZ-93/95 · 2 architectural primitives" eyebrow="V">
+      <p class="text-sm text-muted-foreground max-w-prose mb-stack-lg">
+        Architectural primitives adopted from
+        <code class="font-mono text-[11px]">stitch_professional_desktop_crm_refinement</code>.
+        See <code class="font-mono text-[11px]">tasks/TZ-93.md</code> for the full adoption matrix
+        (what was adopted, adapted, rejected). <code class="font-mono text-[11px]">.pi-corner-marks</code>
+        was rolled back in TZ-93.1 (1990s-terminal aesthetic risk).
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+        <!-- .pi-tech-label demo -->
+        <div class="hairline bg-paper p-stack-lg relative">
+          <span class="pi-tech-label absolute top-2 right-2">REF: PIT.01</span>
+          <h3 class="font-title-sm text-ink mb-stack-sm">pi-tech-label</h3>
+          <p class="text-sm text-muted-foreground">
+            10px monospace tech label, uppercase, 0.1em letter-spacing,
+            AAA contrast via <code class="font-mono text-[11px]">--color-muted-foreground-strong</code>.
+            Use for REF numbers, IDs, timestamps in corners of structural panels.
+          </p>
+        </div>
+
+        <!-- .pi-dashed-panel demo -->
+        <div class="pi-dashed-panel p-stack-lg bg-paper">
+          <h3 class="font-title-sm text-ink mb-stack-sm">pi-dashed-panel</h3>
+          <p class="text-sm text-muted-foreground">
+            2px dashed border for empty states and draft-style surfaces.
+            Lower perceptual contrast — apply only on near-empty surfaces.
+            Used by <code class="font-mono text-[11px]">PiEmptyState</code> component.
+          </p>
+        </div>
+      </div>
+    </app-pi-section>
   `,
 })
 export class FoundationsPage {

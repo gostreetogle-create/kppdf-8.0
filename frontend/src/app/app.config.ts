@@ -1,5 +1,6 @@
 import {
   ApplicationConfig,
+  ErrorHandler,
   inject,
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
@@ -15,6 +16,20 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { routes } from './app.routes';
 import { AuthService } from './core/auth.service';
 import { authInterceptor } from './core/auth.interceptor';
+import { PiToastService } from './shared/ui/toast';
+
+/**
+ * Global error handler — catches unhandled errors and shows a toast.
+ * Replaces Angular's default console.error-only handler.
+ */
+class GlobalErrorHandler implements ErrorHandler {
+  handleError(error: unknown): void {
+    const toast = inject(PiToastService);
+    const message = error instanceof Error ? error.message : 'Произошла непредвиденная ошибка';
+    console.error('[GlobalErrorHandler]', error);
+    toast.error(message, { duration: 5000 });
+  }
+}
 
 /**
  * TZ-NEW (site-mode) — Paper & Ink + KPPDF site app config.
@@ -33,6 +48,7 @@ import { authInterceptor } from './core/auth.interceptor';
  */
 export const appConfig: ApplicationConfig = {
   providers: [
+    { provide: ErrorHandler, useClass: GlobalErrorHandler },
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes, withComponentInputBinding()),

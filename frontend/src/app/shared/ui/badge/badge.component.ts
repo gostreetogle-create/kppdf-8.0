@@ -4,11 +4,12 @@ import { LucideAngularModule } from 'lucide-angular';
 export type PiBadgeVariant = 'default' | 'secondary' | 'outline' | 'destructive';
 export type PiBadgeSize = 'sm' | 'md';
 
+/* TZ-96: Design Reference alignment — semi-transparent bg + border tint pattern */
 const VARIANT_CLASS: Record<PiBadgeVariant, string> = {
-  default: 'bg-transparent hairline border-sunrise-warm text-sunrise-warm',
-  secondary: 'bg-transparent hairline border-rule text-ink',
-  outline: 'bg-transparent hairline border-rule text-muted-foreground',
-  destructive: 'bg-transparent hairline border-destructive text-destructive',
+  default: 'bg-gold/10 border border-gold/20 text-gold',
+  secondary: 'bg-green-500/10 border border-green-500/20 text-green-700',
+  outline: 'bg-surface-container border border-rule text-muted-foreground',
+  destructive: 'bg-destructive/10 border border-destructive/20 text-destructive',
 };
 
 const SIZE_CLASS: Record<PiBadgeSize, string> = {

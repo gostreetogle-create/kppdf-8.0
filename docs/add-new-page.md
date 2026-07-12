@@ -136,3 +136,32 @@ pnpm dev
 - ❌ Использовать `border-2`, `border-4`, `border-dashed` — 1px hairline, цветовой акцент.
 - ❌ Трогать `app.config.ts` (если не нужен новый provider) — defaults достаточно.
 - ❌ Трогать `app.ts` (если не нужен host component) — `<router-outlet />` уже в нём.
+
+---
+
+## Border & Utility Conventions (TZ-95)
+
+### When to use `hairline` vs `pi-dashed-panel` vs `pi-tech-label`
+
+| Pattern | Use when | Example |
+|---|---|---|
+| `hairline` (1px solid `var(--color-rule)`) | Default border for all structural panels, cards, tables, dividers. | `<div class="hairline bg-paper p-stack-lg">` |
+| `pi-dashed-panel` (2px dashed `var(--color-rule)`) | Empty states, draft cards, "no data" placeholders. | `<div class="pi-dashed-panel p-stack-lg text-center">` |
+| `pi-tech-label` (10px monospace) | Engineering metadata (REF numbers, IDs, system versions) in corners of structural panels. | `<span class="pi-tech-label absolute top-2 right-2">REF: 80.4.2</span>` |
+
+**Rule of thumb:** start with `hairline` for ALL structural surfaces. Add `pi-dashed-panel` only for near-empty/draft surfaces. Add `pi-tech-label` only for engineering metadata in corners. Never combine `pi-dashed-panel` with solid content fills (use it for containers that are intentionally empty or draft).
+
+### When to use `executive-shadow`
+
+`executive-shadow` is a subtle 1px/2px drop shadow for elevated surfaces (cards, panels, dialogs). Use it on:
+- Cards (`app-pi-card`)
+- Dialog panels
+- Sidebar navigation
+
+Do NOT use on:
+- Tables
+- Inputs
+- Badges
+- Inline elements
+
+**See:** `docs/paper-and-ink.md` § "Pi-* Architectural Utilities", `/kit/foundations` (Section V showcase).
