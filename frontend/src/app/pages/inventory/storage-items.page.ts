@@ -1,9 +1,11 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, TemplateRef, ViewChild, computed, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
 import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { TableComponent, ColumnDef } from '../../shared/ui/pi-table.component';
 import { StorageItemsService, StorageItem } from './storage-items.service';
 import { WarehousesService, Warehouse } from './warehouses.service';
 
@@ -14,11 +16,13 @@ import { WarehousesService, Warehouse } from './warehouses.service';
   selector: 'app-storage-items-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    NgTemplateOutlet,
     PiPageHeaderComponent,
     PiSectionComponent,
     PiToolbarComponent,
     PiEmptyStateComponent,
     ButtonComponent,
+    TableComponent,
   ],
   template: `
     <app-pi-page-header
@@ -44,45 +48,18 @@ import { WarehousesService, Warehouse } from './warehouses.service';
     </app-pi-section>
 
     <app-pi-section title="Остатки" [hint]="totalItems() + ' позиций'" eyebrow="II">
-      @if (loading()) {
-        <p class="text-sm text-muted-foreground">Загрузка...</p>
-      } @else if (items().length === 0) {
-        <app-pi-empty-state [colspan]="1" message="Нет данных об остатках." eyebrow="00" />
-      } @else {
-        <div class="hairline rounded-sm overflow-hidden">
-          <table class="w-full text-sm">
-            <thead class="hairline-b">
-              <tr>
-                <th class="eyebrow py-3 px-4 text-left">Продукт</th>
-                <th class="eyebrow py-3 px-4 text-left">Склад</th>
-                <th class="eyebrow py-3 px-4 text-left">Зона</th>
-                <th class="eyebrow py-3 px-4 text-right">Кол-во</th>
-                <th class="eyebrow py-3 px-4 text-right">Резерв</th>
-                <th class="eyebrow py-3 px-4 text-right">Минимум</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (item of items(); track item._id) {
-                <tr class="hairline-b hover:bg-paper-2 transition-colors">
-                  <td class="py-3 px-4">
-                    <span class="font-medium">{{ item.product?.name ?? '—' }}</span>
-                    @if (item.product?.sku; as sku) {
-                      <span class="ml-2 text-muted-foreground font-mono text-xs">{{ sku }}</span>
-                    }
-                  </td>
-                  <td class="py-3 px-4 text-muted-foreground">{{ item.warehouse?.name ?? '—' }}</td>
-                  <td class="py-3 px-4 text-muted-foreground">{{ item.zoneName ?? '—' }}</td>
-                  <td class="py-3 px-4 text-right font-mono" [class.text-destructive]="item.quantity < item.minQuantity">
-                    {{ item.quantity }}
-                  </td>
-                  <td class="py-3 px-4 text-right font-mono">{{ item.reservedQty }}</td>
-                  <td class="py-3 px-4 text-right font-mono">{{ item.minQuantity }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
+      <app-pi-table
+        [data]="items()"
+        [columns]="columns"
+        [loading]="loading()"
+        [total]="items().length"
+        [pageSize]="50"
+        [emptyMessage]="'Нет данных об остатках.'"
+        [initialSortKey]="'product'"
+        [initialSortDir]="'asc'"
+        ariaLabel="Остатки на складе"
+        data-test="storage-items-table"
+      />
     </app-pi-section>
   `,
 })
@@ -97,9 +74,28 @@ export class StorageItemsPage implements OnInit {
 
   protected readonly totalItems = computed(() => this.items().length);
 
+  protected readonly columns: ColumnDef<StorageItem>[] = [
+    {
+      key: 'product',
+      label: 'Продукт',
+      sortable: true,
+      accessor: (row) => row.product?.name ?? '—',
+    },
+    {
+      key: 'warehouse',
+      label: 'Склад',
+      sortable: true,
+      accessor: (row) => row.warehouse?.name ?? '—',
+    },
+    { key: 'zoneName', label: 'Зона', width: '8rem', accessor: (row) => row.zoneName ?? '—' },
+    { key: 'quantity', label: 'Кол-во', align: 'right', numeric: true, width: '6rem' },
+    { key: 'reservedQty', label: 'Резерв', align: 'right', numeric: true, width: '6rem' },
+    { key: 'minQuantity', label: 'Минимум', align: 'right', numeric: true, width: '6rem' },
+  ];
+
   ngOnInit(): void {
-    this.loadData();
     this.loadWarehouses();
+    this.loadItems();
   }
 
   onWarehouseChange(event: Event): void {
@@ -110,10 +106,6 @@ export class StorageItemsPage implements OnInit {
 
   clearFilters(): void {
     this.selectedWarehouse.set('');
-    this.loadItems();
-  }
-
-  private loadData(): void {
     this.loadItems();
   }
 

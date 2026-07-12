@@ -3,10 +3,13 @@ import {
   Component,
   Injector,
   OnInit,
+  TemplateRef,
+  ViewChild,
   computed,
   inject,
   signal,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { httpResource } from '@angular/common/http';
 import {
   NonNullableFormBuilder,
@@ -22,6 +25,7 @@ import { SwitchComponent } from '../../shared/ui/switch/switch.component';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
 import { PiToastService } from '../../shared/ui/toast';
+import { TableComponent, ColumnDef } from '../../shared/ui/pi-table.component';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
@@ -41,12 +45,14 @@ import { Unit, UnitsService, type UnitsListResponse } from './units.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
+    NgTemplateOutlet,
     PiPageHeaderComponent,
     PiSectionComponent,
     PiEmptyStateComponent,
     PiRowActionsComponent,
     ButtonComponent,
     SwitchComponent,
+    TableComponent,
   ],
   template: `
     <app-pi-page-header
@@ -137,71 +143,32 @@ import { Unit, UnitsService, type UnitsListResponse } from './units.service';
         </div>
       </form>
 
-      <!-- ───── Таблица существующих ───── -->
-      <div class="hairline rounded-sm overflow-hidden">
-        <table class="w-full text-sm">
-          <thead class="hairline-b">
-            <tr>
-              <th class="pi-cell eyebrow w-24 whitespace-nowrap text-left">Ключ</th>
-              <th class="pi-cell eyebrow text-left">Название</th>
-              <th class="pi-cell eyebrow w-20 text-left">Символ</th>
-              <th class="pi-cell eyebrow w-32 text-left">Категория</th>
-              <th class="pi-cell eyebrow w-20 text-right">Сорт.</th>
-              <th class="pi-cell eyebrow w-20 text-center">Активен</th>
-              <th class="pi-cell eyebrow w-32 text-right">Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (u of sortedUnits(); track u._id) {
-              <tr
-                class="pi-table-row pi-table-row-odd last:border-0"
-                [class.opacity-50]="!u.isActive"
-                [attr.data-test]="'unit-row-' + u.key"
-              >
-                <td class="pi-cell align-top font-mono text-xs font-medium whitespace-nowrap">{{ u.key }}</td>
-                <td class="pi-cell align-top">{{ u.label }}</td>
-                <td class="pi-cell align-top text-muted-foreground empty-cell">{{ u.symbol }}</td>
-                <td class="pi-cell align-top text-muted-foreground text-xs empty-cell">{{ u.category }}</td>
-                <td class="pi-cell align-top text-right font-mono text-xs">{{ u.sortOrder }}</td>
-                <td class="pi-cell align-top text-center">
-                  <app-pi-switch
-                    [checked]="u.isActive"
-                    [id]="'switch-' + u.key"
-                    [ariaLabel]="(u.isActive ? 'Деактивировать ' : 'Активировать ') + u.label"
-                    (checkedChange)="onToggleActive(u, $event)"
-                    data-test="active-switch"
-                  />
-                </td>
-                <td class="pi-cell align-top">
-                  <app-pi-row-actions
-                    [row]="u"
-                    editLabel="Не применимо (системный справочник)"
-                    [deleteLabel]="'Удалить ' + u.label"
-                    [deleteTitle]="u.isSystem ? 'Системный юнит — нельзя удалить' : 'Удалить'"
-                    [deleteDisabled]="u.isSystem"
-                    [dataTestDelete]="'delete-button-' + u.key"
-                    (delete)="onDelete($event)"
-                  />
-                </td>
-              </tr>
-            }
-            @if (sortedUnits().length === 0 && !loading()) {
-              <app-pi-empty-state
-                [colspan]="7"
-                message="Нет единиц. Добавьте первую."
-                state="empty"
-              />
-            }
-            @if (loading() && sortedUnits().length === 0) {
-              <app-pi-empty-state
-                [colspan]="7"
-                message="Загрузка…"
-                state="loading"
-              />
-            }
-          </tbody>
-        </table>
-      </div>
+      <!-- ───── pi-table ───── -->
+      <app-pi-table
+        [data]="sortedUnits()"
+        [columns]="columns"
+        [rowActions]="rowActionsTpl"
+        [total]="data().length"
+        [pageSize]="100"
+        [loading]="loading()"
+        [emptyMessage]="'Нет единиц. Добавьте первую.'"
+        [initialSortKey]="'sortOrder'"
+        [initialSortDir]="'asc'"
+        ariaLabel="Единицы измерения"
+        data-test="units-table"
+      />
+
+      <ng-template #rowActionsTpl let-u>
+        <app-pi-row-actions
+          [row]="u"
+          editLabel="Не применимо (системный справочник)"
+          [deleteLabel]="'Удалить ' + u.label"
+          [deleteTitle]="u.isSystem ? 'Системный юнит — нельзя удалить' : 'Удалить'"
+          [deleteDisabled]="u.isSystem"
+          [dataTestDelete]="'delete-button-' + u.key"
+          (delete)="onDelete($event)"
+        />
+      </ng-template>
     </app-pi-section>
   `,
 })
@@ -213,14 +180,7 @@ export class DictionariesPage implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly baseUrl = inject(API_BASE_URL);
 
-  /**
-   * Server list = `GET /api/units` via Angular 20's `httpResource`.
-   * No search/filter on this page (the only "filter" is "system vs
-   * non-system" which is rendered, not filtered server-side), so the
-   * resource's params are static. Same pattern as `materials.page.ts`
-   * and `organizations.page.ts`. `adding` stays as a separate manual
-   * signal — it's about form submit state, not list fetch state.
-   */
+  /** Server list via httpResource. */
   protected readonly listRes = httpResource<UnitsListResponse>(() => ({
     url: `${this.baseUrl}/units`,
     params: { page: 1, limit: 100 },
@@ -235,15 +195,27 @@ export class DictionariesPage implements OnInit {
     return err ? extractErrorMessage(err) : null;
   });
 
-  /** Form-submit state — separate from list fetch state. */
   protected readonly adding = signal<boolean>(false);
 
+  /** Client-side sort by sortOrder then key. */
   protected readonly sortedUnits = computed<Unit[]>(() => {
     return this.data().slice().sort((a, b) => {
       if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
       return a.key.localeCompare(b.key);
     });
   });
+
+  /** Column defs — no edit action for units. */
+  protected readonly columns: ColumnDef<Unit>[] = [
+    { key: 'key', label: 'Ключ', sortable: true, width: '8rem', cellClass: 'font-mono text-xs font-medium' },
+    { key: 'label', label: 'Название', sortable: true },
+    { key: 'symbol', label: 'Символ', width: '5rem' },
+    { key: 'category', label: 'Категория', sortable: true, width: '8rem' },
+    { key: 'sortOrder', label: 'Сорт.', align: 'right', numeric: true, width: '5rem' },
+  ];
+
+  @ViewChild('rowActionsTpl', { static: true })
+  protected readonly rowActionsTpl!: TemplateRef<{ $implicit: Unit }>;
 
   protected readonly form = this.fb.group({
     key: this.fb.control('', [Validators.required, Validators.maxLength(32)]),
@@ -252,9 +224,7 @@ export class DictionariesPage implements OnInit {
     category: this.fb.control<string>(''),
   });
 
-  ngOnInit(): void {
-    // `listRes` auto-fires its initial GET — no explicit `reload()`.
-  }
+  ngOnInit(): void {}
 
   protected onAdd(): void {
     if (this.form.invalid) {
@@ -263,9 +233,6 @@ export class DictionariesPage implements OnInit {
     }
     const v = this.form.getRawValue();
     this.adding.set(true);
-    // (No `this.error.set(null)` — `error` is a `computed()` over
-    // `listRes.error()`. Form-submit failures already go to toast and
-    // auto-dismiss there; nothing to clear on the fetch banner side.)
     this.service
       .create({
         key: v.key,
@@ -286,19 +253,6 @@ export class DictionariesPage implements OnInit {
           this.adding.set(false);
         }
       });
-  }
-
-  protected onToggleActive(u: Unit, checked: boolean): void {
-    this.service.update(u.key, { isActive: checked }).subscribe((res) => {
-      if (res.ok) {
-        this.toast.success(
-          checked ? `«${u.label}» активирована` : `«${u.label}» деактивирована`,
-        );
-        this.listRes.reload();
-      } else {
-        this.toast.error(extractErrorMessage(res.error));
-      }
-    });
   }
 
   protected onDelete(u: Unit): void {

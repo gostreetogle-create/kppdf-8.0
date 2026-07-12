@@ -1,9 +1,11 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, TemplateRef, ViewChild, computed, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
 import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { TableComponent, ColumnDef } from '../../shared/ui/pi-table.component';
 import { StockMovementsService, StockMovement, MovementType } from './stock-movements.service';
 
 /**
@@ -13,11 +15,13 @@ import { StockMovementsService, StockMovement, MovementType } from './stock-move
   selector: 'app-stock-movements-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    NgTemplateOutlet,
     PiPageHeaderComponent,
     PiSectionComponent,
     PiToolbarComponent,
     PiEmptyStateComponent,
     ButtonComponent,
+    TableComponent,
   ],
   template: `
     <app-pi-page-header
@@ -40,40 +44,18 @@ import { StockMovementsService, StockMovement, MovementType } from './stock-move
     </app-pi-section>
 
     <app-pi-section title="Движения" [hint]="totalItems() + ' записей'" eyebrow="II">
-      @if (loading()) {
-        <p class="text-sm text-muted-foreground">Загрузка...</p>
-      } @else if (items().length === 0) {
-        <app-pi-empty-state [colspan]="1" message="Нет движений." eyebrow="00" />
-      } @else {
-        <div class="hairline rounded-sm overflow-hidden">
-          <table class="w-full text-sm">
-            <thead class="hairline-b">
-              <tr>
-                <th class="eyebrow py-3 px-4 text-left">Дата</th>
-                <th class="eyebrow py-3 px-4 text-left">Тип</th>
-                <th class="eyebrow py-3 px-4 text-left">Продукт</th>
-                <th class="eyebrow py-3 px-4 text-left">Склад</th>
-                <th class="eyebrow py-3 px-4 text-right">Кол-во</th>
-                <th class="eyebrow py-3 px-4 text-left">Документ</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (item of items(); track item._id) {
-                <tr class="hairline-b hover:bg-paper-2 transition-colors">
-                  <td class="py-3 px-4 font-mono text-xs">{{ formatDate(item.date) }}</td>
-                  <td class="py-3 px-4">
-                    <span class="eyebrow text-xs" [class]="typeClass(item.type)">{{ typeLabel(item.type) }}</span>
-                  </td>
-                  <td class="py-3 px-4">{{ item.product?.name ?? '—' }}</td>
-                  <td class="py-3 px-4 text-muted-foreground">{{ item.warehouse?.name ?? '—' }}</td>
-                  <td class="py-3 px-4 text-right font-mono">{{ item.qty }}</td>
-                  <td class="py-3 px-4 text-muted-foreground font-mono text-xs">{{ item.documentRef ?? '—' }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
+      <app-pi-table
+        [data]="items()"
+        [columns]="columns"
+        [loading]="loading()"
+        [total]="items().length"
+        [pageSize]="50"
+        [emptyMessage]="'Нет движений.'"
+        [initialSortKey]="'date'"
+        [initialSortDir]="'desc'"
+        ariaLabel="Движения на складе"
+        data-test="stock-movements-table"
+      />
     </app-pi-section>
   `,
 })
@@ -85,6 +67,15 @@ export class StockMovementsPage implements OnInit {
   protected readonly selectedType = signal<string>('');
 
   protected readonly totalItems = computed(() => this.items().length);
+
+  protected readonly columns: ColumnDef<StockMovement>[] = [
+    { key: 'date', label: 'Дата', sortable: true, width: '10rem', numeric: true, accessor: (row) => this.formatDate(row.date) },
+    { key: 'type', label: 'Тип', sortable: true, width: '7rem', accessor: (row) => this.typeLabel(row.type) },
+    { key: 'product', label: 'Продукт', accessor: (row) => row.product?.name ?? '—' },
+    { key: 'warehouse', label: 'Склад', accessor: (row) => row.warehouse?.name ?? '—' },
+    { key: 'qty', label: 'Кол-во', align: 'right', numeric: true, width: '6rem' },
+    { key: 'documentRef', label: 'Документ', width: '8rem', accessor: (row) => row.documentRef ?? '—' },
+  ];
 
   ngOnInit(): void {
     this.loadItems();
@@ -123,16 +114,6 @@ export class StockMovementsPage implements OnInit {
       transfer: 'Перемещ.',
     };
     return labels[type] ?? type;
-  }
-
-  protected typeClass(type: MovementType): string {
-    const classes: Record<MovementType, string> = {
-      in: 'text-green-700',
-      out: 'text-destructive',
-      adjust: 'text-muted-foreground',
-      transfer: 'text-accent-cool',
-    };
-    return classes[type] ?? '';
   }
 
   protected formatDate(date: string): string {
