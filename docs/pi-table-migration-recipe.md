@@ -725,6 +725,8 @@ ngOnInit(): void {
 2. **Resolve `@ViewChild` with `{ static: true }`** so the refs are available BEFORE `ngOnInit` (vs the default `static: false` which resolves after, requiring a `setTimeout` dance or `afterRenderEffect` to populate `cellTemplates`).
 3. **Build `cellTemplates` and `rowActionsTplBinding` in `ngOnInit`, not in the constructor.** Pre-`ngOnInit` would try to read the unresolved `@ViewChild` fields → undefined.
 
+4. **Typecheck pass is `ng build`, not `pnpm exec tsc -p tsconfig.app.json --noEmit`.** `tsc` only walks `.ts` files; `ng build` (and `ng serve`) also invoke `ngtsc` — Angular's stricter template type-checker. Use `ng build` for any change that touches `<app-pi-table>` consumer templates (see commit `f805e66` for the regression that `tsc --noEmit` missed).
+
 ---
 
 ## 8. Common footguns (R-1 .. R-8)
