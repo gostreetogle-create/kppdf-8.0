@@ -23,7 +23,7 @@ import type { DialogRef } from './pi-dialog.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div
-      role="dialog"
+      [attr.role]="variant() === 'alert' ? 'alertdialog' : 'dialog'"
       [attr.aria-label]="effectiveLabel()"
       [attr.aria-modal]="true"
       [class]="panelClass()"

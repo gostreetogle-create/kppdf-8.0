@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, NonNullableFormBuilder, Validators } from '@angular/forms';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import {
@@ -10,6 +11,7 @@ import {
 
 /**
  * TZ-83 Phase D: ProductModulePickerDialog.
+ * TZ-90 Phase C: migrated to polymorphic <app-pi-dialog variant="content">.
  *
  * Показывает все модули из каталога, исключая уже привязанные.
  * Юзер выбирает один → возвращает moduleId строкой (ref.close(id)).
@@ -18,25 +20,31 @@ import {
 @Component({
   selector: 'app-product-module-picker-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, ButtonComponent],
+  imports: [ReactiveFormsModule, ButtonComponent, PiDialogComponent],
   template: `
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="grid gap-4" data-test="picker-form">
-      <p class="eyebrow text-muted-foreground">Привязать модуль к товару</p>
+    <app-pi-dialog
+      title="Привязать модуль к товару"
+      [width]="'lg'"
+      [variant]="'content'"
+    >
+      <form body [formGroup]="form" (ngSubmit)="onSubmit()" data-test="picker-form">
+        <p class="eyebrow text-muted-foreground mb-3">Привязать модуль к товару</p>
 
-      <label class="block">
-        <span class="eyebrow block mb-1.5">Модуль <span class="text-destructive">*</span></span>
-        <select class="pi-input w-full" formControlName="moduleId" data-test="picker-select" size="10">
-          @for (m of available(); track m._id) {
-            <option [value]="m._id">
-              {{ m.name }} · {{ m.article ?? '—' }} · {{ m.materials.length }} материалов
-            </option>
-          } @empty {
-            <option disabled>Нет доступных модулей.</option>
-          }
-        </select>
-      </label>
+        <label class="block">
+          <span class="eyebrow block mb-1.5">Модуль <span class="text-destructive">*</span></span>
+          <select class="pi-input w-full" formControlName="moduleId" data-test="picker-select" size="10">
+            @for (m of available(); track m._id) {
+              <option [value]="m._id">
+                {{ m.name }} · {{ m.article ?? '—' }} · {{ m.materials.length }} материалов
+              </option>
+            } @empty {
+              <option disabled>Нет доступных модулей.</option>
+            }
+          </select>
+        </label>
+      </form>
 
-      <div class="flex justify-end gap-2 pt-2 hairline-t">
+      <div footer>
         <app-pi-button variant="ghost" type="button" (click)="onCancel()" data-test="cancel-button">
           Отмена
         </app-pi-button>
@@ -45,7 +53,7 @@ import {
           Привязать
         </app-pi-button>
       </div>
-    </form>
+    </app-pi-dialog>
   `,
 })
 export class ProductModulePickerDialogComponent {
