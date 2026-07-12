@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   Injector,
   OnInit,
   computed,
@@ -172,6 +173,7 @@ export class OrganizationsPage implements OnInit {
   private readonly service = inject(OrganizationsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly baseUrl = inject(API_BASE_URL);
 
@@ -237,6 +239,7 @@ export class OrganizationsPage implements OnInit {
     const ref = this.dialog.open(OrganizationFormDialogComponent, {
       data: null,
       width: 'lg',
+      parentDestroyRef: this.destroyRef,
     });
     this.refreshOnDialogClose(ref);
   }
@@ -245,6 +248,7 @@ export class OrganizationsPage implements OnInit {
     const ref = this.dialog.open(OrganizationFormDialogComponent, {
       data: org,
       width: 'lg',
+      parentDestroyRef: this.destroyRef,
     });
     this.refreshOnDialogClose(ref);
   }
@@ -258,6 +262,7 @@ export class OrganizationsPage implements OnInit {
         variant: 'destructive',
       },
       width: 'sm',
+      parentDestroyRef: this.destroyRef,
     });
     onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
       if (!confirmed) return;

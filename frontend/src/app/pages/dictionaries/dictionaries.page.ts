@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   Injector,
   OnInit,
   TemplateRef,
@@ -186,6 +187,7 @@ export class DictionariesPage implements OnInit {
   private readonly service = inject(UnitsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly baseUrl = inject(API_BASE_URL);
@@ -300,6 +302,7 @@ export class DictionariesPage implements OnInit {
         variant: 'destructive',
       },
       width: 'sm',
+      parentDestroyRef: this.destroyRef,
     });
     onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
       if (!confirmed) return;

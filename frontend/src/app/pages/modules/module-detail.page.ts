@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   Injector,
   OnInit,
   computed,
@@ -207,6 +208,7 @@ export class ModuleDetailPage implements OnInit {
   private readonly router = inject(Router);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly modulesSvc = inject(ProductModulesService);
   private readonly photosSvc = inject(ProductModulePhotosService);
@@ -269,7 +271,7 @@ export class ModuleDetailPage implements OnInit {
   protected openEdit(): void {
     const m = this.module();
     if (!m) return;
-    const ref = this.dialog.open(ModuleFormDialogComponent, { data: m, width: 'lg' });
+    const ref = this.dialog.open(ModuleFormDialogComponent, { data: m, width: 'lg', parentDestroyRef: this.destroyRef });
     onDialogCloseOnce(ref, this.injector, () => {
       this.moduleRes.reload();
     });
@@ -285,6 +287,7 @@ export class ModuleDetailPage implements OnInit {
         variant: 'destructive',
       },
       width: 'sm',
+      parentDestroyRef: this.destroyRef,
     });
     onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
       if (!confirmed) return;
@@ -366,6 +369,7 @@ export class ModuleDetailPage implements OnInit {
     const ref = this.dialog.open(ModuleMaterialsFormDialogComponent, {
       data: { moduleId: m._id, materials: m.materials ?? [] },
       width: 'xl',
+      parentDestroyRef: this.destroyRef,
     });
     onDialogCloseOnce(ref, this.injector, () => {
       this.moduleRes.reload();

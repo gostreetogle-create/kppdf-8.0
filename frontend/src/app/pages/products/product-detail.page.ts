@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   Injector,
   OnInit,
   computed,
@@ -246,6 +247,7 @@ export class ProductDetailPage implements OnInit {
   private readonly router = inject(Router);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly modulesSvc = inject(ProductModulesService);
   private readonly costSvc = inject(CostCalculationsService);
@@ -332,6 +334,7 @@ export class ProductDetailPage implements OnInit {
     const ref = this.dialog.open(ProductModulePickerDialogComponent, {
       data: { productId: pid, excludeIds: this.attachedModules().map((m) => m._id) },
       width: 'lg',
+      parentDestroyRef: this.destroyRef,
     });
     onDialogCloseOnce(ref, this.injector, (chosenId: unknown) => {
       if (typeof chosenId !== 'string' || !chosenId) return;
@@ -359,6 +362,7 @@ export class ProductDetailPage implements OnInit {
         variant: 'destructive',
       },
       width: 'sm',
+      parentDestroyRef: this.destroyRef,
     });
     onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
       if (!confirmed) return;
@@ -394,6 +398,7 @@ export class ProductDetailPage implements OnInit {
     this.dialog.open(CostCalculationDetailDialogComponent, {
       data: { costCalculation: cc },
       width: 'lg',
+      parentDestroyRef: this.destroyRef,
     });
   }
 
@@ -417,6 +422,7 @@ export class ProductDetailPage implements OnInit {
         variant: 'destructive',
       },
       width: 'sm',
+      parentDestroyRef: this.destroyRef,
     });
     onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
       if (!confirmed) return;

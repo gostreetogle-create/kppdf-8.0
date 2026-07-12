@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   Injector,
   OnInit,
   computed,
@@ -188,6 +189,7 @@ export class WorkTypesPage implements OnInit {
   private readonly service = inject(WorkTypesService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly baseUrl = inject(API_BASE_URL);
 
@@ -247,12 +249,12 @@ export class WorkTypesPage implements OnInit {
   }
 
   protected openCreate(): void {
-    const ref = this.dialog.open(WorkTypeFormDialogComponent, { data: null, width: 'md' });
+    const ref = this.dialog.open(WorkTypeFormDialogComponent, { data: null, width: 'md', parentDestroyRef: this.destroyRef });
     this.refreshOnDialogClose(ref);
   }
 
   protected openEdit(wt: WorkType): void {
-    const ref = this.dialog.open(WorkTypeFormDialogComponent, { data: wt, width: 'md' });
+    const ref = this.dialog.open(WorkTypeFormDialogComponent, { data: wt, width: 'md', parentDestroyRef: this.destroyRef });
     this.refreshOnDialogClose(ref);
   }
 
@@ -282,6 +284,7 @@ export class WorkTypesPage implements OnInit {
         variant: 'destructive',
       },
       width: 'sm',
+      parentDestroyRef: this.destroyRef,
     });
     onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
       if (!confirmed) return;
