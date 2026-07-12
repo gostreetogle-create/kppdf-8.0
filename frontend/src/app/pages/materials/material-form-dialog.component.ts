@@ -17,6 +17,7 @@ import { forkJoin } from 'rxjs';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
+import { InputComponent } from '../../shared/ui/input/input.component';
 import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
 import {
   PI_DIALOG_DATA,
@@ -29,12 +30,12 @@ import {
   Material,
   MaterialDimensionType,
   MaterialsService,
-} from './materials.service';
-import { PhotosService, type Photo } from './photos.service';
+} from '../../shared/services/materials.service';
+import { PhotosService, type Photo } from '../../shared/services/photos.service';
 import {
   Organization,
   OrganizationsService,
-} from '../organizations/organizations.service';
+} from '../../shared/services/organizations.service';
 
 type Result = Material | null | undefined;
 
@@ -81,6 +82,7 @@ interface DimensionFormGroup extends FormGroup {
     PiDialogComponent,
     ButtonComponent,
     FormFieldComponent,
+    InputComponent,
     TextareaComponent,
   ],
   template: `
@@ -103,14 +105,11 @@ interface DimensionFormGroup extends FormGroup {
             [required]="true"
             [error]="errorFor('name')"
           >
-            <input
+            <app-pi-input
               id="mat-name"
-              type="text"
               formControlName="name"
-              maxlength="256"
-              autocomplete="off"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
-              [class.border-destructive]="hasError('name')"
+              placeholder="Название материала"
+              [invalid]="hasError('name')"
             />
           </app-pi-form-field>
 
@@ -119,14 +118,10 @@ interface DimensionFormGroup extends FormGroup {
             htmlFor="mat-article"
             [error]="errorFor('article')"
           >
-            <input
+            <app-pi-input
               id="mat-article"
-              type="text"
               formControlName="article"
-              maxlength="64"
-              autocomplete="off"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
-              [class.border-destructive]="hasError('article')"
+              placeholder="Артикул"
             />
           </app-pi-form-field>
 
@@ -139,7 +134,7 @@ interface DimensionFormGroup extends FormGroup {
             <select
               id="mat-unit"
               formControlName="unit"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+              class="pi-input w-full"
               [class.border-destructive]="hasError('unit')"
             >
               <option value="" disabled>— выберите —</option>
@@ -156,13 +151,10 @@ interface DimensionFormGroup extends FormGroup {
             htmlFor="mat-sku"
             [error]="errorFor('sku')"
           >
-            <input
+            <app-pi-input
               id="mat-sku"
-              type="text"
               formControlName="sku"
-              autocomplete="off"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
-              [class.border-destructive]="hasError('sku')"
+              placeholder="SKU"
             />
           </app-pi-form-field>
 
@@ -171,14 +163,12 @@ interface DimensionFormGroup extends FormGroup {
             htmlFor="mat-price"
             [error]="errorFor('pricePerUnit')"
           >
-            <input
+            <app-pi-input
               id="mat-price"
               type="number"
-              step="0.01"
-              min="0"
               formControlName="pricePerUnit"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors text-right"
-              [class.border-destructive]="hasError('pricePerUnit')"
+              placeholder="0.00"
+              [invalid]="hasError('pricePerUnit')"
             />
           </app-pi-form-field>
 
@@ -187,14 +177,12 @@ interface DimensionFormGroup extends FormGroup {
             htmlFor="mat-stock"
             [error]="errorFor('stockQty')"
           >
-            <input
+            <app-pi-input
               id="mat-stock"
               type="number"
-              step="1"
-              min="0"
               formControlName="stockQty"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors text-right"
-              [class.border-destructive]="hasError('stockQty')"
+              placeholder="0"
+              [invalid]="hasError('stockQty')"
             />
           </app-pi-form-field>
         </div>
@@ -208,7 +196,7 @@ interface DimensionFormGroup extends FormGroup {
           <select
             id="mat-supplier"
             formControlName="supplierId"
-            class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors"
+            class="pi-input w-full"
           >
             <option [ngValue]="null">— не указан —</option>
             @for (s of suppliers(); track s._id) {
@@ -253,23 +241,21 @@ interface DimensionFormGroup extends FormGroup {
                   [attr.id]="'mat-dim-type-' + i"
                   [attr.name]="'dim-type-' + i"
                   formControlName="type"
-                  class="col-span-4 h-9 px-control-x text-sm hairline rounded-sm bg-paper"
+                  class="col-span-4 h-8 px-3 text-xs hairline rounded-sm bg-paper pi-focus-ring"
                   [attr.aria-label]="'Тип габарита ' + (i + 1)"
                 >
                   @for (opt of DIMENSION_TYPES; track opt.value) {
                     <option [value]="opt.value">{{ opt.label }}</option>
                   }
                 </select>
-                <input
+                <app-pi-input
                   [attr.id]="'mat-dim-value-' + i"
-                  [attr.name]="'dim-value-' + i"
                   type="number"
-                  step="0.01"
-                  min="0"
                   formControlName="value"
-                  placeholder="Значение"
-                  class="col-span-3 h-9 px-control-x text-sm hairline rounded-sm bg-paper text-right"
+                  placeholder="0"
+                  size="sm"
                   [attr.aria-label]="'Значение ' + (i + 1)"
+                  class="col-span-3"
                 />
                 <label
                   class="col-span-4 inline-flex items-center gap-2 min-h-touch px-control-x text-sm cursor-pointer"
@@ -284,14 +270,15 @@ interface DimensionFormGroup extends FormGroup {
                   />
                   <span>Неизменяемый</span>
                 </label>
-                <button
+                <app-pi-button
                   type="button"
-                  class="col-span-1 h-9 w-9 inline-flex items-center justify-center text-sm hairline rounded-sm bg-paper hover:bg-destructive hover:text-paper hover:border-destructive transition-colors"
+                  variant="destructive"
+                  size="icon"
                   [attr.aria-label]="'Удалить габарит ' + (i + 1)"
                   (click)="removeDimension(i)"
                 >
                   ×
-                </button>
+                </app-pi-button>
               </div>
             }
           </div>
@@ -353,14 +340,15 @@ interface DimensionFormGroup extends FormGroup {
                     />
                     <span>Главное</span>
                   </label>
-                  <button
+                  <app-pi-button
                     type="button"
-                    class="inline-flex items-center justify-center w-7 h-7 text-xs hover:bg-destructive hover:text-paper rounded-sm transition-colors"
+                    variant="destructive"
+                    size="icon"
                     [attr.aria-label]="'Удалить фото ' + (i + 1)"
                     (click)="removePhoto(p._id)"
                   >
                     ×
-                  </button>
+                  </app-pi-button>
                 </div>
               </div>
             }

@@ -4,6 +4,7 @@ import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.componen
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
+import { InputComponent } from '../../shared/ui/input/input.component';
 import { SelectComponent } from '../../shared/ui/select/select.component';
 import { SelectOptionComponent } from '../../shared/ui/select/select-option.component';
 import { CheckboxComponent } from '../../shared/ui/checkbox/checkbox.component';
@@ -35,6 +36,7 @@ type SortDir = 'asc' | 'desc';
     PiSectionComponent,
     ButtonComponent,
     FormFieldComponent,
+    InputComponent,
     SelectComponent,
     SelectOptionComponent,
     CheckboxComponent,
@@ -55,26 +57,22 @@ type SortDir = 'asc' | 'desc';
         data-test="validated-form"
       >
         <app-pi-form-field label="Имя" htmlFor="form-name" [required]="true" [error]="form.controls.name.invalid && form.controls.name.touched ? 'Минимум 2 символа' : ''">
-          <input
+          <app-pi-input
             id="form-name"
             type="text"
             formControlName="name"
             placeholder="Иван"
-            class="pi-input w-full"
-            [class.border-rule]="!form.controls.name.invalid || !form.controls.name.touched"
-            [class.border-destructive]="form.controls.name.invalid && form.controls.name.touched"
+            [invalid]="form.controls.name.invalid && form.controls.name.touched"
           />
         </app-pi-form-field>
 
         <app-pi-form-field label="E-mail" htmlFor="form-email" [required]="true" [error]="form.controls.email.invalid && form.controls.email.touched ? 'Невалидный e-mail' : ''">
-          <input
+          <app-pi-input
             id="form-email"
             type="email"
             formControlName="email"
             placeholder="you@example.com"
-            class="pi-input w-full"
-            [class.border-rule]="!form.controls.email.invalid || !form.controls.email.touched"
-            [class.border-destructive]="form.controls.email.invalid && form.controls.email.touched"
+            [invalid]="form.controls.email.invalid && form.controls.email.touched"
           />
         </app-pi-form-field>
 
@@ -171,11 +169,10 @@ type SortDir = 'asc' | 'desc';
           <p class="eyebrow mb-3">Inline (label · input · button в одну строку)</p>
           <div class="flex items-end gap-form-field">
         <app-pi-form-field label="Поиск" htmlFor="form-search" class="flex-1">
-          <input
+          <app-pi-input
             id="form-search"
             type="search"
             placeholder="Найти…"
-            class="pi-input w-full"
           />
         </app-pi-form-field>
             <app-pi-button variant="default">Найти</app-pi-button>
@@ -185,19 +182,17 @@ type SortDir = 'asc' | 'desc';
           <p class="eyebrow mb-3">Stacked (label сверху)</p>
           <div class="space-y-form-field">
             <app-pi-form-field label="Город" htmlFor="form-city">
-              <input
+              <app-pi-input
                 id="form-city"
                 type="text"
                 placeholder="Москва"
-                class="pi-input w-full"
               />
             </app-pi-form-field>
             <app-pi-form-field label="Индекс" htmlFor="form-zip">
-              <input
+              <app-pi-input
                 id="form-zip"
                 type="text"
                 placeholder="101000"
-                class="pi-input w-full"
               />
             </app-pi-form-field>
           </div>
@@ -210,10 +205,10 @@ type SortDir = 'asc' | 'desc';
             <h4 class="font-title-sm text-ink mb-stack-sm">Form Field (Architectural)</h4>
             <div class="space-y-form-field">
               <app-pi-form-field label="Email" hint="Используется для уведомлений" [required]="true">
-                <input type="email" placeholder="user@company.ru" class="pi-input w-full" />
+                <app-pi-input type="email" placeholder="user@company.ru" />
               </app-pi-form-field>
               <app-pi-form-field label="Пароль" [required]="true">
-                <input type="password" class="pi-input w-full" />
+                <app-pi-input type="password" placeholder="Введите пароль" />
               </app-pi-form-field>
             </div>
           </div>

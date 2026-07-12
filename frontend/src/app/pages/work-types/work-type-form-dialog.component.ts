@@ -5,6 +5,11 @@ import {
   Validators,
 } from '@angular/forms';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { CheckboxComponent } from '../../shared/ui/checkbox/checkbox.component';
+import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
+import { InputComponent } from '../../shared/ui/input/input.component';
+import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
+import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
@@ -20,102 +25,92 @@ import { extractErrorMessage } from '../../core/silent-http';
 @Component({
   selector: 'app-work-type-form-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, ButtonComponent],
+  imports: [ReactiveFormsModule, ButtonComponent, CheckboxComponent, FormFieldComponent, InputComponent, TextareaComponent, PiDialogComponent],
   template: `
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="grid gap-4" data-test="work-type-form">
-      <p class="eyebrow text-muted-foreground">{{ isEdit ? 'Редактирование' : 'Создание' }} вида работ</p>
-
-      <label class="block">
-        <span class="eyebrow block mb-1.5">Название <span class="text-destructive">*</span></span>
-        <input
-          id="wt-name"
-          type="text"
-          formControlName="name"
-          autocomplete="off"
-          maxlength="200"
-          data-test="name-input"
-          class="pi-input w-full"
-        />
-      </label>
-
-      <div class="grid grid-cols-2 gap-3">
-        <label class="block">
-          <span class="eyebrow block mb-1.5">Секция</span>
-          <input
-            id="wt-section"
-            type="text"
-            formControlName="section"
-            autocomplete="off"
-            maxlength="100"
-            data-test="section-input"
-            class="pi-input w-full"
+    <app-pi-dialog
+      [title]="isEdit ? 'Редактировать вид работ' : 'Создать вид работ'"
+      [width]="'md'"
+    >
+      <form
+        body
+        [formGroup]="form"
+        (ngSubmit)="onSubmit()"
+        class="space-y-form-field"
+        data-test="work-type-form"
+      >
+        <app-pi-form-field label="Название" htmlFor="wt-name" [required]="true" [error]="form.controls.name.invalid && form.controls.name.touched ? 'Обязательное поле' : ''">
+          <app-pi-input
+            id="wt-name"
+            formControlName="name"
+            placeholder="Название вида работ"
+            [invalid]="form.controls.name.invalid && form.controls.name.touched"
+            data-test="name-input"
           />
-        </label>
-        <label class="block">
-          <span class="eyebrow block mb-1.5">Отдел</span>
-          <input
-            id="wt-department"
-            type="text"
-            formControlName="department"
-            autocomplete="off"
-            maxlength="100"
-            data-test="department-input"
-            class="pi-input w-full"
-          />
-        </label>
-      </div>
+        </app-pi-form-field>
 
-      <label class="block">
-        <span class="eyebrow block mb-1.5">Описание</span>
-        <textarea
-          id="wt-description"
-          rows="3"
-          formControlName="description"
-          maxlength="1000"
-          data-test="description-input"
-          class="pi-input w-full"
-        ></textarea>
-      </label>
-
-      <div class="grid grid-cols-2 gap-3">
-        <label class="block">
-          <span class="eyebrow block mb-1.5">Норма часов (на единицу)</span>
-          <input
-            id="wt-default-duration"
-            type="number"
-            step="0.01"
-            min="0"
-            formControlName="defaultDurationHours"
-            data-test="duration-input"
-            class="pi-input w-full font-mono"
-          />
-        </label>
-        <label class="block">
-          <span class="eyebrow block mb-1.5">Ставка (₽/час)</span>
-          <input
-            id="wt-hourly-rate"
-            type="number"
-            step="0.01"
-            min="0"
-            formControlName="hourlyRate"
-            data-test="rate-input"
-            class="pi-input w-full font-mono"
-          />
-        </label>
-      </div>
-
-      <label class="flex items-center gap-2 select-none cursor-pointer">
-        <input id="wt-active" type="checkbox" formControlName="isActive" data-test="active-checkbox" />
-        <span class="eyebrow">Активен</span>
-      </label>
-
-      @if (formError()) {
-        <div role="alert" class="border hairline border-destructive rounded-sm px-3 py-2 text-sm text-destructive">
-          {{ formError() }}
+        <div class="grid grid-cols-2 gap-form-field">
+          <app-pi-form-field label="Секция" htmlFor="wt-section">
+            <app-pi-input
+              id="wt-section"
+              formControlName="section"
+              placeholder="Секция"
+              data-test="section-input"
+            />
+          </app-pi-form-field>
+          <app-pi-form-field label="Отдел" htmlFor="wt-department">
+            <app-pi-input
+              id="wt-department"
+              formControlName="department"
+              placeholder="Отдел"
+              data-test="department-input"
+            />
+          </app-pi-form-field>
         </div>
-      }
 
-      <div class="flex justify-end gap-2 pt-2 hairline-t mt-2">
+        <app-pi-form-field label="Описание" htmlFor="wt-description">
+          <app-pi-textarea
+            id="wt-description"
+            [rows]="3"
+            formControlName="description"
+            [maxLength]="1000"
+            data-test="description-input"
+          />
+        </app-pi-form-field>
+
+        <div class="grid grid-cols-2 gap-form-field">
+          <app-pi-form-field label="Норма часов (на единицу)" htmlFor="wt-default-duration">
+            <app-pi-input
+              id="wt-default-duration"
+              type="number"
+              formControlName="defaultDurationHours"
+              placeholder="0"
+              data-test="duration-input"
+            />
+          </app-pi-form-field>
+          <app-pi-form-field label="Ставка (₽/час)" htmlFor="wt-hourly-rate">
+            <app-pi-input
+              id="wt-hourly-rate"
+              type="number"
+              formControlName="hourlyRate"
+              placeholder="0"
+              data-test="rate-input"
+            />
+          </app-pi-form-field>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <app-pi-checkbox formControlName="isActive" ariaLabel="Активен" data-test="active-checkbox" />
+          <span class="text-sm">Активен</span>
+        </div>
+
+        @if (formError()) {
+          <p role="alert" class="text-xs text-destructive">
+            {{ formError() }}
+          </p>
+        }
+      </form>
+
+      <div footer class="flex gap-3">
         <app-pi-button variant="ghost" type="button" (click)="onCancel()" data-test="cancel-button">
           Отмена
         </app-pi-button>
@@ -128,7 +123,7 @@ import { extractErrorMessage } from '../../core/silent-http';
           {{ submitting() ? 'Сохранение…' : (isEdit ? 'Сохранить' : 'Создать') }}
         </app-pi-button>
       </div>
-    </form>
+    </app-pi-dialog>
   `,
 })
 export class WorkTypeFormDialogComponent {

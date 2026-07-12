@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { LucideAngularModule, Sun, Moon } from 'lucide-angular';
-import { ThemeService } from '../core/theme.service';
+import { ThemeService } from '../shared/theme/theme.service';
 
 /**
  * TZ-67 ThemeToggle — minimal button that flips ThemeService mode.

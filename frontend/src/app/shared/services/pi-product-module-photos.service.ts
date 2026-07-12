@@ -9,7 +9,7 @@ import {
   silentPost,
   SilentResult,
 } from '../../core/silent-http';
-import { Photo } from '../../pages/materials/photos.service';
+import { Photo } from './photos.service';
 
 export interface ProductModulePhoto {
   _id: string;

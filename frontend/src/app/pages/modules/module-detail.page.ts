@@ -222,7 +222,7 @@ export class ModuleDetailPage implements OnInit {
   private readonly idString = computed<string>(() => this.id().get('id') ?? '');
 
   protected readonly moduleRes = httpResource<ProductModule>(() => ({
-    url: `${this.baseUrl}/product-modules/${this.idString()}`,
+    url: `${this.baseUrl}/modules/${this.idString()}`,
   }));
 
   protected readonly module = computed<ProductModule | null>(() => this.moduleRes.value() ?? null);

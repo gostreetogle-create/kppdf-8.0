@@ -16,7 +16,6 @@ export type MaterialDimensionType =
 export interface MaterialDimension {
   type: MaterialDimensionType;
   value: number;
-  /** true = downstream не может менять (например, толщина листа). */
   isImmutable?: boolean;
 }
 
@@ -28,19 +27,10 @@ export interface Material {
   unit: string;
   categoryId?: string;
   description?: string;
-  /** Цена за единицу. Всегда в RUB — поле валюты отсутствует (политика). */
   pricePerUnit?: number;
   stockQty?: number;
   dimensions?: MaterialDimension[];
   photoIds?: string[];
-  /**
-   * Main photo reference. The backend auto-populates this as a full
-   * `Photo` object via Mongoose `.populate('mainPhotoId')`, so consumers
-   * MUST accept either a string ID (unpopulated) or a `Photo` object
-   * (populated). See `mainPhotoOf()` in `materials.page.ts` and
-   * `patchFromData()` in `material-form-dialog.component.ts` for the
-   * dual-shape handling.
-   */
   mainPhotoId?: string | Photo;
   supplierId?: string;
   notes?: string;
@@ -62,21 +52,6 @@ export interface MaterialsListParams {
   categoryId?: string;
 }
 
-/**
- * TZ-NEW MaterialsService — connects the Paper & Ink editorial site
- * to `backend/src/modules/material/material.controller.ts`.
- *
- * List endpoint requires `admin` or `manager` role; the default
- * seeded admin (AdminSeed) has wildcard permissions, so it can read.
- *
- * All methods return `Observable<SilentResult<T>>` (see
- * `frontend/src/app/core/silent-http.ts`) so the observable never
- * errors — RxJS's global unhandled-error log is suppressed, and
- * consumers use a single `.subscribe((res) => res.ok ? … : …)`
- * callback with full type narrowing via the discriminated union.
- *
- * Standalone Angular 20 service, no NgModule.
- */
 @Injectable({ providedIn: 'root' })
 export class MaterialsService {
   private readonly http = inject(HttpClient);

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, viewChild, ElementRef, afterNextRender, Injector } from '@angular/core';
 import { Router } from '@angular/router';
 import { PiCommandPaletteService } from './pi-command-palette.service';
-import { ThemeService } from '../../core/theme.service';
+import { ThemeService } from '../theme/theme.service';
 
 export type CommandItem = {
   id: string;

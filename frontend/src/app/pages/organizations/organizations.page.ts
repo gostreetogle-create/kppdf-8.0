@@ -21,15 +21,17 @@ import { PiToastService } from '../../shared/ui/toast';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
+import { createSortState } from '../../shared/util/sort';
+import { createSearchState } from '../../shared/util/search';
+import { pluralize } from '../../shared/util/format';
 import {
   Organization,
   OrganizationsService,
   type OrganizationsListResponse,
-} from './organizations.service';
+} from '../../shared/services/organizations.service';
 import { OrganizationFormDialogComponent } from './organization-form-dialog.component';
 
-type SortKey = 'name' | 'inn' | 'shortName' | null;
-type SortDir = 'asc' | 'desc';
+type SortKey = 'name' | 'inn' | 'shortName';
 
 @Component({
   selector: 'app-organizations-page',
@@ -173,19 +175,15 @@ export class OrganizationsPage implements OnInit {
   private readonly injector = inject(Injector);
   private readonly baseUrl = inject(API_BASE_URL);
 
-  /**
-   * Server list = `GET /api/organizations` via Angular 20's `httpResource`.
-   * Same pattern as `materials.page.ts`. Re-fires whenever
-   * `debouncedSearch()` changes; auto-fires on creation so no explicit
-   * `reload()` in `ngOnInit`. `error` cast is required because
-   * `httpResource.error()` is typed `unknown`.
-   */
+  private readonly search = createSearchState(300);
+  private readonly sort = createSortState<SortKey>('name');
+
   protected readonly listRes = httpResource<OrganizationsListResponse>(() => ({
     url: `${this.baseUrl}/organizations`,
     params: {
       page: 1,
       limit: 50,
-      ...(this.debouncedSearch() ? { search: this.debouncedSearch() } : {}),
+      ...(this.search.debouncedSearch() ? { search: this.search.debouncedSearch() } : {}),
     },
   }));
 
@@ -201,77 +199,38 @@ export class OrganizationsPage implements OnInit {
     return err ? extractErrorMessage(err) : null;
   });
 
-  /** Live search input (echoed in @if branches). */
-  protected readonly searchQuery = signal<string>('');
-  /** Debounced snapshot driving the httpResource params. */
-  protected readonly debouncedSearch = signal<string>('');
-  protected readonly sortKey = signal<SortKey>('name');
-  protected readonly sortDir = signal<SortDir>('asc');
-
-  protected readonly sortedRows = computed<Organization[]>(() => {
-    const rows = this.data().slice();
-    const k = this.sortKey();
-    if (!k) return rows;
-    const sign = this.sortDir() === 'asc' ? 1 : -1;
-    return rows.sort((a, b) => {
-      const av = a[k];
-      const bv = b[k];
-      if (av == null && bv == null) return 0;
-      if (av == null) return -1 * sign;
-      if (bv == null) return 1 * sign;
-      return String(av).localeCompare(String(bv), 'ru') * sign;
-    });
+  protected readonly sortedRows = this.sort.sorted(this.data(), (r) => {
+    const k = this.sort.sortKey();
+    if (!k) return null;
+    return (r as any)[k];
   });
 
-  private debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  protected readonly searchQuery = this.search.searchQuery;
 
-  ngOnInit(): void {
-    // `listRes` auto-fires its initial GET — no explicit `reload()`.
-  }
+  ngOnInit(): void {}
 
   private refreshOnDialogClose<TResult>(ref: DialogRef<TResult>): void {
     onDialogCloseOnce(ref, this.injector, () => this.listRes.reload());
   }
 
   protected onSearchInput(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.searchQuery.set(target.value);
-    if (this.debounceTimer) clearTimeout(this.debounceTimer);
-    this.debounceTimer = setTimeout(
-      () => this.debouncedSearch.set(target.value.trim()),
-      300,
-    );
+    this.search.onSearchInput(event);
   }
 
-  protected setSort(key: Exclude<SortKey, null>): void {
-    if (this.sortKey() !== key) {
-      this.sortKey.set(key);
-      this.sortDir.set('asc');
-    } else if (this.sortDir() === 'asc') {
-      this.sortDir.set('desc');
-    } else {
-      this.sortKey.set(null);
-      this.sortDir.set('asc');
-    }
+  protected setSort(key: SortKey): void {
+    this.sort.setSort(key);
   }
 
-  protected sortIcon(key: Exclude<SortKey, null>): string {
-    if (this.sortKey() !== key) return '↕';
-    return this.sortDir() === 'asc' ? '↑' : '↓';
+  protected sortIcon(key: SortKey): string {
+    return this.sort.sortIcon(key);
   }
 
-  protected isSortedBy(key: Exclude<SortKey, null>): boolean {
-    return this.sortKey() === key;
+  protected isSortedBy(key: SortKey): boolean {
+    return this.sort.isSortedBy(key);
   }
 
   protected totalLabel(n: number): string {
-    const mod10 = n % 10;
-    const mod100 = n % 100;
-    if (mod10 === 1 && mod100 !== 11) return 'организация';
-    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
-      return 'организации';
-    }
-    return 'организаций';
+    return pluralize(n, ['организация', 'организации', 'организаций']);
   }
 
   protected openCreate(): void {

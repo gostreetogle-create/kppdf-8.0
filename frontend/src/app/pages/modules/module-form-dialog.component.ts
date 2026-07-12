@@ -6,6 +6,10 @@ import {
   Validators,
 } from '@angular/forms';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
+import { InputComponent } from '../../shared/ui/input/input.component';
+import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
+import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
@@ -35,121 +39,117 @@ import { extractErrorMessage } from '../../core/silent-http';
 @Component({
   selector: 'app-module-form-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, ButtonComponent],
+  imports: [ReactiveFormsModule, ButtonComponent, FormFieldComponent, InputComponent, TextareaComponent, PiDialogComponent],
   template: `
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="grid gap-4" data-test="module-form">
-      <p class="eyebrow text-muted-foreground">{{ isEdit ? 'Редактирование' : 'Создание' }} модуля</p>
-
-      <div class="grid grid-cols-2 gap-3">
-        <label class="block">
-          <span class="eyebrow block mb-1.5">Название <span class="text-destructive">*</span></span>
-          <input
-            id="mod-name"
-            type="text"
-            formControlName="name"
-            autocomplete="off"
-            maxlength="200"
-            data-test="name-input"
-            class="pi-input w-full"
-          />
-        </label>
-        <label class="block">
-          <span class="eyebrow block mb-1.5">Артикул</span>
-          <input
-            id="mod-article"
-            type="text"
-            formControlName="article"
-            autocomplete="off"
-            maxlength="100"
-            data-test="article-input"
-            class="pi-input w-full font-mono"
-          />
-        </label>
-      </div>
-
-      <fieldset formGroupName="dimensions" class="hairline rounded-sm p-3">
-        <legend class="eyebrow mb-2 px-1">Габариты модуля</legend>
-        <div class="grid grid-cols-4 gap-2">
-          <label class="block">
-            <span class="eyebrow block mb-1.5">Ширина</span>
-            <input id="mod-width" type="number" step="0.01" formControlName="width"
-              data-test="dim-width" class="pi-input w-full font-mono" />
-          </label>
-          <label class="block">
-            <span class="eyebrow block mb-1.5">Высота</span>
-            <input id="mod-height" type="number" step="0.01" formControlName="height"
-              data-test="dim-height" class="pi-input w-full font-mono" />
-          </label>
-          <label class="block">
-            <span class="eyebrow block mb-1.5">Глубина</span>
-            <input id="mod-depth" type="number" step="0.01" formControlName="depth"
-              data-test="dim-depth" class="pi-input w-full font-mono" />
-          </label>
-          <label class="block">
-            <span class="eyebrow block mb-1.5">Ед.</span>
-            <input id="mod-dim-unit" type="text" formControlName="unit"
-              data-test="dim-unit" class="pi-input w-full" />
-          </label>
+    <app-pi-dialog
+      [title]="isEdit ? 'Редактировать модуль' : 'Создать модуль'"
+      [width]="'lg'"
+    >
+      <form
+        body
+        [formGroup]="form"
+        (ngSubmit)="onSubmit()"
+        class="space-y-form-field"
+        data-test="module-form"
+      >
+        <div class="grid grid-cols-2 gap-form-field">
+          <app-pi-form-field label="Название" htmlFor="mod-name" [required]="true" [error]="form.controls.name.invalid && form.controls.name.touched ? 'Обязательное поле' : ''">
+            <app-pi-input
+              id="mod-name"
+              formControlName="name"
+              placeholder="Название модуля"
+              [invalid]="form.controls.name.invalid && form.controls.name.touched"
+              data-test="name-input"
+            />
+          </app-pi-form-field>
+          <app-pi-form-field label="Артикул" htmlFor="mod-article">
+            <app-pi-input
+              id="mod-article"
+              formControlName="article"
+              placeholder="Артикул"
+              data-test="article-input"
+            />
+          </app-pi-form-field>
         </div>
-      </fieldset>
 
-      <label class="block">
-        <span class="eyebrow block mb-1.5">Вес (кг)</span>
-        <input id="mod-weight" type="number" step="0.01" min="0" formControlName="weight"
-          data-test="weight-input" class="pi-input w-full font-mono" />
-      </label>
-
-      <label class="block">
-        <span class="eyebrow block mb-1.5">Заметки / описание</span>
-        <textarea id="mod-notes" rows="3" formControlName="notes"
-          data-test="notes-input" class="pi-input w-full"></textarea>
-      </label>
-
-      <fieldset class="hairline rounded-sm p-3">
-        <legend class="eyebrow mb-2 px-1">Виды работ в составе</legend>
-        <div formArrayName="workTypes" class="grid gap-2">
-          @for (ctrl of workTypesArray.controls; track $index) {
-            <div [formGroupName]="$index" class="grid grid-cols-12 gap-2 items-end">
-              <label class="block col-span-6">
-                <span class="eyebrow block mb-1.5">Вид работы</span>
-                <select class="pi-input w-full" formControlName="workTypeId" data-test="wt-select">
-                  <option value="">— не выбрано —</option>
-                  @for (wt of workTypesCatalog(); track wt._id) {
-                    <option [value]="wt._id">{{ wt.name }}</option>
-                  }
-                </select>
-              </label>
-              <label class="block col-span-3">
-                <span class="eyebrow block mb-1.5">Норма (ч)</span>
-                <input type="number" step="0.01" min="0" formControlName="estimatedHours"
-                  data-test="wt-hours" class="pi-input w-full font-mono" />
-              </label>
-              <label class="block col-span-2">
-                <span class="eyebrow block mb-1.5">Сорт.</span>
-                <input type="number" formControlName="sortOrder"
-                  data-test="wt-sort" class="pi-input w-full font-mono" />
-              </label>
-              <button type="button" (click)="removeWorkType($index)"
-                class="col-span-1 px-2 py-1.5 hairline border-destructive text-destructive rounded-sm hover:bg-destructive hover:text-paper"
-                aria-label="Удалить строку">
-                ×
-              </button>
-            </div>
-          }
+        <div>
+          <p class="eyebrow mb-form-row">Габариты модуля</p>
+          <div class="grid grid-cols-4 gap-form-field">
+            <app-pi-form-field label="Ширина" htmlFor="mod-width">
+              <app-pi-input id="mod-width" type="number" formControlName="width"
+                placeholder="0" data-test="dim-width" />
+            </app-pi-form-field>
+            <app-pi-form-field label="Высота" htmlFor="mod-height">
+              <app-pi-input id="mod-height" type="number" formControlName="height"
+                placeholder="0" data-test="dim-height" />
+            </app-pi-form-field>
+            <app-pi-form-field label="Глубина" htmlFor="mod-depth">
+              <app-pi-input id="mod-depth" type="number" formControlName="depth"
+                placeholder="0" data-test="dim-depth" />
+            </app-pi-form-field>
+            <app-pi-form-field label="Ед." htmlFor="mod-dim-unit">
+              <app-pi-input id="mod-dim-unit" formControlName="unit"
+                placeholder="мм" data-test="dim-unit" />
+            </app-pi-form-field>
+          </div>
         </div>
-        <button type="button" (click)="addWorkType()" data-test="wt-add"
-          class="mt-2 px-3 py-1.5 hairline rounded-sm text-sm hover:bg-paper-2">
-          + Добавить вид работы
-        </button>
-      </fieldset>
 
-      @if (formError()) {
-        <div role="alert" class="border hairline border-destructive rounded-sm px-3 py-2 text-sm text-destructive">
-          {{ formError() }}
+        <app-pi-form-field label="Вес (кг)" htmlFor="mod-weight">
+          <app-pi-input id="mod-weight" type="number" formControlName="weight"
+            placeholder="0" data-test="weight-input" />
+        </app-pi-form-field>
+
+        <app-pi-form-field label="Заметки / описание" htmlFor="mod-notes">
+          <app-pi-textarea id="mod-notes" [rows]="3" formControlName="notes"
+            data-test="notes-input" />
+        </app-pi-form-field>
+
+        <div>
+          <div class="flex items-baseline justify-between mb-form-row">
+            <p class="eyebrow">Виды работ в составе</p>
+            <app-pi-button type="button" variant="outline" size="sm" (click)="addWorkType()" data-test="wt-add">
+              + Добавить вид работы
+            </app-pi-button>
+          </div>
+          <div formArrayName="workTypes" class="space-y-2">
+            @for (ctrl of workTypesArray.controls; track $index) {
+              <div [formGroupName]="$index" class="grid grid-cols-12 gap-2 items-end p-2 hairline rounded-sm bg-paper-2/30">
+                <label class="block col-span-6">
+                  <span class="eyebrow block mb-1.5">Вид работы</span>
+                  <select class="pi-input w-full" formControlName="workTypeId" data-test="wt-select">
+                    <option value="">— не выбрано —</option>
+                    @for (wt of workTypesCatalog(); track wt._id) {
+                      <option [value]="wt._id">{{ wt.name }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="block col-span-3">
+                  <span class="eyebrow block mb-1.5">Норма (ч)</span>
+                  <app-pi-input type="number" formControlName="estimatedHours"
+                    placeholder="0" data-test="wt-hours" />
+                </label>
+                <label class="block col-span-2">
+                  <span class="eyebrow block mb-1.5">Сорт.</span>
+                  <app-pi-input type="number" formControlName="sortOrder"
+                    placeholder="0" data-test="wt-sort" />
+                </label>
+                <app-pi-button type="button" variant="destructive" size="icon" (click)="removeWorkType($index)"
+                  aria-label="Удалить строку">
+                  ×
+                </app-pi-button>
+              </div>
+            }
+          </div>
         </div>
-      }
 
-      <div class="flex justify-end gap-2 pt-2 hairline-t">
+        @if (formError()) {
+          <p role="alert" class="text-xs text-destructive">
+            {{ formError() }}
+          </p>
+        }
+      </form>
+
+      <div footer class="flex gap-3">
         <app-pi-button variant="ghost" type="button" (click)="onCancel()" data-test="cancel-button">
           Отмена
         </app-pi-button>
@@ -158,7 +158,7 @@ import { extractErrorMessage } from '../../core/silent-http';
           {{ submitting() ? 'Сохранение…' : (isEdit ? 'Сохранить' : 'Создать') }}
         </app-pi-button>
       </div>
-    </form>
+    </app-pi-dialog>
   `,
 })
 export class ModuleFormDialogComponent {

@@ -13,6 +13,7 @@ import {
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
+import { InputComponent } from '../../shared/ui/input/input.component';
 import {
   PI_DIALOG_DATA,
   PI_DIALOG_REF,
@@ -26,7 +27,7 @@ import {
   ORG_TYPES,
   ORG_TYPE_LABELS,
   type OrgType,
-} from './organizations.service';
+} from '../../shared/services/organizations.service';
 
 type Result = Organization | null | undefined;
 
@@ -39,6 +40,7 @@ type Result = Organization | null | undefined;
     PiDialogComponent,
     ButtonComponent,
     FormFieldComponent,
+    InputComponent,
   ],
   template: `
     <app-pi-dialog
@@ -59,14 +61,11 @@ type Result = Organization | null | undefined;
             [required]="true"
             [error]="errorFor('name')"
           >
-            <input
+            <app-pi-input
               id="org-name"
-              type="text"
               formControlName="name"
-              maxlength="256"
-              autocomplete="off"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors"
-              [class.border-destructive]="hasError('name')"
+              placeholder="Полное наименование"
+              [invalid]="hasError('name')"
             />
           </app-pi-form-field>
 
@@ -75,13 +74,10 @@ type Result = Organization | null | undefined;
             htmlFor="org-shortName"
             [error]="errorFor('shortName')"
           >
-            <input
+            <app-pi-input
               id="org-shortName"
-              type="text"
               formControlName="shortName"
-              maxlength="128"
-              autocomplete="off"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors"
+              placeholder="Краткое наименование"
             />
           </app-pi-form-field>
 
@@ -91,14 +87,11 @@ type Result = Organization | null | undefined;
             [required]="true"
             [error]="errorFor('inn')"
           >
-            <input
+            <app-pi-input
               id="org-inn"
-              type="text"
               formControlName="inn"
-              maxlength="12"
-              autocomplete="off"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors mono"
-              [class.border-destructive]="hasError('inn')"
+              placeholder="ИНН"
+              [invalid]="hasError('inn')"
             />
           </app-pi-form-field>
 
@@ -107,13 +100,10 @@ type Result = Organization | null | undefined;
             htmlFor="org-kpp"
             [error]="errorFor('kpp')"
           >
-            <input
+            <app-pi-input
               id="org-kpp"
-              type="text"
               formControlName="kpp"
-              maxlength="16"
-              autocomplete="off"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors mono"
+              placeholder="КПП"
             />
           </app-pi-form-field>
         </div>
@@ -145,12 +135,10 @@ type Result = Organization | null | undefined;
             label="Контактное лицо"
             htmlFor="org-signer"
           >
-            <input
+            <app-pi-input
               id="org-signer"
-              type="text"
               formControlName="signerName"
-              autocomplete="off"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors"
+              placeholder="ФИО контактного лица"
             />
           </app-pi-form-field>
 
@@ -158,12 +146,10 @@ type Result = Organization | null | undefined;
             label="Должность"
             htmlFor="org-position"
           >
-            <input
+            <app-pi-input
               id="org-position"
-              type="text"
               formControlName="signerPosition"
-              autocomplete="off"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors"
+              placeholder="Должность"
             />
           </app-pi-form-field>
 

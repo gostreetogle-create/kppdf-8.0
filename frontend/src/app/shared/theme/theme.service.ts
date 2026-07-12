@@ -4,21 +4,6 @@ import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 export type ThemeMode = 'light' | 'dark';
 const STORAGE_KEY = 'pi.theme';
 
-/**
- * ThemeService — single source of truth for light/dark mode toggle.
- *
- * - `mode` signal: the current mode.
- * - `isDark`: computed boolean.
- * - Effect on `mode` automatically syncs DOM (classList) + localStorage.
- * - `applyEarlyHint()` called once in main.ts SYNCHRONOUSLY so that
- *   pre-paint <html class="dark"> is set BEFORE bootstrapApplication
- *   (TZ-33 §3 — no FOUC).
- *
- * TZ-77 ↔ TZ-33 coordination: this service handles light/dark only.
- * Color override layer (e.g. user shifts hue of `--color-ink`) is
- * applied separately by Theme Editor override-vars via `style.setProperty`,
- * NOT here — keeping two responsibilities split.
- */
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
   private readonly doc = inject(DOCUMENT);

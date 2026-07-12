@@ -22,11 +22,13 @@ import { SwitchComponent } from '../../shared/ui/switch/switch.component';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
+import { createSortState } from '../../shared/util/sort';
+import { createClientSearchState } from '../../shared/util/search';
+import { pluralize } from '../../shared/util/format';
 import { WorkType, WorkTypesService } from '../../shared/services/pi-work-types.service';
 import { WorkTypeFormDialogComponent } from './work-type-form-dialog.component';
 
-type SortKey = 'name' | 'section' | 'department' | 'hourlyRate' | null;
-type SortDir = 'asc' | 'desc';
+type SortKey = 'name' | 'section' | 'department' | 'hourlyRate';
 
 /**
  * TZ-83 Phase B: WorkTypesPage.
@@ -81,7 +83,7 @@ type SortDir = 'asc' | 'desc';
       >
         + Создать
       </app-pi-button>
-      <span hint>{{ visible().length }} {{ totalLabel(visible().length) }}</span>
+      <span hint>{{ sortedRows().length }} {{ totalLabel(sortedRows().length) }}</span>
     </app-pi-toolbar>
 
     <app-pi-section
@@ -189,10 +191,8 @@ export class WorkTypesPage implements OnInit {
   private readonly injector = inject(Injector);
   private readonly baseUrl = inject(API_BASE_URL);
 
-  /**
-   * GET /api/work-types через httpResource.
-   * `WorkType[]` raw shape (backend не пагинирует) — total computed из длины.
-   */
+  private readonly sort = createSortState<SortKey>('name');
+
   protected readonly listRes = httpResource<WorkType[]>(() => ({
     url: `${this.baseUrl}/work-types`,
   }));
@@ -200,79 +200,50 @@ export class WorkTypesPage implements OnInit {
   protected readonly data = computed<WorkType[]>(
     () => this.listRes.value() ?? [],
   );
-  /** search-filtered без sort — sort ниже делается на visible(). */
-  protected readonly visible = computed<WorkType[]>(() => {
-    const q = this.searchQuery().trim().toLowerCase();
-    if (!q) return this.data();
-    return this.data().filter(
-      (w) =>
-        w.name.toLowerCase().includes(q) ||
-        (w.section ?? '').toLowerCase().includes(q) ||
-        (w.department ?? '').toLowerCase().includes(q),
-    );
-  });
+
+  protected readonly filteredRows = createClientSearchState(
+    () => this.data(),
+    (w: WorkType, q: string) =>
+      w.name.toLowerCase().includes(q) ||
+      (w.section ?? '').toLowerCase().includes(q) ||
+      (w.department ?? '').toLowerCase().includes(q),
+  ).filtered;
+
   protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
   protected readonly error = computed<string | null>(() => {
     const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
     return err ? extractErrorMessage(err) : null;
   });
 
-  protected readonly searchQuery = signal<string>('');
-  protected readonly sortKey = signal<SortKey>('name');
-  protected readonly sortDir = signal<SortDir>('asc');
-
-  protected readonly sortedRows = computed<WorkType[]>(() => {
-    const rows = this.visible().slice();
-    const k = this.sortKey();
-    if (!k) return rows;
-    const sign = this.sortDir() === 'asc' ? 1 : -1;
-    return rows.sort((a, b) => {
-      const av = a[k];
-      const bv = b[k];
-      if (av == null && bv == null) return 0;
-      if (av == null) return -1 * sign;
-      if (bv == null) return 1 * sign;
-      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * sign;
-      return String(av).localeCompare(String(bv), 'ru') * sign;
-    });
+  protected readonly sortedRows = this.sort.sorted(this.filteredRows(), (r) => {
+    const k = this.sort.sortKey();
+    if (!k) return null;
+    return (r as any)[k];
   });
 
-  ngOnInit(): void {
-    // listRes auto-fire;
-  }
+  protected readonly searchQuery = signal<string>('');
+
+  ngOnInit(): void {}
 
   protected onSearchInput(event: Event): void {
     const target = event.target as HTMLInputElement;
     this.searchQuery.set(target.value);
   }
 
-  protected setSort(key: Exclude<SortKey, null>): void {
-    if (this.sortKey() !== key) {
-      this.sortKey.set(key);
-      this.sortDir.set('asc');
-    } else if (this.sortDir() === 'asc') {
-      this.sortDir.set('desc');
-    } else {
-      this.sortKey.set(null);
-      this.sortDir.set('asc');
-    }
+  protected setSort(key: SortKey): void {
+    this.sort.setSort(key);
   }
 
-  protected sortIcon(key: Exclude<SortKey, null>): string {
-    if (this.sortKey() !== key) return '↕';
-    return this.sortDir() === 'asc' ? '↑' : '↓';
+  protected sortIcon(key: SortKey): string {
+    return this.sort.sortIcon(key);
   }
 
-  protected isSortedBy(key: Exclude<SortKey, null>): boolean {
-    return this.sortKey() === key;
+  protected isSortedBy(key: SortKey): boolean {
+    return this.sort.isSortedBy(key);
   }
 
   protected totalLabel(n: number): string {
-    const mod10 = n % 10;
-    const mod100 = n % 100;
-    if (mod10 === 1 && mod100 !== 11) return 'вид';
-    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'вида';
-    return 'видов';
+    return pluralize(n, ['вид', 'вида', 'видов']);
   }
 
   protected openCreate(): void {

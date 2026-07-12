@@ -11,6 +11,8 @@ import {
   Validators,
 } from '@angular/forms';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { InputComponent } from '../../shared/ui/input/input.component';
+import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
@@ -18,7 +20,7 @@ import {
   MaterialInModule,
   ProductModulesService,
 } from '../../shared/services/pi-product-modules.service';
-import { Material, MaterialsService } from '../materials/materials.service';
+import { Material, MaterialsService } from '../../shared/services/materials.service';
 import { extractErrorMessage } from '../../core/silent-http';
 
 /**
@@ -39,84 +41,90 @@ import { extractErrorMessage } from '../../core/silent-http';
 @Component({
   selector: 'app-module-materials-form-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, ButtonComponent],
+  imports: [ReactiveFormsModule, ButtonComponent, InputComponent, PiDialogComponent],
   template: `
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="grid gap-4" data-test="materials-form">
-      <p class="eyebrow text-muted-foreground">Материалы в составе модуля</p>
+    <app-pi-dialog
+      title="Материалы в составе модуля"
+      [width]="'lg'"
+    >
+      <form
+        body
+        [formGroup]="form"
+        (ngSubmit)="onSubmit()"
+        class="space-y-form-field"
+        data-test="materials-form"
+      >
+        <div formArrayName="materials" class="space-y-3">
+          @for (ctrl of materialsArray.controls; track $index) {
+            <div [formGroupName]="$index" class="p-3 hairline rounded-sm bg-paper-2/30">
+              <div class="grid grid-cols-12 gap-2 items-start">
+                <label class="block col-span-5">
+                  <span class="eyebrow block mb-1.5">Материал <span class="text-destructive">*</span></span>
+                  <select class="pi-input w-full" formControlName="materialId" data-test="mat-select">
+                    <option value="">— выбрать —</option>
+                    @for (m of materialsCatalog(); track m._id) {
+                      <option [value]="m._id">{{ m.name }} ({{ m.unit }})</option>
+                    }
+                  </select>
+                </label>
+                <label class="block col-span-2">
+                  <span class="eyebrow block mb-1.5">Кол-во <span class="text-destructive">*</span></span>
+                  <app-pi-input type="number" formControlName="quantity"
+                    placeholder="0" data-test="mat-qty" />
+                </label>
+                <label class="block col-span-2">
+                  <span class="eyebrow block mb-1.5">Ед.</span>
+                  <app-pi-input formControlName="unit" placeholder="шт" data-test="mat-unit" />
+                </label>
+                <label class="flex items-center gap-2 col-span-2 pt-6 select-none cursor-pointer">
+                  <input type="checkbox" formControlName="isPurchased" data-test="mat-purchased" />
+                  <span class="eyebrow">Закупка</span>
+                </label>
+                <app-pi-button type="button" variant="destructive" size="icon" (click)="removeRow($index)"
+                  aria-label="Удалить материал">
+                  ×
+                </app-pi-button>
+              </div>
 
-      <div formArrayName="materials" class="grid gap-3">
-        @for (ctrl of materialsArray.controls; track $index) {
-          <fieldset [formGroupName]="$index" class="hairline rounded-sm p-3">
-            <div class="grid grid-cols-12 gap-2 items-start">
-              <label class="block col-span-5">
-                <span class="eyebrow block mb-1.5">Материал <span class="text-destructive">*</span></span>
-                <select class="pi-input w-full" formControlName="materialId" data-test="mat-select">
-                  <option value="">— выбрать —</option>
-                  @for (m of materialsCatalog(); track m._id) {
-                    <option [value]="m._id">{{ m.name }} ({{ m.unit }})</option>
-                  }
-                </select>
-              </label>
-              <label class="block col-span-2">
-                <span class="eyebrow block mb-1.5">Кол-во <span class="text-destructive">*</span></span>
-                <input type="number" step="0.01" min="0" formControlName="quantity"
-                  data-test="mat-qty" class="pi-input w-full font-mono" />
-              </label>
-              <label class="block col-span-2">
-                <span class="eyebrow block mb-1.5">Ед.</span>
-                <input type="text" formControlName="unit" data-test="mat-unit" class="pi-input w-full" />
-              </label>
-              <label class="flex items-center gap-2 col-span-2 pt-6 select-none cursor-pointer">
-                <input type="checkbox" formControlName="isPurchased" data-test="mat-purchased" />
-                <span class="eyebrow">Закупка</span>
-              </label>
-              <button type="button" (click)="removeRow($index)"
-                class="col-span-1 px-2 py-1.5 hairline border-destructive text-destructive rounded-sm hover:bg-destructive hover:text-paper"
-                aria-label="Удалить материал">
-                ×
-              </button>
+              <div formGroupName="overrideDimensions" class="mt-3 grid grid-cols-12 gap-2 items-end">
+                <span class="col-span-12 eyebrow text-muted-foreground">Override-габариты (необязательно)</span>
+                <label class="block col-span-2">
+                  <span class="eyebrow block mb-1.5">Длина</span>
+                  <app-pi-input type="number" formControlName="length"
+                    placeholder="0" data-test="override-len" />
+                </label>
+                <label class="block col-span-2">
+                  <span class="eyebrow block mb-1.5">Ширина</span>
+                  <app-pi-input type="number" formControlName="width"
+                    placeholder="0" data-test="override-w" />
+                </label>
+                <label class="block col-span-2">
+                  <span class="eyebrow block mb-1.5">Высота</span>
+                  <app-pi-input type="number" formControlName="height"
+                    placeholder="0" data-test="override-h" />
+                </label>
+                <label class="block col-span-3">
+                  <span class="eyebrow block mb-1.5">Ед.</span>
+                  <app-pi-input formControlName="unit"
+                    placeholder="мм/см/м" data-test="override-unit" />
+                </label>
+              </div>
             </div>
-
-            <!-- Override-dimensions (Phase C.4: 4 поля — L/W/H/unit) -->
-            <div formGroupName="overrideDimensions" class="mt-3 grid grid-cols-12 gap-2 items-end">
-              <span class="col-span-12 eyebrow text-muted-foreground">Override-габариты (необязательно)</span>
-              <label class="block col-span-2">
-                <span class="eyebrow block mb-1.5">Длина</span>
-                <input type="number" step="0.01" min="0" formControlName="length"
-                  data-test="override-len" class="pi-input w-full font-mono" />
-              </label>
-              <label class="block col-span-2">
-                <span class="eyebrow block mb-1.5">Ширина</span>
-                <input type="number" step="0.01" min="0" formControlName="width"
-                  data-test="override-w" class="pi-input w-full font-mono" />
-              </label>
-              <label class="block col-span-2">
-                <span class="eyebrow block mb-1.5">Высота</span>
-                <input type="number" step="0.01" min="0" formControlName="height"
-                  data-test="override-h" class="pi-input w-full font-mono" />
-              </label>
-              <label class="block col-span-3">
-                <span class="eyebrow block mb-1.5">Ед.</span>
-                <input type="text" formControlName="unit"
-                  data-test="override-unit" class="pi-input w-full" placeholder="мм/см/м" />
-              </label>
-            </div>
-          </fieldset>
-        }
-      </div>
-
-      <button type="button" (click)="addRow()" data-test="mat-add"
-        class="px-3 py-1.5 hairline rounded-sm text-sm hover:bg-paper-2 w-fit">
-        + Добавить материал
-      </button>
-
-      @if (formError()) {
-        <div role="alert" class="border hairline border-destructive rounded-sm px-3 py-2 text-sm text-destructive">
-          {{ formError() }}
+          }
         </div>
-      }
 
-      <div class="flex justify-end gap-2 pt-2 hairline-t">
+        <app-pi-button type="button" variant="outline" size="sm" (click)="addRow()" data-test="mat-add">
+          + Добавить материал
+        </app-pi-button>
+
+        @if (formError()) {
+          <p role="alert" class="text-xs text-destructive">
+            {{ formError() }}
+          </p>
+        }
+      </form>
+
+      <div footer class="flex gap-3">
         <app-pi-button variant="ghost" type="button" (click)="onCancel()" data-test="cancel-button">
           Отмена
         </app-pi-button>
@@ -125,7 +133,7 @@ import { extractErrorMessage } from '../../core/silent-http';
           {{ submitting() ? 'Сохранение…' : 'Сохранить' }}
         </app-pi-button>
       </div>
-    </form>
+    </app-pi-dialog>
   `,
 })
 export class ModuleMaterialsFormDialogComponent {

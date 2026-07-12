@@ -30,7 +30,7 @@ import {
 } from '../../shared/services/pi-cost-calculations.service';
 import { ProductModulePickerDialogComponent } from './product-module-picker-dialog.component';
 import { CostCalculationDetailDialogComponent } from './cost-calculation-detail-dialog.component';
-import { Photo } from '../materials/photos.service';
+import { Photo } from '../../shared/services/photos.service';
 
 /**
  * TZ-83 Phase D: ProductDetailPage.

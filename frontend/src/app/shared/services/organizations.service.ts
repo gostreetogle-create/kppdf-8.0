@@ -13,7 +13,6 @@ export const ORG_TYPES = [
 ] as const;
 export type OrgType = (typeof ORG_TYPES)[number];
 
-/** Локализованные подписи для UI. */
 export const ORG_TYPE_LABELS: Record<OrgType, string> = {
   customer: 'Покупатель',
   supplier: 'Поставщик',
@@ -64,18 +63,9 @@ export interface OrganizationsListParams {
   page?: number;
   limit?: number;
   search?: string;
-  /** Фильтр по наличию типа в массиве type[] (MongoDB array-contains). */
   type?: OrgType;
 }
 
-/**
- * TZ-NEW OrganizationsService — wraps the org CRUD endpoints behind
- * `SilentResult` so the observable never errors and consumers can
- * handle success/failure with full type narrowing via the
- * discriminated union.
- *
- * See `frontend/src/app/core/silent-http.ts` for the rationale.
- */
 @Injectable({ providedIn: 'root' })
 export class OrganizationsService {
   private readonly http = inject(HttpClient);

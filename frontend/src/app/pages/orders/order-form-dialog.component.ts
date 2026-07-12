@@ -16,6 +16,7 @@ import {
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
+import { InputComponent } from '../../shared/ui/input/input.component';
 import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
@@ -25,7 +26,7 @@ import {
   Counterparty,
   CounterpartyService,
 } from '../../shared/services/pi-counterparty.service';
-import { Product, ProductsService } from '../products/products.service';
+import { Product, ProductsService } from '../../shared/services/products.service';
 import { Order, OrderItem, OrdersService, OrderPriority, OrderStatus } from './orders.service';
 
 type Result = Order | null | undefined;
@@ -84,6 +85,7 @@ interface ItemFormGroup extends FormGroup {
     PiDialogComponent,
     ButtonComponent,
     FormFieldComponent,
+    InputComponent,
     TextareaComponent,
   ],
   template: `
@@ -109,7 +111,7 @@ interface ItemFormGroup extends FormGroup {
             <select
               id="ord-cp"
               formControlName="counterpartyId"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors"
+              class="pi-input w-full"
               [class.border-destructive]="hasError('counterpartyId')"
             >
               <option value="" disabled>— выберите —</option>
@@ -126,11 +128,10 @@ interface ItemFormGroup extends FormGroup {
             htmlFor="ord-number"
             hint="Если не задан — генерируется автоматически"
           >
-            <input
+            <app-pi-input
               id="ord-number"
-              type="text"
               formControlName="number"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors mono"
+              placeholder="Номер заказа"
             />
           </app-pi-form-field>
 
@@ -138,11 +139,11 @@ interface ItemFormGroup extends FormGroup {
             label="Планируемая дата"
             htmlFor="ord-plannedDate"
           >
-            <input
+            <app-pi-input
               id="ord-plannedDate"
-              type="date"
+              type="text"
               formControlName="plannedDate"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors mono"
+              placeholder="ГГГГ-ММ-ДД"
             />
           </app-pi-form-field>
 
@@ -153,7 +154,7 @@ interface ItemFormGroup extends FormGroup {
             <select
               id="ord-priority"
               formControlName="priority"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors"
+              class="pi-input w-full"
             >
               @for (opt of PRIORITY_OPTIONS; track opt.value) {
                 <option [value]="opt.value">{{ opt.label }}</option>
@@ -165,7 +166,7 @@ interface ItemFormGroup extends FormGroup {
             <select
               id="ord-status"
               formControlName="status"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors"
+              class="pi-input w-full"
             >
               @for (opt of STATUS_OPTIONS; track opt.value) {
                 <option [value]="opt.value">{{ opt.label }}</option>
@@ -177,12 +178,10 @@ interface ItemFormGroup extends FormGroup {
             label="Адрес доставки"
             htmlFor="ord-address"
           >
-            <input
+            <app-pi-input
               id="ord-address"
-              type="text"
               formControlName="deliveryAddress"
-              maxlength="512"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors"
+              placeholder="Адрес доставки"
             />
           </app-pi-form-field>
         </div>
@@ -226,7 +225,7 @@ interface ItemFormGroup extends FormGroup {
                     [attr.name]="'item-product-' + i"
                     formControlName="productId"
                     (change)="onProductPick(i, $any($event.target).value)"
-                    class="w-full h-9 px-control-x text-sm hairline rounded-sm bg-paper"
+                    class="h-8 px-3 text-xs hairline rounded-sm bg-paper pi-focus-ring w-full"
                     [attr.aria-label]="'Продукт ' + (i + 1)"
                   >
                     <option value="" disabled>— выберите —</option>
@@ -240,48 +239,46 @@ interface ItemFormGroup extends FormGroup {
 
                 <label class="col-span-6 sm:col-span-2 block">
                   <span class="eyebrow block mb-1.5">Кол-во</span>
-                  <input
+                  <app-pi-input
                     type="number"
-                    step="1"
-                    min="0"
                     formControlName="quantity"
-                    class="w-full h-9 px-control-x text-sm hairline rounded-sm bg-paper text-right"
+                    size="sm"
+                    placeholder="0"
                     [attr.aria-label]="'Количество ' + (i + 1)"
                   />
                 </label>
 
                 <label class="col-span-6 sm:col-span-2 block">
                   <span class="eyebrow block mb-1.5">Цена ₽</span>
-                  <input
+                  <app-pi-input
                     type="number"
-                    step="0.01"
-                    min="0"
                     formControlName="unitPrice"
-                    class="w-full h-9 px-control-x text-sm hairline rounded-sm bg-paper text-right"
+                    size="sm"
+                    placeholder="0"
                     [attr.aria-label]="'Цена за единицу ' + (i + 1)"
                   />
                 </label>
 
                 <label class="col-span-8 sm:col-span-2 block">
                   <span class="eyebrow block mb-1.5">Ед.</span>
-                  <input
-                    type="text"
-                    maxlength="16"
+                  <app-pi-input
                     formControlName="unit"
-                    class="w-full h-9 px-control-x text-sm hairline rounded-sm bg-paper"
+                    size="sm"
+                    placeholder="шт"
                     [attr.aria-label]="'Единица ' + (i + 1)"
                   />
                 </label>
 
-                <button
+                <app-pi-button
                   type="button"
-                  class="col-span-4 sm:col-span-1 h-9 inline-flex items-center justify-center text-sm hairline rounded-sm bg-paper hover:bg-destructive hover:text-paper hover:border-destructive transition-colors"
+                  variant="destructive"
+                  size="icon"
                   [attr.aria-label]="'Удалить позицию ' + (i + 1)"
                   (click)="removeItem(i)"
                   data-test="remove-item"
                 >
                   ×
-                </button>
+                </app-pi-button>
               </div>
             }
           </div>

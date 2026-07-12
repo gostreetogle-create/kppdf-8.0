@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject, isDevMode, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LucideAngularModule, LogIn, Eye, EyeOff, KeyRound } from 'lucide-angular';
 import { AuthService } from '../../core/auth.service';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
+import { InputComponent } from '../../shared/ui/input/input.component';
 
 /**
  * TZ-NEW LoginPage — the public entry point of the KPPDF site.
@@ -19,7 +19,7 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
 @Component({
   selector: 'app-login-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, LucideAngularModule, ButtonComponent, FormFieldComponent],
+  imports: [LucideAngularModule, ButtonComponent, FormFieldComponent, InputComponent],
   template: `
     <div
       class="min-h-screen bg-paper text-ink font-body flex items-center justify-center px-page-x"
@@ -55,15 +55,13 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
             htmlFor="login-username"
             [required]="true"
           >
-            <input
+            <app-pi-input
               id="login-username"
               type="text"
-              name="username"
               autocomplete="username"
-              required
-              [(ngModel)]="username"
-              class="pi-input w-full"
-              [class.border-destructive]="!!error()"
+              [(value)]="username"
+              [invalid]="!!error()"
+              placeholder="Имя пользователя"
             />
           </app-pi-form-field>
 
@@ -73,15 +71,14 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
             [required]="true"
           >
             <div class="relative">
-              <input
+              <app-pi-input
                 id="login-password"
                 [type]="passwordVisible() ? 'text' : 'password'"
-                name="password"
                 autocomplete="current-password"
-                required
-                [(ngModel)]="password"
-                class="pi-input w-full pr-9"
-                [class.border-destructive]="!!error()"
+                [(value)]="password"
+                [invalid]="!!error()"
+                placeholder="Пароль"
+                class="pr-9"
               />
               <button
                 type="button"

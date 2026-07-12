@@ -13,6 +13,7 @@ import {
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
+import { InputComponent } from '../../shared/ui/input/input.component';
 import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
@@ -23,7 +24,7 @@ import {
   ProductKind,
   ProductsService,
   ProductStatus,
-} from './products.service';
+} from '../../shared/services/products.service';
 
 type Result = Product | null | undefined;
 
@@ -67,6 +68,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
     PiDialogComponent,
     ButtonComponent,
     FormFieldComponent,
+    InputComponent,
     TextareaComponent,
   ],
   template: `
@@ -89,14 +91,11 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
             [required]="true"
             [error]="errorFor('name')"
           >
-            <input
+            <app-pi-input
               id="prod-name"
-              type="text"
               formControlName="name"
-              maxlength="256"
-              autocomplete="off"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors"
-              [class.border-destructive]="hasError('name')"
+              placeholder="Название продукта"
+              [invalid]="hasError('name')"
             />
           </app-pi-form-field>
 
@@ -106,13 +105,10 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
             hint="Если не задан — генерируется автоматически"
             [error]="errorFor('sku')"
           >
-            <input
+            <app-pi-input
               id="prod-sku"
-              type="text"
               formControlName="sku"
-              maxlength="64"
-              autocomplete="off"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors mono"
+              placeholder="Артикул"
             />
           </app-pi-form-field>
 
@@ -139,13 +135,11 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
             [required]="true"
             [error]="errorFor('unit')"
           >
-            <input
+            <app-pi-input
               id="prod-unit"
-              type="text"
               formControlName="unit"
-              maxlength="16"
-              autocomplete="off"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors"
+              placeholder="шт, м, кг"
+              [invalid]="hasError('unit')"
             />
           </app-pi-form-field>
 
@@ -153,13 +147,10 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
             label="Подкатегория"
             htmlFor="prod-subcategory"
           >
-            <input
+            <app-pi-input
               id="prod-subcategory"
-              type="text"
               formControlName="subcategory"
-              maxlength="64"
-              autocomplete="off"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors"
+              placeholder="Подкатегория"
             />
           </app-pi-form-field>
 
@@ -186,13 +177,12 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
             htmlFor="prod-price"
             [error]="errorFor('listPrice')"
           >
-            <input
+            <app-pi-input
               id="prod-price"
               type="number"
-              step="0.01"
-              min="0"
               formControlName="listPrice"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors text-right"
+              placeholder="0.00"
+              [invalid]="hasError('listPrice')"
             />
           </app-pi-form-field>
 
@@ -216,43 +206,34 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
           <p class="eyebrow mb-form-row">Габариты</p>
           <div class="grid grid-cols-1 sm:grid-cols-4 gap-form-field items-end">
             <app-pi-form-field label="Длина" htmlFor="prod-len">
-              <input
+              <app-pi-input
                 id="prod-len"
                 type="number"
-                step="0.01"
-                min="0"
                 formControlName="dimLength"
-                class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors text-right"
-                aria-label="Длина"
+                placeholder="0"
               />
             </app-pi-form-field>
             <app-pi-form-field label="Ширина" htmlFor="prod-width">
-              <input
+              <app-pi-input
                 id="prod-width"
                 type="number"
-                step="0.01"
-                min="0"
                 formControlName="dimWidth"
-                class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors text-right"
-                aria-label="Ширина"
+                placeholder="0"
               />
             </app-pi-form-field>
             <app-pi-form-field label="Высота" htmlFor="prod-height">
-              <input
+              <app-pi-input
                 id="prod-height"
                 type="number"
-                step="0.01"
-                min="0"
                 formControlName="dimHeight"
-                class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors text-right"
-                aria-label="Высота"
+                placeholder="0"
               />
             </app-pi-form-field>
             <app-pi-form-field label="Единица" htmlFor="prod-dimUnit">
               <select
                 id="prod-dimUnit"
                 formControlName="dimUnit"
-                class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors"
+                class="pi-input w-full"
               >
                 @for (u of DIMENSION_UNIT_OPTIONS; track u) {
                   <option [value]="u">{{ u }}</option>
@@ -265,24 +246,19 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
         <!-- ─── Metadata ─── -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
           <app-pi-form-field label="Вес, кг" htmlFor="prod-weight">
-            <input
+            <app-pi-input
               id="prod-weight"
               type="number"
-              step="0.01"
-              min="0"
               formControlName="weightKg"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors text-right"
+              placeholder="0"
             />
           </app-pi-form-field>
 
           <app-pi-form-field label="RAL (цвет)" htmlFor="prod-ral">
-            <input
+            <app-pi-input
               id="prod-ral"
-              type="text"
               formControlName="ralCode"
-              maxlength="16"
-              autocomplete="off"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors mono"
+              placeholder="RAL 9003"
             />
           </app-pi-form-field>
         </div>

@@ -12,9 +12,9 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of } from 'rxjs';
 
 import { MaterialsPage } from './materials.page';
-import { OrganizationsService } from '../organizations/organizations.service';
-import { PhotosService } from './photos.service';
-import { MaterialsService, Material, MaterialsListResponse } from './materials.service';
+import { OrganizationsService } from '../../shared/services/organizations.service';
+import { PhotosService } from '../../shared/services/photos.service';
+import { MaterialsService, Material, MaterialsListResponse } from '../../shared/services/materials.service';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { API_BASE_URL } from '../../core/api.tokens';

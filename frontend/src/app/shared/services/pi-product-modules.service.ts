@@ -9,7 +9,7 @@ import {
   silentPost,
   SilentResult,
 } from '../../core/silent-http';
-import { Material } from '../../pages/materials/materials.service';
+import { Material } from './materials.service';
 import { WorkType } from './pi-work-types.service';
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -81,11 +81,11 @@ export interface ProductModuleUpsertDto {
  * TZ-83 Phase B + Phase D: ProductModulesService.
  *
  * Routes:
- *   GET    /product-modules?productId=X                → ProductModule[]
- *   GET    /product-modules/:id                        → ProductModule (populated)
- *   POST   /product-modules                            → ProductModule
- *   PATCH  /product-modules/:id                        → ProductModule
- *   DELETE /product-modules/:id                        → void
+ *   GET    /modules?productId=X                → ProductModule[]
+ *   GET    /modules/:id                        → ProductModule (populated)
+ *   POST   /modules                            → ProductModule
+ *   PATCH  /modules/:id                        → ProductModule
+ *   DELETE /modules/:id                        → void
  *
  * Atomic product↔module endpoints (TZ-83 § D.3):
  *   POST   /products/:productId/modules  body={moduleId}                → Product (populated)
@@ -102,23 +102,23 @@ export class ProductModulesService {
   list(productId?: string): Observable<SilentResult<ProductModule[]>> {
     let httpParams = new HttpParams();
     if (productId) httpParams = httpParams.set('productId', productId);
-    return silentGet<ProductModule[]>(this.http, `${this.baseUrl}/product-modules`, { params: httpParams });
+    return silentGet<ProductModule[]>(this.http, `${this.baseUrl}/modules`, { params: httpParams });
   }
 
   findById(id: string): Observable<SilentResult<ProductModule>> {
-    return silentGet<ProductModule>(this.http, `${this.baseUrl}/product-modules/${id}`);
+    return silentGet<ProductModule>(this.http, `${this.baseUrl}/modules/${id}`);
   }
 
   create(payload: ProductModuleUpsertDto): Observable<SilentResult<ProductModule>> {
-    return silentPost<ProductModule>(this.http, `${this.baseUrl}/product-modules`, payload);
+    return silentPost<ProductModule>(this.http, `${this.baseUrl}/modules`, payload);
   }
 
   update(id: string, payload: Partial<ProductModuleUpsertDto>): Observable<SilentResult<ProductModule>> {
-    return silentPatch<ProductModule>(this.http, `${this.baseUrl}/product-modules/${id}`, payload);
+    return silentPatch<ProductModule>(this.http, `${this.baseUrl}/modules/${id}`, payload);
   }
 
   remove(id: string): Observable<SilentResult<void>> {
-    return silentDelete<void>(this.http, `${this.baseUrl}/product-modules/${id}`);
+    return silentDelete<void>(this.http, `${this.baseUrl}/modules/${id}`);
   }
 
   /**

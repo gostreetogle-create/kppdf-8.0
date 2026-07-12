@@ -16,6 +16,8 @@ import {
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
+import { InputComponent } from '../../shared/ui/input/input.component';
+import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
@@ -27,8 +29,8 @@ import {
 import {
   Organization,
   OrganizationsService,
-} from '../organizations/organizations.service';
-import { Product, ProductsService } from '../products/products.service';
+} from '../../shared/services/organizations.service';
+import { Product, ProductsService } from '../../shared/services/products.service';
 import {
   Contract,
   ContractItem,
@@ -81,6 +83,8 @@ interface ItemFormGroup extends FormGroup {
     PiDialogComponent,
     ButtonComponent,
     FormFieldComponent,
+    InputComponent,
+    TextareaComponent,
   ],
   template: `
     <app-pi-dialog
@@ -104,7 +108,7 @@ interface ItemFormGroup extends FormGroup {
             <select
               id="ct-org"
               formControlName="organizationId"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors"
+              class="pi-input w-full"
               [class.border-destructive]="hasError('organizationId')"
             >
               <option value="" disabled>— выберите —</option>
@@ -125,7 +129,7 @@ interface ItemFormGroup extends FormGroup {
             <select
               id="ct-cp"
               formControlName="customerId"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors"
+              class="pi-input w-full"
               [class.border-destructive]="hasError('customerId')"
             >
               <option value="" disabled>— выберите —</option>
@@ -142,11 +146,10 @@ interface ItemFormGroup extends FormGroup {
             htmlFor="ct-number"
             hint="Если не задан — генерируется автоматически"
           >
-            <input
+            <app-pi-input
               id="ct-number"
-              type="text"
               formControlName="number"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors mono"
+              placeholder="Номер договора"
             />
           </app-pi-form-field>
 
@@ -154,12 +157,10 @@ interface ItemFormGroup extends FormGroup {
             label="Название"
             htmlFor="ct-title"
           >
-            <input
+            <app-pi-input
               id="ct-title"
-              type="text"
               formControlName="title"
-              maxlength="256"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors"
+              placeholder="Название договора"
             />
           </app-pi-form-field>
 
@@ -170,7 +171,7 @@ interface ItemFormGroup extends FormGroup {
             <select
               id="ct-status"
               formControlName="status"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors"
+              class="pi-input w-full"
             >
               @for (opt of STATUS_OPTIONS; track opt.value) {
                 <option [value]="opt.value">{{ opt.label }}</option>
@@ -182,11 +183,11 @@ interface ItemFormGroup extends FormGroup {
             label="Срок действия"
             htmlFor="ct-expiresAt"
           >
-            <input
+            <app-pi-input
               id="ct-expiresAt"
-              type="date"
+              type="text"
               formControlName="expiresAt"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors mono"
+              placeholder="ГГГГ-ММ-ДД"
             />
           </app-pi-form-field>
 
@@ -194,12 +195,10 @@ interface ItemFormGroup extends FormGroup {
             label="Пакет / тег"
             htmlFor="ct-packageTag"
           >
-            <input
+            <app-pi-input
               id="ct-packageTag"
-              type="text"
               formControlName="packageTag"
-              maxlength="64"
-              class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors"
+              placeholder="Тег"
             />
           </app-pi-form-field>
         </div>
@@ -243,7 +242,7 @@ interface ItemFormGroup extends FormGroup {
                     [attr.name]="'item-product-' + i"
                     formControlName="productId"
                     (change)="onProductPick(i, $any($event.target).value)"
-                    class="w-full h-9 px-control-x text-sm hairline rounded-sm bg-paper"
+                    class="h-8 px-3 text-xs hairline rounded-sm bg-paper pi-focus-ring w-full"
                     [attr.aria-label]="'Продукт ' + (i + 1)"
                   >
                     <option value="" disabled>— выберите —</option>
@@ -257,47 +256,45 @@ interface ItemFormGroup extends FormGroup {
 
                 <label class="col-span-6 sm:col-span-2 block">
                   <span class="eyebrow block mb-1.5">Кол-во</span>
-                  <input
+                  <app-pi-input
                     type="number"
-                    step="1"
-                    min="0"
                     formControlName="quantity"
-                    class="w-full h-9 px-control-x text-sm hairline rounded-sm bg-paper text-right"
+                    size="sm"
+                    placeholder="0"
                     [attr.aria-label]="'Количество ' + (i + 1)"
                   />
                 </label>
 
                 <label class="col-span-6 sm:col-span-2 block">
                   <span class="eyebrow block mb-1.5">Цена ₽</span>
-                  <input
+                  <app-pi-input
                     type="number"
-                    step="0.01"
-                    min="0"
                     formControlName="unitPrice"
-                    class="w-full h-9 px-control-x text-sm hairline rounded-sm bg-paper text-right"
+                    size="sm"
+                    placeholder="0"
                     [attr.aria-label]="'Цена за единицу ' + (i + 1)"
                   />
                 </label>
 
                 <label class="col-span-8 sm:col-span-2 block">
                   <span class="eyebrow block mb-1.5">Ед.</span>
-                  <input
-                    type="text"
-                    maxlength="16"
+                  <app-pi-input
                     formControlName="unit"
-                    class="w-full h-9 px-control-x text-sm hairline rounded-sm bg-paper"
+                    size="sm"
+                    placeholder="шт"
                     [attr.aria-label]="'Единица ' + (i + 1)"
                   />
                 </label>
 
-                <button
+                <app-pi-button
                   type="button"
-                  class="col-span-4 sm:col-span-1 h-9 inline-flex items-center justify-center text-sm hairline rounded-sm bg-paper hover:bg-destructive hover:text-paper hover:border-destructive transition-colors"
+                  variant="destructive"
+                  size="icon"
                   [attr.aria-label]="'Удалить позицию ' + (i + 1)"
                   (click)="removeItem(i)"
                 >
                   ×
-                </button>
+                </app-pi-button>
               </div>
             }
           </div>
@@ -305,13 +302,13 @@ interface ItemFormGroup extends FormGroup {
 
         <!-- ─── Notes ─── -->
         <app-pi-form-field label="Заметки" htmlFor="ct-notes">
-          <textarea
+          <app-pi-textarea
             id="ct-notes"
             formControlName="notes"
-            rows="2"
-            maxlength="2000"
-            class="w-full min-h-20 px-control-x py-control-y text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors resize-none"
-          ></textarea>
+            [rows]="2"
+            [maxLength]="2000"
+            ariaLabel="Заметки"
+          />
         </app-pi-form-field>
 
         @if (errorMessage()) {
