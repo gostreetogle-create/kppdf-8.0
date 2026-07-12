@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   Injector,
   computed,
   inject,
@@ -156,6 +157,7 @@ export class TablesPage {
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly baseUrl = inject(API_BASE_URL);
 
   private readonly listRes = httpResource<TableTemplateListResponse>(() => ({
@@ -243,12 +245,12 @@ export class TablesPage {
   }
 
   protected openCreate(): void {
-    const ref = this.dialog.open(TableTemplateFormDialogComponent, { data: null, width: 'lg' });
+    const ref = this.dialog.open(TableTemplateFormDialogComponent, { data: null, width: 'lg', parentDestroyRef: this.destroyRef });
     this.refreshOnDialogClose(ref);
   }
 
   protected openEdit(template: TableTemplate): void {
-    const ref = this.dialog.open(TableTemplateFormDialogComponent, { data: template, width: 'lg' });
+    const ref = this.dialog.open(TableTemplateFormDialogComponent, { data: template, width: 'lg', parentDestroyRef: this.destroyRef });
     this.refreshOnDialogClose(ref);
   }
 
