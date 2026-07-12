@@ -11,7 +11,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, switchMap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PiPageHeaderComponent } from '../../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../../shared/page/pi-section.component';
 import { PiEmptyStateComponent } from '../../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { PiRowActionsComponent } from '../../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
@@ -43,7 +42,6 @@ type SortDir = 'asc' | 'desc';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     PiPageHeaderComponent,
-    PiSectionComponent,
     PiEmptyStateComponent,
     PiRowActionsComponent,
     ButtonComponent,

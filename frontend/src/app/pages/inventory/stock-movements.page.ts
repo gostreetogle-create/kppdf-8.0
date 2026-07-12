@@ -1,9 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, TemplateRef, ViewChild, computed, inject, signal } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
-import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { TableComponent, ColumnDef } from '../../shared/ui/pi-table.component';
 import { StockMovementsService, StockMovement, MovementType } from './stock-movements.service';
@@ -15,11 +13,9 @@ import { StockMovementsService, StockMovement, MovementType } from './stock-move
   selector: 'app-stock-movements-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    NgTemplateOutlet,
     PiPageHeaderComponent,
     PiSectionComponent,
     PiToolbarComponent,
-    PiEmptyStateComponent,
     ButtonComponent,
     TableComponent,
   ],

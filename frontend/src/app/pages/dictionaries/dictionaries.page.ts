@@ -10,7 +10,6 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
 import { httpResource } from '@angular/common/http';
 import {
   NonNullableFormBuilder,
@@ -19,7 +18,6 @@ import {
 } from '@angular/forms';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
-import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../shared/ui/switch/switch.component';
@@ -46,10 +44,8 @@ import { Unit, UnitsService, type UnitsListResponse } from './units.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
-    NgTemplateOutlet,
     PiPageHeaderComponent,
     PiSectionComponent,
-    PiEmptyStateComponent,
     PiRowActionsComponent,
     ButtonComponent,
     SwitchComponent,

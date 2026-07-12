@@ -1,9 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, TemplateRef, ViewChild, computed, inject, signal } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
-import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { TableComponent, ColumnDef } from '../../shared/ui/pi-table.component';
 import { StorageItemsService, StorageItem } from './storage-items.service';
@@ -16,11 +14,9 @@ import { WarehousesService, Warehouse } from './warehouses.service';
   selector: 'app-storage-items-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    NgTemplateOutlet,
     PiPageHeaderComponent,
     PiSectionComponent,
     PiToolbarComponent,
-    PiEmptyStateComponent,
     ButtonComponent,
     TableComponent,
   ],
