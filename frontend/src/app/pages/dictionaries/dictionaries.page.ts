@@ -147,6 +147,7 @@ import { Unit, UnitsService, type UnitsListResponse } from './units.service';
       <app-pi-table
         [data]="sortedUnits()"
         [columns]="columns"
+        [cellTemplates]="tpls()"
         [rowActions]="rowActionsTpl"
         [total]="data().length"
         [pageSize]="100"
@@ -167,6 +168,15 @@ import { Unit, UnitsService, type UnitsListResponse } from './units.service';
           [deleteDisabled]="u.isSystem"
           [dataTestDelete]="'delete-button-' + u.key"
           (delete)="onDelete($event)"
+        />
+      </ng-template>
+
+      <ng-template #activeSwitchTpl let-u>
+        <app-pi-switch
+          [checked]="u.isActive"
+          [attr.aria-label]="(u.isActive ? 'Деактивировать ' : 'Активировать ') + u.label"
+          (checkedChange)="onToggleActive(u, $event)"
+          data-test="active-switch"
         />
       </ng-template>
     </app-pi-section>
@@ -205,17 +215,29 @@ export class DictionariesPage implements OnInit {
     });
   });
 
-  /** Column defs — no edit action for units. */
+  /** Column defs — with isActive switch column via cellTemplates. */
   protected readonly columns: ColumnDef<Unit>[] = [
     { key: 'key', label: 'Ключ', sortable: true, width: '8rem', cellClass: 'font-mono text-xs font-medium' },
     { key: 'label', label: 'Название', sortable: true },
     { key: 'symbol', label: 'Символ', width: '5rem' },
     { key: 'category', label: 'Категория', sortable: true, width: '8rem' },
     { key: 'sortOrder', label: 'Сорт.', align: 'right', numeric: true, width: '5rem' },
+    { key: 'isActive', label: 'Активен', width: '5rem', sortable: true },
   ];
 
   @ViewChild('rowActionsTpl', { static: true })
   protected readonly rowActionsTpl!: TemplateRef<{ $implicit: Unit }>;
+
+  /**
+   * Per-column rich templates: isActive switch column.
+   * Mapped via `[cellTemplates]="tpls"` binding on pi-table.
+   */
+  @ViewChild('activeSwitchTpl', { static: true })
+  protected readonly activeSwitchTpl!: TemplateRef<{ $implicit: Unit }>;
+
+  protected readonly tpls = computed<Record<string, TemplateRef<{ $implicit: Unit }>>>(() => ({
+    isActive: this.activeSwitchTpl,
+  }));
 
   protected readonly form = this.fb.group({
     key: this.fb.control('', [Validators.required, Validators.maxLength(32)]),
@@ -253,6 +275,19 @@ export class DictionariesPage implements OnInit {
           this.adding.set(false);
         }
       });
+  }
+
+  protected onToggleActive(u: Unit, checked: boolean): void {
+    this.service.update(u.key, { isActive: checked }).subscribe((res) => {
+      if (res.ok) {
+        this.toast.success(
+          checked ? `«${u.label}» активирована` : `«${u.label}» деактивирована`,
+        );
+        this.listRes.reload();
+      } else {
+        this.toast.error(extractErrorMessage(res.error));
+      }
+    });
   }
 
   protected onDelete(u: Unit): void {
