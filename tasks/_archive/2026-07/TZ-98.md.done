@@ -1,0 +1,54 @@
+# TZ-98 — Frontend Rendering Quality (debounce cleanup + error handler)
+
+**Дата:** 2026-07-12
+**Статус:** ✅ DONE
+**Тип:** cross-cutting (component lifecycle + app config)
+**Приоритет:** средний
+**LAYER:** Layer 1
+
+---
+
+## 1. Цель
+
+Исправить debounce timer leak и добавить глобальный error handler из QA-02.
+
+## 2. Изменения
+
+| Файл | Что меняется | QA Finding |
+|------|-------------|------------|
+| `frontend/src/app/pages/materials/materials.page.ts` | DestroyRef + cleanup debounceTimer on destroy | QA-02:2.5 |
+| `frontend/src/app/app.config.ts` | GlobalErrorHandler — catches unhandled errors, shows toast | QA-02:2.6 |
+
+## 3. Что НЕ входит
+
+- ❌ **QA-02:2.7 (list-pages deduplication)** — слишком масштабный рефакторинг, отдельный TZ
+- ❌ **QA-02:2.1 (pagination на orders/contracts)** — backend changes required
+- ❌ **QA-02:2.2 (prod API URL)** — requires environment config changes
+- ❌ **QA-02:2.3 (authGuard validity check)** — requires auth service changes
+
+## 4. Verification
+
+- Typecheck: 0 errors
+- Tests: 324/324 passed
+
+---
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ARCHIVE_MARKER                                                │
+│ outcome: DONE                                                  │
+│ closed_at: 2026-07-12                                         │
+│ closed_by: Frontend Developer Agent                           │
+│ protected_files:                                               │
+│   - frontend/src/app/pages/materials/materials.page.ts        │
+│   - frontend/src/app/app.config.ts                             │
+│ affected_areas:                                                │
+│   - frontend: materials page (debounce cleanup)               │
+│   - frontend: app config (global error handler)               │
+│ verification:                                                  │
+│   - frontend tsc: exit 0                                       │
+│   - 324/324 tests pass                                         │
+│ criteria_met:                                                  │
+│   - Debounce timer cleaned up on component destroy            │
+│   - GlobalErrorHandler catches unhandled errors               │
+│   - Toast shown on unhandled error                            │
+└─────────────────────────────────────────────────────────────────┘

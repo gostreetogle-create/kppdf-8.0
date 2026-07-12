@@ -47,7 +47,7 @@
 | ~~TZ-72~~ | ~~Forms page (`/forms`)~~ | DONE 2026-07-05 | TZ-40..47 (✓ строчное) · TZ-30..68 |
 | ~~TZ-73~~ | ~~Overlays page (`/overlays`)~~ | DONE 2026-07-05 | TZ-48..57 (✓ строчное) · TZ-30..68 |
 | ~~TZ-74~~ | ~~Navigation page (`/navigation`)~~ | DONE 2026-07-05 | TZ-58..60 (✓) · TZ-61..66 · TZ-30..68 |
-| TZ-75 | ⌘K Command Palette (fuzzy search + nav) | shared/command/* · application | TZ-67 + TZ-68 |
+| ~~TZ-75~~ | ~~⌘K Command Palette (fuzzy search + nav)~~ | DONE — archived 2026-07-05 | — |
 | ~~TZ-76~~ | ~~Prop Playground (Button + Badge live controls)~~ | DONE 2026-07-05 | TZ-34..35 • TZ-68 |
 | ~~TZ-77~~ | ~~Theme Editor (OKLCH live sliders, non-destructive overrides)~~ | DONE 2026-07-05 | TZ-32 + TZ-33 • TZ-67 |
 | ~~TZ-78~~ | ~~Live Code Preview (highlight.js)~~ | DONE 2026-07-05 (fallback) | TZ-68 + TZ-69..74 |
@@ -55,7 +55,8 @@
 | TZ-80 | ~~SSR / hydration + Lighthouse ≥95 config~~ | **REJECTED 2026-07-05** (out of project scope) | TZ-30 • TZ-67 + TZ-69..74 |
 | ~~TZ-81~~ | ~~README + docs (Russian editorial)~~ | DONE 2026-07-05 | TZ-30..79 |
 | ~~TZ-82~~ | ~~Browser-use smoke test~~ | pending | TZ-67 + TZ-69..74 • TZ-79 |
-| TZ-90 | Диалоговая система (4 templates: Alert · Form · Content · Destructive) — токены + polymorphic wrapper + миграция 11+ существующих | styles.css · shared/ui/dialog/* · 13 component files · kits/overlays | TZ-83 (✓) · TZ-85 (IN PROGRESS, only TZ-85D dependency) · TZ-DIALOG-OVERFLOW-FIX rounds 1-5 (✓) |
+| ~~TZ-90~~ | ~~Диалоговая система (Phase A+B shipped; Phase C/D/E deferred)~~ | DONE — Phase A+B archived 2026-07-12 | — |
+| TZ-87 | TZ-86 F.3 close-out + dev-data seeding — (B.1) backend dev-fixtures seed `OnModuleInit` idempotent Organization/Counterparty/DocTypes под `NODE_ENV !== 'production'` guard + (B.2) frontend «Создать шаблон» inline button на `/doc-constructor/builder` empty picker + NewTemplatePlaceholderComponent с init flow GET orgs→doc-types→POST template→navigate + (B.3) re-run F.3 captures screenshots 05-07 в evidence folder + (B.4) docs sync + lockfile + status update | backend/src/common/seed/* · frontend/src/app/pages/doc-constructor/builder/* · tasks/_archive/2026-07/TZ-86-evidence/* · tasks/TZ-87.md | TZ-86 (✅ DONE) · TZ-95 (✅ Pi-* utilities provide pi-dashed-panel) · TZ-91 RBAC (manager role для `POST /api/document-templates`) |
 
 ### Параллелизм (max 4–5 по запросу PO)
 

@@ -82,3 +82,12 @@ backend/uploads/*
 !backend/uploads/.gitkeep
 tmp/
 tmp/tz9*-{commit,arch}-*.txt
+
+# Design reference snapshot — brutalist UI source bundle from
+# `ui/stitch_professional_desktop_crm_refinement/` (4.3MB, 16 brutalist
+# editorial UI kits). Served as inspiration ONLY for TZ-93 + TZ-95 + TZ-96
+# (pi-tech-label, pi-dashed-panel, hairline-first). Adoption matrix is
+# documented in `tasks/_archive/2026-07/TZ-{93,93.1,95,96}.md.done` —
+# live tree doesn't need a copy. Regenerable from original source URL
+# referenced in TZ-93 spec §1 finding if a future TZ needs the source.
+ui/stitch_professional_desktop_crm_refinement/

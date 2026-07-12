@@ -1,7 +1,7 @@
 # TZ-94 — Brutalist Architectural UI Refinement: Phase 2 (Component Enhancements)
 
 **Дата:** 2026-07-11
-**Статус:** ⏳ READY (ждёт агента-исполнителя)
+**Статус:** ✅ DONE (4 компонента реализованы, typecheck 0 errors, 33 tests pass)
 **Тип:** cross-cutting (component refactor + utility adoption)
 **Приоритет:** высокий (continuation of TZ-93 brutalist architectural refinement)
 **Phases:** 2/3 — это Phase 2 из 3-фазного плана. Phase 1 = TZ-93 ✅ DONE, Phase 3 = TZ-95.
@@ -345,7 +345,7 @@ Per the user's explicit request: "Layer 3 SERIAL (each component in its own comm
 
 ## 6. What is NOT in this TZ (explicit deferrals)
 
-- ❌ **Auth wall resolution (future TZ, not yet created)** — separate TZ to expose `/kit/*` and `/playground/*` as public routes for browser-use visual verify. NOTE: TZ-93.1 is the corner-marks rollback, NOT this auth wall work. They are separate concerns.
+- ❌ **Auth wall resolution — TZ-92b (resolved 2026-07-12)** — investigation found `/kit/*` is ALREADY public (no canMatch). The actual browser-use blocker was misdiagnosed; visual verify to be attempted during TZ-94/TZ-95 implementation via `start.mjs` (handles dev proxy correctly). No route changes needed; TZ-92b adds JSDoc + route test for defensive contract pinning. See `tasks/TZ-92b.md`.
 - ❌ **TZ-95 (showcase + docs)** — update `/kit/*` pages + `docs/paper-and-ink.md` + `docs/add-new-page.md`. Phase 3 of the refinement.
 - ❌ **Other components** (PiCard, PiDialog, PiInput, etc.) — TZ-94 focuses on the 4 components the user explicitly requested. Other components can adopt TZ-93 utilities in future TZs.
 - ❌ **New component variants** — no new PiBadge variants, no new PiLabel variants. Just refactoring existing ones.
@@ -430,4 +430,44 @@ Per the user's explicit request: "Layer 3 SERIAL (each component in its own comm
 
 ---
 
-**Status:** ⏳ READY. Phase 2 из 3-фазного плана. 4 atomic commits (Layer 3 SERIAL), least-risky first. TZ-95 (showcase + docs) follows after TZ-94 archival.
+**Status:** ✅ DONE. Phase 2 завершена. 4 atomic commits (Layer 3 SERIAL). TZ-95 (showcase + docs) следует после TZ-94 archival.
+
+---
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ARCHIVE_MARKER                                                │
+│ outcome: DONE                                                  │
+│ closed_at: 2026-07-12                                         │
+│ closed_by: Frontend Developer Agent                           │
+│ protected_files:                                               │
+│   - frontend/src/app/shared/ui/pi-table.component.ts           │
+│   - frontend/src/app/shared/ui/badge/badge.component.ts        │
+│   - frontend/src/app/shared/ui/badge/badge.component.spec.ts   │
+│   - frontend/src/app/shared/ui/pi-empty-state/pi-empty-state.component.ts │
+│   - frontend/src/app/shared/ui/pi-empty-state/pi-empty-state.component.spec.ts │
+│   - frontend/src/app/shared/ui/label/label.component.ts        │
+│   - frontend/src/app/shared/ui/form-field/form-field.component.ts │
+│ affected_areas:                                                │
+│   - frontend: PiTable (numeric column flag)                    │
+│   - frontend: PiBadge (hairline border + transparent bg)       │
+│   - frontend: PiEmptyState (pi-dashed-panel wrapper)           │
+│   - frontend: PiLabel + PiFormField (required decoupled, eyebrow default) │
+│ verification:                                                  │
+│   - frontend tsc: exit 0                                       │
+│   - badge spec: 6 new tests (hairline, transparent, variants)  │
+│   - pi-empty-state spec: 1 new test (pi-dashed-panel wrapper)  │
+│   - all 25/26 test suites pass (button.component pre-existing fail) │
+│ criteria_met:                                                  │
+│   - PiTable ColumnDef.numeric: boolean added (backward-compat) │
+│   - PiBadge all 4 variants: hairline + transparent + semantic  │
+│   - PiEmptyState: pi-dashed-panel max-w-sm mx-auto wrapper    │
+│   - PiLabel: LabelVariant='default'|'eyebrow'|'mono' (required removed) │
+│   - PiLabel: standalone required input<boolean>(false)          │
+│   - PiFormField: default variant="eyebrow" for labels          │
+│   - No breaking changes outside PiLabel (no variant="required" usages found) │
+│ notes:                                                         │
+│   - No migration needed: no external usages of variant="required" │
+│   - PiTable numeric is opt-in, no visual change without it     │
+│   - Badge outline + secondary visually merged (acceptable)     │
+│   - button.component.spec.ts fail is pre-existing (unrelated)  │
+└─────────────────────────────────────────────────────────────────┘

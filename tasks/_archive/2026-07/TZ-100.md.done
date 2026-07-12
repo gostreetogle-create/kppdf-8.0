@@ -1,0 +1,82 @@
+# TZ-100 — Default Seed Data (categories, warehouse, meter unit)
+
+**Дата:** 2026-07-12
+**Статус:** ✅ DONE
+**Тип:** backend (seed data)
+**Приоритет:** низкий
+**LAYER:** Layer 1
+
+---
+
+## 1. Цель
+
+Расширить seed данные: дефолтные единицы (шт, кг, м), базовые категории, склады (QA-03:3.10).
+
+## 2. Изменения
+
+| Файл | Что меняется |
+|------|-------------|
+| `backend/src/common/seed/units.seed.ts` | Добавлен метр (m), reorder (шт→10, кг→20, м→30) |
+| `backend/src/common/seed/categories.seed.ts` | **NEW** — 8 дефолтных категорий (5 materials + 3 products) |
+| `backend/src/common/seed/warehouse.seed.ts` | **NEW** — 2 дефолтных склада (главный + производственный) |
+| `backend/src/app.module.ts` | Регистрация CategoriesSeed + WarehouseSeed |
+
+## 3. Дефолтные данные
+
+### Units (6)
+| Key | Label | Symbol | Category |
+|-----|-------|--------|----------|
+| pcs | Штука | шт | count |
+| kg | Килограмм | кг | mass |
+| m | Метр | м | length |
+| m2 | Квадратный метр | м² | area |
+| m3 | Кубический метр | м³ | volume |
+| sheet | Лист | л. | count |
+
+### Categories (8)
+| Name | Type | SKU Prefix |
+|------|------|------------|
+| Металлы | material | MTL |
+| Пластик | material | PLS |
+| Дерево | material | WD |
+| Текстиль | material | TXT |
+| Комплектующие | material | CMP |
+| Мебель | product | FUR |
+| Вывески | product | SGN |
+| Упаковка | product | PKG |
+
+### Warehouses (2)
+| Name | Type | Zones |
+|------|------|-------|
+| Главный склад | main | Зона A, B, C |
+| Производственный цех | production | Линия 1, 2 |
+
+## 4. Verification
+
+- Backend typecheck: 0 errors
+- Frontend tests: 324/324 passed
+- All seeds are idempotent (check before create)
+
+---
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ARCHIVE_MARKER                                                │
+│ outcome: DONE                                                  │
+│ closed_at: 2026-07-12                                         │
+│ closed_by: Backend Developer Agent                            │
+│ protected_files:                                               │
+│   - backend/src/common/seed/units.seed.ts                     │
+│   - backend/src/common/seed/categories.seed.ts (NEW)          │
+│   - backend/src/common/seed/warehouse.seed.ts (NEW)           │
+│   - backend/src/app.module.ts                                  │
+│ affected_areas:                                                │
+│   - backend: seed data (units, categories, warehouses)        │
+│ verification:                                                  │
+│   - backend tsc: exit 0                                        │
+│   - frontend tests: 324/324 pass                               │
+│ criteria_met:                                                  │
+│   - 6 units (added meter)                                     │
+│   - 8 categories (5 material + 3 product)                     │
+│   - 2 warehouses (main + production)                          │
+│   - All seeds idempotent                                      │
+└─────────────────────────────────────────────────────────────────┘

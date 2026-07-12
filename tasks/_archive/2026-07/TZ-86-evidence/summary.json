@@ -1,0 +1,94 @@
+{
+  "task": "TZ-86 F.3 browser visual verification",
+  "tz_parent": "TZ-86 (Document Constructor)",
+  "session_date": "2026-07-12",
+  "agent": "Buffy/code-reviewer-minimax-m3 (Charlie)",
+  "overall_status": "PARTIAL",
+  "completed_screenshots": [
+    "01-login.png",
+    "02-texts-empty-list.png",
+    "03-tables-empty-list.png",
+    "04-builder-picker.png"
+  ],
+  "blocked_screenshots": [
+    "05-builder-3pane.png",
+    "06-builder-dragdrop.png",
+    "07-builder-saved-indicator.png"
+  ],
+  "console_errors_observed": 0,
+  "dev_env_state": {
+    "mongo_rs": "up (rs0, host: 127.0.0.1:27017)",
+    "backend_port_3000": "up, /api/health returns {status:ok, mongo.status:up}",
+    "frontend_port_4200": "up, Angular 20 SPA serving index.html",
+    "orchestrator": "node start.mjs --no-browser (PID 1521 initiated, stopped cleanly via node start.mjs --stop at session end)"
+  },
+  "credentials_used": {
+    "primary": {
+      "username": "f3mgr",
+      "password": "<redacted — dev-only test user, password generated session-local and not committed>",
+      "role": "manager",
+      "registered_via": "POST /api/auth/register with role=manager (TZ-91 A.1 DTO whitelist allows user|manager); session-local dev password, redacted from archive to avoid credential leak"
+    },
+    "secondary_failed": {
+      "username": "admin",
+      "tried_passwords": [
+        "<env:ADMIN_PASSWORD>",
+        "<legacy seed fallback candidates, exact values redacted from archive>"
+      ],
+      "result": "all 401 — TZ-91 admin-password-drift-detector warns ADMIN_PASSWORD env does not match bcrypt hash stored for admin user"
+    },
+    "secondary_failed_via_email_field": {
+      "field": "email",
+      "value": "admin@kppdf.local",
+      "result": "400 Bad Request — login DTO does not accept {email,password} shape; only {username,password}"
+    }
+  },
+  "blockers_discovered": [
+    {
+      "id": "no-orgs-seeded",
+      "severity": "high",
+      "detail": "GET /api/organizations returned 0 items in fresh dev DB; only DocTypes seeded (6 items).",
+      "impact": "Cannot satisfy ValidationPipe required organizationId reference for POST /api/document-templates (400 Bad Request: organizationId must be 24-char hex ObjectId)."
+    },
+    {
+      "id": "no-create-template-ui",
+      "severity": "high",
+      "detail": "frontend/src/app/pages/doc-constructor/builder/builder.page.ts picker has no '+ Create template' button on empty state. Browser-use agent confirmed empirically.",
+      "impact": "User cannot reach 3-pane builder canvas through the UI flow with empty database — only via direct API POST + manual nav to /doc-constructor/builder/:id."
+    },
+    {
+      "id": "admin-password-drift",
+      "severity": "medium",
+      "detail": "TZ-91 admin-password-drift-detector warns ADMIN_PASSWORD env does not match stored bcrypt hash for admin user. Both admin and a11y_audit (admin role) seeded with hashes that don't unlock via any candidate password.",
+      "impact": "Cannot login as admin via UI. f3mgr fallback used. Out of TZ-87 scope — should be tracked in TZ-91-extension backlog."
+    },
+    {
+      "id": "throttler-per-minute",
+      "severity": "low",
+      "detail": "TZ-91 5 req/min, 20 req/hour throttler on /api/auth/login. Burst of 8+ manual auth probes during recovery exhausted per-minute window.",
+      "impact": "Login attempts deliver 429 Too Many Requests for ~60s window. Workaround: sleep 65s between login bursts."
+    }
+  ],
+  "browser_use_session": {
+    "agent": "browser-use",
+    "lessons_observed": [
+      "/doc-constructor/builder picker does NOT show a 'Create template' button when empty — empirically confirmed. TZ-87 candidate should add this UI affordance."
+    ],
+    "urls_visited": [
+      "http://localhost:4200/login",
+      "http://localhost:4200/doc-constructor/texts",
+      "http://localhost:4200/doc-constructor/tables",
+      "http://localhost:4200/doc-constructor/builder"
+    ],
+    "navigation_results": "1 login + 3 list-style routes = 4 visual checkpoints captured; 3-pane canvas unreachable without seeded DocumentTemplate"
+  },
+  "follow_up": {
+    "tz_spec": "tasks/TZ-87.md",
+    "sub_tasks_proposed": [
+      "B.1 — Backend dev-fixtures seed (Organization + Counterparty + DocTypes) under NODE_ENV guard",
+      "B.2 — Frontend 'Create template' inline button on empty picker state",
+      "B.3 — Re-run TZ-86 F.3 verification with seeded data, capture screenshots 05-07",
+      "B.4 — Docs sync + lock file + status update"
+    ]
+  }
+}

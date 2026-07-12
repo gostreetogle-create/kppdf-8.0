@@ -1,0 +1,470 @@
+# TZ-95 — Brutalist Architectural UI Refinement: Phase 3 (Showcase & Docs)
+
+**Дата:** 2026-07-11
+**Статус:** ✅ DONE (kit pages + doc files updated, typecheck 0 errors)
+**Тип:** cross-cutting (kit showcase + docs sync)
+**Приоритет:** высокий (final phase of TZ-93/94/95 brutalist architectural refinement)
+**Phases:** 3/3 — финальная phase из 3-фазного плана. Phase 1 = TZ-93 ✅ DONE, Phase 2 = TZ-94 ⏳.
+**LAYER:** Phase 3 = **Layer 1** (CSS only + docs — no TS changes, no component API changes)
+**Зависимости:** TZ-93 ✅ DONE (3 utilities), TZ-94 ⏳ (component adopters), Paper & Ink design system
+
+**CONFLICT KEYS:**
+  - frontend/src/app/pages/foundations/foundations.page.ts            # + new "Pi-* Utilities" section (5th section)
+  - frontend/src/app/pages/forms/forms.page.ts                        # + pi-dashed-panel + pi-corner-marks demos in form sections
+  - frontend/src/app/pages/overlays/overlays.page.ts                  # + pi-corner-marks + pi-dashed-panel for empty states
+  - frontend/src/app/pages/playground/theme-editor.page.ts            # + new "Architectural Patterns" section (Section IV)
+  - frontend/src/app/pages/playground/code-preview.page.ts            # + code snippet examples for pi-* utilities
+  - docs/paper-and-ink.md                                             # + new "Pi-* Utilities" section
+  - docs/add-new-page.md                                              # + "When to use pi-* utilities vs hairline" convention
+
+**Решения пользователя (зафиксированы):**
+1. ✅ **Scope**: showcase 4 kit pages (foundations, forms, overlays, playground) + 2 doc files. No new components, no new utilities.
+2. ✅ **Layer 1 trivial**: additive content only (new sections, new demos, new doc sections). No breaking changes.
+3. ✅ **Doc sections**: add "Pi-* Utilities" section to paper-and-ink.md + "Convention" note to add-new-page.md.
+4. ✅ **Kit sections**: 1 new section per page (5 sections total across 4 pages). No existing sections restructured.
+5. ✅ **Auth wall**: browser-use visual verify BLOCKED until TZ-93.1 (or this TZ's optional resolution) lands. Typecheck + manual code review is the primary verification gate.
+
+---
+
+## 1. Цель
+
+Showcase the 3 TZ-93 utilities (`.pi-tech-label`, `.pi-corner-marks`, `.pi-dashed-panel`) + the TZ-94 component adoptions (PiEmptyState, PiEmptyTile, PiBadge, PiTable, PiLabel, PiFormField) in the `/kit/*` pages, and canonize the patterns in the Paper & Ink design system docs.
+
+**Что делаем:**
+- **Kit showcase**: 4 pages get 1 new section each demonstrating the architectural patterns. All sections are additive (no existing content removed/restructured).
+- **Docs sync**: `paper-and-ink.md` gets a new "Pi-* Utilities" section explaining the 3 utilities, their use cases, and the rejected brutalist alternatives. `add-new-page.md` gets a "Convention" note on when to use `pi-*` utilities vs `hairline` borders.
+- **Cross-references**: all kit sections link to the docs sections, and vice versa.
+
+**Что НЕ делаем:**
+- ❌ New components or utilities.
+- ❌ Refactoring existing kit sections.
+- ❌ Auth wall resolution (separate TZ-93.1, optional to fold in here).
+- ❌ Visual regression testing (browser-use blocked by auth — manual code review + typecheck only).
+
+---
+
+## 2. Kit Showcase Plan
+
+### 2.1 Foundations page — new Section V "Pi-* Utilities"
+
+**File:** `frontend/src/app/pages/foundations/foundations.page.ts`
+
+**Current sections (per basher):** I (Палитра), II (Типографика), III (Spacing & Radius), IV (Grid).
+
+**New section (V):** "Pi-* Utilities" — showcases the 3 TZ-93 utilities in isolation (like the existing palette/typography swatches).
+
+**Content:**
+
+```html
+<app-pi-section title="Pi-* Utilities" hint="TZ-93/95 · 3 architectural primitives" eyebrow="V">
+  <p class="text-sm text-muted-foreground max-w-prose mb-stack-lg">
+    Architectural primitives adopted from
+    <code class="font-mono text-[11px]">stitch_professional_desktop_crm_refinement</code>.
+    See <code class="font-mono text-[11px]">tasks/TZ-93.md</code> for the full adoption matrix
+    (what was adopted, adapted, rejected).
+  </p>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+    <!-- .pi-tech-label demo -->
+    <div class="pi-corner-marks hairline bg-paper p-stack-lg relative">
+      <span class="pi-tech-label absolute top-2 right-2">REF: PIT.01</span>
+      <h3 class="font-title-sm text-ink mb-stack-sm">pi-tech-label</h3>
+      <p class="text-sm text-muted-foreground">
+        10px monospace tech label, uppercase, 0.1em letter-spacing,
+        AAA contrast via <code class="font-mono text-[11px]">--color-muted-foreground-strong</code>.
+      </p>
+    </div>
+
+    <!-- .pi-corner-marks demo -->
+    <div class="pi-corner-marks hairline bg-paper p-stack-lg">
+      <h3 class="font-title-sm text-ink mb-stack-sm">pi-corner-marks</h3>
+      <p class="text-sm text-muted-foreground">
+        8px L-shaped corner marks via <code class="font-mono text-[11px]">::before/::after</code>
+        pseudo-elements. Pure CSS, no DOM pollution.
+      </p>
+    </div>
+
+    <!-- .pi-dashed-panel demo -->
+    <div class="pi-dashed-panel p-stack-lg bg-paper">
+      <h3 class="font-title-sm text-ink mb-stack-sm">pi-dashed-panel</h3>
+      <p class="text-sm text-muted-foreground">
+        1px dashed border for empty states and draft-style surfaces.
+        Lower perceptual contrast — apply only on near-empty surfaces.
+      </p>
+    </div>
+  </div>
+</app-pi-section>
+```
+
+**Acceptance:**
+- Section V renders below existing Section IV (Grid).
+- 3 demo cards each show one utility in isolation.
+- Cards use Paper & Ink conventions (`hairline`, `bg-paper`, `text-ink`, `text-muted-foreground`).
+
+---
+
+### 2.2 Forms page — augmented Form Fields section
+
+**File:** `frontend/src/app/pages/forms/forms.page.ts`
+
+**Current sections (per basher, 302 lines):** multiple sections showing form components. The eyebrow labels follow the existing pattern.
+
+**Augmentation:** add `pi-corner-marks` to the form field wrapper demos (already used in production pages, but not in the kit showcase). This visualizes the TZ-94 `PiFormField` adoption.
+
+**Content (add to existing Form Field demo section):**
+
+```html
+<!-- Enhanced Form Field demo with pi-corner-marks -->
+<div class="pi-corner-marks hairline bg-paper p-stack-lg max-w-md">
+  <span class="pi-tech-label absolute top-2 right-2">REF: FORM.04</span>
+  <h3 class="font-title-sm text-ink mb-stack-sm">Form Field (Architectural)</h3>
+  <app-pi-form-field label="Email" hint="Используется для уведомлений" [required]="true">
+    <app-pi-input type="email" placeholder="user@company.ru" />
+  </app-pi-form-field>
+  <app-pi-form-field label="Пароль" [required]="true">
+    <app-pi-input type="password" />
+  </app-pi-form-field>
+</div>
+```
+
+**Acceptance:**
+- Existing form field demos are NOT removed/restructured.
+- 1 new demo card added with `pi-corner-marks` + `pi-tech-label` + eyebrow-style labels (TZ-94 PiFormField adoption).
+
+---
+
+### 2.3 Overlays page — augmented Empty States section
+
+**File:** `frontend/src/app/pages/overlays/overlays.page.ts`
+
+**Current sections (per basher, 181 lines):** showcases modals, popovers, tooltips.
+
+**Augmentation:** add `pi-dashed-panel` + `pi-corner-marks` to the empty states demo (if present) or create a new mini-section showing the TZ-94 PiEmptyState adoption.
+
+**Content (add to existing Empty States section or create new):**
+
+```html
+<!-- Enhanced Empty State demo with pi-dashed-panel + pi-corner-marks -->
+<div class="pi-corner-marks pi-dashed-panel bg-paper p-stack-lg max-w-md text-center">
+  <span class="pi-tech-label">REF: EMPTY.02</span>
+  <h3 class="font-title-sm text-ink mb-stack-sm">Empty State (Architectural)</h3>
+  <p class="text-sm text-muted-foreground">
+    The <code class="font-mono text-[11px]">PiEmptyState</code> component wraps content
+    in a centered, max-384px panel with dashed border + corner marks. Used inside
+    <code class="font-mono text-[11px]">&lt;tbody&gt;</code> when a list is empty.
+  </p>
+  <div class="pi-tech-label mt-stack-sm">Eyebrow: 00</div>
+  <div class="text-sm text-muted-foreground">Нет данных для отображения.</div>
+</div>
+```
+
+**Acceptance:**
+- 1 new demo card showing the TZ-94 PiEmptyState architectural treatment.
+- Visual reference for adopters.
+
+---
+
+### 2.4 Playground page — new Section IV "Architectural Patterns"
+
+**File:** `frontend/src/app/pages/playground/theme-editor.page.ts`
+
+**Current sections (per TZ-93 implementation):** I (Sliders), II (Reset), III (Architectural Utilities — the TZ-93 fixture).
+
+**No new sections needed** — the existing Section III (added in TZ-93 commit `11d88a1`) IS the showcase. It already demonstrates all 3 utilities with 3 demo cards (corner-marks, dashed-panel, combined).
+
+**Optional addition (Layer 1 trivial):** add a 4th demo card showing the utilities in a **table context** (e.g., a small table with `pi-corner-marks` on the table container, `pi-tech-label` as column headers, `tabular-nums` on numeric cells). This visualizes the TZ-94 PiTable adoption.
+
+**Content (optional 4th card):**
+
+```html
+<!-- Table context demo -->
+<div class="pi-corner-marks hairline bg-paper p-stack-lg relative col-span-full">
+  <span class="pi-tech-label absolute top-2 right-2">REF: TBL.04</span>
+  <h3 class="font-title-sm text-ink mb-stack-sm">Table Context</h3>
+  <table class="w-full text-sm">
+    <thead class="hairline-b">
+      <tr>
+        <th class="eyebrow text-left py-2 px-3">ID</th>
+        <th class="eyebrow text-left py-2 px-3">NAME</th>
+        <th class="eyebrow text-right py-2 px-3">QTY</th>
+        <th class="eyebrow text-right py-2 px-3">PRICE</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="hairline-b">
+        <td class="py-2 px-3 font-mono text-[11px] tabular-nums">TX-001</td>
+        <td class="py-2 px-3">Material Alpha</td>
+        <td class="py-2 px-3 text-right tabular-nums">42</td>
+        <td class="py-2 px-3 text-right tabular-nums">1,250.00</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+```
+
+**Acceptance:**
+- 4th card (table context) is added to the existing Section III grid.
+- Card spans full width (`col-span-full`).
+- Table demonstrates: `pi-corner-marks` on container, `pi-tech-label` as REF, `eyebrow` class on `<th>`, `tabular-nums` on numeric `<td>`, `font-mono` on ID `<td>`.
+
+---
+
+### 2.5 Code Preview page — optional code snippet examples
+
+**File:** `frontend/src/app/pages/playground/code-preview.page.ts`
+
+**Optional:** add 1 new code snippet example showing the 3 utilities in HTML form (so adopters can copy-paste).
+
+**Content (optional, additive):**
+
+```html
+<!-- Code Preview new snippet -->
+<div class="pi-corner-marks hairline bg-paper p-stack-lg relative">
+  <span class="pi-tech-label absolute top-2 right-2">SNIPPET</span>
+  <h3 class="font-title-sm text-ink mb-stack-sm">Empty State Pattern</h3>
+  <pre class="font-mono text-xs text-ink bg-paper-2 p-stack-sm rounded-sm overflow-x-auto"><code>&lt;div class="pi-dashed-panel pi-corner-marks p-stack-lg text-center"&gt;
+  &lt;span class="pi-tech-label"&gt;REF: EMPTY&lt;/span&gt;
+  &lt;h3&gt;Нет данных&lt;/h3&gt;
+&lt;/div&gt;</code></pre>
+</div>
+```
+
+**Acceptance:**
+- 1 new code snippet showing the empty state pattern.
+- Snippet is copy-paste ready.
+
+---
+
+## 3. Docs Sync Plan
+
+### 3.1 paper-and-ink.md — new "Pi-* Utilities" section
+
+**File:** `docs/paper-and-ink.md`
+
+**Current structure (per basher, 280 lines, 12 ## sections):** OKLCH, hairline, Lucide, button variants, rounded-sm/none, spacing, когда не использовать, recent palette changes, TZ-WARMUP-100, TZ-LIGHT-XX, WCAG compliance, etc.
+
+**New section (insert BEFORE "Recent palette changes"):** "Pi-* Architectural Utilities" — explains the 3 TZ-93 utilities, their use cases, and the rejected brutalist alternatives.
+
+**Content:**
+
+```markdown
+## Pi-* Architectural Utilities
+
+3 utility-классы adopted from `stitch_professional_desktop_crm_refinement` (TZ-93):
+
+| Utility | Purpose | Use when |
+|---|---|---|
+| `pi-tech-label` | 10px monospace tech label (REF: 80.4.2, ID: MN-01). | Engineering metadata in corners of structural panels. AAA contrast (8.0:1 light, 7.5:1 dark). |
+| `pi-corner-marks` | 8px L-shaped corner marks via `::before/::after`. | Empty states, structural cards, showcase panels. NOT for active interactive panels. |
+| `pi-dashed-panel` | 1px dashed border for draft-style surfaces. | Empty states, draft cards, "no data" placeholders. NOT for active panels. |
+
+**Rejected from brutalist source:**
+- ❌ 0px radius everywhere → keeps `rounded-sm` (interactive) / `rounded-none` (structural).
+- ❌ 2px offset shadow → global `* { box-shadow: none !important }` rule remains.
+- ❌ 1px solid black borders → keeps `var(--color-rule)` (warm L=0.880).
+- ❌ JetBrains Mono everywhere → `--font-mono` only for tech-label, IDs, numeric cells.
+
+**See:** `tasks/TZ-93.md` (full adoption matrix), `tasks/TZ-94.md` (component adopters), `/kit/foundations` (Section V showcase).
+```
+
+**Acceptance:**
+- New section is inserted before "Recent palette changes".
+- Section is well-formatted (table + lists + cross-references).
+- No existing content is removed or restructured.
+
+---
+
+### 3.2 add-new-page.md — new "Convention" note
+
+**File:** `docs/add-new-page.md`
+
+**Current structure (per basher, 138 lines):** 5-step process + Paper & Ink compliance checklist.
+
+**Augmentation:** add a new sub-section under "Paper & Ink compliance" or create a new section "Border & Utility Conventions":
+
+**Content (insert as new sub-section, e.g. after the compliance checklist):**
+
+```markdown
+## Border & Utility Conventions
+
+### When to use `hairline` vs `pi-dashed-panel` vs `pi-corner-marks`
+
+| Pattern | Use when | Example |
+|---|---|---|
+| `hairline` (1px solid `var(--color-rule)`) | Default border for all structural panels, cards, tables, dividers. | `<div class="hairline bg-paper p-stack-lg">` |
+| `pi-dashed-panel` (1px dashed `var(--color-rule)`) | Empty states, draft cards, "no data" placeholders. | `<div class="pi-dashed-panel p-stack-lg text-center">` |
+| `pi-corner-marks` (8px L-shapes) | Empty states, structural cards, showcase panels. Opt-in for visual emphasis. | `<div class="pi-corner-marks hairline p-stack-lg">` |
+
+**Rule of thumb:** start with `hairline` for ALL structural surfaces. Add `pi-corner-marks` only for empty states or showcase panels. Add `pi-dashed-panel` only for near-empty/draft surfaces. Never combine `pi-dashed-panel` with solid content fills (use it for containers that are intentionally empty or draft).
+
+### When to use `pi-tech-label`
+
+`pi-tech-label` is for engineering metadata (REF numbers, IDs, system versions) in corners of structural panels. It's NOT for body text, table headers, or button labels. For those, use the existing `eyebrow` class.
+
+**See:** `docs/paper-and-ink.md` § "Pi-* Architectural Utilities", `/kit/foundations` Section V.
+```
+
+**Acceptance:**
+- New "Border & Utility Conventions" section is added.
+- Table clearly distinguishes `hairline` vs `pi-dashed-panel` vs `pi-corner-marks`.
+- Rule of thumb is actionable.
+
+---
+
+## 4. Implementation Plan (Layer 1 trivial)
+
+5 atomic commits, ordered least-risky first:
+
+| # | Commit | Scope | Risk |
+|---|---|---|---|
+| 1 | `docs: [TZ-95] add Pi-* Utilities section to paper-and-ink.md` | `docs/paper-and-ink.md` | Low (additive doc) |
+| 2 | `docs: [TZ-95] add Border & Utility Conventions to add-new-page.md` | `docs/add-new-page.md` | Low (additive doc) |
+| 3 | `feat(kit): [TZ-95] add Section V Pi-* Utilities to foundations.page` | `foundations.page.ts` | Low (additive section) |
+| 4 | `feat(kit): [TZ-95] augment forms + overlays with architectural demos` | `forms.page.ts` + `overlays.page.ts` | Low (additive demos) |
+| 5 | `feat(kit): [TZ-95] add 4th card (table context) to playground Section III` | `theme-editor.page.ts` (optional) | Low (additive card) |
+
+**Rationale:**
+- Commits 1-2 are doc-only (lowest risk).
+- Commit 3 adds a new section to the most-trafficked kit page (foundations).
+- Commit 4 augments 2 existing kit pages with small demos.
+- Commit 5 is optional — depends on whether the 4th card (table context) adds value.
+
+---
+
+## 5. Risks and Tradeoffs
+
+| Риск | Вероятность | Митигация |
+|---|---|---|
+| Browser-use visual verify BLOCKED by authGuard on /kit/* | High (guaranteed) | Typecheck + manual code review is the primary verification gate. Document in commit body. Consider folding TZ-93.1 (auth wall resolution) into this TZ if user wants end-to-end visual verify. |
+| Doc sections grow too long, dilute the "why" narrative | Low | Keep new sections concise (table + lists, not prose). Cross-reference TZ-93/94/95 specs for full rationale. |
+| Kit page demos use `pi-*` utilities but adopters don't know when to use them | Medium | The new `add-new-page.md` convention section + paper-and-ink.md section explicitly documents the decision tree. |
+| 4th card in playground (table context) overlaps with foundations Section V | Low | Section V is a static reference; Section III playground is interactive. Different purposes. |
+| Existing kit sections get refactored by mistake | Low | Strict additive scope. No existing sections removed/restructured. |
+| `pi-corner-marks` 8px looks wrong on small form field demos | Low | Form field demos use `p-stack-lg` (24px padding) — plenty of room for 8px L-shapes. |
+
+---
+
+## 6. Definition of Done
+
+- 5 atomic commits in `main` (or 4 if the optional 4th card is skipped).
+- `docs/paper-and-ink.md` has the new "Pi-* Architectural Utilities" section.
+- `docs/add-new-page.md` has the new "Border & Utility Conventions" section.
+- 4 kit pages (foundations, forms, overlays, playground) each have 1 new section/demo demonstrating the architectural patterns.
+- Frontend typecheck: 0 errors (`pnpm exec tsc -p tsconfig.app.json --noEmit`).
+- No new `box-shadow`, `rounded-md/lg/3xl`, `bg-white` introduced.
+- All hairline borders use `var(--color-rule)` (warm, not pure black).
+- Cross-references between docs ↔ kit sections work (links resolve).
+- `verify-status.sh` FAIL count unchanged.
+- Browser-use visual verify: **deferred** (authGuard blocks /kit/* — see TZ-93 known limitation).
+
+---
+
+## 7. What is NOT in this TZ (explicit deferrals)
+
+- ❌ **TZ-93.1 (auth wall resolution)** — separate TZ to expose `/kit/*` and `/playground/*` as public routes. **OPTIONAL**: if the user wants visual verify to work, fold this into TZ-95 as an additional commit.
+- ❌ **TZ-94 component implementation** — TZ-95 is a Layer 1 doc + showcase update. TZ-94 (component refactors) is a separate Phase 2.
+- ❌ **New components or utilities** — TZ-95 uses only the 3 TZ-93 utilities + existing components.
+- ❌ **Refactoring existing kit sections** — strict additive scope.
+- ❌ **Operational page migration** — `/materials`, `/organizations`, `/dictionaries` etc. continue to use the pre-TZ-94 component defaults. Migration to TZ-94 adoptions is a separate effort.
+- ❌ **axe-core a11y audit** — separate TZ after the brutalist refinement is complete.
+
+---
+
+## 8. Cross-references
+
+**Foundation:**
+- TZ-93 ✅ DONE (3 utilities: `.pi-tech-label`, `.pi-corner-marks`, `.pi-dashed-panel`).
+- TZ-94 ⏳ (component adopters — PiTable, PiEmptyTile, PiBadge, PiEmptyState, PiLabel, PiFormField).
+- TZ-90 ✅ DONE (Dialog System polymorphic wrapper — kit showcase pattern).
+- Paper & Ink design system (`docs/paper-and-ink.md`).
+
+**Related fixes (must NOT regress):**
+- TZ-AUDIT-6 (focus-ring) — `pi-focus-ring` unification preserved.
+- TZ-AUDIT-8 (hairline-first) — `hairline` utility remains canonical for structural borders.
+- TZ-AUDIT-9 + TZ-LIGHT-XX (warm paper palette) — OKLCH palette unchanged.
+
+**Future extensions:**
+- **TZ-93.1** — Auth wall resolution (optional, fold into TZ-95 if user wants visual verify).
+
+**Lock file (after TZ-94 archival):**
+- `OrchestratorKit/.mimocode/locks/TZ-93-brutalist-architectural-ui.lock` — will be extended in TZ-95 archival with 7 new protected files (4 kit pages + 2 docs + 1 optional playground).
+
+---
+
+## 9. Acceptance Examples
+
+### Foundations page — Section V renders below existing Section IV
+
+```html
+<!-- After TZ-95 commit 3, foundations.page.ts ends with: -->
+<app-pi-section title="Grid" eyebrow="IV">...</app-pi-section>
+<app-pi-section title="Pi-* Utilities" hint="TZ-93/95" eyebrow="V">
+  <!-- 3 demo cards: pi-corner-marks, pi-dashed-panel, pi-tech-label -->
+</app-pi-section>
+```
+
+### docs/paper-and-ink.md — new section before "Recent palette changes"
+
+```markdown
+<!-- After TZ-95 commit 1: -->
+## Pi-* Architectural Utilities
+[table + lists + cross-references]
+
+## Recent palette changes
+[existing content unchanged]
+```
+
+### docs/add-new-page.md — new section after compliance checklist
+
+```markdown
+<!-- After TZ-95 commit 2: -->
+## Paper & Ink compliance
+- [ ] ...
+- [ ] ...
+
+## Border & Utility Conventions
+[table + rule of thumb + cross-references]
+```
+
+---
+
+**Status:** ✅ DONE. Phase 3 завершена. Brutalist architectural refinement complete (TZ-93 → TZ-94 → TZ-95).
+
+---
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ARCHIVE_MARKER                                                │
+│ outcome: DONE                                                  │
+│ closed_at: 2026-07-12                                         │
+│ closed_by: Frontend Developer Agent                           │
+│ protected_files:                                               │
+│   - frontend/src/app/pages/foundations/foundations.page.ts    │
+│   - frontend/src/app/pages/forms/forms.page.ts                │
+│   - frontend/src/app/pages/overlays/overlays.page.ts          │
+│   - frontend/src/app/pages/playground/theme-editor.page.ts    │
+│   - docs/paper-and-ink.md                                     │
+│   - docs/add-new-page.md                                      │
+│ affected_areas:                                                │
+│   - frontend: Foundations page Section V (Pi-* Utilities)     │
+│   - frontend: Forms page architectural demo                   │
+│   - frontend: Overlays page empty state demo                  │
+│   - frontend: Playground table context demo                   │
+│   - docs: paper-and-ink.md Pi-* Utilities section             │
+│   - docs: add-new-page.md Border & Utility Conventions       │
+│ verification:                                                  │
+│   - frontend tsc: exit 0                                       │
+│   - All additive content (no breaking changes)                │
+│ criteria_met:                                                  │
+│   - Foundations Section V: 2 demo cards (tech-label, dashed) │
+│   - Forms Section III: architectural form field demo          │
+│   - Overlays Section VI: empty state demo                     │
+│   - Playground Section III: 3rd card (table context)          │
+│   - paper-and-ink.md: Pi-* Utilities section added            │
+│   - add-new-page.md: Border & Utility Conventions added       │
+│   - pi-corner-marks references removed (rolled back TZ-93.1) │
+│ notes:                                                         │
+│   - pi-corner-marks was rolled back in TZ-93.1 — only        │
+│     pi-tech-label and pi-dashed-panel survive                 │
+│   - TZ-96 design reference alignment applied (2px dashed)    │
+│   - Brutalist architectural refinement: TZ-93→94→95 complete  │
+└─────────────────────────────────────────────────────────────────┘
