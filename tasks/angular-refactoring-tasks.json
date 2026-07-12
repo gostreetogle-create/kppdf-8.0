@@ -1,0 +1,509 @@
+[
+  {
+    "id": 1,
+    "title": "Выделить базовый CRUD-сервис (BaseCrudService)",
+    "description": "Создать generic BaseCrudService<T, ListResponse> в shared/services/ с базовыми методами list/findById/create/update/remove, используя silent-http. Текущие services (MaterialsService, ProductsService, OrganizationsService, WorkTypesService, ProductModulesService) содержат ~90% идентичного кода (inject HttpClient, inject API_BASE_URL, CRUD-методы с silentGet/silentPost/silentPatch/silentDelete). BaseCrudService должен быть abstract, принимать endpoint path через constructor, и дженерик-тип для response shape. После создания — рефакторить каждый service на наследование от BaseCrudService.",
+    "priority": "High",
+    "stage": 1,
+    "acceptance_criteria": [
+      "Создан shared/services/base-crud.service.ts с abstract классом",
+      "MaterialsService наследуется от BaseCrudService, содержит только специфичные методы (если есть)",
+      "ProductsService, OrganizationsService, WorkTypesService аналогично рефакторены",
+      "pnpm typecheck проходит без ошибок",
+      "Все текущие функциональные тесты (если есть) продолжают работать"
+    ],
+    "tags": ["angular", "service", "abstraction", "DRY", "silent-http"]
+  },
+  {
+    "id": 2,
+    "title": "Выделить интерфейсы моделей в shared/models/",
+    "description": "Создать директорию shared/models/ с файлами materials.ts, products.ts, organizations.ts, work-types.ts, modules.ts. Вынести интерфейсы Material, Product, Organization, WorkType, ProductModule и связанные типы (MaterialsListResponse, ProductsListResponse, etc.) из сервисов в эти файлы. Services будут импортировать типы из shared/models/. Это устранит дублирование типов между сервисами и упростит переиспользование.",
+    "priority": "High",
+    "stage": 1,
+    "acceptance_criteria": [
+      "Создана директория shared/models/ с barrel index.ts",
+      "Каждый интерфейс вынесен из service-файла в отдельный models-файл",
+      "Services импортируют типы из shared/models/",
+      "pnpm typecheck проходит без ошибок",
+      "Нет циклических зависимостей"
+    ],
+    "tags": ["angular", "models", "types", "architecture", "DRY"]
+  },
+  {
+    "id": 3,
+    "title": "Создать базовый ListPageComponent (Smart Component)",
+    "description": "Создать shared/components/list-page/list-page.component.ts — generic smart-компонент, инкапсулирующий повторяющийся паттерн list-page: httpResource для загрузки, data/total/loading/error computed, searchQuery/debouncedSearch signals, sortKey/sortDir signals, sortedRows computed, onSearchInput с debounce, setSort/sortIcon/isSortedby, totalLabel (русская плюрализация). Компонент принимает через inputs: endpoint, columns config, searchFields, createLabel. Template рендерит table + toolbar + empty-state. Это устранит ~200 строк дублированного кода в каждом list-page (MaterialsPage, ProductsPage, WorkTypesPage, ModulesPage, ContractsPage).",
+    "priority": "High",
+    "stage": 2,
+    "acceptance_criteria": [
+      "Создан ListPageComponent с generic type parameter",
+      "Component принимает column config через input signal",
+      "MaterialsPage рефакторен на использование ListPageComponent",
+      "ProductsPage рефакторен на использование ListPageComponent",
+      "WorkTypesPage рефакторен на использование ListPageComponent",
+      "ModulesPage рефакторен на использование ListPageComponent",
+      "Каждая page уменьшилась минимум на 60% строк",
+      "pnpm typecheck проходит без ошибок",
+      "Все функциональные тесты продолжают работать"
+    ],
+    "tags": ["angular", "component", "DRY", "smart-component", "list-page"]
+  },
+  {
+    "id": 4,
+    "title": "Рефакторинг debounce поиска в shared utility",
+    "description": "Создать shared/util/create-debounce-signal.ts — утилиту, создающую debounced signal из source signal с configurable delay. Текущий паттерн (debounceTimer + setTimeout + clearTimeout в ngOnDestroy) дублируется в каждом list-page. Утилита должна возвращать { value: Signal<string>, destroy: () => void } или использовать DestroyRef автоматически. Заменить все inline debounce implementations на эту утилиту.",
+    "priority": "Medium",
+    "stage": 2,
+    "acceptance_criteria": [
+      "Создана утилита createDebounceSignal в shared/util/",
+      "Утилита корректно очищает timer через DestroyRef",
+      "MaterialsPage, ProductsPage используют утилиту",
+      "WorkTypesPage, ModulesPage используют утилиту",
+      "pnpm typecheck проходит без ошибок"
+    ],
+    "tags": ["angular", "utility", "debounce", "signal", "DRY"]
+  },
+  {
+    "id": 5,
+    "title": "Рефакторинг сортировки в shared utility",
+    "description": "Создать shared/util/create-sort-signal.ts — утилиту, создающую pair { sortKey, sortDir, sortedRows } из source data signal и column keys. Текущий паттерн (sortKey signal, sortDir signal, sortedRows computed, setSort/sortIcon/isSortedBy methods) дублируется в каждом list-page. Утилита принимает column keys array и возвращает полный набор сигналов и computed для сортировки.",
+    "priority": "Medium",
+    "stage": 2,
+    "acceptance_criteria": [
+      "Создана утилита createSortSignal в shared/util/",
+      "Утилита возвращает { key, dir, sorted, setSort, sortIcon, isSorted }",
+      "MaterialsPage, ProductsPage используют утилиту",
+      "WorkTypesPage, ModulesPage используют утилиту",
+      "pnpm typecheck проходит без ошибок"
+    ],
+    "tags": ["angular", "utility", "sort", "signal", "DRY"]
+  },
+  {
+    "id": 6,
+    "title": "Рефакторинг русской плюрализации в shared utility",
+    "description": "Создать shared/util/pluralize-ru.ts — утилиту для русской плюрализации (totalLabel). Текущий паттерн (mod10/mod100 checks) дублируется в каждом list-page с разными словами (материал/материала/материалов, продукт/продукта/продуктов, вид/вида/видов, модуль/модуля/модулей). Утилита принимает number и массив [one, few, many] и возвращает правильную форму.",
+    "priority": "Low",
+    "stage": 2,
+    "acceptance_criteria": [
+      "Создана утилита pluralizeRu в shared/util/",
+      "Утилита корректно обрабатывает все edge cases (1, 2-4, 5-20, 21, 22-24, 100+)",
+      "Все list-page используют утилиту вместо inline реализации",
+      "pnpm typecheck проходит без ошибок"
+    ],
+    "tags": ["angular", "utility", "i18n", "pluralization", "DRY"]
+  },
+  {
+    "id": 7,
+    "title": "Исправить несоответствие структуры директорий (features/ vs pages/)",
+    "description": "ARCHITECTURE.md описывает features/ директорию, но фактически используется pages/. Либо: (A) переименовать pages/ в features/ и обновить все импорты, либо (B) обновить ARCHITECTURE.md чтобы отражать текущую структуру pages/. Вариант B безопаснее и быстрее. Проверить все ссылки на features/ в документации и обновить.",
+    "priority": "Low",
+    "stage": 1,
+    "acceptance_criteria": [
+      "ARCHITECTURE.md обновлен чтобы отражать pages/ структуру",
+      "Все ссылки на features/ в docs/ обновлены",
+      "STACK.md обновлен если содержит ссылки на features/",
+      "Нет broken links в документации"
+    ],
+    "tags": ["documentation", "architecture", "consistency"]
+  },
+  {
+    "id": 8,
+    "title": "Исправить несоответствие ui-kit/ vs ui/ в документации",
+    "description": "ARCHITECTURE.md и STACK.md описывают shared/ui-kit/ с компонентами (app-ui-page-header, app-ui-empty-state, app-ui-badge), но фактически используется shared/ui/ с другими компонентами (pi-page-header, pi-empty-state, pi-row-actions). Обновить документацию чтобы отражать реальную структуру shared/ui/ с текущими компонентами.",
+    "priority": "Low",
+    "stage": 1,
+    "acceptance_criteria": [
+      "ARCHITECTURE.md секция Frontend UI Kit обновлена",
+      "STACK.md секция UI patterns обновлена",
+      "Все acceptance criteria в документации обновлены (grep команды, паттерны)"
+    ],
+    "tags": ["documentation", "architecture", "consistency"]
+  },
+  {
+    "id": 9,
+    "title": "Добавить barrel exports для shared/ui/ компонентов",
+    "description": "Создать index.ts barrel файлы в каждой поддиректории shared/ui/ (button/, dialog/, toast/, avatar/, badge/, и т.д.) и общий shared/ui/index.ts. Это упростит импорты в page-компонентах (вместо '../../shared/ui/button/button.component' → '../../shared/ui/button'). Проверить текущие импорты и обновить на barrel imports где это уместно.",
+    "priority": "Medium",
+    "stage": 1,
+    "acceptance_criteria": [
+      "Каждая поддиректория shared/ui/ имеет index.ts",
+      "Существует shared/ui/index.ts barrel",
+      "Импорты в pages/ обновлены на barrel imports",
+      "pnpm typecheck проходит без ошибок",
+      "Нет circular dependencies"
+    ],
+    "tags": ["angular", "barrel-exports", "DX", "imports"]
+  },
+  {
+    "id": 10,
+    "title": "Добавить barrel exports для shared/page/ компонентов",
+    "description": "Создать shared/page/index.ts barrel экспортирующий PiPageHeaderComponent, PiSectionComponent, PiToolbarComponent, PiDemoComponent. Текущий shared/page/index.ts существует но может быть неполным. Проверить и обновить. Упростить импорты в pages/ (вместо '../../shared/page/pi-page-header.component' → '../../shared/page').",
+    "priority": "Low",
+    "stage": 1,
+    "acceptance_criteria": [
+      "shared/page/index.ts экспортирует все компоненты",
+      "Импорты в pages/ обновлены на barrel imports",
+      "pnpm typecheck проходит без ошибок"
+    ],
+    "tags": ["angular", "barrel-exports", "DX", "imports"]
+  },
+  {
+    "id": 11,
+    "title": "Рефакторинг MaterialsPage: убрать ngOnInit и loadLookups",
+    "description": "MaterialsPage использует ngOnInit для вызова loadLookups() и cleanup debounce timer. После создания shared utilities (debounce, sort) — убрать ngOnInit, использовать DestroyRef для cleanup, и перенести loadLookups в constructor или signal effect. Также materials.page.ts содержит ручной httpResource call pattern вместо использования нового ListPageComponent.",
+    "priority": "Medium",
+    "stage": 3,
+    "acceptance_criteria": [
+      "MaterialsPage не реализует OnInit",
+      "Debounce cleanup через DestroyRef",
+      "LoadLookups перенесен в constructor или effect",
+      "pnpm typecheck проходит без ошибок"
+    ],
+    "tags": ["angular", "refactoring", "lifecycle", "signals"]
+  },
+  {
+    "id": 12,
+    "title": "Рефакторинг WorkTypesPage: добавить debounced search",
+    "description": "WorkTypesPage не использует debounced search (в отличие от MaterialsPage и ProductsPage). Search применяется мгновенно через visible() computed. Добавить debounced search через createDebounceSignal utility для консистентности с другими pages и чтобы избежать лишних re-renders при быстром наборе текста.",
+    "priority": "Medium",
+    "stage": 3,
+    "acceptance_criteria": [
+      "WorkTypesPage использует debounced search",
+      "Search применяется с delay 300ms",
+      "Visible computed использует debounced value",
+      "pnpm typecheck проходит без ошибок"
+    ],
+    "tags": ["angular", "search", "debounce", "consistency"]
+  },
+  {
+    "id": 13,
+    "title": "Рефакторинг ModulesPage: добавить debounced search",
+    "description": "ModulesPage не использует debounced search (в отличие от MaterialsPage и ProductsPage). Search применяется мгновенно через visible() computed. Добавить debounced search через createDebounceSignal utility для консистентности с другими pages.",
+    "priority": "Medium",
+    "stage": 3,
+    "acceptance_criteria": [
+      "ModulesPage использует debounced search",
+      "Search применяется с delay 300ms",
+      "Visible computed использует debounced value",
+      "pnpm typecheck проходит без ошибок"
+    ],
+    "tags": ["angular", "search", "debounce", "consistency"]
+  },
+  {
+    "id": 14,
+    "title": "Унифицировать shape list-response (массив vs пагинация)",
+    "description": "Некоторые services возвращают массив (WorkTypesService.list → WorkType[], ProductModulesService.list → ProductModule[]), другие — пагinated response (MaterialsService.list → MaterialsListResponse {items, total, page, limit}). Это создаёт несогласованность в list-page паттерне. Решение: (A) добавить backend pagination для work-types и product-modules, или (B) в frontend обернуть массивы в {items, total} шейп. Вариант B проще и не требует backend изменений. WorkTypesService уже делает map → {items, total}, но ProductModulesService.list всё ещё возвращает массив напрямую.",
+    "priority": "Medium",
+    "stage": 2,
+    "acceptance_criteria": [
+      "Все services возвращают единый {items, total, page, limit} шейп",
+      "ProductModulesService.list обернут в {items, total}",
+      "ListPageComponent работает с единым шейпом",
+      "pnpm typecheck проходит без ошибок"
+    ],
+    "tags": ["angular", "api", "consistency", "pagination"]
+  },
+  {
+    "id": 15,
+    "title": "Добавить unit tests для BaseCrudService",
+    "description": "Создать base-crud.service.spec.ts с unit tests для базового CRUD сервиса. Tests должны покрывать: list/findById/create/update/remove методы, корректную передачу params, обработку ошибок через silent-http. Использовать HttpClientTestingModule или jest mocks для HttpClient.",
+    "priority": "Medium",
+    "stage": 4,
+    "acceptance_criteria": [
+      "Создан base-crud.service.spec.ts",
+      "Tests покрывают все CRUD методы",
+      "Tests проверяют передачу params и body",
+      "Tests проверяют обработку ошибок",
+      "pnpm test проходит"
+    ],
+    "tags": ["testing", "unit-test", "service"]
+  },
+  {
+    "id": 16,
+    "title": "Добавить unit tests для shared utilities",
+    "description": "Создать spec файлы для каждой shared utility: create-debounce-signal.spec.ts, create-sort-signal.spec.ts, pluralize-ru.spec.ts, on-dialog-close-once.spec.ts (существует но может быть неполным). Tests должны покрывать edge cases и typical usage patterns.",
+    "priority": "Medium",
+    "stage": 4,
+    "acceptance_criteria": [
+      "pluralize-ru.spec.ts создан и покрывает все edge cases",
+      "create-debounce-signal.spec.ts создан и тестит timer behavior",
+      "create-sort-signal.spec.ts создан и тестит sort logic",
+      "on-dialog-close-once.spec.ts обновлен если нужно",
+      "pnpm test проходит"
+    ],
+    "tags": ["testing", "unit-test", "utility"]
+  },
+  {
+    "id": 17,
+    "title": "Добавить unit tests для ListPageComponent",
+    "description": "Создать list-page.component.spec.ts с unit tests для нового ListPageComponent. Tests должны покрывать: рендеринг columns, search input behavior, sort toggle, empty state, loading state, error state. Использовать @testing-library/angular или Angular TestBed.",
+    "priority": "Medium",
+    "stage": 4,
+    "acceptance_criteria": [
+      "Создан list-page.component.spec.ts",
+      "Tests покрывают render columns, search, sort, empty/loading/error states",
+      "Tests используют реальные компоненты или mocks",
+      "pnpm test проходит"
+    ],
+    "tags": ["testing", "unit-test", "component"]
+  },
+  {
+    "id": 18,
+    "title": "Audit и исправление unused imports в pages/",
+    "description": "Проверить все page-компоненты на неиспользуемые импорты. Angular compiler может показывать NG8113/NG8102 warnings. Удалить неиспользуемые импорты (например, DialogRef в некоторых файлах, DestroyRef где не используется, и т.д.). Запустить pnpm typecheck и исправить все warnings.",
+    "priority": "Low",
+    "stage": 1,
+    "acceptance_criteria": [
+      "pnpm typecheck не показывает NG8113/NG8102 warnings",
+      "Нет неиспользуемых импортов в pages/",
+      "Компиляция проходит чисто"
+    ],
+    "tags": ["angular", "cleanup", "imports", "warnings"]
+  },
+  {
+    "id": 19,
+    "title": "Рефакторинг dialog patterns: выделить useDialog CRUD helper",
+    "description": "Текущий pattern открытия dialog + onDialogCloseOnce + reload дублируется в каждом list-page (openCreate, openEdit, onDelete). Создать shared/util/use-dialog-crud.ts — хук/helper, принимающий dialog service, toast service, и возвращающий { openCreate, openEdit, openDelete } methods. Каждый method принимает component ref и data, открывает dialog, и автоматически делает reload после close.",
+    "priority": "Medium",
+    "stage": 3,
+    "acceptance_criteria": [
+      "Создан useDialogCrud helper в shared/util/",
+      "Helper принимает DialogService, ToastService, reload callback",
+      "MaterialsPage использует helper для CRUD dialogs",
+      "ProductsPage использует helper",
+      "WorkTypesPage использует helper",
+      "ModulesPage использует helper",
+      "pnpm typecheck проходит без ошибок"
+    ],
+    "tags": ["angular", "dialog", "CRUD", "DRY", "helper"]
+  },
+  {
+    "id": 20,
+    "title": "Удалить пустые ngOnInit() методы",
+    "description": "Некоторые page-компоненты реализуют ngOnInit() с пустым телом или комментарием (// listRes auto-fire). После рефакторинга на signal patterns — пустые ngOnInit() методы можно удалить. Проверить все pages и удалить неиспользуемые OnInit implementations. Убедиться что component не implements OnInit если метод пустой.",
+    "priority": "Low",
+    "stage": 3,
+    "acceptance_criteria": [
+      "Нет пустых ngOnInit() методов в pages/",
+      "Component не implements OnInit если метод пустой",
+      "pnpm typecheck проходит без ошибок"
+    ],
+    "tags": ["angular", "cleanup", "lifecycle"]
+  },
+  {
+    "id": 21,
+    "title": "Добавить error boundary для list pages",
+    "description": "Текущий GlobalErrorHandler в app.config.ts ловит unhandled errors и показывает toast. Но list pages имеют inline error banners. Стандартизировать error handling: создать shared/components/error-banner/error-banner.component.ts для отображения ошибок загрузки данных. Заменить inline error divs во всех list pages на этот компонент.",
+    "priority": "Low",
+    "stage": 3,
+    "acceptance_criteria": [
+      "Создан ErrorBannerComponent в shared/components/",
+      "Component показывает error message с retry кнопкой",
+      "Все list pages используют ErrorBannerComponent",
+      "Inline error divs удалены",
+      "pnpm typecheck проходит без ошибок"
+    ],
+    "tags": ["angular", "error-handling", "component", "UX"]
+  },
+  {
+    "id": 22,
+    "title": "Audit Angular warnings (NG8113, NG8102) и исправление",
+    "description": "Запустить ng build с production configuration и проверить все compiler warnings. Исправить: NG8113 (unused imports), NG8102 (unnecessary nullish coalescing ??), любые другие warnings. Цель — 0 warnings в production build. Запустить ng build --configuration production и проверить вывод.",
+    "priority": "Medium",
+    "stage": 1,
+    "acceptance_criteria": [
+      "ng build --configuration production завершается без warnings",
+      "Нет NG8113 warnings",
+      "Нет NG8102 warnings",
+      "Нет других compiler warnings"
+    ],
+    "tags": ["angular", "build", "warnings", "cleanup"]
+  },
+  {
+    "id": 23,
+    "title": "Добавить barrel export для shared/services/",
+    "description": "Создать shared/services/index.ts barrel экспортирующий все сервисы и интерфейсы. Упростить импорты в pages/ и других модулях. Проверить текущие импорты и обновить на barrel imports.",
+    "priority": "Low",
+    "stage": 1,
+    "acceptance_criteria": [
+      "Создан shared/services/index.ts",
+      "Barrel экспортирует все сервисы и интерфейсы",
+      "Импорты обновлены где уместно",
+      "pnpm typecheck проходит без ошибок"
+    ],
+    "tags": ["angular", "barrel-exports", "DX"]
+  },
+  {
+    "id": 24,
+    "title": "Audit и исправление inconsistent naming conventions",
+    "description": "Проверить naming conventions в shared/ui/: некоторые компоненты используют pi- prefix (pi-row-actions, pi-empty-state, pi-dialog), другие — нет (button, input, textarea, select). Стандартизировать: либо все компоненты используют pi- prefix, либо все используют camelCase без prefix. Второй вариант более современный. Переименовать компоненты если нужно.",
+    "priority": "Low",
+    "stage": 1,
+    "acceptance_criteria": [
+      "Определено единое naming convention",
+      "Все компоненты в shared/ui/ используют единый convention",
+      "Селекторы обновлены",
+      "Все template references обновлены",
+      "pnpm typecheck проходит без ошибок"
+    ],
+    "tags": ["angular", "naming", "consistency", "cleanup"]
+  },
+  {
+    "id": 25,
+    "title": "Добавить shared interface для ListPageConfig",
+    "description": "Создать shared/interfaces/list-page-config.ts с интерфейсом ListPageConfig<T> описывающим конфигурацию list-page: endpoint, columns (key, label, type, sortable, width), searchFields, createLabel, deleteTitle. Этот интерфейс будет использоваться ListPageComponent и каждой page для описания своей конфигурацииdeclaratively.",
+    "priority": "Medium",
+    "stage": 2,
+    "acceptance_criteria": [
+      "Создан ListPageConfig интерфейс",
+      "Интерфейс generic по типу row",
+      "Columns определяют key, label, type, sortable, width",
+      "ListPageComponent принимает config через input",
+      "pnpm typecheck проходит без ошибок"
+    ],
+    "tags": ["angular", "interface", "config", "type-safety"]
+  },
+  {
+    "id": 26,
+    "title": "Audit и исправление unused CSS classes",
+    "description": "Проверить styles.css и компонентные стили на неиспользуемые CSS classes. Удалить classes которые нигде не используются в templates. Использовать grep или CSS analyzer для поиска unused selectors. Это уменьшит bundle size.",
+    "priority": "Low",
+    "stage": 1,
+    "acceptance_criteria": [
+      "Нет unused CSS classes в styles.css",
+      "Нет unused компонентных styles",
+      "Bundle size не вырос",
+      "pnpm build проходит без ошибок"
+    ],
+    "tags": ["css", "cleanup", "bundle-size"]
+  },
+  {
+    "id": 27,
+    "title": "Добавить type guards для Mongoose populate responses",
+    "description": "Создать shared/util/type-guards.ts с type guard функциями для Mongoose populate responses: isPopulated(ref), getPopulatedId(ref), getPopulatedName(ref). Текущий код содержит repeated pattern: if (typeof x !== 'string') return x.name else return lookupMap[x]?.name. Type guards упростят этот паттерн и сделают его type-safe.",
+    "priority": "Low",
+    "stage": 2,
+    "acceptance_criteria": [
+      "Создан type-guards.ts в shared/util/",
+      "isPopulated(ref) возвращает true если ref — populated object",
+      "getPopulatedId(ref) возвращает ID无论是 populated или string",
+      "Type guards используются в materials.page.ts, work-types.page.ts",
+      "pnpm typecheck проходит без ошибок"
+    ],
+    "tags": ["angular", "typescript", "type-guards", "utility"]
+  },
+  {
+    "id": 28,
+    "title": "Audit и исправление unused service methods",
+    "description": "Проверить все services на неиспользуемые методы. MaterialsService.findById(), OrganizationsService.findById() и аналогичные методы могут не использоваться в текущем UI. Удалить неиспользуемые methods или пометить как unused если планируется использование в будущем. Проверить через grep по всем files.",
+    "priority": "Low",
+    "stage": 1,
+    "acceptance_criteria": [
+      "Grep показывает что все service methods используются",
+      "Неиспользуемые methods удалены или помечены",
+      "pnpm typecheck проходит без ошибок"
+    ],
+    "tags": ["angular", "cleanup", "dead-code"]
+  },
+  {
+    "id": 29,
+    "title": "Рефакторинг ContractsPage с использованием ListPageComponent",
+    "description": "После создания ListPageComponent (Task #3) — рефакторить ContractsPage на его использование. ContractsPage следует тому же паттерну что и другие list pages (search, sort, CRUD dialogs, empty state). Заменить дублированный код на конфигурацию ListPageComponent.",
+    "priority": "Medium",
+    "stage": 3,
+    "acceptance_criteria": [
+      "ContractsPage использует ListPageComponent",
+      "Page уменьшилась минимум на 60% строк",
+      "Все CRUD операции работают",
+      "pnpm typecheck проходит без ошибок"
+    ],
+    "tags": ["angular", "refactoring", "list-page"]
+  },
+  {
+    "id": 30,
+    "title": "Рефакторинг OrganizationsPage с использованием ListPageComponent",
+    "description": "После создания ListPageComponent (Task #3) — рефакторить OrganizationsPage на его использование. OrganizationsPage следует тому же паттерну что и другие list pages. Заменить дублированный код на конфигурацию ListPageComponent.",
+    "priority": "Medium",
+    "stage": 3,
+    "acceptance_criteria": [
+      "OrganizationsPage использует ListPageComponent",
+      "Page уменьшилась минимум на 60% строк",
+      "Все CRUD операции работают",
+      "pnpm typecheck проходит без ошибок"
+    ],
+    "tags": ["angular", "refactoring", "list-page"]
+  },
+  {
+    "id": 31,
+    "title": "Audit и исправление inconsistent error handling patterns",
+    "description": "Проверить error handling во всех pages и services. Некоторые pages показывают error через signal + inline div, другие используют toast, третьи — silent ignore. Стандартизировать: загрузка ошибок → ErrorBannerComponent, CRUD ошибки → toast. Убрать silent ignores где это неуместно.",
+    "priority": "Medium",
+    "stage": 3,
+    "acceptance_criteria": [
+      "Все list pages используют ErrorBannerComponent для loading errors",
+      "Все CRUD операции показывают toast на ошибке",
+      "Нет silent ignores без объяснения",
+      "Error handling консистентен через весь app"
+    ],
+    "tags": ["angular", "error-handling", "consistency", "UX"]
+  },
+  {
+    "id": 32,
+    "title": "Добавить shared interface для CRUD operations",
+    "description": "Создать shared/interfaces/crud.ts с generic интерфейсами CrudService<T, CreateDto, UpdateDto, ListResponse> и CrudPage<T> описывающими контракт между service и page. Это поможет ListPageComponent работать с любым типом данных через generic constraints.",
+    "priority": "Low",
+    "stage": 2,
+    "acceptance_criteria": [
+      "Создан CrudService интерфейс",
+      "Создан CrudPage интерфейс",
+      "Все services реализуют CrudService",
+      "ListPageComponent использует CrudService constraint",
+      "pnpm typecheck проходит без ошибок"
+    ],
+    "tags": ["angular", "interface", "generic", "type-safety"]
+  },
+  {
+    "id": 33,
+    "title": "Audit и исправление unused Angular features",
+    "description": "Проверить использование Angular features: есть ли компоненты использующие old patterns (*ngIf, *ngFor, constructor injection, ngOnChanges). Заменить на современные (@if, @for, inject(), signal inputs). Проверить что все компоненты используют OnPush change detection.",
+    "priority": "Medium",
+    "stage": 1,
+    "acceptance_criteria": [
+      "Нет *ngIf/*ngFor usage (все @if/@for)",
+      "Нет constructor injection (все inject())",
+      "Нет ngOnChanges (все signal inputs)",
+      "Все компоненты используют OnPush",
+      "pnpm typecheck проходит без ошибок"
+    ],
+    "tags": ["angular", "modernization", "signals", "cleanup"]
+  },
+  {
+    "id": 34,
+    "title": "Добавить shared constants для UI конфигурации",
+    "description": "Создать shared/constants/ui.ts с константами: DEBOUNCE_DELAY = 300, DEFAULT_PAGE_SIZE = 50, SORT_ICONS = { asc: '↑', desc: '↓', none: '↕' }, и другими UI-константами. Заменить magic numbers и strings в pages на эти константы.",
+    "priority": "Low",
+    "stage": 2,
+    "acceptance_criteria": [
+      "Создан shared/constants/ui.ts",
+      "DEBOUNCE_DELAY экспортируется",
+      "SORT_ICONS экспортируются",
+      "Pages используют константы вместо magic values",
+      "pnpm typecheck проходит без ошибок"
+    ],
+    "tags": ["angular", "constants", "magic-numbers", "cleanup"]
+  },
+  {
+    "id": 35,
+    "title": "Audit и исправление inconsistent a11y patterns",
+    "description": "Проверить accessibility patterns во всех pages: role attributes, aria-label, aria-live, aria-checked. Некоторые компоненты имеют a11y (pi-empty-state, pi-progress, toast), другие — нет. Стандартизировать a11y patterns: все interactive elements имеют aria-label, все status regions имеют role + aria-live.",
+    "priority": "Medium",
+    "stage": 3,
+    "acceptance_criteria": [
+      "Все interactive elements имеют aria-label",
+      "Все status regions имеют role + aria-live",
+      "Нет a11y violations в axe-core audit",
+      "Screen reader UX консистентен"
+    ],
+    "tags": ["angular", "a11y", "accessibility", "WCAG"]
+  }
+]
