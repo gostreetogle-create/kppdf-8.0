@@ -45,7 +45,6 @@ export interface Product {
   isActive?: boolean;
   purpose?: string;
   installation?: string;
-  /** EAV — extended attributes keyed by AttributeDefinition.key. */
   attributes?: Record<string, unknown>;
   createdAt?: string;
   updatedAt?: string;
@@ -69,21 +68,6 @@ export interface ProductsListParams {
   sortOrder?: 'asc' | 'desc';
 }
 
-/**
- * TZ-NEW ProductsService — connects the operational site to
- * `backend/src/modules/product/product.controller.ts`.
- *
- * Backend shape is canonical: `{items, total, page, limit}` from
- * `product.service.findAll`. The endpoint supports sortBy + sortOrder
- * query params (forwarded verbatim). All methods return
- * `SilentResult<T>` — the observable never errors per the
- * silent-http convention.
- *
- * Cross-domain use: the ProductsService is also injected by
- * OrderFormDialog / ContractFormDialog components to populate the
- * product picker inside the line-items FormArray. This is fine
- * because the service is `providedIn: 'root'`.
- */
 @Injectable({ providedIn: 'root' })
 export class ProductsService {
   private readonly http = inject(HttpClient);
