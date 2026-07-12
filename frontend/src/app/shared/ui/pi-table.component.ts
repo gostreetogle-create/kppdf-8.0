@@ -260,7 +260,7 @@ export type SelectionMode = 'none' | 'single' | 'multi';
     </div>
   `,
 })
-export class TableComponent<T extends Record<string, unknown>> implements OnInit {
+export class TableComponent<T> implements OnInit {
   readonly data = input<T[]>([]);
   readonly columns = input.required<ColumnDef<T>[]>();
   readonly selectionMode = input<SelectionMode>('none');
@@ -601,8 +601,16 @@ export class TableComponent<T extends Record<string, unknown>> implements OnInit
   }
 
   private keyOf(row: T): string {
-    const k = (row as { id?: string }).id;
-    return k ?? JSON.stringify(row);
+    const r = row as { _id?: string; id?: string };
+    // Prefer MongoDB-style `_id` (materials/orders/products currently
+    // migrated) before falling back to conventional `id`. JSON.stringify
+    // is the final fallback when a T lacks both — identity collisions
+    // (two distinct rows with identical JSON) are unreachable for the
+    // 3 currently migrated consumers (all have `_id: string`) but a
+    // future `<T>` that lacks `_id` AND `id` could trip the fallback.
+    // For durable row identity, new T should carry `_id: string`
+    // (MongoDB convention) or `id: string` (conventional).
+    return r._id ?? r.id ?? JSON.stringify(row);
   }
 
   private emitSelectionChange(): void {
