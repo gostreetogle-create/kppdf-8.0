@@ -1,8 +1,24 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { StorageItemService } from '../storage-item/storage-item.service';
+import { StorageItemDocument } from '../storage-item/storage-item.schema';
 import { WarehouseService } from '../warehouse/warehouse.service';
+import { WarehouseDocument } from '../warehouse/warehouse.schema';
 import { StockMovementService } from '../stock-movement/stock-movement.service';
+
+interface WarehouseSummary {
+  warehouseId: string;
+  warehouseName: string;
+  itemCount: number;
+}
+
+interface RecentItem {
+  id: string;
+  name: string;
+  qty: number;
+  unit: string;
+  updatedAt: string;
+}
 
 @Controller('inventory')
 export class InventoryController {
@@ -28,23 +44,35 @@ export class InventoryController {
       this.movements.findAll(undefined, undefined, undefined, thirtyDaysAgo),
     ]);
 
-    const activeWarehouses = allWarehouses.filter((w: any) => w.isActive !== false);
-    const activeItems = allItems.filter((i: any) => i.isActive !== false && (i.quantity ?? 0) > 0);
-    const outOfStock = allItems.filter((i: any) => i.isActive !== false && (i.quantity ?? 0) === 0);
-    const lowStock = allItems.filter(
-      (i: any) => i.isActive !== false && (i.quantity ?? 0) > 0 && (i.quantity ?? 0) <= (i.minQuantity ?? 0),
+    const activeWarehouses = (allWarehouses as WarehouseDocument[]).filter(
+      (w) => w.isActive !== false,
+    );
+    const activeItems = (allItems as StorageItemDocument[]).filter(
+      (i) => i.isActive !== false && (i.quantity ?? 0) > 0,
+    );
+    const outOfStock = (allItems as StorageItemDocument[]).filter(
+      (i) => i.isActive !== false && (i.quantity ?? 0) === 0,
+    );
+    const lowStock = (allItems as StorageItemDocument[]).filter(
+      (i) =>
+        i.isActive !== false &&
+        (i.quantity ?? 0) > 0 &&
+        (i.quantity ?? 0) <= (i.minQuantity ?? 0),
     );
 
-    const warehouseCounts = new Map<string, { name: string; count: number }>();
+    // Count items per warehouse using raw document data
+    const whCounts = new Map<string, { name: string; count: number }>();
     for (const item of activeItems) {
-      const whId = String(item.warehouseId?._id ?? item.warehouseId);
-      const whName = (item.warehouseId as any)?.name ?? whId;
-      const entry = warehouseCounts.get(whId) ?? { name: whName, count: 0 };
+      const raw = item as unknown as Record<string, unknown>;
+      const whId = String(raw['warehouseId'] ?? '');
+      const whName = String(raw['warehouseName'] ?? whId);
+      const entry = whCounts.get(whId) ?? { name: whName, count: 0 };
       entry.count++;
-      warehouseCounts.set(whId, entry);
+      whCounts.set(whId, entry);
     }
-    const byWarehouseTop = [...warehouseCounts.entries()]
-      .sort((a, b) => b[1].count - a[1].count)
+
+    const byWarehouseTop: WarehouseSummary[] = [...whCounts.entries()]
+      .sort(([, a], [, b]) => b.count - a.count)
       .slice(0, 3)
       .map(([warehouseId, { name: warehouseName, count: itemCount }]) => ({
         warehouseId,
@@ -52,16 +80,25 @@ export class InventoryController {
         itemCount,
       }));
 
-    const recentlyUpdatedItems = [...allItems]
-      .sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    const recentlyUpdatedItems: RecentItem[] = [...allItems]
+      .sort((a, b) => {
+        const aRaw = a as unknown as Record<string, unknown>;
+        const bRaw = b as unknown as Record<string, unknown>;
+        const aDate = new Date(String(aRaw['updatedAt'] ?? 0)).getTime();
+        const bDate = new Date(String(bRaw['updatedAt'] ?? 0)).getTime();
+        return bDate - aDate;
+      })
       .slice(0, 10)
-      .map((i: any) => ({
-        id: String(i._id),
-        name: i.name,
-        qty: i.quantity ?? 0,
-        unit: i.unit ?? '',
-        updatedAt: i.updatedAt,
-      }));
+      .map((i) => {
+        const raw = i as unknown as Record<string, unknown>;
+        return {
+          id: String(raw['_id'] ?? ''),
+          name: String(raw['name'] ?? ''),
+          qty: Number(raw['quantity'] ?? 0),
+          unit: String(raw['unit'] ?? ''),
+          updatedAt: String(raw['updatedAt'] ?? ''),
+        };
+      });
 
     return {
       totalWarehouses: activeWarehouses.length,

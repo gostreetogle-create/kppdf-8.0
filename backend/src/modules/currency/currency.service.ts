@@ -28,7 +28,9 @@ export class CurrencyService {
     const limit = Math.min(100, Math.max(1, q.limit ?? 20));
     const filter: Record<string, unknown> = {};
     if (q.search) {
-      const re = new RegExp(q.search, 'i');
+      // Escape user input to prevent ReDoS / regex injection
+      const escaped = q.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(escaped, 'i');
       filter.$or = [{ key: re }, { label: re }, { symbol: re }];
     }
     if (q.isActive !== undefined) filter.isActive = q.isActive;

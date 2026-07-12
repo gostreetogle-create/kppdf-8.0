@@ -3,7 +3,10 @@ import {
   Logger,
   OnApplicationBootstrap,
 } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { CurrencyService } from '../../modules/currency/currency.service';
+import { Currency, CurrencyDocument } from '../../modules/currency/currency.schema';
 
 interface SeedCurrency {
   key: string;
@@ -27,31 +30,32 @@ const DEFAULT_CURRENCIES: readonly SeedCurrency[] = [
 export class CurrenciesSeed implements OnApplicationBootstrap {
   private readonly logger = new Logger(CurrenciesSeed.name);
 
-  constructor(private readonly currencies: CurrencyService) {}
+  constructor(
+    private readonly currencies: CurrencyService,
+    @InjectModel(Currency.name) private readonly currencyModel: Model<CurrencyDocument>,
+  ) {}
 
   async onApplicationBootstrap(): Promise<void> {
     for (const c of DEFAULT_CURRENCIES) {
       try {
-        await this.currencies.findByKey(c.key);
-      } catch {
-        try {
-          await this.currencies.create({
-            key: c.key,
-            label: c.label,
-            code: c.code,
-            symbol: c.symbol,
-            rate: c.rate,
-            isBase: c.isBase,
-            locale: c.locale,
-            precision: c.precision,
-            sortOrder: c.sortOrder,
-            isActive: true,
-            isSystem: true,
-          });
-          this.logger.log(`Currency seeded: ${c.key}`);
-        } catch (err) {
-          this.logger.warn(`Could not seed currency ${c.key}: ${(err as Error).message}`);
-        }
+        const exists = await this.currencyModel.findOne({ key: c.key }).exec();
+        if (exists) continue;
+        await this.currencies.create({
+          key: c.key,
+          label: c.label,
+          code: c.code,
+          symbol: c.symbol,
+          rate: c.rate,
+          isBase: c.isBase,
+          locale: c.locale,
+          precision: c.precision,
+          sortOrder: c.sortOrder,
+          isActive: true,
+          isSystem: true,
+        });
+        this.logger.log(`Currency seeded: ${c.key}`);
+      } catch (err) {
+        this.logger.warn(`Could not seed currency ${c.key}: ${(err as Error).message}`);
       }
     }
   }
