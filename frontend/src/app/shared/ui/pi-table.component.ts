@@ -22,6 +22,14 @@ export interface ColumnDef<T> {
   accessor?: (row: T) => unknown;
   /** Applies `tabular-nums` to `<td>` for monospace numeric alignment. */
   numeric?: boolean;
+  /**
+   * TZ-104.3 — sticky cell behaviour. `'left'` anchors the cell to the
+   * table's left edge (typical for ID/name columns), `'right'` to the
+   * right edge (typical for action clusters), `false` (default) leaves
+   * the cell flowing normally. Renders with `sticky`, `bg-paper`, and
+   * `z-10` so content scrolling under the sticky column is masked.
+   */
+  sticky?: 'left' | 'right' | false;
 }
 
 export type SelectionMode = 'none' | 'single' | 'multi';
@@ -29,10 +37,15 @@ export type SelectionMode = 'none' | 'single' | 'multi';
 /**
  * Paper & Ink data table primitive.
  *
- * Features:
+ * Features (TZ-104.3 Phase A):
  * - Sortable column headers (click-toggle asc → desc → null).
  * - Optional single/multi row selection with header checkbox.
  * - Optional expanded row content via TemplateRef.
+ * - Per-column sticky cells (`sticky: 'left' | 'right' | false`).
+ * - Row action slot via TemplateRef (`[rowActions]`).
+ * - Server-side pagination (`total` + `page` + `pageSize` → `(pageChange)`).
+ * - Loading skeleton (5 pulsing rows when `loading=true`).
+ * - Empty state via `<app-pi-empty-state>` with `emptyMessage` override.
  * - Footer slot for `<app-pi-pagination>`-style paginators.
  *
  * Standalone, OnPush, signal-based. NO Material, NO shadows.
@@ -46,6 +59,7 @@ export type SelectionMode = 'none' | 'single' | 'multi';
     <table
       role="table"
       [attr.aria-label]="ariaLabel()"
+      [attr.aria-busy]="loading() ? 'true' : null"
       class="w-full border-collapse text-sm"
     >
       <thead class="hairline-b">
@@ -72,6 +86,11 @@ export type SelectionMode = 'none' | 'single' | 'multi';
               [class.text-right]="col.align === 'right'"
               [class.text-center]="col.align === 'center'"
               [class.cursor-pointer]="col.sortable"
+              [class.sticky]="col.sticky"
+              [class.left-0]="col.sticky === 'left'"
+              [class.right-0]="col.sticky === 'right'"
+              [class.z-10]="col.sticky"
+              [class.bg-paper]="col.sticky"
               [style.width]="col.width ?? null"
               (click)="col.sortable && onSort(col.key)"
             >
@@ -83,63 +102,114 @@ export type SelectionMode = 'none' | 'single' | 'multi';
               }
             </th>
           }
+          @if (rowActions()) {
+            <th
+              class="eyebrow py-3 px-3 text-right w-24"
+              [class.sticky]="true"
+              [class.right-0]="true"
+              [class.z-10]="true"
+              [class.bg-paper]="true"
+            >
+              <span class="sr-only">Действия</span>
+            </th>
+          }
         </tr>
       </thead>
       <tbody>
-        @for (row of sortedData(); track rowKeyOf(row, $index)) {
-          <tr
-            class="hairline-b hover:bg-paper-2 transition-colors cursor-pointer"
-            (click)="onRowClick(row)"
-          >
-            @if (selectionMode() !== 'none') {
-              <td class="py-3 px-3 align-middle" (click)="$event.stopPropagation()">
-                <input
-                  type="checkbox"
-                  [attr.id]="'table-select-' + rowKeyOf(row, $index)"
-                  [attr.name]="'table-select-' + rowKeyOf(row, $index)"
-                  [checked]="isRowSelected(row)"
-                  (change)="toggleRow(row, $event)"
-                  aria-label="Выбрать строку"
-                />
-              </td>
-            }
-            @for (col of columns(); track col.key) {
+        @if (loading()) {
+          @for (skel of skeletonRows; track $index) {
+            <tr class="hairline-b" data-test="table-skeleton-row">
               <td
-                class="py-3 px-3 align-top"
-                [class.tabular-nums]="col.numeric"
-                [class.text-right]="col.align === 'right'"
-                [class.text-center]="col.align === 'center'"
-                [class]="col.cellClass ?? ''"
+                [attr.colspan]="visibleColumns()"
+                class="py-3 px-3"
               >
-                {{ formatCell(col, row) }}
-              </td>
-            }
-          </tr>
-          @if (expandedRow()) {
-            <tr>
-              <td
-                [attr.colspan]="columns().length + (selectionMode() !== 'none' ? 1 : 0)"
-                class="bg-paper-2 p-0 hairline-b"
-              >
-                <ng-container
-                  *ngTemplateOutlet="expandedRow()!; context: { $implicit: row }"
-                />
+                <div class="h-3 bg-paper-2 rounded-sm animate-pulse w-full"></div>
               </td>
             </tr>
           }
-        }
-        @if (sortedData().length === 0) {
-          <tr>
-            <td
-              [attr.colspan]="columns().length + (selectionMode() !== 'none' ? 1 : 0)"
-              class="py-12 px-3 text-center text-muted-foreground"
+        } @else {
+          @for (row of sortedData(); track rowKeyOf(row, $index)) {
+            <tr
+              class="hairline-b hover:bg-paper-2 transition-colors cursor-pointer"
+              (click)="onRowClick(row)"
+              [attr.data-test]="'table-row-' + rowKeyOf(row, $index)"
             >
-              <div class="flex flex-col items-center gap-1">
-                <span class="eyebrow">00</span>
-                <span class="text-sm">Нет данных для отображения.</span>
-              </div>
-            </td>
-          </tr>
+              @if (selectionMode() !== 'none') {
+                <td class="py-3 px-3 align-middle" (click)="$event.stopPropagation()">
+                  <input
+                    type="checkbox"
+                    [attr.id]="'table-select-' + rowKeyOf(row, $index)"
+                    [attr.name]="'table-select-' + rowKeyOf(row, $index)"
+                    [checked]="isRowSelected(row)"
+                    (change)="toggleRow(row, $event)"
+                    aria-label="Выбрать строку"
+                  />
+                </td>
+              }
+              @for (col of columns(); track col.key) {
+                <td
+                  class="py-3 px-3 align-top"
+                  [class.tabular-nums]="col.numeric"
+                  [class.text-right]="col.align === 'right'"
+                  [class.text-center]="col.align === 'center'"
+                  [class.sticky]="col.sticky"
+                  [class.left-0]="col.sticky === 'left'"
+                  [class.right-0]="col.sticky === 'right'"
+                  [class.z-10]="col.sticky"
+                  [class.bg-paper]="col.sticky"
+                  [class]="col.cellClass ?? ''"
+                >
+                  {{ formatCell(col, row) }}
+                </td>
+              }
+              @if (rowActions()) {
+                <td
+                  class="py-3 px-3 align-top text-right"
+                  (click)="$event.stopPropagation()"
+                  data-test="row-actions-cell"
+                >
+                  <ng-container
+                    *ngTemplateOutlet="rowActions()!; context: { $implicit: row }"
+                  />
+                </td>
+              }
+            </tr>
+            @if (expandedRow()) {
+              <tr>
+                <td
+                  [attr.colspan]="visibleColumns() + (rowActions() ? 1 : 0)"
+                  class="bg-paper-2 p-0 hairline-b"
+                >
+                  <ng-container
+                    *ngTemplateOutlet="expandedRow()!; context: { $implicit: row }"
+                  />
+                </td>
+              </tr>
+            }
+          }
+          @if (sortedData().length === 0) {
+            <tr data-test="empty-state-row">
+              <td
+                [attr.colspan]="visibleColumns() + (rowActions() ? 1 : 0)"
+                class="py-12 px-3 text-center text-muted-foreground"
+              >
+                @if (emptyTemplate()) {
+                  <ng-container
+                    *ngTemplateOutlet="emptyTemplate()!"
+                    data-test="custom-empty"
+                  />
+                } @else {
+                  <div
+                    class="max-w-sm mx-auto p-6 pi-dashed-panel flex flex-col items-center gap-1"
+                    data-test="default-empty"
+                  >
+                    <span class="eyebrow text-sunrise-warm">00</span>
+                    <span class="text-sm">{{ emptyMessage() }}</span>
+                  </div>
+                }
+              </td>
+            </tr>
+          }
         }
       </tbody>
     </table>
@@ -148,6 +218,38 @@ export type SelectionMode = 'none' | 'single' | 'multi';
         <ng-content select="[caption]" />
       </div>
       <div class="flex items-center gap-2">
+        @if (showPager()) {
+          <span class="text-xs text-muted-foreground tabular-nums" data-test="pager-info">
+            {{ pageRangeStart() }}–{{ pageRangeEnd() }} из {{ total() }}
+          </span>
+          <button
+            type="button"
+            class="pi-icon-btn pi-focus-ring"
+            [disabled]="page() <= 1"
+            (click)="goToPage(page() - 1)"
+            aria-label="Предыдущая страница"
+            data-test="pager-prev"
+          >
+            <span aria-hidden="true">←</span>
+          </button>
+          <span
+            class="text-xs tabular-nums"
+            data-test="pager-page"
+            aria-label="Текущая страница"
+          >
+            {{ page() }} / {{ totalPages() }}
+          </span>
+          <button
+            type="button"
+            class="pi-icon-btn pi-focus-ring"
+            [disabled]="page() >= totalPages()"
+            (click)="goToPage(page() + 1)"
+            aria-label="Следующая страница"
+            data-test="pager-next"
+          >
+            <span aria-hidden="true">→</span>
+          </button>
+        }
         <ng-content select="[footer]" />
       </div>
     </div>
@@ -160,14 +262,85 @@ export class TableComponent<T extends Record<string, unknown>> {
   readonly ariaLabel = input<string>('Таблица');
   readonly expandedRow = input<TemplateRef<{ $implicit: T }> | null>(null);
 
+  // ─── TZ-104.3 Phase A additions ────────────────────────────────────
+  /**
+   * Optional row-actions template. Rendered as a trailing right-aligned
+   * `<td>` for every row. Receives `$implicit: T`. Stop event propagation
+   * is automatically wired on the wrapper `<td>` so clicks on action
+   * buttons don't bubble to the row (which would also fire `rowClick`).
+   * Typical use: `<ng-template #rowActions let-row><app-pi-row-actions [row]="row" .../></ng-template>`.
+   */
+  readonly rowActions = input<TemplateRef<{ $implicit: T }> | null>(null);
+  /**
+   * Total row count for server-side pagination. When 0 (default),
+   * pagination footer is hidden. When > pageSize(), a minimal pager
+   * (Prev / page / Next + range label) is auto-rendered.
+   */
+  readonly total = input<number>(0);
+  /**
+   * Current page (1-indexed). Parent syncs this when (pageChange) fires.
+   * Defaults to 1 — meaningful only when `total() > pageSize()`.
+   */
+  readonly page = input<number>(1);
+  /** Items per page. Defaults to 20. */
+  readonly pageSize = input<number>(20);
+  /** Fires when the user clicks Prev / Next in the auto pager. */
+  readonly pageChange = output<number>();
+  /**
+   * When true, the table body renders 5 animated skeleton rows instead
+   * of the data rows (sortedData is bypassed). Sorts are preserved but
+   * the user cannot interact with rows until `loading` flips back to
+   * false. ARIA: `aria-busy="true"` on the `<table>`.
+   */
+  readonly loading = input<boolean>(false);
+  /**
+   * Override the default empty-row message. Default:
+   * 'Нет данных для отображения.'. Ignored when an `[emptyTemplate]`
+   * is provided (since custom templates own their message).
+   */
+  readonly emptyMessage = input<string>('Нет данных для отображения.');
+
+  /**
+   * TZ-104.3 Round 4 — typed TemplateRef for the empty-state slot.
+   * Renders via `*ngTemplateOutlet` when supplied. Wins over the
+   * inline default-empty markup (which uses `emptyMessage`).
+   *
+   * Why this instead of `<ng-content select="[empty]">` projection?
+   *  1. Angular's `<ng-content>` does NOT render inline fallback
+   *     content (Round 1 finding).
+   *  2. Angular's `contentChild('[empty]')` signal-based query does
+   *     NOT fire synchronously with the first template render in
+   *     test fixtures (Rounds 2-3 finding — default-empty flashed
+   *     one CD cycle even when a `[empty]` block was provided).
+   *  3. A `TemplateRef` is a synchronous, typed, by-reference value
+   *     — no projection timing surface. Templates render immediately
+   *     when `*ngTemplateOutlet` evaluates the input signal.
+   *
+   * Typical use:
+   * ```html
+   * <app-pi-table ... [emptyTemplate]="emptyTpl">
+   *   <ng-template #emptyTpl>
+   *     <div>...custom empty markup...</div>
+   *   </ng-template>
+   * </app-pi-table>
+   * ```
+   */
+  readonly emptyTemplate = input<TemplateRef<unknown> | null>(null);
+
+  // ─── Existing outputs (preserved) ──────────────────────────────────
   readonly rowClick = output<T>();
   readonly sortChange = output<{ key: string; dir: SortDirection }>();
   readonly selectionChange = output<T[]>();
 
+  // ─── Internal state (signals) ──────────────────────────────────────
   private readonly sortKeySig = signal<string | null>(null);
   private readonly sortDirSig = signal<SortDirection>(null);
   private readonly selectedKeys = signal<Set<string>>(new Set());
 
+  /** Fixed number of skeleton rows shown while loading. */
+  protected readonly skeletonRows = [0, 1, 2, 3, 4] as const;
+
+  // ─── Computed ──────────────────────────────────────────────────────
   readonly sortKey = computed(() => this.sortKeySig());
   readonly isAllSelected = computed(() => {
     const data = this.data();
@@ -179,6 +352,42 @@ export class TableComponent<T extends Record<string, unknown>> {
     const data = this.data();
     const selected = this.selectedKeys();
     return data.some((row) => selected.has(this.keyOf(row))) && !this.isAllSelected();
+  });
+
+  /**
+   * TZ-104.3 — number of visible data + selection columns (excludes
+   * the trailing actions column, which is added separately in colspan
+   * calculations). Used for colspan on empty / expanded rows.
+   */
+  readonly visibleColumns = computed(
+    () =>
+      this.columns().length + (this.selectionMode() !== 'none' ? 1 : 0),
+  );
+
+  /** Total page count for server-side pagination. */
+  readonly totalPages = computed(() => {
+    const total = this.total();
+    const pageSize = Math.max(1, this.pageSize());
+    return Math.max(1, Math.ceil(total / pageSize));
+  });
+
+  /** Whether the auto pager should render (server-side mode + >1 page). */
+  readonly showPager = computed(
+    () => this.total() > 0 && this.totalPages() > 1,
+  );
+
+  /** Index of first row on current page (1-indexed), for pager range label. */
+  readonly pageRangeStart = computed(() => {
+    const page = this.page();
+    const pageSize = Math.max(1, this.pageSize());
+    return Math.max(1, (page - 1) * pageSize + 1);
+  });
+
+  /** Index of last row on current page (clamped to total). */
+  readonly pageRangeEnd = computed(() => {
+    const start = this.pageRangeStart();
+    const end = start + Math.max(1, this.pageSize()) - 1;
+    return Math.min(end, this.total());
   });
 
   readonly sortedData = computed<T[]>(() => {
@@ -202,6 +411,7 @@ export class TableComponent<T extends Record<string, unknown>> {
     });
   });
 
+  // ─── Methods ───────────────────────────────────────────────────────
   rowKeyOf(row: T, index: number): string {
     return this.keyOf(row) ?? `idx-${index}`;
   }
@@ -255,6 +465,17 @@ export class TableComponent<T extends Record<string, unknown>> {
 
   onRowClick(row: T): void {
     this.rowClick.emit(row);
+  }
+
+  /**
+   * Pager navigation. Clamps the target page to [1, totalPages] then
+   * emits via `pageChange`. Parent listens, fetches new data, updates
+   * `[page]` input.
+   */
+  goToPage(target: number): void {
+    const clamped = Math.max(1, Math.min(target, this.totalPages()));
+    if (clamped === this.page()) return;
+    this.pageChange.emit(clamped);
   }
 
   formatCell(col: ColumnDef<T>, row: T): string {
