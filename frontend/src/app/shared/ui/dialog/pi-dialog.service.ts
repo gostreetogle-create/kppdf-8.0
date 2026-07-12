@@ -102,25 +102,21 @@ export class PiDialogService {
     const portal = new ComponentPortal(component, null, childInjector);
     overlayRef.attach(portal);
 
-    const panelEl = overlayRef.overlayElement.querySelector(
-      '.cdk-overlay-pane',
-    ) as HTMLElement | null;
+    const panelEl = overlayRef.overlayElement as HTMLElement;
 
-    if (panelEl) {
-      panelEl.classList.add('pi-dialog-host-open');
-      localFocusTrap = this.focusTrapFactory.create(panelEl);
-      localFocusTrap.focusInitialElementWhenReady().catch(() => {});
+    panelEl.classList.add('pi-dialog-host-open');
+    localFocusTrap = this.focusTrapFactory.create(panelEl);
+    localFocusTrap.focusInitialElementWhenReady().catch(() => {});
 
-      // TZ-103.3: RAF repositioning — fixes first-mount positioning race
-      // where the dialog renders at top-left because CDK computed coordinates
-      // against zero-width/zero-height pane. After RAF, layout has settled
-      // and updatePosition() can correctly center the dialog.
-      queueMicrotask(() => {
-        requestAnimationFrame(() => {
-          overlayRef.updatePosition();
-        });
+    // TZ-103.3: RAF repositioning — fixes first-mount positioning race
+    // where the dialog renders at top-left because CDK computed coordinates
+    // against zero-width/zero-height pane. After RAF, layout has settled
+    // and updatePosition() can correctly center the dialog.
+    queueMicrotask(() => {
+      requestAnimationFrame(() => {
+        overlayRef.updatePosition();
       });
-    }
+    });
 
     overlayRef
       .keydownEvents()
