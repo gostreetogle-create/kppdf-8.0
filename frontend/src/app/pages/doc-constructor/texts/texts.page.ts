@@ -328,7 +328,7 @@ export class TextsPage {
     this.loading.set(false);
   });
 
-  private readonly data = signal<TextBlock[]>([]);
+  protected readonly data = signal<TextBlock[]>([]);
   protected readonly loading = signal<boolean>(false);
   protected readonly error = signal<string | null>(null);
 
