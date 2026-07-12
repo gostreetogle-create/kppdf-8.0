@@ -144,9 +144,27 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
             </app-pi-select>
           </div>
         } @else {
-          <p class="empty-state">
-            Нет шаблонов. Создайте шаблон в разделе «Документы» → «Шаблоны».
-          </p>
+          <div class="empty-state">
+            <div class="pi-dashed-panel max-w-sm mx-auto p-6 mb-4 flex flex-col items-center gap-3">
+              <span class="eyebrow text-sunrise-warm">Нет шаблонов</span>
+              <p class="text-sm text-muted-foreground">
+                Создайте первый шаблон документа для начала работы с конструктором.
+              </p>
+              <app-pi-button
+                variant="default"
+                size="sm"
+                [disabled]="isCreating()"
+                (click)="onCreateTemplate()"
+                data-test="create-template-button"
+              >
+                <lucide-icon [img]="PlusIcon" [size]="14"></lucide-icon>
+                {{ isCreating() ? 'Создание…' : '+ Создать шаблон' }}
+              </app-pi-button>
+              <p class="text-xs text-muted-foreground mt-1">
+                Подсказка: перейдите в Тексты / Таблицы чтобы добавить reusable блоки
+              </p>
+            </div>
+          </div>
         }
       </app-pi-section>
     } @else {
@@ -266,6 +284,7 @@ export class BuilderPage {
   protected readonly blocks = signal<TemplateBlock[]>([]);
   protected readonly selectedId = signal<string | null>(null);
   protected readonly isLoading = signal<boolean>(false);
+  protected readonly isCreating = signal<boolean>(false);
   protected readonly saveStatus = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   // Auto-save Subject — grouped by _id, debounced per group.
@@ -617,6 +636,32 @@ export class BuilderPage {
   // ─────────────────────────────────────────────────────────────
   // Misc handlers
   // ─────────────────────────────────────────────────────────────
+  /** TZ-87 B.2: Create a new template and navigate to the builder. */
+  protected onCreateTemplate(): void {
+    this.isCreating.set(true);
+    this.templatesSvc
+      .create({
+        name: `Шаблон ${new Date().toLocaleDateString('ru-RU')}`,
+        pageSize: 'A4',
+        isActive: true,
+      })
+      .subscribe({
+        next: (res) => {
+          this.isCreating.set(false);
+          if (res.ok) {
+            this.toast.success('Шаблон создан');
+            this.router.navigate(['/doc-constructor/builder', res.data._id]);
+          } else {
+            this.toast.error(extractErrorMessage(res.error));
+          }
+        },
+        error: (err: HttpErrorResponse) => {
+          this.isCreating.set(false);
+          this.toast.error(extractErrorMessage(err));
+        },
+      });
+  }
+
   protected onReload(): void {
     const tid = this.templateId();
     if (tid) this.loadBlocks(tid);
