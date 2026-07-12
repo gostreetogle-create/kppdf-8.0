@@ -14,7 +14,7 @@ import { AuditAction } from '../../common/interceptors/audit.interceptor';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { ProductModuleService, UpsertProductModuleDto } from './product-module.service';
 
-@Controller('product-modules')
+@Controller('modules')
 export class ProductModuleController {
   constructor(private readonly service: ProductModuleService) {}
 

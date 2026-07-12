@@ -92,6 +92,8 @@ import { CounterpartyRolesSeed } from './common/seed/counterparty-roles.seed';
 import { UnitsSeed } from './common/seed/units.seed';
 import { CategoriesSeed } from './common/seed/categories.seed';
 import { WarehouseSeed } from './common/seed/warehouse.seed';
+import { CurrenciesSeed } from './common/seed/currencies.seed';
+import { CurrencyModule } from './modules/currency/currency.module';
 import { DevFixturesSeed } from './common/seed/dev-fixtures.seed';
 import { HealthController } from './health.controller';
 
@@ -159,6 +161,7 @@ import { HealthController } from './health.controller';
     StockMovementModule,
     ReservationModule,
     InventoryModule,
+    CurrencyModule,
     PurchaseRequestModule,
     PurchaseOrderModule,
     InvoiceModule,
@@ -211,6 +214,7 @@ import { HealthController } from './health.controller';
     UnitsSeed,
     CategoriesSeed,
     WarehouseSeed,
+    CurrenciesSeed,
     DevFixturesSeed,
   ],
 })
