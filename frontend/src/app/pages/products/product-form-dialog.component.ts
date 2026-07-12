@@ -13,6 +13,7 @@ import {
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
+import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
@@ -66,6 +67,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
     PiDialogComponent,
     ButtonComponent,
     FormFieldComponent,
+    TextareaComponent,
   ],
   template: `
     <app-pi-dialog
@@ -291,13 +293,13 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
           htmlFor="prod-description"
           [error]="errorFor('description')"
         >
-          <textarea
+          <app-pi-textarea
             id="prod-description"
             formControlName="description"
-            rows="2"
-            maxlength="4000"
-            class="w-full min-h-20 px-control-x py-control-y text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors resize-none"
-          ></textarea>
+            [rows]="2"
+            [maxLength]="4000"
+            ariaLabel="Описание"
+          />
         </app-pi-form-field>
 
         <app-pi-form-field
@@ -305,13 +307,13 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
           htmlFor="prod-notes"
           [error]="errorFor('notes')"
         >
-          <textarea
+          <app-pi-textarea
             id="prod-notes"
             formControlName="notes"
-            rows="2"
-            maxlength="4000"
-            class="w-full min-h-20 px-control-x py-control-y text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors resize-none"
-          ></textarea>
+            [rows]="2"
+            [maxLength]="4000"
+            ariaLabel="Заметки"
+          />
         </app-pi-form-field>
 
         @if (errorMessage()) {

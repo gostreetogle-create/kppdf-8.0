@@ -16,6 +16,7 @@ import {
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
+import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
@@ -83,6 +84,7 @@ interface ItemFormGroup extends FormGroup {
     PiDialogComponent,
     ButtonComponent,
     FormFieldComponent,
+    TextareaComponent,
   ],
   template: `
     <app-pi-dialog
@@ -287,13 +289,13 @@ interface ItemFormGroup extends FormGroup {
 
         <!-- ─── Notes ─── -->
         <app-pi-form-field label="Заметки" htmlFor="ord-notes">
-          <textarea
+          <app-pi-textarea
             id="ord-notes"
             formControlName="notes"
-            rows="2"
-            maxlength="2000"
-            class="w-full min-h-20 px-control-x py-control-y text-sm hairline rounded-sm bg-paper text-ink pi-focus-ring transition-colors resize-none"
-          ></textarea>
+            [rows]="2"
+            [maxLength]="2000"
+            ariaLabel="Заметки"
+          />
         </app-pi-form-field>
 
         @if (errorMessage()) {

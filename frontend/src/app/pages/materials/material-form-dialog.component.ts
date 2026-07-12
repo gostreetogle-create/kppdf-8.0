@@ -17,6 +17,7 @@ import { forkJoin } from 'rxjs';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
+import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
 import {
   PI_DIALOG_DATA,
   PI_DIALOG_REF,
@@ -80,6 +81,7 @@ interface DimensionFormGroup extends FormGroup {
     PiDialogComponent,
     ButtonComponent,
     FormFieldComponent,
+    TextareaComponent,
   ],
   template: `
     <app-pi-dialog
@@ -371,14 +373,14 @@ interface DimensionFormGroup extends FormGroup {
           htmlFor="mat-description"
           [error]="errorFor('description')"
         >
-          <textarea
+          <app-pi-textarea
             id="mat-description"
             formControlName="description"
-            rows="2"
-            maxlength="2000"
-            class="w-full min-h-20 px-control-x py-control-y text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors resize-none"
-            [class.border-destructive]="hasError('description')"
-          ></textarea>
+            [rows]="2"
+            [maxLength]="2000"
+            [invalid]="hasError('description')"
+            ariaLabel="Описание"
+          />
         </app-pi-form-field>
 
         <app-pi-form-field
@@ -386,14 +388,14 @@ interface DimensionFormGroup extends FormGroup {
           htmlFor="mat-notes"
           [error]="errorFor('notes')"
         >
-          <textarea
+          <app-pi-textarea
             id="mat-notes"
             formControlName="notes"
-            rows="2"
-            maxlength="2000"
-            class="w-full min-h-20 px-control-x py-control-y text-sm hairline rounded-sm bg-paper text-ink font-body focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper transition-colors resize-none"
-            [class.border-destructive]="hasError('notes')"
-          ></textarea>
+            [rows]="2"
+            [maxLength]="2000"
+            [invalid]="hasError('notes')"
+            ariaLabel="Заметки"
+          />
         </app-pi-form-field>
 
         @if (errorMessage()) {
