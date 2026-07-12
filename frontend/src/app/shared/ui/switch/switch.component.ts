@@ -15,6 +15,7 @@ export type SwitchSize = 'sm' | 'md';
     <button
       type="button"
       role="switch"
+      [attr.id]="id() ?? null"
       [attr.aria-checked]="checked()"
       [attr.aria-label]="ariaLabel()"
       [attr.aria-disabled]="disabled()"
@@ -54,6 +55,14 @@ export class SwitchComponent {
   readonly disabled = input<boolean>(false);
   readonly size = input<SwitchSize>('md');
   readonly ariaLabel = input<string | null>(null);
+  /**
+   * TZ-104.2 — DOM id forwarded to the inner `<button role="switch">`
+   * so e2e selectors like `[id]="switch-' + row._id"` target an exact
+   * switch per row, and `<label htmlFor>` linkage from form wrappers
+   * focuses the correct switch. Mirrors pi-textarea id pattern from
+   * commit a2d1e84.
+   */
+  readonly id = input<string | null>(null);
 
   readonly checkedChange = output<boolean>();
 

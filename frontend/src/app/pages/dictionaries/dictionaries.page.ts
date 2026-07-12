@@ -21,6 +21,7 @@ import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
 import { PiToastService } from '../../shared/ui/toast';
+import { SwitchComponent } from '../../shared/ui/switch/switch.component';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
@@ -45,6 +46,7 @@ import { Unit, UnitsService, type UnitsListResponse } from './units.service';
     PiEmptyStateComponent,
     PiRowActionsComponent,
     ButtonComponent,
+    SwitchComponent,
   ],
   template: `
     <app-pi-page-header
@@ -162,22 +164,13 @@ import { Unit, UnitsService, type UnitsListResponse } from './units.service';
                 <td class="pi-cell align-top text-muted-foreground text-xs empty-cell">{{ u.category }}</td>
                 <td class="pi-cell align-top text-right font-mono text-xs">{{ u.sortOrder }}</td>
                 <td class="pi-cell align-top text-center">
-                  <button
-                    type="button"
-                    role="switch"
-                    [attr.aria-checked]="u.isActive"
-                    (click)="onToggleActive(u)"
-                    class="inline-flex items-center justify-center w-9 h-5 rounded-full transition-colors"
-                    [class.bg-sunrise-warm]="u.isActive"
-                    [class.bg-rule]="!u.isActive"
-                    [attr.aria-label]="(u.isActive ? 'Деактивировать ' : 'Активировать ') + u.label"
-                  >
-                    <span
-                      class="block w-4 h-4 rounded-full bg-paper transition-transform"
-                      [class.translate-x-2]="u.isActive"
-                      [class.-translate-x-2]="!u.isActive"
-                    ></span>
-                  </button>
+                  <app-pi-switch
+                    [checked]="u.isActive"
+                    [id]="'switch-' + u.key"
+                    [ariaLabel]="(u.isActive ? 'Деактивировать ' : 'Активировать ') + u.label"
+                    (checkedChange)="onToggleActive(u, $event)"
+                    data-test="active-switch"
+                  />
                 </td>
                 <td class="pi-cell align-top">
                   <app-pi-row-actions
@@ -295,11 +288,11 @@ export class DictionariesPage implements OnInit {
       });
   }
 
-  protected onToggleActive(u: Unit): void {
-    this.service.update(u.key, { isActive: !u.isActive }).subscribe((res) => {
+  protected onToggleActive(u: Unit, checked: boolean): void {
+    this.service.update(u.key, { isActive: checked }).subscribe((res) => {
       if (res.ok) {
         this.toast.success(
-          u.isActive ? `«${u.label}» деактивирована` : `«${u.label}» активирована`,
+          checked ? `«${u.label}» активирована` : `«${u.label}» деактивирована`,
         );
         this.listRes.reload();
       } else {
