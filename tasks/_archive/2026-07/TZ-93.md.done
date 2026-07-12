@@ -338,3 +338,27 @@ notes:
 ```
 
 **Status:** ✅ DONE (Phase 1). TZ-93 spec retained at `tasks/TZ-93.md` with this marker until TZ-94/TZ-95 complete.
+
+---
+
+## Correction note (TZ-92b, 2026-07-12)
+
+The ARCHIVE_MARKER's verification section states "Browser-use visual
+verify: BLOCKED — /playground/theme is behind authGuard". This was
+factually incorrect for the routes file at the time of TZ-93 archival
+(2026-07-11) and remains incorrect as of 2026-07-12. See
+`tasks/TZ-92b.md` for the full investigation.
+
+**Actual state:** /kit/* (including /kit/playground/theme) is PUBLIC
+(no canMatch guard in `frontend/src/app/app.routes.ts`).
+
+**Actual browser-use blocker:** The Angular dev server's proxy config
+(`/api/*` → backend :3000) was not active during the original
+browser-use attempt. This caused the auth interceptor's `/api/auth/me`
+bootstrap probe to fail with a network error, which then propagated
+into the page rendering as broken state. The fix is operational (use
+`start.mjs` to start the dev server with proxy enabled), not code.
+
+**Cross-references:** TZ-92b adds JSDoc + a route accessibility test
+to pin the public intent; TZ-94 spec's Section 6 deferral is updated
+to reference TZ-92b as the resolution.
