@@ -4,17 +4,17 @@ import {
   DestroyRef,
   Injector,
   OnInit,
+  TemplateRef,
+  ViewChild,
   computed,
   inject,
   signal,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
-import { FormsModule } from '@angular/forms';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
 import { PiEmptyTileComponent } from '../../shared/ui/pi-empty-tile/pi-empty-tile.component';
-import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
@@ -23,27 +23,54 @@ import { PiToastService } from '../../shared/ui/toast';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
+import { createSearchState } from '../../shared/util/search';
+import { pluralize, formatPrice } from '../../shared/util/format';
+import { createLookupTable } from '../../shared/util/lookup-table';
+import { ColumnDef, TableComponent } from '../../shared/ui/pi-table.component';
 import { Material, MaterialsService, type MaterialsListResponse } from './materials.service';
 import { Photo, PhotosService } from './photos.service';
-import { Organization, OrganizationsService } from '../organizations/organizations.service';
+import { Organization, OrganizationsService } from '../../shared/services/organizations.service';
 import { MaterialFormDialogComponent } from './material-form-dialog.component';
 
-type SortKey =
-  | 'name'
-  | 'article'
-  | 'sku'
-  | 'unit'
-  | 'pricePerUnit'
-  | 'stockQty'
-  | null;
-type SortDir = 'asc' | 'desc';
+/** Server-side pagination page size for /materials endpoint. */
+const PAGE_SIZE = 50;
 
 /**
- * MaterialsPage — list with supplier/photo/dimensions columns.
+ * TZ-104.3 Phase B — MaterialsPage migrated to `<app-pi-table>`.
  *
- * Lookup tables:
- *  - suppliersById: orgId → Organization (for Поставщик column)
- *  - photosById: photoId → Photo (for thumbnail + Фото column)
+ * Inline `<table>` markup is replaced by the Paper & Ink primitive.
+ * The page wires [total]/[page]/[pageSize] + (pageChange) for
+ * server-side pagination, plus cell templates for photo/supplier/
+ * dimensions HTML-rich content. The `<app-pi-row-actions>` cluster
+ * is moved from inline-per-row into the `[rowActions]` ng-template
+ * slot. Sort is delegated entirely to pi-table's internal sort.
+ *
+ * Template-ref strategy (post-3-iteration hardening):
+ *  Uses `@ViewChild({ static: true })` decorators with `any`-typed
+ *  refs (NOT the `viewChild` signal API). The signal API surfaced
+ *  two pitfalls across iterations 2-3:
+ *    (a) Angular's compiler treats locator strings the same as the
+ *        local property name (`viewChild('rowActionsTpl')` + class
+ *        field `rowActionsTpl` + template ref `#rowActionsTpl`),
+ *        producing `"rowActionsTpl_r9 is not a function"` runtime
+ *        errors when the symbol resolves ambiguously at the binding
+ *        site.
+ *    (b) `TemplateRef<C>` is invariant — assigning
+ *        `Record<string, TemplateRef<{ $implicit: unknown }>>` to a
+ *        Record of a different $implicit fails TS2345.
+ *  `any` is bidirectional with every other type so both issues
+ *  disappear at once without losing runtime safety (the row IS still
+ *  injected as Material at runtime — type relaxation is type-only).
+ *
+ *  Templates use `let-row` directly: with `any` $implicit, all
+ *  `row.X` accesses are typed-as-any, no `@let m = ... as Material`
+ *  cast pattern needed (Angular's template parser rejects `as Type`
+ *  inside `@let`, surfaced in iteration 2).
+ *
+ * Spec compatibility: `debouncedSearch` is exposed publicly so the
+ * existing `materials.page.spec.ts` test #4 can drive the httpResource
+ * auto-refire contract via `comp.debouncedSearch.set('steel')` —
+ * untyped cast pattern in the spec accesses the signal directly.
  *
  * Standalone + OnPush + signal-based.
  */
@@ -51,14 +78,13 @@ type SortDir = 'asc' | 'desc';
   selector: 'app-materials-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    FormsModule,
     PiPageHeaderComponent,
     PiSectionComponent,
     PiToolbarComponent,
     PiEmptyTileComponent,
-    PiEmptyStateComponent,
     PiRowActionsComponent,
     ButtonComponent,
+    TableComponent,
   ],
   template: `
     <app-pi-page-header
@@ -106,116 +132,56 @@ type SortDir = 'asc' | 'desc';
         <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
           ← Таблица широкая — прокручивайте горизонтально →
         </p>
-        <table class="w-full text-sm min-w-[1280px]">
-          <thead class="hairline-b">
-            <tr>
-              <th class="pi-cell eyebrow w-20 text-left">Фото</th>
-              <th
-                class="pi-cell eyebrow cursor-pointer select-none group text-left"
-                (click)="setSort('name')"
-              >
-                Название
-                <span [class.text-sunrise-warm]="isSortedBy('name')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('name') }}</span>
-              </th>
-              <th
-                class="pi-cell eyebrow cursor-pointer select-none group text-left"
-                (click)="setSort('article')"
-              >
-                Артикул
-                <span [class.text-sunrise-warm]="isSortedBy('article')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('article') }}</span>
-              </th>
-              <th
-                class="pi-cell eyebrow cursor-pointer select-none group text-left"
-                (click)="setSort('sku')"
-              >
-                Код
-                <span [class.text-sunrise-warm]="isSortedBy('sku')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('sku') }}</span>
-              </th>
-              <th
-                class="pi-cell eyebrow cursor-pointer select-none min-w-24 whitespace-nowrap text-left group"
-                (click)="setSort('unit')"
-              >
-                Ед.
-                <span [class.text-sunrise-warm]="isSortedBy('unit')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('unit') }}</span>
-              </th>
-              <th class="pi-cell eyebrow min-w-40 text-left">Поставщик</th>
-              <th class="pi-cell eyebrow min-w-40 text-left">Габариты</th>
-              <th
-                class="pi-cell-numeric eyebrow cursor-pointer select-none min-w-32 group"
-                (click)="setSort('pricePerUnit')"
-              >
-                Цена
-                <span [class.text-sunrise-warm]="isSortedBy('pricePerUnit')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('pricePerUnit') }}</span>
-              </th>
-              <th
-                class="pi-cell-numeric eyebrow cursor-pointer select-none min-w-24 group"
-                (click)="setSort('stockQty')"
-              >
-                Остаток
-                <span [class.text-sunrise-warm]="isSortedBy('stockQty')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('stockQty') }}</span>
-              </th>
-              <th class="pi-cell eyebrow w-40 text-right">Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of sortedRows(); track row._id) {
-              <tr
-                class="pi-table-row pi-table-row-odd last:border-0"
-                [attr.data-test]="'material-row-' + row._id"
-              >
-                <td class="pi-cell align-top">
-                  @if (mainPhotoOf(row); as mp) {
-                    <img
-                      [src]="mp.storageUrl"
-                      [alt]="mp.originalFilename || row.name"
-                      class="block w-20 h-20 object-cover hairline rounded-sm"
-                      loading="lazy"
-                    />
-                  } @else {
-                    <app-pi-empty-tile [sizePx]="80" />
-                  }
-                </td>
-                <td class="pi-cell align-top font-medium">{{ row.name }}</td>
-                <td class="pi-cell align-top empty-cell">{{ row.article }}</td>
-                <td class="pi-cell align-top empty-cell">{{ row.sku }}</td>
-                <td class="pi-cell align-top whitespace-nowrap">{{ row.unit }}</td>
-                <td class="pi-cell align-top empty-cell">{{ supplierNameOf(row) }}</td>
-                <td class="pi-cell align-top font-mono text-xs whitespace-nowrap empty-cell">{{ dimensionsSummary(row) }}</td>
-                <td class="pi-cell-numeric align-top empty-cell">{{ formatPrice(row) }}</td>
-                <td class="pi-cell-numeric align-top">
-                  {{ row.stockQty ?? 0 }}
-                </td>
-                <td class="pi-cell align-top">
-                  <app-pi-row-actions
-                    [row]="row"
-                    [editLabel]="'Редактировать ' + row.name"
-                    [deleteLabel]="'Удалить ' + row.name"
-                    [dataTestEdit]="'edit-button-' + row._id"
-                    [dataTestDelete]="'delete-button-' + row._id"
-                    (edit)="openEdit($event)"
-                    (delete)="onDelete($event)"
-                  />
-                </td>
-              </tr>
-            }
-            @if (sortedRows().length === 0 && !loading()) {
-              <app-pi-empty-state
-                [colspan]="10"
-                [message]="searchQuery()
-                  ? 'Ничего не найдено.'
-                  : 'Нет материалов. Нажмите «Создать», чтобы добавить первый.'"
-                state="empty"
+        <app-pi-table
+          [data]="data()"
+          [columns]="cols"
+          [loading]="loading()"
+          [total]="total()"
+          [page]="page()"
+          [pageSize]="pageSize"
+          [emptyMessage]="emptyMessage()"
+          [ariaLabel]="'Список материалов'"
+          [cellTemplates]="cellTemplates"
+          [rowActions]="rowActionsTplBinding"
+          (pageChange)="onPageChange($event)"
+        >
+          <!-- ───── Photo cell ───── -->
+          <ng-template #photoTpl let-row>
+            @if (mainPhotoOf(row); as mp) {
+              <img
+                [src]="mp.storageUrl"
+                [alt]="mp.originalFilename || row.name"
+                class="block w-20 h-20 object-cover hairline rounded-sm"
+                loading="lazy"
               />
+            } @else {
+              <app-pi-empty-tile [sizePx]="80" />
             }
-            @if (loading() && sortedRows().length === 0) {
-              <app-pi-empty-state
-                [colspan]="10"
-                message="Загрузка…"
-                state="loading"
-              />
-            }
-          </tbody>
-        </table>
+          </ng-template>
+
+          <!-- ───── Supplier cell (lookup name) ───── -->
+          <ng-template #supplierTpl let-row>
+            {{ supplierNameOf(row) ?? '' }}
+          </ng-template>
+
+          <!-- ───── Dimensions cell (font-mono glyphs) ───── -->
+          <ng-template #dimsTpl let-row>
+            <span class="font-mono text-xs whitespace-nowrap">{{ dimensionsSummary(row) }}</span>
+          </ng-template>
+
+          <!-- ───── Row actions cluster ───── -->
+          <ng-template #rowActionsTpl let-row>
+            <app-pi-row-actions
+              [row]="row"
+              [editLabel]="'Редактировать ' + row.name"
+              [deleteLabel]="'Удалить ' + row.name"
+              [dataTestEdit]="'edit-button-' + row._id"
+              [dataTestDelete]="'delete-button-' + row._id"
+              (edit)="openEdit($event)"
+              (delete)="onDelete($event)"
+            />
+          </ng-template>
+        </app-pi-table>
       </div>
     </app-pi-section>
   `,
@@ -230,193 +196,218 @@ export class MaterialsPage implements OnInit {
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly destroyRef = inject(DestroyRef);
 
+  /** Exposed to template via `[pageSize]="pageSize"` (constant literal). */
+  protected readonly pageSize = PAGE_SIZE;
+
+  private readonly search = createSearchState(300);
+
   /**
-   * Server list = `GET /api/materials` via Angular 20's `httpResource`.
-   * Re-fires whenever `debouncedSearch()` changes; loaded automatically
-   * on creation (no explicit `reload()` needed at bootstrap).
-   *
-   * `data`/`total`/`loading`/`error` are `computed()` wrappers around
-   * `listRes.{value(),isLoading(),error()}` so the @if/@for template
-   * and downstream classes (e.g. `sortedRows`, row handlers) work
-   * unchanged. `dialog create/update/remove` still flows through
-   * `MaterialsService.create/update/remove` (silent-http + Observable),
-   * which is the right tool for POST/PATCH/DELETE — `httpResource` is
-   * GET-only.
+   * Current page (1-indexed). Bumped via `(pageChange)` from pi-table.
+   * Reset to 1 on every search input so users land on the first page
+   * of the new result set (avoids page-4-of-empty-filter UX).
    */
-  protected readonly listRes = httpResource<MaterialsListResponse>(() => ({
-    url: `${this.baseUrl}/materials`,
-    params: {
-      page: 1,
-      limit: 50,
-      ...(this.debouncedSearch() ? { search: this.debouncedSearch() } : {}),
-    },
+  private readonly pageSig = signal<number>(1);
+  protected readonly page = this.pageSig.asReadonly();
+
+  /**
+   * Public exposure of the debounced search signal. Required so the
+   * `materials.page.spec.ts` test #4 can drive the resource's
+   * auto-refire contract via `comp.debouncedSearch.set('steel')` (the
+   * spec's `as unknown as { debouncedSearch: ... }` cast bypasses TS
+   * private modifiers but reads from this getter at runtime).
+   *
+   * NOT for use in template — the template binds via `searchQuery()`
+   * for the input field. This getter is used by the test only.
+   */
+  protected readonly debouncedSearch = this.search.debouncedSearch;
+
+  private readonly suppliersLookup = createLookupTable<Organization>(
+    this.orgs.list({ limit: 200 }),
+  );
+  private readonly photosLookup = createLookupTable<Photo>(
+    this.photosService.list(),
+  );
+
+  // ─── Template refs (resolved at view init, static:true → BEFORE ngOnInit) ──
+  // `any` typing is deliberate: it bypasses `TemplateRef<C>` invariance
+  // (TS would otherwise reject assigning TemplateRef<{ $implicit: unknown }>
+  // to a different $implicit) and matches what Angular's relaxed template
+  // type-inference does for `let-row` anyway. Runtime values are still
+  // the page's row type (Material) — this is TYPE-LEVEL relaxation only.
+  @ViewChild('photoTpl', { static: true })
+  private readonly photoTplRef!: TemplateRef<any>;
+  @ViewChild('supplierTpl', { static: true })
+  private readonly supplierTplRef!: TemplateRef<any>;
+  @ViewChild('dimsTpl', { static: true })
+  private readonly dimsTplRef!: TemplateRef<any>;
+  @ViewChild('rowActionsTpl', { static: true })
+  private readonly rowActionsTplRef!: TemplateRef<any>;
+
+  /** Built in ngOnInit after ViewChild fields resolve. Stable reference. */
+  protected cellTemplates: Record<string, TemplateRef<any>> = {};
+  /** Built in ngOnInit; null until then so pi-table defers the slot. */
+  protected rowActionsTplBinding: TemplateRef<any> | null = null;
+
+  /**
+   * Single `computed()` that batches `page` + `limit` + `search`
+   * signal reads. httpResource reads `listParams()` and auto-refires
+   * when any signal it depends on changes; with these three signals
+   * collapsed into ONE computed, Angular 20 schedules a single re-fire
+   * per CD cycle instead of 3.
+   */
+  private readonly listParams = computed(() => ({
+    page: this.pageSig(),
+    limit: PAGE_SIZE,
+    ...(this.search.debouncedSearch()
+      ? { search: this.search.debouncedSearch() }
+      : {}),
   }));
 
-  protected readonly data = computed<Material[]>(() => {
-    // `listRes.value()` THROWS while the resource is in error state
-    // (Angular 20 `HttpResourceRef.value()` rejects when status is
-    // Error). We guard with `hasValue()` so an HTTP error doesn't
-    // crash every downstream reader — `data()` simply returns []
-    // while `error()` surfaces the message via the inline banner.
-    if (!this.listRes.hasValue()) return [];
-    return this.listRes.value()?.items ?? [];
-  });
+  protected readonly listRes = httpResource<MaterialsListResponse>(() => ({
+    url: `${this.baseUrl}/materials`,
+    params: this.listParams(),
+  }));
+
+  protected readonly data = computed<Material[]>(
+    () => this.listRes.value()?.items ?? [],
+  );
+  /**
+   * Backend reported total (canonical `{items, total, page, limit}`
+   * envelope). The pi-table pager uses this to compute
+   * `totalPages = ceil(total / pageSize)` and render the Prev / Next
+   * controls. When backend has ≤limit rows, pi-table hides the pager.
+   */
   protected readonly total = computed<number>(
-    () => this.data().length,
+    () => this.listRes.value()?.total ?? 0,
   );
   protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
   protected readonly error = computed<string | null>(() => {
-    // `httpResource.error()` is typed `unknown` (it can be HttpErrorResponse,
-    // a regular Error, or whatever the request pipeline threw). Cast to
-    // `HttpErrorResponse | undefined` so it satisfies `extractErrorMessage`'s
-    // signature; in practice httpResource's pipeline always surfaces an
-    // HttpErrorResponse on 4xx/5xx, which is exactly what that helper
-    // expects. If the future type narrows in Angular, drop the cast.
     const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
     return err ? extractErrorMessage(err) : null;
   });
 
-  /** Live search input (echoed in the @if branches). */
-  protected readonly searchQuery = signal<string>('');
-  /** Debounced snapshot driving the httpResource params. */
-  protected readonly debouncedSearch = signal<string>('');
-  protected readonly sortKey = signal<SortKey>('name');
-  protected readonly sortDir = signal<SortDir>('asc');
+  protected readonly searchQuery = this.search.searchQuery;
 
-  // Lookup tables for supplier/photo rendering
-  protected readonly suppliersById = signal<Record<string, Organization>>({});
-  protected readonly photosById = signal<Record<string, Photo>>({});
+  protected readonly emptyMessage = computed(() =>
+    this.searchQuery()
+      ? 'Ничего не найдено.'
+      : 'Нет материалов. Нажмите «Создать», чтобы добавить первый.',
+  );
 
-  protected readonly sortedRows = computed<Material[]>(() => {
-    const rows = this.data().slice();
-    const k = this.sortKey();
-    if (!k) return rows;
-    const sign = this.sortDir() === 'asc' ? 1 : -1;
-    return rows.sort((a, b) => {
-      const av = a[k];
-      const bv = b[k];
-      if (av == null && bv == null) return 0;
-      if (av == null) return -1 * sign;
-      if (bv == null) return 1 * sign;
-      if (typeof av === 'number' && typeof bv === 'number') {
-        return (av - bv) * sign;
-      }
-      return String(av).localeCompare(String(bv), 'ru') * sign;
-    });
-  });
-
-  private debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  // ─── Column definitions ────────────────────────────────────────────
+  /**
+   * Columns keyed by existing `Material` fields. Non-sortable cells
+   * (mainPhotoId, supplierId, dimensions) use `cellTemplates` for
+   * rich content; sortable cells use `format` for currency/number
+   * formatting. `name` is sticky-left for horizontal-scroll context
+   * (tablets, narrow viewports). `cellClass: 'empty-cell'` muted-cell
+   * styling restores the original page's visual regression — empty
+   * values (article / sku / supplier / dimensions rendering empty
+   * string) now dim instead of glaring.
+   */
+  protected readonly cols: ColumnDef<Material>[] = [
+    { key: 'mainPhotoId', label: 'Фото', width: '96px', align: 'center' },
+    {
+      key: 'name',
+      label: 'Название',
+      sortable: true,
+      sticky: 'left',
+    },
+    { key: 'article', label: 'Артикул', sortable: true, cellClass: 'empty-cell' },
+    { key: 'sku', label: 'Код', sortable: true, cellClass: 'empty-cell' },
+    { key: 'unit', label: 'Ед.', sortable: true, width: '60px' },
+    {
+      key: 'supplierId',
+      label: 'Поставщик',
+      cellClass: 'empty-cell' /* non-sortable, cellTemplate */,
+    },
+    {
+      key: 'dimensions',
+      label: 'Габариты',
+      cellClass: 'empty-cell' /* non-sortable, cellTemplate */,
+    },
+    {
+      key: 'pricePerUnit',
+      label: 'Цена',
+      sortable: true,
+      numeric: true,
+      align: 'right',
+      width: '128px',
+      format: (r) => formatPrice(r.pricePerUnit),
+    },
+    {
+      key: 'stockQty',
+      label: 'Остаток',
+      sortable: true,
+      numeric: true,
+      align: 'right',
+      width: '96px',
+      format: (r) => String(r.stockQty ?? 0),
+    },
+  ];
 
   ngOnInit(): void {
-    this.loadLookups();
-    // Cleanup debounce timer on component destroy (QA-02:2.5)
-    this.destroyRef.onDestroy(() => {
-      if (this.debounceTimer) clearTimeout(this.debounceTimer);
-    });
-    // `listRes` fires its initial GET automatically on first read —
-    // no explicit `reload()` needed here.
+    this.suppliersLookup.load();
+    this.photosLookup.load();
+    this.destroyRef.onDestroy(() => this.search.destroy());
+
+    // Build cell-template map + row-actions binding AFTER the static
+    // @ViewChild fields resolve (static:true resolves BEFORE
+    // ngOnInit). Targeting fields directly avoids the TemplateRef<C>
+    // invariance trap and Angular's signal-binding name-collision.
+    this.cellTemplates = {
+      mainPhotoId: this.photoTplRef,
+      supplierId: this.supplierTplRef,
+      dimensions: this.dimsTplRef,
+    };
+    this.rowActionsTplBinding = this.rowActionsTplRef;
   }
 
-  private loadLookups(): void {
-    this.orgs.list({ limit: 200 }).subscribe((res) => {
-      if (!res.ok) return; // Silently ignore — lookup tables are non-critical; data falls back to ID-only.
-      const map: Record<string, Organization> = {};
-      for (const o of res.data.items ?? []) map[o._id] = o;
-      this.suppliersById.set(map);
-    });
-    this.photosService.list().subscribe((res) => {
-      if (!res.ok) return; // Silently ignore — thumbnails fall back to the empty tile.
-      const all = res.data;
-      const map: Record<string, Photo> = {};
-      for (const p of all) map[p._id] = p;
-      this.photosById.set(map);
-    });
+  // ─── Cell template helpers ─────────────────────────────────────────
+  /**
+   * Accept `unknown` (row from `let-row`) — Angular binding inserts
+   * the actual Material instance at runtime, so we cast once here
+   * rather than per template call site.
+   */
+  protected mainPhotoOf(row: unknown): Photo | null {
+    const m = row as Material;
+    if (!m.mainPhotoId) return null;
+    if (typeof m.mainPhotoId !== 'string') return m.mainPhotoId;
+    return this.photosLookup.byId()[m.mainPhotoId] ?? null;
   }
 
-  protected mainPhotoOf(row: Material): Photo | null {
-    if (!row.mainPhotoId) return null;
-    // Backend auto-populates `mainPhotoId` as a `Photo` object. If it's
-    // already populated, use it directly. Otherwise look it up in the
-    // photos lookup table by its string ID.
-    if (typeof row.mainPhotoId !== 'string') return row.mainPhotoId;
-    return this.photosById()[row.mainPhotoId] ?? null;
+  protected supplierNameOf(row: unknown): string | null {
+    const m = row as Material;
+    if (!m.supplierId) return null;
+    return (
+      this.suppliersLookup.byId()[m.supplierId]?.shortName ??
+      this.suppliersLookup.byId()[m.supplierId]?.name ??
+      null
+    );
   }
 
-  protected supplierNameOf(row: Material): string | null {
-    if (!row.supplierId) return null;
-    return this.suppliersById()[row.supplierId]?.shortName
-      ?? this.suppliersById()[row.supplierId]?.name
-      ?? null;
-  }
-
-  protected dimensionsSummary(row: Material): string {
-    if (!row.dimensions || row.dimensions.length === 0) return '';
-    return row.dimensions
+  protected dimensionsSummary(row: unknown): string {
+    const m = row as Material;
+    if (!m.dimensions || m.dimensions.length === 0) return '';
+    return m.dimensions
       .map((d) => `${typeLetter(d.type)} ${formatVal(d.value)}`)
       .join(' × ');
   }
 
-  private refreshOnDialogClose(ref: DialogRef<unknown>): void {
-    onDialogCloseOnce(ref, this.injector, (_saved: unknown) => {
-      // No local optimistic merge any more — `data` is now a `computed`
-      // wrapper around `listRes.value()` and can't be mutated directly.
-      // The reload re-fetches the authoritative server state; the
-      // dialog's close animation + backend roundtrip cover the extra
-      // ~50 ms and the table refreshes seamlessly.
-      //
-      // (Hot spot: if the network is slow, the row the user just saved
-      // may briefly disappear before reappearing. If that turns out to
-      // feel bad, revisit with `res.set()` on the httpResource ref or a
-      // small optimistic-state signal layered on top of `data`.)
-      this.loadLookups();
-      this.listRes.reload();
-    });
-  }
-
-  protected onSearchInput(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.searchQuery.set(target.value);
-    if (this.debounceTimer) clearTimeout(this.debounceTimer);
-    this.debounceTimer = setTimeout(
-      () => this.debouncedSearch.set(target.value.trim()),
-      300,
-    );
-  }
-
-  protected setSort(key: Exclude<SortKey, null>): void {
-    if (this.sortKey() !== key) {
-      this.sortKey.set(key);
-      this.sortDir.set('asc');
-    } else if (this.sortDir() === 'asc') {
-      this.sortDir.set('desc');
-    } else {
-      this.sortKey.set(null);
-      this.sortDir.set('asc');
-    }
-  }
-
-  protected sortIcon(key: Exclude<SortKey, null>): string {
-    if (this.sortKey() !== key) return '↕';
-    return this.sortDir() === 'asc' ? '↑' : '↓';
-  }
-
-  protected isSortedBy(key: Exclude<SortKey, null>): boolean {
-    return this.sortKey() === key;
-  }
-
-  protected formatPrice(row: Material): string {
-    if (row.pricePerUnit == null) return '';
-    return `${row.pricePerUnit.toFixed(2)} ₽`;
-  }
-
   protected totalLabel(n: number): string {
-    const mod10 = n % 10;
-    const mod100 = n % 100;
-    if (mod10 === 1 && mod100 !== 11) return 'материал';
-    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
-      return 'материала';
-    }
-    return 'материалов';
+    return pluralize(n, ['материал', 'материала', 'материалов']);
+  }
+
+  // ─── Event handlers ───────────────────────────────────────────────
+  protected onSearchInput(event: Event): void {
+    this.search.onSearchInput(event);
+    // Reset to first page when search query changes so the user doesn't
+    // land on an out-of-range page of a (possibly empty) filter set.
+    this.pageSig.set(1);
+  }
+
+  protected onPageChange(p: number): void {
+    this.pageSig.set(p);
   }
 
   protected openCreate(): void {
@@ -458,16 +449,16 @@ export class MaterialsPage implements OnInit {
     });
   }
 
-  /**
-   * Trigger a fresh fetch of the materials list. Delegates to
-   * `httpResource.reload()` since the load is now declarative
-   * (driven by signal reads inside the resource's config fn).
-   *
-   * Kept as a method so callers like row-actions or other handlers
-   * can stay decoupled from the resource's internals.
-   */
   protected reload(): void {
     this.listRes.reload();
+  }
+
+  private refreshOnDialogClose(ref: DialogRef<unknown>): void {
+    onDialogCloseOnce(ref, this.injector, () => {
+      this.suppliersLookup.load();
+      this.photosLookup.load();
+      this.listRes.reload();
+    });
   }
 }
 
