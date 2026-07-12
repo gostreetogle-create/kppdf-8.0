@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  OnInit,
   TemplateRef,
   computed,
   input,
@@ -259,7 +260,7 @@ export type SelectionMode = 'none' | 'single' | 'multi';
     </div>
   `,
 })
-export class TableComponent<T extends Record<string, unknown>> {
+export class TableComponent<T extends Record<string, unknown>> implements OnInit {
   readonly data = input<T[]>([]);
   readonly columns = input.required<ColumnDef<T>[]>();
   readonly selectionMode = input<SelectionMode>('none');
@@ -277,7 +278,7 @@ export class TableComponent<T extends Record<string, unknown>> {
   readonly rowActions = input<TemplateRef<{ $implicit: T }> | null>(null);
 
   /**
-   * TZ-104.3 Phase B — per-column rich-content templates.
+   * TZ-104.3 Phase B + TZ-104.4.2 — per-column rich-content templates.
    * Map of `ColumnDef.key → TemplateRef<{ $implicit: T }>`. When a
    * column has a matching entry, the cell is rendered via
    * `*ngTemplateOutlet` with `{ $implicit: row }` instead of the
@@ -288,6 +289,12 @@ export class TableComponent<T extends Record<string, unknown>> {
    * formatted dimension glyphs). Columns without an entry fall
    * through to the existing textual render path — backward compat.
    *
+   * TZ-104.4.2 re-typed this from `TemplateRef<{ $implicit: unknown }>`
+   * to `TemplateRef<{ $implicit: T }>` so the keyof T type from
+   * `ColumnDef<T>['key']` flows through to the templates. Page-side
+   * bindings now have compile-time checking without needing the
+   * `any` escape hatch (materials/orders/products pre-TZ-104.4.2).
+   *
    * Typical use:
    * ```html
    * <app-pi-table [columns]="cols" [cellTemplates]="tpls" ...>
@@ -296,10 +303,11 @@ export class TableComponent<T extends Record<string, unknown>> {
    *   </ng-template>
    * </app-pi-table>
    * ```
-   * Where `tpls = { photo: photoTpl }` matches `cols[0].key = 'photo'`.
+   * Where `tpls: Record<string, TemplateRef<{ $implicit: T }>>` and
+   * `tpls['photo'] = photoTpl` matches `cols[0].key = 'photo'`.
    */
   readonly cellTemplates = input<
-    Record<string, TemplateRef<{ $implicit: unknown }>>
+    Record<string, TemplateRef<{ $implicit: T }>>
   >({});
 
   /**
@@ -375,10 +383,68 @@ export class TableComponent<T extends Record<string, unknown>> {
    */
   readonly emptyTemplate = input<TemplateRef<unknown> | null>(null);
 
+  /**
+   * TZ-104.4.2 — initial sort key. One-shot seed for pi-table's
+   * internal sortKeySig. When non-null, ngOnInit syncs the internal
+   * signal before the first template render (avoiding the
+   * `effect()`-delay footgun of post-first-CD signal writes).
+   *
+   * Behavior:
+   *  - First click on a *different* column: cycle starts fresh
+   *    (pi-table emits the new key/dir, just like before).
+   *  - First click on the *same* column: cycle continues from the
+   *    pre-seeded dir (asc → desc → null from the seeded 'asc';
+   *    or desc → null → asc from the seeded 'desc').
+   *
+   * Strongly typed to `keyof T & string` so the compiler catches
+   * typos like `initialSortKey="naem"` that would otherwise silently
+   * produce a non-functional arrow.
+   *
+   * Caveat — page-side state must MIRROR pi-table's seeded state:
+   *  - If a page owns its own sort (orders/products post-TZ-104.3
+   *    migration), the page's `sortKeySig/sortDirSig` must be seeded
+   *    to the SAME values; otherwise the mirror-event handler from
+   *    the lockstep fix will diverge from pi-table's internal on the
+   *    very first natural click. See materials/orders/products
+   *    docblocks for examples.
+   */
+  readonly initialSortKey = input<keyof T & string | null>(null);
+
+  /**
+   * TZ-104.4.2 — initial sort direction. Pairs with `initialSortKey`
+   * to seed pi-table's internal sortDirSig. When `null`
+   * (default), pi-table starts in a "no sort" state — same as if
+   * `initialSortKey` were also null. The seeded arrow display is
+   * determined by whether `initialSortKey` and `initialSortDir`
+   * are both non-null.
+   */
+  readonly initialSortDir = input<SortDirection>(null);
+
   // ─── Existing outputs (preserved) ──────────────────────────────────
   readonly rowClick = output<T>();
   readonly sortChange = output<{ key: string; dir: SortDirection }>();
   readonly selectionChange = output<T[]>();
+
+  // ─── Lifecycle (TZ-104.4.2) ───────────────────────────────────────────
+  /**
+   * One-shot sync of internal sort signals from `initialSortKey` /
+   * `initialSortDir` inputs. Runs once after inputs are bound and
+   * BEFORE the first template render, so the very first frame shows
+   * the seeded sort arrow instead of flashing a "no sort" state on
+   * the way to the seeded value.
+   *
+   * Why ngOnInit instead of `effect()`? `effect()` is microtask-
+   * deferred — it doesn't fire until *after* the first render.
+   * That produces a CD-1-to-CD-2 arrow flash that breaks the
+   * "initial" UX promise. ngOnInit is synchronous and fires before
+   * the first template evaluation.
+   */
+  ngOnInit(): void {
+    const initKey = this.initialSortKey();
+    const initDir = this.initialSortDir();
+    if (initKey !== null) this.sortKeySig.set(initKey);
+    if (initDir !== null) this.sortDirSig.set(initDir);
+  }
 
   // ─── Internal state (signals) ──────────────────────────────────────
   private readonly sortKeySig = signal<string | null>(null);

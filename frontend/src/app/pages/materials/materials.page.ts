@@ -27,8 +27,8 @@ import { createSearchState } from '../../shared/util/search';
 import { pluralize, formatPrice } from '../../shared/util/format';
 import { createLookupTable } from '../../shared/util/lookup-table';
 import { ColumnDef, TableComponent } from '../../shared/ui/pi-table.component';
-import { Material, MaterialsService, type MaterialsListResponse } from './materials.service';
-import { Photo, PhotosService } from './photos.service';
+import { Material, MaterialsService, type MaterialsListResponse } from '../../shared/services/materials.service';
+import { Photo, PhotosService } from '../../shared/services/photos.service';
 import { Organization, OrganizationsService } from '../../shared/services/organizations.service';
 import { MaterialFormDialogComponent } from './material-form-dialog.component';
 
@@ -36,7 +36,9 @@ import { MaterialFormDialogComponent } from './material-form-dialog.component';
 const PAGE_SIZE = 50;
 
 /**
- * TZ-104.3 Phase B — MaterialsPage migrated to `<app-pi-table>`.
+ * TZ-104.3 Phase B + TZ-104.4.2 — MaterialsPage migrated to
+ * `<app-pi-table>`, with TZ-104.4.2 dropping the `any`-escape hatch
+ * that the v4 migration needed.
  *
  * Inline `<table>` markup is replaced by the Paper & Ink primitive.
  * The page wires [total]/[page]/[pageSize] + (pageChange) for
@@ -45,27 +47,21 @@ const PAGE_SIZE = 50;
  * is moved from inline-per-row into the `[rowActions]` ng-template
  * slot. Sort is delegated entirely to pi-table's internal sort.
  *
- * Template-ref strategy (post-3-iteration hardening):
- *  Uses `@ViewChild({ static: true })` decorators with `any`-typed
- *  refs (NOT the `viewChild` signal API). The signal API surfaced
- *  two pitfalls across iterations 2-3:
- *    (a) Angular's compiler treats locator strings the same as the
- *        local property name (`viewChild('rowActionsTpl')` + class
- *        field `rowActionsTpl` + template ref `#rowActionsTpl`),
- *        producing `"rowActionsTpl_r9 is not a function"` runtime
- *        errors when the symbol resolves ambiguously at the binding
- *        site.
- *    (b) `TemplateRef<C>` is invariant — assigning
- *        `Record<string, TemplateRef<{ $implicit: unknown }>>` to a
- *        Record of a different $implicit fails TS2345.
- *  `any` is bidirectional with every other type so both issues
- *  disappear at once without losing runtime safety (the row IS still
- *  injected as Material at runtime — type relaxation is type-only).
+ * Template-ref strategy (post-TZ-104.4.2):
+ *  `@ViewChild({ static: true })` decorators with **strong** typing
+ *  `TemplateRef<{ $implicit: Material }>` (NOT `any`). Pre-TZ-104.4.2
+ *  we used `any` because pi-table's `[cellTemplates]` was typed
+ *  `Record<string, TemplateRef<{ $implicit: unknown }>>`, and
+ *  `TemplateRef<C>` is invariant — assigning a Record of one
+ *  `$implicit` shape to a different shape failed TS2345. TZ-104.4.2
+ *  re-typed pi-table's `[cellTemplates]` to
+ *  `Record<string, TemplateRef<{ $implicit: T }>>`, so the strict
+ *  Material typing now flows through.
  *
- *  Templates use `let-row` directly: with `any` $implicit, all
- *  `row.X` accesses are typed-as-any, no `@let m = ... as Material`
- *  cast pattern needed (Angular's template parser rejects `as Type`
- *  inside `@let`, surfaced in iteration 2).
+ *  `let-row` in templates is now `Material` instead of `any`, so
+ *  `row.X` accesses are static-checked against `Material`. Helper
+ *  methods drop `unknown`-typed arguments and the `as Material`
+ *  internal cast — runtime behavior unchanged.
  *
  * Spec compatibility: `debouncedSearch` is exposed publicly so the
  * existing `materials.page.spec.ts` test #4 can drive the httpResource
@@ -229,24 +225,23 @@ export class MaterialsPage implements OnInit {
   );
 
   // ─── Template refs (resolved at view init, static:true → BEFORE ngOnInit) ──
-  // `any` typing is deliberate: it bypasses `TemplateRef<C>` invariance
-  // (TS would otherwise reject assigning TemplateRef<{ $implicit: unknown }>
-  // to a different $implicit) and matches what Angular's relaxed template
-  // type-inference does for `let-row` anyway. Runtime values are still
-  // the page's row type (Material) — this is TYPE-LEVEL relaxation only.
+  // TZ-104.4.2: strong typing matches pi-table's re-parameterized
+  // `[cellTemplates]` input. Pre-TZ-104.4.2 these were `TemplateRef<any>`
+  // because pi-table's old typed input was `TemplateRef<{ $implicit:
+  // unknown }>` and `TemplateRef<C>` invariance broke the assignment.
   @ViewChild('photoTpl', { static: true })
-  private readonly photoTplRef!: TemplateRef<any>;
+  private readonly photoTplRef!: TemplateRef<{ $implicit: Material }>;
   @ViewChild('supplierTpl', { static: true })
-  private readonly supplierTplRef!: TemplateRef<any>;
+  private readonly supplierTplRef!: TemplateRef<{ $implicit: Material }>;
   @ViewChild('dimsTpl', { static: true })
-  private readonly dimsTplRef!: TemplateRef<any>;
+  private readonly dimsTplRef!: TemplateRef<{ $implicit: Material }>;
   @ViewChild('rowActionsTpl', { static: true })
-  private readonly rowActionsTplRef!: TemplateRef<any>;
+  private readonly rowActionsTplRef!: TemplateRef<{ $implicit: Material }>;
 
   /** Built in ngOnInit after ViewChild fields resolve. Stable reference. */
-  protected cellTemplates: Record<string, TemplateRef<any>> = {};
+  protected cellTemplates: Record<string, TemplateRef<{ $implicit: Material }>> = {};
   /** Built in ngOnInit; null until then so pi-table defers the slot. */
-  protected rowActionsTplBinding: TemplateRef<any> | null = null;
+  protected rowActionsTplBinding: TemplateRef<{ $implicit: Material }> | null = null;
 
   /**
    * Single `computed()` that batches `page` + `limit` + `search`
@@ -365,31 +360,28 @@ export class MaterialsPage implements OnInit {
 
   // ─── Cell template helpers ─────────────────────────────────────────
   /**
-   * Accept `unknown` (row from `let-row`) — Angular binding inserts
-   * the actual Material instance at runtime, so we cast once here
-   * rather than per template call site.
+   * TZ-104.4.2: `row: Material` (was `unknown` + `as Material` cast).
+   * With the strongly-typed `TemplateRef<{ $implicit: Material }>`,
+   * `let-row` in templates IS Material — no cast needed.
    */
-  protected mainPhotoOf(row: unknown): Photo | null {
-    const m = row as Material;
-    if (!m.mainPhotoId) return null;
-    if (typeof m.mainPhotoId !== 'string') return m.mainPhotoId;
-    return this.photosLookup.byId()[m.mainPhotoId] ?? null;
+  protected mainPhotoOf(row: Material): Photo | null {
+    if (!row.mainPhotoId) return null;
+    if (typeof row.mainPhotoId !== 'string') return row.mainPhotoId;
+    return this.photosLookup.byId()[row.mainPhotoId] ?? null;
   }
 
-  protected supplierNameOf(row: unknown): string | null {
-    const m = row as Material;
-    if (!m.supplierId) return null;
+  protected supplierNameOf(row: Material): string | null {
+    if (!row.supplierId) return null;
     return (
-      this.suppliersLookup.byId()[m.supplierId]?.shortName ??
-      this.suppliersLookup.byId()[m.supplierId]?.name ??
+      this.suppliersLookup.byId()[row.supplierId]?.shortName ??
+      this.suppliersLookup.byId()[row.supplierId]?.name ??
       null
     );
   }
 
-  protected dimensionsSummary(row: unknown): string {
-    const m = row as Material;
-    if (!m.dimensions || m.dimensions.length === 0) return '';
-    return m.dimensions
+  protected dimensionsSummary(row: Material): string {
+    if (!row.dimensions || row.dimensions.length === 0) return '';
+    return row.dimensions
       .map((d) => `${typeLetter(d.type)} ${formatVal(d.value)}`)
       .join(' × ');
   }

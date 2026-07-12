@@ -53,7 +53,9 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
 };
 
 /**
- * TZ-104.3 batch-1 commit 2/3 — ProductsPage migrated to `<app-pi-table>`.
+ * TZ-104.3 batch-1 commit 2/3 + TZ-104.4.2 — ProductsPage migrated to
+ * `<app-pi-table>`, with TZ-104.4.2 dropping the `any`-escape
+ * hatch that v4 needed.
  *
  * Architecture: products is server-side paginated AND sorted (matches
  * materials). The backend GET /products endpoint accepts:
@@ -69,32 +71,34 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
  *     `listParams` so httpResource auto-refires
  *   - `[localSort]="false"` so pi-table does NOT re-sort the page
  *     slice (the backend already sorted)
+ *   - `[initialSortKey]="'name'"` + `[initialSortDir]="'asc'"`
+ *     so users see alphabetical-by-name default on first load,
+ *     matching the pre-migration `createSortState<SortKey>('name')`
+ *     behavior. listParams seed on first load includes
+ *     `{sortBy:'name', sortOrder:'asc'}`.
+ *
+ * TZ-104.4.2 lockstep: the page's `sortKeySig/sortDirSig` are
+ * seeded to `'name'/'asc'` to MATCH pi-table's internal state
+ * after ngOnInit applies the inputs above. Page-owned signal
+ * state stays in lockstep with pi-table's internal signal state
+ * from frame 1, so the round-2 mirror-event handler produces the
+ * correct backend request on the very first click.
  *
  * BUG fixes vs the pre-migration source:
- *   1. `params.page: 1` was hardcoded — pagination was BROKEN
- *      (always returning first 50 rows). Migration reads
- *      page from a pageSig signal via listParams.
+ *   1. `params.page: 1` was hardcoded — pagination was BROKEN.
  *   2. `sortedRows = sort.sorted(this.data(), ...)` captured
  *      `data()` as a static snapshot AND frontend-sorted the
- *      already-server-sorted payload (no-op client-side sort +
- *      stale snapshot bug). Migration drops `sortedRows` entirely
- *      — backend handles ordering, page just slices+paginates.
+ *      already-server-sorted payload. Migration drops sortedRows.
  *   3. `total = data().length` was the count of CURRENT page
- *      items, not the backend's true total. Migration reads
- *      `listRes.value()?.total` which is the canonical envelope
- *      field.
+ *      items, not the backend's true total.
  *
- *  Sort ownership: page uses direct `sortKeySig/sortDirSig`
- *  initialised to `(null, 'asc')` so both start in lockstep with
- *  pi-table's internal sortKeySig (also `null`-initial). The
- *  mirror-event handler sorts in lockstep on every click — same
- *  TZ-104.4-alignment as the orders round-2 fix.
- *
- *  Template-ref strategy mirrors materials v4 (see materials.page.ts):
- *  `@ViewChild({ static: true })` decorators + `any`-typed refs +
- *  plain property bindings + ngOnInit assignment. Bypasses
- *  `TemplateRef<C>` invariance + Angular's signal-binding
- *  name-collision; runtime row type is still Product.
+ *  Template-ref strategy (post-TZ-104.4.2):
+ *   `@ViewChild({ static: true })` decorators with strong typing
+ *   `TemplateRef<{ $implicit: Product }>` (NOT `any`). Pre-TZ-104.4.2
+ *   we used `any` because pi-table's `[cellTemplates]` was typed
+ *   `Record<string, TemplateRef<{ $implicit: unknown }>>` and
+ *   TemplateRef invariance broke the binding. TZ-104.4.2 re-typed
+ *   pi-table so the strict Product typing now flows through.
  *
  *  Standalone + OnPush + signal-based. No `products.page.spec.ts`
  *  exists yet; v1 acceptance is visual smoke + tsc.
@@ -166,6 +170,8 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
           [cellTemplates]="cellTemplates"
           [rowActions]="rowActionsTplBinding"
           [localSort]="false"
+          [initialSortKey]="'name'"
+          [initialSortDir]="'asc'"
           (pageChange)="onPageChange($event)"
           (sortChange)="onSortChange($event)"
         >
@@ -221,12 +227,14 @@ export class ProductsPage implements OnInit {
   protected readonly page = this.pageSig.asReadonly();
 
   /**
-   * Page-owned sort signals. Initial `null/asc` matches pi-table's
-   * internal sortKeySig start (also null). Both progress through
-   * the same three-state cycle on each click of the SAME column.
-   * see `onSortChange` below for the mirror-event handler.
+   * Page-owned sort signals. Seeded to `'name'/'asc'` to MATCH
+   * pi-table's internal state after ngOnInit applies the
+   * `[initialSortKey]="'name'"` + `[initialSortDir]="'asc'"`
+   * bindings (TZ-104.4.2). Both halves of the lockstep cycle start
+   * in sync — the round-2 mirror-event handler stays correct on
+   * the very first click instead of needing a recovery cycle.
    */
-  private readonly sortKeySig = signal<SortKey | null>(null);
+  private readonly sortKeySig = signal<SortKey | null>('name');
   private readonly sortDirSig = signal<'asc' | 'desc' | null>('asc');
 
   /** Debounced search — single source (`this.search.searchQuery`). */
@@ -356,18 +364,17 @@ export class ProductsPage implements OnInit {
   ];
 
   // ─── Template refs (resolved at view init, static:true → BEFORE ngOnInit) ──
-  // `any` typing mirrors materials v4 — bypasses TemplateRef<C>
-  // invariance + Angular's signal-binding name-collision. Runtime
-  // values are still Product; this is type-level relaxation only.
+  // TZ-104.4.2: strong typing matches pi-table's re-parameterized
+  // `[cellTemplates]` input. Pre-TZ-104.4.2 these were `TemplateRef<any>`.
   @ViewChild('nameTpl', { static: true })
-  private readonly nameTplRef!: TemplateRef<any>;
+  private readonly nameTplRef!: TemplateRef<{ $implicit: Product }>;
   @ViewChild('rowActionsTpl', { static: true })
-  private readonly rowActionsTplRef!: TemplateRef<any>;
+  private readonly rowActionsTplRef!: TemplateRef<{ $implicit: Product }>;
 
   /** Built in ngOnInit after ViewChild fields resolve. Stable reference. */
-  protected cellTemplates: Record<string, TemplateRef<any>> = {};
+  protected cellTemplates: Record<string, TemplateRef<{ $implicit: Product }>> = {};
   /** Built in ngOnInit; null until then so pi-table defers the slot. */
-  protected rowActionsTplBinding: TemplateRef<any> | null = null;
+  protected rowActionsTplBinding: TemplateRef<{ $implicit: Product }> | null = null;
 
   ngOnInit(): void {
     this.destroyRef.onDestroy(() => this.search.destroy());
@@ -405,13 +412,18 @@ export class ProductsPage implements OnInit {
    * orders.page.ts round-2 fix comment for the full reasoning.
    */
   protected onSortChange(event: { key: string; dir: SortDirection }): void {
-    const key = event.key;
     const dir = event.dir;
-    this.sortKeySig.set(dir === null ? null : (key as SortKey));
+    // TZ-104.4.2: removed `as SortKey` cast — sortKeySig is now
+    // typed `SortKey | null` so the sortKey-bounded assignment is
+    // direct.
+    // pi-table's `sortChange` output type is `{ key: string, ... }`
+    // — pi-table doesn't statically know about this page's `SortKey`
+    // union ('name' | 'sku' | 'listPrice'), so a single boundary
+    // cast is required at the event ingestion point.
+    this.sortKeySig.set(dir === null ? null : (event.key as SortKey));
     // sortDir is null only when sortKey is also null (both cleared).
-    // When pi-table's dir is null, page falls back to 'asc' as
-    // no-visual-effect placeholder (sortedRows returns backend
-    // default order once listParams drops both sortBy+sortOrder).
+    // When pi-table's dir is null, page falls back to null so the
+    // listParams check `sortKey && sortDir` correctly omits both.
     this.sortDirSig.set(dir === null ? null : dir);
     // Reset to first page on every sort change so users see the
     // first rows of the freshly ordered set.

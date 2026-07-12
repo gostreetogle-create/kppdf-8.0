@@ -121,7 +121,9 @@ function counterpartyIdOf(row: Order): string {
 }
 
 /**
- * TZ-104.3 batch-1 commit 3/3 — OrdersPage migrated to `<app-pi-table>`.
+ * TZ-104.3 batch-1 commit 3/3 + TZ-104.4.2 — OrdersPage migrated to
+ * `<app-pi-table>`, with TZ-104.4.2 dropping the `any`-escape
+ * hatch that v4 needed.
  *
  * Architectural shift vs materials.page.ts (server-side pagination):
  *  - Backend GET /orders returns a FLAT `Order[]` (no
@@ -134,6 +136,14 @@ function counterpartyIdOf(row: Order): string {
  *    different natural sorts — `status` cycle index, `date`
  *    chronological, `total` numeric, `number` locale).
  *
+ * TZ-104.4.2 page-loaded default sort: `[initialSortKey]="'date'"`
+ * + `[initialSortDir]="'desc'"` so users see "newest orders first"
+ * on first load (matching pre-migration UX). The page's internal
+ * `sortKeySig/sortDirSig` are seeded to `'date'/'desc'` to match
+ * pi-table's internal state after ngOnInit — both halves of the
+ * lockstep cycle start in sync, so the round-2 mirror-event handler
+ * stays correct from the very first click.
+ *
  * BUG fixes vs the pre-migration source:
  *  1. `sortedRows` was previously bound via
  *     `sort.sorted(this.filteredRows(), fn)`. That captures
@@ -144,25 +154,16 @@ function counterpartyIdOf(row: Order): string {
  *     sort signals so any change triggers re-compute.
  *  2. The pre-migration source had a page-level `searchQuery`
  *     signal AND `createClientSearchState`'s own internal
- *     `searchQuery`. The page's `onSearchInput` updated only the
- *     page-level signal — `createClientSearchState.filtered()`
- *     saw an always-empty internal signal and the filter was
- *     effectively a no-op. Replaced with `createSearchState` +
- *     a single reactive filtered computed reading `debouncedSearch`.
+ *     `searchQuery`. Replaced with `createSearchState` + a single
+ *     reactive filtered computed reading `debouncedSearch`.
  *
- *  Sort ownership: page uses a `sortKeySig/sortDirSig` pair via
- *  custom getters. `[localSort]="false"` so pi-table does NOT
- *  re-sort the visible page slice, and `(sortChange)` writes back
- *  into the page's sort signals. The two cycles progress in
- *  lockstep because both start at `null/asc` and use the same
- *  three-key cycle (asc → desc → null).
- *
- *  Template-ref strategy mirrors materials v4:
- *   `@ViewChild({ static: true })` decorators + `any`-typed refs
- *   + plain property bindings + ngOnInit assignment. Bypasses
- *   `TemplateRef<C>` invariance + Angular's signal-binding
- *   name-collision; runtime row type is still Order (the `any`
- *   is type-level relaxation only).
+ *  Template-ref strategy (post-TZ-104.4.2):
+ *   `@ViewChild({ static: true })` decorators with strong typing
+ *   `TemplateRef<{ $implicit: Order }>` (NOT `any`). Pre-TZ-104.4.2
+ *   we used `any` because pi-table's `[cellTemplates]` was typed
+ *   `Record<string, TemplateRef<{ $implicit: unknown }>>` and
+ *   TemplateRef invariance broke the binding. TZ-104.4.2 re-typed
+ *   pi-table so the strict Order typing now flows through.
  *
  *  Standalone + OnPush + signal-based. No tests for the orders
  *  page yet (no `orders.page.spec.ts`); v1 acceptance is visual
@@ -238,6 +239,8 @@ function counterpartyIdOf(row: Order): string {
           [cellTemplates]="cellTemplates"
           [rowActions]="rowActionsTplBinding"
           [localSort]="false"
+          [initialSortKey]="'date'"
+          [initialSortDir]="'desc'"
           (pageChange)="onPageChange($event)"
           (sortChange)="onSortChange($event)"
         >
@@ -280,13 +283,19 @@ export class OrdersPage implements OnInit {
   protected readonly pageSize = PAGE_SIZE;
 
   /**
-   * Page-owned sort signals. Initially `null/asc` so the cycle starts
-   * in lockstep with pi-table's internal sort (also `null/asc`).
-   * Both progress through asc → desc → null on each click of the
-   * SAME key, and reset to asc when a different key is clicked.
+   * Page-owned sort signals. Seeded to `'date'`/`'desc'` to MATCH
+   * pi-table's internal state after ngOnInit applies the
+   * `[initialSortKey]="'date'"` + `[initialSortDir]="'desc'"`
+   * bindings (TZ-104.4.2). Both halves of the lockstep cycle start
+   * in sync — the round-2 mirror-event handler stays correct on
+   * the very first click instead of needing a recovery cycle.
+   *
+   * Pre-TZ-104.4.2 init: `(null, 'asc')` to align with pi-table's
+   * pre-extension internal defaults. After TZ-104.4.2, both sides
+   * default to the page's chosen default.
    */
-  private readonly sortKeySig = signal<string | null>(null);
-  private readonly sortDirSig = signal<'asc' | 'desc'>('asc');
+  private readonly sortKeySig = signal<SortKey | null>('date');
+  private readonly sortDirSig = signal<'asc' | 'desc'>('desc');
 
   protected readonly sortKey = this.sortKeySig.asReadonly();
   protected readonly sortDir = this.sortDirSig.asReadonly();
@@ -351,7 +360,9 @@ export class OrdersPage implements OnInit {
     const key = this.sortKeySig();
     if (!key) return rows;
     const sign = this.sortDirSig() === 'asc' ? 1 : -1;
-    const accessor = accessorFor(key as SortKey);
+    // TZ-104.4.2: removed `as SortKey` cast — sortKeySig is now
+    // typed `SortKey | null` so the cast is no longer needed.
+    const accessor = accessorFor(key);
     return rows.slice().sort((a, b) => compareValues(accessor(a), accessor(b), sign));
   });
 
@@ -446,18 +457,17 @@ export class OrdersPage implements OnInit {
   ];
 
   // ─── Template refs (resolved at view init, static:true → BEFORE ngOnInit) ──
-  // `any` typing mirrors materials v4 to bypass TemplateRef<C>
-  // invariance + Angular's signal-binding name-collision. Runtime
-  // values are still Order; this is type-level relaxation only.
+  // TZ-104.4.2: strong typing matches pi-table's re-parameterized
+  // `[cellTemplates]` input. Pre-TZ-104.4.2 these were `TemplateRef<any>`.
   @ViewChild('counterpartyTpl', { static: true })
-  private readonly counterpartyTplRef!: TemplateRef<any>;
+  private readonly counterpartyTplRef!: TemplateRef<{ $implicit: Order }>;
   @ViewChild('rowActionsTpl', { static: true })
-  private readonly rowActionsTplRef!: TemplateRef<any>;
+  private readonly rowActionsTplRef!: TemplateRef<{ $implicit: Order }>;
 
   /** Built in ngOnInit after ViewChild fields resolve. Stable reference. */
-  protected cellTemplates: Record<string, TemplateRef<any>> = {};
+  protected cellTemplates: Record<string, TemplateRef<{ $implicit: Order }>> = {};
   /** Built in ngOnInit; null until then so pi-table defers the slot. */
-  protected rowActionsTplBinding: TemplateRef<any> | null = null;
+  protected rowActionsTplBinding: TemplateRef<{ $implicit: Order }> | null = null;
 
   ngOnInit(): void {
     this.counterpartiesLookup.load();
@@ -472,13 +482,10 @@ export class OrdersPage implements OnInit {
 
   // ─── Cell template helpers ─────────────────────────────────────────
   /**
-   * Accept `unknown` from `let-row` — Angular binding inserts the
-   * actual Order at runtime, so we cast once here rather than per
-   * template call site. Mirrors materials v4 helpers.
+   * TZ-104.4.2: `row: Order` (was `unknown` + `as Order` cast).
    */
-  protected counterpartyNameOf(row: unknown): string | null {
-    const o = row as Order;
-    const id = counterpartyIdOf(o);
+  protected counterpartyNameOf(row: Order): string | null {
+    const id = counterpartyIdOf(row);
     if (!id) return null;
     return (
       this.counterpartiesLookup.byId()[id]?.shortName ??
@@ -524,7 +531,12 @@ export class OrdersPage implements OnInit {
    * sortDirSig to 'asc' as a no-visual-effect placeholder.
    */
   protected onSortChange(event: { key: string; dir: SortDirection }): void {
-    this.sortKeySig.set(event.dir === null ? null : event.key);
+    // pi-table's `sortChange` output type is `{ key: string, ... }`
+    // — pi-table doesn't statically know about this page's `SortKey`
+    // union, so a single boundary cast is required at the event
+    // ingestion point. Once stored in `sortKeySig` (typed
+    // `SortKey | null`), no further casts are needed downstream.
+    this.sortKeySig.set(event.dir === null ? null : (event.key as SortKey));
     this.sortDirSig.set(event.dir === null ? 'asc' : event.dir);
     // Reset to first page on every sort change so users see the
     // first rows of the freshly ordered set.
