@@ -493,6 +493,7 @@ export class ModulesPage implements OnInit {
         variant: 'destructive',
       },
       width: 'sm',
+    parentDestroyRef: this.destroyRef,
     });
     onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
       if (!confirmed) return;
