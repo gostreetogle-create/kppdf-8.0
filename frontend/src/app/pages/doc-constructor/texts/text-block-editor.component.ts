@@ -1,22 +1,24 @@
 /**
- * TZ-104.6 — `TextBlockEditorComponent`.
+ * TZ-104.6 — `TextBlockEditorComponent`
  *
- * Visual editor for constructing text blocks with multi-column layout.
- * Each column gets its own `PiRichTextEditorComponent` instance.
+ * Визуальный редактор текстового блока.
  *
- * Layout:
- *   ┌─ Name ──────────────────────────────────────────┐
- *   ├──────────────────────────────────────────────────┤
- *   │ [1] [2] [3] [4] [5] [6] [7] [8]  ← Колонок     │
- *   ├────────┬────────┬────────┬────────┬──────────────┤
- *   │ Col 1  │ Col 2  │ Col 3  │ Col 4  │  [+]         │
- *   │ [RTE]  │ [RTE]  │ [RTE]  │ [RTE]  │              │
- *   └────────┴────────┴────────┴────────┴──────────────┘
- *   │ [✓ Активен]  [💾 Сохранить]  [✕ Отмена]         │
- * └────────────────────────────────────────────────────┘
- *
- * Emits `(save)` with the full TextBlock payload on save.
- * Emits `(cancel)` when the user presses Cancel.
+ * ┌─────────────────────────────────────────────────────────────┐
+ * │ Название блока: [________________________]                  │
+ * │                                                             │
+ * │ Колонок: [1] [2] [3] [4] [5] [6] [7] [8]                  │
+ * │                                                             │
+ * │ ┌─ Документ (рамка как в реальности) ────────────────────┐ │
+ * │ │  ┌────────── Часть 1 ──────────┐ ┌── Часть 2 ───────┐ │ │
+ * │ │  │ [B] [I] [U] | [≡] [≡] [≡]  │ │ [B] [I] [U] | …  │ │ │
+ * │ │  │                             │ │                   │ │ │
+ * │ │  │ Текст колонки 1...          │ │ Текст колонки 2.. │ │ │
+ * │ │  │                             │ │                   │ │ │
+ * │ │  └─────────────────────────────┘ └───────────────────┘ │ │
+ * │ └────────────────────────────────────────────────────────┘ │
+ * │                                                             │
+ * │ [✓ Активен]                [Отмена] [Сохранить блок]       │
+ * └─────────────────────────────────────────────────────────────┘
  */
 
 import {
@@ -42,7 +44,7 @@ import { extractErrorMessage } from '../../../core/silent-http';
   imports: [ReactiveFormsModule, ButtonComponent, PiRichTextEditorComponent],
   template: `
     <div class="tbe">
-      <!-- Name -->
+      <!-- ── Name field ── -->
       <div class="tbe-field">
         <label class="tbe-label" for="tbe-name">Название блока</label>
         <input
@@ -56,7 +58,7 @@ import { extractErrorMessage } from '../../../core/silent-http';
         }
       </div>
 
-      <!-- Column count selector -->
+      <!-- ── Column count selector ── -->
       <div class="tbe-columns-selector">
         <span class="tbe-label">Колонок:</span>
         <div class="tbe-columns-buttons">
@@ -66,315 +68,347 @@ import { extractErrorMessage } from '../../../core/silent-http';
               class="tbe-col-btn"
               [class.is-active]="columnsCount() === n"
               (click)="setColumns(n)"
-              [attr.aria-label]="n + ' колонок'"
             >{{ n }}</button>
           }
-          <span class="tbe-columns-hint">деление на равные части по ширине</span>
+          <span class="tbe-columns-hint">— равные части по ширине</span>
         </div>
       </div>
 
-      <!-- Columns grid -->
+      <!-- ── Document preview frame ── -->
       @if (columns().length > 0) {
-        <div
-          class="tbe-grid"
-          [style.grid-template-columns]="gridTemplate()"
-        >
-          @for (col of columns(); track trackByColId($index, col); let idx = $index) {
-            <div class="tbe-col">
-              <div class="tbe-col-header">
-                <span class="tbe-col-label">Часть {{ idx + 1 }}</span>
-                @if (columns().length > 1) {
-                  <button
-                    type="button"
-                    class="tbe-col-remove"
-                    (click)="removeColumn(idx)"
-                    title="Удалить колонку"
-                    aria-label="Удалить колонку {{ idx + 1 }}"
-                  >✕</button>
-                }
-              </div>
-              <app-pi-rich-text
-                [(value)]="col.content"
-                [placeholder]="'Напишите текст для части ' + (idx + 1) + '…'"
-                [showToolbar]="true"
-              />
-            </div>
-          }
-          @if (columns().length < 8) {
-            <button
-              type="button"
-              class="tbe-add-col"
-              (click)="addColumn()"
-              title="Добавить колонку"
-              aria-label="Добавить колонку"
+        <div class="tbe-doc-frame">
+          <!-- Frame top bar (like paper header) -->
+          <div class="tbe-doc-frame-bar">
+            <span class="tbe-doc-frame-bar-label">{{ nameControl.value || 'Текстовый блок' }}</span>
+            <span class="tbe-doc-frame-bar-cols">{{ columns().length }} колонк{{ columns().length === 1 ? 'а' : columns().length < 5 ? 'и' : 'ок' }}</span>
+          </div>
+
+          <div class="tbe-doc-frame-body">
+            <div
+              class="tbe-grid"
+              [style.grid-template-columns]="gridTemplate()"
             >
-              <span class="tbe-add-col-plus">+</span>
-              <span class="tbe-add-col-text">Колонку</span>
-            </button>
+              @for (col of columns(); track trackByColId($index, col); let idx = $index) {
+                <div class="tbe-block" [class.tbe-block--last]="idx === columns().length - 1">
+                  <!-- Mini-toolbar inside the block -->
+                  <div class="tbe-block-toolbar">
+                    <span class="tbe-block-toolbar-label">#{{ idx + 1 }}</span>
+                    @if (columns().length > 1) {
+                      <button
+                        type="button"
+                        class="tbe-block-remove"
+                        (click)="removeColumn(idx)"
+                        title="Удалить колонку"
+                      >✕</button>
+                    }
+                  </div>
+                  <!-- Rich-text editor (compact mode) -->
+                  <app-pi-rich-text
+                    [(value)]="col.content"
+                    [placeholder]="'Колонка ' + (idx + 1) + '…'"
+                    [showToolbar]="true"
+                    [compact]="true"
+                  />
+                </div>
+              }
+
+              @if (columns().length < 8) {
+                <button type="button" class="tbe-block tbe-block--add" (click)="addColumn()"
+                  title="Добавить колонку" aria-label="Добавить колонку">
+                  <span class="tbe-block-add-icon">+</span>
+                  <span class="tbe-block-add-text">Колонку</span>
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── Controls row ── -->
+      <div class="tbe-controls">
+        <div class="tbe-controls-left">
+          <label class="tbe-check">
+            <input type="checkbox" [formControl]="activeControl" />
+            <span>Активен</span>
+          </label>
+          @if (errorMessage()) {
+            <div role="alert" class="tbe-banner tbe-banner--error">{{ errorMessage() }}</div>
           }
         </div>
-      }
 
-      <!-- Active toggle -->
-      <label class="tbe-check">
-        <input type="checkbox" [formControl]="activeControl" />
-        <span>Блок активен (доступен в конструкторе документов)</span>
-      </label>
-
-      <!-- Error banner -->
-      @if (errorMessage()) {
-        <div role="alert" class="tbe-banner tbe-banner--error">
-          {{ errorMessage() }}
+        <div class="tbe-actions">
+          <app-pi-button variant="ghost" (click)="onCancel()">Отмена</app-pi-button>
+          <app-pi-button variant="default" [disabled]="nameControl.invalid || saving()" (click)="onSave()">
+            {{ saving() ? 'Сохранение…' : 'Сохранить блок' }}
+          </app-pi-button>
         </div>
-      }
-
-      <!-- Actions -->
-      <div class="tbe-actions">
-        <app-pi-button variant="ghost" (click)="onCancel()">Отмена</app-pi-button>
-        <app-pi-button
-          variant="default"
-          [disabled]="nameControl.invalid || saving()"
-          (click)="onSave()"
-        >
-          {{ saving() ? 'Сохранение…' : 'Сохранить блок' }}
-        </app-pi-button>
       </div>
     </div>
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-      }
+  styles: [`
+    :host { display: block; }
 
-      .tbe {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-      }
+    .tbe {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
 
-      .tbe-field {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-      }
+    .tbe-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
 
-      .tbe-label {
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: oklch(var(--color-muted));
-      }
+    .tbe-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: oklch(var(--color-muted));
+    }
 
-      .tbe-error {
-        font-size: 12px;
-        color: oklch(var(--color-destructive));
-      }
+    .tbe-error {
+      font-size: 12px;
+      color: oklch(var(--color-destructive));
+    }
 
-      .tbe-check {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 13px;
-        color: oklch(var(--color-ink));
-        cursor: pointer;
-        user-select: none;
-      }
+    /* ── Column selector ── */
+    .tbe-columns-selector {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
 
-      .tbe-check input[type='checkbox'] {
-        width: 16px;
-        height: 16px;
-        border: 1px solid oklch(var(--color-rule));
-        border-radius: 2px;
-        accent-color: oklch(var(--color-ink));
-      }
+    .tbe-columns-buttons {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
 
-      /* Column selector */
-      .tbe-columns-selector {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
+    .tbe-col-btn {
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      background: transparent;
+      color: oklch(var(--color-ink));
+      border: 1px solid oklch(var(--color-rule));
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 80ms ease;
+    }
+    .tbe-col-btn:hover { background: oklch(var(--color-sunrise-soft)); }
+    .tbe-col-btn.is-active {
+      background: oklch(var(--color-ink));
+      color: oklch(var(--color-paper));
+      border-color: oklch(var(--color-ink));
+    }
 
-      .tbe-columns-buttons {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-      }
+    .tbe-columns-hint {
+      font-size: 11px;
+      color: oklch(var(--color-muted));
+    }
 
-      .tbe-col-btn {
-        width: 32px;
-        height: 32px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 13px;
-        font-weight: 600;
-        font-family: inherit;
-        background: transparent;
-        color: oklch(var(--color-ink));
-        border: 1px solid oklch(var(--color-rule));
-        border-radius: 2px;
-        cursor: pointer;
-        transition: all 80ms ease;
-      }
+    /* ── Document preview frame ── */
+    .tbe-doc-frame {
+      border: 2px solid oklch(var(--color-rule));
+      border-radius: 4px;
+      background: oklch(var(--color-paper));
+      box-shadow: 0 2px 6px oklch(0 0 0 / 0.06);
+      overflow: hidden;
+    }
 
-      .tbe-col-btn:hover {
-        background: oklch(var(--color-sunrise-soft));
-      }
+    .tbe-doc-frame-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 14px;
+      background: oklch(var(--color-paper-2));
+      border-bottom: 2px solid oklch(var(--color-rule));
+    }
 
-      .tbe-col-btn.is-active {
-        background: oklch(var(--color-ink));
-        color: oklch(var(--color-paper));
-        border-color: oklch(var(--color-ink));
-      }
+    .tbe-doc-frame-bar-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: oklch(var(--color-muted));
+    }
 
-      .tbe-columns-hint {
-        font-size: 11px;
-        color: oklch(var(--color-muted));
-      }
+    .tbe-doc-frame-bar-cols {
+      font-size: 10px;
+      color: oklch(var(--color-muted));
+      opacity: 0.6;
+    }
 
-      /* Grid */
-      .tbe-grid {
-        display: grid;
-        gap: 12px;
-        align-items: start;
-      }
+    .tbe-doc-frame-body {
+      padding: 12px;
+    }
 
-      .tbe-col {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
+    .tbe-grid {
+      display: grid;
+      gap: 0;
+      align-items: stretch;
+    }
 
-      .tbe-col-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 4px;
-      }
+    /* ── Individual block ── */
+    .tbe-block {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid oklch(var(--color-rule));
+      border-right: none;
+      background: oklch(var(--color-paper));
+      overflow: hidden;
+      transition: border-color 120ms ease;
+    }
+    .tbe-block:hover {
+      border-color: oklch(var(--color-ink) / 0.35);
+    }
+    .tbe-block--last {
+      border-right: 1px solid oklch(var(--color-rule));
+    }
+    .tbe-block--last:hover {
+      border-right-color: oklch(var(--color-ink) / 0.35);
+    }
 
-      .tbe-col-label {
-        font-size: 10px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: oklch(var(--color-muted));
-      }
+    .tbe-block-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 3px 8px;
+      background: oklch(var(--color-paper-2) / 0.6);
+      border-bottom: 1px solid oklch(var(--color-rule));
+    }
 
-      .tbe-col-remove {
-        width: 20px;
-        height: 20px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 10px;
-        background: transparent;
-        color: oklch(var(--color-muted));
-        border: 1px solid transparent;
-        border-radius: 2px;
-        cursor: pointer;
-        transition: all 80ms ease;
-      }
+    .tbe-block-toolbar-label {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: oklch(var(--color-muted));
+    }
 
-      .tbe-col-remove:hover {
-        color: oklch(var(--color-destructive));
-        background: oklch(var(--color-destructive) / 0.1);
-      }
+    .tbe-block-remove {
+      width: 18px;
+      height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      background: transparent;
+      color: oklch(var(--color-muted));
+      border: 1px solid transparent;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 80ms ease;
+      opacity: 0.5;
+    }
+    .tbe-block:hover .tbe-block-remove { opacity: 1; }
+    .tbe-block-remove:hover {
+      color: oklch(var(--color-destructive));
+      background: oklch(var(--color-destructive) / 0.1);
+      opacity: 1;
+    }
 
-      /* Add column button */
-      .tbe-add-col {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        min-height: 100px;
-        border: 1px dashed oklch(var(--color-rule));
-        border-radius: 2px;
-        background: transparent;
-        color: oklch(var(--color-muted));
-        cursor: pointer;
-        transition: all 120ms ease;
-        font-family: inherit;
-        padding: 16px;
-      }
+    /* ── Add column button ── */
+    .tbe-block--add {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      min-height: 70px;
+      border: 1px dashed oklch(var(--color-rule));
+      border-right: 1px dashed oklch(var(--color-rule));
+      background: transparent;
+      color: oklch(var(--color-muted));
+      cursor: pointer;
+      transition: all 120ms ease;
+      font-family: inherit;
+      padding: 12px;
+    }
+    .tbe-block--add:hover {
+      border-color: oklch(var(--color-ink));
+      color: oklch(var(--color-ink));
+      background: oklch(var(--color-sunrise-soft) / 0.3);
+    }
+    .tbe-block-add-icon { font-size: 22px; font-weight: 200; line-height: 1; }
+    .tbe-block-add-text { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
 
-      .tbe-add-col:hover {
-        border-color: oklch(var(--color-ink));
-        color: oklch(var(--color-ink));
-        background: oklch(var(--color-sunrise-soft) / 0.3);
-      }
+    /* ── Controls row ── */
+    .tbe-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-top: 12px;
+      border-top: 1px solid oklch(var(--color-rule));
+    }
 
-      .tbe-add-col-plus {
-        font-size: 28px;
-        font-weight: 300;
-        line-height: 1;
-      }
+    .tbe-controls-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
 
-      .tbe-add-col-text {
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
+    .tbe-check {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: oklch(var(--color-ink));
+      cursor: pointer;
+      user-select: none;
+    }
+    .tbe-check input[type='checkbox'] {
+      width: 14px;
+      height: 14px;
+      border: 1px solid oklch(var(--color-rule));
+      border-radius: 2px;
+      accent-color: oklch(var(--color-ink));
+    }
 
-      /* Banner */
-      .tbe-banner {
-        padding: 10px 14px;
-        font-size: 13px;
-        border-radius: 2px;
-      }
+    .tbe-banner {
+      padding: 6px 10px;
+      font-size: 12px;
+      border-radius: 2px;
+    }
+    .tbe-banner--error {
+      background: oklch(var(--color-destructive) / 0.1);
+      color: oklch(var(--color-destructive));
+      border: 1px solid oklch(var(--color-destructive) / 0.3);
+    }
 
-      .tbe-banner--error {
-        background: oklch(var(--color-destructive) / 0.1);
-        color: oklch(var(--color-destructive));
-        border: 1px solid oklch(var(--color-destructive) / 0.3);
-      }
-
-      /* Actions */
-      .tbe-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-        padding-top: 8px;
-        border-top: 1px solid oklch(var(--color-rule));
-      }
-    `,
-  ],
+    .tbe-actions {
+      display: flex;
+      gap: 8px;
+    }
+  `],
 })
 export class TextBlockEditorComponent {
-  /** Existing TextBlock to edit, or null for new block. */
   readonly block = input<TextBlock | null>(null);
-
-  /** Emitted when user saves successfully. */
   readonly save = output<TextBlock>();
-
-  /** Emitted when user cancels. */
   readonly cancel = output<void>();
 
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly service = inject(TextBlocksService);
   private readonly toast = inject(PiToastService);
 
-  protected readonly nameControl = this.fb.control('', [
-    Validators.required,
-    Validators.maxLength(200),
-  ]);
+  protected readonly nameControl = this.fb.control('', [Validators.required, Validators.maxLength(200)]);
   protected readonly activeControl = this.fb.control(true);
 
-  /** Number of columns (signals-based, not formcontrol). */
   protected readonly columnsCount = signal<number>(1);
-
-  /** Array of column data. */
   protected readonly columns = signal<TextBlockColumn[]>([]);
-
   protected readonly saving = signal<boolean>(false);
   protected readonly errorMessage = signal<string | null>(null);
 
-  /** Grid template columns — equal widths. */
   protected readonly gridTemplate = computed(() => {
     const count = this.columns().length;
     if (count <= 1) return '1fr';
@@ -388,58 +422,38 @@ export class TextBlockEditorComponent {
   });
 
   constructor() {
-    // Hydrate from existing block
     const existing = this.block();
     if (existing) {
       this.nameControl.setValue(existing.name);
       this.activeControl.setValue(existing.isActive);
-
       if (existing.columns && existing.columns.length > 0) {
-        const cols = existing.columns.map((c) => ({
+        this.columns.set(existing.columns.map((c) => ({
           id: c.id || crypto.randomUUID(),
           content: c.content || '',
           width: c.width || 1,
-        }));
-        this.columns.set(cols);
-        this.columnsCount.set(cols.length);
+        })));
+        this.columnsCount.set(existing.columns.length);
       } else {
-        // Single column from existing content
-        this.columns.set([{
-          id: crypto.randomUUID(),
-          content: existing.content || '',
-          width: 1,
-        }]);
+        this.columns.set([{ id: crypto.randomUUID(), content: existing.content || '', width: 1 }]);
         this.columnsCount.set(1);
       }
     } else {
-      // Fresh start — 1 empty column
       this.columns.set([this.makeColumn()]);
     }
   }
 
-  protected trackByColId(_index: number, col: TextBlockColumn): string {
-    return col.id;
-  }
+  protected trackByColId(_index: number, col: TextBlockColumn): string { return col.id; }
 
   protected setColumns(n: number): void {
     const current = this.columns();
-    const currentLen = current.length;
-
-    if (n === currentLen) return;
-
-    if (n > currentLen) {
-      // Add columns
-      const toAdd = n - currentLen;
+    if (n === current.length) return;
+    if (n > current.length) {
       const next = [...current];
-      for (let i = 0; i < toAdd; i++) {
-        next.push(this.makeColumn());
-      }
+      for (let i = 0; i < n - current.length; i++) next.push(this.makeColumn());
       this.columns.set(next);
     } else {
-      // Remove from end
       this.columns.set(current.slice(0, n));
     }
-
     this.columnsCount.set(n);
   }
 
@@ -449,21 +463,17 @@ export class TextBlockEditorComponent {
   }
 
   protected removeColumn(index: number): void {
-    const next = this.columns().filter((_, i) => i !== index);
-    this.columns.set(next);
-    this.columnsCount.set(next.length);
+    this.columns.update((cols) => cols.filter((_, i) => i !== index));
+    this.columnsCount.update((n) => n - 1);
   }
 
-  protected onCancel(): void {
-    this.cancel.emit();
-  }
+  protected onCancel(): void { this.cancel.emit(); }
 
   protected onSave(): void {
     if (this.nameControl.invalid || this.saving()) {
       this.nameControl.markAsTouched();
       return;
     }
-
     this.saving.set(true);
     this.errorMessage.set(null);
 
@@ -472,7 +482,6 @@ export class TextBlockEditorComponent {
       name: this.nameControl.value,
       isActive: this.activeControl.value,
       columns: cols,
-      // For single-column blocks, also save as content for backward compat
       content: cols.length === 1 ? cols[0].content : '',
     };
 
@@ -484,9 +493,7 @@ export class TextBlockEditorComponent {
       next: (res) => {
         this.saving.set(false);
         if (res.ok) {
-          this.toast.success(
-            this.block() ? 'Блок сохранён' : 'Блок создан',
-          );
+          this.toast.success(this.block() ? 'Блок сохранён' : 'Блок создан');
           this.save.emit(res.data);
         } else {
           const msg = extractErrorMessage(res.error);
