@@ -307,13 +307,13 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         flex-shrink: 0;
         height: 100%;
         overflow-y: auto;
-        background: oklch(var(--color-paper));
-        border-right: 1px solid oklch(var(--color-rule));
+        background: var(--color-paper);
+        border-right: 1px solid var(--color-rule);
       }
 
       .tool-pane__header {
         padding: 16px 16px 8px;
-        border-bottom: 1px solid oklch(var(--color-rule));
+        border-bottom: 1px solid var(--color-rule);
       }
 
       .tool-pane__title {
@@ -321,18 +321,18 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.06em;
-        color: oklch(var(--color-ink));
+        color: var(--color-ink);
         margin: 0 0 4px;
       }
 
       .tool-pane__subtitle {
         font-size: 11px;
-        color: oklch(var(--color-muted));
+        color: var(--color-muted);
         margin: 0;
       }
 
       .tool-pane__section {
-        border-bottom: 1px solid oklch(var(--color-rule));
+        border-bottom: 1px solid var(--color-rule);
       }
 
       .tool-pane__section-toggle {
@@ -344,7 +344,7 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         background: transparent;
         border: none;
         cursor: pointer;
-        color: oklch(var(--color-ink));
+        color: var(--color-ink);
         font-size: 12px;
         font-weight: 600;
         text-transform: uppercase;
@@ -353,7 +353,7 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
       }
 
       .tool-pane__section-toggle:hover {
-        background: oklch(var(--color-sunrise-soft) / 0.4);
+        background: color-mix(in oklch, var(--color-sunrise-soft) 40%, transparent);
       }
 
       .tool-pane__section-title {
@@ -376,7 +376,7 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
       }
 
       .tool-pane__item:hover {
-        background: oklch(var(--color-sunrise-soft) / 0.4);
+        background: color-mix(in oklch, var(--color-sunrise-soft) 40%, transparent);
       }
 
       .tool-pane__item:active {
@@ -393,7 +393,7 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
 
       .tool-pane__item-label {
         font-size: 13px;
-        color: oklch(var(--color-ink));
+        color: var(--color-ink);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -401,7 +401,7 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
 
       .tool-pane__item-hint {
         font-size: 10px;
-        color: oklch(var(--color-muted));
+        color: var(--color-muted);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -415,17 +415,17 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         align-items: center;
         justify-content: center;
         background: transparent;
-        border: 1px solid oklch(var(--color-rule));
-        color: oklch(var(--color-ink));
+        border: 1px solid var(--color-rule);
+        color: var(--color-ink);
         cursor: pointer;
         border-radius: 2px;
         transition: all 100ms ease;
       }
 
       .tool-pane__add:hover {
-        background: oklch(var(--color-ink));
-        color: oklch(var(--color-paper));
-        border-color: oklch(var(--color-ink));
+        background: var(--color-ink);
+        color: var(--color-paper);
+        border-color: var(--color-ink);
       }
 
       .tool-pane__subgroup {
@@ -436,7 +436,7 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         font-size: 10px;
         text-transform: uppercase;
         letter-spacing: 0.06em;
-        color: oklch(var(--color-muted));
+        color: var(--color-muted);
         margin: 4px 16px 4px;
         font-weight: 600;
       }
@@ -447,12 +447,12 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
       .tool-pane__hint {
         padding: 8px 16px;
         font-size: 12px;
-        color: oklch(var(--color-muted));
+        color: var(--color-muted);
         margin: 0;
       }
 
       .tool-pane__error {
-        color: oklch(var(--color-destructive));
+        color: var(--color-destructive);
       }
 
       .tool-pane__decorations {
@@ -483,29 +483,29 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         padding: 6px 12px;
         font-size: 12px;
         font-weight: 600;
-        background: oklch(var(--color-paper-2));
-        color: oklch(var(--color-ink));
-        border: 1px solid oklch(var(--color-rule));
+        background: var(--color-paper-2);
+        color: var(--color-ink);
+        border: 1px solid var(--color-rule);
         border-radius: 2px;
         cursor: pointer;
         transition: all 100ms ease;
       }
 
       .tool-pane__upload-button:hover {
-        background: oklch(var(--color-ink));
-        color: oklch(var(--color-paper));
-        border-color: oklch(var(--color-ink));
+        background: var(--color-ink);
+        color: var(--color-paper);
+        border-color: var(--color-ink);
       }
 
       /* CDK drag preview for palette items */
       .cdk-drag-preview {
         box-sizing: border-box;
-        background: oklch(var(--color-paper));
-        border: 1px solid oklch(var(--color-ink));
+        background: var(--color-paper);
+        border: 1px solid var(--color-ink);
         opacity: 0.9;
         padding: 6px 16px;
         font-size: 13px;
-        color: oklch(var(--color-ink));
+        color: var(--color-ink);
       }
     `,
   ],

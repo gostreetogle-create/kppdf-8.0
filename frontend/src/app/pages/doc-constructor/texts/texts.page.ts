@@ -7,17 +7,14 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, switchMap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { PiPageHeaderComponent } from '../../../shared/page/pi-page-header.component';
 import { PiEmptyStateComponent } from '../../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { PiRowActionsComponent } from '../../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../../shared/ui/dialog/pi-alert-dialog.component';
 import { PiToastService } from '../../../shared/ui/toast';
-import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
 import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../../core/silent-http';
 import {
@@ -25,301 +22,323 @@ import {
   TextBlocksService,
 } from '../../../shared/services/pi-text-blocks.service';
 import { TextBlockEditorComponent } from './text-block-editor.component';
+import { pluralRu, RU_BLOCKS, RU_COLUMNS } from '../../../shared/util/russian-plural';
 
-type SortKey = 'name' | null;
 type SortDir = 'asc' | 'desc';
 
-/**
- * TZ-104.6 — TextsPage (single-column layout).
- *
- * Top: full-width visual editor.
- * Bottom: list of saved blocks for browsing/searching.
- */
 @Component({
   selector: 'app-texts-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    PiPageHeaderComponent,
     PiEmptyStateComponent,
     PiRowActionsComponent,
     ButtonComponent,
-    SwitchComponent,
     TextBlockEditorComponent,
   ],
   template: `
-    <app-pi-page-header
-      eyebrow="раздел · конструктор документов"
-      title="Текстовые блоки"
-      description="Создавайте текстовые блоки с форматированием и разбивкой на колонки. Готовые блоки можно вставлять в шаблоны документов через конструктор."
-    />
-
     @if (error()) {
-      <div role="alert" class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive">
-        {{ error() }}
+      <div role="alert" class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive flex items-center gap-2">
+        <span>{{ error() }}</span>
+        <button type="button" class="pi-icon-btn pi-focus-ring ml-auto" (click)="error.set(null)" aria-label="Закрыть">×</button>
       </div>
     }
 
-    <!-- ── Toolbar: search + create ── -->
-    <div class="texts-toolbar">
-      <div class="texts-toolbar-search">
-        <input
-          type="search"
-          name="texts-search"
-          [value]="searchQuery()"
-          (input)="onSearchInput($event)"
-          placeholder="Поиск блоков…"
-          aria-label="Поиск текстовых блоков"
-          class="pi-input"
-        />
-      </div>
-      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
-        + Создать
-      </app-pi-button>
-    </div>
-
-    <!-- ── Editor area (full-width) ── -->
-    <div class="texts-editor">
-      @if (editingBlock(); as editingBlock) {
-        <app-text-block-editor
-          [block]="editingBlock"
-          (save)="onEditorSaved($event)"
-          (cancel)="onEditorCancel()"
-        />
-      } @else if (creatingNew()) {
-        <app-text-block-editor
-          (save)="onEditorSaved($event)"
-          (cancel)="onEditorCancel()"
-        />
-      } @else {
-        <div class="texts-editor-empty">
-          <p class="texts-editor-empty-title">Выберите или создайте блок</p>
-          <p class="texts-editor-empty-hint">
-            Нажмите «Создать», чтобы добавить новый текстовый блок,<br />
-            или выберите готовый блок из списка ниже.
-          </p>
-        </div>
-      }
-    </div>
-
-    <!-- ── Saved blocks list ── -->
-    <div class="texts-list">
-      <div class="texts-list-header">
-        <span class="texts-list-title">Сохранённые блоки</span>
-        <span class="texts-list-count">{{ data().length }} {{ totalLabel(data().length) }}</span>
-      </div>
-
-      @if (loading() && data().length === 0) {
-        <div class="texts-list-body">
-          <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
-        </div>
-      } @else if (sortedRows().length === 0 && !loading()) {
-        <div class="texts-list-body">
-          <app-pi-empty-state
-            [colspan]="1"
-            [message]="searchQuery() ? 'Ничего не найдено.' : 'Пока нет блоков. Нажмите «Создать».'"
-            state="empty"
+    <div class="texts-stack">
+      <div class="texts-editor-zone">
+        @if (editorOpen()) {
+          <app-text-block-editor
+            [block]="editingBlock()"
+            (save)="onEditorSaved($event)"
+            (cancel)="onEditorCancel()"
           />
-        </div>
-      } @else {
-        <div class="texts-list-body">
-          <div class="texts-list-items">
-            @for (row of sortedRows(); track row._id) {
-              <div
-                class="texts-list-item"
-                [class.is-selected]="editingId() === row._id"
-                [class.is-inactive]="!row.isActive"
-                (click)="openEdit(row)"
-                role="button"
-                tabindex="0"
-                (keydown.enter)="openEdit(row)"
-                [attr.data-test]="'text-row-' + row._id"
-              >
-                <div class="texts-list-item-body">
-                  <span class="texts-list-item-name">{{ row.name }}</span>
-                  <span class="texts-list-item-meta">
-                    @if (row.columns && row.columns.length > 0) {
-                      {{ row.columns.length }} кол.
-                    }
-                  </span>
-                </div>
-                <div class="texts-list-item-actions">
-                  <app-pi-switch
-                    [checked]="row.isActive"
-                    [id]="'switch-' + row._id"
-                    [ariaLabel]="(row.isActive ? 'Деактивировать ' : 'Активировать ') + row.name"
-                    (checkedChange)="onToggleActive(row, $event)"
-                    data-test="active-switch"
-                  />
-                  <app-pi-row-actions
-                    [row]="row"
-                    [editLabel]="'Редактировать ' + row.name"
-                    [deleteLabel]="'Удалить ' + row.name"
-                    [dataTestEdit]="'edit-button-' + row._id"
-                    [dataTestDelete]="'delete-button-' + row._id"
-                    (edit)="openEdit(row)"
-                    (delete)="onDelete(row)"
-                  />
-                </div>
-              </div>
-            }
+        } @else {
+          <section class="texts-shell-empty">
+            <div class="texts-shell-accent" aria-hidden="true"></div>
+            <header class="texts-shell-head">
+              <span class="eyebrow text-sunrise-warm">Конструктор · Тексты</span>
+              <h1 class="font-display texts-shell-title">Текстовые блоки</h1>
+            </header>
+            <div class="texts-shell-body pi-dashed-panel">
+              <p class="text-sm text-muted-foreground">Выберите блок в каталоге ниже или создайте новый</p>
+              <app-pi-button variant="default" size="sm" (click)="openCreate()">+ Новый блок</app-pi-button>
+            </div>
+          </section>
+        }
+      </div>
+
+      <section class="texts-catalog" aria-label="Сохранённые блоки">
+        <header class="texts-catalog-head">
+          <div class="texts-catalog-head-left">
+            <h2 class="texts-catalog-title font-display">
+              Сохранённые блоки · {{ data().length }} {{ totalLabel(data().length) }}
+            </h2>
+            <div class="texts-search-wrap">
+              <span class="texts-search-icon" aria-hidden="true">⌕</span>
+              <input
+                type="search"
+                class="texts-search-input"
+                [value]="searchQuery()"
+                (input)="onSearchInput($event)"
+                placeholder="Поиск…"
+                aria-label="Поиск текстовых блоков"
+              />
+            </div>
           </div>
+          <app-pi-button variant="default" size="sm" (click)="openCreate()" data-test="create-button">
+            + Новый
+          </app-pi-button>
+        </header>
+
+        <div class="texts-catalog-scroll">
+          @if (loading() && data().length === 0) {
+            <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
+          } @else if (sortedRows().length === 0 && !loading()) {
+            <p class="texts-catalog-empty text-sm text-muted-foreground">
+              @if (searchQuery()) {
+                Ничего не найдено
+              } @else {
+                Блоков пока нет
+              }
+            </p>
+          } @else {
+            <table class="texts-table">
+              <thead>
+                <tr>
+                  <th class="eyebrow">Название</th>
+                  <th class="eyebrow">Конфигурация</th>
+                  <th class="eyebrow">Статус</th>
+                  <th class="eyebrow texts-table-actions-col">Действия</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of sortedRows(); track row._id) {
+                  <tr
+                    class="texts-table-row"
+                    [class.is-active]="editingId() === row._id"
+                    [class.is-inactive-row]="!row.isActive"
+                    (click)="openEdit(row)"
+                    [attr.data-test]="'text-row-' + row._id"
+                  >
+                    <td class="texts-table-name">{{ row.name }}</td>
+                    <td class="texts-table-config">{{ columnConfigUpper(row.columns?.length || 1) }}</td>
+                    <td>
+                      <span class="texts-status">
+                        <span
+                          class="texts-status-dot"
+                          [class.texts-status-dot--on]="row.isActive"
+                          [class.texts-status-dot--off]="!row.isActive"
+                        ></span>
+                        {{ row.isActive ? 'Активен' : 'Архив' }}
+                      </span>
+                    </td>
+                    <td class="texts-table-actions" (click)="$event.stopPropagation()">
+                      <app-pi-row-actions
+                        [row]="row"
+                        [editLabel]="'Редактировать'"
+                        [deleteLabel]="'Удалить'"
+                        (edit)="openEdit(row)"
+                        (delete)="onDelete(row)"
+                      />
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
         </div>
-      }
+      </section>
     </div>
   `,
-  styles: [
-    `
-      :host {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        min-height: 0;
-        gap: 12px;
-      }
+  styles: [`
+    :host {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+      padding: 0 0 8px;
+    }
 
-      /* ── Toolbar ── */
-      .texts-toolbar {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
+    .texts-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      flex: 1;
+      min-height: 0;
+    }
 
-      .texts-toolbar-search {
-        flex: 1;
-        max-width: 320px;
-      }
+    .texts-editor-zone {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
 
-      .texts-toolbar-search .pi-input {
-        width: 100%;
-      }
+    .texts-shell-empty {
+      position: relative;
+      background: var(--color-paper);
+      border: 2px solid var(--color-ink);
+      overflow: hidden;
+    }
+    .texts-shell-accent {
+      height: 4px;
+      background: linear-gradient(
+        90deg,
+        var(--color-sunrise-warm),
+        var(--color-sunrise-glow),
+        var(--color-sunrise-warm)
+      );
+    }
+    .texts-shell-head {
+      padding: 24px 32px 16px;
+    }
+    .texts-shell-title {
+      margin: 8px 0 0;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--color-ink);
+    }
+    .texts-shell-body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      min-height: 200px;
+      margin: 0 32px 32px;
+    }
 
-      /* ── Editor area ── */
-      .texts-editor {
-        border: 1px solid oklch(var(--color-rule));
-        border-radius: 2px;
-        background: oklch(var(--color-paper));
-        padding: 16px 20px;
-      }
+    .texts-catalog {
+      flex-shrink: 0;
+      height: 220px;
+      display: flex;
+      flex-direction: column;
+      background: var(--color-paper);
+      border: 2px solid var(--color-ink);
+      overflow: hidden;
+    }
 
-      .texts-editor-empty {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 120px;
-        text-align: center;
-        color: oklch(var(--color-muted));
-        padding: 24px;
-      }
+    .texts-catalog-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--color-rule);
+      flex-shrink: 0;
+    }
+    .texts-catalog-head-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+    .texts-catalog-title {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--color-ink);
+    }
 
-      .texts-editor-empty-title {
-        font-size: 14px;
-        font-weight: 600;
-        margin: 0 0 4px;
-      }
+    .texts-search-wrap { position: relative; }
+    .texts-search-icon {
+      position: absolute;
+      left: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      color: var(--color-muted-foreground-strong);
+      pointer-events: none;
+    }
+    .texts-search-input {
+      width: 192px;
+      padding: 6px 8px 6px 26px;
+      font-size: 14px;
+      border: 1px solid var(--color-rule);
+      background: var(--color-paper-2);
+      color: var(--color-ink);
+    }
+    .texts-search-input:focus {
+      outline: none;
+      box-shadow: 0 0 0 1px var(--color-sunrise-warm);
+    }
 
-      .texts-editor-empty-hint {
-        font-size: 12px;
-        margin: 0;
-        max-width: 320px;
-        line-height: 1.5;
-      }
+    .texts-catalog-scroll {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+    }
+    .texts-catalog-empty {
+      padding: 24px;
+      text-align: center;
+    }
 
-      /* ── Saved blocks list ── */
-      .texts-list {
-        border: 1px solid oklch(var(--color-rule));
-        border-radius: 2px;
-        background: oklch(var(--color-paper));
-        overflow: hidden;
-      }
+    .texts-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    .texts-table thead {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: var(--color-paper-2);
+      border-bottom: 1px solid var(--color-rule);
+    }
+    .texts-table th {
+      padding: 8px 24px;
+      color: var(--color-muted-foreground-strong);
+    }
+    .texts-table-actions-col { text-align: right; }
 
-      .texts-list-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 14px;
-        background: oklch(var(--color-paper-2));
-        border-bottom: 1px solid oklch(var(--color-rule));
-      }
+    .texts-table-row {
+      cursor: pointer;
+      border-bottom: 1px solid var(--color-rule);
+      transition: background 100ms ease;
+    }
+    .texts-table-row:hover {
+      background: color-mix(in oklch, var(--color-paper-2) 70%, transparent);
+    }
+    .texts-table-row.is-active {
+      background: color-mix(in oklch, var(--color-sunrise-warm) 8%, transparent);
+      box-shadow: inset 4px 0 0 var(--color-sunrise-warm);
+    }
+    .texts-table-row.is-inactive-row { opacity: 0.72; }
 
-      .texts-list-title {
-        font-size: 12px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: oklch(var(--color-ink));
-      }
+    .texts-table td {
+      padding: 10px 24px;
+      vertical-align: middle;
+    }
+    .texts-table-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-ink);
+    }
+    .texts-table-config {
+      font-family: ui-monospace, monospace;
+      font-size: 11px;
+      color: var(--color-muted-foreground-strong);
+      text-transform: uppercase;
+    }
+    .texts-table-actions { text-align: right; }
 
-      .texts-list-count {
-        font-size: 11px;
-        color: oklch(var(--color-muted));
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-
-      .texts-list-body {
-        max-height: 320px;
-        overflow-y: auto;
-      }
-
-      .texts-list-items {
-        display: flex;
-        flex-direction: column;
-      }
-
-      .texts-list-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 14px;
-        cursor: pointer;
-        border-left: 2px solid transparent;
-        transition: all 80ms ease;
-      }
-
-      .texts-list-item:hover {
-        background: oklch(var(--color-sunrise-soft) / 0.4);
-      }
-
-      .texts-list-item.is-selected {
-        background: oklch(var(--color-sunrise-soft));
-        border-left-color: oklch(var(--color-ink));
-      }
-
-      .texts-list-item.is-inactive {
-        opacity: 0.5;
-      }
-
-      .texts-list-item-body {
-        flex: 1;
-        min-width: 0;
-      }
-
-      .texts-list-item-name {
-        display: block;
-        font-size: 13px;
-        font-weight: 500;
-        color: oklch(var(--color-ink));
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .texts-list-item-meta {
-        font-size: 10px;
-        color: oklch(var(--color-muted));
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-
-      .texts-list-item-actions {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        flex-shrink: 0;
-      }
-    `,
-  ],
+    .texts-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+    .texts-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .texts-status-dot--on { background: var(--color-accent-cool); }
+    .texts-status-dot--off { background: var(--color-muted-foreground-strong); }
+    .texts-table-row.is-inactive-row .texts-status { color: var(--color-muted-foreground-strong); }
+  `],
 })
 export class TextsPage {
   private readonly service = inject(TextBlocksService);
@@ -328,33 +347,36 @@ export class TextsPage {
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
 
-  // ── Data ──
-
   private readonly reload$ = new Subject<void>();
 
-  private readonly listRes = this.reload$.pipe(
-    switchMap(() => this.service.list()),
-    takeUntilDestroyed(this.destroyRef),
-  ).subscribe((res) => {
-    if (res.ok) {
-      this.data.set(res.data.items);
-    } else {
-      this.error.set(extractErrorMessage(res.error));
-    }
-    this.loading.set(false);
-  });
+  constructor() {
+    this.reload$.pipe(
+      switchMap(() => this.service.list()),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe((res) => {
+      if (res.ok) {
+        this.data.set(res.data.items);
+      } else {
+        this.error.set(extractErrorMessage(res.error));
+      }
+      this.loading.set(false);
+    });
+    this.reload();
+  }
 
   protected readonly data = signal<TextBlock[]>([]);
   protected readonly loading = signal<boolean>(false);
   protected readonly error = signal<string | null>(null);
 
-  /** ID of block currently being edited. */
   protected readonly editingId = signal<string | null>(null);
   protected readonly editingBlock = signal<TextBlock | null>(null);
   protected readonly creatingNew = signal<boolean>(false);
 
+  protected readonly editorOpen = computed(
+    () => this.creatingNew() || this.editingBlock() !== null,
+  );
+
   protected readonly searchQuery = signal<string>('');
-  protected readonly sortKey = signal<'name' | null>('name');
   protected readonly sortDir = signal<SortDir>('asc');
 
   private readonly visible = computed<TextBlock[]>(() => {
@@ -369,22 +391,9 @@ export class TextsPage {
 
   protected readonly sortedRows = computed<TextBlock[]>(() => {
     const rows = this.visible().slice();
-    const k = this.sortKey();
-    if (!k) return rows;
     const sign = this.sortDir() === 'asc' ? 1 : -1;
-    return rows.sort((a, b) => {
-      const av = a[k];
-      const bv = b[k];
-      if (av == null && bv == null) return 0;
-      if (av == null) return -1 * sign;
-      if (bv == null) return 1 * sign;
-      return String(av).localeCompare(String(bv), 'ru') * sign;
-    });
+    return rows.sort((a, b) => String(a.name).localeCompare(String(b.name), 'ru') * sign);
   });
-
-  constructor() {
-    this.reload();
-  }
 
   private reload(): void {
     this.loading.set(true);
@@ -393,19 +402,16 @@ export class TextsPage {
   }
 
   protected onSearchInput(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.searchQuery.set(target.value);
+    this.searchQuery.set((event.target as HTMLInputElement).value);
   }
 
   protected totalLabel(n: number): string {
-    const mod10 = n % 10;
-    const mod100 = n % 100;
-    if (mod10 === 1 && mod100 !== 11) return 'блок';
-    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'блока';
-    return 'блоков';
+    return pluralRu(n, RU_BLOCKS);
   }
 
-  // ── Actions ──
+  protected columnConfigUpper(n: number): string {
+    return pluralRu(n, RU_COLUMNS).toUpperCase();
+  }
 
   protected openCreate(): void {
     this.editingBlock.set(null);
@@ -419,7 +425,7 @@ export class TextsPage {
     this.creatingNew.set(false);
   }
 
-  protected onEditorSaved(saved: TextBlock): void {
+  protected onEditorSaved(_saved: TextBlock): void {
     this.editingBlock.set(null);
     this.editingId.set(null);
     this.creatingNew.set(false);
@@ -432,24 +438,11 @@ export class TextsPage {
     this.creatingNew.set(false);
   }
 
-  protected onToggleActive(block: TextBlock, checked: boolean): void {
-    this.service.update(block._id, { isActive: checked }).subscribe((res) => {
-      if (res.ok) {
-        this.toast.success(
-          checked ? `«${block.name}» активирован` : `«${block.name}» деактивирован`,
-        );
-        this.reload();
-      } else {
-        this.toast.error(extractErrorMessage(res.error));
-      }
-    });
-  }
-
   protected onDelete(block: TextBlock): void {
     const ref = this.dialog.open(AlertDialogComponent, {
       data: {
         title: 'Удалить текстовый блок?',
-        description: `Удалить «${block.name}»? Если блок используется в шаблонах документов — операция может быть отклонена сервером.`,
+        description: `Удалить «${block.name}»?`,
         confirmLabel: 'Удалить',
         variant: 'destructive',
       },
@@ -461,6 +454,7 @@ export class TextsPage {
       this.service.remove(block._id).subscribe((res) => {
         if (res.ok) {
           this.toast.success('Текстовый блок удалён');
+          if (this.editingId() === block._id) this.onEditorCancel();
           this.reload();
         } else {
           this.toast.error(extractErrorMessage(res.error));

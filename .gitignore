@@ -22,6 +22,18 @@ out/
 .env.*.local
 .env.example.local
 
+# Deploy secrets (Synology)
+deploy/synology/config.env
+deploy/synology/CREDENTIALS.md
+
+# Deploy build artifacts
+frontend/browser/
+
+# Stitch mockup extracts (local reference)
+_stitch_ref/
+_stitch_tables/
+stitch_*.zip
+
 # Logs
 logs/
 *.log

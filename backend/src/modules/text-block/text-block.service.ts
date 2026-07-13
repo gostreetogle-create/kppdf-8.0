@@ -82,17 +82,10 @@ export class TextBlockService {
     if (dto.name !== undefined) doc.name = dto.name;
     if (dto.slug !== undefined && dto.slug !== doc.slug) {
       doc.slug = dto.slug;
-      try {
-        await doc.save();
-      } catch (err) {
-        if (this.isDuplicateSlug(err)) {
-          throw new ConflictException(
-            `TextBlock with slug "${dto.slug}" already exists`,
-          );
-        }
-        throw err;
-      }
-      return doc;
+      // Mark slug change but DO NOT return early — the rest of the dto
+      // fields (content, columns, isActive, sortOrder, category, tags)
+      // must still be applied. The single atomic `doc.save()` at the
+      // end below enforces the slug unique index in one go.
     }
     if (dto.category !== undefined) doc.category = dto.category;
     if (dto.tags !== undefined) {
@@ -102,7 +95,19 @@ export class TextBlockService {
     if (dto.columns !== undefined) doc.columns = dto.columns as any;
     if (dto.isActive !== undefined) doc.isActive = dto.isActive;
     if (dto.sortOrder !== undefined) doc.sortOrder = dto.sortOrder;
-    await doc.save();
+    // Single atomic save at the end — slug uniqueness is enforced by the
+    // unique index; if it collides Mongoose throws E11000 and we surface
+    // it as ConflictException.
+    try {
+      await doc.save();
+    } catch (err) {
+      if (this.isDuplicateSlug(err)) {
+        throw new ConflictException(
+          `TextBlock with slug "${doc.slug}" already exists`,
+        );
+      }
+      throw err;
+    }
     return doc;
   }
 

@@ -10,31 +10,25 @@
  *
  * Запуск: `pnpm run test:e2e test/e2e/product-module-photos.e2e-spec.ts`
  */
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
-import { AppModule } from '../../src/app.module';
-import { loginAsAdmin, authHeader } from '../setup/admin.fixture';
+import type { INestApplication } from '@nestjs/common';
+import { createTestApp, TestContext } from '../setup/test-db';
+import { loginAsAdmin, authHeader } from '../setup/test-auth';
 
 describe('ProductModulePhotos (TZ-83 Phase E)', () => {
+  let ctx: TestContext;
   let app: INestApplication;
   let adminToken: string;
   let testModuleId: string;
 
   beforeAll(async () => {
-    const moduleRef: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-    app = moduleRef.createNestApplication();
-    app.setGlobalPrefix('api');
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: false, transform: true }));
-    await app.init();
-
-    const tokens = await loginAsAdmin(app);
-    adminToken = tokens.access;
+    ctx = await createTestApp();
+    app = ctx.app;
+    const { access } = await loginAsAdmin(app);
+    adminToken = access;
 
     const m = await request(app.getHttpServer())
-      .post('/api/product-modules')
+      .post('/api/modules')
       .set(authHeader(adminToken))
       .send({ name: 'E2E Photos Module', materials: [], workTypes: [] })
       .expect(201);
@@ -44,11 +38,11 @@ describe('ProductModulePhotos (TZ-83 Phase E)', () => {
   afterAll(async () => {
     if (testModuleId) {
       await request(app.getHttpServer())
-        .delete(`/api/product-modules/${testModuleId}`)
+        .delete(`/api/modules/${testModuleId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(204);
     }
-    await app.close();
+    await ctx.cleanup();
   });
 
   it('attach by url → 201 + GET list returns it', async () => {

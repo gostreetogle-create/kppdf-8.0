@@ -315,7 +315,7 @@ describe('TableTemplateFormDialogComponent', () => {
       const dialog = getDialog(fixture);
       const category = dialog.form.get('category');
       expect(category).toBeInstanceOf(FormControl);
-      expect(category!.value).toBe('custom');
+      expect(category!.value).toBe('product-spec');
       // category has a Validators.required — clearing makes it invalid.
       category!.setValue(null);
       expect(category!.invalid).toBe(true);

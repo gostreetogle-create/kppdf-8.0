@@ -61,6 +61,48 @@ export class DataBinding {
 
 export const DataBindingSchema = SchemaFactory.createForClass(DataBinding);
 
+/**
+ * TZ-104.6 carry-over on TemplateBlock — multi-column TipTap cell.
+ *
+ * Mirrors the `TextBlockColumn` shape used by the text-block editor
+ * (`/api/text-blocks`). One cell = one column in the grid view on the
+ * builder canvas. `width` is a 0..1 normalized ratio (front-end scales
+ * to whatever document layout is used); `id` is a stable UUID used by
+ * Angular `track` and by the canvas-grid ordering when re-rendering.
+ *
+ * Stored as a top-level subdoc array on TemplateBlock so the canvas
+ * renderer (`block-renderer.component.ts`) can render a true CSS-grid
+ * preview without collapsing to a flat `content` string. The denormalized
+ * `columns` lives in coordination with `settings.textBlockId` for
+ * round-tripping back to the source text-block.
+ *
+ * `_id: false` — like `DataBinding`, we don't need a Mongoose subdoc _id.
+ */
+@Schema({ _id: false })
+export class TemplateBlockColumn {
+  /** UUID-shaped stable id (matches TextBlockColumn.id on the front-end). */
+  @Prop({ required: true })
+  id!: string;
+
+  /** TipTap HTML string for the cell. Sanitized on render via [innerHTML]. */
+  @Prop({ required: true, default: '' })
+  content!: string;
+
+  /**
+   * 0..1 normalized width ratio. NOT required — the canvas preview uses
+   * uniform 1fr cells; the DTO marks it optional; downstream generator
+   * can fall back to linear interpolation when missing. Schema default `1`
+   * is enforced only if the field is absent at the subdoc level, but
+   * Mongoose subdoc defaults on nested arrays don't always apply when
+   * the inner object is persisted verbatim, hence the optional+default
+   * combination on `CreateTemplateBlockDto` is the source of truth.
+   */
+  @Prop({ type: Number, default: 1 })
+  width?: number;
+}
+
+export const TemplateBlockColumnSchema = SchemaFactory.createForClass(TemplateBlockColumn);
+
 export type TemplateBlockDocument = HydratedDocument<TemplateBlock>;
 
 @Schema({ collection: 'template_blocks', timestamps: true })
@@ -79,6 +121,16 @@ export class TemplateBlock {
 
   @Prop()
   content?: string;
+
+  /**
+   * TZ-104.6 carry-over at TemplateBlock level. Mirrors
+   * `TextBlock.columns[]`; the builder canvas renders this array as a
+   * CSS grid when present and length > 1. Falls back to flat `content`
+   * when empty. Persisted here to support true visual fidelity on the
+   * canvas (not just collapsed text) without going through a lookup.
+   */
+  @Prop({ type: [TemplateBlockColumnSchema], default: undefined })
+  columns?: TemplateBlockColumn[];
 
   @Prop()
   height?: number;

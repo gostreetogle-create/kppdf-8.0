@@ -186,6 +186,22 @@ export const routes: Routes = [
         title: 'KPPDF — Договоры',
       },
       {
+        path: 'doc-constructor/templates',
+        loadComponent: () =>
+          import('./pages/doc-constructor/templates/templates.page').then(
+            (m) => m.TemplatesPage,
+          ),
+        title: 'KPPDF — Шаблоны документов',
+      },
+      {
+        path: 'doc-constructor/documents',
+        loadComponent: () =>
+          import('./pages/doc-constructor/documents/documents.page').then(
+            (m) => m.DocumentsPage,
+          ),
+        title: 'KPPDF — Сохранённые документы',
+      },
+      {
         // TZ-86 Phase C.1 — texts sub-page CRUD.
         path: 'doc-constructor/texts',
         loadComponent: () =>

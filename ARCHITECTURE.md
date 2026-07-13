@@ -711,12 +711,18 @@ If a future Load Test or SEO need arrives:
 - **`frontend/src/app/shared/services/pi-document-templates.service.ts`** — `list/findById/create/update/remove/build/uploadBackground` (build silentWrap text; uploadBackground FormData multipart).
 - **`frontend/src/app/shared/services/pi-registry.service.ts`** — `getDataSources` (static catalogue).
 - **`frontend/src/app/shared/services/pi-template-blocks.service.ts`** — list/create/update/reorder/remove for template blocks consumed by BuilderPage.
+- **`frontend/src/app/shared/services/pi-generated-documents.service.ts`** — `list/findById/generate/remove/openHtml` for HTML snapshots produced by `document-template.build()`.
 
-### Frontend pages (4 new lazy routes)
+### Frontend pages (6 lazy routes)
 
-- **`/doc-constructor/texts`** — list with search/sort + create button + EditDialog `text-block-dialog.component.ts` (190 LoC, side-by-side markdown preview via marked@18).
-- **`/doc-constructor/tables`** — list with columns preview + EditDialog `table-template-dialog.component.ts` (290 LoC, FormArray<TableColumnForm> with add/up/down/remove + JSON sampleRows + server-side preview).
-- **`/doc-constructor/builder`** — empty-state picker (no `:id`): shows template-list dropdown → navigate to `/builder/:id` or accepts `?source=order&sourceId=X` query params (cross-feature wiring from /orders + /contracts).
+**Paper & Ink list-page contract** (canonical reference: `tables.page.ts`):
+`app-pi-page-header` + `app-pi-toolbar` (`pi-input`, `app-pi-button`, `hint` slot) + `app-pi-section` with `hairline rounded-sm` table (`pi-cell`, `pi-table-row`, `eyebrow` headers) + `app-pi-row-actions` / `app-pi-switch`. Workspace pages (`texts`, `builder/:id`) keep specialised layouts but reuse the same tokens (`var(--color-*)`, hairline borders, `app-pi-button`).
+
+- **`/doc-constructor/texts`** — split workspace: inline `text-block-editor` (top) + sticky catalog table (bottom, ~220px). Search via `pi-input`; row selection highlights with sunrise inset bar. Data-field picker dialog (`data-field-picker-dialog.component.ts`) uses `PiDialogComponent` + `app-pi-button`.
+- **`/doc-constructor/tables`** — list with columns preview + EditDialog `table-template-dialog.component.ts` (FormArray column editor + JSON sampleRows + server-side preview).
+- **`/doc-constructor/templates`** — «Реестр шаблонов»: search, active toggle, default star, duplicate → builder, pagination.
+- **`/doc-constructor/documents`** — «Сформированные документы»: search + month filter, status dots, open HTML preview, delete.
+- **`/doc-constructor/builder`** — empty-state picker (no `:id`): template dropdown → navigate to `/builder/:id` or accepts `?source=order&sourceId=X` query params (cross-feature wiring from /orders + /contracts).
 - **`/doc-constructor/builder/:id`** — 3-pane canvas (280 / flex-1 / 320):
   - **Left tool pane** (4 sections + Decorations tab): Blocks (5 blockType «+» buttons) · Texts (list from `pi-text-blocks`) · Tables (list from `pi-table-templates`) · Data (DataSourceDescriptor groups from `pi-registry`) · Decorations (background image upload via `pi-document-templates.uploadBackground`).
   - **Center canvas**: `<pi-canvas-page>` (A4 paper wrapper, OKLCH paper + 1px hairline + 32px padding) + `<pi-canvas-block-handle>` (cdkDragHandle GripVertical, hover-only) + `cdkDropList` for reorder.

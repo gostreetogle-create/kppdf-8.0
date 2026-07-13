@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { TableTemplateService } from './table-template.service';
 import { CreateTableTemplateDto } from './dto/create-table-template.dto';
@@ -18,8 +18,12 @@ export class TableTemplateController {
   constructor(private readonly service: TableTemplateService) {}
 
   @Get()
-  findAll() {
-    return this.service.findAll();
+  findAll(
+    @Query('activeOnly') activeOnly?: string,
+    @Query('isActive') isActive?: string,
+  ) {
+    const onlyActive = activeOnly === 'true' || isActive === 'true';
+    return this.service.findAll(onlyActive ? { activeOnly: true } : undefined);
   }
 
   @Get(':id')

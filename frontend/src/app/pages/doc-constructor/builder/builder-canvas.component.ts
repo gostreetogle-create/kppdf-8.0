@@ -124,7 +124,7 @@ export const CANVAS_DROPLIST_ID = 'canvas-droplist';
       .canvas-dropzone.is-empty {
         align-items: center;
         justify-content: center;
-        border: 1px dashed oklch(var(--color-rule));
+        border: 1px dashed var(--color-rule);
         padding: 48px 24px;
         text-align: center;
       }
@@ -132,13 +132,13 @@ export const CANVAS_DROPLIST_ID = 'canvas-droplist';
       .canvas-dropzone__empty-title {
         font-size: 14px;
         font-weight: 600;
-        color: oklch(var(--color-muted));
+        color: var(--color-muted);
         margin: 0 0 4px;
       }
 
       .canvas-dropzone__empty-hint {
         font-size: 12px;
-        color: oklch(var(--color-muted));
+        color: var(--color-muted);
         margin: 0;
         max-width: 320px;
       }
@@ -146,8 +146,8 @@ export const CANVAS_DROPLIST_ID = 'canvas-droplist';
       /* CDK drag-drop animations */
       .cdk-drag-preview {
         box-sizing: border-box;
-        border: 1px solid oklch(var(--color-ink));
-        background: oklch(var(--color-paper));
+        border: 1px solid var(--color-ink);
+        background: var(--color-paper);
         opacity: 0.9;
       }
 
@@ -156,7 +156,7 @@ export const CANVAS_DROPLIST_ID = 'canvas-droplist';
       }
 
       .cdk-drop-list-dragging .canvas-dropzone:not(.is-empty) {
-        background: oklch(var(--color-sunrise-soft) / 0.3);
+        background: color-mix(in oklch, var(--color-sunrise-soft) 30%, transparent);
       }
     `,
   ],

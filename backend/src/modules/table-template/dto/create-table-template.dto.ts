@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsIn,
   IsNotEmpty,
   IsNumber,
@@ -67,4 +68,6 @@ export class CreateTableTemplateDto {
   @ValidateNested({ each: true })
   @Type(() => TableColumnDto)
   columns!: TableColumnDto[];
+
+  @IsOptional() @IsBoolean() isActive?: boolean;
 }

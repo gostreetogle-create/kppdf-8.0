@@ -16,7 +16,15 @@
  * `document-template.service.ts:resolveBlockContent` — the frontend does
  * NOT resolve data itself; the backend's `BuildDocumentDto` is the single
  * resolution surface.
+ *
+ * TZ-104.6 carry-over: text blocks may also carry a `columns?: TextBlockColumn[]`
+ * array mirroring the source text-block's multi-column TipTap layout. When
+ * the array is non-empty the canvas renderer draws a CSS grid with one cell
+ * per column. Backend coordination: `backend/src/modules/template-block/
+ * template-block.schema.ts` adds the matching `@Prop` and the DTOs accept
+ * it. Both stay in lockstep.
  */
+import type { TextBlockColumn } from '../services/pi-text-blocks.service';
 
 export type BlockType = 'header' | 'text' | 'table' | 'image' | 'signature';
 
@@ -76,6 +84,12 @@ export interface DataBinding {
  *
  * `_id` is omitted in create() payloads (server-assigned Mongoose ObjectId).
  * `tempId` is a client-only UUID used for list keying between drop and persist.
+ *
+ * `columns?: TextBlockColumn[]` carries a multi-column TipTap layout that
+ * originated from a source text-block (`/api/text-blocks`). When non-empty
+ * the canvas renderer picks the multi-column grid view; otherwise the flat
+ * `content` string is used. `settings.textBlockId` always points back to
+ * the originating text-block for traceability / future server-side resolution.
  */
 export interface TemplateBlock {
   _id?: string;
@@ -86,6 +100,12 @@ export interface TemplateBlock {
   order: number;
   title?: string;
   content?: string;
+  /**
+   * Multi-column TipTap layout (TZ-104.6). Mirrors the source TextBlock's
+   * `columns[]`. Resolved by `block-renderer` for visual fidelity;
+   * empty / undefined falls back to the flat `content` path.
+   */
+  columns?: TextBlockColumn[];
   height?: number;
   showLine: boolean;
   settings?: Record<string, unknown>;

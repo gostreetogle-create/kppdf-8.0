@@ -19,9 +19,7 @@ import type { DialogRef } from './pi-dialog.service';
  *  - Destructive variant → confirm button uses destructive variant
  *  - onConfirm() → ref.close(true)
  *  - onCancel() → ref.close()
- *  - role="alertdialog" + aria-labelledby/describedby
- *  - ngAfterViewInit → auto-focuses first button via queueMicrotask
- *  - titleId / descId are stable (computed from _uid signal)
+ *  - role="alertdialog" + aria-label (via PiDialogComponent shell)
  */
 
 describe('AlertDialogComponent', () => {
@@ -223,21 +221,17 @@ describe('AlertDialogComponent', () => {
       expect(dialogEl).toBeTruthy();
     });
 
-    it('has aria-labelledby pointing to the title element id', async () => {
+    it('has aria-label derived from the dialog title', async () => {
       const { fixture } = await createFixture({
         title: 'Тестовый заголовок',
       });
       const dialogEl = fixture.nativeElement.querySelector(
         '[role="alertdialog"]',
       );
-      const labelledby = dialogEl.getAttribute('aria-labelledby');
-      expect(labelledby).toBeTruthy();
-
-      const titleEl = fixture.nativeElement.querySelector('h2');
-      expect(titleEl?.getAttribute('id')).toBe(labelledby);
+      expect(dialogEl?.getAttribute('aria-label')).toBe('Тестовый заголовок');
     });
 
-    it('has aria-describedby pointing to the description element id when description is provided', async () => {
+    it('does not set aria-describedby (description is plain body text)', async () => {
       const { fixture } = await createFixture({
         title: 'Test',
         description: 'Описание теста.',
@@ -245,11 +239,10 @@ describe('AlertDialogComponent', () => {
       const dialogEl = fixture.nativeElement.querySelector(
         '[role="alertdialog"]',
       );
-      const describedby = dialogEl.getAttribute('aria-describedby');
-      expect(describedby).toBeTruthy();
-
-      const descEl = fixture.nativeElement.querySelector('p');
-      expect(descEl?.getAttribute('id')).toBe(describedby);
+      expect(dialogEl?.hasAttribute('aria-describedby')).toBe(false);
+      expect(fixture.nativeElement.querySelector('p')?.textContent).toContain(
+        'Описание теста.',
+      );
     });
 
     it('omits aria-describedby when description is not provided', async () => {
@@ -257,25 +250,15 @@ describe('AlertDialogComponent', () => {
       const dialogEl = fixture.nativeElement.querySelector(
         '[role="alertdialog"]',
       );
-      expect(dialogEl.hasAttribute('aria-describedby')).toBe(false);
+      expect(dialogEl?.hasAttribute('aria-describedby')).toBe(false);
     });
 
-    it('titleId and descId are unique', async () => {
-      const { component } = await createFixture({
-        title: 'Test',
-        description: 'Описание.',
-      });
-      expect(component.titleId()).not.toBe(component.descId());
-    });
-
-    it('has aria-label on the dialog root', async () => {
+    it('exposes accessible name via aria-label on the dialog root', async () => {
       const { fixture } = await createFixture({ title: 'Test' });
-      // The dialog div has no explicit aria-label attribute, but
-      // aria-labelledby provides accessible name via the title.
       const dialogEl = fixture.nativeElement.querySelector(
         '[role="alertdialog"]',
       );
-      expect(dialogEl.getAttribute('aria-labelledby')).toBeTruthy();
+      expect(dialogEl?.getAttribute('aria-label')).toBe('Test');
     });
   });
 

@@ -206,7 +206,7 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
         display: flex;
         flex: 1;
         min-height: 0;
-        border-top: 1px solid oklch(var(--color-rule));
+        border-top: 1px solid var(--color-rule);
       }
 
       .header-actions {
@@ -224,37 +224,37 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
         text-transform: uppercase;
         letter-spacing: 0.05em;
         padding: 2px 8px;
-        border: 1px solid oklch(var(--color-rule));
+        border: 1px solid var(--color-rule);
         border-radius: 2px;
       }
 
       .status-chip--saving {
-        color: oklch(var(--color-muted));
-        background: oklch(var(--color-paper-2));
+        color: var(--color-muted);
+        background: var(--color-paper-2);
       }
 
       .status-chip--saved {
-        color: oklch(var(--color-ink));
-        background: oklch(var(--color-sunrise-soft));
-        border-color: oklch(var(--color-sunrise-warm));
+        color: var(--color-ink);
+        background: var(--color-sunrise-soft);
+        border-color: var(--color-sunrise-warm);
       }
 
       .status-chip--error {
-        color: oklch(var(--color-destructive));
-        background: oklch(var(--color-paper-2));
-        border-color: oklch(var(--color-destructive));
+        color: var(--color-destructive);
+        background: var(--color-paper-2);
+        border-color: var(--color-destructive);
       }
 
       .empty-state {
         text-align: center;
-        color: oklch(var(--color-muted));
+        color: var(--color-muted);
         padding: 32px 16px;
         font-size: 13px;
         margin: 0;
       }
 
       .empty-state--error {
-        color: oklch(var(--color-destructive));
+        color: var(--color-destructive);
       }
 
       .picker {

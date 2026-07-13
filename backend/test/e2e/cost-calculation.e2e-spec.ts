@@ -15,13 +15,13 @@
  *
  * Запуск: `pnpm run test:e2e test/e2e/cost-calculation.e2e-spec.ts`
  */
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
-import { AppModule } from '../../src/app.module';
-import { loginAsAdmin, authHeader } from '../setup/admin.fixture';
+import type { INestApplication } from '@nestjs/common';
+import { createTestApp, TestContext } from '../setup/test-db';
+import { loginAsAdmin, authHeader } from '../setup/test-auth';
 
 describe('CostCalculation (TZ-85 Phase E)', () => {
+  let ctx: TestContext;
   let app: INestApplication;
   let adminToken: string;
   let material1Id: string;
@@ -31,16 +31,10 @@ describe('CostCalculation (TZ-85 Phase E)', () => {
   let productId: string;
 
   beforeAll(async () => {
-    const moduleRef: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-    app = moduleRef.createNestApplication();
-    app.setGlobalPrefix('api');
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: false, transform: true }));
-    await app.init();
-
-    const tokens = await loginAsAdmin(app);
-    adminToken = tokens.access;
+    ctx = await createTestApp();
+    app = ctx.app;
+    const { access } = await loginAsAdmin(app);
+    adminToken = access;
 
     // 1. Create Materials
     const mat1 = await request(app.getHttpServer())
@@ -67,7 +61,7 @@ describe('CostCalculation (TZ-85 Phase E)', () => {
 
     // 3. Create ProductModule with materials + workTypes
     const mod = await request(app.getHttpServer())
-      .post('/api/product-modules')
+      .post('/api/modules')
       .set(authHeader(adminToken))
       .send({
         name: 'Корпус шкафа',
@@ -107,7 +101,7 @@ describe('CostCalculation (TZ-85 Phase E)', () => {
     }
     if (moduleId) {
       await request(app.getHttpServer())
-        .delete(`/api/product-modules/${moduleId}`)
+        .delete(`/api/modules/${moduleId}`)
         .set(authHeader(adminToken))
         .expect(204);
     }
@@ -123,7 +117,7 @@ describe('CostCalculation (TZ-85 Phase E)', () => {
       }
     }
     await new Promise((r) => setTimeout(r, 200));
-    await app.close();
+    await ctx.cleanup();
   });
 
   it('POST /products/:id/cost-calculations — creates snapshot with correct totals', async () => {

@@ -15,6 +15,7 @@ import {
   effect,
   input,
   model,
+  output,
   signal,
   viewChild,
 } from '@angular/core';
@@ -43,7 +44,14 @@ export const DEFAULT_EXTENSIONS = [
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="pi-rte" [class.pi-rte--focused]="focused()" [class.pi-rte--compact]="compact()">
+    <div
+      class="pi-rte"
+      [class.pi-rte--focused]="focused()"
+      [class.pi-rte--selected]="selected()"
+      [class.pi-rte--compact]="compact()"
+      [class.pi-rte--chromeless]="!showToolbar()"
+      (mousedown)="activate.emit()"
+    >
       @if (showToolbar()) {
         <div class="pi-rte-toolbar" role="toolbar" aria-label="Форматирование текста">
           <!-- Heading levels -->
@@ -121,41 +129,90 @@ export const DEFAULT_EXTENSIONS = [
   styles: [`
     :host { display: block; }
 
+    /* ── Container ── */
     .pi-rte {
-      border: 1px solid oklch(var(--color-rule));
-      border-radius: 2px;
+      position: relative;
+      border: 1.5px solid oklch(var(--color-ink) / 0.85);
+      border-radius: 5px;
       background: oklch(var(--color-paper));
       overflow: hidden;
-      transition: border-color 120ms ease;
+      transition: border-color 140ms ease, box-shadow 140ms ease;
     }
-    .pi-rte--focused { border-color: oklch(var(--color-ink)); }
+    .pi-rte:hover {
+      border-color: oklch(var(--color-ink));
+    }
+    .pi-rte--focused {
+      border-color: oklch(var(--color-ink));
+      box-shadow:
+        0 0 0 3px oklch(var(--color-sunrise-glow) / 0.4),
+        0 6px 18px oklch(0 0 0 / 0.06);
+    }
+    .pi-rte--selected {
+      border-color: oklch(var(--color-sunrise-warm));
+      box-shadow:
+        0 0 0 3px oklch(var(--color-sunrise-glow) / 0.35),
+        0 4px 12px oklch(0 0 0 / 0.08);
+    }
+    .pi-rte--chromeless {
+      border: none;
+      border-radius: 4px;
+      box-shadow: none;
+      background: transparent;
+    }
+    .pi-rte--chromeless:hover {
+      border-color: transparent;
+    }
+    .pi-rte--chromeless.pi-rte--selected {
+      border-color: transparent;
+      box-shadow: none;
+    }
+    .pi-rte--chromeless .pi-rte-editor {
+      background: oklch(var(--color-paper));
+      border: 1px solid oklch(var(--color-ink) / 0.2);
+      border-radius: 4px;
+      box-shadow: inset 0 1px 3px oklch(0 0 0 / 0.06);
+    }
+    .pi-rte--chromeless.pi-rte--selected .pi-rte-editor {
+      border-color: oklch(var(--color-ink) / 0.35);
+      background: oklch(var(--color-paper));
+    }
 
     /* ── Toolbar ── */
     .pi-rte-toolbar {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 2px;
-      padding: 4px 6px;
-      background: oklch(var(--color-paper-2));
+      gap: 5px;
+      padding: 6px 8px;
+      background:
+        linear-gradient(
+          to bottom,
+          oklch(var(--color-paper-2)),
+          oklch(var(--color-paper))
+        );
       border-bottom: 1px solid oklch(var(--color-rule));
       user-select: none;
     }
     .pi-rte--compact .pi-rte-toolbar {
-      padding: 2px 4px;
+      padding: 4px 6px;
+      gap: 4px;
     }
 
     .pi-rte-group {
       display: flex;
       align-items: center;
       gap: 1px;
+      padding: 2px;
+      background: oklch(var(--color-paper));
+      border: 1px solid oklch(var(--color-rule));
+      border-radius: 5px;
     }
 
     .pi-rte-sep {
       width: 1px;
-      height: 16px;
+      height: 18px;
       background: oklch(var(--color-rule));
-      margin: 0 4px;
+      margin: 0 2px;
       flex-shrink: 0;
     }
 
@@ -163,9 +220,9 @@ export const DEFAULT_EXTENSIONS = [
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 28px;
-      height: 26px;
-      padding: 0 4px;
+      min-width: 26px;
+      height: 24px;
+      padding: 0 6px;
       font-size: 11px;
       font-weight: 600;
       font-family: inherit;
@@ -174,7 +231,13 @@ export const DEFAULT_EXTENSIONS = [
       border: 1px solid transparent;
       border-radius: 3px;
       cursor: pointer;
-      transition: all 100ms ease;
+      transition:
+        background 110ms ease,
+        color 110ms ease,
+        border-color 110ms ease,
+        box-shadow 110ms ease,
+        transform 80ms ease;
+      line-height: 1;
     }
     .pi-rte-btn:hover {
       background: oklch(var(--color-sunrise-soft));
@@ -184,27 +247,41 @@ export const DEFAULT_EXTENSIONS = [
       background: oklch(var(--color-ink));
       color: oklch(var(--color-paper));
       border-color: oklch(var(--color-ink));
-      box-shadow: 0 0 0 1px oklch(var(--color-ink) / 0.3);
+      box-shadow:
+        0 0 0 2px oklch(var(--color-sunrise-glow) / 0.5),
+        0 1px 2px oklch(0 0 0 / 0.12);
     }
     .pi-rte-btn:active {
-      transform: scale(0.95);
+      transform: scale(0.92);
     }
-    .pi-rte-btn--icon { font-size: 13px; }
+    .pi-rte-btn:focus-visible {
+      outline: 2px solid oklch(var(--color-sunrise-warm));
+      outline-offset: 1px;
+    }
+    .pi-rte-btn--icon { font-size: 13px; line-height: 1; }
     .pi-rte-btn sub { font-size: 8px; vertical-align: sub; line-height: 0; }
 
     /* ── Editor content ── */
     .pi-rte-editor {
-      padding: 10px 12px;
-      min-height: 40px;
+      padding: 12px 14px;
+      min-height: 52px;
       font-size: 14px;
       line-height: 1.6;
       color: oklch(var(--color-ink));
       outline: none;
       cursor: text;
+      background: oklch(var(--color-paper));
+      box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.05);
     }
     .pi-rte-editor--compact {
-      padding: 8px 10px;
-      min-height: 32px;
+      padding: 10px 12px;
+      min-height: 38px;
+      font-size: 13px;
+      box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.04);
+    }
+    .pi-rte-editor--compact {
+      padding: 10px 12px;
+      min-height: 38px;
       font-size: 13px;
     }
     .pi-rte-editor p { margin: 0 0 6px; }
@@ -218,18 +295,20 @@ export const DEFAULT_EXTENSIONS = [
 
     .pi-rte-editor .ProseMirror {
       outline: none;
-      min-height: 40px;
+      min-height: 52px;
     }
     .pi-rte-editor--compact .ProseMirror {
-      min-height: 32px;
+      min-height: 38px;
     }
     /* TipTap placeholder */
     .pi-rte-editor .ProseMirror p.is-editor-empty:first-child::before {
       content: attr(data-placeholder);
       float: left;
-      color: oklch(var(--color-muted));
+      color: oklch(var(--color-muted-foreground-strong));
       pointer-events: none;
       height: 0;
+      font-weight: 400;
+      font-style: italic;
     }
   `],
 })
@@ -239,6 +318,10 @@ export class PiRichTextEditorComponent implements AfterViewInit, OnDestroy {
   readonly editable = input<boolean>(true);
   readonly showToolbar = input<boolean>(true);
   readonly compact = input<boolean>(false);
+  /** Parent-driven selection ring (multi-column editor). */
+  readonly selected = input<boolean>(false);
+  readonly activate = output<void>();
+  readonly statesChange = output<ActiveStates>();
   readonly focused = signal<boolean>(false);
 
   readonly activeStates = signal<ActiveStates>(DEFAULT_ACTIVE);
@@ -246,6 +329,8 @@ export class PiRichTextEditorComponent implements AfterViewInit, OnDestroy {
   private readonly editorEl = viewChild<ElementRef<HTMLDivElement>>('editorEl');
   private editor: Editor | null = null;
   private isUpdatingFromOutside = false;
+  /** Caret saved before modal dialogs steal focus. */
+  private savedSelection: { from: number; to: number } | null = null;
 
   ngAfterViewInit(): void {
     const el = this.editorEl()?.nativeElement;
@@ -263,8 +348,14 @@ export class PiRichTextEditorComponent implements AfterViewInit, OnDestroy {
         this.value.set(this.editor!.getHTML());
       },
       onSelectionUpdate: () => this.updateActiveStates(),
-      onFocus: () => { this.focused.set(true); this.updateActiveStates(); },
-      onBlur: () => this.focused.set(false),
+      onFocus: () => {
+        this.focused.set(true);
+        this.activate.emit();
+        this.updateActiveStates();
+      },
+      onBlur: () => {
+        this.focused.set(false);
+      },
     });
   }
 
@@ -285,17 +376,62 @@ export class PiRichTextEditorComponent implements AfterViewInit, OnDestroy {
     this.editor?.destroy();
   }
 
-  // ── Commands ──
-  protected toggleBold(): void { this.editor?.chain().focus().toggleBold().run(); }
-  protected toggleItalic(): void { this.editor?.chain().focus().toggleItalic().run(); }
-  protected toggleUnderline(): void { this.editor?.chain().focus().toggleUnderline().run(); }
-  protected toggleHeading(level: 1 | 2 | 3): void { this.editor?.chain().focus().toggleHeading({ level }).run(); }
-  protected setTextAlign(align: 'left' | 'center' | 'right'): void { this.editor?.chain().focus().setTextAlign(align).run(); }
+  /** Focus this editor instance (used by parent toolbar). */
+  focusEditor(): void {
+    this.editor?.chain().focus().run();
+  }
+
+  /** Remember caret before opening a dialog (focus is lost on blur). */
+  saveSelection(): void {
+    if (!this.editor) return;
+    const { from, to } = this.editor.state.selection;
+    this.savedSelection = { from, to };
+  }
+
+  /** Insert plain text / token at cursor (or saved caret). */
+  insertContent(text: string): void {
+    const ed = this.editor;
+    if (!ed) return;
+
+    let chain = ed.chain().focus();
+    if (this.savedSelection) {
+      chain = chain.setTextSelection(this.savedSelection);
+      this.savedSelection = null;
+    }
+    chain.insertContent(text).run();
+    this.syncValueFromEditor();
+  }
+
+  private syncValueFromEditor(): void {
+    const ed = this.editor;
+    if (!ed) return;
+    const html = ed.getHTML();
+    if (this.value() === html) return;
+    this.isUpdatingFromOutside = true;
+    this.value.set(html);
+    this.isUpdatingFromOutside = false;
+  }
+
+  /** Mirror toolbar state for parent-driven chrome. */
+  getActiveStates(): ActiveStates {
+    return this.activeStates();
+  }
+
+  refreshActiveStates(): void {
+    this.updateActiveStates();
+  }
+
+  // ── Commands (public for parent toolbar) ──
+  toggleBold(): void { this.editor?.chain().focus().toggleBold().run(); }
+  toggleItalic(): void { this.editor?.chain().focus().toggleItalic().run(); }
+  toggleUnderline(): void { this.editor?.chain().focus().toggleUnderline().run(); }
+  toggleHeading(level: 1 | 2 | 3): void { this.editor?.chain().focus().toggleHeading({ level }).run(); }
+  setTextAlign(align: 'left' | 'center' | 'right'): void { this.editor?.chain().focus().setTextAlign(align).run(); }
 
   private updateActiveStates(): void {
     const ed = this.editor;
     if (!ed) return;
-    this.activeStates.set({
+    const next: ActiveStates = {
       bold: ed.isActive('bold'),
       italic: ed.isActive('italic'),
       underline: ed.isActive('underline'),
@@ -305,7 +441,9 @@ export class PiRichTextEditorComponent implements AfterViewInit, OnDestroy {
       alignLeft: ed.isActive({ textAlign: 'left' }),
       alignCenter: ed.isActive({ textAlign: 'center' }),
       alignRight: ed.isActive({ textAlign: 'right' }),
-    });
+    };
+    this.activeStates.set(next);
+    this.statesChange.emit(next);
   }
 }
 

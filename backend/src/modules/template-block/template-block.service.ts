@@ -19,9 +19,16 @@ export class TemplateBlockService {
       order: dto.order,
       title: dto.title,
       content: dto.content,
+      columns: dto.columns?.map((c) => ({
+        id: c.id,
+        content: c.content ?? '',
+        width: c.width ?? 1,
+      })),
       height: dto.height,
       showLine: dto.showLine ?? false,
       settings: dto.settings,
+      dataBinding: dto.dataBinding,
+      isActive: dto.isActive ?? true,
     });
   }
 
@@ -49,9 +56,18 @@ export class TemplateBlockService {
     if (dto.order !== undefined) doc.order = dto.order;
     if (dto.title !== undefined) doc.title = dto.title;
     if (dto.content !== undefined) doc.content = dto.content;
+    if (dto.columns !== undefined) {
+      doc.columns = dto.columns.map((c) => ({
+        id: c.id,
+        content: c.content ?? '',
+        width: c.width ?? 1,
+      }));
+    }
     if (dto.height !== undefined) doc.height = dto.height;
     if (dto.showLine !== undefined) doc.showLine = dto.showLine;
     if (dto.settings !== undefined) doc.settings = dto.settings;
+    if (dto.dataBinding !== undefined) doc.dataBinding = dto.dataBinding;
+    if (dto.isActive !== undefined) doc.isActive = dto.isActive;
     return doc.save();
   }
 

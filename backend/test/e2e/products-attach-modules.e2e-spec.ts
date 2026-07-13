@@ -10,13 +10,13 @@
  *
  * Запуск: `pnpm run test:e2e test/e2e/products-attach-modules.e2e-spec.ts`
  */
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe, BadRequestException } from '@nestjs/common';
 import request from 'supertest';
-import { AppModule } from '../../src/app.module';
-import { loginAsAdmin, authHeader } from '../setup/admin.fixture';
+import type { INestApplication } from '@nestjs/common';
+import { createTestApp, TestContext } from '../setup/test-db';
+import { loginAsAdmin, authHeader } from '../setup/test-auth';
 
 describe('Products attach/detach modules (TZ-83 Phase D.3)', () => {
+  let ctx: TestContext;
   let app: INestApplication;
   let adminToken: string;
   let productId: string;
@@ -24,16 +24,10 @@ describe('Products attach/detach modules (TZ-83 Phase D.3)', () => {
   let module2: string;
 
   beforeAll(async () => {
-    const moduleRef: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-    app = moduleRef.createNestApplication();
-    app.setGlobalPrefix('api');
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: false, transform: true }));
-    await app.init();
-
-    const tokens = await loginAsAdmin(app);
-    adminToken = tokens.access;
+    ctx = await createTestApp();
+    app = ctx.app;
+    const { access } = await loginAsAdmin(app);
+    adminToken = access;
 
     const product = await request(app.getHttpServer())
       .post('/api/products')
@@ -43,14 +37,14 @@ describe('Products attach/detach modules (TZ-83 Phase D.3)', () => {
     productId = product.body._id;
 
     const m1 = await request(app.getHttpServer())
-      .post('/api/product-modules')
+      .post('/api/modules')
       .set(authHeader(adminToken))
       .send({ name: 'E2E Attach Mod 1', materials: [], workTypes: [] })
       .expect(201);
     module1 = m1.body._id;
 
     const m2 = await request(app.getHttpServer())
-      .post('/api/product-modules')
+      .post('/api/modules')
       .set(authHeader(adminToken))
       .send({ name: 'E2E Attach Mod 2', materials: [], workTypes: [] })
       .expect(201);
@@ -66,17 +60,17 @@ describe('Products attach/detach modules (TZ-83 Phase D.3)', () => {
     }
     if (module1) {
       await request(app.getHttpServer())
-        .delete(`/api/product-modules/${module1}`)
+        .delete(`/api/modules/${module1}`)
         .set(authHeader(adminToken))
         .expect(204);
     }
     if (module2) {
       await request(app.getHttpServer())
-        .delete(`/api/product-modules/${module2}`)
+        .delete(`/api/modules/${module2}`)
         .set(authHeader(adminToken))
         .expect(204);
     }
-    await app.close();
+    await ctx.cleanup();
   });
 
   it('atomic attach: POST /products/:id/modules → 201 + productModuleIds populated', async () => {

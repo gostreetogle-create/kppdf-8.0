@@ -11,14 +11,10 @@
  *  - Build with missing sourceIds degrades gracefully (empty placeholder)
  *  - Build with invalid templateId returns 400 (BadRequestException)
  *
- * Implementation note: `CreateTemplateBlockDto` does NOT include the
- * `dataBinding` field, and the global ValidationPipe uses `whitelist: true`
- * which strips unknown fields. The static-binding test therefore creates
- * the block directly via the Mongoose model (bypassing the HTTP layer) —
- * this is a legitimate test pattern when verifying the build pipeline
- * that doesn't go through the create-block HTTP endpoint. A future
- * TZ-XX should add `dataBinding?` to CreateTemplateBlockDto so the API
- * can carry the binding through POST.
+ *  - Build with multi-column blocks (columns[] on TemplateBlock)
+ *
+ * Note: static-binding test uses Mongoose bypass because testing the build
+ * pipeline independent of HTTP validation edge cases.
  *
  * Run: `pnpm test:e2e test/e2e/document-templates-build.e2e-spec.ts`
  */
@@ -235,5 +231,39 @@ describe('DocumentTemplates build (e2e)', () => {
     // build() validates ObjectId first → BadRequestException (400).
     // Note: NOT 404, because we don't even reach the findById call.
     expect([400, 404]).toContain(res.status);
+  });
+
+  it('POST block with columns[] — persists and build renders multi-column HTML', async () => {
+    const orgId = await createRealOrganization('MultiCol Org');
+    const docTypeId = new Types.ObjectId().toString();
+    const tpl = await request(app.getHttpServer())
+      .post('/api/document-templates')
+      .set(auth)
+      .send({ name: 'MultiCol', organizationId: orgId, docTypeId, pageSize: 'A4' });
+    expect([200, 201]).toContain(tpl.status);
+    const templateId = tpl.body._id;
+    createdTemplates.push(templateId);
+
+    const block = await request(app.getHttpServer())
+      .post(`/api/document-templates/${templateId}/blocks`)
+      .set(auth)
+      .send({
+        type: 'text',
+        order: 0,
+        columns: [
+          { id: 'c1', content: 'LEFT_COL_XYZ', width: 1 },
+          { id: 'c2', content: 'RIGHT_COL_XYZ', width: 1 },
+        ],
+      });
+    expect([200, 201]).toContain(block.status);
+    expect(block.body.columns).toHaveLength(2);
+
+    const res = await request(app.getHttpServer())
+      .post(`/api/document-templates/${templateId}/build`)
+      .set(auth)
+      .send({ organizationId: orgId });
+    expect(res.status).toBe(201);
+    expect(res.text).toContain('LEFT_COL_XYZ');
+    expect(res.text).toContain('RIGHT_COL_XYZ');
   });
 });

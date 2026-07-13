@@ -1,41 +1,39 @@
 /**
- * TZ-104.6 — `TextBlockEditorComponent`
+ * TextBlockEditorComponent — редактор текстового блока (Stitch / Paper & Ink).
  *
- * Визуальный редактор текстового блока.
- *
- * ┌─────────────────────────────────────────────────────────────┐
- * │ Название блока: [________________________]                  │
- * │                                                             │
- * │ Колонок: [1] [2] [3] [4] [5] [6] [7] [8]                  │
- * │                                                             │
- * │ ┌─ Документ ────────────────────────────────────────────┐ │
- * │ │ ░░░░░░░░░░░░░░░░░░ (серый фон, чтобы рамки видны) ░░ │ │
- * │ │  ┌────────── #1 ──────────┐ ┌────────── #2 ────────┐ │ │
- * │ │  │ [B] [I] [U] | [≡] [≡] │ │ [B] [I] [U] | [≡] [≡]│ │ │
- * │ │  │                       │ │                       │ │ │
- * │ │  │ текст...              │ │ текст...              │ │ │
- * │ │  └───────────────────────┘ └───────────────────────┘ │ │
- * │ └──────────────────────────────────────────────────────┘ │
- * │                                                           │
- * │ [✓ Активен]              [Отмена] [Сохранить блок]       │
- * └───────────────────────────────────────────────────────────┘
+ * Единая панель форматирования, постановочные данные, колоночная сетка.
  */
 
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
+  Injector,
+  QueryList,
+  ViewChildren,
   computed,
   inject,
   input,
   output,
   signal,
 } from '@angular/core';
+import { httpResource } from '@angular/common/http';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
-import { PiRichTextEditorComponent } from '../../../shared/ui/rich-text/pi-rich-text-editor.component';
+import {
+  PiRichTextEditorComponent,
+  type ActiveStates,
+} from '../../../shared/ui/rich-text/pi-rich-text-editor.component';
 import { PiToastService } from '../../../shared/ui/toast';
+import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
+import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
 import { TextBlocksService, type TextBlock, type TextBlockColumn } from '../../../shared/services/pi-text-blocks.service';
+import type { DataSourcesResponse } from '../../../shared/services/pi-registry.service';
 import { extractErrorMessage } from '../../../core/silent-http';
+import {
+  DataFieldPickerDialogComponent,
+  type DataFieldSelection,
+} from './data-field-picker-dialog.component';
 
 @Component({
   selector: 'app-text-block-editor',
@@ -43,360 +41,398 @@ import { extractErrorMessage } from '../../../core/silent-http';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, ButtonComponent, PiRichTextEditorComponent],
   template: `
-    <div class="tbe">
-      <!-- ── Name field ── -->
-      <div class="tbe-field">
-        <label class="tbe-label" for="tbe-name">Название блока</label>
-        <input
-          id="tbe-name"
-          class="pi-input w-full"
-          [formControl]="nameControl"
-          placeholder="Например: Условия поставки"
-        />
-        @if (nameControl.invalid && (nameControl.dirty || nameControl.touched)) {
-          <span class="tbe-error">Введите название</span>
-        }
-      </div>
+    <section class="tbe-shell">
+      <div class="tbe-accent" aria-hidden="true"></div>
 
-      <!-- ── Column count selector ── -->
-      <div class="tbe-columns-selector">
-        <span class="tbe-label">Колонок:</span>
-        <div class="tbe-columns-buttons">
-          @for (n of columnOptions(); track n) {
-            <button
-              type="button"
-              class="tbe-col-btn"
-              [class.is-active]="columnsCount() === n"
-              (click)="setColumns(n)"
-            >{{ n }}</button>
+      <header class="tbe-head">
+        <span class="eyebrow text-sunrise-warm">Конструктор · Тексты</span>
+        <h1 class="tbe-title font-display">Текстовые блоки</h1>
+      </header>
+
+      <div class="tbe-meta">
+        <div class="tbe-meta-name">
+          <label class="eyebrow text-muted-foreground" for="tbe-name">Название блока</label>
+          <input
+            id="tbe-name"
+            class="tbe-input"
+            [formControl]="nameControl"
+            placeholder="Например: Технические характеристики"
+          />
+          @if (nameControl.invalid && (nameControl.dirty || nameControl.touched)) {
+            <span class="tbe-error">Введите название</span>
           }
-          <span class="tbe-columns-hint">— равные части по ширине</span>
         </div>
+
+        <div class="tbe-meta-cols">
+          <span class="eyebrow text-muted-foreground">Колонок</span>
+          <div class="tbe-col-seg" role="group" aria-label="Количество колонок">
+            @for (n of columnOptions(); track n) {
+              <button
+                type="button"
+                class="tbe-col-seg-btn"
+                [class.is-active]="columnsCount() === n"
+                (click)="setColumns(n)"
+              >{{ n }}</button>
+            }
+          </div>
+        </div>
+
+        <label class="tbe-active-check">
+          <input type="checkbox" [formControl]="activeControl" />
+          <span class="eyebrow">Активен</span>
+        </label>
       </div>
 
-      <!-- ── Document preview frame ── -->
       @if (columns().length > 0) {
-        <div class="tbe-doc-frame">
-          <div class="tbe-doc-frame-bar">
-            <span class="tbe-doc-frame-bar-label">{{ nameControl.value || 'Текстовый блок' }}</span>
-            <span class="tbe-doc-frame-bar-cols">{{ columns().length }} колонк{{ columns().length === 1 ? 'а' : columns().length < 5 ? 'и' : 'ок' }}</span>
+        <div class="tbe-toolbar hairline rounded-sm">
+          <span class="tbe-toolbar-badge eyebrow">Колонка #{{ activeColIndex() + 1 }}</span>
+          <span class="tbe-toolbar-sep" aria-hidden="true"></span>
+          <div class="tbe-toolbar-group" role="toolbar" aria-label="Форматирование">
+            <button type="button" class="tbe-tool" [class.is-active]="toolbarStates().h1" (click)="runCmd('h1')">H1</button>
+            <button type="button" class="tbe-tool" [class.is-active]="toolbarStates().h2" (click)="runCmd('h2')">H2</button>
+            <button type="button" class="tbe-tool" [class.is-active]="toolbarStates().h3" (click)="runCmd('h3')">H3</button>
+            <span class="tbe-toolbar-sep" aria-hidden="true"></span>
+            <button type="button" class="tbe-tool" [class.is-active]="toolbarStates().bold" (click)="runCmd('bold')"><strong>B</strong></button>
+            <button type="button" class="tbe-tool" [class.is-active]="toolbarStates().italic" (click)="runCmd('italic')"><em>I</em></button>
+            <button type="button" class="tbe-tool" [class.is-active]="toolbarStates().underline" (click)="runCmd('underline')"><u>U</u></button>
+            <span class="tbe-toolbar-sep" aria-hidden="true"></span>
+            <button type="button" class="tbe-tool" [class.is-active]="toolbarStates().alignLeft" (click)="runCmd('left')" title="По левому краю">≡</button>
+            <button type="button" class="tbe-tool" [class.is-active]="toolbarStates().alignCenter" (click)="runCmd('center')" title="По центру">≡</button>
+            <button type="button" class="tbe-tool" [class.is-active]="toolbarStates().alignRight" (click)="runCmd('right')" title="По правому краю">≡</button>
+          </div>
+        </div>
+
+        <div class="tbe-data-strip hairline-y">
+          <div class="tbe-data-strip-left">
+            <span class="eyebrow">Постановочные данные</span>
+            <span class="text-sm text-muted-foreground italic">
+              Вставка в колонку #{{ activeColIndex() + 1 }} — токены подставляются при сборке документа
+            </span>
+          </div>
+          <app-pi-button variant="outline" size="sm" class="tbe-data-btn" (click)="openDataPicker()">
+            ⊕ Вставить поле…
+          </app-pi-button>
+        </div>
+
+        <div class="tbe-workspace">
+          <div class="tbe-tabs" role="tablist">
+            @for (col of columns(); track trackByColId($index, col); let idx = $index) {
+              <button
+                type="button"
+                class="tbe-tab eyebrow"
+                [class.is-active]="activeColIndex() === idx"
+                (click)="selectColumn(idx)"
+              >#{{ idx + 1 }}</button>
+            }
+            @if (columns().length < 8) {
+              <button type="button" class="tbe-tab tbe-tab--add eyebrow" (click)="addColumn()">+</button>
+            }
           </div>
 
-          <div class="tbe-doc-frame-body">
-            <div
-              class="tbe-grid"
-              [style.grid-template-columns]="gridTemplate()"
-            >
-              @for (col of columns(); track trackByColId($index, col); let idx = $index) {
-                <div class="tbe-block" [class.tbe-block--last]="idx === columns().length - 1">
-                  <div class="tbe-block-toolbar">
-                    <span class="tbe-block-toolbar-label">#{{ idx + 1 }}</span>
-                    @if (columns().length > 1) {
-                      <span class="tbe-block-remove-wrap">
-                        <button
-                          type="button"
-                          class="tbe-block-remove"
-                          (click)="removeColumn(idx)"
-                          title="Удалить колонку"
-                          aria-label="Удалить колонку {{ idx + 1 }}"
-                        >✕</button>
-                      </span>
-                    }
-                  </div>
-                  <app-pi-rich-text
-                    [(value)]="col.content"
-                    [placeholder]="'Колонка ' + (idx + 1) + '…'"
-                    [showToolbar]="true"
-                    [compact]="true"
-                  />
-                </div>
-              }
-
-              @if (columns().length < 8) {
-                <button type="button" class="tbe-block tbe-block--add" (click)="addColumn()"
-                  title="Добавить колонку" aria-label="Добавить колонку">
-                  <span class="tbe-block-add-icon">+</span>
-                  <span class="tbe-block-add-text">Колонку</span>
-                </button>
-              }
-            </div>
+          <div class="tbe-grid" [style.grid-template-columns]="gridTemplate()">
+            @for (col of columns(); track trackByColId($index, col); let idx = $index) {
+              <div
+                class="tbe-col"
+                [class.is-active]="activeColIndex() === idx"
+                [class.is-dimmed]="activeColIndex() !== idx"
+                (mousedown)="selectColumn(idx)"
+              >
+                @if (isColumnEmpty(col)) {
+                  <div class="tbe-col-empty eyebrow text-muted-foreground">Пусто</div>
+                }
+                <app-pi-rich-text
+                  [value]="col.content"
+                  (valueChange)="onColumnContentChange(idx, $event)"
+                  [placeholder]="'Колонка ' + (idx + 1) + '…'"
+                  [showToolbar]="false"
+                  [selected]="activeColIndex() === idx"
+                  (activate)="selectColumn(idx)"
+                  (statesChange)="onEditorStatesChange(idx, $event)"
+                />
+              </div>
+            }
           </div>
         </div>
       }
 
-      <!-- ── Controls row ── -->
-      <div class="tbe-controls">
-        <div class="tbe-controls-left">
-          <label class="tbe-check">
-            <input type="checkbox" [formControl]="activeControl" />
-            <span>Активен</span>
-          </label>
-          @if (errorMessage()) {
-            <div role="alert" class="tbe-banner tbe-banner--error">{{ errorMessage() }}</div>
-          }
-        </div>
-
-        <div class="tbe-actions">
+      <footer class="tbe-footer hairline-t">
+        @if (errorMessage()) {
+          <div role="alert" class="tbe-banner tbe-banner--error">{{ errorMessage() }}</div>
+        }
+        <div class="tbe-footer-actions">
           <app-pi-button variant="ghost" (click)="onCancel()">Отмена</app-pi-button>
           <app-pi-button variant="default" [disabled]="nameControl.invalid || saving()" (click)="onSave()">
             {{ saving() ? 'Сохранение…' : 'Сохранить блок' }}
           </app-pi-button>
         </div>
-      </div>
-    </div>
+      </footer>
+    </section>
   `,
   styles: [`
     :host { display: block; }
 
-    .tbe {
+    .tbe-shell {
+      position: relative;
       display: flex;
       flex-direction: column;
-      gap: 12px;
-    }
-
-    .tbe-field {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .tbe-label {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: oklch(var(--color-muted));
-    }
-
-    .tbe-error {
-      font-size: 12px;
-      color: oklch(var(--color-destructive));
-    }
-
-    /* ── Column selector ── */
-    .tbe-columns-selector {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .tbe-columns-buttons {
-      display: flex;
-      align-items: center;
-      gap: 3px;
-    }
-
-    .tbe-col-btn {
-      width: 30px;
-      height: 30px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 600;
-      font-family: inherit;
-      background: oklch(var(--color-paper-2) / 0.4);
-      color: oklch(var(--color-ink));
-      border: 1px solid oklch(var(--color-rule));
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 100ms ease;
-    }
-    .tbe-col-btn:hover {
-      background: oklch(var(--color-sunrise-soft));
-      border-color: oklch(var(--color-ink) / 0.4);
-    }
-    .tbe-col-btn.is-active {
-      background: oklch(var(--color-ink));
-      color: oklch(var(--color-paper));
-      border-color: oklch(var(--color-ink));
-      box-shadow: 0 0 0 2px oklch(var(--color-ink) / 0.25);
-    }
-
-    .tbe-columns-hint {
-      font-size: 11px;
-      color: oklch(var(--color-muted));
-    }
-
-    /* ── Document preview frame ── */
-    .tbe-doc-frame {
-      border: 2px solid oklch(var(--color-rule));
-      border-radius: 4px;
-      background: oklch(var(--color-paper));
-      box-shadow: 0 2px 6px oklch(0 0 0 / 0.06);
+      background: var(--color-paper);
+      border: 2px solid var(--color-ink);
       overflow: hidden;
     }
 
-    .tbe-doc-frame-bar {
+    .tbe-accent {
+      height: 4px;
+      background: linear-gradient(
+        90deg,
+        var(--color-sunrise-warm),
+        var(--color-sunrise-glow),
+        var(--color-sunrise-warm)
+      );
+    }
+
+    .tbe-head {
+      padding: 24px 32px 8px;
+    }
+    .tbe-title {
+      margin: 8px 0 0;
+      font-size: 32px;
+      font-weight: 600;
+      line-height: 1.2;
+      color: var(--color-ink);
+    }
+
+    .tbe-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 24px;
+      padding: 0 32px 24px;
+    }
+    .tbe-meta-name {
+      flex: 1 1 280px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+    .tbe-input {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 16px;
+      font-family: inherit;
+      color: var(--color-ink);
+      background: var(--color-paper-main, var(--color-paper));
+      border: 1px solid var(--color-rule);
+      border-radius: 0;
+    }
+    .tbe-input:focus {
+      outline: none;
+      border-color: var(--color-ink);
+      box-shadow: 0 0 0 1px var(--color-sunrise-warm);
+    }
+    .tbe-error { font-size: 12px; color: var(--color-destructive); }
+
+    .tbe-meta-cols {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .tbe-col-seg {
+      display: flex;
+      border: 1px solid var(--color-ink);
+    }
+    .tbe-col-seg-btn {
+      min-width: 40px;
+      padding: 12px 14px;
+      font-family: ui-monospace, monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: var(--color-paper);
+      color: var(--color-ink);
+      border: none;
+      border-left: 1px solid var(--color-rule);
+      cursor: pointer;
+    }
+    .tbe-col-seg-btn:first-child { border-left: none; }
+    .tbe-col-seg-btn:hover { background: var(--color-paper-2); }
+    .tbe-col-seg-btn.is-active {
+      background: var(--color-ink);
+      color: var(--color-paper);
+    }
+
+    .tbe-active-check {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 6px 14px;
-      background: oklch(var(--color-paper-2));
-      border-bottom: 2px solid oklch(var(--color-rule));
+      gap: 10px;
+      margin-bottom: 4px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .tbe-active-check input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--color-ink);
     }
 
-    .tbe-doc-frame-bar-label {
-      font-size: 11px;
+    .tbe-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 32px 16px;
+      padding: 4px 8px;
+      background: var(--color-paper-2);
+    }
+    .tbe-toolbar-badge {
+      padding: 6px 12px;
+      background: var(--color-ink);
+      color: var(--color-paper);
+      flex-shrink: 0;
+    }
+    .tbe-toolbar-sep {
+      width: 1px;
+      height: 24px;
+      background: var(--color-rule);
+      flex-shrink: 0;
+    }
+    .tbe-toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      flex-wrap: wrap;
+    }
+    .tbe-tool {
+      min-width: 32px;
+      height: 32px;
+      padding: 0 8px;
+      font-size: 12px;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: oklch(var(--color-muted));
+      background: transparent;
+      border: none;
+      color: var(--color-ink);
+      cursor: pointer;
+    }
+    .tbe-tool:hover { background: var(--color-paper); }
+    .tbe-tool.is-active {
+      background: var(--color-ink);
+      color: var(--color-paper);
     }
 
-    .tbe-doc-frame-bar-cols {
-      font-size: 10px;
-      color: oklch(var(--color-muted));
-      opacity: 0.6;
+    .tbe-data-strip {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 32px;
+      background: var(--color-paper-2);
+    }
+    .tbe-data-strip-left {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 12px;
+      min-width: 0;
+    }
+    :host ::ng-deep .tbe-data-btn {
+      border-color: var(--color-sunrise-warm) !important;
+      color: var(--color-ink);
     }
 
-    .tbe-doc-frame-body {
-      padding: 12px;
-      background: oklch(var(--color-paper-2) / 0.45);
+    .tbe-workspace {
+      padding: 0 32px 32px;
+      background: var(--color-paper-2);
+    }
+    .tbe-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .tbe-tab {
+      padding: 8px 20px;
+      background: var(--color-paper);
+      border: 1px solid var(--color-rule);
+      color: var(--color-ink);
+      cursor: pointer;
+    }
+    .tbe-tab.is-active {
+      background: var(--color-ink);
+      color: var(--color-paper);
+      border-color: var(--color-ink);
+    }
+    .tbe-tab--add {
+      border-style: dashed;
+      color: var(--color-muted-foreground-strong);
+    }
+    .tbe-tab--add:hover {
+      border-color: var(--color-ink);
+      color: var(--color-ink);
     }
 
     .tbe-grid {
       display: grid;
-      gap: 0;
+      gap: 24px;
       align-items: stretch;
     }
-
-    /* ── Individual block ── */
-    .tbe-block {
+    .tbe-col {
+      position: relative;
+      min-height: 240px;
+      padding: 16px;
+      background: var(--color-paper-main, var(--color-paper));
+      border: 2px solid var(--color-rule);
+      transition: border-color 120ms ease, opacity 120ms ease, box-shadow 120ms ease;
+    }
+    .tbe-col.is-active {
+      background: var(--color-paper);
+      border-color: var(--color-sunrise-warm);
+      box-shadow: 0 0 15px color-mix(in oklch, var(--color-sunrise-warm) 12%, transparent);
+      opacity: 1;
+    }
+    .tbe-col.is-dimmed {
+      opacity: 0.6;
+    }
+    .tbe-col-empty {
+      position: absolute;
+      inset: 0;
       display: flex;
-      flex-direction: column;
-      border: 1px solid oklch(var(--color-rule));
-      border-right: none;
-      background: oklch(var(--color-paper));
-      overflow: hidden;
-      transition: border-color 120ms ease, box-shadow 120ms ease;
-    }
-    .tbe-block:hover {
-      border-color: oklch(var(--color-ink) / 0.45);
-      box-shadow: inset 0 0 0 1px oklch(var(--color-ink) / 0.12);
-    }
-    .tbe-block--last {
-      border-right: 1px solid oklch(var(--color-rule));
-    }
-    .tbe-block--last:hover {
-      border-right-color: oklch(var(--color-ink) / 0.45);
-    }
-
-    .tbe-block-toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 4px 10px;
-      background: oklch(var(--color-paper-2) / 0.5);
-      border-bottom: 1px solid oklch(var(--color-rule));
-    }
-
-    .tbe-block-toolbar-label {
-      font-size: 9px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: oklch(var(--color-muted));
-    }
-
-    .tbe-block-remove-wrap {
-      display: flex;
-    }
-
-    .tbe-block-remove {
-      width: 20px;
-      height: 20px;
-      display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 11px;
-      background: transparent;
-      color: oklch(var(--color-destructive) / 0.6);
-      border: 1px solid transparent;
-      border-radius: 3px;
-      cursor: pointer;
-      transition: all 100ms ease;
+      pointer-events: none;
+      z-index: 0;
     }
-    .tbe-block-remove:hover {
-      color: oklch(var(--color-destructive));
-      background: oklch(var(--color-destructive) / 0.12);
-      border-color: oklch(var(--color-destructive) / 0.25);
+    .tbe-col app-pi-rich-text {
+      position: relative;
+      z-index: 1;
+      display: block;
+      min-height: 180px;
     }
 
-    /* ── Add column button ── */
-    .tbe-block--add {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      min-height: 70px;
-      border: 1px dashed oklch(var(--color-rule));
-      border-right: 1px dashed oklch(var(--color-rule));
-      background: transparent;
-      color: oklch(var(--color-muted));
-      cursor: pointer;
-      transition: all 120ms ease;
-      font-family: inherit;
-      padding: 12px;
-    }
-    .tbe-block--add:hover {
-      border-color: oklch(var(--color-ink));
-      color: oklch(var(--color-ink));
-      background: oklch(var(--color-sunrise-soft) / 0.3);
-    }
-    .tbe-block-add-icon { font-size: 22px; font-weight: 200; line-height: 1; }
-    .tbe-block-add-text { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-
-    /* ── Controls row ── */
-    .tbe-controls {
+    .tbe-footer {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding-top: 12px;
-      border-top: 1px solid oklch(var(--color-rule));
+      justify-content: flex-end;
+      gap: 16px;
+      padding: 24px 32px;
     }
-
-    .tbe-controls-left {
+    .tbe-footer-actions {
       display: flex;
-      align-items: center;
       gap: 12px;
+      margin-left: auto;
     }
-
-    .tbe-check {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13px;
-      color: oklch(var(--color-ink));
-      cursor: pointer;
-      user-select: none;
-    }
-    .tbe-check input[type='checkbox'] {
-      width: 14px;
-      height: 14px;
-      border: 1px solid oklch(var(--color-rule));
-      border-radius: 2px;
-      accent-color: oklch(var(--color-ink));
-    }
-
     .tbe-banner {
-      padding: 6px 10px;
-      font-size: 12px;
+      flex: 1 1 100%;
+      padding: 8px 12px;
+      font-size: 13px;
       border-radius: 2px;
     }
     .tbe-banner--error {
-      background: oklch(var(--color-destructive) / 0.1);
-      color: oklch(var(--color-destructive));
-      border: 1px solid oklch(var(--color-destructive) / 0.3);
-    }
-
-    .tbe-actions {
-      display: flex;
-      gap: 8px;
+      background: color-mix(in oklch, var(--color-destructive) 10%, transparent);
+      color: var(--color-destructive);
+      border: 1px solid color-mix(in oklch, var(--color-destructive) 30%, transparent);
     }
   `],
 })
@@ -405,29 +441,41 @@ export class TextBlockEditorComponent {
   readonly save = output<TextBlock>();
   readonly cancel = output<void>();
 
+  @ViewChildren(PiRichTextEditorComponent) private editors!: QueryList<PiRichTextEditorComponent>;
+
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly service = inject(TextBlocksService);
   private readonly toast = inject(PiToastService);
+  private readonly dialog = inject(PiDialogService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
 
   protected readonly nameControl = this.fb.control('', [Validators.required, Validators.maxLength(200)]);
   protected readonly activeControl = this.fb.control(true);
 
   protected readonly columnsCount = signal<number>(1);
   protected readonly columns = signal<TextBlockColumn[]>([]);
+  protected readonly activeColIndex = signal<number>(0);
   protected readonly saving = signal<boolean>(false);
   protected readonly errorMessage = signal<string | null>(null);
+  protected readonly toolbarStates = signal<ActiveStates>({
+    bold: false, italic: false, underline: false,
+    h1: false, h2: false, h3: false,
+    alignLeft: false, alignCenter: false, alignRight: false,
+  });
+
+  protected readonly registryRes = httpResource<DataSourcesResponse>(
+    () => '/api/registry/data-sources',
+    { defaultValue: { sources: [] } },
+  );
 
   protected readonly gridTemplate = computed(() => {
-    const count = this.columns().length;
-    if (count <= 1) return '1fr';
-    return '1fr '.repeat(count).trim();
+    const n = this.columns().length;
+    if (n <= 1) return '1fr';
+    return `repeat(${n}, minmax(0, 1fr))`;
   });
 
-  protected readonly columnOptions = computed(() => {
-    const opts: number[] = [];
-    for (let i = 1; i <= 8; i++) opts.push(i);
-    return opts;
-  });
+  protected readonly columnOptions = computed(() => Array.from({ length: 8 }, (_, i) => i + 1));
 
   constructor() {
     const existing = this.block();
@@ -438,7 +486,7 @@ export class TextBlockEditorComponent {
         this.columns.set(existing.columns.map((c) => ({
           id: c.id || crypto.randomUUID(),
           content: c.content || '',
-          width: c.width || 1,
+          width: c.width ?? 1,
         })));
         this.columnsCount.set(existing.columns.length);
       } else {
@@ -450,7 +498,53 @@ export class TextBlockEditorComponent {
     }
   }
 
-  protected trackByColId(_index: number, col: TextBlockColumn): string { return col.id; }
+  protected trackByColId(_index: number, col: TextBlockColumn): string {
+    return col.id;
+  }
+
+  protected isColumnEmpty(col: TextBlockColumn): boolean {
+    const html = col.content?.trim() ?? '';
+    return !html || html === '<p></p>' || html === '<p><br></p>';
+  }
+
+  protected selectColumn(index: number): void {
+    this.activeColIndex.set(index);
+    queueMicrotask(() => {
+      const ed = this.editors?.get(index);
+      ed?.refreshActiveStates();
+      if (ed) this.toolbarStates.set(ed.getActiveStates());
+    });
+  }
+
+  protected onEditorStatesChange(index: number, states: ActiveStates): void {
+    if (index === this.activeColIndex()) {
+      this.toolbarStates.set(states);
+    }
+  }
+
+  protected onColumnContentChange(index: number, html: string): void {
+    this.columns.update((cols) =>
+      cols.map((c, i) => (i === index ? { ...c, content: html } : c)),
+    );
+  }
+
+  protected runCmd(cmd: 'bold' | 'italic' | 'underline' | 'h1' | 'h2' | 'h3' | 'left' | 'center' | 'right'): void {
+    const ed = this.editors?.get(this.activeColIndex());
+    if (!ed) return;
+    ed.focusEditor();
+    switch (cmd) {
+      case 'bold': ed.toggleBold(); break;
+      case 'italic': ed.toggleItalic(); break;
+      case 'underline': ed.toggleUnderline(); break;
+      case 'h1': ed.toggleHeading(1); break;
+      case 'h2': ed.toggleHeading(2); break;
+      case 'h3': ed.toggleHeading(3); break;
+      case 'left': ed.setTextAlign('left'); break;
+      case 'center': ed.setTextAlign('center'); break;
+      case 'right': ed.setTextAlign('right'); break;
+    }
+    queueMicrotask(() => this.toolbarStates.set(ed.getActiveStates()));
+  }
 
   protected setColumns(n: number): void {
     const current = this.columns();
@@ -461,18 +555,36 @@ export class TextBlockEditorComponent {
       this.columns.set(next);
     } else {
       this.columns.set(current.slice(0, n));
+      if (this.activeColIndex() >= n) this.activeColIndex.set(n - 1);
     }
     this.columnsCount.set(n);
   }
 
   protected addColumn(): void {
+    if (this.columns().length >= 8) return;
     this.columns.update((cols) => [...cols, this.makeColumn()]);
     this.columnsCount.update((n) => n + 1);
+    this.selectColumn(this.columns().length - 1);
   }
 
-  protected removeColumn(index: number): void {
-    this.columns.update((cols) => cols.filter((_, i) => i !== index));
-    this.columnsCount.update((n) => n - 1);
+  protected openDataPicker(): void {
+    const colIndex = this.activeColIndex();
+    this.editors?.get(colIndex)?.saveSelection();
+
+    const sources = this.registryRes.value()?.sources ?? [];
+    const ref = this.dialog.open<DataFieldSelection | null>(DataFieldPickerDialogComponent, {
+      data: { sources, columnIndex: colIndex },
+      width: '896px',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (sel) => {
+      if (!sel) return;
+      const token = `{{${sel.source}.${sel.field.key}}}`;
+      // Defer until dialog overlay releases focus trap.
+      requestAnimationFrame(() => {
+        this.editors?.get(colIndex)?.insertContent(token);
+      });
+    });
   }
 
   protected onCancel(): void { this.cancel.emit(); }

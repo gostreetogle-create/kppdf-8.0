@@ -13,6 +13,7 @@ import { CounterpartyModule } from '../counterparty/counterparty.module';
 import { ProductModule } from '../product/product.module';
 import { MaterialModule } from '../material/material.module';
 import { WorkTypeModule } from '../work-type/work-type.module';
+import { TableTemplateModule } from '../table-template/table-template.module';
 
 /**
  * TZ-86 Phase A.4 — DocumentTemplateModule extended.
@@ -39,6 +40,7 @@ import { WorkTypeModule } from '../work-type/work-type.module';
     ProductModule,
     MaterialModule,
     WorkTypeModule,
+    TableTemplateModule,
   ],
   controllers: [DocumentTemplateController],
   providers: [DocumentTemplateService],

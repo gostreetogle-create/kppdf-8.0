@@ -34,13 +34,15 @@ export class TableTemplateService {
       columns: dto.columns,
       sampleRows: dto.sampleRows,
       dataSource: dto.dataSource,
-      isActive: true,
+      isActive: dto.isActive ?? true,
     });
   }
 
-  async findAll(): Promise<TableTemplateDocument[]> {
+  async findAll(filter?: { activeOnly?: boolean }): Promise<TableTemplateDocument[]> {
+    const q: Record<string, unknown> = {};
+    if (filter?.activeOnly) q.isActive = true;
     return this.model
-      .find({ isActive: true })
+      .find(q)
       .sort({ category: 1, sortOrder: 1, name: 1 })
       .exec();
   }
@@ -66,6 +68,7 @@ export class TableTemplateService {
     if (dto.columns !== undefined) doc.columns = dto.columns as never;
     if (dto.sampleRows !== undefined) doc.sampleRows = dto.sampleRows;
     if (dto.dataSource !== undefined) doc.dataSource = dto.dataSource;
+    if (dto.isActive !== undefined) doc.isActive = dto.isActive;
     return doc.save();
   }
 

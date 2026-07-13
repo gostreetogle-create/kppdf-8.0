@@ -27,6 +27,7 @@ import { Counterparty, CounterpartyDocument } from '../counterparty/counterparty
 import { Product, ProductDocument } from '../product/product.schema';
 import { Material, MaterialDocument } from '../material/material.schema';
 import { WorkType, WorkTypeDocument } from '../work-type/work-type.schema';
+import { TableTemplateService } from '../table-template/table-template.service';
 
 /**
  * TZ-86 Phase A.4 — DocumentTemplateService extended.
@@ -78,6 +79,7 @@ export class DocumentTemplateService {
     @InjectModel(WorkType.name)
     private readonly workTypeModel: Model<WorkTypeDocument>,
     private readonly counter: CounterService,
+    private readonly tableTemplateService: TableTemplateService,
   ) {}
 
   async create(dto: CreateDocumentTemplateDto): Promise<DocumentTemplateDocument> {
@@ -241,8 +243,32 @@ export class DocumentTemplateService {
     }
     const { template, blocks } = await this.findExpanded(templateId);
     const bag = await this.resolveSourceIds(dto);
-    const resolvedBlocks = blocks.map((b) => this.resolveBlockContent(b, bag));
+    const resolvedBlocks = await Promise.all(
+      blocks.map(async (b) => {
+        const withBinding = this.resolveBlockContent(b, bag);
+        return this.resolveTableBlock(withBinding);
+      }),
+    );
     return this.renderHtml(template, resolvedBlocks, bag);
+  }
+
+  /**
+   * Resolve table blocks by looking up `settings.tableTemplateId` and
+   * injecting the rendered HTML from TableTemplateService.preview().
+   */
+  private async resolveTableBlock(
+    block: TemplateBlockDocument,
+  ): Promise<TemplateBlockDocument> {
+    if (block.type !== 'table') return block;
+    const settings = block.settings as { tableTemplateId?: string } | undefined;
+    const tableTemplateId = settings?.tableTemplateId;
+    if (!tableTemplateId) return block;
+    try {
+      const html = await this.tableTemplateService.preview(tableTemplateId);
+      return { ...block, content: html } as TemplateBlockDocument;
+    } catch {
+      return block;
+    }
   }
 
   /**
@@ -342,6 +368,36 @@ export class DocumentTemplateService {
     }
 
     await Promise.all(lookups);
+
+    // Cascade related entities from order/contract so {{counterparty.*}} tokens resolve
+    const order = bag.order as { counterpartyId?: Types.ObjectId | string } | undefined;
+    if (order?.counterpartyId && !bag.counterparty) {
+      const cpId = String(order.counterpartyId);
+      if (Types.ObjectId.isValid(cpId)) {
+        const cp = await this.counterpartyModel.findById(cpId).lean().exec();
+        if (cp) bag.counterparty = cp;
+      }
+    }
+
+    const contract = bag.contract as {
+      customerId?: Types.ObjectId | string;
+      organizationId?: Types.ObjectId | string;
+    } | undefined;
+    if (contract?.customerId && !bag.counterparty) {
+      const cpId = String(contract.customerId);
+      if (Types.ObjectId.isValid(cpId)) {
+        const cp = await this.counterpartyModel.findById(cpId).lean().exec();
+        if (cp) bag.counterparty = cp;
+      }
+    }
+    if (contract?.organizationId && !bag.organization) {
+      const orgId = String(contract.organizationId);
+      if (Types.ObjectId.isValid(orgId)) {
+        const org = await this.orgModel.findById(orgId).lean().exec();
+        if (org) bag.organization = org;
+      }
+    }
+
     return bag;
   }
 
@@ -473,32 +529,56 @@ export class DocumentTemplateService {
     };
     const css = `
       <style>
-        body { font-family: 'Times New Roman', serif; max-width: 800px; margin: 20px auto; padding: 20px; }
+        body { font-family: 'Times New Roman', serif; max-width: 800px; margin: 20px auto; padding: 20px; position: relative; }
         h1, h2, h3 { margin: 8px 0; }
-        .block { margin: 12px 0; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .block { margin: 12px 0; padding: 8px 0; border-bottom: 1px solid #eee; position: relative; z-index: 1; }
         table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: left; }
+        .doc-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: ${template.backgroundOpacity ?? 0.4}; }
+        .doc-bg img { width: 100%; height: 100%; object-fit: cover; }
+        .doc-content { position: relative; z-index: 1; }
       </style>`;
+    const bgLayers = (template.backgroundImage ?? [])
+      .map((url) => `<div class="doc-bg"><img src="${url}" alt=""></div>`)
+      .join('');
     const body = blocks
       .map((b) => {
         const content = substitute(b.content ?? b.title);
+        const cols = b.columns ?? [];
+        const multiColHtml =
+          cols.length > 1
+            ? `<div style="display:flex;gap:12px;width:100%">${cols
+                .map((c) => {
+                  const w = c.width && c.width > 0 ? c.width : 1;
+                  return `<div style="flex:${w}">${substitute(c.content)}</div>`;
+                })
+                .join('')}</div>`
+            : null;
         switch (b.type) {
           case 'header':
-            return `<div class="block"><h2>${substitute(b.title ?? '')}</h2>${content}</div>`;
+            return `<div class="block"><h2>${substitute(b.title ?? '')}</h2>${multiColHtml ?? content}</div>`;
           case 'text':
-            return `<div class="block">${content}</div>`;
-          case 'image':
-            return `<div class="block"><img src="${content}" alt=""></div>`;
+            return `<div class="block">${multiColHtml ?? content}</div>`;
+          case 'image': {
+            const settings = b.settings as { role?: string } | undefined;
+            if (settings?.role === 'separator') {
+              const h = b.height ?? 40;
+              return `<div class="block" style="height:${h}px"></div>`;
+            }
+            return content
+              ? `<div class="block"><img src="${content}" alt="" style="max-width:100%"></div>`
+              : `<div class="block" style="height:${b.height ?? 80}px"></div>`;
+          }
           case 'signature':
             return `<div class="block"><em>Подпись: ___________________</em><br>${content}</div>`;
           case 'table':
-            return `<div class="block">${content}</div>`;
+            return `<div class="block">${content || '<p>(таблица без данных)</p>'}</div>`;
           default:
             return `<div class="block">${content}</div>`;
         }
       })
       .join('\n');
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${substitute(template.name)}</title>${css}</head><body>${body}</body></html>`;
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${substitute(template.name)}</title>${css}</head><body>${bgLayers}<div class="doc-content">${body}</div></body></html>`;
   }
 
   // ── Phase A.6 — Upload background image (TZ-86 §2.6) ─────────────────────────────────

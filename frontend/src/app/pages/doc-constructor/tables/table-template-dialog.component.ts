@@ -2,9 +2,11 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   inject,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   FormArray,
@@ -24,11 +26,9 @@ import {
   TableTemplatesService,
   type ColumnType,
 } from '../../../shared/services/pi-table-templates.service';
-import { extractErrorMessage } from '../../../core/silent-http';
-import { SilentResult } from '../../../core/silent-http';
+import { extractErrorMessage, SilentResult } from '../../../core/silent-http';
 import { PiToastService } from '../../../shared/ui/toast';
 
-/** Local FormGroup for one row of FormArray<TableColumnForm>. */
 type TableColumnForm = FormGroup<{
   key: FormControl<string>;
   label: FormControl<string>;
@@ -46,37 +46,13 @@ const COLUMN_TYPES: Array<{ key: ColumnType; label: string }> = [
   { key: 'bool', label: 'Да / Нет' },
 ];
 
-const ALIGN_OPTIONS: Array<{ key: 'left' | 'center' | 'right'; label: string }> = [
-  { key: 'left', label: 'Слева' },
-  { key: 'center', label: 'По центру' },
-  { key: 'right', label: 'Справа' },
-];
+interface ClientPreviewModel {
+  name: string;
+  description: string;
+  columns: TableColumn[];
+  rows: unknown[][];
+}
 
-/**
- * TZ-86 Phase C.7 — TableTemplateFormDialog.
- *
- * Form:
- *   - name (required)
- *   - description (optional)
- *   - category (radio: 5 options, pill style)
- *   - columns[] FormArray — each row: key, label, type (select), width (number), align (radio), format (optional text)
- *   - sampleRows JSON textarea — JSON array of arrays; parsed on save
- *   - sortOrder, isActive (footer-strip)
- *
- * Phase C.7 layout: Lumina-style two-column body with sticky-left form column
- * (400px, hairline-bordered) and the server-side preview on the right.
- * Section headers in eyebrow style ("ОСНОВНАЯ ИНФОРМАЦИЯ", "СТРУКТУРА КОЛОНОК",
- * "ОБРАЗЦЫ СТРОК", "СВОЙСТВА"). Pill radios via peer-checked. Visual:
- * Paper & Ink (hairline, OKLCH warm, Lucide). Reference: Lumina Commerce
- * Table Templates (see `docs/reference/lumina-table-template-dialog.html`).
- *
- * Phase C.8 (deferred): drag-cards with collapsed/expanded state, icon-based
- * type picker, client-side live preview from sampleRowsJson.
- *
- * Sample preview:
- *   - показывает server-side preview только ПОСЛЕ успешного first save — endpoint требует существующий id.
- *   - для unsaved конфига показывает placeholder «Сохраните, чтобы увидеть preview».
- */
 @Component({
   selector: 'app-table-template-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -84,188 +60,168 @@ const ALIGN_OPTIONS: Array<{ key: 'left' | 'center' | 'right'; label: string }> 
   template: `
     <app-pi-dialog
       [title]="data ? 'Редактировать шаблон таблицы' : 'Новый шаблон таблицы'"
+      variant="content"
       [width]="'xl'"
+      [maxWidth]="'1000px'"
       [showClose]="true"
     >
-      <div body class="flex" [formGroup]="form">
-        <!-- LEFT: form column (Lumina layout — sticky 400px, hairline-bordered) -->
-        <div class="w-[400px] shrink-0 border-r border-rule pr-6 flex flex-col gap-6">
-          <section class="space-y-4">
-            <h3 class="eyebrow text-ink">Основная информация</h3>
-
-            <label class="block text-sm">
-              <span class="eyebrow block mb-1.5 text-ink">Название</span>
-              <input
-                class="pi-input w-full"
-                formControlName="name"
-                name="name"
-                placeholder="Спецификация товаров"
-                data-test="name-input"
-              />
-            </label>
-
-            <label class="block text-sm">
-              <span class="eyebrow block mb-1.5 text-ink">Описание</span>
-              <input
-                class="pi-input w-full"
-                formControlName="description"
-                name="description"
-                placeholder="Краткое описание назначения шаблона"
-              />
-            </label>
-
-            <div>
-              <span class="eyebrow block mb-2 text-ink">Категория</span>
-              <div class="flex flex-wrap gap-2">
-                @for (c of categoryOptions; track c.key) {
-                  <label class="cursor-pointer">
-                    <input
-                      type="radio"
-                      [value]="c.key"
-                      formControlName="category"
-                      name="category"
-                      class="sr-only peer"
-                    />
-                    <span
-                      class="inline-flex items-center px-3 py-1.5 rounded-sm text-sm font-medium bg-paper-2 text-ink hairline peer-checked:bg-ink peer-checked:text-paper transition-colors"
-                    >
-                      {{ c.label }}
-                    </span>
-                  </label>
-                }
+      <div body class="ttd-body" [formGroup]="form">
+        <div class="ttd-left">
+          <section class="ttd-section">
+            <h3 class="ttd-section-title eyebrow">Основная информация</h3>
+            <div class="ttd-fields">
+              <label class="ttd-field">
+                <span class="eyebrow text-muted-foreground">Название *</span>
+                <input class="ttd-input" formControlName="name" placeholder="Спецификация товаров" data-test="name-input" />
+              </label>
+              <label class="ttd-field">
+                <span class="eyebrow text-muted-foreground">Описание</span>
+                <input class="ttd-input" formControlName="description" placeholder="Краткое описание назначения" />
+              </label>
+              <div class="ttd-field">
+                <span class="eyebrow text-muted-foreground">Категория</span>
+                <div class="ttd-pills">
+                  @for (c of categoryOptions; track c.key) {
+                    <button
+                      type="button"
+                      class="ttd-pill"
+                      [class.is-active]="form.controls.category.value === c.key"
+                      (click)="setCategory(c.key)"
+                    >{{ c.label }}</button>
+                  }
+                </div>
               </div>
             </div>
           </section>
 
-          <section>
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="eyebrow text-ink">Структура колонок</h3>
-              <button
-                type="button"
-                class="text-xs text-ink underline underline-offset-2 hover:opacity-80 pi-focus-ring"
-                (click)="addColumn()"
-                data-test="add-column-button"
-              >+ Добавить</button>
+          <section class="ttd-section">
+            <div class="ttd-section-title eyebrow">
+              <span>Структура колонок</span>
+              <button type="button" class="ttd-link" (click)="addColumn()" data-test="add-column-button">+ Добавить</button>
             </div>
-            <div formArrayName="columns" class="space-y-2">
+            <div formArrayName="columns" class="ttd-columns">
               @for (col of columnsArray.controls; track $index; let i = $index) {
-                <div [formGroupName]="i" class="hairline rounded-sm p-3 space-y-2">
-                  <div class="grid grid-cols-12 gap-2 items-end">
-                    <label class="col-span-3 text-xs">
-                      <span class="block mb-1 text-muted-foreground">Key</span>
-                      <input class="pi-input w-full font-mono text-xs" formControlName="key" placeholder="name" />
+                <div [formGroupName]="i" class="ttd-col-card group">
+                  <div class="ttd-col-actions">
+                    <button type="button" class="ttd-icon-btn" [disabled]="i === 0" (click)="moveColumn(i, -1)" aria-label="Вверх">↑</button>
+                    <button type="button" class="ttd-icon-btn" [disabled]="i === columnsArray.controls.length - 1" (click)="moveColumn(i, 1)" aria-label="Вниз">↓</button>
+                    <button type="button" class="ttd-icon-btn ttd-icon-btn--danger" (click)="removeColumn(i)" aria-label="Удалить">×</button>
+                  </div>
+                  <div class="ttd-col-grid">
+                    <label class="ttd-col-field">
+                      <span class="ttd-col-label">Ключ</span>
+                      <input class="ttd-col-input font-mono" formControlName="key" placeholder="article" />
                     </label>
-                    <label class="col-span-4 text-xs">
-                      <span class="block mb-1 text-muted-foreground">Заголовок</span>
-                      <input class="pi-input w-full" formControlName="label" placeholder="Наименование" />
+                    <label class="ttd-col-field">
+                      <span class="ttd-col-label">Заголовок</span>
+                      <input class="ttd-col-input" formControlName="label" placeholder="Наименование" />
                     </label>
-                    <label class="col-span-3 text-xs">
-                      <span class="block mb-1 text-muted-foreground">Тип</span>
-                      <select class="pi-input w-full" formControlName="type" [name]="'type-' + i">
+                  </div>
+                  <div class="ttd-col-row">
+                    <label class="ttd-col-field ttd-col-field--grow">
+                      <span class="ttd-col-label">Тип</span>
+                      <select class="ttd-col-input" formControlName="type">
                         @for (t of columnTypes; track t.key) {
                           <option [value]="t.key">{{ t.label }}</option>
                         }
                       </select>
                     </label>
-                    <label class="col-span-2 text-xs">
-                      <span class="block mb-1 text-muted-foreground">Ширина</span>
-                      <input class="pi-input w-full font-mono text-xs" type="number" formControlName="width" min="20" max="800" />
+                    <label class="ttd-col-field ttd-col-field--w">
+                      <span class="ttd-col-label">Ширина</span>
+                      <input class="ttd-col-input font-mono text-center" type="number" formControlName="width" min="20" max="800" />
                     </label>
-                  </div>
-                  <div class="grid grid-cols-12 gap-2 items-end">
-                    <div class="col-span-10 flex items-center gap-4 text-xs">
-                      <span class="eyebrow text-muted-foreground">Выравнивание:</span>
-                      @for (a of alignOptions; track a.key) {
-                        <label class="flex items-center gap-1 cursor-pointer">
-                          <!-- No name binding: per-row radio isolation flows from
-                               formGroupName scoping the formControlName. A static
-                               name="align" would globally group all radios across
-                               rows (broken UX). See the value-independence spec. -->
-                          <input type="radio" [value]="a.key" formControlName="align" />
-                          <span>{{ a.label }}</span>
-                        </label>
-                      }
-                      <label class="flex items-center gap-2 ml-2 flex-1">
-                        <span class="eyebrow text-muted-foreground">Формат:</span>
-                        <input class="pi-input flex-1 font-mono text-xs" formControlName="format" placeholder="опционально (Intl pattern)" />
-                      </label>
-                    </div>
-                    <div class="col-span-2 flex justify-end gap-1">
-                      <button
-                        type="button"
-                        class="pi-button pi-button-ghost px-2 py-1 text-xs"
-                        [disabled]="i === 0"
-                        (click)="moveColumn(i, -1)"
-                        [attr.aria-label]="'Переместить ' + col.controls.label.value + ' вверх'"
-                      >↑</button>
-                      <button
-                        type="button"
-                        class="pi-button pi-button-ghost px-2 py-1 text-xs"
-                        [disabled]="i === columnsArray.controls.length - 1"
-                        (click)="moveColumn(i, +1)"
-                        [attr.aria-label]="'Переместить ' + col.controls.label.value + ' вниз'"
-                      >↓</button>
-                      <button
-                        type="button"
-                        class="pi-button pi-button-ghost px-2 py-1 text-xs text-destructive"
-                        (click)="removeColumn(i)"
-                        [attr.aria-label]="'Удалить колонку ' + col.controls.label.value"
-                      >×</button>
+                    <div class="ttd-col-field">
+                      <span class="ttd-col-label">Выравн.</span>
+                      <div class="ttd-align-group">
+                        <button type="button" class="ttd-align-btn" [class.is-active]="col.controls.align.value === 'left'" (click)="setAlign(i, 'left')" title="Слева">≡</button>
+                        <button type="button" class="ttd-align-btn" [class.is-active]="col.controls.align.value === 'center'" (click)="setAlign(i, 'center')" title="По центру">≡</button>
+                        <button type="button" class="ttd-align-btn" [class.is-active]="col.controls.align.value === 'right'" (click)="setAlign(i, 'right')" title="Справа">≡</button>
+                      </div>
                     </div>
                   </div>
+                  <label class="ttd-col-field">
+                    <span class="ttd-col-label">Формат (опционально)</span>
+                    <input class="ttd-col-input font-mono" formControlName="format" placeholder="Intl pattern" />
+                  </label>
                 </div>
               }
             </div>
           </section>
 
-          <section>
-            <h3 class="eyebrow text-ink mb-2">Образцы строк</h3>
+          <section class="ttd-section">
+            <h3 class="ttd-section-title eyebrow">Образцы строк</h3>
             <textarea
-              class="pi-input w-full font-mono text-xs"
+              class="ttd-textarea font-mono"
               rows="6"
               formControlName="sampleRowsJson"
-              name="sampleRowsJson"
-              placeholder='[["А-001", 2, 1500], ["А-002", 1, 800]]'
+              placeholder='[["А-001", "Стол", 2, 1500]]'
               data-test="sample-rows-input"
             ></textarea>
-            <span class="text-xs text-muted-foreground mt-1 block">каждая строка — массив значений в порядке колонок</span>
+            <p class="ttd-hint">каждая строка — массив значений в порядке колонок</p>
           </section>
 
-          <!-- Footer-strip: sortOrder + isActive (Lumina pattern — moved out of form body) -->
-          <div class="mt-auto pt-6 hairline-t flex items-center gap-6">
-            <label class="block text-sm">
-              <span class="eyebrow block mb-1.5 text-ink">Порядок</span>
-              <input class="pi-input w-20" type="number" formControlName="sortOrder" name="sortOrder" />
+          <div class="ttd-meta-strip hairline-t">
+            <label class="ttd-meta-item">
+              <span class="eyebrow text-muted-foreground">Порядок</span>
+              <input class="ttd-order-input font-mono" type="number" formControlName="sortOrder" />
             </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" formControlName="isActive" name="isActive" />
+            <label class="ttd-active-check">
+              <input type="checkbox" formControlName="isActive" />
               <span class="text-sm">Активен</span>
             </label>
           </div>
         </div>
 
-        <!-- RIGHT: preview column (Lumina layout — flex-1; server-side in Phase 1, client-side in Phase 2) -->
-        <div class="flex-1 pl-6 min-w-0 flex flex-col gap-2">
-          <span class="eyebrow text-ink">Предпросмотр (server-side)</span>
-          <div class="hairline rounded-sm bg-paper-2 px-5 py-4 text-sm min-h-[24rem] flex-1 overflow-x-auto">
+        <div class="ttd-right">
+          <div class="ttd-preview-head hairline-b">
+            <span class="eyebrow">Предпросмотр</span>
+            <button
+              type="button"
+              class="ttd-link"
+              [disabled]="!data || previewLoading()"
+              (click)="loadPreview()"
+            >↻ Обновить preview</button>
+          </div>
+          <div class="ttd-preview-body">
             @if (previewLoading()) {
-              <p class="text-muted-foreground">Загрузка preview…</p>
+              <p class="text-muted-foreground text-sm">Загрузка preview…</p>
             } @else if (previewHtml()) {
-              <div [innerHTML]="previewHtml()"></div>
+              <div class="ttd-preview-html" [innerHTML]="previewHtml()"></div>
+            } @else if (clientPreview(); as preview) {
+              <div class="ttd-preview-doc">
+                <div class="ttd-preview-doc-head hairline-b">
+                  <h3 class="font-display text-lg text-center">{{ preview.name }}</h3>
+                  @if (preview.description) {
+                    <p class="text-sm text-muted-foreground text-center">{{ preview.description }}</p>
+                  }
+                </div>
+                <div class="ttd-preview-table">
+                  <div class="ttd-preview-row ttd-preview-row--head" [style.grid-template-columns]="previewGrid(preview.columns)">
+                    @for (col of preview.columns; track col.key + col.label) {
+                      <div class="ttd-preview-cell eyebrow" [style.text-align]="col.align">{{ col.label }}</div>
+                    }
+                  </div>
+                  @for (row of preview.rows; track $index) {
+                    <div class="ttd-preview-row" [style.grid-template-columns]="previewGrid(preview.columns)">
+                      @for (cell of row; track $index; let ci = $index) {
+                        <div class="ttd-preview-cell" [style.text-align]="preview.columns[ci]?.align ?? 'left'">
+                          {{ formatCell(cell, preview.columns[ci]?.type ?? 'text') }}
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
             } @else {
-              <p class="text-muted-foreground text-xs">Сохраните шаблон, чтобы увидеть preview.</p>
+              <p class="text-muted-foreground text-sm text-center">
+                Заполните колонки и образцы строк — предпросмотр обновится автоматически.
+              </p>
             }
           </div>
-          <button
-            type="button"
-            class="text-xs text-muted-foreground underline hover:text-ink self-start"
-            [disabled]="!data || previewLoading()"
-            (click)="loadPreview()"
-          >↻ Обновить preview</button>
         </div>
       </div>
 
-      <div footer>
+      <div footer class="ttd-footer">
         @if (errorMessage()) {
           <span class="text-sm text-destructive mr-auto">{{ errorMessage() }}</span>
         }
@@ -273,17 +229,293 @@ const ALIGN_OPTIONS: Array<{ key: 'left' | 'center' | 'right'; label: string }> 
           <span class="text-sm text-destructive mr-auto">{{ validationError() }}</span>
         }
         <app-pi-button variant="ghost" (click)="onCancel()" data-test="cancel-button">Отмена</app-pi-button>
-        <app-pi-button
-          variant="default"
-          [disabled]="form.invalid || saving()"
-          (click)="onSave()"
-          data-test="save-button"
-        >
+        <app-pi-button variant="default" [disabled]="form.invalid || saving()" (click)="onSave()" data-test="save-button">
           {{ saving() ? 'Сохранение…' : 'Сохранить' }}
         </app-pi-button>
       </div>
     </app-pi-dialog>
   `,
+  styles: [`
+    :host ::ng-deep app-pi-dialog > div[role='dialog'] {
+      border-radius: 0;
+      border-width: 2px;
+      border-color: var(--color-ink);
+      max-height: min(920px, 92vh);
+    }
+    :host ::ng-deep app-pi-dialog header {
+      border-bottom: 2px solid var(--color-ink);
+    }
+    :host ::ng-deep app-pi-dialog footer {
+      border-top: 2px solid var(--color-ink);
+    }
+
+    .ttd-body {
+      display: flex;
+      min-height: 520px;
+      max-height: min(720px, 70vh);
+    }
+
+    .ttd-left {
+      width: 400px;
+      flex-shrink: 0;
+      padding: 24px 24px 16px 0;
+      border-right: 2px solid var(--color-ink);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .ttd-section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 0 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--color-rule);
+      color: var(--color-ink);
+    }
+
+    .ttd-fields { display: flex; flex-direction: column; gap: 16px; }
+    .ttd-field { display: flex; flex-direction: column; gap: 6px; }
+
+    .ttd-input {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 16px;
+      border: 1px solid var(--color-rule);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--color-ink);
+    }
+    .ttd-input:focus {
+      outline: none;
+      border-color: var(--color-sunrise-warm);
+      box-shadow: 0 0 0 1px var(--color-sunrise-warm);
+    }
+
+    .ttd-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+    .ttd-pill {
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid var(--color-rule);
+      border-radius: 6px;
+      background: var(--color-paper-2);
+      color: var(--color-muted-foreground-strong);
+      cursor: pointer;
+    }
+    .ttd-pill.is-active {
+      background: var(--color-ink);
+      border-color: var(--color-ink);
+      color: var(--color-paper);
+    }
+
+    .ttd-link {
+      padding: 0;
+      border: none;
+      background: transparent;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--color-sunrise-warm);
+      cursor: pointer;
+    }
+    .ttd-link:hover { color: var(--color-ink); }
+    .ttd-link:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .ttd-columns { display: flex; flex-direction: column; gap: 12px; }
+    .ttd-col-card {
+      position: relative;
+      padding: 12px;
+      border: 1px solid var(--color-rule);
+      border-radius: 6px;
+      background: var(--color-paper);
+    }
+    .ttd-col-card:hover { background: var(--color-paper-2); }
+
+    .ttd-col-actions {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      opacity: 0;
+      transition: opacity 100ms ease;
+    }
+    .ttd-col-card:hover .ttd-col-actions,
+    .ttd-col-card:focus-within .ttd-col-actions { opacity: 1; }
+
+    .ttd-icon-btn {
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: transparent;
+      color: var(--color-muted-foreground-strong);
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .ttd-icon-btn:hover:not(:disabled) { color: var(--color-ink); }
+    .ttd-icon-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .ttd-icon-btn--danger:hover { color: var(--color-destructive); }
+
+    .ttd-col-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding-right: 28px;
+      margin-bottom: 8px;
+    }
+    .ttd-col-row {
+      display: flex;
+      gap: 8px;
+      padding-right: 28px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .ttd-col-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .ttd-col-field--grow { flex: 1 1 120px; }
+    .ttd-col-field--w { width: 64px; flex-shrink: 0; }
+    .ttd-col-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-muted-foreground-strong);
+    }
+    .ttd-col-input {
+      width: 100%;
+      padding: 6px 8px;
+      font-size: 12px;
+      border: 1px solid var(--color-rule);
+      border-radius: 4px;
+      background: var(--color-paper);
+      color: var(--color-ink);
+    }
+    .ttd-col-input:focus {
+      outline: none;
+      border-color: var(--color-sunrise-warm);
+    }
+
+    .ttd-align-group {
+      display: flex;
+      border: 1px solid var(--color-rule);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .ttd-align-btn {
+      padding: 4px 8px;
+      border: none;
+      border-right: 1px solid var(--color-rule);
+      background: var(--color-paper);
+      color: var(--color-muted-foreground-strong);
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .ttd-align-btn:last-child { border-right: none; }
+    .ttd-align-btn.is-active {
+      background: var(--color-ink);
+      color: var(--color-paper);
+    }
+
+    .ttd-textarea {
+      width: 100%;
+      padding: 12px;
+      font-size: 11px;
+      border: 1px solid var(--color-rule);
+      border-radius: 6px;
+      background: var(--color-paper-2);
+      color: var(--color-ink);
+      resize: vertical;
+    }
+    .ttd-hint {
+      margin: 8px 0 0;
+      font-size: 10px;
+      font-style: italic;
+      color: var(--color-muted-foreground-strong);
+    }
+
+    .ttd-meta-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding-top: 16px;
+      margin-top: auto;
+    }
+    .ttd-meta-item { display: flex; align-items: center; gap: 8px; }
+    .ttd-order-input {
+      width: 64px;
+      padding: 6px 8px;
+      text-align: center;
+      border: 1px solid var(--color-rule);
+      border-radius: 4px;
+    }
+    .ttd-active-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .ttd-right {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--color-paper-2);
+    }
+    .ttd-preview-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: var(--color-paper);
+    }
+    .ttd-preview-body {
+      flex: 1;
+      padding: 24px;
+      overflow: auto;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+    .ttd-preview-doc {
+      width: 100%;
+      max-width: 560px;
+      background: var(--color-paper);
+      border: 2px solid var(--color-ink);
+    }
+    .ttd-preview-doc-head { padding: 16px; }
+    .ttd-preview-table { width: 100%; }
+    .ttd-preview-row {
+      display: grid;
+      border-bottom: 1px solid var(--color-rule);
+    }
+    .ttd-preview-row--head {
+      background: var(--color-paper-2);
+      border-bottom: 1px solid var(--color-ink);
+    }
+    .ttd-preview-cell {
+      padding: 10px 12px;
+      font-size: 13px;
+      border-right: 1px solid var(--color-rule);
+      word-break: break-word;
+    }
+    .ttd-preview-cell:last-child { border-right: none; }
+    .ttd-preview-html :is(table) { width: 100%; border-collapse: collapse; }
+
+    .ttd-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      width: 100%;
+    }
+  `],
 })
 export class TableTemplateFormDialogComponent {
   protected readonly data: TableTemplate | null = inject(PI_DIALOG_DATA) as TableTemplate | null;
@@ -291,9 +523,9 @@ export class TableTemplateFormDialogComponent {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly service = inject(TableTemplatesService);
   private readonly toast = inject(PiToastService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly columnTypes = COLUMN_TYPES;
-  protected readonly alignOptions = ALIGN_OPTIONS;
   protected readonly categoryOptions: Array<{ key: NonNullable<TableTemplate['category']>; label: string }> = [
     { key: 'product-spec', label: 'Спецификация' },
     { key: 'cost-calc', label: 'Калькуляция' },
@@ -307,12 +539,13 @@ export class TableTemplateFormDialogComponent {
   protected readonly validationError = signal<string | null>(null);
   protected readonly previewHtml = signal<string | null>(null);
   protected readonly previewLoading = signal<boolean>(false);
+  private readonly previewTick = signal(0);
 
   protected readonly form = this.fb.group({
     name: this.fb.control(this.data?.name ?? '', [Validators.required, Validators.maxLength(200)]),
     description: this.fb.control(this.data?.description ?? '', []),
     category: this.fb.control<NonNullable<TableTemplate['category']>>(
-      this.data?.category ?? 'custom',
+      this.data?.category ?? 'product-spec',
       [Validators.required],
     ),
     columns: this.fb.array<TableColumnForm>(
@@ -326,15 +559,84 @@ export class TableTemplateFormDialogComponent {
     isActive: this.fb.control(this.data?.isActive ?? true, []),
   });
 
+  protected readonly clientPreview = computed<ClientPreviewModel | null>(() => {
+    this.previewTick();
+    const v = this.form.getRawValue();
+    const columns = (v.columns ?? [])
+      .filter((c) => c.label?.trim())
+      .map((c) => ({
+        key: (c.key ?? '').trim(),
+        label: (c.label ?? '').trim(),
+        type: (c.type ?? 'text') as ColumnType,
+        width: Number(c.width ?? 100),
+        align: (c.align ?? 'left') as 'left' | 'center' | 'right',
+        ...(c.format?.trim() ? { format: c.format.trim() } : {}),
+      }));
+    if (columns.length === 0) return null;
+
+    let rows: unknown[][] = [];
+    const json = (v.sampleRowsJson ?? '').trim();
+    if (json) {
+      try {
+        const parsed = JSON.parse(json) as unknown;
+        if (Array.isArray(parsed)) rows = parsed.filter(Array.isArray) as unknown[][];
+      } catch {
+        return null;
+      }
+    }
+
+    return {
+      name: v.name?.trim() || 'Новый шаблон',
+      description: v.description?.trim() ?? '',
+      columns,
+      rows,
+    };
+  });
+
+  constructor() {
+    this.form.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.previewTick.update((n) => n + 1));
+
+    queueMicrotask(() => {
+      if (this.data) this.loadPreview();
+    });
+  }
+
   protected get columnsArray(): FormArray<TableColumnForm> {
     return this.form.controls.columns;
   }
 
-  /** Edit mode bootstrap: load preview for existing template. */
-  constructor() {
-    queueMicrotask(() => {
-      if (this.data) this.loadPreview();
-    });
+  protected setCategory(key: NonNullable<TableTemplate['category']>): void {
+    this.form.controls.category.setValue(key);
+  }
+
+  protected setAlign(index: number, align: 'left' | 'center' | 'right'): void {
+    this.columnsArray.at(index).controls.align.setValue(align);
+  }
+
+  protected previewGrid(columns: TableColumn[]): string {
+    return columns.map((c) => `${Math.max(20, c.width)}px`).join(' ');
+  }
+
+  protected formatCell(value: unknown, type: ColumnType): string {
+    if (value == null || value === '') return '—';
+    if (type === 'bool') return value ? 'Да' : 'Нет';
+    if (type === 'number') {
+      const n = Number(value);
+      return Number.isFinite(n) ? new Intl.NumberFormat('ru-RU').format(n) : String(value);
+    }
+    if (type === 'currency') {
+      const n = Number(value);
+      return Number.isFinite(n)
+        ? new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(n)
+        : String(value);
+    }
+    if (type === 'date') {
+      const d = new Date(String(value));
+      return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleDateString('ru-RU');
+    }
+    return String(value);
   }
 
   protected addColumn(): void {
@@ -381,7 +683,6 @@ export class TableTemplateFormDialogComponent {
 
   protected onSave(): void {
     if (this.form.invalid || this.saving()) return;
-    const v = this.form.getRawValue();
     const vErr = this.validate();
     if (vErr) {
       this.validationError.set(vErr);
@@ -391,6 +692,7 @@ export class TableTemplateFormDialogComponent {
     this.saving.set(true);
     this.errorMessage.set(null);
 
+    const v = this.form.getRawValue();
     const columns: TableColumn[] = (v.columns as TableColumnForm['value'][]).map((c) => ({
       key: (c.key ?? '').trim(),
       label: (c.label ?? '').trim(),
@@ -402,9 +704,7 @@ export class TableTemplateFormDialogComponent {
 
     let sampleRows: unknown[][] | undefined;
     const json = v.sampleRowsJson.trim();
-    if (json) {
-      sampleRows = JSON.parse(json);
-    }
+    if (json) sampleRows = JSON.parse(json);
 
     const payload: Partial<TableTemplate> = {
       name: v.name,
@@ -433,17 +733,13 @@ export class TableTemplateFormDialogComponent {
     });
   }
 
-  /** Trigger GET /api/table-templates/:id/preview — available only after first save. */
   protected loadPreview(): void {
     if (!this.data) return;
     this.previewLoading.set(true);
     this.service.preview(this.data._id).subscribe((res: SilentResult<string>) => {
       this.previewLoading.set(false);
-      if (res.ok) {
-        this.previewHtml.set(res.data);
-      } else {
-        this.previewHtml.set(null);
-      }
+      if (res.ok) this.previewHtml.set(res.data);
+      else this.previewHtml.set(null);
     });
   }
 

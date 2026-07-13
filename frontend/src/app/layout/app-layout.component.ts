@@ -107,8 +107,10 @@ const NAV_CATEGORIES: NavCategory[] = [
     icon: FileText,
     items: [
       { path: '/doc-constructor/builder', label: 'Конструктор' },
+      { path: '/doc-constructor/templates', label: 'Шаблоны' },
       { path: '/doc-constructor/texts', label: 'Текстовые блоки' },
       { path: '/doc-constructor/tables', label: 'Шаблоны таблиц' },
+      { path: '/doc-constructor/documents', label: 'Архив документов' },
     ],
   },
 ];

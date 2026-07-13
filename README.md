@@ -272,7 +272,9 @@ bash OrchestratorKit/kit-stack.sh --force
 - [`progress.md`](progress.md) — журнал прогресса
 - [`OrchestratorKit/README.md`](OrchestratorKit/README.md) — описание kit-а для AI-агентов
 - [`OrchestratorKit/QUICKSTART.md`](OrchestratorKit/QUICKSTART.md) — 5 шагов от нуля до первого TZ
-- [`OrchestratorKit/AGENTS.md`](OrchestratorKit/AGENTS.md) — мануал для ИИ-агента
+- [`deploy/synology/DEPLOY.md`](deploy/synology/DEPLOY.md) — деплой на Synology/Ubuntu VM (шаги, troubleshooting)
+- [`deploy/synology/RUNBOOK.md`](deploy/synology/RUNBOOK.md) — краткий чеклист деплоя
+- [`deploy/synology/CREDENTIALS.example.md`](deploy/synology/CREDENTIALS.example.md) — шаблон секретов (реальные → `CREDENTIALS.md`, gitignore)
 
 ---
 

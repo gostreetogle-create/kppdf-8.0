@@ -1,0 +1,63 @@
+# KPPDF 8.0 — Production stack (Ubuntu VM on Synology / bare Ubuntu)
+# Up:   sudo docker compose -f docker-compose.prod.yml up -d --build
+# Logs: sudo docker compose -f docker-compose.prod.yml logs -f backend
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: kppdf-mongo
+    restart: unless-stopped
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - ${KPPDF_DATA_DIR}/mongodb:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+
+  mongo-init:
+    image: mongo:7
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: "no"
+    entrypoint: >-
+      sh -c "mongosh --host mongo:27017 --eval
+      'try { rs.status() } catch (e) { rs.initiate({_id: \"rs0\", members: [{_id: 0, host: \"mongo:27017\"}]}) }'"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kppdf-backend
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+      mongo-init:
+        condition: service_completed_successfully
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/browser:/app/frontend:ro
+      - ${KPPDF_DATA_DIR}/uploads:/app/uploads
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      MONGO_URI: mongodb://mongo:27017/kppdf?replicaSet=rs0
+      MONGO_DB: kppdf
+      MONGO_REPLICA_SET: rs0
+      JWT_SECRET: "${JWT_SECRET:?JWT_SECRET is required}"
+      JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET is required}"
+      CORS_ORIGIN: "${CORS_ORIGIN:-https://sport-set.ru}"
+      FRONTEND_PATH: /app/frontend
+      LOG_LEVEL: info
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/api/health', r => process.exit(r.statusCode===200?0:1)).on('error', () => process.exit(1))"]
+      interval: 15s
+      timeout: 10s
+      retries: 6
+      start_period: 40s

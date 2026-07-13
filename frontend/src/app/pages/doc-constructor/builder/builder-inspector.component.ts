@@ -188,8 +188,8 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
         flex-shrink: 0;
         height: 100%;
         overflow-y: auto;
-        background: oklch(var(--color-paper));
-        border-left: 1px solid oklch(var(--color-rule));
+        background: var(--color-paper);
+        border-left: 1px solid var(--color-rule);
       }
 
       .inspector__header {
@@ -197,7 +197,7 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
         align-items: center;
         justify-content: space-between;
         padding: 16px;
-        border-bottom: 1px solid oklch(var(--color-rule));
+        border-bottom: 1px solid var(--color-rule);
       }
 
       .inspector__title {
@@ -205,7 +205,7 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.06em;
-        color: oklch(var(--color-ink));
+        color: var(--color-ink);
         margin: 0;
       }
 
@@ -213,8 +213,8 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
         font-size: 10px;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        background: oklch(var(--color-paper-2));
-        color: oklch(var(--color-ink));
+        background: var(--color-paper-2);
+        color: var(--color-ink);
         padding: 2px 8px;
         border-radius: 2px;
         font-weight: 600;
@@ -228,13 +228,13 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
       .inspector__empty-title {
         font-size: 14px;
         font-weight: 600;
-        color: oklch(var(--color-muted));
+        color: var(--color-muted);
         margin: 0 0 4px;
       }
 
       .inspector__empty-hint {
         font-size: 12px;
-        color: oklch(var(--color-muted));
+        color: var(--color-muted);
         margin: 0;
       }
 
@@ -262,16 +262,16 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: oklch(var(--color-muted));
+        color: var(--color-muted);
       }
 
       .field__input,
       .field__textarea {
         width: 100%;
         padding: 6px 8px;
-        background: oklch(var(--color-paper));
-        color: oklch(var(--color-ink));
-        border: 1px solid oklch(var(--color-rule));
+        background: var(--color-paper);
+        color: var(--color-ink);
+        border: 1px solid var(--color-rule);
         border-radius: 2px;
         font-size: 13px;
         font-family: inherit;
@@ -286,7 +286,7 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
 
       .field__hint {
         font-size: 11px;
-        color: oklch(var(--color-muted));
+        color: var(--color-muted);
         margin: 4px 0 0;
       }
 
@@ -300,29 +300,29 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        background: oklch(var(--color-paper-2));
+        background: var(--color-paper-2);
         padding: 2px 6px;
-        border: 1px solid oklch(var(--color-rule));
+        border: 1px solid var(--color-rule);
         border-radius: 2px;
         font-size: 11px;
       }
 
       .badge__label {
-        color: oklch(var(--color-muted));
+        color: var(--color-muted);
         text-transform: uppercase;
         letter-spacing: 0.05em;
         font-weight: 600;
       }
 
       .badge__value {
-        color: oklch(var(--color-ink));
+        color: var(--color-ink);
         font-family: ui-monospace, monospace;
       }
 
       .inspector__actions {
         margin-top: 8px;
         padding-top: 12px;
-        border-top: 1px solid oklch(var(--color-rule));
+        border-top: 1px solid var(--color-rule);
       }
     `,
   ],

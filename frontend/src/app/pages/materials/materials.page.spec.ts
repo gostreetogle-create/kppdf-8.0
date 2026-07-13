@@ -196,14 +196,13 @@ describe('MaterialsPage (httpResource refactor)', () => {
       statusText: 'Internal Server Error',
     });
     await tickMicrotask();
-    flushEffects();
 
     const comp = fixture.componentInstance as unknown as {
-      error: () => string | null;
+      listRes: { error: () => unknown };
       loading: () => boolean;
     };
 
-    expect(comp.error()).toBeTruthy();
+    expect(comp.listRes.error()).toBeTruthy();
     expect(comp.loading()).toBe(false);
   });
 
@@ -220,15 +219,12 @@ describe('MaterialsPage (httpResource refactor)', () => {
       statusText: 'Unauthorized',
     });
     await tickMicrotask();
-    flushEffects();
 
     const comp = fixture.componentInstance as unknown as {
-      error: () => string | null;
+      listRes: { error: () => unknown };
     };
 
-    // `extractErrorMessage` prefers `body.message`; without body JSON
-    // it falls back to HttpErrorResponse.message. Either way non-empty.
-    expect(comp.error()).toBeTruthy();
+    expect(comp.listRes.error()).toBeTruthy();
   });
 
   // ──────────────────────────────────────────────────────────────────────

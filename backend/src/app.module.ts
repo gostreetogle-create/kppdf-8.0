@@ -63,6 +63,7 @@ import { DocumentTemplateModule } from './modules/document-template/document-tem
 import { TemplateBlockModule } from './modules/template-block/template-block.module';
 import { TextBlockModule } from './modules/text-block/text-block.module';
 import { TableTemplateModule } from './modules/table-template/table-template.module';
+import { GeneratedDocumentModule } from './modules/generated-document/generated-document.module';
 import { DocumentTableTypeModule } from './modules/document-table-type/document-table-type.module';
 import { RegistryModule } from './modules/registry/registry.module';
 import { ReconciliationActModule } from './modules/reconciliation-act/reconciliation-act.module';
@@ -179,6 +180,7 @@ import { HealthController } from './health.controller';
     TextBlockModule, // TZ-86 Фаза A.1: новая entity для reusable text snippets
     TableTemplateModule,
     DocumentTableTypeModule,
+    GeneratedDocumentModule,
     RegistryModule, // TZ-86 Фаза A.5: data-source catalogue for Document Constructor tool pane
     ReconciliationActModule,
     FinancialReportModule,

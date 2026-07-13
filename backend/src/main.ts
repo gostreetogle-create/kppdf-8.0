@@ -6,6 +6,7 @@ import { Logger as PinoLogger } from 'nestjs-pino';
 import helmet from 'helmet';
 import compression from 'compression';
 import { join } from 'path';
+import type { NextFunction, Request, Response } from 'express';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { MulterExceptionFilter } from './common/filters/multer-exception.filter';
@@ -67,6 +68,21 @@ async function bootstrap() {
   // filter is registered first; the global catch-all backs it up.
   app.useGlobalFilters(new MulterExceptionFilter(), new HttpExceptionFilter());
   app.setGlobalPrefix('api');
+
+  // Production: serve built Angular SPA from FRONTEND_PATH (Synology/docker deploy).
+  const frontendPath = process.env.FRONTEND_PATH;
+  if (process.env.NODE_ENV === 'production' && frontendPath) {
+    app.useStaticAssets(frontendPath, { index: false });
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+      const p = req.path;
+      if (p.startsWith('/api') || p.startsWith('/uploads')) return next();
+      res.sendFile(join(frontendPath, 'index.html'), (err: Error | null) => {
+        if (err) next(err);
+      });
+    });
+    Logger.log(`📦 Frontend static: ${frontendPath}`, 'Bootstrap');
+  }
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('KPPDF API')

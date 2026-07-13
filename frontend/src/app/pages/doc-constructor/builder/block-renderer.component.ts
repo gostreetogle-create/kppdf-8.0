@@ -88,19 +88,19 @@ import {
         gap: 8px;
         align-items: flex-start;
         padding: 10px 12px;
-        background: oklch(var(--color-paper));
-        border: 1px solid oklch(var(--color-rule));
+        background: var(--color-paper);
+        border: 1px solid var(--color-rule);
         border-radius: 2px;
         cursor: pointer;
         transition: background 120ms ease, border-color 120ms ease;
       }
 
       .block-renderer:hover {
-        background: oklch(var(--color-sunrise-soft) / 0.5);
+        background: color-mix(in oklch, var(--color-sunrise-soft) 50%, transparent);
       }
 
       .block-renderer.is-selected {
-        border-color: oklch(var(--color-ink));
+        border-color: var(--color-ink);
         border-width: 2px;
         padding: 9px 11px;
       }
@@ -121,7 +121,7 @@ import {
         font-size: 11px;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: oklch(var(--color-muted));
+        color: var(--color-muted);
         margin-bottom: 4px;
       }
 
@@ -130,8 +130,8 @@ import {
       }
 
       .block-renderer__binding {
-        background: oklch(var(--color-sunrise-warm) / 0.2);
-        color: oklch(var(--color-sunrise-warm));
+        background: color-mix(in oklch, var(--color-sunrise-warm) 20%, transparent);
+        color: var(--color-sunrise-warm);
         padding: 1px 6px;
         border-radius: 2px;
         font-size: 10px;
@@ -142,7 +142,7 @@ import {
 
       .block-renderer__content {
         font-size: 14px;
-        color: oklch(var(--color-ink));
+        color: var(--color-ink);
         line-height: 1.5;
         word-wrap: break-word;
       }
@@ -162,7 +162,7 @@ import {
       .block-renderer[data-block-type='signature'] .block-renderer__content {
         font-style: italic;
         text-align: center;
-        border-top: 1px solid oklch(var(--color-rule));
+        border-top: 1px solid var(--color-rule);
         padding-top: 8px;
         width: 100%;
       }
@@ -171,7 +171,7 @@ import {
       .block-renderer[data-block-type='table'] .block-renderer__content {
         font-family: ui-monospace, monospace;
         font-size: 13px;
-        color: oklch(var(--color-muted));
+        color: var(--color-muted);
       }
     `,
   ],
