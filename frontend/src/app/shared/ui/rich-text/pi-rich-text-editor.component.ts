@@ -127,7 +127,15 @@ export const DEFAULT_EXTENSIONS = [
     </div>
   `,
   styles: [`
-    :host { display: block; }
+    :host {
+      display: block;
+      --pi-rte-editor-border: oklch(0.22 0.08 260);
+      --pi-rte-editor-border-selected: oklch(0.32 0.14 260);
+    }
+    :host-context(.dark) {
+      --pi-rte-editor-border: oklch(0.55 0.10 260);
+      --pi-rte-editor-border-selected: oklch(0.65 0.14 260);
+    }
 
     /* ── Container ── */
     .pi-rte {
@@ -168,12 +176,12 @@ export const DEFAULT_EXTENSIONS = [
     }
     .pi-rte--chromeless .pi-rte-editor {
       background: oklch(var(--color-paper));
-      border: 1px solid oklch(var(--color-ink) / 0.2);
+      border: 1px solid var(--pi-rte-editor-border);
       border-radius: 4px;
       box-shadow: inset 0 1px 3px oklch(0 0 0 / 0.06);
     }
     .pi-rte--chromeless.pi-rte--selected .pi-rte-editor {
-      border-color: oklch(var(--color-ink) / 0.35);
+      border-color: var(--pi-rte-editor-border-selected);
       background: oklch(var(--color-paper));
     }
 
@@ -286,9 +294,29 @@ export const DEFAULT_EXTENSIONS = [
     }
     .pi-rte-editor p { margin: 0 0 6px; }
     .pi-rte-editor p:last-child { margin-bottom: 0; }
-    .pi-rte-editor h1 { font-size: 18px; font-weight: 700; margin: 0 0 6px; line-height: 1.2; }
-    .pi-rte-editor h2 { font-size: 15px; font-weight: 600; margin: 0 0 4px; line-height: 1.3; }
-    .pi-rte-editor h3 { font-size: 14px; font-weight: 600; margin: 0 0 4px; line-height: 1.3; }
+    :host ::ng-deep .pi-rte-editor h1 {
+      font-size: 26px;
+      font-weight: 700;
+      margin: 0 0 10px;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      color: var(--color-ink);
+    }
+    :host ::ng-deep .pi-rte-editor h2 {
+      font-size: 21px;
+      font-weight: 650;
+      margin: 0 0 8px;
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+      color: var(--color-ink);
+    }
+    :host ::ng-deep .pi-rte-editor h3 {
+      font-size: 17px;
+      font-weight: 600;
+      margin: 0 0 6px;
+      line-height: 1.3;
+      color: var(--color-ink);
+    }
     .pi-rte-editor strong { font-weight: 700; }
     .pi-rte-editor em { font-style: italic; }
     .pi-rte-editor u { text-decoration: underline; }
