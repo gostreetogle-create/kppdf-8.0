@@ -489,6 +489,7 @@ export class BuilderPage {
         order: newBlock.order,
         title: newBlock.title,
         content: newBlock.content,
+        columns: newBlock.columns,
         height: newBlock.height,
         showLine: newBlock.showLine,
         settings: newBlock.settings,
@@ -551,6 +552,7 @@ export class BuilderPage {
           ...base,
           type: payload.type,
           content: '',
+          height: payload.type === 'spacer' ? 40 : undefined,
         };
       case 'text-block':
         return {
@@ -558,6 +560,7 @@ export class BuilderPage {
           type: 'text',
           title: payload.textBlock.name,
           content: payload.textBlock.content,
+          columns: payload.textBlock.columns,
           dataBinding: { source: 'static' as DataBindingSource, value: payload.textBlock._id ?? '' },
         };
       case 'table-template':

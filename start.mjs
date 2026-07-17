@@ -550,15 +550,22 @@ async function preflight() {
     log.ok(`${detected.join(' · ')}`);
   }
 
-  // ports free? — fail hard if backend/frontend occupied, warn for Mongo (might be expected)
+  // ports free? — auto-kill backend/frontend processes, warn for Mongo (might be expected)
   for (const [name, port] of Object.entries(PORTS)) {
     const inUse = await isPortInUse(port);
     if (!inUse) continue;
     if (name === 'mongo') {
       log.warn(`Порт ${port} (${name}) занят — считаем внешним Mongo, продолжаем`);
     } else {
-      log.err(`Порт ${port} (${name}) занят — остановите процесс или запустите \`node start.mjs --stop\``);
-      ok = false;
+      log.info(`Порт ${port} (${name}) занят — освобождаем…`);
+      const killed = await killProcessOnPort(port);
+      if (killed) {
+        log.ok(`Порт ${port} освобождён (убит pid ${killed})`);
+        await sleep(1000);
+      } else {
+        log.err(`Не удалось освободить порт ${port} (${name})`);
+        ok = false;
+      }
     }
   }
 
@@ -572,6 +579,40 @@ async function isPortInUse(port) {
     srv.once('listening', () => srv.close(() => resolve(false)));
     srv.listen(port, '0.0.0.0');
   });
+}
+
+/**
+ * Kill the process occupying a given port.
+ * Windows: netstat -ano → find PID → taskkill /PID /T /F
+ * Unix: lsof -ti :port → kill
+ * Returns PID killed or null.
+ */
+async function killProcessOnPort(port) {
+  try {
+    if (isWin) {
+      const r = spawnSync('netstat', ['-ano'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+      if (r.status !== 0) return null;
+      for (const line of r.stdout.split('\n')) {
+        const trimmed = line.trim();
+        if (trimmed.includes(`:${port}`) && trimmed.includes('LISTENING')) {
+          const parts = trimmed.split(/\s+/);
+          const pid = parts[parts.length - 1];
+          if (pid && pid !== '0') {
+            spawnSync('taskkill', ['/PID', pid, '/T', '/F'], { stdio: 'ignore' });
+            return pid;
+          }
+        }
+      }
+    } else {
+      const r = spawnSync('lsof', ['-ti', `:${port}`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+      if (r.status === 0 && r.stdout.trim()) {
+        const pid = r.stdout.trim().split('\n')[0];
+        process.kill(Number(pid), 'SIGKILL');
+        return pid;
+      }
+    }
+  } catch {}
+  return null;
 }
 
 // ---------- mongo ----------

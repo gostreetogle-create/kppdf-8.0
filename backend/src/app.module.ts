@@ -47,6 +47,7 @@ import { StorageItemModule } from './modules/storage-item/storage-item.module';
 import { StockMovementModule } from './modules/stock-movement/stock-movement.module';
 import { ReservationModule } from './modules/reservation/reservation.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
+import { CurrencyModule } from './modules/currency/currency.module';
 import { PurchaseRequestModule } from './modules/purchase-request/purchase-request.module';
 import { PurchaseOrderModule } from './modules/purchase-order/purchase-order.module';
 import { InvoiceModule } from './modules/invoice/invoice.module';
@@ -94,8 +95,8 @@ import { UnitsSeed } from './common/seed/units.seed';
 import { CategoriesSeed } from './common/seed/categories.seed';
 import { WarehouseSeed } from './common/seed/warehouse.seed';
 import { CurrenciesSeed } from './common/seed/currencies.seed';
-import { CurrencyModule } from './modules/currency/currency.module';
 import { DevFixturesSeed } from './common/seed/dev-fixtures.seed';
+import { BomComponentResolveService } from './modules/bom/migrations/bom-component-resolve.service';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -218,6 +219,10 @@ import { HealthController } from './health.controller';
     WarehouseSeed,
     CurrenciesSeed,
     DevFixturesSeed,
+    // TZ-105.2: idempotent orphan FK migration (OnApplicationBootstrap lifecycle,
+    // distinct from seeds' OnModuleInit per TZ-87 pattern). Dry-run default
+    // via `BOM_MIGRATE_DRY_RUN=true`; set to "false" to apply migrations.
+    BomComponentResolveService,
   ],
 })
 export class AppModule {}

@@ -131,6 +131,7 @@ export class ProductionOrderService {
         if (bom && bom.components.length > 0) {
           let componentSeq = 100;
           for (const comp of bom.components) {
+            if (!comp.productComponentId) continue;
             const task: Partial<OrderTask> = {
               productionOrderId: doc._id,
               componentId: comp.productComponentId,

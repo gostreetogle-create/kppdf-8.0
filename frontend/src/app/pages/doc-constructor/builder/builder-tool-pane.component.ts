@@ -547,7 +547,7 @@ export class BuilderToolPaneComponent {
   };
 
   // Static palette data
-  protected readonly blockTypeItems = (['header', 'text', 'table', 'image', 'signature'] as const)
+  protected readonly blockTypeItems = (['header', 'text', 'table', 'image', 'signature', 'spacer'] as const)
     .map((t) => ({
       type: t as BlockType,
       label: BLOCK_TYPE_LABELS[t],

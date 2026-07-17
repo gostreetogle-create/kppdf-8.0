@@ -116,7 +116,7 @@ export const CANVAS_DROPLIST_ID = 'canvas-droplist';
         min-height: 200px;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 0;
         position: relative;
         z-index: 1;
       }

@@ -101,7 +101,7 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
             </label>
           }
 
-          @if (block()!.type === 'image' || block()!.type === 'signature') {
+          @if (block()!.type === 'image' || block()!.type === 'signature' || block()!.type === 'spacer') {
             <label class="field">
               <span class="field__label">Высота (px)</span>
               <input
