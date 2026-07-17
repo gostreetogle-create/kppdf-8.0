@@ -27,14 +27,14 @@
 
 | #  | Домен                       | Кол-во | Ключевые сущности                              |
 |----|------------------------------|--------|------------------------------------------------|
-| 1  | Identity & Access            | 7      | `User`, `Role`, `Permissions`, `FeatureFlag`   |
-| 2  | People & Contacts            | 8      | `Person`, `Client`, `Counterparty`, `Worker`   |
+| 1  | Identity & Access            | 6      | `User`, `Role`, `Permissions`, `FeatureFlag`   |
+| 2  | People & Contacts            | 7      | `Person`, `Client`, `Counterparty`, `Worker`   |
 | 3  | Organizations                | 3      | `Organization`, `OrgRole`, `Category`           |
-| 4  | Products & Materials         | 18     | `Product`, `Material`, `Bom`, `ProductModule`  |
+| 4  | Products & Materials         | 16     | `Product`, `Material`, `Bom`, `ProductModule`  |
 | 5  | Production                   | 11     | `ProductionOrder`, `WorkType`, `WorkCenter`    |
-| 6  | Sales & Commerce             | 11     | `Proposal`, `Quotation`, `Contract`, `Order`   |
+| 6  | Sales & Commerce             | 9      | `Quotation`, `Contract`, `Order`   |
 | 7  | Warehouse & Inventory        | 6      | `Warehouse`, `StorageItem`, `InventoryItem`     |
-| 8  | Procurement                  | 10     | `PurchaseRequest`, `SupplierOrder`, `Tender`   |
+| 8  | Procurement                  | 9      | `PurchaseRequest`, `PurchaseOrder`, `Tender`   |
 | 9  | Documents & Templates        | 6      | `DocumentTemplate`, `TemplateBlock`, `DocType` |
 | 10 | Finance                      | 3      | `ReconciliationAct`, `FinancialReport`         |
 | 11 | System & Activity            | 6      | `Setting`, `StatusWorkflow`, `ImportJobs`      |

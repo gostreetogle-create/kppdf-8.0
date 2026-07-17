@@ -8,12 +8,15 @@ class BomComponentSchema {
   // ref переключен на 'ProductModule'; имя поля `productComponentId` оставлено
   // чтобы не трогать DTO / frontend.
   //
-  // TODO: existing boms в БД могут содержать СТАРЫЕ ObjectId из удалённой
-  //       коллекции `productcomponents` — populate вернёт null. Миграция
-  //       через fuzzy name-resolve в новые `productmodules` — отдельный TZ.
-  //       Триггер: первое появление живых BOM-записей с реальными данными.
-  @Prop({ type: Types.ObjectId, ref: 'ProductModule', required: true })
-  productComponentId!: Types.ObjectId;
+  // TZ-105.2: orphan FK migration handled by `BomComponentResolveService`.
+  // `required: false` (relaxed from `true` in this TZ): orphan rows resolved
+  // via soft-detach set productComponentId = null. `null` + `required: true`
+  // would throw Mongoose validation on next read. JSDoc on the migration
+  // service explains runtime invariant — null is only valid for soft-detached
+  // components with audit marker in `notes` (e.g. "[orphan-resolved 2026-07-12 TZ-105.2]").
+
+  @Prop({ type: Types.ObjectId, ref: 'ProductModule', required: false })
+  productComponentId?: Types.ObjectId | null;
 
   @Prop({ default: 1 })
   quantity!: number;
@@ -38,7 +41,7 @@ export class Bom {
   isActive!: boolean;
 
   @Prop({ type: [BomComponentSchemaFactory], default: [] })
-  components!: { productComponentId: Types.ObjectId; quantity: number; notes?: string }[];
+  components!: { productComponentId?: Types.ObjectId | null; quantity: number; notes?: string }[];
 
   @Prop()
   effectiveFrom?: Date;

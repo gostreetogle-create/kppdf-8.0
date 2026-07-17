@@ -1,0 +1,3 @@
+{"error":"Your payload's 'messages' array in misformatted. Messages from roles [user, system, tool] must contain a 'content' field. Got 'undefined'."}
+HTTP_CODE=400
+TIME=0.212198

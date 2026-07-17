@@ -56,7 +56,7 @@
 | ~~TZ-81~~ | ~~README + docs (Russian editorial)~~ | DONE 2026-07-05 | TZ-30..79 |
 | ~~TZ-82~~ | ~~Browser-use smoke test~~ | pending | TZ-67 + TZ-69..74 • TZ-79 |
 | ~~TZ-90~~ | ~~Диалоговая система (Phase A+B shipped; Phase C/D/E deferred)~~ | DONE — Phase A+B archived 2026-07-12 | — |
-| TZ-87 | TZ-86 F.3 close-out + dev-data seeding — (B.1) backend dev-fixtures seed `OnModuleInit` idempotent Organization/Counterparty/DocTypes под `NODE_ENV !== 'production'` guard + (B.2) frontend «Создать шаблон» inline button на `/doc-constructor/builder` empty picker + NewTemplatePlaceholderComponent с init flow GET orgs→doc-types→POST template→navigate + (B.3) re-run F.3 captures screenshots 05-07 в evidence folder + (B.4) docs sync + lockfile + status update | backend/src/common/seed/* · frontend/src/app/pages/doc-constructor/builder/* · tasks/_archive/2026-07/TZ-86-evidence/* · tasks/TZ-87.md | TZ-86 (✅ DONE) · TZ-95 (✅ Pi-* utilities provide pi-dashed-panel) · TZ-91 RBAC (manager role для `POST /api/document-templates`) |
+
 
 ### Параллелизм (max 4–5 по запросу PO)
 
@@ -115,6 +115,7 @@ Kit правила: **Layer 2 ≤ 2 одновременно · Layer 3 = СТР
 | TZ-82 | 2026-07-05 | Smoke test (PENDING — runs against :4200 dev server, INDEPENDENT of TZ-80) | _archive/2026-07/TZ-82.done.txt |
 | TZ-AUDIT-9 | 2026-07-07 | Warm Paper Palette Rebrand (hue 70, chroma 0.015-0.025) | tasks/_archive/2026-07/TZ-AUDIT-9.md.done |
 | TZ-AUDIT-9.1 | 2026-07-07 | Dark Mode L Bump (perceptual density: paper 0.18→0.21, paper-2 0.24→0.27) | tasks/_archive/2026-07/TZ-AUDIT-9.md.done (sub-iteration) |
+| TZ-87 | 2026-07-12 | Doc Constructor F.3 close-out (B.1 + B.2 + B.4 shipped; B.3 browser-use DEFERRED pending production-infra) | tasks/_archive/2026-07/TZ-87.md.done |
 
 ---
 

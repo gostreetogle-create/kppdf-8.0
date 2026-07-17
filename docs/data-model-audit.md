@@ -6,6 +6,8 @@
 > **Дополняет, не дублирует** секцию «Дубликаты и аномалии» в `data-model.md`.
 
 > ⚠️ **Допущения по стеку:** аудит написан под **MongoDB** (или совместимую документ-ориентированную БД): `ObjectId` PK, `*Ids: ObjectId[]` массивы для M2M, наследуемый аудит в субдокументах. **Если выбран PostgreSQL/MySQL — нужна отдельная версия аудита:** массивы FK заменяются на join-таблицы, embedding → normalization, шардинг не применяется. **Принять решение по стеку ДО реализации Priority 1** (§8).
+>
+> **Canonical verdict (search infrastructure):** настоящий документ не рассматривает Vector DB / семантический поиск — kppdf-8.0 использует MongoDB-only document store + structured-name search + ad-hoc regex. Canonical no-Vector-DB решение и обоснования см. в [`../ARCHITECTURE.md`](../ARCHITECTURE.md) §5 «Search infrastructure» (TZ-105.1 verdict, 2026-07-12). Если семантический search потребуется в будущем — отдельный TZ (см. §5.3 в архитектурном документе).
 
 ---
 

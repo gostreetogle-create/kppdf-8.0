@@ -3,7 +3,7 @@
   "tz_parent": "TZ-86 (Document Constructor)",
   "session_date": "2026-07-12",
   "agent": "Buffy/code-reviewer-minimax-m3 (Charlie)",
-  "overall_status": "PARTIAL",
+  "overall_status": "DONE-SEEDED-PENDING-F3",
   "completed_screenshots": [
     "01-login.png",
     "02-texts-empty-list.png",
@@ -90,5 +90,20 @@
       "B.3 — Re-run TZ-86 F.3 verification with seeded data, capture screenshots 05-07",
       "B.4 — Docs sync + lock file + status update"
     ]
+  },
+  "tz_87_close_2026_07_12": {
+    "outcome": "DONE (partial — B.1 + B.2 + B.4 shipped; B.3 DEFERRED)",
+    "B_1_seed_shipped_at": "2026-07-12 (pre-existing implementation, statically confirmed correct)",
+    "B_2_button_shipped_at": "2026-07-12 (inline onCreateTemplate() in builder.page.ts; deviation from TZ-87 §2.2 spec — no separate /builder/new route)",
+    "B_3_browser_verify_status": "DEFERRED — sandbox lacks pnpm + docker compose; static-verification confirmed code is correct (doc-type.controller.findAll returns flat array matching builder.page.ts.onCreateTemplate)",
+    "B_4_docs_archived_at": "2026-07-12",
+    "static_verdict": "PASS (per thinker-with-files-gemini verdict on 2026-07-12)",
+    "dev_dynamic_re_runs": {
+      "pnpm_typecheck_backend": "DEFERRED (no pnpm on PATH in sandbox)",
+      "pnpm_typecheck_frontend": "DEFERRED",
+      "docker_compose_seed_smoke": "DEFERRED (no docker)",
+      "browser_use_F3_full": "DEFERRED (no full-stack sandbox)"
+    },
+    "next_action": "TZ-87-extension once production-infra available (pnpm install + docker compose up + start.mjs)"
   }
 }

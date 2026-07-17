@@ -119,6 +119,75 @@
 
 ---
 
+## 5. Search infrastructure (TZ-105.1 verdict, 2026-07-12 — CANONICAL)
+
+**Decision:** kppdf-8.0 uses MongoDB-only search. **No Vector DB** — neither external semantic-search infrastructure nor MongoDB Atlas `$vectorSearch`. Canonical source-of-truth для любых future «do we need embeddings?» question.
+
+### 5.1 Verification (AC-2, 2026-07-12 ripgrep sweep)
+
+```bash
+# Vector DB SDK / API семейство
+rg -i '(Qdrant|Weaviate|Pinecone|pgvector|chroma|milvus|atlas_vector)' \
+   package.json pnpm-lock.yaml backend/src frontend/src Dockerfile docker-compose*.yml
+
+# MongoDB Atlas vector + text search
+rg '(\$vectorSearch|\$search|\$text|\$meta)' backend/src/
+
+# Embedding-семейство (false positives ожидаемы в OKLCH theme editor)
+rg -i '(embedding|vector.?search|cosine|ANN)' backend/src frontend/src
+```
+
+**Result (verified 2026-07-12):**
+
+| Категория | Совпадений | Comment |
+|---|---|---|
+| Vector DB SDK (Qdrant / Weaviate / Pinecone / pgvector / Chroma / Milvus / Atlas) | **0** | Нет外部клиентов, нет Docker-сервисов, нет npm-зависимостей |
+| MongoDB `$vectorSearch` / `$text` / `$search` / `$meta` | **0** | Native MongoDB document store + compound regex индексы only |
+| Embedding-семейство | **7 false positives** | Все в `shared/theme/pi-theme-editor*` + `theme-editor.service.ts` — OKLCH perceptual color (lightness/chroma/hue channels), НЕ vector embeddings |
+
+### 5.2 Verdict methodology — 4 risk cases
+
+1. **Exact-prefix search (NAME / INN / SKU / phone)** — 100% покрыт MongoDB regex + compound индексы (создаются в schema `@Schema({index: true})` или `Schema.index({...})` из TZ-03). Нет смысла в semantic search для фактографических данных. **Vector DB = overkill.**
+2. **MongoDB `$text` (lexical stemming index)** — built-in, доступен без Vector DB. Dismissed because kppdf-8.0 search domain = structured-fact-lookup (counterparty name, INN, BIN, customer phone). Stemming добавляет index-maintenance cost без ROI. **`$text` не нужен.**
+3. **Natural-language search по text-blocks документов** — TZ-86 вводит text-block конструктор для reuse, но spec не требует «найти шаблон по смыслу описания». Будущая feature «smart block recommendation» — отдельный TZ. **Сейчас нет use-case.**
+4. **Рекомендательные системы (similar products / cross-sell)** — отсутствуют в TZ-83 + data-model.md; нет product owner demand. **Нет use-case.**
+
+### 5.3 Future adapter seam (EXPLICITLY DEFERRED)
+
+Если TZ-N+1 потребует semantic search, architecturally-warranted path:
+
+- **MongoDB Atlas `$vectorSearch`** — если Atlas tier выбран в production infra. Никакой new infrastructure: vector index добавляется к schema + driver call. «Switch-on» migration: 1 TZ + 1 schema migration + embedding model selection.
+- **Qdrant sidecar** — если MongoDB Atlas tier недоступен (community → self-hosted). Добавляется отдельный server в `docker-compose.yml` + SDK в backend. Больше infra overhead, но позволяет pair with non-Mongo data sources.
+
+**Оба option EXPLICITLY DEFERRED.** TZ-105.1 ничего в этом направлении не ships. Если semantic-search use-case emerges — открывается separate TZ (предварительно data-model.audit.md update).
+
+### 5.4 Forbidden (TZ-canonical rule)
+
+❌ Adding Vector DB SDK как npm dep без explicit TZ authorization. Если требуется — открывается separate TZ с полным cost/benefit analysis + ADR.
+
+❌ Включение MongoDB `$text` indices в production schemas без прохождения через TZ directory. `text` indexes добавляют write-amplification cost, который неоправдан для structured-fact-lookup.
+
+### 5.5 Cross-references
+
+- **TZ-105** — родительский TZ (3 sub-tasks: 105.1 verdict [this section] + 105.2 BOM orphan migration + 105.3 frontend error-handling standardization).
+- **TZ-83** — root для BOM orphan migration fix (105.2); обоснование почему `productmodules` reference — не semantic search concern.
+- **TZ-86** — text-block конструктор (натуральный кандидат для future semantic-search TZ, но НЕ в текущей roadmap).
+- **TZ-100/101** — inventory dashboard; structured-name search через compound indexes, не semantic.
+- **`docs/data-model-audit.md`** — cross-ref: «MongoDB-only, no Vector DB» консистентен с этой section.
+
+### 5.6 Maintenance trigger
+
+Если future TZ меняет вердикт (например, появляется product owner demand для «smart text-block recommendation»), explicit pre-requisites:
+
+1. Update этой секции с новым verdict + cite конкретный use-case.
+2. `tasks/_archive/<YYYY-MM>/TZ-NN.md.done` ссылается на эту секцию.
+3. Update `STATUS.md` line для TZ-NN с marker «supersedes TZ-105.1 search verdict».
+4. Migration script if Atlas tier switches (компания перешла на Atlas → enable $vectorSearch seam).
+
+До тех пор этот вердикт — **CANONICAL и его inspired future choices**.
+
+---
+
 ## Dev Tooling — Local Starter (TZ-41)
 - **`D:\kppdf-8.0\start.mjs`** — кросс-платформенный Node 20+ ESM starter (~500 строк, без внешних deps).
 - **Режимы:** `--check` (preflight only), `--tail` (TUI), `--stop` (kill pids), `--reset` (down -v + rm node_modules), `--no-browser`, `--help`.
