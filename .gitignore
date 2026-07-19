@@ -29,7 +29,13 @@ deploy/synology/CREDENTIALS.md
 # Deploy build artifacts
 frontend/browser/
 
-# Stitch mockup extracts (local reference)
+# Stitch mockup extracts — raw source artifacts from D:\kppdf-8.0 (no longer)
+# VALUABLE CONTENT MIGRATED TO docs/ (2026-07-19, TZ-141 batch):
+#   _stitch_ref/DESIGN.md        → docs/design-spec.md
+#   _stitch_ref/code.html        → docs/reference/design-prototype.html
+#   _stitch_ref/screen.png       → docs/reference/design-screen.png
+#   stitch_kppdf_*.zip           → docs/reference/stitch_kppdf_paper_ink_system.zip (оригинал архива)
+# Keep ignore rule for safety — no active files should live here.
 _stitch_ref/
 _stitch_tables/
 stitch_*.zip
@@ -103,3 +109,10 @@ tmp/tz9*-{commit,arch}-*.txt
 # live tree doesn't need a copy. Regenerable from original source URL
 # referenced in TZ-93 spec §1 finding if a future TZ needs the source.
 ui/stitch_professional_desktop_crm_refinement/
+
+# === DOCUMENTATION (explicitly tracked) ===
+# All docs/ content is VITAL and MUST be version-controlled.
+# The SECTION BELOW ensures nothing in docs/ is ever accidentally caught
+# by broader ignore patterns (e.g., tmp/, stitch_*, or future additions).
+# If you add a new docs/ subdirectory, it is automatically protected.
+!docs/**

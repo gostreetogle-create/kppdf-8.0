@@ -2,6 +2,9 @@
 
 > **Почему** этот китинг выглядит именно так. Russian editorial.
 
+> **Связанный документ:** [`docs/design-spec.md`](./design-spec.md) — design spec (бренд, цвета, типографика, компоненты).
+> Этот файл — **implementation rationale**. Тот — **visual specification**. Оба обязательны к прочтению.
+
 ## OKLCH вместо hex
 
 OKLCH (Oklab light-chroma-hue) — perceptually uniform color space:

@@ -71,6 +71,7 @@ pnpm dev
 ## Чек-лист Paper & Ink compliance
 
 - [ ] `standalone: true`, `changeDetection: ChangeDetectionStrategy.OnPush`
+- [ ] Создать `docs/pages/<name>.page.md` — скопировать шаблон из `docs/pages/_template.md` и заполнить
 - [ ] Все inputs через `input<T>()` / `input.required<T>()` (НЕ `@Input()` decorator)
 - [ ] Никаких `any`, `OnInit`, `OnDestroy` — только `effect()`, `computed()`, `afterNextRender()`
 - [ ] Никаких `box-shadow`, `drop-shadow`, `#[hex]`, `bg-white`, `border-dashed`
