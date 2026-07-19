@@ -7,6 +7,8 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
 import { InputComponent } from '../../shared/ui/input/input.component';
 
 /**
+ * Полная документация страницы: docs/pages/login.page.md
+ *
  * TZ-NEW LoginPage — the public entry point of the KPPDF site.
  *
  * Editorial form (Paper & Ink). Username + password, submits via

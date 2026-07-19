@@ -30,6 +30,7 @@ import {
     <div class="pi-canvas-page-host w-full h-full overflow-y-auto overflow-x-hidden">
       <div
         class="pi-canvas-page-paper mx-auto my-8"
+        [class.pi-canvas-page-paper--landscape]="orientation() === 'landscape'"
         [style.max-width.px]="maxWidthPx()"
         [attr.data-page-size]="pageSize()"
       >
@@ -57,21 +58,15 @@ import {
         min-height: calc(1.414 * min(100vw - 64px, 720px));
         position: relative;
       }
+
+      .pi-canvas-page-paper--landscape {
+        min-height: calc(min(100vw - 64px, 900px) / 1.414);
+      }
     `,
   ],
 })
 export class PiCanvasPageComponent {
-  /**
-   * Visual max-width of the page in pixels. Default 720 — comfortable reading
-   * width on desktop without overwhelming the canvas pane. Builders can
-   * override for print-preview-style zoom-out.
-   */
   readonly maxWidthPx = input<number>(720);
-
-  /**
-   * Page size hint — purely for the `data-page-size` attribute used in
-   * browser dev tools / e2e selectors; the actual visual size is governed
-   * by the parent's flex layout. Default 'A4'.
-   */
   readonly pageSize = input<'A4' | 'A5' | 'Letter' | 'Legal'>('A4');
+  readonly orientation = input<'portrait' | 'landscape'>('portrait');
 }

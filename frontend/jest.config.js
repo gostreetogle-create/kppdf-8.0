@@ -11,19 +11,24 @@
  *   - `setupFilesAfterEnv` runs once per test file, after the test
  *     framework is installed. `setup-jest.ts` initializes zone.js
  *     and registers Angular testing utilities (TestBed init).
+ *   - `testRegex` used instead of `testMatch` for Windows path compat.
  *   - The `^@/(.*)$` alias mirrors `tsconfig.json` `paths` so tests
  *     can import from `@/shared/ui/...` etc. if desired.
  */
 module.exports = {
   preset: 'jest-preset-angular',
   setupFilesAfterEnv: ['<rootDir>/src/setup-jest.ts'],
-  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
+  testPathIgnorePatterns: [escapePath('node_modules'), escapePath('dist')],
   testEnvironment: 'jsdom',
+  testRegex: 'src[/\\\\].*\\.spec\\.ts$',
   moduleNameMapper: {
     '^@/components/(.*)$': '<rootDir>/src/app/shared/ui/$1',
     '^@/lib/(.*)$': '<rootDir>/src/app/core/$1',
     '^@/pages/(.*)$': '<rootDir>/src/app/pages/$1',
     '^@/layout/(.*)$': '<rootDir>/src/app/layout/$1',
   },
-  testMatch: ['<rootDir>/src/**/*.spec.ts'],
 };
+
+function escapePath(p) {
+  return p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}

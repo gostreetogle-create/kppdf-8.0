@@ -1,0 +1,29 @@
+{
+    "$help": "https://aka.ms/terminal-documentation",
+    "$schema": "https://aka.ms/terminal-profiles-schema",
+    "schemes": [
+        {
+            "name": "Minimal Flat Dark",
+            "cursorColor": "#0D9488",
+            "selectionBackground": "#0D948850",
+            "background": "#1E1E1E",
+            "foreground": "#D4D4D4",
+            "black": "#1E1E1E",
+            "red": "#F87171",
+            "green": "#0D9488",
+            "yellow": "#FBBF24",
+            "blue": "#60A5FA",
+            "purple": "#A78BFA",
+            "cyan": "#22D3EE",
+            "white": "#F3F4F6",
+            "brightBlack": "#6B7280",
+            "brightRed": "#FCA5A5",
+            "brightGreen": "#5EEAD4",
+            "brightYellow": "#FDE68A",
+            "brightBlue": "#93C5FD",
+            "brightPurple": "#C4B5FD",
+            "brightCyan": "#67E8F9",
+            "brightWhite": "#FFFFFF"
+        }
+    ]
+}

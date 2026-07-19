@@ -1,8 +1,10 @@
 import { IsDateString, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { IsObjectId } from '../../../common/decorators/is-object-id.decorator';
+import { ToObjectId } from '../../../common/decorators/to-object-id.decorator';
 
 export class CreateProductionOrderDto {
   @IsObjectId()
+  @ToObjectId()
   productId!: string;
 
   @IsNumber()
@@ -17,8 +19,8 @@ export class CreateProductionOrderDto {
   @IsOptional() @IsDateString() plannedStartDate?: string;
   @IsOptional() @IsDateString() plannedEndDate?: string;
 
-  @IsOptional() @IsObjectId() workCenterId?: string;
-  @IsOptional() @IsObjectId() workTypeId?: string;
-  @IsOptional() @IsObjectId() contractId?: string;
-  @IsOptional() @IsObjectId() proposalId?: string;
+  @IsOptional() @IsObjectId() @ToObjectId() workCenterId?: string;
+  @IsOptional() @IsObjectId() @ToObjectId() workTypeId?: string;
+  @IsOptional() @IsObjectId() @ToObjectId() contractId?: string;
+  @IsOptional() @IsObjectId() @ToObjectId() proposalId?: string;
 }

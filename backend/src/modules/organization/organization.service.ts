@@ -27,7 +27,7 @@ export class OrganizationService {
     }
     if (q.type) filter.type = q.type;
     const [items, total] = await Promise.all([
-      this.model.find(filter).sort({ name: 1 }).skip((page - 1) * limit).limit(limit).exec(),
+      this.model.find(filter).sort({ name: 1 }).skip((page - 1) * limit).limit(limit).lean().exec(),
       this.model.countDocuments(filter).exec(),
     ]);
     return { items, total, page, limit };

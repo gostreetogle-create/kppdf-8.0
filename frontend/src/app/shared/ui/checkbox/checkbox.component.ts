@@ -33,6 +33,7 @@ export type CheckboxSize = 'sm' | 'md';
     <button
       type="button"
       role="checkbox"
+      [attr.id]="id() ?? null"
       [attr.aria-checked]="ariaCheckedValue()"
       [attr.aria-label]="ariaLabel()"
       [attr.aria-disabled]="disabled()"
@@ -53,6 +54,7 @@ export class CheckboxComponent implements ControlValueAccessor {
   readonly indeterminate = input<boolean>(false);
   readonly disabled = input<boolean>(false);
   readonly size = input<CheckboxSize>('md');
+  readonly id = input<string | null>(null);
   readonly ariaLabel = input<string | null>(null);
 
   readonly checkedChange = output<boolean>();

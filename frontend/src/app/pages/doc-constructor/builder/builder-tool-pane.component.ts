@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  input,
   output,
   signal,
 } from '@angular/core';
@@ -14,6 +15,7 @@ import {
   FileText,
   Table as TableIcon,
   Plus,
+  Minus,
   Image as ImageIcon,
   Upload,
 } from 'lucide-angular';
@@ -63,49 +65,7 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         <p class="tool-pane__subtitle">Перетащите блок на холст или нажмите «+»</p>
       </header>
 
-      <!-- Section 1: Block types (drag-enabled) -->
-      <section class="tool-pane__section" [class.is-open]="isOpen('blocks')">
-        <button
-          type="button"
-          class="tool-pane__section-toggle pi-focus-ring"
-          (click)="toggle('blocks')"
-          [attr.aria-expanded]="isOpen('blocks')"
-        >
-          <span class="tool-pane__section-title">Блоки</span>
-        </button>
-        @if (isOpen('blocks')) {
-          <ul
-            cdkDropList
-            [cdkDropListData]="blockTypeItems"
-            [cdkDropListConnectedTo]="canvasDroplistId"
-            class="tool-pane__list"
-          >
-            @for (item of blockTypeItems; track item.type) {
-              <li
-                cdkDrag
-                [cdkDragData]="{ source: 'block-type', type: item.type }"
-                class="tool-pane__item"
-              >
-                <div class="tool-pane__item-text">
-                  <span class="tool-pane__item-label">{{ item.label }}</span>
-                  <span class="tool-pane__item-hint">{{ item.hint }}</span>
-                </div>
-                <button
-                  type="button"
-                  class="tool-pane__add pi-focus-ring"
-                  [attr.aria-label]="'Добавить ' + item.label"
-                  [title]="'Добавить ' + item.label"
-                  (click)="onAddBlockType(item.type)"
-                >
-                  <lucide-icon [img]="PlusIcon" [size]="14"></lucide-icon>
-                </button>
-              </li>
-            }
-          </ul>
-        }
-      </section>
-
-      <!-- Section 2: Text-blocks (drag-enabled) -->
+      <!-- Section 1: Text-blocks (drag-enabled) -->
       <section class="tool-pane__section" [class.is-open]="isOpen('texts')">
         <button
           type="button"
@@ -211,61 +171,24 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         }
       </section>
 
-      <!-- Section 4: Data sources (registry, drag-enabled) -->
-      <section class="tool-pane__section" [class.is-open]="isOpen('data')">
-        <button
-          type="button"
-          class="tool-pane__section-toggle pi-focus-ring"
-          (click)="toggle('data')"
-          [attr.aria-expanded]="isOpen('data')"
-        >
-          <lucide-icon [img]="DatabaseIcon" [size]="14"></lucide-icon>
-          <span class="tool-pane__section-title">Данные</span>
-        </button>
-        @if (isOpen('data')) {
-          @if (registryRes.isLoading()) {
-            <p class="tool-pane__loading">Загрузка…</p>
-          } @else if (registryRes.error()) {
-            <p class="tool-pane__error">{{ registryErrorMessage() }}</p>
-          } @else if (registryRes.value()) {
-            @for (src of registryRes.value()!.sources; track src.key) {
-              <div class="tool-pane__subgroup">
-                <h4 class="tool-pane__subgroup-title">{{ src.label }}</h4>
-                <ul
-                  cdkDropList
-                  [cdkDropListData]="src.fields"
-                  [cdkDropListConnectedTo]="canvasDroplistId"
-                  class="tool-pane__list"
-                >
-                  @for (f of src.fields; track f.key) {
-                    <li
-                      cdkDrag
-                      [cdkDragData]="{ source: 'data-binding', dataSource: src.key, field: f }"
-                      class="tool-pane__item"
-                    >
-                      <div class="tool-pane__item-text">
-                        <span class="tool-pane__item-label">{{ f.label }}</span>
-                        <span class="tool-pane__item-hint">{{ f.type }}</span>
-                      </div>
-                      <button
-                        type="button"
-                        class="tool-pane__add pi-focus-ring"
-                        [attr.aria-label]="'Добавить поле ' + f.label"
-                        [title]="'Добавить поле ' + f.label"
-                        (click)="onAddFromData(src.key, f)"
-                      >
-                        <lucide-icon [img]="PlusIcon" [size]="14"></lucide-icon>
-                      </button>
-                    </li>
-                  }
-                </ul>
-              </div>
-            }
-          }
-        }
+      <!-- Section 3: Spacer -->
+      <section class="tool-pane__section">
+        <div class="tool-pane__spacer-row">
+          <span class="tool-pane__spacer-icon">—</span>
+          <span class="tool-pane__spacer-label">Отступ</span>
+          <button
+            type="button"
+            class="tool-pane__add pi-focus-ring"
+            aria-label="Добавить отступ"
+            title="Добавить отступ"
+            (click)="onAddBlockType('spacer')"
+          >
+            <lucide-icon [img]="PlusIcon" [size]="14"></lucide-icon>
+          </button>
+        </div>
       </section>
 
-      <!-- Section 5: Decorations (D.2.1) — background image upload -->
+      <!-- Section 4: Decorations (D.2.1) — background image upload -->
       <section class="tool-pane__section" [class.is-open]="isOpen('decorations')">
         <button
           type="button"
@@ -278,9 +201,36 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         </button>
         @if (isOpen('decorations')) {
           <div class="tool-pane__decorations">
-            <p class="tool-pane__hint">
-              Загрузите фоновое изображение (PNG, JPEG, WebP, до 5 МБ)
-            </p>
+            @if (backgroundImages().length > 0) {
+              <div class="bg-list">
+                @for (url of backgroundImages(); track url; let i = $index) {
+                  <div class="bg-item" [class.bg-item--active]="defaultBackgroundIndex() === i">
+                    <div class="bg-thumb" [style.background-image]="'url(' + url + ')'"></div>
+                    <span class="bg-name">Фон {{ i + 1 }}</span>
+                    <div class="bg-actions">
+                      <button
+                        type="button"
+                        class="pi-icon-btn pi-focus-ring"
+                        [class.text-sunrise-warm]="defaultBackgroundIndex() === i"
+                        [attr.aria-label]="defaultBackgroundIndex() === i ? 'Убрать из дефолтных' : 'Сделать по умолчанию'"
+                        (click)="setDefaultBackground.emit(defaultBackgroundIndex() === i ? -1 : i)"
+                      >
+                        {{ defaultBackgroundIndex() === i ? '★' : '☆' }}
+                      </button>
+                      <button
+                        type="button"
+                        class="pi-icon-btn pi-icon-btn-danger pi-focus-ring"
+                        aria-label="Удалить фон"
+                        (click)="removeBackground.emit(i)"
+                      >×</button>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="tool-pane__hint">Нет загруженных фонов</p>
+            }
+
             <label class="tool-pane__upload">
               <input
                 #fileInput
@@ -294,6 +244,39 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
                 Загрузить фон
               </span>
             </label>
+
+            <div class="bg-control">
+              <label class="tool-pane__hint">Прозрачность: {{ opacityPercent() }}%</label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                [value]="backgroundOpacity()"
+                (input)="onOpacityInput($event)"
+                class="w-full"
+              />
+            </div>
+
+            <div class="bg-control">
+              <label class="tool-pane__hint">Ориентация</label>
+              <div class="flex gap-1">
+                <button
+                  type="button"
+                  class="pi-outline-btn flex-1"
+                  [class.bg-ink]="orientation() === 'portrait'"
+                  [class.text-paper]="orientation() === 'portrait'"
+                  (click)="setOrientation.emit('portrait')"
+                >Книжная</button>
+                <button
+                  type="button"
+                  class="pi-outline-btn flex-1"
+                  [class.bg-ink]="orientation() === 'landscape'"
+                  [class.text-paper]="orientation() === 'landscape'"
+                  (click)="setOrientation.emit('landscape')"
+                >Альбомная</button>
+              </div>
+            </div>
           </div>
         }
       </section>
@@ -329,6 +312,55 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         font-size: 11px;
         color: var(--color-muted);
         margin: 0;
+      }
+
+      .tool-pane__quick-add {
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--color-rule);
+      }
+
+      .tool-pane__quick-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 500;
+        border: 1px dashed var(--color-rule);
+        border-radius: 4px;
+        background: var(--color-paper);
+        color: var(--color-muted-foreground-strong);
+        cursor: pointer;
+        transition: all 150ms ease;
+      }
+
+      .tool-pane__quick-btn:hover {
+        border-color: var(--color-ink);
+        color: var(--color-ink);
+        background: var(--color-paper-2);
+      }
+
+      .tool-pane__spacer-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        cursor: default;
+      }
+
+      .tool-pane__spacer-icon {
+        font-size: 14px;
+        color: var(--color-muted-foreground-strong);
+        width: 14px;
+        text-align: center;
+      }
+
+      .tool-pane__spacer-label {
+        flex: 1;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--color-ink);
       }
 
       .tool-pane__section {
@@ -457,6 +489,80 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
 
       .tool-pane__decorations {
         padding: 8px 16px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .bg-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .bg-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 6px;
+        border: 1px solid var(--color-rule);
+        border-radius: 2px;
+        transition: border-color 100ms;
+      }
+
+      .bg-item--active {
+        border-color: var(--color-sunrise-warm);
+      }
+
+      .bg-thumb {
+        width: 36px;
+        height: 36px;
+        border-radius: 2px;
+        background-size: contain;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-color: var(--color-paper-2);
+        border: 1px solid var(--color-rule);
+        flex-shrink: 0;
+      }
+
+      .bg-name {
+        font-size: 12px;
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .bg-actions {
+        display: flex;
+        gap: 2px;
+        flex-shrink: 0;
+      }
+
+      .bg-control {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .bg-control input[type='range'] {
+        height: 4px;
+        -webkit-appearance: none;
+        appearance: none;
+        background: var(--color-rule);
+        border-radius: 2px;
+        outline: none;
+      }
+
+      .bg-control input[type='range']::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--color-ink);
+        cursor: pointer;
       }
 
       .tool-pane__upload {
@@ -513,8 +619,19 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
 export class BuilderToolPaneComponent {
   // Outputs
   readonly addBlock = output<AddBlockPayload>();
-  /** D.2.1: emitted when user picks a file in the Decorations tab. */
   readonly uploadBackground = output<File>();
+  readonly removeBackground = output<number>();
+  readonly setDefaultBackground = output<number>();
+  readonly setOpacity = output<number>();
+  readonly setOrientation = output<'portrait' | 'landscape'>();
+
+  // Inputs
+  readonly backgroundImages = input<string[]>([]);
+  readonly defaultBackgroundIndex = input<number>(-1);
+  readonly backgroundOpacity = input<number>(0.3);
+  readonly orientation = input<'portrait' | 'landscape'>('portrait');
+
+  protected readonly opacityPercent = computed(() => Math.round(this.backgroundOpacity() * 100));
 
   // DI
   private readonly textBlocks = inject(TextBlocksService);
@@ -526,6 +643,7 @@ export class BuilderToolPaneComponent {
   protected readonly FileTextIcon = FileText;
   protected readonly TableIconSvg = TableIcon;
   protected readonly PlusIcon = Plus;
+  protected readonly MinusIcon = Minus;
   protected readonly ImageIconSvg = ImageIcon;
   protected readonly UploadIcon = Upload;
 
@@ -616,6 +734,12 @@ export class BuilderToolPaneComponent {
       dataSource: sourceKey as 'organization' | 'counterparty' | 'product' | 'material' | 'work-type',
       field,
     });
+  }
+
+  /** D.2.1: opacity slider handler. */
+  protected onOpacityInput(event: Event): void {
+    const value = parseFloat((event.target as HTMLInputElement).value);
+    this.setOpacity.emit(value);
   }
 
   /** D.2.1: file picker handler — emit the chosen File to BuilderPage. */

@@ -29,7 +29,6 @@ export interface AuthUserPayload {
 
 export interface AuthResponse {
   access: string;
-  refresh: string;
   user: AuthUserPayload;
 }
 

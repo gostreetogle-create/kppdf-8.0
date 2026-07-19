@@ -46,7 +46,9 @@ export interface DocumentTemplate {
   pageSize: 'A4' | 'A5' | 'Letter' | 'Legal';
   /** Array of `/uploads/document-templates/{id}/{uuid}.{ext}` URLs (max 5 — Phase A.6). */
   backgroundImage: string[];
+  defaultBackgroundIndex: number;
   backgroundOpacity: number;
+  orientation: 'portrait' | 'landscape';
   version: number;
   notes?: string;
   createdAt?: string;
@@ -198,6 +200,41 @@ export class DocumentTemplatesService {
       this.http.post<UploadBackgroundResponse>(
         `${this.baseUrl}/document-templates/${templateId}/upload-background`,
         form,
+      ),
+    );
+  }
+
+  removeBackground(
+    templateId: string,
+    index: number,
+  ): Observable<SilentResult<void>> {
+    return silentWrap(
+      this.http.delete<void>(
+        `${this.baseUrl}/document-templates/${templateId}/backgrounds/${index}`,
+      ),
+    );
+  }
+
+  setDefaultBackground(
+    templateId: string,
+    index: number,
+  ): Observable<SilentResult<void>> {
+    return silentWrap(
+      this.http.patch<void>(
+        `${this.baseUrl}/document-templates/${templateId}/backgrounds/default`,
+        { index },
+      ),
+    );
+  }
+
+  setOrientation(
+    templateId: string,
+    orientation: 'portrait' | 'landscape',
+  ): Observable<SilentResult<void>> {
+    return silentWrap(
+      this.http.patch<void>(
+        `${this.baseUrl}/document-templates/${templateId}/orientation`,
+        { orientation },
       ),
     );
   }

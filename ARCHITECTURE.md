@@ -87,14 +87,14 @@
 
 | Зона | Файлы | Описание |
 |------|-------|----------|
-| Backend API | `backend/src/modules/` | 18 feature modules, CRUD endpoints |
-| Backend common | `backend/src/common/` | Guards, interceptors, decorators, seeds |
+| Backend API | `backend/src/modules/` | 19 feature modules (TZ-102: +Currency), CRUD endpoints. Modules route: `/modules` (renamed from `/product-modules`). |
+| Backend common | `backend/src/common/` | Guards, interceptors, decorators, seeds. **CurrenciesSeed (TZ-102):** idempotent RUB/USD/EUR seed. |
 | Backend database | `backend/src/database/` | Connection, plugins (softDelete, audit, userContext) |
 | Backend scripts | `backend/scripts/` | `audit-di.ts` — DI cascade analyzer |
 | Frontend core | `frontend/src/app/core/` | Auth, interceptors, services, guards, tokens |
 | Frontend layout | `frontend/src/app/layout/` | AppLayout (operational), KitLayout (UI showcase) |
-| Frontend pages | `frontend/src/app/pages/` | Login, materials, organizations, dictionaries, products, orders, contracts, work-types, modules, modules/:id, products/:id, /kit/* showcase |
-| Frontend shared/ui | `frontend/src/app/shared/ui/` | 24+ Paper & Ink primitives (button, card, dialog, table, ...) |
+| Frontend pages | `frontend/src/app/pages/` | Login, materials, organizations, dictionaries, **categories**, products, orders, contracts, work-types, modules, modules/:id, products/:id, /kit/* showcase |
+| Frontend shared/ui | `frontend/src/app/shared/ui/` | 24+ Paper & Ink primitives (button, card, dialog, table, ...). **Dialog service (TZ-103):** closure-local overlay refs per DialogRef (no singleton), `parentDestroyRef` auto-close on caller destroy, RAF first-mount repositioning. |
 | Frontend shared/page | `frontend/src/app/shared/page/` | PageHeader, Section, Demo wrappers |
 | Frontend shared/command | `frontend/src/app/shared/command/` | ⌘K command palette |
 | Frontend shared/theme | `frontend/src/app/shared/theme/` | Live OKLCH theme editor |
@@ -109,7 +109,7 @@
 | # | Вопрос | Статус | Контекст |
 |---|--------|--------|---------|
 | 1 | Дубликаты в data model (16 пар) | 📋 Документированы | `docs/data-model.md` § «Дубликаты». Proposal/Quotation, SupplierOrder/PurchaseOrder, Role/Roles и др. требуют консолидации. |
-| 2 | Operational pages — растут | 📋 В работе | Реализованы **8 фич × 10 routes**: materials, organizations, dictionaries, products [+ TZ-83 detail], orders, contracts + **TZ-83**: work-types, modules [+ detail]. В плане: warehouse, production, procurement — каждая как list+detail. |
+| 2 | Operational pages — растут | 📋 В работе | Реализованы **9 фич × 11 routes**: materials, organizations, dictionaries, **categories**, products [+ TZ-83 detail], orders, contracts + **TZ-83**: work-types, modules [+ detail]. В плане: warehouse, production, procurement — каждая как list+detail. |
 | 3 | E2E тесты не запускались | 📋 Отложено | 7 suites созданы (TZ-17), но не запускались регулярно. Нужен CI pipeline. |
 | 4 | SSR / hydration | ❌ REJECTED | TZ-80 — out of scope. SPA CSR через `start.mjs --prod` static server. |
 | 5 | Browser-use smoke test | ⏳ DEFERRED | TZ-82 — зависит от dev server. Можно запустить независимо через `ng serve`. |

@@ -12,6 +12,7 @@ import {
 } from './text-block.schema';
 import { CreateTextBlockDto } from './dto/create-text-block.dto';
 import { UpdateTextBlockDto } from './dto/update-text-block.dto';
+import { sanitizeHtml, sanitizeBlockContent } from '../../common/sanitize-html';
 
 /**
  * TZ-86 Phase A.1 — TextBlock service.
@@ -37,8 +38,11 @@ export class TextBlockService {
         slug,
         category: dto.category ?? 'custom',
         tags: sanitizedTags,
-        content: dto.content ?? '',
-        columns: dto.columns ?? [],
+        content: sanitizeHtml(dto.content ?? ''),
+        columns: (dto.columns ?? []).map((c) => ({
+          ...c,
+          content: sanitizeBlockContent(c.content ?? ''),
+        })),
         isActive: dto.isActive ?? true,
         sortOrder: dto.sortOrder ?? 0,
       });
@@ -91,8 +95,13 @@ export class TextBlockService {
     if (dto.tags !== undefined) {
       doc.tags = dto.tags.map((t: string) => this.tagSanitize(t));
     }
-    if (dto.content !== undefined) doc.content = dto.content;
-    if (dto.columns !== undefined) doc.columns = dto.columns as any;
+    if (dto.content !== undefined) doc.content = sanitizeHtml(dto.content);
+    if (dto.columns !== undefined) {
+      doc.columns = dto.columns.map((c) => ({
+        ...c,
+        content: sanitizeBlockContent(c.content ?? ''),
+      })) as any;
+    }
     if (dto.isActive !== undefined) doc.isActive = dto.isActive;
     if (dto.sortOrder !== undefined) doc.sortOrder = dto.sortOrder;
     // Single atomic save at the end — slug uniqueness is enforced by the

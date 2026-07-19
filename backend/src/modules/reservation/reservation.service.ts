@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
-import { Connection, Model, Types } from 'mongoose';
+import { ClientSession, Connection, Model, Types } from 'mongoose';
 import { Reservation, ReservationDocument } from './reservation.schema';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { StorageItem, StorageItemDocument } from '../storage-item/storage-item.schema';
@@ -22,18 +22,53 @@ export class ReservationService {
     private readonly movementModel: Model<StockMovementDocument>,
   ) {}
 
-  async create(dto: CreateReservationDto): Promise<ReservationDocument> {
+  async create(dto: CreateReservationDto, externalSession?: ClientSession): Promise<ReservationDocument> {
+    const filter: Record<string, unknown> = {
+      warehouseId: new Types.ObjectId(dto.warehouseId),
+      productId: new Types.ObjectId(dto.productId),
+    };
+    if (dto.zoneName) filter.zoneName = dto.zoneName;
+    else filter.$or = [{ zoneName: { $exists: false } }, { zoneName: null }];
+
+    if (externalSession) {
+      const item = await this.storageModel.findOne(filter).session(externalSession).exec();
+      if (!item) {
+        throw new NotFoundException(
+          `No storage item for product ${dto.productId} in warehouse ${dto.warehouseId}`,
+        );
+      }
+      const available = (item.quantity ?? 0) - (item.reservedQty ?? 0);
+      if (available < dto.qty) {
+        throw new BadRequestException(
+          `Insufficient available stock: have ${available}, requested ${dto.qty}`,
+        );
+      }
+      item.reservedQty = (item.reservedQty ?? 0) + dto.qty;
+      await item.save({ session: externalSession });
+      const [doc] = await this.model.create(
+        [
+          {
+            orderId: dto.orderId,
+            productId: new Types.ObjectId(dto.productId),
+            warehouseId: new Types.ObjectId(dto.warehouseId),
+            qty: dto.qty,
+            zoneName: dto.zoneName,
+            status: 'active',
+            isActive: true,
+            notes: dto.notes,
+            expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : undefined,
+          },
+        ],
+        { session: externalSession },
+      );
+      if (!doc) throw new BadRequestException('Reservation failed');
+      return doc;
+    }
+
     const session = await this.connection.startSession();
     let result: ReservationDocument | undefined;
     try {
       await session.withTransaction(async () => {
-        const filter: Record<string, unknown> = {
-          warehouseId: new Types.ObjectId(dto.warehouseId),
-          productId: new Types.ObjectId(dto.productId),
-        };
-        if (dto.zoneName) filter.zoneName = dto.zoneName;
-        else filter.$or = [{ zoneName: { $exists: false } }, { zoneName: null }];
-
         const item = await this.storageModel
           .findOne(filter)
           .session(session)

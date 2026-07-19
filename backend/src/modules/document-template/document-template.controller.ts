@@ -175,4 +175,34 @@ export class DocumentTemplateController {
   remove(@Param('id') id: string) {
     return this.service.remove(id);
   }
+
+  @Delete(':id/backgrounds/:index')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'remove_background', entityType: 'DocumentTemplate' })
+  removeBackground(
+    @Param('id') id: string,
+    @Param('index') index: string,
+  ) {
+    return this.service.removeBackground(id, parseInt(index, 10));
+  }
+
+  @Patch(':id/backgrounds/default')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'set_default_background', entityType: 'DocumentTemplate' })
+  setDefaultBackground(
+    @Param('id') id: string,
+    @Body('index') index: number,
+  ) {
+    return this.service.setDefaultBackground(id, index);
+  }
+
+  @Patch(':id/orientation')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'set_orientation', entityType: 'DocumentTemplate' })
+  setOrientation(
+    @Param('id') id: string,
+    @Body('orientation') orientation: 'portrait' | 'landscape',
+  ) {
+    return this.service.setOrientation(id, orientation);
+  }
 }

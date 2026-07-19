@@ -48,6 +48,7 @@ export class EavService {
     const defsByName = new Map(defs.map((d) => [d.name, d]));
 
     const result: Record<string, unknown> = {};
+    const operations: any[] = [];
     for (const [name, value] of Object.entries(raw)) {
       const def = defsByName.get(name);
       if (!def) {
@@ -56,11 +57,29 @@ export class EavService {
       }
       const parsed = this.validateAndParse(name, value, def);
       result[name] = parsed;
-      await this.valueModel.updateOne(
-        { entityType, entityId, attributeId: def._id },
-        { $set: { value: parsed } },
-        { upsert: true },
-      ).exec();
+      operations.push({
+        updateOne: {
+          filter: { entityType, entityId, attributeId: def._id },
+          update: { $set: { value: parsed } },
+          upsert: true,
+        },
+      });
+    }
+    if (operations.length > 0) {
+      const session = await this.valueModel.db.startSession();
+      try {
+        await session.withTransaction(async () => {
+          await this.valueModel.bulkWrite(operations, { session, ordered: true });
+        });
+      } catch (err) {
+        this.logger.error(
+          `EAV bulkWrite failed for ${entityType} ${entityId}: ${(err as Error).message}`,
+          (err as Error).stack,
+        );
+        throw err;
+      } finally {
+        await session.endSession();
+      }
     }
     return result;
   }
@@ -150,7 +169,7 @@ export class EavService {
         return d;
       }
       case 'enum': {
-        const s = String(value);
+        const s = String(value).trim();
         if (!def.options || !def.options.includes(s)) {
           throw new BadRequestException(
             `Attribute "${name}" must be one of: ${def.options?.join(', ')}`,

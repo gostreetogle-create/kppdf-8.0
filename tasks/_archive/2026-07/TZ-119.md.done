@@ -1,0 +1,160 @@
+═══════════════════════════════════════════════════════════════
+TZ-119: Backend safety sweep + lookup-table cleanup — parity with TZ-110 across remaining modules
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Backend Developer + Frontend Performance Engineer
+
+ЗАВИСИМОСТИ:
+- **TZ-110** (Category backend safety) — pattern reference. TZ-119 расширяет validation + atomic bulkWrite паттерн на 6+ модулей.
+- **TZ-115** (Inventory httpResource migration) — slight ВНИМАНИЕ. Если inventory frontend меняет subscribe → httpResource, то backend services' lookup-table pattern не нарушается (frontend-only change).
+
+LAYER: 4 (backend validation/transactions) + 2 (shared lookup-table refactor)
+
+CONFLICT KEYS: backend/src/modules/products/products.service.ts; backend/src/modules/products/products.schema.ts; backend/src/modules/orders/orders.service.ts; backend/src/modules/orders/orders.schema.ts; backend/src/modules/contracts/contracts.service.ts; backend/src/modules/contracts/contracts.schema.ts; backend/src/modules/work-types/work-types.service.ts; backend/src/modules/work-types/work-types.schema.ts; backend/src/modules/materials/materials.service.ts; backend/src/modules/materials/materials.schema.ts; backend/src/common/validators/is-object-id.pipe.ts (NEW); frontend/src/app/shared/util/lookup-table.ts (cleanup)
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. **Backend `bulkWrite` / `findByIdAndUpdate` / `deleteOne` patterns without ObjectId validation:**
+   - TZ-110 уже нашёл `new Types.ObjectId(req.body.categoryId)` в unvalidated routes → unhandled exception.
+   - **Вероятно, те же проблемы в:** products/orders/contracts/work-types/materials backend services. Особенно критично для любых reorder/bulk endpoint'ов которых ещё нет, но будут добавлены.
+   - **Critical surface areas:**
+     - `backend/src/modules/products/products.service.ts` — `findById` принимает raw id → `Types.ObjectId(id)` без `isValid`.
+     - `backend/src/modules/orders/orders.service.ts` — то же.
+     - Все остальные модули аналогичны.
+
+2. **Frontend `createLookupTable` lacks cleanup:**
+   ```ts
+   // shared/util/lookup-table.ts (presumed)
+   export function createLookupTable<T>(fetcher: Observable): {
+     byId: signal<Record<string, T>>;
+     load: () => void;
+     // NO cancel/destroy method
+   }
+   ```
+   Когда компонент уничтожается, observable в `load()` остаётся alive → memory leak visible в DevTools Memory tab.
+
+3. **Frontend bulk-update inconsistent across pages:**
+   - categories.page uses `reorder()` через `CategoriesService.reorder` (existing).
+   - products/orders/etc не имеют `reorder()`. Если добавится — риск повторения category-style bug.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Backend safety sweep — ObjectId validation pipe
+
+1.1. Создать `backend/src/common/validators/is-object-id.pipe.ts`:
+```ts
+import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from '@nestjs/common';
+import { Types } from 'mongoose';
+
+@Injectable()
+export class IsObjectIdPipe implements PipeTransform<string, Types.ObjectId> {
+  transform(value: string, _meta: ArgumentMetadata): Types.ObjectId {
+    if (!Types.ObjectId.isValid(value)) {
+      throw new BadRequestException(`Invalid ObjectId: ${value}`);
+    }
+    return new Types.ObjectId(value);
+  }
+}
+```
+
+1.2. Apply в controllers (products/orders/contracts/work-types/materials):
+- `@Param('id', IsObjectIdPipe)` на всех `:id` routes.
+
+1.3. `@Param('productId', IsObjectIdPipe)` etc на nested routes (`/products/:productId/cost-calculations`).
+
+1.4. **Audit job:** написать `backend/scripts/audit-object-id-validation.ts` — grep'ает services+controllers без pipe → list missing. **Single-shot script, не pre-commit hook (TZ-45 precedent).**
+
+ШАГ 2: Atomic bulkWrite inertia in backend
+
+2.1. После TZ-110 trend — **вероятно остальные controllers** НЕ используют bulkWrite (нет reorder endpoint). Если будут добавлены в будущем — pattern reuse из TZ-110:
+- `session.startSession()` + `session.withTransaction()` для ANY bulkWrite.
+- Wrap в `ordered: true`.
+- Graceful fallback на non-transactional для in-memory test mongo.
+
+2.2. **Не делать сейчас для всех модулей** — только когда появится use-case. TZ-119a может предложить **concrete first use-case** в одном модуле (e.g. products-order reorder) для демонстрации pattern adoption.
+
+ШАГ 3: lookup-table cleanup race fix
+
+3.1. `shared/util/lookup-table.ts` — добавить:
+```ts
+export interface LookupTable<T> {
+  readonly byId: Signal<Record<string, T>>;
+  load(): void;
+  destroy(): void;  // NEW
+}
+
+export function createLookupTable<T>(fetcher: Observable<SilentResult<T | T[]>>): LookupTable<T> {
+  let sub: Subscription | null = null;
+  
+  return {
+    byId: ...,  // existing
+    load() { if (sub) sub.unsubscribe(); sub = fetcher.subscribe(...); }, // REPLACE prev subscription
+    destroy() { if (sub) { sub.unsubscribe(); sub = null; } },
+  };
+}
+```
+
+3.2. Pages которые используют createLookupTable (materials/products/contracts/orders/categories/etc) — добавить `this.destroyRef.onDestroy(() => this.lookupTable.destroy())` в ngOnInit.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- 🆕 `backend/src/common/validators/is-object-id.pipe.ts`   NEW pipe
+- `backend/src/modules/products/products.controller.ts`   param pipes
+- `backend/src/modules/products/products.service.ts`   (если bulkWrite ввод)
+- `backend/src/modules/orders/orders.controller.ts`   same
+- `backend/src/modules/contracts/contracts.controller.ts`   same
+- `backend/src/modules/work-types/work-types.controller.ts`   same
+- `backend/src/modules/materials/materials.controller.ts`   same
+- 🆕 `backend/scripts/audit-object-id-validation.ts`   NEW audit script (~120 LoC)
+- `frontend/src/app/shared/util/lookup-table.ts`   cleanup support
+- frontend/src/app/shared/util/lookup-table.spec.ts   NEW unit tests
+- 7+ list-pages which use createLookupTable — add destroyRef.onDestroy(lkp.destroy)
+
+НЕ ИЗМЕНЯТЬ:
+- `frontend/src/app/shared/services/*service.ts` (services не меняются — backend parity only)
+- Frontend toolbar/input components (TZ-117 territory)
+- Pi-table component (TZ-116 territory)
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm exec tsc -p tsconfig.build.json --noEmit` → exit 0.
+2. `pnpm exec tsc -p tsconfig.app.json --noEmit` → exit 0.
+3. `pnpm exec jest frontend/src/app/shared/util/lookup-table.spec.ts` → pass.
+4. `node backend/scripts/audit-object-id-validation.ts` → outputs list of {endpoint, missing_pipe: boolean} → all rows show `missing_pipe: false`.
+5. **Manual E2E (backend):** `curl GET /api/products/INVALID_ID` → 400 BadRequest (was 500 internal unhandled exception).
+6. **Manual E2E (frontend):** open DevTools → Memory tab → navigate /materials → navigate to /products → check `lookup-table` observables are closed (`sub.unsubscribed === true`).
+7. ripgrep: `new Types.ObjectId(req\\.body\\.|params\\.|query\\.|id\\)` без предварительного `isValid` check → 0 hits в backend.
+8. ripgrep: `createLookupTable` без соответствующего `destroyRef.onDestroy` в page ngOnInit → 0 hits в frontend (или explicit comment «not needed»).
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ (для параллельных запусков)
+═══════════════════════════════════════════════════════════════
+
+Layer 4 (backend) можно parallel с Layer 2/3 (frontend) — **НЕ конфликтует** с TZ-115..118 если они НЕ трогают backend/services. Но `lookup-table.ts` shared — single Layer 2 ограничение.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+TZF-00 + lock `TZ-119-backend-safety-sweep.lock` + архивация `_archive/2026-07/TZ-119.done.txt`.
+
+═══════════════════════════════════════════════════════════════
+ПОДСКАЗКИ ДЛЯ PO
+═══════════════════════════════════════════════════════════════
+
+— **Шаг 1 (ObjectId pipe)** — natural follow-on после TZ-110. Critical для production safety.
+
+— **Шаг 2 (atomic bulkWrite inertia)** — currently no other modules have bulk operations. Если такие use cases появятся — apply pattern from TZ-110. Spec-only рекомендация — можно defer.
+
+— **Шаг 3 (lookup-table cleanup)** — техдолг на 7+ pages. Memory leak только в Long-Running Sessions — низкий impact но измеримый.
+
+— **Расщепить на 2 волны:** Wave 1 = Шаг 1 (ObjectId pipe, immediate value). Wave 2 = Шаги 2+3 (deferred пока не станет проблемы).

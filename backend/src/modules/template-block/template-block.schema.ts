@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
-export type BlockType = 'header' | 'text' | 'table' | 'image' | 'signature';
+export type BlockType = 'header' | 'text' | 'table' | 'image' | 'signature' | 'spacer';
 
 /**
  * TZ-86 Phase A.3 — DataBinding subdoc.
@@ -110,7 +110,7 @@ export class TemplateBlock {
   @Prop({ type: Types.ObjectId, ref: 'DocumentTemplate', required: true, index: true })
   templateId!: Types.ObjectId;
 
-  @Prop({ enum: ['header', 'text', 'table', 'image', 'signature'], required: true })
+  @Prop({ enum: ['header', 'text', 'table', 'image', 'signature', 'spacer'], required: true })
   type!: BlockType;
 
   @Prop({ required: true, default: 0 })

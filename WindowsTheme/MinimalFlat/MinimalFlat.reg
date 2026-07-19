@@ -1,0 +1,74 @@
+Windows Registry Editor Version 5.00
+
+; ============================================
+; Minimal Flat Dark - Windows 11 Visual Style
+; ============================================
+
+; === Color Scheme ===
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize]
+"AppsUseLightTheme"=dword:00000000
+"SystemUsesLightTheme"=dword:00000000
+
+; === Accent Color (Modern Teal #0D9488) ===
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Accent]
+"AccentColorMenu"=dword:0088940d
+"AccentColor"=dword:0088940d
+"AccentPalette"=hex:0d,94,88,00,0b,7a,6e,00,09,60,58,00,07,46,40,00,10,b8,aa,00,14,e8,d8,00,18,ff,ff,00,00
+
+; === Taskbar Settings ===
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"TaskbarM"=dword:00000000
+"TaskbarSmallIcons"=dword:00000000
+"TaskbarGlomLevel"=dword:00000000
+
+; === Window Effects (Mica/Acrylic) ===
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize]
+"EnableTransparency"=dword:00000001
+
+; === Disable Snap Launchers (Minimal look) ===
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"SnapAssist"=dword:00000000
+
+; === File Explorer Dark Mode ===
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize]
+"AppsUseLightTheme"=dword:00000000
+
+; === Disable Widgets (Clean taskbar) ===
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"TaskbarDa"=dword:00000000
+
+; === Disable Chat Button ===
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"TaskbarMn"=dword:00000000
+
+; === Disable Search Box (Minimal taskbar) ===
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Search]
+"SearchboxTaskbarMode"=dword:00000000
+
+; === Start Menu Centered ===
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"TaskbarAl"=dword:00000001
+
+; === Rounded Corners (Default Win11) ===
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\DWM]
+"UseWindowFrameStagingBuffer"=dword:00000001
+
+; === Disable Window Animations (Smoother feel) ===
+[HKEY_CURRENT_USER\Control Panel\Desktop\WindowMetrics]
+"MinAnimate"="0"
+
+; === Smooth Scroll ===
+[HKEY_CURRENT_USER\Control Panel\Desktop]
+"SmoothScroll"=dword:00000001
+
+; === Remove Arrows from Shortcuts ===
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Icons]
+"29"=""
+
+; === Hide File Extensions (Clean look) ===
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"HideFileExt"=dword:00000001
+
+; === Classic Context Menu ===
+[HKEY_CURRENT_USER\SOFTWARE\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32]
+@=""

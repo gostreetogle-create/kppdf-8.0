@@ -6,10 +6,8 @@
 > MCP-сервер (`vendor/codebase-memory-mcp/`) автоматически индексирует эти файлы
 > при старте — AI-агенты получают точную семантику каждой страницы.
 
-## Индекс страниц
-
-| # | Страница | Файл | Route | Описание |
-|---|----------|------|-------|----------|
+## Индекс страниц|# | Страница | Файл | Route / Parent | Описание |
+|---|----------|------|---------------|----------|
 | 1 | **Login** | `login.page.md` ✅ | `/login` | Аутентификация |
 | 2 | **Inventory Dashboard** | `inventory-dashboard.page.md` ✅ | `/dashboard` | Складская панель |
 | 3 | **Materials** | `materials.page.md` ✅ | `/materials` | Справочник материалов |
@@ -28,9 +26,11 @@
 | 16 | **Texts** | `texts.page.md` ✅ | `/doc-constructor/texts` | Текстовые блоки |
 | 17 | **Tables** | `tables.page.md` ✅ | `/doc-constructor/tables` | Шаблоны таблиц |
 | 18 | **Templates** | `templates.page.md` ✅ | `/doc-constructor/templates` | Шаблоны документов |
-| 19 | **Builder** | `builder.page.md` ✅ | `/doc-constructor/builder` | Редактор документа |
+| 19 | **Builder** | `builder.page.md` ✅ | `/doc-constructor/builder` | Редактор документа (3-pane) |
+| 20 | **Builder Tool Pane** | `builder-tool-pane.page.md` ✅ | _дочерний BuilderPage_ | Левая панель: палитра блоков |
+| 21 | **Builder Inspector** | `builder-inspector.page.md` ✅ | _дочерний BuilderPage_ | Правая панель: свойства блока |
 
-> Полный список страниц: 19 документированы. Playground-страницы (`/kit/*`) не документированы.
+> 19 страниц с роутами + 2 дочерних компонента = 21 документированы. Playground-страницы (`/kit/*`) не документированы.
 
 ## Статус документации
 
@@ -39,7 +39,7 @@
 | ✅ **DONE** | Документация написана |
 | ⬜ **TODO** | Документация не написана |
 
-> **Текущий прогресс:** ✅ 19/19 бизнес-страниц документированы (TZ-141).
+> **Текущий прогресс:** ✅ 19 бизнес-страниц + 2 дочерних компонента = 21 документированы.
 > Не документированы: playground-страницы (kit/*) — 9 шт. (overview, theme-editor, code-preview, basics, forms, foundations, navigation, overlays).
 > **Скрипт проверки:** `npx tsx scripts/check-page-docs.ts` — exit 0 если всё покрыто.
 

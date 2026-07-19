@@ -50,7 +50,7 @@ import { DialogRef } from '../ui/dialog/pi-dialog.service';
 export function onDialogCloseOnce<T>(
   ref: DialogRef<T>,
   injector: Injector,
-  callback: (value: T) => void,
+  callback: (value: NonNullable<T>) => void,
 ): void {
   toObservable(ref.closed, { injector })
     .pipe(

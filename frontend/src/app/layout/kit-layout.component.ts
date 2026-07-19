@@ -89,7 +89,7 @@ const NAV_GROUPS: NavGroup[] = [
     ThemeToggleComponent,
   ],
   template: `
-    <div class="min-h-screen bg-paper text-ink font-body flex flex-col">
+    <div class="h-screen bg-paper text-ink font-body flex flex-col overflow-hidden">
       <header
         class="sticky top-0 z-30 hairline-b
                bg-paper/95 supports-[backdrop-filter]:backdrop-blur-sm pi-edge-bleed"
@@ -179,9 +179,9 @@ const NAV_GROUPS: NavGroup[] = [
       </div>
 
       <footer
-        class="hairline-t mt-footer-y px-page-x sm:px-10 lg:px-16 py-footer-y
-               font-mono text-[11px] uppercase tracking-[0.18em]
-               text-muted-foreground flex flex-wrap justify-between gap-3"
+        class="hairline-t py-2 px-page-x sm:px-10 lg:px-16
+               font-mono text-[10px] uppercase tracking-[0.12em]
+               text-muted-foreground flex flex-wrap justify-between gap-2"
       >
         <span>© 2026 Paper &amp; Ink</span>
         <span>Syne · Plus Jakarta Sans · Lucide Angular · @angular/cdk</span>

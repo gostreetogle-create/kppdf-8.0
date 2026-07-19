@@ -127,6 +127,14 @@ export const routes: Routes = [
         title: 'KPPDF — Справочники',
       },
       {
+        path: 'categories',
+        loadComponent: () =>
+          import('./pages/dictionaries/categories.page').then(
+            (m) => m.CategoriesPage,
+          ),
+        title: 'KPPDF — Категории',
+      },
+      {
         path: 'products',
         loadComponent: () =>
           import('./pages/products/products.page').then((m) => m.ProductsPage),

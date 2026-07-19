@@ -4,59 +4,75 @@ import {
   DestroyRef,
   Injector,
   OnInit,
+  TemplateRef,
+  ViewChild,
   computed,
   inject,
   signal,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
-import { FormsModule } from '@angular/forms';
+import { LucideAngularModule, RefreshCw } from 'lucide-angular';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
-import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { SwitchComponent } from '../../shared/ui/switch/switch.component';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
 import { PiToastService } from '../../shared/ui/toast';
-import { SwitchComponent } from '../../shared/ui/switch/switch.component';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
-import { createSortState } from '../../shared/util/sort';
 import { createClientSearchState } from '../../shared/util/search';
 import { pluralize } from '../../shared/util/format';
+import { ColumnDef, SortDirection, TableComponent } from '../../shared/ui/pi-table.component';
 import { WorkType, WorkTypesService } from '../../shared/services/pi-work-types.service';
 import { WorkTypeFormDialogComponent } from './work-type-form-dialog.component';
 
-type SortKey = 'name' | 'section' | 'department' | 'hourlyRate';
+type SortKey = 'name' | 'section' | 'department' | 'hourlyRate' | null;
+
+const PAGE_SIZE = 20;
+
+function compareValues(av: unknown, bv: unknown, sign: 1 | -1): number {
+  if (av == null && bv == null) return 0;
+  if (av == null) return -1 * sign;
+  if (bv == null) return 1 * sign;
+  if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * sign;
+  return String(av).localeCompare(String(bv), 'ru') * sign;
+}
+
+function accessorFor(key: Exclude<SortKey, null>): (row: WorkType) => unknown {
+  switch (key) {
+    case 'name': return (r) => r.name;
+    case 'section': return (r) => r.section;
+    case 'department': return (r) => r.department;
+    case 'hourlyRate': return (r) => r.hourlyRate;
+    default: return (r) => r.name;
+  }
+}
 
 /**
- * TZ-83 Phase B: WorkTypesPage.
+ * TZ-104.3 batch-2-B-envelope — WorkTypesPage migrated to <app-pi-table>,
+ * with TZ-104.4.2 typed TemplateRef propagation.
  *
- * Каноничный Paper & Ink list-page паттерн:
- *  - OnPush + signal-based
- *  - httpResource для list-GET (auto-fire на first read)
- *  - data/total/loading/error — computed wrappers
- *  - search debounced через signals
- *  - CRUD через silent-http Observable<SilentResult<T>>
- *  - dialogs через onDialogCloseOnce
+ * Pattern B-envelope: backend returns flat WorkType[] (no pagination envelope).
+ * Client-side filter + sort + paginate. `[localSort]="false"` — page owns sort.
  *
- * Backend GET /api/work-types не возвращает pagination-shape, поэтому
- * `data` здесь — массив, не `{ items, total }`. total() возвращает длину.
+ * Cell template: 'isActive' column uses SwitchComponent for inline toggle.
  */
 @Component({
   selector: 'app-work-types-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    FormsModule,
+    LucideAngularModule,
     PiPageHeaderComponent,
     PiSectionComponent,
     PiToolbarComponent,
-    PiEmptyStateComponent,
     PiRowActionsComponent,
     ButtonComponent,
     SwitchComponent,
+    TableComponent,
   ],
   template: `
     <app-pi-page-header
@@ -77,14 +93,13 @@ type SortKey = 'name' | 'section' | 'department' | 'hourlyRate';
         data-test="search-input"
         class="pi-input w-64"
       />
-      <app-pi-button
-        variant="default"
-        (click)="openCreate()"
-        data-test="create-button"
-      >
+      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
         + Создать
       </app-pi-button>
-      <span hint>{{ sortedRows().length }} {{ totalLabel(sortedRows().length) }}</span>
+      <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
+        <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
+      </app-pi-button>
+      <span hint>{{ total() }} {{ totalLabel(total()) }}</span>
     </app-pi-toolbar>
 
     <app-pi-section
@@ -100,87 +115,47 @@ type SortKey = 'name' | 'section' | 'department' | 'hourlyRate';
           {{ error() }}
         </div>
       }
-      <div class="hairline rounded-sm overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="hairline-b">
-            <tr>
-              <th
-                class="pi-cell eyebrow cursor-pointer select-none group text-left"
-                (click)="setSort('name')"
-              >
-                Название
-                <span [class.text-sunrise-warm]="isSortedBy('name')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('name') }}</span>
-              </th>
-              <th
-                class="pi-cell eyebrow cursor-pointer select-none group text-left"
-                (click)="setSort('section')"
-              >
-                Секция
-                <span [class.text-sunrise-warm]="isSortedBy('section')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('section') }}</span>
-              </th>
-              <th
-                class="pi-cell eyebrow cursor-pointer select-none group text-left"
-                (click)="setSort('department')"
-              >
-                Отдел
-                <span [class.text-sunrise-warm]="isSortedBy('department')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('department') }}</span>
-              </th>
-              <th
-                class="pi-cell-numeric eyebrow cursor-pointer select-none min-w-24 group"
-                (click)="setSort('hourlyRate')"
-              >
-                Час/₽
-                <span [class.text-sunrise-warm]="isSortedBy('hourlyRate')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('hourlyRate') }}</span>
-              </th>
-              <th class="pi-cell eyebrow w-20 text-center">Активен</th>
-              <th class="pi-cell eyebrow w-40 text-right">Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of sortedRows(); track row._id) {
-              <tr
-                class="pi-table-row pi-table-row-odd last:border-0"
-                [class.opacity-50]="!row.isActive"
-                [attr.data-test]="'work-type-row-' + row._id"
-              >
-                <td class="pi-cell align-top font-medium">{{ row.name }}</td>
-                <td class="pi-cell align-top text-muted-foreground empty-cell">{{ row.section }}</td>
-                <td class="pi-cell align-top text-muted-foreground empty-cell">{{ row.department }}</td>
-                <td class="pi-cell-numeric align-top empty-cell font-mono text-xs">{{ row.hourlyRate ?? '—' }}</td>
-                <td class="pi-cell align-top text-center">
-                  <app-pi-switch
-                    [checked]="row.isActive"
-                    [id]="'switch-' + row._id"
-                    [ariaLabel]="(row.isActive ? 'Деактивировать ' : 'Активировать ') + row.name"
-                    (checkedChange)="onToggleActive(row, $event)"
-                    data-test="active-switch"
-                  />
-                </td>
-                <td class="pi-cell align-top">
-                  <app-pi-row-actions
-                    [row]="row"
-                    [editLabel]="'Редактировать ' + row.name"
-                    [deleteLabel]="'Удалить ' + row.name"
-                    [dataTestEdit]="'edit-button-' + row._id"
-                    [dataTestDelete]="'delete-button-' + row._id"
-                    (edit)="openEdit($event)"
-                    (delete)="onDelete($event)"
-                  />
-                </td>
-              </tr>
-            }
-            @if (sortedRows().length === 0 && !loading()) {
-              <app-pi-empty-state
-                [colspan]="6"
-                [message]="searchQuery() ? 'Ничего не найдено.' : 'Нет видов работ. Нажмите «Создать», чтобы добавить первый.'"
-                state="empty"
-              />
-            }
-            @if (loading() && sortedRows().length === 0) {
-              <app-pi-empty-state [colspan]="6" message="Загрузка…" state="loading" />
-            }
-          </tbody>
-        </table>
+
+      <div class="overflow-x-auto hairline rounded-sm">
+        <app-pi-table
+          [data]="paginatedRows()"
+          [columns]="cols"
+          [loading]="loading()"
+          [total]="total()"
+          [page]="page()"
+          [pageSize]="pageSize"
+          [emptyMessage]="emptyMessage()"
+          [ariaLabel]="'Список видов работ'"
+          [cellTemplates]="cellTemplates"
+          [rowActions]="rowActionsTplBinding"
+          [localSort]="false"
+          [initialSortKey]="'name'"
+          [initialSortDir]="'asc'"
+          (pageChange)="onPageChange($event)"
+          (sortChange)="onSortChange($event)"
+        >
+          <ng-template #rowActionsTpl let-row>
+            <app-pi-row-actions
+              [row]="row"
+              [editLabel]="'Редактировать ' + row.name"
+              [deleteLabel]="'Удалить ' + row.name"
+              [dataTestEdit]="'edit-button-' + row._id"
+              [dataTestDelete]="'delete-button-' + row._id"
+              (edit)="openEdit($event)"
+              (delete)="onDelete($event)"
+            />
+          </ng-template>
+
+          <ng-template #isActiveTpl let-row>
+            <app-pi-switch
+              [checked]="row.isActive"
+              [id]="'switch-' + row._id"
+              [ariaLabel]="(row.isActive ? 'Деактивировать ' : 'Активировать ') + row.name"
+              (checkedChange)="onToggleActive(row, $event)"
+              data-test="active-switch"
+            />
+          </ng-template>
+        </app-pi-table>
       </div>
     </app-pi-section>
   `,
@@ -193,55 +168,96 @@ export class WorkTypesPage implements OnInit {
   private readonly injector = inject(Injector);
   private readonly baseUrl = inject(API_BASE_URL);
 
-  private readonly sort = createSortState<SortKey>('name');
+  protected readonly RefreshIcon = RefreshCw;
+  protected readonly pageSize = PAGE_SIZE;
 
-  protected readonly listRes = httpResource<WorkType[]>(() => ({
-    url: `${this.baseUrl}/work-types`,
-  }));
+  private readonly sortKeySig = signal<SortKey>('name');
+  private readonly sortDirSig = signal<'asc' | 'desc' | null>('asc');
+  private readonly pageSig = signal<number>(1);
+  protected readonly page = this.pageSig.asReadonly();
 
-  protected readonly data = computed<WorkType[]>(
-    () => this.listRes.value() ?? [],
-  );
-
-  protected readonly filteredRows = createClientSearchState(
+  private readonly search = createClientSearchState(
     () => this.data(),
     (w: WorkType, q: string) =>
       w.name.toLowerCase().includes(q) ||
       (w.section ?? '').toLowerCase().includes(q) ||
       (w.department ?? '').toLowerCase().includes(q),
-  ).filtered;
+  );
+  protected readonly searchQuery = this.search.searchQuery;
 
+  protected readonly listRes = httpResource<WorkType[]>(() => ({
+    url: `${this.baseUrl}/work-types`,
+  }));
+
+  protected readonly data = computed<WorkType[]>(() => this.listRes.value() ?? []);
   protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
   protected readonly error = computed<string | null>(() => {
     const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
     return err ? extractErrorMessage(err) : null;
   });
 
-  protected readonly sortedRows = this.sort.sorted(this.filteredRows(), (r) => {
-    const k = this.sort.sortKey();
-    if (!k) return null;
-    return (r as any)[k];
+  protected readonly filteredRows = this.search.filtered;
+
+  protected readonly sortedRows = computed<WorkType[]>(() => {
+    const rows = this.filteredRows();
+    const key = this.sortKeySig();
+    if (!key) return rows;
+    const sign = this.sortDirSig() === 'asc' ? 1 : -1;
+    const accessor = accessorFor(key as Exclude<SortKey, null>);
+    return rows.slice().sort((a, b) => compareValues(accessor(a), accessor(b), sign));
   });
 
-  protected readonly searchQuery = signal<string>('');
+  protected readonly total = computed<number>(() => this.sortedRows().length);
 
-  ngOnInit(): void {}
+  protected readonly paginatedRows = computed<WorkType[]>(() => {
+    const all = this.sortedRows();
+    const start = (this.pageSig() - 1) * PAGE_SIZE;
+    return all.slice(start, start + PAGE_SIZE);
+  });
+
+  protected readonly emptyMessage = computed(() =>
+    this.searchQuery()
+      ? 'Ничего не найдено.'
+      : 'Нет видов работ. Нажмите «Создать», чтобы добавить первый.',
+  );
+
+  protected readonly cols: ColumnDef<WorkType>[] = [
+    { key: 'name', label: 'Название', sortable: true, sticky: 'left' },
+    { key: 'section', label: 'Секция', sortable: true, cellClass: 'empty-cell' },
+    { key: 'department', label: 'Отдел', sortable: true, cellClass: 'empty-cell' },
+    { key: 'hourlyRate', label: 'Час/₽', sortable: true, align: 'right', cellClass: 'empty-cell font-mono text-xs' },
+    { key: 'isActive', label: 'Активен', cellClass: 'text-center' },
+  ];
+
+  @ViewChild('rowActionsTpl', { static: true })
+  private readonly rowActionsTplRef!: TemplateRef<{ $implicit: WorkType }>;
+
+  @ViewChild('isActiveTpl', { static: true })
+  private readonly isActiveTplRef!: TemplateRef<{ $implicit: WorkType }>;
+
+  protected cellTemplates: Record<string, TemplateRef<{ $implicit: WorkType }>> = {};
+  protected rowActionsTplBinding: TemplateRef<{ $implicit: WorkType }> | null = null;
+
+  ngOnInit(): void {
+    this.destroyRef.onDestroy(() => this.search.destroy());
+    this.cellTemplates = { isActive: this.isActiveTplRef };
+    this.rowActionsTplBinding = this.rowActionsTplRef;
+  }
 
   protected onSearchInput(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.searchQuery.set(target.value);
+    this.search.onSearchInput(event);
+    this.pageSig.set(1);
   }
 
-  protected setSort(key: SortKey): void {
-    this.sort.setSort(key);
+  protected onPageChange(p: number): void {
+    this.pageSig.set(p);
   }
 
-  protected sortIcon(key: SortKey): string {
-    return this.sort.sortIcon(key);
-  }
-
-  protected isSortedBy(key: SortKey): boolean {
-    return this.sort.isSortedBy(key);
+  protected onSortChange(event: { key: string; dir: SortDirection }): void {
+    const dir = event.dir;
+    this.sortKeySig.set(dir === null ? null : (event.key as Exclude<SortKey, null>));
+    this.sortDirSig.set(dir === null ? 'asc' : dir);
+    this.pageSig.set(1);
   }
 
   protected totalLabel(n: number): string {
@@ -265,9 +281,7 @@ export class WorkTypesPage implements OnInit {
   protected onToggleActive(wt: WorkType, checked: boolean): void {
     this.service.update(wt._id, { isActive: checked }).subscribe((res) => {
       if (res.ok) {
-        this.toast.success(
-          checked ? `«${wt.name}» активирован` : `«${wt.name}» деактивирован`,
-        );
+        this.toast.success(checked ? `«${wt.name}» активирован` : `«${wt.name}» деактивирован`);
         this.listRes.reload();
       } else {
         this.toast.error(extractErrorMessage(res.error));
@@ -276,7 +290,7 @@ export class WorkTypesPage implements OnInit {
   }
 
   protected onDelete(wt: WorkType): void {
-    const ref = this.dialog.open(AlertDialogComponent, {
+    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
       data: {
         title: 'Удалить вид работ?',
         description: `Удалить «${wt.name}»? Если он используется в модулях продукции — операция может быть отклонена сервером.`,
@@ -286,8 +300,7 @@ export class WorkTypesPage implements OnInit {
       width: 'sm',
       parentDestroyRef: this.destroyRef,
     });
-    onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
-      if (!confirmed) return;
+    onDialogCloseOnce(ref, this.injector, () => {
       this.service.remove(wt._id).subscribe((res) => {
         if (res.ok) {
           this.toast.success('Вид работ удалён');
@@ -297,5 +310,9 @@ export class WorkTypesPage implements OnInit {
         }
       });
     });
+  }
+
+  protected reload(): void {
+    this.listRes.reload();
   }
 }

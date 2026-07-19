@@ -31,6 +31,8 @@ import { API_BASE_URL } from '../../core/api.tokens';
 import { Unit, UnitsService, type UnitsListResponse } from './units.service';
 
 /**
+ * Полная документация страницы: docs/pages/dictionaries.page.md
+ *
  * TZ-NEW DictionariesPage — каталог единиц измерения (Units).
  *
  * Сейчас содержит только один справочник — `units`. Архитектура готова

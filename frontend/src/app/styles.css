@@ -63,19 +63,14 @@
        rule silently loses (browser-use verified pre-fix computed
        styles still read maxHeight:100% / overflowY:visible). */
     max-height: 90vh !important;
-    /* `overflow-x: clip` blocks accidental horizontal scrollbar when a
-       dialog child slightly exceeds panel width (CDK leaves overflow-x
-       at visible default; pairing with overflow-y:auto would otherwise
-       introduce a phantom horizontal scrollbar). `clip` is preferred
-       over `hidden` per code-review round 2: clip is the CSS-spec
-       semantic for "intentionally suppress scrollbar here" and is the
-       modern alternative (well-supported since 2022) that still lets
-       dev-tools surface any legitimate horizontal-overflow bug rather
-       than silently hiding it.
-       Browser-support floor: Chromium 90+, Firefox 81+, Safari 15.4+
-       (2022 baseline; safe for evergreen targets). */
     overflow-x: clip !important;
-    overflow-y: auto !important;
+    /* overflow-y: clip — NOT auto. Panel-level scrollbar interferes with
+       dialog close button (×) click targets and creates redundant scroll
+       when the inner dialog already manages its own overflow internally.
+       Content exceeding 90vh is clipped, not scrolled. Each dialog is
+       responsible for its own internal scroll (e.g. content variant body,
+       table-template-dialog .ttd-columns-scroll). */
+    overflow-y: clip !important;
   }
 
   /* Print mode: dialogs shouldn't render with internal scrollbars on

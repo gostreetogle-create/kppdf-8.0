@@ -11,6 +11,7 @@ import {
   signal,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
+import { LucideAngularModule, RefreshCw } from 'lucide-angular';
 import { Router } from '@angular/router';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
@@ -121,6 +122,8 @@ function counterpartyIdOf(row: Order): string {
 }
 
 /**
+ * Полная документация страницы: docs/pages/orders.page.md
+ *
  * TZ-104.3 batch-1 commit 3/3 + TZ-104.4.2 — OrdersPage migrated to
  * `<app-pi-table>`, with TZ-104.4.2 dropping the `any`-escape
  * hatch that v4 needed.
@@ -173,6 +176,7 @@ function counterpartyIdOf(row: Order): string {
   selector: 'app-orders-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    LucideAngularModule,
     PiPageHeaderComponent,
     PiSectionComponent,
     PiToolbarComponent,
@@ -205,6 +209,9 @@ function counterpartyIdOf(row: Order): string {
         data-test="create-button"
       >
         + Создать
+      </app-pi-button>
+      <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
+        <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
       </app-pi-button>
       <span hint>{{ visibleCount() }} {{ totalLabel(visibleCount()) }}</span>
     </app-pi-toolbar>
@@ -278,6 +285,8 @@ export class OrdersPage implements OnInit {
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+
+  protected readonly RefreshIcon = RefreshCw;
 
   /** Exposed to template via `[pageSize]="pageSize"`. */
   protected readonly pageSize = PAGE_SIZE;

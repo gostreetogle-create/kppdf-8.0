@@ -31,6 +31,8 @@ import { ModuleFormDialogComponent } from './module-form-dialog.component';
 import { ModuleMaterialsFormDialogComponent } from './module-materials-form-dialog.component';
 
 /**
+ * Полная документация страницы: docs/pages/module-detail.page.md
+ *
  * TZ-83 Phase C: ModuleDetailPage — 4 sections.
  *
  *   I.   Основное       — name/article/dimensions/weight/notes

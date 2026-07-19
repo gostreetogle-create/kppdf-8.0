@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { optimisticLockPlugin } from '../../common/mongoose';
 
 export type CategoryDocument = HydratedDocument<Category>;
 
@@ -35,4 +36,5 @@ export class Category {
 }
 
 export const CategorySchema = SchemaFactory.createForClass(Category);
+CategorySchema.plugin(optimisticLockPlugin);
 CategorySchema.index({ type: 1, slug: 1 }, { unique: true });

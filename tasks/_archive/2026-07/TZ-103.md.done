@@ -422,3 +422,31 @@ TZ-103 ships when ALL of the following are true (no AC may fail before merge; me
 - **Spec format precedent:** `tasks/TZ-87.md` (closest in style — multi-fix scaffolding + audit discovery → migration plan), `tasks/TZ-102.md` (recent architectural-fix precedent)
 - **Project docs:** `docs/paper-and-ink.md` § "Dialog primitives" (design intent for the polymorphic shell), `docs/add-new-page.md` (typecheck gate + smoke-test gate)
 - **Discovery source:** 2026-07-12 audit session; user-reported 4 symptoms documented in conversation history.
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ARCHIVE_MARKER                                                  │
+│ outcome: DONE                                                   │
+│ closed_at: 2026-07-19                                           │
+│ closed_by: MiMo Code Agent                                      │
+│ protected_files:                                                │
+│   - frontend/src/app/shared/ui/dialog/pi-dialog.service.ts      │
+│   - frontend/src/app/shared/ui/dialog/pi-dialog.service.spec.ts │
+│   - frontend/src/app/shared/ui/dialog/pi-dialog.component.ts    │
+│   - frontend/src/app/shared/util/on-dialog-close-once.ts        │
+│   - frontend/src/styles.css                                      │
+│   - 12+ consumer page files                                     │
+│ affected_areas:                                                 │
+│   - Dialog service closure-local refs (TZ-103.1)                │
+│   - parentDestroyRef auto-close (TZ-103.2)                      │
+│   - RAF first-mount positioning (TZ-103.3)                      │
+│ verification:                                                   │
+│   - pnpm exec tsc (frontend): PASS                              │
+│   - pnpm exec tsc (backend): PASS                               │
+│   - acceptance criteria: PASS (service refactored, spec exists, │
+│     25+ consumers wired with parentDestroyRef)                  │
+│   - progress.md entry: ADDED                                    │
+│   - architecture.md update: DONE                                │
+│   - lock file: CREATED                                          │
+│ notes: TZ-103 code was already implemented in prior sessions.  │
+│   This TZF-00 finalization archives the completed work.        │
+└─────────────────────────────────────────────────────────────────┘

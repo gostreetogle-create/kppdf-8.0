@@ -93,6 +93,8 @@ function moduleDimensions(row: ProductModule): string {
 }
 
 /**
+ * Полная документация страницы: docs/pages/modules.page.md
+ *
  * TZ-104.3 batch-2-B-flat.2 — ModulesPage migrated to <app-pi-table>,
  * with TZ-104.4.2 typed TemplateRef propagation.
  *

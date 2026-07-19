@@ -5,7 +5,7 @@ import {
   Logger,
   NestInterceptor,
 } from '@nestjs/common';
-import { Observable, tap } from 'rxjs';
+import { Observable, catchError, finalize, throwError } from 'rxjs';
 import { Request } from 'express';
 
 @Injectable()
@@ -16,9 +16,17 @@ export class LoggingInterceptor implements NestInterceptor {
     const req = context.switchToHttp().getRequest<Request>();
     const start = Date.now();
     return next.handle().pipe(
-      tap(() => {
+      catchError((err) => {
         const ms = Date.now() - start;
-        this.logger.log(`${req.method} ${req.url} → ${ms}ms`);
+        const status = (err as { status?: number })?.status ?? 500;
+        this.logger.warn(`${req.method} ${req.url} → ${status} (${ms}ms)`);
+        return throwError(() => err);
+      }),
+      finalize(() => {
+        const ms = Date.now() - start;
+        if (ms > 1000) {
+          this.logger.warn(`SLOW REQUEST: ${req.method} ${req.url} (${ms}ms)`);
+        }
       }),
     );
   }

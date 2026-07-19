@@ -46,14 +46,15 @@ export const CANVAS_DROPLIST_ID = 'canvas-droplist';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CdkDropList, BlockRendererComponent, PiCanvasPageComponent],
   template: `
-    <pi-canvas-page [pageSize]="'A4'" [maxWidthPx]="720">
+    <pi-canvas-page [pageSize]="'A4'" [maxWidthPx]="orientation() === 'landscape' ? 900 : 720" [orientation]="orientation()">
       <!-- D.2.1: background layers (z-index 0, pointer-events none). -->
       @if (backgroundImages().length > 0) {
-        <div class="canvas-bg-stack" aria-hidden="true">
+        <div class="canvas-bg-stack" [class.canvas-bg-stack--landscape]="orientation() === 'landscape'" aria-hidden="true">
           @for (url of backgroundImages(); track url) {
             <div
               class="canvas-bg"
               [style.background-image]="'url(' + url + ')'"
+              [style.opacity]="backgroundOpacity()"
             ></div>
           }
         </div>
@@ -65,13 +66,16 @@ export const CANVAS_DROPLIST_ID = 'canvas-droplist';
         [cdkDropListData]="blocks()"
         class="canvas-dropzone"
         [class.is-empty]="blocks().length === 0"
+        role="list"
+        aria-label="Блоки документа"
         (cdkDropListDropped)="onDrop($event)"
       >
         @if (blocks().length === 0) {
           <div class="canvas-dropzone__empty" aria-live="polite">
             <p class="canvas-dropzone__empty-title">Холст пуст</p>
             <p class="canvas-dropzone__empty-hint">
-              Перетащите блок из палитры слева или нажмите «+» рядом с типом блока
+              Перетащите блок из палитры слева или нажмите «+» рядом с типом блока.
+              Навигация: Tab — между блоками, Enter/Пробел — выбор, Ctrl+Enter — множественное выделение
             </p>
           </div>
         } @else {
@@ -79,7 +83,9 @@ export const CANVAS_DROPLIST_ID = 'canvas-droplist';
             <app-block-renderer
               [block]="block"
               [selected]="blockKey(block) === selectedId()"
+              [multiSelected]="selectedIds().has(blockKey(block))"
               (select)="onSelect($event)"
+              (multiSelect)="onMultiSelect($event)"
             />
           }
         }
@@ -106,10 +112,10 @@ export const CANVAS_DROPLIST_ID = 'canvas-droplist';
       .canvas-bg {
         position: absolute;
         inset: 0;
-        background-size: cover;
+        background-size: contain;
         background-position: center;
         background-repeat: no-repeat;
-        opacity: 0.4;
+        background-color: var(--color-paper);
       }
 
       .canvas-dropzone {
@@ -166,11 +172,17 @@ export class BuilderCanvasComponent {
   readonly blocks = input.required<TemplateBlock[]>();
   /** Currently-selected block id (drives the 2px outline on BlockRenderer). */
   readonly selectedId = input<string | null>(null);
+  /** Multi-selected block ids (Ctrl+Click). */
+  readonly selectedIds = input<Set<string>>(new Set());
   /** D.2.1: background image URLs to render as bg layers (z-index 0, opacity 0.4). */
   readonly backgroundImages = input<string[]>([]);
+  readonly orientation = input<'portrait' | 'landscape'>('portrait');
+  readonly backgroundOpacity = input<number>(0.3);
 
   /** Emits when user selects a block. */
   readonly select = output<TemplateBlock>();
+  /** Emits when user Ctrl+Click toggles multi-select. */
+  readonly multiSelect = output<TemplateBlock>();
   /** Emits when user drops to reorder. Carries the new in-memory ordering. */
   readonly reorder = output<TemplateBlock[]>();
   /** D.2.2: emitted when a palette item is dropped onto the canvas. */
@@ -186,6 +198,10 @@ export class BuilderCanvasComponent {
 
   protected onSelect(block: TemplateBlock): void {
     this.select.emit(block);
+  }
+
+  protected onMultiSelect(block: TemplateBlock): void {
+    this.multiSelect.emit(block);
   }
 
   /**

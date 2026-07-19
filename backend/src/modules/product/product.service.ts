@@ -72,6 +72,7 @@ export class ProductService {
         .sort({ [sortField]: sortOrder })
         .skip((page - 1) * limit)
         .limit(limit)
+        .lean()
         .exec(),
       this.model.countDocuments(filter).exec(),
     ]);
@@ -102,6 +103,7 @@ export class ProductService {
   }
 
   async update(id: string, dto: UpdateProductDto): Promise<ProductDocument> {
+    if (!Types.ObjectId.isValid(id)) throw new NotFoundException(`Product ${id} not found`);
     const doc = await this.model.findById(id).exec();
     if (!doc) throw new NotFoundException(`Product ${id} not found`);
     const { attributes, ...rest } = dto;
@@ -115,6 +117,7 @@ export class ProductService {
   }
 
   async remove(id: string): Promise<void> {
+    if (!Types.ObjectId.isValid(id)) throw new NotFoundException(`Product ${id} not found`);
     const doc = await this.model.findById(id).exec();
     if (!doc) throw new NotFoundException(`Product ${id} not found`);
     await this.model

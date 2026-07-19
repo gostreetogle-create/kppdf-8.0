@@ -33,6 +33,9 @@ import { pluralRu } from '../../../shared/util/russian-plural';
 const RU_TEMPLATES = ['шаблон', 'шаблона', 'шаблонов'] as const;
 const PAGE_SIZE = 10;
 
+/**
+ * Полная документация страницы: docs/pages/templates.page.md
+ */
 @Component({
   selector: 'app-templates-page',
   changeDetection: ChangeDetectionStrategy.OnPush,

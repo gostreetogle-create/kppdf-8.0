@@ -1,0 +1,30 @@
+[Theme]
+DisplayName=Minimal Flat Dark
+ThemeId={A7B8C9D0-1234-5678-9ABC-DEF012345678}
+
+[MasterTheme]
+DisplayName=Minimal Flat Dark
+
+[VisualStyles]
+Path=%ResourceDir%\Themes\MinimalFlat Dark\MinimalFlat Dark.theme
+ColorStyle=NormalColor
+Size=NormalSize
+
+[boot]
+SCRNSAVE.EXE=%SystemRoot%\System32\scrnsave.scr
+
+[Metrics]
+IconMetrics=84,11
+MetricType=0
+NonClientMetrics=13,13,13,13,13,13,13
+
+[Desktop]
+Wallpaper=%SystemRoot%\Web\Wallpaper\Windows\img0.jpg
+TileWallpaper=0
+WallpaperStyle=10
+Pattern=
+
+[Sounds]
+; Minimal Flat Sound Scheme - using Windows defaults
+```
+

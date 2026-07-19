@@ -10,6 +10,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { MulterExceptionFilter } from './common/filters/multer-exception.filter';
+import { VersionConflictFilter } from './common/filters/version-conflict.filter';
 import { ThrottlerBehindAuthGuard } from './common/guards/throttler-behind-auth.guard';
 
 async function bootstrap() {
@@ -66,7 +67,7 @@ async function bootstrap() {
   // codes (413 for oversize, 400 for unexpected field) before falling through
   // to HttpExceptionFilter for everything else. More-specific @Catch(MulterError)
   // filter is registered first; the global catch-all backs it up.
-  app.useGlobalFilters(new MulterExceptionFilter(), new HttpExceptionFilter());
+  app.useGlobalFilters(new VersionConflictFilter(), new MulterExceptionFilter(), new HttpExceptionFilter());
   app.setGlobalPrefix('api');
 
   // Production: serve built Angular SPA from FRONTEND_PATH (Synology/docker deploy).

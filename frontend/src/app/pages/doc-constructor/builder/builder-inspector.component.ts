@@ -55,38 +55,59 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
         }
       </header>
 
-      @if (!block()) {
+      @if (!block() && selectedCount() === 0) {
         <div class="inspector__empty">
           <p class="inspector__empty-title">Ничего не выбрано</p>
           <p class="inspector__empty-hint">
             Кликните по блоку на холсте, чтобы изменить его свойства
           </p>
         </div>
+      } @else if (!block() && selectedCount() > 0) {
+        <!-- Multi-select mode: show delete button -->
+        <div class="inspector__multi">
+          <p class="inspector__multi-count">Выбрано: {{ selectedCount() }}</p>
+          <div class="inspector__actions">
+            <app-pi-button
+              variant="destructive"
+              size="sm"
+              (click)="deleteSelected.emit()"
+              ariaLabel="Удалить выбранные блоки"
+            >
+              Удалить ({{ selectedCount() }})
+            </app-pi-button>
+          </div>
+        </div>
       } @else {
         <div class="inspector__form">
-          <!-- title -->
-          <label class="field">
-            <span class="field__label">Заголовок</span>
-            <input
-              class="field__input pi-focus-ring"
-              type="text"
-              [value]="title()"
-              (input)="onTitleInput($event)"
-              placeholder="Необязательно"
-            />
-          </label>
+          <!-- title (not for spacer) -->
+          @if (block()!.type !== 'spacer') {
+            <label class="field">
+              <span class="field__label">Заголовок</span>
+              <input
+                class="field__input pi-focus-ring"
+                type="text"
+                [value]="title()"
+                (input)="onTitleInput($event)"
+                placeholder="Необязательно"
+              />
+            </label>
+          }
 
-          <!-- isActive -->
-          <label class="field field--row">
-            <span class="field__label">Активен</span>
-            <app-pi-switch [checked]="isActive()" (checkedChange)="onIsActiveChange($event)" />
-          </label>
+          <!-- isActive (not for spacer) -->
+          @if (block()!.type !== 'spacer') {
+            <label class="field field--row">
+              <span class="field__label">Активен</span>
+              <app-pi-switch [checked]="isActive()" (checkedChange)="onIsActiveChange($event)" />
+            </label>
+          }
 
-          <!-- showLine -->
-          <label class="field field--row">
-            <span class="field__label">Показывать линию снизу</span>
-            <app-pi-switch [checked]="showLine()" (checkedChange)="onShowLineChange($event)" />
-          </label>
+          <!-- showLine (not for spacer) -->
+          @if (block()!.type !== 'spacer') {
+            <label class="field field--row">
+              <span class="field__label">Показывать линию снизу</span>
+              <app-pi-switch [checked]="showLine()" (checkedChange)="onShowLineChange($event)" />
+            </label>
+          }
 
           @if (block()!.type === 'text' || block()!.type === 'header') {
             <label class="field">
@@ -101,7 +122,7 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
             </label>
           }
 
-          @if (block()!.type === 'image' || block()!.type === 'signature' || block()!.type === 'spacer') {
+          @if (block()!.type === 'image' || block()!.type === 'signature') {
             <label class="field">
               <span class="field__label">Высота (px)</span>
               <input
@@ -112,6 +133,31 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
                 [value]="height()"
                 (input)="onHeightInput($event)"
               />
+            </label>
+          }
+
+          @if (block()!.type === 'spacer') {
+            <label class="field">
+              <span class="field__label">Высота: {{ height() }}px</span>
+              <div class="field__slider-row">
+                <input
+                  type="range"
+                  min="10"
+                  max="500"
+                  step="5"
+                  [value]="height()"
+                  (input)="onHeightInput($event)"
+                  class="field__slider"
+                />
+                <input
+                  class="field__input field__input--small pi-focus-ring"
+                  type="number"
+                  min="10"
+                  max="1000"
+                  [value]="height()"
+                  (input)="onHeightInput($event)"
+                />
+              </div>
             </label>
           }
 
@@ -167,6 +213,15 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
           }
 
           <div class="inspector__actions">
+            @if (block()!.type === 'text' || block()!.type === 'table') {
+              <app-pi-button
+                variant="outline"
+                size="sm"
+                (click)="editSelected.emit()"
+              >
+                Редактировать
+              </app-pi-button>
+            }
             <app-pi-button
               variant="destructive"
               size="sm"
@@ -238,6 +293,18 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
         margin: 0;
       }
 
+      .inspector__multi {
+        padding: 48px 16px;
+        text-align: center;
+      }
+
+      .inspector__multi-count {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--color-sunrise-warm);
+        margin: 0 0 16px;
+      }
+
       .inspector__form {
         padding: 16px;
         display: flex;
@@ -284,6 +351,52 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
         font-size: 12px;
       }
 
+      .field__slider {
+        width: 100%;
+        height: 4px;
+        -webkit-appearance: none;
+        appearance: none;
+        background: var(--color-rule);
+        border-radius: 2px;
+        outline: none;
+        cursor: pointer;
+        flex: 1;
+      }
+
+      .field__slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--color-ink);
+        cursor: pointer;
+        border: 2px solid var(--color-paper);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+
+      .field__slider::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--color-ink);
+        cursor: pointer;
+        border: 2px solid var(--color-paper);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+
+      .field__slider-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .field__input--small {
+        width: 64px;
+        flex-shrink: 0;
+        text-align: center;
+      }
+
       .field__hint {
         font-size: 11px;
         color: var(--color-muted);
@@ -328,13 +441,18 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
   ],
 })
 export class BuilderInspectorComponent {
-  /** The currently-selected block (null = empty state). */
+  /** The currently-selected block (null = nothing selected). */
   readonly block = input<TemplateBlock | null>(null);
-
-  /** Emits a partial patch to be applied to the in-memory blocks signal. */
+  /** Number of blocks in multi-select mode. */
+  readonly selectedCount = input<number>(0);
+  /** Emitted when the user changes a field value. */
   readonly update = output<Partial<TemplateBlock> & { _id: string }>();
-  /** Emits when the user clicks «Удалить блок». */
+  /** Emitted when the user clicks "Удалить блок". */
   readonly delete = output<string>();
+  /** Emitted when the user clicks "Удалить выбранные" (multi-select). */
+  readonly deleteSelected = output<void>();
+  /** Emitted when the user clicks "Редактировать" (multi-select single). */
+  readonly editSelected = output<void>();
 
   // Local form-state signals (mirror the selected block for fast edits).
   protected readonly title = signal<string>('');

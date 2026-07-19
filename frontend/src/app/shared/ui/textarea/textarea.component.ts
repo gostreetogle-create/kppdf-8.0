@@ -79,6 +79,15 @@ export class TextareaComponent implements ControlValueAccessor {
    */
   readonly id = input<string | null>(null);
 
+  /**
+   * TZ-104.5.2 — className override for consumers that need custom styling
+   * (e.g. monospace markdown editor: `[class]="'font-mono text-xs'"`).
+   * Merged into computedClass via tailwind-merge; consumer's utilities
+   * override conflicting base utilities (e.g. consumer's 'border' wins
+   * over textarea's default 'border-rule').
+   */
+  readonly customClass = input<string>('');
+
   readonly valueChange = output<string>();
 
   readonly computedClass = computed(() =>
@@ -86,6 +95,7 @@ export class TextareaComponent implements ControlValueAccessor {
       BASE_CLASS,
       SIZE_CLASS[this.size()],
       this.invalid() ? 'border-destructive' : 'border-rule',
+      this.customClass(),
     ),
   );
 

@@ -53,6 +53,7 @@
     "@tailwindcss/postcss": "^4.0.0",
     "@testing-library/angular": "^17",
     "@types/jest": "^29",
+    "@types/node": "^26.1.1",
     "axe-core": "^4.10",
     "culori": "^4.0.2",
     "jest": "^29",

@@ -1,0 +1,88 @@
+{
+    "$help": "https://aka.ms/terminal-documentation",
+    "$schema": "https://aka.ms/terminal-profiles-schema",
+    "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+    "profiles": {
+        "defaults": {
+            "font": {
+                "face": "Cascadia Code",
+                "size": 12
+            },
+            "opacity": 95,
+            "useAcrylic": true
+        },
+        "list": [
+            {
+                "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+                "name": "Windows PowerShell",
+                "commandline": "powershell.exe",
+                "colorScheme": "Minimal Flat Dark",
+                "icon": "ms-appx:///ProfileIcons/powershell.png"
+            },
+            {
+                "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+                "name": "CMD",
+                "commandline": "cmd.exe",
+                "colorScheme": "Minimal Flat Dark",
+                "icon": "ms-appx:///ProfileIcons/cmd.png"
+            },
+            {
+                "guid": "{2ece5bfe-50ed-5f3a-ab87-5cd4baafed2b}",
+                "name": "Ubuntu",
+                "commandline": "wsl.exe -d Ubuntu",
+                "colorScheme": "Minimal Flat Dark",
+                "icon": "ms-appx:///ProfileIcons/ubuntu.png"
+            },
+            {
+                "guid": "{550ce7b8-d500-50ad-8a1a-c400c3262db3}",
+                "name": "Git Bash",
+                "commandline": "C:\\Program Files\\Git\\bin\\bash.exe --login -i",
+                "colorScheme": "Minimal Flat Dark"
+            }
+        ]
+    },
+    "schemes": [
+        {
+            "name": "Minimal Flat Dark",
+            "cursorColor": "#0D9488",
+            "selectionBackground": "#0D948850",
+            "background": "#1E1E1E",
+            "foreground": "#D4D4D4",
+            "black": "#1E1E1E",
+            "red": "#F87171",
+            "green": "#0D9488",
+            "yellow": "#FBBF24",
+            "blue": "#60A5FA",
+            "purple": "#A78BFA",
+            "cyan": "#22D3EE",
+            "white": "#F3F4F6",
+            "brightBlack": "#6B7280",
+            "brightRed": "#FCA5A5",
+            "brightGreen": "#5EEAD4",
+            "brightYellow": "#FDE68A",
+            "brightBlue": "#93C5FD",
+            "brightPurple": "#C4B5FD",
+            "brightCyan": "#67E8F9",
+            "brightWhite": "#FFFFFF"
+        }
+    ],
+    "themes": [
+        {
+            "name": "Minimal Flat Dark",
+            "tab": {
+                "background": "#1E1E1E",
+                "unfocusedBackground": "#2D2D2D"
+            },
+            "tabRow": {
+                "background": "#1E1E1E"
+            },
+            "window": {
+                "background": "#1E1E1E"
+            }
+        }
+    ],
+    "actions": [
+        { "command": "toggleFullscreen", "keys": "alt+enter" },
+        { "command": "toggleFocusMode", "keys": "ctrl+shift+f" }
+    ]
+}

@@ -11,6 +11,7 @@ import {
   signal,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
+import { LucideAngularModule, RefreshCw } from 'lucide-angular';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
@@ -36,6 +37,8 @@ import { MaterialFormDialogComponent } from './material-form-dialog.component';
 const PAGE_SIZE = 50;
 
 /**
+ * Полная документация страницы: docs/pages/materials.page.md
+ *
  * TZ-104.3 Phase B + TZ-104.4.2 — MaterialsPage migrated to
  * `<app-pi-table>`, with TZ-104.4.2 dropping the `any`-escape hatch
  * that the v4 migration needed.
@@ -74,6 +77,7 @@ const PAGE_SIZE = 50;
   selector: 'app-materials-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    LucideAngularModule,
     PiPageHeaderComponent,
     PiSectionComponent,
     PiToolbarComponent,
@@ -107,6 +111,9 @@ const PAGE_SIZE = 50;
         data-test="create-button"
       >
         + Создать
+      </app-pi-button>
+      <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
+        <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
       </app-pi-button>
       <span hint>{{ total() }} {{ totalLabel(total()) }}</span>
     </app-pi-toolbar>
@@ -191,6 +198,8 @@ export class MaterialsPage implements OnInit {
   private readonly injector = inject(Injector);
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly destroyRef = inject(DestroyRef);
+
+  protected readonly RefreshIcon = RefreshCw;
 
   /** Exposed to template via `[pageSize]="pageSize"` (constant literal). */
   protected readonly pageSize = PAGE_SIZE;

@@ -422,3 +422,28 @@ Pure scaffolding. Order matches migration steps in §5.
 - **Spec format precedent:** `tasks/TZ-100.md.done`, `tasks/TZ-101.md.done` (closest in style — multi-fix scaffolding + smoke-test discovery → migration plan).
 - **Project docs:** `docs/data-model.md` (entity refs), `docs/paper-and-ink.md` §"Catalogue primitives" (controller/service/schema convention), `docs/add-new-page.md` (typecheck gate + ~200 LoC UI gate).
 - **Smoke-test evidence:** TZ-102 is the response to the 2026-07-12 smoke-test 404 discoveries documented in conversation history (2026-07-12 verification phase).
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ARCHIVE_MARKER                                                  │
+│ outcome: DONE                                                   │
+│ closed_at: 2026-07-19                                           │
+│ closed_by: MiMo Code Agent                                      │
+│ protected_files:                                                │
+│   - backend/src/modules/currency/* (6 files)                    │
+│   - backend/src/common/seed/currencies.seed.ts                  │
+│   - backend/src/modules/product-module/product-module.controller.ts │
+│   - backend/src/modules/inventory/inventory.controller.ts       │
+│   - frontend/src/app/shared/services/pi-product-modules.service.ts │
+│ affected_areas:                                                 │
+│   - Currency module (new entity)                                │
+│   - Modules route rename (/product-modules → /modules)          │
+│   - Inventory dashboard summary endpoint                        │
+│ verification:                                                   │
+│   - pnpm exec tsc (backend): PASS                               │
+│   - acceptance criteria: PASS                                   │
+│   - progress.md entry: ADDED                                    │
+│   - architecture.md update: DONE                                │
+│   - lock file: CREATED                                          │
+│ notes: All 3 sub-tasks were already implemented in prior        │
+│   sessions. This TZF-00 finalization archives completed work.   │
+└─────────────────────────────────────────────────────────────────┘

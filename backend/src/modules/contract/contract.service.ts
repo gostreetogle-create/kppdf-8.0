@@ -6,6 +6,7 @@ import { CreateContractDto } from './dto/create-contract.dto';
 import { UpdateContractDto } from './dto/update-contract.dto';
 import { CounterService } from '../counter/counter.service';
 import { OrderService } from '../order/order.service';
+import { SessionRunner } from '../../common/db/session-runner';
 
 @Injectable()
 export class ContractService {
@@ -14,6 +15,7 @@ export class ContractService {
     private readonly model: Model<ContractDocument>,
     private readonly counter: CounterService,
     private readonly orderService: OrderService,
+    private readonly sessionRunner: SessionRunner,
   ) {}
 
   async create(dto: CreateContractDto): Promise<ContractDocument> {
@@ -47,7 +49,7 @@ export class ContractService {
     status?: string,
     from?: Date,
     to?: Date,
-  ): Promise<ContractDocument[]> {
+  ): Promise<(Contract & { _id: Types.ObjectId })[]> {
     const filter: Record<string, unknown> = {};
     if (customerId) {
       if (!Types.ObjectId.isValid(customerId)) return [];
@@ -66,6 +68,7 @@ export class ContractService {
       .populate('organizationId')
       .populate('proposalId')
       .sort({ createdAt: -1 })
+      .lean()
       .exec();
   }
 
@@ -122,26 +125,31 @@ export class ContractService {
   }
 
   async activate(id: string): Promise<{ contract: ContractDocument; orderId: string }> {
-    // Use unpopulated query so customerId is a raw ObjectId.
-    const doc = await this.findByIdRaw(id);
-    if (doc.status !== 'signed') {
-      throw new NotFoundException(`Contract must be signed first (current: ${doc.status})`);
-    }
-    const order = await this.orderService.create({
-      counterpartyId: doc.customerId.toString(),
-      contractId: doc._id.toString(),
-      status: 'confirmed',
-      items: doc.items.map((i) => ({
-        productId: i.productId.toString(),
-        productName: i.productName,
-        quantity: i.quantity,
-        unit: i.unit,
-        unitPrice: i.unitPrice,
-      })),
+    return this.sessionRunner.run(async (session) => {
+      const doc = await this.model.findById(id).session(session).exec();
+      if (!doc) throw new NotFoundException(`Contract ${id} not found`);
+      if (doc.status !== 'signed') {
+        throw new NotFoundException(`Contract must be signed first (current: ${doc.status})`);
+      }
+      const order = await this.orderService.create(
+        {
+          counterpartyId: doc.customerId.toString(),
+          contractId: doc._id.toString(),
+          status: 'confirmed',
+          items: doc.items.map((i) => ({
+            productId: i.productId.toString(),
+            productName: i.productName,
+            quantity: i.quantity,
+            unit: i.unit,
+            unitPrice: i.unitPrice,
+          })),
+        },
+        session,
+      );
+      doc.status = 'active';
+      await doc.save({ session });
+      return { contract: doc, orderId: order._id.toString() };
     });
-    doc.status = 'active';
-    await doc.save();
-    return { contract: doc, orderId: order._id.toString() };
   }
 
   async remove(id: string): Promise<void> {

@@ -73,6 +73,12 @@ import { Photo } from '../../shared/services/photos.service';
       <div role="alert" class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive">
         {{ loadError() }}
       </div>
+      <div class="py-12 text-center text-muted-foreground text-sm">
+        Товар не найден. Вернитесь к списку продукции.
+        <button type="button" (click)="onBack()" class="block mx-auto mt-2 text-ink hover:text-sunrise-warm underline">
+          ← К продукции
+        </button>
+      </div>
     }
 
     <!-- I. Основное -->
@@ -331,13 +337,12 @@ export class ProductDetailPage implements OnInit {
   protected openPicker(): void {
     const pid = this.idString();
     if (!pid) return;
-    const ref = this.dialog.open(ProductModulePickerDialogComponent, {
+    const ref = this.dialog.open<string | null>(ProductModulePickerDialogComponent, {
       data: { productId: pid, excludeIds: this.attachedModules().map((m) => m._id) },
       width: 'lg',
       parentDestroyRef: this.destroyRef,
     });
-    onDialogCloseOnce(ref, this.injector, (chosenId: unknown) => {
-      if (typeof chosenId !== 'string' || !chosenId) return;
+    onDialogCloseOnce(ref, this.injector, (chosenId) => {
       this.attachModule(chosenId);
     });
   }
@@ -354,7 +359,7 @@ export class ProductDetailPage implements OnInit {
   }
 
   protected onDetach(m: ProductModule): void {
-    const ref = this.dialog.open(AlertDialogComponent, {
+    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
       data: {
         title: 'Отвязать модуль?',
         description: `Отвязать «${m.name}» от этого товара? Модуль останется в каталоге.`,
@@ -364,8 +369,7 @@ export class ProductDetailPage implements OnInit {
       width: 'sm',
       parentDestroyRef: this.destroyRef,
     });
-    onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
-      if (!confirmed) return;
+    onDialogCloseOnce(ref, this.injector, () => {
       this.modulesSvc.detachFromProduct(this.idString(), m._id).subscribe((res) => {
         if (res.ok) {
           this.toast.success('Модуль отвязан');
@@ -414,7 +418,7 @@ export class ProductDetailPage implements OnInit {
   }
 
   protected onDeleteCalc(cc: CostCalculation): void {
-    const ref = this.dialog.open(AlertDialogComponent, {
+    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
       data: {
         title: 'Удалить расчёт?',
         description: `Удалить расчёт от ${this.formatDate(cc.calculatedAt || cc.createdAt)}? Это действие нельзя отменить.`,
@@ -424,8 +428,7 @@ export class ProductDetailPage implements OnInit {
       width: 'sm',
       parentDestroyRef: this.destroyRef,
     });
-    onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
-      if (!confirmed) return;
+    onDialogCloseOnce(ref, this.injector, () => {
       this.costSvc.remove(cc._id).subscribe((res) => {
         if (res.ok) {
           this.toast.success('Расчёт удалён');

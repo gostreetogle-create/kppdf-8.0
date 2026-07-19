@@ -1,0 +1,153 @@
+═══════════════════════════════════════════════════════════════
+TZ-114: Category Tree View UX — client-side drag-reorder + cascade visual feedback
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Component Engineer
+
+ЗАВИСИМОСТИ:
+- **TZ-110** (backend ObjectId validation + transactions) — hard blocker. Frontend reorder без backend safety = sending invalid ObjectId массово = unhandled exceptions в log.
+- **TZ-110.x** (**server-side sort by sortOrder**) — выявлено при code-review (reviewer-2026-07-12). `category.service.findAll()` сортирует по `{type, fullPath}`, НЕ по `sortOrder`. Без исправления серверного порядка frontend drag-reorder (который upsert sortOrder) будет **визуально неперсистентен** — после reload клиент получит данные в `type + fullPath` ordering, не в sortOrder.
+- Если TZ-110 (и его subfix для sortOrder) не done — DEFER this TZ.
+
+ДОПОЛНИТЕЛЬНАЯ ЗАВИСИМОСТЬ (TZ-110.x, обязательно):
+- В `backend/src/modules/category/category.service.ts` `findAll()` поменять сортировку: добавить secondary sort `sortOrder: 1` после `type: 1, fullPath: 1`. ИЛИ ввести explicit query-param `?sort=sortOrder` который сортирует primary по `sortOrder: 1`.
+
+LAYER: 3 (edit существующего page — СТРОГО 1 параллельный агент)
+
+CONFLICT KEYS: frontend/src/app/pages/dictionaries/categories.page.ts; frontend/src/app/pages/dictionaries/category-form-dialog.component.ts; frontend/src/app/shared/services/categories.service.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. `frontend/src/app/pages/dictionaries/categories.page.ts` (new untracked file) — создаёт страницу категорий, но **НЕ имеет drag-reorder UI** — только sortOrder editable как input или button-up/down.
+
+   Проблемы (если сравнить с TZ-101 + TZ-110):
+   - Frontend имеет `CategoriesService.reorder()` и `reorderChildren()` backend вызовы (на бэкенде), но **page не использует их в UI**.
+   - Юзер не имеет возможности drag-переставить категории в дереве.
+   - Кнопки ↑/↓ или кастомный sort UI отсутствуют — sortOrder зависит только от серверного default (creation order).
+
+2. `frontend/src/app/shared/services/categories.service.ts`:
+   - `reorder(categoryIds)` и `reorderChildren(parentId, childIds)` методы определены.
+   - `Category._id`, `Category.parentId`, `Category.sortOrder` имеются в interface.
+
+3. **UX feedback (отсутствует):**
+   - При успешном reorder — нет toast (даже в service).
+   - При failure — нет error banner.
+   - Нет optimistic update в frontend перед server confirm.
+
+4. **Audit trail отсутствует:**
+   - Кто передвинул категорию и когда? — `audit.interceptor` ловит `@AuditAction({action: 'reorder'})` на backend, но **frontend не показывает last-modified-timestamp в categories tree**.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Drag-reorder UI на categories.page
+
+1.1. Импортировать `CdkDropList`, `CdkDrag`, `CdkDragDrop` из `@angular/cdk/drag-drop`.
+
+1.2. Для каждого visible parent в дереве:
+```html
+<div cdkDropList [cdkDropListData]="parent.children" (cdkDropListDropped)="onChildDrop(parent, $event)">
+  @for (child of parent.children; track child._id) {
+    <div cdkDrag class="cat-tree-item">
+      <span class="cat-drag-handle">⋮⋮</span>
+      <span class="cat-name">{{ child.name }}</span>
+      <span class="cat-meta">slug: {{ child.slug }} · order {{ child.sortOrder }}</span>
+    </div>
+  }
+</div>
+```
+
+1.3. Top-level root categories — в отдельном cdkDropList (parentId: null).
+
+ШАГ 2: Optimistic + per-item backend call
+
+2.1. Pattern (как TZ-111):
+
+```ts
+protected onChildDrop(parent: CategoryTreeNode, event: CdkDragDrop<Category[]>): void {
+  if (event.previousIndex === event.currentIndex) return;
+  const children = [...parent.children];
+  moveItemInArray(children, event.previousIndex, event.currentIndex);
+  const newChildren = children.map((c, i) => ({ ...c, sortOrder: i }));
+  // Optimistic update в основном сигнале
+  this.data.update(items => mergeChildren(items, parent._id, newChildren));
+  
+  // Backend reorder (per-item mergeMap, concurrency 3)
+  this.categoriesSvc.reorderChildren(parent._id, newChildren.map(c => c._id))
+    .pipe(/* error handling */)
+    .subscribe(res => {
+      if (res.ok) this.toast.success(`Порядок в "${parent.name}" сохранён`);
+      else {
+        this.toast.error(`Не удалось сохранить порядок`);
+        this.listRes.reload();  // full refresh — restore из server
+      }
+    });
+}
+```
+
+2.2. В `CategoriesService.reorder()` / `reorderChildren()` уже есть SilentResult wrapper. Просто использовать `extractErrorMessage`.
+
+ШАГ 3: Cascade visual feedback
+
+3.1. Show row hover effects (cdkDragPlaceholder + custom CDK styling).
+3.2. Disable drag в `isSystem` categories (read-only, как защита).
+3.3. Подсказка: «Зажмите и перетащите для изменения порядка».
+
+ШАГ 4: Backend safety integration
+
+4.1. Документировать (в tasks-readme) что frontend **не** предполагает bulkWrite atomic guarantee — для UX consistency обновляет только после server confirm на critical operations.
+
+  Альтернатива: добавить optimistic-then-confirm pattern.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- `frontend/src/app/pages/dictionaries/categories.page.ts`   drag UI + reorder handler + optimistic updates
+- `frontend/src/app/shared/services/categories.service.ts`   (опционально) добавить `mergeChildren` helper
+- `frontend/src/app/pages/dictionaries/categories.page.spec.ts`   NEW, ~80 LoC (drag-drop logic в unit test)
+
+НЕ ИЗМЕНЯТЬ:
+- `backend/src/modules/category/*` (TZ-110, идёт параллельно или раньше — different layer)
+- `frontend/src/app/pages/dictionaries/category-form-dialog.component.ts` (TZ-114 не трогает — edit only page)
+- `frontend/src/app/pages/dictionaries/category-form-dialog.component.spec.ts`
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm exec tsc -p tsconfig.app.json --noEmit` → exit 0.
+2. `pnpm exec jest frontend/src/app/pages/dictionaries/` → все тесты pass.
+3. Manual E2E (browser): на `/categories` зайти, drag-переставить 3 sibling категории → после drop toast появился, после refresh порядок сохранился.
+4. Manual E2E: симулировать network error → toast error появился, list reload из server показал исходный порядок.
+5. axe-core на `/categories` → 0 violations (drag handles имеют `aria-grabbed` или аналог).
+6. Manual E2E: isSystem категории не drag'аются (cursor: not-allowed).
+7. ripgrep: `cdkDropList.*reorder` → exactly matches expected binding.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ (для параллельных запусков)
+═══════════════════════════════════════════════════════════════
+
+Layer 3 = СТРОГО 1. Любой TZ, трогающий `frontend/src/app/pages/dictionaries/*` — STOP.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+TZF-00 + lock `.mimocode/locks/TZ-114-categories-drag.lock` + `_archive/2026-07/TZ-114.done.txt`.
+
+═══════════════════════════════════════════════════════════════
+ПОДСКАЗКИ ДЛЯ PO
+═══════════════════════════════════════════════════════════════
+
+— Этот TZ создаёт user-visible UX feature (drag-to-reorder), в отличие от TZ-110/111/112/113, которые фиксят скрытые баги. Более высокий business value, но требует TZ-110 как pre-condition.
+
+— DEPENDENCY: TZ-110 MUST BE DONE FIRST. Если TZ-110 blocked/failed — этот TZ тоже block.
+
+— Если хочется начать раньше — можно делать frontend drag UI с фиктивным reorder call, но это tech-debt иконно. Лучше подождать.
+
+— Production scale concern: drag на 100+ категорий одновременно → backend bulkWrite может быть heavy. Рекомендуется debounce/reorder последнего drop (300-500ms) вместо немедленных reorder calls.

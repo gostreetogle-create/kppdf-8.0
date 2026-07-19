@@ -94,6 +94,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     icon: BookOpen,
     items: [
       { path: '/dictionaries', label: 'Все справочники' },
+      { path: '/categories', label: 'Категории' },
     ],
   },
   {
@@ -127,11 +128,11 @@ const NAV_CATEGORIES: NavCategory[] = [
     PiNavDropdownComponent,
   ],
   template: `
-    <div class="min-h-screen bg-paper text-ink font-body">
-      <div class="pi-page-frame">
+    <div class="h-screen bg-paper text-ink font-body flex flex-col overflow-hidden">
+      <div class="pi-page-frame w-full flex-1 flex flex-col min-h-0">
         <header
           class="sticky top-0 z-30 bg-paper/95 supports-[backdrop-filter]:backdrop-blur-sm
-                 hairline-b pi-edge-bleed"
+                 hairline-b pi-edge-bleed shrink-0"
         >
           <div class="h-14 flex items-center justify-between gap-4">
             <a
@@ -203,14 +204,14 @@ const NAV_CATEGORIES: NavCategory[] = [
           </div>
         </header>
 
-        <main class="min-w-0 pt-page-y">
+        <main class="flex-1 min-w-0 pt-page-y overflow-y-auto">
           <router-outlet />
         </main>
 
         <footer
-          class="border-t hairline border-sunrise-warm mt-footer-y py-footer-y
-                 font-mono text-[11px] uppercase tracking-[0.18em]
-                 text-muted-foreground-strong flex flex-wrap justify-between gap-3"
+          class="border-t hairline border-sunrise-warm py-2 px-page-x
+                 font-mono text-[10px] uppercase tracking-[0.12em]
+                 text-muted-foreground flex flex-wrap justify-between gap-2 shrink-0"
         >
           <span>© 2026 KPPDF · 8.0</span>
           <span>Внутренний сервис · 2026</span>

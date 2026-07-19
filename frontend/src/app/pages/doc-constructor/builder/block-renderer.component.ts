@@ -7,17 +7,17 @@
  * TipTap-formatted content (bold/italic/color/highlight) to display with
  * visual fidelity.
  *
- * The bypass is safe ONLY because of the following trust boundaries:
- *   1. TipTap editor validation — TipTap uses ProseMirror's schema system;
- *      unknown HTML nodes (e.g. <script>, <iframe>, <object>) and
- *      dangerous attributes (e.g. onclick, onerror) are rejected at the
+ * The bypass is safe because of the following trust boundaries:
+ *   1. Server-side DOMPurify pass — ACTIVE. `sanitizeHtml()` / `sanitizeBlockContent()`
+ *      in `backend/src/common/sanitize-html.ts` strips <script>, <iframe>,
+ *      on*-handlers, javascript: URIs, and other injection vectors at write
+ *      time (text-block + template-block services). All paths converge on
+ *      safe HTML including bulk-import and dev fixtures.
+ *   2. TipTap editor validation — TipTap uses ProseMirror's schema system;
+ *      unknown HTML nodes and dangerous attributes are rejected at the
  *      editor layer.
- *   2. RBAC — TextBlock / TemplateBlock CRUD endpoints are admin/manager
+ *   3. RBAC — TextBlock / TemplateBlock CRUD endpoints are admin/manager
  *      only (TZ-91 Phase A1+A4 whitelist).
- *   3. Future: server-side DOMPurify pass — NOT YET IMPLEMENTED.
- *      Bulk-import paths (ImportJobsModule) and dev fixtures can write
- *      columns WITHOUT going through TipTap, leaving server-side sanitization
- *      as a TODO defense-in-depth layer (see TZ-105.3 followup backlog).
  *
  * Before adding a new [innerHTML] usage anywhere on this file, update the
  * trust model above AND confirm server-side sanitization is wired.
@@ -35,13 +35,13 @@ import {
 import { CdkDrag } from '@angular/cdk/drag-drop';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { LucideAngularModule } from 'lucide-angular';
-import { PiCanvasBlockHandleComponent } from '../../../shared/ui/canvas/pi-canvas-block-handle.component';
 import {
   BLOCK_TYPE_LABELS,
   type BlockType,
   type TemplateBlock,
 } from '../../../shared/template-block/template-block.types';
 import type { TextBlockColumn } from '../../../shared/services/pi-text-blocks.service';
+import type { TableColumn } from '../../../shared/services/pi-table-templates.service';
 
 /**
  * TZ-86 Phase D.1 — BlockRenderer (leaf, presentational).
@@ -83,25 +83,115 @@ import type { TextBlockColumn } from '../../../shared/services/pi-text-blocks.se
   selector: 'app-block-renderer',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CdkDrag, LucideAngularModule, PiCanvasBlockHandleComponent],
+  imports: [CdkDrag, LucideAngularModule],
   template: `
     <div
       cdkDrag
       cdkDragLockAxis="y"
       class="group block-renderer"
       [class.is-selected]="selected()"
+      [class.is-multi-selected]="multiSelected()"
       [class.is-inactive]="!block().isActive"
       [attr.data-block-type]="block().type"
-      [attr.aria-selected]="selected()"
+      [attr.aria-selected]="selected() || multiSelected()"
       [attr.role]="'button'"
       [attr.tabindex]="'0'"
       (click)="onSelect($event)"
       (keydown.enter)="onSelect($event)"
       (keydown.space)="onSelect($event)"
+      (keydown.arrowUp)="onArrowKey($event, 'up')"
+      (keydown.arrowDown)="onArrowKey($event, 'down')"
     >
-      <pi-canvas-block-handle />
+      <!-- Multi-select checkbox (visible on hover or when multi-selected) -->
+      <div
+        class="block-renderer__checkbox"
+        [class.is-visible]="multiSelected()"
+        (click)="onCheckboxClick($event)"
+        (keydown.enter)="onCheckboxClick($event)"
+        (keydown.space)="onCheckboxClick($event)"
+        (mousedown)="$event.stopPropagation()"
+        role="checkbox"
+        [attr.aria-checked]="multiSelected()"
+        [attr.aria-label]="multiSelected() ? 'Убрать из выделения' : 'Выбрать блок'"
+        [attr.tabindex]="multiSelected() ? '0' : '-1'"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          @if (multiSelected()) {
+            <rect x="3" y="3" width="18" height="18" rx="2" fill="var(--color-sunrise-warm)" stroke="var(--color-sunrise-warm)"/>
+            <polyline points="9 12 11 14 15 10" stroke="white" stroke-width="2.5"/>
+          } @else {
+            <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor"/>
+          }
+        </svg>
+      </div>
       <div class="block-renderer__body">
-        @if (!hasColumns()) {
+        @if (block().type === 'table' && tableColumns().length > 0) {
+          <!-- Table block: render actual table with columns and sample rows -->
+          <div class="block-renderer__header">
+            <span class="block-renderer__type">{{ typeLabel() }}</span>
+            <span class="block-renderer__table-title">{{ block().title }}</span>
+            @if (bindingBadge()) {
+              <span class="block-renderer__binding" [title]="bindingBadgeTooltip()">
+                {{ bindingBadge() }}
+              </span>
+            }
+          </div>
+          <div class="block-renderer__table-wrap">
+            <table class="block-renderer__table">
+              <thead>
+                <tr>
+                  @for (col of tableColumns(); track col.key) {
+                    <th [style.text-align]="col.align" [style.width]="col.width + 'px'">
+                      {{ col.label }}
+                    </th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @if (tableRows().length > 0) {
+                  @for (row of tableRows(); track $index) {
+                    <tr>
+                      @for (cell of row; track $index; let ci = $index) {
+                        <td [style.text-align]="tableColumns()[ci]?.align ?? 'left'">
+                          {{ formatTableCell(cell, tableColumns()[ci]?.type ?? 'text') }}
+                        </td>
+                      }
+                    </tr>
+                  }
+                } @else {
+                  <tr>
+                    <td [attr.colspan]="tableColumns().length" class="block-renderer__table-empty">
+                      Нет данных
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else if (block().type === 'spacer') {
+          <!-- Spacer block: visual separator line -->
+          <div
+            class="block-renderer__spacer"
+            [style.height.px]="block().height ?? 40"
+          >
+            <div class="block-renderer__spacer-line"></div>
+            <span class="block-renderer__spacer-label">Отступ · {{ block().height ?? 40 }}px</span>
+            <div class="block-renderer__spacer-line"></div>
+          </div>
+        } @else if (hasColumns()) {
+          <!-- Multi-column text block -->
+          @if (block().content) {
+            <div class="block-renderer__content block-renderer__content--preamble">
+              {{ renderedContent() }}
+            </div>
+          }
+          <div class="block-renderer__columns" [style.grid-template-columns]="columnsGridTemplate()">
+            @for (col of block().columns; track col.id) {
+              <div class="block-renderer__column" [innerHTML]="byPassHtml(col.content)"></div>
+            }
+          </div>
+        } @else {
+          <!-- Default text rendering -->
           <div class="block-renderer__header">
             <span class="block-renderer__type">{{ typeLabel() }}</span>
             @if (bindingBadge()) {
@@ -110,23 +200,6 @@ import type { TextBlockColumn } from '../../../shared/services/pi-text-blocks.se
               </span>
             }
           </div>
-        }
-        @if (hasColumns()) {
-          <!-- TZ-104.7 NIT #2: if 'content' is also present, render it ABOVE
-               the columns grid as a plain-text preamble so user prose isn't
-               silently dropped during single-HTML → multi-column migration. -->
-          @if (block().content) {
-            <div class="block-renderer__content block-renderer__content--preamble">
-              {{ renderedContent() }}
-            </div>
-          }
-          <div class="block-renderer__columns" [style.grid-template-columns]="columnsGridTemplate()">
-            @for (col of block().columns; track col.id) {
-              <!-- trust-model: see file header banner for innerHTML bypass rationale -->
-              <div class="block-renderer__column" [innerHTML]="byPassHtml(col.content)"></div>
-            }
-          </div>
-        } @else {
           <div class="block-renderer__content">
             {{ renderedContent() }}
           </div>
@@ -161,6 +234,34 @@ import type { TextBlockColumn } from '../../../shared/services/pi-text-blocks.se
         border-color: var(--color-ink);
         border-width: 2px;
         padding: 9px 11px;
+      }
+
+      .block-renderer.is-multi-selected {
+        border-color: var(--color-sunrise-warm);
+        border-width: 2px;
+        padding: 9px 11px;
+        background: color-mix(in oklch, var(--color-sunrise-soft) 30%, transparent);
+      }
+
+      /* Multi-select checkbox */
+      .block-renderer__checkbox {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 150ms ease;
+        cursor: pointer;
+        z-index: 5;
+      }
+
+      .block-renderer:hover .block-renderer__checkbox,
+      .block-renderer__checkbox.is-visible {
+        opacity: 1;
       }
 
       .block-renderer.is-inactive {
@@ -240,6 +341,69 @@ import type { TextBlockColumn } from '../../../shared/services/pi-text-blocks.se
         color: var(--color-muted);
       }
 
+      /* Table block — actual table rendering */
+      .block-renderer__table-title {
+        font-weight: 600;
+        color: var(--color-ink);
+      }
+      .block-renderer__table-wrap {
+        overflow-x: auto;
+        margin-top: 4px;
+      }
+      .block-renderer__table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      .block-renderer__table th {
+        padding: 6px 8px;
+        text-align: left;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-muted-foreground-strong);
+        background: var(--color-paper-2);
+        border-bottom: 1px solid var(--color-ink);
+        white-space: nowrap;
+      }
+      .block-renderer__table td {
+        padding: 5px 8px;
+        border-bottom: 1px solid var(--color-rule);
+        color: var(--color-ink);
+        word-break: break-word;
+      }
+      .block-renderer__table tr:last-child td {
+        border-bottom: none;
+      }
+      .block-renderer__table-empty {
+        text-align: center;
+        font-style: italic;
+        color: var(--color-muted-foreground-strong);
+        padding: 12px 8px;
+      }
+
+      /* Spacer block */
+      .block-renderer__spacer {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0 16px;
+      }
+      .block-renderer__spacer-line {
+        flex: 1;
+        height: 1px;
+        background: var(--color-rule);
+      }
+      .block-renderer__spacer-label {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-muted-foreground-strong);
+        white-space: nowrap;
+      }
+
       /* Multi-column grid layout */
       .block-renderer__columns {
         display: grid;
@@ -287,8 +451,12 @@ export class BlockRendererComponent {
   readonly block = input.required<TemplateBlock>();
   /** Whether this block is the currently-selected one (drives outline). */
   readonly selected = input<boolean>(false);
+  /** Whether this block is in multi-select mode (Ctrl+Click). */
+  readonly multiSelected = input<boolean>(false);
   /** Emitted when the user clicks/keys to select this block. */
   readonly select = output<TemplateBlock>();
+  /** Emitted on Ctrl/Meta+click for multi-select toggle. */
+  readonly multiSelect = output<TemplateBlock>();
 
   /**
    * DOM sanitizer injected to bypass Angular's default innerHTML stripping.
@@ -310,6 +478,24 @@ export class BlockRendererComponent {
   protected readonly hasColumns = computed<boolean>(() => {
     const cols = this.block().columns;
     return !!cols && cols.length > 0;
+  });
+
+  /** Table columns from block.settings.tableTemplateColumns (populated on drop). */
+  protected readonly tableColumns = computed<TableColumn[]>(() => {
+    const b = this.block();
+    if (b.type !== 'table') return [];
+    const settings = b.settings as Record<string, unknown> | undefined;
+    const cols = settings?.['tableTemplateColumns'] as TableColumn[] | undefined;
+    return cols ?? [];
+  });
+
+  /** Table sample rows from block.settings.tableTemplateSampleRows. */
+  protected readonly tableRows = computed<unknown[][]>(() => {
+    const b = this.block();
+    if (b.type !== 'table') return [];
+    const settings = b.settings as Record<string, unknown> | undefined;
+    const rows = settings?.['tableTemplateSampleRows'] as unknown[][] | undefined;
+    return rows ?? [];
   });
 
   /**
@@ -375,6 +561,50 @@ export class BlockRendererComponent {
 
   protected onSelect(event: Event): void {
     event.stopPropagation();
-    this.select.emit(this.block());
+    if (event instanceof MouseEvent && (event.ctrlKey || event.metaKey)) {
+      this.multiSelect.emit(this.block());
+    } else {
+      this.select.emit(this.block());
+    }
+  }
+
+  protected onCheckboxClick(event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+    this.multiSelect.emit(this.block());
+  }
+
+  protected onArrowKey(event: Event, direction: 'up' | 'down'): void {
+    const keyEvent = event as KeyboardEvent;
+    keyEvent.preventDefault();
+    const allBlocks = (keyEvent.target as HTMLElement)
+      ?.closest('.canvas-dropzone')
+      ?.querySelectorAll<HTMLElement>('.block-renderer[role="button"]');
+    if (!allBlocks || allBlocks.length === 0) return;
+    const current = keyEvent.target as HTMLElement;
+    const idx = Array.from(allBlocks).indexOf(current);
+    const next = direction === 'down' ? allBlocks[idx + 1] : allBlocks[idx - 1];
+    if (next) next.focus();
+  }
+
+  /** Format a table cell value based on column type. */
+  protected formatTableCell(value: unknown, type: string): string {
+    if (value == null || value === '') return '—';
+    if (type === 'bool') return value ? 'Да' : 'Нет';
+    if (type === 'number') {
+      const n = Number(value);
+      return Number.isFinite(n) ? new Intl.NumberFormat('ru-RU').format(n) : String(value);
+    }
+    if (type === 'currency') {
+      const n = Number(value);
+      return Number.isFinite(n)
+        ? new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(n)
+        : String(value);
+    }
+    if (type === 'date') {
+      const d = new Date(String(value));
+      return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleDateString('ru-RU');
+    }
+    return String(value);
   }
 }

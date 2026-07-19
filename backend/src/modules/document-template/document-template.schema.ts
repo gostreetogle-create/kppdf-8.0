@@ -32,8 +32,14 @@ export class DocumentTemplate {
   @Prop({ type: [String], default: [] })
   backgroundImage!: string[];
 
+  @Prop({ default: -1 })
+  defaultBackgroundIndex!: number;
+
   @Prop({ default: 0.3 })
   backgroundOpacity!: number;
+
+  @Prop({ enum: ['portrait', 'landscape'], default: 'portrait' })
+  orientation!: 'portrait' | 'landscape';
 
   @Prop({ default: 1 })
   version!: number;

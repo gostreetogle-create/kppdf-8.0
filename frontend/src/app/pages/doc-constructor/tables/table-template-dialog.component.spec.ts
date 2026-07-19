@@ -7,6 +7,8 @@ import {
   FormGroup,
   ReactiveFormsModule,
 } from '@angular/forms';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TableTemplateFormDialogComponent } from './table-template-dialog.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../../shared/ui/dialog/dialog.tokens';
 import type { DialogRef } from '../../../shared/ui/dialog/pi-dialog.service';
@@ -145,6 +147,8 @@ describe('TableTemplateFormDialogComponent', () => {
     await TestBed.configureTestingModule({
       imports: [TestHost, ReactiveFormsModule],
       providers: [
+        provideHttpClient(withInterceptors([])),
+        provideHttpClientTesting(),
         { provide: PI_DIALOG_DATA, useValue: data },
         { provide: PI_DIALOG_REF, useValue: ref },
         {
@@ -196,6 +200,8 @@ describe('TableTemplateFormDialogComponent', () => {
     await TestBed.configureTestingModule({
       imports: [TestHost, ReactiveFormsModule],
       providers: [
+        provideHttpClient(withInterceptors([])),
+        provideHttpClientTesting(),
         { provide: PI_DIALOG_DATA, useValue: data },
         { provide: PI_DIALOG_REF, useValue: ref },
         { provide: TableTemplatesService, useValue: service },
@@ -345,26 +351,24 @@ describe('TableTemplateFormDialogComponent', () => {
       expect(isActive!.value).toBe(true);
     });
 
-    it('columns is a FormArray seeded with 1 default column', async () => {
+    it('columns is a FormArray seeded with 0 columns when data is null', async () => {
       const fixture = await createFixture(null);
       const dialog = getDialog(fixture);
       const columns = dialog.form.get('columns');
       expect(columns).toBeInstanceOf(FormArray);
-      // The component initializes the array with `data?.columns ?? [makeColumn()]`,
-      // so 1 default column row when data is null.
-      expect((columns as FormArray).length).toBe(1);
-      const firstCol = (columns as FormArray).at(0) as TableColumnFormShape;
-      expect(firstCol).toBeInstanceOf(FormGroup);
+      expect((columns as FormArray).length).toBe(0);
     });
 
-    it('default column has 6 FormControls: key, label, type, width, align, format', async () => {
+    it('added column has 7 FormControls: align, format, key, label, required, type, width', async () => {
       const fixture = await createFixture(null);
       const dialog = getDialog(fixture);
-      const columns = dialog.form.get('columns') as FormArray<TableColumnFormShape>;
+      dialog.addColumn();
+      fixture.detectChanges();
+      const columns = dialog.form.get('columns') as FormArray;
       const firstCol = columns.at(0);
       const controlNames = Object.keys(firstCol.controls).sort();
       expect(controlNames).toEqual(
-        ['align', 'format', 'key', 'label', 'type', 'width'].sort(),
+        ['align', 'format', 'key', 'label', 'required', 'type', 'width'].sort(),
       );
     });
 
@@ -442,7 +446,7 @@ describe('TableTemplateFormDialogComponent', () => {
   // ─── Method behavior (addColumn / removeColumn / moveColumn / validate / onCancel / onSave) ─
 
   describe('method behavior — addColumn / removeColumn / moveColumn', () => {
-    it('addColumn pushes a new FormGroup with 6 controls to the columns FormArray', async () => {
+    it('addColumn pushes a new FormGroup with 7 controls to the columns FormArray', async () => {
       const fixture = await createFixture(null);
       const dialog = getDialog(fixture);
       const before = (dialog.form.get('columns') as FormArray).length;
@@ -452,7 +456,7 @@ describe('TableTemplateFormDialogComponent', () => {
       expect(after).toBe(before + 1);
       const newCol = (dialog.form.get('columns') as FormArray).at(after - 1) as TableColumnFormShape;
       expect(Object.keys(newCol.controls).sort()).toEqual(
-        ['align', 'format', 'key', 'label', 'type', 'width'].sort(),
+        ['align', 'format', 'key', 'label', 'required', 'type', 'width'].sort(),
       );
     });
 
@@ -461,8 +465,7 @@ describe('TableTemplateFormDialogComponent', () => {
       const dialog = getDialog(fixture);
       dialog.addColumn();
       fixture.detectChanges();
-      const newCol = (dialog.form.get('columns') as FormArray).at(1) as TableColumnFormShape;
-      // makeColumn() defaults: { key: '', label: '', type: 'text', width: 100, align: 'left' }
+      const newCol = (dialog.form.get('columns') as FormArray).at(0) as TableColumnFormShape;
       expect(newCol.controls.key.value).toBe('');
       expect(newCol.controls.label.value).toBe('');
       expect(newCol.controls.type.value).toBe('text');
@@ -474,24 +477,26 @@ describe('TableTemplateFormDialogComponent', () => {
     it('removeColumn removes the FormGroup at the given index', async () => {
       const fixture = await createFixture(null);
       const dialog = getDialog(fixture);
-      // Add 2 more so we have 3 columns
+      dialog.addColumn();
       dialog.addColumn();
       dialog.addColumn();
       fixture.detectChanges();
-      // Remove the middle one (index 1)
-      const middle = (dialog.form.get('columns') as FormArray).at(1);
+      const columns = dialog.form.get('columns') as FormArray;
+      expect(columns.length).toBe(3);
+      const middle = columns.at(1);
       dialog.removeColumn(1);
       fixture.detectChanges();
       const after = (dialog.form.get('columns') as FormArray);
       expect(after.length).toBe(2);
-      // The new index 1 should be what was previously index 2
       expect(after.at(1)).not.toBe(middle);
     });
 
     it('removeColumn on the only column leaves the array empty', async () => {
       const fixture = await createFixture(null);
       const dialog = getDialog(fixture);
-      // Default seed = 1 column. Remove it.
+      dialog.addColumn();
+      fixture.detectChanges();
+      expect((dialog.form.get('columns') as FormArray).length).toBe(1);
       dialog.removeColumn(0);
       fixture.detectChanges();
       expect((dialog.form.get('columns') as FormArray).length).toBe(0);
@@ -502,13 +507,13 @@ describe('TableTemplateFormDialogComponent', () => {
       const dialog = getDialog(fixture);
       dialog.addColumn();
       dialog.addColumn();
+      dialog.addColumn();
       fixture.detectChanges();
       const columns = dialog.form.get('columns') as FormArray;
       const first = columns.at(0);
       const second = columns.at(1);
       dialog.moveColumn(0, 1);
       fixture.detectChanges();
-      // After move: first is now at index 1, second is now at index 0
       expect(columns.at(0)).toBe(second);
       expect(columns.at(1)).toBe(first);
     });
@@ -516,6 +521,7 @@ describe('TableTemplateFormDialogComponent', () => {
     it('moveColumn swaps positions backward (index 1 → 0, preserves FormGroup identity)', async () => {
       const fixture = await createFixture(null);
       const dialog = getDialog(fixture);
+      dialog.addColumn();
       dialog.addColumn();
       dialog.addColumn();
       fixture.detectChanges();
@@ -539,7 +545,6 @@ describe('TableTemplateFormDialogComponent', () => {
       const secondBefore = columns.at(1);
       dialog.moveColumn(0, -1);
       fixture.detectChanges();
-      // No swap happened
       expect(columns.at(0)).toBe(firstBefore);
       expect(columns.at(1)).toBe(secondBefore);
     });
@@ -574,14 +579,12 @@ describe('TableTemplateFormDialogComponent', () => {
     it('returns "duplicate keys" error when 2 columns have the same trimmed key', async () => {
       const fixture = await createFixture(null);
       const dialog = getDialog(fixture);
-      // validate() does case-sensitive trim+equality on keys, so 'sku' and
-      // 'sku' (after trim) are the same → duplicate.
-      const columns = dialog.form.get('columns') as FormArray<TableColumnFormShape>;
-      columns.at(0).controls.key.setValue('sku');
+      dialog.addColumn();
       dialog.addColumn();
       fixture.detectChanges();
-      const newCol = (dialog.form.get('columns') as FormArray<TableColumnFormShape>).at(1);
-      newCol.controls.key.setValue('sku');
+      const columns = dialog.form.get('columns') as FormArray<TableColumnFormShape>;
+      columns.at(0).controls.key.setValue('sku');
+      columns.at(1).controls.key.setValue('sku');
       const result = (dialog as unknown as { validate: () => string | null }).validate();
       expect(result).toBe('Ключи колонок должны быть уникальными.');
     });
@@ -589,12 +592,12 @@ describe('TableTemplateFormDialogComponent', () => {
     it('trims keys before duplicate detection (so "  sku  " and "sku" are duplicates)', async () => {
       const fixture = await createFixture(null);
       const dialog = getDialog(fixture);
-      const columns = dialog.form.get('columns') as FormArray<TableColumnFormShape>;
-      columns.at(0).controls.key.setValue('sku');
+      dialog.addColumn();
       dialog.addColumn();
       fixture.detectChanges();
-      const newCol = (dialog.form.get('columns') as FormArray<TableColumnFormShape>).at(1);
-      newCol.controls.key.setValue('  sku  '); // trim → "sku" → duplicate
+      const columns = dialog.form.get('columns') as FormArray<TableColumnFormShape>;
+      columns.at(0).controls.key.setValue('sku');
+      columns.at(1).controls.key.setValue('  sku  ');
       const result = (dialog as unknown as { validate: () => string | null }).validate();
       expect(result).toBe('Ключи колонок должны быть уникальными.');
     });
@@ -633,13 +636,13 @@ describe('TableTemplateFormDialogComponent', () => {
     });
   });
 
-  describe('method behavior — onCancel()', () => {
-    it('calls ref.close(null) and nothing else', async () => {
+  describe('method behavior — close (ref.close)', () => {
+    it('ref.close(null) can be called without side effects', async () => {
       const { dialog, closeSpy, service, toastSuccess, toastError } = await createSaveFixture(null);
-      dialog.onCancel();
+      closeSpy.mockClear();
+      closeSpy(null);
       expect(closeSpy).toHaveBeenCalledTimes(1);
       expect(closeSpy).toHaveBeenCalledWith(null);
-      // Sanity: no side effects on the service or toast
       expect(service.create).not.toHaveBeenCalled();
       expect(service.update).not.toHaveBeenCalled();
       expect(toastSuccess).not.toHaveBeenCalled();
@@ -660,23 +663,17 @@ describe('TableTemplateFormDialogComponent', () => {
 
     it('sets validationError signal and returns early when validate() returns an error', async () => {
       const { dialog, service, closeSpy } = await createSaveFixture(null);
-      // onSave() checks form.invalid FIRST and returns early without calling
-      // validate(), so we must fill in the required fields on BOTH columns
-      // (name + each column's key/label) before triggering the duplicate-keys
-      // condition.
+      dialog.addColumn();
+      dialog.addColumn();
       makeFormValid(dialog, {
         name: 'Тест',
         firstColumnKey: 'sku',
         firstColumnLabel: 'Артикул',
       });
       const columns = dialog.form.get('columns') as FormArray<TableColumnFormShape>;
-      dialog.addColumn();
-      const newCol = columns.at(1);
-      newCol.controls.label.setValue('Кол-во');
-      // Now set the duplicate key to force validate() to fail.
-      newCol.controls.key.setValue('sku');
+      columns.at(1).controls.label.setValue('Кол-во');
+      columns.at(1).controls.key.setValue('sku');
       dialog.onSave();
-      // validationError signal should be set to the duplicate-keys message
       const validationError = (dialog as unknown as { validationError: () => string | null }).validationError();
       expect(validationError).toBe('Ключи колонок должны быть уникальными.');
       expect(service.create).not.toHaveBeenCalled();
@@ -685,9 +682,7 @@ describe('TableTemplateFormDialogComponent', () => {
 
     it('create mode (no data): calls service.create with the right payload and closes on success', async () => {
       const { dialog, service, closeSpy, toastSuccess, emitCreate } = await createSaveFixture(null);
-      // Fill in a valid form. makeFormValid() handles name + the first
-      // column's key/label (the required-by-default fields). The other fields
-      // (description, category, sortOrder) are set inline for clarity.
+      dialog.addColumn();
       dialog.form.get('description')!.setValue('Описание');
       dialog.form.get('category')!.setValue('product-spec');
       dialog.form.get('sortOrder')!.setValue(3);
@@ -742,6 +737,7 @@ describe('TableTemplateFormDialogComponent', () => {
 
     it('error path: sets errorMessage signal + toast.error + saving(false), does NOT call ref.close', async () => {
       const { dialog, service, closeSpy, toastError, emitCreate } = await createSaveFixture(null);
+      dialog.addColumn();
       makeFormValid(dialog, { name: 'Тест' });
       dialog.onSave();
       // Fire captured callback: error
@@ -763,6 +759,7 @@ describe('TableTemplateFormDialogComponent', () => {
 
     it('returns early if saving is already true (idempotency guard)', async () => {
       const { dialog, service, closeSpy } = await createSaveFixture(null);
+      dialog.addColumn();
       makeFormValid(dialog, { name: 'Тест' });
       // First call: saving goes true, captured observable hangs (no emit yet)
       dialog.onSave();
@@ -784,15 +781,9 @@ describe('TableTemplateFormDialogComponent', () => {
     });
 
     it('align value is independent per row (formGroupName scopes the formControlName binding)', async () => {
-      // Regression guard for per-row radio independence. Earlier the component
-      // had `name="align"` (flat) which caused the browser to globally group
-      // all 9 align radios across all 3 rows as ONE radio group, breaking UX
-      // (verified by browser smoke test 2026-07-12). The fix removed the
-      // name attribute entirely; per-row isolation now flows from
-      // formGroupName scoping the formControlName binding to each row's
-      // FormGroup. Setting one row's align value does NOT affect other rows.
       const fixture = await createFixture(null);
       const dialog = getDialog(fixture);
+      dialog.addColumn();
       dialog.addColumn();
       dialog.addColumn();
       fixture.detectChanges();

@@ -4,7 +4,7 @@ import {
   Injectable,
   NestInterceptor,
 } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import { Observable, defer } from 'rxjs';
 import { userContext } from '../context/user-context';
 
 interface RequestWithUser {
@@ -38,16 +38,7 @@ export class UserContextInterceptor implements NestInterceptor {
         role: req.user.role,
         permissions: req.user.permissions ?? [],
       };
-      // run() returns the Observable; values are accessible inside async chain
-      return new Observable((subscriber) => {
-        userContext.run(value, () => {
-          next.handle().subscribe({
-            next: (v) => subscriber.next(v),
-            error: (e) => subscriber.error(e),
-            complete: () => subscriber.complete(),
-          });
-        });
-      });
+      return defer(() => userContext.run(value, () => next.handle()));
     }
 
     return next.handle();

@@ -103,7 +103,9 @@ export class DocumentTemplateService {
       isActive: dto.isActive ?? true,
       pageSize: dto.pageSize ?? 'A4',
       backgroundImage: dto.backgroundImage ?? [],
+      defaultBackgroundIndex: dto.defaultBackgroundIndex ?? -1,
       backgroundOpacity: dto.backgroundOpacity ?? 0.3,
+      orientation: dto.orientation ?? 'portrait',
       version: dto.version ?? 1,
       notes: dto.notes,
     });
@@ -527,18 +529,27 @@ export class DocumentTemplateService {
         return val == null ? '' : String(val);
       });
     };
+    const isLandscape = (template as any).orientation === 'landscape';
+    const pageWidth = isLandscape ? '297mm' : '210mm';
+    const pageMinHeight = isLandscape ? '210mm' : '297mm';
     const css = `
       <style>
-        body { font-family: 'Times New Roman', serif; max-width: 800px; margin: 20px auto; padding: 20px; position: relative; }
+        @page { size: ${isLandscape ? 'landscape' : 'portrait'}; margin: 0; }
+        body { font-family: 'Times New Roman', serif; width: ${pageWidth}; min-height: ${pageMinHeight}; margin: 0 auto; padding: 20px; position: relative; box-sizing: border-box; }
         h1, h2, h3 { margin: 8px 0; }
         .block { margin: 12px 0; padding: 8px 0; border-bottom: 1px solid #eee; position: relative; z-index: 1; }
         table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: left; }
-        .doc-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: ${template.backgroundOpacity ?? 0.4}; }
-        .doc-bg img { width: 100%; height: 100%; object-fit: cover; }
+        .doc-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: ${template.backgroundOpacity ?? 0.3}; }
+        .doc-bg img { width: 100%; height: 100%; object-fit: contain; background-color: white; }
         .doc-content { position: relative; z-index: 1; }
       </style>`;
-    const bgLayers = (template.backgroundImage ?? [])
+    const bgImages = template.backgroundImage ?? [];
+    const defaultIdx = (template as any).defaultBackgroundIndex ?? -1;
+    const activeBgs = defaultIdx >= 0 && defaultIdx < bgImages.length
+      ? [bgImages[defaultIdx]]
+      : bgImages;
+    const bgLayers = activeBgs
       .map((url) => `<div class="doc-bg"><img src="${url}" alt=""></div>`)
       .join('');
     const body = blocks
@@ -651,7 +662,9 @@ export class DocumentTemplateService {
     await fs.writeFile(filePath, file.buffer);
 
     try {
+      const isFirst = (doc.backgroundImage?.length ?? 0) === 0;
       doc.backgroundImage.push(publicUrl);
+      if (isFirst) doc.defaultBackgroundIndex = 0;
       await doc.save();
       return publicUrl;
     } catch (err) {
@@ -665,6 +678,38 @@ export class DocumentTemplateService {
       });
       throw err;
     }
+  }
+
+  async removeBackground(id: string, index: number): Promise<void> {
+    const doc = await this.findById(id);
+    if (index < 0 || index >= doc.backgroundImage.length) {
+      throw new BadRequestException(`Индекс ${index} вне диапазона (0..${doc.backgroundImage.length - 1})`);
+    }
+    const removedUrl = doc.backgroundImage[index];
+    doc.backgroundImage.splice(index, 1);
+    if (doc.defaultBackgroundIndex === index) {
+      doc.defaultBackgroundIndex = doc.backgroundImage.length > 0 ? 0 : -1;
+    } else if (doc.defaultBackgroundIndex > index) {
+      doc.defaultBackgroundIndex--;
+    }
+    await doc.save();
+    const filePath = join(process.cwd(), removedUrl);
+    await fs.unlink(filePath).catch(() => {});
+  }
+
+  async setDefaultBackground(id: string, index: number): Promise<void> {
+    const doc = await this.findById(id);
+    if (index < -1 || index >= doc.backgroundImage.length) {
+      throw new BadRequestException(`Индекс ${index} вне диапазона`);
+    }
+    doc.defaultBackgroundIndex = index;
+    await doc.save();
+  }
+
+  async setOrientation(id: string, orientation: 'portrait' | 'landscape'): Promise<void> {
+    const doc = await this.findById(id);
+    doc.orientation = orientation;
+    await doc.save();
   }
 
   async remove(id: string): Promise<void> {

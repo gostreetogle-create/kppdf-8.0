@@ -26,6 +26,9 @@ import {
 
 const PAGE_SIZE = 10;
 
+/**
+ * Полная документация страницы: docs/pages/documents.page.md
+ */
 @Component({
   selector: 'app-documents-page',
   changeDetection: ChangeDetectionStrategy.OnPush,

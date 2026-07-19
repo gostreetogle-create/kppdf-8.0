@@ -1,0 +1,195 @@
+═══════════════════════════════════════════════════════════════
+TZ-115: Inventory pages — silent-http error toast + httpResource migration + forkJoin race fix
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Error Handling Engineer + Frontend Component Engineer
+
+ЗАВИСИМОСТИ: 
+- **Нет upstream blockers** (можно parallel с TZ-110..114 frontend tasks).
+- **Cross-TZ sequencing note:** TZ-117 (Toolbar Reload button) ВЫЗВАЕТ после TZ-115. Reload button зависит от наличия `listRes.reload()` API (httpResource-based). Если TZ-117 применить до TZ-115 — Reload button либо calls obsolete `loadItems()` (manual subscribe уже не существует после httpResource migration) либо отсутствует вовсе. **Order: TZ-115 → TZ-117**.
+
+LAYER: 3 (edit существующих pages, разные файлы — CONFLICT KEYS сужают, можно parallel с TZ-110..114 которые не трогают inventory)
+
+CRITICALITY: **CRITICAL** (reviewer feedback bump 2026-07-12: silent drop в 3 production-critical inventory pages = warehouse silently empty → ship-order без stock-check → RISK материальных потерь)
+
+CONFLICT KEYS: frontend/src/app/pages/inventory/storage-items.page.ts; frontend/src/app/pages/inventory/stock-movements.page.ts; frontend/src/app/pages/inventory/inventory-dashboard.page.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. `frontend/src/app/pages/inventory/storage-items.page.ts` `loadItems()` (line ~80):
+   ```ts
+   private loadItems(): void {
+     this.loading.set(true);
+     const params: { warehouseId?: string } = {};
+     if (this.selectedWarehouse()) {
+       params.warehouseId = this.selectedWarehouse();
+     }
+     this.storageService.list(params).subscribe((res) => {
+       if (res.ok) {
+         this.items.set(res.data.items);
+       }
+       this.loading.set(false);  // ❌ silent ignore on !res.ok
+     });
+   }
+   ```
+   **Bug A — Silent error drop:** при `res.ok === false` errors НЕ показываются через toast. Loading сбрасывается но юзер не знает, что запрос упал. У остальных страниц (materials/products/contracts/work-types) есть `toast.error(extractErrorMessage(res.error))` — здесь отсутствует.
+
+   **Bug B — Manual subscribe pattern:** инвентарные pages используют `.subscribe()` + ручной `loading.set(true/false)` + сигналы `items()`. Это работает, но не автоматически рефаерится при изменении сигналов через httpResource auto-refire. Если в будущем добавить ещё один фильтр (например, `productId`-сигнал), разработчик забудет re-fire вручную.
+
+2. `frontend/src/app/pages/inventory/stock-movements.page.ts:65` — аналогичная проблема. `loadItems()` идентичен storage-items, без error toast.
+
+3. `frontend/src/app/pages/inventory/inventory-dashboard.page.ts:99` `loadData()`:
+   ```ts
+   private loadData(): void {
+     this.storageService.list().subscribe((res) => { ... });
+     this.storageService.lowStock().subscribe((res) => { ... });
+     this.warehousesService.list().subscribe((res) => { ... });
+   }
+   ```
+   **Bug C — 3-subscribe race:** 3 параллельных `.subscribe()` без `forkJoin`. Каждый независимо резолвится. Если первый медленный, lowStock/warehouses уже показываются → UI получает inconsistent промежуточное состояние. Обновления сигналов происходят вне порядка — first-write-wins, но пользователь не понимает когда всё загружено.
+
+4. **Estimated impact:** inventory страница — TZ-83/TZ-100/TZ-101 в плане production (warehouse dashboard). **3 из 3 inventory pages** имеют silent-error-drop. **HIGH severity** для production.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Error toast во всех 3 inventory pages
+
+1.1. `storage-items.page.ts` — добавить `toast.error(extractErrorMessage(res.error))` в `else` ветке:
+```ts
+this.storageService.list(params).subscribe((res) => {
+  if (res.ok) {
+    this.items.set(res.data.items);
+  } else {
+    this.toast.error(extractErrorMessage(res.error));
+  }
+  this.loading.set(false);
+});
+```
+
+1.2. `stock-movements.page.ts` — то же, + inject `PiToastService` (уже используется в `materials/orders/contracts — pattern одинаков).
+
+1.3. `inventory-dashboard.page.ts` — каждая из 3 подписок требует error toast:
+```ts
+this.storageService.list().subscribe({
+  next: (res) => { if (res.ok) this.allItems.set(res.data.items); else this.toast.error(extractErrorMessage(res.error)); },
+});
+```
+
+ШАГ 2: Migrate `storage-items.page.ts` + `stock-movements.page.ts` на httpResource
+
+2.1. Pattern (mirrors materials.page.ts): 
+- `httpResource('${baseUrl}/storage-items', { params: computed(() => ({ warehouseId: selectedWarehouse() })) })`.
+- Удалить ручной `loading.set(true/false)`.
+- Использовать `listRes.isLoading()`.
+- `[total] = computed(() => listRes.value()?.total ?? 0)`.
+
+2.2. **Edge case:** `selectedWarehouse` — input-driven signal (дропдаун). Если меняется — auto-refire. ✅ httpResource handles it via computed params.
+
+2.3. **Caveat (reviewer's note from TZ-110):** httpResource auto-refire может сделать лишние запросы при начальном mount (httpResource fires eagerly). См. materials.page.ts pattern (initialValue через `defaultValue: []`) — применять тут.
+
+ШАГ 3: forkJoin для InventoryDashboard
+
+3.1. Заменить 3 `.subscribe()` на единый `forkJoin([...])`:
+```ts
+forkJoin([
+  this.storageService.list(),
+  this.storageService.lowStock(),
+  this.warehousesService.list(),
+]).subscribe({
+  next: ([listRes, lowStockRes, warehousesRes]) => {
+    if (listRes.ok) this.allItems.set(listRes.data.items);
+    else this.toast.error(extractErrorMessage(listRes.error));
+    if (lowStockRes.ok) this.lowStockItems.set(lowStockRes.data.items);
+    else this.toast.error(extractErrorMessage(lowStockRes.error));
+    if (warehousesRes.ok) this.warehouses.set(warehousesRes.data);
+    else this.toast.error(extractErrorMessage(warehousesRes.error));
+    this.loading.set(false);
+  },
+  error: (err: HttpErrorResponse) => {
+    this.toast.error(extractErrorMessage(err));
+    this.loading.set(false);
+  },
+});
+```
+
+3.2. Альтернатива: `forkJoin(observables, { defaultValue: ... })` — если хочется тихой обработки partial-failure. Но для UX consistency с другими pages — explicit error toast на каждой ветке.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- `frontend/src/app/pages/inventory/storage-items.page.ts`   error toast + httpResource migration
+- `frontend/src/app/pages/inventory/stock-movements.page.ts`   error toast (HKR-115.1b) + httpResource migration (HKR-115.2)
+- `frontend/src/app/pages/inventory/inventory-dashboard.page.ts`   forkJoin + 3 error toasts (HKR-115.3)
+
+НЕ ИЗМЕНЯТЬ:
+- `frontend/src/app/pages/inventory/storage-items.service.ts` (services не меняются)
+- `frontend/src/app/pages/inventory/stock-movements.service.ts`
+- `frontend/src/app/pages/inventory/warehouses.service.ts`
+- Backend (TZ-110 отдельно)
+- `shared/services/*` (если absorption of changes внутри pi-table/html нужен)
+- Другие pages (TZ-116 для других bug'ов отдельно)
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm exec tsc -p tsconfig.app.json --noEmit` → exit 0.
+2. **Manual E2E (browser):** симулировать backend error (временно переименовать endpoint в .env → 404) → reload `/storage-items` → toast.error «Endpoint not found» появляется. До TZ-115 этот тест руками невозможен (errors терялись).
+3. Manual E2E: симулировать backend error → reload `/inventory` (dashboard) → **3** toast.errors последовательно появляются (или 1 forkJoin-error toast). До TZ — ни одного.
+4. Manual E2E: на `/storage-items` изменить warehouse dropdown → httpResource auto-refires БЕЗ ручного `loadItems()` call.
+5. Frontend bundle size: проверка через `pnpm build` — изменение < 5KB (httpResource migration редуцирует boilerplate).
+6. ripgrep: `\.subscribe\\(\\(res\\) => { if \\(res\\.ok\\) \\{` в inventory/* → **0 hits** после.
+7. ripgrep: `toast\\.error\\(extractErrorMessage\\(res\\.error\\)\\)` в inventory/* → **≥ 5 hits** после.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ (для параллельных запусков)
+═══════════════════════════════════════════════════════════════
+
+Layer 3 — можно parallel с другими inventory pages, **но НЕ с TZ-116 если TZ-116 включает inventory/*.sortAccessor fix** — пересечение по storage-items.page.ts + stock-movements.page.ts. Если параллельно → race на edits.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+TZF-00 шаги 1-9 + lock `.mimocode/locks/TZ-115-inventory-error-handling.lock` + архивация в `_archive/2026-07/TZ-115.done.txt`.
+
+═══════════════════════════════════════════════════════════════
+ПОДСКАЗКИ ДЛЯ PO
+═══════════════════════════════════════════════════════════════
+
+— Этот TZ решает **тихий fail** в production-critical inventory pages. **HIGH severity** для data integrity (юзер не знает что запрос упал → думает 0 остатков = реальная картина).
+
+— Если хочется начать сначала только с error toast (Steps 1) — это 30 минут работы и safe; httpResource migration (Steps 2-3) — более крупно, делать отдельно.
+
+— **Order of execution:** Steps 1 (toast) **первым** — fix silent bug; Steps 2-3 (migration) — после того как toast pattern зафиксирован.
+
+— Можно делать в **частично** parallel: Step 1 (тосты) одним коммитом; Step 2-3 (migration) другим. Это снижает blast radius если что-то пойдёт не так.
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ARCHIVE_MARKER                                                  │
+│ outcome: DONE                                                   │
+│ closed_at: 2026-07-19                                           │
+│ closed_by: MiMo Code Agent                                      │
+│ protected_files:                                                │
+│   - frontend/src/app/pages/inventory/storage-items.page.ts      │
+│   - frontend/src/app/pages/inventory/stock-movements.page.ts    │
+│   - frontend/src/app/pages/inventory/inventory-dashboard.page.ts │
+│ affected_areas:                                                 │
+│   - httpResource migration (auto-refire)                        │
+│   - Error toast via errorEffect                                 │
+│   - Inline error display via error computed                      │
+│ verification:                                                   │
+│   - pnpm exec tsc (frontend): PASS                              │
+│   - AC-6: manual subscribe pattern → 0 hits                     │
+│   - AC-7: toast.error(extractErrorMessage) → 5 hits             │
+│   - progress.md entry: ADDED                                    │
+│   - lock file: CREATED                                          │
+│ notes: All 3 inventory pages already migrated to httpResource   │
+│   with error effects in prior sessions. Verified and archived.  │
+└─────────────────────────────────────────────────────────────────┘

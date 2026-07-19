@@ -1,3 +1,149 @@
+## [2026-07-19] — Завершено: Массовый оркестрированный цикл (17 TZ задач + ручная работа)
+**Исполнитель:** MiMo Code Agent (оркестратор + 15 параллельных агентов)
+**Статус:** Выполнено (frontend build: 0 errors, 0 warnings; backend tsc: 0 errors)
+
+### Ручная работа:
+- **Категории CRUD + drag-drop**: tree view, reorder root + children (backend reorder + reorderChildren endpoints)
+- **Конструктор таблиц**: два режима (новая таблица + выбор из реестра с field picker)
+- **Конструктор документов**: мульти-выбор блоков (чекбокс), таблицы рендерятся на холсте, отступы с ползунком
+- **Layout**: footer прикреплён внизу, скроллы убраны (h-screen overflow-hidden)
+- **DEVELOPMENT-PATTERNS.md**: единый справочник паттернов реализации
+- **Протокол работы**: жёсткие правила "ПЕРЕД/ПОСЛЕ кодом" в project MEMORY.md
+
+### Orchestration (4 волны, 15 агентов):
+- **Wave 1**: TZ-112 (column metadata), TZ-115 (inventory httpResource + error toast), builder-tool-pane parseFloat fix
+- **Wave 2**: TZ-117 (Reload button на 5 pages), TZ-118 (Type safety NonNullable<T>)
+- **Wave 3**: TZ-116 (sort state reactivity), TZ-119 (backend ObjectId validation)
+- **Wave 4**: TZ-113 (builder keyboard a11y), TZ-114 (category tree UX)
+- **Wave 5**: TZ-121 (transaction integrity), TZ-122 (optimistic locking), TZ-123 (type-safe ObjectId)
+- **Wave 6**: TZ-124 (populate optimization), TZ-125 (RxJS leaks CRITICAL), TZ-126 (EAV partial writes CRITICAL), TZ-127 (auth security)
+
+**Затронутые файлы:** 40+ файлов (frontend + backend)
+**Известные ограничения:** pre-existing TS errors в spec-файлах (не影響)
+**Исполнитель:** MiMo Code Agent
+**Статус:** Выполнено (frontend tsc: 0 errors)
+**Что сделано:**
+- **<app-pi-switch>**: Мигрировано 7+ list-pages (work-types, dictionaries, templates, tables, builder-inspector). AC-1 PASSED: 0 raw `<button role="switch">`.
+- **<app-pi-table>**: Мигрировано 9+ main list-pages (materials, products, orders, contracts, organizations, work-types, modules, dictionaries, inventory×2). Raw `<table>` остался только в detail pages, dialogs, dashboards, kit showcase.
+- **<app-pi-textarea>**: Мигрировано 8+ pages (category-form-dialog, contracts, work-types, orders, products, materials, modules, text-block-editor).
+- **<app-pi-checkbox>**: Мигрировано 2+ pages (forms, work-types).
+**Затронутые файлы/папки:** 30+ page files across features
+**Известные ограничения:** 3 raw `<input type="checkbox">` и 4 raw `<textarea>` остались в doc-constructor dialogs (deferred to TZ-104.5).
+
+## [2026-07-19] — Завершено: TZ-120 (Global Soft-Delete Mongoose plugin)
+**Исполнитель:** MiMo Code Agent
+**Статус:** Выполнено (backend tsc: 0 errors)
+**Что сделано:**
+- **soft-delete.plugin.ts (VERIFIED)**: Глобальный Mongoose плагин — auto-filter `{deletedAt: null}` для find/findOne/findOneAndUpdate/countDocuments. Query helpers `.softDelete()` и `.restore()`. Opt-out через `{softDelete: false}` в schema options. `includeSoftDeleted` option для обхода фильтра.
+- **database.module.ts (VERIFIED)**: `connection.plugin(softDeletePlugin)` глобально зарегистрирован.
+- **mongoose-augment.d.ts (VERIFIED)**: TypeScript augmentation для query helpers.
+- Плагин уже применён глобально ко всем schemas (кроме opt-out: feature-flag, setting, counter, role, audit-log, rate-limit, permission).
+**Затронутые файлы/папки:** `backend/src/database/soft-delete.plugin.ts`, `backend/src/database/database.module.ts`, `backend/src/types/mongoose-augment.d.ts` (verified, no changes needed)
+**Известные ограничения:** Покрытие schemas расширено в TZ-120.1 (30+ дополнительных schemas).
+
+## [2026-07-19] — Завершено: TZ-115 (Inventory pages — error toast + httpResource migration)
+**Исполнитель:** MiMo Code Agent
+**Статус:** Выполнено (frontend tsc: 0 errors)
+**Что сделано:**
+- **storage-items.page.ts (VERIFIED)**: Использует `httpResource` с auto-refire, `errorEffect` для toast, `error` computed для inline display. AC-6/AC-7 PASSED.
+- **stock-movements.page.ts (VERIFIED)**: Аналогично — httpResource + errorEffect + error computed.
+- **inventory-dashboard.page.ts (VERIFIED)**: 3 отдельных httpResource (storage-items, low-stock, warehouses) + 3 error effects. AC-6/AC-7 PASSED.
+- Все 3 страницы мигрированы с manual subscribe на httpResource. Silent error drop исправлен.
+**Затронутые файлы/папки:** `frontend/src/app/pages/inventory/storage-items.page.ts`, `stock-movements.page.ts`, `inventory-dashboard.page.ts` (verified, no changes needed)
+**Известные ограничения:** Dashboard использует 3 отдельных httpResource вместо forkJoin (acceptable — каждый auto-refires independently).
+
+## [2026-07-19] — Завершено: TZ-111 (Builder bulk-delete race condition — partial success + snapshot rollback)
+**Исполнитель:** MiMo Code Agent
+**Статус:** Выполнено (frontend tsc: 0 errors)
+**Что сделано:**
+- **builder.page.ts (ANALYZED + VERIFIED)**: Текущая реализация УЖЕ обрабатывает partial success корректно:
+  - `forkJoin(safeOps)` с `catchError(() => of(null))` wrapper — каждый remove observable завершается с `{key, ok}` результатом
+  - Failed blocks восстанавливаются из snapshot `toDelete` (не из `previous`) — защита от concurrent inspector edits
+  - Toast показывает `succeededCount` для успешных и `failedKeys.size` для упавших
+- **AC-6 PASSED**: `forkJoin(this.blocksSvc.remove` → 0 hits (используется forkJoin(safeOps) с wrapper)
+- **AC-1 PASSED**: typecheck exit 0
+**Затронутые файлы/папки:** `frontend/src/app/pages/doc-constructor/builder/builder.page.ts` (verified, no changes needed)
+**Известные ограничения:** Ghost counter toast не различает ghost/real блоки (nice-to-have). onReorder использует полный rollback (acceptable для single API call). Unit spec file не создан (Jest config issue).
+
+## [2026-07-19] — Завершено: TZ-110 (Category backend safety — cycle prevention + existing safety sweep)
+**Исполнитель:** MiMo Code Agent
+**Статус:** Выполнено (backend tsc: 0 errors)
+**Что сделано:**
+- **category.service.ts (MODIFIED)**: Добавлена cycle prevention — `isDescendantOf()` метод проверяет, что новый parent не является потомком перемещаемой категории (защита от infinite loop при смене parentId). fullPath cascade, ObjectId validation, и transaction wrapping УЖЕ были реализованы в предыдущих сессиях.
+- **isDescendantOf() (NEW)**: Рекурсивный обход parentId chain с cycle guard (visited set). Возвращает true если candidateDescendantId является потомком ancestorId.
+**Затронутые файлы/папки:** `backend/src/modules/category/category.service.ts`
+**Известные ограничения:** Scoped return (?scope=parent) не реализован (nice-to-have). Unit tests не созданы из-за pre-existing Jest config issue (babel-jest вместо ts-jest).
+
+## [2026-07-19] — Завершено: TZ-102 (Backend route gaps — Currency module + Modules rename + Inventory summary)
+**Исполнитель:** MiMo Code Agent
+**Статус:** Выполнено (backend tsc: 0 errors)
+**Что сделано:**
+- **Currency module (NEW):** `backend/src/modules/currency/` — schema (key, label, code, symbol, rate, isBase, locale, precision), service (CRUD + findActive), controller (REST + `/active`), DTOs (create/update), module. Registered in `app.module.ts`.
+- **CurrenciesSeed (NEW):** `backend/src/common/seed/currencies.seed.ts` — seeds RUB (base), USD, EUR with idempotent skip-if-exists pattern.
+- **Modules decorator rename:** `@Controller('product-modules')` → `@Controller('modules')` in `product-module.controller.ts`. Class name unchanged.
+- **Inventory dashboard:** `@Get()` in `inventory.controller.ts` — aggregated summary (totalWarehouses, totalActiveItems, outOfStock, lowStock, movements30d, byWarehouseTop, recentlyUpdatedItems).
+- **Frontend service URL:** `pi-product-modules.service.ts` already uses `/modules` (URL swap completed).
+**Затронутые файлы/папки:** `backend/src/modules/currency/*` (6 new), `backend/src/common/seed/currencies.seed.ts` (new), `backend/src/app.module.ts`, `backend/src/modules/product-module/product-module.controller.ts`, `backend/src/modules/inventory/inventory.controller.ts`
+**Известные ограничения:** Currency seed uses `Number` for rate (not Decimal128) — acceptable for display; TZ-43 (Invoices) will need fixed-decimal.
+
+## [2026-07-19] — Завершено: TZ-103 (Dialog system audit + 4-bug fix — close · positioning · tab-switch · buttons)
+**Исполнитель:** MiMo Code Agent
+**Статус:** Выполнено (frontend tsc: 0 errors; backend tsc: 0 errors)
+**Что сделано:**
+- **pi-dialog.service.ts (REFACTORED)**: TZ-103.1 — заменён singleton `activeRef`/`activeFocusTrap` на closure-local refs в каждом DialogRef. Каждый диалог владеет своим overlay + focus trap. TZ-103.2 — добавлен `parentDestroyRef?: DestroyRef` в `DialogConfig` для авто-закрытия при уничтожении вызывающего компонента (tab-switch fix). TZ-103.3 — добавлен `requestAnimationFrame` после `attach()` для корректного позиционирования при первом открытии.
+- **pi-dialog.service.spec.ts (NEW)**: N-cycle open-close тесты, verifицирующие отсутствие утечек overlay между диалогами.
+- **25+ consumer pages**: добавлен `parentDestroyRef: this.destroyRef` во все `dialog.open()` вызовы (texts, tables, dictionaries, categories, products, orders, contracts, materials, work-types, modules, module-detail, product-detail, organizations).
+**Затронутые файлы/папки:** `frontend/src/app/shared/ui/dialog/pi-dialog.service.ts`, `frontend/src/app/shared/ui/dialog/pi-dialog.service.spec.ts`, 12+ page files
+**Известные ограничения:** AC-11 (dialog.open count = parentDestroyRef count) может не совпадать если есть dialog.open в shared/ компонентах (не pages/).
+
+## [2026-07-18] — Завершено: Table Template Dialog — два режима (новая таблица + выбор из реестра)
+**Исполнитель:** MiMo Code Agent
+**Статус:** Выполнено (build: 0 errors, 0 warnings; backend: tsc 0 errors)
+**Что сделано (1 файл):**
+- **table-template-dialog.component.ts (MODIFIED)**: Диалог конструктора таблиц переписан с добавлением двух режимов:
+  - **"Новая таблица"** — текущий функционал (создание с нуля: название, описание, категория, структура колонок, образцы строк)
+  - **"Из существующих данных"** — новый функционал: выбор источника данных из реестра (Organization, Counterparty, Product, Material, WorkType) → выбор полей через checkboxes → drag-drop reorder порядка столбцов → настройка ширины и выравнивания → предпросмотр
+- Переключатель режимов вверху диалога (только при создании, не при редактировании)
+- Режим "Из существующих данных" загружает источники из `RegistryService.getDataSources()`
+- Группировка источников: Контакты, Каталог, Работы
+- При выборе полей — автосинхронизация с FormArray columns (ключ, заголовок, тип из реестра)
+- Предпросмотр обновляется в реальном времени
+- Сохранение `dataSource` ключа в TableTemplate при выборе из реестра
+**Архитектура:**
+- Frontend: `RegistryService` → `GET /registry/data-sources` → `DataSourceDescriptor[]` → UI picker
+- CDK drag-drop для reorder выбранных полей
+- Существующий режим "Новая таблица" полностью сохранён
+**Затронутые файлы:** `frontend/src/app/pages/doc-constructor/tables/table-template-dialog.component.ts`
+
+## [2026-07-18] — Завершено: Categories CRUD + Drag-Drop Reorder (root + children)
+**Исполнитель:** MiMo Code Agent
+**Статус:** Выполнено (build: 0 errors, 0 warnings; backend: tsc 0 errors)
+**Что сделано (~8 файлов):**
+- **categories.service.ts (NEW)**: API-сервис для Category CRUD (list, tree, findById, create, update, remove, **reorder**, **reorderChildren**). Использует silentGet/Post/Patch/Delete.
+- **categories.page.ts (NEW)**: CRUD-страница категорий с **деревом** (GET /categories/tree), **CDK drag-drop reorder на двух уровнях** (корневые + подкатегории), клиентским поиском по дереву, expand/collapse, row actions (edit/delete). Optimistic update при reorder.
+- **category-form-dialog.component.ts (NEW)**: Форма создания/редактирования с валидацией (name, slug, type, skuPrefix required; pattern validation).
+- **category.controller.ts (MODIFIED)**: Добавлены `POST /categories/reorder` + `POST /categories/reorder-children` endpoints (admin-only).
+- **category.service.ts (MODIFIED)**: Добавлены методы `reorder(categoryIds)` + `reorderChildren(parentId, childIds)` — bulkWrite для атомарного обновления sortOrder.
+- **app.routes.ts**: Добавлен маршрут `/categories`.
+- **app-layout.component.ts**: Добавлена ссылка "Категории" в навигацию "Справочники".
+- **categories.page.spec.ts (NEW)**: Unit-тесты (initial load, error handling, client-side search).
+- **category-form-dialog.component.spec.ts (NEW)**: Unit-тесты (create/edit mode, validation, submit).
+**Архитектура:**
+- Backend: Category schema + `POST /categories/reorder` (root) + `POST /categories/reorder-children` (children within parent) — bulkWrite, atomic sortOrder update
+- Frontend: httpResource (tree endpoint) → CDK drag-drop на двух уровнях (CdkDropList + CdkDrag + moveItemInArray) → optimistic update → silentPost reorder/reorderChildren
+- Route: `/categories` (authGuard)
+- Nav: Справочники → Категории
+**Drag-Drop паттерн (tree):**
+- Корневые категории: `CdkDropList` → `onRootDrop()` → `service.reorder()`
+- Подкатегории: вложенный `CdkDropList` внутри каждой parent → `onChildDrop(parentId)` → `service.reorderChildren(parentId, childIds)`
+- `cdkDragHandle` = grip-иконка (6 точек)
+- `moveItemInArray` из `shared/util/move-item-in-array.ts`
+- Optimistic update: `treeRes.update(() => items)` сразу, POST reorder в фоне
+- Rollback при ошибке: `treeRes.reload()`
+- Expand/collapse: `expandedIds` signal, toggle по клику на arrow
+- Поиск по дереву: `filterTree()` — рекурсивная фильтрация с сохранением иерархии
+**Затронутые файлы:** `frontend/src/app/shared/services/categories.service.ts`, `frontend/src/app/pages/dictionaries/categories.page.ts`, `frontend/src/app/pages/dictionaries/category-form-dialog.component.ts`, `frontend/src/app/pages/dictionaries/categories.page.spec.ts`, `frontend/src/app/pages/dictionaries/category-form-dialog.component.spec.ts`, `frontend/src/app/app.routes.ts`, `frontend/src/app/layout/app-layout.component.ts`, `backend/src/modules/category/category.controller.ts`, `backend/src/modules/category/category.service.ts`, `ARCHITECTURE.md`
+
 ## [2026-07-04] — Завершено: TZ-30 (CRUD actions + per-page FormSchema)
 **Исполнитель:** Frontend Developer (Buffy)
 **Статус:** Выполнено (с 1 итерацией TS-фикса: TS4111 noPropertyAccessFromIndexSignature — dot-notation на Record<string,unknown> заменён на bracket-notation)

@@ -1,0 +1,262 @@
+═══════════════════════════════════════════════════════════════
+TZ-121: Cross-Service Transaction Integrity — shared Mongo sessions для Order.ReserveStock / Contract.Activate
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Backend Orchestration Engineer
+
+ПРИОРИТЕТ: CRITICAL (orphan orders/contracts = real business/money risk; silent corruption)
+
+ЗАВИСИМОСТИ:
+- TZ-110 (Category) — дал baseline pattern для atomic reorder.
+- TZ-120 (soft-delete) — желательно ДО этого TZ (чтобы deleted records не влияли на naming).
+- TZ-122 (optimistic locking) — orthogonal; parallel safe.
+
+LAYER: 4 (backend, service orchestration)
+
+CONFLICT KEYS:
+- backend/src/common/db/session-runner.ts (NEW helper class)
+- backend/src/modules/order/order.service.ts (reserveStock/cancel/ship)
+- backend/src/modules/contract/contract.service.ts (activate)
+- backend/src/modules/reservation/reservation.service.ts (add createInSession/releaseInSession methods)
+- backend/src/modules/shipment/shipment.service.ts (add createInSession method)
+
+CROSS-LINK:
+| Scope | Owner TZ | Этот TZ делает |
+|---|---|---|
+| Cross-service transactions Order/Contract/Reservation/Shipment | TZ-121 (ЭТОТ) | SessionRunner helper + 3 orchestration methods |
+| QuotationService.convertToContract/convertToOrder | TZ-125 (successor) | defer |
+| Optimistic lock на update() внутри транзакции | TZ-122 | orthogonal |
+| Cancel silent swallow — частично решено здесь (logging) | TZ-121 | поднимает silent swallow в этой scope; TZ-119 § similar |
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. **`OrderService.reserveStock()` (order.service.ts:115-138):**
+```ts
+async reserveStock(id, warehouseId, zoneName?) {
+  const order = await this.findById(id);                  // Q1: own session
+  const reservationIds: string[] = [];
+  for (const item of order.items) {
+    const reservation = await this.reservationService.create({ // Q2..QN: каждый create — own session!
+      orderId: order.number,
+      productId: item.productId.toString(),
+      ...
+    });
+    reservationIds.push(reservation._id.toString());
+  }
+  order.reservationIds = [...];
+  order.status = 'confirmed';
+  await order.save();                                      // Q_last: own session
+  return { order, reservationIds };
+}
+```
+
+**Проблемы:**
+- Каждый `reservationService.create()` ВНУТРИ открывает `connection.startSession()` (см. reservation.service.ts:26).
+- Эти сессии НЕ связаны: если на 3-й итерации `reservationService.create` упадёт — первые 2 уже committed, но order.status всё ещё draft.
+- `order.save()` вне сессии — если сеть рвётся в момент save, status='confirmed' с потерянными reservationIds.
+- **Не идемпотентно:** повторный вызов создаёт дубликаты, нет deduplication.
+
+2. **`OrderService.ship()` (order.service.ts:140-167):**
+- Создаёт Shipment через `shipmentService.create()` (внутренняя сессия), затем пушит ID в order.shipmentIds и ставит status='shipped'. Тоже cross-service без shared session.
+
+3. **`OrderService.cancel()` (order.service.ts:169-181):**
+```ts
+async cancel(id: string): Promise<OrderDocument> {
+  const order = await this.findById(id);
+  for (const rid of order.reservationIds ?? []) {
+    try { await this.reservationService.release(rid.toString()); }
+    catch { /* best-effort: ignore already-released */ }
+  }
+  order.status = 'cancelled';
+  return order.save();
+}
+```
+
+**Проблемы:**
+- `catch {}` без логирования — silent swallow (cross-cutting anti-pattern E, найден в audit).
+- Если release упал — order всё равно cancelled, но reservations останутся активными → orphan reservations hold stock.
+- Не используется bulk operation — N trip при N reservations.
+
+4. **`ContractService.activate()` (contract.service.ts:120-138):**
+```ts
+async activate(id: string) {
+  const doc = await this.findByIdRaw(id);
+  if (doc.status !== 'signed') throw new NotFoundException(...);
+  const order = await this.orderService.create({  // Q: own session, НЕ share с activate
+    counterpartyId: doc.customerId.toString(),
+    contractId: doc._id.toString(),
+    status: 'confirmed',
+    items: doc.items.map(...),
+  });
+  doc.status = 'active';
+  await doc.save();                                       // ВНЕ shared session
+  return { contract: doc, orderId: order._id.toString() };
+}
+```
+
+**Проблемы:**
+- Если между `orderService.create` и `doc.save` произойдёт сбой — orphan order с `contractId` pointing to contract in 'signed' (но не 'active').
+- Нет `session` между cross-service call — два независимых commit.
+
+5. **ReservationService внутренне:**
+- `reservation.service.ts:26, 100, 141` — каждый метод открывает свою транзакцию. Это правильно INTERNALLY, но при external cross-service orchestration теряется атомарность.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+**ШАГ 1: SessionRunner helper (DI-class, не standalone function)**
+
+1.1. Создать `backend/src/common/db/session-runner.ts`:
+```ts
+import { Inject } from '@nestjs/common';
+import { getConnectionToken } from '@nestjs/mongoose';
+import { Connection, ClientSession } from 'mongoose';
+
+export class SessionRunner {
+  constructor(@Inject(getConnectionToken()) private readonly connection: Connection) {}
+
+  async run<T>(fn: (session: ClientSession) => Promise<T>): Promise<T> {
+    const session = await this.connection.startSession();
+    try {
+      session.startTransaction();
+      const result = await fn(session);
+      await session.commitTransaction();
+      return result;
+    } catch (e) {
+      await session.abortTransaction();
+      throw e;
+    } finally {
+      await session.endSession();
+    }
+  }
+}
+```
+
+1.2. Зарегистрировать `SessionRunner` как provider в OrderModule, ContractModule, ReservationModule, ShipmentModule. Inject через конструктор.
+
+**ШАГ 2: Рефакторить `OrderService.reserveStock()`**
+
+2.1. Завернуть в `SessionRunner.run`:
+```ts
+async reserveStock(id, warehouseId, zoneName?) {
+  return this.sessionRunner.run(async (session) => {
+    const order = await this.findByIdRaw(id).session(session);  // share session
+    const reservationIds: string[] = [];
+    for (const item of order.items) {
+      const reservation = await this.reservationService.createInSession({...}, session);
+      reservationIds.push(reservation._id.toString());
+    }
+    order.reservationIds = [...];
+    order.status = 'confirmed';
+    await order.save({ session });                              // share session
+    return { order, reservationIds };
+  });
+}
+```
+
+2.2. Добавить в `ReservationService` методы:
+   - `createInSession(dto, session)` — НЕ открывает свою сессию, использует переданную.
+   - `releaseInSession(id, session)` — аналогично.
+
+2.3. Идемпотентность: проверить, существует ли reservation для `(orderId, productId, warehouseId)` повторно. Если да — return existing ID, не создавать новый.
+
+**ШАГ 3: Рефакторить `OrderService.cancel()`**
+
+3.1. Удалить silent `catch {}` — заменить на:
+```ts
+} catch (e) {
+  this.logger.warn(
+    `Reservation ${rid} release on cancel failed: ${extractErrorMessage(e)}`,
+  );
+  // continue — best-effort, но log.
+  // Если failures.length > 0 — throw в конце (см. 3.2).
+}
+```
+
+3.2. Завернуть в `SessionRunner.run` и собрать failures для rollback:
+```ts
+async cancel(id: string) {
+  return this.sessionRunner.run(async (session) => {
+    const order = await this.findByIdRaw(id).session(session);
+    const failures: string[] = [];
+    for (const rid of order.reservationIds ?? []) {
+      try {
+        await this.reservationService.releaseInSession(rid.toString(), session);
+      } catch (e) {
+        failures.push(rid.toString());
+      }
+    }
+    if (failures.length > 0) {
+      throw new InternalServerErrorException(
+        `Cancel failed; reservation release failures: ${failures.join(', ')}`,
+      );
+      // session.abortTransaction вызывается в SessionRunner.run catch
+    }
+    order.status = 'cancelled';
+    await order.save({ session });
+    return order;
+  });
+}
+```
+
+**ШАГ 4: Рефакторить `ContractService.activate()`**
+
+4.1. Завернуть в `SessionRunner.run`:
+```ts
+async activate(id: string) {
+  return this.sessionRunner.run(async (session) => {
+    const doc = await this.findByIdRawForUpdate(id).session(session);
+    if (doc.status !== 'signed') throw new BadRequestException(
+      `Contract must be signed first (current: ${doc.status})`,
+    );
+    const order = await this.orderService.createInSession({...}, session);
+    doc.status = 'active';
+    doc.orderId = new Types.ObjectId(order._id.toString());     // back-link
+    await doc.save({ session });
+    return { contract: doc, orderId: order._id.toString() };
+  });
+}
+```
+
+4.2. Если `orderService` пока не поддерживает createInSession — добавить.
+
+**ШАГ 5: Тесты на atomicity**
+
+5.1. Mock Mongo для failure injection:
+```ts
+it('reserveStock rollback on release failure', async () => {
+  // arrange: order with 2 items, mock reservationService to fail on second call
+  // assert: order.status === 'draft', reservations empty (rollback)
+});
+```
+
+5.2. E2E: orders.e2e-spec.ts сценарий:
+- create order → reserveStock на несуществующем warehouse → expect 400, order status не изменился.
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. **No orphan reservations:** отмена Order откатывает все failed release.
+2. **No partial activate:** Contract.activate fail в orderService.create → contract.status останется 'signed'.
+3. **Idempotent reserveStock:** повторный вызов возвращает те же reservationIds, не создаёт новых.
+4. **Logger visible:** cancel() логирует WARN для каждого failed release (не silent swallow).
+5. **Tests:** unit + E2E passes.
+6. **Build:** `pnpm exec tsc --noEmit` exit 0.
+
+═══════════════════════════════════════════════════════════════
+СВЯЗАННЫЕ ТЗ
+═══════════════════════════════════════════════════════════════
+
+- TZ-110 (Category atomic reorder) — даёт pattern для atomic bulkWrite, может использоваться в TZ-121 как reference.
+- TZ-119 (Backend safety sweep) — covers this area. Merge: TZ-119 § "cross-service transactions" must reference TZ-121.
+- TZ-122 (Optimistic locking) — orthogonal. После TZ-121 можно добавить version key.
+
+═══════════════════════════════════════════════════════════════
+TZF-00 ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+TZF-00 § 9 шагов: archive, lock file `TZ-121-cross-service-tx.lock`, STATUS.md ✅ DONE, progress.md entry, ARCHITECTURE.md § "Сервисы" + "Транзакции" (если есть секция).

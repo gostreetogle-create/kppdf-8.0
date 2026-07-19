@@ -14,6 +14,8 @@ export interface DialogConfig<TResult = unknown, TData = unknown> {
   dismissOnEscape?: boolean;
   data?: TData;
   ariaLabel?: string;
+  /** Additional CSS class(es) added to the CDK overlay panel element. */
+  panelClass?: string;
   /** TZ-103.2: caller's DestroyRef; service auto-closes dialog when caller is destroyed. */
   parentDestroyRef?: DestroyRef;
 }

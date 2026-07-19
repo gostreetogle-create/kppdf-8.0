@@ -1,13 +1,17 @@
-import { ChangeDetectionStrategy, Component, OnInit, TemplateRef, ViewChild, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { httpResource } from '@angular/common/http';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { TableComponent, ColumnDef } from '../../shared/ui/pi-table.component';
-import { StockMovementsService, StockMovement, MovementType } from './stock-movements.service';
+import { PiToastService } from '../../shared/ui/toast';
+import { extractErrorMessage } from '../../core/silent-http';
+import { API_BASE_URL } from '../../core/api.tokens';
+import { StockMovement, MovementType, type StockMovementsListResponse } from './stock-movements.service';
 
 /**
- * StockMovementsPage — log of all stock movements (in/out/adjust/transfer).
+ * Полная документация страницы: docs/pages/stock-movements.page.md
  */
 @Component({
   selector: 'app-stock-movements-page',
@@ -40,32 +44,64 @@ import { StockMovementsService, StockMovement, MovementType } from './stock-move
     </app-pi-section>
 
     <app-pi-section title="Движения" [hint]="totalItems() + ' записей'" eyebrow="II">
-      <app-pi-table
-        [data]="items()"
-        [columns]="columns"
-        [loading]="loading()"
-        [total]="items().length"
-        [pageSize]="50"
-        [emptyMessage]="'Нет движений.'"
-        [initialSortKey]="'date'"
-        [initialSortDir]="'desc'"
-        ariaLabel="Движения на складе"
-        data-test="stock-movements-table"
-      />
+      @if (error()) {
+        <div
+          role="alert"
+          class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+        >
+          {{ error() }}
+        </div>
+      }
+      <div class="overflow-x-auto hairline rounded-sm">
+        <app-pi-table
+          [data]="items()"
+          [columns]="columns"
+          [loading]="loading()"
+          [total]="items().length"
+          [pageSize]="50"
+          [emptyMessage]="'Нет движений.'"
+          [initialSortKey]="'date'"
+          [initialSortDir]="'desc'"
+          ariaLabel="Движения на складе"
+          data-test="stock-movements-table"
+        />
+      </div>
     </app-pi-section>
   `,
 })
-export class StockMovementsPage implements OnInit {
-  private readonly movementsService = inject(StockMovementsService);
+export class StockMovementsPage {
+  private readonly toast = inject(PiToastService);
+  private readonly baseUrl = inject(API_BASE_URL);
 
-  protected readonly loading = signal(true);
-  protected readonly items = signal<StockMovement[]>([]);
   protected readonly selectedType = signal<string>('');
 
+  private readonly listParams = computed((): Record<string, string> => {
+    const type = this.selectedType();
+    return type ? { type } : {};
+  });
+
+  protected readonly listRes = httpResource<StockMovementsListResponse>(() => ({
+    url: `${this.baseUrl}/stock-movements`,
+    params: this.listParams(),
+  }));
+
+  protected readonly items = computed<StockMovement[]>(() => this.listRes.value()?.items ?? []);
+  protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
   protected readonly totalItems = computed(() => this.items().length);
+  protected readonly error = computed<string | null>(() => {
+    const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    return err ? extractErrorMessage(err) : null;
+  });
+
+  private readonly errorEffect = effect(() => {
+    const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    if (err) {
+      this.toast.error(extractErrorMessage(err));
+    }
+  });
 
   protected readonly columns: ColumnDef<StockMovement>[] = [
-    { key: 'date', label: 'Дата', sortable: true, width: '10rem', numeric: true, accessor: (row) => this.formatDate(row.date) },
+    { key: 'date', label: 'Дата', sortable: true, width: '10rem', accessor: (row) => row.date, format: (row) => this.formatDate(row.date) },
     { key: 'type', label: 'Тип', sortable: true, width: '7rem', accessor: (row) => this.typeLabel(row.type) },
     { key: 'product', label: 'Продукт', accessor: (row) => row.product?.name ?? '—' },
     { key: 'warehouse', label: 'Склад', accessor: (row) => row.warehouse?.name ?? '—' },
@@ -73,33 +109,13 @@ export class StockMovementsPage implements OnInit {
     { key: 'documentRef', label: 'Документ', width: '8rem', accessor: (row) => row.documentRef ?? '—' },
   ];
 
-  ngOnInit(): void {
-    this.loadItems();
-  }
-
-  onTypeChange(event: Event): void {
+  protected onTypeChange(event: Event): void {
     const value = (event.target as HTMLSelectElement).value;
     this.selectedType.set(value);
-    this.loadItems();
   }
 
-  clearFilters(): void {
+  protected clearFilters(): void {
     this.selectedType.set('');
-    this.loadItems();
-  }
-
-  private loadItems(): void {
-    this.loading.set(true);
-    const params: { type?: string } = {};
-    if (this.selectedType()) {
-      params.type = this.selectedType();
-    }
-    this.movementsService.list(params).subscribe((res) => {
-      if (res.ok) {
-        this.items.set(res.data.items);
-      }
-      this.loading.set(false);
-    });
   }
 
   protected typeLabel(type: MovementType): string {

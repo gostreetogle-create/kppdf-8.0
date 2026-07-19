@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 import { TemplateBlock, TemplateBlockDocument } from './template-block.schema';
 import { CreateTemplateBlockDto } from './dto/create-template-block.dto';
 import { UpdateTemplateBlockDto } from './dto/update-template-block.dto';
+import { sanitizeHtml, sanitizeBlockContent } from '../../common/sanitize-html';
 
 @Injectable()
 export class TemplateBlockService {
@@ -18,10 +19,10 @@ export class TemplateBlockService {
       type: dto.type,
       order: dto.order,
       title: dto.title,
-      content: dto.content,
+      content: sanitizeHtml(dto.content ?? ''),
       columns: dto.columns?.map((c) => ({
         id: c.id,
-        content: c.content ?? '',
+        content: sanitizeBlockContent(c.content || ''),
         width: c.width ?? 1,
       })),
       height: dto.height,
@@ -55,11 +56,11 @@ export class TemplateBlockService {
     if (dto.type !== undefined) doc.type = dto.type;
     if (dto.order !== undefined) doc.order = dto.order;
     if (dto.title !== undefined) doc.title = dto.title;
-    if (dto.content !== undefined) doc.content = dto.content;
+    if (dto.content !== undefined) doc.content = sanitizeHtml(dto.content);
     if (dto.columns !== undefined) {
       doc.columns = dto.columns.map((c) => ({
         id: c.id,
-        content: c.content ?? '',
+        content: sanitizeBlockContent(c.content || ''),
         width: c.width ?? 1,
       }));
     }

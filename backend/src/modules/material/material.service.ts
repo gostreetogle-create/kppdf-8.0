@@ -36,6 +36,7 @@ export class MaterialService {
         .sort({ name: 1 })
         .skip((page - 1) * limit)
         .limit(limit)
+        .lean()
         .exec(),
       this.model.countDocuments(filter).exec(),
     ]);
@@ -55,6 +56,7 @@ export class MaterialService {
   }
 
   async update(id: string, dto: UpdateMaterialDto): Promise<MaterialDocument> {
+    if (!Types.ObjectId.isValid(id)) throw new NotFoundException(`Material ${id} not found`);
     const doc = await this.model.findById(id).exec();
     if (!doc) throw new NotFoundException(`Material ${id} not found`);
     Object.assign(doc, dto);
@@ -62,6 +64,7 @@ export class MaterialService {
   }
 
   async remove(id: string): Promise<void> {
+    if (!Types.ObjectId.isValid(id)) throw new NotFoundException(`Material ${id} not found`);
     const doc = await this.model.findById(id).exec();
     if (!doc) throw new NotFoundException(`Material ${id} not found`);
     await this.model

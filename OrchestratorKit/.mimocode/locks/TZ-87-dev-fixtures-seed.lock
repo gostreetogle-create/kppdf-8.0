@@ -1,0 +1,12 @@
+# Lock file
+Locked as of 2026-07-12 — TZ-87: Document Constructor F.3 close-out + dev-data seeding + Create-template UI (4 sub-tasks).
+
+Owner: Backend Developer (Document Constructor)
+Protected files:
+- backend/src/common/seed/dev-fixtures.seed.ts
+- backend/src/app.module.ts
+- frontend/src/app/pages/doc-constructor/builder/builder.page.ts
+- tasks/_archive/2026-07/TZ-86-evidence/summary.json
+- tasks/_archive/2026-07/TZ-87.md.done
+
+Unlock: только через orchestrator approval (новое TZ-NN). F.3 browser-use verification остаётся DEFERRED до запуска в production-equivalent sandbox (требует pnpm + docker compose + start.mjs).

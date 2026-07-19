@@ -45,6 +45,23 @@ export class CategoryController {
     return this.service.create(dto);
   }
 
+  @Post('reorder')
+  @Roles('admin')
+  @AuditAction({ action: 'reorder', entityType: 'Category' })
+  reorder(@Body('categoryIds') categoryIds: string[]) {
+    return this.service.reorder(categoryIds);
+  }
+
+  @Post('reorder-children')
+  @Roles('admin')
+  @AuditAction({ action: 'reorder', entityType: 'Category' })
+  reorderChildren(
+    @Body('parentId') parentId: string | null,
+    @Body('childIds') childIds: string[],
+  ) {
+    return this.service.reorderChildren(parentId, childIds);
+  }
+
   @Patch(':id')
   @Roles('admin')
   @AuditAction({ action: 'update', entityType: 'Category', idParam: 'id' })

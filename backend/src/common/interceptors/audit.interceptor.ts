@@ -2,11 +2,12 @@ import {
   CallHandler,
   ExecutionContext,
   Injectable,
+  Logger,
   NestInterceptor,
   SetMetadata,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Observable, tap } from 'rxjs';
+import { Observable, mergeMap } from 'rxjs';
 import { AuditService } from '../../modules/audit/audit.service';
 
 export const AUDIT_ACTION_KEY = 'auditAction';
@@ -40,6 +41,8 @@ interface RequestWithUser {
  */
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
+  private readonly logger = new Logger('AuditInterceptor');
+
   constructor(
     private readonly reflector: Reflector,
     private readonly audit: AuditService,
@@ -60,23 +63,25 @@ export class AuditInterceptor implements NestInterceptor {
     const entityId = meta.idParam ? req.params?.[meta.idParam] : undefined;
 
     return next.handle().pipe(
-      tap(async (data: unknown) => {
+      mergeMap(async (data: unknown) => {
         const idFromResponse =
           (data as { _id?: string; id?: string } | undefined)?._id ??
           (data as { _id?: string; id?: string } | undefined)?.id;
-        // Read userId directly from req.user (set by JwtAuthGuard) instead
-        // of relying on AsyncLocalStorage which may have lost scope by the
-        // time this async tap() callback runs.
         const reqUser = (req as RequestWithUser).user;
-        await this.audit.log({
-          action: meta.action,
-          entityType: meta.entityType,
-          entityId: entityId ?? idFromResponse,
-          details: { after: this.safeSnapshot(data) },
-          ipAddress: req.ip,
-          userId: reqUser?.id,
-          userName: reqUser?.username,
-        });
+        try {
+          await this.audit.log({
+            action: meta.action,
+            entityType: meta.entityType,
+            entityId: entityId ?? idFromResponse,
+            details: { after: this.safeSnapshot(data) },
+            ipAddress: req.ip,
+            userId: reqUser?.id,
+            userName: reqUser?.username,
+          });
+        } catch (e) {
+          this.logger.error('Audit log failed', (e as Error).stack);
+        }
+        return data;
       }),
     );
   }

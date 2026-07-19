@@ -20,7 +20,13 @@ export class CreateDocumentTemplateDto {
   @IsOptional() @IsArray() @IsString({ each: true })
   backgroundImage?: string[];
 
+  @IsOptional() @IsNumber()
+  defaultBackgroundIndex?: number;
+
   @IsOptional() @IsNumber() @Min(0) backgroundOpacity?: number;
+
+  @IsOptional() @IsIn(['portrait', 'landscape'])
+  orientation?: 'portrait' | 'landscape';
   @IsOptional() @IsNumber() @Min(1) version?: number;
   @IsOptional() @IsString() notes?: string;
 }

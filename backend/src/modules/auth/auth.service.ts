@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { Response } from 'express';
 import { UserDocument } from '../user/user.schema';
 import { UserService } from '../user/user.service';
 import { AuthResponse, AccessTokenResponse, AuthUserPayload } from './dto/auth-response.dto';
@@ -21,7 +22,7 @@ export class AuthService {
     private readonly config: ConfigService,
   ) {}
 
-  async register(dto: RegisterDto): Promise<AuthResponse> {
+  async register(dto: RegisterDto, res: Response): Promise<AuthResponse> {
     // TZ-91 §4 Phase A.1: dto.role is `@IsOptional @IsIn(['user','manager'])` — defaults to 'user'
     // if not provided. 'user' is the safest default (lowest privilege, defence-in-depth: admin/manager
     // accounts MUST be created through admin-invite-flow or admin.seed, never via /register).
@@ -37,10 +38,10 @@ export class AuthService {
       fullName: dto.fullName,
     });
     this.logger.log(`User registered: ${user.username} (${user.role})`);
-    return this.buildAuthResponse(user);
+    return this.buildAuthResponse(user, res);
   }
 
-  async login(dto: LoginDto): Promise<AuthResponse> {
+  async login(dto: LoginDto, res: Response): Promise<AuthResponse> {
     const user = await this.users.findByUsername(dto.username);
     if (!user || !user.isActive) {
       throw new UnauthorizedException('Invalid credentials');
@@ -52,7 +53,7 @@ export class AuthService {
     user.lastLoginAt = new Date();
     await user.save();
     this.logger.log(`User logged in: ${user.username}`);
-    return this.buildAuthResponse(user);
+    return this.buildAuthResponse(user, res);
   }
 
   /**
@@ -61,12 +62,14 @@ export class AuthService {
    * reach this point, the token is signed, unexpired, and matches the
    * current user version.
    */
-  async refresh(userId: string, version: number): Promise<AccessTokenResponse> {
+  async refresh(userId: string, version: number, res: Response): Promise<AccessTokenResponse> {
     const user = await this.findActiveUserOrThrow(userId);
     if (user.refreshTokenVersion !== version) {
       throw new UnauthorizedException('Refresh token revoked');
     }
     const access = await this.signAccess(user);
+    const refresh = await this.signRefresh(user);
+    this.setRefreshCookie(res, refresh);
     return { access };
   }
 
@@ -120,16 +123,26 @@ export class AuthService {
     return user;
   }
 
-  private async buildAuthResponse(user: UserDocument): Promise<AuthResponse> {
+  private async buildAuthResponse(user: UserDocument, res: Response): Promise<AuthResponse> {
     const [access, refresh] = await Promise.all([
       this.signAccess(user),
       this.signRefresh(user),
     ]);
+    this.setRefreshCookie(res, refresh);
     return {
       access,
-      refresh,
       user: this.toAuthUser(user),
     };
+  }
+
+  private setRefreshCookie(res: Response, token: string): void {
+    res.cookie('refreshToken', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/auth',
+    });
   }
 
   private async signAccess(user: UserDocument): Promise<string> {

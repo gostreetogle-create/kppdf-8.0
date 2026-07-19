@@ -1,8 +1,8 @@
 # STATUS — KPPDF ERP Project Status
 
-**Last updated:** 2026-07-11
+**Last updated:** 2026-07-19
 **Phase:** TZ-86 (Конструктор документов / Document Constructor) — ЗАВЕРШЕНО
-**Total tasks:** 49/49 ✅ (TZ-02..TZ-46) + TZ-AUDIT-9 + 9.1 + TZ-WARMUP-100 + TZ-LIGHT-XX + TZ-83 + TZ-86
+**Total tasks:** 49/49 ✅ (TZ-02..TZ-46) + TZ-AUDIT-9 + 9.1 + TZ-WARMUP-100 + TZ-LIGHT-XX + TZ-83 + TZ-86 + **16 PENDING** (TZ-150..TZ-165 — Quality Audit Batch + Layout audit)
 
 ## ✅ Завершённые этапы
 
@@ -324,6 +324,65 @@
 - AlertDialogComponent: 23 unit tests (новый файл, все проходят) ✅
 - PiDialogService: 28 unit tests (существующие, все проходят) ✅
 
+## 🆕 Новые TZ: Quality Audit Batch (2026-07-19)
+
+**Мотивация:** Полный аудит качества проекта — выявлено 15 задач по 6 направлениям.
+**Total new tasks:** 16 (TZ-150..TZ-165)
+
+### 🔴 CRITICAL (3 задачи)
+
+| TZ | Название | Оценка | Dependencies |
+|----|----------|--------|--------------|
+| **TZ-150** | ESLint — Angular ESLint config + lint скрипты | 2-3h | — |
+| **TZ-151** | CI/CD — GitHub Actions (lint + test + build) | 3-4h | TZ-150* |
+| **TZ-152** | Unit тесты для 10 критических страниц (batch 1) | 6-8h🔥 | — |
+
+> *TZ-151 можно создавать параллельно с TZ-150 — lint job будет пустым до выполнения TZ-150.
+> 🔥 TZ-152 estimate может быть 2-3 дня при полном покрытии (10 страниц × 3+ тестов).
+
+### 🟡 HIGH (5 задач)
+
+| TZ | Название | Оценка | Dependencies |
+|----|----------|--------|--------------|
+| **TZ-153** | Prettier config + format скрипты | 1h | TZ-150 |
+| **TZ-154** | Миграция legacy HttpClient → httpResource (6 страниц) | 4-6h | — |
+| **TZ-155** | DTO validation audit — class-validator покрытие | 3-4h | — |
+| **TZ-156** | E2E тесты для 5 бэкенд модулей | 5-7h | TZ-151 |
+| **TZ-157** | Мониторинг — Sentry + Health Check + Uptime | 3-4h | — |
+
+### 🟢 MEDIUM (4 задачи)
+
+| TZ | Название | Оценка | Dependencies |
+|----|----------|--------|--------------|
+| **TZ-158** | Performance budgets + bundle analyzer | 2-3h | TZ-151 |
+| **TZ-159** | Circular dependency detection (Madge) | 1-2h | — |
+| **TZ-160** | A11y audit в CI (nightly, non-blocking) | 2-3h | TZ-151 |
+| **TZ-161** | Lighthouse CI — performance regression | 2-3h | TZ-151 |
+
+### 🔵 LOW (3 задачи)
+
+| TZ | Название | Оценка | Dependencies |
+|----|----------|--------|--------------|
+| **TZ-162** | Swagger decorators audit | 2-3h | TZ-155 |
+| **TZ-163** | Structured logging — requestId, traceId | 2-3h | — |
+| **TZ-164** | Husky + lint-staged pre-commit hooks | 1-2h | TZ-150, TZ-153 |
+
+### 🆕 TZ-165 — Layout audit form-dialog components
+
+| TZ | Название | Оценка | Dependencies |
+|----|----------|--------|--------------|
+| **TZ-165** | Layout audit всех form-dialog (12 диалогов) + overflow-y:auto для pi-dialog form variant | 1-2h | TZ-104.4 |
+
+**Результат аудита:** Ни один другой диалог не имеет точного такого же бага, как table-template-dialog (two-section layout с height:100%). Но найдена общая проблема: `pi-dialog.component.ts` form variant body не имеет `overflow-y: auto`, что может обрезать контент при многих FormArray-строках. Рекомендация: добавить `overflow-y: auto` в bodyClass для form variant + `min-height: 0` для 5 form-dialog с FormArray.
+
+Подробности: `tasks/TZ-165.md`
+
+### 📋 Дополнительные TZ-кандидаты (из ревью)
+
+- **MongoDB indexes audit** — проверить все 65+ схем на дубликаты/отсутствие индексов
+- **Frontend error boundary** — fallback UI при ошибках рендера компонента
+- **Backend unified error codes** — единый формат ошибок для всех endpoint'ов
+
 ## 📊 Метрики проекта
 
 | Слой | Метрика | Значение |
@@ -514,6 +573,23 @@ kppdf-8.0/
 - TZ-AUDIT-6 (focus-ring), TZ-AUDIT-8 (hairline-first borders), TZ-AUDIT-9 (warm-paper palette) — TZ-90 их НЕ ломает (только потребляет).
 
 **STATUS:** ⏳ READY — spec committed, execution pending.
+
+## 🔥 IN WORK (агенты работают)
+
+| TZ | Дата старта | Описание | Статус |
+|---|---|---|---|
+
+## ✅ DONE (недавно завершены)
+
+| TZ | Дата | Описание | Архив |
+|---|---|---|---|
+| TZ-102 | 2026-07-19 | Backend route gaps (Currency module + Modules rename + Inventory summary) | `tasks/_archive/2026-07/TZ-102.md.done` |
+| TZ-110 | 2026-07-19 | Category backend safety — cycle prevention + existing safety sweep | `tasks/_archive/2026-07/TZ-110.md.done` |
+| TZ-111 | 2026-07-19 | Builder bulk-delete race condition — partial success + snapshot rollback | `tasks/_archive/2026-07/TZ-111.md.done` |
+| TZ-115 | 2026-07-19 | Inventory pages — error toast + httpResource migration | `tasks/_archive/2026-07/TZ-115.md.done` |
+| TZ-104 | 2026-07-19 | Pi-* UI-kit adoption (switches + pi-table + textarea + checkbox) | `tasks/_archive/2026-07/TZ-104.md.done` |
+| TZ-120 | 2026-07-19 | Global Soft-Delete Mongoose plugin | `tasks/_archive/2026-07/TZ-120.md.done` |
+| TZ-103 | 2026-07-19 | Dialog system audit + 4-bug fix (close · positioning · tab-switch · buttons) | `tasks/_archive/2026-07/TZ-103.md.done` |
 
 ## 🚀 Следующие шаги (предложения)
 

@@ -21,10 +21,14 @@ import {
   TableTemplate,
   TableTemplatesService,
 } from '../../../shared/services/pi-table-templates.service';
-import { TableTemplateFormDialogComponent } from './table-template-dialog.component';
+import { TableTemplateFormDialogComponent, type TableTemplateDialogConfig } from './table-template-dialog.component';
 import { pluralRu } from '../../../shared/util/russian-plural';
 
 const RU_TEMPLATES = ['шаблон', 'шаблона', 'шаблонов'] as const;
+
+/**
+ * Полная документация страницы: docs/pages/tables.page.md
+ */
 
 type SortKey = 'name' | 'category' | 'sortOrder' | null;
 type SortDir = 'asc' | 'desc';
@@ -62,9 +66,14 @@ type SortDir = 'asc' | 'desc';
         </div>
         <span class="tables-count-badge eyebrow">{{ data().length }} {{ totalLabel(data().length) }}</span>
       </div>
-      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
-        + Создать
-      </app-pi-button>
+      <div class="tables-toolbar-actions">
+        <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
+          + Новая таблица
+        </app-pi-button>
+        <app-pi-button variant="ghost" (click)="openFromRegistry()" data-test="registry-button">
+          &#x21C4; Из существующих данных
+        </app-pi-button>
+      </div>
     </div>
 
     @if (error()) {
@@ -132,15 +141,30 @@ type SortDir = 'asc' | 'desc';
                     </div>
                   </td>
                   <td class="text-right">
-                    <app-pi-row-actions
-                      [row]="row"
-                      [editLabel]="'Редактировать ' + row.name"
-                      [deleteLabel]="'Удалить ' + row.name"
-                      [dataTestEdit]="'edit-button-' + row._id"
-                      [dataTestDelete]="'delete-button-' + row._id"
-                      (edit)="openEdit($event)"
-                      (delete)="onDelete($event)"
-                    />
+                    <div class="tables-row-actions">
+                      <button
+                        type="button"
+                        class="pi-icon-btn pi-focus-ring"
+                        [attr.aria-label]="'Копировать ' + row.name"
+                        [attr.data-test]="'copy-button-' + row._id"
+                        (click)="onCopy(row)"
+                        title="Копировать шаблон"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                      </button>
+                      <app-pi-row-actions
+                        [row]="row"
+                        [editLabel]="'Редактировать ' + row.name"
+                        [deleteLabel]="'Удалить ' + row.name"
+                        [dataTestEdit]="'edit-button-' + row._id"
+                        [dataTestDelete]="'delete-button-' + row._id"
+                        (edit)="openEdit($event)"
+                        (delete)="onDelete($event)"
+                      />
+                    </div>
                   </td>
                 </tr>
               }
@@ -199,6 +223,11 @@ type SortDir = 'asc' | 'desc';
       gap: 16px;
       flex: 1;
       min-width: 0;
+    }
+    .tables-toolbar-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
     }
     .tables-search-wrap { position: relative; width: 100%; max-width: 288px; }
     .tables-search-icon {
@@ -295,6 +324,12 @@ type SortDir = 'asc' | 'desc';
       font-size: 14px;
     }
 
+    .tables-row-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+    }
     .tables-promo {
       margin-top: 32px;
       padding: 24px;
@@ -394,8 +429,15 @@ export class TablesPage {
 
   protected openCreate(): void {
     const ref = this.dialog.open(TableTemplateFormDialogComponent, {
-      data: null,
-      width: 'xl',
+      data: { mode: 'new' } as TableTemplateDialogConfig,
+      parentDestroyRef: this.destroyRef,
+    });
+    this.refreshOnDialogClose(ref);
+  }
+
+  protected openFromRegistry(): void {
+    const ref = this.dialog.open(TableTemplateFormDialogComponent, {
+      data: { mode: 'from-registry' } as TableTemplateDialogConfig,
       parentDestroyRef: this.destroyRef,
     });
     this.refreshOnDialogClose(ref);
@@ -403,8 +445,15 @@ export class TablesPage {
 
   protected openEdit(template: TableTemplate): void {
     const ref = this.dialog.open(TableTemplateFormDialogComponent, {
-      data: template,
-      width: 'xl',
+      data: { template } as TableTemplateDialogConfig,
+      parentDestroyRef: this.destroyRef,
+    });
+    this.refreshOnDialogClose(ref);
+  }
+
+  protected onCopy(template: TableTemplate): void {
+    const ref = this.dialog.open(TableTemplateFormDialogComponent, {
+      data: { template, mode: 'duplicate' } as TableTemplateDialogConfig,
       parentDestroyRef: this.destroyRef,
     });
     this.refreshOnDialogClose(ref);

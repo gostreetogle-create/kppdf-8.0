@@ -67,8 +67,8 @@ export class DataBindingDto {
 export class CreateTemplateBlockDto {
   @IsObjectId() templateId!: string;
 
-  @IsIn(['header', 'text', 'table', 'image', 'signature'])
-  type!: 'header' | 'text' | 'table' | 'image' | 'signature';
+  @IsIn(['header', 'text', 'table', 'image', 'signature', 'spacer'])
+  type!: 'header' | 'text' | 'table' | 'image' | 'signature' | 'spacer';
 
   @IsNumber() @Min(0)
   order!: number;

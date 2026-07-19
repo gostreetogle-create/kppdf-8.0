@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { optimisticLockPlugin } from '../../common/mongoose';
 
 @Schema({ _id: false })
 class ProdDimensionsSchema {
@@ -94,4 +95,5 @@ export class Product {
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
+ProductSchema.plugin(optimisticLockPlugin);
 ProductSchema.index({ status: 1, isActive: 1 });

@@ -175,8 +175,8 @@ export class PiDialogComponent {
   });
 
   onUserClose(): void {
-    this.ref.close();
     this.userClose.emit();
+    this.ref.close();
   }
 
   /**

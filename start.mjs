@@ -1061,6 +1061,29 @@ async function main() {
   // На Windows child.pid теперь pnpm.cmd напрямую (DEP0190 fix, TZ-44). Раньше был
   // cmd.exe wrapper — теперь PIDs в .start.pids.json точные и можно kill через taskkill /T /F.
 
+  // TZ-92c: MCP auto-start (optional, non-blocking)
+  const MCP_BIN = join(ROOT, 'vendor', 'codebase-memory-mcp', 'bin', 'codebase-memory-mcp.exe');
+  if (existsSync(MCP_BIN)) {
+    const port9749InUse = await isPortInUse(9749);
+    if (!port9749InUse) {
+      log.info('Запуск MCP codebase-memory…');
+      const mcp = spawn(MCP_BIN, ['--ui=true'], {
+        cwd: ROOT,
+        stdio: ['ignore', 'pipe', 'pipe'],
+        detached: !isWin,
+        windowsHide: true,
+      });
+      mcp.unref(); // don't keep process alive for MCP
+      log.dim(`MCP pid=${mcp.pid} · HTTP UI http://127.0.0.1:9749`);
+      mcp.stdout.on('data', (c) => { /* silently consume — MCP logs are for debug */ });
+      mcp.stderr.on('data', (c) => { /* silently consume */ });
+    } else {
+      log.dim('MCP codebase-memory: порт 9749 уже занят — пропускаем');
+    }
+  } else {
+    log.dim('MCP codebase-memory: бинарь не найден — пропускаем');
+  }
+
   // Wait for endpoints
   log.step(6, 'Ожидание готовности endpoints');
   const backendOk = await waitFor(`${HOSTS.backend}/api/health`, 'backend /api/health', 120000, 'backend');

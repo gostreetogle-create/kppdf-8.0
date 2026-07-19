@@ -4,16 +4,16 @@ import {
   DestroyRef,
   Injector,
   OnInit,
+  TemplateRef,
+  ViewChild,
   computed,
   inject,
   signal,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
-import { FormsModule } from '@angular/forms';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
-import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
@@ -22,29 +22,41 @@ import { PiToastService } from '../../shared/ui/toast';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
-import { createSortState } from '../../shared/util/sort';
 import { createSearchState } from '../../shared/util/search';
 import { pluralize } from '../../shared/util/format';
+import { ColumnDef, SortDirection, TableComponent } from '../../shared/ui/pi-table.component';
 import {
   Organization,
   OrganizationsService,
+  ORG_TYPE_LABELS,
+  type OrgType,
   type OrganizationsListResponse,
 } from '../../shared/services/organizations.service';
 import { OrganizationFormDialogComponent } from './organization-form-dialog.component';
 
-type SortKey = 'name' | 'inn' | 'shortName';
+type SortKey = 'name' | 'inn' | 'shortName' | null;
 
+const PAGE_SIZE = 50;
+
+/**
+ * TZ-104.3 batch-2-A-mixed — OrganizationsPage migrated to <app-pi-table>,
+ * option β (canonical).
+ *
+ * Pattern A-mixed: backend honors page/limit/search but NOT sortBy.
+ * `[localSort]="true"` + `[initialSortKey/Dir]` seeded to name/asc.
+ * pi-table re-sorts the current 50-row server page slice on click.
+ * MANDATORY UX disclosure per recipe §4A.4 (sort only affects visible page).
+ */
 @Component({
   selector: 'app-organizations-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    FormsModule,
     PiPageHeaderComponent,
     PiSectionComponent,
     PiToolbarComponent,
-    PiEmptyStateComponent,
     PiRowActionsComponent,
     ButtonComponent,
+    TableComponent,
   ],
   template: `
     <app-pi-page-header
@@ -65,11 +77,7 @@ type SortKey = 'name' | 'inn' | 'shortName';
         data-test="search-input"
         class="pi-input w-72"
       />
-      <app-pi-button
-        variant="default"
-        (click)="openCreate()"
-        data-test="create-button"
-      >
+      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
         + Создать
       </app-pi-button>
       <span hint>{{ total() }} {{ totalLabel(total()) }}</span>
@@ -85,86 +93,50 @@ type SortKey = 'name' | 'inn' | 'shortName';
         </div>
       }
 
-      <div class="hairline rounded-sm overflow-x-auto">
-        <table class="w-full text-sm min-w-[640px]">
-          <thead class="hairline-b">
-            <tr>
-              <th
-                class="pi-cell eyebrow cursor-pointer select-none group text-left"
-                (click)="setSort('name')"
-              >
-                Название
-                <span [class.text-sunrise-warm]="isSortedBy('name')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('name') }}</span>
-              </th>
-              <th
-                class="pi-cell eyebrow cursor-pointer select-none group text-left"
-                (click)="setSort('shortName')"
-              >
-                Краткое
-                <span [class.text-sunrise-warm]="isSortedBy('shortName')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('shortName') }}</span>
-              </th>
-              <th
-                class="pi-cell eyebrow cursor-pointer select-none group text-left"
-                (click)="setSort('inn')"
-              >
-                ИНН
-                <span [class.text-sunrise-warm]="isSortedBy('inn')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIcon('inn') }}</span>
-              </th>
-              <th class="pi-cell eyebrow text-left">Типы</th>
-              <th class="pi-cell eyebrow w-40 text-right">Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of sortedRows(); track row._id) {
-              <tr
-                class="pi-table-row pi-table-row-odd last:border-0"
-                [attr.data-test]="'org-row-' + row._id"
-              >
-                <td class="pi-cell align-top font-medium">{{ row.name }}</td>
-                <td class="pi-cell align-top text-muted-foreground empty-cell">{{ row.shortName }}</td>
-                <td class="pi-cell align-top font-mono text-xs whitespace-nowrap">
-                  {{ row.inn }}
-                </td>
-                <td class="pi-cell align-top">
-                  <div class="flex flex-wrap gap-1">
-                    @for (t of (row.type || []); track t) {
-                      <span class="eyebrow text-[10px] px-2 py-1 hairline rounded-sm">
-                        {{ t }}
-                      </span>
-                    }
-                  </div>
-                </td>
-                <td class="pi-cell align-top">
-                  <app-pi-row-actions
-                    [row]="row"
-                    [editLabel]="'Редактировать ' + row.name"
-                    [deleteLabel]="'Удалить ' + row.name"
-                    [dataTestEdit]="'edit-button-' + row._id"
-                    [dataTestDelete]="'delete-button-' + row._id"
-                    (edit)="openEdit($event)"
-                    (delete)="onDelete($event)"
-                  />
-                </td>
-              </tr>
-            }
-            @if (sortedRows().length === 0 && !loading()) {
-              <app-pi-empty-state
-                [colspan]="5"
-                [message]="searchQuery()
-                  ? 'Ничего не найдено.'
-                  : 'Нет организаций. Нажмите «Создать», чтобы добавить первую.'"
-                state="empty"
-              />
-            }
-            @if (loading() && sortedRows().length === 0) {
-              <app-pi-empty-state
-                [colspan]="5"
-                message="Загрузка…"
-                state="loading"
-              />
-            }
-          </tbody>
-        </table>
+      <p data-test="sort-disclosure" class="text-[10px] text-muted-foreground mb-2">
+        Сортировка применяется только к текущей странице ({{ PAGE_SIZE }} записей).
+      </p>
+
+      <div class="overflow-x-auto hairline rounded-sm">
+        <app-pi-table
+          [data]="data()"
+          [columns]="cols"
+          [loading]="loading()"
+          [total]="total()"
+          [page]="page()"
+          [pageSize]="PAGE_SIZE"
+          [emptyMessage]="emptyMessage()"
+          [ariaLabel]="'Список организаций'"
+          [cellTemplates]="cellTemplates"
+          [rowActions]="rowActionsTplBinding"
+          [localSort]="true"
+          [initialSortKey]="'name'"
+          [initialSortDir]="'asc'"
+          (pageChange)="onPageChange($event)"
+          (sortChange)="onSortChange($event)"
+        >
+          <ng-template #rowActionsTpl let-row>
+            <app-pi-row-actions
+              [row]="row"
+              [editLabel]="'Редактировать ' + row.name"
+              [deleteLabel]="'Удалить ' + row.name"
+              [dataTestEdit]="'edit-button-' + row._id"
+              [dataTestDelete]="'delete-button-' + row._id"
+              (edit)="openEdit($event)"
+              (delete)="onDelete($event)"
+            />
+          </ng-template>
+
+          <ng-template #typeTpl let-row>
+            <div class="flex flex-wrap gap-1">
+              @for (t of (row.type || []); track t) {
+                <span class="eyebrow text-[10px] px-2 py-1 hairline rounded-sm">
+                  {{ orgTypeLabel(t) }}
+                </span>
+              }
+            </div>
+          </ng-template>
+        </app-pi-table>
       </div>
     </app-pi-section>
   `,
@@ -177,58 +149,76 @@ export class OrganizationsPage implements OnInit {
   private readonly injector = inject(Injector);
   private readonly baseUrl = inject(API_BASE_URL);
 
+  protected readonly PAGE_SIZE = PAGE_SIZE;
+  protected readonly page = signal<number>(1);
+
+  private readonly sortKeySig = signal<SortKey>('name');
+  private readonly sortDirSig = signal<'asc' | 'desc' | null>('asc');
+
   private readonly search = createSearchState(300);
-  private readonly sort = createSortState<SortKey>('name');
+  protected readonly searchQuery = this.search.searchQuery;
 
   protected readonly listRes = httpResource<OrganizationsListResponse>(() => ({
     url: `${this.baseUrl}/organizations`,
     params: {
-      page: 1,
-      limit: 50,
+      page: this.page(),
+      limit: PAGE_SIZE,
       ...(this.search.debouncedSearch() ? { search: this.search.debouncedSearch() } : {}),
     },
   }));
 
-  protected readonly data = computed<Organization[]>(
-    () => this.listRes.value()?.items ?? [],
-  );
-  protected readonly total = computed<number>(
-    () => this.listRes.value()?.total ?? this.data().length,
-  );
+  protected readonly data = computed<Organization[]>(() => this.listRes.value()?.items ?? []);
+  protected readonly total = computed<number>(() => this.listRes.value()?.total ?? this.data().length);
   protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
   protected readonly error = computed<string | null>(() => {
     const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
     return err ? extractErrorMessage(err) : null;
   });
 
-  protected readonly sortedRows = this.sort.sorted(this.data(), (r) => {
-    const k = this.sort.sortKey();
-    if (!k) return null;
-    return (r as any)[k];
-  });
+  protected readonly emptyMessage = computed(() =>
+    this.searchQuery()
+      ? 'Ничего не найдено.'
+      : 'Нет организаций. Нажмите «Создать», чтобы добавить первую.',
+  );
 
-  protected readonly searchQuery = this.search.searchQuery;
+  protected readonly cols: ColumnDef<Organization>[] = [
+    { key: 'name', label: 'Название', sortable: true, sticky: 'left' },
+    { key: 'shortName', label: 'Краткое', sortable: true, cellClass: 'empty-cell' },
+    { key: 'inn', label: 'ИНН', sortable: true, cellClass: 'font-mono text-xs whitespace-nowrap' },
+    { key: 'type', label: 'Типы' },
+  ];
 
-  ngOnInit(): void {}
+  @ViewChild('rowActionsTpl', { static: true })
+  private readonly rowActionsTplRef!: TemplateRef<{ $implicit: Organization }>;
 
-  private refreshOnDialogClose<TResult>(ref: DialogRef<TResult>): void {
-    onDialogCloseOnce(ref, this.injector, () => this.listRes.reload());
+  @ViewChild('typeTpl', { static: true })
+  private readonly typeTplRef!: TemplateRef<{ $implicit: Organization }>;
+
+  protected cellTemplates: Record<string, TemplateRef<{ $implicit: Organization }>> = {};
+  protected rowActionsTplBinding: TemplateRef<{ $implicit: Organization }> | null = null;
+
+  ngOnInit(): void {
+    this.destroyRef.onDestroy(() => this.search.destroy());
+    this.cellTemplates = { type: this.typeTplRef };
+    this.rowActionsTplBinding = this.rowActionsTplRef;
+  }
+
+  protected orgTypeLabel(t: OrgType): string {
+    return ORG_TYPE_LABELS[t] ?? t;
   }
 
   protected onSearchInput(event: Event): void {
     this.search.onSearchInput(event);
+    this.page.set(1);
   }
 
-  protected setSort(key: SortKey): void {
-    this.sort.setSort(key);
+  protected onPageChange(p: number): void {
+    this.page.set(p);
   }
 
-  protected sortIcon(key: SortKey): string {
-    return this.sort.sortIcon(key);
-  }
-
-  protected isSortedBy(key: SortKey): boolean {
-    return this.sort.isSortedBy(key);
+  protected onSortChange(event: { key: string; dir: SortDirection }): void {
+    this.sortKeySig.set(event.dir === null ? null : (event.key as Exclude<SortKey, null>));
+    this.sortDirSig.set(event.dir === null ? 'asc' : event.dir);
   }
 
   protected totalLabel(n: number): string {
@@ -277,7 +267,7 @@ export class OrganizationsPage implements OnInit {
     });
   }
 
-  protected reload(): void {
-    this.listRes.reload();
+  private refreshOnDialogClose<TResult>(ref: DialogRef<TResult>): void {
+    onDialogCloseOnce(ref, this.injector, () => this.listRes.reload());
   }
 }

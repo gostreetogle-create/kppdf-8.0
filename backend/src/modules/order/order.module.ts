@@ -6,6 +6,7 @@ import { OrderController } from './order.controller';
 import { CounterModule } from '../counter/counter.module';
 import { ReservationModule } from '../reservation/reservation.module';
 import { ShipmentModule } from '../shipment/shipment.module';
+import { SessionRunner } from '../../common/db/session-runner';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { ShipmentModule } from '../shipment/shipment.module';
     ShipmentModule,
   ],
   controllers: [OrderController],
-  providers: [OrderService],
+  providers: [OrderService, SessionRunner],
   exports: [OrderService, MongooseModule],
 })
 export class OrderModule {}

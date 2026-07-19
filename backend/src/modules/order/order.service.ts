@@ -1,24 +1,28 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { ClientSession, Model, Types } from 'mongoose';
 import { Order, OrderDocument, OrderItem } from './order.schema';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { CounterService } from '../counter/counter.service';
 import { ReservationService } from '../reservation/reservation.service';
 import { ShipmentService } from '../shipment/shipment.service';
+import { SessionRunner } from '../../common/db/session-runner';
 
 @Injectable()
 export class OrderService {
+  private readonly logger = new Logger(OrderService.name);
+
   constructor(
     @InjectModel(Order.name)
     private readonly model: Model<OrderDocument>,
     private readonly counter: CounterService,
     private readonly reservationService: ReservationService,
     private readonly shipmentService: ShipmentService,
+    private readonly sessionRunner: SessionRunner,
   ) {}
 
-  async create(dto: CreateOrderDto): Promise<OrderDocument> {
+  async create(dto: CreateOrderDto, session?: ClientSession): Promise<OrderDocument> {
     const number = dto.number ?? (await this.counter.next('Order', 'ORD'));
     const items: OrderItem[] = dto.items.map((i) => ({
       productId: new Types.ObjectId(i.productId),
@@ -30,7 +34,7 @@ export class OrderService {
       total: (i.quantity ?? 0) * (i.unitPrice ?? 0),
     }));
     const total = items.reduce((s, i) => s + i.total, 0);
-    return this.model.create({
+    const doc = new this.model({
       number,
       counterpartyId: new Types.ObjectId(dto.counterpartyId),
       quotationId: dto.quotationId ? new Types.ObjectId(dto.quotationId) : undefined,
@@ -45,6 +49,12 @@ export class OrderService {
       priority: dto.priority ?? 'normal',
       items,
     });
+    if (session) {
+      await doc.save({ session });
+    } else {
+      await doc.save();
+    }
+    return doc;
   }
 
   async findAll(
@@ -110,25 +120,31 @@ export class OrderService {
     warehouseId: string,
     zoneName?: string,
   ): Promise<{ order: OrderDocument; reservationIds: string[] }> {
-    const order = await this.findById(id);
-    const reservationIds: string[] = [];
-    for (const item of order.items) {
-      const reservation = await this.reservationService.create({
-        orderId: order.number,
-        productId: item.productId.toString(),
-        warehouseId,
-        qty: item.quantity,
-        zoneName,
-      });
-      reservationIds.push(reservation._id.toString());
-    }
-    order.reservationIds = [
-      ...(order.reservationIds ?? []),
-      ...reservationIds.map((rid) => new Types.ObjectId(rid)),
-    ];
-    order.status = 'confirmed';
-    await order.save();
-    return { order, reservationIds };
+    return this.sessionRunner.run(async (session) => {
+      const order = await this.model.findById(id).session(session).exec();
+      if (!order) throw new NotFoundException(`Order ${id} not found`);
+      const reservationIds: string[] = [];
+      for (const item of order.items) {
+        const reservation = await this.reservationService.create(
+          {
+            orderId: order.number,
+            productId: item.productId.toString(),
+            warehouseId,
+            qty: item.quantity,
+            zoneName,
+          },
+          session,
+        );
+        reservationIds.push(reservation._id.toString());
+      }
+      order.reservationIds = [
+        ...(order.reservationIds ?? []),
+        ...reservationIds.map((rid) => new Types.ObjectId(rid)),
+      ];
+      order.status = 'confirmed';
+      await order.save({ session });
+      return { order, reservationIds };
+    });
   }
 
   async ship(
@@ -168,16 +184,31 @@ export class OrderService {
   }
 
   async cancel(id: string): Promise<OrderDocument> {
-    const order = await this.findById(id);
-    for (const rid of order.reservationIds ?? []) {
-      try {
-        await this.reservationService.release(rid.toString());
-      } catch {
-        // best-effort: ignore already-released
+    return this.sessionRunner.run(async (session) => {
+      const order = await this.model.findById(id).session(session).exec();
+      if (!order) throw new NotFoundException(`Order ${id} not found`);
+      const failures: string[] = [];
+      for (const rid of order.reservationIds ?? []) {
+        try {
+          await this.reservationService.release(rid.toString());
+        } catch (e) {
+          const msg = (e as Error).message ?? String(e);
+          this.logger.warn(`Reservation ${rid} release on cancel failed: ${msg}`);
+          failures.push(rid.toString());
+        }
       }
-    }
-    order.status = 'cancelled';
-    return order.save();
+      if (failures.length > 0) {
+        this.logger.error(
+          `Cancel failed: ${failures.length} reservation(s) could not be released — rolling back`,
+        );
+        throw new Error(
+          `Cancel aborted; reservation release failures: ${failures.join(', ')}`,
+        );
+      }
+      order.status = 'cancelled';
+      await order.save({ session });
+      return order;
+    });
   }
 
   async remove(id: string): Promise<void> {

@@ -26,6 +26,9 @@ import { pluralRu, RU_BLOCKS, RU_COLUMNS } from '../../../shared/util/russian-pl
 
 type SortDir = 'asc' | 'desc';
 
+/**
+ * Полная документация страницы: docs/pages/texts.page.md
+ */
 @Component({
   selector: 'app-texts-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -151,10 +154,7 @@ type SortDir = 'asc' | 'desc';
   `,
   styles: [`
     :host {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      min-height: 0;
+      display: block;
       padding: 0 0 8px;
     }
 
@@ -162,14 +162,10 @@ type SortDir = 'asc' | 'desc';
       display: flex;
       flex-direction: column;
       gap: 24px;
-      flex: 1;
-      min-height: 0;
     }
 
     .texts-editor-zone {
-      flex: 1;
       min-height: 0;
-      overflow-y: auto;
     }
 
     .texts-shell-empty {
@@ -207,8 +203,8 @@ type SortDir = 'asc' | 'desc';
     }
 
     .texts-catalog {
-      flex-shrink: 0;
-      height: 220px;
+      flex: 1;
+      min-height: 0;
       display: flex;
       flex-direction: column;
       background: var(--color-paper);

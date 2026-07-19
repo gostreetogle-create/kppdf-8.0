@@ -1,0 +1,232 @@
+═══════════════════════════════════════════════════════════════
+TZ-112: Table Template Dialog — column metadata preservation on field toggle + edit-mode init
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Component Engineer
+
+ЗАВИСИМОСТИ: Нет (изолированно в `frontend/pages/doc-constructor/tables/table-template-dialog.component.ts`)
+
+LAYER: 3 (edit существующего dialog component — СТРОГО 1 параллельный агент)
+
+CONFLICT KEYS: frontend/src/app/pages/doc-constructor/tables/table-template-dialog.component.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. `frontend/src/app/pages/doc-constructor/tables/table-template-dialog.component.ts` — режим `'from-registry'` (был TZ-101 + наращивание):
+
+   **Проблема A — Data loss при toggle fields:**
+
+   ```ts
+   private syncColumnsFromFields(): void {
+     const fields = this.selectedFields();
+     while (this.columnsArray.length > 0) {
+       this.columnsArray.removeAt(0);  // ← WIPE
+     }
+     for (const field of fields) {
+       this.columnsArray.push(this.makeColumnControl({
+         key: field.key,
+         label: field.label,
+         type: field.type as ColumnType,
+         width: 120,                         // ← ВСЕГДА 120, потеря width
+         align: field.type === 'number' || field.type === 'currency' ? 'right' : 'left',  // ← дефолт
+       }));
+     }
+   }
+   ```
+
+   Если юзер:
+   - Открыл dialog (loaded existing template)
+   - Source задан, fields выбраны с кастомными `width: 200px` и `align: 'center'` (сохранены в data.columns)
+   - Решил **добавить ещё одно поле** (toggleField) → `syncColumnsFromFields()` пёрфит columns, делает новые control'ы — но **ВСЕ ранее установленные width/align заменены дефолтами**. Если даже тот же key — width/align сбрасываются.
+
+   **Проблема B — info-gap, не «stateloss»:**
+
+   На edit + `dataSource` mount: `selectedFieldKeys` заполняется из `(data?.columns ?? []).map(c => c.key)`, что ОК. `syncColumnsFromFields()` НЕ вызывается на init — но form init делает seed через `(this.data?.columns ?? []).map(this.makeColumnControl)` — что **правильно наследует width/align из data** (т.к. control seed принимает `seed = c`). Так что **нет info-loss при mount**; только при live-toggle fields (Проблема A).
+
+   **Проблема C — mode toggle без предупреждения:**
+
+   ```ts
+   protected setMode(m: DialogMode): void {
+     this.mode.set(m);
+     // Нет: что делать с уже заполненными columns?
+   }
+   ```
+
+   Если юзер начал в mode = 'new' (заполнил 5 кастомных columns). Потом переключился на 'from-registry' (выбрал source, отметил fields — `syncColumnsFromFields()` сбросил columns к дефолтам!). **Пользователь теряет 5 минут работы.**
+
+2. `Form.silent service` (PI_DIALOG_DATA → TableTemplate with `columns: TableColumn[]`) хранит width и align как part of column data — мы их сохраняем, но при перезагрузке из data они инициализируются в form через `this.data?.columns.map(...)` что ОК. Проблема только при LIVE toggle во время edit.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Мерж при `syncColumnsFromFields()` — preserve customizations
+
+1.1. Изменить логику:
+
+```ts
+private syncColumnsFromFields(): void {
+  const fields = this.selectedFields();
+  // Snapshot текущих column controls ПЕРЕД wipe (по key → control data map)
+  const preservedByKey = new Map<string, TableColumnForm['value']>();
+  for (const ctrl of this.columnsArray.controls) {
+    const v = ctrl.getRawValue();
+    if (v.key) preservedByKey.set(v.key, v);
+  }
+  
+  while (this.columnsArray.length > 0) {
+    this.columnsArray.removeAt(0);
+  }
+  for (const field of fields) {
+    const preserved = preservedByKey.get(field.key);
+    const seed: TableColumn = preserved ? {
+      key: field.key,
+      label: preserved.label || field.label,           // МЕРЖ label
+      type: (preserved.type ?? field.type) as ColumnType, // МЕРЖ type (если юзер изменил)
+      width: preserved.width && preserved.width !== 120 ? preserved.width : (field.type === 'number' ? 100 : 120),
+      align: (preserved.align ?? (field.type === 'number' || field.type === 'currency' ? 'right' : 'left')) as 'left' | 'center' | 'right',
+      ...(preserved.format ? { format: preserved.format } : {}),
+    } : {
+      key: field.key,
+      label: field.label,
+      type: field.type as ColumnType,
+      width: 120,
+      align: (field.type === 'number' || field.type === 'currency' ? 'right' : 'left') as const,
+    };
+    this.columnsArray.push(this.makeColumnControl(seed));
+  }
+  this.previewTick.update(n => n + 1);
+}
+```
+
+1.2. Ключевой инвариант: если юзер явно изменил width ИЛИ align (отличное от auto-derived дефолта), оно НЕ должно сбрасываться при повторном toggle.
+
+ШАГ 2: Init в edit-mode **НЕ вызывает** `syncColumnsFromFields()` (устранено противоречие из раннего черновика)
+
+2.1. **Verified (2026-07-12 review):** form init уже правильно seeds из `data.columns` через `(this.data?.columns ?? []).map(this.makeColumnControl)`. Эта ветка **НЕ требует** `syncColumnsFromFields()` в constructor — она бы скорее навредила бы, восстановив БÁSЕ дефолты width=120 и потенциально затерев edit-set в data.
+
+2.2. **Финальная стратегия (после review):**
+- Init: оставить как сейчас (form init correctly seeds from data).
+- Live toggle fields: ШАГ 1 merge logic (preservedByKey map) триггерится через `syncColumnsFromFields()`.
+- Mode switch: ШАГ 3 confirmation dialog.
+
+2.3. **НЕ ДОБАВЛЯТЬ** `syncColumnsFromFields()` в constructor — ранее отмеченная опасная идея отвергнута.
+
+ШАГ 3: Подтверждение при mode switch с непустыми columns
+
+3.1. В `setMode()`:
+
+```ts
+protected setMode(m: DialogMode): void {
+  if (m === this.mode()) return;
+  if (this.columnsArray.length > 0 && this.hasUserCustomizations()) {
+    // Диалог подтверждения
+    const confirmed = window.confirm(
+      'Текущая структура колонок будет заменена. Продолжить?'
+    );
+    if (!confirmed) return;
+  }
+  this.mode.set(m);
+  if (m === 'from-registry' && this.allSources().length === 0) {
+    this.loadSources();
+  }
+}
+
+private hasUserCustomizations(): boolean {
+  return this.columnsArray.controls.some(c => {
+    const v = c.getRawValue();
+    return v.width !== 120 || (v.align ?? 'left') !== 'left';
+  });
+}
+```
+
+3.2. Использовать нативный `window.confirm` (минимально invasive, no dialog service wrapper needed для этой secondary confirm).
+
+  Альтернатива (для consistency с project style): использовать `PiDialogService` с `AlertDialogComponent` — open confirm в dialog. Но `PiDialogService` injected через constructor уже доступен если нужно.
+
+  **Рекомендация:** для TZ-112 начать с `window.confirm` — позже можно мигрировать.
+
+ШАГ 4: Limit on sampleRows JSON parse — safety vs DoS
+
+4.1. В `clientPreview()` computed:
+
+```ts
+const MAX_ROWS = 50;
+const MAX_CELL_LEN = 1000;
+// ...
+if (json.length > 50_000) {  // >50KB JSON → abort preview render
+  return null;  // тихо, без exception
+}
+const parsed = JSON.parse(json) as unknown;
+if (Array.isArray(parsed) && parsed.length > MAX_ROWS) {
+  return null;
+}
+```
+
+4.2. В `onSave()` `validate()`:
+
+```ts
+if (json) {
+  try {
+    if (json.length > 100_000) return 'Образцы строк слишком большие (>100KB).';
+    const parsed: unknown = JSON.parse(json);
+    // ... existing validation
+  } catch { /* existing */ }
+}
+```
+
+ШАГ 5: Тесты на metadata preservation
+
+5.1. `frontend/src/app/pages/doc-constructor/tables/table-template-dialog.component.spec.ts` NEW:
+
+- Тест: load existing template with width=200 align=center → edit → toggle some fields → verify the unchanged columns retain width=200 and align=center.
+- Тест: large sampleRows JSON (>100KB) → preview returns null без throw.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- `frontend/src/app/pages/doc-constructor/tables/table-template-dialog.component.ts`   merge logic в `syncColumnsFromFields()`, mode switch confirmation, sampleRows limit
+- `frontend/src/app/pages/doc-constructor/tables/table-template-dialog.component.spec.ts`   NEW, ~100 LoC
+
+НЕ ИЗМЕНЯТЬ:
+- `frontend/src/app/shared/services/pi-table-templates.service.ts` (TZ-110 backend transactions если touch, не тут)
+- `frontend/src/app/pages/doc-constructor/tables/tables.page.ts` (page list, not dialog)
+- `frontend/src/app/pages/doc-constructor/builder/builder.page.ts` (TZ-111, different conflict key)
+- `_templates/*`, `progress.md`
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm exec tsc -p tsconfig.app.json --noEmit` → exit 0.
+2. `pnpm exec jest frontend/src/app/pages/doc-constructor/tables/table-template-dialog.component.spec.ts` → все тесты pass.
+3. Manual E2E: edit template, change column width 120→250, switch checkbox for an unrelated field → verify width 250 сохраняется.
+4. Manual E2E: huge sampleRows JSON (60KB) → preview депктит null без зависания UI.
+5. Manual E2E: switch mode 'new' → 'from-registry' с непустыми columns → confirmation показывается.
+6. ripgrep: «style="width: 120px"» без conditional check → 0 hits.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ (для параллельных запусков)
+═══════════════════════════════════════════════════════════════
+
+Layer 3 = СТРОГО 1. Любой TZ, трогающий `frontend/src/app/pages/doc-constructor/tables/table-template-dialog.component.ts` — STOP.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+TZF-00 шаги 1-9 после завершения + lock `.mimocode/locks/TZ-112-dialog-sync-preserve.lock` + архивация в `_archive/2026-07/TZ-112.done.txt`.
+
+═══════════════════════════════════════════════════════════════
+ПОДСКАЗКИ ДЛЯ PO
+═══════════════════════════════════════════════════════════════
+
+— Этот TZ критичен только при REUSE workflow (edit → adjust). Если у юзеров нет такой привычки — может быть отложен до user-facing bug reports.
+
+— Альтернатива для ШАГ 3 (подтверждение): рендерить кнопку "Применить" в toolbar — пользователь явно подтверждает. Но это больше refactor.
+
+— Если TZ-110 ещё не done — порядок не важен, это frontend-only.

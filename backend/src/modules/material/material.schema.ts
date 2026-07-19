@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { optimisticLockPlugin } from '../../common/mongoose';
 
 export type MaterialDocument = HydratedDocument<Material>;
 
@@ -77,6 +78,7 @@ export class Material {
 }
 
 export const MaterialSchema = SchemaFactory.createForClass(Material);
+MaterialSchema.plugin(optimisticLockPlugin);
 
 // Индекс для частого запроса «все материалы конкретного поставщика».
 MaterialSchema.index({ supplierId: 1 });

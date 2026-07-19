@@ -799,7 +799,7 @@
     /* TZ-DIALOG-OVERFLOW-FIX rounds 1 + 3 (must-NOT-regress): */
     max-height: 90vh !important;
     overflow-x: clip !important;
-    overflow-y: auto !important;
+    overflow-y: clip !important;
   }
 }
 

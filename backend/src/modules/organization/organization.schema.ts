@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { optimisticLockPlugin } from '../../common/mongoose';
 
 export type OrganizationDocument = HydratedDocument<Organization>;
 
@@ -100,3 +101,4 @@ export class Organization {
 }
 
 export const OrganizationSchema = SchemaFactory.createForClass(Organization);
+OrganizationSchema.plugin(optimisticLockPlugin);

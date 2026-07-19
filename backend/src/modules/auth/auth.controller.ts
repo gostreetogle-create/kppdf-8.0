@@ -6,7 +6,9 @@ import {
   Post,
   UseGuards,
   Get,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
 import {
@@ -33,38 +35,19 @@ export class AuthController {
     private readonly users: UserService,
   ) {}
 
-  /**
-   * Public /auth/register endpoint.
-   *
-   * CURRENTLY @Public() (TZ-91 �2 Decision 1 deferred): removing @Public requires
-   * invite-flow endpoint `POST /api/users/invite` (TZ-91-extension, out of scope here).
-   *
-   * Defense-in-depth: RegisterDto.role is constrained `@IsIn(['user','manager'])`, so even
-   * with @Public() in place, no admin account can be created via this endpoint � admin
-   * accounts exist only via:
-   *   (a) `backend/src/common/seed/admin.seed.ts` (first admin on fresh bootstrap), or
-   *   (b) future TZ-91-extension invite-flow (manual admin creates manager accounts).
-   *
-   * TODO TZ-91-extension: replace @Public() with @Roles('admin') once invite-flow ships.
-   */
   @Public()
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  register(@Body() dto: RegisterDto) {
-    return this.auth.register(dto);
+  register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
+    return this.auth.register(dto, res);
   }
 
-  /**
-   * TZ-91 �4 Phase A.3: rate-limit �� /auth/login � 5 req/min (short) + 20 req/hour (long),
-   * brute-force prevention. Global @nestjs/throttler (TZ-18) still applies; local @Throttle
-   * overrides global ��� ����� endpoint.
-   */
   @Public()
   @Throttle({ short: { ttl: 60_000, limit: 5 }, long: { ttl: 3_600_000, limit: 20 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  login(@Body() dto: LoginDto) {
-    return this.auth.login(dto);
+  login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
+    return this.auth.login(dto, res);
   }
 
   @Public()
@@ -74,25 +57,20 @@ export class AuthController {
   async refresh(
     @Body() _dto: RefreshTokenDto,
     @CurrentUser() payload: RefreshPayload,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.auth.refresh(payload.id, payload.version);
+    return this.auth.refresh(payload.id, payload.version, res);
   }
 
   @Post('logout')
   @Roles('admin', 'manager', 'user')
   @HttpCode(HttpStatus.OK)
-  async logout(@CurrentUser() me: AuthenticatedUser) {
+  async logout(@CurrentUser() me: AuthenticatedUser, @Res({ passthrough: true }) res: Response) {
     await this.auth.logout(me.id);
+    res.clearCookie('refreshToken', { path: '/auth' });
     return { ok: true };
   }
 
-  /**
-   * TZ-92 Phase 1: GET /auth/me now routes through `AuthService.getMe` which
-   * returns the safe `AuthUserPayload` projection (id, username, email,
-   * displayName, role, permissions) — NOT the full UserDocument. This closes
-   * HIGH QA-01:1.4 (refreshTokenVersion / passwordHash / soft-delete fields
-   * no longer leak through this endpoint).
-   */
   @Get('me')
   async me(@CurrentUser() me: AuthenticatedUser) {
     return this.auth.getMe(me.id);
