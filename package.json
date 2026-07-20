@@ -16,7 +16,14 @@
     "reset:start": "node start.mjs --reset",
     "start:no-browser": "node start.mjs --no-browser",
     "start:prod": "node start.mjs --prod",
-    "check:page-docs": "npx tsx scripts/check-page-docs.ts"
+    "check:page-docs": "npx tsx scripts/check-page-docs.ts",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "frontend/src/**/*.{ts,html,css}": [
+      "node ./node_modules/prettier/bin/prettier.cjs --write",
+      "node ./node_modules/eslint/bin/eslint.js --fix"
+    ]
   },
   "comments": {
     "start": "Default: pre-flight checks only (safe, exits cleanly). Use `npm run start:all` to actually start everything.",
@@ -27,5 +34,9 @@
     "reset:start": "Полный сброс: docker down -v + rm node_modules.",
     "start:no-browser": "Запуск без авто-открытия браузера.",
     "mcp:start": "Запустить codebase-memory MCP server напрямую (stdio transport). Для обычного использования MCP читается из .mcp.json автоматически."
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.1.0"
   }
 }
