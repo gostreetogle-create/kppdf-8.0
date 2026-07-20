@@ -257,7 +257,8 @@ type SortDir = 'asc' | 'desc';
     }
     .texts-search-input:focus {
       outline: none;
-      box-shadow: 0 0 0 1px var(--color-sunrise-warm);
+      outline: 1px solid var(--color-sunrise-warm);
+      outline-offset: -1px;
     }
 
     .texts-catalog-scroll {
@@ -298,7 +299,7 @@ type SortDir = 'asc' | 'desc';
     }
     .texts-table-row.is-active {
       background: color-mix(in oklch, var(--color-sunrise-warm) 8%, transparent);
-      box-shadow: inset 4px 0 0 var(--color-sunrise-warm);
+      border-left: 4px solid var(--color-sunrise-warm);
     }
     .texts-table-row.is-inactive-row { opacity: 0.72; }
 

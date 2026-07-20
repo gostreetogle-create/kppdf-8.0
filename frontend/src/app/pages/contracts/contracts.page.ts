@@ -3,7 +3,6 @@ import {
   Component,
   DestroyRef,
   Injector,
-  OnInit,
   TemplateRef,
   ViewChild,
   computed,
@@ -275,7 +274,12 @@ function organizationIdOf(row: Contract): string {
     </app-pi-section>
   `,
 })
-export class ContractsPage implements OnInit {
+export class ContractsPage {
+  constructor() {
+    this.counterpartiesLookup.load();
+    this.organizationsLookup.load();
+    this.destroyRef.onDestroy(() => this.search.destroy());
+  }
   private readonly service = inject(ContractsService);
   private readonly counterpartyService = inject(CounterpartyService);
   private readonly orgService = inject(OrganizationsService);
@@ -484,10 +488,6 @@ export class ContractsPage implements OnInit {
   protected rowActionsTplBinding: TemplateRef<{ $implicit: Contract }> | null = null;
 
   ngOnInit(): void {
-    this.counterpartiesLookup.load();
-    this.organizationsLookup.load();
-    this.destroyRef.onDestroy(() => this.search.destroy());
-
     // Build cell-template map + row-actions binding AFTER static
     // ViewChild fields resolve. Avoids TemplateRef<C> invariance
     // trap and Angular's signal-binding name-collision.

@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  OnInit,
   inject,
   signal,
 } from '@angular/core';
@@ -178,7 +177,20 @@ type Result = Organization | null | undefined;
     </app-pi-dialog>
   `,
 })
-export class OrganizationFormDialogComponent implements OnInit {
+export class OrganizationFormDialogComponent {
+  constructor() {
+    if (this.data) {
+      this.form.patchValue({
+        name: this.data.name,
+        shortName: this.data.shortName ?? null,
+        inn: this.data.inn,
+        kpp: this.data.kpp ?? null,
+        type: this.data.type ?? [],
+        signerName: this.data.signerName ?? null,
+        signerPosition: this.data.signerPosition ?? null,
+      });
+    }
+  }
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly service = inject(OrganizationsService);
   private readonly toast = inject(PiToastService);
@@ -201,20 +213,6 @@ export class OrganizationFormDialogComponent implements OnInit {
     signerName: this.fb.control<string | null>(null),
     signerPosition: this.fb.control<string | null>(null),
   });
-
-  ngOnInit(): void {
-    if (this.data) {
-      this.form.patchValue({
-        name: this.data.name,
-        shortName: this.data.shortName ?? null,
-        inn: this.data.inn,
-        kpp: this.data.kpp ?? null,
-        type: this.data.type ?? [],
-        signerName: this.data.signerName ?? null,
-        signerPosition: this.data.signerPosition ?? null,
-      });
-    }
-  }
 
   protected onTypeToggle(t: OrgType, checked: boolean): void {
     const current = this.form.controls.type.value ?? [];

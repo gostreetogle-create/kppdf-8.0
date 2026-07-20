@@ -369,7 +369,7 @@ export class BuilderPage {
   });
 
   protected readonly orientation = computed<'portrait' | 'landscape'>(() => {
-    return (this.template() as any)?.orientation ?? 'portrait';
+    return this.template()?.orientation ?? 'portrait';
   });
 
   // httpResource for the template picker (only used when no :id).
@@ -511,7 +511,7 @@ export class BuilderPage {
             if (!t) return t;
             const bg = [...(t.backgroundImage ?? [])];
             bg.splice(index, 1);
-            let defIdx = (t as any).defaultBackgroundIndex ?? -1;
+            let defIdx = t.defaultBackgroundIndex ?? -1;
             if (defIdx === index) defIdx = bg.length > 0 ? 0 : -1;
             else if (defIdx > index) defIdx--;
             return { ...t, backgroundImage: bg, defaultBackgroundIndex: defIdx };

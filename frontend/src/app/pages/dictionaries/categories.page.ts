@@ -299,7 +299,6 @@ const TYPE_COLORS: Record<Category['type'], string> = {
         background: var(--color-paper);
         border: 1px solid var(--color-ink);
         opacity: 0.92;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         border-radius: 4px;
       }
 
@@ -372,6 +371,7 @@ export class CategoriesPage {
   );
 
   constructor() {
+    this.destroyRef.onDestroy(() => this.search.destroy());
     effect(() => {
       const q = this.search.debouncedSearch().trim().toLowerCase();
       if (q) {
@@ -379,10 +379,6 @@ export class CategoriesPage {
         this.expandedIds.set(ids);
       }
     });
-  }
-
-  ngOnInit(): void {
-    this.destroyRef.onDestroy(() => this.search.destroy());
   }
 
   // ─── Tree helpers ───

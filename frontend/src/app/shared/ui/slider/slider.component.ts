@@ -67,7 +67,8 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
       cursor: pointer;
     }
     input[type='range']:focus-visible::-webkit-slider-thumb {
-      box-shadow: 0 0 0 2px var(--color-paper), 0 0 0 4px var(--color-ink);
+      outline: 2px solid var(--color-ink);
+      outline-offset: 2px;
     }
     input[type='range']:disabled { opacity: 0.5; cursor: not-allowed; }
   `],

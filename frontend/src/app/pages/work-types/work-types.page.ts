@@ -3,7 +3,6 @@ import {
   Component,
   DestroyRef,
   Injector,
-  OnInit,
   TemplateRef,
   ViewChild,
   computed,
@@ -160,7 +159,10 @@ function accessorFor(key: Exclude<SortKey, null>): (row: WorkType) => unknown {
     </app-pi-section>
   `,
 })
-export class WorkTypesPage implements OnInit {
+export class WorkTypesPage {
+  constructor() {
+    this.destroyRef.onDestroy(() => this.search.destroy());
+  }
   private readonly service = inject(WorkTypesService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
@@ -239,7 +241,6 @@ export class WorkTypesPage implements OnInit {
   protected rowActionsTplBinding: TemplateRef<{ $implicit: WorkType }> | null = null;
 
   ngOnInit(): void {
-    this.destroyRef.onDestroy(() => this.search.destroy());
     this.cellTemplates = { isActive: this.isActiveTplRef };
     this.rowActionsTplBinding = this.rowActionsTplRef;
   }

@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  OnInit,
   inject,
   signal,
 } from '@angular/core';
@@ -334,7 +333,15 @@ interface ItemFormGroup extends FormGroup {
     </app-pi-dialog>
   `,
 })
-export class ContractFormDialogComponent implements OnInit {
+export class ContractFormDialogComponent {
+  constructor() {
+    this.loadLookups();
+    if (this.data) {
+      this.patchFromData(this.data);
+    } else {
+      this.addItem();
+    }
+  }
   protected readonly STATUS_OPTIONS = STATUS_OPTIONS;
 
   private readonly fb = inject(NonNullableFormBuilder);
@@ -368,15 +375,6 @@ export class ContractFormDialogComponent implements OnInit {
 
   get itemsArray(): FormArray<ItemFormGroup> {
     return this.form.controls.items as FormArray<ItemFormGroup>;
-  }
-
-  ngOnInit(): void {
-    this.loadLookups();
-    if (this.data) {
-      this.patchFromData(this.data);
-    } else {
-      this.addItem();
-    }
   }
 
   private loadLookups(): void {

@@ -53,7 +53,6 @@ import {
       .pi-canvas-page-paper {
         background: oklch(var(--color-paper));
         border: 1.5px solid oklch(var(--color-rule));
-        box-shadow: 0 1px 4px oklch(0 0 0 / 0.08), 0 0 0 1px oklch(0 0 0 / 0.03);
         padding: 32px;
         min-height: calc(1.414 * min(100vw - 64px, 720px));
         position: relative;

@@ -228,7 +228,8 @@ import {
     .tbe-input:focus {
       outline: none;
       border-color: var(--color-ink);
-      box-shadow: 0 0 0 1px var(--color-sunrise-warm);
+      outline: 1px solid var(--color-sunrise-warm);
+      outline-offset: -1px;
     }
     .tbe-error { font-size: 12px; color: var(--color-destructive); }
 
@@ -383,12 +384,11 @@ import {
       padding: 16px;
       background: var(--color-paper-main, var(--color-paper));
       border: 2px solid var(--color-rule);
-      transition: border-color 120ms ease, opacity 120ms ease, box-shadow 120ms ease;
+      transition: border-color 120ms ease, opacity 120ms ease;
     }
     .tbe-col.is-active {
       background: var(--color-paper);
       border-color: var(--color-sunrise-warm);
-      box-shadow: 0 0 15px color-mix(in oklch, var(--color-sunrise-warm) 12%, transparent);
       opacity: 1;
     }
     .tbe-col.is-dimmed {

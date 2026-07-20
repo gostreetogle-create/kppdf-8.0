@@ -3,7 +3,6 @@ import {
   Component,
   DestroyRef,
   Injector,
-  OnInit,
   computed,
   inject,
   signal,
@@ -248,7 +247,7 @@ import { Photo } from '../../shared/services/photos.service';
     }
   `,
 })
-export class ProductDetailPage implements OnInit {
+export class ProductDetailPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly dialog = inject(PiDialogService);
@@ -321,10 +320,6 @@ export class ProductDetailPage implements OnInit {
   }));
   protected readonly costList = computed<CostCalculation[]>(() => this.costRes.value() ?? []);
   protected readonly recalculating = signal<boolean>(false);
-
-  ngOnInit(): void {
-    // productRes + costRes auto-fire;
-  }
 
   protected onBack(): void {
     this.router.navigate(['/products']);

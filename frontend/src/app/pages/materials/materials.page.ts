@@ -3,7 +3,6 @@ import {
   Component,
   DestroyRef,
   Injector,
-  OnInit,
   TemplateRef,
   ViewChild,
   computed,
@@ -189,7 +188,12 @@ const PAGE_SIZE = 50;
     </app-pi-section>
   `,
 })
-export class MaterialsPage implements OnInit {
+export class MaterialsPage {
+  constructor() {
+    this.suppliersLookup.load();
+    this.photosLookup.load();
+    this.destroyRef.onDestroy(() => this.search.destroy());
+  }
   private readonly service = inject(MaterialsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
@@ -351,10 +355,6 @@ export class MaterialsPage implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.suppliersLookup.load();
-    this.photosLookup.load();
-    this.destroyRef.onDestroy(() => this.search.destroy());
-
     // Build cell-template map + row-actions binding AFTER the static
     // @ViewChild fields resolve (static:true resolves BEFORE
     // ngOnInit). Targeting fields directly avoids the TemplateRef<C>

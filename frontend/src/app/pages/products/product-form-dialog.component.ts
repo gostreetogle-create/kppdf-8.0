@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  OnInit,
   inject,
   signal,
 } from '@angular/core';
@@ -315,7 +314,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
     </app-pi-dialog>
   `,
 })
-export class ProductFormDialogComponent implements OnInit {
+export class ProductFormDialogComponent {
   protected readonly KIND_OPTIONS = KIND_OPTIONS;
   protected readonly STATUS_OPTIONS = STATUS_OPTIONS;
   protected readonly DIMENSION_UNIT_OPTIONS = DIMENSION_UNIT_OPTIONS;
@@ -353,7 +352,7 @@ export class ProductFormDialogComponent implements OnInit {
     notes: this.fb.control<string | null>(null, [Validators.maxLength(4000)]),
   });
 
-  ngOnInit(): void {
+  constructor() {
     if (this.data) {
       this.form.patchValue({
         name: this.data.name,

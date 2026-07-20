@@ -3,7 +3,6 @@ import {
   Component,
   DestroyRef,
   Injector,
-  OnInit,
   computed,
   inject,
   signal,
@@ -205,7 +204,10 @@ import { ModuleMaterialsFormDialogComponent } from './module-materials-form-dial
     }
   `,
 })
-export class ModuleDetailPage implements OnInit {
+export class ModuleDetailPage {
+  constructor() {
+    this.reloadPhotos();
+  }
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly dialog = inject(PiDialogService);
@@ -250,10 +252,6 @@ export class ModuleDetailPage implements OnInit {
 
   /** photos отдельным сигналом, обновляется через reloadPhotos(). */
   protected readonly photos = signal<ProductModulePhoto[]>([]);
-
-  ngOnInit(): void {
-    this.reloadPhotos();
-  }
 
   private reloadPhotos(): void {
     const mid = this.idString();

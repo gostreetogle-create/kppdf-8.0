@@ -32,7 +32,8 @@ import { RadioGroupComponent } from './radio-group.component';
     }
     input.radio-native:disabled { cursor: not-allowed; }
     input.radio-native:focus-visible + .radio-circle {
-      box-shadow: 0 0 0 2px var(--color-paper), 0 0 0 4px var(--color-ink);
+      outline: 2px solid var(--color-ink);
+      outline-offset: 2px;
     }
     .radio-circle {
       flex: none;

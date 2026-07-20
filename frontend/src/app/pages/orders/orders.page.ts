@@ -3,7 +3,6 @@ import {
   Component,
   DestroyRef,
   Injector,
-  OnInit,
   TemplateRef,
   ViewChild,
   computed,
@@ -276,7 +275,11 @@ function counterpartyIdOf(row: Order): string {
     </app-pi-section>
   `,
 })
-export class OrdersPage implements OnInit {
+export class OrdersPage {
+  constructor() {
+    this.counterpartiesLookup.load();
+    this.destroyRef.onDestroy(() => this.search.destroy());
+  }
   private readonly service = inject(OrdersService);
   private readonly counterpartyService = inject(CounterpartyService);
   private readonly dialog = inject(PiDialogService);
@@ -479,9 +482,6 @@ export class OrdersPage implements OnInit {
   protected rowActionsTplBinding: TemplateRef<{ $implicit: Order }> | null = null;
 
   ngOnInit(): void {
-    this.counterpartiesLookup.load();
-    this.destroyRef.onDestroy(() => this.search.destroy());
-
     // Build cell-template map + row-actions binding AFTER static
     // ViewChild fields resolve. Avoids TemplateRef<C> invariance
     // trap and Angular's signal-binding name-collision.

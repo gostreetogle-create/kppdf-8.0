@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  OnInit,
   inject,
   signal,
 } from '@angular/core';
@@ -413,7 +412,13 @@ interface DimensionFormGroup extends FormGroup {
     </app-pi-dialog>
   `,
 })
-export class MaterialFormDialogComponent implements OnInit {
+export class MaterialFormDialogComponent {
+  constructor() {
+    this.loadSuppliers();
+    if (this.data) {
+      this.patchFromData(this.data);
+    }
+  }
   protected readonly DIMENSION_TYPES = DIMENSION_TYPES;
 
   private readonly fb = inject(NonNullableFormBuilder);
@@ -461,13 +466,6 @@ export class MaterialFormDialogComponent implements OnInit {
 
   get dimensionsArray(): FormArray<DimensionFormGroup> {
     return this.form.controls.dimensions as FormArray<DimensionFormGroup>;
-  }
-
-  ngOnInit(): void {
-    this.loadSuppliers();
-    if (this.data) {
-      this.patchFromData(this.data);
-    }
   }
 
   /**

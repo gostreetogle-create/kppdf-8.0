@@ -3,7 +3,6 @@ import {
   Component,
   DestroyRef,
   Injector,
-  OnInit,
   TemplateRef,
   ViewChild,
   computed,
@@ -141,7 +140,10 @@ const PAGE_SIZE = 50;
     </app-pi-section>
   `,
 })
-export class OrganizationsPage implements OnInit {
+export class OrganizationsPage {
+  constructor() {
+    this.destroyRef.onDestroy(() => this.search.destroy());
+  }
   private readonly service = inject(OrganizationsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
@@ -198,7 +200,6 @@ export class OrganizationsPage implements OnInit {
   protected rowActionsTplBinding: TemplateRef<{ $implicit: Organization }> | null = null;
 
   ngOnInit(): void {
-    this.destroyRef.onDestroy(() => this.search.destroy());
     this.cellTemplates = { type: this.typeTplRef };
     this.rowActionsTplBinding = this.rowActionsTplRef;
   }

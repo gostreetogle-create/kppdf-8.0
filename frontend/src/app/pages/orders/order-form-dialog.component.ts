@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  OnInit,
   inject,
   signal,
 } from '@angular/core';
@@ -318,7 +317,16 @@ interface ItemFormGroup extends FormGroup {
     </app-pi-dialog>
   `,
 })
-export class OrderFormDialogComponent implements OnInit {
+export class OrderFormDialogComponent {
+  constructor() {
+    this.loadLookups();
+    if (this.data) {
+      this.patchFromData(this.data);
+    } else {
+      // Fresh order — start with one empty item to satisfy CreateOrderDto.required.
+      this.addItem();
+    }
+  }
   protected readonly STATUS_OPTIONS = STATUS_OPTIONS;
   protected readonly PRIORITY_OPTIONS = PRIORITY_OPTIONS;
 
@@ -350,16 +358,6 @@ export class OrderFormDialogComponent implements OnInit {
 
   get itemsArray(): FormArray<ItemFormGroup> {
     return this.form.controls.items as FormArray<ItemFormGroup>;
-  }
-
-  ngOnInit(): void {
-    this.loadLookups();
-    if (this.data) {
-      this.patchFromData(this.data);
-    } else {
-      // Fresh order — start with one empty item to satisfy CreateOrderDto.required.
-      this.addItem();
-    }
   }
 
   private loadLookups(): void {

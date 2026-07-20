@@ -3,7 +3,6 @@ import {
   Component,
   DestroyRef,
   Injector,
-  OnInit,
   TemplateRef,
   ViewChild,
   computed,
@@ -181,7 +180,7 @@ import { Unit, UnitsService, type UnitsListResponse } from './units.service';
     </app-pi-section>
   `,
 })
-export class DictionariesPage implements OnInit {
+export class DictionariesPage {
   private readonly service = inject(UnitsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
@@ -245,8 +244,6 @@ export class DictionariesPage implements OnInit {
     symbol: this.fb.control<string>(''),
     category: this.fb.control<string>(''),
   });
-
-  ngOnInit(): void {}
 
   protected onAdd(): void {
     if (this.form.invalid) {

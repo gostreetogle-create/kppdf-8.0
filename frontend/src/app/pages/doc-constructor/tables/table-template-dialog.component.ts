@@ -376,7 +376,7 @@ interface ClientPreviewModel {
     .ttd-field--grow { flex: 1 1 180px; }
     .ttd-field-header { display: flex; align-items: center; justify-content: space-between; }
     .ttd-input { width: 100%; padding: 5px 8px; font-size: 13px; border: 1px solid var(--color-rule); border-radius: 4px; background: transparent; color: var(--color-ink); }
-    .ttd-input:focus { outline: none; border-color: var(--color-sunrise-warm); box-shadow: 0 0 0 1px var(--color-sunrise-warm); }
+    .ttd-input:focus { outline: none; border-color: var(--color-sunrise-warm); outline: 2px solid var(--color-sunrise-warm); outline-offset: -1px; }
     .ttd-pills { display: flex; flex-wrap: wrap; gap: 4px; }
     .ttd-pill { padding: 3px 8px; font-size: 11px; font-weight: 500; border: 1px solid var(--color-rule); border-radius: 4px; background: var(--color-paper-2); color: var(--color-muted-foreground-strong); cursor: pointer; }
     .ttd-pill.is-active { background: var(--color-ink); border-color: var(--color-ink); color: var(--color-paper); }

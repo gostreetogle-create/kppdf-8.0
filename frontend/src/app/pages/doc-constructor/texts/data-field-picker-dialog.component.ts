@@ -235,7 +235,7 @@ const GROUP_LABELS: Record<DataSourceDescriptor['group'], string> = {
     }
     .dfpd-source-row.is-selected {
       background: color-mix(in oklch, var(--color-sunrise-warm) 10%, transparent);
-      box-shadow: inset 3px 0 0 var(--color-sunrise-warm);
+      border-left: 3px solid var(--color-sunrise-warm);
     }
     .dfpd-source-name {
       font-size: 14px;
@@ -321,14 +321,15 @@ const GROUP_LABELS: Record<DataSourceDescriptor['group'], string> = {
       border: 1px solid var(--color-rule);
       cursor: pointer;
       font-family: inherit;
-      transition: border-color 100ms ease, box-shadow 100ms ease;
+      transition: border-color 100ms ease;
     }
     .dfpd-field-card:hover,
     .dfpd-field-card.is-pending {
       border-color: var(--color-sunrise-warm);
     }
     .dfpd-field-card.is-pending {
-      box-shadow: 0 0 0 1px color-mix(in oklch, var(--color-sunrise-warm) 35%, transparent);
+      outline: 1px solid color-mix(in oklch, var(--color-sunrise-warm) 35%, transparent);
+      outline-offset: 0;
     }
     .dfpd-field-top {
       display: flex;

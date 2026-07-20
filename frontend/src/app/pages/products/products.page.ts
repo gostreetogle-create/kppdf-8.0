@@ -3,7 +3,6 @@ import {
   Component,
   DestroyRef,
   Injector,
-  OnInit,
   TemplateRef,
   ViewChild,
   computed,
@@ -218,7 +217,10 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
     </app-pi-section>
   `,
 })
-export class ProductsPage implements OnInit {
+export class ProductsPage {
+  constructor() {
+    this.destroyRef.onDestroy(() => this.search.destroy());
+  }
   private readonly service = inject(ProductsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
@@ -386,8 +388,6 @@ export class ProductsPage implements OnInit {
   protected rowActionsTplBinding: TemplateRef<{ $implicit: Product }> | null = null;
 
   ngOnInit(): void {
-    this.destroyRef.onDestroy(() => this.search.destroy());
-
     // Build cell-template map + row-actions binding AFTER static
     // ViewChild fields resolve. Avoids TemplateRef<C> invariance
     // trap and Angular's signal-binding name-collision.

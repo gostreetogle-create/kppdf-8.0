@@ -364,15 +364,12 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
       }
 
       .field__slider::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
         width: 16px;
         height: 16px;
         border-radius: 50%;
         background: var(--color-ink);
         cursor: pointer;
         border: 2px solid var(--color-paper);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
       }
 
       .field__slider::-moz-range-thumb {
@@ -382,7 +379,15 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
         background: var(--color-ink);
         cursor: pointer;
         border: 2px solid var(--color-paper);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+
+      .field__slider::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--color-ink);
+        cursor: pointer;
+        border: 2px solid var(--color-paper);
       }
 
       .field__slider-row {

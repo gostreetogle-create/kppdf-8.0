@@ -144,27 +144,25 @@ export const DEFAULT_EXTENSIONS = [
       border-radius: 5px;
       background: oklch(var(--color-paper));
       overflow: hidden;
-      transition: border-color 140ms ease, box-shadow 140ms ease;
+      transition: border-color 140ms ease;
     }
     .pi-rte:hover {
       border-color: oklch(var(--color-ink));
     }
     .pi-rte--focused {
       border-color: oklch(var(--color-ink));
-      box-shadow:
-        0 0 0 3px oklch(var(--color-sunrise-glow) / 0.4),
-        0 6px 18px oklch(0 0 0 / 0.06);
+      outline: 3px solid oklch(var(--color-sunrise-glow) / 0.4);
+      outline-offset: 0;
     }
     .pi-rte--selected {
       border-color: oklch(var(--color-sunrise-warm));
-      box-shadow:
-        0 0 0 3px oklch(var(--color-sunrise-glow) / 0.35),
-        0 4px 12px oklch(0 0 0 / 0.08);
+      outline: 3px solid oklch(var(--color-sunrise-glow) / 0.35);
+      outline-offset: 0;
     }
     .pi-rte--chromeless {
       border: none;
       border-radius: 4px;
-      box-shadow: none;
+      outline: none;
       background: transparent;
     }
     .pi-rte--chromeless:hover {
@@ -172,13 +170,12 @@ export const DEFAULT_EXTENSIONS = [
     }
     .pi-rte--chromeless.pi-rte--selected {
       border-color: transparent;
-      box-shadow: none;
+      outline: none;
     }
     .pi-rte--chromeless .pi-rte-editor {
       background: oklch(var(--color-paper));
       border: 1px solid var(--pi-rte-editor-border);
       border-radius: 4px;
-      box-shadow: inset 0 1px 3px oklch(0 0 0 / 0.06);
     }
     .pi-rte--chromeless.pi-rte--selected .pi-rte-editor {
       border-color: var(--pi-rte-editor-border-selected);
@@ -243,7 +240,6 @@ export const DEFAULT_EXTENSIONS = [
         background 110ms ease,
         color 110ms ease,
         border-color 110ms ease,
-        box-shadow 110ms ease,
         transform 80ms ease;
       line-height: 1;
     }
@@ -255,9 +251,6 @@ export const DEFAULT_EXTENSIONS = [
       background: oklch(var(--color-ink));
       color: oklch(var(--color-paper));
       border-color: oklch(var(--color-ink));
-      box-shadow:
-        0 0 0 2px oklch(var(--color-sunrise-glow) / 0.5),
-        0 1px 2px oklch(0 0 0 / 0.12);
     }
     .pi-rte-btn:active {
       transform: scale(0.92);
@@ -279,13 +272,11 @@ export const DEFAULT_EXTENSIONS = [
       outline: none;
       cursor: text;
       background: oklch(var(--color-paper));
-      box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.05);
     }
     .pi-rte-editor--compact {
       padding: 10px 12px;
       min-height: 38px;
       font-size: 13px;
-      box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.04);
     }
     .pi-rte-editor--compact {
       padding: 10px 12px;

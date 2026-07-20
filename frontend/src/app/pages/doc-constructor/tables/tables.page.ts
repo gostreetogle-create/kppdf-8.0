@@ -249,7 +249,8 @@ type SortDir = 'asc' | 'desc';
     }
     .tables-search-input:focus {
       outline: none;
-      box-shadow: 0 0 0 2px var(--color-ink);
+      outline: 2px solid var(--color-ink);
+      outline-offset: -1px;
     }
     .tables-count-badge {
       padding: 4px 8px;

@@ -3,7 +3,6 @@ import {
   Component,
   DestroyRef,
   Injector,
-  OnInit,
   TemplateRef,
   ViewChild,
   computed,
@@ -235,7 +234,10 @@ function moduleDimensions(row: ProductModule): string {
     </app-pi-section>
   `,
 })
-export class ModulesPage implements OnInit {
+export class ModulesPage {
+  constructor() {
+    this.destroyRef.onDestroy(() => this.search.destroy());
+  }
   private readonly service = inject(ProductModulesService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
@@ -405,8 +407,6 @@ export class ModulesPage implements OnInit {
   protected rowActionsTplBinding: TemplateRef<{ $implicit: ProductModule }> | null = null;
 
   ngOnInit(): void {
-    this.destroyRef.onDestroy(() => this.search.destroy());
-
     // Build cell-templates map + row-actions binding AFTER static
     // @ViewChild fields resolve. Avoids TemplateRef<C> invariance
     // trap and Angular's signal-binding name-collision.
