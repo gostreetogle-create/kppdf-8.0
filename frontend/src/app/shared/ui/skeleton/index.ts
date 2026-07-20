@@ -1,4 +1,1 @@
-export {
-  PiSkeletonComponent,
-  type PiSkeletonVariant,
-} from './pi-skeleton.component';
+export { PiSkeletonComponent, type PiSkeletonVariant } from './pi-skeleton.component';

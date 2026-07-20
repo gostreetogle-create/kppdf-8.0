@@ -196,11 +196,7 @@ function organizationIdOf(row: Contract): string {
         data-test="search-input"
         class="pi-input w-80"
       />
-      <app-pi-button
-        variant="default"
-        (click)="openCreate()"
-        data-test="create-button"
-      >
+      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
         + Создать
       </app-pi-button>
       <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
@@ -209,11 +205,7 @@ function organizationIdOf(row: Contract): string {
       <span hint>{{ visibleCount() }} {{ totalLabel(visibleCount()) }}</span>
     </app-pi-toolbar>
 
-    <app-pi-section
-      title="Реестр"
-      hint="сортировка · клик по заголовку"
-      eyebrow="I"
-    >
+    <app-pi-section title="Реестр" hint="сортировка · клик по заголовку" eyebrow="I">
       @if (error()) {
         <div
           role="alert"
@@ -329,7 +321,8 @@ export class ContractsPage {
   protected readonly data = computed<Contract[]>(() => this.listRes.value() ?? []);
   protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
   protected readonly error = computed<string | null>(() => {
-    const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    const err = this.listRes.error() as
+      import('@angular/common/http').HttpErrorResponse | undefined;
     return err ? extractErrorMessage(err) : null;
   });
 
@@ -376,9 +369,7 @@ export class ContractsPage {
     if (!key) return rows;
     const sign = this.sortDirSig() === 'asc' ? 1 : -1;
     const accessor = accessorFor(key);
-    return rows.slice().sort((a, b) =>
-      compareValues(accessor(a), accessor(b), sign),
-    );
+    return rows.slice().sort((a, b) => compareValues(accessor(a), accessor(b), sign));
   });
 
   /**
@@ -587,7 +578,7 @@ export class ContractsPage {
         variant: 'destructive',
       },
       width: 'sm',
-    parentDestroyRef: this.destroyRef,
+      parentDestroyRef: this.destroyRef,
     });
     onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
       if (!confirmed) return;

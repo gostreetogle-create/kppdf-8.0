@@ -42,10 +42,16 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       </div>
     </figure>
   `,
-  styles: [`
-    :host { display: block; }
-    .pi-chart { transition: none; }
-  `],
+  styles: [
+    `
+      :host {
+        display: block;
+      }
+      .pi-chart {
+        transition: none;
+      }
+    `,
+  ],
 })
 export class PiChartComponent {
   readonly eyebrow = input<string>('');

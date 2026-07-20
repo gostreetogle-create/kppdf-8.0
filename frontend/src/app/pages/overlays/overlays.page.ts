@@ -19,12 +19,7 @@ import { LucideAngularModule, User, ChevronDown } from 'lucide-angular';
 @Component({
   selector: 'app-overlays-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    PiPageHeaderComponent,
-    PiSectionComponent,
-    ButtonComponent,
-    LucideAngularModule,
-  ],
+  imports: [PiPageHeaderComponent, PiSectionComponent, ButtonComponent, LucideAngularModule],
   template: `
     <app-pi-page-header
       eyebrow="05 · оверлеи"
@@ -38,16 +33,14 @@ import { LucideAngularModule, User, ChevronDown } from 'lucide-angular';
         <app-pi-button variant="default" (click)="demoDefaultDialog()">
           Default dialog
         </app-pi-button>
-        <app-pi-button variant="outline" (click)="demoFormDialog()">
-          Form dialog
-        </app-pi-button>
+        <app-pi-button variant="outline" (click)="demoFormDialog()"> Form dialog </app-pi-button>
         <app-pi-button variant="destructive" (click)="demoAlertDialog()">
           AlertDialog (destructive)
         </app-pi-button>
       </div>
       <p class="text-xs text-muted-foreground mt-form-row">
-        Demo: каждый trigger показывает toast-confirmation.
-        PiDialogService.open() доступен для полноценных CDK-overlay flows.
+        Demo: каждый trigger показывает toast-confirmation. PiDialogService.open() доступен для
+        полноценных CDK-overlay flows.
       </p>
     </app-pi-section>
 
@@ -63,13 +56,9 @@ import { LucideAngularModule, User, ChevronDown } from 'lucide-angular';
     <!-- ───── Section III. Tooltip + Popover ───── -->
     <app-pi-section title="Tooltip &amp; Popover" hint="hover · click" eyebrow="III">
       <div class="flex flex-wrap gap-form-field">
-            <app-pi-button
-              variant="outline"
-              ariaLabel="Сохранить документ"
-              title="Сохранить документ"
-            >
-              Hover me (native title tooltip)
-            </app-pi-button>
+        <app-pi-button variant="outline" ariaLabel="Сохранить документ" title="Сохранить документ">
+          Hover me (native title tooltip)
+        </app-pi-button>
         <app-pi-button variant="outline" (click)="demoPopover()">
           <lucide-angular [img]="userIcon" size="14" />
           Open Popover
@@ -95,20 +84,26 @@ import { LucideAngularModule, User, ChevronDown } from 'lucide-angular';
               class="pi-menu-item"
               role="menuitem"
               (click)="onMenuItem('profile')"
-            >Профиль</button>
+            >
+              Профиль
+            </button>
             <button
               type="button"
               class="pi-menu-item"
               role="menuitem"
               (click)="onMenuItem('settings')"
-            >Настройки</button>
+            >
+              Настройки
+            </button>
             <div class="hairline-t my-1" role="separator"></div>
             <button
               type="button"
               class="pi-menu-item pi-menu-item-destructive"
               role="menuitem"
               (click)="onMenuItem('logout')"
-            >Выйти</button>
+            >
+              Выйти
+            </button>
           </div>
         }
       </div>
@@ -117,15 +112,11 @@ import { LucideAngularModule, User, ChevronDown } from 'lucide-angular';
     <!-- ───── Section V. Toast ───── -->
     <app-pi-section title="Toast" hint="Sonner-style" eyebrow="V">
       <div class="flex flex-wrap gap-form-field">
-        <app-pi-button variant="default" (click)="toast.show('Привет')">
-          Default
-        </app-pi-button>
+        <app-pi-button variant="default" (click)="toast.show('Привет')"> Default </app-pi-button>
         <app-pi-button variant="secondary" (click)="toast.success('Готово!')">
           Success
         </app-pi-button>
-        <app-pi-button variant="destructive" (click)="toast.error('Ошибка')">
-          Error
-        </app-pi-button>
+        <app-pi-button variant="destructive" (click)="toast.error('Ошибка')"> Error </app-pi-button>
         <app-pi-button variant="outline" (click)="toast.warning('Внимание')">
           Warning
         </app-pi-button>
@@ -138,8 +129,8 @@ import { LucideAngularModule, User, ChevronDown } from 'lucide-angular';
         <span class="pi-tech-label">REF: EMPTY.02</span>
         <h4 class="font-title-sm text-ink mb-stack-sm mt-2">Empty State (Architectural)</h4>
         <p class="text-sm text-muted-foreground">
-          The <code class="font-mono text-[11px]">PiEmptyState</code> component wraps content
-          in a centered, max-384px panel with 2px dashed border. Used inside
+          The <code class="font-mono text-[11px]">PiEmptyState</code> component wraps content in a
+          centered, max-384px panel with 2px dashed border. Used inside
           <code class="font-mono text-[11px]">&lt;tbody&gt;</code> when a list is empty.
         </p>
         <div class="pi-tech-label mt-stack-sm">Eyebrow: 00</div>

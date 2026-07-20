@@ -60,7 +60,5 @@ export class PiSkeletonComponent {
   readonly ariaLabel = input<string>('Загрузка');
 
   /** Index array for @for iteration. Materializes once per `count()` change. */
-  readonly lines = computed(() =>
-    Array.from({ length: Math.max(0, this.count()) }, (_, i) => i),
-  );
+  readonly lines = computed(() => Array.from({ length: Math.max(0, this.count()) }, (_, i) => i));
 }

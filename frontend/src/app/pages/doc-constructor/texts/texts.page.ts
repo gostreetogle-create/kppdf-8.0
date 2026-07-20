@@ -17,10 +17,7 @@ import { AlertDialogComponent } from '../../../shared/ui/dialog/pi-alert-dialog.
 import { PiToastService } from '../../../shared/ui/toast';
 import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../../core/silent-http';
-import {
-  TextBlock,
-  TextBlocksService,
-} from '../../../shared/services/pi-text-blocks.service';
+import { TextBlock, TextBlocksService } from '../../../shared/services/pi-text-blocks.service';
 import { TextBlockEditorComponent } from './text-block-editor.component';
 import { pluralRu, RU_BLOCKS, RU_COLUMNS } from '../../../shared/util/russian-plural';
 
@@ -40,9 +37,19 @@ type SortDir = 'asc' | 'desc';
   ],
   template: `
     @if (error()) {
-      <div role="alert" class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive flex items-center gap-2">
+      <div
+        role="alert"
+        class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive flex items-center gap-2"
+      >
         <span>{{ error() }}</span>
-        <button type="button" class="pi-icon-btn pi-focus-ring ml-auto" (click)="error.set(null)" aria-label="Закрыть">×</button>
+        <button
+          type="button"
+          class="pi-icon-btn pi-focus-ring ml-auto"
+          (click)="error.set(null)"
+          aria-label="Закрыть"
+        >
+          ×
+        </button>
       </div>
     }
 
@@ -62,8 +69,12 @@ type SortDir = 'asc' | 'desc';
               <h1 class="font-display texts-shell-title">Текстовые блоки</h1>
             </header>
             <div class="texts-shell-body pi-dashed-panel">
-              <p class="text-sm text-muted-foreground">Выберите блок в каталоге ниже или создайте новый</p>
-              <app-pi-button variant="default" size="sm" (click)="openCreate()">+ Новый блок</app-pi-button>
+              <p class="text-sm text-muted-foreground">
+                Выберите блок в каталоге ниже или создайте новый
+              </p>
+              <app-pi-button variant="default" size="sm" (click)="openCreate()"
+                >+ Новый блок</app-pi-button
+              >
             </div>
           </section>
         }
@@ -87,7 +98,12 @@ type SortDir = 'asc' | 'desc';
               />
             </div>
           </div>
-          <app-pi-button variant="default" size="sm" (click)="openCreate()" data-test="create-button">
+          <app-pi-button
+            variant="default"
+            size="sm"
+            (click)="openCreate()"
+            data-test="create-button"
+          >
             + Новый
           </app-pi-button>
         </header>
@@ -123,7 +139,9 @@ type SortDir = 'asc' | 'desc';
                     [attr.data-test]="'text-row-' + row._id"
                   >
                     <td class="texts-table-name">{{ row.name }}</td>
-                    <td class="texts-table-config">{{ columnConfigUpper(row.columns?.length || 1) }}</td>
+                    <td class="texts-table-config">
+                      {{ columnConfigUpper(row.columns?.length || 1) }}
+                    </td>
                     <td>
                       <span class="texts-status">
                         <span
@@ -152,190 +170,206 @@ type SortDir = 'asc' | 'desc';
       </section>
     </div>
   `,
-  styles: [`
-    :host {
-      display: block;
-      padding: 0 0 8px;
-    }
+  styles: [
+    `
+      :host {
+        display: block;
+        padding: 0 0 8px;
+      }
 
-    .texts-stack {
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
+      .texts-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
 
-    .texts-editor-zone {
-      min-height: 0;
-    }
+      .texts-editor-zone {
+        min-height: 0;
+      }
 
-    .texts-shell-empty {
-      position: relative;
-      background: var(--color-paper);
-      border: 2px solid var(--color-ink);
-      overflow: hidden;
-    }
-    .texts-shell-accent {
-      height: 4px;
-      background: linear-gradient(
-        90deg,
-        var(--color-sunrise-warm),
-        var(--color-sunrise-glow),
-        var(--color-sunrise-warm)
-      );
-    }
-    .texts-shell-head {
-      padding: 24px 32px 16px;
-    }
-    .texts-shell-title {
-      margin: 8px 0 0;
-      font-size: 32px;
-      font-weight: 600;
-      color: var(--color-ink);
-    }
-    .texts-shell-body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      min-height: 200px;
-      margin: 0 32px 32px;
-    }
+      .texts-shell-empty {
+        position: relative;
+        background: var(--color-paper);
+        border: 2px solid var(--color-ink);
+        overflow: hidden;
+      }
+      .texts-shell-accent {
+        height: 4px;
+        background: linear-gradient(
+          90deg,
+          var(--color-sunrise-warm),
+          var(--color-sunrise-glow),
+          var(--color-sunrise-warm)
+        );
+      }
+      .texts-shell-head {
+        padding: 24px 32px 16px;
+      }
+      .texts-shell-title {
+        margin: 8px 0 0;
+        font-size: 32px;
+        font-weight: 600;
+        color: var(--color-ink);
+      }
+      .texts-shell-body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        min-height: 200px;
+        margin: 0 32px 32px;
+      }
 
-    .texts-catalog {
-      flex: 1;
-      min-height: 0;
-      display: flex;
-      flex-direction: column;
-      background: var(--color-paper);
-      border: 2px solid var(--color-ink);
-      overflow: hidden;
-    }
+      .texts-catalog {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        background: var(--color-paper);
+        border: 2px solid var(--color-ink);
+        overflow: hidden;
+      }
 
-    .texts-catalog-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 12px 24px;
-      border-bottom: 1px solid var(--color-rule);
-      flex-shrink: 0;
-    }
-    .texts-catalog-head-left {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      flex-wrap: wrap;
-      min-width: 0;
-    }
-    .texts-catalog-title {
-      margin: 0;
-      font-size: 14px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: var(--color-ink);
-    }
+      .texts-catalog-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 24px;
+        border-bottom: 1px solid var(--color-rule);
+        flex-shrink: 0;
+      }
+      .texts-catalog-head-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        min-width: 0;
+      }
+      .texts-catalog-title {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--color-ink);
+      }
 
-    .texts-search-wrap { position: relative; }
-    .texts-search-icon {
-      position: absolute;
-      left: 8px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 14px;
-      color: var(--color-muted-foreground-strong);
-      pointer-events: none;
-    }
-    .texts-search-input {
-      width: 192px;
-      padding: 6px 8px 6px 26px;
-      font-size: 14px;
-      border: 1px solid var(--color-rule);
-      background: var(--color-paper-2);
-      color: var(--color-ink);
-    }
-    .texts-search-input:focus {
-      outline: none;
-      outline: 1px solid var(--color-sunrise-warm);
-      outline-offset: -1px;
-    }
+      .texts-search-wrap {
+        position: relative;
+      }
+      .texts-search-icon {
+        position: absolute;
+        left: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 14px;
+        color: var(--color-muted-foreground-strong);
+        pointer-events: none;
+      }
+      .texts-search-input {
+        width: 192px;
+        padding: 6px 8px 6px 26px;
+        font-size: 14px;
+        border: 1px solid var(--color-rule);
+        background: var(--color-paper-2);
+        color: var(--color-ink);
+      }
+      .texts-search-input:focus {
+        outline: none;
+        outline: 1px solid var(--color-sunrise-warm);
+        outline-offset: -1px;
+      }
 
-    .texts-catalog-scroll {
-      flex: 1;
-      overflow-y: auto;
-      min-height: 0;
-    }
-    .texts-catalog-empty {
-      padding: 24px;
-      text-align: center;
-    }
+      .texts-catalog-scroll {
+        flex: 1;
+        overflow-y: auto;
+        min-height: 0;
+      }
+      .texts-catalog-empty {
+        padding: 24px;
+        text-align: center;
+      }
 
-    .texts-table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-    }
-    .texts-table thead {
-      position: sticky;
-      top: 0;
-      z-index: 1;
-      background: var(--color-paper-2);
-      border-bottom: 1px solid var(--color-rule);
-    }
-    .texts-table th {
-      padding: 8px 24px;
-      color: var(--color-muted-foreground-strong);
-    }
-    .texts-table-actions-col { text-align: right; }
+      .texts-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+      }
+      .texts-table thead {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: var(--color-paper-2);
+        border-bottom: 1px solid var(--color-rule);
+      }
+      .texts-table th {
+        padding: 8px 24px;
+        color: var(--color-muted-foreground-strong);
+      }
+      .texts-table-actions-col {
+        text-align: right;
+      }
 
-    .texts-table-row {
-      cursor: pointer;
-      border-bottom: 1px solid var(--color-rule);
-      transition: background 100ms ease;
-    }
-    .texts-table-row:hover {
-      background: color-mix(in oklch, var(--color-paper-2) 70%, transparent);
-    }
-    .texts-table-row.is-active {
-      background: color-mix(in oklch, var(--color-sunrise-warm) 8%, transparent);
-      border-left: 4px solid var(--color-sunrise-warm);
-    }
-    .texts-table-row.is-inactive-row { opacity: 0.72; }
+      .texts-table-row {
+        cursor: pointer;
+        border-bottom: 1px solid var(--color-rule);
+        transition: background 100ms ease;
+      }
+      .texts-table-row:hover {
+        background: color-mix(in oklch, var(--color-paper-2) 70%, transparent);
+      }
+      .texts-table-row.is-active {
+        background: color-mix(in oklch, var(--color-sunrise-warm) 8%, transparent);
+        border-left: 4px solid var(--color-sunrise-warm);
+      }
+      .texts-table-row.is-inactive-row {
+        opacity: 0.72;
+      }
 
-    .texts-table td {
-      padding: 10px 24px;
-      vertical-align: middle;
-    }
-    .texts-table-name {
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--color-ink);
-    }
-    .texts-table-config {
-      font-family: ui-monospace, monospace;
-      font-size: 11px;
-      color: var(--color-muted-foreground-strong);
-      text-transform: uppercase;
-    }
-    .texts-table-actions { text-align: right; }
+      .texts-table td {
+        padding: 10px 24px;
+        vertical-align: middle;
+      }
+      .texts-table-name {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--color-ink);
+      }
+      .texts-table-config {
+        font-family: ui-monospace, monospace;
+        font-size: 11px;
+        color: var(--color-muted-foreground-strong);
+        text-transform: uppercase;
+      }
+      .texts-table-actions {
+        text-align: right;
+      }
 
-    .texts-status {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 14px;
-    }
-    .texts-status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-    .texts-status-dot--on { background: var(--color-accent-cool); }
-    .texts-status-dot--off { background: var(--color-muted-foreground-strong); }
-    .texts-table-row.is-inactive-row .texts-status { color: var(--color-muted-foreground-strong); }
-  `],
+      .texts-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+      }
+      .texts-status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .texts-status-dot--on {
+        background: var(--color-accent-cool);
+      }
+      .texts-status-dot--off {
+        background: var(--color-muted-foreground-strong);
+      }
+      .texts-table-row.is-inactive-row .texts-status {
+        color: var(--color-muted-foreground-strong);
+      }
+    `,
+  ],
 })
 export class TextsPage {
   private readonly service = inject(TextBlocksService);
@@ -347,17 +381,19 @@ export class TextsPage {
   private readonly reload$ = new Subject<void>();
 
   constructor() {
-    this.reload$.pipe(
-      switchMap(() => this.service.list()),
-      takeUntilDestroyed(this.destroyRef),
-    ).subscribe((res) => {
-      if (res.ok) {
-        this.data.set(res.data.items);
-      } else {
-        this.error.set(extractErrorMessage(res.error));
-      }
-      this.loading.set(false);
-    });
+    this.reload$
+      .pipe(
+        switchMap(() => this.service.list()),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((res) => {
+        if (res.ok) {
+          this.data.set(res.data.items);
+        } else {
+          this.error.set(extractErrorMessage(res.error));
+        }
+        this.loading.set(false);
+      });
     this.reload();
   }
 
@@ -380,9 +416,7 @@ export class TextsPage {
     const q = this.searchQuery().trim().toLowerCase();
     if (!q) return this.data();
     return this.data().filter(
-      (b) =>
-        b.name.toLowerCase().includes(q) ||
-        (b.content ?? '').toLowerCase().includes(q),
+      (b) => b.name.toLowerCase().includes(q) || (b.content ?? '').toLowerCase().includes(q),
     );
   });
 

@@ -10,11 +10,7 @@ import {
   input,
   signal,
 } from '@angular/core';
-import {
-  Overlay,
-  OverlayRef,
-  ConnectedPosition,
-} from '@angular/cdk/overlay';
+import { Overlay, OverlayRef, ConnectedPosition } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 
 export type PopoverPosition = 'top' | 'bottom' | 'left' | 'right';
@@ -43,12 +39,22 @@ export class PopoverDirective {
   private activeRef: OverlayRef | null = null;
   private outsideListener: ((e: MouseEvent) => void) | null = null;
 
-  @HostListener('click') onClick(): void { this.toggle(); }
-  @HostListener('keydown.enter', ['$event']) onEnter(e: KeyboardEvent): void { e.preventDefault(); this.open(); }
-  @HostListener('keydown.space', ['$event']) onSpace(e: KeyboardEvent): void { e.preventDefault(); this.open(); }
+  @HostListener('click') onClick(): void {
+    this.toggle();
+  }
+  @HostListener('keydown.enter', ['$event']) onEnter(e: KeyboardEvent): void {
+    e.preventDefault();
+    this.open();
+  }
+  @HostListener('keydown.space', ['$event']) onSpace(e: KeyboardEvent): void {
+    e.preventDefault();
+    this.open();
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-  toggle(): void { this.isOpen() ? this.close() : this.open(); }
+  toggle(): void {
+    this.isOpen() ? this.close() : this.open();
+  }
 
   open(): void {
     if (this.activeRef) return;
@@ -57,10 +63,10 @@ export class PopoverDirective {
       this.position() === 'top'
         ? [{ originX: 'center', originY: 'top', overlayX: 'center', overlayY: 'bottom' }]
         : this.position() === 'bottom'
-        ? [{ originX: 'center', originY: 'bottom', overlayX: 'center', overlayY: 'top' }]
-        : this.position() === 'left'
-        ? [{ originX: 'start', originY: 'center', overlayX: 'end', overlayY: 'center' }]
-        : [{ originX: 'end', originY: 'center', overlayX: 'start', overlayY: 'center' }];
+          ? [{ originX: 'center', originY: 'bottom', overlayX: 'center', overlayY: 'top' }]
+          : this.position() === 'left'
+            ? [{ originX: 'start', originY: 'center', overlayX: 'end', overlayY: 'center' }]
+            : [{ originX: 'end', originY: 'center', overlayX: 'start', overlayY: 'center' }];
 
     const overlayRef = this.overlay.create({
       hasBackdrop: false,
@@ -80,8 +86,10 @@ export class PopoverDirective {
       this.outsideListener = (e: MouseEvent) => {
         const target = e.target as Node | null;
         if (!target) return;
-        if (!this.hostEl.nativeElement.contains(target) &&
-            !overlayRef.overlayElement.contains(target)) {
+        if (
+          !this.hostEl.nativeElement.contains(target) &&
+          !overlayRef.overlayElement.contains(target)
+        ) {
           this.close();
         }
       };

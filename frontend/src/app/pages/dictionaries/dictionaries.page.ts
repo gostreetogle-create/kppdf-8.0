@@ -10,11 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
-import {
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
@@ -59,11 +55,7 @@ import { Unit, UnitsService, type UnitsListResponse } from './units.service';
       description="Словари значений для выпадающих списков. Единицы измерения — добавление, редактирование, деактивация."
     />
 
-    <app-pi-section
-      title="Единицы измерения"
-      hint="системные юниты нельзя удалить"
-      eyebrow="I"
-    >
+    <app-pi-section title="Единицы измерения" hint="системные юниты нельзя удалить" eyebrow="I">
       @if (error()) {
         <div
           role="alert"
@@ -95,7 +87,9 @@ import { Unit, UnitsService, type UnitsListResponse } from './units.service';
             />
           </label>
           <label class="block">
-            <span class="eyebrow block mb-1.5">Название <span class="text-destructive">*</span></span>
+            <span class="eyebrow block mb-1.5"
+              >Название <span class="text-destructive">*</span></span
+            >
             <input
               id="u-label"
               type="text"
@@ -195,12 +189,11 @@ export class DictionariesPage {
     params: { page: 1, limit: 100 },
   }));
 
-  protected readonly data = computed<Unit[]>(
-    () => this.listRes.value()?.items ?? [],
-  );
+  protected readonly data = computed<Unit[]>(() => this.listRes.value()?.items ?? []);
   protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
   protected readonly error = computed<string | null>(() => {
-    const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    const err = this.listRes.error() as
+      import('@angular/common/http').HttpErrorResponse | undefined;
     return err ? extractErrorMessage(err) : null;
   });
 
@@ -208,15 +201,23 @@ export class DictionariesPage {
 
   /** Client-side sort by sortOrder then key. */
   protected readonly sortedUnits = computed<Unit[]>(() => {
-    return this.data().slice().sort((a, b) => {
-      if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
-      return a.key.localeCompare(b.key);
-    });
+    return this.data()
+      .slice()
+      .sort((a, b) => {
+        if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
+        return a.key.localeCompare(b.key);
+      });
   });
 
   /** Column defs — with isActive switch column via cellTemplates. */
   protected readonly columns: ColumnDef<Unit>[] = [
-    { key: 'key', label: 'Ключ', sortable: true, width: '8rem', cellClass: 'font-mono text-xs font-medium' },
+    {
+      key: 'key',
+      label: 'Ключ',
+      sortable: true,
+      width: '8rem',
+      cellClass: 'font-mono text-xs font-medium',
+    },
     { key: 'label', label: 'Название', sortable: true },
     { key: 'symbol', label: 'Символ', width: '5rem' },
     { key: 'category', label: 'Категория', sortable: true, width: '8rem' },
@@ -277,9 +278,7 @@ export class DictionariesPage {
   protected onToggleActive(u: Unit, checked: boolean): void {
     this.service.update(u.key, { isActive: checked }).subscribe((res) => {
       if (res.ok) {
-        this.toast.success(
-          checked ? `«${u.label}» активирована` : `«${u.label}» деактивирована`,
-        );
+        this.toast.success(checked ? `«${u.label}» активирована` : `«${u.label}» деактивирована`);
         this.listRes.reload();
       } else {
         this.toast.error(extractErrorMessage(res.error));

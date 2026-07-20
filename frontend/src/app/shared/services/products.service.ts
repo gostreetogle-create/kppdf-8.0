@@ -73,9 +73,7 @@ export class ProductsService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
 
-  list(
-    params: ProductsListParams = {},
-  ): Observable<SilentResult<ProductsListResponse>> {
+  list(params: ProductsListParams = {}): Observable<SilentResult<ProductsListResponse>> {
     let httpParams = new HttpParams()
       .set('page', String(params.page ?? 1))
       .set('limit', String(params.limit ?? 50));
@@ -91,11 +89,9 @@ export class ProductsService {
     if (params.sortOrder) {
       httpParams = httpParams.set('sortOrder', params.sortOrder);
     }
-    return silentGet<ProductsListResponse>(
-      this.http,
-      `${this.baseUrl}/products`,
-      { params: httpParams },
-    );
+    return silentGet<ProductsListResponse>(this.http, `${this.baseUrl}/products`, {
+      params: httpParams,
+    });
   }
 
   findById(id: string): Observable<SilentResult<Product>> {
@@ -103,22 +99,11 @@ export class ProductsService {
   }
 
   create(payload: Partial<Product>): Observable<SilentResult<Product>> {
-    return silentPost<Product>(
-      this.http,
-      `${this.baseUrl}/products`,
-      payload,
-    );
+    return silentPost<Product>(this.http, `${this.baseUrl}/products`, payload);
   }
 
-  update(
-    id: string,
-    payload: Partial<Product>,
-  ): Observable<SilentResult<Product>> {
-    return silentPatch<Product>(
-      this.http,
-      `${this.baseUrl}/products/${id}`,
-      payload,
-    );
+  update(id: string, payload: Partial<Product>): Observable<SilentResult<Product>> {
+    return silentPatch<Product>(this.http, `${this.baseUrl}/products/${id}`, payload);
   }
 
   remove(id: string): Observable<SilentResult<void>> {

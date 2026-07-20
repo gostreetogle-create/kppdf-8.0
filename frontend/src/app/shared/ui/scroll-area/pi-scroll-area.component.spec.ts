@@ -24,9 +24,11 @@ describe('PiScrollAreaComponent', () => {
     }).compileComponents();
 
     const fixture = TestBed.createComponent(PiScrollAreaComponent);
-    if (inputs.maxHeight !== undefined) fixture.componentRef.setInput('maxHeight', inputs.maxHeight);
+    if (inputs.maxHeight !== undefined)
+      fixture.componentRef.setInput('maxHeight', inputs.maxHeight);
     if (inputs.orientation) fixture.componentRef.setInput('orientation', inputs.orientation);
-    if (inputs.ariaLabel !== undefined) fixture.componentRef.setInput('ariaLabel', inputs.ariaLabel);
+    if (inputs.ariaLabel !== undefined)
+      fixture.componentRef.setInput('ariaLabel', inputs.ariaLabel);
     fixture.detectChanges();
     return fixture;
   }

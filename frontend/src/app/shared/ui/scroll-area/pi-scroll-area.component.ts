@@ -47,7 +47,5 @@ export class PiScrollAreaComponent {
   );
 
   /** Combined class string: base `pi-scroll-area` (for themed scrollbar rules in styles.css) + orientation class. */
-  readonly computedClass = computed(
-    () => `pi-scroll-area ${this.orientationClass()}`,
-  );
+  readonly computedClass = computed(() => `pi-scroll-area ${this.orientationClass()}`);
 }

@@ -8,10 +8,7 @@
  *  - 2-4 (but not 12-14) → singular[1]
  *  - everything else → singular[2]
  */
-export function pluralize(
-  n: number,
-  forms: [string, string, string],
-): string {
+export function pluralize(n: number, forms: [string, string, string]): string {
   const mod10 = n % 10;
   const mod100 = n % 10;
   if (mod10 === 1 && mod100 !== 11) return forms[0];

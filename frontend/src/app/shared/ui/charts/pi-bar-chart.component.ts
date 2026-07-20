@@ -62,7 +62,9 @@ export interface PiBarDatum {
             dominant-baseline="middle"
             class="pi-bar-chart__tick"
             aria-hidden="true"
-          >{{ tick }}</text>
+          >
+            {{ tick }}
+          </text>
         }
       }
 
@@ -83,12 +85,14 @@ export interface PiBarDatum {
       @if (xAxis()) {
         @for (d of results(); track $index) {
           <text
-            [attr.x]="(barGeometry(d.value, $index).x) + bandScale().bandwidth() / 2"
+            [attr.x]="barGeometry(d.value, $index).x + bandScale().bandwidth() / 2"
             [attr.y]="viewBox.height - padding.bottom + 16"
             text-anchor="middle"
             class="pi-bar-chart__tick"
             aria-hidden="true"
-          >{{ d.name }}</text>
+          >
+            {{ d.name }}
+          </text>
         }
       }
 
@@ -104,16 +108,20 @@ export interface PiBarDatum {
       />
     </svg>
   `,
-  styles: [`
-    .pi-bar-chart { display: block; }
-    .pi-bar-chart__tick {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      fill: var(--color-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-  `],
+  styles: [
+    `
+      .pi-bar-chart {
+        display: block;
+      }
+      .pi-bar-chart__tick {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        fill: var(--color-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+    `,
+  ],
 })
 export class PiBarChartComponent {
   readonly results = input.required<PiBarDatum[]>();

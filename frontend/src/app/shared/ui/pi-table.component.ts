@@ -120,10 +120,7 @@ export type SelectionMode = 'none' | 'single' | 'multi';
         @if (loading()) {
           @for (skel of skeletonRows; track $index) {
             <tr class="hairline-b" data-test="table-skeleton-row">
-              <td
-                [attr.colspan]="visibleColumns()"
-                class="py-3 px-3"
-              >
+              <td [attr.colspan]="visibleColumns()" class="py-3 px-3">
                 <div class="h-3 bg-paper-2 rounded-sm animate-pulse w-full"></div>
               </td>
             </tr>
@@ -173,9 +170,7 @@ export type SelectionMode = 'none' | 'single' | 'multi';
                   (click)="$event.stopPropagation()"
                   data-test="row-actions-cell"
                 >
-                  <ng-container
-                    *ngTemplateOutlet="rowActions()!; context: { $implicit: row }"
-                  />
+                  <ng-container *ngTemplateOutlet="rowActions()!; context: { $implicit: row }" />
                 </td>
               }
             </tr>
@@ -185,9 +180,7 @@ export type SelectionMode = 'none' | 'single' | 'multi';
                   [attr.colspan]="visibleColumns() + (rowActions() ? 1 : 0)"
                   class="bg-paper-2 p-0 hairline-b"
                 >
-                  <ng-container
-                    *ngTemplateOutlet="expandedRow()!; context: { $implicit: row }"
-                  />
+                  <ng-container *ngTemplateOutlet="expandedRow()!; context: { $implicit: row }" />
                 </td>
               </tr>
             }
@@ -199,10 +192,7 @@ export type SelectionMode = 'none' | 'single' | 'multi';
                 class="py-12 px-3 text-center text-muted-foreground"
               >
                 @if (emptyTemplate()) {
-                  <ng-container
-                    *ngTemplateOutlet="emptyTemplate()!"
-                    data-test="custom-empty"
-                  />
+                  <ng-container *ngTemplateOutlet="emptyTemplate()!" data-test="custom-empty" />
                 } @else {
                   <div
                     class="max-w-sm mx-auto p-6 pi-dashed-panel flex flex-col items-center gap-1"
@@ -237,11 +227,7 @@ export type SelectionMode = 'none' | 'single' | 'multi';
           >
             <span aria-hidden="true">←</span>
           </button>
-          <span
-            class="text-xs tabular-nums"
-            data-test="pager-page"
-            aria-label="Текущая страница"
-          >
+          <span class="text-xs tabular-nums" data-test="pager-page" aria-label="Текущая страница">
             {{ page() }} / {{ totalPages() }}
           </span>
           <button
@@ -306,9 +292,7 @@ export class TableComponent<T> implements OnInit {
    * Where `tpls: Record<string, TemplateRef<{ $implicit: T }>>` and
    * `tpls['photo'] = photoTpl` matches `cols[0].key = 'photo'`.
    */
-  readonly cellTemplates = input<
-    Record<string, TemplateRef<{ $implicit: T }>>
-  >({});
+  readonly cellTemplates = input<Record<string, TemplateRef<{ $implicit: T }>>>({});
 
   /**
    * TZ-104.3 Phase B — controls sort ownership.
@@ -408,7 +392,7 @@ export class TableComponent<T> implements OnInit {
    *    very first natural click. See materials/orders/products
    *    docblocks for examples.
    */
-  readonly initialSortKey = input<keyof T & string | null>(null);
+  readonly initialSortKey = input<(keyof T & string) | null>(null);
 
   /**
    * TZ-104.4.2 — initial sort direction. Pairs with `initialSortKey`
@@ -474,8 +458,7 @@ export class TableComponent<T> implements OnInit {
    * calculations). Used for colspan on empty / expanded rows.
    */
   readonly visibleColumns = computed(
-    () =>
-      this.columns().length + (this.selectionMode() !== 'none' ? 1 : 0),
+    () => this.columns().length + (this.selectionMode() !== 'none' ? 1 : 0),
   );
 
   /** Total page count for server-side pagination. */
@@ -486,9 +469,7 @@ export class TableComponent<T> implements OnInit {
   });
 
   /** Whether the auto pager should render (server-side mode + >1 page). */
-  readonly showPager = computed(
-    () => this.total() > 0 && this.totalPages() > 1,
-  );
+  readonly showPager = computed(() => this.total() > 0 && this.totalPages() > 1);
 
   /** Index of first row on current page (1-indexed), for pager range label. */
   readonly pageRangeStart = computed(() => {

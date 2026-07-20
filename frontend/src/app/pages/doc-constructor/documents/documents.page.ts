@@ -70,15 +70,20 @@ const PAGE_SIZE = 10;
       @if (loading()) {
         <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
       } @else if (error()) {
-        <div role="alert" class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive">
+        <div
+          role="alert"
+          class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+        >
           {{ error() }}
         </div>
       } @else if (filtered().length === 0) {
         <app-pi-empty-state
           [colspan]="1"
-          [message]="searchQuery() || periodMonth()
-            ? 'Ничего не найдено.'
-            : 'Нет сохранённых документов. Сгенерируйте документ в конструкторе.'"
+          [message]="
+            searchQuery() || periodMonth()
+              ? 'Ничего не найдено.'
+              : 'Нет сохранённых документов. Сгенерируйте документ в конструкторе.'
+          "
         />
       } @else {
         <div class="hairline rounded-sm overflow-x-auto">
@@ -97,7 +102,9 @@ const PAGE_SIZE = 10;
                 <tr class="pi-table-row pi-table-row-odd group">
                   <td class="pi-cell font-mono text-xs">{{ doc.number }}</td>
                   <td class="pi-cell font-medium">{{ displayTemplateName(doc) }}</td>
-                  <td class="pi-cell text-muted-foreground font-mono text-xs">{{ formatDate(doc.createdAt) }}</td>
+                  <td class="pi-cell text-muted-foreground font-mono text-xs">
+                    {{ formatDate(doc.createdAt) }}
+                  </td>
                   <td class="pi-cell">
                     <span class="inline-flex items-center gap-2">
                       <span
@@ -128,10 +135,20 @@ const PAGE_SIZE = 10;
           <div class="mt-4 flex items-center justify-between gap-4">
             <span class="eyebrow text-muted-foreground">{{ rangeLabel() }}</span>
             <div class="flex gap-2">
-              <app-pi-button variant="outline" size="sm" [disabled]="pageIndex() === 0" (click)="prevPage()">
+              <app-pi-button
+                variant="outline"
+                size="sm"
+                [disabled]="pageIndex() === 0"
+                (click)="prevPage()"
+              >
                 ←
               </app-pi-button>
-              <app-pi-button variant="outline" size="sm" [disabled]="pageIndex() >= totalPages() - 1" (click)="nextPage()">
+              <app-pi-button
+                variant="outline"
+                size="sm"
+                [disabled]="pageIndex() >= totalPages() - 1"
+                (click)="nextPage()"
+              >
                 →
               </app-pi-button>
             </div>
@@ -198,25 +215,30 @@ export class DocumentsPage {
 
   private reload(): void {
     this.loading.set(true);
-    this.svc.list().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (res) => {
-        this.loading.set(false);
-        if (res.ok) {
-          this.items.set(
-            (res.data ?? []).slice().sort(
-              (a, b) =>
-                new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime(),
-            ),
-          );
-        } else {
-          this.error.set(extractErrorMessage(res.error));
-        }
-      },
-      error: (err) => {
-        this.loading.set(false);
-        this.error.set(extractErrorMessage(err));
-      },
-    });
+    this.svc
+      .list()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.loading.set(false);
+          if (res.ok) {
+            this.items.set(
+              (res.data ?? [])
+                .slice()
+                .sort(
+                  (a, b) =>
+                    new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime(),
+                ),
+            );
+          } else {
+            this.error.set(extractErrorMessage(res.error));
+          }
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.error.set(extractErrorMessage(err));
+        },
+      });
   }
 
   protected onSearch(e: Event): void {

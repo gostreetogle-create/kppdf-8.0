@@ -73,9 +73,12 @@ export class PiSheetService {
       this.activeFocusTrap.focusInitialElementWhenReady().catch(() => {});
     }
 
-    overlayRef.keydownEvents().pipe(filter((e) => e.key === 'Escape')).subscribe(() => {
-      if (config.dismissOnEscape !== false) ref.close();
-    });
+    overlayRef
+      .keydownEvents()
+      .pipe(filter((e) => e.key === 'Escape'))
+      .subscribe(() => {
+        if (config.dismissOnEscape !== false) ref.close();
+      });
     overlayRef.backdropClick().subscribe(() => {
       if (config.dismissOnBackdropClick !== false) ref.close();
     });
@@ -100,7 +103,11 @@ export class PiSheetService {
 
   private cleanup(): void {
     if (this.activeFocusTrap) {
-      try { this.activeFocusTrap.destroy(); } catch { /* ignore */ }
+      try {
+        this.activeFocusTrap.destroy();
+      } catch {
+        /* ignore */
+      }
       this.activeFocusTrap = null;
     }
     if (this.activeRef) {

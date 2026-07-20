@@ -14,10 +14,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       <!-- Current item is purely informational; no role="link" (axe
            aria-command-name: a span without href claiming role="link"
            is flagged as missing accessible name + non-interactive link). -->
-      <span
-        aria-current="page"
-        class="text-ink font-medium"
-      ><ng-content /></span>
+      <span aria-current="page" class="text-ink font-medium"><ng-content /></span>
     } @else {
       <a
         [href]="href()"

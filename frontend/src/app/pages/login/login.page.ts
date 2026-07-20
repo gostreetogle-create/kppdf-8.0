@@ -30,18 +30,11 @@ import { InputComponent } from '../../shared/ui/input/input.component';
         class="w-full max-w-sm border hairline border-sunrise-warm rounded-sm px-10 py-12 bg-paper box-border overflow-hidden"
       >
         <div class="flex items-center gap-2 mb-10">
-          <span
-            class="block w-[10px] h-[10px] bg-ink shrink-0"
-            aria-hidden="true"
-          ></span>
-          <span class="font-display font-bold tracking-tight">
-            KPPDF · Вход
-          </span>
+          <span class="block w-[10px] h-[10px] bg-ink shrink-0" aria-hidden="true"></span>
+          <span class="font-display font-bold tracking-tight"> KPPDF · Вход </span>
         </div>
 
-        <h1 class="font-display text-2xl font-semibold mb-3">
-          С возвращением.
-        </h1>
+        <h1 class="font-display text-2xl font-semibold mb-3">С возвращением.</h1>
         <p class="text-sm text-muted-foreground mb-8">
           Введите учётные данные для входа в систему.
         </p>
@@ -52,11 +45,7 @@ import { InputComponent } from '../../shared/ui/input/input.component';
           autocomplete="on"
           data-test="login-form"
         >
-          <app-pi-form-field
-            label="Имя пользователя"
-            htmlFor="login-username"
-            [required]="true"
-          >
+          <app-pi-form-field label="Имя пользователя" htmlFor="login-username" [required]="true">
             <app-pi-input
               id="login-username"
               type="text"
@@ -67,11 +56,7 @@ import { InputComponent } from '../../shared/ui/input/input.component';
             />
           </app-pi-form-field>
 
-          <app-pi-form-field
-            label="Пароль"
-            htmlFor="login-password"
-            [required]="true"
-          >
+          <app-pi-form-field label="Пароль" htmlFor="login-password" [required]="true">
             <div class="relative">
               <app-pi-input
                 id="login-password"
@@ -104,12 +89,7 @@ import { InputComponent } from '../../shared/ui/input/input.component';
             </p>
           }
 
-          <app-pi-button
-            type="submit"
-            variant="default"
-            [disabled]="submitting()"
-            class="w-full"
-          >
+          <app-pi-button type="submit" variant="default" [disabled]="submitting()" class="w-full">
             <lucide-angular [img]="logInIcon" [size]="13" aria-hidden="true" />
             {{ submitting() ? 'Входим…' : 'Войти' }}
           </app-pi-button>
@@ -129,9 +109,7 @@ import { InputComponent } from '../../shared/ui/input/input.component';
           }
         </form>
 
-        <p class="eyebrow text-[10px] text-muted-foreground mt-10 text-center">
-          kppdf-8.0 · 2026
-        </p>
+        <p class="eyebrow text-[10px] text-muted-foreground mt-10 text-center">kppdf-8.0 · 2026</p>
       </main>
     </div>
   `,
@@ -198,9 +176,7 @@ export class LoginPage {
       await this.router.navigateByUrl('/');
     } catch (err) {
       const e = err as { error?: { message?: string }; message?: string };
-      this.error.set(
-        e?.error?.message ?? e?.message ?? 'Не удалось войти.',
-      );
+      this.error.set(e?.error?.message ?? e?.message ?? 'Не удалось войти.');
       this.submitting.set(false);
     }
   }

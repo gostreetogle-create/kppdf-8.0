@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-  output,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { CdkDropList, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { BlockRendererComponent } from './block-renderer.component';
 import { PiCanvasPageComponent } from '../../../shared/ui/canvas/pi-canvas-page.component';
@@ -46,10 +40,18 @@ export const CANVAS_DROPLIST_ID = 'canvas-droplist';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CdkDropList, BlockRendererComponent, PiCanvasPageComponent],
   template: `
-    <pi-canvas-page [pageSize]="'A4'" [maxWidthPx]="orientation() === 'landscape' ? 900 : 720" [orientation]="orientation()">
+    <pi-canvas-page
+      [pageSize]="'A4'"
+      [maxWidthPx]="orientation() === 'landscape' ? 900 : 720"
+      [orientation]="orientation()"
+    >
       <!-- D.2.1: background layers (z-index 0, pointer-events none). -->
       @if (backgroundImages().length > 0) {
-        <div class="canvas-bg-stack" [class.canvas-bg-stack--landscape]="orientation() === 'landscape'" aria-hidden="true">
+        <div
+          class="canvas-bg-stack"
+          [class.canvas-bg-stack--landscape]="orientation() === 'landscape'"
+          aria-hidden="true"
+        >
           @for (url of backgroundImages(); track url) {
             <div
               class="canvas-bg"
@@ -74,8 +76,8 @@ export const CANVAS_DROPLIST_ID = 'canvas-droplist';
           <div class="canvas-dropzone__empty" aria-live="polite">
             <p class="canvas-dropzone__empty-title">Холст пуст</p>
             <p class="canvas-dropzone__empty-hint">
-              Перетащите блок из палитры слева или нажмите «+» рядом с типом блока.
-              Навигация: Tab — между блоками, Enter/Пробел — выбор, Ctrl+Enter — множественное выделение
+              Перетащите блок из палитры слева или нажмите «+» рядом с типом блока. Навигация: Tab —
+              между блоками, Enter/Пробел — выбор, Ctrl+Enter — множественное выделение
             </p>
           </div>
         } @else {

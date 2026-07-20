@@ -1,29 +1,18 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-  output,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-const cn = (...inputs: Array<string | false | null | undefined>) =>
-  twMerge(clsx(inputs));
+const cn = (...inputs: Array<string | false | null | undefined>) => twMerge(clsx(inputs));
 
 export type PiButtonVariant =
-  | 'default'
-  | 'secondary'
-  | 'outline'
-  | 'ghost'
-  | 'link'
-  | 'destructive';
+  'default' | 'secondary' | 'outline' | 'ghost' | 'link' | 'destructive';
 
 export type PiButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 
 const VARIANT_CLASS: Record<PiButtonVariant, string> = {
   /* TZ-96: Design Reference — gold primary, grey bg (user request), executive-shadow */
-  default: 'bg-[oklch(0.55_0.007_260)] text-white border border-gold executive-shadow hover:brightness-110',
+  default:
+    'bg-[oklch(0.55_0.007_260)] text-white border border-gold executive-shadow hover:brightness-110',
   secondary: 'bg-tertiary text-white hover:brightness-110',
   outline: 'bg-transparent border border-rule text-ink hover:bg-paper-2',
   ghost: 'bg-transparent text-ink hover:bg-paper-2',
@@ -39,7 +28,7 @@ const SIZE_CLASS: Record<PiButtonSize, string> = {
 };
 
 const BASE_CLASS =
-  'inline-flex items-center justify-center gap-2 font-medium font-mono ' + /* TZ-96: JetBrains Mono uppercase */
+  'inline-flex items-center justify-center gap-2 font-medium font-mono ' /* TZ-96: JetBrains Mono uppercase */ +
   'uppercase tracking-wider ' +
   'rounded-sm transition-all ' +
   'pi-focus-ring ' +

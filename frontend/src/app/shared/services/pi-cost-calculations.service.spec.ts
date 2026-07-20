@@ -1,12 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import {
-  provideHttpClient,
-  withInterceptors,
-} from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { CostCalculationsService, CostCalculation } from './pi-cost-calculations.service';
 import { API_BASE_URL } from '../../core/api.tokens';
@@ -28,7 +22,14 @@ describe('CostCalculationsService', () => {
     productId: 'prod-1',
     isActive: true,
     materials: [
-      { materialId: 'mat-1', materialName: 'ЛДСП', quantity: 2, unit: 'шт', pricePerUnit: 1500, total: 3000 },
+      {
+        materialId: 'mat-1',
+        materialName: 'ЛДСП',
+        quantity: 2,
+        unit: 'шт',
+        pricePerUnit: 1500,
+        total: 3000,
+      },
     ],
     totalMaterialCost: 3000,
     labor: [

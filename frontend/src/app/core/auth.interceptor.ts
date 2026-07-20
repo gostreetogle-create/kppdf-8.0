@@ -1,8 +1,4 @@
-import {
-  HttpContextToken,
-  HttpErrorResponse,
-  HttpInterceptorFn,
-} from '@angular/common/http';
+import { HttpContextToken, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, from, switchMap, throwError } from 'rxjs';
@@ -63,9 +59,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   // skipToken endpoints. /auth/me is intentionally NOT in this list —
   // it needs the access token to validate the session.
   const authedReq =
-    access && !skipToken
-      ? req.clone({ setHeaders: { Authorization: `Bearer ${access}` } })
-      : req;
+    access && !skipToken ? req.clone({ setHeaders: { Authorization: `Bearer ${access}` } }) : req;
 
   return next(authedReq).pipe(
     catchError((error: HttpErrorResponse) => {

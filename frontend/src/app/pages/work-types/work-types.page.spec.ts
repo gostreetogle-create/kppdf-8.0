@@ -1,13 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import {
-  provideHttpClient,
-  withFetch,
-  withInterceptors,
-} from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of } from 'rxjs';
 
@@ -50,7 +43,7 @@ describe('WorkTypesPage', () => {
             remove: () => of({ ok: true, data: undefined }),
           },
         },
-        { provide: PiDialogService, useValue: { open: () => ({} as never) } },
+        { provide: PiDialogService, useValue: { open: () => ({}) as never } },
         { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
       ],
     })
@@ -107,7 +100,9 @@ describe('WorkTypesPage', () => {
     const fixture = TestBed.createComponent(WorkTypesPage);
     fixture.detectChanges();
 
-    httpMock.expectOne(matchListGet).flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+    httpMock
+      .expectOne(matchListGet)
+      .flush('Server error', { status: 500, statusText: 'Internal Server Error' });
     await tickMicrotask();
 
     const comp = fixture.componentInstance as unknown as { error: () => string | null };
@@ -122,7 +117,10 @@ describe('WorkTypesPage', () => {
     await tickMicrotask();
     fixture.detectChanges();
 
-    const comp = fixture.componentInstance as unknown as { data: () => WorkType[]; total: () => number };
+    const comp = fixture.componentInstance as unknown as {
+      data: () => WorkType[];
+      total: () => number;
+    };
     expect(comp.data().length).toBe(0);
     expect(comp.total()).toBe(0);
   });

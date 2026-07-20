@@ -2,12 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map, tap } from 'rxjs';
 import { API_BASE_URL } from '../../core/api.tokens';
-import {
-  silentDelete,
-  silentGet,
-  silentPost,
-  SilentResult,
-} from '../../core/silent-http';
+import { silentDelete, silentGet, silentPost, SilentResult } from '../../core/silent-http';
 import type { BuildDocumentRequest } from './pi-document-templates.service';
 
 export type GeneratedDocumentSourceType = 'order' | 'contract' | 'manual';

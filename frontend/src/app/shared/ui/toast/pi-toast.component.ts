@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, PLATFORM_ID, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  PLATFORM_ID,
+  inject,
+  signal,
+} from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { PiToastService, type QueuedToast } from './pi-toast.service';
 
@@ -63,28 +70,42 @@ const VARIANT_CLASS: Record<QueuedToast['variant'], string> = {
             class="pi-toast__close inline-flex items-center justify-center w-8 h-8 shrink-0 text-muted-foreground hover:text-ink text-sm leading-none rounded-sm transition-colors"
             (click)="dismiss(t.id)"
             aria-label="Закрыть уведомление"
-          >×</button>
+          >
+            ×
+          </button>
         </div>
       }
     </div>
   `,
-  styles: [`
-    :host { display: contents; }
+  styles: [
+    `
+      :host {
+        display: contents;
+      }
 
-    .pi-toast {
-      pointer-events: auto;
-      animation: pi-toast-in 200ms ease-out;
-    }
+      .pi-toast {
+        pointer-events: auto;
+        animation: pi-toast-in 200ms ease-out;
+      }
 
-    @keyframes pi-toast-in {
-      from { opacity: 0; transform: translateY(-4px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+      @keyframes pi-toast-in {
+        from {
+          opacity: 0;
+          transform: translateY(-4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
 
-    @media (prefers-reduced-motion: reduce) {
-      .pi-toast { animation-duration: 0.01ms; }
-    }
-  `],
+      @media (prefers-reduced-motion: reduce) {
+        .pi-toast {
+          animation-duration: 0.01ms;
+        }
+      }
+    `,
+  ],
 })
 export class PiToastComponent {
   private readonly service = inject(PiToastService);

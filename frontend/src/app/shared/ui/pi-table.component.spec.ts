@@ -48,18 +48,14 @@ describe('TableComponent — TZ-104.3 Phase A', () => {
     it('numeric: true adds `tabular-nums` class to <td>', () => {
       const fixture = TestBed.createComponent(NumericHost);
       fixture.detectChanges();
-      const firstRowCells = fixture.nativeElement.querySelectorAll(
-        'tbody tr:first-child td',
-      );
+      const firstRowCells = fixture.nativeElement.querySelectorAll('tbody tr:first-child td');
       expect(firstRowCells[1].classList.contains('tabular-nums')).toBe(true);
     });
 
     it('numeric: false (or omitted) does NOT add `tabular-nums`', () => {
       const fixture = TestBed.createComponent(NumericHost);
       fixture.detectChanges();
-      const firstRowCells = fixture.nativeElement.querySelectorAll(
-        'tbody tr:first-child td',
-      );
+      const firstRowCells = fixture.nativeElement.querySelectorAll('tbody tr:first-child td');
       expect(firstRowCells[0].classList.contains('tabular-nums')).toBe(false);
     });
   });
@@ -84,9 +80,7 @@ describe('TableComponent — TZ-104.3 Phase A', () => {
       const fixture = TestBed.createComponent(StickyHost);
       fixture.detectChanges();
       const ths = fixture.nativeElement.querySelectorAll('thead th');
-      const firstTd = fixture.nativeElement.querySelectorAll(
-        'tbody tr:first-child td',
-      )[0];
+      const firstTd = fixture.nativeElement.querySelectorAll('tbody tr:first-child td')[0];
       // Left column: <th> and <td> both get sticky positioning.
       expect(ths[0].classList.contains('sticky')).toBe(true);
       expect(ths[0].classList.contains('left-0')).toBe(true);
@@ -99,9 +93,7 @@ describe('TableComponent — TZ-104.3 Phase A', () => {
     it('sticky="right" adds right-0 to the right column', () => {
       const fixture = TestBed.createComponent(StickyHost);
       fixture.detectChanges();
-      const rightTd = fixture.nativeElement.querySelectorAll(
-        'tbody tr:first-child td',
-      )[1];
+      const rightTd = fixture.nativeElement.querySelectorAll('tbody tr:first-child td')[1];
       expect(rightTd.classList.contains('right-0')).toBe(true);
       expect(rightTd.classList.contains('sticky')).toBe(true);
     });
@@ -260,9 +252,7 @@ describe('TableComponent — TZ-104.3 Phase A', () => {
     it('totalPages = ceil(total/pageSize) and rendered as "{page} / {totalPages}"', () => {
       const fixture = TestBed.createComponent(PagerHost);
       fixture.detectChanges();
-      const pageLabel = fixture.nativeElement.querySelector(
-        '[data-test="pager-page"]',
-      );
+      const pageLabel = fixture.nativeElement.querySelector('[data-test="pager-page"]');
       expect(pageLabel.textContent.trim()).toBe('1 / 5');
     });
   });
@@ -289,9 +279,7 @@ describe('TableComponent — TZ-104.3 Phase A', () => {
         'tr[data-test="table-skeleton-row"]',
       );
       expect(skeletons.length).toBe(5);
-      const dataRows = fixture.nativeElement.querySelectorAll(
-        'tbody tr[data-test^="table-row-"]',
-      );
+      const dataRows = fixture.nativeElement.querySelectorAll('tbody tr[data-test^="table-row-"]');
       expect(dataRows.length).toBe(0);
     });
 
@@ -321,11 +309,7 @@ describe('TableComponent — TZ-104.3 Phase A', () => {
       standalone: true,
       imports: [TableComponent],
       template: `
-        <app-pi-table
-          [data]="data"
-          [columns]="columns"
-          [cellTemplates]="{ photo: photoTpl }"
-        >
+        <app-pi-table [data]="data" [columns]="columns" [cellTemplates]="{ photo: photoTpl }">
           <ng-template #photoTpl let-row>
             <span data-test="photo-tpl" [attr.data-id]="row.id">PHOTO-{{ row.id }}</span>
           </ng-template>
@@ -369,9 +353,7 @@ describe('TableComponent — TZ-104.3 Phase A', () => {
       }
       const fixture = TestBed.createComponent(FallbackHost);
       fixture.detectChanges();
-      const priceCell = fixture.nativeElement.querySelector(
-        'tbody tr:first-child td:nth-child(2)',
-      );
+      const priceCell = fixture.nativeElement.querySelector('tbody tr:first-child td:nth-child(2)');
       expect(priceCell.textContent.trim()).toContain('99.99');
     });
   });
@@ -396,9 +378,7 @@ describe('TableComponent — TZ-104.3 Phase A', () => {
         { id: '2', name: 'Gadget', price: 200 },
         { id: '1', name: 'Widget', price: 100 },
       ];
-      columns: ColumnDef<TestRow>[] = [
-        { key: 'name', label: 'Name', sortable: true },
-      ];
+      columns: ColumnDef<TestRow>[] = [{ key: 'name', label: 'Name', sortable: true }];
       localSort = true;
       events: { key: string; dir: string | null }[] = [];
       emitSpy(e: { key: string; dir: string | null }): void {
@@ -413,13 +393,10 @@ describe('TableComponent — TZ-104.3 Phase A', () => {
       // Click Name header — sortChange emits (header arrow flips
       // visually) but the row order is preserved because sortedData()
       // bypasses internal sort and returns data() unchanged.
-      const nameHeader =
-        fixture.nativeElement.querySelectorAll('thead th')[0] as HTMLElement;
+      const nameHeader = fixture.nativeElement.querySelectorAll('thead th')[0] as HTMLElement;
       nameHeader.click();
       fixture.detectChanges();
-      const firstRow = fixture.nativeElement.querySelector(
-        'tbody tr:first-child td:first-child',
-      );
+      const firstRow = fixture.nativeElement.querySelector('tbody tr:first-child td:first-child');
       // Data was [Gadget, Widget] — stays that way under bypass.
       expect(firstRow.textContent.trim()).toBe('Gadget');
     });
@@ -428,8 +405,7 @@ describe('TableComponent — TZ-104.3 Phase A', () => {
       const fixture = TestBed.createComponent(LocalSortHost);
       (fixture.componentInstance as LocalSortHost).localSort = false;
       fixture.detectChanges();
-      const nameHeader =
-        fixture.nativeElement.querySelectorAll('thead th')[0] as HTMLElement;
+      const nameHeader = fixture.nativeElement.querySelectorAll('thead th')[0] as HTMLElement;
       nameHeader.click();
       const host = fixture.componentInstance as LocalSortHost;
       expect(host.events.length).toBe(1);
@@ -454,16 +430,12 @@ describe('TableComponent — TZ-104.3 Phase A', () => {
     it('data=[] renders empty-state-row with default inline markup (eyebrow "00")', () => {
       const fixture = TestBed.createComponent(EmptyHost);
       fixture.detectChanges();
-      const emptyRow = fixture.nativeElement.querySelector(
-        '[data-test="empty-state-row"]',
-      );
+      const emptyRow = fixture.nativeElement.querySelector('[data-test="empty-state-row"]');
       expect(emptyRow).toBeTruthy();
       // Inline fallback (no PiEmptyStateComponent import — pi-table owns
       // its own empty-row markup since PiEmptyState renders a <tr>).
       expect(emptyRow.textContent).toContain('00');
-      const defaultBlock = fixture.nativeElement.querySelector(
-        '[data-test="default-empty"]',
-      );
+      const defaultBlock = fixture.nativeElement.querySelector('[data-test="default-empty"]');
       expect(defaultBlock).toBeTruthy();
     });
 
@@ -479,11 +451,7 @@ describe('TableComponent — TZ-104.3 Phase A', () => {
         standalone: true,
         imports: [TableComponent],
         template: `
-          <app-pi-table
-            [data]="[]"
-            [columns]="baseCols"
-            [emptyTemplate]="customTpl"
-          >
+          <app-pi-table [data]="[]" [columns]="baseCols" [emptyTemplate]="customTpl">
             <ng-template #customTpl>
               <div data-test="custom-empty-block">MY_CUSTOM_EMPTY</div>
             </ng-template>
@@ -495,18 +463,14 @@ describe('TableComponent — TZ-104.3 Phase A', () => {
       }
       const fixture = TestBed.createComponent(CustomEmptyHost);
       fixture.detectChanges();
-      const customBlock = fixture.nativeElement.querySelector(
-        '[data-test="custom-empty-block"]',
-      );
+      const customBlock = fixture.nativeElement.querySelector('[data-test="custom-empty-block"]');
       expect(customBlock).toBeTruthy();
       expect(customBlock.textContent.trim()).toBe('MY_CUSTOM_EMPTY');
       // The wrapper <tr data-test="empty-state-row"> is ALWAYS rendered
       // when data is empty (it containers either default or custom
       // content). The inner default [data-test="default-empty"] div is
       // what gets replaced when emptyTemplate is supplied.
-      const defaultEmpty = fixture.nativeElement.querySelector(
-        '[data-test="default-empty"]',
-      );
+      const defaultEmpty = fixture.nativeElement.querySelector('[data-test="default-empty"]');
       expect(defaultEmpty).toBeNull();
     });
   });

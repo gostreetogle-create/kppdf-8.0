@@ -1,12 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import {
-  FormArray,
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-} from '@angular/forms';
+import { FormArray, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TableTemplateFormDialogComponent } from './table-template-dialog.component';
@@ -173,9 +168,7 @@ describe('TableTemplateFormDialogComponent', () => {
    * subscribe callback at the right moment. This is the bridge between the
    * synchronous test body and the async observable.subscribe() in onSave.
    */
-  async function createSaveFixture(
-    data: TableTemplate | null = null,
-  ): Promise<{
+  async function createSaveFixture(data: TableTemplate | null = null): Promise<{
     fixture: ComponentFixture<TestHost>;
     dialog: TableTemplateFormDialogComponent;
     service: { create: jest.Mock; update: jest.Mock; preview: jest.Mock };
@@ -399,9 +392,7 @@ describe('TableTemplateFormDialogComponent', () => {
     });
 
     it('hydrates sortOrder + isActive from data', async () => {
-      const fixture = await createFixture(
-        stubTableTemplate({ sortOrder: 42, isActive: false }),
-      );
+      const fixture = await createFixture(stubTableTemplate({ sortOrder: 42, isActive: false }));
       const dialog = getDialog(fixture);
       expect(dialog.form.get('sortOrder')!.value).toBe(42);
       expect(dialog.form.get('isActive')!.value).toBe(false);
@@ -435,9 +426,7 @@ describe('TableTemplateFormDialogComponent', () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
       fixture.detectChanges();
 
-      const previewMock = (
-        TestBed.inject(TableTemplatesService) as { preview: jest.Mock }
-      ).preview;
+      const previewMock = (TestBed.inject(TableTemplatesService) as { preview: jest.Mock }).preview;
       expect(previewMock).toHaveBeenCalledTimes(1);
       expect(previewMock).toHaveBeenCalledWith('tmpl-1');
     });
@@ -454,7 +443,9 @@ describe('TableTemplateFormDialogComponent', () => {
       fixture.detectChanges();
       const after = (dialog.form.get('columns') as FormArray).length;
       expect(after).toBe(before + 1);
-      const newCol = (dialog.form.get('columns') as FormArray).at(after - 1) as TableColumnFormShape;
+      const newCol = (dialog.form.get('columns') as FormArray).at(
+        after - 1,
+      ) as TableColumnFormShape;
       expect(Object.keys(newCol.controls).sort()).toEqual(
         ['align', 'format', 'key', 'label', 'required', 'type', 'width'].sort(),
       );
@@ -486,7 +477,7 @@ describe('TableTemplateFormDialogComponent', () => {
       const middle = columns.at(1);
       dialog.removeColumn(1);
       fixture.detectChanges();
-      const after = (dialog.form.get('columns') as FormArray);
+      const after = dialog.form.get('columns') as FormArray;
       expect(after.length).toBe(2);
       expect(after.at(1)).not.toBe(middle);
     });
@@ -674,7 +665,9 @@ describe('TableTemplateFormDialogComponent', () => {
       columns.at(1).controls.label.setValue('Кол-во');
       columns.at(1).controls.key.setValue('sku');
       dialog.onSave();
-      const validationError = (dialog as unknown as { validationError: () => string | null }).validationError();
+      const validationError = (
+        dialog as unknown as { validationError: () => string | null }
+      ).validationError();
       expect(validationError).toBe('Ключи колонок должны быть уникальными.');
       expect(service.create).not.toHaveBeenCalled();
       expect(closeSpy).not.toHaveBeenCalled();
@@ -726,7 +719,10 @@ describe('TableTemplateFormDialogComponent', () => {
       dialog.onSave();
       // service.update should be called with data._id
       expect(service.update).toHaveBeenCalledTimes(1);
-      expect(service.update).toHaveBeenCalledWith('tmpl-42', expect.objectContaining({ name: 'Изменённое имя' }));
+      expect(service.update).toHaveBeenCalledWith(
+        'tmpl-42',
+        expect.objectContaining({ name: 'Изменённое имя' }),
+      );
       // No data.create path: create should not be called
       expect(service.create).not.toHaveBeenCalled();
       // Fire captured callback: success
@@ -743,7 +739,9 @@ describe('TableTemplateFormDialogComponent', () => {
       // Fire captured callback: error
       const httpError = new HttpErrorResponse({ status: 500, statusText: 'Server Error' });
       emitCreate({ ok: false, error: httpError });
-      const errorMessage = (dialog as unknown as { errorMessage: () => string | null }).errorMessage();
+      const errorMessage = (
+        dialog as unknown as { errorMessage: () => string | null }
+      ).errorMessage();
       expect(errorMessage).toBeTruthy();
       expect(toastError).toHaveBeenCalledTimes(1);
       // The toast.error argument should be a human-readable string (extractErrorMessage).
@@ -788,9 +786,15 @@ describe('TableTemplateFormDialogComponent', () => {
       dialog.addColumn();
       fixture.detectChanges();
       // Access the FormArray via the protected getter.
-      const columns = (dialog as unknown as {
-        columnsArray: { at: (i: number) => { controls: { align: { setValue: (v: string) => void; value: string } } } };
-      }).columnsArray;
+      const columns = (
+        dialog as unknown as {
+          columnsArray: {
+            at: (i: number) => {
+              controls: { align: { setValue: (v: string) => void; value: string } };
+            };
+          };
+        }
+      ).columnsArray;
       columns.at(0).controls.align.setValue('right');
       columns.at(1).controls.align.setValue('left');
       columns.at(2).controls.align.setValue('center');
@@ -823,10 +827,7 @@ describe('TableTemplateFormDialogComponent', () => {
       fixture.detectChanges();
       const ngErrors = consoleSpy.mock.calls.filter((args) => {
         const first = args[0];
-        return (
-          typeof first === 'string' &&
-          /NG01050|NG01054|NG01202/.test(first)
-        );
+        return typeof first === 'string' && /NG01050|NG01054|NG01202/.test(first);
       });
       consoleSpy.mockRestore();
       expect(ngErrors).toEqual([]);
@@ -841,4 +842,3 @@ describe('TableTemplateFormDialogComponent', () => {
     });
   });
 });
-

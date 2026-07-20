@@ -89,10 +89,7 @@ export class TemplateBlocksService {
     );
   }
 
-  update(
-    id: string,
-    payload: UpdateTemplateBlockPayload,
-  ): Observable<SilentResult<TemplateBlock>> {
+  update(id: string, payload: UpdateTemplateBlockPayload): Observable<SilentResult<TemplateBlock>> {
     return silentPatch<TemplateBlock>(this.http, `${this.baseUrl}/template-blocks/${id}`, payload);
   }
 

@@ -1,11 +1,4 @@
-import {
-  Directive,
-  ElementRef,
-  HostListener,
-  inject,
-  input,
-  DOCUMENT,
-} from '@angular/core';
+import { Directive, ElementRef, HostListener, inject, input, DOCUMENT } from '@angular/core';
 import {
   Overlay,
   OverlayRef,
@@ -50,30 +43,52 @@ export class TooltipDirective {
   private openTimer: ReturnType<typeof setTimeout> | null = null;
   private closeTimer: ReturnType<typeof setTimeout> | null = null;
 
-  @HostListener('mouseenter') onEnter(): void { this.scheduleOpen(); }
-  @HostListener('mouseleave') onLeave(): void { this.scheduleClose(); }
-  @HostListener('focusin') onFocus(): void { this.openImmediate(); }
-  @HostListener('focusout') onBlur(): void { this.closeNow(); }
+  @HostListener('mouseenter') onEnter(): void {
+    this.scheduleOpen();
+  }
+  @HostListener('mouseleave') onLeave(): void {
+    this.scheduleClose();
+  }
+  @HostListener('focusin') onFocus(): void {
+    this.openImmediate();
+  }
+  @HostListener('focusout') onBlur(): void {
+    this.closeNow();
+  }
 
   private scheduleOpen(): void {
-    if (this.closeTimer) { clearTimeout(this.closeTimer); this.closeTimer = null; }
+    if (this.closeTimer) {
+      clearTimeout(this.closeTimer);
+      this.closeTimer = null;
+    }
     if (this.openTimer) clearTimeout(this.openTimer);
     this.openTimer = setTimeout(() => this.show(), this.delay());
   }
 
   private openImmediate(): void {
-    if (this.openTimer) { clearTimeout(this.openTimer); this.openTimer = null; }
-    if (this.closeTimer) { clearTimeout(this.closeTimer); this.closeTimer = null; }
+    if (this.openTimer) {
+      clearTimeout(this.openTimer);
+      this.openTimer = null;
+    }
+    if (this.closeTimer) {
+      clearTimeout(this.closeTimer);
+      this.closeTimer = null;
+    }
     this.show();
   }
 
   private scheduleClose(): void {
-    if (this.openTimer) { clearTimeout(this.openTimer); this.openTimer = null; }
+    if (this.openTimer) {
+      clearTimeout(this.openTimer);
+      this.openTimer = null;
+    }
     if (this.closeTimer) clearTimeout(this.closeTimer);
     this.closeTimer = setTimeout(() => this.hide(), this.closeDelay());
   }
 
-  private closeNow(): void { this.hide(); }
+  private closeNow(): void {
+    this.hide();
+  }
 
   private show(): void {
     if (this.activeRef) return;

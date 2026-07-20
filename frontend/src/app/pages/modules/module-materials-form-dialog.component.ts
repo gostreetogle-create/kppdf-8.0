@@ -1,15 +1,5 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  signal,
-} from '@angular/core';
-import {
-  FormArray,
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { FormArray, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { InputComponent } from '../../shared/ui/input/input.component';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
@@ -43,10 +33,7 @@ import { extractErrorMessage } from '../../core/silent-http';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, ButtonComponent, InputComponent, PiDialogComponent],
   template: `
-    <app-pi-dialog
-      title="Материалы в составе модуля"
-      [width]="'lg'"
-    >
+    <app-pi-dialog title="Материалы в составе модуля" [width]="'lg'">
       <form
         body
         [formGroup]="form"
@@ -59,8 +46,14 @@ import { extractErrorMessage } from '../../core/silent-http';
             <div [formGroupName]="$index" class="p-3 hairline rounded-sm bg-paper-2/30">
               <div class="grid grid-cols-12 gap-2 items-start">
                 <label class="block col-span-5">
-                  <span class="eyebrow block mb-1.5">Материал <span class="text-destructive">*</span></span>
-                  <select class="pi-input w-full" formControlName="materialId" data-test="mat-select">
+                  <span class="eyebrow block mb-1.5"
+                    >Материал <span class="text-destructive">*</span></span
+                  >
+                  <select
+                    class="pi-input w-full"
+                    formControlName="materialId"
+                    data-test="mat-select"
+                  >
                     <option value="">— выбрать —</option>
                     @for (m of materialsCatalog(); track m._id) {
                       <option [value]="m._id">{{ m.name }} ({{ m.unit }})</option>
@@ -68,9 +61,15 @@ import { extractErrorMessage } from '../../core/silent-http';
                   </select>
                 </label>
                 <label class="block col-span-2">
-                  <span class="eyebrow block mb-1.5">Кол-во <span class="text-destructive">*</span></span>
-                  <app-pi-input type="number" formControlName="quantity"
-                    placeholder="0" data-test="mat-qty" />
+                  <span class="eyebrow block mb-1.5"
+                    >Кол-во <span class="text-destructive">*</span></span
+                  >
+                  <app-pi-input
+                    type="number"
+                    formControlName="quantity"
+                    placeholder="0"
+                    data-test="mat-qty"
+                  />
                 </label>
                 <label class="block col-span-2">
                   <span class="eyebrow block mb-1.5">Ед.</span>
@@ -80,40 +79,71 @@ import { extractErrorMessage } from '../../core/silent-http';
                   <input type="checkbox" formControlName="isPurchased" data-test="mat-purchased" />
                   <span class="eyebrow">Закупка</span>
                 </label>
-                <app-pi-button type="button" variant="destructive" size="icon" (click)="removeRow($index)"
-                  aria-label="Удалить материал">
+                <app-pi-button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  (click)="removeRow($index)"
+                  aria-label="Удалить материал"
+                >
                   ×
                 </app-pi-button>
               </div>
 
-              <div formGroupName="overrideDimensions" class="mt-3 grid grid-cols-12 gap-2 items-end">
-                <span class="col-span-12 eyebrow text-muted-foreground">Override-габариты (необязательно)</span>
+              <div
+                formGroupName="overrideDimensions"
+                class="mt-3 grid grid-cols-12 gap-2 items-end"
+              >
+                <span class="col-span-12 eyebrow text-muted-foreground"
+                  >Override-габариты (необязательно)</span
+                >
                 <label class="block col-span-2">
                   <span class="eyebrow block mb-1.5">Длина</span>
-                  <app-pi-input type="number" formControlName="length"
-                    placeholder="0" data-test="override-len" />
+                  <app-pi-input
+                    type="number"
+                    formControlName="length"
+                    placeholder="0"
+                    data-test="override-len"
+                  />
                 </label>
                 <label class="block col-span-2">
                   <span class="eyebrow block mb-1.5">Ширина</span>
-                  <app-pi-input type="number" formControlName="width"
-                    placeholder="0" data-test="override-w" />
+                  <app-pi-input
+                    type="number"
+                    formControlName="width"
+                    placeholder="0"
+                    data-test="override-w"
+                  />
                 </label>
                 <label class="block col-span-2">
                   <span class="eyebrow block mb-1.5">Высота</span>
-                  <app-pi-input type="number" formControlName="height"
-                    placeholder="0" data-test="override-h" />
+                  <app-pi-input
+                    type="number"
+                    formControlName="height"
+                    placeholder="0"
+                    data-test="override-h"
+                  />
                 </label>
                 <label class="block col-span-3">
                   <span class="eyebrow block mb-1.5">Ед.</span>
-                  <app-pi-input formControlName="unit"
-                    placeholder="мм/см/м" data-test="override-unit" />
+                  <app-pi-input
+                    formControlName="unit"
+                    placeholder="мм/см/м"
+                    data-test="override-unit"
+                  />
                 </label>
               </div>
             </div>
           }
         </div>
 
-        <app-pi-button type="button" variant="outline" size="sm" (click)="addRow()" data-test="mat-add">
+        <app-pi-button
+          type="button"
+          variant="outline"
+          size="sm"
+          (click)="addRow()"
+          data-test="mat-add"
+        >
           + Добавить материал
         </app-pi-button>
 
@@ -128,8 +158,12 @@ import { extractErrorMessage } from '../../core/silent-http';
         <app-pi-button variant="ghost" type="button" (click)="onCancel()" data-test="cancel-button">
           Отмена
         </app-pi-button>
-        <app-pi-button variant="default" type="submit"
-          [disabled]="form.invalid || submitting()" data-test="submit-button">
+        <app-pi-button
+          variant="default"
+          type="submit"
+          [disabled]="form.invalid || submitting()"
+          data-test="submit-button"
+        >
           {{ submitting() ? 'Сохранение…' : 'Сохранить' }}
         </app-pi-button>
       </div>
@@ -139,8 +173,9 @@ import { extractErrorMessage } from '../../core/silent-http';
 export class ModuleMaterialsFormDialogComponent {
   protected readonly ref =
     inject<DialogRef<null | { materials: MaterialInModule[] }>>(PI_DIALOG_REF);
-  protected readonly data =
-    inject<{ moduleId: string; materials: MaterialInModule[] }>(PI_DIALOG_DATA);
+  protected readonly data = inject<{ moduleId: string; materials: MaterialInModule[] }>(
+    PI_DIALOG_DATA,
+  );
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly modules = inject(ProductModulesService);
   private readonly materialsSvc = inject(MaterialsService);
@@ -151,9 +186,7 @@ export class ModuleMaterialsFormDialogComponent {
   protected readonly materialsCatalog = signal<Material[]>([]);
 
   protected readonly form = this.fb.group({
-    materials: this.fb.array(
-      (this.data.materials ?? []).map((m) => this.rowGroup(m)),
-    ),
+    materials: this.fb.array((this.data.materials ?? []).map((m) => this.rowGroup(m))),
   });
 
   protected get materialsArray(): FormArray {
@@ -169,9 +202,14 @@ export class ModuleMaterialsFormDialogComponent {
 
   private rowGroup(m: MaterialInModule) {
     return this.fb.group({
-      materialId: this.fb.control<string>(typeof m.materialId === 'string' ? m.materialId : m.materialId._id,
-        [Validators.required]),
-      quantity: this.fb.control<number>(m.quantity ?? 1, [Validators.required, Validators.min(0.0001)]),
+      materialId: this.fb.control<string>(
+        typeof m.materialId === 'string' ? m.materialId : m.materialId._id,
+        [Validators.required],
+      ),
+      quantity: this.fb.control<number>(m.quantity ?? 1, [
+        Validators.required,
+        Validators.min(0.0001),
+      ]),
       unit: this.fb.control<string>(m.unit ?? 'шт'),
       isPurchased: this.fb.control<boolean>(m.isPurchased ?? true),
       overrideDimensions: this.fb.group({
@@ -184,13 +222,15 @@ export class ModuleMaterialsFormDialogComponent {
   }
 
   protected addRow(): void {
-    this.materialsArray.push(this.rowGroup({
-      materialId: '',
-      quantity: 1,
-      unit: 'шт',
-      isPurchased: true,
-      sortOrder: this.materialsArray.length,
-    }));
+    this.materialsArray.push(
+      this.rowGroup({
+        materialId: '',
+        quantity: 1,
+        unit: 'шт',
+        isPurchased: true,
+        sortOrder: this.materialsArray.length,
+      }),
+    );
   }
 
   protected removeRow(idx: number): void {

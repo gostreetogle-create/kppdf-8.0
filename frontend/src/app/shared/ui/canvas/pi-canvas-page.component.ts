@@ -1,8 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  input,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 /**
  * TZ-86 Phase D.1 — `pi-canvas-page` Paper & Ink primitive.

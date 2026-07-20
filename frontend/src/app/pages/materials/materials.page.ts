@@ -27,7 +27,11 @@ import { createSearchState } from '../../shared/util/search';
 import { pluralize, formatPrice } from '../../shared/util/format';
 import { createLookupTable } from '../../shared/util/lookup-table';
 import { ColumnDef, TableComponent } from '../../shared/ui/pi-table.component';
-import { Material, MaterialsService, type MaterialsListResponse } from '../../shared/services/materials.service';
+import {
+  Material,
+  MaterialsService,
+  type MaterialsListResponse,
+} from '../../shared/services/materials.service';
 import { Photo, PhotosService } from '../../shared/services/photos.service';
 import { Organization, OrganizationsService } from '../../shared/services/organizations.service';
 import { MaterialFormDialogComponent } from './material-form-dialog.component';
@@ -104,11 +108,7 @@ const PAGE_SIZE = 50;
         data-test="search-input"
         class="pi-input w-64"
       />
-      <app-pi-button
-        variant="default"
-        (click)="openCreate()"
-        data-test="create-button"
-      >
+      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
         + Создать
       </app-pi-button>
       <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
@@ -233,9 +233,7 @@ export class MaterialsPage {
   private readonly suppliersLookup = createLookupTable<Organization>(
     this.orgs.list({ limit: 200 }),
   );
-  private readonly photosLookup = createLookupTable<Photo>(
-    this.photosService.list(),
-  );
+  private readonly photosLookup = createLookupTable<Photo>(this.photosService.list());
 
   // ─── Template refs (resolved at view init, static:true → BEFORE ngOnInit) ──
   // TZ-104.4.2: strong typing matches pi-table's re-parameterized
@@ -266,9 +264,7 @@ export class MaterialsPage {
   private readonly listParams = computed(() => ({
     page: this.pageSig(),
     limit: PAGE_SIZE,
-    ...(this.search.debouncedSearch()
-      ? { search: this.search.debouncedSearch() }
-      : {}),
+    ...(this.search.debouncedSearch() ? { search: this.search.debouncedSearch() } : {}),
   }));
 
   protected readonly listRes = httpResource<MaterialsListResponse>(() => ({
@@ -276,21 +272,18 @@ export class MaterialsPage {
     params: this.listParams(),
   }));
 
-  protected readonly data = computed<Material[]>(
-    () => this.listRes.value()?.items ?? [],
-  );
+  protected readonly data = computed<Material[]>(() => this.listRes.value()?.items ?? []);
   /**
    * Backend reported total (canonical `{items, total, page, limit}`
    * envelope). The pi-table pager uses this to compute
    * `totalPages = ceil(total / pageSize)` and render the Prev / Next
    * controls. When backend has ≤limit rows, pi-table hides the pager.
    */
-  protected readonly total = computed<number>(
-    () => this.listRes.value()?.total ?? 0,
-  );
+  protected readonly total = computed<number>(() => this.listRes.value()?.total ?? 0);
   protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
   protected readonly error = computed<string | null>(() => {
-    const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    const err = this.listRes.error() as
+      import('@angular/common/http').HttpErrorResponse | undefined;
     return err ? extractErrorMessage(err) : null;
   });
 
@@ -390,9 +383,7 @@ export class MaterialsPage {
 
   protected dimensionsSummary(row: Material): string {
     if (!row.dimensions || row.dimensions.length === 0) return '';
-    return row.dimensions
-      .map((d) => `${typeLetter(d.type)} ${formatVal(d.value)}`)
-      .join(' × ');
+    return row.dimensions.map((d) => `${typeLetter(d.type)} ${formatVal(d.value)}`).join(' × ');
   }
 
   protected totalLabel(n: number): string {
@@ -436,7 +427,7 @@ export class MaterialsPage {
         variant: 'destructive',
       },
       width: 'sm',
-    parentDestroyRef: this.destroyRef,
+      parentDestroyRef: this.destroyRef,
     });
     onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
       if (!confirmed) return;
@@ -467,13 +458,20 @@ export class MaterialsPage {
 // ─── Local helpers (no need to export) ───
 function typeLetter(t: string): string {
   switch (t) {
-    case 'length': return 'L';
-    case 'width': return 'W';
-    case 'height': return 'H';
-    case 'thickness': return 'T';
-    case 'diameter': return 'Ø';
-    case 'depth': return 'D';
-    default: return t;
+    case 'length':
+      return 'L';
+    case 'width':
+      return 'W';
+    case 'height':
+      return 'H';
+    case 'thickness':
+      return 'T';
+    case 'diameter':
+      return 'Ø';
+    case 'depth':
+      return 'D';
+    default:
+      return t;
   }
 }
 

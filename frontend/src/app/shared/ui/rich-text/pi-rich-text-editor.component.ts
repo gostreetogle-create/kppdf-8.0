@@ -56,19 +56,31 @@ export const DEFAULT_EXTENSIONS = [
         <div class="pi-rte-toolbar" role="toolbar" aria-label="Форматирование текста">
           <!-- Heading levels -->
           <div class="pi-rte-group">
-            <button type="button" class="pi-rte-btn"
+            <button
+              type="button"
+              class="pi-rte-btn"
               [class.is-active]="activeStates().h1"
-              (click)="toggleHeading(1)" title="Заголовок 1">
+              (click)="toggleHeading(1)"
+              title="Заголовок 1"
+            >
               H<sub>1</sub>
             </button>
-            <button type="button" class="pi-rte-btn"
+            <button
+              type="button"
+              class="pi-rte-btn"
               [class.is-active]="activeStates().h2"
-              (click)="toggleHeading(2)" title="Заголовок 2">
+              (click)="toggleHeading(2)"
+              title="Заголовок 2"
+            >
               H<sub>2</sub>
             </button>
-            <button type="button" class="pi-rte-btn"
+            <button
+              type="button"
+              class="pi-rte-btn"
               [class.is-active]="activeStates().h3"
-              (click)="toggleHeading(3)" title="Заголовок 3">
+              (click)="toggleHeading(3)"
+              title="Заголовок 3"
+            >
               H<sub>3</sub>
             </button>
           </div>
@@ -77,19 +89,31 @@ export const DEFAULT_EXTENSIONS = [
 
           <!-- Inline: bold / italic / underline -->
           <div class="pi-rte-group">
-            <button type="button" class="pi-rte-btn pi-rte-btn--icon"
+            <button
+              type="button"
+              class="pi-rte-btn pi-rte-btn--icon"
               [class.is-active]="activeStates().bold"
-              (click)="toggleBold()" title="Жирный">
+              (click)="toggleBold()"
+              title="Жирный"
+            >
               <strong>B</strong>
             </button>
-            <button type="button" class="pi-rte-btn pi-rte-btn--icon"
+            <button
+              type="button"
+              class="pi-rte-btn pi-rte-btn--icon"
               [class.is-active]="activeStates().italic"
-              (click)="toggleItalic()" title="Курсив">
+              (click)="toggleItalic()"
+              title="Курсив"
+            >
               <em>I</em>
             </button>
-            <button type="button" class="pi-rte-btn pi-rte-btn--icon"
+            <button
+              type="button"
+              class="pi-rte-btn pi-rte-btn--icon"
               [class.is-active]="activeStates().underline"
-              (click)="toggleUnderline()" title="Подчёркнутый">
+              (click)="toggleUnderline()"
+              title="Подчёркнутый"
+            >
               <u>U</u>
             </button>
           </div>
@@ -98,25 +122,52 @@ export const DEFAULT_EXTENSIONS = [
 
           <!-- Alignment -->
           <div class="pi-rte-group">
-            <button type="button" class="pi-rte-btn"
+            <button
+              type="button"
+              class="pi-rte-btn"
               [class.is-active]="activeStates().alignLeft"
-              (click)="setTextAlign('left')" title="По левому краю">
+              (click)="setTextAlign('left')"
+              title="По левому краю"
+            >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M1 2h12M1 5h8M1 8h10M1 11h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                <path
+                  d="M1 2h12M1 5h8M1 8h10M1 11h6"
+                  stroke="currentColor"
+                  stroke-width="1.2"
+                  stroke-linecap="round"
+                />
               </svg>
             </button>
-            <button type="button" class="pi-rte-btn"
+            <button
+              type="button"
+              class="pi-rte-btn"
               [class.is-active]="activeStates().alignCenter"
-              (click)="setTextAlign('center')" title="По центру">
+              (click)="setTextAlign('center')"
+              title="По центру"
+            >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M1 2h12M3 5h8M2 8h10M4 11h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                <path
+                  d="M1 2h12M3 5h8M2 8h10M4 11h6"
+                  stroke="currentColor"
+                  stroke-width="1.2"
+                  stroke-linecap="round"
+                />
               </svg>
             </button>
-            <button type="button" class="pi-rte-btn"
+            <button
+              type="button"
+              class="pi-rte-btn"
               [class.is-active]="activeStates().alignRight"
-              (click)="setTextAlign('right')" title="По правому краю">
+              (click)="setTextAlign('right')"
+              title="По правому краю"
+            >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M1 2h12M5 5h8M3 8h10M7 11h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                <path
+                  d="M1 2h12M5 5h8M3 8h10M7 11h6"
+                  stroke="currentColor"
+                  stroke-width="1.2"
+                  stroke-linecap="round"
+                />
               </svg>
             </button>
           </div>
@@ -126,210 +177,228 @@ export const DEFAULT_EXTENSIONS = [
       <div #editorEl class="pi-rte-editor" [class.pi-rte-editor--compact]="compact()"></div>
     </div>
   `,
-  styles: [`
-    :host {
-      display: block;
-      --pi-rte-editor-border: oklch(0.22 0.08 260);
-      --pi-rte-editor-border-selected: oklch(0.32 0.14 260);
-    }
-    :host-context(.dark) {
-      --pi-rte-editor-border: oklch(0.55 0.10 260);
-      --pi-rte-editor-border-selected: oklch(0.65 0.14 260);
-    }
+  styles: [
+    `
+      :host {
+        display: block;
+        --pi-rte-editor-border: oklch(0.22 0.08 260);
+        --pi-rte-editor-border-selected: oklch(0.32 0.14 260);
+      }
+      :host-context(.dark) {
+        --pi-rte-editor-border: oklch(0.55 0.1 260);
+        --pi-rte-editor-border-selected: oklch(0.65 0.14 260);
+      }
 
-    /* ── Container ── */
-    .pi-rte {
-      position: relative;
-      border: 1.5px solid oklch(var(--color-ink) / 0.85);
-      border-radius: 5px;
-      background: oklch(var(--color-paper));
-      overflow: hidden;
-      transition: border-color 140ms ease;
-    }
-    .pi-rte:hover {
-      border-color: oklch(var(--color-ink));
-    }
-    .pi-rte--focused {
-      border-color: oklch(var(--color-ink));
-      outline: 3px solid oklch(var(--color-sunrise-glow) / 0.4);
-      outline-offset: 0;
-    }
-    .pi-rte--selected {
-      border-color: oklch(var(--color-sunrise-warm));
-      outline: 3px solid oklch(var(--color-sunrise-glow) / 0.35);
-      outline-offset: 0;
-    }
-    .pi-rte--chromeless {
-      border: none;
-      border-radius: 4px;
-      outline: none;
-      background: transparent;
-    }
-    .pi-rte--chromeless:hover {
-      border-color: transparent;
-    }
-    .pi-rte--chromeless.pi-rte--selected {
-      border-color: transparent;
-      outline: none;
-    }
-    .pi-rte--chromeless .pi-rte-editor {
-      background: oklch(var(--color-paper));
-      border: 1px solid var(--pi-rte-editor-border);
-      border-radius: 4px;
-    }
-    .pi-rte--chromeless.pi-rte--selected .pi-rte-editor {
-      border-color: var(--pi-rte-editor-border-selected);
-      background: oklch(var(--color-paper));
-    }
+      /* ── Container ── */
+      .pi-rte {
+        position: relative;
+        border: 1.5px solid oklch(var(--color-ink) / 0.85);
+        border-radius: 5px;
+        background: oklch(var(--color-paper));
+        overflow: hidden;
+        transition: border-color 140ms ease;
+      }
+      .pi-rte:hover {
+        border-color: oklch(var(--color-ink));
+      }
+      .pi-rte--focused {
+        border-color: oklch(var(--color-ink));
+        outline: 3px solid oklch(var(--color-sunrise-glow) / 0.4);
+        outline-offset: 0;
+      }
+      .pi-rte--selected {
+        border-color: oklch(var(--color-sunrise-warm));
+        outline: 3px solid oklch(var(--color-sunrise-glow) / 0.35);
+        outline-offset: 0;
+      }
+      .pi-rte--chromeless {
+        border: none;
+        border-radius: 4px;
+        outline: none;
+        background: transparent;
+      }
+      .pi-rte--chromeless:hover {
+        border-color: transparent;
+      }
+      .pi-rte--chromeless.pi-rte--selected {
+        border-color: transparent;
+        outline: none;
+      }
+      .pi-rte--chromeless .pi-rte-editor {
+        background: oklch(var(--color-paper));
+        border: 1px solid var(--pi-rte-editor-border);
+        border-radius: 4px;
+      }
+      .pi-rte--chromeless.pi-rte--selected .pi-rte-editor {
+        border-color: var(--pi-rte-editor-border-selected);
+        background: oklch(var(--color-paper));
+      }
 
-    /* ── Toolbar ── */
-    .pi-rte-toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 5px;
-      padding: 6px 8px;
-      background:
-        linear-gradient(
+      /* ── Toolbar ── */
+      .pi-rte-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 8px;
+        background: linear-gradient(
           to bottom,
           oklch(var(--color-paper-2)),
           oklch(var(--color-paper))
         );
-      border-bottom: 1px solid oklch(var(--color-rule));
-      user-select: none;
-    }
-    .pi-rte--compact .pi-rte-toolbar {
-      padding: 4px 6px;
-      gap: 4px;
-    }
+        border-bottom: 1px solid oklch(var(--color-rule));
+        user-select: none;
+      }
+      .pi-rte--compact .pi-rte-toolbar {
+        padding: 4px 6px;
+        gap: 4px;
+      }
 
-    .pi-rte-group {
-      display: flex;
-      align-items: center;
-      gap: 1px;
-      padding: 2px;
-      background: oklch(var(--color-paper));
-      border: 1px solid oklch(var(--color-rule));
-      border-radius: 5px;
-    }
+      .pi-rte-group {
+        display: flex;
+        align-items: center;
+        gap: 1px;
+        padding: 2px;
+        background: oklch(var(--color-paper));
+        border: 1px solid oklch(var(--color-rule));
+        border-radius: 5px;
+      }
 
-    .pi-rte-sep {
-      width: 1px;
-      height: 18px;
-      background: oklch(var(--color-rule));
-      margin: 0 2px;
-      flex-shrink: 0;
-    }
+      .pi-rte-sep {
+        width: 1px;
+        height: 18px;
+        background: oklch(var(--color-rule));
+        margin: 0 2px;
+        flex-shrink: 0;
+      }
 
-    .pi-rte-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 26px;
-      height: 24px;
-      padding: 0 6px;
-      font-size: 11px;
-      font-weight: 600;
-      font-family: inherit;
-      background: transparent;
-      color: oklch(var(--color-ink));
-      border: 1px solid transparent;
-      border-radius: 3px;
-      cursor: pointer;
-      transition:
-        background 110ms ease,
-        color 110ms ease,
-        border-color 110ms ease,
-        transform 80ms ease;
-      line-height: 1;
-    }
-    .pi-rte-btn:hover {
-      background: oklch(var(--color-sunrise-soft));
-      border-color: oklch(var(--color-rule));
-    }
-    .pi-rte-btn.is-active {
-      background: oklch(var(--color-ink));
-      color: oklch(var(--color-paper));
-      border-color: oklch(var(--color-ink));
-    }
-    .pi-rte-btn:active {
-      transform: scale(0.92);
-    }
-    .pi-rte-btn:focus-visible {
-      outline: 2px solid oklch(var(--color-sunrise-warm));
-      outline-offset: 1px;
-    }
-    .pi-rte-btn--icon { font-size: 13px; line-height: 1; }
-    .pi-rte-btn sub { font-size: 8px; vertical-align: sub; line-height: 0; }
+      .pi-rte-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 26px;
+        height: 24px;
+        padding: 0 6px;
+        font-size: 11px;
+        font-weight: 600;
+        font-family: inherit;
+        background: transparent;
+        color: oklch(var(--color-ink));
+        border: 1px solid transparent;
+        border-radius: 3px;
+        cursor: pointer;
+        transition:
+          background 110ms ease,
+          color 110ms ease,
+          border-color 110ms ease,
+          transform 80ms ease;
+        line-height: 1;
+      }
+      .pi-rte-btn:hover {
+        background: oklch(var(--color-sunrise-soft));
+        border-color: oklch(var(--color-rule));
+      }
+      .pi-rte-btn.is-active {
+        background: oklch(var(--color-ink));
+        color: oklch(var(--color-paper));
+        border-color: oklch(var(--color-ink));
+      }
+      .pi-rte-btn:active {
+        transform: scale(0.92);
+      }
+      .pi-rte-btn:focus-visible {
+        outline: 2px solid oklch(var(--color-sunrise-warm));
+        outline-offset: 1px;
+      }
+      .pi-rte-btn--icon {
+        font-size: 13px;
+        line-height: 1;
+      }
+      .pi-rte-btn sub {
+        font-size: 8px;
+        vertical-align: sub;
+        line-height: 0;
+      }
 
-    /* ── Editor content ── */
-    .pi-rte-editor {
-      padding: 12px 14px;
-      min-height: 52px;
-      font-size: 14px;
-      line-height: 1.6;
-      color: oklch(var(--color-ink));
-      outline: none;
-      cursor: text;
-      background: oklch(var(--color-paper));
-    }
-    .pi-rte-editor--compact {
-      padding: 10px 12px;
-      min-height: 38px;
-      font-size: 13px;
-    }
-    .pi-rte-editor--compact {
-      padding: 10px 12px;
-      min-height: 38px;
-      font-size: 13px;
-    }
-    .pi-rte-editor p { margin: 0 0 6px; }
-    .pi-rte-editor p:last-child { margin-bottom: 0; }
-    :host ::ng-deep .pi-rte-editor h1 {
-      font-size: 26px;
-      font-weight: 700;
-      margin: 0 0 10px;
-      line-height: 1.2;
-      letter-spacing: -0.02em;
-      color: var(--color-ink);
-    }
-    :host ::ng-deep .pi-rte-editor h2 {
-      font-size: 21px;
-      font-weight: 650;
-      margin: 0 0 8px;
-      line-height: 1.25;
-      letter-spacing: -0.01em;
-      color: var(--color-ink);
-    }
-    :host ::ng-deep .pi-rte-editor h3 {
-      font-size: 17px;
-      font-weight: 600;
-      margin: 0 0 6px;
-      line-height: 1.3;
-      color: var(--color-ink);
-    }
-    .pi-rte-editor strong { font-weight: 700; }
-    .pi-rte-editor em { font-style: italic; }
-    .pi-rte-editor u { text-decoration: underline; }
+      /* ── Editor content ── */
+      .pi-rte-editor {
+        padding: 12px 14px;
+        min-height: 52px;
+        font-size: 14px;
+        line-height: 1.6;
+        color: oklch(var(--color-ink));
+        outline: none;
+        cursor: text;
+        background: oklch(var(--color-paper));
+      }
+      .pi-rte-editor--compact {
+        padding: 10px 12px;
+        min-height: 38px;
+        font-size: 13px;
+      }
+      .pi-rte-editor--compact {
+        padding: 10px 12px;
+        min-height: 38px;
+        font-size: 13px;
+      }
+      .pi-rte-editor p {
+        margin: 0 0 6px;
+      }
+      .pi-rte-editor p:last-child {
+        margin-bottom: 0;
+      }
+      :host ::ng-deep .pi-rte-editor h1 {
+        font-size: 26px;
+        font-weight: 700;
+        margin: 0 0 10px;
+        line-height: 1.2;
+        letter-spacing: -0.02em;
+        color: var(--color-ink);
+      }
+      :host ::ng-deep .pi-rte-editor h2 {
+        font-size: 21px;
+        font-weight: 650;
+        margin: 0 0 8px;
+        line-height: 1.25;
+        letter-spacing: -0.01em;
+        color: var(--color-ink);
+      }
+      :host ::ng-deep .pi-rte-editor h3 {
+        font-size: 17px;
+        font-weight: 600;
+        margin: 0 0 6px;
+        line-height: 1.3;
+        color: var(--color-ink);
+      }
+      .pi-rte-editor strong {
+        font-weight: 700;
+      }
+      .pi-rte-editor em {
+        font-style: italic;
+      }
+      .pi-rte-editor u {
+        text-decoration: underline;
+      }
 
-    .pi-rte-editor .ProseMirror {
-      outline: none;
-      min-height: 52px;
-    }
-    .pi-rte-editor--compact .ProseMirror {
-      min-height: 38px;
-    }
-    /* TipTap placeholder */
-    .pi-rte-editor .ProseMirror p.is-editor-empty:first-child::before {
-      content: attr(data-placeholder);
-      float: left;
-      color: oklch(var(--color-muted-foreground-strong));
-      pointer-events: none;
-      height: 0;
-      font-weight: 400;
-      font-style: italic;
-    }
-  `],
+      .pi-rte-editor .ProseMirror {
+        outline: none;
+        min-height: 52px;
+      }
+      .pi-rte-editor--compact .ProseMirror {
+        min-height: 38px;
+      }
+      /* TipTap placeholder */
+      .pi-rte-editor .ProseMirror p.is-editor-empty:first-child::before {
+        content: attr(data-placeholder);
+        float: left;
+        color: oklch(var(--color-muted-foreground-strong));
+        pointer-events: none;
+        height: 0;
+        font-weight: 400;
+        font-style: italic;
+      }
+    `,
+  ],
 })
 export class PiRichTextEditorComponent implements AfterViewInit, OnDestroy {
   readonly value = model<string>('');
@@ -441,11 +510,21 @@ export class PiRichTextEditorComponent implements AfterViewInit, OnDestroy {
   }
 
   // ── Commands (public for parent toolbar) ──
-  toggleBold(): void { this.editor?.chain().focus().toggleBold().run(); }
-  toggleItalic(): void { this.editor?.chain().focus().toggleItalic().run(); }
-  toggleUnderline(): void { this.editor?.chain().focus().toggleUnderline().run(); }
-  toggleHeading(level: 1 | 2 | 3): void { this.editor?.chain().focus().toggleHeading({ level }).run(); }
-  setTextAlign(align: 'left' | 'center' | 'right'): void { this.editor?.chain().focus().setTextAlign(align).run(); }
+  toggleBold(): void {
+    this.editor?.chain().focus().toggleBold().run();
+  }
+  toggleItalic(): void {
+    this.editor?.chain().focus().toggleItalic().run();
+  }
+  toggleUnderline(): void {
+    this.editor?.chain().focus().toggleUnderline().run();
+  }
+  toggleHeading(level: 1 | 2 | 3): void {
+    this.editor?.chain().focus().toggleHeading({ level }).run();
+  }
+  setTextAlign(align: 'left' | 'center' | 'right'): void {
+    this.editor?.chain().focus().setTextAlign(align).run();
+  }
 
   private updateActiveStates(): void {
     const ed = this.editor;
@@ -467,13 +546,25 @@ export class PiRichTextEditorComponent implements AfterViewInit, OnDestroy {
 }
 
 export interface ActiveStates {
-  bold: boolean; italic: boolean; underline: boolean;
-  h1: boolean; h2: boolean; h3: boolean;
-  alignLeft: boolean; alignCenter: boolean; alignRight: boolean;
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+  h1: boolean;
+  h2: boolean;
+  h3: boolean;
+  alignLeft: boolean;
+  alignCenter: boolean;
+  alignRight: boolean;
 }
 
 const DEFAULT_ACTIVE: ActiveStates = {
-  bold: false, italic: false, underline: false,
-  h1: false, h2: false, h3: false,
-  alignLeft: false, alignCenter: false, alignRight: false,
+  bold: false,
+  italic: false,
+  underline: false,
+  h1: false,
+  h2: false,
+  h3: false,
+  alignLeft: false,
+  alignCenter: false,
+  alignRight: false,
 };

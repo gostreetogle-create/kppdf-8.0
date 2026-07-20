@@ -67,14 +67,16 @@ describe('PiDialogService', () => {
     // Close every dialog we opened during the test. This is the public,
     // type-safe way to dispose (instead of poking at private _cleanup).
     for (const ref of openRefs) {
-      try { ref.close(); } catch { /* ignore */ }
+      try {
+        ref.close();
+      } catch {
+        /* ignore */
+      }
     }
     openRefs = [];
   });
 
-  function openDialog<T = unknown>(
-    config: DialogConfig<T, unknown> = {},
-  ): DialogRef<T> {
+  function openDialog<T = unknown>(config: DialogConfig<T, unknown> = {}): DialogRef<T> {
     const ref = service.open(TestDialogContent, config as DialogConfig);
     openRefs.push(ref as DialogRef<unknown>);
     return ref as DialogRef<T>;

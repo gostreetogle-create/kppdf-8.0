@@ -18,8 +18,7 @@ const SIZE_CLASS: Record<PiBadgeSize, string> = {
 };
 
 const BASE_CLASS =
-  'inline-flex items-center gap-1 rounded-sm ' +
-  'font-mono uppercase tracking-wider';
+  'inline-flex items-center gap-1 rounded-sm ' + 'font-mono uppercase tracking-wider';
 
 /**
  * Paper & Ink editorial Badge.

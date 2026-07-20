@@ -1,13 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import {
-  provideHttpClient,
-  withFetch,
-  withInterceptors,
-} from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of } from 'rxjs';
 
@@ -50,7 +43,7 @@ describe('OrganizationsPage', () => {
             remove: () => of({ ok: true, data: undefined }),
           },
         },
-        { provide: PiDialogService, useValue: { open: () => ({} as never) } },
+        { provide: PiDialogService, useValue: { open: () => ({}) as never } },
         { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
       ],
     })
@@ -107,7 +100,10 @@ describe('OrganizationsPage', () => {
     await tickMicrotask();
     fixture.detectChanges();
 
-    const comp = fixture.componentInstance as unknown as { data: () => Organization[]; total: () => number };
+    const comp = fixture.componentInstance as unknown as {
+      data: () => Organization[];
+      total: () => number;
+    };
     expect(comp.data().length).toBe(0);
     expect(comp.total()).toBe(0);
   });

@@ -56,7 +56,14 @@ type SortDir = 'asc' | 'desc';
         class="max-w-xl space-y-form-field"
         data-test="validated-form"
       >
-        <app-pi-form-field label="Имя" htmlFor="form-name" [required]="true" [error]="form.controls.name.invalid && form.controls.name.touched ? 'Минимум 2 символа' : ''">
+        <app-pi-form-field
+          label="Имя"
+          htmlFor="form-name"
+          [required]="true"
+          [error]="
+            form.controls.name.invalid && form.controls.name.touched ? 'Минимум 2 символа' : ''
+          "
+        >
           <app-pi-input
             id="form-name"
             type="text"
@@ -66,7 +73,14 @@ type SortDir = 'asc' | 'desc';
           />
         </app-pi-form-field>
 
-        <app-pi-form-field label="E-mail" htmlFor="form-email" [required]="true" [error]="form.controls.email.invalid && form.controls.email.touched ? 'Невалидный e-mail' : ''">
+        <app-pi-form-field
+          label="E-mail"
+          htmlFor="form-email"
+          [required]="true"
+          [error]="
+            form.controls.email.invalid && form.controls.email.touched ? 'Невалидный e-mail' : ''
+          "
+        >
           <app-pi-input
             id="form-email"
             type="email"
@@ -109,15 +123,36 @@ type SortDir = 'asc' | 'desc';
               <th
                 class="pi-cell font-display font-semibold cursor-pointer group text-left"
                 (click)="setSort('name')"
-              >Название <span [class.text-sunrise-warm]="isSortedBy('name')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIndicator('name') }}</span></th>
+              >
+                Название
+                <span
+                  [class.text-sunrise-warm]="isSortedBy('name')"
+                  class="ml-1 opacity-40 group-hover:opacity-70"
+                  >{{ sortIndicator('name') }}</span
+                >
+              </th>
               <th
                 class="pi-cell-numeric font-display font-semibold cursor-pointer group"
                 (click)="setSort('qty')"
-              >Кол-во <span [class.text-sunrise-warm]="isSortedBy('qty')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIndicator('qty') }}</span></th>
+              >
+                Кол-во
+                <span
+                  [class.text-sunrise-warm]="isSortedBy('qty')"
+                  class="ml-1 opacity-40 group-hover:opacity-70"
+                  >{{ sortIndicator('qty') }}</span
+                >
+              </th>
               <th
                 class="pi-cell font-display font-semibold cursor-pointer group text-left"
                 (click)="setSort('status')"
-              >Статус <span [class.text-sunrise-warm]="isSortedBy('status')" class="ml-1 opacity-40 group-hover:opacity-70">{{ sortIndicator('status') }}</span></th>
+              >
+                Статус
+                <span
+                  [class.text-sunrise-warm]="isSortedBy('status')"
+                  class="ml-1 opacity-40 group-hover:opacity-70"
+                  >{{ sortIndicator('status') }}</span
+                >
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -143,20 +178,23 @@ type SortDir = 'asc' | 'desc';
               variant="outline"
               [disabled]="page() === 1"
               (click)="page.set(page() - 1)"
-            >‹ Prev</app-pi-button>
+              >‹ Prev</app-pi-button
+            >
             @for (p of pageNumbers(); track p) {
               <app-pi-button
                 size="sm"
                 [variant]="p === page() ? 'default' : 'outline'"
                 (click)="page.set(p)"
-              >{{ p }}</app-pi-button>
+                >{{ p }}</app-pi-button
+              >
             }
             <app-pi-button
               size="sm"
               variant="outline"
               [disabled]="page() === totalPages()"
               (click)="page.set(page() + 1)"
-            >Next ›</app-pi-button>
+              >Next ›</app-pi-button
+            >
           </nav>
         </div>
       </div>
@@ -168,13 +206,9 @@ type SortDir = 'asc' | 'desc';
         <div>
           <p class="eyebrow mb-3">Inline (label · input · button в одну строку)</p>
           <div class="flex items-end gap-form-field">
-        <app-pi-form-field label="Поиск" htmlFor="form-search" class="flex-1">
-          <app-pi-input
-            id="form-search"
-            type="search"
-            placeholder="Найти…"
-          />
-        </app-pi-form-field>
+            <app-pi-form-field label="Поиск" htmlFor="form-search" class="flex-1">
+              <app-pi-input id="form-search" type="search" placeholder="Найти…" />
+            </app-pi-form-field>
             <app-pi-button variant="default">Найти</app-pi-button>
           </div>
         </div>
@@ -182,18 +216,10 @@ type SortDir = 'asc' | 'desc';
           <p class="eyebrow mb-3">Stacked (label сверху)</p>
           <div class="space-y-form-field">
             <app-pi-form-field label="Город" htmlFor="form-city">
-              <app-pi-input
-                id="form-city"
-                type="text"
-                placeholder="Москва"
-              />
+              <app-pi-input id="form-city" type="text" placeholder="Москва" />
             </app-pi-form-field>
             <app-pi-form-field label="Индекс" htmlFor="form-zip">
-              <app-pi-input
-                id="form-zip"
-                type="text"
-                placeholder="101000"
-              />
+              <app-pi-input id="form-zip" type="text" placeholder="101000" />
             </app-pi-form-field>
           </div>
         </div>
@@ -204,7 +230,11 @@ type SortDir = 'asc' | 'desc';
             <span class="pi-tech-label absolute top-2 right-2">REF: FORM.04</span>
             <h4 class="font-title-sm text-ink mb-stack-sm">Form Field (Architectural)</h4>
             <div class="space-y-form-field">
-              <app-pi-form-field label="Email" hint="Используется для уведомлений" [required]="true">
+              <app-pi-form-field
+                label="Email"
+                hint="Используется для уведомлений"
+                [required]="true"
+              >
                 <app-pi-input type="email" placeholder="user@company.ru" />
               </app-pi-form-field>
               <app-pi-form-field label="Пароль" [required]="true">

@@ -57,9 +57,6 @@ export class RegistryService {
   private readonly baseUrl = inject(API_BASE_URL);
 
   getDataSources(): Observable<SilentResult<DataSourcesResponse>> {
-    return silentGet<DataSourcesResponse>(
-      this.http,
-      `${this.baseUrl}/registry/data-sources`,
-    );
+    return silentGet<DataSourcesResponse>(this.http, `${this.baseUrl}/registry/data-sources`);
   }
 }

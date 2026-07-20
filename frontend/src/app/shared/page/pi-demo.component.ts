@@ -57,9 +57,13 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       }
     </article>
   `,
-  styles: [`
-    :host { display: block; }
-  `],
+  styles: [
+    `
+      :host {
+        display: block;
+      }
+    `,
+  ],
 })
 export class PiDemoComponent {
   /** Literal `</>` source glyph — bound via interpolation to avoid template parser ambiguity

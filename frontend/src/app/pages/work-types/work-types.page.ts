@@ -43,11 +43,16 @@ function compareValues(av: unknown, bv: unknown, sign: 1 | -1): number {
 
 function accessorFor(key: Exclude<SortKey, null>): (row: WorkType) => unknown {
   switch (key) {
-    case 'name': return (r) => r.name;
-    case 'section': return (r) => r.section;
-    case 'department': return (r) => r.department;
-    case 'hourlyRate': return (r) => r.hourlyRate;
-    default: return (r) => r.name;
+    case 'name':
+      return (r) => r.name;
+    case 'section':
+      return (r) => r.section;
+    case 'department':
+      return (r) => r.department;
+    case 'hourlyRate':
+      return (r) => r.hourlyRate;
+    default:
+      return (r) => r.name;
   }
 }
 
@@ -194,7 +199,8 @@ export class WorkTypesPage {
   protected readonly data = computed<WorkType[]>(() => this.listRes.value() ?? []);
   protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
   protected readonly error = computed<string | null>(() => {
-    const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    const err = this.listRes.error() as
+      import('@angular/common/http').HttpErrorResponse | undefined;
     return err ? extractErrorMessage(err) : null;
   });
 
@@ -227,7 +233,13 @@ export class WorkTypesPage {
     { key: 'name', label: 'Название', sortable: true, sticky: 'left' },
     { key: 'section', label: 'Секция', sortable: true, cellClass: 'empty-cell' },
     { key: 'department', label: 'Отдел', sortable: true, cellClass: 'empty-cell' },
-    { key: 'hourlyRate', label: 'Час/₽', sortable: true, align: 'right', cellClass: 'empty-cell font-mono text-xs' },
+    {
+      key: 'hourlyRate',
+      label: 'Час/₽',
+      sortable: true,
+      align: 'right',
+      cellClass: 'empty-cell font-mono text-xs',
+    },
     { key: 'isActive', label: 'Активен', cellClass: 'text-center' },
   ];
 
@@ -266,12 +278,20 @@ export class WorkTypesPage {
   }
 
   protected openCreate(): void {
-    const ref = this.dialog.open(WorkTypeFormDialogComponent, { data: null, width: 'md', parentDestroyRef: this.destroyRef });
+    const ref = this.dialog.open(WorkTypeFormDialogComponent, {
+      data: null,
+      width: 'md',
+      parentDestroyRef: this.destroyRef,
+    });
     this.refreshOnDialogClose(ref);
   }
 
   protected openEdit(wt: WorkType): void {
-    const ref = this.dialog.open(WorkTypeFormDialogComponent, { data: wt, width: 'md', parentDestroyRef: this.destroyRef });
+    const ref = this.dialog.open(WorkTypeFormDialogComponent, {
+      data: wt,
+      width: 'md',
+      parentDestroyRef: this.destroyRef,
+    });
     this.refreshOnDialogClose(ref);
   }
 

@@ -37,7 +37,8 @@ import type { DialogRef } from './pi-dialog.service';
               class="text-destructive mr-2 inline-flex items-center"
               aria-hidden="true"
               data-test="dialog-destructive-icon"
-            >⚠</span>
+              >⚠</span
+            >
           }
           <h2 class="font-display text-lg tracking-tight text-ink flex-1 min-w-0 truncate">
             {{ title() }}
@@ -126,8 +127,7 @@ export class PiDialogComponent {
     const v = this.variant();
     const hairlineB = 'hairline-b';
     if (v === 'alert') return `flex items-center justify-between ${hairlineB} px-4 py-3`;
-    if (v === 'content')
-      return `flex items-center justify-between ${hairlineB} px-6 py-4 bg-paper`;
+    if (v === 'content') return `flex items-center justify-between ${hairlineB} px-6 py-4 bg-paper`;
     return `flex items-center justify-between ${hairlineB} px-6 py-4`;
   });
 
@@ -161,8 +161,7 @@ export class PiDialogComponent {
     const hairlineT = 'hairline-t';
     const base = `${hairlineT} px-6 py-4 flex justify-end gap-3 items-center`;
     if (v === 'alert') return `hairline-t px-4 py-3 flex justify-end gap-3 items-center`;
-    if (v === 'content')
-      return `${base} bg-paper sticky bottom-0`;
+    if (v === 'content') return `${base} bg-paper sticky bottom-0`;
     return base;
   });
 

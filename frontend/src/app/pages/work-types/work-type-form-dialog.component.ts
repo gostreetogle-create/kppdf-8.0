@@ -1,9 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import {
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { CheckboxComponent } from '../../shared/ui/checkbox/checkbox.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
@@ -25,7 +21,15 @@ import { extractErrorMessage } from '../../core/silent-http';
 @Component({
   selector: 'app-work-type-form-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, ButtonComponent, CheckboxComponent, FormFieldComponent, InputComponent, TextareaComponent, PiDialogComponent],
+  imports: [
+    ReactiveFormsModule,
+    ButtonComponent,
+    CheckboxComponent,
+    FormFieldComponent,
+    InputComponent,
+    TextareaComponent,
+    PiDialogComponent,
+  ],
   template: `
     <app-pi-dialog
       [title]="isEdit ? 'Редактировать вид работ' : 'Создать вид работ'"
@@ -38,7 +42,14 @@ import { extractErrorMessage } from '../../core/silent-http';
         class="space-y-form-field"
         data-test="work-type-form"
       >
-        <app-pi-form-field label="Название" htmlFor="wt-name" [required]="true" [error]="form.controls.name.invalid && form.controls.name.touched ? 'Обязательное поле' : ''">
+        <app-pi-form-field
+          label="Название"
+          htmlFor="wt-name"
+          [required]="true"
+          [error]="
+            form.controls.name.invalid && form.controls.name.touched ? 'Обязательное поле' : ''
+          "
+        >
           <app-pi-input
             id="wt-name"
             formControlName="name"
@@ -99,7 +110,11 @@ import { extractErrorMessage } from '../../core/silent-http';
         </div>
 
         <div class="flex items-center gap-2">
-          <app-pi-checkbox formControlName="isActive" ariaLabel="Активен" data-test="active-checkbox" />
+          <app-pi-checkbox
+            formControlName="isActive"
+            ariaLabel="Активен"
+            data-test="active-checkbox"
+          />
           <span class="text-sm">Активен</span>
         </div>
 
@@ -120,7 +135,7 @@ import { extractErrorMessage } from '../../core/silent-http';
           [disabled]="form.invalid || submitting()"
           data-test="submit-button"
         >
-          {{ submitting() ? 'Сохранение…' : (isEdit ? 'Сохранить' : 'Создать') }}
+          {{ submitting() ? 'Сохранение…' : isEdit ? 'Сохранить' : 'Создать' }}
         </app-pi-button>
       </div>
     </app-pi-dialog>
@@ -140,7 +155,10 @@ export class WorkTypeFormDialogComponent {
   protected readonly formError = signal<string | null>(null);
 
   protected readonly form = this.fb.group({
-    name: this.fb.control<string>(this.data?.name ?? '', [Validators.required, Validators.maxLength(200)]),
+    name: this.fb.control<string>(this.data?.name ?? '', [
+      Validators.required,
+      Validators.maxLength(200),
+    ]),
     section: this.fb.control<string>(this.data?.section ?? ''),
     department: this.fb.control<string>(this.data?.department ?? ''),
     description: this.fb.control<string>(this.data?.description ?? ''),

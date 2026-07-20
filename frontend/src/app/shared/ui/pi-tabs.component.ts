@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, ElementRef, input, output, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  input,
+  output,
+  inject,
+} from '@angular/core';
 
 /**
  * Paper & Ink Tabs container — role="tablist" with horizontal/vertical orientation.

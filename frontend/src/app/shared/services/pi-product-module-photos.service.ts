@@ -60,7 +60,9 @@ export class ProductModulePhotosService {
 
   list(productModuleId: string): Observable<SilentResult<ProductModulePhoto[]>> {
     const params = new HttpParams().set('productModuleId', productModuleId);
-    return silentGet<ProductModulePhoto[]>(this.http, `${this.baseUrl}/product-module-photos`, { params });
+    return silentGet<ProductModulePhoto[]>(this.http, `${this.baseUrl}/product-module-photos`, {
+      params,
+    });
   }
 
   attach(dto: ProductModulePhotoUpsertDto): Observable<SilentResult<ProductModulePhoto>> {
@@ -72,7 +74,11 @@ export class ProductModulePhotosService {
    * to avoid re-fetching all photos). Use `list()` after to refresh.
    */
   setMain(id: string): Observable<SilentResult<{ ok: true }>> {
-    return silentPost<{ ok: true }>(this.http, `${this.baseUrl}/product-module-photos/${id}/main`, {});
+    return silentPost<{ ok: true }>(
+      this.http,
+      `${this.baseUrl}/product-module-photos/${id}/main`,
+      {},
+    );
   }
 
   /**
@@ -84,7 +90,11 @@ export class ProductModulePhotosService {
     id: string,
     dto: Partial<Omit<ProductModulePhotoUpsertDto, 'productModuleId' | 'isMain'>>,
   ): Observable<SilentResult<ProductModulePhoto>> {
-    return silentPatch<ProductModulePhoto>(this.http, `${this.baseUrl}/product-module-photos/${id}`, dto);
+    return silentPatch<ProductModulePhoto>(
+      this.http,
+      `${this.baseUrl}/product-module-photos/${id}`,
+      dto,
+    );
   }
 
   remove(id: string): Observable<SilentResult<void>> {

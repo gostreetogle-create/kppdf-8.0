@@ -38,7 +38,8 @@ describe('AvatarComponent', () => {
     if (inputs.initials !== undefined) fixture.componentRef.setInput('initials', inputs.initials);
     if (inputs.size) fixture.componentRef.setInput('size', inputs.size);
     if (inputs.rounded) fixture.componentRef.setInput('rounded', inputs.rounded);
-    if (inputs.ariaLabel !== undefined) fixture.componentRef.setInput('ariaLabel', inputs.ariaLabel);
+    if (inputs.ariaLabel !== undefined)
+      fixture.componentRef.setInput('ariaLabel', inputs.ariaLabel);
     fixture.detectChanges();
     return fixture;
   }

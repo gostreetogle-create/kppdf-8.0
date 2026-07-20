@@ -36,15 +36,19 @@ import { LucideAngularModule } from 'lucide-angular';
       }
     </article>
   `,
-  styles: [`
-    :host { display: block; }
-    .card-arrow {
-      transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    article:hover .card-arrow {
-      transform: translate(2px, -2px);
-    }
-  `],
+  styles: [
+    `
+      :host {
+        display: block;
+      }
+      .card-arrow {
+        transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      article:hover .card-arrow {
+        transform: translate(2px, -2px);
+      }
+    `,
+  ],
 })
 export class CardComponent {
   readonly eyebrow = input<string>('');
@@ -61,8 +65,10 @@ export class CardComponent {
       'bg-paper',
       interactive ? 'cursor-pointer transition-colors hover:bg-paper-2' : '',
       'hairline',
-      'rounded-lg', /* TZ-96: design ref uses rounded-lg (0.25rem) for cards */
-      'executive-shadow', /* TZ-96: design ref shadow on cards */
-    ].filter(Boolean).join(' ');
+      'rounded-lg' /* TZ-96: design ref uses rounded-lg (0.25rem) for cards */,
+      'executive-shadow' /* TZ-96: design ref shadow on cards */,
+    ]
+      .filter(Boolean)
+      .join(' ');
   });
 }

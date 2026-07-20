@@ -72,10 +72,7 @@ export class CostCalculationsService {
   }
 
   findById(id: string): Observable<SilentResult<CostCalculation>> {
-    return silentGet<CostCalculation>(
-      this.http,
-      `${this.baseUrl}/cost-calculations/${id}`,
-    );
+    return silentGet<CostCalculation>(this.http, `${this.baseUrl}/cost-calculations/${id}`);
   }
 
   create(
@@ -93,11 +90,7 @@ export class CostCalculationsService {
     id: string,
     body: { notes?: string; overheadPercent?: number },
   ): Observable<SilentResult<CostCalculation>> {
-    return silentPatch<CostCalculation>(
-      this.http,
-      `${this.baseUrl}/cost-calculations/${id}`,
-      body,
-    );
+    return silentPatch<CostCalculation>(this.http, `${this.baseUrl}/cost-calculations/${id}`, body);
   }
 
   activate(id: string): Observable<SilentResult<CostCalculation>> {
@@ -109,9 +102,6 @@ export class CostCalculationsService {
   }
 
   remove(id: string): Observable<SilentResult<void>> {
-    return silentDelete<void>(
-      this.http,
-      `${this.baseUrl}/cost-calculations/${id}`,
-    );
+    return silentDelete<void>(this.http, `${this.baseUrl}/cost-calculations/${id}`);
   }
 }

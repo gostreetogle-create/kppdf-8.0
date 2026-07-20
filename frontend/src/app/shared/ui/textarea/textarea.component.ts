@@ -12,8 +12,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-const cn = (...inputs: Array<string | false | null | undefined>) =>
-  twMerge(clsx(inputs));
+const cn = (...inputs: Array<string | false | null | undefined>) => twMerge(clsx(inputs));
 
 export type PiTextareaSize = 'sm' | 'md';
 

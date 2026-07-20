@@ -35,9 +35,13 @@ import { ThemeService } from '../shared/theme/theme.service';
       }
     </button>
   `,
-  styles: [`
-    :host { display: inline-flex; }
-  `],
+  styles: [
+    `
+      :host {
+        display: inline-flex;
+      }
+    `,
+  ],
 })
 export class ThemeToggleComponent {
   protected readonly theme = inject(ThemeService);

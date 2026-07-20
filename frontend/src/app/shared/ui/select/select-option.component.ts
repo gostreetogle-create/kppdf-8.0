@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  input,
+} from '@angular/core';
 import { SelectComponent } from './select.component';
 
 /**
@@ -23,23 +30,27 @@ import { SelectComponent } from './select.component';
       <ng-content />
     </button>
   `,
-  styles: [`
-    :host { display: block; }
-    button {
-      display: block;
-      width: 100%;
-      text-align: left;
-      background: transparent;
-      border: 0;
-      margin: 0;
-      font: inherit;
-      cursor: pointer;
-    }
-    button[aria-selected='true'] {
-      background: var(--color-sunrise-warm);
-      color: var(--color-paper);
-    }
-  `],
+  styles: [
+    `
+      :host {
+        display: block;
+      }
+      button {
+        display: block;
+        width: 100%;
+        text-align: left;
+        background: transparent;
+        border: 0;
+        margin: 0;
+        font: inherit;
+        cursor: pointer;
+      }
+      button[aria-selected='true'] {
+        background: var(--color-sunrise-warm);
+        color: var(--color-paper);
+      }
+    `,
+  ],
 })
 export class SelectOptionComponent {
   readonly value = input.required<string>();

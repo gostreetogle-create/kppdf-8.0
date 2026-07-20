@@ -84,14 +84,14 @@ import { BreadcrumbItemComponent } from '../../shared/ui/pi-breadcrumb-item.comp
       <app-pi-accordion [multi]="false">
         <app-pi-accordion-item title="Что такое Paper & Ink?" value="item-1">
           <p class="text-sm leading-relaxed">
-            Редакторский UI-кит: типографика Syne, палитра paper/ink в OKLCH,
-            zero-deps и hairline-эстетика без Material-look.
+            Редакторский UI-кит: типографика Syne, палитра paper/ink в OKLCH, zero-deps и
+            hairline-эстетика без Material-look.
           </p>
         </app-pi-accordion-item>
         <app-pi-accordion-item title="Как установить?" value="item-2">
           <p class="text-sm leading-relaxed">
-            <code class="mono text-[11px]">pnpm add @paper-and-ink/tokens</code> — один пакет,
-            ноль зависимостей.
+            <code class="mono text-[11px]">pnpm add @paper-and-ink/tokens</code> — один пакет, ноль
+            зависимостей.
           </p>
         </app-pi-accordion-item>
         <app-pi-accordion-item title="Где взять темы?" value="item-3">
@@ -103,7 +103,11 @@ import { BreadcrumbItemComponent } from '../../shared/ui/pi-breadcrumb-item.comp
     </app-pi-section>
 
     <!-- ───── Section IV. Progress + Skeleton + Avatar ───── -->
-    <app-pi-section title="Progress · Skeleton · Avatar" hint="состояния загрузки и идентичности" eyebrow="IV">
+    <app-pi-section
+      title="Progress · Skeleton · Avatar"
+      hint="состояния загрузки и идентичности"
+      eyebrow="IV"
+    >
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="space-y-4">
           <p class="eyebrow">Progress</p>
@@ -183,20 +187,23 @@ export class NavigationPage {
   ]);
 
   protected readonly lineData = signal([
-    { name: 'Активные', series: [
-      { name: 'Янв', value: 120 },
-      { name: 'Фев', value: 145 },
-      { name: 'Мар', value: 162 },
-      { name: 'Апр', value: 198 },
-      { name: 'Май', value: 215 },
-      { name: 'Июн', value: 244 },
-      { name: 'Июл', value: 268 },
-      { name: 'Авг', value: 290 },
-      { name: 'Сен', value: 312 },
-      { name: 'Окт', value: 334 },
-      { name: 'Ноя', value: 358 },
-      { name: 'Дек', value: 380 },
-    ] },
+    {
+      name: 'Активные',
+      series: [
+        { name: 'Янв', value: 120 },
+        { name: 'Фев', value: 145 },
+        { name: 'Мар', value: 162 },
+        { name: 'Апр', value: 198 },
+        { name: 'Май', value: 215 },
+        { name: 'Июн', value: 244 },
+        { name: 'Июл', value: 268 },
+        { name: 'Авг', value: 290 },
+        { name: 'Сен', value: 312 },
+        { name: 'Окт', value: 334 },
+        { name: 'Ноя', value: 358 },
+        { name: 'Дек', value: 380 },
+      ],
+    },
   ]);
 
   protected readonly manyLines = Array.from({ length: 30 }, (_, i) => i);

@@ -29,9 +29,7 @@ describe('PiEmptyTileComponent', () => {
   }
 
   function glyphSpan(): HTMLElement {
-    return fixture.nativeElement.querySelector(
-      '.pi-empty-tile__glyph',
-    ) as HTMLElement;
+    return fixture.nativeElement.querySelector('.pi-empty-tile__glyph') as HTMLElement;
   }
 
   it('defaults sizePx to 48px', () => {

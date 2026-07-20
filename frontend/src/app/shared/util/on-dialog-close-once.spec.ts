@@ -65,9 +65,9 @@ describe('onDialogCloseOnce', () => {
     const closedSig = signal<T | undefined>(undefined);
     const isClosed = signal(false);
     const ref: DialogRef<T> = {
-      closed: computed(() =>
-        isClosed() ? (closedSig() as T | undefined) : undefined,
-      ) as Signal<T | undefined>,
+      closed: computed(() => (isClosed() ? (closedSig() as T | undefined) : undefined)) as Signal<
+        T | undefined
+      >,
       close: (v?: T) => {
         if (isClosed()) return;
         closedSig.set(v);

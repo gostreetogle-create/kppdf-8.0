@@ -1,9 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import {
   FormArray,
   FormControl,
@@ -18,10 +13,7 @@ import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
 import { InputComponent } from '../../shared/ui/input/input.component';
 import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
-import {
-  PI_DIALOG_DATA,
-  PI_DIALOG_REF,
-} from '../../shared/ui/dialog/dialog.tokens';
+import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
 import { extractErrorMessage } from '../../core/silent-http';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
@@ -31,10 +23,7 @@ import {
   MaterialsService,
 } from '../../shared/services/materials.service';
 import { PhotosService, type Photo } from '../../shared/services/photos.service';
-import {
-  Organization,
-  OrganizationsService,
-} from '../../shared/services/organizations.service';
+import { Organization, OrganizationsService } from '../../shared/services/organizations.service';
 
 type Result = Material | null | undefined;
 
@@ -112,16 +101,8 @@ interface DimensionFormGroup extends FormGroup {
             />
           </app-pi-form-field>
 
-          <app-pi-form-field
-            label="Артикул"
-            htmlFor="mat-article"
-            [error]="errorFor('article')"
-          >
-            <app-pi-input
-              id="mat-article"
-              formControlName="article"
-              placeholder="Артикул"
-            />
+          <app-pi-form-field label="Артикул" htmlFor="mat-article" [error]="errorFor('article')">
+            <app-pi-input id="mat-article" formControlName="article" placeholder="Артикул" />
           </app-pi-form-field>
 
           <app-pi-form-field
@@ -145,16 +126,8 @@ interface DimensionFormGroup extends FormGroup {
             </select>
           </app-pi-form-field>
 
-          <app-pi-form-field
-            label="Код (SKU)"
-            htmlFor="mat-sku"
-            [error]="errorFor('sku')"
-          >
-            <app-pi-input
-              id="mat-sku"
-              formControlName="sku"
-              placeholder="SKU"
-            />
+          <app-pi-form-field label="Код (SKU)" htmlFor="mat-sku" [error]="errorFor('sku')">
+            <app-pi-input id="mat-sku" formControlName="sku" placeholder="SKU" />
           </app-pi-form-field>
 
           <app-pi-form-field
@@ -192,16 +165,10 @@ interface DimensionFormGroup extends FormGroup {
           htmlFor="mat-supplier"
           hint="Только организации с типом «Поставщик». Управление в разделе «Организации»."
         >
-          <select
-            id="mat-supplier"
-            formControlName="supplierId"
-            class="pi-input w-full"
-          >
+          <select id="mat-supplier" formControlName="supplierId" class="pi-input w-full">
             <option [ngValue]="null">— не указан —</option>
             @for (s of suppliers(); track s._id) {
-              <option [ngValue]="s._id">
-                {{ s.name }}{{ s.inn ? ' · ИНН ' + s.inn : '' }}
-              </option>
+              <option [ngValue]="s._id">{{ s.name }}{{ s.inn ? ' · ИНН ' + s.inn : '' }}</option>
             }
           </select>
         </app-pi-form-field>
@@ -226,11 +193,7 @@ interface DimensionFormGroup extends FormGroup {
             </p>
           }
           <div formArrayName="dimensions" class="space-y-2">
-            @for (
-              dimGroup of dimensionsArray.controls;
-              track $index;
-              let i = $index
-            ) {
+            @for (dimGroup of dimensionsArray.controls; track $index; let i = $index) {
               <div
                 [formGroupName]="i"
                 class="grid grid-cols-12 gap-2 items-center p-2 hairline rounded-sm bg-paper-2/30"
@@ -370,11 +333,7 @@ interface DimensionFormGroup extends FormGroup {
           />
         </app-pi-form-field>
 
-        <app-pi-form-field
-          label="Заметки"
-          htmlFor="mat-notes"
-          [error]="errorFor('notes')"
-        >
+        <app-pi-form-field label="Заметки" htmlFor="mat-notes" [error]="errorFor('notes')">
           <app-pi-textarea
             id="mat-notes"
             formControlName="notes"
@@ -401,13 +360,7 @@ interface DimensionFormGroup extends FormGroup {
         >
           {{ submitting() ? 'Сохранение…' : 'Сохранить' }}
         </app-pi-button>
-        <app-pi-button
-          type="button"
-          variant="ghost"
-          (click)="onCancel()"
-        >
-          Отмена
-        </app-pi-button>
+        <app-pi-button type="button" variant="ghost" (click)="onCancel()"> Отмена </app-pi-button>
       </div>
     </app-pi-dialog>
   `,
@@ -451,10 +404,7 @@ export class MaterialFormDialogComponent {
       Validators.maxLength(256),
     ]),
     article: this.fb.control<string | null>(null, [Validators.maxLength(64)]),
-    unit: this.fb.control('', [
-      Validators.required,
-      Validators.maxLength(32),
-    ]),
+    unit: this.fb.control('', [Validators.required, Validators.maxLength(32)]),
     sku: this.fb.control<string | null>(null),
     pricePerUnit: this.fb.control<number | null>(null, [Validators.min(0)]),
     stockQty: this.fb.control<number>(0, [Validators.min(0)]),
@@ -523,10 +473,8 @@ export class MaterialFormDialogComponent {
           // instead of a string ID. Normalize to the string ID for the
           // radio-button check `p._id === mainPhotoId()`.
           const mainId =
-            m.mainPhotoId && typeof m.mainPhotoId === 'object'
-              ? m.mainPhotoId._id
-              : m.mainPhotoId;
-          this.mainPhotoId.set(mainId ?? (mine[0]?._id ?? null));
+            m.mainPhotoId && typeof m.mainPhotoId === 'object' ? m.mainPhotoId._id : m.mainPhotoId;
+          this.mainPhotoId.set(mainId ?? mine[0]?._id ?? null);
         } else {
           this.toast.error(extractErrorMessage(res.error));
         }
@@ -572,10 +520,7 @@ export class MaterialFormDialogComponent {
       });
       if (uploaded.length > 0) {
         this.photos.update((cur) => [...cur, ...uploaded]);
-        this.newlyUploadedIds.update((cur) => [
-          ...cur,
-          ...uploaded.map((p) => p._id),
-        ]);
+        this.newlyUploadedIds.update((cur) => [...cur, ...uploaded.map((p) => p._id)]);
         if (!this.mainPhotoId()) {
           this.mainPhotoId.set(uploaded[0]._id);
         }
@@ -688,9 +633,7 @@ export class MaterialFormDialogComponent {
         this.submitted = true;
         // Atomic: after material save succeeds, apply pending photo deletions.
         this.applyPendingPhotoDeletions();
-        this.toast.success(
-          this.isEdit() ? 'Материал обновлён' : 'Материал создан',
-        );
+        this.toast.success(this.isEdit() ? 'Материал обновлён' : 'Материал создан');
         this.ref.close(res.data);
       } else {
         this.errorMessage.set(extractErrorMessage(res.error));
@@ -716,10 +659,11 @@ export class MaterialFormDialogComponent {
     if (orphans.length === 0) return;
     orphans.forEach((id) => {
       this.photosService.remove(id).subscribe({
-        error: () => {/* best-effort */},
+        error: () => {
+          /* best-effort */
+        },
       });
     });
     this.newlyUploadedIds.set([]);
   }
 }
-

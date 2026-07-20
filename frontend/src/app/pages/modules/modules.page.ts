@@ -25,7 +25,10 @@ import { API_BASE_URL } from '../../core/api.tokens';
 import { createSearchState } from '../../shared/util/search';
 import { pluralize } from '../../shared/util/format';
 import { ColumnDef, SortDirection, TableComponent } from '../../shared/ui/pi-table.component';
-import { ProductModule, ProductModulesService } from '../../shared/services/pi-product-modules.service';
+import {
+  ProductModule,
+  ProductModulesService,
+} from '../../shared/services/pi-product-modules.service';
 import { ModuleFormDialogComponent } from './module-form-dialog.component';
 
 /**
@@ -272,7 +275,8 @@ export class ModulesPage {
   protected readonly data = computed<ProductModule[]>(() => this.listRes.value() ?? []);
   protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
   protected readonly error = computed<string | null>(() => {
-    const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    const err = this.listRes.error() as
+      import('@angular/common/http').HttpErrorResponse | undefined;
     return err ? extractErrorMessage(err) : null;
   });
 
@@ -306,9 +310,7 @@ export class ModulesPage {
     if (!key) return rows;
     const sign = this.sortDirSig() === 'asc' ? 1 : -1;
     const accessor = accessorFor(key);
-    return rows
-      .slice()
-      .sort((a, b) => compareValues(accessor(a), accessor(b), sign));
+    return rows.slice().sort((a, b) => compareValues(accessor(a), accessor(b), sign));
   });
 
   /**
@@ -495,7 +497,7 @@ export class ModulesPage {
         variant: 'destructive',
       },
       width: 'sm',
-    parentDestroyRef: this.destroyRef,
+      parentDestroyRef: this.destroyRef,
     });
     onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
       if (!confirmed) return;

@@ -1,12 +1,7 @@
 import { Photo } from '../services/photos.service';
 
 export type MaterialDimensionType =
-  | 'length'
-  | 'width'
-  | 'height'
-  | 'thickness'
-  | 'diameter'
-  | 'depth';
+  'length' | 'width' | 'height' | 'thickness' | 'diameter' | 'depth';
 
 export interface MaterialDimension {
   type: MaterialDimensionType;

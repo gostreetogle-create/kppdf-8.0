@@ -66,14 +66,7 @@ export type PiProgressSize = 'sm' | 'md' | 'lg';
         [class.h-10]="size() === 'lg'"
       >
         <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90" aria-hidden="true">
-          <circle
-            cx="18"
-            cy="18"
-            r="16"
-            fill="none"
-            stroke="var(--color-rule)"
-            stroke-width="1"
-          />
+          <circle cx="18" cy="18" r="16" fill="none" stroke="var(--color-rule)" stroke-width="1" />
           <circle
             cx="18"
             cy="18"

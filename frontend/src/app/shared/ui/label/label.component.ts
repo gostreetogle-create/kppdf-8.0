@@ -19,10 +19,7 @@ export type LabelVariant = 'default' | 'eyebrow' | 'mono';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <label
-      [attr.for]="htmlFor()"
-      [class]="computedClass()"
-    >
+    <label [attr.for]="htmlFor()" [class]="computedClass()">
       <ng-content />
       @if (required()) {
         <span aria-hidden="true" class="text-destructive ml-0.5">*</span>

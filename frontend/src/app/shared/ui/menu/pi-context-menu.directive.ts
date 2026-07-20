@@ -1,11 +1,4 @@
-import {
-  Directive,
-  ElementRef,
-  HostListener,
-  inject,
-  input,
-  signal,
-} from '@angular/core';
+import { Directive, ElementRef, HostListener, inject, input, signal } from '@angular/core';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { ContextMenuComponent } from './pi-context-menu.component';
@@ -51,11 +44,7 @@ export class ContextMenuDirective {
     if (this.activeRef) this.close();
     const overlayRef = this.overlay.create({
       hasBackdrop: false,
-      positionStrategy: this.overlay
-        .position()
-        .global()
-        .left(`${x}px`)
-        .top(`${y}px`),
+      positionStrategy: this.overlay.position().global().left(`${x}px`).top(`${y}px`),
       scrollStrategy: this.overlay.scrollStrategies.reposition(),
       panelClass: 'pi-context-menu-panel',
     });
@@ -66,8 +55,10 @@ export class ContextMenuDirective {
     this.outsideListener = (e: MouseEvent) => {
       const target = e.target as Node | null;
       if (!target) return;
-      if (!this.hostEl.nativeElement.contains(target) &&
-          !overlayRef.overlayElement.contains(target)) {
+      if (
+        !this.hostEl.nativeElement.contains(target) &&
+        !overlayRef.overlayElement.contains(target)
+      ) {
         this.close();
       }
     };

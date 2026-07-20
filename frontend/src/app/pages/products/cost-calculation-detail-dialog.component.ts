@@ -1,8 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
@@ -28,16 +24,14 @@ interface DialogData {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ButtonComponent, PiDialogComponent],
   template: `
-    <app-pi-dialog
-      title="Себестоимость — снимок"
-      [width]="'xl'"
-      [variant]="'content'"
-    >
+    <app-pi-dialog title="Себестоимость — снимок" [width]="'xl'" [variant]="'content'">
       <div body>
         <p class="text-sm text-muted-foreground mb-6">
           {{ formatDate(cc.calculatedAt || cc.createdAt) }}
           @if (cc.isActive) {
-            <span class="ml-2 inline-flex items-center gap-1 text-xs font-medium text-sunrise-warm">● Активен</span>
+            <span class="ml-2 inline-flex items-center gap-1 text-xs font-medium text-sunrise-warm"
+              >● Активен</span
+            >
           }
         </p>
 
@@ -62,15 +56,21 @@ interface DialogData {
                       <td class="pi-cell align-top">{{ m.materialName ?? '—' }}</td>
                       <td class="pi-cell-numeric align-top font-mono">{{ m.quantity }}</td>
                       <td class="pi-cell align-top text-muted-foreground">{{ m.unit ?? '—' }}</td>
-                      <td class="pi-cell-numeric align-top font-mono">{{ formatRuble(m.pricePerUnit) }}</td>
-                      <td class="pi-cell-numeric align-top font-mono font-medium">{{ formatRuble(m.total) }}</td>
+                      <td class="pi-cell-numeric align-top font-mono">
+                        {{ formatRuble(m.pricePerUnit) }}
+                      </td>
+                      <td class="pi-cell-numeric align-top font-mono font-medium">
+                        {{ formatRuble(m.total) }}
+                      </td>
                     </tr>
                   }
                 </tbody>
                 <tfoot class="hairline-t">
                   <tr>
                     <td colspan="4" class="pi-cell eyebrow text-right">Итого материалы</td>
-                    <td class="pi-cell-numeric font-mono font-medium">{{ formatRuble(cc.totalMaterialCost) }}</td>
+                    <td class="pi-cell-numeric font-mono font-medium">
+                      {{ formatRuble(cc.totalMaterialCost) }}
+                    </td>
                   </tr>
                 </tfoot>
               </table>
@@ -97,15 +97,21 @@ interface DialogData {
                     <tr class="pi-table-row pi-table-row-odd last:border-0">
                       <td class="pi-cell align-top">{{ l.workTypeName ?? '—' }}</td>
                       <td class="pi-cell-numeric align-top font-mono">{{ l.hours }}</td>
-                      <td class="pi-cell-numeric align-top font-mono">{{ formatRuble(l.hourlyRate) }}</td>
-                      <td class="pi-cell-numeric align-top font-mono font-medium">{{ formatRuble(l.total) }}</td>
+                      <td class="pi-cell-numeric align-top font-mono">
+                        {{ formatRuble(l.hourlyRate) }}
+                      </td>
+                      <td class="pi-cell-numeric align-top font-mono font-medium">
+                        {{ formatRuble(l.total) }}
+                      </td>
                     </tr>
                   }
                 </tbody>
                 <tfoot class="hairline-t">
                   <tr>
                     <td colspan="3" class="pi-cell eyebrow text-right">Итого работы</td>
-                    <td class="pi-cell-numeric font-mono font-medium">{{ formatRuble(cc.totalLaborCost) }}</td>
+                    <td class="pi-cell-numeric font-mono font-medium">
+                      {{ formatRuble(cc.totalLaborCost) }}
+                    </td>
                   </tr>
                 </tfoot>
               </table>
@@ -121,9 +127,13 @@ interface DialogData {
             <dt class="eyebrow">Работы</dt>
             <dd class="font-mono text-right">{{ formatRuble(cc.totalLaborCost) }}</dd>
             <dt class="eyebrow">Накладные ({{ cc.overheadPercent }}%)</dt>
-            <dd class="font-mono text-right text-muted-foreground">{{ formatRuble(cc.overheadCost) }}</dd>
+            <dd class="font-mono text-right text-muted-foreground">
+              {{ formatRuble(cc.overheadCost) }}
+            </dd>
             <dt class="eyebrow font-semibold border-t hairline pt-2 mt-1">Итого себестоимость</dt>
-            <dd class="font-mono text-right font-semibold text-lg border-t hairline pt-2 mt-1">{{ formatRuble(cc.totalCost) }}</dd>
+            <dd class="font-mono text-right font-semibold text-lg border-t hairline pt-2 mt-1">
+              {{ formatRuble(cc.totalCost) }}
+            </dd>
           </dl>
           @if (cc.notes) {
             <p class="mt-3 text-xs text-muted-foreground italic">{{ cc.notes }}</p>

@@ -29,11 +29,7 @@ export class PiDrawerService {
       hasBackdrop: true,
       backdropClass: 'pi-overlay-backdrop',
       panelClass: 'pi-drawer-panel',
-      positionStrategy: this.overlay
-        .position()
-        .global()
-        .bottom('0')
-        .centerHorizontally(),
+      positionStrategy: this.overlay.position().global().bottom('0').centerHorizontally(),
       scrollStrategy: this.overlay.scrollStrategies.reposition(),
       height: '85vh',
     });
@@ -52,15 +48,20 @@ export class PiDrawerService {
     const portal = new ComponentPortal(DrawerComponent, null, childInjector);
     overlayRef.attach(portal);
 
-    const panelEl = overlayRef.overlayElement.querySelector('.cdk-overlay-pane') as HTMLElement | null;
+    const panelEl = overlayRef.overlayElement.querySelector(
+      '.cdk-overlay-pane',
+    ) as HTMLElement | null;
     if (panelEl) {
       this.activeFocusTrap = this.focusTrapFactory.create(panelEl);
       this.activeFocusTrap.focusInitialElementWhenReady().catch(() => {});
     }
 
-    overlayRef.keydownEvents().pipe(filter((e) => e.key === 'Escape')).subscribe(() => {
-      if (config.dismissOnEscape !== false) ref.close();
-    });
+    overlayRef
+      .keydownEvents()
+      .pipe(filter((e) => e.key === 'Escape'))
+      .subscribe(() => {
+        if (config.dismissOnEscape !== false) ref.close();
+      });
     overlayRef.backdropClick().subscribe(() => {
       if (config.dismissOnBackdropClick !== false) ref.close();
     });
@@ -71,7 +72,11 @@ export class PiDrawerService {
 
   private cleanup(): void {
     if (this.activeFocusTrap) {
-      try { this.activeFocusTrap.destroy(); } catch { /* ignore */ }
+      try {
+        this.activeFocusTrap.destroy();
+      } catch {
+        /* ignore */
+      }
       this.activeFocusTrap = null;
     }
     if (this.activeRef) {

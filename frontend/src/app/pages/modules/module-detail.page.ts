@@ -21,7 +21,10 @@ import { PiToastService } from '../../shared/ui/toast';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
-import { ProductModule, ProductModulesService } from '../../shared/services/pi-product-modules.service';
+import {
+  ProductModule,
+  ProductModulesService,
+} from '../../shared/services/pi-product-modules.service';
 import {
   ProductModulePhoto,
   ProductModulePhotosService,
@@ -73,7 +76,10 @@ import { ModuleMaterialsFormDialogComponent } from './module-materials-form-dial
     </app-pi-page-header>
 
     @if (loadError()) {
-      <div role="alert" class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive">
+      <div
+        role="alert"
+        class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+      >
         {{ loadError() }}
       </div>
     }
@@ -83,15 +89,22 @@ import { ModuleMaterialsFormDialogComponent } from './module-materials-form-dial
       <app-pi-section title="Основное" eyebrow="I">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
           <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-            <dt class="eyebrow">Название</dt><dd class="font-medium">{{ m.name }}</dd>
+            <dt class="eyebrow">Название</dt>
+            <dd class="font-medium">{{ m.name }}</dd>
             <dt class="eyebrow">Артикул</dt>
             <dd class="font-mono empty-cell">{{ m.article ?? '—' }}</dd>
             <dt class="eyebrow">Ширина</dt>
-            <dd class="font-mono empty-cell">{{ m.dimensions?.width ?? '—' }} {{ m.dimensions?.unit ?? '' }}</dd>
+            <dd class="font-mono empty-cell">
+              {{ m.dimensions?.width ?? '—' }} {{ m.dimensions?.unit ?? '' }}
+            </dd>
             <dt class="eyebrow">Высота</dt>
-            <dd class="font-mono empty-cell">{{ m.dimensions?.height ?? '—' }} {{ m.dimensions?.unit ?? '' }}</dd>
+            <dd class="font-mono empty-cell">
+              {{ m.dimensions?.height ?? '—' }} {{ m.dimensions?.unit ?? '' }}
+            </dd>
             <dt class="eyebrow">Глубина</dt>
-            <dd class="font-mono empty-cell">{{ m.dimensions?.depth ?? '—' }} {{ m.dimensions?.unit ?? '' }}</dd>
+            <dd class="font-mono empty-cell">
+              {{ m.dimensions?.depth ?? '—' }} {{ m.dimensions?.unit ?? '' }}
+            </dd>
             <dt class="eyebrow">Вес (кг)</dt>
             <dd class="font-mono empty-cell">{{ m.weight ?? '—' }}</dd>
             <dt class="eyebrow">Сортировка</dt>
@@ -101,15 +114,21 @@ import { ModuleMaterialsFormDialogComponent } from './module-materials-form-dial
       </app-pi-section>
 
       <!-- II. Фотогалерея -->
-      <app-pi-section title="Фотогалерея"
+      <app-pi-section
+        title="Фотогалерея"
         [hint]="photos().length ? 'главное фото отмечено звёздочкой' : 'пока пусто'"
-        eyebrow="II">
+        eyebrow="II"
+      >
         <div class="flex flex-wrap gap-3">
           @for (p of photos(); track p._id) {
             <figure class="relative">
               @if (photoSrc(p); as src) {
-                <img [src]="src" [alt]="p.caption ?? 'фото модуля'"
-                  class="block w-32 h-32 object-cover hairline rounded-sm" loading="lazy" />
+                <img
+                  [src]="src"
+                  [alt]="p.caption ?? 'фото модуля'"
+                  class="block w-32 h-32 object-cover hairline rounded-sm"
+                  loading="lazy"
+                />
               } @else {
                 <app-pi-empty-tile [sizePx]="128" />
               }
@@ -117,12 +136,23 @@ import { ModuleMaterialsFormDialogComponent } from './module-materials-form-dial
                 @if (p.isMain) {
                   <span class="eyebrow text-sunrise-warm">★ главное</span>
                 } @else {
-                  <button type="button" (click)="setMain(p)"
+                  <button
+                    type="button"
+                    (click)="setMain(p)"
                     class="eyebrow text-muted-foreground hover:text-sunrise-warm"
-                    aria-label="Сделать главным">сделать главным</button>
+                    aria-label="Сделать главным"
+                  >
+                    сделать главным
+                  </button>
                 }
-                <button type="button" (click)="removePhoto(p)"
-                  class="eyebrow text-destructive hover:underline" aria-label="Удалить фото">удалить</button>
+                <button
+                  type="button"
+                  (click)="removePhoto(p)"
+                  class="eyebrow text-destructive hover:underline"
+                  aria-label="Удалить фото"
+                >
+                  удалить
+                </button>
               </figcaption>
             </figure>
           } @empty {
@@ -131,18 +161,29 @@ import { ModuleMaterialsFormDialogComponent } from './module-materials-form-dial
         </div>
         <div class="mt-3 flex gap-2">
           <input #photoUrl placeholder="https://…" class="pi-input w-72 font-mono text-sm" />
-          <app-pi-button variant="default" type="button" (click)="addPhotoByUrl(photoUrl.value); photoUrl.value=''">
+          <app-pi-button
+            variant="default"
+            type="button"
+            (click)="addPhotoByUrl(photoUrl.value); photoUrl.value = ''"
+          >
             Добавить по URL
           </app-pi-button>
         </div>
       </app-pi-section>
 
       <!-- III. Материалы -->
-      <app-pi-section title="Материалы"
+      <app-pi-section
+        title="Материалы"
         [hint]="m.materials.length ? 'Override-габариты показаны курсивом' : ''"
-        eyebrow="III">
+        eyebrow="III"
+      >
         <div class="flex justify-end mb-2">
-          <app-pi-button variant="default" type="button" (click)="openMaterialsEditor()" data-test="edit-materials">
+          <app-pi-button
+            variant="default"
+            type="button"
+            (click)="openMaterialsEditor()"
+            data-test="edit-materials"
+          >
             Изменить состав
           </app-pi-button>
         </div>
@@ -165,11 +206,17 @@ import { ModuleMaterialsFormDialogComponent } from './module-materials-form-dial
                   </td>
                   <td class="pi-cell-numeric align-top font-mono">{{ m2.quantity }}</td>
                   <td class="pi-cell align-top">{{ m2.unit ?? 'шт' }}</td>
-                  <td class="pi-cell align-top text-xs italic empty-cell">{{ overrideDims(m2) }}</td>
+                  <td class="pi-cell align-top text-xs italic empty-cell">
+                    {{ overrideDims(m2) }}
+                  </td>
                   <td class="pi-cell align-top text-center">{{ m2.isPurchased ? '✓' : '—' }}</td>
                 </tr>
               } @empty {
-                <app-pi-empty-state [colspan]="5" message="Нет материалов в составе." state="empty" />
+                <app-pi-empty-state
+                  [colspan]="5"
+                  message="Нет материалов в составе."
+                  state="empty"
+                />
               }
             </tbody>
           </table>
@@ -195,7 +242,11 @@ import { ModuleMaterialsFormDialogComponent } from './module-materials-form-dial
                   <td class="pi-cell-numeric align-top font-mono">{{ w.sortOrder }}</td>
                 </tr>
               } @empty {
-                <app-pi-empty-state [colspan]="3" message="Нет видов работ в составе." state="empty" />
+                <app-pi-empty-state
+                  [colspan]="3"
+                  message="Нет видов работ в составе."
+                  state="empty"
+                />
               }
             </tbody>
           </table>
@@ -233,7 +284,8 @@ export class ModuleDetailPage {
 
   protected readonly module = computed<ProductModule | null>(() => this.moduleRes.value() ?? null);
   protected readonly loadError = computed<string | null>(() => {
-    const err = this.moduleRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    const err = this.moduleRes.error() as
+      import('@angular/common/http').HttpErrorResponse | undefined;
     return err ? extractErrorMessage(err) : null;
   });
   protected readonly moduleDescription = computed<string>(() => {
@@ -271,7 +323,11 @@ export class ModuleDetailPage {
   protected openEdit(): void {
     const m = this.module();
     if (!m) return;
-    const ref = this.dialog.open(ModuleFormDialogComponent, { data: m, width: 'lg', parentDestroyRef: this.destroyRef });
+    const ref = this.dialog.open(ModuleFormDialogComponent, {
+      data: m,
+      width: 'lg',
+      parentDestroyRef: this.destroyRef,
+    });
     onDialogCloseOnce(ref, this.injector, () => {
       this.moduleRes.reload();
     });
@@ -335,7 +391,12 @@ export class ModuleDetailPage {
     const mid = this.idString();
     if (!url?.trim() || !mid) return;
     this.photosSvc
-      .attach({ productModuleId: mid, url: url.trim(), sortOrder: 0, isMain: this.photos().length === 0 })
+      .attach({
+        productModuleId: mid,
+        url: url.trim(),
+        sortOrder: 0,
+        isMain: this.photos().length === 0,
+      })
       .subscribe((res) => {
         if (res.ok) {
           this.toast.success('Фото добавлено');
@@ -354,7 +415,9 @@ export class ModuleDetailPage {
     }
     return '—';
   }
-  protected overrideDims(m: { overrideDimensions?: { length?: number; width?: number; height?: number; unit?: string } }): string {
+  protected overrideDims(m: {
+    overrideDimensions?: { length?: number; width?: number; height?: number; unit?: string };
+  }): string {
     const d = m.overrideDimensions;
     if (!d) return '';
     const parts: string[] = [];

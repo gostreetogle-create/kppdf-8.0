@@ -73,7 +73,9 @@ export class TabComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     // Roving tabindex management (initial focus).
     queueMicrotask(() => {
-      const native = this.hostEl.nativeElement.querySelector('button[role="tab"]') as HTMLButtonElement | null;
+      const native = this.hostEl.nativeElement.querySelector(
+        'button[role="tab"]',
+      ) as HTMLButtonElement | null;
       if (native && this.isActive()) native.tabIndex = 0;
     });
   }

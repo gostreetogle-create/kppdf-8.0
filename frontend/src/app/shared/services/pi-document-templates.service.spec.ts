@@ -1,9 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import {
-  provideHttpClientTesting,
-  HttpTestingController,
-} from '@angular/common/http/testing';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { DocumentTemplatesService } from './pi-document-templates.service';
 

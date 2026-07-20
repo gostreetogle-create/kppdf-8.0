@@ -39,13 +39,12 @@ const SIZE_OPTIONS: { value: ButtonSize; label: string }[] = [
         class="p-10 flex items-center justify-center bg-[linear-gradient(var(--color-rule)_1px,transparent_1px),linear-gradient(90deg,var(--color-rule)_1px,transparent_1px)] bg-[size:24px_24px]"
         data-test="playground-button-preview"
       >
-        <app-pi-button
-          [variant]="variant()"
-          [size]="size()"
-          [disabled]="disabled() || loading()"
-        >
+        <app-pi-button [variant]="variant()" [size]="size()" [disabled]="disabled() || loading()">
           @if (loading()) {
-            <span class="inline-block w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" aria-hidden="true"></span>
+            <span
+              class="inline-block w-3 h-3 border border-current border-t-transparent rounded-full animate-spin"
+              aria-hidden="true"
+            ></span>
           } @else if (hasLeadingIcon()) {
             <lucide-angular [img]="saveIcon" size="14" />
           }

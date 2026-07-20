@@ -113,13 +113,12 @@ export class DocumentTemplatesService {
     let httpParams = new HttpParams();
     if (params.organizationId) httpParams = httpParams.set('organizationId', params.organizationId);
     if (params.docTypeId) httpParams = httpParams.set('docTypeId', params.docTypeId);
-    if (params.isDefault !== undefined) httpParams = httpParams.set('isDefault', String(params.isDefault));
+    if (params.isDefault !== undefined)
+      httpParams = httpParams.set('isDefault', String(params.isDefault));
     if (params.search) httpParams = httpParams.set('search', params.search);
-    return silentGet<DocumentTemplate[]>(
-      this.http,
-      `${this.baseUrl}/document-templates`,
-      { params: httpParams },
-    ).pipe(
+    return silentGet<DocumentTemplate[]>(this.http, `${this.baseUrl}/document-templates`, {
+      params: httpParams,
+    }).pipe(
       map((res) => {
         if (!res.ok) return res;
         const arr = (res.data ?? []) as DocumentTemplate[];
@@ -129,20 +128,11 @@ export class DocumentTemplatesService {
   }
 
   findById(id: string): Observable<SilentResult<DocumentTemplate>> {
-    return silentGet<DocumentTemplate>(
-      this.http,
-      `${this.baseUrl}/document-templates/${id}`,
-    );
+    return silentGet<DocumentTemplate>(this.http, `${this.baseUrl}/document-templates/${id}`);
   }
 
-  create(
-    payload: Partial<DocumentTemplate>,
-  ): Observable<SilentResult<DocumentTemplate>> {
-    return silentPost<DocumentTemplate>(
-      this.http,
-      `${this.baseUrl}/document-templates`,
-      payload,
-    );
+  create(payload: Partial<DocumentTemplate>): Observable<SilentResult<DocumentTemplate>> {
+    return silentPost<DocumentTemplate>(this.http, `${this.baseUrl}/document-templates`, payload);
   }
 
   update(
@@ -157,10 +147,7 @@ export class DocumentTemplatesService {
   }
 
   remove(id: string): Observable<SilentResult<void>> {
-    return silentDelete<void>(
-      this.http,
-      `${this.baseUrl}/document-templates/${id}`,
-    );
+    return silentDelete<void>(this.http, `${this.baseUrl}/document-templates/${id}`);
   }
 
   /**
@@ -204,10 +191,7 @@ export class DocumentTemplatesService {
     );
   }
 
-  removeBackground(
-    templateId: string,
-    index: number,
-  ): Observable<SilentResult<void>> {
+  removeBackground(templateId: string, index: number): Observable<SilentResult<void>> {
     return silentWrap(
       this.http.delete<void>(
         `${this.baseUrl}/document-templates/${templateId}/backgrounds/${index}`,
@@ -215,10 +199,7 @@ export class DocumentTemplatesService {
     );
   }
 
-  setDefaultBackground(
-    templateId: string,
-    index: number,
-  ): Observable<SilentResult<void>> {
+  setDefaultBackground(templateId: string, index: number): Observable<SilentResult<void>> {
     return silentWrap(
       this.http.patch<void>(
         `${this.baseUrl}/document-templates/${templateId}/backgrounds/default`,
@@ -232,10 +213,9 @@ export class DocumentTemplatesService {
     orientation: 'portrait' | 'landscape',
   ): Observable<SilentResult<void>> {
     return silentWrap(
-      this.http.patch<void>(
-        `${this.baseUrl}/document-templates/${templateId}/orientation`,
-        { orientation },
-      ),
+      this.http.patch<void>(`${this.baseUrl}/document-templates/${templateId}/orientation`, {
+        orientation,
+      }),
     );
   }
 }

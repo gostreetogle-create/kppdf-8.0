@@ -12,11 +12,7 @@ import { PiCodePreviewComponent } from '../../shared/code/pi-code-preview.compon
 @Component({
   selector: 'app-code-preview-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    PiPageHeaderComponent,
-    PiSectionComponent,
-    PiCodePreviewComponent,
-  ],
+  imports: [PiPageHeaderComponent, PiSectionComponent, PiCodePreviewComponent],
   template: `
     <app-pi-page-header
       eyebrow="07 · playground · code"
@@ -27,16 +23,8 @@ import { PiCodePreviewComponent } from '../../shared/code/pi-code-preview.compon
     />
 
     <!-- ───── Section I. HTML ───── -->
-    <app-pi-section
-      title="HTML"
-      hint="xml language · tag highlighting"
-      eyebrow="I"
-    >
-      <app-pi-code-preview
-        language="html"
-        fileName="button.component.html"
-        [code]="htmlSample"
-      />
+    <app-pi-section title="HTML" hint="xml language · tag highlighting" eyebrow="I">
+      <app-pi-code-preview language="html" fileName="button.component.html" [code]="htmlSample" />
     </app-pi-section>
 
     <!-- ───── Section II. TypeScript ───── -->
@@ -58,37 +46,17 @@ import { PiCodePreviewComponent } from '../../shared/code/pi-code-preview.compon
       hint="css language · selector + property highlighting"
       eyebrow="III"
     >
-      <app-pi-code-preview
-        language="css"
-        fileName="tokens.css"
-        [code]="cssSample"
-      />
+      <app-pi-code-preview language="css" fileName="tokens.css" [code]="cssSample" />
     </app-pi-section>
 
     <!-- ───── Section IV. Bash ───── -->
-    <app-pi-section
-      title="Bash"
-      hint="bash language · command highlighting"
-      eyebrow="IV"
-    >
-      <app-pi-code-preview
-        language="bash"
-        fileName="dev.sh"
-        [code]="bashSample"
-      />
+    <app-pi-section title="Bash" hint="bash language · command highlighting" eyebrow="IV">
+      <app-pi-code-preview language="bash" fileName="dev.sh" [code]="bashSample" />
     </app-pi-section>
 
     <!-- ───── Section V. JSON ───── -->
-    <app-pi-section
-      title="JSON"
-      hint="json language · key + value highlighting"
-      eyebrow="V"
-    >
-      <app-pi-code-preview
-        language="json"
-        fileName="package.json"
-        [code]="jsonSample"
-      />
+    <app-pi-section title="JSON" hint="json language · key + value highlighting" eyebrow="V">
+      <app-pi-code-preview language="json" fileName="package.json" [code]="jsonSample" />
     </app-pi-section>
   `,
 })

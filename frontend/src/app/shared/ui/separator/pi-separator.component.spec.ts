@@ -28,7 +28,8 @@ describe('PiSeparatorComponent', () => {
     const fixture = TestBed.createComponent(PiSeparatorComponent);
     if (inputs.orientation) fixture.componentRef.setInput('orientation', inputs.orientation);
     if (inputs.label !== undefined) fixture.componentRef.setInput('label', inputs.label);
-    if (inputs.ariaLabel !== undefined) fixture.componentRef.setInput('ariaLabel', inputs.ariaLabel);
+    if (inputs.ariaLabel !== undefined)
+      fixture.componentRef.setInput('ariaLabel', inputs.ariaLabel);
     fixture.detectChanges();
     return fixture;
   }

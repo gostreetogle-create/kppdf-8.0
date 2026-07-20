@@ -41,9 +41,7 @@ import { catchError, map } from 'rxjs/operators';
  */
 
 /** Discriminated union returned by every silent-* helper. */
-export type SilentResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; error: HttpErrorResponse };
+export type SilentResult<T> = { ok: true; data: T } | { ok: false; error: HttpErrorResponse };
 
 /** Normalize an unknown error to a proper HttpErrorResponse. */
 export function normalizeError(err: unknown): HttpErrorResponse {
@@ -83,9 +81,7 @@ export function extractErrorMessage(err: HttpErrorResponse): string {
 export function silentWrap<T>(source: Observable<T>): Observable<SilentResult<T>> {
   return source.pipe(
     map((data) => ({ ok: true as const, data })),
-    catchError((err: unknown) =>
-      of({ ok: false as const, error: normalizeError(err) }),
-    ),
+    catchError((err: unknown) => of({ ok: false as const, error: normalizeError(err) })),
   );
 }
 

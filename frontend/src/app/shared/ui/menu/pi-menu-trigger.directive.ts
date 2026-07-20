@@ -8,11 +8,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import {
-  Overlay,
-  OverlayRef,
-  ConnectedPosition,
-} from '@angular/cdk/overlay';
+import { Overlay, OverlayRef, ConnectedPosition } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 
 /**
@@ -156,9 +152,7 @@ export class MenuTriggerDirective {
     // Skip disabled items (aria-disabled="true"); a disabled <span> is
     // not natively tabbable so .focus() is a no-op but screen readers
     // and keyboard navigation get inconsistent behaviour.
-    const first = panel.querySelector<HTMLElement>(
-      '[role="menuitem"]:not([aria-disabled="true"])',
-    );
+    const first = panel.querySelector<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"])');
     first?.focus();
   }
 }

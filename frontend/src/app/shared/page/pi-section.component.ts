@@ -21,9 +21,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="pt-section pb-section">
-      <header
-        class="mb-form-field flex items-end gap-3 hairline-b pb-2"
-      >
+      <header class="mb-form-field flex items-end gap-3 hairline-b pb-2">
         @if (indexRoman()) {
           <span class="font-display text-2xl tracking-tight text-muted-foreground">
             {{ indexRoman() }}
@@ -43,9 +41,13 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       <ng-content />
     </section>
   `,
-  styles: [`
-    :host { display: block; }
-  `],
+  styles: [
+    `
+      :host {
+        display: block;
+      }
+    `,
+  ],
 })
 export class PiSectionComponent {
   readonly title = input.required<string>();

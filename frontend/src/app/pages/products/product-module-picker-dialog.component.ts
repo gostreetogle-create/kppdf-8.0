@@ -22,17 +22,18 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, ButtonComponent, PiDialogComponent],
   template: `
-    <app-pi-dialog
-      title="Привязать модуль к товару"
-      [width]="'lg'"
-      [variant]="'content'"
-    >
+    <app-pi-dialog title="Привязать модуль к товару" [width]="'lg'" [variant]="'content'">
       <form body [formGroup]="form" (ngSubmit)="onSubmit()" data-test="picker-form">
         <p class="eyebrow text-muted-foreground mb-3">Привязать модуль к товару</p>
 
         <label class="block">
           <span class="eyebrow block mb-1.5">Модуль <span class="text-destructive">*</span></span>
-          <select class="pi-input w-full" formControlName="moduleId" data-test="picker-select" size="10">
+          <select
+            class="pi-input w-full"
+            formControlName="moduleId"
+            data-test="picker-select"
+            size="10"
+          >
             @for (m of available(); track m._id) {
               <option [value]="m._id">
                 {{ m.name }} · {{ m.article ?? '—' }} · {{ m.materials.length }} материалов
@@ -48,8 +49,12 @@ import {
         <app-pi-button variant="ghost" type="button" (click)="onCancel()" data-test="cancel-button">
           Отмена
         </app-pi-button>
-        <app-pi-button variant="default" type="submit"
-          [disabled]="form.invalid" data-test="submit-button">
+        <app-pi-button
+          variant="default"
+          type="submit"
+          [disabled]="form.invalid"
+          data-test="submit-button"
+        >
           Привязать
         </app-pi-button>
       </div>

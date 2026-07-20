@@ -7,7 +7,13 @@ import { BadgeComponent } from '../ui/badge/badge.component';
 
 interface SliderGroup {
   label: string;
-  values: { key: 'lightness' | 'chroma' | 'hue'; label: string; min: number; max: number; step: number }[];
+  values: {
+    key: 'lightness' | 'chroma' | 'hue';
+    label: string;
+    min: number;
+    max: number;
+    step: number;
+  }[];
   current: () => { lightness: number; chroma: number; hue: number };
   onChange: (key: 'lightness' | 'chroma' | 'hue', value: number) => void;
 }
@@ -52,7 +58,9 @@ interface SliderGroup {
                   [max]="slider.max"
                   [step]="slider.step"
                   [value]="group.current()[slider.key]"
-                  (input)="group.onChange(slider.key, $any($event.target).valueAsNumber); svc.commit()"
+                  (input)="
+                    group.onChange(slider.key, $any($event.target).valueAsNumber); svc.commit()
+                  "
                   [attr.aria-label]="group.label + ' ' + slider.label"
                 />
               </div>
@@ -81,9 +89,7 @@ interface SliderGroup {
       </section>
 
       <div class="flex justify-end">
-        <app-pi-button variant="outline" (click)="svc.reset()">
-          Reset to defaults
-        </app-pi-button>
+        <app-pi-button variant="outline" (click)="svc.reset()"> Reset to defaults </app-pi-button>
       </div>
     </div>
   `,
@@ -94,7 +100,13 @@ export class PiThemeEditorComponent {
 
   /** Generate a kebab-case ID for a slider input, safe for Angular template expressions. */
   protected sliderId(label: string, key: string): string {
-    return 'theme-' + (label + '-' + key).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '');
+    return (
+      'theme-' +
+      (label + '-' + key)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/-+$/, '')
+    );
   }
 
   protected format(v: { lightness: number; chroma: number; hue: number }): string {

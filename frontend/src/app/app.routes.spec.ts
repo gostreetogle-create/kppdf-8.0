@@ -38,9 +38,7 @@ describe('app.routes (TZ-92b contract)', () => {
       expect(kitRoute).toBeTruthy();
 
       if (path === '/kit') {
-        const guards = (kitRoute!.canMatch ?? []).map(
-          (g) => g.name ?? 'anonymous',
-        );
+        const guards = (kitRoute!.canMatch ?? []).map((g) => g.name ?? 'anonymous');
         expect(guards).not.toContain('authGuard');
         return;
       }
@@ -48,9 +46,7 @@ describe('app.routes (TZ-92b contract)', () => {
       const childPath = path.replace('/kit/', '');
       const child = kitRoute!.children?.find((c) => c.path === childPath);
       expect(child).toBeTruthy();
-      const guards = (child!.canMatch ?? []).map(
-        (g) => g.name ?? 'anonymous',
-      );
+      const guards = (child!.canMatch ?? []).map((g) => g.name ?? 'anonymous');
       expect(guards).not.toContain('authGuard');
     },
   );
@@ -58,18 +54,14 @@ describe('app.routes (TZ-92b contract)', () => {
   it('operational site (/*) still requires authGuard', () => {
     const operationalRoute = router.config.find((r) => r.path === '');
     expect(operationalRoute).toBeTruthy();
-    const guards = (operationalRoute!.canMatch ?? []).map(
-      (g) => g.name ?? 'anonymous',
-    );
+    const guards = (operationalRoute!.canMatch ?? []).map((g) => g.name ?? 'anonymous');
     expect(guards).toContain('authGuard');
   });
 
   it('/login uses publicOnlyGuard', () => {
     const loginRoute = router.config.find((r) => r.path === 'login');
     expect(loginRoute).toBeTruthy();
-    const guards = (loginRoute!.canMatch ?? []).map(
-      (g) => g.name ?? 'anonymous',
-    );
+    const guards = (loginRoute!.canMatch ?? []).map((g) => g.name ?? 'anonymous');
     expect(guards).toContain('publicOnlyGuard');
   });
 });

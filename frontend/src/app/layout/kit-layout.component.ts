@@ -81,13 +81,7 @@ const NAV_GROUPS: NavGroup[] = [
   selector: 'app-kit-layout',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    RouterOutlet,
-    RouterLink,
-    RouterLinkActive,
-    LucideAngularModule,
-    ThemeToggleComponent,
-  ],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule, ThemeToggleComponent],
   template: `
     <div class="h-screen bg-paper text-ink font-body flex flex-col overflow-hidden">
       <header
@@ -229,7 +223,8 @@ export class KitLayoutComponent {
     // ⌘K (or Ctrl+K on Win/Linux) opens the command palette (TZ-75 placeholder).
     if (this.isBrowser) {
       const onKeydown = (event: KeyboardEvent): void => {
-        const isK = event.key === 'k' || event.key === 'K' || event.key === 'к' || event.key === 'К';
+        const isK =
+          event.key === 'k' || event.key === 'K' || event.key === 'к' || event.key === 'К';
         const meta = event.metaKey || event.ctrlKey;
         if (meta && isK) {
           event.preventDefault();

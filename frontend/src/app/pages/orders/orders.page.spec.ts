@@ -1,13 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import {
-  provideHttpClient,
-  withFetch,
-  withInterceptors,
-} from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of } from 'rxjs';
 
@@ -24,8 +17,22 @@ describe('OrdersPage', () => {
   const listUrl = `${baseUrl}/orders`;
 
   const fakeOrders: Order[] = [
-    { _id: 'o1', number: 'ORD-001', status: 'draft', priority: 'normal', items: [], createdAt: '2026-01-01' } as Order,
-    { _id: 'o2', number: 'ORD-002', status: 'confirmed', priority: 'high', items: [], createdAt: '2026-01-02' } as Order,
+    {
+      _id: 'o1',
+      number: 'ORD-001',
+      status: 'draft',
+      priority: 'normal',
+      items: [],
+      createdAt: '2026-01-01',
+    } as Order,
+    {
+      _id: 'o2',
+      number: 'ORD-002',
+      status: 'confirmed',
+      priority: 'high',
+      items: [],
+      createdAt: '2026-01-02',
+    } as Order,
   ];
 
   const matchListGet = (r: { url: string; method: string }): boolean =>
@@ -55,7 +62,7 @@ describe('OrdersPage', () => {
           provide: CounterpartyService,
           useValue: { list: () => of({ ok: true, data: { items: [], total: 0 } }) },
         },
-        { provide: PiDialogService, useValue: { open: () => ({} as never) } },
+        { provide: PiDialogService, useValue: { open: () => ({}) as never } },
         { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
       ],
     })
@@ -112,7 +119,10 @@ describe('OrdersPage', () => {
     await tickMicrotask();
     fixture.detectChanges();
 
-    const comp = fixture.componentInstance as unknown as { data: () => Order[]; total: () => number };
+    const comp = fixture.componentInstance as unknown as {
+      data: () => Order[];
+      total: () => number;
+    };
     expect(comp.data().length).toBe(0);
     expect(comp.total()).toBe(0);
   });

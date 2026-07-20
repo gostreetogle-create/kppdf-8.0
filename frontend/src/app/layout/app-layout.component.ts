@@ -1,15 +1,5 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-} from '@angular/core';
-import {
-  NavigationEnd,
-  Router,
-  RouterLink,
-  RouterOutlet,
-} from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
@@ -135,18 +125,9 @@ const NAV_CATEGORIES: NavCategory[] = [
                  hairline-b pi-edge-bleed shrink-0"
         >
           <div class="h-14 flex items-center justify-between gap-4">
-            <a
-              routerLink="/"
-              class="flex items-center gap-2 min-w-0"
-              aria-label="На главную"
-            >
-              <span
-                class="block w-[10px] h-[10px] bg-ink shrink-0"
-                aria-hidden="true"
-              ></span>
-              <span class="font-display font-bold tracking-tight truncate">
-                KPPDF · 8.0
-              </span>
+            <a routerLink="/" class="flex items-center gap-2 min-w-0" aria-label="На главную">
+              <span class="block w-[10px] h-[10px] bg-ink shrink-0" aria-hidden="true"></span>
+              <span class="font-display font-bold tracking-tight truncate"> KPPDF · 8.0 </span>
             </a>
 
             <nav
@@ -170,14 +151,8 @@ const NAV_CATEGORIES: NavCategory[] = [
                 class="pi-icon-btn gap-1 px-2 w-auto pi-focus-ring"
                 aria-label="UI Kit"
               >
-                <lucide-angular
-                  [img]="paletteIcon"
-                  [size]="12"
-                  aria-hidden="true"
-                />
-                <span class="font-mono text-[10px] tracking-wider">
-                  UI Kit
-                </span>
+                <lucide-angular [img]="paletteIcon" [size]="12" aria-hidden="true" />
+                <span class="font-mono text-[10px] tracking-wider"> UI Kit </span>
               </a>
               <app-theme-toggle />
               @if (user(); as u) {
@@ -190,14 +165,8 @@ const NAV_CATEGORIES: NavCategory[] = [
                   aria-label="Выйти"
                   (click)="onLogout()"
                 >
-                  <lucide-angular
-                    [img]="logOutIcon"
-                    [size]="12"
-                    aria-hidden="true"
-                  />
-                  <span class="font-mono text-[10px] tracking-wider">
-                    Выйти
-                  </span>
+                  <lucide-angular [img]="logOutIcon" [size]="12" aria-hidden="true" />
+                  <span class="font-mono text-[10px] tracking-wider"> Выйти </span>
                 </button>
               }
             </div>

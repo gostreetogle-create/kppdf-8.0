@@ -12,17 +12,9 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-const cn = (...inputs: Array<string | false | null | undefined>) =>
-  twMerge(clsx(inputs));
+const cn = (...inputs: Array<string | false | null | undefined>) => twMerge(clsx(inputs));
 
-export type PiInputType =
-  | 'text'
-  | 'email'
-  | 'password'
-  | 'number'
-  | 'tel'
-  | 'url'
-  | 'search';
+export type PiInputType = 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'search';
 
 export type PiInputSize = 'sm' | 'md';
 
@@ -74,11 +66,7 @@ export class InputComponent implements ControlValueAccessor {
   readonly valueChange = output<string>();
 
   readonly computedClass = computed(() =>
-    cn(
-      BASE_CLASS,
-      SIZE_CLASS[this.size()],
-      this.invalid() ? 'border-destructive' : 'border-rule',
-    ),
+    cn(BASE_CLASS, SIZE_CLASS[this.size()], this.invalid() ? 'border-destructive' : 'border-rule'),
   );
 
   private onChange: (value: string) => void = () => {};

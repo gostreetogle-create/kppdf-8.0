@@ -24,14 +24,7 @@
  * Conventional short reference: trust-model see file header banner.
  */
 
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  input,
-  output,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { CdkDrag } from '@angular/cdk/drag-drop';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { LucideAngularModule } from 'lucide-angular';
@@ -114,12 +107,27 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
         [attr.aria-label]="multiSelected() ? 'Убрать из выделения' : 'Выбрать блок'"
         [attr.tabindex]="multiSelected() ? '0' : '-1'"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
           @if (multiSelected()) {
-            <rect x="3" y="3" width="18" height="18" rx="2" fill="var(--color-sunrise-warm)" stroke="var(--color-sunrise-warm)"/>
-            <polyline points="9 12 11 14 15 10" stroke="white" stroke-width="2.5"/>
+            <rect
+              x="3"
+              y="3"
+              width="18"
+              height="18"
+              rx="2"
+              fill="var(--color-sunrise-warm)"
+              stroke="var(--color-sunrise-warm)"
+            />
+            <polyline points="9 12 11 14 15 10" stroke="white" stroke-width="2.5" />
           } @else {
-            <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor"/>
+            <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" />
           }
         </svg>
       </div>
@@ -169,10 +177,7 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
           </div>
         } @else if (block().type === 'spacer') {
           <!-- Spacer block: visual separator line -->
-          <div
-            class="block-renderer__spacer"
-            [style.height.px]="block().height ?? 40"
-          >
+          <div class="block-renderer__spacer" [style.height.px]="block().height ?? 40">
             <div class="block-renderer__spacer-line"></div>
             <span class="block-renderer__spacer-label">Отступ · {{ block().height ?? 40 }}px</span>
             <div class="block-renderer__spacer-line"></div>
@@ -184,7 +189,10 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
               {{ renderedContent() }}
             </div>
           }
-          <div class="block-renderer__columns" [style.grid-template-columns]="columnsGridTemplate()">
+          <div
+            class="block-renderer__columns"
+            [style.grid-template-columns]="columnsGridTemplate()"
+          >
             @for (col of block().columns; track col.id) {
               <div class="block-renderer__column" [innerHTML]="byPassHtml(col.content)"></div>
             }
@@ -222,7 +230,9 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
         border: 1px solid var(--color-rule);
         border-radius: 2px;
         cursor: pointer;
-        transition: background 120ms ease, border-color 120ms ease;
+        transition:
+          background 120ms ease,
+          border-color 120ms ease;
       }
 
       .block-renderer:hover {

@@ -1,10 +1,4 @@
-export const ORG_TYPES = [
-  'customer',
-  'supplier',
-  'contractor',
-  'manufacturer',
-  'partner',
-] as const;
+export const ORG_TYPES = ['customer', 'supplier', 'contractor', 'manufacturer', 'partner'] as const;
 export type OrgType = (typeof ORG_TYPES)[number];
 
 export const ORG_TYPE_LABELS: Record<OrgType, string> = {

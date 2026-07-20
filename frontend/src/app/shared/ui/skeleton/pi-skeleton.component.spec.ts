@@ -31,7 +31,8 @@ describe('PiSkeletonComponent', () => {
     if (inputs.height !== undefined) fixture.componentRef.setInput('height', inputs.height);
     if (inputs.variant) fixture.componentRef.setInput('variant', inputs.variant);
     if (inputs.count !== undefined) fixture.componentRef.setInput('count', inputs.count);
-    if (inputs.ariaLabel !== undefined) fixture.componentRef.setInput('ariaLabel', inputs.ariaLabel);
+    if (inputs.ariaLabel !== undefined)
+      fixture.componentRef.setInput('ariaLabel', inputs.ariaLabel);
     fixture.detectChanges();
     return fixture;
   }

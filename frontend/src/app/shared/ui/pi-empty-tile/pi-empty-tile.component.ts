@@ -41,15 +41,17 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       [style.height.px]="sizePx()"
       aria-hidden="true"
     >
-      <span class="pi-empty-tile__glyph text-muted-foreground" aria-hidden="true">
-        \u2014
-      </span>
+      <span class="pi-empty-tile__glyph text-muted-foreground" aria-hidden="true"> — </span>
     </div>
   `,
   styles: [
     `
-      :host { display: inline-block; }
-      .pi-empty-tile { user-select: none; }
+      :host {
+        display: inline-block;
+      }
+      .pi-empty-tile {
+        user-select: none;
+      }
       .pi-empty-tile__glyph {
         font-size: 0.875em;
         opacity: 0.6;

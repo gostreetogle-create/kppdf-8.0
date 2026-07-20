@@ -15,11 +15,7 @@ import { Warehouse } from './warehouses.service';
 @Component({
   selector: 'app-inventory-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    PiPageHeaderComponent,
-    PiSectionComponent,
-    PiEmptyStateComponent,
-  ],
+  imports: [PiPageHeaderComponent, PiSectionComponent, PiEmptyStateComponent],
   template: `
     <app-pi-page-header
       eyebrow="07 · склад"
@@ -77,7 +73,9 @@ import { Warehouse } from './warehouses.service';
                 <tr class="hairline-b hover:bg-paper-2 transition-colors">
                   <td class="py-3 px-4">{{ item.product?.name ?? '—' }}</td>
                   <td class="py-3 px-4 text-muted-foreground">{{ item.warehouse?.name ?? '—' }}</td>
-                  <td class="py-3 px-4 text-right font-mono text-destructive">{{ item.quantity }}</td>
+                  <td class="py-3 px-4 text-right font-mono text-destructive">
+                    {{ item.quantity }}
+                  </td>
                   <td class="py-3 px-4 text-right font-mono">{{ item.minQuantity }}</td>
                 </tr>
               }
@@ -104,10 +102,16 @@ export class InventoryDashboardPage {
     url: `${this.baseUrl}/warehouses`,
   }));
 
-  protected readonly allItems = computed<StorageItem[]>(() => this.allItemsRes.value()?.items ?? []);
-  protected readonly lowStockItems = computed<StorageItem[]>(() => this.lowStockRes.value()?.items ?? []);
+  protected readonly allItems = computed<StorageItem[]>(
+    () => this.allItemsRes.value()?.items ?? [],
+  );
+  protected readonly lowStockItems = computed<StorageItem[]>(
+    () => this.lowStockRes.value()?.items ?? [],
+  );
   protected readonly warehouses = computed<Warehouse[]>(() => this.warehousesRes.value() ?? []);
-  protected readonly loading = computed<boolean>(() => this.allItemsRes.isLoading() || this.warehousesRes.isLoading());
+  protected readonly loading = computed<boolean>(
+    () => this.allItemsRes.isLoading() || this.warehousesRes.isLoading(),
+  );
   protected readonly lowStockLoading = computed<boolean>(() => this.lowStockRes.isLoading());
   protected readonly totalItems = computed(() => this.allItems().length);
   protected readonly lowStockCount = computed(() => this.lowStockItems().length);
@@ -115,28 +119,32 @@ export class InventoryDashboardPage {
     this.allItems().reduce((sum, item) => sum + (item.reservedQty ?? 0), 0),
   );
   protected readonly error = computed<string | null>(() => {
-    const err = this.allItemsRes.error() as import('@angular/common/http').HttpErrorResponse | undefined
-      ?? this.lowStockRes.error() as import('@angular/common/http').HttpErrorResponse | undefined
-      ?? this.warehousesRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    const err =
+      (this.allItemsRes.error() as import('@angular/common/http').HttpErrorResponse | undefined) ??
+      (this.lowStockRes.error() as import('@angular/common/http').HttpErrorResponse | undefined) ??
+      (this.warehousesRes.error() as import('@angular/common/http').HttpErrorResponse | undefined);
     return err ? extractErrorMessage(err) : null;
   });
 
   private readonly errorEffect = effect(() => {
-    const err = this.allItemsRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    const err = this.allItemsRes.error() as
+      import('@angular/common/http').HttpErrorResponse | undefined;
     if (err) {
       this.toast.error(extractErrorMessage(err));
     }
   });
 
   private readonly lowStockErrorEffect = effect(() => {
-    const err = this.lowStockRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    const err = this.lowStockRes.error() as
+      import('@angular/common/http').HttpErrorResponse | undefined;
     if (err) {
       this.toast.error(extractErrorMessage(err));
     }
   });
 
   private readonly warehousesErrorEffect = effect(() => {
-    const err = this.warehousesRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    const err = this.warehousesRes.error() as
+      import('@angular/common/http').HttpErrorResponse | undefined;
     if (err) {
       this.toast.error(extractErrorMessage(err));
     }

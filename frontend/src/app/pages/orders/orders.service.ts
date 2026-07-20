@@ -11,13 +11,7 @@ import {
 } from '../../core/silent-http';
 
 export type OrderStatus =
-  | 'draft'
-  | 'confirmed'
-  | 'in_production'
-  | 'ready'
-  | 'shipped'
-  | 'delivered'
-  | 'cancelled';
+  'draft' | 'confirmed' | 'in_production' | 'ready' | 'shipped' | 'delivered' | 'cancelled';
 
 export type OrderPriority = 'low' | 'normal' | 'high' | 'urgent';
 
@@ -94,15 +88,8 @@ export class OrdersService {
     return silentPost<Order>(this.http, `${this.baseUrl}/orders`, payload);
   }
 
-  update(
-    id: string,
-    payload: Partial<Order>,
-  ): Observable<SilentResult<Order>> {
-    return silentPatch<Order>(
-      this.http,
-      `${this.baseUrl}/orders/${id}`,
-      payload,
-    );
+  update(id: string, payload: Partial<Order>): Observable<SilentResult<Order>> {
+    return silentPatch<Order>(this.http, `${this.baseUrl}/orders/${id}`, payload);
   }
 
   remove(id: string): Observable<SilentResult<void>> {

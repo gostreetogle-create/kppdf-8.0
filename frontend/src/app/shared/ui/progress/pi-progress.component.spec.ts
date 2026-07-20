@@ -34,8 +34,10 @@ describe('PiProgressComponent', () => {
     if (inputs.max !== undefined) fixture.componentRef.setInput('max', inputs.max);
     if (inputs.variant) fixture.componentRef.setInput('variant', inputs.variant);
     if (inputs.size) fixture.componentRef.setInput('size', inputs.size);
-    if (inputs.indeterminate !== undefined) fixture.componentRef.setInput('indeterminate', inputs.indeterminate);
-    if (inputs.ariaLabel !== undefined) fixture.componentRef.setInput('ariaLabel', inputs.ariaLabel);
+    if (inputs.indeterminate !== undefined)
+      fixture.componentRef.setInput('indeterminate', inputs.indeterminate);
+    if (inputs.ariaLabel !== undefined)
+      fixture.componentRef.setInput('ariaLabel', inputs.ariaLabel);
     fixture.detectChanges();
     return fixture;
   }

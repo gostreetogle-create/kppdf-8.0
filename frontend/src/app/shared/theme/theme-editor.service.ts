@@ -63,18 +63,9 @@ export class ThemeEditorService {
   apply(): void {
     if (!this.isBrowser) return;
     const root = this.doc.documentElement;
-    root.style.setProperty(
-      '--color-ink-override',
-      this.toOklch(this._ink()),
-    );
-    root.style.setProperty(
-      '--color-paper-override',
-      this.toOklch(this._paper()),
-    );
-    root.style.setProperty(
-      '--color-rule-override',
-      this.toOklch(this._rule()),
-    );
+    root.style.setProperty('--color-ink-override', this.toOklch(this._ink()));
+    root.style.setProperty('--color-paper-override', this.toOklch(this._paper()));
+    root.style.setProperty('--color-rule-override', this.toOklch(this._rule()));
   }
 
   persist(): void {

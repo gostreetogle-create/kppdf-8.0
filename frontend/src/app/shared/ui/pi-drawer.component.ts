@@ -18,8 +18,10 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
     >
       @if (showHandle()) {
         <div class="flex justify-center pt-2 pb-1" aria-hidden="true">
-          <span class="block w-10 h-[3px] rounded-full"
-            style="background: oklch(from var(--color-rule) l c h / 0.80)"></span>
+          <span
+            class="block w-10 h-[3px] rounded-full"
+            style="background: oklch(from var(--color-rule) l c h / 0.80)"
+          ></span>
         </div>
       }
       @if (title()) {

@@ -1,4 +1,1 @@
-export {
-  PiScrollAreaComponent,
-  type PiScrollOrientation,
-} from './pi-scroll-area.component';
+export { PiScrollAreaComponent, type PiScrollOrientation } from './pi-scroll-area.component';

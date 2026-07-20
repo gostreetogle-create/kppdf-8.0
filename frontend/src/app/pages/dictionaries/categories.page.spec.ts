@@ -1,13 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import {
-  provideHttpClient,
-  withFetch,
-  withInterceptors,
-} from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 
 import { CategoriesPage } from './categories.page';
@@ -23,13 +16,34 @@ describe('CategoriesPage', () => {
 
   const fakeTree: CategoryTreeNode[] = [
     {
-      _id: 'c1', name: 'Металлы', slug: 'metals', type: 'material', skuPrefix: 'MET', sortOrder: 1, isActive: true,
+      _id: 'c1',
+      name: 'Металлы',
+      slug: 'metals',
+      type: 'material',
+      skuPrefix: 'MET',
+      sortOrder: 1,
+      isActive: true,
       children: [
-        { _id: 'c1-1', name: 'Сталь', slug: 'steel', type: 'material', skuPrefix: 'STL', sortOrder: 1, isActive: true, children: [] },
+        {
+          _id: 'c1-1',
+          name: 'Сталь',
+          slug: 'steel',
+          type: 'material',
+          skuPrefix: 'STL',
+          sortOrder: 1,
+          isActive: true,
+          children: [],
+        },
       ],
     },
     {
-      _id: 'c2', name: 'Пластик', slug: 'plastic', type: 'material', skuPrefix: 'PLS', sortOrder: 2, isActive: true,
+      _id: 'c2',
+      name: 'Пластик',
+      slug: 'plastic',
+      type: 'material',
+      skuPrefix: 'PLS',
+      sortOrder: 2,
+      isActive: true,
       children: [],
     },
   ];
@@ -47,7 +61,7 @@ describe('CategoriesPage', () => {
         provideHttpClient(withInterceptors([]), withFetch()),
         provideHttpClientTesting(),
         { provide: API_BASE_URL, useValue: baseUrl },
-        { provide: PiDialogService, useValue: { open: () => ({} as never) } },
+        { provide: PiDialogService, useValue: { open: () => ({}) as never } },
         { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
       ],
     })

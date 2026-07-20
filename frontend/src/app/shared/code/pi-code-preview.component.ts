@@ -1,9 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import hljs from 'highlight.js/lib/core';
 import bash from 'highlight.js/lib/languages/bash';
 import css from 'highlight.js/lib/languages/css';
@@ -50,14 +45,10 @@ hljs.registerLanguage('html', xml);
   template: `
     <figure class="hairline rounded-sm overflow-hidden bg-paper-2">
       @if (showCaption()) {
-        <figcaption
-          class="px-4 py-2 hairline-b flex items-center justify-between"
-        >
+        <figcaption class="px-4 py-2 hairline-b flex items-center justify-between">
           <span class="eyebrow">{{ captionTitle() || language() }}</span>
           @if (fileName()) {
-            <span class="font-mono text-[10px] text-muted-foreground">{{
-              fileName()
-            }}</span>
+            <span class="font-mono text-[10px] text-muted-foreground">{{ fileName() }}</span>
           }
         </figcaption>
       }
@@ -169,9 +160,6 @@ export class PiCodePreviewComponent {
   });
 
   private escapeHtml(s: string): string {
-    return s
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 }

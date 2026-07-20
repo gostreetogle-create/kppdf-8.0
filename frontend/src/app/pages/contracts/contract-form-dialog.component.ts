@@ -1,9 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import {
   FormArray,
   FormControl,
@@ -21,21 +16,10 @@ import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tok
 import { PiToastService } from '../../shared/ui/toast';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { extractErrorMessage } from '../../core/silent-http';
-import {
-  Counterparty,
-  CounterpartyService,
-} from '../../shared/services/pi-counterparty.service';
-import {
-  Organization,
-  OrganizationsService,
-} from '../../shared/services/organizations.service';
+import { Counterparty, CounterpartyService } from '../../shared/services/pi-counterparty.service';
+import { Organization, OrganizationsService } from '../../shared/services/organizations.service';
 import { Product, ProductsService } from '../../shared/services/products.service';
-import {
-  Contract,
-  ContractItem,
-  ContractStatus,
-  ContractsService,
-} from './contracts.service';
+import { Contract, ContractItem, ContractStatus, ContractsService } from './contracts.service';
 
 type Result = Contract | null | undefined;
 
@@ -86,10 +70,7 @@ interface ItemFormGroup extends FormGroup {
     TextareaComponent,
   ],
   template: `
-    <app-pi-dialog
-      [title]="isEdit() ? 'Редактировать договор' : 'Создать договор'"
-      [width]="'lg'"
-    >
+    <app-pi-dialog [title]="isEdit() ? 'Редактировать договор' : 'Создать договор'" [width]="'lg'">
       <form
         body
         [formGroup]="form"
@@ -112,9 +93,7 @@ interface ItemFormGroup extends FormGroup {
             >
               <option value="" disabled>— выберите —</option>
               @for (o of organizations(); track o._id) {
-                <option [value]="o._id">
-                  {{ o.name }}{{ o.inn ? ' · ИНН ' + o.inn : '' }}
-                </option>
+                <option [value]="o._id">{{ o.name }}{{ o.inn ? ' · ИНН ' + o.inn : '' }}</option>
               }
             </select>
           </app-pi-form-field>
@@ -145,43 +124,22 @@ interface ItemFormGroup extends FormGroup {
             htmlFor="ct-number"
             hint="Если не задан — генерируется автоматически"
           >
-            <app-pi-input
-              id="ct-number"
-              formControlName="number"
-              placeholder="Номер договора"
-            />
+            <app-pi-input id="ct-number" formControlName="number" placeholder="Номер договора" />
           </app-pi-form-field>
 
-          <app-pi-form-field
-            label="Название"
-            htmlFor="ct-title"
-          >
-            <app-pi-input
-              id="ct-title"
-              formControlName="title"
-              placeholder="Название договора"
-            />
+          <app-pi-form-field label="Название" htmlFor="ct-title">
+            <app-pi-input id="ct-title" formControlName="title" placeholder="Название договора" />
           </app-pi-form-field>
 
-          <app-pi-form-field
-            label="Статус"
-            htmlFor="ct-status"
-          >
-            <select
-              id="ct-status"
-              formControlName="status"
-              class="pi-input w-full"
-            >
+          <app-pi-form-field label="Статус" htmlFor="ct-status">
+            <select id="ct-status" formControlName="status" class="pi-input w-full">
               @for (opt of STATUS_OPTIONS; track opt.value) {
                 <option [value]="opt.value">{{ opt.label }}</option>
               }
             </select>
           </app-pi-form-field>
 
-          <app-pi-form-field
-            label="Срок действия"
-            htmlFor="ct-expiresAt"
-          >
+          <app-pi-form-field label="Срок действия" htmlFor="ct-expiresAt">
             <app-pi-input
               id="ct-expiresAt"
               type="text"
@@ -190,15 +148,8 @@ interface ItemFormGroup extends FormGroup {
             />
           </app-pi-form-field>
 
-          <app-pi-form-field
-            label="Пакет / тег"
-            htmlFor="ct-packageTag"
-          >
-            <app-pi-input
-              id="ct-packageTag"
-              formControlName="packageTag"
-              placeholder="Тег"
-            />
+          <app-pi-form-field label="Пакет / тег" htmlFor="ct-packageTag">
+            <app-pi-input id="ct-packageTag" formControlName="packageTag" placeholder="Тег" />
           </app-pi-form-field>
         </div>
 
@@ -224,11 +175,7 @@ interface ItemFormGroup extends FormGroup {
           }
 
           <div formArrayName="items" class="space-y-2">
-            @for (
-              itemGroup of itemsArray.controls;
-              track $index;
-              let i = $index
-            ) {
+            @for (itemGroup of itemsArray.controls; track $index; let i = $index) {
               <div
                 [formGroupName]="i"
                 class="grid grid-cols-12 gap-2 items-end p-2 hairline rounded-sm bg-paper-2/30"
@@ -246,9 +193,7 @@ interface ItemFormGroup extends FormGroup {
                   >
                     <option value="" disabled>— выберите —</option>
                     @for (p of products(); track p._id) {
-                      <option [value]="p._id">
-                        {{ p.name }}{{ p.sku ? ' · ' + p.sku : '' }}
-                      </option>
+                      <option [value]="p._id">{{ p.name }}{{ p.sku ? ' · ' + p.sku : '' }}</option>
                     }
                   </select>
                 </label>
@@ -326,9 +271,7 @@ interface ItemFormGroup extends FormGroup {
         >
           {{ submitting() ? 'Сохранение…' : 'Сохранить' }}
         </app-pi-button>
-        <app-pi-button type="button" variant="ghost" (click)="onCancel()">
-          Отмена
-        </app-pi-button>
+        <app-pi-button type="button" variant="ghost" (click)="onCancel()"> Отмена </app-pi-button>
       </div>
     </app-pi-dialog>
   `,
@@ -403,13 +346,8 @@ export class ContractFormDialogComponent {
 
   private patchFromData(c: Contract): void {
     const orgId =
-      typeof c.organizationId === 'string'
-        ? c.organizationId
-        : c.organizationId?._id ?? '';
-    const cpId =
-      typeof c.customerId === 'string'
-        ? c.customerId
-        : c.customerId?._id ?? '';
+      typeof c.organizationId === 'string' ? c.organizationId : (c.organizationId?._id ?? '');
+    const cpId = typeof c.customerId === 'string' ? c.customerId : (c.customerId?._id ?? '');
     this.form.patchValue({
       organizationId: orgId,
       customerId: cpId,
@@ -419,7 +357,8 @@ export class ContractFormDialogComponent {
       expiresAt: c.expiresAt ? c.expiresAt.slice(0, 10) : null,
       packageTag: c.packageTag ?? null,
       notes: c.notes ?? null,
-    });              (c.items ?? []).forEach((it) => this.appendItem(it as Partial<ContractItem>));
+    });
+    (c.items ?? []).forEach((it) => this.appendItem(it as Partial<ContractItem>));
   }
 
   addItem(): void {
@@ -442,19 +381,11 @@ export class ContractFormDialogComponent {
 
   private createItemGroup(initial: Partial<ContractItem> = {}): ItemFormGroup {
     return this.fb.group({
-      productId: this.fb.control(initial.productId ?? '', [
-        Validators.required,
-      ]),
+      productId: this.fb.control(initial.productId ?? '', [Validators.required]),
       productName: this.fb.control<string>(initial.productName ?? ''),
-      quantity: this.fb.control(initial.quantity ?? 1, [
-        Validators.required,
-        Validators.min(0),
-      ]),
+      quantity: this.fb.control(initial.quantity ?? 1, [Validators.required, Validators.min(0)]),
       unit: this.fb.control<string>(initial.unit ?? ''),
-      unitPrice: this.fb.control(initial.unitPrice ?? 0, [
-        Validators.required,
-        Validators.min(0),
-      ]),
+      unitPrice: this.fb.control(initial.unitPrice ?? 0, [Validators.required, Validators.min(0)]),
     }) as ItemFormGroup;
   }
 
@@ -515,9 +446,7 @@ export class ContractFormDialogComponent {
       : this.service.create(payload);
     obs.subscribe((res) => {
       if (res.ok) {
-        this.toast.success(
-          this.isEdit() ? 'Договор обновлён' : 'Договор создан',
-        );
+        this.toast.success(this.isEdit() ? 'Договор обновлён' : 'Договор создан');
         this.ref.close(res.data);
       } else {
         this.errorMessage.set(extractErrorMessage(res.error));

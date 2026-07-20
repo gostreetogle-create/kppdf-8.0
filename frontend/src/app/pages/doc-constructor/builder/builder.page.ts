@@ -23,7 +23,16 @@ import {
   tap,
   timer,
 } from 'rxjs';
-import { LucideAngularModule, FileText, Plus, RefreshCw, Check, AlertCircle, Loader2, Trash2 } from 'lucide-angular';
+import {
+  LucideAngularModule,
+  FileText,
+  Plus,
+  RefreshCw,
+  Check,
+  AlertCircle,
+  Loader2,
+  Trash2,
+} from 'lucide-angular';
 import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
 import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
 import { API_BASE_URL } from '../../../core/api.tokens';
@@ -41,10 +50,7 @@ import { PiToastService } from '../../../shared/ui/toast';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../../shared/ui/dialog/pi-alert-dialog.component';
 import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
-import {
-  AddBlockPayload,
-  BuilderToolPaneComponent,
-} from './builder-tool-pane.component';
+import { AddBlockPayload, BuilderToolPaneComponent } from './builder-tool-pane.component';
 import { BuilderCanvasComponent } from './builder-canvas.component';
 import { BuilderInspectorComponent } from './builder-inspector.component';
 
@@ -99,7 +105,10 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
         [subtitle]="headerSubtitle()"
       />
 
-      <app-pi-section title="Выберите шаблон" description="Список доступных шаблонов для редактирования">
+      <app-pi-section
+        title="Выберите шаблон"
+        description="Список доступных шаблонов для редактирования"
+      >
         @if (templateListRes.isLoading()) {
           <p class="empty-state">Загрузка шаблонов…</p>
         } @else if (templateListRes.error()) {
@@ -117,11 +126,16 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
               </thead>
               <tbody>
                 @for (t of templateListRes.value()!; track t._id) {
-                  <tr class="pi-table-row pi-table-row-odd group cursor-pointer"
-                      (click)="onTemplatePick(t._id)">
+                  <tr
+                    class="pi-table-row pi-table-row-odd group cursor-pointer"
+                    (click)="onTemplatePick(t._id)"
+                  >
                     <td class="pi-cell font-medium">{{ t.name }}</td>
                     <td class="pi-cell text-right">
-                      <div class="flex items-center justify-end gap-2" (click)="$event.stopPropagation()">
+                      <div
+                        class="flex items-center justify-end gap-2"
+                        (click)="$event.stopPropagation()"
+                      >
                         <app-pi-button
                           variant="outline"
                           size="sm"
@@ -392,9 +406,7 @@ export class BuilderPage {
         mergeMap((group$) =>
           group$.pipe(
             debounceTime(1500),
-            switchMap(({ _id, patch }) =>
-              this.blocksSvc.update(_id, patch),
-            ),
+            switchMap(({ _id, patch }) => this.blocksSvc.update(_id, patch)),
           ),
         ),
         takeUntilDestroyed(this.destroyRef),
@@ -415,17 +427,15 @@ export class BuilderPage {
     // Phase E.3: read ?source + ?sourceId query params (preserved across
     // template-pick navigation). Logged for future use; binding logic is
     // out of scope until the doc-template service supports pre-binding.
-    this.route.queryParamMap
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((qp) => {
-        const source = qp.get('source');
-        const sourceId = qp.get('sourceId');
-        if (source && sourceId) {
-          this.sourceContext.set({ source, sourceId });
-        } else {
-          this.sourceContext.set(null);
-        }
-      });
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((qp) => {
+      const source = qp.get('source');
+      const sourceId = qp.get('sourceId');
+      if (source && sourceId) {
+        this.sourceContext.set({ source, sourceId });
+      } else {
+        this.sourceContext.set(null);
+      }
+    });
   }
 
   /** Phase E.3: source context (order/contract ID pre-binding for future expansion). */
@@ -480,7 +490,9 @@ export class BuilderPage {
     this.templatesSvc.uploadBackground(tid, file).subscribe({
       next: (res) => {
         if (res.ok) {
-          this.template.update((t) => t ? { ...t, backgroundImage: res.data.backgroundImage } : t);
+          this.template.update((t) =>
+            t ? { ...t, backgroundImage: res.data.backgroundImage } : t,
+          );
           this.toast.success('Фон загружен');
           this.saveStatus.set('saved');
           const myTick = ++this.savedTick;
@@ -528,7 +540,7 @@ export class BuilderPage {
     this.templatesSvc.setDefaultBackground(tid, index).subscribe({
       next: (res) => {
         if (res.ok) {
-          this.template.update((t) => t ? { ...t, defaultBackgroundIndex: index } : t);
+          this.template.update((t) => (t ? { ...t, defaultBackgroundIndex: index } : t));
           this.toast.success(index >= 0 ? 'Фон по умолчанию установлен' : 'Показывать все фоны');
         } else {
           this.toast.error(extractErrorMessage(res.error));
@@ -543,7 +555,7 @@ export class BuilderPage {
     this.templatesSvc.setOrientation(tid, orientation).subscribe({
       next: (res) => {
         if (res.ok) {
-          this.template.update((t) => t ? { ...t, orientation } : t);
+          this.template.update((t) => (t ? { ...t, orientation } : t));
         } else {
           this.toast.error(extractErrorMessage(res.error));
         }
@@ -552,7 +564,7 @@ export class BuilderPage {
   }
 
   protected onSetOpacity(opacity: number): void {
-    this.template.update((t) => t ? { ...t, backgroundOpacity: opacity } : t);
+    this.template.update((t) => (t ? { ...t, backgroundOpacity: opacity } : t));
     const tid = this.templateId();
     if (tid) {
       this.templatesSvc.update(tid, { backgroundOpacity: opacity }).subscribe();
@@ -630,11 +642,12 @@ export class BuilderPage {
           this.toast.error(extractErrorMessage(err));
           this.blocks.update((arr) => arr.filter((b) => b.tempId !== newBlock.tempId));
         },
-    });
+      });
   }
 
   protected onDuplicateTemplate(t: DocumentTemplate): void {
-    this.http.post<DocumentTemplate>(`${this.baseUrl}/document-templates/${t._id}/duplicate`, {})
+    this.http
+      .post<DocumentTemplate>(`${this.baseUrl}/document-templates/${t._id}/duplicate`, {})
       .subscribe({
         next: () => {
           this.toast.success('Копия шаблона создана');
@@ -679,7 +692,10 @@ export class BuilderPage {
           title: payload.textBlock.name,
           content: payload.textBlock.content,
           columns: payload.textBlock.columns,
-          dataBinding: { source: 'static' as DataBindingSource, value: payload.textBlock._id ?? '' },
+          dataBinding: {
+            source: 'static' as DataBindingSource,
+            value: payload.textBlock._id ?? '',
+          },
         };
       case 'table-template':
         return {
@@ -782,9 +798,7 @@ export class BuilderPage {
 
     forkJoin(safeOps).subscribe({
       next: (results) => {
-        const failedKeys = new Set(
-          results.filter((r) => !r.ok).map((r) => r.key),
-        );
+        const failedKeys = new Set(results.filter((r) => !r.ok).map((r) => r.key));
         const succeededCount = results.length - failedKeys.size;
 
         if (succeededCount > 0) {
@@ -798,7 +812,9 @@ export class BuilderPage {
           );
         }
 
-        const currentIds = this.blocks().filter((b) => b._id).map((b) => b._id!);
+        const currentIds = this.blocks()
+          .filter((b) => b._id)
+          .map((b) => b._id!);
         if (currentIds.length > 0) {
           this.blocksSvc.reorder(tid, { blockIds: currentIds }).subscribe();
         }
@@ -819,22 +835,20 @@ export class BuilderPage {
     if (!tid) return;
 
     const ids = reindexed.filter((b) => b._id).map((b) => b._id!);
-    this.blocksSvc
-      .reorder(tid, { blockIds: ids })
-      .subscribe({
-        next: (res) => {
-          if (res.ok) {
-            this.toast.success('Порядок блоков сохранён');
-          } else {
-            this.toast.error(extractErrorMessage(res.error));
-            this.blocks.set(previous); // rollback
-          }
-        },
-        error: (err: HttpErrorResponse) => {
-          this.toast.error(extractErrorMessage(err));
+    this.blocksSvc.reorder(tid, { blockIds: ids }).subscribe({
+      next: (res) => {
+        if (res.ok) {
+          this.toast.success('Порядок блоков сохранён');
+        } else {
+          this.toast.error(extractErrorMessage(res.error));
           this.blocks.set(previous); // rollback
-        },
-      });
+        }
+      },
+      error: (err: HttpErrorResponse) => {
+        this.toast.error(extractErrorMessage(err));
+        this.blocks.set(previous); // rollback
+      },
+    });
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -842,9 +856,7 @@ export class BuilderPage {
   // ─────────────────────────────────────────────────────────────
   protected onInspectorUpdate(patch: Partial<TemplateBlock> & { _id: string }): void {
     const { _id, ...rest } = patch;
-    this.blocks.update((arr) =>
-      arr.map((b) => (b._id === _id ? { ...b, ...rest } : b)),
-    );
+    this.blocks.update((arr) => arr.map((b) => (b._id === _id ? { ...b, ...rest } : b)));
     this.save$.next({ _id, patch: rest });
   }
 
@@ -869,26 +881,28 @@ export class BuilderPage {
   /** TZ-87 B.2: Fetch first org + docType, then create template and navigate. */
   protected onCreateTemplate(): void {
     this.isCreating.set(true);
-    const org$ = this.http.get<{ items: { _id: string }[] }>(`${this.baseUrl}/organizations?limit=1`);
+    const org$ = this.http.get<{ items: { _id: string }[] }>(
+      `${this.baseUrl}/organizations?limit=1`,
+    );
     const dt$ = this.http.get<{ _id: string }[]>(`${this.baseUrl}/doc-types`);
     forkJoin([org$, dt$])
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-      next: ([orgRes, dtRes]) => {
-        const orgId = orgRes?.items?.[0]?._id;
-        const docTypeId = dtRes?.[0]?._id;
-        if (!orgId || !docTypeId) {
-          this.toast.error('Не найдены организация или тип документа. Сначала создайте их.');
+        next: ([orgRes, dtRes]) => {
+          const orgId = orgRes?.items?.[0]?._id;
+          const docTypeId = dtRes?.[0]?._id;
+          if (!orgId || !docTypeId) {
+            this.toast.error('Не найдены организация или тип документа. Сначала создайте их.');
+            this.isCreating.set(false);
+            return;
+          }
+          this.doCreateTemplate(orgId, docTypeId);
+        },
+        error: (err) => {
           this.isCreating.set(false);
-          return;
-        }
-        this.doCreateTemplate(orgId, docTypeId);
-      },
-      error: (err) => {
-        this.isCreating.set(false);
-        this.toast.error('Ошибка загрузки: ' + extractErrorMessage(err));
-      },
-    });
+          this.toast.error('Ошибка загрузки: ' + extractErrorMessage(err));
+        },
+      });
   }
 
   /** Actually create the template with resolved refs. */
@@ -930,9 +944,10 @@ export class BuilderPage {
   protected onTemplatePick(value: string | null): void {
     if (!value) return;
     const ctx = this.sourceContext();
-    if (ctx) {this.router.navigate(['/doc-constructor/builder', value], {
-          queryParams: { source: ctx.source, sourceId: ctx.sourceId },
-        });
+    if (ctx) {
+      this.router.navigate(['/doc-constructor/builder', value], {
+        queryParams: { source: ctx.source, sourceId: ctx.sourceId },
+      });
     } else {
       this.router.navigate(['/doc-constructor/builder', value]);
     }
@@ -980,9 +995,7 @@ export class BuilderPage {
       this.saveStatus.set('error');
       return;
     }
-    this.blocks.update((arr) =>
-      arr.map((b) => (b._id === res.data._id ? res.data : b)),
-    );
+    this.blocks.update((arr) => arr.map((b) => (b._id === res.data._id ? res.data : b)));
     this.saveStatus.set('saved');
     // Monotonic-counter guard (see `savedTick` field JSDoc): only revert if
     // no newer save has started in the 2s window.

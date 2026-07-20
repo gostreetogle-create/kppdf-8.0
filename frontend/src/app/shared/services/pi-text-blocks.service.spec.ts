@@ -1,9 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import {
-  provideHttpClientTesting,
-  HttpTestingController,
-} from '@angular/common/http/testing';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { TextBlocksService } from './pi-text-blocks.service';
 
@@ -47,8 +44,26 @@ describe('TextBlocksService', () => {
     const req = httpMock.expectOne('http://test/api/text-blocks');
     expect(req.request.method).toBe('GET');
     req.flush([
-      { _id: 'tb1', name: 'Стандартные условия', slug: 'standartnye-usloviya', category: 'legal', tags: [], content: '# Условия', isActive: true, sortOrder: 0 },
-      { _id: 'tb2', name: 'Архивный текст', slug: 'arhivnyj-tekst', category: 'custom', tags: [], content: '# Старое', isActive: false, sortOrder: 99 },
+      {
+        _id: 'tb1',
+        name: 'Стандартные условия',
+        slug: 'standartnye-usloviya',
+        category: 'legal',
+        tags: [],
+        content: '# Условия',
+        isActive: true,
+        sortOrder: 0,
+      },
+      {
+        _id: 'tb2',
+        name: 'Архивный текст',
+        slug: 'arhivnyj-tekst',
+        category: 'custom',
+        tags: [],
+        content: '# Старое',
+        isActive: false,
+        sortOrder: 99,
+      },
     ]);
   });
 
@@ -62,22 +77,46 @@ describe('TextBlocksService', () => {
     });
     const req = httpMock.expectOne('http://test/api/text-blocks?activeOnly=true');
     req.flush([
-      { _id: 'tb1', name: 'Стандартные условия', slug: 'standartnye-usloviya', category: 'legal', tags: [], content: '# Условия', isActive: true, sortOrder: 0 },
-      { _id: 'tb2', name: 'Архивный текст', slug: 'arhivnyj-tekst', category: 'custom', tags: [], content: '# Старое', isActive: false, sortOrder: 99 },
+      {
+        _id: 'tb1',
+        name: 'Стандартные условия',
+        slug: 'standartnye-usloviya',
+        category: 'legal',
+        tags: [],
+        content: '# Условия',
+        isActive: true,
+        sortOrder: 0,
+      },
+      {
+        _id: 'tb2',
+        name: 'Архивный текст',
+        slug: 'arhivnyj-tekst',
+        category: 'custom',
+        tags: [],
+        content: '# Старое',
+        isActive: false,
+        sortOrder: 99,
+      },
     ]);
   });
 
   it('create() POSTs body and returns TextBlock on 2xx', () => {
-    svc.create({ name: 'Реквизиты сторон', category: 'legal', content: '# Реквизиты' } as never).subscribe((res) => {
-      if (res.ok) {
-        expect(res.data.name).toBe('Реквизиты сторон');
-        expect(res.data.category).toBe('legal');
-        expect(res.data.slug).toBe('rekvizity-storon');
-      }
-    });
+    svc
+      .create({ name: 'Реквизиты сторон', category: 'legal', content: '# Реквизиты' } as never)
+      .subscribe((res) => {
+        if (res.ok) {
+          expect(res.data.name).toBe('Реквизиты сторон');
+          expect(res.data.category).toBe('legal');
+          expect(res.data.slug).toBe('rekvizity-storon');
+        }
+      });
     const req = httpMock.expectOne('http://test/api/text-blocks');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ name: 'Реквизиты сторон', category: 'legal', content: '# Реквизиты' });
+    expect(req.request.body).toEqual({
+      name: 'Реквизиты сторон',
+      category: 'legal',
+      content: '# Реквизиты',
+    });
     req.flush({
       _id: 'tb3',
       name: 'Реквизиты сторон',
@@ -91,12 +130,14 @@ describe('TextBlocksService', () => {
   });
 
   it('update() PATCHes body to /:id and returns TextBlock', () => {
-    svc.update('tb1', { name: 'Обновлённое название', isActive: false } as never).subscribe((res) => {
-      if (res.ok) {
-        expect(res.data.name).toBe('Обновлённое название');
-        expect(res.data.isActive).toBe(false);
-      }
-    });
+    svc
+      .update('tb1', { name: 'Обновлённое название', isActive: false } as never)
+      .subscribe((res) => {
+        if (res.ok) {
+          expect(res.data.name).toBe('Обновлённое название');
+          expect(res.data.isActive).toBe(false);
+        }
+      });
     const req = httpMock.expectOne('http://test/api/text-blocks/tb1');
     expect(req.request.method).toBe('PATCH');
     expect(req.request.body).toEqual({ name: 'Обновлённое название', isActive: false });

@@ -1,10 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, input, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  NavigationEnd,
-  Router,
-  RouterLink,
-} from '@angular/router';
+import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { LucideAngularModule, ChevronDown } from 'lucide-angular';
 
@@ -53,11 +49,7 @@ export interface PiNavDropdownItem {
   selector: 'app-pi-nav-dropdown',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    RouterLink,
-    LucideAngularModule,
-    MenuTriggerDirective,
-  ],
+  imports: [RouterLink, LucideAngularModule, MenuTriggerDirective],
   template: `
     <button
       type="button"
@@ -71,12 +63,7 @@ export interface PiNavDropdownItem {
       [attr.aria-label]="ariaLabel() || label() + ' (открыть меню)'"
       aria-haspopup="menu"
     >
-      <lucide-angular
-        [img]="icon()"
-        [size]="14"
-        class="opacity-80"
-        aria-hidden="true"
-      />
+      <lucide-angular [img]="icon()" [size]="14" class="opacity-80" aria-hidden="true" />
       <span>{{ label() }}</span>
       <lucide-angular
         [img]="chevronIcon"

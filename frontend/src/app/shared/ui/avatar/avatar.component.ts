@@ -67,26 +67,13 @@ const BASE_CLASS = [
   imports: [LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <span
-      role="img"
-      [attr.aria-label]="ariaLabel()"
-      [class]="computedClass()"
-    >
+    <span role="img" [attr.aria-label]="ariaLabel()" [class]="computedClass()">
       @if (hasImage()) {
-        <img
-          [src]="src()"
-          [alt]="alt()"
-          class="w-full h-full object-cover"
-          draggable="false"
-        />
+        <img [src]="src()" [alt]="alt()" class="w-full h-full object-cover" draggable="false" />
       } @else if (computedInitials()) {
         <span aria-hidden="true">{{ computedInitials() }}</span>
       } @else {
-        <lucide-angular
-          [img]="userIcon"
-          [size]="lucideSize()"
-          aria-hidden="true"
-        />
+        <lucide-angular [img]="userIcon" [size]="lucideSize()" aria-hidden="true" />
       }
     </span>
   `,

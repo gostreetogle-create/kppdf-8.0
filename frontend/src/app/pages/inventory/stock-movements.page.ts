@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
@@ -8,7 +15,11 @@ import { TableComponent, ColumnDef } from '../../shared/ui/pi-table.component';
 import { PiToastService } from '../../shared/ui/toast';
 import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
-import { StockMovement, MovementType, type StockMovementsListResponse } from './stock-movements.service';
+import {
+  StockMovement,
+  MovementType,
+  type StockMovementsListResponse,
+} from './stock-movements.service';
 
 /**
  * Полная документация страницы: docs/pages/stock-movements.page.md
@@ -89,24 +100,44 @@ export class StockMovementsPage {
   protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
   protected readonly totalItems = computed(() => this.items().length);
   protected readonly error = computed<string | null>(() => {
-    const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    const err = this.listRes.error() as
+      import('@angular/common/http').HttpErrorResponse | undefined;
     return err ? extractErrorMessage(err) : null;
   });
 
   private readonly errorEffect = effect(() => {
-    const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    const err = this.listRes.error() as
+      import('@angular/common/http').HttpErrorResponse | undefined;
     if (err) {
       this.toast.error(extractErrorMessage(err));
     }
   });
 
   protected readonly columns: ColumnDef<StockMovement>[] = [
-    { key: 'date', label: 'Дата', sortable: true, width: '10rem', accessor: (row) => row.date, format: (row) => this.formatDate(row.date) },
-    { key: 'type', label: 'Тип', sortable: true, width: '7rem', accessor: (row) => this.typeLabel(row.type) },
+    {
+      key: 'date',
+      label: 'Дата',
+      sortable: true,
+      width: '10rem',
+      accessor: (row) => row.date,
+      format: (row) => this.formatDate(row.date),
+    },
+    {
+      key: 'type',
+      label: 'Тип',
+      sortable: true,
+      width: '7rem',
+      accessor: (row) => this.typeLabel(row.type),
+    },
     { key: 'product', label: 'Продукт', accessor: (row) => row.product?.name ?? '—' },
     { key: 'warehouse', label: 'Склад', accessor: (row) => row.warehouse?.name ?? '—' },
     { key: 'qty', label: 'Кол-во', align: 'right', numeric: true, width: '6rem' },
-    { key: 'documentRef', label: 'Документ', width: '8rem', accessor: (row) => row.documentRef ?? '—' },
+    {
+      key: 'documentRef',
+      label: 'Документ',
+      width: '8rem',
+      accessor: (row) => row.documentRef ?? '—',
+    },
   ];
 
   protected onTypeChange(event: Event): void {

@@ -1,12 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import {
-  provideHttpClient,
-  withInterceptors,
-} from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { AuthService, AuthUser } from './auth.service';
 import { API_BASE_URL } from './api.tokens';
@@ -86,10 +80,7 @@ describe('AuthService', () => {
    * constructed AuthService whose field initializers read those tokens.
    * Call this EXACTLY ONCE per test, BEFORE the first HTTP call.
    */
-  function makeServiceWithTokens(
-    access: string | null,
-    refresh: string | null,
-  ): AuthService {
+  function makeServiceWithTokens(access: string | null, refresh: string | null): AuthService {
     if (access !== null) localStorage.setItem(ACCESS_KEY, access);
     if (refresh !== null) localStorage.setItem(REFRESH_KEY, refresh);
     return TestBed.inject(AuthService);
@@ -224,17 +215,13 @@ describe('AuthService', () => {
       //    /auth/refresh returns new access token
       const refreshReq = httpMock.expectOne(refreshUrl);
       expect(refreshReq.request.method).toBe('POST');
-      expect(refreshReq.request.headers.get('Authorization')).toBe(
-        'Bearer refresh-1',
-      );
+      expect(refreshReq.request.headers.get('Authorization')).toBe('Bearer refresh-1');
       refreshReq.flush({ access: 'access-2' });
       await tick();
 
       // 3. AuthService retries /auth/me with the new access token
       const meRetryReq = httpMock.expectOne(meUrl);
-      expect(meRetryReq.request.headers.get('Authorization')).toBe(
-        'Bearer access-2',
-      );
+      expect(meRetryReq.request.headers.get('Authorization')).toBe('Bearer access-2');
       meRetryReq.flush(fakeUser);
 
       await promise;
@@ -329,9 +316,7 @@ describe('AuthService', () => {
     it('throws when no refresh token is stored', async () => {
       const service = makeServiceWithoutTokens();
 
-      await expect(service.refresh()).rejects.toThrow(
-        'No refresh token available',
-      );
+      await expect(service.refresh()).rejects.toThrow('No refresh token available');
       // refresh() also clears state on this path.
       expect(service.accessToken()).toBeNull();
       // No HTTP call was made.
@@ -346,9 +331,7 @@ describe('AuthService', () => {
 
       const req = httpMock.expectOne(refreshUrl);
       expect(req.request.method).toBe('POST');
-      expect(req.request.headers.get('Authorization')).toBe(
-        'Bearer refresh-1',
-      );
+      expect(req.request.headers.get('Authorization')).toBe('Bearer refresh-1');
       req.flush({ access: 'access-2' });
 
       const newAccess = await promise;

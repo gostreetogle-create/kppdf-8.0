@@ -60,7 +60,9 @@ import { LucideAngularModule, GripVertical } from 'lucide-angular';
         color: oklch(var(--color-muted));
         cursor: grab;
         opacity: 0;
-        transition: opacity 120ms ease, color 120ms ease;
+        transition:
+          opacity 120ms ease,
+          color 120ms ease;
         padding: 0;
       }
 

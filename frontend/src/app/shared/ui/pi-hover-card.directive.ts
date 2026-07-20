@@ -7,11 +7,7 @@ import {
   inject,
   input,
 } from '@angular/core';
-import {
-  Overlay,
-  OverlayRef,
-  ConnectedPosition,
-} from '@angular/cdk/overlay';
+import { Overlay, OverlayRef, ConnectedPosition } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 
 export type HoverCardPosition = 'top' | 'bottom' | 'left' | 'right';
@@ -48,8 +44,12 @@ export class HoverCardDirective {
     if (this.closeTimer) clearTimeout(this.closeTimer);
     this.closeTimer = setTimeout(() => this.hide(), this.closeDelay());
   }
-  @HostListener('focusin') onFocus(): void { this.show(); }
-  @HostListener('focusout') onBlur(): void { this.hide(); }
+  @HostListener('focusin') onFocus(): void {
+    this.show();
+  }
+  @HostListener('focusout') onBlur(): void {
+    this.hide();
+  }
 
   private show(): void {
     if (this.activeRef) return;
@@ -57,10 +57,10 @@ export class HoverCardDirective {
       this.position() === 'top'
         ? [{ originX: 'center', originY: 'top', overlayX: 'center', overlayY: 'bottom' }]
         : this.position() === 'bottom'
-        ? [{ originX: 'center', originY: 'bottom', overlayX: 'center', overlayY: 'top' }]
-        : this.position() === 'left'
-        ? [{ originX: 'start', originY: 'center', overlayX: 'end', overlayY: 'center' }]
-        : [{ originX: 'end', originY: 'center', overlayX: 'start', overlayY: 'center' }];
+          ? [{ originX: 'center', originY: 'bottom', overlayX: 'center', overlayY: 'top' }]
+          : this.position() === 'left'
+            ? [{ originX: 'start', originY: 'center', overlayX: 'end', overlayY: 'center' }]
+            : [{ originX: 'end', originY: 'center', overlayX: 'start', overlayY: 'center' }];
 
     const overlayRef = this.overlay.create({
       hasBackdrop: false,

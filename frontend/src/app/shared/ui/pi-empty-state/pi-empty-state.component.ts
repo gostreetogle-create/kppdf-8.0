@@ -50,7 +50,9 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   `,
   styles: [
     `
-      :host { display: contents; }
+      :host {
+        display: contents;
+      }
     `,
   ],
 })

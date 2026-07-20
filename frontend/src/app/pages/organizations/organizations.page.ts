@@ -128,7 +128,7 @@ const PAGE_SIZE = 50;
 
           <ng-template #typeTpl let-row>
             <div class="flex flex-wrap gap-1">
-              @for (t of (row.type || []); track t) {
+              @for (t of row.type || []; track t) {
                 <span class="eyebrow text-[10px] px-2 py-1 hairline rounded-sm">
                   {{ orgTypeLabel(t) }}
                 </span>
@@ -170,10 +170,13 @@ export class OrganizationsPage {
   }));
 
   protected readonly data = computed<Organization[]>(() => this.listRes.value()?.items ?? []);
-  protected readonly total = computed<number>(() => this.listRes.value()?.total ?? this.data().length);
+  protected readonly total = computed<number>(
+    () => this.listRes.value()?.total ?? this.data().length,
+  );
   protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
   protected readonly error = computed<string | null>(() => {
-    const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    const err = this.listRes.error() as
+      import('@angular/common/http').HttpErrorResponse | undefined;
     return err ? extractErrorMessage(err) : null;
   });
 

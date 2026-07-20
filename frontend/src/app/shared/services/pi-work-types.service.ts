@@ -2,7 +2,13 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { API_BASE_URL } from '../../core/api.tokens';
-import { silentDelete, silentGet, silentPatch, silentPost, SilentResult } from '../../core/silent-http';
+import {
+  silentDelete,
+  silentGet,
+  silentPatch,
+  silentPost,
+  SilentResult,
+} from '../../core/silent-http';
 
 /**
  * TZ-83 Phase B: WorkType mirror of backend `WorkType` schema
@@ -67,7 +73,9 @@ export class WorkTypesService {
     // TZ-83 cleanup: idiomatic `map` instead of hand-rolled Observable shim.
     // Backend returns raw WorkType[]; we wrap in { items, total } so consumers
     // can treat work-types list response same shape as materials/orgs/units.
-    return silentGet<WorkType[]>(this.http, `${this.baseUrl}/work-types`, { params: httpParams }).pipe(
+    return silentGet<WorkType[]>(this.http, `${this.baseUrl}/work-types`, {
+      params: httpParams,
+    }).pipe(
       map((res) => {
         if (!res.ok) return res;
         const arr = (res.data ?? []) as WorkType[];

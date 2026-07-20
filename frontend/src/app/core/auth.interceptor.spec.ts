@@ -5,10 +5,7 @@ import {
   provideHttpClient,
   withInterceptors,
 } from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 
 import { AuthService } from './auth.service';

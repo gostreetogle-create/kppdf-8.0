@@ -64,9 +64,7 @@ export class PaginationComponent {
 
   readonly pageChange = output<number>();
 
-  readonly totalPages = computed(() =>
-    Math.max(1, Math.ceil(this.total() / this.pageSize())),
-  );
+  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize())));
 
   readonly pageList = computed<PageItem[]>(() => {
     const total = this.totalPages();

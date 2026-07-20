@@ -1,14 +1,5 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  signal,
-} from '@angular/core';
-import {
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
@@ -18,10 +9,7 @@ import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tok
 import { PiToastService } from '../../shared/ui/toast';
 import { extractErrorMessage } from '../../core/silent-http';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
-import {
-  Category,
-  CategoriesService,
-} from '../../shared/services/categories.service';
+import { Category, CategoriesService } from '../../shared/services/categories.service';
 
 type Result = Category | null | undefined;
 
@@ -85,16 +73,8 @@ const CATEGORY_TYPES: { value: Category['type']; label: string }[] = [
         </app-pi-form-field>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
-          <app-pi-form-field
-            label="Тип"
-            htmlFor="cat-type"
-            [required]="true"
-          >
-            <select
-              id="cat-type"
-              formControlName="type"
-              class="pi-input w-full"
-            >
+          <app-pi-form-field label="Тип" htmlFor="cat-type" [required]="true">
+            <select id="cat-type" formControlName="type" class="pi-input w-full">
               @for (opt of CATEGORY_TYPES; track opt.value) {
                 <option [value]="opt.value">{{ opt.label }}</option>
               }
@@ -117,10 +97,7 @@ const CATEGORY_TYPES: { value: Category['type']; label: string }[] = [
           </app-pi-form-field>
         </div>
 
-        <app-pi-form-field
-          label="Описание"
-          htmlFor="cat-description"
-        >
+        <app-pi-form-field label="Описание" htmlFor="cat-description">
           <app-pi-textarea
             id="cat-description"
             formControlName="description"
@@ -146,13 +123,7 @@ const CATEGORY_TYPES: { value: Category['type']; label: string }[] = [
         >
           {{ submitting() ? 'Сохранение…' : 'Сохранить' }}
         </app-pi-button>
-        <app-pi-button
-          type="button"
-          variant="ghost"
-          (click)="onCancel()"
-        >
-          Отмена
-        </app-pi-button>
+        <app-pi-button type="button" variant="ghost" (click)="onCancel()"> Отмена </app-pi-button>
       </div>
     </app-pi-dialog>
   `,
@@ -171,10 +142,7 @@ export class CategoryFormDialogComponent {
   protected readonly errorMessage = signal<string | null>(null);
 
   protected readonly form = this.fb.group({
-    name: this.fb.control(this.data?.name ?? '', [
-      Validators.required,
-      Validators.maxLength(128),
-    ]),
+    name: this.fb.control(this.data?.name ?? '', [Validators.required, Validators.maxLength(128)]),
     slug: this.fb.control(this.data?.slug ?? '', [
       Validators.required,
       Validators.maxLength(64),
@@ -186,9 +154,7 @@ export class CategoryFormDialogComponent {
       Validators.maxLength(16),
       Validators.pattern(/^[A-Z0-9-]+$/),
     ]),
-    description: this.fb.control(this.data?.description ?? '', [
-      Validators.maxLength(512),
-    ]),
+    description: this.fb.control(this.data?.description ?? '', [Validators.maxLength(512)]),
   });
 
   protected hasError(name: keyof typeof this.form.controls): boolean {
@@ -235,9 +201,7 @@ export class CategoryFormDialogComponent {
 
     obs.subscribe((res) => {
       if (res.ok) {
-        this.toast.success(
-          this.isEdit() ? 'Категория обновлена' : 'Категория создана',
-        );
+        this.toast.success(this.isEdit() ? 'Категория обновлена' : 'Категория создана');
         this.ref.close(res.data);
       } else {
         this.errorMessage.set(extractErrorMessage(res.error));

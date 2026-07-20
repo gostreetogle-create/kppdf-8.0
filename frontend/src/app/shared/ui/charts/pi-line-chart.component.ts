@@ -62,7 +62,9 @@ export interface PiLineSeries {
             dominant-baseline="middle"
             class="pi-line-chart__tick"
             aria-hidden="true"
-          >{{ tick }}</text>
+          >
+            {{ tick }}
+          </text>
         }
       }
 
@@ -109,7 +111,9 @@ export interface PiLineSeries {
             text-anchor="middle"
             class="pi-line-chart__tick"
             aria-hidden="true"
-          >{{ label }}</text>
+          >
+            {{ label }}
+          </text>
         }
       }
     </svg>
@@ -129,23 +133,27 @@ export interface PiLineSeries {
       </ul>
     }
   `,
-  styles: [`
-    .pi-line-chart { display: block; }
-    .pi-line-chart__tick {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      fill: var(--color-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-    .pi-line-chart__legend-label {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--color-muted);
-    }
-  `],
+  styles: [
+    `
+      .pi-line-chart {
+        display: block;
+      }
+      .pi-line-chart__tick {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        fill: var(--color-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      .pi-line-chart__legend-label {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--color-muted);
+      }
+    `,
+  ],
 })
 export class PiLineChartComponent {
   readonly results = input.required<PiLineSeries[]>();

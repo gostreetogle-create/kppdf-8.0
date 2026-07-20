@@ -1,13 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import {
-  provideHttpClient,
-  withFetch,
-  withInterceptors,
-} from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of } from 'rxjs';
 
@@ -25,8 +18,22 @@ describe('ContractsPage', () => {
   const listUrl = `${baseUrl}/contracts`;
 
   const fakeContracts: Contract[] = [
-    { _id: 'c1', number: 'CTR-001', status: 'draft', totalAmount: 1000, items: [], createdAt: '2026-01-01' } as Contract,
-    { _id: 'c2', number: 'CTR-002', status: 'active', totalAmount: 5000, items: [], createdAt: '2026-01-02' } as Contract,
+    {
+      _id: 'c1',
+      number: 'CTR-001',
+      status: 'draft',
+      totalAmount: 1000,
+      items: [],
+      createdAt: '2026-01-01',
+    } as Contract,
+    {
+      _id: 'c2',
+      number: 'CTR-002',
+      status: 'active',
+      totalAmount: 5000,
+      items: [],
+      createdAt: '2026-01-02',
+    } as Contract,
   ];
 
   const matchListGet = (r: { url: string; method: string }): boolean =>
@@ -60,7 +67,7 @@ describe('ContractsPage', () => {
           provide: OrganizationsService,
           useValue: { list: () => of({ ok: true, data: { items: [], total: 0 } }) },
         },
-        { provide: PiDialogService, useValue: { open: () => ({} as never) } },
+        { provide: PiDialogService, useValue: { open: () => ({}) as never } },
         { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
       ],
     })
@@ -117,7 +124,10 @@ describe('ContractsPage', () => {
     await tickMicrotask();
     fixture.detectChanges();
 
-    const comp = fixture.componentInstance as unknown as { data: () => Contract[]; total: () => number };
+    const comp = fixture.componentInstance as unknown as {
+      data: () => Contract[];
+      total: () => number;
+    };
     expect(comp.data().length).toBe(0);
     expect(comp.total()).toBe(0);
   });

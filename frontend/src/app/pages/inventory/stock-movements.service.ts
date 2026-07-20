@@ -41,14 +41,24 @@ export class StockMovementsService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
 
-  list(params: { warehouseId?: string; productId?: string; type?: string; from?: string; to?: string } = {}): Observable<SilentResult<StockMovementsListResponse>> {
+  list(
+    params: {
+      warehouseId?: string;
+      productId?: string;
+      type?: string;
+      from?: string;
+      to?: string;
+    } = {},
+  ): Observable<SilentResult<StockMovementsListResponse>> {
     let httpParams = new HttpParams();
     if (params.warehouseId) httpParams = httpParams.set('warehouseId', params.warehouseId);
     if (params.productId) httpParams = httpParams.set('productId', params.productId);
     if (params.type) httpParams = httpParams.set('type', params.type);
     if (params.from) httpParams = httpParams.set('from', params.from);
     if (params.to) httpParams = httpParams.set('to', params.to);
-    return silentGet<StockMovementsListResponse>(this.http, `${this.baseUrl}/stock-movements`, { params: httpParams });
+    return silentGet<StockMovementsListResponse>(this.http, `${this.baseUrl}/stock-movements`, {
+      params: httpParams,
+    });
   }
 
   summary(period: 'day' | 'week' | 'month' = 'month'): Observable<SilentResult<MovementSummary>> {

@@ -64,7 +64,12 @@ const PAGE_SIZE = 10;
         (input)="onSearch($event)"
         aria-label="Поиск шаблонов"
       />
-      <app-pi-button variant="default" (click)="onCreate()" [disabled]="creating()" data-test="create-template-button">
+      <app-pi-button
+        variant="default"
+        (click)="onCreate()"
+        [disabled]="creating()"
+        data-test="create-template-button"
+      >
         {{ creating() ? 'Создание…' : '+ Создать шаблон' }}
       </app-pi-button>
       <span hint>{{ filtered().length }} {{ totalLabel(filtered().length) }}</span>
@@ -76,7 +81,9 @@ const PAGE_SIZE = 10;
       } @else if (filtered().length === 0) {
         <app-pi-empty-state
           [colspan]="1"
-          [message]="searchQuery() ? 'Ничего не найдено.' : 'Нет шаблонов. Нажмите «Создать шаблон».'"
+          [message]="
+            searchQuery() ? 'Ничего не найдено.' : 'Нет шаблонов. Нажмите «Создать шаблон».'
+          "
         />
       } @else {
         <div class="hairline rounded-sm overflow-x-auto">
@@ -97,7 +104,9 @@ const PAGE_SIZE = 10;
                   <td class="pi-cell font-medium">{{ t.name }}</td>
                   <td class="pi-cell text-muted-foreground">{{ docTypeName(t) }}</td>
                   <td class="pi-cell">
-                    <span class="eyebrow hairline rounded-sm px-2 py-0.5 font-mono">{{ t.pageSize }}</span>
+                    <span class="eyebrow hairline rounded-sm px-2 py-0.5 font-mono">{{
+                      t.pageSize
+                    }}</span>
                   </td>
                   <td class="pi-cell text-center">
                     <app-pi-switch
@@ -107,14 +116,21 @@ const PAGE_SIZE = 10;
                   </td>
                   <td class="pi-cell text-center">
                     @if (t.isDefault) {
-                      <span class="text-sunrise-warm" aria-label="Шаблон по умолчанию" title="По умолчанию">★</span>
+                      <span
+                        class="text-sunrise-warm"
+                        aria-label="Шаблон по умолчанию"
+                        title="По умолчанию"
+                        >★</span
+                      >
                     } @else {
                       <button
                         type="button"
                         class="pi-icon-btn pi-focus-ring text-muted-foreground hover:text-sunrise-warm"
                         aria-label="Сделать шаблоном по умолчанию"
                         (click)="onSetDefault(t)"
-                      >☆</button>
+                      >
+                        ☆
+                      </button>
                     }
                   </td>
                   <td class="pi-cell text-right">
@@ -138,10 +154,20 @@ const PAGE_SIZE = 10;
           <div class="mt-4 flex items-center justify-between gap-4">
             <span class="eyebrow text-muted-foreground">{{ rangeLabel() }}</span>
             <div class="flex gap-2">
-              <app-pi-button variant="outline" size="sm" [disabled]="pageIndex() === 0" (click)="prevPage()">
+              <app-pi-button
+                variant="outline"
+                size="sm"
+                [disabled]="pageIndex() === 0"
+                (click)="prevPage()"
+              >
                 ←
               </app-pi-button>
-              <app-pi-button variant="outline" size="sm" [disabled]="pageIndex() >= totalPages() - 1" (click)="nextPage()">
+              <app-pi-button
+                variant="outline"
+                size="sm"
+                [disabled]="pageIndex() >= totalPages() - 1"
+                (click)="nextPage()"
+              >
                 →
               </app-pi-button>
             </div>
@@ -171,7 +197,9 @@ export class TemplatesPage {
 
   protected readonly filtered = computed(() => {
     const q = this.searchQuery().trim().toLowerCase();
-    const list = this.items().slice().sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+    const list = this.items()
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
     if (!q) return list;
     return list.filter(
       (t) =>
@@ -196,13 +224,16 @@ export class TemplatesPage {
 
   private reload(): void {
     this.loading.set(true);
-    this.svc.list().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (res) => {
-        this.loading.set(false);
-        if (res.ok) this.items.set(res.data.items ?? []);
-      },
-      error: () => this.loading.set(false),
-    });
+    this.svc
+      .list()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.loading.set(false);
+          if (res.ok) this.items.set(res.data.items ?? []);
+        },
+        error: () => this.loading.set(false),
+      });
   }
 
   protected totalLabel(n: number): string {
@@ -303,7 +334,8 @@ export class TemplatesPage {
   }
 
   protected onDuplicate(t: DocumentTemplate): void {
-    this.http.post<DocumentTemplate>(`${this.baseUrl}/document-templates/${t._id}/duplicate`, {})
+    this.http
+      .post<DocumentTemplate>(`${this.baseUrl}/document-templates/${t._id}/duplicate`, {})
       .subscribe({
         next: (copy) => {
           this.toast.success('Копия создана');

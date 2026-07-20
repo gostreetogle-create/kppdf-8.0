@@ -41,9 +41,13 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       }
     </header>
   `,
-  styles: [`
-    :host { display: block; }
-  `],
+  styles: [
+    `
+      :host {
+        display: block;
+      }
+    `,
+  ],
 })
 export class PiPageHeaderComponent {
   readonly eyebrow = input.required<string>();

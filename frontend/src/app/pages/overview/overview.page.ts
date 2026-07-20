@@ -122,25 +122,33 @@ import { LucideAngularModule, ArrowUpRight, CircleDot } from 'lucide-angular';
           data-toast-trigger="default"
           class="pi-outline-btn"
           (click)="triggerDefault()"
-        >Show default</button>
+        >
+          Show default
+        </button>
         <button
           type="button"
           data-toast-trigger="success"
           class="pi-outline-btn"
           (click)="triggerSuccess()"
-        >Show success</button>
+        >
+          Show success
+        </button>
         <button
           type="button"
           data-toast-trigger="error"
           class="pi-outline-btn pi-outline-btn-destructive"
           (click)="triggerError()"
-        >Show error</button>
+        >
+          Show error
+        </button>
         <button
           type="button"
           data-toast-trigger="warning"
           class="pi-outline-btn pi-outline-btn-destructive"
           (click)="triggerWarning()"
-        >Show warning</button>
+        >
+          Show warning
+        </button>
       </div>
 
       <button
@@ -148,7 +156,9 @@ import { LucideAngularModule, ArrowUpRight, CircleDot } from 'lucide-angular';
         class="mt-6 text-xs text-muted-foreground hover:text-ink"
         data-test="clear-queue"
         (click)="toast.dismiss()"
-      >Dismiss все (или нажмите Esc)</button>
+      >
+        Dismiss все (или нажмите Esc)
+      </button>
     </app-pi-section>
   `,
 })
@@ -199,20 +209,17 @@ export class OverviewPage {
     {
       index: 'I',
       title: 'Токены не хардкод',
-      body:
-        'Один источник истины — CSS variables на :root. Никаких hex в шаблонах. Тема редактируется в одном месте.',
+      body: 'Один источник истины — CSS variables на :root. Никаких hex в шаблонах. Тема редактируется в одном месте.',
     },
     {
       index: 'II',
       title: 'Плоская иерархия',
-      body:
-        'Никаких вложенных card-в-card. Одна структурная единица = одна единица чтения. Глаз скользит, не теряется.',
+      body: 'Никаких вложенных card-в-card. Одна структурная единица = одна единица чтения. Глаз скользит, не теряется.',
     },
     {
       index: 'III',
       title: 'Гарнитура важнее декора',
-      body:
-        'Syne display, Jakarta body, mono для metadata. Никаких emoji-иконок. Только шрифт, hairlines и воздух.',
+      body: 'Syne display, Jakarta body, mono для metadata. Никаких emoji-иконок. Только шрифт, hairlines и воздух.',
     },
   ];
 

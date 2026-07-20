@@ -19,13 +19,17 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
       >
         <div class="flex items-baseline gap-3">
           @if (index()) {
-            <span class="font-display text-sm tracking-tight min-w-[2.5rem] text-ink">{{ index() }}</span>
+            <span class="font-display text-sm tracking-tight min-w-[2.5rem] text-ink">{{
+              index()
+            }}</span>
           }
           <span class="font-display text-lg tracking-tight text-ink">{{ title() }}</span>
         </div>
         <div class="flex items-center gap-3">
           @if (meta()) {
-            <span class="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.18em]">{{ meta() }}</span>
+            <span class="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.18em]">{{
+              meta()
+            }}</span>
           }
           <span aria-hidden="true" class="text-muted-foreground text-sm leading-none">
             {{ expanded() ? '−' : '+' }}

@@ -137,11 +137,7 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
         data-test="search-input"
         class="pi-input w-72"
       />
-      <app-pi-button
-        variant="default"
-        (click)="openCreate()"
-        data-test="create-button"
-      >
+      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
         + Создать
       </app-pi-button>
       <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
@@ -268,12 +264,8 @@ export class ProductsPage {
     return {
       page: this.pageSig(),
       limit: PAGE_SIZE,
-      ...(this.search.debouncedSearch()
-        ? { search: this.search.debouncedSearch() }
-        : {}),
-      ...(sortKey && sortDir
-        ? { sortBy: sortKey, sortOrder: sortDir }
-        : {}),
+      ...(this.search.debouncedSearch() ? { search: this.search.debouncedSearch() } : {}),
+      ...(sortKey && sortDir ? { sortBy: sortKey, sortOrder: sortDir } : {}),
     };
   });
 
@@ -282,9 +274,7 @@ export class ProductsPage {
     params: this.listParams(),
   }));
 
-  protected readonly data = computed<Product[]>(
-    () => this.listRes.value()?.items ?? [],
-  );
+  protected readonly data = computed<Product[]>(() => this.listRes.value()?.items ?? []);
   /**
    * Backend-reported total (canonical `{items, total, page, limit}`
    * envelope). The pi-table pager uses this to compute
@@ -294,12 +284,11 @@ export class ProductsPage {
    * Fixes the prior `total = data().length` which reported the
    * count of the CURRENT page only.
    */
-  protected readonly total = computed<number>(
-    () => this.listRes.value()?.total ?? 0,
-  );
+  protected readonly total = computed<number>(() => this.listRes.value()?.total ?? 0);
   protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
   protected readonly error = computed<string | null>(() => {
-    const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    const err = this.listRes.error() as
+      import('@angular/common/http').HttpErrorResponse | undefined;
     return err ? extractErrorMessage(err) : null;
   });
 
@@ -464,7 +453,7 @@ export class ProductsPage {
         variant: 'destructive',
       },
       width: 'sm',
-    parentDestroyRef: this.destroyRef,
+      parentDestroyRef: this.destroyRef,
     });
     onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
       if (!confirmed) return;

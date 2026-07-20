@@ -2,16 +2,17 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../../core/api.tokens';
-import { silentDelete, silentGet, silentPatch, silentPost, SilentResult } from '../../core/silent-http';
+import {
+  silentDelete,
+  silentGet,
+  silentPatch,
+  silentPost,
+  SilentResult,
+} from '../../core/silent-http';
 import { Photo } from './photos.service';
 
 export type MaterialDimensionType =
-  | 'length'
-  | 'width'
-  | 'height'
-  | 'thickness'
-  | 'diameter'
-  | 'depth';
+  'length' | 'width' | 'height' | 'thickness' | 'diameter' | 'depth';
 
 export interface MaterialDimension {
   type: MaterialDimensionType;
@@ -63,7 +64,9 @@ export class MaterialsService {
       .set('limit', String(params.limit ?? 50));
     if (params.search) httpParams = httpParams.set('search', params.search);
     if (params.categoryId) httpParams = httpParams.set('categoryId', params.categoryId);
-    return silentGet<MaterialsListResponse>(this.http, `${this.baseUrl}/materials`, { params: httpParams });
+    return silentGet<MaterialsListResponse>(this.http, `${this.baseUrl}/materials`, {
+      params: httpParams,
+    });
   }
 
   findById(id: string): Observable<SilentResult<Material>> {

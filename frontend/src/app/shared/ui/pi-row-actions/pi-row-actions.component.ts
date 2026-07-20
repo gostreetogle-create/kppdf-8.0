@@ -1,9 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  output,
-  input,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, output, input } from '@angular/core';
 
 /**
  * TZ-AUDIT-6 PiRowActions + TZ-86 Phase E.1 — right-aligned action cluster
@@ -86,7 +81,7 @@ import {
           [attr.data-test]="dataTestEdit()"
           (click)="edit.emit(row())"
         >
-          <span aria-hidden="true">\u270E</span>
+          <span aria-hidden="true">✎</span>
         </button>
       }
       <button
@@ -99,13 +94,15 @@ import {
         [disabled]="deleteDisabled()"
         (click)="delete.emit(row())"
       >
-        <span aria-hidden="true">\u00D7</span>
+        <span aria-hidden="true">×</span>
       </button>
     </div>
   `,
   styles: [
     `
-      :host { display: inline-flex; }
+      :host {
+        display: inline-flex;
+      }
     `,
   ],
 })

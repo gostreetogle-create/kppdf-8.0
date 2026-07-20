@@ -72,14 +72,14 @@ export class TextBlocksService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
 
-  list(
-    params: TextBlockListParams = {},
-  ): Observable<SilentResult<TextBlockListResponse>> {
+  list(params: TextBlockListParams = {}): Observable<SilentResult<TextBlockListResponse>> {
     let httpParams = new HttpParams();
     if (params.category) httpParams = httpParams.set('category', params.category);
     if (params.activeOnly) httpParams = httpParams.set('activeOnly', 'true');
     if (params.search) httpParams = httpParams.set('search', params.search);
-    return silentGet<TextBlock[]>(this.http, `${this.baseUrl}/text-blocks`, { params: httpParams }).pipe(
+    return silentGet<TextBlock[]>(this.http, `${this.baseUrl}/text-blocks`, {
+      params: httpParams,
+    }).pipe(
       map((res) => {
         if (!res.ok) return res;
         const arr = (res.data ?? []) as TextBlock[];
@@ -98,11 +98,7 @@ export class TextBlocksService {
   }
 
   update(id: string, payload: Partial<TextBlock>): Observable<SilentResult<TextBlock>> {
-    return silentPatch<TextBlock>(
-      this.http,
-      `${this.baseUrl}/text-blocks/${id}`,
-      payload,
-    );
+    return silentPatch<TextBlock>(this.http, `${this.baseUrl}/text-blocks/${id}`, payload);
   }
 
   remove(id: string): Observable<SilentResult<void>> {

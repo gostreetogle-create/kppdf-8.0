@@ -53,9 +53,7 @@ describe('AlertDialogComponent', () => {
     return new Promise((resolve) => setTimeout(resolve, 0));
   }
 
-  async function createFixture(
-    data: AlertDialogData,
-  ): Promise<{
+  async function createFixture(data: AlertDialogData): Promise<{
     fixture: ComponentFixture<AlertDialogComponent>;
     component: AlertDialogComponent;
     closeSpy: jest.Mock;
@@ -87,8 +85,7 @@ describe('AlertDialogComponent', () => {
   ): HTMLElement | null {
     const elements = fixture.nativeElement.querySelectorAll('*');
     return Array.from(elements).find(
-      (el: Element) =>
-        el.textContent?.trim().toLowerCase() === text.toLowerCase(),
+      (el: Element) => el.textContent?.trim().toLowerCase() === text.toLowerCase(),
     ) as HTMLElement | null;
   }
 
@@ -187,10 +184,7 @@ describe('AlertDialogComponent', () => {
       const { fixture, component } = await createFixture({
         title: 'Test',
       });
-      const spy = jest.spyOn(
-        component as unknown as { onConfirm: () => void },
-        'onConfirm',
-      );
+      const spy = jest.spyOn(component as unknown as { onConfirm: () => void }, 'onConfirm');
       const footer = fixture.nativeElement.querySelector('footer');
       const buttons = footer.querySelectorAll('app-pi-button');
       (buttons[1] as HTMLElement).click();
@@ -201,10 +195,7 @@ describe('AlertDialogComponent', () => {
       const { fixture, component } = await createFixture({
         title: 'Test',
       });
-      const spy = jest.spyOn(
-        component as unknown as { onCancel: () => void },
-        'onCancel',
-      );
+      const spy = jest.spyOn(component as unknown as { onCancel: () => void }, 'onCancel');
       const footer = fixture.nativeElement.querySelector('footer');
       const buttons = footer.querySelectorAll('app-pi-button');
       (buttons[0] as HTMLElement).click();
@@ -215,9 +206,7 @@ describe('AlertDialogComponent', () => {
   describe('a11y', () => {
     it('has role="alertdialog"', async () => {
       const { fixture } = await createFixture({ title: 'Test' });
-      const dialogEl = fixture.nativeElement.querySelector(
-        '[role="alertdialog"]',
-      );
+      const dialogEl = fixture.nativeElement.querySelector('[role="alertdialog"]');
       expect(dialogEl).toBeTruthy();
     });
 
@@ -225,9 +214,7 @@ describe('AlertDialogComponent', () => {
       const { fixture } = await createFixture({
         title: 'Тестовый заголовок',
       });
-      const dialogEl = fixture.nativeElement.querySelector(
-        '[role="alertdialog"]',
-      );
+      const dialogEl = fixture.nativeElement.querySelector('[role="alertdialog"]');
       expect(dialogEl?.getAttribute('aria-label')).toBe('Тестовый заголовок');
     });
 
@@ -236,28 +223,20 @@ describe('AlertDialogComponent', () => {
         title: 'Test',
         description: 'Описание теста.',
       });
-      const dialogEl = fixture.nativeElement.querySelector(
-        '[role="alertdialog"]',
-      );
+      const dialogEl = fixture.nativeElement.querySelector('[role="alertdialog"]');
       expect(dialogEl?.hasAttribute('aria-describedby')).toBe(false);
-      expect(fixture.nativeElement.querySelector('p')?.textContent).toContain(
-        'Описание теста.',
-      );
+      expect(fixture.nativeElement.querySelector('p')?.textContent).toContain('Описание теста.');
     });
 
     it('omits aria-describedby when description is not provided', async () => {
       const { fixture } = await createFixture({ title: 'Test' });
-      const dialogEl = fixture.nativeElement.querySelector(
-        '[role="alertdialog"]',
-      );
+      const dialogEl = fixture.nativeElement.querySelector('[role="alertdialog"]');
       expect(dialogEl?.hasAttribute('aria-describedby')).toBe(false);
     });
 
     it('exposes accessible name via aria-label on the dialog root', async () => {
       const { fixture } = await createFixture({ title: 'Test' });
-      const dialogEl = fixture.nativeElement.querySelector(
-        '[role="alertdialog"]',
-      );
+      const dialogEl = fixture.nativeElement.querySelector('[role="alertdialog"]');
       expect(dialogEl?.getAttribute('aria-label')).toBe('Test');
     });
   });

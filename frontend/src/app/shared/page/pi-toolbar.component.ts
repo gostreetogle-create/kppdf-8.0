@@ -42,7 +42,9 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   `,
   styles: [
     `
-      :host { display: block; }
+      :host {
+        display: block;
+      }
     `,
   ],
 })

@@ -44,10 +44,7 @@ export type SelectSize = 'sm' | 'md';
       class="flex flex-col gap-1 w-full"
       (keydown)="onKeydown($event)"
     >
-      <app-pi-select-trigger
-        [size]="size()"
-        [ariaLabel]="ariaLabel()"
-      >
+      <app-pi-select-trigger [size]="size()" [ariaLabel]="ariaLabel()">
         <ng-content select="[selected-label]" />
       </app-pi-select-trigger>
       <div

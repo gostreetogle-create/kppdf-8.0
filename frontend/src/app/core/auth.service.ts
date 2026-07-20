@@ -110,9 +110,9 @@ export class AuthService {
         // refresh() updated the access token signal; retry /auth/me
         // with the same silent-error pattern.
         const retry = await firstValueFrom(
-          this.http.get<AuthUser>(`${this.baseUrl}/auth/me`).pipe(
-            catchError(() => of(null as AuthUser | null)),
-          ),
+          this.http
+            .get<AuthUser>(`${this.baseUrl}/auth/me`)
+            .pipe(catchError(() => of(null as AuthUser | null))),
         );
         if (retry) {
           this.user.set(retry);

@@ -95,11 +95,7 @@ function accessorFor(key: SortKey): (row: Order) => unknown {
  * (page-owned because `pi-table [localSort]=false` here and the page
  * reads the accessor function directly).
  */
-function compareValues(
-  av: unknown,
-  bv: unknown,
-  sign: 1 | -1,
-): number {
+function compareValues(av: unknown, bv: unknown, sign: 1 | -1): number {
   if (av == null && bv == null) return 0;
   if (av == null) return -1 * sign;
   if (bv == null) return 1 * sign;
@@ -202,11 +198,7 @@ function counterpartyIdOf(row: Order): string {
         data-test="search-input"
         class="pi-input w-72"
       />
-      <app-pi-button
-        variant="default"
-        (click)="openCreate()"
-        data-test="create-button"
-      >
+      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
         + Создать
       </app-pi-button>
       <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
@@ -215,11 +207,7 @@ function counterpartyIdOf(row: Order): string {
       <span hint>{{ visibleCount() }} {{ totalLabel(visibleCount()) }}</span>
     </app-pi-toolbar>
 
-    <app-pi-section
-      title="Заказы"
-      hint="сортировка · клик по заголовку"
-      eyebrow="I"
-    >
+    <app-pi-section title="Заказы" hint="сортировка · клик по заголовку" eyebrow="I">
       @if (error()) {
         <div
           role="alert"
@@ -331,7 +319,8 @@ export class OrdersPage {
   protected readonly data = computed<Order[]>(() => this.listRes.value() ?? []);
   protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
   protected readonly error = computed<string | null>(() => {
-    const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    const err = this.listRes.error() as
+      import('@angular/common/http').HttpErrorResponse | undefined;
     return err ? extractErrorMessage(err) : null;
   });
 
@@ -577,7 +566,7 @@ export class OrdersPage {
         variant: 'destructive',
       },
       width: 'sm',
-    parentDestroyRef: this.destroyRef,
+      parentDestroyRef: this.destroyRef,
     });
     onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
       if (!confirmed) return;

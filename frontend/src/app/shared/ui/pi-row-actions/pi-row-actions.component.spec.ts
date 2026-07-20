@@ -76,7 +76,9 @@ describe('PiRowActionsComponent', () => {
     return fixture;
   }
 
-  function editButton(fixture: ComponentFixture<PiRowActionsComponent<TestRow>>): HTMLButtonElement | null {
+  function editButton(
+    fixture: ComponentFixture<PiRowActionsComponent<TestRow>>,
+  ): HTMLButtonElement | null {
     // Semantic selector: pick the button that exposes an aria-label
     // (the edit button) and exclude the delete button by its
     // danger-variant class. More robust than the old
@@ -88,10 +90,10 @@ describe('PiRowActionsComponent', () => {
     ) as HTMLButtonElement | null;
   }
 
-  function deleteButton(fixture: ComponentFixture<PiRowActionsComponent<TestRow>>): HTMLButtonElement {
-    return fixture.nativeElement.querySelector(
-      'button.pi-icon-btn-danger',
-    ) as HTMLButtonElement;
+  function deleteButton(
+    fixture: ComponentFixture<PiRowActionsComponent<TestRow>>,
+  ): HTMLButtonElement {
+    return fixture.nativeElement.querySelector('button.pi-icon-btn-danger') as HTMLButtonElement;
   }
 
   describe('button rendering', () => {

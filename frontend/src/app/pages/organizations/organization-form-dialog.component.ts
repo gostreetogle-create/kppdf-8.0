@@ -1,22 +1,10 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  signal,
-} from '@angular/core';
-import {
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
 import { InputComponent } from '../../shared/ui/input/input.component';
-import {
-  PI_DIALOG_DATA,
-  PI_DIALOG_REF,
-} from '../../shared/ui/dialog/dialog.tokens';
+import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { extractErrorMessage } from '../../core/silent-http';
@@ -94,16 +82,8 @@ type Result = Organization | null | undefined;
             />
           </app-pi-form-field>
 
-          <app-pi-form-field
-            label="КПП"
-            htmlFor="org-kpp"
-            [error]="errorFor('kpp')"
-          >
-            <app-pi-input
-              id="org-kpp"
-              formControlName="kpp"
-              placeholder="КПП"
-            />
+          <app-pi-form-field label="КПП" htmlFor="org-kpp" [error]="errorFor('kpp')">
+            <app-pi-input id="org-kpp" formControlName="kpp" placeholder="КПП" />
           </app-pi-form-field>
         </div>
 
@@ -130,10 +110,7 @@ type Result = Organization | null | undefined;
         </app-pi-form-field>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
-          <app-pi-form-field
-            label="Контактное лицо"
-            htmlFor="org-signer"
-          >
+          <app-pi-form-field label="Контактное лицо" htmlFor="org-signer">
             <app-pi-input
               id="org-signer"
               formControlName="signerName"
@@ -141,17 +118,13 @@ type Result = Organization | null | undefined;
             />
           </app-pi-form-field>
 
-          <app-pi-form-field
-            label="Должность"
-            htmlFor="org-position"
-          >
+          <app-pi-form-field label="Должность" htmlFor="org-position">
             <app-pi-input
               id="org-position"
               formControlName="signerPosition"
               placeholder="Должность"
             />
           </app-pi-form-field>
-
         </div>
 
         @if (errorMessage()) {
@@ -170,9 +143,7 @@ type Result = Organization | null | undefined;
         >
           {{ submitting() ? 'Сохранение…' : 'Сохранить' }}
         </app-pi-button>
-        <app-pi-button type="button" variant="ghost" (click)="onCancel()">
-          Отмена
-        </app-pi-button>
+        <app-pi-button type="button" variant="ghost" (click)="onCancel()"> Отмена </app-pi-button>
       </div>
     </app-pi-dialog>
   `,
@@ -205,7 +176,11 @@ export class OrganizationFormDialogComponent {
   protected readonly errorMessage = signal<string | null>(null);
 
   protected readonly form = this.fb.group({
-    name: this.fb.control('', [Validators.required, Validators.minLength(1), Validators.maxLength(256)]),
+    name: this.fb.control('', [
+      Validators.required,
+      Validators.minLength(1),
+      Validators.maxLength(256),
+    ]),
     shortName: this.fb.control<string | null>(null, [Validators.maxLength(128)]),
     inn: this.fb.control('', [Validators.required, Validators.pattern(/^\d{10,12}$/)]),
     kpp: this.fb.control<string | null>(null, [Validators.maxLength(16)]),
@@ -216,9 +191,7 @@ export class OrganizationFormDialogComponent {
 
   protected onTypeToggle(t: OrgType, checked: boolean): void {
     const current = this.form.controls.type.value ?? [];
-    const next = checked
-      ? [...new Set([...current, t])]
-      : current.filter((x) => x !== t);
+    const next = checked ? [...new Set([...current, t])] : current.filter((x) => x !== t);
     this.form.controls.type.setValue(next);
   }
 
@@ -263,9 +236,7 @@ export class OrganizationFormDialogComponent {
       : this.service.create(payload);
     obs.subscribe((res) => {
       if (res.ok) {
-        this.toast.success(
-          this.isEdit() ? 'Организация обновлена' : 'Организация создана',
-        );
+        this.toast.success(this.isEdit() ? 'Организация обновлена' : 'Организация создана');
         this.ref.close(res.data);
       } else {
         this.errorMessage.set(extractErrorMessage(res.error));

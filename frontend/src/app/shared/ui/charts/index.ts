@@ -1,7 +1,4 @@
-export {
-  PiBarChartComponent,
-  type PiBarDatum,
-} from './pi-bar-chart.component';
+export { PiBarChartComponent, type PiBarDatum } from './pi-bar-chart.component';
 export {
   PiLineChartComponent,
   type PiLinePoint,
@@ -18,10 +15,4 @@ export {
   LINE_DOT_RADIUS,
   type PiChartPalette,
 } from './chart.tokens';
-export {
-  scaleBand,
-  scaleLinear,
-  linePath,
-  type BandScale,
-  type LinearScale,
-} from './scales';
+export { scaleBand, scaleLinear, linePath, type BandScale, type LinearScale } from './scales';

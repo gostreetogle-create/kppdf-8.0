@@ -1,4 +1,1 @@
-export {
-  PiSeparatorComponent,
-  type PiSeparatorOrientation,
-} from './pi-separator.component';
+export { PiSeparatorComponent, type PiSeparatorOrientation } from './pi-separator.component';

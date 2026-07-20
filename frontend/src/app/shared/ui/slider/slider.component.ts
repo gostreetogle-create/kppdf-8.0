@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, forwardRef, input, model, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  forwardRef,
+  input,
+  model,
+  output,
+  signal,
+} from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 /**
@@ -35,43 +44,53 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
       }
     </div>
   `,
-  styles: [`
-    :host { display: block; width: 100%; }
-    input[type='range'] {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 100%;
-      height: 1px;
-      background: var(--color-rule);
-      outline: none;
-      cursor: pointer;
-    }
-    input[type='range']::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 16px;
-      height: 16px;
-      border-radius: 9999px;
-      background: var(--color-ink);
-      border: 1px solid var(--color-ink);
-      cursor: pointer;
-      transition: transform 150ms ease;
-    }
-    input[type='range']::-webkit-slider-thumb:hover { transform: scale(1.15); }
-    input[type='range']::-moz-range-thumb {
-      width: 16px;
-      height: 16px;
-      border-radius: 9999px;
-      background: var(--color-ink);
-      border: 1px solid var(--color-ink);
-      cursor: pointer;
-    }
-    input[type='range']:focus-visible::-webkit-slider-thumb {
-      outline: 2px solid var(--color-ink);
-      outline-offset: 2px;
-    }
-    input[type='range']:disabled { opacity: 0.5; cursor: not-allowed; }
-  `],
+  styles: [
+    `
+      :host {
+        display: block;
+        width: 100%;
+      }
+      input[type='range'] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 1px;
+        background: var(--color-rule);
+        outline: none;
+        cursor: pointer;
+      }
+      input[type='range']::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 9999px;
+        background: var(--color-ink);
+        border: 1px solid var(--color-ink);
+        cursor: pointer;
+        transition: transform 150ms ease;
+      }
+      input[type='range']::-webkit-slider-thumb:hover {
+        transform: scale(1.15);
+      }
+      input[type='range']::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 9999px;
+        background: var(--color-ink);
+        border: 1px solid var(--color-ink);
+        cursor: pointer;
+      }
+      input[type='range']:focus-visible::-webkit-slider-thumb {
+        outline: 2px solid var(--color-ink);
+        outline-offset: 2px;
+      }
+      input[type='range']:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    `,
+  ],
 })
 export class SliderComponent implements ControlValueAccessor {
   readonly value = model<number>(0);

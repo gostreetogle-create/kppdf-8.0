@@ -11,13 +11,7 @@ import {
 } from '../../core/silent-http';
 
 export type ContractStatus =
-  | 'draft'
-  | 'sent'
-  | 'signed'
-  | 'active'
-  | 'completed'
-  | 'cancelled'
-  | 'expired';
+  'draft' | 'sent' | 'signed' | 'active' | 'completed' | 'cancelled' | 'expired';
 
 export interface ContractItem {
   productId: string;
@@ -82,28 +76,14 @@ export class ContractsService {
   }
 
   create(payload: Partial<Contract>): Observable<SilentResult<Contract>> {
-    return silentPost<Contract>(
-      this.http,
-      `${this.baseUrl}/contracts`,
-      payload,
-    );
+    return silentPost<Contract>(this.http, `${this.baseUrl}/contracts`, payload);
   }
 
-  update(
-    id: string,
-    payload: Partial<Contract>,
-  ): Observable<SilentResult<Contract>> {
-    return silentPatch<Contract>(
-      this.http,
-      `${this.baseUrl}/contracts/${id}`,
-      payload,
-    );
+  update(id: string, payload: Partial<Contract>): Observable<SilentResult<Contract>> {
+    return silentPatch<Contract>(this.http, `${this.baseUrl}/contracts/${id}`, payload);
   }
 
   remove(id: string): Observable<SilentResult<void>> {
-    return silentDelete<void>(
-      this.http,
-      `${this.baseUrl}/contracts/${id}`,
-    );
+    return silentDelete<void>(this.http, `${this.baseUrl}/contracts/${id}`);
   }
 }

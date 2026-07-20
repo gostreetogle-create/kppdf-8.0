@@ -212,7 +212,11 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
                         type="button"
                         class="pi-icon-btn pi-focus-ring"
                         [class.text-sunrise-warm]="defaultBackgroundIndex() === i"
-                        [attr.aria-label]="defaultBackgroundIndex() === i ? 'Убрать из дефолтных' : 'Сделать по умолчанию'"
+                        [attr.aria-label]="
+                          defaultBackgroundIndex() === i
+                            ? 'Убрать из дефолтных'
+                            : 'Сделать по умолчанию'
+                        "
                         (click)="setDefaultBackground.emit(defaultBackgroundIndex() === i ? -1 : i)"
                       >
                         {{ defaultBackgroundIndex() === i ? '★' : '☆' }}
@@ -222,7 +226,9 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
                         class="pi-icon-btn pi-icon-btn-danger pi-focus-ring"
                         aria-label="Удалить фон"
                         (click)="removeBackground.emit(i)"
-                      >×</button>
+                      >
+                        ×
+                      </button>
                     </div>
                   </div>
                 }
@@ -267,14 +273,18 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
                   [class.bg-ink]="orientation() === 'portrait'"
                   [class.text-paper]="orientation() === 'portrait'"
                   (click)="setOrientation.emit('portrait')"
-                >Книжная</button>
+                >
+                  Книжная
+                </button>
                 <button
                   type="button"
                   class="pi-outline-btn flex-1"
                   [class.bg-ink]="orientation() === 'landscape'"
                   [class.text-paper]="orientation() === 'landscape'"
                   (click)="setOrientation.emit('landscape')"
-                >Альбомная</button>
+                >
+                  Альбомная
+                </button>
               </div>
             </div>
           </div>
@@ -665,18 +675,18 @@ export class BuilderToolPaneComponent {
   };
 
   // Static palette data
-  protected readonly blockTypeItems = (['header', 'text', 'table', 'image', 'signature', 'spacer'] as const)
-    .map((t) => ({
-      type: t as BlockType,
-      label: BLOCK_TYPE_LABELS[t],
-      hint: BLOCK_TYPE_HINTS[t],
-    }));
+  protected readonly blockTypeItems = (
+    ['header', 'text', 'table', 'image', 'signature', 'spacer'] as const
+  ).map((t) => ({
+    type: t as BlockType,
+    label: BLOCK_TYPE_LABELS[t],
+    hint: BLOCK_TYPE_HINTS[t],
+  }));
 
   // httpResource for live data
-  protected readonly textsRes = httpResource<TextBlock[]>(
-    () => '/api/text-blocks?isActive=true',
-    { defaultValue: [] },
-  );
+  protected readonly textsRes = httpResource<TextBlock[]>(() => '/api/text-blocks?isActive=true', {
+    defaultValue: [],
+  });
   protected readonly tablesRes = httpResource<TableTemplate[]>(
     () => '/api/table-templates?isActive=true',
     { defaultValue: [] },
@@ -684,10 +694,14 @@ export class BuilderToolPaneComponent {
   // Typed response (sources array of { key, label, type, fields[] }). Without
   // an explicit generic + defaultValue, httpResource infers the result as `{}`
   // and template access to `.sources` fails with TS2339.
-  protected readonly registryRes = httpResource<{ sources: Array<{ key: string; label: string; type: string; fields: Array<{ key: string; label: string; type: string }> }> }>(
-    () => '/api/registry/data-sources',
-    { defaultValue: { sources: [] } },
-  );
+  protected readonly registryRes = httpResource<{
+    sources: Array<{
+      key: string;
+      label: string;
+      type: string;
+      fields: Array<{ key: string; label: string; type: string }>;
+    }>;
+  }>(() => '/api/registry/data-sources', { defaultValue: { sources: [] } });
 
   // Error extraction — runtime null guard: httpResource.error() returns
   // `unknown` and may be null on a successful or pending request.
@@ -731,7 +745,8 @@ export class BuilderToolPaneComponent {
   ): void {
     this.addBlock.emit({
       source: 'data-binding',
-      dataSource: sourceKey as 'organization' | 'counterparty' | 'product' | 'material' | 'work-type',
+      dataSource: sourceKey as
+        'organization' | 'counterparty' | 'product' | 'material' | 'work-type',
       field,
     });
   }

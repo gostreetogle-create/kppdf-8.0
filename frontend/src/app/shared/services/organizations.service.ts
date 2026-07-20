@@ -2,15 +2,15 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../../core/api.tokens';
-import { silentDelete, silentGet, silentPatch, silentPost, SilentResult } from '../../core/silent-http';
+import {
+  silentDelete,
+  silentGet,
+  silentPatch,
+  silentPost,
+  SilentResult,
+} from '../../core/silent-http';
 
-export const ORG_TYPES = [
-  'customer',
-  'supplier',
-  'contractor',
-  'manufacturer',
-  'partner',
-] as const;
+export const ORG_TYPES = ['customer', 'supplier', 'contractor', 'manufacturer', 'partner'] as const;
 export type OrgType = (typeof ORG_TYPES)[number];
 
 export const ORG_TYPE_LABELS: Record<OrgType, string> = {

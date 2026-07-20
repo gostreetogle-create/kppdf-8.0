@@ -72,7 +72,11 @@ import { LucideAngularModule, Settings, CircleDot } from 'lucide-angular';
     </app-pi-section>
 
     <!-- ───── Section II. Inputs (form pattern) ───── -->
-    <app-pi-section title="Inputs" hint="form-field + native input/textarea + signal-state" eyebrow="II">
+    <app-pi-section
+      title="Inputs"
+      hint="form-field + native input/textarea + signal-state"
+      eyebrow="II"
+    >
       <div class="max-w-xl space-y-section">
         <app-pi-form-field label="Имя клиента" hint="Как в паспорте">
           <input
@@ -159,9 +163,7 @@ import { LucideAngularModule, Settings, CircleDot } from 'lucide-angular';
         <div class="p-5 hairline rounded-sm">
           <p class="eyebrow text-[10px]">03</p>
           <h3 class="font-display text-lg font-semibold mt-2">With footer</h3>
-          <p class="text-sm text-muted-foreground mt-1">
-            Контент сверху, action-button снизу.
-          </p>
+          <p class="text-sm text-muted-foreground mt-1">Контент сверху, action-button снизу.</p>
           <div class="mt-4 pt-3 hairline-t">
             <app-pi-button size="sm" variant="outline">Действие</app-pi-button>
           </div>

@@ -33,7 +33,8 @@ describe('ButtonComponent', () => {
     if (inputs.size) fixture.componentRef.setInput('size', inputs.size);
     if (inputs.disabled !== undefined) fixture.componentRef.setInput('disabled', inputs.disabled);
     if (inputs.href !== undefined) fixture.componentRef.setInput('href', inputs.href);
-    if (inputs.ariaLabel !== undefined) fixture.componentRef.setInput('ariaLabel', inputs.ariaLabel);
+    if (inputs.ariaLabel !== undefined)
+      fixture.componentRef.setInput('ariaLabel', inputs.ariaLabel);
     if (inputs.type) fixture.componentRef.setInput('type', inputs.type);
     fixture.detectChanges();
     return fixture;
@@ -59,8 +60,9 @@ describe('ButtonComponent', () => {
 
   it('forwards ariaLabel to <button>', async () => {
     const fixture = await createFixture({ ariaLabel: 'Сохранить документ' });
-    expect(hostEl(fixture).querySelector('button')?.getAttribute('aria-label'))
-      .toBe('Сохранить документ');
+    expect(hostEl(fixture).querySelector('button')?.getAttribute('aria-label')).toBe(
+      'Сохранить документ',
+    );
   });
 
   it('forwards ariaLabel to <a> when href is set', async () => {
@@ -68,8 +70,7 @@ describe('ButtonComponent', () => {
       href: '/x',
       ariaLabel: 'Open settings',
     });
-    expect(hostEl(fixture).querySelector('a')?.getAttribute('aria-label'))
-      .toBe('Open settings');
+    expect(hostEl(fixture).querySelector('a')?.getAttribute('aria-label')).toBe('Open settings');
   });
 
   it('disabled=true puts the button into the disabled state', async () => {

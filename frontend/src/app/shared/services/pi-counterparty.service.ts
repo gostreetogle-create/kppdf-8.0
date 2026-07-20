@@ -80,43 +80,24 @@ export class CounterpartyService {
       .set('limit', String(params.limit ?? 200));
     if (params.search) httpParams = httpParams.set('search', params.search);
     if (params.role) httpParams = httpParams.set('role', params.role);
-    return silentGet<CounterpartiesListResponse>(
-      this.http,
-      `${this.baseUrl}/counterparties`,
-      { params: httpParams },
-    );
+    return silentGet<CounterpartiesListResponse>(this.http, `${this.baseUrl}/counterparties`, {
+      params: httpParams,
+    });
   }
 
   findById(id: string): Observable<SilentResult<Counterparty>> {
-    return silentGet<Counterparty>(
-      this.http,
-      `${this.baseUrl}/counterparties/${id}`,
-    );
+    return silentGet<Counterparty>(this.http, `${this.baseUrl}/counterparties/${id}`);
   }
 
   create(payload: Partial<Counterparty>): Observable<SilentResult<Counterparty>> {
-    return silentPost<Counterparty>(
-      this.http,
-      `${this.baseUrl}/counterparties`,
-      payload,
-    );
+    return silentPost<Counterparty>(this.http, `${this.baseUrl}/counterparties`, payload);
   }
 
-  update(
-    id: string,
-    payload: Partial<Counterparty>,
-  ): Observable<SilentResult<Counterparty>> {
-    return silentPatch<Counterparty>(
-      this.http,
-      `${this.baseUrl}/counterparties/${id}`,
-      payload,
-    );
+  update(id: string, payload: Partial<Counterparty>): Observable<SilentResult<Counterparty>> {
+    return silentPatch<Counterparty>(this.http, `${this.baseUrl}/counterparties/${id}`, payload);
   }
 
   remove(id: string): Observable<SilentResult<void>> {
-    return silentDelete<void>(
-      this.http,
-      `${this.baseUrl}/counterparties/${id}`,
-    );
+    return silentDelete<void>(this.http, `${this.baseUrl}/counterparties/${id}`);
   }
 }

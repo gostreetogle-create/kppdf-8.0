@@ -1,14 +1,5 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  signal,
-} from '@angular/core';
-import {
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
@@ -71,10 +62,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
     TextareaComponent,
   ],
   template: `
-    <app-pi-dialog
-      [title]="isEdit() ? 'Редактировать продукт' : 'Создать продукт'"
-      [width]="'lg'"
-    >
+    <app-pi-dialog [title]="isEdit() ? 'Редактировать продукт' : 'Создать продукт'" [width]="'lg'">
       <form
         body
         [formGroup]="form"
@@ -104,11 +92,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
             hint="Если не задан — генерируется автоматически"
             [error]="errorFor('sku')"
           >
-            <app-pi-input
-              id="prod-sku"
-              formControlName="sku"
-              placeholder="Артикул"
-            />
+            <app-pi-input id="prod-sku" formControlName="sku" placeholder="Артикул" />
           </app-pi-form-field>
 
           <app-pi-form-field
@@ -142,10 +126,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
             />
           </app-pi-form-field>
 
-          <app-pi-form-field
-            label="Подкатегория"
-            htmlFor="prod-subcategory"
-          >
+          <app-pi-form-field label="Подкатегория" htmlFor="prod-subcategory">
             <app-pi-input
               id="prod-subcategory"
               formControlName="subcategory"
@@ -153,10 +134,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
             />
           </app-pi-form-field>
 
-          <app-pi-form-field
-            label="Статус"
-            htmlFor="prod-status"
-          >
+          <app-pi-form-field label="Статус" htmlFor="prod-status">
             <select
               id="prod-status"
               formControlName="status"
@@ -229,11 +207,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
               />
             </app-pi-form-field>
             <app-pi-form-field label="Единица" htmlFor="prod-dimUnit">
-              <select
-                id="prod-dimUnit"
-                formControlName="dimUnit"
-                class="pi-input w-full"
-              >
+              <select id="prod-dimUnit" formControlName="dimUnit" class="pi-input w-full">
                 @for (u of DIMENSION_UNIT_OPTIONS; track u) {
                   <option [value]="u">{{ u }}</option>
                 }
@@ -254,11 +228,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
           </app-pi-form-field>
 
           <app-pi-form-field label="RAL (цвет)" htmlFor="prod-ral">
-            <app-pi-input
-              id="prod-ral"
-              formControlName="ralCode"
-              placeholder="RAL 9003"
-            />
+            <app-pi-input id="prod-ral" formControlName="ralCode" placeholder="RAL 9003" />
           </app-pi-form-field>
         </div>
 
@@ -277,11 +247,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
           />
         </app-pi-form-field>
 
-        <app-pi-form-field
-          label="Заметки"
-          htmlFor="prod-notes"
-          [error]="errorFor('notes')"
-        >
+        <app-pi-form-field label="Заметки" htmlFor="prod-notes" [error]="errorFor('notes')">
           <app-pi-textarea
             id="prod-notes"
             formControlName="notes"
@@ -307,9 +273,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
         >
           {{ submitting() ? 'Сохранение…' : 'Сохранить' }}
         </app-pi-button>
-        <app-pi-button type="button" variant="ghost" (click)="onCancel()">
-          Отмена
-        </app-pi-button>
+        <app-pi-button type="button" variant="ghost" (click)="onCancel()"> Отмена </app-pi-button>
       </div>
     </app-pi-dialog>
   `,
@@ -431,9 +395,7 @@ export class ProductFormDialogComponent {
       : this.service.create(payload);
     obs.subscribe((res) => {
       if (res.ok) {
-        this.toast.success(
-          this.isEdit() ? 'Продукт обновлён' : 'Продукт создан',
-        );
+        this.toast.success(this.isEdit() ? 'Продукт обновлён' : 'Продукт создан');
         this.ref.close(res.data);
       } else {
         this.errorMessage.set(extractErrorMessage(res.error));

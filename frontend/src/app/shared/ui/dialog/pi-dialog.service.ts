@@ -1,4 +1,13 @@
-import { DestroyRef, Injectable, Injector, Signal, Type, computed, inject, signal } from '@angular/core';
+import {
+  DestroyRef,
+  Injectable,
+  Injector,
+  Signal,
+  Type,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { Overlay } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { ConfigurableFocusTrapFactory } from '@angular/cdk/a11y';
@@ -56,11 +65,7 @@ export class PiDialogService {
       hasBackdrop: config.modal !== false,
       backdropClass: 'pi-overlay-backdrop',
       panelClass: 'pi-overlay-panel',
-      positionStrategy: this.overlay
-        .position()
-        .global()
-        .centerHorizontally()
-        .centerVertically(),
+      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
       scrollStrategy: this.overlay.scrollStrategies.block(),
     });
 
@@ -78,7 +83,11 @@ export class PiDialogService {
         isClosed.set(true);
         // TZ-103.1: Destroy THIS dialog's focus trap + overlay, not singleton
         if (localFocusTrap) {
-          try { localFocusTrap.destroy(); } catch { /* ignore */ }
+          try {
+            localFocusTrap.destroy();
+          } catch {
+            /* ignore */
+          }
           localFocusTrap = null;
         }
         overlayRef.dispose();

@@ -27,7 +27,11 @@ import {
 import { PiToastService } from '../../../shared/ui/toast';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
-import { TextBlocksService, type TextBlock, type TextBlockColumn } from '../../../shared/services/pi-text-blocks.service';
+import {
+  TextBlocksService,
+  type TextBlock,
+  type TextBlockColumn,
+} from '../../../shared/services/pi-text-blocks.service';
 import type { DataSourcesResponse } from '../../../shared/services/pi-registry.service';
 import { extractErrorMessage } from '../../../core/silent-http';
 import {
@@ -72,7 +76,9 @@ import {
                 class="tbe-col-seg-btn"
                 [class.is-active]="columnsCount() === n"
                 (click)="setColumns(n)"
-              >{{ n }}</button>
+              >
+                {{ n }}
+              </button>
             }
           </div>
         </div>
@@ -88,17 +94,83 @@ import {
           <span class="tbe-toolbar-badge eyebrow">Колонка #{{ activeColIndex() + 1 }}</span>
           <span class="tbe-toolbar-sep" aria-hidden="true"></span>
           <div class="tbe-toolbar-group" role="toolbar" aria-label="Форматирование">
-            <button type="button" class="tbe-tool" [class.is-active]="toolbarStates().h1" (click)="runCmd('h1')">H1</button>
-            <button type="button" class="tbe-tool" [class.is-active]="toolbarStates().h2" (click)="runCmd('h2')">H2</button>
-            <button type="button" class="tbe-tool" [class.is-active]="toolbarStates().h3" (click)="runCmd('h3')">H3</button>
+            <button
+              type="button"
+              class="tbe-tool"
+              [class.is-active]="toolbarStates().h1"
+              (click)="runCmd('h1')"
+            >
+              H1
+            </button>
+            <button
+              type="button"
+              class="tbe-tool"
+              [class.is-active]="toolbarStates().h2"
+              (click)="runCmd('h2')"
+            >
+              H2
+            </button>
+            <button
+              type="button"
+              class="tbe-tool"
+              [class.is-active]="toolbarStates().h3"
+              (click)="runCmd('h3')"
+            >
+              H3
+            </button>
             <span class="tbe-toolbar-sep" aria-hidden="true"></span>
-            <button type="button" class="tbe-tool" [class.is-active]="toolbarStates().bold" (click)="runCmd('bold')"><strong>B</strong></button>
-            <button type="button" class="tbe-tool" [class.is-active]="toolbarStates().italic" (click)="runCmd('italic')"><em>I</em></button>
-            <button type="button" class="tbe-tool" [class.is-active]="toolbarStates().underline" (click)="runCmd('underline')"><u>U</u></button>
+            <button
+              type="button"
+              class="tbe-tool"
+              [class.is-active]="toolbarStates().bold"
+              (click)="runCmd('bold')"
+            >
+              <strong>B</strong>
+            </button>
+            <button
+              type="button"
+              class="tbe-tool"
+              [class.is-active]="toolbarStates().italic"
+              (click)="runCmd('italic')"
+            >
+              <em>I</em>
+            </button>
+            <button
+              type="button"
+              class="tbe-tool"
+              [class.is-active]="toolbarStates().underline"
+              (click)="runCmd('underline')"
+            >
+              <u>U</u>
+            </button>
             <span class="tbe-toolbar-sep" aria-hidden="true"></span>
-            <button type="button" class="tbe-tool" [class.is-active]="toolbarStates().alignLeft" (click)="runCmd('left')" title="По левому краю">≡</button>
-            <button type="button" class="tbe-tool" [class.is-active]="toolbarStates().alignCenter" (click)="runCmd('center')" title="По центру">≡</button>
-            <button type="button" class="tbe-tool" [class.is-active]="toolbarStates().alignRight" (click)="runCmd('right')" title="По правому краю">≡</button>
+            <button
+              type="button"
+              class="tbe-tool"
+              [class.is-active]="toolbarStates().alignLeft"
+              (click)="runCmd('left')"
+              title="По левому краю"
+            >
+              ≡
+            </button>
+            <button
+              type="button"
+              class="tbe-tool"
+              [class.is-active]="toolbarStates().alignCenter"
+              (click)="runCmd('center')"
+              title="По центру"
+            >
+              ≡
+            </button>
+            <button
+              type="button"
+              class="tbe-tool"
+              [class.is-active]="toolbarStates().alignRight"
+              (click)="runCmd('right')"
+              title="По правому краю"
+            >
+              ≡
+            </button>
           </div>
         </div>
 
@@ -106,10 +178,16 @@ import {
           <div class="tbe-data-strip-left">
             <span class="eyebrow">Постановочные данные</span>
             <span class="text-sm text-muted-foreground italic">
-              Вставка в колонку #{{ activeColIndex() + 1 }} — токены подставляются при сборке документа
+              Вставка в колонку #{{ activeColIndex() + 1 }} — токены подставляются при сборке
+              документа
             </span>
           </div>
-          <app-pi-button variant="outline" size="sm" class="tbe-data-btn" (click)="openDataPicker()">
+          <app-pi-button
+            variant="outline"
+            size="sm"
+            class="tbe-data-btn"
+            (click)="openDataPicker()"
+          >
             ⊕ Вставить поле…
           </app-pi-button>
         </div>
@@ -122,10 +200,14 @@ import {
                 class="tbe-tab eyebrow"
                 [class.is-active]="activeColIndex() === idx"
                 (click)="selectColumn(idx)"
-              >#{{ idx + 1 }}</button>
+              >
+                #{{ idx + 1 }}
+              </button>
             }
             @if (columns().length < 8) {
-              <button type="button" class="tbe-tab tbe-tab--add eyebrow" (click)="addColumn()">+</button>
+              <button type="button" class="tbe-tab tbe-tab--add eyebrow" (click)="addColumn()">
+                +
+              </button>
             }
           </div>
 
@@ -161,280 +243,299 @@ import {
         }
         <div class="tbe-footer-actions">
           <app-pi-button variant="ghost" (click)="onCancel()">Отмена</app-pi-button>
-          <app-pi-button variant="default" [disabled]="nameControl.invalid || saving()" (click)="onSave()">
+          <app-pi-button
+            variant="default"
+            [disabled]="nameControl.invalid || saving()"
+            (click)="onSave()"
+          >
             {{ saving() ? 'Сохранение…' : 'Сохранить блок' }}
           </app-pi-button>
         </div>
       </footer>
     </section>
   `,
-  styles: [`
-    :host { display: block; }
+  styles: [
+    `
+      :host {
+        display: block;
+      }
 
-    .tbe-shell {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      background: var(--color-paper);
-      border: 2px solid var(--color-ink);
-      overflow: hidden;
-    }
+      .tbe-shell {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        background: var(--color-paper);
+        border: 2px solid var(--color-ink);
+        overflow: hidden;
+      }
 
-    .tbe-accent {
-      height: 4px;
-      background: linear-gradient(
-        90deg,
-        var(--color-sunrise-warm),
-        var(--color-sunrise-glow),
-        var(--color-sunrise-warm)
-      );
-    }
+      .tbe-accent {
+        height: 4px;
+        background: linear-gradient(
+          90deg,
+          var(--color-sunrise-warm),
+          var(--color-sunrise-glow),
+          var(--color-sunrise-warm)
+        );
+      }
 
-    .tbe-head {
-      padding: 24px 32px 8px;
-    }
-    .tbe-title {
-      margin: 8px 0 0;
-      font-size: 32px;
-      font-weight: 600;
-      line-height: 1.2;
-      color: var(--color-ink);
-    }
+      .tbe-head {
+        padding: 24px 32px 8px;
+      }
+      .tbe-title {
+        margin: 8px 0 0;
+        font-size: 32px;
+        font-weight: 600;
+        line-height: 1.2;
+        color: var(--color-ink);
+      }
 
-    .tbe-meta {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: flex-end;
-      gap: 24px;
-      padding: 0 32px 24px;
-    }
-    .tbe-meta-name {
-      flex: 1 1 280px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      min-width: 0;
-    }
-    .tbe-input {
-      width: 100%;
-      padding: 12px 16px;
-      font-size: 16px;
-      font-family: inherit;
-      color: var(--color-ink);
-      background: var(--color-paper-main, var(--color-paper));
-      border: 1px solid var(--color-rule);
-      border-radius: 0;
-    }
-    .tbe-input:focus {
-      outline: none;
-      border-color: var(--color-ink);
-      outline: 1px solid var(--color-sunrise-warm);
-      outline-offset: -1px;
-    }
-    .tbe-error { font-size: 12px; color: var(--color-destructive); }
+      .tbe-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 24px;
+        padding: 0 32px 24px;
+      }
+      .tbe-meta-name {
+        flex: 1 1 280px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 0;
+      }
+      .tbe-input {
+        width: 100%;
+        padding: 12px 16px;
+        font-size: 16px;
+        font-family: inherit;
+        color: var(--color-ink);
+        background: var(--color-paper-main, var(--color-paper));
+        border: 1px solid var(--color-rule);
+        border-radius: 0;
+      }
+      .tbe-input:focus {
+        outline: none;
+        border-color: var(--color-ink);
+        outline: 1px solid var(--color-sunrise-warm);
+        outline-offset: -1px;
+      }
+      .tbe-error {
+        font-size: 12px;
+        color: var(--color-destructive);
+      }
 
-    .tbe-meta-cols {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      flex-shrink: 0;
-    }
-    .tbe-col-seg {
-      display: flex;
-      border: 1px solid var(--color-ink);
-    }
-    .tbe-col-seg-btn {
-      min-width: 40px;
-      padding: 12px 14px;
-      font-family: ui-monospace, monospace;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      background: var(--color-paper);
-      color: var(--color-ink);
-      border: none;
-      border-left: 1px solid var(--color-rule);
-      cursor: pointer;
-    }
-    .tbe-col-seg-btn:first-child { border-left: none; }
-    .tbe-col-seg-btn:hover { background: var(--color-paper-2); }
-    .tbe-col-seg-btn.is-active {
-      background: var(--color-ink);
-      color: var(--color-paper);
-    }
+      .tbe-meta-cols {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .tbe-col-seg {
+        display: flex;
+        border: 1px solid var(--color-ink);
+      }
+      .tbe-col-seg-btn {
+        min-width: 40px;
+        padding: 12px 14px;
+        font-family: ui-monospace, monospace;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        background: var(--color-paper);
+        color: var(--color-ink);
+        border: none;
+        border-left: 1px solid var(--color-rule);
+        cursor: pointer;
+      }
+      .tbe-col-seg-btn:first-child {
+        border-left: none;
+      }
+      .tbe-col-seg-btn:hover {
+        background: var(--color-paper-2);
+      }
+      .tbe-col-seg-btn.is-active {
+        background: var(--color-ink);
+        color: var(--color-paper);
+      }
 
-    .tbe-active-check {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 4px;
-      cursor: pointer;
-      user-select: none;
-    }
-    .tbe-active-check input {
-      width: 18px;
-      height: 18px;
-      accent-color: var(--color-ink);
-    }
+      .tbe-active-check {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 4px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .tbe-active-check input {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--color-ink);
+      }
 
-    .tbe-toolbar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 0 32px 16px;
-      padding: 4px 8px;
-      background: var(--color-paper-2);
-    }
-    .tbe-toolbar-badge {
-      padding: 6px 12px;
-      background: var(--color-ink);
-      color: var(--color-paper);
-      flex-shrink: 0;
-    }
-    .tbe-toolbar-sep {
-      width: 1px;
-      height: 24px;
-      background: var(--color-rule);
-      flex-shrink: 0;
-    }
-    .tbe-toolbar-group {
-      display: flex;
-      align-items: center;
-      gap: 2px;
-      flex-wrap: wrap;
-    }
-    .tbe-tool {
-      min-width: 32px;
-      height: 32px;
-      padding: 0 8px;
-      font-size: 12px;
-      font-weight: 700;
-      background: transparent;
-      border: none;
-      color: var(--color-ink);
-      cursor: pointer;
-    }
-    .tbe-tool:hover { background: var(--color-paper); }
-    .tbe-tool.is-active {
-      background: var(--color-ink);
-      color: var(--color-paper);
-    }
+      .tbe-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 32px 16px;
+        padding: 4px 8px;
+        background: var(--color-paper-2);
+      }
+      .tbe-toolbar-badge {
+        padding: 6px 12px;
+        background: var(--color-ink);
+        color: var(--color-paper);
+        flex-shrink: 0;
+      }
+      .tbe-toolbar-sep {
+        width: 1px;
+        height: 24px;
+        background: var(--color-rule);
+        flex-shrink: 0;
+      }
+      .tbe-toolbar-group {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        flex-wrap: wrap;
+      }
+      .tbe-tool {
+        min-width: 32px;
+        height: 32px;
+        padding: 0 8px;
+        font-size: 12px;
+        font-weight: 700;
+        background: transparent;
+        border: none;
+        color: var(--color-ink);
+        cursor: pointer;
+      }
+      .tbe-tool:hover {
+        background: var(--color-paper);
+      }
+      .tbe-tool.is-active {
+        background: var(--color-ink);
+        color: var(--color-paper);
+      }
 
-    .tbe-data-strip {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 12px 32px;
-      background: var(--color-paper-2);
-    }
-    .tbe-data-strip-left {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      gap: 12px;
-      min-width: 0;
-    }
-    :host ::ng-deep .tbe-data-btn {
-      border-color: var(--color-sunrise-warm) !important;
-      color: var(--color-ink);
-    }
+      .tbe-data-strip {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 32px;
+        background: var(--color-paper-2);
+      }
+      .tbe-data-strip-left {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 12px;
+        min-width: 0;
+      }
+      :host ::ng-deep .tbe-data-btn {
+        border-color: var(--color-sunrise-warm) !important;
+        color: var(--color-ink);
+      }
 
-    .tbe-workspace {
-      padding: 0 32px 32px;
-      background: var(--color-paper-2);
-    }
-    .tbe-tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-    .tbe-tab {
-      padding: 8px 20px;
-      background: var(--color-paper);
-      border: 1px solid var(--color-rule);
-      color: var(--color-ink);
-      cursor: pointer;
-    }
-    .tbe-tab.is-active {
-      background: var(--color-ink);
-      color: var(--color-paper);
-      border-color: var(--color-ink);
-    }
-    .tbe-tab--add {
-      border-style: dashed;
-      color: var(--color-muted-foreground-strong);
-    }
-    .tbe-tab--add:hover {
-      border-color: var(--color-ink);
-      color: var(--color-ink);
-    }
+      .tbe-workspace {
+        padding: 0 32px 32px;
+        background: var(--color-paper-2);
+      }
+      .tbe-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .tbe-tab {
+        padding: 8px 20px;
+        background: var(--color-paper);
+        border: 1px solid var(--color-rule);
+        color: var(--color-ink);
+        cursor: pointer;
+      }
+      .tbe-tab.is-active {
+        background: var(--color-ink);
+        color: var(--color-paper);
+        border-color: var(--color-ink);
+      }
+      .tbe-tab--add {
+        border-style: dashed;
+        color: var(--color-muted-foreground-strong);
+      }
+      .tbe-tab--add:hover {
+        border-color: var(--color-ink);
+        color: var(--color-ink);
+      }
 
-    .tbe-grid {
-      display: grid;
-      gap: 24px;
-      align-items: stretch;
-    }
-    .tbe-col {
-      position: relative;
-      min-height: 240px;
-      padding: 16px;
-      background: var(--color-paper-main, var(--color-paper));
-      border: 2px solid var(--color-rule);
-      transition: border-color 120ms ease, opacity 120ms ease;
-    }
-    .tbe-col.is-active {
-      background: var(--color-paper);
-      border-color: var(--color-sunrise-warm);
-      opacity: 1;
-    }
-    .tbe-col.is-dimmed {
-      opacity: 0.6;
-    }
-    .tbe-col-empty {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-      z-index: 0;
-    }
-    .tbe-col app-pi-rich-text {
-      position: relative;
-      z-index: 1;
-      display: block;
-      min-height: 180px;
-    }
+      .tbe-grid {
+        display: grid;
+        gap: 24px;
+        align-items: stretch;
+      }
+      .tbe-col {
+        position: relative;
+        min-height: 240px;
+        padding: 16px;
+        background: var(--color-paper-main, var(--color-paper));
+        border: 2px solid var(--color-rule);
+        transition:
+          border-color 120ms ease,
+          opacity 120ms ease;
+      }
+      .tbe-col.is-active {
+        background: var(--color-paper);
+        border-color: var(--color-sunrise-warm);
+        opacity: 1;
+      }
+      .tbe-col.is-dimmed {
+        opacity: 0.6;
+      }
+      .tbe-col-empty {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .tbe-col app-pi-rich-text {
+        position: relative;
+        z-index: 1;
+        display: block;
+        min-height: 180px;
+      }
 
-    .tbe-footer {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 16px;
-      padding: 24px 32px;
-    }
-    .tbe-footer-actions {
-      display: flex;
-      gap: 12px;
-      margin-left: auto;
-    }
-    .tbe-banner {
-      flex: 1 1 100%;
-      padding: 8px 12px;
-      font-size: 13px;
-      border-radius: 2px;
-    }
-    .tbe-banner--error {
-      background: color-mix(in oklch, var(--color-destructive) 10%, transparent);
-      color: var(--color-destructive);
-      border: 1px solid color-mix(in oklch, var(--color-destructive) 30%, transparent);
-    }
-  `],
+      .tbe-footer {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 16px;
+        padding: 24px 32px;
+      }
+      .tbe-footer-actions {
+        display: flex;
+        gap: 12px;
+        margin-left: auto;
+      }
+      .tbe-banner {
+        flex: 1 1 100%;
+        padding: 8px 12px;
+        font-size: 13px;
+        border-radius: 2px;
+      }
+      .tbe-banner--error {
+        background: color-mix(in oklch, var(--color-destructive) 10%, transparent);
+        color: var(--color-destructive);
+        border: 1px solid color-mix(in oklch, var(--color-destructive) 30%, transparent);
+      }
+    `,
+  ],
 })
 export class TextBlockEditorComponent {
   readonly block = input<TextBlock | null>(null);
@@ -450,7 +551,10 @@ export class TextBlockEditorComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
 
-  protected readonly nameControl = this.fb.control('', [Validators.required, Validators.maxLength(200)]);
+  protected readonly nameControl = this.fb.control('', [
+    Validators.required,
+    Validators.maxLength(200),
+  ]);
   protected readonly activeControl = this.fb.control(true);
 
   protected readonly columnsCount = signal<number>(1);
@@ -459,9 +563,15 @@ export class TextBlockEditorComponent {
   protected readonly saving = signal<boolean>(false);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly toolbarStates = signal<ActiveStates>({
-    bold: false, italic: false, underline: false,
-    h1: false, h2: false, h3: false,
-    alignLeft: false, alignCenter: false, alignRight: false,
+    bold: false,
+    italic: false,
+    underline: false,
+    h1: false,
+    h2: false,
+    h3: false,
+    alignLeft: false,
+    alignCenter: false,
+    alignRight: false,
   });
 
   protected readonly registryRes = httpResource<DataSourcesResponse>(
@@ -483,11 +593,13 @@ export class TextBlockEditorComponent {
       this.nameControl.setValue(existing.name);
       this.activeControl.setValue(existing.isActive);
       if (existing.columns && existing.columns.length > 0) {
-        this.columns.set(existing.columns.map((c) => ({
-          id: c.id || crypto.randomUUID(),
-          content: c.content || '',
-          width: c.width ?? 1,
-        })));
+        this.columns.set(
+          existing.columns.map((c) => ({
+            id: c.id || crypto.randomUUID(),
+            content: c.content || '',
+            width: c.width ?? 1,
+          })),
+        );
         this.columnsCount.set(existing.columns.length);
       } else {
         this.columns.set([{ id: crypto.randomUUID(), content: existing.content || '', width: 1 }]);
@@ -523,25 +635,43 @@ export class TextBlockEditorComponent {
   }
 
   protected onColumnContentChange(index: number, html: string): void {
-    this.columns.update((cols) =>
-      cols.map((c, i) => (i === index ? { ...c, content: html } : c)),
-    );
+    this.columns.update((cols) => cols.map((c, i) => (i === index ? { ...c, content: html } : c)));
   }
 
-  protected runCmd(cmd: 'bold' | 'italic' | 'underline' | 'h1' | 'h2' | 'h3' | 'left' | 'center' | 'right'): void {
+  protected runCmd(
+    cmd: 'bold' | 'italic' | 'underline' | 'h1' | 'h2' | 'h3' | 'left' | 'center' | 'right',
+  ): void {
     const ed = this.editors?.get(this.activeColIndex());
     if (!ed) return;
     ed.focusEditor();
     switch (cmd) {
-      case 'bold': ed.toggleBold(); break;
-      case 'italic': ed.toggleItalic(); break;
-      case 'underline': ed.toggleUnderline(); break;
-      case 'h1': ed.toggleHeading(1); break;
-      case 'h2': ed.toggleHeading(2); break;
-      case 'h3': ed.toggleHeading(3); break;
-      case 'left': ed.setTextAlign('left'); break;
-      case 'center': ed.setTextAlign('center'); break;
-      case 'right': ed.setTextAlign('right'); break;
+      case 'bold':
+        ed.toggleBold();
+        break;
+      case 'italic':
+        ed.toggleItalic();
+        break;
+      case 'underline':
+        ed.toggleUnderline();
+        break;
+      case 'h1':
+        ed.toggleHeading(1);
+        break;
+      case 'h2':
+        ed.toggleHeading(2);
+        break;
+      case 'h3':
+        ed.toggleHeading(3);
+        break;
+      case 'left':
+        ed.setTextAlign('left');
+        break;
+      case 'center':
+        ed.setTextAlign('center');
+        break;
+      case 'right':
+        ed.setTextAlign('right');
+        break;
     }
     queueMicrotask(() => this.toolbarStates.set(ed.getActiveStates()));
   }
@@ -587,7 +717,9 @@ export class TextBlockEditorComponent {
     });
   }
 
-  protected onCancel(): void { this.cancel.emit(); }
+  protected onCancel(): void {
+    this.cancel.emit();
+  }
 
   protected onSave(): void {
     if (this.nameControl.invalid || this.saving()) {

@@ -29,19 +29,24 @@ describe('ProductModulePhotosService', () => {
 
   it('list(productModuleId) forwards productModuleId query', () => {
     svc.list('mod1').subscribe();
-    const req = httpMock.expectOne((r) =>
-      r.url === 'http://test/api/product-module-photos' && r.params.get('productModuleId') === 'mod1');
+    const req = httpMock.expectOne(
+      (r) =>
+        r.url === 'http://test/api/product-module-photos' &&
+        r.params.get('productModuleId') === 'mod1',
+    );
     expect(req.request.method).toBe('GET');
     req.flush([]);
   });
 
   it('attach() POSTs DTO as-is', () => {
-    svc.attach({
-      productModuleId: 'mod1',
-      url: 'https://x.test/p.jpg',
-      sortOrder: 1,
-      isMain: true,
-    }).subscribe();
+    svc
+      .attach({
+        productModuleId: 'mod1',
+        url: 'https://x.test/p.jpg',
+        sortOrder: 1,
+        isMain: true,
+      })
+      .subscribe();
     const req = httpMock.expectOne('http://test/api/product-module-photos');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({
@@ -62,7 +67,7 @@ describe('ProductModulePhotosService', () => {
     req.flush({ ok: true });
   });
 
-  it('update() PATCHes /:id (server strips isMain, client also doesn\'t send it)', () => {
+  it("update() PATCHes /:id (server strips isMain, client also doesn't send it)", () => {
     svc.update('photo1', { caption: 'новое', sortOrder: 5 }).subscribe();
     const req = httpMock.expectOne('http://test/api/product-module-photos/photo1');
     expect(req.request.method).toBe('PATCH');

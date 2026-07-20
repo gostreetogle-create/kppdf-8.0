@@ -54,11 +54,7 @@ export function scaleLinear(
 }
 
 /** Builds an SVG path `d` string from data points (M/L commands). */
-export function linePath<T>(
-  data: readonly T[],
-  x: (d: T) => number,
-  y: (d: T) => number,
-): string {
+export function linePath<T>(data: readonly T[], x: (d: T) => number, y: (d: T) => number): string {
   if (data.length === 0) return '';
   return data
     .map((d, i) => `${i === 0 ? 'M' : 'L'}${x(d).toFixed(2)},${y(d).toFixed(2)}`)

@@ -1,9 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import {
   FormArray,
   FormControl,
@@ -21,10 +16,7 @@ import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tok
 import { PiToastService } from '../../shared/ui/toast';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { extractErrorMessage } from '../../core/silent-http';
-import {
-  Counterparty,
-  CounterpartyService,
-} from '../../shared/services/pi-counterparty.service';
+import { Counterparty, CounterpartyService } from '../../shared/services/pi-counterparty.service';
 import { Product, ProductsService } from '../../shared/services/products.service';
 import { Order, OrderItem, OrdersService, OrderPriority, OrderStatus } from './orders.service';
 
@@ -88,10 +80,7 @@ interface ItemFormGroup extends FormGroup {
     TextareaComponent,
   ],
   template: `
-    <app-pi-dialog
-      [title]="isEdit() ? 'Редактировать заказ' : 'Создать заказ'"
-      [width]="'lg'"
-    >
+    <app-pi-dialog [title]="isEdit() ? 'Редактировать заказ' : 'Создать заказ'" [width]="'lg'">
       <form
         body
         [formGroup]="form"
@@ -127,17 +116,10 @@ interface ItemFormGroup extends FormGroup {
             htmlFor="ord-number"
             hint="Если не задан — генерируется автоматически"
           >
-            <app-pi-input
-              id="ord-number"
-              formControlName="number"
-              placeholder="Номер заказа"
-            />
+            <app-pi-input id="ord-number" formControlName="number" placeholder="Номер заказа" />
           </app-pi-form-field>
 
-          <app-pi-form-field
-            label="Планируемая дата"
-            htmlFor="ord-plannedDate"
-          >
+          <app-pi-form-field label="Планируемая дата" htmlFor="ord-plannedDate">
             <app-pi-input
               id="ord-plannedDate"
               type="text"
@@ -146,15 +128,8 @@ interface ItemFormGroup extends FormGroup {
             />
           </app-pi-form-field>
 
-          <app-pi-form-field
-            label="Приоритет"
-            htmlFor="ord-priority"
-          >
-            <select
-              id="ord-priority"
-              formControlName="priority"
-              class="pi-input w-full"
-            >
+          <app-pi-form-field label="Приоритет" htmlFor="ord-priority">
+            <select id="ord-priority" formControlName="priority" class="pi-input w-full">
               @for (opt of PRIORITY_OPTIONS; track opt.value) {
                 <option [value]="opt.value">{{ opt.label }}</option>
               }
@@ -162,21 +137,14 @@ interface ItemFormGroup extends FormGroup {
           </app-pi-form-field>
 
           <app-pi-form-field label="Статус" htmlFor="ord-status">
-            <select
-              id="ord-status"
-              formControlName="status"
-              class="pi-input w-full"
-            >
+            <select id="ord-status" formControlName="status" class="pi-input w-full">
               @for (opt of STATUS_OPTIONS; track opt.value) {
                 <option [value]="opt.value">{{ opt.label }}</option>
               }
             </select>
           </app-pi-form-field>
 
-          <app-pi-form-field
-            label="Адрес доставки"
-            htmlFor="ord-address"
-          >
+          <app-pi-form-field label="Адрес доставки" htmlFor="ord-address">
             <app-pi-input
               id="ord-address"
               formControlName="deliveryAddress"
@@ -207,11 +175,7 @@ interface ItemFormGroup extends FormGroup {
           }
 
           <div formArrayName="items" class="space-y-2">
-            @for (
-              itemGroup of itemsArray.controls;
-              track $index;
-              let i = $index
-            ) {
+            @for (itemGroup of itemsArray.controls; track $index; let i = $index) {
               <div
                 [formGroupName]="i"
                 class="grid grid-cols-12 gap-2 items-end p-2 hairline rounded-sm bg-paper-2/30"
@@ -229,9 +193,7 @@ interface ItemFormGroup extends FormGroup {
                   >
                     <option value="" disabled>— выберите —</option>
                     @for (p of products(); track p._id) {
-                      <option [value]="p._id">
-                        {{ p.name }}{{ p.sku ? ' · ' + p.sku : '' }}
-                      </option>
+                      <option [value]="p._id">{{ p.name }}{{ p.sku ? ' · ' + p.sku : '' }}</option>
                     }
                   </select>
                 </label>
@@ -310,9 +272,7 @@ interface ItemFormGroup extends FormGroup {
         >
           {{ submitting() ? 'Сохранение…' : 'Сохранить' }}
         </app-pi-button>
-        <app-pi-button type="button" variant="ghost" (click)="onCancel()">
-          Отмена
-        </app-pi-button>
+        <app-pi-button type="button" variant="ghost" (click)="onCancel()"> Отмена </app-pi-button>
       </div>
     </app-pi-dialog>
   `,
@@ -379,9 +339,7 @@ export class OrderFormDialogComponent {
 
   private patchFromData(o: Order): void {
     const cpId =
-      typeof o.counterpartyId === 'string'
-        ? o.counterpartyId
-        : o.counterpartyId?._id ?? '';
+      typeof o.counterpartyId === 'string' ? o.counterpartyId : (o.counterpartyId?._id ?? '');
     this.form.patchValue({
       number: o.number,
       counterpartyId: cpId,
@@ -390,7 +348,8 @@ export class OrderFormDialogComponent {
       status: o.status ?? 'draft',
       deliveryAddress: o.deliveryAddress ?? null,
       notes: o.notes ?? null,
-    });              (o.items ?? []).forEach((it) => this.appendItem(it as Partial<OrderItem>));
+    });
+    (o.items ?? []).forEach((it) => this.appendItem(it as Partial<OrderItem>));
   }
 
   addItem(): void {
@@ -418,19 +377,11 @@ export class OrderFormDialogComponent {
 
   private createItemGroup(initial: Partial<OrderItem> = {}): ItemFormGroup {
     return this.fb.group({
-      productId: this.fb.control(initial.productId ?? '', [
-        Validators.required,
-      ]),
+      productId: this.fb.control(initial.productId ?? '', [Validators.required]),
       productName: this.fb.control<string>(initial.productName ?? ''),
-      quantity: this.fb.control(initial.quantity ?? 1, [
-        Validators.required,
-        Validators.min(0),
-      ]),
+      quantity: this.fb.control(initial.quantity ?? 1, [Validators.required, Validators.min(0)]),
       unit: this.fb.control<string>(initial.unit ?? ''),
-      unitPrice: this.fb.control(initial.unitPrice ?? 0, [
-        Validators.required,
-        Validators.min(0),
-      ]),
+      unitPrice: this.fb.control(initial.unitPrice ?? 0, [Validators.required, Validators.min(0)]),
     }) as ItemFormGroup;
   }
 
@@ -490,9 +441,7 @@ export class OrderFormDialogComponent {
       : this.service.create(payload);
     obs.subscribe((res) => {
       if (res.ok) {
-        this.toast.success(
-          this.isEdit() ? 'Заказ обновлён' : 'Заказ создан',
-        );
+        this.toast.success(this.isEdit() ? 'Заказ обновлён' : 'Заказ создан');
         this.ref.close(res.data);
       } else {
         this.errorMessage.set(extractErrorMessage(res.error));

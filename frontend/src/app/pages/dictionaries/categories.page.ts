@@ -76,11 +76,7 @@ const TYPE_COLORS: Record<Category['type'], string> = {
       <span hint>{{ total() }} {{ totalLabel(total()) }}</span>
     </app-pi-toolbar>
 
-    <app-pi-section
-      title="Каталог"
-      hint="Перетаскивайте строки для изменения порядка"
-      eyebrow="I"
-    >
+    <app-pi-section title="Каталог" hint="Перетаскивайте строки для изменения порядка" eyebrow="I">
       @if (error()) {
         <div
           role="alert"
@@ -97,7 +93,9 @@ const TYPE_COLORS: Record<Category['type'], string> = {
       } @else {
         <!-- ───── Root categories (no parent) ───── -->
         <div class="hairline rounded-sm overflow-hidden">
-          <div class="grid grid-cols-[2rem_1fr_8rem_8rem_6rem_5rem_8rem] gap-2 px-3 py-2 hairline-b bg-paper-2/50 text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+          <div
+            class="grid grid-cols-[2rem_1fr_8rem_8rem_6rem_5rem_8rem] gap-2 px-3 py-2 hairline-b bg-paper-2/50 text-[10px] uppercase tracking-wider text-muted-foreground font-medium"
+          >
             <span></span>
             <span>Название</span>
             <span>Slug</span>
@@ -114,23 +112,32 @@ const TYPE_COLORS: Record<Category['type'], string> = {
             class="divide-y divide-rule"
           >
             @for (node of treeData(); track node._id) {
-              <div
-                cdkDrag
-                [cdkDragData]="node"
-                class="group"
-              >
+              <div cdkDrag [cdkDragData]="node" class="group">
                 <!-- ───── Parent row ───── -->
-                <div class="grid grid-cols-[2rem_1fr_8rem_8rem_6rem_5rem_8rem] gap-2 px-3 py-2.5 items-center hover:bg-paper-2/30 transition-colors">
+                <div
+                  class="grid grid-cols-[2rem_1fr_8rem_8rem_6rem_5rem_8rem] gap-2 px-3 py-2.5 items-center hover:bg-paper-2/30 transition-colors"
+                >
                   <!-- Drag handle -->
                   <div
                     cdkDragHandle
                     class="flex items-center justify-center w-5 h-5 text-muted-foreground/50 hover:text-muted-foreground cursor-grab active:cursor-grabbing"
                     [attr.aria-label]="'Перетащить ' + node.name"
                   >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                      <circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/>
-                      <circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/>
-                      <circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/>
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                    >
+                      <circle cx="9" cy="6" r="1" />
+                      <circle cx="15" cy="6" r="1" />
+                      <circle cx="9" cy="12" r="1" />
+                      <circle cx="15" cy="12" r="1" />
+                      <circle cx="9" cy="18" r="1" />
+                      <circle cx="15" cy="18" r="1" />
                     </svg>
                   </div>
 
@@ -156,7 +163,7 @@ const TYPE_COLORS: Record<Category['type'], string> = {
                           class="transition-transform duration-150"
                           [class.rotate-90]="expandedIds().has(node._id)"
                         >
-                          <polyline points="9 18 15 12 9 6"/>
+                          <polyline points="9 18 15 12 9 6" />
                         </svg>
                       </button>
                     } @else {
@@ -165,7 +172,9 @@ const TYPE_COLORS: Record<Category['type'], string> = {
                     <div>
                       <p class="text-sm font-medium text-ink truncate">{{ node.name }}</p>
                       @if (node.description) {
-                        <p class="text-[11px] text-muted-foreground truncate">{{ node.description }}</p>
+                        <p class="text-[11px] text-muted-foreground truncate">
+                          {{ node.description }}
+                        </p>
                       }
                     </div>
                   </div>
@@ -185,10 +194,14 @@ const TYPE_COLORS: Record<Category['type'], string> = {
                   <span class="font-mono text-xs font-medium text-ink">{{ node.skuPrefix }}</span>
 
                   <!-- Sort order -->
-                  <span class="text-right font-mono text-xs text-muted-foreground">{{ node.sortOrder }}</span>
+                  <span class="text-right font-mono text-xs text-muted-foreground">{{
+                    node.sortOrder
+                  }}</span>
 
                   <!-- Actions -->
-                  <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div
+                    class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
                     <button
                       type="button"
                       class="pi-icon-btn pi-focus-ring"
@@ -229,10 +242,21 @@ const TYPE_COLORS: Record<Category['type'], string> = {
                             class="flex items-center justify-center w-5 h-5 text-muted-foreground/50 hover:text-muted-foreground cursor-grab active:cursor-grabbing"
                             [attr.aria-label]="'Перетащить ' + child.name"
                           >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                              <circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/>
-                              <circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/>
-                              <circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/>
+                            <svg
+                              width="12"
+                              height="12"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              aria-hidden="true"
+                            >
+                              <circle cx="9" cy="6" r="1" />
+                              <circle cx="15" cy="6" r="1" />
+                              <circle cx="9" cy="12" r="1" />
+                              <circle cx="15" cy="12" r="1" />
+                              <circle cx="9" cy="18" r="1" />
+                              <circle cx="15" cy="18" r="1" />
                             </svg>
                           </div>
 
@@ -240,12 +264,16 @@ const TYPE_COLORS: Record<Category['type'], string> = {
                           <div class="min-w-0">
                             <p class="text-sm font-medium text-ink truncate">{{ child.name }}</p>
                             @if (child.description) {
-                              <p class="text-[11px] text-muted-foreground truncate">{{ child.description }}</p>
+                              <p class="text-[11px] text-muted-foreground truncate">
+                                {{ child.description }}
+                              </p>
                             }
                           </div>
 
                           <!-- Slug -->
-                          <span class="font-mono text-xs text-muted-foreground">{{ child.slug }}</span>
+                          <span class="font-mono text-xs text-muted-foreground">{{
+                            child.slug
+                          }}</span>
 
                           <!-- Type badge -->
                           <span
@@ -256,13 +284,19 @@ const TYPE_COLORS: Record<Category['type'], string> = {
                           </span>
 
                           <!-- SKU prefix -->
-                          <span class="font-mono text-xs font-medium text-ink">{{ child.skuPrefix }}</span>
+                          <span class="font-mono text-xs font-medium text-ink">{{
+                            child.skuPrefix
+                          }}</span>
 
                           <!-- Sort order -->
-                          <span class="text-right font-mono text-xs text-muted-foreground">{{ child.sortOrder }}</span>
+                          <span class="text-right font-mono text-xs text-muted-foreground">{{
+                            child.sortOrder
+                          }}</span>
 
                           <!-- Actions -->
-                          <div class="flex items-center justify-end gap-1 opacity-0 group-hover/child:opacity-100 transition-opacity">
+                          <div
+                            class="flex items-center justify-end gap-1 opacity-0 group-hover/child:opacity-100 transition-opacity"
+                          >
                             <button
                               type="button"
                               class="pi-icon-btn pi-focus-ring"
@@ -353,7 +387,8 @@ export class CategoriesPage {
   protected readonly allTreeData = computed<CategoryTreeNode[]>(() => this.treeRes.value() ?? []);
   protected readonly loading = computed<boolean>(() => this.treeRes.isLoading());
   protected readonly error = computed<string | null>(() => {
-    const err = this.treeRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    const err = this.treeRes.error() as
+      import('@angular/common/http').HttpErrorResponse | undefined;
     return err ? extractErrorMessage(err) : null;
   });
 

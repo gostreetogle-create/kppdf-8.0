@@ -44,8 +44,10 @@ describe('CardComponent', () => {
     const fixture = TestBed.createComponent(CardComponent);
     if (inputs.eyebrow !== undefined) fixture.componentRef.setInput('eyebrow', inputs.eyebrow);
     if (inputs.title !== undefined) fixture.componentRef.setInput('title', inputs.title);
-    if (inputs.description !== undefined) fixture.componentRef.setInput('description', inputs.description);
-    if (inputs.interactive !== undefined) fixture.componentRef.setInput('interactive', inputs.interactive);
+    if (inputs.description !== undefined)
+      fixture.componentRef.setInput('description', inputs.description);
+    if (inputs.interactive !== undefined)
+      fixture.componentRef.setInput('interactive', inputs.interactive);
     if (inputs.arrow !== undefined) fixture.componentRef.setInput('arrow', inputs.arrow);
     fixture.detectChanges();
     return fixture;

@@ -113,7 +113,10 @@ export class ProductModulesService {
     return silentPost<ProductModule>(this.http, `${this.baseUrl}/modules`, payload);
   }
 
-  update(id: string, payload: Partial<ProductModuleUpsertDto>): Observable<SilentResult<ProductModule>> {
+  update(
+    id: string,
+    payload: Partial<ProductModuleUpsertDto>,
+  ): Observable<SilentResult<ProductModule>> {
     return silentPatch<ProductModule>(this.http, `${this.baseUrl}/modules/${id}`, payload);
   }
 
@@ -127,10 +130,15 @@ export class ProductModulesService {
    * section without a second GET.
    */
   attachToProduct(productId: string, moduleId: string): Observable<SilentResult<unknown>> {
-    return silentPost<unknown>(this.http, `${this.baseUrl}/products/${productId}/modules`, { moduleId });
+    return silentPost<unknown>(this.http, `${this.baseUrl}/products/${productId}/modules`, {
+      moduleId,
+    });
   }
 
   detachFromProduct(productId: string, moduleId: string): Observable<SilentResult<void>> {
-    return silentDelete<void>(this.http, `${this.baseUrl}/products/${productId}/modules/${moduleId}`);
+    return silentDelete<void>(
+      this.http,
+      `${this.baseUrl}/products/${productId}/modules/${moduleId}`,
+    );
   }
 }

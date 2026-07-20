@@ -2,7 +2,13 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../../core/api.tokens';
-import { silentDelete, silentGet, silentPatch, silentPost, SilentResult } from '../../core/silent-http';
+import {
+  silentDelete,
+  silentGet,
+  silentPatch,
+  silentPost,
+  SilentResult,
+} from '../../core/silent-http';
 
 export interface Unit {
   _id: string;
@@ -44,12 +50,15 @@ export class UnitsService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
 
-  list(params: { page?: number; limit?: number; search?: string; isActive?: boolean } = {}): Observable<SilentResult<UnitsListResponse>> {
+  list(
+    params: { page?: number; limit?: number; search?: string; isActive?: boolean } = {},
+  ): Observable<SilentResult<UnitsListResponse>> {
     let httpParams = new HttpParams()
       .set('page', String(params.page ?? 1))
       .set('limit', String(params.limit ?? 50));
     if (params.search) httpParams = httpParams.set('search', params.search);
-    if (params.isActive !== undefined) httpParams = httpParams.set('isActive', String(params.isActive));
+    if (params.isActive !== undefined)
+      httpParams = httpParams.set('isActive', String(params.isActive));
     return silentGet<UnitsListResponse>(this.http, `${this.baseUrl}/units`, { params: httpParams });
   }
 

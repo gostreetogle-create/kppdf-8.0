@@ -49,12 +49,7 @@ import { Photo } from '../../shared/services/photos.service';
 @Component({
   selector: 'app-product-detail-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    PiPageHeaderComponent,
-    PiSectionComponent,
-    PiEmptyStateComponent,
-    ButtonComponent,
-  ],
+  imports: [PiPageHeaderComponent, PiSectionComponent, PiEmptyStateComponent, ButtonComponent],
   template: `
     <app-pi-page-header
       [eyebrow]="'товар'"
@@ -69,12 +64,19 @@ import { Photo } from '../../shared/services/photos.service';
     </app-pi-page-header>
 
     @if (loadError()) {
-      <div role="alert" class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive">
+      <div
+        role="alert"
+        class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+      >
         {{ loadError() }}
       </div>
       <div class="py-12 text-center text-muted-foreground text-sm">
         Товар не найден. Вернитесь к списку продукции.
-        <button type="button" (click)="onBack()" class="block mx-auto mt-2 text-ink hover:text-sunrise-warm underline">
+        <button
+          type="button"
+          (click)="onBack()"
+          class="block mx-auto mt-2 text-ink hover:text-sunrise-warm underline"
+        >
           ← К продукции
         </button>
       </div>
@@ -105,11 +107,17 @@ import { Photo } from '../../shared/services/photos.service';
       <app-pi-section title="Габариты и вес" eyebrow="II">
         <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
           <dt class="eyebrow">Длина</dt>
-          <dd class="font-mono empty-cell">{{ p.dimensions?.length ?? '—' }} {{ p.dimensions?.unit ?? '' }}</dd>
+          <dd class="font-mono empty-cell">
+            {{ p.dimensions?.length ?? '—' }} {{ p.dimensions?.unit ?? '' }}
+          </dd>
           <dt class="eyebrow">Ширина</dt>
-          <dd class="font-mono empty-cell">{{ p.dimensions?.width ?? '—' }} {{ p.dimensions?.unit ?? '' }}</dd>
+          <dd class="font-mono empty-cell">
+            {{ p.dimensions?.width ?? '—' }} {{ p.dimensions?.unit ?? '' }}
+          </dd>
           <dt class="eyebrow">Высота</dt>
-          <dd class="font-mono empty-cell">{{ p.dimensions?.height ?? '—' }} {{ p.dimensions?.unit ?? '' }}</dd>
+          <dd class="font-mono empty-cell">
+            {{ p.dimensions?.height ?? '—' }} {{ p.dimensions?.unit ?? '' }}
+          </dd>
           <dt class="eyebrow">Вес (кг)</dt>
           <dd class="font-mono empty-cell">{{ p.weightKg ?? '—' }}</dd>
           <dt class="eyebrow">RAL</dt>
@@ -122,8 +130,12 @@ import { Photo } from '../../shared/services/photos.service';
         <div class="flex flex-wrap gap-3">
           @for (ph of mainPhotos(); track ph._id) {
             <figure>
-              <img [src]="ph.storageUrl" [alt]="ph.originalFilename ?? 'фото'"
-                class="block w-32 h-32 object-cover hairline rounded-sm" loading="lazy" />
+              <img
+                [src]="ph.storageUrl"
+                [alt]="ph.originalFilename ?? 'фото'"
+                class="block w-32 h-32 object-cover hairline rounded-sm"
+                loading="lazy"
+              />
             </figure>
           } @empty {
             <p class="eyebrow text-muted-foreground">Нет фото. В Phase E добавим загрузку.</p>
@@ -134,11 +146,20 @@ import { Photo } from '../../shared/services/photos.service';
       <!-- IV. Модули -->
       <app-pi-section
         title="Модули"
-        [hint]="p.productModuleIds?.length ? 'один модуль может использоваться в нескольких товарах (M:N)' : ''"
+        [hint]="
+          p.productModuleIds?.length
+            ? 'один модуль может использоваться в нескольких товарах (M:N)'
+            : ''
+        "
         eyebrow="IV"
       >
         <div class="flex justify-end mb-2">
-          <app-pi-button variant="default" type="button" (click)="openPicker()" data-test="attach-module">
+          <app-pi-button
+            variant="default"
+            type="button"
+            (click)="openPicker()"
+            data-test="attach-module"
+          >
             + Привязать модуль
           </app-pi-button>
         </div>
@@ -157,20 +178,34 @@ import { Photo } from '../../shared/services/photos.service';
               @for (m of attachedModules(); track m._id) {
                 <tr class="pi-table-row pi-table-row-odd last:border-0">
                   <td class="pi-cell align-top font-medium">{{ m.name }}</td>
-                  <td class="pi-cell align-top font-mono text-xs empty-cell">{{ m.article ?? '—' }}</td>
+                  <td class="pi-cell align-top font-mono text-xs empty-cell">
+                    {{ m.article ?? '—' }}
+                  </td>
                   <td class="pi-cell-numeric align-top">{{ m.materials.length }}</td>
                   <td class="pi-cell-numeric align-top">{{ m.workTypes.length }}</td>
                   <td class="pi-cell align-top text-right">
-                    <button type="button" (click)="openModuleDetail(m)"
-                      class="eyebrow text-ink hover:text-sunrise-warm mr-3">Открыть</button>
-                    <button type="button" (click)="onDetach(m)"
-                      class="eyebrow text-destructive hover:underline">Отвязать</button>
+                    <button
+                      type="button"
+                      (click)="openModuleDetail(m)"
+                      class="eyebrow text-ink hover:text-sunrise-warm mr-3"
+                    >
+                      Открыть
+                    </button>
+                    <button
+                      type="button"
+                      (click)="onDetach(m)"
+                      class="eyebrow text-destructive hover:underline"
+                    >
+                      Отвязать
+                    </button>
                   </td>
                 </tr>
               } @empty {
-                <app-pi-empty-state [colspan]="5"
+                <app-pi-empty-state
+                  [colspan]="5"
                   message="Нет привязанных модулей. Нажмите «Привязать модуль»."
-                  state="empty" />
+                  state="empty"
+                />
               }
             </tbody>
           </table>
@@ -184,7 +219,13 @@ import { Photo } from '../../shared/services/photos.service';
         hint="снимки расчёта: материалы × кол-во + работы × часы + накладные"
       >
         <div class="flex justify-end mb-2">
-          <app-pi-button variant="default" type="button" (click)="recalculate()" [disabled]="recalculating()" data-test="recalculate-button">
+          <app-pi-button
+            variant="default"
+            type="button"
+            (click)="recalculate()"
+            [disabled]="recalculating()"
+            data-test="recalculate-button"
+          >
             {{ recalculating() ? 'Расчёт…' : 'Пересчитать' }}
           </app-pi-button>
         </div>
@@ -205,31 +246,59 @@ import { Photo } from '../../shared/services/photos.service';
               </thead>
               <tbody>
                 @for (cc of costList(); track cc._id) {
-                  <tr class="pi-table-row pi-table-row-odd last:border-0"
-                      [class.bg-sunrise-warm/10]="cc.isActive">
-                    <td class="pi-cell align-top">{{ formatDate(cc.calculatedAt || cc.createdAt) }}</td>
-                    <td class="pi-cell-numeric align-top font-mono">{{ formatRuble(cc.totalMaterialCost) }}</td>
-                    <td class="pi-cell-numeric align-top font-mono">{{ formatRuble(cc.totalLaborCost) }}</td>
+                  <tr
+                    class="pi-table-row pi-table-row-odd last:border-0"
+                    [class.bg-sunrise-warm/10]="cc.isActive"
+                  >
+                    <td class="pi-cell align-top">
+                      {{ formatDate(cc.calculatedAt || cc.createdAt) }}
+                    </td>
+                    <td class="pi-cell-numeric align-top font-mono">
+                      {{ formatRuble(cc.totalMaterialCost) }}
+                    </td>
+                    <td class="pi-cell-numeric align-top font-mono">
+                      {{ formatRuble(cc.totalLaborCost) }}
+                    </td>
                     <td class="pi-cell-numeric align-top font-mono text-muted-foreground">
                       {{ cc.overheadPercent }}% → {{ formatRuble(cc.overheadCost) }}
                     </td>
-                    <td class="pi-cell-numeric align-top font-mono font-medium">{{ formatRuble(cc.totalCost) }}</td>
+                    <td class="pi-cell-numeric align-top font-mono font-medium">
+                      {{ formatRuble(cc.totalCost) }}
+                    </td>
                     <td class="pi-cell align-top">
                       @if (cc.isActive) {
-                        <span class="inline-flex items-center gap-1 text-xs font-medium text-sunrise-warm">● Активен</span>
+                        <span
+                          class="inline-flex items-center gap-1 text-xs font-medium text-sunrise-warm"
+                          >● Активен</span
+                        >
                       } @else {
                         <span class="text-xs text-muted-foreground">—</span>
                       }
                     </td>
                     <td class="pi-cell align-top text-right">
-                      <button type="button" (click)="openBreakdown(cc)"
-                        class="eyebrow text-ink hover:text-sunrise-warm mr-3">Детали</button>
+                      <button
+                        type="button"
+                        (click)="openBreakdown(cc)"
+                        class="eyebrow text-ink hover:text-sunrise-warm mr-3"
+                      >
+                        Детали
+                      </button>
                       @if (!cc.isActive) {
-                        <button type="button" (click)="activateSnapshot(cc)"
-                          class="eyebrow text-muted-foreground hover:text-ink mr-3">Активировать</button>
+                        <button
+                          type="button"
+                          (click)="activateSnapshot(cc)"
+                          class="eyebrow text-muted-foreground hover:text-ink mr-3"
+                        >
+                          Активировать
+                        </button>
                       }
-                      <button type="button" (click)="onDeleteCalc(cc)"
-                        class="eyebrow text-destructive hover:underline">Удалить</button>
+                      <button
+                        type="button"
+                        (click)="onDeleteCalc(cc)"
+                        class="eyebrow text-destructive hover:underline"
+                      >
+                        Удалить
+                      </button>
                     </td>
                   </tr>
                 }
@@ -291,7 +360,8 @@ export class ProductDetailPage {
 
   protected readonly product = computed(() => this.productRes.value() ?? null);
   protected readonly loadError = computed<string | null>(() => {
-    const err = this.productRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    const err = this.productRes.error() as
+      import('@angular/common/http').HttpErrorResponse | undefined;
     return err ? extractErrorMessage(err) : null;
   });
 
@@ -310,8 +380,12 @@ export class ProductDetailPage {
   protected readonly attachedModules = computed<ProductModule[]>(() => {
     const p = this.product();
     if (!p?.productModuleIds) return [];
-    return p.productModuleIds.filter((m): m is ProductModule =>
-      typeof m === 'object' && m !== null && '_id' in m && typeof (m as { _id: unknown })._id === 'string',
+    return p.productModuleIds.filter(
+      (m): m is ProductModule =>
+        typeof m === 'object' &&
+        m !== null &&
+        '_id' in m &&
+        typeof (m as { _id: unknown })._id === 'string',
     );
   });
 

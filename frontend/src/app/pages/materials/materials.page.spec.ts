@@ -1,20 +1,17 @@
 import { TestBed } from '@angular/core/testing';
-import {
-  provideHttpClient,
-  withFetch,
-  withInterceptors,
-} from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of } from 'rxjs';
 
 import { MaterialsPage } from './materials.page';
 import { OrganizationsService } from '../../shared/services/organizations.service';
 import { PhotosService } from '../../shared/services/photos.service';
-import { MaterialsService, Material, MaterialsListResponse } from '../../shared/services/materials.service';
+import {
+  MaterialsService,
+  Material,
+  MaterialsListResponse,
+} from '../../shared/services/materials.service';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { API_BASE_URL } from '../../core/api.tokens';
@@ -99,8 +96,7 @@ describe('MaterialsPage (httpResource refactor)', () => {
         {
           provide: OrganizationsService,
           useValue: {
-            list: () =>
-              of({ ok: true, data: { items: [], total: 0, page: 1, limit: 200 } }),
+            list: () => of({ ok: true, data: { items: [], total: 0, page: 1, limit: 200 } }),
           },
         },
         {
@@ -114,15 +110,14 @@ describe('MaterialsPage (httpResource refactor)', () => {
         {
           provide: MaterialsService,
           useValue: {
-            list: () =>
-              of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } }),
+            list: () => of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } }),
             findById: () => of({ ok: true, data: {} as never }),
             create: () => of({ ok: true, data: {} as never }),
             update: () => of({ ok: true, data: {} as never }),
             remove: () => of({ ok: true, data: undefined }),
           },
         },
-        { provide: PiDialogService, useValue: { open: () => ({} as never) } },
+        { provide: PiDialogService, useValue: { open: () => ({}) as never } },
         { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
       ],
     })

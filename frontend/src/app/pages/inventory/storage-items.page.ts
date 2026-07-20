@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
@@ -33,11 +40,7 @@ import { Warehouse } from './warehouses.service';
 
     <app-pi-section title="Фильтры" eyebrow="I">
       <app-pi-toolbar>
-        <select
-          class="pi-input"
-          [value]="selectedWarehouse()"
-          (change)="onWarehouseChange($event)"
-        >
+        <select class="pi-input" [value]="selectedWarehouse()" (change)="onWarehouseChange($event)">
           <option value="">Все склады</option>
           @for (wh of warehouses(); track wh._id) {
             <option [value]="wh._id">{{ wh.name }}</option>
@@ -98,12 +101,14 @@ export class StorageItemsPage {
   protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
   protected readonly totalItems = computed(() => this.items().length);
   protected readonly error = computed<string | null>(() => {
-    const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    const err = this.listRes.error() as
+      import('@angular/common/http').HttpErrorResponse | undefined;
     return err ? extractErrorMessage(err) : null;
   });
 
   private readonly errorEffect = effect(() => {
-    const err = this.listRes.error() as import('@angular/common/http').HttpErrorResponse | undefined;
+    const err = this.listRes.error() as
+      import('@angular/common/http').HttpErrorResponse | undefined;
     if (err) {
       this.toast.error(extractErrorMessage(err));
     }

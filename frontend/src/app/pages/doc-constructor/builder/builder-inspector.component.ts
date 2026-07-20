@@ -45,7 +45,13 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
   selector: 'app-builder-inspector',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideAngularModule, ButtonComponent, SwitchComponent, SelectComponent, SelectOptionComponent],
+  imports: [
+    LucideAngularModule,
+    ButtonComponent,
+    SwitchComponent,
+    SelectComponent,
+    SelectOptionComponent,
+  ],
   template: `
     <aside class="inspector" aria-label="Свойства блока">
       <header class="inspector__header">
@@ -190,10 +196,7 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
             </div>
             <label class="field">
               <span class="field__label">Формат</span>
-              <app-pi-select
-                [value]="b.format ?? 'text'"
-                (valueChange)="onFormatChange($event)"
-              >
+              <app-pi-select [value]="b.format ?? 'text'" (valueChange)="onFormatChange($event)">
                 @for (opt of formatOptions; track opt.value) {
                   <app-pi-select-option [value]="opt.value">{{ opt.label }}</app-pi-select-option>
                 }
@@ -214,11 +217,7 @@ import { SelectComponent } from '../../../shared/ui/select/select.component';
 
           <div class="inspector__actions">
             @if (block()!.type === 'text' || block()!.type === 'table') {
-              <app-pi-button
-                variant="outline"
-                size="sm"
-                (click)="editSelected.emit()"
-              >
+              <app-pi-button variant="outline" size="sm" (click)="editSelected.emit()">
                 Редактировать
               </app-pi-button>
             }

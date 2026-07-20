@@ -1,9 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import {
-  provideHttpClientTesting,
-  HttpTestingController,
-} from '@angular/common/http/testing';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { TableTemplatesService } from './pi-table-templates.service';
 
@@ -77,7 +74,8 @@ describe('TableTemplatesService', () => {
   });
 
   it('preview() returns text/html string via silentWrap', () => {
-    const sampleHtml = '<table><thead><tr><th>Наименование</th></tr></thead><tbody></tbody></table>';
+    const sampleHtml =
+      '<table><thead><tr><th>Наименование</th></tr></thead><tbody></tbody></table>';
     svc.preview('tt1').subscribe((res) => {
       if (res.ok) {
         expect(res.data).toBe(sampleHtml);
@@ -93,7 +91,9 @@ describe('TableTemplatesService', () => {
     const payload = {
       name: 'Новая спецификация',
       category: 'product-spec' as const,
-      columns: [{ key: 'sku', label: 'Артикул', type: 'text' as const, width: 100, align: 'left' as const }],
+      columns: [
+        { key: 'sku', label: 'Артикул', type: 'text' as const, width: 100, align: 'left' as const },
+      ],
       sampleRows: [['А-001'], ['А-002']],
     };
     svc.create(payload).subscribe((res) => {

@@ -1,10 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import {
-  FormArray,
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormArray, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
 import { InputComponent } from '../../shared/ui/input/input.component';
@@ -39,12 +34,16 @@ import { extractErrorMessage } from '../../core/silent-http';
 @Component({
   selector: 'app-module-form-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, ButtonComponent, FormFieldComponent, InputComponent, TextareaComponent, PiDialogComponent],
+  imports: [
+    ReactiveFormsModule,
+    ButtonComponent,
+    FormFieldComponent,
+    InputComponent,
+    TextareaComponent,
+    PiDialogComponent,
+  ],
   template: `
-    <app-pi-dialog
-      [title]="isEdit ? 'Редактировать модуль' : 'Создать модуль'"
-      [width]="'lg'"
-    >
+    <app-pi-dialog [title]="isEdit ? 'Редактировать модуль' : 'Создать модуль'" [width]="'lg'">
       <form
         body
         [formGroup]="form"
@@ -53,7 +52,14 @@ import { extractErrorMessage } from '../../core/silent-http';
         data-test="module-form"
       >
         <div class="grid grid-cols-2 gap-form-field">
-          <app-pi-form-field label="Название" htmlFor="mod-name" [required]="true" [error]="form.controls.name.invalid && form.controls.name.touched ? 'Обязательное поле' : ''">
+          <app-pi-form-field
+            label="Название"
+            htmlFor="mod-name"
+            [required]="true"
+            [error]="
+              form.controls.name.invalid && form.controls.name.touched ? 'Обязательное поле' : ''
+            "
+          >
             <app-pi-input
               id="mod-name"
               formControlName="name"
@@ -76,47 +82,88 @@ import { extractErrorMessage } from '../../core/silent-http';
           <p class="eyebrow mb-form-row">Габариты модуля</p>
           <div class="grid grid-cols-4 gap-form-field">
             <app-pi-form-field label="Ширина" htmlFor="mod-width">
-              <app-pi-input id="mod-width" type="number" formControlName="width"
-                placeholder="0" data-test="dim-width" />
+              <app-pi-input
+                id="mod-width"
+                type="number"
+                formControlName="width"
+                placeholder="0"
+                data-test="dim-width"
+              />
             </app-pi-form-field>
             <app-pi-form-field label="Высота" htmlFor="mod-height">
-              <app-pi-input id="mod-height" type="number" formControlName="height"
-                placeholder="0" data-test="dim-height" />
+              <app-pi-input
+                id="mod-height"
+                type="number"
+                formControlName="height"
+                placeholder="0"
+                data-test="dim-height"
+              />
             </app-pi-form-field>
             <app-pi-form-field label="Глубина" htmlFor="mod-depth">
-              <app-pi-input id="mod-depth" type="number" formControlName="depth"
-                placeholder="0" data-test="dim-depth" />
+              <app-pi-input
+                id="mod-depth"
+                type="number"
+                formControlName="depth"
+                placeholder="0"
+                data-test="dim-depth"
+              />
             </app-pi-form-field>
             <app-pi-form-field label="Ед." htmlFor="mod-dim-unit">
-              <app-pi-input id="mod-dim-unit" formControlName="unit"
-                placeholder="мм" data-test="dim-unit" />
+              <app-pi-input
+                id="mod-dim-unit"
+                formControlName="unit"
+                placeholder="мм"
+                data-test="dim-unit"
+              />
             </app-pi-form-field>
           </div>
         </div>
 
         <app-pi-form-field label="Вес (кг)" htmlFor="mod-weight">
-          <app-pi-input id="mod-weight" type="number" formControlName="weight"
-            placeholder="0" data-test="weight-input" />
+          <app-pi-input
+            id="mod-weight"
+            type="number"
+            formControlName="weight"
+            placeholder="0"
+            data-test="weight-input"
+          />
         </app-pi-form-field>
 
         <app-pi-form-field label="Заметки / описание" htmlFor="mod-notes">
-          <app-pi-textarea id="mod-notes" [rows]="3" formControlName="notes"
-            data-test="notes-input" />
+          <app-pi-textarea
+            id="mod-notes"
+            [rows]="3"
+            formControlName="notes"
+            data-test="notes-input"
+          />
         </app-pi-form-field>
 
         <div>
           <div class="flex items-baseline justify-between mb-form-row">
             <p class="eyebrow">Виды работ в составе</p>
-            <app-pi-button type="button" variant="outline" size="sm" (click)="addWorkType()" data-test="wt-add">
+            <app-pi-button
+              type="button"
+              variant="outline"
+              size="sm"
+              (click)="addWorkType()"
+              data-test="wt-add"
+            >
               + Добавить вид работы
             </app-pi-button>
           </div>
           <div formArrayName="workTypes" class="space-y-2">
             @for (ctrl of workTypesArray.controls; track $index) {
-              <div [formGroupName]="$index" class="grid grid-cols-12 gap-2 items-end p-2 hairline rounded-sm bg-paper-2/30">
+              <div
+                [formGroupName]="$index"
+                class="grid grid-cols-12 gap-2 items-end p-2 hairline rounded-sm bg-paper-2/30"
+              >
                 <label class="block col-span-6">
                   <span class="eyebrow block mb-1.5">Вид работы</span>
-                  <select class="pi-input w-full" formControlName="workTypeId" data-test="wt-select">
+                  <select
+                    class="pi-input w-full"
+                    formControlName="workTypeId"
+                    data-test="wt-select"
+                  >
                     <option value="">— не выбрано —</option>
                     @for (wt of workTypesCatalog(); track wt._id) {
                       <option [value]="wt._id">{{ wt.name }}</option>
@@ -125,16 +172,29 @@ import { extractErrorMessage } from '../../core/silent-http';
                 </label>
                 <label class="block col-span-3">
                   <span class="eyebrow block mb-1.5">Норма (ч)</span>
-                  <app-pi-input type="number" formControlName="estimatedHours"
-                    placeholder="0" data-test="wt-hours" />
+                  <app-pi-input
+                    type="number"
+                    formControlName="estimatedHours"
+                    placeholder="0"
+                    data-test="wt-hours"
+                  />
                 </label>
                 <label class="block col-span-2">
                   <span class="eyebrow block mb-1.5">Сорт.</span>
-                  <app-pi-input type="number" formControlName="sortOrder"
-                    placeholder="0" data-test="wt-sort" />
+                  <app-pi-input
+                    type="number"
+                    formControlName="sortOrder"
+                    placeholder="0"
+                    data-test="wt-sort"
+                  />
                 </label>
-                <app-pi-button type="button" variant="destructive" size="icon" (click)="removeWorkType($index)"
-                  aria-label="Удалить строку">
+                <app-pi-button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  (click)="removeWorkType($index)"
+                  aria-label="Удалить строку"
+                >
                   ×
                 </app-pi-button>
               </div>
@@ -153,9 +213,13 @@ import { extractErrorMessage } from '../../core/silent-http';
         <app-pi-button variant="ghost" type="button" (click)="onCancel()" data-test="cancel-button">
           Отмена
         </app-pi-button>
-        <app-pi-button variant="default" type="submit"
-          [disabled]="form.invalid || submitting()" data-test="submit-button">
-          {{ submitting() ? 'Сохранение…' : (isEdit ? 'Сохранить' : 'Создать') }}
+        <app-pi-button
+          variant="default"
+          type="submit"
+          [disabled]="form.invalid || submitting()"
+          data-test="submit-button"
+        >
+          {{ submitting() ? 'Сохранение…' : isEdit ? 'Сохранить' : 'Создать' }}
         </app-pi-button>
       </div>
     </app-pi-dialog>
@@ -178,7 +242,10 @@ export class ModuleFormDialogComponent {
   protected readonly workTypesCatalog = signal<{ _id: string; name: string }[]>([]);
 
   protected readonly form = this.fb.group({
-    name: this.fb.control<string>(this.data?.name ?? '', [Validators.required, Validators.maxLength(200)]),
+    name: this.fb.control<string>(this.data?.name ?? '', [
+      Validators.required,
+      Validators.maxLength(200),
+    ]),
     article: this.fb.control<string>(this.data?.article ?? ''),
     dimensions: this.fb.group({
       width: this.fb.control<number | null>(this.data?.dimensions?.width ?? null),
@@ -189,14 +256,16 @@ export class ModuleFormDialogComponent {
     weight: this.fb.control<number | null>(this.data?.weight ?? null),
     notes: this.fb.control<string>(''),
     workTypes: this.fb.array(
-      (this.data?.workTypes ?? []).map((wt) => this.fb.group({
-        workTypeId: this.fb.control<string>(
-          typeof wt.workTypeId === 'string' ? wt.workTypeId : wt.workTypeId._id,
-          [Validators.required],
-        ),
-        estimatedHours: this.fb.control<number>(wt.estimatedHours ?? 0),
-        sortOrder: this.fb.control<number>(wt.sortOrder ?? 0),
-      })),
+      (this.data?.workTypes ?? []).map((wt) =>
+        this.fb.group({
+          workTypeId: this.fb.control<string>(
+            typeof wt.workTypeId === 'string' ? wt.workTypeId : wt.workTypeId._id,
+            [Validators.required],
+          ),
+          estimatedHours: this.fb.control<number>(wt.estimatedHours ?? 0),
+          sortOrder: this.fb.control<number>(wt.sortOrder ?? 0),
+        }),
+      ),
     ),
   });
 
@@ -209,9 +278,7 @@ export class ModuleFormDialogComponent {
   constructor() {
     this.workTypes.list({ activeOnly: true }).subscribe((res) => {
       if (res.ok) {
-        this.workTypesCatalog.set(
-          res.data.items.map((w) => ({ _id: w._id, name: w.name })),
-        );
+        this.workTypesCatalog.set(res.data.items.map((w) => ({ _id: w._id, name: w.name })));
       }
     });
   }

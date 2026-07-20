@@ -1,9 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import {
-  provideHttpClientTesting,
-  HttpTestingController,
-} from '@angular/common/http/testing';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { RegistryService } from './pi-registry.service';
 
@@ -40,13 +37,7 @@ describe('RegistryService', () => {
       if (res.ok) {
         expect(res.data.sources.length).toBe(5);
         const keys = res.data.sources.map((s) => s.key);
-        expect(keys).toEqual([
-          'organization',
-          'counterparty',
-          'product',
-          'material',
-          'work-type',
-        ]);
+        expect(keys).toEqual(['organization', 'counterparty', 'product', 'material', 'work-type']);
         const organization = res.data.sources.find((s) => s.key === 'organization');
         expect(organization?.label).toBe('Организация');
         expect(organization?.group).toBe('contacts');

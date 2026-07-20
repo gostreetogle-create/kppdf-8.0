@@ -25,11 +25,9 @@ import { LabelComponent } from '../label/label.component';
   template: `
     <div class="flex flex-col gap-form-row">
       @if (label()) {
-        <app-pi-label
-          variant="eyebrow"
-          [required]="required()"
-          [htmlFor]="htmlFor()"
-        >{{ label() }}</app-pi-label>
+        <app-pi-label variant="eyebrow" [required]="required()" [htmlFor]="htmlFor()">{{
+          label()
+        }}</app-pi-label>
       }
       <div class="block">
         <ng-content />

@@ -1,4 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, viewChild, ElementRef, afterNextRender, Injector } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  viewChild,
+  ElementRef,
+  afterNextRender,
+  Injector,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { PiCommandPaletteService } from './pi-command-palette.service';
 import { ThemeService } from '../theme/theme.service';
@@ -68,9 +79,7 @@ export type CommandItem = {
               </li>
             }
             @if (filtered().length === 0) {
-              <li class="px-4 py-3 text-sm text-muted-foreground font-body">
-                Ничего не найдено.
-              </li>
+              <li class="px-4 py-3 text-sm text-muted-foreground font-body">Ничего не найдено.</li>
             }
           </ul>
         </div>
@@ -108,13 +117,16 @@ export class PiCommandPaletteComponent {
         return;
       }
       // schedule focus + scroll into view after DOM renders
-      afterNextRender(() => {
-        const el = this.searchRef()?.nativeElement;
-        if (el) {
-          el.focus();
-          el.select();
-        }
-      }, { injector: this.injector });
+      afterNextRender(
+        () => {
+          const el = this.searchRef()?.nativeElement;
+          if (el) {
+            el.focus();
+            el.select();
+          }
+        },
+        { injector: this.injector },
+      );
     });
 
     // Keep selectedIdx in range when filtered list shrinks
@@ -176,31 +188,156 @@ export class PiCommandPaletteComponent {
       go('/forms'),
       go('/overlays'),
       go('/navigation'),
-      { id: 'prim-button', label: 'Button', group: 'Компоненты', action: () => this.router.navigateByUrl('/basics') },
-      { id: 'prim-badge', label: 'Badge', group: 'Компоненты', action: () => this.router.navigateByUrl('/basics') },
-      { id: 'prim-card', label: 'Card', group: 'Компоненты', action: () => this.router.navigateByUrl('/basics') },
-      { id: 'prim-input', label: 'Input', group: 'Компоненты', action: () => this.router.navigateByUrl('/basics') },
-      { id: 'prim-form-field', label: 'FormField', group: 'Компоненты', action: () => this.router.navigateByUrl('/forms') },
-      { id: 'prim-select', label: 'Select', group: 'Компоненты', action: () => this.router.navigateByUrl('/forms') },
-      { id: 'prim-checkbox', label: 'Checkbox', group: 'Компоненты', action: () => this.router.navigateByUrl('/forms') },
-      { id: 'prim-slider', label: 'Slider', group: 'Компоненты', action: () => this.router.navigateByUrl('/forms') },
-      { id: 'prim-table', label: 'Table', group: 'Компоненты', action: () => this.router.navigateByUrl('/forms') },
-      { id: 'prim-pagination', label: 'Pagination', group: 'Компоненты', action: () => this.router.navigateByUrl('/forms') },
-      { id: 'prim-dialog', label: 'Dialog', group: 'Компоненты', action: () => this.router.navigateByUrl('/overlays') },
-      { id: 'prim-sheet', label: 'Sheet', group: 'Компоненты', action: () => this.router.navigateByUrl('/overlays') },
-      { id: 'prim-tooltip', label: 'Tooltip', group: 'Компоненты', action: () => this.router.navigateByUrl('/overlays') },
-      { id: 'prim-popover', label: 'Popover', group: 'Компоненты', action: () => this.router.navigateByUrl('/overlays') },
-      { id: 'prim-dropdown', label: 'DropdownMenu', group: 'Компоненты', action: () => this.router.navigateByUrl('/overlays') },
-      { id: 'prim-toast', label: 'Toast', group: 'Компоненты', action: () => this.router.navigateByUrl('/overlays') },
-      { id: 'prim-tabs', label: 'Tabs', group: 'Компоненты', action: () => this.router.navigateByUrl('/navigation') },
-      { id: 'prim-breadcrumb', label: 'Breadcrumb', group: 'Компоненты', action: () => this.router.navigateByUrl('/navigation') },
-      { id: 'prim-accordion', label: 'Accordion', group: 'Компоненты', action: () => this.router.navigateByUrl('/navigation') },
-      { id: 'prim-progress', label: 'Progress', group: 'Компоненты', action: () => this.router.navigateByUrl('/navigation') },
-      { id: 'prim-skeleton', label: 'Skeleton', group: 'Компоненты', action: () => this.router.navigateByUrl('/navigation') },
-      { id: 'prim-avatar', label: 'Avatar', group: 'Компоненты', action: () => this.router.navigateByUrl('/navigation') },
-      { id: 'prim-separator', label: 'Separator', group: 'Компоненты', action: () => this.router.navigateByUrl('/navigation') },
-      { id: 'prim-scroll-area', label: 'ScrollArea', group: 'Компоненты', action: () => this.router.navigateByUrl('/navigation') },
-      { id: 'prim-charts', label: 'Charts (bar + line)', group: 'Компоненты', action: () => this.router.navigateByUrl('/navigation') },
+      {
+        id: 'prim-button',
+        label: 'Button',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/basics'),
+      },
+      {
+        id: 'prim-badge',
+        label: 'Badge',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/basics'),
+      },
+      {
+        id: 'prim-card',
+        label: 'Card',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/basics'),
+      },
+      {
+        id: 'prim-input',
+        label: 'Input',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/basics'),
+      },
+      {
+        id: 'prim-form-field',
+        label: 'FormField',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/forms'),
+      },
+      {
+        id: 'prim-select',
+        label: 'Select',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/forms'),
+      },
+      {
+        id: 'prim-checkbox',
+        label: 'Checkbox',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/forms'),
+      },
+      {
+        id: 'prim-slider',
+        label: 'Slider',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/forms'),
+      },
+      {
+        id: 'prim-table',
+        label: 'Table',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/forms'),
+      },
+      {
+        id: 'prim-pagination',
+        label: 'Pagination',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/forms'),
+      },
+      {
+        id: 'prim-dialog',
+        label: 'Dialog',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/overlays'),
+      },
+      {
+        id: 'prim-sheet',
+        label: 'Sheet',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/overlays'),
+      },
+      {
+        id: 'prim-tooltip',
+        label: 'Tooltip',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/overlays'),
+      },
+      {
+        id: 'prim-popover',
+        label: 'Popover',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/overlays'),
+      },
+      {
+        id: 'prim-dropdown',
+        label: 'DropdownMenu',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/overlays'),
+      },
+      {
+        id: 'prim-toast',
+        label: 'Toast',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/overlays'),
+      },
+      {
+        id: 'prim-tabs',
+        label: 'Tabs',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/navigation'),
+      },
+      {
+        id: 'prim-breadcrumb',
+        label: 'Breadcrumb',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/navigation'),
+      },
+      {
+        id: 'prim-accordion',
+        label: 'Accordion',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/navigation'),
+      },
+      {
+        id: 'prim-progress',
+        label: 'Progress',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/navigation'),
+      },
+      {
+        id: 'prim-skeleton',
+        label: 'Skeleton',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/navigation'),
+      },
+      {
+        id: 'prim-avatar',
+        label: 'Avatar',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/navigation'),
+      },
+      {
+        id: 'prim-separator',
+        label: 'Separator',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/navigation'),
+      },
+      {
+        id: 'prim-scroll-area',
+        label: 'ScrollArea',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/navigation'),
+      },
+      {
+        id: 'prim-charts',
+        label: 'Charts (bar + line)',
+        group: 'Компоненты',
+        action: () => this.router.navigateByUrl('/navigation'),
+      },
       action('action-toggle-theme', 'Переключить тему (light/dark)', () => this.theme.toggle()),
     ];
   }

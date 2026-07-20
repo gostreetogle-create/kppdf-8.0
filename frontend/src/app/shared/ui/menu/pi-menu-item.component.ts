@@ -44,8 +44,7 @@ export class MenuItemComponent {
 
   readonly computedClass = computed(() => {
     if (this.type() === 'separator') return '';
-    const variant =
-      this.type() === 'destructive' ? 'text-destructive' : 'text-ink';
+    const variant = this.type() === 'destructive' ? 'text-destructive' : 'text-ink';
     return [
       'w-full',
       'text-left',
