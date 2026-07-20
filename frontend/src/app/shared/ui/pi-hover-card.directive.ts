@@ -13,7 +13,6 @@ import {
   ConnectedPosition,
 } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
-import { HoverCardComponent } from './pi-hover-card.component';
 
 export type HoverCardPosition = 'top' | 'bottom' | 'left' | 'right';
 

@@ -3,7 +3,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  computed,
   forwardRef,
   inject,
   input,
@@ -120,6 +119,7 @@ export class SelectComponent implements AfterViewInit, ControlValueAccessor {
     const opts = this.options().filter((o) => !o.disabled());
     if (opts.length === 0) return;
     const currentIdx = this.focusedIndex() >= 0 ? this.focusedIndex() : 0;
+    // eslint-disable-next-line no-useless-assignment
     let nextIdx = currentIdx;
     switch (event.key) {
       case 'ArrowDown':

@@ -48,6 +48,7 @@ export class TabsComponent {
 
     const activeIdx = tabs.findIndex((t) => t === root.ownerDocument?.activeElement);
     const currentIdx = activeIdx >= 0 ? activeIdx : 0;
+    // eslint-disable-next-line no-useless-assignment
     let nextIdx = currentIdx;
     const arrowNext = this.orientation() === 'horizontal' ? 'ArrowRight' : 'ArrowDown';
     const arrowPrev = this.orientation() === 'horizontal' ? 'ArrowLeft' : 'ArrowUp';

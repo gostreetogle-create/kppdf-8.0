@@ -47,6 +47,7 @@ export class PopoverDirective {
   @HostListener('keydown.enter', ['$event']) onEnter(e: KeyboardEvent): void { e.preventDefault(); this.open(); }
   @HostListener('keydown.space', ['$event']) onSpace(e: KeyboardEvent): void { e.preventDefault(); this.open(); }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
   toggle(): void { this.isOpen() ? this.close() : this.open(); }
 
   open(): void {

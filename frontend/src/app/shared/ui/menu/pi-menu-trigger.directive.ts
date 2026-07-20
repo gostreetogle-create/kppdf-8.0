@@ -83,6 +83,7 @@ export class MenuTriggerDirective {
   }
 
   toggle(): void {
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     this.isOpen() ? this.close() : this.open();
   }
 

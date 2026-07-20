@@ -79,6 +79,7 @@ export class RadioGroupComponent implements AfterViewInit {
     if (items.length === 0) return;
 
     const currentIdx = this.resolveIndex(items);
+    // eslint-disable-next-line no-useless-assignment
     let nextIdx = currentIdx;
 
     switch (event.key) {

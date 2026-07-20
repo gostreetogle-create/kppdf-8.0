@@ -40,7 +40,6 @@ import {
   type BlockType,
   type TemplateBlock,
 } from '../../../shared/template-block/template-block.types';
-import type { TextBlockColumn } from '../../../shared/services/pi-text-blocks.service';
 import type { TableColumn } from '../../../shared/services/pi-table-templates.service';
 
 /**

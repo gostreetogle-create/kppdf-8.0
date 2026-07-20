@@ -11,7 +11,6 @@ import {
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 
 import { CategoryFormDialogComponent } from './category-form-dialog.component';
-import { CategoriesService, Category } from '../../shared/services/categories.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';

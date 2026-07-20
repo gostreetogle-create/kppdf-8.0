@@ -70,7 +70,7 @@ type TableColumnFormShape = FormGroup<{
  * doesn't trigger .subscribe() callbacks in tests that don't care
  * about the preview.
  */
-function noopObservable<T>(): { subscribe: jest.Mock } {
+function noopObservable(): { subscribe: jest.Mock } {
   return { subscribe: jest.fn() };
 }
 
@@ -638,7 +638,7 @@ describe('TableTemplateFormDialogComponent', () => {
 
   describe('method behavior — close (ref.close)', () => {
     it('ref.close(null) can be called without side effects', async () => {
-      const { dialog, closeSpy, service, toastSuccess, toastError } = await createSaveFixture(null);
+      const { service, closeSpy, toastSuccess, toastError } = await createSaveFixture(null);
       closeSpy.mockClear();
       closeSpy(null);
       expect(closeSpy).toHaveBeenCalledTimes(1);
@@ -736,7 +736,7 @@ describe('TableTemplateFormDialogComponent', () => {
     });
 
     it('error path: sets errorMessage signal + toast.error + saving(false), does NOT call ref.close', async () => {
-      const { dialog, service, closeSpy, toastError, emitCreate } = await createSaveFixture(null);
+      const { dialog, closeSpy, toastError, emitCreate } = await createSaveFixture(null);
       dialog.addColumn();
       makeFormValid(dialog, { name: 'Тест' });
       dialog.onSave();

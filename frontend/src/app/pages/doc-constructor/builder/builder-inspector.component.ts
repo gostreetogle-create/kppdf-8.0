@@ -7,7 +7,7 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { LucideAngularModule, X } from 'lucide-angular';
+import { LucideAngularModule } from 'lucide-angular';
 import {
   BLOCK_TYPE_LABELS,
   DATA_BINDING_FORMATS,

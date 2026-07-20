@@ -33,8 +33,6 @@ import {
   type DataBindingSource,
   type TemplateBlock,
 } from '../../../shared/template-block/template-block.types';
-import type { TextBlock } from '../../../shared/services/pi-text-blocks.service';
-import type { TableTemplate } from '../../../shared/services/pi-table-templates.service';
 import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
 import { PiPageHeaderComponent } from '../../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../../shared/page/pi-section.component';

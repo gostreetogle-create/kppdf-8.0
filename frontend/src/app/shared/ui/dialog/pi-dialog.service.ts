@@ -1,11 +1,11 @@
 import { DestroyRef, Injectable, Injector, Signal, Type, computed, inject, signal } from '@angular/core';
-import { Overlay, OverlayRef } from '@angular/cdk/overlay';
+import { Overlay } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { ConfigurableFocusTrapFactory } from '@angular/cdk/a11y';
 import { filter } from 'rxjs/operators';
-import { PiDialogComponent } from './pi-dialog.component';
 import { PI_DIALOG_CONFIG, PI_DIALOG_DATA, PI_DIALOG_REF } from './dialog.tokens';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- TResult is used in open() signature
 export interface DialogConfig<TResult = unknown, TData = unknown> {
   width?: 'sm' | 'md' | 'lg' | string;
   height?: string;

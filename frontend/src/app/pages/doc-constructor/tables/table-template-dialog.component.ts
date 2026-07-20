@@ -34,7 +34,6 @@ import {
 } from '../../../shared/services/pi-registry.service';
 import { extractErrorMessage, SilentResult } from '../../../core/silent-http';
 import { PiToastService } from '../../../shared/ui/toast';
-import { moveItemInArray } from '../../../shared/util/move-item-in-array';
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -518,6 +517,7 @@ export class TableTemplateFormDialogComponent {
 
   protected toggleField(field: FieldDescriptor): void {
     const keys = new Set(this.selectedFieldKeys());
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     keys.has(field.key) ? keys.delete(field.key) : keys.add(field.key);
     this.selectedFieldKeys.set(keys);
     this.syncColumnsFromFields();
