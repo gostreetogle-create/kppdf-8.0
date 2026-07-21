@@ -58,6 +58,7 @@ const ROUTES = [
   '/kit/forms',
   '/kit/overlays',
   '/kit/navigation',
+  '/kit/playground/theme',
   '/kit/playground/code',
 ] as const;
 
@@ -225,7 +226,7 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  console.log('\n✓ 0 serious/critical violations on any of 7 routes — goal MET');
+  console.log(`\n✓ 0 serious/critical violations on any of ${ROUTES.length} routes — goal MET`);
 }
 
 main().catch((err: unknown) => {

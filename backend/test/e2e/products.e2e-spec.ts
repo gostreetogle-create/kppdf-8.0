@@ -48,6 +48,22 @@ describe('Products (e2e)', () => {
     expect(res.body.items.length).toBeGreaterThan(0);
   });
 
+  it('PATCH /products/:id — updates a product', async () => {
+    const created = await request(app.getHttpServer())
+      .post('/api/products')
+      .set(authHeader(token))
+      .send({ name: 'Original Product', kind: 'good', unit: 'шт', listPrice: 10 });
+    const id = created.body._id;
+
+    const res = await request(app.getHttpServer())
+      .patch(`/api/products/${id}`)
+      .set(authHeader(token))
+      .send({ name: 'Updated Product', listPrice: 25 });
+    expect([200, 201]).toContain(res.status);
+    expect(res.body.name).toBe('Updated Product');
+    expect(res.body.listPrice).toBe(25);
+  });
+
   it('POST /boms — creates Bom with components', async () => {
     const p = await request(app.getHttpServer())
       .post('/api/products')

@@ -38,7 +38,7 @@ import { extractErrorMessage } from '../../core/silent-http';
         body
         [formGroup]="form"
         (ngSubmit)="onSubmit()"
-        class="space-y-form-field"
+        class="space-y-form-field overflow-y-auto min-h-0"
         data-test="materials-form"
       >
         <div formArrayName="materials" class="space-y-3">

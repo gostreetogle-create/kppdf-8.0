@@ -6,7 +6,7 @@ import {
   inject,
   input,
 } from '@angular/core';
-import { SelectComponent } from './select.component';
+import { SELECT_PARENT, SelectParent } from './select-parent.interface';
 
 /**
  * SelectOption — single selectable option for Paper & Ink `<app-pi-select>`.
@@ -56,7 +56,7 @@ export class SelectOptionComponent {
   readonly value = input.required<string>();
   readonly disabled = input<boolean>(false);
 
-  private readonly select = inject(SelectComponent, { optional: true });
+  private readonly select = inject<SelectParent>(SELECT_PARENT, { optional: true });
   private readonly hostEl = inject(ElementRef<HTMLElement>);
 
   readonly isSelected = computed(() => this.select?.value() === this.value());

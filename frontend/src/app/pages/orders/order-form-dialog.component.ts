@@ -85,7 +85,7 @@ interface ItemFormGroup extends FormGroup {
         body
         [formGroup]="form"
         (ngSubmit)="onSubmit()"
-        class="space-y-form-field"
+        class="space-y-form-field overflow-y-auto min-h-0"
         data-test="order-form"
       >
         <!-- ─── Header ─── -->

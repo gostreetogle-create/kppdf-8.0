@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, OnDestroy } from '@angular/core';
 import {
   FormArray,
   FormControl,
@@ -82,7 +82,7 @@ interface DimensionFormGroup extends FormGroup {
         body
         [formGroup]="form"
         (ngSubmit)="onSubmit()"
-        class="space-y-form-field"
+        class="space-y-form-field overflow-y-auto min-h-0"
         data-test="material-form"
       >
         <!-- ─── Basics ─── -->
@@ -365,7 +365,7 @@ interface DimensionFormGroup extends FormGroup {
     </app-pi-dialog>
   `,
 })
-export class MaterialFormDialogComponent {
+export class MaterialFormDialogComponent implements OnDestroy {
   constructor() {
     this.loadSuppliers();
     if (this.data) {

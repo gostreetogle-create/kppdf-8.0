@@ -8,6 +8,7 @@ import {
   computed,
   inject,
   signal,
+  OnInit,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -237,7 +238,7 @@ function moduleDimensions(row: ProductModule): string {
     </app-pi-section>
   `,
 })
-export class ModulesPage {
+export class ModulesPage implements OnInit {
   constructor() {
     this.destroyRef.onDestroy(() => this.search.destroy());
   }

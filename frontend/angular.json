@@ -26,7 +26,8 @@
             "production": {
               "budgets": [
                 { "type": "initial", "maximumWarning": "1.5mB", "maximumError": "3mB" },
-                { "type": "anyComponentStyle", "maximumWarning": "8kB", "maximumError": "16kB" }
+                { "type": "anyComponentStyle", "maximumWarning": "8kB", "maximumError": "16kB" },
+                { "type": "anyScript", "maximumWarning": "50kB", "maximumError": "500kB" }
               ],
               "outputHashing": "all",
               "fileReplacements": [
@@ -40,6 +41,21 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "analyze": {
+              "budgets": [
+                { "type": "initial", "maximumWarning": "1.5mB", "maximumError": "3mB" },
+                { "type": "anyComponentStyle", "maximumWarning": "8kB", "maximumError": "16kB" },
+                { "type": "anyScript", "maximumWarning": "50kB", "maximumError": "500kB" }
+              ],
+              "sourceMap": true,
+              "outputHashing": "all",
+              "fileReplacements": [
+                {
+                  "replace": "src/app/core/api.tokens.ts",
+                  "with": "src/app/core/api.tokens.prod.ts"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"

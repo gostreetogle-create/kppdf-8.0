@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { TerminusModule } from '@nestjs/terminus';
@@ -98,6 +98,7 @@ import { CurrenciesSeed } from './common/seed/currencies.seed';
 import { DevFixturesSeed } from './common/seed/dev-fixtures.seed';
 import { BomComponentResolveService } from './modules/bom/migrations/bom-component-resolve.service';
 import { HealthController } from './health.controller';
+import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 
 @Module({
   imports: [
@@ -111,6 +112,25 @@ import { HealthController } from './health.controller';
       useFactory: () => ({
         pinoHttp: {
           level: process.env.LOG_LEVEL ?? 'info',
+          redact: {
+            paths: [
+              'req.headers.authorization',
+              'req.headers["x-api-key"]',
+              'password',
+              'passwordHash',
+              'token',
+              'secret',
+              'refreshToken',
+              'accessToken',
+              '*.password',
+              '*.passwordHash',
+              '*.token',
+              '*.secret',
+              '*.refreshToken',
+              '*.accessToken',
+            ],
+            remove: true,
+          },
           transport:
             process.env.NODE_ENV === 'production'
               ? undefined
@@ -225,4 +245,8 @@ import { HealthController } from './health.controller';
     BomComponentResolveService,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestIdMiddleware).forRoutes('*');
+  }
+}

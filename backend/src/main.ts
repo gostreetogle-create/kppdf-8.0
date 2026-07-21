@@ -3,6 +3,7 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger as PinoLogger } from 'nestjs-pino';
+import * as Sentry from '@sentry/node';
 import helmet from 'helmet';
 import compression from 'compression';
 import { join } from 'path';
@@ -14,6 +15,15 @@ import { VersionConflictFilter } from './common/filters/version-conflict.filter'
 import { ThrottlerBehindAuthGuard } from './common/guards/throttler-behind-auth.guard';
 
 async function bootstrap() {
+  // TZ-157: Initialize Sentry before NestJS so exceptions in bootstrap are captured
+  const sentryDsn = process.env.SENTRY_DSN;
+  if (sentryDsn) {
+    Sentry.init({
+      dsn: sentryDsn,
+      environment: process.env.NODE_ENV ?? 'development',
+      tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 1.0,
+    });
+  }
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
   });

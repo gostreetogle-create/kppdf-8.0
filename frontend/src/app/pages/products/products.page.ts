@@ -8,6 +8,7 @@ import {
   computed,
   inject,
   signal,
+  OnInit,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { LucideAngularModule, RefreshCw } from 'lucide-angular';
@@ -213,7 +214,7 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
     </app-pi-section>
   `,
 })
-export class ProductsPage {
+export class ProductsPage implements OnInit {
   constructor() {
     this.destroyRef.onDestroy(() => this.search.destroy());
   }

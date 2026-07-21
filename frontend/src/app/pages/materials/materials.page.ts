@@ -8,6 +8,7 @@ import {
   computed,
   inject,
   signal,
+  OnInit,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { LucideAngularModule, RefreshCw } from 'lucide-angular';
@@ -188,7 +189,7 @@ const PAGE_SIZE = 50;
     </app-pi-section>
   `,
 })
-export class MaterialsPage {
+export class MaterialsPage implements OnInit {
   constructor() {
     this.suppliersLookup.load();
     this.photosLookup.load();

@@ -8,6 +8,7 @@ import {
   computed,
   inject,
   signal,
+  OnInit,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { LucideAngularModule, RefreshCw } from 'lucide-angular';
@@ -263,7 +264,7 @@ function counterpartyIdOf(row: Order): string {
     </app-pi-section>
   `,
 })
-export class OrdersPage {
+export class OrdersPage implements OnInit {
   constructor() {
     this.counterpartiesLookup.load();
     this.destroyRef.onDestroy(() => this.search.destroy());

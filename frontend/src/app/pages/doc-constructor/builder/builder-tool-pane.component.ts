@@ -29,7 +29,7 @@ import {
   type BlockType,
 } from '../../../shared/template-block/template-block.types';
 // ButtonComponent removed: tool-pane uses inline `<button>` elements (tool-pane__add, tool-pane__upload-button) so no Paper & Ink Button import needed. (Was NG8113 unused import — fixed.)
-import { CANVAS_DROPLIST_ID } from './builder-canvas.component';
+import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
 import type { TextBlock } from '../../../shared/services/pi-text-blocks.service';
 import type { TableTemplate } from '../../../shared/services/pi-table-templates.service';
 
@@ -767,18 +767,3 @@ export class BuilderToolPaneComponent {
     input.value = '';
   }
 }
-
-/**
- * Discriminated union of the 4 ways a user can add a block from the tool pane.
- * BuilderPage handles the union and creates the appropriate TemplateBlock.
- * Phase D.2.2: this is also the `cdkDragData` carried by palette items.
- */
-export type AddBlockPayload =
-  | { source: 'block-type'; type: BlockType }
-  | { source: 'text-block'; textBlock: TextBlock }
-  | { source: 'table-template'; tableTemplate: TableTemplate }
-  | {
-      source: 'data-binding';
-      dataSource: 'organization' | 'counterparty' | 'product' | 'material' | 'work-type';
-      field: { key: string; label: string; type: string };
-    };

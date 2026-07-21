@@ -50,7 +50,8 @@ import { PiToastService } from '../../../shared/ui/toast';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../../shared/ui/dialog/pi-alert-dialog.component';
 import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
-import { AddBlockPayload, BuilderToolPaneComponent } from './builder-tool-pane.component';
+import { BuilderToolPaneComponent } from './builder-tool-pane.component';
+import type { AddBlockPayload } from './builder.types';
 import { BuilderCanvasComponent } from './builder-canvas.component';
 import { BuilderInspectorComponent } from './builder-inspector.component';
 

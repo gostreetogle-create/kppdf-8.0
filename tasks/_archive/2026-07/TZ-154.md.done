@@ -1,4 +1,4 @@
-# TZ-154: Миграция legacy HttpClient → httpResource (batch 1)
+# TZ-154: Миграция legacy HttpClient → httpResource (batch 1) ✅ COMPLETE
 
 **Priority**: HIGH  
 **Dependencies**: —  

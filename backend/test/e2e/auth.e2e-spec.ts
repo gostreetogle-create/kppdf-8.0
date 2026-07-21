@@ -82,4 +82,12 @@ describe('Auth (e2e)', () => {
     expect([200, 201]).toContain(res.status);
     expect(res.body.access).toBeDefined();
   });
+
+  it('POST /auth/refresh — with expired/invalid refresh returns 401', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/auth/refresh')
+      .set(authHeader('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwidmVyc2lvbiI6OTk5LCJpYXQiOjE1MTYyMzkwMjJ9.invalid'))
+      .send({});
+    expect(res.status).toBe(401);
+  });
 });

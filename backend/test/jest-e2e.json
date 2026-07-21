@@ -6,6 +6,10 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
+  "moduleNameMapper": {
+    "^dompurify$": "<rootDir>/../src/common/__mocks__/dompurify.ts",
+    "^jsdom$": "<rootDir>/../src/common/__mocks__/jsdom.ts"
+  },
   "collectCoverageFrom": ["src/modules/**/services/*.ts"],
   "coverageDirectory": "./coverage-e2e",
   "testTimeout": 60000

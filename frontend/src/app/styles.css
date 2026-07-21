@@ -7,13 +7,13 @@
    The wrapper component (pi-dialog.component.ts) + service (pi-dialog.service.ts)
    reference these via var(--...) — NEVER inline literal in component CSS. */
 :root {
-  --dialog-bg: var(--color-paper);             /* opaque panel surface */
-  --dialog-text: var(--color-ink);             /* AAA contrast on --dialog-bg (TZ-AUDIT-9) */
-  --dialog-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);  /* light-mode shadow (per user spec) */
-  --dialog-radius: 8px;                        /* consistent radius — 8px is desktop-app standard */
-  --overlay-bg: oklch(0% 0 0 / 0.50);          /* 50% dimmer (desktop-app, replaces editorial 30%) */
-  --overlay-bg-fallback: rgb(0 0 0 / 0.50);    /* CSS Color L4 fallback on L5 parse failure */
-  --spacing-md: 16px;                          /* section-to-section spacing */
+  --dialog-bg: var(--color-paper); /* opaque panel surface */
+  --dialog-text: var(--color-ink); /* AAA contrast on --dialog-bg (TZ-AUDIT-9) */
+  --dialog-shadow: 0 8px 32px rgba(0, 0, 0, 0.24); /* light-mode shadow (per user spec) */
+  --dialog-radius: 8px; /* consistent radius — 8px is desktop-app standard */
+  --overlay-bg: oklch(0% 0 0 / 0.5); /* 50% dimmer (desktop-app, replaces editorial 30%) */
+  --overlay-bg-fallback: rgb(0 0 0 / 0.5); /* CSS Color L4 fallback on L5 parse failure */
+  --spacing-md: 16px; /* section-to-section spacing */
   --font-heading-dialog: 'display';
 }
 .dark {
@@ -83,7 +83,7 @@
       max-height: none !important;
       overflow-x: visible !important;
       overflow-y: visible !important;
-      box-shadow: none !important;       /* TZ-90 Phase A: paper doesn't carry shadow in print */
+      box-shadow: none !important; /* TZ-90 Phase A: paper doesn't carry shadow in print */
     }
   }
 }
@@ -122,9 +122,17 @@
   animation: pi-dialog-scale-in 180ms ease-out;
 }
 @keyframes pi-dialog-scale-in {
-  from { opacity: 0; transform: scale(0.96); }
-  to   { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .pi-dialog-host-open { animation-duration: 0s; }
+  .pi-dialog-host-open {
+    animation-duration: 0s;
+  }
 }

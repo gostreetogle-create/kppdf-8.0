@@ -14,8 +14,8 @@ import {
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { SelectOptionComponent } from './select-option.component';
 import { SelectTriggerComponent } from './select-trigger.component';
-
-export type SelectSize = 'sm' | 'md';
+import { SelectSize } from './select.types';
+import { SELECT_PARENT, SelectParent } from './select-parent.interface';
 
 /**
  * Select — Paper & Ink listbox-based select primitive.
@@ -33,6 +33,10 @@ export type SelectSize = 'sm' | 'md';
     {
       provide: NG_VALUE_ACCESSOR,
       multi: true,
+      useExisting: forwardRef(() => SelectComponent),
+    },
+    {
+      provide: SELECT_PARENT,
       useExisting: forwardRef(() => SelectComponent),
     },
   ],
@@ -57,7 +61,7 @@ export type SelectSize = 'sm' | 'md';
     </div>
   `,
 })
-export class SelectComponent implements AfterViewInit, ControlValueAccessor {
+export class SelectComponent implements AfterViewInit, ControlValueAccessor, SelectParent {
   readonly value = model<string | null>(null);
   readonly placeholder = input<string>('Выберите значение');
   readonly disabled = input<boolean>(false);

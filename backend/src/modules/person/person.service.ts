@@ -28,7 +28,8 @@ export class PersonService {
     const limit = Math.min(100, Math.max(1, q.limit ?? 20));
     const filter: Record<string, unknown> = {};
     if (q.search) {
-      const re = new RegExp(q.search, 'i');
+      const escaped = q.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(escaped, 'i');
       filter.$or = [{ lastName: re }, { firstName: re }, { patronymic: re }, { email: re }, { phone: re }];
     }
     const [items, total] = await Promise.all([

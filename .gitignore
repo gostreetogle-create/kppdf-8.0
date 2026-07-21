@@ -21,6 +21,8 @@ out/
 .env.local
 .env.*.local
 .env.example.local
+jwt.access
+jwt.refresh
 
 # Deploy secrets (Synology)
 deploy/synology/config.env
@@ -83,6 +85,8 @@ _tmp/
 
 # Local helper binaries
 mimo.exe
+mimo2.exe
+mimocode-windows-x64/
 
 # codebase-memory MCP server (TZ-deferred vendor-bundle)
 # Track metadata + runner script, exclude the large binary + runtime caches.

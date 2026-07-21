@@ -8,6 +8,7 @@ import {
   computed,
   inject,
   signal,
+  OnInit,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
@@ -140,7 +141,7 @@ const PAGE_SIZE = 50;
     </app-pi-section>
   `,
 })
-export class OrganizationsPage {
+export class OrganizationsPage implements OnInit {
   constructor() {
     this.destroyRef.onDestroy(() => this.search.destroy());
   }

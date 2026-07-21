@@ -8,6 +8,7 @@ import {
   computed,
   inject,
   signal,
+  OnInit,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { LucideAngularModule, RefreshCw } from 'lucide-angular';
@@ -266,7 +267,7 @@ function organizationIdOf(row: Contract): string {
     </app-pi-section>
   `,
 })
-export class ContractsPage {
+export class ContractsPage implements OnInit {
   constructor() {
     this.counterpartiesLookup.load();
     this.organizationsLookup.load();

@@ -75,7 +75,7 @@ interface ItemFormGroup extends FormGroup {
         body
         [formGroup]="form"
         (ngSubmit)="onSubmit()"
-        class="space-y-form-field"
+        class="space-y-form-field overflow-y-auto min-h-0"
         data-test="contract-form"
       >
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">

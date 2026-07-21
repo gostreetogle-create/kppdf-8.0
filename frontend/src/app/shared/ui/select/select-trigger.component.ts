@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { SelectSize } from './select.component';
+import { SelectSize } from './select.types';
 
 /**
  * SelectTrigger — Paper & Ink select button face.

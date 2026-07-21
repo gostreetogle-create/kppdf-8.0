@@ -2,8 +2,11 @@ import { Controller, Get } from '@nestjs/common';
 import {
   HealthCheck,
   HealthCheckService,
-  MongooseHealthIndicator,
   HealthIndicatorResult,
+  HealthCheckResult,
+  MongooseHealthIndicator,
+  MemoryHealthIndicator,
+  DiskHealthIndicator,
 } from '@nestjs/terminus';
 import { Public } from './common/decorators/public.decorator';
 
@@ -15,24 +18,23 @@ export class HealthController {
   constructor(
     private readonly health: HealthCheckService,
     private readonly mongo: MongooseHealthIndicator,
+    private readonly memory: MemoryHealthIndicator,
+    private readonly disk: DiskHealthIndicator,
   ) {}
 
   @Get()
   @HealthCheck()
-  async check() {
-    const mongoResult = await this.health.check([
+  check(): Promise<HealthCheckResult> {
+    return this.health.check([
       () => this.mongo.pingCheck('mongo', { timeout: 1000 }) as Promise<HealthIndicatorResult>,
+      () => this.memory.checkRSS('memory', 300 * 1024 * 1024), // 300 MB RSS
+      () => this.disk.checkStorage('disk', { path: process.cwd(), thresholdPercent: 90 }),
     ]);
-    return {
-      ...mongoResult,
-      uptime: Math.floor((Date.now() - this.startedAt) / 1000),
-      timestamp: new Date().toISOString(),
-    };
   }
 
   @Get('ready')
   @HealthCheck()
-  ready() {
+  ready(): Promise<HealthCheckResult> {
     return this.health.check([
       () => this.mongo.pingCheck('mongo', { timeout: 1000 }) as Promise<HealthIndicatorResult>,
     ]);

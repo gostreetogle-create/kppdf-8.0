@@ -17,6 +17,7 @@ describe('ModulesPage', () => {
   let httpMock: HttpTestingController;
   const baseUrl = '/api';
   const listUrl = `${baseUrl}/modules`;
+  const dialogSpy = { open: jest.fn().mockReturnValue({}) };
 
   const fakeModules: ProductModule[] = [
     { _id: 'pm1', name: 'Корпус шкафа', article: 'KW-001' } as ProductModule,
@@ -31,6 +32,7 @@ describe('ModulesPage', () => {
   }
 
   beforeEach(async () => {
+    dialogSpy.open.mockClear();
     await TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([]), withFetch()),
@@ -46,7 +48,7 @@ describe('ModulesPage', () => {
             remove: () => of({ ok: true, data: undefined }),
           },
         },
-        { provide: PiDialogService, useValue: { open: () => ({}) as never } },
+        { provide: PiDialogService, useValue: dialogSpy },
         { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
       ],
     })
@@ -109,5 +111,31 @@ describe('ModulesPage', () => {
     };
     expect(comp.data().length).toBe(0);
     expect(comp.total()).toBe(0);
+  });
+
+  it('handles error response gracefully', async () => {
+    const fixture = TestBed.createComponent(ModulesPage);
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne(matchListGet)
+      .flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+    await tickMicrotask();
+
+    const comp = fixture.componentInstance as unknown as { error: () => string | null };
+    expect(() => comp.error()).not.toThrow();
+  });
+
+  it('create button triggers openCreate', async () => {
+    const fixture = TestBed.createComponent(ModulesPage);
+    fixture.detectChanges();
+
+    httpMock.expectOne(matchListGet).flush([]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as { openCreate: () => void };
+    comp.openCreate();
+    expect(dialogSpy.open).toHaveBeenCalled();
   });
 });

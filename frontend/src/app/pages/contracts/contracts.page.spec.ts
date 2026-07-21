@@ -16,6 +16,7 @@ describe('ContractsPage', () => {
   let httpMock: HttpTestingController;
   const baseUrl = '/api';
   const listUrl = `${baseUrl}/contracts`;
+  const dialogSpy = { open: jest.fn().mockReturnValue({}) };
 
   const fakeContracts: Contract[] = [
     {
@@ -44,6 +45,7 @@ describe('ContractsPage', () => {
   }
 
   beforeEach(async () => {
+    dialogSpy.open.mockClear();
     await TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([]), withFetch()),
@@ -67,7 +69,7 @@ describe('ContractsPage', () => {
           provide: OrganizationsService,
           useValue: { list: () => of({ ok: true, data: { items: [], total: 0 } }) },
         },
-        { provide: PiDialogService, useValue: { open: () => ({}) as never } },
+        { provide: PiDialogService, useValue: dialogSpy },
         { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
       ],
     })
@@ -130,5 +132,31 @@ describe('ContractsPage', () => {
     };
     expect(comp.data().length).toBe(0);
     expect(comp.total()).toBe(0);
+  });
+
+  it('handles error response gracefully', async () => {
+    const fixture = TestBed.createComponent(ContractsPage);
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne(matchListGet)
+      .flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+    await tickMicrotask();
+
+    const comp = fixture.componentInstance as unknown as { error: () => string | null };
+    expect(() => comp.error()).not.toThrow();
+  });
+
+  it('create button triggers openCreate', async () => {
+    const fixture = TestBed.createComponent(ContractsPage);
+    fixture.detectChanges();
+
+    httpMock.expectOne(matchListGet).flush([]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as { openCreate: () => void };
+    comp.openCreate();
+    expect(dialogSpy.open).toHaveBeenCalled();
   });
 });

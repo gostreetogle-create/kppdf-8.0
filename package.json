@@ -17,13 +17,13 @@
     "start:no-browser": "node start.mjs --no-browser",
     "start:prod": "node start.mjs --prod",
     "check:page-docs": "npx tsx scripts/check-page-docs.ts",
-    "prepare": "husky"
+    "prepare": "husky",
+    "lint-staged": "lint-staged"
   },
   "lint-staged": {
-    "frontend/src/**/*.{ts,html,css}": [
-      "node ./node_modules/prettier/bin/prettier.cjs --write",
-      "node ./node_modules/eslint/bin/eslint.js --fix"
-    ]
+    "frontend/**/*.ts": ["cd frontend && npx eslint --fix", "cd frontend && npx prettier --write"],
+    "frontend/**/*.html": ["cd frontend && npx prettier --write --parser angular"],
+    "frontend/**/*.{scss,css}": ["cd frontend && npx prettier --write"]
   },
   "comments": {
     "start": "Default: pre-flight checks only (safe, exits cleanly). Use `npm run start:all` to actually start everything.",

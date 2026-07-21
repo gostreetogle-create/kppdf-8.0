@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { ContractService } from './contract.service';
 import { CreateContractDto } from './dto/create-contract.dto';
@@ -15,11 +16,19 @@ import { UpdateContractDto } from './dto/update-contract.dto';
 import { SignContractDto } from './dto/sign-contract.dto';
 import { AuditAction } from '../../common/decorators/audit-action.decorator';
 
+@ApiTags('Закупки — Контракты')
 @Controller('contracts')
 export class ContractController {
   constructor(private readonly service: ContractService) {}
 
   @Get()
+  @ApiOperation({ summary: 'List all contracts with optional filters' })
+  @ApiQuery({ name: 'counterpartyId', required: false, description: 'Filter by counterparty' })
+  @ApiQuery({ name: 'status', required: false, description: 'Filter by status' })
+  @ApiQuery({ name: 'from', required: false, description: 'Start date (ISO)' })
+  @ApiQuery({ name: 'to', required: false, description: 'End date (ISO)' })
+  @ApiResponse({ status: 200, description: 'List of contracts' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   findAll(
     @Query('counterpartyId') counterpartyId?: string,
     @Query('status') status?: string,
@@ -35,6 +44,10 @@ export class ContractController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get contract by ID' })
+  @ApiResponse({ status: 200, description: 'Contract found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Contract not found' })
   findOne(@Param('id') id: string) {
     return this.service.findById(id);
   }
@@ -42,6 +55,10 @@ export class ContractController {
   @Post()
   @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'Contract' })
+  @ApiOperation({ summary: 'Create a new contract' })
+  @ApiResponse({ status: 201, description: 'Contract created' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
   create(@Body() dto: CreateContractDto) {
     return this.service.create(dto);
   }
@@ -49,6 +66,11 @@ export class ContractController {
   @Patch(':id')
   @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'Contract' })
+  @ApiOperation({ summary: 'Update an existing contract' })
+  @ApiResponse({ status: 200, description: 'Contract updated' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Contract not found' })
   update(@Param('id') id: string, @Body() dto: UpdateContractDto) {
     return this.service.update(id, dto);
   }
@@ -56,6 +78,11 @@ export class ContractController {
   @Post(':id/sign')
   @Roles('admin', 'manager')
   @AuditAction({ action: 'sign', entityType: 'Contract' })
+  @ApiOperation({ summary: 'Sign a contract' })
+  @ApiResponse({ status: 200, description: 'Contract signed' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Contract not found' })
   sign(@Param('id') id: string, @Body() dto: SignContractDto) {
     return this.service.sign(id, dto.signedAt);
   }
@@ -63,6 +90,11 @@ export class ContractController {
   @Post(':id/activate')
   @Roles('admin', 'manager')
   @AuditAction({ action: 'activate', entityType: 'Contract' })
+  @ApiOperation({ summary: 'Activate a signed contract' })
+  @ApiResponse({ status: 200, description: 'Contract activated' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Contract not found' })
   activate(@Param('id') id: string) {
     return this.service.activate(id);
   }
@@ -70,6 +102,11 @@ export class ContractController {
   @Delete(':id')
   @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'Contract' })
+  @ApiOperation({ summary: 'Delete a contract' })
+  @ApiResponse({ status: 200, description: 'Contract deleted' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Contract not found' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);
   }

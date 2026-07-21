@@ -14,6 +14,7 @@ describe('WorkTypesPage', () => {
   let httpMock: HttpTestingController;
   const baseUrl = '/api';
   const listUrl = `${baseUrl}/work-types`;
+  const dialogSpy = { open: jest.fn().mockReturnValue({}) };
 
   const fakeWorkTypes: WorkType[] = [
     { _id: 'wt1', name: 'Раскрой на ЧПУ', hourlyRate: 2000, unit: 'час' } as WorkType,
@@ -28,6 +29,7 @@ describe('WorkTypesPage', () => {
   }
 
   beforeEach(async () => {
+    dialogSpy.open.mockClear();
     await TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([]), withFetch()),
@@ -43,7 +45,7 @@ describe('WorkTypesPage', () => {
             remove: () => of({ ok: true, data: undefined }),
           },
         },
-        { provide: PiDialogService, useValue: { open: () => ({}) as never } },
+        { provide: PiDialogService, useValue: dialogSpy },
         { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
       ],
     })
@@ -64,7 +66,6 @@ describe('WorkTypesPage', () => {
     fixture.detectChanges();
 
     const req = httpMock.expectOne(matchListGet);
-
     req.flush(fakeWorkTypes);
     await tickMicrotask();
     fixture.detectChanges();
@@ -123,5 +124,18 @@ describe('WorkTypesPage', () => {
     };
     expect(comp.data().length).toBe(0);
     expect(comp.total()).toBe(0);
+  });
+
+  it('create button triggers openCreate', async () => {
+    const fixture = TestBed.createComponent(WorkTypesPage);
+    fixture.detectChanges();
+
+    httpMock.expectOne(matchListGet).flush([]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as { openCreate: () => void };
+    comp.openCreate();
+    expect(dialogSpy.open).toHaveBeenCalled();
   });
 });

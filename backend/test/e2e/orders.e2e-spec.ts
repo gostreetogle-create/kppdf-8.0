@@ -60,6 +60,42 @@ describe('Orders (e2e)', () => {
     expect(res.body.total).toBe(250);
   });
 
+  it('GET /orders/:id — returns order details', async () => {
+    const created = await request(app.getHttpServer())
+      .post('/api/orders')
+      .set(authHeader(token))
+      .send({
+        counterpartyId,
+        items: [{ productId, quantity: 2, unitPrice: 50 }],
+      });
+    const orderId = created.body._id;
+
+    const res = await request(app.getHttpServer())
+      .get(`/api/orders/${orderId}`)
+      .set(authHeader(token));
+    expect(res.status).toBe(200);
+    expect(res.body._id).toBe(orderId);
+    expect(res.body.items.length).toBe(1);
+  });
+
+  it('PATCH /orders/:id — updates order status', async () => {
+    const created = await request(app.getHttpServer())
+      .post('/api/orders')
+      .set(authHeader(token))
+      .send({
+        counterpartyId,
+        items: [{ productId, quantity: 1, unitPrice: 50 }],
+      });
+    const orderId = created.body._id;
+
+    const res = await request(app.getHttpServer())
+      .patch(`/api/orders/${orderId}`)
+      .set(authHeader(token))
+      .send({ status: 'confirmed' });
+    expect([200, 201]).toContain(res.status);
+    expect(res.body.status).toBe('confirmed');
+  });
+
   it('POST /orders/:id/reserve-stock — creates Reservations', async () => {
     const order = await request(app.getHttpServer())
       .post('/api/orders')

@@ -20,9 +20,14 @@ export async function loginAsAdmin(app: INestApplication): Promise<AuthTokens> {
         throw new Error(`Login failed: ${r.status} ${JSON.stringify(r.body)}`);
       }
     });
+  // The refresh token is set as an httpOnly cookie, not in the JSON body.
+  const rawCookie = res.headers['set-cookie'];
+  const setCookie: string[] = Array.isArray(rawCookie) ? rawCookie : rawCookie ? [rawCookie] : [];
+  const refreshCookie = setCookie.find((c) => c.startsWith('refreshToken='));
+  const refresh = refreshCookie?.split('refreshToken=')[1]?.split(';')[0] ?? '';
   return {
     access: res.body.access,
-    refresh: res.body.refresh,
+    refresh,
     user: res.body.user,
   };
 }

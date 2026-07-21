@@ -4,14 +4,7 @@ import { BlockRendererComponent } from './block-renderer.component';
 import { PiCanvasPageComponent } from '../../../shared/ui/canvas/pi-canvas-page.component';
 import { blockKey, type TemplateBlock } from '../../../shared/template-block/template-block.types';
 import { moveItemInArray } from '../../../shared/util/move-item-in-array';
-import type { AddBlockPayload } from './builder-tool-pane.component';
-
-/**
- * D.2.2 nit (code-reviewer): the cdkDropList id is now exported so the tool
- * pane can import it (instead of duplicating the string in two places).
- * The tool pane uses it in `[cdkDropListConnectedTo]`.
- */
-export const CANVAS_DROPLIST_ID = 'canvas-droplist';
+import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
 
 /**
  * TZ-86 Phase D.1 + D.2 — `BuilderCanvas` (center pane).

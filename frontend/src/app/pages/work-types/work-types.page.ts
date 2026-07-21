@@ -8,6 +8,7 @@ import {
   computed,
   inject,
   signal,
+  OnInit,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { LucideAngularModule, RefreshCw } from 'lucide-angular';
@@ -164,7 +165,7 @@ function accessorFor(key: Exclude<SortKey, null>): (row: WorkType) => unknown {
     </app-pi-section>
   `,
 })
-export class WorkTypesPage {
+export class WorkTypesPage implements OnInit {
   constructor() {
     this.destroyRef.onDestroy(() => this.search.destroy());
   }
