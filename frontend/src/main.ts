@@ -1,6 +1,21 @@
 import { bootstrapApplication } from '@angular/platform-browser';
+import * as Sentry from '@sentry/angular';
 import { App } from './app/app';
 import { appConfig } from './app/app.config';
+
+// TZ-157: Initialize Sentry before Angular bootstrap.
+// SENTRY_DSN is injected at runtime via window.__SENTRY_DSN__
+// (e.g. from a server-rendered <script> tag in index.html).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const sentryDsn = (window as any).__SENTRY_DSN__ as string | undefined;
+if (sentryDsn) {
+  Sentry.init({
+    dsn: sentryDsn,
+    environment: 'production',
+    tracesSampleRate: 0.2,
+    integrations: [Sentry.browserTracingIntegration()],
+  });
+}
 
 /**
  * Pre-paint theme hint (TZ-33 + TZ-77 coordination).
@@ -38,6 +53,5 @@ import { appConfig } from './app/app.config';
 })();
 
 bootstrapApplication(App, appConfig).catch((err) => {
-  // eslint-disable-next-line no-console
   console.error('Bootstrap failed:', err);
 });

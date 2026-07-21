@@ -85,8 +85,8 @@
   --dialog-text: var(--color-ink);
   --dialog-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);
   --dialog-radius: 8px;
-  --overlay-bg: oklch(0% 0 0 / 0.50);
-  --overlay-bg-fallback: rgb(0 0 0 / 0.50);
+  --overlay-bg: oklch(0% 0 0 / 0.5);
+  --overlay-bg-fallback: rgb(0 0 0 / 0.5);
 }
 
 /* =============================================================================
@@ -103,22 +103,20 @@
  * ============================================================================= */
 :root {
   /* Sub-units (4px base) */
-  --space-1:  4px;
-  --space-2:  8px;    /* sm */
-  --space-3:  12px;   /* md — control-x baseline */
-  --space-4:  16px;   /* lg */
-  --space-6:  24px;   /* xl — page-x, section gap */
-  --space-8:  32px;   /* 2xl — page-y, touch min */
-  --space-10: 40px;   /* touch comfortable */
-  --space-12: 48px;   /* 3xl */
-  --space-16: 64px;   /* 4xl — footer top margin */
+  --space-1: 4px;
+  --space-2: 8px; /* sm */
+  --space-3: 12px; /* md — control-x baseline */
+  --space-4: 16px; /* lg */
+  --space-6: 24px; /* xl — page-x, section gap */
+  --space-8: 32px; /* 2xl — page-y, touch min */
+  --space-10: 40px; /* touch comfortable */
+  --space-12: 48px; /* 3xl */
+  --space-16: 64px; /* 4xl — footer top margin */
 
   /* Focus-ring (TZ-96: Design Reference alignment).
      2px paper gap + 4px gold ring, identical for every interactive
      control. Gold accent matches design ref's primary action color. */
-  --focus-ring-shadow:
-    0 0 0 2px var(--color-paper),
-    0 0 0 4px var(--color-gold);
+  --focus-ring-shadow: 0 0 0 2px var(--color-paper), 0 0 0 4px var(--color-gold);
 
   /* Hover-state tokens for `.pi-icon-btn` (TZ-AUDIT-6 — kill
      duplication of `background-color / color / border-color`
@@ -132,72 +130,96 @@
   --pi-btn-hover-border: inherit;
 
   /* Semantic aliases (single source of truth) */
-  --space-control-x: 12px;     /* input/button horizontal padding */
-  --space-control-y: 8px;      /* input/button vertical (small) */
-  --space-control-y-md: 10px;  /* input/button vertical (medium-large) */
-  --space-form-field: 16px;    /* gap between form fields */
-  --space-form-row: 8px;       /* gap label→input inside a field */
-  --space-section: 24px;       /* gap between page sections */
-  --space-page-x: 24px;        /* page horizontal padding */
-  --space-page-y: 32px;        /* page top padding */
-  --space-header-y: 32px;      /* page-header vertical padding */
-  --space-footer-y: 48px;      /* footer vertical padding */
+  --space-control-x: 12px; /* input/button horizontal padding */
+  --space-control-y: 8px; /* input/button vertical (small) */
+  --space-control-y-md: 10px; /* input/button vertical (medium-large) */
+  --space-form-field: 16px; /* gap between form fields */
+  --space-form-row: 8px; /* gap label→input inside a field */
+  --space-section: 24px; /* gap between page sections */
+  --space-page-x: 24px; /* page horizontal padding */
+  --space-page-y: 32px; /* page top padding */
+  --space-header-y: 32px; /* page-header vertical padding */
+  --space-footer-y: 48px; /* footer vertical padding */
 
   /* Touch targets (Apple HIG 44 / Material 48 / Web 32 minimum) */
-  --touch-min: 32px;           /* w-8 h-8 — minimum click target */
-  --touch-comfortable: 40px;   /* w-10 h-10 */
-  --touch-a11y: 44px;          /* iOS HIG */
+  --touch-min: 32px; /* w-8 h-8 — minimum click target */
+  --touch-comfortable: 40px; /* w-10 h-10 */
+  --touch-a11y: 44px; /* iOS HIG */
 }
 
 @theme inline {
   /* === Palette (TZ-96: Design Reference alignment) ===
      Paper & Ink naming preserved for backward compat.
      Values mapped to design reference Material Design 3 tokens. */
-  --color-paper:       var(--color-paper-override,       oklch(0.972 0.010 80));   /* #F8F9FA — surface */
-  --color-paper-2:     var(--color-paper-2-override,     oklch(0.955 0.008 80));   /* #F3F4F5 — surface-container-low */
-  --color-ink:         var(--color-ink-override,         oklch(0.120 0.008 260));  /* #191C1D — on-surface / charcoal */
-  --color-rule:        var(--color-rule-override,        oklch(0.810 0.015 260));  /* #C3C6D7 — outline-variant */
-  --color-muted:       var(--color-muted-override,       oklch(0.370 0.010 260));  /* #52555C — tertiary */
-  --color-destructive: var(--color-destructive-override, oklch(0.637 0.220 25));   /* #EF4444 — error */
-  --color-accent-warm: var(--color-accent-warm-override, oklch(0.78  0.12  85));   /* #D4AF37 — gold (design ref primary) */
-  --color-accent-cool: var(--color-accent-cool-override, oklch(0.55  0.12 250));
+  --color-paper: var(--color-paper-override, oklch(0.972 0.01 80)); /* #F8F9FA — surface */
+  --color-paper-2: var(
+    --color-paper-2-override,
+    oklch(0.955 0.008 80)
+  ); /* #F3F4F5 — surface-container-low */
+  --color-ink: var(
+    --color-ink-override,
+    oklch(0.12 0.008 260)
+  ); /* #191C1D — on-surface / charcoal */
+  --color-rule: var(--color-rule-override, oklch(0.81 0.015 260)); /* #C3C6D7 — outline-variant */
+  --color-muted: var(--color-muted-override, oklch(0.37 0.01 260)); /* #52555C — tertiary */
+  --color-destructive: var(
+    --color-destructive-override,
+    oklch(0.637 0.22 25)
+  ); /* #EF4444 — error */
+  --color-accent-warm: var(
+    --color-accent-warm-override,
+    oklch(0.78 0.12 85)
+  ); /* #D4AF37 — gold (design ref primary) */
+  --color-accent-cool: var(--color-accent-cool-override, oklch(0.55 0.12 250));
 
   /* === Gold accent (Design Reference — TZ-96) ===
      KPPDF brand gold, used for primary actions, active states,
      focus rings, and brand identity. */
-  --color-gold:         var(--color-gold-override,         oklch(0.78 0.12 85));    /* #D4AF37 */
-  --color-gold-soft:    var(--color-gold-soft-override,    oklch(0.78 0.12 85 / 0.10)); /* Gold 10% opacity */
+  --color-gold: var(--color-gold-override, oklch(0.78 0.12 85)); /* #D4AF37 */
+  --color-gold-soft: var(
+    --color-gold-soft-override,
+    oklch(0.78 0.12 85 / 0.1)
+  ); /* Gold 10% opacity */
 
   /* === Sunrise palette (TZ-NEW + TZ-AUDIT-9) ===
      Kept for backward compat. New components should prefer gold tokens. */
-  --color-sunrise:       var(--color-sunrise-override,       oklch(0.78 0.12  85));  /* ← aligned to gold */
-  --color-sunrise-soft:  var(--color-sunrise-soft-override,  oklch(0.95 0.045 80));
-  --color-sunrise-warm:  var(--color-sunrise-warm-override,  oklch(0.78 0.12  85));  /* ← aligned to gold */
-  --color-sunrise-glow:  var(--color-sunrise-glow-override,  oklch(0.82 0.14  85));  /* brighter gold */
-  --color-sunrise-mist:  var(--color-sunrise-mist-override,  oklch(0.97 0.035 80));
+  --color-sunrise: var(--color-sunrise-override, oklch(0.78 0.12 85)); /* ← aligned to gold */
+  --color-sunrise-soft: var(--color-sunrise-soft-override, oklch(0.95 0.045 80));
+  --color-sunrise-warm: var(
+    --color-sunrise-warm-override,
+    oklch(0.78 0.12 85)
+  ); /* ← aligned to gold */
+  --color-sunrise-glow: var(--color-sunrise-glow-override, oklch(0.82 0.14 85)); /* brighter gold */
+  --color-sunrise-mist: var(--color-sunrise-mist-override, oklch(0.97 0.035 80));
 
   /* === Surface container hierarchy (Design Reference — TZ-96) === */
-  --color-surface-lowest:  oklch(1.00 0 0);       /* #FFFFFF */
-  --color-surface-low:     oklch(0.955 0.008 80); /* #F3F4F5 */
-  --color-surface:         oklch(0.940 0.006 80); /* #EDEEEF */
-  --color-surface-high:    oklch(0.915 0.005 80); /* #E7E8E9 */
+  --color-surface-lowest: oklch(1 0 0); /* #FFFFFF */
+  --color-surface-low: oklch(0.955 0.008 80); /* #F3F4F5 */
+  --color-surface: oklch(0.94 0.006 80); /* #EDEEEF */
+  --color-surface-high: oklch(0.915 0.005 80); /* #E7E8E9 */
   --color-surface-highest: oklch(0.895 0.004 80); /* #E1E3E4 */
 
   /* === Muted foreground (secondary text) — TZ-96: design ref on-surface-variant === */
-  --color-muted-foreground: var(--color-muted-foreground-override, oklch(0.340 0.012 260)); /* #434655 */
+  --color-muted-foreground: var(
+    --color-muted-foreground-override,
+    oklch(0.34 0.012 260)
+  ); /* #434655 */
   /* === Muted foreground STRONG — TZ-96: design ref outline for small text === */
-  --color-muted-foreground-strong: var(--color-muted-foreground-strong-override, oklch(0.420 0.015 260)); /* #737685 */
+  --color-muted-foreground-strong: var(
+    --color-muted-foreground-strong-override,
+    oklch(0.42 0.015 260)
+  ); /* #737685 */
 
   /* === Typography (Design Reference — TZ-96) === */
   --font-display: 'Hanken Grotesk', 'Helvetica Neue', sans-serif;
-  --font-body:    'Inter', system-ui, sans-serif;
-  --font-mono:    'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
   /* === Shape (Design Reference — TZ-96) === */
-  --radius: 0.125rem;     /* 2px — design ref DEFAULT */
+  --radius: 0.125rem; /* 2px — design ref DEFAULT */
   --radius-sm: 0.0625rem; /* 1px */
-  --radius-lg: 0.25rem;   /* 4px */
-  --radius-xl: 0.5rem;    /* 8px */
+  --radius-lg: 0.25rem; /* 4px */
+  --radius-xl: 0.5rem; /* 8px */
 
   /* === Border weights === */
   --border-width-hairline: 1px;
@@ -262,10 +284,14 @@
     padding-inline: var(--space-page-x);
   }
   @media (min-width: 640px) {
-    .pi-page-frame { padding-inline: 40px; }
+    .pi-page-frame {
+      padding-inline: 40px;
+    }
   }
   @media (min-width: 1024px) {
-    .pi-page-frame { padding-inline: 64px; }
+    .pi-page-frame {
+      padding-inline: 64px;
+    }
   }
 
   /* Edge-bleed stickies (app-header) without the negative-margin trick. */
@@ -305,11 +331,14 @@
      Focus rings (--focus-ring-shadow) and dialog shadows (--dialog-shadow)
      are NOT affected by this change. */
   /* Force sharp corners — override .rounded-3xl, .rounded-2xl, .rounded-xl. */
-  .rounded-xl, .rounded-2xl, .rounded-3xl {
+  .rounded-xl,
+  .rounded-2xl,
+  .rounded-3xl {
     border-radius: var(--radius-lg) !important; /* TZ-96: 4px per design ref */
   }
   /* Set default body font + bg + fg using OKLCH tokens. */
-  html, body {
+  html,
+  body {
     background-color: var(--color-paper);
     color: var(--color-ink);
     font-family: var(--font-body);
@@ -320,24 +349,24 @@
      Dark charcoal surface (#1A1A1A) with gold accent (#D4AF37).
      Applied via <html class="dark">. NEVER use body.dark or :root.dark. */
   .dark {
-    --color-paper:       oklch(0.12 0.005 260);    /* #1A1A1A — arch-surface */
-    --color-paper-2:     oklch(0.16 0.008 260);    /* #252525 */
-    --color-ink:         oklch(0.90 0.010 80);     /* #E0E0E0 — arch-text */
-    --color-rule:        oklch(0.22 0.005 260);    /* #333333 — arch-line */
-    --color-muted:       oklch(0.55 0.010 260);    /* #888888 — arch-text-muted */
-    --color-destructive: oklch(0.65 0.25 25);      /* #FF4444 — arch-error */
-    --color-accent-warm: oklch(0.78 0.12 85);      /* #D4AF37 — arch-gold */
-    --color-accent-cool: oklch(0.60 0.10 250);
-    --color-gold:        oklch(0.78 0.12 85);      /* #D4AF37 — arch-gold */
-    --color-gold-soft:   oklch(0.78 0.12 85 / 0.15);
-    --color-sunrise:      oklch(0.78 0.12 85);     /* aligned to gold */
-    --color-sunrise-soft: oklch(0.18 0.010 80);
-    --color-sunrise-warm: oklch(0.78 0.12 85);     /* aligned to gold */
+    --color-paper: oklch(0.12 0.005 260); /* #1A1A1A — arch-surface */
+    --color-paper-2: oklch(0.16 0.008 260); /* #252525 */
+    --color-ink: oklch(0.9 0.01 80); /* #E0E0E0 — arch-text */
+    --color-rule: oklch(0.22 0.005 260); /* #333333 — arch-line */
+    --color-muted: oklch(0.55 0.01 260); /* #888888 — arch-text-muted */
+    --color-destructive: oklch(0.65 0.25 25); /* #FF4444 — arch-error */
+    --color-accent-warm: oklch(0.78 0.12 85); /* #D4AF37 — arch-gold */
+    --color-accent-cool: oklch(0.6 0.1 250);
+    --color-gold: oklch(0.78 0.12 85); /* #D4AF37 — arch-gold */
+    --color-gold-soft: oklch(0.78 0.12 85 / 0.15);
+    --color-sunrise: oklch(0.78 0.12 85); /* aligned to gold */
+    --color-sunrise-soft: oklch(0.18 0.01 80);
+    --color-sunrise-warm: oklch(0.78 0.12 85); /* aligned to gold */
     --color-sunrise-glow: oklch(0.84 0.14 85);
     --color-sunrise-mist: oklch(0.14 0.008 80);
-    --color-muted-foreground: oklch(0.55 0.010 260);       /* #888888 */
+    --color-muted-foreground: oklch(0.55 0.01 260); /* #888888 */
     --color-muted-foreground-strong: oklch(0.65 0.012 260); /* #AAAAAA */
-    --dialog-shadow: 0 8px 32px rgba(0, 0, 0, 0.60);
+    --dialog-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
   }
 }
 
@@ -419,7 +448,9 @@
   border-width: 1px;
   border-color: var(--color-rule);
   border-radius: var(--radius); /* TZ-96: 2px per design ref DEFAULT */
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
   outline: none;
 }
 
@@ -453,8 +484,11 @@
   border-color: var(--color-rule);
   border-radius: var(--radius-sm);
   font-size: 14px;
-  transition: background-color 150ms ease, color 150ms ease,
-              border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 /* Universal "row-hover + odd-stripe" table row treatment that
@@ -522,7 +556,9 @@
     background: transparent;
     border: 0;
     border-radius: var(--radius-sm);
-    transition: background-color 120ms ease, color 120ms ease;
+    transition:
+      background-color 120ms ease,
+      color 120ms ease;
     cursor: pointer;
   }
   .pi-menu-item:hover {
@@ -571,8 +607,10 @@
     border-width: 1px;
     border-color: var(--color-rule);
     border-radius: var(--radius-sm);
-    transition: background-color 150ms ease, color 150ms ease,
-                border-color 150ms ease;
+    transition:
+      background-color 150ms ease,
+      color 150ms ease,
+      border-color 150ms ease;
     cursor: pointer;
   }
   .pi-outline-btn:hover {
@@ -604,8 +642,16 @@
 @utility grid-paper {
   background-color: var(--color-paper);
   background-image:
-    linear-gradient(to right, color-mix(in oklch, var(--color-rule) 40%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in oklch, var(--color-rule) 40%, transparent) 1px, transparent 1px);
+    linear-gradient(
+      to right,
+      color-mix(in oklch, var(--color-rule) 40%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in oklch, var(--color-rule) 40%, transparent) 1px,
+      transparent 1px
+    );
   background-size: 24px 24px;
   background-position: 0 0;
 }
@@ -634,7 +680,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -653,10 +701,12 @@
     color: var(--color-muted);
     opacity: 0.4;
     font-size: 0.875em;
-  }   /* Native scrollbar (auto-applied to body) bypasses the special
+  } /* Native scrollbar (auto-applied to body) bypasses the special
       scrollbar styling — keeps TZ-SCROLLBAR-65 reserved for opt-in
       `.pi-scroll-area` blocks. */
-  html { scrollbar-gutter: stable; }
+  html {
+    scrollbar-gutter: stable;
+  }
 
   .pi-scroll-area,
   .pi-scroll-area * {
@@ -714,12 +764,22 @@
     break-inside: avoid;
   }
 
-  h1 { font-size: 22pt; }
-  h2 { font-size: 14pt; break-after: avoid; }
-  h3 { font-size: 12pt; break-after: avoid; }
+  h1 {
+    font-size: 22pt;
+  }
+  h2 {
+    font-size: 14pt;
+    break-after: avoid;
+  }
+  h3 {
+    font-size: 12pt;
+    break-after: avoid;
+  }
 
   /* Remove transitions/animations/shadows */
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation: none !important;
     transition: none !important;
     box-shadow: none !important;
@@ -786,7 +846,7 @@
 @layer components {
   .pi-overlay-backdrop {
     background-color: var(--overlay-bg);
-    background-color: var(--overlay-bg-fallback);  /* oklch fallback */
+    background-color: var(--overlay-bg-fallback); /* oklch fallback */
     backdrop-filter: none;
   }
 
@@ -813,12 +873,20 @@
 }
 
 @keyframes pi-dialog-scale-in {
-  from { opacity: 0; transform: scale(0.96); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pi-dialog-host-open { animation-duration: 0s; }
+  .pi-dialog-host-open {
+    animation-duration: 0s;
+  }
 }
 
 /* =============================================================================
@@ -875,8 +943,9 @@
    on elevated surfaces (cards, sidebar, tables). NOT applied globally
    — each component opts in via this utility class. */
 @utility executive-shadow {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05),
-              0 1px 2px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 @utility pi-dashed-panel {
