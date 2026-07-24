@@ -32,9 +32,12 @@ import {
   AlertCircle,
   Loader2,
   Trash2,
+  Table as TableIcon,
 } from 'lucide-angular';
 import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
 import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
+import { TextBlocksService } from '../../../shared/services/pi-text-blocks.service';
+import { TableTemplatesService } from '../../../shared/services/pi-table-templates.service';
 import { API_BASE_URL } from '../../../core/api.tokens';
 import { extractErrorMessage, SilentResult } from '../../../core/silent-http';
 import {
@@ -50,7 +53,6 @@ import { PiToastService } from '../../../shared/ui/toast';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../../shared/ui/dialog/pi-alert-dialog.component';
 import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
-import { BuilderToolPaneComponent } from './builder-tool-pane.component';
 import type { AddBlockPayload } from './builder.types';
 import { BuilderCanvasComponent } from './builder-canvas.component';
 import { BuilderInspectorComponent } from './builder-inspector.component';
@@ -94,7 +96,6 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
     PiPageHeaderComponent,
     PiSectionComponent,
     ButtonComponent,
-    BuilderToolPaneComponent,
     BuilderCanvasComponent,
     BuilderInspectorComponent,
   ],
@@ -110,6 +111,18 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
         title="Выберите шаблон"
         description="Список доступных шаблонов для редактирования"
       >
+        <div slot="actions">
+          <app-pi-button
+            variant="default"
+            size="sm"
+            [disabled]="isCreating()"
+            (click)="onCreateTemplate()"
+            data-test="create-template-button-header"
+          >
+            <lucide-icon [img]="PlusIcon" [size]="14"></lucide-icon>
+            {{ isCreating() ? 'Создание…' : 'Новый шаблон' }}
+          </app-pi-button>
+        </div>
         @if (templateListRes.isLoading()) {
           <p class="empty-state">Загрузка шаблонов…</p>
         } @else if (templateListRes.error()) {
@@ -185,32 +198,102 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
                 <lucide-icon [img]="PlusIcon" [size]="14"></lucide-icon>
                 {{ isCreating() ? 'Создание…' : '+ Создать шаблон' }}
               </app-pi-button>
-              <p class="text-xs text-muted-foreground mt-1">
-                Подсказка: перейдите в Тексты / Таблицы чтобы добавить reusable блоки
-              </p>
             </div>
           </div>
         }
       </app-pi-section>
     } @else {
-      <div class="builder-subtitle">
-        <span class="text-xs text-muted-foreground">{{ headerSubtitle() }}</span>
+      <!-- Builder toolbar — horizontal dropdowns for adding blocks -->
+      <div class="builder-toolbar">
+        <div class="builder-toolbar__title">
+          <span class="text-xs text-muted-foreground">{{ headerSubtitle() }}</span>
+        </div>
+        <div class="builder-toolbar__actions">
+          <!-- Тексты dropdown -->
+          <div class="builder-dropdown">
+            <button
+              type="button"
+              class="builder-dropdown__trigger"
+              (click)="toggleDropdown('texts')"
+            >
+              <lucide-icon [img]="FileTextIcon" [size]="14"></lucide-icon>
+              Тексты
+            </button>
+            @if (openDropdown() === 'texts') {
+              <div class="builder-dropdown__panel">
+                @if (textsRes.isLoading()) {
+                  <p class="builder-dropdown__loading">Загрузка…</p>
+                } @else if (textsRes.error()) {
+                  <p class="builder-dropdown__error">Ошибка загрузки</p>
+                } @else if (textsRes.value() && textsRes.value()!.length > 0) {
+                  @for (t of textsRes.value(); track t._id) {
+                    <button
+                      type="button"
+                      class="builder-dropdown__item"
+                      (click)="onAddTextBlock(t); closeDropdown()"
+                    >
+                      <span class="builder-dropdown__item-label">{{ t.name }}</span>
+                      @if (t.category) {
+                        <span class="builder-dropdown__item-hint">{{ t.category }}</span>
+                      }
+                    </button>
+                  }
+                } @else {
+                  <p class="builder-dropdown__empty">Нет текстов</p>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Таблицы dropdown -->
+          <div class="builder-dropdown">
+            <button
+              type="button"
+              class="builder-dropdown__trigger"
+              (click)="toggleDropdown('tables')"
+            >
+              <lucide-icon [img]="TableIcon" [size]="14"></lucide-icon>
+              Таблицы
+            </button>
+            @if (openDropdown() === 'tables') {
+              <div class="builder-dropdown__panel">
+                @if (tablesRes.isLoading()) {
+                  <p class="builder-dropdown__loading">Загрузка…</p>
+                } @else if (tablesRes.error()) {
+                  <p class="builder-dropdown__error">Ошибка загрузки</p>
+                } @else if (tablesRes.value() && tablesRes.value()!.length > 0) {
+                  @for (t of tablesRes.value(); track t._id) {
+                    <button
+                      type="button"
+                      class="builder-dropdown__item"
+                      (click)="onAddTableTemplate(t); closeDropdown()"
+                    >
+                      <span class="builder-dropdown__item-label">{{ t.name }}</span>
+                      @if (t.description) {
+                        <span class="builder-dropdown__item-hint">{{ t.description }}</span>
+                      }
+                    </button>
+                  }
+                } @else {
+                  <p class="builder-dropdown__empty">Нет таблиц</p>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Отступ button -->
+          <button
+            type="button"
+            class="builder-toolbar__btn"
+            (click)="onAddSpacer()"
+          >
+            — Отступ
+          </button>
+        </div>
       </div>
 
+      <!-- Main builder area: canvas + inspector -->
       <div class="builder-shell">
-        <app-builder-tool-pane
-          [backgroundImages]="template()?.backgroundImage ?? []"
-          [defaultBackgroundIndex]="template()?.defaultBackgroundIndex ?? -1"
-          [backgroundOpacity]="template()?.backgroundOpacity ?? 0.3"
-          [orientation]="orientation()"
-          (addBlock)="onAddBlock($event)"
-          (uploadBackground)="onBackgroundUpload($event)"
-          (removeBackground)="onRemoveBackground($event)"
-          (setDefaultBackground)="onSetDefaultBackground($event)"
-          (setOpacity)="onSetOpacity($event)"
-          (setOrientation)="onSetOrientation($event)"
-        />
-
         <app-builder-canvas
           [blocks]="blocks()"
           [selectedId]="selectedId()"
@@ -218,19 +301,35 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
           [backgroundImages]="backgroundImages()"
           [orientation]="orientation()"
           [backgroundOpacity]="template()?.backgroundOpacity ?? 0.3"
+          [headerText]="template()?.headerText ?? ''"
+          [footerText]="template()?.footerText ?? ''"
+          [pageNumbering]="template()?.pageNumbering ?? false"
+          [pageSize]="template()?.pageSize ?? 'A4'"
           (select)="onSelect($event)"
           (multiSelect)="onMultiSelect($event)"
           (reorder)="onReorder($event)"
           (dropAdd)="onDropAdd($event)"
+          (blockWidthChange)="onBlockWidthChange($event)"
+          (canvasClick)="onCanvasClick()"
         />
 
         <app-builder-inspector
           [block]="selectedBlock()"
           [selectedCount]="selectedIds().size"
+          [selectedBlocks]="selectedBlocks()"
+          [paperWidth]="orientation() === 'landscape' ? 900 : 720"
+          [templateSelected]="templateSelected()"
+          [template]="template()"
           (update)="onInspectorUpdate($event)"
           (delete)="onDeleteBlock($event)"
           (deleteSelected)="onDeleteSelected()"
           (editSelected)="onEditSelected()"
+          (marginReset)="onMarginReset($event)"
+          (multiMarginUpdate)="onMultiMarginUpdate($event)"
+          (templateUpdate)="onTemplateUpdate($event)"
+          (uploadBackground)="onBackgroundUpload($event)"
+          (removeBackground)="onRemoveBackground($event)"
+          (setDefaultBackground)="onSetDefaultBackground($event)"
         />
       </div>
     }
@@ -248,7 +347,6 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
         display: flex;
         flex: 1;
         min-height: 0;
-        border-top: 1px solid var(--color-rule);
       }
 
       .header-actions {
@@ -302,6 +400,128 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
       .empty-state--error {
         color: var(--color-destructive);
       }
+
+      /* Builder toolbar — horizontal bar at top */
+      .builder-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 6px 0;
+        border-bottom: 1px solid var(--color-rule);
+        background: var(--color-paper);
+      }
+
+      .builder-toolbar__title {
+        flex-shrink: 0;
+      }
+
+      .builder-toolbar__actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex: 1;
+      }
+
+      .builder-toolbar__btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--color-ink);
+        background: transparent;
+        border: 1px solid var(--color-rule);
+        border-radius: 2px;
+        cursor: pointer;
+        transition: all 100ms ease;
+        white-space: nowrap;
+      }
+
+      .builder-toolbar__btn:hover {
+        background: var(--color-paper-2);
+        border-color: var(--color-ink);
+      }
+
+      /* Dropdown */
+      .builder-dropdown {
+        position: relative;
+      }
+
+      .builder-dropdown__trigger {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--color-ink);
+        background: transparent;
+        border: 1px solid var(--color-rule);
+        border-radius: 2px;
+        cursor: pointer;
+        transition: all 100ms ease;
+        white-space: nowrap;
+      }
+
+      .builder-dropdown__trigger:hover {
+        background: var(--color-paper-2);
+        border-color: var(--color-ink);
+      }
+
+      .builder-dropdown__panel {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        z-index: 100;
+        min-width: 220px;
+        max-height: 320px;
+        overflow-y: auto;
+        background: var(--color-paper);
+        border: 1px solid var(--color-rule);
+        border-radius: 4px;
+        margin-top: 2px;
+      }
+
+      .builder-dropdown__item {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        width: 100%;
+        padding: 6px 12px;
+        text-align: left;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        transition: background 100ms ease;
+      }
+
+      .builder-dropdown__item:hover {
+        background: color-mix(in oklch, var(--color-sunrise-soft) 40%, transparent);
+      }
+
+      .builder-dropdown__item-label {
+        font-size: 12px;
+        color: var(--color-ink);
+      }
+
+      .builder-dropdown__item-hint {
+        font-size: 10px;
+        color: var(--color-muted);
+      }
+
+      .builder-dropdown__loading,
+      .builder-dropdown__error,
+      .builder-dropdown__empty {
+        padding: 8px 12px;
+        font-size: 12px;
+        color: var(--color-muted);
+        margin: 0;
+      }
+
+      .builder-dropdown__error {
+        color: var(--color-destructive);
+      }
     `,
   ],
 })
@@ -313,6 +533,8 @@ export class BuilderPage {
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly blocksSvc = inject(TemplateBlocksService);
   private readonly templatesSvc = inject(DocumentTemplatesService);
+  private readonly textBlocksSvc = inject(TextBlocksService);
+  private readonly tableTemplatesSvc = inject(TableTemplatesService);
   private readonly toast = inject(PiToastService);
   private readonly dialog = inject(PiDialogService);
   private readonly destroyRef = inject(DestroyRef);
@@ -326,6 +548,7 @@ export class BuilderPage {
   protected readonly AlertIcon = AlertCircle;
   protected readonly LoaderIcon = Loader2;
   protected readonly TrashIcon = Trash2;
+  protected readonly TableIcon = TableIcon;
 
   // State
   protected readonly templateId = signal<string | null>(null);
@@ -336,6 +559,21 @@ export class BuilderPage {
   protected readonly isLoading = signal<boolean>(false);
   protected readonly isCreating = signal<boolean>(false);
   protected readonly saveStatus = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  /** When true, inspector shows template properties instead of block properties */
+  protected readonly templateSelected = signal<boolean>(false);
+
+  // Dropdown state for inline toolbar
+  protected readonly openDropdown = signal<string | null>(null);
+
+  // httpResources for inline toolbar dropdowns
+  protected readonly textsRes = httpResource<Array<{ _id: string; name: string; category?: string; content?: string; columns?: unknown[] }>>(
+    () => '/api/text-blocks?isActive=true',
+    { defaultValue: [] },
+  );
+  protected readonly tablesRes = httpResource<Array<{ _id: string; name: string; description?: string; columns?: unknown[]; sampleRows?: unknown[][] }>>(
+    () => '/api/table-templates?isActive=true',
+    { defaultValue: [] },
+  );
 
   // Auto-save Subject — grouped by _id, debounced per group.
   private readonly save$ = new Subject<{ _id: string; patch: Partial<TemplateBlock> }>();
@@ -362,6 +600,13 @@ export class BuilderPage {
       return this.blocks().find((b) => blockKey(b) === key) ?? null;
     }
     return null;
+  });
+
+  // All selected blocks (for multi-select margin controls)
+  protected readonly selectedBlocks = computed<TemplateBlock[]>(() => {
+    const ids = this.selectedIds();
+    if (ids.size === 0) return [];
+    return this.blocks().filter((b) => ids.has(blockKey(b)));
   });
 
   protected readonly headerSubtitle = computed<string>(() => {
@@ -573,6 +818,35 @@ export class BuilderPage {
   }
 
   // ─────────────────────────────────────────────────────────────
+  // Inline toolbar dropdown handlers
+  // ─────────────────────────────────────────────────────────────
+  protected toggleDropdown(name: string): void {
+    this.openDropdown.update((current) => (current === name ? null : name));
+  }
+
+  protected closeDropdown(): void {
+    this.openDropdown.set(null);
+  }
+
+  protected onAddTextBlock(t: { _id: string; name: string; content?: string; columns?: unknown[] }): void {
+    this.onAddBlock({
+      source: 'text-block',
+      textBlock: t as import('../../../shared/services/pi-text-blocks.service').TextBlock,
+    });
+  }
+
+  protected onAddTableTemplate(t: { _id: string; name: string; columns?: unknown[]; sampleRows?: unknown[][] }): void {
+    this.onAddBlock({
+      source: 'table-template',
+      tableTemplate: t as import('../../../shared/services/pi-table-templates.service').TableTemplate,
+    });
+  }
+
+  protected onAddSpacer(): void {
+    this.onAddBlock({ source: 'block-type', type: 'spacer' });
+  }
+
+  // ─────────────────────────────────────────────────────────────
   // Tool pane → add block (Phase D.1) / drop from palette (D.2.2)
   // ─────────────────────────────────────────────────────────────
   protected onAddBlock(payload: AddBlockPayload): void {
@@ -725,6 +999,7 @@ export class BuilderPage {
   protected onSelect(block: TemplateBlock): void {
     this.selectedId.set(blockKey(block));
     this.selectedIds.set(new Set());
+    this.templateSelected.set(false);
   }
 
   protected onMultiSelect(block: TemplateBlock): void {
@@ -736,9 +1011,16 @@ export class BuilderPage {
       ids.add(key);
     }
     this.selectedIds.set(ids);
-    // Clear single selection when multi-selecting
     if (ids.size > 0) {
       this.selectedId.set(null);
+      this.templateSelected.set(false);
+    }
+  }
+
+  protected onCanvasClick(): void {
+    // Only show template properties if no block is selected
+    if (!this.selectedId() && this.selectedIds().size === 0) {
+      this.templateSelected.set(true);
     }
   }
 
@@ -746,24 +1028,16 @@ export class BuilderPage {
     const block = this.selectedBlock();
     if (!block) return;
 
-    // Navigate based on block type
-    const settings = block.settings as Record<string, unknown> | undefined;
-
     switch (block.type) {
       case 'text':
-        // Text block — go to texts page
-        if (settings?.['textBlockId']) {
-          this.router.navigate(['/doc-constructor/texts']);
-        }
+        // Text block — navigate to texts page for editing
+        this.router.navigate(['/doc-constructor/texts']);
         break;
       case 'table':
-        // Table block — go to tables page
-        if (settings?.['tableTemplateId']) {
-          this.router.navigate(['/doc-constructor/tables']);
-        }
+        // Table block — navigate to tables page for editing
+        this.router.navigate(['/doc-constructor/tables']);
         break;
       default:
-        // Other types — scroll to inspector (already visible)
         break;
     }
   }
@@ -859,6 +1133,51 @@ export class BuilderPage {
     const { _id, ...rest } = patch;
     this.blocks.update((arr) => arr.map((b) => (b._id === _id ? { ...b, ...rest } : b)));
     this.save$.next({ _id, patch: rest });
+  }
+
+  protected onBlockWidthChange(event: { block: TemplateBlock; width: number; marginLeft: number }): void {
+    const { block, width, marginLeft } = event;
+    if (!block._id) return;
+    const settings = {
+      ...(block.settings as Record<string, unknown> | undefined),
+      width,
+      marginLeft,
+    };
+    this.blocks.update((arr) =>
+      arr.map((b) => (b._id === block._id ? { ...b, settings } : b)),
+    );
+    this.save$.next({ _id: block._id, patch: { settings } });
+  }
+
+  protected onMarginReset(blockId: string): void {
+    const settings = { width: 100, marginLeft: 0 };
+    this.blocks.update((arr) =>
+      arr.map((b) => (b._id === blockId ? { ...b, settings } : b)),
+    );
+    this.save$.next({ _id: blockId, patch: { settings } });
+  }
+
+  protected onMultiMarginUpdate(
+    updates: Array<{ _id: string; settings: Record<string, unknown> }>,
+  ): void {
+    for (const { _id, settings } of updates) {
+      this.blocks.update((arr) =>
+        arr.map((b) => (b._id === _id ? { ...b, settings } : b)),
+      );
+      this.save$.next({ _id, patch: { settings } });
+    }
+  }
+
+  protected onTemplateUpdate(patch: Partial<DocumentTemplate>): void {
+    const tid = this.templateId();
+    if (!tid) return;
+    this.templatesSvc.update(tid, patch).subscribe({
+      next: (res) => {
+        if (res.ok) {
+          this.template.update((t) => (t ? { ...t, ...patch } : t));
+        }
+      },
+    });
   }
 
   protected onDeleteBlock(id: string): void {

@@ -1,8 +1,8 @@
 # STATUS — KPPDF ERP Project Status
 
-**Last updated:** 2026-07-19
-**Phase:** TZ-86 (Конструктор документов / Document Constructor) — ЗАВЕРШЕНО
-**Total tasks:** 49/49 ✅ (TZ-02..TZ-46) + TZ-AUDIT-9 + 9.1 + TZ-WARMUP-100 + TZ-LIGHT-XX + TZ-83 + TZ-86 + **16 PENDING** (TZ-150..TZ-165 — Quality Audit Batch + Layout audit)
+**Last updated:** 2026-07-24
+**Phase:** TZ-170 (Конструктор документов — UX-ревизия) — ТРЕБУЕТ ПЕРЕПРОВЕРКИ
+**Total tasks:** 49/49 ✅ (TZ-02..TZ-46) + TZ-AUDIT-9 + 9.1 + TZ-WARMUP-100 + TZ-LIGHT-XX + TZ-83 + TZ-86 + TZ-170 (pending QA) + **16 PENDING** (TZ-150..TZ-165 — Quality Audit Batch + Layout audit)
 
 ## ✅ Завершённые этапы
 
@@ -248,6 +248,52 @@
 **Atomic-history decision (per code-reviewer):** F.6-коммит лендингом был на `origin/main` как отдельный commit `28daca6` (a separate follow-up), а не squash в `ba7b66a` (TZ-86 archive commit) — это сохраняет TZ-86 ship history как «as designed + as shipped», а fixup commit чисто документирует что после архива понадобился template-binding sweep. Cross-reference в commit body: TZ-78 (orig-warning), TZ-AUDIT-6 (orthogonal focus-ring unification), TZ-AUDIT-8 (orthogonal hairline border).
 
 **F.3 browser visual verification — STILL PENDING:** F.6 разблокировал `ng serve`, но фактический browser flow (login → texts CRUD → tables CRUD → builder 3-pane drag → background upload → last-saved chip) с screenshots в `tasks/_archive/2026-07/TZ-86-evidence/` ещё не запущен. TZ-87 candidate: запустить browser-use verification flow.
+
+### TZ-170 (2026-07-24) — Конструктор документов: UX-ревизия
+
+**Мотивация:** Пользователь: «свойства шаблона при клике на пустой холст, прозрачность, форматы, визуальные индикаторы». Множественные итерации: исправление клик-детекции, перенос палитры наверх, устранение дублирования.
+
+**Что сделано (7 файлов):**
+
+**1. Панель свойств шаблона (Inspector)**
+- При клике на пустое место холста справа появляется панель свойств шаблона
+- Ориентация: кнопки Книжная / Альбомная
+- Формат страницы: A3 / A4 / A5 (заменены Letter/Legal)
+- Прозрачность фона: слайдер 0-100% (рабочий дизайн из декораций)
+- Нумерация страниц, Оглавление: toggle вкл/выкл
+- Шапка/Подвал документа: текстовые поля
+- Фоновые изображения: загрузка, выбор по умолчанию, удаление
+
+**2. Холст — визуальные улучшения**
+- Рамка шаблона: `2px solid var(--color-ink)` (была 1.5px rule)
+- Dropzone заполняет всю высоту страницы — клик в любом месте
+- Визуальные индикаторы: шапка (сверху), подвал (снизу), номер страницы (справа)
+- A3/A4/A5 форматы с корректными размерами
+
+**3. Палитра перенесена наверх**
+- Тексты/Таблицы/Отступ — dropdown меню в горизонтальной панели
+- Левая панель (280px) удалена — холст занимает всё пространство
+- Альбомная ориентация теперь шире и видна пропорционально
+
+**4. Устранение дублирования**
+- Ориентация, прозрачность, декорации — только в свойствах
+- Секция «Декорации» удалена из палитры
+
+**5. Бэкенд**
+- `document-template.schema.ts`: enum `pageSize` → `['A3', 'A4', 'A5']`
+
+**Затронутые файлы:**
+- `builder.page.ts` — новая layout с toolbar + dropdowns
+- `builder-canvas.component.ts` — dropzone flex:1, visual indicators
+- `builder-inspector.component.ts` — template properties, opacity slider
+- `builder-tool-pane.component.ts` — очищен (unused)
+- `pi-canvas-page.component.ts` — A3/A5 sizes, flex column, 2px border
+- `pi-document-templates.service.ts` — тип pageSize обновлён
+- `document-template.schema.ts` — enum обновлён
+
+**Verification:** `ng build --configuration=production` → 0 errors ✅, `tsc --noEmit` → exit 0 ✅
+
+**Статус:** Требует полной перепроверки по чек-листу `tasks/TZ-170.md` §3 (Tomorrow's QA pass)
 
 ## 🎯 6-направленная сессия улучшений (2026-07-08)
 

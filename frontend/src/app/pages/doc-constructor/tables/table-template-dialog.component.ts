@@ -16,7 +16,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { CdkDropList, CdkDrag, CdkDragDrop } from '@angular/cdk/drag-drop';
+import { LucideAngularModule, AlignLeft, AlignCenter, AlignRight, ChevronLeft, ChevronRight } from 'lucide-angular';
 import { PiDialogComponent } from '../../../shared/ui/dialog/pi-dialog.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../../shared/ui/dialog/dialog.tokens';
 import type { DialogRef } from '../../../shared/ui/dialog/pi-dialog.service';
@@ -82,7 +82,7 @@ interface ClientPreviewModel {
 @Component({
   selector: 'app-table-template-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, CdkDropList, CdkDrag, PiDialogComponent, ButtonComponent],
+  imports: [ReactiveFormsModule, LucideAngularModule, PiDialogComponent, ButtonComponent],
   template: `
     <app-pi-dialog
       [title]="dialogTitle()"
@@ -94,8 +94,9 @@ interface ClientPreviewModel {
       <div body class="ttd-body" [formGroup]="form">
         <!-- ─── Settings (top) ─── -->
         <section class="ttd-settings">
+          <!-- Row 1: Name + Description -->
           <div class="ttd-settings-row">
-            <label class="ttd-field ttd-field--grow">
+            <label class="ttd-field ttd-field--name">
               <span class="eyebrow text-muted-foreground">Название *</span>
               <input
                 class="ttd-input"
@@ -104,15 +105,19 @@ interface ClientPreviewModel {
                 data-test="name-input"
               />
             </label>
-            <label class="ttd-field ttd-field--grow">
+            <label class="ttd-field ttd-field--desc">
               <span class="eyebrow text-muted-foreground">Описание</span>
               <input
                 class="ttd-input"
                 formControlName="description"
-                placeholder="Краткое описание назначения"
+                placeholder="Краткое описание"
               />
             </label>
-            <div class="ttd-field">
+          </div>
+
+          <!-- Row 2: Category + Meta -->
+          <div class="ttd-settings-row">
+            <div class="ttd-field ttd-field--cat">
               <span class="eyebrow text-muted-foreground">Категория</span>
               <div class="ttd-pills">
                 @for (c of categoryOptions; track c.key) {
@@ -127,17 +132,32 @@ interface ClientPreviewModel {
                 }
               </div>
             </div>
+            <div class="ttd-settings-meta">
+              <label class="ttd-meta-item">
+                <span class="eyebrow text-muted-foreground">Порядок</span>
+                <input
+                  class="ttd-order-input font-mono"
+                  type="number"
+                  formControlName="sortOrder"
+                />
+              </label>
+              <label class="ttd-active-check">
+                <input type="checkbox" formControlName="isActive" />
+                <span class="text-sm">Активен</span>
+              </label>
+            </div>
           </div>
 
           @if (mode() === 'from-registry') {
-            <div class="ttd-settings-row">
-              <div class="ttd-field ttd-field--grow">
+            <!-- Row 3: Data source (registry mode) -->
+            <div class="ttd-settings-row ttd-settings-row--source">
+              <div class="ttd-field ttd-field--source">
                 <span class="eyebrow text-muted-foreground">Источник данных</span>
                 @if (sourcesLoading()) {
                   <p class="text-xs text-muted-foreground">Загрузка…</p>
                 } @else {
                   <select
-                    class="ttd-input"
+                    class="ttd-input ttd-input--select"
                     [value]="selectedSourceKey() ?? ''"
                     (change)="onSourceChange($event)"
                     data-test="source-select"
@@ -154,7 +174,7 @@ interface ClientPreviewModel {
                 }
               </div>
               @if (selectedSource(); as src) {
-                <div class="ttd-field ttd-field--grow">
+                <div class="ttd-field ttd-field--fields">
                   <div class="ttd-field-header">
                     <span class="eyebrow text-muted-foreground">Поля источника</span>
                     <span class="text-[10px] text-muted-foreground"
@@ -176,35 +196,6 @@ interface ClientPreviewModel {
                   </div>
                 </div>
               }
-              <div class="ttd-settings-inline">
-                <label class="ttd-meta-item">
-                  <span class="eyebrow text-muted-foreground">Порядок</span>
-                  <input
-                    class="ttd-order-input font-mono"
-                    type="number"
-                    formControlName="sortOrder"
-                  />
-                </label>
-                <label class="ttd-active-check">
-                  <input type="checkbox" formControlName="isActive" />
-                  <span class="text-sm">Активен</span>
-                </label>
-              </div>
-            </div>
-          } @else {
-            <div class="ttd-settings-row ttd-settings-row--meta">
-              <label class="ttd-meta-item">
-                <span class="eyebrow text-muted-foreground">Порядок</span>
-                <input
-                  class="ttd-order-input font-mono"
-                  type="number"
-                  formControlName="sortOrder"
-                />
-              </label>
-              <label class="ttd-active-check">
-                <input type="checkbox" formControlName="isActive" />
-                <span class="text-sm">Активен</span>
-              </label>
             </div>
           }
         </section>
@@ -215,34 +206,133 @@ interface ClientPreviewModel {
             <!-- Global toolbar -->
             <div class="ttd-toolbar">
               <div class="ttd-toolbar-group">
-                <span class="eyebrow text-muted-foreground">Выровнять все:</span>
                 <button
                   type="button"
-                  class="ttd-toolbar-btn"
-                  (click)="alignAll('left')"
-                  title="Влево"
-                >&#x2190;</button>
-                <button
-                  type="button"
-                  class="ttd-toolbar-btn"
-                  (click)="alignAll('center')"
-                  title="По центру"
-                >&#x2192;</button>
-                <button
-                  type="button"
-                  class="ttd-toolbar-btn"
-                  (click)="alignAll('right')"
-                  title="Вправо"
-                >&#x2550;</button>
+                  class="ttd-link"
+                  (click)="addColumn()"
+                  data-test="add-column-button"
+                >
+                  + Добавить столбец
+                </button>
               </div>
-              <button
-                type="button"
-                class="ttd-link"
-                (click)="addColumn()"
-                data-test="add-column-button"
-              >
-                + Добавить столбец
-              </button>
+
+              <!-- Context controls for selected column -->
+              @if (selectedColumnIndex() !== null) {
+                <div class="ttd-toolbar-context">
+                  <span class="ttd-toolbar-sep"></span>
+
+                  <!-- Move buttons -->
+                  <div class="ttd-toolbar-group">
+                    <button
+                      type="button"
+                      class="ttd-toolbar-btn"
+                      [disabled]="selectedColumnIndex() === 0"
+                      (click)="moveColumn(selectedColumnIndex()!, -1)"
+                      title="Переместить влево"
+                    >
+                      <lucide-icon [img]="ChevronLeftIcon" [size]="14"></lucide-icon>
+                    </button>
+                    <button
+                      type="button"
+                      class="ttd-toolbar-btn"
+                      [disabled]="selectedColumnIndex() === columnsArray.length - 1"
+                      (click)="moveColumn(selectedColumnIndex()!, 1)"
+                      title="Переместить вправо"
+                    >
+                      <lucide-icon [img]="ChevronRightIcon" [size]="14"></lucide-icon>
+                    </button>
+                  </div>
+
+                  <span class="ttd-toolbar-sep"></span>
+
+                  <!-- Alignment buttons -->
+                  <div class="ttd-toolbar-group">
+                    <button
+                      type="button"
+                      class="ttd-toolbar-btn"
+                      [class.is-active]="columnsArray.at(selectedColumnIndex()!).controls.align.value === 'left'"
+                      (click)="setColumnAlign(selectedColumnIndex()!, 'left')"
+                      title="Выровнять влево"
+                    >
+                      <lucide-icon [img]="AlignLeftIcon" [size]="14"></lucide-icon>
+                    </button>
+                    <button
+                      type="button"
+                      class="ttd-toolbar-btn"
+                      [class.is-active]="columnsArray.at(selectedColumnIndex()!).controls.align.value === 'center'"
+                      (click)="setColumnAlign(selectedColumnIndex()!, 'center')"
+                      title="Выровнять по центру"
+                    >
+                      <lucide-icon [img]="AlignCenterIcon" [size]="14"></lucide-icon>
+                    </button>
+                    <button
+                      type="button"
+                      class="ttd-toolbar-btn"
+                      [class.is-active]="columnsArray.at(selectedColumnIndex()!).controls.align.value === 'right'"
+                      (click)="setColumnAlign(selectedColumnIndex()!, 'right')"
+                      title="Выровнять вправо"
+                    >
+                      <lucide-icon [img]="AlignRightIcon" [size]="14"></lucide-icon>
+                    </button>
+                  </div>
+
+                  <span class="ttd-toolbar-sep"></span>
+
+                  <!-- Width control -->
+                  <div class="ttd-toolbar-group ttd-toolbar-width">
+                    <span class="ttd-toolbar-label">Ширина:</span>
+                    <input
+                      class="ttd-toolbar-width-input"
+                      type="number"
+                      min="5"
+                      max="800"
+                      [value]="columnsArray.at(selectedColumnIndex()!).controls.width.value"
+                      (input)="onWidthInput($event, selectedColumnIndex()!)"
+                    />
+                    <span class="ttd-toolbar-unit">px</span>
+                    <input
+                      type="range"
+                      class="ttd-toolbar-slider"
+                      min="5"
+                      max="800"
+                      step="5"
+                      [value]="columnsArray.at(selectedColumnIndex()!).controls.width.value"
+                      (input)="onWidthInput($event, selectedColumnIndex()!)"
+                    />
+                  </div>
+
+                  <span class="ttd-toolbar-sep"></span>
+
+                  <!-- Align all -->
+                  <div class="ttd-toolbar-group">
+                    <span class="ttd-toolbar-label">Все:</span>
+                    <button
+                      type="button"
+                      class="ttd-toolbar-btn ttd-toolbar-btn--sm"
+                      (click)="alignAll('left')"
+                      title="Выровнять все влево"
+                    >
+                      <lucide-icon [img]="AlignLeftIcon" [size]="12"></lucide-icon>
+                    </button>
+                    <button
+                      type="button"
+                      class="ttd-toolbar-btn ttd-toolbar-btn--sm"
+                      (click)="alignAll('center')"
+                      title="Выровнять все по центру"
+                    >
+                      <lucide-icon [img]="AlignCenterIcon" [size]="12"></lucide-icon>
+                    </button>
+                    <button
+                      type="button"
+                      class="ttd-toolbar-btn ttd-toolbar-btn--sm"
+                      (click)="alignAll('right')"
+                      title="Выровнять все вправо"
+                    >
+                      <lucide-icon [img]="AlignRightIcon" [size]="12"></lucide-icon>
+                    </button>
+                  </div>
+                </div>
+              }
             </div>
 
             <!-- Interactive table (merged columns + preview) -->
@@ -254,20 +344,14 @@ interface ClientPreviewModel {
                   }
                 </colgroup>
                 <thead>
-                  <tr
-                    cdkDropList
-                    (cdkDropListDropped)="onColumnDrop($event)"
-                  >
+                  <tr>
                     @for (col of columnsArray.controls; track $index; let i = $index) {
                       <th
-                        cdkDrag
-                        [cdkDragData]="col"
                         class="ttd-ih"
                         [class.is-selected]="selectedColumnIndex() === i"
                         (click)="selectedColumnIndex.set(i)"
                       >
                         <div class="ttd-ih-top">
-                          <span class="ttd-drag" cdkDragHandle>&#x2630;</span>
                           <span class="ttd-ih-num">{{ i + 1 }}</span>
                           <span class="ttd-ih-label eyebrow">{{ col.controls.label.value || '—' }}</span>
                           <button
@@ -281,18 +365,18 @@ interface ClientPreviewModel {
                           <input
                             class="ttd-cell-input font-mono ttd-cell-input--sm"
                             [formControl]="col.controls.key"
-                            placeholder="key"
+                            placeholder="ключ"
                             (click)="$event.stopPropagation()"
                           />
                           <input
                             class="ttd-cell-input ttd-cell-input--sm"
                             [formControl]="col.controls.label"
-                            placeholder="label"
+                            placeholder="название"
                             (click)="$event.stopPropagation()"
                           />
                           @if (mode() !== 'from-registry') {
                             <select
-                              class="ttd-cell-input ttd-cell-input--sm"
+                              class="ttd-cell-input ttd-cell-input--sm ttd-cell-input--select"
                               [formControl]="col.controls.type"
                               (click)="$event.stopPropagation()"
                             >
@@ -301,48 +385,7 @@ interface ClientPreviewModel {
                               }
                             </select>
                           }
-                          <div class="ttd-ih-width-align">
-                            <input
-                              class="ttd-cell-input font-mono ttd-cell-input--sm ttd-cell-input--narrow"
-                              type="number"
-                              [formControl]="col.controls.width"
-                              min="20"
-                              max="800"
-                              (click)="$event.stopPropagation()"
-                            />
-                            <div class="ttd-align-group ttd-align-group--sm">
-                              <button
-                                type="button"
-                                class="ttd-align-btn"
-                                [class.is-active]="col.controls.align.value === 'left'"
-                                (click)="col.controls.align.setValue('left'); $event.stopPropagation()"
-                              >&#x2190;</button>
-                              <button
-                                type="button"
-                                class="ttd-align-btn"
-                                [class.is-active]="col.controls.align.value === 'center'"
-                                (click)="col.controls.align.setValue('center'); $event.stopPropagation()"
-                              >&#x2192;</button>
-                              <button
-                                type="button"
-                                class="ttd-align-btn"
-                                [class.is-active]="col.controls.align.value === 'right'"
-                                (click)="col.controls.align.setValue('right'); $event.stopPropagation()"
-                              >&#x2550;</button>
-                            </div>
-                          </div>
-                          <input
-                            class="ttd-cell-input font-mono ttd-cell-input--sm"
-                            [formControl]="col.controls.format"
-                            placeholder="fmt"
-                            (click)="$event.stopPropagation()"
-                          />
                         </div>
-                        <div
-                          class="ttd-resize-handle"
-                          (mousedown)="onResizeStart($event, i)"
-                          (click)="$event.stopPropagation()"
-                        ></div>
                       </th>
                     }
                   </tr>
@@ -434,7 +477,8 @@ interface ClientPreviewModel {
         border-color: var(--color-ink);
         width: calc(100vw - 48px);
         max-width: 1400px;
-        max-height: min(calc(100vh - 48px), 88vh);
+        max-height: min(calc(100vh - 48px), 92vh);
+        height: 80vh;
         margin: 24px auto;
         overflow: hidden;
       }
@@ -460,26 +504,25 @@ interface ClientPreviewModel {
 
       /* ─── Settings ─── */
       .ttd-settings {
-        padding: 10px 16px;
+        padding: 12px 16px;
         border-bottom: 2px solid var(--color-ink);
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 10px;
         flex-shrink: 0;
       }
       .ttd-settings-row {
         display: flex;
-        gap: 10px;
+        gap: 12px;
         align-items: flex-end;
-        flex-wrap: wrap;
       }
-      .ttd-settings-row--meta {
-        align-items: center;
+      .ttd-settings-row--source {
+        align-items: flex-start;
       }
-      .ttd-settings-inline {
+      .ttd-settings-meta {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 16px;
         flex-shrink: 0;
         margin-left: auto;
       }
@@ -506,32 +549,119 @@ interface ClientPreviewModel {
       .ttd-toolbar {
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        gap: 8px;
         padding: 6px 16px;
         border-bottom: 1px solid var(--color-rule);
         flex-shrink: 0;
+        flex-wrap: wrap;
       }
       .ttd-toolbar-group {
         display: flex;
         align-items: center;
         gap: 4px;
       }
+      .ttd-toolbar-context {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .ttd-toolbar-sep {
+        width: 1px;
+        height: 20px;
+        background: var(--color-rule);
+        flex-shrink: 0;
+      }
+      .ttd-toolbar-label {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--color-muted);
+        margin-right: 4px;
+      }
       .ttd-toolbar-btn {
-        padding: 2px 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        padding: 0;
         border: 1px solid var(--color-rule);
         border-radius: 3px;
         background: var(--color-paper);
         color: var(--color-muted-foreground-strong);
         cursor: pointer;
-        font-size: 11px;
-        min-width: 24px;
-        text-align: center;
         transition: all 120ms ease;
       }
-      .ttd-toolbar-btn:hover {
+      .ttd-toolbar-btn:hover:not(:disabled) {
         background: var(--color-ink);
         color: var(--color-paper);
         border-color: var(--color-ink);
+      }
+      .ttd-toolbar-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+      .ttd-toolbar-btn.is-active {
+        background: var(--color-ink);
+        color: var(--color-paper);
+        border-color: var(--color-ink);
+      }
+      .ttd-toolbar-btn--sm {
+        width: 24px;
+        height: 24px;
+      }
+      .ttd-toolbar-width {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .ttd-toolbar-width-input {
+        width: 56px;
+        padding: 4px 6px;
+        font-size: 12px;
+        font-family: ui-monospace, monospace;
+        text-align: center;
+        border: 1px solid var(--color-rule);
+        border-radius: 3px;
+        background: var(--color-paper);
+        color: var(--color-ink);
+      }
+      .ttd-toolbar-width-input:focus {
+        outline: none;
+        border-color: var(--color-sunrise-warm);
+      }
+      .ttd-toolbar-unit {
+        font-size: 10px;
+        color: var(--color-muted);
+      }
+      .ttd-toolbar-slider {
+        width: 100px;
+        height: 4px;
+        -webkit-appearance: none;
+        appearance: none;
+        background: var(--color-rule);
+        border-radius: 2px;
+        outline: none;
+        cursor: pointer;
+      }
+      .ttd-toolbar-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--color-ink);
+        cursor: pointer;
+        border: 2px solid var(--color-paper);
+      }
+      .ttd-toolbar-slider::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--color-ink);
+        cursor: pointer;
+        border: 2px solid var(--color-paper);
       }
 
       /* ─── Interactive Table ─── */
@@ -615,42 +745,26 @@ interface ClientPreviewModel {
         background: color-mix(in oklch, var(--color-destructive) 8%, transparent);
       }
 
-      /* ─── Header Fields ─── */
       .ttd-ih-fields {
         display: flex;
         flex-direction: column;
         gap: 2px;
       }
-      .ttd-ih-width-align {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-      }
       .ttd-cell-input--sm {
-        padding: 2px 4px;
+        padding: 3px 6px;
         font-size: 11px;
       }
-      .ttd-cell-input--narrow {
-        width: 48px;
+      .ttd-cell-input--sm[type="number"] {
+        width: 56px;
         text-align: center;
+        padding: 3px 4px;
       }
-      .ttd-align-group--sm {
-        transform: scale(0.85);
-        transform-origin: left center;
-      }
-
-      /* ─── Resize Handle ─── */
-      .ttd-resize-handle {
-        position: absolute;
-        right: -2px;
-        top: 0;
-        bottom: 0;
-        width: 5px;
-        cursor: col-resize;
-        z-index: 1;
-      }
-      .ttd-resize-handle:hover {
-        background: var(--color-ink);
+      .ttd-cell-input--select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 4px center;
+        padding-right: 18px;
       }
 
       /* ─── Data Cells ─── */
@@ -692,42 +806,6 @@ interface ClientPreviewModel {
         background: var(--color-paper);
       }
 
-      /* ─── Drag handle ─── */
-      .ttd-drag {
-        cursor: grab;
-        color: var(--color-muted-foreground-strong);
-        font-size: 11px;
-      }
-      .ttd-drag:active {
-        cursor: grabbing;
-      }
-
-      /* ─── Align group ─── */
-      .ttd-align-group {
-        display: flex;
-        border: 1px solid var(--color-rule);
-        border-radius: 3px;
-        overflow: hidden;
-      }
-      .ttd-align-btn {
-        padding: 2px 8px;
-        border: none;
-        border-right: 1px solid var(--color-rule);
-        background: var(--color-paper);
-        color: var(--color-muted-foreground-strong);
-        cursor: pointer;
-        font-size: 11px;
-        min-width: 24px;
-        text-align: center;
-      }
-      .ttd-align-btn:last-child {
-        border-right: none;
-      }
-      .ttd-align-btn.is-active {
-        background: var(--color-ink);
-        color: var(--color-paper);
-      }
-
       /* ─── Empty state ─── */
       .ttd-empty {
         padding: 24px;
@@ -737,11 +815,23 @@ interface ClientPreviewModel {
       .ttd-field {
         display: flex;
         flex-direction: column;
-        gap: 3px;
+        gap: 4px;
         min-width: 0;
       }
-      .ttd-field--grow {
-        flex: 1 1 180px;
+      .ttd-field--name {
+        flex: 2 1 200px;
+      }
+      .ttd-field--desc {
+        flex: 3 1 250px;
+      }
+      .ttd-field--cat {
+        flex: 1 1 300px;
+      }
+      .ttd-field--source {
+        flex: 1 1 200px;
+      }
+      .ttd-field--fields {
+        flex: 2 1 300px;
       }
       .ttd-field-header {
         display: flex;
@@ -762,6 +852,13 @@ interface ClientPreviewModel {
         border-color: var(--color-sunrise-warm);
         outline: 2px solid var(--color-sunrise-warm);
         outline-offset: -1px;
+      }
+      .ttd-input--select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        padding-right: 28px;
       }
       .ttd-pills {
         display: flex;
@@ -861,16 +958,6 @@ interface ClientPreviewModel {
         border-radius: 2px;
       }
 
-      .cdk-drag-preview {
-        background: var(--color-paper);
-        border: 1px solid var(--color-ink);
-        opacity: 0.9;
-      }
-      .cdk-drag-placeholder {
-        opacity: 0.3;
-        background: var(--color-sunrise-soft);
-      }
-
       .ttd-footer {
         display: flex;
         align-items: center;
@@ -899,6 +986,13 @@ export class TableTemplateFormDialogComponent {
 
   // ─── Constants ─────────────────────────────────────────────
   protected readonly columnTypes = COLUMN_TYPES;
+
+  // Icons
+  protected readonly AlignLeftIcon = AlignLeft;
+  protected readonly AlignCenterIcon = AlignCenter;
+  protected readonly AlignRightIcon = AlignRight;
+  protected readonly ChevronLeftIcon = ChevronLeft;
+  protected readonly ChevronRightIcon = ChevronRight;
   protected readonly categoryOptions: Array<{
     key: NonNullable<TableTemplate['category']>;
     label: string;
@@ -1047,12 +1141,8 @@ export class TableTemplateFormDialogComponent {
     const c = this.columnsArray.at(i);
     this.columnsArray.removeAt(i);
     this.columnsArray.insert(t, c);
-  }
-  protected onColumnDrop(event: CdkDragDrop<TableColumnForm[]>): void {
-    if (event.previousIndex === event.currentIndex) return;
-    const c = this.columnsArray.at(event.previousIndex);
-    this.columnsArray.removeAt(event.previousIndex);
-    this.columnsArray.insert(event.currentIndex, c);
+    // Update selected index to follow the moved column
+    this.selectedColumnIndex.set(t);
     this.previewTick.update((n) => n + 1);
   }
 
@@ -1063,26 +1153,30 @@ export class TableTemplateFormDialogComponent {
     this.previewTick.update((n) => n + 1);
   }
 
-  protected onResizeStart(event: MouseEvent, columnIndex: number): void {
-    event.preventDefault();
-    event.stopPropagation();
-    const startX = event.clientX;
-    const startWidth = this.columnsArray.at(columnIndex).controls.width.value;
+  protected setColumnAlign(columnIndex: number, align: 'left' | 'center' | 'right'): void {
+    this.columnsArray.at(columnIndex).controls.align.setValue(align);
+    this.previewTick.update((n) => n + 1);
+  }
 
-    const onMouseMove = (e: MouseEvent): void => {
-      const delta = e.clientX - startX;
-      const newWidth = Math.max(20, Math.min(800, Math.round(startWidth + delta)));
-      this.columnsArray.at(columnIndex).controls.width.setValue(newWidth);
-    };
+  protected onWidthInput(event: Event, columnIndex: number): void {
+    const v = Number((event.target as HTMLInputElement).value) || 100;
+    const newWidth = Math.max(5, Math.min(800, v));
+    const oldWidth = this.columnsArray.at(columnIndex).controls.width.value;
+    const delta = newWidth - oldWidth;
 
-    const onMouseUp = (): void => {
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-      this.previewTick.update((n) => n + 1);
-    };
+    this.columnsArray.at(columnIndex).controls.width.setValue(newWidth, { emitEvent: false });
 
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
+    // Compensate by adjusting ONLY the last column
+    // This preserves all other columns' widths
+    const lastIndex = this.columnsArray.length - 1;
+    if (lastIndex > 0 && columnIndex !== lastIndex) {
+      const lastCtrl = this.columnsArray.at(lastIndex);
+      const lastOldWidth = lastCtrl.controls.width.value;
+      const lastNewWidth = Math.max(5, lastOldWidth - delta);
+      lastCtrl.controls.width.setValue(lastNewWidth, { emitEvent: false });
+    }
+
+    this.previewTick.update((n) => n + 1);
   }
 
   // ─── Save ──────────────────────────────────────────────────

@@ -1,3 +1,32 @@
+## [2026-07-24] — TZ-170: Конструктор документов — UX-ревизия
+**Исполнитель:** MiMo Code Agent
+**Статус:** Выполнено (frontend build: 0 errors; requires QA pass tomorrow)
+
+### Что сделано:
+- **Панель свойств шаблона (Inspector):** при клике на пустое место холста справа появляется панель с ориентацией, форматом (A3/A4/A5), прозрачностью, нумерацией, оглавлением, шапкой/подвалом, фоновыми изображениями
+- **Холст — визуальные улучшения:** рамка 2px ink, dropzone заполняет всю высоту A4, визуальные индикаторы шапки/подвала/номера страницы
+- **Палитра перенесена наверх:** Тексты/Таблицы/Отступ — dropdown меню в горизонтальной панели, левая панель 280px удалена
+- **Устранение дублирования:** ориентация, прозрачность, декорации — только в свойствах
+- **Бэкенд:** enum pageSize обновлён на A3/A4/A5
+
+### Файлы изменены (7):
+- `builder.page.ts` — новая layout с toolbar + dropdowns
+- `builder-canvas.component.ts` — dropzone flex:1, visual indicators
+- `builder-inspector.component.ts` — template properties, opacity slider
+- `builder-tool-pane.component.ts` — очищен (unused)
+- `pi-canvas-page.component.ts` — A3/A5 sizes, flex column, 2px border
+- `pi-document-templates.service.ts` — тип pageSize обновлён
+- `document-template.schema.ts` — enum обновлён
+
+### Verification:
+- `ng build --configuration=production` → 0 errors ✅
+- `tsc --noEmit` → exit 0 ✅
+
+### TODO (tomorrow):
+- Полная перепроверка по чек-листу `tasks/TZ-170.md` §3
+
+---
+
 ## [2026-07-19] — Завершено: Массовый оркестрированный цикл (17 TZ задач + ручная работа)
 **Исполнитель:** MiMo Code Agent (оркестратор + 15 параллельных агентов)
 **Статус:** Выполнено (frontend build: 0 errors, 0 warnings; backend tsc: 0 errors)

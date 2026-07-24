@@ -3,7 +3,6 @@ import {
   Component,
   computed,
   inject,
-  input,
   output,
   signal,
 } from '@angular/core';
@@ -16,10 +15,7 @@ import {
   Table as TableIcon,
   Plus,
   Minus,
-  Image as ImageIcon,
-  Upload,
 } from 'lucide-angular';
-import { RegistryService } from '../../../shared/services/pi-registry.service';
 import { TextBlocksService } from '../../../shared/services/pi-text-blocks.service';
 import { TableTemplatesService } from '../../../shared/services/pi-table-templates.service';
 import { extractErrorMessage } from '../../../core/silent-http';
@@ -36,20 +32,19 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
 /**
  * TZ-86 Phase D.1 + D.2 — `BuilderToolPane` (left pane).
  *
- * Five collapsible accordion-tabs:
- *   1. **Структура** — 5 buttons «+» per BlockType.
- *   2. **Тексты** — list TextBlock items via httpResource.
- *   3. **Таблицы** — list TableTemplate items via httpResource.
- *   4. **Данные** — DataSourceDescriptor groups from registry.
- *   5. **Декорации** (Phase D.2.1) — file input for background image upload
- *      (≤ 5 MB, png|jpeg|webp). Emits `(uploadBackground)` with the
- *      selected File; parent BuilderPage calls DocumentTemplatesService.
+ * Three collapsible accordion-tabs:
+ *   1. **Тексты** — list TextBlock items via httpResource.
+ *   2. **Таблицы** — list TableTemplate items via httpResource.
+ *   3. **Отступ** — spacer block add button.
  *
  * Phase D.2.2 (drag-from-palette): each palette list is wrapped in
  * `cdkDropList` with `[cdkDropListConnectedTo]="['canvas-droplist']"`. Each
  * item is a `cdkDrag` with `[cdkDragData]="<AddBlockPayload>"`. Dropping
  * an item on the canvas (which has matching id) triggers BuilderCanvas's
  * `(dropAdd)` output, which routes back to BuilderPage.
+ *
+ * Decorations, orientation, and opacity controls have been moved to the
+ * inspector (right pane) to avoid duplication.
  *
  * Pattern fidelity: same OnPush + signals + httpResource as Phase D.1.
  */
@@ -186,109 +181,6 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
             <lucide-icon [img]="PlusIcon" [size]="14"></lucide-icon>
           </button>
         </div>
-      </section>
-
-      <!-- Section 4: Decorations (D.2.1) — background image upload -->
-      <section class="tool-pane__section" [class.is-open]="isOpen('decorations')">
-        <button
-          type="button"
-          class="tool-pane__section-toggle pi-focus-ring"
-          (click)="toggle('decorations')"
-          [attr.aria-expanded]="isOpen('decorations')"
-        >
-          <lucide-icon [img]="ImageIconSvg" [size]="14"></lucide-icon>
-          <span class="tool-pane__section-title">Декорации</span>
-        </button>
-        @if (isOpen('decorations')) {
-          <div class="tool-pane__decorations">
-            @if (backgroundImages().length > 0) {
-              <div class="bg-list">
-                @for (url of backgroundImages(); track url; let i = $index) {
-                  <div class="bg-item" [class.bg-item--active]="defaultBackgroundIndex() === i">
-                    <div class="bg-thumb" [style.background-image]="'url(' + url + ')'"></div>
-                    <span class="bg-name">Фон {{ i + 1 }}</span>
-                    <div class="bg-actions">
-                      <button
-                        type="button"
-                        class="pi-icon-btn pi-focus-ring"
-                        [class.text-sunrise-warm]="defaultBackgroundIndex() === i"
-                        [attr.aria-label]="
-                          defaultBackgroundIndex() === i
-                            ? 'Убрать из дефолтных'
-                            : 'Сделать по умолчанию'
-                        "
-                        (click)="setDefaultBackground.emit(defaultBackgroundIndex() === i ? -1 : i)"
-                      >
-                        {{ defaultBackgroundIndex() === i ? '★' : '☆' }}
-                      </button>
-                      <button
-                        type="button"
-                        class="pi-icon-btn pi-icon-btn-danger pi-focus-ring"
-                        aria-label="Удалить фон"
-                        (click)="removeBackground.emit(i)"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  </div>
-                }
-              </div>
-            } @else {
-              <p class="tool-pane__hint">Нет загруженных фонов</p>
-            }
-
-            <label class="tool-pane__upload">
-              <input
-                #fileInput
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                class="tool-pane__file-input"
-                (change)="onFileChange($event)"
-              />
-              <span class="tool-pane__upload-button pi-focus-ring">
-                <lucide-icon [img]="UploadIcon" [size]="14"></lucide-icon>
-                Загрузить фон
-              </span>
-            </label>
-
-            <div class="bg-control">
-              <label class="tool-pane__hint">Прозрачность: {{ opacityPercent() }}%</label>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                [value]="backgroundOpacity()"
-                (input)="onOpacityInput($event)"
-                class="w-full"
-              />
-            </div>
-
-            <div class="bg-control">
-              <label class="tool-pane__hint">Ориентация</label>
-              <div class="flex gap-1">
-                <button
-                  type="button"
-                  class="pi-outline-btn flex-1"
-                  [class.bg-ink]="orientation() === 'portrait'"
-                  [class.text-paper]="orientation() === 'portrait'"
-                  (click)="setOrientation.emit('portrait')"
-                >
-                  Книжная
-                </button>
-                <button
-                  type="button"
-                  class="pi-outline-btn flex-1"
-                  [class.bg-ink]="orientation() === 'landscape'"
-                  [class.text-paper]="orientation() === 'landscape'"
-                  (click)="setOrientation.emit('landscape')"
-                >
-                  Альбомная
-                </button>
-              </div>
-            </div>
-          </div>
-        }
       </section>
     </aside>
   `,
@@ -497,122 +389,6 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         color: var(--color-destructive);
       }
 
-      .tool-pane__decorations {
-        padding: 8px 16px 16px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      .bg-list {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-
-      .bg-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 4px 6px;
-        border: 1px solid var(--color-rule);
-        border-radius: 2px;
-        transition: border-color 100ms;
-      }
-
-      .bg-item--active {
-        border-color: var(--color-sunrise-warm);
-      }
-
-      .bg-thumb {
-        width: 36px;
-        height: 36px;
-        border-radius: 2px;
-        background-size: contain;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-color: var(--color-paper-2);
-        border: 1px solid var(--color-rule);
-        flex-shrink: 0;
-      }
-
-      .bg-name {
-        font-size: 12px;
-        flex: 1;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .bg-actions {
-        display: flex;
-        gap: 2px;
-        flex-shrink: 0;
-      }
-
-      .bg-control {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-
-      .bg-control input[type='range'] {
-        height: 4px;
-        -webkit-appearance: none;
-        appearance: none;
-        background: var(--color-rule);
-        border-radius: 2px;
-        outline: none;
-      }
-
-      .bg-control input[type='range']::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        background: var(--color-ink);
-        cursor: pointer;
-      }
-
-      .tool-pane__upload {
-        display: block;
-        margin-top: 8px;
-      }
-
-      .tool-pane__file-input {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border: 0;
-      }
-
-      .tool-pane__upload-button {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
-        font-size: 12px;
-        font-weight: 600;
-        background: var(--color-paper-2);
-        color: var(--color-ink);
-        border: 1px solid var(--color-rule);
-        border-radius: 2px;
-        cursor: pointer;
-        transition: all 100ms ease;
-      }
-
-      .tool-pane__upload-button:hover {
-        background: var(--color-ink);
-        color: var(--color-paper);
-        border-color: var(--color-ink);
-      }
-
       /* CDK drag preview for palette items */
       .cdk-drag-preview {
         box-sizing: border-box;
@@ -629,24 +405,10 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
 export class BuilderToolPaneComponent {
   // Outputs
   readonly addBlock = output<AddBlockPayload>();
-  readonly uploadBackground = output<File>();
-  readonly removeBackground = output<number>();
-  readonly setDefaultBackground = output<number>();
-  readonly setOpacity = output<number>();
-  readonly setOrientation = output<'portrait' | 'landscape'>();
-
-  // Inputs
-  readonly backgroundImages = input<string[]>([]);
-  readonly defaultBackgroundIndex = input<number>(-1);
-  readonly backgroundOpacity = input<number>(0.3);
-  readonly orientation = input<'portrait' | 'landscape'>('portrait');
-
-  protected readonly opacityPercent = computed(() => Math.round(this.backgroundOpacity() * 100));
 
   // DI
   private readonly textBlocks = inject(TextBlocksService);
   private readonly tableTemplates = inject(TableTemplatesService);
-  private readonly registry = inject(RegistryService);
 
   // Icons
   protected readonly DatabaseIcon = Database;
@@ -654,8 +416,6 @@ export class BuilderToolPaneComponent {
   protected readonly TableIconSvg = TableIcon;
   protected readonly PlusIcon = Plus;
   protected readonly MinusIcon = Minus;
-  protected readonly ImageIconSvg = ImageIcon;
-  protected readonly UploadIcon = Upload;
 
   // D.2.2: cdkDropListConnectedTo target — imported from builder-canvas so
   // the id string is single-sourced (see code-reviewer nit 2 on D.2).
@@ -663,11 +423,8 @@ export class BuilderToolPaneComponent {
 
   // Tab state
   private readonly open = signal<Record<string, boolean>>({
-    blocks: true,
     texts: false,
     tables: false,
-    data: false,
-    decorations: false,
   });
   protected readonly isOpen = (k: string): boolean => this.open()[k] === true;
   protected readonly toggle = (k: string): void => {
@@ -691,18 +448,6 @@ export class BuilderToolPaneComponent {
     () => '/api/table-templates?isActive=true',
     { defaultValue: [] },
   );
-  // Typed response (sources array of { key, label, type, fields[] }). Without
-  // an explicit generic + defaultValue, httpResource infers the result as `{}`
-  // and template access to `.sources` fails with TS2339.
-  protected readonly registryRes = httpResource<{
-    sources: Array<{
-      key: string;
-      label: string;
-      type: string;
-      fields: Array<{ key: string; label: string; type: string }>;
-    }>;
-  }>(() => '/api/registry/data-sources', { defaultValue: { sources: [] } });
-
   // Error extraction — runtime null guard: httpResource.error() returns
   // `unknown` and may be null on a successful or pending request.
   protected readonly textErrorMessage = computed<string>(() => {
@@ -711,10 +456,6 @@ export class BuilderToolPaneComponent {
   });
   protected readonly tableErrorMessage = computed<string>(() => {
     const err = this.tablesRes.error() as HttpErrorResponse | null;
-    return err ? extractErrorMessage(err) : '';
-  });
-  protected readonly registryErrorMessage = computed<string>(() => {
-    const err = this.registryRes.error() as HttpErrorResponse | null;
     return err ? extractErrorMessage(err) : '';
   });
 
@@ -729,41 +470,5 @@ export class BuilderToolPaneComponent {
 
   protected onAddFromTable(t: TableTemplate): void {
     this.addBlock.emit({ source: 'table-template', tableTemplate: t });
-  }
-
-  /**
-   * `sourceKey` is widened to `string` because httpResource sources come back
-   * as plain strings (not the discriminated union). The backend API
-   * contractually returns only the 5 documented sources (organization,
-   * counterparty, product, material, work-type) — see RegistryService and
-   * the {@link AddBlockPayload} union definition — so a cast at emit site
-   * is type-safe by construction.
-   */
-  protected onAddFromData(
-    sourceKey: string,
-    field: { key: string; label: string; type: string },
-  ): void {
-    this.addBlock.emit({
-      source: 'data-binding',
-      dataSource: sourceKey as
-        'organization' | 'counterparty' | 'product' | 'material' | 'work-type',
-      field,
-    });
-  }
-
-  /** D.2.1: opacity slider handler. */
-  protected onOpacityInput(event: Event): void {
-    const value = parseFloat((event.target as HTMLInputElement).value);
-    this.setOpacity.emit(value);
-  }
-
-  /** D.2.1: file picker handler — emit the chosen File to BuilderPage. */
-  protected onFileChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
-    this.uploadBackground.emit(file);
-    // Reset input so the same file can be re-selected later.
-    input.value = '';
   }
 }

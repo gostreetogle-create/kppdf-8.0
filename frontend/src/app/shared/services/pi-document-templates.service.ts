@@ -43,12 +43,20 @@ export interface DocumentTemplate {
   docTypeId: string | { _id: string; name: string; code?: string };
   isDefault: boolean;
   isActive: boolean;
-  pageSize: 'A4' | 'A5' | 'Letter' | 'Legal';
+  pageSize: 'A3' | 'A4' | 'A5';
   /** Array of `/uploads/document-templates/{id}/{uuid}.{ext}` URLs (max 5 — Phase A.6). */
   backgroundImage: string[];
   defaultBackgroundIndex: number;
   backgroundOpacity: number;
   orientation: 'portrait' | 'landscape';
+  /** Show page numbers in the generated document. */
+  pageNumbering?: boolean;
+  /** Show table of contents in the generated document. */
+  tableOfContents?: boolean;
+  /** Text to display in the document header. */
+  headerText?: string;
+  /** Text to display in the document footer. */
+  footerText?: string;
   version: number;
   notes?: string;
   createdAt?: string;

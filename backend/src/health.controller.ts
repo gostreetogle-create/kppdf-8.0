@@ -27,7 +27,7 @@ export class HealthController {
   check(): Promise<HealthCheckResult> {
     return this.health.check([
       () => this.mongo.pingCheck('mongo', { timeout: 1000 }) as Promise<HealthIndicatorResult>,
-      () => this.memory.checkRSS('memory', 300 * 1024 * 1024), // 300 MB RSS
+      () => this.memory.checkRSS('memory', 512 * 1024 * 1024), // 512 MB RSS
       () => this.disk.checkStorage('disk', { path: process.cwd(), thresholdPercent: 90 }),
     ]);
   }

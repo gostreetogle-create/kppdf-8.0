@@ -26,7 +26,7 @@ export class DocumentTemplate {
   @Prop({ default: true, index: true })
   isActive!: boolean;
 
-  @Prop({ enum: ['A4', 'A5', 'Letter', 'Legal'], default: 'A4' })
+  @Prop({ enum: ['A3', 'A4', 'A5'], default: 'A4' })
   pageSize!: string;
 
   @Prop({ type: [String], default: [] })
@@ -40,6 +40,18 @@ export class DocumentTemplate {
 
   @Prop({ enum: ['portrait', 'landscape'], default: 'portrait' })
   orientation!: 'portrait' | 'landscape';
+
+  @Prop({ default: false })
+  pageNumbering?: boolean;
+
+  @Prop({ default: false })
+  tableOfContents?: boolean;
+
+  @Prop({ default: '' })
+  headerText?: string;
+
+  @Prop({ default: '' })
+  footerText?: string;
 
   @Prop({ default: 1 })
   version!: number;

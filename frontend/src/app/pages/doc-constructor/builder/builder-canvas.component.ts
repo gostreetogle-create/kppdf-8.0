@@ -7,25 +7,12 @@ import { moveItemInArray } from '../../../shared/util/move-item-in-array';
 import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
 
 /**
- * TZ-86 Phase D.1 + D.2 — `BuilderCanvas` (center pane).
+ * BuilderCanvas — center pane of the document constructor.
  *
- * Hosts the document-template blocks in a vertical `cdkDropList`. Each block
- * is a `BlockRenderer` with its own `cdkDrag`. Phase D.2 adds:
- *   - **`backgroundImages` input** — array of `/uploads/...` URLs rendered
- *     as absolute-positioned bg layers (opacity 0.4, pointer-events none,
- *     z-index 0). Layered via `position: absolute; inset: 0` so they don't
- *     interfere with the dropzone's normal flow.
- *   - **Drag-from-palette** — dropzone has `id="canvas-droplist"` so the
- *     tool pane's `cdkDropList` can connect via `cdkDropListConnectedTo`.
- *     The `onDrop` handler checks `event.previousContainer.id`:
- *       - `=== 'canvas-droplist'` → intra-canvas reorder (existing path)
- *       - `!== 'canvas-droplist'` → from-palette drop → emit `(dropAdd)`
- *         with the carried `cdkDragData` (an `AddBlockPayload`) and the
- *         target `currentIndex`.
- *
- * Empty state: when `blocks()` is empty, render a hairline-bordered
- * empty hint «Перетащите блок сюда» (the message now applies to both
- * drag-from-pane and «+» button paths in D.2).
+ * The canvas wrapper (pi-canvas-page) fills the available height. The
+ * dropzone inside fills the wrapper via flex:1 so clicking anywhere on
+ * the paper (between blocks, above/below blocks, on empty canvas) opens
+ * the template properties panel.
  */
 @Component({
   selector: 'app-builder-canvas',
@@ -34,17 +21,13 @@ import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
   imports: [CdkDropList, BlockRendererComponent, PiCanvasPageComponent],
   template: `
     <pi-canvas-page
-      [pageSize]="'A4'"
-      [maxWidthPx]="orientation() === 'landscape' ? 900 : 720"
+      [pageSize]="pageSize()"
+      [maxWidthPx]="maxWidthPx()"
       [orientation]="orientation()"
     >
-      <!-- D.2.1: background layers (z-index 0, pointer-events none). -->
+      <!-- Background layers (z-index 0, pointer-events none). -->
       @if (backgroundImages().length > 0) {
-        <div
-          class="canvas-bg-stack"
-          [class.canvas-bg-stack--landscape]="orientation() === 'landscape'"
-          aria-hidden="true"
-        >
+        <div class="canvas-bg-stack" aria-hidden="true">
           @for (url of backgroundImages(); track url) {
             <div
               class="canvas-bg"
@@ -53,6 +36,11 @@ import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
             ></div>
           }
         </div>
+      }
+
+      <!-- Header text indicator -->
+      @if (headerText()) {
+        <div class="canvas-header-text">{{ headerText() }}</div>
       }
 
       <div
@@ -64,13 +52,13 @@ import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
         role="list"
         aria-label="Блоки документа"
         (cdkDropListDropped)="onDrop($event)"
+        (click)="onCanvasClick($event)"
       >
         @if (blocks().length === 0) {
           <div class="canvas-dropzone__empty" aria-live="polite">
             <p class="canvas-dropzone__empty-title">Холст пуст</p>
             <p class="canvas-dropzone__empty-hint">
-              Перетащите блок из палитры слева или нажмите «+» рядом с типом блока. Навигация: Tab —
-              между блоками, Enter/Пробел — выбор, Ctrl+Enter — множественное выделение
+              Добавьте блоки из выпадающих списков выше. Кликните в любое место холста для свойств шаблона.
             </p>
           </div>
         } @else {
@@ -81,10 +69,21 @@ import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
               [multiSelected]="selectedIds().has(blockKey(block))"
               (select)="onSelect($event)"
               (multiSelect)="onMultiSelect($event)"
+              (widthChange)="onBlockWidthChange(block, $event)"
             />
           }
         }
       </div>
+
+      <!-- Footer text indicator -->
+      @if (footerText()) {
+        <div class="canvas-footer-text">{{ footerText() }}</div>
+      }
+
+      <!-- Page number indicator -->
+      @if (pageNumbering()) {
+        <div class="canvas-page-number">1</div>
+      }
     </pi-canvas-page>
   `,
   styles: [
@@ -113,21 +112,25 @@ import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
         background-color: var(--color-paper);
       }
 
+      /* Dropzone fills the entire paper height — click anywhere = template props */
       .canvas-dropzone {
-        min-height: 200px;
+        flex: 1;
         display: flex;
         flex-direction: column;
         gap: 0;
         position: relative;
         z-index: 1;
+        min-height: 100%;
       }
 
       .canvas-dropzone.is-empty {
         align-items: center;
         justify-content: center;
         border: 1px dashed var(--color-rule);
+        margin: 16px;
         padding: 48px 24px;
         text-align: center;
+        border-radius: 4px;
       }
 
       .canvas-dropzone__empty-title {
@@ -142,6 +145,43 @@ import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
         color: var(--color-muted);
         margin: 0;
         max-width: 320px;
+      }
+
+      /* Header text on canvas */
+      .canvas-header-text {
+        position: relative;
+        z-index: 2;
+        padding: 12px 16px 8px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-muted);
+        border-bottom: 1px dashed var(--color-rule);
+        text-align: center;
+      }
+
+      /* Footer text on canvas */
+      .canvas-footer-text {
+        position: relative;
+        z-index: 2;
+        padding: 8px 16px 12px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--color-muted);
+        border-top: 1px dashed var(--color-rule);
+        text-align: center;
+      }
+
+      /* Page number on canvas */
+      .canvas-page-number {
+        position: relative;
+        z-index: 2;
+        padding: 4px 16px 12px;
+        font-size: 11px;
+        color: var(--color-muted);
+        text-align: right;
+        font-family: ui-monospace, monospace;
       }
 
       /* CDK drag-drop animations */
@@ -163,33 +203,34 @@ import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
   ],
 })
 export class BuilderCanvasComponent {
-  /** All blocks in display order (parent owns canonical state). */
   readonly blocks = input.required<TemplateBlock[]>();
-  /** Currently-selected block id (drives the 2px outline on BlockRenderer). */
   readonly selectedId = input<string | null>(null);
-  /** Multi-selected block ids (Ctrl+Click). */
   readonly selectedIds = input<Set<string>>(new Set());
-  /** D.2.1: background image URLs to render as bg layers (z-index 0, opacity 0.4). */
   readonly backgroundImages = input<string[]>([]);
   readonly orientation = input<'portrait' | 'landscape'>('portrait');
   readonly backgroundOpacity = input<number>(0.3);
+  readonly headerText = input<string>('');
+  readonly footerText = input<string>('');
+  readonly pageNumbering = input<boolean>(false);
+  readonly pageSize = input<'A3' | 'A4' | 'A5'>('A4');
 
-  /** Emits when user selects a block. */
+  protected readonly maxWidthPx = computed<number>(() => {
+    const isLandscape = this.orientation() === 'landscape';
+    const ps = this.pageSize();
+    if (ps === 'A3') return isLandscape ? 1100 : 900;
+    if (ps === 'A5') return isLandscape ? 680 : 520;
+    return isLandscape ? 900 : 720;
+  });
+
   readonly select = output<TemplateBlock>();
-  /** Emits when user Ctrl+Click toggles multi-select. */
   readonly multiSelect = output<TemplateBlock>();
-  /** Emits when user drops to reorder. Carries the new in-memory ordering. */
   readonly reorder = output<TemplateBlock[]>();
-  /** D.2.2: emitted when a palette item is dropped onto the canvas. */
   readonly dropAdd = output<{ payload: AddBlockPayload; insertIndex: number }>();
+  readonly blockWidthChange = output<{ block: TemplateBlock; width: number; marginLeft: number }>();
+  readonly canvasClick = output<void>();
 
-  /** Constant exposed to the template for `cdkDropList id`. */
   protected readonly CANVAS_DROPLIST_ID: string = CANVAS_DROPLIST_ID;
-
-  /** Re-export the key helper so the template can call it. */
   protected readonly blockKey = blockKey;
-
-  protected readonly isEmpty = computed<boolean>(() => this.blocks().length === 0);
 
   protected onSelect(block: TemplateBlock): void {
     this.select.emit(block);
@@ -199,21 +240,24 @@ export class BuilderCanvasComponent {
     this.multiSelect.emit(block);
   }
 
-  /**
-   * D.2.2: CDK drop handler.
-   *   - intra-canvas (`previousContainer === container`): reorder via moveItemInArray.
-   *   - from-palette (`previousContainer !== container`): emit dropAdd with
-   *     carried `cdkDragData` (an `AddBlockPayload`) and `currentIndex`.
-   */
+  protected onBlockWidthChange(block: TemplateBlock, event: { width: number; marginLeft: number }): void {
+    this.blockWidthChange.emit({ block, width: event.width, marginLeft: event.marginLeft });
+  }
+
+  protected onCanvasClick(event: Event): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.block-renderer')) {
+      this.canvasClick.emit();
+    }
+  }
+
   protected onDrop(event: CdkDragDrop<TemplateBlock[]>): void {
     if (event.previousContainer === event.container) {
-      // Intra-canvas reorder
       if (event.previousIndex === event.currentIndex) return;
       const next = [...this.blocks()];
       moveItemInArray(next, event.previousIndex, event.currentIndex);
       this.reorder.emit(next);
     } else {
-      // From palette (or any connected list) → add new block
       const payload = event.item.data as AddBlockPayload | undefined;
       if (!payload) return;
       this.dropAdd.emit({ payload, insertIndex: event.currentIndex });

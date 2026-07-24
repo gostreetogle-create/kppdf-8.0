@@ -27,9 +27,15 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
             {{ indexRoman() }}
           </span>
         }
-        <h2 class="font-display text-2xl font-semibold tracking-tight">
-          {{ title() }}
-        </h2>
+        <div class="flex flex-col gap-0.5">
+          <h2 class="font-display text-2xl font-semibold tracking-tight">
+            {{ title() }}
+          </h2>
+          @if (description()) {
+            <p class="text-xs text-muted-foreground">{{ description() }}</p>
+          }
+        </div>
+        <ng-content select="[slot=actions]" />
         @if (hint()) {
           <span
             class="ml-auto font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground"
@@ -51,6 +57,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 })
 export class PiSectionComponent {
   readonly title = input.required<string>();
+  readonly description = input<string>('');
   readonly hint = input<string>('');
   readonly indexRoman = input<string>('');
 }

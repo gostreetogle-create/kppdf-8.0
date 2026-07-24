@@ -24,7 +24,7 @@
  * Conventional short reference: trust-model see file header banner.
  */
 
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { CdkDrag } from '@angular/cdk/drag-drop';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { LucideAngularModule } from 'lucide-angular';
@@ -88,12 +88,29 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
       [attr.aria-selected]="selected() || multiSelected()"
       [attr.role]="'button'"
       [attr.tabindex]="'0'"
+      [style.width.%]="currentWidth()"
+      [style.margin-left.%]="currentMarginLeft()"
       (click)="onSelect($event)"
       (keydown.enter)="onSelect($event)"
       (keydown.space)="onSelect($event)"
       (keydown.arrowUp)="onArrowKey($event, 'up')"
       (keydown.arrowDown)="onArrowKey($event, 'down')"
     >
+      <!-- Resize handles (visible when selected) — left & right side bars -->
+      @if (selected()) {
+        <div
+          class="block-renderer__resize-side block-renderer__resize-side--left"
+          (mousedown)="onResizeStart($event, 'left')"
+          (click)="$event.stopPropagation()"
+          title="Перетащите вправо для отступа слева"
+        ></div>
+        <div
+          class="block-renderer__resize-side block-renderer__resize-side--right"
+          (mousedown)="onResizeStart($event, 'right')"
+          (click)="$event.stopPropagation()"
+          title="Перетащите влево для отступа справа"
+        ></div>
+      }
       <!-- Multi-select checkbox (visible on hover or when multi-selected) -->
       <div
         class="block-renderer__checkbox"
@@ -134,15 +151,6 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
       <div class="block-renderer__body">
         @if (block().type === 'table' && tableColumns().length > 0) {
           <!-- Table block: render actual table with columns and sample rows -->
-          <div class="block-renderer__header">
-            <span class="block-renderer__type">{{ typeLabel() }}</span>
-            <span class="block-renderer__table-title">{{ block().title }}</span>
-            @if (bindingBadge()) {
-              <span class="block-renderer__binding" [title]="bindingBadgeTooltip()">
-                {{ bindingBadge() }}
-              </span>
-            }
-          </div>
           <div class="block-renderer__table-wrap">
             <table class="block-renderer__table">
               <thead>
@@ -176,12 +184,8 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
             </table>
           </div>
         } @else if (block().type === 'spacer') {
-          <!-- Spacer block: visual separator line -->
-          <div class="block-renderer__spacer" [style.height.px]="block().height ?? 40">
-            <div class="block-renderer__spacer-line"></div>
-            <span class="block-renderer__spacer-label">Отступ · {{ block().height ?? 40 }}px</span>
-            <div class="block-renderer__spacer-line"></div>
-          </div>
+          <!-- Spacer block: empty space -->
+          <div class="block-renderer__spacer" [style.height.px]="block().height ?? 40"></div>
         } @else if (hasColumns()) {
           <!-- Multi-column text block -->
           @if (block().content) {
@@ -452,6 +456,65 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
       .block-renderer__column i {
         font-style: italic;
       }
+
+      /* Resize side handles — left & right bars, always subtly visible */
+      .block-renderer__resize-side {
+        position: absolute;
+        top: 0;
+        width: 8px;
+        height: 100%;
+        cursor: ew-resize;
+        opacity: 0.25;
+        transition: opacity 150ms ease;
+        z-index: 10;
+      }
+
+      .block-renderer__resize-side--left {
+        left: -4px;
+        border-left: 2px solid var(--color-muted);
+      }
+
+      .block-renderer__resize-side--right {
+        right: -4px;
+        border-right: 2px solid var(--color-muted);
+      }
+
+      .block-renderer:hover .block-renderer__resize-side,
+      .block-renderer.is-selected .block-renderer__resize-side {
+        opacity: 0.6;
+      }
+
+      .block-renderer__resize-side--left:hover,
+      .block-renderer__resize-side--left.is-dragging {
+        border-left-color: var(--color-sunrise-warm);
+        opacity: 1;
+      }
+
+      .block-renderer__resize-side--right:hover,
+      .block-renderer__resize-side--right.is-dragging {
+        border-right-color: var(--color-sunrise-warm);
+        opacity: 1;
+      }
+
+      /* Print: hide editor-only elements */
+      @media print {
+        .block-renderer {
+          border: none !important;
+          border-radius: 0 !important;
+          padding: 0 !important;
+          margin-left: 0 !important;
+          width: 100% !important;
+          background: transparent !important;
+          break-inside: avoid;
+        }
+        .block-renderer__resize-side,
+        .block-renderer__checkbox {
+          display: none !important;
+        }
+        .block-renderer__spacer {
+          break-inside: avoid;
+        }
+      }
     `,
   ],
 })
@@ -466,12 +529,85 @@ export class BlockRendererComponent {
   readonly select = output<TemplateBlock>();
   /** Emitted on Ctrl/Meta+click for multi-select toggle. */
   readonly multiSelect = output<TemplateBlock>();
+  /** Emitted when the user finishes resizing the block. Carries new width & marginLeft. */
+  readonly widthChange = output<{ width: number; marginLeft: number }>();
 
   /**
    * DOM sanitizer injected to bypass Angular's default innerHTML stripping.
    * See the file-header banner for the trust-model rationale.
    */
   private readonly sanitizer = inject(DomSanitizer);
+
+  /** Current block width percentage (read from settings.width, default 100). */
+  protected readonly currentWidth = signal<number>(100);
+  /** Current block left margin percentage (read from settings.marginLeft, default 0). */
+  protected readonly currentMarginLeft = signal<number>(0);
+
+  constructor() {
+    // Sync width & marginLeft from block settings when block changes
+    effect(() => {
+      const b = this.block();
+      const settings = b.settings as Record<string, unknown> | undefined;
+      const w = typeof settings?.['width'] === 'number' ? settings['width'] : 100;
+      const ml = typeof settings?.['marginLeft'] === 'number' ? settings['marginLeft'] : 0;
+      this.currentWidth.set(Math.max(20, Math.min(100, w)));
+      this.currentMarginLeft.set(Math.max(0, Math.min(80, ml)));
+    });
+  }
+
+  /**
+   * Resize handle mousedown — starts a document-level drag to resize the block.
+   * Side 'left' adjusts marginLeft; side 'right' adjusts width.
+   * Width is calculated as a percentage of the paper container width.
+   */
+  protected onResizeStart(event: MouseEvent, side: 'left' | 'right'): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const startX = event.clientX;
+    const startWidth = this.currentWidth();
+    const startMarginLeft = this.currentMarginLeft();
+    // Find the paper container to get its width for percentage calculation
+    const paper = (event.target as HTMLElement)?.closest('.pi-canvas-page-paper') as HTMLElement;
+    const containerWidth = paper?.clientWidth ?? 720;
+
+    // Visual feedback — highlight the active handle
+    const handle = event.target as HTMLElement;
+    handle.classList.add('is-dragging');
+
+    const onMove = (e: MouseEvent): void => {
+      const deltaPx = e.clientX - startX;
+      const deltaPercent = (deltaPx / containerWidth) * 100;
+
+      if (side === 'left') {
+        // Left handle: drag right → increase marginLeft, decrease width
+        const newMarginLeft = Math.max(0, Math.min(80, startMarginLeft + deltaPercent));
+        const newWidth = Math.max(20, 100 - newMarginLeft);
+        this.currentMarginLeft.set(Math.round(newMarginLeft));
+        this.currentWidth.set(Math.round(newWidth));
+      } else {
+        // Right handle: drag left → decrease width
+        const newWidth = Math.max(20, Math.min(100 - startMarginLeft, startWidth + deltaPercent));
+        this.currentWidth.set(Math.round(newWidth));
+      }
+    };
+
+    const onUp = (): void => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      handle.classList.remove('is-dragging');
+      this.widthChange.emit({
+        width: this.currentWidth(),
+        marginLeft: this.currentMarginLeft(),
+      });
+    };
+
+    document.body.style.cursor = 'ew-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
 
   /**
    * Wraps col.content (HTML string from TipTap) in a SafeHtml so that
