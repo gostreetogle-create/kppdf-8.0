@@ -87,6 +87,18 @@
   --dialog-radius: 8px;
   --overlay-bg: oklch(0% 0 0 / 0.5);
   --overlay-bg-fallback: rgb(0 0 0 / 0.5);
+
+  /* === Executive Shadow (Logomock — TZ-210.A) === */
+  --shadow-executive: 0 4px 20px -2px rgba(18, 21, 24, 0.05), 0 2px 6px -1px rgba(18, 21, 24, 0.03);
+
+  /* === Status Colors (Logomock — TZ-210.A) === */
+  --color-success: #16a34a;
+  --color-success-soft: rgba(22, 163, 74, 0.1);
+  --color-info: #0284c7;
+  --color-info-soft: rgba(2, 132, 199, 0.1);
+  --color-warning: #d97706;
+  --color-warning-soft: rgba(217, 119, 6, 0.1);
+  --color-destructive-soft: rgba(220, 38, 38, 0.1);
 }
 
 /* =============================================================================
@@ -145,6 +157,14 @@
   --touch-min: 32px; /* w-8 h-8 — minimum click target */
   --touch-comfortable: 40px; /* w-10 h-10 */
   --touch-a11y: 44px; /* iOS HIG */
+
+  /* === Paper Elevation (Logomock — TZ-210.A) ===
+     Light mode defaults. Dark mode overrides in .dark block. */
+  --color-paper-3: #e9ecef;
+  --color-paper-4: #dee2e6;
+
+  /* === Gold Hover (Logomock — TZ-210.A) === */
+  --color-gold-hover: #a8821b;
 }
 
 @theme inline {
@@ -209,6 +229,25 @@
     --color-muted-foreground-strong-override,
     oklch(0.42 0.015 260)
   ); /* #737685 */
+
+  /* === Paper Elevation (Logomock — TZ-210.A) === */
+  --color-paper-3: var(--color-paper-3);
+  --color-paper-4: var(--color-paper-4);
+
+  /* === Status Colors (Logomock — TZ-210.A) === */
+  --color-success: var(--color-success);
+  --color-success-soft: var(--color-success-soft);
+  --color-info: var(--color-info);
+  --color-info-soft: var(--color-info-soft);
+  --color-warning: var(--color-warning);
+  --color-warning-soft: var(--color-warning-soft);
+  --color-destructive-soft: var(--color-destructive-soft);
+
+  /* === Gold Hover (Logomock — TZ-210.A) === */
+  --color-gold-hover: var(--color-gold-hover);
+
+  /* === Executive Shadow (Logomock — TZ-210.A) === */
+  --shadow-executive: var(--shadow-executive);
 
   /* === Typography (Design Reference — TZ-96) === */
   --font-display: 'Hanken Grotesk', 'Helvetica Neue', sans-serif;
@@ -343,30 +382,76 @@
     color: var(--color-ink);
     font-family: var(--font-body);
     font-feature-settings: 'ss01', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease; /* TZ-210.B: smooth theme transition */
   }
 
-  /* TZ-96 dark mode — Design Reference BAE (Brutalist Architectural Edition).
-     Dark charcoal surface (#1A1A1A) with gold accent (#D4AF37).
+  /* TZ-210.A dark mode — Obsidian Slate (Logomock integration).
+     5-elevation surface hierarchy with polished gold accent.
      Applied via <html class="dark">. NEVER use body.dark or :root.dark. */
   .dark {
-    --color-paper: oklch(0.12 0.005 260); /* #1A1A1A — arch-surface */
-    --color-paper-2: oklch(0.16 0.008 260); /* #252525 */
-    --color-ink: oklch(0.9 0.01 80); /* #E0E0E0 — arch-text */
-    --color-rule: oklch(0.22 0.005 260); /* #333333 — arch-line */
-    --color-muted: oklch(0.55 0.01 260); /* #888888 — arch-text-muted */
-    --color-destructive: oklch(0.65 0.25 25); /* #FF4444 — arch-error */
-    --color-accent-warm: oklch(0.78 0.12 85); /* #D4AF37 — arch-gold */
+    /* === 5-Elevation Obsidian Slate surfaces === */
+    --color-paper: #0b0e11; /* Elevation 0: Base Canvas */
+    --color-paper-2: #12161a; /* Elevation 1: Cards & Surfaces */
+    --color-paper-3: #181d23; /* Elevation 2: Controls & Containers */
+    --color-paper-4: #20262e; /* Elevation 3: Active Highlights */
+
+    /* === Text & Borders === */
+    --color-ink: #f0f4f8; /* High-contrast neutral text */
+    --color-rule: #262e38; /* Subtle 1px borders */
+    --color-muted: #8c96a6; /* Secondary text */
+    --color-muted-strong: #c1c9d6; /* Strong secondary text */
+
+    /* === Gold accent (brighter for dark) === */
+    --color-gold: #e2b842;
+    --color-gold-hover: #f0c755;
+    --color-gold-soft: rgba(226, 184, 66, 0.16);
+
+    /* === Status colors === */
+    --color-destructive: #ef4444;
+    --color-destructive-soft: rgba(239, 68, 68, 0.15);
+    --color-success: #22c55e;
+    --color-success-soft: rgba(34, 197, 94, 0.15);
+    --color-info: #38bdf8;
+    --color-info-soft: rgba(56, 189, 248, 0.15);
+    --color-warning: #f59e0b;
+    --color-warning-soft: rgba(245, 158, 11, 0.15);
+
+    /* === Accents (aligned to gold) === */
+    --color-accent-warm: #e2b842;
     --color-accent-cool: oklch(0.6 0.1 250);
-    --color-gold: oklch(0.78 0.12 85); /* #D4AF37 — arch-gold */
-    --color-gold-soft: oklch(0.78 0.12 85 / 0.15);
-    --color-sunrise: oklch(0.78 0.12 85); /* aligned to gold */
-    --color-sunrise-soft: oklch(0.18 0.01 80);
-    --color-sunrise-warm: oklch(0.78 0.12 85); /* aligned to gold */
-    --color-sunrise-glow: oklch(0.84 0.14 85);
-    --color-sunrise-mist: oklch(0.14 0.008 80);
-    --color-muted-foreground: oklch(0.55 0.01 260); /* #888888 */
-    --color-muted-foreground-strong: oklch(0.65 0.012 260); /* #AAAAAA */
+    --color-sunrise: #e2b842;
+    --color-sunrise-soft: #12161a;
+    --color-sunrise-warm: #e2b842;
+    --color-sunrise-glow: #f0c755;
+    --color-sunrise-mist: #0e1215;
+
+    /* === Secondary text === */
+    --color-muted-foreground: #8c96a6;
+    --color-muted-foreground-strong: #c1c9d6;
+
+    /* === Shadows === */
     --dialog-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    --shadow-executive: 0 8px 32px -4px rgba(0, 0, 0, 0.6), 0 2px 8px -2px rgba(0, 0, 0, 0.4);
+  }
+
+  /* === Universal border-color (Logomock — TZ-210.B) === */
+  * {
+    border-color: var(--color-rule);
+  }
+
+  /* === Heading typography (Logomock — TZ-210.B) === */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
   }
 }
 
@@ -374,7 +459,7 @@
   font-family: var(--font-mono);
   font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.05em; /* TZ-96: design ref uses 0.05em (was 0.18em) */
+  letter-spacing: 0.08em; /* TZ-210.B: updated from 0.05em per Logomock */
   color: var(--color-muted-foreground);
 }
 
@@ -411,6 +496,41 @@
   border-left-style: solid;
   border-left-width: 1px;
   border-left-color: var(--color-rule);
+}
+
+/* === Executive Shadow (Logomock — TZ-210.B) ===
+   Selective shadow for cards, panels, elevated surfaces.
+   NOT a global shadow ban override — specific opt-in only. */
+@utility executive-shadow {
+  box-shadow: var(--shadow-executive);
+}
+
+/* =============================================================================
+ * CUSTOM SCROLLBAR (Logomock — TZ-210.B)
+ *
+ * Sleek 6px thin scrollbar for technical/editorial feel.
+ * Chrome/Safari: webkit pseudo-elements.
+ * Firefox: scrollbar-width + scrollbar-color.
+ * ============================================================================= */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-paper);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-rule);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-rule) var(--color-paper);
 }
 
 /* =============================================================================

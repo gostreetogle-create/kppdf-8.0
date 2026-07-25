@@ -58,7 +58,8 @@ import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
           <div class="canvas-dropzone__empty" aria-live="polite">
             <p class="canvas-dropzone__empty-title">Холст пуст</p>
             <p class="canvas-dropzone__empty-hint">
-              Добавьте блоки из выпадающих списков выше. Кликните в любое место холста для свойств шаблона.
+              Добавьте блоки из выпадающих списков выше. Кликните в любое место холста для свойств
+              шаблона.
             </p>
           </div>
         } @else {
@@ -88,11 +89,15 @@ import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
   `,
   styles: [
     `
+      /* TZ-211: Executive shadow on canvas wrapper */
       :host {
         display: block;
         flex: 1;
         min-width: 0;
         height: 100%;
+        box-shadow: var(--shadow-executive);
+        border-radius: 4px;
+        overflow: hidden;
       }
 
       .canvas-bg-stack {
@@ -240,7 +245,10 @@ export class BuilderCanvasComponent {
     this.multiSelect.emit(block);
   }
 
-  protected onBlockWidthChange(block: TemplateBlock, event: { width: number; marginLeft: number }): void {
+  protected onBlockWidthChange(
+    block: TemplateBlock,
+    event: { width: number; marginLeft: number },
+  ): void {
     this.blockWidthChange.emit({ block, width: event.width, marginLeft: event.marginLeft });
   }
 

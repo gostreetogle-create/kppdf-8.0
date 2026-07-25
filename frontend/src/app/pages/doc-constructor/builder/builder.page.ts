@@ -53,6 +53,10 @@ import { PiToastService } from '../../../shared/ui/toast';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../../shared/ui/dialog/pi-alert-dialog.component';
 import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
+import {
+  TemplateSetupDialogComponent,
+  type TemplateSetupResult,
+} from './template-setup-dialog.component';
 import type { AddBlockPayload } from './builder.types';
 import { BuilderCanvasComponent } from './builder-canvas.component';
 import { BuilderInspectorComponent } from './builder-inspector.component';
@@ -99,6 +103,9 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
     BuilderCanvasComponent,
     BuilderInspectorComponent,
   ],
+  host: {
+    '(document:click)': 'onDocumentClick($event)',
+  },
   template: `
     @if (!templateId()) {
       <app-pi-page-header
@@ -282,11 +289,7 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
           </div>
 
           <!-- Отступ button -->
-          <button
-            type="button"
-            class="builder-toolbar__btn"
-            (click)="onAddSpacer()"
-          >
+          <button type="button" class="builder-toolbar__btn" (click)="onAddSpacer()">
             — Отступ
           </button>
         </div>
@@ -313,24 +316,27 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
           (canvasClick)="onCanvasClick()"
         />
 
-        <app-builder-inspector
-          [block]="selectedBlock()"
-          [selectedCount]="selectedIds().size"
-          [selectedBlocks]="selectedBlocks()"
-          [paperWidth]="orientation() === 'landscape' ? 900 : 720"
-          [templateSelected]="templateSelected()"
-          [template]="template()"
-          (update)="onInspectorUpdate($event)"
-          (delete)="onDeleteBlock($event)"
-          (deleteSelected)="onDeleteSelected()"
-          (editSelected)="onEditSelected()"
-          (marginReset)="onMarginReset($event)"
-          (multiMarginUpdate)="onMultiMarginUpdate($event)"
-          (templateUpdate)="onTemplateUpdate($event)"
-          (uploadBackground)="onBackgroundUpload($event)"
-          (removeBackground)="onRemoveBackground($event)"
-          (setDefaultBackground)="onSetDefaultBackground($event)"
-        />
+        <div class="builder-inspector-panel">
+          <app-builder-inspector
+            [block]="selectedBlock()"
+            [selectedCount]="selectedIds().size"
+            [selectedBlocks]="selectedBlocks()"
+            [paperWidth]="orientation() === 'landscape' ? 900 : 720"
+            [templateSelected]="templateSelected()"
+            [template]="template()"
+            (update)="onInspectorUpdate($event)"
+            (delete)="onDeleteBlock($event)"
+            (deleteSelected)="onDeleteSelected()"
+            (editSelected)="onEditSelected()"
+            (marginReset)="onMarginReset($event)"
+            (multiMarginUpdate)="onMultiMarginUpdate($event)"
+            (templateUpdate)="onTemplateUpdate($event)"
+            (uploadBackground)="onBackgroundUpload($event)"
+            (removeBackground)="onRemoveBackground($event)"
+            (setDefaultBackground)="onSetDefaultBackground($event)"
+            (closePanel)="onCloseInspectorPanel()"
+          />
+        </div>
       </div>
     }
   `,
@@ -401,14 +407,14 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
         color: var(--color-destructive);
       }
 
-      /* Builder toolbar — horizontal bar at top */
+      /* ═══ Builder toolbar — TZ-211: Design System ═══ */
       .builder-toolbar {
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 6px 0;
+        padding: 6px 12px;
         border-bottom: 1px solid var(--color-rule);
-        background: var(--color-paper);
+        background: var(--color-paper-2);
       }
 
       .builder-toolbar__title {
@@ -430,7 +436,7 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
         font-size: 12px;
         font-weight: 500;
         color: var(--color-ink);
-        background: transparent;
+        background: var(--color-paper);
         border: 1px solid var(--color-rule);
         border-radius: 2px;
         cursor: pointer;
@@ -439,11 +445,11 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
       }
 
       .builder-toolbar__btn:hover {
-        background: var(--color-paper-2);
+        background: var(--color-paper-3);
         border-color: var(--color-ink);
       }
 
-      /* Dropdown */
+      /* ═══ Dropdown — TZ-211: Design System ═══ */
       .builder-dropdown {
         position: relative;
       }
@@ -456,7 +462,7 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
         font-size: 12px;
         font-weight: 500;
         color: var(--color-ink);
-        background: transparent;
+        background: var(--color-paper);
         border: 1px solid var(--color-rule);
         border-radius: 2px;
         cursor: pointer;
@@ -465,7 +471,7 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
       }
 
       .builder-dropdown__trigger:hover {
-        background: var(--color-paper-2);
+        background: var(--color-paper-3);
         border-color: var(--color-ink);
       }
 
@@ -481,6 +487,7 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
         border: 1px solid var(--color-rule);
         border-radius: 4px;
         margin-top: 2px;
+        box-shadow: var(--shadow-executive);
       }
 
       .builder-dropdown__item {
@@ -497,7 +504,7 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
       }
 
       .builder-dropdown__item:hover {
-        background: color-mix(in oklch, var(--color-sunrise-soft) 40%, transparent);
+        background: var(--color-paper-3);
       }
 
       .builder-dropdown__item-label {
@@ -521,6 +528,15 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
 
       .builder-dropdown__error {
         color: var(--color-destructive);
+      }
+
+      /* ═══ Inspector Panel — TZ-211: Design System ═══ */
+      .builder-inspector-panel {
+        width: 320px;
+        flex-shrink: 0;
+        background: var(--color-paper-2);
+        border-left: 1px solid var(--color-rule);
+        overflow-y: auto;
       }
     `,
   ],
@@ -566,14 +582,18 @@ export class BuilderPage {
   protected readonly openDropdown = signal<string | null>(null);
 
   // httpResources for inline toolbar dropdowns
-  protected readonly textsRes = httpResource<Array<{ _id: string; name: string; category?: string; content?: string; columns?: unknown[] }>>(
-    () => '/api/text-blocks?isActive=true',
-    { defaultValue: [] },
-  );
-  protected readonly tablesRes = httpResource<Array<{ _id: string; name: string; description?: string; columns?: unknown[]; sampleRows?: unknown[][] }>>(
-    () => '/api/table-templates?isActive=true',
-    { defaultValue: [] },
-  );
+  protected readonly textsRes = httpResource<
+    Array<{ _id: string; name: string; category?: string; content?: string; columns?: unknown[] }>
+  >(() => '/api/text-blocks?isActive=true', { defaultValue: [] });
+  protected readonly tablesRes = httpResource<
+    Array<{
+      _id: string;
+      name: string;
+      description?: string;
+      columns?: unknown[];
+      sampleRows?: unknown[][];
+    }>
+  >(() => '/api/table-templates?isActive=true', { defaultValue: [] });
 
   // Auto-save Subject — grouped by _id, debounced per group.
   private readonly save$ = new Subject<{ _id: string; patch: Partial<TemplateBlock> }>();
@@ -828,17 +848,40 @@ export class BuilderPage {
     this.openDropdown.set(null);
   }
 
-  protected onAddTextBlock(t: { _id: string; name: string; content?: string; columns?: unknown[] }): void {
+  // ──────────────────────────────────────────────────────────────────────────────────────────────────
+  // Dropdown закрытие при клике вне dropdown (TZ-170 §4.1)
+  // HostListener('document:click') - Dropdown открывается только пока триггер в @Component template.
+  // Stope propagation на dropdown контейнере, чтобы click через dropdown panel не закрывал его.
+  // ─────────────────────────────────────────────────────────────
+  onDocumentClick(event: MouseEvent): void {
+    if (this.openDropdown() === null) return;
+    const target = event.target as HTMLElement;
+    if (target.closest('.builder-dropdown')) return;
+    this.openDropdown.set(null);
+  }
+
+  protected onAddTextBlock(t: {
+    _id: string;
+    name: string;
+    content?: string;
+    columns?: unknown[];
+  }): void {
     this.onAddBlock({
       source: 'text-block',
       textBlock: t as import('../../../shared/services/pi-text-blocks.service').TextBlock,
     });
   }
 
-  protected onAddTableTemplate(t: { _id: string; name: string; columns?: unknown[]; sampleRows?: unknown[][] }): void {
+  protected onAddTableTemplate(t: {
+    _id: string;
+    name: string;
+    columns?: unknown[];
+    sampleRows?: unknown[][];
+  }): void {
     this.onAddBlock({
       source: 'table-template',
-      tableTemplate: t as import('../../../shared/services/pi-table-templates.service').TableTemplate,
+      tableTemplate:
+        t as import('../../../shared/services/pi-table-templates.service').TableTemplate,
     });
   }
 
@@ -921,17 +964,37 @@ export class BuilderPage {
   }
 
   protected onDuplicateTemplate(t: DocumentTemplate): void {
-    this.http
-      .post<DocumentTemplate>(`${this.baseUrl}/document-templates/${t._id}/duplicate`, {})
-      .subscribe({
-        next: () => {
-          this.toast.success('Копия шаблона создана');
-          this.templateListRes.reload();
-        },
-        error: (err: HttpErrorResponse) => {
-          this.toast.error(extractErrorMessage(err));
-        },
-      });
+    const ref = this.dialog.open<TemplateSetupResult>(TemplateSetupDialogComponent, {
+      data: { mode: 'duplicate' },
+    });
+    onDialogCloseOnce(ref, this.injector, (result) => {
+      if (!result) return;
+      this.http
+        .post<DocumentTemplate>(`${this.baseUrl}/document-templates/${t._id}/duplicate`, {})
+        .subscribe({
+          next: (copy) => {
+            // Apply chosen format/orientation to the duplicate
+            this.templatesSvc
+              .update(copy._id, {
+                pageSize: result.pageSize,
+                orientation: result.orientation,
+              })
+              .subscribe({
+                next: () => {
+                  this.toast.success('Копия шаблона создана');
+                  this.templateListRes.reload();
+                },
+                error: () => {
+                  this.toast.success('Копия шаблона создана');
+                  this.templateListRes.reload();
+                },
+              });
+          },
+          error: (err: HttpErrorResponse) => {
+            this.toast.error(extractErrorMessage(err));
+          },
+        });
+    });
   }
 
   /**
@@ -1018,10 +1081,10 @@ export class BuilderPage {
   }
 
   protected onCanvasClick(): void {
-    // Only show template properties if no block is selected
-    if (!this.selectedId() && this.selectedIds().size === 0) {
-      this.templateSelected.set(true);
-    }
+    // Always clear block selection and show template properties
+    this.selectedId.set(null);
+    this.selectedIds.set(new Set());
+    this.templateSelected.set(true);
   }
 
   protected onEditSelected(): void {
@@ -1135,7 +1198,11 @@ export class BuilderPage {
     this.save$.next({ _id, patch: rest });
   }
 
-  protected onBlockWidthChange(event: { block: TemplateBlock; width: number; marginLeft: number }): void {
+  protected onBlockWidthChange(event: {
+    block: TemplateBlock;
+    width: number;
+    marginLeft: number;
+  }): void {
     const { block, width, marginLeft } = event;
     if (!block._id) return;
     const settings = {
@@ -1143,17 +1210,13 @@ export class BuilderPage {
       width,
       marginLeft,
     };
-    this.blocks.update((arr) =>
-      arr.map((b) => (b._id === block._id ? { ...b, settings } : b)),
-    );
+    this.blocks.update((arr) => arr.map((b) => (b._id === block._id ? { ...b, settings } : b)));
     this.save$.next({ _id: block._id, patch: { settings } });
   }
 
   protected onMarginReset(blockId: string): void {
     const settings = { width: 100, marginLeft: 0 };
-    this.blocks.update((arr) =>
-      arr.map((b) => (b._id === blockId ? { ...b, settings } : b)),
-    );
+    this.blocks.update((arr) => arr.map((b) => (b._id === blockId ? { ...b, settings } : b)));
     this.save$.next({ _id: blockId, patch: { settings } });
   }
 
@@ -1161,9 +1224,7 @@ export class BuilderPage {
     updates: Array<{ _id: string; settings: Record<string, unknown> }>,
   ): void {
     for (const { _id, settings } of updates) {
-      this.blocks.update((arr) =>
-        arr.map((b) => (b._id === _id ? { ...b, settings } : b)),
-      );
+      this.blocks.update((arr) => arr.map((b) => (b._id === _id ? { ...b, settings } : b)));
       this.save$.next({ _id, patch: { settings } });
     }
   }
@@ -1171,13 +1232,32 @@ export class BuilderPage {
   protected onTemplateUpdate(patch: Partial<DocumentTemplate>): void {
     const tid = this.templateId();
     if (!tid) return;
+    // Optimistic local update for instant visual feedback
+    this.template.update((t) => (t ? { ...t, ...patch } : t));
     this.templatesSvc.update(tid, patch).subscribe({
       next: (res) => {
-        if (res.ok) {
-          this.template.update((t) => (t ? { ...t, ...patch } : t));
+        if (!res.ok) {
+          // Revert on failure — reload from server
+          this.templatesSvc.findById(tid).subscribe({
+            next: (tRes) => {
+              if (tRes.ok) this.template.set(tRes.data);
+            },
+          });
         }
       },
+      error: () => {
+        this.templatesSvc.findById(tid).subscribe({
+          next: (tRes) => {
+            if (tRes.ok) this.template.set(tRes.data);
+          },
+        });
+      },
     });
+  }
+
+  protected onCloseInspectorPanel(): void {
+    this.templateSelected.set(false);
+    this.selectedId.set(null);
   }
 
   protected onDeleteBlock(id: string): void {
@@ -1200,39 +1280,46 @@ export class BuilderPage {
   // ─────────────────────────────────────────────────────────────
   /** TZ-87 B.2: Fetch first org + docType, then create template and navigate. */
   protected onCreateTemplate(): void {
-    this.isCreating.set(true);
-    const org$ = this.http.get<{ items: { _id: string }[] }>(
-      `${this.baseUrl}/organizations?limit=1`,
-    );
-    const dt$ = this.http.get<{ _id: string }[]>(`${this.baseUrl}/doc-types`);
-    forkJoin([org$, dt$])
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: ([orgRes, dtRes]) => {
-          const orgId = orgRes?.items?.[0]?._id;
-          const docTypeId = dtRes?.[0]?._id;
-          if (!orgId || !docTypeId) {
-            this.toast.error('Не найдены организация или тип документа. Сначала создайте их.');
+    const ref = this.dialog.open<TemplateSetupResult>(TemplateSetupDialogComponent, {
+      data: { mode: 'create' },
+    });
+    onDialogCloseOnce(ref, this.injector, (result) => {
+      if (!result) return;
+      this.isCreating.set(true);
+      const org$ = this.http.get<{ items: { _id: string }[] }>(
+        `${this.baseUrl}/organizations?limit=1`,
+      );
+      const dt$ = this.http.get<{ _id: string }[]>(`${this.baseUrl}/doc-types`);
+      forkJoin([org$, dt$])
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: ([orgRes, dtRes]) => {
+            const orgId = orgRes?.items?.[0]?._id;
+            const docTypeId = dtRes?.[0]?._id;
+            if (!orgId || !docTypeId) {
+              this.toast.error('Не найдены организация или тип документа. Сначала создайте их.');
+              this.isCreating.set(false);
+              return;
+            }
+            this.doCreateTemplate(orgId, docTypeId, result);
+          },
+          error: (err) => {
             this.isCreating.set(false);
-            return;
-          }
-          this.doCreateTemplate(orgId, docTypeId);
-        },
-        error: (err) => {
-          this.isCreating.set(false);
-          this.toast.error('Ошибка загрузки: ' + extractErrorMessage(err));
-        },
-      });
+            this.toast.error('Ошибка загрузки: ' + extractErrorMessage(err));
+          },
+        });
+    });
   }
 
   /** Actually create the template with resolved refs. */
-  private doCreateTemplate(orgId: string, docTypeId: string): void {
+  private doCreateTemplate(orgId: string, docTypeId: string, settings: TemplateSetupResult): void {
     this.templatesSvc
       .create({
         name: `Шаблон ${new Date().toLocaleDateString('ru-RU')}`,
         organizationId: orgId,
         docTypeId: docTypeId,
-        pageSize: 'A4',
+        pageSize: settings.pageSize,
+        orientation: settings.orientation,
         isActive: true,
       })
       .subscribe({
@@ -1277,22 +1364,24 @@ export class BuilderPage {
     const ref = this.dialog.open(AlertDialogComponent, {
       data: {
         title: 'Удалить шаблон?',
-        message: `«${t.name}» и все его блоки будут удалены.`,
+        description: `«${t.name}» и все его блоки будут удалены.`,
         confirmLabel: 'Удалить',
         variant: 'destructive',
       },
+      width: 'sm',
+      parentDestroyRef: this.destroyRef,
     });
     onDialogCloseOnce(ref, this.injector, (ok) => {
       if (!ok) return;
-      this.templatesSvc.remove(t._id).subscribe({
-        next: (res) => {
-          if (res.ok) {
-            this.toast.success('Шаблон удалён');
-            this.templateListRes.reload();
-          } else {
-            this.toast.error(extractErrorMessage(res.error));
-          }
-        },
+      this.templatesSvc.remove(t._id).subscribe((res) => {
+        if (res.ok) {
+          this.toast.success('Шаблон удалён');
+          this.templateListRes.reload();
+        } else {
+          this.toast.error(
+            extractErrorMessage(res.error as import('@angular/common/http').HttpErrorResponse),
+          );
+        }
       });
     });
   }
