@@ -421,6 +421,32 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 (checkedChange)="onImageOverlayToggle($event)"
               />
             </label>
+
+            <!-- Overlay position (only when overlay is ON) -->
+            @if (imageOverlay()) {
+              <label class="field">
+                <span class="field__label">Позиция X (px)</span>
+                <input
+                  class="field__input pi-focus-ring"
+                  type="number"
+                  min="0"
+                  max="2000"
+                  [value]="overlayLeft() ?? 0"
+                  (input)="onOverlayLeftInput($event)"
+                />
+              </label>
+              <label class="field">
+                <span class="field__label">Позиция Y (px)</span>
+                <input
+                  class="field__input pi-focus-ring"
+                  type="number"
+                  min="0"
+                  max="2000"
+                  [value]="overlayTop() ?? 0"
+                  (input)="onOverlayTopInput($event)"
+                />
+              </label>
+            }
           }
 
           <!-- Height (signature only) -->
@@ -1382,6 +1408,8 @@ export class BuilderInspectorComponent {
   protected readonly imageWidth = signal<number | null>(null);
   protected readonly imageHeight = signal<number | null>(null);
   protected readonly imageOverlay = signal<boolean>(false);
+  protected readonly overlayLeft = signal<number>(0);
+  protected readonly overlayTop = signal<number>(0);
 
   // Debounced text input for template properties (prevents orientation jumping)
   private readonly textInput$ = new Subject<{ key: string; value: string }>();
@@ -1477,6 +1505,8 @@ export class BuilderInspectorComponent {
       this.imageWidth.set((settings?.['imageWidth'] as number) ?? null);
       this.imageHeight.set((settings?.['imageHeight'] as number) ?? null);
       this.imageOverlay.set((settings?.['overlay'] as boolean) ?? false);
+      this.overlayLeft.set((settings?.['overlayLeft'] as number) ?? 0);
+      this.overlayTop.set((settings?.['overlayTop'] as number) ?? 0);
     });
 
     // Debounced text input for template properties (prevents orientation jumping)
@@ -1611,6 +1641,18 @@ export class BuilderInspectorComponent {
   protected onImageOverlayToggle(checked: boolean): void {
     this.imageOverlay.set(checked);
     this.patchSettings({ overlay: checked });
+  }
+
+  protected onOverlayLeftInput(event: Event): void {
+    const v = Number((event.target as HTMLInputElement).value) || 0;
+    this.overlayLeft.set(v);
+    this.patchSettings({ overlayLeft: v });
+  }
+
+  protected onOverlayTopInput(event: Event): void {
+    const v = Number((event.target as HTMLInputElement).value) || 0;
+    this.overlayTop.set(v);
+    this.patchSettings({ overlayTop: v });
   }
 
   /** Helper to patch block.settings with partial updates. */

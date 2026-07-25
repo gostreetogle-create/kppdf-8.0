@@ -64,6 +64,21 @@ import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
           </div>
         } @else {
           @for (block of blocks(); track blockKey(block)) {
+            <!-- Regular blocks (in flow) -->
+            @if (!isOverlayBlock(block)) {
+              <app-block-renderer
+                [block]="block"
+                [selected]="blockKey(block) === selectedId()"
+                [multiSelected]="selectedIds().has(blockKey(block))"
+                (select)="onSelect($event)"
+                (multiSelect)="onMultiSelect($event)"
+                (widthChange)="onBlockWidthChange(block, $event)"
+                (deleteRequest)="deleteRequest.emit($event)"
+              />
+            }
+          }
+          <!-- Overlay blocks (absolute positioned, rendered after flow blocks) -->
+          @for (block of overlayBlocks(); track blockKey(block)) {
             <app-block-renderer
               [block]="block"
               [selected]="blockKey(block) === selectedId()"
@@ -244,6 +259,18 @@ export class BuilderCanvasComponent {
 
   protected readonly CANVAS_DROPLIST_ID: string = CANVAS_DROPLIST_ID;
   protected readonly blockKey = blockKey;
+
+  /** Check if a block is in overlay mode. */
+  protected isOverlayBlock(block: TemplateBlock): boolean {
+    if (block.type !== 'image') return false;
+    const settings = block.settings as Record<string, unknown> | undefined;
+    return (settings?.['overlay'] as boolean) ?? false;
+  }
+
+  /** Get only overlay blocks for absolute positioning. */
+  protected readonly overlayBlocks = computed(() =>
+    this.blocks().filter((b) => this.isOverlayBlock(b)),
+  );
 
   protected onSelect(block: TemplateBlock): void {
     this.select.emit(block);
