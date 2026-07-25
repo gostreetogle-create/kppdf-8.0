@@ -25,7 +25,7 @@
  */
 
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
-import { CdkDrag, CdkDragHandle } from '@angular/cdk/drag-drop';
+import { CdkDrag } from '@angular/cdk/drag-drop';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { LucideAngularModule } from 'lucide-angular';
 import {
@@ -75,7 +75,7 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
   selector: 'app-block-renderer',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CdkDrag, CdkDragHandle, LucideAngularModule],
+  imports: [CdkDrag, LucideAngularModule],
   template: `
     <div
       cdkDrag
@@ -163,8 +163,8 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
         </svg>
       </div>
       <div class="block-renderer__body">
-        <!-- TZ-211: Drag handle (grip dots) -->
-        <div class="block-renderer__drag-handle" cdkDragHandle title="Перетащите для перемещения">
+        <!-- TZ-211: Drag handle (grip dots) — visual indicator only, entire block is draggable -->
+        <div class="block-renderer__drag-handle" title="Перетащите для перемещения">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="8" cy="6" r="2"/><circle cx="16" cy="6" r="2"/>
             <circle cx="8" cy="12" r="2"/><circle cx="16" cy="12" r="2"/>
