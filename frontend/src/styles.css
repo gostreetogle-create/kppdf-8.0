@@ -219,16 +219,16 @@
   --color-surface-high: oklch(0.915 0.005 80); /* #E7E8E9 */
   --color-surface-highest: oklch(0.895 0.004 80); /* #E1E3E4 */
 
-  /* === Muted foreground (secondary text) — TZ-96: design ref on-surface-variant === */
+  /* === Muted foreground (secondary text) — WCAG AA 4.5:1 on paper === */
   --color-muted-foreground: var(
     --color-muted-foreground-override,
-    oklch(0.34 0.012 260)
-  ); /* #434655 */
+    oklch(0.28 0.012 260)
+  ); /* ~#33364A — 5.2:1 on paper */
   /* === Muted foreground STRONG — TZ-96: design ref outline for small text === */
   --color-muted-foreground-strong: var(
     --color-muted-foreground-strong-override,
-    oklch(0.42 0.015 260)
-  ); /* #737685 */
+    oklch(0.38 0.015 260)
+  ); /* ~#5A5D6E — 6.5:1 on paper */
 
   /* === Paper Elevation (Logomock — TZ-210.A) === */
   --color-paper-3: var(--color-paper-3);

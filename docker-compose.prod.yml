@@ -4,7 +4,7 @@
 
 services:
   mongo:
-    image: mongo:7
+    image: mongo:4.4
     container_name: kppdf-mongo
     restart: unless-stopped
     command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
@@ -13,19 +13,19 @@ services:
     volumes:
       - ${KPPDF_DATA_DIR}/mongodb:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      test: ["CMD", "mongo", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 10s
       timeout: 5s
       retries: 8
 
   mongo-init:
-    image: mongo:7
+    image: mongo:4.4
     depends_on:
       mongo:
         condition: service_healthy
     restart: "no"
     entrypoint: >-
-      sh -c "mongosh --host mongo:27017 --eval
+      sh -c "mongo --host mongo:27017 --eval
       'try { rs.status() } catch (e) { rs.initiate({_id: \"rs0\", members: [{_id: 0, host: \"mongo:27017\"}]}) }'"
 
   backend:
@@ -53,6 +53,7 @@ services:
       JWT_SECRET: "${JWT_SECRET:?JWT_SECRET is required}"
       JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET is required}"
       CORS_ORIGIN: "${CORS_ORIGIN:-https://sport-set.ru}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:-admin-change-me-immediately-in-production}"
       FRONTEND_PATH: /app/frontend
       LOG_LEVEL: info
     healthcheck:

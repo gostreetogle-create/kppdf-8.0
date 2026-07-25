@@ -1,18 +1,18 @@
 #!/bin/bash
 # ====================================================================
-# server-setup-ubuntu.sh — первичная настройка чистого Ubuntu-сервера
+# server-setup-ubuntu.sh — первичная настройка Ubuntu-сервера для KPPDF 8.0
 # Запуск на сервере: scp + ssh
 #
 # Ubuntu 22.04 / 24.04 LTS
 # ====================================================================
 set -euo pipefail
 
-APP_DIR="${APP_DIR:-/opt/kppdf-3.0}"
-DATA_DIR="${KPPDF_DATA_DIR:-/var/lib/kppdf}"
+APP_DIR="${APP_DIR:-/opt/kppdf-8.0}"
+DATA_DIR="${KPPDF_DATA_DIR:-/var/lib/kppdf80}"
 DEPLOY_USER="${DEPLOY_USER:-$USER}"
 
 echo ""
-echo "=== KPPDF 3.0 — Ubuntu server setup ==="
+echo "=== KPPDF 8.0 — Ubuntu server setup ==="
 echo "  User: $DEPLOY_USER"
 echo "  App:  $APP_DIR"
 echo "  Data: $DATA_DIR"
@@ -52,12 +52,12 @@ mkdir -p "$APP_DIR"
 chown -R "$DEPLOY_USER:$DEPLOY_USER" "$APP_DIR"
 
 echo "[5/7] Каталоги данных (MongoDB, медиа, бэкапы)..."
-mkdir -p "$DATA_DIR"/{mongodb,media,backups}
+mkdir -p "$DATA_DIR"/{mongodb,uploads,backups}
 chown -R 999:999 "$DATA_DIR/mongodb"
-chown -R "$DEPLOY_USER:$DEPLOY_USER" "$DATA_DIR/media" "$DATA_DIR/backups"
-chmod 755 "$DATA_DIR" "$DATA_DIR/mongodb" "$DATA_DIR/media" "$DATA_DIR/backups"
+chown -R "$DEPLOY_USER:$DEPLOY_USER" "$DATA_DIR/uploads" "$DATA_DIR/backups"
+chmod 755 "$DATA_DIR" "$DATA_DIR/mongodb" "$DATA_DIR/uploads" "$DATA_DIR/backups"
 echo "  $DATA_DIR/mongodb  — база данных"
-echo "  $DATA_DIR/media    — загруженные файлы"
+echo "  $DATA_DIR/uploads  — загруженные файлы"
 echo "  $DATA_DIR/backups  — ручные бэкапы"
 
 echo "[6/7] Firewall (UFW)..."
@@ -82,9 +82,10 @@ fi
 echo ""
 echo "=== Готово ==="
 echo ""
-echo "  Проверка с dev-машины:"
+echo "  Проверка:"
 echo "    ssh $DEPLOY_USER@$(hostname -I | awk '{print $1}') 'docker ps && ls -la $DATA_DIR'"
 echo ""
-echo "  Деплой:"
-echo "    python deploy/synology/deploy.py --seed"
+echo "  Следующий шаг — настройка туннеля:"
+echo "    scp deploy/synology/setup-tunnel-vm.sh $DEPLOY_USER@$(hostname -I | awk '{print $1}'):/tmp/"
+echo "    ssh $DEPLOY_USER@$(hostname -I | awk '{print $1}') 'bash /tmp/setup-tunnel-vm.sh'"
 echo ""

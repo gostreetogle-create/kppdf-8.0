@@ -9,7 +9,6 @@ import {
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import * as Sentry from '@sentry/angular';
 
 import { routes } from './app.routes';
 import { AuthService } from './core/auth.service';
@@ -18,12 +17,16 @@ import { PiToastService } from './shared/ui/toast';
 
 /**
  * Global error handler — catches unhandled errors, reports to Sentry (if DSN set), and shows a toast.
- * Replaces Angular's default console.error-only handler.
+ * Sentry is lazy-loaded to avoid pulling ~300KB into the initial bundle.
  */
 class GlobalErrorHandler implements ErrorHandler {
   handleError(error: unknown): void {
-    // TZ-157: Capture unhandled errors in Sentry
-    Sentry.captureException(error);
+    // TZ-157: Capture unhandled errors in Sentry (lazy-loaded)
+    if (window.__SENTRY_DSN__) {
+      import('@sentry/angular').then((Sentry) => {
+        Sentry.captureException(error);
+      });
+    }
 
     const toast = inject(PiToastService);
     const message = error instanceof Error ? error.message : 'Произошла непредвиденная ошибка';

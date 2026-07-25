@@ -1,19 +1,23 @@
 import { bootstrapApplication } from '@angular/platform-browser';
-import * as Sentry from '@sentry/angular';
 import { App } from './app/app';
 import { appConfig } from './app/app.config';
 
-// TZ-157: Initialize Sentry before Angular bootstrap.
-// SENTRY_DSN is injected at runtime via window.__SENTRY_DSN__
-// (e.g. from a server-rendered <script> tag in index.html).
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const sentryDsn = (window as any).__SENTRY_DSN__ as string | undefined;
+declare global {
+  interface Window {
+    __SENTRY_DSN__?: string;
+  }
+}
+
+// TZ-157: Initialize Sentry lazily — only load the ~300KB bundle when DSN is present.
+const sentryDsn = window.__SENTRY_DSN__;
 if (sentryDsn) {
-  Sentry.init({
-    dsn: sentryDsn,
-    environment: 'production',
-    tracesSampleRate: 0.2,
-    integrations: [Sentry.browserTracingIntegration()],
+  import('@sentry/angular').then((Sentry) => {
+    Sentry.init({
+      dsn: sentryDsn,
+      environment: 'production',
+      tracesSampleRate: 0.2,
+      integrations: [Sentry.browserTracingIntegration()],
+    });
   });
 }
 

@@ -495,6 +495,41 @@ kppdf-8.0/
 └── STATUS.md             # This file
 ```
 
+## 🆕 Audit Tasks — Security & Code Quality (2026-07-25)
+
+**Мотивация:** Полный аудит проекта выявил 8 задач, не покрытых существующими TZ.
+
+### 🔴 CRITICAL — Security (4 задачи)
+
+| TZ | Название | Оценка | Dependencies |
+|----|----------|--------|--------------|
+| **TZ-171** | Убрать .env из git-истории | 30min | — |
+| **TZ-172** | Закрыть публичный /auth/register | 1h | — |
+| **TZ-173** | Исправить CI backend format → format:check | 20min | — |
+| **TZ-174** | Добавить backend в lint-staged | 30min | TZ-173 |
+
+### 🟡 HIGH — Code Quality (3 задачи)
+
+| TZ | Название | Оценка | Dependencies |
+|----|----------|--------|--------------|
+| **TZ-175** | Добавить security scanning в CI | 1h | TZ-173 |
+| **TZ-176** | Заменить console.warn на Logger + убрать as any | 1-2h | — |
+| **TZ-178** | Добавить unit тесты для 5 backend сервисов | 3-4h | — |
+
+### 🟢 MEDIUM — Architecture (1 задача)
+
+| TZ | Название | Оценка | Dependencies |
+|----|----------|--------|--------------|
+| **TZ-177** | Разбить builder.page.ts (god file 1359 строк) | 2-3h | TZ-170 |
+
+### 📋 Рекомендации по порядку
+
+1. **Немедленно:** TZ-171 (30min) → TZ-172 (1h) → TZ-173 (20min)
+2. **После:** TZ-174, TZ-175, TZ-176
+3. **Параллельно:** TZ-177, TZ-178
+
+---
+
 ## 🆕 Recent atomic commits (2026-07-11)
 
 ### TZ-83 (5 atomic commits — A/B/C/D/E)
@@ -594,6 +629,19 @@ kppdf-8.0/
 **Lock-файлы:** N/A (chore commit, no code zone to lock).
 
 ## ⏳ Готовые к запуску (READY)
+
+### Audit Tasks (2026-07-25) — Security & Code Quality
+
+| TZ | Название | Layer | Оценка | Dependencies |
+|----|----------|-------|--------|--------------|
+| TZ-171 | Убрать .env из git-истории | 4 | 30min | — |
+| TZ-172 | Закрыть публичный /auth/register | 4 | 1h | — |
+| TZ-173 | Исправить CI backend format → format:check | 4 | 20min | — |
+| TZ-174 | Добавить backend в lint-staged | 4 | 30min | TZ-173 |
+| TZ-175 | Добавить security scanning в CI | 4 | 1h | TZ-173 |
+| TZ-176 | Заменить console.warn на Logger + убрать as any | 4 | 1-2h | — |
+| TZ-177 | Разбить builder.page.ts (god file) | 3 | 2-3h | TZ-170 |
+| TZ-178 | Добавить unit тесты для 5 backend сервисов | 4 | 3-4h | — |
 
 ### TZ-90 (2026-07-11) — Dialog system standardization (4 templates · 50% backdrop · 8px radius · shadow tokens · migration of 11+ existing dialogs)
 

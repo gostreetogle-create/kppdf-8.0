@@ -1,191 +1,355 @@
-# KPPDF 8.0 — деплой на Synology / Ubuntu VM
+# KPPDF 8.0 — Документация деплоя
 
-> **Source of truth** для будущих деплоев v8.  
-> Секреты (SSH, JWT, пароли): [`CREDENTIALS.md`](./CREDENTIALS.md) — **локальный файл, не в git** (шаблон: [`CREDENTIALS.example.md`](./CREDENTIALS.example.md)).
-
----
-
-## Статус последнего деплоя
-
-| Дата | Результат | Примечание |
-|------|-----------|------------|
-| 2026-07-13 | ⏳ В процессе | SSH OK на **`192.168.1.103`** (`ubuntu24kppdf_8`). Архив ~97 MB собран. `docker build` на VM — до 15 мин. WAN `193.222.62.240` — auth fail. `sport-set.ru` → Cloudflare 530 |
-
-**После успешного деплоя:** обновите эту таблицу и секцию «Verify» ниже.
+> **Source of truth** для деплоя v8.
+> Секреты: [`CREDENTIALS.md`](./CREDENTIALS.md) (gitignore).
+> Краткий чеклист: [`RUNBOOK.md`](./RUNBOOK.md)
+> Последнее обновление: 2026-07-25
 
 ---
 
-## Инфраструктура
+## 1. Архитектура
 
 ```
-Интернет
-   │
-   ├─ 193.222.62.240 (WAN, Keenetic/Synology) — SSH auth не работает с dev-машины
-   │       └─ проброс → LAN
-   │
-   └─ https://sport-set.ru (Cloudflare Tunnel → nginx → :3000)
-
-Ubuntu VM `ubuntu24kppdf_8` (Synology VMM, хост `nastiit`)
-   IP: 192.168.1.103  (+ 172.17.0.1 docker0)
-   SSH: tiit@192.168.1.103  (из домашней LAN, без VPN)
-   /opt/kppdf-8.0/          ← код (перезаписывается deploy.py)
-   /var/lib/kppdf80/        ← данные (сохраняются)
-      mongodb/
-      uploads/
-      backups/
+┌──────────────────────────────────────────────────────────────┐
+│                        ИНТЕРНЕТ                               │
+│                                                              │
+│   Пользователь → https://kppdf-crm.ru/                       │
+└──────────────────────┬───────────────────────────────────────┘
+                       │ DNS → 193.222.62.240
+                       ▼
+┌──────────────────────────────────────────────────────────────┐
+│  VPS (box-946037) — 193.222.62.240                           │
+│  Ubuntu 26.04 LTS                                            │
+│                                                              │
+│  ┌───────────────┐     ┌──────────────────┐                  │
+│  │ nginx:443     │────→│ localhost:4200   │←──── SSH tunnel   │
+│  │ (HTTP/2+SSL)  │     │ (reverse tunnel) │     (autossh)    │
+│  │ Let's Encrypt │     └──────────────────┘                  │
+│  └───────────────┘                                           │
+│                                                              │
+│  SSL: /etc/letsencrypt/live/kppdf-crm.ru/                    │
+│  Автопродление: certbot timer (ежедневно)                    │
+└──────────────────────────────┬───────────────────────────────┘
+                               │
+          ╔════ SSH reverse tunnel ════╗
+          ║  VM → VPS: -R 4200:3000   ║
+          ╚════════════════════════════╝
+                               │
+┌──────────────────────────────────────────────────────────────┐
+│  Synology NAS (10.0.0.47)                                    │
+│  VMM: Ubuntu VM "ubuntu24kppdf_8"                            │
+│                                                              │
+│  ┌─────────────────────────────────────────┐                 │
+│  │  VM — 192.168.1.103                     │                 │
+│  │                                         │                 │
+│  │  ┌────────────────┐  ┌───────────────┐  │                 │
+│  │  │ kppdf-backend  │  │ kppdf-mongo   │  │                 │
+│  │  │ :3000 (Docker) │  │ :27017 (Docker)│ │                 │
+│  │  └────────────────┘  └───────────────┘  │                 │
+│  │  /opt/kppdf-8.0/                        │                 │
+│  │  /var/lib/kppdf80/                      │                 │
+│  └─────────────────────────────────────────┘                 │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-| Компонент | Значение |
-|-----------|----------|
-| Стек | Docker Compose `docker-compose.prod.yml` |
-| MongoDB | 7.x, replica set `rs0`, контейнер `kppdf-mongo` |
-| Backend | NestJS, контейнер `kppdf-backend`, порт **3000** |
-| Frontend | Angular build → `frontend/browser/` → `FRONTEND_PATH` в backend |
-| Prod URL | https://sport-set.ru |
-| Health | `GET /api/health` |
+### Цепочка запроса
+
+```
+1. Браузер → https://kppdf-crm.ru/ (DNS: 193.222.62.240)
+2. VPS nginx:443 (HTTP/2 + SSL) → proxy_pass http://localhost:4200
+3. localhost:4200 → SSH reverse tunnel (autossh systemd)
+4. SSH tunnel → VM localhost:3000 → Docker kppdf-backend
+5. Backend → MongoDB (kppdf-mongo, replica set rs0)
+```
+
+### Почему туннель
+
+VPS (193.222.62.240) и VM (192.168.1.103) в разных сетях. Synology NAS (10.0.0.47) — хост VM, но не маршрутизируется до VPS. Единственный способ связать их — SSH reverse tunnel, который VM сама устанавливает к VPS.
 
 ---
 
-## Предварительные требования (dev-машина)
+## 2. Текущий статус
 
-- Node.js 20+, npm
-- Python 3 + `pip install -r deploy/synology/requirements.txt`
-- Файл `deploy/synology/config.env` (см. CREDENTIALS.md)
-- SSH-доступ к серверу (LAN или WAN)
+| Компонент | Статус | Детали |
+|-----------|--------|--------|
+| Домен kppdf-crm.ru | ✅ | DNS → 193.222.62.240 |
+| SSL сертификат | ✅ | Let's Encrypt,到期 2026-10-23, автопродление |
+| nginx на VPS | ✅ | HTTP/2, SSL, gzip, кеширование статики |
+| SSH tunnel | ✅ | autossh + systemd, автоперезапуск 10 сек |
+| Backend на VM | ✅ | Docker kppdf-backend, healthy |
+| MongoDB на VM | ✅ | Docker kppdf-mongo 4.4, replica set rs0, healthy |
+| CORS | ✅ | http + https kppdf-crm.ru |
 
 ---
 
-## Быстрый деплой (обновление)
+## 3. Серверы
 
+| Сервер | IP | Роль |
+|--------|-----|------|
+| **VPS** | `193.222.62.240` | nginx (SSL termination) + SSH tunnel endpoint |
+| **VM** | `192.168.1.103` (LAN) | Docker: backend + MongoDB |
+| **Synology** | `10.0.0.47` (LAN) | VMM: Ubuntu VM |
+
+---
+
+## 4. SSH доступ
+
+| Сервер | Команда | Пароль | Доступ |
+|--------|---------|--------|--------|
+| VPS | `ssh root@193.222.62.240` | `serenaubxuekin` | Из интернета |
+| VM | `ssh tiit@192.168.1.103` | `Tg30121986` | Только из LAN |
+
+**SSH-ключ (VM → VPS):** ed25519, уже в `authorized_keys` на VPS.
+
+---
+
+## 5. Nginx конфиг (VPS)
+
+Файл: `/etc/nginx/sites-available/kppdf-proxy`
+
+```nginx
+server {
+    server_name kppdf-crm.ru 193.222.62.240 _;
+    client_max_body_size 10M;
+    http2 on;
+
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # Статика — кеширование 30 дней
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff2|woff|ttf|eot)$ {
+        proxy_pass http://127.0.0.1:4200;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+    }
+
+    location = /robots.txt {
+        alias /var/www/html/robots.txt;
+        access_log off;
+        log_not_found off;
+    }
+
+    location = /favicon.ico {
+        access_log off;
+        log_not_found off;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:4200;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        proxy_read_timeout 120s;
+        proxy_send_timeout 120s;
+    }
+
+    listen [::]:443 ssl ipv6only=on;
+    listen 443 ssl;
+    ssl_certificate /etc/letsencrypt/live/kppdf-crm.ru/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/kppdf-crm.ru/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}
+
+server {
+    if ($host = kppdf-crm.ru) {
+        return 301 https://$host$request_uri;
+    }
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name kppdf-crm.ru 193.222.62.240 _;
+    return 404;
+}
+```
+
+---
+
+## 6. SSH Reverse Tunnel (autossh)
+
+Туннель инициируется **с VM** к VPS. Systemd сервис `kppdf-tunnel`.
+
+```bash
+# На VM:
+sudo systemctl status kppdf-tunnel    # статус
+sudo systemctl restart kppdf-tunnel   # перезапуск
+sudo journalctl -u kppdf-tunnel -n 50 --no-pager  # логи
+
+# Проверка (с VPS):
+curl -4 -s http://127.0.0.1:4200/api/health
+ss -tlnp | grep :4200
+```
+
+---
+
+## 7. Docker (на VM)
+
+| Контейнер | Образ | Порт | Описание |
+|-----------|-------|------|----------|
+| `kppdf-backend` | kppdf-80-backend | `0.0.0.0:3000` | NestJS API |
+| `kppdf-mongo` | mongo:4.4 | `127.0.0.1:27017` | MongoDB RS |
+
+```bash
+docker ps                                          # статус
+docker logs kppdf-backend --tail=50                # логи
+docker compose -f docker-compose.prod.yml restart backend
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+---
+
+## 8. Конфигурация (.env на VM)
+
+Файл: `/opt/kppdf-8.0/.env`
+
+```
+JWT_SECRET=014fd3108b0a0142b212f4385464fa4cf29f041461cf04c9608c9fcfb4db0578
+JWT_REFRESH_SECRET=ceb70bc50ef132a421e536ff9bda8582387e073ca3f96dbfff3c4272a5298bba
+CORS_ORIGIN=https://sport-set.ru,http://kppdf-crm.ru,https://kppdf-crm.ru,http://193.222.62.240
+KPPDF_DATA_DIR=/var/lib/kppdf80
+ADMIN_PASSWORD=admin-change-me-immediately-in-production
+```
+
+**Важно:** После изменения `.env` нужно **пересоздать** контейнер (не просто restart):
+```bash
+cd /opt/kppdf-8.0 && sudo docker compose -f docker-compose.prod.yml up -d --force-recreate --no-deps backend
+```
+
+---
+
+## 9. Деплой
+
+### 9.1 Первичная настройка (один раз)
+
+```bash
+# На VM: установка Docker, каталогов, firewall
+sudo bash deploy/synology/server-setup-ubuntu.sh
+
+# На VM: настройка туннеля (SSH ключ, autossh, systemd)
+scp deploy/synology/setup-tunnel-vm.sh tiit@192.168.1.103:/tmp/
+ssh tiit@192.168.1.103 "bash /tmp/setup-tunnel-vm.sh"
+
+# На VPS: SSL сертификат
+certbot --nginx -d kppdf-crm.ru --non-interactive --agree-tos --email admin@kppdf-crm.ru --redirect
+```
+
+### 9.2 Обновление приложения
+
+**Node.js (рекомендуется):**
 ```powershell
-cd D:\kppdf-8.0
-
-# 1. Проверки
-.\deploy\synology\preflight.ps1
-
-# 2. Бэкап на сервере (рекомендуется)
-ssh tiit@192.168.1.103 "cd /opt/kppdf-8.0 && bash backup.sh"
-
-# 3. Деплой (без seed — данные Mongo сохраняются)
-python deploy/synology/deploy.py
-
-# Явно указать хост (предпочтительно LAN):
-python deploy/synology/deploy.py --host 192.168.1.103
+node deploy/synology/deploy-node.cjs
 ```
 
-**Первый деплoy на чистом сервере:**
+**PowerShell:**
+```powershell
+.\deploy\synology\deploy.ps1 -Seed
+```
 
+**Python (legacy):**
 ```powershell
 python deploy/synology/deploy.py --host 192.168.1.103 --seed
 ```
 
----
+### 9.3 Что делает деплой
 
-## Что делает `deploy.py`
-
-1. `npm run build` в `frontend/` → копия в `frontend/browser/`
-2. Архив: `backend/`, `frontend/browser/`, `docker-compose.prod.yml`
-3. SSH upload → `/opt/kppdf-8.0/`
-4. Запись `.env` (JWT, `KPPDF_DATA_DIR`, CORS)
-5. `docker compose -f docker-compose.prod.yml build --no-cache backend && up -d`
-6. Health check `/api/health`
-7. (опционально `--seed`) restart backend — Nest seeds на старте
+1. Angular build → `frontend/browser/`
+2. Архив: `backend/`, `frontend/`, `docker-compose.prod.yml`
+3. SSH upload на VM → `/opt/kppdf-8.0/`
+4. Запись `.env`
+5. `docker compose build --no-cache backend && up -d`
+6. Health check
+7. Копирование frontend
 
 ---
 
-## Сколько ждать
-
-| Этап | Время |
-|------|-------|
-| Angular build (локально) | ~1 мин |
-| Upload архива ~97 MB | 1–3 мин |
-| **`docker build backend` на VM** | **10–15 мин** (самый долгий) |
-| Health check | до 90 с |
-
-> Вывод `deploy.py` может «молчать» несколько минут — идёт сборка Docker на VM.
-
-**На сервере:**
+## 10. Верификация
 
 ```bash
-ssh tiit@192.168.1.103
-sudo docker ps
-curl -s http://127.0.0.1:3000/api/health
-curl -sI http://127.0.0.1:3000/ | head -5
-sudo docker compose -f /opt/kppdf-8.0/docker-compose.prod.yml logs -f backend --tail=50
+# 1. Backend (на VM):
+curl http://localhost:3000/api/health
+# → {"status":"ok","info":{"mongo":{"status":"up"},...}}
+
+# 2. Туннель (с VPS):
+curl -4 -s http://127.0.0.1:4200/api/health
+# → JSON
+
+# 3. HTTPS (из браузера):
+https://kppdf-crm.ru/              # → страница логина
+https://kppdf-crm.ru/api/health    # → JSON
+
+# 4. HTTP → HTTPS редирект:
+http://kppdf-crm.ru/               # → 301 → https://kppdf-crm.ru/
+
+# 5. robots.txt:
+https://kppdf-crm.ru/robots.txt    # → User-agent: *
 ```
 
-**Снаружи:**
+**Логин:** `admin` / `admin-change-me-immediately-in-production`
+
+---
+
+## 11. SSL сертификат (Let's Encrypt)
 
 ```bash
-curl -sI https://sport-set.ru/
-curl -s https://sport-set.ru/api/health
+# Установка certbot (на VPS):
+apt-get install -y certbot python3-certbot-nginx
+
+# Получение сертификата:
+certbot --nginx -d kppdf-crm.ru --non-interactive --agree-tos --email admin@kppdf-crm.ru --redirect
+
+# Автопродление (настроено автоматически):
+systemctl status certbot.timer
+
+# Ручное обновление:
+certbot renew --dry-run
 ```
 
-**Логин в приложение:** см. `CREDENTIALS.md` → «Приложение KPPDF».
+Сертификат: `/etc/letsencrypt/live/kppdf-crm.ru/`
+- `fullchain.pem` — цепочка сертификатов
+- `privkey.pem` — приватный ключ
 
 ---
 
-## Первичная установка сервера (один раз)
+## 12. Troubleshooting
 
-Если Ubuntu VM ещё не настроена — см. [`INSTALL.md`](./INSTALL.md) (из kppdf-3.0, шаги актуальны):
-
-```powershell
-scp deploy/synology/server-setup-ubuntu.sh tiit@192.168.1.103:/tmp/
-ssh tiit@192.168.1.103 "sudo bash /tmp/server-setup-ubuntu.sh"
-```
-
----
-
-## Cloudflare Tunnel / nginx
-
-Если `sport-set.ru` отдаёт **530** — origin недоступен:
-
-```bash
-# на Ubuntu VM
-sudo systemctl status cloudflared
-sudo systemctl status nginx
-curl -sI -H 'Host: sport-set.ru' http://127.0.0.1:3000/
-```
-
-Документация tunnel из kppdf-3.0:  
-`WebstormProjects/kppdf-3.0/deploy/synology/tunnel_*.py`, `nginx.conf`
+| # | Проблема | Причина | Решение |
+|---|----------|---------|---------|
+| 1 | **502 Bad Gateway** | Туннель упал | `ssh tiit@192.168.1.103 "sudo systemctl restart kppdf-tunnel"` |
+| 2 | **502 Bad Gateway** | Backend упал | `ssh tiit@192.168.1.103 "sudo docker restart kppdf-backend"` |
+| 3 | **ERR_CONNECTION_REFUSED** (порт 443) | SSL не настроен | `certbot --nginx -d kppdf-crm.ru --redirect` |
+| 4 | **CORS error** | URL нет в CORS_ORIGIN | Добавить в `.env` на VM + `--force-recreate backend` |
+| 5 | MongoDB AVX error | CPU Synology без AVX | `mongo:4.4` (уже используется) |
+| 6 | `no replset config` | RS не инициализирован | `docker exec kppdf-mongo mongo --eval "rs.initiate(...)"` |
+| 7 | Frontend пуст | `browser/` пуст | `cp -r frontend/dist/kppdf-frontend/browser/* frontend/browser/` |
+| 8 | Сертификат истёк | certbot не обновился | `certbot renew --force-renewal` |
+| 9 | Туннель не переподключается | autossh завис | `sudo systemctl restart kppdf-tunnel` на VM |
 
 ---
 
-## Troubleshooting
+## 13. Пути на VM
 
-| Проблема | Решение |
-|----------|---------|
-| `Auth failed` SSH WAN | Деплоить из LAN: **`192.168.1.103`**, не `193.222.62.240` |
-| `JWT_SECRET is required` | Заполнить JWT в `config.env` |
-| Mongo permission denied | `sudo chown -R 999:999 /var/lib/kppdf80/mongodb` |
-| Backend unhealthy | `docker logs kppdf-backend`, проверить `MONGO_URI` |
-| Frontend 404 | Проверить `frontend/browser/index.html` на сервере, `FRONTEND_PATH=/app/frontend` |
-| Старый kppdf-3.0 на :3000 | Остановить: `docker stop kppdf-backend kppdf-mongodb` или сменить порт в compose |
-
----
-
-## Файлы деплоя
-
-```
-deploy/synology/
-  DEPLOY.md              ← этот документ
-  RUNBOOK.md             ← краткий чеклист
-  CREDENTIALS.md         ← секреты (gitignore, создать из example)
-  CREDENTIALS.example.md
-  config.env             ← для deploy.py (gitignore)
-  config.env.example
-  deploy.py
-  preflight.ps1
-  backup.sh
-  server-setup-ubuntu.sh
-  INSTALL.md
-docker-compose.prod.yml  ← prod stack
-```
+| Путь | Назначение |
+|------|------------|
+| `/opt/kppdf-8.0/` | Код приложения (перезаписывается при деплое) |
+| `/opt/kppdf-8.0/.env` | JWT + CORS конфиг |
+| `/opt/kppdf-8.0/docker-compose.prod.yml` | Docker Compose production |
+| `/var/lib/kppdf80/mongodb/` | MongoDB data (сохраняется) |
+| `/var/lib/kppdf80/uploads/` | Загруженные файлы |
+| `/var/lib/kppdf80/backups/` | Ручные бэкапы |
 
 ---
 
-## Отличия от kppdf-3.0
+## 14. Отличия от kppdf-3.0
 
 | | kppdf-3.0 | kppdf-8.0 |
 |---|-----------|-----------|
@@ -194,11 +358,21 @@ docker-compose.prod.yml  ← prod stack
 | Frontend dist | `dist/kppdf-3.0/browser` | `frontend/dist/kppdf-frontend/browser` |
 | Data dir | `/var/lib/kppdf` | `/var/lib/kppdf80` |
 | Remote dir | `/opt/kppdf-3.0` | `/opt/kppdf-8.0` |
-| Mongo container | `kppdf-mongodb` | `kppdf-mongo` |
-| Seed | `node dist/.../seed.js` | автоматически при старте Nest |
+| Mongo | 7.x (AVX required) | **4.4** (AVX-free) |
+| SSL | Нет | **Let's Encrypt + HTTP/2** |
+| Туннель | Нет | **autossh + systemd** |
+| Деплой | deploy.py | deploy-node.cjs |
+| Домен | sport-set.ru | **kppdf-crm.ru** |
 
 ---
 
-## История документации
+## 15. История
 
-- **2026-07-13** — VM `ubuntu24kppdf_8` @ `192.168.1.103`, SSH verified. Deploy pending (docker build).
+| Дата | Событие |
+|------|---------|
+| 2026-07-25 | **v5** — HTTPS (Let's Encrypt), HTTP/2, gzip, кеширование статики, robots.txt |
+| 2026-07-25 | **v4** — Туннель создан, CORS исправлен, всё работает |
+| 2026-07-25 | **v3** — VPS подготовлен, setup-tunnel-vm.sh создан |
+| 2026-07-25 | v2 — Диагностика VPS, nginx настроен |
+| 2026-07-25 | v1 — Первый деплой v8 |
+| 2026-07-13 | VM `ubuntu24kppdf_8` создана |
