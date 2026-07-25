@@ -25,7 +25,7 @@
  */
 
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
-import { CdkDrag } from '@angular/cdk/drag-drop';
+import { CdkDrag, CdkDragHandle } from '@angular/cdk/drag-drop';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { LucideAngularModule } from 'lucide-angular';
 import {
@@ -75,7 +75,7 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
   selector: 'app-block-renderer',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CdkDrag, LucideAngularModule],
+  imports: [CdkDrag, CdkDragHandle, LucideAngularModule],
   template: `
     <div
       cdkDrag
@@ -149,6 +149,14 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
         </svg>
       </div>
       <div class="block-renderer__body">
+        <!-- TZ-211: Drag handle (grip dots) -->
+        <div class="block-renderer__drag-handle" cdkDragHandle title="Перетащите для перемещения">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="8" cy="6" r="2"/><circle cx="16" cy="6" r="2"/>
+            <circle cx="8" cy="12" r="2"/><circle cx="16" cy="12" r="2"/>
+            <circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/>
+          </svg>
+        </div>
         @if (block().type === 'table' && tableColumns().length > 0) {
           <!-- Table block: render actual table with columns and sample rows -->
           <div class="block-renderer__table-wrap">
@@ -396,6 +404,33 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
         font-style: italic;
         color: var(--color-muted-foreground-strong);
         padding: 12px 8px;
+      }
+
+      /* ═══ Drag Handle — TZ-211 ═══ */
+      .block-renderer__drag-handle {
+        position: absolute;
+        left: -20px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 16px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-muted);
+        opacity: 0;
+        transition: opacity 150ms ease, color 150ms ease;
+        cursor: grab;
+        z-index: 5;
+      }
+
+      .block-renderer:hover .block-renderer__drag-handle {
+        opacity: 0.5;
+      }
+
+      .block-renderer:hover .block-renderer__drag-handle:hover {
+        opacity: 1;
+        color: var(--color-gold);
       }
 
       /* Spacer block */

@@ -189,20 +189,25 @@ import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
         font-family: ui-monospace, monospace;
       }
 
-      /* CDK drag-drop animations */
+      /* ═══ CDK drag-drop — TZ-211: Design System ═══ */
       .cdk-drag-preview {
         box-sizing: border-box;
-        border: 1px solid var(--color-ink);
+        border: 1px solid var(--color-gold);
         background: var(--color-paper);
-        opacity: 0.9;
+        opacity: 0.92;
+        box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.15);
+        border-radius: 2px;
       }
 
       .cdk-drag-placeholder {
-        opacity: 0.3;
+        opacity: 0.25;
+        border: 1px dashed var(--color-gold);
+        border-radius: 2px;
+        background: var(--color-gold-soft);
       }
 
       .cdk-drop-list-dragging .canvas-dropzone:not(.is-empty) {
-        background: color-mix(in oklch, var(--color-sunrise-soft) 30%, transparent);
+        background: var(--color-paper-3);
       }
     `,
   ],
