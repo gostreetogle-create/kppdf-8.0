@@ -7,6 +7,7 @@ import {
   output,
   signal,
 } from '@angular/core';
+import { Subject, debounceTime } from 'rxjs';
 import {
   LucideAngularModule,
   RotateCcw,
@@ -358,8 +359,72 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
             </label>
           }
 
-          <!-- Height (image/signature) -->
-          @if (block()!.type === 'image' || block()!.type === 'signature') {
+          <!-- Image upload + controls -->
+          @if (block()!.type === 'image') {
+            <div class="field">
+              <span class="field__label">Изображение</span>
+              @if (imageUrl()) {
+                <div class="image-preview">
+                  <img [src]="imageUrl()" alt="Превью" class="image-preview__img" />
+                  <button type="button" class="image-preview__remove" (click)="onRemoveImage()" title="Удалить изображение">
+                    <lucide-icon [img]="CloseIcon" [size]="14"></lucide-icon>
+                  </button>
+                </div>
+              }
+              <label class="bg-upload">
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  class="bg-upload__input"
+                  (change)="onImageUpload($event)"
+                />
+                <span class="bg-upload__inner">
+                  <lucide-icon [img]="UploadIcon" [size]="14"></lucide-icon>
+                  <span class="bg-upload__text">{{ imageUrl() ? 'Заменить' : 'Загрузить фото' }}</span>
+                </span>
+              </label>
+            </div>
+
+            <!-- Width -->
+            <label class="field">
+              <span class="field__label">Ширина (px)</span>
+              <input
+                class="field__input pi-focus-ring"
+                type="number"
+                min="50"
+                max="2000"
+                [value]="imageWidth() ?? ''"
+                (input)="onImageWidthInput($event)"
+                placeholder="Авто"
+              />
+            </label>
+
+            <!-- Height -->
+            <label class="field">
+              <span class="field__label">Высота (px)</span>
+              <input
+                class="field__input pi-focus-ring"
+                type="number"
+                min="20"
+                max="2000"
+                [value]="imageHeight() ?? ''"
+                (input)="onImageHeightInput($event)"
+                placeholder="Авто"
+              />
+            </label>
+
+            <!-- Overlay toggle -->
+            <label class="field field--row">
+              <span class="field__label">Поверх других блоков</span>
+              <app-pi-switch
+                [checked]="imageOverlay()"
+                (checkedChange)="onImageOverlayToggle($event)"
+              />
+            </label>
+          }
+
+          <!-- Height (signature only) -->
+          @if (block()!.type === 'signature') {
             <label class="field">
               <span class="field__label">Высота (px)</span>
               <input
@@ -1149,6 +1214,51 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         background: rgba(115, 92, 0, 0.05);
       }
 
+      /* ═══ Image preview in inspector ═══ */
+      .image-preview {
+        position: relative;
+        display: inline-block;
+        margin-bottom: 8px;
+        border: 1px solid var(--color-rule);
+        border-radius: 2px;
+        overflow: hidden;
+        max-width: 100%;
+      }
+
+      .image-preview__img {
+        display: block;
+        max-width: 100%;
+        max-height: 120px;
+        object-fit: contain;
+      }
+
+      .image-preview__remove {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--color-paper);
+        border: 1px solid var(--color-rule);
+        border-radius: 2px;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 150ms ease;
+        color: var(--color-muted);
+      }
+
+      .image-preview:hover .image-preview__remove {
+        opacity: 1;
+      }
+
+      .image-preview__remove:hover {
+        color: var(--color-destructive);
+        border-color: var(--color-destructive);
+      }
+
       .bg-upload__text {
         font-family: 'JetBrains Mono', monospace;
 
@@ -1267,6 +1377,15 @@ export class BuilderInspectorComponent {
   protected readonly blockWidth = signal<number>(100);
   protected readonly blockMarginLeft = signal<number>(0);
 
+  // Image block signals
+  protected readonly imageUrl = signal<string>('');
+  protected readonly imageWidth = signal<number | null>(null);
+  protected readonly imageHeight = signal<number | null>(null);
+  protected readonly imageOverlay = signal<boolean>(false);
+
+  // Debounced text input for template properties (prevents orientation jumping)
+  private readonly textInput$ = new Subject<{ key: string; value: string }>();
+
   // Template opacity display
   protected readonly opacityPercent = computed<number>(() => {
     const t = this.template();
@@ -1353,6 +1472,16 @@ export class BuilderInspectorComponent {
       const ml = typeof settings?.['marginLeft'] === 'number' ? settings['marginLeft'] : 0;
       this.blockWidth.set(Math.max(20, Math.min(100, w)));
       this.blockMarginLeft.set(Math.max(0, Math.min(80, ml)));
+      // Hydrate image signals
+      this.imageUrl.set((settings?.['imageUrl'] as string) ?? '');
+      this.imageWidth.set((settings?.['imageWidth'] as number) ?? null);
+      this.imageHeight.set((settings?.['imageHeight'] as number) ?? null);
+      this.imageOverlay.set((settings?.['overlay'] as boolean) ?? false);
+    });
+
+    // Debounced text input for template properties (prevents orientation jumping)
+    this.textInput$.pipe(debounceTime(300)).subscribe(({ key, value }) => {
+      this.templateUpdate.emit({ [key]: value } as Partial<DocumentTemplate>);
     });
   }
 
@@ -1429,7 +1558,7 @@ export class BuilderInspectorComponent {
 
   protected onTemplateTextInput(key: string, event: Event): void {
     const value = (event.target as HTMLInputElement).value;
-    this.templateUpdate.emit({ [key]: value } as Partial<DocumentTemplate>);
+    this.textInput$.next({ key, value });
   }
 
   protected onOpacityInput(event: Event): void {
@@ -1443,6 +1572,53 @@ export class BuilderInspectorComponent {
     if (!file) return;
     this.uploadBackground.emit(file);
     input.value = '';
+  }
+
+  // ── Image block handlers ──
+
+  protected onImageUpload(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    // Create a local object URL for immediate display
+    const url = URL.createObjectURL(file);
+    this.imageUrl.set(url);
+    this.patchSettings({ imageUrl: url });
+    input.value = '';
+  }
+
+  protected onRemoveImage(): void {
+    this.imageUrl.set('');
+    this.imageWidth.set(null);
+    this.imageHeight.set(null);
+    this.patchSettings({ imageUrl: '', imageWidth: null, imageHeight: null });
+  }
+
+  protected onImageWidthInput(event: Event): void {
+    const v = (event.target as HTMLInputElement).value;
+    const num = v ? Number(v) : null;
+    this.imageWidth.set(num);
+    this.patchSettings({ imageWidth: num });
+  }
+
+  protected onImageHeightInput(event: Event): void {
+    const v = (event.target as HTMLInputElement).value;
+    const num = v ? Number(v) : null;
+    this.imageHeight.set(num);
+    this.patchSettings({ imageHeight: num });
+  }
+
+  protected onImageOverlayToggle(checked: boolean): void {
+    this.imageOverlay.set(checked);
+    this.patchSettings({ overlay: checked });
+  }
+
+  /** Helper to patch block.settings with partial updates. */
+  private patchSettings(partial: Record<string, unknown>): void {
+    const b = this.block();
+    if (!b?._id) return;
+    const current = (b.settings ?? {}) as Record<string, unknown>;
+    this.update.emit({ _id: b._id, settings: { ...current, ...partial } });
   }
 
   protected onRemoveBackground(index: number): void {

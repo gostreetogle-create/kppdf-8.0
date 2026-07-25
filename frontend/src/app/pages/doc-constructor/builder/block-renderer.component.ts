@@ -205,6 +205,21 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
               </tbody>
             </table>
           </div>
+        } @else if (block().type === 'image' && imageUrl()) {
+          <!-- Image block: render uploaded image with proportional sizing -->
+          <div class="block-renderer__image-wrap">
+            <img
+              [src]="imageUrl()"
+              [alt]="block().title || 'Изображение'"
+              class="block-renderer__image"
+              [style.width]="imageWidth() ? imageWidth() + 'px' : '100%'"
+              [style.height]="imageHeight() ? imageHeight() + 'px' : 'auto'"
+              loading="lazy"
+            />
+            @if (imageOverlay()) {
+              <div class="block-renderer__image-overlay-badge">Поверх</div>
+            }
+          </div>
         } @else if (block().type === 'spacer') {
           <!-- Spacer block: empty space -->
           <div class="block-renderer__spacer" [style.height.px]="block().height ?? 40"></div>
@@ -473,6 +488,37 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
         color: var(--color-gold);
       }
 
+      /* ═══ Image block ═══ */
+      .block-renderer__image-wrap {
+        position: relative;
+        display: inline-block;
+        max-width: 100%;
+        line-height: 0;
+      }
+
+      .block-renderer__image {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        border: 1px solid var(--color-rule);
+        border-radius: 2px;
+        object-fit: contain;
+      }
+
+      .block-renderer__image-overlay-badge {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: var(--color-gold);
+        color: var(--color-paper);
+        font-size: 9px;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 2px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
       /* Spacer block */
       .block-renderer__spacer {
         display: flex;
@@ -702,6 +748,35 @@ export class BlockRendererComponent {
   protected readonly hasColumns = computed<boolean>(() => {
     const cols = this.block().columns;
     return !!cols && cols.length > 0;
+  });
+
+  /** Image URL from block.settings.imageUrl. */
+  protected readonly imageUrl = computed<string | null>(() => {
+    const b = this.block();
+    if (b.type !== 'image') return null;
+    const settings = b.settings as Record<string, unknown> | undefined;
+    return (settings?.['imageUrl'] as string) ?? null;
+  });
+
+  /** Image width in pixels from block.settings.imageWidth. */
+  protected readonly imageWidth = computed<number | null>(() => {
+    const b = this.block();
+    const settings = b.settings as Record<string, unknown> | undefined;
+    return (settings?.['imageWidth'] as number) ?? null;
+  });
+
+  /** Image height in pixels from block.settings.imageHeight. */
+  protected readonly imageHeight = computed<number | null>(() => {
+    const b = this.block();
+    const settings = b.settings as Record<string, unknown> | undefined;
+    return (settings?.['imageHeight'] as number) ?? null;
+  });
+
+  /** Whether image overlays other blocks (z-index). */
+  protected readonly imageOverlay = computed<boolean>(() => {
+    const b = this.block();
+    const settings = b.settings as Record<string, unknown> | undefined;
+    return (settings?.['overlay'] as boolean) ?? false;
   });
 
   /** Table columns from block.settings.tableTemplateColumns (populated on drop). */
