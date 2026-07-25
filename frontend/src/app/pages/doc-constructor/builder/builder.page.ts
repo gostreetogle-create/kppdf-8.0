@@ -349,6 +349,7 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
             [paperWidth]="orientation() === 'landscape' ? 900 : 720"
             [templateSelected]="templateSelected()"
             [template]="template()"
+            [allBlocks]="blocks()"
             (update)="onInspectorUpdate($event)"
             (delete)="onDeleteBlock($event)"
             (deleteSelected)="onDeleteSelected()"

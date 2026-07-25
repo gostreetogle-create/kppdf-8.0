@@ -14,10 +14,13 @@ import {
   Columns,
   Hash,
   List,
-  FileText,
   Eye,
   File,
   Upload,
+  X,
+  Check,
+  Star,
+  FileText,
 } from 'lucide-angular';
 import {
   BLOCK_TYPE_LABELS,
@@ -65,6 +68,11 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         @if (block(); as b) {
           <span class="inspector__type-pill">{{ typeLabel(b) }}</span>
         }
+        @if (templateSelected()) {
+          <button type="button" class="inspector__close" (click)="onClosePanel()" aria-label="Закрыть панель свойств">
+            <lucide-icon [img]="CloseIcon" [size]="18"></lucide-icon>
+          </button>
+        }
       </header>
 
       @if (!block() && selectedCount() === 0 && !templateSelected()) {
@@ -74,169 +82,162 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
             Кликните по блоку или на пустое место холста
           </p>
         </div>
+
+        <!-- TZ-211: Document Summary -->
+        @if (allBlocks().length > 0) {
+          <div class="summary-section">
+            <div class="props-section__header">
+              <span class="props-section__number">00</span>
+              <h3 class="props-section__title">Сводка документа</h3>
+            </div>
+            <div class="summary-grid">
+              <div class="summary-item">
+                <span class="summary-item__label">Всего блоков</span>
+                <span class="summary-item__value">{{ blockCount() }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-item__label">Активных</span>
+                <span class="summary-item__value">{{ activeBlockCount() }}</span>
+              </div>
+              <div class="summary-item summary-item--full">
+                <span class="summary-item__label">Типы</span>
+                <span class="summary-item__value summary-item__value--small">{{ blockTypeSummary() }}</span>
+              </div>
+            </div>
+          </div>
+        }
       } @else if (templateSelected() && template(); as t) {
         <!-- Template properties panel -->
         <div class="inspector__form">
-          <span class="inspector__section-title">Свойства шаблона</span>
-
-          <!-- Orientation -->
-          <div class="field">
-            <span class="field__label">Ориентация</span>
-            <div class="orientation-btns">
-              <button
-                type="button"
-                class="orientation-btn"
-                [class.is-active]="t.orientation === 'portrait' || !t.orientation"
-                (click)="onOrientationChange('portrait')"
-              >
-                <lucide-icon [img]="BookOpenIcon" [size]="14"></lucide-icon>
-                Книжная
-              </button>
-              <button
-                type="button"
-                class="orientation-btn"
-                [class.is-active]="t.orientation === 'landscape'"
-                (click)="onOrientationChange('landscape')"
-              >
-                <lucide-icon [img]="ColumnsIcon" [size]="14"></lucide-icon>
-                Альбомная
-              </button>
+          <!-- Section 01: Visual Style (orientation/format removed — set at creation via dialog) -->
+          <section class="props-section">
+            <div class="props-section__header">
+              <span class="props-section__number">01</span>
+              <h3 class="props-section__title">Визуальный стиль</h3>
             </div>
-          </div>
 
-          <!-- Page size -->
-          <div class="field">
-            <span class="field__label">Формат страницы</span>
-            <div class="orientation-btns">
-              <button
-                type="button"
-                class="orientation-btn orientation-btn--sm"
-                [class.is-active]="t.pageSize === 'A3'"
-                (click)="onPageSizeChange('A3')"
-              >A3</button>
-              <button
-                type="button"
-                class="orientation-btn orientation-btn--sm"
-                [class.is-active]="t.pageSize === 'A4' || !t.pageSize"
-                (click)="onPageSizeChange('A4')"
-              >A4</button>
-              <button
-                type="button"
-                class="orientation-btn orientation-btn--sm"
-                [class.is-active]="t.pageSize === 'A5'"
-                (click)="onPageSizeChange('A5')"
-              >A5</button>
+            <!-- Background opacity -->
+            <div class="field">
+              <div class="field__row-header">
+                <span class="field__label">Прозрачность фона</span>
+                <span class="field__value">{{ opacityPercent() }}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                [value]="t.backgroundOpacity"
+                (input)="onOpacityInput($event)"
+                class="field__slider"
+              />
             </div>
-          </div>
 
-          <!-- Background opacity -->
-          <div class="field">
-            <span class="field__label">
-              <lucide-icon [img]="EyeIcon" [size]="12"></lucide-icon>
-              Прозрачность фона: {{ opacityPercent() }}%
-            </span>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-              [value]="t.backgroundOpacity"
-              (input)="onOpacityInput($event)"
-              class="field__slider"
-            />
-          </div>
+            <!-- Page numbering -->
+            <div class="toggle-row">
+              <div class="toggle-row__left">
+                <lucide-icon [img]="HashIcon" [size]="18"></lucide-icon>
+                <span class="toggle-row__label">Нумерация страниц</span>
+              </div>
+              <input
+                type="checkbox"
+                class="toggle-checkbox"
+                [checked]="t.pageNumbering ?? false"
+                (change)="onTemplateSettingChange('pageNumbering', $any($event.target).checked)"
+              />
+            </div>
 
-          <!-- Page numbering -->
-          <label class="field field--row">
-            <span class="field__label">
-              <lucide-icon [img]="HashIcon" [size]="12"></lucide-icon>
-              Нумерация страниц
-            </span>
-            <app-pi-switch
-              [checked]="t.pageNumbering ?? false"
-              (checkedChange)="onTemplateSettingChange('pageNumbering', $event)"
-            />
-          </label>
+            <!-- Table of contents -->
+            <div class="toggle-row">
+              <div class="toggle-row__left">
+                <lucide-icon [img]="ListIcon" [size]="18"></lucide-icon>
+                <span class="toggle-row__label">Оглавление</span>
+              </div>
+              <input
+                type="checkbox"
+                class="toggle-checkbox"
+                [checked]="t.tableOfContents ?? false"
+                (change)="onTemplateSettingChange('tableOfContents', $any($event.target).checked)"
+              />
+            </div>
+          </section>
 
-          <!-- Table of contents -->
-          <label class="field field--row">
-            <span class="field__label">
-              <lucide-icon [img]="ListIcon" [size]="12"></lucide-icon>
-              Оглавление
-            </span>
-            <app-pi-switch
-              [checked]="t.tableOfContents ?? false"
-              (checkedChange)="onTemplateSettingChange('tableOfContents', $event)"
-            />
-          </label>
+          <!-- Section 03: Metadata -->
+          <section class="props-section">
+            <div class="props-section__header">
+              <span class="props-section__number">03</span>
+              <h3 class="props-section__title">Метаданные</h3>
+            </div>
 
-          <!-- Header text -->
-          <label class="field">
-            <span class="field__label">
-              <lucide-icon [img]="FileTextIcon" [size]="12"></lucide-icon>
-              Шапка документа
-            </span>
-            <input
-              class="field__input pi-focus-ring"
-              type="text"
-              [value]="t.headerText ?? ''"
-              (input)="onTemplateTextInput('headerText', $event)"
-              placeholder="Текст шапки (необязательно)"
-            />
-          </label>
+            <!-- Header text -->
+            <div class="field">
+              <span class="field__label">Шапка Документа</span>
+              <input
+                class="field__input pi-focus-ring"
+                type="text"
+                [value]="t.headerText ?? ''"
+                (input)="onTemplateTextInput('headerText', $event)"
+                placeholder="Введите заголовок..."
+              />
+            </div>
 
-          <!-- Footer text -->
-          <label class="field">
-            <span class="field__label">
-              <lucide-icon [img]="FileTextIcon" [size]="12"></lucide-icon>
-              Подвал документа
-            </span>
-            <input
-              class="field__input pi-focus-ring"
-              type="text"
-              [value]="t.footerText ?? ''"
-              (input)="onTemplateTextInput('footerText', $event)"
-              placeholder="Текст подвала (необязательно)"
-            />
-          </label>
+            <!-- Footer text -->
+            <div class="field">
+              <span class="field__label">Подвал Документа</span>
+              <input
+                class="field__input pi-focus-ring"
+                type="text"
+                [value]="t.footerText ?? ''"
+                (input)="onTemplateTextInput('footerText', $event)"
+                placeholder="Введите подпись..."
+              />
+            </div>
+          </section>
 
-          <!-- Background images -->
-          <div class="field">
-            <span class="field__label">
-              <lucide-icon [img]="FileIcon" [size]="12"></lucide-icon>
-              Фоновое изображение
-            </span>
+          <!-- Section 04: Background Image -->
+          <section class="props-section props-section--last">
+            <div class="props-section__header">
+              <span class="props-section__number">04</span>
+              <h3 class="props-section__title">Фоновое изображение</h3>
+            </div>
+
             @if (t.backgroundImage && t.backgroundImage.length > 0) {
-              <div class="bg-preview-list">
+              <div class="bg-grid">
                 @for (url of t.backgroundImage; track url; let i = $index) {
                   <div
-                    class="bg-preview-item"
+                    class="bg-grid__item"
                     [class.is-default]="t.defaultBackgroundIndex === i"
                   >
-                    <div class="bg-preview-thumb" [style.background-image]="'url(' + url + ')'"></div>
-                    <div class="bg-preview-actions">
-                      <span class="bg-preview-label">Фон {{ i + 1 }}</span>
+                    <div class="bg-grid__thumb" [style.background-image]="'url(' + url + ')'"></div>
+                    @if (t.defaultBackgroundIndex === i) {
+                      <div class="bg-grid__check">
+                        <lucide-icon [img]="CheckIcon" [size]="20"></lucide-icon>
+                      </div>
+                    }
+                    <div class="bg-grid__actions">
                       <button
                         type="button"
-                        class="bg-action-btn"
+                        class="bg-grid__action-btn"
                         [class.is-active]="t.defaultBackgroundIndex === i"
                         (click)="onSetDefaultBackground(i)"
                         [attr.aria-label]="t.defaultBackgroundIndex === i ? 'Убрать из дефолтных' : 'Сделать по умолчанию'"
                       >
-                        {{ t.defaultBackgroundIndex === i ? '★' : '☆' }}
+                        <lucide-icon [img]="t.defaultBackgroundIndex === i ? StarFilledIcon : StarIcon" [size]="14"></lucide-icon>
                       </button>
                       <button
                         type="button"
-                        class="bg-action-btn bg-action-btn--danger"
+                        class="bg-grid__action-btn bg-grid__action-btn--danger"
                         (click)="onRemoveBackground(i)"
                         aria-label="Удалить фон"
-                      >×</button>
+                      >
+                        <lucide-icon [img]="CloseSmallIcon" [size]="14"></lucide-icon>
+                      </button>
                     </div>
                   </div>
                 }
               </div>
             }
-            <label class="bg-upload-label">
+            <label class="bg-upload">
               <input
                 #bgFileInput
                 type="file"
@@ -244,12 +245,12 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 class="bg-file-input"
                 (change)="onFileChange($event)"
               />
-              <span class="bg-upload-button">
-                <lucide-icon [img]="UploadIcon" [size]="12"></lucide-icon>
-                Загрузить фон
+              <span class="bg-upload__inner">
+                <lucide-icon [img]="UploadIcon" [size]="16"></lucide-icon>
+                <span class="bg-upload__text">Загрузить фон</span>
               </span>
             </label>
-          </div>
+          </section>
         </div>
       } @else if (!block() && selectedCount() > 0) {
         <!-- Multi-select mode -->
@@ -512,24 +513,30 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         flex-shrink: 0;
         height: 100%;
         overflow-y: auto;
-        background: var(--color-paper);
-        border-left: 1px solid var(--color-rule);
+        background: var(--color-paper, #f8f9fa);
+        border-left: 1px solid var(--color-rule, #d0c5af);
       }
 
+      /* ── Header ── */
       .inspector__header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 16px;
-        border-bottom: 1px solid var(--color-rule);
+        padding: 16px 16px 12px;
+        border-bottom: 1px solid var(--color-rule, #d0c5af);
+        position: sticky;
+        top: 0;
+        background: var(--color-paper, #f8f9fa);
+        z-index: 10;
       }
 
       .inspector__title {
-        font-size: 13px;
+        font-family: 'Hanken Grotesk', sans-serif;
+        font-size: 20px;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--color-ink);
+        letter-spacing: -0.01em;
+        color: var(--color-ink, #191c1d);
         margin: 0;
       }
 
@@ -537,13 +544,33 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         font-size: 10px;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        background: var(--color-paper-2);
-        color: var(--color-ink);
+        background: var(--color-paper-2, #e1e3e4);
+        color: var(--color-ink, #191c1d);
         padding: 2px 8px;
         border-radius: 2px;
         font-weight: 600;
       }
 
+      .inspector__close {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        background: transparent;
+        border: none;
+        border-radius: 2px;
+        cursor: pointer;
+        color: var(--color-muted, #7f7663);
+        transition: all 100ms ease;
+      }
+
+      .inspector__close:hover {
+        background: var(--color-paper-2, #e1e3e4);
+        color: var(--color-ink, #191c1d);
+      }
+
+      /* ── Empty state ── */
       .inspector__empty {
         padding: 48px 16px;
         text-align: center;
@@ -552,16 +579,17 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
       .inspector__empty-title {
         font-size: 14px;
         font-weight: 600;
-        color: var(--color-muted);
+        color: var(--color-muted, #7f7663);
         margin: 0 0 4px;
       }
 
       .inspector__empty-hint {
         font-size: 12px;
-        color: var(--color-muted);
+        color: var(--color-muted, #7f7663);
         margin: 0;
       }
 
+      /* ── Multi-select ── */
       .inspector__multi {
         padding: 16px;
         text-align: center;
@@ -570,13 +598,14 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
       .inspector__multi-count {
         font-size: 14px;
         font-weight: 600;
-        color: var(--color-sunrise-warm);
+        color: var(--color-sunrise-warm, #735c00);
         margin: 0 0 16px;
       }
 
+      /* ── Sections ── */
       .inspector__section {
         padding: 12px 0;
-        border-top: 1px solid var(--color-rule);
+        border-top: 1px solid var(--color-rule, #d0c5af);
         text-align: left;
       }
 
@@ -591,7 +620,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: var(--color-muted);
+        color: var(--color-muted, #7f7663);
         margin-bottom: 10px;
       }
 
@@ -606,17 +635,55 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         flex-wrap: wrap;
       }
 
+      /* ── Form container ── */
       .inspector__form {
         padding: 16px;
         display: flex;
         flex-direction: column;
-        gap: 14px;
+        gap: 24px;
       }
 
+      /* ── Properties sections ── */
+      .props-section {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .props-section--last {
+        padding-bottom: 24px;
+      }
+
+      .props-section__header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .props-section__number {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        font-weight: 500;
+        line-height: 14px;
+        letter-spacing: 0.05em;
+        color: var(--color-sunrise-warm, #735c00);
+      }
+
+      .props-section__title {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-ink, #191c1d);
+        margin: 0;
+      }
+
+      /* ── Fields ── */
       .field {
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 8px;
       }
 
       .field--row {
@@ -626,24 +693,49 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
       }
 
       .field__label {
-        font-size: 11px;
-        font-weight: 600;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        font-weight: 500;
         text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--color-muted, #7f7663);
+      }
+
+      .field__row-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .field__value {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        font-weight: 500;
         letter-spacing: 0.05em;
-        color: var(--color-muted);
+        color: var(--color-ink, #191c1d);
       }
 
       .field__input,
       .field__textarea {
         width: 100%;
-        padding: 6px 8px;
-        background: var(--color-paper);
-        color: var(--color-ink);
-        border: 1px solid var(--color-rule);
+        padding: 10px 12px;
+        background: var(--color-paper, #f8f9fa);
+        color: var(--color-ink, #191c1d);
+        border: 1px solid var(--color-rule, #d0c5af);
         border-radius: 2px;
-        font-size: 13px;
-        font-family: inherit;
+        font-size: 14px;
+        font-family: 'Inter', sans-serif;
         box-sizing: border-box;
+        transition: border-color 120ms ease;
+      }
+
+      .field__input:focus {
+        outline: none;
+        border-color: var(--color-sunrise-warm, #735c00);
+      }
+
+      .field__input::placeholder {
+        color: var(--color-muted, #7f7663);
       }
 
       .field__textarea {
@@ -652,41 +744,41 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         font-size: 12px;
       }
 
+      /* ── Slider ── */
       .field__slider {
         width: 100%;
-        height: 4px;
+        height: 2px;
         -webkit-appearance: none;
         appearance: none;
-        background: var(--color-rule);
-        border-radius: 2px;
+        background: var(--color-rule, #d0c5af);
+        border-radius: 1px;
         outline: none;
         cursor: pointer;
-        flex: 1;
       }
 
       .field__slider::-webkit-slider-thumb {
         -webkit-appearance: none;
-        width: 14px;
-        height: 14px;
+        width: 12px;
+        height: 12px;
         border-radius: 50%;
-        background: var(--color-ink);
+        background: var(--color-sunrise-warm, #735c00);
         cursor: pointer;
-        border: 2px solid var(--color-paper);
+        border: none;
       }
 
       .field__slider::-moz-range-thumb {
-        width: 14px;
-        height: 14px;
+        width: 12px;
+        height: 12px;
         border-radius: 50%;
-        background: var(--color-ink);
+        background: var(--color-sunrise-warm, #735c00);
         cursor: pointer;
-        border: 2px solid var(--color-paper);
+        border: none;
       }
 
       .field__slider::-moz-range-track {
-        height: 4px;
-        background: var(--color-rule);
-        border-radius: 2px;
+        height: 2px;
+        background: var(--color-rule, #d0c5af);
+        border-radius: 1px;
       }
 
       .field__slider-row {
@@ -703,10 +795,11 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
 
       .field__hint {
         font-size: 11px;
-        color: var(--color-muted);
+        color: var(--color-muted, #7f7663);
         margin: 4px 0 0;
       }
 
+      /* ── Badges ── */
       .badge-row {
         display: flex;
         gap: 6px;
@@ -717,32 +810,32 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        background: var(--color-paper-2);
+        background: var(--color-paper-2, #e1e3e4);
         padding: 2px 6px;
-        border: 1px solid var(--color-rule);
+        border: 1px solid var(--color-rule, #d0c5af);
         border-radius: 2px;
         font-size: 11px;
       }
 
       .badge__label {
-        color: var(--color-muted);
+        color: var(--color-muted, #7f7663);
         text-transform: uppercase;
         letter-spacing: 0.05em;
         font-weight: 600;
       }
 
       .badge__value {
-        color: var(--color-ink);
+        color: var(--color-ink, #191c1d);
         font-family: ui-monospace, monospace;
       }
 
       .inspector__actions {
         margin-top: 8px;
         padding-top: 12px;
-        border-top: 1px solid var(--color-rule);
+        border-top: 1px solid var(--color-rule, #d0c5af);
       }
 
-      /* Margin controls */
+      /* ── Margin controls ── */
       .margin-controls {
         display: flex;
         gap: 12px;
@@ -760,7 +853,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        color: var(--color-muted);
+        color: var(--color-muted, #7f7663);
         text-align: center;
       }
 
@@ -773,7 +866,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
 
       .margin-controls__unit {
         font-size: 10px;
-        color: var(--color-muted);
+        color: var(--color-muted, #7f7663);
         flex-shrink: 0;
       }
 
@@ -785,18 +878,18 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         padding: 4px 8px;
         font-size: 11px;
         font-weight: 500;
-        color: var(--color-muted);
+        color: var(--color-muted, #7f7663);
         background: transparent;
-        border: 1px solid var(--color-rule);
+        border: 1px solid var(--color-rule, #d0c5af);
         border-radius: 2px;
         cursor: pointer;
         transition: all 100ms ease;
       }
 
       .field__reset-btn:hover:not(:disabled) {
-        color: var(--color-ink);
-        border-color: var(--color-ink);
-        background: var(--color-paper-2);
+        color: var(--color-ink, #191c1d);
+        border-color: var(--color-ink, #191c1d);
+        background: var(--color-paper-2, #e1e3e4);
       }
 
       .field__reset-btn:disabled {
@@ -804,10 +897,10 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         cursor: not-allowed;
       }
 
-      /* Orientation buttons */
+      /* ── Orientation buttons ── */
       .orientation-btns {
         display: flex;
-        gap: 6px;
+        gap: 8px;
       }
 
       .orientation-btn {
@@ -815,110 +908,207 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 6px;
-        padding: 8px 12px;
-        font-size: 12px;
+        gap: 8px;
+        padding: 10px 16px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
         font-weight: 500;
-        border: 1px solid var(--color-rule);
-        border-radius: 4px;
-        background: var(--color-paper);
-        color: var(--color-muted-foreground-strong);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        border: 1px solid var(--color-rule, #d0c5af);
+        border-radius: 2px;
+        background: var(--color-paper, #f8f9fa);
+        color: var(--color-muted, #7f7663);
         cursor: pointer;
         transition: all 120ms ease;
       }
 
       .orientation-btn:hover {
-        border-color: var(--color-ink);
-        color: var(--color-ink);
+        border-color: var(--color-ink, #191c1d);
+        color: var(--color-ink, #191c1d);
       }
 
       .orientation-btn.is-active {
-        background: var(--color-ink);
-        border-color: var(--color-ink);
-        color: var(--color-paper);
+        background: var(--color-ink, #191c1d);
+        border-color: var(--color-ink, #191c1d);
+        color: var(--color-paper, #f8f9fa);
       }
 
-      .orientation-btn--sm {
-        flex: none;
-        padding: 6px 12px;
-        min-width: 56px;
+      .orientation-btn__label {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
       }
 
-      /* Background preview */
-      .bg-preview-list {
+      /* ── Page size buttons ── */
+      .pagesize-btns {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+
+      .pagesize-btn {
         display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-      }
-
-      .bg-preview-item {
-        display: flex;
-        flex-direction: column;
         align-items: center;
-        gap: 4px;
+        justify-content: center;
+        padding: 8px 12px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        border: 1px solid var(--color-rule, #d0c5af);
+        border-radius: 2px;
+        background: var(--color-paper, #f8f9fa);
+        color: var(--color-muted, #7f7663);
+        cursor: pointer;
+        transition: all 120ms ease;
       }
 
-      .bg-preview-thumb {
-        width: 48px;
-        height: 48px;
-        border-radius: 4px;
-        background-size: contain;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-color: var(--color-paper-2);
-        border: 1px solid var(--color-rule);
+      .pagesize-btn:hover {
+        border-color: var(--color-ink, #191c1d);
+        color: var(--color-ink, #191c1d);
       }
 
-      .bg-preview-item.is-default .bg-preview-thumb {
-        border-color: var(--color-sunrise-warm);
+      .pagesize-btn.is-active {
+        background: var(--color-sunrise-warm, #735c00);
+        border-color: var(--color-sunrise-warm, #735c00);
+        color: var(--color-paper, #f8f9fa);
+      }
+
+      /* ── Toggle rows (checkboxes) ── */
+      .toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(208, 197, 175, 0.3);
+      }
+
+      .toggle-row:last-child {
+        border-bottom: none;
+      }
+
+      .toggle-row__left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--color-muted, #7f7663);
+      }
+
+      .toggle-row__label {
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        font-weight: 400;
+        color: var(--color-ink, #191c1d);
+      }
+
+      .toggle-checkbox {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--color-sunrise-warm, #735c00);
+        cursor: pointer;
+        border: 1px solid var(--color-rule, #d0c5af);
+        border-radius: 2px;
+      }
+
+      /* ── Background grid ── */
+      .bg-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+
+      .bg-grid__item {
+        position: relative;
+        aspect-ratio: 1;
+        border: 1px solid var(--color-rule, #d0c5af);
+        border-radius: 2px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: border-color 120ms ease;
+      }
+
+      .bg-grid__item:hover {
+        border-color: var(--color-ink, #191c1d);
+      }
+
+      .bg-grid__item.is-default {
+        border-color: var(--color-sunrise-warm, #735c00);
         border-width: 2px;
       }
 
-      .bg-preview-label {
-        font-size: 10px;
-        color: var(--color-muted);
+      .bg-grid__thumb {
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-color: var(--color-paper-2, #e1e3e4);
       }
 
-      .bg-preview-actions {
+      .bg-grid__check {
+        position: absolute;
+        inset: 0;
         display: flex;
         align-items: center;
-        gap: 4px;
+        justify-content: center;
+        background: rgba(115, 92, 0, 0.1);
+        color: var(--color-sunrise-warm, #735c00);
       }
 
-      .bg-action-btn {
-        width: 18px;
-        height: 18px;
+      .bg-grid__actions {
+        position: absolute;
+        bottom: 4px;
+        right: 4px;
+        display: flex;
+        gap: 4px;
+        opacity: 0;
+        transition: opacity 120ms ease;
+      }
+
+      .bg-grid__item:hover .bg-grid__actions {
+        opacity: 1;
+      }
+
+      .bg-grid__item.is-default .bg-grid__actions {
+        opacity: 1;
+      }
+
+      .bg-grid__action-btn {
+        width: 24px;
+        height: 24px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: transparent;
-        border: 1px solid var(--color-rule);
+        background: rgba(255, 255, 255, 0.8);
+        border: none;
         border-radius: 2px;
-        font-size: 10px;
         cursor: pointer;
-        color: var(--color-muted);
+        color: var(--color-muted, #7f7663);
         transition: all 100ms ease;
         padding: 0;
       }
 
-      .bg-action-btn:hover {
-        border-color: var(--color-ink);
-        color: var(--color-ink);
+      .bg-grid__action-btn:hover {
+        background: rgba(255, 255, 255, 1);
+        color: var(--color-ink, #191c1d);
       }
 
-      .bg-action-btn.is-active {
-        color: var(--color-sunrise-warm);
-        border-color: var(--color-sunrise-warm);
+      .bg-grid__action-btn.is-active {
+        color: var(--color-sunrise-warm, #735c00);
       }
 
-      .bg-action-btn--danger:hover {
-        color: var(--color-destructive);
-        border-color: var(--color-destructive);
+      .bg-grid__action-btn--danger:hover {
+        color: var(--color-destructive, #ba1a1a);
       }
 
-      .bg-upload-label {
+      /* ── Upload button ── */
+      .bg-upload {
         display: block;
-        margin-top: 6px;
+        margin-top: 8px;
         cursor: pointer;
       }
 
@@ -934,25 +1124,84 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         border: 0;
       }
 
-      .bg-upload-button {
-        display: inline-flex;
+      .bg-upload__inner {
+        display: flex;
         align-items: center;
-        gap: 4px;
-        padding: 4px 8px;
-        font-size: 11px;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 12px 16px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
         font-weight: 500;
-        background: var(--color-paper-2);
-        color: var(--color-ink);
-        border: 1px dashed var(--color-rule);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--color-sunrise-warm, #735c00);
+        background: transparent;
+        border: 1px dashed var(--color-rule, #d0c5af);
         border-radius: 2px;
         cursor: pointer;
-        transition: all 100ms ease;
+        transition: all 120ms ease;
       }
 
-      .bg-upload-button:hover {
-        border-color: var(--color-ink);
-        border-style: solid;
-        background: var(--color-paper);
+      .bg-upload__inner:hover {
+        border-color: var(--color-sunrise-warm, #735c00);
+        background: rgba(115, 92, 0, 0.05);
+      }
+
+      .bg-upload__text {
+        font-family: 'JetBrains Mono', monospace;
+
+      /* ═══ Document Summary — TZ-211 ═══ */
+      .summary-section {
+        margin-top: 16px;
+        padding: 12px;
+        background: var(--color-paper-2);
+        border: 1px solid var(--color-rule);
+        border-radius: 2px;
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .summary-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .summary-item--full {
+        grid-column: 1 / -1;
+      }
+
+      .summary-item__label {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--color-muted);
+      }
+
+      .summary-item__value {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--color-ink);
+      }
+
+      .summary-item__value--small {
+        font-size: 11px;
+        font-weight: 400;
+        color: var(--color-muted-strong);
+      }
+        font-size: 10px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
       }
     `,
   ],
@@ -970,6 +1219,8 @@ export class BuilderInspectorComponent {
   readonly templateSelected = input<boolean>(false);
   /** Current template (for template properties panel). */
   readonly template = input<DocumentTemplate | null>(null);
+  /** TZ-211: All blocks for summary/totals computation. */
+  readonly allBlocks = input<TemplateBlock[]>([]);
   /** Emitted when the user changes a field value. */
   readonly update = output<Partial<TemplateBlock> & { _id: string }>();
   /** Emitted when the user clicks "Удалить блок". */
@@ -990,17 +1241,21 @@ export class BuilderInspectorComponent {
   readonly removeBackground = output<number>();
   /** Emitted when user sets default background by index. */
   readonly setDefaultBackground = output<number>();
+  /** Emitted when user clicks close on template properties panel. */
+  readonly closePanel = output<void>();
 
   // Icons
   protected readonly ResetIcon = RotateCcw;
-  protected readonly BookOpenIcon = BookOpen;
-  protected readonly ColumnsIcon = Columns;
   protected readonly HashIcon = Hash;
   protected readonly ListIcon = List;
   protected readonly FileTextIcon = FileText;
   protected readonly EyeIcon = Eye;
-  protected readonly FileIcon = File;
   protected readonly UploadIcon = Upload;
+  protected readonly CloseIcon = X;
+  protected readonly CheckIcon = Check;
+  protected readonly StarIcon = Star;
+  protected readonly StarFilledIcon = Star;
+  protected readonly CloseSmallIcon = X;
 
   // Local form-state signals (mirror the selected block for fast edits).
   protected readonly title = signal<string>('');
@@ -1016,6 +1271,23 @@ export class BuilderInspectorComponent {
   protected readonly opacityPercent = computed<number>(() => {
     const t = this.template();
     return Math.round((t?.backgroundOpacity ?? 0.3) * 100);
+  });
+
+  // TZ-211: Document summary computed values
+  protected readonly blockCount = computed<number>(() => this.allBlocks().length);
+  protected readonly activeBlockCount = computed<number>(() =>
+    this.allBlocks().filter((b) => b.isActive).length,
+  );
+  protected readonly blockTypeSummary = computed<string>(() => {
+    const blocks = this.allBlocks();
+    if (blocks.length === 0) return 'Нет блоков';
+    const types = new Map<string, number>();
+    for (const b of blocks) {
+      types.set(b.type, (types.get(b.type) ?? 0) + 1);
+    }
+    return Array.from(types.entries())
+      .map(([type, count]) => `${count} ${type}`)
+      .join(', ');
   });
 
   // Derived — pixel values for single block
@@ -1138,6 +1410,10 @@ export class BuilderInspectorComponent {
   }
 
   // ── Template property handlers ──
+
+  protected onClosePanel(): void {
+    this.closePanel.emit();
+  }
 
   protected onOrientationChange(orientation: 'portrait' | 'landscape'): void {
     this.templateUpdate.emit({ orientation });
