@@ -148,6 +148,20 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
           }
         </svg>
       </div>
+      <!-- TZ-211: Delete button (visible on hover) -->
+      <div
+        class="block-renderer__delete"
+        (click)="onDeleteClick($event)"
+        (keydown.enter)="onDeleteClick($event)"
+        (mousedown)="$event.stopPropagation()"
+        title="Удалить блок"
+        role="button"
+        tabindex="-1"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        </svg>
+      </div>
       <div class="block-renderer__body">
         <!-- TZ-211: Drag handle (grip dots) -->
         <div class="block-renderer__drag-handle" cdkDragHandle title="Перетащите для перемещения">
@@ -285,6 +299,32 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
       .block-renderer:hover .block-renderer__checkbox,
       .block-renderer__checkbox.is-visible {
         opacity: 1;
+      }
+
+      /* ═══ Delete Button — TZ-211 ═══ */
+      .block-renderer__delete {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 150ms ease, color 150ms ease;
+        cursor: pointer;
+        z-index: 5;
+        color: var(--color-muted);
+      }
+
+      .block-renderer:hover .block-renderer__delete {
+        opacity: 0.5;
+      }
+
+      .block-renderer:hover .block-renderer__delete:hover {
+        opacity: 1;
+        color: var(--color-destructive);
       }
 
       .block-renderer.is-inactive {
@@ -568,6 +608,8 @@ export class BlockRendererComponent {
   readonly multiSelect = output<TemplateBlock>();
   /** Emitted when the user finishes resizing the block. Carries new width & marginLeft. */
   readonly widthChange = output<{ width: number; marginLeft: number }>();
+  /** TZ-211: Emitted when user clicks delete button on block. */
+  readonly deleteRequest = output<string>();
 
   /**
    * DOM sanitizer injected to bypass Angular's default innerHTML stripping.
@@ -754,6 +796,14 @@ export class BlockRendererComponent {
     event.stopPropagation();
     event.preventDefault();
     this.multiSelect.emit(this.block());
+  }
+
+  /** TZ-211: Delete button click handler. */
+  protected onDeleteClick(event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+    const id = this.block()._id;
+    if (id) this.deleteRequest.emit(id);
   }
 
   protected onArrowKey(event: Event, direction: 'up' | 'down'): void {

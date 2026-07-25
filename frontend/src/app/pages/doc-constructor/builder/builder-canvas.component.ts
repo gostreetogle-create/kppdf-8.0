@@ -71,6 +71,7 @@ import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
               (select)="onSelect($event)"
               (multiSelect)="onMultiSelect($event)"
               (widthChange)="onBlockWidthChange(block, $event)"
+              (deleteRequest)="deleteRequest.emit($event)"
             />
           }
         }
@@ -238,6 +239,8 @@ export class BuilderCanvasComponent {
   readonly dropAdd = output<{ payload: AddBlockPayload; insertIndex: number }>();
   readonly blockWidthChange = output<{ block: TemplateBlock; width: number; marginLeft: number }>();
   readonly canvasClick = output<void>();
+  /** TZ-211: Emitted when user clicks delete button on a block. */
+  readonly deleteRequest = output<string>();
 
   protected readonly CANVAS_DROPLIST_ID: string = CANVAS_DROPLIST_ID;
   protected readonly blockKey = blockKey;

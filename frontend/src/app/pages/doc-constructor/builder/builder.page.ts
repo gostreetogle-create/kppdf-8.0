@@ -339,6 +339,7 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
           (dropAdd)="onDropAdd($event)"
           (blockWidthChange)="onBlockWidthChange($event)"
           (canvasClick)="onCanvasClick()"
+          (deleteRequest)="onDeleteBlock($event)"
         />
 
         <div class="builder-inspector-panel">
@@ -1330,17 +1331,32 @@ export class BuilderPage {
   }
 
   protected onDeleteBlock(id: string): void {
-    this.blocks.update((arr) => arr.filter((b) => b._id !== id));
-    if (this.selectedId() === id) this.selectedId.set(null);
-    this.blocksSvc.remove(id).subscribe({
-      next: (res) => {
-        if (res.ok) this.toast.success('Блок удалён');
-        else {
-          this.toast.error(extractErrorMessage(res.error));
-          this.loadBlocks(this.templateId() ?? '');
-        }
+    const block = this.blocks().find((b) => b._id === id);
+    const blockTitle = block?.title || block?.type || 'блок';
+    const ref = this.dialog.open(AlertDialogComponent, {
+      data: {
+        title: 'Удалить блок?',
+        description: `«${blockTitle}» будет удалён. Это действие нельзя отменить.`,
+        confirmLabel: 'Удалить',
+        variant: 'destructive',
       },
-      error: (err: HttpErrorResponse) => this.toast.error(extractErrorMessage(err)),
+      width: 'sm',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (ok) => {
+      if (!ok) return;
+      this.blocks.update((arr) => arr.filter((b) => b._id !== id));
+      if (this.selectedId() === id) this.selectedId.set(null);
+      this.blocksSvc.remove(id).subscribe({
+        next: (res) => {
+          if (res.ok) this.toast.success('Блок удалён');
+          else {
+            this.toast.error(extractErrorMessage(res.error));
+            this.loadBlocks(this.templateId() ?? '');
+          }
+        },
+        error: (err: HttpErrorResponse) => this.toast.error(extractErrorMessage(err)),
+      });
     });
   }
 
