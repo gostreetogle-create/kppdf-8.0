@@ -237,7 +237,7 @@ export class BuilderCanvasComponent {
   readonly multiSelect = output<TemplateBlock>();
   readonly reorder = output<TemplateBlock[]>();
   readonly dropAdd = output<{ payload: AddBlockPayload; insertIndex: number }>();
-  readonly blockWidthChange = output<{ block: TemplateBlock; width: number; marginLeft: number }>();
+  readonly blockWidthChange = output<{ block: TemplateBlock; width: number; marginLeft: number; imageWidth?: number; imageHeight?: number }>();
   readonly canvasClick = output<void>();
   /** TZ-211: Emitted when user clicks delete button on a block. */
   readonly deleteRequest = output<string>();

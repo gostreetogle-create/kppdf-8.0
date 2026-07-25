@@ -35,6 +35,7 @@ import {
   Table as TableIcon,
   Eye,
   Pencil,
+  Image as ImageIcon,
 } from 'lucide-angular';
 import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
 import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
@@ -311,6 +312,21 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
                 }
               </div>
             }
+          </div>
+
+          <!-- Фото button (file picker) -->
+          <div class="builder-dropdown">
+            <button type="button" class="builder-toolbar__btn" (click)="photoInput.click()">
+              <lucide-icon [img]="ImageIcon" [size]="14"></lucide-icon>
+              Фото
+            </button>
+            <input
+              #photoInput
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              class="sr-only"
+              (change)="onPhotoFileSelected($event)"
+            />
           </div>
 
           <!-- Отступ button -->
@@ -633,6 +649,7 @@ export class BuilderPage {
   protected readonly TableIcon = TableIcon;
   protected readonly EyeIcon = Eye;
   protected readonly EditIcon = Pencil;
+  protected readonly ImageIcon = ImageIcon;
 
   // State
   protected readonly templateId = signal<string | null>(null);
@@ -959,6 +976,29 @@ export class BuilderPage {
     this.onAddBlock({ source: 'block-type', type: 'spacer' });
   }
 
+  protected onPhotoFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    // Create an image block with the uploaded image URL in settings
+    const tempId = crypto.randomUUID();
+    const block: TemplateBlock = {
+      tempId,
+      templateId: this.templateId()!,
+      order: this.blocks().length,
+      type: 'image',
+      title: file.name.replace(/\.[^.]+$/, ''),
+      content: '',
+      isActive: true,
+      showLine: false,
+      dataBinding: null,
+      settings: { imageUrl: url },
+    };
+    this.insertNewBlock(block);
+    input.value = '';
+  }
+
   // ─────────────────────────────────────────────────────────────
   // Tool pane → add block (Phase D.1) / drop from palette (D.2.2)
   // ─────────────────────────────────────────────────────────────
@@ -970,6 +1010,44 @@ export class BuilderPage {
   protected onDropAdd(event: { payload: AddBlockPayload; insertIndex: number }): void {
     const idx = Math.max(0, Math.min(event.insertIndex, this.blocks().length));
     this.insertBlock(event.payload, idx);
+  }
+
+  /** Insert a pre-built block (used by photo upload). */
+  private insertNewBlock(newBlock: TemplateBlock): void {
+    const tid = this.templateId();
+    if (!tid) return;
+    this.blocks.update((arr) => [...arr, newBlock]);
+    this.selectedId.set(blockKey(newBlock));
+
+    this.blocksSvc
+      .add(tid, {
+        type: newBlock.type,
+        order: newBlock.order,
+        ...(newBlock.title ? { title: newBlock.title } : {}),
+        ...(newBlock.content ? { content: newBlock.content } : {}),
+        ...(newBlock.height ? { height: newBlock.height } : {}),
+        showLine: newBlock.showLine,
+        ...(newBlock.settings ? { settings: newBlock.settings } : {}),
+        ...(newBlock.dataBinding ? { dataBinding: newBlock.dataBinding } : {}),
+        isActive: newBlock.isActive,
+      })
+      .subscribe({
+        next: (res) => {
+          if (!res.ok) {
+            this.toast.error(extractErrorMessage(res.error));
+            this.blocks.update((arr) => arr.filter((b) => b.tempId !== newBlock.tempId));
+            return;
+          }
+          this.blocks.update((arr) =>
+            arr.map((b) => (b.tempId === newBlock.tempId ? res.data : b)),
+          );
+          this.selectedId.set(res.data._id ?? null);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.toast.error(extractErrorMessage(err));
+          this.blocks.update((arr) => arr.filter((b) => b.tempId !== newBlock.tempId));
+        },
+      });
   }
 
   private insertBlock(payload: AddBlockPayload, insertIndex: number): void {
@@ -1272,14 +1350,18 @@ export class BuilderPage {
     block: TemplateBlock;
     width: number;
     marginLeft: number;
+    imageWidth?: number;
+    imageHeight?: number;
   }): void {
-    const { block, width, marginLeft } = event;
+    const { block, width, marginLeft, imageWidth, imageHeight } = event;
     if (!block._id) return;
-    const settings = {
+    const settings: Record<string, unknown> = {
       ...(block.settings as Record<string, unknown> | undefined),
       width,
       marginLeft,
     };
+    if (imageWidth !== undefined) settings['imageWidth'] = imageWidth;
+    if (imageHeight !== undefined) settings['imageHeight'] = imageHeight;
     this.blocks.update((arr) => arr.map((b) => (b._id === block._id ? { ...b, settings } : b)));
     this.save$.next({ _id: block._id, patch: { settings } });
   }

@@ -24,7 +24,7 @@
  * Conventional short reference: trust-model see file header banner.
  */
 
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input, output, signal } from '@angular/core';
 import { CdkDrag } from '@angular/cdk/drag-drop';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { LucideAngularModule } from 'lucide-angular';
@@ -110,6 +110,15 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
           (click)="$event.stopPropagation()"
           title="Перетащите влево для отступа справа"
         ></div>
+        <!-- Corner resize handle for image blocks (proportional) -->
+        @if (block().type === 'image' && imageUrl()) {
+          <div
+            class="block-renderer__resize-corner"
+            (mousedown)="onImageResizeStart($event)"
+            (click)="$event.stopPropagation()"
+            title="Перетащите для изменения размера"
+          ></div>
+        }
       }
       <!-- Multi-select checkbox (visible on hover or when multi-selected) -->
       <div
@@ -619,6 +628,27 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
         opacity: 1;
       }
 
+      /* Corner resize handle — proportional resize for images */
+      .block-renderer__resize-corner {
+        position: absolute;
+        bottom: -4px;
+        right: -4px;
+        width: 12px;
+        height: 12px;
+        background: var(--color-gold);
+        border: 2px solid var(--color-paper);
+        border-radius: 2px;
+        cursor: nwse-resize;
+        z-index: 10;
+        opacity: 0.6;
+        transition: opacity 150ms ease, transform 150ms ease;
+      }
+
+      .block-renderer__resize-corner:hover {
+        opacity: 1;
+        transform: scale(1.2);
+      }
+
       /* Print: hide editor-only elements */
       @media print {
         .block-renderer {
@@ -653,7 +683,7 @@ export class BlockRendererComponent {
   /** Emitted on Ctrl/Meta+click for multi-select toggle. */
   readonly multiSelect = output<TemplateBlock>();
   /** Emitted when the user finishes resizing the block. Carries new width & marginLeft. */
-  readonly widthChange = output<{ width: number; marginLeft: number }>();
+  readonly widthChange = output<{ width: number; marginLeft: number; imageWidth?: number; imageHeight?: number }>();
   /** TZ-211: Emitted when user clicks delete button on block. */
   readonly deleteRequest = output<string>();
 
@@ -663,12 +693,21 @@ export class BlockRendererComponent {
    */
   private readonly sanitizer = inject(DomSanitizer);
 
+  /** Host element for direct DOM manipulation during image resize. */
+  private readonly elRef = inject(ElementRef);
+
   /** Current block width percentage (read from settings.width, default 100). */
   protected readonly currentWidth = signal<number>(100);
   /** Current block left margin percentage (read from settings.marginLeft, default 0). */
   protected readonly currentMarginLeft = signal<number>(0);
+  /** Current image dimensions for proportional resize. */
+  protected currentImageWidth = 300;
+  protected currentImageHeight = 200;
+  /** Host element reference for direct DOM manipulation during resize. */
+  protected hostEl: HTMLElement | null = null;
 
   constructor() {
+    this.hostEl = this.elRef.nativeElement;
     // Sync width & marginLeft from block settings when block changes
     effect(() => {
       const b = this.block();
@@ -677,6 +716,9 @@ export class BlockRendererComponent {
       const ml = typeof settings?.['marginLeft'] === 'number' ? settings['marginLeft'] : 0;
       this.currentWidth.set(Math.max(20, Math.min(100, w)));
       this.currentMarginLeft.set(Math.max(0, Math.min(80, ml)));
+      // Sync image dimensions
+      this.currentImageWidth = (settings?.['imageWidth'] as number) ?? 300;
+      this.currentImageHeight = (settings?.['imageHeight'] as number) ?? 200;
     });
   }
 
@@ -729,6 +771,63 @@ export class BlockRendererComponent {
     };
 
     document.body.style.cursor = 'ew-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+
+  /**
+   * Proportional resize for image blocks — drag from bottom-right corner.
+   * Maintains aspect ratio by scaling both width and height proportionally.
+   */
+  protected onImageResizeStart(event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const settings = this.block().settings as Record<string, unknown> | undefined;
+    const startW = (settings?.['imageWidth'] as number) ?? 300;
+    const startH = (settings?.['imageHeight'] as number) ?? 200;
+    const aspect = startW / startH;
+
+    const handle = event.target as HTMLElement;
+    handle.classList.add('is-dragging');
+
+    const onMove = (e: MouseEvent): void => {
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      // Use the larger delta to determine scale direction
+      const delta = Math.abs(dx) > Math.abs(dy) ? dx : dy;
+      const scale = 1 + delta / Math.max(startW, startH);
+      const newW = Math.max(50, Math.round(startW * scale));
+      const newH = Math.max(20, Math.round(newW / aspect));
+      this.currentImageWidth = newW;
+      this.currentImageHeight = newH;
+      // Update the img element directly for smooth preview
+      const img = this.hostEl?.querySelector('.block-renderer__image') as HTMLImageElement;
+      if (img) {
+        img.style.width = newW + 'px';
+        img.style.height = newH + 'px';
+      }
+    };
+
+    const onUp = (): void => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      handle.classList.remove('is-dragging');
+      // Emit the final dimensions via settings patch
+      const settings = this.block().settings as Record<string, unknown> | undefined;
+      this.widthChange.emit({
+        width: this.currentImageWidth,
+        marginLeft: typeof settings?.['marginLeft'] === 'number' ? settings['marginLeft'] : 0,
+        imageWidth: this.currentImageWidth,
+        imageHeight: this.currentImageHeight,
+      });
+    };
+
+    document.body.style.cursor = 'nwse-resize';
     document.body.style.userSelect = 'none';
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
