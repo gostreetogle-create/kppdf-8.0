@@ -139,8 +139,8 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
               width="18"
               height="18"
               rx="2"
-              fill="var(--color-sunrise-warm)"
-              stroke="var(--color-sunrise-warm)"
+              fill="var(--color-gold)"
+              stroke="var(--color-gold)"
             />
             <polyline points="9 12 11 14 15 10" stroke="white" stroke-width="2.5" />
           } @else {
@@ -236,24 +236,26 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
         cursor: pointer;
         transition:
           background 120ms ease,
-          border-color 120ms ease;
+          border-color 120ms ease,
+          box-shadow 120ms ease;
       }
 
+      /* TZ-211: Hover — paper-3 background */
       .block-renderer:hover {
-        background: color-mix(in oklch, var(--color-sunrise-soft) 50%, transparent);
+        background: var(--color-paper-3);
       }
 
+      /* TZ-211: Selected — gold border + shadow */
       .block-renderer.is-selected {
-        border-color: var(--color-ink);
-        border-width: 2px;
-        padding: 9px 11px;
+        border-color: var(--color-gold);
+        background: var(--color-paper);
+        box-shadow: 0 0 0 1px var(--color-gold), 0 2px 8px -2px rgba(0, 0, 0, 0.1);
       }
 
+      /* TZ-211: Multi-selected — gold-soft background */
       .block-renderer.is-multi-selected {
-        border-color: var(--color-sunrise-warm);
-        border-width: 2px;
-        padding: 9px 11px;
-        background: color-mix(in oklch, var(--color-sunrise-soft) 30%, transparent);
+        border-color: var(--color-gold);
+        background: var(--color-gold-soft);
       }
 
       /* Multi-select checkbox */
@@ -302,8 +304,8 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
       }
 
       .block-renderer__binding {
-        background: color-mix(in oklch, var(--color-sunrise-warm) 20%, transparent);
-        color: var(--color-sunrise-warm);
+        background: var(--color-gold-soft);
+        color: var(--color-gold);
         padding: 1px 6px;
         border-radius: 2px;
         font-size: 10px;
@@ -486,13 +488,13 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
 
       .block-renderer__resize-side--left:hover,
       .block-renderer__resize-side--left.is-dragging {
-        border-left-color: var(--color-sunrise-warm);
+        border-left-color: var(--color-gold);
         opacity: 1;
       }
 
       .block-renderer__resize-side--right:hover,
       .block-renderer__resize-side--right.is-dragging {
-        border-right-color: var(--color-sunrise-warm);
+        border-right-color: var(--color-gold);
         opacity: 1;
       }
 
