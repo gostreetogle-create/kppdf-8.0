@@ -33,6 +33,8 @@ import {
   Loader2,
   Trash2,
   Table as TableIcon,
+  Eye,
+  Pencil,
 } from 'lucide-angular';
 import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
 import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
@@ -215,6 +217,29 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
         <div class="builder-toolbar__title">
           <span class="text-xs text-muted-foreground">{{ headerSubtitle() }}</span>
         </div>
+
+        <!-- TZ-211: View mode toggle -->
+        <div class="builder-view-toggle">
+          <button
+            type="button"
+            class="builder-view-toggle__btn"
+            [class.builder-view-toggle__btn--active]="viewMode() === 'editor'"
+            (click)="viewMode.set('editor')"
+          >
+            <lucide-icon [img]="EditIcon" [size]="13"></lucide-icon>
+            Редактор
+          </button>
+          <button
+            type="button"
+            class="builder-view-toggle__btn"
+            [class.builder-view-toggle__btn--active]="viewMode() === 'preview'"
+            (click)="viewMode.set('preview')"
+          >
+            <lucide-icon [img]="EyeIcon" [size]="13"></lucide-icon>
+            Превью
+          </button>
+        </div>
+
         <div class="builder-toolbar__actions">
           <!-- Тексты dropdown -->
           <div class="builder-dropdown">
@@ -530,6 +555,45 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
         color: var(--color-destructive);
       }
 
+      /* ═══ View Mode Toggle — TZ-211 ═══ */
+      .builder-view-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        background: var(--color-paper-3);
+        border: 1px solid var(--color-rule);
+        border-radius: 2px;
+        padding: 1px;
+      }
+
+      .builder-view-toggle__btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        font-size: 11px;
+        font-weight: 500;
+        font-family: var(--font-mono);
+        color: var(--color-muted);
+        background: transparent;
+        border: none;
+        border-radius: 1px;
+        cursor: pointer;
+        transition: all 100ms ease;
+        white-space: nowrap;
+      }
+
+      .builder-view-toggle__btn:hover {
+        color: var(--color-ink);
+      }
+
+      .builder-view-toggle__btn--active {
+        background: var(--color-paper);
+        color: var(--color-ink);
+        font-weight: 600;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+      }
+
       /* ═══ Inspector Panel — TZ-211: Design System ═══ */
       .builder-inspector-panel {
         width: 320px;
@@ -565,6 +629,8 @@ export class BuilderPage {
   protected readonly LoaderIcon = Loader2;
   protected readonly TrashIcon = Trash2;
   protected readonly TableIcon = TableIcon;
+  protected readonly EyeIcon = Eye;
+  protected readonly EditIcon = Pencil;
 
   // State
   protected readonly templateId = signal<string | null>(null);
@@ -577,6 +643,8 @@ export class BuilderPage {
   protected readonly saveStatus = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
   /** When true, inspector shows template properties instead of block properties */
   protected readonly templateSelected = signal<boolean>(false);
+  /** TZ-211: View mode toggle — 'editor' | 'preview' */
+  protected readonly viewMode = signal<'editor' | 'preview'>('editor');
 
   // Dropdown state for inline toolbar
   protected readonly openDropdown = signal<string | null>(null);
