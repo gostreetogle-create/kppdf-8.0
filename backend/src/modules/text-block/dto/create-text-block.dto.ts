@@ -32,6 +32,10 @@ export class ColumnDto {
   @IsOptional()
   @IsNumber()
   width?: number;
+
+  @IsOptional()
+  @IsNumber()
+  fontSize?: number;
 }
 
 export class CreateTextBlockDto {

@@ -7,8 +7,9 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { Subject, switchMap } from 'rxjs';
+import { Subject, switchMap, map, filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute } from '@angular/router';
 import { PiEmptyStateComponent } from '../../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { PiRowActionsComponent } from '../../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
@@ -377,6 +378,7 @@ export class TextsPage {
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
 
   private readonly reload$ = new Subject<void>();
 
@@ -395,6 +397,18 @@ export class TextsPage {
         this.loading.set(false);
       });
     this.reload();
+
+    // Auto-open editor when navigated from builder with editId query param
+    this.route.queryParams
+      .pipe(
+        map((p) => p['editId'] as string | undefined),
+        filter((id): id is string => !!id),
+        switchMap((id) => this.service.findById(id)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((res) => {
+        if (res.ok) this.openEdit(res.data);
+      });
   }
 
   protected readonly data = signal<TextBlock[]>([]);

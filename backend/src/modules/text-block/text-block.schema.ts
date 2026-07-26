@@ -30,6 +30,7 @@ export interface TextBlockColumn {
   id: string;
   content: string;
   width: number;
+  fontSize?: number;
 }
 
 export type TextBlockDocument = HydratedDocument<TextBlock>;
@@ -70,6 +71,7 @@ export class TextBlock {
       id: { type: String, required: true },
       content: { type: String, default: '' },
       width: { type: Number, default: 1 },
+      fontSize: { type: Number, default: 14 },
     }],
     default: [],
     _id: false,

@@ -349,11 +349,16 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
           [footerText]="template()?.footerText ?? ''"
           [pageNumbering]="template()?.pageNumbering ?? false"
           [pageSize]="template()?.pageSize ?? 'A4'"
+          [snapEnabled]="snapEnabled()"
+          [gridSize]="gridSize()"
+          [boundaryPadding]="boundaryPadding()"
           (select)="onSelect($event)"
           (multiSelect)="onMultiSelect($event)"
           (reorder)="onReorder($event)"
           (dropAdd)="onDropAdd($event)"
           (blockWidthChange)="onBlockWidthChange($event)"
+          (overlayMove)="onOverlayMove($event)"
+          (overlayResize)="onOverlayResize($event)"
           (canvasClick)="onCanvasClick()"
           (deleteRequest)="onDeleteBlock($event)"
         />
@@ -367,6 +372,10 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
             [templateSelected]="templateSelected()"
             [template]="template()"
             [allBlocks]="blocks()"
+            [snapEnabled]="snapEnabled()"
+            [gridSize]="gridSize()"
+            [boundaryPadding]="boundaryPadding()"
+            (snapSettingsChange)="onSnapSettingsChange($event)"
             (update)="onInspectorUpdate($event)"
             (delete)="onDeleteBlock($event)"
             (deleteSelected)="onDeleteSelected()"
@@ -664,6 +673,12 @@ export class BuilderPage {
   protected readonly templateSelected = signal<boolean>(false);
   /** TZ-211: View mode toggle — 'editor' | 'preview' */
   protected readonly viewMode = signal<'editor' | 'preview'>('editor');
+  /** Snap-to-grid enabled for overlay blocks (persisted to localStorage). */
+  protected readonly snapEnabled = signal<boolean>(loadSnapSettings().snapEnabled);
+  /** Grid size for snapping (px) (persisted to localStorage). */
+  protected readonly gridSize = signal<number>(loadSnapSettings().gridSize);
+  /** Padding from paper edges that overlay blocks cannot cross (px) (persisted to localStorage). */
+  protected readonly boundaryPadding = signal<number>(loadSnapSettings().boundaryPadding);
 
   // Dropdown state for inline toolbar
   protected readonly openDropdown = signal<string | null>(null);
@@ -813,6 +828,7 @@ export class BuilderPage {
         this.isLoading.set(false);
         if (res.ok) {
           this.blocks.set(res.data ?? []);
+          this.syncTextBlockSources();
         } else {
           this.toast.error(extractErrorMessage(res.error));
         }
@@ -820,6 +836,56 @@ export class BuilderPage {
       error: (err: HttpErrorResponse) => {
         this.isLoading.set(false);
         this.toast.error(extractErrorMessage(err));
+      },
+    });
+  }
+
+  /**
+   * Sync text block content from source text blocks.
+   * When a text block is added to the template, its content is snapshotted.
+   * This method refreshes the snapshot from the current source text block,
+   * so edits on the texts page are reflected in the template.
+   */
+  private syncTextBlockSources(): void {
+    const blocks = this.blocks();
+    const textBlockIds = blocks
+      .filter((b) => b.type === 'text' && b.dataBinding?.source === 'static' && b.dataBinding?.value)
+      .map((b) => b.dataBinding!.value!)
+      .filter((id): id is string => !!id);
+
+    if (textBlockIds.length === 0) return;
+
+    // Fetch all active text blocks, then match by ID
+    this.textBlocksSvc.list({ activeOnly: false }).subscribe({
+      next: (res) => {
+        if (!res.ok) return;
+        const sourceMap = new Map(res.data.items.map((tb) => [tb._id, tb]));
+        let changed = false;
+
+        const updated = blocks.map((b) => {
+          if (b.type !== 'text' || b.dataBinding?.source !== 'static' || !b.dataBinding?.value) return b;
+          const source = sourceMap.get(b.dataBinding.value);
+          if (!source) return b;
+          // Check if content or columns changed
+          const newContent = source.content ?? '';
+          const newColumns = source.columns;
+          if (b.content === newContent && JSON.stringify(b.columns) === JSON.stringify(newColumns)) return b;
+          changed = true;
+          return { ...b, content: newContent, columns: newColumns };
+        });
+
+        if (changed) {
+          this.blocks.set(updated);
+          // Persist updated blocks to backend
+          for (const block of updated) {
+            if (block._id) {
+              this.blocksSvc.update(block._id, {
+                content: block.content,
+                columns: block.columns,
+              }).subscribe();
+            }
+          }
+        }
       },
     });
   }
@@ -980,8 +1046,8 @@ export class BuilderPage {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    // Create an image block with the uploaded image URL in settings
+    const localUrl = URL.createObjectURL(file);
+    // Create an image block with a local preview URL (will be replaced after upload)
     const tempId = crypto.randomUUID();
     const block: TemplateBlock = {
       tempId,
@@ -993,9 +1059,9 @@ export class BuilderPage {
       isActive: true,
       showLine: false,
       dataBinding: null,
-      settings: { imageUrl: url },
+      settings: { imageUrl: localUrl, overlay: true },
     };
-    this.insertNewBlock(block);
+    this.insertNewBlock(block, file);
     input.value = '';
   }
 
@@ -1012,8 +1078,9 @@ export class BuilderPage {
     this.insertBlock(event.payload, idx);
   }
 
-  /** Insert a pre-built block (used by photo upload). */
-  private insertNewBlock(newBlock: TemplateBlock): void {
+  /** Insert a pre-built block (used by photo upload). If `file` is provided,
+   *  uploads it to the server after block creation and patches the imageUrl. */
+  private insertNewBlock(newBlock: TemplateBlock, file?: File): void {
     const tid = this.templateId();
     if (!tid) return;
     this.blocks.update((arr) => [...arr, newBlock]);
@@ -1042,6 +1109,28 @@ export class BuilderPage {
             arr.map((b) => (b.tempId === newBlock.tempId ? res.data : b)),
           );
           this.selectedId.set(res.data._id ?? null);
+
+          // Upload file to server if provided (e.g. photo upload)
+          if (file && res.data._id) {
+            this.blocksSvc.uploadImage(res.data._id, file).subscribe({
+              next: (uploadRes) => {
+                if (uploadRes.ok) {
+                  this.blocks.update((arr) =>
+                    arr.map((b) =>
+                      b._id === res.data._id
+                        ? { ...b, settings: { ...(b.settings ?? {}), imageUrl: uploadRes.data.url } }
+                        : b,
+                    ),
+                  );
+                } else {
+                  this.toast.error(extractErrorMessage(uploadRes.error));
+                }
+              },
+              error: () => {
+                this.toast.error('Не удалось загрузить изображение на сервер');
+              },
+            });
+          }
         },
         error: (err: HttpErrorResponse) => {
           this.toast.error(extractErrorMessage(err));
@@ -1176,8 +1265,12 @@ export class BuilderPage {
           ...base,
           type: 'text',
           title: payload.textBlock.name,
-          content: payload.textBlock.content,
-          columns: payload.textBlock.columns,
+          content: payload.textBlock.content ?? '',
+          columns: payload.textBlock.columns?.map((c) => ({
+            id: c.id,
+            content: c.content ?? '',
+            width: c.width ?? 1,
+          })),
           dataBinding: {
             source: 'static' as DataBindingSource,
             value: payload.textBlock._id ?? '',
@@ -1240,10 +1333,18 @@ export class BuilderPage {
     if (!block) return;
 
     switch (block.type) {
-      case 'text':
-        // Text block — navigate to texts page for editing
-        this.router.navigate(['/doc-constructor/texts']);
+      case 'text': {
+        // Text block ID is stored in dataBinding.value (set at buildBlockFromPayload)
+        const textBlockId = block.dataBinding?.value;
+        if (textBlockId) {
+          this.router.navigate(['/doc-constructor/texts'], {
+            queryParams: { editId: textBlockId },
+          });
+        } else {
+          this.router.navigate(['/doc-constructor/texts']);
+        }
         break;
+      }
       case 'table':
         // Table block — navigate to tables page for editing
         this.router.navigate(['/doc-constructor/tables']);
@@ -1362,6 +1463,40 @@ export class BuilderPage {
     };
     if (imageWidth !== undefined) settings['imageWidth'] = imageWidth;
     if (imageHeight !== undefined) settings['imageHeight'] = imageHeight;
+    this.blocks.update((arr) => arr.map((b) => (b._id === block._id ? { ...b, settings } : b)));
+    this.save$.next({ _id: block._id, patch: { settings } });
+  }
+
+  /** Handle overlay block position change (drag). */
+  protected onOverlayMove(event: {
+    block: TemplateBlock;
+    overlayLeft: number;
+    overlayTop: number;
+  }): void {
+    const { block, overlayLeft, overlayTop } = event;
+    if (!block._id) return;
+    const settings: Record<string, unknown> = {
+      ...(block.settings as Record<string, unknown> | undefined),
+      overlayLeft,
+      overlayTop,
+    };
+    this.blocks.update((arr) => arr.map((b) => (b._id === block._id ? { ...b, settings } : b)));
+    this.save$.next({ _id: block._id, patch: { settings } });
+  }
+
+  /** Handle overlay image proportional resize (corner handle). */
+  protected onOverlayResize(event: {
+    block: TemplateBlock;
+    imageWidth: number;
+    imageHeight: number;
+  }): void {
+    const { block, imageWidth, imageHeight } = event;
+    if (!block._id) return;
+    const settings: Record<string, unknown> = {
+      ...(block.settings as Record<string, unknown> | undefined),
+      imageWidth,
+      imageHeight,
+    };
     this.blocks.update((arr) => arr.map((b) => (b._id === block._id ? { ...b, settings } : b)));
     this.save$.next({ _id: block._id, patch: { settings } });
   }
@@ -1506,6 +1641,20 @@ export class BuilderPage {
       });
   }
 
+  /** Handle snap settings changes from the inspector (persisted to localStorage). */
+  protected onSnapSettingsChange(settings: { snapEnabled: boolean; gridSize: number; boundaryPadding?: number }): void {
+    this.snapEnabled.set(settings.snapEnabled);
+    this.gridSize.set(settings.gridSize);
+    if (settings.boundaryPadding !== undefined) {
+      this.boundaryPadding.set(settings.boundaryPadding);
+    }
+    saveSnapSettings({
+      snapEnabled: settings.snapEnabled,
+      gridSize: settings.gridSize,
+      boundaryPadding: settings.boundaryPadding ?? this.boundaryPadding(),
+    });
+  }
+
   protected onReload(): void {
     const tid = this.templateId();
     if (tid) this.loadBlocks(tid);
@@ -1591,4 +1740,51 @@ function pluralBlocks(n: number): string {
   if (mod10 === 1 && mod100 !== 11) return 'блок';
   if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'блока';
   return 'блоков';
+}
+
+// ─────────────────────────────────────────────────────────────
+// localStorage persistence for overlay positioning settings
+// ─────────────────────────────────────────────────────────────
+const SNAP_STORAGE_KEY = 'pi-builder-snap-settings';
+
+interface SnapSettings {
+  snapEnabled: boolean;
+  gridSize: number;
+  boundaryPadding: number;
+}
+
+const DEFAULT_SNAP: SnapSettings = {
+  snapEnabled: true,
+  gridSize: 20,
+  boundaryPadding: 8,
+};
+
+function loadSnapSettings(): SnapSettings {
+  try {
+    const raw = localStorage.getItem(SNAP_STORAGE_KEY);
+    if (!raw) return DEFAULT_SNAP;
+    const parsed = JSON.parse(raw) as Partial<SnapSettings>;
+    return {
+      snapEnabled:
+        typeof parsed.snapEnabled === 'boolean' ? parsed.snapEnabled : DEFAULT_SNAP.snapEnabled,
+      gridSize:
+        typeof parsed.gridSize === 'number' && parsed.gridSize >= 5 && parsed.gridSize <= 50
+          ? parsed.gridSize
+          : DEFAULT_SNAP.gridSize,
+      boundaryPadding:
+        typeof parsed.boundaryPadding === 'number' && parsed.boundaryPadding >= 0
+          ? parsed.boundaryPadding
+          : DEFAULT_SNAP.boundaryPadding,
+    };
+  } catch {
+    return DEFAULT_SNAP;
+  }
+}
+
+function saveSnapSettings(settings: SnapSettings): void {
+  try {
+    localStorage.setItem(SNAP_STORAGE_KEY, JSON.stringify(settings));
+  } catch {
+    // localStorage may be unavailable (private browsing, quota exceeded)
+  }
 }

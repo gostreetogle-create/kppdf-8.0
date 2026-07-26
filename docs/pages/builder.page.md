@@ -1,12 +1,16 @@
 # Страница: Конструктор документов (BuilderPage)
 
-**Краткое описание:** 3-панельный редактор шаблонов документов: палитра блоков (слева), canvas (центр), инспектор свойств (справа). Drag-and-drop добавление блоков, auto-save, контекстные свойства шаблона.
+> **Назначение:** Полная документация страницы конструктора документов — 3-панельный редактор шаблонов документов: тулбар (сверху), canvas (центр), инспектор свойств (справа).
+>
+> При редактировании этой страницы — читай этот файл ПЕРЕД внесением изменений.
+
+---
 
 ## Route
 
 ```
-/doc-constructor/builder → выбор шаблона (список)
-/doc-constructor/builder/:id → редактор конкретного шаблона
+/doc-constructor/builder       → выбор шаблона (список)
+/doc-constructor/builder/:id   → редактор конкретного шаблона
 ```
 
 ## Query params
@@ -16,97 +20,420 @@
 | `source` | `string` | Источник контекста (order/contract) |
 | `sourceId` | `string` | ID источника |
 
+## Layout
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  Builder Toolbar (тулбар с выпадающими списками)             │
+├──────────────────────────────────────┬───────────────────────┤
+│                                      │                       │
+│  Canvas (pi-canvas-page)             │  Inspector (320px)    │
+│  ┌─────────────────────────────┐    │  ┌─────────────────┐  │
+│  │ .pi-canvas-page-paper      │    │  │ Section 01:      │  │
+│  │  ┌───────────────────────┐ │    │  │  Блок / Шаблон   │  │
+│  │  │ .canvas-dropzone      │ │    │  ├─────────────────┤  │
+│  │  │  [flow blocks]        │ │    │  │ Section 02:      │  │
+│  │  │  app-block-renderer   │ │    │  │  Позициониро-    │  │
+│  │  │  (cdkDrag, text/img)  │ │    │  │  вание (snap,    │  │
+│  │  └───────────────────────┘ │    │  │  padding)        │  │
+│  │  ┌───────────────────────┐ │    │  ├─────────────────┤  │
+│  │  │ .canvas-overlay-layer │ │    │  │ Section 03:      │  │
+│  │  │  [overlay blocks]     │ │    │  │  Размеры блока   │  │
+│  │  │  app-block-renderer   │ │    │  │  (width, margin) │  │
+│  │  │  (absolute position)  │ │    │  ├─────────────────┤  │
+│  │  └───────────────────────┘ │    │  │ Section 04:      │  │
+│  └─────────────────────────────┘    │  │  Свойства фото   │  │
+│                                      │  │  (overlay, resize│  │
+│                                      │  │  X/Y position)   │  │
+│                                      │  ├─────────────────┤  │
+│                                      │  │ Section 05:      │  │
+│                                      │  │  Привязка данных │  │
+│                                      │  ├─────────────────┤  │
+│                                      │  │ Section 06:      │  │
+│                                      │  │  Фоны шаблона    │  │
+│                                      │  └─────────────────┘  │
+└──────────────────────────────────────┴───────────────────────┘
+```
+
 ## API endpoints
+
+### Template управления
 
 | Метод | Endpoint | Назначение |
 |-------|----------|-----------|
-| GET | `/api/document-templates` | Список шаблонов (для выбора) |
-| GET | `/api/document-templates/:id` | Детали шаблона (фон, ориентация) |
+| GET | `/api/document-templates` | Список шаблонов |
+| GET | `/api/document-templates/:id` | Детали шаблона |
 | PATCH | `/api/document-templates/:id` | Обновить свойства шаблона |
 | POST | `/api/document-templates` | Создать шаблон |
+| DELETE | `/api/document-templates/:id` | Удалить шаблон |
 | POST | `/api/document-templates/:id/duplicate` | Дублировать |
 | POST | `/api/document-templates/:id/upload-background` | Загрузить фон |
 | POST | `/api/document-templates/:id/remove-background` | Удалить фон |
 | POST | `/api/document-templates/:id/set-default-background` | Установить фон по умолчанию |
-| GET | `/api/template-blocks?templateId=:id` | Список блоков шаблона |
+
+### Block управления
+
+| Метод | Endpoint | Назначение |
+|-------|----------|-----------|
+| GET | `/api/template-blocks?templateId=:id` | Список блоков |
 | POST | `/api/template-blocks` | Добавить блок |
 | PATCH | `/api/template-blocks/:id` | Обновить блок (auto-save) |
 | DELETE | `/api/template-blocks/:id` | Удалить блок |
 | POST | `/api/template-blocks/reorder` | Переупорядочить блоки |
 
-## Sub-components
+## Компоненты
 
-| Компонент | Описание |
-|-----------|----------|
-| `BuilderToolPaneComponent` | Левая панель: палитра блоков, тексты, таблицы, отступы, декорации |
-| `BuilderCanvasComponent` | Центр: холст с CDK drag-drop reorder блоков |
-| `BuilderInspectorComponent` | Правая панель: свойства блока / шаблона / мульти-выделения |
-| `BlockRendererComponent` | Рендер отдельного блока на холсте |
+| Файл | Компонент | Описание |
+|------|-----------|----------|
+| `builder.page.ts` | `BuilderPage` | Оркестратор: состояние, auto-save, хендлеры |
+| `builder-canvas.component.ts` | `BuilderCanvasComponent` | Холст: flow/overlay слои, CDK drag-drop |
+| `builder-inspector.component.ts` | `BuilderInspectorComponent` | Правая панель: 3 режима |
+| `block-renderer.component.ts` | `BlockRendererComponent` | Рендер одного блока (flow или overlay) |
+| `builder.types.ts` | `AddBlockPayload` | Типы для добавления блоков |
+| `template-setup-dialog.component.ts` | `TemplateSetupDialogComponent` | Диалог создания/дублирования шаблона |
 
-## State (signals)
+### `BuilderPage` — оркестратор
+
+Файл: `frontend/src/app/pages/doc-constructor/builder/builder.page.ts`
+
+**Выбранный шаблон (экран 1):**
+- `templateListRes` — `httpResource<DocumentTemplate[]>` на `/api/document-templates`
+- Кнопка «Новый шаблон» → `onCreateTemplate()` → `TemplateSetupDialogComponent` → `doCreateTemplate()`
+- Открытие/дублирование/удаление шаблона
+
+**Редактор (экран 2):**
+- Загружает блоки через `loadBlocks(id)` при смене `templateId`
+- Управляет состоянием: `blocks`, `selectedId`, `selectedIds`, `template`, `saveStatus`
+- Прокидывает inputs/outputs между Canvas и Inspector
+
+### `BuilderCanvasComponent` — холст
+
+Файл: `frontend/src/app/pages/doc-constructor/builder/builder-canvas.component.ts`
+
+**Inputs:**
+| Input | Тип | Назначение |
+|-------|-----|-----------|
+| `blocks` | `TemplateBlock[]` | Все блоки |
+| `selectedId` | `string \| null` | Выбранный блок |
+| `selectedIds` | `Set<string>` | Multi-select |
+| `backgroundImages` | `string[]` | Фоны |
+| `orientation` | `portrait \| landscape` | Ориентация |
+| `backgroundOpacity` | `number` | Прозрачность фона |
+| `headerText` / `footerText` | `string` | Шапка/подвал |
+| `pageNumbering` | `boolean` | Нумерация |
+| `pageSize` | `string` | A4 / A5 / Letter |
+| `snapEnabled` | `boolean` | Snap-to-grid для overlay |
+| `gridSize` | `number` | Шаг сетки |
+| `boundaryPadding` | `number` | Отступ от краёв |
+
+**Outputs:**
+| Output | Тип |
+|--------|-----|
+| `select`, `multiSelect` | `TemplateBlock` |
+| `reorder` | `TemplateBlock[]` |
+| `dropAdd` | `{ payload, insertIndex }` |
+| `blockWidthChange` | `{ block, width, marginLeft, ... }` |
+| `overlayMove` | `{ block, overlayLeft, overlayTop }` |
+| `overlayResize` | `{ block, imageWidth, imageHeight }` |
+| `canvasClick` | `void` |
+| `deleteRequest` | `string` |
+
+**Разделение блоков (computed):**
+```typescript
+isOverlayBlock(block): boolean {
+  if (block.type !== 'image') return false;
+  return block.settings?.['overlay'] ?? false;
+}
+overlayBlocks = computed(() => blocks.filter(isOverlayBlock))
+flowBlocks    = computed(() => blocks.filter(b => !isOverlayBlock(b)))
+```
+
+- **Flow блоки** — рендерятся внутри `cdkDropList` (reorder, drag-and-drop)
+- **Overlay блоки** — рендерятся в `.canvas-overlay-layer` (absolute positioning)
+- **Dropzone** — `cdkDropList` с `connectedTo: canvas-droplist` для drag-from-palette
+
+### `BlockRendererComponent` — рендер блока
+
+Файл: `frontend/src/app/pages/doc-constructor/builder/block-renderer.component.ts`
+
+См. также `docs/pages/photo-block-architecture.md`
+
+**Inputs:**
+| Input | Тип | Назначение |
+|-------|-----|-----------|
+| `block` | `TemplateBlock` | Блок |
+| `selected` | `boolean` | Выбран |
+| `multiSelected` | `boolean` | Multi-select |
+| `snapEnabled` | `boolean` | Snap-to-grid |
+| `gridSize` | `number` | Шаг сетки |
+| `boundaryPadding` | `number` | Отступ |
+
+**Outputs:**
+| Output | Тип |
+|--------|-----|
+| `select` | `TemplateBlock` |
+| `multiSelect` | `TemplateBlock` |
+| `widthChange` | `{ width, marginLeft }` |
+| `overlayMove` | `{ block, overlayLeft, overlayTop }` |
+| `overlayResize` | `{ block, imageWidth, imageHeight }` |
+| `deleteRequest` | `string` |
+
+**Два режима рендера:**
+
+1. **Flow (по умолчанию):** внутри `cdkDrag`, участвует в reorder
+   - text/header: контент + column grid
+   - table: `<table>` с колонками и строками
+   - image: `<img>` с `max-width: 100%`
+   - signature: центрированный, с линией
+   - spacer: пустой div с высотой
+   - selection: gold border + shadow
+   - resize хэндлы: левый (marginLeft) + правый (width) — боковые полосы
+
+2. **Overlay (absolute):** вне CDK, `position: absolute` в `.canvas-overlay-layer`
+   - Только для `type === 'image'` с `settings.overlay === true`
+   - `[style.left.px]`, `[style.top.px]` — позиция X/Y
+   - `[style.width.px]`, `[style.height.px]` — размер через сигналы
+   - Corner resize handle (пропорциональный, по диагонали)
+   - Snap-to-grid + block edge snap + boundary clamp
+   - **Сигналы для плавности:** `dragActive/dragLeft/dragTop`, `resizeActive/resizeWidth/resizeHeight`
+
+### `BuilderInspectorComponent` — инспектор
+
+Файл: `frontend/src/app/pages/doc-constructor/builder/builder-inspector.component.ts`
+
+**Inputs:**
+| Input | Тип |
+|-------|-----|
+| `block` | `TemplateBlock \| null` |
+| `selectedCount` | `number` |
+| `selectedBlocks` | `TemplateBlock[]` |
+| `paperWidth` | `number` |
+| `templateSelected` | `boolean` |
+| `template` | `DocumentTemplate \| null` |
+| `allBlocks` | `TemplateBlock[]` |
+| `snapEnabled` | `boolean` |
+| `gridSize` | `number` |
+| `boundaryPadding` | `number` |
+
+**Outputs:**
+| Output | Тип |
+|--------|-----|
+| `snapSettingsChange` | `{ snapEnabled, gridSize, boundaryPadding? }` |
+| `update` | `Partial<TemplateBlock>` |
+| `delete` | `string` |
+| `deleteSelected` | `void` |
+| `editSelected` | `void` |
+| `marginReset` | `string` |
+| `multiMarginUpdate` | `Array<{ _id, settings }>` |
+| `templateUpdate` | `Partial<DocumentTemplate>` |
+| `uploadBackground` | `File` |
+| `removeBackground` | `number` |
+| `setDefaultBackground` | `number` |
+| `closePanel` | `void` |
+
+**3 режима:**
+
+#### Режим 1: Свойства блока (selectedId !== null)
+
+| Секция | Элементы |
+|--------|----------|
+| **00: Заголовок блока** | Иконка типа, название, active toggle, showLine |
+| **01: Содержимое** | text/header → content preview; image/signature → height; table → readonly badge |
+| **02: Позиционирование** (overlay photo) | Чекбокс «Привязка к сетке», ползунок «Шаг сетки» (5–50), ползунок «Отступ от краёв» |
+| **03: Размеры блока** | Ширина (пиксели/progress), Отступ слева (marginLeft), кнопка сброса |
+| **04: Свойства фото** (image type) | Overlay toggle (Поверх других блоков), размер (W×H px), позиция X/Y |
+| **05: Привязка данных** | Data-binding badges (readonly) |
+| **06: Удаление** | Кнопка «Удалить блок» |
+
+#### Режим 2: Мульти-выделение (selectedIds.size > 0)
+
+- Количество выбранных блоков
+- Размеры: общие значения (если одинаковые) или прочерк
+- Кнопка «Сбросить отступы»
+- Кнопка «Удалить выбранные» (внизу)
+
+#### Режим 3: Свойства шаблона (templateSelected === true)
+
+- **Ориентация:** книжная / альбомная (BookOpen/Columns icons)
+- **Формат страницы:** A4 / A5 / Letter
+- **Прозрачность фона:** ползунок
+- **Шапка / Подвал:** текстовые поля
+- **Нумерация страниц:** toggle
+- **Фоны:** превью загруженных, установка по умолчанию, удаление
+
+## Состояние (сигналы BuilderPage)
 
 | Сигнал | Тип | Назначение |
 |--------|-----|-----------|
-| `templateId` | `Signal<string\|null>` | ID активного шаблона (из route) |
-| `template` | `Signal<DocumentTemplate\|null>` | Текущий шаблон (фон, ориентация) |
-| `blocks` | `Signal<TemplateBlock[]>` | Блоки (display order) |
-| `selectedId` | `Signal<string\|null>` | ID выбранного блока |
+| `templateId` | `Signal<string \| null>` | ID активного шаблона (из route param) |
+| `template` | `Signal<DocumentTemplate \| null>` | Текущий шаблон (фон, ориентация) |
+| `blocks` | `Signal<TemplateBlock[]>` | Блоки в display order |
+| `selectedId` | `Signal<string \| null>` | ID выбранного блока |
 | `selectedIds` | `Signal<Set<string>>` | Multi-select IDs (Ctrl+Click) |
-| `templateSelected` | `Signal<boolean>` | Режим "свойства шаблона" (клик на пустой canvas) |
-| `saveStatus` | `Signal<'idle'\|'saving'\|'saved'\|'error'>` | Статус auto-save |
-| `sourceContext` | `Signal<{source, sourceId}\|null>` | Контекст из query params |
+| `templateSelected` | `Signal<boolean>` | Режим «свойства шаблона» |
+| `saveStatus` | `Signal<'idle' \| 'saving' \| 'saved' \| 'error'>` | Статус auto-save |
+| `viewMode` | `Signal<'editor' \| 'preview'>` | Режим просмотра |
+| `isLoading` | `Signal<boolean>` | Загрузка блоков |
+| `isCreating` | `Signal<boolean>` | Создание шаблона |
+| `openDropdown` | `Signal<string \| null>` | Открытый dropdown в тулбаре |
+| `sourceContext` | `Signal<{ source, sourceId } \| null>` | Контекст из query params |
+| `snapEnabled` | `Signal<boolean>` | Snap-to-grid (localStorage) |
+| `gridSize` | `Signal<number>` | Шаг сетки (localStorage) |
+| `boundaryPadding` | `Signal<number>` | Отступ от краёв (localStorage) |
 
-## Инспектор — 3 режима
+**Computed:**
+| Computed | Тип | Назначение |
+|----------|-----|-----------|
+| `selectedBlock` | `TemplateBlock \| null` | Выбранный блок (из selectedId или единственный из selectedIds) |
+| `selectedBlocks` | `TemplateBlock[]` | Все выбранные блоки (для multi-select) |
+| `headerSubtitle` | `string` | Подзаголовок: «Шаблон XXXX · N блоков» |
+| `backgroundImages` | `string[]` | Фоны с учётом defaultBackgroundIndex |
+| `orientation` | `'portrait' \| 'landscape'` | Ориентация шаблона |
+| `templateListErrorMessage` | `string` | Ошибка загрузки списка шаблонов |
 
-### 1. Свойства блока (selectedId !== null)
-- Заголовок, активность, линия снизу
-- Содержимое (text/header), высота (image/signature/spacer)
-- Шаблон таблицы (readonly badge)
-- Привязка к данным (readonly badges)
-- **Отступы**: ширина + marginLeft в пикселях, слайдер, кнопка сброса
+## Auto-save architecture
 
-### 2. Мульти-выделение (selectedIds.size > 0)
-- Количество выбранных
-- **Отступы**: общие значения (если одинаковые) или прочерк
-- Кнопка "Сбросить отступы"
-- Кнопка "Удалить" (внизу, отделена разделителем)
+```
+patchBlockSettings(blockId, { settings })
+  → save$.next({ _id: blockId, patch: { settings } })
+    → groupBy(_id)           # группировка по ID блока
+      → debounceTime(1500)   # 1.5s дебаунс
+        → switchMap          # отменяет предыдущий запрос
+          → blocksSvc.update(_id, patch)
+            → handleSaveResult(res)
+```
 
-### 3. Свойства шаблона (templateSelected === true)
-- **Ориентация**: книжная / альбомная (иконки BookOpen/Columns)
-- **Формат страницы**: A4 / A5 / Letter
-- **Нумерация страниц**: toggle
-- **Оглавление**: toggle
-- **Шапка документа**: текстовое поле
-- **Подвал документа**: текстовое поле
-- **Фоны**: превью загруженных фонов
+- **1500ms debounce** — группирует множественные изменения в один PATCH-запрос
+- **switchMap** — отменяет in-flight запрос, если пришло новое изменение
+- **groupBy(_id)** — каждый блок сохраняется независимо (не ждёт другие блоки)
+- **saveStatus** — проход: `'saving' → 'saved' (2s) → 'idle'`
+- **Monotonic counter** (`savedTick`) — защита от stale timer, который мог бы сбросить `'saved' → 'idle'` раньше времени
+- **Optimistic update** — блоки обновляются локально ДО отправки на сервер
+- **409 Conflict** — тост «Конфликт: шаблон изменён другим пользователем»
 
-## Resize хэндлы (BlockRenderer)
+### Каналы auto-save
 
-- **Боковые**: левый (marginLeft) + правый (width)
-- Всегда видимы (opacity 0.25), усиливаются при наведении (0.6)
-- При захвате: sunrise-warm цвет, opacity 1
-- **@media print**: хэндлы, рамки, чекбоксы скрыты
-- **Ширина/отступ**: хранятся в `block.settings.width` и `block.settings.marginLeft`
+| Хендлер | Что сохраняет |
+|---------|---------------|
+| `onInspectorUpdate` | Patch блока (title, content, isActive, showLine, height, etc.) |
+| `onBlockWidthChange` | `settings.width`, `settings.marginLeft`, `settings.imageWidth`, `settings.imageHeight` |
+| `onOverlayMove` | `settings.overlayLeft`, `settings.overlayTop` |
+| `onOverlayResize` | `settings.imageWidth`, `settings.imageHeight` |
+| `onMarginReset` | `settings.width = 100`, `settings.marginLeft = 0` |
+| `onMultiMarginUpdate` | Массовое обновление margin для нескольких блоков |
+| `onTemplateUpdate` | Patch шаблона (orientation, pageSize, headerText, footerText, etc.) |
 
-## Кнопка "Новый шаблон"
+## Тулбар (Builder Toolbar)
 
-- В секции "Выберите шаблон" (слева от заголовка через `slot="actions"`)
-- Работает когда есть список шаблонов + в пустом состоянии
-- Создаёт шаблон с датой, навигирует в редактор
+Горизонтальная панель с выпадающими списками:
 
-## Block renderer — визуал
+| Кнопка | Действие |
+|--------|----------|
+| «Тексты» | Dropdown со списком текстовых блоков (`/api/text-blocks`) |
+| «Таблицы» | Dropdown со списком шаблонов таблиц (`/api/table-templates`) |
+| «Фото» | File input → `onPhotoFileSelected()` → создаёт image-блок с `overlay: true` |
+| «— Отступ» | Добавляет spacer-блок |
+| Editor/Preview | Переключение режима просмотра |
 
-- **Таблицы**: чистый `<table>` без заголовка "ТАБЛИЦА · Название"
-- **Спейсеры**: пустой div с высотой (без текста "Отступ · Npx" и линий)
-- **Полная ширина A4**: padding paper = 0, блоки от края до края
+Dropdown закрывается при клике вне `.builder-dropdown` (через `@HostListener('document:click')`)
+
+## Фото-блок: два режима
+
+Детальная документация: `docs/pages/photo-block-architecture.md`
+
+### Режим «В потоке» (overlay = false)
+- Рендерится внутри `cdkDropList`, участвует в reorder
+- Ширина: `settings.width` (проценты)
+- Изображение: `max-width: 100%`, height auto
+
+### Режим «Поверх» (overlay = true)
+- Рендерится в `.canvas-overlay-layer` с `position: absolute`
+- Позиция X/Y: `settings.overlayLeft`, `settings.overlayTop`
+- Размер: `settings.imageWidth`, `settings.imageHeight` (px)
+- Snap-to-grid (шаг `gridSize`), block edge snap (8px threshold)
+- Boundary clamp: `[padding, paperWidth - blockW - padding]` × `[padding, paperHeight - blockH - padding]`
+- **Сигналы для плавности:** `dragActive/dragLeft/dragTop` — предотвращают Angular CD от перезаписи `[style.left.px]` во время drag
+- **Сигналы для resize:** `resizeActive/resizeWidth/resizeHeight` — предотвращают Angular CD от перезаписи `[style.width.px]` во время corner resize
+- **Auto-clear эффекты:** когда `imageWidth()` (из settings) догоняет `resizeWidth()` (локальный), эффект очищает override — без визуального flash
+- **Быстрый re-drag:** `startLeft = dragActive() ? dragLeft() : overlayLeft()` — использует последнюю визуальную позицию, не устаревшую из settings
+
+### Настройки позиционирования
+
+| Поле | Тип | Default | localStorage key |
+|------|-----|---------|-----------------|
+| `snapEnabled` | `boolean` | `true` | `pi-builder-snap-settings` |
+| `gridSize` | `number` | `20` (5–50) | `pi-builder-snap-settings` |
+| `boundaryPadding` | `number` | `8` (≥ 0) | `pi-builder-snap-settings` |
+
+Читаются через `loadSnapSettings()` (try/catch, валидация), сохраняются через `saveSnapSettings()`.
+
+## Добавление блока
+
+### `onAddBlock(payload: AddBlockPayload)`
+
+Payload варианты (см. `builder.types.ts`):
+- `{ source: 'block-type', type: 'header' | 'text' | 'image' | 'signature' | 'spacer' }`
+- `{ source: 'text-block', textBlock: TextBlock }`
+- `{ source: 'table-template', tableTemplate: TableTemplate }`
+- `{ source: 'data-binding', dataSource, field }`
+
+Процесс:
+1. `buildBlockFromPayload()` — создаёт `TemplateBlock` с `tempId: crypto.randomUUID()`
+2. Оптимистичная вставка в `blocks` (`splice` на insertIndex)
+3. `blocksSvc.add()` → POST на сервер
+4. При успехе: swap `tempId` на серверный `_id`
+5. При ошибке: удаление из массива + тост
+6. Если вставка в середину списка → `blocksSvc.reorder()` для фиксации позиции
+
+### `insertNewBlock(newBlock: TemplateBlock)`
+
+Используется для фото-блоков (с предзаполненным `settings`).
+
+## Удаление блока
+
+- `onDeleteBlock(id)` → `AlertDialogComponent` с подтверждением → `blocksSvc.remove()`
+- `onDeleteSelected()` → массовое удаление через `forkJoin` + `reorder` после
+
+## Resize хэндлы (flow-блоки)
+
+- **Левый хендл** — изменяет `marginLeft`, ширина подстраивается
+- **Правый хендл** — изменяет `width` (в процентах от `containerWidth`)
+- `opacity: 0.25` (всегда видимы), `0.6` при hover, `1` при захвате (gold цвет)
+- Значения хранятся в `block.settings.width` и `block.settings.marginLeft`
 
 ## TZ reference
 
 | TZ | Что сделано |
 |----|------------|
-| TZ-86 | Полная реализация (Phase D.1 + D.2 + D.3) |
+| TZ-86 | Phase D.1 + D.2 + D.3: полная реализация 3-pane редактора |
+| TZ-87 | Создание шаблона (org + docType) |
+| TZ-104.6+ | Multi-column блоки |
+| TZ-104.7 | Column grid, preamble |
+| TZ-170 | UX-полировка, закрытие dropdown |
+| TZ-211 | View mode toggle, блокировка полосы прокрутки, фото-блок |
+| TZ-211 (overlay) | Overlay-режим фото: drag, resize, snap-to-grid, boundary clamp, corner handle |
 | 2026-07-24 | Template properties panel, block resize, margins, print styles |
+| 2026-07-25 | **Overlay bugfixes:** кеширование hostEl при drag, сигналы resizeActive/resizeWidth/resizeHeight вместо direct DOM, scrollHeight для нижней границы, кешированный paper ref в snapToBlockEdges, сигналы dragActive/dragLeft/dragTop для drag-позиции, авто-очистка override при обновлении settings |
+
+## Известные ограничения
+
+1. **Индикатор snap** — только смена цвета outline, без визуальных линий-направляющих
+2. **Нет snap по центру блоков** — только по краям
+3. **Дебаунс 1500ms** — фото визуально остаётся в новом размере, но на сервере изменения применяются через 1.5с + сеть
+4. **Fallback imageWidth** — `overlayDefaultWidth: 300` в шаблоне, но `imageWidth() ?? 200` в `onCornerResizeStart` (несоответствие)
+5. **Без ImageHeight по умолчанию** — высота overlayDefaultHeight = 200, может не соответствовать реальному соотношению сторон фото
+
+## Файлы
+
+| Файл | Размер | Назначение |
+|------|--------|-----------|
+| `builder.page.ts` | ~1300 строк | Оркестратор, хендлеры, auto-save, localStorage |
+| `builder-canvas.component.ts` | ~400 строк | Холст, разделение flow/overlay, inputs/outputs |
+| `builder-inspector.component.ts` | ~600 строк | 3 режима инспектора |
+| `block-renderer.component.ts` | ~800 строк | Рендер блока, drag, resize, snap, сигналы |
+| `builder.types.ts` | ~30 строк | Типы AddBlockPayload |
+| `template-setup-dialog.component.ts` | ~80 строк | Диалог создания/дублирования |
 
 ---
 
-_Создано: 2026-07-19. Обновлено: 2026-07-24._
+_Создано: 2026-07-19. Последнее обновление: 2026-07-25. Охватывает: TZ-86, TZ-87, TZ-104, TZ-170, TZ-211, overlay bugfixes._

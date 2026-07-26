@@ -32,8 +32,7 @@
     "check:start": "Только pre-flight проверки. Не запускает ничего.",
     "stop:start": "Останавливает backend + frontend.",
     "reset:start": "Полный сброс: docker down -v + rm node_modules.",
-    "start:no-browser": "Запуск без авто-открытия браузера.",
-    "mcp:start": "Запустить codebase-memory MCP server напрямую (stdio transport). Для обычного использования MCP читается из .mcp.json автоматически."
+    "start:no-browser": "Запуск без авто-открытия браузера."
   },
   "devDependencies": {
     "husky": "^9.1.7",

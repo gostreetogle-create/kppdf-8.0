@@ -100,9 +100,9 @@
 | Frontend shared/theme | `frontend/src/app/shared/theme/` | Live OKLCH theme editor |
 | Frontend styles | `frontend/src/styles.css` | OKLCH palette, hairline utils, spacing tokens, dark mode |
 | Dev tooling | `start.mjs`, `docker-compose.yml` | Cross-platform starter, Mongo replica set |
-| MCP integration | `.mcp.json`, `vendor/codebase-memory-mcp/`, `package.json` (`mcp:start`) | Project-local MCP server (codebase-memory v0.9.0) via stdio transport |
 | Docs | `docs/`, `STACK.md`, `STATUS.md`, `progress.md` | Architecture, data model, design rationale |
-| OrchestratorKit | `OrchestratorKit/` | TZ workflow automation, templates, archives |
+| OrchestratorKit | `OrchestratorKit/` | TZ workflow automation, templates, archives (AGENTS.md, TZF-00, verify-status.sh, auto-archive.sh, STATUS.md) |
+| Data-model consolidation | `tasks/TZ-199..205.md`, `tasks/_archive/2026-07/`, `OrchestratorKit/STATUS.md`, `OrchestratorKit/TZ-199..205.txt` | Successor-TZ batch grounded в `docs/data-model-audit.md` (2026-07-25). 9 split-TZ covering entity-pair consolidation, audit-log unification и security prerequisite. Будущий scope (отдельные TZ-кандидаты): §1.2 #16 (Client/Counterparty legalForm normalization), §4.6 (FSM `EntityStatus`→`statusId:ObjectId`), §1.1 #8 (Operation/RoutingStep merge), §3.2 (ProductPricing + WarehouseAccess Zones). Marker files (`TZ-199..205.txt`) — paired companion требуется per `AGENTS.md §3 ✅ ТРОГАЮ`. |
 
 ## 4. Открытые вопросы / отложенные задачи
 
@@ -212,58 +212,54 @@ rg -i '(embedding|vector.?search|cosine|ANN)' backend/src frontend/src
 
 ---
 
-## MCP Integration (TZ-92)
+## Documentation Structure
 
-**Files:** `.mcp.json` (project root) + `vendor/codebase-memory-mcp/` + `package.json` (`mcp:start` script).
+Проект использует иерархическую документацию. При редактировании любой части — начинай с соответствующего файла.
 
-### Why MCP
+### Корневые файлы
 
-Семантический поиск по коду для AI-агентов (Claude Code / Cursor / Cline / Continue) — symbol extraction + dependency navigation between 47 controllers (TZ-91B.2 patched) + 4 NestJS Document Constructor modules (TZ-86) + Paper & Ink UI primitives. Полезно для reviewers и для navigation по M:N связям / nested populate chains в Mongoose schemas.
+| Файл | Назначение | Когда читать |
+|------|-----------|--------------|
+| `ARCHITECTURE.md` | Полная архитектура: схема, конвенции, зоны ответственности, все TZ | Всегда, перед любой работой |
+| `STACK.md` | Технологический стек: фронтенд, бэкенд, инфраструктура | При работе с зависимостями, конфигурацией |
+| `STATUS.md` | Текущий статус проекта: завершённые TZ, метрики, бэклог | При оценке объёма, планировании |
+| `progress.md` | Хронологический лог выполненной работы | При поиске что было сделано и когда |
 
-### Architecture pattern
+### Документация (`docs/`)
 
-- **Vendor pattern (project-local):** бинарь (262 MB) живёт в `vendor/codebase-memory-mcp/bin/`, **gitignored** (clone-size management). На свежем клоне нужно re-extract из исходного ZIP (см. `vendor/codebase-memory-mcp/README.md` § Установка на свежем клоне).
-- **MCP config:** `.mcp.json` (project-local, RFC 8259-compliant without `_comment`). Single MCP entry: `codebase-memory` → `vendor/codebase-memory-mcp/bin/codebase-memory-mcp.exe` (forward-slash path, Node-native, works on Windows).
-- **No new npm deps:** MCP — это external executable, не library. `start.mjs` и frontend builds НЕ зависят от MCP.
-- **Tracked files:** `vendor/codebase-memory-mcp/README.md` (install/run/troubleshooting in Russian, ~150 строк), `vendor/codebase-memory-mcp/doc/LICENSE` (MIT), `vendor/codebase-memory-mcp/doc/THIRD_PARTY_NOTICES.md` (Tree-sitter + 159 parsers), `vendor/codebase-memory-mcp/bin/install.ps1` (⚠️ ⚠️ ⚠️ НЕ ЗАПУСКАТЬ — alien installer, alien downloader, silently overwrites vendored binary).
-- **Gitignored:** `vendor/codebase-memory-mcp/bin/*.exe` (262 MB), `vendor/codebase-memory-mcp/index/` (runtime index, can grow >1 GB), `vendor/codebase-memory-mcp/cache/` (runtime cache), `.codebase-memory/` (alternate runtime artifact dir).
+| Файл/директория | Назначение |
+|-----------------|-----------|
+| `docs/pages/*.page.md` | **Главная документация для работы.** Каждый файл = одна страница frontend. Route, API, сервисы, signals, computed, TZ-ссылки. |
+| `docs/pages/_template.md` | Шаблон для создания новой page doc |
+| `docs/pages/README.md` | Индекс всех page docs |
+| `docs/DEVELOPMENT-PATTERNS.md` | Паттерны реализации: SilentResult, CRUD-страница, форма-диалог, утилиты, бэкенд-модуль |
+| `docs/data-model.md` | Модель данных: все сущности, связи, индексы |
+| `docs/data-model-audit.md` | Аудит модели данных: дубликаты, проблемы, рекомендации |
+| `docs/paper-and-ink.md` | Дизайн-система: палитра OKLCH, hairline, focus-ring, WCAG |
+| `docs/add-new-page.md` | Пошаговый tutorial: добавление новой страницы |
+| `docs/design-spec.md` | Дизайн-спецификация |
+| `docs/security-audit.md` | Аудит безопасности |
 
-### start.mjs deliberate non-spawn
+### Задачи (`tasks/`)
 
-`start.mjs` **не** поднимает MCP автоматически. Это сознательное решение:
-- MCP-сервер индексирует 285+ файлов backend+frontend → добавляет 30-60 s к startup time.
-- AI-агенты типа Claude Code / Cursor поднимают MCP сами при открытии сессии (читают `.mcp.json` автоматически).
-- Manual override: `pnpm run mcp:start` (standalone stdio-server для proxy-тестирования).
+| Путь | Назначение |
+|------|-----------|
+| `tasks/TZ-*.md` | Активные задачи (текущий бэклог) |
+| `tasks/_archive/` | Архив завершённых задач |
 
-### pnpm script
+### Правило
 
-`package.json`:
-```json
-"mcp:start": "vendor/codebase-memory-mcp/bin/codebase-memory-mcp.exe"
-```
+**При редактировании страницы:**
+1. Прочитай `docs/pages/<name>.page.md` — это полный контракт страницы
+2. Прочитай `docs/DEVELOPMENT-PATTERNS.md` — паттерны реализации
+3. Вноси изменения
+4. Обнови `.page.md` если изменился API/route/диалоги
 
-**Not in package.json:** `mcp:cli` (CLI passthrough) — отвергнут по code-reviewer verdict (dead-code narrative; CLI tools не документированы в binary v0.9.0).
-
-### Transport + UI port
-
-- **Transport:** stdio (JSON-RPC). `.mcp.json` НЕ указывает `args` или `env` — бинарь работает в default stdio mode.
-- **HTTP UI port (verified 2026-07-11):** `:9749`. Бинарь авто-стартует HTTP UI server при любом запуске (`./codebase-memory-mcp.exe` или `./codebase-memory-mcp.exe --ui`). Открой `http://127.0.0.1:9749` после `pnpm run mcp:start` (нужно держать окно открытым).
-- **Override port:** НЕ предусмотрен в binary v0.9.0. Если порт занят — user responsibility (close other process on :9749).
-
-### Platform support (TZ-92b)
-
-| Платформа | Статус |
-|---|---|
-| Windows AMD64 | ✅ `codebase-memory-mcp-ui-windows-amd64.zip` (текущий vendored bundle) |
-| Windows ARM64 | ❌ Не выпущен DeusData |
-| Linux / macOS | ❌ Source build из DeusData repo — future TZ (TZ-92b-ux) |
-
-### Cross-references
-
-- **TZ-91B.2:** MCP symbol navigation полезен для review `@Roles('admin','manager','user')` tuples in 47 patched controllers.
-- **TZ-86 Document Constructor:** MCP может assist с `dataBinding` subdoc editing и `{{placeholder}}` substitution format checks.
-- **TZ-83 ProductModule hierarchy:** Mongoose populate chains между Product ↔ WorkType ↔ Module — MCP symbol graph помогает с traverse.
-- **TZ-92b:** http UI port documentation refinement + Linux/macOS source-build plan (deliverable of this TZ).
+**При добавлении новой страницы:**
+1. `docs/add-new-page.md` — пошаговый tutorial
+2. `docs/pages/_template.md` — шаблон документации
+3. Создай `docs/pages/<name>.page.md`
+4. Обнови `docs/pages/README.md` (индекс)
 
 ---
 
@@ -832,3 +828,5 @@ agent fallback. See `OrchestratorKit/_archive/2026-07/TZ-82.done.txt`
 (when implemented) for runbook.
 
 **Lock-файл:** `OrchestratorKit/.mimocode/locks/TZ-82-smoke-test.lock` (placeholder, no code changes).
+
+> **Security audit reference (TZ-205, 2026-07-25):** brute-force protection on /auth/login, bcrypt-hashed User.passwordHash, refresh-token version revocation, and /auth/me projection hardening are documented in [docs/security-audit.md](docs/security-audit.md). TZ-202.B unblocked from this prerequisite; remaining gate is PO + senior security engineer cosign per AGENTS.md §7.5.

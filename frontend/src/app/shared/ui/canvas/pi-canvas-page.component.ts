@@ -42,6 +42,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         border: 2px solid var(--color-ink);
         padding: 0;
         min-height: calc(1.414 * min(100vw - 64px, 720px));
+        height: 100%;
         position: relative;
         display: flex;
         flex-direction: column;

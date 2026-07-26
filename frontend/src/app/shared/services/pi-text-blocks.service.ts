@@ -22,6 +22,7 @@ export interface TextBlockColumn {
   id: string;
   content: string;
   width: number;
+  fontSize?: number;
 }
 
 export interface TextBlock {

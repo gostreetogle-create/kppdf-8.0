@@ -525,6 +525,9 @@ export class PiRichTextEditorComponent implements AfterViewInit, OnDestroy {
   setTextAlign(align: 'left' | 'center' | 'right'): void {
     this.editor?.chain().focus().setTextAlign(align).run();
   }
+  selectAll(): void {
+    this.editor?.chain().focus().selectAll().run();
+  }
 
   private updateActiveStates(): void {
     const ed = this.editor;

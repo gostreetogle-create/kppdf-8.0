@@ -46,7 +46,7 @@ import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
       <div
         cdkDropList
         [id]="CANVAS_DROPLIST_ID"
-        [cdkDropListData]="blocks()"
+        [cdkDropListData]="flowBlocks()"
         class="canvas-dropzone"
         [class.is-empty]="blocks().length === 0"
         role="list"
@@ -63,22 +63,7 @@ import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
             </p>
           </div>
         } @else {
-          @for (block of blocks(); track blockKey(block)) {
-            <!-- Regular blocks (in flow) -->
-            @if (!isOverlayBlock(block)) {
-              <app-block-renderer
-                [block]="block"
-                [selected]="blockKey(block) === selectedId()"
-                [multiSelected]="selectedIds().has(blockKey(block))"
-                (select)="onSelect($event)"
-                (multiSelect)="onMultiSelect($event)"
-                (widthChange)="onBlockWidthChange(block, $event)"
-                (deleteRequest)="deleteRequest.emit($event)"
-              />
-            }
-          }
-          <!-- Overlay blocks (absolute positioned, rendered after flow blocks) -->
-          @for (block of overlayBlocks(); track blockKey(block)) {
+          @for (block of flowBlocks(); track blockKey(block)) {
             <app-block-renderer
               [block]="block"
               [selected]="blockKey(block) === selectedId()"
@@ -89,6 +74,26 @@ import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
               (deleteRequest)="deleteRequest.emit($event)"
             />
           }
+        }
+      </div>
+
+      <!-- Overlay blocks layer (outside cdkDropList for free absolute positioning) -->
+      <div class="canvas-overlay-layer">
+        @for (block of overlayBlocks(); track blockKey(block)) {
+          <app-block-renderer
+            [block]="block"
+            [selected]="blockKey(block) === selectedId()"
+            [multiSelected]="selectedIds().has(blockKey(block))"
+            (select)="onSelect($event)"
+            (multiSelect)="onMultiSelect($event)"
+            (widthChange)="onBlockWidthChange(block, $event)"
+            (deleteRequest)="deleteRequest.emit($event)"
+            (overlayMove)="onOverlayMove($event)"
+            (overlayResize)="onOverlayResize($event)"
+            [snapEnabled]="snapEnabled()"
+            [gridSize]="gridSize()"
+            [boundaryPadding]="boundaryPadding()"
+          />
         }
       </div>
 
@@ -122,11 +127,12 @@ import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
         z-index: 0;
         pointer-events: none;
         overflow: hidden;
+        display: flex;
+        flex-direction: column;
       }
 
       .canvas-bg {
-        position: absolute;
-        inset: 0;
+        flex: 1;
         background-size: contain;
         background-position: center;
         background-repeat: no-repeat;
@@ -225,6 +231,18 @@ import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
       .cdk-drop-list-dragging .canvas-dropzone:not(.is-empty) {
         background: var(--color-paper-3);
       }
+
+      /* ═══ Overlay Layer — absolute positioned blocks rendered above flow ═══ */
+      .canvas-overlay-layer {
+        position: absolute;
+        inset: 0;
+        z-index: 20;
+        pointer-events: none;
+      }
+
+      .canvas-overlay-layer > app-block-renderer {
+        pointer-events: auto;
+      }
     `,
   ],
 })
@@ -253,9 +271,19 @@ export class BuilderCanvasComponent {
   readonly reorder = output<TemplateBlock[]>();
   readonly dropAdd = output<{ payload: AddBlockPayload; insertIndex: number }>();
   readonly blockWidthChange = output<{ block: TemplateBlock; width: number; marginLeft: number; imageWidth?: number; imageHeight?: number }>();
+  /** Overlay move (X/Y position change via drag). */
+  readonly overlayMove = output<{ block: TemplateBlock; overlayLeft: number; overlayTop: number }>();
+  /** Overlay resize (corner handle proportional resize). */
+  readonly overlayResize = output<{ block: TemplateBlock; imageWidth: number; imageHeight: number }>();
   readonly canvasClick = output<void>();
   /** TZ-211: Emitted when user clicks delete button on a block. */
   readonly deleteRequest = output<string>();
+  /** Enable snap-to-grid for overlay blocks. */
+  readonly snapEnabled = input<boolean>(true);
+  /** Grid size for snapping (px). */
+  readonly gridSize = input<number>(20);
+  /** Padding from paper edges that overlay blocks cannot cross (px). */
+  readonly boundaryPadding = input<number>(0);
 
   protected readonly CANVAS_DROPLIST_ID: string = CANVAS_DROPLIST_ID;
   protected readonly blockKey = blockKey;
@@ -272,6 +300,11 @@ export class BuilderCanvasComponent {
     this.blocks().filter((b) => this.isOverlayBlock(b)),
   );
 
+  /** Get only flow blocks (non-overlay) for the drop list. */
+  protected readonly flowBlocks = computed(() =>
+    this.blocks().filter((b) => !this.isOverlayBlock(b)),
+  );
+
   protected onSelect(block: TemplateBlock): void {
     this.select.emit(block);
   }
@@ -282,9 +315,17 @@ export class BuilderCanvasComponent {
 
   protected onBlockWidthChange(
     block: TemplateBlock,
-    event: { width: number; marginLeft: number },
+    event: { width: number; marginLeft: number; imageWidth?: number; imageHeight?: number },
   ): void {
-    this.blockWidthChange.emit({ block, width: event.width, marginLeft: event.marginLeft });
+    this.blockWidthChange.emit({ block, width: event.width, marginLeft: event.marginLeft, imageWidth: event.imageWidth, imageHeight: event.imageHeight });
+  }
+
+  protected onOverlayMove(event: { block: TemplateBlock; overlayLeft: number; overlayTop: number }): void {
+    this.overlayMove.emit(event);
+  }
+
+  protected onOverlayResize(event: { block: TemplateBlock; imageWidth: number; imageHeight: number }): void {
+    this.overlayResize.emit(event);
   }
 
   protected onCanvasClick(event: Event): void {

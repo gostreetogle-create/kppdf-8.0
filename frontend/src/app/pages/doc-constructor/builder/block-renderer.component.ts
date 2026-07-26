@@ -77,186 +77,220 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CdkDrag, LucideAngularModule],
   template: `
-    <div
-      cdkDrag
-      cdkDragLockAxis="y"
-      class="group block-renderer"
-      [class.is-selected]="selected()"
-      [class.is-multi-selected]="multiSelected()"
-      [class.is-inactive]="!block().isActive"
-      [class.is-overlay]="isOverlay()"
-      [attr.data-block-type]="block().type"
-      [attr.aria-selected]="selected() || multiSelected()"
-      [attr.role]="'button'"
-      [attr.tabindex]="'0'"
-      [style.width.%]="isOverlay() ? null : currentWidth()"
-      [style.margin-left.%]="isOverlay() ? null : currentMarginLeft()"
-      [style.left.px]="isOverlay() ? overlayLeft() : null"
-      [style.top.px]="isOverlay() ? overlayTop() : null"
-      (click)="onSelect($event)"
-      (keydown.enter)="onSelect($event)"
-      (keydown.space)="onSelect($event)"
-      (keydown.arrowUp)="onArrowKey($event, 'up')"
-      (keydown.arrowDown)="onArrowKey($event, 'down')"
-    >
-      <!-- Resize handles (visible when selected) — left & right side bars -->
-      @if (selected()) {
-        <div
-          class="block-renderer__resize-side block-renderer__resize-side--left"
-          (mousedown)="onResizeStart($event, 'left')"
-          (click)="$event.stopPropagation()"
-          title="Перетащите вправо для отступа слева"
-        ></div>
-        <div
-          class="block-renderer__resize-side block-renderer__resize-side--right"
-          (mousedown)="onResizeStart($event, 'right')"
-          (click)="$event.stopPropagation()"
-          title="Перетащите влево для отступа справа"
-        ></div>
-      }
-      <!-- Multi-select checkbox (visible on hover or when multi-selected) -->
+    <!-- ═══ OVERLAY MODE: no cdkDrag, free absolute positioning ═══ -->
+    @if (isOverlay()) {
       <div
-        class="block-renderer__checkbox"
-        [class.is-visible]="multiSelected()"
-        (click)="onCheckboxClick($event)"
-        (keydown.enter)="onCheckboxClick($event)"
-        (keydown.space)="onCheckboxClick($event)"
-        (mousedown)="$event.stopPropagation()"
-        role="checkbox"
-        [attr.aria-checked]="multiSelected()"
-        [attr.aria-label]="multiSelected() ? 'Убрать из выделения' : 'Выбрать блок'"
-        [attr.tabindex]="multiSelected() ? '0' : '-1'"
+        class="group block-renderer block-renderer--overlay"
+        [class.is-selected]="selected()"
+        [class.is-inactive]="!block().isActive"
+        [attr.data-block-type]="block().type"
+        [attr.aria-selected]="selected()"
+        [attr.role]="'button'"
+        [attr.tabindex]="'0'"
+        [style.left.px]="dragActive() ? dragLeft() : overlayLeft()"
+        [style.top.px]="dragActive() ? dragTop() : overlayTop()"
+        [style.background-color]="blockBgColor() || null"
+        (click)="onSelect($event)"
+        (mousedown)="onOverlayDragStart($event)"
+        (keydown.enter)="onSelect($event)"
+        (keydown.space)="onSelect($event)"
+        (keydown.arrowUp)="onArrowKey($event, 'up')"
+        (keydown.arrowDown)="onArrowKey($event, 'down')"
       >
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
+        <!-- Delete button -->
+        <div
+          class="block-renderer__delete"
+          (click)="onDeleteClick($event)"
+          (keydown.enter)="onDeleteClick($event)"
+          (mousedown)="$event.stopPropagation()"
+          title="Удалить блок"
+          role="button"
+          tabindex="-1"
         >
-          @if (multiSelected()) {
-            <rect
-              x="3"
-              y="3"
-              width="18"
-              height="18"
-              rx="2"
-              fill="var(--color-gold)"
-              stroke="var(--color-gold)"
-            />
-            <polyline points="9 12 11 14 15 10" stroke="white" stroke-width="2.5" />
-          } @else {
-            <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" />
-          }
-        </svg>
-      </div>
-      <!-- TZ-211: Delete button (visible on hover) -->
-      <div
-        class="block-renderer__delete"
-        (click)="onDeleteClick($event)"
-        (keydown.enter)="onDeleteClick($event)"
-        (mousedown)="$event.stopPropagation()"
-        title="Удалить блок"
-        role="button"
-        tabindex="-1"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-        </svg>
-      </div>
-      <div class="block-renderer__body">
-        <!-- TZ-211: Drag handle (grip dots) — visual indicator only, entire block is draggable -->
-        <div class="block-renderer__drag-handle" title="Перетащите для перемещения">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-            <circle cx="8" cy="6" r="2"/><circle cx="16" cy="6" r="2"/>
-            <circle cx="8" cy="12" r="2"/><circle cx="16" cy="12" r="2"/>
-            <circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
           </svg>
         </div>
-        @if (block().type === 'table' && tableColumns().length > 0) {
-          <!-- Table block: render actual table with columns and sample rows -->
-          <div class="block-renderer__table-wrap">
-            <table class="block-renderer__table">
-              <thead>
-                <tr>
-                  @for (col of tableColumns(); track col.key) {
-                    <th [style.text-align]="col.align" [style.width]="col.width + 'px'">
-                      {{ col.label }}
-                    </th>
-                  }
-                </tr>
-              </thead>
-              <tbody>
-                @if (tableRows().length > 0) {
-                  @for (row of tableRows(); track $index) {
-                    <tr>
-                      @for (cell of row; track $index; let ci = $index) {
-                        <td [style.text-align]="tableColumns()[ci]?.align ?? 'left'">
-                          {{ formatTableCell(cell, tableColumns()[ci]?.type ?? 'text') }}
-                        </td>
-                      }
-                    </tr>
-                  }
-                } @else {
-                  <tr>
-                    <td [attr.colspan]="tableColumns().length" class="block-renderer__table-empty">
-                      Нет данных
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        } @else if (block().type === 'image' && imageUrl()) {
-          <!-- Image block: render uploaded image with proportional sizing -->
-          <div class="block-renderer__image-wrap">
+
+        @if (block().type === 'image' && imageUrl()) {
+          <div class="block-renderer__image-wrap block-renderer__image-wrap--overlay">
             <img
               [src]="imageUrl()"
               [alt]="block().title || 'Изображение'"
-              class="block-renderer__image"
-              [style.width]="imageWidth() ? imageWidth() + 'px' : '100%'"
-              [style.height]="imageHeight() ? imageHeight() + 'px' : 'auto'"
-              loading="lazy"
+              class="block-renderer__image block-renderer__image--overlay"
+              draggable="false"
+              [style.width.px]="resizeActive() ? resizeWidth() : (imageWidth() ?? overlayDefaultWidth)"
+              [style.height.px]="resizeActive() ? resizeHeight() : (imageHeight() ?? overlayDefaultHeight)"
             />
-            @if (isOverlay()) {
-              <div class="block-renderer__image-overlay-badge">Поверх</div>
-            }
-          </div>
-        } @else if (block().type === 'spacer') {
-          <!-- Spacer block: empty space -->
-          <div class="block-renderer__spacer" [style.height.px]="block().height ?? 40"></div>
-        } @else if (hasColumns()) {
-          <!-- Multi-column text block -->
-          @if (block().content) {
-            <div class="block-renderer__content block-renderer__content--preamble">
-              {{ renderedContent() }}
-            </div>
-          }
-          <div
-            class="block-renderer__columns"
-            [style.grid-template-columns]="columnsGridTemplate()"
-          >
-            @for (col of block().columns; track col.id) {
-              <div class="block-renderer__column" [innerHTML]="byPassHtml(col.content)"></div>
+            <!-- Corner resize handle (proportional) -->
+            @if (selected()) {
+              <div
+                class="block-renderer__corner-resize"
+                (mousedown)="onCornerResizeStart($event)"
+                (click)="$event.stopPropagation()"
+                title="Перетащите для пропорционального изменения размера"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M12 0v12H0" stroke="currentColor" stroke-width="2" fill="var(--color-paper)"/>
+                </svg>
+              </div>
             }
           </div>
         } @else {
-          <!-- Default text rendering -->
-          <div class="block-renderer__header">
-            <span class="block-renderer__type">{{ typeLabel() }}</span>
-            @if (bindingBadge()) {
-              <span class="block-renderer__binding" [title]="bindingBadgeTooltip()">
-                {{ bindingBadge() }}
-              </span>
-            }
-          </div>
-          <div class="block-renderer__content">
-            {{ renderedContent() }}
+          <!-- Non-image overlay block fallback -->
+          <div class="block-renderer__body">
+            <div class="block-renderer__header">
+              <span class="block-renderer__type">{{ typeLabel() }}</span>
+            </div>
+            <div class="block-renderer__content" [innerHTML]="byPassHtml(renderedContent())"></div>
           </div>
         }
       </div>
-    </div>
+    } @else {
+      <!-- ═══ FLOW MODE: with cdkDrag ═══ -->
+      <div
+        cdkDrag
+        cdkDragLockAxis="y"
+        class="group block-renderer"
+        [class.is-selected]="selected()"
+        [class.is-multi-selected]="multiSelected()"
+        [class.is-inactive]="!block().isActive"
+        [attr.data-block-type]="block().type"
+        [attr.aria-selected]="selected() || multiSelected()"
+        [attr.role]="'button'"
+        [attr.tabindex]="'0'"
+        [style.width.%]="currentWidth()"
+        [style.margin-left.%]="currentMarginLeft()"
+        [style.background-color]="blockBgColor() || null"
+        (click)="onSelect($event)"
+        (keydown.enter)="onSelect($event)"
+        (keydown.space)="onSelect($event)"
+        (keydown.arrowUp)="onArrowKey($event, 'up')"
+        (keydown.arrowDown)="onArrowKey($event, 'down')"
+      >
+        <!-- Resize handles (visible when selected) — left & right side bars -->
+        @if (selected()) {
+          <div
+            class="block-renderer__resize-side block-renderer__resize-side--left"
+            (mousedown)="onResizeStart($event, 'left')"
+            (click)="$event.stopPropagation()"
+            title="Перетащите вправо для отступа слева"
+          ></div>
+          <div
+            class="block-renderer__resize-side block-renderer__resize-side--right"
+            (mousedown)="onResizeStart($event, 'right')"
+            (click)="$event.stopPropagation()"
+            title="Перетащите влево для отступа справа"
+          ></div>
+        }
+        <!-- Multi-select checkbox -->
+        <div
+          class="block-renderer__checkbox"
+          [class.is-visible]="multiSelected()"
+          (click)="onCheckboxClick($event)"
+          (keydown.enter)="onCheckboxClick($event)"
+          (keydown.space)="onCheckboxClick($event)"
+          (mousedown)="$event.stopPropagation()"
+          role="checkbox"
+          [attr.aria-checked]="multiSelected()"
+          [attr.aria-label]="multiSelected() ? 'Убрать из выделения' : 'Выбрать блок'"
+          [attr.tabindex]="multiSelected() ? '0' : '-1'"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            @if (multiSelected()) {
+              <rect x="3" y="3" width="18" height="18" rx="2" fill="var(--color-gold)" stroke="var(--color-gold)" />
+              <polyline points="9 12 11 14 15 10" stroke="white" stroke-width="2.5" />
+            } @else {
+              <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" />
+            }
+          </svg>
+        </div>
+        <!-- Delete button -->
+        <div
+          class="block-renderer__delete"
+          (click)="onDeleteClick($event)"
+          (keydown.enter)="onDeleteClick($event)"
+          (mousedown)="$event.stopPropagation()"
+          title="Удалить блок"
+          role="button"
+          tabindex="-1"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+        </div>
+        <div class="block-renderer__body">
+          <!-- Drag handle -->
+          <div class="block-renderer__drag-handle" title="Перетащите для перемещения">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="8" cy="6" r="2"/><circle cx="16" cy="6" r="2"/>
+              <circle cx="8" cy="12" r="2"/><circle cx="16" cy="12" r="2"/>
+              <circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/>
+            </svg>
+          </div>
+          @if (block().type === 'table' && tableColumns().length > 0) {
+            <div class="block-renderer__table-wrap">
+              <table class="block-renderer__table">
+                <thead>
+                  <tr>
+                    @for (col of tableColumns(); track col.key) {
+                      <th [style.text-align]="col.align" [style.width]="col.width + 'px'">{{ col.label }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @if (tableRows().length > 0) {
+                    @for (row of tableRows(); track $index) {
+                      <tr>
+                        @for (cell of row; track $index; let ci = $index) {
+                          <td [style.text-align]="tableColumns()[ci]?.align ?? 'left'">{{ formatTableCell(cell, tableColumns()[ci]?.type ?? 'text') }}</td>
+                        }
+                      </tr>
+                    }
+                  } @else {
+                    <tr>
+                      <td [attr.colspan]="tableColumns().length" class="block-renderer__table-empty">Нет данных</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else if (block().type === 'image' && imageUrl()) {
+            <div class="block-renderer__image-wrap">
+              <img [src]="imageUrl()" [alt]="block().title || 'Изображение'" class="block-renderer__image"
+                [style.width]="imageWidth() ? imageWidth() + 'px' : '100%'"
+                [style.height]="imageHeight() ? imageHeight() + 'px' : 'auto'" loading="lazy" />
+            </div>
+          } @else if (block().type === 'spacer') {
+            <div class="block-renderer__spacer" [style.height.px]="block().height ?? 40"></div>
+          } @else if (hasColumns()) {
+            @if (block().content) {
+              <div class="block-renderer__content block-renderer__content--preamble">{{ renderedContent() }}</div>
+            }
+            <div class="block-renderer__columns" [style.grid-template-columns]="columnsGridTemplate()">
+              @for (col of block().columns; track col.id) {
+                <div class="block-renderer__column" [style.font-size.px]="col.fontSize ?? 14" [innerHTML]="byPassHtml(col.content)"></div>
+              }
+            </div>
+          } @else {
+            <div class="block-renderer__header">
+              <span class="block-renderer__type">{{ typeLabel() }}</span>
+              @if (bindingBadge()) {
+                <span class="block-renderer__binding" [title]="bindingBadgeTooltip()">{{ bindingBadge() }}</span>
+              }
+            </div>
+            <div class="block-renderer__content" [innerHTML]="byPassHtml(renderedContent())"></div>
+          }
+        </div>
+      </div>
+    }
   `,
   styles: [
     `
@@ -270,7 +304,7 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
         gap: 8px;
         align-items: flex-start;
         padding: 10px 12px;
-        background: var(--color-paper);
+        background: transparent;
         border: 1px solid var(--color-rule);
         border-radius: 2px;
         cursor: pointer;
@@ -280,22 +314,22 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
           box-shadow 120ms ease;
       }
 
-      /* TZ-211: Hover — paper-3 background */
+      /* TZ-211: Hover — subtle highlight */
       .block-renderer:hover {
-        background: var(--color-paper-3);
+        background: rgba(128, 128, 128, 0.05);
       }
 
       /* TZ-211: Selected — gold border + shadow */
       .block-renderer.is-selected {
         border-color: var(--color-gold);
-        background: var(--color-paper);
+        background: rgba(255, 255, 255, 0.5);
         box-shadow: 0 0 0 1px var(--color-gold), 0 2px 8px -2px rgba(0, 0, 0, 0.1);
       }
 
       /* TZ-211: Multi-selected — gold-soft background */
       .block-renderer.is-multi-selected {
         border-color: var(--color-gold);
-        background: var(--color-gold-soft);
+        background: rgba(255, 255, 255, 0.7);
       }
 
       /* Multi-select checkbox */
@@ -491,7 +525,7 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
         color: var(--color-gold);
       }
 
-      /* ═══ Image block ═══ */
+      /* ═══ Image block (flow mode) ═══ */
       .block-renderer__image-wrap {
         position: relative;
         display: inline-block;
@@ -503,30 +537,117 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
         display: block;
         max-width: 100%;
         height: auto;
-        border: 1px solid var(--color-rule);
         border-radius: 2px;
         object-fit: contain;
       }
 
-      .block-renderer__image-overlay-badge {
-        position: absolute;
-        top: 4px;
-        right: 4px;
-        background: var(--color-gold);
-        color: var(--color-paper);
-        font-size: 9px;
-        font-weight: 600;
-        padding: 2px 6px;
-        border-radius: 2px;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-
-      /* Overlay mode — absolute positioning, floats above other blocks */
-      .block-renderer.is-overlay {
+      /* ═══ Overlay mode — free absolute positioning ═══ */
+      .block-renderer--overlay {
         position: absolute;
         z-index: 10;
         cursor: move;
+        padding: 0;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+        transition: none;
+        user-select: none;
+        touch-action: none;
+      }
+
+      .block-renderer--overlay:hover,
+      .block-renderer--overlay.is-selected {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+      }
+
+      /* Selection ring for overlay blocks — thin gold outline around image */
+      .block-renderer--overlay.is-selected .block-renderer__image-wrap--overlay {
+        outline: 2px solid var(--color-gold);
+        outline-offset: 2px;
+        border-radius: 2px;
+      }
+
+      .block-renderer__image-wrap--overlay {
+        position: relative;
+        display: inline-block;
+        line-height: 0;
+      }
+
+      .block-renderer__image--overlay {
+        display: block;
+        border: none;
+        border-radius: 0;
+        object-fit: contain;
+      }
+
+      /* Delete button for overlay — always visible on hover/selected */
+      .block-renderer--overlay .block-renderer__delete {
+        top: -10px;
+        right: -10px;
+        width: 22px;
+        height: 22px;
+        background: var(--color-paper);
+        border: 1px solid var(--color-rule);
+        border-radius: 50%;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+        opacity: 0;
+        transition: opacity 150ms ease;
+      }
+
+      .block-renderer--overlay:hover .block-renderer__delete,
+      .block-renderer--overlay.is-selected .block-renderer__delete {
+        opacity: 0.8;
+      }
+
+      .block-renderer--overlay .block-renderer__delete:hover {
+        opacity: 1;
+        color: var(--color-destructive);
+      }
+
+      /* ═══ Corner resize handle for overlay images ═══ */
+      .block-renderer__corner-resize {
+        position: absolute;
+        right: -8px;
+        bottom: -8px;
+        width: 16px;
+        height: 16px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: flex-end;
+        cursor: nwse-resize;
+        z-index: 15;
+        color: var(--color-gold);
+        opacity: 0;
+        transition: opacity 150ms ease;
+      }
+
+      .block-renderer--overlay.is-selected .block-renderer__corner-resize,
+      .block-renderer--overlay:hover .block-renderer__corner-resize {
+        opacity: 1;
+      }
+
+      .block-renderer__corner-resize:hover {
+        color: var(--color-gold);
+        opacity: 1;
+      }
+
+      .block-renderer__corner-resize svg {
+        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+      }
+
+      /* ═══ Snap indicator — when overlay block snaps to grid or block edge ═══ */
+      .block-renderer--overlay.is-snapping .block-renderer__image-wrap--overlay {
+        outline-color: #4fc3f7;
+        outline-width: 2px;
+        outline-style: solid;
+        outline-offset: 2px;
+      }
+
+      /* Subtle snap guide glow */
+      .block-renderer--overlay.is-snapping {
+        filter: drop-shadow(0 0 6px rgba(79, 195, 247, 0.35));
       }
 
       /* Spacer block */
@@ -664,6 +785,16 @@ export class BlockRendererComponent {
   readonly multiSelect = output<TemplateBlock>();
   /** Emitted when the user finishes resizing the block. Carries new width & marginLeft. */
   readonly widthChange = output<{ width: number; marginLeft: number }>();
+  /** Whether snap-to-grid is enabled for overlay blocks. */
+  readonly snapEnabled = input<boolean>(true);
+  /** Grid size in pixels for snapping. */
+  readonly gridSize = input<number>(20);
+  /** Padding from the paper edges that overlay blocks cannot cross (px). */
+  readonly boundaryPadding = input<number>(0);
+  /** Emitted when overlay block is dragged to a new position. */
+  readonly overlayMove = output<{ block: TemplateBlock; overlayLeft: number; overlayTop: number }>();
+  /** Emitted when overlay image is resized proportionally via corner handle. */
+  readonly overlayResize = output<{ block: TemplateBlock; imageWidth: number; imageHeight: number }>();
   /** TZ-211: Emitted when user clicks delete button on block. */
   readonly deleteRequest = output<string>();
 
@@ -687,6 +818,30 @@ export class BlockRendererComponent {
       const ml = typeof settings?.['marginLeft'] === 'number' ? settings['marginLeft'] : 0;
       this.currentWidth.set(Math.max(20, Math.min(100, w)));
       this.currentMarginLeft.set(Math.max(0, Math.min(80, ml)));
+    });
+
+    // Auto-clear local drag override when settings catch up (after API debounce + response)
+    effect(() => {
+      const ol = this.overlayLeft();
+      const dl = this.dragLeft();
+      if (dl > 0 && ol === dl) {
+        this.dragActive.set(false);
+        this.dragLeft.set(0);
+        this.dragTop.set(0);
+      }
+    });
+
+    // Auto-clear local resize override when settings catch up (after API debounce + response)
+    effect(() => {
+      const w = this.imageWidth();
+      const d = this.resizeWidth();
+      // When settings signal (imageWidth) catches up to the displayed value (resizeWidth),
+      // clear the local override. No visual flash since w === d at this point.
+      if (d > 0 && w === d) {
+        this.resizeActive.set(false);
+        this.resizeWidth.set(0);
+        this.resizeHeight.set(0);
+      }
     });
   }
 
@@ -742,6 +897,359 @@ export class BlockRendererComponent {
     document.body.style.userSelect = 'none';
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
+  }
+
+  /**
+   * Start dragging an overlay block — captures start mouse position and block position.
+   * On mousemove: updates overlayLeft/overlayTop relative to the paper container.
+   * On mouseup: emits overlayMove with final position.
+   */
+  protected onOverlayDragStart(event: MouseEvent): void {
+    // Only left mouse button, only on image blocks, only if not clicking delete/resize handles
+    if (event.button !== 0) return;
+    const target = event.target as HTMLElement;
+    if (target.closest('.block-renderer__delete') || target.closest('.block-renderer__corner-resize')) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const startMouseX = event.clientX;
+    const startMouseY = event.clientY;
+    // Use override value if previous drag's settings haven't arrived yet,
+    // otherwise fall back to the stored settings value.
+    const startLeft = this.dragActive() ? this.dragLeft() : this.overlayLeft();
+    const startTop = this.dragActive() ? this.dragTop() : this.overlayTop();
+
+    // Activate local signal override — prevents Angular CD from overwriting position via [style.left.px]
+    this.dragActive.set(true);
+    this.dragLeft.set(startLeft);
+    this.dragTop.set(startTop);
+
+    // Cache DOM refs at drag start — avoid querySelector on every mousemove
+    const hostEl = (event.target as HTMLElement).closest('.block-renderer--overlay') as HTMLElement | null;
+    const paper = document.querySelector('.pi-canvas-page-paper') as HTMLElement | null;
+    const img = hostEl?.querySelector('.block-renderer__image--overlay') as HTMLImageElement | null;
+    const cachedBlockW = img?.offsetWidth ?? this.imageWidth() ?? this.overlayDefaultWidth;
+    const cachedBlockH = img?.offsetHeight ?? this.imageHeight() ?? this.overlayDefaultHeight;
+
+    const cleanup = (): void => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('mouseleave', onLeave);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    const onMove = (e: MouseEvent): void => {
+      // Check if mouse button is still held (escape hatch for browser-out-of-focus)
+      if (e.buttons === 0) {
+        cleanup();
+        return;
+      }
+      e.preventDefault();
+      const deltaX = e.clientX - startMouseX;
+      const deltaY = e.clientY - startMouseY;
+      let newLeft = startLeft + deltaX;
+      let newTop = startTop + deltaY;
+
+      // Clamp to paper boundaries (using cached paper ref + cached block dimensions)
+      if (paper) {
+        const pad = this.boundaryPadding();
+        const maxLeft = Math.max(0, paper.clientWidth - cachedBlockW - pad);
+        const maxTop = Math.max(0, paper.scrollHeight - cachedBlockH - pad);
+        newLeft = Math.max(pad, Math.min(maxLeft, newLeft));
+        newTop = Math.max(pad, Math.min(maxTop, newTop));
+      } else {
+        newLeft = Math.max(0, newLeft);
+        newTop = Math.max(0, newTop);
+      }
+
+      // Apply snapping if enabled
+      if (this.snapEnabled()) {
+        // Snap to grid
+        const gridResult = this.applySnapToGrid(newLeft, newTop, this.gridSize());
+        let hadSnap = gridResult.snappedLeft !== newLeft || gridResult.snappedTop !== newTop;
+        newLeft = gridResult.snappedLeft;
+        newTop = gridResult.snappedTop;
+
+        // Snap to other blocks' edges (using cached paper ref)
+        const blockSnap = this.snapToBlockEdges(newLeft, newTop, hostEl, paper);
+        if (blockSnap.snappedLeft !== newLeft || blockSnap.snappedTop !== newTop) {
+          hadSnap = true;
+          this.snapAxisX = blockSnap.axisX;
+          this.snapAxisY = blockSnap.axisY;
+          newLeft = blockSnap.snappedLeft;
+          newTop = blockSnap.snappedTop;
+        }
+
+        if (!hadSnap) {
+          this.snapAxisX = null;
+          this.snapAxisY = null;
+        }
+      } else {
+        this.snapAxisX = null;
+        this.snapAxisY = null;
+      }
+
+      // Update local signals so Angular CD doesn't overwrite with stale stored position
+      this.dragLeft.set(newLeft);
+      this.dragTop.set(newTop);
+      // Set inline style for INSTANT visual feedback (before CD picks up the signal)
+      if (hostEl) {
+        hostEl.style.left = `${newLeft}px`;
+        hostEl.style.top = `${newTop}px`;
+        hostEl.classList.toggle('is-snapping', this.snapAxisX !== null || this.snapAxisY !== null);
+        hostEl.dataset['snapAxisX'] = this.snapAxisX ?? '';
+        hostEl.dataset['snapAxisY'] = this.snapAxisY ?? '';
+      }
+    };
+
+    const onUp = (): void => {
+      cleanup();
+      // Read final values from signals (they're the source of truth)
+      const finalLeft = this.dragLeft();
+      const finalTop = this.dragTop();
+      // Keep local override active — no visual flash while waiting for debounced API
+      // Effect will auto-clear when overlayLeft()/overlayTop() catch up.
+
+      this.overlayMove.emit({
+        block: this.block(),
+        overlayLeft: finalLeft,
+        overlayTop: finalTop,
+      });
+    };
+
+    // Escape hatch: if mouse leaves the document body, clean up
+    const onLeave = (): void => {
+      cleanup();
+      // onLeave → user hasn't committed — restore old position from settings
+      this.dragActive.set(false);
+      this.dragLeft.set(0);
+      this.dragTop.set(0);
+    };
+
+    document.body.style.cursor = 'move';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('mouseleave', onLeave);
+  }
+
+  /** Local signals for overlay drag — override Angular's style binding during drag. */
+  protected readonly dragActive = signal(false);
+  protected readonly dragLeft = signal(0);
+  protected readonly dragTop = signal(0);
+
+  /** Local signals for corner resize — override Angular's style binding during drag. */
+  protected readonly resizeActive = signal(false);
+  protected readonly resizeWidth = signal(0);
+  protected readonly resizeHeight = signal(0);
+
+  /** Current snap state during drag — tracks which axes are snapped. */
+  private snapAxisX: string | null = null;
+  private snapAxisY: string | null = null;
+
+  /** Snap threshold in pixels. */
+  private readonly SNAP_THRESHOLD = 8;
+
+  /** Default image width when overlay is toggled on without explicit dimensions (prevents showing at natural resolution). */
+  protected readonly overlayDefaultWidth = 300;
+  /** Default image height calculated from a 3:2 ratio fallback. */
+  protected readonly overlayDefaultHeight = 200;
+
+  /**
+   * Corner resize start — captures start mouse position and original image dimensions.
+   * On mousemove: calculates new size maintaining aspect ratio.
+   * On mouseup: emits overlayResize with final dimensions.
+   */
+  protected onCornerResizeStart(event: MouseEvent): void {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Get the actual natural dimensions of the image for aspect ratio
+    const img = (event.target as HTMLElement).closest('.block-renderer__image-wrap--overlay')?.querySelector('img') as HTMLImageElement | null;
+    const naturalW = img?.naturalWidth ?? this.imageWidth() ?? 200;
+    const naturalH = img?.naturalHeight ?? this.imageHeight() ?? 200;
+    const aspectRatio = naturalW / naturalH;
+
+    const startMouseX = event.clientX;
+    const startMouseY = event.clientY;
+    // Use override value if previous resize's settings haven't arrived yet
+    const startWidth = this.resizeActive() ? this.resizeWidth() : (this.imageWidth() ?? 200);
+    const startHeight = this.resizeActive() ? this.resizeHeight() : (this.imageHeight() ?? 200);
+
+    // Activate local signal override — Angular will render the correct size via signals, not DOM
+    this.resizeActive.set(true);
+    this.resizeWidth.set(startWidth);
+    this.resizeHeight.set(startHeight);
+
+    const cleanup = (): void => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('mouseleave', onLeave);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    const onMove = (e: MouseEvent): void => {
+      if (e.buttons === 0) {
+        cleanup();
+        return;
+      }
+      e.preventDefault();
+      const deltaX = e.clientX - startMouseX;
+      const deltaY = e.clientY - startMouseY;
+      // Smooth proportional delta using diagonal distance
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      const sign = deltaX + deltaY >= 0 ? 1 : -1;
+      const smoothDelta = sign * distance;
+
+      let newWidth = Math.round(Math.max(50, startWidth + smoothDelta));
+      let newHeight = Math.round(newWidth / aspectRatio);
+
+      if (newHeight < 20) {
+        newHeight = 20;
+        newWidth = Math.round(newHeight * aspectRatio);
+      }
+
+      // Update local signals — Angular CD picks up the change and applies via style binding
+      this.resizeWidth.set(newWidth);
+      this.resizeHeight.set(newHeight);
+    };
+
+    const onUp = (): void => {
+      cleanup();
+      // Read final values from signals BEFORE clearing (they're the source of truth)
+      const finalW = this.resizeWidth();
+      const finalH = this.resizeHeight();
+      // Keep local override active at final size to prevent visual flash
+      // (settings update comes after 1500ms debounce — photo would snap back to old size)
+      // Effect in constructor will auto-clear when settings catch up.
+
+      if (finalW > 0 && finalH > 0) {
+        this.overlayResize.emit({
+          block: this.block(),
+          imageWidth: finalW,
+          imageHeight: finalH,
+        });
+      }
+    };
+
+    const onLeave = (): void => {
+      cleanup();
+      // onLeave → user hasn't committed — restore old size from settings
+      this.resizeActive.set(false);
+      this.resizeWidth.set(0);
+      this.resizeHeight.set(0);
+    };
+
+    document.body.style.cursor = 'nwse-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('mouseleave', onLeave);
+  }
+
+
+
+  /**
+   * Snap a value to the nearest grid point.
+   * Returns the snapped value and whether it was snapped.
+   */
+  private snapValueToGrid(value: number, gridSize: number): { snapped: number; isSnapped: boolean } {
+    const nearest = Math.round(value / gridSize) * gridSize;
+    if (Math.abs(value - nearest) <= this.SNAP_THRESHOLD) {
+      return { snapped: nearest, isSnapped: true };
+    }
+    return { snapped: value, isSnapped: false };
+  }
+
+  /**
+   * Apply grid snapping to both X and Y coordinates.
+   */
+  private applySnapToGrid(
+    left: number, top: number, gridSize: number,
+  ): { snappedLeft: number; snappedTop: number } {
+    const snapX = this.snapValueToGrid(left, gridSize);
+    const snapY = this.snapValueToGrid(top, gridSize);
+    return { snappedLeft: snapX.snapped, snappedTop: snapY.snapped };
+  }
+
+  /**
+   * Snap to edges of other blocks (both flow and overlay) on the canvas.
+   * Returns the snapped position and which axes were snapped.
+   */
+  private snapToBlockEdges(
+    left: number, top: number, hostEl: HTMLElement | null, paper: HTMLElement | null,
+  ): { snappedLeft: number; snappedTop: number; axisX: string | null; axisY: string | null } {
+    if (!paper) return { snappedLeft: left, snappedTop: top, axisX: null, axisY: null };
+    const img = hostEl?.querySelector('.block-renderer__image--overlay') as HTMLImageElement | null;
+    const width = img?.offsetWidth ?? this.imageWidth() ?? this.overlayDefaultWidth;
+    const height = img?.offsetHeight ?? this.imageHeight() ?? this.overlayDefaultHeight;
+
+    const paperRect = paper.getBoundingClientRect();
+    const allBlocks = Array.from(
+      paper.querySelectorAll<HTMLElement>(
+        ':scope > .canvas-dropzone .block-renderer[role="button"], :scope > .canvas-overlay-layer .block-renderer--overlay',
+      ),
+    );
+
+    // Exclude the currently dragged block
+    const otherBlocks = allBlocks.filter((el) => el !== hostEl);
+
+    let snappedLeft = left;
+    let snappedTop = top;
+    let axisX: string | null = null;
+    let axisY: string | null = null;
+
+    const right = left + width;
+    const bottom = top + height;
+    const threshold = this.SNAP_THRESHOLD;
+
+    for (const block of otherBlocks) {
+      const rect = block.getBoundingClientRect();
+      const bLeft = rect.left - paperRect.left;
+      const bRight = bLeft + rect.width;
+      const bTop = rect.top - paperRect.top;
+      const bBottom = bTop + rect.height;
+
+      // Snap left edge
+      if (Math.abs(left - bLeft) <= threshold) {
+        snappedLeft = bLeft;
+        axisX = 'left';
+      } else if (Math.abs(left - bRight) <= threshold) {
+        snappedLeft = bRight;
+        axisX = 'left';
+      }
+      // Snap right edge
+      if (Math.abs(right - bLeft) <= threshold) {
+        snappedLeft = bLeft - width;
+        axisX = 'right';
+      } else if (Math.abs(right - bRight) <= threshold) {
+        snappedLeft = bRight - width;
+        axisX = 'right';
+      }
+
+      // Snap top edge
+      if (Math.abs(top - bTop) <= threshold) {
+        snappedTop = bTop;
+        axisY = 'top';
+      } else if (Math.abs(top - bBottom) <= threshold) {
+        snappedTop = bBottom;
+        axisY = 'top';
+      }
+      // Snap bottom edge
+      if (Math.abs(bottom - bTop) <= threshold) {
+        snappedTop = bTop - height;
+        axisY = 'bottom';
+      } else if (Math.abs(bottom - bBottom) <= threshold) {
+        snappedTop = bBottom - height;
+        axisY = 'bottom';
+      }
+    }
+
+    return { snappedLeft, snappedTop, axisX, axisY };
   }
 
   /**
@@ -804,6 +1312,36 @@ export class BlockRendererComponent {
     return (settings?.['overlayTop'] as number) ?? 0;
   });
 
+  /**
+   * Computed background-color CSS value.
+   * Combines blockBackgroundColor (hex) with blockOpacity (alpha) into rgba().
+   * Returns empty string when no color is set → block stays transparent.
+   */
+  protected readonly blockBgColor = computed<string>(() => {
+    const b = this.block();
+    const settings = b.settings as Record<string, unknown> | undefined;
+    const color = settings?.['blockBackgroundColor'];
+    const opacity = typeof settings?.['blockOpacity'] === 'number' ? settings['blockOpacity'] : 0;
+
+    if (typeof color !== 'string' || color.length === 0) {
+      return '';
+    }
+
+    // Parse hex (#RGB, #RRGGBB) to {r, g, b}
+    const hex = color.replace('#', '');
+    let r = 0, g = 0, b2 = 0;
+    if (hex.length === 3) {
+      r = parseInt(hex[0] + hex[0], 16);
+      g = parseInt(hex[1] + hex[1], 16);
+      b2 = parseInt(hex[2] + hex[2], 16);
+    } else if (hex.length === 6) {
+      r = parseInt(hex.substring(0, 2), 16);
+      g = parseInt(hex.substring(2, 4), 16);
+      b2 = parseInt(hex.substring(4, 6), 16);
+    }
+    return `rgba(${r}, ${g}, ${b2}, ${opacity})`;
+  });
+
   /** Table columns from block.settings.tableTemplateColumns (populated on drop). */
   protected readonly tableColumns = computed<TableColumn[]>(() => {
     const b = this.block();
@@ -832,7 +1370,8 @@ export class BlockRendererComponent {
   protected readonly columnsGridTemplate = computed<string>(() => {
     const cols = this.block().columns;
     if (!cols || cols.length === 0) return '1fr';
-    return cols.map(() => '1fr').join(' ');
+    const total = cols.reduce((sum, c) => sum + (c.width ?? 1), 0);
+    return cols.map((c) => `${((c.width ?? 1) / total) * 100}fr`).join(' ');
   });
 
   protected readonly typeLabel = computed<string>(
@@ -909,12 +1448,15 @@ export class BlockRendererComponent {
   protected onArrowKey(event: Event, direction: 'up' | 'down'): void {
     const keyEvent = event as KeyboardEvent;
     keyEvent.preventDefault();
-    const allBlocks = (keyEvent.target as HTMLElement)
-      ?.closest('.canvas-dropzone')
-      ?.querySelectorAll<HTMLElement>('.block-renderer[role="button"]');
+    const currentEl = keyEvent.target as HTMLElement;
+    // Check if overlay block — overlay blocks are in the overlay layer, not in cdkDropList
+    const isOverlay = currentEl.closest('.block-renderer--overlay');
+    const container = isOverlay
+      ? currentEl.closest('.canvas-overlay-layer')
+      : currentEl.closest('.canvas-dropzone');
+    const allBlocks = container?.querySelectorAll<HTMLElement>('.block-renderer[role="button"], .block-renderer--overlay[role="button"]');
     if (!allBlocks || allBlocks.length === 0) return;
-    const current = keyEvent.target as HTMLElement;
-    const idx = Array.from(allBlocks).indexOf(current);
+    const idx = Array.from(allBlocks).indexOf(currentEl);
     const next = direction === 'down' ? allBlocks[idx + 1] : allBlocks[idx - 1];
     if (next) next.focus();
   }

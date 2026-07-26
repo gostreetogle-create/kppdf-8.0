@@ -85,7 +85,7 @@ export class TemplateBlockColumn {
   id!: string;
 
   /** TipTap HTML string for the cell. Sanitized on render via [innerHTML]. */
-  @Prop({ required: true, default: '' })
+  @Prop({ default: '' })
   content!: string;
 
   /**
