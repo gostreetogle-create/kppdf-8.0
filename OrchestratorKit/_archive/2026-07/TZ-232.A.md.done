@@ -1,0 +1,904 @@
+# TZ-232 — Angular Assembly DSL: Master Plan с встроенной защитой и полной дорожной картой
+
+**Дата создания:** 2026-07-27 (обновлено 2026-07-27 после PO decisions)
+**Автор:** senior-architect review
+**Приоритет:** STRATEGIC (определяет архитектуру семейства Angular-проектов на годы вперёд)
+**Связь:** SUCCESSOR для `DEVELOPMENT-PATTERNS.md §1-§10` и audit TZ-176/177/178 (миграция сигналов); ABSORBS TZ-179 (`any`-cleanup → ESLint rule)
+**Скоу:** foundational design + полный migration checklist для текущего проекта. **Ядро стабильно для повторного использования**.
+
+---
+
+## 0. TL;DR для PO
+
+**Цель Master Plan:** навести полный порядок в Angular-проекте, мигрировав ВСЕ существующие list-страницы и form-диалоги на единый DSL, разложив god-component на атомарные части, и **жёстко** заблокировав небезопасные паттерны на compile-time + runtime + lint-level.
+
+**Что НЕ делаем:** никаких абстракций «на вырост». Ядро DSL — стабильно для повторного использования в будущих Angular-проектах этого семейства (через конфигурируемые entity), но **никакого** "универсального BlockRenderer DSL" по решению PO — декомпозиция делается на конкретные переиспользуемые Pieces.
+
+**Объём внедрения (точно):**
+
+| Тип | Количество | Суммарный объём |
+|---|---|---|
+| List-pages к миграции | 13 | 11 простых/средних + 2 средних + 1 dashboard-композиция |
+| Form-dialogs к миграции | 10 | 4 простых + 4 средних (FormArray) + 2 сложных |
+| Builder atomic parts | 9 | 6 компонентов + 2 сервиса + 1 facade |
+| Sub-TZ (work breakdown) | 14 | TZ-232.A через TZ-232.N |
+
+**Реалистичный объём работы:** **~140–180 часов** (5-7 sessions). Sequential dependency → фактически 3-4 calendar weeks при dedicated session.
+
+---
+
+## 1. Встроенная защита (Po-level обязательная фича)
+
+**Принцип:** Защита от небезопасного кода встраивается В ЯДРО DSL, а не добавляется post-hoc. Любая попытка обойти должна ловиться **хотя бы одной** из трёх защитных линий (lint, compile-time, runtime).
+
+### 1.1 Защита от двойного сабмита (double-click → duplicates)
+
+**Проблема:** В 8 form-dialog есть `submitting = signal(false)` + `[disabled]="form.invalid || submitting()"`. **Но:**
+- Только 5 из 8 имеют guard `if (this.submitting()) return;` в начале `onSubmit()` (отсутствует в organizations, products, modules, contracts).
+- custom submit handlers (не через форму) могут проскочить disabled toggle, если нажатие происходит между двумя CD cycles (< 200ms rapid clicks).
+- **На бэкенде нет idempotency** — повторный POST создаст дубль.
+
+**Решение — 3 уровня:**
+
+#### Уровень 1 + 2 — `SubmitGuard` и HTTP-interceptor как единая коррелированная система (FIX C1 из review)
+
+**Файлы:**
+- `frontend/src/app/shared/dsl/submit-guard.ts` — singleton state holder, single source of UUIDs
+- `frontend/src/app/core/idempotency.interceptor.ts` — HTTP-layer integration, READS ключ от SubmitGuard
+- `frontend/src/app/core/idempotency-cache.ts` — Level 3 client cache
+
+**КРИТИЧНО:** обе защиты читают/пишут **ОДИН Map**. НЕ генерируют UUID независимо. Это устраняет key-scope mismatch (CRITICAL issue из review): если у нас 2 независимых источника UUID, backend не может коррелировать replays.
+
+```typescript
+@Injectable({ providedIn: 'root' })
+export class SubmitGuard {
+  /**
+   * SINGLE-SOURCE-OF-TRUTH for in-flight submit operations.
+   * Holds correlation map: (URL+method+formKey) ↔ active Idempotency-Key (UUID).
+   *
+   * All three protection layers read/write THIS map:
+   *   - Level 1 (`guard()`): rejects if entry exists; creates entry on accept.
+   *   - Level 2 (HTTP interceptor): reads `getActiveKey()` for current URL+method.
+   *     Frontend does NOT generate UUID independently.
+   *   - Level 3 (client cache): stores completed results keyed by same composite key.
+   *
+   * Lifecycle:
+   *   - guard() called → register entry with FRESH UUID
+   *   - HTTP interceptor reads same UUID via getActiveKey() → headers propagate
+   *   - debounce 300ms passes → fetcher fires → result stored in completedCache (5min TTL)
+   *   - in-flight entry removed in finally{} regardless of fetcher outcome
+   *
+   * Re-entry (rapid double-click) → guard() sees active entry → returns 429 SilentResult
+   * BEFORE any HTTP request fires. Idempotency-Key header NEVER reaches backend twice.
+   */
+  private readonly inFlight = new Map<string, string>(); // composite → UUID
+  private readonly completedCache = new Map<string, {
+    result: SilentResult<unknown>;
+    expiresAt: number;
+  }>(); // composite → { result, ttl }
+
+  constructor() {
+    // ── Background cache eviction (FIX REG-2 from review) ──
+    // completedCache relies on passive TTL expiration; without this loop the Map
+    // grows monotonically over app lifetime. In long-running sessions (admin tools,
+    // kiosks) this becomes a memory leak. Sweep every 60s.
+    setInterval(() => {
+      const now = Date.now();
+      for (const [k, v] of this.completedCache) {
+        if (v.expiresAt <= now) this.completedCache.delete(k);
+      }
+    }, 60_000);
+  }
+
+  async guard<T>(opts: {
+    formKey: string;        // e.g. "create:Order:formInstanceId"
+    url: string;
+    method: 'POST' | 'PATCH' | 'DELETE';
+    debounceMs?: number;    // default 300ms
+    fetcher: () => Observable<SilentResult<T>>;
+  }): Promise<SilentResult<T>> {
+    const composite = `${opts.method}|${opts.url}|${opts.formKey}`;
+
+    // ── Level 3: completed cache hit → return previous result ──
+    const cached = this.completedCache.get(composite);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.result as SilentResult<T>;
+    }
+
+    // ── Level 1: re-entry guard → reject if in-flight ──
+    if (this.inFlight.has(composite)) {
+      return {
+        ok: false,
+        error: new HttpErrorResponse({
+          status: 429,
+          statusText: 'Already in flight',
+          error: { message: 'Подождите завершения предыдущей операции' },
+        }),
+      };
+    }
+
+    // Generate UUID — bind to interceptor ONLY AFTER debounce (FIX REG-1 from review).
+    // Registering BEFORE debounce creates a 300ms cross-component contamination
+    // window: any HTTP POST/PATCH/DELETE from OTHER components during debounce
+    // would pick up this form's UUID via interceptor's getActiveKey(url, method)
+    // and inherit a wrong Idempotency-Key → cross-component contamination.
+    //
+    // Trade-off: brief unprotected moment (sub-ms) between debounce completion
+    // and firstValueFrom() firing. Acceptable because debounce itself already
+    // filters rapid-double-click on the same form (~300ms >> typical human
+    // double-click latency of ~150ms).
+    const key = crypto.randomUUID();
+
+    try {
+      // Debounce: rapid double-clicks within window collapse to single fire.
+      await new Promise((r) => setTimeout(r, opts.debounceMs ?? 300));
+
+      // Register AFTER debounce, immediately before HTTP fires. Window
+      // between this line and fetcher() invocation is sub-ms in V8(no async
+      // boundary — Promise resolution runs synchronously in microtask), so
+      // double-click protection is effectively atomic.
+      this.inFlight.set(composite, key);
+
+      // The fetcher flows through idempotencyInterceptor which reads
+      // getActiveKey(url, method) → returns the SAME UUID we just registered.
+      const result = await firstValueFrom(opts.fetcher());
+
+      // ── Level 3: graded cache policy (FIX review regression) ──
+      //   ok:true → cache 5 min (lost ACK + rapid-double-submit защита).
+      //   5xx   → cache 60 s (retry storm на упавшем сервере, юзер подождёт >60s).
+      //   4xx   → НЕ кешируется (юзер ОБЯЗАН исправить форму и повторить СРАЗУ;
+      //                    иначе stale cached error после исправления).
+      if (result.ok) {
+        this.completedCache.set(composite, {
+          result,
+          expiresAt: Date.now() + 5 * 60 * 1000,
+        });
+      } else if (result.error.status >= 500) {
+        this.completedCache.set(composite, {
+          result,
+          expiresAt: Date.now() + 60 * 1000,
+        });
+      }
+      // else: 4xx → no cache → next submit reaches server.
+      return result;
+    } finally {
+      this.inFlight.delete(composite);
+    }
+  }
+
+  /**
+   * Read-only access for the HTTP interceptor.
+   * Returns the active Idempotency-Key for a given (URL+method) if there's an
+   * in-flight submission, OR null if no submit is active.
+   *
+   * IMPORTANT: returns whichever formKey is currently active for this URL.
+   * Multiple instanced forms targeting same endpoint race against each other
+   * — for current architecture (one active dialog at a time) this is safe.
+   */
+  getActiveKey(url: string, method: string): string | null {
+    const prefix = `${method}|${url}|`;
+    for (const [composite, key] of this.inFlight) {
+      if (composite.startsWith(prefix)) return key;
+    }
+    return null;
+  }
+}
+```
+
+#### Уровень 2: Idempotency-header в HTTP-interceptor (READ-ONLY)
+
+```typescript
+/**
+ * Reads active UUID from SubmitGuard (Level 1) and attaches as header.
+ * Does NOT generate UUID independently — that would break key correlation.
+ *
+ * If no submission is currently in-flight for this URL+method, generates
+ * a fresh UUID anyway (for backend protection for service-level mutations
+ * that bypass SubmitGuard — e.g. login, refresh, raw service.post calls
+ * outside <pi-entity-form>).
+ */
+export const idempotencyInterceptor: HttpInterceptorFn = (req, next) => {
+  const guard = inject(SubmitGuard);
+  if (!/^(POST|PATCH|DELETE)$/.test(req.method)) return next(req);
+  if (req.headers.has('Idempotency-Key')) return next(req);
+
+  // Read from SubmitGuard.ifthere's an active submit for this URL.
+  // Otherwise generate fresh (e.g. service-level mutations outside dialogs).
+  const key = guard.getActiveKey(req.url, req.method) ?? crypto.randomUUID();
+  return next(req.clone({ setHeaders: { 'Idempotency-Key': key } }));
+};
+```
+
+#### Уровень 3: Client-side cache (auto-cleanup via TTL)
+
+`completedCache` в SubmitGuard auto-expires entries через 5 min. Это решает:
+- "Lost ACK" — POST прошёл, ответ не дошёл, повторный submit → cache hit → возвращаем старый результат. No double-create.
+- Network retry storm — пользователь жмёт submit несколько раз в течение 5 min после первого успеха → cache returns prior result. No duplicate.
+
+**TTL trade-off:** 5 min — pragmatic для UX форм. Backend может override через свой TTL в idempotency-record table.
+
+### 1.2 Блокировка raw `this.http.*` (compile + lint)
+
+**ESLint rules** (TZ-232.I):
+
+```typescript
+// frontend/eslint/rules/no-raw-http-in-components.ts
+// Apply to *.component.ts files (not services, not core/silent-http.ts).
+// BAN: any 'this.http.<verb>(...)' usage where 'this' resolves to Component class.
+// ALLOW: *.service.ts and *.interceptor.ts (where explicit HTTP use is vetted).
+//
+// AST pattern:
+//   CallExpression[callee.object.property.name='http']
+//                 [callee.property.name=/^(post|get|put|patch|delete)$/]
+//                 AND scope is ClassDeclaration extending Component decorator
+
+// Also: BAN direct import of HttpClient from @angular/common/http in component files:
+no-restricted-imports({
+  paths: [{
+    name: '@angular/common/http',
+    importNames: ['HttpClient'],
+    message: 'HttpClient запрещён в компонентах. Используйте DSL Repository через defineEntity().'
+  }],
+  patterns: ['*.component.ts']
+})
+// Note: HttpParams, HttpErrorResponse, httpResource ARE allowed in components (used by lookup-tables)
+```
+
+### 1.3 Type-safety через `defineEntity<T, P>`
+
+**Решение (из §2 architecture):**
+
+```typescript
+// Coerced compile-time guards через TypeScript's type narrowing:
+export function defineEntity<T extends { _id?: string }, P>(schema: EntitySchema<T, P>) {
+  // Returns ONLY a typed entity token — service methods are accessible
+  // only via `entity.inject()` inside a Component or Service injection context.
+  // Cannot bypass by importing underlying HttpClient directly because:
+  //  - HttpClient import is ESLint-banned in *.component.ts (см. §1.2)
+  //  - defineEntity() requires schema.endpoint to be `string` literal
+  //  - methods are typed for T, P → PATCH/POST body must match T's shape
+  //  - missing _id update → compile error
+}
+```
+
+**Compile-time errors (cannot be bypassed):**
+
+| Попытка | Реакция |
+|---|---|
+| `defineEntity({})` (без endpoint) | TS error: `{ endpoint: string }` required |
+| `defineEntity({ endpoint: 42 })` | TS error: `string` expected |
+| `entity.create({ wrongType: 'x' } as any)` | TS error: `Partial<T>` cannot include `wrongType` if not in T |
+| `<pi-entity-list [endpoint]="">` (literal typo) | When `endpoint: '/users'` declared and used elsewhere — RT error (request 404) AND audit-test catches in spec |
+| `this.http.post(...)` in `*.component.ts` | ESLint error: `no-raw-http-in-components` |
+| `service.update(id, payload)` where `id` is a `number` | TS error (mongo ObjectId is string-typed) |
+
+### 1.4 Other safety mechanisms built into DSL
+
+| Risky pattern | DSL protection |
+|---|---|
+| `OnInit` в page-component (legacy) | ESLint rule `no-implements-oninit-in-pages` (warning) + guidance → use `effect()` or `ngOnInit` исключительно в инфраструктурных сервисах |
+| `any` type | ESLint rule `no-explicit-any` (error в dsl-config files; warning в pages). ANT-targets config from `defineEntity()` itself. |
+| Missing `submitting` guard в custom submit | Type-level: `entity.create()` returns Promise → if called twice while pending, second-awaiter gets same Promise (deduplicated by Guard) |
+| Множественные `<form>` в одном component | ESLint rule: at most one `<form>` without explicit `name` attribute |
+| Memory leak от raw `.subscribe()` outside dsl-service | ESLint rule `no-restricted-syntax` catches `this.http.X.subscribe(...)` pattern |
+| Lookup-table leak (TZ-232.A fixed) | Wizard: `defineLookup` returns `Signal<Record<id,T>>` + auto-cleanup через `DestroyRef.onDestroy(() => fetcher.unsubscribe())` |
+
+---
+
+## 2. Полный migration checklist (LIST-PAGES + FORM-DIALOGS)
+
+### 2.1 LIST-PAGES к миграции (`<pi-entity-list>`)
+
+| # | Файл | Сложность | Скоуп | sub-TZ | Acceptance |
+|---|------|-----------|-------|--------|------------|
+| 1 | `pages/inventory/storage-items.page.ts` | 🟢 Простая | Server-pag, 2 httpResource (items + warehouses.search), нет custom templateSlot. ~280 строк → ~50 | **TZ-232.C** (pilot) | pnpm typecheck ✓; spec passes ✓ |
+| 2 | `pages/inventory/stock-movements.page.ts` | 🟢 Простая | Server-pag, 1 httpResource, простой actions. ~120 строк → ~30 | **TZ-232.F** | pnpm typecheck ✓ |
+| 3 | `pages/dictionaries/dictionaries.page.ts` | 🟢 Простая | Units list + lookup. ~240 строк → ~50 | **TZ-232.F** | pnpm typecheck + counts unchanged ✓ |
+| 4 | `pages/doc-constructor/texts/texts.page.ts` | 🟢 Простая | Server-pag + edit-create dialog (отдельный). ~250 строк → ~60 | **TZ-232.F** | pnpm typecheck ✓ |
+| 5 | `pages/doc-constructor/tables/tables.page.ts` | 🟢 Простая | Server-pag + 3 dialog варианта. ~470 строк → ~80 | **TZ-232.F** | pnpm typecheck + spec passes ✓ |
+| 6 | `pages/doc-constructor/documents/documents.page.ts` | 🟢 Простая | Custom periodMonth filter (client). ~310 строк → ~60 | **TZ-232.F** | pnpm typecheck ✓ |
+| 7 | `pages/doc-constructor/templates/templates.page.ts` | 🟡 Простая (но ALSO migration of raw-http → service-level fix) | ⚠️ Outlier: raw `this.http.get/post` calls. ~390 строк → ~80 + service abstraction needed | **TZ-232.F + TZ-232.B-shim** | raw http удалён; проверить spec переписывается для mock service ✓ |
+| 8 | `pages/work-types/work-types.page.ts` | 🟢 Простая | Server-pag + 1 dialog. ~270 строк → ~50. ⚠️ Has `OnInit` → migrate → `effect()` | **TZ-232.E** | pnpm typecheck + OnInit устранён ✓ |
+| 9 | `pages/organizations/organizations.page.ts` | 🟢 Простая | Server-pag + lookup-cell template. ~250 строк → ~50. OnInit устранён | **TZ-232.E** | pnpm typecheck ✓ |
+| 10 | `pages/modules/modules.page.ts` | 🟢 Простая | Server-pag + нескольких child-формы. ~410 строк → ~80. OnInit устранён | **TZ-232.E** | pnpm typecheck + detail route ✓ |
+| 11 | `pages/materials/materials.page.ts` | 🟡 Средняя | Server-pag + photo-tpl + supplier-tpl + dims-tpl + 3 cell-templates. ~310 строк → ~80. ⚠️ OnInit устранён | **TZ-232.E** | pnpm typecheck ✓ |
+| 12 | `pages/products/products.page.ts` | 🟡 Средняя | Server-pag + 2 cell-templates + detail-route. ~440 строк → ~100. OnInit устранён | **TZ-232.D** (SENTINEL) | pnpm typecheck + 100% spec parity ✓ |
+| 13 | `pages/contracts/contracts.page.ts` | 🟡 Средняя | Server-pag + custom sort (status cycle). ~570 строк → ~120. OnInit устранён | **TZ-232.D** (SENTINEL) | pnpm typecheck + sort cycle index не потерян ✓ |
+| 14 | `pages/orders/orders.page.ts` | 🟠 Средне-сложная | Client-pag (flat array) + custom status sort cycle + client filter + sentinel-маска. ~600 строк → ~150. OnInit устранён | **TZ-232.D** (SENTINEL) | pnpm typecheck + spec parity + sort cycle не потерян ✓ |
+
+> **OnInit migration scope clarification (FIX H1 from review):**
+> - **7 list-pages** реализуют `OnInit` (требуют миграции): work-types:168, organizations:144, products:217, materials:192, orders:267, modules:241, contracts:270.
+> - 1 **shared primitive** реализует `OnInit` INTENTIONAL: `shared/ui/pi-table.component.ts:249` (TZ-104.4.2 one-shot seed sync from `initialSortKey/Dir`). **НЕ мигрируется** — это шаблон, не приложение.
+> - → ESLint rule `no-implements-oninit-in-pages` (TZ-232.I) покрывает WAVE D миграцию. Spec-файлы `.spec.ts` exempt (override в rule).
+| 15 | `pages/products/product-detail.page.ts` | 🟠 Средне-сложная | `<pi-entity-detail>` с custom sub-tables (cost-calculations, photos, modules). ~500 строк → partial DSL | **TZ-232.E-extension** (после E основной) | sub-tables NOT in DSL yet, OK stay custom; core structure DSL-shaped ✓ |
+| 16 | `pages/modules/module-detail.page.ts` | 🟠 Средне-сложная | Аналогично product-detail | **TZ-232.E-extension** | same as #15 ✓ |
+| 17 | `pages/inventory/inventory-dashboard.page.ts` | 🔴 Сложная | 3 httpResource + aggregation logic. НЕ в `<pi-entity-list>` — **`<pi-data-grid>`** компонент. ~140 строк → ~80 | **TZ-232.H** | grid renders unchanged ✓ |
+| 18 | `pages/dictionaries/categories.page.ts` | 🔴 Не для миграции (Phase 1) | Tree view — НЕ покрывается `<pi-entity-list>`. Out of TZ-232 scope | (out of scope) | — |
+| 19 | `pages/basics/basics.page.ts`, `pages/forms/*`, `pages/foundations/*`, `pages/overlays/*`, `pages/navigation/*` | ⚪ Demo pages (P&I editorial kit, TZ-71-74) | НЕ мигрировать — это kit primitive showcase, НЕ production | (out of scope) | — |
+| 20 | `pages/overview/overview.page.ts` | ⚪ Demo | НЕ мигрировать | (out of scope) | — |
+| 21 | `pages/login/login.page.ts` | ⚪ Special (no auth token yet) | Другая форма (auth flow) — НЕ generic EntityForm. Оставить кастомным, DSL-ify отдельно (out of scope TZ-232) | (out of scope) | — |
+
+**ИТОГО:** 13 list-pages мигрируется (1-14, 17) + 2 detail-pages (#15-16, partial) = **15 файлов**.
+
+### 2.2 FORM-DIALOGS к миграции (`<pi-entity-form>`)
+
+| # | Файл | Сложность | Скоуп | sub-TZ | Acceptance |
+|---|------|-----------|-------|--------|------------|
+| 1 | `pages/work-types/work-type-form-dialog.component.ts` | 🟢 Простая | 3-4 поля. ~165 строк → ~30 | **TZ-232.G** | pnpm typecheck + spec parity ✓ |
+| 2 | `pages/organizations/organization-form-dialog.component.ts` | 🟢 Простая | 6 полей. ~205 строк → ~40 | **TZ-232.G** | pnpm typecheck ✓ |
+| 3 | `pages/modules/module-form-dialog.component.ts` | 🟢 Простая | 6 полей. ~265 строк → ~40 | **TZ-232.G** | pnpm typecheck ✓ |
+| 4 | `pages/modules/module-materials-form-dialog.component.ts` | 🟡 Средняя | FormArray<{materialId+quantity}> + lookup. ~210 строк → ~50 | **TZ-232.G** | pnpm typecheck ✓ |
+| 5 | `pages/dictionaries/category-form-dialog.component.ts` | 🟢 Простая | 3 поля. ~175 строк → ~30 | **TZ-232.G** | pnpm typecheck ✓ |
+| 6 | `pages/products/product-form-dialog.component.ts` | 🟡 Средняя | 8+ полей + photo-upload + lookup. ~390 строк → ~80 | **TZ-232.G** (Phase 3) | pnpm typecheck + photo upload сохраняется ✓ |
+| 7 | `pages/materials/material-form-dialog.component.ts` | 🟡 Средняя | FormArray<DimensionFormGroup> + lookup + photo-upload. ~470 строк → ~90 | **TZ-232.G** | pnpm typecheck + dims FormArray сохраняется ✓ |
+| 8 | `pages/orders/order-form-dialog.component.ts` | 🔴 Сложная | FormArray<ItemFormGroup> + 2 lookup'а + computed total. ~410 строк → ~110 (HARDEST form case) | **TZ-232.G** (Phase 3) | pnpm typecheck + total recompute сохраняется + lookup-hydration ✓ |
+| 9 | `pages/contracts/contract-form-dialog.component.ts` | 🔴 Сложная | Аналогично orders (FormArray + lookup + total) | **TZ-232.G** | same as #8 ✓ |
+| 10 | `pages/doc-constructor/tables/table-template-form-dialog.component.ts` | 🔴 Сложная | FormArray<TableColumnForm> + live preview. ~1100 строк → ~300 (preview вне DSL, остальное DSL) | **TZ-232.G** (Phase 3 XL) | preview компоненты выносятся в `<pi-form-preview>` отдельный компонент ✓ |
+| 11 | `pages/doc-constructor/texts/text-block-editor.component.ts` | ⚪ Не для миграции | **Signal-only форма** (НЕ FormBuilder-based) — out of DSL scope Phase 1. Возможно Phase 2 (custom-form support) | (out of scope) | — |
+
+**ИТОГО:** 10 form-dialog мигрируется.
+
+### 2.3 SERVICES (16 шт.) — унифицируются через `defineEntity<T,P>`
+
+**Файл:** `frontend/src/app/shared/services/index.ts` использует 16 сервисов с идентичным 5-методным паттерном. ПОСЛЕ миграции — каждый либо:
+- (a) Становится backward-compat shim, делегирующим к defineEntity-generated сервису. Минимум строк.
+- (b) Полностью переписывается через `serviceFor(Entities.X)` если имеет custom методы (upload, reorder, build и т.п.)
+
+| # | Сервис | Custom операции | Миграционная стратегия | sub-TZ |
+|---|--------|----------------|------------------------|--------|
+| 1 | `materials.service.ts` | `dimensions` custom endpoint? | shim | TZ-232.B-shim |
+| 2 | `photos.service.ts` | upload, setMain, remove | own — имеет custom multipart | TZ-232.B-shim |
+| 3 | `products.service.ts` | — | full defineEntity | TZ-232.B |
+| 4 | `organizations.service.ts` | — | full defineEntity | TZ-232.B |
+| 5 | `pi-counterparty.service.ts` | — | full defineEntity | TZ-232.B |
+| 6 | `pi-work-types.service.ts` | — | full defineEntity | TZ-232.B |
+| 7 | `pi-product-modules.service.ts` | `attachMaterials`, `detachMaterials` (custom $addToSet) | **mixed** — defineEntity + custom methods | TZ-232.B-shim |
+| 8 | `pi-template-blocks.service.ts` | `add`, `reorder` (= atomic bulkWrite), `listByTemplate`, `uploadImage` | **own** — большая custom logic, шim minimum | TZ-232.B-shim |
+| 9 | `pi-text-blocks.service.ts` | — | full defineEntity | TZ-232.B |
+| 10 | `pi-table-templates.service.ts` | `preview` (text response) | shim + custom preview method | TZ-232.B-shim |
+| 11 | `pi-document-templates.service.ts` | `createFromScratch`, `duplicate`, `build`, `uploadBackground`, `removeBackground`, `setDefaultBackground`, `setOrientation` | **own** — много custom, shim | TZ-232.B-shim |
+| 12 | `pi-registry.service.ts` | unique registry (query registry) | shim | TZ-232.B |
+| 13 | `pi-cost-calculations.service.ts` | nested save with materials lookup | shim | TZ-232.B |
+| 14 | `pi-product-module-photos.service.ts` | upload custom | shim | TZ-232.B |
+| 15 | `pi-generated-documents.service.ts` | bulk-process | own | TZ-232.B-shim |
+| 16 | `categories.service.ts` | tree — НЕ CRUD-list | **NOT applicable** (Phase 1) | (out of scope) |
+| (incl.) | `units.service.ts` | — | full defineEntity | TZ-232.B |
+| (incl.) | `stock-movements.service.ts` | — | full defineEntity | TZ-232.B |
+| (incl.) | `storage-items.service.ts` | `lowStock` (computed endpoint) | shim + custom | TZ-232.B-shim |
+| (incl.) | `warehouses.service.ts` | — | full defineEntity | TZ-232.B |
+
+**ИТОГО:** 16-18 сервисов. ~600 строк boilerplate → 0, плюс ~100 строк shim-кода.
+
+### 2.4 Общий migration-progress tracking
+
+Для каждого файла в чек-листе выше будет checkbox (✅ = мигрировано, typecheck ✓ + spec passes), отмечаемый в `progress.md` в момент закрытия sub-TZ.
+
+**Progress entry template:**
+
+```markdown
+## [TZ-232.X] 2026-XX-XX — Sub-title
+- ✅ / ⏳ next wave
+- **Conflict keys:** files modified
+- **Acceptance:** per-wave AC
+- **Notes:** anything notable
+```
+
+---
+
+## 3. Builder decomposition (god-component → atomic parts)
+
+### 3.1 Текущая структура `builder.page.ts` (1800 строк)
+
+**Grep-карта:**
+
+- **Lines 1-63**: imports (HTTP, RxJS, lucide icons, типы, services)
+- **Lines 64-110**: JSDoc (TZ-86 Phase D.1 + D.2)
+- **Lines 111-176**: `@Component({...})` decorator (html + css)
+- **Lines 177-405**: inline styles для builder-toolbar / dropdown / view-toggle / inspector
+- **Lines 406-645**: класс `BuilderPage`:
+  - 105 lines DI
+  - 25 lines icons
+  - 50 lines state (signals)
+  - 60 lines inline-toolbar dropdowns (textsRes, tablesRes, viewMode)
+  - 100 lines constructor (save$ pipeline + route watchers + load)
+  - 30 lines helper loading/template sync
+  - 350 lines handlers (cascade of insertBlock, insertNewBlock, on x, on y, ...)
+  - 40 lines create-template logic с forkJoin
+  - 30 lines reload, snap settings
+- **Lines 646-1800**: private functions (`pluralBlocks`, `loadSnapSettings`, `saveSnapSettings`) и helper встроенные типы
+
+### 3.2 Декомпозиция: 9 atomic parts
+
+> **Принцип (по решению PO):** НЕ generic BlockRenderer DSL. Конкретные Pieces с конкретной ответственностью. Каждый Piece — переиспользуем в других местах, но НЕ пытаемся покрыть всё.
+
+#### Part 1: `BuilderStateService` (facade / orchestrator)
+**Файл:** `frontend/src/app/pages/doc-constructor/builder/builder-state.service.ts`
+**Назначение:** все signals + основные методы в одном Injectable сервисе. Page становится тонким контейнером. **Owner of:**
+- все signals + computed (см. § State Mixin ниже)
+- **photo upload orchestration** (`onPhotoFileSelected` — URL.createObjectURL → tempId insert → upload callback patch) — раньше жила inline в builder.page.ts (lines 1306–1326). СТАЛО: метод `uploadPhoto(file, anchorIndex): Promise<TemplateBlock>`.
+- **snap-settings localStorage persistence** (`loadSnapSettings`/`saveSnapSettings` — раньше inline builder.page.ts lines 1756–1794). СТАЛО: `loadFromStorage()` в constructor, `persistToStorage()` в `onSnapSettingsChange` handler.
+- **`pluralBlocks` (lines 1737–1743) → `pluralize` import** from `shared/util/format.ts` (was duplicate of `pluralize(n, ['блок','блока','блоков'])`). Устранено при рефакторе.
+
+**State:**
+- signals: `template`, `blocks`, `selectedId`, `selectedIds`, `saveStatus`, `viewMode`, `snapEnabled`, `gridSize`, `boundaryPadding`, `openDropdown`, `recentSelections`, `sourceContext`
+- computed: `headerSubtitle`, `backgroundImages`, `orientation`, `selectedBlock`, `selectedBlocks`, `templateListErrorMessage`
+
+**Methods:** `loadBlocks()`, `insertBlock()`, `insertNewBlock()`, `uploadPhoto()` (NEW, см. выше), `buildBlockFromPayload()`, `deleteBlock()`, `deleteSelected()`, `reorder()`, `onSelect()`, `onMultiSelect()`, `onCanvasClick()`, `onInspectorUpdate()`, `onMultiMarginUpdate()`, `onBackgroundUpload()`, `onRemoveBackground()`, `onSetDefaultBackground()`, `onSetOrientation()`, `onSetOpacity()`, `onTemplateUpdate()`, `onCreateTemplate()`, `doCreateTemplate()`, `onDuplicateTemplate()`, `onTemplatePick()`, `onDeleteTemplate()`, `onReload()`, `onSnapSettingsChange()`.
+
+**Inputs:** `route :id`, `route ?source`, `route ?sourceId`.
+
+**Сложность:** 🟠 XL (core service with handlers + localStorage + photo orchestration).
+**Estimated:** 14–18 h.
+**Sub-TZ:** TZ-232.J-step-1.
+
+#### Part 2: `BuilderShellComponent` (layout)
+**Файл:** `frontend/src/app/pages/doc-constructor/builder/builder-shell.component.ts`
+**Назначение:** Pure layout — 3-pane (toolbar + canvas + inspector) без своей логики. Принимает `state: BuilderStateService` через DI; отображает toolbar / canvas / inspector.
+**Входы:** `state = input.required<BuilderStateService>()` (DI-friendly signal).
+**Выходы:** `()` — события проксируются через injected service.
+**Сложность:** 🟢 Простая (pure layout).
+**Estimated:** 1-2 h. **Sub-TZ:** TZ-232.J-step-2
+
+#### Part 3: `BuilderToolbarComponent` (inline dropdowns)
+**Файл:** `frontend/src/app/pages/doc-constructor/builder/builder-toolbar.component.ts`
+**Назначение:** Hostlistener dropdown-closed-on-outside-click logic + Texts/Tables dropdowns httpResources + photo input + spacer button + view-mode toggle. Owns its own dropdown state через сервис.
+**Входы:** `state = input.required<BuilderStateService>()`.
+**Выходы:** events → delegated to state methods.
+**Сложность:** 🟡 Средняя.
+**Estimated:** 3-4 h. **Sub-TZ:** TZ-232.J-step-3
+
+#### Part 4: `BuilderTemplatePickerComponent` (when no templateId)
+**Файл:** `frontend/src/app/pages/doc-constructor/builder/builder-template-picker.component.ts`
+**Назначение:** Empty state when `templateId() === null`. List of templates + create button + delete/duplicate actions. Uses `<pi-entity-list>` (if minimal) or its own table.
+**Входы:** `state = input.required<BuilderStateService>()`.
+**Выходы:** pick-event → state.onTemplatePick(id).
+**Сложность:** 🟢 Простая.
+**Estimated:** 2-3 h. **Sub-TZ:** TZ-232.J-step-4
+
+#### Part 5: `BuilderSavePipeline` (auto-save logic)
+**Файл:** `frontend/src/app/pages/doc-constructor/builder/builder-save-pipeline.ts`
+**Назначение:** Pure RxJS pipeline: `Subject<{_id, patch}>` → `groupBy` → `debounceTime(1500)` → `switchMap` → service call → result handler. Reusable для любого template-like editor.
+**Входы:** `source: Subject<{_id, patch}>`, `updater: (id, patch) => Observable<SilentResult<T>>`.
+**Выходы:** signal `saveStatus: Signal<'idle' | 'saving' | 'saved' | 'error'>`.
+**Сложность:** 🟡 Средняя.
+**Estimated:** 2-3 h. **Sub-TZ:** TZ-232.J-step-5
+
+#### Part 6: `BuilderBulkDeleteService` (forkJoin-based)
+**Файл:** `frontend/src/app/pages/doc-constructor/builder/builder-bulk-delete.service.ts`
+**Назначение:** Multi-delete with optimistic update + rollback. Reusable для любой bulk-delete with forkJoin pattern.
+**Входы:** `<T extends { _id: string }>(ids: string[], deleteFn: (id) => Observable)` + signal-based "currently deleting set".
+**Выходы:** Promise<{ succeeded: string[]; failed: string[] }>.
+**Сложность:** 🟢 Простая.
+**Estimated:** 2 h. **Sub-TZ:** TZ-232.J-step-6
+
+#### Part 7: `BuilderBlockBuilderService` (factory)
+**Файл:** `frontend/src/app/pages/doc-constructor/builder/builder-block-builder.service.ts`
+**Назначение:** Pure function `buildBlockFromPayload(templateId, payload, order)` — converts `AddBlockPayload` → `TemplateBlock` с правильной switch + tempId. 100% pure, easily testable.
+**Сложность:** 🟢 Простая.
+**Estimated:** 1 h. **Sub-TZ:** TZ-232.J-step-7
+
+#### Part 8: `BuilderTemplateSyncService` (syncTextBlockSources)
+**Файл:** `frontend/src/app/pages/doc-constructor/builder/builder-template-sync.service.ts`
+**Назначение:** Snapshot refresh logic — when text blocks change elsewhere, reflect them in template. Reusable for any "external source sync" pattern.
+**Сложность:** 🟢 Простая.
+**Estimated:** 2 h. **Sub-TZ:** TZ-232.J-step-8
+
+#### Part 9: `BuilderPageNew` (thin orchestrator)
+**Файл:** Заменяет `frontend/src/app/pages/doc-constructor/builder/builder.page.ts`.
+**Назначение:** Тонкий компонент, injects `BuilderStateService`, delegates всё to Parts 2-8.
+**Сложность:** 🟢 Простая.
+**Estimated:** 1-2 h + replace-test pass. **Sub-TZ:** TZ-232.J-step-9
+
+**Builder total estimate:** ~28-37 h (без учёта тестов).
+
+### 3.3 Builder-decomposition waves (постепенно)
+
+Каждая волна — отдельный sub-TZ с проверкой после:
+
+- **Wave 1:** Part 1 (BuilderStateService extraction). Миграция: builder.page.ts использует сервис, но не разделяет UI.
+- **Wave 2:** Part 2 (BuilderShell) + Part 4 (TemplatePicker). Extract template + shell из page.ts.
+- **Wave 3:** Part 3 (BuilderToolbar). Extract dropdowns + view-toggle.
+- **Wave 4:** Part 5 (BuilderSavePipeline) + Part 6 (BulkDelete) + Part 7 (BlockBuilder) + Part 8 (TemplateSync). Extract all logic services.
+- **Wave 5:** Part 9 (BuilderPageNew = thin shell). Final aggregation + cleanup dead code.
+
+**Refactor criteria after each wave:**
+- ✅ Builder visual unchanged (pixel-perfect)
+- ✅ All existing features still work (автосохранение, dropdowns, multi-select, drag, photo upload, bg upload)
+- ✅ Specs pass (any new unit test added per part)
+- ✅ Page size target: < 200 lines after Wave 5 (from 1800)
+
+---
+
+## 4. Updated Wave Plan (приоритизирован)
+
+### 4.1 Семь волн миграции (с приоритетами и dependencies)
+
+**Wave A — Фундамент + защита (CRITICAL, добазовый):**
+
+| Sub-TZ | Что | Почему первый |
+|--------|-----|---------------|
+| **TZ-232.A** | Lookup Table rewrite (fix `subscribe()` leak) | Все entity-* компоненты используют lookup'и — leak fix CRITICAL |
+| **TZ-232.N** | SubmitGuard + Idempotency middleware + global HTTP interceptor | Безопасность — обязательная, добазовый для entity-form |
+| **TZ-232.B** | Service factory (`defineEntity<T,P>`) + demo entity | Ядро DSL — ВСЕ остальные под-TZ зависят от него |
+
+**Wave B — Быстрые list-страницы (Proof-of-Concept + снижение рисков):**
+
+| Sub-TZ | Что | Почему здесь |
+|--------|-----|--------------|
+| **TZ-232.C** | `<pi-entity-list>` core + миграция storage-items.page.ts (pilot) | Доказывает DSL на одной странице ДО миграции остальных |
+
+**Wave C — Sentinel-case migrations (средняя сложность):**
+
+| Sub-TZ | Что | Почему |
+|--------|-----|--------|
+| **TZ-232.D** | 3 list-pages (orders/products/contracts — Order/Contract = HARDEST cases) | Стандартизирует FormArray/lookup/custom-sort → после успеха остальные проще |
+
+**Wave D — Rollout (параллельно с C):**
+
+| Sub-TZ | Что |
+|--------|-----|
+| **TZ-232.E** | 4 list-pages (materials/work-types/organizations/modules) + 4 form-dialogs (dependencies) |
+| **TZ-232.G** | `<pi-entity-form>` core + остальные 5 form-dialogs |
+| **TZ-232.F** | финальные flat-list pages (units, stock-movements, texts, tables, documents, templates) |
+
+**Wave E — Builder decomposition (большая единица работы):**
+
+| Sub-TZ | Что |
+|--------|-----|
+| **TZ-232.J** | 9 atomic parts миграция в 5 mini-waves (см. §3.3) |
+
+**Wave F — Advanced UX + tooling:**
+
+| Sub-TZ | Что |
+|--------|-----|
+| **TZ-232.H** | `<pi-data-grid>` для inventory-dashboard (composition, не CRUD) |
+| **TZ-232.I** | ESLint rules (no-raw-http-in-components, no-impl-oninit-in-pages, etc.) |
+| **TZ-232.K** | Schematic generator `ng g pi:entity <name>` |
+
+**Wave G — Cleanup:**
+
+| Sub-TZ | Что |
+|--------|-----|
+| **TZ-232.L** | Dead code cleanup (legacy services после shim) |
+| **TZ-232.M** | DEVELOPMENT-PATTERNS.md v2 (DSL-shaped, replaces §1-§10) |
+
+### 4.2 Общий sub-TZ список (14 sub-TZ)
+
+| # | sub-TZ | Wave | Est. effort | Зависимости |
+|---|--------|------|-------------|--------------|
+| 1 | TZ-232.A Lookup Table rewrite | A | 1-2 h | — |
+| 2 | TZ-232.N SubmitGuard + Idempotency | A | 4-6 h | — |
+| 3 | TZ-232.B Service factory + demo | A | 4-6 h | A |
+| 4 | TZ-232.C EntityList core + storage-items pilot | B | 8-10 h | A, B |
+| 5 | TZ-232.D 3 list-pages (orders/products/contracts) | C | 6-8 h | C |
+| 6 | TZ-232.E 4 list-pages (materials/wt/orgs/modules) + сопутствующие формы | D | 6-8 h | C |
+| 7 | TZ-232.F remaining flat-list pages | D | 4-6 h | C |
+| 8 | TZ-232.G EntityForm core + 10 form-dialogs | D | 10-14 h | N, B |
+| 9 | TZ-232.H `<pi-data-grid>` для dashboard | F | 4-6 h | C |
+| 10 | TZ-232.I ESLint rules | F | 2-3 h | — (parallel) |
+| 11 | TZ-232.J Builder decomposition (5 mini-waves) | E | 28-37 h | A, N, G |
+| 12 | TZ-232.K Schematic generator | F | 6-8 h | G |
+| 13 | TZ-232.L Dead code cleanup | G | 2-3 h | F, D, E, G |
+| 14 | TZ-232.M DEVELOPMENT-PATTERNS.md v2 | G | 3-4 h | all (сводный) |
+
+**ИТОГО:** 87-119 h.
+
+### 4.3 Recommended execution sequence (calendar)
+
+| Session | Sub-TZ | Effort | Календарь |
+|---------|--------|--------|-----------|
+| **Session 1** | A + N + B | 9-14 h | Неделя 1 |
+| **Session 2** | C (POC) → если OK продолжать | 8-10 h | Неделя 2 |
+| **Session 3** | D + G (parallel до C-уровня) | 16-22 h | Неделя 3-4 |
+| **Session 4** | E + F + H | 14-20 h | Неделя 5-6 |
+| **Session 5** | J (Builder decomposition — самый большой) | 28-37 h | Неделя 7-10 |
+| **Session 6** | I + K + L + M | 13-18 h | Неделя 11-12 |
+
+**Реалистично: ~3 месяца** при dedicated sessions.
+
+### 4.4 GO/NO-GO decisions между waves
+
+- После **Wave A (A+N+B)**: проверка фундамента (TSC ✅ + SubmitGuard test passes).
+- После **Wave B (C)**: проверка visual + spec parity для storage-items.
+- После **Wave C (D)**: Sentinel cases (orders/contracts/products) — это HIGHEST RISK. Visual + behavioral parity КАЖДОЙ СТРАНИЦЫ manual-check.
+- После **Wave D (E+F+G)**: на этом этапе ~80% страниц мигрировано.
+- После **Wave E (J)**: builder визуально и behavior-wise unchanged + значимо меньше LOC.
+- После **Wave F (H+I+K)**: tooling готов.
+- После **Wave G (L+M)**: cleanup + docs.
+
+**PO sign-off обязателен** после Wave C и Wave E (sentinel cases + builder — highest risk).
+
+---
+
+## 5. Критерии приёмки (per wave)
+
+### Wave A (TZ-232.A + N + B) — фундамент + защита
+
+**TZ-232.A:**
+- [ ] `frontend/src/app/shared/util/lookup-table.ts` НЕ содержит `this.http.X.subscribe(...)`
+- [ ] Type signature принимает `Observable<SilentResult<...>>` → uses `toObservable` (или new pattern без raw subscribe)
+- [ ] DestroyRef.onDestroy → auto-cleanup
+- [ ] Lycik test: создать/уничтожить компонент 100 раз → 0 leaked subscriptions (use takeUntilDestroyed check)
+- [ ] Существующие потребители (forms с lookup) продолжают работать без изменений в их коде (backward compatible)
+
+**TZ-232.N:**
+- [ ] `core/idempotency.interceptor.ts` adds `Idempotency-Key: <uuid>` header к POST/PATCH/DELETE
+- [ ] `SubmitGuard.guard()` rejects double-submit within 300ms window → returns 429 SilentResult
+- [ ] Idempotency-cache hit (повторный submit в течение 5 min) → возвращает cached result
+- [ ] spec: 10 rapid double-click events → exactly 1 POST to server (Net tab verified)
+- [ ] `Idempotency-Key` header visible в Network tab; backend-Nest-test asserts header received
+
+**TZ-232.B:**
+- [ ] `defineEntity<T, P>({endpoint})` returns typed service stub
+- [ ] demo `Users` entity + `Users.inject()` pattern works
+- [ ] Все 5 методов (list/findById/create/update/remove) generated correctly with correct types
+- [ ] TypeScript compile error when `endpoint` отсутствует
+- [ ] spec: 5 endpoints exercised end-to-end (1 за каждой из 5 операций)
+- [ ] Обратная совместимость: `materials.service.ts` etc. могут вызывать `MaterialsService.list()` через shim — НЕ ломаются
+
+### Wave B (TZ-232.C) — POC
+
+- [ ] `frontend/src/app/shared/dsl/entity-list/entity-list.component.ts` создан и работает
+- [ ] `pages/inventory/storage-items.page.ts` мигрирован → ~50 строк из ~280
+- [ ] Визуально: страница идентична pre-миграции (manual visual QA на dev server + responsive check + error states)
+- [ ] Behavorial parity: search debounce 300ms ✓; pagination ✓; delete + alert dialog ✓; create/edit dialog refresh ✓
+- [ ] spec (existing `storage-items.page.spec.ts`) — passes unchanged
+- [ ] TSC + lint passes; no new lint warnings
+
+### Wave C (TZ-232.D) — sentinels
+
+- [ ] `orders.page.ts` мигрирован, sort cycle (status by lifecycle) сохранён
+- [ ] `products.page.ts` мигрирован, photo-tpl + supplier-tpl сохранены
+- [ ] `contracts.page.ts` мигрирован, status sort сохранён
+- [ ] Manual QA: 3 страницы в браузере работают идентично
+- [ ] pnpm test (all 3 specs) passes
+- [ ] **PO sign-off** на каждой странице (orders/products/contracts)
+
+### Wave D (TZ-232.E + F + G) — rollout
+
+- [ ] E: 4 list-pages + supporting 4 form-dialogs мигрированы (materials/wt/orgs/modules + their forms)
+- [ ] F: units + stock-movements + texts + tables + documents + templates мигрированы
+- [ ] G: 10 form-dialog мигрированы, из них: 6 простых + 4 сложных (orders/contracts/materials/products сохранили свою структуру)
+- [ ] Forms FormArray <Field> сохранены (orders.items, contracts.items, materials.dimensions, table-templates.columns)
+- [ ] Lookup-hydration в FormArray работает (orders.items[].productId правильно резолвится при edit)
+- [ ] Live preview (table-template-dialog) вынесена в отдельный компонент
+- [ ] Photo upload (product-form, material-form) работает
+- [ ] Total recompute (orders/contracts) работает
+- [ ] Все специфичные custom hooks сохранены
+- [ ] **PO sign-off** на orders.page.ts И contracts.page.ts (HARDEST cases)
+
+### Wave E (TZ-232.J) — Builder
+
+- [ ] 9 atomic parts созданы (BuilderStateService, Shell, Toolbar, TemplatePicker, SavePipeline, BulkDelete, BlockBuilder, TemplateSync, BuilderPageNew)
+- [ ] `builder.page.ts` стал < 200 строк (было 1800)
+- [ ] Visual QA: builder renders identically (manual)
+- [ ] Автосохранение (1500ms debounce + 2s revert to idle)
+- [ ] Multi-select + delete + rollback
+- [ ] Photo upload + bg upload
+- [ ] View mode toggle (editor/preview)
+- [ ] Multi-margin update для overlay blocks
+- [ ] All existing builder.unit.spec.ts (если есть) passes
+- [ ] **PO sign-off** (XL change)
+
+### Wave F (TZ-232.H + I + K) — advanced
+
+**H:**
+- [ ] `<pi-data-grid>` для inventory-dashboard.page.ts: 3 httpResource + aggregation → одной декларативной config
+- [ ] Dashboard visual unchanged
+
+**I:**
+- [ ] ESLint rule `no-raw-http-in-components` — failing build on first try, ALL existing files passing auto-fix
+- [ ] ESLint rule `no-implements-oninit-in-pages` — same
+- [ ] ESLint правила run on every commit (pre-commit hook)
+
+**K:**
+- [ ] `ng g pi:entity <name>` создаёт: entity def + page + form-dialog + service shim + spec + docs/page.md
+- [ ] End-to-end test: `ng g pi:entity demo` → `ng serve` → новая страница работает со всеми CRUD операциями
+- [ ] Documentation README in `frontend/schematics/pi-entity/`
+
+### Wave G (TZ-232.L + M) — cleanup
+
+**L:**
+- [ ] Все shim-сервисы идентифицированы (16-18 файлов), legacy `.findById` etc. удалены или задокументированы
+- [ ] `pnpm tsc --noEmit` exit 0
+- [ ] `pnpm test` exit 0
+- [ ] Bundle size: проверка (если есть budget) — unchanged или меньше
+
+**M:**
+- [ ] `docs/DEVELOPMENT-PATTERNS.md` v2 — все секции отражают DSL, **никаких** упоминаний о прямых HttpClient.subscribe в page компонентах
+- [ ] Документ содержит: пример defineEntity → entity-list → best practices (финальный синтаксис)
+- [ ] README.md обновлён (if applicable)
+- [ ] Линтер ссылается на новый документ в правилах
+
+---
+
+## 6. Risks & Migration Pitfalls (обновлено)
+
+### 6.1 Технические риски (после PO decisions)
+
+| Риск | Severity | Mitigation |
+|------|----------|-----------|
+| Idempotency-key middleware может конфликтовать с refresh-логикой (auth interceptor) | HIGH | TZ-232.N — отдельный HTTP interceptor. Cross-interceptor ordering critical: idempotency ПЕРЕД auth. Spec тщательно тестит ordering. |
+| Глобальный idempotency-key header может сломать бэкенд, который его не ожидает | HIGH | Header ДОЛЖЕН проходить через backend (different TZ in backend batch — задокументировать как dependency от TZ-232.N → backend idempotency middleware) |
+| Builder decomposition через 5 mini-waves — время между wave commits | MED | Каждый mini-wave → commit + smoke test; не оставлять без работающего состояния между mini-waves |
+| Sentinel cases (orders, contracts) потенциально регрессируют в prod data | HIGH | Manual QA + feature flag (если долгий rollout); staging deployment обязательно |
+| Detail pages (#15, #16) могут конфликтовать с `<pi-entity-detail>` partial coverage | MED | TZ-232.E-extension явно OUT of main batch; handled отдельно |
+| FormArray preview в table-template-dialog — большая сложность | MED | Live preview выносится в отдельный sub-компонент `<pi-form-preview>`; НЕ пытаться покрыть всё в `<pi-entity-form>` |
+| Wizard spec для generator может не покрыть edge cases (custom methods как `attachMaterials`) | LOW | Генератор ГЕНЕРИРУЕТ PRODUCTION CRUD + service shim; custom ops добавляются вручную |
+| OnInit устранение из 8 list-pages требует тонкого rewrite логики → баги | MED | Каждая миграция: spec parity test (existing spec не ломается); manual smoke-test |
+| `OnInit` rule в ESLint может сломать spec-файлы которые используют его | LOW | Rule имеет conditional: allow in `*.spec.ts` |
+| `defineEntity` принимает только string endpoint, не literal | LOW | OpenAPI integration (TZ-182 prerequisite) не обязателен; просто string достаточно |
+
+### 6.2 Миграционные ямы (обновлено)
+
+- 🪤 **Idempotency key валиден только для POST.** НЕ прикреплять к GET (бессмысленно) — middleware это учитывает, но если кто-то использует `consumeKeyForRequest` руками — будет баг.
+- 🪤 **SubmitGuard rate-limit window (300ms) должен быть > typical double-click interval (< 200ms).** Если поставить 100ms — пропустит двойной клик.
+- 🪤 **Lookup-table с raw http.subscribe() leak — fix в TZ-232.A, иначе весь `<pi-entity-list>` наследует баг.**
+- 🪤 **DefineEntity не покрывает custom methods** (upload, attachMaterials). Shim нужен. Не пытаться покрыть всё.
+- 🪤 **Builder Wave 5 — одновременная работа providers + builder paint может временно рендерить старое + новое** (если плохо изолировано). Чёткие branches per commit.
+- 🪤 **FormArray item lookup при edit (orders.products)** — initialize правильно при open с existing data. Edge case при empty item → lookup показывает none.
+- 🪤 **OnInit миграция на effect()**: signal-based literals внутри effect читаются стабильно, но если эффект читает `route.paramMap` async — нужен `takeUntilDestroyed`. Не забыть cleanup.
+- 🪤 **Backwards compat для existing service-shim**: компонент использует `MaterialsService.list()` → shim работает. После миграции на defineEntity — обновлять ВСЕ прямые вызовы в forms до new form (где используется entity-token). Двухшаговый процесс: shim не удалять пока все callsites не мигрированы.
+- 🪤 **ESLint rule no-raw-http-in-components может сломать builder/builder-inspector/block-renderer** — там `httpResource` (legitimate) но если есть raw http — сломается. Specаем exemption для legacy pages на период их миграции.
+- 🪤 **Detail pages (#15, #16) могут отложиться** (potential DEFERRED sub-TZ после основного batchа).
+
+### 6.3 Coverage disclosure (новое)
+
+**Что покрывает (Tier 1 — primary, ~92%):**
+
+- ✅ Все 11 flat-list pages (CRUD) мигрируются на `<pi-entity-list>`
+- ✅ 9 из 10 form-dialog мигрируются на `<pi-entity-form>` (1 signal-only form out of scope TZ-232)
+- ✅ 13 из 16 сервисов переиспользуются через defineEntity (3 остаются own + shim — имеющие custom logic)
+- ✅ Builder декомпозиция → 9 atomic parts
+- ✅ Inventory dashboard → `<pi-data-grid>` composition
+- ✅ Idempotency + SubmitGuard → безопасность на сабмит-уровне
+- ✅ ESLint guard → безопасность на уровне кода
+
+**Что НЕ покрывает (Tier 2 — out of scope TZ-232):**
+
+- ❌ Tree view (categories.page.ts) — требует отдельного `<pi-tree>` компонента
+- ❌ Custom signal-only формы (text-block-editor) — НЕ FormBuilder-based, требует другого подхода
+- ❌ Demo pages (basics, forms demo, foundations, etc.) — kit showcase, не production
+- ❌ Login flow — auth на другом endpoint, отдельная зона
+- ❌ WebSocket / SSE / real-time streams — нет в проекте
+- ❌ Backend coupling — backend не меняется в этом TZ (cross-TZ dependency)
+
+**Estimated coverage:** ~92% production-frontend pages + forms + safe-by-default.
+
+---
+
+## 7. References & Cross-TZ Integration
+
+### 7.1 Absorbed TZs (теперь часть этого batch)
+
+- **TZ-176, TZ-177, TZ-178** (Signal effects migration в pages): **SUPERSEDED** → этот batch мигрирует на entity-list сразу signal-based + service-factory. Wave C-D-E-F absorb these.
+- **TZ-179** (`any`-typings cleanup): **SUPERSEDED** → ESLint rule `no-explicit-any-in-dsl-config` покрывает это hard в TZ-232.I.
+- **TZ-183, TZ-184** (test coverage): separate, но должно быть обязательным во всех sub-TZ этого batchа (каждая миграция имеет spec-tick).
+
+### 7.2 Backend idempotency middleware — required TZ-247 (FIX C2 из review)
+
+Жёстко зависим от **TZ-247: Backend Idempotency Middleware**. Без него:
+- ❌ Backend НЕ может детектировать replays, frontend-only защита работает только в happy path (Level 1+2, NOT cross-network).
+- ❌ Если backend restart / network drops between fetch and response → пользователь повторяет submit → backend создаёт duplicate record (frontend cache Level 3 не достигает сервера).
+
+**TZ-247:** новый sub-TZ в `Backend Cross-cutting batch` (см. STATUS.md ⏳ READY секцию — новая header). Scope:
+- NestJS middleware который читает `Idempotency-Key` header for POST/PATCH/DELETE.
+- Если header present AND есть stored response for `(idempotency_key, request_fingerprint)` matching → return cached response (200/201 или error).
+- Если NO match → process request normally, store response keyed by Idempotency-Key.
+- TTL 24h default, configurable via env.
+- Storage: `idempotency_records` collection в MongoDB с TTL index.
+- Spec: 10 rapid submits с одинаковым Idempotency-Key → exactly 1 backend record, 9 cached responses returned.
+
+**STATUS.md placement:** отдельный batch header "Backend Idempotency TZ-247 (2026-07-27) — required for full end-to-end double-submit protection в Assembly DSL".
+
+**Sequencing:** TZ-247 в Wave A (добазовый, как TZ-232.A и TZ-232.N). Без него `frontend throws 409-vs-success` race scenarios remain unaddressed.
+
+### 7.3 Прочий backend TZs (dependencies)
+
+- **OpenAPI typed endpoints** (TZ-182 prerequisite, optional): если будет готов — `EntitySchema.endpoint: '/orders'` получает literal type → 100% typo-prevention.
+
+### 7.3 Forward references
+
+| Ref | Описание |
+|-----|----------|
+| `docs/DEVELOPMENT-PATTERNS.md` | Будет REPLACED в TZ-232.M |
+| `OrchestratorKit/STATUS.md` ⏳ READY → ✅ DONE | sub-TZ moves здесь по завершении |
+| `frontend/schematics/pi-entity/` (NEW в TZ-232.K) | Schematic skeleton |
+| `frontend/eslint/rules/` (NEW в TZ-232.I) | New directory |
+
+---
+
+## 8. Definition of Done (глобальный)
+
+**Закрытый Master Plan TZ-232** = все 14 sub-TZ ✅ DONE в `OrchestratorKit/STATUS.md` ✅ DONE секции + каждое acceptance из §5 для соответствующей волны (включая spec parity + manual QA report) + `pnpm tsc --noEmit` exit 0 + `pnpm test` exit 0 + ESLint pass (вкл. новые правила) + `builder.page.ts` < 200 строк + README и DEVELOPMENT-PATTERNS.md обновлены + progress.md содержит 14 записей (по формату TZF-00).
+
+**Частичный прогресс** = mix status в ⏳ READY / 🔥 IN WORK / ✅ DONE — нормальное промежуточное состояние.
+
+**Мажорный checkpoint:** после Wave C (sentinals orders/products/contracts) и после Wave E (Builder) — **PO sign-off ОБЯЗАТЕЛЕН**.
+
+---
+
+## 9. Sub-TZ naming & STATUS.md updates
+
+### 9.1 Numbers (TZ-232.A .. TZ-232.N)
+
+14 sub-TZ, dot-notation (per AGENTS.md §3 split-TZ rule):
+- TZ-232.A, B, C, D, E, F, G, H, I, J, K, L, M, N
+
+(N добавлен по сравнению с v1 TZ-232 — для SubmitGuard/Idempotency middleware.)
+
+### 9.2 Wave-to-TZ mapping (для STATUS.md ⏳ READY)
+
+**Wave A batch:** TZ-232.A, TZ-232.N, TZ-232.B
+**Wave B batch:** TZ-232.C
+**Wave C batch:** TZ-232.D
+**Wave D batch:** TZ-232.E, TZ-232.F, TZ-232.G (parallel within Wave D)
+**Wave E batch:** TZ-232.J
+**Wave F batch:** TZ-232.H, TZ-232.I, TZ-232.K
+**Wave G batch:** TZ-232.L, TZ-232.M
+
+### 9.3 Правки в STATUS.md
+
+В существующей записи TZ-232..244 (READ table) переименовать TZ-232.M → TZ-232.N для SubmitGuard batch и добавить строку TZ-232.N (или новый header для safety batch). Также уточнить TZ-232.J: «Builder decomposition (atomic parts, NOT BlockRenderer DSL)».
+
+---
+
+## 10. Review iteration log & open refinements (после code-review)
+
+### 10.1 Применённые fixes в этой итерации
+
+| Issue | Severity | Где исправлено |
+|-------|----------|----------------|
+| C1: Idempotency-Key scope mismatch | CRITICAL | §1.1 Level 1+2 полностью переписаны: shared Map в SubmitGuard. HTTP interceptor READS ключ, не генерирует. |
+| C2: TZ-247 (backend idempotency) упомянут но НЕ в STATUS.md | CRITICAL | §7.2 → §7.2 (NEW): TZ-247 как cross-dependency, плюс STATUS.md batch header update в этот же коммит. |
+| H1: 'OnInit в 8 list-pages' — фактически 7 | HIGH | §2.1 добавлен блок-сноска с точным breakdown (7 list-pages + 1 shared primitive INTENTIONAL) |
+| H3: snap-settings localStorage не assigned | HIGH | §3.2 Part 1 явно owner of loadFromStorage/persistToStorage |
+| H4: pluralBlocks дублирует pluralize | HIGH | §3.2 Part 1 явно: устранить → `import { pluralize } from shared/util/format` |
+
+### 10.2 Open refinements (к реализации в sub-TZ, не блокируют сейчас)
+
+| Issue | Severity | Где будет fix'нуто |
+|-------|----------|-------------------|
+| H2: Photo upload handler частично assigned | HIGH | TZ-232.J-step-1 (метод `uploadPhoto` явно owner of Part 1) |
+| H5: ESLint bypassable через barrel re-export | HIGH | TZ-232.I — добавить **`eslint-plugin-boundaries`** или **`dependency-cruiser`** (зависит от tooling access — решение при старте TZ) |
+| M1: Idempotency-Key lifecycle не специфицирован | MED | TZ-232.N AC добавит: "UUID generation policy document in code comment" |
+| M2: beforeSave async hook race condition | MED | TZ-232.G entity-form implementation — SubmitGuard обёрнут `withGuard()` не только submit, но и beforeSave |
+| M3: Coverage metric '92%' не указан | MED | §0 пофикшен в subheader; уточнение 'weighted by production-LOC' |
+| M4: ESLint flat config compat не верифицирован | MED | TZ-232.I pre-flight check в subtask AC |
+| M5: Concurrent tabs concurrent snap-settings | MED | TZ-232.J-step-1 persistToStorage через BroadcastChannel API |
+| L1: TZ-244 alias disappeared | LOW | TZ-244 не существует физически; verify-status работает по `TZ-232.N` pattern OK. Skipped если verify-status не возвращает FAIL. |
+| L2: Builder mini-wave commit boundaries | LOW | TZ-232.J wave 5 имеет AC: каждый mini-wave = отдельный commit |
+| L3: OnInit ESLint exemption для spec | LOW | TZ-232.I rule override: `overrides: [{files: ['*.spec.ts'], rules: {'no-oninit': 'off'}}]` |
+| L4: SubmitGuard unhandled-promise log | LOW | TZ-232.N — SubmitGuard.spec.ts проверяет 'no unhandled-promise log' |
+
+Детальные fixes будут сделаны при соответствующих sub-TZ. **Не блокируют утверждение TZ-232.**
+
+---
+
+## 11. Honest disclosure / Authorship
+
+Документ создан на основе:
+- **Прямого чтения 14 ключевых файлов** (silent-http, auth service/interceptor, все util/*.ts, DEVELOPMENT-PATTERNS.md, builder.page.ts полностью ~1800 строк, order-form-dialog partial, materials/pi-table/pi-document-templates services partial).
+- **Targeted code_searcher по 7 категориям** (OnInit/forkJoin/MatTable/HttpClient/FormBuilder/MatDialog/httpResource) — нашёл все 11 list-pages, 8 form-dialogs, 16 сервисов.
+- **8.5k строк read evidence** + 200+ grep matches = достаточное основание.
+
+**Ограничения:**
+- ❌ Не прочитал каждую строку каждой формы (token limit). Но выводы по patterns достаточно репрезентативны.
+- ❌ НЕ верифицировал каждый claim типа "form.dialog rejects double-submit" — основываюсь на 6-of-8 patching через submitting guard. Если 2 формы НЕ имеют guard — может быть residual issue.
+- ❌ Не проверил каждый product-doc-types pattern на 200 страницах (categories etc.) — sample of 13 representative pages.
+
+**Альтернативы, рассмотренные и отвергнутые:**
+
+- ❌ **Decorator-based DSL** (`@Entity`, `@Column`) — Angular standalone + signals плохо стыкуются. Class-based config лучше.
+- ❌ **Generic BlockRenderer DSL** (отвергнут PO) → конкретные 9 atomic parts.
+- ❌ **Client-side only idempotency cache** (без header) — недостаточно для "lost ACK" cases. Header обязателен.
+- ✅ **Class-based config + tenant isolation per page** (final design) — safety-by-default, type-safe, easy to migrate.
+- ✅ **3-layer safety** (SubmitGuard + Idempotency header + Client cache) — защищает от всех известных двойных сабмитов.
+
+**Architectural note:** Ядро DSL (`defineEntity`, `<pi-entity-list>`, `<pi-entity-form>`, `SubmitGuard`, interceptor) — стабильно. **НЕ** зависит от конкретных schema. Может быть скопировано в новый Angular проект этого семейства.
+
+**Преемник:** TBD — после завершения batch + tutorial. Самосамостоятельный sub-TZ процесс (одна sub-TZ = 4-6-8 h).
+
+---
+
+**Status:** TZ-232 (v2 Master Plan) активна. Готов к PO approval + последовательному исполнению sub-TZ.

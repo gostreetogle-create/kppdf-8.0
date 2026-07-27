@@ -1,0 +1,21 @@
+TZ-232.A: Lookup Table rewrite (DestroyRef cleanup)
+
+SEE: tasks/TZ-232.md (master plan §5 Wave A acceptance criteria for TZ-232.A)
+
+Sub-TZ scope: TZ-232.A is one of 14 sub-TZs in TZ-232 master Wave A.
+Inherits all doc narrative context from TZ-232 master plan.
+
+Acceptance criteria (master §5 Wave A — TZ-232.A):
+  - [x] frontend/src/app/shared/util/lookup-table.ts does NOT contain this.http.X.subscribe(...)
+  - [x] Type signature accepts Observable<SilentResult<...>> with takeUntilDestroyed pattern
+  - [x] DestroyRef.onDestroy -> auto-cleanup (via inject(DestroyRef) + takeUntilDestroyed(destroyRef))
+  - [x] 100 mount/unmount cycles -> 0 leaked subscriptions (stress test added with EMPTY fetcher)
+  - [x] Existing consumers (contracts.page, orders.page, materials.page) work unchanged
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER
+═══════════════════════════════════════════════════════════════
+outcome: DONE
+closed_at: 2026-07-28
+closed_by: 
+next_steps: —

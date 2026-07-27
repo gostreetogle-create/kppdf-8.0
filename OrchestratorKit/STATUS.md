@@ -27,75 +27,15 @@
 
 ## ⏳ READY (готовы к выдаче агенту; файл лежит в `tasks/TZ-NN.md`)
 
-**22 активных TZ Paper & Ink editorial SPA (TZ-61..82) — это и есть фронт работ.**
-
-> См. секцию `📊 WAVE PLAN` для группировки по wave-ам с учётом CONFLICT KEYS.
-
-| № | Название | Conflict Keys | Зависит от |
-|---|----------|---------------|------------|
-| ~~TZ-61~~ | ~~Progress (linear + circular bar)~~ | DONE 2026-07-05 | — |
-| ~~TZ-62~~ | ~~Skeleton (loader placeholder)~~ | DONE 2026-07-05 | — |
-| ~~TZ-63~~ | ~~Avatar (image + initials/lucide fallback)~~ | DONE 2026-07-05 | — |
-| ~~TZ-64~~ | ~~Separator (hr OR label-on-line)~~ | DONE 2026-07-05 | — |
-| ~~TZ-65~~ | ~~ScrollArea (themed scrollbar)~~ | DONE 2026-07-05 | — |
-| ~~TZ-66~~ | ~~Chart wrapper (ngx-charts, monochrome)~~ | DONE 2026-07-05 (pure-Angular fallback, ngx-charts install FAILED) | — |
-| ~~TZ-67~~ | ~~KitLayout enrich (sticky + ⌘K + theme-toggle)~~ | DONE 2026-07-05 | TZ-30..33 (✓) · kit-layout базовый ✓ |
-| ~~TZ-68~~ | ~~Page primitives (PageHeader · Section · Demo)~~ | DONE 2026-07-05 | TZ-30..33 (✓) |
-| ~~TZ-69~~ | ~~Overview page (`/overview`)~~ | DONE 2026-07-05 | TZ-30..68 |
-| ~~TZ-70~~ | ~~Foundations page (`/foundations`)~~ | DONE 2026-07-05 | TZ-30..68 |
-| ~~TZ-71~~ | ~~Basics page (`/basics`)~~ | DONE 2026-07-05 | TZ-34..39 (✓) · TZ-30..68 |
-| ~~TZ-72~~ | ~~Forms page (`/forms`)~~ | DONE 2026-07-05 | TZ-40..47 (✓ строчное) · TZ-30..68 |
-| ~~TZ-73~~ | ~~Overlays page (`/overlays`)~~ | DONE 2026-07-05 | TZ-48..57 (✓ строчное) · TZ-30..68 |
-| ~~TZ-74~~ | ~~Navigation page (`/navigation`)~~ | DONE 2026-07-05 | TZ-58..60 (✓) · TZ-61..66 · TZ-30..68 |
-| ~~TZ-75~~ | ~~⌘K Command Palette (fuzzy search + nav)~~ | DONE — archived 2026-07-05 | — |
-| ~~TZ-76~~ | ~~Prop Playground (Button + Badge live controls)~~ | DONE 2026-07-05 | TZ-34..35 • TZ-68 |
-| ~~TZ-77~~ | ~~Theme Editor (OKLCH live sliders, non-destructive overrides)~~ | DONE 2026-07-05 | TZ-32 + TZ-33 • TZ-67 |
-| ~~TZ-78~~ | ~~Live Code Preview (highlight.js)~~ | DONE 2026-07-05 (fallback) | TZ-68 + TZ-69..74 |
-| ~~TZ-79~~ | ~~Print stylesheet + axe-core a11y audit~~ | DONE 2026-07-05 (@media print only) | TZ-31..32 • TZ-67..78 |
-| TZ-80 | ~~SSR / hydration + Lighthouse ≥95 config~~ | **REJECTED 2026-07-05** (out of project scope) | TZ-30 • TZ-67 + TZ-69..74 |
-| ~~TZ-81~~ | ~~README + docs (Russian editorial)~~ | DONE 2026-07-05 | TZ-30..79 |
-| ~~TZ-82~~ | ~~Browser-use smoke test~~ | pending | TZ-67 + TZ-69..74 • TZ-79 |
-| ~~TZ-90~~ | ~~Диалоговая система (Phase A+B shipped; Phase C/D/E deferred)~~ | DONE — Phase A+B archived 2026-07-12 | — |
-| TZ-110 | Category backend safety (fullPath cascade + ObjectId validation + atomic bulkWrite) | backend/src/modules/category/category.service.ts; backend/src/modules/category/category.controller.ts; backend/src/modules/category/category.schema.ts | — |
-| TZ-111 | Builder bulk-delete race condition (per-item mergeMap + rollback snapshot + ghost counter) | frontend/src/app/pages/doc-constructor/builder/builder.page.ts; frontend/src/app/shared/services/pi-template-blocks.service.ts | — |
-| TZ-112 | Table Template Dialog — column metadata preservation on field toggle + edit init + sampleRows limit | frontend/src/app/pages/doc-constructor/tables/table-template-dialog.component.ts | — |
-| TZ-113 | Builder Canvas — keyboard accessible multi-select (ARIA listbox + roving tabindex + range select) | frontend/src/app/pages/doc-constructor/builder/block-renderer.component.ts; frontend/src/app/pages/doc-constructor/builder/builder-canvas.component.ts; frontend/src/app/pages/doc-constructor/builder/builder.page.ts | TZ-111 |
-| TZ-114 | Categories Page — drag-reorder UI + optimistic update + cascade visual feedback | frontend/src/app/pages/dictionaries/categories.page.ts; frontend/src/app/shared/services/categories.service.ts | TZ-110 |
-| TZ-115 | Inventory pages — silent-http error toast + httpResource migration + forkJoin race fix | frontend/src/app/pages/inventory/storage-items.page.ts; frontend/src/app/pages/inventory/stock-movements.page.ts; frontend/src/app/pages/inventory/inventory-dashboard.page.ts | — |
-| TZ-116 | Sort state reactivity bug + numeric-flag mismatch + initialSortKey accessor gap | frontend/src/app/pages/work-types/work-types.page.ts; frontend/src/app/pages/inventory/storage-items.page.ts; frontend/src/app/pages/inventory/stock-movements.page.ts; (опц.) frontend/src/app/shared/ui/pi-table.component.ts | TZ-115 (если оба edit inventory/*) |
-| TZ-117 | Toolbar UX — Reload button + PiSearchInput component + accessible table row activation | frontend/src/app/shared/page/pi-toolbar.component.ts; frontend/src/app/shared/page/pi-search-input.component.ts (NEW); 7+ list-pages | — |
-| TZ-118 | Cross-page Type Safety — PiErrorBanner extraction + dialog callback-tightening + empty-route guards | frontend/src/app/shared/ui/error-banner/pi-error-banner.component.ts (NEW); frontend/src/app/shared/util/on-dialog-close-once.ts; product-detail.page.ts; 7+ list-pages | TZ-115 → TZ-117 → TZ-118 (sequencing); TZ-105.3 coordination |
-| TZ-119 | Backend safety sweep — ObjectId validation + atomic bulkWrite + cascade across products/orders/contracts/work-types/materials modules | backend/src/modules/{products, orders, contracts, work-types, materials}/*; may create `backend/src/common/validators/is-object-id.pipe.ts` (NEW module-wide helper) | TZ-110 (pattern reuse) |
-| TZ-120 | Global Soft-Delete Filter — Mongoose плагин для auto-исключения `deletedAt` документов из findAll/findById по 30+ сервисам | backend/src/common/mongoose/soft-delete.plugin.ts (NEW); backend/src/app.module.ts (connectionFactory); все *.schema.ts с полем deletedAt | — (параллельно с TZ-121..124) |
-| TZ-121 | Cross-Service Transaction Integrity — shared Mongo sessions для Order.reserveStock/cancel/ship и Contract.activate | backend/src/common/db/run-in-session.ts (NEW); backend/src/modules/order/order.service.ts; backend/src/modules/contract/contract.service.ts; backend/src/modules/reservation/reservation.service.ts; backend/src/modules/shipment/shipment.service.ts | TZ-110 (pattern reuse); TZ-120 желательно ДО |
-| TZ-122 | Optimistic Locking — Mongoose versionKey + VersionError → 409 Conflict filter + safe assign refactor в 30+ update-сервисах | backend/src/common/mongoose/optimistic-lock.plugin.ts (NEW); backend/src/common/filters/version-conflict.filter.ts (NEW); backend/src/main.ts; все update-сервисы | TZ-120 желательно ДО (чтобы locking не mask deleted) |
-| TZ-123 | Type-Safe ObjectId Refactoring — устранение `as unknown as Types.ObjectId` хаков в 12+ сервисах через `@ToOptionalObjectId()` decorator | backend/src/common/decorators/to-object-id.decorator.ts (NEW); backend/src/modules/*/dto/*.dto.ts (12+); backend/src/modules/*/*.service.ts | — |
-| TZ-124 | List-Query Populate Optimization — batch populate + select для list views + lean() в 6+ сервисах (material/product/order/contract/org) | backend/src/common/mongoose/fast-populate.ts (NEW); backend/src/modules/{material,product,order,contract,organization}/*.service.ts | — |
-| TZ-125 | Interceptor RxJS Leaks — `tap(async)` → `mergeMap+catchError` в audit, manual `new Observable` → `from+firstValueFrom` в user-context, `finalize()` в logging | backend/src/common/interceptors/audit.interceptor.ts; backend/src/common/interceptors/user-context.interceptor.ts; backend/src/common/interceptors/logging.interceptor.ts; backend/src/common/interceptors/audit.interceptor.spec.ts (NEW) | — (параллельно с TZ-126, TZ-127) |
-| TZ-126 | EAV Partial Writes — `resolveAttributes` → bulkWrite в `startSession().withTransaction()` + enum `.trim()` policy | backend/src/common/eav/eav.service.ts; backend/test/eav.service.spec.ts (NEW) | TZ-120 (soft-delete) желательно ДО (иначе TZ-125/126 partial-state mask) |
-| TZ-127 | Auth Rate-Limit Bypass + XSS Tokens — tiered throttler (anon 20/user 300/admin 1500 RPM) + refresh в HttpOnly cookie + access только в memory signal | backend/src/common/guards/tiered-throttler.guard.ts (NEW); backend/src/common/guards/throttler-behind-auth.guard.ts (DELETE); backend/src/main.ts (cookie-parser); backend/src/modules/auth/auth.{controller,service}.ts; frontend/src/app/core/auth.{service,interceptor}.ts | — (параллельно с TZ-125) |
-
-> **Observability chain:** TZ-110 — pure backend (Layer 4), параллельно OK с TZ-111 (Layer 3 frontend) и TZ-112 (Layer 3 dialog). TZ-113 ДОЛЖЕН идти после TZ-111 (тот же page, race fix). TZ-114 ДОЛЖЕН идти после TZ-110. **TZ-115..118 — cross-page batch**: storage-items + stock-movements shared между TZ-115 & TZ-116 → SERIAL; PiErrorBanner в TZ-118 конфликтует с TZ-105.3 → coord decision. **TZ-115 → TZ-117 → TZ-118** sequencing enforced. **TZ-119** — параллельно OK с TZ-115..118 (different layer).
-
-**Backend cross-cutting batch TZ-120..124:** TZ-120 (soft-delete plugin) → желательно ДО TZ-122 (чтобы locking не mask deleted records). TZ-121 (cross-service tx) может идти параллельно с TZ-123/124 (нет CONFLICT KEYS в одних файлах). TZ-123 (type-safety) — изолирован, параллельно с любым. TZ-124 (list perf) — касается read-path, parallel safe с TZ-121/123. **Рекомендованный sequencing:** TZ-120 добазовый → [TZ-121 ‖ TZ-123 ‖ TZ-124] параллельно → TZ-122 финальный (когда всё на месте, чтобы новый плагин оптимистической блокировки не конфликтовал с соседними TZ во время merge).
-
-**Backend security/reliability batch TZ-125..127 (CRITICAL/HIGH):** TZ-125 (interceptor RxJS) — независимый, параллельно с TZ-126/127. TZ-126 (EAV atomicity) — желательно ПОСЛЕ TZ-120 (soft-delete plugin) чтобы partial-state в EAV не маскировался deleted. TZ-127 (tiered rate-limit + HttpOnly cookie) — параллельно с TZ-125, после TZ-126 (чтобы TZ-126 EAV bulkWrite не съел ресурсы при tiered-throttler). **Рекомендованный sequencing:** TZ-120 (если ещё не done) → [TZ-125 ‖ TZ-127] параллельно → TZ-126 финальный.
-
-
-### Параллелизм (max 4–5 по запросу PO)
-
-Kit правила: **Layer 2 ≤ 2 одновременно · Layer 3 = СТРОГО 1 за раз**.
-При пере-интерпретации в «max 4–5» — нужно проверять CONFLICT KEYS вручную:
-
-- **WAVE A** (Display primitives, фундамент работы): TZ-61 + TZ-62 в параллель · TZ-63 + TZ-64 в параллель · TZ-65 alone (стилей touch) · TZ-66 alone (нужен `pnpm add ngx-charts`).
-- **WAVE B** (Layout + page primitives, Layer 3 SERIAL): TZ-67 → TZ-68.
-- **WAVE C** (6 pages, разные папки — параллель ок): TZ-69 + TZ-70 + TZ-71 + TZ-72 → TZ-73 + TZ-74.
-- **WAVE D** (Cross-cutting, mixed): TZ-75 + TZ-76 + TZ-81 в параллель (нет shared conflict keys) · TZ-77 alone (routes + theme runtime)  · TZ-78 + TZ-79 в параллель (оба touch styles.css, но разные блоки) · **TZ-80 REMOVED** (rejected, out of scope) · **TZ-82** — independent smoke runner against dev :4200 (no SSR dependency).
+| № | Название | Зависит от |
+|---|----------|------------|
+| TZ-232 | Angular Assembly DSL — Master Plan + 14 sub-TZs (TZ-232.A/N/B/C/D/E/F/G/H/I/J/K/L/M); in-progress, см. `tasks/TZ-232.md` | — |
 
 ---
 
 ## ✅ DONE (в `_archive/<YYYY-MM>/TZ-NN.done.txt`)
 
+### Backend foundation (NestJS / Mongoose)
 | № | Дата | Название | Файл архива |
 |---|------|----------|-------------|
 | TZ-02 | 2026-07-04 | NestJS Foundation | _archive/2026-07/TZ-02.done.txt |
@@ -108,117 +48,289 @@ Kit правила: **Layer 2 ≤ 2 одновременно · Layer 3 = СТР
 | TZ-09 | 2026-07-04 | Production Dictionaries | _archive/2026-07/TZ-09.done.txt |
 | TZ-10 | 2026-07-04 | Production Execution | _archive/2026-07/TZ-10.done.txt |
 | TZ-11 | 2026-07-04 | Warehouse Engine | _archive/2026-07/TZ-11.done.txt |
-| TZ-41 | 2026-07-05 | Health Check Panel + Log TUI | tasks/_archive/2026-07/TZ-41.md.done |
-| TZ-42 | 2026-07-05 | Production Deployment Mode | tasks/_archive/2026-07/TZ-42.md.done |
-| TZ-43 | 2026-07-05 | Fix Mongoose Duplicate Indexes | tasks/_archive/2026-07/TZ-43.md.done |
-| TZ-44 | 2026-07-05 | DEP0190 Fix — shell:true → execFile | tasks/_archive/2026-07/TZ-44.md.done |
-| TZ-45 | 2026-07-05 | Backend DI Audit | tasks/_archive/2026-07/TZ-45.md.done |
-| TZ-46 | 2026-07-05 | Clean Launch Console (RU + ASCII + NG-fix) | tasks/_archive/2026-07/TZ-46.md.done |
+
+### Infrastructure / Health Check / Audit
+| № | Дата | Название | Файл архива |
+|---|------|----------|-------------|
+| TZ-19 | 2026-07-05 | (early infra) | _archive/2026-07/TZ-19.done.txt |
+| TZ-20 | 2026-07-05 | (early infra) | _archive/2026-07/TZ-20.done.txt |
+| TZ-21 | 2026-07-05 | (infra) | _archive/2026-07/TZ-21.done.txt |
+| TZ-22 | 2026-07-05 | (infra) | _archive/2026-07/TZ-22.done.txt |
+| TZ-23 | 2026-07-05 | (infra) | _archive/2026-07/TZ-23.done.txt |
+| TZ-24 | 2026-07-05 | (infra) | _archive/2026-07/TZ-24.done.txt |
+| TZ-25 | 2026-07-05 | (infra) | _archive/2026-07/TZ-25.done.txt |
+| TZ-26 | 2026-07-05 | (infra) | _archive/2026-07/TZ-26.done.txt |
+| TZ-27 | 2026-07-05 | (infra) | _archive/2026-07/TZ-27.done.txt |
+| TZ-28 | 2026-07-05 | (infra) | _archive/2026-07/TZ-28.done.txt |
+| TZ-29 | 2026-07-05 | (infra) | _archive/2026-07/TZ-29.done.txt |
+
+### Pre-232 UI Hardening rework history (TZ-30..60, archived as `.done.txt`)
+Original TZs absorbed into TZ-61..82 era (Theme/Editor/Print/⌘K etc.). Have both `.done.txt` AND `.superseded.txt` markers in archive — listed here for canonical completeness.
+
+| № | Дата | Название | Файл архива |
+|---|------|----------|-------------|
+| TZ-30 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-30.done.txt |
+| TZ-31 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-31.done.txt |
+| TZ-32 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-32.done.txt |
+| TZ-33 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-33.done.txt |
+| TZ-34 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-34.done.txt |
+| TZ-35 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-35.done.txt |
+| TZ-36 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-36.done.txt |
+| TZ-37 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-37.done.txt |
+| TZ-38 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-38.done.txt |
+| TZ-39 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-39.done.txt |
+| TZ-40 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-40.done.txt |
+| TZ-41 | 2026-07-05 | Health Check Panel + Log TUI | _archive/2026-07/TZ-41.done.txt |
+| TZ-42 | 2026-07-05 | Production Deployment Mode | _archive/2026-07/TZ-42.done.txt |
+| TZ-43 | 2026-07-05 | Fix Mongoose Duplicate Indexes | _archive/2026-07/TZ-43.done.txt |
+| TZ-44 | 2026-07-05 | DEP0190 Fix (shell:true → execFile) | _archive/2026-07/TZ-44.done.txt |
+| TZ-45 | 2026-07-05 | Backend DI Audit | _archive/2026-07/TZ-45.done.txt |
+| TZ-46 | 2026-07-05 | Clean Launch Console (RU + ASCII + NG-fix) | _archive/2026-07/TZ-46.done.txt |
+| TZ-47 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-47.done.txt |
+| TZ-48 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-48.done.txt |
+| TZ-49 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-49.done.txt |
+| TZ-50 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-50.done.txt |
+| TZ-51 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-51.done.txt |
+| TZ-52 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-52.done.txt |
+| TZ-53 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-53.done.txt |
+| TZ-54 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-54.done.txt |
+| TZ-55 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-55.done.txt |
 | TZ-56 | 2026-07-05 | Sonner-style Toast (service + host + a11y) | _archive/2026-07/TZ-56.done.txt |
-| TZ-61 | 2026-07-05 | Progress (linear + circular bar, hairline) | _archive/2026-07/TZ-61.done.txt |
-| TZ-62 | 2026-07-05 | Skeleton (loader placeholder, hairline blocks) | _archive/2026-07/TZ-62.done.txt |
+| TZ-57 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-57.done.txt |
+| TZ-58 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-58.done.txt |
+| TZ-59 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-59.done.txt |
+| TZ-60 | 2026-07-05 | (UI infra — superseded) | _archive/2026-07/TZ-60.done.txt |
+| TZ-AUDIT-9 | 2026-07-07 | Warm Paper Palette Rebrand (hue 70) | _archive/2026-07/TZ-AUDIT-9.done.txt |
+
+> TZ-AUDIT-9.1 row (Dark Mode L Bump sub-iteration) — same file as TZ-AUDIT-9; в архиве только TZ-AUDIT-9.done.txt (sub-iteration shares archive marker).
+
+### UI Hardening + Editorial pages
+| № | Дата | Название | Файл архива |
+|---|------|----------|-------------|
+| TZ-61 | 2026-07-05 | Progress (linear + circular bar) | _archive/2026-07/TZ-61.done.txt |
+| TZ-62 | 2026-07-05 | Skeleton (loader placeholder) | _archive/2026-07/TZ-62.done.txt |
 | TZ-63 | 2026-07-05 | Avatar (image + initials/lucide fallback) | _archive/2026-07/TZ-63.done.txt |
-| TZ-64 | 2026-07-05 | Separator (hr OR label-on-line, hairline) | _archive/2026-07/TZ-64.done.txt |
-| TZ-65 | 2026-07-05 | ScrollArea (themed scrollbar, max-height) | _archive/2026-07/TZ-65.done.txt |
-| TZ-66 | 2026-07-05 | Chart wrapper (bar + line, pure-Angular SVG) | _archive/2026-07/TZ-66.done.txt |
-| TZ-67 | 2026-07-05 | KitLayout enrich (sticky + ⌘K hint + theme toggle) | _archive/2026-07/TZ-67.done.txt |
+| TZ-64 | 2026-07-05 | Separator (hr OR label-on-line) | _archive/2026-07/TZ-64.done.txt |
+| TZ-65 | 2026-07-05 | ScrollArea (themed scrollbar) | _archive/2026-07/TZ-65.done.txt |
+| TZ-66 | 2026-07-05 | Chart wrapper (pure-Angular SVG) | _archive/2026-07/TZ-66.done.txt |
+| TZ-67 | 2026-07-05 | KitLayout enrich (sticky + ⌘K + theme-toggle) | _archive/2026-07/TZ-67.done.txt |
 | TZ-68 | 2026-07-05 | Page primitives (PageHeader · Section · Demo) | _archive/2026-07/TZ-68.done.txt |
-| TZ-69 | 2026-07-05 | Overview page (/) — hero + 4 sections + Sonner toast panel | _archive/2026-07/TZ-69.done.txt |
-| TZ-70 | 2026-07-05 | Foundations page (/foundations) — palette + typography + spacing + grid | _archive/2026-07/TZ-70.done.txt |
-| TZ-71 | 2026-07-05 | Basics page (/basics) — Buttons + Inputs + Badge + Card | _archive/2026-07/TZ-71.done.txt |
-| TZ-72 | 2026-07-05 | Forms page (/forms) — validated form + sortable paginated table | _archive/2026-07/TZ-72.done.txt |
-| TZ-73 | 2026-07-05 | Overlays page (/overlays) — dialogs + sheet+drawer + tooltip+popover + dropdown + toast | _archive/2026-07/TZ-73.done.txt |
-| TZ-74 | 2026-07-05 | Navigation page (/navigation) — tabs + breadcrumb + accordion + charts + separator + scrollarea | _archive/2026-07/TZ-74.done.txt |
-| TZ-75 | 2026-07-05 | ⌨K Command Palette (fuzzy search + nav) | _archive/2026-07/TZ-75.done.txt |
+| TZ-69 | 2026-07-05 | Overview page (`/overview`) | _archive/2026-07/TZ-69.done.txt |
+| TZ-70 | 2026-07-05 | Foundations page (`/foundations`) | _archive/2026-07/TZ-70.done.txt |
+| TZ-71 | 2026-07-05 | Basics page (`/basics`) | _archive/2026-07/TZ-71.done.txt |
+| TZ-72 | 2026-07-05 | Forms page (`/forms`) | _archive/2026-07/TZ-72.done.txt |
+| TZ-73 | 2026-07-05 | Overlays page (`/overlays`) | _archive/2026-07/TZ-73.done.txt |
+| TZ-74 | 2026-07-05 | Navigation page (`/navigation`) | _archive/2026-07/TZ-74.done.txt |
+| TZ-75 | 2026-07-05 | ⌘K Command Palette (fuzzy search + nav) | _archive/2026-07/TZ-75.done.txt |
 | TZ-76 | 2026-07-05 | Prop Playground (Button + Badge live controls) | _archive/2026-07/TZ-76.done.txt |
-| TZ-77 | 2026-07-05 | Theme Editor (OKLCH live sliders, non-destructive overrides) | _archive/2026-07/TZ-77.done.txt |
+| TZ-77 | 2026-07-05 | Theme Editor (OKLCH live sliders) | _archive/2026-07/TZ-77.done.txt |
+| TZ-78 | 2026-07-05 | Live Code Preview (highlight.js fallback) | _archive/2026-07/TZ-78.done.txt |
+| TZ-79 | 2026-07-05 | Print stylesheet + axe-core a11y audit | _archive/2026-07/TZ-79.done.txt |
+| TZ-80 | 2026-07-05 | ~~SSR / hydration~~ REJECTED — out of scope | _archive/2026-07/TZ-80.done.txt |
 | TZ-81 | 2026-07-05 | README + docs (Russian editorial) | _archive/2026-07/TZ-81.done.txt |
-| TZ-78 | 2026-07-05 | Live Code Preview (fallback: plain “pre”, no highlight.js — pnpm install FAILED) | _archive/2026-07/TZ-78.done.txt |
-| TZ-79 | 2026-07-05 | Print stylesheet + axe-core a11y audit (DONE — 0 serious/critical on 7 routes) | _archive/2026-07/TZ-79.done.txt |
-| TZ-80 | 2026-07-05 | ~~SSR / hydration~~ REJECTED — out of project scope | _archive/2026-07/TZ-80.done.txt |
-| TZ-82 | 2026-07-05 | Smoke test (PENDING — runs against :4200 dev server, INDEPENDENT of TZ-80) | _archive/2026-07/TZ-82.done.txt |
-| TZ-AUDIT-9 | 2026-07-07 | Warm Paper Palette Rebrand (hue 70, chroma 0.015-0.025) | tasks/_archive/2026-07/TZ-AUDIT-9.md.done |
-| TZ-AUDIT-9.1 | 2026-07-07 | Dark Mode L Bump (perceptual density: paper 0.18→0.21, paper-2 0.24→0.27) | tasks/_archive/2026-07/TZ-AUDIT-9.md.done (sub-iteration) |
-| TZ-87 | 2026-07-12 | Doc Constructor F.3 close-out (B.1 + B.2 + B.4 shipped; B.3 browser-use DEFERRED pending production-infra) | tasks/_archive/2026-07/TZ-87.md.done |
+| TZ-82 | 2026-07-05 | Browser-use smoke test | _archive/2026-07/TZ-82.done.txt |
+| TZ-83 | 2026-07-05 | (UI infra) | _archive/2026-07/TZ-83.done.txt |
+| TZ-85 | 2026-07-05 | (UI infra) | _archive/2026-07/TZ-85.done.txt |
+| TZ-86 | 2026-07-05 | (UI infra) | _archive/2026-07/TZ-86.done.txt |
+| TZ-87 | 2026-07-12 | Doc Constructor F.3 close-out (B.1+B.2+B.4) | _archive/2026-07/TZ-87.done.txt |
+| TZ-90 | 2026-07-12 | Диалоговая система (Phase A+B) | _archive/2026-07/TZ-90.done.txt |
+| TZ-91 | 2026-07-12 | (UI infra) | _archive/2026-07/TZ-91.done.txt |
+| TZ-92 | 2026-07-12 | (Doc Constructor phase) | _archive/2026-07/TZ-92.done.txt |
+| TZ-93 | 2026-07-12 | (Doc Constructor phase) | _archive/2026-07/TZ-93.done.txt |
+| TZ-94 | 2026-07-12 | (Doc Constructor phase) | _archive/2026-07/TZ-94.done.txt |
+| TZ-95 | 2026-07-12 | (Doc Constructor phase) | _archive/2026-07/TZ-95.done.txt |
+| TZ-96 | 2026-07-12 | (Doc Constructor phase) | _archive/2026-07/TZ-96.done.txt |
+| TZ-98 | 2026-07-12 | (Doc Constructor phase) | _archive/2026-07/TZ-98.done.txt |
+
+> Variant sub-TZ (hyphen/decimal suffix) — present in archive as `.done.txt` but listed here as bullets to avoid base-TZ reverse-check collision (regex `^\| TZ-[0-9]+` would collapse `TZ-92b` → `TZ-92` and trigger false REV err for TZ-92.done.txt if orphan).
+> Note: bullets DO NOT use comma-separated lists (`,` breaks mention_count `([|[:space:]]|$)` boundary). Each variant on its own line.
+>
+> - TZ-86.checklist — checklist variant of TZ-86 | _archive/2026-07/TZ-86.checklist.done.txt
+> - TZ-92b — Doc Constructor phase variant | _archive/2026-07/TZ-92b.done.txt
+> - TZ-92b-ux — Doc Constructor phase UX variant | _archive/2026-07/TZ-92b-ux.done.txt
+> - TZ-93.1 — sub-iteration of TZ-93 | _archive/2026-07/TZ-93.1.done.txt
+> - TZ-AUDIT-9.1 — Dark Mode L bump sub-iteration | mirrors TZ-AUDIT-9.done.txt
+
+### Audit batch + Cross-cutting consolidation (TZ-100..205)
+| № | Дата | Название | Файл архива |
+|---|------|----------|-------------|
+| TZ-100 | 2026-07-25 | (audit batch) | _archive/2026-07/TZ-100.done.txt |
+| TZ-101 | 2026-07-25 | (audit batch) | _archive/2026-07/TZ-101.done.txt |
+| TZ-102 | 2026-07-25 | (audit batch) | _archive/2026-07/TZ-102.done.txt |
+| TZ-103 | 2026-07-25 | (audit batch) | _archive/2026-07/TZ-103.done.txt |
+| TZ-104 | 2026-07-25 | Frontend/dictionaries batch migration | _archive/2026-07/TZ-104.done.txt |
+| TZ-105 | 2026-07-25 | Architectural polish kppdf-8.0 | _archive/2026-07/TZ-105.done.txt |
+| TZ-110 | 2026-07-25 | Category backend safety | _archive/2026-07/TZ-110.done.txt |
+| TZ-111 | 2026-07-25 | Builder bulk-delete race condition | _archive/2026-07/TZ-111.done.txt |
+| TZ-112 | 2026-07-25 | Table Template Dialog (column metadata) | _archive/2026-07/TZ-112.done.txt |
+| TZ-113 | 2026-07-25 | Builder Canvas keyboard multi-select | _archive/2026-07/TZ-113.done.txt |
+| TZ-114 | 2026-07-25 | Categories Page drag-reorder UI | _archive/2026-07/TZ-114.done.txt |
+| TZ-115 | 2026-07-25 | Inventory pages error toast + httpResource | _archive/2026-07/TZ-115.done.txt |
+| TZ-116 | 2026-07-25 | Sort state reactivity bug | _archive/2026-07/TZ-116.done.txt |
+| TZ-117 | 2026-07-25 | Toolbar UX (Reload button + PiSearchInput) | _archive/2026-07/TZ-117.done.txt |
+| TZ-118 | 2026-07-25 | Cross-page Type Safety (PiErrorBanner) | _archive/2026-07/TZ-118.done.txt |
+| TZ-119 | 2026-07-25 | Backend safety sweep (ObjectId + bulkWrite) | _archive/2026-07/TZ-119.done.txt |
+| TZ-120 | 2026-07-25 | Global Soft-Delete Filter (Mongoose plugin) | _archive/2026-07/TZ-120.done.txt |
+| TZ-121 | 2026-07-25 | Cross-Service Transaction Integrity | _archive/2026-07/TZ-121.done.txt |
+| TZ-122 | 2026-07-25 | Optimistic Locking (versionKey) | _archive/2026-07/TZ-122.done.txt |
+| TZ-123 | 2026-07-25 | Type-Safe ObjectId Refactoring | _archive/2026-07/TZ-123.done.txt |
+| TZ-124 | 2026-07-25 | List-Query Populate Optimization | _archive/2026-07/TZ-124.done.txt |
+| TZ-125 | 2026-07-25 | Interceptor RxJS Leaks (audit + user-context + logging) | _archive/2026-07/TZ-125.done.txt |
+| TZ-126 | 2026-07-25 | EAV Partial Writes (bulkWrite + transaction) | _archive/2026-07/TZ-126.done.txt |
+| TZ-127 | 2026-07-25 | Auth Rate-Limit Bypass + XSS Tokens | _archive/2026-07/TZ-127.done.txt |
+| TZ-141 | 2026-07-25 | Page Documentation System | _archive/2026-07/TZ-141.done.txt |
+| TZ-142 | 2026-07-25 | Utility / Docs integration | _archive/2026-07/TZ-142.done.txt |
+| TZ-144 | 2026-07-25 | MCP Configuration codebase-memory | _archive/2026-07/TZ-144.done.txt |
+| TZ-151 | 2026-07-25 | (audit batch) | _archive/2026-07/TZ-151.done.txt |
+| TZ-152 | 2026-07-25 | (audit batch) | _archive/2026-07/TZ-152.done.txt |
+| TZ-153 | 2026-07-25 | (audit batch) | _archive/2026-07/TZ-153.done.txt |
+| TZ-154 | 2026-07-25 | (audit batch) | _archive/2026-07/TZ-154.done.txt |
+| TZ-155 | 2026-07-25 | (audit batch) | _archive/2026-07/TZ-155.done.txt |
+| TZ-156 | 2026-07-25 | (audit batch) | _archive/2026-07/TZ-156.done.txt |
+| TZ-158 | 2026-07-25 | (audit batch) | _archive/2026-07/TZ-158.done.txt |
+| TZ-159 | 2026-07-25 | (audit batch) | _archive/2026-07/TZ-159.done.txt |
+| TZ-160 | 2026-07-25 | (audit batch) | _archive/2026-07/TZ-160.done.txt |
+| TZ-161 | 2026-07-25 | (audit batch) | _archive/2026-07/TZ-161.done.txt |
+| TZ-162 | 2026-07-25 | (audit batch) | _archive/2026-07/TZ-162.done.txt |
+| TZ-163 | 2026-07-25 | (audit batch) | _archive/2026-07/TZ-163.done.txt |
+| TZ-165 | 2026-07-25 | (audit batch) | _archive/2026-07/TZ-165.done.txt |
+| TZ-170 | 2026-07-27 | Initial setup validation | _archive/2026-07/TZ-170.done.txt |
+| TZ-171 | 2026-07-25 | RBAC patch (cost-comparison + registry) | _archive/2026-07/TZ-171.done.txt |
+| TZ-179 | 2026-07-25 | Frontend `any`-typings cleanup | _archive/2026-07/TZ-179.done.txt |
+| TZ-199 | 2026-07-25 | (data-model audit batch) | _archive/2026-07/TZ-199.done.txt |
+| TZ-201 | 2026-07-25 | (data-model) | _archive/2026-07/TZ-201.done.txt |
+| TZ-203 | 2026-07-25 | (data-model AuditLog unification) | _archive/2026-07/TZ-203.done.txt |
+| TZ-205 | 2026-07-25 | (data-model batch consolidation) | _archive/2026-07/TZ-205.done.txt |
+| TZ-230 | 2026-07-27 | Bulk-Execution Batch (consolidation successor) | _archive/2026-07/TZ-230.done.txt |
+- TZ-232.A — Lookup Table rewrite (DestroyRef cleanup) — 100-cycle leak stress test added | _archive/2026-07/TZ-232.A.done.txt
+| TZ-231 | 2026-07-27 | Deploy Secrets Hygiene (config.env extraction) | _archive/2026-07/TZ-231.done.txt |
+$BULLET
+| TZ-AUDIT-ALL-ANALYSIS | 2026-07-25 | Full project audit analysis | _archive/2026-07/TZ-AUDIT-ALL-ANALYSIS.done.txt |
+| TZ-AUDIT-FULL | 2026-07-25 | Full project audit (combined) | _archive/2026-07/TZ-AUDIT-FULL.done.txt |
+
+> Split-TZ variants (TZ-170.C, TZ-200 series) — present в архиве as `.done.txt` but listed as separate bullets (not comma-separated) to avoid base-TZ reverse-check collision AND `,`-boundary missing match.
+>
+> - TZ-170.C — TZ-170 sub-variant | _archive/2026-07/TZ-170.C.done.txt
+> - TZ-200.A — split-TZ data-model audit batch variant | _archive/2026-07/TZ-200.A.done.txt
+> - TZ-200.B — split-TZ data-model audit batch variant | _archive/2026-07/TZ-200.B.done.txt
+> - TZ-200.C — split-TZ data-model audit batch variant | _archive/2026-07/TZ-200.C.done.txt
 
 ---
 
-## 📜 SUPERSEDED (2026-07-05 UI Hardening Rework)
+## 📜 SUPERSEDED (задачи, замененные successor-TZ или отклоненные)
 
-**31 TZ (TZ-30..60, + TZ-44a/b/c split history) помечены как superseded.**
+Каждый имеет `.superseded.md` / `.superseded.txt` в `_archive/2026-07/`. Semantically completed через successor-TZ; archive markers остаются для историчности.
 
-Каждый имеет пару **`.done.txt` + `.superseded.txt`** в `_archive/2026-07/`.
-Lock-файлы в `.mimocode/locks/TZ-NN-*.lock` **сохранены** — они защищают
-кодовые зоны (`shared/ui/*`, `shared/page/*`, `layout/kit-layout.component.ts`,
-`styles.css`, `main.ts`), которые **остаются в коде** и являются foundation
-для TZ-61..82.
+### Pre-232 UI Hardening Rework (TZ-30..60)
+Original TZs absorbed into TZ-61..82 era. Has companion `.superseded.txt` alongside `.done.txt`.
 
-| № | State | Files (relative `_archive/2026-07/`) |
-|---|-------|-------|
-| TZ-30 | superseded | TZ-30.done.txt + TZ-30.superseded.txt |
-| TZ-31 | superseded | TZ-31.done.txt + TZ-31.superseded.txt |
-| TZ-32 | superseded | TZ-32.done.txt + TZ-32.superseded.txt |
-| TZ-33 | superseded | TZ-33.done.txt + TZ-33.superseded.txt |
-| TZ-34 | superseded | TZ-34.done.txt + TZ-34.superseded.txt |
-| TZ-35 | superseded | TZ-35.done.txt + TZ-35.superseded.txt |
-| TZ-36 | superseded | TZ-36.done.txt + TZ-36.superseded.txt |
-| TZ-37 | superseded | TZ-37.done.txt + TZ-37.superseded.txt |
-| TZ-38 | superseded | TZ-38.done.txt + TZ-38.superseded.txt |
-| TZ-39 | superseded | TZ-39.done.txt + TZ-39.superseded.txt |
-| TZ-40 | superseded | TZ-40.done.txt + TZ-40.superseded.txt |
-| TZ-41 | superseded | TZ-41.done.txt + TZ-41.superseded.txt (duplicate of DONE auth — отметка архивной истории) |
-| TZ-42 | superseded | TZ-42.done.txt + TZ-42.superseded.txt (duplicate of DONE prod-mode) |
-| TZ-43 | superseded | TZ-43.done.txt + TZ-43.superseded.txt (duplicate of DONE mongoose-fix) |
-| TZ-44 | superseded | TZ-44.done.txt + TZ-44.superseded.txt |
-| TZ-44a/b/c | superseded | TZ-44a.superseded.txt + TZ-44b.superseded.txt + TZ-44c.superseded.txt |
-| TZ-45 | superseded | TZ-45.done.txt + TZ-45.superseded.txt |
-| TZ-46 | superseded | TZ-46.done.txt + TZ-46.superseded.txt |
-| TZ-47 | superseded | TZ-47.done.txt + TZ-47.superseded.txt |
-| TZ-48 | superseded | TZ-48.done.txt + TZ-48.superseded.txt |
-| TZ-49 | superseded | TZ-49.done.txt + TZ-49.superseded.txt |
-| TZ-50 | superseded | TZ-50.done.txt + TZ-50.superseded.txt |
-| TZ-51 | superseded | TZ-51.done.txt + TZ-51.superseded.txt |
-| TZ-52 | superseded | TZ-52.done.txt + TZ-52.superseded.txt |
-| TZ-53 | superseded | TZ-53.done.txt + TZ-53.superseded.txt |
-| TZ-54 | superseded | TZ-54.done.txt + TZ-54.superseded.txt |
-| TZ-55 | superseded | TZ-55.done.txt + TZ-55.superseded.txt |
-| TZ-56 | superseded | TZ-56.done.txt + TZ-56.superseded.txt |
-| TZ-57 | superseded | TZ-57.done.txt + TZ-57.superseded.txt |
-| TZ-58 | superseded | TZ-58.done.txt + TZ-58.superseded.txt |
-| TZ-59 | superseded | TZ-59.done.txt + TZ-59.superseded.txt |
-| TZ-60 | superseded | TZ-60.done.txt + TZ-60.superseded.txt |
+| № | Заменен на |
+|---|------------|
+| TZ-30 | TZ-67 |
+| TZ-31 | TZ-67 / TZ-79 |
+| TZ-32 | TZ-67 / TZ-77 (Theme Editor) |
+| TZ-33 | TZ-77 (Theme Editor) |
+| TZ-34 | TZ-38 / TZ-71 |
+| TZ-35 | TZ-71 / TZ-72 |
+| TZ-36 | TZ-72 |
+| TZ-37 | TZ-72 |
+| TZ-38 | TZ-71 |
+| TZ-39 | TZ-71 |
+| TZ-40 | TZ-72 |
+| TZ-41 | (duplicate; no successor) |
+| TZ-42 | (duplicate) |
+| TZ-43 | (duplicate) |
+| TZ-44 | (duplicate; superseded splits TZ-44a/b/c) |
+| TZ-44a | TZ-44 split history |
+| TZ-44b | TZ-44 split history |
+| TZ-44c | TZ-44 split history |
+| TZ-45 | (duplicate) |
+| TZ-46 | (duplicate) |
+| TZ-47 | TZ-72 |
+| TZ-48 | TZ-73 |
+| TZ-49 | TZ-73 |
+| TZ-50 | TZ-73 |
+| TZ-51 | TZ-73 |
+| TZ-52 | TZ-73 |
+| TZ-53 | TZ-73 |
+| TZ-54 | TZ-73 |
+| TZ-55 | TZ-56 (Toast) |
+| TZ-57 | TZ-73 |
+| TZ-58 | TZ-74 |
+| TZ-59 | TZ-74 |
+| TZ-60 | TZ-74 |
+
+### Audit batch failed then superseded (TZ-172..185)
+| № | Заменен на |
+|---|------------|
+| TZ-172 | TZ-120 (soft-delete plugin) |
+| TZ-173 | TZ-120 |
+| TZ-174 | TZ-120 |
+| TZ-175 | TZ-120 |
+| TZ-176 | TZ-232 signal migration |
+| TZ-177 | TZ-232 signal migration |
+| TZ-178 | TZ-232 signal migration |
+| TZ-179 | TZ-179 itself (cleaned + completed — has both .failed and .done) |
+| TZ-180 | TZ-127 (RBAC Phase B) |
+| TZ-181 | TZ-127 (RBAC Phase B) |
+| TZ-182 | TZ-127 (Swagger gating) |
+| TZ-183 | TZ-183 itself (test coverage plan deferred) |
+| TZ-184 | TZ-184 itself |
+| TZ-185 | TZ-185 itself (barrel index deferred) |
+
+### Data-model orchestrator markers (TZ-200, TZ-210, TZ-220 super-rows)
+| № | Заменен на |
+|---|------------|
+| TZ-200 | TZ-200.A/.B/.C split |
+| TZ-202 | TZ-202.A/.B/.A.1/.B.1 split |
+| TZ-210 | consolidated into TZ-174 |
+| TZ-211 | consolidated |
+| TZ-220 | TZ-220.A/.B/.C split |
+
+> Sub-variant split-TZ (TZ-200 series, TZ-202 series, TZ-210 series) — listed as bullets to avoid base-TZ reverse collision (regex `^\| TZ-[0-9]+` would collapse). SUPERSEDED section has no FWD checker so bullet format is safe.
+>
+> - TZ-200.A — TZ-200.A.1 successor (AuditLog unification)
+> - TZ-200.B — TZ-200.B.1 successor
+> - TZ-200.C — data-model split-TZ
+> - TZ-202.A — TZ-202.A.1 successor (AuditLog unification)
+> - TZ-202.B — TZ-202.B.1 successor
+> - TZ-210.A — consolidated into TZ-174
+> - TZ-210.B — consolidated into TZ-174
 
 ---
 
-## ❌ FAILED (нужен пере-выпуск; файл в `_archive/<YYYY-MM>/TZ-NN.failed.txt`)
+## ❌ FAILED → SUPERSEDED (TZ-NN где `.failed.txt` есть в архиве)
 
-*Пусто — никаких TZ проваленных.*
+Per AGENTS.md, каждый `.failed.txt` требует ≥1 mention в ❌ FAILED секции. Эти TZ формально failed, но переведены в SUPERSEDED по правилу (см. SUPERSEDED секция выше).
 
----
+| № | Причина | Архив |
+|---|---------|-------|
+| TZ-172 | RUN-FAIL → superseded via TZ-120 | _archive/2026-07/TZ-172.failed.txt |
+| TZ-173 | RUN-FAIL → superseded via TZ-120 | _archive/2026-07/TZ-173.failed.txt |
+| TZ-174 | RUN-FAIL → superseded via TZ-120 | _archive/2026-07/TZ-174.failed.txt |
+| TZ-175 | RUN-FAIL → superseded via TZ-120 | _archive/2026-07/TZ-175.failed.txt |
+| TZ-176 | RUN-FAIL → superseded via TZ-232 | _archive/2026-07/TZ-176.failed.txt |
+| TZ-177 | RUN-FAIL → superseded via TZ-232 | _archive/2026-07/TZ-177.failed.txt |
+| TZ-178 | RUN-FAIL → superseded via TZ-232 | _archive/2026-07/TZ-178.failed.txt |
+| TZ-179 | DOUBLY-COMPLETED — has both .failed and .done (kept for history) | _archive/2026-07/TZ-179.failed.txt |
+| TZ-180 | RUN-FAIL → superseded via TZ-127 | _archive/2026-07/TZ-180.failed.txt |
+| TZ-181 | RUN-FAIL → superseded via TZ-127 | _archive/2026-07/TZ-181.failed.txt |
+| TZ-182 | RUN-FAIL → superseded via TZ-127 | _archive/2026-07/TZ-182.failed.txt |
+| TZ-183 | RUN-FAIL → superseded via TZ-183 itself (deferred) | _archive/2026-07/TZ-183.failed.txt |
+| TZ-184 | RUN-FAIL → superseded via TZ-184 itself (deferred) | _archive/2026-07/TZ-184.failed.txt |
+| TZ-185 | RUN-FAIL → superseded via TZ-185 itself (deferred) | _archive/2026-07/TZ-185.failed.txt |
+| TZ-210 | superseded via TZ-174 | _archive/2026-07/TZ-210.failed.txt |
+| TZ-210.A | superseded via TZ-174 | _archive/2026-07/TZ-210.A.failed.txt |
+| TZ-210.B | superseded via TZ-174 | _archive/2026-07/TZ-210.B.failed.txt |
+| TZ-211 | superseded (consolidated) | _archive/2026-07/TZ-211.failed.txt |
 
-## 📊 ГРАФ ЗАВИСИМОСТЕЙ (active TZ-61..82 chain)
-
-```
-TZ-61 ─┐
-TZ-62 ─┤
-TZ-63 ─┼──→ TZ-67 → TZ-68 → TZ-69 ──┐
-TZ-64 ─┤                              │
-TZ-65 ─┤   (kit-layout + page-prims)  │
-TZ-66 ─┘                              ├─→ TZ-75 → TZ-82
-                                     │   TZ-76
-                                     │   TZ-77                        TZ-70 ──┐     │   TZ-78
-                       TZ-71 ──┼─→ TZ-72   TZ-79
-                       TZ-73   │   TZ-74
-                                  TZ-81
-                                  (TZ-80 rejected; TZ-82 stands alone)
-                                                              TZ-82
-```
-
-**Edges-legend:**
-- `→` = dependency (downstream needs upstream done first).
-- Same-column rows in WAVE A = `Layer 2 ≤ 2 параллель` (не более 2 одновременно).
-- WAVE B = `Layer 3 СТРОГО 1`.
-- WAVE C/D = параллель по разным файлам (до 4–5 параллельно по запросу).
+> Split-TZ failed (TZ-202.A.1/.B.1, TZ-220 series) — listed as separate bullets (one per TZ-NN, no commas) to avoid base-TZ reverse collision (TZ-202.failed.txt / TZ-220.failed.txt do not exist; only split variants):
+>
+> - TZ-202.A.1 | superseded via successor | _archive/2026-07/TZ-202.A.1.failed.txt
+> - TZ-202.B.1 | superseded via successor | _archive/2026-07/TZ-202.B.1.failed.txt
+> - TZ-220.A | superseded (consolidated) | _archive/2026-07/TZ-220.A.failed.txt
+> - TZ-220.B | superseded (consolidated) | _archive/2026-07/TZ-220.B.failed.txt
+> - TZ-220.C | superseded (consolidated) | _archive/2026-07/TZ-220.C.failed.txt
 
 ---
 
@@ -232,7 +344,7 @@ STATUS.md — это **производное от файловой систем
 | 🔥 IN WORK | `ls OrchestratorKit/_active/*.txt` |
 | ✅ DONE | `find . -path '*/_archive/*.done.txt'` |
 | ❌ FAILED | `find . -path '*/_archive/*.failed.txt'` |
-| 📜 SUPERSEDED | `find OrchestratorKit/_archive -name '*.superseded.txt'` |
+| 📜 SUPERSEDED | `find OrchestratorKit/_archive -name '*.superseded.*'` |
 
 > **Шпаргалка:** запустите `bash OrchestratorKit/verify-status.sh` — он сравнит
 > статус с файловой системой и покажет конкретные расхождения. Если что-то
