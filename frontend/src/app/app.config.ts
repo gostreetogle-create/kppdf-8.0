@@ -11,6 +11,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
 import { routes } from './app.routes';
+import { idempotencyInterceptor } from './core/idempotency.interceptor';
 import { AuthService } from './core/auth.service';
 import { authInterceptor } from './core/auth.interceptor';
 import { PiToastService } from './shared/ui/toast';
@@ -56,7 +57,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes, withComponentInputBinding()),
-    provideHttpClient(withInterceptors([authInterceptor])),
+    provideHttpClient(withInterceptors([idempotencyInterceptor, authInterceptor])),
     provideAnimationsAsync(),
     provideAppInitializer(() => inject(AuthService).bootstrap()),
   ],

@@ -1,5 +1,6 @@
-import { signal } from '@angular/core';
-import { Observable } from 'rxjs';
+import { DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Observable, Subscription } from 'rxjs';
 import { SilentResult } from '../../core/silent-http';
 
 export interface LookupTable<T> {
@@ -22,12 +23,15 @@ export interface LookupTable<T> {
  */
 export function createLookupTable<T>(
   fetcher: Observable<SilentResult<{ items?: T[] } | T[]>>,
-  keyFn: (item: T) => string = (item: any) => item._id,
+  keyFn: (item: T) => string = (item: T) => (item as Record<string, unknown>)['_id'] as string,
 ): LookupTable<T> {
   const byId = signal<Record<string, T>>({});
+  const destroyRef = inject(DestroyRef);
+  let subscription: Subscription | undefined;
 
   function load(): void {
-    fetcher.subscribe((res) => {
+    subscription?.unsubscribe();
+    subscription = fetcher.pipe(takeUntilDestroyed(destroyRef)).subscribe((res) => {
       if (!res.ok) return;
       const items = Array.isArray(res.data) ? res.data : (res.data.items ?? []);
       const map: Record<string, T> = {};
