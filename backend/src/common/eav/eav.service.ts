@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { AnyBulkWriteOperation, Model, Types } from 'mongoose';
 import { AttributeDefinition, AttributeDefinitionDocument } from '../../modules/attribute-definition/attribute-definition.schema';
 import { EntityAttributeValue, EntityAttributeValueDocument } from '../../modules/entity-attribute-value/entity-attribute-value.schema';
 
@@ -48,7 +48,7 @@ export class EavService {
     const defsByName = new Map(defs.map((d) => [d.name, d]));
 
     const result: Record<string, unknown> = {};
-    const operations: any[] = [];
+    const operations: AnyBulkWriteOperation<EntityAttributeValueDocument>[] = [];
     for (const [name, value] of Object.entries(raw)) {
       const def = defsByName.get(name);
       if (!def) {

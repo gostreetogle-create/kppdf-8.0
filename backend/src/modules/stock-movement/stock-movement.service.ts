@@ -4,7 +4,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
-import { Connection, Model, Types } from 'mongoose';
+import { ClientSession, Connection, Model, Types } from 'mongoose';
 import {
   StockMovement,
   StockMovementDocument,
@@ -100,7 +100,7 @@ export class StockMovementService {
     productId: string,
     zoneName: string | undefined,
     qty: number,
-    session: any,
+    session: ClientSession,
   ): Promise<void> {
     const filter: Record<string, unknown> = {
       warehouseId: new Types.ObjectId(warehouseId),
@@ -134,7 +134,7 @@ export class StockMovementService {
     productId: string,
     zoneName: string | undefined,
     qty: number,
-    session: any,
+    session: ClientSession,
   ): Promise<void> {
     const filter: Record<string, unknown> = {
       warehouseId: new Types.ObjectId(warehouseId),
@@ -168,7 +168,7 @@ export class StockMovementService {
     fromZone: string | undefined,
     toZone: string | undefined,
     qty: number,
-    session: any,
+    session: ClientSession,
   ): Promise<void> {
     await this.applyOut(fromWarehouseId, productId, fromZone, qty, session);
     await this.applyIn(toWarehouseId, productId, toZone, qty, session);

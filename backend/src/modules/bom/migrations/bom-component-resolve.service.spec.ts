@@ -1,4 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
+/* eslint-disable @typescript-eslint/no-explicit-any --
+ * Test scaffolding intentionally uses `any` for Mongoose Model mocks
+ * (chained .find().select().limit().lean().exec() interfaces resist
+ * jest.Mocked<Model<T>> typing without invasive `as unknown as` casts
+ * across the entire test surface). Production code in
+ * bom-component-resolve.service.ts is fully typed; this disable is
+ * scoped to SPEC-ONLY assertions of in-memory mock behavior. */
 import { getModelToken } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
 import { BomComponentResolveService } from './bom-component-resolve.service';

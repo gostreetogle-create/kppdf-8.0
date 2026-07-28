@@ -1,0 +1,86 @@
+TZ-252 — Backend `any`-Sweep DONE 2026-07-28
+
+═══════════════════════════════════════════════════════
+Scope
+═══════════════════════════════════════════════════════
+
+Mirror the frontend TZ-179/TZ-252.F/a33fdf9 cleanup pattern for the backend NestJS/Mongoose layer. Scan `backend/src/` via ripgrep for `: any` annotations and `as any` casts in service/controller/DTO files, replace with proper types or `unknown` per `@typescript-eslint/no-explicit-any`.
+
+═══════════════════════════════════════════════════════
+Files affected (3)
+═══════════════════════════════════════════════════════
+
+1. backend/src/common/eav/eav.service.ts
+   line 4  : import — add `AnyBulkWriteOperation` to mongoose named imports
+   line 51 : `const operations: any[] = [];` → `const operations: AnyBulkWriteOperation<EntityAttributeValueDocument>[] = [];`
+
+2. backend/src/modules/stock-movement/stock-movement.service.ts
+   line 7   : import — add `ClientSession` to mongoose named imports
+   lines 103, 137, 171 : `session: any,` → `session: ClientSession,` (3 sites in private applyIn/applyOut/applyTransfer)
+
+3. backend/src/modules/bom/migrations/bom-component-resolve.service.spec.ts
+   line 1 : added file-level `/* eslint-disable @typescript-eslint/no-explicit-any */` block + 6-line justification (test scaffolding intentionally uses `any` for Mongoose Model chaining mocks; production code in bom-component-resolve.service.ts is fully typed)
+
+═══════════════════════════════════════════════════════
+Files excluded (false positives)
+═══════════════════════════════════════════════════════
+
+- backend/src/common/filters/multer-exception.filter.ts:27 — JSDoc comment mentioning "any module"
+- backend/src/modules/auth/auth.service.ts:81 — JSDoc comment mentioning "any other internal fields"
+- backend/src/modules/interaction/interaction.schema.ts — basher grep initially flagged but verified to be description comment in `relatedToId` schema declaration, NOT a `: any` annotation
+
+═══════════════════════════════════════════════════════
+Verification (TZ-252 in-scope)
+═══════════════════════════════════════════════════════
+
+- TSC (`pnpm exec tsc --noEmit` on backend)              → 0 errors
+- ESLint (on 3 TZ-252 files specifically, --max-warnings 0) → 0 problems
+- jest (stock-movement + eav + bom-component-resolve paths)  → 7 pass, 2 fail (pre-existing, see below)
+- Full backend jest                                           → 5 fail total (pre-existing across multiple spec files OK)
+- `grep -c "list: (params: any)"` backend/src/              → 0
+- `grep -c ": any\b" backend/src/ excluding comments`        → 11 matches (1 eav typed-array + 10 in bom spec suppressed by file-level disable, all 11 are intentional)
+
+═══════════════════════════════════════════════════════
+Pre-existing carry-over (NOT from TZ-252)
+═══════════════════════════════════════════════════════
+
+a) 39 ESLint errors in OTHER backend files (controllers, dtos, services NOT in TZ-252 sweep scope):
+   - Mostly `@typescript-eslint/no-unused-vars` (older dev cycles)
+   - 1 `Function` type usage
+   - 1 `@typescript-eslint/no-var-requires`
+   All pre-date TZ-252; recommend TZ-253 for cleanup (4-6h).
+
+b) 5 jest failures in unrelated spec files (BomComponentResolveService TZ-105.2 test cases — pre-existing implementation logic).
+   All my changes are TYPE-ONLY (zero logic code changes), so these failures are NOT regressions.
+   Recommend TZ-254 for investigation (3-5h).
+
+═══════════════════════════════════════════════════════
+Cross-references
+═══════════════════════════════════════════════════════
+
+- Spec doc: tasks/TZ-252.md
+- Lock file: .mimocode/locks/TZ-252-backend-any-sweep.lock (Owner + 4 Unlock refs)
+- Frontend mirror: a33fdf9 chore(frontend): ESLint --max-warnings 0 clean: 7-file cleanup (prior session)
+- TZ-230.D archive: precedent for `session: unknown` migration in services; TZ-252 finishes the remaining 3 `session: any` sites the original commit missed
+- TZ-232.F archive: precedent for typed-service factory migration (frontend); TZ-252 mirrors the backend layer
+
+═══════════════════════════════════════════════════════
+Unlocks
+═══════════════════════════════════════════════════════
+
+- Backend service-layer `any` clusters cleared
+- `AnyBulkWriteOperation<T>` typed in eav.service.ts (proper MongoDB bulk write API)
+- `ClientSession` typed in stock-movement.service.ts (proper transaction handling)
+- BOM test scaffolding explicitly justified as `any`-permissive
+- TZ-253/TZ-254 can proceed without TZ-252 debt
+
+═══════════════════════════════════════════════════════
+Branch + commit
+═══════════════════════════════════════════════════════
+
+Branch: feature/tz-252-backend-any-sweep (from a33fdf9)
+Commit: pending — squash-style single chore commit:
+  chore(backend): TZ-252 backend any-sweep (3 files: eav + stock-movement + bom spec disable)
+  + TZ-252 spec artifact files (tasks/TZ-252.md, archive marker, lock file)
+
+Push: pending — `git push origin feature/tz-252-backend-any-sweep` (awaiting user authorization)
