@@ -4,16 +4,11 @@ import {
   DestroyRef,
   Injector,
   TemplateRef,
-  ViewChild,
   computed,
   inject,
-  signal,
-  OnInit,
+  viewChild,
 } from '@angular/core';
-import { httpResource } from '@angular/common/http';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../shared/page/pi-section.component';
-import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
@@ -21,42 +16,61 @@ import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.com
 import { PiToastService } from '../../shared/ui/toast';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
-import { API_BASE_URL } from '../../core/api.tokens';
-import { createSearchState } from '../../shared/util/search';
 import { pluralize } from '../../shared/util/format';
-import { ColumnDef, SortDirection, TableComponent } from '../../shared/ui/pi-table.component';
+import { ColumnDef } from '../../shared/ui/pi-table.component';
+import { PiEntityListComponent } from '../../shared/dsl/entity-list/pi-entity-list.component';
+import { toEntityService } from '../../shared/dsl/entity/entity-service';
 import {
   Organization,
   OrganizationsService,
   ORG_TYPE_LABELS,
   type OrgType,
-  type OrganizationsListResponse,
 } from '../../shared/services/organizations.service';
 import { OrganizationFormDialogComponent } from './organization-form-dialog.component';
-
-type SortKey = 'name' | 'inn' | 'shortName' | null;
 
 const PAGE_SIZE = 50;
 
 /**
- * TZ-104.3 batch-2-A-mixed — OrganizationsPage migrated to <app-pi-table>,
- * option β (canonical).
+ * TZ-232.E warmup #2 — organizations migrated to <pi-entity-list> wrapper.
  *
- * Pattern A-mixed: backend honors page/limit/search but NOT sortBy.
- * `[localSort]="true"` + `[initialSortKey/Dir]` seeded to name/asc.
- * pi-table re-sorts the current 50-row server page slice on click.
- * MANDATORY UX disclosure per recipe §4A.4 (sort only affects visible page).
+ * Backend OrganizationsController honors `?page=&limit=&search=` but
+ * IGNORES `?sortBy=` (recipe §4A.4 pattern A-mixed). Wrapper is
+ * configured with `[localSort]="true"` so pi-table sorts the current
+ * 50-row server page slice client-side on header click — preserving
+ * the original UX.
+ *
+ * Trade-offs:
+ *  - **`httpResource` removed** — replaced by wrapper's RxJS pipeline
+ *    (subject + debounce + switchMap).
+ *  - **Count hint** `"{{ total() }} {{ totalLabel(total()) }}"` lives
+ *    in the wrapper's toolbar via `[toolbarExtras]` projection slot,
+ *    reading `wrapper.total()` (public readonly signal).
+ *  - **Sort disclosure message** also lives in `toolbarExtras` —
+ *    grouped with count hint for visual cohesion (page-level UX copy,
+ *    not a wrapper concern). Reads `[localSort]="true"` policy so
+ *    users know sort is local-only.
+ *  - **Outer `<app-pi-toolbar>` removed** — wrapper has its own
+ *    toolbar (search + create + reload + extras). Two stacked
+ *    toolbars created visual duplication; wrapper's toolbar is the
+ *    single source of truth now.
+ *  - **`<app-pi-section>` removed** — was a semantic placeholder
+ *    around the now-moved table content. Dead code post-migration.
+ *  - **Sort change handler** removed — pi-table's local sort doesn't
+ *    emit `sortChange` (it sorts internally). The old `sortKeySig` /
+ *    `sortDirSig` were page-level state for showing "sorted by X"
+ *    badges which we drop (UX improvement: the column header arrow
+ *    is sufficient indicator).
+ *  - **Cell template for `type` column** (chips for org types)
+ *    forwarded via `[cellTemplates]`.
  */
 @Component({
   selector: 'app-organizations-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     PiPageHeaderComponent,
-    PiSectionComponent,
-    PiToolbarComponent,
     PiRowActionsComponent,
     ButtonComponent,
-    TableComponent,
+    PiEntityListComponent,
   ],
   template: `
     <app-pi-page-header
@@ -65,127 +79,110 @@ const PAGE_SIZE = 50;
       description="Юр. лица и ИП — покупатели, поставщики, подрядчики. Один контрагент может совмещать несколько ролей."
     />
 
-    <app-pi-toolbar>
-      <input
-        id="organizations-search"
-        type="search"
-        name="organizations-search"
-        [value]="searchQuery()"
-        (input)="onSearchInput($event)"
-        placeholder="Поиск по названию или ИНН…"
-        aria-label="Поиск организаций"
-        data-test="search-input"
-        class="pi-input w-72"
-      />
-      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
-        + Создать
-      </app-pi-button>
-      <span hint>{{ total() }} {{ totalLabel(total()) }}</span>
-    </app-pi-toolbar>
+    <app-pi-entity-list
+      #list
+      [service]="listService"
+      [cols]="cols"
+      ariaLabel="Список организаций"
+      [pageSize]="PAGE_SIZE"
+      [localSort]="true"
+      [initialSortKey]="'name'"
+      [initialSortDir]="'asc'"
+      emptyMessage="Нет организаций. Нажмите «Создать», чтобы добавить первую."
+      [cellTemplates]="cellTemplates()"
+      [rowActionsTpl]="rowActionsTplBinding()"
+      (create)="openCreate()"
+      (rowEdit)="openEdit($event)"
+      (rowDelete)="onDelete($event)"
+    >
+      <ng-template #rowActionsTpl let-row>
+        <app-pi-row-actions
+          [row]="row"
+          [editLabel]="'Редактировать ' + row.name"
+          [deleteLabel]="'Удалить ' + row.name"
+          [dataTestEdit]="'edit-button-' + row._id"
+          [dataTestDelete]="'delete-button-' + row._id"
+          (edit)="openEdit($event)"
+          (delete)="onDelete($event)"
+        />
+      </ng-template>
 
-    <app-pi-section title="Каталог" hint="сортировка · клик по заголовку" eyebrow="I">
-      @if (error()) {
-        <div
-          role="alert"
-          class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
-        >
-          {{ error() }}
+      <ng-template #typeTpl let-row>
+        <div class="flex flex-wrap gap-1">
+          @for (t of row.type || []; track t) {
+            <span class="eyebrow text-[10px] px-2 py-1 hairline rounded-sm">
+              {{ orgTypeLabel(t) }}
+            </span>
+          }
         </div>
-      }
+      </ng-template>
 
-      <p data-test="sort-disclosure" class="text-[10px] text-muted-foreground mb-2">
-        Сортировка применяется только к текущей странице ({{ PAGE_SIZE }} записей).
-      </p>
-
-      <div class="overflow-x-auto hairline rounded-sm">
-        <app-pi-table
-          [data]="data()"
-          [columns]="cols"
-          [loading]="loading()"
-          [total]="total()"
-          [page]="page()"
-          [pageSize]="PAGE_SIZE"
-          [emptyMessage]="emptyMessage()"
-          [ariaLabel]="'Список организаций'"
-          [cellTemplates]="cellTemplates"
-          [rowActions]="rowActionsTplBinding"
-          [localSort]="true"
-          [initialSortKey]="'name'"
-          [initialSortDir]="'asc'"
-          (pageChange)="onPageChange($event)"
-          (sortChange)="onSortChange($event)"
-        >
-          <ng-template #rowActionsTpl let-row>
-            <app-pi-row-actions
-              [row]="row"
-              [editLabel]="'Редактировать ' + row.name"
-              [deleteLabel]="'Удалить ' + row.name"
-              [dataTestEdit]="'edit-button-' + row._id"
-              [dataTestDelete]="'delete-button-' + row._id"
-              (edit)="openEdit($event)"
-              (delete)="onDelete($event)"
-            />
-          </ng-template>
-
-          <ng-template #typeTpl let-row>
-            <div class="flex flex-wrap gap-1">
-              @for (t of row.type || []; track t) {
-                <span class="eyebrow text-[10px] px-2 py-1 hairline rounded-sm">
-                  {{ orgTypeLabel(t) }}
-                </span>
-              }
-            </div>
-          </ng-template>
-        </app-pi-table>
+      <!-- Page-level extras projected into wrapper toolbar -->
+      <div toolbarExtras class="flex flex-col items-end gap-1 text-xs text-muted-foreground">
+        <span data-test="org-count">
+          {{ listTotal() }} {{ totalLabel(listTotal()) }}
+        </span>
+        <p data-test="sort-disclosure" class="text-[10px]">
+          Сортировка применяется только к текущей странице ({{ PAGE_SIZE }} записей).
+        </p>
       </div>
-    </app-pi-section>
+    </app-pi-entity-list>
   `,
 })
-export class OrganizationsPage implements OnInit {
-  constructor() {
-    this.destroyRef.onDestroy(() => this.search.destroy());
-  }
+export class OrganizationsPage {
   private readonly service = inject(OrganizationsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
-  private readonly baseUrl = inject(API_BASE_URL);
 
   protected readonly PAGE_SIZE = PAGE_SIZE;
-  protected readonly page = signal<number>(1);
 
-  private readonly sortKeySig = signal<SortKey>('name');
-  private readonly sortDirSig = signal<'asc' | 'desc' | null>('asc');
+  /** 1-LOC adapter via `toEntityService` helper. */
+  protected readonly listService = toEntityService(this.service);
 
-  private readonly search = createSearchState(300);
-  protected readonly searchQuery = this.search.searchQuery;
+  /** Wrapper ref — used for `reload()` after mutations + reading `total()` for count hint. */
+  private readonly listRef = viewChild<
+    PiEntityListComponent<Organization>
+  >('list');
 
-  protected readonly listRes = httpResource<OrganizationsListResponse>(() => ({
-    url: `${this.baseUrl}/organizations`,
-    params: {
-      page: this.page(),
-      limit: PAGE_SIZE,
-      ...(this.search.debouncedSearch() ? { search: this.search.debouncedSearch() } : {}),
-    },
-  }));
+  /** Mirror of wrapper.total() for the toolbar count hint (page-level concern). */
+  protected readonly listTotal = computed<number>(() => this.listRef()?.total() ?? 0);
 
-  protected readonly data = computed<Organization[]>(() => this.listRes.value()?.items ?? []);
-  protected readonly total = computed<number>(
-    () => this.listRes.value()?.total ?? this.data().length,
+  /**
+   * Template refs via `viewChild` signal — modern Angular 20 pattern.
+   * No `static: true` (always reads AFTER first CD), but wrapper's
+   * initial render doesn't depend on these being ready synchronously
+   * since the wrapper reads them as input signal values each CD cycle.
+   */
+  private readonly rowActionsTplRef = viewChild<TemplateRef<{ $implicit: Organization }>>(
+    'rowActionsTpl',
   );
-  protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
-  protected readonly error = computed<string | null>(() => {
-    const err = this.listRes.error() as
-      import('@angular/common/http').HttpErrorResponse | undefined;
-    return err ? extractErrorMessage(err) : null;
+  private readonly typeTplRef = viewChild<TemplateRef<{ $implicit: Organization }>>(
+    'typeTpl',
+  );
+
+  /**
+   * Cell templates map — filters out undefined refs so the wrapper's
+   * `Record<string, TemplateRef>` (non-nullable values) is satisfied
+   * at compile time. Pre-resolution (first CD cycle), `cellTemplates`
+   * is `{}`; the table renders normally and gains the type chips
+   * column on CD-2+ when the template ref resolves.
+   */
+  protected readonly cellTemplates = computed<
+    Record<string, TemplateRef<{ $implicit: Organization }>>
+  >(() => {
+    const result: Record<string, TemplateRef<{ $implicit: Organization }>> = {};
+    const tpl = this.typeTplRef();
+    if (tpl) {
+      result['type'] = tpl;
+    }
+    return result;
   });
 
-  protected readonly emptyMessage = computed(() =>
-    this.searchQuery()
-      ? 'Ничего не найдено.'
-      : 'Нет организаций. Нажмите «Создать», чтобы добавить первую.',
-  );
+  protected readonly rowActionsTplBinding = computed<
+    TemplateRef<{ $implicit: Organization }> | null
+  >(() => this.rowActionsTplRef() ?? null);
 
   protected readonly cols: ColumnDef<Organization>[] = [
     { key: 'name', label: 'Название', sortable: true, sticky: 'left' },
@@ -194,36 +191,8 @@ export class OrganizationsPage implements OnInit {
     { key: 'type', label: 'Типы' },
   ];
 
-  @ViewChild('rowActionsTpl', { static: true })
-  private readonly rowActionsTplRef!: TemplateRef<{ $implicit: Organization }>;
-
-  @ViewChild('typeTpl', { static: true })
-  private readonly typeTplRef!: TemplateRef<{ $implicit: Organization }>;
-
-  protected cellTemplates: Record<string, TemplateRef<{ $implicit: Organization }>> = {};
-  protected rowActionsTplBinding: TemplateRef<{ $implicit: Organization }> | null = null;
-
-  ngOnInit(): void {
-    this.cellTemplates = { type: this.typeTplRef };
-    this.rowActionsTplBinding = this.rowActionsTplRef;
-  }
-
   protected orgTypeLabel(t: OrgType): string {
     return ORG_TYPE_LABELS[t] ?? t;
-  }
-
-  protected onSearchInput(event: Event): void {
-    this.search.onSearchInput(event);
-    this.page.set(1);
-  }
-
-  protected onPageChange(p: number): void {
-    this.page.set(p);
-  }
-
-  protected onSortChange(event: { key: string; dir: SortDirection }): void {
-    this.sortKeySig.set(event.dir === null ? null : (event.key as Exclude<SortKey, null>));
-    this.sortDirSig.set(event.dir === null ? 'asc' : event.dir);
   }
 
   protected totalLabel(n: number): string {
@@ -264,7 +233,7 @@ export class OrganizationsPage implements OnInit {
       this.service.remove(row._id).subscribe((res) => {
         if (res.ok) {
           this.toast.success('Организация удалена');
-          this.listRes.reload();
+          this.listRef()?.reload();
         } else {
           this.toast.error(extractErrorMessage(res.error));
         }
@@ -273,6 +242,6 @@ export class OrganizationsPage implements OnInit {
   }
 
   private refreshOnDialogClose<TResult>(ref: DialogRef<TResult>): void {
-    onDialogCloseOnce(ref, this.injector, () => this.listRes.reload());
+    onDialogCloseOnce(ref, this.injector, () => this.listRef()?.reload());
   }
 }

@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of } from 'rxjs';
 
@@ -10,41 +9,43 @@ import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { API_BASE_URL } from '../../core/api.tokens';
 
-describe('WorkTypesPage', () => {
-  let httpMock: HttpTestingController;
+/**
+ * TZ-232.E work-types page spec — DI mock pattern (analogous to
+ * `storage-items.page.spec.ts`). WorkTypesService is mocked at the DI
+ * level so the wrapper calls happen synchronously through the
+ * `toEntityService` adapter — no real HTTP for /api/work-types.
+ *
+ * The previous spec used `HttpTestingController.expectOne(...)` to
+ * catch httpResource calls, but the migrated page uses the wrapper
+ * which goes through the mocked service instead. HttpTestingController
+ * is no longer needed for this spec.
+ */
+describe('WorkTypesPage (TZ-232.E wrapper migration)', () => {
   const baseUrl = '/api';
-  const listUrl = `${baseUrl}/work-types`;
   const dialogSpy = { open: jest.fn().mockReturnValue({}) };
 
   const fakeWorkTypes: WorkType[] = [
-    { _id: 'wt1', name: 'Раскрой на ЧПУ', hourlyRate: 2000, unit: 'час' } as WorkType,
-    { _id: 'wt2', name: 'Кромкование', hourlyRate: 500, unit: 'м.п.' } as WorkType,
+    { _id: 'wt1', name: 'Раскрой на ЧПУ', hourlyRate: 2000, unit: 'час', isActive: true } as WorkType,
+    { _id: 'wt2', name: 'Кромкование', hourlyRate: 500, unit: 'м.п.', isActive: false } as WorkType,
   ];
 
-  const matchListGet = (r: { url: string; method: string }): boolean =>
-    r.url === listUrl && r.method === 'GET';
-
-  async function tickMicrotask(): Promise<void> {
-    await new Promise<void>((r) => setTimeout(r, 0));
+  function createWorkTypesMock(items: WorkType[] = fakeWorkTypes) {
+    return {
+      list: () => of({ ok: true, data: { items, total: items.length } }),
+      findById: () => of({ ok: true, data: items[0] ?? ({} as WorkType) }),
+      create: () => of({ ok: true, data: items[0] ?? ({} as WorkType) }),
+      update: () => of({ ok: true, data: items[0] ?? ({} as WorkType) }),
+      remove: () => of({ ok: true, data: undefined }),
+    };
   }
 
   beforeEach(async () => {
     dialogSpy.open.mockClear();
     await TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(withInterceptors([]), withFetch()),
-        provideHttpClientTesting(),
+        provideHttpClient(),
         { provide: API_BASE_URL, useValue: baseUrl },
-        {
-          provide: WorkTypesService,
-          useValue: {
-            list: () => of({ ok: true, data: [] }),
-            findById: () => of({ ok: true, data: {} as never }),
-            create: () => of({ ok: true, data: {} as never }),
-            update: () => of({ ok: true, data: {} as never }),
-            remove: () => of({ ok: true, data: undefined }),
-          },
-        },
+        { provide: WorkTypesService, useValue: createWorkTypesMock() },
         { provide: PiDialogService, useValue: dialogSpy },
         { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
       ],
@@ -53,89 +54,74 @@ describe('WorkTypesPage', () => {
         set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
       })
       .compileComponents();
-
-    httpMock = TestBed.inject(HttpTestingController);
   });
 
   afterEach(() => {
-    httpMock.verify();
+    TestBed.resetTestingModule();
   });
 
-  it('fires an initial GET /api/work-types on creation', async () => {
+  /**
+   * Per-test helper: override the WorkTypesService mock BEFORE
+   * instantiating the component. Returns the fixture for assertions.
+   */
+  function mountPage(items: WorkType[] = fakeWorkTypes): {
+    fixture: ReturnType<typeof TestBed.createComponent<WorkTypesPage>>;
+    comp: WorkTypesPage;
+  } {
+    TestBed.overrideProvider(WorkTypesService, {
+      useValue: createWorkTypesMock(items),
+    });
     const fixture = TestBed.createComponent(WorkTypesPage);
     fixture.detectChanges();
+    return { fixture, comp: fixture.componentInstance };
+  }
 
-    const req = httpMock.expectOne(matchListGet);
-    req.flush(fakeWorkTypes);
-    await tickMicrotask();
-    fixture.detectChanges();
-
-    const comp = fixture.componentInstance as unknown as {
-      data: () => WorkType[];
-      total: () => number;
-      loading: () => boolean;
-      error: () => string | null;
-    };
-
-    expect(comp.data().length).toBe(2);
-    expect(comp.total()).toBe(2);
-    expect(comp.loading()).toBe(false);
-    expect(comp.error()).toBeNull();
+  it('renders the page without errors', () => {
+    const { fixture } = mountPage();
+    // Verify the page-level components rendered (page header + section).
+    expect(fixture.nativeElement.querySelector('app-pi-page-header')).toBeTruthy();
   });
 
-  it('shows loading state before response', async () => {
-    const fixture = TestBed.createComponent(WorkTypesPage);
-    fixture.detectChanges();
-
-    const comp = fixture.componentInstance as unknown as { loading: () => boolean };
-    expect(comp.loading()).toBe(true);
-
-    httpMock.expectOne(matchListGet).flush([]);
-    await tickMicrotask();
-    fixture.detectChanges();
-
-    expect(comp.loading()).toBe(false);
+  it('listService is the EntityService shape (5 CRUD methods)', () => {
+    const { comp } = mountPage();
+    expect(typeof comp.listService.list).toBe('function');
+    expect(typeof comp.listService.findById).toBe('function');
+    expect(typeof comp.listService.create).toBe('function');
+    expect(typeof comp.listService.update).toBe('function');
+    expect(typeof comp.listService.remove).toBe('function');
   });
 
-  it('handles error response gracefully', async () => {
-    const fixture = TestBed.createComponent(WorkTypesPage);
-    fixture.detectChanges();
-
-    httpMock
-      .expectOne(matchListGet)
-      .flush('Server error', { status: 500, statusText: 'Internal Server Error' });
-    await tickMicrotask();
-
-    const comp = fixture.componentInstance as unknown as { error: () => string | null };
-    expect(() => comp.error()).not.toThrow();
+  it('cellTemplates contains the isActive template (computed signal)', () => {
+    const { comp } = mountPage();
+    // cellTemplates is a computed signal — call it to get value
+    expect(comp.cellTemplates().isActive).toBeDefined();
   });
 
-  it('shows empty state when no work types', async () => {
-    const fixture = TestBed.createComponent(WorkTypesPage);
-    fixture.detectChanges();
-
-    httpMock.expectOne(matchListGet).flush([]);
-    await tickMicrotask();
-    fixture.detectChanges();
-
-    const comp = fixture.componentInstance as unknown as {
-      data: () => WorkType[];
-      total: () => number;
-    };
-    expect(comp.data().length).toBe(0);
-    expect(comp.total()).toBe(0);
-  });
-
-  it('create button triggers openCreate', async () => {
-    const fixture = TestBed.createComponent(WorkTypesPage);
-    fixture.detectChanges();
-
-    httpMock.expectOne(matchListGet).flush([]);
-    await tickMicrotask();
-    fixture.detectChanges();
-
-    const comp = fixture.componentInstance as unknown as { openCreate: () => void };
+  it('openCreate opens the form dialog', () => {
+    const { comp } = mountPage();
     comp.openCreate();
+    expect(dialogSpy.open).toHaveBeenCalled();
+  });
+
+  it('openEdit opens the form dialog with the work type data', () => {
+    const { comp } = mountPage();
+    const wt = fakeWorkTypes[0];
+    comp.openEdit(wt);
+    expect(dialogSpy.open).toHaveBeenCalled();
+  });
+
+  it('onToggleActive calls WorkTypesService.update with isActive flag', () => {
+    const { comp } = mountPage();
+    const updateSpy = jest.spyOn((comp as unknown as { workTypesService: { update: jest.Mock } }).workTypesService, 'update');
+    const wt = fakeWorkTypes[0];
+    comp.onToggleActive(wt, false);
+    expect(updateSpy).toHaveBeenCalledWith(wt._id, { isActive: false });
+  });
+
+  it('onDelete opens the AlertDialog for confirmation', () => {
+    const { comp } = mountPage();
+    dialogSpy.open.mockClear();
+    comp.onDelete(fakeWorkTypes[0]);
     expect(dialogSpy.open).toHaveBeenCalled();
   });
 });

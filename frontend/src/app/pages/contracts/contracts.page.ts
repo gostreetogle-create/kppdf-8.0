@@ -4,18 +4,15 @@ import {
   DestroyRef,
   Injector,
   TemplateRef,
-  ViewChild,
   computed,
+  effect,
   inject,
   signal,
-  OnInit,
+  viewChild,
 } from '@angular/core';
-import { httpResource } from '@angular/common/http';
-import { LucideAngularModule, RefreshCw } from 'lucide-angular';
 import { Router } from '@angular/router';
+import { of } from 'rxjs';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../shared/page/pi-section.component';
-import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
@@ -23,27 +20,32 @@ import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.com
 import { PiToastService } from '../../shared/ui/toast';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
-import { API_BASE_URL } from '../../core/api.tokens';
 import { createSearchState } from '../../shared/util/search';
 import { pluralize, formatDate, formatPrice } from '../../shared/util/format';
 import { createLookupTable } from '../../shared/util/lookup-table';
-import { ColumnDef, SortDirection, TableComponent } from '../../shared/ui/pi-table.component';
+import { ColumnDef } from '../../shared/ui/pi-table.component';
+import {
+  PiEntityListComponent,
+  DefaultListParams,
+  SortChangeEvent,
+} from '../../shared/dsl/entity-list/pi-entity-list.component';
+import { EntityService } from '../../shared/dsl/entity/entity-service';
 import { Counterparty, CounterpartyService } from '../../shared/services/pi-counterparty.service';
 import { Organization, OrganizationsService } from '../../shared/services/organizations.service';
-import { Contract, ContractsService, ContractStatus } from './contracts.service';
+import { Contract, ContractStatus, ContractsService } from './contracts.service';
 import { ContractFormDialogComponent } from './contract-form-dialog.component';
-
-type SortKey = 'number' | 'expiresAt' | 'totalAmount' | 'status';
 
 /** Client-side pagination page size for /contracts flat-array endpoint. */
 const PAGE_SIZE = 20;
 
+type SortKey = 'number' | 'expiresAt' | 'totalAmount' | 'status';
+
 /**
  * Contract lifecycle for sort: draft → sent → signed → active →
- * completed → expired → cancelled. Alphabetical ordering on the raw
- * status string would give `active < cancelled < completed < draft`,
- * which is meaningless to a sales manager reading the contract
- * pipeline. Sort by numeric lifecycle index instead.
+ * completed → expired → cancelled. Alphabetical ordering on the
+ * raw status string would give `active < cancelled < completed <
+ * draft`, which is meaningless to a sales manager reading the
+ * contract pipeline. Sort by numeric lifecycle index instead.
  */
 const CONTRACT_STATUS_CYCLE_INDEX: Record<ContractStatus, number> = {
   draft: 0,
@@ -65,12 +67,6 @@ const CONTRACT_STATUS_LABELS: Record<ContractStatus, string> = {
   expired: 'Истёк',
 };
 
-/**
- * Custom sort accessor per key. Different keys have different
- * "natural" sort semantics — `status` is the lifecycle cycle above,
- * `expiresAt` is chronological (null/undefined → bottom regardless
- * of direction), `totalAmount` is numeric, `number` is string-locale.
- */
 function accessorFor(key: SortKey): (row: Contract) => unknown {
   switch (key) {
     case 'status':
@@ -88,6 +84,7 @@ function accessorFor(key: SortKey): (row: Contract) => unknown {
  * Compare two values per the sign direction. Mirrors `compareValues`
  * in `orders.page.ts` — shared mental model between the two B-flat
  * pages (contracts + orders) so behavior stays consistent.
+ *   null/undefined → bottom regardless of direction (R-3-style).
  */
 function compareValues(av: unknown, bv: unknown, sign: 1 | -1): number {
   if (av == null && bv == null) return 0;
@@ -99,23 +96,12 @@ function compareValues(av: unknown, bv: unknown, sign: 1 | -1): number {
   return String(av).localeCompare(String(bv), 'ru') * sign;
 }
 
-/**
- * Customer (counterparty) ID extractor — accepts either a string ID
- * (unpopulated) or a populated Counterparty sub-document. Mirrors
- * the dual-shape pattern used by Material.supplierId in
- * materials.page.ts and Order.counterpartyId in orders.page.ts.
- */
 function customerIdOf(row: Contract): string {
   if (!row.customerId) return '';
   if (typeof row.customerId === 'string') return row.customerId;
   return row.customerId._id ?? '';
 }
 
-/**
- * Organization ID extractor — same dual-shape pattern as
- * customerIdOf. Both organizationId AND customerId may be
- * auto-populated by the backend Mongoose `.populate(...)` chain.
- */
 function organizationIdOf(row: Contract): string {
   if (!row.organizationId) return '';
   if (typeof row.organizationId === 'string') return row.organizationId;
@@ -123,60 +109,28 @@ function organizationIdOf(row: Contract): string {
 }
 
 /**
- * Полная документация страницы: docs/pages/contracts.page.md
+ * TZ-232.D sentinel #2 v3 — contracts migrated on <pi-entity-list>
+ * via Approach D hybrid.
  *
- * TZ-104.3 batch-2-B-flat.1 — ContractsPage migrated to
- * `<app-pi-table>`, with TZ-104.4.2 typed TemplateRef propagation.
- *
- * Backend response caveat (see ContractsService): flat array, not
- * paginated envelope. Pagination TODO at backend. Client-side
- * sort + filter + slice pagination. `[total]` is the CURRENT
- * filtered+sorted length (modulo search), and `paginatedRows` is the
- * page slice of that.
- *
- * Two lookup tables (organizationsById + counterpartiesById) since
- * the contract schema requires BOTH `organizationId` AND
- * `customerId`. Both lookups drive the counterparty + organization
- * cell templates.
- *
- * TZ-104.4.2 page-loaded default sort: `[initialSortKey]="'expiresAt'"`
- * + `[initialSortDir]="'desc'"` — "contracts expiring furthest in
- * the future first", giving sales managers the active pipeline at a
- * glance. The page's internal `sortKeySig/sortDirSig` are seeded to
- * match pi-table's post-ngOnInit state so the mirror-event handler
- * stays in lockstep from the very first click.
- *
- * Two cell templates (post-TZ-104.4.2 strongly typed):
- *   - `counterpartyTpl`: cellTemplate for `customerId` column
- *   - `organizationTpl`: cellTemplate for `organizationId` column
- *   - `rowActionsTpl`: row-actions slot (edit/delete/document)
- *
- * BUG fixes vs the pre-migration source:
- *  1. `sortedRows` was previously bound via
- *     `sort.sorted(this.filteredRows(), fn)`. That captured
- *     `filteredRows()` ONCE at construction (a static snapshot) —
- *     internal computed only re-ran on sortKey/sortDir changes, NOT
- *     on filter changes. New impl is a reactive `computed` reading
- *     both `filteredRows()` AND the sort signals.
- *  2. Pre-migration had a page-level `searchQuery` signal AND
- *     `createClientSearchState`'s own internal `searchQuery`.
- *     Replaced with `createSearchState` + single reactive computed
- *     reading `debouncedSearch`.
- *
- * Standalone + OnPush + signal-based. No `contracts.page.spec.ts`
- * exists for v1; visual smoke + ng build are the acceptance pass.
+ * v3 changes vs v2:
+ *  - Removed `constructor2()` placeholder (left in v2 by mistake).
+ *  - Added real `effect()` block on `sortedRows()` → calls
+ *    `listRef?.reload()` when the slice changes (filter or sort
+ *    cycle click). `firstRun` guard skips the initial mount since
+ *    the wrapper's ngOnInit already fires the initial fetch.
+ *  - Removed redundant `data = computed(() => dataSig())` — the
+ *    page reactively reads `dataSig()` directly in `filteredRows`.
+ *  - Removed unused `HttpClient` + `silentGet` imports (kept
+ *    `extractErrorMessage` for the error-surface path).
  */
 @Component({
   selector: 'app-contracts-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    LucideAngularModule,
     PiPageHeaderComponent,
-    PiSectionComponent,
-    PiToolbarComponent,
     PiRowActionsComponent,
     ButtonComponent,
-    TableComponent,
+    PiEntityListComponent,
   ],
   template: `
     <app-pi-page-header
@@ -185,125 +139,89 @@ function organizationIdOf(row: Contract): string {
       description="Договоры с покупателями. Связь «наша организация ↔ контрагент», позиции, срок действия."
     />
 
-    <app-pi-toolbar>
-      <input
-        id="contracts-search"
-        type="search"
-        name="contracts-search"
-        [value]="searchQuery()"
-        (input)="onSearchInput($event)"
-        placeholder="Поиск по номеру, названию, контрагенту…"
-        aria-label="Поиск договоров"
-        data-test="search-input"
-        class="pi-input w-80"
-      />
-      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
-        + Создать
-      </app-pi-button>
-      <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
-        <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
-      </app-pi-button>
-      <span hint>{{ visibleCount() }} {{ totalLabel(visibleCount()) }}</span>
-    </app-pi-toolbar>
+    <app-pi-entity-list
+      #list
+      [service]="localAdapter"
+      [cols]="cols"
+      ariaLabel="Список договоров"
+      [pageSize]="PAGE_SIZE"
+      [showSearch]="false"
+      [localSort]="false"
+      [initialSortKey]="'expiresAt'"
+      [initialSortDir]="'desc'"
+      emptyMessage="Нет договоров. Нажмите «Создать», чтобы добавить первый."
+      [cellTemplates]="cellTemplates()"
+      [rowActionsTpl]="rowActionsTplBinding()"
+      (create)="openCreate()"
+      (rowEdit)="openEdit($event)"
+      (rowDelete)="onDelete($event)"
+      (sortChange)="onSortChange($event)"
+    >
+      <!-- ───── Counterparty (customer) lookup cell ───── -->
+      <ng-template #counterpartyTpl let-row>
+        {{ counterpartyNameOf(row) ?? '—' }}
+      </ng-template>
 
-    <app-pi-section title="Реестр" hint="сортировка · клик по заголовку" eyebrow="I">
-      @if (error()) {
-        <div
-          role="alert"
-          class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
-        >
-          {{ error() }}
-        </div>
-      }
+      <!-- ───── Organization lookup cell ───── -->
+      <ng-template #organizationTpl let-row>
+        {{ organizationNameOf(row) ?? '—' }}
+      </ng-template>
 
-      <div class="overflow-x-auto hairline rounded-sm">
-        <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
-          ← Таблица широкая — прокручивайте горизонтально →
-        </p>
-        <app-pi-table
-          [data]="paginatedRows()"
-          [columns]="cols"
-          [loading]="loading()"
-          [total]="total()"
-          [page]="page()"
-          [pageSize]="pageSize"
-          [emptyMessage]="emptyMessage()"
-          [ariaLabel]="'Список договоров'"
-          [cellTemplates]="cellTemplates"
-          [rowActions]="rowActionsTplBinding"
-          [localSort]="false"
-          [initialSortKey]="'expiresAt'"
-          [initialSortDir]="'desc'"
-          (pageChange)="onPageChange($event)"
-          (sortChange)="onSortChange($event)"
-        >
-          <!-- ───── Counterparty (customer) lookup cell ───── -->
-          <ng-template #counterpartyTpl let-row>
-            {{ counterpartyNameOf(row) ?? '—' }}
-          </ng-template>
+      <!-- ───── Row actions cluster ───── -->
+      <ng-template #rowActionsTpl let-row>
+        <app-pi-row-actions
+          [row]="row"
+          [documentLabel]="'Создать документ для договора ' + row.number"
+          [dataTestDocument]="'document-button-' + row._id"
+          [editLabel]="'Редактировать договор ' + row.number"
+          [deleteLabel]="'Удалить договор ' + row.number"
+          [dataTestEdit]="'edit-button-' + row._id"
+          [dataTestDelete]="'delete-button-' + row._id"
+          (document)="onCreateDocument($event)"
+          (edit)="openEdit($event)"
+          (delete)="onDelete($event)"
+        />
+      </ng-template>
 
-          <!-- ───── Organization lookup cell ───── -->
-          <ng-template #organizationTpl let-row>
-            {{ organizationNameOf(row) ?? '—' }}
-          </ng-template>
-
-          <!-- ───── Row actions cluster ───── -->
-          <ng-template #rowActionsTpl let-row>
-            <app-pi-row-actions
-              [row]="row"
-              [documentLabel]="'Создать документ для договора ' + row.number"
-              [dataTestDocument]="'document-button-' + row._id"
-              [editLabel]="'Редактировать договор ' + row.number"
-              [deleteLabel]="'Удалить договор ' + row.number"
-              [dataTestEdit]="'edit-button-' + row._id"
-              [dataTestDelete]="'delete-button-' + row._id"
-              (document)="onCreateDocument($event)"
-              (edit)="openEdit($event)"
-              (delete)="onDelete($event)"
-            />
-          </ng-template>
-        </app-pi-table>
+      <!-- Page-level search input + count hint (in toolbarExtras) -->
+      <div toolbarExtras class="flex items-center gap-2 flex-wrap">
+        <input
+          id="contracts-search"
+          type="search"
+          name="contracts-search"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          placeholder="Поиск по номеру, названию, контрагенту…"
+          aria-label="Поиск договоров"
+          data-test="search-input"
+          class="pi-input w-80"
+        />
+        <span class="text-xs text-muted-foreground" data-test="contracts-count">
+          {{ listTotal() }} {{ totalLabel(listTotal()) }}
+        </span>
       </div>
-    </app-pi-section>
+    </app-pi-entity-list>
+
+    <p class="text-[10px] text-muted-foreground mt-2 sm:hidden">
+      ← Таблица широкая — прокручивайте горизонтально →
+    </p>
   `,
 })
-export class ContractsPage implements OnInit {
-  constructor() {
-    this.counterpartiesLookup.load();
-    this.organizationsLookup.load();
-    this.destroyRef.onDestroy(() => this.search.destroy());
-  }
+export class ContractsPage {
   private readonly service = inject(ContractsService);
   private readonly counterpartyService = inject(CounterpartyService);
   private readonly orgService = inject(OrganizationsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
-  private readonly baseUrl = inject(API_BASE_URL);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly RefreshIcon = RefreshCw;
+  protected readonly PAGE_SIZE = PAGE_SIZE;
 
-  /** Exposed to template via `[pageSize]="pageSize"`. */
-  protected readonly pageSize = PAGE_SIZE;
+  protected readonly sortKeySig = signal<SortKey | null>('expiresAt');
+  protected readonly sortDirSig = signal<'asc' | 'desc' | null>('desc');
 
-  /**
-   * Page-owned sort signals. Seeded to MATCH pi-table's internal
-   * state after ngOnInit applies the `[initialSortKey]="'expiresAt'"`
-   * + `[initialSortDir]="'desc'"` bindings (TZ-104.4.2). The `null`
-   *   in the SortDir union marks the "no sort active" state (third
-   * click past desc clears pi-table's sort key) — same shape as
-   * `orders.page.ts` so batch-2 cross-page handling stays uniform.
-   */
-  private readonly sortKeySig = signal<SortKey | null>('expiresAt');
-  private readonly sortDirSig = signal<'asc' | 'desc' | null>('desc');
-
-  /** Current page (1-indexed). Bumped via `(pageChange)` from pi-table. */
-  private readonly pageSig = signal<number>(1);
-  protected readonly page = this.pageSig.asReadonly();
-
-  /** Two lookup tables for the dual cell templates (counterparty + organization). */
   private readonly counterpartiesLookup = createLookupTable<Counterparty>(
     this.counterpartyService.list({ limit: 200 }),
   );
@@ -311,30 +229,64 @@ export class ContractsPage implements OnInit {
     this.orgService.list({ limit: 200 }),
   );
 
-  /** Single debounced search state — owns its own `searchQuery` signal. */
   private readonly search = createSearchState(300);
   protected readonly searchQuery = this.search.searchQuery;
 
-  protected readonly listRes = httpResource<Contract[]>(() => ({
-    url: `${this.baseUrl}/contracts`,
-  }));
+  /**
+   * Direct `service.list()` fetch (no httpResource — page is
+   * purely client-side filter+sort+pag). Stored in `dataSig`;
+   * reactive computed chain downstream.
+   */
+  protected readonly dataSig = signal<Contract[]>([]);
+  protected readonly loading = signal<boolean>(false);
+  protected readonly error = signal<string | null>(null);
 
-  protected readonly data = computed<Contract[]>(() => this.listRes.value() ?? []);
-  protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
-  protected readonly error = computed<string | null>(() => {
-    const err = this.listRes.error() as
-      import('@angular/common/http').HttpErrorResponse | undefined;
-    return err ? extractErrorMessage(err) : null;
-  });
+  constructor() {
+    this.counterpartiesLookup.load();
+    this.organizationsLookup.load();
+    this.reload();
+
+    /**
+     * Effect-driven reload: when `sortedRows()` produces a new
+     * value (filter or sort cycle change), call `listRef?.reload()`
+     * so the wrapper re-pulls its `{items, total}` from the
+     * synthetic localAdapter. `firstRun` guard skips the initial
+     * mount (wrapper's ngOnInit fires the first fetch through
+     * localAdapter.list).
+     */
+    let firstEffectRun = true;
+    effect(() => {
+      this.sortedRows();
+      if (firstEffectRun) {
+        firstEffectRun = false;
+        return;
+      }
+      this.listRef()?.reload();
+    });
+  }
 
   /**
-   * Client-side filter across «number», «title», organization name,
-   * counterparty name/shortName, packageTag. Reactive computed
-   * reading `data()` and `debouncedSearch()` so both filter-set and
-   * search-text changes trigger re-compute.
+   * Fetch the full contracts flat array and store in `dataSig`.
+   * `silentGet` semantics: never throws — failures surface via the
+   * `res.ok === false` discriminated union.
    */
+  private reload(): void {
+    this.loading.set(true);
+    this.error.set(null);
+    this.service.list().subscribe((res) => {
+      if (res.ok) {
+        this.dataSig.set(res.data);
+        this.error.set(null);
+      } else {
+        this.error.set(extractErrorMessage(res.error));
+        this.dataSig.set([]);
+      }
+      this.loading.set(false);
+    });
+  }
+
   protected readonly filteredRows = computed<Contract[]>(() => {
-    const rows = this.data();
+    const rows = this.dataSig();
     const q = this.search.debouncedSearch().trim().toLowerCase();
     if (!q) return rows.slice();
     return rows.filter((c) => {
@@ -357,13 +309,6 @@ export class ContractsPage implements OnInit {
     });
   });
 
-  /**
-   * Filtered + sorted rows. Reactive computed reading BOTH
-   * `filteredRows()` AND `sortKey/sortDir` — fixes the
-   * `sort.sorted(this.filteredRows(), ...)` snapshot bug. Uses
-   * custom accessor per key (status cycle index, expiresAt
-   * chronological, totalAmount numeric, number locale).
-   */
   protected readonly sortedRows = computed<Contract[]>(() => {
     const rows = this.filteredRows();
     const key = this.sortKeySig();
@@ -373,44 +318,65 @@ export class ContractsPage implements OnInit {
     return rows.slice().sort((a, b) => compareValues(accessor(a), accessor(b), sign));
   });
 
-  /**
-   * Total = full filtered+sorted length, NOT page slice. pi-table
-   * derives `totalPages = ceil(total / pageSize)` and shows the
-   * Prev/Next pager accordingly.
-   */
-  protected readonly total = computed<number>(() => this.sortedRows().length);
-
-  /**
-   * Page slice of the sorted+filtered list.
-   *   start = (page-1) * pageSize   (0-indexed start)
-   *   end   = start + pageSize       (exclusive end)
-   */
-  protected readonly paginatedRows = computed<Contract[]>(() => {
-    const all = this.sortedRows();
-    const start = (this.pageSig() - 1) * PAGE_SIZE;
-    return all.slice(start, start + PAGE_SIZE);
-  });
-
-  /** Modal toolbar count: visible rows after filtering (not the page slice). */
   protected readonly visibleCount = computed<number>(() => this.sortedRows().length);
 
-  protected readonly emptyMessage = computed(() =>
-    this.searchQuery()
-      ? 'Ничего не найдено.'
-      : 'Нет договоров. Нажмите «Создать», чтобы добавить первый.',
+  // ─── Wrapper ref + synthetic EntityService adapter ────────────────
+  private readonly listRef = viewChild<PiEntityListComponent<Contract>>('list');
+
+  protected readonly listTotal = computed<number>(() => this.listRef()?.total() ?? 0);
+
+  private readonly counterpartyTplRef = viewChild<TemplateRef<{ $implicit: Contract }>>(
+    'counterpartyTpl',
+  );
+  private readonly organizationTplRef = viewChild<TemplateRef<{ $implicit: Contract }>>(
+    'organizationTpl',
+  );
+  private readonly rowActionsTplRef = viewChild<TemplateRef<{ $implicit: Contract }>>(
+    'rowActionsTpl',
   );
 
-  // ─── Column definitions ────────────────────────────────────────────
+  protected readonly cellTemplates = computed<
+    Record<string, TemplateRef<{ $implicit: Contract }>>
+  >(() => {
+    const result: Record<string, TemplateRef<{ $implicit: Contract }>> = {};
+    const cp = this.counterpartyTplRef();
+    const org = this.organizationTplRef();
+    if (cp) result['customerId'] = cp;
+    if (org) result['organizationId'] = org;
+    return result;
+  });
+
+  protected readonly rowActionsTplBinding = computed<
+    TemplateRef<{ $implicit: Contract }> | null
+  >(() => this.rowActionsTplRef() ?? null);
+
   /**
-   * Column-set mirroring the pre-migration source's 8 visible columns
-   * + the trailing actions slot (auto-injected by `[rowActions]`).
-   * - `number` is sticky-left (acts as an ID column per tablet UX)
-   * - `customerId` + `organizationId` are `cellTemplate` (dual lookup)
-   * - `status` sorts via custom `CONTRACT_STATUS_CYCLE_INDEX` and
-   *   falls through to `CONTRACT_STATUS_LABELS` format string
-   * - `expiresAt` is a sortable date (chrono, null → bottom)
-   * - `totalAmount` is numeric with `formatPrice`, right-aligned
+   * Synthetic `EntityService<Contract, DefaultListParams>` adapter.
+   * Slices the locally filtered+sorted `sortedRows()` into the
+   * `{items, total}` shape the wrapper expects.
    */
+  protected readonly localAdapter: EntityService<Contract, DefaultListParams> = {
+    list: (params: DefaultListParams) => {
+      const limit = Math.max(params.limit ?? PAGE_SIZE, 1);
+      const start = ((params.page ?? 1) - 1) * limit;
+      const all = this.sortedRows();
+      return of({
+        ok: true as const,
+        data: {
+          items: all.slice(start, start + limit),
+          total: all.length,
+          page: params.page ?? 1,
+          limit,
+        },
+      });
+    },
+    findById: (id: string) => this.service.findById(id),
+    create: (payload) => this.service.create(payload),
+    update: (id, payload) => this.service.update(id, payload),
+    remove: (id) => this.service.remove(id),
+  };
+
+  // ─── Column definitions ─────────────────────────────────────────────
   protected readonly cols: ColumnDef<Contract>[] = [
     {
       key: 'number',
@@ -464,33 +430,6 @@ export class ContractsPage implements OnInit {
     },
   ];
 
-  // ─── Template refs (resolved at view init, static:true → BEFORE ngOnInit) ──
-  // TZ-104.4.2: strong typing matches pi-table's re-parameterized
-  // `[cellTemplates]` input. Pre-TZ-104.4.2 these were `TemplateRef<any>`.
-  @ViewChild('counterpartyTpl', { static: true })
-  private readonly counterpartyTplRef!: TemplateRef<{ $implicit: Contract }>;
-  @ViewChild('organizationTpl', { static: true })
-  private readonly organizationTplRef!: TemplateRef<{ $implicit: Contract }>;
-  @ViewChild('rowActionsTpl', { static: true })
-  private readonly rowActionsTplRef!: TemplateRef<{ $implicit: Contract }>;
-
-  /** Built in ngOnInit after ViewChild fields resolve. Stable reference. */
-  protected cellTemplates: Record<string, TemplateRef<{ $implicit: Contract }>> = {};
-  /** Built in ngOnInit; null until then so pi-table defers the slot. */
-  protected rowActionsTplBinding: TemplateRef<{ $implicit: Contract }> | null = null;
-
-  ngOnInit(): void {
-    // Build cell-template map + row-actions binding AFTER static
-    // ViewChild fields resolve. Avoids TemplateRef<C> invariance
-    // trap and Angular's signal-binding name-collision.
-    this.cellTemplates = {
-      customerId: this.counterpartyTplRef,
-      organizationId: this.organizationTplRef,
-    };
-    this.rowActionsTplBinding = this.rowActionsTplRef;
-  }
-
-  // ─── Cell template helpers (TZ-104.4.2: strongly typed) ───────────
   protected counterpartyNameOf(row: Contract): string | null {
     const id = customerIdOf(row);
     if (!id) return null;
@@ -515,43 +454,17 @@ export class ContractsPage implements OnInit {
     return pluralize(n, ['договор', 'договора', 'договоров']);
   }
 
-  // ─── Event handlers ───────────────────────────────────────────────
+  // ─── Event handlers ────────────────────────────────────────────────
   protected onSearchInput(event: Event): void {
     this.search.onSearchInput(event);
-    // Reset to first page when the search filter changes so users
-    // don't land on an out-of-range page of a (possibly empty)
-    // filter set.
-    this.pageSig.set(1);
+    this.sortKeySig.set('expiresAt');
+    this.sortDirSig.set('desc');
   }
 
-  protected onPageChange(p: number): void {
-    this.pageSig.set(p);
-  }
-
-  /**
-   * Page-owned sort handler. `[localSort]="false"` keeps pi-table
-   * from re-sorting the visible page slice, and this handler simply
-   * MIRRORS pi-table's sortChange emit into the page's sort
-   * signals. The mirror-event pattern (vs re-derive) keeps the
-   * cycles in lockstep regardless of starting-state divergence;
-   * see `docs/pi-table-migration-recipe.md` §8 R-5.
-   *
-   * pi-table's emit contract: `{key, dir: SortDirection}` where
-   * dir ∈ {'asc' | 'desc' | null}. When `dir === null`, pi-table
-   * has cleared its key (third click past desc). Page mirrors by
-   * clearing sortKeySig and keeping sortDirSig at 'asc' as a
-   * no-visual-effect placeholder.
-   */
-  protected onSortChange(event: { key: string; dir: SortDirection }): void {
+  protected onSortChange(event: SortChangeEvent): void {
     const dir = event.dir;
-    // Single boundary cast: pi-table emits `key: string`, page's
-    // SortKey is a union. Cast at the event ingestion point; no
-    // further casts needed downstream. Mirrors `orders.page.ts`.
     this.sortKeySig.set(dir === null ? null : (event.key as SortKey));
-    this.sortDirSig.set(dir === null ? null : dir);
-    // Reset to first page on every sort change so users see the
-    // first rows of the freshly ordered set.
-    this.pageSig.set(1);
+    this.sortDirSig.set(dir === null ? null : (dir as 'asc' | 'desc'));
   }
 
   protected openCreate(): void {
@@ -586,7 +499,7 @@ export class ContractsPage implements OnInit {
       this.service.remove(row._id).subscribe((res) => {
         if (res.ok) {
           this.toast.success('Договор удалён');
-          this.listRes.reload();
+          this.reload();
         } else {
           this.toast.error(extractErrorMessage(res.error));
         }
@@ -600,15 +513,11 @@ export class ContractsPage implements OnInit {
     });
   }
 
-  protected reload(): void {
-    this.listRes.reload();
-  }
-
   private refreshOnDialogClose(ref: DialogRef<unknown>): void {
     onDialogCloseOnce(ref, this.injector, () => {
       this.counterpartiesLookup.load();
       this.organizationsLookup.load();
-      this.listRes.reload();
+      this.reload();
     });
   }
 }

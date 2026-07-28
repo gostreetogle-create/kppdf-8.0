@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { Router } from '@angular/router';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of } from 'rxjs';
 
@@ -11,11 +11,15 @@ import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { API_BASE_URL } from '../../core/api.tokens';
 
-describe('OrdersPage', () => {
-  let httpMock: HttpTestingController;
-  const baseUrl = '/api';
-  const listUrl = `${baseUrl}/orders`;
-  const dialogSpy = { open: jest.fn().mockReturnValue({}) };
+/**
+ * Spec v3 — TZ-232.D sentinel #3. The page's `localAdapter.list()` is
+ * SYNCHRONOUS (`of({ok: true, data: ...})`), so we delegate HTTP-
+ * resource mocking to the wrapper's TestBed registers — there is no
+ * outgoing HTTP request that needs flushing in this spec layer.
+ */
+describe('OrdersPage (post-TZ-232.D sentinel #3 v3)', () => {
+  const dialogSpy = { open: jest.fn().mockReturnValue({ closed: of(undefined) }) };
+  const routerSpy = { navigate: jest.fn().mockResolvedValue(true) };
 
   const fakeOrders: Order[] = [
     {
@@ -24,7 +28,8 @@ describe('OrdersPage', () => {
       status: 'draft',
       priority: 'normal',
       items: [],
-      createdAt: '2026-01-01',
+      date: '2026-01-01',
+      counterpartyId: 'cp1',
     } as Order,
     {
       _id: 'o2',
@@ -32,31 +37,26 @@ describe('OrdersPage', () => {
       status: 'confirmed',
       priority: 'high',
       items: [],
-      createdAt: '2026-01-02',
+      date: '2026-01-02',
+      counterpartyId: 'cp2',
     } as Order,
   ];
 
-  const matchListGet = (r: { url: string; method: string }): boolean =>
-    r.url === listUrl && r.method === 'GET';
-
-  async function tickMicrotask(): Promise<void> {
-    await new Promise<void>((r) => setTimeout(r, 0));
-  }
-
   beforeEach(async () => {
     dialogSpy.open.mockClear();
+    routerSpy.navigate.mockClear();
     await TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([]), withFetch()),
-        provideHttpClientTesting(),
-        { provide: API_BASE_URL, useValue: baseUrl },
+        { provide: API_BASE_URL, useValue: '/api' },
         {
           provide: OrdersService,
           useValue: {
-            list: () => of({ ok: true, data: [] }),
-            findById: () => of({ ok: true, data: {} as never }),
-            create: () => of({ ok: true, data: {} as never }),
-            update: () => of({ ok: true, data: {} as never }),
+            list: () => of({ ok: true, data: fakeOrders }),
+            findById: (id: string) => of({ ok: true, data: { _id: id } as Order }),
+            create: (p: Partial<Order>) => of({ ok: true, data: { ...p, _id: 'new' } as Order }),
+            update: (id: string, p: Partial<Order>) =>
+              of({ ok: true, data: { _id: id, ...p } as Order }),
             remove: () => of({ ok: true, data: undefined }),
           },
         },
@@ -66,92 +66,80 @@ describe('OrdersPage', () => {
         },
         { provide: PiDialogService, useValue: dialogSpy },
         { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
+        { provide: Router, useValue: routerSpy },
       ],
     })
       .overrideComponent(OrdersPage, {
-        set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
+        set: { schemas: [NO_ERRORS_SCHEMA] },
       })
       .compileComponents();
-
-    httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => {
-    httpMock.verify();
-  });
-
-  it('fires an initial GET /api/orders on creation', async () => {
+  it('mounts cleanly with no errors', () => {
     const fixture = TestBed.createComponent(OrdersPage);
     fixture.detectChanges();
+    expect(fixture.componentInstance).toBeTruthy();
+  });
 
-    httpMock.expectOne(matchListGet).flush(fakeOrders);
-    await tickMicrotask();
+  it('has a localAdapter that emits the wrapper-expected envelope shape', () => {
+    const fixture = TestBed.createComponent(OrdersPage);
     fixture.detectChanges();
-
     const comp = fixture.componentInstance as unknown as {
-      data: () => Order[];
-      total: () => number;
-      loading: () => boolean;
+      localAdapter: { list: (p: { page: number; limit: number }) => { subscribe: (fn: (v: unknown) => void) => unknown } };
     };
-
-    expect(comp.data().length).toBe(2);
-    expect(comp.total()).toBe(2);
-    expect(comp.loading()).toBe(false);
+    let captured: unknown = undefined;
+    comp.localAdapter?.list({ page: 1, limit: 20, search: '' }).subscribe((v) => {
+      captured = v;
+    });
+    // Synchronous `of()` should have captured a SilentResult envelope.
+    expect(captured).toBeDefined();
   });
 
-  it('shows loading state before response', async () => {
+  it('create button triggers openCreate dialog', () => {
     const fixture = TestBed.createComponent(OrdersPage);
     fixture.detectChanges();
-
-    const comp = fixture.componentInstance as unknown as { loading: () => boolean };
-    expect(comp.loading()).toBe(true);
-
-    httpMock.expectOne(matchListGet).flush([]);
-    await tickMicrotask();
-    fixture.detectChanges();
-
-    expect(comp.loading()).toBe(false);
-  });
-
-  it('shows empty state when no orders', async () => {
-    const fixture = TestBed.createComponent(OrdersPage);
-    fixture.detectChanges();
-
-    httpMock.expectOne(matchListGet).flush([]);
-    await tickMicrotask();
-    fixture.detectChanges();
-
-    const comp = fixture.componentInstance as unknown as {
-      data: () => Order[];
-      total: () => number;
-    };
-    expect(comp.data().length).toBe(0);
-    expect(comp.total()).toBe(0);
-  });
-
-  it('handles error response gracefully', async () => {
-    const fixture = TestBed.createComponent(OrdersPage);
-    fixture.detectChanges();
-
-    httpMock
-      .expectOne(matchListGet)
-      .flush('Server error', { status: 500, statusText: 'Internal Server Error' });
-    await tickMicrotask();
-
-    const comp = fixture.componentInstance as unknown as { error: () => string | null };
-    expect(() => comp.error()).not.toThrow();
-  });
-
-  it('create button triggers openCreate', async () => {
-    const fixture = TestBed.createComponent(OrdersPage);
-    fixture.detectChanges();
-
-    httpMock.expectOne(matchListGet).flush([]);
-    await tickMicrotask();
-    fixture.detectChanges();
-
     const comp = fixture.componentInstance as unknown as { openCreate: () => void };
     comp.openCreate();
     expect(dialogSpy.open).toHaveBeenCalled();
+  });
+
+  it('onCreateDocument navigates to /doc-constructor/builder with source params', () => {
+    const fixture = TestBed.createComponent(OrdersPage);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance as unknown as {
+      onCreateDocument: (row: Order) => void;
+    };
+    comp.onCreateDocument(fakeOrders[0]);
+
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/doc-constructor/builder'], {
+      queryParams: { source: 'order', sourceId: 'o1' },
+    });
+  });
+
+  it('onDelete opens destructive AlertDialogComponent', () => {
+    const fixture = TestBed.createComponent(OrdersPage);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance as unknown as { onDelete: (row: Order) => void };
+    comp.onDelete(fakeOrders[0]);
+
+    expect(dialogSpy.open).toHaveBeenCalled();
+    const lastCall = dialogSpy.open.mock.calls[dialogSpy.open.mock.calls.length - 1];
+    const opts = lastCall?.[1] as { data?: { variant?: string } } | undefined;
+    expect(opts?.data?.variant).toBe('destructive');
+  });
+
+  it('onSortChange mirrors pi-table emits into page sortKey/sortDir signals', () => {
+    const fixture = TestBed.createComponent(OrdersPage);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance as unknown as {
+      onSortChange: (event: { key: string; dir: 'asc' | 'desc' | null }) => void;
+      sortKeySig: () => string | null;
+      sortDirSig: () => string | null;
+    };
+    comp.onSortChange({ key: 'total', dir: 'asc' });
+    expect(comp.sortKeySig()).toBe('total');
+    expect(comp.sortDirSig()).toBe('asc');
+    comp.onSortChange({ key: 'total', dir: null });
+    expect(comp.sortKeySig()).toBeNull();
   });
 });

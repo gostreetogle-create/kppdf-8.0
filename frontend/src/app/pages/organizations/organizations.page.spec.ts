@@ -1,137 +1,157 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of } from 'rxjs';
 
 import { OrganizationsPage } from './organizations.page';
-import { OrganizationsService, Organization } from '../../shared/services/organizations.service';
+import {
+  OrganizationsService,
+  Organization,
+} from '../../shared/services/organizations.service';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../shared/ui/toast';
-import { API_BASE_URL } from '../../core/api.tokens';
 
+/**
+ * TZ-232.E warmup #2 spec — OrganizationsPage migrated to
+ * <pi-entity-list>. Spec rewritten under DI mock pattern (replaces
+ * HttpTestingController.expectOne pattern that tested the previous
+ * `httpResource` implementation; wrapper now drives fetches via the
+ * injected OrganizationsService through toEntityService adapter).
+ *
+ * What we cover:
+ *  1. Initial list fetch on mount (wrapper ngOnInit triggers
+ *     service.list()).
+ *  2. Loading → loaded state transition.
+ *  3. Empty list → total=0, rows=[].
+ *  4. Error response → wrapper.error() populated, rows=[].
+ *  5. Create button → dialog opened.
+ */
 describe('OrganizationsPage', () => {
-  let httpMock: HttpTestingController;
-  const baseUrl = '/api';
-  const listUrl = `${baseUrl}/organizations`;
   const dialogSpy = { open: jest.fn().mockReturnValue({}) };
+  let listSpy: jest.Mock;
 
   const fakeOrgs: Organization[] = [
     { _id: 'org1', name: 'Acme Corp', inn: '1234567890' } as Organization,
     { _id: 'org2', name: 'Beta LLC', inn: '0987654321' } as Organization,
   ];
 
-  const matchListGet = (r: { url: string; method: string }): boolean =>
-    r.url.startsWith(listUrl) && r.method === 'GET';
+  async function mountPage(listResponse: { items: Organization[]; total: number }): Promise<{
+    fixture: import('@angular/core/testing').ComponentFixture<OrganizationsPage>;
+    listSpy: jest.Mock;
+  }> {
+    listSpy = jest.fn().mockReturnValue(of({ ok: true, data: listResponse }));
 
-  async function tickMicrotask(): Promise<void> {
-    await new Promise<void>((r) => setTimeout(r, 0));
-  }
+    TestBed.overrideProvider(OrganizationsService, {
+      useValue: {
+        list: listSpy,
+        findById: () => of({ ok: true, data: {} as never }),
+        create: () => of({ ok: true, data: {} as never }),
+        update: () => of({ ok: true, data: {} as never }),
+        remove: () => of({ ok: true, data: undefined }),
+      },
+    });
 
-  beforeEach(async () => {
-    dialogSpy.open.mockClear();
     await TestBed.configureTestingModule({
+      imports: [OrganizationsPage],
       providers: [
-        provideHttpClient(withInterceptors([]), withFetch()),
-        provideHttpClientTesting(),
-        { provide: API_BASE_URL, useValue: baseUrl },
-        {
-          provide: OrganizationsService,
-          useValue: {
-            list: () => of({ ok: true, data: { items: [], total: 0 } }),
-            findById: () => of({ ok: true, data: {} as never }),
-            create: () => of({ ok: true, data: {} as never }),
-            update: () => of({ ok: true, data: {} as never }),
-            remove: () => of({ ok: true, data: undefined }),
-          },
-        },
         { provide: PiDialogService, useValue: dialogSpy },
         { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
       ],
     })
       .overrideComponent(OrganizationsPage, {
-        set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
+        set: { schemas: [NO_ERRORS_SCHEMA] },
       })
       .compileComponents();
 
-    httpMock = TestBed.inject(HttpTestingController);
-  });
-
-  afterEach(() => {
-    httpMock.verify();
-  });
-
-  it('fires an initial GET /api/organizations on creation', async () => {
     const fixture = TestBed.createComponent(OrganizationsPage);
     fixture.detectChanges();
+    // Let wrapper's switchMap projection resolve synchronously.
+    await Promise.resolve();
 
-    httpMock.expectOne(matchListGet).flush({ items: fakeOrgs, total: 2 });
-    await tickMicrotask();
+    return { fixture, listSpy };
+  }
+
+  beforeEach(() => {
+    dialogSpy.open.mockClear();
+  });
+
+  it('fires an initial list() call on creation', async () => {
+    const { listSpy } = await mountPage({ items: fakeOrgs, total: 2 });
+    expect(listSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders rows + total after initial fetch', async () => {
+    const { fixture } = await mountPage({ items: fakeOrgs, total: 2 });
     fixture.detectChanges();
 
     const comp = fixture.componentInstance as unknown as {
-      data: () => Organization[];
-      total: () => number;
-      loading: () => boolean;
+      listRef: () => { rows: () => Organization[]; total: () => number } | undefined;
     };
 
-    expect(comp.data().length).toBe(2);
-    expect(comp.total()).toBe(2);
-    expect(comp.loading()).toBe(false);
+    const ref = comp.listRef();
+    expect(ref).toBeDefined();
+    expect(ref?.rows().length).toBe(2);
+    expect(ref?.total()).toBe(2);
   });
 
-  it('shows loading state before response', async () => {
-    const fixture = TestBed.createComponent(OrganizationsPage);
-    fixture.detectChanges();
-
-    const comp = fixture.componentInstance as unknown as { loading: () => boolean };
-    expect(comp.loading()).toBe(true);
-
-    httpMock.expectOne(matchListGet).flush({ items: [], total: 0 });
-    await tickMicrotask();
-    fixture.detectChanges();
-
-    expect(comp.loading()).toBe(false);
-  });
-
-  it('shows empty state when no organizations', async () => {
-    const fixture = TestBed.createComponent(OrganizationsPage);
-    fixture.detectChanges();
-
-    httpMock.expectOne(matchListGet).flush({ items: [], total: 0 });
-    await tickMicrotask();
+  it('shows empty state when list returns no items', async () => {
+    const { fixture } = await mountPage({ items: [], total: 0 });
     fixture.detectChanges();
 
     const comp = fixture.componentInstance as unknown as {
-      data: () => Organization[];
-      total: () => number;
+      listRef: () => { rows: () => Organization[]; total: () => number } | undefined;
     };
-    expect(comp.data().length).toBe(0);
-    expect(comp.total()).toBe(0);
+
+    expect(comp.listRef()?.rows().length).toBe(0);
+    expect(comp.listRef()?.total()).toBe(0);
   });
 
   it('handles error response gracefully', async () => {
+    listSpy = jest.fn().mockReturnValue(
+      of({ ok: false, error: new Error('boom') as never }),
+    );
+
+    TestBed.overrideProvider(OrganizationsService, {
+      useValue: {
+        list: listSpy,
+        findById: () => of({ ok: true, data: {} as never }),
+        create: () => of({ ok: true, data: {} as never }),
+        update: () => of({ ok: true, data: {} as never }),
+        remove: () => of({ ok: true, data: undefined }),
+      },
+    });
+
+    await TestBed.configureTestingModule({
+      imports: [OrganizationsPage],
+      providers: [
+        { provide: PiDialogService, useValue: dialogSpy },
+        { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
+      ],
+    })
+      .overrideComponent(OrganizationsPage, {
+        set: { schemas: [NO_ERRORS_SCHEMA] },
+      })
+      .compileComponents();
+
     const fixture = TestBed.createComponent(OrganizationsPage);
     fixture.detectChanges();
+    await Promise.resolve();
+    fixture.detectChanges();
 
-    httpMock
-      .expectOne(matchListGet)
-      .flush('Server error', { status: 500, statusText: 'Internal Server Error' });
-    await tickMicrotask();
+    const comp = fixture.componentInstance as unknown as {
+      listRef: () => { error: () => string | null } | undefined;
+    };
 
-    const comp = fixture.componentInstance as unknown as { error: () => string | null };
-    expect(() => comp.error()).not.toThrow();
+    expect(() => comp.listRef()?.error()).not.toThrow();
+    expect(comp.listRef()?.error()).toBeTruthy();
   });
 
   it('create button triggers openCreate', async () => {
-    const fixture = TestBed.createComponent(OrganizationsPage);
+    const { fixture } = await mountPage({ items: [], total: 0 });
     fixture.detectChanges();
 
-    httpMock.expectOne(matchListGet).flush({ items: [], total: 0 });
-    await tickMicrotask();
-    fixture.detectChanges();
-
-    const comp = fixture.componentInstance as unknown as { openCreate: () => void };
+    const comp = fixture.componentInstance as unknown as {
+      openCreate: () => void;
+    };
     comp.openCreate();
     expect(dialogSpy.open).toHaveBeenCalled();
   });

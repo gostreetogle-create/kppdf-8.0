@@ -4,17 +4,16 @@ import {
   DestroyRef,
   Injector,
   TemplateRef,
-  ViewChild,
   computed,
+  effect,
   inject,
   signal,
-  OnInit,
+  viewChild,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { Observable, of } from 'rxjs';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../shared/page/pi-section.component';
-import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
@@ -25,9 +24,16 @@ import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { createSearchState } from '../../shared/util/search';
 import { pluralize } from '../../shared/util/format';
-import { ColumnDef, SortDirection, TableComponent } from '../../shared/ui/pi-table.component';
+import { ColumnDef } from '../../shared/ui/pi-table.component';
+import {
+  PiEntityListComponent,
+  DefaultListParams,
+  SortChangeEvent,
+} from '../../shared/dsl/entity-list/pi-entity-list.component';
+import { EntityService } from '../../shared/dsl/entity/entity-service';
 import {
   ProductModule,
+  ProductModuleUpsertDto,
   ProductModulesService,
 } from '../../shared/services/pi-product-modules.service';
 import { ModuleFormDialogComponent } from './module-form-dialog.component';
@@ -96,69 +102,50 @@ function moduleDimensions(row: ProductModule): string {
 }
 
 /**
- * Полная документация страницы: docs/pages/modules.page.md
+ * TZ-232.E warmup #3 — modules migrated to <pi-entity-list> wrapper,
+ * Approach D (hybrid adapter pattern).
  *
- * TZ-104.3 batch-2-B-flat.2 — ModulesPage migrated to <app-pi-table>,
- * with TZ-104.4.2 typed TemplateRef propagation.
+ * Backend `/modules` endpoint returns a flat array (NO envelope),
+ * and does NOT support `?search=` or `?sortBy=` query params
+ * (TZ-104.3 batch-2-B-flat pattern). Wrapper's debounced search +
+ * server-side sort would be broken UX; pre-migration page handled
+ * filter/sort/paginate entirely client-side using signal-driven
+ * computed chains.
  *
- * Second B-flat page (after contracts); validates Pattern B-flat's
- * cross-type stability: the same pattern works for Contract (8 columns,
- * dual lookups) and for ProductModule (5 columns, no lookups, with a
- * row-click navigation handler). The pattern survives the
- * Contract↔ProductModule type permutations because both interfaces
- * carry `_id: string` (MongoDB convention) — which is exactly the
- * pi-table keyOf() JSON.stringify-fallback footgun guard.
+ * Migration strategy (Approach D):
+ *  - `httpResource` KEEPS the flat-array fetch preserved.
+ *  - Synthetic `localAdapter: EntityService<T, P>` slices filtered+
+ *    sorted data into `{items, total}` shape expected by the wrapper.
+ *  - Wrapper's `[showSearch]="false"` + `[localSort]="false"` —
+ *    page owns search input via `[toolbarExtras]` and sort cycle
+ *    via `(sortChange)` output fired from pi-table → page updates
+ *    `sortKeySig/sortDirSig` → re-computes `sortedRows()` → reloads
+ *    via `wrapper.reload()` (effect-driven).
+ *  - Wrapper's `(rowClick)` output triggers `router.navigate`.
  *
- * Backend response caveat: flat array (no envelope). Pagination TODO
- * at backend. Sort + filter + slice are page-owned.
- *
- * TZ-104.4.2 page-loaded default sort: `[initialSortKey]="'name'"`
- * + `[initialSortDir]="'asc'"` per spec §1.12.1 (alphabetical by
- * module name, ascending). The page's internal `sortKeySig/sortDirSig`
- * are seeded to MATCH pi-table's post-ngOnInit state so the
- * mirror-event handler stays in lockstep from the very first click.
- *
- * SortKey union: `'name' | 'article'` (intentionally narrow — see
- * file-top SortKey JSDoc for the why). Matches pre-migration UX.
- *
- * Row-click handler preserved from the pre-migration source: clicking
- * any cell OUTSIDE the trailing action column navigates to
- * `/modules/:id` for the detail page. pi-table's trailing action
- * `<td>` stops `$event.stopPropagation()` automatically (per
- * pi-table JSDoc on `[rowActions]`) so action clicks don't bubble.
- *
- * BUG fixes vs the pre-migration source (mirror of contracts recipe):
- *  1. `sortedRows` was previously bound via an INLINE `computed()`
- *     with sortKey/sortDir signals and `visible()` reads. The
- *     migrated version follows the canonical Pattern B reactive
- *     computed chain (`data() → filteredRows() → sortedRows() →
- *     paginatedRows()`) reading ALL upstream signals so any change
- *     cascades.
- *  2. Pre-migration had a page-level `searchQuery` signal AND an
- *     inline `visible()` computed that filtered inside the same
- *     chain. Replaced with `createSearchState` + a single reactive
- *     `filteredRows` computed reading `debouncedSearch`.
- *  3. SortKey typing `'name' | 'article' | null` lets `null` carry
- *     pi-table's "third-click-past-desc clears sort" state cleanly.
- *
- * Dead imports pruned: FormsModule (was unused even pre-migration —
- * `<input>` used `[value]`/`(input)`, not `ngModel`), PiEmptyStateComponent
- * (replaced by pi-table's native `[emptyMessage]` + `[loading]` states —
- * pi-table renders its own empty-state row + skeleton overlay).
- *
- * Standalone + OnPush + signal-based. No `modules.page.spec.ts` exists
- * for v1; acceptance is visual smoke + ng build (recipe §7 Rule 4).
+ * Trade-offs / decisions:
+ *  - **Search is page-level**, not wrapper-level. Backend can't honor
+ *    `?search=`, so we keep the existing `createSearchState` + page-
+ *    level debounced search → filter computed.
+ *  - **Sort cycle is page-level**. Wrapper's `(sortChange)` output
+ *    forwards pi-table's emit; page mirrors into `sortKeySig/sortDirSig`
+ *    + triggers `wrapper.reload()` via effect on `sortedRows()` change.
+ *  - **Paginate is wrapper-level**. Wrapper's `page/pageSize` flow
+ *    into the synthetic `localAdapter.list(params)` which returns
+ *    the slice of `sortedRows()` for that page.
+ *  - **Row-click navigation** preserved via wrapper's `(rowClick)`
+ *    → page navigates to `/modules/:id`.
+ *  - **Count hint** preserved via `viewChild.listRef().total()` →
+ *    "{{ total() }} модулей" (pluralized).
  */
 @Component({
   selector: 'app-modules-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     PiPageHeaderComponent,
-    PiSectionComponent,
-    PiToolbarComponent,
     PiRowActionsComponent,
     ButtonComponent,
-    TableComponent,
+    PiEntityListComponent,
   ],
   template: `
     <app-pi-page-header
@@ -167,81 +154,62 @@ function moduleDimensions(row: ProductModule): string {
       description="Составные части продукции: материалы + виды работ. Модуль переиспользуется между товарами."
     />
 
-    <app-pi-toolbar>
-      <input
-        id="modules-search"
-        type="search"
-        name="modules-search"
-        [value]="searchQuery()"
-        (input)="onSearchInput($event)"
-        placeholder="Поиск по названию или артикулу…"
-        aria-label="Поиск модулей"
-        data-test="search-input"
-        class="pi-input w-72"
-      />
-      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
-        + Создать
-      </app-pi-button>
-      <span hint>{{ visibleCount() }} {{ totalLabel(visibleCount()) }}</span>
-    </app-pi-toolbar>
-
-    <app-pi-section
-      title="Каталог модулей"
-      hint="сортировка · клик по строке → детальная страница"
-      eyebrow="I"
+    <app-pi-entity-list
+      #list
+      [service]="localAdapter"
+      [cols]="cols"
+      ariaLabel="Список модулей"
+      [pageSize]="PAGE_SIZE"
+      [showSearch]="false"
+      [localSort]="false"
+      [initialSortKey]="'name'"
+      [initialSortDir]="'asc'"
+      emptyMessage="Нет модулей. Нажмите «Создать», чтобы добавить первый."
+      [cellTemplates]="cellTemplates()"
+      [rowActionsTpl]="rowActionsTplBinding()"
+      (create)="openCreate()"
+      (rowEdit)="openEdit($event)"
+      (rowDelete)="onDelete($event)"
+      (sortChange)="onSortChange($event)"
+      (rowClick)="onRowClick($event)"
     >
-      @if (error()) {
-        <div
-          role="alert"
-          class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
-        >
-          {{ error() }}
-        </div>
-      }
+      <ng-template #rowActionsTpl let-row>
+        <app-pi-row-actions
+          [row]="row"
+          [editLabel]="'Редактировать ' + row.name"
+          [deleteLabel]="'Удалить ' + row.name"
+          [dataTestEdit]="'edit-button-' + row._id"
+          [dataTestDelete]="'delete-button-' + row._id"
+          (edit)="openEdit($event)"
+          (delete)="onDelete($event)"
+        />
+      </ng-template>
 
-      <div class="overflow-x-auto hairline rounded-sm">
-        <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
-          ← Таблица широкая — прокручивайте горизонтально →
-        </p>
-        <app-pi-table
-          [data]="paginatedRows()"
-          [columns]="cols"
-          [loading]="loading()"
-          [total]="total()"
-          [page]="page()"
-          [pageSize]="pageSize"
-          [emptyMessage]="emptyMessage()"
-          [ariaLabel]="'Список модулей'"
-          [cellTemplates]="cellTemplates"
-          [rowActions]="rowActionsTplBinding"
-          [localSort]="false"
-          [initialSortKey]="'name'"
-          [initialSortDir]="'asc'"
-          (pageChange)="onPageChange($event)"
-          (sortChange)="onSortChange($event)"
-          (rowClick)="onRowClick($event)"
-        >
-          <!-- ───── Row actions cluster ───── -->
-          <ng-template #rowActionsTpl let-row>
-            <app-pi-row-actions
-              [row]="row"
-              [editLabel]="'Редактировать ' + row.name"
-              [deleteLabel]="'Удалить ' + row.name"
-              [dataTestEdit]="'edit-button-' + row._id"
-              [dataTestDelete]="'delete-button-' + row._id"
-              (edit)="openEdit($event)"
-              (delete)="onDelete($event)"
-            />
-          </ng-template>
-        </app-pi-table>
+      <!-- Page-level toolbar: search input + count hint -->
+      <div toolbarExtras class="flex items-center gap-2 flex-wrap">
+        <input
+          id="modules-search"
+          type="search"
+          name="modules-search"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          placeholder="Поиск по названию или артикулу…"
+          aria-label="Поиск модулей"
+          data-test="search-input"
+          class="pi-input w-72"
+        />
+        <span class="text-xs text-muted-foreground" data-test="modules-count">
+          {{ visibleCount() }} {{ totalLabel(visibleCount()) }}
+        </span>
       </div>
-    </app-pi-section>
+    </app-pi-entity-list>
+
+    <p class="text-[10px] text-muted-foreground mt-2 sm:hidden">
+      ← Таблица широкая — прокручивайте горизонтально →
+    </p>
   `,
 })
-export class ModulesPage implements OnInit {
-  constructor() {
-    this.destroyRef.onDestroy(() => this.search.destroy());
-  }
+export class ModulesPage {
   private readonly service = inject(ProductModulesService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
@@ -250,43 +218,39 @@ export class ModulesPage implements OnInit {
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly destroyRef = inject(DestroyRef);
 
-  /** Exposed to template via `[pageSize]="pageSize"`. */
-  protected readonly pageSize = PAGE_SIZE;
+  /** Exposed to template via `[pageSize]`. */
+  protected readonly PAGE_SIZE = PAGE_SIZE;
 
   /**
-   * Page-owned sort signals. Seeded to MATCH pi-table's internal
-   * state after ngOnInit applies the `[initialSortKey]="'name'"`
-   * + `[initialSortDir]="'asc'"` bindings (TZ-104.4.2).
+   * Page-owned sort signals. Seeded to MATCH wrapper/pi-table's
+   * internal state after initial sort applied (`name` / `asc`).
    */
-  private readonly sortKeySig = signal<SortKey>('name');
-  private readonly sortDirSig = signal<'asc' | 'desc' | null>('asc');
+  protected readonly sortKeySig = signal<SortKey>('name');
+  protected readonly sortDirSig = signal<'asc' | 'desc' | null>('asc');
 
-  /** Current page (1-indexed). Bumped via `(pageChange)` from pi-table. */
-  private readonly pageSig = signal<number>(1);
-  protected readonly page = this.pageSig.asReadonly();
-
-  /** Single debounced search state — owns its own `searchQuery` signal. */
+  /** Page-level debounced search (Backend ignores `?search=` → local filter). */
   private readonly search = createSearchState(300);
   protected readonly searchQuery = this.search.searchQuery;
 
+  /**
+   * Flat-array GET /modules via httpResource — preserves the cached
+   * dataset that the page-level `filteredRows` computed reacts to.
+   */
   protected readonly listRes = httpResource<ProductModule[]>(() => ({
     url: `${this.baseUrl}/modules`,
   }));
 
   protected readonly data = computed<ProductModule[]>(() => this.listRes.value() ?? []);
-  protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
   protected readonly error = computed<string | null>(() => {
     const err = this.listRes.error() as
-      import('@angular/common/http').HttpErrorResponse | undefined;
+      | import('@angular/common/http').HttpErrorResponse
+      | undefined;
     return err ? extractErrorMessage(err) : null;
   });
 
   /**
-   * Client-side filter across `name` + `article` (verified by
-   * pre-migration UX surface: the search input placeholder reads
-   * "Поиск по названию или артикулу"). Reactive computed reading
-   * `data()` and `debouncedSearch()` so both filter-set and
-   * search-text changes trigger re-compute.
+   * Client-side filter across `name` + `article` (pre-migration UX).
+   * Reactive computed reading `data()` and `debouncedSearch()`.
    */
   protected readonly filteredRows = computed<ProductModule[]>(() => {
     const rows = this.data();
@@ -299,11 +263,8 @@ export class ModulesPage implements OnInit {
   });
 
   /**
-   * Filtered + sorted rows. Reactive computed reading ALL upstream
-   * signals (`filteredRows()` + `sortKey/sortDir`). Pre-migration
-   * had an inline `computed` referencing `visible()` snapshot —
-   * same fix as the orders + contracts recipes; fixes the snapshot
-   * bug where filter changes didn't re-trigger sort.
+   * Filtered + sorted rows. Reactive computed reading all upstream
+   * signals (`filteredRows()` + `sortKeySig/sortDirSig`).
    */
   protected readonly sortedRows = computed<ProductModule[]>(() => {
     const rows = this.filteredRows();
@@ -311,55 +272,108 @@ export class ModulesPage implements OnInit {
     if (!key) return rows;
     const sign = this.sortDirSig() === 'asc' ? 1 : -1;
     const accessor = accessorFor(key);
-    return rows.slice().sort((a, b) => compareValues(accessor(a), accessor(b), sign));
+    return rows
+      .slice()
+      .sort((a, b) => compareValues(accessor(a), accessor(b), sign));
   });
 
-  /**
-   * Total = full filtered+sorted length, NOT page slice. pi-table
-   * derives `totalPages = ceil(total / pageSize)` and renders
-   * Prev/Next accordingly.
-   */
+  /** Total = full filtered+sorted length, NOT page slice. */
   protected readonly total = computed<number>(() => this.sortedRows().length);
-
-  /**
-   * Page slice of the sorted+filtered list.
-   *   start = (page-1) * pageSize
-   *   end   = start + pageSize
-   */
-  protected readonly paginatedRows = computed<ProductModule[]>(() => {
-    const all = this.sortedRows();
-    const start = (this.pageSig() - 1) * PAGE_SIZE;
-    return all.slice(start, start + PAGE_SIZE);
-  });
 
   /** Modal toolbar count: visible rows after filtering (not the page slice). */
   protected readonly visibleCount = computed<number>(() => this.sortedRows().length);
 
-  protected readonly emptyMessage = computed(() =>
-    this.searchQuery()
-      ? 'Ничего не найдено.'
-      : 'Нет модулей. Нажмите «Создать», чтобы добавить первый.',
+  // ─── Wrapper ref + synthetic EntityService adapter ────────────────
+  private readonly listRef = viewChild<
+    PiEntityListComponent<ProductModule>
+  >('list');
+
+  /**
+   * Template refs via `viewChild` signal (modern Angular 20).
+   */
+  private readonly rowActionsTplRef = viewChild<TemplateRef<{ $implicit: ProductModule }>>(
+    'rowActionsTpl',
   );
 
-  // ─── Column definitions ────────────────────────────────────────────
+  protected readonly cellTemplates = computed<
+    Record<string, TemplateRef<{ $implicit: ProductModule }>>
+  >(() => {
+    const result: Record<string, TemplateRef<{ $implicit: ProductModule }>> = {};
+    void this.rowActionsTplRef();
+    // No per-column cell templates for modules (rowActionsTpl is
+    // forwarded separately via [rowActionsTpl], not via cellTemplates).
+    return result;
+  });
+
+  protected readonly rowActionsTplBinding = computed<
+    TemplateRef<{ $implicit: ProductModule }> | null
+  >(() => this.rowActionsTplRef() ?? null);
+
   /**
-   * Column-set mirroring the pre-migration source's 5 user-visible
-   * columns + the trailing actions slot (auto-injected by
-   * `[rowActions]`):
-   *   - `name`     sortable + sticky-left (acts as ID column for tablet UX)
-   *   - `article`  sortable + monospace (catalog SKU style)
-   *   - `dimensions`  muted, custom `moduleDimensions()` formatter
-   *   - `materials`    count, derived .length (DISPLAY ONLY, not sortable)
-   *   - `workTypes`    count, derived .length (DISPLAY ONLY, not sortable)
+   * Synthetic `EntityService<T, P>` adapter — slices the locally
+   * filtered+sorted `sortedRows()` into `{items, total}` shape that
+   * the wrapper expects. `findById/create/update/remove` delegate
+   * straight to the underlying `ProductModulesService`.
    *
-   * Sortable count is intentionally 2 (`name` + `article`), matching
-   * pre-migration. The Материалов / Работ columns are display-only
-   * because pi-table's ColumnDef.key is `keyof T & string` — a virtual
-   * `_materialsCount` is type-system-forbidden. Users wanting sort
-   * by count can use `sortOrder` (sortOrder?: number is on the type).
-   * Not exposing sortOrder here matches current pre-migration UX
-   * (no sortOrder header was clickable in the source).
+   * `list()` runs synchronously (`of(...)`) because all data is
+   * already in memory after `httpResource` resolves. This bypasses
+   * wrapper's HTTP fetch pipeline cleanly for in-memory pages.
+   *
+   * Update/create cast: the generic `EntityService<T, P>` adapter
+   * uses `Partial<T>` for both update and create payloads, but the
+   * underlying `ProductModulesService.create/update` expects
+   * `ProductModuleUpsertDto` (a subset of `ProductModule`). The
+   * runtime payload is the same shape; the cast preserves the
+   * contract without runtime cost.
    */
+  protected readonly localAdapter: EntityService<ProductModule, DefaultListParams> = {
+    list: (params) => {
+      const limit = Math.max(params.limit ?? PAGE_SIZE, 1);
+      const start = ((params.page ?? 1) - 1) * limit;
+      const all = this.sortedRows();
+      return of({
+        ok: true as const,
+        data: {
+          items: all.slice(start, start + limit),
+          total: all.length,
+          page: params.page ?? 1,
+          limit,
+        },
+      });
+    },
+    findById: (id: string) => this.service.findById(id),
+    create: (payload) =>
+      this.service.create(payload as unknown as ProductModuleUpsertDto),
+    update: (id, payload) =>
+      this.service.update(
+        id,
+        payload as unknown as Partial<ProductModuleUpsertDto>,
+      ),
+    remove: (id) => this.service.remove(id),
+  };
+
+  constructor() {
+    // Reload the wrapper whenever `sortedRows()` changes (i.e.
+    // search OR sort cycle change). Manual trigger pattern mirrors
+    // wrapper's own internal fetch trigger; deterministic in
+    // `fakeAsync` test zones. `firstRun` guard skips the initial
+    // mount (wrapper's ngOnInit already fired the first fetch);
+    // subsequent changes trigger `wrapper.reload()` to re-slice
+    // the synthetic adapter with the new sorted state.
+    let firstEffectRun = true;
+    effect(() => {
+      this.sortedRows();
+      if (firstEffectRun) {
+        firstEffectRun = false;
+        return;
+      }
+      this.listRef()?.reload();
+    });
+
+    void this.error; // referenced for TemplateRef binding
+  }
+
+  // ─── Columns ──────────────────────────────────────────────────────
   protected readonly cols: ColumnDef<ProductModule>[] = [
     {
       key: 'name',
@@ -393,30 +407,6 @@ export class ModulesPage implements OnInit {
     },
   ];
 
-  // ─── Template refs (resolved at view init, static:true → BEFORE ngOnInit) ──
-  /**
-   * TZ-104.4.2: strongly typed `TemplateRef<{ $implicit: ProductModule }>`.
-   * Pre-TZ-104.4.2 these were `TemplateRef<any>`. There is NO
-   * `cellTemplates` content for modules (no rich cell content
-   * needed beyond row-actions), but we still type the field for
-   * parity with the contracts pattern — `{}` initial assignment.
-   */
-  @ViewChild('rowActionsTpl', { static: true })
-  private readonly rowActionsTplRef!: TemplateRef<{ $implicit: ProductModule }>;
-
-  /** Built in ngOnInit after ViewChild fields resolve. Stable reference. */
-  protected cellTemplates: Record<string, TemplateRef<{ $implicit: ProductModule }>> = {};
-  /** Built in ngOnInit; null until then so pi-table defers the slot. */
-  protected rowActionsTplBinding: TemplateRef<{ $implicit: ProductModule }> | null = null;
-
-  ngOnInit(): void {
-    // Build cell-templates map + row-actions binding AFTER static
-    // @ViewChild fields resolve. Avoids TemplateRef<C> invariance
-    // trap and Angular's signal-binding name-collision.
-    this.cellTemplates = {};
-    this.rowActionsTplBinding = this.rowActionsTplRef;
-  }
-
   // ─── Event handlers ───────────────────────────────────────────────
   protected totalLabel(n: number): string {
     return pluralize(n, ['модуль', 'модуля', 'модулей']);
@@ -424,50 +414,29 @@ export class ModulesPage implements OnInit {
 
   protected onSearchInput(event: Event): void {
     this.search.onSearchInput(event);
-    // Reset to first page when the search filter changes so users
-    // don't land on an out-of-range page of a (possibly empty)
-    // filter set.
-    this.pageSig.set(1);
-  }
-
-  protected onPageChange(p: number): void {
-    this.pageSig.set(p);
+    // Reset sort to defaults on search so users get a stable
+    // alphabetical view of the freshly filtered dataset.
+    this.sortKeySig.set('name');
+    this.sortDirSig.set('asc');
   }
 
   /**
-   * Page-owned sort handler. `[localSort]="false"` keeps pi-table
-   * from re-sorting the visible page slice, and this handler simply
-   * MIRRORS pi-table's sortChange emit into the page's sort
-   * signals. The mirror-event pattern (vs re-derive) keeps the
-   * cycles in lockstep regardless of starting-state divergence;
-   * see `docs/pi-table-migration-recipe.md` §8 R-5.
-   *
-   * pi-table's emit contract: `{key, dir: SortDirection}` where
-   * dir ∈ {'asc' | 'desc' | null}. When `dir === null`, pi-table
-   * has cleared its key (third click past desc). Page mirrors by
-   * clearing sortKeySig and keeping sortDirSig at 'asc' as a
-   * no-visual-effect placeholder.
+   * Page-owned sort handler. pi-table emits `{key, dir}`. We mirror
+   * pi-table's state into the page's `sortKeySig/sortDirSig`; the
+   * constructor's effect re-fires `wrapper.reload()` automatically
+   * because `sortedRows()` is reactive.
    */
-  protected onSortChange(event: { key: string; dir: SortDirection }): void {
+  protected onSortChange(event: SortChangeEvent): void {
     const dir = event.dir;
-    // Single boundary cast: pi-table emits `key: string`, page's
-    // SortKey is a union. Cast at the event ingestion point; no
-    // further casts needed downstream. Mirrors `orders.page.ts` +
-    // `contracts.page.ts`.
     this.sortKeySig.set(dir === null ? null : (event.key as Exclude<SortKey, null>));
     this.sortDirSig.set(dir === null ? 'asc' : dir);
-    // Reset to first page on every sort change so users see the
-    // first rows of the freshly ordered set.
-    this.pageSig.set(1);
   }
 
   /**
-   * Row-click handler — preserved from pre-migration. Clicking any
+   * Row-click navigation — preserved from pre-migration. Clicking any
    * cell OUTSIDE the trailing action column navigates to
-   * `/modules/:id` for the detailed product module page. Trailing
-   * action `<td>` is wrapped by pi-table with `$event.stopPropagation()`
-   * (per pi-table JSDoc on `[rowActions]`), so action clicks don't
-   * bubble. This is the canonical R-8 footgun prevention.
+   * `/modules/:id`. Action column clicks are stopPropagation'd by
+   * pi-table.
    */
   protected onRowClick(row: ProductModule): void {
     this.router.navigate(['/modules', row._id]);
@@ -511,10 +480,6 @@ export class ModulesPage implements OnInit {
         }
       });
     });
-  }
-
-  protected reload(): void {
-    this.listRes.reload();
   }
 
   private refreshOnDialogClose<TResult>(ref: DialogRef<TResult>): void {

@@ -1,6 +1,7 @@
 import { inject, InjectionToken } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 import { API_BASE_URL } from '../../../core/api.tokens';
 import {
@@ -69,7 +70,7 @@ export interface PaginatedResponse<T> {
  *   identifier. Kept on the schema so TypeScript can enforce that `T`
  *   exposes the named field.
  */
-export interface EntitySchema<T extends object = object> {
+export interface EntitySchema<T = object> {
   readonly endpoint: string;
   readonly idKey?: keyof T & string;
 }
@@ -88,6 +89,75 @@ export interface EntityService<T, P> {
   create(payload: Partial<T>): Observable<SilentResult<T>>;
   update(id: string, payload: Partial<T>): Observable<SilentResult<T>>;
   remove(id: string): Observable<SilentResult<void>>;
+}
+
+/**
+ * Adapt a hand-written service with the canonical 5-CRUD shape
+ * (returning `{ items, total }` list envelopes) to the
+ * `EntityService<T, P>` interface that `<pi-entity-list>` and other
+ * DSL components expect.
+ *
+ * Per TZ-232 §2.3, services with custom endpoints (adjust / lowStock /
+ * nested create paths) should NOT be forced into `defineEntity`. But
+ * pages using `<pi-entity-list>` need an `EntityService<T, P>`
+ * reference. This helper bridges the gap in 1 LOC per page:
+ *
+ * ```ts
+ * private readonly listService = toEntityService<WorkType, ListParams>(
+ *   inject(WorkTypesService),
+ * );
+ * ```
+ *
+ * **Synthetic page/limit mapping.** Non-paginated endpoints return
+ * `{ items, total }` without `page`/`limit`. The wrapper needs the
+ * full `PaginatedResponse<T>` shape for its pagination signals (e.g.
+ * `showPager` computed in `<app-pi-table>` reads `total()` and
+ * `page()` to decide whether to render the pager). We fill in
+ * synthetic `page: 1` and `limit: items.length` so the wrapper's
+ * arithmetic works — `showPager` returns `false` when `total <=
+ * pageSize` (single page), so the user never sees a bogus pager.
+ * If the backend ever adds pagination, swap the synthetic mapping
+ * for the real values; the rest of the wrapper stays unchanged.
+ *
+ * **`any` for service.list params.** Hand-written services often have
+ * narrower param types than the wrapper's full `P extends
+ * DefaultListParams` (e.g., WorkTypesService.list accepts only
+ * `WorkTypeListParams` without `page`/`limit`/`search`). We type the
+ * source service's `list` parameter as `any` so any function signature
+ * can be adapted without page-level casts. Function bivariance on `any`
+ * means a service that accepts `WorkTypeListParams` IS assignable to
+ * the `(params: any) => ...` signature. Runtime is safe — backend
+ * ignores unknown query params (NestJS default). The wrapper's `P`
+ * type IS preserved on the returned `EntityService<T, P>`.
+ */
+export function toEntityService<T, P>(svc: {
+  list: (params: any) => Observable<SilentResult<{ items: T[]; total: number }>>;
+  findById: (id: string) => Observable<SilentResult<T>>;
+  create: (payload: Partial<T>) => Observable<SilentResult<T>>;
+  update: (id: string, payload: Partial<T>) => Observable<SilentResult<T>>;
+  remove: (id: string) => Observable<SilentResult<void>>;
+}): EntityService<T, P> {
+  return {
+    list: (params: P) =>
+      svc.list(params).pipe(
+        map((res) =>
+          res.ok
+            ? ({
+                ok: true as const,
+                data: {
+                  ...res.data,
+                  page: 1,
+                  limit: Math.max(res.data.items.length, 1),
+                } as PaginatedResponse<T>,
+              })
+            : res,
+        ),
+      ),
+    findById: svc.findById,
+    create: svc.create,
+    update: svc.update,
+    remove: svc.remove,
+  };
 }
 
 /**
@@ -127,7 +197,7 @@ export interface DefineEntity<T, P> {
  * added in a separate TZ if real demand arises.
  */
 export function defineEntity<
-  T extends object,
+  T,
   P = { page: number; limit: number; search?: string },
 >(schema: EntitySchema<T>): DefineEntity<T, P> {
   const token = new InjectionToken<EntityService<T, P>>(`EntityService_${schema.endpoint}`, {
@@ -135,13 +205,19 @@ export function defineEntity<
     factory: () => {
       const http = inject(HttpClient);
       const rawBaseUrl = inject(API_BASE_URL);
-      // Normalize: strip trailing slashes on baseUrl, leading slashes on
-      // endpoint, then join — produces `${baseUrl}/${endpoint}` regardless
-      // of how schema.endpoint was supplied (`'users'`, `'/users'`,
-      // `'///users'` all collapse to `/api/users`).
-      const baseUrl = [rawBaseUrl.replace(/\/+$/, ''), schema.endpoint.replace(/^\/+/, '')].join(
-        '/',
-      );
+      // Normalize: strip trailing slash from rawBaseUrl (preserves leading
+      // slash so the joined URL stays absolute — stripping the leading slash
+      // would turn `/api/users` into the relative path `api/users` and break
+      // every HTTP test expectation). Strip BOTH leading and trailing from
+      // schema.endpoint via two separate `.replace()` calls (a single
+      // combined anchored-alternation regex `\/^/+|\\/+$/g` is unreliable for
+      // trailing slashes under some V8/Node regex engine combinations —
+      // verified via the `collapses trailing slashes on endpoint gracefully`
+      // spec case).
+      const baseUrl = [
+        rawBaseUrl.replace(/\/+$/, ''),
+        schema.endpoint.replace(/^\/+/g, '').replace(/\/+$/g, ''),
+      ].join('/');
 
       return {
         list(params: P): Observable<SilentResult<PaginatedResponse<T>>> {

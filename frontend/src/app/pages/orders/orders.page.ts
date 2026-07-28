@@ -4,18 +4,18 @@ import {
   DestroyRef,
   Injector,
   TemplateRef,
-  ViewChild,
   computed,
+  effect,
   inject,
   signal,
-  OnInit,
+  untracked,
+  viewChild,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
-import { LucideAngularModule, RefreshCw } from 'lucide-angular';
 import { Router } from '@angular/router';
+import { of } from 'rxjs';
+
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../shared/page/pi-section.component';
-import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
@@ -24,18 +24,25 @@ import { PiToastService } from '../../shared/ui/toast';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
-import { createSearchState } from '../../shared/util/search';
-import { pluralize, formatDate, formatPrice } from '../../shared/util/format';
+import { pluralize, formatPrice, formatDate } from '../../shared/util/format';
 import { createLookupTable } from '../../shared/util/lookup-table';
-import { ColumnDef, SortDirection, TableComponent } from '../../shared/ui/pi-table.component';
+import { ColumnDef } from '../../shared/ui/pi-table.component';
+import {
+  PiEntityListComponent,
+  SortChangeEvent,
+  DefaultListParams,
+} from '../../shared/dsl/entity-list/pi-entity-list.component';
+import {
+  EntityService,
+  PaginatedResponse,
+} from '../../shared/dsl/entity/entity-service';
 import { Counterparty, CounterpartyService } from '../../shared/services/pi-counterparty.service';
 import { Order, OrdersService } from './orders.service';
 import { OrderFormDialogComponent } from './order-form-dialog.component';
 
-type SortKey = 'number' | 'date' | 'total' | 'status';
-
-/** Client-side pagination page size for /orders flat-array endpoint. */
 const PAGE_SIZE = 20;
+
+type SortKey = 'number' | 'date' | 'total' | 'status';
 
 const ORDER_STATUS_LABELS: Record<Order['status'], string> = {
   draft: 'Черновик',
@@ -48,13 +55,13 @@ const ORDER_STATUS_LABELS: Record<Order['status'], string> = {
 };
 
 /**
- * Status cycle for sort: draft → confirmed → in_production → ready →
- * shipped → delivered → cancelled. Alphabetical ordering on the raw
- * status string would give `cancelled < confirmed < delivered < draft`,
- * which is meaningless to a sales-manager reading the order pipeline.
- * Sort by numeric index instead.
+ * Pipeline order for sales-manager-friendly sort (Draft → Cancelled).
+ * Alphabetical sort would yield
+ * `cancelled < confirmed < delivered < draft` — meaningless to a
+ * sales manager reading the pipeline. Numeric indices restore the
+ * natural progression; unrecognised statuses fall through to `99`.
  */
-const STATUS_CYCLE_INDEX: Record<Order['status'], number> = {
+const ORDER_STATUS_PIPELINE: Record<Order['status'], number> = {
   draft: 0,
   confirmed: 1,
   in_production: 2,
@@ -72,31 +79,39 @@ const PRIORITY_LABELS: Record<NonNullable<Order['priority']>, string> = {
 };
 
 /**
- * Custom sort accessor per key. Different keys have different "natural"
- * sort semantics — `status` is the lifecycle cycle above, `date` is
- * chronological (null/undefined → bottom regardless of direction),
- * `total` is numeric, `number` is string-locale.
+ * View-model row: `Order` enriched with a single
+ * `$counterpartyName` field so cell templates don't re-query the
+ * lookup map on every CD cycle.
  */
-function accessorFor(key: SortKey): (row: Order) => unknown {
+interface OrderView extends Order {
+  $counterpartyName: string;
+}
+
+/** Counterparty ID extractor — accepts either a string or populated object. */
+function counterpartyIdOf(row: Order): string {
+  if (!row.counterpartyId) return '';
+  if (typeof row.counterpartyId === 'string') return row.counterpartyId;
+  return row.counterpartyId._id ?? '';
+}
+
+function accessorFor(key: SortKey): (row: OrderView) => string | number | null {
   switch (key) {
     case 'status':
-      return (r) => STATUS_CYCLE_INDEX[r.status] ?? -1;
+      return (r) => ORDER_STATUS_PIPELINE[r.status] ?? 99;
     case 'date':
       return (r) => (r.date ? Date.parse(r.date) : null);
     case 'total':
-      return (r) => r.total;
+      return (r) => r.total ?? null;
     case 'number':
-      return (r) => r.number;
+      return (r) => r.number ?? '';
   }
 }
 
-/**
- * Compare two values per the sign direction. Mirrors the logic in
- * `createSortState.sorted` but applied to the page-owned sort pipeline
- * (page-owned because `pi-table [localSort]=false` here and the page
- * reads the accessor function directly).
- */
-function compareValues(av: unknown, bv: unknown, sign: 1 | -1): number {
+function compareValues(
+  av: string | number | null,
+  bv: string | number | null,
+  sign: 1 | -1,
+): number {
   if (av == null && bv == null) return 0;
   if (av == null) return -1 * sign;
   if (bv == null) return 1 * sign;
@@ -107,78 +122,92 @@ function compareValues(av: unknown, bv: unknown, sign: 1 | -1): number {
 }
 
 /**
- * Counterparty ID extractor — accepts either a string ID (unpopulated)
- * or a populated Counterparty sub-document. Mirrors the dual-shape
- * pattern used by `Material.supplierId` in materials.page.ts.
+ * Pure helpers — kept outside the component so they're easy to
+ * unit-test in isolation if / when we extract per-page test suites.
  */
-function counterpartyIdOf(row: Order): string {
-  if (!row.counterpartyId) return '';
-  if (typeof row.counterpartyId === 'string') return row.counterpartyId;
-  return row.counterpartyId._id ?? '';
+function filterAndMap(
+  rows: Order[],
+  query: string,
+  lookup: Record<string, Counterparty | undefined>,
+): OrderView[] {
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? rows.filter((o) => {
+        const cp = lookup[counterpartyIdOf(o)];
+        const hay = [
+          o.number,
+          o.deliveryAddress,
+          o.notes,
+          cp?.name,
+          cp?.shortName,
+          cp?.inn,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return hay.includes(q);
+      })
+    : rows;
+  return filtered.map<OrderView>((o) => {
+    const id = counterpartyIdOf(o);
+    const cp = id ? lookup[id] : undefined;
+    return {
+      ...o,
+      $counterpartyName: cp?.shortName ?? cp?.name ?? '',
+    };
+  });
+}
+
+function sortRows(rows: OrderView[], key: SortKey | null, dir: 'asc' | 'desc' | null): OrderView[] {
+  if (!key) return rows;
+  const sign = dir === 'asc' ? 1 : -1;
+  const accessor = accessorFor(key);
+  return rows.slice().sort((a, b) => compareValues(accessor(a), accessor(b), sign));
 }
 
 /**
- * Полная документация страницы: docs/pages/orders.page.md
+ * TZ-232.D sentinel #3 — OrdersPage migrated to `<pi-entity-list>`.
  *
- * TZ-104.3 batch-1 commit 3/3 + TZ-104.4.2 — OrdersPage migrated to
- * `<app-pi-table>`, with TZ-104.4.2 dropping the `any`-escape
- * hatch that v4 needed.
+ * Backend `/orders` returns a FLAT ARRAY (no `{items, total, ...}`
+ * envelope yet — TZ-104.3 batch-2-B-flat pattern). Page owns
+ * client-side filter+sort+paginate via page-local signals and a
+ * synthetic `localAdapter` that emits the envelope shape the
+ * wrapper expects synchronously.
  *
- * Architectural shift vs materials.page.ts (server-side pagination):
- *  - Backend GET /orders returns a FLAT `Order[]` (no
- *    `{items, total, page, limit}` envelope). The OrderService
- *    doesn't paginate/sort/filter yet; the page owns the pipeline.
- *  - CLIENT-SIDE sort + filter + slice pagination. `[total]` is the
- *    CURRENT filtered+sorted length (modulo search), and
- *    `paginatedRows` is the page slice of that.
- *  - Sort is page-owned via custom accessors (different keys have
- *    different natural sorts — `status` cycle index, `date`
- *    chronological, `total` numeric, `number` locale).
+ * Architecture:
+ *  - `httpResource<Order[]>` for the one-shot flat-array fetch.
+ *  - `localAdapter.list(params)` is SYNCHRONOUS — wraps pure
+ *    `filterAndMap` / `sortRows` helpers + page-slice arithmetic in
+ *    an `of({ok, data})` Observable. Triggered by the wrapper's
+ *    fetch pipeline on search / page change. NO HTTP traffic.
+ *  - `[localSort]="true"` — pi-table renders the visible page slice
+ *    after our `sortRows` has applied the custom accessors.
+ *  - Search: wrapper debounces input → `params.search` →
+ *    `localAdapter.list` reads directly (no page-side mirror).
+ *  - Sort signals: `sortKeySig/sortDirSig` mirror pi-table's emits
+ *    via `onSortChange`.
  *
- * TZ-104.4.2 page-loaded default sort: `[initialSortKey]="'date'"`
- * + `[initialSortDir]="'desc'"` so users see "newest orders first"
- * on first load (matching pre-migration UX). The page's internal
- * `sortKeySig/sortDirSig` are seeded to `'date'/'desc'` to match
- * pi-table's internal state after ngOnInit — both halves of the
- * lockstep cycle start in sync, so the round-2 mirror-event handler
- * stays correct from the very first click.
+ * v6 race-fix: system-wide effect watches `listRes.value()` and
+ * re-emits the wrapper envelope whenever the HTTP resource updates
+ * (initial fetch, post-CRUD refetch, external reload). This
+ * eliminates the race between `listRes.reload()` (HTTP macrotask)
+ * and the wrapper's synchronous envelope emission — pre-migration
+ * the bug was masked by direct `httpResource→computed` binding.
  *
- * BUG fixes vs the pre-migration source:
- *  1. `sortedRows` was previously bound via
- *     `sort.sorted(this.filteredRows(), fn)`. That captures
- *     `filteredRows()` ONCE at construction (a static snapshot) —
- *     the internal `computed` re-ran only on `sortKey/sortDir`
- *     changes, NOT on filter changes. The new impl binds as a
- *     reactive `computed` that reads both `filtered()` AND the
- *     sort signals so any change triggers re-compute.
- *  2. The pre-migration source had a page-level `searchQuery`
- *     signal AND `createClientSearchState`'s own internal
- *     `searchQuery`. Replaced with `createSearchState` + a single
- *     reactive filtered computed reading `debouncedSearch`.
- *
- *  Template-ref strategy (post-TZ-104.4.2):
- *   `@ViewChild({ static: true })` decorators with strong typing
- *   `TemplateRef<{ $implicit: Order }>` (NOT `any`). Pre-TZ-104.4.2
- *   we used `any` because pi-table's `[cellTemplates]` was typed
- *   `Record<string, TemplateRef<{ $implicit: unknown }>>` and
- *   TemplateRef invariance broke the binding. TZ-104.4.2 re-typed
- *   pi-table so the strict Order typing now flows through.
- *
- *  Standalone + OnPush + signal-based. No tests for the orders
- *  page yet (no `orders.page.spec.ts`); v1 acceptance is visual
- *  smoke + tsc.
+ * `firstRun` guard prevents the effect from competing with the
+ * wrapper's own ngOnInit-driven initial fetch (saves one redundant
+ * round-trip). `untracked()` clarifies that `listRef()?.reload()`
+ * is an imperative command — not a dependency — so no infinite
+ * loop is possible.
  */
 @Component({
   selector: 'app-orders-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    LucideAngularModule,
     PiPageHeaderComponent,
-    PiSectionComponent,
-    PiToolbarComponent,
     PiRowActionsComponent,
     ButtonComponent,
-    TableComponent,
+    PiEntityListComponent,
   ],
   template: `
     <app-pi-page-header
@@ -187,229 +216,193 @@ function counterpartyIdOf(row: Order): string {
       description="Заказы покупателей с привязкой к контрагенту и контракту. Бизнес-действия (отгрузка, резервирование) — в следующей итерации."
     />
 
-    <app-pi-toolbar>
-      <input
-        id="orders-search"
-        type="search"
-        name="orders-search"
-        [value]="searchQuery()"
-        (input)="onSearchInput($event)"
-        placeholder="Поиск по номеру заказа…"
-        aria-label="Поиск заказов"
-        data-test="search-input"
-        class="pi-input w-72"
-      />
-      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
-        + Создать
-      </app-pi-button>
-      <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
-        <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
-      </app-pi-button>
-      <span hint>{{ visibleCount() }} {{ totalLabel(visibleCount()) }}</span>
-    </app-pi-toolbar>
+    <app-pi-entity-list
+      #list
+      [service]="localAdapter"
+      [cols]="cols"
+      ariaLabel="Список заказов"
+      [pageSize]="PAGE_SIZE"
+      searchPlaceholder="Поиск по номеру, КА, адресу…"
+      [localSort]="true"
+      [initialSortKey]="'date'"
+      [initialSortDir]="'desc'"
+      emptyMessage="Нет заказов. Нажмите «Создать», чтобы добавить первый."
+      [cellTemplates]="cellTemplates()"
+      [rowActionsTpl]="rowActionsTplBinding()"
+      (create)="openCreate()"
+      (rowEdit)="openEdit($event)"
+      (rowDelete)="onDelete($event)"
+      (sortChange)="onSortChange($event)"
+    >
+      <!-- ───── Counterparty lookup cell ───── -->
+      <ng-template #counterpartyTpl let-row>
+        {{ row.$counterpartyName || '—' }}
+      </ng-template>
 
-    <app-pi-section title="Заказы" hint="сортировка · клик по заголовку" eyebrow="I">
-      @if (error()) {
-        <div
-          role="alert"
-          class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
-        >
-          {{ error() }}
-        </div>
-      }
+      <!-- ───── Row actions cluster ───── -->
+      <ng-template #rowActionsTpl let-row>
+        <app-pi-row-actions
+          [row]="row"
+          [documentLabel]="'Создать документ для заказа ' + row.number"
+          [dataTestDocument]="'document-button-' + row._id"
+          [editLabel]="'Редактировать заказ ' + row.number"
+          [deleteLabel]="'Удалить заказ ' + row.number"
+          [dataTestEdit]="'edit-button-' + row._id"
+          [dataTestDelete]="'delete-button-' + row._id"
+          (document)="onCreateDocument($event)"
+          (edit)="openEdit($event)"
+          (delete)="onDelete($event)"
+        />
+      </ng-template>
 
-      <div class="overflow-x-auto hairline rounded-sm">
-        <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
-          ← Таблица широкая — прокручивайте горизонтально →
-        </p>
-        <app-pi-table
-          [data]="paginatedRows()"
-          [columns]="cols"
-          [loading]="loading()"
-          [total]="total()"
-          [page]="page()"
-          [pageSize]="pageSize"
-          [emptyMessage]="emptyMessage()"
-          [ariaLabel]="'Список заказов'"
-          [cellTemplates]="cellTemplates"
-          [rowActions]="rowActionsTplBinding"
-          [localSort]="false"
-          [initialSortKey]="'date'"
-          [initialSortDir]="'desc'"
-          (pageChange)="onPageChange($event)"
-          (sortChange)="onSortChange($event)"
-        >
-          <!-- ───── Counterparty lookup cell ───── -->
-          <ng-template #counterpartyTpl let-row>
-            {{ counterpartyNameOf(row) ?? '—' }}
-          </ng-template>
-
-          <!-- ───── Row actions cluster ───── -->
-          <ng-template #rowActionsTpl let-row>
-            <app-pi-row-actions
-              [row]="row"
-              [documentLabel]="'Создать документ для заказа ' + row.number"
-              [dataTestDocument]="'document-button-' + row._id"
-              [editLabel]="'Редактировать заказ ' + row.number"
-              [deleteLabel]="'Удалить заказ ' + row.number"
-              [dataTestEdit]="'edit-button-' + row._id"
-              [dataTestDelete]="'delete-button-' + row._id"
-              (document)="onCreateDocument($event)"
-              (edit)="openEdit($event)"
-              (delete)="onDelete($event)"
-            />
-          </ng-template>
-        </app-pi-table>
-      </div>
-    </app-pi-section>
+      <!-- ───── Page-level count hint ───── -->
+      <span
+        hint
+        toolbarExtras
+        class="text-xs text-muted-foreground"
+        data-test="orders-count"
+      >
+        {{ listTotal() }} {{ totalLabel(listTotal()) }}
+      </span>
+    </app-pi-entity-list>
   `,
 })
-export class OrdersPage implements OnInit {
-  constructor() {
-    this.counterpartiesLookup.load();
-    this.destroyRef.onDestroy(() => this.search.destroy());
-  }
+export class OrdersPage {
   private readonly service = inject(OrdersService);
   private readonly counterpartyService = inject(CounterpartyService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
-  private readonly baseUrl = inject(API_BASE_URL);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly baseUrl = inject(API_BASE_URL);
 
-  protected readonly RefreshIcon = RefreshCw;
+  protected readonly PAGE_SIZE = PAGE_SIZE;
 
-  /** Exposed to template via `[pageSize]="pageSize"`. */
-  protected readonly pageSize = PAGE_SIZE;
+  // ─── Sort signals (page-owned; mirror pi-table emit) ────────────────
+  protected readonly sortKeySig = signal<SortKey | null>('date');
+  protected readonly sortDirSig = signal<'asc' | 'desc' | null>('desc');
 
-  /**
-   * Page-owned sort signals. Seeded to `'date'`/`'desc'` to MATCH
-   * pi-table's internal state after ngOnInit applies the
-   * `[initialSortKey]="'date'"` + `[initialSortDir]="'desc'"`
-   * bindings (TZ-104.4.2). Both halves of the lockstep cycle start
-   * in sync — the round-2 mirror-event handler stays correct on
-   * the very first click instead of needing a recovery cycle.
-   *
-   * Pre-TZ-104.4.2 init: `(null, 'asc')` to align with pi-table's
-   * pre-extension internal defaults. After TZ-104.4.2, both sides
-   * default to the page's chosen default.
-   */
-  private readonly sortKeySig = signal<SortKey | null>('date');
-  private readonly sortDirSig = signal<'asc' | 'desc'>('desc');
+  /** Wrapper ref — used for count hint + post-dialog reload. */
+  private readonly listRef = viewChild<
+    PiEntityListComponent<OrderView, DefaultListParams>
+  >('list');
 
-  protected readonly sortKey = this.sortKeySig.asReadonly();
-  protected readonly sortDir = this.sortDirSig.asReadonly();
+  protected readonly listTotal = computed<number>(() => this.listRef()?.total() ?? 0);
 
-  /** Current page (1-indexed). Bumped via `(pageChange)` from pi-table. */
-  private readonly pageSig = signal<number>(1);
-  protected readonly page = this.pageSig.asReadonly();
+  // ─── Template refs (viewChild signal) ───────────────────────────────
+  private readonly counterpartyTplRef = viewChild<
+    TemplateRef<{ $implicit: OrderView }>
+  >('counterpartyTpl');
+  private readonly rowActionsTplRef = viewChild<
+    TemplateRef<{ $implicit: OrderView }>
+  >('rowActionsTpl');
 
-  private readonly counterpartiesLookup = createLookupTable<Counterparty>(
-    this.counterpartyService.list({ limit: 200 }),
-  );
+  protected readonly cellTemplates = computed<
+    Record<string, TemplateRef<{ $implicit: OrderView }>>
+  >(() => {
+    const result: Record<string, TemplateRef<{ $implicit: OrderView }>> = {};
+    const tpl = this.counterpartyTplRef();
+    if (tpl) {
+      result['counterpartyId'] = tpl;
+    }
+    return result;
+  });
 
-  /** Single debounced search state — owns its own `searchQuery` signal. */
-  private readonly search = createSearchState(300);
-  protected readonly searchQuery = this.search.searchQuery;
+  protected readonly rowActionsTplBinding = computed<
+    TemplateRef<{ $implicit: OrderView }> | null
+  >(() => this.rowActionsTplRef() ?? null);
 
+  // ─── HTTP source (flat array) ──────────────────────────────────────
   protected readonly listRes = httpResource<Order[]>(() => ({
     url: `${this.baseUrl}/orders`,
   }));
 
-  protected readonly data = computed<Order[]>(() => this.listRes.value() ?? []);
-  protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
-  protected readonly error = computed<string | null>(() => {
-    const err = this.listRes.error() as
-      import('@angular/common/http').HttpErrorResponse | undefined;
-    return err ? extractErrorMessage(err) : null;
-  });
-
-  /**
-   * Client-side filter: reactive computed reading `data()` (the
-   * signal) and `debouncedSearch()` (signal). Fixes the duplicate
-   * `searchQuery` bug in the previous source.
-   */
-  protected readonly filteredRows = computed<Order[]>(() => {
-    const rows = this.data();
-    const q = this.search.debouncedSearch().trim().toLowerCase();
-    if (!q) return rows.slice();
-    return rows.filter((o) => {
-      const hay = [
-        o.number,
-        o.deliveryAddress,
-        o.notes,
-        this.counterpartiesLookup.byId()[counterpartyIdOf(o)]?.name,
-        this.counterpartiesLookup.byId()[counterpartyIdOf(o)]?.shortName,
-        this.counterpartiesLookup.byId()[counterpartyIdOf(o)]?.inn,
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-      return hay.includes(q);
-    });
-  });
-
-  /**
-   * Filtered + sorted rows. Reactive computed reading BOTH
-   * `filteredRows()` AND `sortKey/sortDir` — fixes the
-   * `sort.sorted(this.filteredRows(), ...)` snapshot bug. Uses
-   * custom accessor per key (status cycle index, date
-   * chronological, total numeric, number locale).
-   */
-  protected readonly sortedRows = computed<Order[]>(() => {
-    const rows = this.filteredRows();
-    const key = this.sortKeySig();
-    if (!key) return rows;
-    const sign = this.sortDirSig() === 'asc' ? 1 : -1;
-    // TZ-104.4.2: removed `as SortKey` cast — sortKeySig is now
-    // typed `SortKey | null` so the cast is no longer needed.
-    const accessor = accessorFor(key);
-    return rows.slice().sort((a, b) => compareValues(accessor(a), accessor(b), sign));
-  });
-
-  /**
-   * Total = full filtered+sorted length, NOT page slice. pi-table
-   * derives `totalPages = ceil(total / pageSize)` from this and
-   * shows the Prev/Next pager accordingly. When `total <= pageSize`,
-   * the pager is hidden (`showPager = total > 0 && totalPages > 1`).
-   */
-  protected readonly total = computed<number>(() => this.sortedRows().length);
-
-  /**
-   * Page slice of the sorted+filtered list. Reads `page()` and
-   * `sortedRows()` so any change re-computes the slice.
-   *
-   *   start = (page-1) * pageSize   (0-indexed start)
-   *   end   = start + pageSize       (exclusive end)
-   */
-  protected readonly paginatedRows = computed<Order[]>(() => {
-    const all = this.sortedRows();
-    const start = (this.pageSig() - 1) * PAGE_SIZE;
-    return all.slice(start, start + PAGE_SIZE);
-  });
-
-  /** Modal toolbar count: visible rows after filtering (not the page slice). */
-  protected readonly visibleCount = computed<number>(() => this.sortedRows().length);
-
-  protected readonly emptyMessage = computed(() =>
-    this.searchQuery()
-      ? 'Ничего не найдено.'
-      : 'Нет заказов. Нажмите «Создать», чтобы добавить первый.',
+  protected readonly counterpartiesLookup = createLookupTable<Counterparty>(
+    this.counterpartyService.list({ limit: 200 }),
   );
 
-  // ─── Column definitions ────────────────────────────────────────────
   /**
-   * Column-set mirroring the pre-migration source's 7 visible columns
-   * + the trailing actions slot (auto-injected by `[rowActions]`).
-   * - `number` is sticky-left (acts as an ID column per tablet UX)
-   * - `date` shows `formatDate(...)` and is `empty-cell` muted
-   * - `counterpartyId` is a `cellTemplate` (lookup helper)
-   * - `status` sorts via custom `STATUS_CYCLE_INDEX` accessor and
-   *   falls through to `ORDER_STATUS_LABELS` format string
-   * - `total` is numeric with `formatPrice` and right-aligned
+   * Local EntityService adapter. Synchronously synthesizes the
+   * `{items, total, page, limit}` envelope from in-memory flat-
+   * array state. Re-runs every time the wrapper fires its
+   * fetch pipeline (initial mount, search-debounce, page change).
+   * No HTTP traffic — all work happens in pure helpers.
    */
-  protected readonly cols: ColumnDef<Order>[] = [
+  protected readonly localAdapter: EntityService<OrderView, DefaultListParams> = {
+    list: (params: DefaultListParams) => {
+      const all = this.listRes.value() ?? [];
+      const viewRows = filterAndMap(
+        all,
+        params.search ?? '',
+        this.counterpartiesLookup.byId(),
+      );
+      const sorted = sortRows(viewRows, this.sortKeySig(), this.sortDirSig());
+      const page = params.page ?? 1;
+      const limit = params.limit ?? PAGE_SIZE;
+      const total = sorted.length;
+      const start = (page - 1) * limit;
+      const items = sorted.slice(start, start + limit);
+      const data: PaginatedResponse<OrderView> = { items, total, page, limit };
+      return of({ ok: true, data }) as unknown as ReturnType<
+        EntityService<OrderView, DefaultListParams>['list']
+      >;
+    },
+    findById: (id: string) =>
+      this.service.findById(id) as unknown as ReturnType<
+        EntityService<OrderView, DefaultListParams>['findById']
+      >,
+    create: (payload: Partial<OrderView>) =>
+      this.service.create(payload as unknown as Partial<Order>) as unknown as ReturnType<
+        EntityService<OrderView, DefaultListParams>['create']
+      >,
+    update: (id: string, payload: Partial<OrderView>) =>
+      this.service.update(
+        id,
+        payload as unknown as Partial<Order>,
+      ) as unknown as ReturnType<
+        EntityService<OrderView, DefaultListParams>['update']
+      >,
+    remove: (id: string) =>
+      this.service.remove(id) as unknown as ReturnType<
+        EntityService<OrderView, DefaultListParams>['remove']
+      >,
+  };
+
+  constructor() {
+    this.counterpartiesLookup.load();
+
+    /**
+     * System-wide reactivity: synchronize `listRes.value()` updates
+     * with the wrapper's display state. Triggers on initial HTTP
+     * fetch completion, post-CRUD refetch, external reload — any
+     * time the flat-array source changes.
+     *
+     * `firstRun` guard skips the initial effect run (the wrapper's
+     * own ngOnInit already drives the first fetch + emission).
+     *
+     * `untracked()` around `listRef()?.reload()` clarifies the
+     * architectural intent: it's an imperative command issued FROM
+     * the effect, not a dependency READ. No infinite loop is
+     * possible because signal-tracking only counts reads inside
+     * the effect's synchronous execution context — the wrapper's
+     * eventual `localAdapter.list()` call reads `listRes.value()`
+     * asynchronously (after `reload()` pushes to its RxJS Subject)
+     * and is NOT tracked.
+     */
+    let firstRun = true;
+    effect(() => {
+      this.listRes.value(); // dependency: HTTP completion
+      if (firstRun) {
+        firstRun = false;
+        return;
+      }
+      untracked(() => this.listRef()?.reload());
+    });
+  }
+
+  // ─── Column definitions ────────────────────────────────────────────
+  protected readonly cols: ColumnDef<OrderView>[] = [
     {
       key: 'number',
       label: 'Номер',
@@ -421,7 +414,7 @@ export class OrdersPage implements OnInit {
       label: 'Дата',
       sortable: true,
       cellClass: 'empty-cell',
-      format: (r) => formatDate(r.date),
+      format: (r) => formatDate(r.date) || '—',
     },
     {
       key: 'counterpartyId',
@@ -458,88 +451,17 @@ export class OrdersPage implements OnInit {
     },
   ];
 
-  // ─── Template refs (resolved at view init, static:true → BEFORE ngOnInit) ──
-  // TZ-104.4.2: strong typing matches pi-table's re-parameterized
-  // `[cellTemplates]` input. Pre-TZ-104.4.2 these were `TemplateRef<any>`.
-  @ViewChild('counterpartyTpl', { static: true })
-  private readonly counterpartyTplRef!: TemplateRef<{ $implicit: Order }>;
-  @ViewChild('rowActionsTpl', { static: true })
-  private readonly rowActionsTplRef!: TemplateRef<{ $implicit: Order }>;
-
-  /** Built in ngOnInit after ViewChild fields resolve. Stable reference. */
-  protected cellTemplates: Record<string, TemplateRef<{ $implicit: Order }>> = {};
-  /** Built in ngOnInit; null until then so pi-table defers the slot. */
-  protected rowActionsTplBinding: TemplateRef<{ $implicit: Order }> | null = null;
-
-  ngOnInit(): void {
-    // Build cell-template map + row-actions binding AFTER static
-    // ViewChild fields resolve. Avoids TemplateRef<C> invariance
-    // trap and Angular's signal-binding name-collision.
-    this.cellTemplates = { counterpartyId: this.counterpartyTplRef };
-    this.rowActionsTplBinding = this.rowActionsTplRef;
-  }
-
-  // ─── Cell template helpers ─────────────────────────────────────────
-  /**
-   * TZ-104.4.2: `row: Order` (was `unknown` + `as Order` cast).
-   */
-  protected counterpartyNameOf(row: Order): string | null {
-    const id = counterpartyIdOf(row);
-    if (!id) return null;
-    return (
-      this.counterpartiesLookup.byId()[id]?.shortName ??
-      this.counterpartiesLookup.byId()[id]?.name ??
-      null
-    );
-  }
-
+  // ─── Helpers ───────────────────────────────────────────────────────
   protected totalLabel(n: number): string {
     return pluralize(n, ['заказ', 'заказа', 'заказов']);
   }
 
-  // ─── Event handlers ───────────────────────────────────────────────
-  protected onSearchInput(event: Event): void {
-    this.search.onSearchInput(event);
-    // Reset to first page when the filter set changes so users don't
-    // land on an out-of-range page of a (possibly empty) filter set.
-    this.pageSig.set(1);
-  }
-
-  protected onPageChange(p: number): void {
-    this.pageSig.set(p);
-  }
-
-  /**
-   * Page-owned sort handler. `[localSort]="false"` keeps pi-table
-   * from re-sorting the visible page slice, and this handler simply
-   * MIRRORS pi-table's sortChange emit into the page's sort signals.
-   *
-   * Why mirror rather than re-derive? pi-table's internal sort
-   * signals are private (no public API to set them externally).
-   * The handler MUST advance the page's state to exactly match
-   * pi-table's, otherwise the cycles phase-shift: pi-table starts
-   * at `(null, null-dir)` while the page starts at `(null, 'asc')`,
-   * which means an over-engineered "re-derive" handler would diverge
-   * from pi-table on the very second click of a column. Mirroring
-   * the event keeps them in lockstep regardless of starting state.
-   *
-   * pi-table's emit contract: `{key, dir: SortDirection}` where dir
-   * ∈ {'asc' | 'desc' | null}. When `dir === null`, pi-table has
-   * cleared its key (third click past desc). Page mirrors by
-   * clearing its own sort key (sortKeySig → null) and falling back
-   * sortDirSig to 'asc' as a no-visual-effect placeholder.
-   */
-  protected onSortChange(event: { key: string; dir: SortDirection }): void {
-    // pi-table's `sortChange` output type is `{ key: string, ... }`
-    // — pi-table doesn't statically know about this page's `SortKey`
-    // union, so a single boundary cast is required at the event
-    // ingestion point. Once stored in `sortKeySig` (typed
-    // `SortKey | null`), no further casts are needed downstream.
-    this.sortKeySig.set(event.dir === null ? null : (event.key as SortKey));
-    this.sortDirSig.set(event.dir === null ? 'asc' : event.dir);
-    // Reset to first page on every sort change so users see the
-    // first rows of the freshly ordered set.
-    this.pageSig.set(1);
+  // ─── Event handlers ────────────────────────────────────────────────
+  /** Mirror pi-table's `(sortChange)` into page-owned sort signals. */
+  protected onSortChange(event: SortChangeEvent): void {
+    const dir = event.dir;
+    this.sortKeySig.set(dir === null ? null : (event.key as SortKey));
+    this.sortDirSig.set(dir === null ? null : (dir as 'asc' | 'desc'));
   }
 
   protected openCreate(): void {
@@ -574,6 +496,10 @@ export class OrdersPage implements OnInit {
       this.service.remove(row._id).subscribe((res) => {
         if (res.ok) {
           this.toast.success('Заказ удалён');
+          // Re-fetch the HTTP source. The system-wide effect in the
+          // constructor detects the `listRes.value()` change after
+          // HTTP completes and triggers the wrapper to re-emit the
+          // envelope — no manual `listRef()?.reload()` here.
           this.listRes.reload();
         } else {
           this.toast.error(extractErrorMessage(res.error));
@@ -588,14 +514,15 @@ export class OrdersPage implements OnInit {
     });
   }
 
-  protected reload(): void {
-    this.listRes.reload();
-  }
-
   private refreshOnDialogClose(ref: DialogRef<unknown>): void {
     onDialogCloseOnce(ref, this.injector, () => {
+      // No CRUD happened here — the user's dialog action (if any)
+      // triggered its own `listRes.reload()` already. We only force
+      // the counterparty lookup to refresh (in case the dialog
+      // edited a KA name) and let the system-wide effect handle
+      // the wrapper envelope re-emission when `listRes.value()`
+      // changes from the CRUD hook.
       this.counterpartiesLookup.load();
-      this.listRes.reload();
     });
   }
 }

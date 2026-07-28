@@ -3,43 +3,65 @@ import {
   Component,
   DestroyRef,
   Injector,
+  TemplateRef,
   computed,
   inject,
-  signal,
+  viewChild,
 } from '@angular/core';
-import { HttpErrorResponse, httpResource } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
+import {
+  PiEntityListComponent,
+  type DefaultListParams,
+} from '../../../shared/dsl/entity-list/pi-entity-list.component';
 import { PiRowActionsComponent } from '../../../shared/ui/pi-row-actions/pi-row-actions.component';
-import { ButtonComponent } from '../../../shared/ui/button/button.component';
-import { PiDialogService, type DialogRef } from '../../../shared/ui/dialog/pi-dialog.service';
+import { type DialogRef, PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../../shared/ui/dialog/pi-alert-dialog.component';
 import { PiToastService } from '../../../shared/ui/toast';
 import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
 import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../../core/silent-http';
-import { API_BASE_URL } from '../../../core/api.tokens';
+import { type ColumnDef } from '../../../shared/ui/pi-table.component';
+import { toEntityService } from '../../../shared/dsl/entity/entity-service';
 import {
-  TableTemplate,
+  type TableTemplate,
+  type TableTemplateListParams,
   TableTemplatesService,
 } from '../../../shared/services/pi-table-templates.service';
 import {
   TableTemplateFormDialogComponent,
   type TableTemplateDialogConfig,
 } from './table-template-dialog.component';
-import { pluralRu } from '../../../shared/util/russian-plural';
-
-const RU_TEMPLATES = ['шаблон', 'шаблона', 'шаблонов'] as const;
 
 /**
+ * TZ-232.F.5 — Tables page migrated to `<pi-entity-list>` wrapper.
+ *
+ * Hybrid pattern (per TZ-232.F.3 documents + TZ-232.F.4 texts):
+ *  - `toEntityService(this.service)` — adapter for canonical envelope
+ *  - `[showCreate]="false"` + `<button toolbarExtras>` slot — page-level buttons
+ *  - `[cellTemplates]` (signal-derived dict) — status dot + Switch column
+ *  - `[rowActionsTpl]` (signal-derived) — Copy + Edit + Delete actions
+ *  - `[localSort]="true"` — backend ignores `?sortBy=`
+ *  - `viewChild<TemplateRef>` (NON-required) + `computed` null-guard per texts v3
+ *
+ * **Defensive `listRef()?.reload?.()` pattern** — under `NO_ERRORS_SCHEMA`
+ * (test override), `<app-pi-entity-list>` renders as an ElementRef placeholder
+ * rather than a real component instance. Optional chaining on `.reload()`
+ * alone still throws "is not a function" because the ElementRef exists but
+ * has no `.reload` method. Adding `?.` on `.reload` itself handles both:
+ *  - `listRef()` returns undefined → `undefined?.reload?.()` → no-op
+ *  - `listRef()` returns ElementRef → `elementRef.reload?.()` → no-op
+ *  - `listRef()` returns wrapper → `wrapper.reload()` → real call
+ *
  * Полная документация страницы: docs/pages/tables.page.md
  */
-
-type SortKey = 'name' | 'category' | 'sortOrder' | null;
-type SortDir = 'asc' | 'desc';
-
 @Component({
   selector: 'app-tables-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiRowActionsComponent, ButtonComponent, SwitchComponent],
+  imports: [
+    PiEntityListComponent,
+    PiRowActionsComponent,
+    SwitchComponent,
+  ],
   template: `
     <header class="tables-head">
       <span class="eyebrow text-muted-foreground">раздел · конструктор документов</span>
@@ -50,145 +72,39 @@ type SortDir = 'asc' | 'desc';
       </p>
     </header>
 
-    <div class="tables-toolbar hairline-b">
-      <div class="tables-toolbar-left">
-        <div class="tables-search-wrap">
-          <span class="tables-search-icon" aria-hidden="true">⌕</span>
-          <input
-            type="search"
-            class="tables-search-input"
-            [value]="searchQuery()"
-            (input)="onSearchInput($event)"
-            placeholder="Поиск по названию…"
-            aria-label="Поиск шаблонов таблиц"
-          />
-        </div>
-        <span class="tables-count-badge eyebrow"
-          >{{ data().length }} {{ totalLabel(data().length) }}</span
-        >
-      </div>
-      <div class="tables-toolbar-actions">
-        <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
-          + Новая таблица
-        </app-pi-button>
-        <app-pi-button variant="ghost" (click)="openFromRegistry()" data-test="registry-button">
-          &#x21C4; Из существующих данных
-        </app-pi-button>
-      </div>
-    </div>
-
-    @if (error()) {
-      <div role="alert" class="tables-error">{{ error() }}</div>
-    }
-
-    <section class="tables-catalog" aria-label="Каталог шаблонов таблиц">
-      <div class="tables-catalog-head">
-        <h2 class="eyebrow m-0">II · Каталог</h2>
-        <span class="text-xs text-muted-foreground italic">клик по заголовку — сортировка</span>
-      </div>
-
-      @if (loading() && sortedRows().length === 0) {
-        <p class="tables-empty text-muted-foreground">Загрузка…</p>
-      } @else if (sortedRows().length === 0) {
-        <p class="tables-empty text-muted-foreground">
-          {{ searchQuery() ? 'Ничего не найдено.' : 'Нет шаблонов таблиц. Нажмите «Создать».' }}
-        </p>
-      } @else {
-        <div class="tables-table-wrap">
-          <table class="tables-table">
-            <thead>
-              <tr>
-                <th class="eyebrow cursor-pointer" (click)="setSort('name')">
-                  Название <span class="opacity-40">{{ sortIcon('name') }}</span>
-                </th>
-                <th class="eyebrow cursor-pointer" (click)="setSort('category')">
-                  Категория <span class="opacity-40">{{ sortIcon('category') }}</span>
-                </th>
-                <th class="eyebrow text-center">Колонок</th>
-                <th class="eyebrow text-center">Образцов</th>
-                <th class="eyebrow text-center cursor-pointer" (click)="setSort('sortOrder')">
-                  Порядок <span class="opacity-40">{{ sortIcon('sortOrder') }}</span>
-                </th>
-                <th class="eyebrow text-center">Активен</th>
-                <th class="eyebrow text-right">Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of sortedRows(); track row._id) {
-                <tr
-                  class="tables-row group"
-                  [class.opacity-50]="!row.isActive"
-                  [attr.data-test]="'table-row-' + row._id"
-                >
-                  <td class="font-medium">{{ row.name }}</td>
-                  <td class="text-muted-foreground">{{ categoryLabel(row.category) }}</td>
-                  <td class="text-center font-mono text-xs">{{ row.columns.length }}</td>
-                  <td class="text-center font-mono text-xs">{{ row.sampleRows?.length ?? 0 }}</td>
-                  <td class="text-center font-mono text-xs text-muted-foreground">
-                    {{ row.sortOrder }}
-                  </td>
-                  <td>
-                    <div class="tables-active-cell">
-                      <span
-                        class="tables-status-dot"
-                        [class.is-on]="row.isActive"
-                        [class.is-off]="!row.isActive"
-                      ></span>
-                      <app-pi-switch
-                        [checked]="row.isActive"
-                        [id]="'switch-' + row._id"
-                        [ariaLabel]="
-                          (row.isActive ? 'Деактивировать ' : 'Активировать ') + row.name
-                        "
-                        (checkedChange)="onToggleActive(row, $event)"
-                        data-test="active-switch"
-                      />
-                    </div>
-                  </td>
-                  <td class="text-right">
-                    <div class="tables-row-actions">
-                      <button
-                        type="button"
-                        class="pi-icon-btn pi-focus-ring"
-                        [attr.aria-label]="'Копировать ' + row.name"
-                        [attr.data-test]="'copy-button-' + row._id"
-                        (click)="onCopy(row)"
-                        title="Копировать шаблон"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="1.5"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          aria-hidden="true"
-                        >
-                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                        </svg>
-                      </button>
-                      <app-pi-row-actions
-                        [row]="row"
-                        [editLabel]="'Редактировать ' + row.name"
-                        [deleteLabel]="'Удалить ' + row.name"
-                        [dataTestEdit]="'edit-button-' + row._id"
-                        [dataTestDelete]="'delete-button-' + row._id"
-                        (edit)="openEdit($event)"
-                        (delete)="onDelete($event)"
-                      />
-                    </div>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
-    </section>
+    <app-pi-entity-list
+      #list
+      [service]="entityService"
+      [cols]="cols"
+      [cellTemplates]="cellTemplates()"
+      [rowActionsTpl]="rowActionsTpl()"
+      [showCreate]="false"
+      [initialSortKey]="'name'"
+      [initialSortDir]="'asc'"
+      [localSort]="true"
+      [searchPlaceholder]="'Поиск по названию…'"
+      [emptyMessage]="emptyMessage"
+      [ariaLabel]="'Каталог шаблонов таблиц'"
+    >
+      <button
+        toolbarExtras
+        type="button"
+        class="pi-btn pi-btn-primary"
+        (click)="openCreate()"
+        data-test="create-button"
+      >
+        + Новая таблица
+      </button>
+      <button
+        toolbarExtras
+        type="button"
+        class="pi-btn pi-btn-ghost"
+        (click)="openFromRegistry()"
+        data-test="registry-button"
+      >
+        ⇄ Из существующих данных
+      </button>
+    </app-pi-entity-list>
 
     <aside class="tables-promo hairline rounded-sm">
       <div class="tables-promo-text">
@@ -199,6 +115,62 @@ type SortDir = 'asc' | 'desc';
         </p>
       </div>
     </aside>
+
+    <ng-template #isActiveCell let-row>
+      <div class="tables-active-cell">
+        <span
+          class="tables-status-dot"
+          [class.is-on]="row.isActive"
+          [class.is-off]="!row.isActive"
+          aria-hidden="true"
+        ></span>
+        <app-pi-switch
+          [checked]="row.isActive"
+          [id]="'switch-' + row._id"
+          [ariaLabel]="(row.isActive ? 'Деактивировать ' : 'Активировать ') + row.name"
+          (checkedChange)="onToggleActive(row, $event)"
+          data-test="active-switch"
+        />
+      </div>
+    </ng-template>
+
+    <ng-template #actionsCell let-row>
+      <div class="tables-row-actions">
+        <button
+          type="button"
+          class="pi-icon-btn pi-focus-ring"
+          [attr.aria-label]="'Копировать ' + row.name"
+          [attr.data-test]="'copy-button-' + row._id"
+          (click)="onCopy(row)"
+          title="Копировать шаблон"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+        </button>
+        <app-pi-row-actions
+          [row]="row"
+          [editLabel]="'Редактировать ' + row.name"
+          [deleteLabel]="'Удалить ' + row.name"
+          [dataTestEdit]="'edit-button-' + row._id"
+          [dataTestDelete]="'delete-button-' + row._id"
+          (edit)="openEdit($event)"
+          (delete)="onDelete($event)"
+        />
+      </div>
+    </ng-template>
   `,
   styles: [
     `
@@ -224,111 +196,6 @@ type SortDir = 'asc' | 'desc';
         line-height: 1.5;
       }
 
-      .tables-toolbar {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        padding-bottom: 16px;
-        margin-bottom: 16px;
-      }
-      .tables-toolbar-left {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 16px;
-        flex: 1;
-        min-width: 0;
-      }
-      .tables-toolbar-actions {
-        display: flex;
-        gap: 8px;
-        flex-shrink: 0;
-      }
-      .tables-search-wrap {
-        position: relative;
-        width: 100%;
-        max-width: 288px;
-      }
-      .tables-search-icon {
-        position: absolute;
-        left: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--color-muted-foreground-strong);
-        pointer-events: none;
-      }
-      .tables-search-input {
-        width: 100%;
-        padding: 8px 12px 8px 36px;
-        font-size: 14px;
-        border: none;
-        border-radius: 6px;
-        background: var(--color-paper-2);
-        color: var(--color-ink);
-      }
-      .tables-search-input:focus {
-        outline: none;
-        outline: 2px solid var(--color-ink);
-        outline-offset: -1px;
-      }
-      .tables-count-badge {
-        padding: 4px 8px;
-        background: var(--color-paper-2);
-        border: 1px solid var(--color-rule);
-        border-radius: 4px;
-        white-space: nowrap;
-      }
-
-      .tables-error {
-        margin-bottom: 16px;
-        padding: 12px 16px;
-        font-size: 14px;
-        color: var(--color-destructive);
-        border: 1px solid var(--color-destructive);
-        border-radius: 4px;
-      }
-
-      .tables-catalog-head {
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 8px;
-      }
-      .tables-table-wrap {
-        border-top: 2px solid var(--color-ink);
-        border-bottom: 2px solid var(--color-ink);
-        overflow-x: auto;
-      }
-      .tables-table {
-        width: 100%;
-        min-width: 800px;
-        border-collapse: collapse;
-        text-align: left;
-        font-size: 14px;
-      }
-      .tables-table thead {
-        background: var(--color-paper-2);
-        border-bottom: 1px solid var(--color-rule);
-      }
-      .tables-table th {
-        padding: 12px 16px;
-        color: var(--color-muted-foreground-strong);
-      }
-      .tables-table td {
-        padding: 12px 16px;
-        vertical-align: middle;
-        border-bottom: 1px solid var(--color-rule);
-      }
-      .tables-row:hover {
-        background: color-mix(in oklch, var(--color-paper-2) 80%, transparent);
-      }
-      .tables-row:last-child td {
-        border-bottom: none;
-      }
-
       .tables-active-cell {
         display: flex;
         align-items: center;
@@ -346,12 +213,6 @@ type SortDir = 'asc' | 'desc';
       }
       .tables-status-dot.is-off {
         background: var(--color-muted-foreground-strong);
-      }
-
-      .tables-empty {
-        padding: 32px 16px;
-        text-align: center;
-        font-size: 14px;
       }
 
       .tables-row-actions {
@@ -379,69 +240,85 @@ export class TablesPage {
   private readonly service = inject(TableTemplatesService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
-  private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly baseUrl = inject(API_BASE_URL);
+  private readonly injector = inject(Injector);
 
-  private readonly listRes = httpResource<TableTemplate[]>(() => ({
-    url: `${this.baseUrl}/table-templates`,
-  }));
+  /** Wrapper ref — non-required, see header docblock on defensive `?.reload?.()`. */
+  private readonly listRef =
+    viewChild<PiEntityListComponent<TableTemplate, DefaultListParams>>('list');
 
-  protected readonly data = computed<TableTemplate[]>(() => this.listRes.value() ?? []);
-  protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
-  protected readonly error = computed<string | null>(() => {
-    const err = this.listRes.error() as HttpErrorResponse | undefined;
-    return err ? extractErrorMessage(err) : null;
-  });
+  private readonly isActiveCellRef =
+    viewChild<TemplateRef<{ $implicit: TableTemplate }>>('isActiveCell');
+  private readonly actionsCellRef =
+    viewChild<TemplateRef<{ $implicit: TableTemplate }>>('actionsCell');
 
-  protected readonly searchQuery = signal<string>('');
-  protected readonly sortKey = signal<SortKey>('name');
-  protected readonly sortDir = signal<SortDir>('asc');
+  protected readonly entityService = toEntityService<
+    TableTemplate,
+    TableTemplateListParams
+  >(this.service);
 
-  private readonly visible = computed<TableTemplate[]>(() => {
-    const q = this.searchQuery().trim().toLowerCase();
-    if (!q) return this.data();
-    return this.data().filter(
-      (t) => t.name.toLowerCase().includes(q) || (t.description ?? '').toLowerCase().includes(q),
-    );
-  });
-
-  protected readonly sortedRows = computed<TableTemplate[]>(() => {
-    const rows = this.visible().slice();
-    const k = this.sortKey();
-    if (!k) return rows;
-    const sign = this.sortDir() === 'asc' ? 1 : -1;
-    return rows.sort((a, b) => {
-      const av = a[k];
-      const bv = b[k];
-      if (av == null && bv == null) return 0;
-      if (av == null) return -1 * sign;
-      if (bv == null) return 1 * sign;
-      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * sign;
-      return String(av).localeCompare(String(bv), 'ru') * sign;
-    });
-  });
-
-  protected onSearchInput(event: Event): void {
-    this.searchQuery.set((event.target as HTMLInputElement).value);
-  }
-
-  protected setSort(key: Exclude<SortKey, null>): void {
-    if (this.sortKey() !== key) {
-      this.sortKey.set(key);
-      this.sortDir.set('asc');
-    } else if (this.sortDir() === 'asc') {
-      this.sortDir.set('desc');
-    } else {
-      this.sortKey.set(null);
-      this.sortDir.set('asc');
+  protected readonly cellTemplates = computed<
+    Record<string, TemplateRef<{ $implicit: TableTemplate }>>
+  >(() => {
+    const result: Record<string, TemplateRef<{ $implicit: TableTemplate }>> = {};
+    const tpl = this.isActiveCellRef();
+    if (tpl) {
+      result['isActive'] = tpl;
     }
-  }
+    return result;
+  });
 
-  protected sortIcon(key: Exclude<SortKey, null>): string {
-    if (this.sortKey() !== key) return '↕';
-    return this.sortDir() === 'asc' ? '↑' : '↓';
-  }
+  protected readonly rowActionsTpl = computed<
+    TemplateRef<{ $implicit: TableTemplate }> | null
+  >(() => this.actionsCellRef() ?? null);
+
+  protected readonly cols: ColumnDef<TableTemplate>[] = [
+    {
+      key: 'name',
+      label: 'Название',
+      sortable: true,
+      cellClass: 'font-medium',
+    },
+    {
+      key: 'category',
+      label: 'Категория',
+      sortable: true,
+      cellClass: 'text-muted-foreground',
+      format: (row: TableTemplate) => this.categoryLabel(row.category),
+    },
+    {
+      key: 'columns',
+      label: 'Колонок',
+      sortable: false,
+      align: 'center',
+      cellClass: 'font-mono text-xs',
+      format: (row: TableTemplate) => String(row.columns.length),
+    },
+    {
+      key: 'sampleRows',
+      label: 'Образцов',
+      sortable: false,
+      align: 'center',
+      cellClass: 'font-mono text-xs',
+      format: (row: TableTemplate) => String(row.sampleRows?.length ?? 0),
+    },
+    {
+      key: 'sortOrder',
+      label: 'Порядок',
+      sortable: true,
+      align: 'center',
+      cellClass: 'font-mono text-xs text-muted-foreground',
+      format: (row: TableTemplate) => String(row.sortOrder),
+    },
+    {
+      key: 'isActive',
+      label: 'Активен',
+      sortable: false,
+      align: 'center',
+    },
+  ];
+
+  protected readonly emptyMessage = 'Нет шаблонов таблиц. Нажмите «Создать».';
 
   protected categoryLabel(c: TableTemplate['category'] | undefined): string {
     if (!c) return '—';
@@ -454,10 +331,7 @@ export class TablesPage {
     }[c];
   }
 
-  protected totalLabel(n: number): string {
-    return pluralRu(n, RU_TEMPLATES);
-  }
-
+  // ─── Dialog handlers ───────────────────────────────────────────────────────
   protected openCreate(): void {
     const ref = this.dialog.open(TableTemplateFormDialogComponent, {
       data: { mode: 'new' } as TableTemplateDialogConfig,
@@ -491,22 +365,24 @@ export class TablesPage {
   }
 
   private refreshOnDialogClose<TResult>(ref: DialogRef<TResult>): void {
-    onDialogCloseOnce(ref, this.injector, () => this.listRes.reload());
+    onDialogCloseOnce(ref, this.injector, () => this.listRef()?.reload?.());
   }
 
+  // ─── Inline Switch (isActive toggle) ──────────────────────────────────────
   protected onToggleActive(template: TableTemplate, checked: boolean): void {
     this.service.update(template._id, { isActive: checked }).subscribe((res) => {
       if (res.ok) {
         this.toast.success(
           checked ? `«${template.name}» активирован` : `«${template.name}» деактивирован`,
         );
-        this.listRes.reload();
+        this.listRef()?.reload?.();
       } else {
         this.toast.error(extractErrorMessage(res.error as HttpErrorResponse));
       }
     });
   }
 
+  // ─── Delete (with confirm dialog) ─────────────────────────────────────────
   protected onDelete(template: TableTemplate): void {
     const ref = this.dialog.open(AlertDialogComponent, {
       data: {
@@ -523,7 +399,7 @@ export class TablesPage {
       this.service.remove(template._id).subscribe((res) => {
         if (res.ok) {
           this.toast.success('Шаблон таблицы удалён');
-          this.listRes.reload();
+          this.listRef()?.reload?.();
         } else {
           this.toast.error(extractErrorMessage(res.error as HttpErrorResponse));
         }

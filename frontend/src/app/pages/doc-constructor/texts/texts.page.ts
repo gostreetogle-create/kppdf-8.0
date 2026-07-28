@@ -3,63 +3,60 @@ import {
   Component,
   DestroyRef,
   Injector,
+  TemplateRef,
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
-import { Subject, switchMap, map, filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
-import { PiEmptyStateComponent } from '../../../shared/ui/pi-empty-state/pi-empty-state.component';
-import { PiRowActionsComponent } from '../../../shared/ui/pi-row-actions/pi-row-actions.component';
-import { ButtonComponent } from '../../../shared/ui/button/button.component';
+import { map, filter, switchMap } from 'rxjs';
+import { PiEntityListComponent } from '../../../shared/dsl/entity-list/pi-entity-list.component';
+import { toEntityService } from '../../../shared/dsl/entity/entity-service';
+import { TextBlockEditorComponent } from './text-block-editor.component';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../../shared/ui/dialog/pi-alert-dialog.component';
 import { PiToastService } from '../../../shared/ui/toast';
 import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../../core/silent-http';
 import { TextBlock, TextBlocksService } from '../../../shared/services/pi-text-blocks.service';
-import { TextBlockEditorComponent } from './text-block-editor.component';
 import { pluralRu, RU_BLOCKS, RU_COLUMNS } from '../../../shared/util/russian-plural';
-
-type SortDir = 'asc' | 'desc';
+import { ColumnDef } from '../../../shared/ui/pi-table.component';
 
 /**
- * Полная документация страницы: docs/pages/texts.page.md
+ * TZ-232.F.4 — TextsPage migrated to `<pi-entity-list>`.
+ *
+ * Hybrid approach per TZ-232.F design review:
+ *  - Catalog zone (right side) → `<pi-entity-list>` wrapper. The
+ *    wrapper handles table layout, search debounce, pagination,
+ *    loading + error states. Page binds `(create)`, `(rowClick)`,
+ *    `(rowDelete)` outputs to coordinate with the editor zone.
+ *  - Editor zone (left side) → kept native. The page's
+ *    `<app-text-block-editor>` is a full-featured rich-text editor
+ *    (not a typical form dialog) and doesn't fit the wrapper's
+ *    standard dialog pattern. Editor signals (`editingId`,
+ *    `editingBlock`, `creatingNew`) remain page-owned.
+ *
+ * Pre-migration `reload$` Subject + manual `<table>` + 200-LOC CSS
+ * dropped. Status indicator moved to `[cellTemplates]` slot with
+ * inline dot + label.
+ *
+ * Row click → `openEdit(block)` opens the editor zone. Wrapper's
+ * built-in search debounces + forwards via `service.list(params)`.
  */
 @Component({
   selector: 'app-texts-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    PiEmptyStateComponent,
-    PiRowActionsComponent,
-    ButtonComponent,
-    TextBlockEditorComponent,
-  ],
+  imports: [TextBlockEditorComponent, PiEntityListComponent],
   template: `
-    @if (error()) {
-      <div
-        role="alert"
-        class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive flex items-center gap-2"
-      >
-        <span>{{ error() }}</span>
-        <button
-          type="button"
-          class="pi-icon-btn pi-focus-ring ml-auto"
-          (click)="error.set(null)"
-          aria-label="Закрыть"
-        >
-          ×
-        </button>
-      </div>
-    }
-
     <div class="texts-stack">
+      <!-- ───── Editor zone (native, kept intact) ───── -->
       <div class="texts-editor-zone">
         @if (editorOpen()) {
           <app-text-block-editor
             [block]="editingBlock()"
-            (save)="onEditorSaved($event)"
+            (save)="onEditorSaved()"
             (cancel)="onEditorCancel()"
           />
         } @else {
@@ -73,101 +70,61 @@ type SortDir = 'asc' | 'desc';
               <p class="text-sm text-muted-foreground">
                 Выберите блок в каталоге ниже или создайте новый
               </p>
-              <app-pi-button variant="default" size="sm" (click)="openCreate()"
-                >+ Новый блок</app-pi-button
+              <button
+                type="button"
+                class="pi-btn pi-btn--default pi-btn--sm"
+                (click)="openCreate()"
               >
+                + Новый блок
+              </button>
             </div>
           </section>
         }
       </div>
 
+      <!-- ───── Catalog zone (migrated to <pi-entity-list>) ───── -->
       <section class="texts-catalog" aria-label="Сохранённые блоки">
         <header class="texts-catalog-head">
           <div class="texts-catalog-head-left">
             <h2 class="texts-catalog-title font-display">
-              Сохранённые блоки · {{ data().length }} {{ totalLabel(data().length) }}
+              Сохранённые блоки
             </h2>
-            <div class="texts-search-wrap">
-              <span class="texts-search-icon" aria-hidden="true">⌕</span>
-              <input
-                type="search"
-                class="texts-search-input"
-                [value]="searchQuery()"
-                (input)="onSearchInput($event)"
-                placeholder="Поиск…"
-                aria-label="Поиск текстовых блоков"
-              />
-            </div>
           </div>
-          <app-pi-button
-            variant="default"
-            size="sm"
-            (click)="openCreate()"
-            data-test="create-button"
-          >
-            + Новый
-          </app-pi-button>
         </header>
 
         <div class="texts-catalog-scroll">
-          @if (loading() && data().length === 0) {
-            <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
-          } @else if (sortedRows().length === 0 && !loading()) {
-            <p class="texts-catalog-empty text-sm text-muted-foreground">
-              @if (searchQuery()) {
-                Ничего не найдено
-              } @else {
-                Блоков пока нет
-              }
-            </p>
-          } @else {
-            <table class="texts-table">
-              <thead>
-                <tr>
-                  <th class="eyebrow">Название</th>
-                  <th class="eyebrow">Конфигурация</th>
-                  <th class="eyebrow">Статус</th>
-                  <th class="eyebrow texts-table-actions-col">Действия</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (row of sortedRows(); track row._id) {
-                  <tr
-                    class="texts-table-row"
-                    [class.is-active]="editingId() === row._id"
-                    [class.is-inactive-row]="!row.isActive"
-                    (click)="openEdit(row)"
-                    [attr.data-test]="'text-row-' + row._id"
-                  >
-                    <td class="texts-table-name">{{ row.name }}</td>
-                    <td class="texts-table-config">
-                      {{ columnConfigUpper(row.columns?.length || 1) }}
-                    </td>
-                    <td>
-                      <span class="texts-status">
-                        <span
-                          class="texts-status-dot"
-                          [class.texts-status-dot--on]="row.isActive"
-                          [class.texts-status-dot--off]="!row.isActive"
-                        ></span>
-                        {{ row.isActive ? 'Активен' : 'Архив' }}
-                      </span>
-                    </td>
-                    <td class="texts-table-actions" (click)="$event.stopPropagation()">
-                      <app-pi-row-actions
-                        [row]="row"
-                        [editLabel]="'Редактировать'"
-                        [deleteLabel]="'Удалить'"
-                        (edit)="openEdit(row)"
-                        (delete)="onDelete(row)"
-                      />
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          }
+          <app-pi-entity-list
+            #listRef
+            [service]="listService"
+            [cols]="cols"
+            [cellTemplates]="cellTemplates()"
+            [showCreate]="true"
+            createLabel="Новый"
+            searchPlaceholder="Поиск…"
+            ariaLabel="Каталог текстовых блоков"
+            emptyMessage="Блоков пока нет."
+            [initialSortKey]="'name'"
+            [initialSortDir]="'asc'"
+            [showSearch]="true"
+            (create)="openCreate()"
+            (rowClick)="openEdit($event)"
+            (rowDelete)="onDelete($event)"
+          >
+          </app-pi-entity-list>
         </div>
+
+        <!-- ───── Status cell with dot indicator ───── -->
+        <ng-template #statusTpl let-row>
+          <span class="texts-status" data-test="status-cell">
+            <span
+              class="texts-status-dot"
+              [class.texts-status-dot--on]="row.isActive"
+              [class.texts-status-dot--off]="!row.isActive"
+              aria-hidden="true"
+            ></span>
+            {{ row.isActive ? 'Активен' : 'Архив' }}
+          </span>
+        </ng-template>
       </section>
     </div>
   `,
@@ -257,95 +214,10 @@ type SortDir = 'asc' | 'desc';
         color: var(--color-ink);
       }
 
-      .texts-search-wrap {
-        position: relative;
-      }
-      .texts-search-icon {
-        position: absolute;
-        left: 8px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 14px;
-        color: var(--color-muted-foreground-strong);
-        pointer-events: none;
-      }
-      .texts-search-input {
-        width: 192px;
-        padding: 6px 8px 6px 26px;
-        font-size: 14px;
-        border: 1px solid var(--color-rule);
-        background: var(--color-paper-2);
-        color: var(--color-ink);
-      }
-      .texts-search-input:focus {
-        outline: none;
-        outline: 1px solid var(--color-sunrise-warm);
-        outline-offset: -1px;
-      }
-
       .texts-catalog-scroll {
         flex: 1;
         overflow-y: auto;
         min-height: 0;
-      }
-      .texts-catalog-empty {
-        padding: 24px;
-        text-align: center;
-      }
-
-      .texts-table {
-        width: 100%;
-        border-collapse: collapse;
-        text-align: left;
-      }
-      .texts-table thead {
-        position: sticky;
-        top: 0;
-        z-index: 1;
-        background: var(--color-paper-2);
-        border-bottom: 1px solid var(--color-rule);
-      }
-      .texts-table th {
-        padding: 8px 24px;
-        color: var(--color-muted-foreground-strong);
-      }
-      .texts-table-actions-col {
-        text-align: right;
-      }
-
-      .texts-table-row {
-        cursor: pointer;
-        border-bottom: 1px solid var(--color-rule);
-        transition: background 100ms ease;
-      }
-      .texts-table-row:hover {
-        background: color-mix(in oklch, var(--color-paper-2) 70%, transparent);
-      }
-      .texts-table-row.is-active {
-        background: color-mix(in oklch, var(--color-sunrise-warm) 8%, transparent);
-        border-left: 4px solid var(--color-sunrise-warm);
-      }
-      .texts-table-row.is-inactive-row {
-        opacity: 0.72;
-      }
-
-      .texts-table td {
-        padding: 10px 24px;
-        vertical-align: middle;
-      }
-      .texts-table-name {
-        font-size: 14px;
-        font-weight: 500;
-        color: var(--color-ink);
-      }
-      .texts-table-config {
-        font-family: ui-monospace, monospace;
-        font-size: 11px;
-        color: var(--color-muted-foreground-strong);
-        text-transform: uppercase;
-      }
-      .texts-table-actions {
-        text-align: right;
       }
 
       .texts-status {
@@ -366,9 +238,6 @@ type SortDir = 'asc' | 'desc';
       .texts-status-dot--off {
         background: var(--color-muted-foreground-strong);
       }
-      .texts-table-row.is-inactive-row .texts-status {
-        color: var(--color-muted-foreground-strong);
-      }
     `,
   ],
 })
@@ -380,25 +249,27 @@ export class TextsPage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
 
-  private readonly reload$ = new Subject<void>();
+  /** Wrapper ref for post-action reload. */
+  private readonly listRef = viewChild<PiEntityListComponent<TextBlock>>('listRef');
+
+  /**
+   * Adapter: 1-LOC bridge `TextBlocksService` → `EntityService<TextBlock, …>`.
+   * Service.list() returns canonical envelope `{items, total}` so the
+   * `toEntityService` helper handles the structural conversion.
+   */
+  protected readonly listService = toEntityService(this.service);
+
+  /** Page-owned editor zone state. */
+  protected readonly editingId = signal<string | null>(null);
+  protected readonly editingBlock = signal<TextBlock | null>(null);
+  protected readonly creatingNew = signal<boolean>(false);
+
+  protected readonly editorOpen = computed(
+    () => this.creatingNew() || this.editingBlock() !== null,
+  );
 
   constructor() {
-    this.reload$
-      .pipe(
-        switchMap(() => this.service.list()),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((res) => {
-        if (res.ok) {
-          this.data.set(res.data.items);
-        } else {
-          this.error.set(extractErrorMessage(res.error));
-        }
-        this.loading.set(false);
-      });
-    this.reload();
-
-    // Auto-open editor when navigated from builder with editId query param
+    // Auto-open editor when navigated from builder with ?editId=X
     this.route.queryParams
       .pipe(
         map((p) => p['editId'] as string | undefined),
@@ -411,53 +282,44 @@ export class TextsPage {
       });
   }
 
-  protected readonly data = signal<TextBlock[]>([]);
-  protected readonly loading = signal<boolean>(false);
-  protected readonly error = signal<string | null>(null);
+  // ─── Cell templates (viewChild signal) ─────────────────────────────
+  private readonly statusTplRef = viewChild<
+    TemplateRef<{ $implicit: TextBlock }>
+  >('statusTpl');
 
-  protected readonly editingId = signal<string | null>(null);
-  protected readonly editingBlock = signal<TextBlock | null>(null);
-  protected readonly creatingNew = signal<boolean>(false);
-
-  protected readonly editorOpen = computed(
-    () => this.creatingNew() || this.editingBlock() !== null,
-  );
-
-  protected readonly searchQuery = signal<string>('');
-  protected readonly sortDir = signal<SortDir>('asc');
-
-  private readonly visible = computed<TextBlock[]>(() => {
-    const q = this.searchQuery().trim().toLowerCase();
-    if (!q) return this.data();
-    return this.data().filter(
-      (b) => b.name.toLowerCase().includes(q) || (b.content ?? '').toLowerCase().includes(q),
-    );
+  protected readonly cellTemplates = computed<
+    Record<string, TemplateRef<{ $implicit: TextBlock }>>
+  >(() => {
+    const result: Record<string, TemplateRef<{ $implicit: TextBlock }>> = {};
+    const tpl = this.statusTplRef();
+    if (tpl) {
+      result['status'] = tpl;
+    }
+    return result;
   });
 
-  protected readonly sortedRows = computed<TextBlock[]>(() => {
-    const rows = this.visible().slice();
-    const sign = this.sortDir() === 'asc' ? 1 : -1;
-    return rows.sort((a, b) => String(a.name).localeCompare(String(b.name), 'ru') * sign);
-  });
+  // ─── Column definitions ────────────────────────────────────────────
+  protected readonly cols: ColumnDef<TextBlock>[] = [
+    {
+      key: 'name',
+      label: 'Название',
+      sortable: true,
+      width: '240px',
+    },
+    {
+      key: 'columns',
+      label: 'Конфигурация',
+      cellClass: 'texts-table-config',
+      format: (r) => this.columnConfigUpper(r.columns?.length ?? 1),
+    },
+    {
+      key: 'isActive',
+      label: 'Статус',
+      width: '120px',
+    },
+  ];
 
-  private reload(): void {
-    this.loading.set(true);
-    this.error.set(null);
-    this.reload$.next();
-  }
-
-  protected onSearchInput(event: Event): void {
-    this.searchQuery.set((event.target as HTMLInputElement).value);
-  }
-
-  protected totalLabel(n: number): string {
-    return pluralRu(n, RU_BLOCKS);
-  }
-
-  protected columnConfigUpper(n: number): string {
-    return pluralRu(n, RU_COLUMNS).toUpperCase();
-  }
-
+  // ─── Event handlers ────────────────────────────────────────────────
   protected openCreate(): void {
     this.editingBlock.set(null);
     this.creatingNew.set(true);
@@ -470,11 +332,11 @@ export class TextsPage {
     this.creatingNew.set(false);
   }
 
-  protected onEditorSaved(_saved: TextBlock): void {
+  protected onEditorSaved(): void {
     this.editingBlock.set(null);
     this.editingId.set(null);
     this.creatingNew.set(false);
-    this.reload();
+    this.listRef()?.reload();
   }
 
   protected onEditorCancel(): void {
@@ -500,11 +362,19 @@ export class TextsPage {
         if (res.ok) {
           this.toast.success('Текстовый блок удалён');
           if (this.editingId() === block._id) this.onEditorCancel();
-          this.reload();
+          this.listRef()?.reload();
         } else {
           this.toast.error(extractErrorMessage(res.error));
         }
       });
     });
+  }
+
+  protected totalLabel(n: number): string {
+    return pluralRu(n, RU_BLOCKS);
+  }
+
+  protected columnConfigUpper(n: number): string {
+    return pluralRu(n, RU_COLUMNS).toUpperCase();
   }
 }

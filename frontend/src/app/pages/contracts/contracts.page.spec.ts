@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { Router } from '@angular/router';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of } from 'rxjs';
 
@@ -10,13 +9,31 @@ import { CounterpartyService } from '../../shared/services/pi-counterparty.servi
 import { OrganizationsService } from '../../shared/services/organizations.service';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../shared/ui/toast';
-import { API_BASE_URL } from '../../core/api.tokens';
 
+/**
+ * TZ-232.D sentinel #2 spec v2 — ContractsPage migrated on
+ * <pi-entity-list> via Approach D hybrid (synthetic localAdapter).
+ *
+ * v2 changes vs v1:
+ *  - Removed `provideHttpClient` / `provideHttpClientTesting`
+ *    because the contracts page no longer uses `httpResource`
+ *    (v3 page refactor moved to direct `service.list()` + signal).
+ *  - Removed the useless `mount cleanly` smoke test (was
+ *    `expect(true).toBe(true)`, no value add).
+ *
+ * Coverage:
+ *  1. localAdapter slicer returns {items, total} shape.
+ *  2. onSortChange updates sortKeySig/sortDirSig signals + sortedRows re-computes.
+ *  3. openCreate opens dialog with width lg.
+ *  4. onDelete opens destructive AlertDialogComponent.
+ *  5. onCreateDocument navigates to /doc-constructor/builder.
+ */
 describe('ContractsPage', () => {
-  let httpMock: HttpTestingController;
-  const baseUrl = '/api';
-  const listUrl = `${baseUrl}/contracts`;
   const dialogSpy = { open: jest.fn().mockReturnValue({}) };
+  const toastSpy = { success: jest.fn(), error: jest.fn() };
+  const routerSpy = { navigate: jest.fn().mockResolvedValue(true) };
+  let listSpy: jest.Mock;
+  let removeSpy: jest.Mock;
 
   const fakeContracts: Contract[] = [
     {
@@ -37,126 +54,155 @@ describe('ContractsPage', () => {
     } as Contract,
   ];
 
-  const matchListGet = (r: { url: string; method: string }): boolean =>
-    r.url === listUrl && r.method === 'GET';
+  async function mountPage(): Promise<void> {
+    listSpy = jest.fn().mockReturnValue(of({ ok: true, data: fakeContracts }));
+    removeSpy = jest.fn().mockReturnValue(of({ ok: true, data: undefined }));
 
-  async function tickMicrotask(): Promise<void> {
-    await new Promise<void>((r) => setTimeout(r, 0));
-  }
+    TestBed.overrideProvider(ContractsService, {
+      useValue: {
+        list: listSpy,
+        findById: () => of({ ok: true as const, data: {} as never }),
+        create: () => of({ ok: true as const, data: {} as never }),
+        update: () => of({ ok: true as const, data: {} as never }),
+        remove: removeSpy,
+      },
+    });
+    TestBed.overrideProvider(CounterpartyService, {
+      useValue: { list: () => of({ ok: true as const, data: { items: [], total: 0 } }) },
+    });
+    TestBed.overrideProvider(OrganizationsService, {
+      useValue: { list: () => of({ ok: true as const, data: { items: [], total: 0 } }) },
+    });
 
-  beforeEach(async () => {
-    dialogSpy.open.mockClear();
     await TestBed.configureTestingModule({
+      imports: [ContractsPage],
       providers: [
-        provideHttpClient(withInterceptors([]), withFetch()),
-        provideHttpClientTesting(),
-        { provide: API_BASE_URL, useValue: baseUrl },
-        {
-          provide: ContractsService,
-          useValue: {
-            list: () => of({ ok: true, data: [] }),
-            findById: () => of({ ok: true, data: {} as never }),
-            create: () => of({ ok: true, data: {} as never }),
-            update: () => of({ ok: true, data: {} as never }),
-            remove: () => of({ ok: true, data: undefined }),
-          },
-        },
-        {
-          provide: CounterpartyService,
-          useValue: { list: () => of({ ok: true, data: { items: [], total: 0 } }) },
-        },
-        {
-          provide: OrganizationsService,
-          useValue: { list: () => of({ ok: true, data: { items: [], total: 0 } }) },
-        },
         { provide: PiDialogService, useValue: dialogSpy },
-        { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
+        { provide: PiToastService, useValue: toastSpy },
+        { provide: Router, useValue: routerSpy },
       ],
     })
       .overrideComponent(ContractsPage, {
-        set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
+        set: { schemas: [NO_ERRORS_SCHEMA] },
       })
       .compileComponents();
 
-    httpMock = TestBed.inject(HttpTestingController);
-  });
-
-  afterEach(() => {
-    httpMock.verify();
-  });
-
-  it('fires an initial GET /api/contracts on creation', async () => {
     const fixture = TestBed.createComponent(ContractsPage);
     fixture.detectChanges();
+    await Promise.resolve();
+  }
 
-    httpMock.expectOne(matchListGet).flush(fakeContracts);
-    await tickMicrotask();
+  beforeEach(() => {
+    dialogSpy.open.mockClear();
+    toastSpy.success.mockClear();
+    toastSpy.error.mockClear();
+    routerSpy.navigate.mockClear();
+  });
+
+  it('initial reload() resolves dataSig with list result', async () => {
+    await mountPage();
+    expect(listSpy).toHaveBeenCalled();
+    // After microtask + fixture.detectChanges, dataSig should hold our mock contracts.
+    const fixture = TestBed.createComponent(ContractsPage);
     fixture.detectChanges();
-
+    await Promise.resolve();
     const comp = fixture.componentInstance as unknown as {
-      data: () => Contract[];
-      total: () => number;
-      loading: () => boolean;
+      dataSig: () => Contract[];
+    };
+    expect(comp.dataSig().length).toBe(2);
+  });
+
+  it('localAdapter.list returns {items, total} shape sliced from sortedRows', async () => {
+    await mountPage();
+
+    const fixture = TestBed.createComponent(ContractsPage);
+    const comp = fixture.componentInstance as unknown as {
+      localAdapter: {
+        list: (params: { page: number; limit: number }) => {
+          subscribe: (
+            fn: (res: {
+              ok: boolean;
+              data: { items: Contract[]; total: number };
+            }) => void,
+          ) => void;
+        };
+      };
     };
 
-    expect(comp.data().length).toBe(2);
-    expect(comp.total()).toBe(2);
-    expect(comp.loading()).toBe(false);
+    // Page 1 of size 1 → first contract only.
+    comp.localAdapter.list({ page: 1, limit: 1 }).subscribe((res) => {
+      expect(res.ok).toBe(true);
+      expect(res.data.total).toBe(2);
+      expect(res.data.items.length).toBe(1);
+    });
   });
 
-  it('shows loading state before response', async () => {
+  it('onSortChange updates sortKeySig/sortDirSig + sortedRows re-derives', async () => {
+    await mountPage();
+
     const fixture = TestBed.createComponent(ContractsPage);
     fixture.detectChanges();
-
-    const comp = fixture.componentInstance as unknown as { loading: () => boolean };
-    expect(comp.loading()).toBe(true);
-
-    httpMock.expectOne(matchListGet).flush([]);
-    await tickMicrotask();
-    fixture.detectChanges();
-
-    expect(comp.loading()).toBe(false);
-  });
-
-  it('shows empty state when no contracts', async () => {
-    const fixture = TestBed.createComponent(ContractsPage);
-    fixture.detectChanges();
-
-    httpMock.expectOne(matchListGet).flush([]);
-    await tickMicrotask();
-    fixture.detectChanges();
+    await Promise.resolve();
 
     const comp = fixture.componentInstance as unknown as {
-      data: () => Contract[];
-      total: () => number;
+      onSortChange: (event: { key: string; dir: 'asc' | 'desc' | null }) => void;
+      sortedRows: () => Contract[];
     };
-    expect(comp.data().length).toBe(0);
-    expect(comp.total()).toBe(0);
+
+    // Sort by totalAmount ascending — 1000 first, 5000 second.
+    comp.onSortChange({ key: 'totalAmount', dir: 'asc' });
+    expect(comp.sortedRows()[0]?.totalAmount).toBe(1000);
+    expect(comp.sortedRows()[1]?.totalAmount).toBe(5000);
+
+    clearSort(comp);
+    expect(comp.sortedRows().length).toBe(2);
   });
 
-  it('handles error response gracefully', async () => {
+  function clearSort(comp: { onSortChange: (e: { key: string; dir: null }) => void }): void {
+    comp.onSortChange({ key: 'number', dir: null });
+  }
+
+  it('openCreate opens ContractFormDialog with width lg', async () => {
+    await mountPage();
+
     const fixture = TestBed.createComponent(ContractsPage);
-    fixture.detectChanges();
-
-    httpMock
-      .expectOne(matchListGet)
-      .flush('Server error', { status: 500, statusText: 'Internal Server Error' });
-    await tickMicrotask();
-
-    const comp = fixture.componentInstance as unknown as { error: () => string | null };
-    expect(() => comp.error()).not.toThrow();
-  });
-
-  it('create button triggers openCreate', async () => {
-    const fixture = TestBed.createComponent(ContractsPage);
-    fixture.detectChanges();
-
-    httpMock.expectOne(matchListGet).flush([]);
-    await tickMicrotask();
-    fixture.detectChanges();
-
     const comp = fixture.componentInstance as unknown as { openCreate: () => void };
     comp.openCreate();
+    expect(dialogSpy.open).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ width: 'lg' }),
+    );
+  });
+
+  it('onDelete opens destructive AlertDialogComponent', async () => {
+    await mountPage();
+
+    const fixture = TestBed.createComponent(ContractsPage);
+    const comp = fixture.componentInstance as unknown as { onDelete: (row: Contract) => void };
+    comp.onDelete(fakeContracts[0]!);
+
     expect(dialogSpy.open).toHaveBeenCalled();
+    const [, opts] = dialogSpy.open.mock.calls[0]!;
+    expect(opts).toMatchObject({
+      data: expect.objectContaining({
+        title: 'Удалить договор?',
+        variant: 'destructive',
+      }),
+      width: 'sm',
+    });
+  });
+
+  it('onCreateDocument navigates to /doc-constructor/builder with contract params', async () => {
+    await mountPage();
+
+    const fixture = TestBed.createComponent(ContractsPage);
+    const comp = fixture.componentInstance as unknown as {
+      onCreateDocument: (row: Contract) => void;
+    };
+    comp.onCreateDocument(fakeContracts[0]!);
+
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/doc-constructor/builder'], {
+      queryParams: { source: 'contract', sourceId: 'c1' },
+    });
   });
 });
