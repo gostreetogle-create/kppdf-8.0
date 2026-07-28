@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { TableTemplate, TableTemplateDocument } from './table-template.schema';
+import { TableTemplate, TableTemplateDocument, TableColumn } from './table-template.schema';
 import { CreateTableTemplateDto } from './dto/create-table-template.dto';
 import { UpdateTableTemplateDto } from './dto/update-table-template.dto';
 
@@ -65,7 +65,7 @@ export class TableTemplateService {
     if (dto.description !== undefined) doc.description = dto.description;
     if (dto.category !== undefined) doc.category = dto.category;
     if (dto.sortOrder !== undefined) doc.sortOrder = dto.sortOrder;
-    if (dto.columns !== undefined) doc.columns = dto.columns as never;
+    if (dto.columns !== undefined) doc.columns = dto.columns as unknown as TableColumn[];
     if (dto.sampleRows !== undefined) doc.sampleRows = dto.sampleRows;
     if (dto.dataSource !== undefined) doc.dataSource = dto.dataSource;
     if (dto.isActive !== undefined) doc.isActive = dto.isActive;

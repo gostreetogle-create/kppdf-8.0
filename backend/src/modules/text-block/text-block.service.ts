@@ -8,6 +8,7 @@ import { Model, Types } from 'mongoose';
 import {
   type TextBlockCategory,
   TextBlock,
+  type TextBlockColumn,
   type TextBlockDocument,
 } from './text-block.schema';
 import { CreateTextBlockDto } from './dto/create-text-block.dto';
@@ -100,7 +101,7 @@ export class TextBlockService {
       doc.columns = dto.columns.map((c) => ({
         ...c,
         content: sanitizeBlockContent(c.content ?? ''),
-      })) as any;
+      })) as unknown as TextBlockColumn[];
     }
     if (dto.isActive !== undefined) doc.isActive = dto.isActive;
     if (dto.sortOrder !== undefined) doc.sortOrder = dto.sortOrder;

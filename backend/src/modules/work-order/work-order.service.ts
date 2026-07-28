@@ -64,10 +64,10 @@ export class WorkOrderService {
     const doc = await this.findById(id);
     if (dto.qty !== undefined) doc.qty = dto.qty;
     if (dto.statusId !== undefined) {
-      doc.statusId = dto.statusId ? new Types.ObjectId(dto.statusId) : (undefined as unknown as Types.ObjectId);
+      doc.statusId = dto.statusId ? new Types.ObjectId(dto.statusId) : undefined;
     }
     if (dto.assignedTo !== undefined) {
-      doc.assignedTo = dto.assignedTo ? new Types.ObjectId(dto.assignedTo) : (undefined as unknown as Types.ObjectId);
+      doc.assignedTo = dto.assignedTo ? new Types.ObjectId(dto.assignedTo) : undefined;
     }
     if (dto.startDate !== undefined) doc.startDate = new Date(dto.startDate);
     if (dto.endDate !== undefined) doc.endDate = new Date(dto.endDate);

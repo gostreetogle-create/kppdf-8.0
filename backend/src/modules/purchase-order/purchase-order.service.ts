@@ -85,9 +85,7 @@ export class PurchaseOrderService {
       doc.deliveryDate = new Date(dto.deliveryDate);
     }
     if (dto.warehouseId !== undefined) {
-      doc.warehouseId = dto.warehouseId
-        ? new Types.ObjectId(dto.warehouseId)
-        : (undefined as unknown as Types.ObjectId);
+      doc.warehouseId = dto.warehouseId ? new Types.ObjectId(dto.warehouseId) : undefined;
     }
     if (dto.items !== undefined) {
       doc.items = dto.items.map((it) => ({

@@ -47,7 +47,7 @@ export class WorkTypeService {
     if (dto.defaultDurationHours !== undefined) doc.defaultDurationHours = dto.defaultDurationHours;
     if (dto.hourlyRate !== undefined) doc.hourlyRate = dto.hourlyRate;
     if (dto.workCenterId !== undefined) {
-      doc.workCenterId = dto.workCenterId ? new Types.ObjectId(dto.workCenterId) : (undefined as unknown as Types.ObjectId);
+      doc.workCenterId = dto.workCenterId ? new Types.ObjectId(dto.workCenterId) : undefined;
     }
     return doc.save();
   }

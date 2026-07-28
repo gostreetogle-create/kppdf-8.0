@@ -89,9 +89,7 @@ export class ShipmentService {
     if (dto.driverInfo !== undefined) doc.driverInfo = dto.driverInfo;
     if (dto.notes !== undefined) doc.notes = dto.notes;
     if (dto.warehouseId !== undefined) {
-      doc.warehouseId = dto.warehouseId
-        ? new Types.ObjectId(dto.warehouseId)
-        : (undefined as unknown as Types.ObjectId);
+      doc.warehouseId = dto.warehouseId ? new Types.ObjectId(dto.warehouseId) : undefined;
     }
     return doc.save();
   }

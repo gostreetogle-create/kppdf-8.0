@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { DocumentTableType, DocumentTableTypeDocument } from './document-table-type.schema';
+import { DocumentTableType, DocumentTableTypeDocument, DocTableColumn } from './document-table-type.schema';
 import { CreateDocumentTableTypeDto } from './dto/create-document-table-type.dto';
 import { UpdateDocumentTableTypeDto } from './dto/update-document-table-type.dto';
 
@@ -46,9 +46,9 @@ export class DocumentTableTypeService {
     if (dto.label !== undefined) doc.label = dto.label;
     if (dto.title !== undefined) doc.title = dto.title;
     if (dto.docType !== undefined) {
-      doc.docType = dto.docType ? new Types.ObjectId(dto.docType) : (undefined as unknown as Types.ObjectId);
+      doc.docType = dto.docType ? new Types.ObjectId(dto.docType) : undefined;
     }
-    if (dto.columns !== undefined) doc.columns = dto.columns as never;
+    if (dto.columns !== undefined) doc.columns = dto.columns as DocTableColumn[];
     if (dto.dataSource !== undefined) doc.dataSource = dto.dataSource;
     if (dto.productKind !== undefined) doc.productKind = dto.productKind;
     if (dto.sortOrder !== undefined) doc.sortOrder = dto.sortOrder;

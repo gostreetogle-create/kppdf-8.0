@@ -48,7 +48,7 @@ export class AttributeDefinitionService {
   async update(id: string, dto: UpdateAttributeDefinitionDto): Promise<AttributeDefinitionDocument> {
     const doc = await this.findById(id);
     if (dto.categoryId !== undefined) {
-      doc.categoryId = dto.categoryId ? new Types.ObjectId(dto.categoryId) : (undefined as unknown as Types.ObjectId);
+      doc.categoryId = dto.categoryId ? new Types.ObjectId(dto.categoryId) : undefined;
     }
     if (dto.label !== undefined) doc.label = dto.label;
     if (dto.type !== undefined) doc.type = dto.type;

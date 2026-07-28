@@ -44,7 +44,7 @@ export class ProductionOrderService {
     }
 
     const session = await this.connection.startSession();
-    let created: ProductionOrderDocument[] = [];
+    const created: ProductionOrderDocument[] = [];
     try {
       await session.withTransaction(async () => {
         const number = await this.counter.next('ProductionOrder', 'PO');
@@ -196,14 +196,10 @@ export class ProductionOrderService {
       }
     }
     if (dto.workCenterId !== undefined) {
-      doc.workCenterId = dto.workCenterId
-        ? new Types.ObjectId(dto.workCenterId)
-        : (undefined as unknown as Types.ObjectId);
+      doc.workCenterId = dto.workCenterId ? new Types.ObjectId(dto.workCenterId) : undefined;
     }
     if (dto.workTypeId !== undefined) {
-      doc.workTypeId = dto.workTypeId
-        ? new Types.ObjectId(dto.workTypeId)
-        : (undefined as unknown as Types.ObjectId);
+      doc.workTypeId = dto.workTypeId ? new Types.ObjectId(dto.workTypeId) : undefined;
     }
     if (dto.plannedStartDate !== undefined) {
       doc.plannedStartDate = new Date(dto.plannedStartDate);

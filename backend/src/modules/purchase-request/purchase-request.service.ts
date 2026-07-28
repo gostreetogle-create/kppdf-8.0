@@ -86,9 +86,7 @@ export class PurchaseRequestService {
       (doc as unknown as { status: string }).status = (dto as { status?: string }).status!;
     }
     if (dto.warehouseId !== undefined) {
-      doc.warehouseId = dto.warehouseId
-        ? new Types.ObjectId(dto.warehouseId)
-        : (undefined as unknown as Types.ObjectId);
+      doc.warehouseId = dto.warehouseId ? new Types.ObjectId(dto.warehouseId) : undefined;
     }
     return doc.save();
   }

@@ -77,9 +77,7 @@ export class ProductModulePhotoService {
     // нового главного фото. Strip через non-mutating destructure-rest (rew #1).
     const { isMain: _isMainIgnored, ...safeDto } = dto;
     if (safeDto.photoId !== undefined) {
-      doc.photoId = safeDto.photoId
-        ? new Types.ObjectId(safeDto.photoId)
-        : (undefined as unknown as Types.ObjectId);
+      doc.photoId = safeDto.photoId ? new Types.ObjectId(safeDto.photoId) : undefined;
     }
     if (safeDto.url !== undefined) doc.url = safeDto.url;
     if (safeDto.caption !== undefined) doc.caption = safeDto.caption;

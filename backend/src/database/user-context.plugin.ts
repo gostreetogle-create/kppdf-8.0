@@ -18,8 +18,7 @@ export function userContextPlugin(schema: Schema): void {
   ): void {
     const ctx = getCurrentUser();
     if (ctx?.userId) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const self = this as any;
+      const self = this as unknown as { $locals: Record<string, unknown> };
       self.$locals = { ...(self.$locals ?? {}), userId: ctx.userId };
     }
     next();

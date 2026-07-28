@@ -84,7 +84,7 @@ export class OrderTaskService {
     if (dto.actualStartDate !== undefined) doc.actualStartDate = new Date(dto.actualStartDate);
     if (dto.actualEndDate !== undefined) doc.actualEndDate = new Date(dto.actualEndDate);
     if (dto.workerId !== undefined) {
-      doc.workerId = dto.workerId ? new Types.ObjectId(dto.workerId) : (undefined as unknown as Types.ObjectId);
+      doc.workerId = dto.workerId ? new Types.ObjectId(dto.workerId) : undefined;
     }
     if (dto.notes !== undefined) doc.notes = dto.notes;
     return doc.save();

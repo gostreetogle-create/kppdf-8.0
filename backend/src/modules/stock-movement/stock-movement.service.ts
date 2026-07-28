@@ -100,7 +100,7 @@ export class StockMovementService {
     productId: string,
     zoneName: string | undefined,
     qty: number,
-    session: unknown,
+    session: any,
   ): Promise<void> {
     const filter: Record<string, unknown> = {
       warehouseId: new Types.ObjectId(warehouseId),
@@ -109,7 +109,7 @@ export class StockMovementService {
     if (zoneName) filter.zoneName = zoneName;
     else filter.$or = [{ zoneName: { $exists: false } }, { zoneName: null }];
 
-    let item = await this.storageModel.findOne(filter).session(session as never).exec();
+    let item = await this.storageModel.findOne(filter).session(session).exec();
     if (!item) {
       const [created] = await this.storageModel.create(
         [
@@ -120,12 +120,12 @@ export class StockMovementService {
             quantity: qty,
           },
         ],
-        { session: session as never },
+        { session },
       );
       item = created;
     } else {
       item.quantity = (item.quantity ?? 0) + qty;
-      await item.save({ session: session as never });
+      await item.save({ session });
     }
   }
 
@@ -134,7 +134,7 @@ export class StockMovementService {
     productId: string,
     zoneName: string | undefined,
     qty: number,
-    session: unknown,
+    session: any,
   ): Promise<void> {
     const filter: Record<string, unknown> = {
       warehouseId: new Types.ObjectId(warehouseId),
@@ -143,7 +143,7 @@ export class StockMovementService {
     if (zoneName) filter.zoneName = zoneName;
     else filter.$or = [{ zoneName: { $exists: false } }, { zoneName: null }];
 
-    const item = await this.storageModel.findOne(filter).session(session as never).exec();
+    const item = await this.storageModel.findOne(filter).session(session).exec();
     if (!item) {
       throw new BadRequestException(
         `No storage item for product ${productId} in warehouse ${warehouseId}`,
@@ -158,7 +158,7 @@ export class StockMovementService {
     if ((item.reservedQty ?? 0) > 0) {
       item.reservedQty = Math.max(0, (item.reservedQty ?? 0) - qty);
     }
-    await item.save({ session: session as never });
+    await item.save({ session });
   }
 
   private async applyTransfer(
@@ -168,7 +168,7 @@ export class StockMovementService {
     fromZone: string | undefined,
     toZone: string | undefined,
     qty: number,
-    session: unknown,
+    session: any,
   ): Promise<void> {
     await this.applyOut(fromWarehouseId, productId, fromZone, qty, session);
     await this.applyIn(toWarehouseId, productId, toZone, qty, session);

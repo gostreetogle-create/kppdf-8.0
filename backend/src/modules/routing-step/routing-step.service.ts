@@ -53,7 +53,7 @@ export class RoutingStepService {
     if (dto.costPerHour !== undefined) doc.costPerHour = dto.costPerHour;
     if (dto.isActive !== undefined) doc.isActive = dto.isActive;
     if (dto.workTypeId !== undefined) {
-      doc.workTypeId = dto.workTypeId ? new Types.ObjectId(dto.workTypeId) : (undefined as unknown as Types.ObjectId);
+      doc.workTypeId = dto.workTypeId ? new Types.ObjectId(dto.workTypeId) : undefined;
     }
     return doc.save();
   }

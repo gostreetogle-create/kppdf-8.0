@@ -56,7 +56,7 @@ export class WorkerService {
     if (dto.isActive !== undefined) doc.isActive = dto.isActive;
     if (dto.phone !== undefined) doc.phone = dto.phone;
     if (dto.personId !== undefined) {
-      doc.personId = dto.personId ? new Types.ObjectId(dto.personId) : (undefined as unknown as Types.ObjectId);
+      doc.personId = dto.personId ? new Types.ObjectId(dto.personId) : undefined;
     }
     if (dto.department !== undefined) doc.department = dto.department;
     return doc.save();

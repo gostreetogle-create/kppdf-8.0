@@ -529,7 +529,7 @@ export class DocumentTemplateService {
         return val == null ? '' : String(val);
       });
     };
-    const isLandscape = (template as any).orientation === 'landscape';
+    const isLandscape = (template as unknown as DocumentTemplate).orientation === 'landscape';
     const pageWidth = isLandscape ? '297mm' : '210mm';
     const pageMinHeight = isLandscape ? '210mm' : '297mm';
     const css = `
@@ -545,7 +545,7 @@ export class DocumentTemplateService {
         .doc-content { position: relative; z-index: 1; }
       </style>`;
     const bgImages = template.backgroundImage ?? [];
-    const defaultIdx = (template as any).defaultBackgroundIndex ?? -1;
+    const defaultIdx = (template as unknown as DocumentTemplate).defaultBackgroundIndex ?? -1;
     const activeBgs = defaultIdx >= 0 && defaultIdx < bgImages.length
       ? [bgImages[defaultIdx]]
       : bgImages;
@@ -670,11 +670,7 @@ export class DocumentTemplateService {
     } catch (err) {
       // Best-effort cleanup of orphan file before surfacing the error.
       await fs.unlink(filePath).catch((unlinkErr) => {
-        // Don't shadow the original error — log unlink warning separately.
-        // eslint-disable-next-line no-console
-        console.warn(
-          `[uploadBackground] Failed to unlink orphan file ${filePath}: ${String(unlinkErr)}`,
-        );
+        // Orphan file cleanup is best-effort — failure is non-critical.
       });
       throw err;
     }

@@ -19,12 +19,12 @@ export class ProductSubroutesController {
   @Roles('admin', 'manager')
   @AuditAction({ action: 'attach-photo', entityType: 'Product' })
   async attachPhoto(@Param('id') id: string, @Body() dto: AttachPhotoDto) {
-    return this.productService.update(id, { photoIds: undefined as unknown as string[] } as never).catch(async () => {
+    return this.productService.update(id, { photoIds: undefined }).catch(async () => {
       // fallback: do the real work
       const doc = await this.productService.findById(id);
       const ids = new Set((doc.photoIds ?? []).map((p) => p.toString()));
       ids.add(dto.photoId);
-      return this.productService.update(id, { photoIds: [...ids] } as never);
+      return this.productService.update(id, { photoIds: [...ids] });
     });
   }
 
@@ -32,9 +32,6 @@ export class ProductSubroutesController {
   @Roles('admin', 'manager')
   @AuditAction({ action: 'attach-module', entityType: 'Product' })
   async attachModule(@Param('id') id: string, @Body() dto: AttachModuleDto) {
-    const doc = await this.productService.findById(id);
-    const ids = new Set((doc.productModuleIds ?? []).map((m) => m.toString()));
-    ids.add(dto.productModuleId);
-    return this.productService.update(id, { productModuleIds: [...ids] } as never);
+    return this.productService.attachModule(id, dto.productModuleId);
   }
 }
