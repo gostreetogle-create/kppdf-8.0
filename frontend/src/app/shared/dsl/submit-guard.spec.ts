@@ -4,6 +4,9 @@ import { of } from 'rxjs';
 
 import { SubmitGuard } from './submit-guard';
 
+/** Derived from `SubmitGuard['guard']` first-parameter shape. No library API change. */
+type Fetcher = Parameters<SubmitGuard['guard']>[0]['fetcher'];
+
 const mockUUID = () =>
   'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c: string) => {
     const r = (Math.random() * 16) | 0;
@@ -31,7 +34,8 @@ describe('SubmitGuard', () => {
   });
 
   it('caches successful result and returns it on second call', async () => {
-    const fetcher = (): any => of({ ok: true, data: { id: '2' } });
+    const fetcher: Fetcher = () =>
+      of<SilentResult<{ id: string }>>({ ok: true as const, data: { id: '2' } });
     const formKey = 'cached-form';
     const url = '/api/items';
     const method = 'POST' as const;
@@ -44,9 +48,9 @@ describe('SubmitGuard', () => {
   });
 
   it('does not cache 4xx errors — fetcher is called again', async () => {
-    const fetcher = (): any =>
-      of({
-        ok: false,
+    const fetcher: Fetcher = () =>
+      of<SilentResult<unknown>>({
+        ok: false as const,
         error: new HttpErrorResponse({ status: 400, error: { message: 'Bad Request' } }),
       });
     const formKey = '4xx-form';
@@ -60,9 +64,9 @@ describe('SubmitGuard', () => {
   });
 
   it('caches 5xx errors and returns them on second call', async () => {
-    const fetcher = (): any =>
-      of({
-        ok: false,
+    const fetcher: Fetcher = () =>
+      of<SilentResult<unknown>>({
+        ok: false as const,
         error: new HttpErrorResponse({ status: 500, error: { message: 'Server Error' } }),
       });
     const formKey = '5xx-form';
@@ -77,7 +81,8 @@ describe('SubmitGuard', () => {
   });
 
   it('clears in-flight entry after request completes', async () => {
-    const fetcher = (): any => of({ ok: true, data: { id: '3' } });
+    const fetcher: Fetcher = () =>
+      of<SilentResult<{ id: string }>>({ ok: true as const, data: { id: '3' } });
     const formKey = 'reset-form';
     const url = '/api/items';
     const method = 'POST' as const;

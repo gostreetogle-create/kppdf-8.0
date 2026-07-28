@@ -78,11 +78,6 @@ describe('createMutation', () => {
     return { fetcher, invocations: () => invocations, resolve };
   }
 
-  /** Wait for one microtask cycle to settle Promise.resolve chains. */
-  function flushMicrotasks(): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, 0));
-  }
-
   /**
    * Build a synchronous-of fetcher that RETURNS the same SilentResult
    * every time. Tracks invocations via a closure-side counter so

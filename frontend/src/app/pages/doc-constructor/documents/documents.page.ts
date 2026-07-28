@@ -21,9 +21,7 @@ import {
   EntityService,
   PaginatedResponse,
 } from '../../../shared/dsl/entity/entity-service';
-import { SilentResult } from '../../../core/silent-http';
-import { API_BASE_URL } from '../../../core/api.tokens';
-import { extractErrorMessage } from '../../../core/silent-http';
+import { SilentResult, extractErrorMessage } from '../../../core/silent-http';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../../shared/ui/dialog/pi-alert-dialog.component';
 import { PiToastService } from '../../../shared/ui/toast';
@@ -270,22 +268,16 @@ export class DocumentsPage {
     if (!key) return rows;
     const sign = this.sortDirSig() === 'asc' ? 1 : -1;
     return rows.slice().sort((a, b) => {
-      let av: string | number = '';
-      let bv: string | number = '';
-      if (key === 'createdAt') {
-        av = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        bv = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      } else if (key === 'number') {
-        av = a.number ?? '';
-        bv = b.number ?? '';
-      } else {
-        av = a.displayName;
-        bv = b.displayName;
-      }
-      if (typeof av === 'number' && typeof bv === 'number') {
-        return (av - bv) * sign;
-      }
-      return String(av).localeCompare(String(bv), 'ru') * sign;
+      // Branch-local comparator — no temp vars (avoids `no-useless-assignment`
+      // on type-narrowed `string | number` initializers).
+      const cmp =
+        key === 'createdAt'
+          ? (a.createdAt ? new Date(a.createdAt).getTime() : 0) -
+            (b.createdAt ? new Date(b.createdAt).getTime() : 0)
+          : key === 'number'
+            ? (a.number ?? '').localeCompare(b.number ?? '', 'ru')
+            : a.displayName.localeCompare(b.displayName, 'ru');
+      return cmp * sign;
     });
   });
 

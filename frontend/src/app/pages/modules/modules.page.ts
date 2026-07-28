@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, of } from 'rxjs';
+import { of } from 'rxjs';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';

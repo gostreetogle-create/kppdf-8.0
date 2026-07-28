@@ -176,10 +176,7 @@ export class StockMovementsPage {
    */
   protected readonly listService: EntityService<StockMovement, MovementListParams> =
     toEntityService<StockMovement, MovementListParams>({
-      list: (params: any) =>
-        this.service.list(
-          params as Parameters<StockMovementsService['list']>[0],
-        ),
+      list: (params) => this.service.list(params),
       findById: () => notImplementedStub<StockMovement>(),
       create: (payload) => this.service.create(payload),
       update: () => notImplementedStub<StockMovement>(),

@@ -119,18 +119,19 @@ export interface EntityService<T, P> {
  * If the backend ever adds pagination, swap the synthetic mapping
  * for the real values; the rest of the wrapper stays unchanged.
  *
- * **`any` for service.list params.** Hand-written services often have
+ * **`any` for service.list params (strictFunctionTypes escape).** Hand-written services often have
  * narrower param types than the wrapper's full `P extends
  * DefaultListParams` (e.g., WorkTypesService.list accepts only
  * `WorkTypeListParams` without `page`/`limit`/`search`). We type the
  * source service's `list` parameter as `any` so any function signature
- * can be adapted without page-level casts. Function bivariance on `any`
+ * can be adapted without page-level casts. On `strictFunctionTypes: true`, `any` in parameter position is excluded from strict contravariance checks
  * means a service that accepts `WorkTypeListParams` IS assignable to
  * the `(params: any) => ...` signature. Runtime is safe — backend
  * ignores unknown query params (NestJS default). The wrapper's `P`
  * type IS preserved on the returned `EntityService<T, P>`.
  */
 export function toEntityService<T, P>(svc: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   list: (params: any) => Observable<SilentResult<{ items: T[]; total: number }>>;
   findById: (id: string) => Observable<SilentResult<T>>;
   create: (payload: Partial<T>) => Observable<SilentResult<T>>;

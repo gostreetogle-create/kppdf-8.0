@@ -179,14 +179,12 @@ describe('defineEntity: Users (canonical 5-method, default idKey, leading-slash 
 
 describe('defineEntity: bare-config defaults (singleton + slash normalization)', () => {
   let httpMock: HttpTestingController;
-  let injector: Injector;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
     httpMock = TestBed.inject(HttpTestingController);
-    injector = TestBed.inject(Injector);
   });
 
   afterEach(() => {
