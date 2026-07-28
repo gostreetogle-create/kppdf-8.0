@@ -8,10 +8,10 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { forkJoin, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, forkJoin, of } from 'rxjs';
+import { switchMap, map } from 'rxjs/operators';
 import { PiPageHeaderComponent } from '../../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../../shared/page/pi-section.component';
 import { PiToolbarComponent } from '../../../shared/page/pi-toolbar.component';
@@ -28,11 +28,12 @@ import {
   type TemplateSetupResult,
 } from '../builder/template-setup-dialog.component';
 import { extractErrorMessage } from '../../../core/silent-http';
-import { API_BASE_URL } from '../../../core/api.tokens';
 import {
   DocumentTemplate,
   DocumentTemplatesService,
 } from '../../../shared/services/pi-document-templates.service';
+import { OrganizationsService } from '../../../shared/services/organizations.service';
+import { DocTypesService } from '../../../shared/services/doc-types.service';
 import { pluralRu } from '../../../shared/util/russian-plural';
 
 const RU_TEMPLATES = ['шаблон', 'шаблона', 'шаблонов'] as const;
@@ -40,6 +41,14 @@ const PAGE_SIZE = 10;
 
 /**
  * Полная документация страницы: docs/pages/templates.page.md
+ *
+ * TZ-232.F: нет ни одного raw `HttpClient` вызова в этом компоненте. Все
+ * обращения к backend идут через типизированные {@link OrganizationsService},
+ * {@link DocTypesService} и {@link DocumentTemplatesService} сервисы,
+ * которые возвращают discriminated {@link SilentResult} union — ошибки
+ * приходят как `{ok:false, error:HttpErrorResponse}`, а не через RxJS
+ * `error`-channel. Это разблокирует full ESLint-применение правила
+ * `@pi-dsl/no-raw-http-in-components`.
  */
 @Component({
   selector: 'app-templates-page',
@@ -186,8 +195,8 @@ export class TemplatesPage {
   protected readonly PAGE_SIZE = PAGE_SIZE;
 
   private readonly svc = inject(DocumentTemplatesService);
-  private readonly http = inject(HttpClient);
-  private readonly baseUrl = inject(API_BASE_URL);
+  private readonly orgSvc = inject(OrganizationsService);
+  private readonly docTypeSvc = inject(DocTypesService);
   private readonly router = inject(Router);
   private readonly toast = inject(PiToastService);
   private readonly dialog = inject(PiDialogService);
@@ -281,77 +290,92 @@ export class TemplatesPage {
     });
   }
 
+  /**
+   * Pipeline:
+   * 1) Parallel lookup: 1 organization (paginated) + all doc-types.
+   * 2) For each missing entity, auto-create the project default ('Основная
+   *    организация' / 'Коммерческое предложение' with slug 'kp'). Failures
+   *    in this auto-create branch throw inside the map() so they propagate
+   *    to the outer error handler — we do NOT silently create a broken
+   *    template with a missing FK.
+   * 3) Once both ids exist, POST the DocumentTemplate (inactive).
+   * 4) Navigate to the builder for the new template on success.
+   */
   private createWithSettings(settings: TemplateSetupResult): void {
     this.creating.set(true);
 
-    // Step 1: Check existing org + doc-type, create defaults if missing
-    forkJoin([
-      this.http.get<{ items: { _id: string; name: string }[] }>(`${this.baseUrl}/organizations?limit=1`),
-      this.http.get<{ _id: string; name: string }[]>(`${this.baseUrl}/doc-types`),
-    ])
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: ([orgRes, dtRes]) => {
-          let orgId = orgRes?.items?.[0]?._id;
-          let docTypeId = dtRes?.[0]?._id;
+    forkJoin({
+      orgs: this.orgSvc.list({ page: 1, limit: 1 }),
+      docTypes: this.docTypeSvc.list(),
+    })
+      .pipe(
+        switchMap(({ orgs, docTypes }) => {
+          const existingOrgId =
+            orgs.ok && orgs.data.items.length > 0 ? orgs.data.items[0]._id : null;
+          const existingDocTypeId =
+            docTypes.ok && docTypes.data.items.length > 0
+              ? docTypes.data.items[0]._id
+              : null;
 
-          // Auto-create default doc-type if none exists
-          const ensureDocType$ = docTypeId
-            ? of(docTypeId)
-            : this.http
-                .post<{ _id: string }>(`${this.baseUrl}/doc-types`, {
+          const ensureDocType$: Observable<string> = existingDocTypeId
+            ? of(existingDocTypeId)
+            : this.docTypeSvc
+                .create({
                   name: 'Коммерческое предложение',
                   slug: 'kp',
                   description: 'Тип документа по умолчанию',
                   isActive: true,
-                })
-                .pipe(map((r) => r._id));
+                } as never)
+                .pipe(
+                  map((res) => {
+                    if (!res.ok) throw res.error;
+                    return res.data._id;
+                  }),
+                );
 
-          // Auto-create default organization if none exists
-          const ensureOrg$ = orgId
-            ? of(orgId)
-            : this.http
-                .post<{ _id: string }>(`${this.baseUrl}/organizations`, {
+          const ensureOrg$: Observable<string> = existingOrgId
+            ? of(existingOrgId)
+            : this.orgSvc
+                .create({
                   name: 'Основная организация',
                   shortName: 'Основная',
                   isActive: true,
-                })
-                .pipe(map((r) => r._id));
+                } as never)
+                .pipe(
+                  map((res) => {
+                    if (!res.ok) throw res.error;
+                    return res.data._id;
+                  }),
+                );
 
-          forkJoin({ docTypeId: ensureDocType$, orgId: ensureOrg$ })
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe({
-              next: ({ docTypeId: dtId, orgId: oId }) => {
-                // Step 2: Create template (inactive by default)
-                this.svc
-                  .create({
-                    name: `Шаблон ${new Date().toLocaleDateString('ru-RU')}`,
-                    organizationId: oId,
-                    docTypeId: dtId,
-                    pageSize: settings.pageSize,
-                    orientation: settings.orientation,
-                    isActive: false,
-                  })
-                  .subscribe({
-                    next: (res) => {
-                      this.creating.set(false);
-                      if (res.ok) {
-                        this.toast.success('Шаблон создан (неактивен). Откройте конструктор.');
-                        this.router.navigate(['/doc-constructor/builder', res.data._id]);
-                      } else {
-                        this.toast.error(extractErrorMessage(res.error));
-                      }
-                    },
-                    error: () => this.creating.set(false),
-                  });
-              },
-              error: () => {
-                this.creating.set(false);
-                this.toast.error('Ошибка создания сущностей');
-              },
-            });
+          return forkJoin({ docTypeId: ensureDocType$, orgId: ensureOrg$ });
+        }),
+        switchMap(({ docTypeId: dtId, orgId: oId }) =>
+          this.svc.create({
+            name: `Шаблон ${new Date().toLocaleDateString('ru-RU')}`,
+            organizationId: oId,
+            docTypeId: dtId,
+            pageSize: settings.pageSize,
+            orientation: settings.orientation,
+            isActive: false,
+          }),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (res) => {
+          this.creating.set(false);
+          if (res.ok) {
+            this.toast.success('Шаблон создан (неактивен). Откройте конструктор.');
+            this.router.navigate(['/doc-constructor/builder', res.data._id]);
+          } else {
+            this.toast.error(extractErrorMessage(res.error));
+          }
         },
-        error: () => this.creating.set(false),
+        error: (err: HttpErrorResponse) => {
+          this.creating.set(false);
+          this.toast.error(extractErrorMessage(err));
+        },
       });
   }
 
@@ -368,12 +392,16 @@ export class TemplatesPage {
   }
 
   protected onSetDefault(t: DocumentTemplate): void {
-    this.http.post(`${this.baseUrl}/document-templates/${t._id}/set-default`, {}).subscribe({
-      next: () => {
-        this.toast.success('Шаблон по умолчанию');
-        this.reload();
+    this.svc.setDefault(t._id).subscribe({
+      next: (res) => {
+        if (res.ok) {
+          this.toast.success('Шаблон по умолчанию');
+          this.reload();
+        } else {
+          this.toast.error(extractErrorMessage(res.error));
+        }
       },
-      error: (err) => this.toast.error(extractErrorMessage(err)),
+      error: (err: HttpErrorResponse) => this.toast.error(extractErrorMessage(err)),
     });
   }
 
@@ -387,15 +415,21 @@ export class TemplatesPage {
     });
     onDialogCloseOnce(ref, this.injector, (result) => {
       if (!result) return;
-      this.http
-        .post<DocumentTemplate>(`${this.baseUrl}/document-templates/${t._id}/duplicate`, {})
-        .subscribe({
-          next: (copy) => {
-            // Apply chosen format/orientation to the duplicate
-            this.svc.update(copy._id, {
+      this.svc.duplicate(t._id).subscribe({
+        next: (dupRes) => {
+          if (!dupRes.ok) {
+            this.toast.error(extractErrorMessage(dupRes.error));
+            return;
+          }
+          const copy = dupRes.data;
+          // Apply chosen format/orientation to the duplicate; navigate even
+          // if the post-create patch fails (the copy exists either way).
+          this.svc
+            .update(copy._id, {
               pageSize: result.pageSize,
               orientation: result.orientation,
-            }).subscribe({
+            })
+            .subscribe({
               next: () => {
                 this.toast.success('Копия создана');
                 this.router.navigate(['/doc-constructor/builder', copy._id]);
@@ -405,9 +439,8 @@ export class TemplatesPage {
                 this.router.navigate(['/doc-constructor/builder', copy._id]);
               },
             });
-          },
-          error: (err) => this.toast.error(extractErrorMessage(err)),
-        });
+        },
+      });
     });
   }
 
@@ -433,3 +466,4 @@ export class TemplatesPage {
     });
   }
 }
+

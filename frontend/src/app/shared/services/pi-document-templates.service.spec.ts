@@ -167,4 +167,40 @@ describe('DocumentTemplatesService', () => {
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
   });
+
+  it('setDefault() POSTs to /:id/set-default with empty body', () => {
+    svc.setDefault('dt1').subscribe((res) => {
+      if (res.ok) expect(res.data).toBeUndefined();
+    });
+    const req = httpMock.expectOne('http://test/api/document-templates/dt1/set-default');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({});
+    req.flush(null);
+  });
+
+  it('duplicate() POSTs /:id/duplicate and returns the new template record', () => {
+    svc.duplicate('dt1').subscribe((res) => {
+      if (res.ok) {
+        expect(res.data._id).toBe('dt-copy');
+        expect(res.data.isActive).toBe(false);
+        expect(res.data.isDefault).toBe(false);
+      }
+    });
+    const req = httpMock.expectOne('http://test/api/document-templates/dt1/duplicate');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({});
+    req.flush({
+      _id: 'dt-copy',
+      name: 'Копия — Договор поставки',
+      tags: ['договор'],
+      organizationId: 'org1',
+      docTypeId: { _id: 'doc-contract', name: 'Договор' },
+      isDefault: false,
+      isActive: false,
+      pageSize: 'A4',
+      backgroundImage: [],
+      backgroundOpacity: 0.3,
+      version: 1,
+    });
+  });
 });

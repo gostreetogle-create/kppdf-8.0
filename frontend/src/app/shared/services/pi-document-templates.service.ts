@@ -226,4 +226,38 @@ export class DocumentTemplatesService {
       }),
     );
   }
+
+  /**
+   * TZ-232.F — `setDefault` action endpoint (`POST /document-templates/:id/set-default`).
+   *
+   * Marks the given template as the **default** within its `DocType`. Backend
+   * automatically unsets the previous default for the same DocType before
+   * flipping this one. Logs audit row `entityType: 'DocumentTemplate'`.
+   *
+   * NOTE: Do not confuse with `setDefaultBackground` above which selects which
+   * background IMAGE is the default — different concept.
+   */
+  setDefault(id: string): Observable<SilentResult<void>> {
+    return silentPost<void>(
+      this.http,
+      `${this.baseUrl}/document-templates/${id}/set-default`,
+      {},
+    );
+  }
+
+  /**
+   * TZ-232.F — `duplicate` action endpoint (`POST /document-templates/:id/duplicate`).
+   *
+   * Creates a deep copy of the given template (new `_id`, `isActive: false`,
+   * `isDefault: false`, `version: 1`). Returned record is intended for builder
+   * navigation after the caller applies any post-duplication edits
+   * (pageSize, orientation) via `update`.
+   */
+  duplicate(id: string): Observable<SilentResult<DocumentTemplate>> {
+    return silentPost<DocumentTemplate>(
+      this.http,
+      `${this.baseUrl}/document-templates/${id}/duplicate`,
+      {},
+    );
+  }
 }

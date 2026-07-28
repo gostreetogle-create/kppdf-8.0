@@ -1,19 +1,31 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { Router } from '@angular/router';
+import { of } from 'rxjs';
 
 import { TemplatesPage } from './templates.page';
 import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
+import { OrganizationsService } from '../../../shared/services/organizations.service';
+import { DocTypesService } from '../../../shared/services/doc-types.service';
 import { PiToastService } from '../../../shared/ui/toast';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
-import { API_BASE_URL } from '../../../core/api.tokens';
 
+/**
+ * TZ-232.F spec — TemplatesPage migrated off raw `HttpClient`.
+ *
+ * v3 changes vs v2 (post TZ-232.F):
+ *  - Removed `provideHttpClient` / `provideHttpClientTesting` (page no longer
+ *    uses HttpClient directly — OrganizationsService / DocTypesService /
+ *    DocumentTemplatesService handle all backend calls and are mocked here).
+ *  - Added synthesized empty-data mocks for `OrganizationsService.list` and
+ *    `DocTypesService.list` so the page instantiates without DI errors.
+ *  - Added `setDefault` and `duplicate` to the DocumentTemplatesService mock
+ *    so the new methods in the service can be invoked if the page exercises
+ *    those code paths in future tests.
+ */
 describe('TemplatesPage', () => {
-  let httpMock: HttpTestingController;
-  const baseUrl = '/api';
   const dialogSpy = { open: jest.fn().mockReturnValue({}) };
+  const toastSpy = { success: jest.fn(), error: jest.fn() };
 
   const fakeTemplates = [
     {
@@ -40,44 +52,69 @@ describe('TemplatesPage', () => {
       pageSize: 'A4',
       backgroundImage: [],
       backgroundOpacity: 0.3,
-      version: 1,
+      version: 2,
     },
   ];
 
   const listResult = { ok: true, data: { items: fakeTemplates } };
+  const orgsListResult = {
+    ok: true,
+    data: {
+      items: [{ _id: 'org1', name: 'Основная организация' }],
+      total: 1,
+      page: 1,
+      limit: 1,
+    },
+  };
+  const docTypesListResult = {
+    ok: true,
+    data: {
+      items: [{ _id: 'dt-default', name: 'КП', slug: 'kp', isActive: true }],
+      total: 1,
+      page: 1,
+      limit: 1,
+    },
+  };
 
-  beforeEach(async () => {
-    dialogSpy.open.mockClear();
+  async function mountPage(): Promise<void> {
     await TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(withInterceptors([]), withFetch()),
-        provideHttpClientTesting(),
-        { provide: API_BASE_URL, useValue: baseUrl },
         {
           provide: DocumentTemplatesService,
           useValue: {
-            list: jest.fn().mockReturnValue({
-              pipe: jest.fn().mockReturnValue({
-                subscribe: (observerOrCb: unknown) => {
-                  if (typeof observerOrCb === 'function') observerOrCb(listResult);
-                  else (observerOrCb as { next: (r: typeof listResult) => void }).next(listResult);
-                },
-              }),
-            }),
-            create: jest.fn().mockReturnValue({
-              subscribe: (cb: (r: { ok: boolean; data: { _id: string } }) => void) =>
-                cb({ ok: true, data: { _id: 'dt3' } }),
-            }),
-            update: jest.fn().mockReturnValue({
-              subscribe: (cb: (r: { ok: boolean }) => void) => cb({ ok: true }),
-            }),
-            remove: jest.fn().mockReturnValue({
-              subscribe: (cb: (r: { ok: boolean }) => void) => cb({ ok: true }),
-            }),
+            list: jest.fn().mockReturnValue(of(listResult)),
+            findById: jest.fn().mockReturnValue(of({ ok: true, data: {} as never })),
+            create: jest
+              .fn()
+              .mockReturnValue(of({ ok: true, data: { _id: 'dt3', isActive: false } })),
+            update: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
+            remove: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
+            setDefault: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
+            duplicate: jest
+              .fn()
+              .mockReturnValue(of({ ok: true, data: { _id: 'dt-copy', isActive: false } })),
           },
         },
-        { provide: Router, useValue: { navigate: jest.fn() } },
-        { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
+        {
+          provide: OrganizationsService,
+          useValue: {
+            list: jest.fn().mockReturnValue(of(orgsListResult)),
+            create: jest
+              .fn()
+              .mockReturnValue(of({ ok: true, data: { _id: 'org-new' } })),
+          },
+        },
+        {
+          provide: DocTypesService,
+          useValue: {
+            list: jest.fn().mockReturnValue(of(docTypesListResult)),
+            create: jest
+              .fn()
+              .mockReturnValue(of({ ok: true, data: { _id: 'dt-new' } })),
+          },
+        },
+        { provide: Router, useValue: { navigate: jest.fn().mockResolvedValue(true) } },
+        { provide: PiToastService, useValue: toastSpy },
         { provide: PiDialogService, useValue: dialogSpy },
       ],
     })
@@ -85,20 +122,22 @@ describe('TemplatesPage', () => {
         set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
       })
       .compileComponents();
+  }
 
-    httpMock = TestBed.inject(HttpTestingController);
-  });
-
-  afterEach(() => {
-    httpMock.verify();
+  beforeEach(() => {
+    dialogSpy.open.mockClear();
+    toastSpy.success.mockClear();
+    toastSpy.error.mockClear();
   });
 
   it('creates successfully', async () => {
+    await mountPage();
     const fixture = TestBed.createComponent(TemplatesPage);
     expect(fixture.componentInstance).toBeTruthy();
   });
 
   it('loads templates on creation', async () => {
+    await mountPage();
     const fixture = TestBed.createComponent(TemplatesPage);
     fixture.detectChanges();
 
@@ -111,7 +150,8 @@ describe('TemplatesPage', () => {
     expect(comp.loading()).toBe(false);
   });
 
-  it('shows loading state initially', async () => {
+  it('shows loading state initially (false after sync list mock)', async () => {
+    await mountPage();
     const fixture = TestBed.createComponent(TemplatesPage);
     fixture.detectChanges();
     const comp = fixture.componentInstance as unknown as {
@@ -121,6 +161,7 @@ describe('TemplatesPage', () => {
   });
 
   it('filters templates by search query', async () => {
+    await mountPage();
     const fixture = TestBed.createComponent(TemplatesPage);
     fixture.detectChanges();
 
@@ -138,6 +179,7 @@ describe('TemplatesPage', () => {
   });
 
   it('returns all when search is cleared', async () => {
+    await mountPage();
     const fixture = TestBed.createComponent(TemplatesPage);
     fixture.detectChanges();
 
@@ -152,4 +194,5 @@ describe('TemplatesPage', () => {
 
     expect(comp.filtered().length).toBe(2);
   });
+
 });
