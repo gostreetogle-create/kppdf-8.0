@@ -27,6 +27,12 @@ export interface AppConfig {
     username: string;
     password: string;
   };
+  // TZ-247: Backend Idempotency Middleware
+  idempotency: {
+    enabled: boolean;
+    ttlSeconds: number;
+    maxBodyBytes: number;
+  };
 }
 
 export default (): AppConfig => ({
@@ -54,5 +60,14 @@ export default (): AppConfig => ({
   admin: {
     username: process.env.ADMIN_USERNAME ?? DEFAULT_ADMIN_USERNAME,
     password: process.env.ADMIN_PASSWORD ?? DEFAULT_ADMIN_PASSWORD,
+  },
+  // TZ-247: Backend Idempotency Middleware — 5 min TTL matches frontend TZ-232.N
+  idempotency: {
+    enabled: process.env.IDEMPOTENCY_ENABLED !== 'false',
+    ttlSeconds: parseInt(process.env.IDEMPOTENCY_TTL_SECONDS ?? '300', 10),
+    maxBodyBytes: parseInt(
+      process.env.IDEMPOTENCY_MAX_BODY_BYTES ?? String(5 * 1024 * 1024),
+      10,
+    ),
   },
 });

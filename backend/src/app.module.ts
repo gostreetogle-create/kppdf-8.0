@@ -80,10 +80,12 @@ import { CertificateModule } from './modules/certificate/certificate.module';
 import { ComplianceRuleModule } from './modules/compliance-rule/compliance-rule.module';
 import { ProductPassportModule } from './modules/product-passport/product-passport.module';
 import { InventorFileModule } from './modules/inventor-file/inventor-file.module';
+import { IdempotencyModule } from './modules/idempotency/idempotency.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { UserContextInterceptor } from './common/interceptors/user-context.interceptor';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
+import { IdempotencyInterceptor } from './modules/idempotency/idempotency.interceptor';
 import { AdminSeed } from './common/seed/admin.seed';
 import { AdminPasswordDriftDetector } from './common/seed/admin-password-drift-detector';
 import { SettingsSeed } from './common/seed/settings.seed';
@@ -218,6 +220,7 @@ import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
     ComplianceRuleModule,
     ProductPassportModule,
     InventorFileModule,
+    IdempotencyModule, // TZ-247: Backend Idempotency Middleware
     TerminusModule,
   ],
   controllers: [HealthController],
@@ -225,6 +228,9 @@ import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_INTERCEPTOR, useClass: UserContextInterceptor },
+    // TZ-247: Idempotency runs AFTER AuthGuard (needs req.user) and BEFORE
+    // UserContext/Audit so audit logs of replayed requests are NOT re-emitted.
+    { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
     ThrottlerBehindAuthGuard,
     AdminSeed,
@@ -249,4 +255,4 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(RequestIdMiddleware).forRoutes('*');
   }
-}
+}

@@ -22,4 +22,9 @@ export const envValidationSchema = Joi.object({
 
   ADMIN_USERNAME: Joi.string().default('admin'),
   ADMIN_PASSWORD: Joi.string().min(8).required(),
+
+  // TZ-247: Backend Idempotency Middleware
+  IDEMPOTENCY_ENABLED: Joi.boolean().default(true),
+  IDEMPOTENCY_TTL_SECONDS: Joi.number().integer().min(60).max(86400).default(300),
+  IDEMPOTENCY_MAX_BODY_BYTES: Joi.number().integer().min(1024).default(5 * 1024 * 1024),
 });
