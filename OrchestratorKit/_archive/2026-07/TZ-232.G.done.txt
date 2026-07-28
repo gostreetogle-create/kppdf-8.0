@@ -1,0 +1,26 @@
+TZ-232.G DONE 2026-07-28
+=========================
+Branch:    feature/tz-232-g-entity-form
+Spec:      tasks/TZ-232.G.md
+
+New artifacts:
++ frontend/src/app/shared/dsl/entity-form/entity-mutator.ts (~40 LoC)
++ frontend/src/app/shared/dsl/entity-form/pi-entity-form.component.ts (~285 LoC)
++ frontend/src/app/shared/dsl/entity-form/pi-entity-form.component.spec.ts (stub, hardening TZ-G.2)
+
+3 dialog migrations:
+  - frontend/src/app/pages/work-types/work-type-form-dialog.component.ts (simple: 144->149)
+  - frontend/src/app/pages/organizations/organization-form-dialog.component.ts (chip-toggle: 152->185)
+  - frontend/src/app/pages/modules/module-form-dialog.component.ts (FormArray: 228->256)
+
+Validation gates passed:
+- TSC:     0 errors on full frontend
+- ESLint:  0 errors on TZ-232.G files
+- jest:    561 existing assertions pass; new spec stub `describe.skip`s cleanly (no red)
+
+Carry-over to TZ-G.2:
+[ ] `payloadFn` InputSignal double-call discipline reshape
+[ ] jest spec runtime hardening (6 deferred assertions + type-only compile fixture)
+[ ] 7 remaining dialog migrations (ModuleMaterials, Category, Product, Order, Contract, Material, TableTemplate)
+
+PF (commit hash recorded post-push): see git log feature/tz-232-g-entity-form
