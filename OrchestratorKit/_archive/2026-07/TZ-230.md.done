@@ -1,0 +1,125 @@
+# TZ-230 — Консолидированный Bulk-Execution Batch (преемник 8 SUPERSEDED ТЗ)
+
+**Дата создания:** 2026-07-25
+**Автор:** MiMo Code Agent (orchestrator + closure tick audit)
+**Приоритет:** MEDIUM (консолидированный pickup для следующего execution window)
+**Связь:** SUCCESSOR для `TZ-202.A.1`, `TZ-202.B.1`, `TZ-210`, `TZ-210.A`, `TZ-211`, `TZ-220.A`, `TZ-220.B`, `TZ-220.C` (все SUPERSEDED в архиве `OrchestratorKit/_archive/2026-07/TZ-*.superseded.md`)
+
+---
+
+## Зачем нужен этот TZ
+
+В рамках closure tick 2026-07-25 (MiMo Agent) был проведён mass bulk-audit всех ТЗ в `tasks/`. Audit показал:
+
+- 11 ТЗ реально EXECUTED → `_archive/2026-07/*.done.md`
+- 16 ТЗ SUPERSEDED-по-blast-radius или по-deferral-у-window → `_archive/2026-07/*.superseded.md`
+- Из оставшихся 8 successor-ТЗ (TZ-202.A.1, B.1, TZ-210, A, 211, TZ-220.A, B, C) все оказались:
+  - либо cross-cutting (multi-module DB schema migrations),
+  - либо security-sensitive (RBAC Phase B, rate-limit bypass, input validation),
+  - либо design-system level (Logomock → kppdf-8.0 интеграция),
+  - либо pre-existing TS-error sweep (22 ошибки в backend services).
+
+Ни один из 8 не был EXECUTED в этой closure batch — все archived as SUPERSEDED с явной ссылкой «pickup at TZ-230».
+
+**TZ-230 = консолидированный future-execution-window**, который собирает все 8 в единый batch для последующего targeted-execution.
+
+---
+
+## Что нужно сделать (декомпозиция по 8 absorbed ТЗ)
+
+### Sub-task A: TZ-202.A.1 → AuditLog Unification
+**Что:** Создать единый `AuditLog` schema + service module для замены 4 дублированных audit-patterns (counter-party / product / contract / settings). Унификация структуры `action`, `actor`, `target`, `metadata`.
+**Файлы (предположительно):** `backend/src/audit/audit-log.schema.ts`, `audit-log.service.ts`, `audit.controller.ts`, refactor `*.service.ts` в 4 модулях.
+**Blast-radius:** HIGH (4+ модуля используют inline-аудит; неудача = runtime regression для security log).
+**Effort estimate:** 8-12 часов.
+
+### Sub-task B: TZ-202.B.1 → 3NF Schema Cleanup + User Password Verification
+**Что:** Удалить redundant cached fields (`fullName`, `displayName` дубликаты `firstName + lastName`), привести `User.password` к единому bcrypt migration path (убрать legacy `hash`/`salt` поля).
+**Файлы:** `user.schema.ts`, `auth.service.ts`, migration script.
+**Blast-radius:** CRITICAL (auth module — прямая security impact).
+**Effort estimate:** 4-8 часов.
+
+### Sub-task C: TZ-210 → Design Audit: Logomock → kppdf-8.0 Integration
+**Что:** Map Logomock design system ↔ kppdf-8.0 OKLCH tokens. Создать design-token mapping table, мигрировать dark-theme tokens, обновить `@layer base` styles.
+**Файлы:** `frontend/tailwind.config.ts`, `frontend/src/styles.css`, новый `docs/design-migration.md`.
+**Blast-radius:** MEDIUM (визуальный regression acceptable; dark-mode tokens критичны).
+**Effort estimate:** 12-16 часов.
+
+### Sub-task D: TZ-210.A → Pre-existing TS Errors Cleanup
+**Что:** Исправить 22 существующих TypeScript error в `backend/src/services/*` (audit-di.ts false-positives по факту оказались real type mismatches).
+**Файлы:** ~10-15 файлов в `backend/src/services/*` + audit-di.ts logic fix.
+**Blast-radius:** HIGH (strict mode блокирует CI).
+**Effort estimate:** 4-6 часов.
+
+### Sub-task E: TZ-211 → Apply Design System to DocumentConstructor
+**Что:** Применить Logomock-derived tokens (после TZ-210) ко всем `<app-pi-*>` компонентам в `/doc-constructor/*` страницах.
+**Файлы:** `frontend/src/app/pages/doc-constructor/{builder,tables,builder-canvas,builder-inspector}/*`.
+**Blast-radius:** MEDIUM (UI-only, можем rollback через visual QA).
+**Effort estimate:** 6-10 часов.
+
+### Sub-task F: TZ-220.A → Frontend Lifecycle + any-cleanup
+**Что:** Применить `declare global { interface Window { __SENTRY_DSN__?: string } }` + `DestroyRef.onDestroy()` pattern ко всем `as any` и `ngOnDestroy` местам в frontend/src/, мигрировать console.log на logger.
+**Файлы:** ~15-25 файлов в `frontend/src/app/{shared,pages}/`.
+**Blast-radius:** MEDIUM (TS-only changes, runtime safe).
+**Effort estimate:** 6-8 часов.
+
+### Sub-task G: TZ-220.B → Backend Data Integrity Hardening
+**Что:** Cross-service transaction boundaries (MongoDB session reuse), optimistic locking для aggregate updates, EAV-row atomicity для dictionary-template mutations.
+**Файлы:** ~10-15 файлов в `backend/src/modules/{order,contract,bom,work-type,product-module}/*`.
+**Blast-radius:** CRITICAL (MongoDB session safety, transaction integrity).
+**Effort estimate:** 16-24 часа.
+
+### Sub-task H: TZ-220.C → Security Hardening Batch
+**Что:** Auth rate-limit bypass fix (TZ-127), RxJS interceptor unsubscribe leak (TZ-125), input validation на product IDs (TZ-119), missing RBAC roles (TZ-210.A pre-existing).
+**Файлы:** ~12-20 файлов в `backend/src/{auth,common,middleware}/*` + RBAC sweep 27 controllers.
+**Blast-radius:** CRITICAL (security boundary failures leak data).
+**Effort estimate:** 12-18 часов.
+
+---
+
+## Plan of execution (при начале TZ-230)
+
+**Tick 1:** Sub-task D (TS errors cleanup) → unblock backend CI → разблокирует Tick 2.
+**Tick 2:** Sub-task F (frontend any-cleanup) → unblock frontend CI → разблокирует Tick 3.
+**Tick 3:** Sub-task B (password verification) + Sub-task H.1 (TZ-127 rate-limit) → security wins.
+**Tick 4:** Sub-task A (audit-log unification) + Sub-task G (data integrity).
+**Tick 5:** Sub-task C (design tokens) → Sub-task E (apply design system) → final visual QA pass.
+
+**Co-review gates:** После каждого tick — `pnpm tsc --noEmit` (frontend + backend) + `pnpm test`. Plus `bash OrchestratorKit/verify-status.sh` должен вернуть EXIT=0 перед close.
+
+---
+
+## Acceptance criteria
+
+- [ ] Все 8 sub-tasks выполнены И заархивированы как `TZ-{A,B,C,D,E,F,G,H}.*.done.md` (или отдельные TZ-231..238 если user prefers specificity)
+- [ ] Frontend + backend typecheck exit 0
+- [ ] verify-status.sh возвращает EXIT=0
+- [ ] progress.md содержит 5-field TZF-00 формат для каждого sub-task
+- [ ] STATUS.md не содержит SUPERSEDED row с ссылкой «pickup at TZ-230» (все forwarders purged)
+- [ ] Optional: если user хочет sub-TZ, разбить на TZ-231..238 (Sub-task A..H)
+
+---
+
+## Известные ограничения (для будущего executor)
+
+- **Effort estimate (всего):** 70-100 часов reflection work. НЕ realisitic в одном execution window без dedicated session.
+- **Recommended split:** минимум 2-3 sessions (security first, потом design + TS cleanup, потом deferred integration).
+- **Risk-rank:** H > G > B > D > F > C > E > A (security/data integrity → cleanup → UX).
+- **Discovery:** Sub-task D и Sub-task G могут открыть новые issues not in original 8. Budget 20% extra time for surprises.
+
+---
+
+## Связанные документы (references)
+
+- `OrchestratorKit/_archive/2026-07/TZ-{202.A.1,202.B.1,210,210.A,211,220.A,220.B,220.C}.superseded.md` — исходные спецификации (full text)
+- `docs/architecture-audit-2026-07.md` — audit-output driving the SUPERSEDED batch
+- `docs/data-model-audit.md` — TZ-202.* первоисточник
+- `OrchestratorKit/STATUS.md` — batch summary row (при создании)
+- `progress.md` (next entry) — final closure disclosure
+
+---
+
+**Преемник:** TBD (либо inline sub-task completion, либо TZ-231..238 split).
+
+**Disposition если user declines full execution:**
+- Optional graceful close: archive `tasks/TZ-230.md` как SUPERSEDED with explicit "user-deferred, go-to-portfolio-backlog" forwarder. No pressure.

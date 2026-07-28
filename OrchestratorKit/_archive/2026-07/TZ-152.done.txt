@@ -1,0 +1,65 @@
+# TZ-152: Unit-тесты для критических страниц (batch 1)
+
+**Priority**: CRITICAL  
+**Dependencies**: —  
+**Estimate**: 6-8h
+
+## Проблема
+
+Из 30+ страниц только единицы имеют тесты. Критические бизнес-страницы без покрытия:
+
+| Страница | Компонент | Файл | Риск |
+|----------|-----------|------|------|
+| Orders | `orders.page.ts` | `pages/orders/` | Высокий |
+| Contracts | `contracts.page.ts` | `pages/contracts/` | Высокий |
+| Organizations | `organizations.page.ts` | `pages/organizations/` | Высокий |
+| Stock Movements | `stock-movements.page.ts` | `pages/inventory/` | Средний |
+| Storage Items | `storage-items.page.ts` | `pages/inventory/` | Средний |
+| Builder | `builder.page.ts` | `pages/doc-constructor/builder/` | Средний |
+| Modules | `modules.page.ts` | `pages/modules/` | Средний |
+| Work Types | `work-types.page.ts` | `pages/work-types/` | Средний |
+| Templates | `templates.page.ts` | `pages/doc-constructor/templates/` | Низкий |
+| Tables | `tables.page.ts` | `pages/doc-constructor/tables/` | Низкий |
+
+## Требования
+
+1. **Тесты для TOP-5 страниц** (Orders, Contracts, Organizations, StockMovements, StorageItems):
+   - Компонент создаётся с `TestBed.createComponent`
+   - Проверка заголовка/таблицы/списка
+   - Проверка loading state (скелетон)
+   - Проверка empty state
+   - Проверка error state (через httpResource mock)
+   - Проверка пагинации (onPageChange)
+   - Проверка открытия диалога создания
+
+2. **Service тесты** для всех сервисов этих страниц:
+   - Проверка CRUD методов
+   - Проверка error handling (SilentResult)
+   - Mock HttpClient через HttpTestingController
+
+3. **Обновить** `jest.config.js` — убедиться, что coverage thresholds включены:
+   ```js
+   coverageThreshold: {
+     global: {
+       branches: 60,
+       functions: 60,
+       lines: 60,
+       statements: 60,
+     },
+   }
+   ```
+
+4. **Добавить** скрипт `test:coverage` в `package.json`
+
+## Acceptance Criteria
+
+- [ ] 10 новых spec файлов созданы
+- [ ] `pnpm run test` проходит зелёным
+- [ ] Каждый тест покрывает: happy path, loading, error, empty
+- [ ] Coverage > 60% для каждой страницы
+- [ ] Все service тесты используют HttpTestingController
+
+## TZ References
+
+- TZ-151: CI/CD — автоматический прогон тестов
+- TZ-156: E2E тесты

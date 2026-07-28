@@ -1,0 +1,48 @@
+# TZ-158: Performance Budgets — bundle analyzer + component budgets
+
+**Priority**: MEDIUM  
+**Dependencies**: TZ-151 (CI/CD)  
+**Estimate**: 2-3h
+
+## Проблема
+
+Есть только `initial` budget (1.5MB warning / 3MB error). Нет:
+- `anyComponentStyle` budgets для всех компонентов
+- Bundle analyzer отчёта
+- Гоняться за размером бандла можно только вручную
+
+## Требования
+
+1. **Добавить** в `angular.json` budgets:
+   ```json
+   {
+     "type": "anyComponentStyle",
+     "maximumWarning": "8kB",
+     "maximumError": "16kB"
+   },
+   {
+     "type": "anyScript",
+     "maximumWarning": "50kB",
+     "maximumError": "100kB"
+   }
+   ```
+2. **Установить** `source-map-explorer` или `webpack-bundle-analyzer`:
+   - Добавить скрипт `"analyze": "ng build --stats-json && source-map-explorer dist/**/*.js"`
+3. **Проверить** размер lazy-loaded chunks:
+   - Самые большие страницы (builder, doc-constructor)
+   - Lucide icons tree-shaking (проверить, что только используемые иконки)
+4. **Оптимизировать** при необходимости:
+   - Разделить builder page на под-chunks
+   - Lazy load диалогов
+
+## Acceptance Criteria
+
+- [ ] `ng build --configuration production` проходит budgets
+- [ ] `source-map-explorer` показывает понятную карту бандла
+- [ ] Самый большой lazy chunk < 200 KB
+- [ ] Lucide иконки tree-shaken (только используемые)
+
+## TZ References
+
+- TZ-151: CI/CD (прогон в CI)
+- TZ-161: Lighthouse CI

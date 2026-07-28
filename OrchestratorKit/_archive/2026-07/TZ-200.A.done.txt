@@ -1,0 +1,73 @@
+TZ-200.A\n: ✓ Layer 0 verify-only DONE (orphan-каталоги не существуют per DIAGNOSTIC OVERRIDE 2026-07-25)
+
+# TZ-200.A — SupplierOrder ⇄ PurchaseOrder canonical cleanup (split из TZ-200)
+
+**Дата:** 2026-07-25
+**Тип:** Data-model consolidation (split из original TZ-200 per code-reviewer verdict for finer granularity)
+**Priority:** 🟠 HIGH
+**Status:** ⏳ READY
+**Layer:** 0 (Doc-only — verify-only)
+**Agent Role:** Backend data-model engineer
+**Estimated complexity:** S (<1 day)
+
+## 1. Контекст
+
+Per code-reviewer verdict on `tasks/TZ-200.md`: split PurchaseOrder part out into single-purpose TZ-200.A. Audit §1.1 #4 identifies `PurchaseOrder` ⇄ `SupplierOrder` conceptual duplicate, but actual code shows only `purchase-order/` module exists (no `supplier-order/` directory). Real work is documentation cleanup + verify-canonical-naming.
+
+## 2. Проблема
+
+Audit references obsolete schemas (`SupplierOrder`) not present in actual code. Documentation cross-references outdated terminology. Risk of future devs searching for `SupplierOrder` and finding misleading audit comments.
+
+## 3. Файлы
+
+### Files to verify (read-only)
+- `backend/src/modules/purchase-order/purchase-order.schema.ts`
+- `backend/src/modules/purchase-order/purchase-order.service.ts`
+- `backend/src/modules/purchase-request/purchase-request.schema.ts`
+- `backend/src/modules/purchase-request/purchase-request.service.ts`
+
+### Files to update (audit-doc only)
+- `docs/data-model-audit.md` (§1.1 #4 mark DONE)
+- `docs/data-model.md` (cross-ref cleanup)
+
+### Files NOT to touch
+- `backend/src/modules/purchase-order/*` (canonical, untouched)
+- `backend/src/modules/purchase-request/*` (canonical, untouched)
+- `backend/src/modules/invoice/*` (separate concern, TZ-200.B territory)
+- Mongoose collections `purchaseorders`, `purchaserequests`
+
+## 4. Action Steps
+
+1. Verify-canonical: `grep -rn "supplierOrgId\|expectedDate\|SupplierOrder" backend/src/` returns 0 (except audit-doc references).
+2. Verify `purchase-order.schema.ts` JSDoc clearly states canonical naming vs legacy aliases.
+3. Update `docs/data-model-audit.md`: §1.1 #4 status → **DONE (was conceptual duplicate; resolved at file-system level — only `purchase-order/` exists)**.
+4. Update `docs/data-model.md`: remove any mentions of "SupplierOrder" schema module.
+
+## 5. Acceptance Criteria
+
+1. `grep -rn "SupplierOrder" backend/src/` returns 0 hits.
+2. `docs/data-model-audit.md` §1.1 #4 row shows **DONE 2026-07-25 (TZ-200.A)**.
+3. `pnpm exec tsc --noEmit` exit 0 в backend (changes are docs-only, sanity check).
+
+## 6. Cross-references
+
+- **Split из:** TZ-200 (initial draft) per code-reviewer verdict.
+- **Упомянуто в:** `docs/data-model-audit.md` §1.1 #4 + §8.1 Priority 1 #1.6.
+
+## 7. Out of Scope
+
+- Rpp/RppEntry cleanup (TZ-200.B).
+- WorkOrderOperation (TZ-200.C candidate if needed).
+- New entities (WarehouseAccess, Etc — separate TZs).
+
+## 8. Finalization
+
+TZF-00 standard flow. Lock: `.mimocode/locks/TZ-200.A-purchase-order-cleanup.lock`.
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER
+═══════════════════════════════════════════════════════════════
+outcome: DONE
+closed_at: 2026-07-25
+closed_by: 
+next_steps: —

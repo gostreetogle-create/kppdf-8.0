@@ -14,6 +14,7 @@
     "test:watch": "jest --config jest.config.js --watch",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
+    "lint:rules": "node eslint/rules/no-raw-http-in-components.spec.js && node eslint/rules/no-implements-oninit-in-pages.spec.js",
     "format": "prettier --write \"src/**/*.{ts,html,scss,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,html,scss,css}\"",
     "analyze": "ng build --configuration=analyze && source-map-explorer dist/kppdf-frontend/**/*.js",

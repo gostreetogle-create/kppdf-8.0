@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
+import { HttpErrorResponse, httpResource } from '@angular/common/http';
 import {
   Subject,
   catchError,
@@ -41,7 +41,6 @@ import { TemplateBlocksService } from '../../../shared/services/pi-template-bloc
 import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
 import { TextBlocksService } from '../../../shared/services/pi-text-blocks.service';
 import { TableTemplatesService } from '../../../shared/services/pi-table-templates.service';
-import { API_BASE_URL } from '../../../core/api.tokens';
 import { extractErrorMessage, SilentResult } from '../../../core/silent-http';
 import {
   blockKey,
@@ -63,6 +62,8 @@ import {
 import type { AddBlockPayload } from './builder.types';
 import { BuilderCanvasComponent } from './builder-canvas.component';
 import { BuilderInspectorComponent } from './builder-inspector.component';
+import { OrganizationsService } from '../../../shared/services/organizations.service';
+import { DocTypesService } from '../../../shared/services/doc-types.service';
 
 /**
  * Полная документация страницы: docs/pages/builder.page.md
@@ -636,10 +637,10 @@ export class BuilderPage {
   // DI
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly http = inject(HttpClient);
-  private readonly baseUrl = inject(API_BASE_URL);
   private readonly blocksSvc = inject(TemplateBlocksService);
   private readonly templatesSvc = inject(DocumentTemplatesService);
+  private readonly orgSvc = inject(OrganizationsService);
+  private readonly docTypeSvc = inject(DocTypesService);
   private readonly textBlocksSvc = inject(TextBlocksService);
   private readonly tableTemplatesSvc = inject(TableTemplatesService);
   private readonly toast = inject(PiToastService);
@@ -1206,10 +1207,15 @@ export class BuilderPage {
     });
     onDialogCloseOnce(ref, this.injector, (result) => {
       if (!result) return;
-      this.http
-        .post<DocumentTemplate>(`${this.baseUrl}/document-templates/${t._id}/duplicate`, {})
+      this.templatesSvc
+        .duplicate(t._id)
         .subscribe({
-          next: (copy) => {
+          next: (res) => {
+            if (!res.ok) {
+              this.toast.error(extractErrorMessage(res.error));
+              return;
+            }
+            const copy = res.data;
             // Apply chosen format/orientation to the duplicate
             this.templatesSvc
               .update(copy._id, {
@@ -1588,16 +1594,21 @@ export class BuilderPage {
     onDialogCloseOnce(ref, this.injector, (result) => {
       if (!result) return;
       this.isCreating.set(true);
-      const org$ = this.http.get<{ items: { _id: string }[] }>(
-        `${this.baseUrl}/organizations?limit=1`,
-      );
-      const dt$ = this.http.get<{ _id: string }[]>(`${this.baseUrl}/doc-types`);
-      forkJoin([org$, dt$])
+      forkJoin({
+        orgs: this.orgSvc.list({ page: 1, limit: 1 }),
+        docTypes: this.docTypeSvc.list(),
+      })
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
-          next: ([orgRes, dtRes]) => {
-            const orgId = orgRes?.items?.[0]?._id;
-            const docTypeId = dtRes?.[0]?._id;
+          next: (results) => {
+            const orgs = results.orgs;
+            const docTypes = results.docTypes;
+            const orgId =
+              orgs.ok && orgs.data.items.length > 0 ? orgs.data.items[0]._id : undefined;
+            const docTypeId =
+              docTypes.ok && docTypes.data.items.length > 0
+                ? docTypes.data.items[0]._id
+                : undefined;
             if (!orgId || !docTypeId) {
               this.toast.error('Не найдены организация или тип документа. Сначала создайте их.');
               this.isCreating.set(false);
@@ -1605,7 +1616,7 @@ export class BuilderPage {
             }
             this.doCreateTemplate(orgId, docTypeId, result);
           },
-          error: (err) => {
+          error: (err: HttpErrorResponse) => {
             this.isCreating.set(false);
             this.toast.error('Ошибка загрузки: ' + extractErrorMessage(err));
           },

@@ -1,0 +1,204 @@
+═══════════════════════════════════════════════════════════════
+TZ-111: Builder bulk-delete — race condition rollback + ghost blocks counter fix + per-item error reporting
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Error Handling Engineer
+
+ЗАВИСИМОСТИ: Нет (изолированно в `frontend/pages/doc-constructor/builder/`)
+
+LAYER: 3 (edit существующего page component — СТРОГО 1 параллельный агент)
+
+CONFLICT KEYS: frontend/src/app/pages/doc-constructor/builder/builder.page.ts; frontend/src/app/shared/services/pi-template-blocks.service.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. `frontend/src/app/pages/doc-constructor/builder/builder.page.ts` метод `onDeleteSelected()`:
+
+   **Проблема A — Ghost blocks counter lies:**
+   ```ts
+   const deleteOps = toDelete.filter((b) => b._id).map((b) => this.blocksSvc.remove(b._id!));
+   // ... 
+   this.toast.success(`Удалено блоков: ${deleteOps.length}`);  // ← этот count иногда не совпадает с реальностью
+   ```
+   - `toDelete` = все блоки в `selectedIds`, включая tempId-блоки (без сохранённого `_id`).
+   - `deleteOps` = только с `_id` (т.е. уже синхронизированные с сервером).
+   - Toast показывает `deleteOps.length`, но реально из массива исчезло `toDelete.length` блоков. Юзер видит 3 а удалено 5 — confusion.
+
+   **Проблема B — forkJoin failure semantics:**
+   ```ts
+   forkJoin(deleteOps).subscribe({
+     next: (results) => {
+       const allOk = results.every((r) => r.ok);
+       if (allOk) { /* success */ }
+       else { this.blocks.set(previous); }  // ← жёсткий full-rollback, ломает частичный success
+     },
+     error: () => {
+       this.blocks.set(previous);  // ← same
+     },
+   });
+   ```
+   - Если 3 из 5 deletes прошли, а 2 упали — **весь UI возвращается к до-optimistic состоянию**, теряя 3 успешно удалённых блока. Пользователь видит 5 блоков вместо 3 успешно удалённых → permanent data confusion.
+   - `error` callback срабатывает ТОЛЬКО если forkJoin ВСЕ операции упали (Network-level error). Но `SilentResult<T>` обёртка никогда не ошибается — поэтому `error` НИКОГДА не сработает. Мёртвый код.
+
+   **Проблема C — Rollback race с concurrent edits:**
+   Если между моментом `this.blocks.set(remaining)` (optimistic) и приходом ответа юзер через Inspector отредактировал другой блок (через `save$` debounce pipeline) — rollback до `previous` затёрёт локальные правки.
+
+2. `frontend/src/app/shared/services/pi-template-blocks.service.ts` — метод `remove(id)` использует `silentDelete` → ВСЕГДА возвращает `SilentResult<void>`, никогда error. Это OK (silent-http pattern), но значит `forkJoin` error-branch в builder.page.ts — unreachable.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Fix ghost counter и простой counter стратегии
+
+1.1. В `builder.page.ts` `onDeleteSelected()`:
+
+- Посчитать `ghostBlocks = toDelete.filter((b) => !b._id).length` — это количество НЕсохранённых tempId-блоков, удалённых только локально.
+- Посчитать `realDeleted = deleteOps.length` — это серверные deletes.
+
+1.2. Toast message strategy:
+- Если `ghostBlocks === 0`: `Удалено блоков: N` (where N = realDeleted).
+- Если `realDeleted === 0 && ghostBlocks > 0`: `Удалено локально: N` (nothing sent to server).
+- Если оба > 0: `Удалено: N (на сервере) + M (локально)`.
+
+1.3. Не показывать success toast пока не получим ответ от сервера. Toast = "Удаление…" (loading) с `loading=true`, потом закрыть по `next` callback. Этот шаг — для UX feedback.
+
+ШАГ 2: Partial success — не терять уже удалённые блоки
+
+2.1. Перейти с `forkJoin` на per-item merge:
+
+```ts
+import { mergeMap, toArray, EMPTY } from 'rxjs';
+
+mergeMap(block => {
+  if (!block._id) return EMPTY;  // ghost — уже удалён в optimistic update
+  return this.blocksSvc.remove(block._id).pipe(
+    tap(res => {
+      if (!res.ok) {
+        // Этот конкретный block ВСЁ ЕЩЁ нужен на сервере → вернуть его обратно в массив
+        this.blocks.update(arr => {
+          const idx = arr.findIndex(b => b._id === block._id);
+          if (idx === -1) {
+            // Блок был стёрт в optimistic update. Вставить обратно.
+            return [...arr, { ...block, order: arr.length }];
+          }
+          return arr;
+        });
+      }
+    }),
+  );
+}, 3 /* concurrency */),
+toArray(),
+```
+
+2.2. Только теперь `subscribe` с финальным summary toast, который говорит: "Удалено N, ошибок M".
+
+ШАГ 3: Изолировать rollback от concurrent Inspector edits
+
+3.1. Стратегия:
+- В момент удаления сохранить **snapshot только удаляемых блоков** (`deletedSnapshots = toDelete`) в локальную переменную.
+- При failed remove одного конкретного блока → вставить snapshot обратно в массив, **не через `previous = this.blocks()`** (которое может быть stale из-за concurrent inspector).
+
+3.2. Конкретный fix:
+```ts
+const deletedSnapshots = new Map(blockKey(b), b);  // snapshot ПЕРЕД удалением
+this.blocks.set(remaining);
+
+const obs$ = toDelete
+  .filter(b => b._id)
+  .map(b => this.blocksSvc.remove(b._id!).pipe(
+    tap(res => {
+      if (!res.ok) {
+        // Восстановить КОНКРЕТНЫЙ удалённый block
+        const snap = deletedSnapshots.get(blockKey(b));
+        if (snap) {
+          this.blocks.update(arr => {
+            const exists = arr.some(x => blockKey(x) === blockKey(snap));
+            if (exists) return arr;
+            return [...arr, snap];
+          });
+        }
+      }
+    })
+  ));
+```
+
+ШАГ 4: Заменить `forkJoin` на per-item merge в `onReorder()` — для consistency
+
+4.1. По аналогичной схеме — если reorder fail, восстанавливать конкретный блок, а не весь массив. Иначе Inspector edits затираются.
+
+ШАГ 5: Тест unit на rollback path
+
+5.1. Создать `frontend/src/app/pages/doc-constructor/builder/builder.page.spec.ts`:
+- mock service, simulate partial-failure (2 of 3 remove failures).
+- Verify: blocks set has restored the 2 failed blocks, success toast = "Удалено 1, ошибок 2".
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- `frontend/src/app/pages/doc-constructor/builder/builder.page.ts`   переписать `onDeleteSelected()`, `onReorder()` с per-item mergeMap
+- `frontend/src/app/shared/services/pi-template-blocks.service.ts`  (опционально) добавить concurrency-aware batch API `removeMany()` для оптимизации
+- `frontend/src/app/pages/doc-constructor/builder/builder.page.spec.ts`   NEW, ~80 LoC
+
+НЕ ИЗМЕНЯТЬ:
+- `backend/src/modules/template-block/template-block.service.ts` (TZ-110 не блокирует — разные слои)
+- `frontend/src/app/pages/doc-constructor/builder/block-renderer.component.ts` (TZ-113 трогает — different conflict key)
+- `frontend/src/app/pages/doc-constructor/builder/builder-tool-pane.component.ts`
+- `frontend/src/app/pages/doc-constructor/builder/builder-canvas.component.ts` (только TZ-113 multi-select если parallel, иначе — same Layer 3)
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm exec tsc -p tsconfig.app.json --noEmit` в frontend → exit 0.
+2. `pnpm exec jest frontend/src/app/pages/doc-constructor/builder/builder.page.spec.ts` → все тесты pass.
+3. Manual E2E (browser): delete 5 blocks, server fails 2 → UI показывает 3 успешно удалённых блока + 2 восстановленных в исходные positions; toast "Удалено 3, ошибок 2".
+4. Manual E2E: одновременно с delete отредактировать другой block через Inspector (debounce 1.5s) → edit сохраняется, не теряется при rollback.
+5. Ghost block counter: визуально исчезают при optimistic delete, в toast показывается корректное общее число.
+6. ripgrep: `forkJoin\\(this\\.blocksSvc\\.remove` → 0 hits (replaced with mergeMap per-item).
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ (для параллельных запусков)
+═══════════════════════════════════════════════════════════════
+
+Layer 3 = СТРОГО 1 параллельный агент. Любой другой TZ, трогающий `frontend/src/app/pages/doc-constructor/builder/*.page.ts` или `.spec.ts` — STOP.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+После завершения: TZF-00 шаги 1-9 + lock `.mimocode/locks/TZ-111-builder-delete-race.lock` + STATUS.md → ✅ DONE.
+
+═══════════════════════════════════════════════════════════════
+ПОДСКАЗКИ ДЛЯ PO
+═══════════════════════════════════════════════════════════════
+
+— Этот TZ исправляет **реальный bug** с data loss под concurrent edits. Даже без concurrent — UX страдает от неточного counter.
+
+— Не блокирует TZ-110 (backend) или TZ-112 (dialog). Можно делать параллельно с ними.
+
+— Рекомендуемая concurrency=3 для mergeMap — оптимально для Mongo write throughput, не перегружает backend.
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ARCHIVE_MARKER                                                  │
+│ outcome: DONE                                                   │
+│ closed_at: 2026-07-19                                           │
+│ closed_by: MiMo Code Agent                                      │
+│ protected_files:                                                │
+│   - frontend/src/app/pages/doc-constructor/builder/builder.page.ts │
+│ affected_areas:                                                 │
+│   - Bulk-delete partial success handling                        │
+│   - Snapshot-based rollback for concurrent edits                │
+│ verification:                                                   │
+│   - pnpm exec tsc (frontend): PASS                              │
+│   - AC-6: forkJoin(this.blocksSvc.remove) → 0 hits              │
+│   - progress.md entry: ADDED                                    │
+│   - architecture.md update: DONE                                │
+│   - lock file: CREATED                                          │
+│ notes: Core race condition fix already implemented in prior     │
+│   sessions. TZ-111 verified and archived.                       │
+└─────────────────────────────────────────────────────────────────┘

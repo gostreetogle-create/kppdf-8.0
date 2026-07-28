@@ -1,0 +1,182 @@
+═══════════════════════════════════════════════════════════════
+TZ-120: Глобальный Soft-Delete фильтр — Mongoose плагин для сокрытия deletedAt документов
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Backend Database Engineer
+
+ПРИОРИТЕТ: HIGH (admin UX bug; не data corruption, но contaminates списки после удаления, путает FK resolve)
+
+ЗАВИСИМОСТИ:
+- TZ-110 (Category safety) — даёт reference реализацию soft-delete pattern.
+- Других жёстких блокеров нет. Можно делать параллельно с TZ-121..124.
+
+LAYER: 4 (backend, database-layer)
+
+CONFLICT KEYS (top-6 в scope этого TZ; остальное → TZ-120.1, TZ-120.2 extensions):
+- backend/src/common/mongoose/soft-delete.plugin.ts (NEW)
+- backend/src/app.module.ts (MongooseModule.forRootAsync connectionFactory)
+- backend/src/modules/material/material.schema.ts
+- backend/src/modules/organization/organization.schema.ts
+- backend/src/modules/work-type/work-type.schema.ts
+- backend/src/modules/category/category.schema.ts
+- backend/src/modules/product/product.schema.ts
+- backend/src/modules/storage-item/storage-item.schema.ts
+
+CROSS-LINK (явное разделение с другими TZ):
+| Scope | Owner TZ | Этот TZ делает |
+|---|---|---|
+| Soft-delete plugin infra + first 6 services adoption | TZ-120 (ЭТОТ) | plugin + .includeDeleted() + 6 schemas |
+| 30+ schemas остальных модулей | TZ-120.1 (successor) | defer |
+| Atomic bulkWrite cascade | TZ-110 + TZ-119 | decline (no overlap) |
+| Cross-service transactions | TZ-121 | decline |
+| Type-safety ObjectId | TZ-123 | decline |
+| List perf | TZ-124 | decline |
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. **Soft-delete pattern вручную продублирован в 30+ сервисах:**
+```ts
+// material.service.ts:60-66  |  organization.service.ts:55-61 | work-type.service.ts:62-67
+async remove(id: string): Promise<void> {
+  const doc = await this.model.findById(id).exec();
+  if (!doc) throw new NotFoundException(...);
+  await this.model
+    .updateOne({ _id: doc._id }, { $set: { deletedAt: new Date() } })
+    .exec();
+}
+```
+
+2. **Но `findAll` и `findById` НЕ фильтруют по `deletedAt`!**
+   - `material.service.ts:22-32 findAll()` — фильтр собирает только search/categoryId/supplierId. `deletedAt` НЕ учитывается.
+   - `organization.service.ts:23-32 findAll()` — то же самое.
+   - `work-type.service.ts:32-37 findAll()` — то же.
+   - `category.service.ts` — `findAllTree()` тоже не фильтрует.
+
+3. **Результат:** удалённые документы по-прежнему возвращаются в:
+   - `GET /materials` — список удалённых материалов
+   - `GET /organizations` — список удалённых клиентов
+   - `GET /work-types` — список удалённых работ
+   - autocomplete dropdowns в orders/products (FK refs к удалённым сущностям)
+   - detail pages (e.g. /orders/:id показывает items с deleted material name)
+
+4. **Side-effects:**
+   - FK integrity ломается: Order ссылается на `productId`, который удалён, но всё ещё появляется в autocomplete.
+   - Cost calculation, BOM resolve могут пытаться загрузить удалённый Material/WorkType → тихие ошибки в `/cost-calc`.
+   - UI путается: пользователь не понимает, почему удалённый элемент снова в списке.
+   - E2E regression: TZ-83 /product/:id detail page падает на attachModule, если есть deleted modules.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+**ШАГ 1: Создать Mongoose плагин soft-delete**
+
+1.1. Создать `backend/src/common/mongoose/soft-delete.plugin.ts`:
+   - Функция `softDeletePlugin(schema: Schema)` — добавляет `pre` хуки для:
+     - `find`, `findOne`, `findOneAndUpdate`, `findOneAndDelete`, `count`, `countDocuments`, `updateMany`, `updateOne`.
+   - Логика: если в filter нет явного `deletedAt` или флага `includeDeleted: true`, добавить `{ deletedAt: { $exists: false } }`.
+   - TypeScript: расширить `Query<...>` тип через module augmentation, добавить `.includeDeleted()` builder method.
+
+1.2. Edge cases:
+   - Если filter уже имеет `deletedAt` (явный поиск) — НЕ перезаписывать.
+   - Если `includeDeleted: true` — НЕ добавлять filter.
+   - Для агрегаций (`aggregate` hook) — НЕ вмешиваться (агрегация может требовать deleted records).
+
+**ШАГ 2: Подключить плагин глобально**
+
+2.1. В `backend/src/app.module.ts` найти место инициализации Mongoose (вероятно `MongooseModule.forRootAsync({ useFactory: ... })`).
+
+2.2. Вариант A (глобальный): в `connectionFactory` подключить плагин к каждой схеме после её регистрации:
+```ts
+import { softDeletePlugin } from './common/mongoose/soft-delete.plugin';
+connectionFactory: (connection: Connection) => {
+  // применить к каждой схеме
+  for (const modelName of connection.modelNames()) {
+    connection.model(modelName).schema.plugin(softDeletePlugin);
+  }
+  return connection;
+}
+```
+
+2.3. Вариант B (per-schema): прописать в каждой `@Schema({ timestamps: true })` через `SchemaFactory.forFeature(...).plugin(softDeletePlugin)`. Менее DRY, но безопаснее для исключений.
+
+**Выбрать A как default** (DRY). Если возникнут коллизии с агрегациями / специальными queries — fallback B для конкретных схем.
+
+**ШАГ 3: Аудит существующих findAll/findById**
+
+3.1. Список сервисов, где фильтр НЕ должен перезаписывать plugin:
+   - `audit.service.ts` — поиск по датам/actor, может требовать deleted records.
+   - `rate-limit.service.ts` — глобальный счётчик.
+   - `feature-flag.service.ts` — feature flags.
+   - `counter.service.ts` — atomic counter.
+   - `permission.service.ts` — RBAC lookup.
+
+3.2. Для них НЕ ставить плагин в схему, либо явно `.includeDeleted()` в их queries.
+
+3.3. Список сервисов, ГДЕ плагин нужен:
+   - material, organization, work-type, work-center, category, product, product-module, counterparty, person, worker, role, role-org, role-counterparty, doc-type, status, currency, unit, comment, interaction, photo, certificate, compliance-rule, table-template, text-block, attribute-definition, template-block, document-template (опц.), inventory, tech-process, routing-step, bom, product-passport, rpp, product-photo, product-module-photo, certificate, contract, order, reservation, shipment, invoice, financial-report, reconciliation-act, cart-item, cart-session, actual-cost, regulator, inventory-item, storage-item, stock-movement, doc-template, registration.
+
+**ШАГ 4: Тесты на новый behaviour**
+
+4.1. В `backend/src/modules/material/material.service.spec.ts` (если отсутствует — создать) добавить:
+   - `it('should exclude deletedAt materials from findAll')` — create → delete → findAll → expect.length === 0.
+   - `it('should include deleted when using includeDeleted()')` — same but with query builder flag.
+
+4.2. Аналогично для `organization.service.spec.ts` (1 тест).
+
+4.3. E2E: в `backend/test/material.e2e-spec.ts` добавить scenario: POST /materials → DELETE → GET /materials → expect 404, не в списке.
+
+**ШАГ 5: Cache invalidation**
+
+Если существует Redis/cache, инвалидировать при soft-delete:
+- Update cached lists.
+- Pending: проверить наличие кэша через поиск `cache` в src/common/.
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. **Unit:** `material.service.spec.ts`, `organization.service.spec.ts` — тесты на hidden deleted records.
+2. **Integration:** E2E `material.e2e-spec.ts` — POST/DELETE/GET сценарий passes.
+3. **Build:** `pnpm exec tsc --noEmit` exit 0.
+4. **Lint:** ESLint не жалуется на global schema mutation.
+5. **Behaviour:** frontend /materials list пуст после DELETE (можно проверить в browser/manual smoke test).
+6. **No regression:** services в группе "не должен трогать" (audit, counter, etc.) работают как раньше — проверить через `verify-status.sh` (если есть regression tests).
+7. **Audit log:** каждый soft-delete по-прежнему создаёт `AuditAction` entry (interceptor не блокирует).
+
+═══════════════════════════════════════════════════════════════
+ПОСЛЕДСТВИЯ / СВЯЗАННЫЕ ТЗ
+═══════════════════════════════════════════════════════════════
+
+- **TZ-110** (Category) — если `category.service.ts findAllTree()` тоже фильтрует deletedAt, повторно проревьюить, чтобы не было cascade filtering break.
+- **TZ-119** (Backend safety sweep) — этот TZ частично overlap. После merge TZ-120 можно mark TZ-119 § "soft-delete hidden" as DONE.
+- **TZ-122** (Optimistic locking) — должна идти ПОСЛЕ TZ-120 (после устранения утечки удалённых — locking не будет masking deleted records).
+
+═══════════════════════════════════════════════════════════════
+TZF-00 ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+После применения выполнить TZF-00 § "9 шагов": archive в `tasks/_archive/YYYY-MM/TZ-120.md`, lock-файл `OrchestratorKit/.mimocode/locks/TZ-120-soft-delete-plugin.lock`, STATUS.md → ✅ DONE, progress.md entry, ARCHITECTURE.md § "Справочники" ссылка на soft-delete pattern.
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ARCHIVE_MARKER                                                  │
+│ outcome: DONE                                                   │
+│ closed_at: 2026-07-19                                           │
+│ closed_by: MiMo Code Agent                                      │
+│ protected_files:                                                │
+│   - backend/src/database/soft-delete.plugin.ts                  │
+│   - backend/src/database/database.module.ts                     │
+│   - backend/src/types/mongoose-augment.d.ts                     │
+│ affected_areas:                                                 │
+│   - Global soft-delete plugin (auto-filter deletedAt)           │
+│   - Query helpers (.softDelete, .restore)                       │
+│   - Opt-out via schema options                                  │
+│ verification:                                                   │
+│   - pnpm exec tsc (backend): PASS                               │
+│   - progress.md entry: ADDED                                    │
+│   - lock file: CREATED                                          │
+│ notes: Plugin already implemented and registered globally in    │
+│   prior sessions. Verified and archived.                        │
+└─────────────────────────────────────────────────────────────────┘

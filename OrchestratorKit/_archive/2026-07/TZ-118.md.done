@@ -1,0 +1,220 @@
+═══════════════════════════════════════════════════════════════
+TZ-118: Cross-page Type Safety — dialog guards + PiErrorBanner extraction + empty-route guards
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Error Handling Engineer + Frontend Component Engineer
+
+ЗАВИСИМОСТИ:
+- **TZ-115** (inventory error toast) — сек часть. Sequencing: TZ-115 → TZ-118 если стартованы оба; конкурентно не трогать inventory/* одновременно.
+- **TZ-117** (Toolbar Reload button) — TZ-115 → TZ-118 может идти параллельно с TZ-117 если разные files edit; banner adoption — независимо от Reload button.
+- **TZ-105.3 (ErrorBannerComponent extraction)** — **explicit coordination** per STATUS.md:
+  1. Если TZ-105.3 является за réserve ✓ DONE — этот TZ defer ШАГ 1 (banner adoption отдельно в TZ-105.3сplay).
+  2. Если TZ-105.3 ¤ IN WORK — **WAIT** для merge. Renames вероятны.
+  3. Если TZ-105.3 не стартовал — этот TZ включает PiErrorBanner создание, update progress.md: «supersedes TZ-105.3 §3.3».
+  4. **Conflict prevention:** если ТZ-105.3 еще не делает banner extract — этот TZ его делает.
+  5. Альяссинг: предполагаемый `app-pi-error-banner`. Если ТZ-105.3 делает `app-ui-error-banner` — конфликт. Координация required.
+
+LAYER: **MIXED 2 + 3** (reviewer fix): ШАГ 1 (PiErrorBanner creation) = **Layer 2**. ШАГ 2 (onDialogCloseOnce type) + ШАГ 3 (route guard) = **Layer 3**. План: ШАГ 1 первым (Layer 2 solo), ШАГИ 2-3 последовательно с TZ-117.
+
+
+CONFLICT KEYS: frontend/src/app/shared/ui/error-banner/pi-error-banner.component.ts (NEW); frontend/src/app/shared/util/on-dialog-close-once.ts; frontend/src/app/pages/products/product-detail.page.ts; frontend/src/app/pages/dictionaries/categories.page.ts; frontend/src/app/pages/work-types/work-types.page.ts
+
+═══════════════════════════════════════════════════════════════
+КРИТИЧНОСТЬ: **HIGH** (reviewer feedback 2026-07-12)
+═══════════════════════════════════════════════════════════════
+
+Дублирование `error-banner` markup в 8+ местах + unhandled callback type narrowing + пустые route 404 — TypeSafety debt который начинает влнять на UX/SCM. Не CRITICAL потому что нет user-facing immediate failure — но длительный debt ухудшает developer experience.
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. **Дублированный error-banner markup** в 8+ list-page templates:
+   ```html
+   @if (error()) {
+     <div role="alert" class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive">
+       {{ error() }}
+     </div>
+   }
+   ```
+   
+   Pages с этим markup: materials/products/contracts/work-types/products-detail/categories/etc — В 8+ местах. **Maintainability risk:** UX-критичная markup нельзя менять через 1 источник правды. Если завтра product решит изменить цвет — 8 файлов надо править.
+
+2. **`shared/util/on-dialog-close-once.ts` callback type:**
+   ```ts
+   onDialogCloseOnce<TResult>(ref, injector, callback: (result: TResult) => void);
+   ```
+   В page-usage: `(confirmed: unknown) => { if (!confirmed) return; ... }`. **Без `=== true` guard** — тип `unknown` остаётся unknown во всём handler. Если handler делает что-то типизированное (например `if (typeof result === 'string')`), он должен вручную добавлять type narrowing каждый раз.
+
+3. **`product-detail.page.ts:75` empty-route 404 fire:**
+   ```ts
+   protected readonly productRes = httpResource<{...}>(() => ({
+     url: `${this.baseUrl}/products/${this.idString()}`,  // /products/ (404) на initialValue
+   }));
+   ```
+   
+   `idString` = `''` initially (paramMap defaults to no `id`). httpResource eagerly fires → 404. **Пользователь видит «404 Not Found»** пока route не зарезолвится. If shared route resolver fix — нет защиты.
+
+4. **`work-types.page.ts:198` `as any` cast в sort accessor:**
+   `(r as any)[k]` — TypeScript escape. Companion к TZ-116 Step 1, но typo здесь specifically.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Extract `<app-pi-error-banner>` shared component
+
+1.1. Создать `frontend/src/app/shared/ui/error-banner/pi-error-banner.component.ts`:
+```ts
+@Component({
+  selector: 'app-pi-error-banner',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    @if (error()) {
+      <div role="alert" class="pi-error-banner">
+        {{ error() }}
+      </div>
+    }
+  `,
+  styles: [`
+    .pi-error-banner {
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--color-rule);
+      border-color: var(--color-destructive);
+      border-radius: 2px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--color-destructive);
+    }
+  `],
+})
+export class PiErrorBannerComponent {
+  readonly error = input<string | null>(null);
+}
+```
+
+1.2. **Adoption:** 8+ pages заменяют inline markup:
+```html
+<!-- BEFORE -->
+@if (error()) {
+  <div role="alert" class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive">
+    {{ error() }}
+  </div>
+}
+
+<!-- AFTER -->
+<app-pi-error-banner [error]="error()" />
+```
+
+1.3. Barrel export: `shared/ui/error-banner/index.ts`.
+
+1.4. **Anti-scope**: TZ-105.3 уже в плане делает похожее. **Если TZ-105.3 был реализован** — не дублировать; coordinate через STATUS.md.
+
+ШАГ 2: Tighten `onDialogCloseOnce` type signature
+
+2.1. `shared/util/on-dialog-close-once.ts`:
+```ts
+// CURRENT
+type Confirmed = unknown;
+
+// NEW: enforces boolean disambiguation
+type ConfirmFn = (confirmed: boolean) => void;
+type ResultFn<TResult> = (result: TResult) => void;
+
+// Overloads:
+onDialogCloseOnce(ref, injector, callback: ConfirmFn, defaultValue?: false): void;
+onDialogCloseOnce<TResult>(ref, injector, callback: ResultFn<TResult>): void;
+```
+
+2.2. Update all page call sites:
+```ts
+// Before:
+onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
+  if (!confirmed) return;
+  // ...
+});
+
+// After:
+onDialogCloseOnce(ref, this.injector, (confirmed: boolean) => {
+  if (!confirmed) return;  // now type is boolean
+  // ...
+});
+```
+
+2.3. Page-level call sites to update: 7+ pages. Mechanical replacement.
+
+ШАГ 3: Guard `product-detail.page.ts` from empty-route fire
+
+3.1. Fix `protected readonly productRes`:
+```ts
+protected readonly productRes = httpResource<...>(() => {
+  const id = this.idString();
+  if (!id || id === 'null') return undefined;  // skip request
+  return { url: `${this.baseUrl}/products/${id}` };
+});
+```
+
+3.2. Add loading indicator for "ID not yet resolved":
+```html
+@if (!idString()) {
+  <p class="text-sm text-muted-foreground">Загрузка идентификатора…</p>
+}
+```
+
+3.3. Apply to **all** detail pages that paramMap-resolve: `module-detail.page.ts`, … (search for `idString() ?? ''` pattern + add guard).
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- 🆕 `frontend/src/app/shared/ui/error-banner/pi-error-banner.component.ts`   NEW component
+- 🆕 `frontend/src/app/shared/ui/error-banner/index.ts`   barrel export
+- `frontend/src/app/shared/util/on-dialog-close-once.ts`   type tightening
+- 7+ `frontend/src/app/pages/*/*.page.ts`   adoption (mechanical replacement)
+- `frontend/src/app/pages/products/product-detail.page.ts`   route guard
+- `frontend/src/app/pages/modules/module-detail.page.ts`   route guard (if same pattern)
+
+НЕ ИЗМЕНЯТЬ:
+- `frontend/src/app/shared/ui/dialog/*` (dialog infrastructure НЕ меняется; только callback type render split)
+- Backend
+- TZ-105.3 territory (если они уже сделали ErrorBanner — не конфликтовать, rename)
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm exec tsc -p tsconfig.app.json --noEmit` → exit 0.
+2. `pnpm exec jest frontend/src/app/shared/ui/error-banner/pi-error-banner.component.spec.ts` (NEW) → pass.
+3. Manual E2E (browser): на `/products/INVALID_ID` теперь НЕ показывается 404 toast «Endpoint not found» сразу. Вместо — «Загрузка идентификатора…» пока paramMap не resolved.
+4. Manual E2E: deleted-material не показывается красный banner в 8+ местах — все используют `<app-pi-error-banner>`.
+5. ripgrep: `class=\"mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive\"` после TZ → **0 hits** (все заменены на компонент).
+6. ripgrep: `(confirmed: unknown)` в `onDialogCloseOnce` callbacks → **0 hits** (заменены на `(confirmed: boolean)`).
+7. IDE TypeScript hints: в `(confirmed: boolean) =>` callback, IDE помогает narrows type для первого branch.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ (для параллельных запусков)
+═══════════════════════════════════════════════════════════════
+
+Layer 2/3 combinatorial — **sequence строго**:
+- Шаг 1 (create component) ДОЛЬШЕ — делать первым.
+- Шаг 2 (callback type) второй — может делать параллельно с Шаг 3.
+- Шаг 3 (route guard) делать вместе с тестом.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+TZF-00 + lock `TZ-118-type-safety.lock` + архивация `_archive/2026-07/TZ-118.done.txt`.
+
+═══════════════════════════════════════════════════════════════
+ПОДСКАЗКИ ДЛЯ PO
+═══════════════════════════════════════════════════════════════
+
+— **Step 1 (PiErrorBanner)** — самый impactful. Влияет на 8+ pages сразу. Перед merge — coordinate с TZ-105.3 если они работают над тем же.
+
+— **Step 2 (callback type)** — механический mechanical replacement. Safe.
+
+— **Step 3 (route guard)** — subtle. Visual test («Загрузка идентификатора...») показывает fine. Если делать — careful с ID 'undefined'/'null' literals (URL `/products/undefined` встречается если route resolver не делает typed narrowing).
+
+— Если TZ-105.3 has higher priority — coordinate, не дублировать.

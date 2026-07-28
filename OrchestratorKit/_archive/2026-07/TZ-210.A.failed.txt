@@ -1,0 +1,11 @@
+TZ-210.A: SUPERSEDED — consolidated into TZ-230 bulk-execution batch (future window). Reason: out-of-scope for current closure tick (cross-cutting DB schema / design-system migration / security sweep / 22 TS errors). Pickup at TZ-230.
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER
+═══════════════════════════════════════════════════════════════
+outcome: FAILED
+closed_at: 2026-07-25
+failure_reason: (см. отчёт агента)
+partial_progress: (что успели)
+next_steps: (successor-TZ с номером, см. TZF-00 §5)
+lock_file_skipped: TRUE

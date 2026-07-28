@@ -65,6 +65,10 @@ export interface TableTemplateListResponse {
 }
 
 export interface TableTemplateListParams {
+  // Wrapper-injected pagination (DefaultListParams shape required by pi-entity-list).
+  // Service.list() ignores these — backend uses its own `?limit/?offset` if at all.
+  page?: number;
+  limit?: number;
   category?: TableTemplateCategory;
   dataSource?: string;
   activeOnly?: boolean;

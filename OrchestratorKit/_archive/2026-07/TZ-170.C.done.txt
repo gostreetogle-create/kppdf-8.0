@@ -1,0 +1,7 @@
+TZ-170.C \u2014 done 2026-07-25
+Successor-TZ: delete orphaned BuilderToolPaneComponent.
+Removed file: frontend/src/app/pages/doc-constructor/builder/builder-tool-pane.component.ts (474 LoC).
+Backup retained: builder-tool-pane.component.ts.deleted-by-TZ-170C-20260725065918 (for audit).
+typecheck FE+BE: PASS (exit 0).
+ESLint: no errors.
+Zero external refs confirmed (grep over frontend/src/ app build/\u2192 result).

@@ -1,0 +1,287 @@
+═══════════════════════════════════════════════════════════════
+TZ-AUDIT-9:  Warm Paper Palette Rebrand
+TZ-AUDIT-9.1: Dark Mode L Bump (perceptual density)
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend / Design System
+
+ЗАВИСИМОСТИ:
+  - TZ-32  (Palette tokens declared via @theme inline)
+  - TZ-33  (.dark mode override pattern via <html class="dark">)
+  - TZ-77  (Theme Editor override pattern — `--color-X-override`)
+  - TZ-AUDIT-8 (Hairline-first borders + secondary text convention)
+
+LAYER: 4   ← design system / tokens
+
+CONFLICT KEYS:
+  - frontend/src/styles.css                                          (palette + .dark + JSDoc)
+  - frontend/src/app/pages/foundations/foundations.page.ts           (palette swatch[] values)
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+**Проблема (от пользователя):** «исправить чёрно-серые цвета, сайт мрачный».
+
+**Pre-TZ-AUDIT-9 палитра (light mode):**
+```css
+--color-paper:       oklch(0.972 0.008 85)   /* bleached, chroma 0.008 */
+--color-paper-2:     oklch(0.925 0.009 80)   /* cold light gray */
+--color-ink:         oklch(0.145 0       0)   /* pure BLACK, zero chroma */
+--color-rule:        oklch(0.85  0.006 80)   /* cold light gray rule */
+--color-muted:       oklch(0.30  0.01  80)   /* cold dark gray */
+--color-muted-foreground: oklch(0.55 0.01 80) /* cold medium gray */
+--color-accent-cool: oklch(0.42  0.18 230)   /* cyan, vibrating on warm base */
+```
+
+**Главные проблемы:**
+1. **Chroma ~0.005-0.01** — слишком desaturated, всё читается холодно/безлико
+2. **Ink = pure neutral black** — режет глаза на тёплом фоне
+3. **Sunrise-палитра** (hue 55-80) существовала, но UI-Kit оставался в B&W → акценты
+   «выскакивали» как чужеродные
+4. **Accent-cool в hue 230 (cyan)** — vibrating complement к тёплой базе
+5. **JSDoc-документация** корректная, но не упоминала WCAG-контраст для muted-foreground
+
+═══════════════════════════════════════════════════════════════
+ЧТО БЫЛО СДЕЛАНО
+═══════════════════════════════════════════════════════════════
+
+**TZ-AUDIT-9 (warm-paper rebrand):**
+
+Все 8 базовых токенов обновлены (light + dark mode):
+- Hue сдвинут с 80/нейтрального на **70 (golden-beige)**
+- Chroma поднята с 0.005-0.01 до **0.015-0.025** (заметная теплота, но НЕ bold)
+- Ink с pure black `oklch(0.145 0 0)` → **deep espresso `oklch(0.180 0.015 70)`**
+- Accent-cool с hue 230 (cyan) → **hue 250 (indigo)** — убрана вибрация
+- Dark mode: cold charcoal + cold white → **warm espresso + warm cream**
+
+**Sunrise-палитра НЕ тронута** — hue 55-80 уже сидит внутри базы hue 70, теперь
+естественно перетекает с базой вместо «выскакивания». Это был ключевой design decision:
+если бы начал трогать sunrise, потерял бы harmony.
+
+**Новые JSDoc-конвенции в styles.css:**
+
+1. **HAIRLINE-FIRST BORDER CONVENTION (TZ-AUDIT-8):**
+   - Все borders 1px через `hairline` utility
+   - Color override через `border-ink` / `border-destructive` (НЕ через толщину)
+   - Запрещены `border-2`, `border-4`, `border-[Npx]`
+   - Verbose `border hairline border-rule` → просто `hairline`
+
+2. **SECONDARY TEXT CONVENTION (TZ-AUDIT-8):**
+   - `text-muted-foreground` для всего secondary text
+   - Старый `text-muted` (darker) зарезервирован для internal utility use (`.eyebrow`)
+   - Bulk migration: 40 instances `text-muted` → `text-muted-foreground` в 27 файлах
+   - 66× `border hairline border-rule` → `hairline` + 13× `border-t hairline border-rule`
+     → `hairline-t` в 34 файлах
+
+3. **WCAG-нота на `--color-muted-foreground`:**
+   - Контраст ~3:1 (passes AA Large only, НЕ AA Standard 4.5:1)
+   - DON'T-list: form labels, required-field markers (`*`), error messages,
+     button text, navigation links, table headers
+   - For required body text — use `text-ink` primary (~12:1)
+
+4. **JSDoc-обновления:**
+   - `HAIRLINE-FIRST BORDER CONVENTION` блок — новая секция
+   - `SECONDARY TEXT CONVENTION` блок — новая секция
+   - Sunrise palette: «Not used in UI-Kit to preserve B&W» — устарело, заменено на
+     «now flows as natural extension of warm base»
+   - `.dark` блок: TZ-33 + TZ-AUDIT-9 + TZ-AUDIT-9.1 layered JSDoc
+   - `--color-muted-foreground` accessibility note (adjacent к токену, не в Sunrise-блоке)
+
+5. **Defensive longhand conversion (cascade safety):**
+   5 utility definitions переписаны с shorthand на longhand, чтобы `border-ink` /
+   `border-destructive` color overrides ВСЕГДА выигрывали в cascade независимо от
+   Tailwind v4 utility ordering:
+   - `hairline` (`border: 1px solid ...` → `border-style/width/color`)
+   - `hairline-t/b/r/l` (тот же паттерн)
+   - `pi-input` (тот же паттерн)
+   - `pi-icon-btn` (тот же паттерн)
+   - `.pi-outline-btn` в @layer components (тот же паттерн)
+
+**TZ-AUDIT-9.1 (dark mode L bump):**
+
+Reviewer заметил: «warm dark colors read perceptually denser than cool dark, so
+the current values may feel heavier than the L number suggests».
+
+- `--color-paper` (dark): L **0.18 → 0.21** (+17%, middle of 0.20-0.22 range)
+- `--color-paper-2` (dark): L **0.24 → 0.27** (+12.5%, middle of 0.26-0.28 range)
+- Hue (70) и chroma (0.015/0.020) UNCHANGED
+- Light mode + все остальные dark tokens UNTOUCHED
+- JSDoc: «higher L gives the surface breathing room»
+
+**Микро-фикс reviewer'а:** JSDoc reference `TZ-AUDIT-9b` → `TZ-AUDIT-9.1`
+(соответствует 2-digit TZ convention файла: TZ-32, TZ-33, TZ-65, TZ-70, TZ-72, TZ-77, TZ-79).
+
+**FoundationsPage swatch values updated** (6 из 8 в `palette[]`):
+- paper, paper-2, ink, rule, muted-fg, accent-cool — value strings обновлены
+- destructive, accent-warm — не менялись (sunset red / warm orange — уже warm)
+- Hairline border demo: 3 variants (rule / ink / destructive) — 2px вариант удалён
+  (всё теперь 1px)
+
+**Visual verification** (browser-use через /kit/* public route prefix):
+- /kit/foundations: 8 swatches + typography + spacing + hairline demos
+- /kit/overview: navigation cards (проверка card-on-background separation)
+- /kit/basics, /kit/forms, /kit/overlays: components coverage
+- /login: auth page
+- **12 screenshots total** (6 страниц × 2 режима) — all clean, no console errors
+- Warm coffee feel confirmed, NOT muddy/toast/sepia
+- Dark mode после L bump — warm espresso с visible card separation (paper-2 vs paper)
+
+═══════════════════════════════════════════════════════════════
+DISCOVERY: /kit/* PUBLIC ROUTE PREFIX
+═══════════════════════════════════════════════════════════════
+
+При попытке верификации protected pages (/materials, /organizations, /dictionaries) обнаружено:
+
+- `app.routes.ts` имеет TWO layout shells: operational site (authGuard) + UI-Kit (NO authGuard)
+- `/kit/*` routes уже public — `/kit/foundations`, `/kit/overview`, `/kit/basics`,
+  `/kit/forms`, `/kit/overlays`, `/kit/navigation` все рендерят те же page components,
+  что и operational site, но в KitLayoutComponent shell
+- Это спасло от необходимости делать 1-line route config change (изначально
+  планировалось убрать `authGuard` с /foundations)
+- Browser-use sandbox не поддерживает Playwright `page.route` для auth bypass,
+  так что /kit/* — единственный путь для visual verification без правки роутинга
+- **Урок:** всегда читай routing полностью перед unilateral route changes
+- **Кейс для будущего:** verification /materials и т.д. требует fix dev proxy
+  (Angular dev server не проксирует `/api/*` на backend :3000)
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ИЗМЕНЁННЫЕ
+═══════════════════════════════════════════════════════════════
+
+**`frontend/src/styles.css`** (основной файл):
+- @theme inline: 7 base tokens (light) + muted-foreground = **8 tokens**
+- .dark: 7 base tokens + muted-foreground + sunrise-5 = **14 tokens**
+- JSDoc добавлены: HAIRLINE-FIRST, SECONDARY TEXT, TZ-AUDIT-9 warm-paper rationale,
+  TZ-AUDIT-9.1 L bump rationale, WCAG notes, Sunrise palette rationale update
+- 5 utility definitions converted to longhand (cascade safety):
+  - `@utility hairline` (shorthand → longhand)
+  - `@utility hairline-t/b/r/l` (тот же паттерн)
+  - `@utility pi-input` (тот же паттерн)
+  - `@utility pi-icon-btn` (тот же паттерн)
+  - `.pi-outline-btn` в @layer components (тот же паттерн)
+
+**`frontend/src/app/pages/foundations/foundations.page.ts`:**
+- `palette[]` array: 6 swatch values обновлены
+- Hairline border demo: 2px variant удалён, добавлен hairline destructive
+
+**Bulk migration (pre-TZ-AUDIT-9, в рамках TZ-AUDIT-8):**
+- 27 files: `text-muted` → `text-muted-foreground` (40 instances)
+- 34 files: `border hairline border-rule` → `hairline` (66 instances)
+- 13 files: `border-t hairline border-rule` → `hairline-t` (13 instances)
+- forms.page.ts: NG8113 fix — removed unused SliderComponent import + orphan priority form control
+
+**НЕ ИЗМЕНЁННЫЕ (явно):**
+- `frontend/tailwind.config.ts` — palette идёт через @theme inline в CSS
+- `Sunrise palette` (sunrise/sunrise-soft/sunrise-warm/sunrise-glow/sunrise-mist)
+- Theme Editor (TZ-77) — использует `--color-X-override` pattern, не конфликтует
+- Любые компоненты shared/ui/* — они используют tokens, не переопределяют
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. ✅ `--color-paper` light = `oklch(0.972 0.015 70)` — warm cream, НЕ bleached
+2. ✅ `--color-ink` light = `oklch(0.180 0.015 70)` — deep espresso, НЕ pure black
+3. ✅ `--color-accent-cool` = `oklch(0.45 0.14 250)` — indigo, НЕ cyan
+4. ✅ `--color-paper` dark = `oklch(0.21 0.015 70)` — warm espresso (TZ-AUDIT-9.1)
+5. ✅ `--color-paper-2` dark = `oklch(0.27 0.020 70)` — warm cream espresso
+6. ✅ Hue 70 consistency across base palette (light + dark)
+7. ✅ Sunrise palette harmonized (hue 55-80 inside base 70) — UNCHANGED
+8. ✅ Hairline-first border convention documented
+9. ✅ Secondary text convention documented + WCAG notes
+10. ✅ FoundationsPage swatches updated (6/8)
+11. ✅ Visual verification: 12 screenshots, no console errors
+12. ✅ Dark mode card-on-background separation visible
+13. ✅ JSDoc reference renamed TZ-AUDIT-9b → TZ-AUDIT-9.1 (file convention)
+14. ✅ 166/166 tests passing, typecheck exit 0, code-reviewer approved (3 review rounds)
+
+═══════════════════════════════════════════════════════════════
+REVIEW ROUNDS
+═══════════════════════════════════════════════════════════════
+
+**Round 1 (TZ-AUDIT-9 initial):**
+- 7 base tokens (light) + 7 base tokens (dark) + 6 FoundationsPage swatches
+- Reviewer flags: 3 MINORs
+  1. Stale Sunrise JSDoc («B&W aesthetic») → **FIXED** (обновлён rationale)
+  2. `text-muted-foreground` WCAG note placement + 3.1:1 too specific → **FIXED**
+     (moved adjacent к токену, softened to «~3:1» + AA Standard threshold)
+  3. Dark mode L=0.18 too dark → **DEFERRED** to TZ-AUDIT-9.1
+
+**Round 2 (TZ-AUDIT-9.1):**
+- 2 L bumps в dark mode
+- JSDoc update с rationale
+- Reviewer flags: 1 MINOR
+  1. TZ-AUDIT-9b naming inconsistent → **FIXED** (renamed to TZ-AUDIT-9.1)
+
+**Round 3 (post-verification):**
+- TZ-AUDIT-9.1 dark mode visual verified — warm coffee + card separation confirmed
+- No further changes needed
+
+═══════════════════════════════════════════════════════════════
+CONFLICT-ЧЕК-ЛИСТ (для параллельных запусков)
+═══════════════════════════════════════════════════════════════
+
+Этот TZ трогает:
+- `frontend/src/styles.css` (palette + JSDoc + 5 utility definitions)
+- `frontend/src/app/pages/foundations/foundations.page.ts` (palette[] values)
+
+НЕ конфликтует с:
+- Tailwind config (`tailwind.config.ts`)
+- Theme Editor (TZ-77)
+- Любые shared/ui/* компоненты
+- Sunrise palette tokens (намеренно UNCHANGED)
+
+Если запущены параллельно другие palette-related таски → DEFER.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+✅ Самопроверка по 14 критериям приёмки — PASS
+✅ 166/166 tests passing
+✅ typecheck exit 0
+✅ 3 review rounds — все MINOR'ы закрыты
+✅ Visual verification: 12 screenshots, no console errors
+✅ ARCHIVE_MARKER оформлен
+✅ Memory: this archive в tasks/_archive/2026-07/
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ARCHIVE_MARKER                                                │
+│ outcome: DONE                                                  │
+│ closed_at: 2026-07-07                                         │
+│ closed_by: Frontend / Design System                            │
+│ protected_files:                                               │
+│   - frontend/src/styles.css                                    │
+│   - frontend/src/app/pages/foundations/foundations.page.ts     │
+│ affected_areas:                                                │
+│   - @theme inline palette: 8 tokens (light)                    │
+│   - .dark palette: 14 tokens (dark)                            │
+│   - JSDoc: HAIRLINE-FIRST, SECONDARY TEXT, TZ-AUDIT-9/9.1,    │
+│     WCAG notes, Sunrise palette rationale update              │
+│   - 5 utility definitions converted to longhand (cascade safe) │
+│   - FoundationsPage palette[]: 6 swatch values                 │
+│ verification:                                                  │
+│   - tests: 166/166 PASS                                       │
+│   - typecheck: exit 0                                         │
+│   - visual: 12 screenshots OK (no muddy/toast/sepia)          │
+│   - code-reviewer: APPROVED (3 MINORs closed across 2 rounds) │
+│ criteria_met: 1-14 (all 14)                                    │
+│ notes:                                                         │
+│   - Sunrise palette: UNCHANGED (hue 55-80 already inside base 70)│
+│   - Bulk text-muted→text-muted-foreground migration: TZ-AUDIT-8│
+│   - Bulk hairline simplification: TZ-AUDIT-8                  │
+│   - NG8113 fix (SliderComponent): pre-TZ-AUDIT-9 cleanup      │
+│   - /kit/* public route discovery: SAVED 1-line route change  │
+│   - Naming: TZ-AUDIT-9b → TZ-AUDIT-9.1 (file convention)      │
+│   - Dark mode L bump rationale: warm dark reads denser         │
+│     than cool dark at same L value                             │
+│ discovery:                                                     │
+│   - /kit/* routes are PUBLIC (no authGuard) — same page        │
+│     components as operational site, different layout shell    │
+│   - Browser-use sandbox lacks Playwright page.route() — auth   │
+│     bypass unavailable; /kit/* was the unblock for visual     │
+│     verification without route changes                         │
+│   - Dev proxy broken in frontend (Angular dev server doesn't  │
+│     forward /api/* to backend :3000) — blocks real login flow │
+│     for browser-use verification of operational pages          │

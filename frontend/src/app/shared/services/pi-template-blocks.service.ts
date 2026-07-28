@@ -96,4 +96,36 @@ export class TemplateBlocksService {
   remove(id: string): Observable<SilentResult<void>> {
     return silentDelete<void>(this.http, `${this.baseUrl}/template-blocks/${id}`);
   }
+
+  /**
+   * Upload an image file for an image-type block.
+   *
+   * Endpoint contract (planned, TZ-251 backend follow-up):
+   *   POST /template-blocks/:id/upload   multipart/form-data  →  { url: string }
+   *
+   * Uses `silentPost<T>` helper from `core/silent-http` for pattern-consistency
+   * with the rest of this service (every existing method delegates to silent-http).
+   * The raw `http.post` → cast-as-SilentResult pattern would defeat SilentResult's
+   * discriminator: HttpClient emits an ErrorEvent on 4xx/5xx (not a SilentResult
+   * `{ok: false}`, which would silently lie as `{ok: true, data: <whatever>}`).
+   *
+   * TODO TZ-251: the backend endpoint at
+   * `backend/src/modules/template-block/template-block.controller.ts` is NOT
+   * YET implemented (grep confirms only 5 routes: GET list, GET :id, POST
+   * add, POST reorder, PATCH update). Until TZ-251 ships, calls 404 at runtime;
+   * builder.page.ts' `.error` toast handler catches this and the local blob URL
+   * keeps canvas preview working for the current session.
+   */
+  uploadImage(
+    blockId: string,
+    file: File,
+  ): Observable<SilentResult<{ url: string }>> {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    return silentPost<{ url: string }>(
+      this.http,
+      `${this.baseUrl}/template-blocks/${blockId}/upload`,
+      form,
+    );
+  }
 }

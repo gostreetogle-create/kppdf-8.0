@@ -1,0 +1,204 @@
+═══════════════════════════════════════════════════════════════
+TZ-116: Sort state reactivity bug + numeric-flag mismatch + initialSortKey accessor gap
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Component Engineer
+
+ЗАВИСИМОСТИ:
+- Если TZ-115 запущен параллельно с этим и тоже трогает inventory/* → **conflict**. Запускать serial: TZ-115 → TZ-116 (или TZ-116 только work-types + TZ-115a для inventory/Step1 только).
+- Нет зависимостей от backend TZ.
+
+LAYER: 3 (edit существующих pages — combine 3 разных файла, не ту же папку → возможно parallel с TZ-115 if conflict keys правильно разделены)
+
+CONFLICT KEYS: frontend/src/app/pages/work-types/work-types.page.ts; frontend/src/app/pages/inventory/storage-items.page.ts; frontend/src/app/pages/inventory/stock-movements.page.ts
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. **`work-types.page.ts:194` — `createSortState` snapshot bug:**
+   ```ts
+   protected readonly sortedRows = this.sort.sorted(this.filteredRows(), (r) => {
+     const k = this.sort.sortKey();
+     if (!k) return null;
+     return (r as any)[k];   // ❌ as any escape hatch
+   });
+   ```
+   
+   **Bug A — Snapshot construction:** `this.sort.sorted(...)` — это вызов функции, которая создаёт computed SORTED VALUE разово. `this.filteredRows()` — это computed signal call (резолвится в массив Array на момент вызова). `sortedRows` хранит **текущее значение** snapshot, а НЕ реактивную computацию.
+   
+   Когда filter меняется → `filteredRows()` computed возвращает новый массив, но `sortedRows` остался прежним (snapshot не пересчитан).
+   
+   Это работает только потому что `this.sort.sort.sorted()` внутри, видимо, делает reactive binding. **ВНИМАНИЕ:** в `orders/contracts/pages` уже переехали на reactive `computed(() => [...].sort(...))` — `work-types` остаётся legacy.
+
+   **Bug B — `as any` cast:** `(r as any)[k]` — TypeScript escape. До TZ-104.4.2 в products были такие же; после миграции в products убрали.
+
+2. **`stock-movements.page.ts:67` — `numeric: true` + `accessor` returns formatted string:**
+   ```ts
+   {
+     key: 'date',
+     label: 'Дата',
+     sortable: true,
+     width: '10rem',
+     numeric: true,       // ❌ triggers numeric sort
+     accessor: (row) => this.formatDate(row.date),  // ❌ returns "01.07.2026"
+   }
+   ```
+   
+   `numeric: true` в pi-table → sort comparator применяет числовое сравнение к `accessor`-результату. `formatDate('2026-07-01')` → `"01.07.2026"`. Если pi-table приводит к number — `Number("01.07.2026")` → `NaN`. Если coerce — sort вернёт неправильный результат. Date rows отсортированы **по непредсказуемому порядку**.
+
+3. **`storage-items.page.ts:60-66` — `[initialSortKey]="'product'` с `accessor` возвращает строку имени:**
+   ```ts
+   { key: 'product', label: 'Продукт', sortable: true, accessor: (row) => row.product?.name ?? '—' }
+   ```
+   
+   ```html
+   <app-pi-table
+     ...
+     [initialSortKey]="'product'"
+     [initialSortDir]="'asc'"
+   />
+   ```
+   
+   **Bug C — initialSortKey introspection:** pi-table может интерпретировать `'product'` как ключ field, не accessor. Если accessor используется ТОЛЬКО для отображения (format cell), а sort — на raw property → sort по объекту `[object Object]` (raw `row.product`). Пользователь не осознаёт что сортирует по reference equality, не по имени.
+
+   Требуется явно документировать в pi-table: используется `accessor` И для сортировки, или только для отображения? Сейчас — undefined behavior.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: Migrate work-types sort на reactive `computed`
+
+1.1. `frontend/src/app/pages/work-types/work-types.page.ts` — заменить:
+```ts
+// REMOVE
+private readonly sort = createSortState<SortKey>('name');
+protected readonly sortedRows = this.sort.sorted(this.filteredRows(), (r) => { ... });
+
+// ADD: inline reactive computed (mirror orders/contracts pattern)
+private readonly sortKeySig = signal<SortKey | null>('name');
+private readonly sortDirSig = signal<'asc' | 'desc' | null>('asc');
+
+protected readonly sortedRows = computed<WorkType[]>(() => {
+  const rows = this.filteredRows();
+  const key = this.sortKeySig();
+  if (!key) return rows;
+  const sign = this.sortDirSig() === 'asc' ? 1 : -1;
+  return rows.slice().sort((a, b) => compareWorkTypeValues(a[key], b[key], sign));
+});
+```
+
+1.2. `setSort(key)` handler меняет `sortKeySig` (cycle asc→desc→null).
+
+1.3. `isSortedBy` / `sortIcon` — переписаны inline.
+
+1.4. Drop `createSortState` import. Remove helper function `compareWorkTypeValues` (private).
+
+1.5. Side effects:
+- `(click)="setSort('name')"` — template unchanged (handler signature same).
+- search filter change → sortedRows автоматически re-computes (cross-reactive).
+- `as any` cast убран.
+
+ШАГ 2: Fix stock-movements date sorting
+
+2.1. Удалить `numeric: true` для `date` колонки (которая возвращает formatted string):
+```ts
+{
+  key: 'date',
+  label: 'Дата',
+  sortable: true,
+  width: '10rem',
+  // numeric: true REMOVED — формат уже в accessor
+  accessor: (row) => this.formatDate(row.date),
+}
+```
+
+2.2. Если pi-table требует `numeric: true` для date sort → альтернатива: использовать **двойной ключ-форматёр**:
+```ts
+{
+  key: 'date',
+  label: 'Дата',
+  sortable: true,
+  width: '10rem',
+  accessor: (row) => Date.parse(row.date),  // numeric value for sort
+  // format если нужно
+}
+```
+
+И отдельно column definition с raw key (`format: (r) => formatDate(r.date)`) для отображения.
+
+2.3. Verify в pi-table: `accessor` всегда используется для sort. Если нет — добавить raw key + format.
+
+ШАГ 3: Fix storage-items initialSortKey (или explicit accessor pair)
+
+3.1. Проверить, что `pi-table.component.ts` actually использует `accessor` для sort, если указан `sortable: true`. Если нет — добавить поддержку:
+
+3.2. В `storage-items.page.ts`:
+```ts
+{
+  key: 'productName',     // virtual key (string field name — sort identifier)
+  label: 'Продукт',
+  sortable: true,
+  accessor: (row) => row.product?.name ?? '—',
+  sortAccessor: (row) => row.product?.name ?? '',  // explicit if needed
+}
+```
+
+И в template:
+```html
+[initialSortKey]="'productName'"
+[initialSortDir]="'asc'"
+```
+
+3.3. Альтернатива: FIX pi-table.component.ts чтобы при `sortable: true` он использовал `accessor` для sort by default (semantic guarantee).
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- `frontend/src/app/pages/work-types/work-types.page.ts`   reactive computed migration
+- `frontend/src/app/pages/inventory/stock-movements.page.ts`   `numeric: true` УБРАТЬ или сменить на raw timestamp accessor (Step 2)
+- `frontend/src/app/pages/inventory/storage-items.page.ts`   initialSortKey → virtual key + sortAccessor (Step 3)
+- `frontend/src/app/shared/ui/pi-table.component.ts`   (опционально) гарантировать `accessor` используется для sort
+
+НЕ ИЗМЕНЯТЬ:
+- `shared/util/sort.ts` (если createSortState остаётся для других pages — оставить, но work-types не использовать)
+- Inventory services или backend
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. `pnpm exec tsc -p tsconfig.app.json --noEmit` → exit 0.
+2. **Manual E2E (work-types):** set sort by name (A→Я) → filter «сварка» → видимо только 3 elements, отсортированы по алфавиту. Изменить sort на «отдел» → строки пересортированы (cross-reactive).
+3. Manual E2E (stock-movements): sort by date desc → newest first (даты «01.07.2026», «30.06.2026», ...). До TZ — возможно broken.
+4. Manual E2E (storage-items): sort by «Продукт» ASC → alphabetically по product?.name. До TZ — possible reference-equality sort.
+5. ripgrep: `as any` в work-types → 0 hits после.
+6. ripgrep: `createSortState` импорты в pages → 0 hits (если TZ-118 тоже хочет удалить usage в materials/orders — но materials использует reactive?). Только work-types.
+7. ripgrep: `numeric: true` в stock-movements → 0 hits для колонки date.
+
+═══════════════════════════════════════════════════════════════
+КОНФЛИКТ-ЧЕК-ЛИСТ (для параллельных запусков)
+═══════════════════════════════════════════════════════════════
+
+Layer 3 = parallel ok с TZ-117/TZ-118 если они не трогают work-types/inventory. **TZ-115 conflict**: оба трогают inventory/* → serial execution required.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+TZF-00 шаги + lock `TZ-116-sort-bugs.lock` + архивация в `_archive/2026-07/TZ-116.done.txt`.
+
+═══════════════════════════════════════════════════════════════
+ПОДСКАЗКИ ДЛЯ PO
+═══════════════════════════════════════════════════════════════
+
+— STEP 1 (work-types migration) — самая крупная работа. Если делать все три — обязательно unit-tests для sort.
+
+— STEP 2 (numeric: true) — поверхностная правка, 1 файл. Можно выделить в **TZ-116a** если хочется быстрее ship.
+
+— STEP 3 (storage-items accessor) — если pi-table УЖЕ делает правильный sort through accessor — это non-issue. **Проверить через `pnpm test` или hand-test browser** перед коммитом.
+
+— Если вне scope pi-table.component.ts changes — skip Step 3.3 (опционально). Это архитектурное изменение которое лучше делать отдельным TZ.

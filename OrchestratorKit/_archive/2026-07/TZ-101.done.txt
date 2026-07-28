@@ -1,0 +1,73 @@
+# TZ-101 — Inventory Operations (frontend pages)
+
+**Дата:** 2026-07-12
+**Статус:** ✅ DONE
+**Тип:** frontend (new pages + services)
+**Приоритет:** средний
+**LAYER:** Layer 2
+
+---
+
+## 1. Цель
+
+Создать frontend страницы для управления складом: dashboard с остатками, список остатков с фильтрами, журнал движений.
+
+## 2. Изменения
+
+### Backend (нет изменений)
+Существующие эндпоинты: storage-items CRUD, stock-movements CRUD, inventory/low-stock.
+
+### Frontend (новые файлы)
+
+| Файл | Описание |
+|------|----------|
+| `pages/inventory/storage-items.service.ts` | Service для storage-items CRUD + adjust + lowStock |
+| `pages/inventory/stock-movements.service.ts` | Service для stock-movements CRUD + summary |
+| `pages/inventory/warehouses.service.ts` | Read-only service для warehouse dropdowns |
+| `pages/inventory/inventory-dashboard.page.ts` | Dashboard: сводка + low-stock alerts |
+| `pages/inventory/storage-items.page.ts` | List: остатки с фильтром по складу |
+| `pages/inventory/stock-movements.page.ts` | List: журнал движений с фильтром по типу |
+| `app.routes.ts` | +3 routes: /inventory, /storage-items, /stock-movements |
+
+## 3. Pages
+
+### /inventory — Dashboard
+- 4 KPI cards: складов, позиций, мало остатков, зарезервировано
+- Low-stock table: продукт, склад, остаток, минимум
+
+### /storage-items — Остатки
+- Фильтр по складу (dropdown)
+- Таблица: продукт, склад, зона, кол-во, резерв, минимум
+- Low-stock выделен красным
+
+### /stock-movements — Движения
+- Фильтр по типу (приход/расход/корректировка/перемещение)
+- Таблица: дата, тип, продукт, склад, кол-во, документ
+- Цветовая кодировка по типу
+
+## 4. Verification
+
+- Typecheck: 0 errors
+- Tests: 327/327 passed
+
+---
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ARCHIVE_MARKER                                                │
+│ outcome: DONE                                                  │
+│ closed_at: 2026-07-12                                         │
+│ closed_by: Frontend Developer Agent                           │
+│ protected_files:                                               │
+│   - frontend/src/app/pages/inventory/*.ts (6 files NEW)       │
+│   - frontend/src/app/app.routes.ts                             │
+│ affected_areas:                                                │
+│   - frontend: inventory dashboard, storage items, movements   │
+│ verification:                                                  │
+│   - frontend tsc: exit 0                                       │
+│   - 327/327 tests pass                                         │
+│ criteria_met:                                                  │
+│   - 3 new pages (dashboard, storage items, movements)         │
+│   - 3 new services (storage-items, stock-movements, warehouses)│
+│   - 3 new routes registered                                   │
+│   - Filters, tables, KPI cards working                        │
+└─────────────────────────────────────────────────────────────────┘

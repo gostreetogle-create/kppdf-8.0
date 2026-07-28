@@ -11,8 +11,6 @@ import { Subject, debounceTime } from 'rxjs';
 import {
   LucideAngularModule,
   RotateCcw,
-  BookOpen,
-  Columns,
   Hash,
   List,
   Eye,

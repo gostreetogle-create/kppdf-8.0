@@ -88,6 +88,10 @@ mimo.exe
 mimo2.exe
 mimocode-windows-x64/
 
+# codebase-memory-mcp binary: ~262 MB, exceeds GitHub 100 MB push limit.
+# See vendor/codebase-memory-mcp/README.md §"Что НЕ в git".
+vendor/codebase-memory-mcp/bin/*.exe
+
 # Runtime PID tracker from start.mjs (kept on disk; not tracked in git)
 .start.pids.json
 
@@ -112,3 +116,5 @@ ui/stitch_professional_desktop_crm_refinement/
 # by broader ignore patterns (e.g., tmp/, stitch_*, or future additions).
 # If you add a new docs/ subdirectory, it is automatically protected.
 !docs/**
+# codebase-memory-mcp binary: 262 MB, exceeds GitHub 100 MB limit. See vendor/codebase-memory-mcp/README.md.
+vendor/codebase-memory-mcp/bin/*.exe

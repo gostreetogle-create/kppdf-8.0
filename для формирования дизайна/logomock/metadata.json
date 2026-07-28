@@ -1,0 +1,7 @@
+{
+  "name": "LogoMock",
+  "description": "Upload your logo to instantly visualize it on professional product mockups like t-shirts, mugs, and more.",
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

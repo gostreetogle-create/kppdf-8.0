@@ -1,0 +1,8 @@
+# Lock file
+Locked as of 2026-07-27 — TZ-230: Консолидированный Bulk-Execution Batch (преемник 8 SUPERSEDED ТЗ).
+
+Owner: 
+Protected files:
+  (см. CONFLICT KEYS в TZ-230.done.txt)
+
+Unlock: only via orchestrator approval (новое TZ-NN с пометкой «successor»).

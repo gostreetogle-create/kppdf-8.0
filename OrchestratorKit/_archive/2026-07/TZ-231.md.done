@@ -1,0 +1,220 @@
+# TZ-231 — Deploy Secrets Hygiene (hardcoded credentials → config.env)
+
+**Дата создания:** 2026-07-26
+**Автор:** MiMo Code Agent (preflight disclosure during deploy-readiness audit)
+**Приоритет:** CRITICAL (security boundary — hardcoded production SSH password + JWT secrets in source code)
+**Связь:** SUCCESSOR для findings из preflight 2026-07-26 (deploy-readiness audit)
+
+---
+
+## Зачем нужен этот TZ
+
+В рамках preflight к деплою (запрос пользователя: "send to server") были проверены деплой-скрипты и обнаружена **КРИТИЧЕСКАЯ ПРОБЛЕМА БЕЗОПАСНОСТИ**:
+
+### Найденные hardcoded secrets (deploy-node.cjs, lines 5-15):
+
+```js
+const CONFIG = {
+  host: '192.168.1.103',
+  port: 22,
+  username: 'tiit',
+  password: 'Tg30121986',           // ← SSH password в публичном исходнике
+  remoteDir: '/opt/kppdf-8.0',
+  dataDir: '/var/lib/kppdf80',
+  jwtSecret: '014fd3108b0a0142...', // ← JWT_SECRET в публичном исходнике
+  jwtRefresh: 'ceb70bc50ef132a4...', // ← JWT_REFRESH_SECRET в публичном исходнике
+  corsOrigin: 'https://sport-set.ru',
+};
+```
+
+### Blast-radius:
+
+| Кто | Что может сделать |
+|-----|-------------------|
+| Любой с доступом к репозиторию | SSH к production VM (`tiit@Tg30121986@192.168.1.103`), полный root через sudo |
+| Любой с доступом к репозиторию | Подделать JWT tokens (знает SECRET) → обход аутентификации |
+| Любой с доступом к репозиторию | Украсть актуальные данные из MongoDB (через planted backend) |
+
+### Почему это CRITICAL:
+- Репозиторий может быть cloned любым contributor / leave на GitHub
+- Даже private-repo leak = compromise в течение часов
+- JWT_SECRET leak = невозможно сменить без breaking ALL user sessions
+- Утечка происходит на этапе **компиляции** (любой `git log -p` покажет секреты)
+
+---
+
+## Решение
+
+Привести `deploy-node.cjs` к **тому же паттерну**, что используют `deploy.py` и `deploy.ps1`:
+- Загружать **все секреты** из `deploy/synology/config.env`
+- Хардкод **только для non-secret defaults** (paths, host пример, timeouts)
+- Fail-fast если `config.env` отсутствует или обязательные переменные пустые
+
+### Sub-task A: Refactor deploy-node.cjs
+
+**Что:** Заменить hardcoded `CONFIG = {...}` на `loadConfig()` функцию, читающую `deploy/synology/config.env` (как в `deploy.py:load_config`).
+
+**Изменения (~50-70 строк):**
+
+```js
+// БЫЛО (lines 6-15):
+const CONFIG = {
+  host: '192.168.1.103',
+  port: 22,
+  username: 'tiit',
+  password: 'Tg30121986',
+  // ...
+  jwtSecret: '014fd3108...',
+  jwtRefresh: 'ceb70bc50...',
+  corsOrigin: 'https://sport-set.ru',
+};
+
+// СТАЛО:
+function loadConfig() {
+  const configPath = path.join(__dirname, 'config.env');
+  if (!fs.existsSync(configPath)) {
+    fail(`config.env not found at ${configPath}`);
+  }
+  const cfg = {};
+  for (const line of fs.readFileSync(configPath, 'utf-8').split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#') || !trimmed.includes('=')) continue;
+    const [key, ...rest] = trimmed.split('=');
+    cfg[key.trim()] = rest.join('=').trim();
+  }
+  const required = ['DEPLOY_HOST', 'DEPLOY_USER', 'DEPLOY_PASSWORD',
+                    'JWT_SECRET', 'JWT_REFRESH_SECRET'];
+  for (const k of required) {
+    if (!cfg[k]) fail(`Required var ${k} missing in config.env`);
+  }
+  return {
+    host: cfg.DEPLOY_HOST,
+    port: 22,
+    username: cfg.DEPLOY_USER,
+    password: cfg.DEPLOY_PASSWORD,
+    remoteDir: cfg.REMOTE_DIR || '/opt/kppdf-8.0',
+    dataDir: cfg.KPPDF_DATA_DIR || '/var/lib/kppdf80',
+    jwtSecret: cfg.JWT_SECRET,
+    jwtRefresh: cfg.JWT_REFRESH_SECRET,
+    corsOrigin: cfg.CORS_ORIGIN || 'https://sport-set.ru',
+  };
+}
+const CONFIG = loadConfig();
+```
+
+**Файлы:**
+- `deploy/synology/deploy-node.cjs` (~50-70 lines diff)
+- `deploy/synology/config.env` (verifying it's already populated correctly)
+- `.gitignore` (verify `deploy/synology/config.env` is git-ignored)
+
+### Sub-task B: Add `--env-alternate` flag for dev/CI scenarios
+
+**Что:** `deploy-node.cjs --env-file <path>` — для CI/CD или testing использовать альтернативный .env (например `.env.deploy.staging`).
+
+**Изменения (~15 строк):**
+- Argv parsing в начале `main()`
+- Если передан `--env-file`, использовать `path.resolve(argv.envFile)`
+- Иначе — `config.env` (по умолчанию)
+
+### Sub-task C: Verify .gitignore protects config.env — ✅ ALREADY DONE
+
+**Что:** Cross-check при создании TZ-231 подтверждает `.gitignore` (lines 27-30) УЖЕ содержит:
+```
+# Deploy secrets (Synology)
+deploy/synology/config.env
+deploy/synology/CREDENTIALS.md
+```
+
+**Verification (basher 2026-07-26):**
+- `git check-ignore deploy/synology/config.env` → ignored ✅
+- `git check-ignore deploy/synology/CREDENTIALS.md` → ignored ✅
+- `grep -i 'deploy.*secret\|deploy.*credential' .gitignore` → match confirmed ✅
+
+**Не требует работы.** Если в будущем `.gitignore` будет очищен / переписан, **провести повторно** — это самая критичная защита от случайного коммита creds.
+
+### Sub-task D: Update DEPLOY.md / RUNBOOK.md
+
+**Что:** Чёткая документация где secrets живут и как их генерировать.
+
+**Изменения (DEPLOY.md):**
+- Добавить секцию `## Secrets & config.env` с:
+  - Список всех переменных
+  - Команды для генерации (`openssl rand -hex 32`)
+  - Что делать если .env потерян
+  - Where to store in password manager
+
+**Изменения (RUNBOOK.md):**
+- Упомянуть `config.env` как source-of-truth для secrets
+- Quick reference по `cat deploy/synology/config.env` (только на dev-машине)
+
+### Sub-task E: Secrets rotation SOP (optional, для завершения)
+
+**Что:** Stand Operating Procedure для ротации secrets при компрометации:
+- Generate new SECRET → deploy → all users re-login
+- Backup old MongoDB на случай rollback
+- Документировать в `DEPLOY.md §16 Secrets Rotation`
+
+**Файлы:** `deploy/synology/DEPLOY.md`
+
+---
+
+## Plan of execution (при начале TZ-231)
+
+**Tick 1:** Sub-task C (gitignore verify) → **блокирует** accidental commit
+**Tick 2:** Sub-task A (deploy-node.cjs refactor) + Sub-task B (--env-file flag)
+**Tick 3:** Sub-task D (docs update)
+**Tick 4:** Sub-task E (rotation SOP)
+**Tick 5:** Verification — `git grep -i 'password|secret|jwt' deploy/synology/deploy-node.cjs` → **0 hits для values** (только variable NAMES допустимы)
+
+---
+
+## Acceptance criteria
+
+- [ ] `deploy-node.cjs` НЕ содержит hardcoded `Tg30121986`, JWT hex strings, или секретов в любой форме
+- [ ] `deploy-node.cjs` читает все секреты только из `config.env`
+- [ ] `git check-ignore deploy/synology/config.env` → ignored
+- [ ] `--env-file </path/to/alt.env>` flag работает (для CI)
+- [ ] `DEPLOY.md` содержит § Secrets & rotation SOP
+- [ ] Pre-commit hook (future integration post-TZ-164 pickup — TZ-164 в Quality Audit Batch, LOW priority, не запущен): блокирует commit .env / config.env
+- [ ] **Guard rail:** documentation note добавляет "deploy MUST use deploy.py / deploy.ps1 (both already read config.env). Do NOT invoke deploy-node.cjs до закрытия Tick 2."
+- [ ] Smoke test: `node deploy/synology/deploy-node.cjs --check` (read + verify, no SSH) → exit 0 если config валидный
+
+---
+
+## Известные ограничения (для будущего executor)
+
+- **Existing secrets в git history:** Даже после удаления hardcoded значений, они навсегда в git history. Решение: `git filter-repo` или BFG (требует force-push + team coordination). **НЕ блокирует** TZ — accept and document.
+- **Pre-existing JWT_SECRET validity:** Текущий JWT_SECRET в config.env уже deployed на VM. После ротации → все users re-login. Acceptable.
+- **Backward compatibility:** `deploy.py` и `deploy.ps1` УЖЕ используют config.env. После TZ-231 они останутся работать. Никаких breaking changes для них.
+
+---
+
+## Связанные документы (references)
+
+- `deploy/synology/deploy-node.cjs:7-15` — hardcoded CONFIG literal (target)
+- `deploy/synology/deploy.py:35-67` (load_config) — pattern to reuse
+- `deploy/synology/deploy.ps1:24-43` (Load config.env) — pattern to reuse
+- `deploy/synology/DEPLOY.md` — needs new §Secrets & rotation
+- `deploy/synology/RUNBOOK.md` — needs config.env reference
+- `.gitignore` — verify deploy secrets are excluded
+
+---
+
+**Преемник:** None (terminal TZ — comprehensive fix).
+**Disposition:** CRITICAL. Не deploy на production пока TZ-231 не закрыт? Альтернатива: deploy через `deploy.py` / `deploy.ps1` (они уже читают config.env) И записать в progress.md что deploy-node.cjs был обойдён до закрытия TZ-231.
+
+---
+
+## ⚠️ Guard rail в production при работе с TZ-231
+
+> **Пока TZ-231 Tick 2 (deploy-node.cjs refactor) не закрыт**, все deploy-операции **ОБЯЗАНЫ** использовать `deploy.py` или `deploy.ps1` — оба уже корректно читают `deploy/synology/config.env`. **НЕ использовать `deploy-node.cjs`**, пока в нём hardcoded secrets.
+>
+> **Current recommendation (2026-07-26):** Если нужен deploy до закрытия TZ-231 — использовать **только** `python deploy/synology/deploy.py` или `.\\deploy\\synology\\deploy.ps1`. Оба безопасны.
+
+---
+
+## Honest disclosure от preflight обнаружителя
+
+> Найдено в рамках deploy-readiness preflight (запрос пользователя: "send to server"). **Не пытался** запускать deploy-node.cjs с текущими hardcoded кредами — это дало бы false-confidence (deploy успешен ≠ безопасная среда). Лучше STOP + audit + отдельный TZ.
+>
+> Blast-radius attack: если репозиторий публичный или был клонирован на любую внешнюю машину (CI cache, contractor laptop, GitHub mirror), attacker уже знает SSH пароль и JWT secret. Mitigation: 1) refactor → config.env (Tick 2), 2) rotate SSH password (manual ops задача), 3) rotate JWT_SECRET → users re-login (acceptable). **Recommends: TZ-231 = do Tick 2 ASAP, do password rotation in same deploy window.**

@@ -1,0 +1,14 @@
+TZ-87: TZ-87 — Document Constructor F.3 close-out + dev-data seeding
+
+SEE: OrchestratorKit/_archive/2026-07/TZ-87.md.done
+РОЛЬ АГЕНТА: Orchestrator
+CONFLICT KEYS:
+-
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER
+═══════════════════════════════════════════════════════════════
+outcome: DONE
+closed_at: 2026-07-27
+closed_by: Orchestrator
+next_steps: —

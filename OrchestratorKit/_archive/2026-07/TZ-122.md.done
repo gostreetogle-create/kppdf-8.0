@@ -1,0 +1,191 @@
+═══════════════════════════════════════════════════════════════
+TZ-122: Optimistic Locking — Mongoose versionKey + global VersionError filter
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Backend Database Engineer
+
+ПРИОРИТЕТ: MEDIUM (race protection; rare но real overwrite risk на manual edit)
+
+ЗАВИСИМОСТИ:
+- TZ-120 (soft-delete plugin) — должен быть ДО. Иначе locking будет маскировать deleted records.
+- TZ-121 (cross-service tx) — может быть параллельно (не конфликтуют).
+
+LAYER: 4 (backend, schema + global error filter)
+
+CONFLICT KEYS (top-6 schemas в scope этого TZ; остальное → TZ-122.x):
+- backend/src/common/mongoose/optimistic-lock.plugin.ts (NEW)
+- backend/src/main.ts (global filter registration)
+- backend/src/common/filters/version-conflict.filter.ts (NEW)
+- backend/src/modules/material/material.schema.ts
+- backend/src/modules/organization/organization.schema.ts
+- backend/src/modules/work-type/work-type.schema.ts
+- backend/src/modules/category/category.schema.ts
+- backend/src/modules/product/product.schema.ts
+- backend/src/modules/person/person.schema.ts
+
+CROSS-LINK:
+| Scope | Owner TZ | Этот TZ делает |
+|---|---|---|
+| Optimistic lock infrastructure + VersionError filter | TZ-122 (ЭТОТ) | plugin + filter + 6 schemas adopt |
+| Safe assign refactor на 30+ update() | TZ-122.1 (successor) | defer |
+| Soft-delete plugin integration | TZ-120 | decline (no overlap) |
+| Frontend 409 toast + __v transport | TZ-117 (UI) + TZ-122 § 4 | coordinated |
+| Cross-service tx внутри optimistic lock | TZ-121 | decline |
+
+**Prerequisite:** проверить `backend/package.json` для версии mongoose:
+- Если >= 7.0 — `schema.set('optimisticConcurrency', true)` supported natively.
+- Если 6.x — нужна explicit handling, рассмотреть split на TZ-122.x.
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. **Анти-паттерн C обнаружен повсеместно:**
+```ts
+// material.service.ts:55-59
+async update(id, dto) {
+  const doc = await this.findById(id);
+  Object.assign(doc, dto);
+  return doc.save();       // ← RACE: если 2 admin'a меняют одновременно,
+}                          //         последний silent overwrite.
+```
+
+**Это касается:**
+- material, organization, work-type, work-center, person, worker, counterparty, role, role-org, role-counterparty, product, product-module, category, attribute-definition, doc-type, status, currency, unit, table-template, text-block, product-photo, photos, certificate, compliance-rule, comment, interaction, routing-step, bom, product-passport, table-template, doc-template.
+
+2. **Нет `@Prop({ versionKey: true })` ни в одной схеме** (проверено grep). Mongoose по умолчанию создаёт `__v` НЕ инкрементируемый вручную, потому что save() НЕ incrementится если не использовать .increment() или non-mongoose direct write.
+
+3. **Нет глобального фильтра для `VersionError`:**
+   - Если в будущем optimistic locking будет включён, ошибка `VersionError` от Mongoose НЕ перехватывается — пользователь получит 500 или generic "save failed".
+
+4. **Нет audit-trail для "who edited last":**
+   - `doc.updatedBy` не существует в схемах — невозможно понять, кто перезаписал чьи изменения.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+**ШАГ 1: Преprerequisite verify + plugin**
+
+**Prerequisite:** проверить `backend/package.json` для версии mongoose:
+- Если >= 7.0 — `schema.set('optimisticConcurrency', true)` supported natively.
+- Если 6.x — нужна explicit handling, рассмотреть split на TZ-122.x.
+
+1.1. Создать `backend/src/common/mongoose/optimistic-lock.plugin.ts`:
+```ts
+export function optimisticLockPlugin(schema: Schema) {
+  schema.set('optimisticConcurrency', true);
+  schema.set('versionKey', '__v');
+  schema.pre('save', function (next) {
+    this.$__version = (this.$__version ?? 0) + 1;
+    next();
+  });
+}
+```
+
+1.2. Подключить в `app.module.ts connectionFactory` ПОСЛЕ soft-delete plugin (если TZ-120 done) или ПЕРЕД (если TZ-120 not yet — sequential).
+
+1.3. Для схем, которые НЕ должны иметь version (audit, counter, rate-limit, feature-flag): НЕ подключать.
+
+**ШАГ 2: Заменить `Object.assign(doc, dto); doc.save()` на safe pattern**
+
+2.1. В список сервисов из "ИСХОДНОЕ СОСТОЯНИЕ § 1" (top-6 в scope данного TZ) заменить:
+```ts
+async update(id, dto) {
+  const doc = await this.findById(id);
+  if (!doc) throw new NotFoundException(...);
+  Object.assign(doc, dto);
+  return doc.save();    // ← WILL THROW VersionError on conflict
+}
+```
+
+На:
+```ts
+async update(id, dto, expectedVersion?: number) {
+  const doc = await this.findById(id);
+  if (!doc) throw new NotFoundException(...);
+  if (expectedVersion !== undefined && doc.__v !== expectedVersion) {
+    throw new ConflictException(`Stale update: expected ${expectedVersion}, got ${doc.__v}`);
+  }
+  Object.assign(doc, dto);
+  try {
+    return await doc.save();
+  } catch (e) {
+    if (e.name === 'VersionError') {
+      throw new ConflictException('Concurrent modification; please reload and retry');
+    }
+    throw e;
+  }
+}
+```
+
+2.2. Опционально: добавить поле `updatedBy` (ObjectId ref User) в схемы, инжектить из `@CurrentUser()` interceptor.
+
+**ШАГ 3: Глобальный filter для VersionError**
+
+3.1. Создать `backend/src/common/filters/version-conflict.filter.ts`:
+```ts
+@Catch(VersionError)
+export class VersionConflictFilter implements ExceptionFilter {
+  catch(exception: VersionError, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    response.status(409).json({
+      statusCode: 409,
+      message: 'Concurrent modification; please reload and retry',
+      error: 'VersionConflict',
+      currentVersion: exception.document?.__v,
+    });
+  }
+}
+```
+
+3.2. Зарегистрировать в `main.ts` через `app.useGlobalFilters(new VersionConflictFilter())`.
+
+**ШАГ 4: Frontend интеграция (координация с TZ-117)**
+
+4.1. В `silent-http.ts` добавить handling 409 → toast "Конфликт изменений; обновите страницу".
+
+4.2. В страницах list+edit (напр. /materials/:id/edit) — сохранять `__v` из GET, отправлять в PUT.
+
+**ШАГ 5: Тесты**
+
+5.1. Unit: `material.service.spec.ts` — test concurrent updates:
+```ts
+it('rejects stale update', async () => {
+  const doc = await service.create({ ... });
+  const docA = await service.findById(doc._id.toString());  // version = 0
+  const docB = await service.findById(doc._id.toString());  // same version 0
+  await service.update(doc._id.toString(), { name: 'A' });  // succeeds, version becomes 1
+  await expect(service.update(doc._id.toString(), { name: 'B' }, 0))
+    .rejects.toThrow(ConflictException);
+});
+```
+
+5.2. E2E: 2 параллельных PUT на /materials/:id — один должен получить 200, другой 409.
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. **No silent overwrite:** параллельный update одной записи → второй запрос 409 Conflict.
+2. **HTTP semantics:** 409 response с правильным message.
+3. **Frontend sees conflict:** UI toast "Конфликт изменений" + reload.
+4. **Audit log:** конфликтующий update всё ещё создаёт `AuditAction` entry с `action=update_failed`.
+5. **Tests:** unit + E2E passes.
+6. **Build green:** `pnpm exec tsc --noEmit` exit 0.
+7. **No regression:** все существующие GET endpoints работают (только `__v` added).
+
+═══════════════════════════════════════════════════════════════
+СВЯЗАННЫЕ ТЗ
+═══════════════════════════════════════════════════════════════
+
+- TZ-120 (soft-delete) — должен быть ДО. Иначе optimize lock будет mask deleted records.
+- TZ-121 (cross-service tx) — orthogonal; parallel safe.
+- TZ-119 (Backend safety sweep) — может merge § "optimistic locking" в TZ-122.
+
+═══════════════════════════════════════════════════════════════
+TZF-00 ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+TZF-00 § 9 шагов: archive, lock file `TZ-122-optimistic-locking.lock`, STATUS.md ✅ DONE, progress.md entry, ARCHITECTURE.md § "Backend Data Integrity" (если есть) или новый sub-section.

@@ -1,0 +1,147 @@
+═══════════════════════════════════════════════════════════════
+TZ-124: List-Query Populate Optimization — устранение N+1 и over-fetch в findAll
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Backend Performance Engineer
+
+ПРИОРИТЕТ: LOW (perf optimization; functional OK сейчас, but 200ms latency на list ухудшает UX)
+
+ЗАВИСИМОСТИ: Нет (можно делать параллельно с TZ-120..123).
+
+LAYER: 4 (backend, service read queries)
+
+CONFLICT KEYS:
+- backend/src/modules/material/material.service.ts (batch populate)
+- backend/src/modules/product/product.service.ts (batch populate)
+- backend/src/modules/order/order.service.ts (batch populate)
+- backend/src/modules/organization/organization.service.ts (.lean())
+- backend/src/modules/contract/contract.service.ts (.lean())
+
+CROSS-LINK:
+| Scope | Owner TZ | Этот TZ делает |
+|---|---|---|
+| Batch populate replacement (.populate([a])) + .lean() | TZ-124 (ЭТОТ) | 5 services |
+| Materialized view aggregation pipeline | TZ-124.x (extension, speculative) | defer (out of scope) |
+| Redis cache для list endpoints | TZ-124.x | defer (не в scope — слишком speculative) |
+| Frontend pagination/loading tuning | TZ-117 (UI) | coupled — TZ-117 делает paged list UX; TZ-124 делает их быстрыми |
+
+**Prerequisite:** Проверить `backend/package.json` для версии mongoose — single-call `.populate([{...}])` supported в v6.0+.
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. **`material.service.ts findAll()` (line 22-42):**
+```ts
+this.model.find(filter)
+  .populate('categoryId')      // 1 JOIN
+  .populate('photoIds')        // 2 JOIN
+  .populate('mainPhotoId')     // 3 JOIN
+  .populate('supplierId')      // 4 JOIN
+  .sort({ name: 1 })
+  .skip((page - 1) * limit)
+  .limit(limit)
+  .exec()
+```
+
+**Проблемы:**
+- 4 sequential `populate` → 4x trips БД per page.
+- `populate('photoIds')` — массив, может вернуть 100+ photo per page × 20 items = 2000+ JOIN-result rows.
+- Mongoose по умолчанию НЕ batch populate если использовать chained `.populate()` — каждое populate делает отдельный `find({ _id: { $in: [...] } })`.
+- Для page=20 it's ~80 queries на запрос. На странице material list — пиздец.
+
+2. **`product.service.ts findAll()` (line 57-76):**
+- `populate('categoryId')`, `populate('photoIds')`, `populate('productModuleIds')` — 3 sequential queries.
+- `productModuleIds` содержит modules с workTypes[] и materials[] — N+1 в N+1.
+
+3. **`order.service.ts findAll()` (line 60-79):**
+- `populate('counterpartyId')`, `populate('quotationId')`, `populate('contractId')` — 3 queries.
+- Если filter = 'confirmed', может вернуть 1000+ orders → 3000+ queries per page.
+
+4. **Количество populate НЕ conditional:**
+- Material list page не нужны все photo (нужен только mainPhoto для thumbnail).
+- Order list page не нужны все contract detail — только amount/title.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+**ШАГ 1: Baseline measurement**
+
+1.1. Запустить lightweight performance probe `node --inspect` или `clinic.js doctor` на `GET /materials?limit=20` через dev server.
+- Посчитать Mongo queries через `mongoose-query-trail` или direct Mongo profiler.
+- Записать baseline: ~80 queries, ~50-150 ms total.
+- Сохранить в `backend/perf-baselines.md` как reference.
+
+**ШАГ 2: Refactor chained `.populate()` → single-call batch**
+
+2.1. **Не создавать helper.** Mongoose v6+ native уже batch populate через `.populate([{...}])`. Просто refactor на single call.
+
+```ts
+// ДО (chained → 4 отдельных queries):
+.find()
+.populate('categoryId')
+.populate('photoIds')
+.populate('mainPhotoId')
+.populate('supplierId')
+.exec();
+
+// ПОСЛЕ (single batch → 1 query total):
+.find()
+.populate([
+  { path: 'categoryId' },
+  { path: 'photoIds', select: 'url' },
+  { path: 'mainPhotoId', select: 'url thumbnail' },
+  { path: 'supplierId', select: 'name' },
+])
+.exec();
+```
+
+2.2. В `material.service.ts findAll()` — заменить на batch form с selected fields.
+2.3. В `product.service.ts findAll()` — то же самое.
+2.4. В `order.service.ts findAll()` — то же.
+2.5. В `organization.service.ts findAll()` (нет chained — добавить batch anyway для consistency).
+2.6. В `contract.service.ts findAll()` — то же.
+
+**ШАГ 3: Оптимизировать list endpoint payloads**
+
+3.1. Завести `listSelects` для каждой схемы:
+   - `Material.listFields = 'name sku unit mainPhotoId price'` — только что UI list показывает.
+   - `Product.listFields = 'name sku price status categoryId mainPhotoIds'` — то же.
+   - `Order.listFields = 'number date status total counterpartyId'` — то же.
+
+3.2. В findAll добавить `.select(this.listFields)` для list views.
+
+3.3. Детальный endpoint оставляет с full populate — он используется редко.
+
+**ШАГ 4: Добавить `lean()` для list views**
+
+4.1. Чистые объекты Mongoose = ~2x медленнее plain JS objects из-за getters/setters/virtuals.
+
+4.2. В findAll добавить `.lean<T[]>().exec()` — возвращает plain objects.
+
+4.3. ⚠️ Caveat: `lean()` не triggers hooks, не работает с chained `.populate()` post-call (hydrate manually). TypeScript generic `<T[]>` cast нужен на return.
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. **p95 latency** `GET /materials?limit=20` < 100ms (down from 200ms).
+2. **Query count** < 10 (down from 80+).
+3. **Memory usage** list endpoint < 5 MB.
+4. **Tests pass** с mock Document → проверка select fields.
+5. **Build green.**
+6. **No regression:** detail endpoints возвращают тот же shape.
+
+═══════════════════════════════════════════════════════════════
+СВЯЗАННЫЕ ТЗ
+═══════════════════════════════════════════════════════════════
+
+- TZ-117 (frontend httpResource migration) — совместимо. Backend optimization → frontend видит быстрее loading.
+- TZ-119 (Backend safety sweep) — может merge § "list perf" в TZ-124.
+
+═══════════════════════════════════════════════════════════════
+TZF-00 ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+TZF-00 § 9: archive, lock `TZ-124-list-optimization.lock`, STATUS.md ✅ DONE, ARCHITECTURE.md § "Performance" (если есть) + progress.md entry с baseline→after metrics.

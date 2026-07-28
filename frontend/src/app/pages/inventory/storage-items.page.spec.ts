@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of } from 'rxjs';
 
@@ -28,7 +28,6 @@ import { API_BASE_URL } from '../../core/api.tokens';
  */
 describe('StorageItemsPage (TZ-232.C wrapper migration)', () => {
   const baseUrl = '/api';
-  const warehousesUrl = `${baseUrl}/warehouses`;
 
   const fakeItems: StorageItem[] = [
     {

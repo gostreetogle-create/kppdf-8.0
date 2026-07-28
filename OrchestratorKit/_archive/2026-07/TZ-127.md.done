@@ -1,0 +1,280 @@
+═══════════════════════════════════════════════════════════════
+TZ-127: Auth Rate-Limit Bypass + XSS Tokens — tiered throttling + HttpOnly cookies
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Backend Security Engineer
+
+ПРИОРИТЕТ: HIGH (≤7d) — single-user DoS + XSS-уязвимость для краж сессий
+
+ЗАВИСИМОСТИ:
+- TZ-110 (Auth pattern reuse) — done.
+- TZ-119 (Frontend safety sweep) — done.
+- TZ-127 трогает ток auth flow, поэтому ЖЕЛАТЕЛЬНО после TZ-119 (чтобы silent-http pattern уже применён).
+
+LAYER: 4 (backend guard + cookie middleware + 2 frontend auth files)
+
+CONFLICT KEYS:
+- backend/src/common/guards/throttler-behind-auth.guard.ts (split tier: anon/auth/admin)
+- backend/src/main.ts (cookie-parser middleware)
+- backend/src/modules/auth/auth.service.ts (refresh читает cookie OR header)
+- backend/src/modules/auth/auth.controller.ts (login → set Refresh cookie; logout → clear)
+- backend/src/common/guards/role-admin.guard.ts (NEW — admin tier detection)
+- frontend/src/app/core/auth.service.ts (remove localStorage → memory signal; refresh via cookie)
+- frontend/src/app/core/auth.interceptor.ts (credentials:include on refresh)
+
+CROSS-LINK:
+| Scope | Owner TZ | Этот TZ делает |
+|---|---|---|
+| Rate-limiter tier split | TZ-127 (ЭТОТ) | tiered guard |
+| HttpOnly cookie auth rotation | TZ-127 (ЭТОТ) | refresh endpoint + cookie set |
+| Frontend XSS hardening | TZ-127 (ЭТОТ) | access signal-only |
+| Audit interceptors | TZ-125 | TZ-127 refresh event becomes auditable action; TZ-125 wire-in ready |
+| CSRF concerns | TZ-127.x (defer) | TZ-127 cookie set is `SameSite=Strict` — no CSRF token needed, browser-enforced. Optional explicit CSRF token = future TZ. |
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. **`backend/src/common/guards/throttler-behind-auth.guard.ts` lines 30-37:**
+
+```ts
+async canActivate(context: ExecutionContext): Promise<boolean> {
+  const req = context.switchToHttp().getRequest<{ user?: { sub?: string } }>();
+  const hasAuthUser = !!req.user?.sub;
+  if (hasAuthUser) {
+    return true;   // ← ПОЛНЫЙ BYPASS rate limit для авторизованных
+  }
+  return super.canActivate(context);
+}
+```
+
+**Проблема:**
+- Авторизованный user может делать 1000 req/s без ограничения → потенциальный Application-Layer DoS.
+- Особенно тяжелые endpoints: POST /products/{id}/attributes (TZ-126 EAV), POST /documents/preview (PDF render), POST /admin/jobs.
+- Один взломанный аккаунт = single point of failure для всего API.
+
+2. **`frontend/src/app/core/auth.service.ts` lines 79-83:**
+
+```ts
+const ACCESS_KEY = 'kppdf.access';
+const REFRESH_KEY = 'kppdf.refresh';
+
+private read(k: string): string | null {
+  if (typeof localStorage === 'undefined') return null;
+  return localStorage.getItem(k);    // ← localStorage = XSS-доступно
+}
+```
+
+**Проблема:**
+- Любой inline-script (через XSS в TipTap, CDN exploit, third-party widget) может прочитать `kppdf.access` + `kppdf.refresh`.
+- Хотя refresh token rotation отсутствует (server doesn't issue new refresh on each refresh) — access token достаточен для полного impersonation в TTL.
+- Refresh token — постоянный (не rotate), поэтому XSS steal = сессия valid навсегда.
+
+3. **`backend/src/main.ts` middleware list:**
+
+```ts
+app.use(helmet(...));
+app.useStaticAssets(...);
+app.use(compression());
+app.enableCors(...);
+app.useGlobalGuards(...);
+app.useGlobalPipes(...);
+// ← НЕТ cookie-parser
+```
+
+**Проблема:**
+- `req.cookies` undefined → refresh endpoint не может читать token из HttpOnly cookie.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+**ШАГ 1: Tiered rate-limit guard — `tiered-throttler.guard.ts` (NEW)**
+
+1.1. Создать файл `backend/src/common/guards/tiered-throttler.guard.ts`:
+```ts
+import { Injectable, ExecutionContext } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
+
+const TIERS = {
+  anonymous: { ttl: 60000, limit: 20 },   // 20 RPM
+  user:      { ttl: 60000, limit: 300 },  // 300 RPM (5 req/s avg)
+  admin:     { ttl: 60000, limit: 1500 }, // 1500 RPM (25 req/s avg)
+};
+
+@Injectable()
+export class TieredThrottlerGuard extends ThrottlerGuard {
+  protected async getTracker(req: any): Promise<string> {
+    const xff = req.headers?.['x-forwarded-for'];
+    const ip = Array.isArray(xff) ? xff[0] : xff ?? req.ip ?? 'unknown';
+    const userSub = req.user?.sub ?? 'anon';
+    return `user:${userSub}:ip:${ip}`;
+  }
+
+  protected async shouldSkip(_ctx: ExecutionContext): Promise<boolean> {
+    if (process.env.DISABLE_THROTTLE === '1') return true;
+    return false;
+  }
+
+  // Tier detection via @nestjs/throttler v6 canonical pattern: override
+  // `getThrottlerSuffix` only — base class uses it in `generateKey` for
+  // storage-isolated namespace per tier (no manual throttler splicing).
+  // ThrottlerModule.forRootAsync registration lives in app.module.ts (ШАГ 1.3),
+  // providing three named throttler entries ('anonymous' / 'user' / 'admin').
+  protected getThrottlerSuffix(req: Record<string, unknown>): Promise<string> {
+    const u = (req as { user?: { role?: string } }).user;
+    return Promise.resolve(
+      u?.role === 'admin' ? 'admin'
+        : u?.role ? 'user'
+        : 'anonymous',
+    );
+  }
+}
+```
+
+1.2. Удалить `throttler-behind-auth.guard.ts` (legacy bypass) → заменить на `tiered-throttler.guard.ts`.
+
+1.3. В `backend/src/app.module.ts` заменить текущий `ThrottlerModule.forRoot([...])` (lines 88-93) на `ThrottlerModule.forRootAsync`:
+
+```ts
+import { ThrottlerModule, ThrottlerStorageService } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { TieredThrottlerGuard } from './common/guards/tiered-throttler.guard';
+
+// В @Module({ imports: [...] }):
+ThrottlerModule.forRootAsync({
+  useFactory: () => ({
+    throttlers: [
+      { name: 'anonymous', ttl: 60_000, limit: 20 },   // 20 req/min anon
+      { name: 'user',      ttl: 60_000, limit: 300 },  // 5 req/s avg user
+      { name: 'admin',     ttl: 60_000, limit: 1500 }, // 25 req/s avg admin
+    ],
+    // Storage service is in-memory by default; for multi-instance deploy
+    // switch to `@nestjs/throttler-storage-redis` + property env REDIS_URL.
+  }),
+}),
+
+// В @Module({ providers: [...] }):
+{ provide: APP_GUARD, useClass: TieredThrottlerGuard },  // ← replaces ThrottlerBehindAuthGuard
+```
+
+**Migration concern (current код vs new):**
+- Current `ThrottlerModule.forRoot([{ name: 'short', ttl: 1000, limit: 10 }, { name: 'long', ttl: 60000, limit: 100 }])` имеет 2 throttlers с другими names. Удалить эти 2 entries целиком — они теряются при switching на tiered model.
+- Provider-side: убрать `ThrottlerBehindAuthGuard` из корня providers (он в `app.module.ts:108` сейчас).
+
+**ШАГ 2: Refresh token в HttpOnly cookie — `cookie-parser` middleware**
+
+2.1. `pnpm add cookie-parser @types/cookie-parser` (backend).
+
+2.2. В `backend/src/main.ts`:
+```ts
+import cookieParser from 'cookie-parser';
+// `secret` enables SIGNED cookies (HMAC) — protects against network tampering
+// of HttpOnly cookies (XSS protection alone is NOT sufficient if HTTPS is
+// misconfigured / pinned incorrectly).
+// Production: REQUIRED to set COOKIE_SECRET in .env (>=32 random hex chars).
+const cookieSecret = process.env.COOKIE_SECRET ?? 'kppdf-development-cookie-secret-CHANGE-IN-PROD';
+if (process.env.NODE_ENV === 'production') {
+  const isWeak =
+    !process.env.COOKIE_SECRET ||
+    process.env.COOKIE_SECRET.length < 32 ||
+    process.env.COOKIE_SECRET.includes('change-me') ||
+    process.env.COOKIE_SECRET.includes('development');
+  if (isWeak) {
+    throw new Error(
+      'COOKIE_SECRET must be set in production (>=32 hex chars, must NOT contain "change-me" or "development"). Refusing to start.',
+    );
+  }
+}
+app.use(cookieParser(cookieSecret));   // перед guards
+```
+
+**Подпись cookie на emit:** в `auth.controller.ts login` использовать `res.cookie('kppdf.refresh', refresh, { httpOnly: true, secure: true, sameSite: 'strict', signed: true, path: '/auth', maxAge: ... })`. Без `signed: true` наш secret бесполезен.
+
+2.3. `backend/src/modules/auth/auth.controller.ts`:
+- `POST /auth/login` (existing): помимо JSON `{access, refresh, user}` также `Set-Cookie: kppdf.refresh={refresh}; HttpOnly; Secure; SameSite=Strict; Path=/auth; Max-Age=...`.
+- `POST /auth/refresh` (existing): читает refresh token в порядке приоритета:
+  1. `req.cookies?.kppdf.refresh` (preferred — primary)
+  2. `Authorization: Bearer <refresh>` (legacy fallback для SSR / CLI)
+- `POST /auth/logout`: очищает cookie + сигналит "revoked" в Redis (TZ-127.x, defer).
+
+**ШАГ 3: Access token — signal-only (no localStorage)**
+
+3.1. `frontend/src/app/core/auth.service.ts`:
+- `ACCESS_KEY = 'kppdf.access'` — УДАЛИТЬ из localStorage.
+- `accessToken = signal<string | null>(null)` — только memory.
+- После page reload: `bootstrap()` — если cookie valid → call `/auth/me` or `/auth/refresh` → restore access in memory.
+
+3.2. Frontend **продолжает** bearer access-token header (`Authorization: Bearer ${access()}`).
+
+3.3. Cookie HttpOnly frontend НЕ видит → защищён от XSS.
+
+**ШАГ 4: Frontend refresh тянется через `credentials: 'include'`**
+
+4.1. `auth.interceptor.ts`:
+```ts
+return next(req.clone({ withCredentials: true }));  // чтобы cookies отправлялись
+```
+Для всех запросов (Angular HttpClient по умолчанию НЕ шлёт cookies cross-origin; с `withCredentials: true` шлёт).
+
+4.2. CORS: `main.ts` — refresh cookie требует `credentials: true` + `origin` НЕ wildcard (= must match exact). Уже `corsOrigins` array ставит specific. OK.
+
+**ШАГ 5: Tests**
+
+5.1. Unit test `tiered-throttler.guard.spec.ts` (NEW):
+- Anonymous user → 21-й request in 1 min → 429.
+- Standard user → 301-й request in 1 min → 429.
+- Admin → 1501-й request in 1 min → 429.
+
+5.2. E2E test: bootstrap flow with cookie-based refresh.
+
+5.3. Security manual test: open DevTools → localStorage → нет kppdf.access / kppdf.refresh.
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. **Rate-limit tier enforcement:** 11 req/s от standard user → 429.
+2. **No localStorage tokens:** Login → открыть DevTools → Application → Local Storage → нет `kppdf.access` / `kppdf.refresh`.
+3. **Cookie-based refresh:** DevTools → Application → Cookies (httponly ✓) → `kppdf.refresh` присутствует.
+4. **XSS smoke test:** Inject inline `localStorage.getItem('kppdf.access')` через test harness → returns null (наш код уже не кладёт туда).
+5. **Page reload survives session:** F5 на /products → user остаётся authenticated (cookie-backed).
+6. **Backend typecheck:** `pnpm --filter backend typecheck` passes.
+7. **Frontend typecheck:** `pnpm --filter frontend typecheck` passes.
+8. **Manual E2E:** Login → refresh (wait 1 min, token expires) → auto refresh через cookie → page continues work.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- backend/package.json (add cookie-parser + @types)
+- backend/src/common/guards/tiered-throttler.guard.ts (NEW)
+- backend/src/common/guards/throttler-behind-auth.guard.ts (DELETE — replaced by tiered)
+- backend/src/main.ts (add cookieParser middleware, корректировка throttler registration)
+- backend/src/app.module.ts (ThrottlerModule.forRootAsync — 3 throttlers)
+- backend/src/modules/auth/auth.controller.ts (Set-Cookie on login, Clear on logout)
+- backend/src/modules/auth/auth.service.ts (refresh reads cookie OR header)
+- backend/src/common/guards/tiered-throttler.spec.ts (NEW)
+- frontend/src/app/core/auth.service.ts (remove localStorage read/write for tokens)
+- frontend/src/app/core/auth.interceptor.ts (withCredentials: true, обновить skipRefresh paths)
+
+НЕ ИЗМЕНЯТЬ:
+- backend/src/modules/audit/* (TZ-125 touches this surface; coordinate)
+- TZ-120..126 (different CONFLICT KEYS — parallel safe by keys)
+- ARCHITECTURE.md (обновится в TZF-00 step 4)
+
+═══════════════════════════════════════════════════════════════
+СВЯЗАННЫЕ ТЗ
+═══════════════════════════════════════════════════════════════
+
+- **TZ-04 (Auth & Identity, done):** Auth flow foundation; TZ-127 augmenting без breaking existing API.
+- **TZ-110 (Category backend safety):** Pattern reuse для atomic operations.
+- **TZ-119 (Frontend safety sweep):** Silent-http pattern ensured; TZ-127 builds on it.
+- **TZ-129 (Observability Blindspots):** TZ-127 logging refresh failures подхватит TZ-129.
+
+═══════════════════════════════════════════════════════════════
+TZF-00 ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+TZF-00 §9: archive `TZ-127.done.txt`, lock `TZ-127-auth-rate-limit-httponly.lock`, STATUS.md ✅ DONE, ARCHITECTURE.md § "Security/Authentication" с updates про rate-limiter + cookie auth, progress.md entry с "XSS surface устранён; rate-limiter tiered (anon/user/admin)".

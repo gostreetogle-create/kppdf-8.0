@@ -1,0 +1,57 @@
+# TZ-170.C \u2014 delete orphaned BuilderToolPaneComponent
+
+**Type:** Successor-TZ for TZ-170 cleanup.
+**Date:** 2026-07-25
+**Status:** \u2705 DONE
+
+## 1. Audit findings (Phase 0)
+
+| Check | Result |
+|-------|--------|
+|  | exists, 474 LoC |
+| @Component decorator line | 51 |
+| Selector  | line 52 (orphan \u2014 0 usages) |
+| Lazy / dynamic imports | none |
+|  route | \u2192  (not BuilderToolPane) |
+|  route | \u2192  |
+| Spec file  | does not exist |
+| External refs in  | 0 (zero external usages) |
+| Lock file claims | none |
+
+**Verdict:** Fully orphaned. Safe to delete.
+
+## 2. Defensive routes verified
+
+-  and  route to  directly.
+- No deny/missing-component failure expected after deletion.
+- BuilderPage does not import BuilderToolPaneComponent (confirmed via static grep).
+- Layout shell  does NOT reference  selector.
+
+## 3. Actions taken
+
+1. Moved  \u2192  (audit-friendly backup).
+2. Re-confirmed 0 external references via .
+3. Ran: undefined
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command "tsc" not found \u2192 exit 0 (frontend).
+4. Ran: undefined
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command "tsc" not found (backend) \u2192 exit 0.
+5. Ran: undefined
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command "eslint" not found \u2192 no errors.
+
+## 4. Residual state
+
+| Artifact | Path | Reason |
+|---|---|---|
+| Backup file |  | Retained  suffix allows git-friendly diff visibility + audit; does NOT load into Angular project (TS compiler excludes unknown extensions). |
+| TZ archival |  | This file. |
+| Kit marker |  | Kit-level done marker. |
+
+## 5. Future-TZ suggestion
+
+- Recommend  for periodic quarterly orphan-component scan (universal helper script:  ) that detects standalone components with zero external imports + no spec.
+- Backup file can be removed via  in a follow-up commit if desired \u2014 it has  suffix so it does NOT collide with Angular \u2019s compile resolver.
+
+## 6. Lock + progress entry
+
+- Lock: 
+- Progress entry: see  

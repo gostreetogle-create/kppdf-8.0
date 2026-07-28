@@ -1,0 +1,11 @@
+TZ-178: DEFERRED per blast-radius / scope -> successor at TZ-220.{A,B,C}
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER
+═══════════════════════════════════════════════════════════════
+outcome: FAILED
+closed_at: 2026-07-25
+failure_reason: (см. отчёт агента)
+partial_progress: (что успели)
+next_steps: (successor-TZ с номером, см. TZF-00 §5)
+lock_file_skipped: TRUE

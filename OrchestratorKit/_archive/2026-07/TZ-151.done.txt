@@ -1,0 +1,57 @@
+# TZ-151: CI/CD — GitHub Actions (lint + test + build)
+
+**Priority**: CRITICAL  
+**Dependencies**: TZ-150 (ESLint)  
+**Estimate**: 3-4h
+
+## Проблема
+
+В проекте **нет CI/CD** — ни одного GitHub Actions workflow. Это значит:
+- Коммиты не проверяются автоматически
+- Тесты не прогоняются при пуше
+- Сборка не валидируется
+- Можно случайно сломать `main` без обратной связи
+
+## Требования
+
+1. **Создать** `.github/workflows/ci.yml` с триггерами:
+   - `push` на `main`
+   - `pull_request` на `main`
+2. **Job: lint** (frontend):
+   - Установка pnpm + dependencies
+   - `pnpm run lint` (ESLint)
+   - `pnpm run lint:styles` (Stylelint, если будет)
+3. **Job: test** (frontend):
+   - `pnpm run test -- --watch=false --browsers=ChromeHeadless`
+   - `pnpm run test:coverage` (опционально)
+4. **Job: build** (frontend + backend):
+   - `pnpm run build` frontend
+   - `pnpm run build` backend (typecheck)
+5. **Job: test** (backend):
+   - `pnpm run test` backend unit
+   - `pnpm run test:e2e` backend (если есть база)
+6. **Кэширование**:
+   - pnpm store cache
+   - node_modules cache
+7. **Matrix**: Node.js 20.x, 22.x
+
+8. **Создать** `.github/workflows/nightly.yml`:
+   - Запуск раз в день (cron)
+   - Полный e2e suite
+   - A11y audit (см. TZ-160)
+
+## Acceptance Criteria
+
+- [ ] CI проходит зелёным на push/PR
+- [ ] Все jobs выполняются параллельно
+- [ ] Кэш pnpm работает (< 30s restore)
+- [ ] Nightly workflow запускается по расписанию
+- [ ] Badge в README.md: `[![CI](https://github.com/.../workflows/ci/badge.svg)](...)`
+
+## TZ References
+
+- TZ-150: ESLint (линтер в CI)
+- TZ-152: Unit тесты
+- TZ-156: E2E тесты
+- TZ-160: A11y audit в CI
+- TZ-161: Lighthouse CI

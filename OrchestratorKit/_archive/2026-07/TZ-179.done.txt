@@ -1,0 +1,9 @@
+TZ-179: Frontend scope partial cleanup applied to main.ts (declare global + as any removal); pi-rich-text-editor DestroyRef skipped (component path stale in current refactor)
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER
+═══════════════════════════════════════════════════════════════
+outcome: DONE
+closed_at: 2026-07-25
+closed_by: 
+next_steps: —

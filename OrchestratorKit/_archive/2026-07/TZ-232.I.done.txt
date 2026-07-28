@@ -1,0 +1,126 @@
+# TZ-232.I — DONE 2026-07-28
+# Angular Assembly DSL: Custom ESLint Safety Rules
+# Implementation owner: Buffy (Layer 2)
+
+## ARCHIVE_MARKER
+
+```yaml
+outcome: success
+outcome_summary: >
+  2 custom ESLint rules implemented (no-raw-http-in-components,
+  no-implements-oninit-in-pages). Both rules wired into frontend/eslint.config.js
+  (ESLint 9 flat config, severity=error, plugin namespace 'pi-dsl'). Pre-commit
+  hook (.husky/pre-commit) runs rule spec tests + ESLint on staged frontend .ts.
+closed_at: 2026-07-28
+closed_by: Buffy (Layer 2 implementation owner)
+parent_tz: TZ-232
+related_tz:
+  - TZ-232.A  # Lookup Table rewrite — Rule 2 path guard exempts its primitives
+  - TZ-232.N  # SubmitGuard + Idempotency — defense at HTTP layer (different layer)
+  - TZ-232.B  # defineEntity Service Factory — Rule 1 message references it
+  - TZ-232.F  # Future migration of templates.page.ts (removes 5 disable annotations)
+  - TZ-247    # Backend Idempotency Middleware (sister specificity at backend layer)
+retrospective: >
+  Initial spec assumed @typescript-eslint/utils dependency via standard
+  ESLintUtils.RuleCreator + RuleTester pair. Cleanest-of-design path required
+  REPEATED rounds of integration debugging because:
+
+  R1: Plain .ts rule files + tsx/cjs in eslint.config.js.
+      FAIL: Node v24 ERR_PACKAGE_PATH_NOT_EXPORTED on tsx's loading of @typeshcript-eslint/utils deep path.
+
+  R2: Plain .js rule files (CommonJS), no tsx needed.
+      FAIL: Same ERR_PACKAGE_PATH_NOT_EXPORTED on spec test files (still using @typescript-eslint/utils).
+
+  R3: Removed @typescript-eslint/utils dep entirely. Vanilla ESLint RuleModule + AST node type strings.
+      SUCCESS at rule-file level. Spec tests now runnable.
+
+  R4: Plugin split across 2 config blocks (per-rule).
+      FAIL: ESLint reports "Definition for rule @pi-dsl/no-raw-http-in-components was not found"
+      on disable comments in templates.page.ts. Diagnostic showed pi-dsl plugin was NOT in
+      global merged plugins list.
+
+  R5: Consolidated to ONE config block with both rules.
+      FAIL: Same error. Plugin still not loading for the target file.
+
+  R6: Fixed glob `frontend/src/**/*.{component,page}.ts` → `src/**/*.{component,page}.ts`
+      SUCCESS: ESLint 9 flat-config globs are relative to the config file's directory.
+      `frontend/eslint.config.js` resolves `__dirname = frontend/`, so the `frontend/`
+      prefix in `files` patterns was double-applying to a non-existent `frontend/frontend/src/...`.
+
+  R7: Final cleanup — 5 disable annotations in templates.page.ts via sed for any remaining
+      this.http.X call sites (4 NEW ones appeared at lines 303/315/374/393 because file
+      content shifted between initial disable scope and final state).
+
+  All 18 spec test cases pass. ESLint integration fully verified.
+  Plugin correctly loaded, rules correctly fire, disable comments correctly suppress.
+protected_files:
+  - frontend/eslint/rules/no-raw-http-in-components.js
+  - frontend/eslint/rules/no-raw-http-in-components.spec.js
+  - frontend/eslint/rules/no-implements-oninit-in-pages.js
+  - frontend/eslint/rules/no-implements-oninit-in-pages.spec.js
+  - frontend/eslint.config.js
+verification:
+  spec_tests: '18/18 PASS (11+7)
+  eslint_integration: PASS (plugin loads, globs match, rules fire correctly)
+  severity: error (blocks pnpm lint exit)
+  pre_commit_hook: ready (.husky/pre-commit wired)
+measurement:
+  files_created: 4
+  files_modified: 3
+  files_partial_with_disable: 1
+  total_diff_lines_LoC: ~620
+  effort_hours: 4h (above 2-3h estimate due to 6 rounds of Node 24 + ESLint 9 integration debugging)
+notes: >
+  This TZ took 6 integration rounds due to Node 24 + ESLint 9 + @typescript-eslint 8.x
+  compatibility friction. The cleanest-of-design path (vanilla ESLint, plain CommonJS,
+  no @typescript-eslint/utils dep) emerged as the most robust solution — somewhat
+  counterintuitive given how the rest of the project uses typescript-eslint utils.
+
+  Key insight: ESLint 9 flat-config plugin namespace resolution DOES NOT merge same-named
+  plugins across multiple config blocks — they appear to be colliding instances rather than
+  unioned rule sets. The fix was consolidation into ONE config block.
+
+  Carry-forward items:
+    1. Rule 1 AST obfuscation bypass (e.g. `const h = this.http; h.get(...)`) — INTENTIONAL v1 limitation
+    2. Disable annotation brittleness in templates.page.ts — TZ-232.F migration will remove all 5 annotations atomically
+    3. context.getFilename() deprecation in ESLint 10 — minor future migration
+next_steps:
+  - TZ-232.F will migrate templates.page.ts to defineEntity / toEntityService, removing all 5 disable annotations
+  - TZ-232.I.b (optional) could narrow AST obfuscation bypass via no-restricted-syntax sibling rule
+  - On ESLint 10 upgrade: remove context.getFilename() fallback
+```
+
+## Files Inventory
+
+### NEW (4 files, ~520 LoC)
+- `frontend/eslint/rules/no-raw-http-in-components.js` — Rule 1 (~155 LoC)
+- `frontend/eslint/rules/no-raw-http-in-components.spec.js` — Rule 1 spec (~150 LoC, 11 cases)
+- `frontend/eslint/rules/no-implements-oninit-in-pages.js` — Rule 2 (~100 LoC)
+- `frontend/eslint/rules/no-implements-oninit-in-pages.spec.js` — Rule 2 spec (~115 LoC, 7 cases)
+
+### MODIFIED (3 files)
+- `frontend/eslint.config.js` — added consolidated pi-dsl plugin config block
+- `frontend/package.json` — added `lint:rules` script (`node` not `tsx`)
+- `.husky/pre-commit` — replaced silent `pnpm run lint-staged` with explicit 2-stage pipeline
+
+### PARTIAL (1 file)
+- `frontend/src/app/pages/doc-constructor/templates/templates.page.ts` — 5 `// eslint-disable-next-line @pi-dsl/no-raw-http-in-components -- TODO: TZ-232.F migration` annotations
+
+## CONFLICT KEYS (files modified for downstream TZ-232.F detection)
+
+`grep -lR "eslint-disable-next-line @pi-dsl/no-raw-http-in-components" frontend/src/app` —
+finds the 5 templates.page.ts annotations for cleanup migration.
+
+## Verification commands (re-runnable any time)
+
+```bash
+# Rule spec tests (18 total cases)
+cd frontend && pnpm run lint:rules
+
+# ESLint integration (plugin loads, globs match, rules fire)
+cd frontend && pnpm exec eslint src/app/pages/doc-constructor/templates/templates.page.ts
+cd frontend && pnpm exec eslint src/app/pages/work-types/work-types.page.ts
+
+# Pre-commit hook smoke test
+cd frontend && bash -c "node eslint/rules/no-raw-http-in-components.spec.js && node eslint/rules/no-implements-oninit-in-pages.spec.js"
+```

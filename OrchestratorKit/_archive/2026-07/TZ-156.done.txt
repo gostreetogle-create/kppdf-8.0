@@ -1,0 +1,61 @@
+# TZ-156: E2E тесты для 5 модулей (auth, materials, products, orders, contracts)
+
+**Priority**: HIGH  
+**Dependencies**: TZ-151 (CI/CD)  
+**Estimate**: 5-7h
+
+## Проблема
+
+Только 1 e2e тест (`reset-password.e2e-spec.ts`) на весь проект. Это означает:
+- API изменения не проверяются интеграционно
+- Можно сломать REST API без обратной связи
+- Нет тестов на бизнес-логику (создание заказа, расчёт стоимости)
+
+## Требования
+
+1. **Настроить** e2e тестовую среду:
+   - Завести тестовую MongoDB (в памяти или отдельная БД)
+   - Завести тестовые seed данные (минимум)
+   - Создать `jest-e2e.json` с timeout 30s
+2. **Создать тесты для модулей:**
+
+   **Auth (CRITICAL):**
+   - `POST /api/auth/login` — успешный логин
+   - `POST /api/auth/login` — неверный пароль → 401
+   - `POST /api/auth/refresh` — успешный refresh
+   - `POST /api/auth/refresh` — истёкший refresh → 401
+
+   **Materials:**
+   - `GET /api/materials` — пагинированный список
+   - `POST /api/materials` — создание (admin)
+   - `POST /api/materials` — без роли admin → 403
+   - `GET /api/materials/:id` — по ID
+
+   **Products:**
+   - `GET /api/products` — список с фильтрацией
+   - `POST /api/products` — создание
+   - `PATCH /api/products/:id` — обновление
+
+   **Orders:**
+   - `POST /api/orders` — создание заказа
+   - `GET /api/orders/:id` — детали заказа
+   - `PATCH /api/orders/:id/status` — смена статуса
+
+   **Contracts:**
+   - `POST /api/contracts` — создание договора
+   - `GET /api/contracts` — список с фильтрами
+
+3. **Добавить** скрипт `test:e2e` в `backend/package.json`
+4. **Добавить** e2e job в CI (TZ-151)
+
+## Acceptance Criteria
+
+- [ ] `pnpm run test:e2e` проходит зелёным на локальной MongoDB
+- [ ] Каждый тест изолирован (clean state)
+- [ ] Auth guard тесты проверяют 401/403
+- [ ] CI job для e2e (с MongoDB service container)
+
+## TZ References
+
+- TZ-151: CI/CD pipeline
+- TZ-152: Unit tests

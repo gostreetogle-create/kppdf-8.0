@@ -1,0 +1,8 @@
+# Lock file
+Locked as of 2026-07-25 — TZ-179: Frontend scope partial cleanup applied to main.ts (declare global + as any removal); pi-rich-text-editor DestroyRef skipped (component path stale in current refactor).
+
+Owner: 
+Protected files:
+  (см. CONFLICT KEYS в TZ-179.done.txt)
+
+Unlock: only via orchestrator approval (новое TZ-NN с пометкой «successor»).

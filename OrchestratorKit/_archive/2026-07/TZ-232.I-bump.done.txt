@@ -1,0 +1,39 @@
+[2026-07-28] TZ-232.I-bump (ESLint Rule 1 file-wide enabled + builder.page.ts surgical fix) DONE
+─────────────────────────────────────────────────────────────────────
+SPEC:           tasks/TZ-232.I-bump.md
+LOCK:           .mimocode/locks/TZ-232.I-bump-eslint-file-wide-enable.lock
+CROSS-REFS:     TZ-232.F (typed services precedent), TZ-232.I Original (rule scaffolding)
+
+DELIVERABLES (1 file op):
+  frontend/src/app/pages/doc-constructor/builder/builder.page.ts       5 surgical edits + 1 cleanup
+                                                                          HttpClient import REMOVED
+                                                                          2 services ADDED: OrganizationsService + DocTypesService
+                                                                          Duplicate flow → DocumentTemplatesService.duplicate()
+                                                                          org/docType forkJoin → orgSvc.list() + docTypeSvc.list()
+                                                                          Dead API_BASE_URL import CLEANED UP
+                                                                          1790 → 1773 LoC (-17)
+
+VERIFICATION (post-cleanup):
+  TSC frontend:           0 errors
+  ESLint builder.page.ts: clean (--max-warnings 0)
+  ESLint project-wide:    CLEAN (0 violations on all .component.ts + .page.ts)
+  disable comments:       0
+  raw HttpClient usages:  0 in 6 .page.ts files (storage-items/templates/builder + 3 others)
+  jest builder.page.spec: 5/5 PASS
+
+OUTCOME:
+  ✅ Rule 1 (@pi-dsl/no-raw-http-in-components) now effectively FILE-WIDE ENFORCED.
+  ✅ Closes the carry-over debt from TZ-232.I (rule scaffolding DONE but not enforced).
+  ✅ Surprising outcome: only 4 violations in only 1 page. Other 14+ pages suspected to need
+     migration per TZ-232 master plan were ALREADY clean — TZ-230.D + TZ-240 batch had
+     incidentally fixed most pages. Plan's "16 remaining pages" estimate obsolete.
+
+UNLOCKS:
+  TZ-232.G  — 10 form-dialogs → <pi-entity-form> adoption (next logical wave)
+  TZ-232.J  — Builder 1790 LoC → 9 atomic parts (highest-value single TZ)
+
+CARRY-FORWARD:
+  None blocking. Rule 1 fully enforced. PR review will pass lint without exceptions.
+
+CLOSED BY:  Buffy (parent session)
+ARCHIVED:   2026-07-28

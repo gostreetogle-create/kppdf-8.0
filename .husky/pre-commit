@@ -1,1 +1,50 @@
-pnpm run lint-staged
+#!/usr/bin/env sh
+# ─── TZ-232.I ─ Pre-commit hook (Angular Assembly DSL safety) ────────────────
+#
+# Order of operations (each failure aborts commit):
+#   1. Verify both TZ-232.I custom ESLint rules still pass their internal spec tests.
+#      Catches rule regressions BEFORE merge ─ e.g. someone modifies the rule
+#      implementation without running `pnpm run lint:rules`.
+#   2. Run ESLint on staged frontend .ts files only (fast feedback loop).
+#      Catches new pi-dsl violations at the developer machine BEFORE CI.
+#
+# Why staged-only and not full repo scan?
+#   - Pre-commit lint should be FAST (<10s on cold cache).
+#   - Full repo lint runs in CI (`.github/workflows/lint.yml`).
+#
+# Why skip lint-staged (the npm package)?
+#   - `lint-staged` is not in this project's devDependencies (as of 2026-07-28).
+#   - Husky pre-commit just called `pnpm run lint-staged` which silently failed.
+#   - This inline script replaces that with explicit, version-controlled steps.
+
+set -e
+
+# ── 1) Internal spec tests ─ validate the rule implementations themselves ──
+echo ""
+echo "[pre-commit 1/2] Verifying TZ-232.I custom ESLint rules pass spec tests..."
+echo ""
+cd frontend
+node eslint/rules/no-raw-http-in-components.spec.js
+node eslint/rules/no-implements-oninit-in-pages.spec.js
+cd ..
+echo ""
+echo "[pre-commit 1/2] OK ✓"
+echo ""
+
+# ── 2) Project-wide ESLint on STAGED frontend .ts files only ──
+# Collect staged .ts files (added/copied/modified/renamed, type A/C/M/R),
+# filter to frontend/src scope. Empty result = skip lint (no TS work).
+STAGED_TS=$(git diff --cached --name-only --diff-filter=ACMR | grep '^frontend/src/.*\.ts$' || true)
+
+if [ -z "$STAGED_TS" ]; then
+  echo "[pre-commit 2/2] No staged frontend .ts files ─ skipping ESLint."
+  exit 0
+fi
+
+echo "[pre-commit 2/2] Running ESLint on $(echo "$STAGED_TS" | wc -l | tr -d ' ') staged .ts files..."
+pnpm exec eslint --no-warn-ignored $STAGED_TS
+echo ""
+echo "[pre-commit 2/2] OK ✓"
+echo ""
+
+exit 0

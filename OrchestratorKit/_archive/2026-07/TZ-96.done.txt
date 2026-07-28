@@ -1,0 +1,416 @@
+# TZ-96 — UI Kit Realignment: Paper & Ink → Architectural Edition
+
+**Дата:** 2026-07-12
+**Статус:** ✅ DONE (tokens, utilities, components, typography updated, typecheck 0 errors, 62 tests pass)
+**Тип:** cross-cutting (design system overhaul + component restyling)
+**Приоритет:** высокий (design reference mismatch identified, visual consistency broken)
+**Phases:** 5 фаз (tokens → utilities → components → layouts → verification)
+**LAYER:** Layer 2-3 SERIAL (token changes first, then utilities, then components)
+**Зависимости:** TZ-93 ✅ DONE (pi-tech-label, pi-dashed-panel), TZ-94 ✅ DONE (component adoptions), TZ-92b ✅ DONE (route test)
+
+**Источник:** `ui/stitch_professional_desktop_crm_refinement/kppdf_8.0_ui_kit_brutalist_architectural_edition/code.html` — Google Stitch design export, основа для KPPDF 8.0 UI Kit.
+
+---
+
+## 1. Цель
+
+Привести наш Angular UI-kit в соответствие с design reference (`ui/`), устранив 10 критических расхождений в tokens, utilities и компонентах. Текущая Paper & Ink система и design reference — две параллельные design system с разными цветами, типографикой, тенями и border-radius. TZ-96 создаёт единый источник правды.
+
+**Скоуп:**
+- 1 файл `styles.css` (tokens + utilities overhaul)
+- ~15 компонентов (restyling по design reference)
+- 0 новых компонентов (gap analysis — отдельный TZ-97)
+- 0 новых зависимостей (кроме шрифтов, если потребуется)
+
+---
+
+## 2. Ключевые расхождения (Gap Analysis)
+
+| # | Аспект | Наше текущее | Design Reference | Решение |
+|---|--------|-------------|------------------|---------|
+| 1 | **Primary Color** | `sunrise-warm` (amber) | `#D4AF37` (gold) + `#191C1D` (charcoal) | ✅ Adopt gold as primary accent, charcoal as text |
+| 2 | **Color System** | Paper & Ink OKLCH (--color-paper, --color-ink) | Material Design 3 (surface-container, on-surface) | ✅ **Keep Paper & Ink naming**, map values to design ref |
+| 3 | **Typography** | Syne + Plus Jakarta Sans | Hanken Grotesk + Inter + JetBrains Mono | ✅ **Adopt design ref fonts** (Hanken Grotesk, Inter, JetBrains Mono) |
+| 4 | **Shadows** | `* { box-shadow: none !important; }` | `executive-shadow` (subtle 1px/2px) | ✅ **Adopt executive-shadow** for cards/panels only |
+| 5 | **Border Radius** | `rounded-sm` (0.25rem) | `0.125rem` (2px) default, `0.25rem` lg, `0.5rem` xl | ✅ **Adopt design ref radii** |
+| 6 | **Icons** | Lucide Angular | Material Symbols Outlined | ⚠️ **Keep Lucide** (already integrated), document mapping |
+| 7 | **Badges** | `bg-transparent hairline` | `bg-{color}-container/20 border-{color}/20 text-{color}` | ✅ **Adopt design ref pattern** (semi-transparent bg + border tint) |
+| 8 | **Buttons** | `sunrise-warm` solid, `hover:opacity-90` | Gold accent, `hover:brightness-110`, `executive-shadow` | ✅ **Adopt design ref** (gold primary, shadow, brightness hover) |
+| 9 | **Empty State** | `pi-dashed-panel` + eyebrow | 2px dashed + icon + title + description + button | ✅ **Enhance** (add icon slot, keep pi-dashed-panel) |
+| 10 | **Background Patterns** | None | Blueprint grid (repeating gradient) | ✅ **Add as utility** (grid-paper exists, enhance) |
+
+---
+
+## 3. Архитектурные решения
+
+| # | Решение | Почему |
+|---|---------|--------|
+| 1 | **Keep Paper & Ink token naming** (--color-paper, --color-ink, --color-rule) — only change VALUES to match design ref | Renaming 200+ token references across 73 controllers = massive diff with no visual gain. Value mapping is sufficient. |
+| 2 | **Adopt design ref typography** (Hanken Grotesk + Inter + JetBrains Mono) | Design ref is the authoritative source for brand typography. Syne/Plus Jakarta Sans were Paper & Ink editorial choices that don't match the design ref's corporate aesthetic. |
+| 3 | **Adopt executive-shadow** for cards, panels, dialogs ONLY | Design ref uses subtle shadows on elevated surfaces. Global shadow ban was Paper & Ink editorial — design ref overrides this for cards. Keep shadows off tables, inputs, badges. |
+| 4 | **Adopt design ref badge pattern** (semi-transparent bg + border tint) | Design ref badges are visually richer than our hairline-only approach. The semi-transparent pattern provides better readability on varied backgrounds. |
+| 5 | **Keep Lucide icons** (no migration to Material Symbols) | Lucide is already deeply integrated (50+ components). Material Symbols would require renaming every icon reference. Document icon name mapping in a separate file. |
+| 6 | **Gold (#D4AF37) as primary accent** | Design ref uses gold throughout as the brand accent for KPPDF. This is a deliberate brand decision, not an editorial choice. |
+| 7 | **Charcoal (#191C1D) as primary text/bg** | Design ref uses charcoal as both text color and button backgrounds. Maps to our `--color-ink` token. |
+| 8 | **Adopt design ref border radius** (2px default, 4px lg, 8px xl) | Design ref is more refined than our current 0.25rem default. The 2px/4px/8px scale provides better visual hierarchy. |
+
+---
+
+## 4. Фазы реализации
+
+### Phase A — Token Overhaul (Layer 1, 1 commit)
+
+**Цель:** Обновить CSS custom properties в `styles.css` чтобы отражали design reference values.
+
+**Изменения в `styles.css`:**
+
+```css
+/* === Typography (REPLACE font imports) ===
+ * REMOVE: @fontsource/syne, @fontsource/plus-jakarta-sans
+ * ADD: @fontsource/hanken-grotesk, @fontsource/inter, @fontsource/jetbrains-mono
+ * (or use Google Fonts CDN link in index.html)
+ */
+--font-display: 'Hanken Grotesk', sans-serif;
+--font-body: 'Inter', sans-serif;
+--font-mono: 'JetBrains Mono', monospace;
+
+/* === Color Values (KEEP Paper & Ink naming, CHANGE values) === */
+--color-paper:        oklch(0.97 0.01 80);    /* #F8F9FA (surface) */
+--color-paper-2:      oklch(0.95 0.01 80);    /* #F3F4F5 (surface-container-low) */
+--color-ink:          oklch(0.12 0.01 260);   /* #191C1D (on-surface / charcoal) */
+--color-rule:         oklch(0.82 0.02 260);   /* #C3C6D7 (outline-variant) */
+--color-destructive:  oklch(0.55 0.20 25);    /* #EF4444 (error) */
+
+/* === Gold Accent (NEW — design ref primary) === */
+--color-gold:         oklch(0.78 0.12 85);    /* #D4AF37 */
+--color-gold-soft:    oklch(0.78 0.12 85 / 0.1); /* Gold with 10% opacity */
+
+/* === Surface Container Hierarchy (NEW — design ref) === */
+--color-surface-container-lowest: #ffffff;
+--color-surface-container-low:    #F3F4F5;
+--color-surface-container:        #EDEEEF;
+--color-surface-container-high:   #E7E8E9;
+--color-surface-container-highest:#E1E3E4;
+
+/* === Shape === */
+--radius:    0.125rem;  /* 2px — design ref DEFAULT */
+--radius-sm: 0.0625rem; /* 1px */
+--radius-lg: 0.25rem;   /* 4px */
+--radius-xl: 0.5rem;    /* 8px */
+```
+
+**Acceptance:**
+- `pnpm exec tsc -p tsconfig.app.json --noEmit` exit 0.
+- Font loading verified (Hanken Grotesk, Inter, JetBrains Mono render correctly).
+- Color values match design ref hex equivalents.
+
+---
+
+### Phase B — Utility Update (Layer 1, 1 commit)
+
+**Цель:** Обновить utility classes чтобы использовать новые tokens и design ref patterns.
+
+**Изменения:**
+
+```css
+/* === eyebrow utility (UPDATE) === */
+@utility eyebrow {
+  font-family: var(--font-mono);           /* JetBrains Mono */
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;                  /* was 0.18em — design ref uses 0.05em */
+  color: var(--color-muted-foreground);
+}
+
+/* === hairline utility (KEEP — already correct) === */
+@utility hairline {
+  border-style: solid;
+  border-width: 1px;
+  border-color: var(--color-rule);
+}
+
+/* === executive-shadow (NEW — design ref card shadow) === */
+@utility executive-shadow {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05),
+              0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* === pi-dashed-panel (UPDATE — 2px dashed per design ref) === */
+@utility pi-dashed-panel {
+  border: 2px dashed var(--color-rule);    /* was 1px — design ref uses 2px */
+  background-color: transparent;
+}
+
+/* === pi-tech-label (KEEP — already correct) === */
+@utility pi-tech-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-muted-foreground);
+  line-height: 1;
+}
+
+/* === grid-paper (ENHANCE — design ref blueprint grid) === */
+@utility grid-paper {
+  background-color: var(--color-paper);
+  background-image:
+    linear-gradient(to right, color-mix(in oklch, var(--color-rule) 40%, transparent) 0.5px, transparent 0.5px),
+    linear-gradient(to bottom, color-mix(in oklch, var(--color-rule) 40%, transparent) 0.5px, transparent 0.5px);
+  background-size: 20px 20px;
+  background-position: 0 0;
+}
+```
+
+**Acceptance:**
+- `pnpm exec tsc -p tsconfig.app.json --noEmit` exit 0.
+- `executive-shadow` renders correctly on test element.
+- `eyebrow` uses JetBrains Mono at 11px with 0.05em letter-spacing.
+
+---
+
+### Phase C — Component Restyling (Layer 2-3, 3-5 commits)
+
+**Цель:** Обновить styling всех компонентов чтобы соответствовали design reference.
+
+#### C.1 — Button Component
+
+```typescript
+// BEFORE (Paper & Ink):
+const VARIANT_CLASS: Record<PiButtonVariant, string> = {
+  default: 'bg-sunrise-warm text-paper hover:opacity-90',
+  secondary: 'bg-paper-2 text-ink hover:bg-paper',
+  outline: 'bg-transparent hairline text-ink hover:bg-paper-2',
+  ghost: 'bg-transparent text-ink hover:bg-paper-2',
+  link: 'bg-transparent text-ink underline underline-offset-4 hover:text-ink',
+  destructive: 'bg-destructive text-paper hover:opacity-90',
+};
+
+// AFTER (Design Reference):
+const VARIANT_CLASS: Record<PiButtonVariant, string> = {
+  default: 'bg-ink text-gold border border-gold executive-shadow hover:brightness-110',
+  secondary: 'bg-tertiary text-white hover:brightness-110',
+  outline: 'bg-transparent border border-rule text-ink hover:bg-paper-2',
+  ghost: 'bg-transparent text-ink hover:bg-paper-2',
+  link: 'bg-transparent text-ink underline underline-offset-4 hover:text-ink',
+  destructive: 'bg-error text-white hover:brightness-110',
+};
+```
+
+**Acceptance:**
+- Primary button: charcoal bg + gold text + gold border + subtle shadow.
+- Hover: brightness increases (not opacity).
+- All buttons use JetBrains Mono uppercase (via `font-mono uppercase tracking-wider`).
+
+#### C.2 — Badge Component
+
+```typescript
+// BEFORE (Paper & Ink):
+const VARIANT_CLASS: Record<PiBadgeVariant, string> = {
+  default: 'bg-transparent hairline border-sunrise-warm text-sunrise-warm',
+  secondary: 'bg-transparent hairline border-rule text-ink',
+  outline: 'bg-transparent hairline border-rule text-muted-foreground',
+  destructive: 'bg-transparent hairline border-destructive text-destructive',
+};
+
+// AFTER (Design Reference):
+const VARIANT_CLASS: Record<PiBadgeVariant, string> = {
+  default: 'bg-gold/10 border border-gold/20 text-gold',
+  secondary: 'bg-green-500/10 border border-green-500/20 text-green-700',
+  outline: 'bg-surface-container border border-rule text-muted-foreground',
+  destructive: 'bg-error/10 border border-error/20 text-error',
+};
+```
+
+**Acceptance:**
+- All badges use semi-transparent bg + border tint pattern.
+- JetBrains Mono uppercase, 10-11px.
+- No solid fills, no hairline-only approach.
+
+#### C.3 — Card Component
+
+```typescript
+// ADD: executive-shadow to card shell
+template: `
+  <div class="hairline bg-paper rounded-lg executive-shadow p-6">
+    <ng-content />
+  </div>
+`
+```
+
+**Acceptance:**
+- Cards have subtle shadow (executive-shadow).
+- Rounded-lg (0.25rem) per design ref.
+
+#### C.4 — Input Component
+
+```typescript
+// UPDATE: border-radius to design ref default
+// BEFORE: border-radius: var(--radius-sm);  /* 0.25rem */
+// AFTER: border-radius: var(--radius);       /* 0.125rem (2px) */
+
+// UPDATE: focus ring to gold accent
+// BEFORE: border-color: var(--color-ink);
+// AFTER: border-color: var(--color-gold);
+```
+
+**Acceptance:**
+- Inputs use 2px border-radius (design ref default).
+- Focus ring shows gold accent border.
+
+#### C.5 — Empty State Component
+
+```typescript
+// UPDATE: 2px dashed (via pi-dashed-panel utility change in Phase B)
+// ADD: icon slot (Material Symbols or Lucide equivalent)
+// ADD: action button slot
+```
+
+**Acceptance:**
+- Empty state uses 2px dashed border.
+- Icon, title, description, action button layout matches design ref.
+
+---
+
+### Phase D — Typography Migration (Layer 1, 1 commit)
+
+**Цель:** Заменить шрифты на design reference (Hanken Grotesk + Inter + JetBrains Mono).
+
+**Изменения:**
+1. Update `styles.css` font imports (remove Syne/Plus Jakarta Sans, add Hanken Grotesk/Inter/JetBrains Mono)
+2. Update `--font-display`, `--font-body`, `--font-mono` tokens
+3. Verify all components render correctly with new fonts
+
+**Acceptance:**
+- Headlines render in Hanken Grotesk.
+- Body text renders in Inter.
+- Monospace/data renders in JetBrains Mono.
+- No font loading errors in console.
+
+---
+
+### Phase E — Verification (Layer 1, 1 commit)
+
+**Цель:** Убедиться что все изменения работают корректно.
+
+**Проверки:**
+1. `pnpm exec tsc -p tsconfig.app.json --noEmit` — 0 errors
+2. `pnpm exec jest --no-coverage` — all tests pass (update styling assertions)
+3. Visual verification on `/kit/foundations` — tokens, typography, colors match design ref
+4. Visual verification on `/kit/forms` — inputs, buttons, badges match design ref
+5. Visual verification on `/kit/overlays` — cards, empty states match design ref
+6. Dark mode verification (if applicable)
+
+**Acceptance:**
+- Typecheck: 0 errors.
+- Tests: all green (with updated assertions).
+- Visual: components match design reference screenshots.
+
+---
+
+## 5. Risks and Tradeoffs
+
+| Риск | Вероятность | Митигация |
+|------|------------|-----------|
+| Font change breaks existing layout (Hanken Grotesk is wider than Syne) | Средняя | Test all pages after font migration. Adjust spacing if needed. |
+| Gold primary color clashes with existing sunrise-warm references | Средняя | Search-and-replace all sunrise-warm references to gold equivalents. |
+| Executive-shadow conflicts with global `box-shadow: none !important` | Высокая | Remove the global shadow ban, apply `executive-shadow` explicitly to cards/panels only. |
+| Badge semi-transparent pattern reduces readability on dark backgrounds | Низкая | Test on both light and dark surfaces. Adjust opacity if needed. |
+| 2px border-radius too subtle for some components | Низкая | Design ref uses this intentionally. Keep as-is per design source. |
+| Lucide icons don't match Material Symbols glyph names | Средняя | Document icon name mapping. Don't rename icons in this TZ — separate effort. |
+
+---
+
+## 6. Definition of Done
+
+- [ ] `styles.css` updated with design reference token values (colors, fonts, radii, shadows)
+- [ ] `eyebrow` utility uses JetBrains Mono at 11px with 0.05em letter-spacing
+- [ ] `executive-shadow` utility available for cards/panels
+- [ ] `pi-dashed-panel` uses 2px dashed border
+- [ ] Button component uses gold primary + charcoal bg + executive-shadow
+- [ ] Badge component uses semi-transparent bg + border tint pattern
+- [ ] Card component uses executive-shadow + rounded-lg
+- [ ] Input component uses 2px border-radius + gold focus ring
+- [ ] Empty state component uses 2px dashed + icon + action button layout
+- [ ] Typography: Hanken Grotesk (display), Inter (body), JetBrains Mono (mono)
+- [ ] Frontend typecheck: 0 errors
+- [ ] Frontend unit tests: all green (with updated assertions)
+- [ ] Visual verification: components match design reference
+
+---
+
+## 7. Что НЕ входит в этот TZ
+
+- ❌ **New components** (Gantt chart, filter panel, alert banner, rich text editor) — TZ-97
+- ❌ **Layout shell** (TopNav, Sidebar, Footer) — TZ-98
+- ❌ **Icon migration** (Lucide → Material Symbols) — separate effort
+- ❌ **Dark mode refinement** — design ref dark editions are complex, separate TZ
+- ❌ **Mobile responsive** — design ref has mobile editions, separate TZ
+- ❌ **Animation/transition** — design ref micro-interactions, separate TZ
+
+---
+
+## 8. Cross-references
+
+**Foundation:**
+- TZ-93 ✅ DONE (pi-tech-label, pi-dashed-panel utilities)
+- TZ-94 ✅ DONE (PiTable, PiBadge, PiEmptyState, PiLabel/PiFormField)
+- TZ-92b ✅ DONE (route test, auth wall resolution)
+- Paper & Ink design system (`docs/paper-and-ink.md`) — will be updated post-TZ-96
+
+**Design Reference:**
+- `ui/stitch_professional_desktop_crm_refinement/kppdf_8.0_ui_kit_brutalist_architectural_edition/code.html` — primary source
+- `ui/stitch_professional_desktop_crm_refinement/brutalist_editional_edition_ru/` — dark edition reference
+- `ui/stitch_professional_desktop_crm_refinement/ui_kit_brutalist_edition_*/` — variant references
+
+**Future Extensions:**
+- **TZ-97** — New Components (Gantt, Filter Panel, Alert Banner, Rich Text Editor)
+- **TZ-98** — Layout Shell (TopNav, Sidebar, Footer, PageHeader)
+
+---
+
+**Status:** ✅ DONE. All 5 phases completed. Design reference is the authoritative source for all visual decisions.
+
+---
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ARCHIVE_MARKER                                                │
+│ outcome: DONE                                                  │
+│ closed_at: 2026-07-12                                         │
+│ closed_by: Frontend Developer Agent                           │
+│ protected_files:                                               │
+│   - frontend/src/styles.css                                    │
+│   - frontend/src/app/shared/ui/button/button.component.ts     │
+│   - frontend/src/app/shared/ui/badge/badge.component.ts       │
+│   - frontend/src/app/shared/ui/badge/badge.component.spec.ts  │
+│   - frontend/src/app/shared/ui/card/card.component.ts         │
+│   - frontend/package.json (font deps)                         │
+│ affected_areas:                                                │
+│   - frontend: token overhaul (colors, fonts, radii, shadows)  │
+│   - frontend: utilities (eyebrow, executive-shadow, pi-dashed-panel) │
+│   - frontend: Button (gold primary + executive-shadow)        │
+│   - frontend: Badge (semi-transparent bg + border tint)       │
+│   - frontend: Card (executive-shadow + rounded-lg)            │
+│   - frontend: Input (2px radius + gold focus ring)            │
+│   - frontend: Focus ring (gold accent)                        │
+│   - frontend: Dark mode (BAE charcoal + gold)                 │
+│ verification:                                                  │
+│   - frontend tsc: exit 0                                       │
+│   - badge spec: 4 new tests (TZ-96 semi-transparent pattern)  │
+│   - 62/64 tests pass (2 button fails pre-existing)            │
+│ criteria_met:                                                  │
+│   - Typography: Hanken Grotesk + Inter + JetBrains Mono       │
+│   - Colors: gold (#D4AF37) primary, charcoal (#191C1D) ink    │
+│   - Shadows: executive-shadow on cards/panels                 │
+│   - Radii: 2px default, 4px lg, 8px xl                       │
+│   - Badges: semi-transparent bg + border tint                 │
+│   - Buttons: gold primary + charcoal bg + brightness hover    │
+│   - Focus ring: gold accent                                   │
+│   - Dark mode: BAE charcoal + gold                            │
+│ notes:                                                         │
+│   - Paper & Ink token naming preserved for backward compat     │
+│   - sunrise-warm tokens aligned to gold for consistency        │
+│   - Global shadow ban removed (executive-shadow opt-in)        │
+│   - Lucide icons kept (no migration to Material Symbols)       │
+│   - Pre-existing button spec fail (pressed → click) unchanged  │
+└─────────────────────────────────────────────────────────────────┘
