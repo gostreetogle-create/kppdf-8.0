@@ -24,8 +24,8 @@ echo ""
 echo "[pre-commit 1/2] Verifying TZ-232.I custom ESLint rules pass spec tests..."
 echo ""
 cd frontend
-node eslint/rules/no-raw-http-in-components.spec.js
-node eslint/rules/no-implements-oninit-in-pages.spec.js
+pnpm exec tsx eslint/rules/no-raw-http-in-components.spec.ts
+pnpm exec tsx eslint/rules/no-implements-oninit-in-pages.spec.ts
 cd ..
 echo ""
 echo "[pre-commit 1/2] OK ✓"

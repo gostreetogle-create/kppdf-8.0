@@ -1,8 +1,8 @@
 /**
  * TZ-232.I — Custom ESLint rule: `no-raw-http-in-components`.
  *
- * **Scope:** `frontend/src/**/*.component.ts` files (NOT services,
- * NOT interceptors, NOT specs).
+ * **Scope:** All `*.component.ts` files under `frontend/src/` (recursive glob).
+ *          (NOT services, NOT interceptors, NOT specs).
  *
  * **What it bans:**
  *   1. Direct `this.http.<get|post|put|patch|delete>(...)` member calls
@@ -102,16 +102,28 @@ export default createRule({
       // intentionally not flagged: rare and harder to detect, but also
       // isolated — if such a ref exists, the actual `.get/post` call
       // surface will be flagged when invoked.
+      //
+      // AST chain: this.http → this.http.<verb> → this.http.<verb>(...)
+      // The inner MemberExpression (this.http) has a parent that is another
+      // MemberExpression (this.http.<verb>), whose parent is the CallExpression.
       MemberExpression(node) {
         if (!isThisHttp(node)) return;
-        const parent = node.parent;
-        if (!parent || parent.type !== AST_NODE_TYPES.CallExpression) return;
-        if (parent.callee !== node) return;
-        const calleeProperty = parent.callee.property;
+
+        // Step up: node is `this.http`, its parent should be `this.http.<verb>`
+        const verbNode = node.parent;
+        if (!verbNode || verbNode.type !== AST_NODE_TYPES.MemberExpression) return;
+
+        // Step up again: verbNode's parent should be the CallExpression
+        const callNode = verbNode.parent;
+        if (!callNode || callNode.type !== AST_NODE_TYPES.CallExpression) return;
+        if (callNode.callee !== verbNode) return;
+
+        const calleeProperty = verbNode.property;
         if (calleeProperty.type !== AST_NODE_TYPES.Identifier) return;
         if (!HTTP_VERBS.has(calleeProperty.name)) return;
+
         context.report({
-          node: parent,
+          node: callNode,
           messageId: 'rawHttpCall',
           data: { method: calleeProperty.name },
         });

@@ -1,9 +1,9 @@
 /**
  * TZ-232.I — Custom ESLint rule: `no-implements-oninit-in-pages`.
  *
- * **Scope:** `frontend/src/app/pages/**/*.page.ts` files (NOT shared
- * primitives — `<pi-table.component.ts>` and similar may legitimately
- * use `OnInit` for one-shot seed sync, see TZ-104.4.2).
+ * **Scope:** All `*.page.ts` files under `frontend/src/app/pages/` (recursive glob).
+ *          (NOT shared primitives — `<pi-table.component.ts>` and similar
+ *          may legitimately use `OnInit` for one-shot seed sync, see TZ-104.4.2).
  *
  * **What it bans:**
  *   - A class declaration that `implements OnInit` AND has an

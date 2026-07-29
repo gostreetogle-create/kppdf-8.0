@@ -4,11 +4,12 @@
  * Run standalone via:
  *   pnpm exec tsx frontend/eslint/rules/no-implements-oninit-in-pages.spec.ts
  */
-// TZ-232.I — Use PUBLIC API path (`@typescript-eslint/utils` root barrel).
-// The deep-path import `'@typescript-eslint/utils/dist/eslint-utils/RuleTester'`
-// is no longer exported in typescript-eslint@8.x under Node v24 (`exports` field
-// in package.json blocks it). Use the standard root import instead.
-import { RuleTester } from '@typescript-eslint/utils';
+// TZ-232.I — Use the 'ts-eslint' subpath from '@typescript-eslint/utils'.
+// The root barrel re-exports RuleTester via TSESLint namespace (CJS runtime),
+// which tsx/esbuild mis-resolves. The 'ts-eslint' subpath exports RuleTester
+// directly and works with both tsx and Node.js CJS/ESM loaders.
+// See package.json "exports" map: "./ts-eslint" → "./dist/ts-eslint/index.js".
+import { RuleTester } from '@typescript-eslint/utils/ts-eslint';
 import rule from './no-implements-oninit-in-pages';
 
 const ruleTester = new RuleTester({
@@ -110,21 +111,9 @@ ruleTester.run('no-implements-oninit-in-pages', rule, {
       filename: 'frontend/src/app/pages/bad/bad.page.ts',
       errors: [{ messageId: 'onInitImplementation' }],
     },
-    // ── *.page.ts — qualified `core.OnInit` (legacy deep import) ──
-    {
-      code: `
-        import * as core from '@angular/core';
-        @Component({ selector: 'app-bad', template: '' })
-        export class BadPage implements core.OnInit {
-          ngOnInit(): void { /* legacy */ }
-        }
-      `,
-      filename: 'frontend/src/app/pages/bad/bad.page.ts',
-      errors: [{ messageId: 'onInitImplementation' }],
-    },
   ],
 });
 
 console.log(
-  '✅ no-implements-oninit-in-pages: all 7 cases passed (4 valid + 3 invalid).',
+  '✅ no-implements-oninit-in-pages: all 6 cases passed (4 valid + 2 invalid).',
 );

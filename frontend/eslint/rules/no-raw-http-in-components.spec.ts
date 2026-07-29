@@ -10,11 +10,12 @@
  *
  * @see docs/DEVELOPMENT-PATTERNS.md — DSL conventions.
  */
-// TZ-232.I — Use the public API path '@typescript-eslint/utils' (root barrel).
-// The older deep-path import `'@typescript-eslint/utils/dist/eslint-utils/RuleTester'`
-// is no longer exported in typescript-eslint@8.x under Node v24 (`exports` field
-// in package.json blocks it). Use the standard root import instead.
-import { RuleTester } from '@typescript-eslint/utils';
+// TZ-232.I — Use the 'ts-eslint' subpath from '@typescript-eslint/utils'.
+// The root barrel re-exports RuleTester via TSESLint namespace (CJS runtime),
+// which tsx/esbuild mis-resolves. The 'ts-eslint' subpath exports RuleTester
+// directly and works with both tsx and Node.js CJS/ESM loaders.
+// See package.json "exports" map: "./ts-eslint" → "./dist/ts-eslint/index.js".
+import { RuleTester } from '@typescript-eslint/utils/ts-eslint';
 import rule from './no-raw-http-in-components';
 
 const ruleTester = new RuleTester({
@@ -64,7 +65,7 @@ ruleTester.run('no-raw-http-in-components', rule, {
           private readonly data = httpResource<Material[]>(() => '/api/materials');
         }
       `,
-      filename: 'frontend/src/app/pages/foo/foo.page.ts',
+      filename: 'frontend/src/app/shared/components/foo/foo.component.ts',
     },
     // ── *.component.ts — HttpParams / HttpErrorResponse imports are allowed ──
     {
@@ -76,7 +77,7 @@ ruleTester.run('no-raw-http-in-components', rule, {
           buildParams(): HttpParams { return new HttpParams().set('a', '1'); }
         }
       `,
-      filename: 'frontend/src/app/pages/foo/foo.page.ts',
+      filename: 'frontend/src/app/shared/components/foo/foo.component.ts',
     },
     // ── *.component.ts — bare `this.http` reference w/o chained verb ──
     {
@@ -87,7 +88,7 @@ ruleTester.run('no-raw-http-in-components', rule, {
           get raw() { return this.http; }
         }
       `,
-      filename: 'frontend/src/app/pages/foo/foo.page.ts',
+      filename: 'frontend/src/app/shared/components/foo/foo.component.ts',
     },
   ],
 
@@ -103,7 +104,7 @@ ruleTester.run('no-raw-http-in-components', rule, {
           }
         }
       `,
-      filename: 'frontend/src/app/pages/bad/bad.page.ts',
+      filename: 'frontend/src/app/shared/components/bad/bad.component.ts',
       errors: [{ messageId: 'rawHttpCall' }],
     },
     // ── *.component.ts — `this.http.post(...)` should fail ──
@@ -117,7 +118,7 @@ ruleTester.run('no-raw-http-in-components', rule, {
           }
         }
       `,
-      filename: 'frontend/src/app/pages/bad/bad.page.ts',
+      filename: 'frontend/src/app/shared/components/bad/bad.component.ts',
       errors: [{ messageId: 'rawHttpCall' }],
     },
     // ── *.component.ts — all 5 HTTP verbs fail ──
@@ -133,7 +134,7 @@ ruleTester.run('no-raw-http-in-components', rule, {
           e() { return this.http.delete('/api/x'); }
         }
       `,
-      filename: 'frontend/src/app/pages/bad/bad.page.ts',
+      filename: 'frontend/src/app/shared/components/bad/bad.component.ts',
       errors: [
         { messageId: 'rawHttpCall' },
         { messageId: 'rawHttpCall' },
@@ -151,7 +152,7 @@ ruleTester.run('no-raw-http-in-components', rule, {
           constructor(private http: HttpClient) { /* ... */ }
         }
       `,
-      filename: 'frontend/src/app/pages/bad/bad.page.ts',
+      filename: 'frontend/src/app/shared/components/bad/bad.component.ts',
       errors: [{ messageId: 'rawHttpImport' }],
     },
     // ── *.component.ts — HttpClient + other http imports; only HttpClient fails ──
@@ -165,7 +166,7 @@ ruleTester.run('no-raw-http-in-components', rule, {
           load() { return this.http.get(this.base); }
         }
       `,
-      filename: 'frontend/src/app/pages/bad/bad.page.ts',
+      filename: 'frontend/src/app/shared/components/bad/bad.component.ts',
       errors: [
         { messageId: 'rawHttpImport' },
         { messageId: 'rawHttpCall' },
