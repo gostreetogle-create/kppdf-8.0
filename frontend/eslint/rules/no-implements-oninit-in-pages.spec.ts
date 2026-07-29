@@ -111,9 +111,23 @@ ruleTester.run('no-implements-oninit-in-pages', rule, {
       filename: 'frontend/src/app/pages/bad/bad.page.ts',
       errors: [{ messageId: 'onInitImplementation' }],
     },
+    // ── *.page.ts — qualified `core.OnInit` (legacy namespace import pattern) ──
+    // Note: `core` is intentionally undefined — the parser resolves it as
+    // TSQualifiedName regardless of symbol resolution. This tests the
+    // rule's qualified-name detection path without requiring @angular/core.
+    {
+      code: `
+        @Component({ selector: 'app-bad', template: '' })
+        export class BadPage implements core.OnInit {
+          ngOnInit(): void { /* legacy */ }
+        }
+      `,
+      filename: 'frontend/src/app/pages/bad/bad.page.ts',
+      errors: [{ messageId: 'onInitImplementation' }],
+    },
   ],
 });
 
 console.log(
-  '✅ no-implements-oninit-in-pages: all 6 cases passed (4 valid + 2 invalid).',
+  '✅ no-implements-oninit-in-pages: all 7 cases passed (4 valid + 3 invalid).',
 );

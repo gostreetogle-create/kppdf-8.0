@@ -83,13 +83,23 @@ export default createRule({
         if (!implementsClause || implementsClause.length === 0) return;
         const hasOnInit = implementsClause.some((impl) => {
           // Expression form: `Identifier { name: 'OnInit' }` for bare
-          // `OnInit`; `TSQualifiedName { left: Identifier, right: Identifier }`
-          // for `Foo.OnInit`.
+          // `OnInit`; `TSQualifiedName { left, right }` for `Foo.OnInit`
+          // when Foo is a resolved import; `MemberExpression { object, property }`
+          // for `Foo.OnInit` when Foo is an unresolved identifier.
+          // All three paths check the rightmost identifier === 'OnInit'.
           if (impl.expression.type === AST_NODE_TYPES.Identifier) {
             return impl.expression.name === ONINIT_NAME;
           }
           if (impl.expression.type === AST_NODE_TYPES.TSQualifiedName) {
             return impl.expression.right.name === ONINIT_NAME;
+          }
+          if (impl.expression.type === AST_NODE_TYPES.MemberExpression) {
+            const prop = impl.expression.property;
+            return (
+              !impl.expression.computed &&
+              prop.type === AST_NODE_TYPES.Identifier &&
+              prop.name === ONINIT_NAME
+            );
           }
           return false;
         });
