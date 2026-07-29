@@ -180,4 +180,4 @@ ruleTester.run('no-raw-http-in-components', rule, {
 // No explicit `process.exit` needed — RuleTester throws on any invalid
 // case that unexpectedly passes (or vice versa), which bubbles up to
 // the runner as a non-zero exit.
-console.log('✅ no-raw-http-in-components: all 14 cases passed (6 valid + 8 invalid).');
+console.log('✅ no-raw-http-in-components: all 10 cases passed (5 valid + 5 invalid).');
