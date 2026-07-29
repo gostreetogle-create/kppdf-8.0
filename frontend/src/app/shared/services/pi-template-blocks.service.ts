@@ -96,4 +96,21 @@ export class TemplateBlocksService {
   remove(id: string): Observable<SilentResult<void>> {
     return silentDelete<void>(this.http, `${this.baseUrl}/template-blocks/${id}`);
   }
+
+  /**
+   * Upload an image file for a template block.
+   * Sends FormData via POST to the block's image upload endpoint.
+   */
+  uploadImage(
+    blockId: string,
+    file: File,
+  ): Observable<SilentResult<{ url: string }>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return silentPost<{ url: string }>(
+      this.http,
+      `${this.baseUrl}/template-blocks/${blockId}/image`,
+      formData,
+    );
+  }
 }

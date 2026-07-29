@@ -94,7 +94,7 @@ export interface EntityService<T, P> {
  * The shape returned by `defineEntity`. Provides the schema (for reflection /
  * logging / tooling) and an `inject()` function for Angular DI lookup.
  */
-export interface DefineEntity<T, P> {
+export interface DefineEntity<T extends object, P> {
   readonly schema: EntitySchema<T>;
   inject(): EntityService<T, P>;
 }
