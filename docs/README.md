@@ -54,6 +54,7 @@ docs/
 
 | Категория | Файлы | Назначение |
 |-----------|-------|-----------|
+| **AI Agent Guide** | `AI-AGENT-GUIDE.md` | **ОБЯЗАТЕЛЬНО К ПРОЧТЕНИЮ** — онбординг AI-агента: паттерны, запреты, чек-лист |
 | **Архитектура** | `architecture-audit-2026-07.md` | Полный срез архитектуры |
 | **Модель данных** | `data-model.md`, `data-model-audit.md` | Entity-relationship model |
 | **Разработка** | `DEVELOPMENT-PATTERNS.md`, `add-new-page.md` | Как писать код |
@@ -63,15 +64,16 @@ docs/
 | **Референсы** | `reference/` (5 файлов) | HTML-прототипы, скриншоты, примеры документов |
 | **Compose** | `compose/plans/` | Планы композ-задач
 
-## Рекомендуемый порядок чтения для нового разработчика
+## Рекомендуемый порядок чтения для AI-агента / разработчика
 
-1. `ARCHITECTURE.md` (корень проекта) — общая архитектура
-2. `docs/DEVELOPMENT-PATTERNS.md` — как писать код
-3. `docs/data-model.md` — модель данных
-4. `docs/design-spec.md` — design spec (бренд, цвета, компоненты)
-5. `docs/paper-and-ink.md` — техническое rationale (токены, WCAG)
-6. `docs/pages/README.md` — какие страницы есть
-7. Нужная `docs/pages/<name>.page.md` — конкретная страница
+1. `docs/AI-AGENT-GUIDE.md` — **ОБЯЗАТЕЛЬНО** (онбординг, паттерны, запреты)
+2. `ARCHITECTURE.md` (корень проекта) — общая архитектура
+3. `docs/DEVELOPMENT-PATTERNS.md` — как писать код (SilentResult, defineEntity, SubmitGuard, EntityList, httpResource)
+4. `docs/data-model.md` — модель данных
+5. `docs/design-spec.md` — design spec (бренд, цвета, компоненты)
+6. `docs/paper-and-ink.md` — техническое rationale (токены, WCAG)
+7. `docs/pages/README.md` — какие страницы есть
+8. Нужная `docs/pages/<name>.page.md` — конкретная страница
 
 ## Связанные
 
