@@ -123,3 +123,4 @@ vendor/codebase-memory-mcp/bin/*.exe
 # Contains secrets, binaries, and non-reproducible assets.
 # See vendor/codebase-memory-mcp/README.md §"Что НЕ в git".
 gitignore/
+gitignore.zip
