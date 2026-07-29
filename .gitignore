@@ -118,3 +118,8 @@ ui/stitch_professional_desktop_crm_refinement/
 !docs/**
 # codebase-memory-mcp binary: 262 MB, exceeds GitHub 100 MB limit. See vendor/codebase-memory-mcp/README.md.
 vendor/codebase-memory-mcp/bin/*.exe
+
+# Snapshot of gitignored files for project portability
+# Contains secrets, binaries, and non-reproducible assets.
+# See vendor/codebase-memory-mcp/README.md §"Что НЕ в git".
+gitignore/
