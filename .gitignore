@@ -106,6 +106,9 @@ tmp/tz9*-{commit,arch}-*.txt
 # referenced in TZ-93 spec §1 finding if a future TZ needs the source.
 ui/stitch_professional_desktop_crm_refinement/
 
+# Freebuff AI agent workspace (local only)
+.freebuff/
+
 # === DOCUMENTATION (explicitly tracked) ===
 # All docs/ content is VITAL and MUST be version-controlled.
 # The SECTION BELOW ensures nothing in docs/ is ever accidentally caught

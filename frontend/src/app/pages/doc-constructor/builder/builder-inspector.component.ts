@@ -107,6 +107,50 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
             </div>
           </div>
         }
+
+        <!-- Snap settings -->
+        <div class="props-section" style="margin-top: 16px; padding: 12px;">
+          <div class="props-section__header">
+            <span class="props-section__number">SNAP</span>
+            <h3 class="props-section__title">Привязка к сетке</h3>
+          </div>
+          <div class="snap-controls">
+            <label class="toggle-row">
+              <div class="toggle-row__left">
+                <span class="toggle-row__label">Привязка</span>
+              </div>
+              <input
+                type="checkbox"
+                class="toggle-checkbox"
+                [checked]="localSnapEnabled()"
+                (change)="onSnapEnabledChange($any($event.target).checked)"
+              />
+            </label>
+            <div class="field">
+              <span class="field__label">Шаг сетки (px)</span>
+              <input
+                class="field__input pi-focus-ring"
+                type="number"
+                min="5"
+                max="50"
+                step="5"
+                [value]="localGridSize()"
+                (input)="onGridSizeInput($event)"
+              />
+            </div>
+            <div class="field">
+              <span class="field__label">Отступ от краёв (px)</span>
+              <input
+                class="field__input pi-focus-ring"
+                type="number"
+                min="0"
+                max="100"
+                [value]="localBoundaryPadding()"
+                (input)="onBoundaryPaddingInput($event)"
+              />
+            </div>
+          </div>
+        </div>
       } @else if (templateSelected() && template(); as t) {
         <!-- Template properties panel -->
         <div class="inspector__form">
@@ -431,7 +475,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                   type="number"
                   min="0"
                   max="2000"
-                  [value]="overlayLeft() ?? 0"
+                  [value]="overlayLeft()"
                   (input)="onOverlayLeftInput($event)"
                 />
               </label>
@@ -442,7 +486,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                   type="number"
                   min="0"
                   max="2000"
-                  [value]="overlayTop() ?? 0"
+                  [value]="overlayTop()"
                   (input)="onOverlayTopInput($event)"
                 />
               </label>
@@ -1377,6 +1421,14 @@ export class BuilderInspectorComponent {
   readonly removeBackground = output<number>();
   /** Emitted when user sets default background by index. */
   readonly setDefaultBackground = output<number>();
+  /** Snap-to-grid enabled (input from parent). */
+  readonly snapEnabled = input<boolean>(true);
+  /** Grid size for snapping (px) (input from parent). */
+  readonly gridSize = input<number>(20);
+  /** Padding from paper edges (px) (input from parent). */
+  readonly boundaryPadding = input<number>(8);
+  /** Emitted when user changes snap settings via the inspector. */
+  readonly snapSettingsChange = output<{ snapEnabled: boolean; gridSize: number; boundaryPadding?: number }>();
   /** Emitted when user clicks close on template properties panel. */
   readonly closePanel = output<void>();
 
@@ -1413,6 +1465,11 @@ export class BuilderInspectorComponent {
 
   // Debounced text input for template properties (prevents orientation jumping)
   private readonly textInput$ = new Subject<{ key: string; value: string }>();
+
+  // Snap settings internal state
+  protected readonly localSnapEnabled = signal<boolean>(true);
+  protected readonly localGridSize = signal<number>(20);
+  protected readonly localBoundaryPadding = signal<number>(8);
 
   // Template opacity display
   protected readonly opacityPercent = computed<number>(() => {
@@ -1509,6 +1566,13 @@ export class BuilderInspectorComponent {
       this.overlayTop.set((settings?.['overlayTop'] as number) ?? 0);
     });
 
+    // Hydrate snap settings from inputs when they change.
+    effect(() => {
+      this.localSnapEnabled.set(this.snapEnabled());
+      this.localGridSize.set(this.gridSize());
+      this.localBoundaryPadding.set(this.boundaryPadding());
+    });
+
     // Debounced text input for template properties (prevents orientation jumping)
     this.textInput$.pipe(debounceTime(300)).subscribe(({ key, value }) => {
       this.templateUpdate.emit({ [key]: value } as Partial<DocumentTemplate>);
@@ -1566,6 +1630,35 @@ export class BuilderInspectorComponent {
     const b = this.block();
     if (!b?._id) return;
     this.delete.emit(b._id);
+  }
+
+  // ── Snap settings handlers ──
+
+  protected onSnapEnabledChange(enabled: boolean): void {
+    this.localSnapEnabled.set(enabled);
+    this.emitSnapSettings();
+  }
+
+  protected onGridSizeInput(event: Event): void {
+    const v = Number((event.target as HTMLInputElement).value) || 20;
+    const clamped = Math.max(5, Math.min(50, v));
+    this.localGridSize.set(clamped);
+    this.emitSnapSettings();
+  }
+
+  protected onBoundaryPaddingInput(event: Event): void {
+    const v = Number((event.target as HTMLInputElement).value) || 8;
+    const clamped = Math.max(0, Math.min(100, v));
+    this.localBoundaryPadding.set(clamped);
+    this.emitSnapSettings();
+  }
+
+  private emitSnapSettings(): void {
+    this.snapSettingsChange.emit({
+      snapEnabled: this.localSnapEnabled(),
+      gridSize: this.localGridSize(),
+      boundaryPadding: this.localBoundaryPadding(),
+    });
   }
 
   // ── Template property handlers ──

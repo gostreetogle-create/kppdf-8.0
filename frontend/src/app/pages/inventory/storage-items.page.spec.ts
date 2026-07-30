@@ -2,53 +2,26 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { of } from 'rxjs';
 
 import { StorageItemsPage } from './storage-items.page';
-import { StorageItemsService, StorageItem } from './storage-items.service';
-import { WarehousesService } from './warehouses.service';
-import { PiToastService } from '../../shared/ui/toast';
 import { API_BASE_URL } from '../../core/api.tokens';
+import { PiToastService } from '../../shared/ui/toast';
 
-describe('StorageItemsPage', () => {
+describe('StorageItemsPage (Wave 3 — PiEntityListComponent)', () => {
   let httpMock: HttpTestingController;
   const baseUrl = '/api';
   const storageUrl = `${baseUrl}/storage-items`;
   const warehousesUrl = `${baseUrl}/warehouses`;
 
-  const fakeItems: StorageItem[] = [
-    {
-      _id: 'si1',
-      quantity: 100,
-      reservedQty: 0,
-      minQuantity: 10,
-      isActive: true,
-      warehouseId: 'w1',
-      productId: 'p1',
-      product: { _id: 'p1', name: 'ДСП' },
-      warehouse: { _id: 'w1', name: 'Основной' },
-    } as StorageItem,
-    {
-      _id: 'si2',
-      quantity: 50,
-      reservedQty: 10,
-      minQuantity: 20,
-      isActive: true,
-      warehouseId: 'w1',
-      productId: 'p2',
-      product: { _id: 'p2', name: 'ЛДСП' },
-      warehouse: { _id: 'w1', name: 'Основной' },
-    } as StorageItem,
-  ];
-
-  const matchListGet = (r: { url: string; method: string }): boolean =>
-    r.url.startsWith(storageUrl) && r.method === 'GET';
-
-  const matchWarehousesGet = (r: { url: string; method: string }): boolean =>
-    r.url === warehousesUrl && r.method === 'GET';
-
-  async function tickMicrotask(): Promise<void> {
-    await new Promise<void>((r) => setTimeout(r, 0));
+  /**
+   * Flush both pending HTTP requests (storage-items from PiEntityListComponent,
+   * warehouses from the page). Must be called after fixture.detectChanges().
+   */
+  function flushAll(): void {
+    httpMock.expectOne((r) => r.url.startsWith(storageUrl) && r.method === 'GET')
+      .flush({ items: [], total: 0 });
+    httpMock.expectOne((r) => r.url === warehousesUrl && r.method === 'GET')
+      .flush([]);
   }
 
   beforeEach(async () => {
@@ -57,20 +30,6 @@ describe('StorageItemsPage', () => {
         provideHttpClient(withInterceptors([]), withFetch()),
         provideHttpClientTesting(),
         { provide: API_BASE_URL, useValue: baseUrl },
-        {
-          provide: StorageItemsService,
-          useValue: {
-            list: () => of({ ok: true, data: { items: [], total: 0 } }),
-            findById: () => of({ ok: true, data: {} as never }),
-            create: () => of({ ok: true, data: {} as never }),
-            update: () => of({ ok: true, data: {} as never }),
-            remove: () => of({ ok: true, data: undefined }),
-          },
-        },
-        {
-          provide: WarehousesService,
-          useValue: { list: () => of({ ok: true, data: [] }) },
-        },
         { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
       ],
     })
@@ -86,88 +45,85 @@ describe('StorageItemsPage', () => {
     httpMock.verify();
   });
 
-  it('fires an initial GET /api/storage-items on creation', async () => {
+  it('creates the component and flushes both HTTP requests', () => {
+    const fixture = TestBed.createComponent(StorageItemsPage);
+    fixture.detectChanges();
+    flushAll();
+    expect(fixture.componentInstance).toBeTruthy();
+  });
+
+  it('loads warehouses on init for the filter dropdown', () => {
     const fixture = TestBed.createComponent(StorageItemsPage);
     fixture.detectChanges();
 
-    httpMock.expectOne(matchListGet).flush({ items: fakeItems, total: 2 });
-    httpMock.expectOne(matchWarehousesGet).flush([]);
-    await tickMicrotask();
-    fixture.detectChanges();
+    // Flush storage-items first, then flush warehouses with test data
+    httpMock.expectOne((r) => r.url.startsWith(storageUrl) && r.method === 'GET')
+      .flush({ items: [], total: 0 });
+    httpMock.expectOne((r) => r.url === warehousesUrl && r.method === 'GET')
+      .flush([
+        { _id: 'w1', name: 'Основной' },
+        { _id: 'w2', name: 'Резервный' },
+      ]);
 
     const comp = fixture.componentInstance as unknown as {
-      items: () => StorageItem[];
-      totalItems: () => number;
-      loading: () => boolean;
+      warehouses: () => unknown[];
     };
-
-    expect(comp.items().length).toBe(2);
-    expect(comp.totalItems()).toBe(2);
-    expect(comp.loading()).toBe(false);
+    expect(comp.warehouses().length).toBe(2);
   });
 
-  it('shows loading state before response', async () => {
+  it('selectedWarehouse starts empty', () => {
     const fixture = TestBed.createComponent(StorageItemsPage);
     fixture.detectChanges();
-
-    const comp = fixture.componentInstance as unknown as { loading: () => boolean };
-    expect(comp.loading()).toBe(true);
-
-    httpMock.expectOne(matchListGet).flush({ items: [], total: 0 });
-    httpMock.expectOne(matchWarehousesGet).flush([]);
-    await tickMicrotask();
-    fixture.detectChanges();
-
-    expect(comp.loading()).toBe(false);
+    flushAll();
+    const comp = fixture.componentInstance as unknown as {
+      selectedWarehouse: { (): string; set: (v: string) => void };
+    };
+    expect(comp.selectedWarehouse()).toBe('');
   });
 
-  it('shows empty state when no storage items', async () => {
+  it('onWarehouseChange sets the selected warehouse signal', () => {
     const fixture = TestBed.createComponent(StorageItemsPage);
     fixture.detectChanges();
-
-    httpMock.expectOne(matchListGet).flush({ items: [], total: 0 });
-    httpMock.expectOne(matchWarehousesGet).flush([]);
-    await tickMicrotask();
-    fixture.detectChanges();
+    flushAll();
 
     const comp = fixture.componentInstance as unknown as {
-      items: () => StorageItem[];
-      totalItems: () => number;
+      selectedWarehouse: { (): string; set: (v: string) => void };
     };
-    expect(comp.items().length).toBe(0);
-    expect(comp.totalItems()).toBe(0);
+
+    // Simulate user selecting a warehouse in the dropdown
+    comp.selectedWarehouse.set('w1');
+    expect(comp.selectedWarehouse()).toBe('w1');
   });
 
-  it('handles error response gracefully', async () => {
+  it('listParams returns empty when no warehouse selected', () => {
     const fixture = TestBed.createComponent(StorageItemsPage);
     fixture.detectChanges();
-
-    httpMock
-      .expectOne(matchListGet)
-      .flush('Server error', { status: 500, statusText: 'Internal Server Error' });
-    httpMock.expectOne(matchWarehousesGet).flush([]);
-    await tickMicrotask();
-
-    const comp = fixture.componentInstance as unknown as { error: () => string | null };
-    expect(() => comp.error()).not.toThrow();
+    flushAll();
+    const comp = fixture.componentInstance as unknown as {
+      listParams: () => Record<string, string>;
+    };
+    expect(comp.listParams()).toEqual({});
   });
 
-  it('clearFilters resets selected warehouse', async () => {
+  it('listParams returns warehouseId when warehouse selected', () => {
     const fixture = TestBed.createComponent(StorageItemsPage);
     fixture.detectChanges();
-
-    httpMock.expectOne(matchListGet).flush({ items: fakeItems, total: 2 });
-    httpMock.expectOne(matchWarehousesGet).flush([]);
-    await tickMicrotask();
-    fixture.detectChanges();
+    flushAll();
 
     const comp = fixture.componentInstance as unknown as {
       selectedWarehouse: { set: (v: string) => void };
-      clearFilters: () => void;
+      listParams: () => Record<string, string>;
     };
-
     comp.selectedWarehouse.set('w1');
-    comp.clearFilters();
-    expect(comp.selectedWarehouse()).toBe('');
+    expect(comp.listParams()).toEqual({ warehouseId: 'w1' });
+  });
+
+  it('renders pi-entity-list component in the template', () => {
+    const fixture = TestBed.createComponent(StorageItemsPage);
+    fixture.detectChanges();
+    flushAll();
+
+    const rootEl = fixture.nativeElement as HTMLElement;
+    expect(rootEl.querySelector('app-pi-entity-list')).toBeTruthy();
   });
 });

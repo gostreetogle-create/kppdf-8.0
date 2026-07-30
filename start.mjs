@@ -615,27 +615,6 @@ async function killProcessOnPort(port) {
   return null;
 }
 
-// ---------- gotenberg ----------
-async function startGotenberg() {
-  // TZ-236.Wave A.1: только healthcheck, не blocking.
-  // Gotenberg container стартует параллельно с mongo через docker compose up.
-  // Здесь только проверяем, что /health отвечает (иначе помечаем degraded).
-  const gotenbergUrl = 'http://localhost:3001/health';
-  const start = Date.now();
-  const timeoutMs = 60000;
-  while (Date.now() - start < timeoutMs) {
-    const ok = await pingHttp(gotenbergUrl, 2000);
-    if (ok) {
-      const elapsed = Math.round((Date.now() - start) / 1000);
-      log.ok(`Gotenberg /health готов за ${elapsed}s (http://localhost:3001)`);
-      return true;
-    }
-    await sleep(2000);
-  }
-  log.warn(`Gotenberg /health не отвечает после ${timeoutMs / 1000}s — продолжаем (PDF generation недоступно)`);
-  return false;
-}
-
 // ---------- mongo ----------
 async function startMongo() {
   log.step(2, 'Запуск MongoDB (replica set rs0)');
@@ -654,22 +633,11 @@ async function startMongo() {
     log.dim('удалён старый контейнер kppdf-mongo');
   }
 
-  // TZ-236.Wave A.1: Gotenberg — PDF generation microservice.
-  // Аналогично: cleanup stale container если был с предыдущего запуска.
-  const staleG = spawnSync(
-    'docker',
-    ['rm', '-f', 'kppdf-gotenberg'],
-    { stdio: 'pipe', encoding: 'utf8' },
-  );
-  if (staleG.status === 0) {
-    log.dim('удалён старый контейнер kppdf-gotenberg');
-  }
-
   // В TUI режиме — перехватываем docker output (иначе он сломает in-place обновление)
   const stdio = useTui() ? 'pipe' : 'inherit';
   const r = spawnSync(
     'docker',
-    ['compose', 'up', '-d', 'mongo', 'mongo-init', 'gotenberg'],
+    ['compose', 'up', '-d', 'mongo', 'mongo-init'],
     { cwd: ROOT, stdio, encoding: 'utf8' },
   );
   if (useTui() && r.stdout) {
@@ -683,7 +651,7 @@ async function startMongo() {
     if (useTui()) renderStatus();
     throw new Error('docker compose up failed');
   }
-  log.ok('Mongo + Gotenberg контейнеры запущены');
+  log.ok('Mongo контейнеры запущены');
 }
 
 async function waitMongo() {
@@ -1102,8 +1070,6 @@ async function main() {
 
   // Spawn
   log.step(5, 'Запуск backend + frontend (detached, логи в pipe)');
-  // TZ-236.Wave A.1: Gotenberg healthcheck (non-blocking)
-  await startGotenberg();
 
   // Clean up any prior pid file
   const prior = readPids();

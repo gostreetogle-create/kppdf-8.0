@@ -3,7 +3,9 @@
 [![CI](https://github.com/user/kppdf-8.0/actions/workflows/ci.yml/badge.svg)](https://github.com/user/kppdf-8.0/actions/workflows/ci.yml)
 
 > **ERP-система для управления коммерческими предложениями, договорами, производством, складом, закупками и тендерами.**
-> Ранняя стадия: описание доменной модели и инфраструктура для AI-агентов. Код приложения пока не написан.
+> Активная стадия: Angular 20 SPA + NestJS 10 backend + MongoDB Replica Set.
+> Дизайн-система: Paper & Ink (OKLCH, hairline, anti-bling).
+> Разработка через AI-агентов: `docs/AI-AGENT-GUIDE.md`
 
 ---
 
@@ -43,9 +45,7 @@
 | 11 | **System & Activity**        | 6      | `StatusWorkflow`, `EntityStatus`, `ImportJobs`, `OrderHistory`, `UserActivity` |
 |    | **Итого**                    | **89** | |
 
-**Стек-сигнатуры из доменной модели:** MongoDB-стиль (ObjectId, `*Id`/`*Ids`, `createdAt`/`updatedAt`/`deletedAt`, `is*`-флаги) → бэкенд скорее всего на Node.js (NestJS/Mongoose) или Python. UI — гибкие шаблоны документов → SPA с PDF-генерацией.
-
-> ⚠️ Стек **пока не зафиксирован** — `STACK.md` авто-генерируется из manifests проекта, и сейчас manifests нет. См. [«Как определить стек»](#-как-определить-стек).
+**Стек:** NestJS 10 + Mongoose 8 + MongoDB 7 Replica Set (backend) · Angular 20 standalone + Signals + OnPush (frontend) · Paper & Ink OKLCH design system · TailwindCSS v4 · Lucide icons. См. `STACK.md`.
 
 ---
 
@@ -59,8 +59,8 @@ kppdf-8.0/
 │   └── data-model-audit.md        ← аудит модели (консолидация, target schema)
 ├── tasks/                         ← 👁️ ТВОЯ ПАПКА: файлы задач (TZ-NN.md)
 │                                    (агент удаляет файл после выполнения)
-├── backend/                       ← сюда агент кладёт backend-код (пока пусто)
-├── frontend/                      ← сюда агент кладёт frontend-код (пока пусто)
+├── backend/                       ← NestJS 10 backend (19+ modules, 65+ entities)
+├── frontend/                      ← Angular 20 SPA (pages, shared/ui, shared/dsl)
 ├── OrchestratorKit/               ← 🔒 МОЯ ПАПКА: автоматизация, скрипты, архив (не трогать)
 │   ├── README.md                  ← описание kit-а
 │   ├── QUICKSTART.md              ← 5 шагов от нуля до первого TZ
@@ -133,20 +133,34 @@ NO_COLOR=1 node start.mjs     # отключить ANSI-цвета
 **Endpoints после старта:**
 - Backend: http://localhost:3000/api/health
 - Frontend: http://localhost:4200
-- Login: `admin` / `admin-change-me-immediately-in-production` (admin user seeded by `AdminSeed`)
-- UI Kit showcase: http://localhost:4200/kit ( хедер → кнопка "🎨 UI Kit")
+- Swagger: http://localhost:3000/docs
+- Login: `admin` / `admin123` (admin user seeded by `AdminSeed`)
+- Login field: `username` (НЕ email) — `admin@kppdf.local` даст 401
+- UI Kit showcase: http://localhost:4200/kit (хедер → кнопка "🎨 UI Kit")
 
 **Требования:** Node 20+, pnpm 8+, Docker Desktop.
 
 **Кросс-платформенность:** Windows 10+ (cmd/PowerShell/Git Bash), macOS, Linux.
+
+---
+
+### 🤖 Для AI-агентов
+
+Перед началом работы обязательно прочитай:
+- [`docs/AI-AGENT-GUIDE.md`](docs/AI-AGENT-GUIDE.md) — онбординг, обязательные паттерны, запреты
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — полная архитектура проекта
+- [`docs/DEVELOPMENT-PATTERNS.md`](docs/DEVELOPMENT-PATTERNS.md) — конкретные код-паттерны
 
 **⚠️ Важно для Windows:** не вводите `start --check` без `.\` — Windows путает с built-in командой `start` (для открытия файлов). Используйте `.\start.cmd --check` или `node start.mjs --check` или `npm run start:check`.
 
 ### 🛠️ Под капотом
 
 Архитектура проекта:
-- Backend: NestJS 10 + Mongoose 8 + MongoDB Replica Set — 18 модулей, 65+ entities (TZ-02..TZ-18)
-- Frontend: Angular 20 + TailwindCSS + AG Grid + CDK — 35+ UI Kit компонентов (TZ-19..TZ-40)
+- Backend: NestJS 10 + Mongoose 8 + MongoDB Replica Set — 19+ modules, 65+ entities (TZ-02..TZ-18)
+- Frontend: Angular 20 standalone + Signals + OnPush + Paper & Ink design system — 24+ UI primitives (TZ-19..TZ-104)
+- DSL: defineEntity, SubmitGuard, IdempotencyInterceptor, PiEntityListComponent (TZ-232)
+- Auth: JWT (access+refresh), bcrypt, RBAC, 30+ permission keys (TZ-04)
+- Audit: все мутации автоматически логируются в AuditLog (TZ-05)
 - Auth: JWT (access+refresh), bcrypt, RBAC, 30+ permission keys (TZ-04)
 - Audit: все мутации автоматически логируются в AuditLog (TZ-05)
 
