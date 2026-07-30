@@ -1,0 +1,472 @@
+:host {
+  display: block;
+}
+
+.block-renderer {
+  position: relative;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  background: transparent;
+  border: 1px solid var(--color-rule);
+  border-radius: 2px;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+/* TZ-211: Hover — subtle highlight */
+.block-renderer:hover {
+  background: rgba(128, 128, 128, 0.05);
+}
+
+/* TZ-211: Selected — gold border + shadow */
+.block-renderer.is-selected {
+  border-color: var(--color-gold);
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 0 1px var(--color-gold), 0 2px 8px -2px rgba(0, 0, 0, 0.1);
+}
+
+/* TZ-211: Multi-selected — gold-soft background */
+.block-renderer.is-multi-selected {
+  border-color: var(--color-gold);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+/* Multi-select checkbox */
+.block-renderer__checkbox {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 150ms ease;
+  cursor: pointer;
+  z-index: 5;
+}
+
+.block-renderer:hover .block-renderer__checkbox,
+.block-renderer__checkbox.is-visible {
+  opacity: 1;
+}
+
+/* ═══ Delete Button — TZ-211 ═══ */
+.block-renderer__delete {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 150ms ease, color 150ms ease;
+  cursor: pointer;
+  z-index: 5;
+  color: var(--color-muted);
+}
+
+.block-renderer:hover .block-renderer__delete {
+  opacity: 0.5;
+}
+
+.block-renderer:hover .block-renderer__delete:hover {
+  opacity: 1;
+  color: var(--color-destructive);
+}
+
+.block-renderer.is-inactive {
+  opacity: 0.5;
+}
+
+.block-renderer__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.block-renderer__header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-muted);
+  margin-bottom: 4px;
+}
+
+.block-renderer__type {
+  font-weight: 600;
+}
+
+.block-renderer__binding {
+  background: var(--color-gold-soft);
+  color: var(--color-gold);
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-size: 10px;
+  font-family: ui-monospace, monospace;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.block-renderer__content {
+  font-size: 14px;
+  color: var(--color-ink);
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+/* TZ-104.7 NIT #2: preamble spacing */
+.block-renderer__content--preamble {
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--color-rule);
+}
+
+/* Header variant — larger weight */
+.block-renderer[data-block-type='header'] .block-renderer__content {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Signature variant — centered, italic */
+.block-renderer[data-block-type='signature'] {
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+.block-renderer[data-block-type='signature'] .block-renderer__content {
+  font-style: italic;
+  text-align: center;
+  border-top: 1px solid var(--color-rule);
+  padding-top: 8px;
+  width: 100%;
+}
+
+/* Table variant — content styled as caption */
+.block-renderer[data-block-type='table'] .block-renderer__content {
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+/* Table block — actual table rendering */
+.block-renderer__table-title {
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.block-renderer__table-wrap {
+  overflow-x: auto;
+  margin-top: 4px;
+}
+.block-renderer__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.block-renderer__table th {
+  padding: 6px 8px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-muted-foreground-strong);
+  background: var(--color-paper-2);
+  border-bottom: 1px solid var(--color-ink);
+  white-space: nowrap;
+}
+.block-renderer__table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--color-rule);
+  color: var(--color-ink);
+  word-break: break-word;
+}
+.block-renderer__table tr:last-child td {
+  border-bottom: none;
+}
+.block-renderer__table-empty {
+  text-align: center;
+  font-style: italic;
+  color: var(--color-muted-foreground-strong);
+  padding: 12px 8px;
+}
+
+/* ═══ Drag Handle — TZ-211 ═══ */
+.block-renderer__drag-handle {
+  position: absolute;
+  left: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-muted);
+  opacity: 0;
+  transition: opacity 150ms ease, color 150ms ease;
+  cursor: grab;
+  z-index: 5;
+}
+
+.block-renderer:hover .block-renderer__drag-handle {
+  opacity: 0.5;
+}
+
+.block-renderer:hover .block-renderer__drag-handle:hover {
+  opacity: 1;
+  color: var(--color-gold);
+}
+
+/* ═══ Image block (flow mode) ═══ */
+.block-renderer__image-wrap {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  line-height: 0;
+}
+
+.block-renderer__image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 2px;
+  object-fit: contain;
+}
+
+/* ═══ Overlay mode — free absolute positioning ═══ */
+.block-renderer--overlay {
+  position: absolute;
+  z-index: 10;
+  cursor: move;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  transition: none;
+  user-select: none;
+  touch-action: none;
+}
+
+.block-renderer--overlay:hover,
+.block-renderer--overlay.is-selected {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* Selection ring for overlay blocks */
+.block-renderer--overlay.is-selected .block-renderer__image-wrap--overlay {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.block-renderer__image-wrap--overlay {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
+.block-renderer__image--overlay {
+  display: block;
+  border: none;
+  border-radius: 0;
+  object-fit: contain;
+}
+
+/* Delete button for overlay */
+.block-renderer--overlay .block-renderer__delete {
+  top: -10px;
+  right: -10px;
+  width: 22px;
+  height: 22px;
+  background: var(--color-paper);
+  border: 1px solid var(--color-rule);
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.block-renderer--overlay:hover .block-renderer__delete,
+.block-renderer--overlay.is-selected .block-renderer__delete {
+  opacity: 0.8;
+}
+
+.block-renderer--overlay .block-renderer__delete:hover {
+  opacity: 1;
+  color: var(--color-destructive);
+}
+
+/* ═══ Corner resize handle for overlay images ═══ */
+.block-renderer__corner-resize {
+  position: absolute;
+  right: -8px;
+  bottom: -8px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  cursor: nwse-resize;
+  z-index: 15;
+  color: var(--color-gold);
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.block-renderer--overlay.is-selected .block-renderer__corner-resize,
+.block-renderer--overlay:hover .block-renderer__corner-resize {
+  opacity: 1;
+}
+
+.block-renderer__corner-resize:hover {
+  color: var(--color-gold);
+  opacity: 1;
+}
+
+.block-renderer__corner-resize svg {
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+}
+
+/* ═══ Snap indicator ═══ */
+.block-renderer--overlay.is-snapping .block-renderer__image-wrap--overlay {
+  outline-color: #4fc3f7;
+  outline-width: 2px;
+  outline-style: solid;
+  outline-offset: 2px;
+}
+
+/* Subtle snap guide glow */
+.block-renderer--overlay.is-snapping {
+  filter: drop-shadow(0 0 6px rgba(79, 195, 247, 0.35));
+}
+
+/* Spacer block */
+.block-renderer__spacer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+}
+.block-renderer__spacer-line {
+  flex: 1;
+  height: 1px;
+  background: var(--color-rule);
+}
+.block-renderer__spacer-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-muted-foreground-strong);
+  white-space: nowrap;
+}
+
+/* Multi-column grid layout */
+.block-renderer__columns {
+  display: grid;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--color-ink);
+  line-height: 1.5;
+  width: 100%;
+}
+
+.block-renderer__column {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.block-renderer__column :first-child {
+  margin-top: 0;
+}
+
+.block-renderer__column :last-child {
+  margin-bottom: 0;
+}
+
+.block-renderer__column p {
+  margin: 0 0 0.5em;
+}
+
+/* Trust-model-mandated multi-column fidelity rules */
+.block-renderer__column strong,
+.block-renderer__column b {
+  font-weight: 600;
+}
+.block-renderer__column em,
+.block-renderer__column i {
+  font-style: italic;
+}
+
+/* Resize side handles */
+.block-renderer__resize-side {
+  position: absolute;
+  top: 0;
+  width: 8px;
+  height: 100%;
+  cursor: ew-resize;
+  opacity: 0.25;
+  transition: opacity 150ms ease;
+  z-index: 10;
+}
+
+.block-renderer__resize-side--left {
+  left: -4px;
+  border-left: 2px solid var(--color-muted);
+}
+
+.block-renderer__resize-side--right {
+  right: -4px;
+  border-right: 2px solid var(--color-muted);
+}
+
+.block-renderer:hover .block-renderer__resize-side,
+.block-renderer.is-selected .block-renderer__resize-side {
+  opacity: 0.6;
+}
+
+.block-renderer__resize-side--left:hover,
+.block-renderer__resize-side--left.is-dragging {
+  border-left-color: var(--color-gold);
+  opacity: 1;
+}
+
+.block-renderer__resize-side--right:hover,
+.block-renderer__resize-side--right.is-dragging {
+  border-right-color: var(--color-gold);
+  opacity: 1;
+}
+
+/* Print: hide editor-only elements */
+@media print {
+  .block-renderer {
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin-left: 0 !important;
+    width: 100% !important;
+    background: transparent !important;
+    break-inside: avoid;
+  }
+  .block-renderer__resize-side,
+  .block-renderer__checkbox {
+    display: none !important;
+  }
+  .block-renderer__spacer {
+    break-inside: avoid;
+  }
+}
