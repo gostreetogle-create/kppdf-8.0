@@ -22,4 +22,8 @@ export const envValidationSchema = Joi.object({
 
   ADMIN_USERNAME: Joi.string().default('admin'),
   ADMIN_PASSWORD: Joi.string().min(8).required(),
+
+  // TZ-236.B: Gotenberg microservice URL (TZ-236.A.1 Docker).
+  // Optional: defaults to http://localhost:3001 in PdfRenderService.
+  GOTENBERG_URL: Joi.string().uri().optional(),
 });

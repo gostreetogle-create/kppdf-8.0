@@ -65,6 +65,7 @@ import { TemplateBlockModule } from './modules/template-block/template-block.mod
 import { TextBlockModule } from './modules/text-block/text-block.module';
 import { TableTemplateModule } from './modules/table-template/table-template.module';
 import { GeneratedDocumentModule } from './modules/generated-document/generated-document.module';
+import { PdfRenderModule } from './modules/pdf-render/pdf-render.module';
 import { DocumentTableTypeModule } from './modules/document-table-type/document-table-type.module';
 import { RegistryModule } from './modules/registry/registry.module';
 import { ReconciliationActModule } from './modules/reconciliation-act/reconciliation-act.module';
@@ -202,6 +203,7 @@ import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
     TableTemplateModule,
     DocumentTableTypeModule,
     GeneratedDocumentModule,
+    PdfRenderModule, // TZ-236.B: HTML → PDF via Gotenberg microservice
     RegistryModule, // TZ-86 Фаза A.5: data-source catalogue for Document Constructor tool pane
     ReconciliationActModule,
     FinancialReportModule,
