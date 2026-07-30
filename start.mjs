@@ -615,17 +615,61 @@ async function killProcessOnPort(port) {
   return null;
 }
 
+// ---------- gotenberg ----------
+async function startGotenberg() {
+  // TZ-236.Wave A.1: только healthcheck, не blocking.
+  // Gotenberg container стартует параллельно с mongo через docker compose up.
+  // Здесь только проверяем, что /health отвечает (иначе помечаем degraded).
+  const gotenbergUrl = 'http://localhost:3001/health';
+  const start = Date.now();
+  const timeoutMs = 60000;
+  while (Date.now() - start < timeoutMs) {
+    const ok = await pingHttp(gotenbergUrl, 2000);
+    if (ok) {
+      const elapsed = Math.round((Date.now() - start) / 1000);
+      log.ok(`Gotenberg /health готов за ${elapsed}s (http://localhost:3001)`);
+      return true;
+    }
+    await sleep(2000);
+  }
+  log.warn(`Gotenberg /health не отвечает после ${timeoutMs / 1000}s — продолжаем (PDF generation недоступно)`);
+  return false;
+}
+
 // ---------- mongo ----------
 async function startMongo() {
   log.step(2, 'Запуск MongoDB (replica set rs0)');
   state.services.mongo.status = 'starting';
   state.services.mongo.startedAt = Date.now();
   if (useTui()) renderStatus();
+
+  // Удаляем старый контейнер, если висит с прошлого запуска — иначе
+  // `docker compose up` упадёт с «Conflict. The container name is already in use».
+  const stale = spawnSync(
+    'docker',
+    ['rm', '-f', 'kppdf-mongo'],
+    { stdio: 'pipe', encoding: 'utf8' },
+  );
+  if (stale.status === 0) {
+    log.dim('удалён старый контейнер kppdf-mongo');
+  }
+
+  // TZ-236.Wave A.1: Gotenberg — PDF generation microservice.
+  // Аналогично: cleanup stale container если был с предыдущего запуска.
+  const staleG = spawnSync(
+    'docker',
+    ['rm', '-f', 'kppdf-gotenberg'],
+    { stdio: 'pipe', encoding: 'utf8' },
+  );
+  if (staleG.status === 0) {
+    log.dim('удалён старый контейнер kppdf-gotenberg');
+  }
+
   // В TUI режиме — перехватываем docker output (иначе он сломает in-place обновление)
   const stdio = useTui() ? 'pipe' : 'inherit';
   const r = spawnSync(
     'docker',
-    ['compose', 'up', '-d', 'mongo', 'mongo-init'],
+    ['compose', 'up', '-d', 'mongo', 'mongo-init', 'gotenberg'],
     { cwd: ROOT, stdio, encoding: 'utf8' },
   );
   if (useTui() && r.stdout) {
@@ -639,7 +683,7 @@ async function startMongo() {
     if (useTui()) renderStatus();
     throw new Error('docker compose up failed');
   }
-  log.ok('Mongo контейнеры запущены');
+  log.ok('Mongo + Gotenberg контейнеры запущены');
 }
 
 async function waitMongo() {
@@ -677,16 +721,55 @@ function installDeps(dir, name) {
     return;
   }
   log.info(`Установка зависимостей ${name} (~30-60s)…`);
-  // В TUI режиме — перехватываем pnpm output (иначе сломает in-place обновление)
-  const stdio = useTui() ? 'pipe' : 'inherit';
   const pnpmBin = resolveBin('pnpm');
   if (!pnpmBin) throw new Error('pnpm not found in PATH');
-  const r = spawnSync(pnpmBin, ['install', '--prefer-offline'], {
+
+  // pnpm 10+ blocks build scripts for packages unknown to the project.
+  // Always use 'pipe' to capture stderr for ERR_PNPM_IGNORED_BUILDS detection.
+  // Captured output is re-printed to console in non-TUI mode below.
+  let r = spawnSync(pnpmBin, ['install', '--prefer-offline'], {
     cwd: dir,
-    stdio,
+    stdio: 'pipe',
     encoding: 'utf8',
     ...(needsShell(pnpmBin) ? { shell: true } : {}),
   });
+
+  // In non-TUI mode, pipe captured output back to console
+  if (!useTui()) {
+    if (r.stdout) process.stdout.write(r.stdout);
+    if (r.stderr) process.stderr.write(r.stderr);
+  }
+
+  if (r.status !== 0) {
+    const output = (r.stderr || r.stdout || '').toString();
+    if (output.includes('ERR_PNPM_IGNORED_BUILDS')) {
+      log.warn(`${name}: обнаружены заблокированные build-скрипты (pnpm 11+), одобряем…`);
+      const approve = spawnSync(pnpmBin, ['approve-builds', '--all'], {
+        cwd: dir,
+        stdio: 'pipe',
+        encoding: 'utf8',
+        ...(needsShell(pnpmBin) ? { shell: true } : {}),
+      });
+      if (approve.status !== 0) {
+        log.warn(`pnpm approve-builds warn: ${(approve.stderr || '').trim().slice(0, 200)}`);
+      } else {
+        const approved = (approve.stdout || '').trim();
+        if (approved) log.dim(`Approved builds: ${approved.slice(0, 300)}`);
+      }
+      // Retry install after approval
+      r = spawnSync(pnpmBin, ['install', '--prefer-offline'], {
+        cwd: dir,
+        stdio: 'pipe',
+        encoding: 'utf8',
+        ...(needsShell(pnpmBin) ? { shell: true } : {}),
+      });
+      if (!useTui()) {
+        if (r.stdout) process.stdout.write(r.stdout);
+        if (r.stderr) process.stderr.write(r.stderr);
+      }
+    }
+  }
+
   if (r.status !== 0) throw new Error(`pnpm install failed in ${name}`);
   log.ok(`${name}: зависимости установлены`);
 }
@@ -1019,6 +1102,8 @@ async function main() {
 
   // Spawn
   log.step(5, 'Запуск backend + frontend (detached, логи в pipe)');
+  // TZ-236.Wave A.1: Gotenberg healthcheck (non-blocking)
+  await startGotenberg();
 
   // Clean up any prior pid file
   const prior = readPids();

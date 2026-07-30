@@ -1,0 +1,55 @@
+# Gotenberg + Cyrillic fonts (TZ-236.Wave A.1)
+#
+# Что даёт:
+# - Chromium-based PDF generation (HTML → PDF)
+# - Поддержка кириллицы (Liberation + DejaVu + Noto — fallback если PT Sans недоступен)
+# - Healthcheck endpoint /health
+# - Production-grade image (~600 MB, but isolated from Node event-loop)
+#
+# Использование:
+#   docker compose up -d gotenberg
+#   curl http://localhost:3001/health  → 200 OK
+#   POST http://localhost:3001/forms/chromium/convert/html  → returns PDF binary
+#
+# Phase A.2 (TODO): заменить шрифты на PT Sans / PT Serif / JetBrains Mono
+#   когда появятся локально (сейчас apt-get install даёт fallback fonts).
+
+FROM gotenberg/gotenberg:8
+
+USER root
+
+# ── SYSTEM PACKAGES ──────────────────────────────────────────────
+# fontconfig — для fc-cache
+# curl/wget — для скачивания дополнительных шрифтов
+# tini встроен в gotenberg image
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        fontconfig \
+        fonts-dejavu \
+        fonts-liberation \
+        fonts-liberation2 \
+        fonts-noto-core \
+        fonts-noto-cjk \
+    && rm -rf /var/lib/apt/lists/* \
+    && fc-cache -fv > /dev/null 2>&1
+
+# ── CUSTOM FONTS (PT Sans / PT Serif / JetBrains Mono) ───────────
+# Phase A.2 placeholder: используем Noto/Liberation как Cyrillic fallback.
+# TODO: скопировать PT Sans / PT Serif из docker/fonts/PT-Sans/ и
+#   JetBrains Mono из docker/fonts/JetBrains-Mono/ сюда и обновить fc-cache.
+# См. TZ-236 §4.2 "Cyrillic font consistency".
+
+# ── HEALTHCHECK ──────────────────────────────────────────────────
+# Gotenberg слушает /health → 200 OK = ready
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD wget -qO- http://localhost:3000/health || exit 1
+
+EXPOSE 3000
+
+# Gotenberg entrypoint (default) — переменные конфигурации
+# см. https://gotenberg.dev/docs/configuration
+ENV GOTENBERG_API_PORT=3000
+# Chromium defaults для production:
+ENV GOTENBERG_CHROMIUM_RESTART_AFTER=1000
+ENV GOTENBERG_CHROMIUM_MAX_QUEUE_SIZE=100
+
+USER gotenberg

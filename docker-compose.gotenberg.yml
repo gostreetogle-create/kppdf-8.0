@@ -1,0 +1,27 @@
+# docker-compose.gotenberg.yml — TZ-236.Wave A.1
+# Override для добавления Gotenberg (PDF generation microservice) с Cyrillic fonts.
+# Использование: docker compose -f docker-compose.yml -f docker-compose.gotenberg.yml up -d
+# Или просто добавлено в базовый docker-compose.yml (preferred).
+#
+# Override standalone — для ситуаций, когда Gotenberg нужен только разработчику
+# конструктора шаблонов, но не baseline environment.
+
+version: '3.9'
+
+services:
+  gotenberg:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.gotenberg
+    container_name: kppdf-gotenberg
+    # Port 3001 на host (чтобы не конфликтовать с backend на 3000)
+    ports:
+      - "3001:3000"
+    restart: unless-stopped
+    # Healthcheck as backup (Docker-level, start.mjs — на host level)
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

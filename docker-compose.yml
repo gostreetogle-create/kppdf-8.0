@@ -44,5 +44,21 @@ services:
     volumes:
       - ./backend/src:/app/src
 
+  gotenberg:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.gotenberg
+    container_name: kppdf-gotenberg
+    # Port 3001 на host (чтобы не конфликтовать с backend :3000)
+    ports:
+      - "3001:3000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
 volumes:
   mongo-data:
