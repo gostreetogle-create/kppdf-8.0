@@ -1,0 +1,59 @@
+## TZ-235.A R3 — dual-source-of-truth cleanup — DONE 2026-07-30
+
+**Parent:** TZ-235 (Конструктор v2 UX-апгрейд — 16 sub-TZ, 7 waves, ~140-180h)
+**Sub-TZ:** A Round 3 (dual-source cleanup after Round 2 extraction)
+**Commit:** (see git log — 0b3c...) — page.ts 1631 → 1024 lines (-607)
+**Status:** ✅ DONE
+
+### Mission
+Delete 25+ legacy handlers from `builder.page.ts` that were duplicated in `BuilderStateService` after Round 2 extraction. Template was already rewired to `state.X(...)` in Round 2 — Round 3 deletes the page-side shadows.
+
+### What changed
+- `frontend/src/app/pages/doc-constructor/builder/builder.page.ts`: **1631 → 1024 lines** (-607)
+- **Template rewire (9 bindings):** `onTemplatePick` → `state.onTemplatePick`, `viewMode.set` → `state.viewMode.set`, `toggleDropdown` → `state.toggleDropdown`, `closeDropdown` → `state.closeDropdown`, `onAddTextBlock` → `state.onAddTextBlock`, `onAddTableTemplate` → `state.onAddTableTemplate`, `onAddSpacer` → `state.onAddSpacer`, `onPhotoFileSelected` → `state.onPhotoFileSelected`. Constructor: `this.loadBlocks(id)` → `this.state.loadBlocks(id)`.
+- **Dead methods deleted (25):** `loadBlocks`, `syncTextBlockSources`, `onSelect`, `onMultiSelect`, `onCanvasClick`, `onEditSelected`, `onDeleteSelected`, `onReorder`, `onInspectorUpdate`, `onBlockWidthChange`, `onOverlayMove`, `onOverlayResize`, `onMarginReset`, `onMultiMarginUpdate`, `onCloseInspectorPanel`, `onSnapSettingsChange`, `onReload`, `onTemplatePick`, `toggleDropdown`, `closeDropdown`, `onAddTextBlock`, `onAddTableTemplate`, `onAddSpacer`, `onPhotoFileSelected`, `onAddBlock`, `onDropAdd`, `insertNewBlock`, `insertBlock`, `buildBlockFromPayload`, `onSetOrientation`, `onSetOpacity`, `handleSaveResult`.
+- **Dead injections removed:** `textBlocksSvc`, `tableTemplatesSvc`.
+- **Dead imports removed:** `SilentResult`, `Subject`, `catchError`, `forkJoin` (re-added after critical reviewer flag — needed by `onCreateTemplate`), `map`, `of`, `AddBlockPayload`, `TextBlocksService`, `TableTemplatesService`, `blockKey`, `DataBindingSource`, `TemplateBlock`.
+- **Two critical issues caught & fixed during review:**
+  1. `forkJoin` was over-deleted from rxjs imports but `onCreateTemplate` still uses it → restored.
+  2. `this.loadBlocks(...)` reference left in `onDeleteBlock` error fallback → rewired to `this.state.loadBlocks(...)`.
+
+### KEPT in page.ts (template-specific + Dialog UI)
+- `onCreateTemplate()` + private `doCreateTemplate()` — Dialog + http (template creation)
+- `onDuplicateTemplate(t)` — Dialog + http
+- `onDeleteTemplate(t)` — Dialog + http
+- `onDeleteBlock(id)` — UI Dialog wrapping (service deliberately does NOT wrap Dialog)
+- `onTemplateUpdate(patch)` — template mutation via http
+- `onBackgroundUpload(file)`, `onRemoveBackground(index)`, `onSetDefaultBackground(index)` — background http ops
+- `onDocumentClick(event)` — host listener for close-on-outside-click
+- `templateListRes httpResource` + `templateListErrorMessage computed` — only used by template picker
+- Constructor save pipeline — subscribes to `state.saveEvents$` → groupBy/debounce/switchMap → `state.handleSaveResult` (lifecycle ownership stays in page)
+
+### Architecture after Round 3
+- **Service** = source of truth for state + actions (signals, computed, save pipeline plumbing, all block mutations, selection, dropdowns, snap settings).
+- **Page** = thin coordinator: template CRUD + Dialog UI + constructor save pipeline.
+- **Template bindings** = all block-mutation handlers route through `state.X()`; template-specific + Dialog handlers stay local on page.ts.
+
+### Code review
+- Initial reviewer flagged 2 critical: `SilentResult` import + unused rxjs (`Subject`, `catchError`, `map`, `of`) → fixed.
+- Second reviewer caught **2 more criticals** missed in first pass: `forkJoin` needed by `onCreateTemplate` (restored), `this.loadBlocks` reference in `onDeleteBlock` error fallback (rewired to `state.loadBlocks`).
+- Final reviewer: **APPROVE** with 1 micro (optional documentation comment consolidation).
+
+### Verification
+- `npx tsc --noEmit` — 0 errors in builder section; total project errors 129 (baseline ~130).
+- File sizes: page.ts 1631 → 1024 lines (-607), state service 907 lines (unchanged).
+- `git grep "this.loadBlocks"` → 0 hits in page.ts.
+- `git grep "this.insertBlock"` → 0 hits.
+- `git grep "this.buildBlockFromPayload"` → 0 hits.
+
+### Honest disclosure
+- Three "moved to BuilderStateService" breadcrumb comments remain in page.ts class body where deleted methods used to live. Acceptable for grep-discoverability; could be consolidated into a single class-header comment in future cleanup.
+- Other god-components still large: `block-renderer.component.ts` (1484 lines), `builder-inspector.component.ts` (1856 lines). Separate TZ candidates (TZ-235.B / TZ-235.C).
+
+### Files touched
+- `frontend/src/app/pages/doc-constructor/builder/builder.page.ts` (rewired template + deleted 25 dead methods + removed dead imports)
+
+### Next steps (separate TZ candidates)
+- TZ-235.B: extract `block-renderer.component.ts` (1484 lines) state + handlers
+- TZ-235.C: extract `builder-inspector.component.ts` (1856 lines) state + handlers
+- TZ-236.B: PdfRenderService NestJS module + Gotenberg integration (PDF generation end-to-end)

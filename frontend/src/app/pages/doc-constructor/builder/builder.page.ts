@@ -3,14 +3,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
 import {
-  Subject,
-  catchError,
   debounceTime,
   forkJoin,
   groupBy,
-  map,
   mergeMap,
-  of,
   switchMap,
   tap,
   timer,
@@ -31,15 +27,10 @@ import {
 } from 'lucide-angular';
 import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
 import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
-import { TextBlocksService } from '../../../shared/services/pi-text-blocks.service';
-import { TableTemplatesService } from '../../../shared/services/pi-table-templates.service';
+// TextBlocksService + TableTemplatesService + AddBlockPayload moved to
+// BuilderStateService (no longer used directly in page.ts).
 import { API_BASE_URL } from '../../../core/api.tokens';
-import { extractErrorMessage, SilentResult } from '../../../core/silent-http';
-import {
-  blockKey,
-  type DataBindingSource,
-  type TemplateBlock,
-} from '../../../shared/template-block/template-block.types';
+import { extractErrorMessage } from '../../../core/silent-http';
 import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
 import { PiPageHeaderComponent } from '../../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../../shared/page/pi-section.component';
@@ -52,7 +43,7 @@ import {
   TemplateSetupDialogComponent,
   type TemplateSetupResult,
 } from './template-setup-dialog.component';
-import type { AddBlockPayload } from './builder.types';
+
 import { BuilderStateService } from './builder-state.service';
 import { BuilderCanvasComponent } from './builder-canvas.component';
 import { BuilderInspectorComponent } from './builder-inspector.component';
@@ -146,7 +137,7 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
                 @for (t of templateListRes.value()!; track t._id) {
                   <tr
                     class="pi-table-row pi-table-row-odd group cursor-pointer"
-                    (click)="onTemplatePick(t._id)"
+                    (click)="state.onTemplatePick(t._id)"
                   >
                     <td class="pi-cell font-medium">{{ t.name }}</td>
                     <td class="pi-cell text-right">
@@ -157,8 +148,8 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
                         <app-pi-button
                           variant="outline"
                           size="sm"
-                          (click)="onTemplatePick(t._id)"
-                          data-test="open-template"
+                      (click)="state.onTemplatePick(t._id)"
+                      data-test="open-template"
                         >
                           Открыть
                         </app-pi-button>
@@ -219,7 +210,7 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
             type="button"
             class="builder-view-toggle__btn"
             [class.builder-view-toggle__btn--active]="state.viewMode() === 'editor'"
-            (click)="viewMode.set('editor')"
+            (click)="state.viewMode.set('editor')"
           >
             <lucide-icon [img]="EditIcon" [size]="13"></lucide-icon>
             Редактор
@@ -228,7 +219,7 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
             type="button"
             class="builder-view-toggle__btn"
             [class.builder-view-toggle__btn--active]="state.viewMode() === 'preview'"
-            (click)="viewMode.set('preview')"
+            (click)="state.viewMode.set('preview')"
           >
             <lucide-icon [img]="EyeIcon" [size]="13"></lucide-icon>
             Превью
@@ -241,7 +232,7 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
             <button
               type="button"
               class="builder-dropdown__trigger"
-              (click)="toggleDropdown('texts')"
+              (click)="state.toggleDropdown('texts')"
             >
               <lucide-icon [img]="FileTextIcon" [size]="14"></lucide-icon>
               Тексты
@@ -253,11 +244,11 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
                 } @else if (textsRes.error()) {
                   <p class="builder-dropdown__error">Ошибка загрузки</p>
                 } @else if (textsRes.value() && textsRes.value()!.length > 0) {
-                  @for (t of textsRes.value(); track t._id) {
+                  @for (t of state.textsRes.value(); track t._id) {
                     <button
                       type="button"
                       class="builder-dropdown__item"
-                      (click)="onAddTextBlock(t); closeDropdown()"
+                      (click)="state.onAddTextBlock(t); state.closeDropdown()"
                     >
                       <span class="builder-dropdown__item-label">{{ t.name }}</span>
                       @if (t.category) {
@@ -277,7 +268,7 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
             <button
               type="button"
               class="builder-dropdown__trigger"
-              (click)="toggleDropdown('tables')"
+              (click)="state.toggleDropdown('tables')"
             >
               <lucide-icon [img]="TableIcon" [size]="14"></lucide-icon>
               Таблицы
@@ -289,11 +280,11 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
                 } @else if (tablesRes.error()) {
                   <p class="builder-dropdown__error">Ошибка загрузки</p>
                 } @else if (tablesRes.value() && tablesRes.value()!.length > 0) {
-                  @for (t of tablesRes.value(); track t._id) {
+                  @for (t of state.tablesRes.value(); track t._id) {
                     <button
                       type="button"
                       class="builder-dropdown__item"
-                      (click)="onAddTableTemplate(t); closeDropdown()"
+                      (click)="state.onAddTableTemplate(t); state.closeDropdown()"
                     >
                       <span class="builder-dropdown__item-label">{{ t.name }}</span>
                       @if (t.description) {
@@ -319,12 +310,12 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
               type="file"
               accept="image/png,image/jpeg,image/webp"
               class="sr-only"
-              (change)="onPhotoFileSelected($event)"
+              (change)="state.onPhotoFileSelected($event)"
             />
           </div>
 
           <!-- Отступ button -->
-          <button type="button" class="builder-toolbar__btn" (click)="onAddSpacer()">
+          <button type="button" class="builder-toolbar__btn" (click)="state.onAddSpacer()">
             — Отступ
           </button>
         </div>
@@ -635,8 +626,7 @@ export class BuilderPage {
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly blocksSvc = inject(TemplateBlocksService);
   private readonly templatesSvc = inject(DocumentTemplatesService);
-  private readonly textBlocksSvc = inject(TextBlocksService);
-  private readonly tableTemplatesSvc = inject(TableTemplatesService);
+  
   private readonly toast = inject(PiToastService);
   private readonly dialog = inject(PiDialogService);
   private readonly destroyRef = inject(DestroyRef);
@@ -693,7 +683,7 @@ export class BuilderPage {
       this.state.template.set(null);
       this.state.selectedId.set(null);
       this.state.saveStatus.set('idle');
-      if (id) this.loadBlocks(id);
+      if (id) this.state.loadBlocks(id);
     });
 
     // Phase E.3: read ?source + ?sourceId query params (preserved across
@@ -711,85 +701,10 @@ export class BuilderPage {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Initial load — fetches BOTH blocks AND template (D.2.1 needs template).
+  // Initial load (state.loadBlocks) + text-block source sync
+  // (state.syncTextBlockSources, private to service) are owned by
+  // BuilderStateService.
   // ─────────────────────────────────────────────────────────────
-  private loadBlocks(id: string): void {
-    this.state.isLoading.set(true);
-    // Fetch template first (lightweight); blocks second.
-    this.templatesSvc.findById(id).subscribe({
-      next: (tRes) => {
-        if (tRes.ok) this.state.template.set(tRes.data);
-      },
-      error: () => {
-        // Non-fatal — canvas can still render without bg images.
-      },
-    });
-    this.blocksSvc.listByTemplate(id).subscribe({
-      next: (res) => {
-        this.state.isLoading.set(false);
-        if (res.ok) {
-          this.state.blocks.set(res.data ?? []);
-          this.syncTextBlockSources();
-        } else {
-          this.toast.error(extractErrorMessage(res.error));
-        }
-      },
-      error: (err: HttpErrorResponse) => {
-        this.state.isLoading.set(false);
-        this.toast.error(extractErrorMessage(err));
-      },
-    });
-  }
-
-  /**
-   * Sync text block content from source text blocks.
-   * When a text block is added to the template, its content is snapshotted.
-   * This method refreshes the snapshot from the current source text block,
-   * so edits on the texts page are reflected in the template.
-   */
-  private syncTextBlockSources(): void {
-    const blocks = this.state.blocks();
-    const textBlockIds = blocks
-      .filter((b) => b.type === 'text' && b.dataBinding?.source === 'static' && b.dataBinding?.value)
-      .map((b) => b.dataBinding!.value!)
-      .filter((id): id is string => !!id);
-
-    if (textBlockIds.length === 0) return;
-
-    // Fetch all active text blocks, then match by ID
-    this.textBlocksSvc.list({ activeOnly: false }).subscribe({
-      next: (res) => {
-        if (!res.ok) return;
-        const sourceMap = new Map(res.data.items.map((tb) => [tb._id, tb]));
-        let changed = false;
-
-        const updated = blocks.map((b) => {
-          if (b.type !== 'text' || b.dataBinding?.source !== 'static' || !b.dataBinding?.value) return b;
-          const source = sourceMap.get(b.dataBinding.value);
-          if (!source) return b;
-          // Check if content or columns changed
-          const newContent = source.content ?? '';
-          const newColumns = source.columns;
-          if (b.content === newContent && JSON.stringify(b.columns) === JSON.stringify(newColumns)) return b;
-          changed = true;
-          return { ...b, content: newContent, columns: newColumns };
-        });
-
-        if (changed) {
-          this.state.blocks.set(updated);
-          // Persist updated blocks to backend
-          for (const block of updated) {
-            if (block._id) {
-              this.blocksSvc.update(block._id, {
-                content: block.content,
-                columns: block.columns,
-              }).subscribe();
-            }
-          }
-        }
-      },
-    });
-  }
 
   // ─────────────────────────────────────────────────────────────
   // D.2.1: Background upload
@@ -869,38 +784,12 @@ export class BuilderPage {
     });
   }
 
-  protected onSetOrientation(orientation: 'portrait' | 'landscape'): void {
-    const tid = this.state.templateId();
-    if (!tid) return;
-    this.templatesSvc.setOrientation(tid, orientation).subscribe({
-      next: (res) => {
-        if (res.ok) {
-          this.state.template.update((t) => (t ? { ...t, orientation } : t));
-        } else {
-          this.toast.error(extractErrorMessage(res.error));
-        }
-      },
-    });
-  }
-
-  protected onSetOpacity(opacity: number): void {
-    this.state.template.update((t) => (t ? { ...t, backgroundOpacity: opacity } : t));
-    const tid = this.state.templateId();
-    if (tid) {
-      this.templatesSvc.update(tid, { backgroundOpacity: opacity }).subscribe();
-    }
-  }
+  
 
   // ─────────────────────────────────────────────────────────────
-  // Inline toolbar dropdown handlers
+  // Inline toolbar dropdown handlers are owned by BuilderStateService.
+  // Page only owns the `document:click` host listener (close-on-outside-click).
   // ─────────────────────────────────────────────────────────────
-  protected toggleDropdown(name: string): void {
-    this.state.openDropdown.update((current) => (current === name ? null : name));
-  }
-
-  protected closeDropdown(): void {
-    this.state.openDropdown.set(null);
-  }
 
   // ──────────────────────────────────────────────────────────────────────────────────────────────────
   // Dropdown закрытие при клике вне dropdown (TZ-170 §4.1)
@@ -914,192 +803,16 @@ export class BuilderPage {
     this.state.openDropdown.set(null);
   }
 
-  protected onAddTextBlock(t: {
-    _id: string;
-    name: string;
-    content?: string;
-    columns?: unknown[];
-  }): void {
-    this.onAddBlock({
-      source: 'text-block',
-      textBlock: t as import('../../../shared/services/pi-text-blocks.service').TextBlock,
-    });
-  }
-
-  protected onAddTableTemplate(t: {
-    _id: string;
-    name: string;
-    columns?: unknown[];
-    sampleRows?: unknown[][];
-  }): void {
-    this.onAddBlock({
-      source: 'table-template',
-      tableTemplate:
-        t as import('../../../shared/services/pi-table-templates.service').TableTemplate,
-    });
-  }
-
-  protected onAddSpacer(): void {
-    this.onAddBlock({ source: 'block-type', type: 'spacer' });
-  }
-
-  protected onPhotoFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
-    const localUrl = URL.createObjectURL(file);
-    // Create an image block with a local preview URL (will be replaced after upload)
-    const tempId = crypto.randomUUID();
-    const block: TemplateBlock = {
-      tempId,
-      templateId: this.state.templateId()!,
-      order: this.state.blocks().length,
-      type: 'image',
-      title: file.name.replace(/\.[^.]+$/, ''),
-      content: '',
-      isActive: true,
-      showLine: false,
-      dataBinding: null,
-      settings: { imageUrl: localUrl, overlay: true },
-    };
-    this.insertNewBlock(block, file);
-    input.value = '';
-  }
-
   // ─────────────────────────────────────────────────────────────
-  // Tool pane → add block (Phase D.1) / drop from palette (D.2.2)
+  // Toolbar block creation handlers are owned by BuilderStateService:
+  //   state.onAddTextBlock(t), state.onAddTableTemplate(t),
+  //   state.onAddSpacer(), state.onPhotoFileSelected(event).
   // ─────────────────────────────────────────────────────────────
-  protected onAddBlock(payload: AddBlockPayload): void {
-    return this.insertBlock(payload, this.state.blocks().length);
-  }
 
-  /** D.2.2: drag-from-palette handler — adds block at the dropped index. */
-  protected onDropAdd(event: { payload: AddBlockPayload; insertIndex: number }): void {
-    const idx = Math.max(0, Math.min(event.insertIndex, this.state.blocks().length));
-    this.insertBlock(event.payload, idx);
-  }
-
-  /** Insert a pre-built block (used by photo upload). If `file` is provided,
-   *  uploads it to the server after block creation and patches the imageUrl. */
-  private insertNewBlock(newBlock: TemplateBlock, file?: File): void {
-    const tid = this.state.templateId();
-    if (!tid) return;
-    this.state.blocks.update((arr) => [...arr, newBlock]);
-    this.state.selectedId.set(blockKey(newBlock));
-
-    this.blocksSvc
-      .add(tid, {
-        type: newBlock.type,
-        order: newBlock.order,
-        ...(newBlock.title ? { title: newBlock.title } : {}),
-        ...(newBlock.content ? { content: newBlock.content } : {}),
-        ...(newBlock.height ? { height: newBlock.height } : {}),
-        showLine: newBlock.showLine,
-        ...(newBlock.settings ? { settings: newBlock.settings } : {}),
-        ...(newBlock.dataBinding ? { dataBinding: newBlock.dataBinding } : {}),
-        isActive: newBlock.isActive,
-      })
-      .subscribe({
-        next: (res) => {
-          if (!res.ok) {
-            this.toast.error(extractErrorMessage(res.error));
-            this.state.blocks.update((arr) => arr.filter((b) => b.tempId !== newBlock.tempId));
-            return;
-          }
-          this.state.blocks.update((arr) =>
-            arr.map((b) => (b.tempId === newBlock.tempId ? res.data : b)),
-          );
-          this.state.selectedId.set(res.data._id ?? null);
-
-          // Upload file to server if provided (e.g. photo upload)
-          if (file && res.data._id) {
-            this.blocksSvc.uploadImage(res.data._id, file).subscribe({
-              next: (uploadRes) => {
-                if (uploadRes.ok) {
-                  this.state.blocks.update((arr) =>
-                    arr.map((b) =>
-                      b._id === res.data._id
-                        ? { ...b, settings: { ...(b.settings ?? {}), imageUrl: uploadRes.data.url } }
-                        : b,
-                    ),
-                  );
-                } else {
-                  this.toast.error(extractErrorMessage(uploadRes.error));
-                }
-              },
-              error: () => {
-                this.toast.error('Не удалось загрузить изображение на сервер');
-              },
-            });
-          }
-        },
-        error: (err: HttpErrorResponse) => {
-          this.toast.error(extractErrorMessage(err));
-          this.state.blocks.update((arr) => arr.filter((b) => b.tempId !== newBlock.tempId));
-        },
-      });
-  }
-
-  private insertBlock(payload: AddBlockPayload, insertIndex: number): void {
-    const tid = this.state.templateId();
-    if (!tid) {
-      this.toast.error('Сначала выберите шаблон');
-      return;
-    }
-    const order = insertIndex; // temporary; server will reassign on reorder
-    const newBlock = this.buildBlockFromPayload(tid, payload, order);
-    // Optimistic insert at index.
-    this.state.blocks.update((arr) => {
-      const next = [...arr];
-      next.splice(insertIndex, 0, newBlock);
-      return next;
-    });
-    this.state.selectedId.set(blockKey(newBlock));
-
-    this.blocksSvc
-      .add(tid, {
-        type: newBlock.type,
-        order: newBlock.order,
-        ...(newBlock.title ? { title: newBlock.title } : {}),
-        ...(newBlock.content ? { content: newBlock.content } : {}),
-        ...(newBlock.columns?.length ? { columns: newBlock.columns } : {}),
-        ...(newBlock.height ? { height: newBlock.height } : {}),
-        showLine: newBlock.showLine,
-        ...(newBlock.settings ? { settings: newBlock.settings } : {}),
-        ...(newBlock.dataBinding ? { dataBinding: newBlock.dataBinding } : {}),
-        isActive: newBlock.isActive,
-      })
-      .subscribe({
-        next: (res) => {
-          if (!res.ok) {
-            this.toast.error(extractErrorMessage(res.error));
-            this.state.blocks.update((arr) => arr.filter((b) => b.tempId !== newBlock.tempId));
-            return;
-          }
-          // Swap tempId for server _id at the same index.
-          this.state.blocks.update((arr) =>
-            arr.map((b) => (b.tempId === newBlock.tempId ? res.data : b)),
-          );
-          this.state.selectedId.set(res.data._id ?? null);
-          // If inserted mid-list (not at end), fire atomic reorder to lock the
-          // server-side position — POST /add appends, not inserts at index.
-          if (insertIndex < this.state.blocks().length - 1) {
-            const ids = this.state.blocks()
-              .filter((b) => b._id)
-              .map((b) => b._id!);
-            this.blocksSvc.reorder(tid, { blockIds: ids }).subscribe({
-              next: (r) => {
-                if (!r.ok) this.toast.error(extractErrorMessage(r.error));
-              },
-            });
-          }
-        },
-        error: (err: HttpErrorResponse) => {
-          this.toast.error(extractErrorMessage(err));
-          this.state.blocks.update((arr) => arr.filter((b) => b.tempId !== newBlock.tempId));
-        },
-      });
-  }
+  // Block insertion logic moved to BuilderStateService:
+  //   state.insertBlock(payload, insertIndex)
+  //   state.insertNewBlock(newBlock, file?)
+  //   state.buildBlockFromPayload (private to service)
 
   protected onDuplicateTemplate(t: DocumentTemplate): void {
     const ref = this.dialog.open<TemplateSetupResult>(TemplateSetupDialogComponent, {
@@ -1135,287 +848,19 @@ export class BuilderPage {
     });
   }
 
-  /**
-   * Build a new TemplateBlock from the 4 AddBlockPayload variants.
-   * Pinned to BLOCK_TYPES + DATA_BINDING_SOURCES in the types module.
-   */
-  private buildBlockFromPayload(
-    templateId: string,
-    payload: AddBlockPayload,
-    order: number,
-  ): TemplateBlock {
-    const tempId = crypto.randomUUID();
-    const base = {
-      tempId,
-      templateId,
-      order,
-      isActive: true,
-      showLine: false,
-      dataBinding: null,
-    };
-    switch (payload.source) {
-      case 'block-type':
-        return {
-          ...base,
-          type: payload.type,
-          content: '',
-          height: payload.type === 'spacer' ? 40 : undefined,
-        };
-      case 'text-block':
-        return {
-          ...base,
-          type: 'text',
-          title: payload.textBlock.name,
-          content: payload.textBlock.content ?? '',
-          columns: payload.textBlock.columns?.map((c) => ({
-            id: c.id,
-            content: c.content ?? '',
-            width: c.width ?? 1,
-          })),
-          dataBinding: {
-            source: 'static' as DataBindingSource,
-            value: payload.textBlock._id ?? '',
-          },
-        };
-      case 'table-template':
-        return {
-          ...base,
-          type: 'table',
-          title: payload.tableTemplate.name,
-          settings: {
-            tableTemplateId: payload.tableTemplate._id,
-            tableTemplateColumns: payload.tableTemplate.columns,
-            tableTemplateSampleRows: payload.tableTemplate.sampleRows,
-          },
-        };
-      case 'data-binding':
-        return {
-          ...base,
-          type: 'text',
-          content: `[${payload.field.label}]`,
-          dataBinding: { source: payload.dataSource, field: payload.field.key },
-        };
-    }
-  }
+  
 
   // ─────────────────────────────────────────────────────────────
-  // Canvas → select / reorder
+  // Canvas selection / reorder / edit / delete handlers are owned by
+  // BuilderStateService. Page only owns template-level CRUD and Dialog UI.
   // ─────────────────────────────────────────────────────────────
-  protected onSelect(block: TemplateBlock): void {
-    this.state.selectedId.set(blockKey(block));
-    this.state.selectedIds.set(new Set());
-    this.state.templateSelected.set(false);
-  }
-
-  protected onMultiSelect(block: TemplateBlock): void {
-    const key = blockKey(block);
-    const ids = new Set(this.state.selectedIds());
-    if (ids.has(key)) {
-      ids.delete(key);
-    } else {
-      ids.add(key);
-    }
-    this.state.selectedIds.set(ids);
-    if (ids.size > 0) {
-      this.state.selectedId.set(null);
-      this.state.templateSelected.set(false);
-    }
-  }
-
-  protected onCanvasClick(): void {
-    // Always clear block selection and show template properties
-    this.state.selectedId.set(null);
-    this.state.selectedIds.set(new Set());
-    this.state.templateSelected.set(true);
-  }
-
-  protected onEditSelected(): void {
-    const block = this.state.selectedBlock();
-    if (!block) return;
-
-    switch (block.type) {
-      case 'text': {
-        // Text block ID is stored in dataBinding.value (set at buildBlockFromPayload)
-        const textBlockId = block.dataBinding?.value;
-        if (textBlockId) {
-          this.router.navigate(['/doc-constructor/texts'], {
-            queryParams: { editId: textBlockId },
-          });
-        } else {
-          this.router.navigate(['/doc-constructor/texts']);
-        }
-        break;
-      }
-      case 'table':
-        // Table block — navigate to tables page for editing
-        this.router.navigate(['/doc-constructor/tables']);
-        break;
-      default:
-        break;
-    }
-  }
-
-  protected onDeleteSelected(): void {
-    const ids = this.state.selectedIds();
-    if (ids.size === 0) return;
-
-    const previous = this.state.blocks();
-    const toDelete = previous.filter((b) => ids.has(blockKey(b)));
-    const remaining = previous.filter((b) => !ids.has(blockKey(b)));
-
-    // Optimistic update
-    this.state.blocks.set(remaining.map((b, i) => ({ ...b, order: i })));
-    this.state.selectedIds.set(new Set());
-    this.state.selectedId.set(null);
-
-    const tid = this.state.templateId();
-    if (!tid) return;
-
-    const deleteOps = toDelete
-      .filter((b) => b._id)
-      .map((b) => ({ key: blockKey(b), obs: this.blocksSvc.remove(b._id!) }));
-
-    if (deleteOps.length === 0) return;
-
-    const safeOps = deleteOps.map(({ key, obs }) =>
-      obs.pipe(
-        catchError(() => of(null)),
-        map((r) => ({ key, ok: r?.ok ?? false })),
-      ),
-    );
-
-    forkJoin(safeOps).subscribe({
-      next: (results) => {
-        const failedKeys = new Set(results.filter((r) => !r.ok).map((r) => r.key));
-        const succeededCount = results.length - failedKeys.size;
-
-        if (succeededCount > 0) {
-          this.toast.success(`Удалено блоков: ${succeededCount}`);
-        }
-        if (failedKeys.size > 0) {
-          this.toast.error(`Не удалось удалить ${failedKeys.size} блок(ов)`);
-          const failedBlocks = toDelete.filter((b) => failedKeys.has(blockKey(b)));
-          this.state.blocks.update((arr) =>
-            [...arr, ...failedBlocks].map((b, i) => ({ ...b, order: i })),
-          );
-        }
-
-        const currentIds = this.state.blocks()
-          .filter((b) => b._id)
-          .map((b) => b._id!);
-        if (currentIds.length > 0) {
-          this.blocksSvc.reorder(tid, { blockIds: currentIds }).subscribe();
-        }
-      },
-      error: () => {
-        this.toast.error('Ошибка при удалении блоков');
-        this.state.blocks.set(previous);
-      },
-    });
-  }
-
-  protected onReorder(next: TemplateBlock[]): void {
-    const reindexed = next.map((b, i) => ({ ...b, order: i }));
-    const previous = this.state.blocks();
-    this.state.blocks.set(reindexed);
-
-    const tid = this.state.templateId();
-    if (!tid) return;
-
-    const ids = reindexed.filter((b) => b._id).map((b) => b._id!);
-    this.blocksSvc.reorder(tid, { blockIds: ids }).subscribe({
-      next: (res) => {
-        if (res.ok) {
-          this.toast.success('Порядок блоков сохранён');
-        } else {
-          this.toast.error(extractErrorMessage(res.error));
-          this.state.blocks.set(previous); // rollback
-        }
-      },
-      error: (err: HttpErrorResponse) => {
-        this.toast.error(extractErrorMessage(err));
-        this.state.blocks.set(previous); // rollback
-      },
-    });
-  }
 
   // ─────────────────────────────────────────────────────────────
-  // Inspector → update / delete
+  // Inspector update handlers (onInspectorUpdate / onBlockWidthChange /
+  // onOverlayMove / onOverlayResize / onMarginReset / onMultiMarginUpdate)
+  // are owned by BuilderStateService. Page only owns template-level
+  // (onTemplateUpdate) and Dialog UI handlers.
   // ─────────────────────────────────────────────────────────────
-  protected onInspectorUpdate(patch: Partial<TemplateBlock> & { _id: string }): void {
-    const { _id, ...rest } = patch;
-    this.state.blocks.update((arr) => arr.map((b) => (b._id === _id ? { ...b, ...rest } : b)));
-    this.state.saveBlock(_id, rest);
-  }
-
-  protected onBlockWidthChange(event: {
-    block: TemplateBlock;
-    width: number;
-    marginLeft: number;
-    imageWidth?: number;
-    imageHeight?: number;
-  }): void {
-    const { block, width, marginLeft, imageWidth, imageHeight } = event;
-    if (!block._id) return;
-    const settings: Record<string, unknown> = {
-      ...(block.settings as Record<string, unknown> | undefined),
-      width,
-      marginLeft,
-    };
-    if (imageWidth !== undefined) settings['imageWidth'] = imageWidth;
-    if (imageHeight !== undefined) settings['imageHeight'] = imageHeight;
-    this.state.blocks.update((arr) => arr.map((b) => (b._id === block._id ? { ...b, settings } : b)));
-    this.state.saveBlock(block._id, { settings });
-  }
-
-  /** Handle overlay block position change (drag). */
-  protected onOverlayMove(event: {
-    block: TemplateBlock;
-    overlayLeft: number;
-    overlayTop: number;
-  }): void {
-    const { block, overlayLeft, overlayTop } = event;
-    if (!block._id) return;
-    const settings: Record<string, unknown> = {
-      ...(block.settings as Record<string, unknown> | undefined),
-      overlayLeft,
-      overlayTop,
-    };
-    this.state.blocks.update((arr) => arr.map((b) => (b._id === block._id ? { ...b, settings } : b)));
-    this.state.saveBlock(block._id, { settings });
-  }
-
-  /** Handle overlay image proportional resize (corner handle). */
-  protected onOverlayResize(event: {
-    block: TemplateBlock;
-    imageWidth: number;
-    imageHeight: number;
-  }): void {
-    const { block, imageWidth, imageHeight } = event;
-    if (!block._id) return;
-    const settings: Record<string, unknown> = {
-      ...(block.settings as Record<string, unknown> | undefined),
-      imageWidth,
-      imageHeight,
-    };
-    this.state.blocks.update((arr) => arr.map((b) => (b._id === block._id ? { ...b, settings } : b)));
-    this.state.saveBlock(block._id, { settings });
-  }
-
-  protected onMarginReset(blockId: string): void {
-    const settings = { width: 100, marginLeft: 0 };
-    this.state.blocks.update((arr) => arr.map((b) => (b._id === blockId ? { ...b, settings } : b)));
-    this.state.saveBlock(blockId, { settings });
-  }
-
-  protected onMultiMarginUpdate(
-    updates: Array<{ _id: string; settings: Record<string, unknown> }>,
-  ): void {
-    for (const { _id, settings } of updates) {
-      this.state.blocks.update((arr) => arr.map((b) => (b._id === _id ? { ...b, settings } : b)));
-      this.state.saveBlock(_id, { settings });
-    }
-  }
 
   protected onTemplateUpdate(patch: Partial<DocumentTemplate>): void {
     const tid = this.state.templateId();
@@ -1443,10 +888,7 @@ export class BuilderPage {
     });
   }
 
-  protected onCloseInspectorPanel(): void {
-    this.state.templateSelected.set(false);
-    this.state.selectedId.set(null);
-  }
+  
 
   protected onDeleteBlock(id: string): void {
     const block = this.state.blocks().find((b) => b._id === id);
@@ -1470,7 +912,7 @@ export class BuilderPage {
           if (res.ok) this.toast.success('Блок удалён');
           else {
             this.toast.error(extractErrorMessage(res.error));
-            this.loadBlocks(this.state.templateId() ?? '');
+            this.state.loadBlocks(this.state.templateId() ?? '');
           }
         },
         error: (err: HttpErrorResponse) => this.toast.error(extractErrorMessage(err)),
@@ -1542,38 +984,11 @@ export class BuilderPage {
       });
   }
 
-  /** Handle snap settings changes from the inspector (persisted to localStorage). */
-  protected onSnapSettingsChange(settings: { snapEnabled: boolean; gridSize: number; boundaryPadding?: number }): void {
-    this.state.snapEnabled.set(settings.snapEnabled);
-    this.state.gridSize.set(settings.gridSize);
-    if (settings.boundaryPadding !== undefined) {
-      this.state.boundaryPadding.set(settings.boundaryPadding);
-    }
-    // TZ-235.A Round 3: delegate localStorage write to BuilderStateService.
-    // (page.ts free function `saveSnapSettings` removed at file bottom.)
-    this.state.persistSnapSettings();
-  }
-
-  protected onReload(): void {
-    const tid = this.state.templateId();
-    if (tid) this.loadBlocks(tid);
-  }
-
-  /**
-   * Phase E.3: preserve ?source + ?sourceId query params when navigating
-   * from the empty-state picker to a specific /builder/:id route.
-   */
-  protected onTemplatePick(value: string | null): void {
-    if (!value) return;
-    const ctx = this.state.sourceContext();
-    if (ctx) {
-      this.router.navigate(['/doc-constructor/builder', value], {
-        queryParams: { source: ctx.source, sourceId: ctx.sourceId },
-      });
-    } else {
-      this.router.navigate(['/doc-constructor/builder', value]);
-    }
-  }
+  // ─────────────────────────────────────────────────────────────
+  // Snap settings + reload + template-pick navigation handlers are owned by
+  // BuilderStateService (state.onSnapSettingsChange / state.onReload /
+  // state.onTemplatePick). Page only owns template-level CRUD and Dialog UI.
+  // ─────────────────────────────────────────────────────────────
 
   protected onDeleteTemplate(t: DocumentTemplate): void {
     const ref = this.dialog.open(AlertDialogComponent, {
@@ -1601,31 +1016,9 @@ export class BuilderPage {
     });
   }
 
-  /**
-   * Auto-save result handler. Uses early-return on `!res.ok` so TypeScript
-   * narrows the SilentResult<TemplateBlock> discriminated union to
-   * `{ok: false, error: HttpErrorResponse}` before accessing `res.error`.
-   * D.2.3: also updates `saveStatus` signal — 'saved' for 2s then 'idle',
-   * or 'error' indefinitely.
-   */
-  private handleSaveResult(res: SilentResult<TemplateBlock>): void {
-    if (!res.ok) {
-      const code = res.error.status;
-      if (code === 409) {
-        this.toast.error('Конфликт: шаблон изменён другим пользователем');
-      } else {
-        this.toast.error(`Ошибка сохранения: ${extractErrorMessage(res.error)}`);
-      }
-      this.state.saveStatus.set('error');
-      return;
-    }
-    this.state.blocks.update((arr) => arr.map((b) => (b._id === res.data._id ? res.data : b)));
-    this.state.saveStatus.set('saved');
-    // Monotonic-counter guard (see `savedTick` field JSDoc): only revert if
-    // no newer save has started in the 2s window.
-    const myTick = ++this.state.savedTick;
-    timer(2000).subscribe(() => {
-      if (myTick === this.state.savedTick) this.state.saveStatus.set('idle');
-    });
-  }
+  // ─────────────────────────────────────────────────────────────
+// Auto-save result handler (state.handleSaveResult) is owned by
+// BuilderStateService. Constructor subscribes to state.saveEvents$
+// and delegates via state.handleSaveResult.
+// ─────────────────────────────────────────────────────────────
 }
