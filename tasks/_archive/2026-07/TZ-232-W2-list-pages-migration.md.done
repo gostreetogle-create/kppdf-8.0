@@ -1,0 +1,58 @@
+# TZ-232 Wave 2 — DONE ✅
+
+## Outcome
+
+5 list-pages migrated to the canonical `<pi-entity-list>` shell (pattern established in Wave 3 — organizations.page.ts).
+
+| Page | Before | After | Δ | Endpoint | Server sortBy |
+|---|---|---|---|---|---|
+| materials | 482 | 127 | **−355 (−74%)** | /api/materials | off |
+| products | 475 | 170 | **−305 (−64%)** | /api/products | on (backend) |
+| work-types | 340 | 133 | **−207 (−61%)** | /api/work-types | off |
+| modules | 523 | 169 | **−354 (−68%)** | /api/product-modules | off |
+| tables (table-templates) | 533 | 142 | **−391 (−73%)** | /api/table-templates | off |
+| **TOTAL** | **2353** | **741** | **−1612 (−69%)** | | |
+
+Net **−1612 lines** (~69% reduction) across 5 pages. Every page now follows the same shape:
+
+```
+template  → <app-pi-entity-list endpoint="" [columns]="" ... [rowActions]="rowActionsTpl" (create)="openCreate()">
+class     → injects (service/dialog/toast/destroyRef/injector) + cols + openCreate/openEdit/onDelete
+```
+
+## New file
+
+`frontend/src/app/pages/doc-constructor/tables/table-template-form-dialog.component.ts` (132 lines) — created because `tables.page.ts` had no existing form-dialog. Minimal: edits `name + description` only (full columns/rows editor planned). Uses correct tokens `PI_DIALOG_DATA` / `PI_DIALOG_REF` from `dialog.tokens.ts` + `DialogRef` type.
+
+## Deferred to TZ-232-W2.1
+
+User's directive named **9** list-pages: `counterparty, person, material, product, work-types, units, currencies, modules, tables`. Wave 2 shipped **5** because the other 4 don't exist as dedicated `.page.ts` files yet:
+
+| Entity | Page exists? | Frontend service exists? | Status |
+|---|---|---|---|
+| counterparties | ❌ no | ✅ `frontend/src/app/shared/services/pi-counterparty.service.ts` | need new page + form-dialog + routes/nav |
+| persons | ❌ no | ❌ backend only | need new page + new service + form-dialog + routes/nav |
+| units | ❌ no | ✅ `pages/dictionaries/units.service.ts` (nested in dictionaries multi-entity page) | split out from dictionaries.page.ts OR create new page |
+| currencies | ❌ no | ❌ backend only | need new page + new service + form-dialog + routes/nav |
+
+These 4 pages are materially more work than migrations (new files, new services for 2 of them, all the wiring). Deferred to **TZ-232-W2.1**.
+
+## Validation
+
+- TypeScript typecheck on TZ-232 W2 files: **0 errors**
+- Total frontend error count: **129 (matches pre-Wave-2 baseline)** — 0 regressions introduced
+- Pattern fidelity to `organizations.page.ts`: exact (injects, rowActionsTpl, AlertDialog, OnPush)
+- Commit: `98dc960` — pushed to `origin/freebuff/new-thread-thms6ee2rx5i1q`
+
+## Architecture summary (so next agent picking this up has context)
+
+1. **`<pi-entity-list>` is a drop-in shell** — handles server-side pagination, 300ms-debounced search, loading skeleton, empty state, error toast. Page supplies `[columns]`, `[rowActions]`, `(create)`, optional `(rowClick)`.
+2. **Page owns column definitions** (not DSL) so column logic stays with business layer.
+3. **Page owns dialog lifecycle** — creates PiRowActionsComponent template, opens EntityFormDialogComponent, refreshOnDialogClose stub (TODO once entity-list exposes `reload()`, currently surfaces a toast on delete only).
+4. **Backend sortBy discipline** — only `/api/products` accepts `sortBy`. Marking `sortable: true` on pages without backend support causes 400.
+5. **All migrated pages now use AlertDialogComponent for delete** with predictable Russian copy + `extractErrorMessage(res.error)` for failure.
+
+## Out-of-scope notes
+
+- `inventory/storage-items.page.ts` and `inventory/stock-movements.page.ts` were already migrated in Wave 3 (TZ-232.C). Combined with this Wave 2, total pages on `<pi-entity-list>` shell: **7**.
+- Backend sortBy unification — TZ-XXX future: add `sortBy?: string` to backend `findAll` DTOs for materials / work-types / product-modules / table-templates + counterparties + persons + units + currencies (the 8 services without it).
