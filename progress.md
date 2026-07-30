@@ -1,4 +1,63 @@
 ---
+## [2026-07-30] — Завершено: TZ-235.A R3 + TZ-236.B (dual-source cleanup + Gotenberg NestJS integration)
+
+**Исполнитель:** MiMo Code Agent
+**Статус:** Выполнено (2 commits, backend tsc 0 errors, frontend tsc clean на builder)
+**Что сделано (2 TZ):**
+
+### TZ-235.A Round 3 — dual-source-of-truth cleanup (commit 0cb8e60)
+- `frontend/src/app/pages/doc-constructor/builder/builder.page.ts`: 1631 → 1024 lines (-607, -37%)
+- Template rewired (9 bindings → state.X(...))
+- 25 dead methods deleted (selection, dropdowns, block mutations, inspector updates)
+- Dead imports/injections убраны (SilentResult, Subject, forkJoin reverted, AddBlockPayload, etc.)
+- Service остался source-of-truth для state + actions
+- Page стал thin coordinator (template CRUD + Dialog UI + lifecycle)
+- Code review APPROVE (final, после 2 critical fixes)
+
+### TZ-236.B — PdfRender NestJS module + Gotenberg integration (commit 84d912c)
+- **3 NEW files** (218 lines total): `pdf-render.module.ts` (24), `pdf-render.service.ts` (145), `pdf-render.controller.ts` (49)
+- **POST /api/pdf-render/from-template/:templateId** endpoint
+- Service delegates HTML rendering to `DocumentTemplateService.build()` (no duplicate logic)
+- Native `fetch` + `FormData` + `Blob` + `AbortSignal` (no new deps)
+- Hard 60s timeout via `AbortController` + cleanup in `finally`
+- `ServiceUnavailableException` on Gotenberg failure
+- `StreamableFile` for binary PDF response
+- Roles admin/manager + `AuditAction render`
+- Page size mapping A4/A3/A5 portrait+landscape → inches
+- `GOTENBERG_URL?: string` added to env validation schema
+- MVP scope: A4/A3/A5 sync rendering, Cyrillic fonts (TZ-236.A.1 Dockerfile)
+- Backend tsc: **0 errors**
+- Code review APPROVE (final)
+
+### Verification
+- Backend `npx tsc --noEmit` → 0 errors
+- Frontend builder section: 0 errors (129 total — baseline)
+- Module structure mirrors existing `generated-document.module.ts` pattern
+- 2 archive markers created: `TZ-235.A-R3-dual-source-cleanup.md.done`, `TZ-236.B-pdf-render-gotenberg.md.done`
+
+### Honest disclosure
+- TZ-236.B background images в PDF не работают (relative /uploads/* URLs — Gotenberg в Docker не видит host). Documented TODO для TZ-236.C.
+- TZ-236.B async queue нет (60s sync timeout для больших docs). Documented TODO для TZ-236.C.
+- TZ-235.A R3 оставил "moved to BuilderStateService" breadcrumb comments (3 шт) — cosmetic, не blocker.
+
+### Files touched (2 TZ combined)
+- `frontend/src/app/pages/doc-constructor/builder/builder.page.ts` (-607 строк)
+- `backend/src/modules/pdf-render/pdf-render.module.ts` (NEW)
+- `backend/src/modules/pdf-render/pdf-render.service.ts` (NEW)
+- `backend/src/modules/pdf-render/pdf-render.controller.ts` (NEW)
+- `backend/src/app.module.ts` (register PdfRenderModule)
+- `backend/src/config/env.validation.ts` (add GOTENBERG_URL?: string)
+- `tasks/_archive/2026-07/TZ-235.A-R3-dual-source-cleanup.md.done` (NEW archive)
+- `tasks/_archive/2026-07/TZ-236.B-pdf-render-gotenberg.md.done` (NEW archive)
+
+### Next steps (separate TZ candidates)
+- **TZ-236.C**: background images via host.docker.internal, async render queue, header/footer injection
+- **KP first use case** (/commercial-proposal): выбрать template → авто-заполнить товарами → PDF download (использует TZ-236.B)
+- **TZ-235.B**: extract block-renderer.component.ts (1484 lines) state + handlers
+- **TZ-235.C**: extract builder-inspector.component.ts (1856 lines) state + handlers
+- **TZ-232 Wave 2**: migrate 9 list-pages на <pi-entity-list>
+
+---
 ## [2026-07-30] — Завершено: 4-Phase Batch (STATUS sync + Gotenberg + BuilderStateService R2 + organizations PoC)
 
 **Исполнитель:** MiMo Code Agent

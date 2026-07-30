@@ -1,0 +1,80 @@
+## TZ-236.B — PdfRender NestJS module + Gotenberg integration — DONE 2026-07-30
+
+**Parent:** TZ-236 (PDF/Print стек — 4 waves, ~140-180h)
+**Sub-TZ:** B (Gotenberg NestJS integration)
+**Commit:** 84d912c — 5 files changed, 227 insertions(+)
+**Status:** ✅ DONE
+
+### Mission
+Wire the Gotenberg microservice (TZ-236.A.1) into NestJS backend via a new `pdf-render` module. Expose HTTP endpoint that renders DocumentTemplate → PDF on demand.
+
+### What changed (5 files)
+- **`backend/src/modules/pdf-render/pdf-render.module.ts` (NEW, 24 lines)** — NestJS module wiring service + controller, imports `DocumentTemplateModule`.
+- **`backend/src/modules/pdf-render/pdf-render.service.ts` (NEW, 145 lines)** — `PdfRenderService.renderFromTemplate()`:
+  1. Delegate HTML rendering to `DocumentTemplateService.build()` (reuses existing dataBinding/Intl/layout logic — no duplicate HTML generation).
+  2. Fetch template metadata via `findExpanded()` for pageSize + orientation.
+  3. Map page size to inches (A4/A3/A5 portrait+landscape).
+  4. Build multipart `FormData` with HTML as `index.html` Blob.
+  5. POST to `${GOTENBERG_URL}/forms/chromium/convert/html` with 60s `AbortController` timeout.
+  6. Return PDF `Buffer` on success; throw `ServiceUnavailableException` on Gotenberg failure (unreachable, timeout, non-OK).
+- **`backend/src/modules/pdf-render/pdf-render.controller.ts` (NEW, 49 lines)** — `POST /api/pdf-render/from-template/:templateId`:
+  - Body: `BuildDocumentDto` (same as generate endpoint)
+  - `Roles('admin', 'manager')` + `AuditAction({ action: 'render', entityType: 'PdfRender' })` decorators
+  - Returns `StreamableFile` with `Content-Type: application/pdf` + `Content-Disposition: attachment; filename="template-{id6}-{ts}.pdf"`
+- **`backend/src/app.module.ts` (MODIFIED)** — register `PdfRenderModule` after `GeneratedDocumentModule`.
+- **`backend/src/config/env.validation.ts` (MODIFIED)** — add optional `GOTENBERG_URL?: string` (defaults to `http://localhost:3001` in service).
+
+### Architecture decisions
+- **Reuse `DocumentTemplateService.build()`** — already handles dataBinding resolution, Intl ru-RU formatting (currency/date/number), and block layout. PdfRenderService is a thin HTTP wrapper.
+- **Native `fetch` + `FormData` + `Blob` + `AbortSignal`** — Node 24+ built-ins; no new dependencies (avoid adding `@nestjs/axios`).
+- **MVP scope**: A4/A3/A5 sync rendering, Cyrillic text (fonts pre-installed in TZ-236.A.1 Dockerfile).
+- **Deferred (TZ-236.C)**:
+  - **Background images**: relative `/uploads/*` URLs in `renderHtml()` can't be fetched by Gotenberg in Docker without `host.docker.internal` or mounted volume. Currently renders as broken `<img>` (silent in Chromium).
+  - **Header/footer injection** via Chromium API (`--header-template` / `--footer-template`).
+  - **Async render queue** for large docs (60s sync timeout insufficient).
+
+### Endpoint contract
+```
+POST /api/pdf-render/from-template/:templateId
+Content-Type: application/json
+Body: { organizationId?, counterpartyId?, productId?, materialId?,
+        workTypeId?, orderId?, contractId? }
+Response: 200 application/pdf (binary stream)
+Errors:
+  - 502 ServiceUnavailable: Gotenberg unreachable or timeout
+  - 401/403: Auth/Roles
+  - 404: Template not found
+```
+
+### Code review
+- Initial reviewer: **APPROVE** with 2 micro (non-null assertion in `mapPageSize`; `GOTENBERG_URL` schema entry).
+- Both fixed in same commit.
+- Final reviewer: **APPROVE** ships-ready.
+
+### Verification
+- `cd backend && npx tsc --noEmit` → **0 errors**.
+- Module structure mirrors `generated-document.module.ts` reference pattern.
+- `Roles` + `AuditAction` decorators consistent with codebase (compare to `generated-document.controller.ts`).
+- `clearTimeout` in `finally` — no leak.
+
+### Honest disclosure
+- **Background images in PDF** won't render correctly until TZ-236.C (Gotenberg can't fetch relative URLs from host without network bridge). Documented in service JSDoc.
+- **No async queue** — 60s sync timeout. Large templates (>50 blocks) may timeout; TZ-236.C will add BullMQ or similar.
+- **No PDF storage** — service returns binary stream but does not persist to disk or `GeneratedDocument` collection. If persistence is needed (e.g., for "download my previously generated PDF"), that's a separate sub-TZ.
+
+### Files touched
+- `backend/src/modules/pdf-render/pdf-render.module.ts` (NEW)
+- `backend/src/modules/pdf-render/pdf-render.service.ts` (NEW)
+- `backend/src/modules/pdf-render/pdf-render.controller.ts` (NEW)
+- `backend/src/app.module.ts` (MODIFIED — register PdfRenderModule)
+- `backend/src/config/env.validation.ts` (MODIFIED — add GOTENBERG_URL)
+
+### Smoke test (manual)
+1. `pnpm start` — Gotenberg container healthy on :3001 (verified via `docker ps`).
+2. `curl -X POST http://localhost:3000/api/pdf-render/from-template/<id> -H "Content-Type: application/json" -d '{}' -o test.pdf` — returns `application/pdf` stream.
+3. Open `test.pdf` — Cyrillic text renders correctly, A4 portrait.
+
+### Next steps (separate TZ candidates)
+- **TZ-236.C**: background images via `host.docker.internal`, async render queue, header/footer injection.
+- **TZ-237** (proposed): Commercial Proposal page — first end-to-end use case combining DocumentTemplate + PdfRender + product autofill + VAT calc.
+- **TZ-238** (proposed): Frontend PDF download button — call `/api/pdf-render/from-template/:id` from generated-document page.
