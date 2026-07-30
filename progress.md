@@ -2073,3 +2073,68 @@ SUPERSEDED (14): TZ-172, 173, 174, 175, 176, 177, 178, 180, 181, 182, 183, 184, 
 ARCHIVED DONE (4): TZ-171, TZ-179, TZ-AUDIT-FULL, TZ-AUDIT-ALL-ANALYSIS.
 STATUS.md: SUPERSEDED batch-summary row + TZ-220.{A,B,C} active rows + Known RBAC gaps subsection in DEFER block.
 Известные ограничения: pi-rich-text-editor component absent (TZ-179 partial). RBAC Phase B intentionally full-deferred. 26 tasks remain as successor/predecessor queue.
+
+## [2026-07-30] — TZ-235.A Конструктор — state extraction COMPLETE
+
+**Цель:** развязать god-component `builder.page.ts` (1793 строк) и подготовить безопасную почву для UX-фич из TZ-235 (snap guides / group drag / undo/redo / placeholders).
+
+**Выполнено:** 4 atomic коммита (Round 1 → 2 → 2.5 → 3 + polish):
+1. **76a5328** Round 1 — BuilderStateService foundation (279 строк, 14 signals + 5 computed + 2 httpResource + save$ + snap localStorage).
+2. **45ce0a5** Round 2 — page.ts подключён к state (122 class body + 22 template переименованы на `state.X()`).
+3. **957123c** Round 3 + 2.5 — дедупликация сигналов/computed/httpResource + миграция save$ Subject + helpers cleanup + BLOCKER-фикс localStorage миграции (silent loss prevention).
+4. **bee36c5** Polish — JSDoc-only, saveEvents$ lifecycle + 4-item Round 4 forward pointer.
+
+**Метрики:**
+- `builder.page.ts`: 1793 → 1636 строк (-157, -9%).
+- `builder-state.service.ts`: 283 → 297 строк (cleaner imports, hardened migration + JSDoc).
+- `npx tsc --noEmit` для builder dir: 0 ошибок.
+- 129 pre-existing TS errors in OTHER directories: НЕ выросло от наших правок.
+
+**Critical safety wins:**
+- BLOCKER FIX: legacy `pi-builder-snap-settings` localStorage users no longer lose snap-настройки при следующем reload (one-shot copy+drop с JSON shape validation).
+- saveEvents$ Subject теперь доступен только через readonly `asObservable()` (Subject остался private — нельзя `.next()` извне).
+- 10 helper injected services удалены избыточно (Route/Router/HttpClient/API_BASE_URL + 4 TypedServices + PiToastService) — Round 4 добавит обратно по необходимости.
+
+**Не сделано (TZ-235.A Round 4, отдельный commit/сессия):**
+- 47+ handler методов в page.ts (loadBlocks, onSelect, onMultiSelect, onInspectorUpdate, onDelete, onInsertBlock, onReload, syncTextBlockSources, etc).
+- Constructor route-param watchers + save$ pipeline subscription (сейчас в page.ts constructor).
+- service.ts добавит обратно: `blocksSvc` / `templatesSvc` / `http` / `baseUrl` / `toast` для handler-логики; `route`/`router` для constructor watchers.
+
+**Audit ready:** TZ-235 (16 sub-TZ, 7 волн) теперь можно безопасно начинать фичить: snap guides (TZ-235.B), group drag (TZ-235.D), undo/redo (TZ-235.C), placeholders (TZ-235.E). Все они требуют signal-driven state mutations которых теперь ~500 строк безопасной почвы.
+
+## [2026-07-30] — Deep project audit — i18n + валидации + DSL hygiene
+
+**Контекст:** глубокий PO-аудит проекта kppdf-8.0 (Angular 20 + NestJS). 4 параллельных среза за одну сессию: (1) i18n RU — английские утечки в backend, (2) валидации форм — coverage + DSL готовность, (3) tasks/_archive inventory — duplicates/miss, (4) DSL compliance — какие pages не используют pi-* компоненты.
+
+**3 atomic коммита:**
+
+1. **3ab72f0** `refactor(backend): localize 28 english exception messages to russian`
+   - 14 файлов backend → 28 строковых замен EN→RU.
+   - Auth 4xx messages оставлены GENERIC (anti-enumeration): `'Invalid credentials'` → `'Неверные учётные данные'` (NOT per-mode).
+   - Coverage-gap fix: 3 дополнительных leaks в user.controller (L95, L130) и user.service (L107) → найдены post-commit и fixed в этом же коммите.
+   - `*.spec.ts` grep = 0 hits на старых EN строках → нет CI breakage.
+
+2. **13f3324** `feat(frontend): FormErrorI18n DSL helper + contract-form-dialog PoC + §18 docs`
+   - NEW `frontend/src/app/shared/dsl/form-i18n.ts` (~125 строк): frozen `RU_VALIDATION_MESSAGES` (9 валидаторов: required/email/minlength/maxlength/pattern/min/max/ruPhone/ruInn) + `FormErrorI18n` @Injectable class с `errorFor()` + `firstErrorKey()`.
+   - PoC adoption: `contract-form-dialog.component.ts` — импорт + `inject(FormErrorI18n)` + удалены orphan local `errorFor()` + `hasError()` (reviewer minor fix), template bindings `[error]="formError.errorFor(form.controls.X)"`.
+   - NEW §18 в `docs/DEVELOPMENT-PATTERNS.md` (~75 строк): pattern documentation + 5-step migration recipe + edge cases.
+   - Spec risk: 0 (нет spec файла contract-form-dialog). Dictionary spec не мигрировал — его parent component не менялся.
+
+3. **a10c97f** `docs(development-patterns): §18 polish — count drift fix + reserved-keys note`
+   - "16 forms" → "~10–12 edit-dialogs" (Audit 2 grep counted 16, из них ~10 с inline `errorFor()`, остальные — filter/search forms).
+   - ruPhone/ruInn clarification: reserved for future custom validators setting `errors.ruPhone`/`.ruInn`.
+
+**Метрики:**
+- 14 backend файлов ts-компилируется без новых errors.
+- 2 frontend файла (form-i18n.ts + contract-form-dialog) ts-компилируется чисто.
+- Pre-existing global 129 tsc errors в OTHER directories — НЕ увеличилось (Audit 1 baseline).
+- 25 строк BACKEND + 532 строк FRONTEND/DOCS = 557 строк shipped.
+
+**Known followups (для следующей сессии):**
+- 4. `<pi-entity-list>` orphaned pattern risk (Audit 3 finding) — 0/19 pages adoption. Pick ONE page, migrate как PoC.
+- 5. Backend exception `frozen contract` SPEC tests — assert RU messages exactly equal expected strings, чтобы избежать regression в CI.
+- 6. Demo pages (basics/forms/foundations/navigation) English by-design — добавить `docs/showcase-i18n.md` note, чтобы future devs не пытались переводить showcase.
+- 7. Backend `extractErrorMessage` audit — как frontend извлекает RU strings из 4xx response body для toast? Verify end-to-end.
+- 8. i18n batch 2 (низкий приоритет) — оставшиеся potential leaks в tests/dev tools/seed scripts.
+
+PO mandates met: (a) "никаких английских слов в ошибках" ✓ (Audit 1), (b) "валидации нужные фишки" ✓ (Audit 2 PoC), (c) "DSL переиспользование как Лего" ✓ (FormErrorI18n применён в 1 форме, pattern задокументирован для остальных 15), (d) "глубокий анализ архива" ✓ (4 аудита + closing note).
