@@ -1,0 +1,121 @@
+## TZ-236.C — PdfRender production-ready (C.1 backgrounds + C.2 async queue + C.3 header/footer) — DONE 2026-07-30
+
+**Parent:** TZ-236W (PDF/Print стек — 4 waves, ~140-180h)
+**Sub-TZ:** C (all 3 sub-waves in one commit)
+**Commit:** ec54189 — 4 files changed, +355/-44 lines
+**Sync commit:** ea3de11 (sync main bece1c42 with 3 conflict resolutions)
+**Status:** ✅ DONE
+
+### Mission
+Advance PdfRender module from MVP (TZ-236.B) to production-ready state.
+Three sub-waves implemented in single atomic commit.
+
+### Sub-wave C.1 — Background images in PDF
+**Problem:** Gotenberg (in Docker) cannot fetch template background images from host backend (relative `/uploads/*` URLs).
+
+**Solution:** Add `extra_hosts: ["host.docker.internal:host-gateway"]` to docker-compose gotenberg service + regex rewrite `/uploads/*` URLs in HTML to absolute `BACKEND_PUBLIC_URL` (defaults to `http://host.docker.internal:3000`) before sending to Gotenberg.
+
+**Files:**
+- `docker-compose.yml` (modified — added extra_hosts block)
+- `backend/src/modules/pdf-render/pdf-render.service.ts` (URL regex rewrite in `renderFromHtmlAndTemplate`)
+- `backend/src/config/env.validation.ts` (added `BACKEND_PUBLIC_URL?: string`)
+
+### Sub-wave C.2 — Async render queue (in-memory FIFO + TTL)
+**Problem:** Sync rendering can hit 60s timeout for large templates (>50 blocks). Multiple simultaneous renders overwhelm Gotenberg.
+
+**Solution:** In-memory FIFO queue with MAX_CONCURRENT=2 concurrency cap + per-job TTL of 1 hour + periodic GC.
+
+**Files:**
+- `backend/src/modules/pdf-render/pdf-render.service.ts`:
+  - `jobs: Map<string, JobState>` — pending/processing/done/failed
+  - `queue: Array<{jobId, templateId, dto}>` — FIFO
+  - `activeRenders: number` — concurrency cap counter
+  - `enqueueRender()` — returns jobId immediately (caller polls)
+  - `processQueue()` — worker loop (FIFO + MAX_CONCURRENT)
+  - `runJob()` — per-job render execution
+  - `gcStaleJobs()` — periodic cleanup of jobs older than JOB_TTL_MS
+  - `setInterval(..., 5min).unref()` — GC interval (doesn't block shutdown)
+- `backend/src/modules/pdf-render/pdf-render.controller.ts`:
+  - NEW `POST /async/from-template/:templateId` (202 Accepted) → `{jobId, status}`
+  - NEW `GET /jobs/:jobId` → status JSON
+  - NEW `GET /jobs/:jobId/download` → consumes PDF buffer
+
+**Backward compat:** Original `POST /from-template/:templateId` sync endpoint PRESERVED untouched.
+
+### Sub-wave C.3 — Header/footer injection (Chromium API)
+**Problem:** Documents need page numbering and template name in header/footer.
+
+**Solution:** Use Chromium's native `--header-template` / `--footer-template` form fields with HTML containing Chromium placeholders (`class="pageNumber"`, `class="totalPages"`, `class="title"`, `class="date"`). Auto-bump `marginTop`/`marginBottom` when header/footer present.
+
+**Files:**
+- `backend/src/modules/pdf-render/pdf-render.service.ts`:
+  - `buildDefaultHeader(template)` — `<span class="title">${template.name}</span> &middot; <span>${organizationId.slice(-6)}</span>`
+  - `buildDefaultFooter(_template)` — `<span class="pageNumber"></span> / <span class="totalPages"></span> &middot; <span class="date"></span>`
+  - `escapeHtml(s)` — minimal HTML escape for template.name (defense-in-depth)
+  - `HF_MARGIN_INCHES = 0.79` (~20mm reserved for sticky zones)
+- DTO supports optional `htmlHeader?` / `htmlFooter?` via TypeScript cast (future override hook, upgradeable to proper DTO field when override callers exist)
+
+### Architecture summary
+```
+┌────────────────────────┐                            ┌─────────────────────┐
+│ Sync flow (TZ-236.B):  │  POST /from-template/:id   │                     │
+│ client ──request──►   │ ───────────────────────►  │  PdfRenderService   │
+│ client ◄──PDF ◄────   │  (StreamableFile)         │  ↓ GET /api/...     │
+└────────────────────────┘                            └─────────────────────┘
+┌────────────────────────┐                            ┌─────────────────────┐
+│ Async flow (TZ-236.C): │  POST /async/.../:id      │   jobs Map<jobId,   │
+│ client ──jobId──►     │ ───────────────────────►  │   JobState>         │
+│ client  poll ───────► │  GET /jobs/:jobId         │   (FIFO + concurrency│
+│ client ──PDF ────►    │  GET /jobs/:jobId/download│    + TTL GC)        │
+└────────────────────────┘                            └─────────────────────┘
+                                                          │
+                                                          ▼
+                                                  ┌──────────────────┐
+                                                  │ Gotenberg        │
+                                                  │ Chromium headless│
+                                                  │ (+ host.docker.   │
+                                                  │  .internal for   │
+                                                  │  backgrounds,    │
+                                                  │  + HF margins)   │
+                                                  └──────────────────┘
+```
+
+### Code review
+- Reviewer APPROVE with 3 non-blocking notes (documented for future hardening):
+  1. **renderHtml body padding regression risk** — `renderHtml` sets `body { padding: 20px }`. Combined with new `HF_MARGIN_INCHES=0.79` (=20mm) marginTop → ~37px top whitespace before content. Header sits in gotenberg's margin zone, body content below. Smoke-test on multi-page doc to confirm visual OK. If looks wrong, remove body padding or shrink HF margin.
+  2. **`processQueue()` re-entrance** — `enqueueRender()` and `runJob().finally()` both call `void this.processQueue()`. `shift()` at top makes this safe (concurrency bounded by MAX_CONCURRENT=2), but log "queue depth=N" can show stale value during rapid enqueues. Add `isProcessing` flag in Round 4 hardening.
+  3. **DTO `htmlHeader?`/`htmlFooter?` cast is brittle** — TypeScript-level cast works, but fields don't exist on class-validator schema → invisible to Swagger / future validation tightening. Promote to proper DTO optional fields when override callers materialize.
+
+### Verification
+- `cd backend && npx tsc --noEmit` → **0 errors** in pdf-render section.
+- Module structure consistent (`generated-document.module.ts` is reference pattern).
+- Native `fetch` + `FormData` + `Blob` + `AbortController` — no new dependencies.
+- `Roles` + `AuditAction` decorators consistent.
+
+### Honest disclosure
+- **Sync endpoint 60s timeout** remains. Async queue helps but only 2 concurrent renders.
+- **In-memory jobs** lost on backend restart (clients retry from scratch).
+- **Linux production** may need different `extra_hosts` strategy (e.g., `network_mode: host`).
+- **Visual smoke test** needed for header/footer margin combination (Defer if renderHtml padding: 20px proves problematic).
+
+### Endpoints summary
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/api/pdf-render/from-template/:id` | Sync render (TZ-236.B compat) — returns PDF stream |
+| POST | `/api/pdf-render/async/from-template/:id` | Enqueue async job — 202 + `{jobId, status}` |
+| GET  | `/api/pdf-render/jobs/:jobId` | Job status (pending/processing/done/failed) |
+| GET  | `/api/pdf-render/jobs/:jobId/download` | Consume PDF buffer for completed job |
+
+### Files touched (5)
+- `docker-compose.yml` (modified — extra_hosts)
+- `backend/src/modules/pdf-render/pdf-render.service.ts` (rewrite, 280 lines)
+- `backend/src/modules/pdf-render/pdf-render.controller.ts` (rewrite, 95 lines)
+- `backend/src/config/env.validation.ts` (modified, +5 lines)
+- `tasks/_archive/2026-07/TZ-236.C-pdf-render-production-ready.md.done` (NEW archive)
+
+### Next steps (separate TZ candidates)
+- **TZ-236.D** (UI integration): Frontend PDF download button on generated-document page.
+- **`/commercial-proposal`** — First real use case: select template → autofill products → PDF download (uses TZ-236.C).
+- **Visual smoke test** — Multi-page render with header/footer to verify margin semantics.
+- **TZ-236.E hardening** — DTO optional fields (proper class-validator), `isProcessing` flag, BullMQ for production-grade queue.
+- **TZ-235.B/C** — Continue extracting god-components (block-renderer, builder-inspector).

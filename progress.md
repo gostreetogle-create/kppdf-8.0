@@ -1,5 +1,66 @@
----
-
+---
+## [2026-07-30] — Завершено: TZ-236.C — backgrounds + async queue + header/footer (3 sub-waves)
+
+**Исполнитель:** MiMo Code Agent
+**Статус:** Выполнено (1 commit ec54189, +355/-44 lines, backend tsc 0 errors, reviewer APPROVE)
+**Sync:** ea3de11 (sync main bece1c42, resolved 3 conflicts: stock-movements.page.spec.ts removed per main, start.mjs/progress.md restored to main + this TZ-235.A R3 entry re-added)
+
+### Sub-wave C.1 — Background images in PDF
+- `docker-compose.yml`: gotenberg `extra_hosts: ["host.docker.internal:host-gateway"]`
+- `pdf-render.service.ts`: rewrite `/uploads/*` URLs to absolute `BACKEND_PUBLIC_URL` (default `http://host.docker.internal:3000`)
+- `env.validation.ts`: `BACKEND_PUBLIC_URL?: string` optional entry
+
+### Sub-wave C.2 — Async render queue (in-memory FIFO + TTL)
+- `pdf-render.service.ts`: jobs Map + queue + activeRenders + processQueue + runJob + gcStaleJobs (setInterval 5min unref'd)
+- `pdf-render.controller.ts`: NEW `POST /async/from-template/:id` (202), `GET /jobs/:jobId`, `GET /jobs/:jobId/download`
+- Sync `POST /from-template/:id` PRESERVED untouched (backward-compat)
+- JOB_TTL_MS = 1 hour; MAX_CONCURRENT = 2 (shields Gotenberg from OOM)
+
+### Sub-wave C.3 — Header/footer injection (Chromium API)
+- `pdf-render.service.ts`: buildDefaultHeader (template.name as `<span class="title">` + organizationId), buildDefaultFooter (pageNumber/totalPages/date), escapeHtml
+- HF_MARGIN_INCHES = 0.79 (~20mm) auto-bumped when header/footer present
+- DTO optional `htmlHeader?`/`htmlFooter?` via cast (future override hook)
+
+### Verification
+- Backend `npx tsc --noEmit` → 0 errors
+- Reviewer APPROVE с 3 non-blocking notes (documented for future hardening)
+
+### Honest disclosure (риски)
+- `renderHtml` body padding (20px) + HF marginTop (0.79"/~20mm) могут создать ~37px top whitespace. Visual smoke-test нужен.
+- In-memory jobs lost on backend restart (clients retry from scratch). BullMQ would be production-grade.
+- DTO `htmlHeader?`/`htmlFooter?` cast brittle — promote to proper DTO field when override callers materialize.
+
+### Next: KP first use case + Visual smoke test + TZ-236.D UI
+
+
+**Исполнитель:** MiMo Code Agent
+**Статус:** Выполнено (2 runtime commits + 1 final docs commit, backend tsc 0 errors, frontend tsc clean на builder)
+**Commits:** 0cb8e60 + 84d912c (code), c9c6276 (docs archive)
+**Sync:** ea3de11 (sync main bece1c42 before TZ-236.C, resolved 3 conflicts mechanical: took main's start.mjs/progress.md structure, deleted orphan stock-movements.page.spec.ts per main)
+
+### TZ-235.A R3 — dual-source cleanup
+- `builder.page.ts`: **1631 → 1024 lines (−607, −37%)**. 25 dead methods deleted (selection/dropdowns/block mutations/inspector updates). 9 template bindings → `state.X(...)`. Service = source of truth, page = thin coordinator. Reviewer APPROVE (2 critical fixes: `forkJoin` + `this.state.loadBlocks`).
+
+### TZ-236.B — PdfRender NestJS module + Gotenberg HTTP integration
+- **3 NEW files** (218 lines): `pdf-render.module.ts` (24), `pdf-render.service.ts` (145), `pdf-render.controller.ts` (49)
+- `POST /api/pdf-render/from-template/:templateId` — HTML → PDF via Gotenberg Chromium headless
+- Reuses `DocumentTemplateService.build()` — no duplicate HTML rendering
+- Native `fetch` + `FormData` + `Blob` + `AbortSignal` (no new deps)
+- 60s timeout via `AbortController` + `ServiceUnavailableException` on Gotenberg failure
+- `StreamableFile` for binary PDF response + `audit render` action
+- MVP scope: A4/A3/A5 sync rendering, Cyrillic fonts (TZ-236.A.1 Dockerfile)
+
+### Honest disclosure (TZ-236.B limitations)
+- Background images в PDF broken (relative `/uploads/*` URLs — Gotenberg в Docker не видит host). TZ-236.C.1.
+- Async queue нет (60s sync timeout). TZ-236.C.2.
+- Header/footer injection не реализован. TZ-236.C.3.
+
+### Next: TZ-236.C (3 sub-waves)
+- **C.1** — Background images (host.docker.internal либо volume mount)
+- **C.2** — Async render queue (in-memory FIFO + status polling)
+- **C.3** — Header/footer injection (Chromium `--header-template`/`--footer-template`)
+
+---
 ## [2026-07-25] — FINAL CLOSURE TICK: TZ-171 + TZ-179 + ZERO-OUT tasks/
 
 **Исполнитель:** MiMo Code Agent (orchestrator + basher + code-reviewer pipeline)
