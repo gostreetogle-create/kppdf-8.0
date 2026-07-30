@@ -3,14 +3,14 @@
  * (Template Builder). Source-of-truth for all reactive state inside
  * `frontend/src/app/pages/doc-constructor/builder/`.
  *
- * TZ-235.A (Wave 1, Round 1). Migrated from `builder.page.ts` god-component
- * (1790 lines) to:
+ * TZ-235.A (Wave 1, Round 2). Migrated from `builder.page.ts` god-component
+ * (1790 lines → 1636 lines) to:
  *   - Make SAFE addition of snap guides (TZ-235.B), group drag (TZ-235.D),
  *     undo/redo (TZ-235.C), placeholders (TZ-235.E).
  *   - Reduce coupling between BuilderPage's Template (HTML/CSS) and its
  *     imperative action handlers.
  *
- * Scope (this batch — TZ-235.A round 1):
+ * Scope (this batch — TZ-235.A round 2):
  *   - 14 signals (templateId / template / blocks / selectedId(s) / loading /
  *     creating / saveStatus / templateSelected / viewMode / snapEnabled /
  *     gridSize / boundaryPadding / openDropdown / sourceContext)
@@ -19,11 +19,18 @@
  *   - 2 httpResource (toolbar dropdowns: textsRes / tablesRes)
  *   - private save$ Subject + savedTick counter (save pipeline plumbing)
  *   - localStorage persistence for snap settings
+ *   - 16 handler methods (selection / dropdown / block mutation / delete /
+ *     reorder / loadBlocks) — extracted from page.ts
+ *   - service injection (TemplateBlocksService, DocumentTemplatesService,
+ *     TextBlocksService, TableTemplatesService, HttpClient, PiToastService,
+ *     API_BASE_URL, ActivatedRoute, Router, DestroyRef)
  *
  * Out of scope (next rounds):
- *   - 47 handler methods (onSelect / onMultiSelect / onInspectorUpdate / ...)
- *   - Constructor route watchers + save$ subscribe
- *   - Inventory loadBlocks / syncTextBlockSources orchestration
+ *   - Template CRUD (onCreateTemplate / doCreateTemplate /
+ *     onDuplicateTemplate / onDeleteTemplate / onTemplatePick / onReload)
+ *   - Template config mutators (onBackgroundUpload / onRemoveBackground /
+ *     onSetDefaultBackground / onSetOrientation / onSetOpacity)
+ *   - onTemplateUpdate / onEditSelected / handleSaveResult (save pipeline)
  *
  * Lifetime: COMPONENT-SCOPED. Registered via `providers: [BuilderStateService]`
  * on `BuilderPage`'s `@Component` decorator. Rationale (thinker verdict, 2026-07-30):
@@ -33,14 +40,48 @@
  *   - Component-scoped guarantees state dies when BuilderPage navigates away.
  *   - Two browser tabs have separate JS contexts anyway, no cross-tab bleed.
  */
-import { Injectable, computed, inject, signal } from '@angular/core';
-import { httpResource } from '@angular/common/http';
-import { Observable, Subject } from 'rxjs';
+import {
+  DestroyRef,
+  Injectable,
+  Injector,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  HttpClient,
+  HttpErrorResponse,
+  httpResource,
+} from '@angular/common/http';
+import { ActivatedRoute, Router } from '@angular/router';
+import {
+  Observable,
+  Subject,
+  catchError,
+  forkJoin,
+  map,
+  of,
+  switchMap,
+  timer,
+} from 'rxjs';
+import { API_BASE_URL } from '../../../core/api.tokens';
+import {
+  extractErrorMessage,
+  SilentResult,
+} from '../../../core/silent-http';
 import {
   blockKey,
+  type DataBindingSource,
   type TemplateBlock,
 } from '../../../shared/template-block/template-block.types';
 import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
+import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
+import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
+import { TextBlocksService } from '../../../shared/services/pi-text-blocks.service';
+import { TableTemplatesService } from '../../../shared/services/pi-table-templates.service';
+import { PiToastService } from '../../../shared/ui/toast';
+import type { AddBlockPayload } from './builder.types';
 
 // ─────────────────────────────────────────────────────────────────────
 // LocalStorage persistence for snap settings
@@ -63,14 +104,6 @@ const DEFAULT_SNAP: SnapSettings = {
 function loadSnapSettings(): SnapSettings {
   if (typeof localStorage === 'undefined') return DEFAULT_SNAP;
   try {
-    // TZ-235.A Round 3 reviewer-fix 2026-07-30:
-    // On 2026-07-26 we renamed `pi-builder-snap-settings` -> `kppdf.builder.snapSettings`.
-    // End-users who had snap-settings saved before this rename would silently
-    // lose their settings on next reload. One-shot migration: if the OLD key
-    // is present, VALIDATE its JSON shape before copying to the NEW key then
-    // remove the OLD key. (Without validation, malformed legacy JSON would
-    // be copied verbatim and re-throw on every subsequent load — user stuck
-    // silently on DEFAULT_SNAP forever.)
     const LEGACY_SNAP_KEY = 'pi-builder-snap-settings';
     const legacyRaw = localStorage.getItem(LEGACY_SNAP_KEY);
     if (legacyRaw !== null) {
@@ -82,18 +115,12 @@ function loadSnapSettings(): SnapSettings {
             typeof parsed.gridSize === 'number' ||
             typeof parsed.boundaryPadding === 'number')
         ) {
-          // VALID legacy settings → COPY to new key then drop old. (Reviewer 2026-07-30:
-          // earlier version only removed the legacy key without copying, silently
-          // destroying user data on first reload.)
           localStorage.setItem(SNAP_SETTINGS_KEY, legacyRaw);
           localStorage.removeItem(LEGACY_SNAP_KEY);
         } else {
-          // Legacy JSON parsed but doesn't match our shape — drop to avoid
-          // re-evaluating same garbage forever on every reload.
           localStorage.removeItem(LEGACY_SNAP_KEY);
         }
       } catch {
-        // Legacy value is not valid JSON — drop it to avoid silent failure.
         try {
           localStorage.removeItem(LEGACY_SNAP_KEY);
         } catch {
@@ -123,7 +150,7 @@ function saveSnapSettings(s: SnapSettings): void {
   }
 }
 
-// Russian plural-form for "блок" (moved from builder.page.ts).
+// Russian plural-form for "блок".
 function pluralBlocks(n: number): string {
   const mod10 = n % 10;
   const mod100 = n % 100;
@@ -152,40 +179,38 @@ function pluralBlocks(n: number): string {
  */
 @Injectable()
 export class BuilderStateService {
+  // ── DI ─────────────────────────────────────────────────────────────
+  private readonly blocksSvc = inject(TemplateBlocksService);
+  private readonly templatesSvc = inject(DocumentTemplatesService);
+  private readonly textBlocksSvc = inject(TextBlocksService);
+  private readonly tableTemplatesSvc = inject(TableTemplatesService);
+  private readonly http = inject(HttpClient);
+  private readonly baseUrl = inject(API_BASE_URL);
+  private readonly toast = inject(PiToastService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
+
   // ── Core state signals ────────────────────────────────────────────
-  /** Active template id from route :id. null when in template-picker mode. */
   readonly templateId = signal<string | null>(null);
-  /** Active DocumentTemplate (response of GET /document-templates/:id). */
   readonly template = signal<DocumentTemplate | null>(null);
-  /** All TemplateBlock rows for the active template. */
   readonly blocks = signal<TemplateBlock[]>([]);
-  /** Single-selected block id (string-id). null when nothing selected. */
   readonly selectedId = signal<string | null>(null);
-  /** Multi-selected block id-set (≥1 ids). */
   readonly selectedIds = signal<Set<string>>(new Set());
-  /** True during initial GET / template-blocks?templateId=… */
   readonly isLoading = signal<boolean>(false);
-  /** True during POST /document-templates (create flow). */
   readonly isCreating = signal<boolean>(false);
-  /** Auto-save pipeline status (idle / saving / saved / error). */
   readonly saveStatus = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  /** When true, inspector shows TEMPLATE properties instead of BLOCK properties. */
   readonly templateSelected = signal<boolean>(false);
-  /** TZ-211: View mode toggle — editor (manipulate) | preview (rendered only). */
   readonly viewMode = signal<'editor' | 'preview'>('editor');
 
   // ── Snap settings (persisted to localStorage) ──────────────────────
-  /** Snap-to-grid enabled for overlay blocks (persisted). */
   readonly snapEnabled = signal<boolean>(loadSnapSettings().snapEnabled);
-  /** Grid size for snapping (px) (persisted). Default 20. */
   readonly gridSize = signal<number>(loadSnapSettings().gridSize);
-  /** Padding from paper edges (px) (persisted). Default 0. */
   readonly boundaryPadding = signal<number>(loadSnapSettings().boundaryPadding);
 
   // ── UI ephemeral state ────────────────────────────────────────────
-  /** Which toolbar dropdown is open (texts | tables | null). */
   readonly openDropdown = signal<string | null>(null);
-  /** Phase E.3: source context for pre-binding (order/contract id). */
   readonly sourceContext = signal<{ source: string; sourceId: string } | null>(null);
 
   // ── httpResource for inline toolbar dropdowns ─────────────────────
@@ -204,19 +229,8 @@ export class BuilderStateService {
   >(() => '/api/table-templates?isActive=true', { defaultValue: [] });
 
   // ── Auto-save plumbing ─────────────────────────────────────────────
-  /**
-   * Auto-save Subject — private to the service. Handlers push via
-   * `saveBlock(_id, patch)`. Page-level pipeline (groupBy / debounceTime /
-   * switchMap / takeUntilDestroyed) subscribes via the public `saveEvents$`
-   * observable. Round 4 will move the pipeline itself into the service.
-   */
   private readonly save$ = new Subject<{ _id: string; patch: Partial<TemplateBlock> }>();
 
-  // TRANSIENT (TZ-235.A Round 4): Round 4 will move the save pipeline
-  // (groupBy → debounceTime → switchMap → takeUntilDestroyed) INTO this
-  // service constructor. Until then, page.ts subscribes here. Do NOT use
-  // `@deprecated` — that would trigger IDE/ESLint warnings on the page.ts
-  // consumer, which is the current sanctioned wiring.
   readonly saveEvents$: Observable<{ _id: string; patch: Partial<TemplateBlock> }> =
     this.save$.asObservable();
 
@@ -225,14 +239,19 @@ export class BuilderStateService {
     this.save$.next({ _id, patch });
   }
 
+  // Monotonic counter guard for saveStatus 'saved' → 'idle' revert.
+  // Each save increments the counter; the timer callback only reverts if
+  // its captured value matches the current value (no newer save has started).
+  // Public — page.ts handlers (onBackgroundUpload etc.) under Dialog UI need
+  // the same monotonic guard to avoid revert races.
+  savedTick = 0;
+
+  // NOTE: onDeleteBlock with Dialog UI is intentionally NOT in the service.
+  // PiDialogService + AlertDialogComponent are template concerns; page.ts wraps
+  // the dialog flow and calls this.blocksSvc.remove() directly via templates.
+
   // ── Computed signals ───────────────────────────────────────────────
 
-  /**
-   * Single "currently selected" block for the inspector.
-   * - Single-click selection: read from `selectedId`.
-   * - Multi-select with exactly 1 item: treat as single for the inspector.
-   * - Multi-select with ≥2: returns null (use `selectedBlocks` instead).
-   */
   readonly selectedBlock = computed<TemplateBlock | null>(() => {
     const id = this.selectedId();
     if (id) {
@@ -246,14 +265,12 @@ export class BuilderStateService {
     return null;
   });
 
-  /** All multi-selected blocks (used for group margin controls etc). */
   readonly selectedBlocks = computed<TemplateBlock[]>(() => {
     const ids = this.selectedIds();
     if (ids.size === 0) return [];
     return this.blocks().filter((b) => ids.has(blockKey(b)));
   });
 
-  /** Header subtitle — shows last-6 of templateId + block count + plural. */
   readonly headerSubtitle = computed<string>(() => {
     const id = this.templateId();
     if (!id) return 'Выберите шаблон для редактирования';
@@ -261,7 +278,6 @@ export class BuilderStateService {
     return `Шаблон ${id.slice(-6)} · ${count} ${pluralBlocks(count)}`;
   });
 
-  /** D.2.1: derived background images (respects defaultBackgroundIndex). */
   readonly backgroundImages = computed<string[]>(() => {
     const t = this.template();
     if (!t) return [];
@@ -271,14 +287,12 @@ export class BuilderStateService {
     return all;
   });
 
-  /** Page orientation for canvas sizing. */
   readonly orientation = computed<'portrait' | 'landscape'>(() => {
     return this.template()?.orientation ?? 'portrait';
   });
 
   // ── public helpers ─────────────────────────────────────────────────
 
-  /** Persist current snap settings to localStorage. Called by handler. */
   persistSnapSettings(): void {
     saveSnapSettings({
       snapEnabled: this.snapEnabled(),
@@ -287,19 +301,607 @@ export class BuilderStateService {
     });
   }
 
-  // NOTE (TZ-235.A Round 3 reviewer): `savedTick` / `beginSavedTick()` /
-  // `currentSavedTick` getter were removed. BuilderPage handlers hold their
-  // own page-level tick counter for the 2s 'saved'->'idle' revert.
-  //
-  // @see TZ-235.A Round 4 — handler migration will:
-  //   1. Re-inject blocksSvc, templatesSvc, http, baseUrl, toast for direct
-  //      service-internal use (handlers currently live in page.ts).
-  //   2. Activate route + router for the new service constructor (route-param
-  //      watchers move into service in Round 4; page.ts no longer subscribes).
-  //   3. Keep textBlocksSvc + tableTemplatesSvc permanently DEAD (their work
-  //      is now done by `textsRes` / `tablesRes` httpResources directly).
-  //   4. Pick a fresh debounce/revert strategy in service (likely RxJS
-  //      `auditTime` + `tap` state machine, or a simpler signal-driven
-  //      approach — leaving implementation choice open).
+  // ─────────────────────────────────────────────────────────────────
+  // TZ-235.A Round 2: HANDLER METHODS (extracted from page.ts)
+  // ─────────────────────────────────────────────────────────────────
 
+  // ── Selection handlers ─────────────────────────────────────────────
+  onSelect(block: TemplateBlock): void {
+    this.selectedId.set(blockKey(block));
+    this.selectedIds.set(new Set());
+    this.templateSelected.set(false);
+  }
+
+  onMultiSelect(block: TemplateBlock): void {
+    const key = blockKey(block);
+    const ids = new Set(this.selectedIds());
+    if (ids.has(key)) {
+      ids.delete(key);
+    } else {
+      ids.add(key);
+    }
+    this.selectedIds.set(ids);
+    if (ids.size > 0) {
+      this.selectedId.set(null);
+      this.templateSelected.set(false);
+    }
+  }
+
+  onCanvasClick(): void {
+    this.selectedId.set(null);
+    this.selectedIds.set(new Set());
+    this.templateSelected.set(true);
+  }
+
+  onCloseInspectorPanel(): void {
+    this.templateSelected.set(false);
+    this.selectedId.set(null);
+  }
+
+  // ── Dropdown handlers ─────────────────────────────────────────────
+  toggleDropdown(name: string): void {
+    this.openDropdown.update((current) => (current === name ? null : name));
+  }
+
+  closeDropdown(): void {
+    this.openDropdown.set(null);
+  }
+
+  onDocumentClick(event: MouseEvent): void {
+    if (this.openDropdown() === null) return;
+    const target = event.target as HTMLElement;
+    if (target.closest('.builder-dropdown')) return;
+    this.openDropdown.set(null);
+  }
+
+  // ── Snap settings (from inspector) ─────────────────────────────────
+  onSnapSettingsChange(settings: {
+    snapEnabled: boolean;
+    gridSize: number;
+    boundaryPadding?: number;
+  }): void {
+    this.snapEnabled.set(settings.snapEnabled);
+    this.gridSize.set(settings.gridSize);
+    if (settings.boundaryPadding !== undefined) {
+      this.boundaryPadding.set(settings.boundaryPadding);
+    }
+    this.persistSnapSettings();
+  }
+
+  // ── Inspector + save handlers ──────────────────────────────────────
+  onInspectorUpdate(patch: Partial<TemplateBlock> & { _id: string }): void {
+    const { _id, ...rest } = patch;
+    this.blocks.update((arr) => arr.map((b) => (b._id === _id ? { ...b, ...rest } : b)));
+    this.saveBlock(_id, rest);
+  }
+
+  onBlockWidthChange(event: {
+    block: TemplateBlock;
+    width: number;
+    marginLeft: number;
+    imageWidth?: number;
+    imageHeight?: number;
+  }): void {
+    const { block, width, marginLeft, imageWidth, imageHeight } = event;
+    if (!block._id) return;
+    const settings: Record<string, unknown> = {
+      ...(block.settings as Record<string, unknown> | undefined),
+      width,
+      marginLeft,
+    };
+    if (imageWidth !== undefined) settings['imageWidth'] = imageWidth;
+    if (imageHeight !== undefined) settings['imageHeight'] = imageHeight;
+    this.blocks.update((arr) => arr.map((b) => (b._id === block._id ? { ...b, settings } : b)));
+    this.saveBlock(block._id, { settings });
+  }
+
+  onOverlayMove(event: {
+    block: TemplateBlock;
+    overlayLeft: number;
+    overlayTop: number;
+  }): void {
+    const { block, overlayLeft, overlayTop } = event;
+    if (!block._id) return;
+    const settings: Record<string, unknown> = {
+      ...(block.settings as Record<string, unknown> | undefined),
+      overlayLeft,
+      overlayTop,
+    };
+    this.blocks.update((arr) => arr.map((b) => (b._id === block._id ? { ...b, settings } : b)));
+    this.saveBlock(block._id, { settings });
+  }
+
+  onOverlayResize(event: {
+    block: TemplateBlock;
+    imageWidth: number;
+    imageHeight: number;
+  }): void {
+    const { block, imageWidth, imageHeight } = event;
+    if (!block._id) return;
+    const settings: Record<string, unknown> = {
+      ...(block.settings as Record<string, unknown> | undefined),
+      imageWidth,
+      imageHeight,
+    };
+    this.blocks.update((arr) => arr.map((b) => (b._id === block._id ? { ...b, settings } : b)));
+    this.saveBlock(block._id, { settings });
+  }
+
+  onMarginReset(blockId: string): void {
+    const settings = { width: 100, marginLeft: 0 };
+    this.blocks.update((arr) => arr.map((b) => (b._id === blockId ? { ...b, settings } : b)));
+    this.saveBlock(blockId, { settings });
+  }
+
+  onMultiMarginUpdate(
+    updates: Array<{ _id: string; settings: Record<string, unknown> }>,
+  ): void {
+    for (const { _id, settings } of updates) {
+      this.blocks.update((arr) => arr.map((b) => (b._id === _id ? { ...b, settings } : b)));
+      this.saveBlock(_id, { settings });
+    }
+  }
+
+  // ── OnEditSelected (router navigation) ─────────────────────────────
+  onEditSelected(): void {
+    const block = this.selectedBlock();
+    if (!block) return;
+    switch (block.type) {
+      case 'text': {
+        const textBlockId = block.dataBinding?.value;
+        if (textBlockId) {
+          this.router.navigate(['/doc-constructor/texts'], {
+            queryParams: { editId: textBlockId },
+          });
+        } else {
+          this.router.navigate(['/doc-constructor/texts']);
+        }
+        break;
+      }
+      case 'table':
+        this.router.navigate(['/doc-constructor/tables']);
+        break;
+      default:
+        break;
+    }
+  }
+
+  // ── Initial load ──────────────────────────────────────────────────
+  loadBlocks(id: string): void {
+    this.isLoading.set(true);
+    this.templatesSvc.findById(id).subscribe({
+      next: (tRes) => {
+        if (tRes.ok) this.template.set(tRes.data);
+      },
+      error: () => {
+        // Non-fatal — canvas can still render without bg images.
+      },
+    });
+    this.blocksSvc.listByTemplate(id).subscribe({
+      next: (res) => {
+        this.isLoading.set(false);
+        if (res.ok) {
+          this.blocks.set(res.data ?? []);
+          this.syncTextBlockSources();
+        } else {
+          this.toast.error(extractErrorMessage(res.error));
+        }
+      },
+      error: (err: HttpErrorResponse) => {
+        this.isLoading.set(false);
+        this.toast.error(extractErrorMessage(err));
+      },
+    });
+  }
+
+  /**
+   * Sync text block content from source text blocks.
+   * When a text block is added to the template, its content is snapshotted.
+   * This method refreshes the snapshot from the current source text block,
+   * so edits on the texts page are reflected in the template.
+   */
+  private syncTextBlockSources(): void {
+    const blocks = this.blocks();
+    const textBlockIds = blocks
+      .filter((b) => b.type === 'text' && b.dataBinding?.source === 'static' && b.dataBinding?.value)
+      .map((b) => b.dataBinding!.value!)
+      .filter((id): id is string => !!id);
+
+    if (textBlockIds.length === 0) return;
+
+    this.textBlocksSvc.list({ activeOnly: false }).subscribe({
+      next: (res) => {
+        if (!res.ok) return;
+        const sourceMap = new Map(res.data.items.map((tb) => [tb._id, tb]));
+        let changed = false;
+
+        const updated = blocks.map((b) => {
+          if (b.type !== 'text' || b.dataBinding?.source !== 'static' || !b.dataBinding?.value) return b;
+          const source = sourceMap.get(b.dataBinding.value);
+          if (!source) return b;
+          const newContent = source.content ?? '';
+          const newColumns = source.columns;
+          if (b.content === newContent && JSON.stringify(b.columns) === JSON.stringify(newColumns)) return b;
+          changed = true;
+          return { ...b, content: newContent, columns: newColumns };
+        });
+
+        if (changed) {
+          this.blocks.set(updated);
+          for (const block of updated) {
+            if (block._id) {
+              this.blocksSvc.update(block._id, {
+                content: block.content,
+                columns: block.columns,
+              }).subscribe();
+            }
+          }
+        }
+      },
+    });
+  }
+
+  // ── Block creation (palette + drop) ───────────────────────────────
+  onAddBlock(payload: AddBlockPayload): void {
+    this.insertBlock(payload, this.blocks().length);
+  }
+
+  onDropAdd(event: { payload: AddBlockPayload; insertIndex: number }): void {
+    const idx = Math.max(0, Math.min(event.insertIndex, this.blocks().length));
+    this.insertBlock(event.payload, idx);
+  }
+
+  onAddTextBlock(t: {
+    _id: string;
+    name: string;
+    content?: string;
+    columns?: unknown[];
+  }): void {
+    this.onAddBlock({
+      source: 'text-block',
+      textBlock: t as import('../../../shared/services/pi-text-blocks.service').TextBlock,
+    });
+  }
+
+  onAddTableTemplate(t: {
+    _id: string;
+    name: string;
+    columns?: unknown[];
+    sampleRows?: unknown[][];
+  }): void {
+    this.onAddBlock({
+      source: 'table-template',
+      tableTemplate:
+        t as import('../../../shared/services/pi-table-templates.service').TableTemplate,
+    });
+  }
+
+  onAddSpacer(): void {
+    this.onAddBlock({ source: 'block-type', type: 'spacer' });
+  }
+
+  onPhotoFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    const localUrl = URL.createObjectURL(file);
+    const tempId = crypto.randomUUID();
+    const block: TemplateBlock = {
+      tempId,
+      templateId: this.templateId()!,
+      order: this.blocks().length,
+      type: 'image',
+      title: file.name.replace(/\.[^.]+$/, ''),
+      content: '',
+      isActive: true,
+      showLine: false,
+      dataBinding: null,
+      settings: { imageUrl: localUrl, overlay: true },
+    };
+    this.insertNewBlock(block, file);
+    input.value = '';
+  }
+
+  /**
+   * Build a new TemplateBlock from the 4 AddBlockPayload variants.
+   * Pinned to BLOCK_TYPES + DATA_BINDING_SOURCES in the types module.
+   */
+  private buildBlockFromPayload(
+    templateId: string,
+    payload: AddBlockPayload,
+    order: number,
+  ): TemplateBlock {
+    const tempId = crypto.randomUUID();
+    const base = {
+      tempId,
+      templateId,
+      order,
+      isActive: true,
+      showLine: false,
+      dataBinding: null,
+    };
+    switch (payload.source) {
+      case 'block-type':
+        return {
+          ...base,
+          type: payload.type,
+          content: '',
+          height: payload.type === 'spacer' ? 40 : undefined,
+        };
+      case 'text-block':
+        return {
+          ...base,
+          type: 'text',
+          title: payload.textBlock.name,
+          content: payload.textBlock.content ?? '',
+          columns: payload.textBlock.columns?.map((c) => ({
+            id: c.id,
+            content: c.content ?? '',
+            width: c.width ?? 1,
+          })),
+          dataBinding: {
+            source: 'static' as DataBindingSource,
+            value: payload.textBlock._id ?? '',
+          },
+        };
+      case 'table-template':
+        return {
+          ...base,
+          type: 'table',
+          title: payload.tableTemplate.name,
+          settings: {
+            tableTemplateId: payload.tableTemplate._id,
+            tableTemplateColumns: payload.tableTemplate.columns,
+            tableTemplateSampleRows: payload.tableTemplate.sampleRows,
+          },
+        };
+      case 'data-binding':
+        return {
+          ...base,
+          type: 'text',
+          content: `[${payload.field.label}]`,
+          dataBinding: { source: payload.dataSource, field: payload.field.key },
+        };
+    }
+  }
+
+  /** Insert a block at the given index. Optimistic update + server add. */
+  insertBlock(payload: AddBlockPayload, insertIndex: number): void {
+    const tid = this.templateId();
+    if (!tid) {
+      this.toast.error('Сначала выберите шаблон');
+      return;
+    }
+    const order = insertIndex;
+    const newBlock = this.buildBlockFromPayload(tid, payload, order);
+    this.blocks.update((arr) => {
+      const next = [...arr];
+      next.splice(insertIndex, 0, newBlock);
+      return next;
+    });
+    this.selectedId.set(blockKey(newBlock));
+
+    this.blocksSvc
+      .add(tid, {
+        type: newBlock.type,
+        order: newBlock.order,
+        ...(newBlock.title ? { title: newBlock.title } : {}),
+        ...(newBlock.content ? { content: newBlock.content } : {}),
+        ...(newBlock.columns?.length ? { columns: newBlock.columns } : {}),
+        ...(newBlock.height ? { height: newBlock.height } : {}),
+        showLine: newBlock.showLine,
+        ...(newBlock.settings ? { settings: newBlock.settings } : {}),
+        ...(newBlock.dataBinding ? { dataBinding: newBlock.dataBinding } : {}),
+        isActive: newBlock.isActive,
+      })
+      .subscribe({
+        next: (res) => {
+          if (!res.ok) {
+            this.toast.error(extractErrorMessage(res.error));
+            this.blocks.update((arr) => arr.filter((b) => b.tempId !== newBlock.tempId));
+            return;
+          }
+          this.blocks.update((arr) =>
+            arr.map((b) => (b.tempId === newBlock.tempId ? res.data : b)),
+          );
+          this.selectedId.set(res.data._id ?? null);
+          if (insertIndex < this.blocks().length - 1) {
+            const ids = this.blocks()
+              .filter((b) => b._id)
+              .map((b) => b._id!);
+            this.blocksSvc.reorder(tid, { blockIds: ids }).subscribe({
+              next: (r) => {
+                if (!r.ok) this.toast.error(extractErrorMessage(r.error));
+              },
+            });
+          }
+        },
+        error: (err: HttpErrorResponse) => {
+          this.toast.error(extractErrorMessage(err));
+          this.blocks.update((arr) => arr.filter((b) => b.tempId !== newBlock.tempId));
+        },
+      });
+  }
+
+  /** Insert a pre-built block (used by photo upload). */
+  insertNewBlock(newBlock: TemplateBlock, file?: File): void {
+    const tid = this.templateId();
+    if (!tid) return;
+    this.blocks.update((arr) => [...arr, newBlock]);
+    this.selectedId.set(blockKey(newBlock));
+
+    this.blocksSvc
+      .add(tid, {
+        type: newBlock.type,
+        order: newBlock.order,
+        ...(newBlock.title ? { title: newBlock.title } : {}),
+        ...(newBlock.content ? { content: newBlock.content } : {}),
+        ...(newBlock.height ? { height: newBlock.height } : {}),
+        showLine: newBlock.showLine,
+        ...(newBlock.settings ? { settings: newBlock.settings } : {}),
+        ...(newBlock.dataBinding ? { dataBinding: newBlock.dataBinding } : {}),
+        isActive: newBlock.isActive,
+      })
+      .subscribe({
+        next: (res) => {
+          if (!res.ok) {
+            this.toast.error(extractErrorMessage(res.error));
+            this.blocks.update((arr) => arr.filter((b) => b.tempId !== newBlock.tempId));
+            return;
+          }
+          this.blocks.update((arr) =>
+            arr.map((b) => (b.tempId === newBlock.tempId ? res.data : b)),
+          );
+          this.selectedId.set(res.data._id ?? null);
+
+          if (file && res.data._id) {
+            this.blocksSvc.uploadImage(res.data._id, file).subscribe({
+              next: (uploadRes) => {
+                if (uploadRes.ok) {
+                  this.blocks.update((arr) =>
+                    arr.map((b) =>
+                      b._id === res.data._id
+                        ? { ...b, settings: { ...(b.settings ?? {}), imageUrl: uploadRes.data.url } }
+                        : b,
+                    ),
+                  );
+                } else {
+                  this.toast.error(extractErrorMessage(uploadRes.error));
+                }
+              },
+              error: () => {
+                this.toast.error('Не удалось загрузить изображение на сервер');
+              },
+            });
+          }
+        },
+        error: (err: HttpErrorResponse) => {
+          this.toast.error(extractErrorMessage(err));
+          this.blocks.update((arr) => arr.filter((b) => b.tempId !== newBlock.tempId));
+        },
+      });
+  }
+
+  // ── Delete + reorder ──────────────────────────────────────────────
+  onDeleteSelected(): void {
+    const ids = this.selectedIds();
+    if (ids.size === 0) return;
+
+    const previous = this.blocks();
+    const toDelete = previous.filter((b) => ids.has(blockKey(b)));
+    const remaining = previous.filter((b) => !ids.has(blockKey(b)));
+
+    this.blocks.set(remaining.map((b, i) => ({ ...b, order: i })));
+    this.selectedIds.set(new Set());
+    this.selectedId.set(null);
+
+    const tid = this.templateId();
+    if (!tid) return;
+
+    const deleteOps = toDelete
+      .filter((b) => b._id)
+      .map((b) => ({ key: blockKey(b), obs: this.blocksSvc.remove(b._id!) }));
+
+    if (deleteOps.length === 0) return;
+
+    const safeOps = deleteOps.map(({ key, obs }) =>
+      obs.pipe(
+        catchError(() => of(null)),
+        map((r) => ({ key, ok: r?.ok ?? false })),
+      ),
+    );
+
+    forkJoin(safeOps).subscribe({
+      next: (results) => {
+        const failedKeys = new Set(results.filter((r) => !r.ok).map((r) => r.key));
+        const succeededCount = results.length - failedKeys.size;
+
+        if (succeededCount > 0) {
+          this.toast.success(`Удалено блоков: ${succeededCount}`);
+        }
+        if (failedKeys.size > 0) {
+          this.toast.error(`Не удалось удалить ${failedKeys.size} блок(ов)`);
+          const failedBlocks = toDelete.filter((b) => failedKeys.has(blockKey(b)));
+          this.blocks.update((arr) =>
+            [...arr, ...failedBlocks].map((b, i) => ({ ...b, order: i })),
+          );
+        }
+
+        const currentIds = this.blocks()
+          .filter((b) => b._id)
+          .map((b) => b._id!);
+        if (currentIds.length > 0) {
+          this.blocksSvc.reorder(tid, { blockIds: currentIds }).subscribe();
+        }
+      },
+      error: () => {
+        this.toast.error('Ошибка при удалении блоков');
+        this.blocks.set(previous);
+      },
+    });
+  }
+
+  onReorder(next: TemplateBlock[]): void {
+    const reindexed = next.map((b, i) => ({ ...b, order: i }));
+    const previous = this.blocks();
+    this.blocks.set(reindexed);
+
+    const tid = this.templateId();
+    if (!tid) return;
+
+    const ids = reindexed.filter((b) => b._id).map((b) => b._id!);
+    this.blocksSvc.reorder(tid, { blockIds: ids }).subscribe({
+      next: (res) => {
+        if (res.ok) {
+          this.toast.success('Порядок блоков сохранён');
+        } else {
+          this.toast.error(extractErrorMessage(res.error));
+          this.blocks.set(previous);
+        }
+      },
+      error: (err: HttpErrorResponse) => {
+        this.toast.error(extractErrorMessage(err));
+        this.blocks.set(previous);
+      },
+    });
+  }
+
+  // ── Save pipeline result handler ──────────────────────────────────
+  handleSaveResult(res: SilentResult<TemplateBlock>): void {
+    if (!res.ok) {
+      const code = res.error.status;
+      if (code === 409) {
+        this.toast.error('Конфликт: шаблон изменён другим пользователем');
+      } else {
+        this.toast.error(`Ошибка сохранения: ${extractErrorMessage(res.error)}`);
+      }
+      this.saveStatus.set('error');
+      return;
+    }
+    this.blocks.update((arr) => arr.map((b) => (b._id === res.data._id ? res.data : b)));
+    this.saveStatus.set('saved');
+    const myTick = ++this.savedTick;
+    timer(2000).subscribe(() => {
+      if (myTick === this.savedTick) this.saveStatus.set('idle');
+    });
+  }
+
+  // ── Public reload entry point ─────────────────────────────────────
+  onReload(): void {
+    const tid = this.templateId();
+    if (tid) this.loadBlocks(tid);
+  }
+
+  // ── Template picker navigation ────────────────────────────────────
+  onTemplatePick(value: string | null): void {
+    if (!value) return;
+    const ctx = this.sourceContext();
+    if (ctx) {
+      this.router.navigate(['/doc-constructor/builder', value], {
+        queryParams: { source: ctx.source, sourceId: ctx.sourceId },
+      });
+    } else {
+      this.router.navigate(['/doc-constructor/builder', value]);
+    }
+  }
 }

@@ -346,14 +346,14 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
           [snapEnabled]="state.snapEnabled()"
           [gridSize]="state.gridSize()"
           [boundaryPadding]="state.boundaryPadding()"
-          (select)="onSelect($event)"
-          (multiSelect)="onMultiSelect($event)"
-          (reorder)="onReorder($event)"
-          (dropAdd)="onDropAdd($event)"
-          (blockWidthChange)="onBlockWidthChange($event)"
-          (overlayMove)="onOverlayMove($event)"
-          (overlayResize)="onOverlayResize($event)"
-          (canvasClick)="onCanvasClick()"
+          (select)="state.onSelect($event)"
+          (multiSelect)="state.onMultiSelect($event)"
+          (reorder)="state.onReorder($event)"
+          (dropAdd)="state.onDropAdd($event)"
+          (blockWidthChange)="state.onBlockWidthChange($event)"
+          (overlayMove)="state.onOverlayMove($event)"
+          (overlayResize)="state.onOverlayResize($event)"
+          (canvasClick)="state.onCanvasClick()"
           (deleteRequest)="onDeleteBlock($event)"
         />
 
@@ -369,18 +369,18 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
             [snapEnabled]="state.snapEnabled()"
             [gridSize]="state.gridSize()"
             [boundaryPadding]="state.boundaryPadding()"
-            (snapSettingsChange)="onSnapSettingsChange($event)"
-            (update)="onInspectorUpdate($event)"
+            (snapSettingsChange)="state.onSnapSettingsChange($event)"
+            (update)="state.onInspectorUpdate($event)"
             (delete)="onDeleteBlock($event)"
-            (deleteSelected)="onDeleteSelected()"
-            (editSelected)="onEditSelected()"
-            (marginReset)="onMarginReset($event)"
-            (multiMarginUpdate)="onMultiMarginUpdate($event)"
+            (deleteSelected)="state.onDeleteSelected()"
+            (editSelected)="state.onEditSelected()"
+            (marginReset)="state.onMarginReset($event)"
+            (multiMarginUpdate)="state.onMultiMarginUpdate($event)"
             (templateUpdate)="onTemplateUpdate($event)"
             (uploadBackground)="onBackgroundUpload($event)"
             (removeBackground)="onRemoveBackground($event)"
             (setDefaultBackground)="onSetDefaultBackground($event)"
-            (closePanel)="onCloseInspectorPanel()"
+            (closePanel)="state.onCloseInspectorPanel()"
           />
         </div>
       </div>
@@ -655,11 +655,6 @@ export class BuilderPage {
   protected readonly EditIcon = Pencil;
   protected readonly ImageIcon = ImageIcon;
 
-  // that completed within the 2s window. `++savedTick` returns the new value;
-  // each timer callback captures its own `myTick` and only reverts if no
-  // newer save has started.
-  private savedTick = 0;
-
   // httpResource for the template picker (only used when no :id).
   protected readonly templateListRes = httpResource<DocumentTemplate[]>(
     () => '/api/document-templates',
@@ -688,7 +683,7 @@ export class BuilderPage {
         ),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe((res) => this.handleSaveResult(res));
+      .subscribe((res) => this.state.handleSaveResult(res));
 
     // 2) Watch route param :id + query params (Phase E.3: ?source + ?sourceId).
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
@@ -820,9 +815,9 @@ export class BuilderPage {
           );
           this.toast.success('Фон загружен');
           this.state.saveStatus.set('saved');
-          const myTick = ++this.savedTick;
+          const myTick = ++this.state.savedTick;
           timer(2000).subscribe(() => {
-            if (myTick === this.savedTick) this.state.saveStatus.set('idle');
+            if (myTick === this.state.savedTick) this.state.saveStatus.set('idle');
           });
         } else {
           this.toast.error(extractErrorMessage(res.error));
@@ -1628,9 +1623,9 @@ export class BuilderPage {
     this.state.saveStatus.set('saved');
     // Monotonic-counter guard (see `savedTick` field JSDoc): only revert if
     // no newer save has started in the 2s window.
-    const myTick = ++this.savedTick;
+    const myTick = ++this.state.savedTick;
     timer(2000).subscribe(() => {
-      if (myTick === this.savedTick) this.state.saveStatus.set('idle');
+      if (myTick === this.state.savedTick) this.state.saveStatus.set('idle');
     });
   }
 }
