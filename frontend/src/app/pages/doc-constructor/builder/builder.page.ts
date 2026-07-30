@@ -239,11 +239,11 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
             </button>
             @if (state.openDropdown() === 'texts') {
               <div class="builder-dropdown__panel">
-                @if (textsRes.isLoading()) {
+                @if (state.textsRes.isLoading()) {
                   <p class="builder-dropdown__loading">Загрузка…</p>
-                } @else if (textsRes.error()) {
+                } @else if (state.textsRes.error()) {
                   <p class="builder-dropdown__error">Ошибка загрузки</p>
-                } @else if (textsRes.value() && textsRes.value()!.length > 0) {
+                } @else if ((state.textsRes.value() ?? []).length > 0) {
                   @for (t of state.textsRes.value(); track t._id) {
                     <button
                       type="button"
@@ -275,11 +275,11 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
             </button>
             @if (state.openDropdown() === 'tables') {
               <div class="builder-dropdown__panel">
-                @if (tablesRes.isLoading()) {
+                @if (state.tablesRes.isLoading()) {
                   <p class="builder-dropdown__loading">Загрузка…</p>
-                } @else if (tablesRes.error()) {
+                } @else if (state.tablesRes.error()) {
                   <p class="builder-dropdown__error">Ошибка загрузки</p>
-                } @else if (tablesRes.value() && tablesRes.value()!.length > 0) {
+                } @else if ((state.tablesRes.value() ?? []).length > 0) {
                   @for (t of state.tablesRes.value(); track t._id) {
                     <button
                       type="button"

@@ -58,7 +58,7 @@ import { extractErrorMessage } from '../../../core/silent-http';
 
       @if (row) {
         <div class="text-xs text-muted">
-          Колонок: {{ row.columns?.length ?? 0 }} · Образцов строк: {{ row.sampleRows?.length ?? 0 }}
+          Колонок: {{ row.columns.length }} · Образцов строк: {{ row.sampleRows?.length ?? 0 }}
         </div>
       } @else {
         <div class="text-xs text-muted">

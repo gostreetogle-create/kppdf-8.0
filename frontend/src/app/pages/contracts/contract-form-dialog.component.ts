@@ -321,6 +321,16 @@ export class ContractFormDialogComponent {
     return this.form.controls.items as FormArray<ItemFormGroup>;
   }
 
+  /**
+   * Локальный helper для проверки ошибки валидации конкретного контрола формы.
+   * Совпадает по сигнатуре и реализации с materials / orders / dictionaries/category —
+   * единый идиом для всех form-dialogs проекта.
+   */
+  protected hasError(name: keyof typeof this.form.controls): boolean {
+    const c = this.form.controls[name];
+    return c.invalid && (c.dirty || c.touched);
+  }
+
   private loadLookups(): void {
     this.orgService.list({ limit: 200 }).subscribe((res) => {
       if (res.ok) {
