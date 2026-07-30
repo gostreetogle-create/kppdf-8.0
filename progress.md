@@ -1,5 +1,19 @@
 ---
+## [2026-07-30] — Завершено: TZ-233 (TZ-AUDIT для 19 Freebuff-скиллов)
+**Исполнитель:** MiMo Code Agent
+**Статус:** Выполнено (DOC-ONLY, 3 файла, 0 runtime changes)
+**Что сделано:**
+- **tasks/TZ-233.md (VERIFIED, unchanged от seed)** — полная Evidence Table 19 скиллов ↔ архивные TZ с path:line якорями.
+- **agents/skills/install-list.md (NEW)** — Tier 1/2/3 категоризация, 19 строк, каждая ссылается на TZ-233 row N.
+- **agents/skills/skip-list.md (NEW)** — 32 скипа из Freebuff-каталога по 8 группам (React/Next/Vercel, Azure/Cloudflare, Tailwind/shadcn, Python/Go/Rust, Postgres/Prisma, Auth/Payments, media/Office, pre-commit).
+**Verification:**
+- `git diff --stat` показал только 2 новых файла + 1 archive move, 0 runtime файлов.
+- 19 строк в install-list, 32 строки в skip-list — полное покрытие Tier 1-3.
+- Каждая строка install-list ссылается на конкретный TZ-233 row (line range).
+**Затронутые файлы:** `tasks/TZ-233.md` (unchanged), `agents/skills/install-list.md` (new), `agents/skills/skip-list.md` (new), `tasks/_archive/2026-07/TZ-233.md.done` (new), `OrchestratorKit/STATUS.md` (updated), `progress.md` (this entry).
+**Известные ограничения:** Smoke-test (ШАГ 5) не выполнен — требует отдельной сессии new-thread с TZ-record создания ПРОСТОРО tasks/Z-<next>-demo.md через Tier-1 skill.
 
+---
 ## [2026-07-25] — FINAL CLOSURE TICK: TZ-171 + TZ-179 + ZERO-OUT tasks/
 
 **Исполнитель:** MiMo Code Agent (orchestrator + basher + code-reviewer pipeline)

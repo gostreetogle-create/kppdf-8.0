@@ -57,6 +57,7 @@
 | ~~TZ-82~~ | ~~Browser-use smoke test~~ | pending | TZ-67 + TZ-69..74 • TZ-79 |
 | ~~TZ-90~~ | ~~Диалоговая система (Phase A+B shipped; Phase C/D/E deferred)~~ | DONE — Phase A+B archived 2026-07-12 | — |
 | TZ-110 | Category backend safety (fullPath cascade + ObjectId validation + atomic bulkWrite) | backend/src/modules/category/category.service.ts; backend/src/modules/category/category.controller.ts; backend/src/modules/category/category.schema.ts | — |
+| ~~TZ-233~~ | ~~TZ-AUDIT — обоснование 19 скиллов через архивные TZ (DOC-ONLY)~~ | DONE 2026-07-30 | TZ-232 (DONE context) |
 | TZ-111 | Builder bulk-delete race condition (per-item mergeMap + rollback snapshot + ghost counter) | frontend/src/app/pages/doc-constructor/builder/builder.page.ts; frontend/src/app/shared/services/pi-template-blocks.service.ts | — |
 | TZ-112 | Table Template Dialog — column metadata preservation on field toggle + edit init + sampleRows limit | frontend/src/app/pages/doc-constructor/tables/table-template-dialog.component.ts | — |
 | TZ-113 | Builder Canvas — keyboard accessible multi-select (ARIA listbox + roving tabindex + range select) | frontend/src/app/pages/doc-constructor/builder/block-renderer.component.ts; frontend/src/app/pages/doc-constructor/builder/builder-canvas.component.ts; frontend/src/app/pages/doc-constructor/builder/builder.page.ts | TZ-111 |
@@ -140,6 +141,7 @@ Kit правила: **Layer 2 ≤ 2 одновременно · Layer 3 = СТР
 | TZ-AUDIT-9 | 2026-07-07 | Warm Paper Palette Rebrand (hue 70, chroma 0.015-0.025) | tasks/_archive/2026-07/TZ-AUDIT-9.md.done |
 | TZ-AUDIT-9.1 | 2026-07-07 | Dark Mode L Bump (perceptual density: paper 0.18→0.21, paper-2 0.24→0.27) | tasks/_archive/2026-07/TZ-AUDIT-9.md.done (sub-iteration) |
 | TZ-87 | 2026-07-12 | Doc Constructor F.3 close-out (B.1 + B.2 + B.4 shipped; B.3 browser-use DEFERRED pending production-infra) | tasks/_archive/2026-07/TZ-87.md.done |
+| TZ-233 | 2026-07-30 | TZ-AUDIT — 19 Freebuff skills ↔ архивные TZ evidence table + install/skip lists (DOC-ONLY, 0 runtime changes) | tasks/_archive/2026-07/TZ-233.md.done |
 
 ---
 

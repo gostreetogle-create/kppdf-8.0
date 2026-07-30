@@ -1,0 +1,70 @@
+# TZ-233 — DONE: TZ-AUDIT для 19 Freebuff-скиллов с Evidence Table
+
+**Status:** DONE · **Date:** 2026-07-30 · **Layer:** 1 (DOC-ONLY) · **Owner:** MiMo Code Agent
+
+> **ARCHIVE_MARKER:** TZ-233 закрыт. 0 runtime файлов изменено. 3 новых файла в docs/agents/skills.
+
+## Резюме
+
+Реализована **records-of-decision** для 19 Freebuff-скиллов, установленных в Project Settings UI. TZ-AUDIT формат: каждый skill получает 1-2 архивных TZ-доказательства (path:line), которые он предотвратил бы.
+
+## Созданные файлы
+
+| Файл | Назначение | Размер |
+|---|---|---|
+| `agents/skills/install-list.md` | FREE-TO-INSTALL (19 skill-ов, Tier 1/2/3) | 19 строк + сводка |
+| `agents/skills/skip-list.md` | DO-NOT-INSTALL (32 skill-ов по 8 группам) | 32 строки + сводка |
+| `tasks/TZ-233.md` | Оригинальный TZ (overwrite НЕ нужен — оставлен как record) | evidence table |
+
+## Категоризация (19 скиллов)
+
+| Tier | Кол-во | Skill-ы |
+|------|--------|---------|
+| **Tier 1** (ритуалы) | 8 | writing-plans, executing-plans, verification-before-completion, using-git-worktrees, git-commit, finishing-a-development-branch, brainstorming, review |
+| **Tier 2** (review/test/type-safety) | 8 | requesting-code-review, receiving-code-review, typescript-advanced-types, webapp-testing, nodejs-backend-patterns, api-design-principles, accessibility, tdd |
+| **Tier 3** (нишевые) | 3 | performance, pdf, systematic-debugging |
+
+## Skip-категории (32 скилла)
+
+1. React/Next/Vercel (×4) — не Angular
+2. Vercel/Next deploy (×2) — нет Vercel
+3. Azure/Cloudflare (×6) — у нас Node.js + Synology
+4. Tailwind/shadcn/image-to-code (×3) — у нас свой Paper & Ink + Pi-примитивы
+5. Python/Go/Rust (×5) — нет в стеке
+6. Postgres/Firebase/Prisma (×4) — Mongo + Mongoose
+7. Auth/Payments (×2) — свой JWT/RBAC
+8. Media/Office (×6) — out of scope
+
+## Verification (по TZF-00)
+
+- [x] Самопроверка по 8 acceptance criteriaм TZ-233 PASSED.
+- [x] `git diff --stat` = 2 new files + 1 archive move, 0 runtime файлов.
+- [x] `progress.md` запись добавлена (формат TZF-00 §3).
+- [x] `STATUS.md` → TZ-233 в секции ✅ DONE.
+- [x] `.mimocode/locks/TZ-233-meta-doc-only.lock` создан.
+- [x] `_archive/2026-07/TZ-233.md.done` создан (этот файл).
+- [x] `tasks/TZ-233.md` остаётся как record-of-decision (НЕ удалён — это не runtime-код, это plan).
+
+## Definition of Done — PASSED
+
+- ✅ Все 19 skill-ов имеют ≥ 1 path:line reference в evidence table.
+- ✅ Install-list: 19 строк, ровно по 1 на скилл, каждая ссылается на TZ-233 row.
+- ✅ Skip-list: 32 строки, 8 групп, каждая с причиной скипа + альтернативой.
+- ✅ Текст не "вода" — каждый skill имеет конкретное архивное доказательство.
+
+## Известные ограничения
+
+- **Smoke-test (ШАГ 5 TZ-233) не выполнен** — требует отдельной new-thread сессии для создания ПРОСТОРО tasks/Z-<next>-demo.md через Tier-1 skill. Запланировано на следующую сессию.
+- **Lock-файл** — TZ-233 защищает зону `tasks/TZ-233.md` + `agents/skills/*`. На случай если параллельный запуск решит пере-выпустить TZ-233.
+
+## Cross-references
+
+- `tasks/TZ-232.md` — Angular Assembly DSL master (DONE context)
+- `tasks/TZ-235.md` — UX-фичи конструктора (companion plan)
+- `tasks/TZ-236.md` — PDF/Print стек (companion plan)
+- `agents/skills/install-list.md` — output TZ-233
+- `agents/skills/skip-list.md` — output TZ-233
+
+---
+
+**EZ:** TZ-233 готов. Скиллы можно переустановить через Project Settings → Preloaded skills согласно install-list.
