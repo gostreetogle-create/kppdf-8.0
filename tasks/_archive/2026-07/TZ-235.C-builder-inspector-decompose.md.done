@@ -1,0 +1,120 @@
+# TZ-235.C — DONE — builder-inspector decomposed into 5 focused files
+
+**Completed:** 2026-07-30
+**Branch:** `freebuff/new-thread-thms6ee2rx5i1q`
+**Commit:** `5837981` — refactor(builder): TZ-235.C — decompose builder-inspector (1856 → ~2428 lines across 5 focused files)
+
+## Что сделано простым языком
+
+`builder-inspector` — это самый «толстый» компонент во всём проекте (1856 строк). Это правая панель конструктора, которая показывает свойства в четырёх разных режимах:
+- **Пусто** (никликнули) — сводка документа + настройки сетки
+- **Шаблон целиком** (кликнули пустое место холста) — opacity, шапка/подвал, фоновые картинки
+- **Один блок** (кликнули на блок) — название, контент, картинка, отступы, привязки
+- **Несколько блоков** (Ctrl+Click) — общие отступы, удалить всё
+
+**Что было**: 1856 строк, в которых перемешаны 4 режима интерфейса, 17 сигналов формы, 30 обработчиков, 11 формул.
+
+**Что стало**: распилено на 5 файлов (PO directive: «inspector-state-сервис + template-properties form + per-block inspector»).
+
+## Метрики
+
+| Файл | Было | Стало | Δ |
+|---|---|---|---|
+| `builder-inspector.component.ts` | 1856 стр | 464 стр | **−1392 (−75%)** ⚡ |
+| `builder-inspector-state.service.ts` | — | 581 стр | (NEW) |
+| `template-properties-form.component.ts` | — | 506 стр | (NEW) |
+| `block-inspector.component.ts` | — | 656 стр | (NEW) |
+| `multi-select-inspector.component.ts` | — | 221 стр | (NEW) |
+| **Сумма** | 1856 | 2428 | +572 (компактнее, читаемее, тестируемее) |
+
+## Архитектура
+
+**Один** сервис-источник правды (все сигналы, формулы, обработчики).
+**Один** тонкий переключатель режимов (по какому режиму показать).
+**Три** подкомпонента, по одному на каждый «богатый» режим (template / block / multi-select).
+
+### Схема
+
+```
+BuilderInspectorComponent (switcher, 464 стр)
+├── providers: [BuilderInspectorStateService]      ← per-instance
+├── inputs (9) ──[effect()]──> service signals
+├── outputs (12) <─[takeUntilDestroyed()]── service Subjects
+└── template:
+    @if (empty)         → inline empty/summary
+    @else if (template)  → <app-template-properties-form />
+    @else if (multi)     → <app-multi-select-inspector />
+    @else                → <app-block-inspector />
+
+BuilderInspectorStateService (581 стр)
+├── 9 mirrored inputs (block, selectedCount, ..., boundaryPadding)
+├── 17 form-state signals (title, content, ..., localSnapEnabled)
+├── 11 computed (opacityPercent, ..., settingsTableId)
+├── 2 effects (hydrate form / hydrate snap)
+├── 1 debounced Subject (textInput$ → templateUpdate with 300ms debounce)
+├── 12 output Subjects (Subjects → Observable$)
+├── 1 debounced subscription (in constructor)
+├── 30+ handlers (all verbatim from original)
+└── 3 trigger methods (fire-and-forget: deleteSelected/editSelected/closePanel)
+
+template-properties-form.component.ts (506 стр)
+└── inject service — uses state.template(), state.opacityPercent(), etc.
+
+block-inspector.component.ts (656 стр)
+└── inject service — uses state.title(), state.content(), etc.
+
+multi-select-inspector.component.ts (221 стр)
+└── inject service — uses state.selectedCount(), state.multiMarginLeftPx(), etc.
+```
+
+## Ключевые решения
+
+1. **Per-instance service** через `providers:` (не `providedIn: 'root'`) — каждый экземпляр switcher изолирован, если вдруг два инспектора появятся одновременно (например в split-view).
+2. **Подкомпоненты делят state** через Angular hierarchical DI (parent provides → children find same instance). Нет input/output на подкомпонентах — всё едет через `state.X()`.
+3. **12 Subject→Observable мостов** для boundary events — компонент-родитель в constructor делает 12 `takeUntilDestroyed()` подписок и ре-эмитит через Angular `output()`. Без утечек на destroy.
+4. **3 trigger метода** (triggerDeleteSelected/triggerEditSelected/triggerClosePanel) — обёртки над private Subject.next() для fire-and-forget событий в подкомпонентах. Subjects инкапсулированы в сервисе, чистый API.
+5. **Debounced Subject textInput$** живёт в сервисе, `debounceTime(300)` подписывается один раз в constructor. Когда сервис умирает, Subject умирает вместе с ним.
+6. **Switcher шаблон всего ~80 строк** — `<aside>` с header + 4 ветки диспетчера `@if/@else if`. Inline empty/summary оставлен в switcher (он тесно связан со switcher-логикой).
+7. **builder.page.ts не изменился ни в одной строке** — все 9 inputs + 12 outputs сохранены verbatim.
+
+## Контроль качества
+
+- TypeScript typecheck: 0 ошибок в TZ-235.C файлах (общий счётчик 129 — pre-existing baseline).
+- Reviewer APPROVE с 1 disclosure (см. ниже).
+- Шаблон sum: 2428 строк, но 75% component.ts уменьшение = читаемее, тестируемее.
+- Нет новых imports (тот же LucideAngularModule, switch, button — все уже в проекте).
+
+## Honest disclosure (сохранено verbatim)
+
+Один **pre-existing bug** сохранён ПО РЕФАКТОР-ДИСЦИПЛИНЕ:
+
+`onImageHeightInput` в `builder-inspector-state.service.ts`:
+```ts
+this.imageHeight.set(num);
+this.patchSettings({ imageHeight: null });   // BUG: должно быть `num`, не `null`
+```
+Следствие: пользователь меняет высоту картинки в инспекторе → сигнал обновляется, но в API уходит `null`. Сервер получает `null`, на следующей перезагрузке высота сбрасывается.
+
+Tracked как **TZ-235.C.1** (image-height-input bug + general inspector audit) — НЕ молча фиксим во время релокации.
+
+Второе (пред-существующее):
+- `@else` ветка в switcher может смонтировать block-inspector с `state.block()=null`, если `templateSelected=true && template=null` (загрузка). Это вызовет NPE на `state.block()!.type`. Риск унаследован от оригинала, сохранён.
+
+## Что разблокировано
+
+Этот рефактор делает тривиальным добавление фич, о которых говорили:
+- **TZ-235.D группировка блоков** — multi-select-inspector изолирован, добавим drag-direction в сервис + поле в компоненте
+- **TZ-235.E undo/redo** — стек истории живёт в сервисе, подкомпоненты вызывают `recordSnapshot()` через сервис
+- **Магнитная сетка с визуальными линиями** — snap-логика изолирована в empty/summary секции switcher
+- **Color picker для template** — добавим в template-properties-form
+
+Все эти фичи добавятся без касания других режимов.
+
+## Файлы
+
+- `frontend/src/app/pages/doc-constructor/builder/builder-inspector-state.service.ts` (NEW, 581 стр)
+- `frontend/src/app/pages/doc-constructor/builder/builder-inspector.component.ts` (REWRITTEN, 464 стр было 1856)
+- `frontend/src/app/pages/doc-constructor/builder/template-properties-form.component.ts` (NEW, 506 стр)
+- `frontend/src/app/pages/doc-constructor/builder/block-inspector.component.ts` (NEW, 656 стр)
+- `frontend/src/app/pages/doc-constructor/builder/multi-select-inspector.component.ts` (NEW, 221 стр)
+- `tasks/TZ-235.C.md` (planning doc, не заархивирован — канонический план)
