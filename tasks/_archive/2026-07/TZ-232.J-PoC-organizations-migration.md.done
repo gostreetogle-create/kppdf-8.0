@@ -1,0 +1,45 @@
+## TZ-232 sub-TZ PoC — organizations.page.ts → <pi-entity-list> — DONE 2026-07-30
+
+**Parent:** TZ-232 (DSL Master Plan — Angular Assembly)
+**PoC:** Migration validation — does <pi-entity-list> handle 100% of pattern A-mixed list-page cases with zero glue code?
+**Commit:** 3280212
+**Status:** ✅ DONE
+
+### Mission
+Validate that `<pi-entity-list>` (existing DSL component) can replace manual `<app-pi-table>` + `httpResource` + `createSearchState` pattern in real list-pages. Use `organizations.page.ts` as PoC — Pattern A-mixed (no sortBy on backend).
+
+### What changed
+- `frontend/src/app/pages/organizations/organizations.page.ts`: **195 → 141 lines** (-54, -28%)
+  - **Removed**: manual `<app-pi-table>`, `httpResource`, `createSearchState`, custom `cellTemplates`, lifecycle hooks, `OnInit`, manual `page`/`total`/`loading`/`error` signals, `SortDirection` plumbing.
+  - **Kept**: row-actions template (edit/delete), Dialog lifecycle (`openCreate`, `openEdit`, `onDelete`), `type`-column accessor (comma-separated ORG_TYPE_LABELS — DSL doesn't yet support `cellTemplates` proxy).
+
+### Architecture (after)
+- **Template**: `<app-pi-entity-list endpoint="organizations" [columns]="cols" [rowActions]="rowActionsTpl" (create)="openCreate()">`
+- **Class**: DI of `OrganizationsService`, `PiDialogService`, `PiToastService`, `DestroyRef`, `Injector`. No state management signals (DSL owns it).
+- **Columns**: 4 columns — `name` (sticky), `shortName`, `inn` (font-mono), `type` (custom accessor).
+- **Server-side sort DISABLED** — Pattern A-mixed per TZ-104.3 batch-2 (backend doesn't support `sortBy`). JSDoc cross-references the constraint with TODO to re-enable when backend ships.
+
+### Code review
+- APPROVE (1 critical + 1 micro):
+  - **Critical (1)**: server-side sort regression — fixed by setting all columns `sortable: false`.
+  - **Micro**: JSDoc on `cols` property — minor placement nit, non-blocking.
+- TypeScript fix: missed `DestroyRef` and `Injector` imports in initial write_file — added on re-review.
+
+### Honest disclosure
+- **Refresh-after-dialog TODO**: when create/edit dialog closes, list doesn't auto-reload (DSL doesn't yet expose `reload()` method). Workaround: full page reload on delete, success-toast prompts manual refresh.
+- **Type column UX regression**: lost chip rendering (DSL doesn't yet expose `[cellTemplates]`). Acceptable PoC trade-off — comma-separated labels are still readable.
+- **Pattern A-mixed constraint**: server-side sort will work only when backend lands `sortBy` for `/api/organizations`. Until then, sort=false.
+
+### Verification
+- `npx tsc --noEmit` — 0 errors in `organizations.page.ts`.
+- `git diff --stat`: 1 file changed, 54 insertions(+), 191 deletions(-) → net -137 lines.
+- Reviewer: APPROVE after sortFix.
+
+### Files touched
+- `frontend/src/app/pages/organizations/organizations.page.ts` (rewritten, -54 lines net)
+
+### Follow-ups (not blocking)
+- **DSL**: expose `reload()` method on `PiEntityListComponent` for post-Dialog refresh.
+- **DSL**: expose `[cellTemplates]` proxy for custom cell templates (chips, badges, etc.).
+- **Backend**: implement `sortBy` for `/api/organizations` to re-enable client-side sort headers.
+- **Migration queue**: storage-items (already done), organizations (PoC done), counterparty, person, material, product, work-types, units, currencies — next 9 list-pages can be migrated following this PoC pattern (~30-60 min each).

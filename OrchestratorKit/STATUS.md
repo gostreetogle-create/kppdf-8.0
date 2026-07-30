@@ -56,9 +56,9 @@
 | ~~TZ-81~~ | ~~README + docs (Russian editorial)~~ | DONE 2026-07-05 | TZ-30..79 |
 | ~~TZ-82~~ | ~~Browser-use smoke test~~ | pending | TZ-67 + TZ-69..74 • TZ-79 |
 | ~~TZ-90~~ | ~~Диалоговая система (Phase A+B shipped; Phase C/D/E deferred)~~ | DONE — Phase A+B archived 2026-07-12 | — |
-| TZ-232 | DSL Master Plan (Angular Assembly) — sub-TZ A-N. **DONE parts:** A, B-shim, C, D, E, F, G, H, I, J (partial via TZ-235), K (FormErrorI18n 2026-07-30). Остаются runtime work: TZ-232.D (Sentinel list-pages), TZ-232.E (OnInit migration). | frontend/src/app/shared/dsl/*; frontend/src/app/shared/ui/*; frontend/src/app/pages/* | — |
-| TZ-235 | Конструктор v2 UX-апгрейд (16 sub-TZ, 7 waves, ~140-180h) — planning doc. **Wave 1 (BuilderStateService) NOT STARTED.** | frontend/src/app/pages/doc-constructor/builder/* | TZ-232.J |
-| TZ-236 | PDF/Print стек (4 waves, ~140-180h) — planning doc. **Wave A.1 (Gotenberg Docker) NOT STARTED** — no dependencies. | docker-compose.yml; docker/Dockerfile.gotenberg; backend/src/modules/pdf-render/* | — |
+| TZ-232 | DSL Master Plan (Angular Assembly) — sub-TZ A-N. **DONE parts:** A, B-shim, C, D, E, F, G, H, I, J (partial via TZ-235), K (FormErrorI18n 2026-07-30), **+ organizations PoC (storage-items → orgs) 2026-07-30**. Остаются runtime work: TZ-232.D (Sentinel list-pages), TZ-232.E (OnInit migration). | frontend/src/app/shared/dsl/*; frontend/src/app/shared/ui/*; frontend/src/app/pages/* | — |
+| TZ-235 | Конструктор v2 UX-апгрейд (16 sub-TZ, 7 waves, ~140-180h) — planning doc. **Wave 1 R2 (BuilderStateService: 16 handlers extraction) DONE 2026-07-30** (commits 3633b9c). Template wires to `state.X()`; page.ts legacy handlers TODO-delete next session. | frontend/src/app/pages/doc-constructor/builder/* | TZ-232.J |
+| TZ-236 | PDF/Print стек (4 waves, ~140-180h) — planning doc. **Wave A.1 (Gotenberg Docker + Cyrillic fonts + start.mjs integration) DONE 2026-07-30** (commit 3b3ed16). Phase A.2 (PT Sans/Serif/Mono) pending. | docker-compose.yml; docker/Dockerfile.gotenberg; backend/src/modules/pdf-render/* | — |
 | ~~TZ-110~~ | ~~Category backend safety (cycle prevention + fullPath cascade + ObjectId validation)~~ | DONE 2026-07-19 | — |
 | ~~TZ-111~~ | ~~Builder bulk-delete race condition (partial success + snapshot rollback)~~ | DONE 2026-07-19 | — |
 | ~~TZ-112~~ | ~~Table Template Dialog — column metadata preservation + edit init + sampleRows limit~~ | DONE 2026-07-19 | — |

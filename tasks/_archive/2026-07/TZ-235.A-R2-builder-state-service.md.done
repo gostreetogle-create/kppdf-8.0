@@ -1,0 +1,39 @@
+## TZ-235.A R2 — BuilderStateService handlers extraction — DONE 2026-07-30
+
+**Parent:** TZ-235 (Конструктор v2 UX-апгрейд — 16 sub-TZ, 7 waves, ~140-180h)
+**Sub-TZ:** A (Wave 1 — BuilderStateService) Round 2
+**Commit:** 3633b9c
+**Status:** ✅ DONE
+
+### Mission
+Extract 16 handlers from 1636-line god-component (`builder.page.ts`) into `BuilderStateService` so the service becomes source-of-truth for both state and actions.
+
+### What changed
+- `frontend/src/app/pages/doc-constructor/builder/builder-state.service.ts`: **305 → 907 lines** (+602)
+  - 16 handlers added: selection (`onSelect`, `onMultiSelect`, `onCanvasClick`, `onCloseInspectorPanel`), dropdowns (`toggleDropdown`, `closeDropdown`, `onDocumentClick`), snap (`onSnapSettingsChange`), inspector/save (`onInspectorUpdate`, `onBlockWidthChange`, `onOverlayMove`, `onOverlayResize`, `onMarginReset`, `onMultiMarginUpdate`), edit (`onEditSelected`), load (`loadBlocks`, `syncTextBlockSources`), block creation (`onAddBlock`, `onDropAdd`, `onPhotoFileSelected`, `onAddTextBlock`, `onAddTableTemplate`, `onAddSpacer`, `insertBlock`, `insertNewBlock`, `buildBlockFromPayload`), delete/reorder (`onDeleteSelected`, `onReorder`).
+  - DI: TemplateBlocksService, DocumentTemplatesService, TextBlocksService, TableTemplatesService.
+- `frontend/src/app/pages/doc-constructor/builder/builder.page.ts`: template wiring updated to call `state.X()` directly (4 str_replace applied). `private savedTick = 0` moved to service.
+
+### Architecture
+- **Service = source of truth** for state (signals, computed) and actions (handlers).
+- **Page = thin coordinator**: lifecycle (constructor, route watchers, save pipeline), Dialog UI, page-specific logic (template CRUD).
+- **Template wires to `state.onX(...)`** — no more `this.onX(...)` from template.
+
+### Code review
+- Initial reviewer REJECT (4 criticals: duplicate handlers, stub `initRouteWatchers`, duplicate `savedTick`, signature change in `onDeleteBlock`).
+- All 4 fixed: stub removed, `onDeleteBlock` reverted (UI Dialog stays in page.ts), `savedTick` consolidated, pipeline rewired.
+- Final APPROVE: architecture correct, template wires to service, tsc clean, no semantic drift.
+
+### Known limitations (next session)
+- **Dual-source-of-truth**: page.ts still has legacy handlers (dead code from template's POV). TODO: delete in Round 3.
+- **Auto-save pipeline**: still owned by page.ts constructor (subscribe + groupBy + debounce + switchMap). Could move to service in Round 4.
+- **Block-renderer.component.ts (1484 lines)** and **builder-inspector.component.ts (1856 lines)** — separate god-components, separate TZ candidates (TZ-235.B / TZ-235.C).
+
+### Verification
+- `npx tsc --noEmit` — 0 errors in builder files.
+- File sizes: state service 305 → 907 lines, page.ts 1631 lines (unchanged — handlers TODO-delete).
+- Reviewer: APPROVE (1 micro-note about `@deprecated` JSDoc, non-blocking).
+
+### Files touched
+- `frontend/src/app/pages/doc-constructor/builder/builder-state.service.ts` (modified, +602 lines)
+- `frontend/src/app/pages/doc-constructor/builder/builder.page.ts` (template rewired)

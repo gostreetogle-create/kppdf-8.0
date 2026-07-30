@@ -1,4 +1,64 @@
 ---
+## [2026-07-30] — Завершено: 4-Phase Batch (STATUS sync + Gotenberg + BuilderStateService R2 + organizations PoC)
+
+**Исполнитель:** MiMo Code Agent
+**Статус:** Выполнено (3 runtime commits + 1 docs commit, 0 typecheck errors в затронутых файлах)
+**Что сделано (4 phases, последовательно):**
+
+### Phase 1: STATUS.md cleanup (commit 225266d)
+- Перемещены TZ-110..127 + TZ-233 из ⏳ READY → ✅ DONE (18 backend/frontend safety TZ, выполненных в batch 2026-07-19).
+- Удалены obsolete "Observability chain" + "Backend cross-cutting batch" заметки.
+- Добавлены TZ-232/235/236 как текущие planning docs (с sub-TZ status).
+
+### Phase 2: TZ-236.Wave A.1 — Gotenberg Docker (commit 3b3ed16)
+- **`docker/Dockerfile.gotenberg` (NEW)**: based on `gotenberg/gotenberg:8`, Cyrillic fonts (fonts-dejavu, fonts-liberation2, fonts-noto-core, fonts-noto-cjk), HEALTHCHECK via wget.
+- **`docker-compose.gotenberg.yml` (NEW)**: standalone override. Port 3001:3000 (избегает коллизии с backend :3000).
+- **`docker-compose.yml` (MODIFIED)**: добавлен `gotenberg` service block.
+- **`start.mjs` (MODIFIED)**: добавлена `startGotenberg()` — non-blocking healthcheck, stale container cleanup, TUI-aware log. Graceful degradation (warn-and-continue при failure).
+- TODO Phase A.2: заменить на PT Sans/PT Serif/JetBrains Mono (брендовые шрифты).
+
+### Phase 3: TZ-235.A Round 2 — extract 16 handlers to BuilderStateService (commit 3633b9c)
+- `frontend/src/app/pages/doc-constructor/builder/builder-state.service.ts`: 305 → 907 lines (+602).
+- DI: TemplateBlocksService + DocumentTemplatesService + TextBlocksService + TableTemplatesService.
+- 16 handlers добавлены: selection, dropdowns, snap, inspector/save, edit, load, block creation, delete/reorder.
+- Template rewired на `state.X()` direct (4 str_replace в `builder.page.ts`).
+- Code review: REJECT → fixed 4 criticals (stub `initRouteWatchers`, `onDeleteBlock` signature, duplicate `savedTick`, pipeline wiring) → APPROVE.
+- TODO Round 3: удалить legacy handlers из page.ts (dual-source-of-truth устранение).
+
+### Phase 4: TZ-232 PoC — organizations.page.ts → <pi-entity-list> (commit 3280212)
+- 195 → 141 lines (-54, -28%).
+- Удалено: manual `<app-pi-table>`, `httpResource`, `createSearchState`, custom `cellTemplates`, `OnInit`, manual signals для page/total/loading/error.
+- Сохранено: row-actions template, Dialog lifecycle, `type`-column accessor (comma-separated ORG_TYPE_LABELS).
+- Server-side sort DISABLED (Pattern A-mixed per TZ-104.3 batch-2: backend не поддерживает `sortBy`).
+- TypeScript fix: добавлены импорты `DestroyRef` + `Injector` (пропущены в initial write_file).
+- Code review: APPROVE (1 critical sortFix + 1 micro JSDoc placement).
+- TODO DSL: expose `reload()` method + `[cellTemplates]` proxy. TODO Backend: implement `sortBy` для `/api/organizations`.
+
+### Verification
+- `git log --oneline -5`: 225266d → 3b3ed16 → 3633b9c → 3280212 ✅ (all pushed).
+- `npx tsc --noEmit` — 0 errors в organizations.page.ts, builder-state.service.ts, builder.page.ts.
+- Code reviewer: 2 APPROVE (Phase 3 + Phase 4), 1 APPROVE Phase 2 (с 1 critical fact-check resolved).
+
+### Honest disclosure
+- Phase 3 R2 оставил dual-source-of-truth (page.ts legacy handlers как dead code от template's POV). Round 3 cleanup нужен в следующей сессии.
+- Phase 4 PoC оставил 3 TODO в DSL (reload, cellTemplates, server sort). Phase 4 НЕ валидирует, что pattern покрывает 100% случаев — только organizations (Pattern A-mixed).
+- Phase 2 Gotenberg ДОБАВЛЕН в docker-compose, но backend NestJS module ещё не использует. Phase B (TZ-236.B) — добавить `PdfRenderService` + `pdf-render` NestJS module.
+
+### Files touched (4 phases combined)
+- `OrchestratorKit/STATUS.md` (TZ-232/235/236 entries updated with DONE markers)
+- `progress.md` (this entry)
+- `docker/Dockerfile.gotenberg` (NEW)
+- `docker-compose.gotenberg.yml` (NEW)
+- `docker-compose.yml` (modified)
+- `start.mjs` (modified, +startGotenberg)
+- `frontend/src/app/pages/doc-constructor/builder/builder-state.service.ts` (+602 lines)
+- `frontend/src/app/pages/doc-constructor/builder/builder.page.ts` (template rewired)
+- `frontend/src/app/pages/organizations/organizations.page.ts` (-54 lines)
+- `tasks/_archive/2026-07/TZ-235.A-R2-builder-state-service.md.done` (NEW archive)
+- `tasks/_archive/2026-07/TZ-236.A.1-gotenberg-docker.md.done` (NEW archive)
+- `tasks/_archive/2026-07/TZ-232.J-PoC-organizations-migration.md.done` (NEW archive)
+
+---
 ## [2026-07-30] — Завершено: TZ-233 (TZ-AUDIT для 19 Freebuff-скиллов)
 **Исполнитель:** MiMo Code Agent
 **Статус:** Выполнено (DOC-ONLY, 3 файла, 0 runtime changes)

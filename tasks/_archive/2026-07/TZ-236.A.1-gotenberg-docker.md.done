@@ -1,0 +1,40 @@
+## TZ-236.A.1 — Gotenberg Docker + Cyrillic fonts — DONE 2026-07-30
+
+**Parent:** TZ-236 (PDF/Print стек — 4 waves, ~140-180h)
+**Sub-TZ:** A.1 (Gotenberg Docker microservice)
+**Commit:** 3b3ed16
+**Status:** ✅ DONE
+
+### Mission
+Add Gotenberg PDF generation microservice with Cyrillic font support as foundation for PDF generation wave in TZ-236.
+
+### What changed (4 files)
+- **`docker/Dockerfile.gottenberg` (NEW)**: based on `gotenberg/gotenberg:8`, installs Cyrillic fonts (fonts-dejavu, fonts-liberation, fonts-liberation2, fonts-noto-core, fonts-noto-cjk), HEALTHCHECK via wget /health, EXPOSE 3000.
+- **`docker-compose.gotenberg.yml` (NEW)**: standalone override file for opt-in use. Port 3001:3000 (avoids backend :3000 conflict), container name `kppdf-gotenberg`, healthcheck at docker-level.
+- **`docker-compose.yml` (MODIFIED)**: added `gotenberg` service block. `docker compose up -d mongo mongo-init` upgraded to `mongo mongo-init gotenberg`.
+- **`start.mjs` (MODIFIED)**: added `startGotenberg()` function — non-blocking healthcheck to `http://localhost:3001/health` with 60s timeout, stale container cleanup, TUI-aware log output. Wired into step 5 after backend spawn.
+
+### Architecture
+- **Port 3001 (host) → 3000 (container)** — avoids collision with backend on :3000.
+- **Docker network**: same compose network as mongo/backend (default).
+- **Cyrillic coverage**: DejaVu + Liberation + Noto all ship with Cyrillic glyphs — no extra font files needed for Phase A.1.
+- **Graceful degradation**: warn-and-continue if Gotenberg healthcheck fails (don't block backend/frontend startup).
+
+### Known limitations (next phase)
+- **Phase A.2 pending**: replace bundled fonts with PT Sans / PT Serif / JetBrains Mono (project brand fonts).
+- **No usage from backend yet**: Gotenberg service is up but no NestJS module consumes it. TZ-236.B will add `PdfRenderService` + `pdf-render` NestJS module.
+
+### Code review
+- APPROVE (1 micro-note: `--quiet` flag for wget healthcheck to silence docker logs — non-blocking).
+- Critical fact-check raised by reviewer: `start.mjs` was actually modified (parent agent confirmed via diff verification).
+
+### Verification
+- `docker compose up` — gotenberg container starts, healthcheck passes.
+- `curl http://localhost:3001/health` returns 200 OK.
+- Cyrillic render test: Gotenberg `/forms/libreoffice/convert` with Russian text → PDF embeds fonts correctly.
+
+### Files touched
+- `docker/Dockerfile.gotenberg` (NEW)
+- `docker-compose.gotenberg.yml` (NEW)
+- `docker-compose.yml` (added gotenberg service block)
+- `start.mjs` (added `startGotenberg()` + wire into step 5)
