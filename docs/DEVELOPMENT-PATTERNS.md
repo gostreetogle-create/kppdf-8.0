@@ -780,12 +780,353 @@ export class MyEntityService {
 
 ---
 
-## 10. Чек-лист перед коммитом
+## 11. defineEntity — DSL-фабрика CRUD-сервисов
+
+**Файл:** `frontend/src/app/shared/dsl/entity/entity-service.ts`
+
+### Назначение
+
+`defineEntity<T, P>()` создаёт fully-typed 5-методный CRUD-сервис, готовый к внедрению через Angular DI. **Не нужно** писать отдельный сервис для каждой стандартной сущности.
+
+### Паттерн
+
+```ts
+import { defineEntity } from '../../shared/dsl/entity/entity-service';
+
+// 1. Интерфейс сущности
+export interface Material {
+  _id: string;
+  name: string;
+  unit: string;
+  category?: string;
+}
+
+// 2. Определение (один раз, можно export const)
+export const Materials = defineEntity<Material>({ endpoint: 'materials' });
+
+// 3. Использование (везде)
+@Component({ ... })
+export class MaterialsPage {
+  private readonly materials = Materials.inject();
+  // materials.list({ page: 1 }) → Observable<SilentResult<PaginatedResponse<Material>>>
+  // materials.findById('...')   → Observable<SilentResult<Material>>
+  // materials.create(payload)   → Observable<SilentResult<Material>>
+  // materials.update(id, body)  → Observable<SilentResult<Material>>
+  // materials.remove(id)        → Observable<SilentResult<void>>
+}
+```
+
+### Когда использовать
+
+| Использовать | НЕ использовать |
+|-------------|----------------|
+| Стандартный CRUD (list/findById/create/update/remove) | Вложенные endpoints (`/products/:id/cost-calculations`) |
+| Сущность с плоским JSON-ответом | FormData upload (фото, файлы) |
+| Стандартная пагинация `{items, total, page, limit}` | Нестандартный ответ сервера |
+
+### DI модель
+
+Каждый вызов `defineEntity` создаёт `InjectionToken` с `providedIn: 'root'` (singleton, lazy). Сервис создаётся при первом `inject()` и переиспользуется в DI graph.
+
+### Кастомный тип параметров
+
+```ts
+export const Materials = defineEntity<Material, { page: number; limit: number; search?: string; category?: string }>({
+  endpoint: 'materials',
+});
+```
+
+### Вспомогательные функции
+
+| Функция | Назначение |
+|---------|-----------|
+| `paramsToHttpParams(params)` | Конвертирует `Record<string, unknown>` в `HttpParams`, пропуская null/undefined/empty |
+| `PaginatedResponse<T>` | Generic-интерфейс `{ items: T[]; total: number; page: number; limit: number }` |
+| `EntitySchema<T>` | Конфиг: `endpoint` + `idKey` |
+| `EntityService<T, P>` | Интерфейс 5-методного CRUD |
+| `DefineEntity<T, P>` | Результат фабрики: `{ schema, inject() }` |
+
+---
+
+## 12. SubmitGuard — защита от двойного сабмита
+
+**Файл:** `frontend/src/app/shared/dsl/submit-guard.ts`
+
+### Архитектура (3 уровня)
+
+```
+Уровень 1 — Debounce (300ms)
+  ├── Клик → 300ms ожидание → HTTP-запрос
+  └── Быстрый дабл-клик в пределах 300ms → игнорируется
+
+Уровень 2 — In-flight Map
+  ├── Первый запрос → compositeKey записан в inFlight Map
+  ├── Второй сабмит с тем же compositeKey → SilentResult 429
+  └── После ответа (успех/ошибка) → compositeKey удалён из inFlight
+
+Уровень 3 — Completed Cache (5 минут)
+  ├── Успешный ответ → кеширован на 5 минут
+  ├── Ошибка 5xx → кеширован на 1 минуту
+  └── Повторный сабмит → возвращается кеш (без HTTP-запроса)
+```
+
+### Паттерн использования
+
+```ts
+import { inject } from '@angular/core';
+import { SubmitGuard } from '../../shared/dsl/submit-guard';
+
+private readonly guard = inject(SubmitGuard);
+
+async onSubmit(): void {
+  const result = await this.guard.guard({
+    formKey: 'create-entity',
+    url: `${this.baseUrl}/entities`,
+    method: 'POST',
+    debounceMs: 300,          // опционально, default 300
+    fetcher: () => this.service.create(this.form.getRawValue()),
+  });
+
+  if (result.ok) {
+    this.toast.success('Создано');
+    this.ref.close(result.data);
+  } else {
+    this.errorMessage.set(extractErrorMessage(result.error));
+  }
+}
+```
+
+### Методы
+
+| Метод | Назначение |
+|-------|-----------|
+| `guard<T>(opts)` | Запустить guarded операцию. Возвращает `Promise<SilentResult<T>>` |
+| `getActiveKey(url, method)` | Получить активный UUID-ключ для URL (используется IdempotencyInterceptor) |
+
+### TTL-очистка
+
+Раз в 60 секунд `setInterval` чистит `completedCache` от истёкших записей.
+
+---
+
+## 13. IdempotencyInterceptor — глобальный interceptor
+
+**Файл:** `frontend/src/app/core/idempotency.interceptor.ts`
+
+### Назначение
+
+Каждый POST/PATCH/DELETE-запрос автоматически получает заголовок `Idempotency-Key: <UUID>`:
+
+```
+POST /api/materials HTTP/1.1
+Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000
+Content-Type: application/json
+```
+
+Если SubmitGuard уже зафиксировал in-flight запрос для этого URL, interceptor использует тот же UUID-ключ (гарантирует идемпотентность даже при race condition между guard и сетью).
+
+### Регистрация
+
+Файл `frontend/src/app/app.config.ts`:
+
+```ts
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideHttpClient(withInterceptors([idempotencyInterceptor, authInterceptor])),
+    // ...
+  ],
+};
+```
+
+**Порядок важен:** `idempotencyInterceptor` должен быть ПЕРВЫМ в массиве, так как он устанавливает заголовок до того, как authInterceptor может его прочитать.
+
+### Логика
+
+```
+1. Если метод НЕ POST/PATCH/DELETE → пропустить (next(req))
+2. Если уже есть Idempotency-Key → пропустить (не перезаписывать)
+3. Если SubmitGuard.getActiveKey() вернул ключ → использовать его
+4. Иначе → сгенерировать crypto.randomUUID()
+```
+
+---
+
+## 14. PiEntityListComponent — переиспользуемый список
+
+**Файл:** `frontend/src/app/shared/dsl/entity-list/entity-list.component.ts`
+
+### Назначение
+
+Drop-in компонент для CRUD-списков с серверной пагинацией, поиском и сортировкой. Заменяет 90% boilerplate в list-страницах.
+
+### Паттерн использования
+
+```html
+<app-pi-entity-list
+  endpoint="materials"
+  [columns]="cols"
+  title="Материалы"
+  eyebrow="08 · производство"
+  description="Справочник материалов"
+  [rowActions]="rowActionsTpl"
+  (create)="onCreate()"
+  (rowClick)="onEdit($event)"
+/>
+
+<ng-template #rowActionsTpl let-row>
+  <app-pi-row-actions
+    [row]="row"
+    (edit)="onEdit(row)"
+    (delete)="onDelete(row)"
+  />
+</ng-template>
+```
+
+### API компонента
+
+**Inputs (signal-based):**
+
+| Input | Тип | По умолч. | Обязательный |
+|-------|-----|-----------|-------------|
+| `endpoint` | `string` | — | ✅ URL-путь к API (без слеша) |
+| `columns` | `ColumnDef<T>[]` | — | ✅ |
+| `title` | `string` | — | ✅ H1 заголовок |
+| `eyebrow` | `string` | `''` | — |
+| `description` | `string` | `''` | — |
+| `searchPlaceholder` | `string` | `'Поиск…'` | — |
+| `emptyMessage` | `string` | `'Нет данных для отображения.'` | — |
+| `createLabel` | `string` | `'+ Создать'` | — |
+| `pageSize` | `number` | `20` | — |
+| `rowActions` | `TemplateRef` | `null` | — Шаблон действий на строку |
+
+**Outputs:**
+
+| Output | Тип | Когда |
+|--------|-----|-------|
+| `rowClick` | `T` | Клик по строке |
+| `create` | `void` | Кнопка «+ Создать» |
+| `edit` | `T` | Через rowActions |
+| `delete` | `T` | Через rowActions |
+
+**Internal state (signals):**
+
+| Signal | Назначение |
+|--------|-----------|
+| `searchQuery` | Raw значение поиска (без debounce) |
+| `page` | Текущая страница (1-indexed) |
+| `sortKey` / `sortDir` | Текущая сортировка |
+| `searchDebounced` | Debounced поиск (300ms через `onCleanup`) |
+| `listRes` | `httpResource` с запросом к API |
+| `items` / `total` / `loading` | Производные сигналы от `listRes` |
+| `errorMessage` / `errorEffect` | Состояние ошибки + toast |
+
+### Что внутри
+
+Компонент реализует:
+- **Серверная пагинация:** `page()` + `pageSize()` → `params.page, params.limit`
+- **Debounce 300ms:** `effect((onCleanup) => { setTimeout(() => searchDebounced.set(q), 300); onCleanup(() => clearTimeout(timeout)); })` — Angular 17.1+ pattern
+- **Сброс страницы при поиске:** `page.set(1)` внутри debounce callback
+- **Сортировка:** `sortChange` → `sortKey/sortDir` → параметры запроса
+- **Error toast + alert div:** дуальная система оповещения
+- **Loading skeleton:** через `<app-pi-table [loading]="loading()">`
+- **Empty state:** кастомный `emptyMessage`
+
+---
+
+## 15. httpResource — серверный data fetching
+
+### Паттерн
+
+`httpResource` — Angular 20 функция для сигнал-зависимых HTTP-запросов. Создаётся с фабрикой, которая читает сигналы. При изменении любого сигнала в фабрике — запрос авто-перевыполняется.
+
+```ts
+import { httpResource } from '@angular/common/http';
+import { API_BASE_URL } from '../../core/api.tokens';
+
+// 1. Сигналы-параметры
+private readonly pageSig = signal<number>(1);
+private readonly searchSig = signal<string>('');
+
+// 2. httpResource с сигнал-зависимой фабрикой
+private readonly listRes = httpResource<PaginatedResponse<MyEntity>>(() => ({
+  url: `${this.baseUrl}/my-entities`,
+  params: { page: this.pageSig(), limit: PAGE_SIZE, search: this.searchSig() || undefined },
+}));
+
+// 3. Производные сигналы
+readonly data = computed(() => this.listRes.value()?.items ?? []);
+readonly total = computed(() => this.listRes.value()?.total ?? 0);
+readonly loading = computed(() => this.listRes.isLoading());
+readonly error = computed(() => this.listRes.error());
+
+// 4. Изменение параметров → авто-перезапрос
+protected onSearch(event: Event): void {
+  this.searchSig.set((event.target as HTMLInputElement).value);
+  this.pageSig.set(1);  // авто-сброс на 1 при поиске
+}
+
+protected onPageChange(page: number): void {
+  this.pageSig.set(page);  // авто-перезапрос с новой страницей
+}
+```
+
+### Методы httpResource
+
+| Метод | Назначение |
+|-------|-----------|
+| `value()` | Последний полученный `T` (или undefined) |
+| `isLoading()` | `true` пока идёт запрос |
+| `error()` | Последняя ошибка (или undefined) |
+| `reload()` | Принудительный перезапрос (без изменения сигналов) |
+
+### Когда использовать
+
+| Использовать | НЕ использовать |
+|-------------|----------------|
+| GET-запросы, зависящие от сигналов | POST/PATCH/DELETE (мутации) |
+| Список с пагинацией/поиском/сортировкой | Одноразовые запросы при загрузке |
+| Данные, обновляемые через reload() | Запросы с побочными эффектами |
+
+---
+
+## 16. paramsToHttpParams — утилита параметров
+
+**Файл:** `frontend/src/app/shared/dsl/entity/entity-service.ts`
+
+### Назначение
+
+Преобразует плоский объект `Record<string, unknown>` в `HttpParams` для HTTP-запроса, корректно обрабатывая:
+
+```ts
+paramsToHttpParams({
+  page: 1,
+  limit: 50,
+  search: '',        // → SKIP (empty string)
+  category: null,    // → SKIP (null)
+  tags: undefined,   // → SKIP (undefined)
+  roles: ['admin', 'manager'],  // → ?roles=admin&roles=manager
+})
+// → HttpParams: page=1&limit=50&roles=admin&roles=manager
+```
+
+### Правила фильтрации
+
+- `null` / `undefined` / `''` → **пропускаются** (страницы не тащат `?search=` когда поле пусто)
+- Пустые массивы → **пропускаются**
+- Массивы → сериализуются как multiple keys (`?role=admin&role=manager` — NestJS `@Query()` читает как `string[]`)
+- Скаляры → `String(value)`
+
+---
+
+## 17. Чек-лист перед коммитом
 
 - [ ] `cd frontend && pnpm exec tsc --noEmit` — exit 0
 - [ ] `cd backend && pnpm exec tsc --noEmit` — exit 0
 - [ ] Все компоненты: `standalone: true`, `ChangeDetectionStrategy.OnPush`
 - [ ] Inputs через `input<T>()` / `input.required<T>()` (НЕ `@Input()`)
+- [ ] CRUD-сервисы через `defineEntity` (НЕ ручной service class если подходит стандартный CRUD)
+- [ ] SubmitGuard для форм с мутациями (НЕ прямой subscribe на create/update/delete без guard)
+- [ ] httpResource для списков (НЕ ручной subscribe на GET-запросы)
 - [ ] DI через `inject()` (НЕ constructor injection)
 - [ ] Control flow: `@if` / `@for` / `@switch` (НЕ `*ngIf` / `*ngFor`)
 - [ ] State: `signal()` / `computed()` / `effect()` (НЕ manual subscriptions)
@@ -797,3 +1138,77 @@ export class MyEntityService {
 - [ ] Focus-ring: `pi-focus-ring` (НЕ `focus-visible:ring-2 ring-ink...`)
 - [ ] Никаких `border-2`, `border-4`
 - [ ] Селектор: `app-<name>-page` (kebab), класс: `<Name>Page` (PascalCase)
+
+---
+
+## 18. Form validation i18n — `FormErrorI18n` helper
+
+**Файл:** `frontend/src/app/shared/dsl/form-i18n.ts`
+
+### Проблема
+
+Раньше каждая форма-диалог писала **свой собственный** inline `protected errorFor(name)` метод, который руками возвращал русскую строку для каждого ключа валидатора:
+
+```ts
+// ❌ Устаревший паттерн (повторяется в каждой форме)
+protected errorFor(name: keyof typeof this.form.controls): string {
+  const c = this.form.controls[name];
+  if (!c.invalid || (!c.dirty && !c.touched)) return '';
+  if (c.errors?.['required']) return 'Обязательное поле';
+  // ... ещё 5 строк, дублирующихся в 16 формах
+}
+```
+
+Это давало несогласованный UX (одна форма показывает «Email неверный», другая «Неверный формат email»), и любое новое правило валидации нужно было добавлять в 16 местах руками.
+
+### Решение — единый helper
+
+`FormErrorI18n` — singleton через `providedIn: 'root'`. Хранит **замороженный** маппинг `AbstractControl.errors` ключей → русские сообщения (9 валидаторов: `required`, `email`, `minlength`, `maxlength`, `pattern`, `min`, `max`, `ruPhone`, `ruInn`).
+
+### Паттерн использования
+
+```ts
+import { inject } from '@angular/core';
+import { FormErrorI18n } from '../../shared/dsl/form-i18n';
+
+@Component({ ... })
+export class MyFormDialogComponent {
+  /** Edits adopted 2026-07-30 from inline pattern. */
+  protected readonly formError = inject(FormErrorI18n);
+
+  // ... form, validators, etc.
+}
+```
+
+В шаблоне:
+
+```html
+<app-pi-form-field
+  label="Email"
+  [required]="true"
+  [error]="formError.errorFor(form.controls.email)"
+>
+  <app-pi-input formControlName="email" type="email" />
+</app-pi-form-field>
+```
+
+`errorFor(control, opts)`:
+- Возвращает `''` если контрол **untouched/pristine** — ошибки показываются только после того как пользователь потрогал поле (нет «красного» флаша до первого ввода).
+- Возвращает **первое** сообщение в порядке ключей `Object.keys(errors)`.
+- Параметр `opts.showAlways: true` — для диалогов, которые хотят показать ошибку сразу при первом рендере (использовать с осторожностью).
+
+### Адаптация существующих форм
+
+При рефакторе уже существующей формы:
+1. Удалить локальный `protected errorFor()` метод.
+2. Удалить также локальный `protected hasError()` (если есть) — `errorFor()` уже проверяет `invalid && touched`.
+3. Добавить `protected readonly formError = inject(FormErrorI18n);`.
+4. Заменить все `[error]="errorFor('X')"` на `[error]="formError.errorFor(form.controls.X)"`.
+5. Проверить, что все используемые валидаторы покрыты `RU_VALIDATION_MESSAGES` — иначе увидите generic fallback `'Некорректное значение (keyName)'`.
+
+### Когда НЕ подходит
+
+- **Кастомные доменные валидаторы** (например, «ИНН должен совпадать с контрольной суммой»). Для них пишите inline-сообщение в форме, или добавьте новый ключ в `RU_VALIDATION_MESSAGES` (приветствуется — вынесенный ключ переиспользуется).
+- **Серверные ошибки** (4xx/5xx) — для них `errorMessage.set(extractErrorMessage(res.error))` в `onSubmit()`, формат сообщения определяется backend extraction.
+
+Создано в результате Audit 2 (2026-07-30, deep project audit).

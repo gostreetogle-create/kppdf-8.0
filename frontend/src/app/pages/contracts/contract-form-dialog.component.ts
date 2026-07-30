@@ -14,6 +14,7 @@ import { InputComponent } from '../../shared/ui/input/input.component';
 import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
+import { FormErrorI18n } from '../../shared/dsl/form-i18n';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { extractErrorMessage } from '../../core/silent-http';
 import { Counterparty, CounterpartyService } from '../../shared/services/pi-counterparty.service';
@@ -83,7 +84,7 @@ interface ItemFormGroup extends FormGroup {
             label="Наша организация"
             htmlFor="ct-org"
             [required]="true"
-            [error]="errorFor('organizationId')"
+            [error]="formError.errorFor(form.controls.organizationId)"
           >
             <select
               id="ct-org"
@@ -102,7 +103,7 @@ interface ItemFormGroup extends FormGroup {
             label="Контрагент"
             htmlFor="ct-cp"
             [required]="true"
-            [error]="errorFor('customerId')"
+            [error]="formError.errorFor(form.controls.customerId)"
           >
             <select
               id="ct-cp"
@@ -393,21 +394,8 @@ export class ContractFormDialogComponent {
     this.itemsArray.push(this.createItemGroup(initial));
   }
 
-  protected hasError(name: keyof typeof this.form.controls): boolean {
-    const c = this.form.controls[name];
-    return c.invalid && (c.dirty || c.touched);
-  }
-
-  protected errorFor(name: keyof typeof this.form.controls): string {
-    const c = this.form.controls[name];
-    if (!c.invalid || (!c.dirty && !c.touched)) return '';
-    if (c.errors?.['required']) return 'Обязательное поле';
-    if (c.errors?.['maxlength']) {
-      return `Максимум ${c.errors['maxlength'].requiredLength} символов`;
-    }
-    if (c.errors?.['min']) return `Минимум ${c.errors['min'].min}`;
-    return 'Некорректное значение';
-  }
+  /** Audit 2 PoC (2026-07-30) — adopt FormErrorI18n helper. */
+  protected readonly formError = inject(FormErrorI18n);
 
   protected onSubmit(): void {
     if (this.submitting()) return;
