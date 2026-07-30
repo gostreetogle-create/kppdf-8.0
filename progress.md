@@ -2181,3 +2181,27 @@ PO чётко обозначил: **фокус теперь на Констру�
 
 ---
 
+## [2026-07-30] — Завершено: TZ-235.A.R4 (emergency hotfix)
+
+**Ситуация простым языком:** после распила builder/inspector и миграции 5 страниц на `<pi-entity-list>` остались 3 живых символьных бага в шаблонах, которые падали при typecheck — пользователь бы увидел NG5002 при `start.cmd`.
+
+**3 фикса за один коммит (84e2665):**
+
+| Файл | Что | До → После |
+|---|---|---|
+| `builder.page.ts` | `textsRes` / `tablesRes` refs без `state.` + `value()!` (non-null assertion) | все 6 refs теперь `state.X.X()` + null-safe `(value() ?? []).length > 0` |
+| `contract-form-dialog.component.ts` | `hasError('organizationId'/'customerId')` без метода | добавил `hasError(name: keyof typeof this.form.controls)` (сигнатура как у 3 соседей — materials / orders / dictionaries/category) + конвертировал template обратно на helper |
+| `table-template-form-dialog.component.ts` | `row.columns?.length ?? 0` (NG8107 пустая защита) | `row.columns.length` |
+
+**Контроль качества:**
+- TYPECHECK секции (3 файла): 0 ошибок
+- TYPECHECK project-wide: 129 (= baseline, без регрессии)
+- NG5002: 0, NG8107: 0
+- hasError помощник exists + placements matches siblings (после `form = fb.group`)
+
+**Бонус:** convention drift устранён — теперь все 4 form-dialog в проекте используют **единый** идиом `hasError(name)` вместо смеси inline `.invalid && ...touched` (был только contract) vs helper (был в 3 других).
+
+**Синхронизация:** HOME (`D:\kppdf-8.0`, ветка `local-home-mirror`) сброшен в `84e2665` через `git reset --hard origin/freebuff/...`. Пользовательский `start.cmd` теперь собирает чистый код без NG5002.
+
+**Следующие TZ:** TZ-235.C.1 (imageHeight bugfix), TZ-235.D (group drag), TZ-235.E (undo/redo) — в очереди.
+

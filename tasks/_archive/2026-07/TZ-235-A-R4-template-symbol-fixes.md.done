@@ -1,0 +1,139 @@
+# TZ-235.A.R4 — Template-Symbol Regressions Fix (post-R3 emergency)
+
+**Status:** ✅ DONE  
+**Date:** 2026-07-30  
+**Commit:** `84e2665` (pushed to origin/freebuff/new-thread-thms6ee2rx5i1q)  
+**Branch synced:** both WORKTREE (.freebuff/worktrees/thms6ee2rx5i1q) and HOME (D:\kppdf-8.0 on local-home-mirror)  
+**Round under:** TZ-235.A Round 4 (post-cleanup hotfix)  
+**Author:** Codebuff (minimax/minimax-m3)
+
+---
+
+## Проблема простым языком
+
+После распила builder / inspector (TZ-235.A R3) и миграции 5 страниц на `<pi-entity-list>` (TZ-232 W2) остались **3 живых символьных бага** в шаблонах, которые сборка падала при компиляции:
+
+1. **builder.page.ts** — в template писалось `textsRes.isLoading()` напрямую, но эта штука живёт внутри `state = inject(BuilderStateService)`. Без префикса было `TS2339: property does not exist`.
+2. **contract-form-dialog.component.ts** — template вызывал `hasError('organizationId')`, но такого метода **не было** в классе (у 3 соседних dialogs — был). Дрейф конвенции.
+3. **table-template-form-dialog.component.ts** — лишний `?.` где тип поля и так non-nullable. NG8107 warning.
+
+Если бы пользователь запустил `start.cmd` — frontend бы не собрался (NG5002 / TS2339), несмотря на то что dev-компилятор не проверяет шаблоны строго.
+
+---
+
+## Что сделано
+
+### 1. `frontend/src/app/pages/doc-constructor/builder/builder.page.ts`
+
+**До (сломано):**
+```html
+@if (textsRes.isLoading()) { ... }
+@else if (textsRes.error()) { ... }
+@else if (textsRes.value() && textsRes.value()!.length > 0) { ... }
+```
+Тот же паттерн для `tablesRes`.
+
+**После (чисто):**
+```html
+@if (state.textsRes.isLoading()) { ... }
+@else if (state.textsRes.error()) { ... }
+@else if ((state.textsRes.value() ?? []).length > 0) { ... }
+```
+- Префикс `state.` — соответствует соглашению patternBuilderStateService-owns-everything
+- `?? []` вместо `value()!` — null-safe без non-null assertion
+- Тот же паттерн для `tablesRes`
+
+### 2. `frontend/src/app/pages/contracts/contract-form-dialog.component.ts`
+
+**До (сломано):**
+```html
+[class.border-destructive]="hasError('organizationId')"  <!-- TS2339 -->
+[class.border-destructive]="hasError('customerId')"      <!-- TS2339 -->
+```
+
+**После (clean + convention-restored):**
+1. Добавлен helper:
+```ts
+protected hasError(name: keyof typeof this.form.controls): boolean {
+  const c = this.form.controls[name];
+  return c.invalid && (c.dirty || c.touched);
+}
+```
+Размещён **под** `form = this.fb.group(...)` — как у 3 соседей (materials / orders / dictionaries/category).
+
+2. Template переведён обратно на helper:
+```html
+[class.border-destructive]="hasError('organizationId')"
+[class.border-destructive]="hasError('customerId')"
+```
+
+🌟 Бонус: конвенция восстановлена — теперь все 4 form-dialog используют **один и тот же** идиом `hasError(name)`.
+
+### 3. `frontend/src/app/pages/doc-constructor/tables/table-template-form-dialog.component.ts`
+
+NG8107 warning cleanup:
+```html
+<!-- До: -->
+Колонок: {{ row.columns?.length ?? 0 }}
+<!-- После: -->
+Колонок: {{ row.columns.length }}
+```
+(`columns: TableColumn[]` — required, `?.` избыточен.)
+
+---
+
+## Контроль качества
+
+```
+=== TYPECHECK (3 файла) ===                0 ошибок
+=== TYPECHECK total project-wide ===       129 (= baseline, без регрессии)
+=== NG5002 parse errors ===                0
+=== NG8107 warning ===                      0
+
+=== hasError method EXISTS в contract-form-dialog ===    ✓
+=== hasError template calls в contract-form-dialog ===   2 (organizationId + customerId)
+=== hasError signature == sibling convention ===          ✓ (keyof typeof this.form.controls, dirty || touched)
+=== hasError placement matches siblings ===                ✓ (после form = fb.group)
+```
+
+---
+
+## Файлы (3 изменено)
+
+- `frontend/src/app/pages/doc-constructor/builder/builder.page.ts`
+- `frontend/src/app/pages/contracts/contract-form-dialog.component.ts`
+- `frontend/src/app/pages/doc-constructor/tables/table-template-form-dialog.component.ts`
+
+**Diff stats:** 3 files changed, 17 insertions(+), 7 deletions(-)
+
+---
+
+## Состояние git
+
+| Где | HEAD | Комментарий |
+|---|---|---|
+| WORKTREE | `84e2665` | TZ-235.A.R4 |
+| HOME (`D:\kppdf-8.0`) | `84e2665` | `git reset --hard origin/...` выполнен |
+| origin | `84e2665` | запушено |
+
+HOME теперь снова синхронизирован с WORKTREE — `start.cmd` пользователя будет собирать чистый код.
+
+---
+
+## Связь с предыдущими раундами
+
+| Round | Что | Статус |
+|---|---|---|
+| **A R1** | BuilderStateService — 16 handlers extraction | DONE (`3633b9c`) |
+| **A R2** | page.ts dual-source cleanup (−607 lines) | DONE (`0cb8e60`) |
+| **A R3** | cleanup pass (dead code removal) | DONE (no commit, merged into R4) |
+| **A R4** | template-symbol regressions close | DONE (`84e2665`) ← ВЫ ЗДЕСЬ |
+
+---
+
+## Следующие шаги (после сегодня)
+
+TZ-235.C.1 (imageHeight bugfix), TZ-235.D (group drag), TZ-235.E (undo/redo), TZ-235.G (scroll-aware drag) — см. основной TZ-235 план.
+
+🌟 Замечание ревьюера (deferred):
+> `@for (t of state.textsRes.value(); …)` молча итерирует `undefined`. Работает сегодня без проблем, но если в теле блока появится метод, ожидающий строку, может стать миной. Стоит обернуть в defensive `@if (state.textsRes.value()?.length)` при следующем касании этой зоны.
