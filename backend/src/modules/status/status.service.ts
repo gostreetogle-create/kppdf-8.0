@@ -66,7 +66,7 @@ export class StatusService {
     userRole: string,
   ): Promise<Transition> {
     if (fromStatus === toStatus) {
-      throw new BadRequestException('Status is already the requested value');
+      throw new BadRequestException('Статус уже имеет запрошенное значение');
     }
 
     const workflows = await this.workflowModel

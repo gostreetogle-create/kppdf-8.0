@@ -21,7 +21,7 @@ export class InventorFileService {
     file: Express.Multer.File,
     dto: CreateInventorFileDto,
   ): Promise<InventorFileDocument> {
-    if (!file) throw new NotFoundException('File is required');
+    if (!file) throw new NotFoundException('Файл обязателен');
     await fs.mkdir(UPLOAD_DIR, { recursive: true });
     const ext = path.extname(file.originalname) || '';
     const stored = `${randomUUID()}${ext}`;

@@ -28,7 +28,7 @@ export class StockMovementService {
     dto: CreateStockMovementDto,
   ): Promise<StockMovementDocument> {
     if (dto.type === 'transfer' && !dto.toWarehouseId) {
-      throw new BadRequestException('Transfer requires toWarehouseId');
+      throw new BadRequestException('Для перемещения требуется идентификатор склада-получателя');
     }
 
     const session = await this.connection.startSession();
@@ -91,7 +91,7 @@ export class StockMovementService {
     } finally {
       await session.endSession();
     }
-    if (!movement) throw new BadRequestException('Movement failed');
+    if (!movement) throw new BadRequestException('Ошибка перемещения');
     return movement;
   }
 

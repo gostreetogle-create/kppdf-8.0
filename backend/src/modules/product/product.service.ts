@@ -137,7 +137,7 @@ export class ProductService {
    */
   async attachModule(productId: string, moduleId: string): Promise<ProductDocument> {
     if (!Types.ObjectId.isValid(productId) || !Types.ObjectId.isValid(moduleId)) {
-      throw new BadRequestException('Invalid productId or moduleId');
+      throw new BadRequestException('Некорректный идентификатор продукта или модуля');
     }
     // TZ-83 Review #3: existence-check предотвращает dangling ObjectId в
     // productModuleIds[] (race-safe: другой пользователь мог параллельно
@@ -176,7 +176,7 @@ export class ProductService {
 
   async detachModule(productId: string, moduleId: string): Promise<void> {
     if (!Types.ObjectId.isValid(productId) || !Types.ObjectId.isValid(moduleId)) {
-      throw new BadRequestException('Invalid productId or moduleId');
+      throw new BadRequestException('Некорректный идентификатор продукта или модуля');
     }
     const result = await this.model
       .updateOne(

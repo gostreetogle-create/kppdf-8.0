@@ -61,7 +61,7 @@ export class ReservationService {
         ],
         { session: externalSession },
       );
-      if (!doc) throw new BadRequestException('Reservation failed');
+      if (!doc) throw new BadRequestException('Ошибка бронирования');
       return doc;
     }
 
@@ -107,7 +107,7 @@ export class ReservationService {
     } finally {
       await session.endSession();
     }
-    if (!result) throw new BadRequestException('Reservation failed');
+    if (!result) throw new BadRequestException('Ошибка бронирования');
     return result;
   }
 
@@ -163,7 +163,7 @@ export class ReservationService {
     } finally {
       await session.endSession();
     }
-    if (!result) throw new NotFoundException('Release failed');
+    if (!result) throw new NotFoundException('Ошибка освобождения');
     return result;
   }
 
@@ -225,7 +225,7 @@ export class ReservationService {
     } finally {
       await session.endSession();
     }
-    if (!result) throw new NotFoundException('Fulfill failed');
+    if (!result) throw new NotFoundException('Ошибка выполнения');
     return result;
   }
 

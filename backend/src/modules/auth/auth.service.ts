@@ -44,11 +44,11 @@ export class AuthService {
   async login(dto: LoginDto, res: Response): Promise<AuthResponse> {
     const user = await this.users.findByUsername(dto.username);
     if (!user || !user.isActive) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Неверные учётные данные');
     }
     const ok = await this.users.verifyPassword(user, dto.password);
     if (!ok) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Неверные учётные данные');
     }
     user.lastLoginAt = new Date();
     await user.save();
@@ -65,7 +65,7 @@ export class AuthService {
   async refresh(userId: string, version: number, res: Response): Promise<AccessTokenResponse> {
     const user = await this.findActiveUserOrThrow(userId);
     if (user.refreshTokenVersion !== version) {
-      throw new UnauthorizedException('Refresh token revoked');
+      throw new UnauthorizedException('Refresh-токен отозван');
     }
     const access = await this.signAccess(user);
     const refresh = await this.signRefresh(user);
@@ -118,7 +118,7 @@ export class AuthService {
   private async findActiveUserOrThrow(userId: string): Promise<UserDocument> {
     const user = await this.users.findById(userId);
     if (!user || !user.isActive) {
-      throw new UnauthorizedException('User not found or inactive');
+      throw new UnauthorizedException('Пользователь не найден или заблокирован');
     }
     return user;
   }

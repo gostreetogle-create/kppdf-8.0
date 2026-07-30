@@ -50,7 +50,7 @@ export class UserController {
     @CurrentUser() me: AuthenticatedUser,
   ) {
     if (me.role !== 'admin' && me.id !== id) {
-      throw new ForbiddenException('You can only view your own profile');
+      throw new ForbiddenException('Вы можете просматривать только свой профиль');
     }
     return this.service.findById(id);
   }
@@ -92,7 +92,7 @@ export class UserController {
     @CurrentUser() me: AuthenticatedUser,
   ) {
     if (me.role !== 'admin' && me.id !== id) {
-      throw new ForbiddenException('You can only edit your own profile');
+      throw new ForbiddenException('Вы можете редактировать только свой профиль');
     }
     if (me.role !== 'admin') {
       // Non-admin cannot change role / isActive / permissions
@@ -127,7 +127,7 @@ export class UserController {
     @CurrentUser() me: AuthenticatedUser,
   ) {
     if (me.role !== 'admin' && me.id !== id) {
-      throw new ForbiddenException('You can only change your own password');
+      throw new ForbiddenException('Вы можете менять только свой пароль');
     }
     return this.service.changePassword(id, dto);
   }

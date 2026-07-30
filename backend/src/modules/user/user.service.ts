@@ -104,7 +104,7 @@ export class UserService {
 
     const ok = await bcrypt.compare(dto.oldPassword, doc.passwordHash);
     if (!ok) {
-      throw new UnauthorizedException('Wrong old password');
+      throw new UnauthorizedException('Неверный текущий пароль');
     }
     doc.passwordHash = await bcrypt.hash(dto.newPassword, BCRYPT_ROUNDS);
     doc.refreshTokenVersion += 1; // invalidate all refresh tokens

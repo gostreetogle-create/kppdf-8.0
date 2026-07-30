@@ -50,7 +50,7 @@ export class EntityAttributeValueController {
   ) {
     this.ensureEntityType(entityType);
     if (!Types.ObjectId.isValid(entityId)) {
-      throw new BadRequestException('Invalid entityId');
+      throw new BadRequestException('Некорректный идентификатор сущности');
     }
     return this.service.loadFor(entityType, new Types.ObjectId(entityId));
   }
@@ -65,7 +65,7 @@ export class EntityAttributeValueController {
   ) {
     this.ensureEntityType(entityType);
     if (!Types.ObjectId.isValid(entityId)) {
-      throw new BadRequestException('Invalid entityId');
+      throw new BadRequestException('Некорректный идентификатор сущности');
     }
     return this.service.resolveAndStore(
       entityType,
@@ -85,7 +85,7 @@ export class EntityAttributeValueController {
   ) {
     this.ensureEntityType(entityType);
     if (!Types.ObjectId.isValid(entityId) || !Types.ObjectId.isValid(attributeId)) {
-      throw new BadRequestException('Invalid id');
+      throw new BadRequestException('Некорректный идентификатор');
     }
     await this.eavService.setValue(
       entityType,
@@ -106,7 +106,7 @@ export class EntityAttributeValueController {
   ) {
     this.ensureEntityType(entityType);
     if (!Types.ObjectId.isValid(entityId) || !Types.ObjectId.isValid(attributeId)) {
-      throw new BadRequestException('Invalid id');
+      throw new BadRequestException('Некорректный идентификатор');
     }
     await this.eavService.deleteValue(
       entityType,

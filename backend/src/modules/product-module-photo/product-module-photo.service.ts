@@ -26,7 +26,7 @@ export class ProductModulePhotoService {
     dto: UpsertProductModulePhotoDto,
   ): Promise<ProductModulePhotoDocument> {
     if (!dto.url && !dto.photoId) {
-      throw new BadRequestException('At least one of url or photoId is required');
+      throw new BadRequestException('Необходимо указать URL или идентификатор фото');
     }
     if (dto.isMain) {
       // Atomic: demote other mains for this module BEFORE inserting the new main.

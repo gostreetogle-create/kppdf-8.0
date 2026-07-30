@@ -71,7 +71,7 @@ export class TechProcessService {
   async activate(id: string): Promise<TechProcessDocument> {
     const doc = await this.findById(id);
     if (doc.operations.length === 0) {
-      throw new BadRequestException('Cannot activate tech process with no operations');
+      throw new BadRequestException('Невозможно активировать техпроцесс без операций');
     }
     // Deactivate other active tech processes for same product
     await this.model

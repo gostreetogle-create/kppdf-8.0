@@ -38,10 +38,10 @@ export class JwtRefreshStrategy extends PassportStrategy(
   async validate(payload: JwtRefreshPayload) {
     const user = await this.users.findById(payload.sub);
     if (!user || !user.isActive) {
-      throw new UnauthorizedException('User not found or inactive');
+      throw new UnauthorizedException('Пользователь не найден или заблокирован');
     }
     if (user.refreshTokenVersion !== payload.version) {
-      throw new UnauthorizedException('Refresh token revoked');
+      throw new UnauthorizedException('Refresh-токен отозван');
     }
     return { id: user.id, version: user.refreshTokenVersion };
   }

@@ -125,7 +125,7 @@ export class StorageItemService {
     } finally {
       await session.endSession();
     }
-    if (!result) throw new NotFoundException('Adjust failed');
+    if (!result) throw new NotFoundException('Ошибка корректировки');
     return result;
   }
 
