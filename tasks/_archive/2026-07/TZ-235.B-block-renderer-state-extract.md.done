@@ -1,0 +1,63 @@
+# TZ-235.B — DONE — block-renderer state extracted into per-instance service
+
+**Completed:** 2026-07-30
+**Branch:** `freebuff/new-thread-thms6ee2rx5i1q`
+**Commit:** `7a27443` — refactor(builder): TZ-235.B — extract block-renderer state into per-instance service
+
+## Что сделано простым языком
+
+`block-renderer.component.ts` — компонент, который рисует один блок на холсте конструктора (используется много раз — по одному экземпляру на блок). Это была вторая «бомба» проекта после `builder.page.ts`: 1484 строки, из которых почти 700 — это сложная логика перетаскивания, ресайза, прилипания к сетке и расчёты.
+
+**Решение:** вся логика вынесена в отдельный сервис `block-renderer-state.service.ts` по тому же шаблону, что мы применили к `builder.page.ts` в TZ-235.A R3.
+
+## Метрики
+
+| Файл | Было | Стало | Δ |
+|---|---|---|---|
+| `block-renderer.component.ts` | 1484 стр | 941 стр | **−543 (−37%)** |
+| `block-renderer-state.service.ts` | — | 739 стр | (NEW) |
+
+## Архитектура (Hybrid Split)
+
+**Сервис** (владеет всем сложным):
+- 8 сигналов состояния (размеры, маржа, состояние перетаскивания, состояние ресайза)
+- 15 вычислений (computed) — извлекают данные из настроек блока: картинка, таблица, цвет фона, бейдж привязки и т.д.
+- 3 эффекта в конструкторе: авто-синхронизация, авто-сброс локального перетаскивания, авто-сброс ресайза
+- 3 обработчика перетаскивания (onResizeStart, onOverlayDragStart, onCornerResizeStart) — содержат DOM-логику
+- 3 приватных хелпера прилипания (snapValueToGrid, applySnapToGrid, snapToBlockEdges)
+- 3 Subject для outputs (widthChange$, overlayMove$, overlayResize$)
+
+**Компонент** (тонкий хост):
+- 6 inputs, 6 outputs — все те же
+- 23 алиаса сервисных сигналов/computed по ссылке → **синтаксис шаблона не изменился** (220 строк HTML трогать не пришлось)
+- 4 простых обработчика остались в компоненте (onSelect, onCheckboxClick, onDeleteClick, onArrowKey)
+- formatTableCell, byPassHtml, DomSanitizer — остались в компоненте
+- Подписки на Subject'ы сервиса через `takeUntilDestroyed()` — без утечек памяти
+
+## Ключевые решения
+
+1. **Per-instance через `providers:`** (не `providedIn: 'root'`) — каждый экземпляр `<app-block-renderer>` имеет свой собственный сервис. Это критично: когда на холсте 5 блоков и пользователь тащит один, состояние перетаскивания не должно интерферировать с другими.
+2. **BLOCK_TYPE_LABELS из общего источника** — изначально я заинлайнил карту лейблов в сервис, но ревьюер поймал это как регрессию (два источника истины). Исправлено: импортируем `BLOCK_TYPE_LABELS` из `'../../../shared/template-block/template-block.types'`.
+3. **Template syntax unchanged** — все алиасы сигналов пробрасываются по ссылке (`protected readonly currentWidth = this.state.currentWidth`), поэтому шаблон работает без изменений.
+4. **Subject→Observable мост для outputs** — Angular `output()` декоратор обязан быть на компоненте, поэтому сервис эмитит через Subject, а компонент подписывается через `takeUntilDestroyed()` и ре-эмитит через `output.emit()`.
+
+## Результат
+
+- TypeScript typecheck: 0 ошибок в секции block-renderer (общий счётчик 129 держится в baseline — это пре-существующие ошибки в Spec-файлах других компонентов, не наши).
+- Reviewer APPROVE после исправления регрессии `BLOCK_TYPE_LABELS`.
+- Никаких визуальных регрессов — логика перетаскивания character-identical, только `emit` → `Subject.next`.
+
+## Что разблокировано
+
+Этот рефактор делает тривиальным добавление:
+- **TZ-235.D — группировка блоков** (несколько блоков тащатся вместе со снапом к группе)
+- **TZ-235.E — undo/redo** (стек истории изменений)
+- **TZ-235.G — scroll-aware drag** (слушатель на родителе бумаги)
+
+Все эти фичи добавятся как новые сигналы + хелперы в сервис, без касания шаблона.
+
+## Файлы
+
+- `frontend/src/app/pages/doc-constructor/builder/block-renderer-state.service.ts` (NEW, 739 стр)
+- `frontend/src/app/pages/doc-constructor/builder/block-renderer.component.ts` (REWRITTEN, 941 стр было 1484)
+- `tasks/TZ-235.B.md` (planning doc, не заархивирован — это канонический план)
