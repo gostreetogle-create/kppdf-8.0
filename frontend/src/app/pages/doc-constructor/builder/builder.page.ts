@@ -1,12 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  Injector,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import {ChangeDetectionStrategy, Component, DestroyRef, Injector, computed, inject} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
@@ -663,97 +655,10 @@ export class BuilderPage {
   protected readonly EditIcon = Pencil;
   protected readonly ImageIcon = ImageIcon;
 
-  // State
-  protected readonly templateId = signal<string | null>(null);
-  protected readonly template = signal<DocumentTemplate | null>(null);
-  protected readonly blocks = signal<TemplateBlock[]>([]);
-  protected readonly selectedId = signal<string | null>(null);
-  protected readonly selectedIds = signal<Set<string>>(new Set());
-  protected readonly isLoading = signal<boolean>(false);
-  protected readonly isCreating = signal<boolean>(false);
-  protected readonly saveStatus = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  /** When true, inspector shows template properties instead of block properties */
-  protected readonly templateSelected = signal<boolean>(false);
-  /** TZ-211: View mode toggle — 'editor' | 'preview' */
-  protected readonly viewMode = signal<'editor' | 'preview'>('editor');
-  /** Snap-to-grid enabled for overlay blocks (persisted to localStorage). */
-  protected readonly snapEnabled = signal<boolean>(loadSnapSettings().snapEnabled);
-  /** Grid size for snapping (px) (persisted to localStorage). */
-  protected readonly gridSize = signal<number>(loadSnapSettings().gridSize);
-  /** Padding from paper edges that overlay blocks cannot cross (px) (persisted to localStorage). */
-  protected readonly boundaryPadding = signal<number>(loadSnapSettings().boundaryPadding);
-
-  // Dropdown state for inline toolbar
-  protected readonly openDropdown = signal<string | null>(null);
-
-  // httpResources for inline toolbar dropdowns
-  protected readonly textsRes = httpResource<
-    Array<{ _id: string; name: string; category?: string; content?: string; columns?: unknown[] }>
-  >(() => '/api/text-blocks?isActive=true', { defaultValue: [] });
-  protected readonly tablesRes = httpResource<
-    Array<{
-      _id: string;
-      name: string;
-      description?: string;
-      columns?: unknown[];
-      sampleRows?: unknown[][];
-    }>
-  >(() => '/api/table-templates?isActive=true', { defaultValue: [] });
-
-  // Auto-save Subject — grouped by _id, debounced per group.
-  private readonly save$ = new Subject<{ _id: string; patch: Partial<TemplateBlock> }>();
-
-  // D.2.3 nit (code-reviewer): monotonic counter for the 2s 'saved'→'idle'
-  // timer revert. Without this guard, a stale timer from an earlier 'saved'
-  // state could revert a NEW 'saved' state set by a more recent save cycle
   // that completed within the 2s window. `++savedTick` returns the new value;
   // each timer callback captures its own `myTick` and only reverts if no
   // newer save has started.
   private savedTick = 0;
-
-  // Selected block derived (works for both single-click and multi-select single)
-  protected readonly selectedBlock = computed<TemplateBlock | null>(() => {
-    // Single click selection
-    const id = this.state.selectedId();
-    if (id) {
-      return this.state.blocks().find((b) => blockKey(b) === id) ?? null;
-    }
-    // Multi-select: if exactly 1 block selected, treat it as "selected"
-    const ids = this.state.selectedIds();
-    if (ids.size === 1) {
-      const key = Array.from(ids)[0];
-      return this.state.blocks().find((b) => blockKey(b) === key) ?? null;
-    }
-    return null;
-  });
-
-  // All selected blocks (for multi-select margin controls)
-  protected readonly selectedBlocks = computed<TemplateBlock[]>(() => {
-    const ids = this.state.selectedIds();
-    if (ids.size === 0) return [];
-    return this.state.blocks().filter((b) => ids.has(blockKey(b)));
-  });
-
-  protected readonly headerSubtitle = computed<string>(() => {
-    const id = this.state.templateId();
-    if (!id) return 'Выберите шаблон для редактирования';
-    const count = this.state.blocks().length;
-    return `Шаблон ${id.slice(-6)} · ${count} ${pluralBlocks(count)}`;
-  });
-
-  /** D.2.1: derived background images from template — respects defaultBackgroundIndex. */
-  protected readonly backgroundImages = computed<string[]>(() => {
-    const t = this.state.template();
-    if (!t) return [];
-    const all = t.backgroundImage ?? [];
-    const idx = t.defaultBackgroundIndex ?? -1;
-    if (idx >= 0 && idx < all.length) return [all[idx]];
-    return all;
-  });
-
-  protected readonly orientation = computed<'portrait' | 'landscape'>(() => {
-    return this.state.template()?.orientation ?? 'portrait';
-  });
 
   // httpResource for the template picker (only used when no :id).
   protected readonly templateListRes = httpResource<DocumentTemplate[]>(
@@ -770,7 +675,8 @@ export class BuilderPage {
     // 1) Initialize save$ pipeline (groupBy _id → debounce 1500 → switchMap).
     //    D.2.3: `tap` before switchMap to set 'saving'; success path sets
     //    'saved' (auto-revert to 'idle' after 2s via timer), failure sets 'error'.
-    this.save$
+    // TZ-235.A Round 2.5: subscribe to public saveEvents$ (Subject itself is private).
+    this.state.saveEvents$
       .pipe(
         tap(() => this.state.saveStatus.set('saving')),
         groupBy((p) => p._id),
@@ -808,9 +714,6 @@ export class BuilderPage {
       }
     });
   }
-
-  /** Phase E.3: source context (order/contract ID pre-binding for future expansion). */
-  protected readonly sourceContext = signal<{ source: string; sourceId: string } | null>(null);
 
   // ─────────────────────────────────────────────────────────────
   // Initial load — fetches BOTH blocks AND template (D.2.1 needs template).
@@ -1447,7 +1350,7 @@ export class BuilderPage {
   protected onInspectorUpdate(patch: Partial<TemplateBlock> & { _id: string }): void {
     const { _id, ...rest } = patch;
     this.state.blocks.update((arr) => arr.map((b) => (b._id === _id ? { ...b, ...rest } : b)));
-    this.save$.next({ _id, patch: rest });
+    this.state.saveBlock(_id, rest);
   }
 
   protected onBlockWidthChange(event: {
@@ -1467,7 +1370,7 @@ export class BuilderPage {
     if (imageWidth !== undefined) settings['imageWidth'] = imageWidth;
     if (imageHeight !== undefined) settings['imageHeight'] = imageHeight;
     this.state.blocks.update((arr) => arr.map((b) => (b._id === block._id ? { ...b, settings } : b)));
-    this.save$.next({ _id: block._id, patch: { settings } });
+    this.state.saveBlock(block._id, { settings });
   }
 
   /** Handle overlay block position change (drag). */
@@ -1484,7 +1387,7 @@ export class BuilderPage {
       overlayTop,
     };
     this.state.blocks.update((arr) => arr.map((b) => (b._id === block._id ? { ...b, settings } : b)));
-    this.save$.next({ _id: block._id, patch: { settings } });
+    this.state.saveBlock(block._id, { settings });
   }
 
   /** Handle overlay image proportional resize (corner handle). */
@@ -1501,13 +1404,13 @@ export class BuilderPage {
       imageHeight,
     };
     this.state.blocks.update((arr) => arr.map((b) => (b._id === block._id ? { ...b, settings } : b)));
-    this.save$.next({ _id: block._id, patch: { settings } });
+    this.state.saveBlock(block._id, { settings });
   }
 
   protected onMarginReset(blockId: string): void {
     const settings = { width: 100, marginLeft: 0 };
     this.state.blocks.update((arr) => arr.map((b) => (b._id === blockId ? { ...b, settings } : b)));
-    this.save$.next({ _id: blockId, patch: { settings } });
+    this.state.saveBlock(blockId, { settings });
   }
 
   protected onMultiMarginUpdate(
@@ -1515,7 +1418,7 @@ export class BuilderPage {
   ): void {
     for (const { _id, settings } of updates) {
       this.state.blocks.update((arr) => arr.map((b) => (b._id === _id ? { ...b, settings } : b)));
-      this.save$.next({ _id, patch: { settings } });
+      this.state.saveBlock(_id, { settings });
     }
   }
 
@@ -1651,11 +1554,9 @@ export class BuilderPage {
     if (settings.boundaryPadding !== undefined) {
       this.state.boundaryPadding.set(settings.boundaryPadding);
     }
-    saveSnapSettings({
-      snapEnabled: settings.snapEnabled,
-      gridSize: settings.gridSize,
-      boundaryPadding: settings.boundaryPadding ?? this.state.boundaryPadding(),
-    });
+    // TZ-235.A Round 3: delegate localStorage write to BuilderStateService.
+    // (page.ts free function `saveSnapSettings` removed at file bottom.)
+    this.state.persistSnapSettings();
   }
 
   protected onReload(): void {
@@ -1731,63 +1632,5 @@ export class BuilderPage {
     timer(2000).subscribe(() => {
       if (myTick === this.savedTick) this.state.saveStatus.set('idle');
     });
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
-// Russian noun pluralization (1 блок, 2 блока, 5 блоков)
-// ─────────────────────────────────────────────────────────────
-function pluralBlocks(n: number): string {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return 'блок';
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'блока';
-  return 'блоков';
-}
-
-// ─────────────────────────────────────────────────────────────
-// localStorage persistence for overlay positioning settings
-// ─────────────────────────────────────────────────────────────
-const SNAP_STORAGE_KEY = 'pi-builder-snap-settings';
-
-interface SnapSettings {
-  snapEnabled: boolean;
-  gridSize: number;
-  boundaryPadding: number;
-}
-
-const DEFAULT_SNAP: SnapSettings = {
-  snapEnabled: true,
-  gridSize: 20,
-  boundaryPadding: 8,
-};
-
-function loadSnapSettings(): SnapSettings {
-  try {
-    const raw = localStorage.getItem(SNAP_STORAGE_KEY);
-    if (!raw) return DEFAULT_SNAP;
-    const parsed = JSON.parse(raw) as Partial<SnapSettings>;
-    return {
-      snapEnabled:
-        typeof parsed.snapEnabled === 'boolean' ? parsed.snapEnabled : DEFAULT_SNAP.snapEnabled,
-      gridSize:
-        typeof parsed.gridSize === 'number' && parsed.gridSize >= 5 && parsed.gridSize <= 50
-          ? parsed.gridSize
-          : DEFAULT_SNAP.gridSize,
-      boundaryPadding:
-        typeof parsed.boundaryPadding === 'number' && parsed.boundaryPadding >= 0
-          ? parsed.boundaryPadding
-          : DEFAULT_SNAP.boundaryPadding,
-    };
-  } catch {
-    return DEFAULT_SNAP;
-  }
-}
-
-function saveSnapSettings(settings: SnapSettings): void {
-  try {
-    localStorage.setItem(SNAP_STORAGE_KEY, JSON.stringify(settings));
-  } catch {
-    // localStorage may be unavailable (private browsing, quota exceeded)
   }
 }

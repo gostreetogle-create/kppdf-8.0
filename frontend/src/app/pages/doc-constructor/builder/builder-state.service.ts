@@ -34,20 +34,13 @@
  *   - Two browser tabs have separate JS contexts anyway, no cross-tab bleed.
  */
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { HttpClient, httpResource } from '@angular/common/http';
-import { Subject } from 'rxjs';
-import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
-import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
-import { TextBlocksService } from '../../../shared/services/pi-text-blocks.service';
-import { TableTemplatesService } from '../../../shared/services/pi-table-templates.service';
-import { API_BASE_URL } from '../../../core/api.tokens';
+import { httpResource } from '@angular/common/http';
+import { Observable, Subject } from 'rxjs';
 import {
   blockKey,
   type TemplateBlock,
 } from '../../../shared/template-block/template-block.types';
 import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
-import { PiToastService } from '../../../shared/ui/toast';
 
 // ─────────────────────────────────────────────────────────────────────
 // LocalStorage persistence for snap settings
@@ -70,6 +63,44 @@ const DEFAULT_SNAP: SnapSettings = {
 function loadSnapSettings(): SnapSettings {
   if (typeof localStorage === 'undefined') return DEFAULT_SNAP;
   try {
+    // TZ-235.A Round 3 reviewer-fix 2026-07-30:
+    // On 2026-07-26 we renamed `pi-builder-snap-settings` -> `kppdf.builder.snapSettings`.
+    // End-users who had snap-settings saved before this rename would silently
+    // lose their settings on next reload. One-shot migration: if the OLD key
+    // is present, VALIDATE its JSON shape before copying to the NEW key then
+    // remove the OLD key. (Without validation, malformed legacy JSON would
+    // be copied verbatim and re-throw on every subsequent load — user stuck
+    // silently on DEFAULT_SNAP forever.)
+    const LEGACY_SNAP_KEY = 'pi-builder-snap-settings';
+    const legacyRaw = localStorage.getItem(LEGACY_SNAP_KEY);
+    if (legacyRaw !== null) {
+      try {
+        const parsed = JSON.parse(legacyRaw) as Partial<SnapSettings>;
+        if (
+          parsed &&
+          (typeof parsed.snapEnabled === 'boolean' ||
+            typeof parsed.gridSize === 'number' ||
+            typeof parsed.boundaryPadding === 'number')
+        ) {
+          // VALID legacy settings → COPY to new key then drop old. (Reviewer 2026-07-30:
+          // earlier version only removed the legacy key without copying, silently
+          // destroying user data on first reload.)
+          localStorage.setItem(SNAP_SETTINGS_KEY, legacyRaw);
+          localStorage.removeItem(LEGACY_SNAP_KEY);
+        } else {
+          // Legacy JSON parsed but doesn't match our shape — drop to avoid
+          // re-evaluating same garbage forever on every reload.
+          localStorage.removeItem(LEGACY_SNAP_KEY);
+        }
+      } catch {
+        // Legacy value is not valid JSON — drop it to avoid silent failure.
+        try {
+          localStorage.removeItem(LEGACY_SNAP_KEY);
+        } catch {
+          /* swallow */
+        }
+      }
+    }
     const raw = localStorage.getItem(SNAP_SETTINGS_KEY);
     if (!raw) return DEFAULT_SNAP;
     const parsed = JSON.parse(raw) as Partial<SnapSettings>;
@@ -121,17 +152,6 @@ function pluralBlocks(n: number): string {
  */
 @Injectable()
 export class BuilderStateService {
-  // ── Injected services ─────────────────────────────────────────────
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
-  private readonly http = inject(HttpClient);
-  private readonly baseUrl = inject(API_BASE_URL);
-  private readonly blocksSvc = inject(TemplateBlocksService);
-  private readonly templatesSvc = inject(DocumentTemplatesService);
-  private readonly textBlocksSvc = inject(TextBlocksService);
-  private readonly tableTemplatesSvc = inject(TableTemplatesService);
-  private readonly toast = inject(PiToastService);
-
   // ── Core state signals ────────────────────────────────────────────
   /** Active template id from route :id. null when in template-picker mode. */
   readonly templateId = signal<string | null>(null);
@@ -186,23 +206,20 @@ export class BuilderStateService {
   // ── Auto-save plumbing ─────────────────────────────────────────────
   /**
    * Auto-save Subject — private to the service. Handlers push via
-   * `saveBlock(_id, patch)`. Pipeline wiring (groupBy / debounceTime /
-   * switchMap / takeUntilDestroyed) lands on service constructor in
-   * Round 2 (handler migration).
+   * `saveBlock(_id, patch)`. Page-level pipeline (groupBy / debounceTime /
+   * switchMap / takeUntilDestroyed) subscribes via the public `saveEvents$`
+   * observable. Round 4 will move the pipeline itself into the service.
    */
   private readonly save$ = new Subject<{ _id: string; patch: Partial<TemplateBlock> }>();
+
+  /** Read-only Observable view of the save sink. Page.ts subscribes here. */
+  readonly saveEvents$: Observable<{ _id: string; patch: Partial<TemplateBlock> }> =
+    this.save$.asObservable();
 
   /** Public API for handlers: enqueue a save operation. */
   saveBlock(_id: string, patch: Partial<TemplateBlock>): void {
     this.save$.next({ _id, patch });
   }
-
-  /**
-   * D.2.3 nit (code-reviewer): monotonic counter for the 2s 'saved'→'idle'
-   * timer revert. Without this guard a stale timer from an earlier 'saved'
-   * state could revert a NEW 'saved' state set by a more recent save cycle.
-   */
-  private savedTick = 0;
 
   // ── Computed signals ───────────────────────────────────────────────
 
@@ -266,14 +283,10 @@ export class BuilderStateService {
     });
   }
 
-  /** increment-and-return tick for the 2s 'saved'→'idle' revert guard. */
-  beginSavedTick(): number {
-    return ++this.savedTick;
-  }
-
-  /** Read current savedTick without incrementing (used by timer callback). */
-  get currentSavedTick(): number {
-    return this.savedTick;
-  }
+  // NOTE (TZ-235.A Round 3 reviewer): `savedTick` / `beginSavedTick()` /
+  // `currentSavedTick` getter were removed. BuilderPage handlers hold their
+  // own page-level tick counter for the 2s 'saved'->'idle' revert. Round 4
+  // will move the save pipeline INTO this service (constructor + takeUntilDestroyed),
+  // and a fresh monotonic counter will be re-introduced then if needed.
 
 }
