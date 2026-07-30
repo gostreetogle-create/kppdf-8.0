@@ -2138,3 +2138,31 @@ STATUS.md: SUPERSEDED batch-summary row + TZ-220.{A,B,C} active rows + Known RBA
 - 8. i18n batch 2 (низкий приоритет) — оставшиеся potential leaks в tests/dev tools/seed scripts.
 
 PO mandates met: (a) "никаких английских слов в ошибках" ✓ (Audit 1), (b) "валидации нужные фишки" ✓ (Audit 2 PoC), (c) "DSL переиспользование как Лего" ✓ (FormErrorI18n применён в 1 форме, pattern задокументирован для остальных 15), (d) "глубокий анализ архива" ✓ (4 аудита + closing note).
+
+## [2026-07-30] — Push blocked: GitHub auth unavailable in sandbox
+
+После 4 atomic коммитов deep-audit batch (3ab72f0 → 13f3324 → a10c97f → 8a03537)
+попытки `git push origin HEAD` падают:
+
+```
+20:56:56 http.c:992  <= Recv header: www-authenticate: Basic realm="GitHub"
+20:56:56 run-command.c:946 trace: start_command: 'git credential-manager get'
+```
+
+Remote (github.com/gostreetogle-create/kppdf-8.0) возвращает `401 Basic realm="GitHub"`
+— требует GitHub credentials. Credential manager в Freebuff sandbox env не имеет
+хранимых credentials, и нет интерактивного prompt для их ввода.
+
+**Manual push command** (PO запустит когда у него есть GitHub auth в локальной среде):
+
+```bash
+cd D:/kppdf-8.0/.freebuff/worktrees/thms6ee2rx5i1q
+git push origin HEAD                  # если уже есть upstream tracking
+# или
+git push --set-upstream origin HEAD   # первый push для branch
+```
+
+Все 10 коммитов (4 audit + 4 TZ-235.A + 2 предыдущие) уйдут одним push.
+Перед push — `git status` покажет modified files от прошлой сессии (README, STACK, package.json,
+.gitignore, .npmrc deleted и т.д.) — это НЕ мои изменения, commitить их НЕ нужно.
+Push подхватит ТОЛЬКО мои 4 коммита (working tree uncommitted changes остаются локально).
