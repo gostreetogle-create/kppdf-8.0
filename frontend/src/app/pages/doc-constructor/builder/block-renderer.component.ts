@@ -24,22 +24,25 @@
  * Conventional short reference: trust-model see file header banner.
  */
 
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, input, output } from '@angular/core';
 import { CdkDrag } from '@angular/cdk/drag-drop';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { LucideAngularModule } from 'lucide-angular';
-import {
-  BLOCK_TYPE_LABELS,
-  type BlockType,
-  type TemplateBlock,
-} from '../../../shared/template-block/template-block.types';
-import type { TableColumn } from '../../../shared/services/pi-table-templates.service';
+import type { TemplateBlock } from '../../../shared/template-block/template-block.types';
+import { BlockRendererStateService } from './block-renderer-state.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 /**
- * TZ-86 Phase D.1 — BlockRenderer (leaf, presentational).
+ * TZ-86 Phase D.1 — TZ-235.B — BlockRenderer (leaf, presentational).
  *
  * Renders ONE TemplateBlock on the builder canvas. Wraps the content in
  * a cdkDrag so the parent BuilderCanvas (cdkDropList) can reorder it.
+ *
+ * TZ-235.B: the imperative drag/resize/snap logic moved into
+ * `BlockRendererStateService` (per-instance, `providers:`-scoped). This
+ * component now only owns the template (HTML/CSS) + 4 simple output-emitting
+ * handlers + byPassHtml + formatTableCell + a thin "mirror inputs to
+ * service" effect. Lines: was 1484 → now ~870.
  *
  * Selection model:
  *   - Click anywhere on the block (NOT the drag-handle) → emits (select)
@@ -62,20 +65,19 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
  * byPassHtml() which calls DomSanitizer.bypassSecurityTrustHtml() —
  * see the file-header banner for the trust-model rationale.
  *
- * Precedence rule (TZ-104.7 NIT #2): when BOTH content and columns[]
- * are present, render content ABOVE the columns grid as a preamble — the
- * user keeps their prose, the multi-column layout stays intact. If only
+ * Precedence rule (TZ-104.7 NIT #2): when BOTH content and columns[] are
+ * present, render content ABOVE the columns grid as a preamble. If only
  * content is present, render the existing renderedContent() plain-text
  * fallback. If only columns[] is present, render the grid alone.
- *
- * No service injection (other than DOM sanitizer for HTML escaping). All
- * inputs come from the parent; outputs go back up.
  */
 @Component({
   selector: 'app-block-renderer',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CdkDrag, LucideAngularModule],
+  // Per-instance state service (TZ-235.B): each block-renderer owns its own
+  // drag/resize/snap state — no cross-block interference on canvas.
+  providers: [BlockRendererStateService],
   template: `
     <!-- ═══ OVERLAY MODE: no cdkDrag, free absolute positioning ═══ -->
     @if (isOverlay()) {
@@ -773,654 +775,95 @@ import type { TableColumn } from '../../../shared/services/pi-table-templates.se
   ],
 })
 export class BlockRendererComponent {
-  /** The block to render. */
+  // ─────────────────────────────────────────────────────────────────
+  // Inputs (unchanged from pre-TZ-235.B)
+  // ─────────────────────────────────────────────────────────────────
   readonly block = input.required<TemplateBlock>();
-  /** Whether this block is the currently-selected one (drives outline). */
   readonly selected = input<boolean>(false);
-  /** Whether this block is in multi-select mode (Ctrl+Click). */
   readonly multiSelected = input<boolean>(false);
-  /** Emitted when the user clicks/keys to select this block. */
-  readonly select = output<TemplateBlock>();
-  /** Emitted on Ctrl/Meta+click for multi-select toggle. */
-  readonly multiSelect = output<TemplateBlock>();
-  /** Emitted when the user finishes resizing the block. Carries new width & marginLeft. */
-  readonly widthChange = output<{ width: number; marginLeft: number }>();
-  /** Whether snap-to-grid is enabled for overlay blocks. */
   readonly snapEnabled = input<boolean>(true);
-  /** Grid size in pixels for snapping. */
   readonly gridSize = input<number>(20);
-  /** Padding from the paper edges that overlay blocks cannot cross (px). */
   readonly boundaryPadding = input<number>(0);
-  /** Emitted when overlay block is dragged to a new position. */
+
+  // ─────────────────────────────────────────────────────────────────
+  // Outputs (unchanged shape, but emitted via Subject subscriptions)
+  // ─────────────────────────────────────────────────────────────────
+  readonly select = output<TemplateBlock>();
+  readonly multiSelect = output<TemplateBlock>();
+  readonly widthChange = output<{ width: number; marginLeft: number }>();
   readonly overlayMove = output<{ block: TemplateBlock; overlayLeft: number; overlayTop: number }>();
-  /** Emitted when overlay image is resized proportionally via corner handle. */
   readonly overlayResize = output<{ block: TemplateBlock; imageWidth: number; imageHeight: number }>();
-  /** TZ-211: Emitted when user clicks delete button on block. */
   readonly deleteRequest = output<string>();
 
-  /**
-   * DOM sanitizer injected to bypass Angular's default innerHTML stripping.
-   * See the file-header banner for the trust-model rationale.
-   */
+  // ─────────────────────────────────────────────────────────────────
+  // State service (per-instance providers-scoped)
+  // ─────────────────────────────────────────────────────────────────
+  protected readonly state = inject(BlockRendererStateService);
+
+  /** DOM sanitizer lives in component (trust-model banner applies here). */
   private readonly sanitizer = inject(DomSanitizer);
 
-  /** Current block width percentage (read from settings.width, default 100). */
-  protected readonly currentWidth = signal<number>(100);
-  /** Current block left margin percentage (read from settings.marginLeft, default 0). */
-  protected readonly currentMarginLeft = signal<number>(0);
+  // ─────────────────────────────────────────────────────────────────
+  // Service signal aliases — keeps template syntax unchanged:
+  // template still uses `currentWidth()`, `dragActive()`, `isOverlay()`, etc.
+  // (TZ-235.B zero-churn — no template diff required.)
+  // ─────────────────────────────────────────────────────────────────
+  protected readonly currentWidth = this.state.currentWidth;
+  protected readonly currentMarginLeft = this.state.currentMarginLeft;
+  protected readonly dragActive = this.state.dragActive;
+  protected readonly dragLeft = this.state.dragLeft;
+  protected readonly dragTop = this.state.dragTop;
+  protected readonly resizeActive = this.state.resizeActive;
+  protected readonly resizeWidth = this.state.resizeWidth;
+  protected readonly resizeHeight = this.state.resizeHeight;
+  protected readonly overlayDefaultWidth = this.state.overlayDefaultWidth;
+  protected readonly overlayDefaultHeight = this.state.overlayDefaultHeight;
+  protected readonly hasColumns = this.state.hasColumns;
+  protected readonly imageUrl = this.state.imageUrl;
+  protected readonly imageWidth = this.state.imageWidth;
+  protected readonly imageHeight = this.state.imageHeight;
+  protected readonly isOverlay = this.state.isOverlay;
+  protected readonly overlayLeft = this.state.overlayLeft;
+  protected readonly overlayTop = this.state.overlayTop;
+  protected readonly blockBgColor = this.state.blockBgColor;
+  protected readonly tableColumns = this.state.tableColumns;
+  protected readonly tableRows = this.state.tableRows;
+  protected readonly columnsGridTemplate = this.state.columnsGridTemplate;
+  protected readonly typeLabel = this.state.typeLabel;
+  protected readonly bindingBadge = this.state.bindingBadge;
+  protected readonly bindingBadgeTooltip = this.state.bindingBadgeTooltip;
+  protected readonly renderedContent = this.state.renderedContent;
 
   constructor() {
-    // Sync width & marginLeft from block settings when block changes
-    effect(() => {
-      const b = this.block();
-      const settings = b.settings as Record<string, unknown> | undefined;
-      const w = typeof settings?.['width'] === 'number' ? settings['width'] : 100;
-      const ml = typeof settings?.['marginLeft'] === 'number' ? settings['marginLeft'] : 0;
-      this.currentWidth.set(Math.max(20, Math.min(100, w)));
-      this.currentMarginLeft.set(Math.max(0, Math.min(80, ml)));
-    });
+    // ── Mirror inputs to service ──
+    effect(() => this.state.setBlock(this.block()));
+    effect(() => this.state.setSnapSettings(this.snapEnabled(), this.gridSize(), this.boundaryPadding()));
 
-    // Auto-clear local drag override when settings catch up (after API debounce + response)
-    effect(() => {
-      const ol = this.overlayLeft();
-      const dl = this.dragLeft();
-      if (dl > 0 && ol === dl) {
-        this.dragActive.set(false);
-        this.dragLeft.set(0);
-        this.dragTop.set(0);
-      }
-    });
-
-    // Auto-clear local resize override when settings catch up (after API debounce + response)
-    effect(() => {
-      const w = this.imageWidth();
-      const d = this.resizeWidth();
-      // When settings signal (imageWidth) catches up to the displayed value (resizeWidth),
-      // clear the local override. No visual flash since w === d at this point.
-      if (d > 0 && w === d) {
-        this.resizeActive.set(false);
-        this.resizeWidth.set(0);
-        this.resizeHeight.set(0);
-      }
-    });
+    // ── Subscribe to service output streams, re-emit as Angular outputs ──
+    // takeUntilDestroyed() — must be in constructor so Injector context is component.
+    this.state.widthChange$.pipe(takeUntilDestroyed()).subscribe((e) => this.widthChange.emit(e));
+    this.state.overlayMove$.pipe(takeUntilDestroyed()).subscribe((e) => this.overlayMove.emit(e));
+    this.state.overlayResize$.pipe(takeUntilDestroyed()).subscribe((e) => this.overlayResize.emit(e));
   }
 
-  /**
-   * Resize handle mousedown — starts a document-level drag to resize the block.
-   * Side 'left' adjusts marginLeft; side 'right' adjusts width.
-   * Width is calculated as a percentage of the paper container width.
-   */
+  // ─────────────────────────────────────────────────────────────────
+  // DELEGATED MUTATING HANDLERS — pure forward to service
+  // ─────────────────────────────────────────────────────────────────
   protected onResizeStart(event: MouseEvent, side: 'left' | 'right'): void {
-    event.preventDefault();
-    event.stopPropagation();
-    const startX = event.clientX;
-    const startWidth = this.currentWidth();
-    const startMarginLeft = this.currentMarginLeft();
-    // Find the paper container to get its width for percentage calculation
-    const paper = (event.target as HTMLElement)?.closest('.pi-canvas-page-paper') as HTMLElement;
-    const containerWidth = paper?.clientWidth ?? 720;
-
-    // Visual feedback — highlight the active handle
-    const handle = event.target as HTMLElement;
-    handle.classList.add('is-dragging');
-
-    const onMove = (e: MouseEvent): void => {
-      const deltaPx = e.clientX - startX;
-      const deltaPercent = (deltaPx / containerWidth) * 100;
-
-      if (side === 'left') {
-        // Left handle: drag right → increase marginLeft, decrease width
-        const newMarginLeft = Math.max(0, Math.min(80, startMarginLeft + deltaPercent));
-        const newWidth = Math.max(20, 100 - newMarginLeft);
-        this.currentMarginLeft.set(Math.round(newMarginLeft));
-        this.currentWidth.set(Math.round(newWidth));
-      } else {
-        // Right handle: drag left → decrease width
-        const newWidth = Math.max(20, Math.min(100 - startMarginLeft, startWidth + deltaPercent));
-        this.currentWidth.set(Math.round(newWidth));
-      }
-    };
-
-    const onUp = (): void => {
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-      handle.classList.remove('is-dragging');
-      this.widthChange.emit({
-        width: this.currentWidth(),
-        marginLeft: this.currentMarginLeft(),
-      });
-    };
-
-    document.body.style.cursor = 'ew-resize';
-    document.body.style.userSelect = 'none';
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
+    this.state.onResizeStart(event, side);
   }
 
-  /**
-   * Start dragging an overlay block — captures start mouse position and block position.
-   * On mousemove: updates overlayLeft/overlayTop relative to the paper container.
-   * On mouseup: emits overlayMove with final position.
-   */
   protected onOverlayDragStart(event: MouseEvent): void {
-    // Only left mouse button, only on image blocks, only if not clicking delete/resize handles
-    if (event.button !== 0) return;
-    const target = event.target as HTMLElement;
-    if (target.closest('.block-renderer__delete') || target.closest('.block-renderer__corner-resize')) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    const startMouseX = event.clientX;
-    const startMouseY = event.clientY;
-    // Use override value if previous drag's settings haven't arrived yet,
-    // otherwise fall back to the stored settings value.
-    const startLeft = this.dragActive() ? this.dragLeft() : this.overlayLeft();
-    const startTop = this.dragActive() ? this.dragTop() : this.overlayTop();
-
-    // Activate local signal override — prevents Angular CD from overwriting position via [style.left.px]
-    this.dragActive.set(true);
-    this.dragLeft.set(startLeft);
-    this.dragTop.set(startTop);
-
-    // Cache DOM refs at drag start — avoid querySelector on every mousemove
-    const hostEl = (event.target as HTMLElement).closest('.block-renderer--overlay') as HTMLElement | null;
-    const paper = document.querySelector('.pi-canvas-page-paper') as HTMLElement | null;
-    const img = hostEl?.querySelector('.block-renderer__image--overlay') as HTMLImageElement | null;
-    const cachedBlockW = img?.offsetWidth ?? this.imageWidth() ?? this.overlayDefaultWidth;
-    const cachedBlockH = img?.offsetHeight ?? this.imageHeight() ?? this.overlayDefaultHeight;
-
-    const cleanup = (): void => {
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-      document.removeEventListener('mouseleave', onLeave);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-
-    const onMove = (e: MouseEvent): void => {
-      // Check if mouse button is still held (escape hatch for browser-out-of-focus)
-      if (e.buttons === 0) {
-        cleanup();
-        return;
-      }
-      e.preventDefault();
-      const deltaX = e.clientX - startMouseX;
-      const deltaY = e.clientY - startMouseY;
-      let newLeft = startLeft + deltaX;
-      let newTop = startTop + deltaY;
-
-      // Clamp to paper boundaries (using cached paper ref + cached block dimensions)
-      if (paper) {
-        const pad = this.boundaryPadding();
-        const maxLeft = Math.max(0, paper.clientWidth - cachedBlockW - pad);
-        const maxTop = Math.max(0, paper.scrollHeight - cachedBlockH - pad);
-        newLeft = Math.max(pad, Math.min(maxLeft, newLeft));
-        newTop = Math.max(pad, Math.min(maxTop, newTop));
-      } else {
-        newLeft = Math.max(0, newLeft);
-        newTop = Math.max(0, newTop);
-      }
-
-      // Apply snapping if enabled
-      if (this.snapEnabled()) {
-        // Snap to grid
-        const gridResult = this.applySnapToGrid(newLeft, newTop, this.gridSize());
-        let hadSnap = gridResult.snappedLeft !== newLeft || gridResult.snappedTop !== newTop;
-        newLeft = gridResult.snappedLeft;
-        newTop = gridResult.snappedTop;
-
-        // Snap to other blocks' edges (using cached paper ref)
-        const blockSnap = this.snapToBlockEdges(newLeft, newTop, hostEl, paper);
-        if (blockSnap.snappedLeft !== newLeft || blockSnap.snappedTop !== newTop) {
-          hadSnap = true;
-          this.snapAxisX = blockSnap.axisX;
-          this.snapAxisY = blockSnap.axisY;
-          newLeft = blockSnap.snappedLeft;
-          newTop = blockSnap.snappedTop;
-        }
-
-        if (!hadSnap) {
-          this.snapAxisX = null;
-          this.snapAxisY = null;
-        }
-      } else {
-        this.snapAxisX = null;
-        this.snapAxisY = null;
-      }
-
-      // Update local signals so Angular CD doesn't overwrite with stale stored position
-      this.dragLeft.set(newLeft);
-      this.dragTop.set(newTop);
-      // Set inline style for INSTANT visual feedback (before CD picks up the signal)
-      if (hostEl) {
-        hostEl.style.left = `${newLeft}px`;
-        hostEl.style.top = `${newTop}px`;
-        hostEl.classList.toggle('is-snapping', this.snapAxisX !== null || this.snapAxisY !== null);
-        hostEl.dataset['snapAxisX'] = this.snapAxisX ?? '';
-        hostEl.dataset['snapAxisY'] = this.snapAxisY ?? '';
-      }
-    };
-
-    const onUp = (): void => {
-      cleanup();
-      // Read final values from signals (they're the source of truth)
-      const finalLeft = this.dragLeft();
-      const finalTop = this.dragTop();
-      // Keep local override active — no visual flash while waiting for debounced API
-      // Effect will auto-clear when overlayLeft()/overlayTop() catch up.
-
-      this.overlayMove.emit({
-        block: this.block(),
-        overlayLeft: finalLeft,
-        overlayTop: finalTop,
-      });
-    };
-
-    // Escape hatch: if mouse leaves the document body, clean up
-    const onLeave = (): void => {
-      cleanup();
-      // onLeave → user hasn't committed — restore old position from settings
-      this.dragActive.set(false);
-      this.dragLeft.set(0);
-      this.dragTop.set(0);
-    };
-
-    document.body.style.cursor = 'move';
-    document.body.style.userSelect = 'none';
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-    document.addEventListener('mouseleave', onLeave);
+    this.state.onOverlayDragStart(event);
   }
 
-  /** Local signals for overlay drag — override Angular's style binding during drag. */
-  protected readonly dragActive = signal(false);
-  protected readonly dragLeft = signal(0);
-  protected readonly dragTop = signal(0);
-
-  /** Local signals for corner resize — override Angular's style binding during drag. */
-  protected readonly resizeActive = signal(false);
-  protected readonly resizeWidth = signal(0);
-  protected readonly resizeHeight = signal(0);
-
-  /** Current snap state during drag — tracks which axes are snapped. */
-  private snapAxisX: string | null = null;
-  private snapAxisY: string | null = null;
-
-  /** Snap threshold in pixels. */
-  private readonly SNAP_THRESHOLD = 8;
-
-  /** Default image width when overlay is toggled on without explicit dimensions (prevents showing at natural resolution). */
-  protected readonly overlayDefaultWidth = 300;
-  /** Default image height calculated from a 3:2 ratio fallback. */
-  protected readonly overlayDefaultHeight = 200;
-
-  /**
-   * Corner resize start — captures start mouse position and original image dimensions.
-   * On mousemove: calculates new size maintaining aspect ratio.
-   * On mouseup: emits overlayResize with final dimensions.
-   */
   protected onCornerResizeStart(event: MouseEvent): void {
-    if (event.button !== 0) return;
-    event.preventDefault();
-    event.stopPropagation();
-
-    // Get the actual natural dimensions of the image for aspect ratio
-    const img = (event.target as HTMLElement).closest('.block-renderer__image-wrap--overlay')?.querySelector('img') as HTMLImageElement | null;
-    const naturalW = img?.naturalWidth ?? this.imageWidth() ?? 200;
-    const naturalH = img?.naturalHeight ?? this.imageHeight() ?? 200;
-    const aspectRatio = naturalW / naturalH;
-
-    const startMouseX = event.clientX;
-    const startMouseY = event.clientY;
-    // Use override value if previous resize's settings haven't arrived yet
-    const startWidth = this.resizeActive() ? this.resizeWidth() : (this.imageWidth() ?? 200);
-    const startHeight = this.resizeActive() ? this.resizeHeight() : (this.imageHeight() ?? 200);
-
-    // Activate local signal override — Angular will render the correct size via signals, not DOM
-    this.resizeActive.set(true);
-    this.resizeWidth.set(startWidth);
-    this.resizeHeight.set(startHeight);
-
-    const cleanup = (): void => {
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-      document.removeEventListener('mouseleave', onLeave);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-
-    const onMove = (e: MouseEvent): void => {
-      if (e.buttons === 0) {
-        cleanup();
-        return;
-      }
-      e.preventDefault();
-      const deltaX = e.clientX - startMouseX;
-      const deltaY = e.clientY - startMouseY;
-      // Smooth proportional delta using diagonal distance
-      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-      const sign = deltaX + deltaY >= 0 ? 1 : -1;
-      const smoothDelta = sign * distance;
-
-      let newWidth = Math.round(Math.max(50, startWidth + smoothDelta));
-      let newHeight = Math.round(newWidth / aspectRatio);
-
-      if (newHeight < 20) {
-        newHeight = 20;
-        newWidth = Math.round(newHeight * aspectRatio);
-      }
-
-      // Update local signals — Angular CD picks up the change and applies via style binding
-      this.resizeWidth.set(newWidth);
-      this.resizeHeight.set(newHeight);
-    };
-
-    const onUp = (): void => {
-      cleanup();
-      // Read final values from signals BEFORE clearing (they're the source of truth)
-      const finalW = this.resizeWidth();
-      const finalH = this.resizeHeight();
-      // Keep local override active at final size to prevent visual flash
-      // (settings update comes after 1500ms debounce — photo would snap back to old size)
-      // Effect in constructor will auto-clear when settings catch up.
-
-      if (finalW > 0 && finalH > 0) {
-        this.overlayResize.emit({
-          block: this.block(),
-          imageWidth: finalW,
-          imageHeight: finalH,
-        });
-      }
-    };
-
-    const onLeave = (): void => {
-      cleanup();
-      // onLeave → user hasn't committed — restore old size from settings
-      this.resizeActive.set(false);
-      this.resizeWidth.set(0);
-      this.resizeHeight.set(0);
-    };
-
-    document.body.style.cursor = 'nwse-resize';
-    document.body.style.userSelect = 'none';
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-    document.addEventListener('mouseleave', onLeave);
+    this.state.onCornerResizeStart(event);
   }
 
-
-
-  /**
-   * Snap a value to the nearest grid point.
-   * Returns the snapped value and whether it was snapped.
-   */
-  private snapValueToGrid(value: number, gridSize: number): { snapped: number; isSnapped: boolean } {
-    const nearest = Math.round(value / gridSize) * gridSize;
-    if (Math.abs(value - nearest) <= this.SNAP_THRESHOLD) {
-      return { snapped: nearest, isSnapped: true };
-    }
-    return { snapped: value, isSnapped: false };
-  }
-
-  /**
-   * Apply grid snapping to both X and Y coordinates.
-   */
-  private applySnapToGrid(
-    left: number, top: number, gridSize: number,
-  ): { snappedLeft: number; snappedTop: number } {
-    const snapX = this.snapValueToGrid(left, gridSize);
-    const snapY = this.snapValueToGrid(top, gridSize);
-    return { snappedLeft: snapX.snapped, snappedTop: snapY.snapped };
-  }
-
-  /**
-   * Snap to edges of other blocks (both flow and overlay) on the canvas.
-   * Returns the snapped position and which axes were snapped.
-   */
-  private snapToBlockEdges(
-    left: number, top: number, hostEl: HTMLElement | null, paper: HTMLElement | null,
-  ): { snappedLeft: number; snappedTop: number; axisX: string | null; axisY: string | null } {
-    if (!paper) return { snappedLeft: left, snappedTop: top, axisX: null, axisY: null };
-    const img = hostEl?.querySelector('.block-renderer__image--overlay') as HTMLImageElement | null;
-    const width = img?.offsetWidth ?? this.imageWidth() ?? this.overlayDefaultWidth;
-    const height = img?.offsetHeight ?? this.imageHeight() ?? this.overlayDefaultHeight;
-
-    const paperRect = paper.getBoundingClientRect();
-    const allBlocks = Array.from(
-      paper.querySelectorAll<HTMLElement>(
-        ':scope > .canvas-dropzone .block-renderer[role="button"], :scope > .canvas-overlay-layer .block-renderer--overlay',
-      ),
-    );
-
-    // Exclude the currently dragged block
-    const otherBlocks = allBlocks.filter((el) => el !== hostEl);
-
-    let snappedLeft = left;
-    let snappedTop = top;
-    let axisX: string | null = null;
-    let axisY: string | null = null;
-
-    const right = left + width;
-    const bottom = top + height;
-    const threshold = this.SNAP_THRESHOLD;
-
-    for (const block of otherBlocks) {
-      const rect = block.getBoundingClientRect();
-      const bLeft = rect.left - paperRect.left;
-      const bRight = bLeft + rect.width;
-      const bTop = rect.top - paperRect.top;
-      const bBottom = bTop + rect.height;
-
-      // Snap left edge
-      if (Math.abs(left - bLeft) <= threshold) {
-        snappedLeft = bLeft;
-        axisX = 'left';
-      } else if (Math.abs(left - bRight) <= threshold) {
-        snappedLeft = bRight;
-        axisX = 'left';
-      }
-      // Snap right edge
-      if (Math.abs(right - bLeft) <= threshold) {
-        snappedLeft = bLeft - width;
-        axisX = 'right';
-      } else if (Math.abs(right - bRight) <= threshold) {
-        snappedLeft = bRight - width;
-        axisX = 'right';
-      }
-
-      // Snap top edge
-      if (Math.abs(top - bTop) <= threshold) {
-        snappedTop = bTop;
-        axisY = 'top';
-      } else if (Math.abs(top - bBottom) <= threshold) {
-        snappedTop = bBottom;
-        axisY = 'top';
-      }
-      // Snap bottom edge
-      if (Math.abs(bottom - bTop) <= threshold) {
-        snappedTop = bTop - height;
-        axisY = 'bottom';
-      } else if (Math.abs(bottom - bBottom) <= threshold) {
-        snappedTop = bBottom - height;
-        axisY = 'bottom';
-      }
-    }
-
-    return { snappedLeft, snappedTop, axisX, axisY };
-  }
-
-  /**
-   * Wraps col.content (HTML string from TipTap) in a SafeHtml so that
-   * inline style attributes for bold/italic/color/highlight pass through
-   * to the rendered output. Without this, columns render as plain text.
-   *
-   * content ?? '' defensively handles missing content (empty SafeHtml).
-   */
-  protected byPassHtml(content: string | undefined): SafeHtml {
-    return this.sanitizer.bypassSecurityTrustHtml(content ?? '');
-  }
-
-  protected readonly hasColumns = computed<boolean>(() => {
-    const cols = this.block().columns;
-    return !!cols && cols.length > 0;
-  });
-
-  /** Image URL from block.settings.imageUrl. */
-  protected readonly imageUrl = computed<string | null>(() => {
-    const b = this.block();
-    if (b.type !== 'image') return null;
-    const settings = b.settings as Record<string, unknown> | undefined;
-    return (settings?.['imageUrl'] as string) ?? null;
-  });
-
-  /** Image width in pixels from block.settings.imageWidth. */
-  protected readonly imageWidth = computed<number | null>(() => {
-    const b = this.block();
-    const settings = b.settings as Record<string, unknown> | undefined;
-    return (settings?.['imageWidth'] as number) ?? null;
-  });
-
-  /** Image height in pixels from block.settings.imageHeight. */
-  protected readonly imageHeight = computed<number | null>(() => {
-    const b = this.block();
-    const settings = b.settings as Record<string, unknown> | undefined;
-    return (settings?.['imageHeight'] as number) ?? null;
-  });
-
-  /** Whether image overlays other blocks (absolute positioning). */
-  protected readonly isOverlay = computed<boolean>(() => {
-    const b = this.block();
-    if (b.type !== 'image') return false;
-    const settings = b.settings as Record<string, unknown> | undefined;
-    return (settings?.['overlay'] as boolean) ?? false;
-  });
-
-  /** Overlay X position in pixels. */
-  protected readonly overlayLeft = computed<number>(() => {
-    const b = this.block();
-    const settings = b.settings as Record<string, unknown> | undefined;
-    return (settings?.['overlayLeft'] as number) ?? 0;
-  });
-
-  /** Overlay Y position in pixels. */
-  protected readonly overlayTop = computed<number>(() => {
-    const b = this.block();
-    const settings = b.settings as Record<string, unknown> | undefined;
-    return (settings?.['overlayTop'] as number) ?? 0;
-  });
-
-  /**
-   * Computed background-color CSS value.
-   * Combines blockBackgroundColor (hex) with blockOpacity (alpha) into rgba().
-   * Returns empty string when no color is set → block stays transparent.
-   */
-  protected readonly blockBgColor = computed<string>(() => {
-    const b = this.block();
-    const settings = b.settings as Record<string, unknown> | undefined;
-    const color = settings?.['blockBackgroundColor'];
-    const opacity = typeof settings?.['blockOpacity'] === 'number' ? settings['blockOpacity'] : 0;
-
-    if (typeof color !== 'string' || color.length === 0) {
-      return '';
-    }
-
-    // Parse hex (#RGB, #RRGGBB) to {r, g, b}
-    const hex = color.replace('#', '');
-    let r = 0, g = 0, b2 = 0;
-    if (hex.length === 3) {
-      r = parseInt(hex[0] + hex[0], 16);
-      g = parseInt(hex[1] + hex[1], 16);
-      b2 = parseInt(hex[2] + hex[2], 16);
-    } else if (hex.length === 6) {
-      r = parseInt(hex.substring(0, 2), 16);
-      g = parseInt(hex.substring(2, 4), 16);
-      b2 = parseInt(hex.substring(4, 6), 16);
-    }
-    return `rgba(${r}, ${g}, ${b2}, ${opacity})`;
-  });
-
-  /** Table columns from block.settings.tableTemplateColumns (populated on drop). */
-  protected readonly tableColumns = computed<TableColumn[]>(() => {
-    const b = this.block();
-    if (b.type !== 'table') return [];
-    const settings = b.settings as Record<string, unknown> | undefined;
-    const cols = settings?.['tableTemplateColumns'] as TableColumn[] | undefined;
-    return cols ?? [];
-  });
-
-  /** Table sample rows from block.settings.tableTemplateSampleRows. */
-  protected readonly tableRows = computed<unknown[][]>(() => {
-    const b = this.block();
-    if (b.type !== 'table') return [];
-    const settings = b.settings as Record<string, unknown> | undefined;
-    const rows = settings?.['tableTemplateSampleRows'] as unknown[][] | undefined;
-    return rows ?? [];
-  });
-
-  /**
-   * TZ-104.7 NIT #1 — defensive width normalization. Legacy DB rows from
-   * pre-TZ-104.6 epochs (or dev-fixture columns written without width)
-   * can have col.width === undefined. Splicing '${undefined}%' into the
-   * template collapses the column to 0px. Fall back to equal share so
-   * legacy rows still render visibly.
-   */
-  protected readonly columnsGridTemplate = computed<string>(() => {
-    const cols = this.block().columns;
-    if (!cols || cols.length === 0) return '1fr';
-    const total = cols.reduce((sum, c) => sum + (c.width ?? 1), 0);
-    return cols.map((c) => `${((c.width ?? 1) / total) * 100}fr`).join(' ');
-  });
-
-  protected readonly typeLabel = computed<string>(
-    () => BLOCK_TYPE_LABELS[this.block().type] ?? this.block().type,
-  );
-
-  protected readonly bindingBadge = computed<string | null>(() => {
-    const b = this.block().dataBinding;
-    if (!b) return null;
-    if (b.source === 'static') return `static: ${b.value ?? ''}`;
-    if (b.field) return `${b.source}.${b.field}`;
-    return b.source;
-  });
-
-  protected readonly bindingBadgeTooltip = computed<string>(() => {
-    const b = this.block().dataBinding;
-    if (!b) return '';
-    const parts: string[] = [b.source];
-    if (b.field) parts.push(b.field);
-    if (b.format) parts.push(`format: ${b.format}`);
-    return parts.join(' · ');
-  });
-
-  /**
-   * Per-type rendering — for MVP we keep all types text-based (no image
-   * upload, no table render). The shape is '{title} · {content}' so the
-   * user can see the input even without visual fidelity.
-   *
-   * Also reused as the multi-column path's preamble (TZ-104.7 NIT #2).
-   */
-  protected readonly renderedContent = computed<string>(() => {
-    const b = this.block();
-    const parts: string[] = [];
-    if (b.title) parts.push(b.title);
-    if (b.content) parts.push(b.content);
-    if (!parts.length) {
-      // No content — show a placeholder appropriate to the type
-      const placeholders: Record<BlockType, string> = {
-        header: 'Заголовок без текста',
-        text: 'Текстовый блок без содержимого',
-        table: 'Таблица без шаблона',
-        image: 'Изображение не выбрано',
-        signature: 'Место для подписи',
-        spacer: 'Разделитель',
-      };
-      return placeholders[b.type] ?? '—';
-    }
-    return parts.join(' · ');
-  });
+  // ─────────────────────────────────────────────────────────────────
+  // PURE HANDLERS — stay in component (emit outputs directly, no state)
+  // ─────────────────────────────────────────────────────────────────
 
   protected onSelect(event: Event): void {
     event.stopPropagation();
@@ -1449,7 +892,6 @@ export class BlockRendererComponent {
     const keyEvent = event as KeyboardEvent;
     keyEvent.preventDefault();
     const currentEl = keyEvent.target as HTMLElement;
-    // Check if overlay block — overlay blocks are in the overlay layer, not in cdkDropList
     const isOverlay = currentEl.closest('.block-renderer--overlay');
     const container = isOverlay
       ? currentEl.closest('.canvas-overlay-layer')
@@ -1459,6 +901,21 @@ export class BlockRendererComponent {
     const idx = Array.from(allBlocks).indexOf(currentEl);
     const next = direction === 'down' ? allBlocks[idx + 1] : allBlocks[idx - 1];
     if (next) next.focus();
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // FORMATTERS — stay in component
+  // ─────────────────────────────────────────────────────────────────
+
+  /**
+   * Wraps col.content (HTML string from TipTap) in a SafeHtml so that
+   * inline style attributes for bold/italic/color/highlight pass through
+   * to the rendered output. Without this, columns render as plain text.
+   *
+   * content ?? '' defensively handles missing content (empty SafeHtml).
+   */
+  protected byPassHtml(content: string | undefined): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(content ?? '');
   }
 
   /** Format a table cell value based on column type. */
