@@ -59,6 +59,12 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+    # TZ-236.C.1: bridge for Gotenberg → host backend so template background images
+    # (/uploads/document-templates/...) rendered as relative URLs in renderHtml
+    # can be resolved by Chromium. host.docker.internal points to host's loopback
+    # (Docker Desktop standard + host-gateway user-defined network alias on Linux).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 volumes:
   mongo-data:

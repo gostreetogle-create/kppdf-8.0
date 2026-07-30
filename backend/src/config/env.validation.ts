@@ -26,4 +26,8 @@ export const envValidationSchema = Joi.object({
   // TZ-236.B: Gotenberg microservice URL (TZ-236.A.1 Docker).
   // Optional: defaults to http://localhost:3001 in PdfRenderService.
   GOTENBERG_URL: Joi.string().uri().optional(),
+  // TZ-236.C.1: Public base URL for absolute asset URLs in PDF rendering
+  // (background images fetched by Gotenberg via host.docker.internal).
+  // Optional: defaults to http://host.docker.internal:3000 in PdfRenderService.
+  BACKEND_PUBLIC_URL: Joi.string().uri().optional(),
 });
