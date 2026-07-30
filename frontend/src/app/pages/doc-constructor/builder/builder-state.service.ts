@@ -212,7 +212,11 @@ export class BuilderStateService {
    */
   private readonly save$ = new Subject<{ _id: string; patch: Partial<TemplateBlock> }>();
 
-  /** Read-only Observable view of the save sink. Page.ts subscribes here. */
+  // TRANSIENT (TZ-235.A Round 4): Round 4 will move the save pipeline
+  // (groupBy → debounceTime → switchMap → takeUntilDestroyed) INTO this
+  // service constructor. Until then, page.ts subscribes here. Do NOT use
+  // `@deprecated` — that would trigger IDE/ESLint warnings on the page.ts
+  // consumer, which is the current sanctioned wiring.
   readonly saveEvents$: Observable<{ _id: string; patch: Partial<TemplateBlock> }> =
     this.save$.asObservable();
 
@@ -285,8 +289,17 @@ export class BuilderStateService {
 
   // NOTE (TZ-235.A Round 3 reviewer): `savedTick` / `beginSavedTick()` /
   // `currentSavedTick` getter were removed. BuilderPage handlers hold their
-  // own page-level tick counter for the 2s 'saved'->'idle' revert. Round 4
-  // will move the save pipeline INTO this service (constructor + takeUntilDestroyed),
-  // and a fresh monotonic counter will be re-introduced then if needed.
+  // own page-level tick counter for the 2s 'saved'->'idle' revert.
+  //
+  // @see TZ-235.A Round 4 — handler migration will:
+  //   1. Re-inject blocksSvc, templatesSvc, http, baseUrl, toast for direct
+  //      service-internal use (handlers currently live in page.ts).
+  //   2. Activate route + router for the new service constructor (route-param
+  //      watchers move into service in Round 4; page.ts no longer subscribes).
+  //   3. Keep textBlocksSvc + tableTemplatesSvc permanently DEAD (their work
+  //      is now done by `textsRes` / `tablesRes` httpResources directly).
+  //   4. Pick a fresh debounce/revert strategy in service (likely RxJS
+  //      `auditTime` + `tap` state machine, or a simpler signal-driven
+  //      approach — leaving implementation choice open).
 
 }
