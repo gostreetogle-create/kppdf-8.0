@@ -210,7 +210,7 @@ flowBlocks = computed(() => blocks.filter(b => !isOverlayBlock(b) && !isPosition
    - `[style.left.px]`, `[style.top.px]` — позиция X/Y
    - `[style.width.px]`, `[style.height.px]` — размер через сигналы
    - Resize handle в правом нижнем углу для изменения width/height
-   - Snap-to-grid + block edge snap + boundary clamp
+   - Boundary clamp + minimum-size contract; magnetic grid and alignment guides are deferred to TZ-261
    - **Сигналы для плавности:** `dragActive/dragLeft/dragTop`, `resizeActive/resizeWidth/resizeHeight`
 
 ### `BuilderInspectorComponent` — инспектор
