@@ -29,6 +29,7 @@ import { CdkDrag } from '@angular/cdk/drag-drop';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { LucideAngularModule } from 'lucide-angular';
 import type { TemplateBlock } from '../../../shared/template-block/template-block.types';
+import type { Rect } from './snap-engine';
 import {
   BlockRendererStateService,
   OVERLAY_DEFAULT_WIDTH,
@@ -275,6 +276,15 @@ export class BlockRendererComponent {
   readonly overlayMove = output<{ block: TemplateBlock; overlayLeft: number; overlayTop: number }>();
   readonly overlayResize = output<{ block: TemplateBlock; imageWidth: number; imageHeight: number }>();
   readonly deleteRequest = output<string>();
+  /**
+   * Live drag rectangle for the overlay block (TZ-237.MAGNETIC-GRID-r0).
+   * Emits `null` when no drag is active or when only a resize gesture
+   * is in progress. Consumed by `BuilderCanvasComponent` to render
+   * alignment guides against neighbouring overlay blocks. The parent
+   * never reads this synchronously — Angular signal change detection
+   * handles the propagation.
+   */
+  readonly dragRectChange = output<Rect | null>();
 
   // ── DI ──
   protected readonly state = inject(BlockRendererStateService);
@@ -296,6 +306,9 @@ export class BlockRendererComponent {
     effect(() => this.state.snapEnabled.set(this.snapEnabled()));
     effect(() => this.state.gridSize.set(this.gridSize()));
     effect(() => this.state.boundaryPadding.set(this.boundaryPadding()));
+
+    // TZ-237.MAGNETIC-GRID-r0: forward dragRect for alignment-guide math.
+    effect(() => this.dragRectChange.emit(this.state.dragRect()));
 
     // Sync width & marginLeft from block settings when block changes
     effect(() => {

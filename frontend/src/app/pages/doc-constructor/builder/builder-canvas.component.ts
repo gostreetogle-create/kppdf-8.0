@@ -1,10 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { CdkDropList, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { BlockRendererComponent } from './block-renderer.component';
 import { PiCanvasPageComponent } from '../../../shared/ui/canvas/pi-canvas-page.component';
 import { blockKey, type TemplateBlock } from '../../../shared/template-block/template-block.types';
 import { moveItemInArray } from '../../../shared/util/move-item-in-array';
 import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
+import {
+  computeAlignmentGuides,
+  overlayBlockToRect,
+  type Rect,
+  type SnapGuide,
+} from './snap-engine';
 
 /**
  * BuilderCanvas — center pane of the document constructor.
@@ -88,12 +94,39 @@ import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
             (multiSelect)="onMultiSelect($event)"
             (widthChange)="onBlockWidthChange(block, $event)"
             (deleteRequest)="deleteRequest.emit($event)"
+            (dragRectChange)="onChildDragRect($event)"
             (overlayMove)="onOverlayMove($event)"
             (overlayResize)="onOverlayResize($event)"
             [snapEnabled]="snapEnabled()"
             [gridSize]="gridSize()"
             [boundaryPadding]="boundaryPadding()"
           />
+        }
+
+        @if (snapEnabled()) {
+          <!-- TZ-237.MAGNETIC-GRID-r0: visible magnetic grid dots overlay. -->
+          <div
+            class="canvas-builder__grid-layer"
+            aria-hidden="true"
+            [style.background-size.px]="gridSize()"
+          ></div>
+        }
+        @if (currentGuides().length > 0) {
+          <!-- TZ-237.MAGNETIC-GRID-r0: alignment guides for the active overlay drag. -->
+          <div class="canvas-builder__guides-layer" aria-hidden="true">
+            @for (g of currentGuides(); track g.edge + ':' + g.targetBlockId) {
+              <div
+                class="canvas-builder__guide"
+                [class.canvas-builder__guide--center]="g.kind === 'center'"
+                [class.canvas-builder__guide--x]="g.axis === 'x'"
+                [class.canvas-builder__guide--y]="g.axis === 'y'"
+                [style.left.px]="g.axis === 'x' ? g.coordinate : null"
+                [style.top.px]="g.axis === 'y' ? g.coordinate : null"
+                [attr.data-edge]="g.edge"
+                [attr.data-target]="g.targetBlockId"
+              ></div>
+            }
+          </div>
         }
       </div>
 
@@ -244,6 +277,54 @@ import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
         pointer-events: auto;
       }
     `,
+
+    /* ── TZ-237.MAGNETIC-GRID-r0: magnetic grid + alignment guides ── */
+    `
+      .canvas-builder__grid-layer {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background-image: radial-gradient(
+          circle at 1px 1px,
+          rgba(15, 23, 42, 0.18) 1px,
+          transparent 0
+        );
+      }
+      .canvas-builder__guides-layer {
+        position: absolute;
+        inset: 0;
+        z-index: 100;
+        pointer-events: none;
+      }
+      .canvas-builder__guide {
+        position: absolute;
+        pointer-events: none;
+        background: rgba(220, 38, 38, 0.85);
+      }
+      .canvas-builder__guide--x {
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        transform: translateX(-0.5px);
+      }
+      .canvas-builder__guide--y {
+        left: 0;
+        right: 0;
+        height: 1px;
+        transform: translateY(-0.5px);
+      }
+      .canvas-builder__guide--center {
+        background: rgba(37, 99, 235, 0.85);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .canvas-builder__guide { transition: none; }
+      }
+      @media print {
+        .canvas-builder__grid-layer,
+        .canvas-builder__guides-layer { display: none !important; }
+      }
+    `,
   ],
 })
 export class BuilderCanvasComponent {
@@ -293,6 +374,65 @@ export class BuilderCanvasComponent {
     if (block.type !== 'image') return false;
     const settings = block.settings as Record<string, unknown> | undefined;
     return (settings?.['overlay'] as boolean) ?? false;
+  }
+
+  // ═══ TZ-237.MAGNETIC-GRID-r0: magnetic grid + alignment guides ═══
+
+  /**
+   * Live drag rectangle of the overlay block currently being dragged.
+   * `null` while no drag is in progress. Set by child renderers via
+   * `onChildDragRect()` bound to the `dragRectChange` output.
+   *
+   * Single-block drag only. Multi-select drag propagation is a future
+   * slice.
+   */
+  protected readonly currentDragRect = signal<Rect | null>(null);
+
+  /**
+   * Reactive alignment guides computed from `currentDragRect` and all
+   * other overlay blocks on the canvas. Re-emits whenever the active
+   * drag rect or the block list changes.
+   */
+  protected readonly currentGuides = computed<readonly SnapGuide[]>(() =>
+    this.computeGuidesForCurrentDrag(),
+  );
+
+  /**
+   * Handler bound to each child renderer's `dragRectChange` output.
+   * Replaces any previous drag (only one overlay drag is supported per
+   * slice). `null` clears the guides on drag end / cancel / destroy.
+   */
+  protected onChildDragRect(rect: Rect | null): void {
+    this.currentDragRect.set(rect);
+  }
+
+  /**
+   * Compute deterministic, threshold-filtered alignment guides for the
+   * currently active drag against all overlay neighbours. Self-exclusion
+   * is enforced both here AND inside `computeAlignmentGuides` (defence
+   * in depth, because the engine never trusts the caller).
+   *
+   * Block identity uses the project's `blockKey(block)` helper — R1
+   * `TemplateBlock` does NOT carry a `block.id` field; identity is
+   * computed via `(block._id ?? block.tempId ?? "idx-${order}")`.
+   */
+  private computeGuidesForCurrentDrag(): readonly SnapGuide[] {
+    const dragged = this.currentDragRect();
+    if (!dragged) return [];
+    const blocks = this.blocks() ?? [];
+    const others: Rect[] = [];
+    for (const b of blocks) {
+      if (!this.isOverlayBlock(b)) continue;
+      const r = overlayBlockToRect({
+        blockId: blockKey(b),
+        // `settings` on `TemplateBlock` is `Record<string, unknown> | undefined`;
+        // the engine accepts `Readonly<Record<string, unknown>> | null` so the
+        // contract lines up without `any` casts.
+        settings: b.settings ?? null,
+      });
+      if (r) others.push(r);
+    }
+    return computeAlignmentGuides(dragged, others);
   }
 
   /** Get only overlay blocks for absolute positioning. */

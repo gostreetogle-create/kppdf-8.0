@@ -1,4 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
+import { blockKey } from '../../../shared/template-block/template-block.types';
+import type { Rect } from './snap-engine';
 
 import {
   BLOCK_TYPE_LABELS,
@@ -192,13 +194,46 @@ export class BlockRendererStateService {
       return placeholders[b.type] ?? '—';
     }
     return parts.join(' · ');
-  });
+  });      // ═══════════════════════════════════════════════════════════
+      //  Drag geometry (TZ-237.MAGNETIC-GRID-r0)
+      // ═══════════════════════════════════════════════════════════
+      /**
+       * Live rectangle of the overlay block during drag. Returns `null`
+       * when no drag is active, when only a resize is in progress, or
+       * when the block has no positive image dimensions.
+       *
+       * Reads: `dragActive`, `dragLeft`, `dragTop`, and the existing
+       * fully-typed `imageWidth()` / `imageHeight()` computeds — we
+       * deliberately do NOT re-introspect the indexed `settings` record
+       * to keep type narrowing clean. Returns `null` while a resize
+       * (not a drag) is in progress so consumers don't confuse the two
+       * gestures — the alignment-guide engine is drag-only for this
+       * vertical slice.
+       */
+      readonly dragRect = computed<Rect | null>(() => {
+        if (!this.dragActive()) return null;
+        if (this.resizeActive()) return null;
+        const w = this.imageWidth();
+        const h = this.imageHeight();
+        if (w == null || h == null) return null;
+        if (!(w > 0) || !(h > 0)) return null;
+        return {
+          // blockKey is the project's stable block identity (uses _id,
+          // tempId, or an order-based index). The R1 contract is to
+          // NEVER reach for `block.id` directly — it does not exist.
+          blockId: blockKey(this.block()),
+          left: this.dragLeft(),
+          top: this.dragTop(),
+          width: w,
+          height: h,
+        };
+      });
 
-  // ═══════════════════════════════════════════════════════════
-  //  Cell formatting (pure function)
-  // ═══════════════════════════════════════════════════════════
+      // ═══════════════════════════════════════════════════════════
+      //  Cell formatting (pure function)
+      // ═══════════════════════════════════════════════════════════
 
-  formatTableCell(value: unknown, type: string): string {
+      formatTableCell(value: unknown, type: string): string {
     if (value == null || value === '') return '—';
     if (type === 'bool') return value ? 'Да' : 'Нет';
     if (type === 'number') {
