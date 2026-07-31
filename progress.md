@@ -2120,3 +2120,72 @@ PO чётко обозначил: **фокус теперь на Констру�
 
 ---
 
+## [2026-07-31] — TZ-237.MAGNETIC-GRID-r0 — Magnetic Grid + Alignment Guides shipped
+
+### Результат
+
+Полный vertical slice для Конструктора документов готов к merge / review.
+Все 5 атомарных коммитов на `feat/builder-magnetic-grid` запушены в origin.
+
+### Что сделано
+
+1. `d15b5f7` — `feat(builder): add magnetic grid and alignment guides (TZ-237.MAGNETIC-GRID-r0)`.
+   5 файлов, +771/-8. Pure typed geometry engine в `snap-engine.ts`
+   (290 LoC, no DI, no DOM), state extension на dragRect в `BlockRendererStateService`,
+   output `dragRectChange` в `BlockRendererComponent` (effect-forwarding),
+   canvas wiring (`currentDragRect` signal, `currentGuides` computed,
+   `onChildDragRect` handler, `@if`-гварды для grid+guides слоёв, CSS
+   с `@media print { display:none !important }` и `prefers-reduced-motion`).
+2. `f10a0e2` — `feat(builder): add DOM-contract spec for magnetic grid +
+   alignment guides`. +296 LoC, 7 jest TestBed тестов в
+   `builder-canvas.component.spec.ts`. Locks §10 acceptance: grid toggle,
+   guide cleanup on emit(null), aria-hidden, axis/kind/css classes,
+   data-edge/data-target, axis-style binding, source-file-inspected
+   print-CSS + pointer-events:none.
+3. `f1109e6` — `feat(builder): collapse alignment guides per (axis, kind,
+   edge)`. Nit 1: 3 NEW helper `collapseAlignmentGuides` (pure, no
+   engine semantics change) + caller-side apply в
+   `computeGuidesForCurrentDrag`. 7 NEW unit tests для collapse helper.
+4. `38e0af7` — `chore(builder): harden onChildDragRect + multi-select TODO
+   marker (Nits 3+4)`. One-word null→null short-circuit guard +
+   JSDoc marker на `currentDragRect` для будущего multi-select.
+5. `<commit>` — `docs(builder): document magnetic-grid + alignment-guides`.
+   Single insertion в `docs/pages/builder.page.md` между секциями
+   "TZ reference" и "Известные ограничения": поведение слоёв,
+   архитектура (3 NEW + 3 MOD файлов), out-of-scope deferrals.
+
+### Состояние проверок @ HEAD
+
+- `pnpm exec tsc -p tsconfig.app.json` — exit 0 (typecheck чист).
+- `pnpm exec jest snap-engine` — 34/34 (engine math + collapse helper).
+- `pnpm exec jest builder-canvas DOM spec` — 7/7 (DOM-contract).
+- `pnpm exec jest doc-constructor` — 98/98 в 6 suites (regression).
+
+### Branch state
+
+- Local + remote HEAD synced на `9e82dce` (или актуальный docs commit hash).
+- Branch: `feat/builder-magnetic-grid`.
+- Public URL: https://github.com/gostreetogle-create/kppdf-8.0/tree/feat/builder-magnetic-grid
+- 5 commits ahead of `origin/main` (после docs коммита).
+
+### Что НЕ закрыто в этой сессии (deferred)
+
+- **Browser visual verify** — нужен живой `pnpm start`. Любой следующий сеанс.
+- **Hygiene commit 5314931** на `local-home-mirror` — отдельный upstream PR.
+- **Pre-existing baseline**: `StorageItemsPage` httpMock утечка `/api/warehouses` —
+  НЕ связано с magnetic-grid.
+
+### Файлы в этой сессии (внутри `frontend/src/app/pages/doc-constructor/builder/` + 1 docs)
+
+```
+NEW     snap-engine.ts                              (+280 LoC)
+NEW     snap-engine.spec.ts                         (+485 LoC, 34 unit tests)
+NEW     builder-canvas.component.spec.ts            (+296 LoC, 7 DOM-contract tests)
+MOD     block-renderer-state.service.ts             (+25 LoC)
+MOD     block-renderer.component.ts                 (+10 LoC)
+MOD     builder-canvas.component.ts                 (+92 LoC)
+MOD     docs/pages/builder.page.md                  (+64 LoC, new section)
+```
+
+---
+
