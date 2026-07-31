@@ -21,9 +21,9 @@
     "lint-staged": "lint-staged"
   },
   "lint-staged": {
-    "frontend/**/*.ts": ["cd frontend && npx eslint --fix", "cd frontend && npx prettier --write"],
-    "frontend/**/*.html": ["cd frontend && npx prettier --write --parser angular"],
-    "frontend/**/*.{scss,css}": ["cd frontend && npx prettier --write"]
+    "frontend/**/*.ts": ["pnpm --dir frontend exec eslint --fix", "pnpm --dir frontend exec prettier --write"],
+    "frontend/**/*.html": ["pnpm --dir frontend exec prettier --write --parser angular"],
+    "frontend/**/*.{scss,css}": ["pnpm --dir frontend exec prettier --write"]
   },
   "comments": {
     "start": "Default: pre-flight checks only (safe, exits cleanly). Use `npm run start:all` to actually start everything.",
