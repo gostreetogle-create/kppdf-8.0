@@ -86,9 +86,9 @@
 | Файл | Компонент | Описание |
 |------|-----------|----------|
 | `builder.page.ts` | `BuilderPage` | Оркестратор: состояние, auto-save, хендлеры |
-| `builder-canvas.component.ts` | `BuilderCanvasComponent` | Холст: flow/overlay слои, CDK drag-drop |
+| `builder-canvas.component.ts` | `BuilderCanvasComponent` | Холст: flow/legacy overlay/positioned слои, CDK drag-drop |
 | `builder-inspector.component.ts` | `BuilderInspectorComponent` | Правая панель: 3 режима |
-| `block-renderer.component.ts` | `BlockRendererComponent` | Рендер одного блока (flow или overlay) |
+| `block-renderer.component.ts` | `BlockRendererComponent` | Рендер одного блока (flow, legacy overlay или positioned) |
 | `builder.types.ts` | `AddBlockPayload` | Типы для добавления блоков |
 | `template-setup-dialog.component.ts` | `TemplateSetupDialogComponent` | Диалог создания/дублирования шаблона |
 
@@ -121,8 +121,8 @@
 | `backgroundOpacity` | `number` | Прозрачность фона |
 | `headerText` / `footerText` | `string` | Шапка/подвал |
 | `pageNumbering` | `boolean` | Нумерация |
-| `pageSize` | `string` | A4 / A5 / Letter |
-| `snapEnabled` | `boolean` | Snap-to-grid для overlay |
+| `pageSize` | `string` | A3 / A4 / A5 / Letter |
+| `snapEnabled` | `boolean` | Snap-to-grid для legacy image overlay |
 | `gridSize` | `number` | Шаг сетки |
 | `boundaryPadding` | `number` | Отступ от краёв |
 
@@ -135,21 +135,27 @@
 | `blockWidthChange` | `{ block, width, marginLeft, ... }` |
 | `overlayMove` | `{ block, overlayLeft, overlayTop }` |
 | `overlayResize` | `{ block, imageWidth, imageHeight }` |
+| `positionedGeometryChange` | `{ block, geometry: { x, y, width, height } }` |
 | `canvasClick` | `void` |
 | `deleteRequest` | `string` |
 
 **Разделение блоков (computed):**
 ```typescript
 isOverlayBlock(block): boolean {
-  if (block.type !== 'image') return false;
-  return block.settings?.['overlay'] ?? false;
+  return block.type === 'image' && block.settings?.['overlay'] === true;
 }
-overlayBlocks = computed(() => blocks.filter(isOverlayBlock))
-flowBlocks    = computed(() => blocks.filter(b => !isOverlayBlock(b)))
+isPositionedBlock(block): boolean {
+  return (block.type === 'text' || block.type === 'header')
+    && readPositionedGeometry(block.settings) !== null;
+}
+positionedBlocks = computed(() => blocks.filter(isPositionedBlock));
+overlayBlocks = computed(() => blocks.filter(b => isOverlayBlock(b) && !isPositionedBlock(b)));
+flowBlocks = computed(() => blocks.filter(b => !isOverlayBlock(b) && !isPositionedBlock(b)));
 ```
 
 - **Flow блоки** — рендерятся внутри `cdkDropList` (reorder, drag-and-drop)
-- **Overlay блоки** — рендерятся в `.canvas-overlay-layer` (absolute positioning)
+- **Legacy image overlay** — рендерится в `.canvas-overlay-layer` (absolute positioning)
+- **Positioned text/header** — рендерится в `.canvas-overlay-layer` по document-space geometry
 - **Dropzone** — `cdkDropList` с `connectedTo: canvas-droplist` для drag-from-palette
 
 ### `BlockRendererComponent` — рендер блока
@@ -176,9 +182,10 @@ flowBlocks    = computed(() => blocks.filter(b => !isOverlayBlock(b)))
 | `widthChange` | `{ width, marginLeft }` |
 | `overlayMove` | `{ block, overlayLeft, overlayTop }` |
 | `overlayResize` | `{ block, imageWidth, imageHeight }` |
+| `positionedGeometryChange` | `{ block, geometry: { x, y, width, height } }` |
 | `deleteRequest` | `string` |
 
-**Два режима рендера:**
+**Три режима рендера:**
 
 1. **Flow (по умолчанию):** внутри `cdkDrag`, участвует в reorder
    - text/header: контент + column grid
@@ -189,11 +196,20 @@ flowBlocks    = computed(() => blocks.filter(b => !isOverlayBlock(b)))
    - selection: gold border + shadow
    - resize хэндлы: левый (marginLeft) + правый (width) — боковые полосы
 
-2. **Overlay (absolute):** вне CDK, `position: absolute` в `.canvas-overlay-layer`
+2. **Legacy image overlay (absolute):** вне CDK, `position: absolute` в `.canvas-overlay-layer`
    - Только для `type === 'image'` с `settings.overlay === true`
+   - Сохраняет legacy-поля `overlayLeft`, `overlayTop`, `imageWidth`, `imageHeight`
+
+3. **Positioned (document-space absolute):** вне CDK, только для `text`/`header` с явным `settings.layoutMode === 'positioned'`
+   - `settings.geometry = { x, y, width, height }` в канонических CSS px от верхнего левого угла страницы
+   - `x/y/width/height` округляются до целых и ограничиваются page bounds + minimum size
+   - drag и resize работают через rendered-canvas scale; viewport/scroll не сохраняются в geometry
+   - переключение выполняется только через инспектор «Свободное позиционирование»
+   - таблицы и многостраничный flow остаются flow-блоками
+
    - `[style.left.px]`, `[style.top.px]` — позиция X/Y
    - `[style.width.px]`, `[style.height.px]` — размер через сигналы
-   - Corner resize handle (пропорциональный, по диагонали)
+   - Resize handle в правом нижнем углу для изменения width/height
    - Snap-to-grid + block edge snap + boundary clamp
    - **Сигналы для плавности:** `dragActive/dragLeft/dragTop`, `resizeActive/resizeWidth/resizeHeight`
 
@@ -255,11 +271,24 @@ flowBlocks    = computed(() => blocks.filter(b => !isOverlayBlock(b)))
 #### Режим 3: Свойства шаблона (templateSelected === true)
 
 - **Ориентация:** книжная / альбомная (BookOpen/Columns icons)
-- **Формат страницы:** A4 / A5 / Letter
+- **Формат страницы:** A3 / A4 / A5 / Letter
 - **Прозрачность фона:** ползунок
 - **Шапка / Подвал:** текстовые поля
 - **Нумерация страниц:** toggle
 - **Фоны:** превью загруженных, установка по умолчанию, удаление
+
+## Geometry contract (TZ-259)
+
+`settings.layoutMode` является явным режимом блока: `flow` или `positioned`. Для positioned text/header-блоков persisted geometry хранится в document-space и не зависит от ширины viewport:
+
+```ts
+settings: {
+  layoutMode: 'positioned',
+  geometry: { x: number, y: number, width: number, height: number }
+}
+```
+
+Канонические размеры страницы при 96 dpi: A3 `1123×1587`, A4 `794×1123`, A5 `559×794`, Letter `816×1056` CSS px; landscape меняет местами width/height. UI scale применяется только к presentation layer. Legacy blocks без `geometry` не мигрируются и продолжают работать в прежнем flow/overlay режиме.
 
 ## Состояние (сигналы BuilderPage)
 
@@ -319,6 +348,7 @@ patchBlockSettings(blockId, { settings })
 | `onBlockWidthChange` | `settings.width`, `settings.marginLeft`, `settings.imageWidth`, `settings.imageHeight` |
 | `onOverlayMove` | `settings.overlayLeft`, `settings.overlayTop` |
 | `onOverlayResize` | `settings.imageWidth`, `settings.imageHeight` |
+| `onPositionedGeometryChange` | `settings.layoutMode = 'positioned'`, `settings.geometry` |
 | `onMarginReset` | `settings.width = 100`, `settings.marginLeft = 0` |
 | `onMultiMarginUpdate` | Массовое обновление margin для нескольких блоков |
 | `onTemplateUpdate` | Patch шаблона (orientation, pageSize, headerText, footerText, etc.) |
@@ -413,15 +443,17 @@ Payload варианты (см. `builder.types.ts`):
 | TZ-211 | View mode toggle, блокировка полосы прокрутки, фото-блок |
 | TZ-211 (overlay) | Overlay-режим фото: drag, resize, snap-to-grid, boundary clamp, corner handle |
 | 2026-07-24 | Template properties panel, block resize, margins, print styles |
+| 2026-07-31 | **TZ-259 geometry contract:** explicit positioned text/header mode, document-space geometry, scale-aware drag/resize, Letter page dimensions, backward-compatible persistence |
 | 2026-07-25 | **Overlay bugfixes:** кеширование hostEl при drag, сигналы resizeActive/resizeWidth/resizeHeight вместо direct DOM, scrollHeight для нижней границы, кешированный paper ref в snapToBlockEdges, сигналы dragActive/dragLeft/dragTop для drag-позиции, авто-очистка override при обновлении settings |
 
 ## Известные ограничения
 
-1. **Индикатор snap** — только смена цвета outline, без визуальных линий-направляющих
-2. **Нет snap по центру блоков** — только по краям
-3. **Дебаунс 1500ms** — фото визуально остаётся в новом размере, но на сервере изменения применяются через 1.5с + сеть
-4. **Fallback imageWidth** — `overlayDefaultWidth: 300` в шаблоне, но `imageWidth() ?? 200` в `onCornerResizeStart` (несоответствие)
-5. **Без ImageHeight по умолчанию** — высота overlayDefaultHeight = 200, может не соответствовать реальному соотношению сторон фото
+1. **Positioned PDF layout** — текущая TZ-259 сохраняет и восстанавливает geometry в builder; server-side generated HTML/PDF absolute layout требует отдельного render-contract task и не выполняется массово для legacy flow blocks.
+2. **Индикатор snap** — только смена цвета outline, без визуальных линий-направляющих.
+3. **Нет snap по центру блоков** — только по краям.
+4. **Дебаунс 1500ms** — фото визуально остаётся в новом размере, но на сервере изменения применяются через 1.5с + сеть.
+5. **Fallback imageWidth** — `overlayDefaultWidth: 300` в шаблоне, но `imageWidth() ?? 200` в `onCornerResizeStart` (несоответствие).
+6. **Без ImageHeight по умолчанию** — высота `overlayDefaultHeight = 200` может не соответствовать реальному соотношению сторон фото.
 
 ## Файлы
 
@@ -436,4 +468,4 @@ Payload варианты (см. `builder.types.ts`):
 
 ---
 
-_Создано: 2026-07-19. Последнее обновление: 2026-07-25. Охватывает: TZ-86, TZ-87, TZ-104, TZ-170, TZ-211, overlay bugfixes._
+_Создано: 2026-07-19. Последнее обновление: 2026-07-31. Охватывает: TZ-86, TZ-87, TZ-104, TZ-170, TZ-211, overlay bugfixes и TZ-259._

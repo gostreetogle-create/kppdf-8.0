@@ -74,6 +74,8 @@ const NAV_CATEGORIES: NavCategory[] = [
     icon: Briefcase,
     items: [
       { path: '/organizations', label: 'Организации' },
+      { path: '/counterparties', label: 'Контрагенты' },
+      { path: '/persons', label: 'Физические лица' },
       { path: '/contracts', label: 'Договоры' },
       { path: '/orders', label: 'Заказы' },
     ],
@@ -85,6 +87,8 @@ const NAV_CATEGORIES: NavCategory[] = [
     items: [
       { path: '/dictionaries', label: 'Все справочники' },
       { path: '/categories', label: 'Категории' },
+      { path: '/units', label: 'Единицы измерения' },
+      { path: '/currencies', label: 'Валюты' },
     ],
   },
   {

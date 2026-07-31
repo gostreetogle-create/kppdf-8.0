@@ -5,6 +5,7 @@ import { PiCanvasPageComponent } from '../../../shared/ui/canvas/pi-canvas-page.
 import { blockKey, type TemplateBlock } from '../../../shared/template-block/template-block.types';
 import { moveItemInArray } from '../../../shared/util/move-item-in-array';
 import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
+import { readPositionedGeometry } from './builder-geometry';
 
 /**
  * BuilderCanvas — center pane of the document constructor.
@@ -77,13 +78,31 @@ import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
         }
       </div>
 
-      <!-- Overlay blocks layer (outside cdkDropList for free absolute positioning) -->
+      <!-- Positioned and legacy overlay blocks share one absolute presentation layer. -->
       <div class="canvas-overlay-layer">
+        @for (block of positionedBlocks(); track blockKey(block)) {
+          <app-block-renderer
+            [block]="block"
+            [selected]="blockKey(block) === selectedId()"
+            [multiSelected]="selectedIds().has(blockKey(block))"
+            [pageSize]="pageSize()"
+            [orientation]="orientation()"
+            (select)="onSelect($event)"
+            (multiSelect)="onMultiSelect($event)"
+            (positionedGeometryChange)="onPositionedGeometryChange($event)"
+            (deleteRequest)="deleteRequest.emit($event)"
+            [snapEnabled]="snapEnabled()"
+            [gridSize]="gridSize()"
+            [boundaryPadding]="boundaryPadding()"
+          />
+        }
         @for (block of overlayBlocks(); track blockKey(block)) {
           <app-block-renderer
             [block]="block"
             [selected]="blockKey(block) === selectedId()"
             [multiSelected]="selectedIds().has(blockKey(block))"
+            [pageSize]="pageSize()"
+            [orientation]="orientation()"
             (select)="onSelect($event)"
             (multiSelect)="onMultiSelect($event)"
             (widthChange)="onBlockWidthChange(block, $event)"
@@ -256,13 +275,14 @@ export class BuilderCanvasComponent {
   readonly headerText = input<string>('');
   readonly footerText = input<string>('');
   readonly pageNumbering = input<boolean>(false);
-  readonly pageSize = input<'A3' | 'A4' | 'A5'>('A4');
+  readonly pageSize = input<'A3' | 'A4' | 'A5' | 'Letter'>('A4');
 
   protected readonly maxWidthPx = computed<number>(() => {
     const isLandscape = this.orientation() === 'landscape';
     const ps = this.pageSize();
     if (ps === 'A3') return isLandscape ? 1100 : 900;
     if (ps === 'A5') return isLandscape ? 680 : 520;
+    if (ps === 'Letter') return isLandscape ? 900 : 720;
     return isLandscape ? 900 : 720;
   });
 
@@ -270,11 +290,27 @@ export class BuilderCanvasComponent {
   readonly multiSelect = output<TemplateBlock>();
   readonly reorder = output<TemplateBlock[]>();
   readonly dropAdd = output<{ payload: AddBlockPayload; insertIndex: number }>();
-  readonly blockWidthChange = output<{ block: TemplateBlock; width: number; marginLeft: number; imageWidth?: number; imageHeight?: number }>();
+  readonly blockWidthChange = output<{
+    block: TemplateBlock;
+    width: number;
+    marginLeft: number;
+    imageWidth?: number;
+    imageHeight?: number;
+  }>();
   /** Overlay move (X/Y position change via drag). */
-  readonly overlayMove = output<{ block: TemplateBlock; overlayLeft: number; overlayTop: number }>();
+  readonly overlayMove = output<{
+    block: TemplateBlock;
+    overlayLeft: number;
+    overlayTop: number;
+  }>();
   /** Overlay resize (corner handle proportional resize). */
-  readonly overlayResize = output<{ block: TemplateBlock; imageWidth: number; imageHeight: number }>();
+  readonly overlayResize = output<{
+    block: TemplateBlock;
+    imageWidth: number;
+    imageHeight: number;
+  }>();
+  readonly positionedGeometryChange =
+    output<import('./builder-geometry').PositionedGeometryChange>();
   readonly canvasClick = output<void>();
   /** TZ-211: Emitted when user clicks delete button on a block. */
   readonly deleteRequest = output<string>();
@@ -288,21 +324,37 @@ export class BuilderCanvasComponent {
   protected readonly CANVAS_DROPLIST_ID: string = CANVAS_DROPLIST_ID;
   protected readonly blockKey = blockKey;
 
-  /** Check if a block is in overlay mode. */
+  /** Check if a block is a legacy image overlay. */
   protected isOverlayBlock(block: TemplateBlock): boolean {
     if (block.type !== 'image') return false;
     const settings = block.settings as Record<string, unknown> | undefined;
     return (settings?.['overlay'] as boolean) ?? false;
   }
 
-  /** Get only overlay blocks for absolute positioning. */
-  protected readonly overlayBlocks = computed(() =>
-    this.blocks().filter((b) => this.isOverlayBlock(b)),
+  /**
+   * Positioned mode is explicit and currently supported only by text/header
+   * blocks. Tables and multi-page flow blocks remain in the flow layer until a
+   * separate pagination contract exists.
+   */
+  protected isPositionedBlock(block: TemplateBlock): boolean {
+    if (block.type !== 'text' && block.type !== 'header') return false;
+    const settings = block.settings as Record<string, unknown> | undefined;
+    return readPositionedGeometry(settings) !== null;
+  }
+
+  /** Get positioned blocks for absolute document-space rendering. */
+  protected readonly positionedBlocks = computed(() =>
+    this.blocks().filter((b) => this.isPositionedBlock(b)),
   );
 
-  /** Get only flow blocks (non-overlay) for the drop list. */
+  /** Get only legacy image overlay blocks for absolute rendering. */
+  protected readonly overlayBlocks = computed(() =>
+    this.blocks().filter((b) => this.isOverlayBlock(b) && !this.isPositionedBlock(b)),
+  );
+
+  /** Get only flow blocks for the CDK list. */
   protected readonly flowBlocks = computed(() =>
-    this.blocks().filter((b) => !this.isOverlayBlock(b)),
+    this.blocks().filter((b) => !this.isOverlayBlock(b) && !this.isPositionedBlock(b)),
   );
 
   protected onSelect(block: TemplateBlock): void {
@@ -317,15 +369,35 @@ export class BuilderCanvasComponent {
     block: TemplateBlock,
     event: { width: number; marginLeft: number; imageWidth?: number; imageHeight?: number },
   ): void {
-    this.blockWidthChange.emit({ block, width: event.width, marginLeft: event.marginLeft, imageWidth: event.imageWidth, imageHeight: event.imageHeight });
+    this.blockWidthChange.emit({
+      block,
+      width: event.width,
+      marginLeft: event.marginLeft,
+      imageWidth: event.imageWidth,
+      imageHeight: event.imageHeight,
+    });
   }
 
-  protected onOverlayMove(event: { block: TemplateBlock; overlayLeft: number; overlayTop: number }): void {
+  protected onOverlayMove(event: {
+    block: TemplateBlock;
+    overlayLeft: number;
+    overlayTop: number;
+  }): void {
     this.overlayMove.emit(event);
   }
 
-  protected onOverlayResize(event: { block: TemplateBlock; imageWidth: number; imageHeight: number }): void {
+  protected onOverlayResize(event: {
+    block: TemplateBlock;
+    imageWidth: number;
+    imageHeight: number;
+  }): void {
     this.overlayResize.emit(event);
+  }
+
+  protected onPositionedGeometryChange(
+    event: import('./builder-geometry').PositionedGeometryChange,
+  ): void {
+    this.positionedGeometryChange.emit(event);
   }
 
   protected onCanvasClick(event: Event): void {

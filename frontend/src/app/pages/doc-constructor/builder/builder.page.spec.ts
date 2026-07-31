@@ -68,29 +68,33 @@ describe('BuilderPage', () => {
 
   it('starts with null templateId (shows template picker)', () => {
     const fixture = TestBed.createComponent(BuilderPage);
-    const comp = fixture.componentInstance as unknown as { templateId: () => string | null };
-    expect(comp.templateId()).toBeNull();
+    const comp = fixture.componentInstance as unknown as {
+      state: { templateId: () => string | null };
+    };
+    expect(comp.state.templateId()).toBeNull();
   });
 
   it('starts with empty blocks', () => {
     const fixture = TestBed.createComponent(BuilderPage);
-    const comp = fixture.componentInstance as unknown as { blocks: () => unknown[] };
-    expect(comp.blocks().length).toBe(0);
+    const comp = fixture.componentInstance as unknown as {
+      state: { blocks: () => unknown[] };
+    };
+    expect(comp.state.blocks().length).toBe(0);
   });
 
   it('starts with idle save status', () => {
     const fixture = TestBed.createComponent(BuilderPage);
     const comp = fixture.componentInstance as unknown as {
-      saveStatus: () => 'idle' | 'saving' | 'saved' | 'error';
+      state: { saveStatus: () => 'idle' | 'saving' | 'saved' | 'error' };
     };
-    expect(comp.saveStatus()).toBe('idle');
+    expect(comp.state.saveStatus()).toBe('idle');
   });
 
   it('selectedBlock is null when nothing selected', () => {
     const fixture = TestBed.createComponent(BuilderPage);
     const comp = fixture.componentInstance as unknown as {
-      selectedBlock: () => { _id: string } | null;
+      state: { selectedBlock: () => { _id: string } | null };
     };
-    expect(comp.selectedBlock()).toBeNull();
+    expect(comp.state.selectedBlock()).toBeNull();
   });
 });

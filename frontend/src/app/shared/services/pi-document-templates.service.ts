@@ -20,7 +20,7 @@ import {
  * parametrized by:
  *   - `organizationId`: our side (FK → Organization)
  *   - `docTypeId`: meta-classifier (FK → DocType — «КП» / «Договор» / «Акт»)
- *   - `pageSize`: A4 | A5 | Letter | Legal
+ *   - `pageSize`: A3 | A4 | A5 | Letter
  *   - `backgroundImage[]`: array of `/uploads/...` URLs (Phase A.6)
  *
  * Block composition (`TemplateBlock[]`) is NOT exposed on DocumentTemplate
@@ -43,7 +43,7 @@ export interface DocumentTemplate {
   docTypeId: string | { _id: string; name: string; code?: string };
   isDefault: boolean;
   isActive: boolean;
-  pageSize: 'A3' | 'A4' | 'A5';
+  pageSize: 'A3' | 'A4' | 'A5' | 'Letter';
   /** Array of `/uploads/document-templates/{id}/{uuid}.{ext}` URLs (max 5 — Phase A.6). */
   backgroundImage: string[];
   defaultBackgroundIndex: number;

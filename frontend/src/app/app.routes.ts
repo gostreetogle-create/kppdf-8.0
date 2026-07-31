@@ -100,6 +100,17 @@ export const routes: Routes = [
         title: 'KPPDF — Организации',
       },
       {
+        path: 'counterparties',
+        loadComponent: () =>
+          import('./pages/counterparties/counterparties.page').then((m) => m.CounterpartiesPage),
+        title: 'KPPDF — Контрагенты',
+      },
+      {
+        path: 'persons',
+        loadComponent: () => import('./pages/persons/persons.page').then((m) => m.PersonsPage),
+        title: 'KPPDF — Физические лица',
+      },
+      {
         path: 'dictionaries',
         loadComponent: () =>
           import('./pages/dictionaries/dictionaries.page').then((m) => m.DictionariesPage),
@@ -110,6 +121,17 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/dictionaries/categories.page').then((m) => m.CategoriesPage),
         title: 'KPPDF — Категории',
+      },
+      {
+        path: 'units',
+        loadComponent: () => import('./pages/units/units.page').then((m) => m.UnitsPage),
+        title: 'KPPDF — Единицы измерения',
+      },
+      {
+        path: 'currencies',
+        loadComponent: () =>
+          import('./pages/currencies/currencies.page').then((m) => m.CurrenciesPage),
+        title: 'KPPDF — Валюты',
       },
       {
         path: 'products',

@@ -1,0 +1,100 @@
+# TZ-259 — DONE — Builder geometry contract и свободное перемещение блоков
+
+**Completed:** 2026-07-31
+**Branch:** `freebuff/task-bd071bf3-8c60-40ff-abe9-6c82aa30289b`
+**Status:** ✅ DONE
+
+## Итог
+
+Реализован канонический geometry contract для конструктора документов. Positioned-режим включается явно из инспектора только для `text` и `header`; legacy flow-блоки, таблицы и image overlay не мигрируются автоматически.
+
+## Реализовано
+
+- Добавлен `builder-geometry.ts` с единым типизированным контрактом:
+  - `settings.layoutMode: 'flow' | 'positioned'`;
+  - `settings.geometry: { x, y, width, height }`;
+  - document-space coordinates от верхнего левого угла страницы;
+  - canonical A3/A4/A5/Letter dimensions at 96 dpi;
+  - portrait/landscape conversion;
+  - minimum-size and boundary-padding clamp;
+  - rendered/document coordinate conversion with scale and scroll support.
+- Добавлен explicit inspector toggle «Свободное позиционирование».
+- Реализованы positioned drag и resize с:
+  - сохранением document-space geometry;
+  - viewport scale conversion;
+  - re-read viewport coordinates during gesture;
+  - boundary clamp;
+  - cancel handling;
+  - ResizeObserver-based canvas scale refresh.
+- Добавлен component-scoped output bridge:
+  `BlockRendererComponent → BuilderCanvasComponent → BuilderStateService → autosave`.
+- Добавлена поддержка Letter в frontend canvas, setup dialog, document-template DTO/schema и service types.
+- Сохранён backward compatibility:
+  - legacy flow blocks remain in CDK flow layer;
+  - legacy image overlay keeps `overlayLeft`, `overlayTop`, `imageWidth`, `imageHeight`;
+  - tables remain flow blocks;
+  - malformed positioned geometry falls back to flow rendering;
+  - no destructive migration.
+
+## Tests and verification
+
+- Builder Jest suites: **6 passed, 24 tests passed**.
+- Frontend typecheck: **passed**.
+- Frontend lint for touched builder/shared files: **passed**.
+- Backend typecheck: **passed**.
+- `git diff --check`: **passed**.
+- Final code review: **PASS**, no blockers.
+
+Covered regression contracts:
+
+- canonical page dimensions and orientation;
+- document/rendered round-trip and scale;
+- real `pi-canvas-page-host` scroll container with `scrollLeft`/`scrollTop`;
+- positioned drag and resize output wiring;
+- boundary clamp and minimum size;
+- cancellation without persistence;
+- invalid geometry fallback;
+- explicit flow/positioned partitioning;
+- optimistic geometry persistence without losing existing settings;
+- ResizeObserver observe/disconnect lifecycle;
+- Letter canvas contract.
+
+## Deliberate non-goals
+
+- No server-side PDF absolute-layout render contract; this remains a separate PDF/render task.
+- No migration of existing blocks.
+- No table, header/footer, or multi-page flow conversion to absolute layout.
+- No grouping, marquee selection, undo/redo, visible grid, alignment guides, or layers in this slice.
+
+## Next order
+
+1. **TZ-264** — bounded undo/redo and safe keyboard contract.
+2. **TZ-260** — marquee selection, grouping, and group drag.
+3. **TZ-261** — visible grid, magnetic snap, and alignment guides.
+4. **TZ-262** — layers, visibility, lock, and opacity.
+5. **TZ-263** — final interaction QA and rollout checklist.
+
+## Files
+
+- `frontend/src/app/pages/doc-constructor/builder/builder-geometry.ts`
+- `frontend/src/app/pages/doc-constructor/builder/builder-geometry.spec.ts`
+- `frontend/src/app/pages/doc-constructor/builder/block-renderer-state.service.ts`
+- `frontend/src/app/pages/doc-constructor/builder/block-renderer-state.service.spec.ts`
+- `frontend/src/app/pages/doc-constructor/builder/block-renderer.component.ts`
+- `frontend/src/app/pages/doc-constructor/builder/block-renderer.component.spec.ts`
+- `frontend/src/app/pages/doc-constructor/builder/builder-canvas.component.ts`
+- `frontend/src/app/pages/doc-constructor/builder/builder-canvas.component.spec.ts`
+- `frontend/src/app/pages/doc-constructor/builder/builder-state.service.ts`
+- `frontend/src/app/pages/doc-constructor/builder/builder-state.service.spec.ts`
+- `frontend/src/app/pages/doc-constructor/builder/builder-inspector-state.service.ts`
+- `frontend/src/app/pages/doc-constructor/builder/block-inspector.component.ts`
+- `frontend/src/app/pages/doc-constructor/builder/builder.page.ts`
+- `frontend/src/app/pages/doc-constructor/builder/builder.page.spec.ts`
+- `frontend/src/app/pages/doc-constructor/builder/template-setup-dialog.component.ts`
+- `frontend/src/app/shared/services/pi-document-templates.service.ts`
+- `frontend/src/app/shared/ui/canvas/pi-canvas-page.component.ts`
+- `backend/src/modules/document-template/document-template.schema.ts`
+- `backend/src/modules/document-template/dto/create-document-template.dto.ts`
+- `docs/pages/builder.page.md`
+- `tasks/TZ-259.md`
+- `tasks/_archive/2026-07/TZ-259.md.done`

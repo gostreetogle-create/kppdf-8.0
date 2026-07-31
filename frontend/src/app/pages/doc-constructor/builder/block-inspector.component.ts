@@ -51,7 +51,10 @@ import { BuilderInspectorStateService } from './builder-inspector-state.service'
       @if (state.block()!.type !== 'spacer') {
         <label class="field field--row">
           <span class="field__label">Активен</span>
-          <app-pi-switch [checked]="state.isActive()" (checkedChange)="state.onIsActiveChange($event)" />
+          <app-pi-switch
+            [checked]="state.isActive()"
+            (checkedChange)="state.onIsActiveChange($event)"
+          />
         </label>
       }
 
@@ -59,7 +62,10 @@ import { BuilderInspectorStateService } from './builder-inspector-state.service'
       @if (state.block()!.type !== 'spacer') {
         <label class="field field--row">
           <span class="field__label">Линия снизу</span>
-          <app-pi-switch [checked]="state.showLine()" (checkedChange)="state.onShowLineChange($event)" />
+          <app-pi-switch
+            [checked]="state.showLine()"
+            (checkedChange)="state.onShowLineChange($event)"
+          />
         </label>
       }
 
@@ -75,6 +81,15 @@ import { BuilderInspectorStateService } from './builder-inspector-state.service'
             placeholder="Текст блока…"
           ></textarea>
         </label>
+
+        <!-- Explicit layout mode for text/header blocks. Legacy flow remains the default. -->
+        <label class="field field--row">
+          <span class="field__label">Свободное позиционирование</span>
+          <app-pi-switch
+            [checked]="state.positionedLayout()"
+            (checkedChange)="state.onPositionedLayoutToggle($event)"
+          />
+        </label>
       }
 
       <!-- Image upload + controls -->
@@ -84,7 +99,12 @@ import { BuilderInspectorStateService } from './builder-inspector-state.service'
           @if (state.imageUrl()) {
             <div class="image-preview">
               <img [src]="state.imageUrl()" alt="Превью" class="image-preview__img" />
-              <button type="button" class="image-preview__remove" (click)="state.onRemoveImage()" title="Удалить изображение">
+              <button
+                type="button"
+                class="image-preview__remove"
+                (click)="state.onRemoveImage()"
+                title="Удалить изображение"
+              >
                 <lucide-icon [img]="CloseIcon" [size]="14"></lucide-icon>
               </button>
             </div>
@@ -98,7 +118,9 @@ import { BuilderInspectorStateService } from './builder-inspector-state.service'
             />
             <span class="bg-upload__inner">
               <lucide-icon [img]="UploadIcon" [size]="14"></lucide-icon>
-              <span class="bg-upload__text">{{ state.imageUrl() ? 'Заменить' : 'Загрузить фото' }}</span>
+              <span class="bg-upload__text">{{
+                state.imageUrl() ? 'Заменить' : 'Загрузить фото'
+              }}</span>
             </span>
           </label>
         </div>

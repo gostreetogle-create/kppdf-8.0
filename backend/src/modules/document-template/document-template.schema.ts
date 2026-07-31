@@ -26,7 +26,7 @@ export class DocumentTemplate {
   @Prop({ default: true, index: true })
   isActive!: boolean;
 
-  @Prop({ enum: ['A3', 'A4', 'A5'], default: 'A4' })
+  @Prop({ enum: ['A3', 'A4', 'A5', 'Letter'], default: 'A4' })
   pageSize!: string;
 
   @Prop({ type: [String], default: [] })

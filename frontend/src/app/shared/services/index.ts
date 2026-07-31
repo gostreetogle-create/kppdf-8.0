@@ -29,6 +29,11 @@ export type {
   Counterparty,
   CounterpartiesListResponse,
   CounterpartiesListParams,
+  CounterpartyRole,
 } from './pi-counterparty.service';
 export { WorkTypesService } from './pi-work-types.service';
 export type { WorkType } from './pi-work-types.service';
+export { PersonService } from './pi-person.service';
+export type { Person, PersonsListResponse, PersonsListParams } from './pi-person.service';
+export { CurrencyService } from './pi-currency.service';
+export type { Currency, CurrenciesListResponse, CurrenciesListParams } from './pi-currency.service';

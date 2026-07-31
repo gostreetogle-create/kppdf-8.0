@@ -14,8 +14,8 @@ export class CreateDocumentTemplateDto {
   @IsOptional() @IsBoolean() isDefault?: boolean;
   @IsOptional() @IsBoolean() isActive?: boolean;
 
-  @IsOptional() @IsIn(['A4', 'A5', 'Letter', 'Legal'])
-  pageSize?: 'A4' | 'A5' | 'Letter' | 'Legal';
+  @IsOptional() @IsIn(['A3', 'A4', 'A5', 'Letter'])
+  pageSize?: 'A3' | 'A4' | 'A5' | 'Letter';
 
   @IsOptional() @IsArray() @IsString({ each: true })
   backgroundImage?: string[];

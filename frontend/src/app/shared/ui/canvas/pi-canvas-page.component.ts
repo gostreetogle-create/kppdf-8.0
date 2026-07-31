@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 /**
  * Paper wrapper for the document-constructor builder canvas.
- * Supports A3/A4/A5 page sizes and portrait/landscape orientations.
+ * Supports A3/A4/A5/Letter page sizes and portrait/landscape orientations.
  * The paper uses flex column so child content fills the full page height.
  */
 @Component({
@@ -16,6 +16,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         [class.pi-canvas-page-paper--landscape]="orientation() === 'landscape'"
         [class.pi-canvas-page-paper--a3]="pageSize() === 'A3'"
         [class.pi-canvas-page-paper--a5]="pageSize() === 'A5'"
+        [class.pi-canvas-page-paper--letter]="pageSize() === 'Letter'"
         [style.max-width.px]="maxWidthPx()"
         [attr.data-page-size]="pageSize()"
       >
@@ -56,6 +57,10 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         min-height: calc(1.414 * min(100vw - 64px, 520px));
       }
 
+      .pi-canvas-page-paper--letter {
+        min-height: calc(1.294 * min(100vw - 64px, 720px));
+      }
+
       .pi-canvas-page-paper--landscape {
         min-height: calc(min(100vw - 64px, 900px) / 1.414);
       }
@@ -66,6 +71,10 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
       .pi-canvas-page-paper--landscape.pi-canvas-page-paper--a5 {
         min-height: calc(min(100vw - 64px, 680px) / 1.414);
+      }
+
+      .pi-canvas-page-paper--landscape.pi-canvas-page-paper--letter {
+        min-height: calc(min(100vw - 64px, 900px) / 1.294);
       }
 
       @media print {
@@ -81,6 +90,6 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 })
 export class PiCanvasPageComponent {
   readonly maxWidthPx = input<number>(720);
-  readonly pageSize = input<'A3' | 'A4' | 'A5'>('A4');
+  readonly pageSize = input<'A3' | 'A4' | 'A5' | 'Letter'>('A4');
   readonly orientation = input<'portrait' | 'landscape'>('portrait');
 }

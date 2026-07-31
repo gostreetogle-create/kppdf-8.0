@@ -44,12 +44,7 @@
  *     inspector instance (not desired — independent edit context)
  *   - Per-instance guarantees state dies with the switcher.
  */
-import {
-  Injectable,
-  computed,
-  effect,
-  signal,
-} from '@angular/core';
+import { Injectable, computed, effect, signal } from '@angular/core';
 import { Subject, debounceTime } from 'rxjs';
 import { BLOCK_TYPE_LABELS } from '../../../shared/template-block/template-block.types';
 import type {
@@ -58,6 +53,11 @@ import type {
   TemplateBlock,
 } from '../../../shared/template-block/template-block.types';
 import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
+import {
+  createDefaultPositionedGeometry,
+  getPageDimensions,
+  type BuilderPageSize,
+} from './builder-geometry';
 
 @Injectable()
 export class BuilderInspectorStateService {
@@ -94,6 +94,7 @@ export class BuilderInspectorStateService {
   readonly imageOverlay = signal<boolean>(false);
   readonly overlayLeft = signal<number>(0);
   readonly overlayTop = signal<number>(0);
+  readonly positionedLayout = signal<boolean>(false);
 
   // ─────────────────────────────────────────────────────────────────
   // SNAP SETTINGS LOCAL STATE — user-editable copy
@@ -126,7 +127,9 @@ export class BuilderInspectorStateService {
   private readonly marginResetSub = new Subject<string>();
   readonly marginReset$ = this.marginResetSub.asObservable();
 
-  private readonly multiMarginUpdateSub = new Subject<Array<{ _id: string; settings: Record<string, unknown> }>>();
+  private readonly multiMarginUpdateSub = new Subject<
+    Array<{ _id: string; settings: Record<string, unknown> }>
+  >();
   readonly multiMarginUpdate$ = this.multiMarginUpdateSub.asObservable();
 
   private readonly templateUpdateSub = new Subject<Partial<DocumentTemplate>>();
@@ -141,7 +144,11 @@ export class BuilderInspectorStateService {
   private readonly setDefaultBackgroundSub = new Subject<number>();
   readonly setDefaultBackground$ = this.setDefaultBackgroundSub.asObservable();
 
-  private readonly snapSettingsChangeSub = new Subject<{ snapEnabled: boolean; gridSize: number; boundaryPadding?: number }>();
+  private readonly snapSettingsChangeSub = new Subject<{
+    snapEnabled: boolean;
+    gridSize: number;
+    boundaryPadding?: number;
+  }>();
   readonly snapSettingsChange$ = this.snapSettingsChangeSub.asObservable();
 
   private readonly closePanelSub = new Subject<void>();
@@ -158,8 +165,8 @@ export class BuilderInspectorStateService {
 
   // TZ-211: Document summary computed values
   readonly blockCount = computed<number>(() => this.allBlocks().length);
-  readonly activeBlockCount = computed<number>(() =>
-    this.allBlocks().filter((b) => b.isActive).length,
+  readonly activeBlockCount = computed<number>(
+    () => this.allBlocks().filter((b) => b.isActive).length,
   );
   readonly blockTypeSummary = computed<string>(() => {
     const blocks = this.allBlocks();
@@ -246,6 +253,7 @@ export class BuilderInspectorStateService {
       this.imageOverlay.set((settings?.['overlay'] as boolean) ?? false);
       this.overlayLeft.set((settings?.['overlayLeft'] as number) ?? 0);
       this.overlayTop.set((settings?.['overlayTop'] as number) ?? 0);
+      this.positionedLayout.set(settings?.['layoutMode'] === 'positioned');
     });
 
     // 2. Hydrate snap settings from inputs when they change.
@@ -394,7 +402,7 @@ export class BuilderInspectorStateService {
     this.templateUpdateSub.next({ orientation });
   }
 
-  onPageSizeChange(pageSize: 'A3' | 'A4' | 'A5'): void {
+  onPageSizeChange(pageSize: 'A3' | 'A4' | 'A5' | 'Letter'): void {
     this.templateUpdateSub.next({ pageSize });
   }
 
@@ -471,6 +479,30 @@ export class BuilderInspectorStateService {
     const v = Number((event.target as HTMLInputElement).value) || 0;
     this.overlayTop.set(v);
     this.patchSettings({ overlayTop: v });
+  }
+
+  /** Explicitly switch text/header blocks between flow and positioned layout. */
+  onPositionedLayoutToggle(checked: boolean): void {
+    const b = this.block();
+    if (!b || (b.type !== 'text' && b.type !== 'header')) return;
+    this.positionedLayout.set(checked);
+    const current = (b.settings ?? {}) as Record<string, unknown>;
+    const pageSize = (this.template()?.pageSize ?? 'A4') as BuilderPageSize;
+    const orientation = this.template()?.orientation ?? 'portrait';
+    const next = checked
+      ? {
+          ...current,
+          layoutMode: 'positioned',
+          geometry:
+            current['geometry'] ??
+            createDefaultPositionedGeometry(getPageDimensions(pageSize, orientation)),
+        }
+      : {
+          ...current,
+          layoutMode: 'flow',
+        };
+    if (!b._id) return;
+    this.updateSub.next({ _id: b._id, settings: next });
   }
 
   // ─────────────────────────────────────────────────────────────────

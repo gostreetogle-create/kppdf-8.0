@@ -30,8 +30,8 @@
  *     onDeleteClick/onArrowKey/formatTableCell/byPassHtml) STAY in the
  *     component because they are either pure-output emits or formatting
  *     helpers.
- *   - 3 Subjects for service-emitted stream-style outputs (widthChange$,
- *     overlayMove$, overlayResize$) — component subscribes with
+ *   - 4 Subjects for service-emitted stream-style outputs (widthChange$,
+ *     overlayMove$, overlayResize$, positionedGeometryChange$) — component subscribes with
  *     takeUntilDestroyed() to re-emit as Angular `output()`.
  *   - 3 private snap helpers (snapValueToGrid, applySnapToGrid,
  *     snapToBlockEdges) + 2 axis private fields + SNAP_THRESHOLD constant
@@ -40,7 +40,6 @@
  * OUT OF SCOPE (future rounds):
  *   - Group drag (TZ-235.D) — multi-block snapping + alignment guides
  *   - Undo/redo stack (TZ-235.E) — history buffer + apply()/unapply()
- *   - Document-level scroll-aware drag (TZ-235.G) — listener on paper parent
  *
  * Lifetime: COMPONENT-SCOPED (per-instance). Each `<app-block-renderer>` on
  * the canvas owns its own service instance. Registered via
@@ -53,13 +52,24 @@
  *   - Two browser tabs have separate JS contexts; no cross-tab concern.
  */
 import {
+  afterNextRender,
+  DestroyRef,
+  ElementRef,
   Injectable,
   computed,
   effect,
   inject,
   signal,
 } from '@angular/core';
-import type { SafeHtml } from '@angular/platform-browser';
+import {
+  clampPositionedGeometry,
+  clientToDocumentPoint,
+  getPageDimensions,
+  readPositionedGeometry,
+  type BuilderOrientation,
+  type BuilderPageSize,
+  type PositionedGeometry,
+} from './builder-geometry';
 import { Subject } from 'rxjs';
 import {
   BLOCK_TYPE_LABELS,
@@ -77,12 +87,18 @@ export class BlockRendererStateService {
   private readonly _snapEnabled = signal<boolean>(true);
   private readonly _gridSize = signal<number>(20);
   private readonly _boundaryPadding = signal<number>(0);
+  private readonly _pageSize = signal<BuilderPageSize>('A4');
+  private readonly _orientation = signal<BuilderOrientation>('portrait');
+  private readonly _canvasScale = signal<number>(1);
 
   /** Readonly public views — for component.template & computeds. */
   readonly block = this._block.asReadonly();
   readonly snapEnabled = this._snapEnabled.asReadonly();
   readonly gridSize = this._gridSize.asReadonly();
   readonly boundaryPadding = this._boundaryPadding.asReadonly();
+  readonly pageSize = this._pageSize.asReadonly();
+  readonly orientation = this._orientation.asReadonly();
+  readonly canvasScale = this._canvasScale.asReadonly();
 
   // ─────────────────────────────────────────────────────────────────
   // State signals (flow mode: width + margin)
@@ -96,6 +112,8 @@ export class BlockRendererStateService {
   readonly dragActive = signal(false);
   readonly dragLeft = signal(0);
   readonly dragTop = signal(0);
+  readonly positionedDragActive = signal(false);
+  readonly positionedDragGeometry = signal<PositionedGeometry | null>(null);
 
   // ─────────────────────────────────────────────────────────────────
   // State signals (overlay mode: corner resize)
@@ -103,6 +121,9 @@ export class BlockRendererStateService {
   readonly resizeActive = signal(false);
   readonly resizeWidth = signal(0);
   readonly resizeHeight = signal(0);
+  readonly positionedResizeActive = signal(false);
+  readonly positionedResizeWidth = signal(0);
+  readonly positionedResizeHeight = signal(0);
 
   // ─────────────────────────────────────────────────────────────────
   // Snap state (private — used only during interactive drag)
@@ -139,6 +160,17 @@ export class BlockRendererStateService {
     imageHeight: number;
   }>();
   readonly overlayResize$ = this.overlayResizeSub.asObservable();
+
+  private readonly positionedGeometryChangeSub = new Subject<{
+    block: TemplateBlock;
+    geometry: PositionedGeometry;
+  }>();
+  readonly positionedGeometryChange$ = this.positionedGeometryChangeSub.asObservable();
+
+  private readonly hostElement = inject(ElementRef<HTMLElement>);
+  private readonly destroyRef = inject(DestroyRef);
+  private paperResizeObserver: ResizeObserver | null = null;
+  private observedPaper: HTMLElement | null = null;
 
   // ─────────────────────────────────────────────────────────────────
   // 15 COMPUTED signals
@@ -199,6 +231,52 @@ export class BlockRendererStateService {
     return (settings?.['overlayTop'] as number) ?? 0;
   });
 
+  readonly positionedGeometry = computed<PositionedGeometry | null>(() => {
+    const b = this._block();
+    const raw = readPositionedGeometry(b?.settings as Record<string, unknown> | undefined);
+    if (!raw) return null;
+    return clampPositionedGeometry(
+      raw,
+      getPageDimensions(this._pageSize(), this._orientation()),
+      this._boundaryPadding(),
+    );
+  });
+
+  readonly isPositioned = computed<boolean>(() => this.positionedGeometry() !== null);
+
+  readonly positionedRenderedGeometry = computed<PositionedGeometry | null>(() => {
+    const geometry = this.positionedResizeActive()
+      ? {
+          ...(this.positionedGeometry() ?? { x: 0, y: 0 }),
+          width: this.positionedResizeWidth(),
+          height: this.positionedResizeHeight(),
+        }
+      : this.positionedDragActive()
+        ? this.positionedDragGeometry()
+        : this.positionedGeometry();
+    return geometry;
+  });
+
+  readonly renderedLeft = computed<number>(() => {
+    const geometry = this.positionedRenderedGeometry();
+    return geometry ? geometry.x * this._canvasScale() : this.overlayLeft();
+  });
+
+  readonly renderedTop = computed<number>(() => {
+    const geometry = this.positionedRenderedGeometry();
+    return geometry ? geometry.y * this._canvasScale() : this.overlayTop();
+  });
+
+  readonly renderedWidth = computed<number | null>(() => {
+    const geometry = this.positionedRenderedGeometry();
+    return geometry ? geometry.width * this._canvasScale() : null;
+  });
+
+  readonly renderedHeight = computed<number | null>(() => {
+    const geometry = this.positionedRenderedGeometry();
+    return geometry ? geometry.height * this._canvasScale() : null;
+  });
+
   /**
    * Computed background-color CSS value.
    * Combines blockBackgroundColor (hex) with blockOpacity (alpha) into rgba().
@@ -217,7 +295,9 @@ export class BlockRendererStateService {
 
     // Parse hex (#RGB, #RRGGBB) to {r, g, b}
     const hex = color.replace('#', '');
-    let r = 0, g = 0, b2 = 0;
+    let r = 0,
+      g = 0,
+      b2 = 0;
     if (hex.length === 3) {
       r = parseInt(hex[0] + hex[0], 16);
       g = parseInt(hex[1] + hex[1], 16);
@@ -322,6 +402,12 @@ export class BlockRendererStateService {
   // ─────────────────────────────────────────────────────────────────
 
   constructor() {
+    this.destroyRef.onDestroy(() => this.paperResizeObserver?.disconnect());
+    // The per-renderer host is not guaranteed to be attached while the
+    // service constructor runs. Attach after the first render, then keep the
+    // explicit setPageSettings() retry for page changes.
+    afterNextRender(() => this.observePaper());
+
     // 1. Sync width & marginLeft from block settings when block changes
     effect(() => {
       const b = this._block();
@@ -370,9 +456,213 @@ export class BlockRendererStateService {
     this._boundaryPadding.set(boundaryPadding);
   }
 
+  setPageSettings(pageSize: BuilderPageSize, orientation: BuilderOrientation): void {
+    this._pageSize.set(pageSize);
+    this._orientation.set(orientation);
+    this.observePaper();
+    const paper =
+      this.observedPaper ?? this.hostElement.nativeElement.closest('.pi-canvas-page-paper');
+    if (paper) this.refreshCanvasScale(paper);
+  }
+
+  private observePaper(): void {
+    const paper = this.hostElement.nativeElement.closest(
+      '.pi-canvas-page-paper',
+    ) as HTMLElement | null;
+    if (!paper || this.observedPaper === paper || typeof ResizeObserver === 'undefined') return;
+    this.paperResizeObserver?.disconnect();
+    this.observedPaper = paper;
+    this.paperResizeObserver = new ResizeObserver(() => this.refreshCanvasScale(paper));
+    this.paperResizeObserver.observe(paper);
+    this.refreshCanvasScale(paper);
+  }
+
+  refreshCanvasScale(paper?: HTMLElement): void {
+    const page = paper ?? this.hostElement.nativeElement.closest('.pi-canvas-page-paper');
+    if (!page) return;
+    const documentWidth = getPageDimensions(this._pageSize(), this._orientation()).width;
+    const renderedWidth = page.getBoundingClientRect().width || page.clientWidth;
+    if (renderedWidth > 0 && documentWidth > 0) {
+      this._canvasScale.set(renderedWidth / documentWidth);
+    }
+  }
+
   // ─────────────────────────────────────────────────────────────────
   // MUTATING DOM-EVENT HANDLERS (extracted from block-renderer.component)
   // ─────────────────────────────────────────────────────────────────
+
+  /** Start a positioned text/block drag in document-space coordinates. */
+  onPositionedDragStart(event: MouseEvent): void {
+    if (event.button !== 0) return;
+    const target = event.target as HTMLElement | null;
+    if (
+      target?.closest('.block-renderer__delete') ||
+      target?.closest('.block-renderer__positioned-resize')
+    )
+      return;
+
+    const startGeometry = this.positionedGeometry();
+    if (!startGeometry) return;
+    event.preventDefault();
+    event.stopPropagation();
+
+    // `getBoundingClientRect()` is viewport-relative and already reflects
+    // scrolling. Re-read it for each pointer event instead of adding scroll
+    // offsets to a cached rect (which would double-count scroll).
+    const toDocumentPoint = (clientX: number, clientY: number) => {
+      const currentPaper = this.hostElement.nativeElement.closest(
+        '.pi-canvas-page-paper',
+      ) as HTMLElement | null;
+      const rect = currentPaper?.getBoundingClientRect();
+      return clientToDocumentPoint(clientX, clientY, {
+        left: rect?.left ?? 0,
+        top: rect?.top ?? 0,
+        scale: this._canvasScale() > 0 ? this._canvasScale() : 1,
+      });
+    };
+    const startPoint = toDocumentPoint(event.clientX, event.clientY);
+    this.positionedDragActive.set(true);
+    this.positionedDragGeometry.set(startGeometry);
+
+    const cleanup = (): void => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('mouseleave', onLeave);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    const onMove = (moveEvent: MouseEvent): void => {
+      if (moveEvent.buttons === 0) {
+        onLeave();
+        return;
+      }
+      const currentPoint = toDocumentPoint(moveEvent.clientX, moveEvent.clientY);
+      const deltaX = currentPoint.x - startPoint.x;
+      const deltaY = currentPoint.y - startPoint.y;
+      const page = getPageDimensions(this._pageSize(), this._orientation());
+      const next = clampPositionedGeometry(
+        { ...startGeometry, x: startGeometry.x + deltaX, y: startGeometry.y + deltaY },
+        page,
+        this._boundaryPadding(),
+      );
+      this.positionedDragGeometry.set(next);
+    };
+
+    const onUp = (): void => {
+      cleanup();
+      const finalGeometry = this.positionedDragGeometry();
+      const block = this._block();
+      this.positionedDragActive.set(false);
+      this.positionedDragGeometry.set(null);
+      if (block && finalGeometry) {
+        this.positionedGeometryChangeSub.next({ block, geometry: finalGeometry });
+      }
+    };
+
+    const onLeave = (): void => {
+      cleanup();
+      this.positionedDragActive.set(false);
+      this.positionedDragGeometry.set(null);
+    };
+
+    // The adapter above keeps persisted deltas in document-space even when the
+    // rendered paper is scaled or its scroll host moves during the gesture.
+    document.body.style.cursor = 'move';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('mouseleave', onLeave);
+  }
+
+  /** Resize a positioned block while preserving document-space geometry. */
+  onPositionedResizeStart(event: MouseEvent): void {
+    if (event.button !== 0) return;
+    const startGeometry = this.positionedGeometry();
+    if (!startGeometry) return;
+    event.preventDefault();
+    event.stopPropagation();
+
+    // `getBoundingClientRect()` is viewport-relative and already reflects
+    // scrolling. Re-read it for each pointer event instead of adding scroll
+    // offsets to a cached rect (which would double-count scroll).
+    const toDocumentPoint = (clientX: number, clientY: number) => {
+      const currentPaper = this.hostElement.nativeElement.closest(
+        '.pi-canvas-page-paper',
+      ) as HTMLElement | null;
+      const rect = currentPaper?.getBoundingClientRect();
+      return clientToDocumentPoint(clientX, clientY, {
+        left: rect?.left ?? 0,
+        top: rect?.top ?? 0,
+        scale: this._canvasScale() > 0 ? this._canvasScale() : 1,
+      });
+    };
+    const startPoint = toDocumentPoint(event.clientX, event.clientY);
+    this.positionedResizeActive.set(true);
+    this.positionedResizeWidth.set(startGeometry.width);
+    this.positionedResizeHeight.set(startGeometry.height);
+
+    const cleanup = (): void => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('mouseleave', onLeave);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    const onMove = (moveEvent: MouseEvent): void => {
+      if (moveEvent.buttons === 0) {
+        onLeave();
+        return;
+      }
+      const currentPoint = toDocumentPoint(moveEvent.clientX, moveEvent.clientY);
+      const deltaX = currentPoint.x - startPoint.x;
+      const deltaY = currentPoint.y - startPoint.y;
+      const page = getPageDimensions(this._pageSize(), this._orientation());
+      const next = clampPositionedGeometry(
+        {
+          ...startGeometry,
+          width: startGeometry.width + deltaX,
+          height: startGeometry.height + deltaY,
+        },
+        page,
+        this._boundaryPadding(),
+      );
+      this.positionedResizeWidth.set(next.width);
+      this.positionedResizeHeight.set(next.height);
+    };
+
+    const onUp = (): void => {
+      cleanup();
+      const block = this._block();
+      const geometry = clampPositionedGeometry(
+        {
+          ...startGeometry,
+          width: this.positionedResizeWidth(),
+          height: this.positionedResizeHeight(),
+        },
+        getPageDimensions(this._pageSize(), this._orientation()),
+        this._boundaryPadding(),
+      );
+      this.positionedResizeActive.set(false);
+      this.positionedResizeWidth.set(0);
+      this.positionedResizeHeight.set(0);
+      if (block) this.positionedGeometryChangeSub.next({ block, geometry });
+    };
+
+    const onLeave = (): void => {
+      cleanup();
+      this.positionedResizeActive.set(false);
+      this.positionedResizeWidth.set(0);
+      this.positionedResizeHeight.set(0);
+    };
+
+    document.body.style.cursor = 'nwse-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('mouseleave', onLeave);
+  }
 
   /**
    * Resize handle mousedown — starts a document-level drag to resize the block.
@@ -437,7 +727,11 @@ export class BlockRendererStateService {
     // Only left mouse button, only on image blocks, only if not clicking delete/resize handles
     if (event.button !== 0) return;
     const target = event.target as HTMLElement;
-    if (target.closest('.block-renderer__delete') || target.closest('.block-renderer__corner-resize')) return;
+    if (
+      target.closest('.block-renderer__delete') ||
+      target.closest('.block-renderer__corner-resize')
+    )
+      return;
 
     event.preventDefault();
     event.stopPropagation();
@@ -453,7 +747,9 @@ export class BlockRendererStateService {
     this.dragTop.set(startTop);
 
     // Cache DOM refs at drag start
-    const hostEl = (event.target as HTMLElement).closest('.block-renderer--overlay') as HTMLElement | null;
+    const hostEl = (event.target as HTMLElement).closest(
+      '.block-renderer--overlay',
+    ) as HTMLElement | null;
     const paper = document.querySelector('.pi-canvas-page-paper') as HTMLElement | null;
     const img = hostEl?.querySelector('.block-renderer__image--overlay') as HTMLImageElement | null;
     const cachedBlockW = img?.offsetWidth ?? this.imageWidth() ?? this.overlayDefaultWidth;
@@ -569,7 +865,9 @@ export class BlockRendererStateService {
     event.preventDefault();
     event.stopPropagation();
 
-    const img = (event.target as HTMLElement).closest('.block-renderer__image-wrap--overlay')?.querySelector('img') as HTMLImageElement | null;
+    const img = (event.target as HTMLElement)
+      .closest('.block-renderer__image-wrap--overlay')
+      ?.querySelector('img') as HTMLImageElement | null;
     const naturalW = img?.naturalWidth ?? this.imageWidth() ?? 200;
     const naturalH = img?.naturalHeight ?? this.imageHeight() ?? 200;
     const aspectRatio = naturalW / naturalH;
@@ -650,7 +948,10 @@ export class BlockRendererStateService {
   // PRIVATE SNAP HELPERS
   // ─────────────────────────────────────────────────────────────────
 
-  private snapValueToGrid(value: number, gridSize: number): { snapped: number; isSnapped: boolean } {
+  private snapValueToGrid(
+    value: number,
+    gridSize: number,
+  ): { snapped: number; isSnapped: boolean } {
     const nearest = Math.round(value / gridSize) * gridSize;
     if (Math.abs(value - nearest) <= this.SNAP_THRESHOLD) {
       return { snapped: nearest, isSnapped: true };
@@ -659,7 +960,9 @@ export class BlockRendererStateService {
   }
 
   private applySnapToGrid(
-    left: number, top: number, gridSize: number,
+    left: number,
+    top: number,
+    gridSize: number,
   ): { snappedLeft: number; snappedTop: number } {
     const snapX = this.snapValueToGrid(left, gridSize);
     const snapY = this.snapValueToGrid(top, gridSize);
@@ -667,7 +970,10 @@ export class BlockRendererStateService {
   }
 
   private snapToBlockEdges(
-    left: number, top: number, hostEl: HTMLElement | null, paper: HTMLElement | null,
+    left: number,
+    top: number,
+    hostEl: HTMLElement | null,
+    paper: HTMLElement | null,
   ): { snappedLeft: number; snappedTop: number; axisX: string | null; axisY: string | null } {
     if (!paper) return { snappedLeft: left, snappedTop: top, axisX: null, axisY: null };
     const img = hostEl?.querySelector('.block-renderer__image--overlay') as HTMLImageElement | null;

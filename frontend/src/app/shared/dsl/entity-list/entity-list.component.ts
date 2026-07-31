@@ -62,11 +62,7 @@ import type { PaginatedResponse } from '../entity/entity-service';
     TableComponent,
   ],
   template: `
-    <app-pi-page-header
-      [eyebrow]="eyebrow()"
-      [title]="title()"
-      [description]="description()"
-    />
+    <app-pi-page-header [eyebrow]="eyebrow()" [title]="title()" [description]="description()" />
 
     <app-pi-section [title]="title()" [hint]="totalHint()" eyebrow="I">
       <app-pi-toolbar>
@@ -234,9 +230,12 @@ export class PiEntityListComponent<T extends { _id?: string }> {
     }
   });
 
-
-
   // ── Handlers ──
+  /** Refresh the current page after a create/edit/delete operation. */
+  reload(): void {
+    this.listRes.reload();
+  }
+
   protected onSearch(event: Event): void {
     this.searchQuery.set((event.target as HTMLInputElement).value);
   }

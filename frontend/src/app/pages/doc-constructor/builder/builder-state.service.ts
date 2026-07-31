@@ -40,36 +40,12 @@
  *   - Component-scoped guarantees state dies when BuilderPage navigates away.
  *   - Two browser tabs have separate JS contexts anyway, no cross-tab bleed.
  */
-import {
-  DestroyRef,
-  Injectable,
-  Injector,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  HttpClient,
-  HttpErrorResponse,
-  httpResource,
-} from '@angular/common/http';
+import { DestroyRef, Injectable, Injector, computed, inject, signal } from '@angular/core';
+import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
-import {
-  Observable,
-  Subject,
-  catchError,
-  forkJoin,
-  map,
-  of,
-  switchMap,
-  timer,
-} from 'rxjs';
+import { Observable, Subject, catchError, forkJoin, map, of, timer } from 'rxjs';
 import { API_BASE_URL } from '../../../core/api.tokens';
-import {
-  extractErrorMessage,
-  SilentResult,
-} from '../../../core/silent-http';
+import { extractErrorMessage, SilentResult } from '../../../core/silent-http';
 import {
   blockKey,
   type DataBindingSource,
@@ -82,6 +58,7 @@ import { TextBlocksService } from '../../../shared/services/pi-text-blocks.servi
 import { TableTemplatesService } from '../../../shared/services/pi-table-templates.service';
 import { PiToastService } from '../../../shared/ui/toast';
 import type { AddBlockPayload } from './builder.types';
+import type { PositionedGeometry } from './builder-geometry';
 
 // ─────────────────────────────────────────────────────────────────────
 // LocalStorage persistence for snap settings
@@ -395,11 +372,7 @@ export class BuilderStateService {
     this.saveBlock(block._id, { settings });
   }
 
-  onOverlayMove(event: {
-    block: TemplateBlock;
-    overlayLeft: number;
-    overlayTop: number;
-  }): void {
+  onOverlayMove(event: { block: TemplateBlock; overlayLeft: number; overlayTop: number }): void {
     const { block, overlayLeft, overlayTop } = event;
     if (!block._id) return;
     const settings: Record<string, unknown> = {
@@ -411,11 +384,7 @@ export class BuilderStateService {
     this.saveBlock(block._id, { settings });
   }
 
-  onOverlayResize(event: {
-    block: TemplateBlock;
-    imageWidth: number;
-    imageHeight: number;
-  }): void {
+  onOverlayResize(event: { block: TemplateBlock; imageWidth: number; imageHeight: number }): void {
     const { block, imageWidth, imageHeight } = event;
     if (!block._id) return;
     const settings: Record<string, unknown> = {
@@ -427,15 +396,26 @@ export class BuilderStateService {
     this.saveBlock(block._id, { settings });
   }
 
+  /** Persist document-space geometry from the positioned canvas layer. */
+  onPositionedGeometryChange(event: { block: TemplateBlock; geometry: PositionedGeometry }): void {
+    const { block, geometry } = event;
+    if (!block._id) return;
+    const settings: Record<string, unknown> = {
+      ...(block.settings as Record<string, unknown> | undefined),
+      layoutMode: 'positioned',
+      geometry,
+    };
+    this.blocks.update((arr) => arr.map((b) => (b._id === block._id ? { ...b, settings } : b)));
+    this.saveBlock(block._id, { settings });
+  }
+
   onMarginReset(blockId: string): void {
     const settings = { width: 100, marginLeft: 0 };
     this.blocks.update((arr) => arr.map((b) => (b._id === blockId ? { ...b, settings } : b)));
     this.saveBlock(blockId, { settings });
   }
 
-  onMultiMarginUpdate(
-    updates: Array<{ _id: string; settings: Record<string, unknown> }>,
-  ): void {
+  onMultiMarginUpdate(updates: Array<{ _id: string; settings: Record<string, unknown> }>): void {
     for (const { _id, settings } of updates) {
       this.blocks.update((arr) => arr.map((b) => (b._id === _id ? { ...b, settings } : b)));
       this.saveBlock(_id, { settings });
@@ -503,7 +483,9 @@ export class BuilderStateService {
   private syncTextBlockSources(): void {
     const blocks = this.blocks();
     const textBlockIds = blocks
-      .filter((b) => b.type === 'text' && b.dataBinding?.source === 'static' && b.dataBinding?.value)
+      .filter(
+        (b) => b.type === 'text' && b.dataBinding?.source === 'static' && b.dataBinding?.value,
+      )
       .map((b) => b.dataBinding!.value!)
       .filter((id): id is string => !!id);
 
@@ -516,12 +498,14 @@ export class BuilderStateService {
         let changed = false;
 
         const updated = blocks.map((b) => {
-          if (b.type !== 'text' || b.dataBinding?.source !== 'static' || !b.dataBinding?.value) return b;
+          if (b.type !== 'text' || b.dataBinding?.source !== 'static' || !b.dataBinding?.value)
+            return b;
           const source = sourceMap.get(b.dataBinding.value);
           if (!source) return b;
           const newContent = source.content ?? '';
           const newColumns = source.columns;
-          if (b.content === newContent && JSON.stringify(b.columns) === JSON.stringify(newColumns)) return b;
+          if (b.content === newContent && JSON.stringify(b.columns) === JSON.stringify(newColumns))
+            return b;
           changed = true;
           return { ...b, content: newContent, columns: newColumns };
         });
@@ -530,10 +514,12 @@ export class BuilderStateService {
           this.blocks.set(updated);
           for (const block of updated) {
             if (block._id) {
-              this.blocksSvc.update(block._id, {
-                content: block.content,
-                columns: block.columns,
-              }).subscribe();
+              this.blocksSvc
+                .update(block._id, {
+                  content: block.content,
+                  columns: block.columns,
+                })
+                .subscribe();
             }
           }
         }
@@ -551,12 +537,7 @@ export class BuilderStateService {
     this.insertBlock(event.payload, idx);
   }
 
-  onAddTextBlock(t: {
-    _id: string;
-    name: string;
-    content?: string;
-    columns?: unknown[];
-  }): void {
+  onAddTextBlock(t: { _id: string; name: string; content?: string; columns?: unknown[] }): void {
     this.onAddBlock({
       source: 'text-block',
       textBlock: t as import('../../../shared/services/pi-text-blocks.service').TextBlock,
@@ -761,7 +742,10 @@ export class BuilderStateService {
                   this.blocks.update((arr) =>
                     arr.map((b) =>
                       b._id === res.data._id
-                        ? { ...b, settings: { ...(b.settings ?? {}), imageUrl: uploadRes.data.url } }
+                        ? {
+                            ...b,
+                            settings: { ...(b.settings ?? {}), imageUrl: uploadRes.data.url },
+                          }
                         : b,
                     ),
                   );

@@ -1,15 +1,10 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { PiDialogComponent } from '../../../shared/ui/dialog/pi-dialog.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../../shared/ui/dialog/dialog.tokens';
 import type { DialogRef } from '../../../shared/ui/dialog/pi-dialog.service';
 
-export type PageSize = 'A3' | 'A4' | 'A5';
+export type PageSize = 'A3' | 'A4' | 'A5' | 'Letter';
 export type Orientation = 'portrait' | 'landscape';
 
 export interface TemplateSetupResult {
@@ -76,9 +71,7 @@ export interface TemplateSetupData {
         </div>
       </div>
       <div footer>
-        <app-pi-button variant="ghost" size="sm" (click)="onCancel()">
-          Отмена
-        </app-pi-button>
+        <app-pi-button variant="ghost" size="sm" (click)="onCancel()"> Отмена </app-pi-button>
         <app-pi-button variant="default" size="sm" (click)="onConfirm()">
           {{ data.mode === 'duplicate' ? 'Дублировать' : 'Создать' }}
         </app-pi-button>
@@ -147,7 +140,7 @@ export class TemplateSetupDialogComponent {
   readonly data = inject<TemplateSetupData>(PI_DIALOG_DATA);
   private readonly ref = inject<DialogRef<TemplateSetupResult>>(PI_DIALOG_REF);
 
-  protected readonly pageSizes: PageSize[] = ['A3', 'A4', 'A5'];
+  protected readonly pageSizes: PageSize[] = ['A3', 'A4', 'A5', 'Letter'];
   protected readonly orientations = [
     { value: 'portrait' as Orientation, label: 'Книжная' },
     { value: 'landscape' as Orientation, label: 'Альбомная' },

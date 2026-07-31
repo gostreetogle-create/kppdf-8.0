@@ -67,6 +67,15 @@ export interface CounterpartiesListParams {
   role?: string;
 }
 
+export interface CounterpartyRole {
+  _id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  isActive: boolean;
+  isSystem: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class CounterpartyService {
   private readonly http = inject(HttpClient);
@@ -83,6 +92,10 @@ export class CounterpartyService {
     return silentGet<CounterpartiesListResponse>(this.http, `${this.baseUrl}/counterparties`, {
       params: httpParams,
     });
+  }
+
+  listRoles(): Observable<SilentResult<CounterpartyRole[]>> {
+    return silentGet<CounterpartyRole[]>(this.http, `${this.baseUrl}/counterparty-roles`);
   }
 
   findById(id: string): Observable<SilentResult<Counterparty>> {

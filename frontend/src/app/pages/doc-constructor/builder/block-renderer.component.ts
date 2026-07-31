@@ -79,8 +79,74 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   // drag/resize/snap state — no cross-block interference on canvas.
   providers: [BlockRendererStateService],
   template: `
-    <!-- ═══ OVERLAY MODE: no cdkDrag, free absolute positioning ═══ -->
-    @if (isOverlay()) {
+    <!-- ═══ POSITIONED MODE: document-space geometry ═══ -->
+    @if (isPositioned()) {
+      <div
+        class="group block-renderer block-renderer--positioned"
+        [class.is-selected]="selected()"
+        [class.is-multi-selected]="multiSelected()"
+        [class.is-inactive]="!block().isActive"
+        [attr.data-block-type]="block().type"
+        [attr.aria-selected]="selected() || multiSelected()"
+        [attr.role]="'button'"
+        [attr.tabindex]="'0'"
+        [style.left.px]="renderedLeft()"
+        [style.top.px]="renderedTop()"
+        [style.width.px]="renderedWidth()"
+        [style.height.px]="renderedHeight()"
+        [style.background-color]="blockBgColor() || null"
+        (click)="onSelect($event)"
+        (mousedown)="onPositionedDragStart($event)"
+        (keydown.enter)="onSelect($event)"
+        (keydown.space)="onSelect($event)"
+        (keydown.arrowUp)="onArrowKey($event, 'up')"
+        (keydown.arrowDown)="onArrowKey($event, 'down')"
+      >
+        @if (selected()) {
+          <div
+            class="block-renderer__positioned-resize"
+            (mousedown)="onPositionedResizeStart($event)"
+            (click)="$event.stopPropagation()"
+            title="Изменить размер блока"
+            aria-label="Изменить размер блока"
+          ></div>
+        }
+        <div
+          class="block-renderer__delete"
+          (click)="onDeleteClick($event)"
+          (keydown.enter)="onDeleteClick($event)"
+          (mousedown)="$event.stopPropagation()"
+          title="Удалить блок"
+          role="button"
+          tabindex="-1"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polyline points="3 6 5 6 21 6" />
+            <path
+              d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+            />
+          </svg>
+        </div>
+        <div class="block-renderer__body">
+          <div class="block-renderer__header">
+            <span class="block-renderer__type">{{ typeLabel() }}</span>
+            @if (bindingBadge()) {
+              <span class="block-renderer__binding" [title]="bindingBadgeTooltip()">{{
+                bindingBadge()
+              }}</span>
+            }
+          </div>
+          <div class="block-renderer__content" [innerHTML]="byPassHtml(renderedContent())"></div>
+        </div>
+      </div>
+    } @else if (isOverlay()) {
       <div
         class="group block-renderer block-renderer--overlay"
         [class.is-selected]="selected()"
@@ -109,8 +175,18 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
           role="button"
           tabindex="-1"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polyline points="3 6 5 6 21 6" />
+            <path
+              d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+            />
           </svg>
         </div>
 
@@ -121,8 +197,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
               [alt]="block().title || 'Изображение'"
               class="block-renderer__image block-renderer__image--overlay"
               draggable="false"
-              [style.width.px]="resizeActive() ? resizeWidth() : (imageWidth() ?? overlayDefaultWidth)"
-              [style.height.px]="resizeActive() ? resizeHeight() : (imageHeight() ?? overlayDefaultHeight)"
+              [style.width.px]="
+                resizeActive() ? resizeWidth() : (imageWidth() ?? overlayDefaultWidth)
+              "
+              [style.height.px]="
+                resizeActive() ? resizeHeight() : (imageHeight() ?? overlayDefaultHeight)
+              "
             />
             <!-- Corner resize handle (proportional) -->
             @if (selected()) {
@@ -133,7 +213,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
                 title="Перетащите для пропорционального изменения размера"
               >
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path d="M12 0v12H0" stroke="currentColor" stroke-width="2" fill="var(--color-paper)"/>
+                  <path
+                    d="M12 0v12H0"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    fill="var(--color-paper)"
+                  />
                 </svg>
               </div>
             }
@@ -207,7 +292,15 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
             stroke-width="2"
           >
             @if (multiSelected()) {
-              <rect x="3" y="3" width="18" height="18" rx="2" fill="var(--color-gold)" stroke="var(--color-gold)" />
+              <rect
+                x="3"
+                y="3"
+                width="18"
+                height="18"
+                rx="2"
+                fill="var(--color-gold)"
+                stroke="var(--color-gold)"
+              />
               <polyline points="9 12 11 14 15 10" stroke="white" stroke-width="2.5" />
             } @else {
               <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" />
@@ -224,17 +317,30 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
           role="button"
           tabindex="-1"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polyline points="3 6 5 6 21 6" />
+            <path
+              d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+            />
           </svg>
         </div>
         <div class="block-renderer__body">
           <!-- Drag handle -->
           <div class="block-renderer__drag-handle" title="Перетащите для перемещения">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="8" cy="6" r="2"/><circle cx="16" cy="6" r="2"/>
-              <circle cx="8" cy="12" r="2"/><circle cx="16" cy="12" r="2"/>
-              <circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/>
+              <circle cx="8" cy="6" r="2" />
+              <circle cx="16" cy="6" r="2" />
+              <circle cx="8" cy="12" r="2" />
+              <circle cx="16" cy="12" r="2" />
+              <circle cx="8" cy="18" r="2" />
+              <circle cx="16" cy="18" r="2" />
             </svg>
           </div>
           @if (block().type === 'table' && tableColumns().length > 0) {
@@ -243,7 +349,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
                 <thead>
                   <tr>
                     @for (col of tableColumns(); track col.key) {
-                      <th [style.text-align]="col.align" [style.width]="col.width + 'px'">{{ col.label }}</th>
+                      <th [style.text-align]="col.align" [style.width]="col.width + 'px'">
+                        {{ col.label }}
+                      </th>
                     }
                   </tr>
                 </thead>
@@ -252,13 +360,20 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
                     @for (row of tableRows(); track $index) {
                       <tr>
                         @for (cell of row; track $index; let ci = $index) {
-                          <td [style.text-align]="tableColumns()[ci]?.align ?? 'left'">{{ formatTableCell(cell, tableColumns()[ci]?.type ?? 'text') }}</td>
+                          <td [style.text-align]="tableColumns()[ci]?.align ?? 'left'">
+                            {{ formatTableCell(cell, tableColumns()[ci]?.type ?? 'text') }}
+                          </td>
                         }
                       </tr>
                     }
                   } @else {
                     <tr>
-                      <td [attr.colspan]="tableColumns().length" class="block-renderer__table-empty">Нет данных</td>
+                      <td
+                        [attr.colspan]="tableColumns().length"
+                        class="block-renderer__table-empty"
+                      >
+                        Нет данных
+                      </td>
                     </tr>
                   }
                 </tbody>
@@ -266,26 +381,42 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
             </div>
           } @else if (block().type === 'image' && imageUrl()) {
             <div class="block-renderer__image-wrap">
-              <img [src]="imageUrl()" [alt]="block().title || 'Изображение'" class="block-renderer__image"
+              <img
+                [src]="imageUrl()"
+                [alt]="block().title || 'Изображение'"
+                class="block-renderer__image"
                 [style.width]="imageWidth() ? imageWidth() + 'px' : '100%'"
-                [style.height]="imageHeight() ? imageHeight() + 'px' : 'auto'" loading="lazy" />
+                [style.height]="imageHeight() ? imageHeight() + 'px' : 'auto'"
+                loading="lazy"
+              />
             </div>
           } @else if (block().type === 'spacer') {
             <div class="block-renderer__spacer" [style.height.px]="block().height ?? 40"></div>
           } @else if (hasColumns()) {
             @if (block().content) {
-              <div class="block-renderer__content block-renderer__content--preamble">{{ renderedContent() }}</div>
+              <div class="block-renderer__content block-renderer__content--preamble">
+                {{ renderedContent() }}
+              </div>
             }
-            <div class="block-renderer__columns" [style.grid-template-columns]="columnsGridTemplate()">
+            <div
+              class="block-renderer__columns"
+              [style.grid-template-columns]="columnsGridTemplate()"
+            >
               @for (col of block().columns; track col.id) {
-                <div class="block-renderer__column" [style.font-size.px]="col.fontSize ?? 14" [innerHTML]="byPassHtml(col.content)"></div>
+                <div
+                  class="block-renderer__column"
+                  [style.font-size.px]="col.fontSize ?? 14"
+                  [innerHTML]="byPassHtml(col.content)"
+                ></div>
               }
             </div>
           } @else {
             <div class="block-renderer__header">
               <span class="block-renderer__type">{{ typeLabel() }}</span>
               @if (bindingBadge()) {
-                <span class="block-renderer__binding" [title]="bindingBadgeTooltip()">{{ bindingBadge() }}</span>
+                <span class="block-renderer__binding" [title]="bindingBadgeTooltip()">{{
+                  bindingBadge()
+                }}</span>
               }
             </div>
             <div class="block-renderer__content" [innerHTML]="byPassHtml(renderedContent())"></div>
@@ -325,7 +456,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
       .block-renderer.is-selected {
         border-color: var(--color-gold);
         background: rgba(255, 255, 255, 0.5);
-        box-shadow: 0 0 0 1px var(--color-gold), 0 2px 8px -2px rgba(0, 0, 0, 0.1);
+        box-shadow:
+          0 0 0 1px var(--color-gold),
+          0 2px 8px -2px rgba(0, 0, 0, 0.1);
       }
 
       /* TZ-211: Multi-selected — gold-soft background */
@@ -366,7 +499,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
         align-items: center;
         justify-content: center;
         opacity: 0;
-        transition: opacity 150ms ease, color 150ms ease;
+        transition:
+          opacity 150ms ease,
+          color 150ms ease;
         cursor: pointer;
         z-index: 5;
         color: var(--color-muted);
@@ -513,7 +648,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
         justify-content: center;
         color: var(--color-muted);
         opacity: 0;
-        transition: opacity 150ms ease, color 150ms ease;
+        transition:
+          opacity 150ms ease,
+          color 150ms ease;
         cursor: grab;
         z-index: 5;
       }
@@ -543,7 +680,38 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
         object-fit: contain;
       }
 
-      /* ═══ Overlay mode — free absolute positioning ═══ */
+      /* ═══ Positioned mode — document-space free positioning ═══ */
+      .block-renderer--positioned {
+        position: absolute;
+        z-index: 10;
+        padding: 10px 12px;
+        overflow: hidden;
+        cursor: move;
+        user-select: none;
+        touch-action: none;
+        box-sizing: border-box;
+        transition: none;
+      }
+
+      .block-renderer--positioned.is-selected {
+        outline: 2px solid var(--color-gold);
+        outline-offset: 1px;
+      }
+
+      .block-renderer__positioned-resize {
+        position: absolute;
+        right: -1px;
+        bottom: -1px;
+        width: 14px;
+        height: 14px;
+        z-index: 15;
+        cursor: nwse-resize;
+        border-right: 3px solid var(--color-gold);
+        border-bottom: 3px solid var(--color-gold);
+        opacity: 0.9;
+      }
+
+      /* ═══ Overlay mode — legacy image free absolute positioning ═══ */
       .block-renderer--overlay {
         position: absolute;
         z-index: 10;
@@ -593,7 +761,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
         background: var(--color-paper);
         border: 1px solid var(--color-rule);
         border-radius: 50%;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
         opacity: 0;
         transition: opacity 150ms ease;
       }
@@ -636,7 +804,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
       }
 
       .block-renderer__corner-resize svg {
-        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
       }
 
       /* ═══ Snap indicator — when overlay block snaps to grid or block edge ═══ */
@@ -784,6 +952,8 @@ export class BlockRendererComponent {
   readonly snapEnabled = input<boolean>(true);
   readonly gridSize = input<number>(20);
   readonly boundaryPadding = input<number>(0);
+  readonly pageSize = input<'A3' | 'A4' | 'A5' | 'Letter'>('A4');
+  readonly orientation = input<'portrait' | 'landscape'>('portrait');
 
   // ─────────────────────────────────────────────────────────────────
   // Outputs (unchanged shape, but emitted via Subject subscriptions)
@@ -791,8 +961,20 @@ export class BlockRendererComponent {
   readonly select = output<TemplateBlock>();
   readonly multiSelect = output<TemplateBlock>();
   readonly widthChange = output<{ width: number; marginLeft: number }>();
-  readonly overlayMove = output<{ block: TemplateBlock; overlayLeft: number; overlayTop: number }>();
-  readonly overlayResize = output<{ block: TemplateBlock; imageWidth: number; imageHeight: number }>();
+  readonly overlayMove = output<{
+    block: TemplateBlock;
+    overlayLeft: number;
+    overlayTop: number;
+  }>();
+  readonly overlayResize = output<{
+    block: TemplateBlock;
+    imageWidth: number;
+    imageHeight: number;
+  }>();
+  readonly positionedGeometryChange = output<{
+    block: TemplateBlock;
+    geometry: import('./builder-geometry').PositionedGeometry;
+  }>();
   readonly deleteRequest = output<string>();
 
   // ─────────────────────────────────────────────────────────────────
@@ -823,6 +1005,11 @@ export class BlockRendererComponent {
   protected readonly imageWidth = this.state.imageWidth;
   protected readonly imageHeight = this.state.imageHeight;
   protected readonly isOverlay = this.state.isOverlay;
+  protected readonly isPositioned = this.state.isPositioned;
+  protected readonly renderedLeft = this.state.renderedLeft;
+  protected readonly renderedTop = this.state.renderedTop;
+  protected readonly renderedWidth = this.state.renderedWidth;
+  protected readonly renderedHeight = this.state.renderedHeight;
   protected readonly overlayLeft = this.state.overlayLeft;
   protected readonly overlayTop = this.state.overlayTop;
   protected readonly blockBgColor = this.state.blockBgColor;
@@ -837,13 +1024,21 @@ export class BlockRendererComponent {
   constructor() {
     // ── Mirror inputs to service ──
     effect(() => this.state.setBlock(this.block()));
-    effect(() => this.state.setSnapSettings(this.snapEnabled(), this.gridSize(), this.boundaryPadding()));
+    effect(() =>
+      this.state.setSnapSettings(this.snapEnabled(), this.gridSize(), this.boundaryPadding()),
+    );
+    effect(() => this.state.setPageSettings(this.pageSize(), this.orientation()));
 
     // ── Subscribe to service output streams, re-emit as Angular outputs ──
     // takeUntilDestroyed() — must be in constructor so Injector context is component.
     this.state.widthChange$.pipe(takeUntilDestroyed()).subscribe((e) => this.widthChange.emit(e));
     this.state.overlayMove$.pipe(takeUntilDestroyed()).subscribe((e) => this.overlayMove.emit(e));
-    this.state.overlayResize$.pipe(takeUntilDestroyed()).subscribe((e) => this.overlayResize.emit(e));
+    this.state.overlayResize$
+      .pipe(takeUntilDestroyed())
+      .subscribe((e) => this.overlayResize.emit(e));
+    this.state.positionedGeometryChange$
+      .pipe(takeUntilDestroyed())
+      .subscribe((e) => this.positionedGeometryChange.emit(e));
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -859,6 +1054,14 @@ export class BlockRendererComponent {
 
   protected onCornerResizeStart(event: MouseEvent): void {
     this.state.onCornerResizeStart(event);
+  }
+
+  protected onPositionedDragStart(event: MouseEvent): void {
+    this.state.onPositionedDragStart(event);
+  }
+
+  protected onPositionedResizeStart(event: MouseEvent): void {
+    this.state.onPositionedResizeStart(event);
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -896,7 +1099,9 @@ export class BlockRendererComponent {
     const container = isOverlay
       ? currentEl.closest('.canvas-overlay-layer')
       : currentEl.closest('.canvas-dropzone');
-    const allBlocks = container?.querySelectorAll<HTMLElement>('.block-renderer[role="button"], .block-renderer--overlay[role="button"]');
+    const allBlocks = container?.querySelectorAll<HTMLElement>(
+      '.block-renderer[role="button"], .block-renderer--overlay[role="button"]',
+    );
     if (!allBlocks || allBlocks.length === 0) return;
     const idx = Array.from(allBlocks).indexOf(currentEl);
     const next = direction === 'down' ? allBlocks[idx + 1] : allBlocks[idx - 1];

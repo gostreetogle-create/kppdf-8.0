@@ -44,6 +44,17 @@ describe('CounterpartyService', () => {
     });
   });
 
+  it('listRoles() GETs /api/counterparty-roles', () => {
+    svc.listRoles().subscribe((res) => {
+      if (res.ok) expect(res.data[0].slug).toBe('customer');
+    });
+    const req = httpMock.expectOne('http://test/api/counterparty-roles');
+    expect(req.request.method).toBe('GET');
+    req.flush([
+      { _id: 'role1', name: 'Покупатель', slug: 'customer', isActive: true, isSystem: true },
+    ]);
+  });
+
   it('findById() GETs /api/counterparties/:id', () => {
     svc.findById('cp1').subscribe((res) => {
       if (res.ok) expect(res.data.name).toBe('ООО Ромашка');

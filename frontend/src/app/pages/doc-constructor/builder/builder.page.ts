@@ -1,16 +1,15 @@
-import {ChangeDetectionStrategy, Component, DestroyRef, Injector, computed, inject} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  Injector,
+  computed,
+  inject,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
-import {
-  debounceTime,
-  forkJoin,
-  groupBy,
-  mergeMap,
-  switchMap,
-  tap,
-  timer,
-} from 'rxjs';
+import { debounceTime, forkJoin, groupBy, mergeMap, switchMap, tap, timer } from 'rxjs';
 import {
   LucideAngularModule,
   FileText,
@@ -148,8 +147,8 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
                         <app-pi-button
                           variant="outline"
                           size="sm"
-                      (click)="state.onTemplatePick(t._id)"
-                      data-test="open-template"
+                          (click)="state.onTemplatePick(t._id)"
+                          data-test="open-template"
                         >
                           Открыть
                         </app-pi-button>
@@ -344,6 +343,7 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
           (blockWidthChange)="state.onBlockWidthChange($event)"
           (overlayMove)="state.onOverlayMove($event)"
           (overlayResize)="state.onOverlayResize($event)"
+          (positionedGeometryChange)="state.onPositionedGeometryChange($event)"
           (canvasClick)="state.onCanvasClick()"
           (deleteRequest)="onDeleteBlock($event)"
         />
@@ -626,7 +626,7 @@ export class BuilderPage {
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly blocksSvc = inject(TemplateBlocksService);
   private readonly templatesSvc = inject(DocumentTemplatesService);
-  
+
   private readonly toast = inject(PiToastService);
   private readonly dialog = inject(PiDialogService);
   private readonly destroyRef = inject(DestroyRef);
@@ -784,8 +784,6 @@ export class BuilderPage {
     });
   }
 
-  
-
   // ─────────────────────────────────────────────────────────────
   // Inline toolbar dropdown handlers are owned by BuilderStateService.
   // Page only owns the `document:click` host listener (close-on-outside-click).
@@ -848,8 +846,6 @@ export class BuilderPage {
     });
   }
 
-  
-
   // ─────────────────────────────────────────────────────────────
   // Canvas selection / reorder / edit / delete handlers are owned by
   // BuilderStateService. Page only owns template-level CRUD and Dialog UI.
@@ -857,7 +853,8 @@ export class BuilderPage {
 
   // ─────────────────────────────────────────────────────────────
   // Inspector update handlers (onInspectorUpdate / onBlockWidthChange /
-  // onOverlayMove / onOverlayResize / onMarginReset / onMultiMarginUpdate)
+  // onOverlayMove / onOverlayResize / onPositionedGeometryChange /
+  // onMarginReset / onMultiMarginUpdate)
   // are owned by BuilderStateService. Page only owns template-level
   // (onTemplateUpdate) and Dialog UI handlers.
   // ─────────────────────────────────────────────────────────────
@@ -887,8 +884,6 @@ export class BuilderPage {
       },
     });
   }
-
-  
 
   protected onDeleteBlock(id: string): void {
     const block = this.state.blocks().find((b) => b._id === id);
@@ -1017,8 +1012,8 @@ export class BuilderPage {
   }
 
   // ─────────────────────────────────────────────────────────────
-// Auto-save result handler (state.handleSaveResult) is owned by
-// BuilderStateService. Constructor subscribes to state.saveEvents$
-// and delegates via state.handleSaveResult.
-// ─────────────────────────────────────────────────────────────
+  // Auto-save result handler (state.handleSaveResult) is owned by
+  // BuilderStateService. Constructor subscribes to state.saveEvents$
+  // and delegates via state.handleSaveResult.
+  // ─────────────────────────────────────────────────────────────
 }
