@@ -130,6 +130,35 @@ export function applySnapToGrid(
  *   - any candidate has non-positive dimensions or non-finite
  *     coordinates (silently skipped).
  */
+/**
+ * Collapse a sorted candidate list of guides to AT MOST one per
+ * (axis, kind, edge) tuple. Keeps the FIRST occurrence of each key
+ * in the input order, which under `computeAlignmentGuides` is
+ * always the closest match (smaller distance first; edges before
+ * centres as a tie-break; lex `targetBlockId` as the cold tie-break).
+ *
+ * The engine itself does NOT collapse — it returns the deterministic
+ * full candidate list. This helper applies the visual layer's
+ * "no-fan-of-lines" policy and belongs at the caller side; tests of
+ * the pure engine therefore stay decoupled from canvas-side choices.
+ *
+ * Returns an empty array for empty input.
+ */
+export function collapseAlignmentGuides(
+  guides: readonly SnapGuide[],
+): readonly SnapGuide[] {
+  if (guides.length === 0) return [];
+  const seen = new Set<string>();
+  const out: SnapGuide[] = [];
+  for (const g of guides) {
+    const key = `${g.axis}|${g.kind}|${g.edge}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(g);
+  }
+  return out;
+}
+
 export function computeAlignmentGuides(
   dragged: Rect,
   others: ReadonlyArray<Rect>,

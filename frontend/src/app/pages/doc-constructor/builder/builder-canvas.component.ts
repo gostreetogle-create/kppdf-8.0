@@ -6,6 +6,7 @@ import { blockKey, type TemplateBlock } from '../../../shared/template-block/tem
 import { moveItemInArray } from '../../../shared/util/move-item-in-array';
 import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
 import {
+  collapseAlignmentGuides,
   computeAlignmentGuides,
   overlayBlockToRect,
   type Rect,
@@ -431,9 +432,8 @@ export class BuilderCanvasComponent {
         settings: b.settings ?? null,
       });
       if (r) others.push(r);
+    }      return collapseAlignmentGuides(computeAlignmentGuides(dragged, others));
     }
-    return computeAlignmentGuides(dragged, others);
-  }
 
   /** Get only overlay blocks for absolute positioning. */
   protected readonly overlayBlocks = computed(() =>

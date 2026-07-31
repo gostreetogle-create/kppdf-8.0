@@ -6,11 +6,13 @@
  */
 import {
   applySnapToGrid,
+  collapseAlignmentGuides,
   computeAlignmentGuides,
   overlayBlockToRect,
   snapValueToGrid,
   SNAP_THRESHOLD_PX,
   type Rect,
+  type SnapGuide,
 } from './snap-engine';
 
 const rect = (id: string, left: number, top: number, w: number, h: number): Rect => ({
@@ -228,6 +230,89 @@ describe('computeAlignmentGuides', () => {
 
   it('SNAP_THRESHOLD_PX default is 8 pixels and matches BlockRendererStateService SNAP_THRESHOLD', () => {
     expect(SNAP_THRESHOLD_PX).toBe(8);
+  });
+});
+
+describe('collapseAlignmentGuides', () => {
+  const g = (
+    axis: SnapGuide['axis'],
+    edge: SnapGuide['edge'],
+    coordinate: number,
+    distance: number,
+    target = 't',
+  ): SnapGuide => ({
+    axis,
+    coordinate,
+    kind: edge === 'cx' || edge === 'cy' ? 'center' : 'edge',
+    edge,
+    targetBlockId: target,
+    distance,
+  });
+
+  it('returns [] for empty input', () => {
+    expect(collapseAlignmentGuides([])).toEqual([]);
+  });
+
+  it('preserves identity for a single guide', () => {
+    const single = [g('x', 'left', 100, 5)];
+    expect(collapseAlignmentGuides(single)).toEqual(single);
+  });
+
+  it('keeps only the FIRST occurrence per (axis, kind, edge) tuple', () => {
+    // Three guides for the SAME x-edge-left key with different distances.
+    // Engine sort order puts the smallest distance first — collapse
+    // must preserve that ordering and drop the rest.
+    const input = [
+      g('x', 'left', 100, 2, 'a'),
+      g('x', 'left', 100, 4, 'b'),
+      g('x', 'left', 100, 6, 'c'),
+    ];
+    expect(collapseAlignmentGuides(input)).toEqual([input[0]]);
+  });
+
+  it('preserves guides with distinct (axis, kind, edge) tuples', () => {
+    // Same X axis, but different edges (left / right) and a centre:
+    // all three should be kept.
+    const input = [
+      g('x', 'left', 100, 2, 'a'),
+      g('x', 'right', 200, 2, 'b'),
+      g('x', 'cx', 150, 2, 'c'),
+      g('y', 'top', 50, 2, 'd'),
+      g('y', 'bottom', 100, 2, 'e'),
+      g('y', 'cy', 75, 2, 'f'),
+    ];
+    expect(collapseAlignmentGuides(input)).toEqual(input);
+  });
+
+  it('deduplicates only the matching keys, preserves others in order', () => {
+    const input = [
+      g('x', 'left', 100, 2, 'a'), // unique x-edge-left
+      g('x', 'left', 100, 4, 'b'), // dup x-edge-left → dropped
+      g('y', 'top', 50, 2, 'c'), // unique y-edge-top
+      g('x', 'left', 100, 6, 'd'), // dup x-edge-left → dropped
+      g('x', 'cx', 150, 2, 'e'), // unique x-kind-center
+    ];
+    expect(collapseAlignmentGuides(input)).toEqual([
+      input[0],
+      input[2],
+      input[4],
+    ]);
+  });
+
+  it('treats cx (X center) and cy (Y center) as separate keys', () => {
+    // Different axis, different edge — both survive.
+    const input = [g('x', 'cx', 100, 2, 'a'), g('y', 'cy', 100, 2, 'b')];
+    expect(collapseAlignmentGuides(input)).toEqual(input);
+  });
+
+  it('does NOT mutate input', () => {
+    const input = [
+      g('x', 'left', 100, 2, 'a'),
+      g('x', 'left', 100, 4, 'b'),
+    ];
+    const snapshot = input.map((x) => ({ ...x }));
+    collapseAlignmentGuides(input);
+    expect(input).toEqual(snapshot);
   });
 });
 
