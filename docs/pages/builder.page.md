@@ -415,6 +415,70 @@ Payload варианты (см. `builder.types.ts`):
 | 2026-07-24 | Template properties panel, block resize, margins, print styles |
 | 2026-07-25 | **Overlay bugfixes:** кеширование hostEl при drag, сигналы resizeActive/resizeWidth/resizeHeight вместо direct DOM, scrollHeight для нижней границы, кешированный paper ref в snapToBlockEdges, сигналы dragActive/dragLeft/dragTop для drag-позиции, авто-очистка override при обновлении settings |
 
+## Magnetic Grid + Alignment Guides (TZ-237.MAGNETIC-GRID-r0)
+
+Shipped on branch `feat/builder-magnetic-grid` (4 atomic commits:
+`d15b5f7` magnetic-grid implementation, `f10a0e2` DOM-contract spec,
+`f1109e6` collapse-per-axis guides, `38e0af7` Nit 3 + 4 polish).
+Branch URL:
+`https://github.com/gostreetogle-create/kppdf-8.0/tree/feat/builder-magnetic-grid`.
+
+The Конструктор now decorates the canvas with two purely-visual layers
+that interact with the existing snap math in `BlockRendererStateService`
+(`applySnapToGrid`, `snapToBlockEdges`) WITHOUT changing the position
+math itself.
+
+### Visible behaviour
+
+* **Grid layer** (`.canvas-builder__grid-layer`). A radial-gradient dot
+  pattern painted across the paper area; `background-size` follows the
+  existing `gridSize` signal so changing the grid size in the inspector
+  updates the dot pitch live. Rendered only when `snapEnabled === true`.
+  `pointer-events: none`; `aria-hidden="true"`;
+  `display: none !important` under `@media print`; respects
+  `@media (prefers-reduced-motion: reduce)`.
+* **Alignment guides** (`.canvas-builder__guides-layer`). Vertical and
+  horizontal guide lines drawn while ONE overlay image block is being
+  dragged. Up to 4 guides per drag (one edge + one center per X axis,
+  same for Y). Lines snap to the closest neighbouring overlay rect's
+  edges (left/right/top/bottom) AND centres (cx/cy). When multiple
+  neighbours fall within `SNAP_THRESHOLD_PX` of the dragged rect on
+  the SAME edge, the visual layer collapses to the single closest one
+  — no "fan of lines". Each guide `div` carries:
+  - `.canvas-builder__guide--x` / `--y` axis modifier class;
+  - `.canvas-builder__guide--center` for `cx`/`cy` guides;
+  - `data-edge="left|right|cx|top|bottom|cy"` identifying the kind;
+  - `data-target="<blockKey()>"` identifying the neighbour;
+  - `style.left.px` for X-axis guides, `style.top.px` for Y-axis guides
+    (the opposite axis is left empty).
+
+### Architecture
+
+The slice is intentionally additive: the existing drag math is **never
+modified**. New code lives in three new files plus a handful of additive
+changes to three existing files.
+
+| Concern | File |
+| --- | --- |
+| Pure typed geometry engine (no DI, no DOM) | `frontend/src/app/pages/doc-constructor/builder/snap-engine.ts` |
+| Engine unit tests (34 / 34 pass) | `frontend/src/app/pages/doc-constructor/builder/snap-engine.spec.ts` |
+| DOM-contract test for the canvas layers (7 / 7 pass) | `frontend/src/app/pages/doc-constructor/builder/builder-canvas.component.spec.ts` |
+| New `dragRect = computed<Rect \| null>(...)` reading `blockKey(block)` + reusing existing `imageWidth()` / `imageHeight()` | `block-renderer-state.service.ts` |
+| New `@Output() dragRectChange = output<Rect \| null>()` mirrored via `effect(() => emit(state.dragRect()))` | `block-renderer.component.ts` |
+| `currentDragRect = signal`, `currentGuides = computed`, `onChildDragRect` (+ null→null short-circuit), `computeGuidesForCurrentDrag` (caller-side policy: `collapseAlignmentGuides(computeAlignmentGuides(...))`); `@if (snapEnabled())` grid layer; `@if (currentGuides().length > 0)` guides layer; CSS for both with print-hide + reduced-motion | `builder-canvas.component.ts` |
+
+### Out of scope (intentional deferrals)
+
+* **Flow blocks** do not have absolute coordinates; guides against them
+  require bounding-rect measurement that this slice does not attempt.
+  Flow vs overlay split is preserved.
+* **Multi-select drag.** `currentDragRect` is single-rect. A JSDoc TODO
+  marker on the field explicitly notes that when multi-select drag
+  ships the signal becomes `Map<blockId, Rect>`.
+* **Resize-time guides** are out of scope. `BlockRendererStateService.dragRect`
+  returns `null` while `resizeActive()` is true so guides do not flicker
+  during a corner or side resize.
+
 ## Известные ограничения
 
 1. **Индикатор snap** — только смена цвета outline, без визуальных линий-направляющих
