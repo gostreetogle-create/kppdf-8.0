@@ -384,8 +384,10 @@ export class BuilderCanvasComponent {
    * `null` while no drag is in progress. Set by child renderers via
    * `onChildDragRect()` bound to the `dragRectChange` output.
    *
-   * Single-block drag only. Multi-select drag propagation is a future
-   * slice.
+   * Single-block drag only. When multi-select drag ships (TZ-237.E /
+   * builder follow-up), this signal becomes a `Map<blockId, Rect>`
+   * and `currentGuides` aggregates guides against every active drag
+   * rect. Keep this TODO marker in sync with that future contract.
    */
   protected readonly currentDragRect = signal<Rect | null>(null);
 
@@ -402,8 +404,14 @@ export class BuilderCanvasComponent {
    * Handler bound to each child renderer's `dragRectChange` output.
    * Replaces any previous drag (only one overlay drag is supported per
    * slice). `null` clears the guides on drag end / cancel / destroy.
+   *
+   * Defensive guard: a redundant `null → null` write is skipped so
+   * downstream computeds don't see a spurious re-evaluation. Also
+   * short-circuits when this is the very first emission and the
+   * caller is asking us to clear while we were already empty.
    */
   protected onChildDragRect(rect: Rect | null): void {
+    if (rect === null && this.currentDragRect() === null) return;
     this.currentDragRect.set(rect);
   }
 
