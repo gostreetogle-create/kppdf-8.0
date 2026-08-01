@@ -1,0 +1,30 @@
+{
+  "name": "kppdf-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "KPPDF Desktop — десктоп-компаньон kppdf-8.0: массовый ввод данных через AI (скелет, фичи — будущие TZ)",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "check": "svelte-check --tsconfig ./tsconfig.json"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.5.0",
+    "@tauri-apps/plugin-dialog": "^2.2.0",
+    "@tauri-apps/plugin-fs": "^2.2.0",
+    "papaparse": "^5.4.1",
+    "pdfjs-dist": "^4.10.38",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@tauri-apps/cli": "^2.5.0",
+    "svelte": "^5.19.0",
+    "svelte-check": "^4.1.4",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0"
+  }
+}

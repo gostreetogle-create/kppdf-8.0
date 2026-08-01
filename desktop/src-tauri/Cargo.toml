@@ -1,0 +1,25 @@
+[package]
+name = "kppdf-desktop"
+version = "0.1.0"
+description = "KPPDF Desktop — десктоп-компаньон kppdf-8.0"
+authors = ["kppdf"]
+edition = "2021"
+
+[lib]
+name = "kppdf_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[features]
+# by default Tauri runs in production mode
+# when `tauri dev` runs it is executed both `rustc` and `cargo` with `--cfg tauri_compile_time_commands` or `--no-default-features` if you want to use custom protocol
+custom-protocol = ["tauri/custom-protocol"]
