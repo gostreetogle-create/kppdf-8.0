@@ -4641,3 +4641,20 @@ Closed this session (all checks basher-verified: backend 243/243, frontend 559/5
 - **TZD-00** (desktop master roadmap) archived as MASTER-KEEPER → `tasks/_archive/2026-08/TZD-00.done.md` (restore to tasks/ when desktop v0.4+ resumes).
 - **STATUS.md** — DONE table 10→14 rows (TZ-256.A, TZ-257.A.1, TZ-256.B, TZ-259), metrics refresh (72 schemas, 559 tests / 59 suites), TZ-258.A → ORPHANED. README/ARCHITECTURE stale metrics refreshed.
 - **tasks/ folder empty** (only `_archive/`) — signals all in-folder TZ tasks completed.
+
+## 2026-08-01 — TZ-257.B closed (admin DTO-whitelist + permission catalog UI)
+
+- Backend: `AdminCreateRoleDto`/`AdminUpdateRoleDto` (admin-role.dto.ts) — admin surface
+  accepts ONLY name/label/description/permissions; internal fields (isSystem, sortOrder,
+  sectionIds, isActive) rejected by global ValidationPipe({ whitelist, forbidNonWhitelisted }).
+  `roles-admin.controller.ts` switched to admin DTOs; `AdminUpdateRoleDto` has no name (rename
+  not offered on admin surface).
+- Backend: `GET /api/admin/permissions` (permissions-admin.controller.ts) — canonical PERMISSIONS
+  catalog grouped by section, gated by guard stack + role:read + admin. Registered in admin.module.
+- Frontend: `PermissionsCatalogService` (pi-permissions.service.ts) + role-form-dialog rewritten
+  to checkbox catalog by section (select-all/clear, selected count, loading/error states);
+  roles-admin.page PATCH sends only {label, description, permissions} (strips name).
+- Verification: backend 250/250 (+7: roles+permissions-admin 12/12), frontend 559/559,
+  tsc 0/0, eslint 0 errors, diff --check clean. Code reviewed by code-reviewer-deepseek-flash
+  (firstValueFrom fix + isSystem:false assert confirmed).
+- Archived: tasks/_archive/2026-08/TZ-257.B.done.md + lock. STATUS.md DONE 14→15 rows.

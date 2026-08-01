@@ -1,0 +1,15 @@
+task: TZ-257.B
+title: Admin DTO-whitelist + Permission Catalog UI
+status: DONE
+outcome: DONE
+COMMIT: 0fc57bf
+closed_at: 2026-08-01
+closed_by: autonomous-agent (Codebuff session)
+protected_files:
+  - backend/src/modules/admin/dto/admin-role.dto.ts
+  - backend/src/modules/admin/permissions-admin.controller.ts
+  - backend/src/modules/admin/roles-admin.controller.ts
+  - frontend/src/app/pages/admin/role-form-dialog.component.ts
+  - frontend/src/app/pages/admin/roles-admin.page.ts
+verification: tsc 0/0 + backend 250/250 + frontend 559/559 + eslint 0 errors + diff clean
+successor: NONE

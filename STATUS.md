@@ -993,10 +993,11 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 | TZ-257 | `tasks/_archive/2026-08/TZ-257.done.md` (mutations shipped via TZ-257.A.1) | `.mimocode/locks/TZ-257-admin-module-readonly.lock` |
 | TZ-257.A.1 | `tasks/_archive/2026-08/TZ-257.A.1.done.md` (user mutations + reset-password + LastAdminGuard demotion) | `.mimocode/locks/TZ-257.A.1-admin-user-mutations.lock` |
 | TZ-256.B | `tasks/_archive/2026-08/TZ-256.B.done.md` (roles CRUD — real /admin body) | `.mimocode/locks/TZ-256.B-roles-crud.lock` |
+| TZ-257.B | `tasks/_archive/2026-08/TZ-257.B.done.md` (admin DTO-whitelist + permission catalog UI) | `.mimocode/locks/TZ-257.B-permissions-catalog.lock` |
 | TZ-258 | `tasks/_archive/2026-08/TZ-258.done.md` | `.mimocode/locks/TZ-258-protected-onboarding.lock` |
 | TZ-259 | `tasks/_archive/2026-08/TZ-259.done.md` (builder UX 259.1–259.6) | `.mimocode/locks/TZ-259-builder-ux.lock` |
 
-**Code evidence:** все 14 файлов подтверждены через grep/ls на диске (basher-verified this session). TZ-257.A.1 / TZ-256.B / TZ-259 реализованы и закоммичены в этой сессии; остальные — filesystem cleanup + archive creation.
+**Code evidence:** все 15 файлов подтверждены через grep/ls на диске (basher-verified this session). TZ-257.A.1 / TZ-256.B / TZ-259 / TZ-257.B реализованы и закоммичены в этой сессии; остальные — filesystem cleanup + archive creation.
 
 ### ⚫ SUPERSEDED (1 task)
 
@@ -1013,7 +1014,7 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 | TZ-253 (Dependabot + body-size + runbook) | NO `.github/dependabot.yml`, NO `docs/runbook/`, Mongo exposure check needed | TZ-253.A — 2-3h |
 | TZ-251.A | Path relocation spec scripts/ → src/scripts/ | **TZ-251.A — ATTEMPT this session (atomic)** |
 | TZ-255.A | Mongo e2e harness not available; dunder rename | TZ-255.B — post-Mongo-harness |
-| TZ-257.A | DONE via TZ-257.A.1 (admin user mutations + LastAdminGuard per-method + dialogs) → см. ✅ DONE | TZ-257.B |
+| TZ-257.A | DONE via TZ-257.A.1 (admin user mutations + LastAdminGuard per-method + dialogs) → см. ✅ DONE | **TZ-257.B — CLOSED 2026-08-01** (DTO-whitelist + permission catalog UI) |
 | TZ-258.A | ORPHANED — «spec relocate» устарел: `audit-policy-metadata.spec.ts` не существует в репо (find=0, 259.10); живых пунктов нет | — |
 
 ### Per-task verification (this session)
