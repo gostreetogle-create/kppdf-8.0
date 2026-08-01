@@ -211,6 +211,7 @@ provideHttpClient(withInterceptors([idempotencyInterceptor, authInterceptor]))
 
 ```markdown
 - [ ] `cd frontend && npx tsc --noEmit` — 0 ошибок
+- [ ] `cd frontend && pnpm exec ng build --configuration=development` — 0 ошибок (template typecheck, tsc не ловит)
 - [ ] `cd backend && npx tsc --noEmit` — 0 ошибок
 - [ ] Новые компоненты: `standalone: true`, `OnPush`
 - [ ] Inputs через `input<T>()` / `input.required<T>()`

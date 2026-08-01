@@ -1,0 +1,25 @@
+# TZ-263 — DONE lock
+TASK: TZ-263
+OWNER: Frontend Error Handling Engineer / DevOps (Buffy)
+CLOSED_AT: 2026-08-02
+PROTECTED_FILES:
+  - .agents/skills/run-project-checks/SKILL.md
+  - .husky/pre-commit
+  - docs/AI-AGENT-GUIDE.md
+  - frontend/package.json
+SUCCESSOR: none (verification-only gate). TZ-264/TZ-265 continue admin UI work.
+NOTES:
+  - run-project-checks SKILL.md now includes step 2:
+    'cd frontend && pnpm exec ng build --configuration=development'
+    (after frontend tsc, before frontend jest) — tsc does NOT compile
+    Angular templates (known since TZ-86 F.6), ng build catches NG5xxx.
+  - Regression check (TZ-263 AC #3): injected deliberately broken template
+    (input)="x.set(($event.target as HTMLInputElement).value)" into a temp
+    component → ng build failed with NG5002 Parser Error (exit 1); temp
+    file removed → clean ng build exit 0.
+  - docs/AI-AGENT-GUIDE.md §5 checklist: added ng build line.
+  - .husky/pre-commit: kept lint-staged in hot-path; added comment
+    explaining full check runs via run-project-checks / pnpm check:build.
+  - frontend/package.json: added 'check:build': 'ng build --configuration
+    development' alias (decision per TZ-263 ШАГ 3). No lockfile changes.
+  - ng build --configuration=development PASS (0 errors); tsc exit 0.

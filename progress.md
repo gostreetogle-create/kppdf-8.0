@@ -4717,3 +4717,27 @@ Code review: PASS (code-reviewer-deepseek-flash).
 - Imported the verified templates-registry SilentResult/error-boundary implementation as canonical TZ-267; its original sandbox identifier TZ-262 collided with the canonical root's completed admin-gates task and was intentionally renumbered.
 - Preserved the root's existing TZ-261/TZ-262 archives, locks, and progress history; added separate TZ-266/TZ-267 archive/checklist/lock records.
 - Merge validation is recorded separately after the integrated backend/frontend gates complete.
+
+---
+
+## 2026-08-02 — TZ-263 closed (Verifier — ng build в run-project-checks)
+
+**Исполнитель:** Frontend Error Handling Engineer / DevOps (Buffy)
+**Статус:** Выполнено / Проверено
+**Что сделано кратко:** В скилл run-project-checks добавлен шаг 2
+`cd frontend && pnpm exec ng build --configuration=development` — tsc
+не компилирует Angular templates (известно с TZ-86 F.6), поэтому
+template-синтаксис (NG5xxx) теперь ловится гейтом проверок. Добавлен
+пункт в чек-лист docs/AI-AGENT-GUIDE.md §5; в .husky/pre-commit добавлен
+комментарий (hot-path остался lint-staged, полная проверка — вручную/CI);
+добавлен алиас `pnpm --dir frontend check:build`.
+**Затронутые файлы/папки:**
+- .agents/skills/run-project-checks/SKILL.md
+- docs/AI-AGENT-GUIDE.md
+- .husky/pre-commit
+- frontend/package.json (только scripts — lockfile не тронут)
+**Verification:** регрессия AC #3 (сломанный template -> NG5002 exit 1,
+откат -> exit 0); ng build --configuration=development PASS (0 errors);
+tsc exit 0; git diff --check PASS. Code review: PASS.
+**Известные ограничения:** pre-commit hot-path не запускает ng build
+(слишком медленно) — полная проверка через run-project-checks/check:build.

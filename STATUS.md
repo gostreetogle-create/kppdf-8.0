@@ -721,8 +721,9 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 | TZ-104 | 2026-07-19 | Pi-* UI-kit adoption (switches + pi-table + textarea + checkbox) | `tasks/_archive/2026-07/TZ-104.md.done` |
 | TZ-120 | 2026-07-19 | Global Soft-Delete Mongoose plugin | `tasks/_archive/2026-07/TZ-120.md.done` |
 | TZ-103 | 2026-07-19 | Dialog system audit + 4-bug fix (close · positioning · tab-switch · buttons) | `tasks/_archive/2026-07/TZ-103.md.done` |
-| TZ-261 | 2026-08-02 | Generated-document organization scope before HTML/read/write side effects | `tasks/_archive/2026-08/TZ-261.done.md` |
-| TZ-262 | 2026-08-02 | Templates registry error state and SilentResult HTTP boundary | `tasks/_archive/2026-08/TZ-262.done.md` |
+| TZ-261 | 2026-08-02 | Admin dialogs — as-casts removed from templates (P0, ng build 0 errors) | `tasks/_archive/2026-08/TZ-261.done.md` |
+| TZ-262 | 2026-08-02 | Admin gates capability alignment (`/admin/users` route+nav `user:read` → `user:admin`) | `tasks/_archive/2026-08/TZ-262.done.md` |
+| TZ-263 | 2026-08-02 | Verifier — `ng build --configuration=development` added to run-project-checks (tsc не компилирует templates) | `tasks/_archive/2026-08/TZ-263.done.md` |
 | TZ-266 | 2026-08-02 | Generated-document organization scope before HTML/read/write side effects (imported workspace task, renumbered) | `tasks/_archive/2026-08/TZ-266.done.md` |
 | TZ-267 | 2026-08-02 | Templates registry error state and SilentResult HTTP boundary (imported workspace task, renumbered) | `tasks/_archive/2026-08/TZ-267.done.md` |
 
@@ -1006,6 +1007,7 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 | TZ-259 | `tasks/_archive/2026-08/TZ-259.done.md` (builder UX 259.1–259.6) | `.mimocode/locks/TZ-259-builder-ux.lock` |
 | TZ-261 | `tasks/_archive/2026-08/TZ-261.done.md` (admin-dialogs template as-casts fixed — P0, ng build 0 errors) | `.mimocode/locks/TZ-261-admin-dialogs-template-as-casts.lock` |
 | TZ-262 | `tasks/_archive/2026-08/TZ-262.done.md` (admin-gates capability alignment: `/admin/users` route+nav `user:read` → `user:admin`) | `.mimocode/locks/TZ-262-admin-gates-capability-alignment.lock` |
+| TZ-263 | `tasks/_archive/2026-08/TZ-263.done.md` (run-project-checks + ng build gate) | `.mimocode/locks/TZ-263-verifier-ng-build-in-checks.lock` |
 | TZ-266 | `tasks/_archive/2026-08/TZ-266.done.md` (generated-document organization scope, imported workspace task renumbered from sandbox TZ-261) | `.mimocode/locks/TZ-266-generated-document-scope.lock` |
 | TZ-267 | `tasks/_archive/2026-08/TZ-267.done.md` (templates error boundary, imported workspace task renumbered from sandbox TZ-262) | `.mimocode/locks/TZ-267-templates-error-boundary.lock` |
 
