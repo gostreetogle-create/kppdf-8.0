@@ -1,6 +1,7 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { blockKey } from '../../../shared/template-block/template-block.types';
 import type { Rect } from './snap-engine';
+import type { BlockLayout } from '../../../shared/template-block/template-block-layout';
 
 import {
   BLOCK_TYPE_LABELS,
@@ -100,7 +101,16 @@ export class BlockRendererStateService {
   readonly positionedDragTop = signal(0);
   readonly layoutDragDelta = signal<{ dx: number; dy: number } | null>(null);
   readonly layoutDragBlockIds = signal<ReadonlySet<string>>(new Set());
+
+  // TZ-259.4: live resize preview for canonical (layout) blocks. While a
+  // resize gesture is active this holds the proposed normalized layout;
+  // the layoutLeft/Top/Width/Height computeds below prefer it over the
+  // committed block layout so the browser paints the preview instantly.
+  readonly layoutResize = signal<BlockLayout | null>(null);
+
   readonly layoutLeft = computed<number>(() => {
+    const resize = this.layoutResize();
+    if (resize) return resize.x * 100;
     const layout = this.block().layout;
     const delta = this.layoutDragDelta();
     const isPreviewTarget = this.layoutDragBlockIds().has(blockKey(this.block()));
@@ -108,14 +118,22 @@ export class BlockRendererStateService {
     return this.positionedDragActive() ? this.positionedDragLeft() : (layout?.x ?? 0) * 100;
   });
   readonly layoutTop = computed<number>(() => {
+    const resize = this.layoutResize();
+    if (resize) return resize.y * 100;
     const layout = this.block().layout;
     const delta = this.layoutDragDelta();
     const isPreviewTarget = this.layoutDragBlockIds().has(blockKey(this.block()));
     if (delta && layout && isPreviewTarget) return (layout.y + delta.dy) * 100;
     return this.positionedDragActive() ? this.positionedDragTop() : (layout?.y ?? 0) * 100;
   });
-  readonly layoutWidth = computed<number>(() => (this.block().layout?.width ?? 1) * 100);
+  readonly layoutWidth = computed<number>(() => {
+    const resize = this.layoutResize();
+    if (resize) return resize.width * 100;
+    return (this.block().layout?.width ?? 1) * 100;
+  });
   readonly layoutHeight = computed<number | null>(() => {
+    const resize = this.layoutResize();
+    if (resize) return resize.height === undefined ? null : resize.height * 100;
     const height = this.block().layout?.height;
     return height === undefined ? null : height * 100;
   });
@@ -318,13 +336,21 @@ export class BlockRendererStateService {
   ): { snappedLeft: number; snappedTop: number; axisX: string | null; axisY: string | null } {
     if (!paper) return { snappedLeft: left, snappedTop: top, axisX: null, axisY: null };
     const img = hostEl?.querySelector('.block-renderer__image--overlay') as HTMLImageElement | null;
-    const width = img?.offsetWidth ?? this.imageWidth() ?? OVERLAY_DEFAULT_WIDTH;
-    const height = img?.offsetHeight ?? this.imageHeight() ?? OVERLAY_DEFAULT_HEIGHT;
+    // TZ-259.5: for positioned (non-image) blocks there is no overlay img,
+    // so fall back to the host element's real rendered size — otherwise snap
+    // math would use the 300×200 image default for every positioned block.
+    const width =
+      img?.offsetWidth ?? hostEl?.offsetWidth ?? this.imageWidth() ?? OVERLAY_DEFAULT_WIDTH;
+    const height =
+      img?.offsetHeight ?? hostEl?.offsetHeight ?? this.imageHeight() ?? OVERLAY_DEFAULT_HEIGHT;
 
     const paperRect = paper.getBoundingClientRect();
+    // TZ-259.5: include canonical positioned blocks (`.canvas-layout-layer`)
+    // alongside flow blocks and overlay images so magnetic snap works
+    // between positioned blocks (tables ↔ text) too.
     const allBlocks = Array.from(
       paper.querySelectorAll<HTMLElement>(
-        ':scope > .canvas-dropzone .block-renderer[role="button"], :scope > .canvas-overlay-layer .block-renderer--overlay',
+        ':scope > .canvas-dropzone .block-renderer[role="button"], :scope > .canvas-overlay-layer .block-renderer--overlay, :scope > .canvas-layout-layer .block-renderer[role="button"]',
       ),
     );
 
@@ -432,6 +458,51 @@ export class BlockRendererStateService {
     }
 
     return { left: newLeft, top: newTop, snapAxisX: axisX, snapAxisY: axisY };
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //  TZ-259.5 — Positioned (layout) drag with magnetic snap (pure)
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * Snap a normalized layout drag delta to the grid and to neighbouring
+   * block edges. Inputs are normalized (fractions of the paper); the
+   * math converts to paper px for the shared `snapToBlockEdges` DOM
+   * pass, then converts back. Pure in the sense that it only reads
+   * `paper`/`hostEl` for geometry and never mutates state.
+   */
+  computePositionedDrag(
+    startLayout: BlockLayout,
+    rawDx: number,
+    rawDy: number,
+    paper: HTMLElement | null,
+    hostEl: HTMLElement | null,
+  ): { dx: number; dy: number } {
+    if (!paper) return { dx: rawDx, dy: rawDy };
+    const pw = Math.max(1, paper.clientWidth);
+    const ph = Math.max(1, paper.clientHeight);
+    const startLeft = startLayout.x * pw;
+    const startTop = startLayout.y * ph;
+    const width = startLayout.width * pw;
+    const height = (startLayout.height ?? 0.06) * ph;
+
+    let left = startLeft + rawDx * pw;
+    let top = startTop + rawDy * ph;
+
+    if (this.snapEnabled()) {
+      const g = this.applySnapToGrid(left, top, this.gridSize());
+      left = g.snappedLeft;
+      top = g.snappedTop;
+      const bs = this.snapToBlockEdges(left, top, hostEl, paper);
+      left = bs.snappedLeft;
+      top = bs.snappedTop;
+    }
+
+    const pad = this.boundaryPadding();
+    left = Math.max(pad, Math.min(Math.max(0, pw - width - pad), left));
+    top = Math.max(pad, Math.min(Math.max(0, ph - height - pad), top));
+
+    return { dx: (left - startLeft) / pw, dy: (top - startTop) / ph };
   }
 
   // ═══════════════════════════════════════════════════════════

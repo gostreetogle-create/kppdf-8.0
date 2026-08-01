@@ -24,7 +24,16 @@
  * Conventional short reference: trust-model see file header banner.
  */
 
-import { ChangeDetectionStrategy, Component, effect, inject, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { CdkDrag } from '@angular/cdk/drag-drop';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { LucideAngularModule } from 'lucide-angular';
@@ -38,6 +47,11 @@ import {
   normalizeBlockLayout,
 } from '../../../shared/template-block/template-block-layout';
 import type { Rect } from './snap-engine';
+import {
+  computeLayoutResize,
+  type LayoutResizeHandle,
+  RESIZE_CURSORS,
+} from './snap-engine';
 import {
   BlockRendererStateService,
   OVERLAY_DEFAULT_WIDTH,
@@ -84,19 +98,33 @@ import {
         [style.z-index]="state.layoutZIndex()"
         [style.transform]="'rotate(' + state.layoutRotation() + 'deg)'"
         (click)="onSelect($event)"
-        (mousedown)="onPositionedDragStart($event)"
+        (mousedown)="!preview() && onPositionedDragStart($event)"
+        (dblclick)="!preview() && onLayoutDblClick($event)"
         (keydown.enter)="onSelect($event)"
         (keydown.space)="onSelect($event)"
       >
-        <div
-          class="block-renderer__delete"
-          (click)="onDeleteClick($event)"
-          (keydown.enter)="onDeleteClick($event)"
-          (mousedown)="$event.stopPropagation()"
-          title="Удалить блок"
-          role="button"
-          tabindex="-1"
-        >
+        @if (selected() && !preview()) {
+          <!-- TZ-259.4: canonical resize handles — edges + corners -->
+          @for (h of RESIZE_HANDLES; track h) {
+            <div
+              class="block-renderer__resize block-renderer__resize--{{ h }}"
+              [attr.data-handle]="h"
+              (mousedown)="onLayoutResizeStart($event, h)"
+              (click)="$event.stopPropagation()"
+              [attr.title]="resizeHandleTitle(h)"
+            ></div>
+          }
+        }
+        @if (!preview()) {
+          <div
+            class="block-renderer__delete"
+            (click)="onDeleteClick($event)"
+            (keydown.enter)="onDeleteClick($event)"
+            (mousedown)="$event.stopPropagation()"
+            title="Удалить блок"
+            role="button"
+            tabindex="-1"
+          >
           <svg
             width="14"
             height="14"
@@ -110,16 +138,51 @@ import {
               d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
             />
           </svg>
-        </div>
-        <div class="block-renderer__body">
-          <div class="block-renderer__header">
-            <span class="block-renderer__type">{{ state.typeLabel() }}</span>
-            @if (state.bindingBadge()) {
-              <span class="block-renderer__binding" [title]="state.bindingBadgeTooltip()">{{
-                state.bindingBadge()
-              }}</span>
-            }
           </div>
+        }
+        @if (sizeEditOpen() && !preview()) {
+          <!-- TZ-259.4: double-click size editor (px) -->
+          <div
+            class="block-renderer__size-editor"
+            (mousedown)="$event.stopPropagation()"
+            (click)="$event.stopPropagation()"
+            (dblclick)="$event.stopPropagation()"
+          >
+            <span class="block-renderer__size-editor-title">Размер, px</span>
+            <label class="block-renderer__size-editor-field">
+              <span>Ш</span>
+              <input
+                type="number"
+                min="20"
+                [value]="sizeEditWidthPx()"
+                (input)="onSizeEditInput($event, 'w')"
+              />
+            </label>
+            <label class="block-renderer__size-editor-field">
+              <span>В</span>
+              <input
+                type="number"
+                min="20"
+                [value]="sizeEditHeightPx()"
+                (input)="onSizeEditInput($event, 'h')"
+              />
+            </label>
+            <button type="button" class="block-renderer__size-editor-apply" (click)="applySizeEdit()">
+              Применить
+            </button>
+          </div>
+        }
+        <div class="block-renderer__body">
+          @if (!preview()) {
+            <div class="block-renderer__header">
+              <span class="block-renderer__type">{{ state.typeLabel() }}</span>
+              @if (state.bindingBadge()) {
+                <span class="block-renderer__binding" [title]="state.bindingBadgeTooltip()">{{
+                  state.bindingBadge()
+                }}</span>
+              }
+            </div>
+          }
           @if (block().type === 'image' && state.imageUrl()) {
             <div class="block-renderer__image-wrap">
               <img
@@ -200,21 +263,22 @@ import {
         [style.top.px]="state.dragActive() ? state.dragTop() : state.overlayTop()"
         [style.background-color]="state.blockBgColor() || null"
         (click)="onSelect($event)"
-        (mousedown)="onOverlayDragStart($event)"
+        (mousedown)="!preview() && onOverlayDragStart($event)"
         (keydown.enter)="onSelect($event)"
         (keydown.space)="onSelect($event)"
         (keydown.arrowUp)="onArrowKey($event, 'up')"
         (keydown.arrowDown)="onArrowKey($event, 'down')"
       >
-        <div
-          class="block-renderer__delete"
-          (click)="onDeleteClick($event)"
-          (keydown.enter)="onDeleteClick($event)"
-          (mousedown)="$event.stopPropagation()"
-          title="Удалить блок"
-          role="button"
-          tabindex="-1"
-        >
+        @if (!preview()) {
+          <div
+            class="block-renderer__delete"
+            (click)="onDeleteClick($event)"
+            (keydown.enter)="onDeleteClick($event)"
+            (mousedown)="$event.stopPropagation()"
+            title="Удалить блок"
+            role="button"
+            tabindex="-1"
+          >
           <svg
             width="14"
             height="14"
@@ -228,7 +292,8 @@ import {
               d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
             />
           </svg>
-        </div>
+          </div>
+        }
 
         @if (block().type === 'image' && state.imageUrl()) {
           <div class="block-renderer__image-wrap block-renderer__image-wrap--overlay">
@@ -283,6 +348,7 @@ import {
       <div
         cdkDrag
         cdkDragLockAxis="y"
+        [class.is-preview]="preview()"
         class="group block-renderer"
         [class.is-selected]="selected()"
         [class.is-multi-selected]="multiSelected()"
@@ -300,7 +366,7 @@ import {
         (keydown.arrowUp)="onArrowKey($event, 'up')"
         (keydown.arrowDown)="onArrowKey($event, 'down')"
       >
-        @if (selected()) {
+        @if (selected() && !preview()) {
           <div
             class="block-renderer__resize-side block-renderer__resize-side--left"
             (mousedown)="onResizeStart($event, 'left')"
@@ -314,14 +380,15 @@ import {
             title="Перетащите влево для отступа справа"
           ></div>
         }
-        <div
-          class="block-renderer__checkbox"
-          [class.is-visible]="multiSelected()"
-          (click)="onCheckboxClick($event)"
-          (keydown.enter)="onCheckboxClick($event)"
-          (keydown.space)="onCheckboxClick($event)"
-          (mousedown)="$event.stopPropagation()"
-          role="checkbox"
+        @if (!preview()) {
+          <div
+            class="block-renderer__checkbox"
+            [class.is-visible]="multiSelected()"
+            (click)="onCheckboxClick($event)"
+            (keydown.enter)="onCheckboxClick($event)"
+            (keydown.space)="onCheckboxClick($event)"
+            (mousedown)="$event.stopPropagation()"
+            role="checkbox"
           [attr.aria-checked]="multiSelected()"
           [attr.aria-label]="multiSelected() ? 'Убрать из выделения' : 'Выбрать блок'"
           [attr.tabindex]="multiSelected() ? '0' : '-1'"
@@ -349,30 +416,33 @@ import {
               <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" />
             }
           </svg>
-        </div>
-        <div
-          class="block-renderer__delete"
-          (click)="onDeleteClick($event)"
-          (keydown.enter)="onDeleteClick($event)"
-          (mousedown)="$event.stopPropagation()"
-          title="Удалить блок"
-          role="button"
-          tabindex="-1"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
+          </div>
+        }
+        @if (!preview()) {
+          <div
+            class="block-renderer__delete"
+            (click)="onDeleteClick($event)"
+            (keydown.enter)="onDeleteClick($event)"
+            (mousedown)="$event.stopPropagation()"
+            title="Удалить блок"
+            role="button"
+            tabindex="-1"
           >
-            <polyline points="3 6 5 6 21 6" />
-            <path
-              d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-            />
-          </svg>
-        </div>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <polyline points="3 6 5 6 21 6" />
+              <path
+                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+              />
+            </svg>
+          </div>
+        }
         <div class="block-renderer__body">
           <div class="block-renderer__drag-handle" title="Перетащите для перемещения">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
@@ -483,6 +553,8 @@ export class BlockRendererComponent {
   readonly snapEnabled = input<boolean>(true);
   readonly gridSize = input<number>(20);
   readonly boundaryPadding = input<number>(0);
+  /** TZ-259.2: when true, render print-preview — no editor chrome, no drag. */
+  readonly preview = input<boolean>(false);
 
   // ── Outputs ──
   readonly select = output<TemplateBlock>();
@@ -518,14 +590,39 @@ export class BlockRendererComponent {
   // ── DI ──
   protected readonly state = inject(BlockRendererStateService);
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly host = inject(ElementRef);
 
   // Constants for template
   protected readonly OVERLAY_DEFAULT_WIDTH = OVERLAY_DEFAULT_WIDTH;
   protected readonly OVERLAY_DEFAULT_HEIGHT = OVERLAY_DEFAULT_HEIGHT;
 
+  /** TZ-259.4: canonical resize handle directions (clockwise from NW). */
+  protected readonly RESIZE_HANDLES: LayoutResizeHandle[] = [
+    'nw',
+    'n',
+    'ne',
+    'e',
+    'se',
+    's',
+    'sw',
+    'w',
+  ];
+
+  /** TZ-259.4: double-click size editor (px) — open flag + current values. */
+  protected readonly sizeEditOpen = signal(false);
+  protected readonly sizeEditWidthPx = signal(0);
+  protected readonly sizeEditHeightPx = signal(0);
+
   constructor() {
     // Sync block input → service
     effect(() => this.state.block.set(this.block()));
+
+    // TZ-259.4: close the double-click size editor when the block changes
+    // (selection switched) so the popup never lingers on another block.
+    effect(() => {
+      const b = this.block();
+      if (b) this.sizeEditOpen.set(false);
+    });
 
     // Sync selection inputs → service
     effect(() => this.state.selected.set(this.selected()));
@@ -670,6 +767,8 @@ export class BlockRendererComponent {
     if (event.button !== 0) return;
     const target = event.target as HTMLElement;
     if (target.closest('.block-renderer__delete')) return;
+    if (target.closest('.block-renderer__resize')) return;
+    if (target.closest('.block-renderer__size-editor')) return;
     event.preventDefault();
     event.stopPropagation();
 
@@ -688,6 +787,7 @@ export class BlockRendererComponent {
     this.state.positionedDragActive.set(true);
     this.state.positionedDragLeft.set(startLayout.x * 100);
     this.state.positionedDragTop.set(startLayout.y * 100);
+    const hostEl = target.closest('.block-renderer--positioned') as HTMLElement | null;
     const cleanup = (): void => {
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
@@ -702,11 +802,24 @@ export class BlockRendererComponent {
       moveEvent.preventDefault();
       const rawDx = (moveEvent.clientX - startX) / Math.max(1, paper.clientWidth);
       const rawDy = (moveEvent.clientY - startY) / Math.max(1, paper.clientHeight);
-      const clamped = clampLayoutDelta(
-        groupLayouts.map(({ layout }) => layout),
-        rawDx,
-        rawDy,
-      );
+      // TZ-259.5: single-block positioned drags get magnetic snap (grid +
+      // neighbour edges); group drags keep the pure clamp path.
+      let clamped: { dx: number; dy: number };
+      if (!isGroupDrag && groupLayouts.length === 1) {
+        clamped = this.state.computePositionedDrag(
+          groupLayouts[0].layout,
+          rawDx,
+          rawDy,
+          paper,
+          hostEl,
+        );
+      } else {
+        clamped = clampLayoutDelta(
+          groupLayouts.map(({ layout }) => layout),
+          rawDx,
+          rawDy,
+        );
+      }
       clampedDx = clamped.dx;
       clampedDy = clamped.dy;
       this.state.layoutDragDelta.set({ dx: clampedDx, dy: clampedDy });
@@ -715,11 +828,23 @@ export class BlockRendererComponent {
         blockIds: new Set(groupLayouts.map(({ block }) => blockKey(block))),
         delta: { dx: clampedDx, dy: clampedDy },
       });
+      // TZ-259.5: live paper-px rect for alignment guides.
+      const live = {
+        left: (startLayout.x + clampedDx) * paper.clientWidth,
+        top: (startLayout.y + clampedDy) * paper.clientHeight,
+        width: startLayout.width * paper.clientWidth,
+        height: (startLayout.height ?? 0.06) * paper.clientHeight,
+      };
+      this.dragRectChange.emit({
+        blockId: blockKey(this.block()),
+        ...live,
+      });
     };
     const onLeave = (): void => {
       cleanup();
       this.state.positionedDragActive.set(false);
       this.state.layoutDragDelta.set(null);
+      this.dragRectChange.emit(null);
       this.layoutDragPreview.emit({
         blockId: this.block()._id ?? this.block().tempId ?? '',
         blockIds: new Set(),
@@ -738,6 +863,7 @@ export class BlockRendererComponent {
       }));
       this.state.positionedDragActive.set(false);
       this.state.layoutDragDelta.set(null);
+      this.dragRectChange.emit(null);
       this.layoutDragPreview.emit({
         blockId: this.block()._id ?? this.block().tempId ?? '',
         blockIds: new Set(),
@@ -751,6 +877,111 @@ export class BlockRendererComponent {
     document.addEventListener('mouseup', onUp);
     document.addEventListener('mouseleave', onLeave);
     window.addEventListener('blur', onLeave);
+  }
+
+  // ── TZ-259.4: canonical layout resize handler ──
+
+  protected onLayoutResizeStart(event: MouseEvent, handle: LayoutResizeHandle): void {
+    if (event.button !== 0) return;
+    const target = event.target as HTMLElement;
+    event.preventDefault();
+    event.stopPropagation();
+    const startLayout = this.block().layout;
+    const paper = target.closest('.pi-canvas-page-paper') as HTMLElement | null;
+    if (!startLayout || !paper) return;
+    const startX = event.clientX;
+    const startY = event.clientY;
+    this.state.layoutResize.set(startLayout);
+    const cleanup = (): void => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('mouseleave', onLeave);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    const onMove = (moveEvent: MouseEvent): void => {
+      if (moveEvent.buttons === 0) {
+        cleanup();
+        return;
+      }
+      moveEvent.preventDefault();
+      const next = computeLayoutResize(
+        startLayout,
+        handle,
+        { dx: moveEvent.clientX - startX, dy: moveEvent.clientY - startY },
+        paper.clientWidth,
+        paper.clientHeight,
+      );
+      this.state.layoutResize.set(next);
+    };
+    const onLeave = (): void => {
+      cleanup();
+      this.state.layoutResize.set(null);
+    };
+    const onUp = (): void => {
+      cleanup();
+      const final = this.state.layoutResize();
+      this.state.layoutResize.set(null);
+      if (final) {
+        this.layoutChanges.emit([{ block: this.block(), layout: final }]);
+      }
+    };
+    const cursor = RESIZE_CURSORS[handle] ?? 'nwse-resize';
+    document.body.style.cursor = cursor;
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('mouseleave', onLeave);
+  }
+
+  // ── TZ-259.4: double-click size editor ──
+
+  protected onLayoutDblClick(event: MouseEvent): void {
+    const layout = this.block().layout;
+    const paper = (event.target as HTMLElement).closest(
+      '.pi-canvas-page-paper',
+    ) as HTMLElement | null;
+    if (!layout || !paper) return;
+    this.sizeEditWidthPx.set(Math.round(layout.width * paper.clientWidth));
+    this.sizeEditHeightPx.set(
+      Math.round((layout.height ?? 0.06) * paper.clientHeight),
+    );
+    this.sizeEditOpen.set(true);
+  }
+
+  protected onSizeEditInput(event: Event, axis: 'w' | 'h'): void {
+    const value = Number((event.target as HTMLInputElement).value) || 0;
+    if (axis === 'w') this.sizeEditWidthPx.set(Math.max(20, value));
+    else this.sizeEditHeightPx.set(Math.max(20, value));
+  }
+
+  protected applySizeEdit(): void {
+    const layout = this.block().layout;
+    const paper = (this.host.nativeElement as HTMLElement).closest(
+      '.pi-canvas-page-paper',
+    ) as HTMLElement | null;
+    if (!layout || !paper) return;
+    const next = normalizeBlockLayout({
+      ...layout,
+      width: Math.min(1, this.sizeEditWidthPx() / Math.max(1, paper.clientWidth)),
+      height: Math.min(1, this.sizeEditHeightPx() / Math.max(1, paper.clientHeight)),
+    });
+    this.sizeEditOpen.set(false);
+    this.layoutChanges.emit([{ block: this.block(), layout: next }]);
+  }
+
+  protected resizeHandleTitle(handle: LayoutResizeHandle): string {
+    const titles: Record<LayoutResizeHandle, string> = {
+      n: 'Тяните для изменения высоты',
+      s: 'Тяните для изменения высоты',
+      e: 'Тяните для изменения ширины',
+      w: 'Тяните для изменения ширины',
+      ne: 'Тяните для изменения размера',
+      nw: 'Тяните для изменения размера',
+      se: 'Тяните для изменения размера',
+      sw: 'Тяните для изменения размера',
+    };
+    return titles[handle];
   }
 
   // ── Overlay drag handler ──

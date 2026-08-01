@@ -27,6 +27,7 @@ import {
   type DataBinding,
   type TemplateBlock,
 } from '../../../shared/template-block/template-block.types';
+import { normalizeBlockLayout } from '../../../shared/template-block/template-block-layout';
 import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
@@ -586,49 +587,111 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
             }
           }
 
-          <!-- Margin controls -->
-          <div class="inspector__section">
-            <span class="inspector__section-title">Отступы</span>
-            <div class="margin-controls">
-              <label class="margin-controls__item">
-                <span class="margin-controls__label">Слева</span>
-                <div class="margin-controls__input-row">
-                  <input
-                    class="field__input field__input--small pi-focus-ring"
-                    type="number"
-                    min="0"
-                    [max]="maxMarginLeftPx()"
-                    [value]="marginLeftPx()"
-                    (input)="onMarginLeftInput($event)"
-                  />
-                  <span class="margin-controls__unit">px</span>
-                </div>
-              </label>
-              <label class="margin-controls__item">
-                <span class="margin-controls__label">Справа</span>
-                <div class="margin-controls__input-row">
-                  <input
-                    class="field__input field__input--small pi-focus-ring"
-                    type="number"
-                    min="0"
-                    [max]="maxMarginRightPx()"
-                    [value]="marginRightPx()"
-                    (input)="onMarginRightInput($event)"
-                  />
-                  <span class="margin-controls__unit">px</span>
-                </div>
-              </label>
+          <!-- TZ-259.4: canonical positioned blocks use layout (px fields
+               below); legacy flow margin section is hidden for them. -->
+          @if (block()!.layout) {
+            <div class="inspector__section">
+              <span class="inspector__section-title">Позиция и размер (px)</span>
+              <div class="margin-controls margin-controls--grid">
+                <label class="margin-controls__item">
+                  <span class="margin-controls__label">X</span>
+                  <div class="margin-controls__input-row">
+                    <input
+                      class="field__input field__input--small pi-focus-ring"
+                      type="number"
+                      min="0"
+                      [value]="layoutXpx()"
+                      (input)="onLayoutXInput($event)"
+                    />
+                    <span class="margin-controls__unit">px</span>
+                  </div>
+                </label>
+                <label class="margin-controls__item">
+                  <span class="margin-controls__label">Y</span>
+                  <div class="margin-controls__input-row">
+                    <input
+                      class="field__input field__input--small pi-focus-ring"
+                      type="number"
+                      min="0"
+                      [value]="layoutYpx()"
+                      (input)="onLayoutYInput($event)"
+                    />
+                    <span class="margin-controls__unit">px</span>
+                  </div>
+                </label>
+                <label class="margin-controls__item">
+                  <span class="margin-controls__label">Ширина</span>
+                  <div class="margin-controls__input-row">
+                    <input
+                      class="field__input field__input--small pi-focus-ring"
+                      type="number"
+                      min="20"
+                      [value]="layoutWidthPx()"
+                      (input)="onLayoutWidthInput($event)"
+                    />
+                    <span class="margin-controls__unit">px</span>
+                  </div>
+                </label>
+                <label class="margin-controls__item">
+                  <span class="margin-controls__label">Высота</span>
+                  <div class="margin-controls__input-row">
+                    <input
+                      class="field__input field__input--small pi-focus-ring"
+                      type="number"
+                      min="20"
+                      [value]="layoutHeightPx()"
+                      (input)="onLayoutHeightInput($event)"
+                    />
+                    <span class="margin-controls__unit">px</span>
+                  </div>
+                </label>
+              </div>
             </div>
-            <button
-              type="button"
-              class="field__reset-btn pi-focus-ring"
-              (click)="onResetMargins()"
-              [disabled]="marginLeftPx() === 0 && marginRightPx() === 0"
-            >
-              <lucide-icon [img]="ResetIcon" [size]="12"></lucide-icon>
-              Сбросить отступы
-            </button>
-          </div>
+          } @else {
+            <!-- Margin controls (flow model — legacy) -->
+            <div class="inspector__section">
+              <span class="inspector__section-title">Отступы</span>
+              <div class="margin-controls">
+                <label class="margin-controls__item">
+                  <span class="margin-controls__label">Слева</span>
+                  <div class="margin-controls__input-row">
+                    <input
+                      class="field__input field__input--small pi-focus-ring"
+                      type="number"
+                      min="0"
+                      [max]="maxMarginLeftPx()"
+                      [value]="marginLeftPx()"
+                      (input)="onMarginLeftInput($event)"
+                    />
+                    <span class="margin-controls__unit">px</span>
+                  </div>
+                </label>
+                <label class="margin-controls__item">
+                  <span class="margin-controls__label">Справа</span>
+                  <div class="margin-controls__input-row">
+                    <input
+                      class="field__input field__input--small pi-focus-ring"
+                      type="number"
+                      min="0"
+                      [max]="maxMarginRightPx()"
+                      [value]="marginRightPx()"
+                      (input)="onMarginRightInput($event)"
+                    />
+                    <span class="margin-controls__unit">px</span>
+                  </div>
+                </label>
+              </div>
+              <button
+                type="button"
+                class="field__reset-btn pi-focus-ring"
+                (click)="onResetMargins()"
+                [disabled]="marginLeftPx() === 0 && marginRightPx() === 0"
+              >
+                <lucide-icon [img]="ResetIcon" [size]="12"></lucide-icon>
+                Сбросить отступы
+              </button>
+            </div>
+          }
 
           <!-- Actions -->
           <div class="inspector__section inspector__section--actions">
@@ -984,6 +1047,13 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
       .margin-controls {
         display: flex;
         gap: 12px;
+      }
+
+      /* TZ-259.4: 2×2 grid for the four canonical layout fields (X/Y/Ш/В). */
+      .margin-controls--grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
       }
 
       .margin-controls__item {
@@ -1405,6 +1475,8 @@ export class BuilderInspectorComponent {
   readonly selectedBlocks = input<TemplateBlock[]>([]);
   /** Paper width in px (720 for portrait, 900 for landscape). */
   readonly paperWidth = input<number>(720);
+  /** Paper height in px (portrait ≈ width × 1.414, landscape ≈ width / 1.414). */
+  readonly paperHeight = input<number>(1018);
   /** When true, show template properties instead of block properties. */
   readonly templateSelected = input<boolean>(false);
   /** Current template (for template properties panel). */
@@ -1476,6 +1548,12 @@ export class BuilderInspectorComponent {
   protected readonly imageOverlay = signal<boolean>(false);
   protected readonly overlayLeft = signal<number>(0);
   protected readonly overlayTop = signal<number>(0);
+
+  // TZ-259.4: canonical layout geometry (px) for positioned blocks.
+  protected readonly layoutXpx = signal<number>(0);
+  protected readonly layoutYpx = signal<number>(0);
+  protected readonly layoutWidthPx = signal<number>(0);
+  protected readonly layoutHeightPx = signal<number>(0);
 
   // Debounced text input for template properties (prevents orientation jumping)
   private readonly textInput$ = new Subject<{ key: string; value: string }>();
@@ -1578,6 +1656,14 @@ export class BuilderInspectorComponent {
       this.imageOverlay.set((settings?.['overlay'] as boolean) ?? false);
       this.overlayLeft.set((settings?.['overlayLeft'] as number) ?? 0);
       this.overlayTop.set((settings?.['overlayTop'] as number) ?? 0);
+      // Hydrate canonical layout geometry (TZ-259.4).
+      const layout = b?.layout;
+      this.layoutXpx.set(layout ? Math.round(layout.x * this.paperWidth()) : 0);
+      this.layoutYpx.set(layout ? Math.round(layout.y * this.paperHeight()) : 0);
+      this.layoutWidthPx.set(layout ? Math.round(layout.width * this.paperWidth()) : 0);
+      this.layoutHeightPx.set(
+        layout ? Math.round((layout.height ?? 0.06) * this.paperHeight()) : 0,
+      );
     });
 
     // Hydrate snap settings from inputs when they change.
@@ -1776,6 +1862,48 @@ export class BuilderInspectorComponent {
 
   protected onSetDefaultBackground(index: number): void {
     this.setDefaultBackground.emit(index);
+  }
+
+  // ── TZ-259.4: canonical layout geometry handlers (positioned blocks) ──
+
+  protected onLayoutXInput(event: Event): void {
+    const px = Number((event.target as HTMLInputElement).value) || 0;
+    this.layoutXpx.set(Math.max(0, px));
+    this.emitLayoutPatch();
+  }
+
+  protected onLayoutYInput(event: Event): void {
+    const px = Number((event.target as HTMLInputElement).value) || 0;
+    this.layoutYpx.set(Math.max(0, px));
+    this.emitLayoutPatch();
+  }
+
+  protected onLayoutWidthInput(event: Event): void {
+    const px = Number((event.target as HTMLInputElement).value) || 0;
+    this.layoutWidthPx.set(Math.max(20, px));
+    this.emitLayoutPatch();
+  }
+
+  protected onLayoutHeightInput(event: Event): void {
+    const px = Number((event.target as HTMLInputElement).value) || 0;
+    this.layoutHeightPx.set(Math.max(20, px));
+    this.emitLayoutPatch();
+  }
+
+  /** Emit a normalized `layout` patch for the selected positioned block. */
+  private emitLayoutPatch(): void {
+    const b = this.block();
+    if (!b?._id || !b.layout) return;
+    const pw = Math.max(1, this.paperWidth());
+    const ph = Math.max(1, this.paperHeight());
+    const layout = normalizeBlockLayout({
+      ...b.layout,
+      x: Math.min(1, this.layoutXpx() / pw),
+      y: Math.min(1, this.layoutYpx() / ph),
+      width: Math.min(1, this.layoutWidthPx() / pw),
+      height: Math.min(1, this.layoutHeightPx() / ph),
+    });
+    this.update.emit({ _id: b._id, layout });
   }
 
   // ── Margin handlers (single block) ──

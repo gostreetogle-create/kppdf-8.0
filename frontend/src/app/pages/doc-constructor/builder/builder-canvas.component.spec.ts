@@ -242,8 +242,9 @@ describe('BuilderCanvasComponent \u2014 Magnetic Grid + Guides (TZ-237.MAGNETIC-
     // jsdom doesn't apply @media print styles, so we verify the rule
     // exists in the source authored CSS. This is the same string
     // Angular's `styles: [\`...\`]` array holds at runtime.
+    // TZ-259.6: the print block also hides the floating alignment toolbar.
     expect(CANVAS_SOURCE).toMatch(
-      /@media print\s*\{[^}]*\.canvas-builder__grid-layer,\s*\.canvas-builder__guides-layer\s*\{[^}]*display:\s*none\s*!important[^}]*\}/,
+      /@media print\s*\{[^}]*\.canvas-builder__grid-layer,\s*\.canvas-builder__guides-layer,\s*\.canvas-align-toolbar\s*\{[^}]*display:\s*none\s*!important[^}]*\}/,
     );
   });
 

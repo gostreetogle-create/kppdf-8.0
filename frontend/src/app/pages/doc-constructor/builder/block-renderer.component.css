@@ -257,7 +257,11 @@
   min-height: 0;
   margin: 0;
   padding: 10px 12px;
-  overflow: hidden;
+  /* TZ-259.4: overflow must be VISIBLE so the resize handles (placed just
+     outside the box at -4/-5px) are neither clipped nor unclickable. In the
+     editor, overflowing block content shows freely; print CSS hides the
+     editor chrome and the server renderer clamps to the layout box. */
+  overflow: visible;
   box-sizing: border-box;
   cursor: move;
   transform-origin: center;
@@ -476,6 +480,153 @@
   opacity: 1;
 }
 
+/* ═══ TZ-259.4: canonical (positioned) resize handles ═══ */
+.block-renderer__resize {
+  position: absolute;
+  z-index: 12;
+  background: var(--color-paper);
+  border: 1px solid var(--color-gold);
+  border-radius: 1px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+  touch-action: none;
+}
+
+.block-renderer--positioned:hover .block-renderer__resize,
+.block-renderer--positioned.is-selected .block-renderer__resize {
+  opacity: 0.85;
+}
+
+.block-renderer__resize:hover {
+  opacity: 1;
+  background: var(--color-gold-soft);
+}
+
+/* Edges */
+.block-renderer__resize--n,
+.block-renderer__resize--s {
+  left: 8px;
+  right: 8px;
+  height: 7px;
+  cursor: ns-resize;
+}
+.block-renderer__resize--n {
+  top: -4px;
+}
+.block-renderer__resize--s {
+  bottom: -4px;
+}
+.block-renderer__resize--e,
+.block-renderer__resize--w {
+  top: 8px;
+  bottom: 8px;
+  width: 7px;
+  cursor: ew-resize;
+}
+.block-renderer__resize--e {
+  right: -4px;
+}
+.block-renderer__resize--w {
+  left: -4px;
+}
+
+/* Corners */
+.block-renderer__resize--nw,
+.block-renderer__resize--ne,
+.block-renderer__resize--sw,
+.block-renderer__resize--se {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+.block-renderer__resize--nw {
+  top: -5px;
+  left: -5px;
+  cursor: nwse-resize;
+}
+.block-renderer__resize--ne {
+  top: -5px;
+  right: -5px;
+  cursor: nesw-resize;
+}
+.block-renderer__resize--sw {
+  bottom: -5px;
+  left: -5px;
+  cursor: nesw-resize;
+}
+.block-renderer__resize--se {
+  bottom: -5px;
+  right: -5px;
+  cursor: nwse-resize;
+}
+
+/* ═══ TZ-259.4: double-click size editor (px) ═══ */
+.block-renderer__size-editor {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: var(--color-paper);
+  border: 1px solid var(--color-gold);
+  border-radius: 3px;
+  box-shadow: var(--shadow-executive);
+  white-space: nowrap;
+}
+
+.block-renderer__size-editor-title {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-muted);
+}
+
+.block-renderer__size-editor-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--color-ink);
+}
+
+.block-renderer__size-editor-field span {
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.block-renderer__size-editor-field input {
+  width: 56px;
+  padding: 3px 5px;
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  color: var(--color-ink);
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  border-radius: 2px;
+}
+
+.block-renderer__size-editor-apply {
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-paper);
+  background: var(--color-ink);
+  border: 1px solid var(--color-ink);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 100ms ease;
+}
+
+.block-renderer__size-editor-apply:hover {
+  background: var(--color-gold);
+  border-color: var(--color-gold);
+}
+
 /* Print: hide editor-only elements */
 @media print {
   .block-renderer {
@@ -488,6 +639,8 @@
     break-inside: avoid;
   }
   .block-renderer__resize-side,
+  .block-renderer__resize,
+  .block-renderer__size-editor,
   .block-renderer__checkbox {
     display: none !important;
   }

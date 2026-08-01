@@ -96,8 +96,16 @@ export class PiDialogService {
     // where the dialog renders at top-left because CDK computed coordinates
     // against zero-width/zero-height pane. After RAF, layout has settled
     // and updatePosition() can correctly center the dialog.
+    //
+    // TZ-259.1: the RAF callback is guarded by `isClosed()` so that a
+    // dialog closed BEFORE the frame fires (e.g. template setup →
+    // «Создать» immediately after mount) never calls updatePosition()
+    // on a disposed overlay. Without the guard, the late callback could
+    // re-position a detached pane and leave the overlay container in a
+    // half-torn-down state — the observed «диалог остаётся на экране».
     queueMicrotask(() => {
       requestAnimationFrame(() => {
+        if (isClosed()) return;
         overlayRef.updatePosition();
       });
     });

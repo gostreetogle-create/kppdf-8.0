@@ -5,6 +5,9 @@
  * source of truth for the *visual* geometry of the magnetic grid and
  * alignment guides in the Document Constructor (Конструктор).
  *
+ * TZ-259.4/5/6: extended with normalized-layout resize math, positioned
+ * block rect conversion, and multi-select alignment — all pure, no DOM.
+ *
  * Constraints:
  *   - Angular DI: NONE. No DOM, no signals, no zone. Pure functions
  *     so the engine can be unit-tested deterministically without
@@ -15,8 +18,9 @@
  *     accidental mutation downstream.
  *
  * Scope (explicit):
- *   - Alignment candidates: overlay image blocks ONLY. Flow blocks
- *     have no absolute coordinates and are deliberately out of scope.
+ *   - Alignment candidates: overlay image blocks + canonical positioned
+ *     (layout) blocks. Flow blocks have no absolute coordinates and are
+ *     deliberately out of scope.
  *   - Single-block drag. Multi-select drag is deferred (the
  *     `multiSelected` signal exists in the renderer, but its UI
  *     shipping is post-this-slice).
@@ -34,6 +38,8 @@
  *   required so Angular's @for + track expressions do not flicker
  *   guides during fast drag.
  */
+
+import { normalizeBlockLayout, type BlockLayout } from '../../../shared/template-block/template-block-layout';
 
 export interface Rect {
   readonly left: number;
@@ -304,4 +310,224 @@ export function overlayBlockToRect(
     width: rawW,
     height: rawH,
   };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TZ-259.4 — Normalized-layout resize math (pure)
+// ═══════════════════════════════════════════════════════════════
+
+/** Resize handle directions for canonical (layout) blocks. */
+export type LayoutResizeHandle =
+  | 'n'
+  | 's'
+  | 'e'
+  | 'w'
+  | 'ne'
+  | 'nw'
+  | 'se'
+  | 'sw';
+
+/** CSS cursor per resize handle direction (mirrors the handle geometry). */
+export const RESIZE_CURSORS: Readonly<Record<LayoutResizeHandle, string>> = {
+  n: 'ns-resize',
+  s: 'ns-resize',
+  e: 'ew-resize',
+  w: 'ew-resize',
+  ne: 'nesw-resize',
+  sw: 'nesw-resize',
+  nw: 'nwse-resize',
+  se: 'nwse-resize',
+};
+
+/**
+ * Resize a normalized layout by a pointer delta (px) relative to a paper
+ * sized `paperW` x `paperH` (px). Edges and corners move/scale the
+ * rectangle; `normalizeBlockLayout` re-clamps to page bounds and
+ * min dimensions. Pure and deterministic — unit-testable without DOM.
+ */
+export function computeLayoutResize(
+  start: BlockLayout,
+  handle: LayoutResizeHandle,
+  deltaPx: { dx: number; dy: number },
+  paperW: number,
+  paperH: number,
+  minWidthPx = 20,
+  minHeightPx = 20,
+): BlockLayout {
+  const pw = Math.max(1, paperW);
+  const ph = Math.max(1, paperH);
+  const dx = deltaPx.dx / pw;
+  const dy = deltaPx.dy / ph;
+  const minW = minWidthPx / pw;
+  const minH = minHeightPx / ph;
+
+  let x = start.x;
+  let y = start.y;
+  let w = start.width;
+  let h = start.height ?? 0.06;
+
+  if (handle.includes('e')) {
+    w = Math.min(1 - x, Math.max(minW, w + dx));
+  }
+  if (handle.includes('w')) {
+    const newX = Math.min(x + w - minW, Math.max(0, x + dx));
+    w = w + (x - newX);
+    x = newX;
+  }
+  if (handle.includes('s')) {
+    h = Math.min(1 - y, Math.max(minH, h + dy));
+  }
+  if (handle.includes('n')) {
+    const newY = Math.min(y + h - minH, Math.max(0, y + dy));
+    h = h + (y - newY);
+    y = newY;
+  }
+
+  return normalizeBlockLayout({ ...start, x, y, width: w, height: h });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TZ-259.5 — Positioned (layout) block → Rect (pure)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Convert a canonical layout block to a paper-relative px `Rect` so the
+ * alignment-guide engine can treat positioned blocks exactly like
+ * overlay blocks. Returns `null` when the block has no layout or
+ * non-positive dimensions.
+ */
+export function layoutBlockToRect(
+  block: { blockId: string; layout?: BlockLayout | null },
+  paperW: number,
+  paperH: number,
+): Rect | null {
+  const l = block.layout;
+  if (!l) return null;
+  if (!(paperW > 0) || !(paperH > 0)) return null;
+  const width = l.width * paperW;
+  const height = (l.height ?? 0.06) * paperH;
+  if (!(width > 0) || !(height > 0)) return null;
+  return {
+    blockId: block.blockId,
+    left: l.x * paperW,
+    top: l.y * paperH,
+    width,
+    height,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TZ-259.6 — Multi-select alignment / distribution (pure)
+// ═══════════════════════════════════════════════════════════════
+
+export type AlignMode =
+  | 'left'
+  | 'center-x'
+  | 'right'
+  | 'top'
+  | 'middle-y'
+  | 'bottom'
+  | 'distribute-h'
+  | 'distribute-v'
+  | 'same-width'
+  | 'same-height';
+
+export interface AlignEntry {
+  readonly blockId: string;
+  readonly layout: BlockLayout;
+}
+
+/**
+ * Compute new normalized layouts that align/distribute a group of
+ * positioned blocks. Pure and deterministic: identical inputs always
+ * produce identical outputs. Returns an entry per input (order
+ * preserved), each with the normalized layout for that block.
+ */
+export function computeAlignLayouts(
+  entries: readonly AlignEntry[],
+  mode: AlignMode,
+): readonly AlignEntry[] {
+  if (entries.length === 0) return entries;
+  const layouts = entries.map((e) => normalizeBlockLayout(e.layout));
+
+  const left = Math.min(...layouts.map((l) => l.x));
+  const top = Math.min(...layouts.map((l) => l.y));
+  const right = Math.max(...layouts.map((l) => l.x + l.width));
+  const bottom = Math.max(...layouts.map((l) => l.y + (l.height ?? 0.06)));
+  const cx = (left + right) / 2;
+  const cy = (top + bottom) / 2;
+
+  let next: BlockLayout[];
+
+  switch (mode) {
+    case 'left':
+      next = layouts.map((l) => normalizeBlockLayout({ ...l, x: left }));
+      break;
+    case 'center-x':
+      next = layouts.map((l) =>
+        normalizeBlockLayout({ ...l, x: cx - l.width / 2 }),
+      );
+      break;
+    case 'right':
+      next = layouts.map((l) =>
+        normalizeBlockLayout({ ...l, x: right - l.width }),
+      );
+      break;
+    case 'top':
+      next = layouts.map((l) => normalizeBlockLayout({ ...l, y: top }));
+      break;
+    case 'middle-y':
+      next = layouts.map((l) =>
+        normalizeBlockLayout({ ...l, y: cy - (l.height ?? 0.06) / 2 }),
+      );
+      break;
+    case 'bottom':
+      next = layouts.map((l) =>
+        normalizeBlockLayout({ ...l, y: bottom - (l.height ?? 0.06) }),
+      );
+      break;
+    case 'same-width': {
+      const maxW = Math.max(...layouts.map((l) => l.width));
+      next = layouts.map((l) => normalizeBlockLayout({ ...l, width: maxW }));
+      break;
+    }
+    case 'same-height': {
+      const maxH = Math.max(...layouts.map((l) => l.height ?? 0.06));
+      next = layouts.map((l) =>
+        normalizeBlockLayout({ ...l, height: maxH }),
+      );
+      break;
+    }
+    case 'distribute-h': {
+      // Sort by current x, keep first/last anchors, spread evenly.
+      const sorted = layouts
+        .map((l, i) => ({ l, i }))
+        .sort((a, b) => a.l.x - b.l.x);
+      const gap = sorted.length > 1
+        ? (right - left) / (sorted.length - 1)
+        : 0;
+      const placed = new Array<BlockLayout>(layouts.length);
+      sorted.forEach(({ l, i }, idx) => {
+        placed[i] = normalizeBlockLayout({ ...l, x: left + gap * idx });
+      });
+      next = placed;
+      break;
+    }
+    case 'distribute-v': {
+      const sorted = layouts
+        .map((l, i) => ({ l, i }))
+        .sort((a, b) => a.l.y - b.l.y);
+      const gap = sorted.length > 1
+        ? (bottom - top) / (sorted.length - 1)
+        : 0;
+      const placed = new Array<BlockLayout>(layouts.length);
+      sorted.forEach(({ l, i }, idx) => {
+        placed[i] = normalizeBlockLayout({ ...l, y: top + gap * idx });
+      });
+      next = placed;
+      break;
+    }
+  }
+
+  return entries.map((e, i) => ({ blockId: e.blockId, layout: next[i] }));
 }

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { CdkDropList, CdkDragDrop } from '@angular/cdk/drag-drop';
+import { LucideAngularModule, AlignLeft, AlignRight, AlignCenterHorizontal, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignHorizontalSpaceBetween, AlignVerticalSpaceBetween, MoveHorizontal, MoveVertical } from 'lucide-angular';
 import { BlockRendererComponent } from './block-renderer.component';
 import { PiCanvasPageComponent } from '../../../shared/ui/canvas/pi-canvas-page.component';
 import { blockKey, type TemplateBlock } from '../../../shared/template-block/template-block.types';
@@ -8,7 +9,11 @@ import { CANVAS_DROPLIST_ID, type AddBlockPayload } from './builder.types';
 import {
   collapseAlignmentGuides,
   computeAlignmentGuides,
+  computeAlignLayouts,
+  layoutBlockToRect,
   overlayBlockToRect,
+  type AlignEntry,
+  type AlignMode,
   type Rect,
   type SnapGuide,
 } from './snap-engine';
@@ -25,7 +30,7 @@ import {
   selector: 'app-builder-canvas',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CdkDropList, BlockRendererComponent, PiCanvasPageComponent],
+  imports: [CdkDropList, BlockRendererComponent, PiCanvasPageComponent, LucideAngularModule],
   template: `
     <pi-canvas-page
       [pageSize]="pageSize()"
@@ -78,6 +83,7 @@ import {
               [groupBlocks]="selectedBlocks()"
               [layoutDragDelta]="layoutDragDelta()"
               [layoutDragBlockIds]="layoutDragBlockIds()"
+              [preview]="isPreview()"
               (select)="onSelect($event)"
               (multiSelect)="onMultiSelect($event)"
               (widthChange)="onBlockWidthChange(block, $event)"
@@ -99,14 +105,111 @@ import {
             [groupBlocks]="selectedBlocks()"
             [layoutDragDelta]="layoutDragDelta()"
             [layoutDragBlockIds]="layoutDragBlockIds()"
+            [preview]="isPreview()"
             (select)="onSelect($event)"
             (multiSelect)="onMultiSelect($event)"
             (deleteRequest)="deleteRequest.emit($event)"
             (layoutChanges)="onLayoutChanges($event)"
             (layoutDragPreview)="onLayoutDragPreview($event)"
+            (dragRectChange)="onChildDragRect($event)"
           />
         }
       </div>
+
+      <!-- TZ-259.6: floating alignment toolbar for multi-select (2+ blocks). -->
+      @if (alignToolbarVisible()) {
+        <div
+          class="canvas-align-toolbar"
+          role="toolbar"
+          aria-label="Выравнивание блоков"
+          (mousedown)="$event.stopPropagation()"
+          (click)="$event.stopPropagation()"
+        >
+          <button
+            type="button"
+            class="canvas-align-toolbar__btn"
+            (click)="onAlign('left')"
+            title="Выровнять по левому краю"
+          >
+            <lucide-icon [img]="AlignLeftIcon" [size]="14"></lucide-icon>
+          </button>
+          <button
+            type="button"
+            class="canvas-align-toolbar__btn"
+            (click)="onAlign('center-x')"
+            title="Выровнять по центру по горизонтали"
+          >
+            <lucide-icon [img]="AlignCenterHorizontalIcon" [size]="14"></lucide-icon>
+          </button>
+          <button
+            type="button"
+            class="canvas-align-toolbar__btn"
+            (click)="onAlign('right')"
+            title="Выровнять по правому краю"
+          >
+            <lucide-icon [img]="AlignRightIcon" [size]="14"></lucide-icon>
+          </button>
+          <span class="canvas-align-toolbar__sep" aria-hidden="true"></span>
+          <button
+            type="button"
+            class="canvas-align-toolbar__btn"
+            (click)="onAlign('top')"
+            title="Выровнять по верху"
+          >
+            <lucide-icon [img]="AlignStartVerticalIcon" [size]="14"></lucide-icon>
+          </button>
+          <button
+            type="button"
+            class="canvas-align-toolbar__btn"
+            (click)="onAlign('middle-y')"
+            title="Выровнять по центру по вертикали"
+          >
+            <lucide-icon [img]="AlignCenterVerticalIcon" [size]="14"></lucide-icon>
+          </button>
+          <button
+            type="button"
+            class="canvas-align-toolbar__btn"
+            (click)="onAlign('bottom')"
+            title="Выровнять по низу"
+          >
+            <lucide-icon [img]="AlignEndVerticalIcon" [size]="14"></lucide-icon>
+          </button>
+          <span class="canvas-align-toolbar__sep" aria-hidden="true"></span>
+          <button
+            type="button"
+            class="canvas-align-toolbar__btn"
+            (click)="onAlign('distribute-h')"
+            title="Распределить по горизонтали"
+          >
+            <lucide-icon [img]="AlignHorizontalSpaceBetweenIcon" [size]="14"></lucide-icon>
+          </button>
+          <button
+            type="button"
+            class="canvas-align-toolbar__btn"
+            (click)="onAlign('distribute-v')"
+            title="Распределить по вертикали"
+          >
+            <lucide-icon [img]="AlignVerticalSpaceBetweenIcon" [size]="14"></lucide-icon>
+          </button>
+          <span class="canvas-align-toolbar__sep" aria-hidden="true"></span>
+          <button
+            type="button"
+            class="canvas-align-toolbar__btn"
+            (click)="onAlign('same-width')"
+            title="Сделать одинаковую ширину"
+          >
+            <lucide-icon [img]="MoveHorizontalIcon" [size]="14"></lucide-icon>
+          </button>
+          <button
+            type="button"
+            class="canvas-align-toolbar__btn"
+            (click)="onAlign('same-height')"
+            title="Сделать одинаковую высоту"
+          >
+            <lucide-icon [img]="MoveVerticalIcon" [size]="14"></lucide-icon>
+          </button>
+        </div>
+      }
 
       <!-- Overlay blocks layer (outside cdkDropList for free absolute positioning) -->
       <div class="canvas-overlay-layer">
@@ -133,7 +236,7 @@ import {
           />
         }
 
-        @if (snapEnabled()) {
+        @if (snapEnabled() && !isPreview()) {
           <!-- TZ-237.MAGNETIC-GRID-r0: visible magnetic grid dots overlay. -->
           <div
             class="canvas-builder__grid-layer"
@@ -141,7 +244,7 @@ import {
             [style.background-size.px]="gridSize()"
           ></div>
         }
-        @if (currentGuides().length > 0) {
+        @if (currentGuides().length > 0 && !isPreview()) {
           <!-- TZ-237.MAGNETIC-GRID-r0: alignment guides for the active overlay drag. -->
           <div class="canvas-builder__guides-layer" aria-hidden="true">
             @for (g of currentGuides(); track g.edge + ':' + g.targetBlockId) {
@@ -315,6 +418,58 @@ import {
       .canvas-overlay-layer > app-block-renderer {
         pointer-events: auto;
       }
+
+      /* ═══ TZ-259.6: floating multi-select alignment toolbar ═══ */
+      .canvas-align-toolbar {
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 200;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        padding: 4px 6px;
+        background: var(--color-paper);
+        border: 1px solid var(--color-rule);
+        border-radius: 4px;
+        box-shadow: var(--shadow-executive);
+        pointer-events: auto;
+      }
+
+      .canvas-align-toolbar__btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        padding: 0;
+        color: var(--color-muted);
+        background: transparent;
+        border: none;
+        border-radius: 2px;
+        cursor: pointer;
+        transition:
+          color 100ms ease,
+          background 100ms ease;
+      }
+
+      .canvas-align-toolbar__btn:hover {
+        color: var(--color-ink);
+        background: var(--color-paper-3);
+      }
+
+      .canvas-align-toolbar__btn:focus-visible {
+        outline: 2px solid var(--color-gold);
+        outline-offset: -1px;
+      }
+
+      .canvas-align-toolbar__sep {
+        width: 1px;
+        height: 16px;
+        margin: 0 3px;
+        background: var(--color-rule);
+      }
     `,
 
     /* ── TZ-237.MAGNETIC-GRID-r0: magnetic grid + alignment guides ── */
@@ -324,11 +479,15 @@ import {
         inset: 0;
         z-index: 0;
         pointer-events: none;
+        /* TZ-259.3: contrast raised from 0.18 → 0.42 and dot size 1px → 2px
+           so the snap grid is actually visible on white paper. Hidden in
+           preview via the isPreview() guard in the template. */
         background-image: radial-gradient(
           circle at 1px 1px,
-          rgba(15, 23, 42, 0.18) 1px,
+          rgba(15, 23, 42, 0.42) 2px,
           transparent 0
         );
+        background-size: var(--grid-size, 20px) var(--grid-size, 20px);
       }
       .canvas-builder__guides-layer {
         position: absolute;
@@ -363,7 +522,8 @@ import {
       }
       @media print {
         .canvas-builder__grid-layer,
-        .canvas-builder__guides-layer {
+        .canvas-builder__guides-layer,
+        .canvas-align-toolbar {
           display: none !important;
         }
       }
@@ -381,6 +541,8 @@ export class BuilderCanvasComponent {
   readonly footerText = input<string>('');
   readonly pageNumbering = input<boolean>(false);
   readonly pageSize = input<'A3' | 'A4' | 'A5'>('A4');
+  /** TZ-259.2: 'editor' | 'preview' — preview hides editor chrome and locks drag. */
+  readonly viewMode = input<'editor' | 'preview'>('editor');
 
   protected readonly maxWidthPx = computed<number>(() => {
     const isLandscape = this.orientation() === 'landscape';
@@ -427,6 +589,44 @@ export class BuilderCanvasComponent {
 
   protected readonly CANVAS_DROPLIST_ID: string = CANVAS_DROPLIST_ID;
   protected readonly blockKey = blockKey;
+
+  // TZ-259.6: lucide icons for the floating alignment toolbar.
+  protected readonly AlignLeftIcon = AlignLeft;
+  protected readonly AlignRightIcon = AlignRight;
+  protected readonly AlignCenterHorizontalIcon = AlignCenterHorizontal;
+  protected readonly AlignStartVerticalIcon = AlignStartVertical;
+  protected readonly AlignCenterVerticalIcon = AlignCenterVertical;
+  protected readonly AlignEndVerticalIcon = AlignEndVertical;
+  protected readonly AlignHorizontalSpaceBetweenIcon = AlignHorizontalSpaceBetween;
+  protected readonly AlignVerticalSpaceBetweenIcon = AlignVerticalSpaceBetween;
+  protected readonly MoveHorizontalIcon = MoveHorizontal;
+  protected readonly MoveVerticalIcon = MoveVertical;
+
+  /** TZ-259.2: true when the canvas is in print-preview mode. */
+  protected readonly isPreview = computed<boolean>(() => this.viewMode() === 'preview');
+
+  /**
+   * TZ-259.6: show the floating alignment toolbar only when 2+ positioned
+   * (layout) blocks are multi-selected and we are NOT in preview mode.
+   * Gate on positioned count so the toolbar never appears for a selection
+   * of flow-only blocks, where `onAlign` would silently no-op.
+   */
+  protected readonly alignToolbarVisible = computed<boolean>(() => {
+    if (this.selectedIds().size < 2 || this.isPreview()) return false;
+    const positioned = this.selectedBlocks().filter((b) => !!b.layout);
+    return positioned.length >= 2;
+  });
+
+  /**
+   * Paper pixel size used to convert normalized layout coordinates into
+   * paper-relative px for the guide engine (mirrors pi-canvas-page CSS).
+   */
+  protected readonly paperSizePx = computed<{ width: number; height: number }>(() => {
+    const w = this.maxWidthPx();
+    const landscape = this.orientation() === 'landscape';
+    const h = landscape ? w / 1.414 : w * 1.414;
+    return { width: w, height: h };
+  });
 
   /** Check if a block is in overlay mode. */
   protected isOverlayBlock(block: TemplateBlock): boolean {
@@ -489,19 +689,50 @@ export class BuilderCanvasComponent {
     const dragged = this.currentDragRect();
     if (!dragged) return [];
     const blocks = this.blocks() ?? [];
+    const paper = this.paperSizePx();
     const others: Rect[] = [];
     for (const b of blocks) {
-      if (!this.isOverlayBlock(b)) continue;
-      const r = overlayBlockToRect({
-        blockId: blockKey(b),
-        // `settings` on `TemplateBlock` is `Record<string, unknown> | undefined`;
-        // the engine accepts `Readonly<Record<string, unknown>> | null` so the
-        // contract lines up without `any` casts.
-        settings: b.settings ?? null,
-      });
-      if (r) others.push(r);
+      if (blockKey(b) === dragged.blockId) continue;
+      // TZ-259.5: alignment candidates are BOTH overlay images and
+      // canonical positioned (layout) blocks — not just overlay.
+      if (this.isOverlayBlock(b)) {
+        const r = overlayBlockToRect({
+          blockId: blockKey(b),
+          // `settings` on `TemplateBlock` is `Record<string, unknown> | undefined`;
+          // the engine accepts `Readonly<Record<string, unknown>> | null` so the
+          // contract lines up without `any` casts.
+          settings: b.settings ?? null,
+        });
+        if (r) others.push(r);
+      } else {
+        const r = layoutBlockToRect(
+          { blockId: blockKey(b), layout: b.layout },
+          paper.width,
+          paper.height,
+        );
+        if (r) others.push(r);
+      }
     }
     return collapseAlignmentGuides(computeAlignmentGuides(dragged, others));
+  }
+
+  /**
+   * TZ-259.6: apply an alignment/distribution mode to all multi-selected
+   * positioned blocks and emit the batch layout update.
+   */
+  protected onAlign(mode: AlignMode): void {
+    const selected = this.selectedBlocks().filter((b) => b.layout);
+    if (selected.length < 2) return;
+    const entries: AlignEntry[] = selected.map((b) => ({
+      blockId: blockKey(b),
+      layout: b.layout!,
+    }));
+    const next = computeAlignLayouts(entries, mode);
+    const byId = new Map(next.map((e) => [e.blockId, e.layout]));
+    const changes = selected
+      .map((b) => ({ block: b, layout: byId.get(blockKey(b))! }))
+      .filter((c) => c.layout);
+    if (changes.length > 0) this.layoutChanges.emit(changes);
   }
 
   /** Legacy pixel-positioned image blocks stay in the overlay layer. */

@@ -8,12 +8,16 @@ import {
   applySnapToGrid,
   collapseAlignmentGuides,
   computeAlignmentGuides,
+  computeAlignLayouts,
+  computeLayoutResize,
+  layoutBlockToRect,
   overlayBlockToRect,
   snapValueToGrid,
   SNAP_THRESHOLD_PX,
   type Rect,
   type SnapGuide,
 } from './snap-engine';
+import type { BlockLayout } from '../../../shared/template-block/template-block-layout';
 
 const rect = (id: string, left: number, top: number, w: number, h: number): Rect => ({
   blockId: id,
@@ -378,5 +382,182 @@ describe('overlayBlockToRect', () => {
       settings: { overlay: true, imageWidth: 30, imageHeight: 40 },
     });
     expect(r).toEqual({ blockId: 'x', left: 0, top: 0, width: 30, height: 40 });
+  });
+});
+
+describe('layoutBlockToRect (TZ-259.5)', () => {
+  const layout = (overrides: Partial<BlockLayout> = {}): BlockLayout => ({
+    page: 1,
+    x: 0.1,
+    y: 0.2,
+    width: 0.5,
+    height: 0.1,
+    zIndex: 1,
+    rotation: 0,
+    ...overrides,
+  });
+
+  it('converts normalized layout to paper-relative px', () => {
+    const r = layoutBlockToRect({ blockId: 'b', layout: layout() }, 720, 1018);
+    expect(r!.blockId).toBe('b');
+    expect(r!.left).toBeCloseTo(72, 5);
+    expect(r!.top).toBeCloseTo(203.6, 5);
+    expect(r!.width).toBeCloseTo(360, 5);
+    expect(r!.height).toBeCloseTo(101.8, 5);
+  });
+
+  it('defaults missing height to 0.06', () => {
+    const l = layout({ height: undefined });
+    const r = layoutBlockToRect({ blockId: 'b', layout: l }, 720, 1018);
+    expect(r!.height).toBeCloseTo(0.06 * 1018, 5);
+  });
+
+  it('returns null for missing layout or non-positive paper dims', () => {
+    expect(layoutBlockToRect({ blockId: 'b', layout: null }, 720, 1018)).toBeNull();
+    expect(layoutBlockToRect({ blockId: 'b', layout: undefined }, 720, 1018)).toBeNull();
+    expect(layoutBlockToRect({ blockId: 'b', layout: layout() }, 0, 1018)).toBeNull();
+  });
+});
+
+describe('computeLayoutResize (TZ-259.4)', () => {
+  const base: BlockLayout = {
+    page: 1,
+    x: 0.2,
+    y: 0.2,
+    width: 0.4,
+    height: 0.2,
+    zIndex: 1,
+    rotation: 0,
+  };
+
+  it('east handle grows width without moving x', () => {
+    const next = computeLayoutResize(base, 'e', { dx: 72, dy: 0 }, 720, 1000);
+    expect(next.x).toBeCloseTo(0.2, 5);
+    expect(next.width).toBeCloseTo(0.5, 5);
+  });
+
+  it('west handle moves x and shrinks width to keep right edge', () => {
+    const next = computeLayoutResize(base, 'w', { dx: 72, dy: 0 }, 720, 1000);
+    expect(next.x).toBeCloseTo(0.3, 5);
+    expect(next.x + next.width).toBeCloseTo(0.6, 5);
+  });
+
+  it('south handle grows height without moving y', () => {
+    const next = computeLayoutResize(base, 's', { dx: 0, dy: 50 }, 720, 1000);
+    expect(next.y).toBeCloseTo(0.2, 5);
+    expect(next.height).toBeCloseTo(0.25, 5);
+  });
+
+  it('north handle moves y and shrinks height to keep bottom edge', () => {
+    const next = computeLayoutResize(base, 'n', { dx: 0, dy: -50 }, 720, 1000);
+    expect(next.y).toBeCloseTo(0.15, 5);
+    expect(next.y + next.height).toBeCloseTo(0.4, 5);
+  });
+
+  it('corner handles resize both axes', () => {
+    const next = computeLayoutResize(base, 'se', { dx: 72, dy: 50 }, 720, 1000);
+    expect(next.width).toBeCloseTo(0.5, 5);
+    expect(next.height).toBeCloseTo(0.25, 5);
+  });
+
+  it('clamps to min width/height px', () => {
+    const tiny = computeLayoutResize(base, 'w', { dx: 720, dy: 0 }, 720, 1000, 20);
+    expect(tiny.width * 720).toBeGreaterThanOrEqual(19.9);
+    const short = computeLayoutResize(base, 'n', { dx: 0, dy: -1000 }, 720, 1000, 20);
+    expect(short.height * 1000).toBeGreaterThanOrEqual(19.9);
+  });
+
+  it('never lets the block leave the page bounds', () => {
+    const far = computeLayoutResize(base, 'nw', { dx: -2000, dy: -2000 }, 720, 1000);
+    expect(far.x).toBeGreaterThanOrEqual(0);
+    expect(far.y).toBeGreaterThanOrEqual(0);
+    const huge = computeLayoutResize(base, 'se', { dx: 2000, dy: 2000 }, 720, 1000);
+    expect(huge.x + huge.width).toBeLessThanOrEqual(1.0001);
+    expect(huge.y + huge.height).toBeLessThanOrEqual(1.0001);
+  });
+});
+
+describe('computeAlignLayouts (TZ-259.6)', () => {
+  const entry = (blockId: string, layout: Partial<BlockLayout> = {}) => ({
+    blockId,
+    layout: {
+      page: 1,
+      x: 0,
+      y: 0,
+      width: 0.1,
+      height: 0.1,
+      zIndex: 1,
+      rotation: 0,
+      ...layout,
+    },
+  });
+
+  it('returns empty for empty input', () => {
+    expect(computeAlignLayouts([], 'left')).toEqual([]);
+  });
+
+  it('aligns left edges to the minimum x', () => {
+    const out = computeAlignLayouts(
+      [entry('a', { x: 0.3 }), entry('b', { x: 0.1 }), entry('c', { x: 0.5 })],
+      'left',
+    );
+    expect(out.map((e) => e.layout.x)).toEqual([0.1, 0.1, 0.1]);
+  });
+
+  it('aligns right edges to the maximum right', () => {
+    // max(x + width): a → 0.3 + 0.1 = 0.4; b → 0.1 + 0.2 = 0.3 ⇒ target 0.4.
+    const out = computeAlignLayouts(
+      [entry('a', { x: 0.3 }), entry('b', { x: 0.1, width: 0.2 })],
+      'right',
+    );
+    expect(out[0].layout.x + out[0].layout.width).toBeCloseTo(0.4, 5);
+    expect(out[1].layout.x + out[1].layout.width).toBeCloseTo(0.4, 5);
+  });
+
+  it('center-x aligns horizontal centers', () => {
+    const out = computeAlignLayouts(
+      [entry('a', { x: 0.2, width: 0.2 }), entry('b', { x: 0.5, width: 0.1 })],
+      'center-x',
+    );
+    const ca = out[0].layout.x + out[0].layout.width / 2;
+    const cb = out[1].layout.x + out[1].layout.width / 2;
+    expect(ca).toBeCloseTo(cb, 5);
+  });
+
+  it('top aligns y to the minimum', () => {
+    const out = computeAlignLayouts(
+      [entry('a', { y: 0.3 }), entry('b', { y: 0.05 })],
+      'top',
+    );
+    expect(out.map((e) => e.layout.y)).toEqual([0.05, 0.05]);
+  });
+
+  it('same-width sets every block to the widest', () => {
+    const out = computeAlignLayouts(
+      [entry('a', { width: 0.2 }), entry('b', { width: 0.4 }), entry('c', { width: 0.1 })],
+      'same-width',
+    );
+    expect(out.map((e) => e.layout.width)).toEqual([0.4, 0.4, 0.4]);
+  });
+
+  it('distribute-h spreads left edges evenly across the span', () => {
+    // Span is [min x, max (x+width)] = [0, 0.6]; with n=3 the gap is 0.3,
+    // so left edges land at 0 / 0.3 / 0.6 (blocks keep their own widths).
+    const out = computeAlignLayouts(
+      [entry('a', { x: 0.0 }), entry('b', { x: 0.25 }), entry('c', { x: 0.5 })],
+      'distribute-h',
+    );
+    expect(out[0].layout.x).toBeCloseTo(0.0, 5);
+    expect(out[1].layout.x).toBeCloseTo(0.3, 5);
+    expect(out[2].layout.x).toBeCloseTo(0.6, 5);
+  });
+
+  it('preserves order and identity of input entries', () => {
+    const out = computeAlignLayouts(
+      [entry('z', { x: 0.5 }), entry('a', { x: 0.1 })],
+      'left',
+    );
+    expect(out.map((e) => e.blockId)).toEqual(['z', 'a']);
+    expect(out[0].layout.x).toBeCloseTo(0.1, 5);
   });
 });
