@@ -92,8 +92,12 @@ async function bootstrap() {
 
   // TZ-91 §4 Phase A.6: CORS multi-origin — read CORS_ORIGIN (preferred, new convention) or
   // CORS_ORIGINS (legacy, deprecated). Comma-separated list, trimmed, empty handlers dropped.
+  // Desktop (Tauri 2): dev origin http://localhost:1420, prod tauri://localhost / https://tauri.localhost.
   const corsEnv = process.env.CORS_ORIGIN ?? process.env.CORS_ORIGINS ?? 'http://localhost:3000,http://localhost:4200';
   const corsOrigins = corsEnv.split(',').map((o) => o.trim()).filter(Boolean);
+  for (const desktopOrigin of ['http://localhost:1420', 'tauri://localhost', 'https://tauri.localhost']) {
+    if (!corsOrigins.includes(desktopOrigin)) corsOrigins.push(desktopOrigin);
+  }
   app.enableCors({
     origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
     credentials: true,
