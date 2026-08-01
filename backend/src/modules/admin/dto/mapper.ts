@@ -56,10 +56,13 @@ export function toClientUser(doc: Record<string, unknown>): ClientUser {
 /**
  * Public shape returned to the client for role entities. `isSystem`
  * flag lets the UI render system roles read-only per TZ-257 §ШАГ 0.
+ * `label` (display name) added in TZ-256.B so the admin UI can render
+ * a human-readable role name alongside the system `name` slug.
  */
 export interface ClientRole {
   id: string;
   name: string;
+  label: string;
   description?: string;
   permissions: string[];
   isSystem: boolean;
@@ -71,6 +74,7 @@ export function toClientRole(doc: Record<string, unknown>): ClientRole {
   return {
     id: String(doc._id ?? ''),
     name: String(doc.name ?? ''),
+    label: String(doc.label ?? doc.name ?? ''),
     description: doc.description ? String(doc.description) : undefined,
     permissions: Array.isArray(doc.permissions)
       ? (doc.permissions as unknown[]).map(String)
