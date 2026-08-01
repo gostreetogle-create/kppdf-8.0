@@ -1,8 +1,9 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { SubmitGuard } from './submit-guard';
+import type { SilentResult } from '../../core/silent-http';
 
 const mockUUID = () =>
   'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c: string) => {
@@ -31,7 +32,8 @@ describe('SubmitGuard', () => {
   });
 
   it('caches successful result and returns it on second call', async () => {
-    const fetcher = (): any => of({ ok: true, data: { id: '2' } });
+    const fetcher = (): Observable<SilentResult<unknown>> =>
+      of({ ok: true, data: { id: '2' } });
     const formKey = 'cached-form';
     const url = '/api/items';
     const method = 'POST' as const;
@@ -44,7 +46,7 @@ describe('SubmitGuard', () => {
   });
 
   it('does not cache 4xx errors — fetcher is called again', async () => {
-    const fetcher = (): any =>
+    const fetcher = (): Observable<SilentResult<unknown>> =>
       of({
         ok: false,
         error: new HttpErrorResponse({ status: 400, error: { message: 'Bad Request' } }),
@@ -60,7 +62,7 @@ describe('SubmitGuard', () => {
   });
 
   it('caches 5xx errors and returns them on second call', async () => {
-    const fetcher = (): any =>
+    const fetcher = (): Observable<SilentResult<unknown>> =>
       of({
         ok: false,
         error: new HttpErrorResponse({ status: 500, error: { message: 'Server Error' } }),
@@ -77,7 +79,8 @@ describe('SubmitGuard', () => {
   });
 
   it('clears in-flight entry after request completes', async () => {
-    const fetcher = (): any => of({ ok: true, data: { id: '3' } });
+    const fetcher = (): Observable<SilentResult<unknown>> =>
+      of({ ok: true, data: { id: '3' } });
     const formKey = 'reset-form';
     const url = '/api/items';
     const method = 'POST' as const;
