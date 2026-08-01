@@ -15,6 +15,7 @@ describe('IdempotencyMiddleware', () => {
   const mockStorage = {
     findByKey: jest.fn(),
     insert: jest.fn().mockResolvedValue(undefined),
+    insertOrFetch: jest.fn().mockResolvedValue(undefined),
   };
 
   beforeEach(async () => {
@@ -112,9 +113,63 @@ describe('IdempotencyMiddleware', () => {
     await middleware.use(fakeReq('POST', '/api/foo', { x: 1 }, 'abc'), res, next);
     expect(next).toHaveBeenCalledTimes(1);
     // res.json was wrapped, so trigger it explicitly to test redaction
-    jsonSpy(res, next);
-    expect(mockStorage.insert).not.toHaveBeenCalled();
+    res.json({ ok: true });
+    expect(mockStorage.insertOrFetch).not.toHaveBeenCalled();
   });
 
-  function jsonSpy(_r: unknown, _n: unknown) { /* placeholder for clarity above */ }
+  it('does NOT stack-overflow on a cyclic response body (Mongoose-doc shaped)', async () => {
+    // Regression: TZ-247 — POST /api/document-templates returned a Mongoose
+    // document (service.create → this.model.create(...)) with an internal
+    // cyclic reference ($__ / _doc back-pointing to the document itself).
+    // The naive recursive redact() walked the cycle forever →
+    // RangeError: Maximum call stack size exceeded.
+    mockStorage.findByKey.mockResolvedValueOnce(null);
+    const res = fakeRes();
+    await middleware.use(fakeReq('POST', '/api/foo', { x: 1 }, 'abc'), res, next);
+    expect(next).toHaveBeenCalledTimes(1);
+
+    // Build a Mongoose-doc-shaped cyclic object.
+    const doc: Record<string, unknown> = {
+      _id: '6a6dd6a4b4012551a62e19e4',
+      name: 'Договор',
+      _doc: {}, // mirrors Mongoose internal raw-values holder
+    };
+    doc.$__ = { doc }; // mirrors Mongoose InternalCache back-reference
+    doc._doc = { name: 'Договор' };
+
+    // Should NOT throw. NOTE: this fixture is a plain object with a real
+    // cycle, so JSON.stringify throws and the cycle-GUARDED walk handles it
+    // (the round-trip path is exercised by real Mongoose docs, whose
+    // toJSON() yields a plain object).
+    expect(() => res.json(doc)).not.toThrow();
+
+    expect(mockStorage.insertOrFetch).toHaveBeenCalledTimes(1);
+    const record = mockStorage.insertOrFetch.mock.calls[0][0];
+    // Redaction preserved the useful payload and dropped the cyclic internals.
+    expect(record.cachedResponse.name).toBe('Договор');
+  });
+
+  it('redacts sensitive keys and does not recurse on plain circular objects', async () => {
+    mockStorage.findByKey.mockResolvedValueOnce(null);
+    const res = fakeRes();
+    await middleware.use(fakeReq('POST', '/api/foo', { x: 1 }, 'abc'), res, next);
+
+    const body: Record<string, unknown> = {
+      id: 'x',
+      refreshTokenVersion: 3,
+      accessToken: 'abc',
+      nested: { passwordHash: 'hash', ok: true },
+    };
+    body.self = body; // plain circular reference — not JSON-serializable
+
+    expect(() => res.json(body)).not.toThrow();
+
+    const record = mockStorage.insertOrFetch.mock.calls[0][0];
+    expect(record.cachedResponse.refreshTokenVersion).toBe('[REDACTED]');
+    expect(record.cachedResponse.accessToken).toBe('[REDACTED]');
+    expect(record.cachedResponse.nested.passwordHash).toBe('[REDACTED]');
+    expect(record.cachedResponse.nested.ok).toBe(true);
+    // Cycle flagged, not recursed.
+    expect(record.cachedResponse.self).toBe('[Circular]');
+  });
 });
