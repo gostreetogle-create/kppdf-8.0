@@ -29,7 +29,8 @@ interface ClientRole {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PiPageHeaderComponent],
   template: `
-    <pi-page-header
+    <app-pi-page-header
+      eyebrow="администрирование"
       title="Роли"
       subtitle="Управление ролями и их набором прав"
       data-testid="roles-admin-header"
@@ -37,9 +38,9 @@ interface ClientRole {
 
     <section class="pi-page-frame pi-edge-bleed py-page-y">
       <p class="text-sm text-muted-foreground mb-4">
-        Read-only slice backend support shipped in TZ-257. System
-        roles <code>isSystem: true</code> flag read-only after creation.
-        Mutation endpoints (create / patch / delete) tracked as TZ-257.A.
+        Read-only slice backend support shipped in TZ-257. System roles
+        <code>isSystem: true</code> flag read-only after creation. Mutation endpoints (create /
+        patch / delete) tracked as TZ-257.A.
       </p>
 
       @if (loading()) {
@@ -109,9 +110,7 @@ export class RolesAdminPage {
 
   private async refresh(): Promise<void> {
     try {
-      const data = await firstValueFrom(
-        this.http.get<ClientRole[]>(`${this.baseUrl}/admin/roles`),
-      );
+      const data = await firstValueFrom(this.http.get<ClientRole[]>(`${this.baseUrl}/admin/roles`));
       this.roles.set(data);
     } catch (err) {
       this.error.set(this.describe(err));

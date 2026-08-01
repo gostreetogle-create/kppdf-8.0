@@ -44,7 +44,7 @@ export class ProductionOrderService {
     }
 
     const session = await this.connection.startSession();
-    let created: ProductionOrderDocument[] = [];
+    const created: ProductionOrderDocument[] = [];
     try {
       await session.withTransaction(async () => {
         const number = await this.counter.next('ProductionOrder', 'PO');

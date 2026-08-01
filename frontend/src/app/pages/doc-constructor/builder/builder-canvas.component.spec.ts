@@ -35,7 +35,9 @@
  *     inline styles into `<head>` the way the production browser does.
  */
 import { Component, NO_ERRORS_SCHEMA, input, output } from '@angular/core';
+import { CdkDropList } from '@angular/cdk/drag-drop';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { PiCanvasPageComponent } from '../../../shared/ui/canvas/pi-canvas-page.component';
 import { BuilderCanvasComponent } from './builder-canvas.component';
 import type { Rect } from './snap-engine';
 import type { TemplateBlock } from '../../../shared/template-block/template-block.types';
@@ -55,6 +57,9 @@ class BlockRendererStub {
   block = input.required<TemplateBlock>();
   selected = input<boolean>(false);
   multiSelected = input<boolean>(false);
+  groupBlocks = input<TemplateBlock[]>([]);
+  layoutDragDelta = input<{ dx: number; dy: number } | null>(null);
+  layoutDragBlockIds = input<ReadonlySet<string>>(new Set());
   snapEnabled = input<boolean>(true);
   gridSize = input<number>(20);
   boundaryPadding = input<number>(0);
@@ -63,6 +68,13 @@ class BlockRendererStub {
   multiSelect = output<TemplateBlock>();
   widthChange = output<{ width: number; marginLeft: number }>();
   deleteRequest = output<string>();
+  layoutChanges =
+    output<Array<{ block: TemplateBlock; layout: NonNullable<TemplateBlock['layout']> }>>();
+  layoutDragPreview = output<{
+    blockId: string;
+    blockIds: ReadonlySet<string>;
+    delta: { dx: number; dy: number } | null;
+  }>();
   dragRectChange = output<Rect | null>();
   overlayMove = output<{
     block: TemplateBlock;
@@ -122,10 +134,7 @@ const DRAGGED_RECT: Rect = {
 import * as fs from 'fs';
 import * as path from 'path';
 
-const CANVAS_SOURCE_PATH = path.join(
-  __dirname,
-  'builder-canvas.component.ts',
-);
+const CANVAS_SOURCE_PATH = path.join(__dirname, 'builder-canvas.component.ts');
 const CANVAS_SOURCE = fs.readFileSync(CANVAS_SOURCE_PATH, 'utf-8');
 
 describe('BuilderCanvasComponent \u2014 Magnetic Grid + Guides (TZ-237.MAGNETIC-GRID-r0 DOM contract)', () => {
@@ -137,7 +146,7 @@ describe('BuilderCanvasComponent \u2014 Magnetic Grid + Guides (TZ-237.MAGNETIC-
       schemas: [NO_ERRORS_SCHEMA],
     })
       .overrideComponent(BuilderCanvasComponent, {
-        set: { imports: [BlockRendererStub] },
+        set: { imports: [BlockRendererStub, PiCanvasPageComponent, CdkDropList] },
       })
       .compileComponents();
 
@@ -157,43 +166,31 @@ describe('BuilderCanvasComponent \u2014 Magnetic Grid + Guides (TZ-237.MAGNETIC-
   });
 
   it('renders the grid layer only when snapEnabled is true', () => {
-    expect(
-      fixture.nativeElement.querySelector('.canvas-builder__grid-layer'),
-    ).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.canvas-builder__grid-layer')).toBeTruthy();
 
     fixture.componentRef.setInput('snapEnabled', false);
     fixture.detectChanges();
 
-    expect(
-      fixture.nativeElement.querySelector('.canvas-builder__grid-layer'),
-    ).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.canvas-builder__grid-layer')).toBeFalsy();
 
     // Reactivity: flipping back restores the layer.
     fixture.componentRef.setInput('snapEnabled', true);
     fixture.detectChanges();
-    expect(
-      fixture.nativeElement.querySelector('.canvas-builder__grid-layer'),
-    ).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.canvas-builder__grid-layer')).toBeTruthy();
   });
 
   it('renders the guide layer only while a drag rect is being emitted', () => {
-    expect(
-      fixture.nativeElement.querySelector('.canvas-builder__guides-layer'),
-    ).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.canvas-builder__guides-layer')).toBeFalsy();
 
     findOverlayStub(fixture).dragRectChange.emit(DRAGGED_RECT);
     fixture.detectChanges();
 
-    expect(
-      fixture.nativeElement.querySelector('.canvas-builder__guides-layer'),
-    ).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.canvas-builder__guides-layer')).toBeTruthy();
 
     // Cleanup: emitting null back collapses the layer again.
     findOverlayStub(fixture).dragRectChange.emit(null);
     fixture.detectChanges();
-    expect(
-      fixture.nativeElement.querySelector('.canvas-builder__guides-layer'),
-    ).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.canvas-builder__guides-layer')).toBeFalsy();
   });
 
   it('marks both layers aria-hidden="true" for screen readers', () => {
@@ -219,14 +216,10 @@ describe('BuilderCanvasComponent \u2014 Magnetic Grid + Guides (TZ-237.MAGNETIC-
     // An edge guide on the X axis carries `--x` but not `--center`,
     // carries `data-edge="left"`, and for the X-axis the inline
     // `style.left` is set to the coordinate while `style.top` is empty.
-    const leftEl = fixture.nativeElement.querySelector(
-      '.canvas-builder__guide[data-edge="left"]',
-    );
+    const leftEl = fixture.nativeElement.querySelector('.canvas-builder__guide[data-edge="left"]');
     expect(leftEl).toBeTruthy();
     expect(leftEl.classList.contains('canvas-builder__guide--x')).toBe(true);
-    expect(leftEl.classList.contains('canvas-builder__guide--center')).toBe(
-      false,
-    );
+    expect(leftEl.classList.contains('canvas-builder__guide--center')).toBe(false);
     expect(leftEl.getAttribute('data-target')).toBe('target-1');
     expect(leftEl.style.left).toBe('200px');
     expect(leftEl.style.top).toBe('');
@@ -236,14 +229,10 @@ describe('BuilderCanvasComponent \u2014 Magnetic Grid + Guides (TZ-237.MAGNETIC-
     // `style.left` is empty. The Y-centre coordinate is `cy = top + h/2`,
     // i.e. `200 + 100/2 = 250` for this fixture (not 200 — that is the
     // top edge coordinate).
-    const cyEl = fixture.nativeElement.querySelector(
-      '.canvas-builder__guide[data-edge="cy"]',
-    );
+    const cyEl = fixture.nativeElement.querySelector('.canvas-builder__guide[data-edge="cy"]');
     expect(cyEl).toBeTruthy();
     expect(cyEl.classList.contains('canvas-builder__guide--y')).toBe(true);
-    expect(cyEl.classList.contains('canvas-builder__guide--center')).toBe(
-      true,
-    );
+    expect(cyEl.classList.contains('canvas-builder__guide--center')).toBe(true);
     expect(cyEl.getAttribute('data-target')).toBe('target-1');
     expect(cyEl.style.top).toBe('250px');
     expect(cyEl.style.left).toBe('');
@@ -259,20 +248,14 @@ describe('BuilderCanvasComponent \u2014 Magnetic Grid + Guides (TZ-237.MAGNETIC-
   });
 
   it('applies pointer-events: none to the visual layers', () => {
-    expect(CANVAS_SOURCE).toMatch(
-      /\.canvas-builder__grid-layer\s*\{[^}]*pointer-events:\s*none/,
-    );
-    expect(CANVAS_SOURCE).toMatch(
-      /\.canvas-builder__guides-layer\s*\{[^}]*pointer-events:\s*none/,
-    );
+    expect(CANVAS_SOURCE).toMatch(/\.canvas-builder__grid-layer\s*\{[^}]*pointer-events:\s*none/);
+    expect(CANVAS_SOURCE).toMatch(/\.canvas-builder__guides-layer\s*\{[^}]*pointer-events:\s*none/);
   });
 
   it('gridSize input reacts on the grid layer background-size', () => {
     fixture.componentRef.setInput('gridSize', 40);
     fixture.detectChanges();
-    const grid = fixture.nativeElement.querySelector(
-      '.canvas-builder__grid-layer',
-    );
+    const grid = fixture.nativeElement.querySelector('.canvas-builder__grid-layer');
     expect(grid.style.backgroundSize).toBe('40px');
   });
 });
@@ -283,12 +266,8 @@ describe('BuilderCanvasComponent \u2014 Magnetic Grid + Guides (TZ-237.MAGNETIC-
  * then the separate overlay layer). The overlay stub is the one wired to
  * the parent's `(dragRectChange)` handler.
  */
-function findOverlayStub(
-  fixture: ComponentFixture<BuilderCanvasComponent>,
-): BlockRendererStub {
-  const stubEls = fixture.debugElement.queryAll(
-    (el) => el.name === 'app-block-renderer',
-  );
+function findOverlayStub(fixture: ComponentFixture<BuilderCanvasComponent>): BlockRendererStub {
+  const stubEls = fixture.debugElement.queryAll((el) => el.name === 'app-block-renderer');
   if (stubEls.length === 0) {
     throw new Error('expected at least one <app-block-renderer> in the DOM');
   }

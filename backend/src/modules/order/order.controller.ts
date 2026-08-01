@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -15,8 +16,12 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { ReserveStockDto } from './dto/reserve-stock.dto';
 import { AuditAction } from '../../common/decorators/audit-action.decorator';
+import { RequireOrgScope } from '../../common/decorators/require-org-scope.decorator';
+import { OrgScopeGuardInterceptor } from '../../common/interceptors/org-scope.interceptor';
 
 @ApiTags('Закупки — Заказы')
+@RequireOrgScope()
+@UseInterceptors(OrgScopeGuardInterceptor)
 @Controller('orders')
 export class OrderController {
   constructor(private readonly service: OrderService) {}

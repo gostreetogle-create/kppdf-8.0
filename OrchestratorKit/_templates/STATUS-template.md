@@ -41,6 +41,11 @@ bash OrchestratorKit/make-tz.sh "My first feature"
 
 *Пусто — никаких TZ завершённых.*
 
+<!-- Convention: rows use `(archived · см. файл архива)` for historical-flavor entries;
+     rows with descriptive titles carry forward-looking semantics (recurring audit,
+     scope-rejection marker, PENDING INDEPENDENT workflow).
+     Per-TZ rationale registry: `OrchestratorKit/_meta/done-titles.yaml`. -->
+
 | № | Дата | Название | Файл архива |
 |---|------|----------|-------------|
 

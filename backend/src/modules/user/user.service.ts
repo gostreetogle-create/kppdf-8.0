@@ -12,6 +12,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { User, UserDocument } from './user.schema';
+import { userActivityCache } from '../../common/guards/user-activity-cache';
 
 const BCRYPT_ROUNDS = 10;
 
@@ -85,6 +86,7 @@ export class UserService {
     const doc = await this.findById(id);
     Object.assign(doc, dto);
     await doc.save();
+    userActivityCache.invalidate(id);
     this.logger.log(`User updated: ${doc.username}`);
     return doc;
   }
@@ -107,8 +109,9 @@ export class UserService {
       throw new UnauthorizedException('Wrong old password');
     }
     doc.passwordHash = await bcrypt.hash(dto.newPassword, BCRYPT_ROUNDS);
-    doc.refreshTokenVersion += 1; // invalidate all refresh tokens
+    doc.refreshTokenVersion += 1;
     await doc.save();
+    userActivityCache.invalidate(id);
     this.logger.log(`Password changed for user: ${doc.username}`);
     return doc;
   }

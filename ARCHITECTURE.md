@@ -2,6 +2,17 @@
 
 > Корневой архитектурный документ.
 
+## Local Team Room (2026-08-01)
+
+`OrchestratorKit/team-room/` — локальный coordination layer для параллельных coding agents. Это dependency-free Node.js standard-library сервис, который слушает только `127.0.0.1`, хранит repository-scoped JSON state вне worktrees и переиспользуется всеми linked worktrees одного Git repository.
+
+- **Startup:** первый `join` запускает room, последующие `join`/`open` используют тот же процесс; owner открывает browser dashboard только через `open`.
+- **Coordination:** registration/heartbeats, task sync, atomic claim с `CONFLICT KEYS`, durable task/direct messages, activity feed и stale lease recovery.
+- **Lifecycle safety:** atomic writer lock с repo identity и legacy/stale recovery; `claim` запускает detached watcher, `release`/`complete`/`stop` очищают marker и process tree.
+- **Interface:** CLI (`join`, `status`, `claim`, `heartbeat`, `watch`, `send`, `inbox`, `release`, `complete`, `stop`), Windows `.cmd`, POSIX `.sh`, static responsive dashboard.
+- **Boundary:** это asynchronous local coordination, не remote chat и не mechanism для wake-up остановленного AI runtime.
+- **Evidence:** `tasks/_archive/2026-08/TZ-TEAM-ROOM.done.md`; 23/23 Node tests, lifecycle PASS, CDP desktop/mobile PASS.
+
 ## 1. Общая схема
 
 ```

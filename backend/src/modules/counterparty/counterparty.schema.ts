@@ -79,6 +79,14 @@ export class Counterparty {
 
   @Prop({ default: 20 })
   vatRate!: number;
+
+  // TZ-241: multi-tenant org scoping
+  @Prop({ required: false, index: true, sparse: true })
+  organizationId?: Types.ObjectId;
+
+  @Prop({ default: false })
+  isSystem!: boolean;
 }
 
 export const CounterpartySchema = SchemaFactory.createForClass(Counterparty);
+CounterpartySchema.index({ organizationId: 1, inn: 1 }, { unique: true, sparse: true });

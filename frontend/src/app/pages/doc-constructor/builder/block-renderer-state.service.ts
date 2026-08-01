@@ -93,6 +93,35 @@ export class BlockRendererStateService {
     return (s?.['overlayTop'] as number) ?? 0;
   });
 
+  /** Canonical normalized geometry is the preferred free-positioning mode. */
+  readonly isPositioned = computed<boolean>(() => this.block().layout !== undefined);
+  readonly positionedDragActive = signal(false);
+  readonly positionedDragLeft = signal(0);
+  readonly positionedDragTop = signal(0);
+  readonly layoutDragDelta = signal<{ dx: number; dy: number } | null>(null);
+  readonly layoutDragBlockIds = signal<ReadonlySet<string>>(new Set());
+  readonly layoutLeft = computed<number>(() => {
+    const layout = this.block().layout;
+    const delta = this.layoutDragDelta();
+    const isPreviewTarget = this.layoutDragBlockIds().has(blockKey(this.block()));
+    if (delta && layout && isPreviewTarget) return (layout.x + delta.dx) * 100;
+    return this.positionedDragActive() ? this.positionedDragLeft() : (layout?.x ?? 0) * 100;
+  });
+  readonly layoutTop = computed<number>(() => {
+    const layout = this.block().layout;
+    const delta = this.layoutDragDelta();
+    const isPreviewTarget = this.layoutDragBlockIds().has(blockKey(this.block()));
+    if (delta && layout && isPreviewTarget) return (layout.y + delta.dy) * 100;
+    return this.positionedDragActive() ? this.positionedDragTop() : (layout?.y ?? 0) * 100;
+  });
+  readonly layoutWidth = computed<number>(() => (this.block().layout?.width ?? 1) * 100);
+  readonly layoutHeight = computed<number | null>(() => {
+    const height = this.block().layout?.height;
+    return height === undefined ? null : height * 100;
+  });
+  readonly layoutRotation = computed<number>(() => this.block().layout?.rotation ?? 0);
+  readonly layoutZIndex = computed<number>(() => this.block().layout?.zIndex ?? 1);
+
   // ═══════════════════════════════════════════════════════════
   //  Computed signals — background color
   // ═══════════════════════════════════════════════════════════
@@ -105,7 +134,9 @@ export class BlockRendererStateService {
     if (typeof color !== 'string' || color.length === 0) return '';
 
     const hex = color.replace('#', '');
-    let r = 0, g = 0, b = 0;
+    let r = 0,
+      g = 0,
+      b = 0;
     if (hex.length === 3) {
       r = parseInt(hex[0] + hex[0], 16);
       g = parseInt(hex[1] + hex[1], 16);
@@ -194,46 +225,46 @@ export class BlockRendererStateService {
       return placeholders[b.type] ?? '—';
     }
     return parts.join(' · ');
-  });      // ═══════════════════════════════════════════════════════════
-      //  Drag geometry (TZ-237.MAGNETIC-GRID-r0)
-      // ═══════════════════════════════════════════════════════════
-      /**
-       * Live rectangle of the overlay block during drag. Returns `null`
-       * when no drag is active, when only a resize is in progress, or
-       * when the block has no positive image dimensions.
-       *
-       * Reads: `dragActive`, `dragLeft`, `dragTop`, and the existing
-       * fully-typed `imageWidth()` / `imageHeight()` computeds — we
-       * deliberately do NOT re-introspect the indexed `settings` record
-       * to keep type narrowing clean. Returns `null` while a resize
-       * (not a drag) is in progress so consumers don't confuse the two
-       * gestures — the alignment-guide engine is drag-only for this
-       * vertical slice.
-       */
-      readonly dragRect = computed<Rect | null>(() => {
-        if (!this.dragActive()) return null;
-        if (this.resizeActive()) return null;
-        const w = this.imageWidth();
-        const h = this.imageHeight();
-        if (w == null || h == null) return null;
-        if (!(w > 0) || !(h > 0)) return null;
-        return {
-          // blockKey is the project's stable block identity (uses _id,
-          // tempId, or an order-based index). The R1 contract is to
-          // NEVER reach for `block.id` directly — it does not exist.
-          blockId: blockKey(this.block()),
-          left: this.dragLeft(),
-          top: this.dragTop(),
-          width: w,
-          height: h,
-        };
-      });
+  }); // ═══════════════════════════════════════════════════════════
+  //  Drag geometry (TZ-237.MAGNETIC-GRID-r0)
+  // ═══════════════════════════════════════════════════════════
+  /**
+   * Live rectangle of the overlay block during drag. Returns `null`
+   * when no drag is active, when only a resize is in progress, or
+   * when the block has no positive image dimensions.
+   *
+   * Reads: `dragActive`, `dragLeft`, `dragTop`, and the existing
+   * fully-typed `imageWidth()` / `imageHeight()` computeds — we
+   * deliberately do NOT re-introspect the indexed `settings` record
+   * to keep type narrowing clean. Returns `null` while a resize
+   * (not a drag) is in progress so consumers don't confuse the two
+   * gestures — the alignment-guide engine is drag-only for this
+   * vertical slice.
+   */
+  readonly dragRect = computed<Rect | null>(() => {
+    if (!this.dragActive()) return null;
+    if (this.resizeActive()) return null;
+    const w = this.imageWidth();
+    const h = this.imageHeight();
+    if (w == null || h == null) return null;
+    if (!(w > 0) || !(h > 0)) return null;
+    return {
+      // blockKey is the project's stable block identity (uses _id,
+      // tempId, or an order-based index). The R1 contract is to
+      // NEVER reach for `block.id` directly — it does not exist.
+      blockId: blockKey(this.block()),
+      left: this.dragLeft(),
+      top: this.dragTop(),
+      width: w,
+      height: h,
+    };
+  });
 
-      // ═══════════════════════════════════════════════════════════
-      //  Cell formatting (pure function)
-      // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════
+  //  Cell formatting (pure function)
+  // ═══════════════════════════════════════════════════════════
 
-      formatTableCell(value: unknown, type: string): string {
+  formatTableCell(value: unknown, type: string): string {
     if (value == null || value === '') return '—';
     if (type === 'bool') return value ? 'Да' : 'Нет';
     if (type === 'number') {
@@ -266,7 +297,9 @@ export class BlockRendererStateService {
   }
 
   applySnapToGrid(
-    left: number, top: number, gs: number,
+    left: number,
+    top: number,
+    gs: number,
   ): { snappedLeft: number; snappedTop: number } {
     const snapX = this.snapValueToGrid(left, gs);
     const snapY = this.snapValueToGrid(top, gs);
@@ -278,7 +311,8 @@ export class BlockRendererStateService {
    * Returns snapped position + which axes were snapped.
    */
   snapToBlockEdges(
-    left: number, top: number,
+    left: number,
+    top: number,
     hostEl: HTMLElement | null,
     paper: HTMLElement | null,
   ): { snappedLeft: number; snappedTop: number; axisX: string | null; axisY: string | null } {
@@ -312,14 +346,34 @@ export class BlockRendererStateService {
       const bTop = rect.top - paperRect.top;
       const bBottom = bTop + rect.height;
 
-      if (Math.abs(left - bLeft) <= t) { snappedLeft = bLeft; axisX = 'left'; }
-      else if (Math.abs(left - bRight) <= t) { snappedLeft = bRight; axisX = 'left'; }
-      if (Math.abs(right - bLeft) <= t) { snappedLeft = bLeft - width; axisX = 'right'; }
-      else if (Math.abs(right - bRight) <= t) { snappedLeft = bRight - width; axisX = 'right'; }
-      if (Math.abs(top - bTop) <= t) { snappedTop = bTop; axisY = 'top'; }
-      else if (Math.abs(top - bBottom) <= t) { snappedTop = bBottom; axisY = 'top'; }
-      if (Math.abs(bottom - bTop) <= t) { snappedTop = bTop - height; axisY = 'bottom'; }
-      else if (Math.abs(bottom - bBottom) <= t) { snappedTop = bBottom - height; axisY = 'bottom'; }
+      if (Math.abs(left - bLeft) <= t) {
+        snappedLeft = bLeft;
+        axisX = 'left';
+      } else if (Math.abs(left - bRight) <= t) {
+        snappedLeft = bRight;
+        axisX = 'left';
+      }
+      if (Math.abs(right - bLeft) <= t) {
+        snappedLeft = bLeft - width;
+        axisX = 'right';
+      } else if (Math.abs(right - bRight) <= t) {
+        snappedLeft = bRight - width;
+        axisX = 'right';
+      }
+      if (Math.abs(top - bTop) <= t) {
+        snappedTop = bTop;
+        axisY = 'top';
+      } else if (Math.abs(top - bBottom) <= t) {
+        snappedTop = bBottom;
+        axisY = 'top';
+      }
+      if (Math.abs(bottom - bTop) <= t) {
+        snappedTop = bTop - height;
+        axisY = 'bottom';
+      } else if (Math.abs(bottom - bBottom) <= t) {
+        snappedTop = bBottom - height;
+        axisY = 'bottom';
+      }
     }
 
     return { snappedLeft, snappedTop, axisX, axisY };
@@ -331,8 +385,10 @@ export class BlockRendererStateService {
 
   computeOverlayDrag(
     event: MouseEvent,
-    startMouseX: number, startMouseY: number,
-    startLeft: number, startTop: number,
+    startMouseX: number,
+    startMouseY: number,
+    startLeft: number,
+    startTop: number,
     paper: HTMLElement | null,
     hostEl: HTMLElement | null,
   ): { left: number; top: number; snapAxisX: string | null; snapAxisY: string | null } {
@@ -365,10 +421,13 @@ export class BlockRendererStateService {
 
       const bs = this.snapToBlockEdges(newLeft, newTop, hostEl, paper);
       if (bs.snappedLeft !== newLeft || bs.snappedTop !== newTop) {
-        axisX = bs.axisX; axisY = bs.axisY;
-        newLeft = bs.snappedLeft; newTop = bs.snappedTop;
+        axisX = bs.axisX;
+        axisY = bs.axisY;
+        newLeft = bs.snappedLeft;
+        newTop = bs.snappedTop;
       } else if (hadGridSnap) {
-        axisX = null; axisY = null;
+        axisX = null;
+        axisY = null;
       }
     }
 
@@ -381,9 +440,11 @@ export class BlockRendererStateService {
 
   computeCornerResize(
     event: MouseEvent,
-    startMouseX: number, startMouseY: number,
+    startMouseX: number,
+    startMouseY: number,
     startWidth: number,
-    naturalW: number, naturalH: number,
+    naturalW: number,
+    naturalH: number,
   ): { width: number; height: number } {
     const deltaX = event.clientX - startMouseX;
     const deltaY = event.clientY - startMouseY;

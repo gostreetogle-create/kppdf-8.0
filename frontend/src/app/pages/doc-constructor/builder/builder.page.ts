@@ -39,15 +39,10 @@ import {
 } from 'lucide-angular';
 import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
 import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
-import { TextBlocksService } from '../../../shared/services/pi-text-blocks.service';
-import { TableTemplatesService } from '../../../shared/services/pi-table-templates.service';
 import { API_BASE_URL } from '../../../core/api.tokens';
 import { extractErrorMessage, SilentResult } from '../../../core/silent-http';
-import {
-  blockKey,
-  type DataBindingSource,
-  type TemplateBlock,
-} from '../../../shared/template-block/template-block.types';
+import { blockKey, type TemplateBlock } from '../../../shared/template-block/template-block.types';
+import { defaultBlockLayout } from '../../../shared/template-block/template-block-layout';
 import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
 import { PiPageHeaderComponent } from '../../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../../shared/page/pi-section.component';
@@ -359,6 +354,7 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
           (blockWidthChange)="onBlockWidthChange($event)"
           (overlayMove)="onOverlayMove($event)"
           (overlayResize)="onOverlayResize($event)"
+          (layoutChanges)="onLayoutChanges($event)"
           (canvasClick)="onCanvasClick()"
           (deleteRequest)="onDeleteBlock($event)"
         />
@@ -640,8 +636,6 @@ export class BuilderPage {
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly blocksSvc = inject(TemplateBlocksService);
   private readonly templatesSvc = inject(DocumentTemplatesService);
-  private readonly textBlocksSvc = inject(TextBlocksService);
-  private readonly tableTemplatesSvc = inject(TableTemplatesService);
   private readonly toast = inject(PiToastService);
   private readonly dialog = inject(PiDialogService);
   private readonly destroyRef = inject(DestroyRef);
@@ -828,7 +822,6 @@ export class BuilderPage {
         this.isLoading.set(false);
         if (res.ok) {
           this.blocks.set(res.data ?? []);
-          this.syncTextBlockSources();
         } else {
           this.toast.error(extractErrorMessage(res.error));
         }
@@ -836,56 +829,6 @@ export class BuilderPage {
       error: (err: HttpErrorResponse) => {
         this.isLoading.set(false);
         this.toast.error(extractErrorMessage(err));
-      },
-    });
-  }
-
-  /**
-   * Sync text block content from source text blocks.
-   * When a text block is added to the template, its content is snapshotted.
-   * This method refreshes the snapshot from the current source text block,
-   * so edits on the texts page are reflected in the template.
-   */
-  private syncTextBlockSources(): void {
-    const blocks = this.blocks();
-    const textBlockIds = blocks
-      .filter((b) => b.type === 'text' && b.dataBinding?.source === 'static' && b.dataBinding?.value)
-      .map((b) => b.dataBinding!.value!)
-      .filter((id): id is string => !!id);
-
-    if (textBlockIds.length === 0) return;
-
-    // Fetch all active text blocks, then match by ID
-    this.textBlocksSvc.list({ activeOnly: false }).subscribe({
-      next: (res) => {
-        if (!res.ok) return;
-        const sourceMap = new Map(res.data.items.map((tb) => [tb._id, tb]));
-        let changed = false;
-
-        const updated = blocks.map((b) => {
-          if (b.type !== 'text' || b.dataBinding?.source !== 'static' || !b.dataBinding?.value) return b;
-          const source = sourceMap.get(b.dataBinding.value);
-          if (!source) return b;
-          // Check if content or columns changed
-          const newContent = source.content ?? '';
-          const newColumns = source.columns;
-          if (b.content === newContent && JSON.stringify(b.columns) === JSON.stringify(newColumns)) return b;
-          changed = true;
-          return { ...b, content: newContent, columns: newColumns };
-        });
-
-        if (changed) {
-          this.blocks.set(updated);
-          // Persist updated blocks to backend
-          for (const block of updated) {
-            if (block._id) {
-              this.blocksSvc.update(block._id, {
-                content: block.content,
-                columns: block.columns,
-              }).subscribe();
-            }
-          }
-        }
       },
     });
   }
@@ -1059,6 +1002,7 @@ export class BuilderPage {
       isActive: true,
       showLine: false,
       dataBinding: null,
+      layout: defaultBlockLayout(this.blocks().length),
       settings: { imageUrl: localUrl, overlay: true },
     };
     this.insertNewBlock(block, file);
@@ -1096,6 +1040,8 @@ export class BuilderPage {
         showLine: newBlock.showLine,
         ...(newBlock.settings ? { settings: newBlock.settings } : {}),
         ...(newBlock.dataBinding ? { dataBinding: newBlock.dataBinding } : {}),
+        ...(newBlock.layout ? { layout: newBlock.layout } : {}),
+        ...(newBlock.source ? { source: newBlock.source } : {}),
         isActive: newBlock.isActive,
       })
       .subscribe({
@@ -1118,7 +1064,10 @@ export class BuilderPage {
                   this.blocks.update((arr) =>
                     arr.map((b) =>
                       b._id === res.data._id
-                        ? { ...b, settings: { ...(b.settings ?? {}), imageUrl: uploadRes.data.url } }
+                        ? {
+                            ...b,
+                            settings: { ...(b.settings ?? {}), imageUrl: uploadRes.data.url },
+                          }
                         : b,
                     ),
                   );
@@ -1166,6 +1115,8 @@ export class BuilderPage {
         showLine: newBlock.showLine,
         ...(newBlock.settings ? { settings: newBlock.settings } : {}),
         ...(newBlock.dataBinding ? { dataBinding: newBlock.dataBinding } : {}),
+        ...(newBlock.layout ? { layout: newBlock.layout } : {}),
+        ...(newBlock.source ? { source: newBlock.source } : {}),
         isActive: newBlock.isActive,
       })
       .subscribe({
@@ -1251,6 +1202,7 @@ export class BuilderPage {
       isActive: true,
       showLine: false,
       dataBinding: null,
+      layout: defaultBlockLayout(order),
     };
     switch (payload.source) {
       case 'block-type':
@@ -1270,10 +1222,12 @@ export class BuilderPage {
             id: c.id,
             content: c.content ?? '',
             width: c.width ?? 1,
+            fontSize: c.fontSize ?? 14,
           })),
-          dataBinding: {
-            source: 'static' as DataBindingSource,
-            value: payload.textBlock._id ?? '',
+          source: {
+            kind: 'text-block',
+            refId: payload.textBlock._id,
+            mode: 'live',
           },
         };
       case 'table-template':
@@ -1285,6 +1239,11 @@ export class BuilderPage {
             tableTemplateId: payload.tableTemplate._id,
             tableTemplateColumns: payload.tableTemplate.columns,
             tableTemplateSampleRows: payload.tableTemplate.sampleRows,
+          },
+          source: {
+            kind: 'table-template',
+            refId: payload.tableTemplate._id,
+            mode: 'live',
           },
         };
       case 'data-binding':
@@ -1309,16 +1268,18 @@ export class BuilderPage {
   protected onMultiSelect(block: TemplateBlock): void {
     const key = blockKey(block);
     const ids = new Set(this.selectedIds());
+    // Preserve the current single selection when the user starts a
+    // Ctrl/Cmd group selection, then toggle the clicked block.
+    const currentId = this.selectedId();
+    if (currentId && ids.size === 0) ids.add(currentId);
     if (ids.has(key)) {
       ids.delete(key);
     } else {
       ids.add(key);
     }
     this.selectedIds.set(ids);
-    if (ids.size > 0) {
-      this.selectedId.set(null);
-      this.templateSelected.set(false);
-    }
+    this.selectedId.set(null);
+    this.templateSelected.set(ids.size === 0);
   }
 
   protected onCanvasClick(): void {
@@ -1334,8 +1295,8 @@ export class BuilderPage {
 
     switch (block.type) {
       case 'text': {
-        // Text block ID is stored in dataBinding.value (set at buildBlockFromPayload)
-        const textBlockId = block.dataBinding?.value;
+        const textBlockId =
+          block.source?.kind === 'text-block' ? block.source.refId : block.dataBinding?.value;
         if (textBlockId) {
           this.router.navigate(['/doc-constructor/texts'], {
             queryParams: { editId: textBlockId },
@@ -1465,6 +1426,58 @@ export class BuilderPage {
     if (imageHeight !== undefined) settings['imageHeight'] = imageHeight;
     this.blocks.update((arr) => arr.map((b) => (b._id === block._id ? { ...b, settings } : b)));
     this.save$.next({ _id: block._id, patch: { settings } });
+  }
+
+  /** Persist single/group canonical layout changes as one atomic server update. */
+  protected onLayoutChanges(
+    changes: Array<{
+      _id?: string;
+      block: TemplateBlock;
+      layout: NonNullable<TemplateBlock['layout']>;
+    }>,
+  ): void {
+    const tid = this.templateId();
+    if (!tid || changes.length === 0) return;
+
+    const updates = changes
+      .map((change) => ({ blockId: change._id ?? change.block._id, layout: change.layout }))
+      .filter(
+        (update): update is { blockId: string; layout: NonNullable<TemplateBlock['layout']> } =>
+          !!update.blockId,
+      );
+    if (updates.length === 0) return;
+
+    const previous = this.blocks();
+    const nextById = new Map(updates.map((update) => [update.blockId, update.layout]));
+    this.blocks.update((arr) =>
+      arr.map((block) => {
+        const layout = block._id ? nextById.get(block._id) : undefined;
+        return layout ? { ...block, layout } : block;
+      }),
+    );
+    this.saveStatus.set('saving');
+
+    this.blocksSvc.updateLayouts(tid, updates).subscribe({
+      next: (res) => {
+        if (res.ok) {
+          if (res.data) this.blocks.set(res.data);
+          this.saveStatus.set('saved');
+          const myTick = ++this.savedTick;
+          timer(2000).subscribe(() => {
+            if (myTick === this.savedTick) this.saveStatus.set('idle');
+          });
+          return;
+        }
+        this.blocks.set(previous);
+        this.saveStatus.set('error');
+        this.toast.error(extractErrorMessage(res.error));
+      },
+      error: (err: HttpErrorResponse) => {
+        this.blocks.set(previous);
+        this.saveStatus.set('error');
+        this.toast.error(extractErrorMessage(err));
+      },
+    });
   }
 
   /** Handle overlay block position change (drag). */
@@ -1642,7 +1655,11 @@ export class BuilderPage {
   }
 
   /** Handle snap settings changes from the inspector (persisted to localStorage). */
-  protected onSnapSettingsChange(settings: { snapEnabled: boolean; gridSize: number; boundaryPadding?: number }): void {
+  protected onSnapSettingsChange(settings: {
+    snapEnabled: boolean;
+    gridSize: number;
+    boundaryPadding?: number;
+  }): void {
     this.snapEnabled.set(settings.snapEnabled);
     this.gridSize.set(settings.gridSize);
     if (settings.boundaryPadding !== undefined) {

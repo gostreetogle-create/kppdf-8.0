@@ -28,6 +28,18 @@ import { Product, ProductDocument } from '../product/product.schema';
 import { Material, MaterialDocument } from '../material/material.schema';
 import { WorkType, WorkTypeDocument } from '../work-type/work-type.schema';
 import { TableTemplateService } from '../table-template/table-template.service';
+import { TextBlock, TextBlockDocument } from '../text-block/text-block.schema';
+import { sanitizeHtml } from '../../common/sanitize-html';
+import { blockLayoutStyle } from './layout-renderer';
+
+function escapeHtmlValue(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 /**
  * TZ-86 Phase A.4 — DocumentTemplateService extended.
@@ -78,6 +90,8 @@ export class DocumentTemplateService {
     private readonly materialModel: Model<MaterialDocument>,
     @InjectModel(WorkType.name)
     private readonly workTypeModel: Model<WorkTypeDocument>,
+    @InjectModel(TextBlock.name)
+    private readonly textBlockModel: Model<TextBlockDocument>,
     private readonly counter: CounterService,
     private readonly tableTemplateService: TableTemplateService,
   ) {}
@@ -218,10 +232,16 @@ export class DocumentTemplateService {
       organizationId: src.organizationId,
       docTypeId: src.docTypeId,
       isDefault: false,
-      isActive: true,
+      isActive: src.isActive,
       pageSize: src.pageSize,
+      orientation: src.orientation,
       backgroundImage: src.backgroundImage,
+      defaultBackgroundIndex: src.defaultBackgroundIndex,
       backgroundOpacity: src.backgroundOpacity,
+      headerText: src.headerText,
+      footerText: src.footerText,
+      pageNumbering: src.pageNumbering,
+      tableOfContents: src.tableOfContents,
       version: 1,
       notes: src.notes,
       createdBy: userId && Types.ObjectId.isValid(userId)
@@ -237,9 +257,14 @@ export class DocumentTemplateService {
         order: b.order,
         title: b.title,
         content: b.content,
+        columns: b.columns,
         height: b.height,
         showLine: b.showLine,
         settings: b.settings,
+        dataBinding: b.dataBinding,
+        layout: b.layout,
+        source: b.source,
+        isActive: b.isActive,
       });
     }
     return newTemplate;
@@ -277,7 +302,7 @@ export class DocumentTemplateService {
     const bag = await this.resolveSourceIds(dto);
     const resolvedBlocks = await Promise.all(
       blocks.map(async (b) => {
-        const withBinding = this.resolveBlockContent(b, bag);
+        const withBinding = await this.resolveBlockContent(b, bag);
         return this.resolveTableBlock(withBinding);
       }),
     );
@@ -292,10 +317,14 @@ export class DocumentTemplateService {
     block: TemplateBlockDocument,
   ): Promise<TemplateBlockDocument> {
     if (block.type !== 'table') return block;
+    const source = block.source;
     const settings = block.settings as { tableTemplateId?: string } | undefined;
-    const tableTemplateId = settings?.tableTemplateId;
+    const tableTemplateId = source?.kind === 'table-template'
+      ? source.refId
+      : settings?.tableTemplateId;
     if (!tableTemplateId) return block;
     try {
+      if (source?.kind === 'table-template' && source.mode === 'snapshot') return block;
       const html = await this.tableTemplateService.preview(tableTemplateId);
       return { ...block, content: html } as TemplateBlockDocument;
     } catch {
@@ -445,12 +474,63 @@ export class DocumentTemplateService {
    * a partial-shaped object satisfies the Mongoose Document<T> brand
    * (which carries `$assertPopulated`/`$clone` etc.). Runtime is correct.
    */
-  private resolveBlockContent(
+  private async resolveBlockContent(
     block: TemplateBlockDocument,
     bag: Record<string, unknown>,
-  ): TemplateBlockDocument {
+  ): Promise<TemplateBlockDocument> {
+    const source = block.source;
+    if (source?.kind === 'literal') {
+      return { ...block, content: source.value } as TemplateBlockDocument;
+    }
+    if (source?.kind === 'text-block') {
+      if (source.mode === 'snapshot') return block;
+      if (!Types.ObjectId.isValid(source.refId)) return block;
+      const text = await this.textBlockModel.findById(source.refId).lean().exec();
+      if (!text) return block;
+      return {
+        ...block,
+        content: text.content ?? '',
+        columns: text.columns?.map((column) => ({
+          ...column,
+          fontSize: column.fontSize ?? 14,
+        })),
+      } as TemplateBlockDocument;
+    }
+    if (source?.kind === 'field') {
+      const resolved = this.resolveBinding(
+        { source: source.source, field: source.field, format: source.format },
+        bag,
+      );
+      return resolved === undefined ? block : ({ ...block, content: resolved } as TemplateBlockDocument);
+    }
+
     const binding = block.dataBinding;
     if (!binding) return block;
+
+    // Legacy Builder versions stored the source id in static.value together
+    // with an explicit textBlockId marker. Only that marker opts a block into
+    // legacy reference resolution; static values otherwise remain literals.
+    const settings = block.settings as { textBlockId?: string } | undefined;
+    const legacyTextId = settings?.textBlockId;
+    const hasExplicitLegacyMarker = binding.source === 'static'
+      && typeof legacyTextId === 'string'
+      && Types.ObjectId.isValid(legacyTextId);
+    if (hasExplicitLegacyMarker) {
+      const legacyText = await this.textBlockModel.findById(legacyTextId).lean().exec();
+      // A legacy source is live only when the document carries the explicit
+      // marker. Never infer a reference from an ObjectId-shaped literal or a
+      // matching snapshot; that would silently change user-authored content.
+      if (legacyText) {
+        return {
+          ...block,
+          content: legacyText.content ?? '',
+          columns: legacyText.columns?.map((column) => ({
+            ...column,
+            fontSize: column.fontSize ?? 14,
+          })),
+        } as TemplateBlockDocument;
+      }
+    }
 
     const resolved = this.resolveBinding(binding, bag);
     if (resolved === undefined) return block;
@@ -468,7 +548,7 @@ export class DocumentTemplateService {
   ): string | undefined {
     // Static literal — explicit user-controlled value
     if (binding.source === 'static') {
-      return binding.value ?? '';
+      return escapeHtmlValue(binding.value ?? '');
     }
     // Sources not implemented in MVP: cost-calculation. Render empty.
     if (binding.source === 'cost-calculation') {
@@ -515,7 +595,7 @@ export class DocumentTemplateService {
         return String(v);
       }
     }
-    return String(v);
+    return escapeHtmlValue(String(v));
   }
 
   // ── TZ-86 legacy preview (kept for backward compat /A.7 manual smoke) ─────
@@ -542,6 +622,25 @@ export class DocumentTemplateService {
     blocks: TemplateBlockDocument[],
     data: Record<string, unknown>,
   ): string {
+    const escapeHtml = (value: string): string => value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+    const safeImageUrl = (value: string | undefined): string => {
+      const url = value?.trim() ?? '';
+      if (!url) return '';
+      if (/^data:/i.test(url)) {
+        return /^data:image\/(?:png|jpe?g|gif|webp);base64,/i.test(url)
+          ? escapeHtml(url)
+          : '';
+      }
+      if (/^https?:\/\//i.test(url) || /^\/(?!\/)/.test(url) || /^\.\.?(?:\/|$)/.test(url) || /^#/.test(url)) {
+        return escapeHtml(url);
+      }
+      return '';
+    };
     const substitute = (s: string | undefined): string => {
       if (!s) return '';
       return s.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_m, key: string) => {
@@ -556,7 +655,7 @@ export class DocumentTemplateService {
           }
           return undefined;
         }, data);
-        return val == null ? '' : String(val);
+        return val == null ? '' : escapeHtml(String(val));
       });
     };
     const isLandscape = (template as any).orientation === 'landscape';
@@ -568,6 +667,8 @@ export class DocumentTemplateService {
         body { font-family: 'Times New Roman', serif; width: ${pageWidth}; min-height: ${pageMinHeight}; margin: 0 auto; padding: 20px; position: relative; box-sizing: border-box; }
         h1, h2, h3 { margin: 8px 0; }
         .block { margin: 12px 0; padding: 8px 0; border-bottom: 1px solid #eee; position: relative; z-index: 1; }
+        .doc-content { position: relative; min-height: ${pageMinHeight}; }
+        .block--positioned { margin: 0; box-sizing: border-box; }
         table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: left; }
         .doc-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: ${template.backgroundOpacity ?? 0.3}; }
@@ -580,46 +681,57 @@ export class DocumentTemplateService {
       ? [bgImages[defaultIdx]]
       : bgImages;
     const bgLayers = activeBgs
-      .map((url) => `<div class="doc-bg"><img src="${url}" alt=""></div>`)
+      .map((url) => {
+        const safeUrl = safeImageUrl(url);
+        return safeUrl ? `<div class="doc-bg"><img src="${safeUrl}" alt=""></div>` : '';
+      })
       .join('');
     const body = blocks
       .map((b) => {
         const content = substitute(b.content ?? b.title);
+        const literalContent = b.source?.kind === 'literal'
+          ? sanitizeHtml(b.source.value)
+          : content;
+        const imageSettings = b.settings as { role?: string; imageUrl?: string } | undefined;
+        const imageContent = safeImageUrl(content) || safeImageUrl(imageSettings?.imageUrl);
+        const layoutStyle = blockLayoutStyle(b.layout);
+        const blockClass = layoutStyle ? 'block block--positioned' : 'block';
+        const styleAttr = layoutStyle ? ` style="${layoutStyle}"` : '';
         const cols = b.columns ?? [];
         const multiColHtml =
           cols.length > 1
             ? `<div style="display:flex;gap:12px;width:100%">${cols
                 .map((c) => {
                   const w = c.width && c.width > 0 ? c.width : 1;
-                  return `<div style="flex:${w}">${substitute(c.content)}</div>`;
+                  return `<div style="flex:${w};font-size:${c.fontSize ?? 14}px">${substitute(c.content)}</div>`;
                 })
                 .join('')}</div>`
             : null;
         switch (b.type) {
           case 'header':
-            return `<div class="block"><h2>${substitute(b.title ?? '')}</h2>${multiColHtml ?? content}</div>`;
+            return `<div class="${blockClass}"${styleAttr}><h2>${substitute(b.title ?? '')}</h2>${multiColHtml ?? literalContent}</div>`;
           case 'text':
-            return `<div class="block">${multiColHtml ?? content}</div>`;
+            return `<div class="${blockClass}"${styleAttr}>${multiColHtml ?? literalContent}</div>`;
           case 'image': {
             const settings = b.settings as { role?: string } | undefined;
             if (settings?.role === 'separator') {
               const h = b.height ?? 40;
-              return `<div class="block" style="height:${h}px"></div>`;
+              return `<div class="${blockClass}" style="${[layoutStyle, `height:${h}px`].filter(Boolean).join(';')}"></div>`;
             }
-            return content
-              ? `<div class="block"><img src="${content}" alt="" style="max-width:100%"></div>`
-              : `<div class="block" style="height:${b.height ?? 80}px"></div>`;
+            return imageContent
+              ? `<div class="${blockClass}"${styleAttr}><img src="${imageContent}" alt="" style="max-width:100%"></div>`
+              : `<div class="${blockClass}" style="${[layoutStyle, `height:${b.height ?? 80}px`].filter(Boolean).join(';')}"></div>`;
           }
           case 'signature':
-            return `<div class="block"><em>Подпись: ___________________</em><br>${content}</div>`;
+            return `<div class="${blockClass}"${styleAttr}><em>Подпись: ___________________</em><br>${content}</div>`;
           case 'table':
-            return `<div class="block">${content || '<p>(таблица без данных)</p>'}</div>`;
+            return `<div class="${blockClass}"${styleAttr}>${literalContent || '<p>(таблица без данных)</p>'}</div>`;
           default:
-            return `<div class="block">${content}</div>`;
+            return `<div class="${blockClass}"${styleAttr}>${content}</div>`;
         }
       })
       .join('\n');
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${substitute(template.name)}</title>${css}</head><body>${bgLayers}<div class="doc-content">${body}</div></body></html>`;
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(template.name ?? '')}</title>${css}</head><body>${bgLayers}<div class="doc-content">${body}</div></body></html>`;
   }
 
   // ── Phase A.6 — Upload background image (TZ-86 §2.6) ─────────────────────────────────

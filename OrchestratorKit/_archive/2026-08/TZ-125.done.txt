@@ -1,0 +1,31 @@
+═══════════════════════════════════════════════════════════════
+TZ-125 — Interceptor RxJS leaks
+═══════════════════════════════════════════════════════════════
+
+ACTUAL TASK SPEC: tasks/_archive/TZ-125.md (230 lines).
+
+This session deliverables:
+1. NEW audit.interceptor.spec.ts — 7 jest tests verifying crash-prevention behaviour (PASS 7/7)
+
+Pre-existing implementation (verified by code_searcher):
+- backend/src/common/interceptors/audit.interceptor.ts: uses mergeMap + try/catch + Logger.error (NOT `tap(async)` — original anti-pattern FIXED)
+- backend/src/common/interceptors/user-context.interceptor.ts: uses `defer(() => userContext.run(value, () => next.handle()))` (NOT manual `new Observable().subscribe()` — original anti-pattern FIXED)
+- backend/src/common/interceptors/logging.interceptor.ts: uses `tap + catchError + finalize` (correct pattern, includes slow-request warning at >1000ms)
+
+ARCHIVE_MARKER
+outcome: DONE
+closed_at: 2026-08-01
+closed_by: autonomous-backend-agent
+protected_files:
+  - backend/src/common/interceptors/audit.interceptor.ts
+  - backend/src/common/interceptors/user-context.interceptor.ts
+  - backend/src/common/interceptors/logging.interceptor.ts
+  - backend/src/common/interceptors/audit.interceptor.spec.ts (NEW this session — 7 tests, all PASS)
+verification:
+  - pnpm exec tsc -p tsconfig.build.json --noEmit: PASS
+  - pnpm exec jest src/common/interceptors/audit.interceptor.spec.ts: 7/7 PASS
+  - code-reviewer-minimax-m3 verdict: PASS (after MINORs: removed dead `ArgumentMetadata` as-value test, fixed jest.Fn type assertions, removed helper dead-code)
+  - lock file: CREATED (.mimocode/locks/TZ-125-interceptor-rxjs-rewrite.lock)
+notes:
+  - Acceptance criterion "process crash prevention on audit.log failure" VERIFIED — interceptor swallows log failure via try/catch + Logger.error and propagates original response unchanged.
+  - Acceptance criterion "Error logging visibility" VERIFIED — logging.interceptor.ts catchError branch logs WARN with status + duration.

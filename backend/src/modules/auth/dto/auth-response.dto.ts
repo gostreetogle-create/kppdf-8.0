@@ -25,6 +25,8 @@ export interface AuthUserPayload {
   permissions: string[];
   phone?: string | null;
   fullName?: string | null;
+  /** TZ-238 */
+  organizationId?: string | null;
 }
 
 export interface AuthResponse {

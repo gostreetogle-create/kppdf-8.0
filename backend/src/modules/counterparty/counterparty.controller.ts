@@ -11,10 +11,12 @@ import {
   Query,
 } from '@nestjs/common';
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CreateCounterpartyDto } from './dto/create-counterparty.dto';
 import { UpdateCounterpartyDto } from './dto/update-counterparty.dto';
 import { CounterpartyService } from './counterparty.service';
+import { AuthenticatedUser } from '../../common/decorators/current-user.decorator';
 
 @Controller('counterparties')
 export class CounterpartyController {
@@ -27,8 +29,14 @@ export class CounterpartyController {
     @Query('limit') limit = '20',
     @Query('search') search?: string,
     @Query('role') role?: string,
+    @CurrentUser() user?: AuthenticatedUser,
   ) {
-    return this.service.findAll({ page: parseInt(page, 10), limit: parseInt(limit, 10), search, role });
+    return this.service.findAll(
+      { page: parseInt(page, 10), limit: parseInt(limit, 10), search, role },
+      user
+        ? { organizationId: user.organizationId, role: user.role }
+        : undefined,
+    );
   }
 
   @Get(':id')

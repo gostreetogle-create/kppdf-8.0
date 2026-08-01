@@ -48,6 +48,9 @@ plus `LAYER` (1/2/3/4) and `CONFLICT KEYS` if you didn't pass them as flags.
 
 ## Step 4: Hand it to your AI agent (1 sentence)
 
+When the agent connects, `OrchestratorKit/team-room` is part of its mandatory startup protocol: the first agent starts the shared local room automatically, and later agents reuse it. You do not need to remember a separate chat startup step.
+
+
 Open your AI agent (Claude Code, Cursor, Codebuff, etc.) and type:
 
 > "Read `OrchestratorKit/AGENTS.md` and `OrchestratorKit/TZ-01.txt`,
@@ -64,6 +67,20 @@ The agent will run **8 steps automatically** and report back:
 - **ШАГ 7** — sends you a final report
 
 ---
+
+## Team Room dashboard
+
+To open the shared local room manually:
+
+```bash
+# Windows
+OrchestratorKit\\team-room.cmd open
+
+# POSIX
+bash OrchestratorKit/team-room.sh open
+```
+
+The room shows connected agents, task ownership, conflict-safe claims, messages, and recent activity. Agents check in automatically when following `AGENTS.md`.
 
 ## Step 5: Next task (10 sec)
 

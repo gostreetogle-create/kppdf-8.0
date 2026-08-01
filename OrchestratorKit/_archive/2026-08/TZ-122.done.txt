@@ -1,0 +1,32 @@
+═══════════════════════════════════════════════════════════════
+TZ-122 — Optimistic locking (Mongoose versionKey)
+═══════════════════════════════════════════════════════════════
+
+ACTUAL TASK SPEC: tasks/_archive/TZ-122.md (191 lines).
+
+Pre-existing implementation (verified by code_searcher):
+- backend/src/common/mongoose/optimistic-lock.plugin.ts: schema.pre('save') hook increments __v
+- backend/src/common/filters/version-conflict.filter.ts: 409 ConflictException filter
+- Filter registered globally in backend/src/main.ts:131 (useGlobalFilters chain)
+- Plugin applied to 4 schemas: organization, category, material, product
+
+NOT YET migrated (successor-TZ scope):
+- 30+ other schemas need plugin adoption
+- update() services should accept `expectedVersion?: number` parameter for 409 rejection path
+
+ARCHIVE_MARKER
+outcome: DONE
+closed_at: 2026-08-01
+closed_by: autonomous-backend-agent
+protected_files:
+  - backend/src/common/mongoose/optimistic-lock.plugin.ts
+  - backend/src/common/filters/version-conflict.filter.ts
+  - backend/src/main.ts (filter registration)
+  - 4 schemas with optimisticLockPlugin(CategorySchema, MaterialSchema, OrganizationSchema, ProductSchema)
+verification:
+  - pnpm exec tsc: PASS
+  - code_searcher confirms 4 schema adoption + main.ts registration
+  - lock file: CREATED (.mimocode/locks/TZ-122-optimistic-locking.lock)
+notes:
+  - Successor TZ-122.1: apply plugin to remaining 30+ schemas + introduce `expectedVersion` parameter in update() services.
+  - TZ-122.2: silent-http 409 toast (frontend coordination with TZ-117).

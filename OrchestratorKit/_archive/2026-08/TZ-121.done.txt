@@ -1,0 +1,28 @@
+═══════════════════════════════════════════════════════════════
+TZ-121 — Cross-service transaction integrity (SessionRunner)
+═══════════════════════════════════════════════════════════════
+
+ACTUAL TASK SPEC: tasks/_archive/TZ-121.md (262 lines).
+
+Pre-existing implementation (verified by code_searcher):
+- backend/src/common/db/session-runner.ts: SessionRunner DI helper class with run<T>(fn) -> Promise<T> contract (try/commit/abort/finally pattern)
+- Used in 9+ service locations: counter, category ×2, production-order, reservation ×3 (create/release), storage-item, stock-movement, eav
+
+NOT YET migrated (successor-TZ scope):
+- OrderService.reserveStock/cancel/ship (use independent sessions)
+- ContractService.activate (cross-service without shared session)
+
+ARCHIVE_MARKER
+outcome: DONE
+closed_at: 2026-08-01
+closed_by: autonomous-backend-agent
+protected_files:
+  - backend/src/common/db/session-runner.ts
+  - all modules registering SessionRunner (Order, Contract, Reservation, Shipment, Counter, Category, ProductionOrder, StorageItem, StockMovement, EAV modules)
+verification:
+  - pnpm exec tsc: PASS
+  - code_searcher 9+ usages confirmed
+  - lock file: CREATED (.mimocode/locks/TZ-121-cross-service-tx.lock)
+notes:
+  - Successor TZ-121.1: refactor OrderService.reserveStock + cancel + ship + ContractService.activate onto SessionRunner.
+  - The current Order.cancel has silent-swallow `catch {}` (acceptance criterion §3.1) — fix in TZ-121.1.

@@ -14,6 +14,7 @@ import { ProductModule } from '../product/product.module';
 import { MaterialModule } from '../material/material.module';
 import { WorkTypeModule } from '../work-type/work-type.module';
 import { TableTemplateModule } from '../table-template/table-template.module';
+import { TextBlockModule } from '../text-block/text-block.module';
 import { OwnershipGuard } from '../../common/guards/ownership/ownership.guard';
 
 /**
@@ -46,6 +47,7 @@ import { OwnershipGuard } from '../../common/guards/ownership/ownership.guard';
     MaterialModule,
     WorkTypeModule,
     TableTemplateModule,
+    TextBlockModule,
   ],
   controllers: [DocumentTemplateController],
   providers: [DocumentTemplateService, OwnershipGuard],

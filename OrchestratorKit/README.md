@@ -42,6 +42,8 @@
 | `auto-archive.sh` | **1-line финализация**: archive + lock file + STATUS update + verify-status | Агент (на ШАГ 6) |
 | `kit-doctor.sh` | **Диагностика**: парсит verify-status FAIL и выдаёт человеко-понятные советы | PO (когда что-то сломалось) |
 | `kit-smoke-test.sh` | **E2E тест**: 6 шагов валидации на fake TZ-99 (clean state → make → archive) | PO (для проверки kit-а) |
+| `team-room.cmd` / `team-room.sh` | **Локальная Team Room**: автоматически запускает общую комнату, регистрирует агента и даёт browser dashboard/chat | PO + агент |
+| `TEAM-ROOM.md` | Правила auto-join, сообщений, heartbeat и безопасного claim | PO + агент |
 | `verify-status.sh` | Bash-чекер: STATUS.md ↔ filesystem синхрон? (ASCII-only regex для Windows/Linux/macOS) | PO + агент |
 
 > **Какую инструкцию я даю агенту?** Один ответ: «читай `OrchestratorKit/AGENTS.md`».
@@ -65,7 +67,7 @@
 
 > **Полный cheat sheet** + частые ошибки: см. [PO-HANDOFF.md](PO-HANDOFF.md) и [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
-Дальше — по QUICKSTART.
+Дальше — по QUICKSTART. Team Room подключается автоматически при первом `join`; вручную открыть dashboard можно через `OrchestratorKit\\team-room.cmd open`.
 
 ---
 

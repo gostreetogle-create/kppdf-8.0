@@ -13,6 +13,8 @@ export interface AuthUser {
   displayName: string;
   role: string;
   permissions: string[];
+  /** TZ-238 */
+  organizationId?: string | null;
 }
 
 interface LoginResponse {

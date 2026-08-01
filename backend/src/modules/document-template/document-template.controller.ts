@@ -16,6 +16,8 @@ import {
 } from '@nestjs/common';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { RequireOrgScope } from '../../common/decorators/require-org-scope.decorator';
+import { OrgScopeGuardInterceptor } from '../../common/interceptors/org-scope.interceptor';
 import type { Request, Response } from 'express';
 import { memoryStorage } from 'multer';
 import { DocumentTemplateService } from './document-template.service';
@@ -54,6 +56,8 @@ import type { AuthenticatedUserLike } from '../../common/contracts/rbac-contract
  * Each guard either passes or rejects with its own error code; OwnershipGuard
  * throws 401 (no user) or 404 (mismatch) — never 403, to avoid enumeration.
  */
+@RequireOrgScope()
+@UseInterceptors(OrgScopeGuardInterceptor)
 @Controller('document-templates')
 @UseGuards(OwnershipGuard)
 export class DocumentTemplateController {

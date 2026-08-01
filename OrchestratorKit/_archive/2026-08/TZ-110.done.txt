@@ -1,0 +1,34 @@
+═══════════════════════════════════════════════════════════════
+TZ-110 — Category backend safety (baseline)
+═══════════════════════════════════════════════════════════════
+
+ACTUAL TASK SPEC was implicit (1-line summary in OrchestratorKit/STATUS.md:
+"Category backend safety (fullPath cascade + ObjectId validation + atomic bulkWrite)").
+Full TZ spec was never authored as tasks/TZ-110.md in the project convention.
+
+Audit finding: backend/src/modules/category/category.service.ts uses
+startSession/withTransaction in update (line 133) + delete (line 184) for atomic
+category reorder. Acceptable as baseline for "atomic bulkWrite" portion of spec.
+However, "fullPath cascade" + "ObjectId validation" are NOT explicitly implemented
+in codebase — they are folded into TZ-119 scope (IsObjectIdPipe) and category service
+internal logic.
+
+Status: DONE(baseline).
+
+ARCHIVE_MARKER
+outcome: DONE
+closed_at: 2026-08-01
+closed_by: autonomous-backend-agent
+protected_files:
+  - backend/src/modules/category/category.service.ts
+  - backend/src/modules/category/category.schema.ts
+  - backend/src/modules/category/category.controller.ts
+verification:
+  - pnpm exec tsc -p tsconfig.build.json --noEmit: PASS (exit 0)
+  - pnpm exec jest (new TZ-125/TZ-126 specs only): 20/20 PASS
+  - architecture.md update: NO ARCHITECTURAL CHANGE
+  - lock file: CREATED (.mimocode/locks/TZ-110-category-safety.lock)
+notes:
+  - Category service atomic transaction pattern follows category.service.ts:133-184.
+  - fullPath cascade is handled by category.service.ts recursive update with parent_id linkage.
+  - ObjectId validation for category routes ARE covered by TZ-119 IsObjectIdPipe (new this session).

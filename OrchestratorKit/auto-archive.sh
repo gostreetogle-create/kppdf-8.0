@@ -58,6 +58,13 @@ fi
 # Extract title из TZ файла (ищем первую строку после "TZ-NN: ")
 TITLE=$(grep -E "^${TZ}:" "$SRC" | head -1 | sed "s/^${TZ}:[[:space:]]*//")
 [ -z "$TITLE" ] && TITLE="(см. TZ)"
+# Sanitize (2026-08-01): if TITLE is decoration-only (≡ of U+2550 box-drawing
+# chars), substitute the canonical placeholder. Belt-and-suspenders against
+# TZ-source paste mistakes that would propagate ═══… into STATUS.md's
+# title column and trip the verify-status.sh regression guard added the
+# same session. NOTE: mixed strings like "═ tl;dr ═" are intentionally
+# preserved — they carry meaningful content, not decoration drift.
+if [[ "$TITLE" =~ ^═+$ ]]; then TITLE="(archived · см. файл архива)"; fi
 
 # Slug для lock файла
 SLUG=$(echo "$TZ" | tr '[:upper:]' '[:lower:]')

@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { AuthService } from '../../../core/auth.service';
 import { ForbiddenPage } from './forbidden.page';
@@ -14,7 +15,15 @@ describe('ForbiddenPage (TZ-256 §ШАГ 4)', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [ForbiddenPage],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter([]),
+        // TZ-CLEANUP 2026-08-01: ForbiddenPage reads AuthService.user() in its
+        // copy() signal. AuthService.createEffect lazily injects HttpClient,
+        // so add provideHttpClient to satisfy the transitive DI dependency
+        // (otherwise TestBed.createComponent triggers NG0201 at first signal read).
+        provideHttpClient(),
+        AuthService,
+      ],
     });
   });
 
@@ -34,8 +43,12 @@ describe('ForbiddenPage (TZ-256 §ШАГ 4)', () => {
   it('renders insufficient-permissions copy when AuthService.user() is set', () => {
     const fixture = TestBed.createComponent(ForbiddenPage);
     TestBed.inject(AuthService).user.set({
-      id: 'x', username: 'u', email: 'u@x', displayName: 'U',
-      role: 'user', permissions: [],
+      id: 'x',
+      username: 'u',
+      email: 'u@x',
+      displayName: 'U',
+      role: 'user',
+      permissions: [],
     });
     fixture.detectChanges();
 

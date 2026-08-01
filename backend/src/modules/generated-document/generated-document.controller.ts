@@ -7,6 +7,7 @@ import {
   Post,
   Query,
   Res,
+  UseInterceptors,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -15,11 +16,15 @@ import { GeneratedDocumentService } from './generated-document.service';
 import { BuildDocumentDto } from '../document-template/dto/build-document.dto';
 import { IsOptional, IsString } from 'class-validator';
 
+import { RequireOrgScope } from '../../common/decorators/require-org-scope.decorator';
+import { OrgScopeGuardInterceptor } from '../../common/interceptors/org-scope.interceptor';
 class GenerateDocumentOptionsDto extends BuildDocumentDto {
   @IsOptional() @IsString()
   name?: string;
 }
 
+@RequireOrgScope()
+@UseInterceptors(OrgScopeGuardInterceptor)
 @Controller('generated-documents')
 export class GeneratedDocumentController {
   constructor(private readonly service: GeneratedDocumentService) {}

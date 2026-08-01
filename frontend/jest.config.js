@@ -20,7 +20,7 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/src/setup-jest.ts'],
   testPathIgnorePatterns: [escapePath('node_modules'), escapePath('dist')],
   testEnvironment: 'jsdom',
-  testRegex: 'src[/\\\\].*\\.spec\\.ts$',
+  testRegex: 'src[/\\\\].*\\.spec\\.ts$|eslint[/\\\\].*\\.spec\\.cjs$',
   moduleNameMapper: {
     '^@/components/(.*)$': '<rootDir>/src/app/shared/ui/$1',
     '^@/lib/(.*)$': '<rootDir>/src/app/core/$1',

@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { Router, UrlTree, provideRouter } from '@angular/router';
 import { CapabilityRouteGuard as _capabilityRouteGuard } from './capability-route.guard';
 import { AuthService } from '../auth.service';
@@ -23,7 +24,6 @@ import { ALL_PERMISSION_KEYS } from './capabilities.metadata';
 const capabilityRouteGuard: any = _capabilityRouteGuard;
 
 function invoke(routeData: { capabilities?: string[] }): boolean | UrlTree {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return TestBed.runInInjectionContext(() =>
     capabilityRouteGuard(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,7 +37,15 @@ function invoke(routeData: { capabilities?: string[] }): boolean | UrlTree {
 describe('capabilityRouteGuard (TZ-256 §ШАГ 2)', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), AuthService],
+      providers: [
+        provideRouter([]),
+        AuthService,
+        // TZ-CLEANUP 2026-08-01: AuthService injects HttpClient lazily; guards
+        // that read `auth.user()` may trigger it depending on the implementation.
+        // Adding provideHttpClient ensures NG0201 is not raised at fixture
+        // resolution time, keeping the spec di-graph well-formed.
+        provideHttpClient(),
+      ],
     });
   });
 
@@ -53,16 +61,24 @@ describe('capabilityRouteGuard (TZ-256 §ШАГ 2)', () => {
 
   it('bypasses when user holds at least one required (OR semantics)', () => {
     TestBed.inject(AuthService).user.set({
-      id: 'a', username: 'a', email: 'a@x', displayName: 'A',
-      role: 'manager', permissions: ['material:read'],
+      id: 'a',
+      username: 'a',
+      email: 'a@x',
+      displayName: 'A',
+      role: 'manager',
+      permissions: ['material:read'],
     });
     expect(invoke({ capabilities: ['material:read', 'material:write'] })).toBe(true);
   });
 
   it('redirects to /forbidden when user holds none of the required', () => {
     TestBed.inject(AuthService).user.set({
-      id: 'a', username: 'a', email: 'a@x', displayName: 'A',
-      role: 'user', permissions: ['material:read'],
+      id: 'a',
+      username: 'a',
+      email: 'a@x',
+      displayName: 'A',
+      role: 'user',
+      permissions: ['material:read'],
     });
     const result = invoke({ capabilities: ['user:admin', 'role:admin'] });
     expect(result instanceof UrlTree).toBe(true);
@@ -72,8 +88,12 @@ describe('capabilityRouteGuard (TZ-256 §ШАГ 2)', () => {
 
   it('admin shortcut: user with role="admin" and empty perms bypasses gate', () => {
     TestBed.inject(AuthService).user.set({
-      id: 'a', username: 'a', email: 'a@x', displayName: 'A',
-      role: 'admin', permissions: [],
+      id: 'a',
+      username: 'a',
+      email: 'a@x',
+      displayName: 'A',
+      role: 'admin',
+      permissions: [],
     });
     // ALL catalog keys should pass.
     expect(invoke({ capabilities: ['user:admin'] })).toBe(true);
@@ -82,8 +102,12 @@ describe('capabilityRouteGuard (TZ-256 §ШАГ 2)', () => {
 
   it('wildcard "*" in user.permissions bypasses any gate', () => {
     TestBed.inject(AuthService).user.set({
-      id: 'a', username: 'a', email: 'a@x', displayName: 'A',
-      role: 'manager', permissions: ['*'],
+      id: 'a',
+      username: 'a',
+      email: 'a@x',
+      displayName: 'A',
+      role: 'manager',
+      permissions: ['*'],
     });
     expect(invoke({ capabilities: [...ALL_PERMISSION_KEYS] })).toBe(true);
   });

@@ -6,6 +6,8 @@ export interface AuthenticatedUser {
   role: string;
   permissions?: string[];
   version?: number;
+  /** TZ-238 */
+  organizationId?: string | null;
 }
 
 /**
@@ -15,9 +17,12 @@ export interface AuthenticatedUser {
  * @example
  *   handler(@CurrentUser() user: AuthenticatedUser) { ... }
  */
+export function getAuthenticatedUser(ctx: ExecutionContext): AuthenticatedUser {
+  const req = ctx.switchToHttp().getRequest<{ user: AuthenticatedUser }>();
+  return req.user;
+}
+
 export const CurrentUser = createParamDecorator(
-  (_data: unknown, ctx: ExecutionContext): AuthenticatedUser => {
-    const req = ctx.switchToHttp().getRequest<{ user: AuthenticatedUser }>();
-    return req.user;
-  },
+  (_data: unknown, ctx: ExecutionContext): AuthenticatedUser =>
+    getAuthenticatedUser(ctx),
 );

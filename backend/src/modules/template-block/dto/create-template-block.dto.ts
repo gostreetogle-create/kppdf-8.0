@@ -6,6 +6,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Max,
   Min,
   ValidateNested,
 } from 'class-validator';
@@ -28,6 +29,9 @@ export class TemplateBlockColumnDto {
 
   @IsOptional() @IsNumber() @Min(0)
   width?: number;
+
+  @IsOptional() @IsNumber() @Min(1)
+  fontSize?: number;
 }
 
 export class DataBindingDto {
@@ -98,5 +102,71 @@ export class CreateTemplateBlockDto {
   @Type(() => DataBindingDto)
   dataBinding?: DataBindingDto;
 
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => BlockLayoutDto)
+  layout?: BlockLayoutDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => BlockSourceDto)
+  source?: BlockSourceDto;
+
   @IsOptional() @IsBoolean() isActive?: boolean;
+}
+
+export class BlockLayoutDto {
+  /** Pagination is not implemented yet; reject page 2+ instead of silently remapping it. */
+  @IsOptional() @IsNumber() @Min(1) @Max(1)
+  page?: number;
+
+  @IsOptional() @IsNumber() @Min(0)
+  x?: number;
+
+  @IsOptional() @IsNumber() @Min(0)
+  y?: number;
+
+  @IsOptional() @IsNumber() @Min(0)
+  width?: number;
+
+  @IsOptional() @IsNumber() @Min(0)
+  height?: number;
+
+  @IsOptional() @IsNumber() @Min(0)
+  zIndex?: number;
+
+  @IsOptional() @IsNumber()
+  rotation?: number;
+}
+
+export class BlockSourceDto {
+  @IsIn(['text-block', 'table-template', 'field', 'literal'])
+  kind!: 'text-block' | 'table-template' | 'field' | 'literal';
+
+  @IsOptional() @IsString() @IsNotEmpty() @IsObjectId()
+  refId?: string;
+
+  @IsOptional() @IsIn(['live', 'snapshot'])
+  mode?: 'live' | 'snapshot';
+
+  @IsOptional() @IsIn([
+    'organization',
+    'counterparty',
+    'product',
+    'material',
+    'work-type',
+    'order',
+    'contract',
+    'cost-calculation',
+  ])
+  source?: Exclude<DataBindingDto['source'], 'static'>;
+
+  @IsOptional() @IsString() @IsNotEmpty()
+  field?: string;
+
+  @IsOptional() @IsIn(['text', 'date', 'currency', 'number'])
+  format?: 'text' | 'date' | 'currency' | 'number';
+
+  @IsOptional() @IsString()
+  value?: string;
 }

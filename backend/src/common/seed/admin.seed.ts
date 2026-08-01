@@ -105,6 +105,7 @@ export class AdminSeed implements OnApplicationBootstrap {
       return;
     }
 
+    // TZ-238: bootstrap admin is a system user with no organizationId
     try {
       await this.users.create({
         username,

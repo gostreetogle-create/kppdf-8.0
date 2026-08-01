@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import type { BlockLayout, BlockSource } from './template-block-layout';
 
 export type BlockType = 'header' | 'text' | 'table' | 'image' | 'signature' | 'spacer';
 
@@ -99,6 +100,9 @@ export class TemplateBlockColumn {
    */
   @Prop({ type: Number, default: 1 })
   width?: number;
+
+  @Prop({ type: Number, default: 14 })
+  fontSize?: number;
 }
 
 export const TemplateBlockColumnSchema = SchemaFactory.createForClass(TemplateBlockColumn);
@@ -140,6 +144,14 @@ export class TemplateBlock {
 
   @Prop({ type: Object })
   settings?: Record<string, unknown>;
+
+  /** Canonical normalized page geometry introduced by TZ-259.A. */
+  @Prop({ type: Object })
+  layout?: BlockLayout;
+
+  /** Canonical source reference; legacy blocks may omit this field. */
+  @Prop({ type: Object })
+  source?: BlockSource;
 
   /**
    * TZ-86 Phase A.3 — Optional live-data binding. Absent for static-template

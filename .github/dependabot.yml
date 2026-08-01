@@ -1,0 +1,75 @@
+# TZ-253 — Dependabot configuration.
+#
+# Policy:
+#   - Backend (NestJS/Mongoose): weekly npm audit, auto-PR for patches/minor for low/moderate;
+#     separate manual triage for high/critical.
+#   - Frontend (Angular 20): same policy.
+#   - Repository-level GH Actions / Docker: best-effort weekly scan.
+#
+# Required `package.json` manifest files:
+#   - /package.json (monorepo root, both backend + frontend tools)
+#   - /backend/package.json
+#   - /frontend/package.json
+
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Moscow"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "backend"
+    # Patch-only auto-bump for low/moderate advisories.
+    # High/critical requires manual review per TZ-253 §1 PR POLICY.
+    versioning-strategy: "increase"
+
+  - package-ecosystem: "npm"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:30"
+      timezone: "Europe/Moscow"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "backend"
+    versioning-strategy: "increase"
+
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "06:00"
+      timezone: "Europe/Moscow"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "frontend"
+    versioning-strategy: "increase"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "ci"
+    versioning-strategy: "increase"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "infra"
+    versioning-strategy: "increase"

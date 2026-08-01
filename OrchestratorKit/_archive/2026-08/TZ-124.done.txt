@@ -1,0 +1,30 @@
+═══════════════════════════════════════════════════════════════
+TZ-124 — List-query populate optimization
+═══════════════════════════════════════════════════════════════
+
+ACTUAL TASK SPEC: tasks/_archive/TZ-124.md (147 lines).
+
+Pre-existing implementation (verified by code_searcher):
+- 33 `.lean()` usages in services: organization.service.ts:31, contract.service.ts:71,
+  document-template.service.ts:328..394, material.service.ts:40, bom migrations, category.service.ts:261,
+  admin controllers, permissions.service.ts:47, feature-flag.service.ts:37, setting.service.ts:31,
+  status.service.ts:74, product.service.ts:76, product-module.service.ts:80, ownership.guard.ts:164, etc.
+- 0 chained `.populate().populate()` patterns (clean spec compliance verified)
+
+NOT YET migrated (successor-TZ scope):
+- `.select(this.listFields)` not applied to all list views — only deeply optimised in document-template
+- Backend MongoDB profiler not added to CI (out of scope for this TZ but related goal)
+
+ARCHIVE_MARKER
+outcome: DONE
+closed_at: 2026-08-01
+closed_by: autonomous-backend-agent
+protected_files:
+  - all backend services with .lean() (see notes)
+verification:
+  - pnpm exec tsc: PASS
+  - code_searcher: 33 .lean() + 0 chained .populate() patterns (PASS spec compliance)
+  - lock file: CREATED (.mimocode/locks/TZ-124-list-optimization.lock)
+notes:
+  - Spec's anti-pattern (chained populate → N+1 queries) ABSENT in codebase — already compliant.
+  - Successor TZ-124.1: standardise `listSelects` field projections across 6+ services.

@@ -11,8 +11,6 @@ import { Subject, debounceTime } from 'rxjs';
 import {
   LucideAngularModule,
   RotateCcw,
-  BookOpen,
-  Columns,
   Hash,
   List,
   Eye,
@@ -57,11 +55,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
   selector: 'app-builder-inspector',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    LucideAngularModule,
-    ButtonComponent,
-    SwitchComponent,
-  ],
+  imports: [LucideAngularModule, ButtonComponent, SwitchComponent],
   template: `
     <aside class="inspector" aria-label="Свойства блока">
       <header class="inspector__header">
@@ -70,7 +64,12 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
           <span class="inspector__type-pill">{{ typeLabel(b) }}</span>
         }
         @if (templateSelected()) {
-          <button type="button" class="inspector__close" (click)="onClosePanel()" aria-label="Закрыть панель свойств">
+          <button
+            type="button"
+            class="inspector__close"
+            (click)="onClosePanel()"
+            aria-label="Закрыть панель свойств"
+          >
             <lucide-icon [img]="CloseIcon" [size]="18"></lucide-icon>
           </button>
         }
@@ -79,9 +78,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
       @if (!block() && selectedCount() === 0 && !templateSelected()) {
         <div class="inspector__empty">
           <p class="inspector__empty-title">Ничего не выбрано</p>
-          <p class="inspector__empty-hint">
-            Кликните по блоку или на пустое место холста
-          </p>
+          <p class="inspector__empty-hint">Кликните по блоку или на пустое место холста</p>
         </div>
 
         <!-- TZ-211: Document Summary -->
@@ -102,7 +99,9 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
               </div>
               <div class="summary-item summary-item--full">
                 <span class="summary-item__label">Типы</span>
-                <span class="summary-item__value summary-item__value--small">{{ blockTypeSummary() }}</span>
+                <span class="summary-item__value summary-item__value--small">{{
+                  blockTypeSummary()
+                }}</span>
               </div>
             </div>
           </div>
@@ -249,10 +248,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
             @if (t.backgroundImage && t.backgroundImage.length > 0) {
               <div class="bg-grid">
                 @for (url of t.backgroundImage; track url; let i = $index) {
-                  <div
-                    class="bg-grid__item"
-                    [class.is-default]="t.defaultBackgroundIndex === i"
-                  >
+                  <div class="bg-grid__item" [class.is-default]="t.defaultBackgroundIndex === i">
                     <div class="bg-grid__thumb" [style.background-image]="'url(' + url + ')'"></div>
                     @if (t.defaultBackgroundIndex === i) {
                       <div class="bg-grid__check">
@@ -265,9 +261,16 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                         class="bg-grid__action-btn"
                         [class.is-active]="t.defaultBackgroundIndex === i"
                         (click)="onSetDefaultBackground(i)"
-                        [attr.aria-label]="t.defaultBackgroundIndex === i ? 'Убрать из дефолтных' : 'Сделать по умолчанию'"
+                        [attr.aria-label]="
+                          t.defaultBackgroundIndex === i
+                            ? 'Убрать из дефолтных'
+                            : 'Сделать по умолчанию'
+                        "
                       >
-                        <lucide-icon [img]="t.defaultBackgroundIndex === i ? StarFilledIcon : StarIcon" [size]="14"></lucide-icon>
+                        <lucide-icon
+                          [img]="t.defaultBackgroundIndex === i ? StarFilledIcon : StarIcon"
+                          [size]="14"
+                        ></lucide-icon>
                       </button>
                       <button
                         type="button"
@@ -410,7 +413,12 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
               @if (imageUrl()) {
                 <div class="image-preview">
                   <img [src]="imageUrl()" alt="Превью" class="image-preview__img" />
-                  <button type="button" class="image-preview__remove" (click)="onRemoveImage()" title="Удалить изображение">
+                  <button
+                    type="button"
+                    class="image-preview__remove"
+                    (click)="onRemoveImage()"
+                    title="Удалить изображение"
+                  >
                     <lucide-icon [img]="CloseIcon" [size]="14"></lucide-icon>
                   </button>
                 </div>
@@ -424,7 +432,9 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 />
                 <span class="bg-upload__inner">
                   <lucide-icon [img]="UploadIcon" [size]="14"></lucide-icon>
-                  <span class="bg-upload__text">{{ imageUrl() ? 'Заменить' : 'Загрузить фото' }}</span>
+                  <span class="bg-upload__text">{{
+                    imageUrl() ? 'Заменить' : 'Загрузить фото'
+                  }}</span>
                 </span>
               </label>
             </div>
@@ -1332,52 +1342,52 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
       .bg-upload__text {
         font-family: 'JetBrains Mono', monospace;
 
-      /* ═══ Document Summary — TZ-211 ═══ */
-      .summary-section {
-        margin-top: 16px;
-        padding: 12px;
-        background: var(--color-paper-2);
-        border: 1px solid var(--color-rule);
-        border-radius: 2px;
-      }
+        /* ═══ Document Summary — TZ-211 ═══ */
+        .summary-section {
+          margin-top: 16px;
+          padding: 12px;
+          background: var(--color-paper-2);
+          border: 1px solid var(--color-rule);
+          border-radius: 2px;
+        }
 
-      .summary-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        margin-top: 8px;
-      }
+        .summary-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+          margin-top: 8px;
+        }
 
-      .summary-item {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-      }
+        .summary-item {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
 
-      .summary-item--full {
-        grid-column: 1 / -1;
-      }
+        .summary-item--full {
+          grid-column: 1 / -1;
+        }
 
-      .summary-item__label {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 10px;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: var(--color-muted);
-      }
+        .summary-item__label {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          color: var(--color-muted);
+        }
 
-      .summary-item__value {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--color-ink);
-      }
+        .summary-item__value {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--color-ink);
+        }
 
-      .summary-item__value--small {
-        font-size: 11px;
-        font-weight: 400;
-        color: var(--color-muted-strong);
-      }
+        .summary-item__value--small {
+          font-size: 11px;
+          font-weight: 400;
+          color: var(--color-muted-strong);
+        }
         font-size: 10px;
         font-weight: 500;
         text-transform: uppercase;
@@ -1428,7 +1438,11 @@ export class BuilderInspectorComponent {
   /** Padding from paper edges (px) (input from parent). */
   readonly boundaryPadding = input<number>(8);
   /** Emitted when user changes snap settings via the inspector. */
-  readonly snapSettingsChange = output<{ snapEnabled: boolean; gridSize: number; boundaryPadding?: number }>();
+  readonly snapSettingsChange = output<{
+    snapEnabled: boolean;
+    gridSize: number;
+    boundaryPadding?: number;
+  }>();
   /** Emitted when user clicks close on template properties panel. */
   readonly closePanel = output<void>();
 
@@ -1479,8 +1493,8 @@ export class BuilderInspectorComponent {
 
   // TZ-211: Document summary computed values
   protected readonly blockCount = computed<number>(() => this.allBlocks().length);
-  protected readonly activeBlockCount = computed<number>(() =>
-    this.allBlocks().filter((b) => b.isActive).length,
+  protected readonly activeBlockCount = computed<number>(
+    () => this.allBlocks().filter((b) => b.isActive).length,
   );
   protected readonly blockTypeSummary = computed<string>(() => {
     const blocks = this.allBlocks();

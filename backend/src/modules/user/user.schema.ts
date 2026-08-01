@@ -40,6 +40,10 @@ export class User {
   @Prop({ default: 0 })
   refreshTokenVersion!: number;
 
+  /** TZ-238: organization this user belongs to. Null for system (bootstrap) admin. */
+  @Prop({ required: false, sparse: true, index: true })
+  organizationId?: Types.ObjectId;
+
   @Prop()
   fullName?: string;
 }

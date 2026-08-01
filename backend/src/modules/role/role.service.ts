@@ -9,6 +9,7 @@ import { Model } from 'mongoose';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { Role, RoleDocument } from './role.schema';
+import { userActivityCache } from '../../common/guards/user-activity-cache';
 
 @Injectable()
 export class RoleService {
@@ -48,17 +49,19 @@ export class RoleService {
 
   async update(id: string, dto: UpdateRoleDto): Promise<RoleDocument> {
     const doc = await this.findById(id);
+    const oldRoleName = doc.name;
     Object.assign(doc, dto);
     await doc.save();
+    if (oldRoleName !== doc.name) {
+      this.model
+        .updateMany({ role: oldRoleName }, { role: doc.name })
+        .exec();
+    }
+    userActivityCache.invalidateAll();
     this.logger.log(`Role updated: ${doc.name}`);
     return doc;
   }
 
-  /**
-   * Soft-delete: refuse if `isSystem` (system roles cannot be deleted).
-   * Actual hard-delete; the soft-delete plugin is not enabled on Role to
-   * keep role references stable (users reference role by name).
-   */
   async remove(id: string): Promise<void> {
     const doc = await this.findById(id);
     if (doc.isSystem) {

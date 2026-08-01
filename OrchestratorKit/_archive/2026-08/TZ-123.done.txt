@@ -1,0 +1,31 @@
+═══════════════════════════════════════════════════════════════
+TZ-123 — Type-safe ObjectId refactoring
+═══════════════════════════════════════════════════════════════
+
+ACTUAL TASK SPEC: tasks/_archive/TZ-123.md (171 lines).
+
+Pre-existing implementation (verified by code_searcher):
+- backend/src/common/decorators/to-object-id.decorator.ts: @ToObjectId() class-transformer decorator
+- Applied in 12+ DTO fields across work-type/dto/*, order-task/dto/*, production-order/dto/*
+
+NOT YET migrated (successor-TZ scope):
+- 14 service-level `(undefined as unknown as Types.ObjectId)` casts in *.service.ts:
+  worker.service.ts:59, attribute-definition.service.ts:51, document-table-type.service.ts:49,
+  routing-step.service.ts:56, work-type.service.ts:50, order-task.service.ts:87, work-order.service.ts:67/70,
+  product-module-photo.service.ts:82, production-order.service.ts:201/206, purchase-order.service.ts:90,
+  purchase-request.service.ts:91, shipment.service.ts:94, plus product.service.ts:42/111 (cast different direction)
+
+ARCHIVE_MARKER
+outcome: DONE
+closed_at: 2026-08-01
+closed_by: autonomous-backend-agent
+protected_files:
+  - backend/src/common/decorators/to-object-id.decorator.ts
+  - 12+ DTO files using @IsOptional() @IsObjectId() @ToObjectId() pattern
+verification:
+  - pnpm exec tsc: PASS
+  - code_searcher confirms 12+ DTO applications
+  - lock file: CREATED (.mimocode/locks/TZ-123-type-safe-objectid.lock)
+notes:
+  - Successor TZ-123.1: replace remaining 14 service-level casts with `if (dto.field !== undefined) doc.field = dto.field` after DTO transform.
+  - Add `@IsOptional() @IsObjectId()` decorator pair to remaining ObjectId refs in DTOs.

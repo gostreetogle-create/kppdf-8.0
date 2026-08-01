@@ -17,16 +17,38 @@ export class CounterpartyService {
     return this.model.create(dto);
   }
 
-  async findAll(q: { page?: number; limit?: number; search?: string; role?: string } = {}) {
+  async findAll(
+    q: { page?: number; limit?: number; search?: string; role?: string } = {},
+    user?: { organizationId?: string | null; role?: string },
+  ) {
     const page = Math.max(1, q.page ?? 1);
     const limit = Math.min(100, Math.max(1, q.limit ?? 20));
-    const filter: Record<string, unknown> = {};
+    const filter: Record<string, unknown> = { deletedAt: null };
+
+    if (user?.organizationId) {
+      filter.$or = [
+        { organizationId: new Types.ObjectId(user.organizationId) },
+        { organizationId: null, isSystem: true },
+        { organizationId: { $exists: false } },
+      ];
+    }
+
     if (q.search) {
       const escaped = q.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const re = new RegExp(escaped, 'i');
-      filter.$or = [{ name: re }, { shortName: re }, { inn: re }];
+      const searchCond = { $or: [{ name: re }, { shortName: re }, { inn: re }] };
+      if (filter.$or) {
+        filter.$or = (filter.$or as Record<string, unknown>[]).map((cond) => ({
+          ...cond,
+          ...searchCond,
+        }));
+      } else {
+        filter.$or = [searchCond];
+      }
     }
+
     if (q.role) filter.roles = q.role;
+
     const [items, total] = await Promise.all([
       this.model.find(filter).sort({ name: 1 }).skip((page - 1) * limit).limit(limit).exec(),
       this.model.countDocuments(filter).exec(),

@@ -93,6 +93,18 @@ export class TemplateBlocksService {
     return silentPatch<TemplateBlock>(this.http, `${this.baseUrl}/template-blocks/${id}`, payload);
   }
 
+  /** Persist a single/group canonical layout change atomically on the server. */
+  updateLayouts(
+    templateId: string,
+    updates: Array<{ blockId: string; layout: NonNullable<TemplateBlock['layout']> }>,
+  ): Observable<SilentResult<TemplateBlock[]>> {
+    return silentPatch<TemplateBlock[]>(
+      this.http,
+      `${this.baseUrl}/document-templates/${templateId}/blocks/layouts`,
+      { updates },
+    );
+  }
+
   remove(id: string): Observable<SilentResult<void>> {
     return silentDelete<void>(this.http, `${this.baseUrl}/template-blocks/${id}`);
   }
@@ -101,10 +113,7 @@ export class TemplateBlocksService {
    * Upload an image file for a template block.
    * Sends FormData via POST to the block's image upload endpoint.
    */
-  uploadImage(
-    blockId: string,
-    file: File,
-  ): Observable<SilentResult<{ url: string }>> {
+  uploadImage(blockId: string, file: File): Observable<SilentResult<{ url: string }>> {
     const formData = new FormData();
     formData.append('file', file);
     return silentPost<{ url: string }>(

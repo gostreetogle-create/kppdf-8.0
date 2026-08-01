@@ -1,0 +1,54 @@
+═══════════════════════════════════════════════════════════════
+TZ-119.1 — Backend safety sweep INCREMENTAL adoption — BLOCKED
+═══════════════════════════════════════════════════════════════
+
+Status note: file naming follows kit-convention (`*.failed.txt` ~ what
+`verify-status.sh` REV-check expects for the ❌ FAILED section). The
+semantic outcome is BLOCKED — the project-convention archive lives at
+`tasks/_archive/2026-08/TZ-119.1.blocked.md`. The original spec for
+TZ-119.1 lives in the 'successor-TZ' paragraph of:
+- `OrchestratorKit/_archive/2026-08/TZ-119.done.txt` (TZ-119 SHIPS notes)
+- `progress.md` §'## 2026-08-01 — Backend TZ-110..127 audit batch' (successor-TZ plan section)
+
+There is no standalone `tasks/TZ-119.1.md` task file — user invoked the
+suffix as a logical successor of TZ-119.
+
+═══════════════════════════════════════════════════════════════
+ARCHIVE_MARKER
+
+outcome: FAILED
+semantic_outcome: BLOCKED
+closed_at: 2026-08-01
+closed_by: autonomous-backend-agent
+failure_reason: |
+  Three hard user-supplied constraints cannot be satisfied simultaneously with the existing codebase:
+  (1) Existing IsObjectIdPipe returns Types.ObjectId; applying it to controllers forces ~60 LOC
+      service-signature refactor which the user explicitly forbade without separate justification.
+  (2) Partial adoption (apply to a few controllers only) creates false safety — user explicitly
+      forbids it as 'ложное чувство защиты'.
+  (3) Third validate-only pipe class (returning string) was rejected by code-reviewer prior session
+      and explicitly forbidded by user; existing IsObjectIdPipe IsObjectIdValidPipe pattern.
+  These constraints are mutually exclusive in current scope → BLOCKED.
+
+partial_progress: |
+  - Verified no source task-file for TZ-119.1 exists; no orphan file to delete.
+  - Verified no other agent worktree conflicts (both worktrees at commit 72cd8e9b, not touching
+    backend/src controllers or pipe file).
+  - Verified existing IsObjectIdPipe contract doesn't fit existing findById(id: string) service
+    signatures (60+ services confirmed via code_searcher).
+  - typecheck PASS (exit 0); jest 20/20 PASS (no regressions in shipped TZ-119 artifacts).
+  - audit-object-id-validation.ts baseline FAIL (exit 1) — 173+ unvalidated new Types.ObjectId()
+    calls remain.
+
+  next_steps: |
+  Recommended successor: TZ-119.2 — coordinated findById signature refactor.
+    - Refactor 60+ services: findById(id: string) → findById(id: string | Types.ObjectId)
+    - Adopt IsObjectIdPipe at 30+ controllers
+    - Add per-call-site unit tests (invalid→400; valid-round-trip)
+    - Re-run audit-object-id-validation.ts after each batch
+    - Estimated ~3 hours focused; requires branched worktree (NOT main).
+  Alternate: TZ-119.3 — defensive isValidObjectId() in services (narrower, doesn't change controller contract).
+  See tasks/_archive/2026-08/TZ-119.1.blocked.md for full reasoning.
+
+  lock_file_skipped: TRUE
+═══════════════════════════════════════════════════════════════

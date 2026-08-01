@@ -1,0 +1,29 @@
+═══════════════════════════════════════════════════════════════
+TZ-120 — Global soft-delete plugin (Mongoose)
+═══════════════════════════════════════════════════════════════
+
+ACTUAL TASK SPEC was implicit (1-line summary in OrchestratorKit/STATUS.md).
+
+Pre-existing implementation (verified by code_searcher):
+- backend/src/database/soft-delete.plugin.ts (78 lines, fully implemented)
+- Plugin registered in backend/src/database/database.module.ts:25
+- 30+ schemas use auto-filter behaviour
+- Opt-out flag `softDelete: false` works (counter / audit-log / role / permission / rate-limit / setting / feature-flag / role-counterparty / role-org all opt out)
+- Query helpers `.softDelete()` (sets deletedAt = now) and `.restore()` (clears deletedAt) registered
+
+ARCHIVE_MARKER
+outcome: DONE
+closed_at: 2026-08-01
+closed_by: autonomous-backend-agent
+protected_files:
+  - backend/src/database/soft-delete.plugin.ts
+  - backend/src/database/database.module.ts
+  - backend/src/types/mongoose-augment.d.ts (SchemaOptions.softDelete type)
+  - all schemas with `deletedAt?: Date | null` field (30+ files)
+verification:
+  - pnpm exec tsc: PASS
+  - code_searcher confirms 30+ services use updateOne deletedAt + auto-filter via pre-hook chain
+  - lock file: CREATED (.mimocode/locks/TZ-120-soft-delete-plugin.lock)
+notes:
+  - Plugin applied across all 30+ business schemas; system-level schemas opt out via `softDelete: false`.
+  - DEL-94 hotfix: table-template.service.ts:82 explicitly switched from raw `$set: {deletedAt}` to `model.deleteOne(...)` so softDelete plugin captures audit-log.

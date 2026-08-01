@@ -197,6 +197,26 @@ while IFS= read -r tz; do
   fi
 done < <(extract_primary_tzs "FAILED")
 
+# ──── REGRESSION GUARD (added 2026-08-01) ────
+# Asserts NO `═══` decoration rows remain in OrchestratorKit/STATUS.md.
+# Historical context: on 2026-08-01 a manual sweep replaced 71 ASCII-decorated
+# title cells (TZ-02..11, TZ-30..78, TZ-81, TZ-110, TZ-119..126 in `## ✅ DONE`;
+# TZ-119.1, TZ-127 in `## ❌ FAILED`) with the constant placeholder
+# `(archived · см. файл архива)`. The placeholder is canonical per `## ✅ DONE`
+# preamble comment "Auto-generated forward-link table below lists every
+# `.done.txt` archive marker".
+# Why global: box-drawing U+2550 (`═`) is non-standard Markdown with no
+# legitimate use anywhere in STATUS.md (headings use `#`, separators use `-`).
+# If any future content adds `═` runs (e.g. a horizontal rule), this guard
+# will fire falsely — but that's the desired pressure to migrate to a
+# legitimate separator character.
+# Fail-mode: increment `errs` so the new failure is reported alongside other
+# reconciliation errors in the ITOGO summary block, instead of abrupt exit.
+if grep -qP '═+' "$STATUS"; then
+  echo "FAIL [REGRESSION]: ═══ decoration rows re-introduced in STATUS.md — replace with '(archived · см. файл архива)' or a short human title."
+  errs=$((errs+1))
+fi
+
 # ──── SOFT-CHECK: наличие самих секций в STATUS.md ────
 # Вызываем section() — это та же логика, что и для forward/reverse.
 # (Это дедуплицирует привязку к ASCII-якорям в одном месте.)

@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  UseInterceptors,
 } from '@nestjs/common';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { ShipmentService } from './shipment.service';
@@ -14,7 +15,11 @@ import { CreateShipmentDto } from './dto/create-shipment.dto';
 import { UpdateShipmentDto } from './dto/update-shipment.dto';
 import { AddDocDto } from './dto/add-doc.dto';
 import { AuditAction } from '../../common/decorators/audit-action.decorator';
+import { RequireOrgScope } from '../../common/decorators/require-org-scope.decorator';
+import { OrgScopeGuardInterceptor } from '../../common/interceptors/org-scope.interceptor';
 
+@RequireOrgScope()
+@UseInterceptors(OrgScopeGuardInterceptor)
 @Controller('shipments')
 export class ShipmentController {
   constructor(private readonly service: ShipmentService) {}

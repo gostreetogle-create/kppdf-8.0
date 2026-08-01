@@ -28,7 +28,15 @@ import { ChangeDetectionStrategy, Component, effect, inject, input, output } fro
 import { CdkDrag } from '@angular/cdk/drag-drop';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { LucideAngularModule } from 'lucide-angular';
-import type { TemplateBlock } from '../../../shared/template-block/template-block.types';
+import {
+  blockKey,
+  type BlockLayout,
+  type TemplateBlock,
+} from '../../../shared/template-block/template-block.types';
+import {
+  clampLayoutDelta,
+  normalizeBlockLayout,
+} from '../../../shared/template-block/template-block-layout';
 import type { Rect } from './snap-engine';
 import {
   BlockRendererStateService,
@@ -58,8 +66,128 @@ import {
   providers: [BlockRendererStateService],
   styleUrl: './block-renderer.component.css',
   template: `
-    <!-- ═══ OVERLAY MODE: no cdkDrag, free absolute positioning ═══ -->
-    @if (state.isOverlay()) {
+    <!-- ═══ CANONICAL MODE: every new block has normalized page geometry ═══ -->
+    @if (state.isPositioned()) {
+      <div
+        class="group block-renderer block-renderer--positioned"
+        [class.is-selected]="selected()"
+        [class.is-multi-selected]="multiSelected()"
+        [class.is-inactive]="!block().isActive"
+        [attr.data-block-type]="block().type"
+        [attr.aria-selected]="selected() || multiSelected()"
+        role="button"
+        tabindex="0"
+        [style.left.%]="state.layoutLeft()"
+        [style.top.%]="state.layoutTop()"
+        [style.width.%]="state.layoutWidth()"
+        [style.height.%]="state.layoutHeight()"
+        [style.z-index]="state.layoutZIndex()"
+        [style.transform]="'rotate(' + state.layoutRotation() + 'deg)'"
+        (click)="onSelect($event)"
+        (mousedown)="onPositionedDragStart($event)"
+        (keydown.enter)="onSelect($event)"
+        (keydown.space)="onSelect($event)"
+      >
+        <div
+          class="block-renderer__delete"
+          (click)="onDeleteClick($event)"
+          (keydown.enter)="onDeleteClick($event)"
+          (mousedown)="$event.stopPropagation()"
+          title="Удалить блок"
+          role="button"
+          tabindex="-1"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polyline points="3 6 5 6 21 6" />
+            <path
+              d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+            />
+          </svg>
+        </div>
+        <div class="block-renderer__body">
+          <div class="block-renderer__header">
+            <span class="block-renderer__type">{{ state.typeLabel() }}</span>
+            @if (state.bindingBadge()) {
+              <span class="block-renderer__binding" [title]="state.bindingBadgeTooltip()">{{
+                state.bindingBadge()
+              }}</span>
+            }
+          </div>
+          @if (block().type === 'image' && state.imageUrl()) {
+            <div class="block-renderer__image-wrap">
+              <img
+                [src]="state.imageUrl()"
+                [alt]="block().title || 'Изображение'"
+                class="block-renderer__image"
+                draggable="false"
+                loading="lazy"
+                [style.width]="'100%'"
+                [style.height]="'100%'"
+              />
+            </div>
+          } @else if (block().type === 'table' && state.tableColumns().length > 0) {
+            <div class="block-renderer__table-wrap">
+              <table class="block-renderer__table">
+                <thead>
+                  <tr>
+                    @for (col of state.tableColumns(); track col.key) {
+                      <th [style.text-align]="col.align">{{ col.label }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of state.tableRows(); track $index) {
+                    <tr>
+                      @for (cell of row; track $index; let ci = $index) {
+                        <td [style.text-align]="state.tableColumns()[ci]?.align ?? 'left'">
+                          {{
+                            state.formatTableCell(cell, state.tableColumns()[ci]?.type ?? 'text')
+                          }}
+                        </td>
+                      }
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td
+                        [attr.colspan]="state.tableColumns().length"
+                        class="block-renderer__table-empty"
+                      >
+                        Нет данных
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else if (state.hasColumns()) {
+            <div
+              class="block-renderer__columns"
+              [style.grid-template-columns]="state.columnsGridTemplate()"
+            >
+              @for (col of block().columns; track col.id) {
+                <div
+                  class="block-renderer__column"
+                  [style.font-size.px]="col.fontSize ?? 14"
+                  [innerHTML]="byPassHtml(col.content)"
+                ></div>
+              }
+            </div>
+          } @else {
+            <div
+              class="block-renderer__content"
+              [innerHTML]="byPassHtml(state.renderedContent())"
+            ></div>
+          }
+        </div>
+      </div>
+    } @else if (state.isOverlay()) {
       <div
         class="group block-renderer block-renderer--overlay"
         [class.is-selected]="selected()"
@@ -87,8 +215,18 @@ import {
           role="button"
           tabindex="-1"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polyline points="3 6 5 6 21 6" />
+            <path
+              d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+            />
           </svg>
         </div>
 
@@ -99,8 +237,16 @@ import {
               [alt]="block().title || 'Изображение'"
               class="block-renderer__image block-renderer__image--overlay"
               draggable="false"
-              [style.width.px]="state.resizeActive() ? state.resizeWidth() : (state.imageWidth() ?? OVERLAY_DEFAULT_WIDTH)"
-              [style.height.px]="state.resizeActive() ? state.resizeHeight() : (state.imageHeight() ?? OVERLAY_DEFAULT_HEIGHT)"
+              [style.width.px]="
+                state.resizeActive()
+                  ? state.resizeWidth()
+                  : (state.imageWidth() ?? OVERLAY_DEFAULT_WIDTH)
+              "
+              [style.height.px]="
+                state.resizeActive()
+                  ? state.resizeHeight()
+                  : (state.imageHeight() ?? OVERLAY_DEFAULT_HEIGHT)
+              "
             />
             @if (selected()) {
               <div
@@ -110,7 +256,12 @@ import {
                 title="Перетащите для пропорционального изменения размера"
               >
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path d="M12 0v12H0" stroke="currentColor" stroke-width="2" fill="var(--color-paper)"/>
+                  <path
+                    d="M12 0v12H0"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    fill="var(--color-paper)"
+                  />
                 </svg>
               </div>
             }
@@ -120,7 +271,10 @@ import {
             <div class="block-renderer__header">
               <span class="block-renderer__type">{{ state.typeLabel() }}</span>
             </div>
-            <div class="block-renderer__content" [innerHTML]="byPassHtml(state.renderedContent())"></div>
+            <div
+              class="block-renderer__content"
+              [innerHTML]="byPassHtml(state.renderedContent())"
+            ></div>
           </div>
         }
       </div>
@@ -172,9 +326,24 @@ import {
           [attr.aria-label]="multiSelected() ? 'Убрать из выделения' : 'Выбрать блок'"
           [attr.tabindex]="multiSelected() ? '0' : '-1'"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
             @if (multiSelected()) {
-              <rect x="3" y="3" width="18" height="18" rx="2" fill="var(--color-gold)" stroke="var(--color-gold)" />
+              <rect
+                x="3"
+                y="3"
+                width="18"
+                height="18"
+                rx="2"
+                fill="var(--color-gold)"
+                stroke="var(--color-gold)"
+              />
               <polyline points="9 12 11 14 15 10" stroke="white" stroke-width="2.5" />
             } @else {
               <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" />
@@ -190,16 +359,29 @@ import {
           role="button"
           tabindex="-1"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polyline points="3 6 5 6 21 6" />
+            <path
+              d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+            />
           </svg>
         </div>
         <div class="block-renderer__body">
           <div class="block-renderer__drag-handle" title="Перетащите для перемещения">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="8" cy="6" r="2"/><circle cx="16" cy="6" r="2"/>
-              <circle cx="8" cy="12" r="2"/><circle cx="16" cy="12" r="2"/>
-              <circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/>
+              <circle cx="8" cy="6" r="2" />
+              <circle cx="16" cy="6" r="2" />
+              <circle cx="8" cy="12" r="2" />
+              <circle cx="16" cy="12" r="2" />
+              <circle cx="8" cy="18" r="2" />
+              <circle cx="16" cy="18" r="2" />
             </svg>
           </div>
           @if (block().type === 'table' && state.tableColumns().length > 0) {
@@ -208,7 +390,9 @@ import {
                 <thead>
                   <tr>
                     @for (col of state.tableColumns(); track col.key) {
-                      <th [style.text-align]="col.align" [style.width]="col.width + 'px'">{{ col.label }}</th>
+                      <th [style.text-align]="col.align" [style.width]="col.width + 'px'">
+                        {{ col.label }}
+                      </th>
                     }
                   </tr>
                 </thead>
@@ -217,13 +401,22 @@ import {
                     @for (row of state.tableRows(); track $index) {
                       <tr>
                         @for (cell of row; track $index; let ci = $index) {
-                          <td [style.text-align]="state.tableColumns()[ci]?.align ?? 'left'">{{ state.formatTableCell(cell, state.tableColumns()[ci]?.type ?? 'text') }}</td>
+                          <td [style.text-align]="state.tableColumns()[ci]?.align ?? 'left'">
+                            {{
+                              state.formatTableCell(cell, state.tableColumns()[ci]?.type ?? 'text')
+                            }}
+                          </td>
                         }
                       </tr>
                     }
                   } @else {
                     <tr>
-                      <td [attr.colspan]="state.tableColumns().length" class="block-renderer__table-empty">Нет данных</td>
+                      <td
+                        [attr.colspan]="state.tableColumns().length"
+                        class="block-renderer__table-empty"
+                      >
+                        Нет данных
+                      </td>
                     </tr>
                   }
                 </tbody>
@@ -231,29 +424,48 @@ import {
             </div>
           } @else if (block().type === 'image' && state.imageUrl()) {
             <div class="block-renderer__image-wrap">
-              <img [src]="state.imageUrl()" [alt]="block().title || 'Изображение'" class="block-renderer__image"
+              <img
+                [src]="state.imageUrl()"
+                [alt]="block().title || 'Изображение'"
+                class="block-renderer__image"
                 [style.width]="state.imageWidth() ? state.imageWidth() + 'px' : '100%'"
-                [style.height]="state.imageHeight() ? state.imageHeight() + 'px' : 'auto'" loading="lazy" />
+                [style.height]="state.imageHeight() ? state.imageHeight() + 'px' : 'auto'"
+                loading="lazy"
+              />
             </div>
           } @else if (block().type === 'spacer') {
             <div class="block-renderer__spacer" [style.height.px]="block().height ?? 40"></div>
           } @else if (state.hasColumns()) {
             @if (block().content) {
-              <div class="block-renderer__content block-renderer__content--preamble">{{ state.renderedContent() }}</div>
+              <div class="block-renderer__content block-renderer__content--preamble">
+                {{ state.renderedContent() }}
+              </div>
             }
-            <div class="block-renderer__columns" [style.grid-template-columns]="state.columnsGridTemplate()">
+            <div
+              class="block-renderer__columns"
+              [style.grid-template-columns]="state.columnsGridTemplate()"
+            >
               @for (col of block().columns; track col.id) {
-                <div class="block-renderer__column" [style.font-size.px]="col.fontSize ?? 14" [innerHTML]="byPassHtml(col.content)"></div>
+                <div
+                  class="block-renderer__column"
+                  [style.font-size.px]="col.fontSize ?? 14"
+                  [innerHTML]="byPassHtml(col.content)"
+                ></div>
               }
             </div>
           } @else {
             <div class="block-renderer__header">
               <span class="block-renderer__type">{{ state.typeLabel() }}</span>
               @if (state.bindingBadge()) {
-                <span class="block-renderer__binding" [title]="state.bindingBadgeTooltip()">{{ state.bindingBadge() }}</span>
+                <span class="block-renderer__binding" [title]="state.bindingBadgeTooltip()">{{
+                  state.bindingBadge()
+                }}</span>
               }
             </div>
-            <div class="block-renderer__content" [innerHTML]="byPassHtml(state.renderedContent())"></div>
+            <div
+              class="block-renderer__content"
+              [innerHTML]="byPassHtml(state.renderedContent())"
+            ></div>
           }
         </div>
       </div>
@@ -265,6 +477,9 @@ export class BlockRendererComponent {
   readonly block = input.required<TemplateBlock>();
   readonly selected = input<boolean>(false);
   readonly multiSelected = input<boolean>(false);
+  readonly groupBlocks = input<TemplateBlock[]>([]);
+  readonly layoutDragDelta = input<{ dx: number; dy: number } | null>(null);
+  readonly layoutDragBlockIds = input<ReadonlySet<string>>(new Set());
   readonly snapEnabled = input<boolean>(true);
   readonly gridSize = input<number>(20);
   readonly boundaryPadding = input<number>(0);
@@ -273,8 +488,22 @@ export class BlockRendererComponent {
   readonly select = output<TemplateBlock>();
   readonly multiSelect = output<TemplateBlock>();
   readonly widthChange = output<{ width: number; marginLeft: number }>();
-  readonly overlayMove = output<{ block: TemplateBlock; overlayLeft: number; overlayTop: number }>();
-  readonly overlayResize = output<{ block: TemplateBlock; imageWidth: number; imageHeight: number }>();
+  readonly overlayMove = output<{
+    block: TemplateBlock;
+    overlayLeft: number;
+    overlayTop: number;
+  }>();
+  readonly layoutChanges = output<Array<{ block: TemplateBlock; layout: BlockLayout }>>();
+  readonly layoutDragPreview = output<{
+    blockId: string;
+    blockIds: ReadonlySet<string>;
+    delta: { dx: number; dy: number } | null;
+  }>();
+  readonly overlayResize = output<{
+    block: TemplateBlock;
+    imageWidth: number;
+    imageHeight: number;
+  }>();
   readonly deleteRequest = output<string>();
   /**
    * Live drag rectangle for the overlay block (TZ-237.MAGNETIC-GRID-r0).
@@ -301,6 +530,8 @@ export class BlockRendererComponent {
     // Sync selection inputs → service
     effect(() => this.state.selected.set(this.selected()));
     effect(() => this.state.multiSelected.set(this.multiSelected()));
+    effect(() => this.state.layoutDragDelta.set(this.layoutDragDelta()));
+    effect(() => this.state.layoutDragBlockIds.set(this.layoutDragBlockIds()));
 
     // Sync snap config → service
     effect(() => this.state.snapEnabled.set(this.snapEnabled()));
@@ -404,7 +635,13 @@ export class BlockRendererComponent {
 
     const onMove = (e: MouseEvent): void => {
       const deltaPx = e.clientX - startX;
-      const result = this.state.computeSideResize(deltaPx, side, containerWidth, startWidth, startMarginLeft);
+      const result = this.state.computeSideResize(
+        deltaPx,
+        side,
+        containerWidth,
+        startWidth,
+        startMarginLeft,
+      );
       this.state.currentMarginLeft.set(result.marginLeft);
       this.state.currentWidth.set(result.width);
     };
@@ -415,7 +652,10 @@ export class BlockRendererComponent {
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
       handle.classList.remove('is-dragging');
-      this.widthChange.emit({ width: this.state.currentWidth(), marginLeft: this.state.currentMarginLeft() });
+      this.widthChange.emit({
+        width: this.state.currentWidth(),
+        marginLeft: this.state.currentMarginLeft(),
+      });
     };
 
     document.body.style.cursor = 'ew-resize';
@@ -424,12 +664,105 @@ export class BlockRendererComponent {
     document.addEventListener('mouseup', onUp);
   }
 
+  // ── Canonical normalized-layout drag handler ──
+
+  protected onPositionedDragStart(event: MouseEvent): void {
+    if (event.button !== 0) return;
+    const target = event.target as HTMLElement;
+    if (target.closest('.block-renderer__delete')) return;
+    event.preventDefault();
+    event.stopPropagation();
+
+    const startLayout = this.block().layout;
+    const paper = target.closest('.pi-canvas-page-paper') as HTMLElement | null;
+    if (!startLayout || !paper) return;
+    const selectedGroup = this.groupBlocks();
+    const draggedKey = blockKey(this.block());
+    const isGroupDrag =
+      selectedGroup.length > 1 && selectedGroup.some((b) => blockKey(b) === draggedKey);
+    const groupLayouts = (isGroupDrag ? selectedGroup : [this.block()])
+      .filter((b) => b.layout)
+      .map((b) => ({ block: b, layout: b.layout! }));
+    const startX = event.clientX;
+    const startY = event.clientY;
+    this.state.positionedDragActive.set(true);
+    this.state.positionedDragLeft.set(startLayout.x * 100);
+    this.state.positionedDragTop.set(startLayout.y * 100);
+    const cleanup = (): void => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('mouseleave', onLeave);
+      window.removeEventListener('blur', onLeave);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    let clampedDx = 0;
+    let clampedDy = 0;
+    const onMove = (moveEvent: MouseEvent): void => {
+      moveEvent.preventDefault();
+      const rawDx = (moveEvent.clientX - startX) / Math.max(1, paper.clientWidth);
+      const rawDy = (moveEvent.clientY - startY) / Math.max(1, paper.clientHeight);
+      const clamped = clampLayoutDelta(
+        groupLayouts.map(({ layout }) => layout),
+        rawDx,
+        rawDy,
+      );
+      clampedDx = clamped.dx;
+      clampedDy = clamped.dy;
+      this.state.layoutDragDelta.set({ dx: clampedDx, dy: clampedDy });
+      this.layoutDragPreview.emit({
+        blockId: this.block()._id ?? this.block().tempId ?? '',
+        blockIds: new Set(groupLayouts.map(({ block }) => blockKey(block))),
+        delta: { dx: clampedDx, dy: clampedDy },
+      });
+    };
+    const onLeave = (): void => {
+      cleanup();
+      this.state.positionedDragActive.set(false);
+      this.state.layoutDragDelta.set(null);
+      this.layoutDragPreview.emit({
+        blockId: this.block()._id ?? this.block().tempId ?? '',
+        blockIds: new Set(),
+        delta: null,
+      });
+    };
+    const onUp = (): void => {
+      cleanup();
+      const updates = groupLayouts.map(({ block, layout }) => ({
+        block,
+        layout: normalizeBlockLayout({
+          ...layout,
+          x: layout.x + clampedDx,
+          y: layout.y + clampedDy,
+        }),
+      }));
+      this.state.positionedDragActive.set(false);
+      this.state.layoutDragDelta.set(null);
+      this.layoutDragPreview.emit({
+        blockId: this.block()._id ?? this.block().tempId ?? '',
+        blockIds: new Set(),
+        delta: null,
+      });
+      this.layoutChanges.emit(updates);
+    };
+    document.body.style.cursor = 'move';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('mouseleave', onLeave);
+    window.addEventListener('blur', onLeave);
+  }
+
   // ── Overlay drag handler ──
 
   protected onOverlayDragStart(event: MouseEvent): void {
     if (event.button !== 0) return;
     const target = event.target as HTMLElement;
-    if (target.closest('.block-renderer__delete') || target.closest('.block-renderer__corner-resize')) return;
+    if (
+      target.closest('.block-renderer__delete') ||
+      target.closest('.block-renderer__corner-resize')
+    )
+      return;
 
     event.preventDefault();
     event.stopPropagation();
@@ -455,10 +788,21 @@ export class BlockRendererComponent {
     };
 
     const onMove = (e: MouseEvent): void => {
-      if (e.buttons === 0) { cleanup(); return; }
+      if (e.buttons === 0) {
+        cleanup();
+        return;
+      }
       e.preventDefault();
 
-      const pos = this.state.computeOverlayDrag(e, startMouseX, startMouseY, startLeft, startTop, paper, hostEl);
+      const pos = this.state.computeOverlayDrag(
+        e,
+        startMouseX,
+        startMouseY,
+        startLeft,
+        startTop,
+        paper,
+        hostEl,
+      );
 
       this.state.dragLeft.set(pos.left);
       this.state.dragTop.set(pos.top);
@@ -528,9 +872,19 @@ export class BlockRendererComponent {
     };
 
     const onMove = (e: MouseEvent): void => {
-      if (e.buttons === 0) { cleanup(); return; }
+      if (e.buttons === 0) {
+        cleanup();
+        return;
+      }
       e.preventDefault();
-      const size = this.state.computeCornerResize(e, startMouseX, startMouseY, startWidth, naturalW, naturalH);
+      const size = this.state.computeCornerResize(
+        e,
+        startMouseX,
+        startMouseY,
+        startWidth,
+        naturalW,
+        naturalH,
+      );
       this.state.resizeWidth.set(size.width);
       this.state.resizeHeight.set(size.height);
     };

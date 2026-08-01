@@ -135,13 +135,13 @@ export function defineEntity<
     factory: () => {
       const http = inject(HttpClient);
       const rawBaseUrl = inject(API_BASE_URL);
-      // Normalize: strip trailing slashes on baseUrl, leading slashes on
-      // endpoint, then join — produces `${baseUrl}/${endpoint}` regardless
-      // of how schema.endpoint was supplied (`'users'`, `'/users'`,
-      // `'///users'` all collapse to `/api/users`).
-      const baseUrl = [rawBaseUrl.replace(/\/+$/, ''), schema.endpoint.replace(/^\/+/, '')].join(
-        '/',
-      );
+      // Normalize both sides before joining. This tolerates leading and
+      // trailing slashes in endpoint declarations and prevents accidental
+      // duplicate separators in generated API URLs.
+      const baseUrl = [
+        rawBaseUrl.replace(/\/+$/, ''),
+        schema.endpoint.replace(/^\/+|\/+$/g, ''),
+      ].join('/');
 
       return {
         list(params: P): Observable<SilentResult<PaginatedResponse<T>>> {

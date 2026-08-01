@@ -1,0 +1,29 @@
+═══════════════════════════════════════════════════════════════
+TZ-127 — Auth rate-limit + XSS tokens (tiered throttler + HttpOnly cookie)
+═══════════════════════════════════════════════════════════════
+
+ACTUAL TASK SPEC: tasks/_archive/TZ-127.md (280 lines).
+
+STATUS: **FAILED** — three-acceptance-criteria breach verified by audit.
+
+WHAT IS IMPLEMENTED (partial):
+- `backend/src/modules/auth/auth.service.ts:228` sets HttpOnly + Secure + SameSite=Strict + Path=/auth refresh cookie via `res.cookie('refreshToken', ...)`. (Spec §2.3 SET ✓)
+
+WHAT IS **BROKEN** (verified by code_searcher):
+1. **Cookie is set but NEVER READ.** `backend/src/modules/auth/strategies/jwt-refresh.strategy.ts` reads refresh from Authorization: Bearer header (line ~34) — not from `req.cookies.refreshToken`. Browser NEVER sends the HttpOnly cookie because no extraction logic exists.
+2. **Throttler is NOT tiered.** `backend/src/common/guards/throttler-behind-auth.guard.ts` has TIER_LIMITS constants but the wired module is `ThrottlerModule.forRoot([{ name: 'short', ttl:1000, limit:10 }, { name: 'long', ttl:60000, limit:100 }])` — same limits for anon and auth. Worse: `auth-bypass` returns `true` for authenticated users (line 30-37), defeating the entire throttle.
+3. **No tiered-throttler.guard.ts** exists (NEW guard is missing).
+4. **Frontend localStorage not removed.** `frontend/src/app/core/auth.service.ts` still reads `kppdf.access`/`kppdf.refresh` from localStorage — XSS surface unmitigated.
+5. **No cookie-parser middleware** in `backend/src/main.ts` middleware chain (would be needed for cookie auth via Passport refresh strategy).
+
+ARCHIVE_MARKER
+outcome: FAILED
+closed_at: 2026-08-01
+closed_by: autonomous-backend-agent
+failure_reason: 3 critical acceptance criteria unmet: (a) cookie WRITE ok but READ path missing → cookie never authenticates; (b) tiered throttler not implemented + authenticated users BYPASS rate-limit; (c) frontend XSS surface (localStorage tokens) unmitigated. Cookie set is decorative only.
+partial_progress: HttpOnly cookie emit (auth.service.ts:228) — but read path absent; throttle guard has tier constants (10/30/100 RPM) but wire-up uses 2 throttler entries with same default keys → no actual tiering at runtime.
+next_steps: Split into 3 successor-TZ:
+  - TZ-127.1 — `tiered-throttler.guard.ts`: anon 20/auth 300/admin 1500 RPM via 3 named throttler entries; remove auth-bypass logic.
+  - TZ-127.2 — `jwt-refresh.strategy.ts` + `cookie-parser` middleware + frontend `withCredentials: true`: read refresh from `req.cookies.refreshToken` instead of Authorization header.
+  - TZ-127.3 — frontend `core/auth.service.ts`: drop localStorage; keep access token in memory signal only; bootstrap flow restores via cookie-backed refresh.
+lock_file_skipped: TRUE (TZ-127 outcome is FAILED; lock files only created on DONE per TZF-00 §5)

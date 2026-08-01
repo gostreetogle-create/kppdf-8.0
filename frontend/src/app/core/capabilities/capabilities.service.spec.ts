@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { AuthService } from '../auth.service';
 import { CapabilitiesService } from './capabilities.service';
 import { ALL_PERMISSION_KEYS } from './capabilities.metadata';
@@ -22,7 +23,15 @@ describe('CapabilitiesService (TZ-256 §ШАГ 1)', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [CapabilitiesService, AuthService],
+      providers: [
+        CapabilitiesService,
+        AuthService,
+        // TZ-CLEANUP 2026-08-01: AuthService.createEffect internally calls
+        // inject(HttpClient). Without provideHttpClient, TestBed.runInInjectionContext
+        // throws NG0201 (`No provider for HttpClient`). Adding it transitively
+        // satisfies the lazy AuthService → HttpClient dependency tree.
+        provideHttpClient(),
+      ],
     });
     caps = TestBed.inject(CapabilitiesService);
     auth = TestBed.inject(AuthService);
@@ -35,8 +44,12 @@ describe('CapabilitiesService (TZ-256 §ШАГ 1)', () => {
 
   it('returns USE-permissions exactly when role is non-admin and no wildcard', () => {
     auth.user.set({
-      id: 'a', username: 'alice', email: 'a@x', displayName: 'A',
-      role: 'manager', permissions: ['material:read', 'material:write'],
+      id: 'a',
+      username: 'alice',
+      email: 'a@x',
+      displayName: 'A',
+      role: 'manager',
+      permissions: ['material:read', 'material:write'],
     });
     const eff = caps.effectivePermissions();
     expect(eff.has('material:read')).toBe(true);
@@ -46,8 +59,12 @@ describe('CapabilitiesService (TZ-256 §ШАГ 1)', () => {
 
   it('admin role shortcut (role="admin" with empty permissions) → full catalog', () => {
     auth.user.set({
-      id: 'a', username: 'root', email: 'a@x', displayName: 'A',
-      role: 'admin', permissions: [],
+      id: 'a',
+      username: 'root',
+      email: 'a@x',
+      displayName: 'A',
+      role: 'admin',
+      permissions: [],
     });
     const eff = caps.effectivePermissions();
     expect(eff.size).toBe(ALL_PERMISSION_KEYS.size);
@@ -58,8 +75,12 @@ describe('CapabilitiesService (TZ-256 §ШАГ 1)', () => {
 
   it('wildcard "*" in permissions triggers ALL catalog for non-admin roles', () => {
     auth.user.set({
-      id: 'a', username: 'alice', email: 'a@x', displayName: 'A',
-      role: 'manager', permissions: ['*'],
+      id: 'a',
+      username: 'alice',
+      email: 'a@x',
+      displayName: 'A',
+      role: 'manager',
+      permissions: ['*'],
     });
     const eff = caps.effectivePermissions();
     expect(eff.size).toBe(ALL_PERMISSION_KEYS.size);
@@ -71,8 +92,12 @@ describe('CapabilitiesService (TZ-256 §ШАГ 1)', () => {
   describe('hasAny', () => {
     beforeEach(() => {
       auth.user.set({
-        id: 'a', username: 'alice', email: 'a@x', displayName: 'A',
-        role: 'user', permissions: ['material:read'],
+        id: 'a',
+        username: 'alice',
+        email: 'a@x',
+        displayName: 'A',
+        role: 'user',
+        permissions: ['material:read'],
       });
     });
 
@@ -93,5 +118,4 @@ describe('CapabilitiesService (TZ-256 §ШАГ 1)', () => {
       expect(caps.hasAny(undefined)).toBe(true);
     });
   });
-
 });

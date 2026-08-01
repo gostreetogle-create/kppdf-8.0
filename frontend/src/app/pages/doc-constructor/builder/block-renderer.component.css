@@ -27,7 +27,9 @@
 .block-renderer.is-selected {
   border-color: var(--color-gold);
   background: rgba(255, 255, 255, 0.5);
-  box-shadow: 0 0 0 1px var(--color-gold), 0 2px 8px -2px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 0 0 1px var(--color-gold),
+    0 2px 8px -2px rgba(0, 0, 0, 0.1);
 }
 
 /* TZ-211: Multi-selected — gold-soft background */
@@ -68,7 +70,9 @@
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 150ms ease, color 150ms ease;
+  transition:
+    opacity 150ms ease,
+    color 150ms ease;
   cursor: pointer;
   z-index: 5;
   color: var(--color-muted);
@@ -214,7 +218,9 @@
   justify-content: center;
   color: var(--color-muted);
   opacity: 0;
-  transition: opacity 150ms ease, color 150ms ease;
+  transition:
+    opacity 150ms ease,
+    color 150ms ease;
   cursor: grab;
   z-index: 5;
 }
@@ -245,6 +251,25 @@
 }
 
 /* ═══ Overlay mode — free absolute positioning ═══ */
+.block-renderer--positioned {
+  position: absolute;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 10px 12px;
+  overflow: hidden;
+  box-sizing: border-box;
+  cursor: move;
+  transform-origin: center;
+  background: color-mix(in srgb, var(--color-paper) 88%, transparent);
+}
+
+.block-renderer--positioned:hover,
+.block-renderer--positioned.is-selected,
+.block-renderer--positioned.is-multi-selected {
+  background: color-mix(in srgb, var(--color-paper) 96%, var(--color-gold));
+}
+
 .block-renderer--overlay {
   position: absolute;
   z-index: 10;
@@ -294,7 +319,7 @@
   background: var(--color-paper);
   border: 1px solid var(--color-rule);
   border-radius: 50%;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
   opacity: 0;
   transition: opacity 150ms ease;
 }
@@ -337,7 +362,7 @@
 }
 
 .block-renderer__corner-resize svg {
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
 }
 
 /* ═══ Snap indicator ═══ */

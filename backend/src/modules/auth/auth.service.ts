@@ -241,6 +241,7 @@ export class AuthService {
         username: user.username,
         role: user.role,
         version: user.refreshTokenVersion,
+        orgId: user.organizationId?.toString() ?? null,
       },
       {
         secret: this.config.get<string>('jwt.secret'),
@@ -273,6 +274,7 @@ export class AuthService {
       // were added to RegisterDto.
       phone: user.phone ?? null,
       fullName: user.fullName ?? null,
+      organizationId: user.organizationId?.toString() ?? null,
     };
   }
 }

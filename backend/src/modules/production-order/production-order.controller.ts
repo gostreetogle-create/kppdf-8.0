@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  UseInterceptors,
 } from '@nestjs/common';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { ProductionOrderService } from './production-order.service';
@@ -16,6 +17,8 @@ import { OrderTask, OrderTaskDocument } from '../order-task/order-task.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 
+import { RequireOrgScope } from '../../common/decorators/require-org-scope.decorator';
+import { OrgScopeGuardInterceptor } from '../../common/interceptors/org-scope.interceptor';
 @Controller('production-orders')
 export class ProductionOrderController {
   constructor(

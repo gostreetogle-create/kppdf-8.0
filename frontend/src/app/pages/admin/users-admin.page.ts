@@ -36,7 +36,8 @@ interface ClientUser {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PiPageHeaderComponent],
   template: `
-    <pi-page-header
+    <app-pi-page-header
+      eyebrow="администрирование"
       title="Пользователи"
       subtitle="Управление учётными записями системы"
       data-testid="users-admin-header"
@@ -44,9 +45,8 @@ interface ClientUser {
 
     <section class="pi-page-frame pi-edge-bleed py-page-y">
       <p class="text-sm text-muted-foreground mb-4">
-        Read-only slice backend support shipped in TZ-257. Mutations
-        (create / patch / activate / deactivate / change-password)
-        tracked as TZ-257.A follow-up.
+        Read-only slice backend support shipped in TZ-257. Mutations (create / patch / activate /
+        deactivate / change-password) tracked as TZ-257.A follow-up.
       </p>
 
       @if (loading()) {

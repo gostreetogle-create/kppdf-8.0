@@ -4,6 +4,7 @@ import { TemplateBlockService } from './template-block.service';
 import { CreateTemplateBlockDto } from './dto/create-template-block.dto';
 import { UpdateTemplateBlockDto } from './dto/update-template-block.dto';
 import { ReorderBlocksDto } from './dto/reorder-blocks.dto';
+import { UpdateTemplateBlockLayoutsDto } from './dto/update-layouts.dto';
 import { AuditAction } from '../../common/decorators/audit-action.decorator';
 
 @Controller()
@@ -25,6 +26,13 @@ export class TemplateBlockController {
   @AuditAction({ action: 'create', entityType: 'TemplateBlock' })
   add(@Param('id') templateId: string, @Body() dto: Omit<CreateTemplateBlockDto, 'templateId'>) {
     return this.service.create({ ...dto, templateId });
+  }
+
+  @Patch('document-templates/:id/blocks/layouts')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'update-layouts', entityType: 'TemplateBlock' })
+  updateLayouts(@Param('id') templateId: string, @Body() dto: UpdateTemplateBlockLayoutsDto) {
+    return this.service.updateLayouts(templateId, dto);
   }
 
   @Post('document-templates/:id/blocks/reorder')

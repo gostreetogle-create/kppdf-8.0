@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { DiscoveryModule } from '@nestjs/core';
 import { PermissionsBootValidator } from './permissions-boot-validator';
 
 /**
@@ -14,6 +15,11 @@ import { PermissionsBootValidator } from './permissions-boot-validator';
  * the earlier draft silently introduced.
  */
 @Module({
+  // NestJS ships DiscoveryService + MetadataScanner (+ Reflector) through
+  // DiscoveryModule. Without this import the boot validator cannot resolve
+  // its dependencies and NestFactory.create() throws "Nest can't resolve
+  // dependencies of the PermissionsBootValidator".
+  imports: [DiscoveryModule],
   providers: [PermissionsBootValidator],
   exports: [PermissionsBootValidator],
 })

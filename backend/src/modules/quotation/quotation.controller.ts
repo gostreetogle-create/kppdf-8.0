@@ -7,13 +7,18 @@ import {
   Patch,
   Post,
   Query,
+  UseInterceptors,
 } from '@nestjs/common';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { QuotationService } from './quotation.service';
 import { CreateQuotationDto } from './dto/create-quotation.dto';
 import { UpdateQuotationDto } from './dto/update-quotation.dto';
 import { AuditAction } from '../../common/decorators/audit-action.decorator';
+import { RequireOrgScope } from '../../common/decorators/require-org-scope.decorator';
+import { OrgScopeGuardInterceptor } from '../../common/interceptors/org-scope.interceptor';
 
+@RequireOrgScope()
+@UseInterceptors(OrgScopeGuardInterceptor)
 @Controller('quotations')
 export class QuotationController {
   constructor(private readonly service: QuotationService) {}

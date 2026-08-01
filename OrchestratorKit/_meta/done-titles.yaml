@@ -1,0 +1,54 @@
+# Per-TZ rationale registry for DONE/FAILED rows that keep descriptive titles.
+#
+# Some rows in OrchestratorKit/STATUS.md `## ✅ DONE` table keep a descriptive
+# title instead of the standard placeholder `(archived · см. файл архива)`.
+# That happens only when the title carries FORWARD-LOOKING semantics, not
+# just historical flavor.
+#
+# This file is the single source of truth for "why this row is special".
+# Update it when:
+#   1. A new TZ gets a forward-looking title (add entry below).
+#   2. A TZ scope flips (e.g., TZ-82 PENDING → DONE) — re-evaluate whether
+#      the place-holder convention still applies.
+#   3. A TZ is removed from DONE → archive → SUPERSEDED — keep entry as
+#      historical note (semantic_class: deprecated).
+#
+# Schema:
+#   TZ-NN:
+#     semantic_class:  recurring | scope-marker | pending-independent | deprecated
+#     why_titled:      <one-line human-readable explanation>
+#     archive_tip:     <which field in the archive file to read for full context>
+
+TZ-79:
+  semantic_class: recurring
+  why_titled: |
+    axe-core a11y audit. This isn't a one-shot — it is a recurring audit
+    scope. Every release / re-audit cycle may re-trigger this TZ or its
+    successors. Keeping the title surfaces that ongoing commitment.
+  archive_tip: read `next_steps:` in TZ-79.done.txt for the recurring schedule.
+
+TZ-80:
+  semantic_class: scope-marker
+  why_titled: |
+    SSR / Hydration, outcome REJECTED. This row is a SCOPE-REJECTION marker
+    — it reminds future agents that we already decided "no SSR" so they
+    don't waste time re-litigating the decision. Without this row, every
+    new frontend agent will eventually ask "should we add SSR?" again.
+  archive_tip: read `failure_reason:` and `next_steps:` in TZ-80.done.txt.
+
+TZ-82:
+  semantic_class: pending-independent
+  why_titled: |
+    Browser-use smoke test. State is PENDING and INDEPENDENT — meaning it
+    lives outside the main TZ flow and runs on its own cadence. The title
+    flags that this is a living test runner, not a finished one-off task.
+  archive_tip: read `next_steps:` in TZ-82.done.txt for the independent workflow.
+
+# Conventions reference:
+# - Placeholder text for historical-flavor rows: `(archived · см. файл архива)`.
+# - HTML comment in OrchestratorKit/STATUS.md explains the asymmetry:
+#   see `## ✅ DONE` preamble.
+# - Forward-link table in STATUS.md is auto-reconciled by
+#   `bash OrchestratorKit/auto-archive.sh TZ-NN done`.
+# - Regression guard against re-introducing `═══` decoration:
+#   `grep -qP '═+' OrchestratorKit/STATUS.md` in verify-status.sh.

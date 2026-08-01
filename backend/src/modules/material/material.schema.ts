@@ -75,6 +75,14 @@ export class Material {
 
   @Prop()
   notes?: string;
+
+  /** TZ-240: organization this material belongs to. Null/undefined for system (TZ-seeded shared) records. */
+  @Prop({ required: false, sparse: true, index: true })
+  organizationId?: Types.ObjectId;
+
+  /** TZ-240: marks the record as system-shared (visible across orgs). Created only via admin/seed. */
+  @Prop({ default: false })
+  isSystem?: boolean;
 }
 
 export const MaterialSchema = SchemaFactory.createForClass(Material);

@@ -4,6 +4,7 @@ import { RoleModule } from '../role/role.module';
 import { UsersAdminController } from './users-admin.controller';
 import { RolesAdminController } from './roles-admin.controller';
 import { LastAdminGuard } from '../../common/guards/last-admin.guard';
+import { SystemRoleGuard } from '../../common/guards/system-role.guard';
 
 /**
  * TZ-257 §ШАГ 1 — admin module.
@@ -31,7 +32,7 @@ import { LastAdminGuard } from '../../common/guards/last-admin.guard';
 @Module({
   imports: [UserModule, RoleModule],
   controllers: [UsersAdminController, RolesAdminController],
-  providers: [LastAdminGuard],
-  exports: [LastAdminGuard],
+  providers: [LastAdminGuard, SystemRoleGuard],
+  exports: [LastAdminGuard, SystemRoleGuard],
 })
 export class AdminModule {}

@@ -57,4 +57,8 @@ export class CreateCounterpartyDto {
 
   @IsOptional() @IsInt() @Min(0) @Max(365) paymentTermDays?: number;
   @IsOptional() @IsInt() @Min(0) @Max(100) vatRate?: number;
+
+  @IsOptional() @IsMongoId() organizationId?: string;
+
+  @IsOptional() @IsBoolean() isSystem?: boolean;
 }

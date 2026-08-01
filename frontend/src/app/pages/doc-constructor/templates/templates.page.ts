@@ -286,14 +286,16 @@ export class TemplatesPage {
 
     // Step 1: Check existing org + doc-type, create defaults if missing
     forkJoin([
-      this.http.get<{ items: { _id: string; name: string }[] }>(`${this.baseUrl}/organizations?limit=1`),
+      this.http.get<{ items: { _id: string; name: string }[] }>(
+        `${this.baseUrl}/organizations?limit=1`,
+      ),
       this.http.get<{ _id: string; name: string }[]>(`${this.baseUrl}/doc-types`),
     ])
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ([orgRes, dtRes]) => {
-          let orgId = orgRes?.items?.[0]?._id;
-          let docTypeId = dtRes?.[0]?._id;
+          const orgId = orgRes?.items?.[0]?._id;
+          const docTypeId = dtRes?.[0]?._id;
 
           // Auto-create default doc-type if none exists
           const ensureDocType$ = docTypeId
@@ -392,19 +394,21 @@ export class TemplatesPage {
         .subscribe({
           next: (copy) => {
             // Apply chosen format/orientation to the duplicate
-            this.svc.update(copy._id, {
-              pageSize: result.pageSize,
-              orientation: result.orientation,
-            }).subscribe({
-              next: () => {
-                this.toast.success('Копия создана');
-                this.router.navigate(['/doc-constructor/builder', copy._id]);
-              },
-              error: () => {
-                this.toast.success('Копия создана');
-                this.router.navigate(['/doc-constructor/builder', copy._id]);
-              },
-            });
+            this.svc
+              .update(copy._id, {
+                pageSize: result.pageSize,
+                orientation: result.orientation,
+              })
+              .subscribe({
+                next: () => {
+                  this.toast.success('Копия создана');
+                  this.router.navigate(['/doc-constructor/builder', copy._id]);
+                },
+                error: () => {
+                  this.toast.success('Копия создана');
+                  this.router.navigate(['/doc-constructor/builder', copy._id]);
+                },
+              });
           },
           error: (err) => this.toast.error(extractErrorMessage(err)),
         });

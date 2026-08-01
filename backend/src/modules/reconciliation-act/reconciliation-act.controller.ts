@@ -1,11 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseInterceptors } from '@nestjs/common';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { ReconciliationActService } from './reconciliation-act.service';
 import { CreateReconciliationActDto } from './dto/create-reconciliation-act.dto';
 import { UpdateReconciliationActDto } from './dto/update-reconciliation-act.dto';
 import { SignActDto } from './dto/sign-act.dto';
 import { AuditAction } from '../../common/decorators/audit-action.decorator';
+import { RequireOrgScope } from '../../common/decorators/require-org-scope.decorator';
+import { OrgScopeGuardInterceptor } from '../../common/interceptors/org-scope.interceptor';
 
+@RequireOrgScope()
+@UseInterceptors(OrgScopeGuardInterceptor)
 @Controller('reconciliation-acts')
 export class ReconciliationActController {
   constructor(private readonly service: ReconciliationActService) {}

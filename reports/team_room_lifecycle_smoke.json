@@ -1,0 +1,24 @@
+{
+  "task": "TZ-238",
+  "agent": "lifecycle-smoke",
+  "joinExit": 0,
+  "claimExit": 0,
+  "releaseExit": 0,
+  "markersBeforeClaim": 0,
+  "markerCountAfterClaim": 1,
+  "markerPayload": [
+    {
+      "pid": 25072,
+      "taskId": "TZ-238",
+      "agentId": "lifecycle-smoke",
+      "startedAt": "2026-08-01T09:22:49.961Z",
+      "status": "running"
+    }
+  ],
+  "watcherPid": 25072,
+  "markerCountAfterRelease": 0,
+  "markerRemoved": true,
+  "watcherStopped": true,
+  "runningWatcher": true,
+  "result": "PASS"
+}

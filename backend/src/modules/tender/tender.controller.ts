@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  UseInterceptors,
 } from '@nestjs/common';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { TenderService } from './tender.service';
@@ -15,11 +16,15 @@ import { UpdateTenderDto } from './dto/update-tender.dto';
 import { WinTenderDto } from './dto/win-tender.dto';
 import { AuditAction } from '../../common/decorators/audit-action.decorator';
 import { IsObjectId } from '../../common/decorators/is-object-id.decorator';
+import { RequireOrgScope } from '../../common/decorators/require-org-scope.decorator';
+import { OrgScopeGuardInterceptor } from '../../common/interceptors/org-scope.interceptor';
 
 class AttachQuoteDto {
   @IsObjectId() quoteId!: string;
 }
 
+@RequireOrgScope()
+@UseInterceptors(OrgScopeGuardInterceptor)
 @Controller()
 export class TenderController {
   constructor(private readonly service: TenderService) {}

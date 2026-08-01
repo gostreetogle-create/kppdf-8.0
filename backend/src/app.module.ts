@@ -77,6 +77,8 @@ import { ThrottlerBehindAuthGuard } from './common/guards/throttler-behind-auth.
 import { PermissionsGuard } from './common/guards/permissions.guard';
 import { PermissionsBootModule } from './common/middleware/permissions-boot-validator.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { IdempotencyModule } from './common/idempotency/idempotency-storage.module';
+import { IdempotencyMiddleware } from './common/idempotency/idempotency.middleware';
 import { AttributeDefinitionModule } from './modules/attribute-definition/attribute-definition.module';
 import { EntityAttributeValueModule } from './modules/entity-attribute-value/entity-attribute-value.module';
 import { CertificateModule } from './modules/certificate/certificate.module';
@@ -102,6 +104,7 @@ import { DevFixturesSeed } from './common/seed/dev-fixtures.seed';
 import { BomComponentResolveService } from './modules/bom/migrations/bom-component-resolve.service';
 import { HealthController } from './health.controller';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
+import { RequestMethod } from '@nestjs/common';
 
 @Module({
   imports: [
@@ -224,6 +227,7 @@ import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
     TerminusModule,
     PermissionsBootModule, // TZ-255: registers PermissionsBootValidator for OnApplicationBootstrap catalog scan
     AdminModule,            // TZ-257: /api/admin/users + /api/admin/roles (read-only slice)
+    IdempotencyModule,      // TZ-247.A: registers IdempotencyStorageService + IdempotencyMiddleware
   ],
   controllers: [HealthController],
   providers: [
@@ -269,5 +273,17 @@ import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(RequestIdMiddleware).forRoutes('*');
+    // TZ-247.A: mount the idempotency middleware on MUTATING verbs only.
+    // GET / HEAD / OPTIONS requests pass through unchanged; the
+    // middleware itself additionally excludes /auth/login|register|refresh|logout
+    // and /health from caching even if they bear an Idempotency-Key header.
+    consumer
+      .apply(IdempotencyMiddleware)
+      .forRoutes(
+        { path: '*', method: RequestMethod.POST },
+        { path: '*', method: RequestMethod.PUT },
+        { path: '*', method: RequestMethod.PATCH },
+        { path: '*', method: RequestMethod.DELETE },
+      );
   }
 }

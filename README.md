@@ -146,6 +146,8 @@ NO_COLOR=1 node start.mjs     # отключить ANSI-цвета
 
 ### 🤖 Для AI-агентов
 
+Перед началом работы агент автоматически подключается к локальной Team Room через `OrchestratorKit/team-room`. Первый агент запускает общую комнату, последующие используют её же. Вручную открыть dashboard можно через `OrchestratorKit\\team-room.cmd open` (Windows) или `bash OrchestratorKit/team-room.sh open`.
+
 Перед началом работы обязательно прочитай:
 - [`docs/AI-AGENT-GUIDE.md`](docs/AI-AGENT-GUIDE.md) — онбординг, обязательные паттерны, запреты
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — полная архитектура проекта

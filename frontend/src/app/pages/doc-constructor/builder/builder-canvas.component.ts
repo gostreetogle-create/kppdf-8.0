@@ -75,12 +75,36 @@ import {
               [block]="block"
               [selected]="blockKey(block) === selectedId()"
               [multiSelected]="selectedIds().has(blockKey(block))"
+              [groupBlocks]="selectedBlocks()"
+              [layoutDragDelta]="layoutDragDelta()"
+              [layoutDragBlockIds]="layoutDragBlockIds()"
               (select)="onSelect($event)"
               (multiSelect)="onMultiSelect($event)"
               (widthChange)="onBlockWidthChange(block, $event)"
               (deleteRequest)="deleteRequest.emit($event)"
+              (layoutChanges)="onLayoutChanges($event)"
+              (layoutDragPreview)="onLayoutDragPreview($event)"
             />
           }
+        }
+      </div>
+
+      <!-- Canonical positioned blocks share the paper coordinate system. -->
+      <div class="canvas-layout-layer" (click)="onCanvasClick($event)">
+        @for (block of positionedBlocks(); track blockKey(block)) {
+          <app-block-renderer
+            [block]="block"
+            [selected]="blockKey(block) === selectedId()"
+            [multiSelected]="selectedIds().has(blockKey(block))"
+            [groupBlocks]="selectedBlocks()"
+            [layoutDragDelta]="layoutDragDelta()"
+            [layoutDragBlockIds]="layoutDragBlockIds()"
+            (select)="onSelect($event)"
+            (multiSelect)="onMultiSelect($event)"
+            (deleteRequest)="deleteRequest.emit($event)"
+            (layoutChanges)="onLayoutChanges($event)"
+            (layoutDragPreview)="onLayoutDragPreview($event)"
+          />
         }
       </div>
 
@@ -91,6 +115,9 @@ import {
             [block]="block"
             [selected]="blockKey(block) === selectedId()"
             [multiSelected]="selectedIds().has(blockKey(block))"
+            [groupBlocks]="selectedBlocks()"
+            [layoutDragDelta]="layoutDragDelta()"
+            [layoutDragBlockIds]="layoutDragBlockIds()"
             (select)="onSelect($event)"
             (multiSelect)="onMultiSelect($event)"
             (widthChange)="onBlockWidthChange(block, $event)"
@@ -98,6 +125,8 @@ import {
             (dragRectChange)="onChildDragRect($event)"
             (overlayMove)="onOverlayMove($event)"
             (overlayResize)="onOverlayResize($event)"
+            (layoutChanges)="onLayoutChanges($event)"
+            (layoutDragPreview)="onLayoutDragPreview($event)"
             [snapEnabled]="snapEnabled()"
             [gridSize]="gridSize()"
             [boundaryPadding]="boundaryPadding()"
@@ -267,13 +296,22 @@ import {
       }
 
       /* ═══ Overlay Layer — absolute positioned blocks rendered above flow ═══ */
+      .canvas-layout-layer,
       .canvas-overlay-layer {
         position: absolute;
         inset: 0;
-        z-index: 20;
         pointer-events: none;
       }
 
+      .canvas-layout-layer {
+        z-index: 10;
+      }
+
+      .canvas-overlay-layer {
+        z-index: 20;
+      }
+
+      .canvas-layout-layer > app-block-renderer,
       .canvas-overlay-layer > app-block-renderer {
         pointer-events: auto;
       }
@@ -319,11 +357,15 @@ import {
         background: rgba(37, 99, 235, 0.85);
       }
       @media (prefers-reduced-motion: reduce) {
-        .canvas-builder__guide { transition: none; }
+        .canvas-builder__guide {
+          transition: none;
+        }
       }
       @media print {
         .canvas-builder__grid-layer,
-        .canvas-builder__guides-layer { display: none !important; }
+        .canvas-builder__guides-layer {
+          display: none !important;
+        }
       }
     `,
   ],
@@ -352,11 +394,27 @@ export class BuilderCanvasComponent {
   readonly multiSelect = output<TemplateBlock>();
   readonly reorder = output<TemplateBlock[]>();
   readonly dropAdd = output<{ payload: AddBlockPayload; insertIndex: number }>();
-  readonly blockWidthChange = output<{ block: TemplateBlock; width: number; marginLeft: number; imageWidth?: number; imageHeight?: number }>();
+  readonly blockWidthChange = output<{
+    block: TemplateBlock;
+    width: number;
+    marginLeft: number;
+    imageWidth?: number;
+    imageHeight?: number;
+  }>();
   /** Overlay move (X/Y position change via drag). */
-  readonly overlayMove = output<{ block: TemplateBlock; overlayLeft: number; overlayTop: number }>();
+  readonly overlayMove = output<{
+    block: TemplateBlock;
+    overlayLeft: number;
+    overlayTop: number;
+  }>();
   /** Overlay resize (corner handle proportional resize). */
-  readonly overlayResize = output<{ block: TemplateBlock; imageWidth: number; imageHeight: number }>();
+  readonly overlayResize = output<{
+    block: TemplateBlock;
+    imageWidth: number;
+    imageHeight: number;
+  }>();
+  readonly layoutChanges =
+    output<Array<{ block: TemplateBlock; layout: NonNullable<TemplateBlock['layout']> }>>();
   readonly canvasClick = output<void>();
   /** TZ-211: Emitted when user clicks delete button on a block. */
   readonly deleteRequest = output<string>();
@@ -390,6 +448,8 @@ export class BuilderCanvasComponent {
    * rect. Keep this TODO marker in sync with that future contract.
    */
   protected readonly currentDragRect = signal<Rect | null>(null);
+  protected readonly layoutDragDelta = signal<{ dx: number; dy: number } | null>(null);
+  protected readonly layoutDragBlockIds = signal<ReadonlySet<string>>(new Set());
 
   /**
    * Reactive alignment guides computed from `currentDragRect` and all
@@ -440,17 +500,26 @@ export class BuilderCanvasComponent {
         settings: b.settings ?? null,
       });
       if (r) others.push(r);
-    }      return collapseAlignmentGuides(computeAlignmentGuides(dragged, others));
     }
+    return collapseAlignmentGuides(computeAlignmentGuides(dragged, others));
+  }
 
-  /** Get only overlay blocks for absolute positioning. */
+  /** Legacy pixel-positioned image blocks stay in the overlay layer. */
   protected readonly overlayBlocks = computed(() =>
-    this.blocks().filter((b) => this.isOverlayBlock(b)),
+    this.blocks().filter((b) => !b.layout && this.isOverlayBlock(b)),
   );
 
-  /** Get only flow blocks (non-overlay) for the drop list. */
+  protected readonly selectedBlocks = computed(() => {
+    const ids = this.selectedIds();
+    return this.blocks().filter((b) => ids.has(blockKey(b)));
+  });
+
+  /** Canonical positioned blocks render in the paper-level layout layer. */
+  protected readonly positionedBlocks = computed(() => this.blocks().filter((b) => !!b.layout));
+
+  /** Legacy flow blocks remain in the sortable drop list. */
   protected readonly flowBlocks = computed(() =>
-    this.blocks().filter((b) => !this.isOverlayBlock(b)),
+    this.blocks().filter((b) => !b.layout && !this.isOverlayBlock(b)),
   );
 
   protected onSelect(block: TemplateBlock): void {
@@ -465,15 +534,46 @@ export class BuilderCanvasComponent {
     block: TemplateBlock,
     event: { width: number; marginLeft: number; imageWidth?: number; imageHeight?: number },
   ): void {
-    this.blockWidthChange.emit({ block, width: event.width, marginLeft: event.marginLeft, imageWidth: event.imageWidth, imageHeight: event.imageHeight });
+    this.blockWidthChange.emit({
+      block,
+      width: event.width,
+      marginLeft: event.marginLeft,
+      imageWidth: event.imageWidth,
+      imageHeight: event.imageHeight,
+    });
   }
 
-  protected onOverlayMove(event: { block: TemplateBlock; overlayLeft: number; overlayTop: number }): void {
+  protected onOverlayMove(event: {
+    block: TemplateBlock;
+    overlayLeft: number;
+    overlayTop: number;
+  }): void {
     this.overlayMove.emit(event);
   }
 
-  protected onOverlayResize(event: { block: TemplateBlock; imageWidth: number; imageHeight: number }): void {
+  protected onOverlayResize(event: {
+    block: TemplateBlock;
+    imageWidth: number;
+    imageHeight: number;
+  }): void {
     this.overlayResize.emit(event);
+  }
+
+  protected onLayoutChanges(
+    changes: Array<{ block: TemplateBlock; layout: NonNullable<TemplateBlock['layout']> }>,
+  ): void {
+    this.layoutDragDelta.set(null);
+    this.layoutDragBlockIds.set(new Set());
+    this.layoutChanges.emit(changes);
+  }
+
+  protected onLayoutDragPreview(event: {
+    blockId: string;
+    blockIds: ReadonlySet<string>;
+    delta: { dx: number; dy: number } | null;
+  }): void {
+    this.layoutDragDelta.set(event.delta);
+    this.layoutDragBlockIds.set(event.blockIds);
   }
 
   protected onCanvasClick(event: Event): void {
@@ -485,9 +585,16 @@ export class BuilderCanvasComponent {
 
   protected onDrop(event: CdkDragDrop<TemplateBlock[]>): void {
     if (event.previousContainer === event.container) {
+      const flow = [...this.flowBlocks()];
       if (event.previousIndex === event.currentIndex) return;
-      const next = [...this.blocks()];
-      moveItemInArray(next, event.previousIndex, event.currentIndex);
+      moveItemInArray(flow, event.previousIndex, event.currentIndex);
+
+      // CDK indexes are relative to the flow-only drop list. Rebuild the
+      // complete order without moving positioned/overlay blocks accidentally.
+      let flowIndex = 0;
+      const next = this.blocks().map((block) =>
+        !block.layout && !this.isOverlayBlock(block) ? flow[flowIndex++] : block,
+      );
       this.reorder.emit(next);
     } else {
       const payload = event.item.data as AddBlockPayload | undefined;

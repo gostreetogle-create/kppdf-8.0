@@ -25,6 +25,8 @@
  * it. Both stay in lockstep.
  */
 import type { TextBlockColumn } from '../services/pi-text-blocks.service';
+import type { BlockLayout, BlockSource } from './template-block-layout';
+export type { BlockLayout, BlockSource } from './template-block-layout';
 
 export type BlockType = 'header' | 'text' | 'table' | 'image' | 'signature' | 'spacer';
 
@@ -111,6 +113,10 @@ export interface TemplateBlock {
   showLine: boolean;
   settings?: Record<string, unknown>;
   dataBinding?: DataBinding | null;
+  /** Canonical normalized page geometry; absent on legacy flow blocks. */
+  layout?: BlockLayout;
+  /** Canonical source reference; legacy blocks may omit this field. */
+  source?: BlockSource | null;
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;

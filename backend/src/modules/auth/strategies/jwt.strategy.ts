@@ -9,6 +9,7 @@ export interface JwtAccessPayload {
   username: string;
   role: string;
   version: number;
+  orgId?: string;
 }
 
 @Injectable()
@@ -43,6 +44,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       username: user.username,
       role: user.role,
       permissions: user.permissions ?? [],
+      organizationId: user.organizationId?.toString() ?? null,
     };
   }
 }

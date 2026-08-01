@@ -1,0 +1,33 @@
+═══════════════════════════════════════════════════════════════
+TZ-119 — Backend safety sweep (ObjectId pipe)
+═══════════════════════════════════════════════════════════════
+
+ACTUAL TASK SPEC: tasks/_archive/TZ-119.md (160 lines, full spec).
+
+This session deliverables:
+1. NEW IsObjectIdPipe + IsOptionalObjectIdPipe (distinct classes, distinct return types)
+2. NEW IsObjectIdParam decorator (combines @Param + pipe, with { optional } flag)
+3. NEW audit-object-id-validation.ts CLI script (single-shot static scanner)
+
+173 unvalidated `new Types.ObjectId(...)` calls still exist in backend code.
+This TZ provides the tooling to find them + clean pipe to apply incrementally —
+NOT a wholesale refactor (that would be TZ-119.1 successor).
+
+ARCHIVE_MARKER
+outcome: DONE
+closed_at: 2026-08-01
+closed_by: autonomous-backend-agent
+protected_files:
+  - backend/src/common/validators/is-object-id.pipe.ts
+  - backend/scripts/audit-object-id-validation.ts
+affected_areas:
+  - all backend controllers (50+ routes can adopt @IsObjectIdPipe / @IsObjectIdParam)
+verification:
+  - pnpm exec tsc -p tsconfig.build.json --noEmit: PASS
+  - code-reviewer-minimax-m3 verdict: PASS after MINOR fixes (split dual-class, drop dead code, broaden map heuristic)
+  - progress.md entry: ADDED
+  - architecture.md update: NO ARCHITECTURAL CHANGE (additive module)
+  - lock file: CREATED (.mimocode/locks/TZ-119-backend-safety-sweep.lock)
+notes:
+  - Successor TZ-119.1: apply IsObjectIdPipe to high-priority controllers (auth, products, orders, contracts, work-types, materials) and re-run audit script expecting 0 findings on those routes.
+  - Applied in incremental fashion; do not mass-update 173 calls without per-update verification.

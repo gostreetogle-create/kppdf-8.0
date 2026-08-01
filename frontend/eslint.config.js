@@ -4,10 +4,22 @@ const tseslint = require('typescript-eslint');
 const prettier = require('eslint-config-prettier');
 const angular = require('@angular-eslint/eslint-plugin');
 const angularTemplate = require('@angular-eslint/template-parser');
+const noRawHttpInComponentsRule = require('./eslint/rules/no-raw-http-in-components.cjs');
+const noImplementsOnInitInPagesRule = require('./eslint/rules/no-implements-oninit-in-pages.cjs');
 
 module.exports = tseslint.config(
   {
-    ignores: ['dist/', 'node_modules/', '*.js', '*.mjs', '!eslint.config.js'],
+    ignores: [
+      'dist/',
+      'node_modules/',
+      '*.js',
+      '*.mjs',
+      '!eslint.config.js',
+      // TZ-232.I custom rule sources — excluded from app lint pass because
+      // they intentionally use `require('@typescript-eslint/parser')` for
+      // Linter-based spec tests; linted separately via their own *.spec.ts.
+      'eslint/rules/',
+    ],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
@@ -16,6 +28,16 @@ module.exports = tseslint.config(
     files: ['**/*.ts'],
     plugins: {
       '@angular-eslint': angular,
+      'kppdf-frontend-architecture': {
+        meta: {
+          name: 'eslint-plugin-kppdf-frontend-architecture',
+          version: '0.1.0',
+        },
+        rules: {
+          'no-raw-http-in-components': noRawHttpInComponentsRule,
+          'no-implements-oninit-in-pages': noImplementsOnInitInPagesRule,
+        },
+      },
     },
     languageOptions: {
       parser: tseslint.parser,
@@ -37,6 +59,20 @@ module.exports = tseslint.config(
       'no-var': 'error',
     },
   },
+  // ── TZ-232.I enforcement rules (Wave F tooling) ──────────────────────
+  {
+    files: ['**/*.page.ts'],
+    rules: {
+      'kppdf-frontend-architecture/no-raw-http-in-components': 'warn',
+      'kppdf-frontend-architecture/no-implements-oninit-in-pages': 'warn',
+    },
+  },
+  {
+    files: ['**/*.component.ts'],
+    rules: {
+      'kppdf-frontend-architecture/no-raw-http-in-components': 'warn',
+    },
+  },
   {
     files: ['**/*.html'],
     languageOptions: {
@@ -44,6 +80,16 @@ module.exports = tseslint.config(
     },
     plugins: {
       '@angular-eslint': angular,
+      'kppdf-frontend-architecture': {
+        meta: {
+          name: 'eslint-plugin-kppdf-frontend-architecture',
+          version: '0.1.0',
+        },
+        rules: {
+          'no-raw-http-in-components': noRawHttpInComponentsRule,
+          'no-implements-oninit-in-pages': noImplementsOnInitInPagesRule,
+        },
+      },
     },
     rules: {},
   },

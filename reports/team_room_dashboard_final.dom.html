@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Team Room</title>
+  <style>
+    :root { color-scheme: light dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: #111318; color: #f6f0e5; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: radial-gradient(circle at 20% 0%, #2b3141, #111318 46%); }
+    header { display:flex; justify-content:space-between; gap:1rem; align-items:center; padding:1.2rem 1.5rem; border-bottom:1px solid #3b414e; background:#171a20dd; backdrop-filter: blur(12px); position:sticky; top:0; z-index:2; }
+    h1, h2, p { margin: 0; } h1 { font-size: 1.35rem; letter-spacing:.02em; } h2 { font-size:.88rem; text-transform:uppercase; letter-spacing:.12em; color:#c4cbd8; margin-bottom:.8rem; }
+    .live { display:inline-flex; align-items:center; gap:.45rem; color:#9fe0b5; font-size:.8rem; } .live::before { content:""; width:.5rem; height:.5rem; border-radius:50%; background:#64d98a; box-shadow:0 0 0 .25rem #64d98a22; }
+    main { display:grid; grid-template-columns: 250px minmax(360px, 1fr) 330px; gap:1rem; padding:1rem; max-width:1600px; margin:auto; }
+    section, .card { border:1px solid #3b414e; background:#1a1e26db; border-radius:14px; padding:1rem; box-shadow:0 12px 30px #0003; }
+    .stack { display:grid; gap:.7rem; align-content:start; } .agent, .task, .message, .event { border:1px solid #343b49; border-radius:10px; padding:.7rem; background:#202530; }
+    .agent { display:flex; gap:.6rem; align-items:flex-start; } .avatar { width:2rem; height:2rem; border-radius:50%; display:grid; place-items:center; background:#c7a8ff; color:#181421; font-weight:700; font-size:.75rem; flex:none; }
+    .name { font-weight:700; font-size:.9rem; } .muted { color:#9ca6b7; font-size:.76rem; } .online { color:#8fe2aa; } .away { color:#e8ba7a; }
+    .board { display:grid; grid-template-columns: repeat(4, minmax(150px,1fr)); gap:.7rem; align-items:start; } .column { min-width:0; } .column > h2 { display:flex; justify-content:space-between; } .count { color:#909bab; font-size:.75rem; }
+    .task { margin-bottom:.6rem; } .task-title { font-weight:700; font-size:.85rem; margin-bottom:.35rem; } .badge { display:inline-flex; border-radius:99px; padding:.18rem .45rem; font-size:.68rem; background:#303848; color:#cdd6e6; } .owner { margin-top:.45rem; color:#b9c5d8; font-size:.75rem; }
+    .message { display:grid; gap:.25rem; } .message strong { color:#d6c0ff; font-size:.78rem; } .message p { font-size:.83rem; line-height:1.35; } .event { font-size:.76rem; color:#c4cbd8; }
+    .empty { color:#7f8998; font-size:.8rem; padding:.7rem 0; } footer { text-align:center; color:#7f8998; font-size:.72rem; padding:0 1rem 1.2rem; }
+    @media (max-width: 1100px) { main { grid-template-columns: 220px 1fr; } aside { grid-column: span 2; display:grid; grid-template-columns:1fr 1fr; gap:1rem; } }
+    @media (max-width: 1320px) { .board { grid-template-columns: repeat(3, minmax(150px,1fr)); } }
+    @media (max-width: 720px) { main { grid-template-columns:1fr; } aside { grid-column:auto; display:block; } .board { grid-template-columns:1fr 1fr; } }
+    @media (prefers-reduced-motion: reduce) { * { scroll-behavior:auto!important; transition:none!important; animation:none!important; } }
+  </style>
+</head>
+<body>
+  <header><div><h1>Team Room</h1><p class="muted">Shared workspace for coding agents</p></div><div class="live" id="health">Connecting…</div></header>
+  <main>
+    <section><h2>Agents</h2><div class="stack" id="agents"><p class="empty">No agents connected.</p></div></section>
+    <section><h2>Task board</h2><div class="board" id="board"></div></section>
+    <aside class="stack"><section><h2>Chat</h2><form id="message-form" class="stack" style="margin-bottom:.8rem"><label class="muted" for="message-input">Send a message</label><select id="message-to" aria-label="Recipient" style="width:100%;padding:.6rem;border:1px solid #4a5363;border-radius:8px;background:#151920;color:inherit"><option value="">Everyone</option></select><select id="message-task" aria-label="Task" style="width:100%;padding:.6rem;border:1px solid #4a5363;border-radius:8px;background:#151920;color:inherit"><option value="">General room</option></select><input id="message-input" name="message" autocomplete="off" placeholder="Type a message…" style="width:100%;padding:.65rem;border:1px solid #4a5363;border-radius:8px;background:#151920;color:inherit"><button type="submit" style="padding:.6rem .8rem;border:1px solid #8e76c7;border-radius:8px;background:#c7a8ff;color:#181421;font-weight:700;cursor:pointer">Send message</button><span class="muted" id="message-status" role="status"></span></form><div class="stack" id="messages"><p class="empty">No messages yet.</p></div></section><section><h2>Activity</h2><div class="stack" id="activity"><p class="empty">No activity yet.</p></div></section></aside>
+  </main>
+  <footer>Local-only room · updates every 2 seconds · no cloud connection</footer>
+  <script>
+    const columns = [['ready','Ready'],['in_progress','In progress'],['needs_help','Needs help'],['review','Review'],['done','Done']];
+    const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    const initials = (name) => String(name || '?').slice(0, 2).toUpperCase();
+    async function refresh() {
+      try {
+        const [state, health] = await Promise.all([fetch('/api/state').then((r) => r.json()), fetch('/health').then((r) => r.json())]);
+        document.querySelector('#health').textContent = health.ok ? 'Room online' : 'Room unavailable';
+        const agents = Object.values(state.agents);
+        document.querySelector('#agents').innerHTML = agents.length ? agents.map((agent) => `<div class="agent"><div class="avatar">${esc(initials(agent.id))}</div><div><div class="name">${esc(agent.id)}</div><div class="muted">${esc(agent.role)}</div><div class="muted ${agent.status === 'online' ? 'online' : 'away'}">${esc(agent.status)} · ${esc(agent.branch || 'branch unknown')}</div></div></div>`).join('') : '<p class="empty">No agents connected.</p>';
+        const recipient = document.querySelector('#message-to');
+        const selectedRecipient = recipient.value;
+        recipient.innerHTML = '<option value="">Everyone</option>' + agents.filter((agent) => agent.id !== 'project-owner').map((agent) => `<option value="${esc(agent.id)}">${esc(agent.id)} · ${esc(agent.role)}</option>`).join('');
+        recipient.value = agents.some((agent) => agent.id === selectedRecipient) ? selectedRecipient : '';
+        const tasks = Object.values(state.tasks);
+        const taskSelect = document.querySelector('#message-task');
+        const selectedTask = taskSelect.value;
+        taskSelect.innerHTML = '<option value="">General room</option>' + tasks.map((task) => `<option value="${esc(task.id)}">${esc(task.id)} · ${esc(task.title)}</option>`).join('');
+        taskSelect.value = tasks.some((task) => task.id === selectedTask) ? selectedTask : '';
+        document.querySelector('#board').innerHTML = columns.map(([status, title]) => { const items = tasks.filter((task) => task.status === status); return `<div class="column"><h2>${title}<span class="count">${items.length}</span></h2>${items.length ? items.map((task) => `<div class="task"><div class="task-title">${esc(task.id)} · ${esc(task.title)}</div><span class="badge">${esc(task.conflictKeys.join(', ') || 'no conflict keys')}</span>${task.owner ? `<div class="owner">Owner: ${esc(task.owner)}</div>` : ''}</div>`).join('') : '<p class="empty">Nothing here.</p>'}</div>`; }).join('');
+        const messages = state.messages.slice(-20).reverse();
+        document.querySelector('#messages').innerHTML = messages.length ? messages.map((message) => `<div class="message"><strong>${esc(message.from)}${message.to ? ` → ${esc(message.to)}` : ''}${message.taskId ? ` · ${esc(message.taskId)}` : ''}</strong><p>${esc(message.body)}</p><span class="muted">${esc(new Date(message.createdAt).toLocaleTimeString())}</span></div>`).join('') : '<p class="empty">No messages yet.</p>';
+        document.querySelector('#activity').innerHTML = state.activity.slice(0, 12).map((event) => `<div class="event"><strong>${esc(event.type)}</strong><br><span class="muted">${esc(event.agentId || event.taskId || event.messageId || '')} · ${esc(new Date(event.at).toLocaleTimeString())}</span></div>`).join('') || '<p class="empty">No activity yet.</p>';
+      } catch (error) { document.querySelector('#health').textContent = 'Waiting for room'; }
+    }
+    async function registerOwner() {
+      await fetch('/api/agents/register', { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify({ id: 'project-owner', role: 'Project owner' }) });
+    }
+    document.querySelector('#message-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const input = document.querySelector('#message-input');
+      const status = document.querySelector('#message-status');
+      const body = input.value.trim();
+      if (!body) return;
+      status.textContent = 'Sending…';
+      try {
+        const response = await fetch('/api/messages', { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify({ from: 'project-owner', to: document.querySelector('#message-to').value || null, taskId: document.querySelector('#message-task').value || null, body }) });
+        if (!response.ok) throw new Error('Message was not accepted');
+        input.value = '';
+        status.textContent = 'Sent';
+        refresh();
+      } catch (error) { status.textContent = error.message; }
+    });
+    registerOwner().then(refresh).catch(() => refresh());
+    setInterval(refresh, 2000);
+  </script>
+
+
+</body></html>

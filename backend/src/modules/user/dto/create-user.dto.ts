@@ -57,4 +57,9 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   fullName?: string;
+
+  @ApiPropertyOptional({ description: 'Organization ID (TZ-238)' })
+  @IsOptional()
+  @IsString()
+  organizationId?: string;
 }
