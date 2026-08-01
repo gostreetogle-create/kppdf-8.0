@@ -1,0 +1,12 @@
+# Lock file
+Locked as of 2026-08-02 — TZ-267: templates registry error boundary.
+
+Owner: Buffy (Codebuff session)
+Protected files:
+- frontend/src/app/pages/doc-constructor/templates/templates.page.ts
+- frontend/src/app/pages/doc-constructor/templates/templates.page.spec.ts
+- frontend/src/app/shared/services/pi-document-templates.service.ts
+- frontend/src/app/shared/services/pi-document-templates.service.spec.ts
+
+Unlock: only via orchestrator approval (a successor TZ with explicit scope).
+Imported from Freebuff workspace commit 113d61e; original sandbox task identifier was TZ-262.

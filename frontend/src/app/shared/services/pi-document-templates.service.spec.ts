@@ -4,17 +4,6 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { API_BASE_URL } from '../../core/api.tokens';
 import { DocumentTemplatesService } from './pi-document-templates.service';
 
-/**
- * TZ-86 Phase B.5 — DocumentTemplatesService unit tests.
- *
- * Smoke: list() wraps raw array, findById() returns DocumentTemplate,
- *        build() returns text/html string, uploadBackground() posts FormData
- *        multipart with file field 'file'.
- *
- * Unlike text-blocks/table-templates specs, this service has TWO special
- * routes (build HTMl + uploadBackground multipart) that need explicit
- * coverage.
- */
 describe('DocumentTemplatesService', () => {
   let svc: DocumentTemplatesService;
   let httpMock: HttpTestingController;
@@ -76,9 +65,7 @@ describe('DocumentTemplatesService', () => {
 
   it('findById() returns DocumentTemplate by id', () => {
     svc.findById('dt1').subscribe((res) => {
-      if (res.ok) {
-        expect(res.data.name).toBe('Договор поставки (стандарт)');
-      }
+      if (res.ok) expect(res.data.name).toBe('Договор поставки (стандарт)');
     });
     const req = httpMock.expectOne('http://test/api/document-templates/dt1');
     expect(req.request.method).toBe('GET');
@@ -104,9 +91,7 @@ describe('DocumentTemplatesService', () => {
       docTypeId: 'doc-contract',
     };
     svc.create(payload as never).subscribe((res) => {
-      if (res.ok) {
-        expect(res.data.name).toBe('Новый шаблон');
-      }
+      if (res.ok) expect(res.data.name).toBe('Новый шаблон');
     });
     const req = httpMock.expectOne('http://test/api/document-templates');
     expect(req.request.method).toBe('POST');
@@ -124,12 +109,42 @@ describe('DocumentTemplatesService', () => {
     });
   });
 
+  it('covers setup and action endpoints through the SilentResult boundary', () => {
+    svc.listOrganizations().subscribe((res) => expect(res.ok).toBe(true));
+    const listOrganizations = httpMock.expectOne('http://test/api/organizations?limit=1');
+    expect(listOrganizations.request.method).toBe('GET');
+    listOrganizations.flush({ items: [] });
+
+    svc.listDocTypes().subscribe((res) => expect(res.ok).toBe(true));
+    const listTypes = httpMock.expectOne('http://test/api/doc-types');
+    expect(listTypes.request.method).toBe('GET');
+    listTypes.flush([]);
+
+    svc.createOrganization({ name: 'Org', shortName: 'Org', isActive: true }).subscribe();
+    const createOrg = httpMock.expectOne('http://test/api/organizations');
+    expect(createOrg.request.method).toBe('POST');
+    createOrg.flush({ _id: 'org1', name: 'Org' });
+
+    svc.createDocType({ name: 'КП', slug: 'kp', description: 'КП', isActive: true }).subscribe();
+    const createType = httpMock.expectOne('http://test/api/doc-types');
+    expect(createType.request.method).toBe('POST');
+    createType.flush({ _id: 'type1', name: 'КП' });
+
+    svc.setDefault('dt1').subscribe();
+    const setDefault = httpMock.expectOne('http://test/api/document-templates/dt1/set-default');
+    expect(setDefault.request.method).toBe('POST');
+    setDefault.flush(null);
+
+    svc.duplicate('dt1').subscribe();
+    const duplicate = httpMock.expectOne('http://test/api/document-templates/dt1/duplicate');
+    expect(duplicate.request.method).toBe('POST');
+    duplicate.flush({ _id: 'dt4', name: 'Копия' });
+  });
+
   it('build() POSTs sourceIds and returns rendered HTML string', () => {
     const dummyHtml = '<!DOCTYPE html><html><body><h2>Договор №123</h2></body></html>';
     svc.build('dt1', { organizationId: 'org1', counterpartyId: 'cp1' }).subscribe((res) => {
-      if (res.ok) {
-        expect(res.data).toBe(dummyHtml);
-      }
+      if (res.ok) expect(res.data).toBe(dummyHtml);
     });
     const req = httpMock.expectOne('http://test/api/document-templates/dt1/build');
     expect(req.request.method).toBe('POST');

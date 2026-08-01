@@ -1,7 +1,7 @@
 # STATUS — KPPDF ERP Project Status
 
 **Last updated:** 2026-08-01
-**Phase:** Canonical cleanup and verification — active task folder empty; roadmap items remain documented backlog
+**Phase:** Canonical cleanup and verification — TZ-261 and TZ-262 are closed; roadmap items remain documented backlog
 **Canonical workspace:** `D:\kppdf-8.0` on `main`; only registered Git worktree; package manager `pnpm`
 **Task truth:** `tasks/` contains only active work. Completed or deferred work belongs in `tasks/_archive/`; this status file also retains historical roadmap notes.
 **Total tasks:** Historical completed work plus documented backlog; see `OrchestratorKit/STATUS.md` for the filesystem-synchronised kit board.
@@ -676,6 +676,10 @@ kppdf-8.0/
 | TZ-177 | Разбить builder.page.ts (god file) | 3 | 2-3h | TZ-170 |
 | TZ-178 | Добавить unit тесты для 5 backend сервисов | 4 | 3-4h | — |
 
+### QA audit findings (2026-08-01) — closed 2026-08-02
+
+TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived after the evidence-based audit. Browser smoke was not run in the isolated session; this limitation remains recorded in each archive marker.
+
 ### TZ-90 (2026-07-11) — Dialog system standardization (4 templates · 50% backdrop · 8px radius · shadow tokens · migration of 11+ existing dialogs)
 
 **Мотивация:** Спека фиксирует единый стандарт для ВСЕХ модальных/диалоговых окон, чтобы они ощущались как «зрелое десктопное приложение» (явный запрос PO 2026-07-11). Разрозненные ad-hoc лейауты (30% editorial backdrop, разные radius, разные header-плотности) заменяются на 4 templates × 4 widths через polymorphic `<app-pi-dialog variant="...">`.
@@ -717,6 +721,10 @@ kppdf-8.0/
 | TZ-104 | 2026-07-19 | Pi-* UI-kit adoption (switches + pi-table + textarea + checkbox) | `tasks/_archive/2026-07/TZ-104.md.done` |
 | TZ-120 | 2026-07-19 | Global Soft-Delete Mongoose plugin | `tasks/_archive/2026-07/TZ-120.md.done` |
 | TZ-103 | 2026-07-19 | Dialog system audit + 4-bug fix (close · positioning · tab-switch · buttons) | `tasks/_archive/2026-07/TZ-103.md.done` |
+| TZ-261 | 2026-08-02 | Generated-document organization scope before HTML/read/write side effects | `tasks/_archive/2026-08/TZ-261.done.md` |
+| TZ-262 | 2026-08-02 | Templates registry error state and SilentResult HTTP boundary | `tasks/_archive/2026-08/TZ-262.done.md` |
+| TZ-266 | 2026-08-02 | Generated-document organization scope before HTML/read/write side effects (imported workspace task, renumbered) | `tasks/_archive/2026-08/TZ-266.done.md` |
+| TZ-267 | 2026-08-02 | Templates registry error state and SilentResult HTTP boundary (imported workspace task, renumbered) | `tasks/_archive/2026-08/TZ-267.done.md` |
 
 ## 🚀 Следующие шаги (предложения)
 
@@ -998,6 +1006,8 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 | TZ-259 | `tasks/_archive/2026-08/TZ-259.done.md` (builder UX 259.1–259.6) | `.mimocode/locks/TZ-259-builder-ux.lock` |
 | TZ-261 | `tasks/_archive/2026-08/TZ-261.done.md` (admin-dialogs template as-casts fixed — P0, ng build 0 errors) | `.mimocode/locks/TZ-261-admin-dialogs-template-as-casts.lock` |
 | TZ-262 | `tasks/_archive/2026-08/TZ-262.done.md` (admin-gates capability alignment: `/admin/users` route+nav `user:read` → `user:admin`) | `.mimocode/locks/TZ-262-admin-gates-capability-alignment.lock` |
+| TZ-266 | `tasks/_archive/2026-08/TZ-266.done.md` (generated-document organization scope, imported workspace task renumbered from sandbox TZ-261) | `.mimocode/locks/TZ-266-generated-document-scope.lock` |
+| TZ-267 | `tasks/_archive/2026-08/TZ-267.done.md` (templates error boundary, imported workspace task renumbered from sandbox TZ-262) | `.mimocode/locks/TZ-267-templates-error-boundary.lock` |
 
 **Code evidence:** все 15 файлов подтверждены через grep/ls на диске (basher-verified this session). TZ-257.A.1 / TZ-256.B / TZ-259 / TZ-257.B реализованы и закоммичены в этой сессии; остальные — filesystem cleanup + archive creation.
 

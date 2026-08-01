@@ -96,6 +96,20 @@ export interface UploadBackgroundResponse {
   backgroundImage: string[];
 }
 
+export interface DocumentTypeOption {
+  _id: string;
+  name: string;
+}
+
+export interface OrganizationOption {
+  _id: string;
+  name: string;
+}
+
+export interface OrganizationsSetupResponse {
+  items: OrganizationOption[];
+}
+
 /**
  * TZ-86 Phase B.3 — DocumentTemplatesService. Largest of the four TZ-86
  * services: 7 methods covering CRUD + build (HTML render) + upload-background
@@ -156,6 +170,46 @@ export class DocumentTemplatesService {
 
   remove(id: string): Observable<SilentResult<void>> {
     return silentDelete<void>(this.http, `${this.baseUrl}/document-templates/${id}`);
+  }
+
+  setDefault(id: string): Observable<SilentResult<void>> {
+    return silentPost<void>(this.http, `${this.baseUrl}/document-templates/${id}/set-default`, {});
+  }
+
+  duplicate(id: string): Observable<SilentResult<DocumentTemplate>> {
+    return silentPost<DocumentTemplate>(
+      this.http,
+      `${this.baseUrl}/document-templates/${id}/duplicate`,
+      {},
+    );
+  }
+
+  listOrganizations(): Observable<SilentResult<OrganizationsSetupResponse>> {
+    return silentGet<OrganizationsSetupResponse>(
+      this.http,
+      `${this.baseUrl}/organizations?limit=1`,
+    );
+  }
+
+  createOrganization(payload: {
+    name: string;
+    shortName: string;
+    isActive: boolean;
+  }): Observable<SilentResult<OrganizationOption>> {
+    return silentPost<OrganizationOption>(this.http, `${this.baseUrl}/organizations`, payload);
+  }
+
+  listDocTypes(): Observable<SilentResult<DocumentTypeOption[]>> {
+    return silentGet<DocumentTypeOption[]>(this.http, `${this.baseUrl}/doc-types`);
+  }
+
+  createDocType(payload: {
+    name: string;
+    slug: string;
+    description: string;
+    isActive: boolean;
+  }): Observable<SilentResult<DocumentTypeOption>> {
+    return silentPost<DocumentTypeOption>(this.http, `${this.baseUrl}/doc-types`, payload);
   }
 
   /**

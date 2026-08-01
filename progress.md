@@ -4710,3 +4710,10 @@ Code review: PASS (code-reviewer-deepseek-flash).
 «Пользователи» + 200; manager с user:read — пункт скрыт + /forbidden при
 прямом переходе) — MANUAL_BROWSER_CHECK_REQUIRED (dev-server не поднят в
 сессии); поведение гварда доказано unit-тестом.
+
+## 2026-08-02 — Imported workspace tasks TZ-266 + TZ-267 synchronized
+
+- Imported the verified generated-document organization-scope implementation from the Freebuff workspace as canonical TZ-266; its original sandbox identifier TZ-261 collided with the canonical root's completed admin-dialog task and was intentionally renumbered.
+- Imported the verified templates-registry SilentResult/error-boundary implementation as canonical TZ-267; its original sandbox identifier TZ-262 collided with the canonical root's completed admin-gates task and was intentionally renumbered.
+- Preserved the root's existing TZ-261/TZ-262 archives, locks, and progress history; added separate TZ-266/TZ-267 archive/checklist/lock records.
+- Merge validation is recorded separately after the integrated backend/frontend gates complete.

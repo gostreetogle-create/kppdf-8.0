@@ -779,7 +779,7 @@ If a future Load Test or SEO need arrives:
 - **`backend/src/modules/text-block/`** (NEW, TZ-86A.1) — schema/service/controller/module/DTOs. Fields: name, slug (Russian transliteration), content (markdown), tags[], category, sortOrder, isActive. Slug uniqueness via Mongo unique index + 11000→409 catch.
 - **`backend/src/modules/table-template/`** (EXTENDED, TZ-86A.2) — ColumnColumn gains `type: ColumnType` (text|number|date|currency|bool); TableTemplate gains `category?` (5 enum), `sortOrder`, `sampleRows?: unknown[][]`, `dataSource?`. `GET /:id/preview` endpoint.
 - **`backend/src/modules/template-block/`** (EXTENDED, TZ-86A.3) — schema gains `dataBinding?: { source, field?, value?, format? }` subdoc (`_id: false`).
-- **`backend/src/modules/document-template/`** (EXTENDED, TZ-86A.4 + A.6) — `build(id, dto)` service method + `POST /:id/build` controller endpoint. `uploadBackground(id, file)` method + `POST /:id/upload-background` controller endpoint. Module imports 5 new modules (Organization/Counterparty/Product/Material/WorkType) for `resolveSourceIds` parallel lookups.
+- **`backend/src/modules/document-template/`** (EXTENDED, TZ-86A.4 + A.6) — `build(id, dto)` service method + `POST /:id/build` controller endpoint. `uploadBackground(id, file)` method + `POST /:id/upload-background` controller endpoint. Module imports 5 new modules (Organization/Counterparty/Product/Material/WorkType) for `resolveSourceIds` parallel lookups. TZ-266 adds `assertBuildSourcesInOrganization()` as a pre-generation boundary: explicit source IDs are validated, missing/foreign organization-owned sources return safe 404s, and legacy shared relations are checked before generated-document persistence.
 - **`backend/src/modules/registry/`** (NEW, TZ-86A.5) — controller/service/module. `GET /api/registry/data-sources` lists 5 entity types + `{key, label, type}` field metadata.
 - **`backend/src/common/filters/multer-exception.filter.ts`** (NEW, TZ-86A.6) — `@Catch(MulterError)` maps `LIMIT_FILE_SIZE` → 413 + other MulterErrors → 400 + Russian human-readable messages.
 
@@ -787,7 +787,7 @@ If a future Load Test or SEO need arrives:
 
 - **`frontend/src/app/shared/services/pi-text-blocks.service.ts`** — `list/findById/create/update/remove`.
 - **`frontend/src/app/shared/services/pi-table-templates.service.ts`** — `list/findById/create/update/remove/preview` (preview silentWrap text).
-- **`frontend/src/app/shared/services/pi-document-templates.service.ts`** — `list/findById/create/update/remove/build/uploadBackground` (build silentWrap text; uploadBackground FormData multipart).
+- **`frontend/src/app/shared/services/pi-document-templates.service.ts`** — `list/findById/create/update/remove/build/uploadBackground` (build silentWrap text; uploadBackground FormData multipart). TZ-267 also centralizes template setup, set-default, and duplicate JSON calls behind the service's `SilentResult` boundary.
 - **`frontend/src/app/shared/services/pi-registry.service.ts`** — `getDataSources` (static catalogue).
 - **`frontend/src/app/shared/services/pi-template-blocks.service.ts`** — list/create/update/reorder/remove for template blocks consumed by BuilderPage.
 - **`frontend/src/app/shared/services/pi-generated-documents.service.ts`** — `list/findById/generate/remove/openHtml` for HTML snapshots produced by `document-template.build()`.
@@ -799,7 +799,7 @@ If a future Load Test or SEO need arrives:
 
 - **`/doc-constructor/texts`** — split workspace: inline `text-block-editor` (top) + sticky catalog table (bottom, ~220px). Search via `pi-input`; row selection highlights with sunrise inset bar. Data-field picker dialog (`data-field-picker-dialog.component.ts`) uses `PiDialogComponent` + `app-pi-button`.
 - **`/doc-constructor/tables`** — list with columns preview + EditDialog `table-template-dialog.component.ts` (FormArray column editor + JSON sampleRows + server-side preview).
-- **`/doc-constructor/templates`** — «Реестр шаблонов»: search, active toggle, default star, duplicate → builder, pagination.
+- **`/doc-constructor/templates`** — «Реестр шаблонов»: search, active toggle, default star, duplicate → builder, pagination. TZ-267 distinguishes loading, empty, and initial-load error states, exposes retry, and reports action failures without optimistic success/navigation.
 - **`/doc-constructor/documents`** — «Сформированные документы»: search + month filter, status dots, open HTML preview, delete.
 - **`/doc-constructor/builder`** — empty-state picker (no `:id`): template dropdown → navigate to `/builder/:id` or accepts `?source=order&sourceId=X` query params (cross-feature wiring from /orders + /contracts).
 - **`/doc-constructor/builder/:id`** — 3-pane canvas (280 / flex-1 / 320):

@@ -1,0 +1,14 @@
+# Lock file
+Locked as of 2026-08-02 — TZ-266: generated-document organization scope.
+
+Owner: Buffy (Codebuff session)
+Protected files:
+- backend/src/modules/generated-document/generated-document.controller.ts
+- backend/src/modules/generated-document/generated-document.service.ts
+- backend/src/modules/document-template/document-template.service.ts
+- backend/src/modules/generated-document/generated-document.controller.spec.ts
+- backend/src/modules/generated-document/generated-document.service.spec.ts
+- backend/src/modules/document-template/document-template.scope.spec.ts
+
+Unlock: only via orchestrator approval (a successor TZ with explicit scope).
+Imported from Freebuff workspace commit 113d61e; original sandbox task identifier was TZ-261.
