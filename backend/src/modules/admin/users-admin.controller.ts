@@ -1,4 +1,19 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { UserService } from '../user/user.service';
+import { CreateUserDto } from '../user/dto/create-user.dto';
+import { UpdateUserDto } from '../user/dto/update-user.dto';
+import { LastAdminGuard } from '../../common/guards/last-admin.guard';
+import { AuditAction } from '../../common/interceptors/audit.interceptor';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Permissions } from '../../common/decorators/permissions.decorator';
@@ -6,19 +21,14 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { User, UserDocument } from '../user/user.schema';
 import { Role, RoleDocument } from '../role/role.schema';
 import { toClientUser } from './dto/mapper';
-// TZ-257.A audit-emission contract — see block comment below. Not yet
-// imported here because TZ-257 mainline ships read-only slice; the
-// import becomes mandatory when mutators land.
-// import { AuditAction } from '../../common/interceptors/audit.interceptor';
 
 /**
- * TZ-257 §ШАГ 1 — users-admin controller (minimal-viable read surface).
+ * TZ-257.A.1 — users-admin controller.
  *
- * Mounted at `/api/admin/users`. This initial slice ships ONLY the
- * read paths (`list`, `getById`) with mandatory `passwordHash`
- * redaction. Mutations (create / patch / change-password / activate /
- * deactivate / delete) ship in TZ-257.A and will apply `@UseGuards(LastAdminGuard)`
- * on the mutating endpoints only.
+ * Mounted at `/api/admin/users`. Read and mutation paths all map through
+ * `toClientUser()`, so credentials never cross the API boundary. Mutations
+ * use `UserService` so password hashing, cache invalidation, and persistence
+ * remain in the user domain service.
  *
  * DTO mapping policy (TZ-257 §ШАГ 1 acceptance criterion
  * "passwordHash NEVER returned to client"):
@@ -55,6 +65,7 @@ export class UsersAdminController {
     private readonly userModel: Model<UserDocument>,
     @InjectModel(Role.name)
     private readonly roleModel: Model<RoleDocument>,
+    private readonly userService: UserService,
   ) {}
 
   /**
@@ -88,6 +99,57 @@ export class UsersAdminController {
     return docs.map((d) => toClientUser(d as Record<string, unknown>));
   }
 
+  @Post()
+  @Permissions('user:admin')
+  @Roles('admin')
+  @AuditAction({ action: 'admin.user.created', entityType: 'User' })
+  async create(@Body() dto: CreateUserDto): Promise<ReturnType<typeof toClientUser>> {
+    const doc = await this.userService.create(dto);
+    return toClientUser(doc as unknown as Record<string, unknown>);
+  }
+
+  @Patch(':id')
+  @Permissions('user:admin')
+  @Roles('admin')
+  @UseGuards(LastAdminGuard)
+  @AuditAction({ action: 'admin.user.updated', entityType: 'User', idParam: 'id' })
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateUserDto,
+  ): Promise<ReturnType<typeof toClientUser>> {
+    const doc = await this.userService.update(id, dto);
+    return toClientUser(doc as unknown as Record<string, unknown>);
+  }
+
+  @Post(':id/activate')
+  @Permissions('user:admin')
+  @Roles('admin')
+  @AuditAction({ action: 'admin.user.activated', entityType: 'User', idParam: 'id' })
+  async activate(@Param('id') id: string): Promise<ReturnType<typeof toClientUser>> {
+    const doc = await this.userService.update(id, { isActive: true });
+    return toClientUser(doc as unknown as Record<string, unknown>);
+  }
+
+  @Post(':id/deactivate')
+  @Permissions('user:admin')
+  @Roles('admin')
+  @UseGuards(LastAdminGuard)
+  @AuditAction({ action: 'admin.user.deactivated', entityType: 'User', idParam: 'id' })
+  async deactivate(@Param('id') id: string): Promise<ReturnType<typeof toClientUser>> {
+    const doc = await this.userService.update(id, { isActive: false });
+    return toClientUser(doc as unknown as Record<string, unknown>);
+  }
+
+  @Delete(':id')
+  @Permissions('user:admin')
+  @Roles('admin')
+  @UseGuards(LastAdminGuard)
+  @AuditAction({ action: 'admin.user.deleted', entityType: 'User', idParam: 'id' })
+  async remove(@Param('id') id: string): Promise<ReturnType<typeof toClientUser>> {
+    const doc = await this.userService.remove(id);
+    return toClientUser(doc as unknown as Record<string, unknown>);
+  }
+
   /**
    * GET /api/admin/users/:id
    * Single user read with `passwordHash` REDACTED. Returns 404 via
@@ -113,8 +175,9 @@ export class UsersAdminController {
 }
 
 /**
- * TZ-257.A AUDIT-EMISSION CONTRACT — applies to every mutator that
- * lands in TZ-257.A on this controller.
+ * TZ-257.A AUDIT-EMISSION CONTRACT — applies to every mutator on this
+ * controller. The global interceptor emits after successful responses and
+ * redacts credential fields from the response snapshot.
  *
  * The global `AuditInterceptor` (registered as `APP_INTERCEPTOR` in
  * `app.module.ts`) inspects each handler for `@AuditAction({ action,
@@ -180,9 +243,5 @@ export class UsersAdminController {
  *   async remove(@Param('id') id: string): Promise<void> {...}
  *
  * No manual `AuditService.log()` calls are needed in the mutators —
- * the interceptor handles emit. If a future TZ needs to log BEFORE
- * the mutation (e.g. capture `details.before` for diff), inject
- * `AuditService` directly and call `this.audit.log(...)` with an
- * explicit `before`/`after` shape; the action key should still
- * match the canonical strings above.
+ * the interceptor handles emission.
  */

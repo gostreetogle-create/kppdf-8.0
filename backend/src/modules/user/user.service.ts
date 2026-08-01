@@ -91,10 +91,11 @@ export class UserService {
     return doc;
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string): Promise<UserDocument> {
     const doc = await this.findById(id);
     await doc.deleteOne();
     this.logger.log(`User soft-deleted: ${doc.username}`);
+    return doc;
   }
 
   async changePassword(
