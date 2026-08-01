@@ -47,20 +47,22 @@ ID1=""
 
 # ----- fail-path cleanup (best-effort) -----------------------------------
 # Fires on ANY exit (including `set -e` failures from Steps 3-8). Step 9 is
-# the SHAMAN cleanup that ALSO asserts deletedCount; the trap is the
+# the main cleanup that ALSO asserts deletedCount; the trap is the
 # safety net so a `set -e` crash mid-run does not orphan a smoke doc.
-# Best-effort (no exit-code propagation) — failures go to stderr so the
-# caller can manually clean if needed.
+# Best-effort (no exit-code propagation) — failures print a WARN line to
+# stderr so the caller can manually clean if needed.
 trap_cleanup() {
   if [ -n "$ID1" ]; then
     docker exec "$MONGO_CONTAINER" mongosh --quiet "$DB" \
       --eval "db.document_templates.deleteOne({_id:ObjectId('$ID1')});" \
-      >/dev/null 2>&1 || true
+      >/dev/null 2>&1 || \
+      printf 'WARN: trap cleanup failed for document_templates _id=%s (check Mongo manually)\n' "$ID1" >&2
   fi
   if [ -n "$KEY" ]; then
     docker exec "$MONGO_CONTAINER" mongosh --quiet "$DB" \
       --eval "db.idempotency_records.deleteOne({idempotencyKey:'$KEY'});" \
-      >/dev/null 2>&1 || true
+      >/dev/null 2>&1 || \
+      printf 'WARN: trap cleanup failed for idempotency_records idempotencyKey=%s (check Mongo manually)\n' "$KEY" >&2
   fi
 }
 trap trap_cleanup EXIT
@@ -86,7 +88,7 @@ m_eval() {
 
 # Run mongosh eval that returns a sentinel-decorated delete-count, then
 # assert deletedCount === 1 AND propagate docker/mongosh exit code as
-# failure. Used by Step 9 (shaman cleanup) — distinguished from the
+# failure. Used by Step 9 (main cleanup) — distinguished from the
 # opportunistic cleanup in `trap_cleanup` which silently swallows
 # failures.
 m_delete_check_target() {
@@ -217,7 +219,7 @@ COUNT_AFTER_3="$(count_docs document_templates '{name:"'"$NAME_B2"'"}')"
   && PASS "DB count after POST 3 = $COUNT_AFTER_3 (expected 0 — conflict did NOT create a doc)" \
   || FAIL "DB count after POST 3 = $COUNT_AFTER_3 (expected 0) — 409 conflict leaked a doc"
 
-# ----- STEP 9: shaman cleanup (assertive: deletedCount=1 OR FAIL) -----
+# ----- STEP 9: main cleanup (assertive: deletedCount=1 OR FAIL) -----
 INFO "STEP 9 — cleanup (assertive delete of test document + idempotency record)"
 m_delete_check_target "document_templates" "{_id:ObjectId('$ID1')}" "deleted document_templates _id=$ID1"
 m_delete_check_target "idempotency_records" "{idempotencyKey:'$KEY'}" "deleted idempotency_records key=$KEY"
