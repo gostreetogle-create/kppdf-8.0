@@ -117,18 +117,29 @@ describe('IdempotencyMiddleware', () => {
     expect(mockStorage.insertOrFetch).not.toHaveBeenCalled();
   });
 
-  it('does NOT stack-overflow on a cyclic response body (Mongoose-doc shaped)', async () => {
+  it('exercises ancestor-Set fallback on JSON-roundtrip-throwing cyclic body (regression: TZ-247 stack-overflow)', async () => {
     // Regression: TZ-247 — POST /api/document-templates returned a Mongoose
     // document (service.create → this.model.create(...)) with an internal
     // cyclic reference ($__ / _doc back-pointing to the document itself).
     // The naive recursive redact() walked the cycle forever →
     // RangeError: Maximum call stack size exceeded.
+    //
+    // PATH COVERAGE NOTE (audit 2026-08-01): this fixture is a plain JS
+    // object whose `doc.$__ = { doc }` reference makes `JSON.stringify`
+    // throw synchronously. Therefore this test exercises the
+    // ancestor-Set fallback path in `redact()`, NOT the JSON-roundtrip
+    // happy path. Real Mongoose documents route through the JSON-roundtrip
+    // path (their `toJSON()` breaks internal `$__`/`_doc` cycles before
+    // stringify sees them); covering that path at unit-test level
+    // requires capturing a real hydrated Mongoose document. Marked as
+    // successor work alongside TZ-247.B.
     mockStorage.findByKey.mockResolvedValueOnce(null);
     const res = fakeRes();
     await middleware.use(fakeReq('POST', '/api/foo', { x: 1 }, 'abc'), res, next);
     expect(next).toHaveBeenCalledTimes(1);
 
-    // Build a Mongoose-doc-shaped cyclic object.
+    // Build a Mongoose-DOC-SHAPED plain object with a REAL self-cycle so
+    // JSON.stringify throws → ancestry-walk fallback path is exercised.
     const doc: Record<string, unknown> = {
       _id: '6a6dd6a4b4012551a62e19e4',
       name: 'Договор',
@@ -137,10 +148,8 @@ describe('IdempotencyMiddleware', () => {
     doc.$__ = { doc }; // mirrors Mongoose InternalCache back-reference
     doc._doc = { name: 'Договор' };
 
-    // Should NOT throw. NOTE: this fixture is a plain object with a real
-    // cycle, so JSON.stringify throws and the cycle-GUARDED walk handles it
-    // (the round-trip path is exercised by real Mongoose docs, whose
-    // toJSON() yields a plain object).
+    // Should NOT throw — the ancestor-Set fallback catches the cycle
+    // and surfaces the user's name instead of recursing forever.
     expect(() => res.json(doc)).not.toThrow();
 
     expect(mockStorage.insertOrFetch).toHaveBeenCalledTimes(1);
