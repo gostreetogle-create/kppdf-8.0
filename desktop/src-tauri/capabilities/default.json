@@ -6,7 +6,9 @@
   "permissions": [
     "core:default",
     "dialog:default",
+    "dialog:allow-open",
     "fs:allow-read-text-file",
+    "fs:allow-read-file",
     "fs:allow-write-text-file",
     "fs:allow-remove",
     "fs:allow-rename",
@@ -14,7 +16,7 @@
     "fs:allow-exists",
     {
       "identifier": "fs:scope",
-      "allow": ["$APPDATA", "$APPDATA/**"]
+      "allow": ["$APPDATA", "$APPDATA/**", "$HOME/**"]
     }
   ]
 }

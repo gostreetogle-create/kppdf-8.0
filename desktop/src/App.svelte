@@ -1,10 +1,12 @@
 <script lang="ts">
-  // Экран «Подключение» (v0.2): вставка паринг-JSON → saveConfig → проверка /auth/me.
-  // AI-импорт — будущая TZ (кнопка-стаб).
+  // v0.2 — «Подключение» (паринг + /auth/me). v0.3 — «Импорт» (excel/csv → таблица).
   import { onMount } from 'svelte';
+  import { open } from '@tauri-apps/plugin-dialog';
+  import { readFile } from '@tauri-apps/plugin-fs';
   import { apiGet, ApiError } from './core/api';
   import { loadConfig, saveConfig, type AppConfig } from './core/config';
   import { parsePairing } from './core/pairing';
+  import { importerFor, type RawRow } from './importers';
 
   // Placeholder вынесен в JS: фигурные скобки в атрибуте Svelte парсит как выражение.
   const pairingPlaceholder =
@@ -14,6 +16,11 @@
   let errors = $state<string[]>([]);
   let connecting = $state(false);
   let connected = $state<{ username: string; apiBaseUrl: string } | null>(null);
+
+  // Импорт
+  let importRows = $state<RawRow[]>([]);
+  let importError = $state('');
+  let importing = $state(false);
 
   onMount(async () => {
     // Восстанавливаем сохранённое подключение (живой ли токен — покажет первый запрос).
@@ -65,6 +72,65 @@
     pairingJson = '';
     errors = [];
   }
+
+  /** Выбрать файл через нативный диалог Tauri и прочитать его. */
+  async function pickFile() {
+    importError = '';
+    const picked = await open({
+      multiple: false,
+      filters: [
+        { name: 'Данные', extensions: ['xlsx', 'xls', 'csv', 'tsv'] },
+        { name: 'Все файлы', extensions: ['*'] },
+      ],
+    });
+    if (!picked || Array.isArray(picked)) return; // отмена
+    await importFromPath(picked);
+  }
+
+  /** Общий путь: имя файла + байты → импортёр → parse (для диалога и drag&drop). */
+  async function parseBytes(name: string, data: ArrayBuffer | Uint8Array) {
+    const importer = importerFor(name);
+    if (!importer) {
+      importError = `Файл «${name}» не распознан — поддерживаются: Excel (.xlsx/.xls), CSV/TSV.`;
+      importRows = [];
+      return;
+    }
+    importing = true;
+    importError = '';
+    try {
+      importRows = await importer.parse({ name, data });
+    } catch (err) {
+      importError = err instanceof Error ? err.message : 'Не удалось прочитать файл.';
+      importRows = [];
+    } finally {
+      importing = false;
+    }
+  }
+
+  /** Чтение файла (plugin-fs) → parseBytes. */
+  async function importFromPath(path: string) {
+    const name = path.split(/[\\/]/).pop() ?? path;
+    try {
+      const data = await readFile(path); // Uint8Array
+      await parseBytes(name, data);
+    } catch (err) {
+      importError = err instanceof Error ? err.message : 'Не удалось прочитать файл.';
+    }
+  }
+
+  /** Drag&drop файла (падение прямо в карточку «Импорт»). */
+  function onDrop(e: DragEvent) {
+    e.preventDefault();
+    const file = e.dataTransfer?.files?.[0];
+    if (!file) return;
+    void (async () => {
+      try {
+        await parseBytes(file.name, await file.arrayBuffer());
+      } catch (err) {
+        importError = err instanceof Error ? err.message : 'Не удалось прочитать файл.';
+      }
+    })();
+  }
 </script>
 
 <svelte:head>
@@ -112,18 +178,69 @@
     </article>
 
     <article class="card">
-      <h2>AI-импорт</h2>
-      <p>Массовый ввод данных: файл → парсинг → AI-нормализация → подтверждение → батч-отправка.</p>
-      <button class="btn" type="button" disabled title="TODO: реализация — будущая TZ">
-        Импортировать данные
+      <h2>Импорт</h2>
+      <p>Файл → парсинг → таблица предпросмотра. Подтверждение и отправка — будущие TZ.</p>
+
+      <button class="btn btn--primary" type="button" onclick={pickFile} disabled={importing}>
+        {importing ? 'Читаем…' : 'Выбрать файл'}
       </button>
+
+      <div
+        class="dropzone"
+        role="region"
+        aria-label="Зона перетаскивания файла"
+        ondragover={(e) => e.preventDefault()}
+        ondrop={onDrop}
+      >
+        или перетащите файл сюда
+      </div>
+
+      {#if importError}
+        <p class="errors" role="alert">{importError}</p>
+      {/if}
+
+      {#if importRows.length > 0}
+        <p class="import-status">
+          Импортировано строк: <strong>{importRows.length}</strong>
+        </p>
+        {@render PreviewTable(importRows)}
+      {/if}
     </article>
   </section>
 
   <footer class="shell__footer">
-    <p>Скелет v0.2 — паринг работает, импорт помечен TODO (см. README.md → Roadmap).</p>
+    <p>v0.3 — паринг и импорт Excel/CSV работают, отправка на сервер помечена TODO.</p>
   </footer>
 </main>
+
+<!-- Таблица предпросмотра: первые 10 строк + счётчик. -->
+{#snippet PreviewTable(rows: RawRow[])}
+  {@const preview = rows.slice(0, 10)}
+  {@const columns = preview.length > 0 ? Object.keys(preview[0]) : []}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          {#each columns as col (col)}
+            <th>{col}</th>
+          {/each}
+        </tr>
+      </thead>
+      <tbody>
+        {#each preview as row, i (i)}
+          <tr>
+            {#each columns as col (col)}
+              <td>{String(row[col] ?? '')}</td>
+            {/each}
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  </div>
+  {#if rows.length > 10}
+    <p class="import-more">…и ещё {rows.length - 10} строк (всего {rows.length})</p>
+  {/if}
+{/snippet}
 
 <style>
   :global(*) {
@@ -169,7 +286,7 @@
 
   .cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
     gap: 1.25rem;
   }
 
@@ -231,6 +348,57 @@
   .status__url {
     color: #5a6a78;
     font-size: 0.8rem;
+  }
+
+  .dropzone {
+    margin: 0.75rem 0;
+    padding: 0.9rem;
+    border: 1px dashed #b7c0c8;
+    border-radius: 8px;
+    text-align: center;
+    color: #7a8794;
+    font-size: 0.85rem;
+  }
+
+  .import-status {
+    font-size: 0.9rem;
+  }
+
+  .import-more {
+    margin-top: 0.5rem !important;
+    font-size: 0.8rem;
+    color: #7a8794;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid #d9dee3;
+    border-radius: 8px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid #e4e8ec;
+    white-space: nowrap;
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  th {
+    background: #eef1f4;
+    color: #44535f;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
   }
 
   .btn {
