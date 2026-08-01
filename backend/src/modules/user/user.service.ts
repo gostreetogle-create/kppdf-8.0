@@ -117,6 +117,27 @@ export class UserService {
     return doc;
   }
 
+  /**
+   * TZ-257.A.1 §2 — Administrator password reset.
+   *
+   * Unlike `changePassword()`, this method does NOT compare an old
+   * password: an admin resetting another user's password has no way
+   * (and no need) to know the target's current password. It hashes the
+   * new password, bumps `refreshTokenVersion` to invalidate all of the
+   * target's refresh tokens, and clears the user-activity cache.
+   */
+  async adminResetPassword(id: string, newPassword: string): Promise<UserDocument> {
+    const doc = await this.model.findById(id).exec();
+    if (!doc) throw new NotFoundException(`User ${id} not found`);
+
+    doc.passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+    doc.refreshTokenVersion += 1;
+    await doc.save();
+    userActivityCache.invalidate(id);
+    this.logger.log(`Password reset by admin for user: ${doc.username}`);
+    return doc;
+  }
+
   async incrementRefreshVersion(id: string): Promise<void> {
     await this.model
       .updateOne({ _id: id }, { $inc: { refreshTokenVersion: 1 } })

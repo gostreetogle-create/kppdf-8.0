@@ -115,6 +115,52 @@ describe('LastAdminGuard (TZ-257 §ШАГ 1)', () => {
       });
       await expect(guard.canActivate(ctx)).resolves.toBe(true);
     });
+
+    it('TZ-257.A.1 REJECTS demotion of the only active admin via PATCH body.role', async () => {
+      const adminId = VALID_USER_ID;
+      const { userModel } = buildModelMock({
+        target: { id: adminId, role: 'admin', isActive: true },
+        adminCount: 1,
+      });
+      const guard = buildGuard(userModel);
+      const ctx = makeContext({
+        method: 'PATCH',
+        params: { id: adminId },
+        user: { id: OTHER_USER_ID, role: 'admin' },
+        body: { role: 'manager' },
+      });
+      await expect(guard.canActivate(ctx)).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('TZ-257.A.1 allows demotion when another active admin exists', async () => {
+      const { userModel } = buildModelMock({
+        target: { id: VALID_USER_ID, role: 'admin', isActive: true },
+        adminCount: 2,
+      });
+      const guard = buildGuard(userModel);
+      const ctx = makeContext({
+        method: 'PATCH',
+        params: { id: VALID_USER_ID },
+        user: { id: OTHER_USER_ID, role: 'admin' },
+        body: { role: 'manager' },
+      });
+      await expect(guard.canActivate(ctx)).resolves.toBe(true);
+    });
+
+    it('TZ-257.A.1 allows no-op role patch (admin → admin)', async () => {
+      const { userModel } = buildModelMock({
+        target: { id: VALID_USER_ID, role: 'admin', isActive: true },
+        adminCount: 1,
+      });
+      const guard = buildGuard(userModel);
+      const ctx = makeContext({
+        method: 'PATCH',
+        params: { id: VALID_USER_ID },
+        user: { id: OTHER_USER_ID, role: 'admin' },
+        body: { role: 'admin' },
+      });
+      await expect(guard.canActivate(ctx)).resolves.toBe(true);
+    });
   });
 
   describe('Target user is NOT admin', () => {
@@ -128,6 +174,21 @@ describe('LastAdminGuard (TZ-257 §ШАГ 1)', () => {
         method: 'DELETE',
         params: { id: VALID_USER_ID },
         user: { id: OTHER_USER_ID, role: 'admin' },
+      });
+      await expect(guard.canActivate(ctx)).resolves.toBe(true);
+    });
+
+    it('TZ-257.A.1 allows role patch on a non-admin target (no invariant)', async () => {
+      const { userModel } = buildModelMock({
+        target: { id: VALID_USER_ID, role: 'manager', isActive: true },
+        adminCount: 1,
+      });
+      const guard = buildGuard(userModel);
+      const ctx = makeContext({
+        method: 'PATCH',
+        params: { id: VALID_USER_ID },
+        user: { id: OTHER_USER_ID, role: 'admin' },
+        body: { role: 'user' },
       });
       await expect(guard.canActivate(ctx)).resolves.toBe(true);
     });

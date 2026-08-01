@@ -1,22 +1,50 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  Injector,
+  inject,
+  signal,
+} from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Observable } from 'rxjs';
 import { API_BASE_URL } from '../../core/api.tokens';
+import {
+  extractErrorMessage,
+  silentDelete,
+  silentGet,
+  silentPatch,
+  silentPost,
+  type SilentResult,
+} from '../../core/silent-http';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
+import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { PiToastService } from '../../shared/ui/toast';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
+import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
+import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
+import {
+  UserFormDialogComponent,
+  type UserFormData,
+  type UserFormResult,
+} from './user-form-dialog.component';
+import {
+  ResetPasswordDialogComponent,
+  type ResetPasswordData,
+} from './reset-password-dialog.component';
 
 /**
- * TZ-257 §ШАГ 2 — `users-admin.page`.
+ * TZ-257.A.1 §5 — users-admin page (full mutation surface).
  *
- * Minimal-viable admin page surfacing the read-only slice of
- * `GET /api/admin/users`. Mutations (create/patch/deactivate/...) are
- * tracked as TZ-257.A follow-up; this page is intentionally a skeleton
- * that demonstrates the routing + capability-gate wiring without
- * introducing RBAC-bypass risks.
+ * Create / edit / reset-password / activate / deactivate / delete with
+ * confirmation dialogs, toast feedback, and refresh after every
+ * successful mutation. `LAST_ADMIN_INVARIANT` 403 from the backend is
+ * surfaced as the user-visible message «Нельзя удалить/понизить
+ * последнего админа».
  *
- * Read-side calls go through `HttpClient` directly (no AuthService
- * mutation) — the auth interceptor auto-attaches the bearer token,
- * and a 403 from the backend will be transparently redirected to
- * `/forbidden` (TZ-256 §ШАГ 5).
+ * All HTTP goes through `silent-*` helpers — the observables never
+ * error, so RxJS never logs noise for expected 4xx responses.
  */
 interface ClientUser {
   id: string;
@@ -34,7 +62,7 @@ interface ClientUser {
   selector: 'pi-users-admin-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiPageHeaderComponent],
+  imports: [PiPageHeaderComponent, ButtonComponent, PiRowActionsComponent],
   template: `
     <app-pi-page-header
       eyebrow="администрирование"
@@ -44,17 +72,15 @@ interface ClientUser {
     />
 
     <section class="pi-page-frame pi-edge-bleed py-page-y">
-      <p class="text-sm text-muted-foreground mb-4">
-        Read-only slice backend support shipped in TZ-257. Mutations (create / patch / activate /
-        deactivate / change-password) tracked as TZ-257.A follow-up.
-      </p>
-
+      <div class="flex items-center justify-end mb-4">
+        <app-pi-button variant="default" size="sm" (click)="onCreate()" data-test="users-admin-create">
+          Создать пользователя
+        </app-pi-button>
+      </div>
       @if (loading()) {
         <p class="text-sm text-muted-foreground">Загрузка…</p>
       } @else if (error(); as err) {
-        <p class="text-sm text-red-600" data-testid="users-admin-error">
-          {{ err }}
-        </p>
+        <p class="text-sm text-red-600" data-testid="users-admin-error">{{ err }}</p>
       } @else {
         <table class="pi-table w-full" data-testid="users-admin-table">
           <thead>
@@ -64,6 +90,7 @@ interface ClientUser {
               <th class="text-left pi-table-th">Email</th>
               <th class="text-left pi-table-th">Роль</th>
               <th class="text-left pi-table-th">Активен</th>
+              <th class="text-left pi-table-th w-64">Действия</th>
             </tr>
           </thead>
           <tbody>
@@ -82,10 +109,43 @@ interface ClientUser {
                     <span class="pi-badge pi-badge-warning">нет</span>
                   }
                 </td>
+                <td class="pi-table-td">
+                  <div class="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      class="pi-icon-btn pi-focus-ring"
+                      (click)="onResetPassword(u)"
+                      [attr.aria-label]="'Сбросить пароль ' + u.username"
+                      title="Сбросить пароль"
+                      data-test="users-admin-reset-password"
+                    >
+                      <span aria-hidden="true">⚿</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="pi-icon-btn pi-focus-ring"
+                      (click)="onToggleActive(u)"
+                      [attr.aria-label]="u.isActive ? 'Деактивировать ' + u.username : 'Активировать ' + u.username"
+                      [title]="u.isActive ? 'Деактивировать' : 'Активировать'"
+                      data-test="users-admin-toggle-active"
+                    >
+                      <span aria-hidden="true">{{ u.isActive ? '⏸' : '▶' }}</span>
+                    </button>
+                    <app-pi-row-actions
+                      [row]="u"
+                      editLabel="Редактировать"
+                      dataTestEdit="users-admin-edit"
+                      deleteLabel="Удалить"
+                      dataTestDelete="users-admin-delete"
+                      (edit)="onEdit($event)"
+                      (delete)="onDelete($event)"
+                    />
+                  </div>
+                </td>
               </tr>
             } @empty {
               <tr>
-                <td colspan="5" class="pi-table-td text-center text-muted-foreground py-8">
+                <td colspan="6" class="pi-table-td text-center text-muted-foreground py-8">
                   Пользователи не найдены.
                 </td>
               </tr>
@@ -99,6 +159,10 @@ interface ClientUser {
 export class UsersAdminPage {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
+  private readonly toast = inject(PiToastService);
+  private readonly dialog = inject(PiDialogService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
 
   readonly users = signal<ClientUser[]>([]);
   readonly loading = signal(true);
@@ -109,16 +173,160 @@ export class UsersAdminPage {
   }
 
   private async refresh(): Promise<void> {
+    this.loading.set(true);
     try {
       const data = await firstValueFrom(
-        this.http.get<ClientUser[]>(`${this.baseUrl}/admin/users?limit=200`),
+        silentGet<ClientUser[]>(this.http, `${this.baseUrl}/admin/users?limit=200`),
       );
-      this.users.set(data);
+      if (data.ok) {
+        this.users.set(data.data);
+        this.error.set(null);
+      } else {
+        this.error.set(this.describe(data.error));
+      }
     } catch (err) {
       this.error.set(this.describe(err));
     } finally {
       this.loading.set(false);
     }
+  }
+
+  // ── Create ──
+  protected onCreate(): void {
+    const ref = this.dialog.open<UserFormResult>(UserFormDialogComponent, {
+      data: { mode: 'create' } satisfies UserFormData,
+    });
+    onDialogCloseOnce(ref, this.injector, (result) => {
+      this.silentRun(
+        silentPost<ClientUser>(this.http, `${this.baseUrl}/admin/users`, {
+          username: result.username,
+          email: result.email,
+          displayName: result.displayName,
+          password: result.password,
+          role: result.role,
+          isActive: result.isActive,
+        }),
+        'Пользователь создан',
+      );
+    });
+  }
+
+  // `refresh` invoked from constructor before dialog service is used; no parentDestroyRef needed there.
+
+  // ── Edit ──
+  protected onEdit(u: ClientUser): void {
+    const ref = this.dialog.open<UserFormResult>(UserFormDialogComponent, {
+      data: {
+        mode: 'edit',
+        user: {
+          id: u.id,
+          username: u.username,
+          email: u.email,
+          displayName: u.displayName,
+          role: u.role,
+          isActive: u.isActive,
+        },
+      } satisfies UserFormData,
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (result) => {
+      this.silentRun(
+        silentPatch<ClientUser>(this.http, `${this.baseUrl}/admin/users/${u.id}`, {
+          username: result.username,
+          email: result.email,
+          displayName: result.displayName,
+          role: result.role,
+          isActive: result.isActive,
+        }),
+        'Пользователь обновлён',
+      );
+    });
+  }
+
+  // ── Reset password ──
+  protected onResetPassword(u: ClientUser): void {
+    const ref = this.dialog.open<string>(ResetPasswordDialogComponent, {
+      data: { username: u.username } satisfies ResetPasswordData,
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (newPassword) => {
+      this.silentRun(
+        silentPost<ClientUser>(this.http, `${this.baseUrl}/admin/users/${u.id}/reset-password`, {
+          newPassword,
+        }),
+        'Пароль сброшен',
+      );
+    });
+  }
+
+  // ── Toggle active ──
+  protected onToggleActive(u: ClientUser): void {
+    const activating = !u.isActive;
+    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
+      data: {
+        title: activating ? 'Активировать пользователя?' : 'Деактивировать пользователя?',
+        description: `«${u.displayName || u.username}» будет ${
+          activating ? 'активирован' : 'деактивирован'
+        }.`,
+        confirmLabel: activating ? 'Активировать' : 'Деактивировать',
+        variant: activating ? 'default' : 'destructive',
+      },
+      width: 'sm',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (ok) => {
+      if (!ok) return;
+      const url = `${this.baseUrl}/admin/users/${u.id}/${activating ? 'activate' : 'deactivate'}`;
+      this.silentRun(
+        silentPost<ClientUser>(this.http, url, {}),
+        activating ? 'Пользователь активирован' : 'Пользователь деактивирован',
+      );
+    });
+  }
+
+  // ── Delete ──
+  protected onDelete(u: ClientUser): void {
+    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
+      data: {
+        title: 'Удалить пользователя?',
+        description: `«${u.displayName || u.username}» будет удалён. Это действие нельзя отменить.`,
+        confirmLabel: 'Удалить',
+        variant: 'destructive',
+      },
+      width: 'sm',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (ok) => {
+      if (!ok) return;
+      this.silentRun(
+        silentDelete<ClientUser>(this.http, `${this.baseUrl}/admin/users/${u.id}`),
+        'Пользователь удалён',
+      );
+    });
+  }
+
+  /**
+   * Shared mutation runner: toast on success, refresh the table, and
+   * map the `LAST_ADMIN_INVARIANT` 403 to the user-visible message.
+   */
+  private silentRun(obs: Observable<SilentResult<ClientUser>>, successMsg: string): void {
+    obs.subscribe((res) => {
+      if (res.ok) {
+        this.toast.success(successMsg);
+        void this.refresh();
+        return;
+      }
+      if (res.error.status === 403) {
+        const body = res.error.error as { code?: string } | null;
+        this.toast.error(
+          body?.code === 'LAST_ADMIN_INVARIANT'
+            ? 'Нельзя удалить/понизить последнего админа'
+            : extractErrorMessage(res.error),
+        );
+        return;
+      }
+      this.toast.error(extractErrorMessage(res.error));
+    });
   }
 
   private describe(err: unknown): string {

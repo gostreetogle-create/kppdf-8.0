@@ -69,9 +69,29 @@ export class LastAdminGuard implements CanActivate {
     // Read the proposed mutation from request method + body.
     const method = (req.method ?? 'GET').toUpperCase();
     const isDeletingAdmin = method === 'DELETE';
-    const proposedActive =
-      method === 'DELETE' ? false : (req.body?.isActive ?? targetUser.isActive);
     const currentActive = !!targetUser.isActive;
+
+    // TZ-257.A.1 — PATCH demotion gap.
+    // `body.role` was previously never consumed: the guard only read
+    // `isActive`, so demoting the last active admin via
+    // `PATCH /api/admin/users/:id { role: 'manager' }` slipped through.
+    // A PATCH that changes an active admin's role to anything other
+    // than 'admin' removes the target from the active-admin set and
+    // must be evaluated exactly like a deactivation.
+    const bodyRole = req.body?.role;
+    const demotingActiveAdmin =
+      method === 'PATCH' &&
+      targetIsAdmin &&
+      currentActive &&
+      typeof bodyRole === 'string' &&
+      bodyRole !== 'admin';
+
+    const proposedActive =
+      method === 'DELETE'
+        ? false
+        : demotingActiveAdmin
+          ? false
+          : (req.body?.isActive ?? targetUser.isActive);
 
     // Active admin count pre-mutation.
     //

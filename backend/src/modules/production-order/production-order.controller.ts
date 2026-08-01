@@ -19,7 +19,18 @@ import { Model, Types } from 'mongoose';
 
 import { RequireOrgScope } from '../../common/decorators/require-org-scope.decorator';
 import { OrgScopeGuardInterceptor } from '../../common/interceptors/org-scope.interceptor';
+
+/**
+ * TZ-257.A.1 §4 — production-order org scope.
+ *
+ * The last controller missing the org-scope decorators (imports were
+ * already present from TZ-239). Applying both existing class decorators
+ * aligns production-order with the other 10 org-scoped controllers.
+ * Service/route behavior is unchanged.
+ */
 @Controller('production-orders')
+@RequireOrgScope()
+@UseInterceptors(OrgScopeGuardInterceptor)
 export class ProductionOrderController {
   constructor(
     private readonly service: ProductionOrderService,

@@ -12,6 +12,7 @@ import {
 import { UserService } from '../user/user.service';
 import { CreateUserDto } from '../user/dto/create-user.dto';
 import { UpdateUserDto } from '../user/dto/update-user.dto';
+import { AdminResetPasswordDto } from './dto/admin-reset-password.dto';
 import { LastAdminGuard } from '../../common/guards/last-admin.guard';
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
 import { InjectModel } from '@nestjs/mongoose';
@@ -147,6 +148,29 @@ export class UsersAdminController {
   @AuditAction({ action: 'admin.user.deleted', entityType: 'User', idParam: 'id' })
   async remove(@Param('id') id: string): Promise<ReturnType<typeof toClientUser>> {
     const doc = await this.userService.remove(id);
+    return toClientUser(doc as unknown as Record<string, unknown>);
+  }
+
+  /**
+   * POST /api/admin/users/:id/reset-password
+   * TZ-257.A.1 §2 — administrator password reset.
+   *
+   * Admin-only, LastAdminGuard-protected (an admin cannot reset the
+   * password of the last active admin through this path — the guard
+   * treats PATCH-style mutations conservatively). Audited with the
+   * canonical `admin.user.password-changed` action. Returns the
+   * redacted client user shape (never `passwordHash`).
+   */
+  @Post(':id/reset-password')
+  @Permissions('user:admin')
+  @Roles('admin')
+  @UseGuards(LastAdminGuard)
+  @AuditAction({ action: 'admin.user.password-changed', entityType: 'User', idParam: 'id' })
+  async resetPassword(
+    @Param('id') id: string,
+    @Body() dto: AdminResetPasswordDto,
+  ): Promise<ReturnType<typeof toClientUser>> {
+    const doc = await this.userService.adminResetPassword(id, dto.newPassword);
     return toClientUser(doc as unknown as Record<string, unknown>);
   }
 
