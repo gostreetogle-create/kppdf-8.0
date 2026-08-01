@@ -8,10 +8,13 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
+import {
+  extractErrorMessage,
+  type SilentResult,
+} from '../../../core/silent-http';
 import { PiPageHeaderComponent } from '../../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../../shared/page/pi-section.component';
 import { PiToolbarComponent } from '../../../shared/page/pi-toolbar.component';
@@ -27,8 +30,6 @@ import {
   TemplateSetupDialogComponent,
   type TemplateSetupResult,
 } from '../builder/template-setup-dialog.component';
-import { extractErrorMessage } from '../../../core/silent-http';
-import { API_BASE_URL } from '../../../core/api.tokens';
 import {
   DocumentTemplate,
   DocumentTemplatesService,
@@ -83,6 +84,13 @@ const PAGE_SIZE = 10;
     <app-pi-section title="Каталог" eyebrow="I">
       @if (loading()) {
         <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
+      } @else if (error()) {
+        <div role="alert" class="hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive">
+          <p>{{ error() }}</p>
+          <app-pi-button class="mt-3" variant="outline" size="sm" (click)="reload()">
+            Повторить
+          </app-pi-button>
+        </div>
       } @else if (filtered().length === 0) {
         <app-pi-empty-state
           [colspan]="1"
@@ -186,8 +194,6 @@ export class TemplatesPage {
   protected readonly PAGE_SIZE = PAGE_SIZE;
 
   private readonly svc = inject(DocumentTemplatesService);
-  private readonly http = inject(HttpClient);
-  private readonly baseUrl = inject(API_BASE_URL);
   private readonly router = inject(Router);
   private readonly toast = inject(PiToastService);
   private readonly dialog = inject(PiDialogService);
@@ -196,6 +202,7 @@ export class TemplatesPage {
 
   protected readonly items = signal<DocumentTemplate[]>([]);
   protected readonly loading = signal(true);
+  protected readonly error = signal<string | null>(null);
   protected readonly creating = signal(false);
   protected readonly searchQuery = signal('');
   protected readonly pageIndex = signal(0);
@@ -227,17 +234,19 @@ export class TemplatesPage {
     this.reload();
   }
 
-  private reload(): void {
+  protected reload(): void {
     this.loading.set(true);
+    this.error.set(null);
     this.svc
       .list()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
-          this.loading.set(false);
-          if (res.ok) this.items.set(res.data.items ?? []);
-        },
-        error: () => this.loading.set(false),
+      .subscribe((res) => {
+        this.loading.set(false);
+        if (res.ok) {
+          this.items.set(res.data.items ?? []);
+        } else {
+          this.error.set(extractErrorMessage(res.error));
+        }
       });
   }
 
@@ -284,98 +293,107 @@ export class TemplatesPage {
   private createWithSettings(settings: TemplateSetupResult): void {
     this.creating.set(true);
 
-    // Step 1: Check existing org + doc-type, create defaults if missing
-    forkJoin([
-      this.http.get<{ items: { _id: string; name: string }[] }>(
-        `${this.baseUrl}/organizations?limit=1`,
-      ),
-      this.http.get<{ _id: string; name: string }[]>(`${this.baseUrl}/doc-types`),
-    ])
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: ([orgRes, dtRes]) => {
-          const orgId = orgRes?.items?.[0]?._id;
-          const docTypeId = dtRes?.[0]?._id;
+    type SetupId = SilentResult<string>;
 
-          // Auto-create default doc-type if none exists
-          const ensureDocType$ = docTypeId
-            ? of(docTypeId)
-            : this.http
-                .post<{ _id: string }>(`${this.baseUrl}/doc-types`, {
-                  name: 'Коммерческое предложение',
-                  slug: 'kp',
-                  description: 'Тип документа по умолчанию',
-                  isActive: true,
+    const ensureId = (
+      existingId: string | undefined,
+      request: import('rxjs').Observable<SilentResult<{ _id: string }>>,
+    ): import('rxjs').Observable<SetupId> => {
+      if (existingId) return of({ ok: true, data: existingId });
+      return request.pipe(
+        map((res): SetupId => (res.ok ? { ok: true, data: res.data._id } : res)),
+      );
+    };
+
+    // Step 1: read setup data, then create only missing defaults through the
+    // document-template service's silent HTTP boundary.
+    forkJoin({
+      organizations: this.svc.listOrganizations(),
+      docTypes: this.svc.listDocTypes(),
+    })
+      .pipe(
+        switchMap(({ organizations, docTypes }) => {
+          if (!organizations.ok) return of({ kind: 'setup-error' as const, error: organizations.error });
+          if (!docTypes.ok) return of({ kind: 'setup-error' as const, error: docTypes.error });
+
+          const orgId = organizations.data.items[0]?._id;
+          const docTypeId = docTypes.data[0]?._id;
+          return forkJoin({
+            orgId: ensureId(
+              orgId,
+              this.svc.createOrganization({
+                name: 'Основная организация',
+                shortName: 'Основная',
+                isActive: true,
+              }),
+            ),
+            docTypeId: ensureId(
+              docTypeId,
+              this.svc.createDocType({
+                name: 'Коммерческое предложение',
+                slug: 'kp',
+                description: 'Тип документа по умолчанию',
+                isActive: true,
+              }),
+            ),
+          }).pipe(
+            switchMap(({ orgId: ensuredOrgId, docTypeId: ensuredDocTypeId }) => {
+              if (!ensuredOrgId.ok) {
+                return of({ kind: 'setup-error' as const, error: ensuredOrgId.error });
+              }
+              if (!ensuredDocTypeId.ok) {
+                return of({ kind: 'setup-error' as const, error: ensuredDocTypeId.error });
+              }
+              return this.svc
+                .create({
+                  name: `Шаблон ${new Date().toLocaleDateString('ru-RU')}`,
+                  organizationId: ensuredOrgId.data,
+                  docTypeId: ensuredDocTypeId.data,
+                  pageSize: settings.pageSize,
+                  orientation: settings.orientation,
+                  isActive: false,
                 })
-                .pipe(map((r) => r._id));
-
-          // Auto-create default organization if none exists
-          const ensureOrg$ = orgId
-            ? of(orgId)
-            : this.http
-                .post<{ _id: string }>(`${this.baseUrl}/organizations`, {
-                  name: 'Основная организация',
-                  shortName: 'Основная',
-                  isActive: true,
-                })
-                .pipe(map((r) => r._id));
-
-          forkJoin({ docTypeId: ensureDocType$, orgId: ensureOrg$ })
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe({
-              next: ({ docTypeId: dtId, orgId: oId }) => {
-                // Step 2: Create template (inactive by default)
-                this.svc
-                  .create({
-                    name: `Шаблон ${new Date().toLocaleDateString('ru-RU')}`,
-                    organizationId: oId,
-                    docTypeId: dtId,
-                    pageSize: settings.pageSize,
-                    orientation: settings.orientation,
-                    isActive: false,
-                  })
-                  .subscribe({
-                    next: (res) => {
-                      this.creating.set(false);
-                      if (res.ok) {
-                        this.toast.success('Шаблон создан (неактивен). Откройте конструктор.');
-                        this.router.navigate(['/doc-constructor/builder', res.data._id]);
-                      } else {
-                        this.toast.error(extractErrorMessage(res.error));
-                      }
-                    },
-                    error: () => this.creating.set(false),
-                  });
-              },
-              error: () => {
-                this.creating.set(false);
-                this.toast.error('Ошибка создания сущностей');
-              },
-            });
-        },
-        error: () => this.creating.set(false),
+                .pipe(map((result) => ({ kind: 'create-result' as const, result })));
+            }),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((outcome) => {
+        this.creating.set(false);
+        if (outcome.kind === 'setup-error') {
+          this.toast.error(extractErrorMessage(outcome.error));
+          return;
+        }
+        if (outcome.result.ok) {
+          this.toast.success('Шаблон создан (неактивен). Откройте конструктор.');
+          this.router.navigate(['/doc-constructor/builder', outcome.result.data._id]);
+        } else {
+          this.toast.error(extractErrorMessage(outcome.result.error));
+        }
       });
   }
 
   protected onToggleActive(t: DocumentTemplate, active: boolean): void {
-    this.svc.update(t._id, { isActive: active }).subscribe({
-      next: (res) => {
-        if (res.ok) {
-          this.items.update((arr) =>
-            arr.map((x) => (x._id === t._id ? { ...x, isActive: active } : x)),
-          );
-        }
-      },
+    this.svc.update(t._id, { isActive: active }).subscribe((res) => {
+      if (res.ok) {
+        this.items.update((arr) =>
+          arr.map((x) => (x._id === t._id ? { ...x, isActive: active } : x)),
+        );
+      } else {
+        this.toast.error(extractErrorMessage(res.error));
+      }
     });
   }
 
   protected onSetDefault(t: DocumentTemplate): void {
-    this.http.post(`${this.baseUrl}/document-templates/${t._id}/set-default`, {}).subscribe({
-      next: () => {
+    this.svc.setDefault(t._id).subscribe((res) => {
+      if (res.ok) {
         this.toast.success('Шаблон по умолчанию');
         this.reload();
-      },
-      error: (err) => this.toast.error(extractErrorMessage(err)),
+      } else {
+        this.toast.error(extractErrorMessage(res.error));
+      }
     });
   }
 
@@ -389,28 +407,44 @@ export class TemplatesPage {
     });
     onDialogCloseOnce(ref, this.injector, (result) => {
       if (!result) return;
-      this.http
-        .post<DocumentTemplate>(`${this.baseUrl}/document-templates/${t._id}/duplicate`, {})
-        .subscribe({
-          next: (copy) => {
-            // Apply chosen format/orientation to the duplicate
-            this.svc
-              .update(copy._id, {
+      this.svc.duplicate(t._id)
+        .pipe(
+          switchMap((duplicateResult) => {
+            if (!duplicateResult.ok) {
+              return of({ kind: 'duplicate-error' as const, error: duplicateResult.error });
+            }
+            return this.svc
+              .update(duplicateResult.data._id, {
                 pageSize: result.pageSize,
                 orientation: result.orientation,
               })
-              .subscribe({
-                next: () => {
-                  this.toast.success('Копия создана');
-                  this.router.navigate(['/doc-constructor/builder', copy._id]);
-                },
-                error: () => {
-                  this.toast.success('Копия создана');
-                  this.router.navigate(['/doc-constructor/builder', copy._id]);
-                },
-              });
-          },
-          error: (err) => this.toast.error(extractErrorMessage(err)),
+              .pipe(
+                switchMap((updateResult) => {
+                  if (updateResult.ok) {
+                    return of({ kind: 'success' as const, id: duplicateResult.data._id });
+                  }
+                  return this.svc.remove(duplicateResult.data._id).pipe(
+                    map((cleanupResult) =>
+                      cleanupResult.ok
+                        ? { kind: 'update-error' as const, error: updateResult.error }
+                        : { kind: 'cleanup-error' as const, error: cleanupResult.error },
+                    ),
+                  );
+                }),
+              );
+          }),
+        )
+        .subscribe((outcome) => {
+          if (
+            outcome.kind === 'duplicate-error' ||
+            outcome.kind === 'update-error' ||
+            outcome.kind === 'cleanup-error'
+          ) {
+            this.toast.error(extractErrorMessage(outcome.error));
+            return;
+          }
+          this.toast.success('Копия создана');
+          this.router.navigate(['/doc-constructor/builder', outcome.id]);
         });
     });
   }
@@ -426,13 +460,13 @@ export class TemplatesPage {
     });
     onDialogCloseOnce(ref, this.injector, (ok) => {
       if (!ok) return;
-      this.svc.remove(t._id).subscribe({
-        next: (res) => {
-          if (res.ok) {
-            this.toast.success('Шаблон удалён');
-            this.items.update((arr) => arr.filter((x) => x._id !== t._id));
-          }
-        },
+      this.svc.remove(t._id).subscribe((res) => {
+        if (res.ok) {
+          this.toast.success('Шаблон удалён');
+          this.items.update((arr) => arr.filter((x) => x._id !== t._id));
+        } else {
+          this.toast.error(extractErrorMessage(res.error));
+        }
       });
     });
   }

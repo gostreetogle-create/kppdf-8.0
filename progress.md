@@ -4658,3 +4658,11 @@ Closed this session (all checks basher-verified: backend 243/243, frontend 559/5
   tsc 0/0, eslint 0 errors, diff --check clean. Code reviewed by code-reviewer-deepseek-flash
   (firstValueFrom fix + isSystem:false assert confirmed).
 - Archived: tasks/_archive/2026-08/TZ-257.B.done.md + lock. STATUS.md DONE 14→15 rows.
+
+## 2026-08-02 — TZ-261 + TZ-262 closed (security scope and template error boundary)
+
+- **TZ-261:** generated-document reads and writes now receive authenticated organization context. List/detail/HTML reads are scoped before response handling; generation rejects foreign templates, DTO organization overrides, invalid/missing/foreign sources before rendering/counter/create; deletion rejects cross-org/global writes for organization users. Added controller, service, source-scope, and relationship regression coverage.
+- **TZ-262:** templates registry initial-load errors have a dedicated retryable error state. Setup, create, set-default, duplicate, toggle, and delete flows use the document-template service's `SilentResult` boundary and report failures without false success or navigation. Duplicate format update failures attempt cleanup and surface cleanup failures.
+- **Verification:** backend typecheck/build PASS; backend full Jest 31 suites / 268 tests PASS; frontend typecheck PASS; frontend full Jest 59 suites / 566 tests PASS; frontend build PASS with existing bundle/style budget warnings; changed-file lint PASS (backend has 2 pre-existing `no-explicit-any` warnings); `git diff --check` PASS; `bash OrchestratorKit/verify-status.sh` PASS (0 warnings).
+- **Limitations:** authenticated browser/manual smoke was not run in the isolated session; the frontend build's budget warnings and existing Angular test-console warnings remain outside these TZs.
+- **Archives/locks:** `tasks/_archive/2026-08/TZ-261.done.md`, `tasks/_archive/2026-08/TZ-262.done.md`; `.mimocode/locks/TZ-261-generated-document-scope.lock`, `.mimocode/locks/TZ-262-templates-error-boundary.lock`.

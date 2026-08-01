@@ -294,6 +294,126 @@ export class DocumentTemplateService {
    * Returns the rendered HTML string. Service is read-only (no DB writes);
    * AuditInterceptor auto-skips logging because no @AuditAction decorator.
    */
+  /**
+   * Validate that caller-supplied build sources belong to the authenticated
+   * organization before generated-document persistence can occur. Global and
+   * legacy records without an organization remain readable; a concrete
+   * foreign organization is rejected without revealing its existence.
+   */
+  async assertBuildSourcesInOrganization(
+    dto: BuildDocumentDto,
+    organizationId: string,
+  ): Promise<void> {
+    if (!Types.ObjectId.isValid(organizationId)) {
+      throw new NotFoundException('Organization not found');
+    }
+
+    const assertMatch = (value: unknown): void => {
+      if (value === null || value === undefined) return;
+      if (String(value) !== organizationId) {
+        throw new NotFoundException('Source not found');
+      }
+    };
+    const assertSource = (source: unknown): void => {
+      if (!source || typeof source !== 'object') {
+        throw new NotFoundException('Source not found');
+      }
+      assertMatch((source as { organizationId?: unknown }).organizationId);
+    };
+    const assertOrganizationSource = (source: unknown): void => {
+      if (!source || typeof source !== 'object') {
+        throw new NotFoundException('Source not found');
+      }
+      const sourceOrgId = (source as { organizationId?: unknown }).organizationId;
+      if (String(sourceOrgId ?? '') !== organizationId) {
+        throw new NotFoundException('Source not found');
+      }
+    };
+    const requireSourceId = (value: string | undefined): string | undefined => {
+      if (value === undefined) return undefined;
+      if (!Types.ObjectId.isValid(value)) {
+        throw new NotFoundException('Source not found');
+      }
+      return value;
+    };
+
+    if (dto.organizationId) assertMatch(dto.organizationId);
+
+    const counterpartyId = requireSourceId(dto.counterpartyId);
+    if (counterpartyId) {
+      const counterparty = await this.counterpartyModel
+        .findById(counterpartyId)
+        .lean()
+        .exec();
+      assertSource(counterparty);
+    }
+    const productId = requireSourceId(dto.productId);
+    if (productId) {
+      const product = await this.productModel.findById(productId).lean().exec();
+      assertSource(product);
+    }
+    const materialId = requireSourceId(dto.materialId);
+    if (materialId) {
+      const material = await this.materialModel.findById(materialId).lean().exec();
+      assertSource(material);
+    }
+    const workTypeId = requireSourceId(dto.workTypeId);
+    if (workTypeId) {
+      const workType = await this.workTypeModel.findById(workTypeId).lean().exec();
+      if (!workType) throw new NotFoundException('Source not found');
+    }
+    const contractId = requireSourceId(dto.contractId);
+    if (contractId) {
+      const contract = await this.contractModel.findById(contractId).lean().exec();
+      assertSource(contract);
+      if (contract?.customerId) {
+        const customerId = requireSourceId(String(contract.customerId));
+        const counterparty = await this.counterpartyModel
+          .findById(customerId)
+          .lean()
+          .exec();
+        assertOrganizationSource(counterparty);
+      }
+    }
+    const orderId = requireSourceId(dto.orderId);
+    if (orderId) {
+      const order = await this.orderModel.findById(orderId).lean().exec();
+      if (!order) throw new NotFoundException('Source not found');
+      if (!order.counterpartyId) throw new NotFoundException('Source not found');
+      assertSource(order);
+      if (order.contractId) {
+        const contractId = requireSourceId(String(order.contractId));
+        const contract = await this.contractModel
+          .findById(contractId)
+          .lean()
+          .exec();
+        assertOrganizationSource(contract);
+      }
+      if (order.counterpartyId) {
+        const counterpartyId = requireSourceId(String(order.counterpartyId));
+        const counterparty = await this.counterpartyModel
+          .findById(counterpartyId)
+          .lean()
+          .exec();
+        assertOrganizationSource(counterparty);
+      }
+      // Orders are legacy shared records and do not carry organizationId.
+      // Their organization boundary is therefore enforced through every
+      // organization-scoped relation that can be rendered from the order.
+      for (const item of order.items ?? []) {
+        if (!item.productId) {
+          throw new NotFoundException('Source not found');
+        }
+        const productId = requireSourceId(String(item.productId));
+        const product = await this.productModel
+          .findById(productId)
+          .lean()
+          .exec();
+        assertOrganizationSource(product);
+      }
+    }
+  }
+
   async build(templateId: string, dto: BuildDocumentDto): Promise<string> {
     if (!Types.ObjectId.isValid(templateId)) {
       throw new BadRequestException(`Invalid templateId ${templateId}`);
