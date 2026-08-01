@@ -1,0 +1,16 @@
+# TZ-256.A — DONE lock
+TASK: TZ-256.A
+OWNER: autonomous-frontend-agent (Codebuff)
+CLOSED_AT: 2026-08-01
+COMMIT: e505b9b
+PROTECTED_FILES:
+  - frontend/src/app/layout/app-layout.component.ts (Palette→ShieldCheck + paletteIcon→shieldCheckIcon)
+  - frontend/src/app/app.routes.ts (/admin placeholder added)
+  - frontend/src/app/pages/admin/_admin-placeholder.page.ts (NEW — 45 lines)
+SUCCESSOR: TZ-256.B (real /admin body — see tasks/TZ-256.B.md)
+NOTES:
+  - user spec verbatim applied (line 1012 STATUS.md TZ-256.A text
+    describes icon+placeholder as "остаток" pending — actually shipped
+    in e505b9b; surfaced for future recon)
+  - field renamed alongside icon (paletteIcon→shieldCheckIcon) for
+    `logOutIcon=LogOut` convention consistency
