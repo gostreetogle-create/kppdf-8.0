@@ -16,8 +16,8 @@ import { SystemRoleGuard } from '../../common/guards/system-role.guard';
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
 import { Role, RoleDocument } from '../role/role.schema';
 import { RoleService } from '../role/role.service';
-import { CreateRoleDto } from '../role/dto/create-role.dto';
-import { UpdateRoleDto } from '../role/dto/update-role.dto';
+import { AdminCreateRoleDto } from './dto/admin-role.dto';
+import { AdminUpdateRoleDto } from './dto/admin-role.dto';
 import { toClientRole } from './dto/mapper';
 
 /**
@@ -33,6 +33,13 @@ import { toClientRole } from './dto/mapper';
  * refuses PATCH/DELETE on system roles (403 `SYSTEM_ROLE_FROZEN`)
  * and escalation patches (403 `SYSTEM_ROLE_ESCALATION`). POST always
  * forces `isSystem: false` regardless of payload.
+ *
+ * TZ-257.B DTO-whitelist: mutations accept ONLY `AdminCreateRoleDto` /
+ * `AdminUpdateRoleDto` (name/label/description/permissions). Internal
+ * fields (`isSystem`, `sortOrder`, `sectionIds`, `isActive`) are not
+ * declared, so the global `ValidationPipe({ whitelist: true,
+ * forbidNonWhitelisted: true })` rejects them with 400 before any
+ * controller/guard logic runs.
  *
  * All endpoints gated by the global guard stack (JwtAuthGuard →
  * PermissionsGuard → RolesGuard) plus per-method `@UseGuards` where
@@ -68,7 +75,7 @@ export class RolesAdminController {
   @Permissions('role:write')
   @Roles('admin')
   @AuditAction({ action: 'admin.role.created', entityType: 'Role' })
-  async create(@Body() dto: CreateRoleDto): Promise<ReturnType<typeof toClientRole>> {
+  async create(@Body() dto: AdminCreateRoleDto): Promise<ReturnType<typeof toClientRole>> {
     const doc = await this.roleService.create({ ...dto, isSystem: false });
     return toClientRole(doc as unknown as Record<string, unknown>);
   }
@@ -85,7 +92,7 @@ export class RolesAdminController {
   @AuditAction({ action: 'admin.role.updated', entityType: 'Role', idParam: 'id' })
   async update(
     @Param('id') id: string,
-    @Body() dto: UpdateRoleDto,
+    @Body() dto: AdminUpdateRoleDto,
   ): Promise<ReturnType<typeof toClientRole>> {
     const doc = await this.roleService.update(id, dto);
     return toClientRole(doc as unknown as Record<string, unknown>);

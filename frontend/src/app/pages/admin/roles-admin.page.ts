@@ -210,8 +210,16 @@ export class RolesAdminPage {
     });
     onDialogCloseOnce(ref, this.injector, (result) => {
       if (!result) return;
+      // TZ-257.B whitelist: AdminUpdateRoleDto accepts label/description/
+      // permissions ONLY — `name` (locked by the dialog) is never sent,
+      // otherwise ValidationPipe({ forbidNonWhitelisted: true }) rejects 400.
+      const payload = {
+        label: result.label,
+        description: result.description,
+        permissions: result.permissions,
+      };
       this.silentRun(
-        silentPatch<ClientRole>(this.http, `${this.baseUrl}/admin/roles/${r.id}`, result),
+        silentPatch<ClientRole>(this.http, `${this.baseUrl}/admin/roles/${r.id}`, payload),
         'Роль обновлена',
       );
     });

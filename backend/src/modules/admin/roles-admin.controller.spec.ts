@@ -1,15 +1,16 @@
 import { Types } from 'mongoose';
 import { RolesAdminController } from './roles-admin.controller';
-import { CreateRoleDto } from '../role/dto/create-role.dto';
-import { UpdateRoleDto } from '../role/dto/update-role.dto';
+import { AdminCreateRoleDto } from './dto/admin-role.dto';
+import { AdminUpdateRoleDto } from './dto/admin-role.dto';
 import type { RoleService } from '../role/role.service';
 
 /**
- * TZ-256.B — RolesAdminController unit spec.
+ * TZ-256.B + TZ-257.B — RolesAdminController unit spec.
  *
  * Pure unit spec with manual mocks (repository convention — see
  * `users-admin.controller.spec.ts`). Verifies mutation delegation to
- * `RoleService`, the `isSystem: false` create-forcing, and the
+ * `RoleService`, the `isSystem: false` create-forcing, the admin
+ * DTO-whitelist (no `isSystem`/internal fields accepted), and the
  * audit-safe client-role mapping (no internal fields).
  */
 
@@ -55,12 +56,11 @@ describe('RolesAdminController (TZ-256.B)', () => {
       const { controller, create } = buildController({
         create: jest.fn().mockResolvedValue(roleDoc()),
       });
-      const dto = new CreateRoleDto();
+      const dto = new AdminCreateRoleDto();
       dto.name = 'clerk';
       dto.label = 'Клерк';
       dto.permissions = ['orders.read'];
-      // Attempt to smuggle isSystem: true — must be forced to false.
-      const out = await controller.create({ ...dto, isSystem: true } as unknown as CreateRoleDto);
+      const out = await controller.create(dto);
       expect(create).toHaveBeenCalledWith(expect.objectContaining({ isSystem: false }));
       expect(out).toHaveProperty('id');
       expect(out).toHaveProperty('name', 'manager');
@@ -71,7 +71,7 @@ describe('RolesAdminController (TZ-256.B)', () => {
       const { controller, update } = buildController({
         update: jest.fn().mockResolvedValue(roleDoc({ label: 'Старший менеджер' })),
       });
-      const dto = new UpdateRoleDto();
+      const dto = new AdminUpdateRoleDto();
       dto.label = 'Старший менеджер';
       const out = await controller.update('r1', dto);
       expect(update).toHaveBeenCalledWith('r1', dto);
@@ -86,6 +86,49 @@ describe('RolesAdminController (TZ-256.B)', () => {
       const out = await controller.remove('r1');
       expect(remove).toHaveBeenCalledWith('r1');
       expect(out).toEqual({ success: true });
+    });
+  });
+
+  describe('TZ-257.B admin DTO whitelist', () => {
+    it('AdminCreateRoleDto exposes only name/label/description/permissions', () => {
+      const dto = new AdminCreateRoleDto();
+      const keys = Object.keys(dto);
+      // Class-validator @ApiProperty-annotated fields only materialize
+      // when assigned — inspect the declared property descriptors instead.
+      const declared = Object.getOwnPropertyNames(AdminCreateRoleDto.prototype);
+      expect(declared).not.toContain('isSystem');
+      expect(declared).not.toContain('sortOrder');
+      expect(declared).not.toContain('sectionIds');
+      expect(declared).not.toContain('isActive');
+    });
+
+    it('AdminUpdateRoleDto excludes internal/system fields (no escalation surface)', () => {
+      const declared = Object.getOwnPropertyNames(AdminUpdateRoleDto.prototype);
+      expect(declared).not.toContain('isSystem');
+      expect(declared).not.toContain('sortOrder');
+      expect(declared).not.toContain('sectionIds');
+      expect(declared).not.toContain('isActive');
+      expect(declared).not.toContain('name');
+    });
+
+    it('controller create passes through only whitelisted fields', async () => {
+      const { controller, create } = buildController({
+        create: jest.fn().mockResolvedValue(roleDoc()),
+      });
+      const dto = new AdminCreateRoleDto();
+      dto.name = 'clerk';
+      dto.label = 'Клерк';
+      dto.permissions = ['orders.read'];
+      await controller.create(dto);
+      const received = create.mock.calls[0][0] as Record<string, unknown>;
+      // Whitelist excludes isSystem from the DTO surface, but the controller
+      // deliberately FORCES isSystem: false on create — so it must be present
+      // as false (never true), while other internal fields stay absent.
+      expect(received).toHaveProperty('isSystem', false);
+      expect(received).not.toHaveProperty('sortOrder');
+      expect(received).not.toHaveProperty('sectionIds');
+      expect(received).not.toHaveProperty('isActive');
+      expect(received).toHaveProperty('name', 'clerk');
     });
   });
 

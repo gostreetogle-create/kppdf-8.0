@@ -3,6 +3,7 @@ import { UserModule } from '../user/user.module';
 import { RoleModule } from '../role/role.module';
 import { UsersAdminController } from './users-admin.controller';
 import { RolesAdminController } from './roles-admin.controller';
+import { PermissionsAdminController } from './permissions-admin.controller';
 import { LastAdminGuard } from '../../common/guards/last-admin.guard';
 import { SystemRoleGuard } from '../../common/guards/system-role.guard';
 
@@ -31,7 +32,7 @@ import { SystemRoleGuard } from '../../common/guards/system-role.guard';
  */
 @Module({
   imports: [UserModule, RoleModule],
-  controllers: [UsersAdminController, RolesAdminController],
+  controllers: [UsersAdminController, RolesAdminController, PermissionsAdminController],
   providers: [LastAdminGuard, SystemRoleGuard],
   exports: [LastAdminGuard, SystemRoleGuard],
 })
