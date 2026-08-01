@@ -15,6 +15,7 @@ docs/
 ├── design-spec.md                 ← [NEW] design spec (бренд, цвета, типографика, компоненты)
 ├── DEVELOPMENT-PATTERNS.md        ← паттерны кодирования (SilentResult, CRUD, формы, API)
 ├── ORCHESTRATION_CHECKLIST.md     ← чек-лист для OrchestratorKit
+├── openhands-cloud-api.md         ← [NEW] подключение к OpenHands Cloud API (делегирование задач другому AI-агенту)
 ├── paper-and-ink.md               ← дизайн-система Paper & Ink (OKLCH, токены, WCAG)
 ├── pi-table-migration-recipe.md   ← рецепт миграции на pi-table
 ├── pages/                         ← [TZ-141] документация всех 19 бизнес-страниц
@@ -62,7 +63,7 @@ docs/
 | **Страницы** | `pages/` (19 .page.md) | [TZ-141] Описание каждой бизнес-страницы |
 | **Миграции** | `pi-table-migration-recipe.md` | Рецепт pi-table |
 | **Референсы** | `reference/` (5 файлов) | HTML-прототипы, скриншоты, примеры документов |
-| **Compose** | `compose/plans/` | Планы композ-задач
+| **Интеграции** | `openhands-cloud-api.md` | Подключение к OpenHands Cloud API, делегирование задач другому AI-агенту |
 
 ## Рекомендуемый порядок чтения для AI-агента / разработчика
 
