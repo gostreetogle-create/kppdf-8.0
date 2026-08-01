@@ -70,14 +70,19 @@ interface ClientRole {
 
     <section class="pi-page-frame pi-edge-bleed py-page-y">
       <div class="flex items-center justify-end mb-4">
-        <app-pi-button variant="default" size="sm" (click)="onCreate()" data-test="roles-admin-create">
+        <app-pi-button
+          variant="default"
+          size="sm"
+          (click)="onCreate()"
+          data-test="roles-admin-create"
+        >
           Создать роль
         </app-pi-button>
       </div>
       @if (loading()) {
         <p class="text-sm text-muted-foreground">Загрузка…</p>
       } @else if (error(); as err) {
-        <p class="text-sm text-red-600" data-testid="roles-admin-error">
+        <p class="text-sm text-destructive" data-testid="roles-admin-error">
           {{ err }}
         </p>
       } @else {
@@ -250,7 +255,10 @@ export class RolesAdminPage {
    * Shared mutation runner: toast on success, refresh the table, and
    * map system-role 403 codes to the user-visible message.
    */
-  private silentRun(obs: Observable<SilentResult<ClientRole | { success: true }>>, successMsg: string): void {
+  private silentRun(
+    obs: Observable<SilentResult<ClientRole | { success: true }>>,
+    successMsg: string,
+  ): void {
     obs.subscribe((res) => {
       if (res.ok) {
         this.toast.success(successMsg);

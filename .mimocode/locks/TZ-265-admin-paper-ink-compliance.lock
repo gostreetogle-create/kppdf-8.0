@@ -1,0 +1,26 @@
+# TZ-265 — DONE lock
+TASK: TZ-265
+OWNER: Frontend CSS Architect (Buffy)
+CLOSED_AT: 2026-08-02
+PROTECTED_FILES:
+  - frontend/src/app/pages/admin/users-admin.page.ts
+  - frontend/src/app/pages/admin/roles-admin.page.ts
+  - frontend/src/app/pages/admin/user-form-dialog.component.ts
+  - frontend/src/app/pages/admin/role-form-dialog.component.ts
+  - frontend/src/app/pages/admin/reset-password-dialog.component.ts
+SUCCESSOR: TZ-264 (dialog unit tests against final components)
+NOTES:
+  - text-red-600 → text-destructive in users-admin.page.ts (line 83) and
+    roles-admin.page.ts (line 80) error messages (Tailwind hex → OKLCH token).
+  - hex fallbacks removed from var() in all 3 dialogs:
+    var(--color-muted, #7f7663) → var(--color-muted);
+    var(--color-ink, #191c1d) → var(--color-ink);
+    var(--color-paper, #f8f9fa) → var(--color-paper);
+    var(--color-rule, #d0c5af) → var(--color-rule);
+    var(--color-sunrise-warm, #735c00) → var(--color-sunrise-warm);
+    var(--color-destructive, #b91c1c) → var(--color-destructive).
+    Tokens are globally defined on :root in styles.css → fallbacks unnecessary.
+  - grep: 0 × text-red-600, 0 × hardcoded hex in 5 admin files.
+  - ng build --configuration=development PASS (0 errors); tsc exit 0;
+    jest admin 5/5 PASS.
+  - Builder (box-shadow canvas theme) NOT touched — separate TZ per spec.

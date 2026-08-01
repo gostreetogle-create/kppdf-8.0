@@ -4741,3 +4741,29 @@ template-синтаксис (NG5xxx) теперь ловится гейтом п
 tsc exit 0; git diff --check PASS. Code review: PASS.
 **Известные ограничения:** pre-commit hot-path не запускает ng build
 (слишком медленно) — полная проверка через run-project-checks/check:build.
+
+---
+
+## 2026-08-02 — TZ-265 closed (Admin — Paper & Ink токен-комплаенс)
+
+**Исполнитель:** Frontend CSS Architect (Buffy)
+**Статус:** Выполнено / Проверено
+**Что сделано кратко:** Admin-страницы и диалоги приведены к дизайн-системе
+Paper & Ink: `text-red-600` (Tailwind hex) заменён на токен
+`text-destructive` в error-сообщениях users-admin и roles-admin; во всех
+3 диалогах (user-form, role-form, reset-password) из `var()` убраны
+hex-фолбэки (#7f7663/#191c1d/#f8f9fa/#d0c5af/#735c00/#b91c1c) — токены
+`--color-*` глобально определены на :root в styles.css.
+**Затронутые файлы/папки:**
+- frontend/src/app/pages/admin/users-admin.page.ts
+- frontend/src/app/pages/admin/roles-admin.page.ts
+- frontend/src/app/pages/admin/user-form-dialog.component.ts
+- frontend/src/app/pages/admin/role-form-dialog.component.ts
+- frontend/src/app/pages/admin/reset-password-dialog.component.ts
+**Verification:** grep 0 × text-red-600, 0 × hex в 5 файлах; ng build
+--configuration=development PASS (0 errors); tsc exit 0; jest admin 5/5
+PASS; git diff --check PASS. Code review: PASS.
+**Известные ограничения:** builder canvas box-shadow (отдельная тема
+«бумага на столе») НЕ тронут — отдельный TZ/решение PO; визуальная
+проверка destructive-цвета на /admin/users,/admin/roles —
+MANUAL_BROWSER_CHECK_REQUIRED.

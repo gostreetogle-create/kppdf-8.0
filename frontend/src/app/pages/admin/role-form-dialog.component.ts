@@ -193,7 +193,7 @@ export interface RoleFormResult {
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.1em;
-        color: var(--color-muted, #7f7663);
+        color: var(--color-muted);
       }
 
       .field__hint {
@@ -205,9 +205,9 @@ export interface RoleFormResult {
         width: 100%;
         padding: 8px 10px;
         font-size: 13px;
-        color: var(--color-ink, #191c1d);
-        background: var(--color-paper, #f8f9fa);
-        border: 1px solid var(--color-rule, #d0c5af);
+        color: var(--color-ink);
+        background: var(--color-paper);
+        border: 1px solid var(--color-rule);
         border-radius: 2px;
         outline: none;
         transition: border-color 120ms ease;
@@ -215,7 +215,7 @@ export interface RoleFormResult {
       }
 
       .field__input:focus {
-        border-color: var(--color-sunrise-warm, #735c00);
+        border-color: var(--color-sunrise-warm);
       }
 
       .field__input:disabled {
@@ -225,7 +225,7 @@ export interface RoleFormResult {
 
       .field__error {
         font-size: 12px;
-        color: var(--color-destructive, #b91c1c);
+        color: var(--color-destructive);
         margin: 0;
       }
 
@@ -251,7 +251,7 @@ export interface RoleFormResult {
       }
 
       .role-form__section {
-        border: 1px solid var(--color-rule, #d0c5af);
+        border: 1px solid var(--color-rule);
         border-radius: 3px;
         padding: 10px 12px 12px;
         margin: 0;
@@ -265,7 +265,7 @@ export interface RoleFormResult {
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        color: var(--color-ink, #191c1d);
+        color: var(--color-ink);
         padding: 0 4px;
       }
 
@@ -282,7 +282,7 @@ export interface RoleFormResult {
       }
 
       .role-form__select-all:hover {
-        color: var(--color-sunrise-warm, #735c00);
+        color: var(--color-sunrise-warm);
       }
 
       .role-form__section-grid {
@@ -309,7 +309,7 @@ export interface RoleFormResult {
         margin-top: 2px;
         width: 14px;
         height: 14px;
-        accent-color: var(--color-sunrise-warm, #735c00);
+        accent-color: var(--color-sunrise-warm);
         flex-shrink: 0;
       }
 
@@ -323,7 +323,7 @@ export interface RoleFormResult {
       .role-form__perm-key {
         font-family: 'JetBrains Mono', monospace;
         font-size: 11px;
-        color: var(--color-ink, #191c1d);
+        color: var(--color-ink);
         word-break: break-all;
       }
 

@@ -73,14 +73,19 @@ interface ClientUser {
 
     <section class="pi-page-frame pi-edge-bleed py-page-y">
       <div class="flex items-center justify-end mb-4">
-        <app-pi-button variant="default" size="sm" (click)="onCreate()" data-test="users-admin-create">
+        <app-pi-button
+          variant="default"
+          size="sm"
+          (click)="onCreate()"
+          data-test="users-admin-create"
+        >
           Создать пользователя
         </app-pi-button>
       </div>
       @if (loading()) {
         <p class="text-sm text-muted-foreground">Загрузка…</p>
       } @else if (error(); as err) {
-        <p class="text-sm text-red-600" data-testid="users-admin-error">{{ err }}</p>
+        <p class="text-sm text-destructive" data-testid="users-admin-error">{{ err }}</p>
       } @else {
         <table class="pi-table w-full" data-testid="users-admin-table">
           <thead>
@@ -125,7 +130,9 @@ interface ClientUser {
                       type="button"
                       class="pi-icon-btn pi-focus-ring"
                       (click)="onToggleActive(u)"
-                      [attr.aria-label]="u.isActive ? 'Деактивировать ' + u.username : 'Активировать ' + u.username"
+                      [attr.aria-label]="
+                        u.isActive ? 'Деактивировать ' + u.username : 'Активировать ' + u.username
+                      "
                       [title]="u.isActive ? 'Деактивировать' : 'Активировать'"
                       data-test="users-admin-toggle-active"
                     >

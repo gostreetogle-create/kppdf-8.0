@@ -167,7 +167,7 @@ export interface UserFormResult {
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.1em;
-        color: var(--color-muted, #7f7663);
+        color: var(--color-muted);
       }
 
       .field__label--inline {
@@ -175,34 +175,34 @@ export interface UserFormResult {
         letter-spacing: 0;
         font-family: inherit;
         font-size: 13px;
-        color: var(--color-ink, #191c1d);
+        color: var(--color-ink);
       }
 
       .field__input {
         width: 100%;
         padding: 8px 10px;
         font-size: 13px;
-        color: var(--color-ink, #191c1d);
-        background: var(--color-paper, #f8f9fa);
-        border: 1px solid var(--color-rule, #d0c5af);
+        color: var(--color-ink);
+        background: var(--color-paper);
+        border: 1px solid var(--color-rule);
         border-radius: 2px;
         outline: none;
         transition: border-color 120ms ease;
       }
 
       .field__input:focus {
-        border-color: var(--color-sunrise-warm, #735c00);
+        border-color: var(--color-sunrise-warm);
       }
 
       .field__checkbox {
         width: 16px;
         height: 16px;
-        accent-color: var(--color-sunrise-warm, #735c00);
+        accent-color: var(--color-sunrise-warm);
       }
 
       .field__error {
         font-size: 12px;
-        color: var(--color-destructive, #b91c1c);
+        color: var(--color-destructive);
         margin: 0;
       }
     `,
