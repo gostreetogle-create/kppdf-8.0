@@ -34,7 +34,7 @@
 │  │   app-layout,     │   │  ├── database/ (connectionFactory,│
 │  │   kit-layout      │   │  │   softDelete, audit, userContext)│
 │  ├── pages/          │   │  ├── health.controller.ts         │
-│  │   materials,      │   │  └── modules/ (65+ entities)      │
+│  │   materials,      │   │  └── modules/ (72 schema files,     │
 │  │   organizations,  │   │      auth, product, material,     │
 │  │   dictionaries,   │   │      order, warehouse, tender,    │
 │  │   login,          │   │      document-template, ...       │

@@ -1,0 +1,19 @@
+# TZ-257.A.1 — DONE lock
+TASK: TZ-257.A.1
+OWNER: autonomous-agent (Codebuff session)
+CLOSED_AT: 2026-08-01
+COMMIT: 401bfc6
+PROTECTED_FILES:
+  - backend/src/common/guards/last-admin.guard.ts
+  - backend/src/modules/admin/users-admin.controller.ts
+  - backend/src/modules/user/user.service.ts
+  - frontend/src/app/pages/admin/users-admin.page.ts
+  - frontend/src/app/pages/admin/user-form-dialog.component.ts
+  - frontend/src/app/pages/admin/reset-password-dialog.component.ts
+SUCCESSOR: TZ-257.B (DTO whitelist hardening — see TZ-260 handoff archive)
+NOTES:
+  - LastAdminGuard PATCH-demote gap closed (403 LAST_ADMIN_INVARIANT)
+  - adminResetPassword without oldPassword + refreshTokenVersion rotation
+  - production-order org-scope applied (11th controller, closes TZ-239.A gap)
+  - frontend full mutation surface + 5 deterministic unit tests
+  - backend 243/243 · frontend 559/559 · tsc 0/0 · eslint 0 errors

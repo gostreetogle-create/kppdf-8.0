@@ -137,3 +137,17 @@ desktop/
 ---
 
 **End of TZD-00 · контекст зафиксирован. Следующие задачи — по roadmap §5.**
+
+---
+
+ARCHIVE_MARKER
+outcome: MASTER-KEEPER (roadmap/context doc — archived for folder hygiene 2026-08-01)
+closed_at: 2026-08-01
+closed_by: autonomous-agent (Codebuff session)
+source_task: tasks/TZD-00.md (master context, NOT implementation)
+affected_files: none (context keeper)
+acceptance_status: N/A (no acceptance criteria — roadmap doc)
+verification: N/A
+review: N/A
+lock_file: not-applicable (master doc)
+successor_required: TRUE (TZD-01..10 roadmap — restore to tasks/ when desktop v0.4+ work resumes)

@@ -4627,3 +4627,17 @@ Phase 0 Round 2 closed TZ-CLEANUP with explicit DONE_PARTIAL outcome. The first 
 **AC state (at the time):** 8/15 PASSING after AC4. The remaining seven criteria were subsequently completed in the canonical cleanup pass; see `tasks/_archive/2026-08/TZ-CLEANUP-R2.done.md`.
 
 **Historical note:** changes were initially left uncommitted during the audit session. The canonical cleanup is now complete in the working tree and will be committed and pushed to `origin/main` after the final verification gate.
+
+---
+
+## 2026-08-01 — Session close: TZ-257.A.1 + TZ-259 + TZ-256.B (all shipped, verified, archived)
+
+Closed this session (all checks basher-verified: backend 243/243, frontend 559/559, tsc 0/0, eslint 0 errors, diff --check clean):
+
+- **TZ-257.A.1** — admin user mutations complete: LastAdminGuard PATCH-demote gap, `AdminResetPasswordDto` + `adminResetPassword()` (no oldPassword, refreshTokenVersion rotation), production-order org-scope (11th controller), frontend users-admin CRUD surface (create/edit/reset-password/activate/deactivate/delete + dialogs + 5 deterministic specs). Archived → `tasks/_archive/2026-08/TZ-257.A.1.done.md` + lock.
+- **TZ-259** — builder UX checklist 259.1–259.6: dialog RAF-after-dispose guard, preview mode (hides grid/guides/selection-chrome, blocks drag), grid visibility 0.18→0.42, positioned-block resize handles (edges+corners) + dblclick size editor, magnetic snap + alignment guides for positioned drag, multi-select alignment toolbar (align/distribute/same-size). Archived → `tasks/_archive/2026-08/TZ-259.done.md` + lock.
+- **TZ-256.B** — roles CRUD (real /admin body remainder): POST/PATCH/DELETE with SystemRoleGuard (SYSTEM_ROLE_FROZEN/ESCALATION), create forces isSystem:false, audit contract admin.role.created/updated/deleted, `ClientRole.label`, frontend roles-admin CRUD with role-form dialog, system roles read-only, 403 mapping, 5 specs. Archived → `tasks/_archive/2026-08/TZ-256.B.done.md` + lock.
+- **TZ-260 handoff** — all 7 outstanding items closed (STATUS reconciliation, /admin body, doc-sync, entities metric 65→72, locks schema, TZ-258.A ORPHANED, task files). Archived → `tasks/_archive/2026-08/TZ-260.done.md`.
+- **TZD-00** (desktop master roadmap) archived as MASTER-KEEPER → `tasks/_archive/2026-08/TZD-00.done.md` (restore to tasks/ when desktop v0.4+ resumes).
+- **STATUS.md** — DONE table 10→14 rows (TZ-256.A, TZ-257.A.1, TZ-256.B, TZ-259), metrics refresh (72 schemas, 559 tests / 59 suites), TZ-258.A → ORPHANED. README/ARCHITECTURE stale metrics refreshed.
+- **tasks/ folder empty** (only `_archive/`) — signals all in-folder TZ tasks completed.

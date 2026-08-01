@@ -1,0 +1,22 @@
+# TZ-259 — DONE lock
+TASK: TZ-259
+OWNER: autonomous-agent (Codebuff session)
+CLOSED_AT: 2026-08-01
+COMMIT: 594ddce
+PROTECTED_FILES:
+  - frontend/src/app/pages/doc-constructor/builder/block-renderer.component.ts
+  - frontend/src/app/pages/doc-constructor/builder/block-renderer-state.service.ts
+  - frontend/src/app/pages/doc-constructor/builder/builder-canvas.component.ts
+  - frontend/src/app/pages/doc-constructor/builder/builder-inspector.component.ts
+  - frontend/src/app/pages/doc-constructor/builder/snap-engine.ts
+  - frontend/src/app/pages/doc-constructor/builder/builder.page.ts
+  - frontend/src/app/shared/ui/dialog/pi-dialog.service.ts
+SUCCESSOR: TZD-01 (desktop v0.4 AI-pipeline — see TZD-00 roadmap in archive)
+NOTES:
+  - 259.1 dialog RAF-after-dispose guard (TZ-259.1)
+  - 259.2 preview mode hides grid/guides/selection-chrome, blocks drag
+  - 259.3 grid visibility 0.18 → 0.42 contrast
+  - 259.4 positioned-block resize handles (edges+corners) + dblclick size editor
+  - 259.5 magnetic snap + alignment guides for positioned drag
+  - 259.6 multi-select alignment toolbar (align/distribute/same-size)
+  - builder+snap-engine 64/64 · full 559/559 · tsc 0/0

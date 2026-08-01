@@ -158,7 +158,7 @@ NO_COLOR=1 node start.mjs     # отключить ANSI-цвета
 ### 🛠️ Под капотом
 
 Архитектура проекта:
-- Backend: NestJS 10 + Mongoose 8 + MongoDB Replica Set — 19+ modules, 65+ entities (TZ-02..TZ-18)
+- Backend: NestJS 10 + Mongoose 8 + MongoDB Replica Set — 73 module files, 72 schema files (basher-verified 2026-08-01)
 - Frontend: Angular 20 standalone + Signals + OnPush + Paper & Ink design system — 24+ UI primitives (TZ-19..TZ-104)
 - DSL: defineEntity, SubmitGuard, IdempotencyInterceptor, PiEntityListComponent (TZ-232)
 - Auth: JWT (access+refresh), bcrypt, RBAC, 30+ permission keys (TZ-04)
@@ -269,7 +269,7 @@ frontend/src/app/shared/ui/
 - ✅ **Стек проекта:** NestJS 10 + Angular 20 + MongoDB 7 Replica Set, manifests и lock-файлы синхронизированы
 - ✅ **Код приложения:** backend и frontend реализованы; текущие ограничения и следующие этапы отражены в `STATUS.md` и `progress.md`
 - 📋 **Ближайший backlog:** security/RBAC follow-ups перечислены в `STATUS.md` и архиве задач; отсутствие файлов в `tasks/` означает отсутствие выданной активной задачи, а не отсутствие roadmap.
-- 📋 **Security batch TZ-247:** idempotency и связанные проверки требуют отдельного follow-up.
+- ✅ **Security batch TZ-247:** idempotency middleware + storage + smoke-скрипт реализованы (backend/src/common/idempotency/), live REPLAY/CONFLICT проверены — DONE.
 - 📋 **Security batch TZ-248:** CORS/trust-proxy проверены и зафиксированы в архиве.
 - 📋 **Security batch TZ-255:** backend permissions guard и boot validation уже зафиксированы в архиве.
 - 📋 **Security batch TZ-256:** capability guard и frontend authorization имеют отдельные тестовые follow-ups.

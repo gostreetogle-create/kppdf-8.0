@@ -1,0 +1,17 @@
+# TZ-256.B — DONE lock
+TASK: TZ-256.B
+OWNER: autonomous-agent (Codebuff session)
+CLOSED_AT: 2026-08-01
+COMMIT: 8ae6b24
+PROTECTED_FILES:
+  - backend/src/modules/admin/roles-admin.controller.ts
+  - backend/src/modules/admin/dto/mapper.ts
+  - frontend/src/app/pages/admin/roles-admin.page.ts
+  - frontend/src/app/pages/admin/role-form-dialog.component.ts
+SUCCESSOR: TZ-257.B (permission-catalog UI + DTO whitelist hardening)
+NOTES:
+  - real /admin body remainder: roles CRUD (create/patch/delete)
+  - SystemRoleGuard per-method (SYSTEM_ROLE_FROZEN / SYSTEM_ROLE_ESCALATION)
+  - create forces isSystem:false; audit actions admin.role.created/updated/deleted
+  - frontend: system roles read-only, silent-* helpers, 403 mapping
+  - backend roles-admin 5/5 · backend full 243/243 · tsc 0/0
