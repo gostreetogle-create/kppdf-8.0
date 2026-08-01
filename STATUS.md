@@ -470,9 +470,9 @@ Autonomous backend engineer (`Codebuff`) провёл полный аудит 10
 | Backend | Modules | 73 files |
 | Backend | Files | ~285 |
 | Backend | Build time | ~10s |
-| Frontend | Pages (router) | 22 (login + 6 operational + 8 /kit/* showcase + /work-types + /modules + /modules/:id + /products/:id + **/doc-constructor/texts + /doc-constructor/tables + /doc-constructor/builder + /doc-constructor/builder/:id** — TZ-86 +4) |
+| Frontend | Pages (router) | 23 (login + operational + /kit/* showcase + /admin placeholder — см. app.routes.ts) |
 | Frontend | UI components | 24+ (Paper & Ink primitives) |
-| Frontend | Unit tests | 242 (21 suites — TZ-83 +11 specs) |
+| Frontend | Unit tests | 536 (58 suites) |
 | Frontend | Bundle size | 542.84 kB initial / ~155 kB transfer |
 | Frontend | Build time | ~2s |
 | Backend | E2E specs | 7 baseline (post-TZ count см. archive) |
