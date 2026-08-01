@@ -86,6 +86,24 @@ describe('capabilityRouteGuard (TZ-256 §ШАГ 2)', () => {
     expect(tree.toString()).toBe('/forbidden');
   });
 
+  it('TZ-262: manager with only user:read is blocked from user:admin-gated route', () => {
+    // Backend GET /api/admin/users requires @Permissions('user:admin').
+    // A manager holding only `user:read` (self-service) must NOT pass
+    // the route gate — direct navigation to /admin/users → /forbidden.
+    TestBed.inject(AuthService).user.set({
+      id: 'm',
+      username: 'm',
+      email: 'm@x',
+      displayName: 'M',
+      role: 'manager',
+      permissions: ['user:read'],
+    });
+    expect(invoke({ capabilities: ['user:read'] })).toBe(true); // still allowed on read-gated routes
+    const result = invoke({ capabilities: ['user:admin'] });
+    expect(result instanceof UrlTree).toBe(true);
+    expect((result as UrlTree).toString()).toBe('/forbidden');
+  });
+
   it('admin shortcut: user with role="admin" and empty perms bypasses gate', () => {
     TestBed.inject(AuthService).user.set({
       id: 'a',

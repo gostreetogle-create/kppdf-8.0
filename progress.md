@@ -4658,3 +4658,55 @@ Closed this session (all checks basher-verified: backend 243/243, frontend 559/5
   tsc 0/0, eslint 0 errors, diff --check clean. Code reviewed by code-reviewer-deepseek-flash
   (firstValueFrom fix + isSystem:false assert confirmed).
 - Archived: tasks/_archive/2026-08/TZ-257.B.done.md + lock. STATUS.md DONE 14→15 rows.
+
+---
+
+## 2026-08-02 — TZ-261 closed (admin dialogs — as-casts out of templates, P0)
+
+**Исполнитель:** Frontend Component Engineer (Buffy)
+**Статус:** Выполнено / Проверено
+**Что сделано кратко:** Устранён P0-блокер — frontend не компилировался
+(NG5002/TS2339/TS2531) из-за TypeScript-кастов `as` внутри выражений Angular
+templates в 3 admin-диалогах. 11 кастов заменены на методы-обработчики
+(onUsernameInput/onDisplayNameInput/onEmailInput/onPasswordInput/onRoleChange/
+onActiveChange в user-form; onNameInput/onLabelInput/onDescriptionInput в role-form;
+onPasswordInput/onConfirmInput в reset-password), где каст легален в теле `.ts`.
+Поведение не изменилось: те же сигналы, те же события input/change.
+**Затронутые файлы/папки:**
+- frontend/src/app/pages/admin/user-form-dialog.component.ts
+- frontend/src/app/pages/admin/role-form-dialog.component.ts
+- frontend/src/app/pages/admin/reset-password-dialog.component.ts
+**Verification:** ng build --configuration=development PASS (0 errors, 4.5s);
+tsc -p tsconfig.app.json --noEmit exit 0; jest src/app/pages/admin 5/5 PASS;
+grep по трём файлам — 0 вхождений `target as HTML` в template.
+Code review: PASS (code-reviewer-deepseek-flash).
+**Известные ограничения:** браузерная проверка диалогов (/admin/users, создание
+пользователя, сброс пароля) — MANUAL_BROWSER_CHECK_REQUIRED (dev-server не
+поднят в сессии); unit-тесты диалогов — отдельная задача TZ-264.
+
+---
+
+## 2026-08-02 — TZ-262 closed (admin-gates capability alignment)
+
+**Исполнитель:** Frontend Architect (Buffy)
+**Статус:** Выполнено / Проверено
+**Что сделано кратко:** Выровнены frontend capability-гейты admin-страниц с
+backend-правами (TZ-256 §0 «FRONTEND VISIBILITY = UX»). У маршрута
+`/admin/users` и nav-элемента «Пользователи» capabilities изменены с
+`['user:read']` на `['user:admin']` — backend GET /api/admin/users требует
+@Permissions('user:admin') + @Roles('admin'), поэтому гейт `user:read` давал
+тупик UX (страница открывалась, но backend отвечал 403). `/admin/roles`
+оставлен `role:read` — совпадает с backend @Permissions('role:read').
+Добавлен unit-тест: manager с user:read без user:admin → /forbidden на
+user:admin-гейте (AC #3); admin-shortcut bypass уже покрыт (AC #4).
+**Затронутые файлы/папки:**
+- frontend/src/app/app.routes.ts
+- frontend/src/app/layout/app-layout.component.ts
+- frontend/src/app/core/capabilities/capability-route.guard.spec.ts
+**Verification:** ng build --configuration=development PASS (0 errors);
+tsc --noEmit exit 0; jest guard + admin 14/14 PASS (включая новый тест TZ-262).
+Code review: PASS (code-reviewer-deepseek-flash).
+**Известные ограничения:** браузерная проверка двух ролей (admin видит
+«Пользователи» + 200; manager с user:read — пункт скрыт + /forbidden при
+прямом переходе) — MANUAL_BROWSER_CHECK_REQUIRED (dev-server не поднят в
+сессии); поведение гварда доказано unit-тестом.

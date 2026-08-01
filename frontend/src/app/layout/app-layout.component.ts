@@ -116,7 +116,10 @@ const NAV_CATEGORIES: NavCategory[] = [
       {
         path: '/admin/users',
         label: 'Пользователи',
-        capabilities: ['user:read'],
+        // TZ-262 (2026-08-02): выровнено с backend GET /api/admin/users
+        // (@Permissions('user:admin')). user:read без user:admin → пункт
+        // скрыт из меню (TZ-256 §0 «FRONTEND VISIBILITY = UX»).
+        capabilities: ['user:admin'],
       },
       {
         path: '/admin/roles',
@@ -233,12 +236,10 @@ export class AppLayoutComponent {
    * aligned.
    */
   protected readonly navCategories = computed<readonly NavCategory[]>(() => {
-    return NAV_CATEGORIES
-      .map((cat) => ({
-        ...cat,
-        items: cat.items.filter((item) => this.caps.hasAny(item.capabilities)),
-      }))
-      .filter((cat) => cat.items.length > 0);
+    return NAV_CATEGORIES.map((cat) => ({
+      ...cat,
+      items: cat.items.filter((item) => this.caps.hasAny(item.capabilities)),
+    })).filter((cat) => cat.items.length > 0);
   });
 
   /** Source of truth: signal-mapped URL from Router NavigationEnd events. */

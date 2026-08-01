@@ -996,6 +996,8 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 | TZ-257.B | `tasks/_archive/2026-08/TZ-257.B.done.md` (admin DTO-whitelist + permission catalog UI) | `.mimocode/locks/TZ-257.B-permissions-catalog.lock` |
 | TZ-258 | `tasks/_archive/2026-08/TZ-258.done.md` | `.mimocode/locks/TZ-258-protected-onboarding.lock` |
 | TZ-259 | `tasks/_archive/2026-08/TZ-259.done.md` (builder UX 259.1–259.6) | `.mimocode/locks/TZ-259-builder-ux.lock` |
+| TZ-261 | `tasks/_archive/2026-08/TZ-261.done.md` (admin-dialogs template as-casts fixed — P0, ng build 0 errors) | `.mimocode/locks/TZ-261-admin-dialogs-template-as-casts.lock` |
+| TZ-262 | `tasks/_archive/2026-08/TZ-262.done.md` (admin-gates capability alignment: `/admin/users` route+nav `user:read` → `user:admin`) | `.mimocode/locks/TZ-262-admin-gates-capability-alignment.lock` |
 
 **Code evidence:** все 15 файлов подтверждены через grep/ls на диске (basher-verified this session). TZ-257.A.1 / TZ-256.B / TZ-259 / TZ-257.B реализованы и закоммичены в этой сессии; остальные — filesystem cleanup + archive creation.
 

@@ -53,7 +53,7 @@ export interface UserFormResult {
             <input
               class="field__input"
               [value]="username()"
-              (input)="username.set(($event.target as HTMLInputElement).value)"
+              (input)="onUsernameInput($event)"
               autocomplete="off"
               data-test="user-form-username"
             />
@@ -64,7 +64,7 @@ export interface UserFormResult {
             <input
               class="field__input"
               [value]="displayName()"
-              (input)="displayName.set(($event.target as HTMLInputElement).value)"
+              (input)="onDisplayNameInput($event)"
               autocomplete="off"
               data-test="user-form-display-name"
             />
@@ -76,7 +76,7 @@ export interface UserFormResult {
               class="field__input"
               type="email"
               [value]="email()"
-              (input)="email.set(($event.target as HTMLInputElement).value)"
+              (input)="onEmailInput($event)"
               autocomplete="off"
               data-test="user-form-email"
             />
@@ -89,7 +89,7 @@ export interface UserFormResult {
                 class="field__input"
                 type="password"
                 [value]="password()"
-                (input)="password.set(($event.target as HTMLInputElement).value)"
+                (input)="onPasswordInput($event)"
                 autocomplete="new-password"
                 data-test="user-form-password"
               />
@@ -101,7 +101,7 @@ export interface UserFormResult {
             <select
               class="field__input"
               [value]="role()"
-              (change)="role.set(($event.target as HTMLSelectElement).value)"
+              (change)="onRoleChange($event)"
               data-test="user-form-role"
             >
               @for (r of roles; track r) {
@@ -115,7 +115,7 @@ export interface UserFormResult {
               type="checkbox"
               class="field__checkbox"
               [checked]="isActive()"
-              (change)="isActive.set(($event.target as HTMLInputElement).checked)"
+              (change)="onIsActiveChange($event)"
               data-test="user-form-active"
             />
             <span class="field__label field__label--inline">Активен</span>
@@ -221,6 +221,30 @@ export class UserFormDialogComponent {
   protected readonly role = signal<string>(this.data.user?.role ?? 'user');
   protected readonly isActive = signal<boolean>(this.data.user?.isActive ?? true);
   protected readonly error = signal<string | null>(null);
+
+  protected onUsernameInput(event: Event): void {
+    this.username.set((event.target as HTMLInputElement).value);
+  }
+
+  protected onDisplayNameInput(event: Event): void {
+    this.displayName.set((event.target as HTMLInputElement).value);
+  }
+
+  protected onEmailInput(event: Event): void {
+    this.email.set((event.target as HTMLInputElement).value);
+  }
+
+  protected onPasswordInput(event: Event): void {
+    this.password.set((event.target as HTMLInputElement).value);
+  }
+
+  protected onRoleChange(event: Event): void {
+    this.role.set((event.target as HTMLSelectElement).value);
+  }
+
+  protected onIsActiveChange(event: Event): void {
+    this.isActive.set((event.target as HTMLInputElement).checked);
+  }
 
   protected readonly canSubmit = (): boolean => {
     if (this.username().trim().length < 3) return false;

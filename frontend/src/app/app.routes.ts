@@ -249,17 +249,19 @@ export const routes: Routes = [
       {
         path: 'admin/users',
         canMatch: [authGuard, capabilityRouteGuard],
-        data: { capabilities: ['user:read'] },
-        loadComponent: () =>
-          import('./pages/admin/users-admin.page').then((m) => m.UsersAdminPage),
+        // TZ-262 (2026-08-02): gate выровнен с backend GET /api/admin/users
+        // (@Permissions('user:admin') — LIST перечисляет всех пользователей;
+        // user:read зарезервирован для self-service). user:read без user:admin
+        // теперь не проходит гейт → /forbidden, а не тупик 403 на странице.
+        data: { capabilities: ['user:admin'] },
+        loadComponent: () => import('./pages/admin/users-admin.page').then((m) => m.UsersAdminPage),
         title: 'KPPDF — Пользователи',
       },
       {
         path: 'admin/roles',
         canMatch: [authGuard, capabilityRouteGuard],
         data: { capabilities: ['role:read'] },
-        loadComponent: () =>
-          import('./pages/admin/roles-admin.page').then((m) => m.RolesAdminPage),
+        loadComponent: () => import('./pages/admin/roles-admin.page').then((m) => m.RolesAdminPage),
         title: 'KPPDF — Роли',
       },
       // TZ-256.A remainder — `/admin` placeholder route (sibling to
@@ -270,9 +272,7 @@ export const routes: Routes = [
       {
         path: 'admin',
         loadComponent: () =>
-          import('./pages/admin/_admin-placeholder.page').then(
-            (m) => m.AdminPlaceholderPage,
-          ),
+          import('./pages/admin/_admin-placeholder.page').then((m) => m.AdminPlaceholderPage),
         title: 'KPPDF — Администрирование',
       },
     ],

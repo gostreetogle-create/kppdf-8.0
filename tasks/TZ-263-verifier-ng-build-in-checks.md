@@ -1,0 +1,101 @@
+═══════════════════════════════════════════════════════════════
+TZ-263: Verifier — добавить ng build в run-project-checks
+═══════════════════════════════════════════════════════════════
+
+РОЛЬ АГЕНТА: Frontend Error Handling Engineer / DevOps
+
+ЗАВИСИМОСТИ: Нет (независима от TZ-261, но логически её предотвращает в будущем)
+
+LAYER: 1 (docs/config — НЕ CSS: трогает skill-файл, git hook и docs;
+не код, низкий конфликт-профиль, допускается параллельно с TZ-262)
+
+CONFLICT KEYS:
+.agents/skills/run-project-checks/SKILL.md;
+.husky/pre-commit;
+docs/AI-AGENT-GUIDE.md;
+frontend/package.json
+
+═══════════════════════════════════════════════════════════════
+ИСХОДНОЕ СОСТОЯНИЕ
+═══════════════════════════════════════════════════════════════
+
+1. `run-project-checks` (skill, вызываемый pre-commit) запускает ТОЛЬКО:
+   1) frontend tsc --noEmit; 2) frontend jest; 3) backend tsc; 4) backend
+   jest; 5) git diff --check. НЕ запускает `ng build` / `ng serve`.
+
+2. Проблемы / неточности текущего состояния:
+   - `tsc --noEmit` НЕ проверяет Angular templates (известно с TZ-86 F.6).
+   - В результате P0-баг TZ-261 (касты `as` в template трёх admin-диалогов)
+     прошёл: `tsc` exit 0, `jest` 5/5 PASS, а `ng serve` не компилируется.
+   - `.husky/pre-commit` → `pnpm run lint-staged` — только eslint+prettier,
+     без компиляции templates.
+   - Следствие: «тесты дают ложное чувство покрытия» — именно этот класс
+     ошибок (template-синтаксис) не ловится ни одним гейтом.
+
+3. Контекст (внешние зависимости, conventions, нюансы):
+   - Доказательство (2026-08-02): `tsc -p tsconfig.app.json --noEmit`
+     → exit 0 ПРИ НАЛИЧИИ NG5002/TS2339/TS2531 в admin-диалогах;
+     `ng build --configuration=development` → fail.
+   - `ng build` в development-конфигурации быстрее production и ловит
+     template-ошибки (NG-компилятор). Опционально можно ограничить
+     `--configuration=development` без production-минификации.
+
+═══════════════════════════════════════════════════════════════
+ЧТО ДЕЛАТЬ
+═══════════════════════════════════════════════════════════════
+
+ШАГ 1: В `.agents/skills/run-project-checks/SKILL.md` добавить шаг 2.5
+       (или переставить после п.1):
+
+   cd frontend && pnpm exec ng build --configuration=development
+
+   (после frontend tsc, перед frontend jest; либо в конец списка —
+   главное, чтобы шаг присутствовал и был отдельной строкой команды).
+
+ШАГ 2: В `docs/AI-AGENT-GUIDE.md` §5 «Чек-лист перед сабмитом любой
+       задачи» добавить строку:
+
+   - [ ] `cd frontend && pnpm exec ng build --configuration=development` — 0 ошибок (template typecheck, tsc не ловит)
+
+ШАГ 3: В `.husky/pre-commit` — НЕ добавлять полный ng build в hot-path
+       (медленно). Вместо этого: оставить lint-staged; добавить заметку
+       комментарием, что полная проверка — через run-project-checks /
+       CI. (Если PO хочет — вынести build в отдельный скрипт
+       `pnpm check:build`, вызываемый вручную; решение задокументировать.)
+
+ШАГ 4: Проверка регрессии: вручную вставить заведомо сломанный template
+       (например, `(input)="x.set(($event.target as HTMLInputElement).value)"`
+       во временный компонент), прогнать `ng build` — убедиться, что
+       команда ловит ошибку; затем откатить.
+
+═══════════════════════════════════════════════════════════════
+ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+═══════════════════════════════════════════════════════════════
+
+ИЗМЕНЯТЬ:
+- .agents/skills/run-project-checks/SKILL.md   [добавить шаг ng build]
+- docs/AI-AGENT-GUIDE.md                      [добавить пункт в чек-лист §5]
+- .husky/pre-commit                           [комментарий о full-check; решение по hot-path]
+
+НЕ ИЗМЕНЯТЬ (явно перечислите):
+- frontend/src/** (кроме временной регрессионной проверки, которая откатывается)
+- backend/**, package.json, pnpm-lock.yaml, node_modules
+- _templates/*, progress.md, ARCHITECTURE.md
+
+═══════════════════════════════════════════════════════════════
+КРИТЕРИИ ПРИЁМКИ
+═══════════════════════════════════════════════════════════════
+
+1. В `run-project-checks/SKILL.md` присутствует команда `ng build
+   --configuration=development` (отдельной строкой).
+2. В `docs/AI-AGENT-GUIDE.md` §5 чек-лист содержит пункт про ng build.
+3. Регрессионная проверка: заведомо сломанный template → ng build падает
+   с ошибкой NG5xxx; после отката — exit 0.
+4. `git diff --check` без замечаний.
+
+═══════════════════════════════════════════════════════════════
+TZF-00: ОБЯЗАТЕЛЬНАЯ ФИНАЛИЗАЦИЯ
+═══════════════════════════════════════════════════════════════
+
+После завершения работы применить TZF-00 (_templates/TZF-00.txt).
+Выполняет агент-исполнитель ПОСЛЕ TZ-263.

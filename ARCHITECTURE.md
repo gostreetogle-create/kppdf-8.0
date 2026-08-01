@@ -102,9 +102,9 @@
 | Backend common | `backend/src/common/` | Guards, interceptors, decorators, seeds. **CurrenciesSeed (TZ-102):** idempotent RUB/USD/EUR seed. |
 | Backend database | `backend/src/database/` | Connection, plugins (softDelete, audit, userContext) |
 | Backend scripts | `backend/scripts/` | `audit-di.ts` — DI cascade analyzer |
-| Frontend core | `frontend/src/app/core/` | Auth, interceptors, services, guards, tokens |
+| Frontend core | `frontend/src/app/core/` | Auth, interceptors, services, guards, tokens. **Capabilities (TZ-256/262):** `CapabilitiesService.hasAny()` OR-семантика, `capabilityRouteGuard` (CanMatchFn, утечка маршрута → `/forbidden`). **TZ-262 (2026-08-02):** гейты admin-маршрутов выровнены с backend — `/admin/users` (route + nav) теперь `user:admin` (backend `GET /api/admin/users` = `@Permissions('user:admin')`), `/admin/roles` остаётся `role:read`. Принцип: frontend-гейт = UX-видимость, backend — authority (TZ-255). |
 | Frontend layout | `frontend/src/app/layout/` | AppLayout (operational), KitLayout (UI showcase) |
-| Frontend pages | `frontend/src/app/pages/` | Login, materials, organizations, dictionaries, **categories**, products, orders, contracts, work-types, modules, modules/:id, products/:id, /kit/* showcase |
+| Frontend pages | `frontend/src/app/pages/` | Login, materials, organizations, dictionaries, **categories**, products, orders, contracts, work-types, modules, modules/:id, products/:id, /kit/* showcase. **Admin (TZ-257.A.1/256.B/261):** users-admin, roles-admin pages + 3 form-диалога. **TZ-261 (2026-08-02):** конвенция «никаких `as`-кастов в template-выражениях — только методы-обработчики (onXxxInput/onXxxChange)» закреплена; P0 (NG5002) устранён в 3 admin-диалогах. |
 | Frontend shared/ui | `frontend/src/app/shared/ui/` | 24+ Paper & Ink primitives (button, card, dialog, table, ...). **Dialog service (TZ-103):** closure-local overlay refs per DialogRef (no singleton), `parentDestroyRef` auto-close on caller destroy, RAF first-mount repositioning. |
 | Frontend shared/page | `frontend/src/app/shared/page/` | PageHeader, Section, Demo wrappers |
 | Frontend shared/command | `frontend/src/app/shared/command/` | ⌘K command palette |
