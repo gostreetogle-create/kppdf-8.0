@@ -1,8 +1,10 @@
 /**
  * Реестр импортёров файлов.
  *
- * Каждый импортёр: parse(file) → Promise<RawRow[]>.
- * Реализация — будущая TZ (Excel/csv: xlsx + papaparse; pdf: pdfjs-dist).
+ * Каждый импортёр: parse(source) → Promise<RawRow[]>.
+ * Источник — имя файла + байты (Tauri readFile даёт Uint8Array;
+ * drag&drop — ArrayBuffer). Реализация: excel/csv — v0.3,
+ * text/pdf — будущие TZ.
  */
 
 import { excelImporter } from './excel';
@@ -15,12 +17,18 @@ export interface RawRow {
   [column: string]: unknown;
 }
 
+/** Источник данных для импортёра: имя файла + байты. */
+export interface ImportSource {
+  name: string;
+  data: ArrayBuffer | Uint8Array;
+}
+
 export interface Importer {
   id: 'excel' | 'csv' | 'text' | 'pdf';
   label: string;
   extensions: string[];
-  /** TODO: реализация парсинга в соответствующей TZ. */
-  parse(file: File): Promise<RawRow[]>;
+  /** TODO: реализация парсинга (text/pdf — будущие TZ). */
+  parse(source: ImportSource): Promise<RawRow[]>;
 }
 
 export const importers: Importer[] = [
@@ -30,10 +38,10 @@ export const importers: Importer[] = [
   pdfImporter,
 ];
 
-/** Найти импортёр по расширению файла. */
-export function importerFor(file: File): Importer | undefined {
-  const dot = file.name.lastIndexOf('.');
+/** Найти импортёр по имени файла (по расширению). */
+export function importerFor(fileName: string): Importer | undefined {
+  const dot = fileName.lastIndexOf('.');
   if (dot === -1) return undefined; // нет расширения
-  const ext = file.name.slice(dot).toLowerCase();
+  const ext = fileName.slice(dot).toLowerCase();
   return importers.find((i) => i.extensions.includes(ext));
 }

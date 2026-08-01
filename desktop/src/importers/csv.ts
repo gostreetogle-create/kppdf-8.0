@@ -1,16 +1,15 @@
 /**
  * Импортёр CSV/TSV через papaparse.
- * TODO(import): разделитель (автодетект), BOM, кавычки, кодировка,
- * header-строка → RawRow[].
+ * TODO(import): header:true, динамический разделитель, BOM-strip.
  */
 
-import type { Importer, RawRow } from './index';
+import type { Importer, ImportSource, RawRow } from './index';
 
 export const csvImporter: Importer = {
   id: 'csv',
   label: 'CSV / TSV',
   extensions: ['.csv', '.tsv'],
-  async parse(_file: File): Promise<RawRow[]> {
-    throw new Error('TODO: парсинг CSV — будущая TZ (papaparse).');
+  async parse(_source: ImportSource): Promise<RawRow[]> {
+    throw new Error('TODO: парсинг CSV — следующая TZ (papaparse).');
   },
 };
