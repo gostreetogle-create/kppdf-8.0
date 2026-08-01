@@ -29,6 +29,8 @@ export interface BatchPostResult {
 /**
  * Шаг 1. Парсинг файла в сырые строки (importers/*).
  * TODO(import): выбор импортёра по расширению, прогресс.
+ * TODO(import): сигнатура устарела — контракт импортёров теперь
+ * ImportSource { name, data } (см. importers/index.ts), а не File.
  */
 export async function parseStep(_file: File): Promise<RawRow[]> {
   // TODO
