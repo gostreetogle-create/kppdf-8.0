@@ -325,6 +325,8 @@ rg -i '(embedding|vector.?search|cosine|ANN)' backend/src frontend/src
 
 ## Security Architecture (TZ-91)
 
+**Canonical contract:** `[docs/RBAC-CONTRACT.md](docs/RBAC-CONTRACT.md)`, runtime module `backend/src/common/contracts/rbac-contract.ts` — TZ-254 ships the `<section>:<action>` permission format, `effectivePermissions(user, role)` algorithm, system-role invariants (`SYSTEM_ROLE_NAMES` frozen: admin/manager/user), and the `OWNERSHIP_BY_ENTITY` matrix that TZ-251/TZ-255/TZ-257/TZ-258 consume. Runbook for operators: see §3.1 of the RBAC contract.
+
 **Defense-in-depth chain** для всех sensitive endpoints (TZ-91 Phase A ships A.1+A.3+A.4+A.6; Phase B+C planned):
 
 - **JWT validate** (`JwtAuthGuard`, global `APP_GUARD`): access token (15m, `JWT_SECRET`) + payload versioning через `user.refreshTokenVersion` — инвалидация по всему refresh-tree при password change / logout.

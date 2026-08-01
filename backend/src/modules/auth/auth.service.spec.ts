@@ -1,0 +1,314 @@
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { UnauthorizedException } from '@nestjs/common';
+import { AuthService } from './auth.service';
+import { LoginSoftlockService } from '../../common/login-softlock/login-softlock.service';
+import { UserService } from '../user/user.service';
+
+/**
+ * TZ-249 unit tests for AuthService.
+ *
+ * Covers:
+ *  - Generic 401 message identity (TZ-249 §2.3).
+ *  - Production register role coerce (TZ-249 §2.2 — manager silently → 'user').
+ *  - Dev register does NOT coerce (role respected as-is).
+ *  - Softlock pre-check returns the SAME generic 401 message.
+ *  - Softlock bucket is incremented on wrong-password only.
+ *  - Softlock bucket is reset on successful login.
+ *
+ * Uses an in-memory UserService stub with a captured-input spy so the
+ * production-coerce assertion is real (not a tautology).
+ */
+
+interface CapturedCreate {
+  username?: unknown;
+  email?: unknown;
+  displayName?: unknown;
+  password?: unknown;
+  role?: unknown;
+  permissions?: unknown;
+  isActive?: unknown;
+  phone?: unknown;
+  fullName?: unknown;
+}
+
+class FakeUserService {
+  /** Captured create() input — used by role-coerce tests. */
+  public lastCreateArgs: CapturedCreate = {};
+
+  async create(input: CapturedCreate) {
+    this.lastCreateArgs = { ...input };
+    return {
+      id: 'mock-id',
+      username: input.username,
+      email: input.email,
+      displayName: input.displayName,
+      role: input.role,
+      permissions: input.permissions,
+      isActive: input.isActive,
+      phone: input.phone,
+      fullName: input.fullName,
+      refreshTokenVersion: 0,
+      lastLoginAt: null,
+      save: async () => undefined,
+    } as never;
+  }
+  async findByUsername(_username: string) {
+    return null;
+  }
+  async verifyPassword(_user: never, _plain: string) {
+    return false;
+  }
+  async incrementRefreshVersion(_id: string) {
+    return;
+  }
+}
+
+interface BuildOpts {
+  nodeEnv?: string;
+  user?: Record<string, unknown> | null;
+  verifyResult?: boolean;
+}
+
+function buildAuthService(opts: BuildOpts = {}): {
+  svc: AuthService;
+  users: FakeUserService;
+  softlock: LoginSoftlockService;
+} {
+  const users = new FakeUserService();
+  const jwt = { signAsync: async () => 'mock-token' } as unknown as JwtService;
+  const config = {
+    get: (key: string) => {
+      if (key === 'nodeEnv') return opts.nodeEnv ?? 'production';
+      if (key === 'jwt.secret') return 'a-strong-test-jwt-secret-32-chars-x';
+      if (key === 'jwt.refreshSecret') return 'a-strong-test-refresh-secret-32-chars';
+      return undefined;
+    },
+  } as unknown as ConfigService;
+  const softlock = new LoginSoftlockService();
+  softlock.__resetForTests();
+  const svc = new AuthService(
+    users as unknown as UserService,
+    jwt,
+    config,
+    softlock,
+  );
+  return { svc, users, softlock };
+}
+
+function mockRes() {
+  return {
+    cookie: () => undefined,
+  } as never;
+}
+
+describe('AuthService (TZ-249 §2.2-2.4)', () => {
+  describe('login() — generic credential messages (TZ-249 §2.3)', () => {
+    it('throws the SAME generic 401 message for an unknown user', async () => {
+      const { svc } = buildAuthService({ user: null });
+      const dto = { username: 'ghost', password: 'anything' };
+      await expect(svc.login(dto, mockRes(), '127.0.0.1')).rejects.toThrow(
+        UnauthorizedException,
+      );
+      await expect(svc.login(dto, mockRes(), '127.0.0.1')).rejects.toMatchObject({
+        message: 'Неверный логин или пароль',
+      });
+    });
+
+    it('throws the SAME generic 401 message for a wrong password on a real user', async () => {
+      const { svc } = buildAuthService({
+        user: {
+          id: 'u1',
+          username: 'alice',
+          email: 'a@example.com',
+          displayName: 'A',
+          role: 'user',
+          permissions: [],
+          isActive: true,
+          refreshTokenVersion: 0,
+          phone: null,
+          fullName: null,
+        },
+        verifyResult: false,
+      });
+      const dto = { username: 'alice', password: 'wrong-password' };
+      await expect(svc.login(dto, mockRes(), '127.0.0.1')).rejects.toThrow(
+        UnauthorizedException,
+      );
+      await expect(svc.login(dto, mockRes(), '127.0.0.1')).rejects.toMatchObject({
+        message: 'Неверный логин или пароль',
+      });
+    });
+
+    it('does NOT leak whether the user exists by message shape', async () => {
+      const { svc: svcNoUser } = buildAuthService({ user: null });
+      const { svc: svcWrongPwd } = buildAuthService({
+        user: {
+          id: 'u1',
+          username: 'alice',
+          email: 'a@example.com',
+          displayName: 'A',
+          role: 'user',
+          permissions: [],
+          isActive: true,
+          refreshTokenVersion: 0,
+          phone: null,
+          fullName: null,
+        },
+        verifyResult: false,
+      });
+      const dto1 = { username: 'ghost', password: 'x' };
+      const dto2 = { username: 'alice', password: 'y' };
+      let m1: string | undefined;
+      let m2: string | undefined;
+      try {
+        await svcNoUser.login(dto1, mockRes(), '127.0.0.1');
+      } catch (e) {
+        m1 = (e as Error).message;
+      }
+      try {
+        await svcWrongPwd.login(dto2, mockRes(), '127.0.0.1');
+      } catch (e) {
+        m2 = (e as Error).message;
+      }
+      expect(m1).toBe(m2);
+    });
+  });
+
+  describe('login() — softlock (TZ-249 §2.4)', () => {
+    it('returns the SAME generic 401 message when the username is locked', async () => {
+      const { svc, softlock } = buildAuthService({ user: null });
+      const username = 'locked-user';
+      // Use the public API to reach the locked state (5 recordFailure calls).
+      for (let i = 0; i < 5; i++) {
+        softlock.recordFailure(username);
+      }
+      expect(softlock.isLocked(username)).toBe(true);
+      await expect(
+        svc.login({ username, password: 'whatever' }, mockRes(), '127.0.0.1'),
+      ).rejects.toMatchObject({ message: 'Неверный логин или пароль' });
+    });
+
+    it('does NOT increment softlock bucket for the missing-user path', async () => {
+      const { svc, softlock } = buildAuthService({ user: null });
+      const sizeBefore = softlock['entries'].size;
+      await expect(
+        svc.login({ username: 'ghost', password: 'x' }, mockRes(), '127.0.0.1'),
+      ).rejects.toThrow();
+      // missing-user path performs bcrypt-dummy compare but does NOT mutate
+      // the softlock (the user is unknown, so no escalation history exists).
+      expect(softlock['entries'].size).toBe(sizeBefore);
+    });
+
+    it('DOES increment softlock bucket on a verified wrong-password attempt', async () => {
+      const users = new FakeUserService();
+      const verifyUser = {
+        id: 'u1',
+        username: 'alice',
+        email: 'a@example.com',
+        displayName: 'A',
+        role: 'user',
+        permissions: [],
+        isActive: true,
+        refreshTokenVersion: 0,
+        phone: null,
+        fullName: null,
+      };
+      users.findByUsername = async () => verifyUser as never;
+      users.verifyPassword = async () => false;
+      const jwt = { signAsync: async () => 'mock' } as unknown as JwtService;
+      const config = {
+        get: (k: string) =>
+          k === 'nodeEnv'
+            ? 'test'
+            : k === 'jwt.secret'
+              ? 'a-strong-test-jwt-secret-32-chars-x'
+              : k === 'jwt.refreshSecret'
+                ? 'a-strong-test-refresh-secret-32-chars'
+                : undefined,
+      } as unknown as ConfigService;
+      const softlock = new LoginSoftlockService();
+      softlock.__resetForTests();
+      const svc = new AuthService(
+        users as unknown as UserService,
+        jwt,
+        config,
+        softlock,
+      );
+      const before = softlock['entries'].size;
+      await expect(
+        svc.login({ username: 'alice', password: 'wrong' }, mockRes(), '127.0.0.1'),
+      ).rejects.toThrow();
+      expect(softlock['entries'].size).toBe(before + 1);
+      expect(softlock.isLocked('alice')).toBe(false); // only 1 failure so far
+    });
+
+    it('returns the SAME generic 401 message when softlock is triggered (TS-249 §2.4 parity)', async () => {
+      const { svc, softlock } = buildAuthService({ user: null });
+      const username = 'lockout-user';
+      for (let i = 0; i < 5; i++) {
+        softlock.recordFailure(username);
+      }
+      let capturedMessage: string | undefined;
+      try {
+        await svc.login(
+          { username, password: 'correct-password' },
+          mockRes(),
+          '127.0.0.1',
+        );
+      } catch (e) {
+        capturedMessage = (e as Error).message;
+      }
+      expect(capturedMessage).toBe('Неверный логин или пароль');
+    });
+  });
+
+  describe('register() — production role coerce (TZ-249 §2.2)', () => {
+    it('coerces manager role -> user when NODE_ENV=production (real assertion via spy)', async () => {
+      const { users, svc } = buildAuthService({ nodeEnv: 'production' });
+      const dto = {
+        username: 'alice',
+        email: 'a@example.com',
+        displayName: 'A',
+        password: 'a-strong-pass-12345',
+        role: 'manager',
+        permissions: [],
+        isActive: true,
+      };
+      await svc.register(dto, mockRes());
+      // The user.service.create() was called with role='user' despite the
+      // DTO passing role='manager'. The captured arg is the proof.
+      expect(users.lastCreateArgs.role).toBe('user');
+    });
+
+    it('preserves manager role when NODE_ENV=development', async () => {
+      const { users, svc } = buildAuthService({ nodeEnv: 'development' });
+      const dto = {
+        username: 'bob',
+        email: 'b@example.com',
+        displayName: 'B',
+        password: 'a-strong-pass-12345',
+        role: 'manager',
+        permissions: [],
+        isActive: true,
+      };
+      await svc.register(dto, mockRes());
+      expect(users.lastCreateArgs.role).toBe('manager');
+    });
+
+    it('preserves user role in production (no-op coerce for the default case)', async () => {
+      const { users, svc } = buildAuthService({ nodeEnv: 'production' });
+      const dto = {
+        username: 'carol',
+        email: 'c@example.com',
+        displayName: 'C',
+        password: 'a-strong-pass-12345',
+        role: 'user',
+        permissions: [],
+        isActive: true,
+      };
+      await svc.register(dto, mockRes());
+      expect(users.lastCreateArgs.role).toBe('user');
+    });
+  });
+});

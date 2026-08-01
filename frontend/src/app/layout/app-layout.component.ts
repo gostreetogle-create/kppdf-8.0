@@ -20,6 +20,7 @@ import {
  */
 type LucideIcon = typeof Package;
 import { AuthService } from '../core/auth.service';
+import { CapabilitiesService } from '../core/capabilities/capabilities.service';
 import { ThemeToggleComponent } from './theme-toggle.component';
 import {
   PiNavDropdownComponent,
@@ -104,6 +105,24 @@ const NAV_CATEGORIES: NavCategory[] = [
       { path: '/doc-constructor/documents', label: 'Архив документов' },
     ],
   },
+  {
+    // TZ-256 §ШАГ 3 — admin category, capability-gated.
+    id: 'admin',
+    label: 'Администрирование',
+    icon: Palette,
+    items: [
+      {
+        path: '/admin/users',
+        label: 'Пользователи',
+        capabilities: ['user:read'],
+      },
+      {
+        path: '/admin/roles',
+        label: 'Роли',
+        capabilities: ['role:read'],
+      },
+    ],
+  },
 ];
 
 @Component({
@@ -134,7 +153,7 @@ const NAV_CATEGORIES: NavCategory[] = [
               class="flex items-center gap-1 flex-1 justify-center"
               aria-label="Главная навигация"
             >
-              @for (cat of navCategories; track cat.id) {
+              @for (cat of navCategories(); track cat.id) {
                 <app-pi-nav-dropdown
                   [label]="cat.label"
                   [icon]="cat.icon"
@@ -192,12 +211,33 @@ const NAV_CATEGORIES: NavCategory[] = [
 export class AppLayoutComponent {
   protected readonly logOutIcon = LogOut;
   protected readonly paletteIcon = Palette;
-  protected readonly navCategories = NAV_CATEGORIES;
 
   private readonly auth = inject(AuthService);
+  private readonly caps = inject(CapabilitiesService);
   private readonly router = inject(Router);
 
   protected readonly user = this.auth.user;
+
+  /**
+   * TZ-256 §ШАГ 3 — capability-filtered nav as a `computed` signal.
+   *
+   * For each category, drop items where the user does NOT hold ANY of
+   * the required keys (`item.capabilities []` ⇒ always visible).
+   * Drop entire categories that have no surviving items, so a non-admin
+   * user does not see an empty «Администрирование» dropdown.
+   *
+   * Pure derived state. Re-evaluates whenever `user()` changes (login,
+   * logout, permission bump), keeping OnPush change-detection naturally
+   * aligned.
+   */
+  protected readonly navCategories = computed<readonly NavCategory[]>(() => {
+    return NAV_CATEGORIES
+      .map((cat) => ({
+        ...cat,
+        items: cat.items.filter((item) => this.caps.hasAny(item.capabilities)),
+      }))
+      .filter((cat) => cat.items.length > 0);
+  });
 
   /** Source of truth: signal-mapped URL from Router NavigationEnd events. */
   protected readonly currentUrl = toSignal(
@@ -213,11 +253,14 @@ export class AppLayoutComponent {
    * Returns the id of the active category when ANY of its sub-paths is
    * the current URL (with `/` boundary check). Null when on a route not
    * covered by any nav category (e.g. `/login`).
+   *
+   * Iterates the (post-filter) `navCategories()` signal so URL
+   * matching is consistent with what the user can actually see.
    */
   protected readonly activeCategoryId = computed<string | null>(() => {
     const url = this.currentUrl();
     if (!url) return null;
-    for (const cat of NAV_CATEGORIES) {
+    for (const cat of this.navCategories()) {
       for (const item of cat.items) {
         if (url === item.path || url.startsWith(item.path + '/')) {
           return cat.id;

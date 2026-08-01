@@ -3,6 +3,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { LucideAngularModule, ChevronDown } from 'lucide-angular';
+import type {
+  PermissionKey,
+} from '../../../core/capabilities/capabilities.metadata';
 
 /**
  * Lucide icon structural type — `lucide-angular@0.460.0` keeps `LucideIconData`
@@ -20,6 +23,16 @@ export interface PiNavDropdownItem {
   label: string;
   /** When true, item is rendered muted/disabled with title='скоро' tooltip. */
   disabled?: boolean;
+  /**
+   * TZ-256 §ШАГ 3 — Optional OR-list of canonical permission keys.
+   * When omitted (or empty) the item is publicly visible inside the
+   * nav dropdown (caller is responsible for capability filtering at
+   * the route level). When set, AppLayoutComponent filters the item
+   * out unless `CapabilitiesService.hasAny(keys) === true`.
+   *
+   * OR semantics — at least one key match required.
+   */
+  capabilities?: readonly PermissionKey[];
 }
 
 /**

@@ -13,6 +13,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { MulterExceptionFilter } from './common/filters/multer-exception.filter';
 import { VersionConflictFilter } from './common/filters/version-conflict.filter';
 import { ThrottlerBehindAuthGuard } from './common/guards/throttler-behind-auth.guard';
+import { SecretValidationService } from './config/secret-validation.service';
 
 async function bootstrap() {
   // TZ-157: Initialize Sentry before NestJS so exceptions in bootstrap are captured
@@ -24,6 +25,42 @@ async function bootstrap() {
       tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 1.0,
     });
   }
+
+  // TZ-248: production secret-validation guard. Runs AFTER Sentry.init so
+  // fatal failures get a chance to be reported, but BEFORE NestFactory.create()
+  // so insecure configs never reach DB / DI / Mongo. Production throws ->
+  // exit 1. Dev/test logs warnings via NestJS Logger only. Opt-out is
+  // explicit-string `DISABLE_SECRET_VALIDATION=1` (see
+  // docs/SECURITY-OPERATIONS.md for the opt-out policy).
+  try {
+    SecretValidationService.assertProductionSafe(process.env);
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : 'Unknown rejection reason';
+    Logger.error(
+      `⛔ Production safety guard rejected the environment (TZ-248) — halting boot.\n${message}`,
+      'Bootstrap',
+    );
+    // TZ-157 contract: flush Sentry so the TZ-248 rejection reaches the
+    // dashboard before we tear the process down. 2-second budget; if Sentry
+    // does not respond in time we still exit 1 — log-only failure is worse
+    // than a slightly-delayed exit.
+    if (sentryDsn) {
+      try {
+        Sentry.captureException(err);
+        await Sentry.flush(2000);
+      } catch (sentryErr) {
+        Logger.warn(
+          `Sentry.flush failed during TZ-248 halt path: ${
+            sentryErr instanceof Error ? sentryErr.message : String(sentryErr)
+          }`,
+          'Bootstrap',
+        );
+      }
+    }
+    process.exit(1);
+  }
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
   });
@@ -62,8 +99,54 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Global throttler (skips when DISABLE_THROTTLE=1)
-  app.useGlobalGuards(app.get(ThrottlerBehindAuthGuard));
+  // TZ-249 §2.1 — TRUST_PROXY=1 explicitly opts into trusting
+  // X-Forwarded-For for downstream guards. Default is FALSE: spoofable
+  // headers cannot reach the throttle tracker.
+  app.set('trust proxy', process.env.TRUST_PROXY === '1');
+
+  // TZ-249 §2.1 — DISABLE_THROTTLE has NO effect in production. A
+  // non-empty value in production halts the boot before the NestJS
+  // global guards pipe is wired up. Mirrored inside
+  // ThrottlerBehindAuthGuard.shouldSkip() for defence-in-depth.
+  const disableThrottleRaw = process.env.DISABLE_THROTTLE;
+  if (
+    process.env.NODE_ENV === 'production' &&
+    disableThrottleRaw !== undefined &&
+    disableThrottleRaw !== ''
+  ) {
+    Logger.error(
+      `⛔ DISABLE_THROTTLE=${disableThrottleRaw} is not allowed in production (TZ-249) — halting boot.`,
+      'Bootstrap',
+    );
+    if (sentryDsn) {
+      try {
+        Sentry.captureException(
+          new Error(`DISABLE_THROTTLE in production (TZ-249) = ${disableThrottleRaw}`),
+        );
+        await Sentry.flush(2000);
+      } catch (sentryErr) {
+        Logger.warn(
+          `Sentry.flush failed during DISABLE_THROTTLE halt path: ${
+            sentryErr instanceof Error ? sentryErr.message : String(sentryErr)
+          }`,
+          'Bootstrap',
+        );
+      }
+    }
+    process.exit(1);
+  }
+
+  // Global throttler (skips ONLY when dev/test AND DISABLE_THROTTLE=1).
+  // In production DISABLE_THROTTLE is rejected above, so the condition
+  // simplifies to "always install in prod".
+  if (disableThrottleRaw !== '1') {
+    app.useGlobalGuards(app.get(ThrottlerBehindAuthGuard));
+  } else {
+    Logger.warn(
+      'Throttler disabled via DISABLE_THROTTLE=1 (dev/test only) — TZ-249 invariant in production is enforced elsewhere',
+      'Bootstrap',
+    );
+  }
 
   app.useGlobalPipes(
     new ValidationPipe({

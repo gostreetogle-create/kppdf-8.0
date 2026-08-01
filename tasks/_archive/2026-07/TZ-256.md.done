@@ -1,0 +1,130 @@
+# TZ-256 — Capability-aware routes and navigation
+
+**Дата создания:** 2026-07-31
+**Автор:** senior-orchestrator
+**Приоритет:** HIGH (UX-only enforcement; server is TZ-255)
+**ЗАВИСИМОСТИ:** TZ-255, TZ-252
+**LAYER:** 3 (frontend) + 1 small backend route metadata endpoint
+**CONFLICT KEYS:**
+- frontend/src/app/core/capabilities/capabilities.service.ts (NEW)
+- frontend/src/app/core/capabilities/has-permission.ts (helper)
+- frontend/src/app/core/capabilities/capabilities.metadata.ts (route→capability map)
+- frontend/src/app/app.routes.ts (+ data: { capabilities } on sensitive routes)
+- frontend/src/app/layout/app-layout.component.ts (nav filter)
+- frontend/src/app/shared/ui/forbidden/forbidden.page.ts (NEW — single forbidden state)
+
+---
+
+## 0. Цель
+
+- Typed `hasPermission()`/capability service.
+- Route metadata: `data: { capabilities: ['user:admin'] }` — declarative.
+- Navigation metadata: каждый nav item имеет `capabilities`.
+- Direct URL denial: route loader / guard читает metadata → если user no capability → redirect to `/forbidden` (NOT 404, чтобы не leak).
+- Single forbidden state (не 13 разных страниц).
+- Различие 401 (re-login) vs 403 (capability missing).
+- `/kit/*` остаётся публичным showcase (TZ-92b).
+
+**Не размножать `if (role === 'admin')` по страницам. Все гадалки через `HasPermission.check('user:admin')`.**
+
+---
+
+## 1. Архитектурное решение
+
+### ШАГ 1: Capabilities service
+
+`frontend/src/app/core/capabilities/capabilities.service.ts`:
+- Signal `permissions: Set<string>` empty init.
+- After login (`AuthService.user()` устанавливается), resolve permissions:
+  - Если `user.role === 'admin'` ИЛИ `user.permissions?.includes('*')` → все canonical keys (получить из `/api/permissions/catalog`).
+  - Иначе: union `role.permissions ∪ user.permissions`.
+- `hasPermission(key: PermissionKey): boolean` — pure read.
+
+### ШАГ 2: Route metadata + guard
+
+`app.routes.ts`:
+- На sensitive routes в operational section:
+  - `data: { capabilities: ['user:write'] }` — admin-only product page.
+- Frontend `CanMatchFn`: `capabilityRouteGuard` reads route data, defers to `capabilitiesService.hasPermission()`.
+
+### ШАГ 3: Navigation metadata
+
+`frontend/src/app/layout/app-layout.component.ts`:
+- `navItems: Signal<NavItem[]>` — appended к existing.
+- `NavItem { label, route, icon?, capabilities?: PermissionKey[] }`.
+- `visibleNavItems = computed(() => navItems().filter(...))` — filter по capabilities.
+- Lazy: per capabilities graceful degradation (skip reactive computation if no user).
+
+### ШАГ 4: Forbidden state
+
+`frontend/src/app/shared/ui/forbidden/forbidden.page.ts`:
+- Single page with role-aware messaging: «У вас нет доступа к этому разделу».
+- Возможно action: «Вернуться на главную» (routerLink `/`).
+- При попытке прямой URL с no capability → redirect to `/forbidden` (NO 404 — не leak о существовании маршрута).
+
+### ШАГ 5: 401 vs 403 differentiation
+
+Frontend:
+- 401 → автоматический redirect to `/login` (AuthGuard, existing).
+- 403 → автоматический redirect to `/forbidden` (capability guard).
+- AuthService.user() === null + 401 → bounce to /login.
+- AuthService.user() не null + server 403 → bounce to /forbidden.
+
+### ШАГ 6: Kit showcase exemption
+
+`/kit/*` routes — НЕ имеют `data: { capabilities }`. Продолжают публичный доступ (TZ-92b).
+
+### ШАГ 7: Tests
+
+- Unit `capabilities.service.spec.ts`:
+  - admin user → все keys;
+  - user без permissions → empty set, hasPermission → false;
+  - union role + user permissions;
+  - wildcard expansion.
+- Unit `capabilityRouteGuard.spec.ts`:
+  - route data empty → bypass;
+  - route data has cap → guard проверка;
+  - no permission → redirectUrl `/forbidden`.
+- Unit `navigation-filter.spec.ts`:
+  - navItems filter по capabilities;
+  - items без capabilities всегда видны;
+  - admin sees everything.
+- DOM-contract TestBed:
+  - `/users` page (admin only) — admin login → рендерится, user login → redirect на `/forbidden`.
+
+---
+
+## 3. Файлы для изменения
+
+**ИЗМЕНЯТЬ:**
+- frontend/src/app/core/capabilities/capabilities.service.ts (NEW)
+- frontend/src/app/core/capabilities/capability-route.guard.ts (NEW)
+- frontend/src/app/core/capabilities/capabilities.metadata.ts (NEW; canonical map)
+- frontend/src/app/app.routes.ts (+ guard, + data.metadata)
+- frontend/src/app/layout/app-layout.component.ts (nav items + filter)
+- frontend/src/app/shared/ui/forbidden/forbidden.page.ts (NEW)
+- frontend/src/app/shared/ui/forbidden/forbidden.page.spec.ts (NEW)
+
+**НЕ ИЗМЕНЯТЬ:**
+- `/kit/*` public routes (TZ-92b protected)
+- existing AuthInterceptor (TZ-252)
+- backend (capabilities metadata fetched e2e — but keep tight scope)
+
+---
+
+## 4. Критерии приёмки
+
+1. `/users` direct URL с admin роль → рендерится.
+2. `/users` direct URL с user роль → redirect на `/forbidden`.
+3. nav menu без admin прав → не показывает «Пользователи».
+4. `kit/*` остаётся публичным (no capability check).
+5. 401 auto-redirect to `/login`, 403 to `/forbidden`.
+6. `pnpm test` + frontend typecheck + lint exit 0.
+7. Regression: existing functional pages (materials/products/etc) не сломаны.
+
+---
+
+## 5. Cross-references
+
+- **REQUIRES:** TZ-252 (refresh cookie), TZ-255 (canonical permissions on backend)
+- **DEPENDS ON BY:** TZ-258 (onboarding contract)

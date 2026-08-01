@@ -14,17 +14,22 @@ import { ProductModule } from '../product/product.module';
 import { MaterialModule } from '../material/material.module';
 import { WorkTypeModule } from '../work-type/work-type.module';
 import { TableTemplateModule } from '../table-template/table-template.module';
+import { OwnershipGuard } from '../../common/guards/ownership/ownership.guard';
 
 /**
  * TZ-86 Phase A.4 — DocumentTemplateModule extended.
  *
- * Imports `OrganizationModule`, `CounterpartyModule`, `ProductModule`,
- * `MaterialModule`, `WorkTypeModule` so DocumentTemplateService can inject
- * these models for the dataBinding-aware build() flow.
+ * TZ-251 §ШАГ 2 — Ownership guard is registered as a per-module provider
+ * because it needs `@InjectModel(DocumentTemplate.name)` to work. Mongoose
+ * models are module-scoped (the `forFeature` registration below), so a
+ * guard that needs to read from this model must live in this module's DI
+ * scope. A future cross-entity registry (TZ-251.A) can lift it to a
+ * generic provider.
  *
- * Each imported module exports `MongooseModule` so its `forFeature` models
- * are re-registered in this module's DI scope — no shadow registration
- * needed.
+ * @UseGuards(OwnershipGuard) on the controller class activates the guard
+ * for every route in this controller. The `@OwnerOnly(entityKey)`
+ * metadata is read INSIDE the guard's `canActivate()` — routes that
+ * don't carry `@OwnerOnly` short-circuit to true.
  */
 @Module({
   imports: [
@@ -43,7 +48,7 @@ import { TableTemplateModule } from '../table-template/table-template.module';
     TableTemplateModule,
   ],
   controllers: [DocumentTemplateController],
-  providers: [DocumentTemplateService],
+  providers: [DocumentTemplateService, OwnershipGuard],
   exports: [DocumentTemplateService, MongooseModule],
 })
 export class DocumentTemplateModule {}

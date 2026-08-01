@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { LoginSoftlockService } from '../../common/login-softlock/login-softlock.service';
 
 @Module({
   imports: [
@@ -24,7 +25,15 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtRefreshStrategy],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    JwtRefreshStrategy,
+    // TZ-249 §2.4 — softlock service is module-scoped. Single instance per
+    // AuthModule; multi-pod Redis swap is a follow-up but the public API
+    // (isLocked / recordFailure / reset) stays identical.
+    LoginSoftlockService,
+  ],
   exports: [AuthService, JwtModule, PassportModule],
 })
 export class AuthModule {}

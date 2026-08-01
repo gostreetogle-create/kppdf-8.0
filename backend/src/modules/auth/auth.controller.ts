@@ -6,6 +6,8 @@ import {
   Post,
   UseGuards,
   Get,
+  Ip,
+  Logger,
   Res,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -32,6 +34,8 @@ interface RefreshPayload {
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(
     private readonly auth: AuthService,
     private readonly users: UserService,
@@ -55,8 +59,12 @@ export class AuthController {
   @ApiOperation({ summary: 'Login with username and password' })
   @ApiResponse({ status: 200, description: 'Login successful, returns access token' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
-    return this.auth.login(dto, res);
+  login(
+    @Body() dto: LoginDto,
+    @Ip() ip: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.auth.login(dto, res, ip);
   }
 
   @Public()

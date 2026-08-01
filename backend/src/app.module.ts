@@ -74,6 +74,9 @@ import { CommentModule } from './modules/comment/comment.module';
 import { RateLimitModule } from './modules/rate-limit/rate-limit.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ThrottlerBehindAuthGuard } from './common/guards/throttler-behind-auth.guard';
+import { PermissionsGuard } from './common/guards/permissions.guard';
+import { PermissionsBootModule } from './common/middleware/permissions-boot-validator.module';
+import { AdminModule } from './modules/admin/admin.module';
 import { AttributeDefinitionModule } from './modules/attribute-definition/attribute-definition.module';
 import { EntityAttributeValueModule } from './modules/entity-attribute-value/entity-attribute-value.module';
 import { CertificateModule } from './modules/certificate/certificate.module';
@@ -219,10 +222,28 @@ import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
     ProductPassportModule,
     InventorFileModule,
     TerminusModule,
+    PermissionsBootModule, // TZ-255: registers PermissionsBootValidator for OnApplicationBootstrap catalog scan
+    AdminModule,            // TZ-257: /api/admin/users + /api/admin/roles (read-only slice)
   ],
   controllers: [HealthController],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    // TZ-255: guard execution order is JWT → Permissions → Roles.
+    //
+    // - JwtAuthGuard populates `req.user` (req'd by everything below).
+    // - PermissionsGuard runs BEFORE RolesGuard so that a missing
+    //   capability surfaces a precision «403 — required permission: …»
+    //   rather than a generic «403 — required role: …». When the user
+    //   has BOTH, the order doesn't matter (AND-composition). When they
+    //   have neither, Permissions fires first because it is registered
+    //   first.
+    // - RolesGuard catches the legacy `@Roles()`-only routes that
+    //   pre-date the permissions matrix; AND-composed with Permissions.
+    //
+    // IMPORTANT: do NOT reorder these providers without re-testing the
+    // error message UX above. Nest runs APP_GUARDs in registration
+    // order and the returned messages determine what users see.
+    { provide: APP_GUARD, useClass: PermissionsGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_INTERCEPTOR, useClass: UserContextInterceptor },
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },

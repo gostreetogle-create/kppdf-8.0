@@ -16,6 +16,32 @@ import { AuthService } from './auth.service';
 const IS_RETRY = new HttpContextToken<boolean>(() => false);
 
 /**
+ * TZ-256 §ШАГ 5 — opt-out token for the blanket 403 → /forbidden
+ * redirect. Some endpoints intentionally return 403 as a programmatic
+ * signal — admin probes, capability self-check endpoints, dependency
+ * health pings — and those should NOT bounce the user off the page.
+ *
+ * DEFAULT IS NOW `true` (TZ-256 ship-fix, 2026-07-31, post-review).
+ * Rationale: pre-existing components surface 403 to inline error
+ * banners or toast notifications (e.g. inventory pages, builder
+ * overlay-resize failures). The blanket 403 → /forbidden redirect
+ * silently loses those messages, regressing UX across every consumer.
+ * The safe migration is opt-IN to redirect: only callers that genuinely
+ * want to bounce the user on 403 explicitly set
+ * `context.set(SKIP_FORBIDDEN_REDIRECT, false)`.
+ *
+ * Usage:
+ *   // default (no bounce): keep page, show inline error / toast
+ *   this.http.get('/api/admin/x');
+ *
+ *   // explicit redirect:
+ *   this.http.get('/api/admin/x', {
+ *     context: new HttpContext().set(SKIP_FORBIDDEN_REDIRECT, false),
+ *   });
+ */
+export const SKIP_FORBIDDEN_REDIRECT = new HttpContextToken<boolean>(() => true);
+
+/**
  * Combined auth + auto-refresh interceptor.
  *
  * Request path:
@@ -63,6 +89,32 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authedReq).pipe(
     catchError((error: HttpErrorResponse) => {
+      // TZ-256 §ШАГ 5 — 403 vs 401 differentiation.
+      //
+      // 401 → auto-refresh-and-retry (existing behavior). On refresh
+      //       failure we fall through to /login (handled below).
+      // 403 → CAPABILITY MISSING. Backend's PermissionsGuard (TZ-255)
+      //       returned 403 because the JWT is valid but lacks the
+      //       required permission key. UX-wise this is what the
+      //       capability guard would have produced for a client-side
+      //       check too — so we route to the same /forbidden page.
+      //
+      // We deliberately route BEFORE the refresh loop because
+      // refreshing can't change the user's permissions: a 403 is
+      // permanent until permissions change server-side or the user
+      // re-logs-in with a different role.
+      //
+      // SKIP_FORBIDDEN_REDIRECT opt-out exists for endpoints that
+      // intentionally return 403 as a programmatic signal — e.g.
+      // admin probes, capability self-check endpoints, dependency
+      // health pings — and those should NOT bounce the user off-page.
+      if (error.status === 403 && !req.context.get(SKIP_FORBIDDEN_REDIRECT)) {
+        if (!router.url.startsWith('/forbidden')) {
+          void router.navigate(['/forbidden']);
+        }
+        return throwError(() => error);
+      }
+
       // Anything other than 401 propagates immediately.
       if (error.status !== 401) return throwError(() => error);
 

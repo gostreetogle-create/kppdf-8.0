@@ -82,7 +82,21 @@ export class DocumentTemplateService {
     private readonly tableTemplateService: TableTemplateService,
   ) {}
 
-  async create(dto: CreateDocumentTemplateDto): Promise<DocumentTemplateDocument> {
+  /**
+   * TZ-251 §ШАГ 2 — set `createdBy` on create.
+   *
+   * `userId` is OPTIONAL for backward compatibility with any callers that
+   * haven't been updated. When provided AND valid, the new template is
+   * tagged with the creator. When missing or invalid, `createdBy` is
+   * `undefined` and the template enters the "legacy data" fallback
+   * branch in `OwnershipGuard` (deferred to RBAC).
+   *
+   * The IDOR ladder in OwnershipGuard is robust to either case.
+   */
+  async create(
+    dto: CreateDocumentTemplateDto,
+    userId?: string,
+  ): Promise<DocumentTemplateDocument> {
     if (dto.isDefault) {
       await this.model.updateMany(
         {
@@ -108,6 +122,9 @@ export class DocumentTemplateService {
       orientation: dto.orientation ?? 'portrait',
       version: dto.version ?? 1,
       notes: dto.notes,
+      createdBy: userId && Types.ObjectId.isValid(userId)
+        ? new Types.ObjectId(userId)
+        : undefined,
     });
   }
 
@@ -182,7 +199,17 @@ export class DocumentTemplateService {
     return doc.save();
   }
 
-  async duplicate(id: string): Promise<DocumentTemplateDocument> {
+  /**
+   * TZ-251 §ШАГ 2 — duplicate propagates createdBy to the NEW template.
+   *
+   * Note: source template ownership is enforced upstream by the
+   * OwnershipGuard on the `:id/duplicate` route (Step 8). After passing
+   * the source-own check, the newly duplicated template's `createdBy`
+   * is set to the ACTING user (`userId`), not the source creator —
+   * because the copy is a fresh resource owned by whoever performed the
+   * action.
+   */
+  async duplicate(id: string, userId?: string): Promise<DocumentTemplateDocument> {
     const src = await this.findById(id);
     const newTemplate = await this.model.create({
       name: `${src.name} (копия)`,
@@ -197,6 +224,9 @@ export class DocumentTemplateService {
       backgroundOpacity: src.backgroundOpacity,
       version: 1,
       notes: src.notes,
+      createdBy: userId && Types.ObjectId.isValid(userId)
+        ? new Types.ObjectId(userId)
+        : undefined,
     });
     // Duplicate blocks
     const blocks = await this.blockModel.find({ templateId: src._id }).exec();

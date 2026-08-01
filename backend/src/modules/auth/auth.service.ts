@@ -6,11 +6,37 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
+import * as bcrypt from 'bcryptjs';
 import { UserDocument } from '../user/user.schema';
 import { UserService } from '../user/user.service';
+import { LoginSoftlockService } from '../../common/login-softlock/login-softlock.service';
 import { AuthResponse, AccessTokenResponse, AuthUserPayload } from './dto/auth-response.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+
+/**
+ * Single-source-of-truth generic login error.
+ *
+ * TZ-249 §2.3 demands that the response body is **byte-for-byte identical**
+ * for "no such user" and "wrong password" so an attacker cannot enumerate
+ * valid usernames by comparing 401 bodies. The audit log keeps the
+ * distinguishing context (`login_attempt_unknown_user` vs.
+ * `login_attempt_wrong_password`) so forensics stay intact.
+ */
+const GENERIC_BAD_CREDENTIALS_MESSAGE = 'Неверный логин или пароль';
+
+/**
+ * Pre-computed bcrypt hash used as the comparison target when the
+ * supplied username does not exist. Computing it once at module load
+ * cost (~80-100 ms with COST=10) keeps the missing-user branch of the
+ * login flow at parity with the wrong-password branch in terms of CPU
+ * time — preventing username-enumeration via timing side-channels (TZ-249
+ * §2.3 second bullet).
+ *
+ * The plaintext (`__not_a_real_password__`) NEVER matches any real
+ * account's hash, so no false-positive authentication is possible.
+ */
+const DUMMY_BCRYPT_HASH = bcrypt.hashSync('__not_a_real_password__', 10);
 
 @Injectable()
 export class AuthService {
@@ -20,18 +46,44 @@ export class AuthService {
     private readonly users: UserService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
+    private readonly softlock: LoginSoftlockService,
   ) {}
 
   async register(dto: RegisterDto, res: Response): Promise<AuthResponse> {
-    // TZ-91 §4 Phase A.1: dto.role is `@IsOptional @IsIn(['user','manager'])` — defaults to 'user'
-    // if not provided. 'user' is the safest default (lowest privilege, defence-in-depth: admin/manager
-    // accounts MUST be created through admin-invite-flow or admin.seed, never via /register).
+    const isProd = this.config.get<string>('nodeEnv') === 'production';
+
+    // TZ-249 §2.2: in production, ROLE COERCE — any non-'user' role arriving
+    // via /auth/register is silently coerced to 'user'. We do NOT throw 403
+    // because that's a louder fingerprint than the silent coerce and would
+    // break the existing dev/test fixtures that intentionally request
+    // 'manager'. Warn-level audit log captures the attempted escalation for
+    // forensics.
+    let effectiveRole: 'user' | 'manager';
+    const incomingRole = dto.role ?? 'user';
+    if (incomingRole === 'user' || incomingRole === 'manager') {
+      effectiveRole = incomingRole;
+    } else {
+      // Unexpected role string (DTO Transform should have validated this,
+      // but defensive default is never wrong). Falls back to 'user'.
+      effectiveRole = 'user';
+    }
+    if (isProd && effectiveRole !== 'user') {
+      this.logger.warn(
+        `Refusing privileged role escalation: ${dto.username} ` +
+          `attempted role=${effectiveRole}; coerced to 'user' (TZ-249 §2.2)`,
+      );
+      effectiveRole = 'user';
+    }
+
+    // First admin/manager accounts MUST come from admin.seed or admin-invite
+    // (TZ-91 §4 Phase A.1 baseline) — never via /auth/register.
+
     const user = await this.users.create({
       username: dto.username,
       email: dto.email,
       displayName: dto.displayName,
       password: dto.password,
-      role: dto.role ?? 'user',
+      role: effectiveRole,
       permissions: dto.permissions ?? [],
       isActive: dto.isActive ?? true,
       phone: dto.phone,
@@ -41,15 +93,52 @@ export class AuthService {
     return this.buildAuthResponse(user, res);
   }
 
-  async login(dto: LoginDto, res: Response): Promise<AuthResponse> {
+  async login(
+    dto: LoginDto,
+    res: Response,
+    ip?: string,
+  ): Promise<AuthResponse> {
+    const usernameRaw = dto.username ?? '';
+    const usernameNormalized = usernameRaw.trim().toLowerCase();
+
+    // TZ-249 §2.4: pre-check softlock BEFORE bcrypt — an attacker hammering
+    // a locked-out username should get a constant-time 401 without burning
+    // CPU on a doomed bcrypt round.
+    if (this.softlock.isLocked(usernameNormalized)) {
+      const until = this.softlock.lockedUntil(usernameNormalized);
+      this.logger.warn(
+        `login_attempt_locked_out username=${usernameRaw} ` +
+          `lockedUntil=${new Date(until).toISOString()} ip=${ip ?? '?'}`,
+      );
+      throw new UnauthorizedException(GENERIC_BAD_CREDENTIALS_MESSAGE);
+    }
+
     const user = await this.users.findByUsername(dto.username);
     if (!user || !user.isActive) {
-      throw new UnauthorizedException('Invalid credentials');
+      // TZ-249 §2.3: timing-safe bcrypt-dummy compare so an attacker cannot
+      // distinguish "no such user" from "wrong password" via wall-clock
+      // latency. The exact same exception follows.
+      await bcrypt
+        .compare(dto.password ?? '', DUMMY_BCRYPT_HASH)
+        .catch(() => undefined);
+      this.logger.warn(
+        `login_attempt_unknown_user username=${usernameRaw} ip=${ip ?? '?'}`,
+      );
+      throw new UnauthorizedException(GENERIC_BAD_CREDENTIALS_MESSAGE);
     }
+
     const ok = await this.users.verifyPassword(user, dto.password);
     if (!ok) {
-      throw new UnauthorizedException('Invalid credentials');
+      // TZ-249 §2.4: increment softlock bucket on failed verify.
+      this.softlock.recordFailure(usernameNormalized);
+      this.logger.warn(
+        `login_attempt_wrong_password username=${user.username} ip=${ip ?? '?'}`,
+      );
+      throw new UnauthorizedException(GENERIC_BAD_CREDENTIALS_MESSAGE);
     }
+
+    // Successful login — clear the softlock bucket.
+    this.softlock.reset(usernameNormalized);
     user.lastLoginAt = new Date();
     await user.save();
     this.logger.log(`User logged in: ${user.username}`);

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, publicOnlyGuard } from './core/auth.guard';
+import { capabilityRouteGuard } from './core/capabilities/capability-route.guard';
 
 /**
  * KPPDF site routing.
@@ -24,6 +25,21 @@ export const routes: Routes = [
     canMatch: [publicOnlyGuard],
     loadComponent: () => import('./pages/login/login.page').then((m) => m.LoginPage),
     title: 'KPPDF — Вход',
+  },
+  // TZ-256 §ШАГ 4 — single forbidden state. Reached from:
+  //  - capabilityRouteGuard when `data.capabilities` gating fails (no leak)
+  //  - auth.interceptor when backend returns 403 (capability missing)
+  //  - post-logout state (auth.interceptor on refresh failure → /login,
+  //    direct URL on a capability-gated route when user is null)
+  //
+  // Doesn't require authGuard (ForbiddenPage handles both auth profiles
+  // via copy() branching). NO `canMatch: [capabilityRouteGuard]`
+  // because the route ITSELF is the gateway, not a gated resource.
+  {
+    path: 'forbidden',
+    loadComponent: () =>
+      import('./shared/ui/forbidden/forbidden.page').then((m) => m.ForbiddenPage),
+    title: 'KPPDF — Доступ ограничен',
   },
   {
     // TZ-92b: /kit/* is intentionally PUBLIC (no canMatch guard).
@@ -225,6 +241,26 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/inventory/stock-movements.page').then((m) => m.StockMovementsPage),
         title: 'KPPDF — Движения',
+      },
+      // TZ-257 — admin module (read-only slice). Routes are
+      // capability-gated AND role-gated server-side. The frontend
+      // route gate mirrors this for UX (hidden from non-admin users
+      // per TZ-256 §ШАГ 3 nav filter).
+      {
+        path: 'admin/users',
+        canMatch: [authGuard, capabilityRouteGuard],
+        data: { capabilities: ['user:read'] },
+        loadComponent: () =>
+          import('./pages/admin/users-admin.page').then((m) => m.UsersAdminPage),
+        title: 'KPPDF — Пользователи',
+      },
+      {
+        path: 'admin/roles',
+        canMatch: [authGuard, capabilityRouteGuard],
+        data: { capabilities: ['role:read'] },
+        loadComponent: () =>
+          import('./pages/admin/roles-admin.page').then((m) => m.RolesAdminPage),
+        title: 'KPPDF — Роли',
       },
     ],
   },

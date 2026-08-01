@@ -8,19 +8,24 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   Res,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { memoryStorage } from 'multer';
 import { DocumentTemplateService } from './document-template.service';
 import { CreateDocumentTemplateDto } from './dto/create-document-template.dto';
 import { UpdateDocumentTemplateDto } from './dto/update-document-template.dto';
 import { BuildDocumentDto } from './dto/build-document.dto';
 import { AuditAction } from '../../common/decorators/audit-action.decorator';
+import { OwnerOnly } from '../../common/guards/ownership/ownership.decorator';
+import { OwnershipGuard } from '../../common/guards/ownership/ownership.guard';
+import type { AuthenticatedUserLike } from '../../common/contracts/rbac-contract';
 
 /**
  * TZ-86 Phase A.4 — DocumentTemplateController extended.
@@ -33,7 +38,24 @@ import { AuditAction } from '../../common/decorators/audit-action.decorator';
  * writes), AuditInterceptor matches only decorated metadata. Adding a
  * decorator here would pollute audit-log with every preview render.
  */
+/**
+ * TZ-251 §ШАГ 2 — Class-level `@UseGuards(OwnershipGuard)`.
+ *
+ * Registering the guard on the controller class ensures that EVERY route
+ * goes through it. The guard internally short-circuits to `true` for
+ * routes without `@OwnerOnly(...)` metadata (see `ownership.guard.ts` Step 1),
+ * so this is safe even on un-protected endpoints.
+ *
+ * Order of guards (NestJS evaluation):
+ *   1. JwtAuthGuard       (APP_GUARD, global)
+ *   2. RolesGuard         (APP_GUARD, global)
+ *   3. OwnershipGuard     (class-level @UseGuards)
+ *
+ * Each guard either passes or rejects with its own error code; OwnershipGuard
+ * throws 401 (no user) or 404 (mismatch) — never 403, to avoid enumeration.
+ */
 @Controller('document-templates')
+@UseGuards(OwnershipGuard)
 export class DocumentTemplateController {
   constructor(private readonly service: DocumentTemplateService) {}
 
@@ -50,12 +72,33 @@ export class DocumentTemplateController {
     );
   }
 
+  /**
+   * TZ-251 §ШАГ 2 — `:id` routes are guarded by OwnershipGuard.
+   *
+   * Guard order on each method: `[JwtAuthGuard, RolesGuard, OwnershipGuard]`
+   * in app-wide registration order. Application-layer controllers do NOT
+   * need to pass them via `@UseGuards()` because they are registered as
+   * `APP_GUARD` providers in `app.module.ts`. The `@OwnerOnly` metadata
+   * is the only thing this controller owns — the guard reads it via
+   * Reflector and decides whether to enforce.
+   *
+   * NOTE: NestJS executes APP_GUARDs in registration order. Our order is:
+   *   1. JwtAuthGuard       (401 if no valid JWT)
+   *   2. RolesGuard         (403 if @Roles mismatch)
+   *   3. OwnershipGuard     (404 if ownership mismatch)
+   *
+   * This sequence gives the user the most informative 4xx when something
+   * is wrong without leaking existence of unowned resources.
+   */
+
   @Get(':id')
+  @OwnerOnly('documentTemplate')
   findOne(@Param('id') id: string) {
     return this.service.findById(id);
   }
 
   @Get(':id/expanded')
+  @OwnerOnly('documentTemplate')
   expanded(@Param('id') id: string) {
     return this.service.findExpanded(id);
   }
@@ -64,9 +107,14 @@ export class DocumentTemplateController {
    * TZ-86 Phase A.4 — DataBinding-aware HTML build.
    * Returns inline HTML (text/html). Service injects resolved sourceIds
    * via parallel Mongoose lookups before delegating to existing renderHtml.
+   *
+   * TZ-251 §ШАГ 2 — `@OwnerOnly` here enforces that only the owner (or
+   * admin wildcard) can render the template via this caller-supplied
+   * data binding flow (which can reach external documents and tokens).
    */
   @Post(':id/build')
   @Roles('admin', 'manager')
+  @OwnerOnly('documentTemplate')
   async build(
     @Param('id') id: string,
     @Body() dto: BuildDocumentDto,
@@ -102,6 +150,7 @@ export class DocumentTemplateController {
    */
   @Post(':id/upload-background')
   @Roles('admin', 'manager')
+  @OwnerOnly('documentTemplate')
   @AuditAction({ action: 'upload_background', entityType: 'DocumentTemplate' })
   @UseInterceptors(
     FileInterceptor('file', {
@@ -130,35 +179,57 @@ export class DocumentTemplateController {
     return { url, backgroundImage: template.backgroundImage };
   }
 
+  /**
+   * TZ-251 §ШАГ 2 — `create()` reads `req.user.id` (populated by JWT
+   * strategy) and forwards it to `service.create(dto, userId)`, which
+   * tags the new template with `createdBy = userId`. Existing callers
+   * that pass only `dto` still work because `userId` is optional — the
+   * legacy-fallback branch in OwnershipGuard covers unowned documents.
+   */
   @Post()
   @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'DocumentTemplate' })
-  create(@Body() dto: CreateDocumentTemplateDto) {
-    return this.service.create(dto);
+  create(
+    @Body() dto: CreateDocumentTemplateDto,
+    @Req() req: Request & { user?: AuthenticatedUserLike },
+  ) {
+    return this.service.create(dto, req.user?.id);
   }
 
   @Patch(':id')
   @Roles('admin', 'manager')
+  @OwnerOnly('documentTemplate')
   @AuditAction({ action: 'update', entityType: 'DocumentTemplate' })
   update(@Param('id') id: string, @Body() dto: UpdateDocumentTemplateDto) {
     return this.service.update(id, dto);
   }
 
+  /**
+   * TZ-251 §ШАГ 2 — duplicate enforces ownership of the SOURCE template.
+   * The newly created copy's `createdBy` is set to the ACTING user in
+   * `service.duplicate(id, userId)`.
+   */
   @Post(':id/duplicate')
   @Roles('admin', 'manager')
+  @OwnerOnly('documentTemplate')
   @AuditAction({ action: 'duplicate', entityType: 'DocumentTemplate' })
-  duplicate(@Param('id') id: string) {
-    return this.service.duplicate(id);
+  duplicate(
+    @Param('id') id: string,
+    @Req() req: Request & { user?: AuthenticatedUserLike },
+  ) {
+    return this.service.duplicate(id, req.user?.id);
   }
 
   @Post(':id/set-default')
   @Roles('admin', 'manager')
+  @OwnerOnly('documentTemplate')
   @AuditAction({ action: 'set_default', entityType: 'DocumentTemplate' })
   setDefault(@Param('id') id: string) {
     return this.service.setDefault(id);
   }
 
   @Get(':id/preview')
+  @OwnerOnly('documentTemplate')
   async preview(
     @Param('id') id: string,
     @Query('dataId') dataId: string | undefined,
@@ -171,6 +242,7 @@ export class DocumentTemplateController {
 
   @Delete(':id')
   @Roles('admin', 'manager')
+  @OwnerOnly('documentTemplate')
   @AuditAction({ action: 'delete', entityType: 'DocumentTemplate' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);
@@ -178,6 +250,7 @@ export class DocumentTemplateController {
 
   @Delete(':id/backgrounds/:index')
   @Roles('admin', 'manager')
+  @OwnerOnly('documentTemplate')
   @AuditAction({ action: 'remove_background', entityType: 'DocumentTemplate' })
   removeBackground(
     @Param('id') id: string,
@@ -188,6 +261,7 @@ export class DocumentTemplateController {
 
   @Patch(':id/backgrounds/default')
   @Roles('admin', 'manager')
+  @OwnerOnly('documentTemplate')
   @AuditAction({ action: 'set_default_background', entityType: 'DocumentTemplate' })
   setDefaultBackground(
     @Param('id') id: string,
@@ -198,6 +272,7 @@ export class DocumentTemplateController {
 
   @Patch(':id/orientation')
   @Roles('admin', 'manager')
+  @OwnerOnly('documentTemplate')
   @AuditAction({ action: 'set_orientation', entityType: 'DocumentTemplate' })
   setOrientation(
     @Param('id') id: string,

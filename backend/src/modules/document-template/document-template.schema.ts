@@ -58,6 +58,22 @@ export class DocumentTemplate {
 
   @Prop()
   notes?: string;
+
+  /**
+   * TZ-251 §ШАГ 1 — Object-level ownership (IDOR).
+   *
+   * Optional ObjectId of the user who created the template. New templates
+   * (created via `POST /api/document-templates`) populate this from
+   * `req.user.id`. Existing legacy templates without `createdBy` fall back
+   * to RBAC-only authorization (the `OwnershipGuard` ladder treats
+   * undefined owner as "defer to roles" — see `OwnershipGuard` Step 7).
+   *
+   * Index added on `createdBy` because future guards (TZ-255
+   * server-side permissions) will need it for `find({ createdBy: userId })`
+   * filters.
+   */
+  @Prop({ type: Types.ObjectId, ref: 'User', index: true })
+  createdBy?: Types.ObjectId;
 }
 
 export const DocumentTemplateSchema = SchemaFactory.createForClass(DocumentTemplate);
