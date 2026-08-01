@@ -1,7 +1,8 @@
 # PROJECT PASSPORT — kppdf-8.0
 
 > **Тип:** ERP / производственная платформа
-> **Статус:** Активная разработка (Angular 20 SPA + NestJS 10 + MongoDB 7 Replica Set)
+> **Статус:** Канонический паспорт проекта; разработка продолжается (Angular 20 SPA + NestJS 10 + MongoDB 7 Replica Set)
+> **Актуальность:** 2026-08-01. Список задач ниже — историческая дорожная карта, а не реестр текущих активных файлов.
 > **Дата создания паспорта:** 2026-08-01
 > **Автор паспорта:** Gemini (исследовательский анализ задач проекта)
 
@@ -94,7 +95,9 @@ Module -> Controller -> Service -> Mongoose Schema
 
 ---
 
-## 5. Активные задачи (tasks/)
+## 5. Дорожная карта задач (исторический срез)
+
+> После финальной очистки 2026-08-01 в корне `tasks/` не осталось активных task-файлов. Таблицы этого раздела сохраняют контекст ранее согласованной дорожной карты и не являются доказательством текущего статуса. Фактическое состояние проверяется через `tasks/`, `tasks/_archive/`, `STATUS.md` и `progress.md`.
 
 ### 5.1 Категории задач
 
@@ -164,6 +167,8 @@ progress.md, STATUS.md (root), ARCHITECTURE.md, OrchestratorKit/STATUS.md, front
 
 ## 6. Архив задач
 
+> Архивные записи — историческое evidence. Не удаляйте их при уборке: они объясняют происхождение решений и ограничений.
+
 ### 6.1 tasks/_archive/
 
 - **2026-07:** 11 DONE + 24 SUPERSEDED + 23 failed forwarders (TZ-100..TZ-170)
@@ -213,8 +218,6 @@ progress.md, STATUS.md (root), ARCHITECTURE.md, OrchestratorKit/STATUS.md, front
 | OrchestratorKit/AGENTS.md | Инструкция для AI-агентов в OrchestratorKit |
 | OrchestratorKit/STATUS.md | Kit board статусов |
 | OrchestratorKit/_templates/TZF-00.txt | Финализатор: 8 шагов завершения TZ |
-| tasks/p.txt | Cycle-prompt (portable) |
-| tasks/p2.txt | Cycle-prompt (compact) |
 
 ---
 

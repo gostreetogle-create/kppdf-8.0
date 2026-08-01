@@ -1,8 +1,17 @@
 # STATUS — KPPDF ERP Project Status
 
-**Last updated:** 2026-07-24
-**Phase:** TZ-170 (Конструктор документов — UX-ревизия) — ТРЕБУЕТ ПЕРЕПРОВЕРКИ
-**Total tasks:** 49/49 ✅ (TZ-02..TZ-46) + TZ-AUDIT-9 + 9.1 + TZ-WARMUP-100 + TZ-LIGHT-XX + TZ-83 + TZ-86 + TZ-170 (pending QA) + **16 PENDING** (TZ-150..TZ-165 — Quality Audit Batch + Layout audit)
+**Last updated:** 2026-08-01
+**Phase:** Canonical cleanup and verification — active task folder empty; roadmap items remain documented backlog
+**Canonical workspace:** `D:\kppdf-8.0` on `main`; only registered Git worktree; package manager `pnpm`
+**Task truth:** `tasks/` contains only active work. Completed or deferred work belongs in `tasks/_archive/`; this status file also retains historical roadmap notes.
+**Total tasks:** Historical completed work plus documented backlog; see `OrchestratorKit/STATUS.md` for the filesystem-synchronised kit board.
+
+## Canonical cleanup checkpoint — 2026-08-01
+
+- Confirmed source of truth: `D:\\kppdf-8.0`, branch `main`; `git worktree list` contains only this checkout.
+- Removed non-project artifacts: `WindowsTheme/`, `vendor/codebase-memory-mcp/`, root `Пимер.pdf`, `.mcp.json`; `start.mjs` no longer auto-starts the removed MCP.
+- Moved the project passport to `docs/project-passport.md`; `TZ-CLEANUP-R2` is archived as DONE after all cleanup acceptance criteria and verification gates.
+- `tasks/` is intended to contain only real active `TZ-*.md` files. Roadmap prose elsewhere is historical context, not an active task claim.
 
 ## ✅ Завершённые этапы
 
@@ -28,15 +37,11 @@
 **Build:** pnpm run build ✅ (542.84 kB initial bundle, 0 warnings)
 
 ### UI Hardening Rework (2026-07-05)
-- **Material MD3 + custom shared/ui-kit wrappers + density -3 глобально** — свёрнутый стек UI под реальные нужды проекта (а не 35+ generic shadcn-style компонентов из TZ-31..TZ-40).
-- **`@angular/material@20.2`** — оставлен как единственный UI-кит (даёт MD3 tokens `--mat-sys-*` + accessibility + density mixins).
-- **3 кастомные обёртки** в `frontend/src/app/shared/ui-kit/` — закрывают повторяющиеся паттерны, для которых в Material нет готового:
-  - `<app-ui-page-header>` — заголовок страницы (icon + title + subtitle + back-link + action slot).
-  - `<app-ui-empty-state>` — empty-state для `*matNoDataRow` / пустых filter-results / «нет данных».
-  - `<app-ui-badge>` — status / isActive / isSystem indicator (variant × size × dot × icon).
-- **Глобальный compact-mode**: `@include mat.all-component-densities(-3)` в `frontend/src/styles.scss` (после `mat.theme()`) → table rows ≈36px, inputs/chips/paginator ≈36px без per-page правок. Per-component opt-out: `@include mat.table-density(0)`, `mat.form-field-density(0)`, etc.
-- **Migrated**: `materials-list.page.ts`, `units-list.page.ts`, `currencies-list.page.ts` → ui-kit обёртки. Acceptance: `grep '<header class="page-header">' src/app/features/` = 0, `grep '<span class="chip">' src/app/features/` = 0.
-- **Подробности:** см. `STACK.md §6 (UI patterns)` + `§6.4 (Global density)` + `progress.md` entry этого rework (2026-07-05).
+- **Paper & Ink shared UI** — собственный Angular kit в `frontend/src/app/shared/ui/` и композиционные primitives в `frontend/src/app/shared/page/`.
+- **Token-first styling**: OKLCH palette, hairline borders, `pi-focus-ring`, responsive states и keyboard-visible focus.
+- **Migrated primitives**: `PiPageHeader`, `PiEmptyState`, `PiBadge`, `PiRowActions`, dialogs, tables, forms, canvas and feedback components.
+- **Document constructor**: builder canvas, inspector, DSL contracts and reference-data services live under `frontend/src/app/pages/doc-constructor/` and `frontend/src/app/shared/dsl/`.
+- **Подробности:** `docs/paper-and-ink.md`, `ARCHITECTURE.md` и `progress.md` содержат дизайн-контракт и историю переходов.
 
 ### Dev Tooling (TZ-41..TZ-46)
 - TZ-41: Health Check Panel + Log TUI Mode — `start.mjs` стал TUI-aware orchestrator с `--tail` режимом (in-place статус 3 сервисов, ring buffer 5 строк на сервис, финальная "Ready" панель с латентностями /api/health). checkHealth() парсит JSON body и определяет `degraded` состояние.
@@ -727,8 +732,9 @@ kppdf-8.0/
 
 ## TZ-92 series (2026-07-11) — MCP integration (3 sequential TZs)
 
-### TZ-92: codebase-memory MCP integration baseline
+### TZ-92: codebase-memory MCP integration baseline (retired 2026-08-01)
 
+- Historical record only: the optional vendored MCP bundle and `.mcp.json` were removed during the canonical cleanup because the application does not depend on them.
 - Commit: feat(mcp): TZ-92 baseline — vendor bundle + .mcp.json + mcp:start
 - Archive: tasks/_archive/2026-07/TZ-92.md.done
 - Lock: OrchestratorKit/.mimocode/locks/TZ-92-mcp-integration.lock

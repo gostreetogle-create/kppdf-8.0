@@ -98,15 +98,15 @@ node start.mjs --reset        # полный сброс: docker down -v + rm nod
 node start.mjs --no-browser   # без авто-открытия браузера
 node start.mjs --help         # справка
 
-# ── npm-скрипты (из корня, где есть package.json):
-npm start                     # = node start.mjs --check (безопасный preflight, не висит)
-npm run start:all             # = node start.mjs (полный запуск, висит пока работает)
-npm run start:tail            # = node start.mjs --tail (TUI-режим)
-npm run check:start           # = node start.mjs --check
-npm run stop:start            # = node start.mjs --stop
-npm run reset:start           # = node start.mjs --reset
-npm run start:no-browser      # = node start.mjs --no-browser
-npm run start:prod            # = node start.mjs --prod (production: pnpm build + node dist/main.js + static server)
+# ── pnpm-скрипты (из корня, где есть package.json):
+pnpm start                    # = node start.mjs --check (безопасный preflight, не висит)
+pnpm run start:all            # = node start.mjs (полный запуск, висит пока работает)
+pnpm run start:tail           # = node start.mjs --tail (TUI-режим)
+pnpm run check:start          # = node start.mjs --check
+pnpm run stop:start           # = node start.mjs --stop
+pnpm run reset:start          # = node start.mjs --reset
+pnpm run start:no-browser     # = node start.mjs --no-browser
+pnpm run start:prod           # = node start.mjs --prod (production: pnpm build + node dist/main.js + static server)
 
 # ── ENV-переменные:
 NO_TUI=1 node start.mjs       # отключить TUI (для CI / пайп-режима), даже если передан --tail
@@ -153,7 +153,7 @@ NO_COLOR=1 node start.mjs     # отключить ANSI-цвета
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — полная архитектура проекта
 - [`docs/DEVELOPMENT-PATTERNS.md`](docs/DEVELOPMENT-PATTERNS.md) — конкретные код-паттерны
 
-**⚠️ Важно для Windows:** не вводите `start --check` без `.\` — Windows путает с built-in командой `start` (для открытия файлов). Используйте `.\start.cmd --check` или `node start.mjs --check` или `npm run start:check`.
+**⚠️ Важно для Windows:** не вводите `start --check` без `.\` — Windows путает с built-in командой `start` (для открытия файлов). Используйте `.\start.cmd --check` или `node start.mjs --check` или `pnpm run check:start`.
 
 ### 🛠️ Под капотом
 
@@ -161,8 +161,6 @@ NO_COLOR=1 node start.mjs     # отключить ANSI-цвета
 - Backend: NestJS 10 + Mongoose 8 + MongoDB Replica Set — 19+ modules, 65+ entities (TZ-02..TZ-18)
 - Frontend: Angular 20 standalone + Signals + OnPush + Paper & Ink design system — 24+ UI primitives (TZ-19..TZ-104)
 - DSL: defineEntity, SubmitGuard, IdempotencyInterceptor, PiEntityListComponent (TZ-232)
-- Auth: JWT (access+refresh), bcrypt, RBAC, 30+ permission keys (TZ-04)
-- Audit: все мутации автоматически логируются в AuditLog (TZ-05)
 - Auth: JWT (access+refresh), bcrypt, RBAC, 30+ permission keys (TZ-04)
 - Audit: все мутации автоматически логируются в AuditLog (TZ-05)
 
@@ -180,7 +178,7 @@ kppdf-8.0/
 ├── frontend/                     ← Angular приложение
 ├── OrchestratorKit/              ← 🔒 kit для AI-агентов (TZ-flow, скрипты, шаблоны)
 ├── STACK.md / progress.md / ARCHITECTURE.md  ← сгенерированы kit-ом
-└── mimo.exe                      ← CLI-агент (не в git)
+└── docs/project-passport.md       ← паспорт проекта и рабочие соглашения
 ```
 
 ### 🛑 Остановить всё
@@ -248,37 +246,34 @@ frontend/src/app/shared/ui/
 
 ---
 
-## 🧪 Определить стек
+## 🧰 Стек и служебные команды
 
-Сейчас manifests проекта (`package.json`, `requirements.txt`, `go.mod` и т.п.) отсутствуют, поэтому `STACK.md` пустой. Чтобы авто-детект заработал:
+Стек проекта уже определён и поддерживается двумя самостоятельными пакетами:
 
-```bash
-# Вариант 1: инициализировать проект (например, NestJS)
-npx @nestjs/cli new backend
-# → kit-stack.sh при следующем запуске увидит package.json и заполнит STACK.md
+- `backend/package.json` + `backend/pnpm-lock.yaml` — NestJS 10, Mongoose 8 и Jest;
+- `frontend/package.json` + `frontend/pnpm-lock.yaml` — Angular 20, TypeScript, Jest и ESLint;
+- корневой `package.json` — только кросс-платформенный запуск проекта, Team Room и pre-commit tooling.
 
-# Вариант 2: вручную создать минимальный package.json
-cat > package.json <<'EOF'
-{
-  "name": "kppdf-8.0",
-  "version": "0.1.0",
-  "private": true
-}
-EOF
-bash OrchestratorKit/kit-stack.sh --force
-```
+Канонический менеджер пакетов — **pnpm**. CI использует `pnpm install --frozen-lockfile` отдельно в `backend/` и `frontend/`; не создавайте root `package-lock.json`.
 
-После этого `STACK.md` заполнится реальным стеком. Kit-stack.sh также поддерживает `requirements.txt` (Python), `go.mod` (Go), `Cargo.toml` (Rust), `pyproject.toml`, `pom.xml` — для каждого стека есть специализированный шаблон в `OrchestratorKit/_templates/_stacks/`.
+Для обновления описания стека используйте `STACK.md` и соответствующие manifests, а не создавайте новый manifest в корне.
 
 ---
 
 ## 📊 Текущий статус
 
 - ✅ **Доменная модель:** 89 entity, 11 доменов, задокументированы дубликаты и аномалии
-- ✅ **Инфраструктура для AI-агентов:** OrchestratorKit полностью функционален (после фикса STACK-template.md)
-- ⚠️ **Стек проекта:** не определён (нет manifests)
-- ⚠️ **Код приложения:** не начат
-- ⚠️ **Дубликаты в модели:** 16 пар/троек требуют консолидации (см. `docs/data-model.md` § «Дубликаты и аномалии»)
+- ✅ **Инфраструктура для AI-агентов:** OrchestratorKit и локальный Team Room функциональны
+- ✅ **Стек проекта:** NestJS 10 + Angular 20 + MongoDB 7 Replica Set, manifests и lock-файлы синхронизированы
+- ✅ **Код приложения:** backend и frontend реализованы; текущие ограничения и следующие этапы отражены в `STATUS.md` и `progress.md`
+- 📋 **Ближайший backlog:** security/RBAC follow-ups перечислены в `STATUS.md` и архиве задач; отсутствие файлов в `tasks/` означает отсутствие выданной активной задачи, а не отсутствие roadmap.
+- 📋 **Security batch TZ-247:** idempotency и связанные проверки требуют отдельного follow-up.
+- 📋 **Security batch TZ-248:** CORS/trust-proxy проверены и зафиксированы в архиве.
+- 📋 **Security batch TZ-255:** backend permissions guard и boot validation уже зафиксированы в архиве.
+- 📋 **Security batch TZ-256:** capability guard и frontend authorization имеют отдельные тестовые follow-ups.
+- 📋 **Security batch TZ-257:** admin/RBAC mutation follow-ups отражены в `STATUS.md`.
+- 📋 **Security batch TZ-258:** RBAC contracts и остаточные spec follow-ups отражены в `STATUS.md`.
+- 📋 **Дубликаты в модели:** 16 пар/троек документированы для последующей консолидации (см. `docs/data-model.md` § «Дубликаты и аномалии»)
 
 ---
 

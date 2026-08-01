@@ -414,44 +414,45 @@ rg -i '(embedding|vector.?search|cosine|ANN)' backend/src frontend/src
 
 ---
 
-## Frontend UI Kit (shared/ui-kit/ — 2026-07-05 rework)
+## Frontend UI Kit (`frontend/src/app/shared/ui/` — current)
 
-UI держится на **`@angular/material@20` (Material Design 3)** + трёх кастомных обёртках в `frontend/src/app/shared/ui-kit/`. Material даёт MD3 tokens (`--mat-sys-*`), accessibility и density mixins из коробки; обёртки закрывают 3 повторяющихся паттерна, для которых в Material нет готового «швейцара». Глобальный compact-mode в `frontend/src/styles.scss` (`@include mat.all-component-densities(-3)`) — table rows ≈36px, inputs/chips/paginator ≈36px без per-page правок.
+UI держится на собственном Paper & Ink kit без Material/PrimeNG: standalone Angular-компоненты, Signals, OnPush, OKLCH design tokens, hairline borders и единый focus-ring. Переиспользуемые primitives находятся в `frontend/src/app/shared/ui/`; page-level composition находится в `frontend/src/app/shared/page/`.
 
 ### Три обёртки (расширяется до 4)
 
-- **`<app-ui-page-header>`** — `frontend/src/app/shared/ui-kit/ui-page-header.component.ts`. Заголовок-страницы: rounded title icon tile + title (required) + optional subtitle + optional back-link (`backLink` input → `[routerLink]`) + content slot `[actions]` для trailing buttons. Standalone, OnPush, signal inputs.
-- **`<app-ui-empty-state>`** — `frontend/src/app/shared/ui-kit/ui-empty-state.component.ts`. Empty-state block: icon + title (required) + optional description + default `<ng-content>` для CTA. Используется внутри `<tr class="mat-row" *matNoDataRow>` table-row'а и для пустых list-views.
-- **`<app-ui-badge>`** — `frontend/src/app/shared/ui-kit/ui-badge.component.ts`. Status / isActive / isSystem indicator. Variants: `default | primary | success | warning | danger | info | muted`. Sizes: `sm | md`. Опции: `dot`, `icon`. Все варианты приводятся через MD3 tokens (`--mat-sys-*`) или path-faith semantic-tones (#16a34a / #d97706 / ...) через `color-mix`. `[matTooltip]` привязывается к host element, что даёт tooltip на весь badge.
-- **`<app-ui-table-row-actions>`** — `frontend/src/app/shared/ui-kit/ui-table-row-actions.component.ts` *(P1, добавлено 2026-07-05 rework)*. Обёртка для actions-колонки в `<mat-table>`. Action buttons скрыты по умолчанию (opacity 0 + translateX 4px), staggered-reveal на row hover или `:focus-within` — первый button появляется мгновенно, последующие c `transition-delay: 30/60/90ms`. Persistent visibility через `[revealed]` input (для selected / editing rows). CSS-only animation (no JS). Применяется в будущих TZ для warehouses/orders/tech-process list-pages (TZ-49+).
+- **`<app-pi-page-header>`** — `frontend/src/app/shared/page/pi-page-header.component.ts`. Общий заголовок страницы с title, subtitle, back-link и actions slot.
+- **`<app-pi-empty-state>`** — `frontend/src/app/shared/ui/pi-empty-state/pi-empty-state.component.ts`. Единое empty-state представление с описанием и CTA slot.
+- **`<app-pi-badge>`** — `frontend/src/app/shared/ui/badge/badge.component.ts`. Status/isActive/isSystem indicator с семантическими вариантами и token-driven цветами.
+- **`<app-pi-row-actions>`** — `frontend/src/app/shared/ui/pi-row-actions/pi-row-actions.component.ts`. Доступные row actions с hover/focus-visible состояниями и persistent visibility для выбранной строки.
 
 ### Acceptance criteria (проект-wide)
 
-- `grep '<header class="page-header">' src/app/features/` → **0 hits** (вся inline разметка заменена на `<app-ui-page-header>`).
-- `grep '<span class="chip">' src/app/features/` → **0 hits** (status / category / indicator идут через `<app-ui-badge>`).
-- Никаких inline `<mat-chip color="primary">` привязок ни в каком feature-page.
-- Все list-pages импортируют `UiPageHeader` / `UiEmptyState` / `UiBadge` из `shared/ui-kit/` и используют `<app-ui-*>` селекторы.
+- Inline page headers and status chips are not reimplemented when a shared primitive exists.
+- Components use `pi-focus-ring`, semantic tokens and keyboard-visible states instead of page-specific visual hacks.
+- New primitives are added only after a pattern repeats across at least three pages (YAGNI).
+- List pages compose primitives from `shared/ui/` and `shared/page/` using the `app-pi-*` selectors.
 
 ### Shell layout
 
-- **`frontend/src/app/layouts/main-layout.component.ts`** — authenticated app shell. Owns topbar (brand + user meta + logout) + `<app-ui-page-header>` (с динамическим title/icon из active route) + `<router-outlet>`. Login page bypasses shell (standalone centered card).
+- **Authenticated app shell** — owns topbar (brand + user meta + logout) and the shared page composition around `<router-outlet>`. Login bypasses the shell with a standalone centered card.
 - **`frontend/src/app/app.routes.ts`** — все auth-required routes (`home / materials / units / currencies`) вложены в `MainLayout` через `children: [...]` pattern. Per-route `data.icon` → page header icon; per-route `title` → page header title (после strip `KPPDF — ` prefix). Login — отдельный top-level route.
 
 ### Migrated pages
 
 | Page | Path | Под ui-kit обёртками |
 |------|------|----------------------|
-| `/materials` | `features/materials/materials-list.page.ts` | ✅ page-header + empty-state + badges |
-| `/units` | `features/units/units-list.page.ts` | ✅ page-header + empty-state + badges (isSystem warning, isActive success/danger) |
-| `/currencies` | `features/currencies/currencies-list.page.ts` | ✅ page-header + empty-state + badges (IS-код info, isSystem warning) |
-| `/home`, `/login`, `/categories`, `/products`, `/orders`, ... | `features/<name>/` | ⏳ future TZ — migrate remaining CRUD |
+| `/materials` | `pages/materials/materials-list.page.ts` | ✅ page-header + empty-state + badges |
+| `/units` | `pages/units/units-list.page.ts` | ✅ page-header + empty-state + badges |
+| `/currencies` | `pages/currencies/currencies-list.page.ts` | ✅ page-header + empty-state + badges |
+| `/doc-constructor/*` | `pages/doc-constructor/` | ✅ builder canvas, inspector, DSL and template data services |
+| Remaining operational pages | `pages/<name>/` | Follow the same shared primitive and page contract during their next feature change |
 
 ### Cross-cutting
 
-- **Density -3 глобально:** один mixin `@include mat.all-component-densities(-3)` в `frontend/src/styles.scss` после `mat.theme(...)`. Per-component opt-out: `@include mat.table-density(0)`, `mat.form-field-density(0)`, etc.
-- **Bundle impact:** обёртки — это pure Angular standalone components (no extra deps). С Material 20 уже в `node_modules` → net zero new deps в prod.
-- **Token consistency:** все 3 обёртки + shell layout используют только MD3 tokens (`--mat-sys-surface`, `--mat-sys-primary`, `--mat-sys-outline-variant`, `--mat-sys-on-surface-variant`, `--mat-sys-error`). Никаких hardcoded hex (кроме semantic-tones `#16a34a`/`#d97706`/etc в badge variants — через `color-mix` для tonal neutral blending).
-- **Расширение:** future wrappers (candidates) — `<app-ui-row-actions>` для staggered row actions на hover, `<app-ui-section-card>` для grouped forms. До тех пор пока паттерн не повторяется в 3+ page'ах — обёртку **не создаём** (YAGNI).
+- **Token consistency:** shared primitives consume the Paper & Ink tokens from `frontend/src/styles.css`; page styles do not introduce competing palettes or shadows.
+- **Accessibility:** controls expose labels, focus-visible states and appropriate live/semantic regions; keyboard behavior is covered by focused component tests where applicable.
+- **Bundle impact:** primitives are local standalone components with no additional UI framework dependency.
+- **Расширение:** новые wrappers не создаём, пока паттерн не повторяется в 3+ page'ах (YAGNI).
 
 ### Подробная документация обёрток
 
@@ -459,14 +460,14 @@ UI держится на **`@angular/material@20` (Material Design 3)** + трё
 - **Файлы, импорты, default values:** в doc-комментариях внутри каждой `ui-*.component.ts` (header doc-block в верхней части файла).
 - **Глобальный dashboard / метрики:** см. `STATUS.md` → "UI Hardening Rework (2026-07-05)" секция + `progress.md` хронологическая запись rework'а.
 
-### Структура директории shared/ui-kit/
+### Структура shared UI
 
 ```
-frontend/src/app/shared/ui-kit/
-├── ui-page-header.component.ts       # ~110 lines, signal inputs (icon/title/subtitle/backLink/backLabel)
-├── ui-empty-state.component.ts       # ~80 lines, signal inputs (icon/title/description) + slot for CTA
-├── ui-badge.component.ts             # ~170 lines, variant × size × dot × icon, MD3 tokens
-└── ui-table-row-actions.component.ts # ~110 lines, CSS-only staggered hover-reveal, [revealed]/[staggerMs] inputs
+frontend/src/app/shared/
+├── ui/       # buttons, forms, dialogs, tables, canvas, feedback and navigation primitives
+├── page/     # page-header, section, toolbar and demo composition
+├── dsl/      # entity/list schema and service contracts
+└── template-block/ # document-constructor block models and helpers
 ```
 
 Все три — `standalone: true`, `ChangeDetection.OnPush`, signal-based inputs (`input<T>()` / `input.required<T>()`).

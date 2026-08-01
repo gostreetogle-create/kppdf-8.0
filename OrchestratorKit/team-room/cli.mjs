@@ -102,13 +102,12 @@ function extractConflictKeys(content) {
   return [...new Set([...pathCandidates(explicit), ...pathCandidates(changedFiles), ...inlineFiles])];
 }
 
-function taskFiles() {
-  const tasksDir = path.join(PROJECT_ROOT, 'tasks');
+function taskFiles(tasksDir = path.join(PROJECT_ROOT, 'tasks'), sourcePrefix = 'tasks') {
   if (!fs.existsSync(tasksDir)) return [];
   return fs.readdirSync(tasksDir, { withFileTypes: true })
     .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
     .map((entry) => {
-      const sourcePath = path.join('tasks', entry.name).replaceAll('\\', '/');
+      const sourcePath = path.join(sourcePrefix, entry.name).replaceAll('\\', '/');
       const content = fs.readFileSync(path.join(tasksDir, entry.name), 'utf8');
       const heading = content.match(/^#\s+([^\r\n]+)/m)?.[1] || entry.name;
       const id = entry.name.replace(/\.md$/, '');

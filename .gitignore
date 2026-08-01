@@ -109,6 +109,11 @@ ui/stitch_professional_desktop_crm_refinement/
 # Freebuff AI agent workspace (local only)
 .freebuff/
 
+# Files intentionally excluded from the ERP repository
+WindowsTheme/
+vendor/
+Пимер.pdf
+
 # === DOCUMENTATION (explicitly tracked) ===
 # All docs/ content is VITAL and MUST be version-controlled.
 # The SECTION BELOW ensures nothing in docs/ is ever accidentally caught

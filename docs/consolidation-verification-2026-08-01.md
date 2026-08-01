@@ -5,7 +5,7 @@
 - Working directory: `D:\kppdf-8.0`
 - Branch: `main`
 - This is the single canonical location for continued work.
-- The Freebuff worktree and Git stashes are retained as rollback backups until the user explicitly authorizes cleanup.
+- No linked Freebuff worktree is registered. The ignored `.freebuff/` directory is local tooling state, not project source; one stale host-locked directory may require a terminal/Freebuff restart before Windows can remove it.
 
 ## Consolidated Team Room
 
@@ -44,4 +44,4 @@ The original user-reported `POST /api/document-templates` stack-overflow and blo
 
 - Angular build reports existing bundle/style budget warnings.
 - The builder page still reports existing architecture warnings for raw HTTP calls; these are warnings and were not expanded into this consolidation.
-- No production deployment, database mutation, or destructive workspace cleanup was performed.
+- Cleanup pass removed the confirmed non-project Windows theme, vendored MCP bundle, root sample PDF and `.mcp.json` integration; the launcher no longer references the removed MCP. No production deployment or database mutation was performed.

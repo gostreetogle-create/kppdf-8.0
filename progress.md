@@ -4587,7 +4587,7 @@ Phase 0 Round 2 closed TZ-CLEANUP with explicit DONE_PARTIAL outcome. The first 
 ## 2026-08-01 — TZ-CLEANUP-R2 (cleanup-audit session)
 
 **Исполнитель:** autonomous cleanup-audit agent (Codebuff session)
-**Статус:** AUDIT COMPLETED — ТЗ создано в `tasks/TZ-CLEANUP-R2.md`, ожидает реализации в следующей сессии. Никаких destructivenых изменений в этой сессии не сделано (только аудит + спецификация).
+**Статус (историческая запись):** AUDIT COMPLETED — на момент этой записи ТЗ было создано и ожидало реализации. Реализация завершена позднее и зафиксирована в `tasks/_archive/2026-08/TZ-CLEANUP-R2.done.md`.
 
 **Находки Phase 0 inventory (top-level dirs):**
 
@@ -4607,7 +4607,7 @@ Phase 0 Round 2 closed TZ-CLEANUP with explicit DONE_PARTIAL outcome. The first 
 
 **Verification (этой сессии):**
 - `bash OrchestratorKit/verify-status.sh` exit 0 (как и было)
-- TZ-файл `tasks/TZ-CLEANUP-R2.md` создан, готов к выполнению следующей сессией.
+- Исторически создан активный файл `tasks/TZ-CLEANUP-R2.md`; позднее он был выполнен и перемещён в `tasks/_archive/2026-08/TZ-CLEANUP-R2.done.md`.
 
 ## 2026-08-01 — TZ-CLEANUP-R2 cleanup-batch-1: delete tasks/p.txt, tasks/p2.txt
 
@@ -4624,6 +4624,6 @@ Phase 0 Round 2 closed TZ-CLEANUP with explicit DONE_PARTIAL outcome. The first 
 - `cd backend && pnpm exec tsc -p tsconfig.build.json --noEmit` — exit 0
 - `cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit` — exit 0
 
-**AC state:** now 8/15 PASSING (AC4 closed). Remaining 7 FAIL remain for next batches (WindowsTheme/, vendor/, Пимер.pdf decision, doc-drift fixes).
+**AC state (at the time):** 8/15 PASSING after AC4. The remaining seven criteria were subsequently completed in the canonical cleanup pass; see `tasks/_archive/2026-08/TZ-CLEANUP-R2.done.md`.
 
-**Not committed yet:** changes are in working tree only, not committed to git (per user's request to start small).
+**Historical note:** changes were initially left uncommitted during the audit session. The canonical cleanup is now complete in the working tree and will be committed and pushed to `origin/main` after the final verification gate.

@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 import { agentIdentity, extractConflictKeys, parseArgs, pathCandidates, portFor, taskFiles } from './cli.mjs';
 import { conflictKeysOverlap } from './store.mjs';
@@ -49,14 +52,36 @@ test('parses bold CONFLICT KEYS metadata when no changed-file section exists', (
   ]);
 });
 
-test('reads the repository\'s current active tasks without importing protected files', () => {
+test('reads active tasks and tolerates an empty canonical task folder', () => {
   const tasks = taskFiles();
-  assert.ok(tasks.length > 0, 'at least one active task should be visible');
   assert.ok(tasks.every((task) => task.sourcePath.startsWith('tasks/')));
+  assert.equal(new Set(tasks.map((task) => task.id)).size, tasks.length);
+  assert.ok(
+    tasks.every((task) => task.title.length > 0 && Array.isArray(task.conflictKeys)),
+    'every active task should expose title and conflict metadata',
+  );
 
-  const cleanup = tasks.find((task) => task.id === 'TZ-CLEANUP-R2');
-  assert.ok(cleanup, 'TZ-CLEANUP-R2 should be present in the active task folder');
-  assert.equal(cleanup.sourcePath, 'tasks/TZ-CLEANUP-R2.md');
+  const fixtureDir = fs.mkdtempSync(path.join(os.tmpdir(), 'team-room-tasks-'));
+  try {
+    fs.writeFileSync(
+      path.join(fixtureDir, 'TZ-fixture.md'),
+      '# TZ-fixture: Test task\n\n**CONFLICT KEYS:**\n- frontend/src/app/example.ts\n',
+      'utf8',
+    );
+    const fixtureTasks = taskFiles(fixtureDir, 'fixture-tasks');
+    assert.equal(fixtureTasks.length, 1);
+    assert.deepEqual(fixtureTasks[0], {
+      id: 'TZ-fixture',
+      title: 'Test task',
+      sourcePath: 'fixture-tasks/TZ-fixture.md',
+      conflictKeys: ['frontend/src/app/example.ts'],
+    });
+
+    fs.rmSync(path.join(fixtureDir, 'TZ-fixture.md'));
+    assert.deepEqual(taskFiles(fixtureDir, 'fixture-tasks'), []);
+  } finally {
+    fs.rmSync(fixtureDir, { recursive: true, force: true });
+  }
 });
 
 test('pathCandidates reads list items, ignores prose, and strips punctuation', () => {
