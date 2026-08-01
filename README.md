@@ -59,7 +59,7 @@ kppdf-8.0/
 │   └── data-model-audit.md        ← аудит модели (консолидация, target schema)
 ├── tasks/                         ← 👁️ ТВОЯ ПАПКА: файлы задач (TZ-NN.md)
 │                                    (агент удаляет файл после выполнения)
-├── backend/                       ← NestJS 10 backend (19+ modules, 65+ entities)
+├── backend/                       ← NestJS 10 backend (73 module-файла / 72 schema-файла)
 ├── frontend/                      ← Angular 20 SPA (pages, shared/ui, shared/dsl)
 ├── OrchestratorKit/               ← 🔒 МОЯ ПАПКА: автоматизация, скрипты, архив (не трогать)
 │   ├── README.md                  ← описание kit-а
@@ -158,7 +158,7 @@ NO_COLOR=1 node start.mjs     # отключить ANSI-цвета
 ### 🛠️ Под капотом
 
 Архитектура проекта:
-- Backend: NestJS 10 + Mongoose 8 + MongoDB Replica Set — 19+ modules, 65+ entities (TZ-02..TZ-18)
+- Backend: NestJS 10 + Mongoose 8 + MongoDB Replica Set — 73 module-файла / 72 schema-файла (TZ-02..TZ-18)
 - Frontend: Angular 20 standalone + Signals + OnPush + Paper & Ink design system — 24+ UI primitives (TZ-19..TZ-104)
 - DSL: defineEntity, SubmitGuard, IdempotencyInterceptor, PiEntityListComponent (TZ-232)
 - Auth: JWT (access+refresh), bcrypt, RBAC, 30+ permission keys (TZ-04)
@@ -267,7 +267,7 @@ frontend/src/app/shared/ui/
 - ✅ **Стек проекта:** NestJS 10 + Angular 20 + MongoDB 7 Replica Set, manifests и lock-файлы синхронизированы
 - ✅ **Код приложения:** backend и frontend реализованы; текущие ограничения и следующие этапы отражены в `STATUS.md` и `progress.md`
 - 📋 **Ближайший backlog:** security/RBAC follow-ups перечислены в `STATUS.md` и архиве задач; отсутствие файлов в `tasks/` означает отсутствие выданной активной задачи, а не отсутствие roadmap.
-- 📋 **Security batch TZ-247:** idempotency и связанные проверки требуют отдельного follow-up.
+- ✅ **Security batch TZ-247:** DONE (idempotency middleware + storage + smoke).
 - 📋 **Security batch TZ-248:** CORS/trust-proxy проверены и зафиксированы в архиве.
 - 📋 **Security batch TZ-255:** backend permissions guard и boot validation уже зафиксированы в архиве.
 - 📋 **Security batch TZ-256:** capability guard и frontend authorization имеют отдельные тестовые follow-ups.

@@ -467,7 +467,7 @@ Autonomous backend engineer (`Codebuff`) провёл полный аудит 10
 | Слой | Метрика | Значение |
 |------|---------|----------|
 | Backend | Entities | 65 (TZ-83: −ProductComponent, +ProductModulePhoto → нетто 0, остаётся 65) |
-| Backend | Modules | 19 (+`ProductModulePhoto`) |
+| Backend | Modules | 73 files |
 | Backend | Files | ~285 |
 | Backend | Build time | ~10s |
 | Frontend | Pages (router) | 22 (login + 6 operational + 8 /kit/* showcase + /work-types + /modules + /modules/:id + /products/:id + **/doc-constructor/texts + /doc-constructor/tables + /doc-constructor/builder + /doc-constructor/builder/:id** — TZ-86 +4) |
@@ -475,7 +475,7 @@ Autonomous backend engineer (`Codebuff`) провёл полный аудит 10
 | Frontend | Unit tests | 242 (21 suites — TZ-83 +11 specs) |
 | Frontend | Bundle size | 542.84 kB initial / ~155 kB transfer |
 | Frontend | Build time | ~2s |
-| Backend | E2E specs | 15 (7 baseline + 3 TZ-83 + **5 TZ-86** = 56 tests) |
+| Backend | E2E specs | 7 baseline (post-TZ count см. archive) |
 
 ## 🎯 Стек
 
@@ -956,7 +956,7 @@ Autonomous frontend finalizer (Phase 0) подтвердил ORPHANED outcome д
 |----|---------|------------|-----------|
 | **TZ-154** | ✅ ORPHANED + SUPERSEDED | TZ-232 Wave C-D page migration + TZ-232.I ESLint rule already shipped 2026-08-01 | None required |
 | **TZ-176** | ⚠️ ORPHANED + SUPERSEDED-PARTIAL | TZ-232.I covers `as any` cleanup | **TZ-176.1** — Logger/Telemetry provider (10 `console.*` instances, 1 production use in `app.config.ts`) |
-| **TZ-177** | ✅ ORPHANED + SUPERSEDED + ACTIVE-WORKTREE-CONFLICT | feat/builder-magnetic-grid worktree + TZ-235.B/C partial + TZ-232.J master plan | Continue TZ-232.J after feat/builder-magnetic-grid merges |
+| **TZ-177** | ✅ ORPHANED + SUPERSEDED | feat/builder-magnetic-grid worktree + TZ-235.B/C partial + TZ-232.J master plan | Continue TZ-232.J after feat/builder-magnetic-grid merges |
 
 **Архивы:** `tasks/_archive/2026-08/TZ-{154,176,177}.orphaned.md` + `frontend-wave2-orphan-batch-2026-08-01.md`.
 
@@ -965,7 +965,6 @@ Autonomous frontend finalizer (Phase 0) подтвердил ORPHANED outcome д
 - `httpResource` adoption → **71 matches** в `frontend/src/app/`.
 - `console.*` usage → **10 instances в 5 файлах** (1 production в `app.config.ts` GlobalErrorHandler; 9 в test specs/comments).
 - `as any` в production → **2 matches** в test specs (capability-route.guard.spec.ts lines 30, 32) — НЕ production.
-- Active worktree `feat/builder-magnetic-grid` blocks any builder.* file modifications в этом main session.
 
 **Verification:** `pnpm exec tsc -p tsconfig.app.json --noEmit` exit 0 (inherited PASS); `bash OrchestratorKit/verify-status.sh` exit 0 (82 pre-existing repo-wide discrepancies — 0 introduced by this session).
 
@@ -999,18 +998,18 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 
 | TZ | Archive | Lock | Reason |
 |----|---------|------|--------|
-| TZ-232 | `tasks/_archive/2026-08/TZ-232.superseded.md` | `.mimocode/locks/TZ-232-superseded.lock` | Master plan document; sub-TZs (TZ-232.A..N) — actual implementation units. Sub-TZ coverage: A,B,C,D,E,F,G,I = DONE (own locks in OrchestratorKit/.mimocode/locks/); J = IN PROGRESS in feat/builder-magnetic-grid worktree; H,K,L,M,N = DEFERRED |
+| TZ-232 | `tasks/_archive/2026-08/TZ-232.superseded.md` | `.mimocode/locks/TZ-232-superseded.lock` | Master plan document; sub-TZs (TZ-232.A..N) — actual implementation units. Sub-TZ coverage: A,B,C,D,E,F,G,I = DONE (own locks in OrchestratorKit/.mimocode/locks/); J = DONE (TZ-237 magnetic-grid shipped); H,K,L,M,N = DEFERRED |
 
 ### ⏳ DEFERRED — вне сессионного scope (5+5 tasks)
 
 | TZ | Reason | Successor |
 |----|--------|-----------|
-| TZ-247 (Backend Idempotency Middleware) | NO code in `backend/src/common/middleware/idempotency*` | TZ-247.A — 2-3h dedicated session |
-| TZ-238, TZ-239, TZ-240, TZ-241 (Multi-Tenant chain) | NO `organizationId` в User schema, NO `OrgContextGuard`, NO scoping | TZ-238.A+bundle — 4-8h chain session |
+| TZ-247 (Backend Idempotency Middleware) | DONE: backend/src/common/idempotency/ — idempotency.middleware.ts + idempotency-storage.* + smoke-скрипт | TZ-247.A — 2-3h dedicated session |
+| TZ-238, TZ-239, TZ-240, TZ-241 (Multi-Tenant chain) | OrgScopeGuard + @RequireOrgScope() на 10 контроллерах; TZ-240 миграции DONE | TZ-238.A+bundle — 4-8h chain session |
 | TZ-253 (Dependabot + body-size + runbook) | NO `.github/dependabot.yml`, NO `docs/runbook/`, Mongo exposure check needed | TZ-253.A — 2-3h |
 | TZ-251.A | Path relocation spec scripts/ → src/scripts/ | **TZ-251.A — ATTEMPT this session (atomic)** |
 | TZ-255.A | Mongo e2e harness not available; dunder rename | TZ-255.B — post-Mongo-harness |
-| TZ-256.A | TestBed scaffold + SKIP_FORBIDDEN_REDIRECT — DONE; icon Palette→ShieldCheck + /admin/* placeholder — DONE (TZ-256.A remainder) | TZ-256.B |
+| TZ-256.A | capability specs 16/16 PASS; остаток: admin-nav icon Palette→ShieldCheck + /admin/* placeholder | TZ-256.B |
 | TZ-257.A | Admin mutations + LastAdminGuard per-method + DTO whitelist + frontend dialogs | TZ-257.B |
 | TZ-258.A | RBAC cross-link polish + sample fixture | TZ-258.B |
 

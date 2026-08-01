@@ -114,10 +114,10 @@ Historical inventory at session start — 24 source files were present before th
 
 The cleanup task does not silently close unrelated failing tests or stale production-code lint errors. They remain documented in prior archive records and must receive dedicated successor TZs before being called fixed:
 
-- backend BOM resolver expectations: 2 failing tests;
-- frontend storage-items request expectation: 7 failing tests;
-- frontend capability guard export/spec mismatch: 7 failing tests;
-- frontend wildcard permission expectation: 1 failing test;
+- [RESOLVED 2026-08-01] backend BOM resolver expectations: 2 failing tests;
+- [RESOLVED 2026-08-01] frontend storage-items request expectation: 7 failing tests;
+- [RESOLVED 2026-08-01] frontend capability guard export/spec mismatch: 7 failing tests;
+- [RESOLVED 2026-08-01] frontend wildcard permission expectation: 1 failing test;
 - backend lint baseline: 48 errors / 51 warnings;
 - frontend lint baseline: 19 warnings.
 
