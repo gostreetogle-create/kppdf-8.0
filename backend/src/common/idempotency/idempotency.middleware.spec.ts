@@ -172,4 +172,39 @@ describe('IdempotencyMiddleware', () => {
     // Cycle flagged, not recursed.
     expect(record.cachedResponse.self).toBe('[Circular]');
   });
+
+  // TZ-247.B: insertOrFetch is E11000-race-safe at the STORAGE layer
+  // (idempotency-storage.service.ts implements atomic upsert + on-dup-select).
+  // The middleware never inspects the resolved value, so the resilience
+  // surface here is narrower: insertOrFetch rejection MUST NOT throw
+  // through the response cycle. The `.catch` in idempotency.middleware.ts
+  // (warn-level log, no rethrow) is the contract under test below.
+  it('does NOT propagate insertOrFetch rejection (TZ-247.B E11000 tolerance)', async () => {
+    mockStorage.findByKey.mockResolvedValueOnce(null);
+    // Simulate storage's atomic insert losing the race to a concurrent
+    // first-caller. The middleware contract is to swallow and log, not
+    // to surface the E11000 to the HTTP client (whose request already
+    // succeeded at the controller level).
+    mockStorage.insertOrFetch.mockRejectedValueOnce({
+      code: 11000,
+      keyPattern: { _id: 1 },
+      errmsg:
+        'E11000 duplicate key error collection: kppdf.idempotency_records index: idempotencyKey_1 dup key',
+    });
+
+    const res = fakeRes();
+    await middleware.use(
+      fakeReq('POST', '/api/foo', { x: 1 }, 'abc'),
+      res,
+      next,
+    );
+    // use() did NOT throw despite insertOrFetch rejection.
+    expect(next).toHaveBeenCalledTimes(1);
+
+    // Caller's res.json completes synchronously and the rejection is caught
+    // by the middleware's `.catch` (warn-level log) — never propagates.
+    expect(() => res.json({ id: 'x' })).not.toThrow();
+    expect(res._body).toEqual({ id: 'x' });
+    expect(mockStorage.insertOrFetch).toHaveBeenCalledTimes(1);
+  });
 });
