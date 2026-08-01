@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { Router, UrlTree, provideRouter } from '@angular/router';
-import { CapabilityRouteGuard as _capabilityRouteGuard } from './capability-route.guard';
+import { capabilityRouteGuard as _capabilityRouteGuard } from './capability-route.guard';
 import { AuthService } from '../auth.service';
 import { ALL_PERMISSION_KEYS } from './capabilities.metadata';
 
