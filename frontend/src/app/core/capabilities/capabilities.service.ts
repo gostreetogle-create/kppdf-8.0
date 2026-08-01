@@ -49,11 +49,15 @@ export class CapabilitiesService {
 
     const granted = new Set<string>(user.permissions ?? []);
     const isAdminShortcut =
-      user.role === 'admin' ||
-      (user.permissions ?? []).includes(PERMISSION_WILDCARD);
+      user.role === 'admin' || (user.permissions ?? []).includes(PERMISSION_WILDCARD);
 
     if (isAdminShortcut) {
       for (const k of ALL_PERMISSION_KEYS) granted.add(k);
+      // TZ-fix 2026-08-01: remove the literal '*' from the effective set so
+      // the API stays exactly equal to ALL_PERMISSION_KEYS.size rather than
+      // ALL_PERMISSION_KEYS.size + 1 (the wildcard was a union member but the
+      // contract is `effective === catalog` for the admin shortcut).
+      granted.delete(PERMISSION_WILDCARD);
     }
     return granted;
   });
