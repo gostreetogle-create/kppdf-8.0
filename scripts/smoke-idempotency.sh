@@ -6,18 +6,23 @@
 #   1. Replay:    POST /api/document-templates twice with the same Idempotency-Key
 #                 + body. Both calls return HTTP 201 with the SAME Mongo _id.
 #                 The middleware must short-circuit the controller on replay.
+#                 **Primary invariant: ID2 == ID1** (asserted in Step 5).
 #
 #   2. Conflict:  POST the same key with a MUTATED body. Must return HTTP 409
 #                 with `code: IDEMPOTENCY_KEY_REUSED`.
 #
 #   3. DB count:  After replay (POST 2), Mongo must contain EXACTLY ONE
-#                 document with that _id (NOT two). This is the critical
-#                 proof that the middleware replayed instead of re-creating:
-#                 identical response bodies alone do not prove "POST 2 was a
-#                 pure middleware replay" — only DB state can.
+#                 document with that _id (NOT two). **Defence-in-depth probe**:
+#                 re-affirms the same-_id replay in a way the body-equality
+#                 check cannot — namely, a buggy middleware that short-circuits
+#                 the response body but double-inserts at the storage layer with
+#                 the SAME _id would slip past Steps 1 + 5 but fail this probe.
+#                 Primary protection is Step 5 (ID2 == ID1); this probe is the
+#                 backstop. Useful for future readers: do not invert — Step 5
+#                 is the canonical replay contract, Step 6 is the audit trail.
 #
 # Usage:
-#   BASE_URL=http://127.0.0.1:3000 ./scrips/smoke-idempotency.sh
+#   BASE_URL=http://127.0.0.1:3000 ./scripts/smoke-idempotency.sh
 #
 # Exit codes:
 #   0  all assertions PASS, Mongo state confirmed, cleanup OK
@@ -34,9 +39,31 @@ ADMIN_USER="${ADMIN_USER:-admin}"
 ADMIN_PASS="${ADMIN_PASS:-admin123}"
 DB="${DB:-kppdf}"
 MONGO_CONTAINER="${MONGO_CONTAINER:-kppdf-mongo}"
-KEY="$(date +%s%N)-$$"
-NAME_B1="SmokeIdemp-$$-B1"
-NAME_B2="SmokeIdemp-$$-B2-MUTATED"
+
+# Initialised empty so the EXIT-trap (below) knows which artefacts to
+# remove best-effort. Populated as the smoke run progresses.
+KEY=""
+ID1=""
+
+# ----- fail-path cleanup (best-effort) -----------------------------------
+# Fires on ANY exit (including `set -e` failures from Steps 3-8). Step 9 is
+# the SHAMAN cleanup that ALSO asserts deletedCount; the trap is the
+# safety net so a `set -e` crash mid-run does not orphan a smoke doc.
+# Best-effort (no exit-code propagation) — failures go to stderr so the
+# caller can manually clean if needed.
+trap_cleanup() {
+  if [ -n "$ID1" ]; then
+    docker exec "$MONGO_CONTAINER" mongosh --quiet "$DB" \
+      --eval "db.document_templates.deleteOne({_id:ObjectId('$ID1')});" \
+      >/dev/null 2>&1 || true
+  fi
+  if [ -n "$KEY" ]; then
+    docker exec "$MONGO_CONTAINER" mongosh --quiet "$DB" \
+      --eval "db.idempotency_records.deleteOne({idempotencyKey:'$KEY'});" \
+      >/dev/null 2>&1 || true
+  fi
+}
+trap trap_cleanup EXIT
 
 # ----- ANSI helpers --------------------------------------------------------
 G='\033[0;32m'; R='\033[0;31m'; Y='\033[0;33m'; N='\033[0m'
@@ -50,9 +77,36 @@ FAILED=0
 hex() { echo "$1" | grep -oE '[0-9a-f]{24}' | head -1; }
 
 # mongosh one-liner that updates Mongo state and prints a single value.
+# Silently truncates to first line + 24-char hex (used for ID extraction
+# where docker/mongosh exit non-zero would already be caught by `set -e`).
 m_eval() {
   docker exec "$MONGO_CONTAINER" mongosh --quiet "$DB" --eval "$1" 2>&1 \
     | tr -d '\r' | head -1 | hex
+}
+
+# Run mongosh eval that returns a sentinel-decorated delete-count, then
+# assert deletedCount === 1 AND propagate docker/mongosh exit code as
+# failure. Used by Step 9 (shaman cleanup) — distinguished from the
+# opportunistic cleanup in `trap_cleanup` which silently swallows
+# failures.
+m_delete_check_target() {
+  local collection="$1"
+  local selector="$2"
+  local label="$3"
+  local out rc
+  out=$(docker exec "$MONGO_CONTAINER" mongosh --quiet "$DB" --eval \
+    "const r = db.${collection}.deleteOne(${selector}); print('deletedCount=' + r.deletedCount);" \
+    2>&1)
+  rc=$?
+  if [ "$rc" != "0" ]; then
+    FAIL "mongo shell exited rc=$rc during $label — stderr: $out"
+    return 1
+  fi
+  if echo "$out" | grep -oE 'deletedCount=[0-9]+' | head -1 | grep -q 'deletedCount=1'; then
+    PASS "$label"
+  else
+    FAIL "$label: doc did not exist or was already deleted (deletedCount!=1)"
+  fi
 }
 
 # Count documents matching a filter on collection $1.
@@ -107,7 +161,10 @@ post_doc_template() {
 }
 
 # ----- STEP 3: POST 1 — create ----------------------------------------
-INFO "STEP 3 — POST 1 (key=$KEY, body name=$NAME_B1, expect 201 + _id)"
+INFO "STEP 3 — POST 1 (generates Idempotency-Key + body name, expect 201 + _id)"
+KEY="$(date +%s%N)-$$"
+NAME_B1="SmokeIdemp-$$-B1"
+NAME_B2="SmokeIdemp-$$-B2-MUTATED"
 BODY_B1='{"name":"'"$NAME_B1"'","description":"first call","organizationId":"'"$ORG_ID"'","docTypeId":"'"$DOCTYPE_ID"'"}'
 RES1="$(post_doc_template "$BODY_B1")"
 HTTP1="$(echo "$RES1" | sed -n 's/^__HTTP__//p')"
@@ -123,7 +180,7 @@ COUNT_AFTER_1="$(count_docs document_templates '{name:"'"$NAME_B1"'"}')"
   && PASS "DB count after POST 1 = $COUNT_AFTER_1 (expected 1)" \
   || FAIL "DB count after POST 1 = $COUNT_AFTER_1 (expected 1) — POST 1 may have mis-created"
 
-# ----- STEP 5: POST 2 — replay -----------------------------------------
+# ----- STEP 5: POST 2 — replay (primary invariant) ---------------------
 INFO "STEP 5 — POST 2 (same key, same body, expect 201 + same _id as POST 1)"
 RES2="$(post_doc_template "$BODY_B1")"
 HTTP2="$(echo "$RES2" | sed -n 's/^__HTTP__//p')"
@@ -131,10 +188,10 @@ BODY2="$(echo "$RES2" | sed '/^__HTTP__/d')"
 ID2="$(echo "$BODY2" | grep -oE '"_id":"[^"]+"' | head -1 | sed 's/"_id":"//;s/"$//')"
 [ "$HTTP2" = "201" ]     && PASS "POST 2 → HTTP 201" || { FAIL "POST 2 → HTTP $HTTP2 (expected 201)"; echo "$BODY2"; }
 [ -n "$ID2" ]            && PASS "POST 2 → _id=$ID2" || FAIL "POST 2 → no _id"
-[ "$ID2" = "$ID1" ]      && PASS "REPLAY → ID1==ID2 (same _id)" || { FAIL "REPLAY FAIL: ID1=$ID1  ID2=$ID2"; }
+[ "$ID2" = "$ID1" ]      && PASS "REPLAY → ID1==ID2 (same _id) — primary invariant" || { FAIL "REPLAY FAIL: ID1=$ID1  ID2=$ID2"; }
 
-# ----- STEP 6: DB count probe #2 (the critical one) --------------------
-INFO "STEP 6 — DB count probe (after POST 2): documents with _id=$ID1 MUST STILL = 1"
+# ----- STEP 6: DB count probe #2 (defence-in-depth backstop) ----------
+INFO "STEP 6 — DB count probe (after POST 2): documents with _id=$ID1 MUST STILL = 1 (backstop for ID1==ID2)"
 COUNT_AFTER_2="$(count_docs document_templates '{_id:ObjectId("'"$ID1"'")}' )"
 [ "$COUNT_AFTER_2" = "1" ] \
   && PASS "DB count after POST 2 = $COUNT_AFTER_2 (expected 1 — replay did NOT re-create)" \
@@ -160,14 +217,10 @@ COUNT_AFTER_3="$(count_docs document_templates '{name:"'"$NAME_B2"'"}')"
   && PASS "DB count after POST 3 = $COUNT_AFTER_3 (expected 0 — conflict did NOT create a doc)" \
   || FAIL "DB count after POST 3 = $COUNT_AFTER_3 (expected 0) — 409 conflict leaked a doc"
 
-# ----- STEP 9: cleanup -------------------------------------------------
-INFO "STEP 9 — cleanup (remove smoke test document + idempotency record)"
-m_eval "db.document_templates.deleteOne({_id:ObjectId('$ID1')})" >/dev/null \
-  && PASS "deleted document_templates _id=$ID1" \
-  || FAIL "failed to delete document_templates _id=$ID1"
-m_eval "db.idempotency_records.deleteOne({idempotencyKey:'$KEY'})" >/dev/null \
-  && PASS "deleted idempotency_records key=$KEY" \
-  || FAIL "failed to delete idempotency_records key=$KEY"
+# ----- STEP 9: shaman cleanup (assertive: deletedCount=1 OR FAIL) -----
+INFO "STEP 9 — cleanup (assertive delete of test document + idempotency record)"
+m_delete_check_target "document_templates" "{_id:ObjectId('$ID1')}" "deleted document_templates _id=$ID1"
+m_delete_check_target "idempotency_records" "{idempotencyKey:'$KEY'}" "deleted idempotency_records key=$KEY"
 
 # ----- summary ---------------------------------------------------------
 printf "\n${Y}===== SMOKE-IDEMPOTENCY SUMMARY =====${N}\n"
