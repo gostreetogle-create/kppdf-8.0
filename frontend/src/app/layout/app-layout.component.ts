@@ -9,7 +9,7 @@ import {
   Briefcase,
   BookOpen,
   FileText,
-  Palette,
+  ShieldCheck,
 } from 'lucide-angular';
 
 /**
@@ -107,9 +107,11 @@ const NAV_CATEGORIES: NavCategory[] = [
   },
   {
     // TZ-256 §ШАГ 3 — admin category, capability-gated.
+    // TZ-256.A remainder — Palette swapped to ShieldCheck to avoid icon
+    // collision with Palette (paint swatch) elsewhere.
     id: 'admin',
     label: 'Администрирование',
-    icon: Palette,
+    icon: ShieldCheck,
     items: [
       {
         path: '/admin/users',
@@ -170,7 +172,7 @@ const NAV_CATEGORIES: NavCategory[] = [
                 class="pi-icon-btn gap-1 px-2 w-auto pi-focus-ring"
                 aria-label="UI Kit"
               >
-                <lucide-angular [img]="paletteIcon" [size]="12" aria-hidden="true" />
+                <lucide-angular [img]="shieldCheckIcon" [size]="12" aria-hidden="true" />
                 <span class="font-mono text-[10px] tracking-wider"> UI Kit </span>
               </a>
               <app-theme-toggle />
@@ -210,7 +212,7 @@ const NAV_CATEGORIES: NavCategory[] = [
 })
 export class AppLayoutComponent {
   protected readonly logOutIcon = LogOut;
-  protected readonly paletteIcon = Palette;
+  protected readonly shieldCheckIcon = ShieldCheck;
 
   private readonly auth = inject(AuthService);
   private readonly caps = inject(CapabilitiesService);

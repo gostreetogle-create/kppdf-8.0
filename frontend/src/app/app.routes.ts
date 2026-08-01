@@ -262,6 +262,19 @@ export const routes: Routes = [
           import('./pages/admin/roles-admin.page').then((m) => m.RolesAdminPage),
         title: 'KPPDF — Роли',
       },
+      // TZ-256.A remainder — `/admin` placeholder route (sibling to
+      // admin/users + admin/roles). Catches exact `/admin` deep links;
+      // sub-paths (`/admin/users`, `/admin/roles`) keep matching their
+      // explicit sibling routes above (longer-prefix win in Angular 20).
+      // Falls through to `** → ''` if no admin/* wildcard later exists.
+      {
+        path: 'admin',
+        loadComponent: () =>
+          import('./pages/admin/_admin-placeholder.page').then(
+            (m) => m.AdminPlaceholderPage,
+          ),
+        title: 'KPPDF — Администрирование',
+      },
     ],
   },
   { path: '**', redirectTo: '' },

@@ -1010,7 +1010,7 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 | TZ-253 (Dependabot + body-size + runbook) | NO `.github/dependabot.yml`, NO `docs/runbook/`, Mongo exposure check needed | TZ-253.A — 2-3h |
 | TZ-251.A | Path relocation spec scripts/ → src/scripts/ | **TZ-251.A — ATTEMPT this session (atomic)** |
 | TZ-255.A | Mongo e2e harness not available; dunder rename | TZ-255.B — post-Mongo-harness |
-| TZ-256.A | jest TestBed scaffolds + icon collision + /admin/* placeholders | TZ-256.B |
+| TZ-256.A | TestBed scaffold + SKIP_FORBIDDEN_REDIRECT — DONE; icon Palette→ShieldCheck + /admin/* placeholder — DONE (TZ-256.A remainder) | TZ-256.B |
 | TZ-257.A | Admin mutations + LastAdminGuard per-method + DTO whitelist + frontend dialogs | TZ-257.B |
 | TZ-258.A | RBAC cross-link polish + sample fixture | TZ-258.B |
 
