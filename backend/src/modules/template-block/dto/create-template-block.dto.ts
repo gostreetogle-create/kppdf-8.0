@@ -68,53 +68,13 @@ export class DataBindingDto {
   format?: 'text' | 'date' | 'currency' | 'number';
 }
 
-export class CreateTemplateBlockDto {
-  @IsObjectId() templateId!: string;
-
-  @IsIn(['header', 'text', 'table', 'image', 'signature', 'spacer'])
-  type!: 'header' | 'text' | 'table' | 'image' | 'signature' | 'spacer';
-
-  @IsNumber() @Min(0)
-  order!: number;
-
-  @IsOptional() @IsString() title?: string;
-  @IsOptional() @IsString() content?: string;
-
-  /**
-   * TZ-104.6 carry-over — multi-column text-block payload. Optional;
-   * builder canvas renders `columns[]` as a CSS grid when length > 1.
-   * Stored verbatim via `Mongoose` schema; `@ValidateNested` enforces
-   * that any nested cell matches `TemplateBlockColumnDto`. Empty array
-   * ⇒ fall back to flat `content` rendering.
-   */
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => TemplateBlockColumnDto)
-  columns?: TemplateBlockColumnDto[];
-
-  @IsOptional() @IsNumber() @Min(0) height?: number;
-  @IsOptional() @IsBoolean() showLine?: boolean;
-  @IsOptional() settings?: Record<string, unknown>;
-
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => DataBindingDto)
-  dataBinding?: DataBindingDto;
-
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => BlockLayoutDto)
-  layout?: BlockLayoutDto;
-
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => BlockSourceDto)
-  source?: BlockSourceDto;
-
-  @IsOptional() @IsBoolean() isActive?: boolean;
-}
-
+/**
+ * ORDERING CONSTRAINT: classes referenced by decorators (@Type/@ValidateNested)
+ * MUST be declared before their consumer — emitDecoratorMetadata evaluates
+ * `Reflect.metadata('design:type', X)` at class-definition time, so a forward
+ * reference throws `Cannot access X before initialization` at boot. Do not
+ * move BlockLayoutDto / BlockSourceDto below CreateTemplateBlockDto.
+ */
 export class BlockLayoutDto {
   /** Pagination is not implemented yet; reject page 2+ instead of silently remapping it. */
   @IsOptional() @IsNumber() @Min(1) @Max(1)
@@ -169,4 +129,51 @@ export class BlockSourceDto {
 
   @IsOptional() @IsString()
   value?: string;
+}
+
+export class CreateTemplateBlockDto {
+  @IsObjectId() templateId!: string;
+
+  @IsIn(['header', 'text', 'table', 'image', 'signature', 'spacer'])
+  type!: 'header' | 'text' | 'table' | 'image' | 'signature' | 'spacer';
+
+  @IsNumber() @Min(0)
+  order!: number;
+
+  @IsOptional() @IsString() title?: string;
+  @IsOptional() @IsString() content?: string;
+
+  /**
+   * TZ-104.6 carry-over — multi-column text-block payload. Optional;
+   * builder canvas renders `columns[]` as a CSS grid when length > 1.
+   * Stored verbatim via `Mongoose` schema; `@ValidateNested` enforces
+   * that any nested cell matches `TemplateBlockColumnDto`. Empty array
+   * ⇒ fall back to flat `content` rendering.
+   */
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TemplateBlockColumnDto)
+  columns?: TemplateBlockColumnDto[];
+
+  @IsOptional() @IsNumber() @Min(0) height?: number;
+  @IsOptional() @IsBoolean() showLine?: boolean;
+  @IsOptional() settings?: Record<string, unknown>;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => DataBindingDto)
+  dataBinding?: DataBindingDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => BlockLayoutDto)
+  layout?: BlockLayoutDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => BlockSourceDto)
+  source?: BlockSourceDto;
+
+  @IsOptional() @IsBoolean() isActive?: boolean;
 }
