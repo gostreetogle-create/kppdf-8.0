@@ -20,6 +20,8 @@ export const csvImporter: Importer = {
 
     // header: true — первая строка = ключи; delimiter: '' — автодетект (papaparse);
     // skipEmptyLines: 'greedy' — пустые строки отбрасываются.
+    // TODO(import): дубликаты заголовков в CSV молча перезаписываются
+    // (papaparse: последняя колонка выигрывает) — учесть в v0.4.
     const result = Papa.parse<RawRow>(text, {
       header: true,
       delimiter: '',

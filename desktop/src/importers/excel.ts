@@ -52,6 +52,8 @@ export const excelImporter: Importer = {
 
     // Пустые колонки отбрасываем: пропускаем колонку, если заголовок пуст
     // и все ячейки колонки ниже пусты.
+    // TODO(import): колонки шире заголовка (данные без заголовка) молча
+    // теряются — v0.4 нормализация не должна считать извлечение полным.
     const colCount = headerRow.length;
     const keptColumns = Array.from({ length: colCount }, (_, c) => c).filter((col) => {
       if (!isEmptyCell(headerRow[col])) return true;

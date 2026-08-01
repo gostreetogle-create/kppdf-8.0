@@ -76,15 +76,19 @@
   /** Выбрать файл через нативный диалог Tauri и прочитать его. */
   async function pickFile() {
     importError = '';
-    const picked = await open({
-      multiple: false,
-      filters: [
-        { name: 'Данные', extensions: ['xlsx', 'xls', 'csv', 'tsv'] },
-        { name: 'Все файлы', extensions: ['*'] },
-      ],
-    });
-    if (!picked || Array.isArray(picked)) return; // отмена
-    await importFromPath(picked);
+    try {
+      const picked = await open({
+        multiple: false,
+        filters: [
+          { name: 'Данные', extensions: ['xlsx', 'xls', 'csv', 'tsv'] },
+          { name: 'Все файлы', extensions: ['*'] },
+        ],
+      });
+      if (!picked || Array.isArray(picked)) return; // отмена
+      await importFromPath(picked);
+    } catch (err) {
+      importError = err instanceof Error ? err.message : 'Не удалось открыть диалог выбора файла.';
+    }
   }
 
   /** Общий путь: имя файла + байты → импортёр → parse (для диалога и drag&drop). */
