@@ -4,6 +4,9 @@
  */
 
 import type { AiProviderConfig } from '../config';
+import { OLLAMA_DEFAULT } from './defaults';
+
+export { OLLAMA_DEFAULT };
 
 export interface ResolvedProvider {
   baseUrl: string;
@@ -12,12 +15,6 @@ export interface ResolvedProvider {
   /** Удалённый провайдер — общаться с сетью, локальный — нет. */
   isRemote: boolean;
 }
-
-export const OLLAMA_DEFAULT: AiProviderConfig = {
-  type: 'local-ollama',
-  baseUrl: 'http://localhost:11434',
-  model: 'qwen2.5:7b',
-};
 
 /** Преобразует конфиг в готовые параметры для chatCompletion(). */
 export function resolveProvider(config: AiProviderConfig): ResolvedProvider {

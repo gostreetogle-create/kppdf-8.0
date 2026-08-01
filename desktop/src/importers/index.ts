@@ -32,6 +32,8 @@ export const importers: Importer[] = [
 
 /** Найти импортёр по расширению файла. */
 export function importerFor(file: File): Importer | undefined {
-  const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+  const dot = file.name.lastIndexOf('.');
+  if (dot === -1) return undefined; // нет расширения
+  const ext = file.name.slice(dot).toLowerCase();
   return importers.find((i) => i.extensions.includes(ext));
 }
