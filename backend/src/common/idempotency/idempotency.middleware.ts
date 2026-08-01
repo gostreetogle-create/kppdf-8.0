@@ -163,26 +163,68 @@ export class IdempotencyMiddleware implements NestMiddleware {
   /**
    * Strip known sensitive fields before persistence:
    * `passwordHash`, `refreshTokenVersion`, anything matching `/token/i`.
+   *
+   * CYCLE SAFETY (TZ-247 stack-overflow fix): controllers may pass
+   * Mongoose documents (or other ORM objects) straight to `res.json`.
+   * Such objects carry internal cyclic structures (`$__`/`_doc` with a
+   * back-reference to the document itself), and a naive recursive walk
+   * over `Object.entries` recurses forever → `RangeError: Maximum call
+   * stack size exceeded` (observed on `POST /api/document-templates`).
+   *
+   * Defense in depth:
+   *   1. JSON round-trip first — mirrors exactly what `res.json` will
+   *      serialize for the client (Mongoose docs have `toJSON`), so the
+   *      cached copy matches the wire payload and internal cyclic
+   *      structures never reach the walk.
+   *   2. If the body is not JSON-serializable (plain circular object,
+   *      BigInt, functions), fall back to a cycle-guarded walk that
+   *      flags genuine ancestor cycles as `[Circular]` without
+   *      recursing, while still allowing shared (non-cyclic) references.
    */
   private redact(body: unknown): unknown {
-    if (Array.isArray(body)) {
-      return body.map((b) => this.redact(b));
-    }
-    if (body && typeof body === 'object') {
-      const out: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(body)) {
-        if (
-          k === 'passwordHash' ||
-          k === 'refreshTokenVersion' ||
-          /token/i.test(k)
-        ) {
-          out[k] = '[REDACTED]';
-          continue;
-        }
-        out[k] = this.redact(v);
+    let plain: unknown = body;
+    if (body !== undefined && body !== null) {
+      try {
+        plain = JSON.parse(JSON.stringify(body));
+      } catch {
+        // Non-serializable (circular plain object, BigInt, functions…)
+        // — keep the raw value and let the guarded walk handle it.
+        plain = body;
       }
-      return out;
     }
-    return body;
+
+    // Ancestors currently being visited. Only genuine cycles are flagged;
+    // shared references appearing twice in different branches are walked
+    // twice (no false `[Circular]` markers).
+    const stack = new Set<object>();
+
+    const walk = (value: unknown): unknown => {
+      if (Array.isArray(value)) {
+        return value.map(walk);
+      }
+      if (value && typeof value === 'object') {
+        if (stack.has(value)) {
+          return '[Circular]';
+        }
+        stack.add(value);
+        const out: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(value)) {
+          if (
+            k === 'passwordHash' ||
+            k === 'refreshTokenVersion' ||
+            /token/i.test(k)
+          ) {
+            out[k] = '[REDACTED]';
+            continue;
+          }
+          out[k] = walk(v);
+        }
+        stack.delete(value);
+        return out;
+      }
+      return value;
+    };
+
+    return walk(plain);
   }
 }
