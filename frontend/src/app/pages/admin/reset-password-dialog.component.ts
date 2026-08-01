@@ -42,7 +42,7 @@ export interface ResetPasswordData {
               class="field__input"
               type="password"
               [value]="password()"
-              (input)="password.set(($event.target as HTMLInputElement).value)"
+              (input)="onPasswordInput($event)"
               autocomplete="new-password"
               data-test="reset-password-input"
             />
@@ -54,7 +54,7 @@ export interface ResetPasswordData {
               class="field__input"
               type="password"
               [value]="confirm()"
-              (input)="confirm.set(($event.target as HTMLInputElement).value)"
+              (input)="onConfirmInput($event)"
               autocomplete="new-password"
               data-test="reset-password-confirm"
             />
@@ -138,6 +138,14 @@ export class ResetPasswordDialogComponent {
   protected readonly canSubmit = (): boolean => {
     return this.password().length >= 8;
   };
+
+  protected onPasswordInput(event: Event): void {
+    this.password.set((event.target as HTMLInputElement).value);
+  }
+
+  protected onConfirmInput(event: Event): void {
+    this.confirm.set((event.target as HTMLInputElement).value);
+  }
 
   protected onSubmit(): void {
     if (this.password() !== this.confirm()) {

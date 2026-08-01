@@ -62,7 +62,7 @@ export interface RoleFormResult {
                 class="field__input"
                 [value]="name()"
                 [disabled]="data.mode === 'edit'"
-                (input)="name.set(($event.target as HTMLInputElement).value)"
+                (input)="onNameInput($event)"
                 autocomplete="off"
                 spellcheck="false"
                 data-test="role-form-name"
@@ -77,7 +77,7 @@ export interface RoleFormResult {
               <input
                 class="field__input"
                 [value]="label()"
-                (input)="label.set(($event.target as HTMLInputElement).value)"
+                (input)="onLabelInput($event)"
                 autocomplete="off"
                 data-test="role-form-label"
               />
@@ -88,7 +88,7 @@ export interface RoleFormResult {
               <input
                 class="field__input"
                 [value]="description()"
-                (input)="description.set(($event.target as HTMLInputElement).value)"
+                (input)="onDescriptionInput($event)"
                 autocomplete="off"
                 data-test="role-form-description"
               />
@@ -369,6 +369,18 @@ export class RoleFormDialogComponent {
     } finally {
       this.catalogLoading.set(false);
     }
+  }
+
+  protected onNameInput(event: Event): void {
+    this.name.set((event.target as HTMLInputElement).value);
+  }
+
+  protected onLabelInput(event: Event): void {
+    this.label.set((event.target as HTMLInputElement).value);
+  }
+
+  protected onDescriptionInput(event: Event): void {
+    this.description.set((event.target as HTMLInputElement).value);
   }
 
   protected readonly selectedCount = (): number => this.selected().size;
