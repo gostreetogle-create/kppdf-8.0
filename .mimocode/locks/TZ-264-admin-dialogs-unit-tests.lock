@@ -1,0 +1,23 @@
+# TZ-264 — DONE lock
+TASK: TZ-264
+OWNER: QA-валидатор / Frontend Component Engineer (Buffy)
+CLOSED_AT: 2026-08-02
+PROTECTED_FILES:
+  - frontend/src/app/pages/admin/reset-password-dialog.component.spec.ts (NEW)
+  - frontend/src/app/pages/admin/user-form-dialog.component.spec.ts (NEW)
+  - frontend/src/app/pages/admin/role-form-dialog.component.spec.ts (NEW)
+SUCCESSOR: none (admin dialog coverage complete; TZ-263/265 verifier+tokens gates closed)
+NOTES:
+  - 3 additive spec files; dialog .ts components NOT modified (TZ-261 fixed
+    templates, TZ-265 tokenized styles — specs written against final components).
+  - Each spec has a smoke test that INSTANTIATES the dialog via TestBed →
+    forces Angular template compilation (NG5xxx regression guard forever).
+  - reset-password: canSubmit (<8 false, >=8 true), mismatch → error
+    «Пароли не совпадают» + no close, match → close(password).
+  - user-form: smoke create+edit, canSubmit matrix (username<3, invalid email,
+    password<8 create-mode), onSubmit create includes password / edit omits it.
+  - role-form: smoke, loadCatalog success (sections filled, loading false) +
+    HTTP error (catalogError set) via HttpTestingController, toggleKey add/remove,
+    toggleSection select-all/unselect-all, sectionAllSelected, selectedCount.
+  - jest src/app/pages/admin: 23/23 PASS (old 5 + new 18).
+  - tsc -p tsconfig.app.json --noEmit: exit 0.

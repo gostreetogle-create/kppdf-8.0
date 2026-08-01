@@ -725,6 +725,7 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 | TZ-262 | 2026-08-02 | Admin gates capability alignment (`/admin/users` route+nav `user:read` → `user:admin`) | `tasks/_archive/2026-08/TZ-262.done.md` |
 | TZ-263 | 2026-08-02 | Verifier — `ng build --configuration=development` added to run-project-checks (tsc не компилирует templates) | `tasks/_archive/2026-08/TZ-263.done.md` |
 | TZ-265 | 2026-08-02 | Admin pages Paper & Ink compliance — `text-red-600` → `text-destructive`, hex → tokens in 3 dialogs | `tasks/_archive/2026-08/TZ-265.done.md` |
+| TZ-264 | 2026-08-02 | Admin dialog unit tests — 3 additive spec files (smoke NG5xxx guard, canSubmit, loadCatalog, toggles) | `tasks/_archive/2026-08/TZ-264.done.md` |
 | TZ-266 | 2026-08-02 | Generated-document organization scope before HTML/read/write side effects (imported workspace task, renumbered) | `tasks/_archive/2026-08/TZ-266.done.md` |
 | TZ-267 | 2026-08-02 | Templates registry error state and SilentResult HTTP boundary (imported workspace task, renumbered) | `tasks/_archive/2026-08/TZ-267.done.md` |
 
@@ -1010,6 +1011,7 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 | TZ-262 | `tasks/_archive/2026-08/TZ-262.done.md` (admin-gates capability alignment: `/admin/users` route+nav `user:read` → `user:admin`) | `.mimocode/locks/TZ-262-admin-gates-capability-alignment.lock` |
 | TZ-263 | `tasks/_archive/2026-08/TZ-263.done.md` (run-project-checks + ng build gate) | `.mimocode/locks/TZ-263-verifier-ng-build-in-checks.lock` |
 | TZ-265 | `tasks/_archive/2026-08/TZ-265.done.md` (admin Paper & Ink token compliance) | `.mimocode/locks/TZ-265-admin-paper-ink-compliance.lock` |
+| TZ-264 | `tasks/_archive/2026-08/TZ-264.done.md` (admin dialog unit tests, 3 spec files) | `.mimocode/locks/TZ-264-admin-dialogs-unit-tests.lock` |
 | TZ-266 | `tasks/_archive/2026-08/TZ-266.done.md` (generated-document organization scope, imported workspace task renumbered from sandbox TZ-261) | `.mimocode/locks/TZ-266-generated-document-scope.lock` |
 | TZ-267 | `tasks/_archive/2026-08/TZ-267.done.md` (templates error boundary, imported workspace task renumbered from sandbox TZ-262) | `.mimocode/locks/TZ-267-templates-error-boundary.lock` |
 

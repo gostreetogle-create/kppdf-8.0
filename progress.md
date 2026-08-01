@@ -4767,3 +4767,26 @@ PASS; git diff --check PASS. Code review: PASS.
 «бумага на столе») НЕ тронут — отдельный TZ/решение PO; визуальная
 проверка destructive-цвета на /admin/users,/admin/roles —
 MANUAL_BROWSER_CHECK_REQUIRED.
+
+---
+
+## 2026-08-02 — TZ-264 closed (Admin-диалоги — unit-тесты)
+
+**Исполнитель:** QA-валидатор / Frontend Component Engineer (Buffy)
+**Статус:** Выполнено / Проверено
+**Что сделано кратко:** Созданы 3 аддитивных spec-файла для admin-диалогов
+(reset-password, user-form, role-form). Каждый содержит smoke-тест,
+инстанцирующий диалог через TestBed — это форсирует компиляцию template
+и навсегда защищает от регрессии NG5xxx (класс бага TZ-261, который tsc
+не ловит). Покрыты: canSubmit (все 3), mismatch-пароли, loadCatalog
+(успех/ошибка через HttpTestingController), toggleKey/toggleSection/
+sectionAllSelected/selectedCount.
+**Затронутые файлы/папки:**
+- frontend/src/app/pages/admin/reset-password-dialog.component.spec.ts (NEW)
+- frontend/src/app/pages/admin/user-form-dialog.component.spec.ts (NEW)
+- frontend/src/app/pages/admin/role-form-dialog.component.spec.ts (NEW)
+**Verification:** jest src/app/pages/admin 23/23 PASS (старые 5 + новые 18);
+tsc exit 0; git diff --check PASS. Code review: PASS.
+**Известные ограничения:** компоненты .ts не менялись (аддитивные тесты
+против финальных компонентов TZ-261/TZ-265); браузерный прогон диалогов
+не выполнялся (MANUAL_BROWSER_CHECK_REQUIRED) — логика покрыта unit-тестами.
