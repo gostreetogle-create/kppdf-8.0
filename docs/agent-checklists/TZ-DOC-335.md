@@ -9,7 +9,7 @@
 
 ## Executor report (auto)
 
-- commit: (pending — see git log for DOC-334/335)
+- commit: b975b10db9f4312eca97f16ba3c64d24c24396c4
 - outcome: DONE
 - notes: materials stockQty key fix included for tsc gate
 - gates: tsc PASS; builder.page / tool-pane / tables.page specs PASS
