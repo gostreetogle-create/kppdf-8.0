@@ -72,6 +72,7 @@
 |----|------------|
 | TZ-104.3 | Миграция на pi-table + server-side pagination |
 | TZ-104.4.2 | Typed TemplateRef (устранён `any`) |
+| TZ-PRODUCTS-302 | Rework ProductFormDialog → content-variant 1000px, секции, RAL dropdown из справочника цветов |
 
 ## Особенности
 
@@ -83,6 +84,29 @@
 - **Format functions:** `formatPrice()` для `listPrice`, `KIND_LABELS`/`STATUS_LABELS` для enum-полей
 - **Refresh on dialog close:** `onDialogCloseOnce` → `listRes.reload()`
 
+## ProductFormDialog (TZ-PRODUCTS-302)
+
+`ProductFormDialogComponent` переработан из компактного form-variant в широкий
+content-DSL (паттерн TZ-MATERIALS-301): `variant="content"` +
+`[maxWidth]="'1000px'"`, body со скроллом и ВСЕГДА видимый sticky footer
+(«Сохранить» / «Отмена»).
+
+**Секции формы (по порядку):** Основные данные (name/sku/kind/unit/status) →
+Категория (dropdown из `CategoriesService.list('product')`) → Цены (listPrice/
+isActive) → Габариты (L/W/H + единица) → **Цвет (RAL)** → Вес → Описание и
+заметки → Изображения (фото-upload, паттерн TZ-MATERIALS-306).
+
+**RAL contract (TZ-PRODUCTS-301/302):**
+
+- Список активных цветов грузится из `PiColorReferencesService.list({ activeOnly: true })` (кэш активного каталога).
+- Значение опции = `ColorReference.slug` (стабильный ключ); системный «Не выбран» (`ne_vybran`) очищает `ralCode` → `null`.
+- В dropdown есть поиск по name/slug; пустой справочник показывает hint + ссылку на `/dictionaries/color-references` (только admin/manager).
+- Legacy-значение `ralCode` (не в активном списке) рендерится disabled-fallback — селект никогда не пуст молча.
+
+**Регрессия:** legacy create/update payload-логика и data-test атрибуты сохранены;
+добавлены `categoryId` и `photoIds`. Загруженные в сессии фото удаляются при
+cancel (orphan cleanup в `ngOnDestroy`).
+
 ---
 
-_Создано: 2026-07-19. Последнее обновление: 2026-07-19._
+_Создано: 2026-07-19. Последнее обновление: 2026-08-02._

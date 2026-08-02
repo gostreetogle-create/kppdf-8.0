@@ -5142,3 +5142,21 @@ E2E-сценарии с созданием данных помечены MANUAL_
 **Архив:** tasks/_archive/2026-08/TZ-PRODUCTS-301-color-reference-dictionary.done.md; lock: .mimocode/locks/TZ-PRODUCTS-301-color-reference-dictionary.lock (gitignored).
 
 **Ограничения:** frontend полный jest — 1 pre-existing failure в button.component.spec.ts (воспроизводится на чистом baseline через stash; НЕ регрессия). E2E backend не запускался (unit-контракт). TZ-DOC-308 categories.page.ts pre-existing blocker — не fix-force. Push: нет.
+
+## 2026-08-02 — TZ-PRODUCTS-302 DONE (ProductFormDialog rework: content DSL + RAL dropdown)
+
+**Статус:** DONE. Layer 3 (frontend). Зависимость TZ-PRODUCTS-301 (PiColorReferencesService, commit 610fd4b) выполнена.
+
+**Тип:** ProductFormDialogComponent полностью переработан: `variant="content"` + `maxWidth 1000px` (широкий content-DSL, sticky footer — PiDialog contract), секции: Основные данные → Категория (dropdown из CategoriesService) → Цены → Габариты → **Цвет (RAL)** → Вес → Описание/Заметки → Изображения (фото-upload TZ-MATERIALS-306).
+
+**RAL contract:** значение = `ColorReference.slug` (стабильный ключ; seed «Не выбран» = `ne_vybran`); загрузка активных цветов через `PiColorReferencesService.list({ activeOnly: true })` (кэш TZ-DOC-309); поиск в dropdown; «Не выбран» → ralCode null; пустой справочник → ссылка на /dictionaries/color-references (admin/manager); legacy ralCode → disabled fallback.
+
+**Затронуто:** frontend/src/app/pages/products/product-form-dialog.component.ts (rework), product-form-dialog.component.spec.ts (NEW, 20 tests), shared/services/products.service.ts + shared/models/products.ts (Product.ralCode/categoryId → string | null), docs/pages/products.page.md.
+
+**Исправления по review:** P1 — clear-to-null ralCode/categoryId выпадал из PATCH (backend $set не применялся) → явный null в payload + widening интерфейсов; P2 — удаление существующего фото не удаляло файл на сервере → отложенный delete (atomic после save, pendingPhotoDeletions); P3 — тест-пробелы закрыты (+4 теста). Также: `selectedColor` из computed() → метод (форма не сигналы — computed кешировал stale null).
+
+**Проверки:** frontend tsc exit 0; jest product-form-dialog 20/20 PASS; полный frontend jest 825/826 PASS (единственный fail — pre-existing button.component.spec.ts, baseline-проверен stash'ем в 301, не регрессия); ng build --configuration=development exit 0; git diff --check clean.
+
+**Архив:** tasks/_archive/2026-08/TZ-PRODUCTS-302-product-form-dialog-rework.done.md; lock: .mimocode/locks/TZ-PRODUCTS-302-product-form-dialog-rework.lock (gitignored).
+
+**Ограничения:** TZ-DOC-308 categories.page.ts pre-existing blocker — не fix-force. Удаление фото с сервера — после успешного save (при провале save фото остаётся orphan'ом; документированное поведение материалов-паттерна). Push: нет.

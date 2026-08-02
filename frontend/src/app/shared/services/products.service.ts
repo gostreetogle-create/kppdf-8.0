@@ -26,7 +26,8 @@ export interface Product {
   sku?: string;
   kind: ProductKind;
   unit: string;
-  categoryId?: string;
+  /** Explicitly nullable: clearing the color in the form sends `null` (TZ-PRODUCTS-302). */
+  categoryId?: string | null;
   subcategory?: string;
   status?: ProductStatus;
   listPrice?: number;
@@ -39,7 +40,8 @@ export interface Product {
   photoIds?: string[];
   dimensions?: ProductDimensions;
   weightKg?: number;
-  ralCode?: string;
+  /** Explicitly nullable: choosing «Не выбран» clears ralCode to `null` (TZ-PRODUCTS-302). */
+  ralCode?: string | null;
   hasPassport?: boolean;
   hasDrawing?: boolean;
   isActive?: boolean;
