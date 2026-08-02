@@ -11,14 +11,8 @@ import {
   OnInit,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
-import {
-  LucideAngularModule,
-  RefreshCw,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-} from 'lucide-angular';
-import { Router, RouterLink } from '@angular/router';
+import { LucideAngularModule, LayoutGrid, List, RefreshCw } from 'lucide-angular';
+import { RouterLink } from '@angular/router';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
@@ -33,22 +27,15 @@ import { API_BASE_URL } from '../../core/api.tokens';
 import { createSearchState } from '../../shared/util/search';
 import { pluralize, formatPrice } from '../../shared/util/format';
 import { ColumnDef, SortDirection, TableComponent } from '../../shared/ui/pi-table.component';
+import { PiShowcaseCardComponent } from '../../shared/ui/card/pi-showcase-card.component';
+import { AvatarComponent } from '../../shared/ui/avatar/avatar.component';
 import {
   Product,
   ProductsService,
   type ProductsListResponse,
 } from '../../shared/services/products.service';
-import {
-  ProductModule,
-  ProductModulesService,
-} from '../../shared/services/pi-product-modules.service';
+import { ProductModule } from '../../shared/services/pi-product-modules.service';
 import { ProductFormDialogComponent } from './product-form-dialog.component';
-
-/**
- * List rows carry populated `productModuleIds` (backend `list()` populate,
- * product.service.ts). The scalar `Product` type omits it — widen locally.
- */
-type ProductWithModules = Product & { productModuleIds?: Array<string | ProductModule> };
 
 /** Server-side pagination page size for /products endpoint. */
 const PAGE_SIZE = 50;
@@ -119,8 +106,14 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
  *   TemplateRef invariance broke the binding. TZ-104.4.2 re-typed
  *   pi-table so the strict Product typing now flows through.
  *
- *  Standalone + OnPush + signal-based. No `products.page.spec.ts`
- *  exists yet; v1 acceptance is visual smoke + tsc.
+ * TZ-PRODUCTS-304 — expandable-строки: клик по строке разворачивает
+ * список привязанных модулей (карточки: инициалы-аватар, имя, артикул,
+ * «N материалов», ссылка на /modules/:id). `expandedId` сигнал хранит
+ * _id развёрнутого товара; повторный клик сворачивает. `[expandedRow]`
+ * передаёт `expandedTpl` ТОЛЬКО когда есть развёрнутая строка
+ * (свёрнутые строки без пустых `<tr>`).
+ *
+ *  Standalone + OnPush + signal-based.
  */
 @Component({
   selector: 'app-products-page',
@@ -134,6 +127,8 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
     PiRowActionsComponent,
     ButtonComponent,
     TableComponent,
+    PiShowcaseCardComponent,
+    AvatarComponent,
   ],
   template: `
     <app-pi-page-header
@@ -160,6 +155,41 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
       <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
         <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
       </app-pi-button>
+      <div
+        class="flex items-center gap-0.5 hairline rounded-sm p-0.5"
+        role="group"
+        aria-label="Вид каталога"
+        data-test="view-toggle"
+      >
+        <button
+          type="button"
+          (click)="setViewMode('list')"
+          [attr.aria-pressed]="viewMode() === 'list'"
+          [class]="
+            viewMode() === 'list'
+              ? 'min-h-touch min-w-8 px-2 rounded-sm bg-paper-2 text-ink transition-colors'
+              : 'min-h-touch min-w-8 px-2 rounded-sm text-muted-foreground hover:bg-paper-2/60 hover:text-ink transition-colors'
+          "
+          aria-label="Показать списком"
+          data-test="view-list-button"
+        >
+          <lucide-icon [img]="ListIcon" [size]="16"></lucide-icon>
+        </button>
+        <button
+          type="button"
+          (click)="setViewMode('grid')"
+          [attr.aria-pressed]="viewMode() === 'grid'"
+          [class]="
+            viewMode() === 'grid'
+              ? 'min-h-touch min-w-8 px-2 rounded-sm bg-paper-2 text-ink transition-colors'
+              : 'min-h-touch min-w-8 px-2 rounded-sm text-muted-foreground hover:bg-paper-2/60 hover:text-ink transition-colors'
+          "
+          aria-label="Показать карточками"
+          data-test="view-grid-button"
+        >
+          <lucide-icon [img]="GridIcon" [size]="16"></lucide-icon>
+        </button>
+      </div>
       <span hint>{{ total() }} {{ totalLabel(total()) }}</span>
     </app-pi-toolbar>
 
@@ -173,122 +203,155 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
         </div>
       }
 
-      <div class="overflow-x-auto hairline rounded-sm">
-        <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
-          ← Таблица широкая — прокручивайте горизонтально →
-        </p>
-        <app-pi-table
-          [data]="data()"
-          [columns]="cols"
-          [loading]="loading()"
-          [total]="total()"
-          [page]="page()"
-          [pageSize]="pageSize"
-          [emptyMessage]="emptyMessage()"
-          [ariaLabel]="'Список продукции'"
-          [cellTemplates]="cellTemplates"
-          [rowActions]="rowActionsTplBinding"
-          [expandedRow]="expandedId() ? expandedTpl : null"
-          [localSort]="false"
-          [initialSortKey]="'name'"
-          [initialSortDir]="'asc'"
-          (pageChange)="onPageChange($event)"
-          (sortChange)="onSortChange($event)"
-          (rowClick)="onRowClick($event)"
-        >
-          <!-- ───── Name cell: expand chevron + routerLink (TZ-PRODUCTS-304) ───── -->
-          <!-- The chevron toggles the module panel; the row-level
-               (rowClick) ALSO toggles, so stopPropagation prevents
-               double-toggle. The trailing <a> keeps the detail-page
-               navigation affordance. -->
-          <ng-template #nameTpl let-row>
-            <span class="inline-flex items-center gap-2">
-              <button
-                type="button"
-                class="inline-flex items-center justify-center w-7 h-7 rounded-sm hover:bg-paper-2 transition-colors cursor-pointer"
-                (click)="$event.stopPropagation(); onRowClick(row)"
-                [attr.aria-label]="
-                  (expandedId() === row._id ? 'Свернуть' : 'Развернуть') + ' модули ' + row.name
-                "
-                data-test="expand-toggle"
-              >
-                <lucide-icon
-                  [img]="expandedId() === row._id ? ChevronUpIcon : ChevronDownIcon"
-                  [size]="16"
-                ></lucide-icon>
-              </button>
+      @if (viewMode() === 'grid') {
+        <!-- ───── Grid view: showcase cards (TZ-PRODUCTS-305) ───── -->
+        @if (loading()) {
+          <p class="text-sm text-muted-foreground py-8 text-center" data-test="grid-loading">
+            Загрузка…
+          </p>
+        } @else if (data().length === 0) {
+          <p class="text-sm text-muted-foreground py-8 text-center" data-test="grid-empty">
+            {{ emptyMessage() }}
+          </p>
+        } @else {
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+            data-test="products-grid"
+          >
+            @for (row of data(); track row._id) {
               <a
                 [routerLink]="['/products', row._id]"
-                (click)="$event.stopPropagation()"
-                class="text-ink hover:text-sunrise-warm hover:underline"
+                class="block min-w-0"
                 [attr.aria-label]="'Открыть ' + row.name"
-                data-test="open-row-link"
-                >{{ row.name }}</a
+                [attr.data-test]="'showcase-cell-' + row._id"
               >
-            </span>
-          </ng-template>
-
-          <!-- ───── Row actions cluster ───── -->
-          <ng-template #rowActionsTpl let-row>
-            <app-pi-row-actions
-              [row]="row"
-              [editLabel]="'Редактировать ' + row.name"
-              [deleteLabel]="'Удалить ' + row.name"
-              [dataTestEdit]="'edit-button-' + row._id"
-              [dataTestDelete]="'delete-button-' + row._id"
-              (edit)="openEdit($event)"
-              (delete)="onDelete($event)"
-            />
-          </ng-template>
-
-          <!-- ───── Expanded module panel (TZ-PRODUCTS-304) ───── -->
-          <!-- Rendered under EVERY row by pi-table when a template is
-               bound; the @if guard narrows the actual panel to the
-               expanded row only. Collapsed rows: [expandedRow]="null"
-               → no empty <tr>. -->
-          <ng-template #expandedTpl let-row>
-            @if (expandedId() === row._id) {
-              @let mods = expandedModules(row);
-              <div class="px-4 py-3" data-test="expanded-modules">
-                <p class="eyebrow mb-2 text-muted-foreground">Модули в составе</p>
-                @if (modulesLoading()) {
-                  <p class="text-xs text-muted-foreground">Загрузка модулей…</p>
-                } @else if (modulesError()) {
-                  <p class="text-xs text-destructive">{{ modulesError() }}</p>
-                } @else if (mods.length === 0) {
-                  <p class="text-xs text-muted-foreground">
-                    Нет модулей в составе. Откройте товар, чтобы привязать модули.
-                  </p>
-                } @else {
-                  <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    @for (m of mods; track m._id) {
-                      <button
-                        type="button"
-                        (click)="openModule(m)"
-                        class="flex items-center gap-3 p-2 hairline rounded-sm bg-paper hover:bg-paper-2 transition-colors cursor-pointer text-left"
-                        [attr.data-test]="'expanded-module-' + m._id"
+                <app-pi-showcase-card
+                  size="sm"
+                  [title]="row.name"
+                  [description]="gridDescription(row)"
+                  [eyebrow]="gridEyebrow(row)"
+                  [interactive]="true"
+                >
+                  <span sc-actions-sm class="flex items-center gap-2">
+                    <app-pi-avatar
+                      [alt]="row.name"
+                      size="xs"
+                      ariaLabel="Иконка товара"
+                      data-test="showcase-avatar"
+                    />
+                    @if (statusLabel(row)) {
+                      <span
+                        [class]="statusBadgeClass(row)"
+                        data-test="showcase-status"
                       >
-                        <span class="flex-1 min-w-0">
-                          <span class="block text-sm font-medium truncate">{{ m.name }}</span>
-                          <span class="block text-xs text-muted-foreground">
-                            {{ m.article ?? '—' }} · {{ m.materials.length }} материалов
-                          </span>
-                        </span>
-                        <lucide-icon
-                          [img]="ChevronRightIcon"
-                          [size]="16"
-                          class="text-muted-foreground shrink-0"
-                        ></lucide-icon>
-                      </button>
+                        {{ statusLabel(row) }}
+                      </span>
                     }
-                  </div>
-                }
-              </div>
+                    <span class="font-medium" data-test="showcase-price">
+                      {{ gridPrice(row) }}
+                    </span>
+                  </span>
+                </app-pi-showcase-card>
+              </a>
             }
-          </ng-template>
-        </app-pi-table>
-      </div>
+          </div>
+        }
+      } @else {
+        <div class="overflow-x-auto hairline rounded-sm">
+          <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
+            ← Таблица широкая — прокручивайте горизонтально →
+          </p>
+          <app-pi-table
+            [data]="data()"
+            [columns]="cols"
+            [loading]="loading()"
+            [total]="total()"
+            [page]="page()"
+            [pageSize]="pageSize"
+            [emptyMessage]="emptyMessage()"
+            [ariaLabel]="'Список продукции'"
+            [cellTemplates]="cellTemplates"
+            [rowActions]="rowActionsTplBinding"
+            [localSort]="false"
+            [initialSortKey]="'name'"
+            [initialSortDir]="'asc'"
+            (pageChange)="onPageChange($event)"
+            (sortChange)="onSortChange($event)"
+            (rowClick)="onRowClick($event)"
+            [expandedRow]="expandedId() ? expandedTpl : null"
+          ></app-pi-table>
+        </div>
+      }
     </app-pi-section>
+
+    <!-- ───── Template refs (hoisted out of @if/@else so the
+         @ViewChild({ static: true }) queries resolve) ───── -->
+    <!-- Name cell (routerLink to detail page). The (click) propagates
+         to the row <tr>. pi-table wraps each row with
+         (click)="onRowClick(row)" so without stopPropagation the
+         navigation would also fire rowClick — the stopPropagation
+         makes the cell template robust against row-level click. -->
+    <ng-template #nameTpl let-row>
+      <a
+        [routerLink]="['/products', row._id]"
+        (click)="$event.stopPropagation()"
+        class="text-ink hover:text-sunrise-warm hover:underline"
+        [attr.aria-label]="'Открыть ' + row.name"
+        data-test="open-row-link"
+        >{{ row.name }}</a
+      >
+    </ng-template>
+
+    <!-- ───── Row actions cluster ───── -->
+    <ng-template #rowActionsTpl let-row>
+      <app-pi-row-actions
+        [row]="row"
+        [editLabel]="'Редактировать ' + row.name"
+        [deleteLabel]="'Удалить ' + row.name"
+        [dataTestEdit]="'edit-button-' + row._id"
+        [dataTestDelete]="'delete-button-' + row._id"
+        (edit)="openEdit($event)"
+        (delete)="onDelete($event)"
+      />
+    </ng-template>
+
+    <!-- ───── Expanded row: модули в составе (TZ-PRODUCTS-304) ───── -->
+    <ng-template #expandedTpl let-row>
+      @if (expandedId() === row._id) {
+        <div class="px-4 py-3" data-test="expanded-row">
+          @if (modulesOf(row).length === 0) {
+            <p class="text-xs text-muted-foreground" data-test="expanded-empty">
+              Нет модулей в составе. Откройте товар, чтобы привязать модули.
+            </p>
+          } @else {
+            <div class="flex flex-wrap gap-2">
+              @for (m of modulesOf(row); track m._id) {
+                <a
+                  [routerLink]="['/modules', m._id]"
+                  class="inline-flex items-center gap-2 min-h-touch px-2 py-1.5 text-sm hairline rounded-sm bg-paper hover:bg-paper-2 hover:shadow-sm transition-all"
+                  [attr.aria-label]="'Открыть модуль ' + m.name"
+                  [attr.data-test]="'module-card-' + m._id"
+                >
+                  <span
+                    class="w-7 h-7 rounded-sm hairline bg-paper-2 flex items-center justify-center text-muted-foreground text-xs font-medium shrink-0"
+                    aria-hidden="true"
+                  >
+                    {{ (m.name || 'M').charAt(0).toUpperCase() }}
+                  </span>
+                  <span class="font-medium truncate max-w-40">{{ m.name }}</span>
+                  <span class="font-mono text-xs text-muted-foreground empty-cell">
+                    {{ m.article ?? '—' }}
+                  </span>
+                  <span class="text-xs text-muted-foreground">
+                    {{ m.materials.length }} материалов
+                  </span>
+                </a>
+              }
+            </div>
+          }
+        </div>
+      }
+    </ng-template>
   `,
 })
 export class ProductsPage implements OnInit {
@@ -303,26 +366,23 @@ export class ProductsPage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly RefreshIcon = RefreshCw;
-  protected readonly ChevronDownIcon = ChevronDown;
-  protected readonly ChevronUpIcon = ChevronUp;
-  protected readonly ChevronRightIcon = ChevronRight;
+  protected readonly ListIcon = List;
+  protected readonly GridIcon = LayoutGrid;
+
+  /**
+   * TZ-PRODUCTS-305 — вид каталога: `list` (pi-table) ↔ `grid` (sm
+   * showcase-карточки). Переключение в тулбаре; выбор сохраняется в
+   * localStorage (паттерн snapSettings в builder).
+   */
+  protected readonly viewMode = signal<ProductsViewMode>(loadProductsViewMode());
+
+  protected setViewMode(mode: ProductsViewMode): void {
+    this.viewMode.set(mode);
+    saveProductsViewMode(mode);
+  }
 
   /** Exposed to template via `[pageSize]="pageSize"`. */
   protected readonly pageSize = PAGE_SIZE;
-
-  /**
-   * TZ-PRODUCTS-304 — single-expand UX: the product row currently
-   * expanded to show its module panel, or null (all collapsed).
-   */
-  protected readonly expandedId = signal<string | null>(null);
-  /** Page-scoped module cache (moduleId → ProductModule). NOT in the service. */
-  private readonly moduleCache = new Map<string, ProductModule>();
-  /** Products whose module list was already fetched (lazy-on-first-expand). */
-  private readonly loadedModuleProducts = new Set<string>();
-  protected readonly modulesLoading = signal<boolean>(false);
-  protected readonly modulesError = signal<string | null>(null);
-  private readonly modulesSvc = inject(ProductModulesService);
-  private readonly router = inject(Router);
 
   /** Current page (1-indexed). Bumped via `(pageChange)`. */
   private readonly pageSig = signal<number>(1);
@@ -395,7 +455,7 @@ export class ProductsPage implements OnInit {
 
   // ─── Column definitions ────────────────────────────────────────────
   /**
-   * 7 visible columns + row-actions slot (auto-injected).
+   * 8 visible columns + row-actions slot (auto-injected).
    * - `name` is sticky-left (ID-like for tablets) and a `cellTemplate`
    *   so the rich `<a [routerLink]>` markup renders. Sort wires to
    *   backend `sortBy=name`.
@@ -409,6 +469,10 @@ export class ProductsPage implements OnInit {
    *   sort `active/archived/draft/new` is what users see. (No status
    *   cycle order needed since status enum isn't a lifecycle like
    *   Order.status.)
+   * - `productModuleIds` («Модулей», TZ-PRODUCTS-304) is numeric and
+   *   counts the RAW array length (strings + objects) — backend `list()`
+   *   populates top-level, so it matches the expanded-row card count
+   *   (`modulesOf` filters to populated objects only).
    * - `stockQty` is numeric with manual format() (string) so we can
    *   default null to 0.
    */
@@ -449,6 +513,14 @@ export class ProductsPage implements OnInit {
       format: (r) => (r.status ? (STATUS_LABELS[r.status] ?? r.status) : '—'),
     },
     {
+      key: 'productModuleIds',
+      label: 'Модулей',
+      numeric: true,
+      align: 'right',
+      width: '80px',
+      format: (r) => String(r.productModuleIds?.length ?? 0),
+    },
+    {
       key: 'stockQty',
       label: 'Остаток',
       numeric: true,
@@ -463,8 +535,6 @@ export class ProductsPage implements OnInit {
   // `[cellTemplates]` input. Pre-TZ-104.4.2 these were `TemplateRef<any>`.
   @ViewChild('nameTpl', { static: true })
   private readonly nameTplRef!: TemplateRef<{ $implicit: Product }>;
-  @ViewChild('expandedTpl', { static: true })
-  private readonly expandedTplRef!: TemplateRef<{ $implicit: Product }>;
   @ViewChild('rowActionsTpl', { static: true })
   private readonly rowActionsTplRef!: TemplateRef<{ $implicit: Product }>;
 
@@ -569,80 +639,91 @@ export class ProductsPage implements OnInit {
     this.listRes.reload();
   }
 
-  // ─── Expandable module panel (TZ-PRODUCTS-304) ──────────────────────────
+  // ─── Expandable rows (TZ-PRODUCTS-304) ──────────────────────────────
+
+  /** _id развёрнутого товара; null = все свёрнуты. */
+  protected readonly expandedId = signal<string | null>(null);
 
   /**
-   * Row-click toggle: expand the clicked row's module panel, collapse if
-   * it was already the expanded one (single-expand UX). The chevron button
-   * calls the same handler with stopPropagation (no double-toggle).
+   * Клик по строке — toggle expand. Повторный клик по той же строке
+   * сворачивает. Редактирование/удаление НЕ триггерят expand (pi-table
+   * сам делает stopPropagation на row-actions `<td>`).
    */
   protected onRowClick(row: Product): void {
-    const wasExpanded = this.expandedId() === row._id;
-    this.expandedId.set(wasExpanded ? null : row._id);
-    if (wasExpanded) {
-      // Collapsing: clear in-flight loading/error so a later expand of
-      // another (already-populated) row doesn't show a stale «Загрузка…».
-      this.modulesLoading.set(false);
-      this.modulesError.set(null);
-      return;
-    }
-    this.ensureModulesLoaded(row);
+    this.expandedId.update((cur) => (cur === row._id ? null : row._id));
   }
 
   /**
-   * Modules of the currently-expanded product, resolved from the row's
-   * populated `productModuleIds` (backend list populate) or the page-scoped
-   * cache (lazy-fetched on first expand). Unknown ids (catalog not loaded)
-   * are skipped — the panel shows only what is known.
+   * Populated ProductModule объекты из `productModuleIds` (строки-ids,
+   * если populate не прошёл, отфильтровываем). Используется в
+   * expandedTpl для карточек модулей.
    */
-  protected expandedModules(row: Product): ProductModule[] {
-    const refs = (row as ProductWithModules).productModuleIds ?? [];
-    return refs
-      .map((ref) => (typeof ref === 'string' ? this.moduleCache.get(ref) : ref))
-      .filter((m): m is ProductModule => !!m);
+  protected modulesOf(row: Product): ProductModule[] {
+    return (row.productModuleIds ?? []).filter(
+      (m): m is ProductModule => typeof m === 'object' && m !== null && '_id' in m,
+    );
+  }
+
+  // ─── Grid view helpers (TZ-PRODUCTS-305) ──────────────────────────
+
+  /** Eyebrow в sm-карточке: метка вида («Товар»/«Услуга»/«Работа»). */
+  protected gridEyebrow(row: Product): string {
+    return row.kind ? (KIND_LABELS[row.kind] ?? row.kind) : '';
   }
 
   /**
-   * Lazy module fetch on FIRST expand, and ONLY when the row carries
-   * plain string ids that are still missing from the cache. Rows whose
-   * `productModuleIds` are already populated objects (backend `list()`
-   * top-level populate) need no GET and never see a loading flash.
-   * `loadedModuleProducts` guards re-GET on collapse/expand cycles; on
-   * error the product is removed so a transient failure can retry.
-   * Resolved modules land in the page-scoped Map cache (NOT the service).
+   * Подпись под названием в sm-карточке: SKU + категория (если есть).
+   * Инициалы/фото — PiAvatar (фото нет в list-payload, показываем
+   * монограмму по названию).
    */
-  private ensureModulesLoaded(row: Product): void {
-    const pid = row._id;
-    const refs = (row as ProductWithModules).productModuleIds ?? [];
-    // Seed the cache from already-populated object refs (no fetch needed).
-    refs.forEach((r) => {
-      if (typeof r === 'object' && r !== null && '_id' in r) {
-        this.moduleCache.set(r._id, r);
-      }
-    });
-    const missing = refs
-      .map((r) => (typeof r === 'string' ? r : null))
-      .filter((id): id is string => typeof id === 'string' && id.length > 0)
-      .filter((id) => !this.moduleCache.has(id));
-    if (missing.length === 0 || this.loadedModuleProducts.has(pid)) return;
-    this.loadedModuleProducts.add(pid);
-    this.modulesLoading.set(true);
-    this.modulesError.set(null);
-    this.modulesSvc.list(pid).subscribe((res) => {
-      this.modulesLoading.set(false);
-      if (res.ok) {
-        (res.data ?? []).forEach((m) => this.moduleCache.set(m._id, m));
-      } else {
-        // Allow retry on a later expand: transient failure shouldn't
-        // permanently break the panel for this product.
-        this.loadedModuleProducts.delete(pid);
-        this.modulesError.set(extractErrorMessage(res.error));
-      }
-    });
+  protected gridDescription(row: Product): string {
+    const parts: string[] = [];
+    if (row.sku) parts.push(row.sku);
+    if (row.subcategory) parts.push(row.subcategory);
+    return parts.join(' · ');
   }
 
-  /** Click a module card → module detail page (materials live there). */
-  protected openModule(m: ProductModule): void {
-    this.router.navigate(['/modules', m._id]);
+  /** Цена в sm-карточке (footer actions-sm слот). */
+  protected gridPrice(row: Product): string {
+    return formatPrice(row.listPrice);
+  }
+
+  /** Badge статуса: «Активен»/«Неактивен» по isActive, иначе статус. */
+  protected statusLabel(row: Product): string {
+    if (row.isActive === false) return 'Неактивен';
+    return row.status ? (STATUS_LABELS[row.status] ?? row.status) : '';
+  }
+
+  /** Класс бейджа статуса: muted для неактивных/архива, иначе default. */
+  protected statusBadgeClass(row: Product): string {
+    const muted =
+      row.isActive === false || row.status === 'archived' || row.status === 'draft';
+    const base =
+      'text-[10px] font-medium uppercase tracking-wide hairline rounded-full px-2 py-0.5 bg-paper-2';
+    return `${base} ${muted ? 'text-muted-foreground' : 'text-ink'}`;
+  }
+}
+
+// ─── View-mode persistence (TZ-PRODUCTS-305, паттерн snapSettings) ───
+const PRODUCTS_VIEW_MODE_KEY = 'pi-products-view-mode';
+
+type ProductsViewMode = 'list' | 'grid';
+
+const DEFAULT_VIEW_MODE: ProductsViewMode = 'list';
+
+function loadProductsViewMode(): ProductsViewMode {
+  try {
+    const raw = localStorage.getItem(PRODUCTS_VIEW_MODE_KEY);
+    return raw === 'grid' ? 'grid' : 'list';
+  } catch {
+    return DEFAULT_VIEW_MODE;
+  }
+}
+
+function saveProductsViewMode(mode: ProductsViewMode): void {
+  try {
+    localStorage.setItem(PRODUCTS_VIEW_MODE_KEY, mode);
+  } catch {
+    // localStorage may be unavailable (private browsing, quota exceeded)
   }
 }

@@ -1,5 +1,3 @@
-import { Test } from '@nestjs/testing';
-import { getModelToken } from '@nestjs/mongoose';
 import {
   BadRequestException,
   ConflictException,
@@ -7,400 +5,488 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Types } from 'mongoose';
-import {
-  ColorReferenceService,
-  SYSTEM_DEFAULT_COLOR_SLUG,
-} from './color-reference.service';
+import { ColorReferenceService } from './color-reference.service';
 import { ColorReference } from './color-reference.schema';
 
-/**
- * TZ-PRODUCTS-301 — Unit spec for ColorReferenceService.
- *
- * Hermetic: in-memory fake-модель (@InjectModel), без Mongo. Зеркалит
- * TZ-DOC-307/315 spec-паттерн. Покрывает acceptance criteria:
- *  - create: slug-генерация, 409 на дубликат в scope, org-scope;
- *  - findAll: envelope/org-scope $or + search + soft-delete;
- *  - update: 403 на чужую область, 409 на system-цвет, 409 dup slug;
- *  - remove: soft-delete, 409 system;
- *  - resolveDefault: org-default → системный «Не выбран» → null;
- *  - assertAssignable / assertDefaultId: 404/400;
- *  - legacy backward-compat (цвет без новых полей открывается).
- */
+const ORG_A = new Types.ObjectId().toString();
+const ORG_B = new Types.ObjectId().toString();
 
-type MockDoc = Record<string, unknown> & {
-  _id: Types.ObjectId;
-  save: jest.Mock;
-  organizationId?: Types.ObjectId | null;
-  deletedAt?: Date | null;
-};
-
-function valuesEqual(a: unknown, b: unknown): boolean {
-  if (a === b) return true;
-  if (a === undefined || b === undefined) return false;
-  if (Array.isArray(a)) {
-    return a.some((item) => String(item) === String(b));
-  }
-  return String(a) === String(b);
-}
-
-function matchesQuery(doc: MockDoc, query: Record<string, unknown>): boolean {
-  return Object.entries(query).every(([k, v]) => {
-    if (k === '$and') {
-      return (v as Record<string, unknown>[]).every((cond) =>
-        matchesQuery(doc, cond),
-      );
-    }
-    if (k === '$or') {
-      return (v as Record<string, unknown>[]).some((cond) =>
-        matchesQuery(doc, cond),
-      );
-    }
-    if (v && typeof v === 'object' && '$exists' in v) {
-      const present = doc[k] !== undefined && doc[k] !== null;
-      return v.$exists ? present : !present;
-    }
-    if (v instanceof RegExp) {
-      return v.test(String(doc[k] ?? ''));
-    }
-    if (v && typeof v === 'object' && '$ne' in v) {
-      return !valuesEqual(doc[k], (v as { $ne: unknown }).$ne);
-    }
-    return valuesEqual(doc[k], v);
-  });
-}
-
-class FakeModel {
-  public store: Map<string, MockDoc> = new Map();
-
-  reset() {
-    this.store.clear();
-  }
-
-  makeDoc(partial: Record<string, unknown>): MockDoc {
-    const _id = (partial._id as Types.ObjectId) ?? new Types.ObjectId();
-    const doc: MockDoc = { ...partial, _id, save: jest.fn(async () => doc) };
-    this.store.set(String(_id), doc);
-    return doc;
-  }
-
-  findOne = jest.fn((query: Record<string, unknown>) => {
-    const matches = Array.from(this.store.values()).filter((d) =>
-      matchesQuery(d, query),
-    );
-    const select = jest.fn(() => ({
-      exec: jest.fn(async () => matches[0] ?? null),
-    }));
-    const sort = jest.fn(() => ({ exec: jest.fn(async () => matches[0] ?? null) }));
-    return { select, sort, exec: jest.fn(async () => matches[0] ?? null) };
-  });
-
-  find = jest.fn((query: Record<string, unknown>) => {
-    const matches = Array.from(this.store.values()).filter((d) =>
-      matchesQuery(d, query),
-    );
-    return {
-      sort: jest.fn(() => ({ exec: jest.fn(async () => matches) })),
-    };
-  });
-
-  findById = jest.fn((id: string) => ({
-    exec: jest.fn(async () => {
-      const doc = this.store.get(String(id));
-      if (!doc) return null;
-      return doc;
+/** Minimal mock Mongoose document (toObject-free). */
+function colorDoc(overrides: Record<string, unknown> = {}) {
+  return {
+    _id: new Types.ObjectId(),
+    name: 'RAL 9003 — Сигнальный белый',
+    slug: 'ral-9003-signalny-belyy',
+    hex: '#F4F4F4',
+    description: undefined,
+    isActive: true,
+    isSystem: false,
+    isDefault: false,
+    deletedAt: undefined,
+    save: jest.fn().mockImplementation(function (this: unknown) {
+      return Promise.resolve(this);
     }),
-  }));
+    ...overrides,
+  };
+}
 
-  create = jest.fn(async (doc: Record<string, unknown>) => this.makeDoc(doc));
+/** Minimal mock Mongoose query wrapper (matching project convention). */
+function mockQuery<T>(value: T) {
+  return { sort: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue(value) };
+}
 
-  updateOne = jest.fn((filter: Record<string, unknown>, update: Record<string, unknown>) => {
-    const target = Array.from(this.store.values()).find((d) =>
-      matchesQuery(d, filter),
-    );
-    if (target) {
-      const set = (update.$set ?? {}) as Record<string, unknown>;
-      Object.entries(set).forEach(([k, v]) => {
-        (target as Record<string, unknown>)[k] = v;
-      });
-    }
-    return { exec: jest.fn(async () => ({ modifiedCount: target ? 1 : 0 })) };
-  });
+function createService(overrides: Record<string, unknown> = {}) {
+  const model = {
+    findOne: jest.fn(),
+    find: jest.fn(),
+    findById: jest.fn(),
+    create: jest.fn(),
+    deleteOne: jest.fn(),
+  };
+  const dependencies = { model, ...overrides };
+  return {
+    service: new ColorReferenceService(dependencies.model as never),
+    model: dependencies.model as {
+      findOne: jest.Mock;
+      find: jest.Mock;
+      findById: jest.Mock;
+      create: jest.Mock;
+      deleteOne: jest.Mock;
+    },
+  };
 }
 
 describe('ColorReferenceService (TZ-PRODUCTS-301)', () => {
-  let service: ColorReferenceService;
-  let model: FakeModel;
-
-  beforeEach(async () => {
-    model = new FakeModel();
-    const moduleRef = await Test.createTestingModule({
-      providers: [
-        ColorReferenceService,
-        { provide: getModelToken(ColorReference.name), useValue: model },
-      ],
-    }).compile();
-    service = moduleRef.get(ColorReferenceService);
-  });
-
-  const orgId = String(new Types.ObjectId());
-
-  // ── create ────────────────────────────────────────────────────────────
   describe('create', () => {
-    it('creates with org scope, generates slug from Cyrillic name, isActive default true', async () => {
-      const created = await service.create(
-        { name: 'Сигнальный белый', hex: '#FFFFFF' },
-        orgId,
+    it('creates an org-scoped color with a stable slug', async () => {
+      const { service, model } = createService();
+      model.findOne.mockReturnValue(mockQuery(null));
+      const doc = colorDoc({ _id: new Types.ObjectId(), organizationId: new Types.ObjectId(ORG_A) });
+      model.create.mockResolvedValue(doc);
+
+      const result = await service.create(
+        { name: 'RAL 9003 — Сигнальный белый', slug: 'ral-9003-signalny-belyy', hex: '#F4F4F4' },
+        ORG_A,
       );
-      expect(created.slug).toBe('signalnyi-belyi');
-      expect(created.organizationId?.toString()).toBe(orgId);
-      expect(created.isActive).toBe(true);
-      expect(created.isSystem).toBe(false);
-      expect(created.hex).toBe('#FFFFFF');
+      expect(model.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          slug: 'ral-9003-signalny-belyy',
+          hex: '#F4F4F4',
+          organizationId: new Types.ObjectId(ORG_A),
+          isSystem: false,
+          isActive: true,
+        }),
+      );
+      expect(result).toBe(doc);
     });
 
-    it('409 on duplicate slug in same org scope', async () => {
-      model.makeDoc({
-        _id: new Types.ObjectId(),
-        slug: 'ral-9003',
-        organizationId: new Types.ObjectId(orgId),
-        deletedAt: null,
-      });
+    it('GENERATES a server-side slug from a Cyrillic name when slug omitted', async () => {
+      const { service, model } = createService();
+      model.findOne.mockReturnValue(mockQuery(null));
+      model.create.mockResolvedValue(colorDoc({}));
+
+      await service.create({ name: 'Не выбран' }, ORG_A);
+      expect(model.create).toHaveBeenCalledWith(
+        expect.objectContaining({ slug: 'ne-vybran' }),
+      );
+    });
+
+    it('rejects an INVALID hex with 400 (service-level backstop)', async () => {
+      const { service, model } = createService();
+
       await expect(
-        service.create({ name: 'RAL 9003', hex: '#FFFFFF', slug: 'ral-9003' }, orgId),
+        service.create({ name: 'Плохой цвет', hex: 'F4F4F4' }, ORG_A),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(model.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects a duplicate slug in the SAME org scope with 409', async () => {
+      const { service, model } = createService();
+      model.findOne.mockReturnValue(mockQuery(colorDoc({ organizationId: new Types.ObjectId(ORG_A) })));
+
+      await expect(
+        service.create({ name: 'Дубликат', slug: 'ral-9003-signalny-belyy' }, ORG_A),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(model.create).not.toHaveBeenCalled();
+    });
+
+    it('allows the same slug in a DIFFERENT org (ownership-scoped uniqueness)', async () => {
+      const { service, model } = createService();
+      model.findOne.mockReturnValue(mockQuery(null));
+      model.create.mockResolvedValue(colorDoc({ organizationId: new Types.ObjectId(ORG_A) }));
+
+      const result = await service.create(
+        { name: 'RAL 9003 — Сигнальный белый', slug: 'ral-9003-signalny-belyy' },
+        ORG_B,
+      );
+      expect(model.findOne).toHaveBeenCalledWith({
+        organizationId: new Types.ObjectId(ORG_B),
+        slug: 'ral-9003-signalny-belyy',
+      });
+      expect(result).toBeDefined();
+    });
+  });
+
+  describe('findAll', () => {
+    it('filters to org scope + system colors when organizationId provided', async () => {
+      const { service, model } = createService();
+      model.find.mockReturnValue({ sort: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue([]) }) });
+
+      await service.findAll({ organizationId: ORG_A });
+      expect(model.find).toHaveBeenCalledWith({
+        deletedAt: { $exists: false },
+        $or: [
+          { organizationId: new Types.ObjectId(ORG_A) },
+          { organizationId: { $exists: false } },
+        ],
+      });
+    });
+
+    it('returns only active colors when activeOnly=true', async () => {
+      const { service, model } = createService();
+      model.find.mockReturnValue({ sort: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue([]) }) });
+
+      await service.findAll({ activeOnly: true });
+      expect(model.find).toHaveBeenCalledWith({
+        deletedAt: { $exists: false },
+        isActive: true,
+      });
+    });
+
+    it('COMBINES search (name OR slug) and org scope via $and (search is never dropped)', async () => {
+      const { service, model } = createService();
+      model.find.mockReturnValue({ sort: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue([]) }) });
+
+      await service.findAll({ organizationId: ORG_A, search: 'RAL 9003' });
+      expect(model.find).toHaveBeenCalledWith({
+        deletedAt: { $exists: false },
+        $and: [
+          {
+            $or: [
+              { name: new RegExp('RAL 9003', 'i') },
+              { slug: new RegExp('RAL 9003', 'i') },
+            ],
+          },
+          {
+            $or: [
+              { organizationId: new Types.ObjectId(ORG_A) },
+              { organizationId: { $exists: false } },
+            ],
+          },
+        ],
+      });
+    });
+
+    it('ESCAPES regex metacharacters in the search term (no SyntaxError/ReDoS)', async () => {
+      const { service, model } = createService();
+      model.find.mockReturnValue({ sort: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue([]) }) });
+
+      await expect(
+        service.findAll({ organizationId: ORG_A, search: '(белый [a-' }),
+      ).resolves.toEqual([]);
+      expect(model.find).toHaveBeenCalledWith({
+        deletedAt: { $exists: false },
+        $and: [
+          {
+            $or: [
+              { name: new RegExp('\\(белый \\[a-', 'i') },
+              { slug: new RegExp('\\(белый \\[a-', 'i') },
+            ],
+          },
+          {
+            $or: [
+              { organizationId: new Types.ObjectId(ORG_A) },
+              { organizationId: { $exists: false } },
+            ],
+          },
+        ],
+      });
+    });
+  });
+
+  describe('update / rename', () => {
+    it('renames WITHOUT changing the id (product ralCode references stay stable)', async () => {
+      const { service, model } = createService();
+      const doc = colorDoc({ _id: new Types.ObjectId('aaaaaaaaaaaaaaaaaaaaaaaa'), name: 'Старое' });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      const result = await service.update(doc._id.toString(), { name: 'Новое имя' }, ORG_A);
+      expect(result._id.toString()).toBe('aaaaaaaaaaaaaaaaaaaaaaaa');
+      expect(result.name).toBe('Новое имя');
+      expect(result.save).toHaveBeenCalled();
+    });
+
+    it('rejects a slug rename that collides in the same scope with 409', async () => {
+      const { service, model } = createService();
+      const doc = colorDoc({ _id: new Types.ObjectId('aaaaaaaaaaaaaaaaaaaaaaaa'), slug: 'old' });
+      model.findById.mockReturnValue(mockQuery(doc));
+      model.findOne.mockReturnValue(mockQuery(colorDoc({ _id: new Types.ObjectId('bbbbbbbbbbbbbbbbbbbbbbbb') })));
+
+      await expect(
+        service.update(doc._id.toString(), { slug: 'new-slug' }, ORG_A),
       ).rejects.toBeInstanceOf(ConflictException);
     });
 
-    it('allows the same slug in a different org scope', async () => {
-      model.makeDoc({
-        _id: new Types.ObjectId(),
-        slug: 'ral-9003',
-        organizationId: new Types.ObjectId(),
-        deletedAt: null,
-      });
-      const created = await service.create(
-        { name: 'RAL 9003', hex: '#FFFFFF', slug: 'ral-9003' },
-        orgId,
+    it('REFUSES to update a FOREIGN-ORG color with 403 (IDOR guard)', async () => {
+      const { service, model } = createService();
+      model.findById.mockReturnValue(
+        mockQuery(colorDoc({ organizationId: new Types.ObjectId(ORG_B) })),
       );
-      expect(created.slug).toBe('ral-9003');
-    });
-  });
 
-  // ── findAll ───────────────────────────────────────────────────────────
-  describe('findAll', () => {
-    it('returns only non-deleted colors and applies org-scope $or', async () => {
-      model.makeDoc({ _id: new Types.ObjectId(), name: 'Белый', deletedAt: null });
-      model.makeDoc({ _id: new Types.ObjectId(), name: 'Удалённый', deletedAt: new Date() });
-      const res = await service.findAll({ organizationId: orgId });
-      expect(res.length).toBe(1);
-      expect(res[0].name).toBe('Белый');
-    });
-
-    it('filters by search on name', async () => {
-      model.makeDoc({ _id: new Types.ObjectId(), name: 'Сигнальный белый', deletedAt: null });
-      model.makeDoc({ _id: new Types.ObjectId(), name: 'Чёрный', deletedAt: null });
-      const res = await service.findAll({ search: 'сигнал', organizationId: orgId });
-      expect(res.length).toBe(1);
-      expect(res[0].name).toBe('Сигнальный белый');
-    });
-
-    it('filters activeOnly', async () => {
-      model.makeDoc({ _id: new Types.ObjectId(), name: 'Белый', isActive: true, deletedAt: null });
-      model.makeDoc({ _id: new Types.ObjectId(), name: 'Чёрный', isActive: false, deletedAt: null });
-      const res = await service.findAll({ activeOnly: true, organizationId: orgId });
-      expect(res.length).toBe(1);
-    });
-  });
-
-  // ── update (IDOR / system / dup) ──────────────────────────────────────
-  describe('update', () => {
-    it('403 when updating a color of another org scope', async () => {
-      const doc = model.makeDoc({
-        _id: new Types.ObjectId(),
-        name: 'Чужой',
-        slug: 'chuzhoy',
-        organizationId: new Types.ObjectId(),
-        deletedAt: null,
-      });
       await expect(
-        service.update(String(doc._id), { name: 'X' }, orgId),
+        service.update(new Types.ObjectId().toString(), { name: 'Взлом' }, ORG_A),
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
 
-    it('409 on system color update', async () => {
-      const doc = model.makeDoc({
-        _id: new Types.ObjectId(),
-        name: 'Не выбран',
-        slug: SYSTEM_DEFAULT_COLOR_SLUG,
-        isSystem: true,
-        deletedAt: null,
-      });
+    it('REFUSES to modify a SYSTEM color with 409 (seed-managed)', async () => {
+      const { service, model } = createService();
+      model.findById.mockReturnValue(
+        mockQuery(colorDoc({ isSystem: true, organizationId: undefined })),
+      );
+
       await expect(
-        service.update(String(doc._id), { name: 'X' }, orgId),
+        service.update(new Types.ObjectId().toString(), { name: 'Переименовать' }, ORG_A),
       ).rejects.toBeInstanceOf(ConflictException);
     });
 
-    it('409 on duplicate slug during rename', async () => {
-      const doc = model.makeDoc({
-        _id: new Types.ObjectId(),
-        name: 'Белый',
-        slug: 'belyy',
-        organizationId: new Types.ObjectId(orgId),
-        deletedAt: null,
-      });
-      model.makeDoc({
-        _id: new Types.ObjectId(),
-        name: 'Чёрный',
-        slug: 'chernyy',
-        organizationId: new Types.ObjectId(orgId),
-        deletedAt: null,
-      });
+    it('rejects an INVALID hex on update with 400', async () => {
+      const { service, model } = createService();
+      model.findById.mockReturnValue(mockQuery(colorDoc({ organizationId: undefined })));
+
       await expect(
-        service.update(String(doc._id), { slug: 'chernyy' }, orgId),
-      ).rejects.toBeInstanceOf(ConflictException);
+        service.update(new Types.ObjectId().toString(), { hex: 'not-a-color' }, ORG_A),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
   });
 
-  // ── remove (soft-delete / system) ─────────────────────────────────────
-  describe('remove', () => {
-    it('soft-deletes via deletedAt; findById then 404s', async () => {
-      const doc = model.makeDoc({
-        _id: new Types.ObjectId(),
-        name: 'Белый',
-        slug: 'belyy',
-        organizationId: new Types.ObjectId(orgId),
-        deletedAt: null,
+  describe('resolveDefault', () => {
+    it('prefers an active org-scoped isDefault color', async () => {
+      const { service, model } = createService();
+      const orgDefault = colorDoc({ _id: new Types.ObjectId('aaaaaaaaaaaaaaaaaaaaaaaa') });
+      model.findOne.mockReturnValueOnce(mockQuery(orgDefault));
+
+      const result = await service.resolveDefault(ORG_A);
+      expect(result).toBe(orgDefault);
+      expect(model.findOne).toHaveBeenCalledWith({
+        organizationId: new Types.ObjectId(ORG_A),
+        isActive: true,
+        isDefault: true,
+        deletedAt: { $exists: false },
       });
-      await service.remove(String(doc._id), orgId);
-      expect(doc.deletedAt).toBeInstanceOf(Date);
-      await expect(service.findById(String(doc._id))).rejects.toBeInstanceOf(
+    });
+
+    it('falls back to the active system «Не выбран» when no org default exists', async () => {
+      const { service, model } = createService();
+      const systemDefault = colorDoc({ _id: new Types.ObjectId('bbbbbbbbbbbbbbbbbbbbbbbb') });
+      model.findOne.mockReturnValueOnce(mockQuery(null)).mockReturnValueOnce(mockQuery(systemDefault));
+
+      const result = await service.resolveDefault(ORG_A);
+      expect(result).toBe(systemDefault);
+      expect(model.findOne).toHaveBeenLastCalledWith({
+        organizationId: { $exists: false },
+        isActive: true,
+        isDefault: true,
+        deletedAt: { $exists: false },
+      });
+    });
+
+    it('returns null when no default exists (caller must fail with 4xx)', async () => {
+      const { service, model } = createService();
+      model.findOne.mockReturnValue(mockQuery(null));
+
+      await expect(service.resolveDefault(ORG_A)).resolves.toBeNull();
+    });
+  });
+
+  describe('assertDefaultId', () => {
+    it('accepts an active isDefault color in the same org', async () => {
+      const { service, model } = createService();
+      const doc = colorDoc({ isDefault: true, organizationId: new Types.ObjectId(ORG_A) });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(service.assertDefaultId(doc._id.toString(), ORG_A)).resolves.toBe(doc);
+    });
+
+    it('accepts an active SYSTEM default for any org', async () => {
+      const { service, model } = createService();
+      const doc = colorDoc({ isDefault: true, isSystem: true, organizationId: undefined });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(service.assertDefaultId(doc._id.toString(), ORG_A)).resolves.toBe(doc);
+    });
+
+    it('rejects a color NOT marked isDefault with 400', async () => {
+      const { service, model } = createService();
+      model.findById.mockReturnValue(mockQuery(colorDoc({ isDefault: false, organizationId: undefined })));
+
+      await expect(
+        service.assertDefaultId(new Types.ObjectId().toString(), ORG_A),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('rejects a malformed colorId with 400 before any lookup', async () => {
+      const { service, model } = createService();
+
+      await expect(service.assertDefaultId('not-an-object-id', ORG_A)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(model.findById).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('assertAssignable', () => {
+    it('accepts an active color in the same org', async () => {
+      const { service, model } = createService();
+      const doc = colorDoc({ organizationId: new Types.ObjectId(ORG_A) });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(service.assertAssignable(doc._id.toString(), ORG_A)).resolves.toBe(doc);
+    });
+
+    it('accepts an active SYSTEM (global) color for any org', async () => {
+      const { service, model } = createService();
+      const doc = colorDoc({ isSystem: true, organizationId: undefined });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(service.assertAssignable(doc._id.toString(), ORG_A)).resolves.toBe(doc);
+    });
+
+    it('rejects a NONEXISTENT color with 404', async () => {
+      const { service, model } = createService();
+      model.findById.mockReturnValue(mockQuery(null));
+
+      await expect(service.assertAssignable(new Types.ObjectId().toString(), ORG_A)).rejects.toBeInstanceOf(
         NotFoundException,
       );
     });
 
-    it('409 on system color remove', async () => {
-      const doc = model.makeDoc({
-        _id: new Types.ObjectId(),
-        name: 'Не выбран',
-        slug: SYSTEM_DEFAULT_COLOR_SLUG,
-        isSystem: true,
-        deletedAt: null,
-      });
-      await expect(
-        service.remove(String(doc._id), orgId),
-      ).rejects.toBeInstanceOf(ConflictException);
+    it('rejects an INACTIVE color with 400', async () => {
+      const { service, model } = createService();
+      model.findById.mockReturnValue(mockQuery(colorDoc({ isActive: false, organizationId: undefined })));
+
+      await expect(service.assertAssignable(new Types.ObjectId().toString(), ORG_A)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+
+    it('rejects a FOREIGN-ORG color with 400 (ownership isolation)', async () => {
+      const { service, model } = createService();
+      model.findById.mockReturnValue(mockQuery(colorDoc({ organizationId: new Types.ObjectId(ORG_B) })));
+
+      await expect(service.assertAssignable(new Types.ObjectId().toString(), ORG_A)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+
+    it('rejects a malformed colorId with 400 before any lookup', async () => {
+      const { service, model } = createService();
+
+      await expect(service.assertAssignable('not-an-object-id', ORG_A)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(model.findById).not.toHaveBeenCalled();
     });
   });
 
-  // ── resolveDefault ────────────────────────────────────────────────────
-  describe('resolveDefault', () => {
-    it('returns org-scoped isDefault color when present', async () => {
-      const orgDefault = model.makeDoc({
-        _id: new Types.ObjectId(),
-        slug: 'org-default',
-        isActive: true,
-        isDefault: true,
-        organizationId: new Types.ObjectId(orgId),
-        deletedAt: null,
-      });
-      const res = await service.resolveDefault(orgId);
-      expect(res?._id).toEqual(orgDefault._id);
+  describe('remove', () => {
+    it('refuses to delete a system color with 409', async () => {
+      const { service, model } = createService();
+      model.findById.mockReturnValue(mockQuery(colorDoc({ isSystem: true })));
+
+      await expect(service.remove(new Types.ObjectId().toString(), ORG_A)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
     });
 
-    it('falls back to system «Не выбран» when org has no default', async () => {
-      model.makeDoc({
-        _id: new Types.ObjectId(),
-        slug: 'some-org-color',
-        isActive: true,
-        isDefault: false,
-        organizationId: new Types.ObjectId(orgId),
-        deletedAt: null,
-      });
-      const sys = model.makeDoc({
-        _id: new Types.ObjectId(),
-        slug: SYSTEM_DEFAULT_COLOR_SLUG,
-        isActive: true,
-        isDefault: true,
-        deletedAt: null,
-      });
-      const res = await service.resolveDefault(orgId);
-      expect(res?._id).toEqual(sys._id);
+    it('refuses to delete the isDefault color with 409 (used by the default contract)', async () => {
+      const { service, model } = createService();
+      model.findById.mockReturnValue(mockQuery(colorDoc({ isSystem: false, isDefault: true })));
+
+      await expect(service.remove(new Types.ObjectId().toString(), ORG_A)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
     });
 
-    it('returns null when no default exists', async () => {
-      const res = await service.resolveDefault(orgId);
-      expect(res).toBeNull();
+    it('REFUSES to delete a FOREIGN-ORG color with 403 (IDOR guard)', async () => {
+      const { service, model } = createService();
+      model.findById.mockReturnValue(
+        mockQuery(colorDoc({ organizationId: new Types.ObjectId(ORG_B) })),
+      );
+
+      await expect(
+        service.remove(new Types.ObjectId().toString(), ORG_A),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(model.deleteOne).not.toHaveBeenCalled();
+    });
+
+    it('SOFT-DELETES an unused, non-system, non-default color (sets deletedAt)', async () => {
+      const { service, model } = createService();
+      const doc = colorDoc({ isSystem: false, isDefault: false });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.remove(new Types.ObjectId().toString(), ORG_A);
+      expect(doc.deletedAt).toBeInstanceOf(Date);
+      expect(doc.save).toHaveBeenCalled();
     });
   });
+});
 
-  // ── assertAssignable / assertDefaultId ────────────────────────────────
-  describe('assertAssignable / assertDefaultId', () => {
-    it('assertAssignable rejects invalid ObjectId with BadRequest', async () => {
-      await expect(
-        service.assertAssignable('not-an-id', orgId),
-      ).rejects.toBeInstanceOf(BadRequestException);
-    });
+// ─── Controller RBAC + Audit metadata (unit-level proof) ───
 
-    it('assertAssignable returns NotFound for missing color', async () => {
-      await expect(
-        service.assertAssignable(String(new Types.ObjectId()), orgId),
-      ).rejects.toBeInstanceOf(NotFoundException);
-    });
+import { ColorReferenceController } from './color-reference.controller';
+import { ROLES_KEY } from '../../common/decorators/roles.decorator';
+import { AUDIT_ACTION_KEY } from '../../common/interceptors/audit.interceptor';
+import { Reflector } from '@nestjs/core';
 
-    it('assertAssignable rejects inactive color with BadRequest', async () => {
-      const doc = model.makeDoc({
-        _id: new Types.ObjectId(),
-        name: 'Архив',
-        slug: 'archived',
-        isActive: false,
-        organizationId: new Types.ObjectId(orgId),
-        deletedAt: null,
-      });
-      await expect(
-        service.assertAssignable(String(doc._id), orgId),
-      ).rejects.toBeInstanceOf(BadRequestException);
-    });
+describe('ColorReferenceController RBAC (TZ-PRODUCTS-301)', () => {
+  const reflector = new Reflector();
 
-    it('assertAssignable rejects foreign-org color with BadRequest', async () => {
-      const doc = model.makeDoc({
-        _id: new Types.ObjectId(),
-        name: 'Чужой',
-        slug: 'chuzhoy',
-        isActive: true,
-        organizationId: new Types.ObjectId(),
-        deletedAt: null,
-      });
-      await expect(
-        service.assertAssignable(String(doc._id), orgId),
-      ).rejects.toBeInstanceOf(BadRequestException);
-    });
+  it('read routes require user|admin|manager roles', () => {
+    const listRoles = reflector.getAllAndOverride<string[]>(ROLES_KEY, [
+      ColorReferenceController.prototype.list,
+      ColorReferenceController,
+    ]);
+    const findRoles = reflector.getAllAndOverride<string[]>(ROLES_KEY, [
+      ColorReferenceController.prototype.findOne,
+      ColorReferenceController,
+    ]);
+    expect(listRoles).toEqual(['user', 'admin', 'manager']);
+    expect(findRoles).toEqual(['user', 'admin', 'manager']);
+  });
 
-    it('assertDefaultId rejects a non-default color with BadRequest', async () => {
-      const doc = model.makeDoc({
-        _id: new Types.ObjectId(),
-        name: 'Не default',
-        slug: 'non-default',
-        isActive: true,
-        isDefault: false,
-        organizationId: new Types.ObjectId(orgId),
-        deletedAt: null,
-      });
-      await expect(
-        service.assertDefaultId(String(doc._id), orgId),
-      ).rejects.toBeInstanceOf(BadRequestException);
-    });
+  it('mutating routes require admin|manager only', () => {
+    const createRoles = reflector.getAllAndOverride<string[]>(ROLES_KEY, [
+      ColorReferenceController.prototype.create,
+      ColorReferenceController,
+    ]);
+    const updateRoles = reflector.getAllAndOverride<string[]>(ROLES_KEY, [
+      ColorReferenceController.prototype.update,
+      ColorReferenceController,
+    ]);
+    const removeRoles = reflector.getAllAndOverride<string[]>(ROLES_KEY, [
+      ColorReferenceController.prototype.remove,
+      ColorReferenceController,
+    ]);
+    expect(createRoles).toEqual(['admin', 'manager']);
+    expect(updateRoles).toEqual(['admin', 'manager']);
+    expect(removeRoles).toEqual(['admin', 'manager']);
+  });
 
-    it('assertDefaultId resolves a valid org default', async () => {
-      const doc = model.makeDoc({
-        _id: new Types.ObjectId(),
-        name: 'Белый',
-        slug: 'belyy',
-        isActive: true,
-        isDefault: true,
-        organizationId: new Types.ObjectId(orgId),
-        deletedAt: null,
-      });
-      const res = await service.assertDefaultId(String(doc._id), orgId);
-      expect(res._id).toEqual(doc._id);
-    });
+  it('every mutating route carries AuditAction metadata', () => {
+    const createMeta = reflector.getAllAndOverride<{ action: string; entityType: string }>(
+      AUDIT_ACTION_KEY,
+      [ColorReferenceController.prototype.create, ColorReferenceController],
+    );
+    const updateMeta = reflector.getAllAndOverride<{ action: string }>(AUDIT_ACTION_KEY, [
+      ColorReferenceController.prototype.update,
+      ColorReferenceController,
+    ]);
+    const removeMeta = reflector.getAllAndOverride<{ action: string }>(AUDIT_ACTION_KEY, [
+      ColorReferenceController.prototype.remove,
+      ColorReferenceController,
+    ]);
+    expect(createMeta).toMatchObject({ action: 'create', entityType: 'ColorReference' });
+    expect(updateMeta).toMatchObject({ action: 'update' });
+    expect(removeMeta).toMatchObject({ action: 'delete' });
   });
 });

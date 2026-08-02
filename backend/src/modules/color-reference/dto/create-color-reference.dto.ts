@@ -1,44 +1,42 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsBoolean,
-  IsInt,
-  IsOptional,
-  IsString,
-  Length,
-  Matches,
-  Min,
-} from 'class-validator';
+import { IsBoolean, IsHexColor, IsOptional, IsString, Length, Matches } from 'class-validator';
 
 /**
  * TZ-PRODUCTS-301 — Create DTO for color references.
  *
- * Whitelist-only: the global ValidationPipe strips unknown fields
- * (forbidNonWhitelisted → 400). `organizationId` is NOT accepted from the
- * client — it is derived from the authenticated user (controller), so a
- * user can never create a color in a foreign scope.
+ * Whitelist-only: the global ValidationPipe strips unknown fields, so any
+ * future payload must be added here explicitly. `organizationId` is NOT
+ * accepted from the client — it is derived from the authenticated user
+ * (controller) so a user can never create a color in a foreign scope.
  *
  * `slug` is OPTIONAL: when omitted the server generates it from `name`
  * (Russian→Latin transliteration, kebab-case) — see
- * `ColorReferenceService.slugify`. `hex` is REQUIRED and validated as
- * `#RRGGBB` (400 on anything else).
+ * `ColorReferenceService.slugify`. Clients that want a custom stable key
+ * may still send one (validated `[a-z0-9-]+`).
+ *
+ * `hex` is OPTIONAL and validated as `#RRGGBB` via class-validator
+ * `@IsHexColor()` (TZ-PRODUCTS-301 — 400 on invalid hex).
  */
 export class CreateColorReferenceDto {
-  @ApiProperty({ example: 'RAL 9003 (Сигнальный белый)', description: 'Название цвета' })
+  @ApiProperty({ example: 'RAL 9003 — Сигнальный белый', description: 'Название цвета' })
   @IsString()
   @Length(1, 128)
   name!: string;
 
-  @ApiPropertyOptional({ example: 'ral-9003-signal-white', description: 'Slug (строчные, a-z, 0-9, -). Необязателен — сервер сгенерирует из name' })
+  @ApiPropertyOptional({
+    example: 'ral-9003-signalny-belyy',
+    description: 'Slug (строчные, a-z, 0-9, -). Необязателен — сервер сгенерирует из name',
+  })
   @IsOptional()
   @IsString()
   @Length(1, 64)
   @Matches(/^[a-z0-9-]+$/, { message: 'slug must be lowercase, a-z, 0-9, -' })
   slug?: string;
 
-  @ApiProperty({ example: '#FFFFFF', description: 'Swatch-значение #RRGGBB' })
-  @IsString()
-  @Matches(/^#[0-9a-fA-F]{6}$/, { message: 'hex must match #RRGGBB' })
-  hex!: string;
+  @ApiPropertyOptional({ example: '#F4F4F4', description: 'Swatch #RRGGBB (необязательно)' })
+  @IsOptional()
+  @IsHexColor({ message: 'hex must be a valid #RRGGBB color' })
+  hex?: string;
 
   @ApiPropertyOptional({ description: 'Описание цвета' })
   @IsOptional()
@@ -51,14 +49,8 @@ export class CreateColorReferenceDto {
   @IsBoolean()
   isActive?: boolean;
 
-  @ApiPropertyOptional({ description: 'Цвет по умолчанию для форм товара' })
+  @ApiPropertyOptional({ description: 'Цвет по умолчанию («Не выбран»)' })
   @IsOptional()
   @IsBoolean()
   isDefault?: boolean;
-
-  @ApiPropertyOptional({ description: 'Порядок сортировки' })
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  sortOrder?: number;
 }

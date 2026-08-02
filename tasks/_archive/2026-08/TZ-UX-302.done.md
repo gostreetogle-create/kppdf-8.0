@@ -1,4 +1,4 @@
-═══════════════════════════════════════════════════════════════
+﻿═══════════════════════════════════════════════════════════════
 TZ-UX-302: CategoriesPage — вырезать мёртвый doc-template CRUD
 ═══════════════════════════════════════════════════════════════
 
@@ -36,3 +36,11 @@ AC: rg docCat|DocumentTemplateCategory в categories.page.ts → 0;
   page compiles; doc-template-categories не затронут.
 ПРОМПТ: GEMINI.md + tasks/TZ-UX-302-categories-dead-doccat.md. Checklist
 docs/agent-checklists/TZ-UX-302.md. Push нет.
+
+---
+ARCHIVE_MARKER
+outcome: DONE
+date: 2026-08-02
+agent: Cursor (lightweight UX/docs sweep)
+summary: Categories dead docCat remove
+---

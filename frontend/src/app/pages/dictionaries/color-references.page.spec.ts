@@ -4,7 +4,7 @@ import { of } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { ColorReferencesPage } from './color-references.page';
-import { ColorReferencesService } from '../../shared/services/pi-color-references.service';
+import { PiColorReferencesService } from '../../shared/services/pi-color-references.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import type { SilentResult } from '../../core/silent-http';
@@ -17,34 +17,31 @@ describe('ColorReferencesPage (TZ-PRODUCTS-301)', () => {
 
   const fakeColors: ColorReference[] = [
     {
-      _id: 'col1',
+      _id: 'color1',
       name: 'Не выбран',
-      slug: 'ne-vybran',
+      slug: 'ne_vybran',
       hex: '#9CA3AF',
       isActive: true,
       isSystem: true,
       isDefault: true,
-      sortOrder: 0,
     },
     {
-      _id: 'col2',
-      name: 'RAL 9003 (Сигнальный белый)',
-      slug: 'ral-9003-signal-white',
-      hex: '#F5F5F5',
+      _id: 'color2',
+      name: 'RAL 9003 — Сигнальный белый',
+      slug: 'ral-9003',
+      hex: '#F4F4F4',
       isActive: true,
       isSystem: false,
       isDefault: false,
-      sortOrder: 10,
     },
     {
-      _id: 'col3',
-      name: 'RAL 9004 (Чёрный)',
-      slug: 'ral-9004-black',
-      hex: '#191C1D',
+      _id: 'color3',
+      name: 'RAL 7016 — Антрацитово-серый',
+      slug: 'ral-7016',
+      hex: '#383E42',
       isActive: false,
       isSystem: false,
       isDefault: false,
-      sortOrder: 20,
     },
   ];
 
@@ -72,7 +69,7 @@ describe('ColorReferencesPage (TZ-PRODUCTS-301)', () => {
 
     await TestBed.configureTestingModule({
       providers: [
-        { provide: ColorReferencesService, useValue: service },
+        { provide: PiColorReferencesService, useValue: service },
         { provide: PiToastService, useValue: { success, error } },
         { provide: PiDialogService, useValue: dialogSpy },
       ],
@@ -90,11 +87,7 @@ describe('ColorReferencesPage (TZ-PRODUCTS-301)', () => {
     return closed;
   }
 
-  /**
-   * Fresh component instance per test (constructor consumes list() once).
-   * detectChanges() is required so the initial synchronous of() emission
-   * lands and the template renders.
-   */
+  /** Fresh component instance per test (constructor consumes list() once). */
   function createComp<T = Record<string, never>>() {
     const fixture = TestBed.createComponent(ColorReferencesPage);
     fixture.detectChanges();
@@ -130,78 +123,84 @@ describe('ColorReferencesPage (TZ-PRODUCTS-301)', () => {
     const el: HTMLElement = fixture.nativeElement;
     const c = fixture.componentInstance as unknown as { visible: () => unknown[] };
     expect(c.visible()).toEqual([]);
-    expect(el.querySelector('app-pi-empty-state')).toBeTruthy();
+    expect(el.querySelector('app-pi-table')).toBeTruthy();
   });
 
-  it('filters colors by search query on name', () => {
-    const c = createComp<{
-      searchQuery: { set: (v: string) => void };
-      visible: () => { _id: string; name: string }[];
-    }>();
-    c.searchQuery.set('Сигнальный');
-    expect(c.visible()).toHaveLength(1);
-    expect(c.visible()[0].name).toBe('RAL 9003 (Сигнальный белый)');
-  });
-
-  it('filters colors by search query on slug', () => {
+  it('filters colors by search query (name OR slug)', () => {
     const c = createComp<{
       searchQuery: { set: (v: string) => void };
       visible: () => { _id: string }[];
     }>();
-    c.searchQuery.set('ral-9004');
+    c.searchQuery.set('ral-9003');
     expect(c.visible()).toHaveLength(1);
-    expect(c.visible()[0]._id).toBe('col3');
+    expect(c.visible()[0]._id).toBe('color2');
   });
 
-  it('sorts by sortOrder then name', () => {
+  it('sorts by name then slug (ru collation: Cyrillic before Latin)', () => {
     const c = createComp<{ visible: () => { _id: string }[] }>();
-    expect(c.visible().map((x) => x._id)).toEqual(['col1', 'col2', 'col3']);
+    expect(c.visible().map((x) => x._id)).toEqual(['color1', 'color3', 'color2']);
   });
 
-  it('toggle active calls update and mutates local data on success', () => {
+  it('pauses toggling a SYSTEM color in the UI (no update call)', () => {
     const c = createComp<{
-      onToggleActive: (cat: ColorReference, active: boolean) => void;
+      onToggleActive: (color: ColorReference, active: boolean) => void;
       items: () => ColorReference[];
-    }>();
-    c.onToggleActive(fakeColors[1], false);
-    expect(service.update).toHaveBeenCalledWith('col2', { isActive: false });
-    expect(c.items().find((x) => x._id === 'col2')?.isActive).toBe(false);
-  });
-
-  it('does not toggle a system color', () => {
-    const c = createComp<{
-      onToggleActive: (cat: ColorReference, active: boolean) => void;
     }>();
     c.onToggleActive(fakeColors[0], false);
     expect(service.update).not.toHaveBeenCalled();
+    expect(c.items().find((x) => x._id === 'color1')?.isActive).toBe(true);
   });
 
-  it('reports toggle failure without changing local data', () => {
+  it('optimistically toggles active and mutates local data on success', () => {
+    const c = createComp<{
+      onToggleActive: (color: ColorReference, active: boolean) => void;
+      items: () => ColorReference[];
+    }>();
+    c.onToggleActive(fakeColors[1], false);
+    expect(service.update).toHaveBeenCalledWith('color2', { isActive: false });
+    expect(c.items().find((x) => x._id === 'color2')?.isActive).toBe(false);
+  });
+
+  it('reports toggle failure and ROLLS BACK the optimistic flip', () => {
     service.update.mockReturnValue(of(fail('Не удалось изменить активность')));
     const c = createComp<{
-      onToggleActive: (cat: ColorReference, active: boolean) => void;
+      onToggleActive: (color: ColorReference, active: boolean) => void;
       items: () => ColorReference[];
     }>();
     c.onToggleActive(fakeColors[1], false);
     expect(error).toHaveBeenCalledWith('Не удалось изменить активность');
-    expect(c.items().find((x) => x._id === 'col2')?.isActive).toBe(true);
+    expect(c.items().find((x) => x._id === 'color2')?.isActive).toBe(true);
   });
 
-  it('reports delete failure without removing the local row', async () => {
-    service.remove.mockReturnValue(of(fail('Цвет используют товары')));
+  it('blocks delete of a SYSTEM color in the UI', () => {
+    const c = createComp<{
+      onDelete: (color: ColorReference) => void;
+      items: () => ColorReference[];
+    }>();
+    c.onDelete(fakeColors[0]);
+    expect(dialogSpy.open).not.toHaveBeenCalled();
+    expect(c.items().length).toBe(3);
+  });
+
+  it('reports remove failure (e.g. 409 used/default) via snackbar without removing the row', async () => {
+    service.remove.mockReturnValue(
+      of(fail('Цвет используется как цвет по умолчанию — удаление невозможно')),
+    );
     const closed = openDialogMock();
     const fixture = TestBed.createComponent(ColorReferencesPage);
     fixture.detectChanges();
     const c = fixture.componentInstance as unknown as {
-      onDelete: (cat: ColorReference) => void;
+      onDelete: (color: ColorReference) => void;
       items: () => ColorReference[];
     };
     c.onDelete(fakeColors[2]);
     closed.set(true);
     fixture.detectChanges();
     await fixture.whenStable();
-    expect(service.remove).toHaveBeenCalledWith('col3');
-    expect(error).toHaveBeenCalledWith('Цвет используют товары');
+    expect(service.remove).toHaveBeenCalledWith('color3');
+    expect(error).toHaveBeenCalledWith(
+      'Цвет используется как цвет по умолчанию — удаление невозможно',
+    );
     expect(c.items().length).toBe(3);
   });
 
@@ -210,21 +209,15 @@ describe('ColorReferencesPage (TZ-PRODUCTS-301)', () => {
     const fixture = TestBed.createComponent(ColorReferencesPage);
     fixture.detectChanges();
     const c = fixture.componentInstance as unknown as {
-      onDelete: (cat: ColorReference) => void;
+      onDelete: (color: ColorReference) => void;
       items: () => ColorReference[];
     };
     c.onDelete(fakeColors[2]);
     closed.set(true);
     fixture.detectChanges();
     await fixture.whenStable();
-    expect(service.remove).toHaveBeenCalledWith('col3');
+    expect(service.remove).toHaveBeenCalledWith('color3');
     expect(c.items().length).toBe(2);
-  });
-
-  it('does not open delete for a system color', () => {
-    const c = createComp<{ onDelete: (cat: ColorReference) => void }>();
-    c.onDelete(fakeColors[0]);
-    expect(dialogSpy.open).not.toHaveBeenCalled();
   });
 
   it('reloads the list when a create dialog closes', async () => {
@@ -244,5 +237,25 @@ describe('ColorReferencesPage (TZ-PRODUCTS-301)', () => {
     await fixture.whenStable();
     expect(service.list.mock.calls.length).toBeGreaterThan(before);
     expect(c.items().length).toBe(3);
+  });
+
+  it('copy opens the create dialog pre-filled without an _id', () => {
+    const closed = openDialogMock();
+    const fixture = TestBed.createComponent(ColorReferencesPage);
+    fixture.detectChanges();
+    const c = fixture.componentInstance as unknown as {
+      onCopy: (color: ColorReference) => void;
+    };
+    c.onCopy(fakeColors[1]);
+    expect(dialogSpy.open).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        data: expect.objectContaining({
+          name: 'RAL 9003 — Сигнальный белый (копия)',
+          _id: undefined,
+        }),
+      }),
+    );
+    expect(closed()).toBeUndefined();
   });
 });

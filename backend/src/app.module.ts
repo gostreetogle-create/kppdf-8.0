@@ -211,15 +211,7 @@ import { RequestMethod } from '@nestjs/common';
     DocumentTemplateModule,
     // TZ-DOC-307: категории шаблонов документов (отдельная сущность)
     DocumentTemplateCategoryModule,
-    // TZ-DOC-321: TextBlockCategoryModule must be imported at AppModule
-    // level so the MongooseModel for `TextBlockCategory` is available
-    // for the cross-module TextBlockCategoriesSeed provider. The
-    // module is also re-exported via TextBlockModule (for the service)
-    // but providers at AppModule scope need direct access. The
-    // import was missed in TZ-DOC-315 (the module file shipped but
-    // AppModule wiring never registered it) — closing that gap here.
-    TextBlockCategoryModule,
-    // TZ-PRODUCTS-301: справочник «Цвета» (RAL/HEX)
+    // TZ-PRODUCTS-301: справочник цветов (RAL) — продуктовая словарная сущность
     ColorReferenceModule,
     TemplateBlockModule,
     TextBlockModule, // TZ-86 Фаза A.1: новая entity для reusable text snippets
@@ -284,13 +276,7 @@ import { RequestMethod } from '@nestjs/common';
     DevFixturesSeed,
     // TZ-DOC-307: системная default-категория шаблонов «Общее»
     DocumentTemplateCategoriesSeed,
-    // TZ-DOC-321: wire TextBlockCategoriesSeed between
-    // DocumentTemplateCategoriesSeed and BomComponentResolveService
-    // — closes TZ-DOC-320's known-limitation #1 (seed file existed
-    // since TZ-DOC-315 but was never wired). Pure provider-list
-    // addition, no behaviour change elsewhere.
-    TextBlockCategoriesSeed,
-    // TZ-PRODUCTS-301: system default color «Не выбран»
+    // TZ-PRODUCTS-301: системный default-цвет «Не выбран»
     ColorReferencesSeed,
     // TZ-105.2: idempotent orphan FK migration (OnApplicationBootstrap lifecycle,
     // distinct from seeds' OnModuleInit per TZ-87 pattern). Dry-run default

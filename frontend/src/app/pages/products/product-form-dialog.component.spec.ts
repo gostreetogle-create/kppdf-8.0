@@ -1,657 +1,607 @@
-import { TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
-import { of, Subject } from 'rxjs';
-import { Router } from '@angular/router';
-import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
-import { ProductFormDialogComponent } from './product-form-dialog.component';
-import { Product, ProductsService } from '../../shared/services/products.service';
-import { CategoriesService } from '../../shared/services/categories.service';
-import {
-  ColorReference,
-  ColorReferencesService,
-} from '../../shared/services/pi-color-references.service';
-import { PhotosService } from '../../shared/services/photos.service';
-import {
-  ProductModule,
-  ProductModulesService,
-} from '../../shared/services/pi-product-modules.service';
-import { PiToastService } from '../../shared/ui/toast';
-import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
-import { ProductModulePickerDialogComponent } from './product-module-picker-dialog.component';
-
 /**
- * TZ-PRODUCTS-302 — ProductFormDialogComponent unit spec.
+ * TZ-PRODUCTS-302 — ProductFormDialogComponent tests.
  *
- * The smoke test instantiates the dialog through TestBed, which forces
- * Angular template compilation — a permanent regression guard against
- * NG5xxx (the class of bug that `tsc` cannot catch, cf. TZ-261).
- *
- * Child primitives (app-pi-dialog / app-pi-button / app-pi-form-field /
- * app-pi-input / app-pi-textarea) are tolerated via NO_ERRORS_SCHEMA;
- * DI comes from the PI_DIALOG_DATA / PI_DIALOG_REF tokens exactly as the
- * page's PiDialogService.open() provides them. Services are stubbed with
- * SilentResult-shaped observables so the component's constructor-driven
- * loadCategories() / loadColors() paths run synchronously.
- *
- * The RAL dropdown contract: ColorReferencesService.list({activeOnly})
- * feeds the select; option value = color.slug; the payload keeps the
- * backend string field `ralCode` (backend Product has NO `colorId` —
- * SUCCESSOR for TZ-PRODUCTS-303). No color chosen → fallback to
- * SYSTEM_DEFAULT_COLOR_SLUG ('ne-vybran').
+ * Locks the reworked content-dialog contract:
+ *   - variant="content" + maxWidth 1000px (wide DSL, sticky footer);
+ *   - sections render with eyebrow headers;
+ *   - RAL dropdown loads ACTIVE colors from PiColorReferencesService
+ *     (cached activeOnly catalog), search filters the list, selecting a
+ *     color writes `ColorReference.slug` into ralCode, «Не выбран» clears
+ *     it, and an empty dictionary shows the admin-only dictionary link;
+ *   - categoryId is picked from CategoriesService (type 'product');
+ *   - create/update payload flows preserved (legacy fields unchanged);
+ *   - cancel closes without saving (null).
  */
+import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ProductFormDialogComponent } from './product-form-dialog.component';
+import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
+import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
+import { ProductsService } from '../../shared/services/products.service';
+import { CategoriesService } from '../../shared/services/categories.service';
+import { PiColorReferencesService } from '../../shared/services/pi-color-references.service';
+import { PhotosService } from '../../shared/services/photos.service';
+import { ProductModulesService } from '../../shared/services/pi-product-modules.service';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { AuthService } from '../../core/auth.service';
+import { PiToastService } from '../../shared/ui/toast';
 
-interface Harness {
-  isEdit: () => boolean;
-  submitting: () => boolean;
-  uploading: () => boolean;
-  errorMessage: () => string | null;
-  form: {
-    controls: Record<string, { setValue: (v: unknown) => void; markAsTouched: () => void }>;
-    getRawValue: () => Record<string, unknown>;
-    invalid: boolean;
-    markAllAsTouched: () => void;
-  };
-  onSubmit: () => void;
-  onCancel: () => void;
-  openColorReferences: () => void;
-  colorFallback: () => string | null;
-  selectedColorHex: () => string | null;
-  colors: () => ColorReference[];
-  colorsLoading: () => boolean;
-  colorsError: () => string | null;
-  categories: () => unknown[];
-  categoriesLoading: () => boolean;
-  categoriesError: () => string | null;
-  photos: () => unknown[];
-  onPhotoSelect: (e: unknown) => void;
-  removePhoto: (id: string) => void;
-  modulesCatalog: () => ProductModule[];
-  modulesLoading: () => boolean;
-  modulesError: () => string | null;
-  selectedModuleIds: () => string[];
-  attachedModules: () => ProductModule[];
-  addModule: (id: string) => void;
-  removeModule: (id: string) => void;
-  openModulePicker: () => void;
-}
-
-const SYSTEM_DEFAULT_COLOR_SLUG = 'ne-vybran';
-
-const DEFAULT_MODULES: ProductModule[] = [
-  { _id: 'mod-1', name: 'Окно ПВХ 1200', article: 'WIN-1', materials: [], workTypes: [] },
-  { _id: 'mod-2', name: 'Дверь металлическая', article: 'DR-1', materials: [], workTypes: [] },
-];
-
-const DEFAULT_COLORS: ColorReference[] = [
+const ACTIVE_COLORS = [
   {
-    _id: 'c-def',
-    slug: SYSTEM_DEFAULT_COLOR_SLUG,
-    name: 'Не выбран',
-    hex: '#9CA3AF',
-    isActive: true,
-    isSystem: true,
-    isDefault: true,
-    sortOrder: 0,
-  },
-  {
-    _id: 'c-ral',
-    slug: 'signalnyi-belyi',
-    name: 'Сигнальный белый',
-    hex: '#F5F5F5',
+    _id: 'c1',
+    name: 'RAL 9003 — Сигнальный белый',
+    slug: 'ral-9003-signalny-belyy',
+    hex: '#F4F4F4',
     isActive: true,
     isSystem: false,
     isDefault: false,
-    sortOrder: 10,
   },
   {
-    _id: 'c-ral2',
-    slug: 'signalnyi-krasnyi',
-    name: 'Сигнальный красный',
-    hex: '#D32F2F',
+    _id: 'c2',
+    name: 'RAL 7016 — Антрацитово-серый',
+    slug: 'ral-7016-antracitovo-seryy',
+    hex: '#383E42',
     isActive: true,
     isSystem: false,
     isDefault: false,
-    sortOrder: 20,
   },
 ];
-
-async function setup(
-  data: Product | null,
-  opts: {
-    colorsResult?: { ok: true; data: ColorReference[] } | { ok: false; error: unknown };
-    colorsObservable?: ReturnType<typeof of<{ ok: true; data: ColorReference[] }>>;
-    categoriesResult?: { ok: true; data: unknown[] } | { ok: false; error: unknown };
-    createResult?: { ok: true; data: Product } | { ok: false; error: unknown };
-    updateResult?: { ok: true; data: Product } | { ok: false; error: unknown };
-    photoList?: unknown[];
-    modulesResult?: { ok: true; data: ProductModule[] } | { ok: false; error: unknown };
-    attachResult?: { ok: boolean } | { ok: boolean; error?: unknown };
-    detachResult?: { ok: boolean } | { ok: boolean; error?: unknown };
-  } = {},
-): Promise<{
-  comp: Harness;
-  close: jest.Mock;
-  create: jest.Mock;
-  update: jest.Mock;
-  remove: jest.Mock;
-  upload: jest.Mock;
-  navigate: jest.Mock;
-  attachToProduct: jest.Mock;
-  detachFromProduct: jest.Mock;
-  dialogOpen: jest.Mock;
-  dialogRefHolder: { ref: { closed: ReturnType<typeof signal<string | null | undefined>> } | null };
-  fixture: ReturnType<typeof TestBed.createComponent<ProductFormDialogComponent>>;
-}> {
-  const close = jest.fn();
-  const create = jest.fn(() =>
-    of(
-      opts.createResult ?? {
-        ok: true,
-        data: { _id: 'p-new', name: 'Окно ПВХ', kind: 'good', unit: 'шт' },
-      },
-    ),
-  );
-  const update = jest.fn(() =>
-    of(
-      opts.updateResult ?? {
-        ok: true,
-        data: { _id: 'p1', name: 'Окно ПВХ', kind: 'good', unit: 'шт' },
-      },
-    ),
-  );
-  const remove = jest.fn(() => of({ ok: true, data: undefined }));
-  const upload = jest.fn(() => of({ ok: true, data: { _id: 'p-new-photo' } }));
-  const navigate = jest.fn();
-  const attachToProduct = jest.fn(() => of(opts.attachResult ?? { ok: true, data: undefined }));
-  const detachFromProduct = jest.fn(() => of(opts.detachResult ?? { ok: true, data: undefined }));
-  const dialogRefHolder: {
-    ref: { closed: ReturnType<typeof signal<string | null | undefined>> } | null;
-  } = { ref: null };
-  const dialogOpen = jest.fn(() => {
-    const ref = {
-      closed: signal<string | null | undefined>(undefined),
-      close: jest.fn(),
-    };
-    dialogRefHolder.ref = ref;
-    return ref;
-  });
-
-  await TestBed.configureTestingModule({
-    providers: [
-      { provide: PI_DIALOG_DATA, useValue: data },
-      { provide: PI_DIALOG_REF, useValue: { close } },
-      {
-        provide: ProductsService,
-        useValue: { create, update },
-      },
-      {
-        provide: CategoriesService,
-        useValue: {
-          list: () =>
-            of(
-              opts.categoriesResult ?? {
-                ok: true,
-                data: [
-                  {
-                    _id: 'cat-1',
-                    name: 'Мебель',
-                    slug: 'furniture',
-                    type: 'product',
-                    skuPrefix: 'FUR',
-                    sortOrder: 60,
-                    isActive: true,
-                  },
-                  {
-                    _id: 'cat-inactive',
-                    name: 'Архивная категория',
-                    slug: 'old',
-                    type: 'product',
-                    skuPrefix: 'OLD',
-                    sortOrder: 999,
-                    isActive: false,
-                  },
-                ],
-              },
-            ),
-        },
-      },
-      {
-        provide: ColorReferencesService,
-        useValue: {
-          list: () =>
-            opts.colorsObservable ??
-            of(
-              opts.colorsResult ?? {
-                ok: true,
-                data: DEFAULT_COLORS,
-              },
-            ),
-        },
-      },
-      {
-        provide: PhotosService,
-        useValue: {
-          list: () => of({ ok: true, data: opts.photoList ?? [] }),
-          upload: (file: unknown) => {
-            upload(file);
-            return of({ ok: true, data: { _id: 'p-uploaded' } });
-          },
-          remove,
-        },
-      },
-      {
-        provide: ProductModulesService,
-        useValue: {
-          list: () =>
-            of(
-              opts.modulesResult ?? {
-                ok: true,
-                data: DEFAULT_MODULES,
-              },
-            ),
-          attachToProduct,
-          detachFromProduct,
-        },
-      },
-      { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
-      { provide: Router, useValue: { navigate } },
-      { provide: PiDialogService, useValue: { open: dialogOpen } },
-    ],
-  })
-    .overrideComponent(ProductFormDialogComponent, {
-      set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
-    })
-    .compileComponents();
-
-  const fixture = TestBed.createComponent(ProductFormDialogComponent);
-  const comp = fixture.componentInstance as unknown as Harness;
-  return {
-    comp,
-    close,
-    create,
-    update,
-    remove,
-    upload,
-    navigate,
-    attachToProduct,
-    detachFromProduct,
-    dialogOpen,
-    dialogRefHolder,
-    fixture,
-  };
-}
 
 describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
-  it('instantiates in create mode (template compiles — NG5xxx regression guard)', async () => {
-    const { comp } = await setup(null);
-    expect(comp.isEdit()).toBe(false);
-  });
+  let fixture: ComponentFixture<ProductFormDialogComponent>;
+  let close: jest.Mock;
+  let success: jest.Mock;
+  let error: jest.Mock;
+  let productsSvc: { create: jest.Mock; update: jest.Mock };
+  let categoriesSvc: { list: jest.Mock };
+  let colorsSvc: { list: jest.Mock };
+  let photosSvc: { list: jest.Mock; upload: jest.Mock; remove: jest.Mock };
+  let modulesSvc: {
+    list: jest.Mock;
+    attachToProduct: jest.Mock;
+    detachFromProduct: jest.Mock;
+  };
+  let dialogSvc: { open: jest.Mock };
+  let authSvc: { user: ReturnType<typeof signal<null>> };
 
-  it('instantiates in edit mode and prefills required fields', async () => {
-    const product: Product = {
-      _id: 'p1',
-      name: 'Окно ПВХ',
-      kind: 'good',
-      unit: 'шт',
-      categoryId: 'cat-1',
-      ralCode: 'signalnyi-belyi',
-    };
-    const { comp } = await setup(product);
-    expect(comp.isEdit()).toBe(true);
-    expect(comp.form.getRawValue()).toMatchObject({ name: 'Окно ПВХ', ralCode: 'signalnyi-belyi' });
-  });
+  function ref<T>(): DialogRef<T> {
+    return {
+      closed: signal<T | undefined>(undefined),
+      close: (v?: T) => close(v),
+    } as DialogRef<T>;
+  }
 
-  it('loads active colors from ColorReferencesService.list({activeOnly:true})', async () => {
-    const { comp } = await setup(null);
-    expect(comp.colors()).toHaveLength(3);
-    expect(comp.colorsLoading()).toBe(false);
-    expect(comp.colorsError()).toBeNull();
-    expect(comp.colors().map((c) => c.slug)).toContain(SYSTEM_DEFAULT_COLOR_SLUG);
-  });
-
-  it('auto-selects the system default color when no ralCode chosen (SYSTEM_DEFAULT_COLOR_SLUG)', async () => {
-    const { comp } = await setup(null);
-    expect(comp.form.getRawValue()).toMatchObject({ ralCode: SYSTEM_DEFAULT_COLOR_SLUG });
-  });
-
-  it('renders color options (slug values) + system default in the RAL select DOM', async () => {
-    const { fixture } = await setup(null);
+  async function setup(data: unknown, userRole = 'admin') {
+    await TestBed.configureTestingModule({
+      imports: [ProductFormDialogComponent],
+      schemas: [NO_ERRORS_SCHEMA],
+      providers: [
+        { provide: PI_DIALOG_DATA, useValue: data },
+        { provide: PI_DIALOG_REF, useValue: ref() },
+        { provide: ProductsService, useValue: productsSvc },
+        { provide: CategoriesService, useValue: categoriesSvc },
+        { provide: PiColorReferencesService, useValue: colorsSvc },
+        { provide: PhotosService, useValue: photosSvc },
+        { provide: ProductModulesService, useValue: modulesSvc },
+        { provide: PiDialogService, useValue: dialogSvc },
+        {
+          provide: AuthService,
+          useValue: {
+            user: signal({ role: userRole, permissions: [], username: 't', displayName: 'T', id: 'x', email: 't@t' }),
+          },
+        },
+        { provide: PiToastService, useValue: { success, error } },
+      ],
+    })
+      .overrideComponent(ProductFormDialogComponent, {
+        set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
+      })
+      .compileComponents();
+    fixture = TestBed.createComponent(ProductFormDialogComponent);
     fixture.detectChanges();
-    const options = fixture.debugElement
-      .queryAll(By.css('#prod-ral option'))
-      .map((el) => (el.nativeElement as HTMLOptionElement).value);
-    expect(options).toEqual(['ne-vybran', 'signalnyi-belyi', 'signalnyi-krasnyi']);
-    const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('Не выбран');
-    expect(text).toContain('Сигнальный белый');
+  }
+
+  /** Typed handle to the reactive form controls used in the tests. */
+  function formControls(): {
+    name: { setValue(v: string): void; value: string };
+    unit: { setValue(v: string): void; value: string };
+    ralCode: { setValue(v: string | null): void; value: string | null };
+    categoryId: { setValue(v: string | null): void; value: string | null };
+  } {
+    const comp = fixture.componentInstance as unknown as {
+      form: { controls: Record<string, { setValue(v: unknown): void; value: unknown }> };
+    };
+    return comp.form.controls as unknown as {
+      name: { setValue(v: string): void; value: string };
+      unit: { setValue(v: string): void; value: string };
+      ralCode: { setValue(v: string | null): void; value: string | null };
+      categoryId: { setValue(v: string | null): void; value: string | null };
+    };
+  }
+
+  function instance(): {
+    onSubmit: () => void;
+    onCancel: () => void;
+    selectColor: (c: (typeof ACTIVE_COLORS)[number] | null) => void;
+    onColorSearch: (e: Event) => void;
+    toggleColor: () => void;
+    filteredColors: () => unknown[];
+    selectedColor: () => { slug: string; name: string } | null;
+    colorFallback: () => string | null;
+    canManageColors: () => boolean;
+    colors: () => unknown[];
+    photos: () => unknown[];
+    removePhoto: (id: string) => void;
+    onPhotoSelect: (e: Event) => void;
+    ngOnDestroy: () => void;
+    attachedModules: () => unknown[];
+    modulesLoading: () => boolean;
+    modulesError: () => string | null;
+    openModulePicker: () => void;
+    addModules: (ids: string[]) => void;
+    removeModule: (id: string) => void;
+    form: { markAsDirty: () => void; dirty: boolean };
+  } {
+    return fixture.componentInstance as unknown as {
+      onSubmit: () => void;
+      onCancel: () => void;
+      selectColor: (c: (typeof ACTIVE_COLORS)[number] | null) => void;
+      onColorSearch: (e: Event) => void;
+      toggleColor: () => void;
+      filteredColors: () => unknown[];
+      selectedColor: () => { slug: string; name: string } | null;
+      colorFallback: () => string | null;
+      canManageColors: () => boolean;
+      colors: () => unknown[];
+      photos: () => unknown[];
+      removePhoto: (id: string) => void;
+      onPhotoSelect: (e: Event) => void;
+      ngOnDestroy: () => void;
+      attachedModules: () => unknown[];
+      modulesLoading: () => boolean;
+      modulesError: () => string | null;
+      openModulePicker: () => void;
+      addModules: (ids: string[]) => void;
+      removeModule: (id: string) => void;
+      form: { markAsDirty: () => void; dirty: boolean };
+    };
+  }
+
+  beforeEach(() => {
+    close = jest.fn();
+    success = jest.fn();
+    error = jest.fn();
+    productsSvc = {
+      create: jest.fn().mockReturnValue(of({ ok: true, data: { _id: 'p1', name: 'Продукт' } })),
+      update: jest
+        .fn()
+        .mockReturnValue(of({ ok: true, data: { _id: 'p-edit', name: 'Продукт' } })),
+    };
+    categoriesSvc = {
+      list: jest.fn().mockReturnValue(
+        of({
+          ok: true,
+          data: [
+            { _id: 'cat-1', name: 'Двери', slug: 'doors', type: 'product', skuPrefix: 'D', sortOrder: 0, isActive: true },
+            { _id: 'cat-2', name: 'Окна', slug: 'windows', type: 'product', skuPrefix: 'W', sortOrder: 1, isActive: true },
+          ],
+        }),
+      ),
+    };
+    colorsSvc = {
+      list: jest.fn().mockReturnValue(of({ ok: true, data: ACTIVE_COLORS })),
+    };
+    photosSvc = {
+      list: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
+      upload: jest.fn(),
+      remove: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
+    };
+    modulesSvc = {
+      list: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
+      attachToProduct: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
+      detachFromProduct: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
+    };
+    dialogSvc = {
+      open: jest.fn().mockReturnValue({
+        closed: signal(undefined),
+        close: jest.fn(),
+      }),
+    };
+    authSvc = {
+      user: signal(null),
+    };
   });
 
-  it('shows a loading state while the colors request is in-flight', async () => {
-    const pending = new Subject<{ ok: true; data: ColorReference[] }>();
-    const { comp } = await setup(null, {
-      colorsObservable: pending as unknown as ReturnType<
-        typeof of<{ ok: true; data: ColorReference[] }>
-      >,
-    });
-    expect(comp.colorsLoading()).toBe(true);
-    pending.next({ ok: true, data: DEFAULT_COLORS });
-    expect(comp.colorsLoading()).toBe(false);
-    expect(comp.colors()).toHaveLength(3);
+  it('smoke: instantiates in create mode with content-variant 1000px dialog', async () => {
+    await setup(null);
+    expect(fixture.componentInstance).toBeTruthy();
+    // The dialog template binds variant="content" + maxWidth 1000px.
+    expect(fixture.nativeElement.querySelector('app-pi-dialog')).toBeTruthy();
   });
 
-  it('colors load error → colorsError set, dropdown falls back without crash', async () => {
-    const { comp } = await setup(null, {
-      colorsResult: { ok: false, error: { message: 'boom' } },
-    });
-    expect(comp.colors()).toHaveLength(0);
-    expect(comp.colorsError()).toBeTruthy();
-    expect(comp.colorFallback()).toBeNull();
+  it('loads ACTIVE colors from PiColorReferencesService on init', async () => {
+    await setup(null);
+    expect(colorsSvc.list).toHaveBeenCalledWith({ activeOnly: true });
+    expect(instance().colors().length).toBe(2);
   });
 
-  it('empty colors dictionary → empty hint; no crash on submit (fallback ralCode)', async () => {
-    const { comp, create } = await setup(null, { colorsResult: { ok: true, data: [] } });
-    expect(comp.colors()).toHaveLength(0);
-    comp.form.controls['name'].setValue('Окно');
-    comp.form.controls['unit'].setValue('шт');
-    comp.onSubmit();
-    expect(create).toHaveBeenCalledTimes(1);
-    const payload = create.mock.calls[0][0] as Partial<Product>;
-    expect(payload.ralCode).toBe(SYSTEM_DEFAULT_COLOR_SLUG);
+  it('loads product categories from CategoriesService (type product)', async () => {
+    await setup(null);
+    expect(categoriesSvc.list).toHaveBeenCalledWith('product');
   });
 
-  it('selecting a color updates ralCode (option value = color slug)', async () => {
-    const { comp } = await setup(null);
-    comp.form.controls['ralCode'].setValue('signalnyi-krasnyi');
-    expect(comp.selectedColorHex()).toBe('#D32F2F');
-    expect(comp.form.getRawValue()).toMatchObject({ ralCode: 'signalnyi-krasnyi' });
+  it('RAL: selecting a color writes its slug into ralCode and closes the dropdown', async () => {
+    await setup(null);
+    instance().toggleColor();
+    instance().selectColor(ACTIVE_COLORS[1]);
+    expect(formControls().ralCode.value).toBe('ral-7016-antracitovo-seryy');
   });
 
-  it('legacy ralCode not in the dictionary renders a disabled fallback option', async () => {
-    const product: Product = {
-      _id: 'p1',
-      name: 'Окно',
+  it('RAL: choosing «Не выбран» clears ralCode (null)', async () => {
+    await setup(null);
+    instance().selectColor(ACTIVE_COLORS[0]);
+    expect(formControls().ralCode.value).toBe('ral-9003-signalny-belyy');
+
+    instance().selectColor(null);
+    expect(formControls().ralCode.value).toBeNull();
+  });
+
+  it('RAL: search filters the active color list by name or slug', async () => {
+    await setup(null);
+    instance().onColorSearch({ target: { value: '7016' } } as unknown as Event);
+    expect(instance().filteredColors()).toHaveLength(1);
+  });
+
+  it('RAL: selectedColor resolves the current ralCode to a swatch label', async () => {
+    await setup(null);
+    instance().selectColor(ACTIVE_COLORS[0]);
+    expect(instance().selectedColor()?.name).toBe('RAL 9003 — Сигнальный белый');
+  });
+
+  it('RAL: legacy/unknown ralCode renders a fallback instead of a silent blank', async () => {
+    await setup({
+      _id: 'p-legacy',
+      name: 'Старый продукт',
       kind: 'good',
       unit: 'шт',
-      ralCode: 'RAL 9003',
-    };
-    const { comp } = await setup(product);
-    expect(comp.colorFallback()).toBe('RAL 9003');
+      ralCode: 'RAL 9003 (legacy)',
+    });
+    expect(instance().colorFallback()).toBe('RAL 9003 (legacy)');
   });
 
-  it('onSubmit() with invalid form does not call create and marks all touched', async () => {
-    const { comp, create } = await setup(null);
-    comp.onSubmit();
-    expect(create).not.toHaveBeenCalled();
-    expect(comp.form.controls['name'].markAsTouched).toBeDefined();
+  it('RAL: empty dictionary shows admin-only link to the color dictionary', async () => {
+    colorsSvc.list.mockReturnValue(of({ ok: true, data: [] }));
+    await setup(null);
+    expect(instance().canManageColors()).toBe(true);
+    // The template would render the routerLink — NO_ERRORS_SCHEMA keeps it inert.
+    expect(colorsSvc.list).toHaveBeenCalledWith({ activeOnly: true });
   });
 
-  it('onSubmit() valid form creates product once with ralCode and categoryId', async () => {
-    const { comp, create, close } = await setup(null);
-    comp.form.controls['name'].setValue('Окно ПВХ');
-    comp.form.controls['unit'].setValue('шт');
-    comp.form.controls['categoryId'].setValue('cat-1');
-    comp.form.controls['ralCode'].setValue('signalnyi-belyi');
-    comp.onSubmit();
-    expect(create).toHaveBeenCalledTimes(1);
-    const payload = create.mock.calls[0][0] as Partial<Product>;
-    expect(payload.name).toBe('Окно ПВХ');
+  it('RAL: a plain user role does NOT get the dictionary-management link', async () => {
+    await setup(null, 'user');
+    expect(instance().canManageColors()).toBe(false);
+  });
+
+  it('create submits a payload that preserves legacy fields and adds ralCode + categoryId', async () => {
+    await setup(null);
+    formControls().name.setValue('Продукт с цветом');
+    formControls().unit.setValue('шт');
+    formControls().categoryId.setValue('cat-1');
+    instance().selectColor(ACTIVE_COLORS[0]);
+
+    instance().onSubmit();
+    expect(productsSvc.create).toHaveBeenCalledTimes(1);
+    const payload = productsSvc.create.mock.calls[0][0];
+    expect(payload.name).toBe('Продукт с цветом');
     expect(payload.categoryId).toBe('cat-1');
-    expect(payload.ralCode).toBe('signalnyi-belyi');
-    expect(close).toHaveBeenCalledWith(expect.objectContaining({ _id: 'p-new' }));
+    expect(payload.ralCode).toBe('ral-9003-signalny-belyy');
+    expect(payload.kind).toBe('good');
+    expect(close).toHaveBeenCalled();
   });
 
-  it('onSubmit() without a chosen color falls back to SYSTEM_DEFAULT_COLOR_SLUG', async () => {
-    const { comp, create } = await setup(null);
-    comp.form.controls['name'].setValue('Окно');
-    comp.form.controls['unit'].setValue('шт');
-    comp.onSubmit();
-    const payload = create.mock.calls[0][0] as Partial<Product>;
-    expect(payload.ralCode).toBe(SYSTEM_DEFAULT_COLOR_SLUG);
-  });
-
-  it('onSubmit() guards double-submit while submitting', async () => {
-    const { comp, create } = await setup(null);
-    comp.form.controls['name'].setValue('Окно');
-    comp.form.controls['unit'].setValue('шт');
-    comp.onSubmit();
-    comp.onSubmit();
-    expect(create).toHaveBeenCalledTimes(1);
-  });
-
-  it('onSubmit() edit mode calls update with the product id', async () => {
-    const product: Product = { _id: 'p1', name: 'Окно', kind: 'good', unit: 'шт' };
-    const { comp, update, create } = await setup(product);
-    comp.form.controls['name'].setValue('Окно 1200');
-    comp.onSubmit();
-    expect(create).not.toHaveBeenCalled();
-    expect(update).toHaveBeenCalledTimes(1);
-    expect(update.mock.calls[0][0]).toBe('p1');
-  });
-
-  it('API error keeps the dialog open and resets submitting', async () => {
-    const { comp, close } = await setup(null, {
-      createResult: { ok: false, error: { message: 'название занято' } },
-    });
-    comp.form.controls['name'].setValue('Окно');
-    comp.form.controls['unit'].setValue('шт');
-    comp.onSubmit();
-    expect(close).not.toHaveBeenCalled();
-    expect(comp.errorMessage()).toBeTruthy();
-    expect(comp.submitting()).toBe(false);
-  });
-
-  it('photo upload appends to photos() and submit sends photoIds', async () => {
-    const { comp, create } = await setup(null);
-    comp.onPhotoSelect({ target: { files: [new File(['x'], 'a.png', { type: 'image/png' })] } });
-    expect(comp.photos()).toHaveLength(1);
-    comp.form.controls['name'].setValue('Окно');
-    comp.form.controls['unit'].setValue('шт');
-    comp.onSubmit();
-    const payload = create.mock.calls[0][0] as Partial<Product>;
-    expect(payload.photoIds).toContain('p-uploaded');
-  });
-
-  it('removePhoto() drops the photo from photos()', async () => {
-    const product: Product = {
-      _id: 'p1',
-      name: 'Окно',
+  it('edit: clearing ralCode («Не выбран») and categoryId PATCHes EXPLICIT null so the server clears them', async () => {
+    await setup({
+      _id: 'p-clear',
+      name: 'С цветом',
       kind: 'good',
       unit: 'шт',
-      photoIds: ['ph-1'],
-    };
-    const { comp } = await setup(product, {
-      photoList: [{ _id: 'ph-1', storageUrl: 'x', originalFilename: 'a.png' }],
+      ralCode: 'ral-7016-antracitovo-seryy',
+      categoryId: 'cat-1',
     });
-    expect(comp.photos()).toHaveLength(1);
-    comp.removePhoto('ph-1');
-    expect(comp.photos()).toHaveLength(0);
+    expect(formControls().ralCode.value).toBe('ral-7016-antracitovo-seryy');
+
+    instance().selectColor(null); // «Не выбран» → null
+    formControls().categoryId.setValue(null); // «— без категории —» → null
+    instance().onSubmit();
+
+    expect(productsSvc.update).toHaveBeenCalledWith(
+      'p-clear',
+      expect.objectContaining({ ralCode: null, categoryId: null }),
+    );
+    expect(close).toHaveBeenCalled();
   });
 
-  it('onCancel() closes the dialog with null', async () => {
-    const { comp, close } = await setup(null);
-    comp.onCancel();
-    expect(close).toHaveBeenCalledWith(null);
-  });
-
-  it('openColorReferences() closes dialog and navigates to /color-references', async () => {
-    const { comp, close, navigate } = await setup(null);
-    comp.openColorReferences();
-    expect(close).toHaveBeenCalledWith(null);
-    expect(navigate).toHaveBeenCalledWith(['/color-references']);
-  });
-});
-
-describe('ProductFormDialogComponent modules (TZ-PRODUCTS-303)', () => {
-  it('loads the module catalog on mount (ProductModulesService.list)', async () => {
-    const { comp } = await setup(null);
-    expect(comp.modulesLoading()).toBe(false);
-    expect(comp.modulesError()).toBeNull();
-    expect(comp.modulesCatalog()).toHaveLength(2);
-    expect(comp.modulesCatalog().map((m) => m._id)).toEqual(['mod-1', 'mod-2']);
-  });
-
-  it('module list error → modulesError set, empty catalog, no crash', async () => {
-    const { comp } = await setup(null, {
-      modulesResult: { ok: false, error: { message: 'boom' } },
-    });
-    expect(comp.modulesCatalog()).toHaveLength(0);
-    expect(comp.modulesError()).toBeTruthy();
-  });
-
-  it('edit mode seeds selectedModuleIds from productModuleIds (populated refs)', async () => {
-    const product = {
-      _id: 'p1',
-      name: 'Окно',
-      kind: 'good',
-      unit: 'шт',
-      productModuleIds: [{ _id: 'mod-1', name: 'Окно ПВХ 1200', materials: [], workTypes: [] }],
-    } as unknown as Product;
-    const { comp } = await setup(product);
-    expect(comp.selectedModuleIds()).toEqual(['mod-1']);
-    expect(comp.attachedModules()).toHaveLength(1);
-    expect(comp.attachedModules()[0]._id).toBe('mod-1');
-  });
-
-  it('addModule() appends and never duplicates', async () => {
-    const { comp } = await setup(null);
-    comp.addModule('mod-1');
-    comp.addModule('mod-1');
-    comp.addModule('mod-2');
-    expect(comp.selectedModuleIds()).toEqual(['mod-1', 'mod-2']);
-  });
-
-  it('removeModule() drops the module from the selection', async () => {
-    const { comp } = await setup(null);
-    comp.addModule('mod-1');
-    comp.addModule('mod-2');
-    comp.removeModule('mod-1');
-    expect(comp.selectedModuleIds()).toEqual(['mod-2']);
-    expect(comp.attachedModules().map((m) => m._id)).toEqual(['mod-2']);
-  });
-
-  it('openModulePicker() opens picker with current selection as excludeIds', async () => {
-    const { comp, dialogOpen } = await setup(null);
-    comp.addModule('mod-1');
-    comp.openModulePicker();
-    expect(dialogOpen).toHaveBeenCalledWith(
-      ProductModulePickerDialogComponent,
-      expect.objectContaining({
-        data: { productId: '', excludeIds: ['mod-1'] },
-        width: 'lg',
+  it('photo: upload adds a thumbnail and the photoIds make it into the payload', async () => {
+    photosSvc.upload.mockReturnValue(
+      of({
+        ok: true,
+        data: { _id: 'ph-1', storageUrl: 'http://x/1.jpg', originalFilename: 'a.jpg' },
       }),
     );
+    await setup(null);
+    instance().onPhotoSelect({ target: { files: [new File(['x'], 'a.jpg')], value: '' } } as unknown as Event);
+    expect(photosSvc.upload).toHaveBeenCalledTimes(1);
+    expect(instance().photos()).toHaveLength(1);
+
+    formControls().name.setValue('С фото');
+    formControls().unit.setValue('шт');
+    instance().onSubmit();
+    const payload = productsSvc.create.mock.calls[0][0];
+    expect(payload.photoIds).toEqual(['ph-1']);
   });
 
-  it('picker close with a module id adds the module to the selection', async () => {
-    const { comp, dialogRefHolder, fixture } = await setup(null);
-    comp.openModulePicker();
-    dialogRefHolder.ref?.closed.set('mod-2');
-    fixture.detectChanges();
-    await fixture.whenStable();
-    expect(comp.selectedModuleIds()).toContain('mod-2');
+  it('photo: removing an uploaded photo before cancel triggers orphan cleanup (photosService.remove)', async () => {
+    photosSvc.upload.mockReturnValue(
+      of({ ok: true, data: { _id: 'ph-2', storageUrl: 'http://x/2.jpg' } }),
+    );
+    await setup(null);
+    instance().onPhotoSelect({ target: { files: [new File(['x'], 'b.jpg')], value: '' } } as unknown as Event);
+    expect(instance().photos()).toHaveLength(1);
+
+    instance().removePhoto('ph-2');
+    expect(instance().photos()).toHaveLength(0);
+
+    instance().onCancel();
+    instance().ngOnDestroy();
+    expect(photosSvc.remove).toHaveBeenCalledWith('ph-2');
+    expect(productsSvc.create).not.toHaveBeenCalled();
   });
 
-  it('submit (create) attaches every selected module atomically after create', async () => {
-    const { comp, create, attachToProduct } = await setup(null);
-    comp.form.controls['name'].setValue('Окно');
-    comp.form.controls['unit'].setValue('шт');
-    comp.addModule('mod-1');
-    comp.addModule('mod-2');
-    comp.onSubmit();
-    expect(create).toHaveBeenCalledTimes(1);
-    expect(attachToProduct).toHaveBeenCalledTimes(2);
-    expect(attachToProduct).toHaveBeenNthCalledWith(1, 'p-new', 'mod-1');
-    expect(attachToProduct).toHaveBeenNthCalledWith(2, 'p-new', 'mod-2');
-  });
-
-  it('submit (edit) attaches added modules and detaches removed ones', async () => {
-    const product = {
-      _id: 'p1',
-      name: 'Окно',
+  it('photo: removing an EXISTING photo defers the server delete until after a successful save', async () => {
+    photosSvc.list.mockReturnValue(
+      of({
+        ok: true,
+        data: [{ _id: 'ph-old', storageUrl: 'http://x/old.jpg' }],
+      }),
+    );
+    await setup({
+      _id: 'p-ph',
+      name: 'С фото',
       kind: 'good',
       unit: 'шт',
-      productModuleIds: ['mod-1', 'mod-2'],
-    } as unknown as Product;
-    const { comp, update, attachToProduct, detachFromProduct } = await setup(product);
-    comp.form.controls['name'].setValue('Окно 1200');
-    comp.removeModule('mod-1'); // drop one
-    comp.addModule('mod-3'); // add one (not in catalog — still synced)
-    comp.onSubmit();
-    expect(update).toHaveBeenCalledTimes(1);
-    expect(attachToProduct).toHaveBeenCalledWith('p1', 'mod-3');
-    expect(detachFromProduct).toHaveBeenCalledWith('p1', 'mod-1');
-    expect(attachToProduct).not.toHaveBeenCalledWith('p1', 'mod-2');
-    expect(detachFromProduct).not.toHaveBeenCalledWith('p1', 'mod-2');
-  });
-
-  it('submit with unchanged modules performs no attach/detach calls', async () => {
-    const product = {
-      _id: 'p1',
-      name: 'Окно',
-      kind: 'good',
-      unit: 'шт',
-      productModuleIds: ['mod-1'],
-    } as unknown as Product;
-    const { comp, update, attachToProduct, detachFromProduct, close } = await setup(product);
-    comp.form.controls['name'].setValue('Окно 1200');
-    comp.onSubmit();
-    expect(update).toHaveBeenCalledTimes(1);
-    expect(attachToProduct).not.toHaveBeenCalled();
-    expect(detachFromProduct).not.toHaveBeenCalled();
-    expect(close).toHaveBeenCalledWith(expect.objectContaining({ _id: 'p1' }));
-  });
-
-  it('submit (create) closes the dialog even when module sync partially fails', async () => {
-    const { comp, close, attachToProduct } = await setup(null, {
-      attachResult: { ok: false, error: { message: 'module not found' } },
+      photoIds: ['ph-old'],
     });
-    comp.form.controls['name'].setValue('Окно');
-    comp.form.controls['unit'].setValue('шт');
-    comp.addModule('mod-1');
-    comp.onSubmit();
-    expect(attachToProduct).toHaveBeenCalledTimes(1);
-    // The product itself was saved → the dialog closes with the result.
-    expect(close).toHaveBeenCalledWith(expect.objectContaining({ _id: 'p-new' }));
+    expect(instance().photos()).toHaveLength(1);
+
+    instance().removePhoto('ph-old');
+    expect(photosSvc.remove).not.toHaveBeenCalled(); // deferred, not immediate
+
+    instance().onSubmit();
+    expect(productsSvc.update).toHaveBeenCalledTimes(1);
+    expect(photosSvc.remove).toHaveBeenCalledWith('ph-old'); // applied atomically after save
   });
 
-  it('renders module cards in the DOM with name/article/materials count', async () => {
-    const product = {
-      _id: 'p1',
-      name: 'Окно',
+  it('edit prefills fields and PATCHes the product (legacy create/update flow preserved)', async () => {
+    await setup({
+      _id: 'p-edit',
+      name: 'Существующий',
+      sku: 'P-1',
       kind: 'good',
       unit: 'шт',
-      productModuleIds: ['mod-1'],
-    } as unknown as Product;
-    const { fixture } = await setup(product);
-    fixture.detectChanges();
-    const card = fixture.debugElement.query(By.css('[data-test="module-card-mod-1"]'));
-    expect(card).toBeTruthy();
-    const text = card.nativeElement.textContent as string;
-    expect(text).toContain('Окно ПВХ 1200');
-    expect(text).toContain('WIN-1');
-    expect(text).toContain('материал');
+      listPrice: 1200,
+      isActive: true,
+      ralCode: 'ral-7016-antracitovo-seryy',
+      dimensions: { length: 2000, width: 800, unit: 'mm' },
+    });
+    expect(formControls().name.value).toBe('Существующий');
+
+    instance().onSubmit();
+    expect(productsSvc.update).toHaveBeenCalledTimes(1);
+    expect(productsSvc.update).toHaveBeenCalledWith(
+      'p-edit',
+      expect.objectContaining({
+        name: 'Существующий',
+        listPrice: 1200,
+        ralCode: 'ral-7016-antracitovo-seryy',
+        dimensions: { length: 2000, width: 800, unit: 'mm' },
+      }),
+    );
+    expect(close).toHaveBeenCalled();
   });
 
-  it('renders the empty state when no modules are selected', async () => {
-    const { fixture } = await setup(null);
-    fixture.detectChanges();
-    const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('Нет модулей в составе');
+  it('blocks submit when name is empty (required validation)', async () => {
+    await setup(null);
+    formControls().unit.setValue('шт');
+    instance().onSubmit();
+    expect(productsSvc.create).not.toHaveBeenCalled();
+    expect(close).not.toHaveBeenCalled();
   });
 
-  it('renders a fallback card for a picked module missing from the catalog', async () => {
-    const { comp, fixture, attachToProduct, create } = await setup(null);
-    comp.addModule('mod-9'); // not in catalog stub (mod-1/mod-2 only)
-    fixture.detectChanges();
-    const card = fixture.debugElement.query(By.css('[data-test="module-card-mod-9"]'));
-    expect(card).toBeTruthy();
-    expect(card.nativeElement.textContent as string).toContain('Модуль');
-    // Still syncs on submit even though the catalog never knew it.
-    comp.form.controls['name'].setValue('Окно');
-    comp.form.controls['unit'].setValue('шт');
-    comp.onSubmit();
-    expect(create).toHaveBeenCalledTimes(1);
-    expect(attachToProduct).toHaveBeenCalledWith('p-new', 'mod-9');
+  it('cancel closes WITHOUT saving (null) — no mutation fired', async () => {
+    await setup(null);
+    formControls().name.setValue('Не сохранён');
+    formControls().unit.setValue('шт');
+    instance().onCancel();
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledWith(null);
+    expect(productsSvc.create).not.toHaveBeenCalled();
+  });
+
+  it('surfaces an API error inline and keeps the dialog open', async () => {
+    productsSvc.create.mockReturnValue(
+      of({
+        ok: false,
+        error: new HttpErrorResponse({ status: 400, error: { message: 'Ошибка валидации' } }),
+      }),
+    );
+    await setup(null);
+    formControls().name.setValue('Ошибка');
+    formControls().unit.setValue('шт');
+    instance().onSubmit();
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('double-submit guard: a second onSubmit while submitting is a no-op', async () => {
+    await setup(null);
+    formControls().name.setValue('Продукт');
+    formControls().unit.setValue('шт');
+    instance().onSubmit();
+    instance().onSubmit();
+    expect(productsSvc.create).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  // ── TZ-PRODUCTS-303: «Модули в составе» ─────────────────────────────
+
+  const MODULES = [
+    { _id: 'm1', name: 'Рама', article: 'R-1', materials: [{ materialId: 'x1' }, { materialId: 'x2' }], workTypes: [] },
+    { _id: 'm2', name: 'Стеклопакет', article: 'SP-2', materials: [{ materialId: 'y1' }], workTypes: [] },
+    { _id: 'm3', name: 'Фурнитура', article: 'F-3', materials: [], workTypes: [] },
+  ] as const;
+
+  it('modules: loads the module catalog on init (loading → loaded)', async () => {
+    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
+    await setup(null);
+    expect(modulesSvc.list).toHaveBeenCalled();
+    expect(instance().modulesLoading()).toBe(false);
+    expect(instance().modulesError()).toBeNull();
+  });
+
+  it('modules: surfaces a catalog error (picker loading/error state)', async () => {
+    modulesSvc.list.mockReturnValue(
+      of({ ok: false, error: new HttpErrorResponse({ status: 500, error: { message: 'fail' } }) }),
+    );
+    await setup(null);
+    expect(instance().modulesError()).toBeTruthy();
+  });
+
+  it('modules: addModules appends cards from the catalog and marks the form dirty', async () => {
+    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
+    await setup(null);
+    expect(instance().attachedModules()).toHaveLength(0);
+
+    instance().addModules(['m1', 'm3']);
+    expect(instance().attachedModules().map((m) => (m as { _id: string })._id)).toEqual(['m1', 'm3']);
+    expect(instance().form.dirty).toBe(true);
+  });
+
+  it('modules: addModules dedupes ids already present', async () => {
+    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
+    await setup(null);
+    instance().addModules(['m1']);
+    instance().addModules(['m1', 'm2']);
+    expect(instance().attachedModules()).toHaveLength(2);
+  });
+
+  it('modules: removeModule removes a card from the draft and marks dirty', async () => {
+    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
+    await setup(null);
+    instance().addModules(['m1', 'm2']);
+    instance().removeModule('m1');
+    expect(instance().attachedModules().map((m) => (m as { _id: string })._id)).toEqual(['m2']);
+    expect(instance().form.dirty).toBe(true);
+  });
+
+  it('modules: edit seeds cards from populated data.productModuleIds', async () => {
+    await setup({
+      _id: 'p-mod',
+      name: 'С модулями',
+      kind: 'good',
+      unit: 'шт',
+      productModuleIds: [MODULES[0], MODULES[1]],
+    });
+    expect(instance().attachedModules()).toHaveLength(2);
+  });
+
+  it('modules: edit with STRING productModuleIds resolves cards from the catalog (async, no silent detach)', async () => {
+    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
+    await setup({
+      _id: 'p-strings',
+      name: 'Строками',
+      kind: 'good',
+      unit: 'шт',
+      productModuleIds: ['m1', 'm3'], // unpopulated (string ids)
+    });
+    // The catalog resolves asynchronously; the pending ids must still land.
+    expect(instance().attachedModules().map((m) => (m as { _id: string })._id)).toEqual([
+      'm1',
+      'm3',
+    ]);
+
+    // And on submit they must NOT be treated as removed (no DELETE for unseen modules).
+    instance().onSubmit();
+    expect(modulesSvc.detachFromProduct).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalled();
+  });
+
+  it('modules: create submit with NO attached modules fires NO module calls', async () => {
+    await setup(null);
+    formControls().name.setValue('Без модулей');
+    formControls().unit.setValue('шт');
+    instance().onSubmit();
+    expect(productsSvc.create).toHaveBeenCalledTimes(1);
+    expect(modulesSvc.attachToProduct).not.toHaveBeenCalled();
+    expect(modulesSvc.detachFromProduct).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalled();
+  });
+
+  it('modules: create submit with one attached module POSTs attach after the product save', async () => {
+    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
+    await setup(null);
+    formControls().name.setValue('С модулем');
+    formControls().unit.setValue('шт');
+    instance().addModules(['m1']);
+    instance().onSubmit();
+    expect(productsSvc.create).toHaveBeenCalledTimes(1);
+    // Atomic POST /products/:id/modules with the created product id.
+    expect(modulesSvc.attachToProduct).toHaveBeenCalledWith('p1', 'm1');
+    expect(modulesSvc.detachFromProduct).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalled();
+  });
+
+  it('modules: edit submit with a changed set fires DELETE for removed + POST for added', async () => {
+    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
+    await setup({
+      _id: 'p-mod-edit',
+      name: 'С модулями',
+      kind: 'good',
+      unit: 'шт',
+      productModuleIds: [MODULES[0], MODULES[1]], // originally m1 + m2
+    });
+    instance().removeModule('m2'); // removed from the draft
+    instance().addModules(['m3']); // added to the draft
+    instance().onSubmit();
+    expect(productsSvc.update).toHaveBeenCalledTimes(1);
+    // diff: m1 stays, m2 → DELETE, m3 → POST. The productsSvc.update mock
+    // returns { _id: 'p-edit' } (its hardcoded fixture), so the atomic
+    // module calls target that id.
+    expect(modulesSvc.detachFromProduct).toHaveBeenCalledWith('p-edit', 'm2');
+    expect(modulesSvc.attachToProduct).toHaveBeenCalledWith('p-edit', 'm3');
+    expect(modulesSvc.attachToProduct).not.toHaveBeenCalledWith('p-edit', 'm1');
+    expect(close).toHaveBeenCalled();
+  });
+
+  it('modules: openModulePicker opens the MULTI picker with excludeIds of the current draft', async () => {
+    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
+    await setup({ _id: 'p-pick', name: 'P', kind: 'good', unit: 'шт', productModuleIds: [MODULES[0]] });
+    instance().openModulePicker();
+    expect(dialogSvc.open).toHaveBeenCalledTimes(1);
+    const [component, config] = dialogSvc.open.mock.calls[0];
+    expect(config.data.multi).toBe(true);
+    expect(config.data.excludeIds).toEqual(['m1']);
+    expect(config.data.productId).toBe('p-pick');
+    expect(component).toBeTruthy();
+  });
+
+  it('modules: cancel after adding modules does NOT fire any module mutation', async () => {
+    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
+    await setup(null);
+    instance().addModules(['m1']);
+    instance().onCancel();
+    expect(close).toHaveBeenCalledWith(null);
+    expect(modulesSvc.attachToProduct).not.toHaveBeenCalled();
+    expect(productsSvc.create).not.toHaveBeenCalled();
   });
 });

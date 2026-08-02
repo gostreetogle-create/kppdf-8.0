@@ -28,42 +28,11 @@
 | `ProductFormDialogComponent` | create / edit | `null` / `Product` |
 | `AlertDialogComponent` | confirm delete | `{ title, description, confirmLabel, variant }` |
 
-`ProductFormDialogComponent` (TZ-PRODUCTS-302) — большой content-диалог
-(`variant="content"` + `maxWidth 1000px`, sticky footer через PiDialog
-contract). Поля сгруппированы по eyebrow-секциям: «Основные данные»
-(name/sku/kind/unit/subcategory/status), «Категория и цены» (categoryId
-из `CategoriesService.list('product')` + listPrice + isActive), «Габариты»
-(L/W/H+unit), «Дополнительно» (weightKg + Цвет/RAL), «Изображения»
-(photo upload по паттерну TZ-MATERIALS-306; `photoIds`), «Описание и
-заметки».
-
-## RAL / ColorReference integration (TZ-PRODUCTS-302)
-
-- Цвет продукта выбирается **только** из справочника цветов
-  (`ColorReferencesService.list({ activeOnly: true })`, endpoint
-  `/api/color-references` из TZ-PRODUCTS-301). Свободный ввод не допускается.
-- Значение опции — `slug` цвета; payload сохраняет backend-контракт строки
-  `ralCode` (поля `colorId` в backend Product **нет** — это SUCCESSOR для
-  TZ-PRODUCTS-303).
-- Дефолтный выбор: системный цвет «Не выбран» (`SYSTEM_DEFAULT_COLOR_SLUG`
-  = `ne-vybran`, seed TZ-PRODUCTS-301) авто-выбирается после успешной
-  загрузки, если цвет не задан. Submit без цвета → `ralCode` падает на
-  `SYSTEM_DEFAULT_COLOR_SLUG`.
-- Рядом с селектом — swatch-превью выбранного hex (`selectedColorHex()`).
-- Loading / error / empty состояния; при пустом справочнике — подсказка
-  и кнопка «Открыть справочник цветов» (`/color-references`).
-- Legacy `ralCode` (например «RAL 9003»), отсутствующий в справочнике,
-  рендерится как disabled fallback-опция (паттерн unitFallback из
-  TZ-MATERIALS-302) — edit не обнуляет значение молча.
-
 ## Services
 
 | Сервис | Методы |
 |--------|--------|
 | `ProductsService` | `list(params)`, `findById(id)`, `create(payload)`, `update(id, payload)`, `remove(id)` |
-| `ColorReferencesService` | `list({activeOnly})`, `findById(id)`, `create`, `update`, `remove` |
-| `CategoriesService` | `list(type)` — type `'product'` для categoryId |
-| `PhotosService` | `upload(file)`, `list()`, `remove(id)` — фото продукта |
 
 ## State (signals)
 
@@ -95,7 +64,7 @@ contract). Поля сгруппированы по eyebrow-секциям: «О
 
 ## Column definitions (8 колонок)
 
-`name` (sticky, sortable, cellTemplate) → `sku` (sortable) → `kind` → `unit` → `listPrice` (sortable, numeric, right) → `status` (sortable) → `stockQty` (numeric, right)
+`name` (sticky, sortable, cellTemplate) → `sku` (sortable) → `kind` → `unit` → `listPrice` (sortable, numeric, right) → `status` (sortable) → `productModuleIds` «Модулей» (numeric, right, TZ-PRODUCTS-304) → `stockQty` (numeric, right)
 
 ## TZ reference
 
@@ -103,57 +72,10 @@ contract). Поля сгруппированы по eyebrow-секциям: «О
 |----|------------|
 | TZ-104.3 | Миграция на pi-table + server-side pagination |
 | TZ-104.4.2 | Typed TemplateRef (устранён `any`) |
-| TZ-PRODUCTS-302 | Content-диалог 1000px, секции, categoryId select, RAL dropdown, фото |
-| TZ-PRODUCTS-303 | Секция «Модули в составе»: карточки привязанных модулей + атомарная синхронизация |
-| TZ-PRODUCTS-304 | Expandable-каталог: клик по строке раскрывает модули, клик по модулю → `/modules/:id` |
-
-## Expandable-каталог с модулями (TZ-PRODUCTS-304)
-
-Каталог продукции — expandable-строки (single-expand UX):
-
-- **Клик по строке** (или по chevron в ячейке «Название») раскрывает/сворачивает
-  панель модулей под строкой. Открыта может быть только одна строка
-  (`expandedId` signal = `string | null`).
-- **Панель модулей** — карточки: имя, артикул, «N материалов»; клик по карточке
-  → `router.navigate(['/modules', m._id])` (страница модуля с материалами).
-  Пустое состояние: «Нет модулей в составе. Откройте товар, чтобы привязать
-  модули».
-- **Данные**: backend `list()` уже популирует `productModuleIds`; для модулей,
-  пришедших строковыми id, выполняется ленивый `ProductModulesService.list(pid)`
-  при ПЕРВОМ раскрытии (guard `loadedModuleProducts` — повторных GET нет),
-  результат кэшируется в page-scoped `Map<moduleId, ProductModule>` (не в сервисе).
-- **Навигация на детальную страницу товара сохранена**: `<a [routerLink]>` в
-  той же ячейке (stopPropagation). Row-actions (edit/delete) не раскрывают
-  строку (stopPropagation в pi-table).
-- pi-table НЕ изменялся: используется готовый `[expandedRow]`
-  (TemplateRef, `$implicit: row`) + `(rowClick)` output;
-  `[expandedRow]="expandedId() ? expandedTpl : null"` — свёрнутые строки без
-  пустых `<tr>`.
-
-## Редактор модулей в диалоге товара (TZ-PRODUCTS-303)
-
-Секция «Модули в составе» в `product-form-dialog.component.ts` реализует M:N
-привязку модулей к товару карточками (паттерн TZ-MODULES-301):
-
-- **Карточка модуля** — имя, артикул, количество материалов в составе, кнопка
-  удаления (×). Пустое состояние: «Нет модулей в составе».
-- **Кнопка «+ Добавить модуль»** — открывает существующий
-  `ProductModulePickerDialogComponent` с `excludeIds` = текущий выбор
-  (уже привязанные недоступны — дубликат невозможен).
-- **Каталог** загружается один раз через `ProductModulesService.list()`;
-  карточки рендерятся из `selectedModuleIds` + каталога (`attachedModules` computed).
-- **Сохранение — атомарные endpoints** (не bulk PATCH):
-  `POST /products/:id/modules {moduleId}` и `DELETE /products/:id/modules/:moduleId`
-  (`ProductModulesService.attachToProduct` / `detachFromProduct`).
-  Причина: `UpdateProductDto` (whitelist) не содержит `productModuleIds` —
-  bulk PATCH вернул бы 400. Синхронизация на submit — diff снапшота при
-  открытии vs финальный выбор: attach добавленных + detach удалённых.
-- **Ошибки синхронизации** не блокируют закрытие диалога (товар уже сохранён),
-  но показываются toast-ом.
-
-Контракт: `ProductModule` (pi-product-modules.service.ts) — `_id, name, article?,
-workTypes[], materials[]`. Backend M:N через `Product.productModuleIds[]`
-(populate в findById, reverse-lookup `GET /modules?productId=X`).
+| TZ-PRODUCTS-302 | Rework ProductFormDialog → content-variant 1000px, секции, RAL dropdown из справочника цветов |
+| TZ-PRODUCTS-303 | «Модули в составе» в диалоге товара: карточки модулей + мульти-picker + атомарные POST/DELETE |
+| TZ-PRODUCTS-304 | Expandable-строки каталога: клик по строке разворачивает карточки модулей, ссылка на `/modules/:id` |
+| TZ-PRODUCTS-305 | Карточки-витрины: toggle list ↔ grid (sm showcase-карточки, localStorage persistence) |
 
 ## Особенности
 
@@ -165,6 +87,112 @@ workTypes[], materials[]`. Backend M:N через `Product.productModuleIds[]`
 - **Format functions:** `formatPrice()` для `listPrice`, `KIND_LABELS`/`STATUS_LABELS` для enum-полей
 - **Refresh on dialog close:** `onDialogCloseOnce` → `listRes.reload()`
 
+## ProductFormDialog (TZ-PRODUCTS-302)
+
+`ProductFormDialogComponent` переработан из компактного form-variant в широкий
+content-DSL (паттерн TZ-MATERIALS-301): `variant="content"` +
+`[maxWidth]="'1000px'"`, body со скроллом и ВСЕГДА видимый sticky footer
+(«Сохранить» / «Отмена»).
+
+**Секции формы (по порядку):** Основные данные (name/sku/kind/unit/status) →
+Категория (dropdown из `CategoriesService.list('product')`) → Цены (listPrice/
+isActive) → Габариты (L/W/H + единица) → **Цвет (RAL)** → **Модули в составе** →
+Вес → Описание и заметки → Изображения (фото-upload, паттерн TZ-MATERIALS-306).
+
+**RAL contract (TZ-PRODUCTS-301/302):**
+
+- Список активных цветов грузится из `PiColorReferencesService.list({ activeOnly: true })` (кэш активного каталога).
+- Значение опции = `ColorReference.slug` (стабильный ключ); системный «Не выбран» (`ne_vybran`) очищает `ralCode` → `null`.
+- В dropdown есть поиск по name/slug; пустой справочник показывает hint + ссылку на `/dictionaries/color-references` (только admin/manager).
+- Legacy-значение `ralCode` (не в активном списке) рендерится disabled-fallback — селект никогда не пуст молча.
+
+**Регрессия:** legacy create/update payload-логика и data-test атрибуты сохранены;
+добавлены `categoryId` и `photoIds`. Загруженные в сессии фото удаляются при
+cancel (orphan cleanup в `ngOnDestroy`).
+
+## «Модули в составе» (TZ-PRODUCTS-303)
+
+Секция встроена в диалог товара (между «Цвет (RAL)» и «Описание»), паттерн
+TZ-MODULES-301 (карточки-строки, как material-cards в module-detail).
+
+- **Карточка модуля:** нейтральная миниатюра (у `GET /modules` нет фото — это
+  отдельная сущность `ProductModulePhoto`), имя, артикул, «N материалов»,
+  кнопка «×» (удалить из черновика).
+- **«+ Добавить модуль»** открывает `ProductModulePickerDialogComponent` в
+  мульти-режиме (`data.multi=true`, variant="content", 1000px) — чекбокс-список
+  доступных модулей (уже привязанные исключены через `excludeIds`), возвращает
+  `string[]`. Обратно совместим: без `multi` остаётся классический
+  single-select для `product-detail.page.ts`.
+- **Состояния:** loading / error / empty по образцу RAL dropdown
+  (TZ-PRODUCTS-302) — каталог грузится в `loadModules()` на mount.
+- **Dirty tracking:** добавление/удаление карточки помечает форму `dirty` →
+  «Сохранить» активна.
+- **Submit-контракт (зафиксирован по коду):** bulk PATCH с `productModuleIds[]`
+  НЕ поддерживается (`CreateProductDto` не содержит поля — whitelist выбросит).
+  Используются атомарные endpoints (race-safe, `$addToSet`/`$pull`):
+  - `POST /products/:id/modules` body `{ moduleId }` — attach
+    (`backend/src/modules/product/product.controller.ts:128-132`)
+  - `DELETE /products/:id/modules/:moduleId` — detach
+    (`product.controller.ts:147-151`)
+  После успешного create/update `syncModules()` считает diff исходных привязок
+  против черновика: удалённые → DELETE, добавленные → POST; все через
+  `PiProductModulesService.attachToProduct/detachFromProduct`.
+- **Legacy:** старые товары с `productModuleIds[]` (populated в list/findById)
+  открываются и редактируются без потери привязок.
+
+## Expandable-строки (TZ-PRODUCTS-304)
+
+Клик по строке товара в каталоге РАЗВОРАЧИВАЕТ/СВОРАЧИВАЕТ список
+привязанных модулей (паттерн TZ-MODULES-302: pi-table `expandedRow` +
+сигнал `expandedId` + conditional template на странице).
+
+- **Состояние:** `expandedId: signal<string | null>` — `_id` развёрнутого
+  товара; повторный клик по той же строке сворачивает (null).
+- **Подключение:** `(rowClick)="onRowClick($event)"` (pi-table эмитит строку)
+  + `[expandedRow]="expandedId() ? expandedTpl : null"` — свёрнутые строки
+  БЕЗ пустых `<tr>` (template передаётся только при развёрнутой строке).
+- **Развёрнутый контент** (`#expandedTpl`): карточки модулей — инициалы-аватар
+  (у `GET /modules` нет фото — отдельная сущность `ProductModulePhoto`), имя,
+  артикул, «N материалов»; клик по карточке → `routerLink` `/modules/:id`
+  (route существует, app.routes.ts).
+- **Empty state:** «Нет модулей в составе. Откройте товар, чтобы привязать
+  модули.»
+- **Колонка «Модулей»:** count из `productModuleIds.length` (numeric, right).
+- **Row-actions НЕ раскрывают строку:** pi-table сам делает
+  `stopPropagation` на actions `<td>`; ссылка-название товара тоже
+  `stopPropagation` (навигация на `/products/:id` сохранена — отдельный
+  аффорданс, не конфликтует с toggle).
+- **Backend НЕ менялся:** `list()` уже populate `productModuleIds`
+  (product.service.ts:72).
+
+## Карточки-витрины / toggle list ↔ grid (TZ-PRODUCTS-305)
+
+Каталог товаров получил переключение вида: **list** (pi-table, дефолт) ↔
+**grid** (sm showcase-карточки). Переиспользуемый `PiShowcaseCardComponent`
+(три размерных варианта sm/md/lg, `shared/ui/card/pi-showcase-card.component.ts`,
+перенесён идентичным контентом из part-1 `e00be99`) — общий UI Kit для
+карточек-витрин товара/модуля/материала.
+
+- **Toggle в тулбаре:** кнопки `ListIcon` / `GridIcon` (lucide), `data-test`
+  `view-list-button` / `view-grid-button`, `aria-pressed` для a11y.
+- **Состояние:** `viewMode: signal<'list' | 'grid'>`, выбор персистится в
+  localStorage (`pi-products-view-mode`) — паттерн `snapSettings` из builder
+  (load/save в try/catch, дефолт `list`).
+- **Grid-вид:** сетка `grid-cols-1 md:2 xl:3 gap-4`; каждая ячейка —
+  `<a [routerLink]="['/products', id]">` с `app-pi-showcase-card size="sm"`:
+  - `eyebrow` — метка вида (Товар/Услуга/Работа);
+  - `title` — название; `description` — SKU · подкатегория;
+  - `sc-actions-sm` слот — `app-pi-avatar` (инициалы по названию, т.к. фото =
+    отдельная сущность в list-payload) + badge статуса (`statusLabel`/
+    `statusBadgeClass`, muted для Неактивен/Архив/Черновик) + цена
+    (`formatPrice`);
+  - loading / empty state (`grid-loading` / `grid-empty`) по образцу pi-table.
+- **Template-refs хоустированы из `@if/@else`** на корень компонента —
+  `@ViewChild({ static: true })` резолвится независимо от viewMode
+  (иначе row-actions/name-ссылки терялись в grid-режиме).
+- **md/lg варианты** компонента готовы для будущих витрин (детальные
+  страницы — отдельными TZ).
+
 ---
 
-_Создано: 2026-07-19. Последнее обновление: 2026-08-02 (TZ-PRODUCTS-302)._
+_Создано: 2026-07-19. Последнее обновление: 2026-08-02._

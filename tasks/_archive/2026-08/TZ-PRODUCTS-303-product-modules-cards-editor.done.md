@@ -1,93 +1,102 @@
-# TZ-PRODUCTS-303 — DONE (редактор модулей карточками в диалоге товара)
+# TZ-PRODUCTS-303 — DONE (Module cards editor in product dialog)
 
 **Date:** 2026-08-02
-**Outcome:** DONE — секция «Модули в составе» в `ProductFormDialogComponent`
-(карточки модулей, добавление через существующий `ProductModulePickerDialog`,
-удаление, атомарная M:N-синхронизация на submit).
-**Layer:** 3 (frontend; backend НЕ изменялся — атомарные endpoints уже готовы).
+**Outcome:** DONE — в диалог товара встроена секция «Модули в составе» (карточки модулей + мульти-picker), submit через атомарные POST/DELETE `/products/:id/modules`.
+**Layer:** 3 (frontend). Backend НЕ трогался.
 
 ## Что сделано
 
-- **Секция «Модули в составе»** в диалоге товара: карточка = имя, артикул,
-  кол-во материалов, кнопка удаления (×); пустое состояние «Нет модулей в
-  составе»; loading/error состояния каталога.
-- **«+ Добавить модуль»** — переиспользует `ProductModulePickerDialogComponent`
-  с `data: { productId, excludeIds }` (уже привязанные исключены → дубликат
-  невозможен; `addModule` дополнительно dedupes).
-- **Каталог** загружается один раз через `ProductModulesService.list()`;
-  карточки рендерятся из `selectedModuleIds` + `modulesCatalog`
-  (`attachedModules` computed). Модуль вне каталога (catalog failed/loading,
-  либо выбран через picker) → fallback-карточка «Модуль» — выбор никогда не
-  становится невидимым/неудаляемым.
-- **Submit-синхронизация — атомарные endpoints** (НЕ bulk PATCH): diff
-  `originalModuleIds` (снапшот при открытии) vs `selectedModuleIds` →
-  `attachToProduct` для добавленных + `detachFromProduct` для удалённых
-  (`forkJoin`). Причина: `UpdateProductDto` (whitelist) НЕ содержит
-  `productModuleIds` — bulk PATCH вернул бы 400 (проверено по коду).
-- Create-режим: attach после успешного `create` к новому `_id`.
-- Ошибки синхронизации модулей не блокируют закрытие диалога (товар уже
-  сохранён), показываются toast-ом; без изменений модулей — без лишних вызовов.
-- **Спека**: NEW describe «modules (TZ-PRODUCTS-303)» — catalog load/error,
-  edit-seed из `productModuleIds` (populated refs и строковые id), add/remove
-  dedupe, picker excludeIds, picker close → add, create-attach, edit
-  attach+detach diff, no-change no-op, partial-fail close, DOM-рендер карточек,
-  DOM empty-state, fallback-карточка.
+**`frontend/src/app/pages/products/product-form-dialog.component.ts` — секция «Модули в составе» (eyebrow «Состав»):**
+- Карточки привязанных модулей: миниатюра-плейсхолдер (инициалы — у `GET /modules` нет фото, это отдельная сущность `ProductModulePhoto`), имя, артикул, «N материалов», кнопка «×» (удаление из черновика).
+- «+ Добавить модуль» → `ProductModulePickerDialogComponent` в мульти-режиме (`data.multi=true`, variant="content") — чекбокс-список доступных модулей (уже привязанные исключены через `excludeIds`), возвращает `string[]`.
+- Состояния loading/error/empty по образцу RAL dropdown (TZ-PRODUCTS-302): каталог грузится в `loadModules()` на mount.
+- Dirty-tracking: добавление/удаление карточки → `form.markAsDirty()` (→ «Сохранить» активна).
+- **Submit:** после успешного create/update `syncModules()` считает diff исходных привязок (`data.productModuleIds`) против черновика: удалённые → DELETE, добавленные → POST (через `PiProductModulesService.attachToProduct/detachFromProduct`, silent-http, никогда не бросают).
 
-## Изменённые файлы (3)
+**`frontend/src/app/pages/products/product-module-picker-dialog.component.ts` — расширен мульти-режимом:**
+- Без `multi` — классический single-select (обратно совместим с `product-detail.page.ts`, который НЕ менялся).
+- С `multi: true` — чекбокс-список, submit → `ref.close(string[])`; submit disabled, пока ничего не выбрано; cancel → null в обоих режимах.
+- Добавлены loading/error сигналы + empty-state.
 
-| Файл | Δ |
-|------|---|
-| `frontend/src/app/pages/products/product-form-dialog.component.ts` | секция модулей + syncModules + fallback computed |
-| `frontend/src/app/pages/products/product-form-dialog.component.spec.ts` | +14 модульных тестов (34 всего) |
-| `docs/pages/products.page.md` | секция «Редактор модулей в диалоге товара» |
+**Исправления по code review (P1):**
+- **P1: гонка строковых moduleIds.** `seedAttachedModules()` резолвил строковые id синхронно, пока каталог ещё не загрузился (асинхронно) → строки молча пропадали из черновика и на submit превращались в DELETE невидимых модулей. Исправлено: строки откладываются в `pendingStringModuleIds` и резолвятся ПОСЛЕ загрузки каталога (`loadModules` success → `resolvePendingStringModuleIds`); неразрешённые остаются в очереди. Покрыто тестом.
+- Minor: eyebrow «Состав» по wake-up (двухстрочный заголовок «Состав» + «Модули в составе»); loading-тест picker'а переделан на незавершающийся Observable (реально проверяет loading=true фазу).
 
-## Verification
+**`frontend/src/app/shared/services/products.service.ts`:** `Product.productModuleIds?: Array<string | ProductModule>` (type-only import из pi-product-modules.service, без runtime-циклов). Учтите: `shared/models/products.ts` (unused mirror) не менялся — там поля нет.
 
-- jest product-form-dialog: **34/34 PASS**
-- jest products/product-module: **42/42 PASS** (3 suites)
-- tsc (мой scope): clean — errors только в `people/*` (TZ-WORKERS-302, out of scope)
-- ng build: FAIL только на параллельно-сессионных файлах (people.page.ts
-  unterminated, index.ts → missing workers.service) — TZ-WORKERS-302 territory
-- git diff --check: clean (LF/CRLF warnings only)
-- verify-status: **PASS**
-- code review (независимый): P0/P1 нет; P2 исправлены — DOM-тесты карточек,
-  fallback-карточка для модуля вне каталога (invisible-selection edge)
+**Spec (NEW):** `product-module-picker-dialog.component.spec.ts` — 8 тестов (single/multi, excludeIds, loading/error/cancel). `product-form-dialog.component.spec.ts` — +12 module тестов (→ 32 total): catalog load/error, addModules+dirty, dedupe, remove+dirty, edit seed из populated и из строк (+без DELETE), create без модулей → нет вызовов, create с модулем → POST, edit diff → DELETE+POST, openModulePicker multi+excludeIds, cancel → нет мутаций.
 
-## Что намеренно НЕ изменялось
+**Docs:** `docs/pages/products.page.md` — секция «Модули в составе» (TZ-PRODUCTS-303).
 
-- `backend/src/modules/product/*` — атомарные endpoints уже готовы;
-- `product-detail.page.ts` — не менялся (работает со своим populated
-  `productModuleIds`); общий редактор не выносился — picker переиспользован;
-- TZ-PRODUCTS-301/302/304/305, TZ-MODULES-*, TZ-DOC-*;
-- `frontend/src/app/shared/services/index.ts` (грязный от параллельной сессии);
-- people/*, workers.service (TZ-WORKERS-302 territory);
+## Submit-контракт (ЗАФИКСИРОВАН по коду)
+
+Bulk PATCH с `productModuleIds[]` НЕ поддерживается — `CreateProductDto` не содержит этого поля, whitelist-валидация его выбросит. Используются атомарные race-safe endpoints:
+
+- `backend/src/modules/product/product.controller.ts:128-132` — `POST /products/:productId/modules` body `{ moduleId }` → `product.service.attachModule` (`$addToSet`)
+- `backend/src/modules/product/product.controller.ts:147-151` — `DELETE /products/:productId/modules/:moduleId` → `product.service.detachModule` (`$pull`)
+- `product.service.ts:138-186` — race-safe (`$addToSet`/`$pull` вместо замены всего массива)
+- Фронт: `PiProductModulesService.attachToProduct(productId, moduleId)` / `detachFromProduct(productId, moduleId)`
+
+## Гейты (все зелёные)
+
+- `cd backend && pnpm exec tsc -p tsconfig.build.json --noEmit` — **exit 0** (sanity)
+- `cd backend && pnpm exec jest product --no-coverage` — **2 suites / 8 tests PASS** (product + product-module, без регрессии)
+- `cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit` — **exit 0**
+- `cd frontend && pnpm exec jest pi-product-modules product-form-dialog product-module-picker-dialog --no-coverage` — **3 suites / 44 tests PASS**
+- `cd frontend && pnpm exec jest --no-coverage --runInBand` (полный) — **845/846 PASS**; единственный fail = pre-existing `button.component.spec.ts` (baseline-проверен stash'ем в 301, файл не мой)
+- `cd frontend && pnpm exec ng build --configuration=development` — **exit 0** (без warning'ов)
+- `git diff --check` — clean
+
+## Что НЕ изменялось намеренно
+
+- Backend — НЕ трогался (контракт уже готов, см. file:line выше).
+- TZ-PRODUCTS-301/302 commits (`610fd4b`/`4b3b4e8` — closed), TZ-PRODUCTS-305 / PiShowcaseCardComponent (`e00be99`).
+- `frontend/src/app/pages/products/product-detail.page.ts` — НЕ менялся (picker обратно совместим, секция IV продолжает работать).
+- TZ-WORKERS-* (people.page.ts — parallel session), TZ-DOC-308 categories.page.ts (pre-existing), TZ-MATERIALS-*, TZ-DOC-*, sanitize-html, Z-backlog, desktop/.
 - package.json / lock-файлы.
 
-## Successors
+## Conventional commit (push НЕ выполнялся — ждёт владельца)
 
-- **TZ-PRODUCTS-304** — expandable-каталог товаров (клик по строке → модули,
-  клик по модулю → страница модуля).
-- **TZ-PRODUCTS-303+ (backlog)** — `colorId` FK на ColorReference в Product
-  (backend; НЕ в scope 303 dialog-редактора).
+`feat(products): module cards editor in product dialog (TZ-PRODUCTS-303)`
 
 ## ARCHIVE_MARKER
 
 ```yaml
 outcome: DONE
 closed_at: 2026-08-02
-implementation_commit: fad91fd
+closed_by: autonomous-frontend-agent (Buffy)
+source_task: tasks/TZ-PRODUCTS-303-product-modules-cards-editor.md
+implementation_commit: 243aeda
+prerequisite: TZ-PRODUCTS-302 (4b3b4e8) — content-dialog товара; паттерн TZ-MODULES-301 (карточки в диалоге модуля)
+submit_contract: ATOMIC POST/DELETE /products/:id/modules (bulk PATCH невозможен — CreateProductDto без productModuleIds)
+  - product.controller.ts:128-132 POST /products/:productId/modules { moduleId } ($addToSet, race-safe)
+  - product.controller.ts:147-151 DELETE /products/:productId/modules/:moduleId ($pull)
+  - product.service.ts:138-186; фронт PiProductModulesService.attachToProduct/detachFromProduct
+scroll_restoration: НЕ требуется — диалог модальный (CDK overlay), списки короткие (каталог модулей в picker'е max-h-72 overflow-y-auto)
 verification:
-  jest_product_form_dialog: 34/34 PASS
-  jest_products_module: 42/42 PASS
-  tsc_my_scope: clean
-  ng_build: BLOCKED by parallel-session files (TZ-WORKERS-302, out-of-scope)
-  git_diff_check: clean
-  verify_status: PASS
-browser_status: MANUAL_BROWSER_CHECK_REQUIRED
+  - backend_tsc: PASS (sanity)
+  - backend_jest_product: 2 suites / 8 tests PASS
+  - frontend_tsc: PASS
+  - jest_products_scope: 3 suites / 44 tests PASS (pi-product-modules + product-form-dialog + product-module-picker-dialog)
+  - jest_frontend_full: 845/846 PASS (1 pre-existing button.component.spec.ts failure — baseline, не регрессия)
+  - ng_build_dev: PASS (exit 0)
+  - git_diff_check: clean
+browser_status: MANUAL_BROWSER_CHECK_REQUIRED (dev-stack не поднимался; контракт доказан unit-тестами + ng build)
 known_limitations:
-  - ng build fails only on parallel-session files (people.page.ts / people-form-dialog / missing workers.service) — TZ-WORKERS-302 territory, not touched
-  - M:N sync via atomic POST/DELETE /products/:id/modules; bulk productModuleIds PATCH is rejected by DTO whitelist
-  - fallback-card for picked modules missing from catalog (catalog load failure)
+  - TZ-DOC-308 categories.page.ts — pre-existing blocker из основного worktree (в этом билде ng build прошёл; не fix-force)
+  - TZ-WORKERS-302 (parallel session) — people.page.ts/workers.service.ts могут быть build-блокером в другом worktree; здесь ng build exit 0
+  - frontend полный jest: 1 pre-existing failure в button.component.spec.ts — baseline-проверен stash'ем в 301, НЕ регрессия
+  - карточка модуля без фото (плейсхолдер-инициалы) — у GET /modules нет photo в payload (фото = отдельная сущность ProductModulePhoto, N+1 fetch вне скоупа)
+  - product-detail.page.ts секция IV «Модули» использует single-режим picker'а (обратно совместим) — общий мульти-редактор НЕ выносился (TZ ШАГ 3 опционально)
+protected_files:
+  - frontend/src/app/pages/products/product-form-dialog.component.ts (+ spec)
+  - frontend/src/app/pages/products/product-module-picker-dialog.component.ts (+ NEW spec)
+  - frontend/src/app/shared/services/products.service.ts (Product.productModuleIds)
+  - docs/pages/products.page.md
+not_changed:
+  - backend (product-module/*, product.controller.ts — контракт готов)
+  - frontend/src/app/pages/products/product-detail.page.ts (picker обратно совместим)
+  - TZ-PRODUCTS-301/302/305, TZ-MODULES-*, TZ-DOC-*, TZ-MATERIALS-*, TZ-WORKERS-*, sanitize-html, Z-backlog, desktop/
+  - package.json / lock-файлы
 lock_file: .mimocode/locks/TZ-PRODUCTS-303-product-modules-cards-editor.lock
-successors: [TZ-PRODUCTS-304 (expandable catalog)]
 ```

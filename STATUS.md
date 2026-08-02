@@ -814,6 +814,13 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 
 | TZ | Дата | Описание | Архив |
 |---|---|---|---|
+| TZ-PRODUCTS-301 | 2026-08-02 | Справочник «Цвета» (RAL) — ColorReference entity (sparse-unique {organizationId, slug}, hex, soft-delete) + seed «Не выбран» + страница /dictionaries/color-references (pi-table, copy/edit/delete) | `tasks/_archive/2026-08/TZ-PRODUCTS-301-color-reference-dictionary.done.md` |
+| TZ-PRODUCTS-302 | 2026-08-02 | ProductFormDialog — content-диалог 1000px + секции по категориям + RAL dropdown из справочника цветов (slug → ralCode, «Не выбран» → null, явный null в PATCH, атомарное удаление фото) | `tasks/_archive/2026-08/TZ-PRODUCTS-302-product-form-dialog-rework.done.md` |
+| TZ-PRODUCTS-303 | 2026-08-02 | «Модули в составе» в диалоге товара — карточки модулей (имя/артикул/N материалов/×) + мульти-picker (string[]), submit атомарными POST/DELETE /products/:id/modules (diff) | `tasks/_archive/2026-08/TZ-PRODUCTS-303-product-modules-cards-editor.done.md` |
+| TZ-PRODUCTS-304 | 2026-08-02 | Expandable-строки каталога — клик по строке разворачивает карточки модулей (инициалы/имя/артикул/N материалов), routerLink /modules/:id, empty state, колонка «Модулей» | `tasks/_archive/2026-08/TZ-PRODUCTS-304-products-catalog-expandable-modules.done.md` |
+| TZ-PRODUCTS-305 | 2026-08-02 | Карточки-витрины: PiShowcaseCardComponent sm/md/lg (порт e00be99 verbatim) + toggle list ↔ grid в каталоге (sm-карточки: инициалы/name/цена/badge статуса, routerLink, localStorage persistence) | `tasks/_archive/2026-08/TZ-PRODUCTS-305-ui-kit-showcase-cards.done.md` |
+
+> **MERGE CUE:** TZ-303 + TZ-304 + TZ-305 попадут в main одним merge из worktree `221ae09f` (branch `freebuff/task-221ae09f-…`) — PO/merge-agent ответственность.
 | TZ-WORKERS-301 | 2026-08-02 | «Люди» — единая backend-сущность на базе Worker (email, position, supplierId, managerOfSupplierIds, userId, organizationId sparse, deletedAt); Person-консолидация → SUCCESSOR | `tasks/_archive/2026-08/TZ-WORKERS-301.done.md` |
 | TZ-PRODUCTS-301 | 2026-08-02 | Справочник «Цвета» — ColorReference backend-контракт + UI `/color-references` (sparse-unique, system-цвет «Не выбран» seed, 409 in_use/system, content-диалог 1000px) | `tasks/_archive/2026-08/TZ-PRODUCTS-301-color-reference-dictionary.done.md` |
 | TZ-PRODUCTS-302 | 2026-08-02 | Диалог товара — content-вариант 1000px, секции по категориям, categoryId select, RAL dropdown из справочника цветов, фото-загрузка | `tasks/_archive/2026-08/TZ-PRODUCTS-302-product-form-dialog-rework.done.md` |

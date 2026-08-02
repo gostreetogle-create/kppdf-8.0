@@ -1,79 +1,88 @@
-# Документация страницы: Справочник «Цвета» (`ColorReferencesPage`)
+# Страница: Цвета (ColorReferencesPage)
 
-**Краткое описание:** Справочник RAL/HEX-цветов для товаров и модулей.
-Создание, редактирование, активация/деактивация и мягкое удаление цветов.
-Системный цвет «Не выбран» (seed) отображается, но заблокирован для
-изменений и удаления. Цвет — справочник общего назначения: формы товара
-(TZ-PRODUCTS-302) будут использовать его как dropdown + swatch.
+**Краткое описание:** Справочник цветов (RAL) — CRUD-страница для словаря цветов, используемого в RAL-выпадающем списке товара (TZ-PRODUCTS-302).
 
-TZ: **TZ-PRODUCTS-301** (backend-контракт + UI справочника).
-
----
-
-## Страница: Цвета (`ColorReferencesPage`)
-
-### Route
+## Route
 
 ```
-/color-references — «KPPDF — Цвета»
+/dictionaries/color-references — «KPPDF — Цвета»
 ```
 
-(дочерний route внутри `AppLayout`; гейт — `authGuard` родителя, как у
-остальных справочников; мутации защищены на backend `@Roles('admin','manager')`)
+Защита: `authGuard` + `adminOnlyRouteGuard` (admin/manager). Чтение через API доступно и `user`-ролям — RAL-dropdown в диалоге товара открыт каждому авторизованному пользователю (backend `@Roles('user','admin','manager')` на read).
 
-### Query params
-
-| Параметр | Тип | Назначение |
-|----------|-----|-----------|
-| — | — | (none — всё через сигналы; список грузится в конструкторе) |
-
-### API endpoints
+## API endpoints
 
 | Метод | Endpoint | Назначение |
 |-------|----------|-----------|
-| GET | `/api/color-references` | Список (org-scope: свои + системные; `activeOnly`, `search`) |
+| GET | `/api/color-references` | Список (`activeOnly`, `search`) — org-scope + системные |
 | GET | `/api/color-references/:id` | Один цвет |
-| POST | `/api/color-references` | Создать (admin/manager) |
-| PATCH | `/api/color-references/:id` | Обновить / переименовать (admin/manager) |
-| DELETE | `/api/color-references/:id` | Мягкое удаление (admin/manager; 409 для системного) |
+| POST | `/api/color-references` | Создание (admin/manager) |
+| PATCH | `/api/color-references/:id` | Обновление (admin/manager; 403 foreign-org, 409 system/дубликат slug) |
+| DELETE | `/api/color-references/:id` | Мягкое удаление `deletedAt` (admin/manager; 409 system/default) |
 
-### Dialogs
+Ответ GET: `ColorReference[]` (массив, не envelope — контракт TZ-DOC-307/315).
+
+## Entity
+
+| Поле | Тип | Назначение |
+|------|-----|-----------|
+| `name` | string | Название (RAL-код + имя, например «RAL 9003 — Сигнальный белый») |
+| `slug` | string | Стабильный ключ (kebab, генерируется из name сервером при пустом) |
+| `hex` | string? | Swatch `#RRGGBB` (400 на невалидный) |
+| `description` | string? | Описание |
+| `isActive` | boolean | Доступен ли в RAL-списке товара |
+| `isSystem` | boolean | Seed-цвет («Не выбран») — только чтение |
+| `isDefault` | boolean | Цвет по умолчанию для товаров без цвета |
+| `deletedAt` | Date? | Soft-delete |
+| `organizationId` | ObjectId? | undefined = системный (глобальный) |
+
+## Dialogs
 
 | Компонент | Режим | Данные |
 |-----------|-------|--------|
-| `ColorReferenceFormDialogComponent` | create / edit | `null` / `ColorReference` |
+| `ColorReferenceFormDialogComponent` | create / edit / copy | `null` / `ColorReference` / `{...c, _id: undefined}` |
 | `AlertDialogComponent` | confirm delete | `{ title, message, confirmLabel, variant }` |
 
-### Services
+## Services
 
 | Сервис | Методы |
 |--------|--------|
-| `ColorReferencesService` | `list()`, `findById()`, `create()`, `update()`, `remove()` |
+| `PiColorReferencesService` | `list({activeOnly, search})` (кэш активного каталога, TZ-DOC-309 паттерн), `findById(id)`, `create(payload)`, `update(id, payload)`, `remove(id)` |
 
-### State (signals)
+## State (signals)
 
 | Сигнал | Тип | Назначение |
 |--------|-----|-----------|
-| `items` | `Signal<ColorReference[]>` | Загруженные цвета |
-| `loading` | `Signal<boolean>` | Идёт первичная загрузка |
+| `items` | `Signal<ColorReference[]>` | Загруженный список |
+| `loading` | `Signal<boolean>` | Загрузка |
 | `error` | `Signal<string\|null>` | Ошибка загрузки |
 | `searchQuery` | `Signal<string>` | Поиск по name/slug |
+| `page` | `Signal<number>` | Клиентская пагинация (pageSize=100) |
 
-### Computed
+## Computed
 
-| Computed | Назначение |
-|----------|-----------|
-| `visible` | Отсортированные (sortOrder → name) и отфильтрованные по поиску цвета |
+| Computed | Трансформация |
+|----------|--------------|
+| `visible` | filter (name/slug search) → sort (name, затем slug) → slice по странице |
 
-### Контракт backend (TZ-PRODUCTS-301)
+## Column definitions
 
-- `slug` — стабильный ключ (kebab-lowercase), уникальность скоупирована
-  областью (compound unique `{ organizationId, slug }` sparse).
-- `organizationId` — **никогда не отправляется с фронтенда**: сервер берёт
-  его из `req.user` (IDOR guard). undefined = system-область.
-- `hex` — `#RRGGBB`, валидируется `@Matches(/^#[0-9a-fA-F]{6}$/)` (400).
-- `deletedAt` — soft delete; удалённые исключены из list/findById.
-- `isDefault` — серверный default для форм товара (`resolveDefault` /
-  `assertDefaultId`, паттерн TZ-DOC-307/315).
-- Системный цвет «Не выбран» (`isSystem: true`, seed-managed, глобальный,
-  `isDefault: true`, hex `#9CA3AF`): мутации → 409, UI блокирует действия.
+`name` (sticky, sortable, cellTemplate: badge «системный» + ★ default) → `slug` (sortable, mono) → `hex` (cellTemplate: swatch-кружок + hex) → `isActive` (cellTemplate: switch, disabled для system) + row actions.
+
+## Row actions (Copy / Edit / Delete)
+
+- **Copy** — открывает create-диалог с префиллом `{...c, _id: undefined}` и суффиксом «(копия)» в name (slug перегенерируется сервером — нет коллизии уникальности).
+- **Edit** — не доступен для `isSystem` (409 на бэкенде, UI блокирует заранее).
+- **Delete** — не доступен для `isSystem` и для `isDefault` (409); при 409 из бэкенда (используется по умолчанию) — toast-ошибка, строка остаётся.
+
+## Особенности
+
+- **Optimistic toggle**: переключатель isActive флипается локально сразу, при ошибке — rollback + toast.
+- **Системный цвет «Не выбран»** (slug `ne_vybran`, hex `#9CA3AF`, isDefault) — seed в `backend/src/common/seed/color-references.seed.ts`, идемпотентный (TZ-DOC-307/315 паттерн; UTF-8 литералы, без CP1251-bug).
+- **Soft-delete**: `remove()` ставит `deletedAt` (worker/counterparty паттерн), findAll/findById исключают удалённые.
+- **Сервис-кэш**: `list({activeOnly:true})` кэшируется на время жизни приложения и инвалидируется на успешные мутации (TZ-DOC-309 contract).
+- Unit test: `color-references.page.spec.ts` + `pi-color-references.service.spec.ts`.
+
+---
+
+_Создано: 2026-08-02 (TZ-PRODUCTS-301)._

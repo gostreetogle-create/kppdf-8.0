@@ -1,4 +1,4 @@
-═══════════════════════════════════════════════════════════════
+﻿═══════════════════════════════════════════════════════════════
 TZ-UX-303: Единые названия — Архив документов + Справочники nav
 ═══════════════════════════════════════════════════════════════
 
@@ -39,3 +39,11 @@ docs/agent-checklists/TZ-UX-303.md
 AC: три строки documents совпадают; dictionaries nav не врёт «все».
 ПРОМПТ: GEMINI.md + tasks/TZ-UX-303-nav-label-consistency.md.
 Checklist docs/agent-checklists/TZ-UX-303.md. Push нет.
+
+---
+ARCHIVE_MARKER
+outcome: DONE
+date: 2026-08-02
+agent: Cursor (lightweight UX/docs sweep)
+summary: Nav label consistency
+---

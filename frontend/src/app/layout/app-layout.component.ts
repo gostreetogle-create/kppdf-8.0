@@ -10,6 +10,7 @@ import {
   BookOpen,
   FileText,
   ShieldCheck,
+  Palette,
 } from 'lucide-angular';
 
 /**
@@ -88,10 +89,8 @@ const NAV_CATEGORIES: NavCategory[] = [
       { path: '/dictionaries', label: 'Все справочники' },
       { path: '/categories', label: 'Категории' },
       { path: '/doc-template-categories', label: 'Категории шаблонов' },
-      // TZ-DOC-316 — категории текстовых блоков (справочник + picker).
-      { path: '/dictionaries/text-block-categories', label: 'Категории текстов' },
-      // TZ-PRODUCTS-301 — справочник цветов (hex + RAL).
-      { path: '/color-references', label: 'Цвета' },
+      // TZ-PRODUCTS-301: справочник цветов (RAL) — иконка Palette.
+      { path: '/dictionaries/color-references', label: 'Цвета', icon: Palette },
     ],
   },
   {
@@ -104,11 +103,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     label: 'Документы',
     icon: FileText,
     items: [
-      // TZ-DOC-324 (IA: реестр ↔ редактор): «Конструктор» убран из nav —
-      // вход в редактор только через действие «Открыть» в реестре
-      // /doc-constructor/templates. Прямой пункт меню создавал иллюзию
-      // двух «кабинетов шаблонов». /doc-constructor/builder (без :id)
-      // редиректит на /templates (см. app.routes.ts).
+      { path: '/doc-constructor/builder', label: 'Конструктор' },
       { path: '/doc-constructor/templates', label: 'Шаблоны' },
       { path: '/doc-constructor/texts', label: 'Текстовые блоки' },
       { path: '/doc-constructor/tables', label: 'Шаблоны таблиц' },

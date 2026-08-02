@@ -1,4 +1,4 @@
-═══════════════════════════════════════════════════════════════
+﻿═══════════════════════════════════════════════════════════════
 TZ-JOURNEY-301: Канон потока цеха + карта дыр (spec-only)
 ═══════════════════════════════════════════════════════════════
 
@@ -34,3 +34,11 @@ tasks/_backlog/vision/ (NEW folder ok)
 AC: таблица дыр в docs; backlog files созданы; INDEX обновлён.
 ПРОМПТ: GEMINI.md + tasks/TZ-JOURNEY-301-shop-flow-gap-map.md.
 Checklist TZ-JOURNEY-301. Push нет.
+
+---
+ARCHIVE_MARKER
+outcome: DONE
+date: 2026-08-02
+agent: Cursor (lightweight UX/docs sweep)
+summary: Shop flow gap map
+---

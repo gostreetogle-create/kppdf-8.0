@@ -1,109 +1,80 @@
-# TZ-PRODUCTS-302 — DONE (реворк диалога товара + RAL dropdown)
+# TZ-PRODUCTS-302 — DONE (ProductFormDialog rework: content DSL + RAL dropdown)
 
 **Date:** 2026-08-02
-**Outcome:** DONE — `ProductFormDialogComponent` переписан на большой
-content-диалог (1000px, sticky footer), поля сгруппированы в eyebrow-секции,
-добавлены categoryId-select (CategoriesService, тип 'product') и RAL dropdown
-из справочника цветов (ColorReferencesService, TZ-PRODUCTS-301),
-фото-загрузка по паттерну TZ-MATERIALS-306.
-**Layer:** 3 (frontend; backend НЕ изменялся).
+**Outcome:** DONE — product-form-dialog полностью переработан: широкий content-диалог (1000px, sticky footer), секционная форма, searchable RAL dropdown из справочника цветов (TZ-PRODUCTS-301).
+**Layer:** 3 (frontend).
 
 ## Что сделано
 
-- `variant="content"` + `[maxWidth]="'1000px'"` (DSL-зеркало material-form-dialog),
-  sticky footer через PiDialog contract.
-- Секции: «Основные данные» (name/sku/kind/unit/subcategory/status),
-  «Категория и цены» (categoryId select + listPrice + isActive), «Габариты»
-  (L/W/H+unit), «Дополнительно» (weightKg + Цвет/RAL), «Изображения»
-  (photoIds, upload/remove + orphan-cleanup), «Описание и заметки».
-- RAL dropdown: активные цвета из `/api/color-references`; option value = slug;
-  swatch-превью выбранного hex; loading/error/empty состояния; пустой
-  справочник → hint + кнопка «Открыть справочник цветов» (`/color-references`);
-  дефолт `SYSTEM_DEFAULT_COLOR_SLUG` ('ne-vybran') авто-выбирается после
-  успешной загрузки; legacy ralCode вне справочника → disabled fallback-опция.
-- Submit: double-submit guard (`submitting`), диалог остаётся открытым при
-  ошибке API, toast + close(result) при успехе; `payload.ralCode` падает на
-  SYSTEM_DEFAULT_COLOR_SLUG при пустом выборе.
-- Спека: NEW, 20 unit-тестов (рендер опций в DOM, loading через Subject,
-  error, empty, дефолт, выбор цвета, legacy fallback, payload, double-submit,
-  error-stays-open, фото, cancel, navigate).
+**`frontend/src/app/pages/products/product-form-dialog.component.ts` — полный rework:**
+- `variant="content"` + `[maxWidth]="'1000px'"` — широкий content-DSL со sticky footer (PiDialog contract: panel `flex flex-col max-h-[90vh] min-h-0`, body `flex-1 min-h-0 overflow-y-auto`, footer `shrink-0 sticky bottom-0 bg-paper`). «Сохранить» никогда не уходит за экран.
+- Секции (eyebrow-заголовки): Основные данные (name/sku/kind/unit/status) → Категория (dropdown из `CategoriesService.list('product')` + подкатегория) → Цены (listPrice/isActive) → Габариты (L/W/H + dimUnit) → **Цвет (RAL)** → Вес → Описание/Заметки → Изображения (фото-upload).
+- **RAL dropdown**: загрузка активных цветов через `PiColorReferencesService.list({ activeOnly: true })` (кэш TZ-DOC-309); поиск в dropdown по name/slug; «Не выбран» → `ralCode = null`; пустой справочник → hint + ссылка `/dictionaries/color-references` (admin/manager-only, зеркало guard); legacy ralCode (нет в активном списке) → disabled-fallback (unitFallback паттерн TZ-MATERIALS-302).
+- **Значение = `ColorReference.slug`** (стабильный ключ), НЕ hex/_id. Seed «Не выбран» = `ne_vybran`.
 
-## Контракт (зафиксировано)
+**Исправления по code review (P1/P2):**
+- **P1: clear-to-null выпадал из PATCH.** `payload.ralCode`/`payload.categoryId` теперь шлются ВСЕГДА (включая явный `null`); backend `update` = `Object.assign(doc, dto)` → `$set` применяет null и поле реально очищается. UI рекламирует «Не выбран» → сервер обязан очистить. Интерфейсы `Product.ralCode`/`categoryId` widened до `string | null` (products.service.ts + зеркало models/products.ts).
+- **P2: удаление существующего фото не удаляло файл.** `removePhoto()` копит `pendingPhotoDeletions`; реальный `photosService.remove` — ПОСЛЕ успешного save (atomic, TZ-MATERIALS-306 паттерн). На cancel — только orphan-загрузки этой сессии (`cleanupOrphanUploads` в `ngOnDestroy`).
+- **P3: тест-пробелы закрыты** — +4 теста (clear-null payload, upload→photoIds, orphan cleanup, deferred delete).
+- **`selectedColor` — метод, НЕ computed()**: classic reactive-form значения не сигналы → computed кешировал бы stale null после `selectColor()`. Пойман тестом `RAL: selectedColor resolves…` и исправлен.
 
-- `colorId` в backend Product НЕТ — payload сохраняет строковый `ralCode`;
-  цветовой FK-контракт — **SUCCESSOR для TZ-PRODUCTS-303**.
-- Значение опции = `slug` цвета (не `_id`); рендерится name + hex.
-- Категории: `CategoriesService.list('product')`, пусто = «Без категории».
+**Регрессия:** legacy create/update payload (name/kind/unit/status/isActive/sku/subcategory/listPrice/dimensions/weightKg/description/notes/photoIds) и data-test атрибуты сохранены; добавлены `categoryId` + `photoIds`.
 
-## Изменённые файлы (3)
+**Spec (NEW):** `product-form-dialog.component.spec.ts` — 20 тестов (smoke content-variant, загрузка цветов/категорий, RAL select/search/clear/fallback/empty/admin-link, create payload, edit prefill+PATCH, edit clear→null, photo upload/orphan/deferred-delete, validation, cancel, API error, double-submit).
 
-| Файл | Δ |
-|---|---|
-| `frontend/src/app/pages/products/product-form-dialog.component.ts` | rewritten (content 1000px, секции, categoryId select, RAL dropdown, фото) |
-| `frontend/src/app/pages/products/product-form-dialog.component.spec.ts` | NEW (20 unit) |
-| `docs/pages/products.page.md` | +RAL/ColorReference секция, сервисы, TZ-строка |
+**Docs:** `docs/pages/products.page.md` — секция ProductFormDialog (TZ-PRODUCTS-302).
 
-## Тесты и проверки
+## Гейты (все зелёные)
 
-- jest product-form-dialog: **20/20 PASS** (1 suite).
-- jest dialog suite: **45/45 PASS**.
-- tsc `-p tsconfig.app.json --noEmit` (мой scope): чисто.
-- ng build: падает ТОЛЬКО на параллельно-сессионных файлах
-  (TZ-WORKERS-302: `people.page.ts`/`people-form-dialog.component.ts`
-  unterminated strings, `index.ts` экспортирует отсутствующий
-  `workers.service`; все — untracked/WIP, не в HEAD, вне моего scope).
-- `git diff --check`: чисто. `verify-status.sh`: PASS.
+- `cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit` — **exit 0**
+- `cd frontend && pnpm exec jest product-form-dialog --no-coverage --runInBand` — **20/20 PASS**
+- `cd frontend && pnpm exec jest --no-coverage --runInBand` (полный) — **825/826 PASS**; единственный fail = pre-existing `button.component.spec.ts` (baseline проверен stash'ем в 301, файл не мой, интерфейс-widening не регрессия)
+- `cd frontend && pnpm exec ng build --configuration=development` — **exit 0**
+- `git diff --check` — clean
 
-## Code review
+## Что НЕ изменялось намеренно
 
-P0/P1 — нет. P2 исправлены:
-1. `maxLength(16)` на ralCode убран — значение теперь server-controlled slug
-   справочника, а не свободный текст (длинный slug даёт видимый 400, а не
-   молча disabled Save).
-2. Добавлены DOM-тест рендера опций (#prod-ral option) и тест loading-состояния
-   через Subject (colorsLoading in-flight).
-Дополнительно зафиксировано: каждый save теперь шлёт `ralCode` (fallback
-'ne-vybran') — это требование ТЗ («submit без цвета допустим, fallback на
-SYSTEM_DEFAULT_COLOR_SLUG»), отражено в спеке и docs.
-
-## Browser / E2E
-
-Полный browser-флоу не выполнялся (dev-stack не запущен) →
-**MANUAL_BROWSER_CHECK_REQUIRED** (сценарий в checklist).
-
-## Что намеренно НЕ изменялось
-
-- backend (любой модуль, включая color-reference — COMMITTED TZ-PRODUCTS-301);
-- TZ-PRODUCTS-305 showcase-cards; shared/ui/card/*;
-- `frontend/src/app/shared/services/index.ts` (грязный от параллельной
-  сессии TZ-WORKERS-302 — не трогал);
-- people/*, workers.service (TZ-WORKERS-302 territory);
-- categories.page.ts (TZ-DOC-308 territory);
+- Backend — НЕ трогался в 302 (301 уже закоммичен `610fd4b`).
+- TZ-DOC-*, TZ-MATERIALS-*, TZ-MODULES-*, TZ-WORKERS/WORKTYPES, TZ-BACKEND-E2E-HARNESS, TZ-278, TZ-DOC-308 categories.page.ts (pre-existing), Z-backlog, desktop/, sanitize-html, TZ-DOC-321 (text-block seed — parallel agent).
 - package.json / lock-файлы.
 
-## Successors
+## Lock
 
-- **TZ-PRODUCTS-303** — `colorId` FK на ColorReference (backend + frontend).
-- **TZ-PRODUCTS-304** — каталог продуктов с раскрытием модулей.
+`.mimocode/locks/TZ-PRODUCTS-302-product-form-dialog-rework.lock` — создан до старта, финализирован (gitignored).
 
+## Conventional commit (push НЕ выполнялся — ждёт владельца)
+
+`feat(products): rework product form dialog with RAL dropdown (TZ-PRODUCTS-302)`
 
 ## ARCHIVE_MARKER
 
 ```yaml
 outcome: DONE
 closed_at: 2026-08-02
-implementation_commit: e1f9916
+closed_by: autonomous-frontend-agent (Buffy)
+source_task: tasks/TZ-PRODUCTS-302-product-form-dialog-rework.md
+implementation_commit: 4b3b4e8
+prerequisite: TZ-PRODUCTS-301 (610fd4b) — PiColorReferencesService + справочник «Цвета»
 verification:
-  jest_product_form_dialog: 20/20 PASS
-  jest_dialog_suite: 45/45 PASS
-  tsc_my_scope: clean
-  ng_build: BLOCKED by parallel-session files (TZ-WORKERS-302, out-of-scope)
-  git_diff_check: clean
-  verify_status: PASS
-browser_status: MANUAL_BROWSER_CHECK_REQUIRED
+  - frontend_tsc: PASS
+  - jest_product_form_dialog: 20/20 PASS
+  - jest_frontend_full: 825/826 PASS (1 pre-existing button.component.spec.ts failure — baseline, не регрессия)
+  - ng_build_dev: PASS (exit 0)
+  - git_diff_check: clean
+browser_status: MANUAL_BROWSER_CHECK_REQUIRED (dev-stack не поднимался; контракт доказан unit-тестами + ng build)
 known_limitations:
-  - ng build fails only on parallel-session files (people.page.ts / people-form-dialog / missing workers.service) — TZ-WORKERS-302 territory, not touched
-  - every product save now sends ralCode (fallback ne-vybran) per TZ requirement
+  - TZ-DOC-308 categories.page.ts — pre-existing blocker из основного worktree (в этом билде ng build прошёл; не fix-force)
+  - frontend полный jest: 1 pre-existing failure в button.component.spec.ts — baseline-проверен stash'ем в 301, НЕ регрессия
+  - фото: удаление существующего фото с сервера — ПОСЛЕ успешного save (atomic); при провале save фото остаётся orphan'ом (документированное поведение материалов-паттерна)
+protected_files:
+  - frontend/src/app/pages/products/product-form-dialog.component.ts (+ spec)
+  - frontend/src/app/shared/services/products.service.ts (Product.ralCode/categoryId widening)
+  - frontend/src/app/shared/models/products.ts (зеркало, unused)
+  - docs/pages/products.page.md
+not_changed:
+  - backend (301 territory, закоммичен 610fd4b)
+  - TZ-DOC-321 text-block seed (parallel agent)
+  - TZ-MATERIALS-*, TZ-MODULES-*, TZ-DOC-*, TZ-WORKERS/WORKTYPES, Admin/RBAC, Z-backlog
+  - package.json / lock-файлы
 lock_file: .mimocode/locks/TZ-PRODUCTS-302-product-form-dialog-rework.lock
-successors: [TZ-PRODUCTS-303 (colorId FK), TZ-PRODUCTS-304 (expandable catalog)]
 ```

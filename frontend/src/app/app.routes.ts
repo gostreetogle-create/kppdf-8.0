@@ -1,6 +1,25 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { CanMatchFn, Router, Routes } from '@angular/router';
 import { authGuard, publicOnlyGuard } from './core/auth.guard';
+import { AuthService } from './core/auth.service';
 import { capabilityRouteGuard } from './core/capabilities/capability-route.guard';
+
+/**
+ * TZ-PRODUCTS-301 — admin-only route guard for the color dictionary.
+ *
+ * Backend RBAC allows `user` to READ colors (the RAL dropdown in the product
+ * form is used by every authenticated user), but the dictionary PAGE is an
+ * admin/manager management surface — mutations are @Roles('admin','manager').
+ * This guard hides the page from plain `user` role accounts by redirecting to
+ * /forbidden (same UX contract as capabilityRouteGuard, without inventing a
+ * new permission key for a small dictionary).
+ */
+export const adminOnlyRouteGuard: CanMatchFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (auth.user()?.role === 'admin' || auth.user()?.role === 'manager') return true;
+  return router.parseUrl('/forbidden');
+};
 
 /**
  * KPPDF site routing.
@@ -137,22 +156,15 @@ export const routes: Routes = [
         title: 'KPPDF — Категории шаблонов',
       },
       {
-        // TZ-DOC-316 — категории текстовых блоков (справочник + picker).
-        path: 'dictionaries/text-block-categories',
+        // TZ-PRODUCTS-301 — справочник цветов (RAL). Admin/manager page;
+        // reads are also available to users via the API for the product
+        // form RAL dropdown (TZ-PRODUCTS-302).
+        path: 'dictionaries/color-references',
+        canMatch: [authGuard, adminOnlyRouteGuard],
         loadComponent: () =>
-          import('./pages/dictionaries/text-block-categories.page').then(
-            (m) => m.TextBlockCategoriesPage,
+          import('./pages/dictionaries/color-references.page').then(
+            (m) => m.ColorReferencesPage,
           ),
-        title: 'KPPDF — Категории текстов',
-      },
-      {
-        // TZ-PRODUCTS-301 — справочник «Цвета» (hex + RAL). Гейт как у
-        // остальных справочников (authGuard родителя): отдельного
-        // capability-ключа в RBAC-каталоге нет; мутации защищены на
-        // backend @Roles('admin','manager').
-        path: 'color-references',
-        loadComponent: () =>
-          import('./pages/dictionaries/color-references.page').then((m) => m.ColorReferencesPage),
         title: 'KPPDF — Цвета',
       },
       {
@@ -232,19 +244,18 @@ export const routes: Routes = [
         title: 'KPPDF — Конструктор: Таблицы',
       },
       {
-        // TZ-DOC-324 (IA): /doc-constructor/builder без :id — это дубль
-        // реестра. Single source of CRUD = /doc-constructor/templates.
-        // Builder — только редактор для конкретного :id (следующий route).
-        // pathMatch: 'full' гарантирует, что redirect жадно не съедает
-        // /doc-constructor/builder/:id (Angular longest-prefix match).
+        // TZ-86 Phase D.1 — builder canvas (3-pane) picker state.
+        // No :id → shows template-list picker; selecting navigates to
+        // /doc-constructor/builder/:id (see BuilderPage empty state).
         path: 'doc-constructor/builder',
-        pathMatch: 'full',
-        redirectTo: 'doc-constructor/templates',
+        loadComponent: () =>
+          import('./pages/doc-constructor/builder/builder.page').then((m) => m.BuilderPage),
+        title: 'KPPDF — Конструктор: Сборка',
       },
       {
         // TZ-86 Phase D.1 — builder canvas with a specific template id.
-        // Чистый editor-режим: empty-state-picker'а больше нет,
-        // сюда попадаем только через «Открыть» из реестра /templates.
+        // Longest-prefix match in Angular 20 wins over the bare /builder
+        // route above, so :id takes precedence for non-empty ids.
         path: 'doc-constructor/builder/:id',
         loadComponent: () =>
           import('./pages/doc-constructor/builder/builder.page').then((m) => m.BuilderPage),

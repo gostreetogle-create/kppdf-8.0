@@ -1,4 +1,4 @@
-═══════════════════════════════════════════════════════════════
+﻿═══════════════════════════════════════════════════════════════
 TZ-UX-301: Nav — группа «Склад» для inventory routes
 ═══════════════════════════════════════════════════════════════
 
@@ -38,3 +38,11 @@ AC: три пункта видны в меню; capability-gate не ломае�
   как у materials). tsc/layout smoke. Executor report.
 ПРОМПТ: Прочитай GEMINI.md + tasks/TZ-UX-301-warehouse-nav.md. Выполни.
 Checklist docs/agent-checklists/TZ-UX-301.md + Executor report. Push нет.
+
+---
+ARCHIVE_MARKER
+outcome: DONE
+date: 2026-08-02
+agent: Cursor (lightweight UX/docs sweep)
+summary: Nav warehouse group
+---

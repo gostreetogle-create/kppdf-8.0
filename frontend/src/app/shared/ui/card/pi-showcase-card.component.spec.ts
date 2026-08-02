@@ -1,5 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ChangeDetectionStrategy, Component, signal, ViewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  CUSTOM_ELEMENTS_SCHEMA,
+  signal,
+  ViewChild,
+} from '@angular/core';
+import { LucideAngularModule } from 'lucide-angular';
 import { PiShowcaseCardComponent } from './pi-showcase-card.component';
 
 /**
@@ -7,6 +14,12 @@ import { PiShowcaseCardComponent } from './pi-showcase-card.component';
  *
  * Uses signals in the fixture host so input changes propagate to the
  * child component reliably (Angular 20 input binding pattern).
+ *
+ * Lucide icons: the component imports LucideAngularModule which renders
+ * `<i-lucide>`. In jsdom the icon provider isn't registered, so we
+ * override the component to drop the Lucide module and let
+ * CUSTOM_ELEMENTS_SCHEMA pass `<i-lucide>` through (card.component.spec
+ * pattern) — DOM-level assertions on the arrow still work.
  */
 @Component({
   selector: 'app-fixture-host',
@@ -50,7 +63,12 @@ describe('PiShowcaseCardComponent — TZ-PRODUCTS-305', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [FixtureHostComponent, PiShowcaseCardComponent],
-    }).compileComponents();
+      schemas: [CUSTOM_ELEMENTS_SCHEMA],
+    })
+      .overrideComponent(PiShowcaseCardComponent, {
+        remove: { imports: [LucideAngularModule] },
+      })
+      .compileComponents();
     fixture = TestBed.createComponent(FixtureHostComponent);
     host = fixture.componentInstance;
     fixture.detectChanges();

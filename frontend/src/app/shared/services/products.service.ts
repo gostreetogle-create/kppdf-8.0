@@ -9,6 +9,7 @@ import {
   silentPost,
   SilentResult,
 } from '../../core/silent-http';
+import type { ProductModule } from './pi-product-modules.service';
 
 export type ProductKind = 'good' | 'service' | 'work';
 export type ProductStatus = 'new' | 'active' | 'archived' | 'draft';
@@ -26,7 +27,8 @@ export interface Product {
   sku?: string;
   kind: ProductKind;
   unit: string;
-  categoryId?: string;
+  /** Explicitly nullable: clearing the color in the form sends `null` (TZ-PRODUCTS-302). */
+  categoryId?: string | null;
   subcategory?: string;
   status?: ProductStatus;
   listPrice?: number;
@@ -39,7 +41,13 @@ export interface Product {
   photoIds?: string[];
   dimensions?: ProductDimensions;
   weightKg?: number;
-  ralCode?: string;
+  /** Explicitly nullable: choosing «Не выбран» clears ralCode to `null` (TZ-PRODUCTS-302). */
+  ralCode?: string | null;
+  /**
+   * Привязанные модули (M:N). Backend populate: строки (unpopulated) либо
+   * полные ProductModule объекты (populated). TZ-PRODUCTS-303.
+   */
+  productModuleIds?: Array<string | ProductModule>;
   hasPassport?: boolean;
   hasDrawing?: boolean;
   isActive?: boolean;

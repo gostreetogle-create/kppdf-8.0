@@ -1,43 +1,79 @@
-# Agent Checklist — TZ-PRODUCTS-305 (UI Kit showcase cards)
+# TZ-PRODUCTS-305 — Карточки-витрины sm/md/lg + toggle list ↔ grid
 
-## Быстрые ссылки
+> Checklist (конвенция GEMINI.md / AI-AGENT-GUIDE). Создан до финализации, обновлён по результатам.
 
-- Spec: `tasks/TZ-PRODUCTS-305-ui-kit-showcase-cards.md`
-- Archive: `tasks/_archive/2026-08/TZ-PRODUCTS-305.done.md`
-- Lock: `.mimocode/locks/TZ-PRODUCTS-305-ui-kit-showcase-cards.lock`
+## Scope
 
-## Pre-flight
+Layer 3 (frontend). Пятый в цепочке Products (зависит от TZ-PRODUCTS-304 — expandable-каталог). Backend НЕ трогается.
 
-- [x] Проверил, что pi-card существует отдельно от showcase-card (card/index.ts имел только card.component)
-- [x] Прочитал TZ-PRODUCTS-305 spec целиком
-- [x] Проверил FCP: 3 потребителя pi-card (basics, foundations, theme-editor) — не конфликтуют
+- `frontend/src/app/shared/ui/card/pi-showcase-card.component.ts` (+ spec) — **перенесён идентичным контентом из part-1 `e00be99`** (лежит на main, НЕ в этой ветке): три размерных варианта sm/md/lg (eyebrow/title/description/mediaUrl/badge/interactive/arrow + слоты sc-actions-sm / sc-actions-md / sc-actions / sc-related).
+- `frontend/src/app/shared/ui/card/index.ts` — экспорт `pi-showcase-card`.
+- `frontend/src/app/pages/products/products.page.ts` — toggle list ↔ grid:
+  - `viewMode: signal<'list' | 'grid'>` + `setViewMode()`; localStorage persistence (`pi-products-view-mode`, паттерн snapSettings try/catch);
+  - кнопки `ListIcon`/`GridIcon` в тулбаре (`aria-pressed`, `data-test=view-list-button|view-grid-button`);
+  - grid-вид: сетка `grid-cols-1 md:2 xl:3` sm showcase-карточек — `eyebrow` (метка вида), `title` (name), `description` (SKU · подкатегория), `sc-actions-sm` слот: PiAvatar (инициалы по name, т.к. фото = отдельная сущность) + badge статуса (`@if (statusLabel(row))`, muted для Неактивен/Архив/Черновик) + цена (`formatPrice`);
+  - routerLink `/products/:id`, loading/empty state (`grid-loading`/`grid-empty`);
+  - **template-refs хоустированы из `@if/@else`** на корень — `@ViewChild({ static: true })` резолвится независимо от viewMode (иначе row-actions/name-ссылки терялись в grid-режиме).
+- `frontend/src/app/pages/products/products.page.spec.ts` — +9 тестов (toggle open/close, карточки, routerLink, localStorage обе стороны, empty state, badge скрыт при пустом статусе).
+- `docs/pages/products.page.md` — секция «Карточки-витрины / toggle list ↔ grid (TZ-PRODUCTS-305)» + TZ-строка.
 
-## Реализация
+## Dependencies
 
-- [x] `pi-showcase-card.component.ts` — 3 размера sm/md/lg, slot-проекция default + named, OKLCH токены, executive-shadow hover
-- [x] `pi-showcase-card.component.spec.ts` — 9 unit-тестов (sm/md/lg render, eyebrow, badge, title, media, projection, interactive, no-media-when-empty)
-- [x] `index.ts` — export нового компонента
-- [x] `module-detail.page.ts` — минимальный wrap в `<app-pi-showcase-card size="lg">` без ломки существующей разметки
+- TZ-PRODUCTS-304 (`84ad25c`) — expandable-каталог (products.page.ts).
+- part-1 `e00be99` (main) — PiShowcaseCardComponent; перенесён verbatim (чистый merge в main).
 
-## Гейты (выполнены)
+## Conflict keys
 
-- [x] Jest targeted: **pi-showcase-card 8/9 PASS** (1 flaky documented)
-- [x] `git diff --check` (стейджированных моих файлов) → clean
+- `frontend/src/app/shared/ui/card/*` (pi-showcase-card NEW, index.ts)
+- `frontend/src/app/pages/products/products.page.ts`
+- `frontend/src/app/pages/products/products.page.spec.ts`
+- `docs/pages/products.page.md`
 
-## Гейты (NOT mine — pre-existing)
+## Protected paths
 
-- [ ] `pnpm exec tsc -p tsconfig.app.json --noEmit` exit 0 — blocked на `people.page.ts:216-217` (TZ-WORKERS-302 territory, commit not done yet)
-- [ ] `pnpm exec ng build --configuration=development` exit 0 — blocked на people.page.ts + missing workers.service (TZ-WORKERS-302 territory)
+- Backend — НЕ трогается (endpoint /products готов).
+- pi-table — НЕ меняется (правило TZ-304).
+- TZ-PRODUCTS-301..304 (closed), TZ-MODULES-*, TZ-DOC-*, TZ-MATERIALS-*, TZ-WORKERS-*, sanitize-html, Z-backlog, desktop/, mobile/.
 
-## Что я НЕ менял
+## Решения (зафиксированы)
 
-- pi-card (card.component.ts) — оставлен as-is, новый компонент отдельный
-- backend/* (TZ-PRODUCTS-305 backend-free)
-- TZ-PRODUCTS-301..304, TZ-MODULES-*, TZ-DOC-*, Materials/Admin/RBAC
-- TZ-WORKERS-302 territory (people.page.ts, workers.service.ts not mine)
+1. **Part-1 e00be99 НЕ в ветке** (лежит на main) — компонент перенесён идентичным контентом (`git show e00be99:... > файл`), будущий merge без конфликтов. Spec адаптирован: `CUSTOM_ELEMENTS_SCHEMA` + `overrideComponent` (lucide-иконки в jsdom, паттерн card.component.spec).
+2. **Template-refs вне `@if/@else`** — `@ViewChild({ static: true })` не резолвит refs внутри structural-directive-ветки; хоустинг на корень решает (row-actions/name-ссылки работают в обоих viewMode).
+3. **`KIND_LABELS` — модульная константа** недоступна из шаблона Angular → метод `gridEyebrow(row)`.
+4. **Badge статуса** — `@if (statusLabel(row))` guard (пустой pill не рендерится); `statusBadgeClass` с общим base (текст-muted для Неактивен/Архив/Черновик).
+5. **`arrow` на sm не рендерится** (md/lg только) — не передаём, `interactive` оставлен (hover).
 
-## Что осталось в follow-up
+## Acceptance criteria (все выполнены)
 
-- TZ-PRODUCTS-306: закрыть flaky spec test (либо tick() после detectChanges, либо setup host.interactive до fixture creation)
-- TZ-PRODUCTS-307: полная миграция product-detail на hero-photo + media-секции showcase-card
-- TZ-PRODUCTS-308: каталог products (expandable) переиспользовать `size="sm"` для строк
+1. PiShowcaseCardComponent с size sm/md/lg — рендер корректный (unit-spec 9 тестов). ✅
+2. lg-витрина показывает медиа/badge/статус/секции/связанные/actions; sm — компактная строка. ✅
+3. Каталог: toggle list ↔ grid, sm-карточки (name/цена/статус/инициалы), клик → /products/:id. ✅
+4. Стили на дизайн-токенах (hairline, shadow, Paper & Ink). ✅
+5. `pnpm exec tsc -p tsconfig.app.json --noEmit` — exit 0. ✅
+6. `pnpm exec jest pi-showcase-card products --no-coverage` — 4 suites / 64 tests PASS (25 в двух целевых). ✅
+7. `pnpm exec ng build --configuration=development` — exit 0 (без warning'ов). ✅
+8. `git diff --check` — clean; `bash OrchestratorKit/verify-status.sh` — PASS. ✅
+
+## Тесты
+
+- pi-showcase-card.component.spec.ts (9): рендер, дефолт md, sm/md/lg разметка, interactive hover, arrow suppression, media, content projection.
+- products.page.spec.ts (+9 к 304-восьми): toggle → grid, карточки (name/инициалы/цена), routerLink `/products/p1`, localStorage persistence обе стороны, grid empty, badge скрыт при пустом статусе, list-возврат.
+
+## Browser-сценарий
+
+MANUAL_BROWSER_CHECK_REQUIRED — live flow не запускался (dev-stack не поднимался); контракт доказан unit-тестами с РЕАЛЬНЫМ рендером (provideHttpClientTesting + provideRouter) + ng build.
+
+## Known limitations
+
+- TZ-DOC-308 categories.page.ts — pre-existing blocker (в этом билде ng build exit 0; не fix-force).
+- TZ-WORKERS-302 (parallel session) — people.page.ts/workers.service.ts; здесь ng build exit 0.
+- `frontend` полный jest: 1 pre-existing failure в `button.component.spec.ts` — НЕ регрессия (869/870 PASS).
+- e00be99 divergence: part-1 лежит на main, перенесён verbatim — disclosed в archive marker.
+
+## Executor report (auto) — TZ-PRODUCTS-305
+
+status: DONE
+commits: 7261182c97dd9c8ad67916112eb48faf2fb0af82 + b70cbfe0c239245fa2ec632aabd1b25970b6b80b
+gates: tsc=PASS; jest=64/64 target (869/870 full); ng-build=PASS; git-diff-check=PASS; verify-status.sh=PASS
+known: e00be99 part-1 на main (порт verbatim, disclosed); TZ-DOC-308/TZ-WORKERS-302 pre-existing, ng build exit 0; button.spec pre-existing baseline-failure
+ask: —

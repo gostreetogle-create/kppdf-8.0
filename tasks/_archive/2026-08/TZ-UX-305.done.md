@@ -1,4 +1,4 @@
-═══════════════════════════════════════════════════════════════
+﻿═══════════════════════════════════════════════════════════════
 TZ-UX-305: Sync page.md drift (orgs, work-types, storage, materials)
 ═══════════════════════════════════════════════════════════════
 
@@ -37,3 +37,11 @@ Docs врут относительно кода:
 AC: 4 файла соответствуют коду; git diff только docs (+checklist).
 ПРОМПТ: GEMINI.md + tasks/TZ-UX-305-page-docs-sync.md.
 Checklist docs/agent-checklists/TZ-UX-305.md. Push нет.
+
+---
+ARCHIVE_MARKER
+outcome: DONE
+date: 2026-08-02
+agent: Cursor (lightweight UX/docs sweep)
+summary: page.md drift sync
+---
