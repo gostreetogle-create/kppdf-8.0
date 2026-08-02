@@ -9,27 +9,21 @@ import { HydratedDocument, Types } from 'mongoose';
  *   - **Simple** (legacy): `content` as HTML string
  *   - **Multi-column** (new): `columns[]` array, each with its own HTML content
  *
- * `slug` is auto-generated from name if omitted. `category`, `tags`,
- * `sortOrder` are optional (the simplified UI no longer exposes them).
+ * `slug` is auto-generated from name if omitted. `tags`, `sortOrder` are
+ * optional (the simplified UI no longer exposes them).
  *
- * TZ-DOC-315 adds the optional FK `categoryId?: Types.ObjectId` so that
- * each text block can be grouped under a user-defined TextBlockCategory.
- * The legacy enum `category: 'legal'|'intro'|'outro'|'custom'` is kept
- * for backward compatibility — UI products migrate gradually.
+ * TZ-DOC-315 added the FK `categoryId?: Types.ObjectId` so text blocks
+ * can be grouped under a user-defined TextBlockCategory.
+ *
+ * TZ-DOC-323 — the legacy enum `category: 'legal'|'intro'|'outro'|'custom'`
+ * is REMOVED end-to-end. Callers that previously set `dto.category` either
+ * (a) have already migrated to `categoryId` (frontend per TZ-DOC-316), or
+ * (b) receive an explicit 400 from the global `ValidationPipe` whose
+ * `forbidNonWhitelisted: true` rejects unknown properties in incoming
+ * payloads. The companion migration
+ * `backend/src/database/migrations/2026-08-02-TZ-DOC-323-remove-legacy-text-block-category.ts`
+ * `$unset`s the legacy field on existing documents.
  */
-
-export type TextBlockCategory =
-  | 'legal'
-  | 'intro'
-  | 'outro'
-  | 'custom';
-
-export const TEXT_BLOCK_CATEGORIES: TextBlockCategory[] = [
-  'legal',
-  'intro',
-  'outro',
-  'custom',
-];
 
 export interface TextBlockColumn {
   id: string;
@@ -48,14 +42,6 @@ export class TextBlock {
   /** Unique slug — auto-generated from name (kebab-case + transliteration) if caller omits. */
   @Prop({ required: true, unique: true, index: true, maxlength: 100 })
   slug!: string;
-
-  @Prop({
-    type: String,
-    enum: [...TEXT_BLOCK_CATEGORIES],
-    default: 'custom',
-    index: true,
-  })
-  category!: TextBlockCategory;
 
   @Prop({ type: [String], default: [] })
   tags!: string[];
@@ -85,6 +71,12 @@ export class TextBlock {
    * READ compatibility with legacy blocks; new blocks always receive a
    * category SERVER-SIDE via TextBlockCategoryService (assertAssignable
    * for caller-provided ids, else resolveDefault to org/system default).
+   *
+   * Required at the service layer for new blocks — the model itself keeps
+   * the field optional to preserve read compatibility with pre-existing
+   * documents whose `categoryId` was back-filled by the TZ-DOC-307-style
+   * migration. The service contract (TZ-DOC-322) raises a deterministic
+   * 400 when the system default is missing.
    */
   @Prop({ type: Types.ObjectId, ref: 'TextBlockCategory', index: true, sparse: true })
   categoryId?: Types.ObjectId;
@@ -97,11 +89,9 @@ export class TextBlock {
 export const TextBlockSchema = SchemaFactory.createForClass(TextBlock);
 
 /**
- * Compound indexes:
- *  - (category, sortOrder) → primary picker listing query (TZ-86C.1).
- *  - (category, isActive)  → fast active-only lookup for canvas render.
- *  - (categoryId, isActive) — TZ-DOC-315: builder picker dropdown filter.
+ * Indexes (TZ-DOC-323: dropped the older {category, ...} pair).
+ *  - `{ categoryId: 1, isActive: 1 }` — primary picker listing query
+ *    (used by GET /api/text-blocks and the builder dropdown, TZ-DOC-317).
+ *  - slug uniqueness is enforced via the Prop-level `unique: true` index.
  */
-TextBlockSchema.index({ category: 1, sortOrder: 1 });
-TextBlockSchema.index({ category: 1, isActive: 1 });
 TextBlockSchema.index({ categoryId: 1, isActive: 1 });

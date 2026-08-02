@@ -7,12 +7,10 @@ import { TextBlock } from './text-block.schema';
 import { TextBlockCategoryService } from '../text-block-category/text-block-category.service';
 
 /**
- * TZ-DOC-322 — text-block categoryId resolution contract (post TZ-DOC-321
- * seed wire-up, post TZ-DOC-320 ladder removal).
+ * TZ-DOC-322 + TZ-DOC-323 — text-block `categoryId` resolution contract.
  *
- * The two paths verified here (also exercised by the
- * test/e2e/text-blocks.e2e-spec.ts suite + the boot assertion
- * test/e2e/text-block-category-seed-init.e2e-spec.ts):
+ * Verified here (also exercised by the e2e text-blocks suite + the boot
+ * assertion `text-block-category-seed-init.e2e-spec.ts`):
  *
  *  1. Caller-supplied `categoryId` is honored via `assertAssignable`.
  *  2. No `categoryId` → `resolveDefault(organizationId)`. Empty result
@@ -22,17 +20,26 @@ import { TextBlockCategoryService } from '../text-block-category/text-block-cate
  *  3. The shared `isDuplicateSlug(11000) → ConflictException` and
  *     Mongoose-error-propagation paths stay unchanged.
  *
- * Removed in TZ-DOC-322:
- *  - `LEGACY_CATEGORY_SLUG` ladder (legal|legal, intro|intro, ...). The
- *    legacy enum still flows through `dto.category` and is persisted on
- *    the schema's `category` field for backward compat (TZ-DOC-318
- *    successor plans to remove it), but its value no longer drives
- *    `categoryId` resolution.
- *  - `ensureSystemDefault()` lazy upsert of «Общее». The seed is now
- *    wired (TZ-DOC-321), so silent auto-heal is both redundant and
- *    operationally misleading.
+ * Removed in TZ-DOC-322: `LEGACY_CATEGORY_SLUG` ladder, `ensureSystemDefault`
+ * lazy upsert (both rolled forward by TZ-DOC-321 seed wire-up).
+ * Removed in TZ-DOC-323: the legacy `dto.category?: 'legal'|...` test.
+ * The schema field is gone; a caller that still sends `category` is
+ * rejected upstream by the global `ValidationPipe.forbidNonWhitelisted`
+ * (covered by `backend/src/main.ts` `exceptionFactory`, via e2e sanity
+ * when needed).
+ *
+ * TZ-DOC-323 regression additions:
+ *  - create({ categoryId: <system default ObjectId> }) → writes through
+ *    `assertAssignable` and returns a doc with that `_id` on
+ *    `categoryId`. (Mirrors test #1 but asserts the doc's persisted
+ *    payload explicitly — covering the integration with `model.create`.)
+ *  - create({ category: 'intro' as any, ... }) → the service is given
+ *    a `category`-shaped unknown extra by an upstream caller. The
+ *    service MUST NOT forward that key to Mongoose (it would be
+ *    stripped by the global DTO cast; this test asserts the same at
+ *    service-layer as a defense-in-depth.
  */
-describe('TextBlockService (TZ-DOC-322)', () => {
+describe('TextBlockService (TZ-DOC-322 + TZ-DOC-323)', () => {
   let service: TextBlockService;
   let blockModel: {
     create: jest.Mock;
@@ -87,6 +94,34 @@ describe('TextBlockService (TZ-DOC-322)', () => {
     );
   });
 
+  // TZ-DOC-323 regression #1 — caller-supplied categoryId flow with an
+  // explicit persistence assertion. Mirrors #1 but is named for the
+  // TZ-DOC-323 invariant (the contract closure of the legacy enum).
+  it('TZ-DOC-323 regression: persists only the resolved categoryId, even when caller passed a category-like field shape', async () => {
+    const systemDefaultId = new Types.ObjectId();
+    const callerCat = { _id: systemDefaultId, name: 'Caller category' };
+    categoryService.assertAssignable.mockResolvedValue(callerCat);
+    const captured: Record<string, unknown> = {};
+    blockModel.create.mockImplementation((doc: Record<string, unknown>) => {
+      Object.assign(captured, doc);
+      return Promise.resolve({ ...doc, _id: new Types.ObjectId() });
+    });
+
+    const res = await service.create({
+      name: 'TZ-DOC-323 invariant block',
+      content: 'x',
+      categoryId: systemDefaultId.toHexString(),
+    });
+
+    expect((res as unknown as { categoryId: Types.ObjectId }).categoryId).toEqual(
+      systemDefaultId,
+    );
+    // The persisted payload MUST carry only categoryId (not the legacy
+    // category enum), confirming the schema-side removal.
+    expect(captured).toHaveProperty('categoryId', systemDefaultId);
+    expect(Object.prototype.hasOwnProperty.call(captured, 'category')).toBe(false);
+  });
+
   it('falls back to resolveDefault when no categoryId is supplied', async () => {
     const sysDefault = {
       _id: new Types.ObjectId(),
@@ -122,15 +157,21 @@ describe('TextBlockService (TZ-DOC-322)', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
-  it('persists legacy category enum on the schema without affecting categoryId resolution', async () => {
-    // The legacy `dto.category` enum ('legal'|'intro'|'outro'|'custom')
-    // is persisted on the doc for backward compat (TZ-DOC-318 successor).
-    // It does NOT drive categoryId — that comes exclusively from
-    // assertAssignable or resolveDefault.
+  // TZ-DOC-323 regression #2 — service-layer defense in depth for the
+  // legacy field. Even if a future caller bypassed the global ValidationPipe
+  // (e.g. an internal Nest service-to-service call), the service must
+  // not forward a `category`-shaped key to Mongoose. The DTO strips it
+  // upstream; this test confirms the service writes a payload that has
+  // `categoryId` set and NO `category` field at all.
+  it('TZ-DOC-323 regression: service.create never writes a `category` key to Mongoose', async () => {
     const sysDefault = {
       _id: new Types.ObjectId(),
       slug: 'obshchee',
     };
+    // Caller passes a body that looks like the legacy DTO shape — the
+    // service is called with `category: 'intro' as any` (an explicit
+    // bypass of the typing contract). The service should still write
+    // nothing keyed under `category`.
     categoryService.resolveDefault.mockResolvedValue(sysDefault);
     const captured: Record<string, unknown> = {};
     blockModel.create.mockImplementation((doc: Record<string, unknown>) => {
@@ -138,18 +179,26 @@ describe('TextBlockService (TZ-DOC-322)', () => {
       return Promise.resolve({ ...doc, _id: new Types.ObjectId() });
     });
 
-    await service.create({
-      name: 'Legacy enum block',
+    // Caller bypasses the typing contract — pre-TZ-DOC-323 callers would
+    // send a `category` key. We type the input as the legacy DTO shape
+    // (with `category` declared) so the test documents what an
+    // integration call from a non-conformant upstream would look like.
+    // The service should still ignore it and write `categoryId` only.
+    interface LegacyCreateTextBlockDto {
+      name: string;
+      content?: string;
+      categoryId?: string;
+      category?: 'legal' | 'intro' | 'outro' | 'custom';
+    }
+    const legacyBody: LegacyCreateTextBlockDto = {
+      name: 'Service-layer legacy-field sanitization',
       content: 'x',
-      category: 'legal',
-    });
+      category: 'intro',
+    };
+    await service.create(legacyBody);
 
-    expect(captured.category).toBe('legal');
+    expect(Object.prototype.hasOwnProperty.call(captured, 'category')).toBe(false);
     expect(captured.categoryId).toEqual(sysDefault._id);
-    // Service-level isActive/legit assertions: no slug-map lookup,
-    // no direct TextBlockCategory model access (the second
-    // @InjectModel from TZ-DOC-320 was removed).
-    expect(categoryService.resolveDefault).toHaveBeenCalledTimes(1);
   });
 
   it('rejects a duplicated slug with ConflictException (11000)', async () => {

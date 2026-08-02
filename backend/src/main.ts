@@ -152,11 +152,53 @@ async function bootstrap() {
     );
   }
 
+  // TZ-DOC-323: a `category` field in a text-block payload was the most
+  // likely legacy property to slip through here. We surface a friendly
+  // operator-actionable message naming the canonical replacement
+  // (`categoryId`) on `forbidNonWhitelisted` failures, instead of the
+  // generic `property <name> should not exist`.
+  //
+  // Probe (src/main.ts / DTO:CreateTextBlockDto) confirms the error
+  // shape class-validator emits for whitelist rejections:
+  //   errors[i].property           = the rejected property name ('category')
+  //   errors[i].constraints.whitelistValidation
+  //                                 = the canonical message
+  //   errors[i].value               = the rejected value
+  // Anything else uses the standard default message.
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      exceptionFactory: (errors) => {
+        const lines: string[] = [];
+        for (const err of errors) {
+          const wlm = err.constraints?.whitelistValidation;
+          if (wlm) {
+            if (err.property === 'category') {
+              // TZ-DOC-323 — the legacy enum was removed; surface a
+              // domain-aware message.
+              lines.push(
+                `Property 'category' is no longer accepted on this endpoint. ` +
+                  `It was a legacy enum introduced pre-TZ-DOC-315 and removed by TZ-DOC-323. ` +
+                  `Use 'categoryId' instead (a 24-hex ObjectId of a TextBlockCategory).`,
+              );
+            } else {
+              // Other unknown properties keep the canonical class-validator
+              // message verbatim so unrelated 4xx shapes are untouched.
+              lines.push(wlm);
+            }
+          } else {
+            // Non-whitelist errors: pass through with the standard
+            // class-validator rendering so we don't accidentally reword
+            // unrelated validation messages.
+            lines.push(
+              Object.values(err.constraints ?? { default: err.toString() }).join('; '),
+            );
+          }
+        }
+        return lines.length ? new Error(lines.join('; ')) : new Error('Validation failed');
+      },
     }),
   );
 

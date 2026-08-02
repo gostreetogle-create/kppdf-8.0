@@ -15,14 +15,18 @@ import { AuditAction } from '../../common/decorators/audit-action.decorator';
 import { TextBlockService } from './text-block.service';
 import { CreateTextBlockDto } from './dto/create-text-block.dto';
 import { UpdateTextBlockDto } from './dto/update-text-block.dto';
-import type { TextBlockCategory } from './text-block.schema';
 
 /**
  * TZ-86 Phase A.1 — TextBlock controller.
  *
- * Routes: GET / (list, optionally filtered by category+isActive),
+ * Routes: GET / (list, optionally filtered by categoryId/isActive),
  *  GET /:id, POST /, PATCH /:id, DELETE /:id. Audit hooks via @AuditAction
  *  which globally registers AuditInterceptor metadata for the action.
+ *
+ * TZ-DOC-323 — the `GET /api/text-blocks?category=...` query has been
+ * removed. Use `categoryId` (system/uuid) instead. The body-level
+ * `category` enum property is also gone (DTO + schema) — callers that
+ * still send it get explicit 400 from `ValidationPipe.forbidNonWhitelisted`.
  */
 @Controller('text-blocks')
 export class TextBlockController {
@@ -30,13 +34,11 @@ export class TextBlockController {
 
   @Get()
   list(
-    @Query('category') category?: TextBlockCategory,
     @Query('isActive') isActive?: string,
     @Query('categoryId') categoryId?: string,
     @Query('activeOnly') activeOnly?: string,
   ) {
-    const filter: { category?: TextBlockCategory; isActive?: boolean; categoryId?: string } = {};
-    if (category) filter.category = category;
+    const filter: { isActive?: boolean; categoryId?: string } = {};
     if (categoryId) filter.categoryId = categoryId;
     if (typeof isActive === 'string') {
       if (isActive === 'true') filter.isActive = true;

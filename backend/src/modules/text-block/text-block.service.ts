@@ -7,12 +7,7 @@ import {
 import { TextBlockCategoryService } from '../text-block-category/text-block-category.service';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import {
-  type TextBlockCategory,
-  TextBlock,
-  type TextBlockDocument,
-} from './text-block.schema';
-import { SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG } from '../text-block-category/text-block-category.schema';
+import { TextBlock, type TextBlockDocument } from './text-block.schema';
 import { CreateTextBlockDto } from './dto/create-text-block.dto';
 import { UpdateTextBlockDto } from './dto/update-text-block.dto';
 import { sanitizeHtml, sanitizeBlockContent } from '../../common/sanitize-html';
@@ -25,18 +20,21 @@ import { sanitizeHtml, sanitizeBlockContent } from '../../common/sanitize-html';
  * index + duplicate-key catch (11000 → ConflictException 409). Soft-delete via
  * project plugin — deleteOne() captures `deletedAt` + audit_log automatically.
  *
- * TZ-DOC-322 — categoryId resolution contract:
- *  - `dto.categoryId` caller-supplied → `TextBlockCategoryService.assertAssignable()`.
- *  - else → `TextBlockCategoryService.resolveDefault(organizationId)`.
- *    Returns null only when the AppModule-wired seed
- *    (`TextBlockCategoriesSeed`, TZ-DOC-321) did not run or was
- *    deactivated by an administrator — in that case we surface a
- *    deterministic 4xx so ops notices missing-default-category instead
- *    of silently self-healing via a hidden upsert (TZ-DOC-320 ladder).
- *  - The legacy `dto.category` enum ('legal'|'intro'|'outro'|'custom')
- *    is accepted by the DTO and persisted on the schema's `category`
- *    field for backward compatibility, but no longer affects
- *    `categoryId` lookup. Removal is the responsibility of TZ-DOC-318.
+ * TZ-DOC-322 — `categoryId` resolution contract (canonical):
+ *   - `dto.categoryId` caller-supplied → `TextBlockCategoryService.assertAssignable()`.
+ *   - else → `TextBlockCategoryService.resolveDefault(organizationId)`.
+ *     Returns null only when the AppModule-wired seed
+ *     (`TextBlockCategoriesSeed`, TZ-DOC-321) did not run or was
+ *     deactivated by an administrator — in that case we surface a
+ *     deterministic 4xx so ops notices missing-default-category instead
+ *     of silently self-healing via a hidden upsert (TZ-DOC-320 ladder).
+ *
+ * TZ-DOC-323 — the legacy `category: 'legal'|'intro'|'outro'|'custom'`
+ * enum is GONE. The schema no longer has the field, the DTO rejects any
+ * incoming `category` property via `ValidationPipe.forbidNonWhitelisted`
+ * with an explicit 400, the controller's `?category=` query parameter is
+ * removed. New callers must use `categoryId` exclusively. Pre-existing
+ * DB rows have the legacy field `$unset` by the companion migration.
  */
 @Injectable()
 export class TextBlockService {
@@ -80,7 +78,6 @@ export class TextBlockService {
       return await this.model.create({
         name: dto.name,
         slug,
-        category: dto.category ?? 'custom',
         categoryId,
         tags: sanitizedTags,
         content: sanitizeHtml(dto.content ?? ''),
@@ -102,12 +99,10 @@ export class TextBlockService {
   }
 
   async findAll(filter?: {
-    category?: TextBlockCategory;
     isActive?: boolean;
     categoryId?: string;
   }): Promise<TextBlockDocument[]> {
     const q: Record<string, unknown> = {};
-    if (filter?.category) q.category = filter.category;
     if (filter?.categoryId) {
       if (!Types.ObjectId.isValid(filter.categoryId)) {
         throw new BadRequestException(`Invalid categoryId ${filter.categoryId}`);
@@ -117,7 +112,7 @@ export class TextBlockService {
     if (typeof filter?.isActive === 'boolean') q.isActive = filter.isActive;
     return this.model
       .find(q)
-      .sort({ category: 1, sortOrder: 1, name: 1 })
+      .sort({ sortOrder: 1, name: 1 })
       .exec();
   }
 
@@ -139,11 +134,10 @@ export class TextBlockService {
     if (dto.slug !== undefined && dto.slug !== doc.slug) {
       doc.slug = dto.slug;
       // Mark slug change but DO NOT return early — the rest of the dto
-      // fields (content, columns, isActive, sortOrder, category, tags)
+      // fields (content, columns, isActive, sortOrder, tags)
       // must still be applied. The single atomic `doc.save()` at the
       // end below enforces the slug unique index in one go.
     }
-    if (dto.category !== undefined) doc.category = dto.category;
     if (dto.tags !== undefined) {
       doc.tags = dto.tags.map((t: string) => this.tagSanitize(t));
     }
