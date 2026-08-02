@@ -5247,3 +5247,23 @@ PATCH `productModuleIds[]` невозможен (UpdateProductDto whitelist → 
 сохранён). Спека: 34/34 unit PASS (dialog), 42/42 products/module suites;
 tsc scope чист; ng build падает только на параллельно-сессионных файлах
 TZ-WORKERS-302 (не мой scope, disclosure в ARCHIVE).
+
+## [2026-08-02] — TZ-JOURNEY-301: DONE (канон потока цеха + карта дыр, spec-only)
+
+**TZ-JOURNEY-301** — gap map «шаг потока → страница → статус» в docs/product-vision-lite.md
+(КП ⛔→SALES-301, Заказ/Договор/Модули/Виды работ/Склад/Документы ✅, Люди 🔶→UX-306+WORKERS-302,
+Гант/Проектное ОК 🅿️→_backlog/vision/GANT-calendar.md) + одна mermaid-схема. Executor report в
+checklist. Документный TZ — кодовые тесты N/A, git diff --check clean. Push: нет.
+
+## [2026-08-02] — TZ-PRODUCTS-304: DONE (expandable-каталог товаров)
+
+**TZ-PRODUCTS-304** — expandable-строки в каталоге продукции: `expandedId`
+signal (single-expand), chevron в nameTpl (stopPropagation; отдельная колонка
+невозможна — `ColumnDef` требует `keyof Product`), `[expandedRow]` pi-table
+(НЕ изменён), панель модулей (имя/артикул/N материалов) + клик →
+`/modules/:id`. Ленивая загрузка `ProductModulesService.list(pid)` при первом
+раскрытии ТОЛЬКО для строковых id вне page-scoped Map-cache; populated-строки
+(backend list populate) рендерятся без GET и без loading-флэша; retry при
+ошибке; collapse очищает loading/error. Спека: 11/11 PASS (page), 71/71
+(products+pi-table); tsc scope чист; ng build падает только на
+параллельно-сессионных файлах (не мой scope, disclosure в ARCHIVE).

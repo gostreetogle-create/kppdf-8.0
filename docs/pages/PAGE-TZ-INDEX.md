@@ -78,7 +78,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | Vision | — | [product-vision-lite.md](../product-vision-lite.md) |
 | [ACCESS-301](../tasks/TZ-ACCESS-301-page-acl-catalog.md) | admin | Page ACL + 4 roles seed |
 | [ACCESS-302](../tasks/TZ-ACCESS-302-director-page-grants-ui.md) | admin/access | Director page checkboxes |
-| [JOURNEY-301](../tasks/TZ-JOURNEY-301-shop-flow-gap-map.md) | all | Flow gap map (docs) |
+| [JOURNEY-301](../tasks/TZ-JOURNEY-301-shop-flow-gap-map.md) | all | Flow gap map (docs) → см. [product-vision-lite.md «Карта потока → страницы»](../product-vision-lite.md) |
 | [SALES-301](../tasks/TZ-SALES-301-proposal-thin-ui.md) | /proposals (NEW) | Thin КП list |
 | GANT | parked | `_backlog/vision/GANT-calendar.md` |
 

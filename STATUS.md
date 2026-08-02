@@ -745,7 +745,6 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 | TZ | Название | Layer | Оценка | Dependencies |
 |----|----------|-------|--------|--------------|
 | TZ-PRODUCTS-301 | Справочник «Цвета» (RAL): ColorReference backend-контракт + UI `/dictionaries/colors` (sparse-unique, system seed, 409 in_use/system) | 4 → 3 | 3-4h | — |
-| TZ-PRODUCTS-304 | Каталог товаров — expandable-строки с модулями + переход на страницу модуля | 3 | 1-2h | TZ-PRODUCTS-303 (recommended) |
 | TZ-PRODUCTS-305 | UI Kit — карточки-витрины sm/md/lg (товар/модуль/материал), переиспользуемые + эталонное применение на одной детальной странице | 2 | 3-4h | — (самостоятельный UI-слой) |
 
 **Порядок:** 301 → 302 → 303 → 304 строго последовательно (Layer 3, общий products-домен + сервисы). 305 — UI Kit (Layer 2), может идти параллельно только если нет пересечения по файлам.
@@ -813,6 +812,7 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 | TZ-PRODUCTS-301 | 2026-08-02 | Справочник «Цвета» — ColorReference backend-контракт + UI `/color-references` (sparse-unique, system-цвет «Не выбран» seed, 409 in_use/system, content-диалог 1000px) | `tasks/_archive/2026-08/TZ-PRODUCTS-301-color-reference-dictionary.done.md` |
 | TZ-PRODUCTS-302 | 2026-08-02 | Диалог товара — content-вариант 1000px, секции по категориям, categoryId select, RAL dropdown из справочника цветов, фото-загрузка | `tasks/_archive/2026-08/TZ-PRODUCTS-302-product-form-dialog-rework.done.md` |
 | TZ-PRODUCTS-303 | 2026-08-02 | Редактор модулей в диалоге товара — секция «Модули в составе»: карточки модулей (имя, артикул, N материалов), добавление через ProductModulePicker, удаление, атомарная M:N-синхронизация POST/DELETE /products/:id/modules (diff snapshot vs selection) | `tasks/_archive/2026-08/TZ-PRODUCTS-303-product-modules-cards-editor.done.md` |
+| TZ-PRODUCTS-304 | 2026-08-02 | Expandable-каталог товаров — клик по строке раскрывает модули (карточки имя/артикул/N материалов), клик по модулю → `/modules/:id`; ленивая загрузка при первом раскрытии + page-scoped cache | `tasks/_archive/2026-08/TZ-PRODUCTS-304-products-catalog-expandable-modules.done.md` |
 | TZ-DOC-311 | 2026-08-02 | Свойства шаблона — pageNumbering сохраняется; «Оглавление/Шапка/Подвал» убраны из UI (backward-compatible, без миграции) | `tasks/_archive/2026-08/TZ-DOC-311.done.md` |
 | TZ-DOC-309 | 2026-08-02 | Диалог создания шаблона — мгновенное открытие (кэш активных категорий в сервисе, инвалидация на CRUD) | `tasks/_archive/2026-08/TZ-DOC-309.done.md` |
 | TZ-DOC-310 | 2026-08-02 | Диалог создания — закрытие с первого клика; видимая валидация категории; parentDestroyRef в 4 open() | `tasks/_archive/2026-08/TZ-DOC-310-template-dialog-one-click-close.done.md` |
@@ -1513,3 +1513,23 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 1. Реeстр-tесты TZ-DOC-268/310 (создание/дублирование/parentDestroyRef) формально не были перевезены в `templates.page.spec.ts` в этой сессии — `templates.page.ts` уже содержал реализацию и имел свой coverage, явная недопубликованная регрессия для отдельной TZ-DOC-325 или TZ-DOC-324.FOLLOWUP.
 2. Pre-existing `people/*` ng-build blocker от TZ-WORKERS-302 WIP — НЕ fix-force per NO-TOUCH list (out of scope, зафиксировано для successor).
 3. TZ-DOC-317 (builder dropdown категории) + TZ-DOC-318 (builder topbar polish) + TZ-DOC-326 (categoryId UI) остаются READY — layout Builder теперь чисто editor-режим, следующие UX polish пройдут чище.
+
+---
+
+## 2026-08-02 — TZ-JOURNEY-301 DONE (канон потока цеха + карта дыр, spec-only)
+
+**Исполнитель:** Buffy
+**Статус:** DONE / docs + backlog (LAYER 1, продукт-кода НЕТ)
+**Цель:** зафиксировать сквозной поток цеха «шаг → страница → статус» и дыры как successor IDs; одна mermaid-схема в каноне.
+
+**Что сделано:**
+1. **Gap map** в `docs/product-vision-lite.md` (раздел «Карта потока → страницы (gap map, TZ-JOURNEY-301)»): КП ⛔(нет UI→TZ-SALES-301) → Заказ ✅(/orders) → Договор ✅(/contracts) → Модули ✅(/modules) → Виды работ ✅(/work-types) → Люди 🔶(/people, UX-306+WORKERS-302) → Склад ✅(/inventory…) → Документы ✅(/doc-constructor/documents) → Гант 🅿️ + Проектное ОК 🅿️ (backlog `tasks/_backlog/vision/GANT-calendar.md`).
+2. **Mermaid** flowchart LR (один граф всего потока, parked-ветки на Гант) — в product-vision-lite.md.
+3. **Executor report** — `docs/agent-checklists/TZ-JOURNEY-301.md` (AC + report, status DONE).
+4. **INDEX** — `docs/pages/PAGE-TZ-INDEX.md` pointer на gap map.
+
+**Файлы:** `docs/product-vision-lite.md`, `docs/pages/PAGE-TZ-INDEX.md`, `docs/agent-checklists/TZ-JOURNEY-301.md`, `tasks/_backlog/vision/GANT-calendar.md` (существовал), `tasks/_archive/2026-08/TZ-JOURNEY-301-shop-flow-gap-map.done.md`, `.mimocode/locks/TZ-JOURNEY-301-shop-flow-gap-map.lock`, `STATUS.md`, `progress.md`.
+
+**Verification:** spec-only docs TZ — кодовые тесты N/A (GEMINI.md); markdown review + `git diff --check` clean; `bash OrchestratorKit/verify-status.sh` PASS.
+**Known limitations:** карта — срез на 2026-08-02; КП-дыра открыта до TZ-SALES-301; Гант намеренно parked (по GANT-calendar.md — после ACCESS+SALES+WORKERS-302).
+**Push:** нет.

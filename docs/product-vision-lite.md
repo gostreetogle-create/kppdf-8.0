@@ -15,6 +15,38 @@
 
 Правило доступа Phase 1: **страница целиком да/нет** (пункт меню = раздел). Не прячем каждую кнопку отдельно — проще для 10 человек.
 
+## Карта крупными блоками (для глаз)
+
+```mermaid
+flowchart TB
+  subgraph need [Нужно_цеху]
+    Sprav[Справочники_материалы_продукты_модули_виды_работ_люди]
+    Clients[Клиенты_организации]
+    KP[КП]
+    Order[Заказ]
+    Docs[Шаблоны_и_документы_по_сделке]
+    Stock[Склад_остатки_отгрузка]
+  end
+  subgraph later [Позже_не_сейчас]
+    Gant[Гант_календарь_цеха]
+    PayFlag[Флаг_оплаты_проектный_ОК]
+  end
+  subgraph out [Не_наше]
+    Acc[Бухгалтерия]
+    CRM[Звонки_активности_CRM]
+    Tender[Тендеры_сложные_закупки]
+  end
+  Sprav --> KP
+  Clients --> KP
+  KP -->|подтвердили| Order
+  Order --> Docs
+  Order --> Stock
+  Order -.->|когда_готовы_люди| Gant
+  PayFlag -.-> Gant
+```
+
+**Журнал бизнес-логики:** отдельного «живого журнала» нет. Канон для приоритетов — этот файл; детали сущностей — `docs/data-model.md` (там много лишнего наследия модели, не всё = продукт для цеха).
+
 ## Сквозной поток (золотая середина)
 
 1. Менеджер готовит **КП** (одна сущность, не три дубля в модели).  
@@ -25,6 +57,41 @@
 6. Склад: остатки/движения по мере необходимости, не второй SAP.
 
 Сейчас в UI **нет** маршрута КП — это дыра потока №1. Гант — **не** сейчас.
+
+## Карта потока → страницы (gap map, TZ-JOURNEY-301)
+
+Статус легенда: ✅ UI есть · 🔶 half (каркас/частично) · ⛔ нет UI · 🅿️ parked (backlog).
+
+| Шаг потока | Страница (route) сейчас | Статус | Successor / парк |
+|------------|-------------------------|--------|------------------|
+| **КП** | — (нет route) | ⛔ | [TZ-SALES-301](../tasks/TZ-SALES-301-proposal-thin-ui.md) — одна сущность Proposal + тонкий список |
+| **Заказ** | `/orders` (orders.page.md) | ✅ | — |
+| **Договор** | `/contracts` (contracts.page.md) | ✅ | — |
+| **Модули** | `/modules`, `/modules/:id` | ✅ | MODULES-301/302 (материалы в модуле) |
+| **Виды работ** | `/work-types` | ✅ | WORKTYPES-301/302 (люди в работах) |
+| **Люди** | `/people` (каркас, WIP: TZ-WORKERS-302) | 🔶 | [TZ-UX-306](../tasks/TZ-UX-306-people-route-align.md) (route/nav) + [TZ-WORKERS-302](../tasks/TZ-WORKERS-302-people-page-and-person-card.md) (страница+карточка) |
+| **Склад** | `/inventory`, `/storage-items`, `/stock-movements` | ✅ | MATERIALS-307/308/309, Z-001 (backend) |
+| **Документы** | `/doc-constructor/documents` + builder | ✅ | DOC-324..326 (IA/палитра) |
+| **Гант / календарь** | — (нет route) | 🅿️ | [`tasks/_backlog/vision/GANT-calendar.md`](../tasks/_backlog/vision/GANT-calendar.md) |
+| **Проектное ОК** («готово к запуску») | — (флаг на заказе отсутствует) | 🅿️ | тот же GANT-calendar.md (scope: автопосле подтверждения) |
+
+**Дыры потока №1:** КП без UI (главный вход менеджера) и люди-в-задачах (WorkTypes→People ещё не связаны).
+**Не реализуются здесь:** карта фиксирует дыры как successor-IDs, никакого кода в этом TZ.
+
+```mermaid
+flowchart LR
+  KP["КП<br/>(TZ-SALES-301)"] --> ZAK["Заказ<br/>/orders"]
+  ZAK --> DOG["Договор<br/>/contracts"]
+  ZAK --> MOD["Модули<br/>/modules"]
+  MOD --> VR["Виды работ<br/>/work-types"]
+  VR --> LIUDI{"Люди связаны<br/>с задачами?"}
+  LIUDI -- "ещё нет → Гант в backlog<br/>(TZ-UX-306 / WORKERS-302)" --> GANT["Гант/календарь<br/>backlog vision/GANT-calendar.md"]
+  LIUDI -- "позже, после задач" --> SKL["Склад<br/>/inventory…"]
+  ZAK --> DOC["Документы<br/>/doc-constructor/documents"]
+  DOC --> OK{"Проектное ОК"}
+  OK -- "parked" --> GANT
+  SKL --> OK
+```
 
 ## Что делаем сейчас vs паркуем
 
