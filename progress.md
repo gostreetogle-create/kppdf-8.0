@@ -5286,3 +5286,15 @@ TZ-WORKERS-302 (не мой scope, disclosure в ARCHIVE).
 **Commit:** conventional commits `feat(builder): text-category topbar polish — sync + URL persist + breadcrumb (TZ-DOC-318)` + `docs(closeout): TZ-DOC-318 archive + executor-report + status sync` (NO push).
 
 **Ограничения:** Browser E2E MANUAL_BROWSER_CHECK_REQUIRED; legacy enum → TZ-DOC-326 successor; pre-existing flakes (button.component, pi-showcase-card) вне scope; rebase обновил SHA 316/317 (архивы ссылаются на pre-rebase SHA — контент идентичен).
+
+## 2026-08-02 — TZ-DOC-326 DONE (TextBlock categoryId UI, legacy enum removed)
+
+**Scope:** frontend-only residual sweep — legacy text-block `category` enum (`legal|intro|outro|custom`) полностью убран из UI-слоя после backend TZ-DOC-323.
+
+**Changes:** `pi-text-blocks.service.ts` — удалён legacy-тип `TextBlockCategory`, поле `category` у `TextBlock`, param `category` у list и сеттер `httpParams.set(category)`; остаётся только `categoryId`. Хинты insert UI: dead `@if (t.category)` → `categoryName(t.categoryId)` lookup (tool-pane + inline dropdown builder.page), inline-тип `textsRes` `category?` → `categoryId?`. Unused imports `PiPageHeaderComponent`/`ButtonComponent` (NG8113 от TZ-DOC-324 rewrite) удалены — ng build 0 warnings. Спек-фикстуры очищены (pi-text-blocks.service.spec, texts.page.spec, builder-tool-pane.component.spec).
+
+**Gates:** tsc fe/be PASS; jest targeted 5 suites/40 PASS; jest full 898 PASS (2 pre-existing flakes: button.component, pi-showcase-card TZ-PRODUCTS-305 — disclosed); ng build PASS (0 warnings); diff-check PASS; verify-status.sh PASS; residual grep → 0 hits.
+
+**Commit:** conventional commits `feat(texts): remove legacy text-block category enum — categoryId only (TZ-DOC-326)` + `docs(closeout): TZ-DOC-326 archive + verification log + executor-report + status sync` (NO push).
+
+**TZ-CHAIN-COMPLETE:** 315 → 316 → 317 → 318 → 326 — text-block category lineage закрыта. Successor: нет (chain complete).
