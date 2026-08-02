@@ -42,6 +42,17 @@ description: >-
 
 Не дублируй уже существующий TZ: сначала `tasks/` + `_archive/2026-08/`.
 
+## Page tagging (обязательно для UI/IA TZ)
+
+В шапке TZ указывай:
+
+```
+PAGES: /route1 ; /route2
+PAGE_DOCS: foo.page.md ; bar.page.md
+```
+
+После создания/закрытия — строка в [`docs/pages/PAGE-TZ-INDEX.md`](../../docs/pages/PAGE-TZ-INDEX.md).
+
 ## Verification block (обязателен в AC)
 
 Укажи релевантное, например:

@@ -26,6 +26,20 @@ Cursor does **not** bulk-move `tasks/` (Mode A). Peer owns parking WORKERS/WORKT
 
 Order: **324 → 325 → 326**. Max 2 streams overall with Stream B.
 
+## Stream C — cross-page UX sweep (Cursor 2026-08-02)
+
+| ID | Pages | Hint |
+|----|-------|------|
+| TZ-UX-301 | /inventory, /storage-items, /stock-movements | Склад nav |
+| TZ-UX-302 | /categories | dead docCat |
+| TZ-UX-303 | /documents, /dictionaries | labels |
+| TZ-UX-304 | /color-references, /doc-template-categories | pi-table |
+| TZ-UX-305 | orgs, work-types, storage, materials | page.md only |
+| TZ-UX-306 | /people | align WORKERS-302 |
+| Index | `docs/pages/PAGE-TZ-INDEX.md` | search page→TZ |
+
+Parallel OK with DOC-324 if conflict keys disjoint (UX-301/303/305 safe).
+
 ## Stream B — inventory integrity (P0)
 
 | ID | Status | Owner hint |
