@@ -374,14 +374,16 @@
 |------|-----|-------------|
 | `id` | `ObjectId` | PK |
 | `name` | `string` | — |
-| `article` | `string` | Артикул |
-| `sku` | `string` | SKU |
+| `article` | `string` | **Артикул** — пользовательский/внешний код (код поставщика, каталог клиента). Опционально, может повторяться. |
+| `sku` | `string` | **Внутренний код материала** — уникальный системный идентификатор для поиска и связей. Mongo: `unique: true, sparse: true, index: true` — уникальность гарантируется сервером (E11000 → 409). Опционален: заполняется вручную или генерируется сервером (см. TZ-MATERIALS-307). |
+| `unit` | `string` | Единица измерения |
 | `unit` | `string` | Единица измерения |
 | `category` | `string` | Категория (legacy) |
 | `categoryId` | `ObjectId` | FK → `MaterialCategory` |
 | `description` | `string` | — |
 | `price` | `number` | Цена (legacy) |
 | `pricePerUnit` | `number` | Цена за единицу. Всегда в **RUB** — поле валюты отсутствует (см. политику ниже). |
+| `stockQty` | `number` | ⚠️ **LEGACY (deprecated)** — остаток. Создание/редактирование материала больше не отправляет это поле (TZ-MATERIALS-304). Canonical owner остатка — складской `StorageItem.quantity` (склад/приходы/расходы). Поле сохранено в schema/DTO только для backward compatibility старых записей/API; не является источником истины. Связь material→stock пока отсутствует: `StorageItem.productId` ссылается на продукт, не на материал (см. TZ-MATERIALS-308). |
 | `dimensions` | `Dimension[]` | Габариты (см. `Dimension`). Массив, не объект. |
 | `mainPhotoId` | `ObjectId?` | FK → `Photo`. Главное фото (используется в карточках). Выбирается галочкой из `photoIds[]`. |
 | `photoIds` | `ObjectId[]` | FK → `Photos` |

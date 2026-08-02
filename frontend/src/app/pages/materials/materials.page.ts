@@ -316,7 +316,7 @@ export class MaterialsPage implements OnInit {
       sticky: 'left',
     },
     { key: 'article', label: 'Артикул', sortable: true, cellClass: 'empty-cell' },
-    { key: 'sku', label: 'Код', sortable: true, cellClass: 'empty-cell' },
+    { key: 'sku', label: 'Внутренний код', sortable: true, cellClass: 'empty-cell' },
     { key: 'unit', label: 'Ед.', sortable: true, width: '60px' },
     {
       key: 'supplierId',
@@ -336,15 +336,6 @@ export class MaterialsPage implements OnInit {
       align: 'right',
       width: '128px',
       format: (r) => formatPrice(r.pricePerUnit),
-    },
-    {
-      key: 'stockQty',
-      label: 'Остаток',
-      sortable: true,
-      numeric: true,
-      align: 'right',
-      width: '96px',
-      format: (r) => String(r.stockQty ?? 0),
     },
   ];
 

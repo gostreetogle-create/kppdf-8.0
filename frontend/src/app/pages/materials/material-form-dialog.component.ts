@@ -24,6 +24,7 @@ import {
 } from '../../shared/services/materials.service';
 import { PhotosService, type Photo } from '../../shared/services/photos.service';
 import { Organization, OrganizationsService } from '../../shared/services/organizations.service';
+import { Unit, UnitsService } from '../../pages/dictionaries/units.service';
 
 type Result = Material | null | undefined;
 
@@ -45,18 +46,27 @@ interface DimensionFormGroup extends FormGroup {
 }
 
 /**
- * MaterialFormDialogComponent — full Phase 8 refactor.
+ * MaterialFormDialogComponent — wide structured layout (TZ-MATERIALS-301).
+ *
+ * Layout:
+ *  - `variant="content"` + `[maxWidth]="'1000px'"` — wide dialog with
+ *    internal body scroll and an ALWAYS-VISIBLE sticky footer (Save/Cancel).
+ *    The shared PiDialogComponent content template already provides
+ *    `overflow-y-auto` on the body and `sticky bottom-0 bg-paper` on the
+ *    footer, so long forms no longer push «Сохранить» off-screen.
+ *  - Two-column grid (collapses to one column on narrow viewports):
+ *      LEFT  → required basics (name, article, unit, sku, price); stock moved to Склад
+ *      RIGHT → optional data (supplier, description, notes, photos)
+ *  - Dimensions stay in their own full-width section.
  *
  * Sections (in order):
- *  1. Basics: name, article, unit, sku, pricePerUnit, stockQty
- *  2. Supplier: dropdown of organizations filtered by type=supplier
- *  3. Dimensions: FormArray of {type, value, isImmutable} rows
- *  4. Photos: multi-upload with isMain radio, preview grid
- *  5. Notes: description, notes (textareas)
+ *  1. Основные данные (left): name, article, unit, sku, pricePerUnit
+ *  2. Дополнительно (right): supplier, description, notes, photos
+ *  3. Габариты (full-width FormArray of {type, value, isImmutable})
  *
  * On submit:
  *  - Upload any new files via PhotosService
- *  - Collect photoIds + mainPhotoId
+ *  - Collect photoIds + mainPhotoId; Save disabled while uploading
  *  - POST/PATCH material with all fields
  *
  * Standalone + OnPush + signal-based.
@@ -76,104 +86,238 @@ interface DimensionFormGroup extends FormGroup {
   template: `
     <app-pi-dialog
       [title]="isEdit() ? 'Редактировать материал' : 'Создать материал'"
-      [width]="'lg'"
+      [variant]="'content'"
+      [maxWidth]="'1000px'"
     >
       <form
         body
         [formGroup]="form"
         (ngSubmit)="onSubmit()"
-        class="space-y-form-field overflow-y-auto min-h-0"
+        class="space-y-form-field"
         data-test="material-form"
       >
-        <!-- ─── Basics ─── -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
-          <app-pi-form-field
-            label="Название"
-            htmlFor="mat-name"
-            [required]="true"
-            [error]="errorFor('name')"
-          >
-            <app-pi-input
-              id="mat-name"
-              formControlName="name"
-              placeholder="Название материала"
-              [invalid]="hasError('name')"
-            />
-          </app-pi-form-field>
+        <!-- ─── Two-column layout: basics (left) + optional (right) ─── -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-form-field items-start">
+          <!-- ─── LEFT: обязательные основные данные ─── -->
+          <div class="space-y-form-field">
+            <p class="eyebrow">Основные данные</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
+              <app-pi-form-field
+                label="Название"
+                htmlFor="mat-name"
+                [required]="true"
+                [error]="errorFor('name')"
+              >
+                <app-pi-input
+                  id="mat-name"
+                  formControlName="name"
+                  placeholder="Название материала"
+                  [invalid]="hasError('name')"
+                />
+              </app-pi-form-field>
 
-          <app-pi-form-field label="Артикул" htmlFor="mat-article" [error]="errorFor('article')">
-            <app-pi-input id="mat-article" formControlName="article" placeholder="Артикул" />
-          </app-pi-form-field>
+              <app-pi-form-field
+                label="Артикул"
+                htmlFor="mat-article"
+                [error]="errorFor('article')"
+              >
+                <app-pi-input id="mat-article" formControlName="article" placeholder="Артикул" />
+              </app-pi-form-field>
 
-          <app-pi-form-field
-            label="Единица измерения"
-            htmlFor="mat-unit"
-            [required]="true"
-            [error]="errorFor('unit')"
-          >
-            <select
-              id="mat-unit"
-              formControlName="unit"
-              class="pi-input w-full"
-              [class.border-destructive]="hasError('unit')"
+              <app-pi-form-field
+                label="Единица измерения"
+                htmlFor="mat-unit"
+                [required]="true"
+                [error]="errorFor('unit')"
+              >
+                <select
+                  id="mat-unit"
+                  formControlName="unit"
+                  class="pi-input w-full"
+                  [class.border-destructive]="hasError('unit')"
+                >
+                  <option value="" disabled>— выберите —</option>
+                  @if (unitsLoading()) {
+                    <option value="" disabled>Загрузка единиц…</option>
+                  } @else if (unitsError()) {
+                    <option value="" disabled>Ошибка загрузки единиц</option>
+                    @if (unitFallback(); as fb) {
+                      <option [value]="fb" disabled>{{ fb }} (неактивна)</option>
+                    }
+                  } @else {
+                    @for (u of units(); track u.key) {
+                      <option [value]="u.key">
+                        {{ u.label }}{{ u.symbol ? ' (' + u.symbol + ')' : '' }}
+                      </option>
+                    }
+                    @if (unitFallback(); as fb) {
+                      <option [value]="fb" disabled>{{ fb }} (неактивна)</option>
+                    }
+                  }
+                </select>
+                @if (units().length === 0 && !unitsLoading() && !unitsError()) {
+                  <span class="block text-xs text-muted-foreground mt-1"
+                    >Нет активных единиц — добавьте в разделе «Справочники».</span
+                  >
+                }
+              </app-pi-form-field>
+
+              <app-pi-form-field
+                label="Внутренний код материала"
+                htmlFor="mat-sku"
+                [error]="errorFor('sku')"
+              >
+                <app-pi-input id="mat-sku" formControlName="sku" placeholder="Например, M-0001" />
+                <span class="block text-xs text-muted-foreground mt-1"
+                  >Необязательное поле. Уникальный системный код для поиска — заполняется вручную
+                  или будет генерироваться сервером автоматически.</span
+                >
+              </app-pi-form-field>
+
+              <app-pi-form-field
+                label="Цена за единицу, ₽"
+                htmlFor="mat-price"
+                [error]="errorFor('pricePerUnit')"
+              >
+                <app-pi-input
+                  id="mat-price"
+                  type="number"
+                  formControlName="pricePerUnit"
+                  placeholder="0.00"
+                  [invalid]="hasError('pricePerUnit')"
+                />
+              </app-pi-form-field>
+
+              <div class="hairline rounded-sm bg-paper-2 px-3 py-2">
+                <p class="text-xs text-muted-foreground">Остаток на складе</p>
+                <p class="text-sm">
+                  Управляется в разделе «Склад» и не вводится при создании материала.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ─── RIGHT: необязательные данные ─── -->
+          <div class="space-y-form-field">
+            <p class="eyebrow">Дополнительно</p>
+
+            <app-pi-form-field
+              label="Поставщик"
+              htmlFor="mat-supplier"
+              hint="Только организации с типом «Поставщик». Управление в разделе «Организации»."
             >
-              <option value="" disabled>— выберите —</option>
-              <option value="m2">м² (площадь)</option>
-              <option value="m3">м³ (объём)</option>
-              <option value="kg">кг (масса)</option>
-              <option value="sheet">лист</option>
-              <option value="pcs">штука</option>
-            </select>
-          </app-pi-form-field>
+              <select id="mat-supplier" formControlName="supplierId" class="pi-input w-full">
+                <option [ngValue]="null">— не указан —</option>
+                @if (suppliersLoading()) {
+                  <option [ngValue]="null" disabled>Загрузка поставщиков…</option>
+                } @else if (suppliersError()) {
+                  <option [ngValue]="null" disabled>Ошибка загрузки поставщиков</option>
+                } @else {
+                  @for (s of suppliers(); track s._id) {
+                    <option [ngValue]="s._id">
+                      {{ s.name }}{{ s.inn ? ' · ИНН ' + s.inn : '' }}
+                    </option>
+                  }
+                }
+              </select>
+            </app-pi-form-field>
 
-          <app-pi-form-field label="Код (SKU)" htmlFor="mat-sku" [error]="errorFor('sku')">
-            <app-pi-input id="mat-sku" formControlName="sku" placeholder="SKU" />
-          </app-pi-form-field>
+            <app-pi-form-field
+              label="Описание"
+              htmlFor="mat-description"
+              [error]="errorFor('description')"
+            >
+              <app-pi-textarea
+                id="mat-description"
+                formControlName="description"
+                [rows]="2"
+                [maxLength]="2000"
+                [invalid]="hasError('description')"
+                ariaLabel="Описание"
+              />
+            </app-pi-form-field>
 
-          <app-pi-form-field
-            label="Цена за единицу, ₽"
-            htmlFor="mat-price"
-            [error]="errorFor('pricePerUnit')"
-          >
-            <app-pi-input
-              id="mat-price"
-              type="number"
-              formControlName="pricePerUnit"
-              placeholder="0.00"
-              [invalid]="hasError('pricePerUnit')"
-            />
-          </app-pi-form-field>
+            <app-pi-form-field label="Заметки" htmlFor="mat-notes" [error]="errorFor('notes')">
+              <app-pi-textarea
+                id="mat-notes"
+                formControlName="notes"
+                [rows]="2"
+                [maxLength]="2000"
+                [invalid]="hasError('notes')"
+                ariaLabel="Заметки"
+              />
+            </app-pi-form-field>
 
-          <app-pi-form-field
-            label="Остаток на складе"
-            htmlFor="mat-stock"
-            [error]="errorFor('stockQty')"
-          >
-            <app-pi-input
-              id="mat-stock"
-              type="number"
-              formControlName="stockQty"
-              placeholder="0"
-              [invalid]="hasError('stockQty')"
-            />
-          </app-pi-form-field>
+            <!-- ─── Photos ─── -->
+            <div>
+              <div class="flex items-baseline justify-between mb-form-row">
+                <p class="eyebrow">Фотографии</p>
+                <label
+                  class="inline-flex items-center gap-1 min-h-touch px-control-x py-control-y text-xs hairline rounded-sm bg-paper hover:bg-paper-2 cursor-pointer transition-colors"
+                >
+                  <span>+ Загрузить</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    class="sr-only"
+                    data-test="photo-input"
+                    (change)="onPhotoSelect($event)"
+                  />
+                </label>
+              </div>
+
+              @if (uploading()) {
+                <p class="text-xs text-muted-foreground">Загрузка…</p>
+              }
+              @if (photos().length === 0 && !uploading()) {
+                <p class="text-xs text-muted-foreground">
+                  Нет фото. Можно загрузить несколько, выбрать «главное» (используется в карточках).
+                </p>
+              }
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                @for (p of photos(); track p._id; let i = $index) {
+                  <div
+                    class="relative hairline rounded-sm overflow-hidden bg-paper-2"
+                    [class.border-ink]="p._id === mainPhotoId()"
+                    [attr.data-test]="'photo-thumb-' + i"
+                  >
+                    <img
+                      [src]="p.storageUrl"
+                      [alt]="p.originalFilename || 'Фото материала'"
+                      class="block w-full h-24 object-cover"
+                    />
+                    <div class="flex items-center justify-between p-1 hairline-t">
+                      <label
+                        class="inline-flex items-center gap-1 text-[10px] cursor-pointer min-h-touch px-1"
+                      >
+                        <input
+                          type="radio"
+                          name="mainPhoto"
+                          [checked]="p._id === mainPhotoId()"
+                          (change)="setMainPhoto(p._id)"
+                          [attr.aria-label]="'Сделать главным ' + (i + 1)"
+                        />
+                        <span>Главное</span>
+                      </label>
+                      <app-pi-button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        [attr.aria-label]="'Удалить фото ' + (i + 1)"
+                        (click)="removePhoto(p._id)"
+                      >
+                        ×
+                      </app-pi-button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- ─── Supplier ─── -->
-        <app-pi-form-field
-          label="Поставщик"
-          htmlFor="mat-supplier"
-          hint="Только организации с типом «Поставщик». Управление в разделе «Организации»."
-        >
-          <select id="mat-supplier" formControlName="supplierId" class="pi-input w-full">
-            <option [ngValue]="null">— не указан —</option>
-            @for (s of suppliers(); track s._id) {
-              <option [ngValue]="s._id">{{ s.name }}{{ s.inn ? ' · ИНН ' + s.inn : '' }}</option>
-            }
-          </select>
-        </app-pi-form-field>
-
-        <!-- ─── Dimensions (FormArray) ─── -->
+        <!-- ─── Dimensions (full-width section) ─── -->
         <div>
           <div class="flex items-baseline justify-between mb-form-row">
             <p class="eyebrow">Габариты</p>
@@ -250,100 +394,6 @@ interface DimensionFormGroup extends FormGroup {
           </p>
         </div>
 
-        <!-- ─── Photos ─── -->
-        <div>
-          <div class="flex items-baseline justify-between mb-form-row">
-            <p class="eyebrow">Фотографии</p>
-            <label
-              class="inline-flex items-center gap-1 min-h-touch px-control-x py-control-y text-xs hairline rounded-sm bg-paper hover:bg-paper-2 cursor-pointer transition-colors"
-            >
-              <span>+ Загрузить</span>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                class="sr-only"
-                data-test="photo-input"
-                (change)="onPhotoSelect($event)"
-              />
-            </label>
-          </div>
-
-          @if (uploading()) {
-            <p class="text-xs text-muted-foreground">Загрузка…</p>
-          }
-          @if (photos().length === 0 && !uploading()) {
-            <p class="text-xs text-muted-foreground">
-              Нет фото. Можно загрузить несколько, выбрать «главное» (используется в карточках).
-            </p>
-          }
-          <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
-            @for (p of photos(); track p._id; let i = $index) {
-              <div
-                class="relative hairline rounded-sm overflow-hidden bg-paper-2"
-                [class.border-ink]="p._id === mainPhotoId()"
-                [attr.data-test]="'photo-thumb-' + i"
-              >
-                <img
-                  [src]="p.storageUrl"
-                  [alt]="p.originalFilename || 'Фото материала'"
-                  class="block w-full h-24 object-cover"
-                />
-                <div class="flex items-center justify-between p-1 hairline-t">
-                  <label
-                    class="inline-flex items-center gap-1 text-[10px] cursor-pointer min-h-touch px-1"
-                  >
-                    <input
-                      type="radio"
-                      name="mainPhoto"
-                      [checked]="p._id === mainPhotoId()"
-                      (change)="setMainPhoto(p._id)"
-                      [attr.aria-label]="'Сделать главным ' + (i + 1)"
-                    />
-                    <span>Главное</span>
-                  </label>
-                  <app-pi-button
-                    type="button"
-                    variant="destructive"
-                    size="icon"
-                    [attr.aria-label]="'Удалить фото ' + (i + 1)"
-                    (click)="removePhoto(p._id)"
-                  >
-                    ×
-                  </app-pi-button>
-                </div>
-              </div>
-            }
-          </div>
-        </div>
-
-        <!-- ─── Notes ─── -->
-        <app-pi-form-field
-          label="Описание"
-          htmlFor="mat-description"
-          [error]="errorFor('description')"
-        >
-          <app-pi-textarea
-            id="mat-description"
-            formControlName="description"
-            [rows]="2"
-            [maxLength]="2000"
-            [invalid]="hasError('description')"
-            ariaLabel="Описание"
-          />
-        </app-pi-form-field>
-
-        <app-pi-form-field label="Заметки" htmlFor="mat-notes" [error]="errorFor('notes')">
-          <app-pi-textarea
-            id="mat-notes"
-            formControlName="notes"
-            [rows]="2"
-            [maxLength]="2000"
-            [invalid]="hasError('notes')"
-            ariaLabel="Заметки"
-          />
-        </app-pi-form-field>
-
         @if (errorMessage()) {
           <p role="alert" class="text-xs text-destructive">
             {{ errorMessage() }}
@@ -355,10 +405,10 @@ interface DimensionFormGroup extends FormGroup {
         <app-pi-button
           type="button"
           variant="default"
-          [disabled]="submitting()"
+          [disabled]="submitting() || uploading()"
           (click)="onSubmit()"
         >
-          {{ submitting() ? 'Сохранение…' : 'Сохранить' }}
+          {{ uploading() ? 'Загрузка фото…' : submitting() ? 'Сохранение…' : 'Сохранить' }}
         </app-pi-button>
         <app-pi-button type="button" variant="ghost" (click)="onCancel()"> Отмена </app-pi-button>
       </div>
@@ -368,6 +418,7 @@ interface DimensionFormGroup extends FormGroup {
 export class MaterialFormDialogComponent implements OnDestroy {
   constructor() {
     this.loadSuppliers();
+    this.loadUnits();
     if (this.data) {
       this.patchFromData(this.data);
     }
@@ -377,6 +428,7 @@ export class MaterialFormDialogComponent implements OnDestroy {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly service = inject(MaterialsService);
   private readonly orgs = inject(OrganizationsService);
+  private readonly unitsService = inject(UnitsService);
   private readonly photosService = inject(PhotosService);
   private readonly toast = inject(PiToastService);
   private readonly ref = inject<DialogRef<Result>>(PI_DIALOG_REF);
@@ -388,6 +440,24 @@ export class MaterialFormDialogComponent implements OnDestroy {
   protected readonly errorMessage = signal<string | null>(null);
 
   protected readonly suppliers = signal<Organization[]>([]);
+  protected readonly suppliersLoading = signal<boolean>(false);
+  protected readonly suppliersError = signal<string | null>(null);
+  /** Active units from GET /units/active (canonical `key` stored in Material.unit). */
+  protected readonly units = signal<Unit[]>([]);
+  protected readonly unitsLoading = signal<boolean>(false);
+  protected readonly unitsError = signal<string | null>(null);
+
+  /**
+   * TZ-MATERIALS-302: when editing a material whose canonical `unit` key is
+   * absent from the active units list (e.g. the unit was deactivated), render
+   * the current key as a disabled fallback option so the select is never
+   * silently blank and the payload keeps the canonical key.
+   */
+  protected unitFallback(): string | null {
+    const v = this.form.get('unit')?.value as string | null | undefined;
+    if (!v) return null;
+    return this.units().some((u) => u.key === v) ? null : v;
+  }
   protected readonly photos = signal<Photo[]>([]);
   protected readonly mainPhotoId = signal<string | null>(null);
   /** Photo IDs marked for deletion; applied on submit (atomic with save). */
@@ -407,7 +477,6 @@ export class MaterialFormDialogComponent implements OnDestroy {
     unit: this.fb.control('', [Validators.required, Validators.maxLength(32)]),
     sku: this.fb.control<string | null>(null),
     pricePerUnit: this.fb.control<number | null>(null, [Validators.min(0)]),
-    stockQty: this.fb.control<number>(0, [Validators.min(0)]),
     supplierId: this.fb.control<string | null>(null),
     dimensions: this.fb.array<DimensionFormGroup>([]),
     description: this.fb.control<string | null>(null, [Validators.maxLength(2000)]),
@@ -430,11 +499,35 @@ export class MaterialFormDialogComponent implements OnDestroy {
   }
 
   private loadSuppliers(): void {
+    this.suppliersLoading.set(true);
+    this.suppliersError.set(null);
     this.orgs.list({ type: 'supplier', limit: 200 }).subscribe((res) => {
+      this.suppliersLoading.set(false);
       if (res.ok) {
-        this.suppliers.set(res.data.items ?? []);
+        // Backend list does not filter `isActive`; only offer active suppliers.
+        this.suppliers.set((res.data.items ?? []).filter((o) => o.isActive !== false));
       } else {
-        this.suppliers.set([]); // Empty dropdown on failure — non-critical.
+        this.suppliers.set([]);
+        this.suppliersError.set(extractErrorMessage(res.error));
+      }
+    });
+  }
+
+  /**
+   * TZ-MATERIALS-302: units come from GET /units/active, never hardcoded.
+   * The canonical `Unit.key` is stored in `Material.unit` (free-text FK
+   * contract); label/symbol are display-only.
+   */
+  private loadUnits(): void {
+    this.unitsLoading.set(true);
+    this.unitsError.set(null);
+    this.unitsService.listActive().subscribe((res) => {
+      this.unitsLoading.set(false);
+      if (res.ok) {
+        this.units.set(res.data ?? []);
+      } else {
+        this.units.set([]);
+        this.unitsError.set(extractErrorMessage(res.error));
       }
     });
   }
@@ -446,7 +539,6 @@ export class MaterialFormDialogComponent implements OnDestroy {
       unit: m.unit,
       sku: m.sku ?? null,
       pricePerUnit: m.pricePerUnit ?? null,
-      stockQty: m.stockQty ?? 0,
       supplierId: m.supplierId ?? null,
       description: m.description ?? null,
       notes: m.notes ?? null,
@@ -487,11 +579,27 @@ export class MaterialFormDialogComponent implements OnDestroy {
   addDimension(): void {
     this.dimensionsArray.push(
       this.fb.group({
-        type: this.fb.control<MaterialDimensionType>('length', Validators.required),
+        type: this.fb.control<MaterialDimensionType>(
+          this.nextUnusedDimensionType(),
+          Validators.required,
+        ),
         value: this.fb.control<number>(0, [Validators.required, Validators.min(0)]),
         isImmutable: this.fb.control<boolean>(false),
       }) as DimensionFormGroup,
     );
+  }
+
+  /**
+   * TZ-MATERIALS-305: the next dimension type not yet present in the row set,
+   * in the canonical order Длина → Ширина → Высота → Толщина → Диаметр → Глубина.
+   * When all six types are already present, falls back to 'length' — repeated
+   * rows are an explicitly documented behavior (each user click still creates
+   * exactly one row; the button is a component `click` Output, no double fire).
+   */
+  private nextUnusedDimensionType(): MaterialDimensionType {
+    const used = new Set(this.dimensionsArray.controls.map((g) => g.controls.type.value));
+    const firstUnused = DIMENSION_TYPES.find((t) => !used.has(t.value));
+    return firstUnused?.value ?? 'length';
   }
 
   removeDimension(i: number): void {
@@ -594,7 +702,7 @@ export class MaterialFormDialogComponent implements OnDestroy {
   // ─── Submit ───
 
   protected onSubmit(): void {
-    if (this.submitting()) return;
+    if (this.submitting() || this.uploading()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -615,7 +723,6 @@ export class MaterialFormDialogComponent implements OnDestroy {
     if (v.article) payload.article = v.article;
     if (v.sku) payload.sku = v.sku;
     if (v.pricePerUnit != null) payload.pricePerUnit = v.pricePerUnit;
-    if (v.stockQty != null) payload.stockQty = v.stockQty;
     if (v.supplierId) payload.supplierId = v.supplierId;
     if (dimensions.length > 0) payload.dimensions = dimensions;
     if (photoIds.length > 0) payload.photoIds = photoIds;

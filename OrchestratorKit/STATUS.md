@@ -59,6 +59,10 @@
 | **TZ-267** | Templates registry error state and SilentResult HTTP boundary (imported workspace task, renumbered from TZ-262) | `tasks/_archive/2026-08/TZ-267.done.md` | DONE 2026-08-02 |
 | **TZ-MATERIALS-301** | Материалы — широкий структурированный диалог (imported workspace task) | `tasks/_archive/2026-08/TZ-MATERIALS-301.done.md` | DONE 2026-08-02 |
 | **TZ-MATERIALS-302** | Материалы — единицы из API и поставщики (imported workspace task) | `tasks/_archive/2026-08/TZ-MATERIALS-302.done.md` | DONE 2026-08-02 |
+| **TZ-MATERIALS-303** | Материалы — понятный код и идентификация (imported workspace task; successor TZ-307 Layer 4) | `tasks/_archive/2026-08/TZ-MATERIALS-303.done.md` | DONE 2026-08-02 |
+| **TZ-MATERIALS-304** | Материалы — остатки отделены от карточки (imported workspace task; successor TZ-308 Layer 4) | `tasks/_archive/2026-08/TZ-MATERIALS-304.done.md` | DONE 2026-08-02 |
+| **TZ-MATERIALS-305** | Материалы — габариты и неизменяемость (imported workspace task; successor TZ-309 Layer 4) | `tasks/_archive/2026-08/TZ-MATERIALS-305.done.md` | DONE 2026-08-02 |
+| **TZ-MATERIALS-306** | Материалы — фото и надёжное сохранение (imported workspace task) | `tasks/_archive/2026-08/TZ-MATERIALS-306.done.md` | DONE 2026-08-02 |
 | **TZ-DOC-307** | Категории шаблонов — доменный контракт | `backend/src/modules/document-template/*; backend/src/modules/category/*; docs/data-model.md` | — |
 | **TZ-DOC-308** | Категории шаблонов — справочник и форма | `frontend/src/app/pages/doc-constructor/*; frontend/src/app/pages/dictionaries/*` | TZ-DOC-307 |
 

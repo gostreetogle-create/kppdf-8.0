@@ -71,9 +71,22 @@
 | `dimsTpl` | `dimensions` | `L 3000мм × W 2000мм × T 2мм` |
 | `rowActionsTpl` | (actions) | Edit / Delete |
 
-## Column definitions (9 колонок)
+## Идентификация: «Артикул» vs «Внутренний код материала»
 
-`mainPhotoId` (96px, center) → `name` (sticky, sortable) → `article` (sortable) → `sku` (sortable) → `unit` (sortable) → `supplierId` (cellTemplate) → `dimensions` (cellTemplate) → `pricePerUnit` (sortable, numeric, right) → `stockQty` (sortable, numeric, right)
+- **Артикул** (`article`) — пользовательский/внешний код (поставщик, каталог клиента). Необязателен, может повторяться.
+- **Внутренний код материала** (`sku`) — уникальный системный идентификатор для поиска (`$or: [name, article, sku]`) и связей.
+  Уникальность гарантируется сервером: Mongo `unique: true, sparse: true` + E11000 → HTTP 409 (не 500).
+  Создаётся вручную (опционально) или будет генерироваться сервером через counter (см. `TZ-MATERIALS-307`);
+  локальной генерации на клиенте нет. При редактировании оба поля сохраняются без потери значений.
+
+## Column definitions (8 колонок)
+
+`mainPhotoId` (96px, center) → `name` (sticky, sortable) → `article` (sortable) → `sku` (sortable) → `unit` (sortable) → `supplierId` (cellTemplate) → `dimensions` (cellTemplate) → `pricePerUnit` (sortable, numeric, right)
+
+> **Остаток (TZ-MATERIALS-304):** колонка `stockQty` убрана из списка материалов — остаток
+> управляется только в разделе «Склад» (`StorageItem.quantity`, приходы/расходы). `Material.stockQty`
+> остаётся в schema/DTO как legacy (backward compatibility), но не отображается и не вводится.
+> Связь материал→склад отсутствует (`StorageItem.productId` → продукт; см. TZ-MATERIALS-308).
 
 ## TZ reference
 

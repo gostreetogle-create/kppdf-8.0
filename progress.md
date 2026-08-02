@@ -4863,3 +4863,93 @@ Observable fix, fallback в error-branch); git diff --check PASS. Полный
 - tasks/_archive/2026-08/TZ-DOC-307.done.md (archive marker)
 **Verification:** pnpm exec tsc -p tsconfig.build.json --noEmit exit 0; pnpm exec jest document-template --no-coverage 45/45 PASS; pnpm exec jest document-template-category --no-coverage 21/21 PASS; git diff --check PASS.
 **Известные ограничения:** frontend UI для категорий шаблонов — следующая задача TZ-DOC-308; browser check не выполнялся (требует поднятого стека :4200/:3000/mongo).
+---
+
+## 2026-08-02 — TZ-MATERIALS-303 closed (Материалы — понятный код и идентификация)
+
+**Исполнитель:** Product Analyst / API Contract Engineer / Frontend Engineer (Buffy)
+**Статус:** Выполнено / Проверено
+**Решение:** B — ручной optional input с русским объяснением; серверная генерация
+вынесена в successor TZ-MATERIALS-307 (Layer 4), т.к. требует backend
+counter/transaction (как в ProductService) — локальной генерации на клиенте нет.
+**Скрытый дефект исправлен:** `sku` отсутствовал в обоих material DTO, а backend
+работает с `whitelist: true, forbidNonWhitelisted: true` — ручной SKU давал 400.
+Поле задекларировано (`@IsOptional @IsString @Length(0, 64)`); E11000 → 409
+ConflictException в create/update; уникальность остаётся серверной (unique+sparse
+index). UI: «Внутренний код материала» + hint; колонка «Внутренний код».
+Docs: data-model.md + materials.page.md — раздел «Артикул vs Внутренний код».
+**Затронутые файлы:** create-material.dto.ts, material.service.ts,
+material.service.spec.ts (NEW 5 тестов), material-form-dialog.component.ts,
+materials.page.ts, material-form-dialog.component.spec.ts (+4), docs ×2,
+tasks/TZ-MATERIALS-307-sku-autogeneration.md (NEW successor).
+**Verification:** backend tsc PASS, frontend tsc PASS, backend jest 5/5,
+frontend jest materials 23/23, code review 3 раунда (findings устранены),
+git diff --check PASS. Полный `ng build` — пере-прогон в конце цепочки
+(параллельная TZ-DOC-сессия чинит свои файлы).
+**Известные ограничения:** генерация SKU — TZ-MATERIALS-307; backfill
+существующих записей — отдельный TZ при необходимости.
+---
+
+## 2026-08-02 — TZ-MATERIALS-304 closed (Материалы — отделить остатки от карточки)
+
+**Исполнитель:** Domain Model Analyst / Backend Engineer / Frontend Engineer (Buffy)
+**Статус:** Выполнено / Проверено
+**Что сделано кратко:** Consumer audit подтвердил: canonical owner остатка —
+складской контур (`StorageItem.quantity`, stock movements, inventory); связь
+material→склад отсутствует (`StorageItem.productId` → Product) → оформлен
+Layer 4 domain successor TZ-MATERIALS-308. Поле «Остаток на складе» убрано из
+create/edit диалога (вместо него read-only индикатор «Управляется в разделе
+Склад» на штатных токенах hairline/bg-paper-2), form control/patch/payload
+строки удалены, колонка «Остаток» убрана из списка. Backend schema/DTO НЕ
+тронуты (backward compat, deprecation задокументирован в data-model.md);
+registry descriptor сохранён для Document Constructor template compat.
+**Затронутые файлы:** material-form-dialog.component.ts, materials.page.ts,
+material-form-dialog.component.spec.ts (+3), docs/data-model.md,
+docs/pages/materials.page.md, tasks/TZ-MATERIALS-308-material-stock-link.md (NEW successor).
+**Verification:** frontend tsc PASS, jest materials 26/26, code review 2 раунда
+(findings устранены: TZ-id из UI, токены, 8 колонок), git diff --check PASS.
+**Известные ограничения:** Material.stockQty остаётся в schema/DTO как legacy
+(backward compat); связь материал→склад — TZ-MATERIALS-308; полный `ng build`
+— пере-прогон в конце цепочки.
+---
+
+## 2026-08-02 — TZ-MATERIALS-305 closed (Материалы — габариты и неизменяемость)
+
+**Исполнитель:** Frontend Component Engineer / Domain Integration QA (Buffy)
+**Статус:** Выполнено / Проверено
+**Что сделано кратко:** Один click по «Добавить размер» создаёт ровно одну
+FormArray row (app-pi-button click Output эмитит один раз). `addDimension()`
+выбирает следующий неиспользованный тип в канон. порядке Длина → Ширина →
+Высота → Толщина → Диаметр → Глубина; при всех шести занятых — документированный
+fallback на 'length'. Existing edit rows не дублируются; removeDimension,
+русские labels и isImmutable в payload сохранены. isImmutable audit: backend
+ProductModuleService принимает overrideDimensions безусловно (enforcement-gap) →
+по правилу TZ-305 оформлен Layer 4 successor TZ-MATERIALS-309 (backend rule +
+UI disable), никаких ложных UI-only исправлений.
+**Затронутые файлы:** material-form-dialog.component.ts, spec (+6),
+tasks/TZ-MATERIALS-309-isimmutable-enforcement.md (NEW successor).
+**Verification:** frontend tsc PASS, jest materials 32/32, code review 3 раунда,
+git diff --check PASS.
+**Известные ограничения:** isImmutable enforcement — TZ-MATERIALS-309 (Layer 4);
+полный `ng build` — пере-прогон в конце цепочки.
+---
+
+## 2026-08-02 — TZ-MATERIALS-306 closed (Материалы — фото и надёжное сохранение)
+
+**Исполнитель:** QA-валидатор / Frontend Integration Engineer (Buffy)
+**Статус:** Выполнено / Проверено
+**Что сделано кратко:** Кнопка «Сохранить» теперь `[disabled]="submitting() || uploading()"`
+(label «Загрузка фото…»), `onSubmit()` — early-return при uploading: сохранить
+material до завершения загрузки фото невозможно. Смешанный upload: per-file
+ok/fail — успешные фото в photos()/payload, failed исключены, toast с точным
+результатом. mainPhotoId всегда принадлежит photoIds (переключается при
+удалении). Cancel/Esc/backdrop: ngOnDestroy удаляет только newlyUploadedIds
+текущей сессии (флаг submitted), сохранённые фото не трогаются. Edit flow:
+list() грузит фото, mainPhotoId нормализуется, удаление отложено до onsubmit.
+Бэкенд-контракт не менялся (backend gap не выявлен).
+**Затронутые файлы:** material-form-dialog.component.ts, spec (setup
+uploadResults-queue/photoList/remove/upload; +4 теста, +1 усиление).
+**Verification:** frontend tsc PASS, jest materials 36/36, code review 2 раунда,
+git diff --check PASS.
+**Известные ограничения:** атомарность photos/material — существующая модель
+(upload → PATCH); полный `ng build` и browser-аудит — следующий (финальный) шаг.

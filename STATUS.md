@@ -730,6 +730,10 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 | TZ-267 | 2026-08-02 | Templates registry error state and SilentResult HTTP boundary (imported workspace task, renumbered) | `tasks/_archive/2026-08/TZ-267.done.md` |
 | TZ-MATERIALS-301 | 2026-08-02 | Материалы — широкий структурированный диалог (content variant + maxWidth 1000px, sticky footer, двухколоночный layout) | `tasks/_archive/2026-08/TZ-MATERIALS-301.done.md` |
 | TZ-MATERIALS-302 | 2026-08-02 | Материалы — единицы из API (listActive) + поставщики: active-фильтр, loading/error/empty, unitFallback для деактивированной единицы | `tasks/_archive/2026-08/TZ-MATERIALS-302.done.md` |
+| TZ-MATERIALS-303 | 2026-08-02 | Материалы — понятный код: «Внутренний код материала», DTO-декларация sku (фикс 400), E11000→409, решение B + successor TZ-307 на серверную генерацию | `tasks/_archive/2026-08/TZ-MATERIALS-303.done.md` |
+| TZ-MATERIALS-304 | 2026-08-02 | Материалы — остаток отделён от карточки: убраны input/payload/колонка stockQty, legacy deprecation, successor TZ-308 (material→склад) | `tasks/_archive/2026-08/TZ-MATERIALS-304.done.md` |
+| TZ-MATERIALS-305 | 2026-08-02 | Материалы — габариты: one-click-one-row, следующий неиспользованный тип по порядку, fallback length, isImmutable gap → successor TZ-309 | `tasks/_archive/2026-08/TZ-MATERIALS-305.done.md` |
+| TZ-MATERIALS-306 | 2026-08-02 | Материалы — фото и надёжное сохранение: save guard (submitting||uploading), mixed upload, main photo ∈ photoIds, orphan cleanup | `tasks/_archive/2026-08/TZ-MATERIALS-306.done.md` |
 | TZ-DOC-307 | 2026-08-02 | Категории шаблонов — доменный контракт (отдельная сущность DocumentTemplateCategory, categoryId в DocumentTemplate, server-side default, RBAC, backfill migration) | `tasks/_archive/2026-08/TZ-DOC-307.done.md` |
 
 ## 🚀 Следующие шаги (предложения)
@@ -1019,6 +1023,10 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 | TZ-267 | `tasks/_archive/2026-08/TZ-267.done.md` (templates error boundary, imported workspace task renumbered from sandbox TZ-262) | `.mimocode/locks/TZ-267-templates-error-boundary.lock` |
 | TZ-MATERIALS-301 | `tasks/_archive/2026-08/TZ-MATERIALS-301.done.md` (материалы — широкий структурированный диалог) | `.mimocode/locks/TZ-MATERIALS-301-dialog-layout.lock` |
 | TZ-MATERIALS-302 | `tasks/_archive/2026-08/TZ-MATERIALS-302.done.md` (материалы — единицы и поставщики) | `.mimocode/locks/TZ-MATERIALS-302-reference-data.lock` |
+| TZ-MATERIALS-303 | `tasks/_archive/2026-08/TZ-MATERIALS-303.done.md` (материалы — понятный код и идентификация) | `.mimocode/locks/TZ-MATERIALS-303-identity-code.lock` |
+| TZ-MATERIALS-304 | `tasks/_archive/2026-08/TZ-MATERIALS-304.done.md` (материалы — остатки отделены от карточки) | `.mimocode/locks/TZ-MATERIALS-304-stock-boundary.lock` |
+| TZ-MATERIALS-305 | `tasks/_archive/2026-08/TZ-MATERIALS-305.done.md` (материалы — габариты и неизменяемость) | `.mimocode/locks/TZ-MATERIALS-305-dimensions-contract.lock` |
+| TZ-MATERIALS-306 | `tasks/_archive/2026-08/TZ-MATERIALS-306.done.md` (материалы — фото и надёжное сохранение) | `.mimocode/locks/TZ-MATERIALS-306-media-and-save-audit.lock` |
 | TZ-DOC-307 | `tasks/_archive/2026-08/TZ-DOC-307.done.md` (категории шаблонов — доменный контракт) | `.mimocode/locks/TZ-DOC-307-template-category.lock` |
 
 **Code evidence:** все 15 файлов подтверждены через grep/ls на диске (basher-verified this session). TZ-257.A.1 / TZ-256.B / TZ-259 / TZ-257.B реализованы и закоммичены в этой сессии; остальные — filesystem cleanup + archive creation.

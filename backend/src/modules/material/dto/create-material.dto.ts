@@ -52,6 +52,12 @@ export class CreateMaterialDto {
   @Length(0, 64)
   article?: string;
 
+  @ApiPropertyOptional({ example: 'M-0001', description: 'Внутренний код материала (уникальный, поисковый)' })
+  @IsOptional()
+  @IsString()
+  @Length(0, 64)
+  sku?: string;
+
   @ApiProperty({ example: 'м2', description: 'Единица измерения' })
   @IsString()
   @Length(1, 32)
