@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ClientSession, Model, Types } from 'mongoose';
 import { Order, OrderDocument, OrderItem } from './order.schema';
+import { Shipment, ShipmentDocument } from '../shipment/shipment.schema';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { CounterService } from '../counter/counter.service';
@@ -16,6 +17,8 @@ export class OrderService {
   constructor(
     @InjectModel(Order.name)
     private readonly model: Model<OrderDocument>,
+    @InjectModel(Shipment.name)
+    private readonly shipmentModel: Model<ShipmentDocument>,
     private readonly counter: CounterService,
     private readonly reservationService: ReservationService,
     private readonly shipmentService: ShipmentService,
@@ -154,33 +157,51 @@ export class OrderService {
     warehouseId?: string,
     driverInfo?: string,
   ): Promise<{ order: OrderDocument; shipmentId: string }> {
-    // Use unpopulated query so counterpartyId is a raw ObjectId.
-    const order = await this.findByIdRaw(id);
-    if (order.status === 'cancelled' || order.status === 'shipped' || order.status === 'delivered') {
-      throw new NotFoundException(`Cannot ship order in status ${order.status}`);
-    }
-    const shipment = await this.shipmentService.create({
-      orderId: order._id.toString(),
-      counterpartyId: order.counterpartyId.toString(),
-      recipient,
-      address,
-      warehouseId,
-      driverInfo,
-      status: 'scheduled',
-      items: order.items.map((i) => ({
-        productId: i.productId.toString(),
-        productName: i.productName,
-        quantity: i.quantity,
-        unit: i.unit,
-      })),
+    // Z-001: shipment creation + order.status update must be atomic.
+    return this.sessionRunner.run(async (session) => {
+      const order = await this.model.findById(id).session(session).exec();
+      if (!order) throw new NotFoundException(`Order ${id} not found`);
+      if (
+        order.status === 'cancelled' ||
+        order.status === 'shipped' ||
+        order.status === 'delivered'
+      ) {
+        throw new NotFoundException(`Cannot ship order in status ${order.status}`);
+      }
+      // Write Shipment directly on the same session so a failed order.save
+      // (e.g. validation error) rolls back the shipment too.
+      const [shipment] = await this.shipmentModel.create(
+        [
+          {
+            number: `SHP-${order.number}`,
+            orderId: order._id,
+            counterpartyId: order.counterpartyId,
+            recipient,
+            address,
+            warehouseId: warehouseId
+              ? new Types.ObjectId(warehouseId)
+              : undefined,
+            driverInfo,
+            status: 'scheduled',
+            items: order.items.map((i) => ({
+              productId: i.productId,
+              productName: i.productName,
+              quantity: i.quantity,
+              unit: i.unit,
+            })),
+          },
+        ],
+        { session },
+      );
+      if (!shipment) throw new NotFoundException('Shipment create failed');
+      order.shipmentIds = [
+        ...(order.shipmentIds ?? []),
+        new Types.ObjectId(shipment._id.toString()),
+      ];
+      order.status = 'shipped';
+      const saved = await order.save({ session });
+      return { order: saved, shipmentId: shipment._id.toString() };
     });
-    order.shipmentIds = [
-      ...(order.shipmentIds ?? []),
-      new Types.ObjectId(shipment._id.toString()),
-    ];
-    order.status = 'shipped';
-    await order.save();
-    return { order, shipmentId: shipment._id.toString() };
   }
 
   async cancel(id: string): Promise<OrderDocument> {

@@ -8,6 +8,7 @@ import { PurchaseOrderService } from './purchase-order.service';
 import { PurchaseOrderController } from './purchase-order.controller';
 import { CounterModule } from '../counter/counter.module';
 import { StockMovementModule } from '../stock-movement/stock-movement.module';
+import { SessionRunner } from '../../common/db/session-runner';
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import { StockMovementModule } from '../stock-movement/stock-movement.module';
     StockMovementModule,
   ],
   controllers: [PurchaseOrderController],
-  providers: [PurchaseOrderService],
+  providers: [PurchaseOrderService, SessionRunner],
   exports: [PurchaseOrderService, MongooseModule],
 })
 export class PurchaseOrderModule {}

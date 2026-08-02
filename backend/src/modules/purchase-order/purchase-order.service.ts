@@ -10,6 +10,7 @@ import { CreatePurchaseOrderDto } from './dto/create-purchase-order.dto';
 import { UpdatePurchaseOrderDto } from './dto/update-purchase-order.dto';
 import { CounterService } from '../counter/counter.service';
 import { StockMovementService } from '../stock-movement/stock-movement.service';
+import { SessionRunner } from '../../common/db/session-runner';
 
 @Injectable()
 export class PurchaseOrderService {
@@ -20,6 +21,7 @@ export class PurchaseOrderService {
     private readonly model: Model<PurchaseOrderDocument>,
     private readonly counter: CounterService,
     private readonly movementService: StockMovementService,
+    private readonly sessionRunner: SessionRunner,
   ) {}
 
   async create(dto: CreatePurchaseOrderDto): Promise<PurchaseOrderDocument> {
@@ -106,25 +108,31 @@ export class PurchaseOrderService {
 
   /** Receive = create in StockMovement per item, update status */
   async receive(id: string): Promise<PurchaseOrderDocument> {
-    const doc = await this.findById(id);
-    if (!doc.warehouseId) {
-      throw new BadRequestException(
-        `PurchaseOrder ${id} has no warehouseId; cannot receive`,
-      );
-    }
-    for (const item of doc.items) {
-      await this.movementService.create({
-        type: 'in',
-        productId: item.materialId.toString(),
-        warehouseId: doc.warehouseId.toString(),
-        qty: item.quantity,
-        cost: item.unitPrice,
-        orderId: doc.number,
-        documentRef: `PO:${doc.number}`,
-      });
-    }
-    doc.status = 'received';
-    return doc.save();
+    return this.sessionRunner.run(async (session) => {
+      const doc = await this.model.findById(id).session(session).exec();
+      if (!doc) throw new NotFoundException(`PurchaseOrder ${id} not found`);
+      if (!doc.warehouseId) {
+        throw new BadRequestException(
+          `PurchaseOrder ${id} has no warehouseId; cannot receive`,
+        );
+      }
+      for (const item of doc.items) {
+        await this.movementService.create(
+          {
+            type: 'in',
+            productId: item.materialId.toString(),
+            warehouseId: doc.warehouseId.toString(),
+            qty: item.quantity,
+            cost: item.unitPrice,
+            orderId: doc.number,
+            documentRef: `PO:${doc.number}`,
+          },
+          session,
+        );
+      }
+      doc.status = 'received';
+      return doc.save({ session });
+    });
   }
 
   async remove(id: string): Promise<void> {

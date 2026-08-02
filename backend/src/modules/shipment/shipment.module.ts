@@ -6,6 +6,7 @@ import { ShipmentController } from './shipment.controller';
 import { CounterModule } from '../counter/counter.module';
 import { StockMovementModule } from '../stock-movement/stock-movement.module';
 import { ReservationModule } from '../reservation/reservation.module';
+import { SessionRunner } from '../../common/db/session-runner';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { ReservationModule } from '../reservation/reservation.module';
     ReservationModule,
   ],
   controllers: [ShipmentController],
-  providers: [ShipmentService],
+  providers: [ShipmentService, SessionRunner],
   exports: [ShipmentService, MongooseModule],
 })
 export class ShipmentModule {}

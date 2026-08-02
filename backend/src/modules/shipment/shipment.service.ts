@@ -8,6 +8,7 @@ import { AddDocDto } from './dto/add-doc.dto';
 import { CounterService } from '../counter/counter.service';
 import { StockMovementService } from '../stock-movement/stock-movement.service';
 import { ReservationService } from '../reservation/reservation.service';
+import { SessionRunner } from '../../common/db/session-runner';
 
 @Injectable()
 export class ShipmentService {
@@ -17,6 +18,7 @@ export class ShipmentService {
     private readonly counter: CounterService,
     private readonly stockMovementService: StockMovementService,
     private readonly reservationService: ReservationService,
+    private readonly sessionRunner: SessionRunner,
   ) {}
 
   async create(dto: CreateShipmentDto): Promise<ShipmentDocument> {
@@ -97,37 +99,41 @@ export class ShipmentService {
   }
 
   async dispatch(id: string): Promise<ShipmentDocument> {
-    const doc = await this.findById(id);
-    if (!doc.warehouseId) {
-      throw new NotFoundException(`Shipment has no warehouseId; cannot dispatch`);
-    }
-    if (doc.status === 'in_transit' || doc.status === 'delivered') {
-      throw new NotFoundException(`Shipment already ${doc.status}`);
-    }
-    for (const item of doc.items) {
-      await this.stockMovementService.create({
-        type: 'out',
-        productId: item.productId.toString(),
-        warehouseId: doc.warehouseId.toString(),
-        qty: item.quantity,
-        orderId: doc.orderId.toString(),
-        documentRef: `SHP:${doc.number}`,
-      });
-    }
-    // Release any active reservations for this order
-    const reservations = await this.reservationService.findAll(doc.orderId.toString());
-    for (const r of reservations) {
-      if (r.status === 'active') {
-        try {
-          await this.reservationService.fulfill(r._id.toString());
-        } catch {
-          // best-effort
+    // Z-001: wrap entire write-graph in a single Mongo transaction.
+    return this.sessionRunner.run(async (session) => {
+      const doc = await this.model.findById(id).session(session).exec();
+      if (!doc) throw new NotFoundException(`Shipment ${id} not found`);
+      if (!doc.warehouseId) {
+        throw new NotFoundException(`Shipment has no warehouseId; cannot dispatch`);
+      }
+      if (doc.status === 'in_transit' || doc.status === 'delivered') {
+        throw new NotFoundException(`Shipment already ${doc.status}`);
+      }
+      for (const item of doc.items) {
+        await this.stockMovementService.create(
+          {
+            type: 'out',
+            productId: item.productId.toString(),
+            warehouseId: doc.warehouseId.toString(),
+            qty: item.quantity,
+            orderId: doc.orderId.toString(),
+            documentRef: `SHP:${doc.number}`,
+          },
+          session,
+        );
+      }
+      const reservations = await this.reservationService.findAll(
+        doc.orderId.toString(),
+      );
+      for (const r of reservations) {
+        if (r.status === 'active') {
+          await this.reservationService.fulfill(r._id.toString(), session);
         }
       }
-    }
-    doc.status = 'in_transit';
-    doc.dispatchedAt = new Date();
-    return doc.save();
+      doc.status = 'in_transit';
+      doc.dispatchedAt = new Date();
+      return doc.save({ session });
+    });
   }
 
   async addDoc(id: string, dto: AddDocDto): Promise<ShipmentDocument> {

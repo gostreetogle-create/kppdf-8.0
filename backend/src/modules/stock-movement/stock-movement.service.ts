@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
-import { Connection, Model, Types } from 'mongoose';
+import { ClientSession, Connection, Model, Types } from 'mongoose';
 import { StockMovement, StockMovementDocument } from './stock-movement.schema';
 import { CreateStockMovementDto } from './dto/create-stock-movement.dto';
 import { StorageItem, StorageItemDocument } from '../storage-item/storage-item.schema';
@@ -19,51 +19,23 @@ export class StockMovementService {
     private readonly storageModel: Model<StorageItemDocument>,
   ) {}
 
-  async create(dto: CreateStockMovementDto): Promise<StockMovementDocument> {
+  async create(
+    dto: CreateStockMovementDto,
+    externalSession?: ClientSession,
+  ): Promise<StockMovementDocument> {
     const target = this.resolveTarget(dto);
     if (dto.type === 'transfer' && !dto.toWarehouseId) {
       throw new BadRequestException('Transfer requires toWarehouseId');
     }
-
+    // Z-001: if caller passes an external session, run on it (no nested txn).
+    if (externalSession) {
+      return this.runCreateGraph(dto, target, externalSession);
+    }
     const session = await this.connection.startSession();
     let movement: StockMovementDocument | undefined;
     try {
       await session.withTransaction(async () => {
-        if (dto.type === 'in') {
-          await this.applyIn(dto.warehouseId, target, dto.zoneName, dto.qty, session);
-        } else if (dto.type === 'out') {
-          await this.applyOut(dto.warehouseId, target, dto.zoneName, dto.qty, session);
-        } else if (dto.type === 'transfer') {
-          await this.applyTransfer(
-            dto.warehouseId,
-            dto.toWarehouseId!,
-            target,
-            dto.zoneName,
-            dto.toZoneName,
-            dto.qty,
-            session,
-          );
-        }
-
-        const [doc] = await this.model.create(
-          [{
-            type: dto.type,
-            date: new Date(),
-            productId: target.productId ? new Types.ObjectId(target.productId) : undefined,
-            materialId: target.materialId ? new Types.ObjectId(target.materialId) : undefined,
-            warehouseId: new Types.ObjectId(dto.warehouseId),
-            toWarehouseId: dto.toWarehouseId ? new Types.ObjectId(dto.toWarehouseId) : undefined,
-            zoneName: dto.zoneName,
-            toZoneName: dto.toZoneName,
-            qty: dto.qty,
-            cost: dto.cost ?? 0,
-            orderId: dto.orderId,
-            documentRef: dto.documentRef,
-            createdBy: dto.createdBy ? new Types.ObjectId(dto.createdBy) : undefined,
-          }],
-          { session },
-        );
-        movement = doc;
+        movement = await this.runCreateGraph(dto, target, session);
       });
     } finally {
       await session.endSession();
@@ -72,12 +44,54 @@ export class StockMovementService {
     return movement;
   }
 
+  private async runCreateGraph(
+    dto: CreateStockMovementDto,
+    target: StockTarget,
+    session: ClientSession,
+  ): Promise<StockMovementDocument> {
+    if (dto.type === 'in') {
+      await this.applyIn(dto.warehouseId, target, dto.zoneName, dto.qty, session);
+    } else if (dto.type === 'out') {
+      await this.applyOut(dto.warehouseId, target, dto.zoneName, dto.qty, session);
+    } else if (dto.type === 'transfer') {
+      await this.applyTransfer(
+        dto.warehouseId,
+        dto.toWarehouseId!,
+        target,
+        dto.zoneName,
+        dto.toZoneName,
+        dto.qty,
+        session,
+      );
+    }
+    const [doc] = await this.model.create(
+      [{
+        type: dto.type,
+        date: new Date(),
+        productId: target.productId ? new Types.ObjectId(target.productId) : undefined,
+        materialId: target.materialId ? new Types.ObjectId(target.materialId) : undefined,
+        warehouseId: new Types.ObjectId(dto.warehouseId),
+        toWarehouseId: dto.toWarehouseId ? new Types.ObjectId(dto.toWarehouseId) : undefined,
+        zoneName: dto.zoneName,
+        toZoneName: dto.toZoneName,
+        qty: dto.qty,
+        cost: dto.cost ?? 0,
+        orderId: dto.orderId,
+        documentRef: dto.documentRef,
+        createdBy: dto.createdBy ? new Types.ObjectId(dto.createdBy) : undefined,
+      }],
+      { session },
+    );
+    if (!doc) throw new BadRequestException('Movement failed');
+    return doc;
+  }
+
   private async applyIn(
     warehouseId: string,
     target: StockTarget,
     zoneName: string | undefined,
     qty: number,
-    session: unknown,
+    session: ClientSession,
   ): Promise<void> {
     const filter = this.targetFilter(warehouseId, target, zoneName);
     let item = await this.storageModel.findOne(filter).session(session as never).exec();
@@ -104,7 +118,7 @@ export class StockMovementService {
     target: StockTarget,
     zoneName: string | undefined,
     qty: number,
-    session: unknown,
+    session: ClientSession,
   ): Promise<void> {
     const item = await this.storageModel
       .findOne(this.targetFilter(warehouseId, target, zoneName))
@@ -132,7 +146,7 @@ export class StockMovementService {
     fromZone: string | undefined,
     toZone: string | undefined,
     qty: number,
-    session: unknown,
+    session: ClientSession,
   ): Promise<void> {
     await this.applyOut(fromWarehouseId, target, fromZone, qty, session);
     await this.applyIn(toWarehouseId, target, toZone, qty, session);
@@ -200,10 +214,56 @@ export class StockMovementService {
 
   async remove(id: string): Promise<void> {
     if (!Types.ObjectId.isValid(id)) return;
-    await this.model.updateOne(
-      { _id: new Types.ObjectId(id) },
-      { $set: { deletedAt: new Date() } },
-    ).exec();
+    // Z-001 (variant a): compensating reverse-movement + soft-delete in one txn.
+    const session = await this.connection.startSession();
+    try {
+      session.startTransaction();
+      const origin = await this.model
+        .findById(new Types.ObjectId(id))
+        .session(session)
+        .exec();
+      if (!origin || (origin as unknown as { deletedAt?: Date }).deletedAt) {
+        await session.abortTransaction();
+        return;
+      }
+      const reverse: Record<string, unknown> = {
+        date: new Date(),
+        qty: origin.qty,
+        cost: origin.cost ?? 0,
+        orderId: origin.orderId,
+        documentRef:
+          origin.type === 'transfer'
+            ? `REVTR:${origin._id.toString()}`
+            : `REV:${origin._id.toString()}`,
+      };
+      if (origin.type === 'in') reverse.type = 'out';
+      else if (origin.type === 'out') reverse.type = 'in';
+      else if (origin.type === 'transfer') {
+        reverse.type = 'transfer';
+        reverse.warehouseId = origin.toWarehouseId;
+        reverse.toWarehouseId = origin.warehouseId;
+        reverse.zoneName = origin.toZoneName;
+        reverse.toZoneName = origin.zoneName;
+      } else {
+        reverse.type = origin.type;
+      }
+      if (!reverse.warehouseId) reverse.warehouseId = origin.warehouseId;
+      if (reverse.zoneName === undefined) reverse.zoneName = origin.zoneName;
+      if (origin.productId) reverse.productId = origin.productId;
+      if (origin.materialId) reverse.materialId = origin.materialId;
+      await this.model.create([reverse], { session });
+      await this.model.updateOne(
+        { _id: origin._id },
+        { $set: { deletedAt: new Date() } },
+        { session },
+      );
+      await session.commitTransaction();
+    } catch (e) {
+      await session.abortTransaction();
+      throw e;
+    } finally {
+      await session.endSession();
+    }
   }
 
   private resolveTarget(dto: Pick<CreateStockMovementDto, 'productId' | 'materialId'>): StockTarget {

@@ -5193,3 +5193,20 @@ checklist: `docs/agent-checklists/TZ-PRODUCTS-301.md`; page-дока: `docs/page
 **Verification:** TSC exit 0; jest text-block 19/19; jest e2e text-blocks 9/9 + seed-init 1/1 + user-org/production 12/12 + is-object-id 4/4; migration standalone probe idempotent 0/0/0; `git diff --check` clean; `verify-status.sh` PASS.
 **Push:** нет.
 **Сессионный overlap:** TZ-PRODUCTS-301/302 — pre-existing TSC-broken files reverted к HEAD перед моими коммитами.
+
+## Z-001 (2026-08-02) — Inventory write-transactions DONE
+
+Atomic MongoDB writes for `shipment.dispatch`, `purchase-order.receive`,
+`order.ship` + reverse-movement support in `stock-movement.remove`.
+8 backend files, +189/-62 net. `SessionRunner` registered in
+`ShipmentModule` and `PurchaseOrderModule`. `StockMovementService.create`
+and `ReservationService.fulfill` now accept an optional external
+`ClientSession` so callers can run their own transaction without nested
+`withTransaction`. `applyIn/applyOut/applyTransfer` typed as
+`ClientSession`. Pre-existing best-effort try/catch inside
+`shipment.dispatch` replaced with `fail-fast` — any fulfill failure
+aborts the whole transaction. tsc clean; module specs were pre-existing
+absent — rollback tests would be a separate TZ.
+Archive: `tasks/_archive/2026-08/Z-001-inventory-write-transactions.done.md`.
+Lock: `.mimocode/locks/Z-001-inventory-write-transactions.lock` (DONE).
+Push: NO.

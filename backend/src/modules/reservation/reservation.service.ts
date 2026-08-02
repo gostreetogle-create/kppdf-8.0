@@ -167,11 +167,13 @@ export class ReservationService {
     return result;
   }
 
-  async fulfill(id: string): Promise<ReservationDocument> {
+  async fulfill(id: string, externalSession?: ClientSession): Promise<ReservationDocument> {
     const doc = await this.findById(id);
     if (doc.status !== 'active') {
       throw new BadRequestException(`Reservation already ${doc.status}`);
     }
+    // Z-001: if caller passed an external session, run on it.
+    if (externalSession) return this.runFulfillOnSession(doc, id, externalSession);
     // Manual startTransaction + inline movementModel.create to avoid nested transactions
     const session = await this.connection.startSession();
     let result: ReservationDocument | undefined;
@@ -229,6 +231,52 @@ export class ReservationService {
     return result;
   }
 
+
+  private async runFulfillOnSession(
+    doc: ReservationDocument,
+    id: string,
+    session: ClientSession,
+  ): Promise<ReservationDocument> {
+    const filter: Record<string, unknown> = {
+      warehouseId: doc.warehouseId,
+      productId: doc.productId,
+    };
+    if (doc.zoneName) filter.zoneName = doc.zoneName;
+    else filter.$or = [{ zoneName: { $exists: false } }, { zoneName: null }];
+    const item = await this.storageModel.findOne(filter).session(session).exec();
+    if (!item) {
+      throw new NotFoundException(
+        `No storage item for product ${doc.productId} in warehouse ${doc.warehouseId}`,
+      );
+    }
+    if ((item.quantity ?? 0) < doc.qty) {
+      throw new BadRequestException(
+        `Insufficient stock: have ${item.quantity}, requested ${doc.qty}`,
+      );
+    }
+    item.quantity = (item.quantity ?? 0) - doc.qty;
+    item.reservedQty = Math.max(0, (item.reservedQty ?? 0) - doc.qty);
+    await item.save({ session });
+    await this.movementModel.create(
+      [
+        {
+          type: 'out',
+          date: new Date(),
+          productId: doc.productId,
+          warehouseId: doc.warehouseId,
+          zoneName: doc.zoneName,
+          qty: doc.qty,
+          cost: 0,
+          orderId: doc.orderId,
+          documentRef: `RES:${id}`,
+        },
+      ],
+      { session },
+    );
+    doc.status = 'fulfilled';
+    doc.isActive = false;
+    return doc.save({ session });
+  }
   async remove(id: string): Promise<void> {
     const doc = await this.findById(id);
     await this.model

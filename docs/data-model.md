@@ -1774,3 +1774,27 @@ dimensions: [
 ---
 
 _Документ сгенерирован автоматически. При внесении изменений в модель — обновляйте соответствующие секции этого документа._
+
+
+## Concurrency & Transactions (Z-001)
+
+Inventory write-paths use MongoDB transactions through a single shared
+`SessionRunner` helper (`backend/src/common/db/session-runner.ts`).
+
+- **Atomic write-paths** (all-or-nothing): `shipment.dispatch`,
+  `purchase-order.receive`, `order.ship`. Any throw mid-graph aborts the
+  entire transaction.
+- **Subordinate services** accept an optional `externalSession?: ClientSession`
+  parameter (`StockMovementService.create`, `ReservationService.fulfill`).
+  When the caller passes its session, the subordinate does NOT open its own
+  `startSession`/`withTransaction` (avoids nested transactions).
+- **`stock-movement.remove`** variant (a) — creates a compensating
+  reverse-movement on the same session, then soft-deletes the origin.
+  Warehouse-side quantity effect over the origin+reverse pair is zero.
+  Reversal rules: 'in'↔'out', 'transfer' swaps warehouseId/toWarehouseId and
+  zoneName/toZoneName, 'adjust' is symmetric. `documentRef` prefix
+  `REV:` for single-warehouse reversal, `REVTR:` for transfer reversal.
+
+Pattern reference: `order.service.ts:reserveStock`, `contract.service.ts:activate`,
+`order.service.ts:cancel`. Replica Set is required (already present in
+`docker-compose.yml`).

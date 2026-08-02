@@ -844,3 +844,20 @@ agent fallback. See `OrchestratorKit/_archive/2026-07/TZ-82.done.txt`
 **Lock-файл:** `OrchestratorKit/.mimocode/locks/TZ-82-smoke-test.lock` (placeholder, no code changes).
 
 > **Security audit reference (TZ-205, 2026-07-25):** brute-force protection on /auth/login, bcrypt-hashed User.passwordHash, refresh-token version revocation, and /auth/me projection hardening are documented in [docs/security-audit.md](docs/security-audit.md). TZ-202.B unblocked from this prerequisite; remaining gate is PO + senior security engineer cosign per AGENTS.md §7.5.
+
+
+## Inventory transaction contract (Z-001)
+
+The accounting/warehouse domain guarantees the following atomicity for
+write-paths:
+
+1. `shipment.dispatch` is atomic — movements + reservation fulfills +
+   shipment status update either all succeed or all abort.
+2. `purchase-order.receive` is atomic — movements + status update.
+3. `order.ship` is atomic — shipment creation + order.status update.
+
+Reverse-movement (`stock-movement.remove` variant a) keeps the warehouse-side
+delta at zero by emitting a complementary movement in the same transaction.
+Subordinate services (`StockMovementService.create`, `ReservationService.fulfill`)
+honor an optional `externalSession` so the caller can run them on its own
+transaction. See `docs/data-model.md` § Concurrency & Transactions.
