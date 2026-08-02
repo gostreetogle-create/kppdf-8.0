@@ -27,7 +27,7 @@ function makeParamMap(values: Record<string, string | null>): {
   const keys = Object.keys(values);
   return {
     keys,
-    get: (key: string) => (key in values ? values[key] ?? null : null),
+    get: (key: string) => (key in values ? (values[key] ?? null) : null),
   };
 }
 
@@ -35,9 +35,7 @@ describe('BuilderPage', () => {
   const baseUrl = '/api';
   const initialParamMap = makeParamMap({});
   const initialQueryParamMap = makeParamMap({});
-  const paramSubject = new BehaviorSubject<ReturnType<typeof makeParamMap>>(
-    initialParamMap,
-  );
+  const paramSubject = new BehaviorSubject<ReturnType<typeof makeParamMap>>(initialParamMap);
   const queryParamSubject = new BehaviorSubject<ReturnType<typeof makeParamMap>>(
     initialQueryParamMap,
   );
@@ -61,9 +59,19 @@ describe('BuilderPage', () => {
     .fn()
     .mockReturnValue(of({ ok: true, data: { _id: 'tpl-1' } as never }));
   const templatesSvcFindById = jest.fn().mockReturnValue(of({ ok: true, data: null }));
+  // Hoisted mock so TZ-DOC-318 tests can seed a catalog for the badge lookup.
+  const catSvcList = jest.fn().mockReturnValue(of({ ok: true, data: [] }));
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    // Test isolation: the describe-scoped BehaviorSubjects retain state from
+    // the previous test (e.g. `categoryId=cat-7` seeded by TZ-DOC-318 URL
+    // tests) and would leak into the next fixture. Reset both to empty.
+    paramSubject.next(initialParamMap);
+    queryParamSubject.next(initialQueryParamMap);
+    // The catalog mock's implementation survives `clearAllMocks` — reset the
+    // default (empty) so badge-lookup tests don't inherit a seeded catalog.
+    catSvcList.mockReturnValue(of({ ok: true, data: [] }));
     await TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([]), withFetch()),
@@ -100,7 +108,7 @@ describe('BuilderPage', () => {
         {
           provide: TextBlockCategoriesService,
           useValue: {
-            list: () => of({ ok: true, data: [] }),
+            list: catSvcList,
             findById: () => of({ ok: true, data: null }),
           },
         },
@@ -213,18 +221,14 @@ describe('BuilderPage', () => {
     const httpMock = TestBed.inject(HttpTestingController);
 
     // Initial GET fires on creation without categoryId — flush it first.
-    httpMock
-      .expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks'))
-      .flush([]);
+    httpMock.expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks')).flush([]);
 
     const filter = TestBed.inject(BuilderTextFilterService);
     filter.categoryId.set('cat-9');
     fixture.detectChanges();
     TestBed.flushEffects(); // httpResource re-dispatches with the new URL.
 
-    const req = httpMock.expectOne(
-      (r) => r.method === 'GET' && r.url.includes('/text-blocks'),
-    );
+    const req = httpMock.expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks'));
     expect(req.request.urlWithParams).toContain('categoryId=cat-9');
     expect(req.request.urlWithParams).toContain('isActive=true');
     req.flush([]);
@@ -237,24 +241,18 @@ describe('BuilderPage', () => {
     const httpMock = TestBed.inject(HttpTestingController);
 
     // Initial GET fires on creation without categoryId — flush it first.
-    httpMock
-      .expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks'))
-      .flush([]);
+    httpMock.expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks')).flush([]);
 
     const filter = TestBed.inject(BuilderTextFilterService);
     filter.categoryId.set('cat-9');
     fixture.detectChanges();
     TestBed.flushEffects();
-    httpMock
-      .expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks'))
-      .flush([]);
+    httpMock.expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks')).flush([]);
 
     filter.reset();
     fixture.detectChanges();
     TestBed.flushEffects();
-    const req = httpMock.expectOne(
-      (r) => r.method === 'GET' && r.url.includes('/text-blocks'),
-    );
+    const req = httpMock.expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks'));
     expect(req.request.urlWithParams).not.toContain('categoryId');
     expect(req.request.urlWithParams).toContain('isActive=true');
     req.flush([]);
@@ -300,7 +298,7 @@ describe('BuilderPage', () => {
     const extras = lastCall[1];
     expect(extras).toEqual(
       expect.objectContaining({
-        queryParams: { category: 'cat-7' },
+        queryParams: { categoryId: 'cat-7' },
         queryParamsHandling: 'merge',
         replaceUrl: true,
       }),
@@ -340,5 +338,121 @@ describe('BuilderPage', () => {
     while (httpMock.match(() => true).length > 0) {
       httpMock.match(() => true).forEach((m) => m.flush([]));
     }
+  });
+
+  // ────────────────────────────────────────────────────────────────────
+  // TZ-DOC-318 (step b + badge): URL persistence `?categoryId=...` and
+  // the topbar breadcrumb chip.
+  // ────────────────────────────────────────────────────────────────────
+
+  it('TZ-DOC-318: reading ?categoryId= from URL restores the filter (F5 refresh)', async () => {
+    // Seed the URL with an existing category BEFORE creating the page.
+    queryParamSubject.next(makeParamMap({ categoryId: 'cat-7' }));
+    const fixture = TestBed.createComponent(BuilderPage);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    const filter = TestBed.inject(BuilderTextFilterService);
+    expect(filter.categoryId()).toBe('cat-7');
+
+    // Drain any GETs the constructor's httpResources fired.
+    const httpMock = TestBed.inject(HttpTestingController);
+    while (httpMock.match(() => true).length > 0) {
+      httpMock.match(() => true).forEach((m) => m.flush([]));
+    }
+  });
+
+  it('TZ-DOC-318: shareable link ?categoryId=<id> pre-selects the filter on open', async () => {
+    const fakeCategories = [
+      {
+        _id: 'cat-7',
+        name: 'Описания',
+        slug: 'opisaniya',
+        isActive: true,
+        isSystem: false,
+        isDefault: false,
+        sortOrder: 1,
+      },
+      {
+        _id: 'cat-9',
+        name: 'Реквизиты',
+        slug: 'rekvizity',
+        isActive: true,
+        isSystem: false,
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ];
+    catSvcList.mockReturnValue(of({ ok: true, data: fakeCategories }));
+
+    queryParamSubject.next(makeParamMap({ categoryId: 'cat-7' }));
+    const fixture = TestBed.createComponent(BuilderPage);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    const comp = fixture.componentInstance as unknown as {
+      templateId: { set: (v: string | null) => void };
+      selectedCategoryId: () => string | null;
+      currentCategoryLabel: () => string;
+    };
+    comp.templateId.set('tpl-1');
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    expect(comp.selectedCategoryId()).toBe('cat-7');
+    expect(comp.currentCategoryLabel()).toBe('Описания');
+
+    const chip: HTMLButtonElement | null = fixture.nativeElement.querySelector(
+      '[data-test="builder-category-chip"]',
+    );
+    expect(chip).toBeTruthy();
+    expect(chip.textContent).toContain('Описания');
+
+    const httpMock = TestBed.inject(HttpTestingController);
+    while (httpMock.match(() => true).length > 0) {
+      httpMock.match(() => true).forEach((m) => m.flush([]));
+    }
+  });
+
+  it('TZ-DOC-318: breadcrumb chip shows «Все» when no category selected', async () => {
+    const fixture = TestBed.createComponent(BuilderPage);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance as unknown as {
+      templateId: { set: (v: string | null) => void };
+      currentCategoryLabel: () => string;
+    };
+    comp.templateId.set('tpl-1');
+    fixture.detectChanges();
+
+    expect(comp.currentCategoryLabel()).toBe('Все');
+    const chip: HTMLButtonElement | null = fixture.nativeElement.querySelector(
+      '[data-test="builder-category-chip"]',
+    );
+    expect(chip).toBeTruthy();
+    expect(chip.textContent).toContain('Все');
+  });
+
+  it('TZ-DOC-318: clicking the breadcrumb chip resets the filter to null', async () => {
+    const fixture = TestBed.createComponent(BuilderPage);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance as unknown as {
+      templateId: { set: (v: string | null) => void };
+      onCategoryChipReset: () => void;
+    };
+    comp.templateId.set('tpl-1');
+    fixture.detectChanges();
+
+    // Set the filter AFTER creation — the constructor's URL read-side
+    // would otherwise reset it to null from the empty queryParamMap.
+    const filter = TestBed.inject(BuilderTextFilterService);
+    filter.categoryId.set('cat-7');
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    expect(filter.categoryId()).toBe('cat-7');
+
+    comp.onCategoryChipReset();
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    expect(filter.categoryId()).toBeNull();
   });
 });

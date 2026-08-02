@@ -349,7 +349,13 @@ patchBlockSettings(blockId, { settings })
 - Пустой результат в выбранной категории → empty state «Нет блоков в этой категории».
 - Ошибка `/text-block-categories` (4xx/5xx) не ломает picker: dropdown показывает «Все».
 
-Dropdown закрывается при клике вне `.builder-dropdown` (через `@HostListener('document:click')`)
+### Filter URL-sync + breadcrumb badge (TZ-DOC-318)
+
+Поверх TZ-DOC-317 добавлены три UX-закрытия:
+
+- **URL persistence** — выбранная категория зеркалится в URL как `?categoryId=<id>` (`router.navigate` с `replaceUrl: true` + `queryParamsHandling: 'merge'`). Read-side: `route.queryParamMap` subscribe пишет в `BuilderTextFilterService.categoryId` → F5-refresh и shareable-ссылка `/doc-constructor/builder?categoryId=<id>` открывают builder с уже активным фильтром. `categoryId: null` убирает параметр (merge-removal). Loop-guard через `route.snapshot.queryParamMap` скипает избыточный navigate при первом прогоне эффекта.
+- **Breadcrumb badge** — в верхней панели builder (рядом с `headerSubtitle`, только когда `templateId()` есть) чип `builder-category-chip`: `«Категория: <name>»` (или «Все», если фильтр не задан). Лейбл — lookup по `categories()` по `selectedCategoryId()`. Клик по чипу → `onCategoryChipReset()` → `categoryId = null` → URL без параметра, все блоки снова видны.
+- **Sync** — единый источник правды `BuilderTextFilterService` (root-provided signal `categoryId`): tool-pane и inline dropdown читают ИЗ него (у tool-pane нет локального signal), два picker-call-site не расходятся.
 
 ## Фото-блок: два режима
 
