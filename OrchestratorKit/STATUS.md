@@ -57,6 +57,10 @@
 | ~~TZ-90~~ | ~~Диалоговая система (Phase A+B shipped; Phase C/D/E deferred)~~ | DONE — Phase A+B archived 2026-07-12 | — |
 | **TZ-266** | Generated-document organization scope before HTML/read/write side effects (imported workspace task, renumbered from TZ-261) | `tasks/_archive/2026-08/TZ-266.done.md` | DONE 2026-08-02 |
 | **TZ-267** | Templates registry error state and SilentResult HTTP boundary (imported workspace task, renumbered from TZ-262) | `tasks/_archive/2026-08/TZ-267.done.md` | DONE 2026-08-02 |
+| **TZ-MATERIALS-301** | Материалы — широкий структурированный диалог (imported workspace task) | `tasks/_archive/2026-08/TZ-MATERIALS-301.done.md` | DONE 2026-08-02 |
+| **TZ-MATERIALS-302** | Материалы — единицы из API и поставщики (imported workspace task) | `tasks/_archive/2026-08/TZ-MATERIALS-302.done.md` | DONE 2026-08-02 |
+| **TZ-DOC-307** | Категории шаблонов — доменный контракт | `backend/src/modules/document-template/*; backend/src/modules/category/*; docs/data-model.md` | — |
+| **TZ-DOC-308** | Категории шаблонов — справочник и форма | `frontend/src/app/pages/doc-constructor/*; frontend/src/app/pages/dictionaries/*` | TZ-DOC-307 |
 
 > **Observability chain:** TZ-110 — pure backend (Layer 4), параллельно OK с TZ-111 (Layer 3 frontend) и TZ-112 (Layer 3 dialog). TZ-113 ДОЛЖЕН идти после TZ-111 (тот же page, race fix). TZ-114 ДОЛЖЕН идти после TZ-110. **TZ-115..118 — cross-page batch**: storage-items + stock-movements shared между TZ-115 & TZ-116 → SERIAL; PiErrorBanner в TZ-118 конфликтует с TZ-105.3 → coord decision. **TZ-115 → TZ-117 → TZ-118** sequencing enforced. **TZ-119** — параллельно OK с TZ-115..118 (different layer).
 

@@ -16,6 +16,7 @@ import { WorkTypeModule } from '../work-type/work-type.module';
 import { TableTemplateModule } from '../table-template/table-template.module';
 import { TextBlockModule } from '../text-block/text-block.module';
 import { OwnershipGuard } from '../../common/guards/ownership/ownership.guard';
+import { DocumentTemplateCategoryModule } from '../document-template-category/document-template-category.module';
 
 /**
  * TZ-86 Phase A.4 — DocumentTemplateModule extended.
@@ -31,6 +32,9 @@ import { OwnershipGuard } from '../../common/guards/ownership/ownership.guard';
  * for every route in this controller. The `@OwnerOnly(entityKey)`
  * metadata is read INSIDE the guard's `canActivate()` — routes that
  * don't carry `@OwnerOnly` short-circuit to true.
+ *
+ * TZ-DOC-307 — DocumentTemplateCategoryModule is imported so the service
+ * can resolve/validate the template category contract (default + scope).
  */
 @Module({
   imports: [
@@ -48,6 +52,8 @@ import { OwnershipGuard } from '../../common/guards/ownership/ownership.guard';
     WorkTypeModule,
     TableTemplateModule,
     TextBlockModule,
+    // TZ-DOC-307 — document-template categories
+    DocumentTemplateCategoryModule,
   ],
   controllers: [DocumentTemplateController],
   providers: [DocumentTemplateService, OwnershipGuard],

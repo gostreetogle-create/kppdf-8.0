@@ -20,6 +20,19 @@ export class DocumentTemplate {
   @Prop({ type: Types.ObjectId, ref: 'DocType', required: true, index: true })
   docTypeId!: Types.ObjectId;
 
+  /**
+   * TZ-DOC-307 — document-template category (FK → DocumentTemplateCategory).
+   *
+   * Optional on the persisted model for READ compatibility with legacy
+   * templates created before categories existed. New templates always
+   * receive a category SERVER-SIDE: either the caller-provided
+   * `categoryId` (validated active + same org scope) or the active default
+   * category resolved by DocumentTemplateCategoryService. Dangling / cross-org
+   * references are rejected, and a referenced category cannot be deleted.
+   */
+  @Prop({ type: Types.ObjectId, ref: 'DocumentTemplateCategory', index: true })
+  categoryId?: Types.ObjectId;
+
   @Prop({ default: false, index: true })
   isDefault!: boolean;
 

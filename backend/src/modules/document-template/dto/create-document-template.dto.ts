@@ -11,6 +11,13 @@ export class CreateDocumentTemplateDto {
   tags?: string[];  @IsObjectId() organizationId!: string;
   @IsObjectId() docTypeId!: string;
 
+  /**
+   * TZ-DOC-307 — optional on the wire; the service ALWAYS assigns a
+   * category server-side (provided + validated, or the active default).
+   */
+  @IsOptional() @IsObjectId()
+  categoryId?: string;
+
   @IsOptional() @IsBoolean() isDefault?: boolean;
   @IsOptional() @IsBoolean() isActive?: boolean;
 

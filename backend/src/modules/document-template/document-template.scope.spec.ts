@@ -26,6 +26,7 @@ function createService(overrides: Record<string, unknown> = {}) {
   const textBlockModel = {};
   const counter = {};
   const tableTemplateService = {};
+  const categoryService = {};
 
   const dependencies = {
     model,
@@ -41,6 +42,7 @@ function createService(overrides: Record<string, unknown> = {}) {
     textBlockModel,
     counter,
     tableTemplateService,
+    categoryService,
     ...overrides,
   };
 
@@ -58,6 +60,7 @@ function createService(overrides: Record<string, unknown> = {}) {
     dependencies.textBlockModel as never,
     dependencies.counter as never,
     dependencies.tableTemplateService as never,
+    dependencies.categoryService as never,
   );
 }
 

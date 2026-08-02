@@ -31,13 +31,14 @@ import { TableTemplateService } from '../table-template/table-template.service';
 import { TextBlock, TextBlockDocument } from '../text-block/text-block.schema';
 import { sanitizeHtml } from '../../common/sanitize-html';
 import { blockLayoutStyle } from './layout-renderer';
+import { DocumentTemplateCategoryService } from '../document-template-category/document-template-category.service';
 
 function escapeHtmlValue(value: string): string {
   return value
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/\"/g, '&quot;')
+    .replace(/\\"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
 
@@ -66,6 +67,16 @@ function escapeHtmlValue(value: string): string {
  * MVP scope: only single-field reads (no nested-path). Format applied via
  * `formatValue()` for currency/date/number (Intl ru-RU defaults). Format hint
  * `text` and undefined fall through to raw String(value).
+ *
+ * TZ-DOC-307 — Category contract:
+ *   - create() accepts an optional `categoryId`; when absent it resolves the
+ *     active default category SERVER-SIDE in the template's org scope. When
+ *     the default cannot be resolved, creation FAILS with a testable 400 and
+ *     no template is persisted (no partial record).
+ *   - update() validates any provided `categoryId` (exists + active + same
+ *     org scope or system).
+ *   - duplicate() preserves the source template's categoryId.
+ *   - findAll() supports an optional `categoryId` filter.
  */
 @Injectable()
 export class DocumentTemplateService {
@@ -94,7 +105,38 @@ export class DocumentTemplateService {
     private readonly textBlockModel: Model<TextBlockDocument>,
     private readonly counter: CounterService,
     private readonly tableTemplateService: TableTemplateService,
+    private readonly categoryService: DocumentTemplateCategoryService,
   ) {}
+
+  /**
+   * TZ-DOC-307 §ШАГ 4 — resolve the category a NEW template must carry.
+   *
+   * Order:
+   *   1. caller-provided `categoryId` → `assertAssignable` (exists, active,
+   *      same org scope or system) — otherwise a testable 4xx.
+   *   2. no categoryId → active default category in the template's org
+   *      scope (org `isDefault` → system «Общее»).
+   *   3. default unresolvable → BadRequestException (400); the template is
+   *      NOT created partially.
+   */
+  private async resolveCategoryId(
+    dto: Pick<CreateDocumentTemplateDto, 'categoryId' | 'organizationId'>,
+  ): Promise<Types.ObjectId> {
+    if (dto.categoryId) {
+      const cat = await this.categoryService.assertAssignable(
+        dto.categoryId,
+        dto.organizationId,
+      );
+      return cat._id;
+    }
+    const fallback = await this.categoryService.resolveDefault(dto.organizationId);
+    if (!fallback) {
+      throw new BadRequestException(
+        'Не удалось определить категорию шаблона: нет активной категории по умолчанию. Создайте категорию шаблонов или активируйте системную «Общее».',
+      );
+    }
+    return fallback._id;
+  }
 
   /**
    * TZ-251 §ШАГ 2 — set `createdBy` on create.
@@ -106,6 +148,9 @@ export class DocumentTemplateService {
    * branch in `OwnershipGuard` (deferred to RBAC).
    *
    * The IDOR ladder in OwnershipGuard is robust to either case.
+   *
+   * TZ-DOC-307 — the created template ALWAYS carries `categoryId`
+   * (validated or server-side default).
    */
   async create(
     dto: CreateDocumentTemplateDto,
@@ -121,12 +166,14 @@ export class DocumentTemplateService {
         { $set: { isDefault: false } },
       );
     }
+    const categoryId = await this.resolveCategoryId(dto);
     return this.model.create({
       name: dto.name,
       description: dto.description,
       tags: dto.tags ?? [],
       organizationId: new Types.ObjectId(dto.organizationId),
       docTypeId: new Types.ObjectId(dto.docTypeId),
+      categoryId,
       isDefault: dto.isDefault ?? false,
       isActive: dto.isActive ?? true,
       pageSize: dto.pageSize ?? 'A4',
@@ -146,6 +193,7 @@ export class DocumentTemplateService {
     organizationId?: string,
     docTypeId?: string,
     isDefault?: boolean,
+    categoryId?: string,
   ): Promise<DocumentTemplateDocument[]> {
     const filter: Record<string, unknown> = {};
     if (organizationId) {
@@ -157,10 +205,15 @@ export class DocumentTemplateService {
       filter.docTypeId = new Types.ObjectId(docTypeId);
     }
     if (typeof isDefault === 'boolean') filter.isDefault = isDefault;
+    if (categoryId) {
+      if (!Types.ObjectId.isValid(categoryId)) return [];
+      filter.categoryId = new Types.ObjectId(categoryId);
+    }
     return this.model
       .find(filter)
       .populate('organizationId')
       .populate('docTypeId')
+      .populate('categoryId')
       .sort({ name: 1 })
       .exec();
   }
@@ -173,6 +226,7 @@ export class DocumentTemplateService {
       .findById(id)
       .populate('organizationId')
       .populate('docTypeId')
+      .populate('categoryId')
       .exec();
     if (!doc) throw new NotFoundException(`DocumentTemplate ${id} not found`);
     return doc;
@@ -210,6 +264,13 @@ export class DocumentTemplateService {
     if (dto.backgroundOpacity !== undefined) doc.backgroundOpacity = dto.backgroundOpacity;
     if (dto.notes !== undefined) doc.notes = dto.notes;
     if (dto.version !== undefined) doc.version = dto.version;
+    if (dto.categoryId !== undefined) {
+      const cat = await this.categoryService.assertAssignable(
+        dto.categoryId,
+        doc.organizationId.toString(),
+      );
+      doc.categoryId = cat._id;
+    }
     return doc.save();
   }
 
@@ -222,6 +283,10 @@ export class DocumentTemplateService {
    * is set to the ACTING user (`userId`), not the source creator —
    * because the copy is a fresh resource owned by whoever performed the
    * action.
+   *
+   * TZ-DOC-307 — duplicate PRESERVES the source template's categoryId
+   * (no new category record is created server-side; the reference is
+   * copied verbatim).
    */
   async duplicate(id: string, userId?: string): Promise<DocumentTemplateDocument> {
     const src = await this.findById(id);
@@ -231,6 +296,7 @@ export class DocumentTemplateService {
       tags: src.tags,
       organizationId: src.organizationId,
       docTypeId: src.docTypeId,
+      categoryId: src.categoryId,
       isDefault: false,
       isActive: src.isActive,
       pageSize: src.pageSize,
