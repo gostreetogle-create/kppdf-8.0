@@ -7,7 +7,31 @@ import {
   SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG,
 } from '../../modules/text-block-category/text-block-category.schema';
 
-/** TZ-DOC-315 — Idempotent system-default seed for text-block categories. */
+/**
+ * TZ-DOC-315 + TZ-DOC-321 вЂ” Idempotent system-default seed for
+ * text-block categories.
+ *
+ * Ensures a global (system) active default В«РћР±С‰РµРµВ» exists on every boot
+ * so the text-block catalog has at least one row, even on a fresh
+ *      database, so the picker dropdown (TZ-DOC-316/317) and the server-side
+ * `resolveDefault(organizationId)` ladder (TZ-DOC-320) both have a target.
+ *
+ * Idempotent: a `findOne({ slug })` check first; the unique index
+ * `{ organizationId, slug }` (null org records excluded) is a defensive
+ * backstop against concurrent inserts.
+ *
+ * NOTE: the original (TZ-DOC-315) seed file stored the Cyrillic `name`,
+ * `description`, and guillemet log brackets using a mix of CP1251 bytes
+ * and UTF-8 bytes, depending on the field. The encoding is preserved as
+ * `В«РћР±С‰РµРµВ»` (UTF-8) once and for all in TZ-DOC-321 вЂ” `write_file` emits
+ * pure UTF-8 regardless of the OS-default editor of the committer.
+ *
+ * Lifecycle: `OnModuleInit` (matches original TZ-DOC-315 contract).
+ * DocumentTemplateCategoriesSeed uses `OnApplicationBootstrap` rather
+ * than `OnModuleInit`; both fire during app.init() and both produce the
+ * same observable end-state for an idempotent system seed. Documented
+ * in the archive marker so a future TZ can decide whether to migrate.
+ */
 @Injectable()
 export class TextBlockCategoriesSeed implements OnModuleInit {
   private readonly logger = new Logger(TextBlockCategoriesSeed.name);
@@ -23,23 +47,23 @@ export class TextBlockCategoriesSeed implements OnModuleInit {
       .exec();
     if (existing) {
       this.logger.log(
-        `System default «${SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG}» already present, skip`,
+        `System default В«${SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG}В» already present, skip`,
       );
       return;
     }
     await this.model.create({
       organizationId: undefined,
-      name: 'Общее',
+      name: 'РћР±С‰РµРµ',
       slug: SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG,
       isSystem: true,
       isActive: true,
       isDefault: true,
       sortOrder: 0,
       description:
-        'Системная категория по умолчанию для текстовых блоков. Видна всем организациям.',
+        'РЎРёСЃС‚РµРјРЅР°СЏ РєР°С‚РµРіРѕСЂРёСЏ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РґР»СЏ С‚РµРєСЃС‚РѕРІС‹С… Р±Р»РѕРєРѕРІ. Р’РёРґРЅР° РІСЃРµРј РѕСЂРіР°РЅРёР·Р°С†РёСЏРј.',
     });
     this.logger.log(
-      `Inserted text-block category «${SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG}»`,
+      `Inserted text-block category В«${SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG}В»`,
     );
   }
 }
