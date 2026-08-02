@@ -1,4 +1,9 @@
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Types } from 'mongoose';
 import { DocumentTemplateCategoryService } from './document-template-category.service';
 import { DocumentTemplateCategory } from './document-template-category.schema';
@@ -81,6 +86,17 @@ describe('DocumentTemplateCategoryService (TZ-DOC-307)', () => {
       expect(result).toBe(doc);
     });
 
+    it('GENERATES a server-side slug from a Cyrillic name when slug omitted', async () => {
+      const { service, model } = createService();
+      model.findOne.mockReturnValue(mockQuery(null));
+      model.create.mockResolvedValue(catDoc({}));
+
+      await service.create({ name: 'Коммерческие предложения' }, ORG_A);
+      expect(model.create).toHaveBeenCalledWith(
+        expect.objectContaining({ slug: 'kommercheskie-predlozheniya' }),
+      );
+    });
+
     it('rejects a duplicate slug in the SAME org scope with 409', async () => {
       const { service, model } = createService();
       model.findOne.mockReturnValue(mockQuery(catDoc({ organizationId: new Types.ObjectId(ORG_A) })));
@@ -129,6 +145,45 @@ describe('DocumentTemplateCategoryService (TZ-DOC-307)', () => {
       await service.findAll({ activeOnly: true });
       expect(model.find).toHaveBeenCalledWith({ isActive: true });
     });
+
+    it('COMBINES search and org scope via $and (search is never dropped)', async () => {
+      const { service, model } = createService();
+      model.find.mockReturnValue({ sort: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue([]) }) });
+
+      await service.findAll({ organizationId: ORG_A, search: 'Комм' });
+      expect(model.find).toHaveBeenCalledWith({
+        $and: [
+          { name: new RegExp('Комм', 'i') },
+          {
+            $or: [
+              { organizationId: new Types.ObjectId(ORG_A) },
+              { organizationId: { $exists: false } },
+            ],
+          },
+        ],
+      });
+    });
+
+    it('ESCAPES regex metacharacters in the search term (no SyntaxError/ReDoS)', async () => {
+      const { service, model } = createService();
+      model.find.mockReturnValue({ sort: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue([]) }) });
+
+      // `(` and `[a-` would throw inside new RegExp if not escaped.
+      await expect(
+        service.findAll({ organizationId: ORG_A, search: '(комм [a-' }),
+      ).resolves.toEqual([]);
+      expect(model.find).toHaveBeenCalledWith({
+        $and: [
+          { name: new RegExp('\\(комм \\[a-', 'i') },
+          {
+            $or: [
+              { organizationId: new Types.ObjectId(ORG_A) },
+              { organizationId: { $exists: false } },
+            ],
+          },
+        ],
+      });
+    });
   });
 
   describe('update / rename', () => {
@@ -137,7 +192,7 @@ describe('DocumentTemplateCategoryService (TZ-DOC-307)', () => {
       const doc = catDoc({ _id: new Types.ObjectId('aaaaaaaaaaaaaaaaaaaaaaaa'), name: 'Старое' });
       model.findById.mockReturnValue(mockQuery(doc));
 
-      const result = await service.update(doc._id.toString(), { name: 'Новое имя' });
+      const result = await service.update(doc._id.toString(), { name: 'Новое имя' }, ORG_A);
       expect(result._id.toString()).toBe('aaaaaaaaaaaaaaaaaaaaaaaa');
       expect(result.name).toBe('Новое имя');
       expect(result.save).toHaveBeenCalled();
@@ -150,7 +205,30 @@ describe('DocumentTemplateCategoryService (TZ-DOC-307)', () => {
       model.findOne.mockReturnValue(mockQuery(catDoc({ _id: new Types.ObjectId('bbbbbbbbbbbbbbbbbbbbbbbb') })));
 
       await expect(
-        service.update(doc._id.toString(), { slug: 'new-slug' }),
+        service.update(doc._id.toString(), { slug: 'new-slug' }, ORG_A),
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('REFUSES to update a FOREIGN-ORG category with 403 (IDOR guard)', async () => {
+      const { service, model } = createService();
+      model.findById.mockReturnValue(
+        mockQuery(catDoc({ organizationId: new Types.ObjectId(ORG_B) })),
+      );
+
+      await expect(
+        service.update(new Types.ObjectId().toString(), { name: 'Взлом' }, ORG_A),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      // no save attempted on a foreign-org category
+    });
+
+    it('REFUSES to modify a SYSTEM category with 409 (seed-managed)', async () => {
+      const { service, model } = createService();
+      model.findById.mockReturnValue(
+        mockQuery(catDoc({ isSystem: true, organizationId: undefined })),
+      );
+
+      await expect(
+        service.update(new Types.ObjectId().toString(), { name: 'Переименовать' }, ORG_A),
       ).rejects.toBeInstanceOf(ConflictException);
     });
   });
@@ -251,9 +329,21 @@ describe('DocumentTemplateCategoryService (TZ-DOC-307)', () => {
       const { service, model } = createService();
       model.findById.mockReturnValue(mockQuery(catDoc({ isSystem: true })));
 
-      await expect(service.remove(new Types.ObjectId().toString())).rejects.toBeInstanceOf(
+      await expect(service.remove(new Types.ObjectId().toString(), ORG_A)).rejects.toBeInstanceOf(
         ConflictException,
       );
+    });
+
+    it('REFUSES to delete a FOREIGN-ORG category with 403 (IDOR guard)', async () => {
+      const { service, model } = createService();
+      model.findById.mockReturnValue(
+        mockQuery(catDoc({ organizationId: new Types.ObjectId(ORG_B) })),
+      );
+
+      await expect(
+        service.remove(new Types.ObjectId().toString(), ORG_A),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(model.deleteOne).not.toHaveBeenCalled();
     });
 
     it('refuses to delete a category referenced by templates with 409', async () => {
@@ -261,7 +351,7 @@ describe('DocumentTemplateCategoryService (TZ-DOC-307)', () => {
       model.findById.mockReturnValue(mockQuery(catDoc({ isSystem: false })));
       templateModel.countDocuments.mockReturnValue(mockQuery(2));
 
-      await expect(service.remove(new Types.ObjectId().toString())).rejects.toBeInstanceOf(
+      await expect(service.remove(new Types.ObjectId().toString(), ORG_A)).rejects.toBeInstanceOf(
         ConflictException,
       );
       expect(templateModel.countDocuments).toHaveBeenCalledWith({
@@ -275,7 +365,7 @@ describe('DocumentTemplateCategoryService (TZ-DOC-307)', () => {
       templateModel.countDocuments.mockReturnValue(mockQuery(0));
       model.deleteOne.mockReturnValue(mockQuery(undefined));
 
-      await service.remove(new Types.ObjectId().toString());
+      await service.remove(new Types.ObjectId().toString(), ORG_A);
       expect(model.deleteOne).toHaveBeenCalled();
     });
   });

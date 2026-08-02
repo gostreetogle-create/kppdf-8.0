@@ -128,6 +128,15 @@ export const routes: Routes = [
         title: 'KPPDF — Категории',
       },
       {
+        // TZ-DOC-308 — категории шаблонов документов (справочник).
+        path: 'doc-template-categories',
+        loadComponent: () =>
+          import('./pages/dictionaries/document-template-categories.page').then(
+            (m) => m.DocumentTemplateCategoriesPage,
+          ),
+        title: 'KPPDF — Категории шаблонов',
+      },
+      {
         path: 'products',
         loadComponent: () => import('./pages/products/products.page').then((m) => m.ProductsPage),
         title: 'KPPDF — Продукция',

@@ -4953,3 +4953,29 @@ uploadResults-queue/photoList/remove/upload; +4 теста, +1 усиление)
 git diff --check PASS.
 **Известные ограничения:** атомарность photos/material — существующая модель
 (upload → PATCH); полный `ng build` и browser-аудит — следующий (финальный) шаг.
+
+## 2026-08-02 — TZ-DOC-308 closed (Категории шаблонов — справочник и UI выбора категории)
+
+**Исполнитель:** Senior Full-Stack Engineer / Domain Architect / QA Engineer (Buffy)
+**Статус:** Выполнено / Проверено
+**Что сделано кратко:** Фронтенд поверх контракта TZ-DOC-307. Новый справочник «Категории шаблонов»
+(DocumentTemplateCategoriesPage, `/doc-template-categories`, пункт в навигации «Справочники») с CRUD:
+создание/переименование (form-dialog, slug генерируется сервером), активация/деактивация (switch),
+удаление только неиспользуемых (409 от бэкенда → toast), системные категории заблокированы.
+Setup-диалог шаблона: обязательное поле «Категория шаблона» с auto-select активной default-категории,
+только активные категории, loading/error/empty состояния, submit заблокирован без валидной categoryId.
+Реестр шаблонов: колонка «Категория», фильтр по categoryId (API-фильтр), duplicate сохраняет категорию.
+**Затронутые файлы/папки:**
+- frontend/src/app/pages/dictionaries/document-template-categories.page.ts + .spec.ts (NEW)
+- frontend/src/app/pages/dictionaries/document-template-category-form-dialog.component.ts + .spec.ts (NEW)
+- frontend/src/app/shared/services/pi-document-template-categories.service.ts (NEW)
+- frontend/src/app/pages/doc-constructor/builder/template-setup-dialog.component.ts + .spec.ts (категория, default auto-select)
+- frontend/src/app/pages/doc-constructor/templates/templates.page.ts + .spec.ts (колонка + фильтр + duplicate)
+- frontend/src/app/shared/services/pi-document-templates.service.ts (categoryId в payload)
+- frontend/src/app/app.routes.ts (+/doc-template-categories), frontend/src/app/layout/app-layout.component.ts (пункт навигации)
+- docs/data-model.md, docs/pages/templates.page.md, docs/pages/categories.page.md, STATUS.md
+**Verification:** frontend tsc PASS; frontend jest 56/56 targeted + 689/689 full PASS; ng build (development) PASS;
+backend 50/50 targeted + 315/315 full PASS (регресс-прогон контракта); git diff --check PASS; code review PASS.
+**Известные ограничения:** browser smoke check — см. отчёт сессии (dev-стек :4200/:3000 поднят; глубокие
+E2E-сценарии с созданием данных помечены MANUAL_BROWSER_CHECK_REQUIRED).
+---

@@ -16,6 +16,11 @@ import {
  * future payload must be added here explicitly. `organizationId` is NOT
  * accepted from the client — it is derived from the authenticated user
  * (controller) so a user can never create a category in a foreign scope.
+ *
+ * `slug` is OPTIONAL: when omitted the server generates it from `name`
+ * (Russian→Latin transliteration, kebab-case) — see
+ * `DocumentTemplateCategoryService.slugify`. Clients that want a custom
+ * stable key may still send one (validated `[a-z0-9-]+`).
  */
 export class CreateDocumentTemplateCategoryDto {
   @ApiProperty({ example: 'Коммерческие предложения', description: 'Название категории' })
@@ -23,11 +28,12 @@ export class CreateDocumentTemplateCategoryDto {
   @Length(1, 128)
   name!: string;
 
-  @ApiProperty({ example: 'commercial-proposals', description: 'Slug (строчные, a-z, 0-9, -)' })
+  @ApiPropertyOptional({ example: 'commercial-proposals', description: 'Slug (строчные, a-z, 0-9, -). Необязателен — сервер сгенерирует из name' })
+  @IsOptional()
   @IsString()
   @Length(1, 64)
   @Matches(/^[a-z0-9-]+$/, { message: 'slug must be lowercase, a-z, 0-9, -' })
-  slug!: string;
+  slug?: string;
 
   @ApiPropertyOptional({ description: 'Описание категории' })
   @IsOptional()

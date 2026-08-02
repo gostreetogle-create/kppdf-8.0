@@ -1,6 +1,6 @@
 # STATUS — KPPDF ERP Project Status
 
-**Last updated:** 2026-08-01
+**Last updated:** 2026-08-02
 **Phase:** Canonical cleanup and verification — TZ-261 and TZ-262 are closed; roadmap items remain documented backlog
 **Canonical workspace:** `D:\kppdf-8.0` on `main`; only registered Git worktree; package manager `pnpm`
 **Task truth:** `tasks/` contains only active work. Completed or deferred work belongs in `tasks/_archive/`; this status file also retains historical roadmap notes.
@@ -735,6 +735,7 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 | TZ-MATERIALS-305 | 2026-08-02 | Материалы — габариты: one-click-one-row, следующий неиспользованный тип по порядку, fallback length, isImmutable gap → successor TZ-309 | `tasks/_archive/2026-08/TZ-MATERIALS-305.done.md` |
 | TZ-MATERIALS-306 | 2026-08-02 | Материалы — фото и надёжное сохранение: save guard (submitting||uploading), mixed upload, main photo ∈ photoIds, orphan cleanup | `tasks/_archive/2026-08/TZ-MATERIALS-306.done.md` |
 | TZ-DOC-307 | 2026-08-02 | Категории шаблонов — доменный контракт (отдельная сущность DocumentTemplateCategory, categoryId в DocumentTemplate, server-side default, RBAC, backfill migration) | `tasks/_archive/2026-08/TZ-DOC-307.done.md` |
+| TZ-DOC-308 | 2026-08-02 | Категории шаблонов — UI: справочник-страница, выбор категории в setup-диалоге (default auto-select), колонка + фильтр в реестре шаблонов, form-dialog, тесты | `tasks/_archive/2026-08/TZ-DOC-308.done.md` |
 
 ## 🚀 Следующие шаги (предложения)
 
@@ -1028,6 +1029,7 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 | TZ-MATERIALS-305 | `tasks/_archive/2026-08/TZ-MATERIALS-305.done.md` (материалы — габариты и неизменяемость) | `.mimocode/locks/TZ-MATERIALS-305-dimensions-contract.lock` |
 | TZ-MATERIALS-306 | `tasks/_archive/2026-08/TZ-MATERIALS-306.done.md` (материалы — фото и надёжное сохранение) | `.mimocode/locks/TZ-MATERIALS-306-media-and-save-audit.lock` |
 | TZ-DOC-307 | `tasks/_archive/2026-08/TZ-DOC-307.done.md` (категории шаблонов — доменный контракт) | `.mimocode/locks/TZ-DOC-307-template-category.lock` |
+| TZ-DOC-308 | `tasks/_archive/2026-08/TZ-DOC-308.done.md` (категории шаблонов — UI справочник + выбор в диалоге + реестр) | `.mimocode/locks/TZ-DOC-308-template-category-ui.lock` |
 
 **Code evidence:** все 15 файлов подтверждены через grep/ls на диске (basher-verified this session). TZ-257.A.1 / TZ-256.B / TZ-259 / TZ-257.B реализованы и закоммичены в этой сессии; остальные — filesystem cleanup + archive creation.
 

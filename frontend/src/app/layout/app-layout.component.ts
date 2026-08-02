@@ -43,8 +43,9 @@ interface NavCategory {
  *   Сделки        ← Организации · Договоры · Заказы
  *     (Briefcase) — counterparty + commercial obligations
  *
- *   Справочники   ← Справочники
- *     (BookOpen)  — meta-catalog umbrella route
+ *   Справочники   ← Справочники · Категории · Категории шаблонов
+ *     (BookOpen)  — meta-catalog umbrella route (+ TZ-DOC-308 template
+ *                    categories dictionary)
  *
  *   Документы     ← Конструктор · Текстовые блоки · Шаблоны таблиц
  *     (FileText)  — TZ-86 Phase D.1 document constructor sub-system
@@ -86,12 +87,13 @@ const NAV_CATEGORIES: NavCategory[] = [
     items: [
       { path: '/dictionaries', label: 'Все справочники' },
       { path: '/categories', label: 'Категории' },
+      { path: '/doc-template-categories', label: 'Категории шаблонов' },
     ],
   },
   {
     // TZ-86 Phase D.1 — 4-я категория «Документы»: текстовые блоки,
     // шаблоны таблиц и 3-pane builder canvas. FileText иконка
-    // (lucide-angular@0.460). Active-category algorithm в
+    // (lucide-angular@0.460). Active-category алгоритм в
     // PiNavDropdownComponent использует path === url || url.startsWith(path + '/'),
     // поэтому /doc-constructor/builder/:id матчится по '/doc-constructor/builder'.
     id: 'docs',

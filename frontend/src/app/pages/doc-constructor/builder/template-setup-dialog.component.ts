@@ -1,13 +1,10 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { PiDialogComponent } from '../../../shared/ui/dialog/pi-dialog.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../../shared/ui/dialog/dialog.tokens';
 import type { DialogRef } from '../../../shared/ui/dialog/pi-dialog.service';
+import { DocumentTemplateCategoriesService } from '../../../shared/services/pi-document-template-categories.service';
+import { DocumentTemplateCategory } from '../../../shared/services/pi-document-template-categories.service';
 
 export type PageSize = 'A3' | 'A4' | 'A5';
 export type Orientation = 'portrait' | 'landscape';
@@ -15,6 +12,7 @@ export type Orientation = 'portrait' | 'landscape';
 export interface TemplateSetupResult {
   pageSize: PageSize;
   orientation: Orientation;
+  categoryId: string;
 }
 
 export interface TemplateSetupData {
@@ -40,6 +38,37 @@ export interface TemplateSetupData {
     >
       <div body>
         <div class="setup-form">
+          <!-- Category -->
+          <div class="field">
+            <span class="field__label">Категория шаблона</span>
+            @if (categoriesLoading()) {
+              <span class="text-xs text-muted-foreground">Загрузка категорий…</span>
+            } @else if (categoriesError()) {
+              <span class="text-xs text-destructive">{{ categoriesError() }}</span>
+            } @else if (categories().length === 0) {
+              <span class="text-xs text-muted-foreground"
+                >Нет активных категорий. Создайте категорию в разделе «Справочники».</span
+              >
+            } @else {
+              <select
+                id="template-category"
+                class="pi-input w-full"
+                [value]="categoryId()"
+                (change)="onCategoryChange($event)"
+                [class.border-destructive]="hasCategoryError()"
+                aria-label="Категория шаблона"
+              >
+                <option value="" disabled>— выберите категорию —</option>
+                @for (cat of categories(); track cat._id) {
+                  <option [value]="cat._id">{{ cat.name }}</option>
+                }
+              </select>
+            }
+            @if (hasCategoryError()) {
+              <span class="text-xs text-destructive">Выберите категорию</span>
+            }
+          </div>
+
           <!-- Page size -->
           <div class="field">
             <span class="field__label">Формат страницы</span>
@@ -76,9 +105,7 @@ export interface TemplateSetupData {
         </div>
       </div>
       <div footer>
-        <app-pi-button variant="ghost" size="sm" (click)="onCancel()">
-          Отмена
-        </app-pi-button>
+        <app-pi-button variant="ghost" size="sm" (click)="onCancel()"> Отмена </app-pi-button>
         <app-pi-button variant="default" size="sm" (click)="onConfirm()">
           {{ data.mode === 'duplicate' ? 'Дублировать' : 'Создать' }}
         </app-pi-button>
@@ -146,6 +173,7 @@ export interface TemplateSetupData {
 export class TemplateSetupDialogComponent {
   readonly data = inject<TemplateSetupData>(PI_DIALOG_DATA);
   private readonly ref = inject<DialogRef<TemplateSetupResult>>(PI_DIALOG_REF);
+  private readonly categoriesSvc = inject(DocumentTemplateCategoriesService);
 
   protected readonly pageSizes: PageSize[] = ['A3', 'A4', 'A5'];
   protected readonly orientations = [
@@ -155,15 +183,63 @@ export class TemplateSetupDialogComponent {
 
   protected readonly pageSize = signal<PageSize>('A4');
   protected readonly orientation = signal<Orientation>('portrait');
+  protected readonly categoryId = signal<string>('');
+  protected readonly categories = signal<DocumentTemplateCategory[]>([]);
+  protected readonly categoriesLoading = signal(true);
+  protected readonly categoriesError = signal<string | null>(null);
+
+  /**
+   * TZ-DOC-268: submit guard. A double-click on «Создать» before the CDK
+   * overlay finishes teardown could fire `onConfirm` twice. `ref.close()` is
+   * idempotent (the service ignores a second close), but the guard makes the
+   * intent explicit and unit-testable: the FIRST confirm wins, everything
+   * after it is a no-op — no second dialog result, no second template POST.
+   */
+  protected readonly submitted = signal(false);
+
+  constructor() {
+    this.loadCategories();
+  }
+
+  private loadCategories(): void {
+    this.categoriesLoading.set(true);
+    this.categoriesError.set(null);
+    this.categoriesSvc.list({ activeOnly: true }).subscribe((res) => {
+      this.categoriesLoading.set(false);
+      if (res.ok) {
+        this.categories.set(res.data ?? []);
+        const defaultCat = res.data?.find((c) => c.isDefault);
+        if (defaultCat) {
+          this.categoryId.set(defaultCat._id);
+        }
+      } else {
+        this.categoriesError.set('Не удалось загрузить категории');
+      }
+    });
+  }
+
+  protected hasCategoryError(): boolean {
+    return !this.categoryId() && this.categories().length > 0;
+  }
+
+  protected onCategoryChange(e: Event): void {
+    this.categoryId.set((e.target as HTMLSelectElement).value);
+  }
 
   protected onConfirm(): void {
+    if (this.submitted()) return;
+    if (!this.categoryId()) return;
+    this.submitted.set(true);
     this.ref.close({
       pageSize: this.pageSize(),
       orientation: this.orientation(),
+      categoryId: this.categoryId(),
     });
   }
 
   protected onCancel(): void {
+    if (this.submitted()) return;
+    this.submitted.set(true);
     this.ref.close();
   }
 }

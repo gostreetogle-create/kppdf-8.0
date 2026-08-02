@@ -61,6 +61,7 @@ import { CartSessionModule } from './modules/cart-session/cart-session.module';
 import { CartItemModule } from './modules/cart-item/cart-item.module';
 import { DocTypeModule } from './modules/doc-type/doc-type.module';
 import { DocumentTemplateModule } from './modules/document-template/document-template.module';
+import { DocumentTemplateCategoryModule } from './modules/document-template-category/document-template-category.module';
 import { TemplateBlockModule } from './modules/template-block/template-block.module';
 import { TextBlockModule } from './modules/text-block/text-block.module';
 import { TableTemplateModule } from './modules/table-template/table-template.module';
@@ -101,6 +102,7 @@ import { CategoriesSeed } from './common/seed/categories.seed';
 import { WarehouseSeed } from './common/seed/warehouse.seed';
 import { CurrenciesSeed } from './common/seed/currencies.seed';
 import { DevFixturesSeed } from './common/seed/dev-fixtures.seed';
+import { DocumentTemplateCategoriesSeed } from './common/seed/document-template-categories.seed';
 import { BomComponentResolveService } from './modules/bom/migrations/bom-component-resolve.service';
 import { HealthController } from './health.controller';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
@@ -203,6 +205,8 @@ import { RequestMethod } from '@nestjs/common';
     CartItemModule,
     DocTypeModule,
     DocumentTemplateModule,
+    // TZ-DOC-307: категории шаблонов документов (отдельная сущность)
+    DocumentTemplateCategoryModule,
     TemplateBlockModule,
     TextBlockModule, // TZ-86 Фаза A.1: новая entity для reusable text snippets
     TableTemplateModule,
@@ -264,6 +268,8 @@ import { RequestMethod } from '@nestjs/common';
     WarehouseSeed,
     CurrenciesSeed,
     DevFixturesSeed,
+    // TZ-DOC-307: системная default-категория шаблонов «Общее»
+    DocumentTemplateCategoriesSeed,
     // TZ-105.2: idempotent orphan FK migration (OnApplicationBootstrap lifecycle,
     // distinct from seeds' OnModuleInit per TZ-87 pattern). Dry-run default
     // via `BOM_MIGRATE_DRY_RUN=true`; set to "false" to apply migrations.

@@ -31,6 +31,10 @@ import {
   DocumentTemplate,
   DocumentTemplatesService,
 } from '../../../shared/services/pi-document-templates.service';
+import {
+  DocumentTemplateCategoriesService,
+  DocumentTemplateCategory,
+} from '../../../shared/services/pi-document-template-categories.service';
 import { pluralRu } from '../../../shared/util/russian-plural';
 
 const RU_TEMPLATES = ['шаблон', 'шаблона', 'шаблонов'] as const;
@@ -67,6 +71,17 @@ const PAGE_SIZE = 10;
         (input)="onSearch($event)"
         aria-label="Поиск шаблонов"
       />
+      <select
+        class="pi-input w-48"
+        [value]="categoryFilter()"
+        (change)="onCategoryFilter($event)"
+        aria-label="Фильтр по категории"
+      >
+        <option value="">Все категории</option>
+        @for (cat of categories(); track cat._id) {
+          <option [value]="cat._id">{{ cat.name }}</option>
+        }
+      </select>
       <app-pi-button
         variant="default"
         (click)="onCreate()"
@@ -104,6 +119,7 @@ const PAGE_SIZE = 10;
             <thead class="hairline-b">
               <tr>
                 <th class="pi-cell eyebrow text-left">Название</th>
+                <th class="pi-cell eyebrow text-left">Категория</th>
                 <th class="pi-cell eyebrow text-left">Тип документа</th>
                 <th class="pi-cell eyebrow text-left w-24">Формат</th>
                 <th class="pi-cell eyebrow text-center w-24">Активен</th>
@@ -115,6 +131,7 @@ const PAGE_SIZE = 10;
               @for (t of pageRows(); track t._id) {
                 <tr class="pi-table-row pi-table-row-odd group" [class.opacity-50]="!t.isActive">
                   <td class="pi-cell font-medium">{{ t.name }}</td>
+                  <td class="pi-cell text-muted-foreground">{{ categoryName(t) }}</td>
                   <td class="pi-cell text-muted-foreground">{{ docTypeName(t) }}</td>
                   <td class="pi-cell">
                     <span class="eyebrow hairline rounded-sm px-2 py-0.5 font-mono">{{
@@ -194,6 +211,7 @@ export class TemplatesPage {
   protected readonly PAGE_SIZE = PAGE_SIZE;
 
   private readonly svc = inject(DocumentTemplatesService);
+  private readonly categoriesSvc = inject(DocumentTemplateCategoriesService);
   private readonly router = inject(Router);
   private readonly toast = inject(PiToastService);
   private readonly dialog = inject(PiDialogService);
@@ -201,23 +219,35 @@ export class TemplatesPage {
   private readonly injector = inject(Injector);
 
   protected readonly items = signal<DocumentTemplate[]>([]);
+  protected readonly categories = signal<DocumentTemplateCategory[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly creating = signal(false);
   protected readonly searchQuery = signal('');
+  protected readonly categoryFilter = signal('');
   protected readonly pageIndex = signal(0);
 
   protected readonly filtered = computed(() => {
     const q = this.searchQuery().trim().toLowerCase();
+    const catId = this.categoryFilter();
     const list = this.items()
       .slice()
       .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
-    if (!q) return list;
-    return list.filter(
+    let result = list;
+    if (catId) {
+      result = result.filter(
+        (t) =>
+          t.categoryId === catId ||
+          (typeof t.categoryId === 'object' && t.categoryId._id === catId),
+      );
+    }
+    if (!q) return result;
+    return result.filter(
       (t) =>
         t.name.toLowerCase().includes(q) ||
         this.docTypeName(t).toLowerCase().includes(q) ||
-        t.pageSize.toLowerCase().includes(q),
+        t.pageSize.toLowerCase().includes(q) ||
+        this.categoryName(t).toLowerCase().includes(q),
     );
   });
 
@@ -248,10 +278,23 @@ export class TemplatesPage {
           this.error.set(extractErrorMessage(res.error));
         }
       });
+    this.categoriesSvc
+      .list({ activeOnly: true })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (res.ok) {
+          this.categories.set(res.data ?? []);
+        }
+      });
   }
 
   protected totalLabel(n: number): string {
     return pluralRu(n, RU_TEMPLATES);
+  }
+
+  protected onCategoryFilter(e: Event): void {
+    this.categoryFilter.set((e.target as HTMLSelectElement).value);
+    this.pageIndex.set(0);
   }
 
   protected onSearch(e: Event): void {
@@ -277,6 +320,12 @@ export class TemplatesPage {
   protected docTypeName(t: DocumentTemplate): string {
     const dt = t.docTypeId;
     if (typeof dt === 'object' && dt?.name) return dt.name;
+    return '—';
+  }
+
+  protected categoryName(t: DocumentTemplate): string {
+    const cat = t.categoryId;
+    if (typeof cat === 'object' && cat?.name) return cat.name;
     return '—';
   }
 
@@ -348,6 +397,7 @@ export class TemplatesPage {
                   name: `Шаблон ${new Date().toLocaleDateString('ru-RU')}`,
                   organizationId: ensuredOrgId.data,
                   docTypeId: ensuredDocTypeId.data,
+                  categoryId: settings.categoryId,
                   pageSize: settings.pageSize,
                   orientation: settings.orientation,
                   isActive: false,

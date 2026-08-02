@@ -5,7 +5,7 @@
 
 ## Обзор
 
-Проект представляет **ERP/производственную систему** для управления коммерческими предложениями (КП), договорами, заказами на производство, складом, закупками, документами и тендерами. Модель содержит **89 сущностей**, сгруппированных в **11 доменов**, с явным указанием типов полей, FK-связей и обнаруженных аномалий.
+Проект представляет **ERP/производственную систему** для управления коммерческими предложениями (КП), договорами, заказами на производство, складом, закупками, документами и тендерами. Модель содержит **90 сущностей**, сгруппированных в **11 доменов**, с явным указанием типов полей, FK-связей и обнаруженных аномалий.
 
 **Конвенции (применены ко всем таблицам ниже):**
 
@@ -35,10 +35,10 @@
 | 6  | Sales & Commerce             | 9      | `Quotation`, `Contract`, `Order`   |
 | 7  | Warehouse & Inventory        | 6      | `Warehouse`, `StorageItem`, `InventoryItem`     |
 | 8  | Procurement                  | 9      | `PurchaseRequest`, `PurchaseOrder`, `Tender`   |
-| 9  | Documents & Templates        | 6      | `DocumentTemplate`, `TemplateBlock`, `DocType` |
+| 9  | Documents & Templates        | 7      | `DocumentTemplate`, `TemplateBlock`, `DocType`, `DocumentTemplateCategory` |
 | 10 | Finance                      | 3      | `ReconciliationAct`, `FinancialReport`         |
 | 11 | System & Activity            | 6      | `Setting`, `StatusWorkflow`, `ImportJobs`      |
-| **Total** |                          | **89** |                                                |
+| **Total** |                          | **90** |                                                |
 
 ---
 
@@ -1452,6 +1452,7 @@ dimensions: [
 | `tags` | `string[]` | — |
 | `organizationId` | `ObjectId` | FK → `Organization` |
 | `docType` / `docTypeId` | `string / ObjectId` | ⚠️ Дубликат |
+| `categoryId` | `ObjectId?` | FK → `DocumentTemplateCategory` (опционально; при отсутствии сервер назначает активную default-категорию, иначе 400) |
 | `isDefault` | `boolean` | — |
 | `isActive` | `boolean` | — |
 | `pageSize` | `string` | A4/A3... |
@@ -1461,6 +1462,26 @@ dimensions: [
 | `version` | `string \| number` | — |
 | `createdAt` | `Date` | — |
 | `updatedAt` | `Date` | — |
+
+### `DocumentTemplateCategory` (Категория шаблона)
+
+**Отдельная сущность (TZ-DOC-307) — НЕ переиспользует generic `Category`** (который требует `skuPrefix` и имеет глобальный уникальный индекс `{type, slug}`, не поддерживающий org-scoped уникальность).
+
+| Поле | Тип | Комментарий |
+|------|-----|-------------|
+| `id` | `ObjectId` | PK |
+| `name` | `string` | Название |
+| `slug` | `string` | Стабильный ключ; сервер генерирует из name (транслитерация), уникальность в рамках организации |
+| `description` | `string?` | — |
+| `isActive` | `boolean` | Активна |
+| `isSystem` | `boolean` | Системная (seed «Общее») — нельзя менять/удалять через API |
+| `isDefault` | `boolean` | Активная default-категория организации; используется server-side resolution |
+| `sortOrder` | `number` | Порядок сортировки |
+| `organizationId` | `ObjectId?` | FK → `Organization`. `null` = system/global scope (доступна всем организациям) |
+| `createdAt` | `Date` | — |
+| `updatedAt` | `Date` | — |
+
+**Индексы:** compound unique `{organizationId, slug}` (sparse, `null` = system). Удаление: 409 Conflict при ссылках из `DocumentTemplate`; системные категории — 409. Переименование не меняет `id`.
 
 ### `TemplateBlock` (Блок шаблона)
 

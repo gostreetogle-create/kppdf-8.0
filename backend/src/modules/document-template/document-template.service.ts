@@ -38,7 +38,7 @@ function escapeHtmlValue(value: string): string {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/\\"/g, '&quot;')
+    .replace(/\\\"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
 
@@ -75,7 +75,10 @@ function escapeHtmlValue(value: string): string {
  *     no template is persisted (no partial record).
  *   - update() validates any provided `categoryId` (exists + active + same
  *     org scope or system).
- *   - duplicate() preserves the source template's categoryId.
+ *   - duplicate() preserves the source template's categoryId when it is still
+ *     assignable; if the source category was deactivated/deleted/foreign in
+ *     the meantime, it falls back to the server-side default so the copy
+ *     NEVER persists a reference to an inactive category (TZ-DOC-307 §#9).
  *   - findAll() supports an optional `categoryId` filter.
  */
 @Injectable()
@@ -265,9 +268,10 @@ export class DocumentTemplateService {
     if (dto.notes !== undefined) doc.notes = dto.notes;
     if (dto.version !== undefined) doc.version = dto.version;
     if (dto.categoryId !== undefined) {
+      const orgRef = this.refId(doc.organizationId);
       const cat = await this.categoryService.assertAssignable(
         dto.categoryId,
-        doc.organizationId.toString(),
+        orgRef ?? '',
       );
       doc.categoryId = cat._id;
     }
@@ -286,17 +290,44 @@ export class DocumentTemplateService {
    *
    * TZ-DOC-307 — duplicate PRESERVES the source template's categoryId
    * (no new category record is created server-side; the reference is
-   * copied verbatim).
+   * copied verbatim) — provided the source category is still assignable.
+   * If it was deactivated, deleted or moved to another org in the
+   * meantime, the copy falls back to the server-side default so we never
+   * persist a reference to an inactive category. If no default exists,
+   * duplication fails with a testable 400 and nothing is written.
    */
   async duplicate(id: string, userId?: string): Promise<DocumentTemplateDocument> {
     const src = await this.findById(id);
+    const srcOrgRef = this.refId(src.organizationId);
+    const srcCategoryRef = this.refId(src.categoryId);
+    let categoryId: Types.ObjectId | undefined = srcCategoryRef
+      ? new Types.ObjectId(srcCategoryRef)
+      : undefined;
+    if (categoryId) {
+      try {
+        const cat = await this.categoryService.assertAssignable(
+          categoryId.toString(),
+          srcOrgRef ?? '',
+        );
+        categoryId = cat._id;
+      } catch {
+        // Source category no longer assignable → server-side default.
+        const fallback = await this.categoryService.resolveDefault(srcOrgRef ?? null);
+        if (!fallback) {
+          throw new BadRequestException(
+            'Не удалось определить категорию шаблона: исходная категория недоступна и нет активной категории по умолчанию.',
+          );
+        }
+        categoryId = fallback._id;
+      }
+    }
     const newTemplate = await this.model.create({
       name: `${src.name} (копия)`,
       description: src.description,
       tags: src.tags,
       organizationId: src.organizationId,
       docTypeId: src.docTypeId,
-      categoryId: src.categoryId,
+      categoryId,
       isDefault: false,
       isActive: src.isActive,
       pageSize: src.pageSize,
@@ -812,7 +843,7 @@ export class DocumentTemplateService {
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
+      .replace(/\"/g, '&quot;')
       .replace(/'/g, '&#39;');
     const safeImageUrl = (value: string | undefined): string => {
       const url = value?.trim() ?? '';
@@ -1044,5 +1075,19 @@ export class DocumentTemplateService {
     const doc = await this.findById(id);
     await this.model.deleteOne({ _id: doc._id }).exec();
     await this.blockModel.deleteMany({ templateId: doc._id }).exec();
+  }
+
+  /**
+   * Extract a stable ObjectId string from a possibly-populated reference
+   * field. `findById`/`findAll` populate `organizationId`/`docTypeId`/
+   * `categoryId`, so the raw field may be a full document; this helper
+   * returns the underlying `_id` in both cases.
+   */
+  private refId(value: unknown): string | undefined {
+    if (!value) return undefined;
+    const id = (value as { _id?: unknown })._id ?? value;
+    if (!id) return undefined;
+    const s = String(id);
+    return Types.ObjectId.isValid(s) ? s : undefined;
   }
 }

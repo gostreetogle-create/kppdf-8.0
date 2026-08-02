@@ -4,6 +4,7 @@ import { DocumentTemplateService } from './document-template.service';
 
 const ORG_A = new Types.ObjectId().toString();
 const CAT_ID = new Types.ObjectId('aaaaaaaaaaaaaaaaaaaaaaaa');
+const FALLBACK_ID = new Types.ObjectId('bbbbbbbbbbbbbbbbbbbbbbbb');
 
 function lookup<T>(value: T) {
   return {
@@ -193,7 +194,7 @@ describe('DocumentTemplateService category contract (TZ-DOC-307)', () => {
   });
 
   describe('duplicate', () => {
-    it('preserves the source template categoryId', async () => {
+    it('preserves the source template categoryId after assignability validation', async () => {
       const { service, model, categoryService } = createService();
       const src = {
         _id: new Types.ObjectId(),
@@ -218,13 +219,72 @@ describe('DocumentTemplateService category contract (TZ-DOC-307)', () => {
         notes: undefined,
       };
       model.findById.mockReturnValue(findByIdChain(src));
+      categoryService.assertAssignable.mockResolvedValue({ _id: new Types.ObjectId(CAT_ID) });
 
       await service.duplicate(src._id.toString());
+      expect(categoryService.assertAssignable).toHaveBeenCalledWith(CAT_ID.toString(), ORG_A);
       expect(model.create).toHaveBeenCalledWith(
         expect.objectContaining({ categoryId: new Types.ObjectId(CAT_ID) }),
       );
       expect(categoryService.resolveDefault).not.toHaveBeenCalled();
-      expect(categoryService.assertAssignable).not.toHaveBeenCalled();
+    });
+
+    it('FALLS BACK to the server default when the source category is no longer assignable', async () => {
+      const { service, model, categoryService } = createService();
+      const src = {
+        _id: new Types.ObjectId(),
+        name: 'Исходный',
+        description: undefined,
+        tags: [],
+        organizationId: new Types.ObjectId(ORG_A),
+        docTypeId: new Types.ObjectId(),
+        categoryId: new Types.ObjectId(CAT_ID),
+        isDefault: false,
+        isActive: true,
+        pageSize: 'A4',
+        orientation: 'portrait',
+        backgroundImage: [],
+        defaultBackgroundIndex: -1,
+        backgroundOpacity: 0.3,
+        version: 1,
+      };
+      model.findById.mockReturnValue(findByIdChain(src));
+      categoryService.assertAssignable.mockRejectedValue(new BadRequestException('inactive'));
+      categoryService.resolveDefault.mockResolvedValue({ _id: new Types.ObjectId(FALLBACK_ID) });
+
+      await service.duplicate(src._id.toString());
+      expect(categoryService.assertAssignable).toHaveBeenCalledWith(CAT_ID.toString(), ORG_A);
+      expect(categoryService.resolveDefault).toHaveBeenCalledWith(ORG_A);
+      expect(model.create).toHaveBeenCalledWith(
+        expect.objectContaining({ categoryId: new Types.ObjectId(FALLBACK_ID) }),
+      );
+    });
+
+    it('FAILS with a testable 400 when the source category is gone and no default exists', async () => {
+      const { service, model, categoryService } = createService();
+      const src = {
+        _id: new Types.ObjectId(),
+        name: 'Исходный',
+        description: undefined,
+        tags: [],
+        organizationId: new Types.ObjectId(ORG_A),
+        docTypeId: new Types.ObjectId(),
+        categoryId: new Types.ObjectId(CAT_ID),
+        isDefault: false,
+        isActive: true,
+        pageSize: 'A4',
+        orientation: 'portrait',
+        backgroundImage: [],
+        defaultBackgroundIndex: -1,
+        backgroundOpacity: 0.3,
+        version: 1,
+      };
+      model.findById.mockReturnValue(findByIdChain(src));
+      categoryService.assertAssignable.mockRejectedValue(new BadRequestException('inactive'));
+      categoryService.resolveDefault.mockResolvedValue(null);
+
+      await expect(service.duplicate(src._id.toString())).rejects.toBeInstanceOf(BadRequestException);
+      expect(model.create).not.toHaveBeenCalled();
     });
   });
 
@@ -269,8 +329,8 @@ describe('DocumentTemplateService category contract (TZ-DOC-307)', () => {
       expect(result[0].categoryId).toBeUndefined();
     });
 
-    it('duplicate of a legacy template (no categoryId) keeps categoryId absent', async () => {
-      const { service, model } = createService();
+    it('duplicate of a legacy template (no categoryId) keeps categoryId absent and never validates', async () => {
+      const { service, model, categoryService } = createService();
       const src = {
         _id: new Types.ObjectId(),
         name: 'Legacy',
@@ -292,6 +352,8 @@ describe('DocumentTemplateService category contract (TZ-DOC-307)', () => {
 
       await service.duplicate(src._id.toString());
       expect(model.create).toHaveBeenCalledWith(expect.objectContaining({ categoryId: undefined }));
+      expect(categoryService.assertAssignable).not.toHaveBeenCalled();
+      expect(categoryService.resolveDefault).not.toHaveBeenCalled();
     });
   });
 });

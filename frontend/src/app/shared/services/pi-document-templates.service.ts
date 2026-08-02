@@ -41,6 +41,7 @@ export interface DocumentTemplate {
   tags: string[];
   organizationId: string | { _id: string; name: string };
   docTypeId: string | { _id: string; name: string; code?: string };
+  categoryId?: string | { _id: string; name: string; slug: string };
   isDefault: boolean;
   isActive: boolean;
   pageSize: 'A3' | 'A4' | 'A5';

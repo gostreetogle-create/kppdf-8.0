@@ -12,7 +12,7 @@
 
 | Метод | Endpoint | Назначение |
 |-------|----------|-----------|
-| GET | `/api/document-templates` | Список шаблонов |
+| GET | `/api/document-templates?categoryId=` | Список шаблонов (фильтр по категории через `categoryId`) |
 | POST | `/api/document-templates` | Создать шаблон |
 | PATCH | `/api/document-templates/:id` | Обновить (isActive) |
 | DELETE | `/api/document-templates/:id` | Удалить |
@@ -26,12 +26,14 @@
 | Компонент | Режим | Данные |
 |-----------|-------|--------|
 | `AlertDialogComponent` | confirm delete | `{ title, message, confirmLabel, variant }` |
+| `TemplateSetupDialogComponent` | create / duplicate | `{ mode: 'create' \| 'duplicate' }` — результат `{ pageSize, orientation, categoryId }` |
 
 ## Services
 
 | Сервис | Методы |
 |--------|--------|
-| `DocumentTemplatesService` | `list()`, `findById(id)`, `create(payload)`, `update(id, payload)`, `remove(id)` |
+| `DocumentTemplatesService` | `list()`, `findById(id)`, `create(payload)`, `update(id, payload)`, `remove(id)`, `duplicate(id)` |
+| `DocumentTemplateCategoriesService` | `list({ activeOnly })`, `findById(id)`, `create(payload)`, `update(id, payload)`, `remove(id)` |
 
 ## State (signals)
 
@@ -42,6 +44,7 @@
 | `pageIndex` | `Signal<number>` | Пагинация (0-indexed) |
 | `creating` | `Signal<boolean>` | Флаг создания |
 | `loading` | `Signal<boolean>` | Флаг загрузки |
+| `categoryId` | `Signal<string \| null>` | Фильтр реестра по категории шаблона |
 
 ## Особенности
 
@@ -53,12 +56,17 @@
 - **Default star** — ★ (активен) / ☆ (кнопка для set-default)
 - **Doc type resolution** — `docTypeName()`: populated object or '—'
 - **RxJS subscription** — manual subscribe (не httpResource)
+- **Category column** — отображает имя категории (populated `categoryId`); «—» если нет
+- **Category filter** — `<select>` активных категорий из `DocumentTemplateCategoriesService`; фильтр уходит в API `categoryId`
+- **Setup dialog (create/duplicate)** — обязательный выбор категории; активная default-категория подставляется автоматически; неактивные не отображаются; без валидной `categoryId` submit заблокирован
+- **Duplicate** — сохраняет исходную `categoryId` исходного шаблона (сервер валидирует; fallback на default)
 
 ## TZ reference
 
 | TZ | Что сделано |
 |----|------------|
 | TZ-86 | Первая реализация (Phase D) |
+| TZ-DOC-308 | Категория шаблона: колонка в реестре, фильтр по категории, выбор категории в setup-диалоге (default auto-select, required, duplicate сохраняет категорию) |
 
 ---
 

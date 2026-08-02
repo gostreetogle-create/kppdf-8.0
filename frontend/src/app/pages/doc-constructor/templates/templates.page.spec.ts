@@ -6,6 +6,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 
 import { TemplatesPage } from './templates.page';
 import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
+import { DocumentTemplateCategoriesService } from '../../../shared/services/pi-document-template-categories.service';
 import { PiToastService } from '../../../shared/ui/toast';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import type { SilentResult } from '../../../core/silent-http';
@@ -92,6 +93,11 @@ describe('TemplatesPage', () => {
     await TestBed.configureTestingModule({
       providers: [
         { provide: DocumentTemplatesService, useValue: service },
+        {
+          // TZ-DOC-308 categories: the page injects the categories service.
+          provide: DocumentTemplateCategoriesService,
+          useValue: { list: jest.fn().mockReturnValue(of(ok([]))) },
+        },
         { provide: Router, useValue: { navigate } },
         { provide: PiToastService, useValue: { success, error } },
         { provide: PiDialogService, useValue: dialogSpy },
@@ -271,6 +277,68 @@ describe('TemplatesPage', () => {
     expect(instance.creating()).toBe(false);
     expect(error).toHaveBeenCalledWith('Не удалось сохранить шаблон');
     expect(navigate).not.toHaveBeenCalled();
+  });
+
+  // ═══ TZ-DOC-268: template-creation dialog lifecycle regression tests ═══
+
+  it('TZ-DOC-268: confirm creates exactly one template and navigates to it', async () => {
+    const fixture = TestBed.createComponent(TemplatesPage);
+    fixture.detectChanges();
+    const instance = fixture.componentInstance as unknown as {
+      onCreate: () => void;
+      creating: () => boolean;
+    };
+    const closed = signal<TemplateSetupResult | undefined>(undefined);
+    dialogSpy.open.mockReturnValue({ closed, close: jest.fn() });
+
+    instance.onCreate();
+    closed.set({ pageSize: 'A5', orientation: 'landscape' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(service.create).toHaveBeenCalledTimes(1);
+    expect(service.create).toHaveBeenCalledWith(
+      expect.objectContaining({ pageSize: 'A5', orientation: 'landscape' }),
+    );
+    expect(instance.creating()).toBe(false);
+    expect(navigate).toHaveBeenCalledWith(['/doc-constructor/builder', 'dt3']);
+  });
+
+  it('TZ-DOC-268: cancel (close without value) does NOT create or navigate', async () => {
+    const fixture = TestBed.createComponent(TemplatesPage);
+    fixture.detectChanges();
+    const instance = fixture.componentInstance as unknown as { onCreate: () => void };
+    const closed = signal<TemplateSetupResult | undefined>(undefined);
+    dialogSpy.open.mockReturnValue({ closed, close: jest.fn() });
+
+    instance.onCreate();
+    // Cancel / Escape / backdrop → close() with no value → falsy filtered out.
+    closed.set(undefined);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(service.create).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('TZ-DOC-268: repeated confirm emissions cannot create a duplicate template', async () => {
+    const fixture = TestBed.createComponent(TemplatesPage);
+    fixture.detectChanges();
+    const instance = fixture.componentInstance as unknown as { onCreate: () => void };
+    const closed = signal<TemplateSetupResult | undefined>(undefined);
+    dialogSpy.open.mockReturnValue({ closed, close: jest.fn() });
+
+    instance.onCreate();
+    closed.set({ pageSize: 'A4', orientation: 'portrait' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(service.create).toHaveBeenCalledTimes(1);
+
+    // A stale second emission must not re-fire the callback (filter+take(1)).
+    closed.set({ pageSize: 'A4', orientation: 'portrait' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(service.create).toHaveBeenCalledTimes(1);
   });
 
   it('filters templates by search query', () => {

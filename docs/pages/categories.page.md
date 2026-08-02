@@ -58,6 +58,7 @@
 | TZ | Что сделано |
 |----|------------|
 | TZ-114 | Categories page — drag-reorder UI + optimistic update |
+| TZ-DOC-308 | Новый справочник «Категории шаблонов» (`/doc-template-categories`, `DocumentTemplateCategoriesPage`) — плоский CRUD категорий шаблонов документов, ОТДЕЛЬНО от этого дерева; материалы/продукция не затронуты |
 
 ---
 
