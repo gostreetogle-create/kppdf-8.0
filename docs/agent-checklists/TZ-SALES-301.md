@@ -33,7 +33,7 @@
 
 ## Executor report (auto) — TZ-SALES-301
 - status: DONE
-- commits: f7083169b9e0bc75ae9eac84e945e4133851133d + <closeout SHA pending>
+- commits: f7083169b9e0bc75ae9eac84e945e4133851133d + aa6f4cd57a72ef8cb67ac2584cd9fc7746895a27
 - gates: backend-tsc=PASS; quotation-jest=12/12; frontend-tsc=PASS; proposals-jest=18/18; ng-build=PASS; diff-check=clean; verify-status=PASS
 - known: quotation module bootstrapped earlier — reused as single КП API (no duplicate module); unitPrice DTO правка — TZ-ORDERS-301 (вне этой TZ)
 - ask: ORDERS-301 разблокирован (кнопка «В заказ», strip-commerce)

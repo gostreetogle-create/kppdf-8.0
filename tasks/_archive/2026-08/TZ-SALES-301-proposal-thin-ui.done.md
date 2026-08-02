@@ -68,7 +68,7 @@ registered `app.module.ts:204`). ТЗ требовало «выбрать оди
 ## Commit hashes
 
 - feat: `f7083169b9e0bc75ae9eac84e945e4133851133d`
-- closeout: `<closeout-sha>` (заполняется после коммита)
+- closeout: `aa6f4cd57a72ef8cb67ac2584cd9fc7746895a27`
 
 ## Successor
 
