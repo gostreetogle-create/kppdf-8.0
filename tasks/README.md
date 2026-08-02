@@ -22,6 +22,12 @@ Completed work belongs under `tasks/_archive/2026-08/`.
 | [TZ-DOC-324](TZ-DOC-324-builder-templates-ia.md) | Document Constructor · IA | P1 | Active — templates vs builder | — | **A2-1** |
 | [TZ-DOC-325](TZ-DOC-325-builder-insert-palette.md) | Document Constructor · builder chrome | P1 | after 324 | TZ-DOC-324 | **A2-2** |
 | [TZ-DOC-326](TZ-DOC-326-textblock-categoryid-ui.md) | Document Constructor · categoryId UI | P1 | after 325/316 | TZ-DOC-323 done, 316 | **A2-3** |
+| [TZ-DOC-331](../tasks/_archive/2026-08/TZ-DOC-331-builder-group-drag-by-groupid.done.md) | Document Constructor · group drag | — | **DONE** (archive) | — | — |
+| [TZ-DOC-332](TZ-DOC-332-builder-inspector-ia-visual-canon.md) | Document Constructor · inspector UX | **P0** | Ready — right pane IA + visual canon | mirror tool-pane chrome | **A2-5** |
+| [TZ-DOC-333](../tasks/_archive/2026-08/TZ-DOC-333-persist-template-block-photos.done.md) | Document Constructor · photo persist | — | **DONE** (archive) | — | — |
+| [TZ-DOC-334](TZ-DOC-334-text-block-categories-nav.md) | Document Constructor · categories nav | **P0** | Ready — wire route+nav (DOC-316 gap) | page already exists | **A2-7** |
+| [TZ-DOC-335](TZ-DOC-335-builder-ux-empty-states-deeplink.md) | Document Constructor · builder UX | **P1** | Ready — empty copy, CTAs, table editId | after top palette | **A2-8** |
+| [TZ-DOC-336](TZ-DOC-336-texts-tables-shell-dialog-canon.md) | Document Constructor · texts/tables canon | **P1** | Ready — Pi shell + FormField dialogs | after 335 on tables.page | **A2-9** |
 | [TZ-DOC-316](TZ-DOC-316-text-block-category-reference-and-picker.md) | Document Constructor · UI | P1 | Stream A | TZ-DOC-315 (archive/done preferred) | 2A |
 | [TZ-DOC-317](TZ-DOC-317-builder-text-picker-category-filter.md) | Document Constructor · builder | P1 | after 316 | TZ-DOC-315/316 | 2B |
 | [TZ-DOC-318](TZ-DOC-318-builder-texts-topbar-category-filter.md) | Document Constructor · builder | P1 | after 317 | TZ-DOC-317 | 2C |

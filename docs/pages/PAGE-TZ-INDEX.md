@@ -10,10 +10,10 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 
 | Route | Page doc | TZs |
 |-------|----------|-----|
-| `/doc-constructor/builder`, `/builder/:id` | builder.page.md, builder-tool-pane, builder-inspector | DOC-324, DOC-325, DOC-326, DOC-317/318 (318 supersede after 325), DOC-319 done |
-| `/doc-constructor/templates` | templates.page.md | DOC-324, DOC-308 done |
-| `/doc-constructor/texts` | texts.page.md | DOC-316, DOC-326 |
-| `/doc-constructor/tables` | tables.page.md | (open as needed) |
+| `/doc-constructor/builder`, `/builder/:id` | builder.page.md, builder-tool-pane, builder-inspector | DOC-324, DOC-325, DOC-326, DOC-317/318, DOC-319 done, DOC-331 done, **DOC-332** (inspector IA), DOC-333 done, **DOC-335** (empty/CTA/editId) |
+| `/doc-constructor/templates` | templates.page.md | DOC-324, DOC-308 done, **DOC-336** (copy slot) |
+| `/doc-constructor/texts` | texts.page.md | DOC-316, DOC-326, **DOC-336** (shell+editor polish) |
+| `/doc-constructor/tables` | tables.page.md | **DOC-335** (editId), **DOC-336** (shell+dialog) |
 | `/doc-constructor/documents` | documents.page.md | **UX-303 DONE** |
 
 ## Catalog / production
@@ -41,6 +41,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | `/dictionaries` | dictionaries.page.md | **UX-303 DONE**, UX-304 sibling |
 | `/categories` | categories.page.md | **UX-302 DONE** |
 | `/doc-template-categories` | — | **UX-304** |
+| `/dictionaries/text-block-categories` | — | DOC-316 (page), **DOC-334** (route+nav gap) |
 | `/color-references` | color-references.page.md | PRODUCTS-301, **UX-304** |
 
 ## Warehouse
@@ -70,6 +71,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | [UX-305 DONE](../tasks/_archive/2026-08/TZ-UX-305.done.md) | orgs, work-types, storage, materials | Fix page.md |
 | [UX-306](../tasks/TZ-UX-306-people-route-align.md) | people/workers | Route+nav align (blocked) |
 | [DOC-324..326](../docs/agent-checklists/DOC-CONSTRUCTOR-UX-AUDIT.md) | builder/templates/texts | Prior audit |
+| [DOC-334 audit](../docs/audits/DOC-334-doc-constructor-ui-polish-audit.md) | builder/texts/tables/categories | Deploy polish queue 334→335→332→336 |
 
 ## Vision / access / sales (2026-08-02)
 
@@ -81,5 +83,6 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | [JOURNEY-301 DONE](../tasks/_archive/2026-08/TZ-JOURNEY-301.done.md) | all | Flow gap map (docs) |
 | [SALES-301](../tasks/TZ-SALES-301-proposal-thin-ui.md) | /proposals (NEW) | Thin КП list |
 | GANT | parked | `_backlog/vision/GANT-calendar.md` |
+| **[DEPLOY-301](../tasks/TZ-DEPLOY-301-prep-first-deploy.md)** | ops | **Gate перед первым деплоем** (auth/CORS/secrets/compose) |
 
 Audit note (doc-constructor detail): `DOC-CONSTRUCTOR-UX-AUDIT.md`
