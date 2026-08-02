@@ -28,11 +28,42 @@
 | `ProductFormDialogComponent` | create / edit | `null` / `Product` |
 | `AlertDialogComponent` | confirm delete | `{ title, description, confirmLabel, variant }` |
 
+`ProductFormDialogComponent` (TZ-PRODUCTS-302) — большой content-диалог
+(`variant="content"` + `maxWidth 1000px`, sticky footer через PiDialog
+contract). Поля сгруппированы по eyebrow-секциям: «Основные данные»
+(name/sku/kind/unit/subcategory/status), «Категория и цены» (categoryId
+из `CategoriesService.list('product')` + listPrice + isActive), «Габариты»
+(L/W/H+unit), «Дополнительно» (weightKg + Цвет/RAL), «Изображения»
+(photo upload по паттерну TZ-MATERIALS-306; `photoIds`), «Описание и
+заметки».
+
+## RAL / ColorReference integration (TZ-PRODUCTS-302)
+
+- Цвет продукта выбирается **только** из справочника цветов
+  (`ColorReferencesService.list({ activeOnly: true })`, endpoint
+  `/api/color-references` из TZ-PRODUCTS-301). Свободный ввод не допускается.
+- Значение опции — `slug` цвета; payload сохраняет backend-контракт строки
+  `ralCode` (поля `colorId` в backend Product **нет** — это SUCCESSOR для
+  TZ-PRODUCTS-303).
+- Дефолтный выбор: системный цвет «Не выбран» (`SYSTEM_DEFAULT_COLOR_SLUG`
+  = `ne-vybran`, seed TZ-PRODUCTS-301) авто-выбирается после успешной
+  загрузки, если цвет не задан. Submit без цвета → `ralCode` падает на
+  `SYSTEM_DEFAULT_COLOR_SLUG`.
+- Рядом с селектом — swatch-превью выбранного hex (`selectedColorHex()`).
+- Loading / error / empty состояния; при пустом справочнике — подсказка
+  и кнопка «Открыть справочник цветов» (`/color-references`).
+- Legacy `ralCode` (например «RAL 9003»), отсутствующий в справочнике,
+  рендерится как disabled fallback-опция (паттерн unitFallback из
+  TZ-MATERIALS-302) — edit не обнуляет значение молча.
+
 ## Services
 
 | Сервис | Методы |
 |--------|--------|
 | `ProductsService` | `list(params)`, `findById(id)`, `create(payload)`, `update(id, payload)`, `remove(id)` |
+| `ColorReferencesService` | `list({activeOnly})`, `findById(id)`, `create`, `update`, `remove` |
+| `CategoriesService` | `list(type)` — type `'product'` для categoryId |
+| `PhotosService` | `upload(file)`, `list()`, `remove(id)` — фото продукта |
 
 ## State (signals)
 
@@ -72,6 +103,7 @@
 |----|------------|
 | TZ-104.3 | Миграция на pi-table + server-side pagination |
 | TZ-104.4.2 | Typed TemplateRef (устранён `any`) |
+| TZ-PRODUCTS-302 | Content-диалог 1000px, секции, categoryId select, RAL dropdown, фото |
 
 ## Особенности
 
@@ -85,4 +117,4 @@
 
 ---
 
-_Создано: 2026-07-19. Последнее обновление: 2026-07-19._
+_Создано: 2026-07-19. Последнее обновление: 2026-08-02 (TZ-PRODUCTS-302)._

@@ -5179,3 +5179,7 @@ checklist: `docs/agent-checklists/TZ-PRODUCTS-301.md`; page-дока: `docs/page
 **Commit:** будет conventional commit `feat(ui): showcase cards sm/md/lg (TZ-PRODUCTS-305)` (NO push).
 
 **Ограничения:** 1/9 flaky spec test → successor TZ-PRODUCTS-306; reference-миграция на module-detail минимальная → successor TZ-PRODUCTS-307 для полной (hero-photo + related entities). Pre-existing build blocker от TZ-WORKERS-302 не моей епархии.
+
+## [2026-08-02] — TZ-PRODUCTS-302: DONE (диалог товара + RAL dropdown)
+
+**TZ-PRODUCTS-302** — реворк `ProductFormDialogComponent`: content-диалог 1000px (sticky footer), eyebrow-секции, `categoryId` select (CategoriesService тип product), RAL dropdown из справочника цветов (ColorReferencesService, option value = slug, дефолт `ne-vybran`, legacy fallback-опция), фото-загрузка (TZ-MATERIALS-306 паттерн), double-submit guard. `colorId` НЕ добавлялся — backend Product не имеет поля (SUCCESSOR для TZ-PRODUCTS-303). Спека: 20/20 unit PASS; dialog suite 45/45; tsc моего scope чист; ng build падает только на параллельно-сессионных файлах TZ-WORKERS-302 (не мой scope, задокументировано).
