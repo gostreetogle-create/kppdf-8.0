@@ -7,6 +7,7 @@ ARCHIVE_MARKER
 outcome: DONE
 closed_at: 2026-08-02
 closed_by: local-executor
+commit: 6c620d337116bded4a58df669946eff2ebf6a824
 verification:
   - acceptance criteria: PASS
   - typecheck: PASS (pnpm exec tsc -p tsconfig.app.json --noEmit)

@@ -2,41 +2,32 @@
 
 ## Pre-edit checklist
 
-- **Status:** IN WORK
-- **Task/spec:** `tasks/TZ-DOC-332-builder-inspector-ia-visual-canon.md`
+- **Status:** DONE
+- **Task/spec:** `tasks/_archive/2026-08/TZ-DOC-332-builder-inspector-ia-visual-canon.done.md`
 - **Created before first code edit:** yes (2026-08-02)
-- **Out of scope:** canvas / block-renderer / tool-pane structure / backend / DOC-336
+- **Out of scope respected:** canvas / block-renderer / tool-pane structure / backend / DOC-336
 
 ## Conflict-key audit
 
-| Key | Peer overlap |
-|-----|--------------|
-| `builder-inspector.component.ts` | none in `_active` |
-| `builder-inspector.component.spec.ts` | none |
-| `docs/pages/builder-inspector.page.md` | none |
-| `docs/pages/PAGE-TZ-INDEX.md` | shared docs — touch DOC-332 line only |
-| `docs/agent-checklists/TZ-DOC-332.md` | this file |
+No peer `_active` overlap on inspector keys.
 
-## Plan
+## Gates
 
-1. One `insp-section` chrome (header 13px uppercase, hairline sections, 16px pad).
-2. Modes A–D IA reorder; snap/pageNumbering → `app-pi-switch`; no Inter/hex.
-3. Compact layer toolbar; Edit ≠ Delete row.
-4. Spec section-order + gates; page doc + PAGE-TZ-INDEX; archive.
+- [x] `pnpm exec tsc -p tsconfig.app.json --noEmit` — PASS
+- [x] jest `builder-inspector` --no-coverage — PASS (11)
+- [x] `git diff --check` — PASS (CRLF warnings only)
 
-## Gates (fill after)
+## Manual AC
 
-- [ ] `pnpm exec tsc -p tsconfig.app.json --noEmit`
-- [ ] jest `builder-inspector` --no-coverage
-- [ ] `git diff --check` on DOC-332 files
-
-## Manual AC (record)
-
-- [ ] canvas click → document context + snap
-- [ ] block click → geometry first
-- [ ] multi 2 → group/layer/danger
-- [ ] template props → style + background
+- [ ] canvas click → document context + snap (PO browser)
+- [ ] block click → geometry first (PO browser)
+- [ ] multi 2 → group/layer/danger (PO browser)
+- [ ] template props → style + background (PO browser)
 
 ## Executor report (auto)
 
-_(fill on archive)_
+- status: DONE
+- outcome: inspector one chrome + modes A–D; pi-switch snap/pageNumbering; geometry first; Edit≠Delete
+- commit: `6c620d337116bded4a58df669946eff2ebf6a824`
+- evidence: archive + this checklist; jest 11 green; tsc green
+- residual: full browser smoke for PO; shared pane CSS extract = successor; ng build not in this closeout
