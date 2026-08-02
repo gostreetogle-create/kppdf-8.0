@@ -85,3 +85,25 @@ SYSTEM_DEFAULT_COLOR_SLUG»), отражено в спеке и docs.
 
 - **TZ-PRODUCTS-303** — `colorId` FK на ColorReference (backend + frontend).
 - **TZ-PRODUCTS-304** — каталог продуктов с раскрытием модулей.
+
+
+## ARCHIVE_MARKER
+
+```yaml
+outcome: DONE
+closed_at: 2026-08-02
+implementation_commit: e1f9916
+verification:
+  jest_product_form_dialog: 20/20 PASS
+  jest_dialog_suite: 45/45 PASS
+  tsc_my_scope: clean
+  ng_build: BLOCKED by parallel-session files (TZ-WORKERS-302, out-of-scope)
+  git_diff_check: clean
+  verify_status: PASS
+browser_status: MANUAL_BROWSER_CHECK_REQUIRED
+known_limitations:
+  - ng build fails only on parallel-session files (people.page.ts / people-form-dialog / missing workers.service) — TZ-WORKERS-302 territory, not touched
+  - every product save now sends ralCode (fallback ne-vybran) per TZ requirement
+lock_file: .mimocode/locks/TZ-PRODUCTS-302-product-form-dialog-rework.lock
+successors: [TZ-PRODUCTS-303 (colorId FK), TZ-PRODUCTS-304 (expandable catalog)]
+```
