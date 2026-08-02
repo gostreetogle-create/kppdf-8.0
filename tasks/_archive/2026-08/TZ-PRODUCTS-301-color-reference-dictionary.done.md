@@ -156,7 +156,7 @@ TZ: TZ-PRODUCTS-301
 status: DONE
 outcome: DONE — ColorReference backend-контракт + UI-справочник «Цвета»
 closed_at: 2026-08-02
-implementation_commit: <set at commit time>
+implementation_commit: fc259fd438a0b81c87787e87d49955ee2ff9240c
 verification:
   backend_tsc: PASS
   backend_jest_color_reference: "20/20 PASS"

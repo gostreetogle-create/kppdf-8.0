@@ -5148,7 +5148,7 @@ nav «Цвета», 14 unit.
 **Архив:** `tasks/_archive/2026-08/TZ-PRODUCTS-301-color-reference-dictionary.done.md`;
 lock: `.mimocode/locks/TZ-PRODUCTS-301-color-reference-dictionary.lock`;
 checklist: `docs/agent-checklists/TZ-PRODUCTS-301.md`; page-дока: `docs/pages/color-references.page.md`.
-**Commit:** <set at commit time> — `feat(reference): unified color reference dictionary (TZ-PRODUCTS-301)`. Push: нет.
+**Commit:** `fc259fd438a0b81c87787e87d49955ee2ff9240c` — `feat(reference): unified color reference dictionary (TZ-PRODUCTS-301)`. Push: нет.
 **Ограничения:** categories.page.ts — project-wide tsc-blocker из чужой сессии (TZ-DOC-308 territory),
 не фиксировался; GET /:id без org-scope — зеркало reference-паттерна; роут authGuard
 (ключ color:* отсутствует в RBAC-каталоге; мутации защищены backend). Browser: MANUAL_BROWSER_CHECK_REQUIRED.
