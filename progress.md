@@ -5124,5 +5124,5 @@ E2E-сценарии с созданием данных помечены MANUAL_
 **Проверки:** tsc exit 0; jest worker 2 suites/24 PASS; полный jest 43 suites/410 PASS; e2e workers 5/5 PASS (Mongo 7 docker, replicaSet rs0); git diff --check clean; verify-status PASS.
 **Review:** P1 fix — одиночное чтение GET /workers/:id получило org-scope (403 на чужую область); P2 fix — normalizeEmail(null) больше не даёт 500. После фиксов все гейты перезапущены — зелёные.
 **Архив:** tasks/_archive/2026-08/TZ-WORKERS-301.done.md; lock: .mimocode/locks/TZ-WORKERS-301-people-backend-entity.lock (gitignored).
-**Commit:** <HASH> — feat(workers): consolidate People backend entity — TZ-WORKERS-301. Push: нет.
+**Commit:** `e449335ac7980f957b2b3a01326fcdc47a8adefa` — feat(workers): consolidate People backend entity — TZ-WORKERS-301. Push: нет.
 **Ограничения:** UI «Люди» — TZ-WORKERS-302; Person-консолидация — SUCCESSOR; e2e-харнесс без forbidNonWhitelisted (production имеет) — поведение задокументировано тестом.

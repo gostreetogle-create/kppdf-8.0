@@ -68,4 +68,4 @@ controller spec обновлён. **P2: `normalizeEmail(null)`** (null прох�
 
 ## Conventional commit (push НЕ выполнялся — ждёт владельца)
 
-`feat(workers): consolidate People backend entity — TZ-WORKERS-301`
+`e449335ac7980f957b2b3a01326fcdc47a8adefa` — `feat(workers): consolidate People backend entity — TZ-WORKERS-301` — 15 files / +1405 / -47. Push: нет.
