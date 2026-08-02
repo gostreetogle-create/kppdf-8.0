@@ -29,14 +29,15 @@ Live focus map: [`docs/agent-checklists/_active-map.md`](../docs/agent-checklist
 
 ## Parked (`_backlog/`) — не исполнять без PO
 
+See [`_backlog/README.md`](_backlog/README.md) (audit 2026-08-02).
+
 | Cluster | Examples |
 |---------|----------|
-| Materials domain | `TZ-MATERIALS-308-material-stock-link.md` |
-| People route | `TZ-UX-306-people-route-align.md` |
-| Vision / production | PRODUCTION-301…307, GANT, ARCHIVE-301, CORE-301 |
-| Access / RBAC successors | ACCESS-303/304, RBAC-302…304 |
-| Sales / inventory / shipping | INVENTORY-301, PROCUREMENT-301, SHIPPING-301, DOC-330 |
-| Z-series | `_backlog/z-series/` (Z-001…Z-007) — Z-001 archive-eligible if peers closed |
+| Production / Gantt | PRODUCTION-301…307, vision/GANT |
+| Commerce lifecycle | CORE-301, INVENTORY-301, PROCUREMENT, SHIPPING, DOC-330 |
+| People | UX-306 (rewrite) |
+| Access residual | ACCESS-303 (route gates), ACCESS-304 verification |
+| Z-series | `_backlog/z-series/` |
 
 ---
 

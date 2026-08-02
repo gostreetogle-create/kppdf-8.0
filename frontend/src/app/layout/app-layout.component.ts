@@ -11,6 +11,7 @@ import {
   FileText,
   ShieldCheck,
   Palette,
+  Warehouse,
 } from 'lucide-angular';
 
 /**
@@ -39,18 +40,11 @@ interface NavCategory {
  * TZ-CategoriesNav — AppLayout top-panel nav grouped into 4 dropdowns:
  *
  *   Каталог       ← Продукция · Модули · Материалы · Виды работ
- *     (Package)   — TZ-83 product → module → material hierarchy
- *
- *   Сделки        ← Организации · Договоры · Заказы
- *     (Briefcase) — counterparty + commercial obligations
- *
- *   Справочники   ← Справочники · Категории · Категории шаблонов
- *     (BookOpen)  — meta-catalog umbrella route (+ TZ-DOC-308 template
- *                    categories dictionary)
- *
- *   Документы     ← Конструктор · Текстовые блоки · Шаблоны таблиц
- *     (FileText)  — TZ-86 Phase D.1 document constructor sub-system
- *
+ *   Сделки        ← Организации · КП · Договоры · Заказы
+ *   Склад         ← Дашборд · Остатки · Движения (TZ-UX-301 — restore if missing)
+ *   Справочники   ← …
+ *   Документы     ← …
+ *   Админ         ← …
  * Active-category algorithm: when ANY sub-route is active (e.g. /products/:id),
  * the parent category trigger is highlighted via bg-sunrise-warm. Boundary
  * matching uses `path === url || url.startsWith(path + '/')` so that
@@ -65,10 +59,10 @@ const NAV_CATEGORIES: NavCategory[] = [
     label: 'Каталог',
     icon: Package,
     items: [
-      { path: '/products', label: 'Продукция' },
-      { path: '/modules', label: 'Модули' },
-      { path: '/materials', label: 'Материалы' },
-      { path: '/work-types', label: 'Виды работ' },
+      { path: '/products', pageKey: 'products', label: 'Продукция' },
+      { path: '/modules', pageKey: 'modules', label: 'Модули' },
+      { path: '/materials', pageKey: 'materials', label: 'Материалы' },
+      { path: '/work-types', pageKey: 'work-types', label: 'Виды работ' },
     ],
   },
   {
@@ -76,12 +70,23 @@ const NAV_CATEGORIES: NavCategory[] = [
     label: 'Сделки',
     icon: Briefcase,
     items: [
-      { path: '/organizations', label: 'Организации' },
+      { path: '/organizations', pageKey: 'organizations', label: 'Организации' },
       // TZ-SALES-301: КП (коммерческие предложения) — thin UI над
       // QuotationModule, первая волна shop-customer-lifecycle.
-      { path: '/proposals', label: 'КП' },
-      { path: '/contracts', label: 'Договоры' },
-      { path: '/orders', label: 'Заказы' },
+      { path: '/proposals', pageKey: 'proposals', label: 'КП' },
+      { path: '/contracts', pageKey: 'contracts', label: 'Договоры' },
+      { path: '/orders', pageKey: 'orders', label: 'Заказы' },
+    ],
+  },
+  {
+    // TZ-UX-301: warehouse routes existed without menu entry — restore.
+    id: 'warehouse',
+    label: 'Склад',
+    icon: Warehouse,
+    items: [
+      { path: '/inventory', pageKey: 'inventory', label: 'Дашборд' },
+      { path: '/storage-items', pageKey: 'storage-items', label: 'Остатки' },
+      { path: '/stock-movements', pageKey: 'stock-movements', label: 'Движения' },
     ],
   },
   {
@@ -89,14 +94,27 @@ const NAV_CATEGORIES: NavCategory[] = [
     label: 'Справочники',
     icon: BookOpen,
     items: [
-      { path: '/dictionaries', label: 'Все справочники' },
+      { path: '/dictionaries', pageKey: 'dictionaries', label: 'Все справочники' },
 
-      { path: '/categories', label: 'Категории' },
-      { path: '/doc-template-categories', label: 'Категории шаблонов' },
+      { path: '/categories', pageKey: 'categories', label: 'Категории' },
+      {
+        path: '/doc-template-categories',
+        pageKey: 'doc-template-categories',
+        label: 'Категории шаблонов',
+      },
       // TZ-DOC-334: категории текстовых блоков (DOC-316 page wiring).
-      { path: '/dictionaries/text-block-categories', label: 'Категории текстов' },
+      {
+        path: '/dictionaries/text-block-categories',
+        pageKey: 'text-block-categories',
+        label: 'Категории текстов',
+      },
       // TZ-PRODUCTS-301: справочник цветов (RAL) — иконка Palette.
-      { path: '/dictionaries/color-references', label: 'Цвета', icon: Palette },
+      {
+        path: '/dictionaries/color-references',
+        pageKey: 'color-references',
+        label: 'Цвета',
+        icon: Palette,
+      },
     ],
   },
   {
@@ -111,10 +129,10 @@ const NAV_CATEGORIES: NavCategory[] = [
     icon: FileText,
     items: [
       // Registry first: create/open a template, then land on /builder/:id.
-      { path: '/doc-constructor/templates', label: 'Шаблоны' },
-      { path: '/doc-constructor/texts', label: 'Текстовые блоки' },
-      { path: '/doc-constructor/tables', label: 'Шаблоны таблиц' },
-      { path: '/doc-constructor/documents', label: 'Архив документов' },
+      { path: '/doc-constructor/templates', pageKey: 'doc-templates', label: 'Шаблоны' },
+      { path: '/doc-constructor/texts', pageKey: 'doc-texts', label: 'Текстовые блоки' },
+      { path: '/doc-constructor/tables', pageKey: 'doc-tables', label: 'Шаблоны таблиц' },
+      { path: '/doc-constructor/documents', pageKey: 'doc-documents', label: 'Архив документов' },
     ],
   },
   {
@@ -127,6 +145,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     items: [
       {
         path: '/admin/users',
+        pageKey: 'admin-users',
         label: 'Пользователи',
         // TZ-262 (2026-08-02): выровнено с backend GET /api/admin/users
         // (@Permissions('user:admin')). user:read без user:admin → пункт
@@ -135,6 +154,7 @@ const NAV_CATEGORIES: NavCategory[] = [
       },
       {
         path: '/admin/roles',
+        pageKey: 'admin-roles',
         label: 'Роли',
         capabilities: ['role:read'],
       },
@@ -247,10 +267,16 @@ export class AppLayoutComponent {
    * logout, permission bump), keeping OnPush change-detection naturally
    * aligned.
    */
+  /** TZ-ACCESS-302: filter nav by user pages (from /auth/me) AND capabilities. */
   protected readonly navCategories = computed<readonly NavCategory[]>(() => {
+    const pages = this.user()?.pages;
     return NAV_CATEGORIES.map((cat) => ({
       ...cat,
-      items: cat.items.filter((item) => this.caps.hasAny(item.capabilities)),
+      items: cat.items.filter((item) => {
+        if (pages && (item as any).pageKey && !pages.includes((item as any).pageKey)) return false;
+        if (!this.caps.hasAny(item.capabilities)) return false;
+        return true;
+      }),
     })).filter((cat) => cat.items.length > 0);
   });
 
