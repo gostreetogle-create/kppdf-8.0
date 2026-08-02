@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
 
 /**
  * TZ-86 Phase A.1 — TextBlock (extended for visual constructor).
@@ -11,6 +11,11 @@ import { HydratedDocument } from 'mongoose';
  *
  * `slug` is auto-generated from name if omitted. `category`, `tags`,
  * `sortOrder` are optional (the simplified UI no longer exposes them).
+ *
+ * TZ-DOC-315 adds the optional FK `categoryId?: Types.ObjectId` so that
+ * each text block can be grouped under a user-defined TextBlockCategory.
+ * The legacy enum `category: 'legal'|'intro'|'outro'|'custom'` is kept
+ * for backward compatibility — UI products migrate gradually.
  */
 
 export type TextBlockCategory =
@@ -55,17 +60,11 @@ export class TextBlock {
   @Prop({ type: [String], default: [] })
   tags!: string[];
 
-  /**
-   * Content for simple blocks (HTML, previously CommonMark markdown).
-   * Optional — multi-column blocks use `columns` instead.
-   */
+  /** Content for simple blocks (HTML, previously CommonMark markdown). */
   @Prop({ maxlength: 50000 })
   content?: string;
 
-  /**
-   * Multi-column layout. Each column has id, HTML content, and width ratio.
-   * When non-empty, `content` should be ignored in favor of rendering columns.
-   */
+  /** Multi-column layout (when set, content is rendered as columns). */
   @Prop({
     type: [{
       id: { type: String, required: true },
@@ -81,6 +80,15 @@ export class TextBlock {
   @Prop({ default: true, index: true })
   isActive!: boolean;
 
+  /**
+   * TZ-DOC-315 — FK → TextBlockCategory. Optional on persisted model for
+   * READ compatibility with legacy blocks; new blocks always receive a
+   * category SERVER-SIDE via TextBlockCategoryService (assertAssignable
+   * for caller-provided ids, else resolveDefault to org/system default).
+   */
+  @Prop({ type: Types.ObjectId, ref: 'TextBlockCategory', index: true, sparse: true })
+  categoryId?: Types.ObjectId;
+
   /** Manual reordering in picker (low → high). */
   @Prop({ default: 0 })
   sortOrder!: number;
@@ -91,7 +99,9 @@ export const TextBlockSchema = SchemaFactory.createForClass(TextBlock);
 /**
  * Compound indexes:
  *  - (category, sortOrder) → primary picker listing query (TZ-86C.1).
- *  - (category, isActive) → fast active-only lookup for canvas render.
+ *  - (category, isActive)  → fast active-only lookup for canvas render.
+ *  - (categoryId, isActive) — TZ-DOC-315: builder picker dropdown filter.
  */
 TextBlockSchema.index({ category: 1, sortOrder: 1 });
 TextBlockSchema.index({ category: 1, isActive: 1 });
+TextBlockSchema.index({ categoryId: 1, isActive: 1 });

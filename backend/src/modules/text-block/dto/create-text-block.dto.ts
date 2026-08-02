@@ -2,6 +2,7 @@ import {
   IsArray,
   IsBoolean,
   IsIn,
+  IsMongoId,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -78,4 +79,8 @@ export class CreateTextBlockDto {
   @IsOptional()
   @IsNumber()
   sortOrder?: number;
+
+  @IsOptional()
+  @IsMongoId()
+  categoryId?: string;
 }

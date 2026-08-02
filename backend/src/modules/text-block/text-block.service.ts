@@ -1,8 +1,10 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { TextBlockCategoryService } from '../text-block-category/text-block-category.service';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import {
@@ -27,16 +29,39 @@ export class TextBlockService {
   constructor(
     @InjectModel(TextBlock.name)
     private readonly model: Model<TextBlockDocument>,
+    private readonly categoryService: TextBlockCategoryService,
   ) {}
 
-  async create(dto: CreateTextBlockDto): Promise<TextBlockDocument> {
+  async create(
+    dto: CreateTextBlockDto,
+    organizationId?: string | null,
+  ): Promise<TextBlockDocument> {
     const slug = dto.slug ?? this.slugify(dto.name);
     const sanitizedTags = (dto.tags ?? []).map((t: string) => this.tagSanitize(t));
+
+    let categoryId: Types.ObjectId;
+    if (dto.categoryId) {
+      const cat = await this.categoryService.assertAssignable(
+        dto.categoryId,
+        organizationId ?? '',
+      );
+      categoryId = cat._id;
+    } else {
+      const def = await this.categoryService.resolveDefault(organizationId);
+      if (!def) {
+        throw new BadRequestException(
+          'Default text-block category unavailable. Run text-block-categories seed or set a default in the dictionary.',
+        );
+      }
+      categoryId = def._id;
+    }
+
     try {
       return await this.model.create({
         name: dto.name,
         slug,
         category: dto.category ?? 'custom',
+        categoryId,
         tags: sanitizedTags,
         content: sanitizeHtml(dto.content ?? ''),
         columns: (dto.columns ?? []).map((c) => ({
@@ -59,9 +84,16 @@ export class TextBlockService {
   async findAll(filter?: {
     category?: TextBlockCategory;
     isActive?: boolean;
+    categoryId?: string;
   }): Promise<TextBlockDocument[]> {
     const q: Record<string, unknown> = {};
     if (filter?.category) q.category = filter.category;
+    if (filter?.categoryId) {
+      if (!Types.ObjectId.isValid(filter.categoryId)) {
+        throw new BadRequestException(`Invalid categoryId ${filter.categoryId}`);
+      }
+      q.categoryId = new Types.ObjectId(filter.categoryId);
+    }
     if (typeof filter?.isActive === 'boolean') q.isActive = filter.isActive;
     return this.model
       .find(q)

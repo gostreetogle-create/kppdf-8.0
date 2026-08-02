@@ -7,7 +7,9 @@ import {
   Patch,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { AuditAction } from '../../common/decorators/audit-action.decorator';
 import { TextBlockService } from './text-block.service';
@@ -30,13 +32,17 @@ export class TextBlockController {
   list(
     @Query('category') category?: TextBlockCategory,
     @Query('isActive') isActive?: string,
+    @Query('categoryId') categoryId?: string,
+    @Query('activeOnly') activeOnly?: string,
   ) {
-    const filter: { category?: TextBlockCategory; isActive?: boolean } = {};
+    const filter: { category?: TextBlockCategory; isActive?: boolean; categoryId?: string } = {};
     if (category) filter.category = category;
+    if (categoryId) filter.categoryId = categoryId;
     if (typeof isActive === 'string') {
       if (isActive === 'true') filter.isActive = true;
       else if (isActive === 'false') filter.isActive = false;
     }
+    if (activeOnly === 'true') filter.isActive = true;
     return this.service.findAll(filter);
   }
 
@@ -48,8 +54,11 @@ export class TextBlockController {
   @Post()
   @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'TextBlock' })
-  create(@Body() dto: CreateTextBlockDto) {
-    return this.service.create(dto);
+  create(
+    @Body() dto: CreateTextBlockDto,
+    @Req() req?: Request & { user?: { organizationId?: string | null } },
+  ) {
+    return this.service.create(dto, req?.user?.organizationId ?? null);
   }
 
   @Patch(':id')

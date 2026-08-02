@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { TextBlock, TextBlockSchema } from './text-block.schema';
 import { TextBlockService } from './text-block.service';
 import { TextBlockController } from './text-block.controller';
+import { TextBlockCategoryModule } from '../text-block-category/text-block-category.module';
 
 /**
  * TZ-86 Phase A.1 — TextBlockModule.
@@ -17,6 +18,7 @@ import { TextBlockController } from './text-block.controller';
     MongooseModule.forFeature([
       { name: TextBlock.name, schema: TextBlockSchema },
     ]),
+    TextBlockCategoryModule,
   ],
   controllers: [TextBlockController],
   providers: [TextBlockService],
