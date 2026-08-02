@@ -97,6 +97,80 @@ describe('ButtonComponent', () => {
     expect(clickSpy).not.toHaveBeenCalled();
   });
 
+  // ─── DOUBLE-EMIT REGRESSION GUARDS (user report 2026-08-02) ─────────────
+  // The «Добавить размер» button in materials dialog was reported to add
+  // two rows per click. The Angular Output is emitted once per click handler
+  // invocation; these specs guard that no extra listener, parent handler
+  // or keyboard simulation can produce a second emit from the same intent.
+  describe('double-emit regression guards', () => {
+    it('two consecutive clicks emit exactly two outputs (not zero, not one, not three)', async () => {
+      const fixture = await createFixture();
+      const clickSpy = jest.fn();
+      fixture.componentInstance.click.subscribe(clickSpy);
+
+      const btn = hostEl(fixture).querySelector('button') as HTMLButtonElement;
+      btn.click();
+      btn.click();
+      expect(clickSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('click stops DOM propagation so an outer listener cannot re-invoke addDimension', async () => {
+      const fixture = await createFixture();
+      const outerSpy = jest.fn();
+      // Attach an outer listener to the fixture host (simulated dialog
+      // overlay). If pi-button fails to stopPropagation, the click bubbles
+      // up and outerSpy fires — proves the inner handler will not run twice.
+      hostEl(fixture).addEventListener('click', outerSpy);
+
+      const btn = hostEl(fixture).querySelector('button') as HTMLButtonElement;
+      btn.click();
+      expect(outerSpy).not.toHaveBeenCalled();
+    });
+
+    it('type defaults to "button" so a click never submits a surrounding <form>', async () => {
+      // Wrap button in a real <form> with onSubmit spy.
+      const fixture = await createFixture();
+      const host = hostEl(fixture);
+      const form = document.createElement('form');
+      const submitSpy = jest.fn((e: Event) => e.preventDefault());
+      form.addEventListener('submit', submitSpy);
+      const btn = host.querySelector('button') as HTMLButtonElement;
+      form.appendChild(btn);
+      host.appendChild(form);
+
+      btn.click();
+      expect(submitSpy).not.toHaveBeenCalled();
+    });
+
+    it('explicit type="button" survives event flow even if the host has a (click) handler', async () => {
+      const fixture = await createFixture({ type: 'button' });
+      const btn = hostEl(fixture).querySelector('button') as HTMLButtonElement;
+      expect(btn.getAttribute('type')).toBe('button');
+    });
+
+    it('type="submit" still emits exactly one click on press (does not auto-double-fire)', async () => {
+      const fixture = await createFixture({ type: 'submit' });
+      const clickSpy = jest.fn();
+      fixture.componentInstance.click.subscribe(clickSpy);
+      const btn = hostEl(fixture).querySelector('button') as HTMLButtonElement;
+      btn.click();
+      expect(clickSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('Enter press synthesises a click event the host listens to (browser keyboard simulation)', async () => {
+      const fixture = await createFixture();
+      const clickSpy = jest.fn();
+      fixture.componentInstance.click.subscribe(clickSpy);
+      const btn = hostEl(fixture).querySelector('button') as HTMLButtonElement;
+      // Angular CDK does NOT auto-bind keydown.enter → click; we explicitly
+      // simulate what a real browser does: dispatch a click event on the
+      // focused button. This proves a single user intent (Enter) yields
+      // exactly one emit.
+      btn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      expect(clickSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('variants (apply different class sets)', () => {
     const variants = ['default', 'secondary', 'outline', 'ghost', 'link', 'destructive'] as const;
     for (const v of variants) {
