@@ -5218,3 +5218,13 @@ chore(docs): rbac-capability-gap-audit + 5 TZ-stubs + SoT sync (Cursor Mode A).
 - 5 _backlog TZ-stubs: TZ-RBAC-302/303/304 + TZ-ACCESS-303/304.
 - RBAC-CONTRACT.md +17 lines; product-vision-lite.md +40 lines.
 - First по deps: TZ-RBAC-302 → TZ-ACCESS-303.
+
+## 2026-08-02 — TZ-WORKERS-302 closeout (Buffy takeover)
+Dead-end ling-3.0-flash session handed over with no committed work. Closed in this pass:
+- pi-workers.service.ts + spec (6 driver tests for list/get/create/update/remove/params)
+- people.page.ts (pi-table + search + activeOnly + double-submit dialog integration)
+- people-form-dialog.component.ts (content 1000px, sections: Основное/Заметки, footer sticky)
+- route /people + capability material:read gate + nav-menu «Люди» in Справочники dropdown
+- docs/pages/people.page.md (full page contract, columns, dialog fields, services)
+- archive marker + lock + STATUS.md DONE entry + this progress entry
+Backend /api/workers noted as out-of-scope dependent on TZ-WORKERS-301.

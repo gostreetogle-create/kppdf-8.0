@@ -1547,3 +1547,7 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 **Verification:** spec-only docs TZ — кодовые тесты N/A (GEMINI.md); markdown review + `git diff --check` clean; `bash OrchestratorKit/verify-status.sh` PASS.
 **Known limitations:** карта — срез на 2026-08-02; КП-дыра открыта до TZ-SALES-301; Гант намеренно parked (по GANT-calendar.md — после ACCESS+SALES+WORKERS-302).
 **Push:** нет.
+
+## TZ-WORKERS-302 — DONE (Buffy takeover of dead-end session)
+Frontend-only closeout: /people page + content-dialog 1000px + pi-workers.service + route + nav + docs.
+Backend /api/workers pending TZ-WORKERS-301 followup (separate territory).

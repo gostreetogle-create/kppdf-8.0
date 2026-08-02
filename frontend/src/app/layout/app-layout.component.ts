@@ -87,6 +87,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     icon: BookOpen,
     items: [
       { path: '/dictionaries', label: 'Все справочники' },
+      
       { path: '/categories', label: 'Категории' },
       { path: '/doc-template-categories', label: 'Категории шаблонов' },
       // TZ-PRODUCTS-301: справочник цветов (RAL) — иконка Palette.

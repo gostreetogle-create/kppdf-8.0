@@ -128,7 +128,7 @@ export const routes: Routes = [
           import('./pages/materials/materials.page').then((m) => m.MaterialsPage),
         title: 'KPPDF — Материалы',
       },
-      {
+{
         path: 'organizations',
         loadComponent: () =>
           import('./pages/organizations/organizations.page').then((m) => m.OrganizationsPage),
