@@ -764,7 +764,6 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 
 | TZ | Название | Layer | Оценка | Dependencies |
 |----|----------|-------|--------|--------------|
-| TZ-WORKERS-301 | «Люди» — единая backend-сущность на базе Worker (email, position, supplierId, managerOfSupplierIds, userId, organizationId sparse, deletedAt) + консолидация Person по факту кода | 4 | 3-4h | — |
 | TZ-WORKERS-302 | «Люди» — большая таблица (pi-table) + единая карточка человека (content-диалог 1000px, секции: основное/производство/виды работ/фирма-поставщик/статус) | 3 | 3-4h | TZ-WORKERS-301 |
 | TZ-WORKTYPES-301 | Вид работы — большой content-диалог по DSL + секция «Сотрудники» (dropdown людей, M2M через Worker.workTypeIds) | 3 | 2-3h | TZ-WORKERS-302 |
 | TZ-WORKTYPES-302 | Каталог видов работ — expandable-строки с сотрудниками + фильтр по людям (по факту поддержки) | 3 | 1-2h | TZ-WORKTYPES-301 |
@@ -812,6 +811,7 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 
 | TZ | Дата | Описание | Архив |
 |---|---|---|---|
+| TZ-WORKERS-301 | 2026-08-02 | «Люди» — единая backend-сущность на базе Worker (email, position, supplierId, managerOfSupplierIds, userId, organizationId sparse, deletedAt); Person-консолидация → SUCCESSOR | `tasks/_archive/2026-08/TZ-WORKERS-301.done.md` |
 | TZ-DOC-311 | 2026-08-02 | Свойства шаблона — pageNumbering сохраняется; «Оглавление/Шапка/Подвал» убраны из UI (backward-compatible, без миграции) | `tasks/_archive/2026-08/TZ-DOC-311.done.md` |
 | TZ-DOC-309 | 2026-08-02 | Диалог создания шаблона — мгновенное открытие (кэш активных категорий в сервисе, инвалидация на CRUD) | `tasks/_archive/2026-08/TZ-DOC-309.done.md` |
 | TZ-DOC-310 | 2026-08-02 | Диалог создания — закрытие с первого клика; видимая валидация категории; parentDestroyRef в 4 open() | `tasks/_archive/2026-08/TZ-DOC-310-template-dialog-one-click-close.done.md` |

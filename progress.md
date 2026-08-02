@@ -5115,3 +5115,14 @@ E2E-сценарии с созданием данных помечены MANUAL_
 **Изменения:** оба `findOne` в `TextBlockService.create()` теперь требуют `isActive: true` (legacy slug-map + `ensureSystemDefault()` helper). Это защищает от случая «админ деактивировал системную «Общее»» — ранее сервис бы привязал TextBlock к неактивной категории. Также убран dead-code placeholder тест #8 (`exclude-unused-import lint`); unit spec сократился с 8 до 7 driver tests.
 **Проверки:** tsc exit 0; jest text-block 2 suites / 19 tests PASS; jest e2e text-blocks 9/9 PASS; regression 12/12 (user-org+production) + 4/4 (is-object-id).
 **Commit:** `19a4b68d732d10ab615eeb189c45be461f1dbae4` — `chore(text-block): TZ-DOC-320 amendment — isActive guards + spec cleanup` — 2 files / +7 / -12. Push: нет.
+
+## 2026-08-02 — TZ-WORKERS-301 DONE (единая сущность «Люди» — backend контракт)
+
+**Тип:** Layer 4 backend. Worker расширен до единого справочника людей: email, position, supplierId?, managerOfSupplierIds?, userId?, organizationId? (sparse), deletedAt?, notes?, isSystem? + sparse-unique {organizationId, email}.
+**Person НЕ консолидирован:** Organization.contactPersonId/Counterparty/OrganizationContact/EAV активно ссылаются на persons — миграция рискованна, SUCCESSOR зафиксирован (docs/data-model.md).
+**Затронуто:** backend/src/modules/worker/* (schema, dto x3, service, controller, module) + worker.service.spec.ts (NEW, 18 unit), worker.controller.spec.ts (NEW, 6 unit), test/e2e/workers.e2e-spec.ts (NEW, 5 e2e).
+**Проверки:** tsc exit 0; jest worker 2 suites/24 PASS; полный jest 43 suites/410 PASS; e2e workers 5/5 PASS (Mongo 7 docker, replicaSet rs0); git diff --check clean; verify-status PASS.
+**Review:** P1 fix — одиночное чтение GET /workers/:id получило org-scope (403 на чужую область); P2 fix — normalizeEmail(null) больше не даёт 500. После фиксов все гейты перезапущены — зелёные.
+**Архив:** tasks/_archive/2026-08/TZ-WORKERS-301.done.md; lock: .mimocode/locks/TZ-WORKERS-301-people-backend-entity.lock (gitignored).
+**Commit:** <HASH> — feat(workers): consolidate People backend entity — TZ-WORKERS-301. Push: нет.
+**Ограничения:** UI «Люди» — TZ-WORKERS-302; Person-консолидация — SUCCESSOR; e2e-харнесс без forbidNonWhitelisted (production имеет) — поведение задокументировано тестом.

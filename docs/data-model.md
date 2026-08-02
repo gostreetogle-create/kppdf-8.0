@@ -203,6 +203,15 @@
 | `isActive` | `boolean` | — |
 | `phone` | `string` | — |
 | `role` | `string` | ⚠️ Должность (есть `grade`) — кандидат на удаление |
+| `email` | `string` | Email (lowercased; sparse-unique в рамках organizationId) — TZ-WORKERS-301 |
+| `position` | `string` | Должность — TZ-WORKERS-301 |
+| `supplierId` | `ObjectId?` | FK → `Organization` (тип supplier) — TZ-WORKERS-301 |
+| `managerOfSupplierIds` | `ObjectId[]` | FK → `Organization` (фирмы-поставщики, где человек — менеджер) — TZ-WORKERS-301 |
+| `userId` | `ObjectId?` | FK → `User` (аккаунт системы, опционально) — TZ-WORKERS-301 |
+| `organizationId` | `ObjectId?` | TZ-238: область владения (sparse) — TZ-WORKERS-301 |
+| `deletedAt` | `Date?` | Soft delete — TZ-WORKERS-301 |
+| `notes` | `string?` | Заметки — TZ-WORKERS-301 |
+| `isSystem` | `boolean?` | Системная запись (default false) — TZ-WORKERS-301 |
 | `createdAt` | `Date` | — |
 | `updatedAt` | `Date` | — |
 
