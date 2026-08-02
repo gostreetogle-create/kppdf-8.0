@@ -40,6 +40,18 @@ Order: **324 → 325 → 326**. Max 2 streams overall with Stream B.
 
 Parallel OK with DOC-324 if conflict keys disjoint (UX-301/303/305 safe).
 
+## Stream D — vision lite (roles + КП)
+
+| ID | Hint |
+|----|------|
+| docs/product-vision-lite.md | канон цеха ~10 чел |
+| TZ-ACCESS-301 → 302 | page ACL затем UI галочек |
+| TZ-JOURNEY-301 | gap map (docs) |
+| TZ-SALES-301 | thin /proposals |
+| GANT | parked `_backlog/vision/` |
+
+Рекомендуемый порядок исполнения overall: UX-301/303/305 (быстрые) ∥ DOC-324; затем ACCESS-301→302; JOURNEY-301; SALES-301; People/UX-306.
+
 ## Stream B — inventory integrity (P0)
 
 | ID | Status | Owner hint |

@@ -71,4 +71,15 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | [UX-306](../tasks/TZ-UX-306-people-route-align.md) | people/workers | Route+nav align |
 | [DOC-324..326](../docs/agent-checklists/DOC-CONSTRUCTOR-UX-AUDIT.md) | builder/templates/texts | Prior audit |
 
+## Vision / access / sales (2026-08-02)
+
+| TZ | Pages | One-liner |
+|----|-------|-----------|
+| Vision | — | [product-vision-lite.md](../product-vision-lite.md) |
+| [ACCESS-301](../tasks/TZ-ACCESS-301-page-acl-catalog.md) | admin | Page ACL + 4 roles seed |
+| [ACCESS-302](../tasks/TZ-ACCESS-302-director-page-grants-ui.md) | admin/access | Director page checkboxes |
+| [JOURNEY-301](../tasks/TZ-JOURNEY-301-shop-flow-gap-map.md) | all | Flow gap map (docs) |
+| [SALES-301](../tasks/TZ-SALES-301-proposal-thin-ui.md) | /proposals (NEW) | Thin КП list |
+| GANT | parked | `_backlog/vision/GANT-calendar.md` |
+
 Audit note (doc-constructor detail): `DOC-CONSTRUCTOR-UX-AUDIT.md`
