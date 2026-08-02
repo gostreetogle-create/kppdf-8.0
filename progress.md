@@ -5098,3 +5098,13 @@ E2E-сценарии с созданием данных помечены MANUAL_
 **Архивы:** `tasks/_archive/2026-08/TZ-BACKEND-E2E-HARNESS.done.md` (создан в этом workflow).
 **Commit:** `a7943f82c8361a9d7ee78dbaed570327bb006afd` — `fix(backend): TZ-BACKEND-E2E-HARNESS — IsObjectId accepts Types.ObjectId + real e2e tests` — 5 files / +232 / -64.
 **Ограничения:** Полный `pnpm test:e2e` всё ещё имеет 2 failing suites (text-blocks + integration) — обе out-of-scope TZ (TZ-DOC-315 commitment уже в HEAD ломает text-blocks e2e, integration — order-dependent flake). Pre-existing baseline, не моя регрессия.
+
+## 2026-08-02 — TZ-DOC-320 DONE (text-block legacy enum → categoryId resolution fallback)
+
+**Тип:** Backend service-side resolution ladder + lazy upsert fallback (TZ-DOC-315 territory isolated).
+**Результат:** `TextBlockService.create()` расширен 4-шаговой лесенкой (assertAssignable → legacy slug-map → resolveDefault → ensureSystemDefault). Lazy upsert `«Общее»` гарантирует legacy-enum поддержку без правки TZ-DOC-315 territory (`text-block-category/**`).
+**Затронуто:** `backend/src/modules/text-block/text-block.service.ts` (+74/-3), `backend/src/modules/text-block/text-block.service.spec.ts` (NEW, 8 unit-tests).
+**Проверки:** tsc exit 0; jest text-block 2 suites / 20 tests PASS; jest e2e text-blocks 9/9 PASS (was 6/9); regression 12/12 PASS (user-org + production) + 4/4 PASS (is-object-id).
+**Архив:** `tasks/_archive/2026-08/TZ-DOC-320-text-block-enum-resolution-fallback.done.md`; lock: `.mimocode/locks/TZ-DOC-320-text-block-enum-resolution-fallback.lock` (gitignored).
+**Commit:** `b6ee278decbf6fa3077b6fe7f0768190f5bbae37` — `feat(text-block): migrate legacy enum → categoryId with default-resolve — TZ-DOC-320` — 2 files / +311 / -3. Push: нет.
+**Ограничения:** TZ-DOC-315 seed остаётся unwired (successor TZ-DOC-321); интеграционный order-flake не моя епархия; CP1251 в seed-файле pre-existing observation.

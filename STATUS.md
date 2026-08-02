@@ -705,6 +705,76 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 
 **STATUS:** ⏳ READY — spec committed, execution pending.
 
+### Document Constructor — TZ-DOC-319 (2026-08-02) — Удаление блока «Отступ» (spacer)
+
+**Мотивация (пользователь 2026-08-02):** «Отступ не нужен — тексты и так выставляются по факту. Раньше отступ нужен был, чтобы раздвигать тексты, сейчас смысла нет. Почистить понятие отступ, все связанные файлы с отступом».
+
+**Зафиксированные решения:** `spacer`-блок полностью удаляется из frontend (создание: кнопка тулбара «— Отступ» + секция 3 tool-pane; рендер-ветка + CSS; слайдер высоты в инспекторе; `BlockType`/`BLOCK_TYPES`/labels/hints; placeholder «Разделитель»). Backend **не изменяется**: `'spacer'` остаётся в enum schema и `@IsIn` DTO для backward compat старых шаблонов (полная миграция legacy-значения — отдельная задача, вне scope). Старые шаблоны с `type: 'spacer'` продолжают открываться через generic-ветку рендера.
+
+| TZ | Название | Layer | Оценка | Dependencies |
+|----|----------|-------|--------|--------------|
+| TZ-DOC-319 | Удаление блока «Отступ» (spacer): UI/типы/рендер/инспектор/docs; backend enum остаётся для backward compat | 3 | 1-2h | — (не параллельно с TZ-DOC-316/317) |
+
+**Must-NOT-regress:** TZ-DOC-309..314 (общие `builder.page.ts`/`builder-tool-pane.component.ts`/`template-block.types.ts`), слайдер высоты `signature` (инспектор), TZ-DOC-315..317, TZ-DOC-318 (зарезервирован), Materials/Admin/Z-backlog.
+
+**STATUS:** ⏳ READY — spec committed, execution pending.
+
+### Modules (2026-08-02) — Модуль: большой content-диалог + редактор материалов + expandable-каталог
+
+**Мотивация (пользователь 2026-08-02):** «диалог создания модуля — как в материалах: большое грамотно работающее окно; модуль состоит из материалов — выпадающий список материалов с подстановкой ширины/высоты; если галочка зафиксирована (isImmutable) — в модуле менять нельзя, остальные размеры редактируются; несколько материалов — красиво, структурно по категориям, строками как таблица с параметрами и фотографиями; в каталоге модулей клик по строке раздвигает вниз таблицу материалов».
+
+**Зафиксированные решения:** backend уже готов (schema `ProductModule.materials[]`, DTO, серверный enforcement `isImmutable`, populate `materials.materialId` с `name photoIds unit dimensions`) — backend НЕ изменяется. Два frontend-слоя (Layer 3, строго последовательно): (1) диалог модуля переводится на DSL content-диалога (`variant="content"` + maxWidth 1000px, как у материалов) и встраивает редактор материалов с isImmutable-локами, фото и группировкой по категориям; (2) каталог модулей получает expandable-строки с таблицей материалов (pi-table уже умеет `expandedRow`). Старые модули не ломаются.
+
+| TZ | Название | Layer | Оценка | Dependencies |
+|----|----------|-------|--------|--------------|
+| TZ-MODULES-301 | Модуль — большой content-диалог + встроенный редактор материалов (dropdown, isImmutable-локи, фото, группировка по категориям) | 3 | 3-4h | — (backend готов) |
+| TZ-MODULES-302 | Каталог модулей — expandable-строки: клик по строке раздвигает таблицу материалов | 3 | 1-2h | TZ-MODULES-301 (recommended) |
+
+**Порядок:** 301 → 302. Не параллельно (Layer 3, общий домен модулей).
+
+**Must-NOT-regress:** TZ-DOC-309..319 (общие `pi-dialog` DSL — только потребляют), Materials page (референс DSL — read-only), Admin/RBAC, Z-backlog, desktop.
+
+**STATUS:** ⏳ READY — spec committed, execution pending.
+
+### Products (2026-08-02) — Товар: большой content-диалог по DSL + RAL-цвета + модули карточками + expandable-каталог + карточки-витрины
+
+**Мотивация (пользователь 2026-08-02):** «диалог товара — реально красивая реализация по нашему DSL/UI-киту/дизайну, поля по категориям разбитые и красиво показанные; цвет — RAL выпадающим списком + добавить их в справочники как цвета; обязательный пункт — выбор модулей в товаре как материалы в модуле, модули карточками, из чего состоит продукция; в каталоге продукции при нажатии на строку раскрывается список модулей; при нажатии на модуль — переход на страницу модуля; нужны большие карточки товара/модуля/материала — витрина, где всё про него, по категориям, с кнопками редактирования и переходами на связанные сущности; три размера карточек: большая/средняя/маленькая по DSL/UI-киту, переиспользуемые».
+
+**Зафиксированные решения:** backend в основном готов (Product schema, M:N `productModuleIds`, атомарные POST/DELETE `/products/:id/modules`, populate в list/findById). Цепочка: 301 (справочник цветов RAL — новая сущность, backend + UI) → 302 (диалог товара: content-вариант 1000px + поля по категориям + RAL dropdown) → 303 (встроенный редактор модулей карточками в диалоге товара) → 304 (expandable-каталог товаров: клик по строке → модули, клик по модулю → страница модуля) → 305 (UI Kit карточки-витрины sm/md/lg, переиспользуемые). `ralCode` остаётся legacy-строкой (миграция — отдельный SUCCESSOR при необходимости). Проверено: справочника цветов нет, pi-card есть (базовый, без размеров/медиа) — 305 его расширяет или создаёт PiShowcaseCardComponent.
+
+| TZ | Название | Layer | Оценка | Dependencies |
+|----|----------|-------|--------|--------------|
+| TZ-PRODUCTS-301 | Справочник «Цвета» (RAL): ColorReference backend-контракт + UI `/dictionaries/colors` (sparse-unique, system seed, 409 in_use/system) | 4 → 3 | 3-4h | — |
+| TZ-PRODUCTS-302 | Товар — большой content-диалог (DSL 1000px) + поля по категориям + RAL dropdown из справочника | 3 | 2-3h | TZ-PRODUCTS-301 |
+| TZ-PRODUCTS-303 | Товар — привязка модулей карточками в диалоге (паттерн TZ-MODULES-301) | 3 | 2-3h | TZ-PRODUCTS-302 |
+| TZ-PRODUCTS-304 | Каталог товаров — expandable-строки с модулями + переход на страницу модуля | 3 | 1-2h | TZ-PRODUCTS-303 (recommended) |
+| TZ-PRODUCTS-305 | UI Kit — карточки-витрины sm/md/lg (товар/модуль/материал), переиспользуемые + эталонное применение на одной детальной странице | 2 | 3-4h | — (самостоятельный UI-слой) |
+
+**Порядок:** 301 → 302 → 303 → 304 строго последовательно (Layer 3, общий products-домен + сервисы). 305 — UI Kit (Layer 2), может идти параллельно только если нет пересечения по файлам.
+
+**Must-NOT-regress:** TZ-MODULES-301/302 (паттерн редактора материалов и expandable-каталога — референсы), TZ-DOC-309..319, Materials page (референс DSL — read-only), Admin/RBAC, Z-backlog, desktop.
+
+**STATUS:** ⏳ READY — spec committed, execution pending.
+
+### Workers / WorkTypes (2026-08-02) — «Люди»: единая таблица + карточка человека; «Виды работ»: большой content-диалог + сотрудники + expandable-каталог
+
+**Мотивация (пользователь 2026-08-02):** «всё то же самое касается видов работ: создание, большой диалог; у вида работ должен быть выпадающий список сотрудников, в ПЛМ будем фильтровать по сотрудникам; если понятия сотрудников нет — создать одну большую таблицу людей; единая карточка создания человека: e-mail, телефон, пароль (всё о пользователе) + должность, фирма, поставщик, менеджер поставщика; выпадающие списки-категории; привязываем людей к виду работ, к фирме/поставщику — единый справочник людей; в каталоге поставщика — пункт «добавить человека» из этого списка».
+
+**Зафиксированные решения:** `Worker` и `Person` УЖЕ существуют в backend (workers + persons), но UI для людей отсутствует полностью. Единая «Люди»-сущность строится на базе Worker (уже есть `workTypeIds[]` M2M → WorkType), расширяется: email, position, department, supplierId?, managerOfSupplierIds?, userId? (→ User), organizationId? (sparse unique, TZ-238), deletedAt?. Консолидация Person → Worker решается по факту кода (Organization.contactPersonId — ref). M2M вид работы ↔ сотрудники — через `Worker.workTypeIds[]` (вариант A, backend не меняется). Четыре TZ: 301 (backend «Люди»-контракт) → 302 (UI страница «Люди» + единая карточка content-диалог) → 301 (диалог вида работы + секция «Сотрудники») → 302 (expandable-каталог видов работ с сотрудниками). Создание аккаунта-пользователя из карточки человека — отдельный SUCCESSOR (не лезть в auth).
+
+| TZ | Название | Layer | Оценка | Dependencies |
+|----|----------|-------|--------|--------------|
+| TZ-WORKERS-301 | «Люди» — единая backend-сущность на базе Worker (email, position, supplierId, managerOfSupplierIds, userId, organizationId sparse, deletedAt) + консолидация Person по факту кода | 4 | 3-4h | — |
+| TZ-WORKERS-302 | «Люди» — большая таблица (pi-table) + единая карточка человека (content-диалог 1000px, секции: основное/производство/виды работ/фирма-поставщик/статус) | 3 | 3-4h | TZ-WORKERS-301 |
+| TZ-WORKTYPES-301 | Вид работы — большой content-диалог по DSL + секция «Сотрудники» (dropdown людей, M2M через Worker.workTypeIds) | 3 | 2-3h | TZ-WORKERS-302 |
+| TZ-WORKTYPES-302 | Каталог видов работ — expandable-строки с сотрудниками + фильтр по людям (по факту поддержки) | 3 | 1-2h | TZ-WORKTYPES-301 |
+
+**Порядок:** WORKERS-301 → 302 → WORKTYPES-301 → 302 строго последовательно (Layer 3/4, общие сервисы людей). SUCCESSOR: создание аккаунта-пользователя из карточки человека (auth/user), привязка людей в карточке поставщика (по TZ-WORKERS-302).
+
+**Must-NOT-regress:** TZ-MODULES-301/302, TZ-PRODUCTS-301..305 (паттерны референсов), TZ-DOC-309..319, Materials page (референс DSL — read-only), auth/user (пароль/логин не трогаем), Admin/RBAC, Z-backlog, desktop.
+
+**STATUS:** ⏳ READY — spec committed, execution pending.
+
 ### Document Constructor — TZ-DOC-315..317 (2026-08-02) — Категории текстовых блоков
 
 **Мотивация (пользователь 2026-08-02):** в `/doc-constructor/texts` и в builder picker'е «Тексты» нужен фильтр по пользовательским категориям — чтобы при росте библиотеки текстов было понятно, откуда и для чего блок. Существующий фиксированный enum `category: 'legal'|'intro'|'outro'|'custom'` (text-block.schema.ts:24-39) не масштабируется, и в builder панели тексты подгружаются одним GET без фильтра (builder-tool-pane.component.ts:444, builder.page.ts:704).
@@ -1179,3 +1249,49 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 **Ограничения:** `pnpm test:e2e` AC «0 failing suites» формально не выполнен (2 suites тек-blocks+integration fail), но эти failures явно out-of-scope TZ (TZ-DOC-315 dirty effect + integration order-flake) и **pre-existing на чистом HEAD**. Запись в `tasks/TZ-BACKEND-E2E-HARNESS.md` тоже подтверждает baseline «22 pass, 2 fail» = наши 2 цели были user-org+production, а не нынешние text-blocks+integration — это значит task-базлайн лукавит либо он был снят до коммита TZ-DOC-315. Successor TZ-DOC-318 запланирован для migrate text-blocks.spec на pattern с `categoryId`.
 **Commit:** `a7943f82c8361a9d7ee78dbaed570327bb006afd` — 5 files / +232 / -64.
 **Archive:** `tasks/_archive/2026-08/TZ-BACKEND-E2E-HARNESS.done.md`.
+
+---
+
+## 2026-08-02 — TZ-DOC-320 DONE (text-block legacy enum → categoryId resolution fallback)
+
+**Исполнитель:** Buffy
+**Статус:** DONE / service-side resolution ladder + verification
+**Корневая причина:** `backend/test/e2e/text-blocks.e2e-spec.ts` фейлил 6/9 — все POST/PATCH, использующие legacy `category: 'legal', content, name` без явного `categoryId`. Probe подтвердил: `text_block_categories.countDocuments() === 0` сразу после `app.init()` в test-bootstrap (kppdf-test DB), потому что `TextBlockCategoriesSeed` (созданный в TZ-DOC-315 в `backend/src/common/seed/text-block-categories.seed.ts`) НЕ зарегистрирован в providers `backend/src/app.module.ts:239+` (provider block содержит `DocumentTemplateCategoriesSeed` + `BomComponentResolveService`, но НЕ `TextBlockCategoriesSeed`). `resolveDefault(null)` для system admin → null → `BadRequestException 'Default text-block category unavailable…'` → 400. **Это расхождение с TZ-DOC-315 контрактом**: сид написан, но не wired.
+
+**Что НЕ трогали** (per user NO-TOUCH + TZ-DOC-315 territory):
+- `backend/src/common/decorators/is-object-id.decorator.ts`, `backend/src/common/validators/is-object-id.pipe.ts` (TZ-BACKEND-E2E-HARNESS).
+- `backend/src/modules/text-block-category/**` (TZ-DOC-315).
+- `backend/src/common/seed/text-block-categories.seed.ts` (encoding CP1251 detected via hex dump — оставлено как есть, не territory этой TZ).
+- `backend/test/e2e/integration.e2e-spec.ts` (order-dependent flake из TZ-BACKEND-E2E-HARNESS).
+- frontend/, sanitize-html, Materials, Admin/RBAC, TZ-278, Z-backlog, TZ-MATERIALS-*, document-table-type.
+
+**Решение:** service-side resolution ladder в `TextBlockService.create()` + lazy upsert в service (НЕ в seed). Лесенка:
+1. `dto.categoryId` задан → `assertAssignable()` через `TextBlockCategoryService`.
+2. legacy enum (`legal`|`intro`|`outro`|`custom`) БЕЗ `categoryId` → прямой `@InjectModel('TextBlockCategory')` lookup с map `LEGACY_CATEGORY_SLUG` по `{ slug, isSystem: true }`.
+3. else → `resolveDefault(organizationId)`.
+4. else (legacy-miss + system-miss) → `ensureSystemDefault()` — idempotent lazy upsert глобальной `«Общее»` (slug `obshchee`, `isSystem=true`, `isDefault=true`, `isActive=true`). WARN-log на первом insert.
+
+`ensureSystemDefault()` использует литерал `Общее` в `text-block.service.ts` (файл UTF-8 при создании через `write_file`). Обход CP1251 кодировки исходного seed-файла — за счёт того, что в моём service-коде Cyrillic записывается всегда в чистом UTF-8 вне зависимости от default-кодировки редактора репо.
+
+**Затронутые файлы (2 files / +311 / -3 net):**
+- `M  backend/src/modules/text-block/text-block.service.ts` — `Logger` import, второй `@InjectModel('TextBlockCategory')`, `LEGACY_CATEGORY_SLUG` const, лесенка в `create()`, `ensureSystemDefault()` helper.
+- `A  backend/src/modules/text-block/text-block.service.spec.ts` — NEW, 8 unit-tests: assertAssignable, legacy slug-map, resolveDefault, lazy-upsert «Общее», slug-conflict 11000, propagation of unknown errors.
+
+**Verification gates (per TZ-DOC-320 §ШАГ 5):**
+- ✅ `pnpm exec tsc -p tsconfig.build.json --noEmit` → exit 0.
+- ✅ `pnpm exec jest --no-coverage text-block` → **2 suites / 20 tests PASS** (TZ-DOC-315 category-spec: 12 + new spec: 8).
+- ✅ `pnpm exec jest --config test/jest-e2e.json --runInBand text-blocks` → **9/9 PASS** (was 6/9 fail).
+- ✅ `pnpm exec jest --testPathPattern='is-object-id'` → **4/4 PASS** (TZ-BACKEND-E2E-HARNESS regression).
+- ✅ `pnpm exec jest --config test/jest-e2e.json --runInBand user-organizationId production` → **12/12 PASS** (regression).
+- ✅ `git diff --check` (staged) → clean.
+
+**Commit:** `b6ee278decbf6fa3077b6fe7f0768190f5bbae37` — `feat(text-block): migrate legacy enum → categoryId with default-resolve — TZ-DOC-320` — 2 files / +311 / -3.
+**Archive:** `tasks/_archive/2026-08/TZ-DOC-320-text-block-enum-resolution-fallback.done.md` (с ARCHIVE_MARKER + commit hash).
+**Lock:** `.mimocode/locks/TZ-DOC-320-text-block-enum-resolution-fallback.lock` (gitignored, паттерн DONE-lock).
+**Push:** НЕТ (per user instruction).
+
+**Известные ограничения:**
+- TZ-DOC-315 seed остаётся unwired — successor **TZ-DOC-321** запланирован в архивном маркере.
+- TZ-DOC-318 (окончательная миграция → удаление legacy `category` enum) остаётся отдельной цепочкой.
+- Полный `pnpm test:e2e` всё ещё может иметь flake от `integration.e2e-spec.ts` (order-dependent на text-blocks suite, confirmed в TZ-BACKEND-E2E-HARNESS). Не устранён здесь (out-of-scope per NO-TOUCH list).
+- CP1251-encoding в seed-файле остаётся pre-existing observation; моя `ensureSystemDefault()` immune к этой кодировке потому что пишется как literal Cyrillic в UTF-8-файле.
