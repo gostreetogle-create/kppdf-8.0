@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { TextBlockCategoryService } from '../text-block-category/text-block-category.service';
@@ -12,9 +13,22 @@ import {
   TextBlock,
   type TextBlockDocument,
 } from './text-block.schema';
+import {
+  TextBlockCategory as TextBlockCategorySchema,
+  TextBlockCategoryDocument,
+  SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG,
+} from '../text-block-category/text-block-category.schema';
 import { CreateTextBlockDto } from './dto/create-text-block.dto';
 import { UpdateTextBlockDto } from './dto/update-text-block.dto';
 import { sanitizeHtml, sanitizeBlockContent } from '../../common/sanitize-html';
+
+/** TZ-DOC-320 — legacy enum → system-category slug map. */
+const LEGACY_CATEGORY_SLUG: Readonly<Record<TextBlockCategory, string>> = {
+  legal: 'legal',
+  intro: 'intro',
+  outro: 'outro',
+  custom: 'custom',
+};
 
 /**
  * TZ-86 Phase A.1 — TextBlock service.
@@ -23,12 +37,27 @@ import { sanitizeHtml, sanitizeBlockContent } from '../../common/sanitize-html';
  * parser converts at consumption. Slug uniqueness enforced by Mongoose unique
  * index + duplicate-key catch (11000 → ConflictException 409). Soft-delete via
  * project plugin — deleteOne() captures `deletedAt` + audit_log automatically.
+ *
+ * TZ-DOC-320 — legacy enum migration:
+ *  - `dto.categoryId` caller-supplied → `TextBlockCategoryService.assertAssignable()`.
+ *  - legacy `dto.category` ('legal'|'intro'|'outro'|'custom') WITHOUT categoryId →
+ *    matches a SYSTEM-scoped TextBlockCategory with the corresponding slug
+ *    (LEGACY_CATEGORY_SLUG).
+ *  - else (or legacy miss) → `resolveDefault()` (org-scoped isDefault first,
+ *    then system isDefault fallback).
+ *  - last-resort → `ensureSystemDefault()` lazily upserts the global «Общее»
+ *    (slug `SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG`) so legacy callers never
+ *    fail just because the seed didn't run.
  */
 @Injectable()
 export class TextBlockService {
+  private readonly logger = new Logger(TextBlockService.name);
+
   constructor(
     @InjectModel(TextBlock.name)
     private readonly model: Model<TextBlockDocument>,
+    @InjectModel(TextBlockCategorySchema.name)
+    private readonly categoryModel: Model<TextBlockCategoryDocument>,
     private readonly categoryService: TextBlockCategoryService,
   ) {}
 
@@ -47,10 +76,31 @@ export class TextBlockService {
       );
       categoryId = cat._id;
     } else {
-      const def = await this.categoryService.resolveDefault(organizationId);
+      // TZ-DOC-320 — legacy category resolution ladder.
+      // 1. Legacy enum → look up SYSTEM-scoped category by slug (idempotent).
+      // 2. resolveDefault — org-scoped isDefault first, then system isDefault.
+      // 3. Lazy upsert of «Общее» so legacy callers always have a target.
+      let def: TextBlockCategoryDocument | null = null;
+      if (dto.category) {
+        const candidate = LEGACY_CATEGORY_SLUG[dto.category] ?? dto.category;
+        def = await this.categoryModel
+          .findOne({ slug: candidate, isSystem: true })
+          .exec();
+        if (def) {
+          this.logger.log(
+            `TextBlock legacy category "${dto.category}" → system category "${def.slug}"`,
+          );
+        } else {
+          this.logger.warn(
+            `TextBlock legacy category "${dto.category}" has no system match — falling back to default`,
+          );
+        }
+      }
+      if (!def) def = await this.categoryService.resolveDefault(organizationId);
       if (!def) {
-        throw new BadRequestException(
-          'Default text-block category unavailable. Run text-block-categories seed or set a default in the dictionary.',
+        def = await this.ensureSystemDefault();
+        this.logger.warn(
+          `TextBlock default category missing — lazily upserted system «${SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG}»`,
         );
       }
       categoryId = def._id;
@@ -159,6 +209,27 @@ export class TextBlockService {
   }
 
   // ── helpers ────────────────────────────────────────────────────────────────────────
+
+  /**
+   * TZ-DOC-320 — keep the default system 'Общее' category available so
+   * legacy callers (no `categoryId`, no `category`) never fail just
+   * because the seed hasn't run. Idempotent: insert only when the
+   * `SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG` slug is absent.
+   */
+  private async ensureSystemDefault(): Promise<TextBlockCategoryDocument> {
+    const existing = await this.categoryModel
+      .findOne({ slug: SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG })
+      .exec();
+    if (existing) return existing;
+    return await this.categoryModel.create({
+      name: 'Общее',
+      slug: SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG,
+      isSystem: true,
+      isActive: true,
+      isDefault: true,
+      sortOrder: 0,
+    });
+  }
 
   /** Slugify: lowercase + transliterate Russian→Latin + kebab. Conservative map for MVP. */
   private slugify(name: string): string {
