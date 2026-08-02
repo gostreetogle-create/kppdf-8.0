@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ClientSession, Model, Types } from 'mongoose';
 import { Order, OrderDocument, OrderItem } from './order.schema';
@@ -30,7 +30,10 @@ export class OrderService {
       productSku: i.productSku,
       quantity: i.quantity,
       unit: i.unit,
-      unitPrice: i.unitPrice,
+      // TZ-ORDERS-301: unitPrice is OPTIONAL — orders converted from an
+      // accepted quote arrive strip-commerce (no price). Default to 0 so
+      // the schema invariant holds and the total stays stripped.
+      unitPrice: i.unitPrice ?? 0,
       total: (i.quantity ?? 0) * (i.unitPrice ?? 0),
     }));
     const total = items.reduce((s, i) => s + i.total, 0);
@@ -107,6 +110,20 @@ export class OrderService {
 
   async update(id: string, dto: UpdateOrderDto): Promise<OrderDocument> {
     const doc = await this.findById(id);
+    // TZ-ORDERS-301: once an order enters production it is FROZEN for
+    // manual edits — corrections flow through dedicated production/workflow
+    // endpoints instead of the generic PATCH.
+    if (
+      doc.status === 'in_production' ||
+      doc.status === 'ready' ||
+      doc.status === 'shipped' ||
+      doc.status === 'delivered' ||
+      doc.status === 'cancelled'
+    ) {
+      throw new BadRequestException(
+        `Order in status "${doc.status}" cannot be updated — only draft/confirmed orders are editable`,
+      );
+    }
     if (dto.notes !== undefined) doc.notes = dto.notes;
     if (dto.status !== undefined) doc.status = dto.status;
     if (dto.plannedDate !== undefined) doc.plannedDate = new Date(dto.plannedDate);

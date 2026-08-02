@@ -197,6 +197,24 @@ function counterpartyIdOf(row: Proposal): string {
             </span>
           </ng-template>
 
+          <!-- TZ-ORDERS-301: convert accepted КП → Заказ. Enabled ONLY for
+               accepted proposals (backend enforces the same guard). -->
+          <ng-template #convertTpl let-row>
+            <button
+              type="button"
+              class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring
+                     disabled:opacity-30 disabled:cursor-not-allowed"
+              [disabled]="!canConvertToOrder(row)"
+              [attr.aria-label]="canConvertToOrder(row)
+                ? 'Преобразовать КП ' + row.number + ' в заказ'
+                : 'Только принятые КП можно преобразовать в заказ'"
+              [attr.data-test]="'convert-button-' + row._id"
+              (click)="onConvertToOrder(row)"
+            >
+              В заказ
+            </button>
+          </ng-template>
+
           <ng-template #rowActionsTpl let-row>
             <app-pi-row-actions
               [row]="row"
@@ -338,6 +356,15 @@ export class ProposalsPage implements OnInit {
       width: '128px',
       format: (r) => (r.total == null ? '—' : formatPrice(r.total)),
     },
+    {
+      // TZ-ORDERS-301: «В заказ» button cell. Uses the real convertedOrderId
+      // field as the column key (ColumnDef.key is `keyof Proposal`); the cell
+      // template renders the action button, not the raw value.
+      key: 'convertedOrderId',
+      label: '',
+      width: '88px',
+      cellClass: 'text-right',
+    },
   ];
 
   // ─── Template refs (resolved at view init, static:true → BEFORE ngOnInit) ──
@@ -345,6 +372,8 @@ export class ProposalsPage implements OnInit {
   private readonly counterpartyTplRef!: TemplateRef<{ $implicit: Proposal }>;
   @ViewChild('statusTpl', { static: true })
   private readonly statusTplRef!: TemplateRef<{ $implicit: Proposal }>;
+  @ViewChild('convertTpl', { static: true })
+  private readonly convertTplRef!: TemplateRef<{ $implicit: Proposal }>;
   @ViewChild('rowActionsTpl', { static: true })
   private readonly rowActionsTplRef!: TemplateRef<{ $implicit: Proposal }>;
 
@@ -357,6 +386,7 @@ export class ProposalsPage implements OnInit {
     this.cellTemplates = {
       counterpartyId: this.counterpartyTplRef,
       status: this.statusTplRef,
+      convertedOrderId: this.convertTplRef,
     };
     this.rowActionsTplBinding = this.rowActionsTplRef;
   }
@@ -378,6 +408,42 @@ export class ProposalsPage implements OnInit {
 
   protected statusBadgeClass(status: ProposalStatus): string {
     return STATUS_BADGE_CLASS[status] ?? 'bg-paper-2 text-muted-foreground';
+  }
+
+  // ─── TZ-ORDERS-301: КП → Заказ ────────────────────────────────────
+  /** Only ACCEPTED proposals may be converted (backend enforces the same). */
+  protected canConvertToOrder(row: Proposal): boolean {
+    return row.status === 'accepted';
+  }
+
+  /**
+   * Confirm + convert. Backend strip-commerce copies FK + inline snapshot
+   * (no price), creates the order as draft and marks the КП converted.
+   */
+  protected onConvertToOrder(row: Proposal): void {
+    if (!this.canConvertToOrder(row)) return;
+    const ref = this.dialog.open(AlertDialogComponent, {
+      data: {
+        title: 'Преобразовать в заказ?',
+        description:
+          `Создать заказ из «${row.number}»? Позиции перейдут без цен ` +
+          `(strip-commerce), КП станет «Преобразовано».`,
+        confirmLabel: 'В заказ',
+        variant: 'default',
+      },
+      width: 'sm',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, () => {
+      this.service.convertToOrder(row._id).subscribe((res) => {
+        if (res.ok) {
+          this.toast.success(`Заказ ${res.data?.orderId ?? ''} создан из КП`);
+          this.listRes.reload();
+        } else {
+          this.toast.error(extractErrorMessage(res.error));
+        }
+      });
+    });
   }
 
   protected totalLabel(n: number): string {

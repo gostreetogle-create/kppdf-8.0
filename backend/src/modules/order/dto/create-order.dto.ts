@@ -20,9 +20,13 @@ export class OrderItemDto {
   @ApiPropertyOptional({ description: 'Единица измерения' })
   @IsOptional() @IsString() unit?: string;
 
-  @ApiProperty({ description: 'Цена за единицу' })
-  @IsNumber() @Min(0)
-  unitPrice!: number;
+  @ApiPropertyOptional({
+    description:
+      'Цена за единицу. OPTIONAL с TZ-ORDERS-301: заказы из принятых КП приходят ' +
+      'strip-commerce (без цены) — цена/сумма в заказе не хранятся.',
+  })
+  @IsOptional() @IsNumber() @Min(0)
+  unitPrice?: number;
 }
 
 export class CreateOrderDto {

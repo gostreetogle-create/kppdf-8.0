@@ -1,6 +1,7 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { QuotationService } from './quotation.service';
+import { QuotationStatus } from './quotation.schema';
 
 const COUNTERPARTY = new Types.ObjectId().toString();
 const ORG = new Types.ObjectId().toString();
@@ -16,6 +17,7 @@ function quotationDoc(overrides: Record<string, unknown> = {}) {
     status: 'draft',
     total: 0,
     items: [],
+    convertedOrderId: undefined,
     save: jest.fn().mockImplementation(function (this: unknown) {
       return Promise.resolve(this);
     }),
@@ -262,6 +264,83 @@ describe('QuotationService — SALES-301 (КП thin UI)', () => {
         status: 'draft',
         notes: 'Дубликат QTN-0001',
       });
+    });
+  });
+});
+
+describe('QuotationService — ORDERS-301 (quote → order conversion)', () => {
+  describe('convertToOrder', () => {
+    it('REJECTS a quotation that is NOT accepted (draft/sent/rejected/cancelled)', async () => {
+      const { service, model } = createService();
+      for (const status of ['draft', 'sent', 'rejected', 'cancelled'] as QuotationStatus[]) {
+        model.findById.mockReturnValue(mockQuery(quotationDoc({ status })));
+        await expect(
+          service.convertToOrder(new Types.ObjectId().toString()),
+        ).rejects.toBeInstanceOf(BadRequestException);
+      }
+      expect(model.findById).toHaveBeenCalledTimes(4);
+    });
+
+    it('REJECTS an already-converted quotation', async () => {
+      const { service, model } = createService();
+      model.findById.mockReturnValue(mockQuery(quotationDoc({ status: 'converted' })));
+
+      await expect(
+        service.convertToOrder(new Types.ObjectId().toString()),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('STRIPS COMMERCE: order items carry NO unitPrice/total — only FK + inline snapshot', async () => {
+      const { service, model, orderService } = createService();
+      model.findById.mockReturnValue(
+        mockQuery(
+          quotationDoc({
+            status: 'accepted',
+            items: [
+              {
+                productId: new Types.ObjectId(),
+                productName: 'Стенд напольный',
+                productSku: 'SKU-100',
+                quantity: 2,
+                unit: 'шт',
+                unitPrice: 5000,
+                total: 10000,
+              },
+            ],
+          }),
+        ),
+      );
+      orderService.create.mockResolvedValue({ _id: new Types.ObjectId() });
+
+      await service.convertToOrder(new Types.ObjectId().toString());
+
+      const orderPayload = orderService.create.mock.calls[0][0];
+      expect(orderPayload.counterpartyId).toBe(COUNTERPARTY);
+      expect(orderPayload.status).toBe('draft');
+      const item = orderPayload.items[0];
+      // COPY: FK is preserved (immutable identifier).
+      expect(item.productId).toBeDefined();
+      // SNAPSHOT: name/sku survive (inline productSnapshot pattern).
+      expect(item.productName).toBe('Стенд напольный');
+      expect(item.productSku).toBe('SKU-100');
+      // DROP: commerce fields are NOT copied.
+      expect(item.unitPrice).toBeUndefined();
+    });
+
+    it('marks the quotation converted and records the order id', async () => {
+      const { service, model, orderService } = createService();
+      const orderId = new Types.ObjectId();
+      orderService.create.mockResolvedValue({ _id: orderId });
+      const doc = quotationDoc({
+        status: 'accepted',
+        items: [{ productId: new Types.ObjectId(), quantity: 1, unitPrice: 10, total: 10 }],
+      });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.convertToOrder(doc._id.toString());
+      expect(doc.status).toBe('converted');
+      expect(doc.convertedOrderId).toBe(orderId.toString());
+      expect(doc.save).toHaveBeenCalled();
     });
   });
 });

@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { of } from 'rxjs';
 
 import { ProposalsPage } from './proposals.page';
@@ -16,6 +16,10 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
   const baseUrl = '/api';
   const listUrl = `${baseUrl}/quotations`;
   const dialogSpy = { open: jest.fn().mockReturnValue({}) };
+  /** Reconfigurable per-test (cannot use overrideProvider after compile). */
+  const convertToOrderMock = jest.fn(() =>
+    of({ ok: true, data: { quotation: {}, orderId: 'ord-42' } }),
+  );
 
   const fakeCounterparties = [
     { _id: 'cp-1', name: 'ООО Ромашка' },
@@ -52,6 +56,10 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
 
   beforeEach(async () => {
     dialogSpy.open.mockClear();
+    convertToOrderMock.mockReset();
+    convertToOrderMock.mockReturnValue(
+      of({ ok: true, data: { quotation: {}, orderId: 'ord-42' } }),
+    );
     await TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([]), withFetch()),
@@ -66,7 +74,7 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
             update: () => of({ ok: true, data: {} as never }),
             remove: () => of({ ok: true, data: undefined }),
             duplicate: () => of({ ok: true, data: {} as never }),
-            convertToOrder: () => of({ ok: true, data: { quotation: {}, orderId: 'x' } }),
+            convertToOrder: convertToOrderMock,
           },
         },
         {
@@ -232,6 +240,95 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
     };
     comp.onPageChange(3);
     expect(comp.page()).toBe(3);
+  });
+
+  // ─── TZ-ORDERS-301: КП → Заказ ────────────────────────────────────
+  it('canConvertToOrder allows ONLY accepted proposals', async () => {
+    const fixture = TestBed.createComponent(ProposalsPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush(fakeProposals);
+    await tickMicrotask();
+
+    const comp = fixture.componentInstance as unknown as {
+      canConvertToOrder: (p: Proposal) => boolean;
+    };
+    expect(comp.canConvertToOrder(fakeProposals[0])).toBe(true); // accepted
+    for (const status of ['draft', 'sent', 'rejected', 'converted', 'cancelled']) {
+      expect(comp.canConvertToOrder({ ...fakeProposals[0], status } as Proposal)).toBe(false);
+    }
+  });
+
+  it('onConvertToOrder early-returns for a NON-accepted row (no confirm dialog)', async () => {
+    const fixture = TestBed.createComponent(ProposalsPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush(fakeProposals);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as { onConvertToOrder: (p: Proposal) => void };
+    comp.onConvertToOrder(fakeProposals[1]); // draft
+    expect(dialogSpy.open).not.toHaveBeenCalled();
+  });
+
+  it('onConvertToOrder opens the confirm dialog for an ACCEPTED row', async () => {
+    const fixture = TestBed.createComponent(ProposalsPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush(fakeProposals);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as { onConvertToOrder: (p: Proposal) => void };
+    comp.onConvertToOrder(fakeProposals[0]); // accepted
+    expect(dialogSpy.open).toHaveBeenCalled();
+    const data = dialogSpy.open.mock.calls[0][1]?.data;
+    expect(data.title).toContain('Преобразовать в заказ');
+    expect(data.description).toContain('QTN-001');
+  });
+
+  it('confirmed conversion calls convertToOrder, toasts and reloads the list', async () => {
+    const closeSignal = signal<unknown>(undefined);
+    dialogSpy.open.mockReturnValue({ closed: closeSignal });
+    const fixture = TestBed.createComponent(ProposalsPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush(fakeProposals);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as { onConvertToOrder: (p: Proposal) => void };
+    comp.onConvertToOrder(fakeProposals[0]);
+    closeSignal.set(true); // user confirms
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    // Page calls convertToOrder(row._id) — body is optional (default {}).
+    expect(convertToOrderMock).toHaveBeenCalledTimes(1);
+    expect(convertToOrderMock.mock.calls[0][0]).toBe('p1');
+    // A fresh GET after the conversion reload.
+    httpMock.expectOne(matchListGet).flush([]);
+    await tickMicrotask();
+  });
+
+  it('failed conversion surfaces the backend error via toast', async () => {
+    const closeSignal = signal<unknown>(undefined);
+    dialogSpy.open.mockReturnValue({ closed: closeSignal });
+    convertToOrderMock.mockReturnValue(
+      of({ ok: false, error: { message: 'КП не принято покупателем' } }),
+    );
+    const fixture = TestBed.createComponent(ProposalsPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush(fakeProposals);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as { onConvertToOrder: (p: Proposal) => void };
+    comp.onConvertToOrder(fakeProposals[0]);
+    closeSignal.set(true);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(convertToOrderMock).toHaveBeenCalledWith('p1');
+    // No reload GET on failure — afterEach httpMock.verify() confirms
+    // no pending requests remain.
   });
 
   it('resolves the counterparty name via the lookup (dual-shape id/object)', async () => {
