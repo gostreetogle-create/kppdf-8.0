@@ -1296,3 +1296,53 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 - TZ-DOC-318 (окончательная миграция → удаление legacy `category` enum) остаётся отдельной цепочкой.
 - Полный `pnpm test:e2e` всё ещё может иметь flake от `integration.e2e-spec.ts` (order-dependent на text-blocks suite, confirmed в TZ-BACKEND-E2E-HARNESS). Не устранён здесь (out-of-scope per NO-TOUCH list).
 - CP1251-encoding в seed-файле остаётся pre-existing observation; моя `ensureSystemDefault()` immune к этой кодировке потому что пишется как literal Cyrillic в UTF-8-файле.
+
+---
+
+## 2026-08-02 — TZ-DOC-321 DONE (TextBlockCategoriesSeed wired in AppModule)
+
+**Исполнитель:** Buffy
+**Статус:** DONE / wire-up + encoding fix + boot assertion
+**Корневая причина закрытия:** TZ-DOC-320 known-limitation #1: `TextBlockCategoriesSeed` (созданный в `tasks/TZ-DOC-315` и сохранённый в `backend/src/common/seed/text-block-categories.seed.ts`) НЕ был зарегистрирован в `backend/src/app.module.ts` ни как provider, ни import'нут как модуль. TZ-DOC-315.done.md лукавил на этот счёт — реально `TextBlockCategoriesSeed` отсутствовал в providers-массиве, и `TextBlockCategoryModule` отсутствовал в imports-массиве.
+
+**Что сделано (3 файла / +92 / -5):**
+1. **AppModule.imports**: добавлен `TextBlockCategoryModule` рядом с `DocumentTemplateCategoryModule`, чтобы MongooseModel-токен для `TextBlockCategory` был доступен cross-module'овому провайдеру `TextBlockCategoriesSeed`.
+2. **AppModule.providers**: добавлен `TextBlockCategoriesSeed` между `DocumentTemplateCategoriesSeed` и `BomComponentResolveService` — замыкает contract gap из TZ-DOC-320.
+3. **Encoding fix** (`backend/src/common/seed/text-block-categories.seed.ts`): rewrite в чистый UTF-8. Исходный файл имел **mixed encoding** — `name: 'Общее'` как байты CP1251 (`CE E1 F9 E5 E5`), description в UTF-8, log-сообщения `«»` снова CP1251. После `write_file` name-литерал корректно записан как `D0 9E D0 B1 D1 89 D0 B5 D0 B5` (canonical UTF-8). Подтверждено `file` (теперь reports `Unicode text, UTF-8 text, with CRLF line terminators`) и hex-dump.
+4. **NEW e2e spec** (`backend/test/e2e/text-block-category-seed-init.e2e-spec.ts`, ~30 строк): после `app.init()` ассертит ≥1 запись в `text_block_categories` с `isSystem=true, isActive=true, isDefault=true, slug=SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG`. Без providers+imports фиксов этот тест упал бы с `length === 0`; с фиксами — проходит. Это и есть proof, что seed реально wired, а не только компилируется.
+
+**Что НЕ трогали** (per NO-TOUCH list):
+- `backend/src/modules/text-block/text-block.service.ts` — TZ-DOC-320 lazy-upsert ladder сохранён как defense-in-depth (admin может деактивировать системную «Общее», race condition, частичный bootstrap).
+- `backend/src/modules/text-block-category/**` — TZ-DOC-315 territory.
+- TZ-DOC-309..320, TZ-MATERIALS-*, TZ-BACKEND-E2E-HARNESS, TZ-278, Z-backlog, frontend/, desktop/, sanitize-html, document-table-type.
+
+**API delta зафиксирован в архиве** (НЕ fix-forced per user instruction):
+- `DocumentTemplateCategoriesSeed` lifecycle: `OnApplicationBootstrap`
+- `TextBlockCategoriesSeed` lifecycle: `OnModuleInit`
+Оба срабатывают во время `app.init()`. Successor TZ может нормализовать, если будет нужно.
+
+**Сессионный артефакт:** одновременно с TZ-DOC-321 работал TZ-PRODUCTS-301 — добавил half-baked импорты `ColorReferenceModule`/`ColorReferencesSeed` в тот же `app.module.ts`. Их файлы на диске отсутствовали → TSC падал. Я сделал `git checkout HEAD -- backend/src/app.module.ts` перед своими правками, чтобы моя коммит содержал ИСКЛЮЧИТЕЛЬНО мои TZ-DOC-321 изменения. Чужие untracked-импорты остались в worktree чужой сессии (не моя ответственность, но предупреждаю в архиве на случай merge conflict).
+
+**Verification gates (mandatory per spec):**
+- ✅ `pnpm exec tsc -p tsconfig.build.json --noEmit` → exit 0.
+- ✅ `pnpm exec jest --no-coverage text-block` → **2 suites / 19 tests PASS** (TZ-DOC-315 + TZ-DOC-320 без регрессий).
+- ✅ NEW `pnpm exec jest --config test/jest-e2e.json text-block-category-seed-init` → **1/1 PASS** (boot assertion: seed реально работает).
+- ✅ `pnpm exec jest --config test/jest-e2e.json text-blocks` → **9/9 PASS** (без регрессий).
+- ✅ Regression `pnpm exec jest --testPathPattern='is-object-id'` → 4/4 PASS.
+- ✅ Regression `pnpm exec jest --config test/jest-e2e.json user-organizationId production` → **12/12 PASS**.
+- ✅ `git diff --check` (staged, только мои 3 файла) → clean.
+
+**Commit:** `e7a25503a5dbcfd6c7ebd599c2fdeb358e76bf7a` — `fix(app-module): wire TextBlockCategoriesSeed in providers — TZ-DOC-321` — 3 файла / +92 / -5.
+**Archive:** `tasks/_archive/2026-08/TZ-DOC-321-text-block-seed-wireup.done.md` (с ARCHIVE_MARKER + verification proof + known limitations + successor TZ-DOC-322).
+**Lock:** `.mimocode/locks/TZ-DOC-321-text-block-seed-wireup.lock` (DONE-формат).
+**Push:** НЕТ (per user instruction).
+
+**Successor TZ-DOC-322 (out of scope этой сессии):** теперь `TextBlockService.ensureSystemDefault()` и `LEGACY_CATEGORY_SLUG` ladder — redundant defence-in-depth. Successor может:
+1. Удалить `ensureSystemDefault()` private helper + `LEGACY_CATEGORY_SLUG` + второй `@InjectModel('TextBlockCategory')`.
+2. Восстановить explicit-400 контракт для `resolveDefault(null)`.
+3. Добавить e2e test, который transient-удалит seed-вставленный «Общее» и ассертит 400.
+
+**Известные ограничения:**
+- Defense-in-depth остаётся в `text-block.service.ts` (per user instruction).
+- API-различие lifecycle hooks (OnApplicationBootstrap vs OnModuleInit) документировано, не фиксится силой.
+- Соседняя TZ-PRODUCTS-301 сессия оставила half-baked untracked-импорты в worktree — зафиксировано в known_limitations архива.

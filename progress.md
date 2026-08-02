@@ -5126,3 +5126,14 @@ E2E-сценарии с созданием данных помечены MANUAL_
 **Архив:** tasks/_archive/2026-08/TZ-WORKERS-301.done.md; lock: .mimocode/locks/TZ-WORKERS-301-people-backend-entity.lock (gitignored).
 **Commit:** `e449335ac7980f957b2b3a01326fcdc47a8adefa` — feat(workers): consolidate People backend entity — TZ-WORKERS-301. Push: нет.
 **Ограничения:** UI «Люди» — TZ-WORKERS-302; Person-консолидация — SUCCESSOR; e2e-харнесс без forbidNonWhitelisted (production имеет) — поведение задокументировано тестом.
+
+## 2026-08-02 — TZ-DOC-321 DONE (TextBlockCategoriesSeed wired)
+
+**Тип:** Backend AppModule wire-up + UTF-8 seed rewrite + boot assertion spec.
+**Результат:** Закрыт contract gap из TZ-DOC-320 known-limitation #1. `TextBlockCategoriesSeed` зарегистрирован в providers (между DocumentTemplateCategoriesSeed и BomComponentResolveService) + `TextBlockCategoryModule` добавлен к imports (рядом с DocumentTemplateCategoryModule) — теперь seed реально работает на каждом boot. Plus: rewrite seed-файла из mixed CP1251/UTF-8 encoding в чистый UTF-8 (name «Общее» как `D0 9E D0 B1 D1 89 D0 B5 D0 B5`). Plus: NEW spec `text-block-category-seed-init.e2e-spec.ts` ассертит ≥1 system-active-default category row после `app.init()` (доказательство, что seed не только компилируется, но и работает).
+**Затронуто:** `backend/src/app.module.ts` (+14 backref-existing imports, +14 comment), `backend/src/common/seed/text-block-categories.seed.ts` (+29/-5 — UTF-8 + JSDoc), `backend/test/e2e/text-block-category-seed-init.e2e-spec.ts` (NEW, +49).
+**Проверки:** tsc exit 0; jest text-block 2 suites / 19 PASS; jest e2e text-blocks + seed-init 2 suites / 10 PASS (включая boot assertion); regression 12/12 (user-org+production) + 4/4 (is-object-id).
+**Архив:** `tasks/_archive/2026-08/TZ-DOC-321-text-block-seed-wireup.done.md`; lock: `.mimocode/locks/TZ-DOC-321-text-block-seed-wireup.lock` (DONE-формат); checklist: `docs/agent-checklists/TZ-DOC-321.md`.
+**Commit:** `e7a25503a5dbcfd6c7ebd599c2fdeb358e76bf7a` — `fix(app-module): wire TextBlockCategoriesSeed in providers — TZ-DOC-321` — 3 files / +92 / -5. Push: нет.
+**Сессионный артефакт:** во время работы параллельная TZ-PRODUCTS-301 добавила half-baked импорты ColorReferenceModule в тот же app.module.ts без самих файлов (TSC ломался). Решил через `git checkout HEAD -- app.module.ts` → мои правки → commit. Их untracked-импорты остались в worktree, см. known_limitations в архиве.
+**Ограничения:** defense-in-depth в text-block.service.ts сохранена (per user instruction); API delta (OnApplicationBootstrap vs OnModuleInit) документирована, не fix-forced. Successor TZ-DOC-322 (microfix для удаления redundant ladder) — out-of-scope этой сессии.
