@@ -5219,3 +5219,12 @@ E2E-сценарии с созданием данных помечены MANUAL_
 **Архив:** tasks/_archive/2026-08/TZ-SALES-301-proposal-thin-ui.done.md; lock: .mimocode/locks/TZ-SALES-301-proposal-thin-ui.lock (gitignored).
 
 **Successor:** TZ-ORDERS-301 (quote→order conversion, strip-commerce, guard accepted). Push: нет.
+
+## 2026-08-02 — TZ-ORDERS-301 (quote → order, strip-commerce) — DONE
+convertToOrder: guard accepted + strip unitPrice (COPY FK + inline snapshot productName/SKU, DROP price/total/discount); order.update() блок после in_production; OrderItemDto.unitPrice @IsOptional. UI: кнопка «В заказ» на proposals page (только accepted, confirm → convertToOrder → toast+reload). Spec'ы: quotation +4 convert, order.service.spec NEW (11).
+
+**Проверки:** backend tsc exit 0; backend jest quotation order 27/27 PASS; frontend tsc exit 0; jest proposals pi-proposals 23/23 PASS; ng build dev exit 0; git diff --check clean; verify-status.sh PASS.
+
+**Архив:** tasks/_archive/2026-08/TZ-ORDERS-301-quote-to-order-conversion.done.md; lock: .mimocode/locks/TZ-ORDERS-301-quote-to-order-conversion.lock (gitignored).
+
+**Known:** convertToContract asymmetry (unitPrice, no accepted guard — out-of-scope); frozen-guard не блокирует PATCH draft→in_production (флаг TZ-PRODUCTION-301). Push: нет.
