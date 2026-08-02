@@ -11,8 +11,14 @@ import {
   OnInit,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
-import { LucideAngularModule, RefreshCw } from 'lucide-angular';
-import { RouterLink } from '@angular/router';
+import {
+  LucideAngularModule,
+  RefreshCw,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
+} from 'lucide-angular';
+import { Router, RouterLink } from '@angular/router';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
@@ -32,7 +38,17 @@ import {
   ProductsService,
   type ProductsListResponse,
 } from '../../shared/services/products.service';
+import {
+  ProductModule,
+  ProductModulesService,
+} from '../../shared/services/pi-product-modules.service';
 import { ProductFormDialogComponent } from './product-form-dialog.component';
+
+/**
+ * List rows carry populated `productModuleIds` (backend `list()` populate,
+ * product.service.ts). The scalar `Product` type omits it — widen locally.
+ */
+type ProductWithModules = Product & { productModuleIds?: Array<string | ProductModule> };
 
 /** Server-side pagination page size for /products endpoint. */
 const PAGE_SIZE = 50;
@@ -172,29 +188,44 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
           [ariaLabel]="'Список продукции'"
           [cellTemplates]="cellTemplates"
           [rowActions]="rowActionsTplBinding"
+          [expandedRow]="expandedId() ? expandedTpl : null"
           [localSort]="false"
           [initialSortKey]="'name'"
           [initialSortDir]="'asc'"
           (pageChange)="onPageChange($event)"
           (sortChange)="onSortChange($event)"
+          (rowClick)="onRowClick($event)"
         >
-          <!-- ───── Name cell (routerLink to detail page) ───── -->
-          <!-- The (click) propagates to the row <tr>. pi-table wraps
-               each row with (click)="onRowClick(row)" so without
-               stopPropagation the navigation would also fire
-               rowClick. Today the page doesn't subscribe to
-               (rowClick), so it's latent — but stopPropagation
-               makes the cell template robust against any future
-               consumer that adds a row-level click handler. -->
+          <!-- ───── Name cell: expand chevron + routerLink (TZ-PRODUCTS-304) ───── -->
+          <!-- The chevron toggles the module panel; the row-level
+               (rowClick) ALSO toggles, so stopPropagation prevents
+               double-toggle. The trailing <a> keeps the detail-page
+               navigation affordance. -->
           <ng-template #nameTpl let-row>
-            <a
-              [routerLink]="['/products', row._id]"
-              (click)="$event.stopPropagation()"
-              class="text-ink hover:text-sunrise-warm hover:underline"
-              [attr.aria-label]="'Открыть ' + row.name"
-              data-test="open-row-link"
-              >{{ row.name }}</a
-            >
+            <span class="inline-flex items-center gap-2">
+              <button
+                type="button"
+                class="inline-flex items-center justify-center w-7 h-7 rounded-sm hover:bg-paper-2 transition-colors cursor-pointer"
+                (click)="$event.stopPropagation(); onRowClick(row)"
+                [attr.aria-label]="
+                  (expandedId() === row._id ? 'Свернуть' : 'Развернуть') + ' модули ' + row.name
+                "
+                data-test="expand-toggle"
+              >
+                <lucide-icon
+                  [img]="expandedId() === row._id ? ChevronUpIcon : ChevronDownIcon"
+                  [size]="16"
+                ></lucide-icon>
+              </button>
+              <a
+                [routerLink]="['/products', row._id]"
+                (click)="$event.stopPropagation()"
+                class="text-ink hover:text-sunrise-warm hover:underline"
+                [attr.aria-label]="'Открыть ' + row.name"
+                data-test="open-row-link"
+                >{{ row.name }}</a
+              >
+            </span>
           </ng-template>
 
           <!-- ───── Row actions cluster ───── -->
@@ -208,6 +239,52 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
               (edit)="openEdit($event)"
               (delete)="onDelete($event)"
             />
+          </ng-template>
+
+          <!-- ───── Expanded module panel (TZ-PRODUCTS-304) ───── -->
+          <!-- Rendered under EVERY row by pi-table when a template is
+               bound; the @if guard narrows the actual panel to the
+               expanded row only. Collapsed rows: [expandedRow]="null"
+               → no empty <tr>. -->
+          <ng-template #expandedTpl let-row>
+            @if (expandedId() === row._id) {
+              @let mods = expandedModules(row);
+              <div class="px-4 py-3" data-test="expanded-modules">
+                <p class="eyebrow mb-2 text-muted-foreground">Модули в составе</p>
+                @if (modulesLoading()) {
+                  <p class="text-xs text-muted-foreground">Загрузка модулей…</p>
+                } @else if (modulesError()) {
+                  <p class="text-xs text-destructive">{{ modulesError() }}</p>
+                } @else if (mods.length === 0) {
+                  <p class="text-xs text-muted-foreground">
+                    Нет модулей в составе. Откройте товар, чтобы привязать модули.
+                  </p>
+                } @else {
+                  <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    @for (m of mods; track m._id) {
+                      <button
+                        type="button"
+                        (click)="openModule(m)"
+                        class="flex items-center gap-3 p-2 hairline rounded-sm bg-paper hover:bg-paper-2 transition-colors cursor-pointer text-left"
+                        [attr.data-test]="'expanded-module-' + m._id"
+                      >
+                        <span class="flex-1 min-w-0">
+                          <span class="block text-sm font-medium truncate">{{ m.name }}</span>
+                          <span class="block text-xs text-muted-foreground">
+                            {{ m.article ?? '—' }} · {{ m.materials.length }} материалов
+                          </span>
+                        </span>
+                        <lucide-icon
+                          [img]="ChevronRightIcon"
+                          [size]="16"
+                          class="text-muted-foreground shrink-0"
+                        ></lucide-icon>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            }
           </ng-template>
         </app-pi-table>
       </div>
@@ -226,9 +303,26 @@ export class ProductsPage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly RefreshIcon = RefreshCw;
+  protected readonly ChevronDownIcon = ChevronDown;
+  protected readonly ChevronUpIcon = ChevronUp;
+  protected readonly ChevronRightIcon = ChevronRight;
 
   /** Exposed to template via `[pageSize]="pageSize"`. */
   protected readonly pageSize = PAGE_SIZE;
+
+  /**
+   * TZ-PRODUCTS-304 — single-expand UX: the product row currently
+   * expanded to show its module panel, or null (all collapsed).
+   */
+  protected readonly expandedId = signal<string | null>(null);
+  /** Page-scoped module cache (moduleId → ProductModule). NOT in the service. */
+  private readonly moduleCache = new Map<string, ProductModule>();
+  /** Products whose module list was already fetched (lazy-on-first-expand). */
+  private readonly loadedModuleProducts = new Set<string>();
+  protected readonly modulesLoading = signal<boolean>(false);
+  protected readonly modulesError = signal<string | null>(null);
+  private readonly modulesSvc = inject(ProductModulesService);
+  private readonly router = inject(Router);
 
   /** Current page (1-indexed). Bumped via `(pageChange)`. */
   private readonly pageSig = signal<number>(1);
@@ -369,6 +463,8 @@ export class ProductsPage implements OnInit {
   // `[cellTemplates]` input. Pre-TZ-104.4.2 these were `TemplateRef<any>`.
   @ViewChild('nameTpl', { static: true })
   private readonly nameTplRef!: TemplateRef<{ $implicit: Product }>;
+  @ViewChild('expandedTpl', { static: true })
+  private readonly expandedTplRef!: TemplateRef<{ $implicit: Product }>;
   @ViewChild('rowActionsTpl', { static: true })
   private readonly rowActionsTplRef!: TemplateRef<{ $implicit: Product }>;
 
@@ -471,5 +567,82 @@ export class ProductsPage implements OnInit {
 
   protected reload(): void {
     this.listRes.reload();
+  }
+
+  // ─── Expandable module panel (TZ-PRODUCTS-304) ──────────────────────────
+
+  /**
+   * Row-click toggle: expand the clicked row's module panel, collapse if
+   * it was already the expanded one (single-expand UX). The chevron button
+   * calls the same handler with stopPropagation (no double-toggle).
+   */
+  protected onRowClick(row: Product): void {
+    const wasExpanded = this.expandedId() === row._id;
+    this.expandedId.set(wasExpanded ? null : row._id);
+    if (wasExpanded) {
+      // Collapsing: clear in-flight loading/error so a later expand of
+      // another (already-populated) row doesn't show a stale «Загрузка…».
+      this.modulesLoading.set(false);
+      this.modulesError.set(null);
+      return;
+    }
+    this.ensureModulesLoaded(row);
+  }
+
+  /**
+   * Modules of the currently-expanded product, resolved from the row's
+   * populated `productModuleIds` (backend list populate) or the page-scoped
+   * cache (lazy-fetched on first expand). Unknown ids (catalog not loaded)
+   * are skipped — the panel shows only what is known.
+   */
+  protected expandedModules(row: Product): ProductModule[] {
+    const refs = (row as ProductWithModules).productModuleIds ?? [];
+    return refs
+      .map((ref) => (typeof ref === 'string' ? this.moduleCache.get(ref) : ref))
+      .filter((m): m is ProductModule => !!m);
+  }
+
+  /**
+   * Lazy module fetch on FIRST expand, and ONLY when the row carries
+   * plain string ids that are still missing from the cache. Rows whose
+   * `productModuleIds` are already populated objects (backend `list()`
+   * top-level populate) need no GET and never see a loading flash.
+   * `loadedModuleProducts` guards re-GET on collapse/expand cycles; on
+   * error the product is removed so a transient failure can retry.
+   * Resolved modules land in the page-scoped Map cache (NOT the service).
+   */
+  private ensureModulesLoaded(row: Product): void {
+    const pid = row._id;
+    const refs = (row as ProductWithModules).productModuleIds ?? [];
+    // Seed the cache from already-populated object refs (no fetch needed).
+    refs.forEach((r) => {
+      if (typeof r === 'object' && r !== null && '_id' in r) {
+        this.moduleCache.set(r._id, r);
+      }
+    });
+    const missing = refs
+      .map((r) => (typeof r === 'string' ? r : null))
+      .filter((id): id is string => typeof id === 'string' && id.length > 0)
+      .filter((id) => !this.moduleCache.has(id));
+    if (missing.length === 0 || this.loadedModuleProducts.has(pid)) return;
+    this.loadedModuleProducts.add(pid);
+    this.modulesLoading.set(true);
+    this.modulesError.set(null);
+    this.modulesSvc.list(pid).subscribe((res) => {
+      this.modulesLoading.set(false);
+      if (res.ok) {
+        (res.data ?? []).forEach((m) => this.moduleCache.set(m._id, m));
+      } else {
+        // Allow retry on a later expand: transient failure shouldn't
+        // permanently break the panel for this product.
+        this.loadedModuleProducts.delete(pid);
+        this.modulesError.set(extractErrorMessage(res.error));
+      }
+    });
+  }
+
+  /** Click a module card → module detail page (materials live there). */
+  protected openModule(m: ProductModule): void {
+    this.router.navigate(['/modules', m._id]);
   }
 }

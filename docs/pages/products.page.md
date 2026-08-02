@@ -105,6 +105,30 @@ contract). Поля сгруппированы по eyebrow-секциям: «О
 | TZ-104.4.2 | Typed TemplateRef (устранён `any`) |
 | TZ-PRODUCTS-302 | Content-диалог 1000px, секции, categoryId select, RAL dropdown, фото |
 | TZ-PRODUCTS-303 | Секция «Модули в составе»: карточки привязанных модулей + атомарная синхронизация |
+| TZ-PRODUCTS-304 | Expandable-каталог: клик по строке раскрывает модули, клик по модулю → `/modules/:id` |
+
+## Expandable-каталог с модулями (TZ-PRODUCTS-304)
+
+Каталог продукции — expandable-строки (single-expand UX):
+
+- **Клик по строке** (или по chevron в ячейке «Название») раскрывает/сворачивает
+  панель модулей под строкой. Открыта может быть только одна строка
+  (`expandedId` signal = `string | null`).
+- **Панель модулей** — карточки: имя, артикул, «N материалов»; клик по карточке
+  → `router.navigate(['/modules', m._id])` (страница модуля с материалами).
+  Пустое состояние: «Нет модулей в составе. Откройте товар, чтобы привязать
+  модули».
+- **Данные**: backend `list()` уже популирует `productModuleIds`; для модулей,
+  пришедших строковыми id, выполняется ленивый `ProductModulesService.list(pid)`
+  при ПЕРВОМ раскрытии (guard `loadedModuleProducts` — повторных GET нет),
+  результат кэшируется в page-scoped `Map<moduleId, ProductModule>` (не в сервисе).
+- **Навигация на детальную страницу товара сохранена**: `<a [routerLink]>` в
+  той же ячейке (stopPropagation). Row-actions (edit/delete) не раскрывают
+  строку (stopPropagation в pi-table).
+- pi-table НЕ изменялся: используется готовый `[expandedRow]`
+  (TemplateRef, `$implicit: row`) + `(rowClick)` output;
+  `[expandedRow]="expandedId() ? expandedTpl : null"` — свёрнутые строки без
+  пустых `<tr>`.
 
 ## Редактор модулей в диалоге товара (TZ-PRODUCTS-303)
 

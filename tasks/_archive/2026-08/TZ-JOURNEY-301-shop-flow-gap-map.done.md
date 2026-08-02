@@ -3,7 +3,7 @@ outcome: DONE
 closed_at: 2026-08-02
 closed_by: Buffy (AI Agent)
 tz_id: TZ-JOURNEY-301-shop-flow-gap-map
-commit: (заполняется после commit)
+commit: 22caa41d9e9486156e28428c21f8d8ded0d4c067
 verification:
   - acceptance criteria: PASS
   - gap table in docs: PASS (docs/product-vision-lite.md → «Карта потока → страницы (gap map, TZ-JOURNEY-301)»)

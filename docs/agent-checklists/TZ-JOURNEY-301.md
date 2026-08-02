@@ -17,7 +17,7 @@
 ## Executor report (auto)
 
 - **status:** DONE (spec-only, docs + backlog, no code)
-- **commit:** `(заполняется после commit — docs TZ: один docs commit)`
+- **commit:** `22caa41d9e9486156e28428c21f8d8ded0d4c067`
 - **gates:** markdown/diff review — чисто; кодовых тестов не требуется (docs task, GEMINI.md: «для документных задач кодовые тесты не нужны»); `git diff --check` clean
 - **known:** дыра «КП без UI» остаётся открытой до TZ-SALES-301; Гант намеренно parked; этот TZ только фиксирует карту
 - **ask:** нет
