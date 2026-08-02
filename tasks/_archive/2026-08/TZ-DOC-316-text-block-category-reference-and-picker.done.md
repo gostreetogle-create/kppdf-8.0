@@ -3,7 +3,7 @@ outcome: DONE
 closed_at: 2026-08-02
 closed_by: Buffy
 tz_id: TZ-DOC-316-text-block-category-reference-and-picker
-commit: (см. closeout commit ниже — feat(text-block): categories reference and picker)
+commit: b6ff21e — feat(text-block): categories reference and picker (TZ-DOC-316)
 verification:
   - acceptance criteria: TZ-DOC-316 §Acceptance 1..16 — covered (см. ниже)
   - backend tsc (tsc -p tsconfig.build.json --noEmit): PASS (exit 0, no diagnostics)
