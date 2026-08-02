@@ -8,6 +8,8 @@
 ```
 docs/
 ├── README.md                      ← этот файл (индекс docs/)
+├── AI-AGENT-GUIDE.md              ← онбординг ИИ-агента
+├── TZ-AUTHORING.md                ← [канон] как писать техзадачи (domain preflight)
 ├── add-new-page.md                ← инструкция: как создать новую страницу
 ├── architecture-audit-2026-07.md  ← полный аудит архитектуры (2026-07-05)
 ├── data-model.md                  ← модель данных: 89 сущностей, 11 доменов
@@ -56,6 +58,7 @@ docs/
 | Категория | Файлы | Назначение |
 |-----------|-------|-----------|
 | **AI Agent Guide** | `AI-AGENT-GUIDE.md` | **ОБЯЗАТЕЛЬНО К ПРОЧТЕНИЮ** — онбординг AI-агента: паттерны, запреты, чек-лист |
+| **TZ Authoring** | `TZ-AUTHORING.md` | **Как писать TZ** — канон имён (Counterparty≠Organization), unique, preflight; skill: `.agents/skills/tz-authoring` |
 | **Архитектура** | `architecture-audit-2026-07.md` | Полный срез архитектуры |
 | **Модель данных** | `data-model.md`, `data-model-audit.md` | Entity-relationship model |
 | **Разработка** | `DEVELOPMENT-PATTERNS.md`, `add-new-page.md` | Как писать код |
@@ -68,6 +71,7 @@ docs/
 ## Рекомендуемый порядок чтения для AI-агента / разработчика
 
 1. `docs/AI-AGENT-GUIDE.md` — **ОБЯЗАТЕЛЬНО** (онбординг, паттерны, запреты)
+1b. `docs/TZ-AUTHORING.md` — **если пишешь TZ** (канон имён / unique / preflight)
 2. `ARCHITECTURE.md` (корень проекта) — общая архитектура
 3. `docs/DEVELOPMENT-PATTERNS.md` — как писать код (SilentResult, defineEntity, SubmitGuard, EntityList, httpResource)
 4. `docs/data-model.md` — модель данных

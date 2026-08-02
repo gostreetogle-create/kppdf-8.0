@@ -48,4 +48,5 @@ Goal: do not leave unpushed architecture work that can be lost. Skip push only i
 ## Skills
 
 `.agents/skills/cursor-usage/SKILL.md` · `.agents/skills/tz-authoring/SKILL.md`  
+**Перед любой новой TZ:** `docs/TZ-AUTHORING.md` (канон имён / unique / preflight).  
 Executor: `GEMINI.md` + `OrchestratorKit/AGENTS.md`

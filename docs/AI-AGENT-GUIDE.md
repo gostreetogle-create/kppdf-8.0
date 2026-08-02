@@ -21,7 +21,7 @@
 
 Контракты:
 
-- Cursor: `.cursor/rules/cursor-architect.mdc`, `.agents/skills/cursor-usage/SKILL.md`, `.agents/skills/tz-authoring/SKILL.md`
+- Cursor: `.cursor/rules/cursor-architect.mdc`, `.agents/skills/cursor-usage/SKILL.md`, `.agents/skills/tz-authoring/SKILL.md`, **`docs/TZ-AUTHORING.md`**
 - Исполнитель: корневой `GEMINI.md`, `.agents/skills/kppdf-project/SKILL.md`, при kit-flow — `OrchestratorKit/AGENTS.md`
 
 Если ты Cursor и тебя просят имплементировать — отказ по Mode A + путь/черновик TZ для локального агента.
@@ -35,6 +35,7 @@
 ```
 0. docs/how-to-connect-ai.md       ← ПЕРВЫМ: рабочая папка main, запрет .freebuff/worktrees, ритуал старта
 1. docs/AI-AGENT-GUIDE.md          ← Ты здесь. Обязательные паттерны, запреты, ритуалы.
+1b. docs/TZ-AUTHORING.md           ← Если ПИШЕШЬ или правишь TZ (канон имён, unique, preflight)
 2. ARCHITECTURE.md                  ← Полная архитектура: схема, конвенции, зоны ответственности.
 3. docs/DEVELOPMENT-PATTERNS.md     ← Конкретные код-паттерны: SilentResult, defineEntity, SubmitGuard.
 4. STACK.md                         ← Технологический стек (актуален на 2026-07).
@@ -43,6 +44,9 @@
 7. docs/pages/README.md             ← Какие страницы есть, их статус.
 8. docs/pages/<name>.page.md        ← Документация конкретной страницы (если работаешь с ней).
 ```
+
+**TZ authors (Cursor / любой ИИ):** перед созданием `tasks/TZ-*.md` — всегда
+`docs/TZ-AUTHORING.md` + skill `.agents/skills/tz-authoring/SKILL.md`.
 
 ### 1.3 Где что лежит
 

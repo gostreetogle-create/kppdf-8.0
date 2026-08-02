@@ -2,6 +2,10 @@
 TZ-NN: [КРАТКОЕ НАЗВАНИЕ — 3-6 СЛОВ]
 ═══════════════════════════════════════════════════════════════
 
+> Перед заполнением: прочитай docs/TZ-AUTHORING.md (канон имён:
+> Counterparty = покупатель ≠ Organization; unique на номер документа,
+> не на FK клиента; domain preflight checklist).
+
 РОЛЬ АГЕНТА: [Frontend CSS Architect | Frontend Layout Engineer | Frontend UI Engineer | Frontend Component Engineer | Frontend Architect | Frontend Error Handling Engineer | Backend Developer | QA-валидатор | и т.д.]
 
 ЗАВИСИМОСТИ: [другие TZ-NN, которые ДОЛЖНЫ быть выполнены перед этим. Или «Нет (фундамент — выполняется ПЕРВЫМ)» / «Нет»]

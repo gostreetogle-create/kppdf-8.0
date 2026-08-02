@@ -10,6 +10,9 @@ Completed work belongs under `tasks/_archive/2026-08/`.
 > **Агенту нельзя выполнять все файлы из tasks/ одной командой.**
 > Владелец выбирает одну конкретную TZ, после чего агент проверяет
 > dependencies и conflict keys перед началом работы.
+>
+> **Авторам TZ:** перед созданием новой спеки — [`docs/TZ-AUTHORING.md`](../docs/TZ-AUTHORING.md)
+> (канон имён / unique / preflight) + skill `.agents/skills/tz-authoring`.
 
 ## Active tasks (priority streams)
 

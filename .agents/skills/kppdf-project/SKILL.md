@@ -13,7 +13,7 @@ description: >-
 
 | Агент | Контракт | Режим |
 |---|---|---|
-| **Cursor** | `.cursor/rules/cursor-architect.mdc` + `cursor-usage` + `tz-authoring` | Mode A: TZ/планы/UX-smell notes/review; **commit+push своих docs**; **не** код продукта |
+| **Cursor** | `.cursor/rules/cursor-architect.mdc` + `cursor-usage` + `tz-authoring` + **`docs/TZ-AUTHORING.md`** | Mode A: TZ/планы/UX-smell notes/review; **commit+push своих docs**; **не** код продукта |
 | **Gemini / локальные** | корневой `GEMINI.md` + этот skill (секции ниже) | Executor: код, gates, archive |
 
 Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `executing-plans` / `tdd` / `run-project-checks` / `verification-before-completion` для собственной имплементации.
@@ -51,7 +51,7 @@ Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `
 | Ситуация | Skill |
 |---|---|
 | Любая сессия Cursor на репо | `cursor-usage` |
-| Написать/уточнить TZ, спеку, AC | `tz-authoring` |
+| Написать/уточнить TZ, спеку, AC | `tz-authoring` + **обязательно** `docs/TZ-AUTHORING.md` |
 | Новый feature / поведение (дизайн) | `brainstorming` |
 | План без кода | `writing-plans` |
 | Текстовый review чужого diff | `requesting-code-review` / `receiving-code-review` (без патчей) |

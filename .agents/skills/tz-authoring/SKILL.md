@@ -3,19 +3,34 @@ name: tz-authoring
 description: >-
   Writes executable TZ specs for kppdf-8.0 local agents. Use when PO asks for a
   TZ, task spec, acceptance criteria, conflict keys, or work for Gemini/local AI.
+  ALWAYS read docs/TZ-AUTHORING.md (domain preflight) before drafting any TZ.
 ---
 
 # TZ Authoring (Cursor)
 
 Пиши задачи так, чтобы локальный агент выполнил их без уточнений. Код не пиши.
 
+**ОБЯЗАТЕЛЬНО перед черновиком TZ:** прочитай и примени
+[`docs/TZ-AUTHORING.md`](../../docs/TZ-AUTHORING.md)
+(канон имён, unique/кардинальность, preflight checklist). Без § Domain preflight
+не отдавай TZ исполнителю.
+
 Источники спеки: запрос PO, архитектурный риск, **или UX/business smell**
 (дубли UI, лишние шаги, нелогичные статусы) — смотри как будущий пользователь ERP.
 
 ## Шаблон и эталон
 
-- Скелет: `OrchestratorKit/_templates/TZ-template.txt`
+- **Канон написания (SoT):** `docs/TZ-AUTHORING.md`
+- Скелет секций: `OrchestratorKit/_templates/TZ-template.txt`
 - Качество эталона: `tasks/_backlog/z-series/backend/inventory/Z-001-inventory-write-transactions.md`
+
+## Domain preflight (кратко — детали в TZ-AUTHORING.md)
+
+1. Клиент/покупатель = **Counterparty**, не Organization.
+2. Unique обычно на **номере** документа, не на FK клиента.
+3. Зафиксируй «Проверено: …» (schema / data-model / vision).
+4. Явные НЕ / known_limitation.
+5. Спор имён в dictation → одна строка «loose wording → код-канон».
 
 ## Обязательные поля
 
@@ -38,7 +53,7 @@ description: >-
 |---|---|
 | `tasks/TZ-*.md` | PO готов выдать исполнителю сейчас |
 | `tasks/_backlog/` | park / initiative (напр. z-series) |
-| Индекс | новые active — строка в `tasks/README.md` |
+| Индекс | новые active — строка в `tasks/README.md` + `_active-map` при stream |
 
 Не дублируй уже существующий TZ: сначала `tasks/` + `_archive/2026-08/`.
 
@@ -68,7 +83,7 @@ cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit
 1. Путь к файлу
 2. Conflict keys (кратко)
 3. Кому отдавать (backend/frontend) и deps
-4. One-liner: «Прочитай `docs/AI-AGENT-GUIDE.md` и `<path>`, выполни TZ»
+4. One-liner: «Прочитай `docs/AI-AGENT-GUIDE.md`, `docs/TZ-AUTHORING.md` (если правишь спеку) и `<path>`, выполни TZ»
 
 ## Executor report (auto) — required before archive
 
@@ -91,4 +106,3 @@ jest-stdout / TZ-DOC-323 probe-records bloat repeating):
 - Verification-evidence sections (`## Gates`, `## Diff scope`): **≤30
   lines**. If longer, move verbatim output to `docs/agent-checklists/
   evidence/<id>.txt` and cite by path from the gates table.
-

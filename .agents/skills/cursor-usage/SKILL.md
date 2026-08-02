@@ -46,9 +46,11 @@ description: >-
 ## Чтение
 
 1. `docs/AI-AGENT-GUIDE.md` § ролей  
-2. Целевой `tasks/<TZ>.md`  
-3. `docs/agent-checklists/_active-map.md`  
-4. Эталон спеки: `tasks/Z-001-inventory-write-transactions.md`
+2. **Если пишешь TZ:** `docs/TZ-AUTHORING.md` (обязательно) + skill `tz-authoring`  
+3. Целевой `tasks/<TZ>.md`  
+4. `docs/agent-checklists/_active-map.md`  
+5. Эталон спеки: `tasks/Z-001-inventory-write-transactions.md` /
+   `tasks/_backlog/z-series/backend/inventory/Z-001-inventory-write-transactions.md`
 
 ## Цикл
 
