@@ -3,23 +3,35 @@ import { getModelToken } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
 import { TextBlockService } from './text-block.service';
 import { TextBlock } from './text-block.schema';
-import { TextBlockCategoryDocument } from '../text-block-category/text-block-category.schema';
 import { TextBlockCategoryService } from '../text-block-category/text-block-category.service';
 
 /**
- * TZ-DOC-320 — text-block legacy enum → categoryId migration regression.
+ * TZ-DOC-322 — text-block categoryId resolution contract (post TZ-DOC-321
+ * seed wire-up, post TZ-DOC-320 ladder removal).
  *
- * The three contracts verified here (also exercised by the
- * test/e2e/text-blocks.e2e-spec.ts suite):
+ * The two paths verified here (also exercised by the
+ * test/e2e/text-blocks.e2e-spec.ts suite + the boot assertion
+ * test/e2e/text-block-category-seed-init.e2e-spec.ts):
  *
  *  1. Caller-supplied `categoryId` is honored via `assertAssignable`.
- *  2. Legacy enum `category` without `categoryId` resolves through the
- *     `LEGACY_CATEGORY_SLUG` ladder first, then `resolveDefault`, then
- *     the lazy `ensureSystemDefault()` upsert.
- *  3. Last-resort `ensureSystemDefault()` upserts the global «Общее»
- *     with the published constants and logs a WARN.
+ *  2. No `categoryId` → `resolveDefault(organizationId)`. Empty result
+ *     surfaces a deterministic 4xx BadRequestException with a message
+ *     that names the operator action (AppModule-wired seed) — NOT a
+ *     silent self-heal via the TZ-DOC-320 ladder.
+ *  3. The shared `isDuplicateSlug(11000) → ConflictException` and
+ *     Mongoose-error-propagation paths stay unchanged.
+ *
+ * Removed in TZ-DOC-322:
+ *  - `LEGACY_CATEGORY_SLUG` ladder (legal|legal, intro|intro, ...). The
+ *    legacy enum still flows through `dto.category` and is persisted on
+ *    the schema's `category` field for backward compat (TZ-DOC-318
+ *    successor plans to remove it), but its value no longer drives
+ *    `categoryId` resolution.
+ *  - `ensureSystemDefault()` lazy upsert of «Общее». The seed is now
+ *    wired (TZ-DOC-321), so silent auto-heal is both redundant and
+ *    operationally misleading.
  */
-describe('TextBlockService (TZ-DOC-320)', () => {
+describe('TextBlockService (TZ-DOC-322)', () => {
   let service: TextBlockService;
   let blockModel: {
     create: jest.Mock;
@@ -27,20 +39,10 @@ describe('TextBlockService (TZ-DOC-320)', () => {
     find: jest.Mock;
     deleteOne: jest.Mock;
   };
-  let categoryModel: {
-    findOne: jest.Mock;
-    create: jest.Mock;
-  };
   let categoryService: {
     assertAssignable: jest.Mock;
     resolveDefault: jest.Mock;
   };
-
-  const SYS_DEFAULT_ID = new Types.ObjectId();
-
-  /** Helper: make Mongoose-shape chainable mock for `Model.findOne`. */
-  const findOneMock = (resolved: unknown): jest.Mock =>
-    jest.fn(() => ({ exec: jest.fn().mockResolvedValue(resolved) }));
 
   beforeEach(async () => {
     blockModel = {
@@ -49,14 +51,12 @@ describe('TextBlockService (TZ-DOC-320)', () => {
       find: jest.fn(() => ({ sort: () => ({ exec: () => Promise.resolve([]) }) })),
       deleteOne: jest.fn(() => ({ exec: () => Promise.resolve({}) })),
     };
-    categoryModel = { findOne: findOneMock(null), create: jest.fn() };
     categoryService = { assertAssignable: jest.fn(), resolveDefault: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TextBlockService,
         { provide: getModelToken(TextBlock.name), useValue: blockModel },
-        { provide: getModelToken('TextBlockCategory'), useValue: categoryModel },
         { provide: TextBlockCategoryService, useValue: categoryService },
       ],
     }).compile();
@@ -80,106 +80,61 @@ describe('TextBlockService (TZ-DOC-320)', () => {
       '64a7b8c9d0e1f2a3b4c5d6e7',
       '',
     );
+    expect(categoryService.resolveDefault).not.toHaveBeenCalled();
     expect((res as unknown as { categoryId: Types.ObjectId }).categoryId).toEqual(
       callerCat._id,
     );
-    expect(categoryModel.findOne).not.toHaveBeenCalled();
-    expect(categoryModel.create).not.toHaveBeenCalled();
   });
 
-  it('legacy legal enum → resolves through slug-map to system category', async () => {
-    const sysCat = {
-      _id: new Types.ObjectId(),
-      slug: 'legal',
-      isSystem: true,
-    } as unknown as TextBlockCategoryDocument;
-    categoryModel.findOne = findOneMock(sysCat);
-    blockModel.create.mockImplementation((doc: Record<string, unknown>) =>
-      Promise.resolve({ ...doc, _id: new Types.ObjectId() }),
-    );
-
-    const res = await service.create({
-      name: 'Terms of service',
-      content: 'b',
-      category: 'legal',
-    });
-
-    expect(categoryModel.findOne).toHaveBeenCalledWith({
-      slug: 'legal',
-      isSystem: true,
-      isActive: true,
-    });
-    expect(categoryService.resolveDefault).not.toHaveBeenCalled();
-    expect((res as unknown as { categoryId: Types.ObjectId }).categoryId).toEqual(
-      sysCat._id,
-    );
-  });
-
-  it('legacy enum without system match → resolveDefault (org scope)', async () => {
-    categoryModel.findOne = findOneMock(null);
-    const orgDefault = {
-      _id: SYS_DEFAULT_ID,
-      slug: 'org-default',
-    } as unknown as TextBlockCategoryDocument;
-    categoryService.resolveDefault.mockResolvedValue(orgDefault);
-    blockModel.create.mockImplementation((doc: Record<string, unknown>) =>
-      Promise.resolve({ ...doc, _id: new Types.ObjectId() }),
-    );
-
-    const res = await service.create({
-      name: 'Plain',
-      content: 'a',
-      category: 'intro',
-    });
-
-    expect(categoryModel.findOne).toHaveBeenCalledWith({
-      slug: 'intro',
-      isSystem: true,
-      isActive: true,
-    });
-    expect(categoryService.resolveDefault).toHaveBeenCalledWith(undefined);
-    expect(categoryModel.create).not.toHaveBeenCalled();
-    expect((res as unknown as { categoryId: Types.ObjectId }).categoryId).toEqual(
-      orgDefault._id,
-    );
-  });
-
-  it('no categoryId, no legacy enum, resolveDefault null → lazily upserts «Общее»', async () => {
-    categoryService.resolveDefault.mockResolvedValue(null);
-    categoryModel.findOne = findOneMock(null);
-    const upserted = {
+  it('falls back to resolveDefault when no categoryId is supplied', async () => {
+    const sysDefault = {
       _id: new Types.ObjectId(),
       slug: 'obshchee',
-    } as unknown as TextBlockCategoryDocument;
-    categoryModel.create.mockResolvedValue(upserted);
+      name: 'Общее',
+    };
+    categoryService.resolveDefault.mockResolvedValue(sysDefault);
     blockModel.create.mockImplementation((doc: Record<string, unknown>) =>
       Promise.resolve({ ...doc, _id: new Types.ObjectId() }),
     );
 
     const res = await service.create({ name: 'Default block', content: 'x' });
 
+    expect(categoryService.assertAssignable).not.toHaveBeenCalled();
     expect(categoryService.resolveDefault).toHaveBeenCalledWith(undefined);
-    expect(categoryModel.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        slug: 'obshchee',
-        isSystem: true,
-        isDefault: true,
-        isActive: true,
-      }),
-    );
     expect((res as unknown as { categoryId: Types.ObjectId }).categoryId).toEqual(
-      upserted._id,
+      sysDefault._id,
     );
   });
 
-  it('upserted default has categoryId and category attributes back on the block', async () => {
+  it('throws BadRequestException when resolveDefault returns null (TZ-DOC-322 explicit contract)', async () => {
+    // Reproduces the historical 400 the seed-path healed: when the
+    // TextBlockCategoriesSeed (TZ-DOC-321) did not run OR was
+    // deactivated, surface a deterministic 4xx describing the
+    // operator-actionable fix. Never silent-upsert.
     categoryService.resolveDefault.mockResolvedValue(null);
-    categoryModel.findOne = findOneMock(null);
-    const upserted = {
+    blockModel.create.mockImplementation((doc: Record<string, unknown>) =>
+      Promise.resolve({ ...doc, _id: new Types.ObjectId() }),
+    );
+
+    await expect(
+      service.create({ name: 'No default', content: 'x' }),
+    ).rejects.toMatchObject({
+      // NestJS BadRequestException has status 400; we don't pin the
+      // exact message here so future copy-edits don't break the test.
+      status: 400,
+    });
+  });
+
+  it('persists legacy category enum on the schema without affecting categoryId resolution', async () => {
+    // The legacy `dto.category` enum ('legal'|'intro'|'outro'|'custom')
+    // is persisted on the doc for backward compat (TZ-DOC-318 successor).
+    // It does NOT drive categoryId — that comes exclusively from
+    // assertAssignable or resolveDefault.
+    const sysDefault = {
       _id: new Types.ObjectId(),
       slug: 'obshchee',
-    } as unknown as TextBlockCategoryDocument;
-    categoryModel.create.mockResolvedValue(upserted);
+    };
+    categoryService.resolveDefault.mockResolvedValue(sysDefault);
     const captured: Record<string, unknown> = {};
     blockModel.create.mockImplementation((doc: Record<string, unknown>) => {
       Object.assign(captured, doc);
@@ -187,43 +142,45 @@ describe('TextBlockService (TZ-DOC-320)', () => {
     });
 
     await service.create({
-      name: 'Default test',
+      name: 'Legacy enum block',
       content: 'x',
-      category: 'custom',
+      category: 'legal',
     });
 
-    expect(captured.categoryId).toEqual(upserted._id);
-    expect(captured.category).toBe('custom');
-    expect(captured.slug).toBe('default-test');
-    expect(captured.name).toBe('Default test');
+    expect(captured.category).toBe('legal');
+    expect(captured.categoryId).toEqual(sysDefault._id);
+    // Service-level isActive/legit assertions: no slug-map lookup,
+    // no direct TextBlockCategory model access (the second
+    // @InjectModel from TZ-DOC-320 was removed).
+    expect(categoryService.resolveDefault).toHaveBeenCalledTimes(1);
   });
 
   it('rejects a duplicated slug with ConflictException (11000)', async () => {
-    const sysCat = {
+    const sysDefault = {
       _id: new Types.ObjectId(),
-      slug: 'legal',
-    } as unknown as TextBlockCategoryDocument;
-    categoryModel.findOne = findOneMock(sysCat);
+      slug: 'obshchee',
+    };
+    categoryService.resolveDefault.mockResolvedValue(sysDefault);
     const err = new Error('dup') as Error & { code: number };
     err.code = 11000;
     blockModel.create.mockRejectedValue(err);
 
     await expect(
-      service.create({ name: 'Dup', content: 'x', category: 'legal' }),
+      service.create({ name: 'Dup', content: 'x' }),
     ).rejects.toThrow(/already exists/);
   });
 
   it('propagates an unknown Mongoose error untouched', async () => {
-    const sysCat = {
+    const sysDefault = {
       _id: new Types.ObjectId(),
-      slug: 'legal',
-    } as unknown as TextBlockCategoryDocument;
-    categoryModel.findOne = findOneMock(sysCat);
+      slug: 'obshchee',
+    };
+    categoryService.resolveDefault.mockResolvedValue(sysDefault);
     const err = new Error('boom');
     blockModel.create.mockRejectedValue(err);
 
     await expect(
-      service.create({ name: 'Boom', content: 'x', category: 'legal' }),
+      service.create({ name: 'Boom', content: 'x' }),
     ).rejects.toBe(err);
   });
 });

@@ -2,7 +2,6 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
-  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { TextBlockCategoryService } from '../text-block-category/text-block-category.service';
@@ -13,22 +12,9 @@ import {
   TextBlock,
   type TextBlockDocument,
 } from './text-block.schema';
-import {
-  TextBlockCategory as TextBlockCategorySchema,
-  TextBlockCategoryDocument,
-  SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG,
-} from '../text-block-category/text-block-category.schema';
 import { CreateTextBlockDto } from './dto/create-text-block.dto';
 import { UpdateTextBlockDto } from './dto/update-text-block.dto';
 import { sanitizeHtml, sanitizeBlockContent } from '../../common/sanitize-html';
-
-/** TZ-DOC-320 — legacy enum → system-category slug map. */
-const LEGACY_CATEGORY_SLUG: Readonly<Record<TextBlockCategory, string>> = {
-  legal: 'legal',
-  intro: 'intro',
-  outro: 'outro',
-  custom: 'custom',
-};
 
 /**
  * TZ-86 Phase A.1 — TextBlock service.
@@ -38,26 +24,24 @@ const LEGACY_CATEGORY_SLUG: Readonly<Record<TextBlockCategory, string>> = {
  * index + duplicate-key catch (11000 → ConflictException 409). Soft-delete via
  * project plugin — deleteOne() captures `deletedAt` + audit_log automatically.
  *
- * TZ-DOC-320 — legacy enum migration:
+ * TZ-DOC-322 — categoryId resolution contract:
  *  - `dto.categoryId` caller-supplied → `TextBlockCategoryService.assertAssignable()`.
- *  - legacy `dto.category` ('legal'|'intro'|'outro'|'custom') WITHOUT categoryId →
- *    matches a SYSTEM-scoped TextBlockCategory with the corresponding slug
- *    (LEGACY_CATEGORY_SLUG).
- *  - else (or legacy miss) → `resolveDefault()` (org-scoped isDefault first,
- *    then system isDefault fallback).
- *  - last-resort → `ensureSystemDefault()` lazily upserts the global «Общее»
- *    (slug `SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG`) so legacy callers never
- *    fail just because the seed didn't run.
+ *  - else → `TextBlockCategoryService.resolveDefault(organizationId)`.
+ *    Returns null only when the AppModule-wired seed
+ *    (`TextBlockCategoriesSeed`, TZ-DOC-321) did not run or was
+ *    deactivated by an administrator — in that case we surface a
+ *    deterministic 4xx so ops notices missing-default-category instead
+ *    of silently self-healing via a hidden upsert (TZ-DOC-320 ladder).
+ *  - The legacy `dto.category` enum ('legal'|'intro'|'outro'|'custom')
+ *    is accepted by the DTO and persisted on the schema's `category`
+ *    field for backward compatibility, but no longer affects
+ *    `categoryId` lookup. Removal is the responsibility of TZ-DOC-318.
  */
 @Injectable()
 export class TextBlockService {
-  private readonly logger = new Logger(TextBlockService.name);
-
   constructor(
     @InjectModel(TextBlock.name)
     private readonly model: Model<TextBlockDocument>,
-    @InjectModel(TextBlockCategorySchema.name)
-    private readonly categoryModel: Model<TextBlockCategoryDocument>,
     private readonly categoryService: TextBlockCategoryService,
   ) {}
 
@@ -76,31 +60,16 @@ export class TextBlockService {
       );
       categoryId = cat._id;
     } else {
-      // TZ-DOC-320 — legacy category resolution ladder.
-      // 1. Legacy enum → look up SYSTEM-scoped category by slug (idempotent).
-      // 2. resolveDefault — org-scoped isDefault first, then system isDefault.
-      // 3. Lazy upsert of «Общее» so legacy callers always have a target.
-      let def: TextBlockCategoryDocument | null = null;
-      if (dto.category) {
-        const candidate = LEGACY_CATEGORY_SLUG[dto.category] ?? dto.category;
-        def = await this.categoryModel
-          .findOne({ slug: candidate, isSystem: true, isActive: true })
-          .exec();
-        if (def) {
-          this.logger.log(
-            `TextBlock legacy category "${dto.category}" → system category "${def.slug}"`,
-          );
-        } else {
-          this.logger.warn(
-            `TextBlock legacy category "${dto.category}" has no system match — falling back to default`,
-          );
-        }
-      }
-      if (!def) def = await this.categoryService.resolveDefault(organizationId);
+      // TZ-DOC-322 — explicit contract: rely on the seed-inserted system
+      // «Общее» (TZ-DOC-321). When it is missing, fail loudly rather than
+      // silently upsert in the service path.
+      const def = await this.categoryService.resolveDefault(organizationId);
       if (!def) {
-        def = await this.ensureSystemDefault();
-        this.logger.warn(
-          `TextBlock default category missing — lazily upserted system «${SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG}»`,
+        throw new BadRequestException(
+          `Default text-block category unavailable. The AppModule-wired ` +
+            `TextBlockCategoriesSeed (slug SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG) ` +
+            `must be present and active. Run the seed or activate the system default in ` +
+            `the dictionary.`,
         );
       }
       categoryId = def._id;
@@ -209,30 +178,6 @@ export class TextBlockService {
   }
 
   // ── helpers ────────────────────────────────────────────────────────────────────────
-
-  /**
-   * TZ-DOC-320 — keep the default system 'Общее' category available so
-   * legacy callers (no `categoryId`, no `category`) never fail just
-   * because the seed hasn't run. Idempotent: insert only when the
-   * `SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG` slug is absent.
-   */
-  private async ensureSystemDefault(): Promise<TextBlockCategoryDocument> {
-    const existing = await this.categoryModel
-      .findOne({
-        slug: SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG,
-        isActive: true,
-      })
-      .exec();
-    if (existing) return existing;
-    return await this.categoryModel.create({
-      name: 'Общее',
-      slug: SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG,
-      isSystem: true,
-      isActive: true,
-      isDefault: true,
-      sortOrder: 0,
-    });
-  }
 
   /** Slugify: lowercase + transliterate Russian→Latin + kebab. Conservative map for MVP. */
   private slugify(name: string): string {
