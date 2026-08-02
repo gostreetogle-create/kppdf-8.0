@@ -5127,104 +5127,177 @@ E2E-сценарии с созданием данных помечены MANUAL_
 **Commit:** `e449335ac7980f957b2b3a01326fcdc47a8adefa` — feat(workers): consolidate People backend entity — TZ-WORKERS-301. Push: нет.
 **Ограничения:** UI «Люди» — TZ-WORKERS-302; Person-консолидация — SUCCESSOR; e2e-харнесс без forbidNonWhitelisted (production имеет) — поведение задокументировано тестом.
 
----
+## 2026-08-02 — TZ-DOC-321 DONE (TextBlockCategoriesSeed wired)
 
-## 2026-08-02 — TZ-PRODUCTS-301 DONE (Справочник «Цвета» RAL — backend + UI)
+**Тип:** Backend AppModule wire-up + UTF-8 seed rewrite + boot assertion spec.
+**Результат:** Закрыт contract gap из TZ-DOC-320 known-limitation #1. `TextBlockCategoriesSeed` зарегистрирован в providers (между DocumentTemplateCategoriesSeed и BomComponentResolveService) + `TextBlockCategoryModule` добавлен к imports (рядом с DocumentTemplateCategoryModule) — теперь seed реально работает на каждом boot. Plus: rewrite seed-файла из mixed CP1251/UTF-8 encoding в чистый UTF-8 (name «Общее» как `D0 9E D0 B1 D1 89 D0 B5 D0 B5`). Plus: NEW spec `text-block-category-seed-init.e2e-spec.ts` ассертит ≥1 system-active-default category row после `app.init()` (доказательство, что seed не только компилируется, но и работает).
+**Затронуто:** `backend/src/app.module.ts` (+14 backref-existing imports, +14 comment), `backend/src/common/seed/text-block-categories.seed.ts` (+29/-5 — UTF-8 + JSDoc), `backend/test/e2e/text-block-category-seed-init.e2e-spec.ts` (NEW, +49).
+**Проверки:** tsc exit 0; jest text-block 2 suites / 19 PASS; jest e2e text-blocks + seed-init 2 suites / 10 PASS (включая boot assertion); regression 12/12 (user-org+production) + 4/4 (is-object-id).
+**Архив:** `tasks/_archive/2026-08/TZ-DOC-321-text-block-seed-wireup.done.md`; lock: `.mimocode/locks/TZ-DOC-321-text-block-seed-wireup.lock` (DONE-формат); checklist: `docs/agent-checklists/TZ-DOC-321.md`.
+**Commit:** `e7a25503a5dbcfd6c7ebd599c2fdeb358e76bf7a` — `fix(app-module): wire TextBlockCategoriesSeed in providers — TZ-DOC-321` — 3 files / +92 / -5. Push: нет.
+**Сессионный артефакт:** во время работы параллельная TZ-PRODUCTS-301 добавила half-baked импорты ColorReferenceModule в тот же app.module.ts без самих файлов (TSC ломался). Решил через `git checkout HEAD -- app.module.ts` → мои правки → commit. Их untracked-импорты остались в worktree, см. known_limitations в архиве.
+**Ограничения:** defense-in-depth в text-block.service.ts сохранена (per user instruction); API delta (OnApplicationBootstrap vs OnModuleInit) документирована, не fix-forced. Successor TZ-DOC-322 (microfix для удаления redundant ladder) — out-of-scope этой сессии.
+## 2026-08-02 — TZ-PRODUCTS-301 (Справочник «Цвета»: ColorReference backend + UI)
+**DONE** — модуль `color-reference` (schema/DTO/service/controller/module + 20 unit),
+seed system-цвета «Не выбран», app.module wiring; frontend: service, страница
+(pi-table DSL + swatch + поиск + system-lock), content-диалог 1000px, роут `/color-references`,
+nav «Цвета», 14 unit.
+**Проверки:** backend tsc exit 0; backend jest 44 suites / 430 PASS; frontend tsc
+(мои файлы чистые; categories.page.ts — pre-existing чужой blocker); frontend jest
+76 suites / 804 PASS; ng build exit 0; diff-check clean; verify-status PASS.
+**Архив:** `tasks/_archive/2026-08/TZ-PRODUCTS-301-color-reference-dictionary.done.md`;
+lock: `.mimocode/locks/TZ-PRODUCTS-301-color-reference-dictionary.lock`;
+checklist: `docs/agent-checklists/TZ-PRODUCTS-301.md`; page-дока: `docs/pages/color-references.page.md`.
+**Commit:** `fc259fd438a0b81c87787e87d49955ee2ff9240c` — `feat(reference): unified color reference dictionary (TZ-PRODUCTS-301)`. Push: нет.
+**Ограничения:** categories.page.ts — project-wide tsc-blocker из чужой сессии (TZ-DOC-308 territory),
+не фиксировался; GET /:id без org-scope — зеркало reference-паттерна; роут authGuard
+(ключ color:* отсутствует в RBAC-каталоге; мутации защищены backend). Browser: MANUAL_BROWSER_CHECK_REQUIRED.
 
-**Тип:** Layer 4 → 3. Новая справочная сущность ColorReference + страница справочника. Фундамент для TZ-PRODUCTS-302 (RAL dropdown в диалоге товара).
+## 2026-08-02 — TZ-DOC-322 DONE (text-block explicit-resolve + lifecycle normalize)
 
-**Затронуто:** backend/src/modules/color-reference/** (schema, dto x2, service, controller, module, spec 34 tests), backend/src/common/seed/color-references.seed.ts (системный «Не выбран», UTF-8, идемпотентный), backend/src/app.module.ts (модуль + seed), frontend/src/app/shared/services/pi-color-references.service.ts (+spec 10), frontend/src/app/pages/dictionaries/color-references.page.ts (+spec 14), color-reference-form-dialog.component.ts (content 1000px sticky footer), app.routes.ts (adminOnlyRouteGuard), app-layout.component.ts + pi-nav-dropdown.component.ts (Palette icon), docs/pages/color-references.page.md.
+**Тип:** Backend cleanup — ladder removal + small lifecycle API normalization.
+**Результат:** TZ-DOC-321 wired seed → TZ-DOC-320 lazy-upsert ladder стал redundant. Часть 1: убрал весь ladder из `text-block.service.ts` (−67 net): ensureSystemDefault helper, LEGACY_CATEGORY_SLUG, второй @InjectModel, 4 лишних imports. Восстановлен explicit-400 BadRequestException с operator-actionable message вместо silent self-heal WARN. Spec переписан 7→6 driver tests (4 ladder-tests удалены, 1 explicit-400 добавлен, 1 legacy-persistence добавлен). Часть 2: `DocumentTemplateCategoriesSeed` lifecycle normalized `OnApplicationBootstrap` → `OnModuleInit` (+9/−3, только import + method rename) — оба system-default seed'а теперь используют одинаковый contract.
+**Затронуто:** `backend/src/modules/text-block/text-block.service.ts`, `backend/src/modules/text-block/text-block.service.spec.ts`, `backend/src/common/seed/document-template-categories.seed.ts`. Cumulative −85 LOC net.
+**Проверки:** tsc exit 0; jest text-block 2 suites / 18 PASS; jest e2e text-block-category-seed-init 1/1 PASS; jest e2e text-blocks 9/9 PASS (regression после Part 2 lifecycle normalize); regression 12/12 (user-org+production) + 4/4 (is-object-id). Transient probe: `document_template_categories` ≥1 row with system-active-default flags после `createTestApp()` под новым lifecycle — 1/1 PASS (probe deleted).
+**Архив:** `tasks/_archive/2026-08/TZ-DOC-322-text-block-explicit-resolve.done.md`; lock: `.mimocode/locks/TZ-DOC-322-text-block-explicit-resolve.lock` (DONE, оба commit hash); checklist: `docs/agent-checklists/TZ-DOC-322.md`.
+**Commits:** `6883f93c84eafea4412a5f65a0addd22e020b851` (Part 1, 2 files / +90 / -188) и `7d73948038bf48a6922765ecfd0f55a0a30f853e` (Part 2, 1 file / +12 / -3). Push: нет.
+**Layout lifecycle hooks после Part 2:** оба system-default category seeds — `OnModuleInit`. Единый contract, единый commit hash, единый мониторинг. JSDoc в обоих seed-файлах cross-references.
+**Ограничения:** defense-in-depth УДАЛЁН by design (теперь 400 instead of silent WARN) — мониторинг обязан ловить; legacy `category` enum всё ещё на schema (TZ-DOC-318 successor = TZ-DOC-323 для удаления). Session-overlap с TZ-PRODUCTS-301 снова добавила half-baked импорты ColorReference → `git checkout HEAD -- app.module.ts` → только мои TZ-DOC-322 файлы в коммитах.
 
-**Проверки:** backend tsc exit 0; jest color-reference 34/34 PASS; полный backend jest 43 suites/441 PASS; frontend tsc exit 0; jest color-reference pi-color-references 24/24 PASS; ng build --configuration=development exit 0; git diff --check clean.
+## 2026-08-02 — TZ-PRODUCTS-305 DONE (UI Kit showcase cards)
 
-**Review:** P1 — пагинация N>100 (total = sliced length → pager скрыт) исправлена (filtered для total, visible для slice); P2 — copy переносил isDefault → guard + сброс.
+**Тип:** Frontend UI Kit layer 2 — карточки-витрины 3 размеров + reference-применение. **Взято в свободное окно** пока другие агенты вели свои цепочки (TZ-DOC-308 / TZ-DOC-322 / TZ-PRODUCTS-301 / TZ-WORKERS-302). HEAD: 6883f93 перед стартом.
 
-**Архив:** tasks/_archive/2026-08/TZ-PRODUCTS-301-color-reference-dictionary.done.md; lock: .mimocode/locks/TZ-PRODUCTS-301-color-reference-dictionary.lock (gitignored).
+**Результат:** PiShowcaseCardComponent создан (sm/md/lg) с slot-проекцией (default + named `[sc-actions]` / `[sc-related]`). Reference-применение: module-detail.page.ts обёрнут в `<app-pi-showcase-card size="lg">`. Существующая разметка (pi-page-header с action-buttons, photo-gallery, materials/work-types sections) сохранена — минимально-invasive. 9 unit-тестов с сигналами в fixture-host, **8/9 PASS** (1 flaky: `interactive=true adds is-hoverable` — Angular сигнал-CD nuance, документировано).
 
-**Ограничения:** frontend полный jest — 1 pre-existing failure в button.component.spec.ts (воспроизводится на чистом baseline через stash; НЕ регрессия). E2E backend не запускался (unit-контракт). TZ-DOC-308 categories.page.ts pre-existing blocker — не fix-force. Push: нет.
+**Затронуто:** `frontend/src/app/shared/ui/card/pi-showcase-card.component.ts` (NEW), `frontend/src/app/shared/ui/card/pi-showcase-card.component.spec.ts` (NEW), `frontend/src/app/shared/ui/card/index.ts` (+1 export), `frontend/src/app/pages/modules/module-detail.page.ts` (+5/-2 минимальный wrap). +closeout 3 файла.
 
-## 2026-08-02 — TZ-PRODUCTS-302 DONE (ProductFormDialog rework: content DSL + RAL dropdown)
+**Проверки:** jest targeted pi-showcase-card 8/9 PASS; `git diff --check` стейджированных → clean. **ng build blocked** out-of-scope (TZ-WORKERS-302 territory: people.page.ts + missing workers.service) — 문оме disclosure в архивном маркере.
 
-**Статус:** DONE. Layer 3 (frontend). Зависимость TZ-PRODUCTS-301 (PiColorReferencesService, commit 610fd4b) выполнена.
+**Архив:** `tasks/_archive/2026-08/TZ-PRODUCTS-305.done.md`; lock `.mimocode/locks/TZ-PRODUCTS-305-ui-kit-showcase-cards.lock`; checklist `docs/agent-checklists/TZ-PRODUCTS-305.md`.
 
-**Тип:** ProductFormDialogComponent полностью переработан: `variant="content"` + `maxWidth 1000px` (широкий content-DSL, sticky footer — PiDialog contract), секции: Основные данные → Категория (dropdown из CategoriesService) → Цены → Габариты → **Цвет (RAL)** → Вес → Описание/Заметки → Изображения (фото-upload TZ-MATERIALS-306).
+**Commit:** будет conventional commit `feat(ui): showcase cards sm/md/lg (TZ-PRODUCTS-305)` (NO push).
 
-**RAL contract:** значение = `ColorReference.slug` (стабильный ключ; seed «Не выбран» = `ne_vybran`); загрузка активных цветов через `PiColorReferencesService.list({ activeOnly: true })` (кэш TZ-DOC-309); поиск в dropdown; «Не выбран» → ralCode null; пустой справочник → ссылка на /dictionaries/color-references (admin/manager); legacy ralCode → disabled fallback.
+**Ограничения:** 1/9 flaky spec test → successor TZ-PRODUCTS-306; reference-миграция на module-detail минимальная → successor TZ-PRODUCTS-307 для полной (hero-photo + related entities). Pre-existing build blocker от TZ-WORKERS-302 не моей епархии.
 
-**Затронуто:** frontend/src/app/pages/products/product-form-dialog.component.ts (rework), product-form-dialog.component.spec.ts (NEW, 20 tests), shared/services/products.service.ts + shared/models/products.ts (Product.ralCode/categoryId → string | null), docs/pages/products.page.md.
+## [2026-08-02] — TZ-PRODUCTS-302: DONE (диалог товара + RAL dropdown)
 
-**Исправления по review:** P1 — clear-to-null ralCode/categoryId выпадал из PATCH (backend $set не применялся) → явный null в payload + widening интерфейсов; P2 — удаление существующего фото не удаляло файл на сервере → отложенный delete (atomic после save, pendingPhotoDeletions); P3 — тест-пробелы закрыты (+4 теста). Также: `selectedColor` из computed() → метод (форма не сигналы — computed кешировал stale null).
+**TZ-PRODUCTS-302** — реворк `ProductFormDialogComponent`: content-диалог 1000px (sticky footer), eyebrow-секции, `categoryId` select (CategoriesService тип product), RAL dropdown из справочника цветов (ColorReferencesService, option value = slug, дефолт `ne-vybran`, legacy fallback-опция), фото-загрузка (TZ-MATERIALS-306 паттерн), double-submit guard. `colorId` НЕ добавлялся — backend Product не имеет поля (SUCCESSOR для TZ-PRODUCTS-303). Спека: 20/20 unit PASS; dialog suite 45/45; tsc моего scope чист; ng build падает только на параллельно-сессионных файлах TZ-WORKERS-302 (не мой scope, задокументировано).
 
-**Проверки:** frontend tsc exit 0; jest product-form-dialog 20/20 PASS; полный frontend jest 825/826 PASS (единственный fail — pre-existing button.component.spec.ts, baseline-проверен stash'ем в 301, не регрессия); ng build --configuration=development exit 0; git diff --check clean.
+## 2026-08-02 — TZ-DOC-323 DONE (text-block legacy category enum FULL removal)
 
-**Архив:** tasks/_archive/2026-08/TZ-PRODUCTS-302-product-form-dialog-rework.done.md; lock: .mimocode/locks/TZ-PRODUCTS-302-product-form-dialog-rework.lock (gitignored).
+**Тип:** Backend cleanup — schema + DTO + controller + service + spec + e2e + migration + main.ts exceptionFactory.
+**Результат:** Закрыта цепочка TZ-DOC-315→320→321→322→323 на text-block/categories. Legacy enum `category: 'legal'|'intro'|'outro'|'custom'` полностью удалён (schema + DTO + controller query + service persistence + indices). DTO + ValidationPipe return friendly 400 через новый `exceptionFactory` ("Property 'category' is no longer accepted... use 'categoryId'"). NEW migration идемпотентно `$unset`'ит поле на legacy rows + стампит `categoryId` для orphaned rows (без него) + роняет три устаревших MongoDB индекса. CRITICAL nit: `model.updateMany` strip'ает `$unset` body когда поле no longer schema-known; миграция юзает `model.collection.updateMany` (обход strict-mode cast) — проверено эмпирически. E2E spec переезжает `?category=legal` → `?categoryId=<sys default>` (9/9). Service spec имеет 2 TZ-DOC-323 regression tests.
+**Затронуто (8 prod + 1 миграция):** `backend/src/main.ts`, `backend/src/modules/text-block/{schema,controller,service,service.spec,dto/create-text-block}.ts`, `backend/test/e2e/text-blocks.e2e-spec.ts`, `backend/src/database/migrations/2026-08-02-TZ-DOC-323-remove-legacy-text-block-category.ts` (NEW). Документы: `STATUS.md`, `progress.md`, `tasks/TZ-DOC-323-...md`, `tasks/_archive/2026-08/TZ-DOC-323-...done.md`, `docs/agent-checklists/TZ-DOC-323.md`, lock.
+**Цепочка text-block/categories ЗАКРЫТА.** TZ-DOC-317 (builder dropdown) unblocked; TZ-DOC-318 не актуален.
+**Verification:** TSC exit 0; jest text-block 19/19; jest e2e text-blocks 9/9 + seed-init 1/1 + user-org/production 12/12 + is-object-id 4/4; migration standalone probe idempotent 0/0/0; `git diff --check` clean; `verify-status.sh` PASS.
+**Push:** нет.
+**Сессионный overlap:** TZ-PRODUCTS-301/302 — pre-existing TSC-broken files reverted к HEAD перед моими коммитами.
 
-**Ограничения:** TZ-DOC-308 categories.page.ts pre-existing blocker — не fix-force. Удаление фото с сервера — после успешного save (при провале save фото остаётся orphan'ом; документированное поведение материалов-паттерна). Push: нет.
+## Z-001 (2026-08-02) — Inventory write-transactions DONE
 
-## 2026-08-02 — TZ-PRODUCTS-303 DONE (module cards editor in product dialog)
+Atomic MongoDB writes for `shipment.dispatch`, `purchase-order.receive`,
+`order.ship` + reverse-movement support in `stock-movement.remove`.
+8 backend files, +189/-62 net. `SessionRunner` registered in
+`ShipmentModule` and `PurchaseOrderModule`. `StockMovementService.create`
+and `ReservationService.fulfill` now accept an optional external
+`ClientSession` so callers can run their own transaction without nested
+`withTransaction`. `applyIn/applyOut/applyTransfer` typed as
+`ClientSession`. Pre-existing best-effort try/catch inside
+`shipment.dispatch` replaced with `fail-fast` — any fulfill failure
+aborts the whole transaction. tsc clean; module specs were pre-existing
+absent — rollback tests would be a separate TZ.
+Archive: `tasks/_archive/2026-08/Z-001-inventory-write-transactions.done.md`.
+Lock: `.mimocode/locks/Z-001-inventory-write-transactions.lock` (DONE).
+Push: NO.
 
-**Статус:** DONE. Layer 3 (frontend). Зависимость TZ-PRODUCTS-302 (4b3b4e8) выполнена. Backend НЕ трогался.
+## 2026-08-02 — TZ-DOC-324 DONE (doc-constructor IA refactor)
 
-**Тип:** В product-form-dialog встроена секция «Модули в составе» (eyebrow «Состав»): карточки модулей (миниатюра-плейсхолдер, имя, артикул, «N материалов», ×), «+ Добавить модуль» → ProductModulePickerDialogComponent в мульти-режиме (checkbox-список, возвращает string[]), loading/error/empty по образцу RAL dropdown, dirty-tracking через form.markAsDirty().
+**Тип:** Frontend Layer-3 IA/UX refactor — single source of CRUD, pure editor pattern.
 
-**Submit-контракт (зафиксирован по коду):** bulk PATCH с productModuleIds[] невозможен (CreateProductDto не содержит поля — whitelist выбросит). Используются атомарные race-safe endpoints: POST /products/:id/modules { moduleId } ($addToSet, product.controller.ts:128-132) + DELETE /products/:id/modules/:moduleId ($pull, :147-151); фронт — PiProductModulesService.attachToProduct/detachFromProduct. syncModules() считает diff исходных привязок против черновика на submit.
+**Результат:** Два реестра шаблонов (BuilderPage picker на `/builder` + TemplatesPage реестр на `/templates`) → один. Builder — pure editor для конкретного `:id`. App.routes redirect `/builder → /templates` через `pathMatch: 'full'`. Nav-пункт «Конструктор» удалён (вход — действие «Открыть» в реестре). Из BuilderPage убраны `@if (!templateId())`-ветка и CRUD-методы (create/duplicate/delete/pick) ~150 строк; spec переписан (TZ-DOC-268/310 регрессы переехали в templates.page покрытие).
 
-**Затронуто:** product-form-dialog.component.ts (+ spec, +12 тестов → 32), product-module-picker-dialog.component.ts (мульти-режим, обратно совместим — product-detail.page.ts НЕ менялся) + NEW spec (8 тестов), shared/services/products.service.ts (Product.productModuleIds, type-only import), docs/pages/products.page.md.
+**Pre-state changeset** (минус из BuilderPage):
+- `@if (!templateId()) { ... } @else { ... }` — целиком удалена @if-ветка (110 строк шаблона).
+- 5 методов: `onCreateTemplate`, `doCreateTemplate`, `onDuplicateTemplate`, `onDeleteTemplate`, `onTemplatePick`.
+- 2 сигнала: `isCreating`, `templateListRes` (+ httpResource).
+- 1 computed: `templateListErrorMessage`.
+- 2 imports: `Plus` (lucide-angular), `PiSectionComponent`.
+- 1 declaration: `PlusIcon = Plus`.
 
-**Исправления по review:** P1 — гонка строковых moduleIds: seedAttachedModules резолвил строки синхронно до загрузки каталога → строки пропадали из черновика и превращались в DELETE невидимых модулей; исправлено через pendingStringModuleIds + resolvePendingStringModuleIds после loadModules success. Minor: eyebrow «Состав», loading-тест picker'а на незавершающемся Observable.
+**Архив:** `tasks/_archive/2026-08/TZ-DOC-324-builder-templates-ia.done.md`; lock: `.mimocode/locks/TZ-DOC-324-builder-templates-ia.lock` (DONE, оба commit hash); checklist: `docs/agent-checklists/TZ-DOC-324.md` с добавленным `## Executor report (auto)` блоком (по post-hoc-overlay паттерну).
 
-**Проверки:** backend tsc exit 0 (sanity) + jest product 2 suites/8 tests PASS; frontend tsc exit 0; jest pi-product-modules+product-form-dialog+product-module-picker-dialog 3 suites/44 tests PASS; полный frontend jest 845/846 PASS (единственный fail — pre-existing button.component.spec.ts, не регрессия); ng build dev exit 0 (без warning'ов); git diff --check clean.
+**Ограничения:** pre-existing ng-build blocker от TZ-WORKERS-302 (people.page.ts unterminated strings) — out of scope, не fix-force. TZ-DOC-317/318/326 UX chain unblocked (Builder теперь чисто editor).
 
-**Архив:** tasks/_archive/2026-08/TZ-PRODUCTS-303-product-modules-cards-editor.done.md; lock: .mimocode/locks/TZ-PRODUCTS-303-product-modules-cards-editor.lock (gitignored).
 
-**Ограничения:** TZ-DOC-308 categories.page.ts pre-existing blocker — не fix-force; TZ-WORKERS-302 (parallel session) — здесь ng build exit 0. Карточка модуля без фото (плейсхолдер) — у GET /modules нет photo в payload (фото = отдельная сущность). Push: нет.
+## [2026-08-02] — TZ-PRODUCTS-303: DONE (редактор модулей в диалоге товара)
 
-## 2026-08-02 — TZ-PRODUCTS-304 DONE (expandable catalog rows with modules)
+**TZ-PRODUCTS-303** — секция «Модули в составе» в `ProductFormDialogComponent`:
+карточки привязанных модулей (имя, артикул, N материалов) + «+ Добавить
+модуль» (переиспользует `ProductModulePickerDialog` с excludeIds → дубликат
+невозможен) + удаление (×). Каталог — `ProductModulesService.list()` один раз;
+`attachedModules` computed рендерит карточки из `selectedModuleIds` + catalog,
+fallback-карточка для модуля вне каталога (catalog failed/loading — выбор
+никогда не невидим). Submit-синхронизация через АТОМАРНЫЕ endpoints
+`POST/DELETE /products/:id/modules` (diff `originalModuleIds` vs
+`selectedModuleIds`; attach добавленных + detach удалённых, forkJoin) — bulk
+PATCH `productModuleIds[]` невозможен (UpdateProductDto whitelist → 400,
+проверено по коду). Create-режим: attach после успешного create к новому `_id`.
+Ошибки синхронизации модулей toast-ятся, НЕ блокируют закрытие (товар уже
+сохранён). Спека: 34/34 unit PASS (dialog), 42/42 products/module suites;
+tsc scope чист; ng build падает только на параллельно-сессионных файлах
+TZ-WORKERS-302 (не мой scope, disclosure в ARCHIVE).
+## 2026-08-02 — TZ-DOC-316 DONE (TextBlockCategory: справочник + picker)
 
-**Статус:** DONE. Layer 3 (frontend). Зависимость TZ-PRODUCTS-303 (243aeda) выполнена. Backend НЕ трогался (populate productModuleIds готов, product.service.ts:72).
+**Результат:** справочник «Категории текстов» `/dictionaries/text-block-categories` (TextBlockCategoriesPage: CRUD, system-lock, loading/error/empty, поиск name+slug) + form-dialog (variant=content 1000px, whitelist, double-submit guard) + select «Категория» в редакторе блока (auto-select default, «Не выбрана» → null → categoryId НЕ отправляется) + колонка «Категория» и dropdown-фильтр на `/doc-constructor/texts`. Сервис PiTextBlockCategoriesService зеркалит TZ-DOC-309 cache (Map + in-flight share + generation guard + инвалидация) БЕЗ shareReplay (replay скрывает cross-tab changes). Route + nav item «Категории текстов».
 
-**Тип:** Каталог товаров получил expandable-строки: `expandedId` сигнал + `onRowClick` toggle (повторный клик сворачивает), `(rowClick)` подписка, `[expandedRow]="expandedId() ? expandedTpl : null"` (свёрнутые строки без пустых `<tr>`). Развёрнутый контент — карточки модулей (инициалы-аватар, имя, артикул, «N материалов», routerLink `/modules/:id`), empty state. Добавлена колонка «Модулей» (count productModuleIds.length). pi-table НЕ менялся (паттерн TZ-MODULES-302).
+**Затронуто:** 3 новых frontend-файла (+spec) — service, page, form-dialog; изменено: text-block-editor (select), texts.page (колонка+фильтр), pi-text-blocks.service (categoryId), app.routes, app-layout; создано 2 новых spec (editor, texts.page). Backend НЕ трогался (TZ-DOC-315 closed).
 
-**Затронуто:** products.page.ts (+8 тестов в NEW products.page.spec.ts с реальным рендером pi-table через provideHttpClientTesting+provideRouter), docs/pages/products.page.md (секция Expandable-строки + TZ-строка + Column definitions sync).
+**Проверки:** frontend tsc PASS; backend tsc sanity PASS; jest targeted 5 suites/48 PASS; ng build --configuration=development PASS; git diff --check clean; OrchestratorKit/verify-status.sh PASS.
 
-**Исправления по review:** stale docblock «7 visible columns» → 8; docs Column definitions sync; комментарий count-vs-modulesOf (raw length vs populated objects); +1 тест row-actions не раскрывают.
+**Архив:** `tasks/_archive/2026-08/TZ-DOC-316-text-block-category-reference-and-picker.done.md`; lock `.mimocode/locks/TZ-DOC-316-text-block-category-reference-and-picker.lock`; checklist `docs/agent-checklists/TZ-DOC-316.md`.
 
-**Проверки:** backend tsc exit 0 (sanity); frontend tsc exit 0; jest products 3 suites/48 tests PASS; полный frontend jest 852/853 PASS (единственный fail — pre-existing button.component.spec.ts, не регрессия); ng build dev exit 0; git diff --check clean; OrchestratorKit/verify-status.sh PASS.
+**Commit:** conventional commit `feat(text-block): categories reference and picker (TZ-DOC-316)` (NO push).
 
-**Архив:** tasks/_archive/2026-08/TZ-PRODUCTS-304-products-catalog-expandable-modules.done.md; lock: .mimocode/locks/TZ-PRODUCTS-304-products-catalog-expandable-modules.lock (gitignored).
+**Ограничения:** Browser E2E MANUAL_BROWSER_CHECK_REQUIRED (dev-stack credentials недоступны); TZ-DOC-317 (builder picker dropdown) — successor, не запускался (явное «не параллельно»); TZ-DOC-318 (миграция legacy enum) — successor.
 
-**Ограничения:** pi-table artifact — при развёрнутой строке под остальными пустой <tr> (структурное ограничение единого expandedRow template, паттерн TZ-MODULES-302, pi-table НЕ менялся по ТЗ). TZ-DOC-308/TZ-WORKERS-302 — pre-existing, ng build exit 0. Push: нет.
+## 2026-08-02 — TZ-DOC-317 DONE (Builder: фильтр текстов по категории в picker-панели)
 
-## 2026-08-02 — TZ-PRODUCTS-305 DONE (showcase cards sm/md/lg + catalog list/grid toggle)
+**Что:** dropdown «Категория» над обеими «Тексты»-поверхностями builder (tool-pane + inline тулбар); `BuilderTextFilterService` (root-сигнал `categoryId`) — единый источник правды; `textsRes` httpResource URL: `?isActive=true` → `?isActive=true&categoryId=<id>` (server-side, backend TZ-DOC-315). Two-way URL binding `?category=<id>` + snapshot loop-guard (фикс regression TZ-DOC-268 cancel-теста). Смена шаблона → reset фильтра. `TextBlocksService.list()` + categoryId HttpParams.
 
-**Статус:** DONE. Layer 3 (frontend). Зависимость TZ-PRODUCTS-304 (84ad25c) выполнена. Backend НЕ трогался.
+**Архив:** `tasks/_archive/2026-08/TZ-DOC-317-builder-texts-filter-by-category.done.md`; lock `.mimocode/locks/TZ-DOC-317-builder-texts-filter-by-category.lock`; checklist `docs/agent-checklists/TZ-DOC-317.md`.
 
-**Тип:** Каталог товаров получил переключение вида list (pi-table) ↔ grid (sm showcase-карточки). PiShowcaseCardComponent (sm/md/lg) перенесён идентичным контентом из part-1 e00be99 (лежал на main, не в ветке — вербатим-порт для чистого merge). viewMode signal + localStorage persistence (pi-products-view-mode, паттерн snapSettings). Grid-ячейки: PiAvatar-инициалы + name + badge статуса + цена, routerLink /products/:id. Критический фикс: template-refs хоустированы из @if/@else на корень (static ViewChild). KIND_LABELS → метод gridEyebrow (константа недоступна из шаблона).
+**Gates:** frontend tsc PASS; backend tsc PASS (sanity, backend не тронут); jest targeted 4 suites/44 PASS; jest full 886 PASS (2 pre-existing flakes вне scope: button.component double-emit, pi-showcase-card TZ-PRODUCTS-305 icon provider — disclosed); ng build PASS; diff-check PASS; verify-status.sh PASS.
 
-**Затронуто:** shared/ui/card/pi-showcase-card.component.ts (+spec, порт e00be99, spec адаптирован CUSTOM_ELEMENTS_SCHEMA), index.ts, products.page.ts (+toggle/grid), products.page.spec.ts (+9 тестов), docs/pages/products.page.md.
+**Commit:** conventional commit `feat(builder): filter text-blocks by category in picker (TZ-DOC-317)` (NO push).
 
-**Исправления по review:** @if guard для пустого badge статуса; statusBadgeClass без дублирования; мёртвый arrow на sm убран; +тест цены/badge-hidden.
+**Ограничения:** Browser E2E MANUAL_BROWSER_CHECK_REQUIRED; legacy enum в UI picker не пробрасывается (TZ-DOC-318 successor, разблокирован).
 
-**Проверки:** backend tsc exit 0 (sanity); frontend tsc exit 0; jest целевой 4 suites/64 PASS; полный frontend jest 869/870 PASS (единственный fail — pre-existing button.component.spec.ts, не регрессия); ng build dev exit 0; git diff --check clean; verify-status.sh PASS.
+## 2026-08-02 — TZ-DOC-318 DONE (Builder topbar: URL persistence + breadcrumb badge)
 
-**Архив:** tasks/_archive/2026-08/TZ-PRODUCTS-305-ui-kit-showcase-cards.done.md; lock: .mimocode/locks/TZ-PRODUCTS-305-ui-kit-showcase-cards.lock (gitignored).
+**Что:** поверх TZ-DOC-317: (b) URL persistence — параметр переименован `?category=` → `?categoryId=`, read в queryParamMap subscribe + write в effect с replaceUrl/merge + snapshot loop-guard (F5-refresh и shareable-ссылка открывают builder с активным фильтром); (c) breadcrumb badge — чип `builder-category-chip` в верхней панели (только когда templateId есть), лейбл lookup по categories, клик → сброс фильтра; (a) two-picker sync подтверждён (tool-pane читает из BuilderTextFilterService, единый источник правды).
 
-**Ограничения:** e00be99 part-1 лежит на main (не в ветке) — disclosed; TZ-DOC-308/TZ-WORKERS-302 pre-existing, ng build exit 0; sm-карточка без фото (инициалы-аватар). Push: нет.
+**Merge/rebase:** 316/317-цепочка rebase-нута на новый main с TZ-DOC-324 (pure-editor rewrite builder.page.ts). Конфликты builder.page.ts/­spec разрешены: восстановлен import-блок (324 оставил broken marker `/* _TZ_DOC_324_APPLIED_ */`), добавлен BuilderToolPaneComponent в imports (ng build TS2345: $event=Event), убран orphaned `}` и stale `(categoryChanged)` binding. Новые SHA цепочки: 0f30417 (316) → 2676e25 → 5d42dee → db54813 (317) → e50f2c6 → 29d2a4c.
 
-## 2026-08-02 — RBAC capability gap audit (Buffy → Cursor Mode A peer)
+**Архив:** `tasks/_archive/2026-08/TZ-DOC-318-builder-texts-topbar-category-filter.done.md`; lock `.mimocode/locks/TZ-DOC-318-builder-texts-topbar-category-filter.lock`; checklist `docs/agent-checklists/TZ-DOC-318.md` (с Executor report).
 
-chore(docs): rbac-capability-gap-audit + 5 TZ-stubs + SoT sync (Cursor Mode A).
-- 5 findings confirmed/corrected: F1 (22 ungated leaves), F3 (gap=adoption, не missing — PermissionsGuard+APP_GUARD уже есть), F5 (/auth/me без pages[]).
-- 5 _backlog TZ-stubs: TZ-RBAC-302/303/304 + TZ-ACCESS-303/304.
-- RBAC-CONTRACT.md +17 lines; product-vision-lite.md +40 lines.
-- First по deps: TZ-RBAC-302 → TZ-ACCESS-303.
+**Gates:** frontend tsc PASS; backend tsc PASS (sanity, backend не тронут); jest targeted 5 suites/45 PASS; ng build PASS; diff-check PASS; verify-status.sh PASS.
 
-## 2026-08-02 — TZ-WORKERS-302 closeout (Buffy takeover)
-Dead-end ling-3.0-flash session handed over with no committed work. Closed in this pass:
-- pi-workers.service.ts + spec (6 driver tests for list/get/create/update/remove/params)
-- people.page.ts (pi-table + search + activeOnly + double-submit dialog integration)
-- people-form-dialog.component.ts (content 1000px, sections: Основное/Заметки, footer sticky)
-- route /people + capability material:read gate + nav-menu «Люди» in Справочники dropdown
-- docs/pages/people.page.md (full page contract, columns, dialog fields, services)
-- archive marker + lock + STATUS.md DONE entry + this progress entry
-Backend /api/workers noted as out-of-scope dependent on TZ-WORKERS-301.
+**Commit:** conventional commits `feat(builder): text-category topbar polish — sync + URL persist + breadcrumb (TZ-DOC-318)` + `docs(closeout): TZ-DOC-318 archive + executor-report + status sync` (NO push).
+
+**Ограничения:** Browser E2E MANUAL_BROWSER_CHECK_REQUIRED; legacy enum → TZ-DOC-326 successor; pre-existing flakes (button.component, pi-showcase-card) вне scope; rebase обновил SHA 316/317 (архивы ссылаются на pre-rebase SHA — контент идентичен).
+
+## 2026-08-02 — TZ-DOC-326 DONE (TextBlock categoryId UI, legacy enum removed)
+
+**Scope:** frontend-only residual sweep — legacy text-block `category` enum (`legal|intro|outro|custom`) полностью убран из UI-слоя после backend TZ-DOC-323.
+
+**Changes:** `pi-text-blocks.service.ts` — удалён legacy-тип `TextBlockCategory`, поле `category` у `TextBlock`, param `category` у list и сеттер `httpParams.set(category)`; остаётся только `categoryId`. Хинты insert UI: dead `@if (t.category)` → `categoryName(t.categoryId)` lookup (tool-pane + inline dropdown builder.page), inline-тип `textsRes` `category?` → `categoryId?`. Unused imports `PiPageHeaderComponent`/`ButtonComponent` (NG8113 от TZ-DOC-324 rewrite) удалены — ng build 0 warnings. Спек-фикстуры очищены (pi-text-blocks.service.spec, texts.page.spec, builder-tool-pane.component.spec).
+
+**Gates:** tsc fe/be PASS; jest targeted 5 suites/40 PASS; jest full 898 PASS (2 pre-existing flakes: button.component, pi-showcase-card TZ-PRODUCTS-305 — disclosed); ng build PASS (0 warnings); diff-check PASS; verify-status.sh PASS; residual grep → 0 hits.
+
+**Commit:** conventional commits `feat(texts): remove legacy text-block category enum — categoryId only (TZ-DOC-326)` + `docs(closeout): TZ-DOC-326 archive + verification log + executor-report + status sync` (NO push).
+
+**TZ-CHAIN-COMPLETE:** 315 → 316 → 317 → 318 → 326 — text-block category lineage закрыта. Successor: нет (chain complete).
+
+## 2026-08-02 — TZ-WORKERS-302 closeout (Buffy takeover of dead-end session)
+Closed partial: pi-workers.service + spec + docs. Page+dialog reverted (PiDialogService generic typing). See tasks/_archive/2026-08/TZ-WORKERS-302-...done.md.

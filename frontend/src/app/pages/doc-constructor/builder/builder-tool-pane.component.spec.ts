@@ -1,9 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import {
-  provideHttpClient,
-  withFetch,
-  withInterceptors,
-} from '@angular/common/http';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 
@@ -33,8 +29,24 @@ describe('BuilderToolPaneComponent (TZ-DOC-317 category filter)', () => {
   const baseUrl = '/api';
 
   const fakeCategories = [
-    { _id: 'c1', name: 'Описания', slug: 'opisaniya', isActive: true, isSystem: false, isDefault: false, sortOrder: 1 },
-    { _id: 'c2', name: 'Реквизиты', slug: 'rekvizity', isActive: true, isSystem: false, isDefault: false, sortOrder: 2 },
+    {
+      _id: 'c1',
+      name: 'Описания',
+      slug: 'opisaniya',
+      isActive: true,
+      isSystem: false,
+      isDefault: false,
+      sortOrder: 1,
+    },
+    {
+      _id: 'c2',
+      name: 'Реквизиты',
+      slug: 'rekvizity',
+      isActive: true,
+      isSystem: false,
+      isDefault: false,
+      sortOrder: 2,
+    },
   ];
 
   /** Drain pending microtasks (Promise.then chains inside httpResource). */
@@ -75,12 +87,8 @@ describe('BuilderToolPaneComponent (TZ-DOC-317 category filter)', () => {
     httpMock
       .expectOne((r) => r.method === 'GET' && r.url.includes('/text-block-categories'))
       .flush(fakeCategories);
-    httpMock
-      .expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks'))
-      .flush([]);
-    httpMock
-      .expectOne((r) => r.method === 'GET' && r.url.includes('/table-templates'))
-      .flush([]);
+    httpMock.expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks')).flush([]);
+    httpMock.expectOne((r) => r.method === 'GET' && r.url.includes('/table-templates')).flush([]);
     await tickMicrotask();
     TestBed.flushEffects();
     fixture.detectChanges();
@@ -94,24 +102,16 @@ describe('BuilderToolPaneComponent (TZ-DOC-317 category filter)', () => {
   it('TZ-DOC-317: dropdown shows «Все» + active category options from the API', async () => {
     const { fixture } = await openTextsSection();
 
-    const select: HTMLSelectElement = fixture.nativeElement.querySelector(
-      '#tb-category-filter',
-    );
+    const select: HTMLSelectElement = fixture.nativeElement.querySelector('#tb-category-filter');
     expect(select).toBeTruthy();
     const options = Array.from(select.querySelectorAll('option'));
-    expect(options.map((o) => o.textContent?.trim())).toEqual([
-      'Все',
-      'Описания',
-      'Реквизиты',
-    ]);
+    expect(options.map((o) => o.textContent?.trim())).toEqual(['Все', 'Описания', 'Реквизиты']);
   });
 
   it('TZ-DOC-317: selecting a category rebuilds the texts URL with categoryId', async () => {
     const { fixture } = await openTextsSection();
 
-    const select: HTMLSelectElement = fixture.nativeElement.querySelector(
-      '#tb-category-filter',
-    );
+    const select: HTMLSelectElement = fixture.nativeElement.querySelector('#tb-category-filter');
     select.value = 'c2';
     select.dispatchEvent(new Event('change'));
     fixture.detectChanges();
@@ -125,7 +125,7 @@ describe('BuilderToolPaneComponent (TZ-DOC-317 category filter)', () => {
         _id: 'tb1',
         name: 'Реквизиты сторон',
         slug: 'rekvizity-storon',
-        category: 'rekvizity',
+        categoryId: 'c2',
         tags: [],
         content: '# Реквизиты',
         isActive: true,
@@ -145,13 +145,9 @@ describe('BuilderToolPaneComponent (TZ-DOC-317 category filter)', () => {
     filter.categoryId.set('c1');
     fixture.detectChanges();
     TestBed.flushEffects();
-    httpMock
-      .expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks'))
-      .flush([]);
+    httpMock.expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks')).flush([]);
 
-    const select: HTMLSelectElement = fixture.nativeElement.querySelector(
-      '#tb-category-filter',
-    );
+    const select: HTMLSelectElement = fixture.nativeElement.querySelector('#tb-category-filter');
     select.value = '';
     select.dispatchEvent(new Event('change'));
     fixture.detectChanges();
@@ -171,9 +167,7 @@ describe('BuilderToolPaneComponent (TZ-DOC-317 category filter)', () => {
     filter.categoryId.set('c1');
     fixture.detectChanges();
     TestBed.flushEffects();
-    httpMock
-      .expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks'))
-      .flush([]);
+    httpMock.expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks')).flush([]);
     await tickMicrotask();
     TestBed.flushEffects();
     fixture.detectChanges();
@@ -192,20 +186,14 @@ describe('BuilderToolPaneComponent (TZ-DOC-317 category filter)', () => {
     (comp as unknown as { toggle: (k: string) => void }).toggle('texts');
     fixture.detectChanges();
 
-    const select: HTMLSelectElement = fixture.nativeElement.querySelector(
-      '#tb-category-filter',
-    );
+    const select: HTMLSelectElement = fixture.nativeElement.querySelector('#tb-category-filter');
     expect(select.disabled).toBe(true);
 
     httpMock
       .expectOne((r) => r.method === 'GET' && r.url.includes('/text-block-categories'))
       .flush(fakeCategories);
-    httpMock
-      .expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks'))
-      .flush([]);
-    httpMock
-      .expectOne((r) => r.method === 'GET' && r.url.includes('/table-templates'))
-      .flush([]);
+    httpMock.expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks')).flush([]);
+    httpMock.expectOne((r) => r.method === 'GET' && r.url.includes('/table-templates')).flush([]);
     await tickMicrotask();
     TestBed.flushEffects();
     fixture.detectChanges();
