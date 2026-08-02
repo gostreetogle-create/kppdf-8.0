@@ -69,3 +69,46 @@ controller spec обновлён. **P2: `normalizeEmail(null)`** (null прох�
 ## Conventional commit (push НЕ выполнялся — ждёт владельца)
 
 `e449335ac7980f957b2b3a01326fcdc47a8adefa` — `feat(workers): consolidate People backend entity — TZ-WORKERS-301` — 15 files / +1405 / -47. Push: нет.
+
+## ARCHIVE_MARKER
+
+```yaml
+outcome: DONE
+closed_at: 2026-08-02
+closed_by: autonomous-backend-agent (Codebuff)
+source_task: tasks/TZ-WORKERS-301-people-unified-contract.md
+implementation_commit: e449335ac7980f957b2b3a01326fcdc47a8adefa
+closeout_commit: 92b8cd39791c0f1971cebfc2797de66e7cd53d44
+verification:
+  - backend_tsc: PASS
+  - jest_worker: 2 suites / 24 tests PASS
+  - jest_full: 43 suites / 410 tests PASS
+  - e2e_workers: 5/5 PASS (Mongo 7 docker, replicaSet rs0)
+  - git_diff_check: clean
+  - verify_status: PASS
+browser_status: MANUAL_BROWSER_CHECK_REQUIRED (backend-only; UI «Люди» — TZ-WORKERS-302)
+known_limitations:
+  - Person → Worker консолидация — SUCCESSOR (Organization.contactPersonId и др. активные зависимости)
+  - Создание аккаунта-пользователя из карточки человека — SUCCESSOR (auth/user)
+  - e2e-харнесс без forbidNonWhitelisted (production имеет) — неизвестные поля стрипуются в e2e, 400 в production
+protected_files:
+  - backend/src/modules/worker/worker.schema.ts
+  - backend/src/modules/worker/dto/create-worker.dto.ts
+  - backend/src/modules/worker/dto/update-worker.dto.ts
+  - backend/src/modules/worker/dto/find-workers.dto.ts
+  - backend/src/modules/worker/worker.service.ts
+  - backend/src/modules/worker/worker.controller.ts
+  - backend/src/modules/worker/worker.module.ts
+  - backend/src/modules/worker/worker.service.spec.ts
+  - backend/src/modules/worker/worker.controller.spec.ts
+  - backend/test/e2e/workers.e2e-spec.ts
+not_changed:
+  - backend/src/modules/person/* (Person остаётся — SUCCESSOR)
+  - backend/src/modules/work-type/* (M2M-мутации — TZ-WORKTYPES-301)
+  - backend/src/modules/user/* (auth — только чтение)
+  - frontend (TZ-WORKERS-302)
+  - TZ-MODULES-*, TZ-PRODUCTS-*, TZ-DOC-*
+  - Materials/ProductModule, Admin/RBAC, Z-backlog, sanitize-html
+  - package.json / lock-файлы
+lock_file: .mimocode/locks/TZ-WORKERS-301-people-backend-entity.lock
+```
