@@ -10,7 +10,7 @@
 ## Executor report (auto)
 
 - status: DONE
-- commit: (filled after commit)
+- commit: 5817a6831b808bb74987b598e2417bb1c9f4b225
 - gates: tsc PASS; capability-route.guard.spec 12/12 PASS
 - known: custom roles need ACCESS-302 grants; people/gantt not wired
 - ask: none
