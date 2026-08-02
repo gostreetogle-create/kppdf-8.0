@@ -39,7 +39,10 @@
  *   guides during fast drag.
  */
 
-import { normalizeBlockLayout, type BlockLayout } from '../../../shared/template-block/template-block-layout';
+import {
+  normalizeBlockLayout,
+  type BlockLayout,
+} from '../../../shared/template-block/template-block-layout';
 
 export interface Rect {
   readonly left: number;
@@ -150,9 +153,51 @@ export function applySnapToGrid(
  *
  * Returns an empty array for empty input.
  */
-export function collapseAlignmentGuides(
-  guides: readonly SnapGuide[],
-): readonly SnapGuide[] {
+/** Selection policy for marquee/rectangle selection (TZ-DOC-272). */
+export type MarqueePolicy = 'intersect' | 'contain';
+
+/**
+ * Compute which candidate rects are selected by a marquee rectangle.
+ * Pure + deterministic — block ids are returned in input order.
+ *
+ * The marquee rect may carry NEGATIVE width/height (the user dragged
+ * up-left / down-left), so all four edges are normalised first.
+ *
+ * Policies (documented, TZ-DOC-272 AC):
+ *   - `intersect` (default): a block is selected when its rectangle
+ *     overlaps the marquee by a positive area (touching edges only does
+ *     NOT count — the comparisons are strict).
+ *   - `contain`: a block is selected only when it lies fully inside the
+ *     marquee (inclusive edges).
+ *
+ * Candidates with non-positive dimensions or non-finite coordinates are
+ * skipped (same defensive contract as `computeAlignmentGuides`).
+ */
+export function selectRectsInMarquee(
+  candidates: ReadonlyArray<Rect>,
+  marquee: Rect,
+  policy: MarqueePolicy = 'intersect',
+): string[] {
+  const mLeft = Math.min(marquee.left, marquee.left + marquee.width);
+  const mTop = Math.min(marquee.top, marquee.top + marquee.height);
+  const mRight = Math.max(marquee.left, marquee.left + marquee.width);
+  const mBottom = Math.max(marquee.top, marquee.top + marquee.height);
+  const out: string[] = [];
+
+  for (const c of candidates) {
+    if (!Number.isFinite(c.left) || !Number.isFinite(c.top) || c.width <= 0 || c.height <= 0) {
+      continue;
+    }
+    const cRight = c.left + c.width;
+    const cBottom = c.top + c.height;
+    const intersects = mLeft < cRight && mRight > c.left && mTop < cBottom && mBottom > c.top;
+    const contained = mLeft <= c.left && mTop <= c.top && mRight >= cRight && mBottom >= cBottom;
+    if (policy === 'contain' ? contained : intersects) out.push(c.blockId);
+  }
+  return out;
+}
+
+export function collapseAlignmentGuides(guides: readonly SnapGuide[]): readonly SnapGuide[] {
   if (guides.length === 0) return [];
   const seen = new Set<string>();
   const out: SnapGuide[] = [];
@@ -183,12 +228,7 @@ export function computeAlignmentGuides(
 
   for (const o of others) {
     if (o.blockId === dragged.blockId) continue;
-    if (
-      !Number.isFinite(o.left) ||
-      !Number.isFinite(o.top) ||
-      o.width <= 0 ||
-      o.height <= 0
-    ) {
+    if (!Number.isFinite(o.left) || !Number.isFinite(o.top) || o.width <= 0 || o.height <= 0) {
       continue;
     }
 
@@ -269,9 +309,7 @@ export interface OverlayLikeBlock {
  * the input type is `Record<string, unknown>` — explicit runtime
  * type guards replace compile-time type narrowing.
  */
-export function overlayBlockToRect(
-  block: OverlayLikeBlock,
-): Rect | null {
+export function overlayBlockToRect(block: OverlayLikeBlock): Rect | null {
   const s = block.settings;
   if (!s) return null;
   if (s['overlay'] !== true) return null;
@@ -288,16 +326,10 @@ export function overlayBlockToRect(
   // callers cannot ship corrupt geometry into the alignment engine. ──
   const rawLeft = s['overlayLeft'];
   const rawTop = s['overlayTop'];
-  if (
-    rawLeft != null &&
-    (typeof rawLeft !== 'number' || !Number.isFinite(rawLeft))
-  ) {
+  if (rawLeft != null && (typeof rawLeft !== 'number' || !Number.isFinite(rawLeft))) {
     return null;
   }
-  if (
-    rawTop != null &&
-    (typeof rawTop !== 'number' || !Number.isFinite(rawTop))
-  ) {
+  if (rawTop != null && (typeof rawTop !== 'number' || !Number.isFinite(rawTop))) {
     return null;
   }
   const left = typeof rawLeft === 'number' ? rawLeft : 0;
@@ -317,15 +349,7 @@ export function overlayBlockToRect(
 // ═══════════════════════════════════════════════════════════════
 
 /** Resize handle directions for canonical (layout) blocks. */
-export type LayoutResizeHandle =
-  | 'n'
-  | 's'
-  | 'e'
-  | 'w'
-  | 'ne'
-  | 'nw'
-  | 'se'
-  | 'sw';
+export type LayoutResizeHandle = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
 
 /** CSS cursor per resize handle direction (mirrors the handle geometry). */
 export const RESIZE_CURSORS: Readonly<Record<LayoutResizeHandle, string>> = {
@@ -464,27 +488,19 @@ export function computeAlignLayouts(
       next = layouts.map((l) => normalizeBlockLayout({ ...l, x: left }));
       break;
     case 'center-x':
-      next = layouts.map((l) =>
-        normalizeBlockLayout({ ...l, x: cx - l.width / 2 }),
-      );
+      next = layouts.map((l) => normalizeBlockLayout({ ...l, x: cx - l.width / 2 }));
       break;
     case 'right':
-      next = layouts.map((l) =>
-        normalizeBlockLayout({ ...l, x: right - l.width }),
-      );
+      next = layouts.map((l) => normalizeBlockLayout({ ...l, x: right - l.width }));
       break;
     case 'top':
       next = layouts.map((l) => normalizeBlockLayout({ ...l, y: top }));
       break;
     case 'middle-y':
-      next = layouts.map((l) =>
-        normalizeBlockLayout({ ...l, y: cy - (l.height ?? 0.06) / 2 }),
-      );
+      next = layouts.map((l) => normalizeBlockLayout({ ...l, y: cy - (l.height ?? 0.06) / 2 }));
       break;
     case 'bottom':
-      next = layouts.map((l) =>
-        normalizeBlockLayout({ ...l, y: bottom - (l.height ?? 0.06) }),
-      );
+      next = layouts.map((l) => normalizeBlockLayout({ ...l, y: bottom - (l.height ?? 0.06) }));
       break;
     case 'same-width': {
       const maxW = Math.max(...layouts.map((l) => l.width));
@@ -493,19 +509,13 @@ export function computeAlignLayouts(
     }
     case 'same-height': {
       const maxH = Math.max(...layouts.map((l) => l.height ?? 0.06));
-      next = layouts.map((l) =>
-        normalizeBlockLayout({ ...l, height: maxH }),
-      );
+      next = layouts.map((l) => normalizeBlockLayout({ ...l, height: maxH }));
       break;
     }
     case 'distribute-h': {
       // Sort by current x, keep first/last anchors, spread evenly.
-      const sorted = layouts
-        .map((l, i) => ({ l, i }))
-        .sort((a, b) => a.l.x - b.l.x);
-      const gap = sorted.length > 1
-        ? (right - left) / (sorted.length - 1)
-        : 0;
+      const sorted = layouts.map((l, i) => ({ l, i })).sort((a, b) => a.l.x - b.l.x);
+      const gap = sorted.length > 1 ? (right - left) / (sorted.length - 1) : 0;
       const placed = new Array<BlockLayout>(layouts.length);
       sorted.forEach(({ l, i }, idx) => {
         placed[i] = normalizeBlockLayout({ ...l, x: left + gap * idx });
@@ -514,12 +524,8 @@ export function computeAlignLayouts(
       break;
     }
     case 'distribute-v': {
-      const sorted = layouts
-        .map((l, i) => ({ l, i }))
-        .sort((a, b) => a.l.y - b.l.y);
-      const gap = sorted.length > 1
-        ? (bottom - top) / (sorted.length - 1)
-        : 0;
+      const sorted = layouts.map((l, i) => ({ l, i })).sort((a, b) => a.l.y - b.l.y);
+      const gap = sorted.length > 1 ? (bottom - top) / (sorted.length - 1) : 0;
       const placed = new Array<BlockLayout>(layouts.length);
       sorted.forEach(({ l, i }, idx) => {
         placed[i] = normalizeBlockLayout({ ...l, y: top + gap * idx });

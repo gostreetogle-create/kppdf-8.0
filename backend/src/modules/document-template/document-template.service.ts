@@ -30,7 +30,7 @@ import { WorkType, WorkTypeDocument } from '../work-type/work-type.schema';
 import { TableTemplateService } from '../table-template/table-template.service';
 import { TextBlock, TextBlockDocument } from '../text-block/text-block.schema';
 import { sanitizeHtml } from '../../common/sanitize-html';
-import { blockLayoutStyle } from './layout-renderer';
+import { blockBackgroundStyle, blockLayoutStyle } from './layout-renderer';
 import { DocumentTemplateCategoryService } from '../document-template-category/document-template-category.service';
 
 function escapeHtmlValue(value: string): string {
@@ -912,8 +912,10 @@ export class DocumentTemplateService {
         const imageSettings = b.settings as { role?: string; imageUrl?: string } | undefined;
         const imageContent = safeImageUrl(content) || safeImageUrl(imageSettings?.imageUrl);
         const layoutStyle = blockLayoutStyle(b.layout);
+        const bgStyle = blockBackgroundStyle(b.settings as Record<string, unknown> | undefined);
+        const combinedStyle = [layoutStyle, bgStyle].filter(Boolean).join(';');
         const blockClass = layoutStyle ? 'block block--positioned' : 'block';
-        const styleAttr = layoutStyle ? ` style="${layoutStyle}"` : '';
+        const styleAttr = combinedStyle ? ` style="${combinedStyle}"` : '';
         const cols = b.columns ?? [];
         const multiColHtml =
           cols.length > 1
@@ -933,11 +935,11 @@ export class DocumentTemplateService {
             const settings = b.settings as { role?: string } | undefined;
             if (settings?.role === 'separator') {
               const h = b.height ?? 40;
-              return `<div class="${blockClass}" style="${[layoutStyle, `height:${h}px`].filter(Boolean).join(';')}"></div>`;
+              return `<div class="${blockClass}" style="${[combinedStyle, `height:${h}px`].filter(Boolean).join(';')}"></div>`;
             }
             return imageContent
               ? `<div class="${blockClass}"${styleAttr}><img src="${imageContent}" alt="" style="max-width:100%"></div>`
-              : `<div class="${blockClass}" style="${[layoutStyle, `height:${b.height ?? 80}px`].filter(Boolean).join(';')}"></div>`;
+              : `<div class="${blockClass}" style="${[combinedStyle, `height:${b.height ?? 80}px`].filter(Boolean).join(';')}"></div>`;
           }
           case 'signature':
             return `<div class="${blockClass}"${styleAttr}><em>Подпись: ___________________</em><br>${content}</div>`;

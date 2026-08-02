@@ -23,13 +23,13 @@
   background: rgba(128, 128, 128, 0.05);
 }
 
-/* TZ-211: Selected — gold border + shadow */
+/* TZ-DOC-269: Selected — STRICT, noticeably thicker gold frame.
+   Border (1px) + inset ring (1px) = crisp 2px frame with no glow and
+   no drop shadow; border-box stays 1px so the block does not shift. */
 .block-renderer.is-selected {
   border-color: var(--color-gold);
   background: rgba(255, 255, 255, 0.5);
-  box-shadow:
-    0 0 0 1px var(--color-gold),
-    0 2px 8px -2px rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 0 0 1px var(--color-gold);
 }
 
 /* TZ-211: Multi-selected — gold-soft background */
@@ -235,11 +235,17 @@
 }
 
 /* ═══ Image block (flow mode) ═══ */
+/* TZ-DOC-270: the image is clipped to the inner frame. For canonical /
+   flow blocks the handles are SIBLINGS of this wrap, so overflow:hidden
+   here is safe. The overlay variant below deliberately re-opens it and
+   clips via the inner .block-renderer__image-clip container instead. */
 .block-renderer__image-wrap {
   position: relative;
   display: inline-block;
   max-width: 100%;
   line-height: 0;
+  overflow: hidden;
+  border-radius: 2px;
 }
 
 .block-renderer__image {
@@ -305,6 +311,20 @@
   position: relative;
   display: inline-block;
   line-height: 0;
+  /* TZ-DOC-270: the corner-resize handle sits at right:-8px/bottom:-8px
+     OUTSIDE this wrap — it must stay visible and clickable. Clipping is
+     done by the inner .block-renderer__image-clip container. */
+  overflow: visible;
+  border-radius: 0;
+}
+
+/* TZ-DOC-270: inner clipping container for overlay images — the image is
+   never painted outside the frame; the outer wrap keeps the handles. */
+.block-renderer__image-clip {
+  display: block;
+  overflow: hidden;
+  line-height: 0;
+  border-radius: 1px;
 }
 
 .block-renderer__image--overlay {
@@ -365,9 +385,8 @@
   opacity: 1;
 }
 
-.block-renderer__corner-resize svg {
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
-}
+/* TZ-DOC-269: no decorative glow on the corner handle (rule removed —
+   the svg has no other filter source, so filter: none was dead weight). */
 
 /* ═══ Snap indicator ═══ */
 .block-renderer--overlay.is-snapping .block-renderer__image-wrap--overlay {
@@ -377,10 +396,7 @@
   outline-offset: 2px;
 }
 
-/* Subtle snap guide glow */
-.block-renderer--overlay.is-snapping {
-  filter: drop-shadow(0 0 6px rgba(79, 195, 247, 0.35));
-}
+/* TZ-DOC-269: snap feedback stays a strict outline — no glow filter. */
 
 /* Spacer block */
 .block-renderer__spacer {
@@ -530,14 +546,14 @@
   left: -4px;
 }
 
-/* Corners */
+/* Corners — TZ-DOC-269: strict squares, no decorative circles. */
 .block-renderer__resize--nw,
 .block-renderer__resize--ne,
 .block-renderer__resize--sw,
 .block-renderer__resize--se {
   width: 11px;
   height: 11px;
-  border-radius: 50%;
+  border-radius: 1px;
 }
 .block-renderer__resize--nw {
   top: -5px;

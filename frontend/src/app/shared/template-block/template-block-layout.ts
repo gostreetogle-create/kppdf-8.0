@@ -133,3 +133,101 @@ export function defaultBlockLayout(index: number): BlockLayout {
     rotation: 0,
   });
 }
+
+/** Layer-order operations for canonical positioned blocks (TZ-DOC-271). */
+export type LayerOrderMode = 'front' | 'back' | 'raise' | 'lower';
+
+/**
+ * Compute a NEW compact z-index for every positioned block after a
+ * layer-order operation applied to `targetIds`. Pure + deterministic:
+ * identical inputs always produce identical outputs.
+ *
+ * Semantics (documented multi-select behaviour):
+ *   - `front`: the selected blocks move to the TOP of the stack, preserving
+ *     their internal order;
+ *   - `back`:  the selected blocks move to the BOTTOM of the stack,
+ *     preserving their internal order;
+ *   - `raise`: each selected block swaps with the nearest unselected block
+ *     above it (a selected group rises as a unit past the non-selected);
+ *   - `lower`: each selected block swaps with the nearest unselected block
+ *     below it (symmetric to raise).
+ *
+ * The result is a FULL compact reindex (0..n-1) so callers can diff and
+ * emit only the blocks whose zIndex actually changed. `normalizeBlockLayout`
+ * clamps zIndex to >= 0, so sequential reindexing never collides with the
+ * clamp and never produces negative or NaN values.
+ */
+export function computeLayerOrder(
+  entries: ReadonlyArray<{ blockId: string; zIndex: number }>,
+  targetIds: ReadonlySet<string>,
+  mode: LayerOrderMode,
+): Map<string, number> {
+  const result = new Map<string, number>();
+  if (entries.length === 0 || targetIds.size === 0) return result;
+
+  // Stable sort: zIndex asc, original index as tie-breaker.
+  const sorted = entries
+    .map((e, i) => ({ blockId: e.blockId, zIndex: e.zIndex, order: i }))
+    .sort((a, b) => a.zIndex - b.zIndex || a.order - b.order);
+  const isTarget = (id: string): boolean => targetIds.has(id);
+  const originalIndex = new Map<string, number>(sorted.map((e, i) => [e.blockId, i]));
+
+  const selected = sorted.filter((e) => isTarget(e.blockId));
+  const others = sorted.filter((e) => !isTarget(e.blockId));
+  if (selected.length === 0 || others.length === 0) {
+    // All blocks selected (or none) — nothing to reorder.
+    sorted.forEach((e, i) => result.set(e.blockId, i));
+    return result;
+  }
+
+  let ordered: Array<{ blockId: string; zIndex: number; order: number }>;
+  if (mode === 'front') {
+    // Selected group to the TOP as a unit, internal order preserved.
+    ordered = [...others, ...selected];
+  } else if (mode === 'back') {
+    // Selected group to the BOTTOM as a unit, internal order preserved.
+    ordered = [...selected, ...others];
+  } else if (mode === 'raise') {
+    // Group rises by ONE slot: re-insert it right above the nearest
+    // non-selected block currently above the group's top. Internal order
+    // is always preserved (works for single AND multi selection).
+    const groupTop = Math.max(...sorted.map((e, i) => (isTarget(e.blockId) ? i : -1)));
+    const aboveIdx = others.findIndex((o) => originalIndex.get(o.blockId)! > groupTop);
+    if (aboveIdx === -1) {
+      // Already at the top — no-op.
+      sorted.forEach((e, i) => result.set(e.blockId, i));
+      return result;
+    }
+    ordered = [
+      ...others.slice(0, aboveIdx),
+      others[aboveIdx],
+      ...selected,
+      ...others.slice(aboveIdx + 1),
+    ];
+  } else {
+    // Group sinks by ONE slot: re-insert it right below the nearest
+    // non-selected block currently below the group's bottom.
+    const groupBottom = Math.min(...sorted.map((e, i) => (isTarget(e.blockId) ? i : Infinity)));
+    let belowIdx = -1;
+    for (let i = others.length - 1; i >= 0; i--) {
+      if (originalIndex.get(others[i].blockId)! < groupBottom) {
+        belowIdx = i;
+        break;
+      }
+    }
+    if (belowIdx === -1) {
+      // Already at the bottom — no-op.
+      sorted.forEach((e, i) => result.set(e.blockId, i));
+      return result;
+    }
+    ordered = [
+      ...others.slice(0, belowIdx),
+      ...selected,
+      others[belowIdx],
+      ...others.slice(belowIdx + 1),
+    ];
+  }
+
+  ordered.forEach((e, idx) => result.set(e.blockId, idx));
+  return result;
+}

@@ -12,6 +12,7 @@ import {
   computeLayoutResize,
   layoutBlockToRect,
   overlayBlockToRect,
+  selectRectsInMarquee,
   snapValueToGrid,
   SNAP_THRESHOLD_PX,
   type Rect,
@@ -25,6 +26,65 @@ const rect = (id: string, left: number, top: number, w: number, h: number): Rect
   top,
   width: w,
   height: h,
+});
+
+describe('selectRectsInMarquee (TZ-DOC-272)', () => {
+  const candidates = () => [
+    rect('a', 0, 0, 100, 100),
+    rect('b', 200, 200, 100, 100),
+    rect('c', 500, 500, 50, 50),
+  ];
+
+  it('selects blocks that intersect the marquee (default policy)', () => {
+    const result = selectRectsInMarquee(candidates(), rect('m', 50, 50, 300, 300));
+    expect(result).toContain('a');
+    expect(result).toContain('b');
+    expect(result).not.toContain('c');
+  });
+
+  it('handles a marquee dragged up-left (negative width/height)', () => {
+    const result = selectRectsInMarquee(candidates(), rect('m', 350, 350, -300, -300));
+    // Normalised rect is (50,50)-(350,350) → same as the positive case.
+    expect(result).toEqual(['a', 'b']);
+  });
+
+  it('touching edges only do NOT count as intersection (strict)', () => {
+    const result = selectRectsInMarquee(candidates(), rect('m', 100, 100, 100, 100));
+    // 'a' ends exactly at x=100/y=100 — edge touch is excluded.
+    expect(result).toEqual([]);
+  });
+
+  it('contain policy requires the block fully inside the marquee', () => {
+    const result = selectRectsInMarquee(candidates(), rect('m', 0, 0, 400, 400), 'contain');
+    expect(result).toEqual(['a', 'b']);
+    // Partial overlap: 'd' at (350,350,300,300) spans to (650,650), which
+    // overlaps the marquee (100,100)-(500,500) but is NOT fully inside.
+    const partial = selectRectsInMarquee(
+      [rect('d', 350, 350, 300, 300)],
+      rect('m', 100, 100, 400, 400),
+      'contain',
+    );
+    expect(partial).toEqual([]);
+  });
+
+  it('skips candidates with non-positive dimensions', () => {
+    const result = selectRectsInMarquee(
+      [rect('ok', 10, 10, 50, 50), rect('zero', 10, 10, 0, 50)],
+      rect('m', 0, 0, 500, 500),
+    );
+    expect(result).toEqual(['ok']);
+  });
+
+  it('returns ids in input order and never mutates input', () => {
+    const input = candidates();
+    const result = selectRectsInMarquee(input, rect('m', 0, 0, 1000, 1000));
+    expect(result).toEqual(['a', 'b', 'c']);
+    expect(input.map((r) => r.blockId)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('returns an empty array for empty candidates', () => {
+    expect(selectRectsInMarquee([], rect('m', 0, 0, 100, 100))).toEqual([]);
+  });
 });
 
 describe('snapValueToGrid', () => {
@@ -155,18 +215,12 @@ describe('computeAlignmentGuides', () => {
   });
 
   it('defensively ignores neighbours with NaN or Infinity coordinates', () => {
-    expect(
-      computeAlignmentGuides(makeDragged(), [rect('n', Number.NaN, 200, 50, 50)]),
-    ).toEqual([]);
+    expect(computeAlignmentGuides(makeDragged(), [rect('n', Number.NaN, 200, 50, 50)])).toEqual([]);
     expect(
       computeAlignmentGuides(makeDragged(), [rect('n', 0, Number.POSITIVE_INFINITY, 50, 50)]),
     ).toEqual([]);
-    expect(
-      computeAlignmentGuides(makeDragged(), [rect('n', 0, 200, Number.NaN, 50)]),
-    ).toEqual([]);
-    expect(
-      computeAlignmentGuides(makeDragged(), [rect('n', 0, 200, 50, -1)]),
-    ).toEqual([]);
+    expect(computeAlignmentGuides(makeDragged(), [rect('n', 0, 200, Number.NaN, 50)])).toEqual([]);
+    expect(computeAlignmentGuides(makeDragged(), [rect('n', 0, 200, 50, -1)])).toEqual([]);
   });
 
   it('honours a custom threshold parameter', () => {
@@ -296,11 +350,7 @@ describe('collapseAlignmentGuides', () => {
       g('x', 'left', 100, 6, 'd'), // dup x-edge-left → dropped
       g('x', 'cx', 150, 2, 'e'), // unique x-kind-center
     ];
-    expect(collapseAlignmentGuides(input)).toEqual([
-      input[0],
-      input[2],
-      input[4],
-    ]);
+    expect(collapseAlignmentGuides(input)).toEqual([input[0], input[2], input[4]]);
   });
 
   it('treats cx (X center) and cy (Y center) as separate keys', () => {
@@ -310,10 +360,7 @@ describe('collapseAlignmentGuides', () => {
   });
 
   it('does NOT mutate input', () => {
-    const input = [
-      g('x', 'left', 100, 2, 'a'),
-      g('x', 'left', 100, 4, 'b'),
-    ];
+    const input = [g('x', 'left', 100, 2, 'a'), g('x', 'left', 100, 4, 'b')];
     const snapshot = input.map((x) => ({ ...x }));
     collapseAlignmentGuides(input);
     expect(input).toEqual(snapshot);
@@ -357,7 +404,12 @@ describe('overlayBlockToRect', () => {
     expect(
       overlayBlockToRect({
         blockId: 'a',
-        settings: { overlay: true, imageWidth: 50, imageHeight: 50, overlayLeft: Number.NaN as unknown },
+        settings: {
+          overlay: true,
+          imageWidth: 50,
+          imageHeight: 50,
+          overlayLeft: Number.NaN as unknown,
+        },
       }),
     ).toBeNull();
   });
@@ -525,10 +577,7 @@ describe('computeAlignLayouts (TZ-259.6)', () => {
   });
 
   it('top aligns y to the minimum', () => {
-    const out = computeAlignLayouts(
-      [entry('a', { y: 0.3 }), entry('b', { y: 0.05 })],
-      'top',
-    );
+    const out = computeAlignLayouts([entry('a', { y: 0.3 }), entry('b', { y: 0.05 })], 'top');
     expect(out.map((e) => e.layout.y)).toEqual([0.05, 0.05]);
   });
 
@@ -553,10 +602,7 @@ describe('computeAlignLayouts (TZ-259.6)', () => {
   });
 
   it('preserves order and identity of input entries', () => {
-    const out = computeAlignLayouts(
-      [entry('z', { x: 0.5 }), entry('a', { x: 0.1 })],
-      'left',
-    );
+    const out = computeAlignLayouts([entry('z', { x: 0.5 }), entry('a', { x: 0.1 })], 'left');
     expect(out.map((e) => e.blockId)).toEqual(['z', 'a']);
     expect(out[0].layout.x).toBeCloseTo(0.1, 5);
   });

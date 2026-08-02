@@ -1,5 +1,6 @@
 import {
   clampLayoutDelta,
+  computeLayerOrder,
   defaultBlockLayout,
   legacyOverlayToLayout,
   normalizeBlockLayout,
@@ -74,5 +75,114 @@ describe('template-block-layout', () => {
       zIndex: 1,
       rotation: 0,
     });
+  });
+});
+
+describe('computeLayerOrder (TZ-DOC-271)', () => {
+  const stack = () => [
+    { blockId: 'a', zIndex: 0 },
+    { blockId: 'b', zIndex: 1 },
+    { blockId: 'c', zIndex: 2 },
+    { blockId: 'd', zIndex: 3 },
+  ];
+
+  it('moves a single block to the front preserving others', () => {
+    const result = computeLayerOrder(stack(), new Set(['b']), 'front');
+    expect([...result.values()]).toEqual([0, 1, 2, 3]);
+    expect(result.get('a')).toBe(0);
+    expect(result.get('c')).toBe(1);
+    expect(result.get('d')).toBe(2);
+    expect(result.get('b')).toBe(3);
+  });
+
+  it('moves a single block to the back preserving others', () => {
+    const result = computeLayerOrder(stack(), new Set(['c']), 'back');
+    expect(result.get('c')).toBe(0);
+    expect(result.get('a')).toBe(1);
+    expect(result.get('b')).toBe(2);
+    expect(result.get('d')).toBe(3);
+  });
+
+  it('raises a block one step (swap with the next unselected)', () => {
+    const result = computeLayerOrder(stack(), new Set(['b']), 'raise');
+    expect(result.get('b')).toBe(2);
+    expect(result.get('c')).toBe(1);
+    expect(result.get('a')).toBe(0);
+    expect(result.get('d')).toBe(3);
+  });
+
+  it('lowers a block one step (swap with the previous unselected)', () => {
+    const result = computeLayerOrder(stack(), new Set(['c']), 'lower');
+    expect(result.get('c')).toBe(1);
+    expect(result.get('b')).toBe(2);
+    expect(result.get('a')).toBe(0);
+    expect(result.get('d')).toBe(3);
+  });
+
+  it('raise at the top is a no-op', () => {
+    const result = computeLayerOrder(stack(), new Set(['d']), 'raise');
+    expect([...result.values()]).toEqual([0, 1, 2, 3]);
+  });
+
+  it('lower at the bottom is a no-op', () => {
+    const result = computeLayerOrder(stack(), new Set(['a']), 'lower');
+    expect([...result.values()]).toEqual([0, 1, 2, 3]);
+  });
+
+  it('moves a multi-selection to the front as a unit preserving internal order', () => {
+    const result = computeLayerOrder(stack(), new Set(['a', 'c']), 'front');
+    expect(result.get('b')).toBe(0);
+    expect(result.get('d')).toBe(1);
+    expect(result.get('a')).toBe(2);
+    expect(result.get('c')).toBe(3);
+  });
+
+  it('moves a multi-selection to the back as a unit preserving internal order', () => {
+    const result = computeLayerOrder(stack(), new Set(['b', 'd']), 'back');
+    expect(result.get('b')).toBe(0);
+    expect(result.get('d')).toBe(1);
+    expect(result.get('a')).toBe(2);
+    expect(result.get('c')).toBe(3);
+  });
+
+  it('raises a selected group as a unit by one slot, preserving internal order', () => {
+    const result = computeLayerOrder(stack(), new Set(['a', 'b']), 'raise');
+    // [a,b] rise one slot past c → [c, a, b, d]; internal order kept.
+    expect(result.get('c')).toBe(0);
+    expect(result.get('a')).toBe(1);
+    expect(result.get('b')).toBe(2);
+    expect(result.get('d')).toBe(3);
+  });
+
+  it('lowers a selected group as a unit by one slot, preserving internal order', () => {
+    const result = computeLayerOrder(stack(), new Set(['c', 'd']), 'lower');
+    // [c,d] sink one slot below b → [a, c, d, b]; internal order kept.
+    expect(result.get('a')).toBe(0);
+    expect(result.get('c')).toBe(1);
+    expect(result.get('d')).toBe(2);
+    expect(result.get('b')).toBe(3);
+  });
+
+  it('produces a compact 0..n-1 reindex (no gaps, no negatives)', () => {
+    const result = computeLayerOrder(stack(), new Set(['a']), 'back');
+    const values = [...result.values()].sort((x, y) => x - y);
+    expect(values).toEqual([0, 1, 2, 3]);
+  });
+
+  it('is deterministic for identical inputs', () => {
+    const a = computeLayerOrder(stack(), new Set(['b', 'c']), 'front');
+    const b = computeLayerOrder(stack(), new Set(['b', 'c']), 'front');
+    expect([...a.entries()]).toEqual([...b.entries()]);
+  });
+
+  it('returns an empty map for empty targets or empty entries', () => {
+    expect(computeLayerOrder(stack(), new Set(), 'front').size).toBe(0);
+    expect(computeLayerOrder([], new Set(['a']), 'front').size).toBe(0);
+  });
+
+  it('does not mutate the input entries', () => {
+    const input = stack();
+    computeLayerOrder(input, new Set(['b']), 'front');
+    expect(input.map((e) => e.zIndex)).toEqual([0, 1, 2, 3]);
   });
 });

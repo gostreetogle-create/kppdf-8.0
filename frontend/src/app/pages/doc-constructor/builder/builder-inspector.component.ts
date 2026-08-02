@@ -23,11 +23,17 @@ import {
 } from 'lucide-angular';
 import {
   BLOCK_TYPE_LABELS,
+  blockKey,
   type BlockType,
   type DataBinding,
   type TemplateBlock,
 } from '../../../shared/template-block/template-block.types';
-import { normalizeBlockLayout } from '../../../shared/template-block/template-block-layout';
+import {
+  computeLayerOrder,
+  normalizeBlockLayout,
+  type LayerOrderMode,
+} from '../../../shared/template-block/template-block-layout';
+import { clampOpacity } from './block-renderer-state.service';
 import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
@@ -124,6 +130,18 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 class="toggle-checkbox"
                 [checked]="localSnapEnabled()"
                 (change)="onSnapEnabledChange($any($event.target).checked)"
+              />
+            </label>
+            <!-- TZ-DOC-269: decorative grid dots are an explicit opt-in mode. -->
+            <label class="toggle-row">
+              <div class="toggle-row__left">
+                <span class="toggle-row__label">Показывать сетку</span>
+              </div>
+              <input
+                type="checkbox"
+                class="toggle-checkbox"
+                [checked]="localGridVisible()"
+                (change)="onGridVisibilityChange($any($event.target).checked)"
               />
             </label>
             <div class="field">
@@ -349,6 +367,68 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
             </button>
           </div>
 
+          <!-- TZ-DOC-272: explicit editor-only group actions. -->
+          <div class="inspector__section">
+            <span class="inspector__section-title">Группа</span>
+            @if (grouped()) {
+              <p class="inspector__group-badge">Группа из {{ selectedCount() }} блоков</p>
+              <app-pi-button variant="outline" size="sm" (click)="ungroupSelected.emit()">
+                Разгруппировать
+              </app-pi-button>
+            } @else {
+              <app-pi-button
+                variant="outline"
+                size="sm"
+                (click)="groupSelected.emit()"
+                [disabled]="layerOrderTargets().length < 2"
+              >
+                Сгруппировать
+              </app-pi-button>
+            }
+          </div>
+
+          <!-- TZ-DOC-271: group layer order (multi-select) — operates on the
+               selected positioned blocks as a unit. -->
+          @if (layerOrderTargets().length > 0) {
+            <div class="inspector__section">
+              <span class="inspector__section-title">Порядок слоёв</span>
+              <div class="layer-order-actions">
+                <button
+                  type="button"
+                  class="layer-order-btn"
+                  (click)="onLayerOrder('front')"
+                  title="На передний план"
+                >
+                  На передний план
+                </button>
+                <button
+                  type="button"
+                  class="layer-order-btn"
+                  (click)="onLayerOrder('raise')"
+                  title="Выше"
+                >
+                  Выше
+                </button>
+                <button
+                  type="button"
+                  class="layer-order-btn"
+                  (click)="onLayerOrder('lower')"
+                  title="Ниже"
+                >
+                  Ниже
+                </button>
+                <button
+                  type="button"
+                  class="layer-order-btn"
+                  (click)="onLayerOrder('back')"
+                  title="На задний план"
+                >
+                  На задний план
+                </button>
+              </div>
+            </div>
+          }
+
           <!-- Delete (separated by divider, at the bottom) -->
           <div class="inspector__section inspector__section--danger">
             <app-pi-button
@@ -391,6 +471,42 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
               <span class="field__label">Линия снизу</span>
               <app-pi-switch [checked]="showLine()" (checkedChange)="onShowLineChange($event)" />
             </label>
+          }
+
+          <!-- TZ-DOC-273: block background color + opacity (not for spacer) -->
+          @if (block()!.type !== 'spacer') {
+            <div class="field">
+              <div class="field__row-header">
+                <span class="field__label">Фон блока</span>
+                <span class="field__value">{{ blockBgOpacityPercent() }}%</span>
+              </div>
+              <div class="block-bg-row">
+                <input
+                  type="color"
+                  class="block-bg-swatch pi-focus-ring"
+                  [value]="blockBgColorHex()"
+                  (input)="onBlockBgColorInput($event)"
+                  aria-label="Цвет фона блока"
+                />
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  class="field__slider"
+                  [value]="blockBgOpacityPercent()"
+                  (input)="onBlockBgOpacityInput($event)"
+                />
+                <button
+                  type="button"
+                  class="field__reset-btn"
+                  (click)="onBlockBgReset()"
+                  [disabled]="!hasBlockBg()"
+                >
+                  Сбросить
+                </button>
+              </div>
+            </div>
           }
 
           <!-- Content (text/header) -->
@@ -645,6 +761,45 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                     <span class="margin-controls__unit">px</span>
                   </div>
                 </label>
+              </div>
+            </div>
+
+            <!-- TZ-DOC-271: layer order for canonical positioned blocks. -->
+            <div class="inspector__section">
+              <span class="inspector__section-title">Порядок слоёв</span>
+              <div class="layer-order-actions">
+                <button
+                  type="button"
+                  class="layer-order-btn"
+                  (click)="onLayerOrder('front')"
+                  title="На передний план"
+                >
+                  На передний план
+                </button>
+                <button
+                  type="button"
+                  class="layer-order-btn"
+                  (click)="onLayerOrder('raise')"
+                  title="Выше"
+                >
+                  Выше
+                </button>
+                <button
+                  type="button"
+                  class="layer-order-btn"
+                  (click)="onLayerOrder('lower')"
+                  title="Ниже"
+                >
+                  Ниже
+                </button>
+                <button
+                  type="button"
+                  class="layer-order-btn"
+                  (click)="onLayerOrder('back')"
+                  title="На задний план"
+                >
+                  На задний план
+                </button>
               </div>
             </div>
           } @else {
@@ -1112,6 +1267,76 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         cursor: not-allowed;
       }
 
+      /* TZ-DOC-273: block background color + opacity controls. */
+      .block-bg-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 8px;
+      }
+
+      .block-bg-swatch {
+        width: 36px;
+        height: 32px;
+        padding: 2px;
+        border: 1px solid var(--color-rule, #d0c5af);
+        border-radius: 2px;
+        background: transparent;
+        cursor: pointer;
+      }
+
+      .block-bg-swatch::-webkit-color-swatch-wrapper {
+        padding: 0;
+      }
+
+      .block-bg-swatch::-webkit-color-swatch {
+        border: none;
+        border-radius: 1px;
+      }
+
+      /* TZ-DOC-271: compact layer-order actions (front/raise/lower/back). */
+      .layer-order-actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .layer-order-btn {
+        padding: 4px 8px;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--color-ink);
+        background: var(--color-paper);
+        border: 1px solid var(--color-rule);
+        border-radius: 2px;
+        cursor: pointer;
+        transition: all 100ms ease;
+      }
+
+      .layer-order-btn:hover:not(:disabled) {
+        color: var(--color-paper);
+        background: var(--color-ink);
+        border-color: var(--color-ink);
+      }
+
+      .layer-order-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      /* TZ-DOC-272: editor-only group badge. */
+      .inspector__group-badge {
+        margin: 0 0 8px;
+        padding: 4px 8px;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--color-gold);
+        background: var(--color-gold-soft);
+        border: 1px solid var(--color-gold);
+        border-radius: 2px;
+        text-align: center;
+      }
+
       /* ── Orientation buttons ── */
       .orientation-btns {
         display: flex;
@@ -1509,14 +1734,35 @@ export class BuilderInspectorComponent {
   readonly gridSize = input<number>(20);
   /** Padding from paper edges (px) (input from parent). */
   readonly boundaryPadding = input<number>(8);
+  /**
+   * TZ-DOC-269: show the magnetic grid dots overlay (input from parent).
+   * Off by default; snap and guides work with the grid hidden.
+   */
+  readonly gridVisible = input<boolean>(false);
   /** Emitted when user changes snap settings via the inspector. */
   readonly snapSettingsChange = output<{
     snapEnabled: boolean;
     gridSize: number;
     boundaryPadding?: number;
   }>();
+  /** TZ-DOC-269: emitted when the user toggles the grid-dots overlay. */
+  readonly gridVisibilityChange = output<boolean>();
   /** Emitted when user clicks close on template properties panel. */
   readonly closePanel = output<void>();
+  /**
+   * TZ-DOC-271: emitted when a layer-order action (front/back/raise/lower)
+   * is applied. Carries only the blocks whose zIndex actually changed, in
+   * the same shape as the canvas `layoutChanges` output so the page can
+   * route both through the single batch `updateLayouts` + rollback path.
+   */
+  readonly layoutOrderChange =
+    output<Array<{ block: TemplateBlock; layout: NonNullable<TemplateBlock['layout']> }>>();
+  /** TZ-DOC-272: true while the selection is an explicit editor-only group. */
+  readonly grouped = input<boolean>(false);
+  /** TZ-DOC-272: emitted when the user clicks «Сгруппировать». */
+  readonly groupSelected = output<void>();
+  /** TZ-DOC-272: emitted when the user clicks «Разгруппировать». */
+  readonly ungroupSelected = output<void>();
 
   // Icons
   protected readonly ResetIcon = RotateCcw;
@@ -1562,6 +1808,7 @@ export class BuilderInspectorComponent {
   protected readonly localSnapEnabled = signal<boolean>(true);
   protected readonly localGridSize = signal<number>(20);
   protected readonly localBoundaryPadding = signal<number>(8);
+  protected readonly localGridVisible = signal<boolean>(false);
 
   // Template opacity display
   protected readonly opacityPercent = computed<number>(() => {
@@ -1671,6 +1918,7 @@ export class BuilderInspectorComponent {
       this.localSnapEnabled.set(this.snapEnabled());
       this.localGridSize.set(this.gridSize());
       this.localBoundaryPadding.set(this.boundaryPadding());
+      this.localGridVisible.set(this.gridVisible());
     });
 
     // Debounced text input for template properties (prevents orientation jumping)
@@ -1717,6 +1965,52 @@ export class BuilderInspectorComponent {
     this.patch({ showLine: checked });
   }
 
+  // ── TZ-DOC-273: block background color + opacity ──
+
+  /**
+   * Current safe hex from block settings, normalized to `#rrggbb` for the
+   * native `<input type="color">` value (defaults to white when unset).
+   */
+  protected readonly blockBgColorHex = computed<string>(() => {
+    const s = this.block()?.settings as Record<string, unknown> | undefined;
+    const color = s?.['blockBackgroundColor'];
+    if (typeof color === 'string') {
+      const stripped = color.startsWith('#') ? color.slice(1) : color;
+      if (/^[0-9a-fA-F]{6}$/.test(stripped)) return `#${stripped.toLowerCase()}`;
+    }
+    return '#ffffff';
+  });
+
+  /** Block opacity as a 0–100 percent for the slider. */
+  protected readonly blockBgOpacityPercent = computed<number>(() => {
+    const s = this.block()?.settings as Record<string, unknown> | undefined;
+    const o = s?.['blockOpacity'];
+    return typeof o === 'number' && Number.isFinite(o) ? Math.round(clampOpacity(o) * 100) : 0;
+  });
+
+  /** Whether a non-empty background color is set (enables the reset button). */
+  protected readonly hasBlockBg = computed<boolean>(() => {
+    const s = this.block()?.settings as Record<string, unknown> | undefined;
+    const color = s?.['blockBackgroundColor'];
+    return typeof color === 'string' && color.length > 0;
+  });
+
+  protected onBlockBgColorInput(event: Event): void {
+    const v = (event.target as HTMLInputElement).value; // native picker → #rrggbb
+    if (!/^#[0-9a-fA-F]{6}$/.test(v)) return;
+    this.patchSettings({ blockBackgroundColor: v });
+  }
+
+  protected onBlockBgOpacityInput(event: Event): void {
+    const v = Number((event.target as HTMLInputElement).value);
+    if (!Number.isFinite(v)) return;
+    this.patchSettings({ blockOpacity: clampOpacity(v / 100) });
+  }
+
+  protected onBlockBgReset(): void {
+    this.patchSettings({ blockBackgroundColor: '', blockOpacity: 0 });
+  }
+
   protected onBindingValueInput(event: Event): void {
     const v = (event.target as HTMLInputElement).value;
     this.bindingValue.set(v);
@@ -1751,6 +2045,12 @@ export class BuilderInspectorComponent {
     const clamped = Math.max(0, Math.min(100, v));
     this.localBoundaryPadding.set(clamped);
     this.emitSnapSettings();
+  }
+
+  /** TZ-DOC-269: inspector toggle for the decorative grid-dots overlay. */
+  protected onGridVisibilityChange(visible: boolean): void {
+    this.localGridVisible.set(visible);
+    this.gridVisibilityChange.emit(visible);
   }
 
   private emitSnapSettings(): void {
@@ -1854,6 +2154,50 @@ export class BuilderInspectorComponent {
     if (!b?._id) return;
     const current = (b.settings ?? {}) as Record<string, unknown>;
     this.update.emit({ _id: b._id, settings: { ...current, ...partial } });
+  }
+
+  // ── TZ-DOC-271: layer order (front/back/raise/lower) ──
+
+  /**
+   * The positioned blocks a layer-order action applies to. In single-select
+   * that is the selected positioned block; in multi-select it is the subset
+   * of the selection that has canonical geometry. Returns [] when nothing
+   * can be re-ordered (flow-only selection).
+   */
+  protected readonly layerOrderTargets = computed<TemplateBlock[]>(() => {
+    const single = this.block();
+    if (single?.layout) return [single];
+    return this.selectedBlocks().filter((b) => !!b.layout);
+  });
+
+  /**
+   * Apply a layer-order operation to the current targets. Only the blocks
+   * whose zIndex actually changed are emitted (diff against the compact
+   * reindex), so a no-op action produces zero network traffic.
+   */
+  protected onLayerOrder(mode: LayerOrderMode): void {
+    const targets = this.layerOrderTargets();
+    if (targets.length === 0) return;
+    const targetIds = new Set(targets.map((b) => blockKey(b)));
+    const entries = this.allBlocks()
+      .filter((b) => !!b.layout)
+      .map((b) => ({ blockId: blockKey(b), zIndex: b.layout!.zIndex ?? 1 }));
+    const next = computeLayerOrder(entries, targetIds, mode);
+    // Emit EVERY positioned block whose zIndex changed under the compact
+    // reindex (targets AND non-targets). Diffing only the targets would leave
+    // neighbours with stale zIndex locally and on the server — breaking
+    // refresh persistence and the visual overlap order.
+    const changes = this.allBlocks()
+      .filter((b) => !!b.layout)
+      .map((b) => {
+        const zIndex = next.get(blockKey(b)) ?? b.layout!.zIndex;
+        return {
+          block: b,
+          layout: normalizeBlockLayout({ ...b.layout, zIndex }),
+        };
+      })
+      .filter((c) => c.layout.zIndex !== (c.block.layout?.zIndex ?? 1));
+    if (changes.length > 0) this.layoutOrderChange.emit(changes);
   }
 
   protected onRemoveBackground(index: number): void {

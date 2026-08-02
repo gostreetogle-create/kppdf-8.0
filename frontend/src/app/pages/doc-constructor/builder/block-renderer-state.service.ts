@@ -146,25 +146,7 @@ export class BlockRendererStateService {
 
   readonly blockBgColor = computed<string>(() => {
     const s = this.block().settings as Record<string, unknown> | undefined;
-    const color = s?.['blockBackgroundColor'];
-    const opacity = typeof s?.['blockOpacity'] === 'number' ? s['blockOpacity'] : 0;
-
-    if (typeof color !== 'string' || color.length === 0) return '';
-
-    const hex = color.replace('#', '');
-    let r = 0,
-      g = 0,
-      b = 0;
-    if (hex.length === 3) {
-      r = parseInt(hex[0] + hex[0], 16);
-      g = parseInt(hex[1] + hex[1], 16);
-      b = parseInt(hex[2] + hex[2], 16);
-    } else if (hex.length === 6) {
-      r = parseInt(hex.substring(0, 2), 16);
-      g = parseInt(hex.substring(2, 4), 16);
-      b = parseInt(hex.substring(4, 6), 16);
-    }
-    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    return blockBackgroundCss(s?.['blockBackgroundColor'], s?.['blockOpacity']);
   });
 
   // ═══════════════════════════════════════════════════════════
@@ -509,6 +491,15 @@ export class BlockRendererStateService {
   //  Resize calculation (pure)
   // ═══════════════════════════════════════════════════════════
 
+  /**
+   * TZ-DOC-270: corner resize for overlay images, hardened against
+   * zero/negative/NaN dimensions. The caller passes naturalWidth /
+   * naturalHeight which are 0 before the image finishes loading, and
+   * startWidth can come from corrupted settings — any of those would
+   * otherwise propagate NaN into the persisted size. Every input is
+   * sanitised to a finite positive default before the math runs, and
+   * the output is clamped to the same positive minima as before.
+   */
   computeCornerResize(
     event: MouseEvent,
     startMouseX: number,
@@ -517,15 +508,22 @@ export class BlockRendererStateService {
     naturalW: number,
     naturalH: number,
   ): { width: number; height: number } {
+    const safeNaturalW =
+      Number.isFinite(naturalW) && naturalW > 0 ? naturalW : OVERLAY_DEFAULT_WIDTH;
+    const safeNaturalH =
+      Number.isFinite(naturalH) && naturalH > 0 ? naturalH : OVERLAY_DEFAULT_HEIGHT;
+    const safeStart =
+      Number.isFinite(startWidth) && startWidth > 0 ? startWidth : OVERLAY_DEFAULT_WIDTH;
+
     const deltaX = event.clientX - startMouseX;
     const deltaY = event.clientY - startMouseY;
-    const aspectRatio = naturalW / naturalH;
+    const aspectRatio = safeNaturalW / safeNaturalH;
 
     const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     const sign = deltaX + deltaY >= 0 ? 1 : -1;
     const smoothDelta = sign * distance;
 
-    let newWidth = Math.round(Math.max(50, startWidth + smoothDelta));
+    let newWidth = Math.round(Math.max(50, safeStart + smoothDelta));
     let newHeight = Math.round(newWidth / aspectRatio);
 
     if (newHeight < 20) {
@@ -557,4 +555,32 @@ export class BlockRendererStateService {
       width: Math.round(Math.max(20, Math.min(100 - startMarginLeft, startWidth + deltaPercent))),
     };
   }
+}
+
+/** Clamp an opacity value to [0, 1]; non-finite values become 0. */
+export function clampOpacity(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(1, value));
+}
+
+/**
+ * TZ-DOC-273 — render a block background as an `rgba()` string, or `''` for
+ * transparent. Strict hex-only validation (`#RGB`/`#RRGGBB`, optional `#`):
+ * CSS injection (`url(...)`), gradients, named colors, and NaN are rejected.
+ * Opacity is clamped to [0, 1]. Mirrored server-side by `blockBackgroundStyle`
+ * in `backend/src/modules/document-template/layout-renderer.ts` so the
+ * generated document renders the same values as the builder preview.
+ */
+export function blockBackgroundCss(color: unknown, opacity: unknown): string {
+  if (typeof color !== 'string' || color.length === 0) return '';
+  const hex = color.startsWith('#') ? color.slice(1) : color;
+  if (!/^[0-9a-fA-F]{3}$/.test(hex) && !/^[0-9a-fA-F]{6}$/.test(hex)) return '';
+
+  const parts =
+    hex.length === 3
+      ? [hex[0] + hex[0], hex[1] + hex[1], hex[2] + hex[2]]
+      : [hex.slice(0, 2), hex.slice(2, 4), hex.slice(4, 6)];
+  const rgb = parts.map((p) => parseInt(p, 16));
+  if (rgb.some((v) => !Number.isFinite(v))) return '';
+  return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${clampOpacity(opacity)})`;
 }

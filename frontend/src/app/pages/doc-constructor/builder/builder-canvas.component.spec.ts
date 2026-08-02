@@ -3,7 +3,8 @@
  * alignment guides (TZ-237.MAGNETIC-GRID-r0 second slice \u2014 DOM coverage).
  *
  * Locks the user's \u00a710 acceptance criteria from the original brief:
- *   - grid layer rendered only when `snapEnabled` is true;
+ *   - grid layer rendered only when `gridVisible` is true (TZ-DOC-269:
+ *     opt-in working mode — hidden by default, snap keeps working);
  *   - guide layer rendered only while a drag rect is being emitted;
  *   - `aria-hidden="true"` on both layers;
  *   - print-CSS hides both layers (no carry-over to PDF);
@@ -153,6 +154,10 @@ describe('BuilderCanvasComponent \u2014 Magnetic Grid + Guides (TZ-237.MAGNETIC-
     fixture = TestBed.createComponent(BuilderCanvasComponent);
     fixture.componentRef.setInput('blocks', [TARGET_BLOCK]);
     fixture.componentRef.setInput('snapEnabled', true);
+    // TZ-DOC-269: the grid-dots overlay is opt-in; render it in beforeEach so
+    // the aria-hidden / gridSize DOM tests have a layer to query. The dedicated
+    // gating test below re-toggles it explicitly.
+    fixture.componentRef.setInput('gridVisible', true);
     fixture.detectChanges();
   });
 
@@ -165,18 +170,28 @@ describe('BuilderCanvasComponent \u2014 Magnetic Grid + Guides (TZ-237.MAGNETIC-
     document.head.querySelectorAll('style').forEach((s) => s.remove());
   });
 
-  it('renders the grid layer only when snapEnabled is true', () => {
-    expect(fixture.nativeElement.querySelector('.canvas-builder__grid-layer')).toBeTruthy();
-
-    fixture.componentRef.setInput('snapEnabled', false);
+  it('TZ-DOC-269: grid layer is opt-in via gridVisible — hidden by default and in preview', () => {
+    // Toggle off: no grid even though snapEnabled stays true (snap is
+    // independent of the decorative dots layer).
+    fixture.componentRef.setInput('gridVisible', false);
     fixture.detectChanges();
-
     expect(fixture.nativeElement.querySelector('.canvas-builder__grid-layer')).toBeFalsy();
 
-    // Reactivity: flipping back restores the layer.
-    fixture.componentRef.setInput('snapEnabled', true);
+    // Opt in: the layer appears.
+    fixture.componentRef.setInput('gridVisible', true);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.canvas-builder__grid-layer')).toBeTruthy();
+
+    // Reactivity: flipping back hides it again.
+    fixture.componentRef.setInput('gridVisible', false);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.canvas-builder__grid-layer')).toBeFalsy();
+
+    // Preview mode hides the grid even when the toggle is on (editor chrome).
+    fixture.componentRef.setInput('gridVisible', true);
+    fixture.componentRef.setInput('viewMode', 'preview');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.canvas-builder__grid-layer')).toBeFalsy();
   });
 
   it('renders the guide layer only while a drag rect is being emitted', () => {
@@ -258,6 +273,107 @@ describe('BuilderCanvasComponent \u2014 Magnetic Grid + Guides (TZ-237.MAGNETIC-
     fixture.detectChanges();
     const grid = fixture.nativeElement.querySelector('.canvas-builder__grid-layer');
     expect(grid.style.backgroundSize).toBe('40px');
+  });
+
+  // ═══ TZ-DOC-272: marquee (rectangle) selection ═══
+
+  /**
+   * Give the dropzone real dimensions (jsdom getBoundingClientRect reads
+   * offsetWidth/offsetHeight, which respect inline width/height) and
+   * dispatch a marquee drag: mousedown on the empty dropzone → document
+   * mousemove → document mouseup.
+   */
+  function dragMarquee(fromX: number, fromY: number, toX: number, toY: number): void {
+    const zone = fixture.nativeElement.querySelector('.canvas-dropzone') as HTMLElement;
+    zone.style.width = '720px';
+    zone.style.height = '1018px';
+    zone.dispatchEvent(
+      new MouseEvent('mousedown', { clientX: fromX, clientY: fromY, bubbles: true }),
+    );
+    document.dispatchEvent(new MouseEvent('mousemove', { clientX: toX, clientY: toY }));
+    document.dispatchEvent(new MouseEvent('mouseup', { clientX: toX, clientY: toY }));
+  }
+
+  it('TZ-DOC-272: marquee drag on empty canvas selects intersecting blocks', () => {
+    const spy = jest.fn();
+    fixture.componentInstance.marqueeSelect.subscribe(spy);
+
+    dragMarquee(10, 10, 350, 350);
+
+    // TARGET_BLOCK is an overlay image at (200,200) 100x100 → inside the
+    // marquee (10,10)-(350,350) → selected (intersect policy).
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy.mock.calls[0][0]).toContain('target-1');
+  });
+
+  it('TZ-DOC-272: marquee works in both directions (drag up-left)', () => {
+    const spy = jest.fn();
+    fixture.componentInstance.marqueeSelect.subscribe(spy);
+
+    dragMarquee(350, 350, 10, 10);
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy.mock.calls[0][0]).toContain('target-1');
+  });
+
+  it('TZ-DOC-272: marquee that misses every block emits nothing', () => {
+    const spy = jest.fn();
+    fixture.componentInstance.marqueeSelect.subscribe(spy);
+
+    dragMarquee(400, 400, 500, 500);
+
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('TZ-DOC-272: mousedown on a block never starts a marquee', () => {
+    const spy = jest.fn();
+    fixture.componentInstance.marqueeSelect.subscribe(spy);
+    const zone = fixture.nativeElement.querySelector('.canvas-dropzone') as HTMLElement;
+    zone.style.width = '720px';
+    zone.style.height = '1018px';
+
+    // Stub a block-renderer element as the mousedown target.
+    const blockEl = document.createElement('div');
+    blockEl.className = 'block-renderer block-renderer--overlay';
+    zone.appendChild(blockEl);
+    blockEl.dispatchEvent(new MouseEvent('mousedown', { clientX: 10, clientY: 10, bubbles: true }));
+    document.dispatchEvent(new MouseEvent('mousemove', { clientX: 350, clientY: 350 }));
+    document.dispatchEvent(new MouseEvent('mouseup', { clientX: 350, clientY: 350 }));
+
+    expect(fixture.componentInstance['marqueeActive']()).toBe(false);
+    expect(spy).not.toHaveBeenCalled();
+    blockEl.remove();
+  });
+
+  it('TZ-DOC-272: Escape cancels the marquee without emitting a selection', () => {
+    const spy = jest.fn();
+    fixture.componentInstance.marqueeSelect.subscribe(spy);
+    const zone = fixture.nativeElement.querySelector('.canvas-dropzone') as HTMLElement;
+    zone.style.width = '720px';
+    zone.style.height = '1018px';
+
+    zone.dispatchEvent(new MouseEvent('mousedown', { clientX: 10, clientY: 10, bubbles: true }));
+    document.dispatchEvent(new MouseEvent('mousemove', { clientX: 350, clientY: 350 }));
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    document.dispatchEvent(new MouseEvent('mouseup', { clientX: 350, clientY: 350 }));
+
+    expect(fixture.componentInstance['marqueeActive']()).toBe(false);
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('TZ-DOC-272: a plain click on empty canvas is not a marquee and keeps the default click', () => {
+    const spy = jest.fn();
+    fixture.componentInstance.marqueeSelect.subscribe(spy);
+    const zone = fixture.nativeElement.querySelector('.canvas-dropzone') as HTMLElement;
+    zone.style.width = '720px';
+    zone.style.height = '1018px';
+
+    zone.dispatchEvent(new MouseEvent('mousedown', { clientX: 50, clientY: 50, bubbles: true }));
+    document.dispatchEvent(new MouseEvent('mouseup', { clientX: 51, clientY: 51 }));
+
+    expect(spy).not.toHaveBeenCalled();
+    // suppressNextClick must be reset so the following click clears selection.
+    expect(fixture.componentInstance['suppressNextClick']()).toBe(false);
   });
 });
 

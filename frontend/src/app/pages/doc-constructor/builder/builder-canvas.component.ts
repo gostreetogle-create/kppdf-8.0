@@ -1,6 +1,18 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { CdkDropList, CdkDragDrop } from '@angular/cdk/drag-drop';
-import { LucideAngularModule, AlignLeft, AlignRight, AlignCenterHorizontal, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignHorizontalSpaceBetween, AlignVerticalSpaceBetween, MoveHorizontal, MoveVertical } from 'lucide-angular';
+import {
+  LucideAngularModule,
+  AlignLeft,
+  AlignRight,
+  AlignCenterHorizontal,
+  AlignStartVertical,
+  AlignCenterVertical,
+  AlignEndVertical,
+  AlignHorizontalSpaceBetween,
+  AlignVerticalSpaceBetween,
+  MoveHorizontal,
+  MoveVertical,
+} from 'lucide-angular';
 import { BlockRendererComponent } from './block-renderer.component';
 import { PiCanvasPageComponent } from '../../../shared/ui/canvas/pi-canvas-page.component';
 import { blockKey, type TemplateBlock } from '../../../shared/template-block/template-block.types';
@@ -12,6 +24,7 @@ import {
   computeAlignLayouts,
   layoutBlockToRect,
   overlayBlockToRect,
+  selectRectsInMarquee,
   type AlignEntry,
   type AlignMode,
   type Rect,
@@ -64,6 +77,7 @@ import {
         role="list"
         aria-label="Блоки документа"
         (cdkDropListDropped)="onDrop($event)"
+        (mousedown)="onCanvasMouseDown($event)"
         (click)="onCanvasClick($event)"
       >
         @if (blocks().length === 0) {
@@ -236,8 +250,10 @@ import {
           />
         }
 
-        @if (snapEnabled() && !isPreview()) {
-          <!-- TZ-237.MAGNETIC-GRID-r0: visible magnetic grid dots overlay. -->
+        @if (gridVisible() && !isPreview()) {
+          <!-- TZ-DOC-269: grid dots are an OPT-IN working mode (explicit
+               toggle in the inspector's snap settings). Snap and alignment
+               guides work with the grid hidden — this layer is decorative. -->
           <div
             class="canvas-builder__grid-layer"
             aria-hidden="true"
@@ -260,6 +276,17 @@ import {
               ></div>
             }
           </div>
+        }
+        @if (marqueeActive() && marqueeWidth() > 0) {
+          <!-- TZ-DOC-272: marquee selection rectangle (editor-only aid). -->
+          <div
+            class="canvas-marquee"
+            aria-hidden="true"
+            [style.left.px]="marqueeLeft()"
+            [style.top.px]="marqueeTop()"
+            [style.width.px]="marqueeWidth()"
+            [style.height.px]="marqueeHeight()"
+          ></div>
         }
       </div>
 
@@ -470,6 +497,15 @@ import {
         margin: 0 3px;
         background: var(--color-rule);
       }
+
+      /* TZ-DOC-272: marquee selection rectangle. */
+      .canvas-marquee {
+        position: absolute;
+        z-index: 300;
+        pointer-events: none;
+        background: rgba(196, 156, 20, 0.12);
+        border: 1px solid var(--color-gold);
+      }
     `,
 
     /* ── TZ-237.MAGNETIC-GRID-r0: magnetic grid + alignment guides ── */
@@ -580,12 +616,23 @@ export class BuilderCanvasComponent {
   readonly canvasClick = output<void>();
   /** TZ-211: Emitted when user clicks delete button on a block. */
   readonly deleteRequest = output<string>();
+  /**
+   * TZ-DOC-272: emitted when a marquee drag ends with a real selection.
+   * Carries the block ids (intersection policy) in canvas order.
+   */
+  readonly marqueeSelect = output<string[]>();
   /** Enable snap-to-grid for overlay blocks. */
   readonly snapEnabled = input<boolean>(true);
   /** Grid size for snapping (px). */
   readonly gridSize = input<number>(20);
   /** Padding from paper edges that overlay blocks cannot cross (px). */
   readonly boundaryPadding = input<number>(0);
+  /**
+   * TZ-DOC-269: show the magnetic grid DOTS overlay. Off by default —
+   * snap and guides keep working with the grid hidden; the dots are an
+   * explicit working-mode aid toggled from the inspector's snap settings.
+   */
+  readonly gridVisible = input<boolean>(false);
 
   protected readonly CANVAS_DROPLIST_ID: string = CANVAS_DROPLIST_ID;
   protected readonly blockKey = blockKey;
@@ -673,6 +720,165 @@ export class BuilderCanvasComponent {
   protected onChildDragRect(rect: Rect | null): void {
     if (rect === null && this.currentDragRect() === null) return;
     this.currentDragRect.set(rect);
+  }
+
+  // ═══ TZ-DOC-272: marquee (rectangle) selection ═══
+
+  /**
+   * Anchor of the in-progress marquee drag in dropzone-relative px.
+   * `originLeft/originTop` are the dropzone's bounding-rect origin so
+   * mousemove can keep converting client coords without re-querying the
+   * DOM. `zoneWidth/zoneHeight` are used to convert normalized block
+   * layouts into the same px space at mouseup.
+   */
+  protected readonly marqueeStart = signal<{
+    x: number;
+    y: number;
+    zoneWidth: number;
+    zoneHeight: number;
+    originLeft: number;
+    originTop: number;
+  } | null>(null);
+  protected readonly marqueeEnd = signal<{ x: number; y: number } | null>(null);
+  protected readonly marqueeActive = signal(false);
+  /**
+   * Consumed by `onCanvasClick`: after a marquee drag (or Escape cancel)
+   * the trailing click must NOT wipe the selection. Reset to false when
+   * the mouseup turns out to be a plain click.
+   */
+  protected readonly suppressNextClick = signal(false);
+
+  protected readonly marqueeLeft = computed<number>(() => {
+    const s = this.marqueeStart();
+    const e = this.marqueeEnd();
+    return s && e ? Math.min(s.x, e.x) : 0;
+  });
+  protected readonly marqueeTop = computed<number>(() => {
+    const s = this.marqueeStart();
+    const e = this.marqueeEnd();
+    return s && e ? Math.min(s.y, e.y) : 0;
+  });
+  protected readonly marqueeWidth = computed<number>(() => {
+    const s = this.marqueeStart();
+    const e = this.marqueeEnd();
+    return s && e ? Math.abs(e.x - s.x) : 0;
+  });
+  protected readonly marqueeHeight = computed<number>(() => {
+    const s = this.marqueeStart();
+    const e = this.marqueeEnd();
+    return s && e ? Math.abs(e.y - s.y) : 0;
+  });
+
+  protected onCanvasMouseDown(event: MouseEvent): void {
+    if (event.button !== 0) return;
+    const target = event.target as HTMLElement;
+    // Never start a marquee over a block or an interactive control — those
+    // gestures belong to drag/resize/buttons (TZ-DOC-272 AC).
+    if (target.closest('.block-renderer')) return;
+    if (target.closest('button, a, input, textarea, .canvas-align-toolbar')) return;
+    const zone = target.closest('.canvas-dropzone') as HTMLElement | null;
+    if (!zone) return;
+    const rect = zone.getBoundingClientRect();
+    this.marqueeStart.set({
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+      zoneWidth: rect.width,
+      zoneHeight: rect.height,
+      originLeft: rect.left,
+      originTop: rect.top,
+    });
+    this.marqueeEnd.set({
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    });
+    this.marqueeActive.set(true);
+    this.suppressNextClick.set(true);
+    document.addEventListener('mousemove', this.onMarqueeMove);
+    document.addEventListener('mouseup', this.onMarqueeUp);
+    document.addEventListener('keydown', this.onMarqueeKeydown);
+  }
+
+  private readonly onMarqueeMove = (event: MouseEvent): void => {
+    const start = this.marqueeStart();
+    if (!this.marqueeActive() || !start) return;
+    this.marqueeEnd.set({
+      x: event.clientX - start.originLeft,
+      y: event.clientY - start.originTop,
+    });
+  };
+
+  private readonly onMarqueeUp = (): void => {
+    document.removeEventListener('mousemove', this.onMarqueeMove);
+    document.removeEventListener('mouseup', this.onMarqueeUp);
+    document.removeEventListener('keydown', this.onMarqueeKeydown);
+    if (!this.marqueeActive()) return;
+    const start = this.marqueeStart();
+    const end = this.marqueeEnd();
+    this.marqueeActive.set(false);
+    this.marqueeStart.set(null);
+    this.marqueeEnd.set(null);
+    if (!start || !end) return;
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    if (Math.abs(dx) < 4 && Math.abs(dy) < 4) {
+      // Plain click on empty canvas → restore the default click behaviour
+      // (the following click clears the selection / opens template props).
+      this.suppressNextClick.set(false);
+      return;
+    }
+    const ids = this.computeMarqueeIds(start, end);
+    if (ids.length > 0) this.marqueeSelect.emit(ids);
+    // suppressNextClick stays true → the click after the drag is swallowed.
+  };
+
+  private readonly onMarqueeKeydown = (event: KeyboardEvent): void => {
+    if (event.key !== 'Escape') return;
+    event.preventDefault();
+    document.removeEventListener('mousemove', this.onMarqueeMove);
+    document.removeEventListener('mouseup', this.onMarqueeUp);
+    document.removeEventListener('keydown', this.onMarqueeKeydown);
+    this.marqueeActive.set(false);
+    this.marqueeStart.set(null);
+    this.marqueeEnd.set(null);
+    // suppressNextClick stays true → the trailing click must not clear the
+    // pre-existing selection (Escape = cancel, selection untouched).
+  };
+
+  /**
+   * Build candidate rects (positioned + legacy overlay) in dropzone px and
+   * apply the documented INTERSECT marquee policy. Flow blocks have no
+   * absolute geometry and are out of scope (same rule as the guide engine).
+   */
+  private computeMarqueeIds(
+    start: { x: number; y: number; zoneWidth: number; zoneHeight: number },
+    end: { x: number; y: number },
+  ): string[] {
+    const w = Math.max(1, start.zoneWidth);
+    const h = Math.max(1, start.zoneHeight);
+    const marquee: Rect = {
+      blockId: '__marquee__',
+      left: start.x,
+      top: start.y,
+      width: end.x - start.x,
+      height: end.y - start.y,
+    };
+    const candidates: Rect[] = [];
+    for (const b of this.blocks() ?? []) {
+      const key = blockKey(b);
+      if (b.layout) {
+        candidates.push({
+          blockId: key,
+          left: (b.layout.x ?? 0) * w,
+          top: (b.layout.y ?? 0) * h,
+          width: (b.layout.width ?? 0) * w,
+          height: (b.layout.height ?? 0.06) * h,
+        });
+      } else if (this.isOverlayBlock(b)) {
+        const r = overlayBlockToRect({ blockId: key, settings: b.settings ?? null });
+        if (r) candidates.push(r);
+      }
+    }
+    return selectRectsInMarquee(candidates, marquee, 'intersect');
   }
 
   /**
@@ -808,6 +1014,10 @@ export class BuilderCanvasComponent {
   }
 
   protected onCanvasClick(event: Event): void {
+    if (this.suppressNextClick()) {
+      this.suppressNextClick.set(false);
+      return;
+    }
     const target = event.target as HTMLElement;
     if (!target.closest('.block-renderer')) {
       this.canvasClick.emit();

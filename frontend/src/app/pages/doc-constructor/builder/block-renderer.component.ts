@@ -47,11 +47,7 @@ import {
   normalizeBlockLayout,
 } from '../../../shared/template-block/template-block-layout';
 import type { Rect } from './snap-engine';
-import {
-  computeLayoutResize,
-  type LayoutResizeHandle,
-  RESIZE_CURSORS,
-} from './snap-engine';
+import { computeLayoutResize, type LayoutResizeHandle, RESIZE_CURSORS } from './snap-engine';
 import {
   BlockRendererStateService,
   OVERLAY_DEFAULT_WIDTH,
@@ -125,19 +121,19 @@ import {
             role="button"
             tabindex="-1"
           >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <polyline points="3 6 5 6 21 6" />
-            <path
-              d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-            />
-          </svg>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <polyline points="3 6 5 6 21 6" />
+              <path
+                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+              />
+            </svg>
           </div>
         }
         @if (sizeEditOpen() && !preview()) {
@@ -167,7 +163,11 @@ import {
                 (input)="onSizeEditInput($event, 'h')"
               />
             </label>
-            <button type="button" class="block-renderer__size-editor-apply" (click)="applySizeEdit()">
+            <button
+              type="button"
+              class="block-renderer__size-editor-apply"
+              (click)="applySizeEdit()"
+            >
               Применить
             </button>
           </div>
@@ -279,40 +279,47 @@ import {
             role="button"
             tabindex="-1"
           >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <polyline points="3 6 5 6 21 6" />
-            <path
-              d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-            />
-          </svg>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <polyline points="3 6 5 6 21 6" />
+              <path
+                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+              />
+            </svg>
           </div>
         }
 
         @if (block().type === 'image' && state.imageUrl()) {
+          <!-- TZ-DOC-270: two-layer containment for overlay images. The
+               OUTER wrap keeps overflow:visible so the corner-resize handle
+               (right:-8px/bottom:-8px) stays clickable; the INNER clip
+               container is overflow:hidden so the image is never painted
+               outside the frame. -->
           <div class="block-renderer__image-wrap block-renderer__image-wrap--overlay">
-            <img
-              [src]="state.imageUrl()"
-              [alt]="block().title || 'Изображение'"
-              class="block-renderer__image block-renderer__image--overlay"
-              draggable="false"
-              [style.width.px]="
-                state.resizeActive()
-                  ? state.resizeWidth()
-                  : (state.imageWidth() ?? OVERLAY_DEFAULT_WIDTH)
-              "
-              [style.height.px]="
-                state.resizeActive()
-                  ? state.resizeHeight()
-                  : (state.imageHeight() ?? OVERLAY_DEFAULT_HEIGHT)
-              "
-            />
+            <div class="block-renderer__image-clip">
+              <img
+                [src]="state.imageUrl()"
+                [alt]="block().title || 'Изображение'"
+                class="block-renderer__image block-renderer__image--overlay"
+                draggable="false"
+                [style.width.px]="
+                  state.resizeActive()
+                    ? state.resizeWidth()
+                    : (state.imageWidth() ?? OVERLAY_DEFAULT_WIDTH)
+                "
+                [style.height.px]="
+                  state.resizeActive()
+                    ? state.resizeHeight()
+                    : (state.imageHeight() ?? OVERLAY_DEFAULT_HEIGHT)
+                "
+              />
+            </div>
             @if (selected()) {
               <div
                 class="block-renderer__corner-resize"
@@ -389,33 +396,33 @@ import {
             (keydown.space)="onCheckboxClick($event)"
             (mousedown)="$event.stopPropagation()"
             role="checkbox"
-          [attr.aria-checked]="multiSelected()"
-          [attr.aria-label]="multiSelected() ? 'Убрать из выделения' : 'Выбрать блок'"
-          [attr.tabindex]="multiSelected() ? '0' : '-1'"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
+            [attr.aria-checked]="multiSelected()"
+            [attr.aria-label]="multiSelected() ? 'Убрать из выделения' : 'Выбрать блок'"
+            [attr.tabindex]="multiSelected() ? '0' : '-1'"
           >
-            @if (multiSelected()) {
-              <rect
-                x="3"
-                y="3"
-                width="18"
-                height="18"
-                rx="2"
-                fill="var(--color-gold)"
-                stroke="var(--color-gold)"
-              />
-              <polyline points="9 12 11 14 15 10" stroke="white" stroke-width="2.5" />
-            } @else {
-              <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" />
-            }
-          </svg>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              @if (multiSelected()) {
+                <rect
+                  x="3"
+                  y="3"
+                  width="18"
+                  height="18"
+                  rx="2"
+                  fill="var(--color-gold)"
+                  stroke="var(--color-gold)"
+                />
+                <polyline points="9 12 11 14 15 10" stroke="white" stroke-width="2.5" />
+              } @else {
+                <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" />
+              }
+            </svg>
           </div>
         }
         @if (!preview()) {
@@ -943,9 +950,7 @@ export class BlockRendererComponent {
     ) as HTMLElement | null;
     if (!layout || !paper) return;
     this.sizeEditWidthPx.set(Math.round(layout.width * paper.clientWidth));
-    this.sizeEditHeightPx.set(
-      Math.round((layout.height ?? 0.06) * paper.clientHeight),
-    );
+    this.sizeEditHeightPx.set(Math.round((layout.height ?? 0.06) * paper.clientHeight));
     this.sizeEditOpen.set(true);
   }
 

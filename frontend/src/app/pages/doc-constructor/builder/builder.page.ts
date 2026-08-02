@@ -347,9 +347,11 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
           [snapEnabled]="snapEnabled()"
           [gridSize]="gridSize()"
           [boundaryPadding]="boundaryPadding()"
+          [gridVisible]="showGrid()"
           [viewMode]="viewMode()"
           (select)="onSelect($event)"
           (multiSelect)="onMultiSelect($event)"
+          (marqueeSelect)="onMarqueeSelect($event)"
           (reorder)="onReorder($event)"
           (dropAdd)="onDropAdd($event)"
           (blockWidthChange)="onBlockWidthChange($event)"
@@ -373,7 +375,13 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
             [snapEnabled]="snapEnabled()"
             [gridSize]="gridSize()"
             [boundaryPadding]="boundaryPadding()"
+            [gridVisible]="showGrid()"
+            [grouped]="editorGroupedIds() !== null"
             (snapSettingsChange)="onSnapSettingsChange($event)"
+            (gridVisibilityChange)="onGridVisibilityChange($event)"
+            (layoutOrderChange)="onLayoutChanges($event)"
+            (groupSelected)="onGroupSelected()"
+            (ungroupSelected)="onUngroupSelected()"
             (update)="onInspectorUpdate($event)"
             (delete)="onDeleteBlock($event)"
             (deleteSelected)="onDeleteSelected()"
@@ -675,6 +683,19 @@ export class BuilderPage {
   protected readonly gridSize = signal<number>(loadSnapSettings().gridSize);
   /** Padding from paper edges that overlay blocks cannot cross (px) (persisted to localStorage). */
   protected readonly boundaryPadding = signal<number>(loadSnapSettings().boundaryPadding);
+  /**
+   * TZ-DOC-269: show the magnetic grid DOTS overlay. Off by default —
+   * snap and alignment guides work without the decorative grid; it is
+   * an explicit opt-in aid toggled from the inspector's snap settings.
+   */
+  protected readonly showGrid = signal<boolean>(false);
+  /**
+   * TZ-DOC-272: EDITOR-ONLY group marker (no backend persistence — the
+   * TemplateBlock schema has no group field; a real persisted group is a
+   * successor TZ). When non-null, the selected blocks are treated as an
+   * explicit group (shared group-drag, batch margin/align, group badge).
+   */
+  protected readonly editorGroupedIds = signal<ReadonlySet<string> | null>(null);
 
   // Dropdown state for inline toolbar
   protected readonly openDropdown = signal<string | null>(null);
@@ -1291,6 +1312,27 @@ export class BuilderPage {
     this.templateSelected.set(true);
   }
 
+  /**
+   * TZ-DOC-272: marquee drag finished → replace the selection with the
+   * intersecting blocks (editor group semantics live in the page state).
+   */
+  protected onMarqueeSelect(ids: string[]): void {
+    this.selectedIds.set(new Set(ids));
+    this.selectedId.set(null);
+    this.templateSelected.set(ids.length === 0);
+  }
+
+  /** TZ-DOC-272: mark the current multi-selection as an explicit (editor-only) group. */
+  protected onGroupSelected(): void {
+    if (this.selectedIds().size < 2) return;
+    this.editorGroupedIds.set(new Set(this.selectedIds()));
+  }
+
+  /** TZ-DOC-272: dissolve the editor group — blocks edit independently again. */
+  protected onUngroupSelected(): void {
+    this.editorGroupedIds.set(null);
+  }
+
   protected onEditSelected(): void {
     const block = this.selectedBlock();
     if (!block) return;
@@ -1654,6 +1696,11 @@ export class BuilderPage {
           this.toast.error(extractErrorMessage(err));
         },
       });
+  }
+
+  /** TZ-DOC-269: inspector toggle for the decorative grid-dots overlay. */
+  protected onGridVisibilityChange(visible: boolean): void {
+    this.showGrid.set(visible);
   }
 
   /** Handle snap settings changes from the inspector (persisted to localStorage). */
