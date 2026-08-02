@@ -5260,3 +5260,15 @@ TZ-WORKERS-302 (не мой scope, disclosure в ARCHIVE).
 **Commit:** conventional commit `feat(text-block): categories reference and picker (TZ-DOC-316)` (NO push).
 
 **Ограничения:** Browser E2E MANUAL_BROWSER_CHECK_REQUIRED (dev-stack credentials недоступны); TZ-DOC-317 (builder picker dropdown) — successor, не запускался (явное «не параллельно»); TZ-DOC-318 (миграция legacy enum) — successor.
+
+## 2026-08-02 — TZ-DOC-317 DONE (Builder: фильтр текстов по категории в picker-панели)
+
+**Что:** dropdown «Категория» над обеими «Тексты»-поверхностями builder (tool-pane + inline тулбар); `BuilderTextFilterService` (root-сигнал `categoryId`) — единый источник правды; `textsRes` httpResource URL: `?isActive=true` → `?isActive=true&categoryId=<id>` (server-side, backend TZ-DOC-315). Two-way URL binding `?category=<id>` + snapshot loop-guard (фикс regression TZ-DOC-268 cancel-теста). Смена шаблона → reset фильтра. `TextBlocksService.list()` + categoryId HttpParams.
+
+**Архив:** `tasks/_archive/2026-08/TZ-DOC-317-builder-texts-filter-by-category.done.md`; lock `.mimocode/locks/TZ-DOC-317-builder-texts-filter-by-category.lock`; checklist `docs/agent-checklists/TZ-DOC-317.md`.
+
+**Gates:** frontend tsc PASS; backend tsc PASS (sanity, backend не тронут); jest targeted 4 suites/44 PASS; jest full 886 PASS (2 pre-existing flakes вне scope: button.component double-emit, pi-showcase-card TZ-PRODUCTS-305 icon provider — disclosed); ng build PASS; diff-check PASS; verify-status.sh PASS.
+
+**Commit:** conventional commit `feat(builder): filter text-blocks by category in picker (TZ-DOC-317)` (NO push).
+
+**Ограничения:** Browser E2E MANUAL_BROWSER_CHECK_REQUIRED; legacy enum в UI picker не пробрасывается (TZ-DOC-318 successor, разблокирован).
