@@ -54,3 +54,10 @@ dictionary, photo upload) + spec + docs.
 6. Без выбора → `ralCode` = `ne-vybran`. Ошибка API → диалог остаётся открытым.
 
 **Browser status:** MANUAL_BROWSER_CHECK_REQUIRED (dev-stack not run).
+
+## Executor report (auto) — TZ-PRODUCTS-302
+status: DONE
+commits: e1f9916d364e6d9fcadd4a4b6334a63ceca5f80b (feat) + b19eeafa0b339e78b7bb70c26169ce81931a8f26 (closeout)
+gates: product-form-dialog jest=20/20; dialog-suite=45/45; tsc (scope) clean; ng build FAIL only на TZ-WORKERS-302 WIP (people.page.ts unterminated — out of scope); git-diff-check=PASS
+known: payload всё ещё шлёт ralCode string (TZ-PRODUCTS-303 fix, dialog reload OK); backend Product.colorId FK отсутствует (TZ-PRODUCTS-303+ дополнение — НЕ в scope 303 dialog-редактора)
+ask: —

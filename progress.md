@@ -5229,3 +5229,21 @@ Push: NO.
 
 **Ограничения:** pre-existing ng-build blocker от TZ-WORKERS-302 (people.page.ts unterminated strings) — out of scope, не fix-force. TZ-DOC-317/318/326 UX chain unblocked (Builder теперь чисто editor).
 
+
+## [2026-08-02] — TZ-PRODUCTS-303: DONE (редактор модулей в диалоге товара)
+
+**TZ-PRODUCTS-303** — секция «Модули в составе» в `ProductFormDialogComponent`:
+карточки привязанных модулей (имя, артикул, N материалов) + «+ Добавить
+модуль» (переиспользует `ProductModulePickerDialog` с excludeIds → дубликат
+невозможен) + удаление (×). Каталог — `ProductModulesService.list()` один раз;
+`attachedModules` computed рендерит карточки из `selectedModuleIds` + catalog,
+fallback-карточка для модуля вне каталога (catalog failed/loading — выбор
+никогда не невидим). Submit-синхронизация через АТОМАРНЫЕ endpoints
+`POST/DELETE /products/:id/modules` (diff `originalModuleIds` vs
+`selectedModuleIds`; attach добавленных + detach удалённых, forkJoin) — bulk
+PATCH `productModuleIds[]` невозможен (UpdateProductDto whitelist → 400,
+проверено по коду). Create-режим: attach после успешного create к новому `_id`.
+Ошибки синхронизации модулей toast-ятся, НЕ блокируют закрытие (товар уже
+сохранён). Спека: 34/34 unit PASS (dialog), 42/42 products/module suites;
+tsc scope чист; ng build падает только на параллельно-сессионных файлах
+TZ-WORKERS-302 (не мой scope, disclosure в ARCHIVE).

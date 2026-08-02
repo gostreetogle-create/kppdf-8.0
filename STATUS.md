@@ -745,7 +745,6 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 | TZ | Название | Layer | Оценка | Dependencies |
 |----|----------|-------|--------|--------------|
 | TZ-PRODUCTS-301 | Справочник «Цвета» (RAL): ColorReference backend-контракт + UI `/dictionaries/colors` (sparse-unique, system seed, 409 in_use/system) | 4 → 3 | 3-4h | — |
-| TZ-PRODUCTS-303 | Товар — привязка модулей карточками в диалоге (паттерн TZ-MODULES-301) | 3 | 2-3h | TZ-PRODUCTS-302 |
 | TZ-PRODUCTS-304 | Каталог товаров — expandable-строки с модулями + переход на страницу модуля | 3 | 1-2h | TZ-PRODUCTS-303 (recommended) |
 | TZ-PRODUCTS-305 | UI Kit — карточки-витрины sm/md/lg (товар/модуль/материал), переиспользуемые + эталонное применение на одной детальной странице | 2 | 3-4h | — (самостоятельный UI-слой) |
 
@@ -813,6 +812,7 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 | TZ-WORKERS-301 | 2026-08-02 | «Люди» — единая backend-сущность на базе Worker (email, position, supplierId, managerOfSupplierIds, userId, organizationId sparse, deletedAt); Person-консолидация → SUCCESSOR | `tasks/_archive/2026-08/TZ-WORKERS-301.done.md` |
 | TZ-PRODUCTS-301 | 2026-08-02 | Справочник «Цвета» — ColorReference backend-контракт + UI `/color-references` (sparse-unique, system-цвет «Не выбран» seed, 409 in_use/system, content-диалог 1000px) | `tasks/_archive/2026-08/TZ-PRODUCTS-301-color-reference-dictionary.done.md` |
 | TZ-PRODUCTS-302 | 2026-08-02 | Диалог товара — content-вариант 1000px, секции по категориям, categoryId select, RAL dropdown из справочника цветов, фото-загрузка | `tasks/_archive/2026-08/TZ-PRODUCTS-302-product-form-dialog-rework.done.md` |
+| TZ-PRODUCTS-303 | 2026-08-02 | Редактор модулей в диалоге товара — секция «Модули в составе»: карточки модулей (имя, артикул, N материалов), добавление через ProductModulePicker, удаление, атомарная M:N-синхронизация POST/DELETE /products/:id/modules (diff snapshot vs selection) | `tasks/_archive/2026-08/TZ-PRODUCTS-303-product-modules-cards-editor.done.md` |
 | TZ-DOC-311 | 2026-08-02 | Свойства шаблона — pageNumbering сохраняется; «Оглавление/Шапка/Подвал» убраны из UI (backward-compatible, без миграции) | `tasks/_archive/2026-08/TZ-DOC-311.done.md` |
 | TZ-DOC-309 | 2026-08-02 | Диалог создания шаблона — мгновенное открытие (кэш активных категорий в сервисе, инвалидация на CRUD) | `tasks/_archive/2026-08/TZ-DOC-309.done.md` |
 | TZ-DOC-310 | 2026-08-02 | Диалог создания — закрытие с первого клика; видимая валидация категории; parentDestroyRef в 4 open() | `tasks/_archive/2026-08/TZ-DOC-310-template-dialog-one-click-close.done.md` |
