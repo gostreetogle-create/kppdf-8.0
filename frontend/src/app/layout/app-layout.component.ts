@@ -10,6 +10,7 @@ import {
   BookOpen,
   FileText,
   ShieldCheck,
+  Palette,
 } from 'lucide-angular';
 
 /**
@@ -88,6 +89,8 @@ const NAV_CATEGORIES: NavCategory[] = [
       { path: '/dictionaries', label: 'Все справочники' },
       { path: '/categories', label: 'Категории' },
       { path: '/doc-template-categories', label: 'Категории шаблонов' },
+      // TZ-PRODUCTS-301: справочник цветов (RAL) — иконка Palette.
+      { path: '/dictionaries/color-references', label: 'Цвета', icon: Palette },
     ],
   },
   {

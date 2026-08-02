@@ -21,6 +21,12 @@ export interface PiNavDropdownItem {
   path: string;
   /** Visible label inside the dropdown. */
   label: string;
+  /**
+   * TZ-PRODUCTS-301 — optional per-item Lucide icon rendered before the label
+   * (e.g. `Palette` for the «Цвета» dictionary). Backward compatible: when
+   * omitted the item renders as a plain text row (existing consumers unchanged).
+   */
+  icon?: LucideIcon;
   /** When true, item is rendered muted/disabled with title='скоро' tooltip. */
   disabled?: boolean;
   /**
@@ -121,6 +127,14 @@ export interface PiNavDropdownItem {
                        focus-visible:bg-paper-2 transition-colors pi-focus-ring
                        cursor-pointer"
               >
+                @if (item.icon) {
+                  <lucide-angular
+                    [img]="item.icon"
+                    [size]="13"
+                    class="opacity-70 mr-1.5 -mt-0.5 inline-block align-middle"
+                    aria-hidden="true"
+                  />
+                }
                 {{ item.label }}
               </a>
             }

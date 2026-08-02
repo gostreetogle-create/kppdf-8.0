@@ -5126,3 +5126,19 @@ E2E-сценарии с созданием данных помечены MANUAL_
 **Архив:** tasks/_archive/2026-08/TZ-WORKERS-301.done.md; lock: .mimocode/locks/TZ-WORKERS-301-people-backend-entity.lock (gitignored).
 **Commit:** `e449335ac7980f957b2b3a01326fcdc47a8adefa` — feat(workers): consolidate People backend entity — TZ-WORKERS-301. Push: нет.
 **Ограничения:** UI «Люди» — TZ-WORKERS-302; Person-консолидация — SUCCESSOR; e2e-харнесс без forbidNonWhitelisted (production имеет) — поведение задокументировано тестом.
+
+---
+
+## 2026-08-02 — TZ-PRODUCTS-301 DONE (Справочник «Цвета» RAL — backend + UI)
+
+**Тип:** Layer 4 → 3. Новая справочная сущность ColorReference + страница справочника. Фундамент для TZ-PRODUCTS-302 (RAL dropdown в диалоге товара).
+
+**Затронуто:** backend/src/modules/color-reference/** (schema, dto x2, service, controller, module, spec 34 tests), backend/src/common/seed/color-references.seed.ts (системный «Не выбран», UTF-8, идемпотентный), backend/src/app.module.ts (модуль + seed), frontend/src/app/shared/services/pi-color-references.service.ts (+spec 10), frontend/src/app/pages/dictionaries/color-references.page.ts (+spec 14), color-reference-form-dialog.component.ts (content 1000px sticky footer), app.routes.ts (adminOnlyRouteGuard), app-layout.component.ts + pi-nav-dropdown.component.ts (Palette icon), docs/pages/color-references.page.md.
+
+**Проверки:** backend tsc exit 0; jest color-reference 34/34 PASS; полный backend jest 43 suites/441 PASS; frontend tsc exit 0; jest color-reference pi-color-references 24/24 PASS; ng build --configuration=development exit 0; git diff --check clean.
+
+**Review:** P1 — пагинация N>100 (total = sliced length → pager скрыт) исправлена (filtered для total, visible для slice); P2 — copy переносил isDefault → guard + сброс.
+
+**Архив:** tasks/_archive/2026-08/TZ-PRODUCTS-301-color-reference-dictionary.done.md; lock: .mimocode/locks/TZ-PRODUCTS-301-color-reference-dictionary.lock (gitignored).
+
+**Ограничения:** frontend полный jest — 1 pre-existing failure в button.component.spec.ts (воспроизводится на чистом baseline через stash; НЕ регрессия). E2E backend не запускался (unit-контракт). TZ-DOC-308 categories.page.ts pre-existing blocker — не fix-force. Push: нет.

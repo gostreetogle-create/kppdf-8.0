@@ -63,6 +63,7 @@ import { DocTypeModule } from './modules/doc-type/doc-type.module';
 import { DocumentTemplateModule } from './modules/document-template/document-template.module';
 import { DocumentTemplateCategoryModule } from './modules/document-template-category/document-template-category.module';
 import { TextBlockCategoryModule } from './modules/text-block-category/text-block-category.module';
+import { ColorReferenceModule } from './modules/color-reference/color-reference.module';
 import { TemplateBlockModule } from './modules/template-block/template-block.module';
 import { TextBlockModule } from './modules/text-block/text-block.module';
 import { TableTemplateModule } from './modules/table-template/table-template.module';
@@ -105,6 +106,7 @@ import { CurrenciesSeed } from './common/seed/currencies.seed';
 import { DevFixturesSeed } from './common/seed/dev-fixtures.seed';
 import { DocumentTemplateCategoriesSeed } from './common/seed/document-template-categories.seed';
 import { TextBlockCategoriesSeed } from './common/seed/text-block-categories.seed';
+import { ColorReferencesSeed } from './common/seed/color-references.seed';
 import { BomComponentResolveService } from './modules/bom/migrations/bom-component-resolve.service';
 import { HealthController } from './health.controller';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
@@ -209,6 +211,8 @@ import { RequestMethod } from '@nestjs/common';
     DocumentTemplateModule,
     // TZ-DOC-307: категории шаблонов документов (отдельная сущность)
     DocumentTemplateCategoryModule,
+    // TZ-PRODUCTS-301: справочник цветов (RAL) — продуктовая словарная сущность
+    ColorReferenceModule,
     TemplateBlockModule,
     TextBlockModule, // TZ-86 Фаза A.1: новая entity для reusable text snippets
     TableTemplateModule,
@@ -272,6 +276,8 @@ import { RequestMethod } from '@nestjs/common';
     DevFixturesSeed,
     // TZ-DOC-307: системная default-категория шаблонов «Общее»
     DocumentTemplateCategoriesSeed,
+    // TZ-PRODUCTS-301: системный default-цвет «Не выбран»
+    ColorReferencesSeed,
     // TZ-105.2: idempotent orphan FK migration (OnApplicationBootstrap lifecycle,
     // distinct from seeds' OnModuleInit per TZ-87 pattern). Dry-run default
     // via `BOM_MIGRATE_DRY_RUN=true`; set to "false" to apply migrations.

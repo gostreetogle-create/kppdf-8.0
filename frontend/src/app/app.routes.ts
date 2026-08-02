@@ -1,6 +1,25 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { CanMatchFn, Router, Routes } from '@angular/router';
 import { authGuard, publicOnlyGuard } from './core/auth.guard';
+import { AuthService } from './core/auth.service';
 import { capabilityRouteGuard } from './core/capabilities/capability-route.guard';
+
+/**
+ * TZ-PRODUCTS-301 — admin-only route guard for the color dictionary.
+ *
+ * Backend RBAC allows `user` to READ colors (the RAL dropdown in the product
+ * form is used by every authenticated user), but the dictionary PAGE is an
+ * admin/manager management surface — mutations are @Roles('admin','manager').
+ * This guard hides the page from plain `user` role accounts by redirecting to
+ * /forbidden (same UX contract as capabilityRouteGuard, without inventing a
+ * new permission key for a small dictionary).
+ */
+export const adminOnlyRouteGuard: CanMatchFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (auth.user()?.role === 'admin' || auth.user()?.role === 'manager') return true;
+  return router.parseUrl('/forbidden');
+};
 
 /**
  * KPPDF site routing.
@@ -135,6 +154,18 @@ export const routes: Routes = [
             (m) => m.DocumentTemplateCategoriesPage,
           ),
         title: 'KPPDF — Категории шаблонов',
+      },
+      {
+        // TZ-PRODUCTS-301 — справочник цветов (RAL). Admin/manager page;
+        // reads are also available to users via the API for the product
+        // form RAL dropdown (TZ-PRODUCTS-302).
+        path: 'dictionaries/color-references',
+        canMatch: [authGuard, adminOnlyRouteGuard],
+        loadComponent: () =>
+          import('./pages/dictionaries/color-references.page').then(
+            (m) => m.ColorReferencesPage,
+          ),
+        title: 'KPPDF — Цвета',
       },
       {
         path: 'products',

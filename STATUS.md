@@ -811,6 +811,7 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 
 | TZ | Дата | Описание | Архив |
 |---|---|---|---|
+| TZ-PRODUCTS-301 | 2026-08-02 | Справочник «Цвета» (RAL) — ColorReference entity (sparse-unique {organizationId, slug}, hex, soft-delete) + seed «Не выбран» + страница /dictionaries/color-references (pi-table, copy/edit/delete) | `tasks/_archive/2026-08/TZ-PRODUCTS-301-color-reference-dictionary.done.md` |
 | TZ-WORKERS-301 | 2026-08-02 | «Люди» — единая backend-сущность на базе Worker (email, position, supplierId, managerOfSupplierIds, userId, organizationId sparse, deletedAt); Person-консолидация → SUCCESSOR | `tasks/_archive/2026-08/TZ-WORKERS-301.done.md` |
 | TZ-DOC-311 | 2026-08-02 | Свойства шаблона — pageNumbering сохраняется; «Оглавление/Шапка/Подвал» убраны из UI (backward-compatible, без миграции) | `tasks/_archive/2026-08/TZ-DOC-311.done.md` |
 | TZ-DOC-309 | 2026-08-02 | Диалог создания шаблона — мгновенное открытие (кэш активных категорий в сервисе, инвалидация на CRUD) | `tasks/_archive/2026-08/TZ-DOC-309.done.md` |
