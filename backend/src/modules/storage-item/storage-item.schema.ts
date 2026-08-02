@@ -18,8 +18,12 @@ export class StorageItem {
   @Prop({ type: Types.ObjectId, ref: 'Warehouse', required: true, index: true })
   warehouseId!: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'Product', required: true, index: true })
-  productId!: Types.ObjectId;
+  /** Exactly one of productId/materialId is required (enforced in service/DTO boundary). */
+  @Prop({ type: Types.ObjectId, ref: 'Product', index: true })
+  productId?: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'Material', index: true })
+  materialId?: Types.ObjectId;
 
   @Prop()
   zoneName?: string;
@@ -53,11 +57,33 @@ export class StorageItem {
 }
 
 export const StorageItemSchema = SchemaFactory.createForClass(StorageItem);
+
+// Keep existing product uniqueness semantics and add the same semantics for materials.
 StorageItemSchema.index(
   { warehouseId: 1, productId: 1, zoneName: 1 },
-  { unique: true, partialFilterExpression: { zoneName: { $type: 'string' } } },
+  {
+    unique: true,
+    partialFilterExpression: { productId: { $exists: true }, zoneName: { $type: 'string' } },
+  },
 );
 StorageItemSchema.index(
   { warehouseId: 1, productId: 1 },
-  { unique: true, partialFilterExpression: { zoneName: { $exists: false } } },
+  {
+    unique: true,
+    partialFilterExpression: { productId: { $exists: true }, zoneName: { $exists: false } },
+  },
+);
+StorageItemSchema.index(
+  { warehouseId: 1, materialId: 1, zoneName: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { materialId: { $exists: true }, zoneName: { $type: 'string' } },
+  },
+);
+StorageItemSchema.index(
+  { warehouseId: 1, materialId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { materialId: { $exists: true }, zoneName: { $exists: false } },
+  },
 );

@@ -27,6 +27,7 @@ export class StockMovementController {
   findAll(
     @Query('warehouseId') warehouseId?: string,
     @Query('productId') productId?: string,
+    @Query('materialId') materialId?: string,
     @Query('type') type?: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
@@ -37,6 +38,7 @@ export class StockMovementController {
       type,
       from ? new Date(from) : undefined,
       to ? new Date(to) : undefined,
+      materialId,
     );
   }
 

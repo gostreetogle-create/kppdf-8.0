@@ -1,39 +1,32 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { MaterialService } from './material.service';
 import type { CreateMaterialDto } from './dto/create-material.dto';
 import type { UpdateMaterialDto } from './dto/update-material.dto';
 
-/**
- * TZ-MATERIALS-303 — MaterialService unit spec (manual mocks, repository
- * convention — see `roles-admin.controller.spec.ts` / `users-admin.controller.spec.ts`).
- *
- * Verifies:
- * 1. `create` persists the user-supplied `sku` (the DTO now declares it —
- *    previously it was silently stripped by the whitelist → HTTP 400).
- * 2. A Mongo duplicate-key (E11000) on `create` is mapped to 409 Conflict
- *    (server-side uniqueness is the sparse unique index, not client code).
- * 3. The same E11000 mapping applies on `update` (doc.save()).
- * 4. Non-duplicate errors are re-thrown untouched.
- */
+const CATEGORY_ID = new Types.ObjectId().toString();
+
+function query<T>(value: T) {
+  return { exec: jest.fn().mockResolvedValue(value) };
+}
 
 function buildService(opts: {
   create?: jest.Mock;
   findById?: jest.Mock;
-  save?: jest.Mock;
   updateOne?: jest.Mock;
+  categoryFindById?: jest.Mock;
+  counterNext?: jest.Mock;
 }) {
   const create = opts.create ?? jest.fn();
   const findById = opts.findById ?? jest.fn();
-  const save = opts.save ?? jest.fn();
   const updateOne = opts.updateOne ?? jest.fn();
-  const model = {
-    create,
-    findById,
-    updateOne,
-  } as any;
-  const service = new MaterialService(model);
-  return { service, create, findById, save, updateOne };
+  const categoryFindById = opts.categoryFindById ?? jest.fn();
+  const counterNext = opts.counterNext ?? jest.fn();
+  const model = { create, findById, updateOne } as any;
+  const categoryModel = { findById: categoryFindById } as any;
+  const counter = { next: counterNext } as any;
+  const service = new MaterialService(model, categoryModel, counter);
+  return { service, create, findById, updateOne, categoryFindById, counterNext };
 }
 
 function dto(overrides: Partial<CreateMaterialDto> = {}): CreateMaterialDto {
@@ -54,23 +47,71 @@ function doc(overrides: Record<string, unknown> = {}) {
   };
 }
 
-describe('MaterialService (TZ-MATERIALS-303)', () => {
+describe('MaterialService (TZ-MATERIALS-303/307)', () => {
   describe('create', () => {
-    it('persists the user-supplied sku through the DTO', async () => {
-      const { service, create } = buildService({
+    it('persists the user-supplied sku without generating another code', async () => {
+      const { service, create, categoryFindById, counterNext } = buildService({
         create: jest.fn().mockResolvedValue(doc({ sku: 'M-0001' })),
       });
       const result = await service.create(dto({ sku: 'M-0001', article: 'STK-004' }));
+
       expect(create).toHaveBeenCalledWith(
         expect.objectContaining({ sku: 'M-0001', article: 'STK-004' }),
       );
+      expect(categoryFindById).not.toHaveBeenCalled();
+      expect(counterNext).not.toHaveBeenCalled();
       expect(result.sku).toBe('M-0001');
+    });
+
+    it('generates a server-side SKU from the material category when sku is omitted', async () => {
+      const { service, create, categoryFindById, counterNext } = buildService({
+        categoryFindById: jest.fn().mockReturnValue(
+          query({ _id: CATEGORY_ID, name: 'Листовые материалы', skuPrefix: 'SHEET' }),
+        ),
+        counterNext: jest.fn().mockResolvedValue('SHEET-2026-001'),
+        create: jest.fn().mockResolvedValue(doc({ sku: 'SHEET-2026-001' })),
+      });
+
+      await service.create(dto({ categoryId: CATEGORY_ID }));
+
+      expect(categoryFindById).toHaveBeenCalledWith(CATEGORY_ID);
+      expect(counterNext).toHaveBeenCalledWith('Material', 'SHEET');
+      expect(create).toHaveBeenCalledWith(
+        expect.objectContaining({ sku: 'SHEET-2026-001', categoryId: CATEGORY_ID }),
+      );
+    });
+
+    it('rejects an unknown category before generating or creating a material', async () => {
+      const { service, create, categoryFindById, counterNext } = buildService({
+        categoryFindById: jest.fn().mockReturnValue(query(null)),
+      });
+
+      await expect(service.create(dto({ categoryId: CATEGORY_ID }))).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(counterNext).not.toHaveBeenCalled();
+      expect(create).not.toHaveBeenCalled();
+    });
+
+    it('rejects a category without a SKU prefix before creating a material', async () => {
+      const { service, create, categoryFindById, counterNext } = buildService({
+        categoryFindById: jest.fn().mockReturnValue(
+          query({ _id: CATEGORY_ID, name: 'Без кода', skuPrefix: '' }),
+        ),
+      });
+
+      await expect(service.create(dto({ categoryId: CATEGORY_ID }))).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(counterNext).not.toHaveBeenCalled();
+      expect(create).not.toHaveBeenCalled();
     });
 
     it('maps a Mongo duplicate-key (E11000) on create to 409 Conflict', async () => {
       const { service, create } = buildService({
         create: jest.fn().mockRejectedValue({ code: 11000, message: 'E11000 duplicate key' }),
       });
+
       await expect(service.create(dto({ sku: 'M-0001' }))).rejects.toBeInstanceOf(
         ConflictException,
       );
@@ -93,6 +134,7 @@ describe('MaterialService (TZ-MATERIALS-303)', () => {
           exec: jest.fn().mockResolvedValue(doc({ save })),
         }),
       });
+
       const updateDto: UpdateMaterialDto = { sku: 'M-0001' };
       await expect(service.update('507f1f77bcf86cd799439011', updateDto)).rejects.toBeInstanceOf(
         ConflictException,
@@ -100,15 +142,16 @@ describe('MaterialService (TZ-MATERIALS-303)', () => {
     });
 
     it('keeps 404 behavior for a missing document (no save attempted)', async () => {
-      const { service, save } = buildService({
+      const { service, findById } = buildService({
         findById: jest.fn().mockReturnValue({
           exec: jest.fn().mockResolvedValue(null),
         }),
       });
+
       await expect(
         service.update('507f1f77bcf86cd799439011', { sku: 'M-0001' }),
       ).rejects.toBeInstanceOf(NotFoundException);
-      expect(save).not.toHaveBeenCalled();
+      expect(findById).toHaveBeenCalled();
     });
   });
 });

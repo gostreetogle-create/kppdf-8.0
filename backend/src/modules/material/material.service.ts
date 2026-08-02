@@ -1,9 +1,17 @@
-import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { CreateMaterialDto } from './dto/create-material.dto';
 import { UpdateMaterialDto } from './dto/update-material.dto';
 import { Material, MaterialDocument } from './material.schema';
+import { CounterService } from '../counter/counter.service';
+import { Category, CategoryDocument } from '../category/category.schema';
 
 @Injectable()
 export class MaterialService {
@@ -11,11 +19,27 @@ export class MaterialService {
 
   constructor(
     @InjectModel(Material.name) private readonly model: Model<MaterialDocument>,
+    @InjectModel(Category.name) private readonly categoryModel: Model<CategoryDocument>,
+    private readonly counter: CounterService,
   ) {}
 
   async create(dto: CreateMaterialDto): Promise<MaterialDocument> {
+    let sku = dto.sku;
+    if (!sku && dto.categoryId) {
+      const category = await this.categoryModel.findById(dto.categoryId).exec();
+      if (!category) {
+        throw new BadRequestException(`Категория материала ${dto.categoryId} не найдена`);
+      }
+      if (!category.skuPrefix) {
+        throw new BadRequestException(
+          `У категории «${category.name}» не настроен префикс внутреннего кода материала`,
+        );
+      }
+      sku = await this.counter.next('Material', category.skuPrefix);
+    }
+
     try {
-      return await this.model.create(dto);
+      return await this.model.create({ ...dto, sku });
     } catch (err) {
       this.rethrowDuplicateSku(err);
     }
@@ -72,12 +96,7 @@ export class MaterialService {
     }
   }
 
-  /**
-   * Map a Mongo duplicate-key (E11000) error to a 409 Conflict so a SKU
-   * collision is reported to the client instead of a raw 500. The unique
-   * sparse index on `sku` is the server-side uniqueness guarantee
-   * (TZ-MATERIALS-303); the client never generates codes.
-   */
+  /** Map Mongo duplicate-key errors to the API's conflict contract. */
   private rethrowDuplicateSku(err: unknown): never {
     const code = (err as { code?: number })?.code;
     if (code === 11000) {

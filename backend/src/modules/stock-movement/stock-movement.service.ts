@@ -1,16 +1,11 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model, Types } from 'mongoose';
-import {
-  StockMovement,
-  StockMovementDocument,
-} from './stock-movement.schema';
+import { StockMovement, StockMovementDocument } from './stock-movement.schema';
 import { CreateStockMovementDto } from './dto/create-stock-movement.dto';
 import { StorageItem, StorageItemDocument } from '../storage-item/storage-item.schema';
+
+type StockTarget = { productId?: string; materialId?: string };
 
 @Injectable()
 export class StockMovementService {
@@ -24,9 +19,8 @@ export class StockMovementService {
     private readonly storageModel: Model<StorageItemDocument>,
   ) {}
 
-  async create(
-    dto: CreateStockMovementDto,
-  ): Promise<StockMovementDocument> {
+  async create(dto: CreateStockMovementDto): Promise<StockMovementDocument> {
+    const target = this.resolveTarget(dto);
     if (dto.type === 'transfer' && !dto.toWarehouseId) {
       throw new BadRequestException('Transfer requires toWarehouseId');
     }
@@ -36,26 +30,14 @@ export class StockMovementService {
     try {
       await session.withTransaction(async () => {
         if (dto.type === 'in') {
-          await this.applyIn(
-            dto.warehouseId,
-            dto.productId,
-            dto.zoneName,
-            dto.qty,
-            session,
-          );
+          await this.applyIn(dto.warehouseId, target, dto.zoneName, dto.qty, session);
         } else if (dto.type === 'out') {
-          await this.applyOut(
-            dto.warehouseId,
-            dto.productId,
-            dto.zoneName,
-            dto.qty,
-            session,
-          );
+          await this.applyOut(dto.warehouseId, target, dto.zoneName, dto.qty, session);
         } else if (dto.type === 'transfer') {
           await this.applyTransfer(
             dto.warehouseId,
             dto.toWarehouseId!,
-            dto.productId,
+            target,
             dto.zoneName,
             dto.toZoneName,
             dto.qty,
@@ -64,26 +46,21 @@ export class StockMovementService {
         }
 
         const [doc] = await this.model.create(
-          [
-            {
-              type: dto.type,
-              date: new Date(),
-              productId: new Types.ObjectId(dto.productId),
-              warehouseId: new Types.ObjectId(dto.warehouseId),
-              toWarehouseId: dto.toWarehouseId
-                ? new Types.ObjectId(dto.toWarehouseId)
-                : undefined,
-              zoneName: dto.zoneName,
-              toZoneName: dto.toZoneName,
-              qty: dto.qty,
-              cost: dto.cost ?? 0,
-              orderId: dto.orderId,
-              documentRef: dto.documentRef,
-              createdBy: dto.createdBy
-                ? new Types.ObjectId(dto.createdBy)
-                : undefined,
-            },
-          ],
+          [{
+            type: dto.type,
+            date: new Date(),
+            productId: target.productId ? new Types.ObjectId(target.productId) : undefined,
+            materialId: target.materialId ? new Types.ObjectId(target.materialId) : undefined,
+            warehouseId: new Types.ObjectId(dto.warehouseId),
+            toWarehouseId: dto.toWarehouseId ? new Types.ObjectId(dto.toWarehouseId) : undefined,
+            zoneName: dto.zoneName,
+            toZoneName: dto.toZoneName,
+            qty: dto.qty,
+            cost: dto.cost ?? 0,
+            orderId: dto.orderId,
+            documentRef: dto.documentRef,
+            createdBy: dto.createdBy ? new Types.ObjectId(dto.createdBy) : undefined,
+          }],
           { session },
         );
         movement = doc;
@@ -97,29 +74,22 @@ export class StockMovementService {
 
   private async applyIn(
     warehouseId: string,
-    productId: string,
+    target: StockTarget,
     zoneName: string | undefined,
     qty: number,
     session: unknown,
   ): Promise<void> {
-    const filter: Record<string, unknown> = {
-      warehouseId: new Types.ObjectId(warehouseId),
-      productId: new Types.ObjectId(productId),
-    };
-    if (zoneName) filter.zoneName = zoneName;
-    else filter.$or = [{ zoneName: { $exists: false } }, { zoneName: null }];
-
+    const filter = this.targetFilter(warehouseId, target, zoneName);
     let item = await this.storageModel.findOne(filter).session(session as never).exec();
     if (!item) {
       const [created] = await this.storageModel.create(
-        [
-          {
-            warehouseId: new Types.ObjectId(warehouseId),
-            productId: new Types.ObjectId(productId),
-            zoneName: zoneName ?? undefined,
-            quantity: qty,
-          },
-        ],
+        [{
+          warehouseId: new Types.ObjectId(warehouseId),
+          productId: target.productId ? new Types.ObjectId(target.productId) : undefined,
+          materialId: target.materialId ? new Types.ObjectId(target.materialId) : undefined,
+          zoneName: zoneName ?? undefined,
+          quantity: qty,
+        }],
         { session: session as never },
       );
       item = created;
@@ -131,23 +101,17 @@ export class StockMovementService {
 
   private async applyOut(
     warehouseId: string,
-    productId: string,
+    target: StockTarget,
     zoneName: string | undefined,
     qty: number,
     session: unknown,
   ): Promise<void> {
-    const filter: Record<string, unknown> = {
-      warehouseId: new Types.ObjectId(warehouseId),
-      productId: new Types.ObjectId(productId),
-    };
-    if (zoneName) filter.zoneName = zoneName;
-    else filter.$or = [{ zoneName: { $exists: false } }, { zoneName: null }];
-
-    const item = await this.storageModel.findOne(filter).session(session as never).exec();
+    const item = await this.storageModel
+      .findOne(this.targetFilter(warehouseId, target, zoneName))
+      .session(session as never)
+      .exec();
     if (!item) {
-      throw new BadRequestException(
-        `No storage item for product ${productId} in warehouse ${warehouseId}`,
-      );
+      throw new BadRequestException('Для выбранного товара нет позиции на складе');
     }
     if ((item.quantity ?? 0) < qty) {
       throw new BadRequestException(
@@ -164,14 +128,14 @@ export class StockMovementService {
   private async applyTransfer(
     fromWarehouseId: string,
     toWarehouseId: string,
-    productId: string,
+    target: StockTarget,
     fromZone: string | undefined,
     toZone: string | undefined,
     qty: number,
     session: unknown,
   ): Promise<void> {
-    await this.applyOut(fromWarehouseId, productId, fromZone, qty, session);
-    await this.applyIn(toWarehouseId, productId, toZone, qty, session);
+    await this.applyOut(fromWarehouseId, target, fromZone, qty, session);
+    await this.applyIn(toWarehouseId, target, toZone, qty, session);
   }
 
   async findAll(
@@ -180,6 +144,7 @@ export class StockMovementService {
     type?: string,
     from?: Date,
     to?: Date,
+    materialId?: string,
   ): Promise<StockMovementDocument[]> {
     const filter: Record<string, unknown> = {};
     if (warehouseId) {
@@ -193,6 +158,10 @@ export class StockMovementService {
       if (!Types.ObjectId.isValid(productId)) return [];
       filter.productId = new Types.ObjectId(productId);
     }
+    if (materialId) {
+      if (!Types.ObjectId.isValid(materialId)) return [];
+      filter.materialId = new Types.ObjectId(materialId);
+    }
     if (type) filter.type = type;
     if (from || to) {
       const range: Record<string, Date> = {};
@@ -203,46 +172,66 @@ export class StockMovementService {
     return this.model
       .find(filter)
       .populate('productId')
+      .populate('materialId')
       .populate('warehouseId')
       .populate('toWarehouseId')
       .sort({ date: -1 })
       .exec();
   }
 
-  async summary(
-    period: 'day' | 'week' | 'month' = 'month',
-  ): Promise<{ type: string; totalQty: number; totalAmount: number }[]> {
+  async summary(period: 'day' | 'week' | 'month' = 'month') {
     const now = new Date();
     const from = new Date(now);
     if (period === 'day') from.setDate(from.getDate() - 1);
     else if (period === 'week') from.setDate(from.getDate() - 7);
     else from.setMonth(from.getMonth() - 1);
-    const result = await this.model
-      .aggregate([
-        { $match: { date: { $gte: from } } },
-        {
-          $group: {
-            _id: '$type',
-            totalQty: { $sum: '$qty' },
-            totalAmount: { $sum: { $multiply: ['$qty', '$cost'] } },
-          },
+    const result = await this.model.aggregate([
+      { $match: { date: { $gte: from } } },
+      {
+        $group: {
+          _id: '$type',
+          totalQty: { $sum: '$qty' },
+          totalAmount: { $sum: { $multiply: ['$qty', '$cost'] } },
         },
-      ])
-      .exec();
-    return result.map((r) => ({
-      type: r._id,
-      totalQty: r.totalQty,
-      totalAmount: r.totalAmount,
-    }));
+      },
+    ]).exec();
+    return result.map((r) => ({ type: r._id, totalQty: r.totalQty, totalAmount: r.totalAmount }));
   }
 
   async remove(id: string): Promise<void> {
     if (!Types.ObjectId.isValid(id)) return;
-    await this.model
-      .updateOne(
-        { _id: new Types.ObjectId(id) },
-        { $set: { deletedAt: new Date() } },
-      )
-      .exec();
+    await this.model.updateOne(
+      { _id: new Types.ObjectId(id) },
+      { $set: { deletedAt: new Date() } },
+    ).exec();
+  }
+
+  private resolveTarget(dto: Pick<CreateStockMovementDto, 'productId' | 'materialId'>): StockTarget {
+    const hasProduct = Boolean(dto.productId);
+    const hasMaterial = Boolean(dto.materialId);
+    if (hasProduct === hasMaterial) {
+      throw new BadRequestException(
+        'Движение должно ссылаться ровно на продукт или материал',
+      );
+    }
+    const id = hasProduct ? dto.productId : dto.materialId;
+    if (!Types.ObjectId.isValid(id!)) throw new BadRequestException('Некорректный идентификатор складской позиции');
+    return { productId: dto.productId, materialId: dto.materialId };
+  }
+
+  private targetFilter(
+    warehouseId: string,
+    target: StockTarget,
+    zoneName?: string,
+  ): Record<string, unknown> {
+    const filter: Record<string, unknown> = {
+      warehouseId: new Types.ObjectId(warehouseId),
+      ...(target.productId
+        ? { productId: new Types.ObjectId(target.productId) }
+        : { materialId: new Types.ObjectId(target.materialId!) }),
+    };
+    if (zoneName) filter.zoneName = zoneName;
+    else filter.$or = [{ zoneName: { $exists: false } }, { zoneName: null }];
+    return filter;
   }
 }

@@ -22,23 +22,29 @@ export class StorageItemController {
   @Post('products/:productId/storage-items')
   @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'StorageItem' })
-  createForProduct(
-    @Param('productId') productId: string,
-    @Body() dto: CreateStorageItemDto,
-  ) {
+  createForProduct(@Param('productId') productId: string, @Body() dto: CreateStorageItemDto) {
     return this.service.create({ ...dto, productId });
+  }
+
+  @Post('materials/:materialId/storage-items')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'create', entityType: 'StorageItem' })
+  createForMaterial(@Param('materialId') materialId: string, @Body() dto: CreateStorageItemDto) {
+    return this.service.create({ ...dto, materialId });
   }
 
   @Get('storage-items')
   findAll(
     @Query('warehouseId') warehouseId?: string,
     @Query('productId') productId?: string,
+    @Query('materialId') materialId?: string,
     @Query('lowStock') lowStock?: string,
   ) {
     return this.service.findAll(
       warehouseId,
       productId,
       lowStock === 'true' || lowStock === '1',
+      materialId,
     );
   }
 

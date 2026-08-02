@@ -1,12 +1,18 @@
-import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsArray, IsBoolean, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { IsObjectId } from '../../../common/decorators/is-object-id.decorator';
 
 export class CreateStorageItemDto {
   @IsObjectId()
   warehouseId!: string;
 
+  /** Exactly one of productId/materialId is required by StorageItemService. */
+  @IsOptional()
   @IsObjectId()
-  productId!: string;
+  productId?: string;
+
+  @IsOptional()
+  @IsObjectId()
+  materialId?: string;
 
   @IsOptional() @IsString() zoneName?: string;
   @IsOptional() @IsString() name?: string;
