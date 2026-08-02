@@ -65,7 +65,9 @@ nul
 *.swp
 *.swo
 *~
-.cursor/
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
 
 # Test coverage
 coverage/

@@ -7,9 +7,28 @@
 
 ## 1. 🧭 Быстрый старт
 
-### 1.1 Кто ты
+### 1.0 Роли агентов
 
-Ты — ИИ-агент, который пишет и редактирует код для **kppdf-8.0**, ERP-системы для управления производством, складом, заказами и документами. Ты работаешь в `D:\kppdf-8.0` на ветке `main`. НИКОГДА не работай в `.freebuff/worktrees/*` — это песочницы Freebuff с устаревшим base (см. `docs/how-to-connect-ai.md`).
+| Роль | Кто | Делает | Не делает |
+|------|-----|--------|-----------|
+| **Архитектор / TZ-author / future user (Mode A)** | Cursor | Оценка, планы, executable TZ, UX/business smell → TZ, review текстом; **commit+push своих docs/TZ по умолчанию** | Код продукта, длинные build/test, archive closeout как исполнитель |
+| **Исполнитель** | Gemini / локальные агенты | Код по TZ, gates, checklist, archive | Выбор roadmap «улучшить всё» без PO |
+| **Оркестрация** | OrchestratorKit | STATUS, `_active`/`_archive`, verify-status | Бизнес-логика ERP |
+
+**Cursor как будущий пользователь ERP:** при чтении кода/потоков замечай неудобные шаги, дубли меню/полей/сущностей, нелогичные статусы и противоречия домена — оформляй в TZ, не молчи.
+
+**Git:** Cursor коммитит и пушит только свои артефакты (rules, skills, `tasks` спеки, checklists). Чужой half-baked `*.ts` не трогать.
+
+Контракты:
+
+- Cursor: `.cursor/rules/cursor-architect.mdc`, `.agents/skills/cursor-usage/SKILL.md`, `.agents/skills/tz-authoring/SKILL.md`
+- Исполнитель: корневой `GEMINI.md`, `.agents/skills/kppdf-project/SKILL.md`, при kit-flow — `OrchestratorKit/AGENTS.md`
+
+Если ты Cursor и тебя просят имплементировать — отказ по Mode A + путь/черновик TZ для локального агента.
+
+### 1.1 Кто ты (исполнитель)
+
+Ты — ИИ-агент-**исполнитель**, который пишет и редактирует код для **kppdf-8.0**, ERP-системы для управления производством, складом, заказами и документами. Ты работаешь в `D:\kppdf-8.0` на ветке `main`. НИКОГДА не работай в `.freebuff/worktrees/*` — это песочницы Freebuff с устаревшим base (см. `docs/how-to-connect-ai.md`).
 
 ### 1.2 Порядок чтения при входе в проект
 

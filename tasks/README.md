@@ -2,34 +2,48 @@
 
 **Verified:** 2026-08-02 · canonical workspace `D:\kppdf-8.0` · branch `main`
 
-This index covers only the four remaining owner-approved active TZ files in the repository root. `tasks/README.md` itself is a service document, not a TZ. Any additional untracked task file outside this approved set is foreign to this review and is intentionally excluded.
-Completed, superseded, blocked, orphaned, and deferred work belongs under
-`tasks/_archive/2026-08/` and is not active merely because it is mentioned in
-historical documentation.
+This index is the human/agent index for `tasks/*.md`. For the live two-stream
+focus map see [`docs/agent-checklists/_active-map.md`](../docs/agent-checklists/_active-map.md).
+`tasks/README.md` itself is a service document, not a TZ.
+Completed work belongs under `tasks/_archive/2026-08/`.
 
 > **Агенту нельзя выполнять все файлы из tasks/ одной командой.**
 > Владелец выбирает одну конкретную TZ, после чего агент проверяет
 > dependencies и conflict keys перед началом работы.
 
-## Active tasks
+## Active tasks (priority streams)
 
 | ID | Category | Priority | Status | Dependencies | Safe order |
 |---|---|---:|---|---|---:|
-| [TZ-278](TZ-278-admin-users-pagination.md) | Admin/RBAC | P1 | Active; separate planning required | TZ-257, TZ-119 | 2A |
-| [TZ-MATERIALS-307](TZ-MATERIALS-307-sku-autogeneration.md) | Materials / Inventory · backend | P1 | Active successor | TZ-MATERIALS-303 (done) | 2B |
-| [TZ-MATERIALS-309](TZ-MATERIALS-309-isimmutable-enforcement.md) | Materials / Inventory · backend + module integration | P1 | Active successor | TZ-MATERIALS-305 (done) | 2C |
-| [TZ-MATERIALS-308](TZ-MATERIALS-308-material-stock-link.md) | Materials / Inventory · domain/API | P1 | Active successor; wait for 307 on shared file | TZ-MATERIALS-304 (done) | 3 |
-| [TZ-DOC-315](TZ-DOC-315-text-block-category-backend-contract.md) | Document Constructor · text-block · backend | P1 | Active; first in chain | — | 4A |
-| [TZ-DOC-316](TZ-DOC-316-text-block-category-reference-and-picker.md) | Document Constructor · text-block · UI | P1 | Active; unlocks after 315 | TZ-DOC-315 | 4B |
-| [TZ-DOC-317](TZ-DOC-317-builder-text-picker-category-filter.md) | Document Constructor · builder text picker | P1 | Active; unlocks after 315 (best after 316) | TZ-DOC-315 | 4C |
+| [Z-001](Z-001-inventory-write-transactions.md) | Inventory · backend transactions | **P0** | Activated from z-series backlog; **local executor only** (Cursor Mode A = spec) | none | **1** |
+| [TZ-DOC-316](TZ-DOC-316-text-block-category-reference-and-picker.md) | Document Constructor · UI | P1 | Stream A | TZ-DOC-315 (archive/done preferred) | 2A |
+| [TZ-DOC-317](TZ-DOC-317-builder-text-picker-category-filter.md) | Document Constructor · builder | P1 | after 316 | TZ-DOC-315/316 | 2B |
+| [TZ-DOC-318](TZ-DOC-318-builder-texts-topbar-category-filter.md) | Document Constructor · builder | P1 | after 317 | TZ-DOC-317 | 2C |
+| [TZ-DOC-323](TZ-DOC-323-text-block-legacy-enum-removal.md) | Document Constructor · backend cleanup | P1 | peer-owned | TZ-DOC-320..322 done | 2D |
 
-Priorities are operational recommendations for sequencing, not changes to the
-source task specifications. TZ-278 is intentionally marked as requiring a
-separate plan because it changes both list API response contracts and frontend
-pagination. Materials TZ-MATERIALS-307..309 may be assigned to another AI, but
-must still honor their dependencies and conflict keys.
+## Still on disk in `tasks/` (not Stream A/B — park or verify)
+
+Do **not** treat as “DONE” without `tasks/_archive/2026-08/*.done.md`. Notably
+**TZ-MATERIALS-307/308/309** remain active files (archive only through MATERIALS-306).
+Peer cleanup may move WORKERS/WORKTYPES/MODULES/PRODUCTS extras to `_backlog`.
+Cursor does not bulk-move those in Mode A.
+
+| ID | Note |
+|---|---|
+| TZ-MATERIALS-307..309 | Still active on disk; conflict with Z-001 on `stock-movement` for **308** — do not parallel 308 with Z-001 |
+| TZ-DOC-315, 319, 320 | 320 archived as done — delete/orphan cleanup is peer’s; 315 may be archive-eligible |
+| TZ-PRODUCTS-*, TZ-MODULES-*, TZ-WORKERS-*, TZ-WORKTYPES-* | Prefer park to `_backlog` per peer plan |
 
 ## Task summaries and conflict keys
+
+### Z-001 — inventory write-path transactions (P0)
+
+- **Description:** Wrap `shipment.dispatch`, `purchase-order.receive`, `order.ship` in
+  SessionRunner; add external-session to nested `stock-movement.create` /
+  `reservation.fulfill`; implement remove policy (a) reverse delta.
+- **Conflict keys:** see task file (shipment/purchase-order/order/stock-movement/reservation + modules).
+- **Executor:** local/Gemini. Cursor only maintains the spec.
+- **Prompt:** see end of task file + `docs/agent-checklists/Z-001.md`.
 
 ### TZ-278 — admin users pagination
 
@@ -73,7 +87,8 @@ must still honor their dependencies and conflict keys.
 - **Dependency note:** TZ-MATERIALS-304 is archived/done. This is a domain/API
   task, not a UI-only fix; no migrations are allowed without a separate TZ.
 - **Execution:** run after TZ-MATERIALS-307 because both claim
-  `backend/src/modules/material/material.service.ts`.
+  `backend/src/modules/material/material.service.ts`. **Also wait for Z-001**
+  (shared `stock-movement.service.ts`).
 
 ### TZ-DOC-315 — TextBlockCategory backend contract
 
@@ -156,54 +171,42 @@ must still honor their dependencies and conflict keys.
 
 ## Safe execution waves
 
-1. **Completed review:** TZ-280 documentation/indexing is archived as DONE. Its short marker is `tasks/_archive/2026-08/TZ-280.done.md`; the Team Room-compatible evidence record is `tasks/_archive/2026-08/TZ-280-project-expert-review.done.md`.
-2. **Wave 1 — next sessions, separately claimed:** TZ-278; TZ-MATERIALS-307;
-   TZ-MATERIALS-309; TZ-DOC-315. TZ-278 is isolated from Materials and
-   Document Constructor. TZ-MATERIALS-307 and TZ-MATERIALS-309 are
-   intersected only by Materials files. TZ-DOC-315 is isolated and ready
-   to start; it does NOT touch Materials, Admin/RBAC, or sanitize-html.
-3. **Wave 2 — after TZ-DOC-315:** TZ-DOC-316 (frontend dictionary + picker
-   in catalog/editor). Once 316 is closed, TZ-DOC-317 unlocks.
-4. **Wave 3 — after TZ-MATERIALS-307:** TZ-MATERIALS-308, because it shares
-   `backend/src/modules/material/material.service.ts` with TZ-307.
-5. **Wave 4 — after TZ-DOC-316:** TZ-DOC-317 (builder dropdown for category
-   filter). Do not run parallel to TZ-DOC-310..314 (same `builder-tool-pane`).
-6. **Successor after Wave 2:** TZ-DOC-318 (migration legacy enum
-   `category: 'legal'|'intro'|'outro'|'custom'` → new `categoryId` FK) is
-   **not** part of this chain — track separately when product is ready.
+1. **Stream B (P0):** Z-001 inventory transactions — local executor only; do not
+   parallel with TZ-MATERIALS-308 (`stock-movement.service.ts`).
+2. **Stream A (DOC):** TZ-DOC-316 → 317 → 318; TZ-DOC-323 peer-owned in parallel
+   if conflict keys disjoint. DOC-320..322 are archived DONE — do not reopen.
+3. **Park / later:** WORKERS, WORKTYPES, MODULES, extra PRODUCTS — peer may move
+   to `_backlog`. MATERIALS-307..309 remain on disk until verified DONE or parked;
+   do not assume DONE (archive only through MATERIALS-306).
+4. **Historical waves** (TZ-278, old MATERIALS/DOC order) — see archive; TZ-278
+   is DONE per domain coverage note below if archived.
 
 Do **not** launch a whole wave as one command. Claim one task, inspect its
 current dependencies and conflict keys, then run only that task's checks.
 
 ## Domain coverage
 
-- **Admin/RBAC:** no active root TZ; TZ-278 is archived DONE. The preceding TZ-274, TZ-275, and TZ-277 are DONE, and TZ-276 is SUPERSEDED.
-- **Materials/Inventory:** active TZ-MATERIALS-307, 308, 309.
-- **Document Constructor:** three active root tasks TZ-DOC-315, 316, and 317
-  form a single chain (backend contract → UI dictionary → builder filter)
-  for user-defined categories on `TextBlock`. TZ-DOC-268..273 are archived
-  DONE and TZ-276 is archived SUPERSEDED by TZ-DOC-268.
-- **Desktop:** no active root task.
-- **Backend architecture:** no active root task in `tasks/*.md`; do not promote
-  Z-series proposals automatically.
-- **Security:** no active root task in `tasks/*.md`; archived RBAC/security
-  work is historical evidence, not a new active task.
-- **Documentation/operations:** TZ-280 is archived DONE; no active documentation/operations TZ remains.
+- **Inventory integrity:** **Z-001 active** at `tasks/Z-001-inventory-write-transactions.md`
+  (activated from z-series backlog). Executor = local/Gemini; Cursor Mode A = spec only.
+- **Admin/RBAC:** TZ-278 archived DONE when present under `_archive`; do not reopen.
+- **Materials/Inventory product work:** TZ-MATERIALS-307, 308, 309 still files in
+  `tasks/` until peer parks or archives with proof.
+- **Document Constructor:** Stream A = 316/317/318/323; 320–322 DONE in archive.
+- **Inactive Z backlog (except activated Z-001):** see
+  [`tasks/_backlog/z-series/README.md`](_backlog/z-series/README.md). Do not
+  promote Z-002..Z-007 without PO.
 
 ## Archived, duplicate, and inactive work
 
 - **Confirmed duplicate:** TZ-276 is archived as SUPERSEDED by
   `tasks/_archive/2026-08/TZ-DOC-268.done.md`. Do not reopen or implement it.
 - **Valid successors:** TZ-MATERIALS-307, 308, and 309 are explicit successors
-  to completed Materials boundary/audit tasks; they are not duplicates.
-- **Closed Admin/RBAC:** TZ-274, TZ-275, and TZ-277 are archived DONE. Do not
-  re-open them while working on TZ-278.
-- **Inactive Z backlog:** see [`tasks/_backlog/z-series/README.md`](_backlog/z-series/README.md).
-  Z-series is analytical/inactive and must not be copied into `tasks/*.md` or
-  treated as executable active work.
+  to completed Materials boundary/audit tasks; they are not duplicates and are
+  **not** automatically DONE.
+- **Closed Admin/RBAC:** TZ-274, TZ-275, and TZ-277 are archived DONE.
+- **Z-001:** active executable; backlog path is pointer only.
 - **Z-003 audit-only:** `docs/audits/Z-003-soft-delete-audit.md` is an audit
-  document, not an implemented task and not an active TZ. It remains outside
-  this index.
+  artefact, not an active TZ. It remains outside this index.
 
 ## Operational rule
 

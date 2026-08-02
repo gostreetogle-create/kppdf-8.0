@@ -1,15 +1,24 @@
 ---
 name: kppdf-project
-description: Project-specific operating rules for Gemini working on the kppdf-8.0 repository
+description: >-
+  Project-specific operating rules for kppdf-8.0. Routes Cursor to architect/TZ
+  mode and Gemini/local agents to executor mode. Use on any work in this repo.
 ---
 
 # kppdf-8.0 Project Skill
 
-Используй этот skill из корня репозитория `D:\kppdf-8.0` вместе с корневым
-`GEMINI.md`. `GEMINI.md` — главный контракт проекта; этот файл дополняет его
-маршрутизацией навыков и короткими правилами.
+Используй из корня `D:\kppdf-8.0`. Роли разные — не смешивай циклы.
 
-## Обязательный порядок
+## Роутинг по роли
+
+| Агент | Контракт | Режим |
+|---|---|---|
+| **Cursor** | `.cursor/rules/cursor-architect.mdc` + `cursor-usage` + `tz-authoring` | Mode A: TZ/планы/UX-smell notes/review; **commit+push своих docs**; **не** код продукта |
+| **Gemini / локальные** | корневой `GEMINI.md` + этот skill (секции ниже) | Executor: код, gates, archive |
+
+Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `executing-plans` / `tdd` / `run-project-checks` / `verification-before-completion` для собственной имплементации.
+
+## Обязательный порядок (исполнитель)
 
 1. Прочитать `GEMINI.md`.
 2. Прочитать `README.md`, `ARCHITECTURE.md`, `STACK.md`,
@@ -37,12 +46,22 @@ description: Project-specific operating rules for Gemini working on the kppdf-8.
 
 ## Skill routing
 
+### Cursor (architect)
+
+| Ситуация | Skill |
+|---|---|
+| Любая сессия Cursor на репо | `cursor-usage` |
+| Написать/уточнить TZ, спеку, AC | `tz-authoring` |
+| Новый feature / поведение (дизайн) | `brainstorming` |
+| План без кода | `writing-plans` |
+| Текстовый review чужого diff | `requesting-code-review` / `receiving-code-review` (без патчей) |
+
+### Исполнитель (Gemini / локальные)
+
 Подключай skills из `C:\Users\User\.agents\skills` только по необходимости:
 
 | Ситуация | Skill |
 |---|---|
-| Новый feature или изменение поведения | `brainstorming` |
-| Планирование | `writing-plans` |
 | Исполнение готового плана | `executing-plans` |
 | TypeScript DSL/generics | `typescript-advanced-types` |
 | NestJS/API/database | `nodejs-backend-patterns` |
@@ -53,9 +72,9 @@ description: Project-specific operating rules for Gemini working on the kppdf-8.
 | Performance/Lighthouse | `performance` |
 | Angular/browser verification | `webapp-testing` |
 | Проверка перед DONE | `verification-before-completion` |
-| Code review | `requesting-code-review` и `receiving-code-review` |
 | Worktree isolation | `using-git-worktrees` |
 | Работа с PDF | `pdf` |
+| Project gates | `run-project-checks` |
 
 ## Проверки
 
