@@ -264,6 +264,17 @@ End-of-day {for each active production task}:
 | Q10 | Archive granularity | per-order vs per-shipment | **RESOLVED: per-shipment** (concrete card); order links many shipments |
 
 > Spike TZ не создавались: defaults достаточно уверенные для lite-цеха (~10 чел). PO может override до старта chain.
+>
+> ✅ **Executor verification (Buffy, 2026-08-02):** все 10 defaults (Q1–Q10) независимо
+> перепроверены против кода (`order.service.ts`, `work-type`/`module` схемы, `Z-001`
+> транзакции, `shipment.service.ts`) и соответствуют текущему состоянию каталога:
+> - Q1/Q2 (strip commerce + inline snapshot) — консистентно с «история продаж» и отсутствием price на Order;
+> - Q3/Q8 (WorkType.days + calendar days) — единственные поля, которые можно читать из существующей схемы без миграции;
+> - Q5 (server cron) — NestJS `@nestjs/schedule` уже в стеке (backend/package.json);
+> - Q6 (Designer auto-set) — совпадает с S3 early-exit (PRODUCTS-306 flag);
+> - Q9/Q10 (per-stage denorm + per-shipment archive) — прямой след immutability rule §3.
+> Z-spikes (Z-008..Z-017) НЕ создаются — каждый default либо тривиален, либо уже
+> зафиксирован в 15 backlog-спеках §7. PO подтверждает перед стартом chain.
 
 ---
 
