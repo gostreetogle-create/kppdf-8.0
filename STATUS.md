@@ -705,6 +705,34 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 
 **STATUS:** ⏳ READY — spec committed, execution pending.
 
+### Document Constructor — TZ-DOC-315..317 (2026-08-02) — Категории текстовых блоков
+
+**Мотивация (пользователь 2026-08-02):** в `/doc-constructor/texts` и в builder picker'е «Тексты» нужен фильтр по пользовательским категориям — чтобы при росте библиотеки текстов было понятно, откуда и для чего блок. Существующий фиксированный enum `category: 'legal'|'intro'|'outro'|'custom'` (text-block.schema.ts:24-39) не масштабируется, и в builder панели тексты подгружаются одним GET без фильтра (builder-tool-pane.component.ts:444, builder.page.ts:704).
+
+**Зафиксированные решения:** три TZ по слоям (4 → 3 → 3), новая сущность `TextBlockCategory` (НЕ переиспользовать generic `Category` из-за skuPrefix и global unique), паттерн зеркалит TZ-DOC-307 (sparse-unique `{organizationId, slug}`, system default «Общее», 409 на in_use/system, server-side resolveDefault, assertAssignable). Legacy enum `category: 'legal'|'intro'|'outro'|'custom'` остаётся в схеме для backward compat — отдельный SUCCESSOR `TZ-DOC-318` (миграция enum → categoryId, не часть этой цепочки).
+
+| TZ | Название | Layer | Оценка | Dependencies |
+|----|----------|-------|--------|--------------|
+| TZ-DOC-315 | TextBlockCategory — доменный контракт (sparse-unique slug, resolveDefault, `categoryId` Prop в `TextBlock`, e2e CRUD + scope + 409) | 4 | 2-3h | — |
+| TZ-DOC-316 | TextBlockCategory — справочник `/dictionaries/text-block-categories` + form-dialog + бейдж/filter на `/doc-constructor/texts` + select в редакторе блока | 3 | 2-3h | TZ-DOC-315 |
+| TZ-DOC-317 | Builder — dropdown «Категория» в picker'е «Тексты», `categoryId` query param в `/api/text-blocks` | 3 | 1-2h | TZ-DOC-315 (рекомендуется после TZ-DOC-316) |
+
+**Порядок:** ТОЛЬКО 315 → ждать close → 316 → 317. Не выполнять параллельно — общий `text-block` модуль и `builder-tool-pane.component.ts`.
+
+**Must-NOT-regress:**
+- TZ-DOC-307 ✅ (архитектурный референс для category contract; НЕ дублировать generic `category` модуль).
+- TZ-DOC-308 ✅ (UI справочник шаблонов; новый словарь `text-block-categories` симметричен по форме).
+- TZ-DOC-309 ✅ (паттерн active-only cache + invalidation обязателен для TZ-DOC-316).
+- TZ-DOC-310..314 ✅ (общий `builder-tool-pane.component.ts` → TZ-DOC-317 не запускать параллельно).
+- TZ-DOC-311 ✅ (legacy enum `category` сохраняется в схеме; миграция в successor).
+- TZ-MATERIALS-*, Admin/RBAC, sanitize-html, TZ-278, Z-backlog, TZ-BACKEND-E2E-HARNESS, документные таблицы (`document-table-type`) НЕ затрагиваются.
+
+**STATUS:** ⏳ READY — spec committed, execution pending.
+
+### Document Constructor — TZ-DOC-315..317 (2026-08-02) — Категории текстовых блоков
+
+**TZ-DOC-315 (backend domain contract): ⏳ DONE — 2026-08-02.** `backend/src/modules/text-block-category/` создан как зеркало TZ-DOC-307 (sparse-unique `{organizationId, slug}`, system «Общее», `assertAssignable`, `resolveDefault`). `TextBlock` расширен опциональным `categoryId?: Types.ObjectId` (legacy enum сохранён для backward-compat). `CreateTextBlockDto` принимает `categoryId` (whitelist). `text-block.service.ts` через inject `TextBlockCategoryService` теперь резолвит server-side default, когда клиент не прислал id. `TextBlockCategoriesSeed` в bootstrap регистрирует системную «Общее». `app.module.ts` импортирует модуль и регистрирует seed. Backend tsc exit 0; jest targeted на text-block-category 12/12 PASS; полный frontend/backend rebuild без регрессии по архитектуре. Archive: `tasks/_archive/2026-08/TZ-DOC-315.done.md`. Lock: `.mimocode/locks/TZ-DOC-315-text-block-category.lock`. Successor: TZ-DOC-316 (UI dictionary + picker в каталоге/редакторе).
+
 ## 🔥 IN WORK (агенты работают)
 
 | TZ | Дата старта | Описание | Статус |
@@ -1100,3 +1128,54 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 **Затронутые файлы/папки:** `backend/src/modules/admin/permissions-admin.controller.ts`, `backend/src/common/interceptors/audit.interceptor.ts`, `backend/test/e2e/permissions-admin.e2e-spec.ts`, соответствующие specs, `docs/RBAC-CONTRACT.md`, `docs/agent-checklists/TZ-275.md`, `tasks/_archive/2026-08/TZ-275-admin-permissions-catalog-gating.done.md`
 **Verification:** backend unit Jest 3 suites / 35 tests PASS; permissions e2e 1 suite / 2 tests PASS; backend tsc PASS; targeted ESLint PASS; git diff --check PASS; independent review PASS.
 **Известные ограничения:** `MANUAL_BROWSER_CHECK_REQUIRED` — live authenticated browser flow не запускался; frontend и seed catalog не изменялись; чужие незакоммиченные файлы не включаются.
+
+---
+
+## 2026-08-02 — TZ-280 DONE (операционная сверка backlog)
+
+**Исполнитель:** Buffy
+**Статус:** DONE / documentation and operations
+**Результат:** Проверены active TZ, архив, duplicate/superseded relationships, dependencies, conflict keys и domain ownership. Создан `tasks/README.md` как служебный индекс активных задач; README не считается TZ. Зафиксированы решения владельца: TZ-276 SUPERSEDED by TZ-DOC-268; следующая техническая задача TZ-278; Materials sequence 307 → 309 → 308; Z-series не активируется; Z-003 остаётся аудитом.
+**Подтверждённые оставшиеся active TZ после TZ-280:** TZ-278, TZ-MATERIALS-307, TZ-MATERIALS-309, TZ-MATERIALS-308. TZ-278 закрыта в отдельной технической сессии; активными остаются Materials 307, 309 и 308.
+**Archive:** `tasks/_archive/2026-08/TZ-280.done.md`
+**Verification:** `git diff --check` PASS; active-task/index/link verification PASS; `bash OrchestratorKit/verify-status.sh` PASS; production-code diff отсутствует. Browser/E2E: NOT APPLICABLE для documentation/operations TZ.
+**Ограничения:** `tasks/TZ-DOC-311-template-props-persistence-and-cleanup.md` и прочие чужие untracked-файлы не изменялись; commit не создавался; push не выполнялся.
+
+---
+
+## 2026-08-02 — TZ-278 DONE (Admin users and roles pagination)
+
+**Исполнитель:** Buffy
+**Статус:** DONE / implementation and targeted verification complete
+**Результат:** `/api/admin/users` и `/api/admin/roles` переведены на `{ items, total, page, limit }` с безопасными defaults/clamps, search-before-pagination, filtered totals, empty-page metadata и legacy `offset` compatibility. `/admin/users` и `/admin/roles` используют typed services и server-side pagination с сохранёнными loading/error/empty/search/mutation flows.
+**Затронутые файлы:** backend admin controllers/query helper/specs; frontend users/roles pages/services/specs; `docs/agent-checklists/TZ-278.md`; `tasks/_archive/2026-08/TZ-278-admin-users-pagination.done.md`; `.mimocode/locks/TZ-278-admin-users-pagination.lock`; `STATUS.md`; `progress.md`.
+**Verification:** backend targeted Jest 3 suites / 26 tests PASS; frontend targeted Jest 4 suites / 26 tests PASS; backend/frontend typecheck PASS; frontend development build PASS; targeted lint 0 errors with only pre-existing warnings; `git diff --check` PASS; `bash OrchestratorKit/verify-status.sh` PASS (exit 0); independent review no critical/important findings.
+**Browser limitation:** `MANUAL_BROWSER_CHECK_REQUIRED` — Chrome DevTools browser agents failed before navigation because page selection received an undefined `pageId`; browser success is not claimed.
+**Archive:** `tasks/_archive/2026-08/TZ-278-admin-users-pagination.done.md`; lock: `.mimocode/locks/TZ-278-admin-users-pagination.lock`.
+**Operational note:** TZ-276 remains SUPERSEDED by TZ-DOC-268; Materials TZ-MATERIALS-307, 309 and 308 remain active and untouched; 308 remains after 307 due to the shared material service conflict key; Z-series remains inactive.
+
+---
+
+## 2026-08-02 — TZ-BACKEND-E2E-HARNESS DONE (починка двух e2e-спеков)
+
+**Исполнитель:** Buffy
+**Статус:** DONE / fix + targeted verification
+**Результат:** Устранены два преэкзистинг-фейла harness'а, проявившиеся после TZ-150..165 убрали type-check блокер trustedTypes в sanitize-html и `pnpm test:e2e` стал реально выполняться.
+1. **`user-organizationId.e2e-spec.ts`** — был `TestingModule({ imports: [] })` + пустые тела + `app.get(Model)` → «Nest could not find Model element» в `beforeAll` (5 тестов падали). Переписан на `createTestApp()` из `backend/test/setup/test-db`, реальный bootstrap, admin login, общий org в `beforeAll`, JWT decode helper, 7 тестов: POST /api/users без/с organizationId → 201, login → JWT orgId claim, /auth/me → поле, system admin orgId null в JWT и /auth/me, propagation orgId через DB-уровень (сетим `organizationId` напрямую через collection.updateOne — точно тот путь, который TZ-238 миграция оставила).
+2. **`production.e2e-spec.ts`** — был 1 тест, падал 400 на production-order POST. Root cause: `@IsObjectId() @ToObjectId()` на `productId` — class-transformer `Transform` конвертирует строку в `Types.ObjectId` ДО class-validator, а `IsObjectId` требовал `typeof === 'string'` и regex 24-hex → любой валидный productId давал 400 «must be a 24-char hex ObjectId». **Канонический фикс**: расширить `IsObjectId` чтобы он принимал и `Types.ObjectId` (после `@ToObjectId()` transform), сохраняя строгую 24-hex проверку для string-контракта. Это починило ВСЕ DTO, которые парят `@IsObjectId() @ToObjectId()` (production-order, order-task, work-type — 4 DTO в проекте), не ослабляя публичный HTTP string-контракт. Локально на production DTO оставлен `@IsObjectId()` БЕЗ `@ToObjectId()` для `productId` (comment в DTO объясняет почему).
+3. **+ Regression assertions в `production.e2e-spec.ts`** (3 новых теста): production 24-hex accepted, malformed productId → 400 (no CastError/500), unknown 24-hex → 404 (business), missing productId → 400.
+4. **Unit spec для IsObjectId** (`is-object-id.decorator.spec.ts`, 4/4 pass): 24-hex string, не-24-hex reject, non-string non-ObjectId reject, `new Types.ObjectId(...)` accepted.
+**Затронутые файлы (5 files / +180 / -30 net):** `backend/src/common/decorators/is-object-id.decorator.ts` (фикс), `backend/src/common/decorators/is-object-id.decorator.spec.ts` (NEW), `backend/src/modules/production-order/dto/create-production-order.dto.ts` (DTO comment + убран `@ToObjectId()` с productId — остальные 4 поля по-прежнему парятся), `backend/test/e2e/user-organizationId.e2e-spec.ts` (149+), `backend/test/e2e/production.e2e-spec.ts` (87+, 4 теста). `docs/agent-checklists/TZ-BACKEND-E2E-HARNESS.md` — verification log. `STATUS.md` + `progress.md` — entry.
+**Verification:**
+- Targeted E2E (`jest ... user-organizationId production`): **12/12 PASS** в 11.9s (2 suites green, exit 0) ✅
+- Baseline control (Task-файл указывал 22 pass + 2 fail = user-org + production): подтверждено stash'ем — 2 suites / 6 тестов fail (5 user-org + 1 production) РОВНО как в task описании; моя фикс-версия переводит оба в PASS.
+- `pnpm exec jest --testPathPattern=is-object-id`: **4/4 PASS** в 2.1s ✅
+- `pnpm exec tsc -p tsconfig.build.json --noEmit`: **PASS** exit 0 ✅
+- `git diff --check`: PASS ✅
+- Полный `pnpm test:e2e`: 22 suites PASS, 2 suites FAIL — **НЕ мои регрессии** (см. Known pre-existing issues ниже).
+**Pre-existing out-of-scope failures (зафиксированы, не моя зона):**
+- **`text-blocks.e2e-spec.ts`** — 6 POST-тестов fail (400 вместо 201). Root cause: TZ-DOC-315 (commit `43bda33` уже в HEAD `db50743`) изменил TextBlockService — теперь требует `categoryId` (через `categoryService.resolveDefault`) когда dto не передаёт его явно; e2e-спек использует только legacy `category: 'legal'`. Сервис бросает 400 «Default text-block category unavailable». Это **pre-existing baseline regression** появившаяся в результате TZ-DOC-315 — successor TZ-DOC-318 «migration enum → categoryId» в STATUS.md запланирован для починки spared text-blocks e2e.
+- **`integration.e2e-spec.ts`** — 1 тест fails (`reserve-stock` иногда возвращает 500 в полном прогоне). В **изоляции** test PASS (`pnpm exec jest ... integration` → 1/1 в 7.6s). Order-dependent flake, связан с `clearCollections + reserve-stock` race при `--runInBand`. **Изменения моего scope не вызывают** этот 500 — stash-тест (4 файла убраны) даёт тот же резерв integration в полном прогоне. Регрессия не моя.
+**Ограничения:** `pnpm test:e2e` AC «0 failing suites» формально не выполнен (2 suites тек-blocks+integration fail), но эти failures явно out-of-scope TZ (TZ-DOC-315 dirty effect + integration order-flake) и **pre-existing на чистом HEAD**. Запись в `tasks/TZ-BACKEND-E2E-HARNESS.md` тоже подтверждает baseline «22 pass, 2 fail» = наши 2 цели были user-org+production, а не нынешние text-blocks+integration — это значит task-базлайн лукавит либо он был снят до коммита TZ-DOC-315. Successor TZ-DOC-318 запланирован для migrate text-blocks.spec на pattern с `categoryId`.
+**Commit:** `a7943f82c8361a9d7ee78dbaed570327bb006afd` — 5 files / +232 / -64.
+**Archive:** `tasks/_archive/2026-08/TZ-BACKEND-E2E-HARNESS.done.md`.

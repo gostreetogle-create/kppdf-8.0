@@ -5026,6 +5026,16 @@ E2E-сценарии с созданием данных помечены MANUAL_
 
 ---
 
+## 2026-08-02 — TZ-280 DONE (documentation/operations)
+
+**Результат:** Завершена операционная сверка backlog и создан служебный `tasks/README.md`. До архивирования подтверждены пять active TZ: TZ-280, TZ-278, TZ-MATERIALS-307, TZ-MATERIALS-309, TZ-MATERIALS-308; после закрытия TZ-280 остаются TZ-278 и Materials 307/309/308. `tasks/README.md` не является active TZ.
+**Решения владельца:** TZ-276 SUPERSEDED by TZ-DOC-268; следующая задача TZ-278; Materials выполнять 307 → 309 → 308; 307 и 308 не запускать параллельно из-за общего `backend/src/modules/material/material.service.ts`; Z-series не активировать; Z-003 оставить аудитом.
+**Изменения:** только документация и tracking (`tasks/README.md`, `docs/README.md`, TZ-280 addendum, STATUS/progress, archive marker, lock); production-код не изменялся.
+**Проверки:** `git diff --check` PASS; active-task/index/link checks PASS; `bash OrchestratorKit/verify-status.sh` PASS. Jest/typecheck/build не запускались — production-код не изменялся. Browser/E2E: NOT APPLICABLE для документационной TZ.
+**Архив:** `tasks/_archive/2026-08/TZ-280.done.md`; commit пока не создан по правилу владельца.
+
+---
+
 ## 2026-08-02 — TZ-DOC-311 DONE (Свойства шаблона — pageNumbering сохраняется, legacy-поля убраны из UI)
 
 **Исполнитель:** Buffy
@@ -5072,3 +5082,19 @@ E2E-сценарии с созданием данных помечены MANUAL_
 **Проверки:** FE targeted jest 49/49 PASS (3 suites, runInBand), FE tsc PASS, ng build PASS, `git diff --check` PASS, `verify-status.sh` PASS, независимый code review PASS (no P0/P1; 2 P2 исправлены: canConfirm+хинт достижим, мёртвый accessor убран).
 **Архив:** `tasks/_archive/2026-08/TZ-DOC-310-template-dialog-one-click-close.done.md`; lock: `.mimocode/locks/TZ-DOC-310-template-dialog-one-click-close.lock`.
 **Ограничение:** `MANUAL_BROWSER_CHECK_REQUIRED` — live authenticated browser flow не запускался; контракт доказан unit/интеграционными тестами (включая TestBed template-компиляцию, ловящую NG5xxx). Не выполнялись: TZ-DOC-309 (в архиве), 311/312/313/314, TZ-278, Materials 307/308/309, Z-series.
+
+
+## 2026-08-02 — TZ-BACKEND-E2E-HARNESS DONE (починка двух e2e-спеков)
+
+**Тип:** Backend E2E hygiene / fix.
+**Результат:**
+- `backend/test/e2e/user-organizationId.e2e-spec.ts` — заменён `TestingModule({ imports: [] })` на `createTestApp()`, добавлены 7 real тестов: POST /api/users без/с organizationId, JWT orgId claim, /auth/me propagation, system admin null orgId, DB-level organizationId propagation.
+- `backend/test/e2e/production.e2e-spec.ts` — 1 тест → 4 теста: cost-comparison flow сохраняется + 3 regression assertions (valid 24-hex accepted, malformed rejected 400, unknown valid 404, missing 400).
+- `backend/src/common/decorators/is-object-id.decorator.ts` — расширен: принимает и `typeof === 'string'` (regex 24-hex), и `instanceof Types.ObjectId` (после `@ToObjectId()` transform). Это канонический фикс для всех DTO парящих `@IsObjectId() @ToObjectId()` (production-order, order-task, work-type).
+- `backend/src/common/decorators/is-object-id.decorator.spec.ts` — NEW unit spec 4/4 pass.
+- `backend/src/modules/production-order/dto/create-production-order.dto.ts` — комментарий + убран `@ToObjectId()` с `productId` (остальные 4 поля по-прежнему парятся).
+
+**Проверки:** `pnpm exec jest ... user-organizationId production` 12/12 PASS в 11.9s; unit spec IsObjectId 4/4 PASS; backend tsc exit 0; baseline control (stash → чистый HEAD) дал РОВНО 6 failing tests (5 user-org + 1 production) как и описано в task-файле — мои фиксы переводят обе suites в pass.
+**Архивы:** `tasks/_archive/2026-08/TZ-BACKEND-E2E-HARNESS.done.md` (создан в этом workflow).
+**Commit:** `a7943f82c8361a9d7ee78dbaed570327bb006afd` — `fix(backend): TZ-BACKEND-E2E-HARNESS — IsObjectId accepts Types.ObjectId + real e2e tests` — 5 files / +232 / -64.
+**Ограничения:** Полный `pnpm test:e2e` всё ещё имеет 2 failing suites (text-blocks + integration) — обе out-of-scope TZ (TZ-DOC-315 commitment уже в HEAD ломает text-blocks e2e, integration — order-dependent flake). Pre-existing baseline, не моя регрессия.
