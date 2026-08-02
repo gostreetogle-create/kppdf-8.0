@@ -26,7 +26,7 @@
 
 - **status:** DONE (code AC pass; live smoke blocked on LAN/VPN)
 - **auth_variant:** A (refresh JWT in JSON body; cookie optional `path:/api/auth`)
-- **commit:** _(filled after push)_
+- **commit:** `d9d7ca02efe642affb9ca5c321e230e034da7ff2`
 - **gates:**
   - backend `tsc -p tsconfig.build.json --noEmit` PASS
   - frontend `tsc -p tsconfig.app.json --noEmit` FAIL pre-existing `work-type-form-dialog.component.ts` TS2729 (out of conflict keys / not DEPLOY)

@@ -44,7 +44,7 @@ Live server smoke **blocked** on LAN/VPN — PO can run `.\deploy\synology\deplo
 ## Executor report (auto)
 
 - **status:** DONE
-- **commit:** _(filled after push)_
+- **commit:** `d9d7ca02efe642affb9ca5c321e230e034da7ff2`
 - **gates:** BE tsc PASS; FE tsc pre-existing fail (work-types); auth jest PASS
 - **known:** smoke blocked LAN/VPN; variant A chosen
 - **ask:** VPN off → `.\deploy\synology\deploy.ps1` (no wipe) → confirm health + login
