@@ -16,6 +16,9 @@ Completed work belongs under `tasks/_archive/2026-08/`.
 | ID | Category | Priority | Status | Dependencies | Safe order |
 |---|---|---:|---|---|---:|
 | [Z-001](Z-001-inventory-write-transactions.md) | Inventory · backend transactions | **P0** | Activated from z-series backlog; **local executor only** (Cursor Mode A = spec) | none | **1** |
+| [TZ-DOC-324](TZ-DOC-324-builder-templates-ia.md) | Document Constructor · IA | P1 | Active — templates vs builder | — | **A2-1** |
+| [TZ-DOC-325](TZ-DOC-325-builder-insert-palette.md) | Document Constructor · builder chrome | P1 | after 324 | TZ-DOC-324 | **A2-2** |
+| [TZ-DOC-326](TZ-DOC-326-textblock-categoryid-ui.md) | Document Constructor · categoryId UI | P1 | after 325/316 | TZ-DOC-323 done, 316 | **A2-3** |
 | [TZ-DOC-316](TZ-DOC-316-text-block-category-reference-and-picker.md) | Document Constructor · UI | P1 | Stream A | TZ-DOC-315 (archive/done preferred) | 2A |
 | [TZ-DOC-317](TZ-DOC-317-builder-text-picker-category-filter.md) | Document Constructor · builder | P1 | after 316 | TZ-DOC-315/316 | 2B |
 | [TZ-DOC-318](TZ-DOC-318-builder-texts-topbar-category-filter.md) | Document Constructor · builder | P1 | after 317 | TZ-DOC-317 | 2C |

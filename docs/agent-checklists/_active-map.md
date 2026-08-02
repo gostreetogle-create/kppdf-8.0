@@ -9,12 +9,22 @@ Cursor does **not** bulk-move `tasks/` (Mode A). Peer owns parking WORKERS/WORKT
 
 | ID | Status | Owner hint |
 |----|--------|------------|
-| TZ-DOC-316 | active | after 315 |
-| TZ-DOC-317 | active | after 316 |
-| TZ-DOC-318 | active | after 317 |
-| TZ-DOC-323 | active | peer (legacy enum) |
-| TZ-DOC-320..322 | DONE in `_archive/2026-08/` | do not reopen |
-| TZ-DOC-319 | peer spacer | cross-check only |
+| TZ-DOC-316 | active / verify | after 315 |
+| TZ-DOC-317 | active | filter on **palette** after DOC-325 |
+| TZ-DOC-318 | **supersede after DOC-325** | topbar texts dropdown goes away |
+| TZ-DOC-323 | DONE archive | — |
+| TZ-DOC-320..322 | DONE | do not reopen |
+
+## Stream A2 — doc-constructor UX (Cursor audit 2026-08-02)
+
+| ID | Status | Owner hint |
+|----|--------|------------|
+| **TZ-DOC-324** | active | IA: templates registry vs builder |
+| **TZ-DOC-325** | active | after 324 — restore palette, drop topbar dup menus |
+| **TZ-DOC-326** | active | after 325/316 — categoryId UI, kill legacy hints |
+| Audit note | `docs/agent-checklists/DOC-CONSTRUCTOR-UX-AUDIT.md` | |
+
+Order: **324 → 325 → 326**. Max 2 streams overall with Stream B.
 
 ## Stream B — inventory integrity (P0)
 
