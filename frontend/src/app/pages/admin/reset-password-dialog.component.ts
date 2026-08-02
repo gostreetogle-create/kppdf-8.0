@@ -1,11 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Observable } from 'rxjs';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
+import { extractErrorMessage, type SilentResult } from '../../core/silent-http';
 
 export interface ResetPasswordData {
   username: string;
+  submit?: (password: string) => Observable<SilentResult<unknown>>;
 }
 
 /**
@@ -70,11 +73,11 @@ export interface ResetPasswordData {
         <app-pi-button
           variant="default"
           size="sm"
-          [disabled]="!canSubmit()"
+          [disabled]="!canSubmit() || submitting()"
           (click)="onSubmit()"
           data-test="reset-password-submit"
         >
-          Сбросить
+          {{ submitting() ? 'Сброс…' : 'Сбросить' }}
         </app-pi-button>
       </div>
     </app-pi-dialog>
@@ -134,6 +137,7 @@ export class ResetPasswordDialogComponent {
   protected readonly password = signal<string>('');
   protected readonly confirm = signal<string>('');
   protected readonly error = signal<string | null>(null);
+  protected readonly submitting = signal(false);
 
   protected onPasswordInput(event: Event): void {
     this.password.set((event.target as HTMLInputElement).value);
@@ -148,11 +152,26 @@ export class ResetPasswordDialogComponent {
   };
 
   protected onSubmit(): void {
+    if (this.submitting()) return;
     if (this.password() !== this.confirm()) {
       this.error.set('Пароли не совпадают');
       return;
     }
-    this.ref.close(this.password());
+    if (!this.data.submit) {
+      this.ref.close(this.password());
+      return;
+    }
+    this.submitting.set(true);
+    this.error.set(null);
+    this.data.submit(this.password()).subscribe((res) => {
+      if (res.ok) {
+        this.submitting.set(false);
+        this.ref.close(this.password());
+      } else {
+        this.error.set(extractErrorMessage(res.error));
+        this.submitting.set(false);
+      }
+    });
   }
 
   protected onCancel(): void {

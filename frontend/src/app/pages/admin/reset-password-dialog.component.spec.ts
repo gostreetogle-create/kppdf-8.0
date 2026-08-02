@@ -1,4 +1,7 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
+import { Subject } from 'rxjs';
+import type { SilentResult } from '../../core/silent-http';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import {
@@ -25,6 +28,7 @@ interface ResetHarness {
   error: () => string | null;
   canSubmit: () => boolean;
   onSubmit: () => void;
+  submitting: () => boolean;
 }
 
 async function setup(data: ResetPasswordData): Promise<{
@@ -72,6 +76,39 @@ describe('ResetPasswordDialogComponent', () => {
     comp.onSubmit();
     expect(comp.error()).toBe('Пароли не совпадают');
     expect(close).not.toHaveBeenCalled();
+  });
+
+  it('keeps the dialog open and blocks duplicate submit on API error', async () => {
+    const pending = new Subject<SilentResult<unknown>>();
+    const submit = jest.fn(() => pending.asObservable());
+    const { comp, close } = await setup({ username: 'alice', submit });
+    comp.password.set('12345678');
+    comp.confirm.set('12345678');
+
+    comp.onSubmit();
+    comp.onSubmit();
+    expect(submit).toHaveBeenCalledTimes(1);
+    expect(comp.submitting()).toBe(true);
+    pending.next({
+      ok: false,
+      error: new HttpErrorResponse({ status: 500, error: { message: 'Server exploded' } }),
+    });
+    expect(comp.submitting()).toBe(false);
+    expect(comp.error()).toBe('Server exploded');
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('closes after a successful API callback', async () => {
+    const pending = new Subject<SilentResult<unknown>>();
+    const submit = jest.fn(() => pending.asObservable());
+    const { comp, close } = await setup({ username: 'alice', submit });
+    comp.password.set('12345678');
+    comp.confirm.set('12345678');
+
+    comp.onSubmit();
+    pending.next({ ok: true, data: {} });
+    expect(comp.submitting()).toBe(false);
+    expect(close).toHaveBeenCalledWith('12345678');
   });
 
   it('onSubmit() with matching confirm closes the dialog with the password', async () => {

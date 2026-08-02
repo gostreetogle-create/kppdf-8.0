@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom, Observable } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { CapabilitiesService } from '../../core/capabilities/capabilities.service';
 import {
@@ -119,6 +120,16 @@ interface ClientUser {
                 </td>
                 <td class="pi-table-td">
                   <div class="flex items-center justify-end gap-2">
+                    @if (loadingRowId() === u.id) {
+                      <span
+                        class="text-xs text-muted-foreground"
+                        role="status"
+                        aria-label="Загрузка"
+                        data-test="users-admin-row-loading"
+                      >
+                        Загрузка…
+                      </span>
+                    }
                     @if (caps.hasAny(['user:admin'])) {
                       <button
                         type="button"
@@ -126,6 +137,7 @@ interface ClientUser {
                         (click)="onResetPassword(u)"
                         [attr.aria-label]="'Сбросить пароль ' + u.username"
                         title="Сбросить пароль"
+                        [disabled]="loadingRowId() === u.id"
                         data-test="users-admin-reset-password"
                       >
                         <span aria-hidden="true">⚿</span>
@@ -140,6 +152,7 @@ interface ClientUser {
                           u.isActive ? 'Деактивировать ' + u.username : 'Активировать ' + u.username
                         "
                         [title]="u.isActive ? 'Деактивировать' : 'Активировать'"
+                        [disabled]="loadingRowId() === u.id"
                         data-test="users-admin-toggle-active"
                       >
                         <span aria-hidden="true">{{ u.isActive ? '⏸' : '▶' }}</span>
@@ -149,6 +162,7 @@ interface ClientUser {
                       [row]="u"
                       [showEdit]="caps.hasAny(['user:write'])"
                       [showDelete]="caps.hasAny(['user:admin'])"
+                      [loading]="loadingRowId() === u.id"
                       editLabel="Редактировать"
                       dataTestEdit="users-admin-edit"
                       deleteLabel="Удалить"
@@ -184,6 +198,7 @@ export class UsersAdminPage {
   readonly users = signal<ClientUser[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
+  readonly loadingRowId = signal<string | null>(null);
 
   constructor() {
     void this.refresh();
@@ -211,20 +226,14 @@ export class UsersAdminPage {
   // ── Create ──
   protected onCreate(): void {
     const ref = this.dialog.open<UserFormResult>(UserFormDialogComponent, {
-      data: { mode: 'create' } satisfies UserFormData,
+      data: {
+        mode: 'create',
+        submit: (result) => this.createUser(result),
+      } satisfies UserFormData,
     });
-    onDialogCloseOnce(ref, this.injector, (result) => {
-      this.silentRun(
-        silentPost<ClientUser>(this.http, `${this.baseUrl}/admin/users`, {
-          username: result.username,
-          email: result.email,
-          displayName: result.displayName,
-          password: result.password,
-          role: result.role,
-          isActive: result.isActive,
-        }),
-        'Пользователь создан',
-      );
+    onDialogCloseOnce(ref, this.injector, () => {
+      this.toast.success('Пользователь создан');
+      void this.refresh();
     });
   }
 
@@ -243,36 +252,28 @@ export class UsersAdminPage {
           role: u.role,
           isActive: u.isActive,
         },
+        submit: (result) => this.updateUser(u.id, result),
       } satisfies UserFormData,
       parentDestroyRef: this.destroyRef,
     });
-    onDialogCloseOnce(ref, this.injector, (result) => {
-      this.silentRun(
-        silentPatch<ClientUser>(this.http, `${this.baseUrl}/admin/users/${u.id}`, {
-          username: result.username,
-          email: result.email,
-          displayName: result.displayName,
-          role: result.role,
-          isActive: result.isActive,
-        }),
-        'Пользователь обновлён',
-      );
+    onDialogCloseOnce(ref, this.injector, () => {
+      this.toast.success('Пользователь обновлён');
+      void this.refresh();
     });
   }
 
   // ── Reset password ──
   protected onResetPassword(u: ClientUser): void {
     const ref = this.dialog.open<string>(ResetPasswordDialogComponent, {
-      data: { username: u.username } satisfies ResetPasswordData,
+      data: {
+        username: u.username,
+        submit: (newPassword) => this.resetPassword(u.id, newPassword),
+      } satisfies ResetPasswordData,
       parentDestroyRef: this.destroyRef,
     });
-    onDialogCloseOnce(ref, this.injector, (newPassword) => {
-      this.silentRun(
-        silentPost<ClientUser>(this.http, `${this.baseUrl}/admin/users/${u.id}/reset-password`, {
-          newPassword,
-        }),
-        'Пароль сброшен',
-      );
+    onDialogCloseOnce(ref, this.injector, () => {
+      this.toast.success('Пароль сброшен');
+      void this.refresh();
     });
   }
 
@@ -297,6 +298,7 @@ export class UsersAdminPage {
       this.silentRun(
         silentPost<ClientUser>(this.http, url, {}),
         activating ? 'Пользователь активирован' : 'Пользователь деактивирован',
+        u.id,
       );
     });
   }
@@ -318,6 +320,7 @@ export class UsersAdminPage {
       this.silentRun(
         silentDelete<ClientUser>(this.http, `${this.baseUrl}/admin/users/${u.id}`),
         'Пользователь удалён',
+        u.id,
       );
     });
   }
@@ -326,8 +329,43 @@ export class UsersAdminPage {
    * Shared mutation runner: toast on success, refresh the table, and
    * map the `LAST_ADMIN_INVARIANT` 403 to the user-visible message.
    */
-  private silentRun(obs: Observable<SilentResult<ClientUser>>, successMsg: string): void {
+  private createUser(result: UserFormResult): Observable<SilentResult<ClientUser>> {
+    return silentPost<ClientUser>(this.http, `${this.baseUrl}/admin/users`, {
+      username: result.username,
+      email: result.email,
+      displayName: result.displayName,
+      password: result.password,
+      role: result.role,
+      isActive: result.isActive,
+    });
+  }
+
+  private updateUser(id: string, result: UserFormResult): Observable<SilentResult<ClientUser>> {
+    return silentPatch<ClientUser>(this.http, `${this.baseUrl}/admin/users/${id}`, {
+      username: result.username,
+      email: result.email,
+      displayName: result.displayName,
+      role: result.role,
+      isActive: result.isActive,
+    });
+  }
+
+  private resetPassword(id: string, newPassword: string): Observable<SilentResult<ClientUser>> {
+    this.loadingRowId.set(id);
+    return silentPost<ClientUser>(this.http, `${this.baseUrl}/admin/users/${id}/reset-password`, {
+      newPassword,
+    }).pipe(finalize(() => this.loadingRowId.set(null)));
+  }
+
+  private silentRun(
+    obs: Observable<SilentResult<ClientUser>>,
+    successMsg: string,
+    rowId?: string,
+  ): void {
+    if (rowId && this.loadingRowId() === rowId) return;
+    if (rowId) this.loadingRowId.set(rowId);
     obs.subscribe((res) => {
+      if (rowId) this.loadingRowId.set(null);
       if (res.ok) {
         this.toast.success(successMsg);
         void this.refresh();

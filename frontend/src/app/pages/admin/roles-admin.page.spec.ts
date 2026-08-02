@@ -1,3 +1,4 @@
+import { HttpClient } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
@@ -7,9 +8,15 @@ import { CapabilitiesService } from '../../core/capabilities/capabilities.servic
 import { PiToastService } from '../../shared/ui/toast';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
+import { silentDelete } from '../../core/silent-http';
 import { RolesAdminPage } from './roles-admin.page';
 
 const BASE_URL = '/api';
+
+interface PageHarness {
+  silentRun: (obs: unknown, successMsg: string, rowId?: string) => void;
+  loadingRowId: () => string | null;
+}
 
 const CLIENT_ROLE = {
   id: 'r1',
@@ -79,5 +86,20 @@ describe('RolesAdminPage capability gating', () => {
     expect(fixture.nativeElement.querySelector('[data-test="roles-admin-create"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test="roles-admin-edit"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test="roles-admin-delete"]')).not.toBeNull();
+  });
+
+  it('tracks row loading and clears it after an error', () => {
+    const fixture = TestBed.createComponent(RolesAdminPage);
+    const comp = fixture.componentInstance as unknown as PageHarness;
+    httpMock.expectOne(`${BASE_URL}/admin/roles`).flush([]);
+
+    const http = TestBed.inject(HttpClient);
+    const obs = silentDelete(http, `${BASE_URL}/admin/roles/r1`);
+    comp.silentRun(obs, 'Роль удалена', 'r1');
+    expect(comp.loadingRowId()).toBe('r1');
+    httpMock
+      .expectOne(`${BASE_URL}/admin/roles/r1`)
+      .flush({ message: 'Server exploded' }, { status: 500, statusText: 'Server Error' });
+    expect(comp.loadingRowId()).toBeNull();
   });
 });

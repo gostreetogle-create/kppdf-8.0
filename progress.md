@@ -5003,3 +5003,13 @@ E2E-сценарии с созданием данных помечены MANUAL_
 **Затронутые файлы/папки:** `frontend/src/app/pages/admin/users-admin.page.ts`, `frontend/src/app/pages/admin/users-admin.page.spec.ts`, `frontend/src/app/pages/admin/roles-admin.page.ts`, `frontend/src/app/pages/admin/roles-admin.page.spec.ts`, `frontend/src/app/shared/ui/pi-row-actions/pi-row-actions.component.ts`, `frontend/src/app/shared/ui/pi-row-actions/pi-row-actions.component.spec.ts`, `tasks/_archive/2026-08/TZ-276.superseded.md`, `tasks/_archive/2026-08/TZ-274-admin-capabilities-ui-gating.done.md`, `docs/agent-checklists/TZ-274.md`, `docs/agent-checklists/TZ-276.md`
 **Verification:** targeted FE Jest 3 suites / 29 tests PASS; frontend tsc PASS; frontend ng build development PASS; git diff --check PASS; independent review PASS.
 **Известные ограничения:** `MANUAL_BROWSER_CHECK_REQUIRED` — live authenticated browser flow не запускался; чужие незакоммиченные файлы не включались.
+
+---
+
+## 2026-08-02 — TZ-277 DONE (Admin mutation loading states)
+
+**Статус:** Выполнено / Проверено.
+**Результат:** Dialog submit callbacks теперь имеют submitting/error lifecycle: повторный submit блокируется, ошибка оставляет диалог открытым, успех сбрасывает submitting и закрывает диалог. Users/roles row mutations используют loadingRowId; PiRowActions блокирует повторные действия и скрывает edit/document/delete на активной строке.
+**Verification:** targeted Jest 6/6 suites, 58/58 tests PASS; frontend typecheck PASS; `ng build --configuration=development` PASS; targeted ESLint 0 errors (2 existing architecture warnings); `git diff --check` PASS; independent review без critical/important findings.
+**Архив:** `tasks/_archive/2026-08/TZ-277-admin-mutation-loading-states.done.md`; lock: `.mimocode/locks/TZ-277-admin-mutation-loading-states.lock`.
+**Ограничение:** `MANUAL_BROWSER_CHECK_REQUIRED` — live authenticated browser/e2e flow не запускался.

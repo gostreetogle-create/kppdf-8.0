@@ -1077,3 +1077,13 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 
 - 11+ tasks имели "claimed DONE in body text" без archive record. **Lesson:** sessions должны архивировать сразу, иначе specs drift.
 - Pre-existing 82-discrepancy baseline — orchestrator verify-status.sh скрипт could be tightened, but isn't blocking.
+
+---
+
+## 2026-08-02 — TZ-277 DONE
+**Исполнитель:** Buffy
+**Статус:** Выполнено / Проверено
+**Что сделано кратко:** В admin users/roles добавлены submitting-состояния для create/edit/reset-password и row-level loading для reset/toggle/delete; повторный submit блокируется. Form dialogs остаются открытыми с ошибкой при неуспешной API-мутации и закрываются только после успеха. `PiRowActions` скрывает все mutating actions во время загрузки строки.
+**Затронутые файлы/папки:** `frontend/src/app/pages/admin/`, `frontend/src/app/shared/ui/pi-row-actions/`, `docs/agent-checklists/TZ-277.md`, `tasks/_archive/2026-08/TZ-277-admin-mutation-loading-states.done.md`
+**Verification:** targeted FE Jest 6 suites / 58 tests PASS; frontend tsc PASS; frontend ng build development PASS; targeted ESLint 0 errors (2 existing raw-HttpClient warnings); git diff --check PASS; independent review PASS.
+**Известные ограничения:** `MANUAL_BROWSER_CHECK_REQUIRED` — live authenticated browser flow не запускался; backend не изменялся; чужие незакоммиченные файлы не включаются.

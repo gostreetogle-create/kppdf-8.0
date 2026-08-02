@@ -38,7 +38,9 @@ const CLIENT_USER = {
 };
 
 interface PageHarness {
-  silentRun: (obs: unknown, successMsg: string) => void;
+  silentRun: (obs: unknown, successMsg: string, rowId?: string) => void;
+  resetPassword: (id: string, password: string) => import('rxjs').Observable<unknown>;
+  loadingRowId: () => string | null;
 }
 
 describe('UsersAdminPage', () => {
@@ -182,6 +184,56 @@ describe('UsersAdminPage', () => {
     expect(
       adminFixture.nativeElement.querySelector('[data-test="users-admin-toggle-active"]'),
     ).toBeNull();
+  });
+
+  it('tracks row loading, blocks duplicate row mutation, and clears on error', () => {
+    const fixture = TestBed.createComponent(UsersAdminPage);
+    const comp = fixture.componentInstance as unknown as PageHarness;
+    httpMock.expectOne(`${BASE_URL}/admin/users?limit=200`).flush([]);
+
+    const obs = silentPost(http, `${BASE_URL}/admin/users/u1/deactivate`, {});
+    comp.silentRun(obs, 'Пользователь деактивирован', 'u1');
+    expect(comp.loadingRowId()).toBe('u1');
+    comp.silentRun(obs, 'Пользователь деактивирован', 'u1');
+
+    const requests = httpMock.match(`${BASE_URL}/admin/users/u1/deactivate`);
+    expect(requests).toHaveLength(1);
+    requests[0].flush({ message: 'Server exploded' }, { status: 500, statusText: 'Server Error' });
+    expect(comp.loadingRowId()).toBeNull();
+    expect(toastError).toHaveBeenCalledWith('Server exploded');
+  });
+
+  it('wires reset-password POST and clears row loading on success and error', () => {
+    const fixture = TestBed.createComponent(UsersAdminPage);
+    const comp = fixture.componentInstance as unknown as PageHarness;
+    httpMock.expectOne(`${BASE_URL}/admin/users?limit=200`).flush([]);
+
+    const success = comp.resetPassword('u1', '12345678');
+    expect(comp.loadingRowId()).toBe('u1');
+    success.subscribe((result) => expect(result).toEqual(expect.objectContaining({ ok: true })));
+    httpMock.expectOne(`${BASE_URL}/admin/users/u1/reset-password`).flush(CLIENT_USER);
+    expect(comp.loadingRowId()).toBeNull();
+
+    const failure = comp.resetPassword('u1', '87654321');
+    expect(comp.loadingRowId()).toBe('u1');
+    failure.subscribe((result) => expect(result).toEqual(expect.objectContaining({ ok: false })));
+    httpMock
+      .expectOne(`${BASE_URL}/admin/users/u1/reset-password`)
+      .flush({ message: 'Server exploded' }, { status: 500, statusText: 'Server Error' });
+    expect(comp.loadingRowId()).toBeNull();
+  });
+
+  it('clears row loading after a successful mutation and refreshes', () => {
+    const fixture = TestBed.createComponent(UsersAdminPage);
+    const comp = fixture.componentInstance as unknown as PageHarness;
+    httpMock.expectOne(`${BASE_URL}/admin/users?limit=200`).flush([]);
+
+    const obs = silentPost(http, `${BASE_URL}/admin/users/u1/activate`, {});
+    comp.silentRun(obs, 'Пользователь активирован', 'u1');
+    expect(comp.loadingRowId()).toBe('u1');
+    httpMock.expectOne(`${BASE_URL}/admin/users/u1/activate`).flush(CLIENT_USER);
+    expect(comp.loadingRowId()).toBeNull();
+    httpMock.expectOne(`${BASE_URL}/admin/users?limit=200`).flush([]);
   });
 
   it('shows the success toast and refreshes after a successful mutation', () => {

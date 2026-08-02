@@ -30,6 +30,7 @@ describe('PiRowActionsComponent', () => {
     inputs: {
       row?: TestRow;
       editLabel?: string | null;
+      documentLabel?: string | null;
       deleteLabel?: string;
       deleteTitle?: string | null;
       deleteDisabled?: boolean;
@@ -37,6 +38,7 @@ describe('PiRowActionsComponent', () => {
       dataTestEdit?: string | null;
       dataTestDelete?: string | null;
       showDelete?: boolean;
+      loading?: boolean;
     } = {},
   ): Promise<ComponentFixture<PiRowActionsComponent<TestRow>>> {
     await TestBed.configureTestingModule({
@@ -58,6 +60,9 @@ describe('PiRowActionsComponent', () => {
       // getter), not via the DOM selector.
       fixture.componentRef.setInput('editLabel', 'Edit row');
     }
+    if (inputs.documentLabel !== undefined) {
+      fixture.componentRef.setInput('documentLabel', inputs.documentLabel);
+    }
     if (inputs.deleteTitle !== undefined) {
       fixture.componentRef.setInput('deleteTitle', inputs.deleteTitle);
     }
@@ -69,6 +74,9 @@ describe('PiRowActionsComponent', () => {
     }
     if (inputs.showDelete !== undefined) {
       fixture.componentRef.setInput('showDelete', inputs.showDelete);
+    }
+    if (inputs.loading !== undefined) {
+      fixture.componentRef.setInput('loading', inputs.loading);
     }
     if (inputs.dataTestEdit !== undefined) {
       fixture.componentRef.setInput('dataTestEdit', inputs.dataTestEdit);
@@ -131,6 +139,16 @@ describe('PiRowActionsComponent', () => {
       const fixture = await createFixture({ showDelete: false });
       expect(deleteButton(fixture)).toBeNull();
       expect(editButton(fixture)).not.toBeNull();
+    });
+
+    it('shows row loading status and hides action buttons while loading', async () => {
+      const fixture = await createFixture({ loading: true, documentLabel: 'Создать документ' });
+      expect(
+        fixture.nativeElement.querySelector('[data-test="row-actions-loading"]'),
+      ).not.toBeNull();
+      expect(fixture.nativeElement.querySelector('[aria-label="Создать документ"]')).toBeNull();
+      expect(editButton(fixture)).toBeNull();
+      expect(deleteButton(fixture)).toBeNull();
     });
   });
 

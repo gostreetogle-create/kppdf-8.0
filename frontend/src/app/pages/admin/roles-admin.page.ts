@@ -123,10 +123,21 @@ interface ClientRole {
                 <td class="pi-table-td">
                   @if (!r.isSystem) {
                     <div class="flex items-center justify-end gap-2">
+                      @if (loadingRowId() === r.id) {
+                        <span
+                          class="text-xs text-muted-foreground"
+                          role="status"
+                          aria-label="Загрузка"
+                          data-test="roles-admin-row-loading"
+                        >
+                          Загрузка…
+                        </span>
+                      }
                       <app-pi-row-actions
                         [row]="r"
                         [showEdit]="caps.hasAny(['role:write'])"
                         [showDelete]="caps.hasAny(['role:admin'])"
+                        [loading]="loadingRowId() === r.id"
                         editLabel="Редактировать"
                         dataTestEdit="roles-admin-edit"
                         deleteLabel="Удалить"
@@ -165,6 +176,7 @@ export class RolesAdminPage {
   readonly roles = signal<ClientRole[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
+  readonly loadingRowId = signal<string | null>(null);
 
   constructor() {
     void this.refresh();
@@ -192,15 +204,15 @@ export class RolesAdminPage {
   // ── Create ──
   protected onCreate(): void {
     const ref = this.dialog.open<RoleFormResult>(RoleFormDialogComponent, {
-      data: { mode: 'create' } satisfies RoleFormData,
+      data: {
+        mode: 'create',
+        submit: (result) => this.createRole(result),
+      } satisfies RoleFormData,
       parentDestroyRef: this.destroyRef,
     });
-    onDialogCloseOnce(ref, this.injector, (result) => {
-      if (!result) return;
-      this.silentRun(
-        silentPost<ClientRole>(this.http, `${this.baseUrl}/admin/roles`, result),
-        'Роль создана',
-      );
+    onDialogCloseOnce(ref, this.injector, () => {
+      this.toast.success('Роль создана');
+      void this.refresh();
     });
   }
 
@@ -216,24 +228,16 @@ export class RolesAdminPage {
           description: r.description,
           permissions: r.permissions,
         },
+        submit: (result) => this.updateRole(r.id, result),
       } satisfies RoleFormData,
       parentDestroyRef: this.destroyRef,
     });
-    onDialogCloseOnce(ref, this.injector, (result) => {
-      if (!result) return;
-      // TZ-257.B whitelist: AdminUpdateRoleDto accepts label/description/
-      // permissions ONLY — `name` (locked by the dialog) is never sent,
-      // otherwise ValidationPipe({ forbidNonWhitelisted: true }) rejects 400.
-      const payload = {
-        label: result.label,
-        description: result.description,
-        permissions: result.permissions,
-      };
-      this.silentRun(
-        silentPatch<ClientRole>(this.http, `${this.baseUrl}/admin/roles/${r.id}`, payload),
-        'Роль обновлена',
-      );
+    onDialogCloseOnce(ref, this.injector, () => {
+      this.toast.success('Роль обновлена');
+      void this.refresh();
     });
+    // TZ-257.B whitelist: `updateRole` sends only label/description/permissions;
+    // the locked role name is never sent to the strict backend DTO.
   }
 
   // ── Delete ──
@@ -253,6 +257,7 @@ export class RolesAdminPage {
       this.silentRun(
         silentDelete<{ success: true }>(this.http, `${this.baseUrl}/admin/roles/${r.id}`),
         'Роль удалена',
+        r.id,
       );
     });
   }
@@ -261,11 +266,28 @@ export class RolesAdminPage {
    * Shared mutation runner: toast on success, refresh the table, and
    * map system-role 403 codes to the user-visible message.
    */
+  private createRole(result: RoleFormResult): Observable<SilentResult<ClientRole>> {
+    return silentPost<ClientRole>(this.http, `${this.baseUrl}/admin/roles`, result);
+  }
+
+  private updateRole(id: string, result: RoleFormResult): Observable<SilentResult<ClientRole>> {
+    const payload = {
+      label: result.label,
+      description: result.description,
+      permissions: result.permissions,
+    };
+    return silentPatch<ClientRole>(this.http, `${this.baseUrl}/admin/roles/${id}`, payload);
+  }
+
   private silentRun(
     obs: Observable<SilentResult<ClientRole | { success: true }>>,
     successMsg: string,
+    rowId?: string,
   ): void {
+    if (rowId && this.loadingRowId() === rowId) return;
+    if (rowId) this.loadingRowId.set(rowId);
     obs.subscribe((res) => {
+      if (rowId) this.loadingRowId.set(null);
       if (res.ok) {
         this.toast.success(successMsg);
         void this.refresh();

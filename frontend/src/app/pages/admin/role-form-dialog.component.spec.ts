@@ -1,4 +1,7 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
+import { Subject } from 'rxjs';
+import type { SilentResult } from '../../core/silent-http';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
@@ -46,6 +49,11 @@ interface RoleHarness {
   toggleKey: (key: string) => void;
   sectionAllSelected: (s: PermissionSection) => boolean;
   toggleSection: (s: PermissionSection, select: boolean) => void;
+  name: { set: (v: string) => void };
+  label: { set: (v: string) => void };
+  onSubmit: () => void;
+  submitting: () => boolean;
+  error: () => string | null;
 }
 
 async function setup(data: RoleFormData): Promise<{
@@ -106,6 +114,45 @@ describe('RoleFormDialogComponent', () => {
     await fixture.whenStable();
     expect(comp.catalogLoading()).toBe(false);
     expect(comp.catalogError()).not.toBeNull();
+    httpMock.verify();
+  });
+
+  it('keeps the dialog open and blocks duplicate submit on API error', async () => {
+    const pending = new Subject<SilentResult<unknown>>();
+    const submit = jest.fn(() => pending.asObservable());
+    const { comp, fixture, httpMock, close } = await setup({ mode: 'create', submit });
+    httpMock.expectOne('/api/admin/permissions').flush(CATALOG);
+    await fixture.whenStable();
+    comp.name.set('custom');
+    comp.label.set('Custom role');
+
+    comp.onSubmit();
+    comp.onSubmit();
+    expect(submit).toHaveBeenCalledTimes(1);
+    expect(comp.submitting()).toBe(true);
+    pending.next({
+      ok: false,
+      error: new HttpErrorResponse({ status: 500, error: { message: 'Server exploded' } }),
+    });
+    expect(comp.submitting()).toBe(false);
+    expect(comp.error()).toBe('Server exploded');
+    expect(close).not.toHaveBeenCalled();
+    httpMock.verify();
+  });
+
+  it('closes after a successful API callback', async () => {
+    const pending = new Subject<SilentResult<unknown>>();
+    const submit = jest.fn(() => pending.asObservable());
+    const { comp, fixture, httpMock, close } = await setup({ mode: 'create', submit });
+    httpMock.expectOne('/api/admin/permissions').flush(CATALOG);
+    await fixture.whenStable();
+    comp.name.set('custom');
+    comp.label.set('Custom role');
+
+    comp.onSubmit();
+    pending.next({ ok: true, data: {} });
+    expect(comp.submitting()).toBe(false);
+    expect(close).toHaveBeenCalledTimes(1);
     httpMock.verify();
   });
 

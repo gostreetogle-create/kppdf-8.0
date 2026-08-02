@@ -1,5 +1,8 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { Subject } from 'rxjs';
+import type { SilentResult } from '../../core/silent-http';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import {
   UserFormDialogComponent,
@@ -22,6 +25,8 @@ interface UserFormHarness {
   password: { set: (v: string) => void };
   canSubmit: () => boolean;
   onSubmit: () => void;
+  submitting: () => boolean;
+  error: () => string | null;
 }
 
 const EDIT_USER = {
@@ -112,6 +117,42 @@ describe('UserFormDialogComponent', () => {
         password: '12345678',
       }),
     );
+  });
+
+  it('keeps the dialog open and blocks duplicate submit while the API is pending', async () => {
+    const pending = new Subject<SilentResult<unknown>>();
+    const submit = jest.fn(() => pending.asObservable());
+    const { comp, close } = await setup({ mode: 'create', submit });
+    fillValidCreate(comp);
+
+    comp.onSubmit();
+    comp.onSubmit();
+    expect(submit).toHaveBeenCalledTimes(1);
+    expect(comp.submitting()).toBe(true);
+    expect(close).not.toHaveBeenCalled();
+
+    pending.next({
+      ok: false,
+      error: new HttpErrorResponse({
+        status: 500,
+        error: { message: 'Server exploded' },
+      }),
+    });
+    expect(comp.submitting()).toBe(false);
+    expect(comp.error()).toBe('Server exploded');
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('closes only after a successful API callback', async () => {
+    const pending = new Subject<SilentResult<unknown>>();
+    const submit = jest.fn(() => pending.asObservable());
+    const { comp, close } = await setup({ mode: 'create', submit });
+    fillValidCreate(comp);
+
+    comp.onSubmit();
+    pending.next({ ok: true, data: {} });
+    expect(comp.submitting()).toBe(false);
+    expect(close).toHaveBeenCalledTimes(1);
   });
 
   it('onSubmit() in edit mode returns NO password field', async () => {

@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Observable } from 'rxjs';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
+import { extractErrorMessage, type SilentResult } from '../../core/silent-http';
 import {
   PermissionsCatalogService,
   type PermissionCatalogEntry,
@@ -12,6 +13,7 @@ import {
 
 export interface RoleFormData {
   mode: 'create' | 'edit';
+  submit?: (result: RoleFormResult) => Observable<SilentResult<unknown>>;
   role?: {
     id: string;
     name: string;
@@ -153,11 +155,11 @@ export interface RoleFormResult {
         <app-pi-button
           variant="default"
           size="sm"
-          [disabled]="!canSubmit()"
+          [disabled]="!canSubmit() || submitting()"
           (click)="onSubmit()"
           data-test="role-form-submit"
         >
-          {{ data.mode === 'create' ? 'Создать' : 'Сохранить' }}
+          {{ submitting() ? 'Сохранение…' : data.mode === 'create' ? 'Создать' : 'Сохранить' }}
         </app-pi-button>
       </div>
     </app-pi-dialog>
@@ -343,6 +345,7 @@ export class RoleFormDialogComponent {
   protected readonly label = signal<string>(this.data.role?.label ?? '');
   protected readonly description = signal<string>(this.data.role?.description ?? '');
   protected readonly error = signal<string | null>(null);
+  protected readonly submitting = signal(false);
 
   protected onNameInput(event: Event): void {
     this.name.set((event.target as HTMLInputElement).value);
@@ -440,12 +443,27 @@ export class RoleFormDialogComponent {
   };
 
   protected onSubmit(): void {
-    const permissions = Array.from(this.selected());
-    this.ref.close({
+    if (this.submitting()) return;
+    const result: RoleFormResult = {
       name: this.data.mode === 'create' ? this.name().trim() : (this.data.role?.name ?? ''),
       label: this.label().trim(),
       description: this.description().trim() || undefined,
-      permissions,
+      permissions: Array.from(this.selected()),
+    };
+    if (!this.data.submit) {
+      this.ref.close(result);
+      return;
+    }
+    this.submitting.set(true);
+    this.error.set(null);
+    this.data.submit(result).subscribe((res) => {
+      if (res.ok) {
+        this.submitting.set(false);
+        this.ref.close(result);
+      } else {
+        this.error.set(extractErrorMessage(res.error));
+        this.submitting.set(false);
+      }
     });
   }
 

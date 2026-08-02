@@ -1,11 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Observable } from 'rxjs';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
+import { extractErrorMessage, type SilentResult } from '../../core/silent-http';
 
 export interface UserFormData {
   mode: 'create' | 'edit';
+  submit?: (result: UserFormResult) => Observable<SilentResult<unknown>>;
   user?: {
     id: string;
     username: string;
@@ -131,11 +134,11 @@ export interface UserFormResult {
         <app-pi-button
           variant="default"
           size="sm"
-          [disabled]="!canSubmit()"
+          [disabled]="!canSubmit() || submitting()"
           (click)="onSubmit()"
           data-test="user-form-submit"
         >
-          {{ data.mode === 'create' ? 'Создать' : 'Сохранить' }}
+          {{ submitting() ? 'Сохранение…' : data.mode === 'create' ? 'Создать' : 'Сохранить' }}
         </app-pi-button>
       </div>
     </app-pi-dialog>
@@ -221,6 +224,7 @@ export class UserFormDialogComponent {
   protected readonly role = signal<string>(this.data.user?.role ?? 'user');
   protected readonly isActive = signal<boolean>(this.data.user?.isActive ?? true);
   protected readonly error = signal<string | null>(null);
+  protected readonly submitting = signal(false);
 
   protected onUsernameInput(event: Event): void {
     this.username.set((event.target as HTMLInputElement).value);
@@ -255,6 +259,7 @@ export class UserFormDialogComponent {
   };
 
   protected onSubmit(): void {
+    if (this.submitting()) return;
     const result: UserFormResult = {
       username: this.username().trim(),
       displayName: this.displayName().trim(),
@@ -265,7 +270,21 @@ export class UserFormDialogComponent {
     if (this.data.mode === 'create') {
       result.password = this.password();
     }
-    this.ref.close(result);
+    if (!this.data.submit) {
+      this.ref.close(result);
+      return;
+    }
+    this.submitting.set(true);
+    this.error.set(null);
+    this.data.submit(result).subscribe((res) => {
+      if (res.ok) {
+        this.submitting.set(false);
+        this.ref.close(result);
+      } else {
+        this.error.set(extractErrorMessage(res.error));
+        this.submitting.set(false);
+      }
+    });
   }
 
   protected onCancel(): void {

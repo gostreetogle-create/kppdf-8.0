@@ -46,7 +46,7 @@ import { ChangeDetectionStrategy, Component, output, input } from '@angular/core
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex items-center justify-end gap-2">
-      @if (documentLabel()) {
+      @if (documentLabel() && !loading()) {
         <button
           type="button"
           class="pi-icon-btn pi-focus-ring"
@@ -73,30 +73,41 @@ import { ChangeDetectionStrategy, Component, output, input } from '@angular/core
           </svg>
         </button>
       }
-      @if (showEdit()) {
-        <button
-          type="button"
-          class="pi-icon-btn pi-focus-ring"
-          [attr.aria-label]="editLabel()"
-          [attr.data-test]="dataTestEdit()"
-          (click)="edit.emit(row())"
+      @if (loading()) {
+        <span
+          class="inline-flex items-center justify-center w-8 h-8 text-xs text-muted-foreground"
+          role="status"
+          aria-label="Загрузка"
+          data-test="row-actions-loading"
         >
-          <span aria-hidden="true">✎</span>
-        </button>
-      }
-      @if (showDelete()) {
-        <button
-          type="button"
-          class="pi-icon-btn pi-icon-btn-danger pi-focus-ring
-                 disabled:opacity-30 disabled:cursor-not-allowed"
-          [attr.aria-label]="deleteLabel()"
-          [attr.data-test]="dataTestDelete()"
-          [attr.title]="deleteTitle()"
-          [disabled]="deleteDisabled()"
-          (click)="delete.emit(row())"
-        >
-          <span aria-hidden="true">×</span>
-        </button>
+          …
+        </span>
+      } @else {
+        @if (showEdit()) {
+          <button
+            type="button"
+            class="pi-icon-btn pi-focus-ring"
+            [attr.aria-label]="editLabel()"
+            [attr.data-test]="dataTestEdit()"
+            (click)="edit.emit(row())"
+          >
+            <span aria-hidden="true">✎</span>
+          </button>
+        }
+        @if (showDelete()) {
+          <button
+            type="button"
+            class="pi-icon-btn pi-icon-btn-danger pi-focus-ring
+                   disabled:opacity-30 disabled:cursor-not-allowed"
+            [attr.aria-label]="deleteLabel()"
+            [attr.data-test]="dataTestDelete()"
+            [attr.title]="deleteTitle()"
+            [disabled]="deleteDisabled()"
+            (click)="delete.emit(row())"
+          >
+            <span aria-hidden="true">×</span>
+          </button>
+        }
       }
     </div>
   `,
@@ -144,6 +155,8 @@ export class PiRowActionsComponent<T> {
   readonly showEdit = input<boolean>(true);
   /** Whether to render the delete button. Default `true` for backwards compatibility. */
   readonly showDelete = input<boolean>(true);
+  /** Replaces mutating row actions with a status indicator while a request is in flight. */
+  readonly loading = input<boolean>(false);
   /** E2E selector prefix for the edit button. Required when `showEdit=true`. */
   readonly dataTestEdit = input<string | null>(null);
   /** E2E selector prefix for the delete button. */
