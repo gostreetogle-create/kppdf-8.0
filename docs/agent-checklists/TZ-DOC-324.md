@@ -51,7 +51,7 @@
 ## Executor report (auto) — TZ-DOC-324
 
 status: DONE
-commits: 8feb262681b3268aabad2798bd0fe88e0229efa9 + <closeout 40-char TBD>
+commits: 8feb262681b3268aabad2798bd0fe88e0229efa9 + 70aff1a023c1fcfd71221da37ce1090737eda67b
 gates:  tsc-fe=PASS exit 0 на scope (people/* — чужой WIP из TZ-WORKERS-302 disclose);
         git-diff-check=PASS;
         BuilderPage spec переписан (7 tests, TZ-DOC-268/310 регрессы должны
