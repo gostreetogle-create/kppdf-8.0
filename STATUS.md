@@ -794,7 +794,7 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 - TZ-DOC-311 ✅ (legacy enum `category` сохраняется в схеме; миграция в successor).
 - TZ-MATERIALS-*, Admin/RBAC, sanitize-html, TZ-278, Z-backlog, TZ-BACKEND-E2E-HARNESS, документные таблицы (`document-table-type`) НЕ затрагиваются.
 
-**STATUS:** ✅ DONE (315/316/317).
+**STATUS:** ✅ DONE (315/316/317/318).
 
 ### Document Constructor — TZ-DOC-315..317 (2026-08-02) — Категории текстовых блоков
 
