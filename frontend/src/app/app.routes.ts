@@ -212,6 +212,16 @@ export const routes: Routes = [
         title: 'KPPDF — Заказы',
       },
       {
+        // TZ-SALES-301 — КП (коммерческие предложения). Thin UI поверх
+        // существующего QuotationModule (single API — дубль не создавался).
+        // Admin/manager surface: мутации @Roles('admin','manager').
+        path: 'proposals',
+        canMatch: [authGuard, adminOnlyRouteGuard],
+        loadComponent: () =>
+          import('./pages/commercial/proposals/proposals.page').then((m) => m.ProposalsPage),
+        title: 'KPPDF — КП',
+      },
+      {
         path: 'contracts',
         loadComponent: () =>
           import('./pages/contracts/contracts.page').then((m) => m.ContractsPage),

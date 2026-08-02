@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Quotation, QuotationDocument, QuotationItem } from './quotation.schema';
@@ -223,6 +223,13 @@ export class QuotationService {
     if (q.status === 'converted') {
       throw new NotFoundException(`Quotation already converted`);
     }
+    // TZ-ORDERS-301 §strip-commerce: an order may only be created from an
+    // ACCEPTED proposal — draft/sent/rejected/cancelled are not convertible.
+    if (q.status !== 'accepted') {
+      throw new BadRequestException(
+        `Cannot convert quotation in status "${q.status}" to an order — only "accepted" is convertible`,
+      );
+    }
     const order = await this.orderService.create({
       counterpartyId: q.counterpartyId.toString(),
       quotationId: q._id.toString(),
@@ -230,12 +237,15 @@ export class QuotationService {
       deliveryAddress,
       managerId,
       items: q.items.map((i) => ({
+        // COPY: FK is immutable. SNAPSHOT: name/sku survive catalog renames.
         productId: i.productId.toString(),
         productName: i.productName,
         productSku: i.productSku,
         quantity: i.quantity,
         unit: i.unit,
-        unitPrice: i.unitPrice,
+        // DROP: commerce (unitPrice/total/discount) is NOT copied — the
+        // order carries quantity + FK + inline snapshot only. Order.total
+        // stays 0 (stripped) per the strip-commerce manifest.
       })),
     });
     q.status = 'converted';
