@@ -8,7 +8,6 @@
     "start": "ng serve --host 0.0.0.0",
     "build": "ng build",
     "build:dev": "ng build --configuration development",
-    "check:build": "ng build --configuration development",
     "watch": "ng build --watch --configuration development",
     "typecheck": "tsc -p tsconfig.app.json --noEmit",
     "test": "jest --config jest.config.js",

@@ -198,7 +198,7 @@ export interface RoleFormResult {
 
       .field__hint {
         font-size: 11px;
-        color: var(--color-muted-foreground, #8a8172);
+        color: var(--color-muted-foreground);
       }
 
       .field__input {
@@ -272,7 +272,7 @@ export interface RoleFormResult {
       .role-form__select-all {
         font-size: 10px;
         font-family: 'JetBrains Mono', monospace;
-        color: var(--color-muted-foreground, #8a8172);
+        color: var(--color-muted-foreground);
         background: none;
         border: none;
         padding: 0;
@@ -302,7 +302,7 @@ export interface RoleFormResult {
       }
 
       .role-form__perm:hover {
-        background: var(--color-paper-2, #f0ece2);
+        background: var(--color-paper-2);
       }
 
       .role-form__checkbox {
@@ -329,7 +329,7 @@ export interface RoleFormResult {
 
       .role-form__perm-desc {
         font-size: 11px;
-        color: var(--color-muted-foreground, #8a8172);
+        color: var(--color-muted-foreground);
       }
     `,
   ],

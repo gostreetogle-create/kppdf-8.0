@@ -2,6 +2,6 @@ pnpm run lint-staged
 
 # Полная проверка (tsc + ng build + jest) — НЕ в hot-path pre-commit:
 # слишком медленно. Запускается вручную / в CI:
-#   pnpm --dir frontend check:build
+#   pnpm --dir frontend build:dev
 #   (или скилл .agents/skills/run-project-checks/SKILL.md)
 # tsc --noEmit НЕ проверяет Angular templates — только ng build их компилирует.
