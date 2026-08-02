@@ -66,7 +66,7 @@ outcome: DONE
 closed_at: 2026-08-02
 closed_by: autonomous-frontend-agent (Buffy)
 source_task: tasks/TZ-PRODUCTS-303-product-modules-cards-editor.md
-implementation_commit: <fill-after-commit>
+implementation_commit: 243aeda
 prerequisite: TZ-PRODUCTS-302 (4b3b4e8) — content-dialog товара; паттерн TZ-MODULES-301 (карточки в диалоге модуля)
 submit_contract: ATOMIC POST/DELETE /products/:id/modules (bulk PATCH невозможен — CreateProductDto без productModuleIds)
   - product.controller.ts:128-132 POST /products/:productId/modules { moduleId } ($addToSet, race-safe)
