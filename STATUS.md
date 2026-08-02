@@ -1347,3 +1347,63 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 - Defense-in-depth остаётся в `text-block.service.ts` (per user instruction).
 - API-различие lifecycle hooks (OnApplicationBootstrap vs OnModuleInit) документировано, не фиксится силой.
 - Соседняя TZ-PRODUCTS-301 сессия оставила half-baked untracked-импорты в worktree — зафиксировано в known_limitations архива.
+
+---
+
+## 2026-08-02 — TZ-DOC-322 DONE (text-block explicit-resolve + lifecycle normalize)
+
+**Исполнитель:** Buffy
+**Статус:** DONE / ladder removal + lifecycle API normalization
+**Предпосылки:** TZ-DOC-321 wired TextBlockCategoriesSeed — значит TZ-DOC-320 lazy-upsert ladder стал redundant defence-in-depth. TZ-DOC-321 задокументировал API delta: DocumentTemplateCategoriesSeed использует `OnApplicationBootstrap`, а TextBlockCategoriesSeed — `OnModuleInit`. Successor TZ-DOC-322 поэтапно закрыл оба замечания.
+
+**Что сделано (2 commits / 3 файла / −85 net LOC):**
+1. **Part 1 — `feat(text-block): remove lazy-upsert ladder`** (commit `6883f93`, −67 net в service):
+   - Удалена `ensureSystemDefault()` private helper (~25 строк).
+   - Удалена `LEGACY_CATEGORY_SLUG` const + legacy-enum ветка в `create()`. Legacy `dto.category` enum всё ещё persisteтся на schema's `category` field для backward compat (TZ-DOC-318 замкнёт это), но больше не влияет на `categoryId` resolution.
+   - Удалён второй `@InjectModel('TextBlockCategory')` из constructor.
+   - Удалены лишние imports (`TextBlockCategory as TextBlockCategorySchema`, `TextBlockCategoryDocument`, `SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG`, `Logger` — он был только для WARN-логов lazy-upsert).
+   - Восстановлен explicit-400 `BadRequestException` в `create()` для случая `resolveDefault(organizationId) === null`. Новое сообщение явно указывает operator-action: «AppModule-wired TextBlockCategoriesSeed must be present и active. Run the seed или activate в dictionary».
+2. **Part 1 — `text-block.service.spec.ts` rewrite** (commit `6883f93`, 7→6 driver tests):
+   - Tests для legacy-slug-map, legacy→resolveDefault и двух lazy-upsert путей УДАЛЕНЫ (тестировали контракт, которого больше нет).
+   - NEW test: `resolveDefault returns null → 4xx BadRequestException` (тот самый 400, который seed-path лечил).
+   - NEW test: legacy `dto.category` enum persisteтся в schema без влияния на `categoryId` resolution.
+   - Keep: assertAssignable happy-path, slug-conflict 11000, Mongoose-error propagation.
+3. **Part 2 — `chore(seeds): normalize lifecycle API to OnModuleInit`** (commit `7d73948`, +9/−3 в seed):
+   - `DocumentTemplateCategoriesSeed`: `OnApplicationBootstrap` → `OnModuleInit` (import + method rename).
+   - Логика, поля и idempotency-guard НЕ тронуты (TZ-DOC-307 territory preserved verbatim).
+   - JSDoc обновлён с пояснением исторического различия и observable end-state equivalence.
+   - Зачем: единый contract обоих system-default seeds → единая cognitive model.
+4. **Probe** (transient, удалён): однократный spec проверил, что после `createTestApp()` collection `document_template_categories` содержит ≥1 row с canonical slug `obshchee` под новым lifecycle. **1/1 PASS** → spec удалён, фиксируется только в archive marker.
+
+**Что НЕ трогали** (per NO-TOUCH list):
+- `backend/src/common/seed/text-block-categories.seed.ts` (TZ-DOC-321 territory, уже OnModuleInit — verified что продолжает работать после Part 2 через seed-init спеку + Part 2 probe).
+- `backend/src/modules/text-block-category/**` (TZ-DOC-315 territory).
+- `backend/src/modules/document-template-category/** service/controller/schema` (TZ-DOC-307 territory).
+- Legacy `category: 'legal'|'intro'|'outro'|'custom'` enum на schema + DTO — сохранён, финальное удаление = TZ-DOC-318 successor.
+- TZ-DOC-308..321, TZ-MATERIALS-*, TZ-WORKERS-*, TZ-PRODUCTS-*, TZ-MODULES-*, Z-backlog.
+
+**Сессионная защита:** Параллельная TZ-PRODUCTS-301 опять добавила half-baked импорты `ColorReferenceModule`/`ColorReferencesSeed` в `app.module.ts` без файлов. Сделал `git checkout HEAD -- backend/src/app.module.ts` ПЕРЕД своими правками — коммиты содержат ИСКЛЮЧИТЕЛЬНО мою TZ-DOC-322 область (3 файла). Чужие untracked-импорты остались в worktree чужой сессии.
+
+**Verification gates (mandatory per spec):**
+- ✅ `pnpm exec tsc -p tsconfig.build.json --noEmit` → exit 0.
+- ✅ `pnpm exec jest --no-coverage text-block` → **2 suites / 18 tests PASS** (TZ-DOC-315: 12 + TZ-DOC-322 service-spec: 6).
+- ✅ `pnpm exec jest --config test/jest-e2e.json text-block-category-seed-init` → **1/1 PASS** (seed всё ещё wired после ladder removal).
+- ✅ `pnpm exec jest --config test/jest-e2e.json text-blocks` → **9/9 PASS** (regression после Part 2 lifecycle normalize).
+- ✅ Regression `pnpm exec jest --testPathPattern='is-object-id'` → 4/4 PASS.
+- ✅ Regression `pnpm exec jest --config test/jest-e2e.json user-organizationId production` → **12/12 PASS**.
+- ✅ `git diff --check` (staged, только мои 3 файла) → clean.
+
+**Commits:**
+- `6883f93c84eafea4412a5f65a0addd22e020b851` — `feat(text-block): remove lazy-upsert ladder, restore explicit 400 contract — TZ-DOC-322 (part 1)` — 2 files / +90 / -188.
+- `7d73948038bf48a6922765ecfd0f55a0a30f853e` — `chore(seeds): normalize lifecycle API to OnModuleInit — TZ-DOC-322 (part 2)` — 1 file / +12 / -3.
+
+**Archive:** `tasks/_archive/2026-08/TZ-DOC-322-text-block-explicit-resolve.done.md` (с ARCHIVE_MARKER + scope before/after + validation proof + known_limitations + successor TZ-DOC-323).
+**Lock:** `.mimocode/locks/TZ-DOC-322-text-block-explicit-resolve.lock` (DONE — записывает оба commit hash).
+**Push:** НЕТ (per user instruction).
+
+**Successor TZ-DOC-323 (out-of-scope):** финальный microfix — решение об удалении legacy `category: 'legal'|'intro'|'outro'|'custom'` enum целиком из text-block schema. Преемник TZ-DOC-318. Out of scope этой сессии.
+
+**Известные ограничения:**
+- **Defense-in-depth УДАЛЁН (by design)** — теперь 400 BadRequestException с явным operator-actionable message вместо silent self-heal WARN. Мониторинг: любой 4xx на POST /api/text-blocks с body без `categoryId` + без старого enum — теперь surfacing, не silent.
+- **Legacy enum все ещё на схеме** — persists the `category` field but doesn't drive `categoryId`. Backward compat для существующих блоков сохранён.
+- **PII заметка:** параллельная TZ-PRODUCTS-301 сессия присутствует — задокументировано в known_limitations архива, чтобы merge conflict не выглядел загадочно.

@@ -5152,3 +5152,14 @@ checklist: `docs/agent-checklists/TZ-PRODUCTS-301.md`; page-дока: `docs/page
 **Ограничения:** categories.page.ts — project-wide tsc-blocker из чужой сессии (TZ-DOC-308 territory),
 не фиксировался; GET /:id без org-scope — зеркало reference-паттерна; роут authGuard
 (ключ color:* отсутствует в RBAC-каталоге; мутации защищены backend). Browser: MANUAL_BROWSER_CHECK_REQUIRED.
+
+## 2026-08-02 — TZ-DOC-322 DONE (text-block explicit-resolve + lifecycle normalize)
+
+**Тип:** Backend cleanup — ladder removal + small lifecycle API normalization.
+**Результат:** TZ-DOC-321 wired seed → TZ-DOC-320 lazy-upsert ladder стал redundant. Часть 1: убрал весь ladder из `text-block.service.ts` (−67 net): ensureSystemDefault helper, LEGACY_CATEGORY_SLUG, второй @InjectModel, 4 лишних imports. Восстановлен explicit-400 BadRequestException с operator-actionable message вместо silent self-heal WARN. Spec переписан 7→6 driver tests (4 ladder-tests удалены, 1 explicit-400 добавлен, 1 legacy-persistence добавлен). Часть 2: `DocumentTemplateCategoriesSeed` lifecycle normalized `OnApplicationBootstrap` → `OnModuleInit` (+9/−3, только import + method rename) — оба system-default seed'а теперь используют одинаковый contract.
+**Затронуто:** `backend/src/modules/text-block/text-block.service.ts`, `backend/src/modules/text-block/text-block.service.spec.ts`, `backend/src/common/seed/document-template-categories.seed.ts`. Cumulative −85 LOC net.
+**Проверки:** tsc exit 0; jest text-block 2 suites / 18 PASS; jest e2e text-block-category-seed-init 1/1 PASS; jest e2e text-blocks 9/9 PASS (regression после Part 2 lifecycle normalize); regression 12/12 (user-org+production) + 4/4 (is-object-id). Transient probe: `document_template_categories` ≥1 row with system-active-default flags после `createTestApp()` под новым lifecycle — 1/1 PASS (probe deleted).
+**Архив:** `tasks/_archive/2026-08/TZ-DOC-322-text-block-explicit-resolve.done.md`; lock: `.mimocode/locks/TZ-DOC-322-text-block-explicit-resolve.lock` (DONE, оба commit hash); checklist: `docs/agent-checklists/TZ-DOC-322.md`.
+**Commits:** `6883f93c84eafea4412a5f65a0addd22e020b851` (Part 1, 2 files / +90 / -188) и `7d73948038bf48a6922765ecfd0f55a0a30f853e` (Part 2, 1 file / +12 / -3). Push: нет.
+**Layout lifecycle hooks после Part 2:** оба system-default category seeds — `OnModuleInit`. Единый contract, единый commit hash, единый мониторинг. JSDoc в обоих seed-файлах cross-references.
+**Ограничения:** defense-in-depth УДАЛЁН by design (теперь 400 instead of silent WARN) — мониторинг обязан ловить; legacy `category` enum всё ещё на schema (TZ-DOC-318 successor = TZ-DOC-323 для удаления). Session-overlap с TZ-PRODUCTS-301 снова добавила half-baked импорты ColorReference → `git checkout HEAD -- app.module.ts` → только мои TZ-DOC-322 файлы в коммитах.
