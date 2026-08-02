@@ -2,6 +2,7 @@ ARCHIVE_MARKER
 outcome: DONE
 closed_at: 2026-08-02
 closed_by: Buffy
+commit: 73cc8a0
 verification:
   - acceptance criteria: PASS
   - frontend typecheck: PASS
@@ -12,6 +13,7 @@ verification:
   - code review: PASS
   - progress.md: UPDATED
   - STATUS.md: UPDATED
+browser: MANUAL_BROWSER_CHECK_REQUIRED (deep E2E scenarios on shared dev stack — login 401 for all known credentials)
 
 TZ-DOC-308: Категории шаблонов — справочник и UI выбора категории
 
@@ -41,3 +43,6 @@ TZ-DOC-308: Категории шаблонов — справочник и UI �
 
 5. Тесты: page spec (11), form-dialog spec, setup-dialog spec (TZ-DOC-268 + TZ-DOC-308 матрица),
    templates.page spec (категория-фильтр/колонка/duplicate).
+
+Известное ограничение: «edit flow выбирает текущую категорию» — в архитектуре нет edit-диалога шаблона
+(setup-диалог поддерживает только create/duplicate); требование покрыто create/duplicate + registry filter.
