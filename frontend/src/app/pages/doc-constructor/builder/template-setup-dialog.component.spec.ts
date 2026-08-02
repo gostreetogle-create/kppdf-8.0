@@ -271,4 +271,46 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
     select!.focus();
     expect(document.activeElement).toBe(select);
   });
+
+  // ═══ TZ-DOC-309 cache contract ═══
+
+  it('renders the select immediately (no loading flash) when categories are already cached', () => {
+    // list() serves the session cache synchronously — the dialog must never
+    // paint the «Загрузка категорий…» branch for a cached catalog.
+    listMock.mockReturnValue(of({ ok: true, data: CATS }));
+    createFixture();
+
+    const text = fixture.nativeElement.textContent ?? '';
+    expect(text).not.toContain('Загрузка категорий');
+    expect(
+      fixture.nativeElement.querySelector<HTMLSelectElement>('#template-category'),
+    ).toBeTruthy();
+    // Default category auto-selected synchronously from the cached catalog.
+    expect(handlers().categoryId()).toBe('cat-1');
+  });
+
+  it('opens and submits from the cache with a single list() call (no re-request)', () => {
+    listMock.mockReturnValue(of({ ok: true, data: CATS }));
+    createFixture();
+
+    handlers().onConfirm();
+    expect(listMock).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledWith({
+      pageSize: 'A4',
+      orientation: 'portrait',
+      categoryId: 'cat-1',
+    });
+  });
+
+  it('repeat open after a cache is present does not show the loading branch either', () => {
+    listMock.mockReturnValue(of({ ok: true, data: CATS }));
+    createFixture();
+    fixture.destroy();
+
+    // Second open (new component instance) — still served from cache.
+    createFixture();
+    const text = fixture.nativeElement.textContent ?? '';
+    expect(text).not.toContain('Загрузка категорий');
+    expect(handlers().categoryId()).toBe('cat-1');
+  });
 });

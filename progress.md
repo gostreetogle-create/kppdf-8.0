@@ -5036,3 +5036,27 @@ E2E-сценарии с созданием данных помечены MANUAL_
 **Проверки:** backend tsc PASS, frontend tsc PASS, ng build PASS, BE e2e 5/5 PASS, BE unit document-template 58/58 PASS, FE builder+service jest 126/126 PASS, eslint 0 errors (4 pre-existing warnings), `git diff --check` PASS, `verify-status.sh` PASS, независимый code review PASS (3 minor findings исправлены).
 **Архив:** `tasks/_archive/2026-08/TZ-DOC-311.done.md`; lock: `.mimocode/locks/TZ-DOC-311-template-props-persistence-and-cleanup.lock`.
 **Ограничение:** `MANUAL_BROWSER_CHECK_REQUIRED` — live authenticated browser flow не запускался; API-контракт доказан Mongo-backed e2e + unit тестами.
+
+---
+
+## 2026-08-02 — TZ-DOC-309 DONE (Диалог создания шаблона — мгновенное открытие, кэш категорий)
+
+**Исполнитель:** Buffy
+**Статус:** DONE
+**Результат:** `DocumentTemplateCategoriesService.list({ activeOnly: true })` кэширует стабильный активный каталог на время жизни приложения: повторные открытия setup-диалога (builder + templates) получают категории синхронно без повторного GET, default-категория автовыбирается сразу, loading/error/empty состояния сохраняются только для холодного первого запроса. Успешные create/update/remove инвалидируют кэш (generation guard не даёт старому in-flight ответу перезаписать свежий кэш). Справочник (`list()` без параметров) и поиск остаются свежими (не кэшируются). Механика закрытия/валидации диалога (TZ-DOC-268/310) не менялась.
+**Изменения:** `pi-document-template-categories.service.ts` (кэш + инвалидация); новый `pi-document-template-categories.service.spec.ts` (реальный HttpTestingController lifecycle: dedup in-flight, кэш-хит без второго GET, раздельные ключи параметров, инвалидация на create, кэш сохраняется при failed mutation); `template-setup-dialog.component.spec.ts` (+3 cache-contract теста: select без loading-вспышки, один list() на открытие, повторное открытие из кэша); `docs/agent-checklists/TZ-DOC-309.md`.
+**Проверки:** frontend tsc PASS, backend tsc PASS, ng build PASS, FE targeted jest 24/24 PASS, BE unit jest 348/348 PASS, полный FE jest 747/748 (1 чужой failure roles-admin.page.spec — TZ-278, в isolation проходит, вне scope), eslint 0 ошибок, `git diff --check` PASS, `verify-status.sh` PASS, независимый code review PASS (P2 опциональные харденинги задокументированы).
+**Архив:** `tasks/_archive/2026-08/TZ-DOC-309.done.md`; lock: `.mimocode/locks/TZ-DOC-309-template-dialog-instant-open.lock`.
+**Ограничение:** `MANUAL_BROWSER_CHECK_REQUIRED` — live authenticated browser flow не запускался (dev-stack/авторизация недоступны); контракт доказан unit-тестами реального observable lifecycle.
+
+---
+
+## 2026-08-02 — TZ-278 DONE (Admin users and roles pagination)
+
+**Тип:** Admin/RBAC implementation task.
+**Результат:** Только `/api/admin/users`, `/api/admin/roles`, `/admin/users` и `/admin/roles` были изменены в рамках TZ-278. Backend list endpoints теперь возвращают `{ items, total, page, limit }` с безопасной нормализацией page/limit, поиском до пагинации, корректным total, empty-page metadata и legacy `offset` compatibility. Frontend использует typed users/roles services и server-side pagination, сохраняя loading/error/empty/search, page transitions, stale-response protection и существующие mutation/dialog flows.
+**Изменения:** backend admin controllers/query helper/specs; frontend admin users/roles pages/services/specs; `docs/agent-checklists/TZ-278.md`; `STATUS.md`; archive marker; DONE lock. Materials, ProductModule, Z-backlog, desktop/Cargo.lock, TZ-DOC-311 и чужие untracked-файлы не изменялись.
+**Проверки:** backend targeted Jest 3 suites / 26 tests PASS; frontend targeted Jest 4 suites / 26 tests PASS; backend typecheck PASS; frontend typecheck PASS; frontend `ng build --configuration=development` PASS; targeted lint 0 errors with pre-existing warnings only; `git diff --check` PASS; `bash OrchestratorKit/verify-status.sh` PASS (exit 0); independent review без critical/important findings.
+**Browser:** `MANUAL_BROWSER_CHECK_REQUIRED` — browser agents не смогли завершить Chrome DevTools page selection (`pageId` оказался undefined), поэтому browser/E2E success не заявляется.
+**Архив:** `tasks/_archive/2026-08/TZ-278-admin-users-pagination.done.md`; lock: `.mimocode/locks/TZ-278-admin-users-pagination.lock`.
+**Оставшиеся active TZ:** TZ-MATERIALS-307, TZ-MATERIALS-309, TZ-MATERIALS-308. Следующий исполнитель выбирает одну конкретную задачу, проверяет dependencies/conflict keys и не запускает весь `tasks/` одновременно.
