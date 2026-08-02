@@ -1,4 +1,3 @@
-import { INestApplication } from '@nestjs/common';
 import { createTestApp, TestContext } from '../setup/test-db';
 import { SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG } from '../../src/modules/text-block-category/text-block-category.schema';
 
@@ -16,13 +15,11 @@ import { SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG } from '../../src/modules/text-
  */
 describe('TextBlockCategoriesSeed wiring (TZ-DOC-321)', () => {
   let ctx: TestContext;
-  let app: INestApplication;
 
   beforeAll(async () => {
     // createTestApp() calls app.init() internally — that triggers
     // OnModuleInit on TextBlockCategoriesSeed.
     ctx = await createTestApp();
-    app = ctx.app;
   });
 
   afterAll(async () => {
@@ -30,9 +27,10 @@ describe('TextBlockCategoriesSeed wiring (TZ-DOC-321)', () => {
   });
 
   it('inserts a system-active-default category row after app.init()', async () => {
-    // The seed's idempotency-guard is `findOne({ slug })`; once proven
-    // here, the second `app.init()` call (not relevant for this spec
-    // — there is only one) is a no-op.
+    // Query the raw MongoDB collection directly (no Mongoose cast) — we
+    // want to verify what was actually stored by the seed, not what the
+    // hydrated schema returns. The query filters by boolean flags to
+    // avoid accidentally matching future non-system categories.
     const docs = await ctx.connection
       .collection('text_block_categories')
       .find({ isSystem: true, isActive: true, isDefault: true })
@@ -44,6 +42,5 @@ describe('TextBlockCategoriesSeed wiring (TZ-DOC-321)', () => {
     expect(docs.map((d) => d.slug)).toContain(
       SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG,
     );
-    void app; // app is needed to bootstrap; linting keeps the symbol.
   });
 });
