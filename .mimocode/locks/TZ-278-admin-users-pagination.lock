@@ -1,0 +1,14 @@
+# TZ-278 — DONE lock
+TASK: TZ-278-admin-users-pagination
+OWNER: Buffy
+CLOSED_AT: 2026-08-02
+PROTECTED_FILES:
+  - backend/src/modules/admin/admin-list-query.ts
+  - backend/src/modules/admin/users-admin.controller.ts
+  - backend/src/modules/admin/roles-admin.controller.ts
+  - frontend/src/app/shared/services/pi-users.service.ts
+  - frontend/src/app/shared/services/pi-roles.service.ts
+  - frontend/src/app/pages/admin/users-admin.page.ts
+  - frontend/src/app/pages/admin/roles-admin.page.ts
+  - corresponding TZ-278 regression specs
+SUCCESSOR: New TZ required for intentional changes to the admin users/roles pagination contract.
