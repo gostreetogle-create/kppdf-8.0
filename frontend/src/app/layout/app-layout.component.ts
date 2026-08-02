@@ -77,6 +77,9 @@ const NAV_CATEGORIES: NavCategory[] = [
     icon: Briefcase,
     items: [
       { path: '/organizations', label: 'Организации' },
+      // TZ-SALES-301: КП (коммерческие предложения) — thin UI над
+      // QuotationModule, первая волна shop-customer-lifecycle.
+      { path: '/proposals', label: 'КП' },
       { path: '/contracts', label: 'Договоры' },
       { path: '/orders', label: 'Заказы' },
     ],
