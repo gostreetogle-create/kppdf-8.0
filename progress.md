@@ -5210,3 +5210,12 @@ E2E-сценарии с созданием данных помечены MANUAL_
 **Архив:** tasks/_archive/2026-08/TZ-PRODUCTS-305-ui-kit-showcase-cards.done.md; lock: .mimocode/locks/TZ-PRODUCTS-305-ui-kit-showcase-cards.lock (gitignored).
 
 **Ограничения:** e00be99 part-1 лежит на main (не в ветке) — disclosed; TZ-DOC-308/TZ-WORKERS-302 pre-existing, ng build exit 0; sm-карточка без фото (инициалы-аватар). Push: нет.
+
+## 2026-08-02 — TZ-SALES-301 (КП thin UI) — DONE
+Тонкий UI КП поверх существующего QuotationModule (single API — proposal-модуль НЕ создавался). Новое: backend/src/modules/quotation/quotation.service.spec.ts (12 тестов: create snapshot, no-mutation-on-catalog-change, list/get); frontend pi-proposals.service.ts (+8 тестов), pages/commercial/proposals/{proposals.page,proposal-form-dialog.component}.ts (+10 тестов), route /proposals (adminOnlyRouteGuard), nav «Сделки → КП», docs/pages/proposals.page.md. Иммутабельность: inline-snapshot productName/productSku на create.
+
+**Проверки:** backend tsc exit 0; backend jest quotation 12/12 PASS; frontend tsc exit 0; jest proposals pi-proposals 18/18 PASS; ng build dev exit 0; git diff --check clean; verify-status.sh PASS.
+
+**Архив:** tasks/_archive/2026-08/TZ-SALES-301-proposal-thin-ui.done.md; lock: .mimocode/locks/TZ-SALES-301-proposal-thin-ui.lock (gitignored).
+
+**Successor:** TZ-ORDERS-301 (quote→order conversion, strip-commerce, guard accepted). Push: нет.
