@@ -84,7 +84,7 @@ export class TextBlockService {
       if (dto.category) {
         const candidate = LEGACY_CATEGORY_SLUG[dto.category] ?? dto.category;
         def = await this.categoryModel
-          .findOne({ slug: candidate, isSystem: true })
+          .findOne({ slug: candidate, isSystem: true, isActive: true })
           .exec();
         if (def) {
           this.logger.log(
@@ -218,7 +218,10 @@ export class TextBlockService {
    */
   private async ensureSystemDefault(): Promise<TextBlockCategoryDocument> {
     const existing = await this.categoryModel
-      .findOne({ slug: SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG })
+      .findOne({
+        slug: SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG,
+        isActive: true,
+      })
       .exec();
     if (existing) return existing;
     return await this.categoryModel.create({

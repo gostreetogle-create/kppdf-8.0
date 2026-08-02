@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
-import { BadRequestException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { TextBlockService } from './text-block.service';
 import { TextBlock } from './text-block.schema';
@@ -108,6 +107,7 @@ describe('TextBlockService (TZ-DOC-320)', () => {
     expect(categoryModel.findOne).toHaveBeenCalledWith({
       slug: 'legal',
       isSystem: true,
+      isActive: true,
     });
     expect(categoryService.resolveDefault).not.toHaveBeenCalled();
     expect((res as unknown as { categoryId: Types.ObjectId }).categoryId).toEqual(
@@ -135,6 +135,7 @@ describe('TextBlockService (TZ-DOC-320)', () => {
     expect(categoryModel.findOne).toHaveBeenCalledWith({
       slug: 'intro',
       isSystem: true,
+      isActive: true,
     });
     expect(categoryService.resolveDefault).toHaveBeenCalledWith(undefined);
     expect(categoryModel.create).not.toHaveBeenCalled();
@@ -224,14 +225,5 @@ describe('TextBlockService (TZ-DOC-320)', () => {
     await expect(
       service.create({ name: 'Boom', content: 'x', category: 'legal' }),
     ).rejects.toBe(err);
-  });
-});
-
-describe('TextBlockService (TZ-DOC-320) — exclude-unused-import lint', () => {
-  it('re-exports BadRequestException for backward compat', () => {
-    // Sanity: the importer of this spec did not lose the import when
-    // we removed the explicit `resolveDefault is null → 400` branch in
-    // service.create (it's covered by ensureSystemDefault instead).
-    expect(BadRequestException).toBeDefined();
   });
 });
