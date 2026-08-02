@@ -1087,3 +1087,13 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 **Затронутые файлы/папки:** `frontend/src/app/pages/admin/`, `frontend/src/app/shared/ui/pi-row-actions/`, `docs/agent-checklists/TZ-277.md`, `tasks/_archive/2026-08/TZ-277-admin-mutation-loading-states.done.md`
 **Verification:** targeted FE Jest 6 suites / 58 tests PASS; frontend tsc PASS; frontend ng build development PASS; targeted ESLint 0 errors (2 existing raw-HttpClient warnings); git diff --check PASS; independent review PASS.
 **Известные ограничения:** `MANUAL_BROWSER_CHECK_REQUIRED` — live authenticated browser flow не запускался; backend не изменялся; чужие незакоммиченные файлы не включаются.
+
+---
+
+## 2026-08-02 — TZ-275 DONE
+**Исполнитель:** Buffy
+**Статус:** Выполнено / Проверено
+**Что сделано кратко:** `GET /api/admin/permissions` теперь требует комбинированный контракт `@Roles('admin')` + effective `role:write`; пользователь только с `role:read` получает 403. Добавлен explicit `auditRead` opt-in для `admin.permissions.catalog`, не включающий шумное аудирование обычных GET.
+**Затронутые файлы/папки:** `backend/src/modules/admin/permissions-admin.controller.ts`, `backend/src/common/interceptors/audit.interceptor.ts`, `backend/test/e2e/permissions-admin.e2e-spec.ts`, соответствующие specs, `docs/RBAC-CONTRACT.md`, `docs/agent-checklists/TZ-275.md`, `tasks/_archive/2026-08/TZ-275-admin-permissions-catalog-gating.done.md`
+**Verification:** backend unit Jest 3 suites / 35 tests PASS; permissions e2e 1 suite / 2 tests PASS; backend tsc PASS; targeted ESLint PASS; git diff --check PASS; independent review PASS.
+**Известные ограничения:** `MANUAL_BROWSER_CHECK_REQUIRED` — live authenticated browser flow не запускался; frontend и seed catalog не изменялись; чужие незакоммиченные файлы не включаются.

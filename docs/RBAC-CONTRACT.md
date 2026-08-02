@@ -208,7 +208,27 @@ call. **Use sparingly** — every `*` should be paired with a
 | `TZ-257` (Admin module) | `lastAdminInvariant` + system-role surfaced in `users-admin` / `roles-admin`. |
 | `TZ-258` (Protected-page onboarding) | Reference contract that protected pages must cite. |
 
-## 11. Maintenance
+## 11. Admin permissions catalog endpoint
+
+`GET /api/admin/permissions` returns the complete canonical permission catalog
+used by the admin role editor. Because this response exposes every available
+capability, it is not a general role-read endpoint:
+
+- the authenticated user must have the `admin` role (the legacy role guard);
+- the user must also satisfy `role:write` in effective permissions (the
+  capability used for role creation and editing); `role:read` alone is
+  insufficient and receives `403`. The seeded admin role is promoted to the
+  full catalog by the canonical effective-permissions algorithm, so its
+  empty explicit permissions array is intentional;
+- the endpoint is decorated with the explicit audit action
+  `admin.permissions.catalog` for entity type `Permission`.
+
+The audit interceptor keeps ordinary `GET` requests unaudited to avoid noisy
+read logging. This endpoint opts in with `auditRead: true`, so successful
+catalog access produces an audit record without changing behavior for other
+read-only routes.
+
+## 12. Maintenance
 
 `TZ-254` is the **last chance** to fix contract semantics WITHOUT a
 schema migration. After this TZ ships:

@@ -1,5 +1,7 @@
 import { PermissionsAdminController } from './permissions-admin.controller';
 import { PERMISSIONS } from '../../common/seed/permissions.constants';
+import { AUDIT_ACTION_KEY } from '../../common/interceptors/audit.interceptor';
+import { PERMISSIONS_KEY } from '../../common/decorators/permissions.decorator';
 
 /**
  * TZ-257.B — PermissionsAdminController unit spec.
@@ -50,5 +52,29 @@ describe('PermissionsAdminController (TZ-257.B)', () => {
         expect(typeof p.description).toBe('string');
       }
     }
+  });
+
+  it('declares the write-level gate for the full role-editing catalog', () => {
+    const prototype = PermissionsAdminController.prototype;
+    const handler = prototype.catalog;
+    const permissions = Reflect.getMetadata(PERMISSIONS_KEY, handler);
+    expect(permissions).toEqual(['role:write']);
+  });
+
+  it('opts the catalog into explicit read auditing', () => {
+    const metadata = Reflect.getMetadata(
+      AUDIT_ACTION_KEY,
+      PermissionsAdminController.prototype.catalog,
+    );
+    expect(metadata).toEqual({
+      action: 'admin.permissions.catalog',
+      entityType: 'Permission',
+      auditRead: true,
+    });
+  });
+
+  it('keeps the admin role requirement on the endpoint', () => {
+    const roles = Reflect.getMetadata('roles', PermissionsAdminController.prototype.catalog);
+    expect(roles).toEqual(['admin']);
   });
 });

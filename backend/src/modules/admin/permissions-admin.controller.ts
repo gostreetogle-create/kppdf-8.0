@@ -2,6 +2,7 @@ import { Controller, Get } from '@nestjs/common';
 import { PERMISSIONS } from '../../common/seed/permissions.constants';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { AuditAction } from '../../common/interceptors/audit.interceptor';
 
 /**
  * TZ-257.B — permissions catalog for the admin role editor.
@@ -16,14 +17,16 @@ import { Roles } from '../../common/decorators/roles.decorator';
  *   { sections: [{ section: 'user', permissions: [{ key, action, description }] }, …] }
  *
  * Gated by the global guard stack: JwtAuthGuard → PermissionsGuard
- * (`role:read`) → RolesGuard (`admin`). Static catalogue — no DB
- * round-trip, no audit needed (read-only).
+ * (`role:write`) → RolesGuard (`admin`). The full catalogue is a
+ * sensitive read and explicitly emits `admin.permissions.catalog` audit
+ * entries; ordinary GET handlers remain unaudited.
  */
 @Controller('admin/permissions')
 export class PermissionsAdminController {
   @Get()
-  @Permissions('role:read')
+  @Permissions('role:write')
   @Roles('admin')
+  @AuditAction({ action: 'admin.permissions.catalog', entityType: 'Permission', auditRead: true })
   catalog(): {
     sections: Array<{
       section: string;

@@ -1,5 +1,6 @@
 import { firstValueFrom, of, throwError } from 'rxjs';
 import { AuditAction, AuditInterceptor } from './audit.interceptor';
+import { Logger } from '@nestjs/common';
 import type { CallHandler, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
@@ -49,7 +50,7 @@ describe('AuditInterceptor (TZ-125)', () => {
 
   beforeAll(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    errorSpy = jest.spyOn((require('@nestjs/common') as any).Logger.prototype, 'error')
+    errorSpy = jest.spyOn(Logger.prototype, 'error')
       .mockImplementation(() => undefined);
   });
 
@@ -89,7 +90,7 @@ describe('AuditInterceptor (TZ-125)', () => {
     expect(errorSpy).toHaveBeenCalled();
   });
 
-  it('skips audit on GET (writes only on POST/PATCH/PUT/DELETE)', async () => {
+  it('skips audit on ordinary GET requests', async () => {
     const logMock = jest.fn().mockResolvedValue(undefined);
     const interceptor = new AuditInterceptor(
       makeReflectorSpy({ action: 'read', entityType: 'category' }),
@@ -101,6 +102,24 @@ describe('AuditInterceptor (TZ-125)', () => {
     await firstValueFrom(interceptor.intercept(ctx, next));
     await new Promise((r) => setImmediate(r));
     expect(logMock).not.toHaveBeenCalled();
+  });
+
+  it('logs an explicitly opted-in audited GET request', async () => {
+    const logMock = jest.fn().mockResolvedValue(undefined);
+    const interceptor = new AuditInterceptor(
+      makeReflectorSpy({ action: 'admin.permissions.catalog', entityType: 'Permission', auditRead: true }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { log: logMock } as any,
+    );
+    const ctx = makeExecutionContext('GET', '/api/admin/permissions', {});
+    const next: CallHandler = { handle: () => of({ sections: [] }) };
+    await firstValueFrom(interceptor.intercept(ctx, next));
+    await new Promise((r) => setImmediate(r));
+    expect(logMock).toHaveBeenCalledTimes(1);
+    expect(logMock.mock.calls[0][0]).toMatchObject({
+      action: 'admin.permissions.catalog',
+      entityType: 'Permission',
+    });
   });
 
   it('passes through when @AuditAction metadata is absent', async () => {

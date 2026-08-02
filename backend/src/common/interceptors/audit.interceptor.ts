@@ -20,6 +20,11 @@ export interface AuditActionMetadata {
    * Used to set entityId in the log.
    */
   idParam?: string;
+  /**
+   * Explicit opt-in for read operations. GET requests remain unaudited by
+   * default; sensitive read surfaces may opt in without auditing every GET.
+   */
+  auditRead?: boolean;
 }
 
 export const AuditAction = (meta: AuditActionMetadata): MethodDecorator =>
@@ -35,7 +40,9 @@ interface RequestWithUser {
 
 /**
  * Global interceptor: after a successful POST/PATCH/PUT/DELETE that has
- * @AuditAction() metadata, writes an AuditLog entry.
+ * @AuditAction() metadata, writes an AuditLog entry. GET handlers may opt in
+ * explicitly with `auditRead: true` on the decorator; ordinary GETs remain
+ * unaudited.
  *
  * Auth writes are handled directly by AuthService.log() (TZ-04), not here.
  */
@@ -56,7 +63,9 @@ export class AuditInterceptor implements NestInterceptor {
     if (!meta) return next.handle();
 
     const req = context.switchToHttp().getRequest<RequestWithUser>();
-    if (!['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method)) {
+    const isWrite = ['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method);
+    const isAuditedRead = req.method === 'GET' && meta.auditRead === true;
+    if (!isWrite && !isAuditedRead) {
       return next.handle();
     }
 

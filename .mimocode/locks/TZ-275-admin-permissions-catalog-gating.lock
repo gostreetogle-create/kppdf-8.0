@@ -1,0 +1,13 @@
+# TZ-275 — DONE lock
+TASK: TZ-275-admin-permissions-catalog-gating
+OWNER: Buffy
+CLOSED_AT: 2026-08-02
+PROTECTED_FILES:
+  - backend/src/modules/admin/permissions-admin.controller.ts
+  - backend/src/modules/admin/permissions-admin.controller.spec.ts
+  - backend/src/common/interceptors/audit.interceptor.ts
+  - backend/src/common/interceptors/audit.interceptor.spec.ts
+  - backend/test/e2e/permissions-admin.e2e-spec.ts
+  - docs/RBAC-CONTRACT.md
+  - docs/agent-checklists/TZ-275.md
+SUCCESSOR: New TZ required for intentional changes to this permissions-catalog authorization or read-audit contract.

@@ -5013,3 +5013,13 @@ E2E-сценарии с созданием данных помечены MANUAL_
 **Verification:** targeted Jest 6/6 suites, 58/58 tests PASS; frontend typecheck PASS; `ng build --configuration=development` PASS; targeted ESLint 0 errors (2 existing architecture warnings); `git diff --check` PASS; independent review без critical/important findings.
 **Архив:** `tasks/_archive/2026-08/TZ-277-admin-mutation-loading-states.done.md`; lock: `.mimocode/locks/TZ-277-admin-mutation-loading-states.lock`.
 **Ограничение:** `MANUAL_BROWSER_CHECK_REQUIRED` — live authenticated browser/e2e flow не запускался.
+
+---
+
+## 2026-08-02 — TZ-275 DONE (Permissions catalog gating)
+
+**Статус:** Выполнено / Проверено.
+**Результат:** Полный RBAC catalog endpoint требует `admin` role и effective `role:write`; `role:read`-only получает 403 с PermissionsGuard denial. Добавлен `@AuditAction({ action: 'admin.permissions.catalog', entityType: 'Permission', auditRead: true })`; обычные GET по-прежнему не аудируются.
+**Verification:** backend unit Jest 35/35, permissions e2e 2/2, backend tsc PASS, targeted ESLint PASS, `git diff --check` PASS, independent review без critical/important findings.
+**Архив:** `tasks/_archive/2026-08/TZ-275-admin-permissions-catalog-gating.done.md`; lock: `.mimocode/locks/TZ-275-admin-permissions-catalog-gating.lock`.
+**Ограничение:** `MANUAL_BROWSER_CHECK_REQUIRED` — live authenticated browser/e2e browser flow не запускался; Mongo-backed API e2e запускался и прошёл.
