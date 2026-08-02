@@ -106,3 +106,11 @@ remain (the probe files were since-deleted):
 If the friendly 400 message scope is expanded to other endpoints that
 have legacy enum-shaped fields, the exceptionFactory may grow. None
 are currently identified; the chain is closed as of TZ-DOC-323.
+
+## Executor report (auto) — TZ-DOC-323
+
+status: DONE
+commits: 18b4da5 (feat) + 5915c3e (closeout)
+gates:  tsc=PASS; e2e text-blocks=9/9; regression e2e user-org+production=12/12; is-object-id unit=4/4; git-diff-check=PASS
+known:  TextBlockCategoriesSeed wiring gap closed by separate TZ (TZ-DOC-321); seed CP1251→UTF-8 fixed; TZ-DOC-322 amendment applied
+ask:    —

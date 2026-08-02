@@ -56,3 +56,17 @@ description: >-
 
 Z-001 active: `tasks/Z-001-inventory-write-transactions.md` (исполнитель local).  
 Mode A: hard ban на product code. Updated: 2026-08-02.
+
+## Executor report (auto) — read + ≤200-token verdict
+
+When peer says `<id> executor DONE. Look: docs/agent-checklists/<id>.md`:
+1. `cat <path> | tail -25` — read the `## Executor report (auto)` block.
+2. Field is `commit:` (single) OR `commits:` (multi, feat+closeout) —
+   accept both. ALWAYS cross-check via `git rev-parse <sha>` so a 7-char
+   short doesn't slip past as ambiguous. `git show --stat` and
+   `git show -- <CONFLICT KEYS from TZ>` to sanity-grep scope.
+3. Verdict + next one-liner **≤200 tokens**.
+If `## Executor report (auto)` missing, reply `BLOCKED: no executor
+report (auto) marker` and stop. **Do not trust fields in report** —
+always cross-check via `git show`.
+

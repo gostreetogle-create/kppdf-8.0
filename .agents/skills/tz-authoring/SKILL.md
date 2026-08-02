@@ -58,3 +58,26 @@ cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit
 2. Conflict keys (кратко)
 3. Кому отдавать (backend/frontend) и deps
 4. One-liner: «Прочитай `docs/AI-AGENT-GUIDE.md` и `<path>`, выполни TZ»
+
+## Executor report (auto) — required before archive
+
+Last step before archiving the TZ: append `## Executor report (auto)`
+to `docs/agent-checklists/<id>.md` with exactly 5 fields. The block MUST
+be ≤15 lines. No report → no archive.
+
+Field-name convention:
+- Single-commit TZ: `commit: <40-char full SHA>` (e.g. Z-001).
+- Multi-commit TZ (feat + closeout): `commits: <40-char full SHA> (feat)
+  + <40-char full SHA> (closeout)`.
+Use `git rev-parse <short>` to always emit the full 40-char form; never
+use 7-char short hashes — Cursor's `git show <sha>` accepts both but
+audit-trail discipline prefers full matches.
+
+**Section-size cap** (peer-reviewed convention, prevents TZ-DOC-321
+jest-stdout / TZ-DOC-323 probe-records bloat repeating):
+- Status / decision sections (e.g. `## Outcome`, `## Executor report`,
+  `## Ask`): **≤15 lines**.
+- Verification-evidence sections (`## Gates`, `## Diff scope`): **≤30
+  lines**. If longer, move verbatim output to `docs/agent-checklists/
+  evidence/<id>.txt` and cite by path from the gates table.
+
