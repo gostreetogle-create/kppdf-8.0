@@ -19,6 +19,10 @@ import { PiToastService } from '../../../shared/ui/toast';
 import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../../core/silent-http';
 import { TextBlock, TextBlocksService } from '../../../shared/services/pi-text-blocks.service';
+import {
+  TextBlockCategoriesService,
+  TextBlockCategory,
+} from '../../../shared/services/pi-text-block-categories.service';
 import { TextBlockEditorComponent } from './text-block-editor.component';
 import { pluralRu, RU_BLOCKS, RU_COLUMNS } from '../../../shared/util/russian-plural';
 
@@ -98,6 +102,20 @@ type SortDir = 'asc' | 'desc';
                 aria-label="Поиск текстовых блоков"
               />
             </div>
+            <label class="texts-filter-wrap" aria-label="Фильтр по категории">
+              <span class="eyebrow text-muted-foreground">Категория</span>
+              <select
+                class="texts-filter-select"
+                [value]="categoryFilter()"
+                (change)="onCategoryFilterChange($event)"
+                data-test="texts-category-filter"
+              >
+                <option value="">Все</option>
+                @for (cat of categories(); track cat._id) {
+                  <option [value]="cat._id">{{ cat.name }}</option>
+                }
+              </select>
+            </label>
           </div>
           <app-pi-button
             variant="default"
@@ -125,6 +143,7 @@ type SortDir = 'asc' | 'desc';
               <thead>
                 <tr>
                   <th class="eyebrow">Название</th>
+                  <th class="eyebrow">Категория</th>
                   <th class="eyebrow">Конфигурация</th>
                   <th class="eyebrow">Статус</th>
                   <th class="eyebrow texts-table-actions-col">Действия</th>
@@ -140,6 +159,17 @@ type SortDir = 'asc' | 'desc';
                     [attr.data-test]="'text-row-' + row._id"
                   >
                     <td class="texts-table-name">{{ row.name }}</td>
+                    <td class="texts-table-category">
+                      @if (row.categoryId; as catId) {
+                        @if (categoryName(catId); as name) {
+                          <span class="texts-category-badge">{{ name }}</span>
+                        } @else {
+                          <span class="text-muted-foreground/50">—</span>
+                        }
+                      } @else {
+                        <span class="text-muted-foreground/50">—</span>
+                      }
+                    </td>
                     <td class="texts-table-config">
                       {{ columnConfigUpper(row.columns?.length || 1) }}
                     </td>
@@ -283,6 +313,26 @@ type SortDir = 'asc' | 'desc';
         outline-offset: -1px;
       }
 
+      .texts-filter-wrap {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .texts-filter-select {
+        padding: 6px 8px;
+        font-size: 14px;
+        font-family: inherit;
+        border: 1px solid var(--color-rule);
+        background: var(--color-paper-2);
+        color: var(--color-ink);
+        cursor: pointer;
+      }
+      .texts-filter-select:focus {
+        outline: none;
+        outline: 1px solid var(--color-sunrise-warm);
+        outline-offset: -1px;
+      }
+
       .texts-catalog-scroll {
         flex: 1;
         overflow-y: auto;
@@ -338,6 +388,18 @@ type SortDir = 'asc' | 'desc';
         font-weight: 500;
         color: var(--color-ink);
       }
+      .texts-table-category {
+        font-size: 13px;
+      }
+      .texts-category-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        font-size: 12px;
+        border: 1px solid var(--color-rule);
+        background: var(--color-paper-2);
+        color: var(--color-ink);
+        white-space: nowrap;
+      }
       .texts-table-config {
         font-family: ui-monospace, monospace;
         font-size: 11px;
@@ -374,6 +436,7 @@ type SortDir = 'asc' | 'desc';
 })
 export class TextsPage {
   private readonly service = inject(TextBlocksService);
+  private readonly categoryService = inject(TextBlockCategoriesService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
@@ -397,6 +460,14 @@ export class TextsPage {
         this.loading.set(false);
       });
     this.reload();
+
+    // TZ-DOC-316 — populated lookup for the «Категория» badge + filter dropdown.
+    this.categoryService
+      .list({ activeOnly: true })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (res.ok) this.categories.set(res.data ?? []);
+      });
 
     // Auto-open editor when navigated from builder with editId query param
     this.route.queryParams
@@ -426,12 +497,26 @@ export class TextsPage {
   protected readonly searchQuery = signal<string>('');
   protected readonly sortDir = signal<SortDir>('asc');
 
+  /** TZ-DOC-316 — active categories powering the filter dropdown + badge lookup. */
+  protected readonly categories = signal<TextBlockCategory[]>([]);
+  protected readonly categoryFilter = signal<string>('');
+
+  protected categoryName(id: string): string | undefined {
+    return this.categories().find((c) => c._id === id)?.name;
+  }
+
+  protected onCategoryFilterChange(event: Event): void {
+    this.categoryFilter.set((event.target as HTMLSelectElement).value);
+  }
+
   private readonly visible = computed<TextBlock[]>(() => {
     const q = this.searchQuery().trim().toLowerCase();
-    if (!q) return this.data();
-    return this.data().filter(
-      (b) => b.name.toLowerCase().includes(q) || (b.content ?? '').toLowerCase().includes(q),
-    );
+    const filterId = this.categoryFilter();
+    return this.data().filter((b) => {
+      if (filterId && b.categoryId !== filterId) return false;
+      if (!q) return true;
+      return b.name.toLowerCase().includes(q) || (b.content ?? '').toLowerCase().includes(q);
+    });
   });
 
   protected readonly sortedRows = computed<TextBlock[]>(() => {

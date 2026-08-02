@@ -1,7 +1,64 @@
-/* _TZ_DOC_324_APPLIED_ */
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  Injector,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
+import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
+import {
+  Subject,
+  catchError,
+  debounceTime,
+  forkJoin,
+  groupBy,
+  map,
+  mergeMap,
+  of,
+  switchMap,
+  tap,
+  timer,
+} from 'rxjs';
+import {
+  LucideAngularModule,
+  FileText,
+  RefreshCw,
+  Check,
+  AlertCircle,
+  Loader2,
+  Trash2,
+  Table as TableIcon,
+  Eye,
+  Pencil,
+  Image as ImageIcon,
+} from 'lucide-angular';
+import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
+import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
+import {
+  TextBlockCategoriesService,
+  type TextBlockCategory,
+} from '../../../shared/services/pi-text-block-categories.service';
+import { BuilderTextFilterService } from './builder-text-filter.service';
+import { API_BASE_URL } from '../../../core/api.tokens';
+import { extractErrorMessage, SilentResult } from '../../../core/silent-http';
+import { blockKey, type TemplateBlock } from '../../../shared/template-block/template-block.types';
+import { defaultBlockLayout } from '../../../shared/template-block/template-block-layout';
+import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
+import { PiPageHeaderComponent } from '../../../shared/page/pi-page-header.component';
+import { ButtonComponent } from '../../../shared/ui/button/button.component';
+import { PiToastService } from '../../../shared/ui/toast';
+import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
+import { AlertDialogComponent } from '../../../shared/ui/dialog/pi-alert-dialog.component';
+import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
 import type { AddBlockPayload } from './builder.types';
 import { BuilderCanvasComponent } from './builder-canvas.component';
 import { BuilderInspectorComponent } from './builder-inspector.component';
+import { BuilderToolPaneComponent } from './builder-tool-pane.component';
 
 /**
  * Полная документация страницы: docs/pages/builder.page.md
@@ -43,6 +100,7 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
     ButtonComponent,
     BuilderCanvasComponent,
     BuilderInspectorComponent,
+    BuilderToolPaneComponent,
   ],
   host: {
     '(document:click)': 'onDocumentClick($event)',
@@ -54,193 +112,216 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
       /doc-constructor/templates (TemplatesPage). /doc-constructor/builder
       exact path redirects there (see app.routes.ts).
     -->
-      <!-- Builder toolbar — horizontal dropdowns for adding blocks -->
-      <div class="builder-toolbar">
-        <div class="builder-toolbar__title">
-          <span class="text-xs text-muted-foreground">{{ headerSubtitle() }}</span>
-        </div>
-
-        <!-- TZ-211: View mode toggle -->
-        <div class="builder-view-toggle">
+    <!-- Builder toolbar — horizontal dropdowns for adding blocks -->
+    <div class="builder-toolbar">
+      <div class="builder-toolbar__title">
+        <span class="text-xs text-muted-foreground">{{ headerSubtitle() }}</span>
+        @if (templateId()) {
           <button
             type="button"
-            class="builder-view-toggle__btn"
-            [class.builder-view-toggle__btn--active]="viewMode() === 'editor'"
-            (click)="viewMode.set('editor')"
+            class="builder-category-chip pi-focus-ring"
+            (click)="onCategoryChipReset()"
+            [title]="selectedCategoryId() ? 'Кликните, чтобы сбросить фильтр' : ''"
+            [attr.aria-label]="'Категория: ' + currentCategoryLabel()"
+            data-test="builder-category-chip"
           >
-            <lucide-icon [img]="EditIcon" [size]="13"></lucide-icon>
-            Редактор
+            Категория: {{ currentCategoryLabel() }}
           </button>
-          <button
-            type="button"
-            class="builder-view-toggle__btn"
-            [class.builder-view-toggle__btn--active]="viewMode() === 'preview'"
-            (click)="viewMode.set('preview')"
-          >
-            <lucide-icon [img]="EyeIcon" [size]="13"></lucide-icon>
-            Превью
-          </button>
-        </div>
-
-        <div class="builder-toolbar__actions">
-          <!-- Тексты dropdown -->
-          <div class="builder-dropdown">
-            <button
-              type="button"
-              class="builder-dropdown__trigger"
-              (click)="toggleDropdown('texts')"
-            >
-              <lucide-icon [img]="FileTextIcon" [size]="14"></lucide-icon>
-              Тексты
-            </button>
-            @if (openDropdown() === 'texts') {
-              <div class="builder-dropdown__panel">
-                @if (textsRes.isLoading()) {
-                  <p class="builder-dropdown__loading">Загрузка…</p>
-                } @else if (textsRes.error()) {
-                  <p class="builder-dropdown__error">Ошибка загрузки</p>
-                } @else if (textsRes.value() && textsRes.value()!.length > 0) {
-                  @for (t of textsRes.value(); track t._id) {
-                    <button
-                      type="button"
-                      class="builder-dropdown__item"
-                      (click)="onAddTextBlock(t); closeDropdown()"
-                    >
-                      <span class="builder-dropdown__item-label">{{ t.name }}</span>
-                      @if (t.category) {
-                        <span class="builder-dropdown__item-hint">{{ t.category }}</span>
-                      }
-                    </button>
-                  }
-                } @else {
-                  <p class="builder-dropdown__empty">Нет текстов</p>
-                }
-              </div>
-            }
-          </div>
-
-          <!-- Таблицы dropdown -->
-          <div class="builder-dropdown">
-            <button
-              type="button"
-              class="builder-dropdown__trigger"
-              (click)="toggleDropdown('tables')"
-            >
-              <lucide-icon [img]="TableIcon" [size]="14"></lucide-icon>
-              Таблицы
-            </button>
-            @if (openDropdown() === 'tables') {
-              <div class="builder-dropdown__panel">
-                @if (tablesRes.isLoading()) {
-                  <p class="builder-dropdown__loading">Загрузка…</p>
-                } @else if (tablesRes.error()) {
-                  <p class="builder-dropdown__error">Ошибка загрузки</p>
-                } @else if (tablesRes.value() && tablesRes.value()!.length > 0) {
-                  @for (t of tablesRes.value(); track t._id) {
-                    <button
-                      type="button"
-                      class="builder-dropdown__item"
-                      (click)="onAddTableTemplate(t); closeDropdown()"
-                    >
-                      <span class="builder-dropdown__item-label">{{ t.name }}</span>
-                      @if (t.description) {
-                        <span class="builder-dropdown__item-hint">{{ t.description }}</span>
-                      }
-                    </button>
-                  }
-                } @else {
-                  <p class="builder-dropdown__empty">Нет таблиц</p>
-                }
-              </div>
-            }
-          </div>
-
-          <!-- Фото button (file picker) -->
-          <div class="builder-dropdown">
-            <button type="button" class="builder-toolbar__btn" (click)="photoInput.click()">
-              <lucide-icon [img]="ImageIcon" [size]="14"></lucide-icon>
-              Фото
-            </button>
-            <input
-              #photoInput
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              class="sr-only"
-              (change)="onPhotoFileSelected($event)"
-            />
-          </div>
-
-          <!-- Отступ button removed (TZ-DOC-319) -->
-        </div>
+        }
       </div>
 
-      <!-- Main builder area: canvas + inspector -->
-      <div class="builder-shell">
-        <app-builder-tool-pane
-          (addBlock)="onAddBlock($event)"
-          (categoryChanged)="onBuilderCategoryFilterChange($event)"
-        ></app-builder-tool-pane>
-        <app-builder-canvas
-          [blocks]="blocks()"
-          [selectedId]="selectedId()"
-          [selectedIds]="selectedIds()"
-          [backgroundImages]="backgroundImages()"
-          [orientation]="orientation()"
-          [backgroundOpacity]="template()?.backgroundOpacity ?? 0.3"
-          [pageNumbering]="template()?.pageNumbering ?? false"
-          [pageSize]="template()?.pageSize ?? 'A4'"
+      <!-- TZ-211: View mode toggle -->
+      <div class="builder-view-toggle">
+        <button
+          type="button"
+          class="builder-view-toggle__btn"
+          [class.builder-view-toggle__btn--active]="viewMode() === 'editor'"
+          (click)="viewMode.set('editor')"
+        >
+          <lucide-icon [img]="EditIcon" [size]="13"></lucide-icon>
+          Редактор
+        </button>
+        <button
+          type="button"
+          class="builder-view-toggle__btn"
+          [class.builder-view-toggle__btn--active]="viewMode() === 'preview'"
+          (click)="viewMode.set('preview')"
+        >
+          <lucide-icon [img]="EyeIcon" [size]="13"></lucide-icon>
+          Превью
+        </button>
+      </div>
+
+      <div class="builder-toolbar__actions">
+        <!-- Тексты dropdown -->
+        <div class="builder-dropdown">
+          <button type="button" class="builder-dropdown__trigger" (click)="toggleDropdown('texts')">
+            <lucide-icon [img]="FileTextIcon" [size]="14"></lucide-icon>
+            Тексты
+          </button>
+          @if (openDropdown() === 'texts') {
+            <div class="builder-dropdown__panel">
+              <label class="builder-dropdown__filter-label" for="bd-text-category-filter"
+                >Категория</label
+              >
+              <select
+                id="bd-text-category-filter"
+                class="builder-dropdown__filter-select"
+                [value]="selectedCategoryId() ?? ''"
+                (change)="onCategoryChange($event)"
+                [disabled]="categoryLoading()"
+                aria-label="Фильтр текстов по категории"
+                data-test="builder-text-category-filter"
+              >
+                <option value="">Все</option>
+                @for (cat of categories(); track cat._id) {
+                  <option [value]="cat._id">{{ cat.name }}</option>
+                }
+              </select>
+              @if (textsRes.isLoading()) {
+                <p class="builder-dropdown__loading">Загрузка…</p>
+              } @else if (textsRes.error()) {
+                <p class="builder-dropdown__error">Ошибка загрузки</p>
+              } @else if (textsRes.value() && textsRes.value()!.length > 0) {
+                @for (t of textsRes.value(); track t._id) {
+                  <button
+                    type="button"
+                    class="builder-dropdown__item"
+                    (click)="onAddTextBlock(t); closeDropdown()"
+                  >
+                    <span class="builder-dropdown__item-label">{{ t.name }}</span>
+                    @if (t.category) {
+                      <span class="builder-dropdown__item-hint">{{ t.category }}</span>
+                    }
+                  </button>
+                }
+              } @else {
+                <p class="builder-dropdown__empty">
+                  {{ selectedCategoryId() ? 'Нет текстов в этой категории' : 'Нет текстов' }}
+                </p>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Таблицы dropdown -->
+        <div class="builder-dropdown">
+          <button
+            type="button"
+            class="builder-dropdown__trigger"
+            (click)="toggleDropdown('tables')"
+          >
+            <lucide-icon [img]="TableIcon" [size]="14"></lucide-icon>
+            Таблицы
+          </button>
+          @if (openDropdown() === 'tables') {
+            <div class="builder-dropdown__panel">
+              @if (tablesRes.isLoading()) {
+                <p class="builder-dropdown__loading">Загрузка…</p>
+              } @else if (tablesRes.error()) {
+                <p class="builder-dropdown__error">Ошибка загрузки</p>
+              } @else if (tablesRes.value() && tablesRes.value()!.length > 0) {
+                @for (t of tablesRes.value(); track t._id) {
+                  <button
+                    type="button"
+                    class="builder-dropdown__item"
+                    (click)="onAddTableTemplate(t); closeDropdown()"
+                  >
+                    <span class="builder-dropdown__item-label">{{ t.name }}</span>
+                    @if (t.description) {
+                      <span class="builder-dropdown__item-hint">{{ t.description }}</span>
+                    }
+                  </button>
+                }
+              } @else {
+                <p class="builder-dropdown__empty">Нет таблиц</p>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Фото button (file picker) -->
+        <div class="builder-dropdown">
+          <button type="button" class="builder-toolbar__btn" (click)="photoInput.click()">
+            <lucide-icon [img]="ImageIcon" [size]="14"></lucide-icon>
+            Фото
+          </button>
+          <input
+            #photoInput
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            class="sr-only"
+            (change)="onPhotoFileSelected($event)"
+          />
+        </div>
+
+        <!-- Отступ button removed (TZ-DOC-319) -->
+      </div>
+    </div>
+
+    <!-- Main builder area: canvas + inspector -->
+    <div class="builder-shell">
+      <app-builder-tool-pane (addBlock)="onAddBlock($event)"></app-builder-tool-pane>
+      <app-builder-canvas
+        [blocks]="blocks()"
+        [selectedId]="selectedId()"
+        [selectedIds]="selectedIds()"
+        [backgroundImages]="backgroundImages()"
+        [orientation]="orientation()"
+        [backgroundOpacity]="template()?.backgroundOpacity ?? 0.3"
+        [pageNumbering]="template()?.pageNumbering ?? false"
+        [pageSize]="template()?.pageSize ?? 'A4'"
+        [snapEnabled]="snapEnabled()"
+        [gridSize]="gridSize()"
+        [boundaryPadding]="boundaryPadding()"
+        [gridVisible]="false"
+        [viewMode]="viewMode()"
+        (select)="onSelect($event)"
+        (multiSelect)="onMultiSelect($event)"
+        (marqueeSelect)="onMarqueeSelect($event)"
+        (reorder)="onReorder($event)"
+        (dropAdd)="onDropAdd($event)"
+        (blockWidthChange)="onBlockWidthChange($event)"
+        (overlayMove)="onOverlayMove($event)"
+        (overlayResize)="onOverlayResize($event)"
+        (layoutChanges)="onLayoutChanges($event)"
+        (canvasClick)="onCanvasClick()"
+        (deleteRequest)="onDeleteBlock($event)"
+      />
+
+      <div class="builder-inspector-panel">
+        <app-builder-inspector
+          [block]="selectedBlock()"
+          [selectedCount]="selectedIds().size"
+          [selectedBlocks]="selectedBlocks()"
+          [paperWidth]="orientation() === 'landscape' ? 900 : 720"
+          [paperHeight]="orientation() === 'landscape' ? 636 : 1018"
+          [templateSelected]="templateSelected()"
+          [template]="template()"
+          [allBlocks]="blocks()"
           [snapEnabled]="snapEnabled()"
           [gridSize]="gridSize()"
           [boundaryPadding]="boundaryPadding()"
           [gridVisible]="false"
-          [viewMode]="viewMode()"
-          (select)="onSelect($event)"
-          (multiSelect)="onMultiSelect($event)"
-          (marqueeSelect)="onMarqueeSelect($event)"
-          (reorder)="onReorder($event)"
-          (dropAdd)="onDropAdd($event)"
-          (blockWidthChange)="onBlockWidthChange($event)"
-          (overlayMove)="onOverlayMove($event)"
-          (overlayResize)="onOverlayResize($event)"
-          (layoutChanges)="onLayoutChanges($event)"
-          (canvasClick)="onCanvasClick()"
-          (deleteRequest)="onDeleteBlock($event)"
+          [grouped]="editorGroupedIds() !== null"
+          (snapSettingsChange)="onSnapSettingsChange($event)"
+          (layoutOrderChange)="onLayoutChanges($event)"
+          (groupSelected)="onGroupSelected()"
+          (ungroupSelected)="onUngroupSelected()"
+          (update)="onInspectorUpdate($event)"
+          (delete)="onDeleteBlock($event)"
+          (deleteSelected)="onDeleteSelected()"
+          (editSelected)="onEditSelected()"
+          (marginReset)="onMarginReset($event)"
+          (multiMarginUpdate)="onMultiMarginUpdate($event)"
+          (templateUpdate)="onTemplateUpdate($event)"
+          (uploadBackground)="onBackgroundUpload($event)"
+          (removeBackground)="onRemoveBackground($event)"
+          (setDefaultBackground)="onSetDefaultBackground($event)"
+          (closePanel)="onCloseInspectorPanel()"
         />
-
-        <div class="builder-inspector-panel">
-          <app-builder-inspector
-            [block]="selectedBlock()"
-            [selectedCount]="selectedIds().size"
-            [selectedBlocks]="selectedBlocks()"
-            [paperWidth]="orientation() === 'landscape' ? 900 : 720"
-            [paperHeight]="orientation() === 'landscape' ? 636 : 1018"
-            [templateSelected]="templateSelected()"
-            [template]="template()"
-            [allBlocks]="blocks()"
-            [snapEnabled]="snapEnabled()"
-            [gridSize]="gridSize()"
-            [boundaryPadding]="boundaryPadding()"
-            [gridVisible]="false"
-            [grouped]="editorGroupedIds() !== null"
-            (snapSettingsChange)="onSnapSettingsChange($event)"
-            (layoutOrderChange)="onLayoutChanges($event)"
-            (groupSelected)="onGroupSelected()"
-            (ungroupSelected)="onUngroupSelected()"
-            (update)="onInspectorUpdate($event)"
-            (delete)="onDeleteBlock($event)"
-            (deleteSelected)="onDeleteSelected()"
-            (editSelected)="onEditSelected()"
-            (marginReset)="onMarginReset($event)"
-            (multiMarginUpdate)="onMultiMarginUpdate($event)"
-            (templateUpdate)="onTemplateUpdate($event)"
-            (uploadBackground)="onBackgroundUpload($event)"
-            (removeBackground)="onRemoveBackground($event)"
-            (setDefaultBackground)="onSetDefaultBackground($event)"
-            (closePanel)="onCloseInspectorPanel()"
-          />
-        </div>
       </div>
-    }
+    </div>
   `,
   styles: [
     `
@@ -321,6 +402,30 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
 
       .builder-toolbar__title {
         flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .builder-category-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-gold, #a16207);
+        background: color-mix(in oklch, var(--color-sunrise-soft) 35%, transparent);
+        border: 1px solid color-mix(in oklch, var(--color-sunrise-warm) 30%, transparent);
+        border-radius: 2px;
+        cursor: pointer;
+        transition: all 120ms ease;
+      }
+
+      .builder-category-chip:hover {
+        background: color-mix(in oklch, var(--color-sunrise-soft) 55%, transparent);
       }
 
       .builder-toolbar__actions {
@@ -375,6 +480,34 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
       .builder-dropdown__trigger:hover {
         background: var(--color-paper-3);
         border-color: var(--color-ink);
+      }
+
+      .builder-dropdown__filter-label {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--color-muted);
+        margin: 0 0 4px;
+        display: block;
+      }
+
+      .builder-dropdown__filter-select {
+        width: 100%;
+        padding: 6px 8px;
+        font-size: 12px;
+        font-family: inherit;
+        color: var(--color-ink);
+        background: var(--color-paper);
+        border: 1px solid var(--color-rule);
+        margin-bottom: 4px;
+        cursor: pointer;
+      }
+
+      .builder-dropdown__filter-select:focus {
+        outline: none;
+        outline: 1px solid var(--color-sunrise-warm);
+        outline-offset: -1px;
       }
 
       .builder-dropdown__panel {
@@ -544,10 +677,44 @@ export class BuilderPage {
   // Dropdown state for inline toolbar
   protected readonly openDropdown = signal<string | null>(null);
 
-  // httpResources for inline toolbar dropdowns
+  // TZ-DOC-317 — shared category filter for the «Тексты» surfaces (pane + dropdown).
+  protected readonly textFilter = inject(BuilderTextFilterService);
+  private readonly textBlockCategories = inject(TextBlockCategoriesService);
+  protected readonly categories = signal<TextBlockCategory[]>([]);
+  protected readonly categoryLoading = signal(true);
+  protected readonly selectedCategoryId = computed(() => this.textFilter.categoryId());
+
+  protected onCategoryChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    // «Все» (empty) → null → no categoryId param on the request.
+    this.textFilter.categoryId.set(value ? value : null);
+  }
+
+  // TZ-DOC-318 — breadcrumb badge in the topbar: friendly name of the
+  // active text category (or «Все»). Clicking the chip clears the filter.
+  protected readonly currentCategoryLabel = computed<string>(() => {
+    const id = this.selectedCategoryId();
+    if (!id) return 'Все';
+    return this.categories().find((c) => c._id === id)?.name ?? 'Все';
+  });
+
+  protected onCategoryChipReset(): void {
+    this.textFilter.categoryId.set(null);
+  }
+
+  // httpResources for inline toolbar dropdowns. The «Тексты» URL is rebuilt
+  // whenever the shared filter categoryId changes (server-side filter).
   protected readonly textsRes = httpResource<
     Array<{ _id: string; name: string; category?: string; content?: string; columns?: unknown[] }>
-  >(() => '/api/text-blocks?isActive=true', { defaultValue: [] });
+  >(
+    () => {
+      const cat = this.textFilter.categoryId();
+      return cat
+        ? `/api/text-blocks?isActive=true&categoryId=${encodeURIComponent(cat)}`
+        : '/api/text-blocks?isActive=true';
+    },
+    { defaultValue: [] },
+  );
   protected readonly tablesRes = httpResource<
     Array<{
       _id: string;
@@ -614,6 +781,16 @@ export class BuilderPage {
   });
 
   constructor() {
+    // TZ-DOC-317 — active catalog for the «Тексты» filter dropdowns
+    // (TZ-DOC-309 cache reuse, never a raw duplicate GET).
+    this.textBlockCategories
+      .list({ activeOnly: true })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        this.categoryLoading.set(false);
+        if (res.ok) this.categories.set(res.data ?? []);
+      });
+
     // 1) Initialize save$ pipeline (groupBy _id → debounce 1500 → switchMap).
     //    D.2.3: `tap` before switchMap to set 'saving'; success path sets
     //    'saved' (auto-revert to 'idle' after 2s via timer), failure sets 'error'.
@@ -635,6 +812,10 @@ export class BuilderPage {
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const id = params.get('id');
       this.templateId.set(id);
+      // TZ-DOC-317 step f: switching templates resets the «Тексты» category
+      // filter back to «Все». A category selected for template A is a UX
+      // dead-end on template B (B may have no blocks in that category).
+      this.textFilter.reset();
       this.blocks.set([]);
       this.template.set(null);
       this.selectedId.set(null);
@@ -642,10 +823,19 @@ export class BuilderPage {
       if (id) this.loadBlocks(id);
     });
 
-    // Phase E.3: read ?source + ?sourceId query params (preserved across
-    // template-pick navigation). Logged for future use; binding logic is
-    // out of scope until the doc-template service supports pre-binding.
+    // TZ-DOC-318 step b: two-way bind `?categoryId=<id>` query param ↔
+    // shared filter signal (shareable link, F5-refresh). Read on URL
+    // change (refresh preserves the selection); write happens in the
+    // effect() below so this subscribe is the read-side only. Setting
+    // the signal to the same value is a no-op (Angular signal equality
+    // for primitives), so the round-trip is loop-free in steady state.
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((qp) => {
+      const category = qp.get('categoryId');
+      this.textFilter.categoryId.set(category ?? null);
+
+      // Phase E.3: read ?source + ?sourceId query params (preserved across
+      // template-pick navigation). Logged for future use; binding logic is
+      // out of scope until the doc-template service supports pre-binding.
       const source = qp.get('source');
       const sourceId = qp.get('sourceId');
       if (source && sourceId) {
@@ -653,6 +843,28 @@ export class BuilderPage {
       } else {
         this.sourceContext.set(null);
       }
+    });
+
+    // TZ-DOC-318 step b (write side): whenever the shared filter signal
+    // changes, write ?categoryId=<id> to the URL (shareable link).
+    // `replaceUrl: true` keeps the back button clean (router state is for
+    // navigation, not filter ticks). `categoryId: null` removes the param
+    // (Angular treats null in queryParams as a removal under merge).
+    //
+    // Loop guard: skip the write when the URL already carries the same
+    // value (covers the initial effect emission on creation, where the
+    // read-side subscription has already synced categoryId ← URL).
+    effect(() => {
+      const c = this.textFilter.categoryId();
+      const current = this.route.snapshot.queryParamMap.get('categoryId');
+      const desired = c ?? null;
+      if ((current ?? null) === desired) return;
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { categoryId: desired },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
     });
   }
 

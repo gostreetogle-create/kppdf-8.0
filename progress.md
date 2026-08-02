@@ -5247,23 +5247,52 @@ PATCH `productModuleIds[]` невозможен (UpdateProductDto whitelist → 
 сохранён). Спека: 34/34 unit PASS (dialog), 42/42 products/module suites;
 tsc scope чист; ng build падает только на параллельно-сессионных файлах
 TZ-WORKERS-302 (не мой scope, disclosure в ARCHIVE).
+## 2026-08-02 — TZ-DOC-316 DONE (TextBlockCategory: справочник + picker)
 
-## [2026-08-02] — TZ-JOURNEY-301: DONE (канон потока цеха + карта дыр, spec-only)
+**Результат:** справочник «Категории текстов» `/dictionaries/text-block-categories` (TextBlockCategoriesPage: CRUD, system-lock, loading/error/empty, поиск name+slug) + form-dialog (variant=content 1000px, whitelist, double-submit guard) + select «Категория» в редакторе блока (auto-select default, «Не выбрана» → null → categoryId НЕ отправляется) + колонка «Категория» и dropdown-фильтр на `/doc-constructor/texts`. Сервис PiTextBlockCategoriesService зеркалит TZ-DOC-309 cache (Map + in-flight share + generation guard + инвалидация) БЕЗ shareReplay (replay скрывает cross-tab changes). Route + nav item «Категории текстов».
 
-**TZ-JOURNEY-301** — gap map «шаг потока → страница → статус» в docs/product-vision-lite.md
-(КП ⛔→SALES-301, Заказ/Договор/Модули/Виды работ/Склад/Документы ✅, Люди 🔶→UX-306+WORKERS-302,
-Гант/Проектное ОК 🅿️→_backlog/vision/GANT-calendar.md) + одна mermaid-схема. Executor report в
-checklist. Документный TZ — кодовые тесты N/A, git diff --check clean. Push: нет.
+**Затронуто:** 3 новых frontend-файла (+spec) — service, page, form-dialog; изменено: text-block-editor (select), texts.page (колонка+фильтр), pi-text-blocks.service (categoryId), app.routes, app-layout; создано 2 новых spec (editor, texts.page). Backend НЕ трогался (TZ-DOC-315 closed).
 
-## [2026-08-02] — TZ-PRODUCTS-304: DONE (expandable-каталог товаров)
+**Проверки:** frontend tsc PASS; backend tsc sanity PASS; jest targeted 5 suites/48 PASS; ng build --configuration=development PASS; git diff --check clean; OrchestratorKit/verify-status.sh PASS.
 
-**TZ-PRODUCTS-304** — expandable-строки в каталоге продукции: `expandedId`
-signal (single-expand), chevron в nameTpl (stopPropagation; отдельная колонка
-невозможна — `ColumnDef` требует `keyof Product`), `[expandedRow]` pi-table
-(НЕ изменён), панель модулей (имя/артикул/N материалов) + клик →
-`/modules/:id`. Ленивая загрузка `ProductModulesService.list(pid)` при первом
-раскрытии ТОЛЬКО для строковых id вне page-scoped Map-cache; populated-строки
-(backend list populate) рендерятся без GET и без loading-флэша; retry при
-ошибке; collapse очищает loading/error. Спека: 11/11 PASS (page), 71/71
-(products+pi-table); tsc scope чист; ng build падает только на
-параллельно-сессионных файлах (не мой scope, disclosure в ARCHIVE).
+**Архив:** `tasks/_archive/2026-08/TZ-DOC-316-text-block-category-reference-and-picker.done.md`; lock `.mimocode/locks/TZ-DOC-316-text-block-category-reference-and-picker.lock`; checklist `docs/agent-checklists/TZ-DOC-316.md`.
+
+**Commit:** conventional commit `feat(text-block): categories reference and picker (TZ-DOC-316)` (NO push).
+
+**Ограничения:** Browser E2E MANUAL_BROWSER_CHECK_REQUIRED (dev-stack credentials недоступны); TZ-DOC-317 (builder picker dropdown) — successor, не запускался (явное «не параллельно»); TZ-DOC-318 (миграция legacy enum) — successor.
+
+## 2026-08-02 — TZ-DOC-317 DONE (Builder: фильтр текстов по категории в picker-панели)
+
+**Что:** dropdown «Категория» над обеими «Тексты»-поверхностями builder (tool-pane + inline тулбар); `BuilderTextFilterService` (root-сигнал `categoryId`) — единый источник правды; `textsRes` httpResource URL: `?isActive=true` → `?isActive=true&categoryId=<id>` (server-side, backend TZ-DOC-315). Two-way URL binding `?category=<id>` + snapshot loop-guard (фикс regression TZ-DOC-268 cancel-теста). Смена шаблона → reset фильтра. `TextBlocksService.list()` + categoryId HttpParams.
+
+**Архив:** `tasks/_archive/2026-08/TZ-DOC-317-builder-texts-filter-by-category.done.md`; lock `.mimocode/locks/TZ-DOC-317-builder-texts-filter-by-category.lock`; checklist `docs/agent-checklists/TZ-DOC-317.md`.
+
+**Gates:** frontend tsc PASS; backend tsc PASS (sanity, backend не тронут); jest targeted 4 suites/44 PASS; jest full 886 PASS (2 pre-existing flakes вне scope: button.component double-emit, pi-showcase-card TZ-PRODUCTS-305 icon provider — disclosed); ng build PASS; diff-check PASS; verify-status.sh PASS.
+
+**Commit:** conventional commit `feat(builder): filter text-blocks by category in picker (TZ-DOC-317)` (NO push).
+
+**Ограничения:** Browser E2E MANUAL_BROWSER_CHECK_REQUIRED; legacy enum в UI picker не пробрасывается (TZ-DOC-318 successor, разблокирован).
+
+## 2026-08-02 — TZ-DOC-318 DONE (Builder topbar: URL persistence + breadcrumb badge)
+
+**Что:** поверх TZ-DOC-317: (b) URL persistence — параметр переименован `?category=` → `?categoryId=`, read в queryParamMap subscribe + write в effect с replaceUrl/merge + snapshot loop-guard (F5-refresh и shareable-ссылка открывают builder с активным фильтром); (c) breadcrumb badge — чип `builder-category-chip` в верхней панели (только когда templateId есть), лейбл lookup по categories, клик → сброс фильтра; (a) two-picker sync подтверждён (tool-pane читает из BuilderTextFilterService, единый источник правды).
+
+**Merge/rebase:** 316/317-цепочка rebase-нута на новый main с TZ-DOC-324 (pure-editor rewrite builder.page.ts). Конфликты builder.page.ts/­spec разрешены: восстановлен import-блок (324 оставил broken marker `/* _TZ_DOC_324_APPLIED_ */`), добавлен BuilderToolPaneComponent в imports (ng build TS2345: $event=Event), убран orphaned `}` и stale `(categoryChanged)` binding. Новые SHA цепочки: 0f30417 (316) → 2676e25 → 5d42dee → db54813 (317) → e50f2c6 → 29d2a4c.
+
+**Архив:** `tasks/_archive/2026-08/TZ-DOC-318-builder-texts-topbar-category-filter.done.md`; lock `.mimocode/locks/TZ-DOC-318-builder-texts-topbar-category-filter.lock`; checklist `docs/agent-checklists/TZ-DOC-318.md` (с Executor report).
+
+**Gates:** frontend tsc PASS; backend tsc PASS (sanity, backend не тронут); jest targeted 5 suites/45 PASS; ng build PASS; diff-check PASS; verify-status.sh PASS.
+
+**Commit:** conventional commits `feat(builder): text-category topbar polish — sync + URL persist + breadcrumb (TZ-DOC-318)` + `docs(closeout): TZ-DOC-318 archive + executor-report + status sync` (NO push).
+
+**Ограничения:** Browser E2E MANUAL_BROWSER_CHECK_REQUIRED; legacy enum → TZ-DOC-326 successor; pre-existing flakes (button.component, pi-showcase-card) вне scope; rebase обновил SHA 316/317 (архивы ссылаются на pre-rebase SHA — контент идентичен).
+
+## 2026-08-02 — RBAC capability gap audit (Buffy → Cursor Mode A peer)
+
+chore(docs): rbac-capability-gap-audit + 5 TZ-stubs + SoT sync (Cursor Mode A).
+- 5 findings confirmed/corrected: F1 (22 ungated leaves), F3 (gap=adoption, не missing — PermissionsGuard+APP_GUARD уже есть), F5 (/auth/me без pages[]).
+- 5 _backlog TZ-stubs: TZ-RBAC-302/303/304 (policy foundation → lite adoption → /me contract) + TZ-ACCESS-303/304 (route map → nav menu gating).
+- RBAC-CONTRACT.md +17 lines (user:read vs user:admin section).
+- product-vision-lite.md +40 lines (route→capability table, 28 строк).
+- First по deps: TZ-RBAC-302 → TZ-ACCESS-303.
+- Push: deferred per project convention.

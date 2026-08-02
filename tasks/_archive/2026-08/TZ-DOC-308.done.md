@@ -46,3 +46,22 @@ TZ-DOC-308: Категории шаблонов — справочник и UI �
 
 Известное ограничение: «edit flow выбирает текущую категорию» — в архитектуре нет edit-диалога шаблона
 (setup-диалог поддерживает только create/duplicate); требование покрыто create/duplicate + registry filter.
+
+jobs_tracking:
+  - tasks/_archive/2026-08/TZ-DOC-308-template-category-ui.md (spec)
+  - tasks/_archive/2026-08/TZ-DOC-308.done.md (this file)
+  - docs/agent-checklists/TZ-DOC-308.md (verification log — created in wake-up session)
+  - .mimocode/locks/TZ-DOC-308-template-category-ui.lock (lock — created in wake-up session)
+  - STATUS.md (✅ DONE row + lock table entry)
+  - progress.md (closed entry 2026-08-02)
+
+wakeup_reverification (2026-08-02, tree @ adc72b9):
+  - frontend tsc (tsconfig.app.json --noEmit): PASS (exit 0)
+  - frontend jest targeted document-template-categories|document-template-category-form-dialog|categories.page:
+    4 suites / 32 tests PASS
+  - ng build --configuration=development: PASS (exit 0)
+  - git diff --check: PASS
+  - lock + agent checklist created (were referenced in STATUS.md but absent on disk)
+  - embedded section in categories.page.ts intentionally NOT added: dedicated page already
+    exists (73cc8a0); 67d9e0b removed the dead docCatService injection; re-adding would
+    duplicate functionality and resurrect removed dead code.

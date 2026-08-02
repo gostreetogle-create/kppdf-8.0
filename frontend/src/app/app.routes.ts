@@ -137,6 +137,15 @@ export const routes: Routes = [
         title: 'KPPDF — Категории шаблонов',
       },
       {
+        // TZ-DOC-316 — категории текстовых блоков (справочник + picker).
+        path: 'dictionaries/text-block-categories',
+        loadComponent: () =>
+          import('./pages/dictionaries/text-block-categories.page').then(
+            (m) => m.TextBlockCategoriesPage,
+          ),
+        title: 'KPPDF — Категории текстов',
+      },
+      {
         // TZ-PRODUCTS-301 — справочник «Цвета» (hex + RAL). Гейт как у
         // остальных справочников (authGuard родителя): отдельного
         // capability-ключа в RBAC-каталоге нет; мутации защищены на

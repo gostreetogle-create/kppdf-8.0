@@ -100,6 +100,27 @@ describe('TextBlocksService', () => {
     ]);
   });
 
+  it('TZ-DOC-317: list({categoryId, activeOnly}) sends categoryId HttpParams', () => {
+    svc.list({ categoryId: 'cat-1', activeOnly: true }).subscribe();
+    const req = httpMock.expectOne(
+      (r) => r.method === 'GET' && r.url.endsWith('/text-blocks'),
+    );
+    expect(req.request.params.get('categoryId')).toBe('cat-1');
+    expect(req.request.params.get('activeOnly')).toBe('true');
+    expect(req.request.urlWithParams).toContain('categoryId=cat-1');
+    req.flush([]);
+  });
+
+  it('TZ-DOC-317: list({categoryId}) omits categoryId when not set', () => {
+    svc.list({ activeOnly: true }).subscribe();
+    const req = httpMock.expectOne(
+      (r) => r.method === 'GET' && r.url.endsWith('/text-blocks'),
+    );
+    expect(req.request.params.has('categoryId')).toBe(false);
+    expect(req.request.params.get('activeOnly')).toBe('true');
+    req.flush([]);
+  });
+
   it('create() POSTs body and returns TextBlock on 2xx', () => {
     svc
       .create({ name: 'Реквизиты сторон', category: 'legal', content: '# Реквизиты' } as never)

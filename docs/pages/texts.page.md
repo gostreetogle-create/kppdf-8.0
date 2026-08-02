@@ -19,11 +19,12 @@
 
 | Метод | Endpoint | Назначение |
 |-------|----------|-----------|
-| GET | `/api/text-blocks` | Список текстовых блоков |
+| GET | `/api/text-blocks` | Список текстовых блоков (TZ-DOC-315: + `categoryId` FK, фильтр `categoryId`/`activeOnly`) |
 | GET | `/api/text-blocks/:id` | Получить блок по ID |
-| POST | `/api/text-blocks` | Создать |
+| POST | `/api/text-blocks` | Создать (без `categoryId` → сервер подставит default категорию) |
 | PATCH | `/api/text-blocks/:id` | Обновить |
 | DELETE | `/api/text-blocks/:id` | Удалить |
+| GET | `/api/text-block-categories` | Категории текстов (TZ-DOC-315 backend; используется для колонки/фильтра) |
 
 ## Dialogs
 
@@ -36,6 +37,7 @@
 | Сервис | Методы |
 |--------|--------|
 | `TextBlocksService` | `list()`, `findById(id)`, `create(payload)`, `update(id, payload)`, `remove(id)` |
+| `TextBlockCategoriesService` | `list({ activeOnly })` — активный каталог категорий для колонки «Категория» и dropdown-фильтра (TZ-DOC-316) |
 
 ## Sub-components
 
@@ -56,6 +58,14 @@
 | `sortDir` | `Signal<'asc'\|'desc'>` | Сортировка по name locale |
 | `visible` | `computed<TextBlock[]>` | Отфильтрованный список |
 | `sortedRows` | `computed<TextBlock[]>` | Отсортированный список |
+| `categories` | `Signal<TextBlockCategory[]>` | Активные категории (lookup для бейджа + опции фильтра) |
+| `categoryFilter` | `Signal<string>` | Выбранный `categoryId` в фильтре (`''` = все) |
+
+## Категории текстов (TZ-DOC-316)
+
+- **Колонка «Категория»** — после «Название», перед «Конфигурация»: бейдж с `name` категории через populated lookup (`categoryName(id)`), прочерк если `categoryId` нет или категория недоступна.
+- **Фильтр «Категория»** — dropdown в шапке каталога (активные категории из `TextBlockCategoriesService.list({ activeOnly: true })`); локальный фильтр по `categoryId`; «Все» сбрасывает. Комбинируется с поиском (AND).
+- **Редактор блока** — select «Категория» в meta-панели: загрузка активных категорий, для нового блока auto-select активной default (как серверный resolveDefault), «Не выбрана» → `null` → `categoryId` НЕ отправляется (сервер сам подставит default).
 
 ## TextBlockEditorComponent — детали
 
@@ -111,6 +121,7 @@
 |----|------------|
 | TZ-86 | Первая реализация (Phase D) |
 | 2026-07-26 | effect init, bottom controls (← × →), font size, column width, toolbar smart formatting, auto-open from builder |
+| TZ-DOC-316 | Колонка «Категория» + dropdown-фильтр в каталоге; select категории в редакторе блока (`categoryId` в payload только при явном выборе) |
 
 ---
 
