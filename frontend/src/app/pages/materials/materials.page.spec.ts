@@ -115,6 +115,15 @@ describe('MaterialsPage (httpResource refactor)', () => {
             create: () => of({ ok: true, data: {} as never }),
             update: () => of({ ok: true, data: {} as never }),
             remove: () => of({ ok: true, data: undefined }),
+            duplicate: () =>
+              of({
+                ok: true,
+                data: {
+                  _id: 'clone-1',
+                  name: 'Стекло 4мм (копия)',
+                  unit: 'm2',
+                },
+              }),
           },
         },
         { provide: PiDialogService, useValue: { open: () => ({}) as never } },

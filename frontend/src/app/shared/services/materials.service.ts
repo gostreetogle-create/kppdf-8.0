@@ -84,4 +84,18 @@ export class MaterialsService {
   remove(id: string): Observable<SilentResult<void>> {
     return silentDelete<void>(this.http, `${this.baseUrl}/materials/${id}`);
   }
+
+  /**
+   * TZ-MATERIALS-310: server-side clone of a material. The response is
+   * the freshly-created `Material` document (the clone), and the page
+   * opens the edit dialog on it so the user can amend photo selection,
+   * tweak dimensions, etc., without losing the original.
+   *
+   * Backend POST /api/materials/:id/duplicate is role-gated
+   * (admin/manager), so a 403 here surfaces as a `res.ok=false` and
+   * the page shows the message via the toast. No silent fallback.
+   */
+  duplicate(id: string): Observable<SilentResult<Material>> {
+    return silentPost<Material>(this.http, `${this.baseUrl}/materials/${id}/duplicate`, {});
+  }
 }

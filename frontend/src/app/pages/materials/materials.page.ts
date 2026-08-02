@@ -176,10 +176,13 @@ const PAGE_SIZE = 50;
           <ng-template #rowActionsTpl let-row>
             <app-pi-row-actions
               [row]="row"
+              [copyLabel]="'Копировать ' + row.name"
               [editLabel]="'Редактировать ' + row.name"
               [deleteLabel]="'Удалить ' + row.name"
+              [dataTestCopy]="'copy-button-' + row._id"
               [dataTestEdit]="'edit-button-' + row._id"
               [dataTestDelete]="'delete-button-' + row._id"
+              (copy)="onCopy($event)"
               (edit)="openEdit($event)"
               (delete)="onDelete($event)"
             />
@@ -427,6 +430,50 @@ export class MaterialsPage implements OnInit {
         if (res.ok) {
           this.toast.success('Материал удалён');
           this.listRes.reload();
+        } else {
+          this.toast.error(extractErrorMessage(res.error));
+        }
+      });
+    });
+  }
+
+  /**
+   * TZ-MATERIALS-310: per-row Copy action.
+   *
+   * Flow:
+   *  1. Confirmation dialog (`AlertDialogComponent`) warns that photos
+   *     are NOT copied (TZ-MATERIALS-306 contract, prevents orphan
+   *     uploads) and shows the source material name.
+   *  2. On confirm — `MaterialsService.duplicate(id)` POSTs to the
+   *     server-side clone endpoint, which generates a fresh SKU (when
+   *     category has a prefix) and returns the new `Material` document.
+   *  3. On success — open the edit dialog pre-filled with the clone
+   *     so the user can amend photo selection, dimensions, etc., without
+   *     losing the original. Suppress list-res refetch on this case
+   *     (the clone isn't bound to the current filter yet).
+   *  4. On error — toast the message; the list stays as-is.
+   */
+  protected onCopy(row: Material): void {
+    const ref = this.dialog.open(AlertDialogComponent, {
+      data: {
+        title: 'Копировать материал?',
+        description:
+          `Создать копию «${row.name}»? Внутренний код будет сгенерирован автоматически; ` +
+          `фотографии и остатки на складе НЕ копируются — их можно добавить после открытия клона.`,
+        confirmLabel: 'Копировать',
+        variant: 'form',
+      },
+      width: 'sm',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
+      if (!confirmed) return;
+      this.service.duplicate(row._id).subscribe((res) => {
+        if (res.ok) {
+          this.toast.success(`Создана копия: ${res.data.name}`);
+          // Open the edit dialog pre-filled with the fresh clone so the
+          // user can attach photos and tweak fields immediately.
+          this.openEdit(res.data);
         } else {
           this.toast.error(extractErrorMessage(res.error));
         }

@@ -26,25 +26,34 @@ interface TestRow {
 describe('PiRowActionsComponent', () => {
   const testRow: TestRow = { id: 1, name: 'Test Row' };
 
+  beforeEach(async () => {
+    // Reset Angular's testing module between tests so subsequent calls
+    // to TestBed.configureTestingModule don't trip `assertNotInstantiated`
+    // (TestBed tracks whether a component has been created; validating
+    // siblings without a manual reset leaks that state across tests).
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [PiRowActionsComponent<TestRow>],
+    }).compileComponents();
+  });
+
   async function createFixture(
     inputs: {
       row?: TestRow;
+      copyLabel?: string | null;
       editLabel?: string | null;
       documentLabel?: string | null;
       deleteLabel?: string;
       deleteTitle?: string | null;
       deleteDisabled?: boolean;
       showEdit?: boolean;
+      dataTestCopy?: string | null;
       dataTestEdit?: string | null;
       dataTestDelete?: string | null;
       showDelete?: boolean;
       loading?: boolean;
     } = {},
   ): Promise<ComponentFixture<PiRowActionsComponent<TestRow>>> {
-    await TestBed.configureTestingModule({
-      imports: [PiRowActionsComponent<TestRow>],
-    }).compileComponents();
-
     const fixture = TestBed.createComponent(PiRowActionsComponent<TestRow>);
     fixture.componentRef.setInput('row', inputs.row ?? testRow);
     fixture.componentRef.setInput('deleteLabel', inputs.deleteLabel ?? 'Delete row');
@@ -59,6 +68,9 @@ describe('PiRowActionsComponent', () => {
       // assert via `fixture.componentInstance.editLabel()` (signal
       // getter), not via the DOM selector.
       fixture.componentRef.setInput('editLabel', 'Edit row');
+    }
+    if (inputs.copyLabel !== undefined) {
+      fixture.componentRef.setInput('copyLabel', inputs.copyLabel);
     }
     if (inputs.documentLabel !== undefined) {
       fixture.componentRef.setInput('documentLabel', inputs.documentLabel);
@@ -77,6 +89,9 @@ describe('PiRowActionsComponent', () => {
     }
     if (inputs.loading !== undefined) {
       fixture.componentRef.setInput('loading', inputs.loading);
+    }
+    if (inputs.dataTestCopy !== undefined) {
+      fixture.componentRef.setInput('dataTestCopy', inputs.dataTestCopy);
     }
     if (inputs.dataTestEdit !== undefined) {
       fixture.componentRef.setInput('dataTestEdit', inputs.dataTestEdit);
@@ -102,6 +117,35 @@ describe('PiRowActionsComponent', () => {
     ) as HTMLButtonElement | null;
   }
 
+  /**
+   * Locate the COPY button specifically (not edit / document / delete).
+   *
+   * Selection strategies, in order:
+   *  1. Explicit `dataTest` argument — match `button[data-test="..."]`.
+   *  2. Heuristic: any button whose data-test starts with `copy-` or
+   *     aria-label contains «Копировать» (the per-row aria-label is
+   *     generated as `'Копировать ' + row.name`).
+   *
+   * Returns `null` when no such button is in the DOM — that is EXACTLY
+   * how the test verifies `copyLabel=null` ⇒ button NOT rendered
+   * (any other button — edit, document, delete — would be a wrong match).
+   */
+  function copyButton(
+    fixture: ComponentFixture<PiRowActionsComponent<TestRow>>,
+    dataTest?: string | null,
+  ): HTMLButtonElement | null {
+    if (dataTest) {
+      return fixture.nativeElement.querySelector(
+        `button[data-test="${dataTest}"]`,
+      ) as HTMLButtonElement | null;
+    }
+    // Match by data-test prefix OR label substring. Both are stable
+    // across slot re-orderings as long as the COPY slot is rendered.
+    return fixture.nativeElement.querySelector(
+      'button[data-test^="copy-"], button[aria-label^="Копировать"]',
+    ) as HTMLButtonElement | null;
+  }
+
   function deleteButton(
     fixture: ComponentFixture<PiRowActionsComponent<TestRow>>,
   ): HTMLButtonElement {
@@ -120,6 +164,37 @@ describe('PiRowActionsComponent', () => {
       expect(editButton(fixture)).toBeNull();
       // Delete still rendered
       expect(deleteButton(fixture)).toBeTruthy();
+    });
+
+    it('renders the copy button only when copyLabel is non-null (TZ-MATERIALS-310)', async () => {
+      const fixture = await createFixture({ copyLabel: null });
+      expect(copyButton(fixture)).toBeNull();
+
+      const fixtureWith = await createFixture({ copyLabel: 'Копировать Test Row' });
+      expect(copyButton(fixtureWith)).not.toBeNull();
+    });
+
+    it('omits the copy button under loading=true and shows the loading state', async () => {
+      const fixture = await createFixture({ copyLabel: 'Копировать', loading: true });
+      expect(copyButton(fixture)).toBeNull();
+      expect(
+        fixture.nativeElement.querySelector('[data-test="row-actions-loading"]'),
+      ).not.toBeNull();
+    });
+
+    it('forwards copyLabel to the copy button aria-label', async () => {
+      const fixture = await createFixture({ copyLabel: 'Копировать Test Row' });
+      expect(copyButton(fixture)?.getAttribute('aria-label')).toBe('Копировать Test Row');
+    });
+
+    it('forwards dataTestCopy to the copy button data-test attribute', async () => {
+      const fixture = await createFixture({
+        copyLabel: 'Копировать',
+        dataTestCopy: 'copy-1',
+      });
+      const btn = copyButton(fixture, 'copy-1');
+      expect(btn).not.toBeNull();
+      expect(btn?.getAttribute('data-test')).toBe('copy-1');
     });
 
     it('keeps the delete button visible even with showEdit=false', async () => {
@@ -256,6 +331,44 @@ describe('PiRowActionsComponent', () => {
 
       expect(editSpy).not.toHaveBeenCalled();
       expect(deleteSpy).toHaveBeenCalledWith(testRow);
+    });
+
+    it('emits `copy` with the row payload ONLY when copyLabel is provided and the button is clicked', async () => {
+      const fixtureNoCopy = await createFixture();
+      const copySpyNoCopy = jest.fn();
+      fixtureNoCopy.componentInstance.copy.subscribe(copySpyNoCopy);
+
+      // No copy button rendered → no copy can fire.
+      expect(copyButton(fixtureNoCopy)).toBeNull();
+      // Even forcing a click does nothing because the button is missing.
+      expect(copySpyNoCopy).not.toHaveBeenCalled();
+
+      const fixture = await createFixture({ copyLabel: 'Копировать Test Row' });
+      const copySpy = jest.fn();
+      fixture.componentInstance.copy.subscribe(copySpy);
+      const editSpy = jest.fn();
+      fixture.componentInstance.edit.subscribe(editSpy);
+
+      copyButton(fixture, 'edit-button-' + (testRow.id || 'test'))?.click();
+      // data-test was different; locate by data-test from input map:
+      const btn = copyButton(fixture);
+      btn?.click();
+
+      expect(copySpy).toHaveBeenCalledTimes(1);
+      expect(copySpy).toHaveBeenCalledWith(testRow);
+      // Clicking copy MUST NOT also fire `edit` (separate outputs / slots).
+      expect(editSpy).not.toHaveBeenCalled();
+    });
+
+    it('preserves row identity when `copy` is emitted', async () => {
+      const customRow: TestRow = { id: 99, name: 'Identity Copy' };
+      const fixture = await createFixture({ row: customRow, copyLabel: 'Копировать' });
+      const copySpy = jest.fn();
+      fixture.componentInstance.copy.subscribe(copySpy);
+
+      copyButton(fixture)?.click();
+
+      expect(copySpy.mock.calls[0][0]).toBe(customRow);
     });
   });
 

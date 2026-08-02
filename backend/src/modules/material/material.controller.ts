@@ -85,4 +85,24 @@ export class MaterialController {
   remove(@Param('id') id: string) {
     return this.service.remove(id);
   }
+
+  /**
+   * TZ-MATERIALS-310: server-side clone. Creates a new material record
+   * based on `id` with regenerated SKU (when category has a prefix) but
+   * WITHOUT photos (re-upload required by the user, see contract in
+   * service.duplicate). The response is the freshly-created
+   * MaterialDocument in 201, mirroring the create() response shape.
+   */
+  @Post(':id/duplicate')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'duplicate', entityType: 'Material', idParam: 'id' })
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Duplicate a material (server-side clone without photos)' })
+  @ApiResponse({ status: 201, description: 'Material duplicated' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Material not found' })
+  duplicate(@Param('id') id: string) {
+    return this.service.duplicate(id);
+  }
 }
