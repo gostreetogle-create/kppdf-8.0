@@ -794,12 +794,12 @@ If a future Load Test or SEO need arrives:
 
 ### Frontend pages (6 lazy routes)
 
-**Paper & Ink list-page contract** (canonical reference: `tables.page.ts`):
-`app-pi-page-header` + `app-pi-toolbar` (`pi-input`, `app-pi-button`, `hint` slot) + `app-pi-section` with `hairline rounded-sm` table (`pi-cell`, `pi-table-row`, `eyebrow` headers) + `app-pi-row-actions` / `app-pi-switch`. Workspace pages (`texts`, `builder/:id`) keep specialised layouts but reuse the same tokens (`var(--color-*)`, hairline borders, `app-pi-button`).
+**Paper & Ink list-page contract** (canonical reference: `templates.page.ts` / `tables.page.ts`, TZ-DOC-336):
+`app-pi-page-header` + `app-pi-toolbar` (`pi-input`, `app-pi-button`, `hint` slot) + `app-pi-section` with `hairline rounded-sm` table (`pi-cell`, `pi-table-row`, `eyebrow` headers) + `app-pi-row-actions` / `app-pi-switch`. Builder workspace (`builder/:id`) keeps specialised layout but reuses the same tokens (`var(--color-*)`, hairline borders, `app-pi-button`).
 
-- **`/doc-constructor/texts`** — split workspace: inline `text-block-editor` (top) + sticky catalog table (bottom, ~220px). Search via `pi-input`; row selection highlights with sunrise inset bar. Data-field picker dialog (`data-field-picker-dialog.component.ts`) uses `PiDialogComponent` + `app-pi-button`.
-- **`/doc-constructor/tables`** — list with columns preview + EditDialog `table-template-dialog.component.ts` (FormArray column editor + JSON sampleRows + server-side preview).
-- **`/doc-constructor/templates`** — «Реестр шаблонов»: search, active toggle, default star, duplicate → builder, pagination. TZ-267 distinguishes loading, empty, and initial-load error states, exposes retry, and reports action failures without optimistic success/navigation.
+- **`/doc-constructor/texts`** — Pi chrome catalog + optional full-page `text-block-editor` above (not modal; successor). Search + category filter in toolbar; row-actions; `editId` deep-link. Editor: `app-pi-switch` «Активен», Lucide align icons.
+- **`/doc-constructor/tables`** — Pi chrome list (no promo aside); copy via `PiRowActions` copy slot; `editId` deep-link (DOC-335). Dialog `table-template-dialog`: FormField/Input/Switch canon.
+- **`/doc-constructor/templates`** — «Реестр шаблонов»: search, active toggle, default star, duplicate via `copyLabel`/(copy) → builder, pagination. TZ-267 distinguishes loading, empty, and initial-load error states, exposes retry, and reports action failures without optimistic success/navigation.
 - **`/doc-constructor/documents`** — «Сформированные документы»: search + month filter, status dots, open HTML preview, delete.
 - **`/doc-constructor/builder`** — empty-state picker (no `:id`): template dropdown → navigate to `/builder/:id` or accepts `?source=order&sourceId=X` query params (cross-feature wiring from /orders + /contracts).
 - **`/doc-constructor/builder/:id`** — 3-pane canvas (280 / flex-1 / 320):

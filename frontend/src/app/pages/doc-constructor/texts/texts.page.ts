@@ -10,6 +10,9 @@ import {
 import { Subject, switchMap, map, filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
+import { PiPageHeaderComponent } from '../../../shared/page/pi-page-header.component';
+import { PiSectionComponent } from '../../../shared/page/pi-section.component';
+import { PiToolbarComponent } from '../../../shared/page/pi-toolbar.component';
 import { PiEmptyStateComponent } from '../../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { PiRowActionsComponent } from '../../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
@@ -30,11 +33,15 @@ type SortDir = 'asc' | 'desc';
 
 /**
  * Полная документация страницы: docs/pages/texts.page.md
+ * TZ-DOC-336 — PiPageHeader / PiToolbar / PiSection / PiEmptyState / PiRowActions.
  */
 @Component({
   selector: 'app-texts-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    PiPageHeaderComponent,
+    PiSectionComponent,
+    PiToolbarComponent,
     PiEmptyStateComponent,
     PiRowActionsComponent,
     ButtonComponent,
@@ -44,7 +51,7 @@ type SortDir = 'asc' | 'desc';
     @if (error()) {
       <div
         role="alert"
-        class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive flex items-center gap-2"
+        class="mb-4 hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive flex items-center gap-2"
       >
         <span>{{ error() }}</span>
         <button
@@ -58,381 +65,127 @@ type SortDir = 'asc' | 'desc';
       </div>
     }
 
-    <div class="texts-stack">
-      <div class="texts-editor-zone">
-        @if (editorOpen()) {
-          <app-text-block-editor
-            [block]="editingBlock()"
-            (save)="onEditorSaved($event)"
-            (cancel)="onEditorCancel()"
-          />
-        } @else {
-          <section class="texts-shell-empty">
-            <div class="texts-shell-accent" aria-hidden="true"></div>
-            <header class="texts-shell-head">
-              <span class="eyebrow text-sunrise-warm">Конструктор · Тексты</span>
-              <h1 class="font-display texts-shell-title">Текстовые блоки</h1>
-            </header>
-            <div class="texts-shell-body pi-dashed-panel">
-              <p class="text-sm text-muted-foreground">
-                Выберите блок в каталоге ниже или создайте новый
-              </p>
-              <app-pi-button variant="default" size="sm" (click)="openCreate()"
-                >+ Новый блок</app-pi-button
-              >
-            </div>
-          </section>
+    @if (editorOpen()) {
+      <app-text-block-editor
+        [block]="editingBlock()"
+        (save)="onEditorSaved($event)"
+        (cancel)="onEditorCancel()"
+      />
+    } @else {
+      <app-pi-page-header
+        eyebrow="раздел · конструктор документов"
+        title="Текстовые блоки"
+        description="Сохранённые текстовые блоки для шаблонов: колонки, форматирование, категории. Выберите блок в каталоге или создайте новый."
+      />
+    }
+
+    <app-pi-toolbar>
+      <input
+        type="search"
+        class="pi-input w-72"
+        placeholder="Поиск…"
+        [value]="searchQuery()"
+        (input)="onSearchInput($event)"
+        aria-label="Поиск текстовых блоков"
+      />
+      <select
+        class="pi-input w-48"
+        [value]="categoryFilter()"
+        (change)="onCategoryFilterChange($event)"
+        aria-label="Фильтр по категории"
+        data-test="texts-category-filter"
+      >
+        <option value="">Все категории</option>
+        @for (cat of categories(); track cat._id) {
+          <option [value]="cat._id">{{ cat.name }}</option>
         }
-      </div>
+      </select>
+      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
+        + Новый блок
+      </app-pi-button>
+      <span hint>{{ data().length }} {{ totalLabel(data().length) }}</span>
+    </app-pi-toolbar>
 
-      <section class="texts-catalog" aria-label="Сохранённые блоки">
-        <header class="texts-catalog-head">
-          <div class="texts-catalog-head-left">
-            <h2 class="texts-catalog-title font-display">
-              Сохранённые блоки · {{ data().length }} {{ totalLabel(data().length) }}
-            </h2>
-            <div class="texts-search-wrap">
-              <span class="texts-search-icon" aria-hidden="true">⌕</span>
-              <input
-                type="search"
-                class="texts-search-input"
-                [value]="searchQuery()"
-                (input)="onSearchInput($event)"
-                placeholder="Поиск…"
-                aria-label="Поиск текстовых блоков"
-              />
-            </div>
-            <label class="texts-filter-wrap" aria-label="Фильтр по категории">
-              <span class="eyebrow text-muted-foreground">Категория</span>
-              <select
-                class="texts-filter-select"
-                [value]="categoryFilter()"
-                (change)="onCategoryFilterChange($event)"
-                data-test="texts-category-filter"
-              >
-                <option value="">Все</option>
-                @for (cat of categories(); track cat._id) {
-                  <option [value]="cat._id">{{ cat.name }}</option>
-                }
-              </select>
-            </label>
-          </div>
-          <app-pi-button
-            variant="default"
-            size="sm"
-            (click)="openCreate()"
-            data-test="create-button"
-          >
-            + Новый
-          </app-pi-button>
-        </header>
-
-        <div class="texts-catalog-scroll">
-          @if (loading() && data().length === 0) {
-            <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
-          } @else if (sortedRows().length === 0 && !loading()) {
-            <p class="texts-catalog-empty text-sm text-muted-foreground">
-              @if (searchQuery()) {
-                Ничего не найдено
-              } @else {
-                Блоков пока нет
-              }
-            </p>
-          } @else {
-            <table class="texts-table">
-              <thead>
-                <tr>
-                  <th class="eyebrow">Название</th>
-                  <th class="eyebrow">Категория</th>
-                  <th class="eyebrow">Конфигурация</th>
-                  <th class="eyebrow">Статус</th>
-                  <th class="eyebrow texts-table-actions-col">Действия</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (row of sortedRows(); track row._id) {
-                  <tr
-                    class="texts-table-row"
-                    [class.is-active]="editingId() === row._id"
-                    [class.is-inactive-row]="!row.isActive"
-                    (click)="openEdit(row)"
-                    [attr.data-test]="'text-row-' + row._id"
-                  >
-                    <td class="texts-table-name">{{ row.name }}</td>
-                    <td class="texts-table-category">
-                      @if (row.categoryId; as catId) {
-                        @if (categoryName(catId); as name) {
-                          <span class="texts-category-badge">{{ name }}</span>
-                        } @else {
-                          <span class="text-muted-foreground/50">—</span>
-                        }
-                      } @else {
-                        <span class="text-muted-foreground/50">—</span>
-                      }
-                    </td>
-                    <td class="texts-table-config">
-                      {{ columnConfigUpper(row.columns?.length || 1) }}
-                    </td>
-                    <td>
-                      <span class="texts-status">
+    <app-pi-section title="Сохранённые блоки" eyebrow="I">
+      @if (loading() && data().length === 0) {
+        <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
+      } @else if (sortedRows().length === 0 && !loading()) {
+        <app-pi-empty-state
+          [colspan]="1"
+          [message]="
+            searchQuery() || categoryFilter()
+              ? 'Ничего не найдено.'
+              : 'Блоков пока нет. Нажмите «Новый блок».'
+          "
+        />
+      } @else {
+        <div class="hairline rounded-sm overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="hairline-b">
+              <tr>
+                <th class="pi-cell eyebrow text-left">Название</th>
+                <th class="pi-cell eyebrow text-left">Категория</th>
+                <th class="pi-cell eyebrow text-left">Конфигурация</th>
+                <th class="pi-cell eyebrow text-left">Статус</th>
+                <th class="pi-cell eyebrow text-right w-40">Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of sortedRows(); track row._id) {
+                <tr
+                  class="pi-table-row pi-table-row-odd group"
+                  [class.opacity-50]="!row.isActive"
+                  [class.border-l-4]="editingId() === row._id"
+                  [class.border-sunrise-warm]="editingId() === row._id"
+                  (click)="openEdit(row)"
+                  [attr.data-test]="'text-row-' + row._id"
+                >
+                  <td class="pi-cell font-medium">{{ row.name }}</td>
+                  <td class="pi-cell text-muted-foreground">
+                    @if (row.categoryId; as catId) {
+                      @if (categoryName(catId); as name) {
                         <span
-                          class="texts-status-dot"
-                          [class.texts-status-dot--on]="row.isActive"
-                          [class.texts-status-dot--off]="!row.isActive"
-                        ></span>
-                        {{ row.isActive ? 'Активен' : 'Архив' }}
-                      </span>
-                    </td>
-                    <td class="texts-table-actions" (click)="$event.stopPropagation()">
-                      <app-pi-row-actions
-                        [row]="row"
-                        [editLabel]="'Редактировать'"
-                        [deleteLabel]="'Удалить'"
-                        (edit)="openEdit(row)"
-                        (delete)="onDelete(row)"
-                      />
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          }
+                          class="texts-category-badge eyebrow hairline rounded-sm px-2 py-0.5"
+                          >{{ name }}</span
+                        >
+                      } @else {
+                        —
+                      }
+                    } @else {
+                      —
+                    }
+                  </td>
+                  <td class="pi-cell font-mono text-xs text-muted-foreground uppercase">
+                    {{ columnConfigUpper(row.columns?.length || 1) }}
+                  </td>
+                  <td class="pi-cell">
+                    <span class="inline-flex items-center gap-2 text-sm">
+                      <span
+                        class="inline-block h-2 w-2 rounded-full shrink-0"
+                        [class.bg-accent-cool]="row.isActive"
+                        [class.bg-muted-foreground]="!row.isActive"
+                        aria-hidden="true"
+                      ></span>
+                      {{ row.isActive ? 'Активен' : 'Архив' }}
+                    </span>
+                  </td>
+                  <td class="pi-cell text-right" (click)="$event.stopPropagation()">
+                    <app-pi-row-actions
+                      [row]="row"
+                      [editLabel]="'Редактировать'"
+                      [deleteLabel]="'Удалить'"
+                      (edit)="openEdit(row)"
+                      (delete)="onDelete(row)"
+                    />
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
         </div>
-      </section>
-    </div>
+      }
+    </app-pi-section>
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-        padding: 0 0 8px;
-      }
-
-      .texts-stack {
-        display: flex;
-        flex-direction: column;
-        gap: 24px;
-      }
-
-      .texts-editor-zone {
-        min-height: 0;
-      }
-
-      .texts-shell-empty {
-        position: relative;
-        background: var(--color-paper);
-        border: 2px solid var(--color-ink);
-        overflow: hidden;
-      }
-      .texts-shell-accent {
-        height: 4px;
-        background: linear-gradient(
-          90deg,
-          var(--color-sunrise-warm),
-          var(--color-sunrise-glow),
-          var(--color-sunrise-warm)
-        );
-      }
-      .texts-shell-head {
-        padding: 24px 32px 16px;
-      }
-      .texts-shell-title {
-        margin: 8px 0 0;
-        font-size: 32px;
-        font-weight: 600;
-        color: var(--color-ink);
-      }
-      .texts-shell-body {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        min-height: 200px;
-        margin: 0 32px 32px;
-      }
-
-      .texts-catalog {
-        flex: 1;
-        min-height: 0;
-        display: flex;
-        flex-direction: column;
-        background: var(--color-paper);
-        border: 2px solid var(--color-ink);
-        overflow: hidden;
-      }
-
-      .texts-catalog-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 12px 24px;
-        border-bottom: 1px solid var(--color-rule);
-        flex-shrink: 0;
-      }
-      .texts-catalog-head-left {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        flex-wrap: wrap;
-        min-width: 0;
-      }
-      .texts-catalog-title {
-        margin: 0;
-        font-size: 14px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--color-ink);
-      }
-
-      .texts-search-wrap {
-        position: relative;
-      }
-      .texts-search-icon {
-        position: absolute;
-        left: 8px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 14px;
-        color: var(--color-muted-foreground-strong);
-        pointer-events: none;
-      }
-      .texts-search-input {
-        width: 192px;
-        padding: 6px 8px 6px 26px;
-        font-size: 14px;
-        border: 1px solid var(--color-rule);
-        background: var(--color-paper-2);
-        color: var(--color-ink);
-      }
-      .texts-search-input:focus {
-        outline: none;
-        outline: 1px solid var(--color-sunrise-warm);
-        outline-offset: -1px;
-      }
-
-      .texts-filter-wrap {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .texts-filter-select {
-        padding: 6px 8px;
-        font-size: 14px;
-        font-family: inherit;
-        border: 1px solid var(--color-rule);
-        background: var(--color-paper-2);
-        color: var(--color-ink);
-        cursor: pointer;
-      }
-      .texts-filter-select:focus {
-        outline: none;
-        outline: 1px solid var(--color-sunrise-warm);
-        outline-offset: -1px;
-      }
-
-      .texts-catalog-scroll {
-        flex: 1;
-        overflow-y: auto;
-        min-height: 0;
-      }
-      .texts-catalog-empty {
-        padding: 24px;
-        text-align: center;
-      }
-
-      .texts-table {
-        width: 100%;
-        border-collapse: collapse;
-        text-align: left;
-      }
-      .texts-table thead {
-        position: sticky;
-        top: 0;
-        z-index: 1;
-        background: var(--color-paper-2);
-        border-bottom: 1px solid var(--color-rule);
-      }
-      .texts-table th {
-        padding: 8px 24px;
-        color: var(--color-muted-foreground-strong);
-      }
-      .texts-table-actions-col {
-        text-align: right;
-      }
-
-      .texts-table-row {
-        cursor: pointer;
-        border-bottom: 1px solid var(--color-rule);
-        transition: background 100ms ease;
-      }
-      .texts-table-row:hover {
-        background: color-mix(in oklch, var(--color-paper-2) 70%, transparent);
-      }
-      .texts-table-row.is-active {
-        background: color-mix(in oklch, var(--color-sunrise-warm) 8%, transparent);
-        border-left: 4px solid var(--color-sunrise-warm);
-      }
-      .texts-table-row.is-inactive-row {
-        opacity: 0.72;
-      }
-
-      .texts-table td {
-        padding: 10px 24px;
-        vertical-align: middle;
-      }
-      .texts-table-name {
-        font-size: 14px;
-        font-weight: 500;
-        color: var(--color-ink);
-      }
-      .texts-table-category {
-        font-size: 13px;
-      }
-      .texts-category-badge {
-        display: inline-block;
-        padding: 2px 8px;
-        font-size: 12px;
-        border: 1px solid var(--color-rule);
-        background: var(--color-paper-2);
-        color: var(--color-ink);
-        white-space: nowrap;
-      }
-      .texts-table-config {
-        font-family: ui-monospace, monospace;
-        font-size: 11px;
-        color: var(--color-muted-foreground-strong);
-        text-transform: uppercase;
-      }
-      .texts-table-actions {
-        text-align: right;
-      }
-
-      .texts-status {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 14px;
-      }
-      .texts-status-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        flex-shrink: 0;
-      }
-      .texts-status-dot--on {
-        background: var(--color-accent-cool);
-      }
-      .texts-status-dot--off {
-        background: var(--color-muted-foreground-strong);
-      }
-      .texts-table-row.is-inactive-row .texts-status {
-        color: var(--color-muted-foreground-strong);
-      }
-    `,
-  ],
 })
 export class TextsPage {
   private readonly service = inject(TextBlocksService);
@@ -461,7 +214,6 @@ export class TextsPage {
       });
     this.reload();
 
-    // TZ-DOC-316 — populated lookup for the «Категория» badge + filter dropdown.
     this.categoryService
       .list({ activeOnly: true })
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -469,7 +221,6 @@ export class TextsPage {
         if (res.ok) this.categories.set(res.data ?? []);
       });
 
-    // Auto-open editor when navigated from builder with editId query param
     this.route.queryParams
       .pipe(
         map((p) => p['editId'] as string | undefined),
@@ -497,7 +248,6 @@ export class TextsPage {
   protected readonly searchQuery = signal<string>('');
   protected readonly sortDir = signal<SortDir>('asc');
 
-  /** TZ-DOC-316 — active categories powering the filter dropdown + badge lookup. */
   protected readonly categories = signal<TextBlockCategory[]>([]);
   protected readonly categoryFilter = signal<string>('');
 

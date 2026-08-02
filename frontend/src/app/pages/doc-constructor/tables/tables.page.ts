@@ -11,6 +11,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse, httpResource } from '@angular/common/http';
 import { filter, map, switchMap } from 'rxjs';
+import { PiPageHeaderComponent } from '../../../shared/page/pi-page-header.component';
+import { PiSectionComponent } from '../../../shared/page/pi-section.component';
+import { PiToolbarComponent } from '../../../shared/page/pi-toolbar.component';
+import { PiEmptyStateComponent } from '../../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { PiRowActionsComponent } from '../../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { PiDialogService, type DialogRef } from '../../../shared/ui/dialog/pi-dialog.service';
@@ -34,6 +38,8 @@ const RU_TEMPLATES = ['шаблон', 'шаблона', 'шаблонов'] as c
 
 /**
  * Полная документация страницы: docs/pages/tables.page.md
+ * TZ-DOC-336 — Pi chrome; promo aside removed; copy via PiRowActions.
+ * TZ-DOC-335 — editId queryParam auto-open preserved.
  */
 
 type SortKey = 'name' | 'category' | 'sortOrder' | null;
@@ -42,148 +48,120 @@ type SortDir = 'asc' | 'desc';
 @Component({
   selector: 'app-tables-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiRowActionsComponent, ButtonComponent, SwitchComponent],
+  imports: [
+    PiPageHeaderComponent,
+    PiSectionComponent,
+    PiToolbarComponent,
+    PiEmptyStateComponent,
+    PiRowActionsComponent,
+    ButtonComponent,
+    SwitchComponent,
+  ],
   template: `
-    <header class="tables-head">
-      <span class="eyebrow text-muted-foreground">раздел · конструктор документов</span>
-      <h1 class="tables-title font-display">Таблицы</h1>
-      <p class="tables-desc text-muted-foreground">
-        Шаблоны таблиц — задают форму колонок, типы данных и форматирование. Используются в шаблонах
-        документов и рендерятся как inline HTML.
-      </p>
-    </header>
+    <app-pi-page-header
+      eyebrow="раздел · конструктор документов"
+      title="Таблицы"
+      description="Шаблоны таблиц — колонки, типы данных и форматирование для шаблонов документов."
+    />
 
-    <div class="tables-toolbar hairline-b">
-      <div class="tables-toolbar-left">
-        <div class="tables-search-wrap">
-          <span class="tables-search-icon" aria-hidden="true">⌕</span>
-          <input
-            type="search"
-            class="tables-search-input"
-            [value]="searchQuery()"
-            (input)="onSearchInput($event)"
-            placeholder="Поиск по названию…"
-            aria-label="Поиск шаблонов таблиц"
-          />
-        </div>
-        <span class="tables-count-badge eyebrow"
-          >{{ data().length }} {{ totalLabel(data().length) }}</span
-        >
-      </div>
-      <div class="tables-toolbar-actions">
-        <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
-          + Новая таблица
-        </app-pi-button>
-        <app-pi-button variant="ghost" (click)="openFromRegistry()" data-test="registry-button">
-          &#x21C4; Из существующих данных
-        </app-pi-button>
-      </div>
-    </div>
+    <app-pi-toolbar>
+      <input
+        type="search"
+        class="pi-input w-72"
+        placeholder="Поиск по названию…"
+        [value]="searchQuery()"
+        (input)="onSearchInput($event)"
+        aria-label="Поиск шаблонов таблиц"
+      />
+      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
+        + Новая таблица
+      </app-pi-button>
+      <app-pi-button variant="ghost" (click)="openFromRegistry()" data-test="registry-button">
+        Из существующих данных
+      </app-pi-button>
+      <span hint>{{ data().length }} {{ totalLabel(data().length) }}</span>
+    </app-pi-toolbar>
 
     @if (error()) {
-      <div role="alert" class="tables-error">{{ error() }}</div>
+      <div
+        role="alert"
+        class="mb-4 hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+      >
+        {{ error() }}
+      </div>
     }
 
-    <section class="tables-catalog" aria-label="Каталог шаблонов таблиц">
-      <div class="tables-catalog-head">
-        <h2 class="eyebrow m-0">II · Каталог</h2>
-        <span class="text-xs text-muted-foreground italic">клик по заголовку — сортировка</span>
-      </div>
-
+    <app-pi-section title="Каталог" eyebrow="I">
       @if (loading() && sortedRows().length === 0) {
-        <p class="tables-empty text-muted-foreground">Загрузка…</p>
+        <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
       } @else if (sortedRows().length === 0) {
-        <p class="tables-empty text-muted-foreground">
-          {{ searchQuery() ? 'Ничего не найдено.' : 'Нет шаблонов таблиц. Нажмите «Создать».' }}
-        </p>
+        <app-pi-empty-state
+          [colspan]="1"
+          [message]="
+            searchQuery() ? 'Ничего не найдено.' : 'Нет шаблонов таблиц. Нажмите «Новая таблица».'
+          "
+        />
       } @else {
-        <div class="tables-table-wrap">
-          <table class="tables-table">
-            <thead>
+        <div class="hairline rounded-sm overflow-x-auto">
+          <table class="w-full text-sm min-w-[800px]">
+            <thead class="hairline-b">
               <tr>
-                <th class="eyebrow cursor-pointer" (click)="setSort('name')">
+                <th class="pi-cell eyebrow text-left cursor-pointer" (click)="setSort('name')">
                   Название <span class="opacity-40">{{ sortIcon('name') }}</span>
                 </th>
-                <th class="eyebrow cursor-pointer" (click)="setSort('category')">
+                <th class="pi-cell eyebrow text-left cursor-pointer" (click)="setSort('category')">
                   Категория <span class="opacity-40">{{ sortIcon('category') }}</span>
                 </th>
-                <th class="eyebrow text-center">Колонок</th>
-                <th class="eyebrow text-center">Образцов</th>
-                <th class="eyebrow text-center cursor-pointer" (click)="setSort('sortOrder')">
+                <th class="pi-cell eyebrow text-center">Колонок</th>
+                <th class="pi-cell eyebrow text-center">Образцов</th>
+                <th
+                  class="pi-cell eyebrow text-center cursor-pointer"
+                  (click)="setSort('sortOrder')"
+                >
                   Порядок <span class="opacity-40">{{ sortIcon('sortOrder') }}</span>
                 </th>
-                <th class="eyebrow text-center">Активен</th>
-                <th class="eyebrow text-right">Действия</th>
+                <th class="pi-cell eyebrow text-center w-24">Активен</th>
+                <th class="pi-cell eyebrow text-right w-40">Действия</th>
               </tr>
             </thead>
             <tbody>
               @for (row of sortedRows(); track row._id) {
                 <tr
-                  class="tables-row group"
+                  class="pi-table-row pi-table-row-odd group"
                   [class.opacity-50]="!row.isActive"
                   [attr.data-test]="'table-row-' + row._id"
                 >
-                  <td class="font-medium">{{ row.name }}</td>
-                  <td class="text-muted-foreground">{{ categoryLabel(row.category) }}</td>
-                  <td class="text-center font-mono text-xs">{{ row.columns.length }}</td>
-                  <td class="text-center font-mono text-xs">{{ row.sampleRows?.length ?? 0 }}</td>
-                  <td class="text-center font-mono text-xs text-muted-foreground">
+                  <td class="pi-cell font-medium">{{ row.name }}</td>
+                  <td class="pi-cell text-muted-foreground">{{ categoryLabel(row.category) }}</td>
+                  <td class="pi-cell text-center font-mono text-xs">{{ row.columns.length }}</td>
+                  <td class="pi-cell text-center font-mono text-xs">
+                    {{ row.sampleRows?.length ?? 0 }}
+                  </td>
+                  <td class="pi-cell text-center font-mono text-xs text-muted-foreground">
                     {{ row.sortOrder }}
                   </td>
-                  <td>
-                    <div class="tables-active-cell">
-                      <span
-                        class="tables-status-dot"
-                        [class.is-on]="row.isActive"
-                        [class.is-off]="!row.isActive"
-                      ></span>
-                      <app-pi-switch
-                        [checked]="row.isActive"
-                        [id]="'switch-' + row._id"
-                        [ariaLabel]="
-                          (row.isActive ? 'Деактивировать ' : 'Активировать ') + row.name
-                        "
-                        (checkedChange)="onToggleActive(row, $event)"
-                        data-test="active-switch"
-                      />
-                    </div>
+                  <td class="pi-cell text-center">
+                    <app-pi-switch
+                      [checked]="row.isActive"
+                      [id]="'switch-' + row._id"
+                      [ariaLabel]="(row.isActive ? 'Деактивировать ' : 'Активировать ') + row.name"
+                      (checkedChange)="onToggleActive(row, $event)"
+                      data-test="active-switch"
+                    />
                   </td>
-                  <td class="text-right">
-                    <div class="tables-row-actions">
-                      <button
-                        type="button"
-                        class="pi-icon-btn pi-focus-ring"
-                        [attr.aria-label]="'Копировать ' + row.name"
-                        [attr.data-test]="'copy-button-' + row._id"
-                        (click)="onCopy(row)"
-                        title="Копировать шаблон"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="1.5"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          aria-hidden="true"
-                        >
-                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                        </svg>
-                      </button>
-                      <app-pi-row-actions
-                        [row]="row"
-                        [editLabel]="'Редактировать ' + row.name"
-                        [deleteLabel]="'Удалить ' + row.name"
-                        [dataTestEdit]="'edit-button-' + row._id"
-                        [dataTestDelete]="'delete-button-' + row._id"
-                        (edit)="openEdit($event)"
-                        (delete)="onDelete($event)"
-                      />
-                    </div>
+                  <td class="pi-cell text-right">
+                    <app-pi-row-actions
+                      [row]="row"
+                      [copyLabel]="'Копировать ' + row.name"
+                      [editLabel]="'Редактировать ' + row.name"
+                      [deleteLabel]="'Удалить ' + row.name"
+                      [dataTestCopy]="'copy-button-' + row._id"
+                      [dataTestEdit]="'edit-button-' + row._id"
+                      [dataTestDelete]="'delete-button-' + row._id"
+                      (copy)="onCopy($event)"
+                      (edit)="openEdit($event)"
+                      (delete)="onDelete($event)"
+                    />
                   </td>
                 </tr>
               }
@@ -191,192 +169,8 @@ type SortDir = 'asc' | 'desc';
           </table>
         </div>
       }
-    </section>
-
-    <aside class="tables-promo hairline rounded-sm">
-      <div class="tables-promo-text">
-        <h3 class="font-display text-lg font-semibold">Настройте визуализацию данных</h3>
-        <p class="text-sm text-muted-foreground">
-          Создавайте кастомные представления таблиц для экспорта в PDF или печать. Настройте
-          колонки, типы ячеек и образцы строк.
-        </p>
-      </div>
-    </aside>
+    </app-pi-section>
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-        max-width: 1200px;
-      }
-
-      .tables-head {
-        margin-bottom: 32px;
-      }
-      .tables-title {
-        margin: 8px 0 0;
-        font-size: 32px;
-        font-weight: 600;
-        line-height: 1.2;
-        color: var(--color-ink);
-      }
-      .tables-desc {
-        margin: 8px 0 0;
-        max-width: 48ch;
-        font-size: 14px;
-        line-height: 1.5;
-      }
-
-      .tables-toolbar {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        padding-bottom: 16px;
-        margin-bottom: 16px;
-      }
-      .tables-toolbar-left {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 16px;
-        flex: 1;
-        min-width: 0;
-      }
-      .tables-toolbar-actions {
-        display: flex;
-        gap: 8px;
-        flex-shrink: 0;
-      }
-      .tables-search-wrap {
-        position: relative;
-        width: 100%;
-        max-width: 288px;
-      }
-      .tables-search-icon {
-        position: absolute;
-        left: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--color-muted-foreground-strong);
-        pointer-events: none;
-      }
-      .tables-search-input {
-        width: 100%;
-        padding: 8px 12px 8px 36px;
-        font-size: 14px;
-        border: none;
-        border-radius: 6px;
-        background: var(--color-paper-2);
-        color: var(--color-ink);
-      }
-      .tables-search-input:focus {
-        outline: none;
-        outline: 2px solid var(--color-ink);
-        outline-offset: -1px;
-      }
-      .tables-count-badge {
-        padding: 4px 8px;
-        background: var(--color-paper-2);
-        border: 1px solid var(--color-rule);
-        border-radius: 4px;
-        white-space: nowrap;
-      }
-
-      .tables-error {
-        margin-bottom: 16px;
-        padding: 12px 16px;
-        font-size: 14px;
-        color: var(--color-destructive);
-        border: 1px solid var(--color-destructive);
-        border-radius: 4px;
-      }
-
-      .tables-catalog-head {
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 8px;
-      }
-      .tables-table-wrap {
-        border-top: 2px solid var(--color-ink);
-        border-bottom: 2px solid var(--color-ink);
-        overflow-x: auto;
-      }
-      .tables-table {
-        width: 100%;
-        min-width: 800px;
-        border-collapse: collapse;
-        text-align: left;
-        font-size: 14px;
-      }
-      .tables-table thead {
-        background: var(--color-paper-2);
-        border-bottom: 1px solid var(--color-rule);
-      }
-      .tables-table th {
-        padding: 12px 16px;
-        color: var(--color-muted-foreground-strong);
-      }
-      .tables-table td {
-        padding: 12px 16px;
-        vertical-align: middle;
-        border-bottom: 1px solid var(--color-rule);
-      }
-      .tables-row:hover {
-        background: color-mix(in oklch, var(--color-paper-2) 80%, transparent);
-      }
-      .tables-row:last-child td {
-        border-bottom: none;
-      }
-
-      .tables-active-cell {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-      }
-      .tables-status-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        flex-shrink: 0;
-      }
-      .tables-status-dot.is-on {
-        background: var(--color-accent-cool);
-      }
-      .tables-status-dot.is-off {
-        background: var(--color-muted-foreground-strong);
-      }
-
-      .tables-empty {
-        padding: 32px 16px;
-        text-align: center;
-        font-size: 14px;
-      }
-
-      .tables-row-actions {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 4px;
-      }
-      .tables-promo {
-        margin-top: 32px;
-        padding: 24px;
-        background: var(--color-paper);
-      }
-      .tables-promo-text h3 {
-        margin: 0 0 8px;
-        color: var(--color-ink);
-      }
-      .tables-promo-text p {
-        margin: 0;
-      }
-    `,
-  ],
 })
 export class TablesPage {
   private readonly service = inject(TableTemplatesService);

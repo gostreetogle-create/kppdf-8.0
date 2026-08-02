@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
+import { FormFieldComponent } from '../../../shared/ui/form-field/form-field.component';
 import { PiDialogComponent } from '../../../shared/ui/dialog/pi-dialog.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../../shared/ui/dialog/dialog.tokens';
 import type { DialogRef } from '../../../shared/ui/dialog/pi-dialog.service';
@@ -22,12 +23,13 @@ export interface TemplateSetupData {
 /**
  * Dialog for choosing page size and orientation when creating or duplicating
  * a document template. Opened via PiDialogService.open().
+ * TZ-DOC-336 — FormField + chips aria-pressed / pi-focus-ring.
  */
 @Component({
   selector: 'app-template-setup-dialog',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, PiDialogComponent],
+  imports: [ButtonComponent, PiDialogComponent, FormFieldComponent],
   template: `
     <app-pi-dialog
       title="Настройка шаблона"
@@ -38,9 +40,12 @@ export interface TemplateSetupData {
     >
       <div body>
         <div class="setup-form">
-          <!-- Category -->
-          <div class="field">
-            <span class="field__label">Категория шаблона</span>
+          <app-pi-form-field
+            label="Категория шаблона"
+            htmlFor="template-category"
+            [required]="true"
+            [error]="confirmAttempted() && !categoryId() ? 'Выберите категорию' : null"
+          >
             @if (categoriesLoading()) {
               <span class="text-xs text-muted-foreground">Загрузка категорий…</span>
             } @else if (categoriesError()) {
@@ -64,20 +69,17 @@ export interface TemplateSetupData {
                 }
               </select>
             }
-            @if (confirmAttempted() && !categoryId()) {
-              <span class="text-xs text-destructive">Выберите категорию</span>
-            }
-          </div>
+          </app-pi-form-field>
 
-          <!-- Page size -->
           <div class="field">
-            <span class="field__label">Формат страницы</span>
-            <div class="field__chips">
+            <span class="field__label" id="page-size-label">Формат страницы</span>
+            <div class="field__chips" role="group" aria-labelledby="page-size-label">
               @for (size of pageSizes; track size) {
                 <button
                   type="button"
-                  class="chip"
+                  class="chip pi-focus-ring"
                   [class.chip--active]="pageSize() === size"
+                  [attr.aria-pressed]="pageSize() === size"
                   (click)="pageSize.set(size)"
                 >
                   {{ size }}
@@ -86,15 +88,15 @@ export interface TemplateSetupData {
             </div>
           </div>
 
-          <!-- Orientation -->
           <div class="field">
-            <span class="field__label">Ориентация</span>
-            <div class="field__chips">
+            <span class="field__label" id="orientation-label">Ориентация</span>
+            <div class="field__chips" role="group" aria-labelledby="orientation-label">
               @for (orient of orientations; track orient.value) {
                 <button
                   type="button"
-                  class="chip"
+                  class="chip pi-focus-ring"
                   [class.chip--active]="orientation() === orient.value"
+                  [attr.aria-pressed]="orientation() === orient.value"
                   (click)="orientation.set(orient.value)"
                 >
                   {{ orient.label }}

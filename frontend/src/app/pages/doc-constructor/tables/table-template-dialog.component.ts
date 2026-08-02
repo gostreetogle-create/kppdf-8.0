@@ -16,11 +16,21 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { LucideAngularModule, AlignLeft, AlignCenter, AlignRight, ChevronLeft, ChevronRight } from 'lucide-angular';
+import {
+  LucideAngularModule,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-angular';
 import { PiDialogComponent } from '../../../shared/ui/dialog/pi-dialog.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../../shared/ui/dialog/dialog.tokens';
 import type { DialogRef } from '../../../shared/ui/dialog/pi-dialog.service';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
+import { FormFieldComponent } from '../../../shared/ui/form-field/form-field.component';
+import { InputComponent } from '../../../shared/ui/input/input.component';
+import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
 import {
   TableColumn,
   TableTemplate,
@@ -82,13 +92,21 @@ interface ClientPreviewModel {
 @Component({
   selector: 'app-table-template-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, LucideAngularModule, PiDialogComponent, ButtonComponent],
+  imports: [
+    ReactiveFormsModule,
+    LucideAngularModule,
+    PiDialogComponent,
+    ButtonComponent,
+    FormFieldComponent,
+    InputComponent,
+    SwitchComponent,
+  ],
   template: `
     <app-pi-dialog
       [title]="dialogTitle()"
       variant="form"
       [width]="'xl'"
-      [maxWidth]="'100vw'"
+      [maxWidth]="'1400px'"
       [showClose]="true"
     >
       <div body class="ttd-body" [formGroup]="form">
@@ -96,35 +114,43 @@ interface ClientPreviewModel {
         <section class="ttd-settings">
           <!-- Row 1: Name + Description -->
           <div class="ttd-settings-row">
-            <label class="ttd-field ttd-field--name">
-              <span class="eyebrow text-muted-foreground">Название *</span>
-              <input
-                class="ttd-input"
+            <app-pi-form-field
+              class="ttd-field ttd-field--name"
+              label="Название"
+              htmlFor="ttd-name"
+              [required]="true"
+            >
+              <app-pi-input
+                id="ttd-name"
                 formControlName="name"
                 placeholder="Спецификация товаров"
                 data-test="name-input"
               />
-            </label>
-            <label class="ttd-field ttd-field--desc">
-              <span class="eyebrow text-muted-foreground">Описание</span>
-              <input
-                class="ttd-input"
+            </app-pi-form-field>
+            <app-pi-form-field
+              class="ttd-field ttd-field--desc"
+              label="Описание"
+              htmlFor="ttd-description"
+            >
+              <app-pi-input
+                id="ttd-description"
                 formControlName="description"
                 placeholder="Краткое описание"
               />
-            </label>
+            </app-pi-form-field>
           </div>
 
           <!-- Row 2: Category + Meta -->
           <div class="ttd-settings-row">
             <div class="ttd-field ttd-field--cat">
               <span class="eyebrow text-muted-foreground">Категория</span>
-              <div class="ttd-pills">
+              <div class="ttd-pills" role="group" aria-label="Категория">
                 @for (c of categoryOptions; track c.key) {
                   <button
                     type="button"
-                    class="ttd-pill"
+                    class="ttd-pill pi-focus-ring"
                     [class.is-active]="form.controls.category.value === c.key"
+                    [attr.aria-pressed]="form.controls.category.value === c.key"
                     (click)="form.controls.category.setValue(c.key)"
                   >
                     {{ c.label }}
@@ -133,31 +159,40 @@ interface ClientPreviewModel {
               </div>
             </div>
             <div class="ttd-settings-meta">
-              <label class="ttd-meta-item">
-                <span class="eyebrow text-muted-foreground">Порядок</span>
+              <app-pi-form-field label="Порядок" htmlFor="ttd-sort-order">
                 <input
-                  class="ttd-order-input font-mono"
+                  id="ttd-sort-order"
+                  class="pi-input w-20 font-mono"
                   type="number"
                   formControlName="sortOrder"
                 />
-              </label>
-              <label class="ttd-active-check">
-                <input type="checkbox" formControlName="isActive" />
-                <span class="text-sm">Активен</span>
-              </label>
+              </app-pi-form-field>
+              <div class="ttd-active-switch">
+                <span class="eyebrow text-muted-foreground" id="ttd-active-label">Активен</span>
+                <app-pi-switch
+                  [checked]="form.controls.isActive.value"
+                  (checkedChange)="form.controls.isActive.setValue($event)"
+                  ariaLabel="Активен"
+                  id="ttd-is-active"
+                />
+              </div>
             </div>
           </div>
 
           @if (mode() === 'from-registry') {
             <!-- Row 3: Data source (registry mode) -->
             <div class="ttd-settings-row ttd-settings-row--source">
-              <div class="ttd-field ttd-field--source">
-                <span class="eyebrow text-muted-foreground">Источник данных</span>
+              <app-pi-form-field
+                class="ttd-field ttd-field--source"
+                label="Источник данных"
+                htmlFor="ttd-source"
+              >
                 @if (sourcesLoading()) {
                   <p class="text-xs text-muted-foreground">Загрузка…</p>
                 } @else {
                   <select
-                    class="ttd-input ttd-input--select"
+                    id="ttd-source"
+                    class="pi-input w-full"
                     [value]="selectedSourceKey() ?? ''"
                     (change)="onSourceChange($event)"
                     data-test="source-select"
@@ -172,7 +207,7 @@ interface ClientPreviewModel {
                     }
                   </select>
                 }
-              </div>
+              </app-pi-form-field>
               @if (selectedSource(); as src) {
                 <div class="ttd-field ttd-field--fields">
                   <div class="ttd-field-header">
@@ -250,7 +285,9 @@ interface ClientPreviewModel {
                     <button
                       type="button"
                       class="ttd-toolbar-btn"
-                      [class.is-active]="columnsArray.at(selectedColumnIndex()!).controls.align.value === 'left'"
+                      [class.is-active]="
+                        columnsArray.at(selectedColumnIndex()!).controls.align.value === 'left'
+                      "
                       (click)="setColumnAlign(selectedColumnIndex()!, 'left')"
                       title="Выровнять влево"
                     >
@@ -259,7 +296,9 @@ interface ClientPreviewModel {
                     <button
                       type="button"
                       class="ttd-toolbar-btn"
-                      [class.is-active]="columnsArray.at(selectedColumnIndex()!).controls.align.value === 'center'"
+                      [class.is-active]="
+                        columnsArray.at(selectedColumnIndex()!).controls.align.value === 'center'
+                      "
                       (click)="setColumnAlign(selectedColumnIndex()!, 'center')"
                       title="Выровнять по центру"
                     >
@@ -268,7 +307,9 @@ interface ClientPreviewModel {
                     <button
                       type="button"
                       class="ttd-toolbar-btn"
-                      [class.is-active]="columnsArray.at(selectedColumnIndex()!).controls.align.value === 'right'"
+                      [class.is-active]="
+                        columnsArray.at(selectedColumnIndex()!).controls.align.value === 'right'
+                      "
                       (click)="setColumnAlign(selectedColumnIndex()!, 'right')"
                       title="Выровнять вправо"
                     >
@@ -353,13 +394,17 @@ interface ClientPreviewModel {
                       >
                         <div class="ttd-ih-top">
                           <span class="ttd-ih-num">{{ i + 1 }}</span>
-                          <span class="ttd-ih-label eyebrow">{{ col.controls.label.value || '—' }}</span>
+                          <span class="ttd-ih-label eyebrow">{{
+                            col.controls.label.value || '—'
+                          }}</span>
                           <button
                             type="button"
                             class="ttd-ih-del"
                             (click)="removeColumn(i); $event.stopPropagation()"
                             title="Удалить столбец"
-                          >&#x00D7;</button>
+                          >
+                            &#x00D7;
+                          </button>
                         </div>
                         <div class="ttd-ih-fields">
                           <input
@@ -467,39 +512,15 @@ interface ClientPreviewModel {
   `,
   styles: [
     `
-      :host ::ng-deep app-pi-dialog {
+      :host {
         display: block;
-        overflow: hidden;
-      }
-      :host ::ng-deep app-pi-dialog > div[role='dialog'] {
-        border-radius: 0;
-        border-width: 2px;
-        border-color: var(--color-ink);
-        width: calc(100vw - 48px);
-        max-width: 1400px;
-        max-height: min(calc(100vh - 48px), 92vh);
-        height: 80vh;
-        margin: 24px auto;
-        overflow: hidden;
-      }
-      :host ::ng-deep app-pi-dialog header {
-        border-bottom: 2px solid var(--color-ink);
-        flex-shrink: 0;
-      }
-      :host ::ng-deep app-pi-dialog > div[role='dialog'] > div:nth-child(2) {
-        flex: 1;
-        min-height: 0;
-        overflow: hidden;
-      }
-      :host ::ng-deep app-pi-dialog footer {
-        border-top: 2px solid var(--color-ink);
-        flex-shrink: 0;
       }
 
       .ttd-body {
         display: flex;
         flex-direction: column;
         padding: 0;
+        min-height: min(70vh, 720px);
       }
 
       /* ─── Settings ─── */
@@ -754,7 +775,7 @@ interface ClientPreviewModel {
         padding: 3px 6px;
         font-size: 11px;
       }
-      .ttd-cell-input--sm[type="number"] {
+      .ttd-cell-input--sm[type='number'] {
         width: 56px;
         text-align: center;
         padding: 3px 4px;
@@ -911,12 +932,10 @@ interface ClientPreviewModel {
         border-radius: 4px;
         font-size: 13px;
       }
-      .ttd-active-check {
+      .ttd-active-switch {
         display: flex;
         align-items: center;
-        gap: 6px;
-        cursor: pointer;
-        font-size: 13px;
+        gap: 8px;
       }
       .ttd-field-list {
         max-height: 100px;

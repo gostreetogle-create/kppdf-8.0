@@ -27,7 +27,7 @@ Completed work belongs under `tasks/_archive/2026-08/`.
 | [TZ-DOC-333](../tasks/_archive/2026-08/TZ-DOC-333-persist-template-block-photos.done.md) | Document Constructor · photo persist | — | **DONE** (archive) | — | — |
 | [TZ-DOC-334](../tasks/_archive/2026-08/TZ-DOC-334-text-block-categories-nav.done.md) | Document Constructor · categories nav | — | **DONE** (archive) | — | — |
 | [TZ-DOC-335](../tasks/_archive/2026-08/TZ-DOC-335-builder-ux-empty-states-deeplink.done.md) | Document Constructor · builder UX | — | **DONE** (archive) | — | — |
-| [TZ-DOC-336](TZ-DOC-336-texts-tables-shell-dialog-canon.md) | Document Constructor · texts/tables canon | **P1** | Ready — Pi shell + FormField dialogs (tomorrow) | after 335 | **A2-9** |
+| [TZ-DOC-336](../tasks/_archive/2026-08/TZ-DOC-336-texts-tables-shell-dialog-canon.done.md) | Document Constructor · texts/tables canon | — | **DONE** (archive) | after 335 | — |
 | [TZ-DOC-316](TZ-DOC-316-text-block-category-reference-and-picker.md) | Document Constructor · UI | P1 | Stream A | TZ-DOC-315 (archive/done preferred) | 2A |
 | [TZ-DOC-317](TZ-DOC-317-builder-text-picker-category-filter.md) | Document Constructor · builder | P1 | after 316 | TZ-DOC-315/316 | 2B |
 | [TZ-DOC-318](TZ-DOC-318-builder-texts-topbar-category-filter.md) | Document Constructor · builder | P1 | after 317 | TZ-DOC-317 | 2C |

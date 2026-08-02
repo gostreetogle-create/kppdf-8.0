@@ -3,9 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { LucideAngularModule, ChevronDown } from 'lucide-angular';
-import type {
-  PermissionKey,
-} from '../../../core/capabilities/capabilities.metadata';
+import type { PermissionKey } from '../../../core/capabilities/capabilities.metadata';
 
 /**
  * Lucide icon structural type — `lucide-angular@0.460.0` keeps `LucideIconData`
@@ -21,6 +19,11 @@ export interface PiNavDropdownItem {
   path: string;
   /** Visible label inside the dropdown. */
   label: string;
+  /**
+   * Optional page ACL key (TZ-ACCESS-301). Used by AppLayout for capability
+   * filtering; omitted items stay visible at the nav-item level.
+   */
+  pageKey?: string;
   /**
    * TZ-PRODUCTS-301 — optional per-item Lucide icon rendered before the label
    * (e.g. `Palette` for the «Цвета» dictionary). Backward compatible: when

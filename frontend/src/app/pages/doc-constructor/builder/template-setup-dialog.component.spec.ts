@@ -44,6 +44,9 @@ import {
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../../shared/ui/dialog/dialog.tokens';
 import type { DialogRef } from '../../../shared/ui/dialog/pi-dialog.service';
 import { DocumentTemplateCategoriesService } from '../../../shared/services/pi-document-template-categories.service';
+import { FormFieldComponent } from '../../../shared/ui/form-field/form-field.component';
+import { ButtonComponent } from '../../../shared/ui/button/button.component';
+import { PiDialogComponent } from '../../../shared/ui/dialog/pi-dialog.component';
 
 describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
   let fixture: ComponentFixture<TemplateSetupDialogComponent>;
@@ -94,7 +97,10 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
       ],
     })
       .overrideComponent(TemplateSetupDialogComponent, {
-        set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
+        set: {
+          imports: [FormFieldComponent, ButtonComponent, PiDialogComponent],
+          schemas: [NO_ERRORS_SCHEMA],
+        },
       })
       .compileComponents();
   });

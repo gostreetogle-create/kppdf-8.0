@@ -49,21 +49,23 @@
 
 ## Особенности
 
-- **Custom table** — inline `<table>` с кастомным дизайном (не pi-table)
+- **Pi page chrome (TZ-DOC-336)** — `PiPageHeader` + `PiToolbar` + `PiSection` + `PiEmptyState` + `PiRowActions`
 - **Inline search** — без debounce, мгновенный фильтр
 - **Two create modes** — «Новая таблица» + «Из существующих данных» (registry)
-- **Copy button** — кнопка дублирования шаблона
+- **Copy** — `PiRowActions` `(copy)` / `copyLabel` (не hand-rolled icon)
 - **isActive switch** — `<app-pi-switch>` inline
-- **Status dot** — green (active) / gray (inactive)
-- **Category labels** — readable Russian (материалы, оборудование...)
-- **Promo aside** — нижняя секция с рекламным текстом
+- **Category labels** — readable Russian
+- **editId deep-link (TZ-DOC-335)** — `?editId=` auto-opens edit dialog, then clears query
+- **Dialog FormField canon (TZ-DOC-336)** — name/description/sortOrder/source via FormField+Input; isActive via pi-switch; без promo aside
 
 ## TZ reference
 
 | TZ | Что сделано |
 |----|------------|
 | TZ-86 | Первая реализация + registry mode |
+| TZ-DOC-335 | `editId` queryParam auto-open from builder |
+| TZ-DOC-336 | Pi shell; remove promo; copy slot; dialog FormField/Switch |
 
 ---
 
-_Создано: 2026-07-19._
+_Создано: 2026-07-19. Обновлено: 2026-08-02 (DOC-336)._

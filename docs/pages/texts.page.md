@@ -108,13 +108,12 @@
 
 ## Особенности
 
-- **Split layout** — редактор (full-width) + каталог блоков снизу
+- **Pi page chrome (TZ-DOC-336)** — `PiPageHeader` + `PiToolbar` + `PiSection` + `PiEmptyState` + `PiRowActions`
+- **Editor zone** — full-page `TextBlockEditorComponent` над каталогом (не modal; known_limitation → successor)
 - **RxJS reload pattern** — `Subject<void>` + `switchMap` + `takeUntilDestroyed` (НЕ httpResource)
-- **Custom table** — inline `<table>` с sticky header, status dots, row highlight
-- **TipTap editor** — через `TextBlockEditorComponent` (Rich Text с B/I/U, H1-H3, alignment)
+- **Catalog table** — Paper & Ink `pi-cell` / `pi-table-row`; status dots; row click → editor
+- **TipTap editor** — B/I/U, H1-H3, Lucide AlignLeft/Center/Right + aria-label; «Активен» = `app-pi-switch`
 - **Pluralization** — `pluralRu(n, RU_BLOCKS)`
-- **Row click** — открывает блок в редакторе (editingBlock)
-- **Status dots** — green (active) / gray (inactive)
 - **Auto-open from builder** — query param `editId` автоматически открывает редактор
 
 ## TZ reference
@@ -124,7 +123,8 @@
 | TZ-86 | Первая реализация (Phase D) |
 | 2026-07-26 | effect init, bottom controls (← × →), font size, column width, toolbar smart formatting, auto-open from builder |
 | TZ-DOC-316 | Колонка «Категория» + dropdown-фильтр в каталоге; select категории в редакторе блока (`categoryId` в payload только при явном выборе) |
+| TZ-DOC-336 | Page shell → Pi chrome; editor «Активен» → pi-switch; align icons Lucide + aria-label |
 
 ---
 
-_Создано: 2026-07-19. Обновлено: 2026-07-26._
+_Создано: 2026-07-19. Обновлено: 2026-08-02 (DOC-336)._

@@ -166,10 +166,10 @@ const PAGE_SIZE = 10;
                   <td class="pi-cell text-right">
                     <app-pi-row-actions
                       [row]="t"
-                      documentLabel="Дублировать"
+                      copyLabel="Дублировать"
                       editLabel="Конструктор"
                       deleteLabel="Удалить"
-                      (document)="onDuplicate($event)"
+                      (copy)="onDuplicate($event)"
                       (edit)="onEdit($event)"
                       (delete)="onDelete($event)"
                     />
@@ -416,7 +416,7 @@ export class TemplatesPage {
           return;
         }
         if (outcome.result.ok) {
-          this.toast.success('Шаблон создан (неактивен). Откройте конструктор.');
+          this.toast.success('Шаблон создан. Открываю конструктор…');
           this.router.navigate(['/doc-constructor/builder', outcome.result.data._id]);
         } else {
           this.toast.error(extractErrorMessage(outcome.result.error));
