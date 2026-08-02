@@ -728,6 +728,9 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 | TZ-264 | 2026-08-02 | Admin dialog unit tests — 3 additive spec files (smoke NG5xxx guard, canSubmit, loadCatalog, toggles) | `tasks/_archive/2026-08/TZ-264.done.md` |
 | TZ-266 | 2026-08-02 | Generated-document organization scope before HTML/read/write side effects (imported workspace task, renumbered) | `tasks/_archive/2026-08/TZ-266.done.md` |
 | TZ-267 | 2026-08-02 | Templates registry error state and SilentResult HTTP boundary (imported workspace task, renumbered) | `tasks/_archive/2026-08/TZ-267.done.md` |
+| TZ-MATERIALS-301 | 2026-08-02 | Материалы — широкий структурированный диалог (content variant + maxWidth 1000px, sticky footer, двухколоночный layout) | `tasks/_archive/2026-08/TZ-MATERIALS-301.done.md` |
+| TZ-MATERIALS-302 | 2026-08-02 | Материалы — единицы из API (listActive) + поставщики: active-фильтр, loading/error/empty, unitFallback для деактивированной единицы | `tasks/_archive/2026-08/TZ-MATERIALS-302.done.md` |
+| TZ-DOC-307 | 2026-08-02 | Категории шаблонов — доменный контракт (отдельная сущность DocumentTemplateCategory, categoryId в DocumentTemplate, server-side default, RBAC, backfill migration) | `tasks/_archive/2026-08/TZ-DOC-307.done.md` |
 
 ## 🚀 Следующие шаги (предложения)
 
@@ -1014,6 +1017,9 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 | TZ-264 | `tasks/_archive/2026-08/TZ-264.done.md` (admin dialog unit tests, 3 spec files) | `.mimocode/locks/TZ-264-admin-dialogs-unit-tests.lock` |
 | TZ-266 | `tasks/_archive/2026-08/TZ-266.done.md` (generated-document organization scope, imported workspace task renumbered from sandbox TZ-261) | `.mimocode/locks/TZ-266-generated-document-scope.lock` |
 | TZ-267 | `tasks/_archive/2026-08/TZ-267.done.md` (templates error boundary, imported workspace task renumbered from sandbox TZ-262) | `.mimocode/locks/TZ-267-templates-error-boundary.lock` |
+| TZ-MATERIALS-301 | `tasks/_archive/2026-08/TZ-MATERIALS-301.done.md` (материалы — широкий структурированный диалог) | `.mimocode/locks/TZ-MATERIALS-301-dialog-layout.lock` |
+| TZ-MATERIALS-302 | `tasks/_archive/2026-08/TZ-MATERIALS-302.done.md` (материалы — единицы и поставщики) | `.mimocode/locks/TZ-MATERIALS-302-reference-data.lock` |
+| TZ-DOC-307 | `tasks/_archive/2026-08/TZ-DOC-307.done.md` (категории шаблонов — доменный контракт) | `.mimocode/locks/TZ-DOC-307-template-category.lock` |
 
 **Code evidence:** все 15 файлов подтверждены через grep/ls на диске (basher-verified this session). TZ-257.A.1 / TZ-256.B / TZ-259 / TZ-257.B реализованы и закоммичены в этой сессии; остальные — filesystem cleanup + archive creation.
 

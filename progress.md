@@ -4790,3 +4790,76 @@ tsc exit 0; git diff --check PASS. Code review: PASS.
 **Известные ограничения:** компоненты .ts не менялись (аддитивные тесты
 против финальных компонентов TZ-261/TZ-265); браузерный прогон диалогов
 не выполнялся (MANUAL_BROWSER_CHECK_REQUIRED) — логика покрыта unit-тестами.
+
+---
+
+## 2026-08-02 — TZ-MATERIALS-301 closed (Материалы — широкий структурированный диалог)
+
+**Исполнитель:** Frontend Layout Engineer / QA-валидатор (Buffy)
+**Статус:** Выполнено / Проверено
+**Что сделано кратко:** MaterialFormDialog переведён с узкой длинной колонки на широкий
+двухколоночный layout через штатный `variant="content"` + `[maxWidth]="'1000px'"`
+общего PiDialogComponent (sticky footer «Сохранить/Отмена» всегда видим, body
+прокручивается внутри, на 375px одна колонка без горизонтального overflow).
+Слева обязательные поля (name/article/unit/sku/price/stockQty), справа
+необязательные (поставщик/описание/заметки/фото), габариты — отдельной
+полноширинной секцией. Жизненный цикл диалога (Enter/Esc/X/Cancel/backdrop),
+guard двойного POST через submitting() не изменены.
+**Затронутые файлы/папки:**
+- frontend/src/app/pages/materials/material-form-dialog.component.ts
+- frontend/src/app/pages/materials/material-form-dialog.component.spec.ts (NEW, 7 тестов)
+**Verification:** tsc -p tsconfig.app.json --noEmit exit 0; jest materials 2 suites /
+11 tests PASS (TestBed-инстанцирование диалога форсирует компиляцию template —
+NG5xxx-гард); git diff --check PASS. Полный `ng build` на уровне цепочки временно
+заблокирован параллельной TZ-DOC-сессией (builder-inspector.component.ts NG5002,
+файл не в conflict keys этой TZ; пере-прогон в конце цепочки).
+**Известные ограничения:** визуальный браузерный прогон диалога запланирован на
+итоговый аудит цепочки (стек :4200/:3000/mongo поднят); фото/единицы/габариты —
+следующие TZ-MATERIALS.
+---
+
+## 2026-08-02 — TZ-MATERIALS-302 closed (Материалы — единицы и поставщики)
+
+**Исполнитель:** Frontend/Backend Integration Engineer / QA-валидатор (Buffy)
+**Статус:** Выполнено / Проверено
+**Что сделано кратко:** Захардкоженный `<select>` единиц в MaterialFormDialog
+заменён на `UnitsService.listActive()` (loading/error/empty состояния,
+сохраняется canonical `Unit.key`, показывается `label`+`symbol`). Добавлен
+`unitFallback()`: при редактировании материала с деактивированной единицей
+(или при сбое загрузки списка) рендерится disabled option с текущим ключом —
+select никогда не «немой», payload сохраняет canonical key. Поставщики: фильтр
+только активных supplier-организаций, loading/error/empty, сохранение
+`supplierId`, edit prefill, без двойной загрузки. Backend contract не менялся.
+**Затронутые файлы/папки:**
+- frontend/src/app/pages/materials/material-form-dialog.component.ts
+- frontend/src/app/pages/materials/material-form-dialog.component.spec.ts (9 новых тестов)
+**Verification:** tsc -p tsconfig.app.json --noEmit exit 0; jest materials 2
+suites / 19 tests PASS; code review 2 раунда — замечания устранены (stub
+Observable fix, fallback в error-branch); git diff --check PASS. Полный
+`ng build` на уровне цепочки временно заблокирован параллельной TZ-DOC-сессией
+(builder-inspector.component.ts NG5002, файл не в conflict keys этой TZ;
+пере-прогон в конце цепочки).
+**Известные ограничения:** критерий «созданная единица видна после reload и
+доступна в material dialog» покрыт существующим dictionaries flow; визуальный
+браузерный прогон диалога — на итоговый аудит цепочки.
+
+---
+
+## 2026-08-02 — TZ-DOC-307 closed (Категории шаблонов — доменный контракт)
+
+**Исполнитель:** Domain Model Architect / NestJS Backend Engineer / API Contract Engineer (Buffy)
+**Статус:** Выполнено / Проверено
+**Что сделано кратко:** Реализован контракт категорий шаблонов документов как отдельная сущность DocumentTemplateCategory (не переиспользование generic Category). Добавлен categoryId в DocumentTemplate schema/DTO/service/controller, полный CRUD с RBAC, server-side default resolution, защита удаления используемых категорий, backfill миграция для legacy шаблонов, seed системной категории «Общее».
+**Затронутые файлы/папки:**
+- backend/src/modules/document-template/document-template.schema.ts (categoryId field)
+- backend/src/modules/document-template/document-template.service.ts (resolveCategoryId, assertAssignable)
+- backend/src/modules/document-template/document-template.controller.ts (categoryId filter)
+- backend/src/modules/document-template/document-template.module.ts (DocumentTemplateCategoryModule import)
+- backend/src/modules/document-template/dto/create-document-template.dto.ts (categoryId)
+- backend/src/modules/document-template-category/ (NEW module: schema, service, controller, DTOs, spec)
+- backend/src/common/seed/document-template-categories.seed.ts (NEW)
+- backend/src/database/migrations/2026-08-02-TZ-DOC-307-backfill-template-categories.ts (NEW)
+- OrchestratorKit/STATUS.md (TZ-DOC-307/308 entries)
+- tasks/_archive/2026-08/TZ-DOC-307.done.md (archive marker)
+**Verification:** pnpm exec tsc -p tsconfig.build.json --noEmit exit 0; pnpm exec jest document-template --no-coverage 45/45 PASS; pnpm exec jest document-template-category --no-coverage 21/21 PASS; git diff --check PASS.
+**Известные ограничения:** frontend UI для категорий шаблонов — следующая задача TZ-DOC-308; browser check не выполнялся (требует поднятого стека :4200/:3000/mongo).
