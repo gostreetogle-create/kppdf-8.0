@@ -154,9 +154,11 @@ describe('BuilderCanvasComponent \u2014 Magnetic Grid + Guides (TZ-237.MAGNETIC-
     fixture = TestBed.createComponent(BuilderCanvasComponent);
     fixture.componentRef.setInput('blocks', [TARGET_BLOCK]);
     fixture.componentRef.setInput('snapEnabled', true);
-    // TZ-DOC-269: the grid-dots overlay is opt-in; render it in beforeEach so
-    // the aria-hidden / gridSize DOM tests have a layer to query. The dedicated
-    // gating test below re-toggles it explicitly.
+    // TZ-DOC-269 (revoked 2026-08-02): the grid-dots overlay no longer exists
+    // in DOM. We still set `gridVisible=true` here as a defensive back-compat
+    // exercise — the layer must remain absent even at the legacy true value
+    // (deprecated, but call sites elsewhere may still pipe it through). The
+    // dedicated gating test below covers both true and false explicitly.
     fixture.componentRef.setInput('gridVisible', true);
     fixture.detectChanges();
   });
@@ -170,24 +172,23 @@ describe('BuilderCanvasComponent \u2014 Magnetic Grid + Guides (TZ-237.MAGNETIC-
     document.head.querySelectorAll('style').forEach((s) => s.remove());
   });
 
-  it('TZ-DOC-269: grid layer is opt-in via gridVisible — hidden by default and in preview', () => {
+  it('TZ-DOC-269-revoked: grid layer is NEVER rendered, regardless of gridVisible (input kept deprecated)', () => {
     // Toggle off: no grid even though snapEnabled stays true (snap is
-    // independent of the decorative dots layer).
+    // independent of the decorative dots layer — TZ-DOC-269 was the
+    // opposite: layer opt-in. After revocation there is no layer at all).
     fixture.componentRef.setInput('gridVisible', false);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.canvas-builder__grid-layer')).toBeFalsy();
 
-    // Opt in: the layer appears.
+    // Opt in (legacy): the layer must STILL be absent, even at the
+    // backwards-compat true value. This guards against a regression where
+    // someone re-introduces the decorative layer without re-amping the
+    // inspector's snap-settings UI (which had the toggle removed).
     fixture.componentRef.setInput('gridVisible', true);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.canvas-builder__grid-layer')).toBeTruthy();
-
-    // Reactivity: flipping back hides it again.
-    fixture.componentRef.setInput('gridVisible', false);
-    fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.canvas-builder__grid-layer')).toBeFalsy();
 
-    // Preview mode hides the grid even when the toggle is on (editor chrome).
+    // Preview-mode: still absent (layer is editor chrome-free already).
     fixture.componentRef.setInput('gridVisible', true);
     fixture.componentRef.setInput('viewMode', 'preview');
     fixture.detectChanges();
@@ -208,15 +209,10 @@ describe('BuilderCanvasComponent \u2014 Magnetic Grid + Guides (TZ-237.MAGNETIC-
     expect(fixture.nativeElement.querySelector('.canvas-builder__guides-layer')).toBeFalsy();
   });
 
-  it('marks both layers aria-hidden="true" for screen readers', () => {
+  it('marks the guides layer aria-hidden="true" for screen readers', () => {
     findOverlayStub(fixture).dragRectChange.emit(DRAGGED_RECT);
     fixture.detectChanges();
 
-    expect(
-      fixture.nativeElement
-        .querySelector('.canvas-builder__grid-layer')
-        .getAttribute('aria-hidden'),
-    ).toBe('true');
     expect(
       fixture.nativeElement
         .querySelector('.canvas-builder__guides-layer')
@@ -253,26 +249,27 @@ describe('BuilderCanvasComponent \u2014 Magnetic Grid + Guides (TZ-237.MAGNETIC-
     expect(cyEl.style.left).toBe('');
   });
 
-  it('declares @media print CSS that hides grid + guides (no PDF carry-over)', () => {
+  it('declares @media print CSS that hides the guides layer (no PDF carry-over)', () => {
     // jsdom doesn't apply @media print styles, so we verify the rule
     // exists in the source authored CSS. This is the same string
     // Angular's `styles: [\`...\`]` array holds at runtime.
     // TZ-259.6: the print block also hides the floating alignment toolbar.
     expect(CANVAS_SOURCE).toMatch(
-      /@media print\s*\{[^}]*\.canvas-builder__grid-layer,\s*\.canvas-builder__guides-layer,\s*\.canvas-align-toolbar\s*\{[^}]*display:\s*none\s*!important[^}]*\}/,
+      /@media print\s*\{[^}]*\.canvas-builder__guides-layer,\s*\.canvas-align-toolbar\s*\{[^}]*display:\s*none\s*!important[^}]*\}/,
     );
+    // TZ-DOC-269-revoked: the grid layer selector must NOT appear in the
+    // print block — its layer has been removed from the canvas render.
+    const printBlock = CANVAS_SOURCE.match(/@media print\s*\{[\s\S]*?\}/);
+    expect(printBlock).toBeTruthy();
+    expect(printBlock![0]).not.toMatch(/\.canvas-builder__grid-layer/);
   });
 
-  it('applies pointer-events: none to the visual layers', () => {
-    expect(CANVAS_SOURCE).toMatch(/\.canvas-builder__grid-layer\s*\{[^}]*pointer-events:\s*none/);
+  it('applies pointer-events: none to the guides layer (no leftover grid-layer rule)', () => {
     expect(CANVAS_SOURCE).toMatch(/\.canvas-builder__guides-layer\s*\{[^}]*pointer-events:\s*none/);
-  });
-
-  it('gridSize input reacts on the grid layer background-size', () => {
-    fixture.componentRef.setInput('gridSize', 40);
-    fixture.detectChanges();
-    const grid = fixture.nativeElement.querySelector('.canvas-builder__grid-layer');
-    expect(grid.style.backgroundSize).toBe('40px');
+    // Defensive: the grid-layer rule must no longer be present in source.
+    expect(CANVAS_SOURCE).not.toMatch(
+      /\.canvas-builder__grid-layer\s*\{[^}]*pointer-events:\s*none/,
+    );
   });
 
   // ═══ TZ-DOC-272: marquee (rectangle) selection ═══

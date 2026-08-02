@@ -245,16 +245,6 @@ import {
           />
         }
 
-        @if (gridVisible() && !isPreview()) {
-          <!-- TZ-DOC-269: grid dots are an OPT-IN working mode (explicit
-               toggle in the inspector's snap settings). Snap and alignment
-               guides work with the grid hidden — this layer is decorative. -->
-          <div
-            class="canvas-builder__grid-layer"
-            aria-hidden="true"
-            [style.background-size.px]="gridSize()"
-          ></div>
-        }
         @if (currentGuides().length > 0 && !isPreview()) {
           <!-- TZ-237.MAGNETIC-GRID-r0: alignment guides for the active overlay drag. -->
           <div class="canvas-builder__guides-layer" aria-hidden="true">
@@ -472,23 +462,8 @@ import {
       }
     `,
 
-    /* ── TZ-237.MAGNETIC-GRID-r0: magnetic grid + alignment guides ── */
+    /* ── TZ-237.MAGNETIC-GRID-r0: alignment guides ── */
     `
-      .canvas-builder__grid-layer {
-        position: absolute;
-        inset: 0;
-        z-index: 0;
-        pointer-events: none;
-        /* TZ-259.3: contrast raised from 0.18 → 0.42 and dot size 1px → 2px
-           so the snap grid is actually visible on white paper. Hidden in
-           preview via the isPreview() guard in the template. */
-        background-image: radial-gradient(
-          circle at 1px 1px,
-          rgba(15, 23, 42, 0.42) 2px,
-          transparent 0
-        );
-        background-size: var(--grid-size, 20px) var(--grid-size, 20px);
-      }
       .canvas-builder__guides-layer {
         position: absolute;
         inset: 0;
@@ -521,7 +496,6 @@ import {
         }
       }
       @media print {
-        .canvas-builder__grid-layer,
         .canvas-builder__guides-layer,
         .canvas-align-toolbar {
           display: none !important;
@@ -590,9 +564,13 @@ export class BuilderCanvasComponent {
   /** Padding from paper edges that overlay blocks cannot cross (px). */
   readonly boundaryPadding = input<number>(0);
   /**
-   * TZ-DOC-269: show the magnetic grid DOTS overlay. Off by default —
-   * snap and guides keep working with the grid hidden; the dots are an
-   * explicit working-mode aid toggled from the inspector's snap settings.
+   * TZ-DOC-269 (revoked 2026-08-02): видимый декоративный слой сетки
+   * (dots) удалён из рендеринга. Snap и направляющие продолжают
+   * работать через `gridSize` + `snap-engine` без визуального шума.
+   * Поле оставлено как deprecated для обратной совместимости binding'ов
+   * в `builder.page.ts`; никакой рендер от него больше не зависит.
+   *
+   * @deprecated со 2 августа 2026 — не использовать в новом коде.
    */
   readonly gridVisible = input<boolean>(false);
 

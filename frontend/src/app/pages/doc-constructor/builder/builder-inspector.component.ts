@@ -130,18 +130,11 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 (change)="onSnapEnabledChange($any($event.target).checked)"
               />
             </label>
-            <!-- TZ-DOC-269: decorative grid dots are an explicit opt-in mode. -->
-            <label class="toggle-row">
-              <div class="toggle-row__left">
-                <span class="toggle-row__label">Показывать сетку</span>
-              </div>
-              <input
-                type="checkbox"
-                class="toggle-checkbox"
-                [checked]="localGridVisible()"
-                (change)="onGridVisibilityChange($any($event.target).checked)"
-              />
-            </label>
+            <!-- TZ-DOC-269 (revoked 2026-08-02): декоративная сетка (dots)
+                 убрана из UI; магнитная привязка (snap-to-grid) и направляющие
+                 снапа работают и без визуальной сетки. Настройка «Шаг сетки»
+                 ниже остаётся — это параметр математической привязки, не
+                 визуальный слой. -->
             <div class="field">
               <span class="field__label">Шаг сетки (px)</span>
               <input
@@ -1687,8 +1680,14 @@ export class BuilderInspectorComponent {
   /** Padding from paper edges (px) (input from parent). */
   readonly boundaryPadding = input<number>(8);
   /**
-   * TZ-DOC-269: show the magnetic grid dots overlay (input from parent).
-   * Off by default; snap and guides work with the grid hidden.
+   * TZ-DOC-269 (revoked 2026-08-02): видимая сетка (dots) удалена из UI.
+   * Магнитная привязка и направляющие продолжают работать через
+   * `gridSize` (математический шаг). Поле намеренно оставлено в типе
+   * с дефолтом `false` ради обратной совместимости существующих binding'ов
+   * в `builder.page.ts`; новые потребители должны полагаться только на
+   * `snapEnabled` + `gridSize`.
+   *
+   * @deprecated со 2 августа 2026 — не использовать в новом коде.
    */
   readonly gridVisible = input<boolean>(false);
   /** Emitted when user changes snap settings via the inspector. */
@@ -1697,8 +1696,6 @@ export class BuilderInspectorComponent {
     gridSize: number;
     boundaryPadding?: number;
   }>();
-  /** TZ-DOC-269: emitted when the user toggles the grid-dots overlay. */
-  readonly gridVisibilityChange = output<boolean>();
   /** Emitted when user clicks close on template properties panel. */
   readonly closePanel = output<void>();
   /**
@@ -1756,7 +1753,6 @@ export class BuilderInspectorComponent {
   protected readonly localSnapEnabled = signal<boolean>(true);
   protected readonly localGridSize = signal<number>(20);
   protected readonly localBoundaryPadding = signal<number>(8);
-  protected readonly localGridVisible = signal<boolean>(false);
 
   // Template opacity display
   protected readonly opacityPercent = computed<number>(() => {
@@ -1866,7 +1862,6 @@ export class BuilderInspectorComponent {
       this.localSnapEnabled.set(this.snapEnabled());
       this.localGridSize.set(this.gridSize());
       this.localBoundaryPadding.set(this.boundaryPadding());
-      this.localGridVisible.set(this.gridVisible());
     });
   }
 
@@ -1988,12 +1983,6 @@ export class BuilderInspectorComponent {
     const clamped = Math.max(0, Math.min(100, v));
     this.localBoundaryPadding.set(clamped);
     this.emitSnapSettings();
-  }
-
-  /** TZ-DOC-269: inspector toggle for the decorative grid-dots overlay. */
-  protected onGridVisibilityChange(visible: boolean): void {
-    this.localGridVisible.set(visible);
-    this.gridVisibilityChange.emit(visible);
   }
 
   private emitSnapSettings(): void {

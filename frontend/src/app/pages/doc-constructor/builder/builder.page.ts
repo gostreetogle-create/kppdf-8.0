@@ -345,7 +345,7 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
           [snapEnabled]="snapEnabled()"
           [gridSize]="gridSize()"
           [boundaryPadding]="boundaryPadding()"
-          [gridVisible]="showGrid()"
+          [gridVisible]="false"
           [viewMode]="viewMode()"
           (select)="onSelect($event)"
           (multiSelect)="onMultiSelect($event)"
@@ -373,10 +373,9 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
             [snapEnabled]="snapEnabled()"
             [gridSize]="gridSize()"
             [boundaryPadding]="boundaryPadding()"
-            [gridVisible]="showGrid()"
+            [gridVisible]="false"
             [grouped]="editorGroupedIds() !== null"
             (snapSettingsChange)="onSnapSettingsChange($event)"
-            (gridVisibilityChange)="onGridVisibilityChange($event)"
             (layoutOrderChange)="onLayoutChanges($event)"
             (groupSelected)="onGroupSelected()"
             (ungroupSelected)="onUngroupSelected()"
@@ -682,9 +681,11 @@ export class BuilderPage {
   /** Padding from paper edges that overlay blocks cannot cross (px) (persisted to localStorage). */
   protected readonly boundaryPadding = signal<number>(loadSnapSettings().boundaryPadding);
   /**
-   * TZ-DOC-269: show the magnetic grid DOTS overlay. Off by default —
-   * snap and alignment guides work without the decorative grid; it is
-   * an explicit opt-in aid toggled from the inspector's snap settings.
+   * TZ-DOC-269 (revoked 2026-08-02): декоративная сетка (dots) удалена
+   * из UI и из canvas-renderer; магнитная привязка работает через
+   * `gridSize` без визуального слоя. Сигнал сохранён как константа
+   * `false` ради совместимости binding'ов и e2e-селекторов, но не
+   * отображается ни на одном из path render.
    */
   protected readonly showGrid = signal<boolean>(false);
   /**
@@ -1696,11 +1697,6 @@ export class BuilderPage {
           this.toast.error(extractErrorMessage(err));
         },
       });
-  }
-
-  /** TZ-DOC-269: inspector toggle for the decorative grid-dots overlay. */
-  protected onGridVisibilityChange(visible: boolean): void {
-    this.showGrid.set(visible);
   }
 
   /** Handle snap settings changes from the inspector (persisted to localStorage). */
