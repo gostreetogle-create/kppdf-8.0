@@ -77,7 +77,7 @@ Frontend:
 ## Commit hashes
 
 - feat: `4e037736600a1e87892690c35cf9183de60cc546`
-- closeout: `<closeout-sha>` (заполняется после коммита)
+- closeout: `566de7d5418389019ddeca2b08e6e278fbe7d43c`
 
 ## Successor
 

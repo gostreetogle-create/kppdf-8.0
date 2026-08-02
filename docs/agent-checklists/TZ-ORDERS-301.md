@@ -35,7 +35,7 @@
 
 ## Executor report (auto) — TZ-ORDERS-301
 - status: DONE
-- commits: 4e037736600a1e87892690c35cf9183de60cc546 + <closeout SHA pending>
+- commits: 4e037736600a1e87892690c35cf9183de60cc546 + 566de7d5418389019ddeca2b08e6e278fbe7d43c
 - gates: backend-tsc=PASS; quotation/order-jest=27/27; frontend-tsc=PASS; proposals-jest=23/23; ng-build=PASS; diff-check=clean; verify-status=PASS
 - known: convertToContract asymmetry (копирует unitPrice, без guard accepted — out-of-scope); frozen-guard не блокирует PATCH draft→in_production напрямую (флаг для TZ-PRODUCTION); org-scope/createdAt — interceptor/сортировка, не в service (disclose)
 - ask: TZ-INVENTORY-301 / TZ-PRODUCTION-301 разблокированы
