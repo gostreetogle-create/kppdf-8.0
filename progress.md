@@ -5194,3 +5194,19 @@ E2E-сценарии с созданием данных помечены MANUAL_
 **Архив:** tasks/_archive/2026-08/TZ-PRODUCTS-304-products-catalog-expandable-modules.done.md; lock: .mimocode/locks/TZ-PRODUCTS-304-products-catalog-expandable-modules.lock (gitignored).
 
 **Ограничения:** pi-table artifact — при развёрнутой строке под остальными пустой <tr> (структурное ограничение единого expandedRow template, паттерн TZ-MODULES-302, pi-table НЕ менялся по ТЗ). TZ-DOC-308/TZ-WORKERS-302 — pre-existing, ng build exit 0. Push: нет.
+
+## 2026-08-02 — TZ-PRODUCTS-305 DONE (showcase cards sm/md/lg + catalog list/grid toggle)
+
+**Статус:** DONE. Layer 3 (frontend). Зависимость TZ-PRODUCTS-304 (84ad25c) выполнена. Backend НЕ трогался.
+
+**Тип:** Каталог товаров получил переключение вида list (pi-table) ↔ grid (sm showcase-карточки). PiShowcaseCardComponent (sm/md/lg) перенесён идентичным контентом из part-1 e00be99 (лежал на main, не в ветке — вербатим-порт для чистого merge). viewMode signal + localStorage persistence (pi-products-view-mode, паттерн snapSettings). Grid-ячейки: PiAvatar-инициалы + name + badge статуса + цена, routerLink /products/:id. Критический фикс: template-refs хоустированы из @if/@else на корень (static ViewChild). KIND_LABELS → метод gridEyebrow (константа недоступна из шаблона).
+
+**Затронуто:** shared/ui/card/pi-showcase-card.component.ts (+spec, порт e00be99, spec адаптирован CUSTOM_ELEMENTS_SCHEMA), index.ts, products.page.ts (+toggle/grid), products.page.spec.ts (+9 тестов), docs/pages/products.page.md.
+
+**Исправления по review:** @if guard для пустого badge статуса; statusBadgeClass без дублирования; мёртвый arrow на sm убран; +тест цены/badge-hidden.
+
+**Проверки:** backend tsc exit 0 (sanity); frontend tsc exit 0; jest целевой 4 suites/64 PASS; полный frontend jest 869/870 PASS (единственный fail — pre-existing button.component.spec.ts, не регрессия); ng build dev exit 0; git diff --check clean; verify-status.sh PASS.
+
+**Архив:** tasks/_archive/2026-08/TZ-PRODUCTS-305-ui-kit-showcase-cards.done.md; lock: .mimocode/locks/TZ-PRODUCTS-305-ui-kit-showcase-cards.lock (gitignored).
+
+**Ограничения:** e00be99 part-1 лежит на main (не в ветке) — disclosed; TZ-DOC-308/TZ-WORKERS-302 pre-existing, ng build exit 0; sm-карточка без фото (инициалы-аватар). Push: нет.
