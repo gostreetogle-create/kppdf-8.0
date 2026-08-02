@@ -55,7 +55,7 @@
 
 ## Executor report (auto) — TZ-PRODUCTS-303
 status: DONE
-commits: fad91fd8c9db4be9012049da336508aa91a4aa94 (feat) + <CLOSEOUT_SHA> (closeout)
+commits: fad91fd8c9db4be9012049da336508aa91a4aa94 (feat) + 592b3955efdccae79e4f43fc0709b229663691ab (closeout)
 gates: product-form-dialog jest=34/34; products jest=42/42; tsc (scope) clean; ng build FAIL only на TZ-WORKERS-302 WIP (people.page.ts unterminated + index.ts→workers.service — out of scope); git-diff-check=PASS; verify-status=PASS
 known: M:N sync через атомарные POST/DELETE /products/:id/modules (bulk productModuleIds PATCH → 400, DTO whitelist); fallback-карточка для модулей вне каталога; ralCode colorId SUCCESSOR — TZ-PRODUCTS-303 backend не трогал
 ask: —
