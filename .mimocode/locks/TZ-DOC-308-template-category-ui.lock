@@ -1,0 +1,25 @@
+LOCK
+task: TZ-DOC-308
+outcome: DONE
+locked_at: 2026-08-02
+locked_by: Buffy
+commit: 73cc8a0
+scope:
+  - frontend/src/app/pages/dictionaries/document-template-categories.page.ts (+ spec)
+  - frontend/src/app/pages/dictionaries/document-template-category-form-dialog.component.ts (+ spec)
+  - frontend/src/app/shared/services/pi-document-template-categories.service.ts (+ spec)
+  - template-setup-dialog.component.ts (categoryId, default auto-select, submit guard)
+  - templates.page.ts (category column + filter + duplicate payload)
+  - pi-document-templates.service.ts (categoryId in interface)
+  - app.routes.ts (+/doc-template-categories), app-layout.component.ts (nav item)
+related_archive: tasks/_archive/2026-08/TZ-DOC-308.done.md
+verification:
+  - acceptance criteria: PASS
+  - frontend typecheck: PASS
+  - frontend jest: PASS (56/56 targeted, 689/689 full — original closeout; 32/32 re-verified 2026-08-02 wake-up session)
+  - ng build (development): PASS (re-verified 2026-08-02 wake-up session)
+  - backend regression: PASS (50/50 targeted, 315/315 full)
+  - git diff --check: PASS
+  - archive: CREATED
+  - STATUS.md: UPDATED
+  - progress.md: UPDATED
