@@ -32,6 +32,7 @@ import {
   ProductsService,
   type ProductsListResponse,
 } from '../../shared/services/products.service';
+import { ProductModule } from '../../shared/services/pi-product-modules.service';
 import { ProductFormDialogComponent } from './product-form-dialog.component';
 
 /** Server-side pagination page size for /products endpoint. */
@@ -103,8 +104,14 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
  *   TemplateRef invariance broke the binding. TZ-104.4.2 re-typed
  *   pi-table so the strict Product typing now flows through.
  *
- *  Standalone + OnPush + signal-based. No `products.page.spec.ts`
- *  exists yet; v1 acceptance is visual smoke + tsc.
+ * TZ-PRODUCTS-304 — expandable-строки: клик по строке разворачивает
+ * список привязанных модулей (карточки: инициалы-аватар, имя, артикул,
+ * «N материалов», ссылка на /modules/:id). `expandedId` сигнал хранит
+ * _id развёрнутого товара; повторный клик сворачивает. `[expandedRow]`
+ * передаёт `expandedTpl` ТОЛЬКО когда есть развёрнутая строка
+ * (свёрнутые строки без пустых `<tr>`).
+ *
+ *  Standalone + OnPush + signal-based.
  */
 @Component({
   selector: 'app-products-page',
@@ -177,6 +184,8 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
           [initialSortDir]="'asc'"
           (pageChange)="onPageChange($event)"
           (sortChange)="onSortChange($event)"
+          (rowClick)="onRowClick($event)"
+          [expandedRow]="expandedId() ? expandedTpl : null"
         >
           <!-- ───── Name cell (routerLink to detail page) ───── -->
           <!-- The (click) propagates to the row <tr>. pi-table wraps
@@ -208,6 +217,44 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
               (edit)="openEdit($event)"
               (delete)="onDelete($event)"
             />
+          </ng-template>
+
+          <!-- ───── Expanded row: модули в составе (TZ-PRODUCTS-304) ───── -->
+          <ng-template #expandedTpl let-row>
+            @if (expandedId() === row._id) {
+              <div class="px-4 py-3" data-test="expanded-row">
+                @if (modulesOf(row).length === 0) {
+                  <p class="text-xs text-muted-foreground" data-test="expanded-empty">
+                    Нет модулей в составе. Откройте товар, чтобы привязать модули.
+                  </p>
+                } @else {
+                  <div class="flex flex-wrap gap-2">
+                    @for (m of modulesOf(row); track m._id) {
+                      <a
+                        [routerLink]="['/modules', m._id]"
+                        class="inline-flex items-center gap-2 min-h-touch px-2 py-1.5 text-sm hairline rounded-sm bg-paper hover:bg-paper-2 hover:shadow-sm transition-all"
+                        [attr.aria-label]="'Открыть модуль ' + m.name"
+                        [attr.data-test]="'module-card-' + m._id"
+                      >
+                        <span
+                          class="w-7 h-7 rounded-sm hairline bg-paper-2 flex items-center justify-center text-muted-foreground text-xs font-medium shrink-0"
+                          aria-hidden="true"
+                        >
+                          {{ (m.name || 'M').charAt(0).toUpperCase() }}
+                        </span>
+                        <span class="font-medium truncate max-w-40">{{ m.name }}</span>
+                        <span class="font-mono text-xs text-muted-foreground empty-cell">
+                          {{ m.article ?? '—' }}
+                        </span>
+                        <span class="text-xs text-muted-foreground">
+                          {{ m.materials.length }} материалов
+                        </span>
+                      </a>
+                    }
+                  </div>
+                }
+              </div>
+            }
           </ng-template>
         </app-pi-table>
       </div>
@@ -301,7 +348,7 @@ export class ProductsPage implements OnInit {
 
   // ─── Column definitions ────────────────────────────────────────────
   /**
-   * 7 visible columns + row-actions slot (auto-injected).
+   * 8 visible columns + row-actions slot (auto-injected).
    * - `name` is sticky-left (ID-like for tablets) and a `cellTemplate`
    *   so the rich `<a [routerLink]>` markup renders. Sort wires to
    *   backend `sortBy=name`.
@@ -315,6 +362,10 @@ export class ProductsPage implements OnInit {
    *   sort `active/archived/draft/new` is what users see. (No status
    *   cycle order needed since status enum isn't a lifecycle like
    *   Order.status.)
+   * - `productModuleIds` («Модулей», TZ-PRODUCTS-304) is numeric and
+   *   counts the RAW array length (strings + objects) — backend `list()`
+   *   populates top-level, so it matches the expanded-row card count
+   *   (`modulesOf` filters to populated objects only).
    * - `stockQty` is numeric with manual format() (string) so we can
    *   default null to 0.
    */
@@ -353,6 +404,14 @@ export class ProductsPage implements OnInit {
       label: 'Статус',
       cellClass: 'empty-cell',
       format: (r) => (r.status ? (STATUS_LABELS[r.status] ?? r.status) : '—'),
+    },
+    {
+      key: 'productModuleIds',
+      label: 'Модулей',
+      numeric: true,
+      align: 'right',
+      width: '80px',
+      format: (r) => String(r.productModuleIds?.length ?? 0),
     },
     {
       key: 'stockQty',
@@ -471,5 +530,30 @@ export class ProductsPage implements OnInit {
 
   protected reload(): void {
     this.listRes.reload();
+  }
+
+  // ─── Expandable rows (TZ-PRODUCTS-304) ──────────────────────────────
+
+  /** _id развёрнутого товара; null = все свёрнуты. */
+  protected readonly expandedId = signal<string | null>(null);
+
+  /**
+   * Клик по строке — toggle expand. Повторный клик по той же строке
+   * сворачивает. Редактирование/удаление НЕ триггерят expand (pi-table
+   * сам делает stopPropagation на row-actions `<td>`).
+   */
+  protected onRowClick(row: Product): void {
+    this.expandedId.update((cur) => (cur === row._id ? null : row._id));
+  }
+
+  /**
+   * Populated ProductModule объекты из `productModuleIds` (строки-ids,
+   * если populate не прошёл, отфильтровываем). Используется в
+   * expandedTpl для карточек модулей.
+   */
+  protected modulesOf(row: Product): ProductModule[] {
+    return (row.productModuleIds ?? []).filter(
+      (m): m is ProductModule => typeof m === 'object' && m !== null && '_id' in m,
+    );
   }
 }

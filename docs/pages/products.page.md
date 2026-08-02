@@ -64,7 +64,7 @@
 
 ## Column definitions (8 колонок)
 
-`name` (sticky, sortable, cellTemplate) → `sku` (sortable) → `kind` → `unit` → `listPrice` (sortable, numeric, right) → `status` (sortable) → `stockQty` (numeric, right)
+`name` (sticky, sortable, cellTemplate) → `sku` (sortable) → `kind` → `unit` → `listPrice` (sortable, numeric, right) → `status` (sortable) → `productModuleIds` «Модулей» (numeric, right, TZ-PRODUCTS-304) → `stockQty` (numeric, right)
 
 ## TZ reference
 
@@ -74,6 +74,7 @@
 | TZ-104.4.2 | Typed TemplateRef (устранён `any`) |
 | TZ-PRODUCTS-302 | Rework ProductFormDialog → content-variant 1000px, секции, RAL dropdown из справочника цветов |
 | TZ-PRODUCTS-303 | «Модули в составе» в диалоге товара: карточки модулей + мульти-picker + атомарные POST/DELETE |
+| TZ-PRODUCTS-304 | Expandable-строки каталога: клик по строке разворачивает карточки модулей, ссылка на `/modules/:id` |
 
 ## Особенности
 
@@ -137,6 +138,31 @@ TZ-MODULES-301 (карточки-строки, как material-cards в module-d
   `PiProductModulesService.attachToProduct/detachFromProduct`.
 - **Legacy:** старые товары с `productModuleIds[]` (populated в list/findById)
   открываются и редактируются без потери привязок.
+
+## Expandable-строки (TZ-PRODUCTS-304)
+
+Клик по строке товара в каталоге РАЗВОРАЧИВАЕТ/СВОРАЧИВАЕТ список
+привязанных модулей (паттерн TZ-MODULES-302: pi-table `expandedRow` +
+сигнал `expandedId` + conditional template на странице).
+
+- **Состояние:** `expandedId: signal<string | null>` — `_id` развёрнутого
+  товара; повторный клик по той же строке сворачивает (null).
+- **Подключение:** `(rowClick)="onRowClick($event)"` (pi-table эмитит строку)
+  + `[expandedRow]="expandedId() ? expandedTpl : null"` — свёрнутые строки
+  БЕЗ пустых `<tr>` (template передаётся только при развёрнутой строке).
+- **Развёрнутый контент** (`#expandedTpl`): карточки модулей — инициалы-аватар
+  (у `GET /modules` нет фото — отдельная сущность `ProductModulePhoto`), имя,
+  артикул, «N материалов»; клик по карточке → `routerLink` `/modules/:id`
+  (route существует, app.routes.ts).
+- **Empty state:** «Нет модулей в составе. Откройте товар, чтобы привязать
+  модули.»
+- **Колонка «Модулей»:** count из `productModuleIds.length` (numeric, right).
+- **Row-actions НЕ раскрывают строку:** pi-table сам делает
+  `stopPropagation` на actions `<td>`; ссылка-название товара тоже
+  `stopPropagation` (навигация на `/products/:id` сохранена — отдельный
+  аффорданс, не конфликтует с toggle).
+- **Backend НЕ менялся:** `list()` уже populate `productModuleIds`
+  (product.service.ts:72).
 
 ---
 
