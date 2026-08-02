@@ -88,6 +88,8 @@ const NAV_CATEGORIES: NavCategory[] = [
       { path: '/dictionaries', label: 'Все справочники' },
       { path: '/categories', label: 'Категории' },
       { path: '/doc-template-categories', label: 'Категории шаблонов' },
+      // TZ-PRODUCTS-301 — справочник цветов (hex + RAL).
+      { path: '/color-references', label: 'Цвета' },
     ],
   },
   {

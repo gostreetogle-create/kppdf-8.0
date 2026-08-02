@@ -137,6 +137,16 @@ export const routes: Routes = [
         title: 'KPPDF — Категории шаблонов',
       },
       {
+        // TZ-PRODUCTS-301 — справочник «Цвета» (hex + RAL). Гейт как у
+        // остальных справочников (authGuard родителя): отдельного
+        // capability-ключа в RBAC-каталоге нет; мутации защищены на
+        // backend @Roles('admin','manager').
+        path: 'color-references',
+        loadComponent: () =>
+          import('./pages/dictionaries/color-references.page').then((m) => m.ColorReferencesPage),
+        title: 'KPPDF — Цвета',
+      },
+      {
         path: 'products',
         loadComponent: () => import('./pages/products/products.page').then((m) => m.ProductsPage),
         title: 'KPPDF — Продукция',

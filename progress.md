@@ -5137,3 +5137,18 @@ E2E-сценарии с созданием данных помечены MANUAL_
 **Commit:** `e7a25503a5dbcfd6c7ebd599c2fdeb358e76bf7a` — `fix(app-module): wire TextBlockCategoriesSeed in providers — TZ-DOC-321` — 3 files / +92 / -5. Push: нет.
 **Сессионный артефакт:** во время работы параллельная TZ-PRODUCTS-301 добавила half-baked импорты ColorReferenceModule в тот же app.module.ts без самих файлов (TSC ломался). Решил через `git checkout HEAD -- app.module.ts` → мои правки → commit. Их untracked-импорты остались в worktree, см. known_limitations в архиве.
 **Ограничения:** defense-in-depth в text-block.service.ts сохранена (per user instruction); API delta (OnApplicationBootstrap vs OnModuleInit) документирована, не fix-forced. Successor TZ-DOC-322 (microfix для удаления redundant ladder) — out-of-scope этой сессии.
+## 2026-08-02 — TZ-PRODUCTS-301 (Справочник «Цвета»: ColorReference backend + UI)
+**DONE** — модуль `color-reference` (schema/DTO/service/controller/module + 20 unit),
+seed system-цвета «Не выбран», app.module wiring; frontend: service, страница
+(pi-table DSL + swatch + поиск + system-lock), content-диалог 1000px, роут `/color-references`,
+nav «Цвета», 14 unit.
+**Проверки:** backend tsc exit 0; backend jest 44 suites / 430 PASS; frontend tsc
+(мои файлы чистые; categories.page.ts — pre-existing чужой blocker); frontend jest
+76 suites / 804 PASS; ng build exit 0; diff-check clean; verify-status PASS.
+**Архив:** `tasks/_archive/2026-08/TZ-PRODUCTS-301-color-reference-dictionary.done.md`;
+lock: `.mimocode/locks/TZ-PRODUCTS-301-color-reference-dictionary.lock`;
+checklist: `docs/agent-checklists/TZ-PRODUCTS-301.md`; page-дока: `docs/pages/color-references.page.md`.
+**Commit:** <set at commit time> — `feat(reference): unified color reference dictionary (TZ-PRODUCTS-301)`. Push: нет.
+**Ограничения:** categories.page.ts — project-wide tsc-blocker из чужой сессии (TZ-DOC-308 territory),
+не фиксировался; GET /:id без org-scope — зеркало reference-паттерна; роут authGuard
+(ключ color:* отсутствует в RBAC-каталоге; мутации защищены backend). Browser: MANUAL_BROWSER_CHECK_REQUIRED.
