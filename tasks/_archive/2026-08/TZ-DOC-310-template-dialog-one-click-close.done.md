@@ -2,7 +2,7 @@ ARCHIVE_MARKER
 outcome: DONE
 closed_at: 2026-08-02
 closed_by: Buffy
-commit: PENDING (feat(builder): one-click close + visible category validation (TZ-DOC-310))
+commit: 5e24dc6 (fix(builder): one-click close + visible category validation in setup dialog (TZ-DOC-310))
 verification:
   - acceptance criteria: PASS (one click closes; no-category click shows visible hint, never silently swallowed; single POST; cancel/Escape/backdrop regression green; parentDestroyRef on all 4 dialog.open entry points)
   - frontend targeted Jest: PASS (49 tests / 3 suites, runInBand)
