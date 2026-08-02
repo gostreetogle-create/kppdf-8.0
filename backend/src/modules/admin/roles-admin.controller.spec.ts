@@ -20,6 +20,7 @@ function buildController(opts: {
   remove?: jest.Mock;
   find?: jest.Mock;
   findById?: jest.Mock;
+  countDocuments?: jest.Mock;
 }) {
   const create = opts.create ?? jest.fn();
   const update = opts.update ?? jest.fn();
@@ -28,6 +29,7 @@ function buildController(opts: {
   const roleModel = {
     find: opts.find ?? jest.fn(),
     findById: opts.findById ?? jest.fn(),
+    countDocuments: opts.countDocuments ?? jest.fn(),
   } as any;
   const controller = new RolesAdminController(roleModel, roleService);
   return { controller, create, update, remove, roleModel };
@@ -91,8 +93,6 @@ describe('RolesAdminController (TZ-256.B)', () => {
 
   describe('TZ-257.B admin DTO whitelist', () => {
     it('AdminCreateRoleDto exposes only name/label/description/permissions', () => {
-      const dto = new AdminCreateRoleDto();
-      const keys = Object.keys(dto);
       // Class-validator @ApiProperty-annotated fields only materialize
       // when assigned — inspect the declared property descriptors instead.
       const declared = Object.getOwnPropertyNames(AdminCreateRoleDto.prototype);
@@ -133,16 +133,59 @@ describe('RolesAdminController (TZ-256.B)', () => {
   });
 
   describe('read paths', () => {
-    it('maps list docs through toClientRole', async () => {
+    it('maps a paginated list envelope through toClientRole', async () => {
       const { controller } = buildController({
         find: jest.fn().mockReturnValue({
-          sort: () => ({ lean: () => ({ exec: () => Promise.resolve([roleDoc()]) }) }),
+          sort: () => ({
+            skip: () => ({
+              limit: () => ({
+                lean: () => ({ exec: () => Promise.resolve([roleDoc()]) }),
+              }),
+            }),
+          }),
         }),
+        countDocuments: jest.fn().mockReturnValue({ exec: () => Promise.resolve(1) }),
       });
       const out = await controller.list();
-      expect(out).toHaveLength(1);
-      expect(out[0]).toHaveProperty('name', 'manager');
-      expect(out[0]).not.toHaveProperty('sectionIds');
+      expect(out).toMatchObject({ total: 1, page: 1, limit: 50 });
+      expect(out.items).toHaveLength(1);
+      expect(out.items[0]).toHaveProperty('name', 'manager');
+      expect(out.items[0]).not.toHaveProperty('sectionIds');
+    });
+
+    it('preserves a legacy offset as the exact skip while reporting its page', async () => {
+      const skip = jest.fn().mockReturnValue({
+        limit: () => ({
+          lean: () => ({ exec: () => Promise.resolve([]) }),
+        }),
+      });
+      const { controller } = buildController({
+        find: jest.fn().mockReturnValue({ sort: () => ({ skip }) }),
+        countDocuments: jest.fn().mockReturnValue({ exec: () => Promise.resolve(11) }),
+      });
+
+      const out = await controller.list(undefined, '5', '10');
+      expect(skip).toHaveBeenCalledWith(10);
+      expect(out).toMatchObject({ items: [], total: 11, page: 3, limit: 5 });
+    });
+
+    it('filters roles by search and returns an empty page', async () => {
+      const find = jest.fn().mockReturnValue({
+        sort: () => ({
+          skip: () => ({
+            limit: () => ({
+              lean: () => ({ exec: () => Promise.resolve([]) }),
+            }),
+          }),
+        }),
+      });
+      const { controller } = buildController({
+        find,
+        countDocuments: jest.fn().mockReturnValue({ exec: () => Promise.resolve(2) }),
+      });
+      const out = await controller.list('2', '1', undefined, 'manager');
+      expect(out).toEqual({ items: [], total: 2, page: 2, limit: 1 });
+      expect(find).toHaveBeenCalledWith({ $or: expect.any(Array) });
     });
 
     it('throws for a missing target on the single-read path', async () => {

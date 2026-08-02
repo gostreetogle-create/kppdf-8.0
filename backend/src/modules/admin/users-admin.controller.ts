@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { normalizeAdminListQuery, type AdminListResponse, escapeRegex } from './admin-list-query';
 import { UserService } from '../user/user.service';
 import { CreateUserDto } from '../user/dto/create-user.dto';
 import { UpdateUserDto } from '../user/dto/update-user.dto';
@@ -71,8 +72,10 @@ export class UsersAdminController {
 
   /**
    * GET /api/admin/users
-   * List all users with `passwordHash` REDACTED. Pagination via
-   * `?limit=` + `?offset=`. Optional `?role=` filter (matches user.role).
+   * List users with `passwordHash` REDACTED. Pagination uses `page` +
+   * `limit`; legacy `offset` remains accepted as a compatibility alias.
+   * `search` matches username, email, and display name. Optional `role`
+   * filters by the user's role.
    *
    * Permission gate: `@Permissions('user:admin')` — admin-only because
    * the LIST enumerates every user. `user:read` is reserved for
@@ -82,22 +85,35 @@ export class UsersAdminController {
   @Permissions('user:admin')
   @Roles('admin')
   async list(
-    @Query('limit') limitRaw?: string,
-    @Query('offset') offsetRaw?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+    @Query('search') search?: string,
     @Query('role') role?: string,
-  ): Promise<ReturnType<typeof toClientUser>[]> {
-    const limit = Math.min(parseInt(limitRaw ?? '50', 10) || 50, 200);
-    const offset = parseInt(offsetRaw ?? '0', 10) || 0;
+  ): Promise<AdminListResponse<ReturnType<typeof toClientUser>>> {
+    const query = normalizeAdminListQuery({ page, limit, offset, search, role });
     const filter: Record<string, unknown> = {};
-    if (role) filter.role = role;
-    const docs = await this.userModel
-      .find(filter)
-      .skip(offset)
-      .limit(limit)
-      .sort({ createdAt: -1 })
-      .lean()
-      .exec();
-    return docs.map((d) => toClientUser(d as Record<string, unknown>));
+    if (query.role) filter.role = query.role;
+    if (query.search) {
+      const pattern = new RegExp(escapeRegex(query.search), 'i');
+      filter.$or = [{ username: pattern }, { email: pattern }, { displayName: pattern }];
+    }
+    const [docs, total] = await Promise.all([
+      this.userModel
+        .find(filter)
+        .skip(query.offset ?? (query.page - 1) * query.limit)
+        .limit(query.limit)
+        .sort({ createdAt: -1 })
+        .lean()
+        .exec(),
+      this.userModel.countDocuments(filter).exec(),
+    ]);
+    return {
+      items: docs.map((d) => toClientUser(d as Record<string, unknown>)),
+      total,
+      page: query.page,
+      limit: query.limit,
+    };
   }
 
   @Post()

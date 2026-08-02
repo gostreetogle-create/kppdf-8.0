@@ -3,18 +3,20 @@ import {
   Component,
   DestroyRef,
   Injector,
+  TemplateRef,
+  ViewChild,
   inject,
   signal,
+  OnInit,
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { firstValueFrom, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { CapabilitiesService } from '../../core/capabilities/capabilities.service';
 import {
   extractErrorMessage,
   silentDelete,
-  silentGet,
   silentPatch,
   silentPost,
   type SilentResult,
@@ -25,6 +27,8 @@ import { PiToastService } from '../../shared/ui/toast';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
+import { TableComponent, type ColumnDef } from '../../shared/ui/pi-table.component';
+import { PiUsersService, type AdminUser } from '../../shared/services/pi-users.service';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import {
   UserFormDialogComponent,
@@ -48,23 +52,14 @@ import {
  * All HTTP goes through `silent-*` helpers — the observables never
  * error, so RxJS never logs noise for expected 4xx responses.
  */
-interface ClientUser {
-  id: string;
-  username: string;
-  email: string;
-  displayName: string;
-  role: string;
-  isActive: boolean;
-  permissions: string[];
-  createdAt?: string;
-  updatedAt?: string;
-}
+type ClientUser = AdminUser;
+const PAGE_SIZE = 50;
 
 @Component({
   selector: 'pi-users-admin-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiPageHeaderComponent, ButtonComponent, PiRowActionsComponent],
+  imports: [PiPageHeaderComponent, ButtonComponent, PiRowActionsComponent, TableComponent],
   template: `
     <app-pi-page-header
       eyebrow="администрирование"
@@ -74,7 +69,16 @@ interface ClientUser {
     />
 
     <section class="pi-page-frame pi-edge-bleed py-page-y">
-      <div class="flex items-center justify-end mb-4">
+      <div class="flex items-center justify-between gap-3 mb-4">
+        <input
+          type="search"
+          class="pi-input w-72"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          placeholder="Поиск пользователей…"
+          aria-label="Поиск пользователей"
+          data-test="users-admin-search"
+        />
         @if (caps.hasAny(['user:write'])) {
           <app-pi-button
             variant="default"
@@ -86,108 +90,86 @@ interface ClientUser {
           </app-pi-button>
         }
       </div>
-      @if (loading()) {
-        <p class="text-sm text-muted-foreground">Загрузка…</p>
-      } @else if (error(); as err) {
-        <p class="text-sm text-destructive" data-testid="users-admin-error">{{ err }}</p>
-      } @else {
-        <table class="pi-table w-full" data-testid="users-admin-table">
-          <thead>
-            <tr>
-              <th class="text-left pi-table-th">Логин</th>
-              <th class="text-left pi-table-th">ФИО</th>
-              <th class="text-left pi-table-th">Email</th>
-              <th class="text-left pi-table-th">Роль</th>
-              <th class="text-left pi-table-th">Активен</th>
-              <th class="text-left pi-table-th w-64">Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (u of users(); track u.id) {
-              <tr class="pi-table-tr">
-                <td class="pi-table-td font-mono text-xs">{{ u.username }}</td>
-                <td class="pi-table-td">{{ u.displayName }}</td>
-                <td class="pi-table-td text-muted-foreground">{{ u.email }}</td>
-                <td class="pi-table-td">
-                  <span class="font-mono text-xs pi-badge pi-badge-neutral">{{ u.role }}</span>
-                </td>
-                <td class="pi-table-td">
-                  @if (u.isActive) {
-                    <span class="pi-badge pi-badge-success">да</span>
-                  } @else {
-                    <span class="pi-badge pi-badge-warning">нет</span>
-                  }
-                </td>
-                <td class="pi-table-td">
-                  <div class="flex items-center justify-end gap-2">
-                    @if (loadingRowId() === u.id) {
-                      <span
-                        class="text-xs text-muted-foreground"
-                        role="status"
-                        aria-label="Загрузка"
-                        data-test="users-admin-row-loading"
-                      >
-                        Загрузка…
-                      </span>
-                    }
-                    @if (caps.hasAny(['user:admin'])) {
-                      <button
-                        type="button"
-                        class="pi-icon-btn pi-focus-ring"
-                        (click)="onResetPassword(u)"
-                        [attr.aria-label]="'Сбросить пароль ' + u.username"
-                        title="Сбросить пароль"
-                        [disabled]="loadingRowId() === u.id"
-                        data-test="users-admin-reset-password"
-                      >
-                        <span aria-hidden="true">⚿</span>
-                      </button>
-                    }
-                    @if (caps.hasAny(['user:write'])) {
-                      <button
-                        type="button"
-                        class="pi-icon-btn pi-focus-ring"
-                        (click)="onToggleActive(u)"
-                        [attr.aria-label]="
-                          u.isActive ? 'Деактивировать ' + u.username : 'Активировать ' + u.username
-                        "
-                        [title]="u.isActive ? 'Деактивировать' : 'Активировать'"
-                        [disabled]="loadingRowId() === u.id"
-                        data-test="users-admin-toggle-active"
-                      >
-                        <span aria-hidden="true">{{ u.isActive ? '⏸' : '▶' }}</span>
-                      </button>
-                    }
-                    <app-pi-row-actions
-                      [row]="u"
-                      [showEdit]="caps.hasAny(['user:write'])"
-                      [showDelete]="caps.hasAny(['user:admin'])"
-                      [loading]="loadingRowId() === u.id"
-                      editLabel="Редактировать"
-                      dataTestEdit="users-admin-edit"
-                      deleteLabel="Удалить"
-                      dataTestDelete="users-admin-delete"
-                      (edit)="onEdit($event)"
-                      (delete)="onDelete($event)"
-                    />
-                  </div>
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="6" class="pi-table-td text-center text-muted-foreground py-8">
-                  Пользователи не найдены.
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+      @if (error(); as err) {
+        <p role="alert" class="text-sm text-destructive mb-4" data-testid="users-admin-error">
+          {{ err }}
+        </p>
       }
+      <div class="overflow-x-auto hairline rounded-sm">
+        <app-pi-table
+          [data]="users()"
+          [columns]="cols"
+          [loading]="loading()"
+          [total]="total()"
+          [page]="page()"
+          [pageSize]="pageSize"
+          [emptyMessage]="searchQuery() ? 'Ничего не найдено.' : 'Пользователи не найдены.'"
+          [ariaLabel]="'Список пользователей'"
+          [rowActions]="rowActionsTplBinding"
+          (pageChange)="onPageChange($event)"
+        >
+          <ng-template #rowActionsTpl let-u>
+            <div class="flex items-center justify-end gap-2">
+              @if (loadingRowId() === u.id) {
+                <span
+                  class="text-xs text-muted-foreground"
+                  role="status"
+                  aria-label="Загрузка"
+                  data-test="users-admin-row-loading"
+                >
+                  Загрузка…
+                </span>
+              }
+              @if (caps.hasAny(['user:admin'])) {
+                <button
+                  type="button"
+                  class="pi-icon-btn pi-focus-ring"
+                  (click)="onResetPassword(u)"
+                  [attr.aria-label]="'Сбросить пароль ' + u.username"
+                  title="Сбросить пароль"
+                  [disabled]="loadingRowId() === u.id"
+                  data-test="users-admin-reset-password"
+                >
+                  <span aria-hidden="true">⚿</span>
+                </button>
+              }
+              @if (caps.hasAny(['user:write'])) {
+                <button
+                  type="button"
+                  class="pi-icon-btn pi-focus-ring"
+                  (click)="onToggleActive(u)"
+                  [attr.aria-label]="
+                    u.isActive ? 'Деактивировать ' + u.username : 'Активировать ' + u.username
+                  "
+                  [title]="u.isActive ? 'Деактивировать' : 'Активировать'"
+                  [disabled]="loadingRowId() === u.id"
+                  data-test="users-admin-toggle-active"
+                >
+                  <span aria-hidden="true">{{ u.isActive ? '⏸' : '▶' }}</span>
+                </button>
+              }
+              <app-pi-row-actions
+                [row]="u"
+                [showEdit]="caps.hasAny(['user:write'])"
+                [showDelete]="caps.hasAny(['user:admin'])"
+                [loading]="loadingRowId() === u.id"
+                editLabel="Редактировать"
+                dataTestEdit="users-admin-edit"
+                deleteLabel="Удалить"
+                dataTestDelete="users-admin-delete"
+                (edit)="onEdit($event)"
+                (delete)="onDelete($event)"
+              />
+            </div>
+          </ng-template>
+        </app-pi-table>
+      </div>
     </section>
   `,
 })
-export class UsersAdminPage {
+export class UsersAdminPage implements OnInit {
   private readonly http = inject(HttpClient);
+  private readonly usersService = inject(PiUsersService);
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly toast = inject(PiToastService);
   private readonly dialog = inject(PiDialogService);
@@ -199,28 +181,66 @@ export class UsersAdminPage {
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly loadingRowId = signal<string | null>(null);
+  readonly page = signal(1);
+  readonly total = signal(0);
+  readonly pageSize = PAGE_SIZE;
+  readonly searchQuery = signal('');
+  private requestVersion = 0;
+
+  protected readonly cols: ColumnDef<ClientUser>[] = [
+    { key: 'username', label: 'Логин', sticky: 'left' },
+    { key: 'displayName', label: 'ФИО' },
+    { key: 'email', label: 'Email', cellClass: 'text-muted-foreground' },
+    { key: 'role', label: 'Роль', cellClass: 'font-mono text-xs' },
+    {
+      key: 'isActive',
+      label: 'Активен',
+      format: (u) => (u.isActive ? 'да' : 'нет'),
+    },
+  ];
+
+  @ViewChild('rowActionsTpl', { static: true })
+  private readonly rowActionsTplRef!: TemplateRef<{ $implicit: ClientUser }>;
+  protected rowActionsTplBinding: TemplateRef<{ $implicit: ClientUser }> | null = null;
 
   constructor() {
-    void this.refresh();
+    this.refresh();
   }
 
-  private async refresh(): Promise<void> {
+  ngOnInit(): void {
+    this.rowActionsTplBinding = this.rowActionsTplRef;
+  }
+
+  private refresh(): void {
+    const version = ++this.requestVersion;
     this.loading.set(true);
-    try {
-      const data = await firstValueFrom(
-        silentGet<ClientUser[]>(this.http, `${this.baseUrl}/admin/users?limit=200`),
-      );
-      if (data.ok) {
-        this.users.set(data.data);
-        this.error.set(null);
-      } else {
-        this.error.set(this.describe(data.error));
-      }
-    } catch (err) {
-      this.error.set(this.describe(err));
-    } finally {
-      this.loading.set(false);
-    }
+    this.usersService
+      .list({ page: this.page(), limit: PAGE_SIZE, search: this.searchQuery() })
+      .subscribe((data) => {
+        if (version !== this.requestVersion) return;
+        this.loading.set(false);
+        if (data.ok) {
+          this.users.set(data.data.items);
+          this.total.set(data.data.total);
+          this.page.set(data.data.page);
+          this.error.set(null);
+        } else {
+          this.error.set(this.describe(data.error));
+        }
+      });
+  }
+
+  protected onSearchInput(event: Event): void {
+    const value = (event.target as HTMLInputElement).value.trim();
+    this.searchQuery.set(value);
+    this.page.set(1);
+    this.refresh();
+  }
+
+  protected onPageChange(nextPage: number): void {
+    if (nextPage === this.page()) return;
+    this.page.set(nextPage);
+    this.refresh();
   }
 
   // ── Create ──

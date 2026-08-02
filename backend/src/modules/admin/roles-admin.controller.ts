@@ -6,8 +6,10 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
+import { normalizeAdminListQuery, type AdminListResponse, escapeRegex } from './admin-list-query';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Permissions } from '../../common/decorators/permissions.decorator';
@@ -61,9 +63,34 @@ export class RolesAdminController {
   @Get()
   @Permissions('role:read')
   @Roles('admin')
-  async list(): Promise<ReturnType<typeof toClientRole>[]> {
-    const docs = await this.roleModel.find().sort({ name: 1 }).lean().exec();
-    return docs.map((d) => toClientRole(d as Record<string, unknown>));
+  async list(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+    @Query('search') search?: string,
+  ): Promise<AdminListResponse<ReturnType<typeof toClientRole>>> {
+    const query = normalizeAdminListQuery({ page, limit, offset, search });
+    const filter: Record<string, unknown> = {};
+    if (query.search) {
+      const pattern = new RegExp(escapeRegex(query.search), 'i');
+      filter.$or = [{ name: pattern }, { label: pattern }, { description: pattern }];
+    }
+    const [docs, total] = await Promise.all([
+      this.roleModel
+        .find(filter)
+        .sort({ name: 1 })
+        .skip(query.offset ?? (query.page - 1) * query.limit)
+        .limit(query.limit)
+        .lean()
+        .exec(),
+      this.roleModel.countDocuments(filter).exec(),
+    ]);
+    return {
+      items: docs.map((d) => toClientRole(d as Record<string, unknown>)),
+      total,
+      page: query.page,
+      limit: query.limit,
+    };
   }
 
   /**

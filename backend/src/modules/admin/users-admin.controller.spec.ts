@@ -18,13 +18,19 @@ function buildController(opts: {
   remove?: jest.Mock;
   adminResetPassword?: jest.Mock;
   findById?: jest.Mock;
+  find?: jest.Mock;
+  countDocuments?: jest.Mock;
 }) {
   const create = opts.create ?? jest.fn();
   const update = opts.update ?? jest.fn();
   const remove = opts.remove ?? jest.fn();
   const adminResetPassword = opts.adminResetPassword ?? jest.fn();
   const userService = { create, update, remove, adminResetPassword } as unknown as UserService;
-  const userModel = { findById: opts.findById ?? jest.fn() } as any;
+  const userModel = {
+    findById: opts.findById ?? jest.fn(),
+    find: opts.find ?? jest.fn(),
+    countDocuments: opts.countDocuments ?? jest.fn(),
+  } as any;
   const roleModel = {} as any;
   const controller = new UsersAdminController(userModel, roleModel, userService);
   return { controller, create, update, remove, adminResetPassword, userModel };
@@ -113,6 +119,74 @@ describe('UsersAdminController (TZ-257.A.1)', () => {
       const dto = new AdminResetPasswordDto();
       expect(Object.keys(dto)).not.toContain('oldPassword');
       expect((dto as unknown as Record<string, unknown>)['oldPassword']).toBeUndefined();
+    });
+  });
+
+  describe('paginated list', () => {
+    function queryChain(docs: unknown[]) {
+      return {
+        skip: () => ({
+          limit: () => ({
+            sort: () => ({ lean: () => ({ exec: () => Promise.resolve(docs) }) }),
+          }),
+        }),
+      };
+    }
+
+    it('uses safe defaults, returns total, and maps items', async () => {
+      const { controller } = buildController({
+        find: jest.fn().mockReturnValue(queryChain([clientUserDoc()])),
+        countDocuments: jest.fn().mockReturnValue({ exec: () => Promise.resolve(3) }),
+      });
+
+      const out = await controller.list();
+      expect(out).toMatchObject({ total: 3, page: 1, limit: 50 });
+      expect(out.items).toHaveLength(1);
+      expect(out.items[0]).not.toHaveProperty('passwordHash');
+    });
+
+    it('applies page, limit, search, and role filters before pagination', async () => {
+      const find = jest.fn().mockReturnValue(queryChain([clientUserDoc()]));
+      const countDocuments = jest.fn().mockReturnValue({ exec: () => Promise.resolve(1) });
+      const { controller } = buildController({ find, countDocuments });
+
+      const out = await controller.list('2', '5', undefined, 'ali', 'manager');
+      expect(out).toMatchObject({ total: 1, page: 2, limit: 5 });
+      expect(find).toHaveBeenCalledWith(expect.objectContaining({
+        role: 'manager',
+        $or: expect.any(Array),
+      }));
+      expect(countDocuments).toHaveBeenCalledWith(expect.objectContaining({ role: 'manager' }));
+    });
+
+    it('preserves a legacy offset as the exact skip while reporting its page', async () => {
+      const skip = jest.fn().mockReturnValue({
+        limit: () => ({
+          sort: () => ({ lean: () => ({ exec: () => Promise.resolve([]) }) }),
+        }),
+      });
+      const { controller } = buildController({
+        find: jest.fn().mockReturnValue({ skip }),
+        countDocuments: jest.fn().mockReturnValue({ exec: () => Promise.resolve(11) }),
+      });
+
+      const out = await controller.list(undefined, '5', '10');
+      expect(skip).toHaveBeenCalledWith(10);
+      expect(out).toMatchObject({ items: [], total: 11, page: 3, limit: 5 });
+    });
+
+    it('returns an empty page with valid envelope metadata', async () => {
+      const { controller } = buildController({
+        find: jest.fn().mockReturnValue(queryChain([])),
+        countDocuments: jest.fn().mockReturnValue({ exec: () => Promise.resolve(1) }),
+      });
+
+      await expect(controller.list('3', '1')).resolves.toEqual({
+        items: [],
+        total: 1,
+        page: 3,
+        limit: 1,
+      });
     });
   });
 

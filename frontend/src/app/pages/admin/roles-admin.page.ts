@@ -3,17 +3,19 @@ import {
   Component,
   DestroyRef,
   Injector,
+  TemplateRef,
+  ViewChild,
   inject,
   signal,
+  OnInit,
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { firstValueFrom, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { CapabilitiesService } from '../../core/capabilities/capabilities.service';
 import {
   extractErrorMessage,
   silentDelete,
-  silentGet,
   silentPatch,
   silentPost,
   type SilentResult,
@@ -24,6 +26,8 @@ import { PiToastService } from '../../shared/ui/toast';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
+import { TableComponent, type ColumnDef } from '../../shared/ui/pi-table.component';
+import { PiRolesService, type AdminRole } from '../../shared/services/pi-roles.service';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import {
   RoleFormDialogComponent,
@@ -45,22 +49,14 @@ import {
  * All HTTP goes through `silent-*` helpers — the observables never
  * error, so RxJS never logs noise for expected 4xx responses.
  */
-interface ClientRole {
-  id: string;
-  name: string;
-  label: string;
-  description?: string;
-  permissions: string[];
-  isSystem: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
+type ClientRole = AdminRole;
+const PAGE_SIZE = 50;
 
 @Component({
   selector: 'pi-roles-admin-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiPageHeaderComponent, ButtonComponent, PiRowActionsComponent],
+  imports: [PiPageHeaderComponent, ButtonComponent, PiRowActionsComponent, TableComponent],
   template: `
     <app-pi-page-header
       eyebrow="администрирование"
@@ -70,7 +66,16 @@ interface ClientRole {
     />
 
     <section class="pi-page-frame pi-edge-bleed py-page-y">
-      <div class="flex items-center justify-end mb-4">
+      <div class="flex items-center justify-between gap-3 mb-4">
+        <input
+          type="search"
+          class="pi-input w-72"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          placeholder="Поиск ролей…"
+          aria-label="Поиск ролей"
+          data-test="roles-admin-search"
+        />
         @if (caps.hasAny(['role:write'])) {
           <app-pi-button
             variant="default"
@@ -82,90 +87,62 @@ interface ClientRole {
           </app-pi-button>
         }
       </div>
-      @if (loading()) {
-        <p class="text-sm text-muted-foreground">Загрузка…</p>
-      } @else if (error(); as err) {
-        <p class="text-sm text-destructive" data-testid="roles-admin-error">
+      @if (error(); as err) {
+        <p role="alert" class="text-sm text-destructive mb-4" data-testid="roles-admin-error">
           {{ err }}
         </p>
-      } @else {
-        <table class="pi-table w-full" data-testid="roles-admin-table">
-          <thead>
-            <tr>
-              <th class="text-left pi-table-th">Имя</th>
-              <th class="text-left pi-table-th">Название</th>
-              <th class="text-left pi-table-th">Permissions</th>
-              <th class="text-left pi-table-th">Тип</th>
-              <th class="text-left pi-table-th w-40">Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (r of roles(); track r.id) {
-              <tr class="pi-table-tr">
-                <td class="pi-table-td font-mono text-xs">{{ r.name }}</td>
-                <td class="pi-table-td">{{ r.label }}</td>
-                <td class="pi-table-td">
-                  @if (r.permissions.length === 0) {
-                    <span class="font-mono text-xs pi-badge pi-badge-neutral">—</span>
-                  } @else {
-                    @for (p of r.permissions; track p) {
-                      <span class="font-mono text-xs pi-badge pi-badge-neutral mr-1">{{ p }}</span>
-                    }
-                  }
-                </td>
-                <td class="pi-table-td">
-                  @if (r.isSystem) {
-                    <span class="pi-badge pi-badge-warning">system</span>
-                  } @else {
-                    <span class="pi-badge pi-badge-success">custom</span>
-                  }
-                </td>
-                <td class="pi-table-td">
-                  @if (!r.isSystem) {
-                    <div class="flex items-center justify-end gap-2">
-                      @if (loadingRowId() === r.id) {
-                        <span
-                          class="text-xs text-muted-foreground"
-                          role="status"
-                          aria-label="Загрузка"
-                          data-test="roles-admin-row-loading"
-                        >
-                          Загрузка…
-                        </span>
-                      }
-                      <app-pi-row-actions
-                        [row]="r"
-                        [showEdit]="caps.hasAny(['role:write'])"
-                        [showDelete]="caps.hasAny(['role:admin'])"
-                        [loading]="loadingRowId() === r.id"
-                        editLabel="Редактировать"
-                        dataTestEdit="roles-admin-edit"
-                        deleteLabel="Удалить"
-                        dataTestDelete="roles-admin-delete"
-                        (edit)="onEdit($event)"
-                        (delete)="onDelete($event)"
-                      />
-                    </div>
-                  } @else {
-                    <span class="text-xs text-muted-foreground">read-only</span>
-                  }
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="5" class="pi-table-td text-center text-muted-foreground py-8">
-                  Роли не найдены.
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
       }
+      <div class="overflow-x-auto hairline rounded-sm">
+        <app-pi-table
+          [data]="roles()"
+          [columns]="cols"
+          [loading]="loading()"
+          [total]="total()"
+          [page]="page()"
+          [pageSize]="pageSize"
+          [emptyMessage]="searchQuery() ? 'Ничего не найдено.' : 'Роли не найдены.'"
+          [ariaLabel]="'Список ролей'"
+          [rowActions]="rowActionsTplBinding"
+          (pageChange)="onPageChange($event)"
+        >
+          <ng-template #rowActionsTpl let-r>
+            @if (!r.isSystem) {
+              <div class="flex items-center justify-end gap-2">
+                @if (loadingRowId() === r.id) {
+                  <span
+                    class="text-xs text-muted-foreground"
+                    role="status"
+                    aria-label="Загрузка"
+                    data-test="roles-admin-row-loading"
+                  >
+                    Загрузка…
+                  </span>
+                }
+                <app-pi-row-actions
+                  [row]="r"
+                  [showEdit]="caps.hasAny(['role:write'])"
+                  [showDelete]="caps.hasAny(['role:admin'])"
+                  [loading]="loadingRowId() === r.id"
+                  editLabel="Редактировать"
+                  dataTestEdit="roles-admin-edit"
+                  deleteLabel="Удалить"
+                  dataTestDelete="roles-admin-delete"
+                  (edit)="onEdit($event)"
+                  (delete)="onDelete($event)"
+                />
+              </div>
+            } @else {
+              <span class="text-xs text-muted-foreground">read-only</span>
+            }
+          </ng-template>
+        </app-pi-table>
+      </div>
     </section>
   `,
 })
-export class RolesAdminPage {
+export class RolesAdminPage implements OnInit {
   private readonly http = inject(HttpClient);
+  private readonly rolesService = inject(PiRolesService);
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly toast = inject(PiToastService);
   private readonly dialog = inject(PiDialogService);
@@ -177,28 +154,69 @@ export class RolesAdminPage {
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly loadingRowId = signal<string | null>(null);
+  readonly page = signal(1);
+  readonly total = signal(0);
+  readonly pageSize = PAGE_SIZE;
+  readonly searchQuery = signal('');
+  private requestVersion = 0;
+
+  protected readonly cols: ColumnDef<ClientRole>[] = [
+    { key: 'name', label: 'Имя', sticky: 'left', cellClass: 'font-mono text-xs' },
+    { key: 'label', label: 'Название' },
+    {
+      key: 'permissions',
+      label: 'Permissions',
+      format: (r) => (r.permissions.length > 0 ? r.permissions.join(', ') : '—'),
+    },
+    {
+      key: 'isSystem',
+      label: 'Тип',
+      format: (r) => (r.isSystem ? 'system' : 'custom'),
+    },
+  ];
+
+  @ViewChild('rowActionsTpl', { static: true })
+  private readonly rowActionsTplRef!: TemplateRef<{ $implicit: ClientRole }>;
+  protected rowActionsTplBinding: TemplateRef<{ $implicit: ClientRole }> | null = null;
 
   constructor() {
-    void this.refresh();
+    this.refresh();
   }
 
-  private async refresh(): Promise<void> {
+  ngOnInit(): void {
+    this.rowActionsTplBinding = this.rowActionsTplRef;
+  }
+
+  private refresh(): void {
+    const version = ++this.requestVersion;
     this.loading.set(true);
-    try {
-      const data = await firstValueFrom(
-        silentGet<ClientRole[]>(this.http, `${this.baseUrl}/admin/roles`),
-      );
-      if (data.ok) {
-        this.roles.set(data.data);
-        this.error.set(null);
-      } else {
-        this.error.set(this.describe(data.error));
-      }
-    } catch (err) {
-      this.error.set(this.describe(err));
-    } finally {
-      this.loading.set(false);
-    }
+    this.rolesService
+      .list({ page: this.page(), limit: PAGE_SIZE, search: this.searchQuery() })
+      .subscribe((data) => {
+        if (version !== this.requestVersion) return;
+        this.loading.set(false);
+        if (data.ok) {
+          this.roles.set(data.data.items);
+          this.total.set(data.data.total);
+          this.page.set(data.data.page);
+          this.error.set(null);
+        } else {
+          this.error.set(this.describe(data.error));
+        }
+      });
+  }
+
+  protected onSearchInput(event: Event): void {
+    const value = (event.target as HTMLInputElement).value.trim();
+    this.searchQuery.set(value);
+    this.page.set(1);
+    this.refresh();
+  }
+
+  protected onPageChange(nextPage: number): void {
+    if (nextPage === this.page()) return;
+    this.page.set(nextPage);
+    this.refresh();
   }
 
   // ── Create ──
