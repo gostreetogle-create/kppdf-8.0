@@ -98,3 +98,43 @@ flowchart LR
 ## Индекс задач
 
 См. `docs/pages/PAGE-TZ-INDEX.md` и `tasks/TZ-ACCESS-*`, `TZ-JOURNEY-*`, `TZ-SALES-*`.
+
+## Карта route → pageKey / capability (Phase 1)
+
+Источник: peer-audit `docs/audits/2026-08-02-rbac-capability-gap-audit.md` Finding 1
++ `app.routes.ts` (2026-08-02). Phase 1 = **page целиком** (не кнопка×кнопка).
+Gate сегодня: ⛔ нет page/capability CanMatch · ✅ capabilityRouteGuard.
+
+| # | Route | pageKey | Capability (Phase 1) | Gate сейчас |
+|--:|-------|---------|----------------------|-------------|
+| 1 | `/materials` | `materials` | `page:materials` | ⛔ |
+| 2 | `/organizations` | `organizations` | `page:organizations` | ⛔ |
+| 3 | `/dictionaries` | `dictionaries` | `page:dictionaries` | ⛔ |
+| 4 | `/categories` | `categories` | `page:categories` | ⛔ |
+| 5 | `/doc-template-categories` | `doc-template-categories` | `page:doc-template-categories` | ⛔ |
+| 6 | `/color-references` | `color-references` | `page:color-references` | ⛔ |
+| 7 | `/products` | `products` | `page:products` | ⛔ |
+| 8 | `/products/:id` | `products` | `page:products` | ⛔ |
+| 9 | `/modules` | `modules` | `page:modules` | ⛔ |
+| 10 | `/modules/:id` | `modules` | `page:modules` | ⛔ |
+| 11 | `/work-types` | `work-types` | `page:work-types` | ⛔ |
+| 12 | `/orders` | `orders` | `page:orders` | ⛔ |
+| 13 | `/contracts` | `contracts` | `page:contracts` | ⛔ |
+| 14 | `/doc-constructor/templates` | `doc-templates` | `page:doc-templates` | ⛔ |
+| 15 | `/doc-constructor/documents` | `doc-documents` | `page:doc-documents` | ⛔ |
+| 16 | `/doc-constructor/texts` | `doc-texts` | `page:doc-texts` | ⛔ |
+| 17 | `/doc-constructor/tables` | `doc-tables` | `page:doc-tables` | ⛔ |
+| 18 | `/doc-constructor/builder/:id` | `doc-builder` | `page:doc-builder` | ⛔ |
+| 19 | `/inventory` | `inventory` | `page:inventory` | ⛔ |
+| 20 | `/storage-items` | `storage-items` | `page:storage-items` | ⛔ |
+| 21 | `/stock-movements` | `stock-movements` | `page:stock-movements` | ⛔ |
+| 22 | `/admin` | `admin` | `page:admin` *(или redirect)* | ⛔ |
+| 23 | `/admin/users` | `admin-users` | `user:admin` | ✅ |
+| 24 | `/admin/roles` | `admin-roles` | `role:read` | ✅ |
+| 25 | `/people` *(planned)* | `people` | `page:people` | — |
+| 26 | `/proposals` *(planned KP)* | `proposals` | `page:proposals` | — |
+| 27 | `/production/gantt` *(parked)* | `gantt` | `page:gantt` | — |
+| 28 | `/login` + `/forbidden` | — | public / gateway | n/a |
+
+Wiring: `TZ-ACCESS-303` (routes) + `TZ-ACCESS-304` (nav). Policy: `TZ-RBAC-302`.
+`/auth/me` + `pages[]`: `TZ-ACCESS-301` + `TZ-RBAC-304`.

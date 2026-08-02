@@ -38,6 +38,23 @@ Examples (taken verbatim from the seeded catalog):
 | `finance:admin` | finance | admin |
 | `*` | (any) | (any) |
 
+### `user:read` vs `user:admin` (self-service boundary)
+
+> Peer-audit 2026-08-02 Finding 5 — см. также `TZ-RBAC-304`,
+> `docs/audits/2026-08-02-rbac-capability-gap-audit.md`.
+
+| Key | Allowed surfaces | Forbidden |
+|-----|------------------|-----------|
+| `user:read` | Self-service: `GET /auth/me`; optional self profile read paths that never enumerate other users | `GET /api/admin/users` list (enumerates all accounts) |
+| `user:admin` | Admin user directory list/create/role/password resets (`/api/admin/users*`) | Must not be confused with «any authenticated user» |
+
+Code already documents this split (`frontend/.../app.routes.ts` admin/users gate;
+`users-admin.controller.ts` comments). `/auth/me` today returns `permissions[]`
+but **not** yet `pages[]` — page ACL delivery is `TZ-ACCESS-301` + `TZ-RBAC-304`.
+
+There is **no** dedicated `_backlog/` TZ solely named `/me`; do not invent a
+parallel endpoint — extend `/auth/me`.
+
 ## 2. Three-action semantics
 
 | Action | Scope | Typical surface |
