@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
+import { BadRequestException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { TextBlockService } from './text-block.service';
 import { TextBlock } from './text-block.schema';
@@ -118,11 +119,7 @@ describe('TextBlockService (TZ-DOC-322)', () => {
 
     await expect(
       service.create({ name: 'No default', content: 'x' }),
-    ).rejects.toMatchObject({
-      // NestJS BadRequestException has status 400; we don't pin the
-      // exact message here so future copy-edits don't break the test.
-      status: 400,
-    });
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('persists legacy category enum on the schema without affecting categoryId resolution', async () => {

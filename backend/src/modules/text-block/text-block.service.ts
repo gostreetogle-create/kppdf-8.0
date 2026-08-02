@@ -12,6 +12,7 @@ import {
   TextBlock,
   type TextBlockDocument,
 } from './text-block.schema';
+import { SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG } from '../text-block-category/text-block-category.schema';
 import { CreateTextBlockDto } from './dto/create-text-block.dto';
 import { UpdateTextBlockDto } from './dto/update-text-block.dto';
 import { sanitizeHtml, sanitizeBlockContent } from '../../common/sanitize-html';
