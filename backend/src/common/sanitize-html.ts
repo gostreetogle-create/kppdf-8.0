@@ -1,8 +1,13 @@
-import DOMPurify from 'dompurify';
+import DOMPurify, { type WindowLike } from 'dompurify';
 import { JSDOM } from 'jsdom';
 
 const { window } = new JSDOM('');
-const purify = DOMPurify(window as unknown as typeof globalThis);
+// TZ-MATERIALS-308 code-review fix / trustedTypes type blocker:
+// dompurify v3.4 ожидает параметр `WindowLike` (= Pick<typeof globalThis, …>
+// & … & Pick<TrustedTypesWindow, 'trustedTypes'>). JSDOM-окно не реализует
+// Trusted Types, поэтому каст в `typeof globalThis` ломал tsc (trustedTypes
+// обязателен в типе). Кастим в официальный экспортируемый тип библиотеки.
+const purify = DOMPurify(window as unknown as WindowLike);
 
 const ALLOWED_TAGS = [
   'p', 'h1', 'h2', 'h3',
