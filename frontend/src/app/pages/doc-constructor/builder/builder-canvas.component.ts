@@ -63,11 +63,6 @@ import {
         </div>
       }
 
-      <!-- Header text indicator -->
-      @if (headerText()) {
-        <div class="canvas-header-text">{{ headerText() }}</div>
-      }
-
       <div
         cdkDropList
         [id]="CANVAS_DROPLIST_ID"
@@ -290,11 +285,6 @@ import {
         }
       </div>
 
-      <!-- Footer text indicator -->
-      @if (footerText()) {
-        <div class="canvas-footer-text">{{ footerText() }}</div>
-      }
-
       <!-- Page number indicator -->
       @if (pageNumbering()) {
         <div class="canvas-page-number">1</div>
@@ -365,32 +355,6 @@ import {
         color: var(--color-muted);
         margin: 0;
         max-width: 320px;
-      }
-
-      /* Header text on canvas */
-      .canvas-header-text {
-        position: relative;
-        z-index: 2;
-        padding: 12px 16px 8px;
-        font-size: 12px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--color-muted);
-        border-bottom: 1px dashed var(--color-rule);
-        text-align: center;
-      }
-
-      /* Footer text on canvas */
-      .canvas-footer-text {
-        position: relative;
-        z-index: 2;
-        padding: 8px 16px 12px;
-        font-size: 12px;
-        font-weight: 500;
-        color: var(--color-muted);
-        border-top: 1px dashed var(--color-rule);
-        text-align: center;
       }
 
       /* Page number on canvas */
@@ -573,8 +537,6 @@ export class BuilderCanvasComponent {
   readonly backgroundImages = input<string[]>([]);
   readonly orientation = input<'portrait' | 'landscape'>('portrait');
   readonly backgroundOpacity = input<number>(0.3);
-  readonly headerText = input<string>('');
-  readonly footerText = input<string>('');
   readonly pageNumbering = input<boolean>(false);
   readonly pageSize = input<'A3' | 'A4' | 'A5'>('A4');
   /** TZ-259.2: 'editor' | 'preview' — preview hides editor chrome and locks drag. */

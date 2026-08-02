@@ -119,8 +119,9 @@
 | `backgroundImages` | `string[]` | Фоны |
 | `orientation` | `portrait \| landscape` | Ориентация |
 | `backgroundOpacity` | `number` | Прозрачность фона |
-| `headerText` / `footerText` | `string` | Шапка/подвал |
-| `pageNumbering` | `boolean` | Нумерация |
+| `pageNumbering` | `boolean` | Нумерация страниц (TZ-DOC-311: единственное сохраняемое свойство из legacy-набора) |
+
+> TZ-DOC-311: `headerText` / `footerText` удалены из инпутов холста — шапка/подвал создаются текстовыми блоками конструктора.
 | `pageSize` | `string` | A4 / A5 / Letter |
 | `snapEnabled` | `boolean` | Snap-to-grid для overlay |
 | `gridSize` | `number` | Шаг сетки |
@@ -257,8 +258,8 @@ flowBlocks    = computed(() => blocks.filter(b => !isOverlayBlock(b)))
 - **Ориентация:** книжная / альбомная (BookOpen/Columns icons)
 - **Формат страницы:** A4 / A5 / Letter
 - **Прозрачность фона:** ползунок
-- **Шапка / Подвал:** текстовые поля
-- **Нумерация страниц:** toggle
+- **Нумерация страниц:** toggle (единственное сохраняемое свойство шаблона)
+- > TZ-DOC-311: «Оглавление», «Шапка» и «Подвал» убраны из панели свойств — тексты вставляются блоками
 - **Фоны:** превью загруженных, установка по умолчанию, удаление
 
 ## Состояние (сигналы BuilderPage)
@@ -321,7 +322,7 @@ patchBlockSettings(blockId, { settings })
 | `onOverlayResize` | `settings.imageWidth`, `settings.imageHeight` |
 | `onMarginReset` | `settings.width = 100`, `settings.marginLeft = 0` |
 | `onMultiMarginUpdate` | Массовое обновление margin для нескольких блоков |
-| `onTemplateUpdate` | Patch шаблона (orientation, pageSize, headerText, footerText, etc.) |
+| `onTemplateUpdate` | Patch шаблона (pageNumbering, backgroundOpacity и др. DTO-поля; headerText/footerText/tableOfContents НЕ отправляются после TZ-DOC-311) |
 
 ## Тулбар (Builder Toolbar)
 

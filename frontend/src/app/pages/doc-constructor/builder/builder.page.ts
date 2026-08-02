@@ -340,8 +340,6 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
           [backgroundImages]="backgroundImages()"
           [orientation]="orientation()"
           [backgroundOpacity]="template()?.backgroundOpacity ?? 0.3"
-          [headerText]="template()?.headerText ?? ''"
-          [footerText]="template()?.footerText ?? ''"
           [pageNumbering]="template()?.pageNumbering ?? false"
           [pageSize]="template()?.pageSize ?? 'A4'"
           [snapEnabled]="snapEnabled()"

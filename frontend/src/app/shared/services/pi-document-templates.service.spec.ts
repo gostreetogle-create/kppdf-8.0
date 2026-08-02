@@ -174,6 +174,16 @@ describe('DocumentTemplatesService', () => {
     });
   });
 
+  it('update() PATCHes pageNumbering to /:id (TZ-DOC-311)', () => {
+    svc.update('dt1', { pageNumbering: true }).subscribe((res) => {
+      if (res.ok) expect(res.data.pageNumbering).toBe(true);
+    });
+    const req = httpMock.expectOne('http://test/api/document-templates/dt1');
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ pageNumbering: true });
+    req.flush({ _id: 'dt1', pageNumbering: true });
+  });
+
   it('remove() DELETEs /:id', () => {
     svc.remove('dt1').subscribe((res) => {
       if (res.ok) expect(res.data).toBeUndefined();

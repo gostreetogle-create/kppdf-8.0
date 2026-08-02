@@ -184,6 +184,7 @@ export class DocumentTemplateService {
       defaultBackgroundIndex: dto.defaultBackgroundIndex ?? -1,
       backgroundOpacity: dto.backgroundOpacity ?? 0.3,
       orientation: dto.orientation ?? 'portrait',
+      pageNumbering: dto.pageNumbering ?? false,
       version: dto.version ?? 1,
       notes: dto.notes,
       createdBy: userId && Types.ObjectId.isValid(userId)
@@ -265,6 +266,7 @@ export class DocumentTemplateService {
     if (dto.pageSize !== undefined) doc.pageSize = dto.pageSize;
     if (dto.backgroundImage !== undefined) doc.backgroundImage = dto.backgroundImage;
     if (dto.backgroundOpacity !== undefined) doc.backgroundOpacity = dto.backgroundOpacity;
+    if (dto.pageNumbering !== undefined) doc.pageNumbering = dto.pageNumbering;
     if (dto.notes !== undefined) doc.notes = dto.notes;
     if (dto.version !== undefined) doc.version = dto.version;
     if (dto.categoryId !== undefined) {

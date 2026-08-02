@@ -31,6 +31,10 @@ describe('BuilderPage', () => {
   const templatesSvcCreate = jest
     .fn()
     .mockReturnValue(of({ ok: true, data: { _id: 'tpl-1' } as never }));
+  const templatesSvcUpdate = jest
+    .fn()
+    .mockReturnValue(of({ ok: true, data: { _id: 'tpl-1' } as never }));
+  const templatesSvcFindById = jest.fn().mockReturnValue(of({ ok: true, data: null }));
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -55,9 +59,9 @@ describe('BuilderPage', () => {
           provide: DocumentTemplatesService,
           useValue: {
             list: () => of({ ok: true, data: { items: [], total: 0 } }),
-            findById: () => of({ ok: true, data: null }),
+            findById: templatesSvcFindById,
             create: templatesSvcCreate,
-            update: () => of({ ok: true, data: {} as never }),
+            update: templatesSvcUpdate,
             remove: () => of({ ok: true, data: undefined }),
             uploadBackground: () => of({ ok: true, data: { url: '', backgroundImage: [] } }),
             removeBackground: () => of({ ok: true, data: undefined }),
@@ -240,5 +244,35 @@ describe('BuilderPage', () => {
     expect(comp.isCreating()).toBe(false);
     expect(templatesSvcCreate).not.toHaveBeenCalled();
     expect(toastError).toHaveBeenCalled();
+  });
+
+  // ═══ TZ-DOC-311: template property persistence regression tests ═══
+
+  it('TZ-DOC-311: onTemplateUpdate PATCHes pageNumbering to the templates service', () => {
+    const fixture = TestBed.createComponent(BuilderPage);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance as unknown as {
+      templateId: { set: (v: string | null) => void };
+      onTemplateUpdate: (patch: Record<string, unknown>) => void;
+    };
+    comp.templateId.set('tpl-1');
+    comp.onTemplateUpdate({ pageNumbering: true });
+    expect(templatesSvcUpdate).toHaveBeenCalledWith('tpl-1', { pageNumbering: true });
+  });
+
+  it('TZ-DOC-311: template update API error reverts via findById (no false optimistic state)', () => {
+    templatesSvcUpdate.mockReturnValueOnce(of({ ok: false, error: { status: 400 } as never }));
+    const fixture = TestBed.createComponent(BuilderPage);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance as unknown as {
+      templateId: { set: (v: string | null) => void };
+      template: { set: (t: unknown) => void };
+      onTemplateUpdate: (patch: Record<string, unknown>) => void;
+    };
+    comp.templateId.set('tpl-1');
+    comp.template.set({ _id: 'tpl-1', pageNumbering: true } as never);
+    comp.onTemplateUpdate({ pageNumbering: true });
+    expect(templatesSvcUpdate).toHaveBeenCalled();
+    expect(templatesSvcFindById).toHaveBeenCalledWith('tpl-1');
   });
 });

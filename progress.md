@@ -5023,3 +5023,16 @@ E2E-сценарии с созданием данных помечены MANUAL_
 **Verification:** backend unit Jest 35/35, permissions e2e 2/2, backend tsc PASS, targeted ESLint PASS, `git diff --check` PASS, independent review без critical/important findings.
 **Архив:** `tasks/_archive/2026-08/TZ-275-admin-permissions-catalog-gating.done.md`; lock: `.mimocode/locks/TZ-275-admin-permissions-catalog-gating.lock`.
 **Ограничение:** `MANUAL_BROWSER_CHECK_REQUIRED` — live authenticated browser/e2e browser flow не запускался; Mongo-backed API e2e запускался и прошёл.
+
+---
+
+## 2026-08-02 — TZ-DOC-311 DONE (Свойства шаблона — pageNumbering сохраняется, legacy-поля убраны из UI)
+
+**Исполнитель:** Buffy
+**Статус:** DONE
+**Результат:** Починено сохранение «Нумерации страниц» (`pageNumbering`) на шаблоне документа; из UI конструктора убраны неработающие поля «Оглавление» (`tableOfContents`), «Шапка Документа» (`headerText`), «Подвал Документа» (`footerText`) — тексты шапки/подвала создаются текстовыми блоками. Поля остаются в DB-схеме без миграции (backward compatibility, старые шаблоны не ломаются).
+**Причина бага (подтверждена кодом):** поля были в Mongoose-схеме, но отсутствовали в `CreateDocumentTemplateDto`; глобальный `ValidationPipe{whitelist, forbidNonWhitelisted}` в `main.ts` отклонял PATCH → 400 → фронтенд откатывал оптимистичное значение (галка/текст «исчезали»).
+**Изменения:** `CreateDocumentTemplateDto` + `pageNumbering`; `document-template.service.ts` create/update применяют `pageNumbering`; `builder-inspector.component.ts` — удалены Оглавление/Шапка/Подвал + мёртвый debounce; `builder-canvas.component.ts` — удалены inputs/рендер headerText/footerText, оставлен page-number индикатор; `builder.page.ts` — убраны прокидывания; `pi-document-templates.service.ts` — legacy-пометка типов; новый e2e `backend/test/e2e/document-templates-props.e2e-spec.ts` (5 тестов); новый `builder-inspector.component.spec.ts` (DOM-контракт); regression-тесты в canvas/page/service specs; `docs/pages/builder.page.md`; `docs/agent-checklists/TZ-DOC-311.md`.
+**Проверки:** backend tsc PASS, frontend tsc PASS, ng build PASS, BE e2e 5/5 PASS, BE unit document-template 58/58 PASS, FE builder+service jest 126/126 PASS, eslint 0 errors (4 pre-existing warnings), `git diff --check` PASS, `verify-status.sh` PASS, независимый code review PASS (3 minor findings исправлены).
+**Архив:** `tasks/_archive/2026-08/TZ-DOC-311.done.md`; lock: `.mimocode/locks/TZ-DOC-311-template-props-persistence-and-cleanup.lock`.
+**Ограничение:** `MANUAL_BROWSER_CHECK_REQUIRED` — live authenticated browser flow не запускался; API-контракт доказан Mongo-backed e2e + unit тестами.

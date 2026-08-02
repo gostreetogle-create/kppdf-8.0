@@ -361,6 +361,14 @@ describe('BuilderCanvasComponent \u2014 Magnetic Grid + Guides (TZ-237.MAGNETIC-
     expect(spy).not.toHaveBeenCalled();
   });
 
+  it('TZ-DOC-311: renders page-number indicator when pageNumbering=true; no header/footer text rendered', () => {
+    fixture.componentRef.setInput('pageNumbering', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.canvas-page-number')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.canvas-header-text')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.canvas-footer-text')).toBeFalsy();
+  });
+
   it('TZ-DOC-272: a plain click on empty canvas is not a marquee and keeps the default click', () => {
     const spy = jest.fn();
     fixture.componentInstance.marqueeSelect.subscribe(spy);

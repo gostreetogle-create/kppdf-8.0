@@ -7,12 +7,10 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { Subject, debounceTime } from 'rxjs';
 import {
   LucideAngularModule,
   RotateCcw,
   Hash,
-  List,
   Eye,
   File,
   Upload,
@@ -209,58 +207,12 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 (change)="onTemplateSettingChange('pageNumbering', $any($event.target).checked)"
               />
             </div>
-
-            <!-- Table of contents -->
-            <div class="toggle-row">
-              <div class="toggle-row__left">
-                <lucide-icon [img]="ListIcon" [size]="18"></lucide-icon>
-                <span class="toggle-row__label">Оглавление</span>
-              </div>
-              <input
-                type="checkbox"
-                class="toggle-checkbox"
-                [checked]="t.tableOfContents ?? false"
-                (change)="onTemplateSettingChange('tableOfContents', $any($event.target).checked)"
-              />
-            </div>
           </section>
 
-          <!-- Section 03: Metadata -->
-          <section class="props-section">
-            <div class="props-section__header">
-              <span class="props-section__number">03</span>
-              <h3 class="props-section__title">Метаданные</h3>
-            </div>
-
-            <!-- Header text -->
-            <div class="field">
-              <span class="field__label">Шапка Документа</span>
-              <input
-                class="field__input pi-focus-ring"
-                type="text"
-                [value]="t.headerText ?? ''"
-                (input)="onTemplateTextInput('headerText', $event)"
-                placeholder="Введите заголовок..."
-              />
-            </div>
-
-            <!-- Footer text -->
-            <div class="field">
-              <span class="field__label">Подвал Документа</span>
-              <input
-                class="field__input pi-focus-ring"
-                type="text"
-                [value]="t.footerText ?? ''"
-                (input)="onTemplateTextInput('footerText', $event)"
-                placeholder="Введите подпись..."
-              />
-            </div>
-          </section>
-
-          <!-- Section 04: Background Image -->
+          <!-- Section 02: Background Image -->
           <section class="props-section props-section--last">
             <div class="props-section__header">
-              <span class="props-section__number">04</span>
+              <span class="props-section__number">02</span>
               <h3 class="props-section__title">Фоновое изображение</h3>
             </div>
 
@@ -1767,7 +1719,6 @@ export class BuilderInspectorComponent {
   // Icons
   protected readonly ResetIcon = RotateCcw;
   protected readonly HashIcon = Hash;
-  protected readonly ListIcon = List;
   protected readonly FileTextIcon = FileText;
   protected readonly EyeIcon = Eye;
   protected readonly UploadIcon = Upload;
@@ -1800,9 +1751,6 @@ export class BuilderInspectorComponent {
   protected readonly layoutYpx = signal<number>(0);
   protected readonly layoutWidthPx = signal<number>(0);
   protected readonly layoutHeightPx = signal<number>(0);
-
-  // Debounced text input for template properties (prevents orientation jumping)
-  private readonly textInput$ = new Subject<{ key: string; value: string }>();
 
   // Snap settings internal state
   protected readonly localSnapEnabled = signal<boolean>(true);
@@ -1919,11 +1867,6 @@ export class BuilderInspectorComponent {
       this.localGridSize.set(this.gridSize());
       this.localBoundaryPadding.set(this.boundaryPadding());
       this.localGridVisible.set(this.gridVisible());
-    });
-
-    // Debounced text input for template properties (prevents orientation jumping)
-    this.textInput$.pipe(debounceTime(300)).subscribe(({ key, value }) => {
-      this.templateUpdate.emit({ [key]: value } as Partial<DocumentTemplate>);
     });
   }
 
@@ -2077,11 +2020,6 @@ export class BuilderInspectorComponent {
 
   protected onTemplateSettingChange(key: string, value: boolean): void {
     this.templateUpdate.emit({ [key]: value } as Partial<DocumentTemplate>);
-  }
-
-  protected onTemplateTextInput(key: string, event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.textInput$.next({ key, value });
   }
 
   protected onOpacityInput(event: Event): void {

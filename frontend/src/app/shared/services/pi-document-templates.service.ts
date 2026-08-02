@@ -52,11 +52,14 @@ export interface DocumentTemplate {
   orientation: 'portrait' | 'landscape';
   /** Show page numbers in the generated document. */
   pageNumbering?: boolean;
-  /** Show table of contents in the generated document. */
+  /**
+   * TZ-DOC-311: LEGACY — not used by the builder UI anymore.
+   * Kept in the type (and DB schema) for backward compatibility with
+   * templates created before TZ-DOC-311; the builder no longer renders
+   * or sends these fields.
+   */
   tableOfContents?: boolean;
-  /** Text to display in the document header. */
   headerText?: string;
-  /** Text to display in the document footer. */
   footerText?: string;
   version: number;
   notes?: string;

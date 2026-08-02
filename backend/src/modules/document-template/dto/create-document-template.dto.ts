@@ -34,6 +34,9 @@ export class CreateDocumentTemplateDto {
 
   @IsOptional() @IsIn(['portrait', 'landscape'])
   orientation?: 'portrait' | 'landscape';
+
+  @IsOptional() @IsBoolean()
+  pageNumbering?: boolean;
   @IsOptional() @IsNumber() @Min(1) version?: number;
   @IsOptional() @IsString() notes?: string;
 }
