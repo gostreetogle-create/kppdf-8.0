@@ -69,3 +69,11 @@ MANUAL_BROWSER_CHECK_REQUIRED — live flow не запускался (dev-stack
 - TZ-WORKERS-302 (parallel session) — people.page.ts/workers.service.ts; здесь ng build exit 0.
 - `frontend` полный jest: 1 pre-existing failure в `button.component.spec.ts` — НЕ регрессия (869/870 PASS).
 - e00be99 divergence: part-1 лежит на main, перенесён verbatim — disclosed в archive marker.
+
+## Executor report (auto) — TZ-PRODUCTS-305
+
+status: DONE
+commits: 7261182c97dd9c8ad67916112eb48faf2fb0af82 + b70cbfe0c239245fa2ec632aabd1b25970b6b80b
+gates: tsc=PASS; jest=64/64 target (869/870 full); ng-build=PASS; git-diff-check=PASS; verify-status.sh=PASS
+known: e00be99 part-1 на main (порт verbatim, disclosed); TZ-DOC-308/TZ-WORKERS-302 pre-existing, ng build exit 0; button.spec pre-existing baseline-failure
+ask: —

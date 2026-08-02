@@ -69,8 +69,8 @@ outcome: DONE
 closed_at: 2026-08-02
 closed_by: autonomous-frontend-agent (Buffy)
 source_task: tasks/TZ-PRODUCTS-305-ui-kit-showcase-cards.md
-implementation_commit: <feat-sha>
-closeout_commit: <closeout-sha>
+implementation_commit: 7261182c97dd9c8ad67916112eb48faf2fb0af82
+closeout_commit: b70cbfe0c239245fa2ec632aabd1b25970b6b80b
 prerequisite: TZ-PRODUCTS-304 (84ad25c) — expandable catalog rows
 related_archive:
   - tasks/_archive/2026-08/TZ-PRODUCTS-301-color-reference-dictionary.done.md
