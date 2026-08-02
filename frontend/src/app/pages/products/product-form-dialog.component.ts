@@ -1,7 +1,9 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   HostListener,
+  Injector,
   computed,
   inject,
   signal,
@@ -10,7 +12,8 @@ import {
   OnDestroy,
 } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of, type Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { RouterLink } from '@angular/router';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
@@ -20,7 +23,7 @@ import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
-import { extractErrorMessage } from '../../core/silent-http';
+import { extractErrorMessage, type SilentResult } from '../../core/silent-http';
 import {
   Product,
   ProductKind,
@@ -34,6 +37,13 @@ import {
 } from '../../shared/services/pi-color-references.service';
 import { PhotosService, type Photo } from '../../shared/services/photos.service';
 import { AuthService } from '../../core/auth.service';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
+import {
+  ProductModule,
+  ProductModulesService,
+} from '../../shared/services/pi-product-modules.service';
+import { ProductModulePickerDialogComponent } from './product-module-picker-dialog.component';
 
 type Result = Product | null | undefined;
 
@@ -69,9 +79,13 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
  *  4. Габариты: L/W/H + unit (4 inputs)
  *  5. Цвет (RAL): searchable dropdown из PiColorReferencesService
  *     (активные цвета, swatch + name; свободный ввод НЕ допускается)
- *  6. Дополнительно: weightKg
- *  7. Описание/Заметки: description, notes
- *  8. Изображения: photo upload (PhotosService, TZ-MATERIALS-306 паттерн)
+ *  6. Модули в составе: карточки привязанных модулей (имя, артикул,
+ *     «N материалов», удаление ×) + «+ Добавить модуль» (мульти-picker
+ *     TZ-PRODUCTS-303); submit через атомарные POST/DELETE
+ *     /products/:id/modules (TZ-83 D.3, race-safe $addToSet/$pull)
+ *  7. Дополнительно: weightKg
+ *  8. Описание/Заметки: description, notes
+ *  9. Изображения: photo upload (PhotosService, TZ-MATERIALS-306 паттерн)
  *
  * RAL contract (TZ-PRODUCTS-301/302):
  *  - Список грузится из `PiColorReferencesService.list({ activeOnly: true })`
@@ -411,7 +425,68 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
           </div>
         </div>
 
-        <!-- ─── 6. Описание/Заметки ─── -->
+        <!-- ─── 6. Модули в составе ─── -->
+        <div>
+          <div class="flex items-baseline justify-between mb-form-row">
+            <div>
+              <p class="eyebrow">Состав</p>
+              <p class="text-sm font-medium">Модули в составе</p>
+            </div>
+            <app-pi-button
+              type="button"
+              variant="outline"
+              size="sm"
+              (click)="openModulePicker()"
+              data-test="add-module"
+            >
+              + Добавить модуль
+            </app-pi-button>
+          </div>
+
+          @if (attachedModules().length === 0 && modulesLoading()) {
+            <p class="text-xs text-muted-foreground" role="status">Загрузка модулей…</p>
+          } @else if (attachedModules().length === 0 && modulesError()) {
+            <p class="text-xs text-destructive" role="alert">{{ modulesError() }}</p>
+          } @else if (attachedModules().length === 0) {
+            <p class="text-xs text-muted-foreground">
+              Нет модулей в составе. Нажмите «+ Добавить модуль».
+            </p>
+          } @else {
+            <div class="space-y-2">
+              @for (m of attachedModules(); track m._id) {
+                <div
+                  class="flex items-center gap-3 p-2 hairline rounded-sm bg-paper-2/30"
+                  [attr.data-test]="'module-card-' + m._id"
+                >
+                  <div
+                    class="w-10 h-10 rounded-sm hairline bg-paper flex items-center justify-center text-muted-foreground text-sm font-medium shrink-0"
+                    aria-hidden="true"
+                  >
+                    {{ (m.name || 'M').charAt(0).toUpperCase() }}
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium truncate">{{ m.name }}</p>
+                    <p class="text-xs text-muted-foreground">
+                      {{ m.article ?? '—' }} · {{ m.materials.length }} материалов
+                    </p>
+                  </div>
+                  <app-pi-button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    [attr.aria-label]="'Удалить модуль ' + m.name"
+                    (click)="removeModule(m._id)"
+                    data-test="remove-module"
+                  >
+                    ×
+                  </app-pi-button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- ─── 7. Описание/Заметки ─── -->
         <div>
           <p class="eyebrow mb-form-row">Описание и заметки</p>
           <div class="grid grid-cols-1 gap-form-field">
@@ -441,7 +516,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
           </div>
         </div>
 
-        <!-- ─── 7. Изображения ─── -->
+        <!-- ─── 8. Изображения ─── -->
         <div>
           <div class="flex items-baseline justify-between mb-form-row">
             <p class="eyebrow">Изображения</p>
@@ -521,6 +596,8 @@ export class ProductFormDialogComponent implements OnDestroy {
     this.loadCategories();
     this.loadColors();
     this.loadPhotos();
+    this.loadModules();
+    this.seedAttachedModules();
     if (this.data) {
       this.form.patchValue({
         name: this.data.name,
@@ -556,6 +633,10 @@ export class ProductFormDialogComponent implements OnDestroy {
   private readonly categoriesService = inject(CategoriesService);
   private readonly colorsService = inject(PiColorReferencesService);
   private readonly photosService = inject(PhotosService);
+  private readonly modulesService = inject(ProductModulesService);
+  private readonly dialog = inject(PiDialogService);
+  private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly auth = inject(AuthService);
 
   private readonly dropdownHost = viewChild<ElementRef<HTMLElement>>('colorDropdownHost');
@@ -615,6 +696,16 @@ export class ProductFormDialogComponent implements OnDestroy {
     const u = this.auth.user();
     return u?.role === 'admin' || u?.role === 'manager';
   });
+
+  // ─── Modules (в составе) ───
+  /** Черновик привязанных модулей (карточки). */
+  protected readonly attachedModules = signal<ProductModule[]>([]);
+  /** Каталог модулей для picker'а (loading/error по образцу RAL dropdown). */
+  protected readonly modulesLoading = signal(false);
+  protected readonly modulesError = signal<string | null>(null);
+  private readonly moduleCatalog = signal<ProductModule[]>([]);
+  /** Строковые moduleIds из данных товара — резолвятся после загрузки каталога. */
+  private pendingStringModuleIds: string[] = [];
 
   // ─── Photos ───
   protected readonly photos = signal<Photo[]>([]);
@@ -701,6 +792,121 @@ export class ProductFormDialogComponent implements OnDestroy {
         this.toast.error(extractErrorMessage(res.error));
       }
     });
+  }
+
+  // ─── Modules (в составе) ───
+
+  /**
+   * Загружает каталог модулей для picker'а (активный список, из которого
+   * пользователь выбирает). Состояния loading/error — по образцу
+   * PiColorReference dropdown из TZ-PRODUCTS-302.
+   * После успешной загрузки резолвим отложенные строковые moduleIds
+   * (см. `seedAttachedModules` / `resolvePendingStringModuleIds`).
+   */
+  private loadModules(): void {
+    this.modulesLoading.set(true);
+    this.modulesError.set(null);
+    this.modulesService.list().subscribe((res) => {
+      this.modulesLoading.set(false);
+      if (res.ok) {
+        this.moduleCatalog.set(res.data);
+        this.resolvePendingStringModuleIds();
+      } else {
+        this.moduleCatalog.set([]);
+        this.modulesError.set(extractErrorMessage(res.error));
+      }
+    });
+  }
+
+  /**
+   * Первичное наполнение черновика из данных редактируемого товара.
+   * `productModuleIds` приходит populated (объекты) либо строками-ids.
+   * Объекты кладём сразу; строки откладываем в `pendingStringModuleIds`
+   * и резолвим из каталога, когда он загрузится (каталог грузится
+   * асинхронно — резолвить строки здесь синхронно нельзя, иначе они
+   * молча пропадут из черновика и на submit превратятся в DELETE).
+   */
+  private seedAttachedModules(): void {
+    const raw = this.data?.productModuleIds ?? [];
+    if (raw.length === 0) return;
+    const objects: ProductModule[] = [];
+    const stringIds: string[] = [];
+    raw.forEach((m) => {
+      if (typeof m === 'object' && m !== null && '_id' in m) {
+        objects.push(m as ProductModule);
+      } else if (typeof m === 'string') {
+        stringIds.push(m);
+      }
+    });
+    this.attachedModules.set(objects);
+    this.pendingStringModuleIds = stringIds;
+    // Каталог мог уже успеть загрузиться (быстрый ответ/тест) — пробуем сразу.
+    this.resolvePendingStringModuleIds();
+  }
+
+  /**
+   * Резолв отложенных строковых moduleIds через загруженный каталог.
+   * Неразрешённые ids остаются в очереди (каталог может ещё не прийти);
+   * повторный вызов происходит из `loadModules` success.
+   */
+  private resolvePendingStringModuleIds(): void {
+    if (this.pendingStringModuleIds.length === 0) return;
+    const byId = new Map(this.moduleCatalog().map((m) => [m._id, m]));
+    const resolved: ProductModule[] = [];
+    const unresolved: string[] = [];
+    this.pendingStringModuleIds.forEach((id) => {
+      const m = byId.get(id);
+      if (m) {
+        resolved.push(m);
+      } else {
+        unresolved.push(id);
+      }
+    });
+    this.pendingStringModuleIds = unresolved;
+    if (resolved.length > 0) {
+      this.attachedModules.update((cur) => {
+        const existing = new Set(cur.map((m) => m._id));
+        return [...cur, ...resolved.filter((m) => !existing.has(m._id))];
+      });
+    }
+  }
+
+  /** Открывает мульти-picker модулей; результат — массив moduleId[]. */
+  protected openModulePicker(): void {
+    const excludeIds = this.attachedModules().map((m) => m._id);
+    const ref = this.dialog.open<string[] | null>(ProductModulePickerDialogComponent, {
+      data: {
+        productId: this.data?._id ?? '',
+        excludeIds,
+        multi: true,
+      },
+      width: 'lg',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (ids) => {
+      this.addModules(ids);
+    });
+  }
+
+  /** Добавляет карточки из выбранных id (дедупликация по _id). */
+  protected addModules(ids: string[]): void {
+    if (ids.length === 0) return;
+    const byId = new Map(this.moduleCatalog().map((m) => [m._id, m]));
+    this.attachedModules.update((cur) => {
+      const existing = new Set(cur.map((m) => m._id));
+      const fresh = ids
+        .map((id) => byId.get(id))
+        .filter((m): m is ProductModule => m !== undefined && !existing.has(m._id));
+      return fresh.length > 0 ? [...cur, ...fresh] : cur;
+    });
+    // dirty-state tracking: добавление модулей → «Сохранить» активна
+    this.form.markAsDirty();
+  }
+
+  /** Удаляет карточку из черновика (само привязывание не трогаем до submit). */
+  protected removeModule(id: string): void {
+    this.attachedModules.update((cur) => cur.filter((m) => m._id !== id));
+    this.form.markAsDirty();
   }
 
   // ─── RAL dropdown handlers ───
@@ -852,13 +1058,48 @@ export class ProductFormDialogComponent implements OnDestroy {
         this.submitted = true;
         // Atomic: after the product save succeeds, apply pending photo deletions.
         this.applyPendingPhotoDeletions();
-        this.toast.success(this.isEdit() ? 'Продукт обновлён' : 'Продукт создан');
-        this.ref.close(res.data);
+        // Modules: atomic POST/DELETE diff vs the original attachment set.
+        this.syncModules(res.data._id).subscribe((allOk) => {
+          if (!allOk) {
+            this.toast.error('Часть модулей не синхронизирована — проверьте состав товара');
+          }
+          this.toast.success(this.isEdit() ? 'Продукт обновлён' : 'Продукт создан');
+          this.ref.close(res.data);
+        });
       } else {
         this.errorMessage.set(extractErrorMessage(res.error));
         this.submitting.set(false);
       }
     });
+  }
+
+  /**
+   * Атомарная синхронизация «модули в составе» после успешного save
+   * (TZ-PRODUCTS-303). Контракт зафиксирован по коду:
+   *   POST   /products/:productId/modules  body { moduleId }  — attach ($addToSet)
+   *   DELETE /products/:productId/modules/:moduleId          — detach ($pull)
+   *   backend/src/modules/product/product.controller.ts:128-151
+   * (CreateProductDto НЕ содержит productModuleIds → bulk PATCH с
+   * массивом не поддерживается whitelist-валидацией; используем атомарные
+   * endpoints — race-safe, см. product.service.ts:138-186).
+   *
+   * Diff исходных привязок (data.productModuleIds) против черновика:
+   * удалённые → DELETE, добавленные → POST. Возвращает true если все
+   * операции ok (silent-http, никогда не бросают).
+   */
+  private syncModules(productId: string): Observable<boolean> {
+    const originalIds = new Set(
+      (this.data?.productModuleIds ?? []).map((m) => (typeof m === 'string' ? m : m._id)),
+    );
+    const draftIds = new Set(this.attachedModules().map((m) => m._id));
+    const toDetach = [...originalIds].filter((id) => !draftIds.has(id));
+    const toAttach = [...draftIds].filter((id) => !originalIds.has(id));
+    const calls: Observable<SilentResult<unknown>>[] = [
+      ...toDetach.map((id) => this.modulesService.detachFromProduct(productId, id)),
+      ...toAttach.map((id) => this.modulesService.attachToProduct(productId, id)),
+    ];
+    if (calls.length === 0) return of(true);
+    return forkJoin(calls).pipe(map((results) => results.every((r) => r.ok)));
   }
 
   protected onCancel(): void {

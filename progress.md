@@ -5160,3 +5160,21 @@ E2E-сценарии с созданием данных помечены MANUAL_
 **Архив:** tasks/_archive/2026-08/TZ-PRODUCTS-302-product-form-dialog-rework.done.md; lock: .mimocode/locks/TZ-PRODUCTS-302-product-form-dialog-rework.lock (gitignored).
 
 **Ограничения:** TZ-DOC-308 categories.page.ts pre-existing blocker — не fix-force. Удаление фото с сервера — после успешного save (при провале save фото остаётся orphan'ом; документированное поведение материалов-паттерна). Push: нет.
+
+## 2026-08-02 — TZ-PRODUCTS-303 DONE (module cards editor in product dialog)
+
+**Статус:** DONE. Layer 3 (frontend). Зависимость TZ-PRODUCTS-302 (4b3b4e8) выполнена. Backend НЕ трогался.
+
+**Тип:** В product-form-dialog встроена секция «Модули в составе» (eyebrow «Состав»): карточки модулей (миниатюра-плейсхолдер, имя, артикул, «N материалов», ×), «+ Добавить модуль» → ProductModulePickerDialogComponent в мульти-режиме (checkbox-список, возвращает string[]), loading/error/empty по образцу RAL dropdown, dirty-tracking через form.markAsDirty().
+
+**Submit-контракт (зафиксирован по коду):** bulk PATCH с productModuleIds[] невозможен (CreateProductDto не содержит поля — whitelist выбросит). Используются атомарные race-safe endpoints: POST /products/:id/modules { moduleId } ($addToSet, product.controller.ts:128-132) + DELETE /products/:id/modules/:moduleId ($pull, :147-151); фронт — PiProductModulesService.attachToProduct/detachFromProduct. syncModules() считает diff исходных привязок против черновика на submit.
+
+**Затронуто:** product-form-dialog.component.ts (+ spec, +12 тестов → 32), product-module-picker-dialog.component.ts (мульти-режим, обратно совместим — product-detail.page.ts НЕ менялся) + NEW spec (8 тестов), shared/services/products.service.ts (Product.productModuleIds, type-only import), docs/pages/products.page.md.
+
+**Исправления по review:** P1 — гонка строковых moduleIds: seedAttachedModules резолвил строки синхронно до загрузки каталога → строки пропадали из черновика и превращались в DELETE невидимых модулей; исправлено через pendingStringModuleIds + resolvePendingStringModuleIds после loadModules success. Minor: eyebrow «Состав», loading-тест picker'а на незавершающемся Observable.
+
+**Проверки:** backend tsc exit 0 (sanity) + jest product 2 suites/8 tests PASS; frontend tsc exit 0; jest pi-product-modules+product-form-dialog+product-module-picker-dialog 3 suites/44 tests PASS; полный frontend jest 845/846 PASS (единственный fail — pre-existing button.component.spec.ts, не регрессия); ng build dev exit 0 (без warning'ов); git diff --check clean.
+
+**Архив:** tasks/_archive/2026-08/TZ-PRODUCTS-303-product-modules-cards-editor.done.md; lock: .mimocode/locks/TZ-PRODUCTS-303-product-modules-cards-editor.lock (gitignored).
+
+**Ограничения:** TZ-DOC-308 categories.page.ts pre-existing blocker — не fix-force; TZ-WORKERS-302 (parallel session) — здесь ng build exit 0. Карточка модуля без фото (плейсхолдер) — у GET /modules нет photo в payload (фото = отдельная сущность). Push: нет.

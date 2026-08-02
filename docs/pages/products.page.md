@@ -73,6 +73,7 @@
 | TZ-104.3 | Миграция на pi-table + server-side pagination |
 | TZ-104.4.2 | Typed TemplateRef (устранён `any`) |
 | TZ-PRODUCTS-302 | Rework ProductFormDialog → content-variant 1000px, секции, RAL dropdown из справочника цветов |
+| TZ-PRODUCTS-303 | «Модули в составе» в диалоге товара: карточки модулей + мульти-picker + атомарные POST/DELETE |
 
 ## Особенности
 
@@ -93,8 +94,8 @@ content-DSL (паттерн TZ-MATERIALS-301): `variant="content"` +
 
 **Секции формы (по порядку):** Основные данные (name/sku/kind/unit/status) →
 Категория (dropdown из `CategoriesService.list('product')`) → Цены (listPrice/
-isActive) → Габариты (L/W/H + единица) → **Цвет (RAL)** → Вес → Описание и
-заметки → Изображения (фото-upload, паттерн TZ-MATERIALS-306).
+isActive) → Габариты (L/W/H + единица) → **Цвет (RAL)** → **Модули в составе** →
+Вес → Описание и заметки → Изображения (фото-upload, паттерн TZ-MATERIALS-306).
 
 **RAL contract (TZ-PRODUCTS-301/302):**
 
@@ -106,6 +107,36 @@ isActive) → Габариты (L/W/H + единица) → **Цвет (RAL)** �
 **Регрессия:** legacy create/update payload-логика и data-test атрибуты сохранены;
 добавлены `categoryId` и `photoIds`. Загруженные в сессии фото удаляются при
 cancel (orphan cleanup в `ngOnDestroy`).
+
+## «Модули в составе» (TZ-PRODUCTS-303)
+
+Секция встроена в диалог товара (между «Цвет (RAL)» и «Описание»), паттерн
+TZ-MODULES-301 (карточки-строки, как material-cards в module-detail).
+
+- **Карточка модуля:** нейтральная миниатюра (у `GET /modules` нет фото — это
+  отдельная сущность `ProductModulePhoto`), имя, артикул, «N материалов»,
+  кнопка «×» (удалить из черновика).
+- **«+ Добавить модуль»** открывает `ProductModulePickerDialogComponent` в
+  мульти-режиме (`data.multi=true`, variant="content", 1000px) — чекбокс-список
+  доступных модулей (уже привязанные исключены через `excludeIds`), возвращает
+  `string[]`. Обратно совместим: без `multi` остаётся классический
+  single-select для `product-detail.page.ts`.
+- **Состояния:** loading / error / empty по образцу RAL dropdown
+  (TZ-PRODUCTS-302) — каталог грузится в `loadModules()` на mount.
+- **Dirty tracking:** добавление/удаление карточки помечает форму `dirty` →
+  «Сохранить» активна.
+- **Submit-контракт (зафиксирован по коду):** bulk PATCH с `productModuleIds[]`
+  НЕ поддерживается (`CreateProductDto` не содержит поля — whitelist выбросит).
+  Используются атомарные endpoints (race-safe, `$addToSet`/`$pull`):
+  - `POST /products/:id/modules` body `{ moduleId }` — attach
+    (`backend/src/modules/product/product.controller.ts:128-132`)
+  - `DELETE /products/:id/modules/:moduleId` — detach
+    (`product.controller.ts:147-151`)
+  После успешного create/update `syncModules()` считает diff исходных привязок
+  против черновика: удалённые → DELETE, добавленные → POST; все через
+  `PiProductModulesService.attachToProduct/detachFromProduct`.
+- **Legacy:** старые товары с `productModuleIds[]` (populated в list/findById)
+  открываются и редактируются без потери привязок.
 
 ---
 

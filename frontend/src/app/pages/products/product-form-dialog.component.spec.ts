@@ -23,6 +23,8 @@ import { ProductsService } from '../../shared/services/products.service';
 import { CategoriesService } from '../../shared/services/categories.service';
 import { PiColorReferencesService } from '../../shared/services/pi-color-references.service';
 import { PhotosService } from '../../shared/services/photos.service';
+import { ProductModulesService } from '../../shared/services/pi-product-modules.service';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { AuthService } from '../../core/auth.service';
 import { PiToastService } from '../../shared/ui/toast';
 
@@ -56,6 +58,12 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
   let categoriesSvc: { list: jest.Mock };
   let colorsSvc: { list: jest.Mock };
   let photosSvc: { list: jest.Mock; upload: jest.Mock; remove: jest.Mock };
+  let modulesSvc: {
+    list: jest.Mock;
+    attachToProduct: jest.Mock;
+    detachFromProduct: jest.Mock;
+  };
+  let dialogSvc: { open: jest.Mock };
   let authSvc: { user: ReturnType<typeof signal<null>> };
 
   function ref<T>(): DialogRef<T> {
@@ -76,6 +84,8 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
         { provide: CategoriesService, useValue: categoriesSvc },
         { provide: PiColorReferencesService, useValue: colorsSvc },
         { provide: PhotosService, useValue: photosSvc },
+        { provide: ProductModulesService, useValue: modulesSvc },
+        { provide: PiDialogService, useValue: dialogSvc },
         {
           provide: AuthService,
           useValue: {
@@ -126,6 +136,13 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     removePhoto: (id: string) => void;
     onPhotoSelect: (e: Event) => void;
     ngOnDestroy: () => void;
+    attachedModules: () => unknown[];
+    modulesLoading: () => boolean;
+    modulesError: () => string | null;
+    openModulePicker: () => void;
+    addModules: (ids: string[]) => void;
+    removeModule: (id: string) => void;
+    form: { markAsDirty: () => void; dirty: boolean };
   } {
     return fixture.componentInstance as unknown as {
       onSubmit: () => void;
@@ -142,6 +159,13 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
       removePhoto: (id: string) => void;
       onPhotoSelect: (e: Event) => void;
       ngOnDestroy: () => void;
+      attachedModules: () => unknown[];
+      modulesLoading: () => boolean;
+      modulesError: () => string | null;
+      openModulePicker: () => void;
+      addModules: (ids: string[]) => void;
+      removeModule: (id: string) => void;
+      form: { markAsDirty: () => void; dirty: boolean };
     };
   }
 
@@ -173,6 +197,17 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
       list: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
       upload: jest.fn(),
       remove: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
+    };
+    modulesSvc = {
+      list: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
+      attachToProduct: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
+      detachFromProduct: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
+    };
+    dialogSvc = {
+      open: jest.fn().mockReturnValue({
+        closed: signal(undefined),
+        close: jest.fn(),
+      }),
     };
     authSvc = {
       user: signal(null),
@@ -416,5 +451,157 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     instance().onSubmit();
     expect(productsSvc.create).toHaveBeenCalledTimes(1);
     expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  // ── TZ-PRODUCTS-303: «Модули в составе» ─────────────────────────────
+
+  const MODULES = [
+    { _id: 'm1', name: 'Рама', article: 'R-1', materials: [{ materialId: 'x1' }, { materialId: 'x2' }], workTypes: [] },
+    { _id: 'm2', name: 'Стеклопакет', article: 'SP-2', materials: [{ materialId: 'y1' }], workTypes: [] },
+    { _id: 'm3', name: 'Фурнитура', article: 'F-3', materials: [], workTypes: [] },
+  ] as const;
+
+  it('modules: loads the module catalog on init (loading → loaded)', async () => {
+    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
+    await setup(null);
+    expect(modulesSvc.list).toHaveBeenCalled();
+    expect(instance().modulesLoading()).toBe(false);
+    expect(instance().modulesError()).toBeNull();
+  });
+
+  it('modules: surfaces a catalog error (picker loading/error state)', async () => {
+    modulesSvc.list.mockReturnValue(
+      of({ ok: false, error: new HttpErrorResponse({ status: 500, error: { message: 'fail' } }) }),
+    );
+    await setup(null);
+    expect(instance().modulesError()).toBeTruthy();
+  });
+
+  it('modules: addModules appends cards from the catalog and marks the form dirty', async () => {
+    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
+    await setup(null);
+    expect(instance().attachedModules()).toHaveLength(0);
+
+    instance().addModules(['m1', 'm3']);
+    expect(instance().attachedModules().map((m) => (m as { _id: string })._id)).toEqual(['m1', 'm3']);
+    expect(instance().form.dirty).toBe(true);
+  });
+
+  it('modules: addModules dedupes ids already present', async () => {
+    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
+    await setup(null);
+    instance().addModules(['m1']);
+    instance().addModules(['m1', 'm2']);
+    expect(instance().attachedModules()).toHaveLength(2);
+  });
+
+  it('modules: removeModule removes a card from the draft and marks dirty', async () => {
+    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
+    await setup(null);
+    instance().addModules(['m1', 'm2']);
+    instance().removeModule('m1');
+    expect(instance().attachedModules().map((m) => (m as { _id: string })._id)).toEqual(['m2']);
+    expect(instance().form.dirty).toBe(true);
+  });
+
+  it('modules: edit seeds cards from populated data.productModuleIds', async () => {
+    await setup({
+      _id: 'p-mod',
+      name: 'С модулями',
+      kind: 'good',
+      unit: 'шт',
+      productModuleIds: [MODULES[0], MODULES[1]],
+    });
+    expect(instance().attachedModules()).toHaveLength(2);
+  });
+
+  it('modules: edit with STRING productModuleIds resolves cards from the catalog (async, no silent detach)', async () => {
+    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
+    await setup({
+      _id: 'p-strings',
+      name: 'Строками',
+      kind: 'good',
+      unit: 'шт',
+      productModuleIds: ['m1', 'm3'], // unpopulated (string ids)
+    });
+    // The catalog resolves asynchronously; the pending ids must still land.
+    expect(instance().attachedModules().map((m) => (m as { _id: string })._id)).toEqual([
+      'm1',
+      'm3',
+    ]);
+
+    // And on submit they must NOT be treated as removed (no DELETE for unseen modules).
+    instance().onSubmit();
+    expect(modulesSvc.detachFromProduct).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalled();
+  });
+
+  it('modules: create submit with NO attached modules fires NO module calls', async () => {
+    await setup(null);
+    formControls().name.setValue('Без модулей');
+    formControls().unit.setValue('шт');
+    instance().onSubmit();
+    expect(productsSvc.create).toHaveBeenCalledTimes(1);
+    expect(modulesSvc.attachToProduct).not.toHaveBeenCalled();
+    expect(modulesSvc.detachFromProduct).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalled();
+  });
+
+  it('modules: create submit with one attached module POSTs attach after the product save', async () => {
+    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
+    await setup(null);
+    formControls().name.setValue('С модулем');
+    formControls().unit.setValue('шт');
+    instance().addModules(['m1']);
+    instance().onSubmit();
+    expect(productsSvc.create).toHaveBeenCalledTimes(1);
+    // Atomic POST /products/:id/modules with the created product id.
+    expect(modulesSvc.attachToProduct).toHaveBeenCalledWith('p1', 'm1');
+    expect(modulesSvc.detachFromProduct).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalled();
+  });
+
+  it('modules: edit submit with a changed set fires DELETE for removed + POST for added', async () => {
+    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
+    await setup({
+      _id: 'p-mod-edit',
+      name: 'С модулями',
+      kind: 'good',
+      unit: 'шт',
+      productModuleIds: [MODULES[0], MODULES[1]], // originally m1 + m2
+    });
+    instance().removeModule('m2'); // removed from the draft
+    instance().addModules(['m3']); // added to the draft
+    instance().onSubmit();
+    expect(productsSvc.update).toHaveBeenCalledTimes(1);
+    // diff: m1 stays, m2 → DELETE, m3 → POST. The productsSvc.update mock
+    // returns { _id: 'p-edit' } (its hardcoded fixture), so the atomic
+    // module calls target that id.
+    expect(modulesSvc.detachFromProduct).toHaveBeenCalledWith('p-edit', 'm2');
+    expect(modulesSvc.attachToProduct).toHaveBeenCalledWith('p-edit', 'm3');
+    expect(modulesSvc.attachToProduct).not.toHaveBeenCalledWith('p-edit', 'm1');
+    expect(close).toHaveBeenCalled();
+  });
+
+  it('modules: openModulePicker opens the MULTI picker with excludeIds of the current draft', async () => {
+    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
+    await setup({ _id: 'p-pick', name: 'P', kind: 'good', unit: 'шт', productModuleIds: [MODULES[0]] });
+    instance().openModulePicker();
+    expect(dialogSvc.open).toHaveBeenCalledTimes(1);
+    const [component, config] = dialogSvc.open.mock.calls[0];
+    expect(config.data.multi).toBe(true);
+    expect(config.data.excludeIds).toEqual(['m1']);
+    expect(config.data.productId).toBe('p-pick');
+    expect(component).toBeTruthy();
+  });
+
+  it('modules: cancel after adding modules does NOT fire any module mutation', async () => {
+    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
+    await setup(null);
+    instance().addModules(['m1']);
+    instance().onCancel();
+    expect(close).toHaveBeenCalledWith(null);
+    expect(modulesSvc.attachToProduct).not.toHaveBeenCalled();
+    expect(productsSvc.create).not.toHaveBeenCalled();
   });
 });

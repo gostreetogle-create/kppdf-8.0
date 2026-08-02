@@ -8,41 +8,97 @@ import {
   ProductModule,
   ProductModulesService,
 } from '../../shared/services/pi-product-modules.service';
+import { extractErrorMessage } from '../../core/silent-http';
 
 /**
- * TZ-83 Phase D: ProductModulePickerDialog.
- * TZ-90 Phase C: migrated to polymorphic <app-pi-dialog variant="content">.
+ * ProductModulePickerDialog — выбор модулей для товара.
  *
- * Показывает все модули из каталога, исключая уже привязанные.
- * Юзер выбирает один → возвращает moduleId строкой (ref.close(id)).
- * Cancel → null.
+ * TZ-83 Phase D: одиночный выбор (используется product-detail.page.ts).
+ * TZ-90 Phase C: мигрирован на полиморфный <app-pi-dialog variant="content">.
+ * TZ-PRODUCTS-303: добавлен МУЛЬТИ-режим для секции «Модули в составе»
+ *   диалога товара.
+ *
+ * Режимы (data.multi):
+ *   - default (без multi): классический `<select size="10">` — один модуль,
+ *     возвращает moduleId строкой (ref.close(id)).
+ *   - multi: чекбокс-список доступных модулей, возвращает `string[]`
+ *     (ref.close(ids)). Cancel → null в обоих режимах.
+ *
+ * Уже привязанные модули исключаются через `excludeIds` из data.
+ * loading/error/empty — по образцу PiColorReference dropdown (TZ-PRODUCTS-301).
  */
+export interface ProductModulePickerData {
+  productId: string;
+  excludeIds: string[];
+  /** true → чекбокс-список, возвращает string[]; default → select, возвращает string. */
+  multi?: boolean;
+}
+
 @Component({
   selector: 'app-product-module-picker-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, ButtonComponent, PiDialogComponent],
   template: `
-    <app-pi-dialog title="Привязать модуль к товару" [width]="'lg'" [variant]="'content'">
+    <app-pi-dialog
+      [title]="multi ? 'Добавить модули в состав' : 'Привязать модуль к товару'"
+      [width]="'lg'"
+      [variant]="'content'"
+    >
       <form body [formGroup]="form" (ngSubmit)="onSubmit()" data-test="picker-form">
-        <p class="eyebrow text-muted-foreground mb-3">Привязать модуль к товару</p>
+        <p class="eyebrow text-muted-foreground mb-3">
+          {{
+            multi ? 'Отметьте модули в составе товара' : 'Привязать модуль к товару'
+          }}
+        </p>
 
-        <label class="block">
-          <span class="eyebrow block mb-1.5">Модуль <span class="text-destructive">*</span></span>
-          <select
-            class="pi-input w-full"
-            formControlName="moduleId"
-            data-test="picker-select"
-            size="10"
-          >
+        @if (loading()) {
+          <p class="text-xs text-muted-foreground py-2" role="status">Загрузка модулей…</p>
+        } @else if (error()) {
+          <p class="text-xs text-destructive py-2" role="alert">{{ error() }}</p>
+        } @else if (multi) {
+          <div class="max-h-72 overflow-y-auto hairline rounded-sm p-1 space-y-0.5">
             @for (m of available(); track m._id) {
-              <option [value]="m._id">
-                {{ m.name }} · {{ m.article ?? '—' }} · {{ m.materials.length }} материалов
-              </option>
+              <label
+                class="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-paper-2 cursor-pointer"
+                [attr.data-test]="'picker-row-' + m._id"
+              >
+                <input
+                  type="checkbox"
+                  class="w-4 h-4 shrink-0"
+                  [checked]="selected().includes(m._id)"
+                  (change)="toggle(m._id)"
+                  data-test="picker-check"
+                />
+                <span class="text-sm truncate">{{ m.name }}</span>
+                <span class="ml-auto text-xs text-muted-foreground whitespace-nowrap">
+                  {{ m.article ?? '—' }} · {{ m.materials.length }} материалов
+                </span>
+              </label>
             } @empty {
-              <option disabled>Нет доступных модулей.</option>
+              <p class="px-2 py-3 text-xs text-muted-foreground">Нет доступных модулей.</p>
             }
-          </select>
-        </label>
+          </div>
+        } @else {
+          <label class="block">
+            <span class="eyebrow block mb-1.5">
+              Модуль <span class="text-destructive">*</span>
+            </span>
+            <select
+              class="pi-input w-full"
+              formControlName="moduleId"
+              data-test="picker-select"
+              size="10"
+            >
+              @for (m of available(); track m._id) {
+                <option [value]="m._id">
+                  {{ m.name }} · {{ m.article ?? '—' }} · {{ m.materials.length }} материалов
+                </option>
+              } @empty {
+                <option disabled>Нет доступных модулей.</option>
+              }
+            </select>
+          </label>
+        }
       </form>
 
       <div footer>
@@ -52,38 +108,71 @@ import {
         <app-pi-button
           variant="default"
           type="submit"
-          [disabled]="form.invalid"
+          [disabled]="multi ? selected().length === 0 : form.invalid"
           data-test="submit-button"
         >
-          Привязать
+          {{ multi ? 'Добавить' : 'Привязать' }}
         </app-pi-button>
       </div>
     </app-pi-dialog>
   `,
 })
 export class ProductModulePickerDialogComponent {
-  protected readonly ref = inject<DialogRef<string | null>>(PI_DIALOG_REF);
-  protected readonly data = inject<{ productId: string; excludeIds: string[] }>(PI_DIALOG_DATA);
+  protected readonly ref = inject<DialogRef<string | string[] | null>>(PI_DIALOG_REF);
+  protected readonly data = inject<ProductModulePickerData>(PI_DIALOG_DATA);
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly modules = inject(ProductModulesService);
 
-  /** Loaded once on mount. */
+  /** Мульти-режим задаётся ДО рендера через data.multi (статично). */
+  protected readonly multi = this.data.multi ?? false;
+
+  /** Каталог всех модулей, загруженный один раз на mount. */
   protected readonly all = signal<ProductModule[]>([]);
+  protected readonly loading = signal(false);
+  protected readonly error = signal<string | null>(null);
+
+  /** Доступные = каталог минус уже привязанные (excludeIds). */
   protected readonly available = computed<ProductModule[]>(() =>
     this.all().filter((m) => !this.data.excludeIds.includes(m._id)),
   );
+
+  /** Выбранные id в мульти-режиме. */
+  protected readonly selected = signal<string[]>([]);
 
   protected readonly form = this.fb.group({
     moduleId: this.fb.control<string>('', [Validators.required]),
   });
 
   constructor() {
+    this.load();
+  }
+
+  private load(): void {
+    this.loading.set(true);
+    this.error.set(null);
     this.modules.list().subscribe((res) => {
-      if (res.ok) this.all.set(res.data);
+      this.loading.set(false);
+      if (res.ok) {
+        this.all.set(res.data);
+      } else {
+        this.all.set([]);
+        this.error.set(extractErrorMessage(res.error));
+      }
     });
   }
 
+  protected toggle(id: string): void {
+    this.selected.update((cur) =>
+      cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id],
+    );
+  }
+
   protected onSubmit(): void {
+    if (this.multi) {
+      if (this.selected().length === 0) return;
+      this.ref.close(this.selected());
+      return;
+    }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
