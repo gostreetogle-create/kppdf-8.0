@@ -744,6 +744,8 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 | TZ-DOC-273 | 2026-08-02 | Builder — фон и прозрачность блоков: строгий hex, кламп opacity, зеркальная валидация в сгенерированном HTML | `tasks/_archive/2026-08/TZ-DOC-273.done.md` |
 | TZ-ADMIN-275 | 2026-08-02 | Role form — подтверждённые hex-fallback убраны из var() (токены глобальные), 0×hex, tsc/build/jest PASS | `tasks/_archive/2026-08/TZ-ADMIN-275.done.md` |
 | TZ-279 | 2026-08-02 | Workflow — дубль build-команды устранён: check:build удалён, канон build:dev, docs синхронизированы (заказан как TZ-276, номер занят другой сессией) | `tasks/_archive/2026-08/TZ-279.done.md` |
+| TZ-276 | 2026-08-02 | SUPERSEDED — полностью покрыт TZ-DOC-268; production-код повторно не менялся | `tasks/_archive/2026-08/TZ-276.superseded.md` |
+| TZ-274 | 2026-08-02 | Admin capability UI-gating — users/roles action buttons hidden by required capabilities; regression tests | `tasks/_archive/2026-08/TZ-274-admin-capabilities-ui-gating.done.md` |
 
 ## 🚀 Следующие шаги (предложения)
 

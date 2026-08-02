@@ -9,6 +9,7 @@ import {
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom, Observable } from 'rxjs';
 import { API_BASE_URL } from '../../core/api.tokens';
+import { CapabilitiesService } from '../../core/capabilities/capabilities.service';
 import {
   extractErrorMessage,
   silentDelete,
@@ -70,14 +71,16 @@ interface ClientRole {
 
     <section class="pi-page-frame pi-edge-bleed py-page-y">
       <div class="flex items-center justify-end mb-4">
-        <app-pi-button
-          variant="default"
-          size="sm"
-          (click)="onCreate()"
-          data-test="roles-admin-create"
-        >
-          Создать роль
-        </app-pi-button>
+        @if (caps.hasAny(['role:write'])) {
+          <app-pi-button
+            variant="default"
+            size="sm"
+            (click)="onCreate()"
+            data-test="roles-admin-create"
+          >
+            Создать роль
+          </app-pi-button>
+        }
       </div>
       @if (loading()) {
         <p class="text-sm text-muted-foreground">Загрузка…</p>
@@ -122,6 +125,8 @@ interface ClientRole {
                     <div class="flex items-center justify-end gap-2">
                       <app-pi-row-actions
                         [row]="r"
+                        [showEdit]="caps.hasAny(['role:write'])"
+                        [showDelete]="caps.hasAny(['role:admin'])"
                         editLabel="Редактировать"
                         dataTestEdit="roles-admin-edit"
                         deleteLabel="Удалить"
@@ -155,6 +160,7 @@ export class RolesAdminPage {
   private readonly dialog = inject(PiDialogService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
+  protected readonly caps = inject(CapabilitiesService);
 
   readonly roles = signal<ClientRole[]>([]);
   readonly loading = signal(true);

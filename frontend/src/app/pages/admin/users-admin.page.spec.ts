@@ -4,6 +4,8 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { HttpClient } from '@angular/common/http';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { API_BASE_URL } from '../../core/api.tokens';
+import { CapabilitiesService } from '../../core/capabilities/capabilities.service';
+import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { silentPost, silentDelete } from '../../core/silent-http';
 import { PiToastService } from '../../shared/ui/toast';
 import { UsersAdminPage } from './users-admin.page';
@@ -44,20 +46,23 @@ describe('UsersAdminPage', () => {
   let http: HttpClient;
   let toastError: jest.Mock;
   let toastSuccess: jest.Mock;
+  let hasAny: jest.Mock;
 
   beforeEach(async () => {
     toastError = jest.fn();
     toastSuccess = jest.fn();
+    hasAny = jest.fn().mockReturnValue(false);
     await TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([]), withFetch()),
         provideHttpClientTesting(),
         { provide: API_BASE_URL, useValue: BASE_URL },
         { provide: PiToastService, useValue: { success: toastSuccess, error: toastError } },
+        { provide: CapabilitiesService, useValue: { hasAny } },
       ],
     })
       .overrideComponent(UsersAdminPage, {
-        set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
+        set: { imports: [PiRowActionsComponent], schemas: [NO_ERRORS_SCHEMA] },
       })
       .compileComponents();
     httpMock = TestBed.inject(HttpTestingController);
@@ -120,6 +125,63 @@ describe('UsersAdminPage', () => {
       .flush({ message: 'Server exploded' }, { status: 500, statusText: 'Server Error' });
 
     expect(toastError).toHaveBeenCalledWith('Server exploded');
+  });
+
+  it('hides users action controls when capabilities are missing', async () => {
+    const fixture = TestBed.createComponent(UsersAdminPage);
+    httpMock.expectOne(`${BASE_URL}/admin/users?limit=200`).flush([CLIENT_USER]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="users-admin-create"]')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="users-admin-reset-password"]'),
+    ).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="users-admin-toggle-active"]'),
+    ).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="users-admin-edit"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="users-admin-delete"]')).toBeNull();
+  });
+
+  it('renders users actions only for their required capabilities', async () => {
+    hasAny.mockImplementation((keys: readonly string[]) => keys.includes('user:write'));
+    const writeFixture = TestBed.createComponent(UsersAdminPage);
+    httpMock.expectOne(`${BASE_URL}/admin/users?limit=200`).flush([CLIENT_USER]);
+    await writeFixture.whenStable();
+    writeFixture.detectChanges();
+
+    expect(
+      writeFixture.nativeElement.querySelector('[data-test="users-admin-create"]'),
+    ).not.toBeNull();
+    expect(
+      writeFixture.nativeElement.querySelector('[data-test="users-admin-toggle-active"]'),
+    ).not.toBeNull();
+    expect(
+      writeFixture.nativeElement.querySelector('[data-test="users-admin-edit"]'),
+    ).not.toBeNull();
+    expect(
+      writeFixture.nativeElement.querySelector('[data-test="users-admin-reset-password"]'),
+    ).toBeNull();
+    expect(writeFixture.nativeElement.querySelector('[data-test="users-admin-delete"]')).toBeNull();
+    writeFixture.destroy();
+
+    hasAny.mockImplementation((keys: readonly string[]) => keys.includes('user:admin'));
+    const adminFixture = TestBed.createComponent(UsersAdminPage);
+    httpMock.expectOne(`${BASE_URL}/admin/users?limit=200`).flush([CLIENT_USER]);
+    await adminFixture.whenStable();
+    adminFixture.detectChanges();
+
+    expect(
+      adminFixture.nativeElement.querySelector('[data-test="users-admin-reset-password"]'),
+    ).not.toBeNull();
+    expect(
+      adminFixture.nativeElement.querySelector('[data-test="users-admin-delete"]'),
+    ).not.toBeNull();
+    expect(adminFixture.nativeElement.querySelector('[data-test="users-admin-create"]')).toBeNull();
+    expect(
+      adminFixture.nativeElement.querySelector('[data-test="users-admin-toggle-active"]'),
+    ).toBeNull();
   });
 
   it('shows the success toast and refreshes after a successful mutation', () => {

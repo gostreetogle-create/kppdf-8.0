@@ -9,6 +9,7 @@ import {
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom, Observable } from 'rxjs';
 import { API_BASE_URL } from '../../core/api.tokens';
+import { CapabilitiesService } from '../../core/capabilities/capabilities.service';
 import {
   extractErrorMessage,
   silentDelete,
@@ -73,14 +74,16 @@ interface ClientUser {
 
     <section class="pi-page-frame pi-edge-bleed py-page-y">
       <div class="flex items-center justify-end mb-4">
-        <app-pi-button
-          variant="default"
-          size="sm"
-          (click)="onCreate()"
-          data-test="users-admin-create"
-        >
-          Создать пользователя
-        </app-pi-button>
+        @if (caps.hasAny(['user:write'])) {
+          <app-pi-button
+            variant="default"
+            size="sm"
+            (click)="onCreate()"
+            data-test="users-admin-create"
+          >
+            Создать пользователя
+          </app-pi-button>
+        }
       </div>
       @if (loading()) {
         <p class="text-sm text-muted-foreground">Загрузка…</p>
@@ -116,30 +119,36 @@ interface ClientUser {
                 </td>
                 <td class="pi-table-td">
                   <div class="flex items-center justify-end gap-2">
-                    <button
-                      type="button"
-                      class="pi-icon-btn pi-focus-ring"
-                      (click)="onResetPassword(u)"
-                      [attr.aria-label]="'Сбросить пароль ' + u.username"
-                      title="Сбросить пароль"
-                      data-test="users-admin-reset-password"
-                    >
-                      <span aria-hidden="true">⚿</span>
-                    </button>
-                    <button
-                      type="button"
-                      class="pi-icon-btn pi-focus-ring"
-                      (click)="onToggleActive(u)"
-                      [attr.aria-label]="
-                        u.isActive ? 'Деактивировать ' + u.username : 'Активировать ' + u.username
-                      "
-                      [title]="u.isActive ? 'Деактивировать' : 'Активировать'"
-                      data-test="users-admin-toggle-active"
-                    >
-                      <span aria-hidden="true">{{ u.isActive ? '⏸' : '▶' }}</span>
-                    </button>
+                    @if (caps.hasAny(['user:admin'])) {
+                      <button
+                        type="button"
+                        class="pi-icon-btn pi-focus-ring"
+                        (click)="onResetPassword(u)"
+                        [attr.aria-label]="'Сбросить пароль ' + u.username"
+                        title="Сбросить пароль"
+                        data-test="users-admin-reset-password"
+                      >
+                        <span aria-hidden="true">⚿</span>
+                      </button>
+                    }
+                    @if (caps.hasAny(['user:write'])) {
+                      <button
+                        type="button"
+                        class="pi-icon-btn pi-focus-ring"
+                        (click)="onToggleActive(u)"
+                        [attr.aria-label]="
+                          u.isActive ? 'Деактивировать ' + u.username : 'Активировать ' + u.username
+                        "
+                        [title]="u.isActive ? 'Деактивировать' : 'Активировать'"
+                        data-test="users-admin-toggle-active"
+                      >
+                        <span aria-hidden="true">{{ u.isActive ? '⏸' : '▶' }}</span>
+                      </button>
+                    }
                     <app-pi-row-actions
                       [row]="u"
+                      [showEdit]="caps.hasAny(['user:write'])"
+                      [showDelete]="caps.hasAny(['user:admin'])"
                       editLabel="Редактировать"
                       dataTestEdit="users-admin-edit"
                       deleteLabel="Удалить"
@@ -170,6 +179,7 @@ export class UsersAdminPage {
   private readonly dialog = inject(PiDialogService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
+  protected readonly caps = inject(CapabilitiesService);
 
   readonly users = signal<ClientUser[]>([]);
   readonly loading = signal(true);

@@ -36,6 +36,7 @@ describe('PiRowActionsComponent', () => {
       showEdit?: boolean;
       dataTestEdit?: string | null;
       dataTestDelete?: string | null;
+      showDelete?: boolean;
     } = {},
   ): Promise<ComponentFixture<PiRowActionsComponent<TestRow>>> {
     await TestBed.configureTestingModule({
@@ -65,6 +66,9 @@ describe('PiRowActionsComponent', () => {
     }
     if (inputs.showEdit !== undefined) {
       fixture.componentRef.setInput('showEdit', inputs.showEdit);
+    }
+    if (inputs.showDelete !== undefined) {
+      fixture.componentRef.setInput('showDelete', inputs.showDelete);
     }
     if (inputs.dataTestEdit !== undefined) {
       fixture.componentRef.setInput('dataTestEdit', inputs.dataTestEdit);
@@ -121,6 +125,12 @@ describe('PiRowActionsComponent', () => {
       expect(del.getAttribute('aria-label')).toBe('Удалить системный юнит');
       expect(del.disabled).toBe(true);
       expect(del.getAttribute('title')).toBe('Системный юнит — нельзя удалить');
+    });
+
+    it('omits the delete button when showDelete=false', async () => {
+      const fixture = await createFixture({ showDelete: false });
+      expect(deleteButton(fixture)).toBeNull();
+      expect(editButton(fixture)).not.toBeNull();
     });
   });
 

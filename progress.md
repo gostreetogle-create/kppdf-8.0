@@ -4993,3 +4993,13 @@ E2E-сценарии с созданием данных помечены MANUAL_
 - TZ-DOC-274 (browser acceptance): DEFERRED, MANUAL_BROWSER_CHECK_REQUIRED.
 - Верификация: FE jest 699/699, BE jest 320/320, tsc FE+BE 0, ng build 0, git diff --check 0, verify-status PASS.
 - Внешний блокер: frontend/src/app/pages/dictionaries/categories.page.ts — незакоммиченная правка параллельной сессии, duplicate identifier 'destroyRef' (TS2300) ломает полный frontend tsc; НЕ включена в коммиты.
+
+---
+
+## 2026-08-02 — TZ-276 SUPERSEDED + TZ-274 DONE
+**Исполнитель:** Buffy
+**Статус:** TZ-276 SUPERSEDED; TZ-274 Выполнено / Проверено
+**Что сделано кратко:** TZ-276 не реализовывался повторно: активный файл архивирован со ссылкой на `TZ-DOC-268.done.md`, который уже покрывает весь builder/template-dialog lifecycle. На users/roles admin-страницах добавлена capability-видимость действий; `PiRowActions` получил обратно-совместимый `showDelete`, добавлены DOM regression-тесты.
+**Затронутые файлы/папки:** `frontend/src/app/pages/admin/users-admin.page.ts`, `frontend/src/app/pages/admin/users-admin.page.spec.ts`, `frontend/src/app/pages/admin/roles-admin.page.ts`, `frontend/src/app/pages/admin/roles-admin.page.spec.ts`, `frontend/src/app/shared/ui/pi-row-actions/pi-row-actions.component.ts`, `frontend/src/app/shared/ui/pi-row-actions/pi-row-actions.component.spec.ts`, `tasks/_archive/2026-08/TZ-276.superseded.md`, `tasks/_archive/2026-08/TZ-274-admin-capabilities-ui-gating.done.md`, `docs/agent-checklists/TZ-274.md`, `docs/agent-checklists/TZ-276.md`
+**Verification:** targeted FE Jest 3 suites / 29 tests PASS; frontend tsc PASS; frontend ng build development PASS; git diff --check PASS; independent review PASS.
+**Известные ограничения:** `MANUAL_BROWSER_CHECK_REQUIRED` — live authenticated browser flow не запускался; чужие незакоммиченные файлы не включались.

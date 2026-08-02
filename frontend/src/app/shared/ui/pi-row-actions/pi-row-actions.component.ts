@@ -84,18 +84,20 @@ import { ChangeDetectionStrategy, Component, output, input } from '@angular/core
           <span aria-hidden="true">✎</span>
         </button>
       }
-      <button
-        type="button"
-        class="pi-icon-btn pi-icon-btn-danger pi-focus-ring
-               disabled:opacity-30 disabled:cursor-not-allowed"
-        [attr.aria-label]="deleteLabel()"
-        [attr.data-test]="dataTestDelete()"
-        [attr.title]="deleteTitle()"
-        [disabled]="deleteDisabled()"
-        (click)="delete.emit(row())"
-      >
-        <span aria-hidden="true">×</span>
-      </button>
+      @if (showDelete()) {
+        <button
+          type="button"
+          class="pi-icon-btn pi-icon-btn-danger pi-focus-ring
+                 disabled:opacity-30 disabled:cursor-not-allowed"
+          [attr.aria-label]="deleteLabel()"
+          [attr.data-test]="dataTestDelete()"
+          [attr.title]="deleteTitle()"
+          [disabled]="deleteDisabled()"
+          (click)="delete.emit(row())"
+        >
+          <span aria-hidden="true">×</span>
+        </button>
+      }
     </div>
   `,
   styles: [
@@ -140,6 +142,8 @@ export class PiRowActionsComponent<T> {
    * are managed via a different flow. Default `true`.
    */
   readonly showEdit = input<boolean>(true);
+  /** Whether to render the delete button. Default `true` for backwards compatibility. */
+  readonly showDelete = input<boolean>(true);
   /** E2E selector prefix for the edit button. Required when `showEdit=true`. */
   readonly dataTestEdit = input<string | null>(null);
   /** E2E selector prefix for the delete button. */
