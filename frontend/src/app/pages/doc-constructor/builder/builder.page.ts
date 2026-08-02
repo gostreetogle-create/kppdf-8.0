@@ -1175,6 +1175,7 @@ export class BuilderPage {
   protected onDuplicateTemplate(t: DocumentTemplate): void {
     const ref = this.dialog.open<TemplateSetupResult>(TemplateSetupDialogComponent, {
       data: { mode: 'duplicate' },
+      parentDestroyRef: this.destroyRef,
     });
     onDialogCloseOnce(ref, this.injector, (result) => {
       if (!result) return;
@@ -1639,6 +1640,7 @@ export class BuilderPage {
   protected onCreateTemplate(): void {
     const ref = this.dialog.open<TemplateSetupResult>(TemplateSetupDialogComponent, {
       data: { mode: 'create' },
+      parentDestroyRef: this.destroyRef,
     });
     onDialogCloseOnce(ref, this.injector, (result) => {
       if (!result) return;

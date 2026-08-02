@@ -5060,3 +5060,15 @@ E2E-сценарии с созданием данных помечены MANUAL_
 **Browser:** `MANUAL_BROWSER_CHECK_REQUIRED` — browser agents не смогли завершить Chrome DevTools page selection (`pageId` оказался undefined), поэтому browser/E2E success не заявляется.
 **Архив:** `tasks/_archive/2026-08/TZ-278-admin-users-pagination.done.md`; lock: `.mimocode/locks/TZ-278-admin-users-pagination.lock`.
 **Оставшиеся active TZ:** TZ-MATERIALS-307, TZ-MATERIALS-309, TZ-MATERIALS-308. Следующий исполнитель выбирает одну конкретную задачу, проверяет dependencies/conflict keys и не запускает весь `tasks/` одновременно.
+
+---
+
+## 2026-08-02 — TZ-DOC-310 DONE (Диалог создания — закрытие по одному клику + видимая валидация)
+
+**Исполнитель:** Buffy
+**Статус:** DONE
+**Результат:** Устранён симптом «диалог висит и ждёт второго нажатия». Кнопка «Создать/Дублировать» disabled только пока каталог категорий грузится / в ошибке / пуст, или уже submitted — во время loading клик физически невозможен. При готовом каталоге без выбранной категории кнопка намеренно активна: клик показывает видимое «Выберите категорию» (confirmAttempted), не закрывает диалог и не создаёт шаблон (вместо молчаливого `if (!categoryId()) return;`); выбор категории сбрасывает hint. Submit-guard TZ-DOC-268 сохранён (ref.close ровно один раз, повторный клик без дубликата POST). Во все 4 точки `dialog.open(TemplateSetupDialogComponent)` передан `parentDestroyRef` (builder onCreate/onDuplicate, templates onCreate/onDuplicate) — CDK overlay гарантированно уничтожается при навигации.
+**Изменения:** `template-setup-dialog.component.ts` (confirmAttempted, canConfirm, onConfirm-валидация, onCategoryChange-reset); `builder.page.ts` + `templates.page.ts` (parentDestroyRef x4); спеки: dialog +5 (no-silent-swallow, hint после выбора, disabled при loading/error/empty), builder.page.spec +2 и templates.page.spec +2 (parentDestroyRef); `docs/agent-checklists/TZ-DOC-310.md`.
+**Проверки:** FE targeted jest 49/49 PASS (3 suites, runInBand), FE tsc PASS, ng build PASS, `git diff --check` PASS, `verify-status.sh` PASS, независимый code review PASS (no P0/P1; 2 P2 исправлены: canConfirm+хинт достижим, мёртвый accessor убран).
+**Архив:** `tasks/_archive/2026-08/TZ-DOC-310-template-dialog-one-click-close.done.md`; lock: `.mimocode/locks/TZ-DOC-310-template-dialog-one-click-close.lock`.
+**Ограничение:** `MANUAL_BROWSER_CHECK_REQUIRED` — live authenticated browser flow не запускался; контракт доказан unit/интеграционными тестами (включая TestBed template-компиляцию, ловящую NG5xxx). Не выполнялись: TZ-DOC-309 (в архиве), 311/312/313/314, TZ-278, Materials 307/308/309, Z-series.

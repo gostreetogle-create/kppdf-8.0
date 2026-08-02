@@ -55,7 +55,7 @@ export interface TemplateSetupData {
                 class="pi-input w-full"
                 [value]="categoryId()"
                 (change)="onCategoryChange($event)"
-                [class.border-destructive]="hasCategoryError()"
+                [class.border-destructive]="confirmAttempted() && !categoryId()"
                 aria-label="Категория шаблона"
               >
                 <option value="" disabled>— выберите категорию —</option>
@@ -64,7 +64,7 @@ export interface TemplateSetupData {
                 }
               </select>
             }
-            @if (hasCategoryError()) {
+            @if (confirmAttempted() && !categoryId()) {
               <span class="text-xs text-destructive">Выберите категорию</span>
             }
           </div>
@@ -106,7 +106,7 @@ export interface TemplateSetupData {
       </div>
       <div footer>
         <app-pi-button variant="ghost" size="sm" (click)="onCancel()"> Отмена </app-pi-button>
-        <app-pi-button variant="default" size="sm" (click)="onConfirm()">
+        <app-pi-button variant="default" size="sm" (click)="onConfirm()" [disabled]="!canConfirm()">
           {{ data.mode === 'duplicate' ? 'Дублировать' : 'Создать' }}
         </app-pi-button>
       </div>
@@ -189,6 +189,14 @@ export class TemplateSetupDialogComponent {
   protected readonly categoriesError = signal<string | null>(null);
 
   /**
+   * TZ-DOC-310 — tracks that the user pressed «Создать» while no category
+   * was chosen, so the «Выберите категорию» hint is visible in every state
+   * (loading, error, empty, ready-without-selection) instead of being
+   * silently swallowed by the old bare `if (!categoryId()) return;`.
+   */
+  protected readonly confirmAttempted = signal(false);
+
+  /**
    * TZ-DOC-268: submit guard. A double-click on «Создать» before the CDK
    * overlay finishes teardown could fire `onConfirm` twice. `ref.close()` is
    * idempotent (the service ignores a second close), but the guard makes the
@@ -218,17 +226,36 @@ export class TemplateSetupDialogComponent {
     });
   }
 
-  protected hasCategoryError(): boolean {
-    return !this.categoryId() && this.categories().length > 0;
+  /**
+   * TZ-DOC-310 — the confirm button is disabled only while the dialog cannot
+   * meaningfully proceed (catalog loading / failed / empty, or already
+   * submitted). When the catalog is ready but no category is chosen yet, the
+   * button stays ENABLED on purpose: a click then surfaces the visible
+   * «Выберите категорию» hint instead of being silently swallowed — the
+   * original «dialog waits for a second click» symptom. During loading the
+   * button cannot be pressed at all.
+   */
+  protected canConfirm(): boolean {
+    if (this.submitted()) return false;
+    if (this.categoriesLoading()) return false;
+    if (this.categoriesError()) return false;
+    if (this.categories().length === 0) return false;
+    return true;
   }
 
   protected onCategoryChange(e: Event): void {
     this.categoryId.set((e.target as HTMLSelectElement).value);
+    this.confirmAttempted.set(false);
   }
 
   protected onConfirm(): void {
     if (this.submitted()) return;
-    if (!this.categoryId()) return;
+    if (!this.categoryId()) {
+      // TZ-DOC-310: never close / never create without a category — show the
+      // visible hint instead (single, testable validation rule).
+      this.confirmAttempted.set(true);
+      return;
+    }
     this.submitted.set(true);
     this.ref.close({
       pageSize: this.pageSize(),

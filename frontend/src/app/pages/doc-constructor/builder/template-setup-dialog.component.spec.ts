@@ -120,6 +120,8 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
     pageSize: () => 'A3' | 'A4' | 'A5';
     orientation: () => 'portrait' | 'landscape';
     categoryId: () => string;
+    canConfirm: () => boolean;
+    confirmAttempted: () => boolean;
   } {
     return fixture.componentInstance as unknown as {
       onConfirm: () => void;
@@ -127,6 +129,8 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
       pageSize: () => 'A3' | 'A4' | 'A5';
       orientation: () => 'portrait' | 'landscape';
       categoryId: () => string;
+      canConfirm: () => boolean;
+      confirmAttempted: () => boolean;
     };
   }
 
@@ -312,5 +316,75 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
     const text = fixture.nativeElement.textContent ?? '';
     expect(text).not.toContain('Загрузка категорий');
     expect(handlers().categoryId()).toBe('cat-1');
+  });
+
+  // ═══ TZ-DOC-310: one-click close + visible validation ═══
+
+  it('confirm without a category NEVER closes the dialog (no silent swallow)', () => {
+    // Categories present, but the user has not picked one (no default).
+    listMock.mockReturnValue(of({ ok: true, data: [CATS[1]] })); // only cat-2, not default
+    createFixture();
+
+    expect(handlers().categoryId()).toBe('');
+    // Catalog is ready, so the button is ENABLED on purpose — a real click
+    // must surface feedback, never be silently swallowed.
+    expect(handlers().canConfirm()).toBe(true);
+    handlers().onConfirm();
+    expect(close).not.toHaveBeenCalled();
+    // The visible hint appears — the click is not silently swallowed.
+    expect(handlers().confirmAttempted()).toBe(true);
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent ?? '';
+    expect(text).toContain('Выберите категорию');
+  });
+
+  it('selecting a category after a failed attempt clears the hint and enables confirm', () => {
+    listMock.mockReturnValue(of({ ok: true, data: [CATS[1]] }));
+    createFixture();
+
+    handlers().onConfirm();
+    expect(handlers().confirmAttempted()).toBe(true);
+
+    const select = fixture.nativeElement.querySelector<HTMLSelectElement>('#template-category');
+    select!.value = 'cat-2';
+    select!.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(handlers().confirmAttempted()).toBe(false);
+    expect(handlers().canConfirm()).toBe(true);
+    handlers().onConfirm();
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledWith({
+      pageSize: 'A4',
+      orientation: 'portrait',
+      categoryId: 'cat-2',
+    });
+  });
+
+  it('confirm button is disabled while the catalog is still loading', () => {
+    listMock.mockReturnValue(new Observable(() => {}));
+    createFixture();
+
+    expect(handlers().canConfirm()).toBe(false);
+    handlers().onConfirm();
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('confirm button is disabled when the category load fails', () => {
+    listMock.mockReturnValue(of({ ok: false, error: new Error('boom') }));
+    createFixture();
+
+    expect(handlers().canConfirm()).toBe(false);
+    handlers().onConfirm();
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('confirm button is disabled when there are no active categories', () => {
+    // Default mock: no categories.
+    createFixture();
+
+    expect(handlers().canConfirm()).toBe(false);
+    handlers().onConfirm();
+    expect(close).not.toHaveBeenCalled();
   });
 });

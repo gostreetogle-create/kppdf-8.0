@@ -332,6 +332,7 @@ export class TemplatesPage {
   protected onCreate(): void {
     const ref = this.dialog.open<TemplateSetupResult>(TemplateSetupDialogComponent, {
       data: { mode: 'create' },
+      parentDestroyRef: this.destroyRef,
     });
     onDialogCloseOnce(ref, this.injector, (result) => {
       if (!result) return;
@@ -453,6 +454,7 @@ export class TemplatesPage {
   protected onDuplicate(t: DocumentTemplate): void {
     const ref = this.dialog.open<TemplateSetupResult>(TemplateSetupDialogComponent, {
       data: { mode: 'duplicate' },
+      parentDestroyRef: this.destroyRef,
     });
     onDialogCloseOnce(ref, this.injector, (result) => {
       if (!result) return;

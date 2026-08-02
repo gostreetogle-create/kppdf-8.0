@@ -11,7 +11,10 @@ import { PiToastService } from '../../../shared/ui/toast';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import type { SilentResult } from '../../../core/silent-http';
 import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
-import type { TemplateSetupResult } from '../builder/template-setup-dialog.component';
+import {
+  TemplateSetupDialogComponent,
+  type TemplateSetupResult,
+} from '../builder/template-setup-dialog.component';
 
 describe('TemplatesPage', () => {
   const dialogSpy = {
@@ -371,5 +374,45 @@ describe('TemplatesPage', () => {
     fixture.detectChanges();
 
     expect(comp.filtered()).toHaveLength(2);
+  });
+
+  // ═══ TZ-DOC-310: dialog.open passes parentDestroyRef on both entry points ═══
+
+  it('TZ-DOC-310: onCreate passes parentDestroyRef', async () => {
+    const fixture = TestBed.createComponent(TemplatesPage);
+    fixture.detectChanges();
+    const instance = fixture.componentInstance as unknown as { onCreate: () => void };
+    const closed = signal<TemplateSetupResult | undefined>(undefined);
+    dialogSpy.open.mockReturnValue({ closed, close: jest.fn() });
+
+    instance.onCreate();
+    expect(dialogSpy.open).toHaveBeenCalledWith(
+      TemplateSetupDialogComponent,
+      expect.objectContaining({
+        data: { mode: 'create' },
+        parentDestroyRef: expect.anything(),
+      }),
+    );
+    await fixture.whenStable();
+  });
+
+  it('TZ-DOC-310: onDuplicate passes parentDestroyRef', async () => {
+    const fixture = TestBed.createComponent(TemplatesPage);
+    fixture.detectChanges();
+    const instance = fixture.componentInstance as unknown as {
+      onDuplicate: (t: { _id: string }) => void;
+    };
+    const closed = signal<TemplateSetupResult | undefined>(undefined);
+    dialogSpy.open.mockReturnValue({ closed, close: jest.fn() });
+
+    instance.onDuplicate({ _id: 'tpl-1' });
+    expect(dialogSpy.open).toHaveBeenCalledWith(
+      TemplateSetupDialogComponent,
+      expect.objectContaining({
+        data: { mode: 'duplicate' },
+        parentDestroyRef: expect.anything(),
+      }),
+    );
+    await fixture.whenStable();
   });
 });

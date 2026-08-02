@@ -275,4 +275,44 @@ describe('BuilderPage', () => {
     expect(templatesSvcUpdate).toHaveBeenCalled();
     expect(templatesSvcFindById).toHaveBeenCalledWith('tpl-1');
   });
+
+  // ═══ TZ-DOC-310: dialog.open passes parentDestroyRef + single-POST contract ═══
+
+  it('TZ-DOC-310: onCreateTemplate passes parentDestroyRef so overlay dies on navigation', () => {
+    const { closed } = fakeDialogRef<TemplateSetupResult>();
+    dialogSpy.open.mockReturnValue({ closed, close: jest.fn() });
+
+    const fixture = TestBed.createComponent(BuilderPage);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance as unknown as { onCreateTemplate: () => void };
+
+    comp.onCreateTemplate();
+    expect(dialogSpy.open).toHaveBeenCalledWith(
+      TemplateSetupDialogComponent,
+      expect.objectContaining({
+        data: { mode: 'create' },
+        parentDestroyRef: expect.anything(),
+      }),
+    );
+  });
+
+  it('TZ-DOC-310: onDuplicateTemplate passes parentDestroyRef too', () => {
+    const { closed } = fakeDialogRef<TemplateSetupResult>();
+    dialogSpy.open.mockReturnValue({ closed, close: jest.fn() });
+
+    const fixture = TestBed.createComponent(BuilderPage);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance as unknown as {
+      onDuplicateTemplate: (t: { _id: string }) => void;
+    };
+
+    comp.onDuplicateTemplate({ _id: 'tpl-1' });
+    expect(dialogSpy.open).toHaveBeenCalledWith(
+      TemplateSetupDialogComponent,
+      expect.objectContaining({
+        data: { mode: 'duplicate' },
+        parentDestroyRef: expect.anything(),
+      }),
+    );
+  });
 });

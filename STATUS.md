@@ -716,6 +716,7 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 |---|---|---|---|
 | TZ-DOC-311 | 2026-08-02 | Свойства шаблона — pageNumbering сохраняется; «Оглавление/Шапка/Подвал» убраны из UI (backward-compatible, без миграции) | `tasks/_archive/2026-08/TZ-DOC-311.done.md` |
 | TZ-DOC-309 | 2026-08-02 | Диалог создания шаблона — мгновенное открытие (кэш активных категорий в сервисе, инвалидация на CRUD) | `tasks/_archive/2026-08/TZ-DOC-309.done.md` |
+| TZ-DOC-310 | 2026-08-02 | Диалог создания — закрытие с первого клика; видимая валидация категории; parentDestroyRef в 4 open() | `tasks/_archive/2026-08/TZ-DOC-310-template-dialog-one-click-close.done.md` |
 | TZ-102 | 2026-07-19 | Backend route gaps (Currency module + Modules rename + Inventory summary) | `tasks/_archive/2026-07/TZ-102.md.done` |
 | TZ-110 | 2026-07-19 | Category backend safety — cycle prevention + existing safety sweep | `tasks/_archive/2026-07/TZ-110.md.done` |
 | TZ-111 | 2026-07-19 | Builder bulk-delete race condition — partial success + snapshot rollback | `tasks/_archive/2026-07/TZ-111.md.done` |
@@ -1099,16 +1100,3 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 **Затронутые файлы/папки:** `backend/src/modules/admin/permissions-admin.controller.ts`, `backend/src/common/interceptors/audit.interceptor.ts`, `backend/test/e2e/permissions-admin.e2e-spec.ts`, соответствующие specs, `docs/RBAC-CONTRACT.md`, `docs/agent-checklists/TZ-275.md`, `tasks/_archive/2026-08/TZ-275-admin-permissions-catalog-gating.done.md`
 **Verification:** backend unit Jest 3 suites / 35 tests PASS; permissions e2e 1 suite / 2 tests PASS; backend tsc PASS; targeted ESLint PASS; git diff --check PASS; independent review PASS.
 **Известные ограничения:** `MANUAL_BROWSER_CHECK_REQUIRED` — live authenticated browser flow не запускался; frontend и seed catalog не изменялись; чужие незакоммиченные файлы не включаются.
-
----
-
-## 2026-08-02 — TZ-278 DONE (Admin users and roles pagination)
-
-**Исполнитель:** Buffy
-**Статус:** DONE / implementation and targeted verification complete
-**Результат:** `/api/admin/users` и `/api/admin/roles` переведены на `{ items, total, page, limit }` с безопасными defaults/clamps, search-before-pagination, filtered totals, empty-page metadata и legacy `offset` compatibility. `/admin/users` и `/admin/roles` используют typed services и server-side pagination с сохранёнными loading/error/empty/search/mutation flows.
-**Затронутые файлы:** backend admin controllers/query helper/specs; frontend users/roles pages/services/specs; `docs/agent-checklists/TZ-278.md`; `tasks/_archive/2026-08/TZ-278-admin-users-pagination.done.md`; `.mimocode/locks/TZ-278-admin-users-pagination.lock`; `STATUS.md`; `progress.md`.
-**Verification:** backend targeted Jest 3 suites / 26 tests PASS; frontend targeted Jest 4 suites / 26 tests PASS; backend/frontend typecheck PASS; frontend development build PASS; targeted lint 0 errors with only pre-existing warnings; `git diff --check` PASS; `bash OrchestratorKit/verify-status.sh` PASS (exit 0); independent review no critical/important findings.
-**Browser limitation:** `MANUAL_BROWSER_CHECK_REQUIRED` — Chrome DevTools browser agents failed before navigation because page selection received an undefined `pageId`; browser success is not claimed.
-**Archive:** `tasks/_archive/2026-08/TZ-278-admin-users-pagination.done.md`; lock: `.mimocode/locks/TZ-278-admin-users-pagination.lock`.
-**Operational note:** TZ-276 remains SUPERSEDED by TZ-DOC-268; Materials TZ-MATERIALS-307, 309 and 308 remain active and untouched; 308 remains after 307 due to the shared material service conflict key; Z-series remains inactive.
