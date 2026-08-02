@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   effect,
+  inject,
   input,
   output,
   signal,
@@ -11,13 +12,14 @@ import {
   LucideAngularModule,
   RotateCcw,
   Hash,
-  Eye,
-  File,
   Upload,
   X,
   Check,
   Star,
-  FileText,
+  ChevronsUp,
+  ChevronUp,
+  ChevronDown,
+  ChevronsDown,
 } from 'lucide-angular';
 import {
   BLOCK_TYPE_LABELS,
@@ -33,28 +35,17 @@ import {
 } from '../../../shared/template-block/template-block-layout';
 import { clampOpacity } from './block-renderer-state.service';
 import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
+import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
+import { PiToastService } from '../../../shared/ui/toast';
+import { extractErrorMessage } from '../../../core/silent-http';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
 
 /**
- * TZ-86 Phase D.1 — `BuilderInspector` (right pane).
+ * BuilderInspector (right pane) — TZ-DOC-332 IA + visual canon.
  *
- * Renders an editable form for the currently-selected block. State is
- * signal-bound (no FormGroup): each field is a signal, and an `effect()`
- * watches them and emits `(update)` with the full patched block to the
- * parent. The parent then merges the patch into its in-memory list signal
- * and debounces a PATCH to the backend.
- *
- * Fields:
- *   - common: title (text), isActive (switch), showLine (switch)
- *   - text/header: content (textarea)
- *   - table: settings.tableTemplateId (readonly badge — change via re-add)
- *   - image/signature: height (number)
- *   - dataBinding: source (readonly badge), field (readonly badge),
- *     format (select: text | date | currency | number), value (text, for static)
- *
- * Empty state: when no block is selected, shows a centered hint
- * «Выберите блок для редактирования».
+ * Modes A–D share one section chrome (parity with top tool-pane).
+ * Signal-bound fields; parent owns PATCH debounce.
  */
 @Component({
   selector: 'app-builder-inspector',
@@ -65,34 +56,24 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
     <aside class="inspector" aria-label="Свойства блока">
       <header class="inspector__header">
         <h2 class="inspector__title">Свойства</h2>
-        @if (block(); as b) {
-          <span class="inspector__type-pill">{{ typeLabel(b) }}</span>
-        }
         @if (templateSelected()) {
           <button
             type="button"
-            class="inspector__close"
+            class="inspector__close pi-focus-ring"
             (click)="onClosePanel()"
             aria-label="Закрыть панель свойств"
           >
-            <lucide-icon [img]="CloseIcon" [size]="18"></lucide-icon>
+            <lucide-icon [img]="CloseIcon" [size]="16"></lucide-icon>
           </button>
         }
       </header>
 
       @if (!block() && selectedCount() === 0 && !templateSelected()) {
-        <div class="inspector__empty">
-          <p class="inspector__empty-title">Ничего не выбрано</p>
-          <p class="inspector__empty-hint">Кликните по блоку или на пустое место холста</p>
-        </div>
-
-        <!-- TZ-211: Document Summary -->
-        @if (allBlocks().length > 0) {
-          <div class="summary-section">
-            <div class="props-section__header">
-              <span class="props-section__number">00</span>
-              <h3 class="props-section__title">Сводка документа</h3>
-            </div>
+        <!-- Mode A: document context -->
+        <section class="insp-section" data-test="insp-section-context">
+          <h3 class="insp-section__title" data-test="insp-section-header">Контекст</h3>
+          <p class="insp-context__label">Документ</p>
+          @if (allBlocks().length > 0) {
             <div class="summary-grid">
               <div class="summary-item">
                 <span class="summary-item__label">Всего блоков</span>
@@ -109,32 +90,22 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 }}</span>
               </div>
             </div>
-          </div>
-        }
+          } @else {
+            <p class="insp-hint">Нет блоков на холсте</p>
+          }
+          <p class="insp-hint insp-hint--muted">Кликните по блоку или на пустое место холста</p>
+        </section>
 
-        <!-- Snap settings -->
-        <div class="props-section" style="margin-top: 16px; padding: 12px;">
-          <div class="props-section__header">
-            <span class="props-section__number">SNAP</span>
-            <h3 class="props-section__title">Привязка к сетке</h3>
-          </div>
+        <section class="insp-section" data-test="insp-section-snap">
+          <h3 class="insp-section__title" data-test="insp-section-header">Привязка к сетке</h3>
           <div class="snap-controls">
-            <label class="toggle-row">
-              <div class="toggle-row__left">
-                <span class="toggle-row__label">Привязка</span>
-              </div>
-              <input
-                type="checkbox"
-                class="toggle-checkbox"
+            <label class="field field--row">
+              <span class="field__label">Привязка</span>
+              <app-pi-switch
                 [checked]="localSnapEnabled()"
-                (change)="onSnapEnabledChange($any($event.target).checked)"
+                (checkedChange)="onSnapEnabledChange($event)"
               />
             </label>
-            <!-- TZ-DOC-269 (revoked 2026-08-02): декоративная сетка (dots)
-                 убрана из UI; магнитная привязка (snap-to-grid) и направляющие
-                 снапа работают и без визуальной сетки. Настройка «Шаг сетки»
-                 ниже остаётся — это параметр математической привязки, не
-                 визуальный слой. -->
             <div class="field">
               <span class="field__label">Шаг сетки (px)</span>
               <input
@@ -159,119 +130,397 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
               />
             </div>
           </div>
-        </div>
+        </section>
       } @else if (templateSelected() && template(); as t) {
-        <!-- Template properties panel -->
-        <div class="inspector__form">
-          <!-- Section 01: Visual Style (orientation/format removed — set at creation via dialog) -->
-          <section class="props-section">
-            <div class="props-section__header">
-              <span class="props-section__number">01</span>
-              <h3 class="props-section__title">Визуальный стиль</h3>
-            </div>
+        <!-- Mode B: template -->
+        <section class="insp-section" data-test="insp-section-context">
+          <h3 class="insp-section__title" data-test="insp-section-header">Контекст</h3>
+          <p class="insp-context__label">Шаблон</p>
+          <p class="insp-hint">{{ t.name }}</p>
+        </section>
 
-            <!-- Background opacity -->
-            <div class="field">
-              <div class="field__row-header">
-                <span class="field__label">Прозрачность фона</span>
-                <span class="field__value">{{ opacityPercent() }}%</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                [value]="t.backgroundOpacity"
-                (input)="onOpacityInput($event)"
-                class="field__slider"
-              />
+        <section class="insp-section" data-test="insp-section-page-style">
+          <h3 class="insp-section__title" data-test="insp-section-header">Стиль страницы</h3>
+          <div class="field">
+            <div class="field__row-header">
+              <span class="field__label">Прозрачность фона</span>
+              <span class="field__value">{{ opacityPercent() }}%</span>
             </div>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              [value]="t.backgroundOpacity"
+              (input)="onOpacityInput($event)"
+              class="field__slider"
+            />
+          </div>
+          <label class="field field--row">
+            <span class="field__label">
+              <lucide-icon [img]="HashIcon" [size]="14"></lucide-icon>
+              Нумерация страниц
+            </span>
+            <app-pi-switch
+              [checked]="t.pageNumbering ?? false"
+              (checkedChange)="onTemplateSettingChange('pageNumbering', $event)"
+            />
+          </label>
+        </section>
 
-            <!-- Page numbering -->
-            <div class="toggle-row">
-              <div class="toggle-row__left">
-                <lucide-icon [img]="HashIcon" [size]="18"></lucide-icon>
-                <span class="toggle-row__label">Нумерация страниц</span>
-              </div>
-              <input
-                type="checkbox"
-                class="toggle-checkbox"
-                [checked]="t.pageNumbering ?? false"
-                (change)="onTemplateSettingChange('pageNumbering', $any($event.target).checked)"
-              />
-            </div>
-          </section>
-
-          <!-- Section 02: Background Image -->
-          <section class="props-section props-section--last">
-            <div class="props-section__header">
-              <span class="props-section__number">02</span>
-              <h3 class="props-section__title">Фоновое изображение</h3>
-            </div>
-
-            @if (t.backgroundImage && t.backgroundImage.length > 0) {
-              <div class="bg-grid">
-                @for (url of t.backgroundImage; track url; let i = $index) {
-                  <div class="bg-grid__item" [class.is-default]="t.defaultBackgroundIndex === i">
-                    <div class="bg-grid__thumb" [style.background-image]="'url(' + url + ')'"></div>
-                    @if (t.defaultBackgroundIndex === i) {
-                      <div class="bg-grid__check">
-                        <lucide-icon [img]="CheckIcon" [size]="20"></lucide-icon>
-                      </div>
-                    }
-                    <div class="bg-grid__actions">
-                      <button
-                        type="button"
-                        class="bg-grid__action-btn"
-                        [class.is-active]="t.defaultBackgroundIndex === i"
-                        (click)="onSetDefaultBackground(i)"
-                        [attr.aria-label]="
-                          t.defaultBackgroundIndex === i
-                            ? 'Убрать из дефолтных'
-                            : 'Сделать по умолчанию'
-                        "
-                      >
-                        <lucide-icon
-                          [img]="t.defaultBackgroundIndex === i ? StarFilledIcon : StarIcon"
-                          [size]="14"
-                        ></lucide-icon>
-                      </button>
-                      <button
-                        type="button"
-                        class="bg-grid__action-btn bg-grid__action-btn--danger"
-                        (click)="onRemoveBackground(i)"
-                        aria-label="Удалить фон"
-                      >
-                        <lucide-icon [img]="CloseSmallIcon" [size]="14"></lucide-icon>
-                      </button>
+        <section class="insp-section" data-test="insp-section-background">
+          <h3 class="insp-section__title" data-test="insp-section-header">Фон</h3>
+          @if (t.backgroundImage && t.backgroundImage.length > 0) {
+            <div class="bg-grid">
+              @for (url of t.backgroundImage; track url; let i = $index) {
+                <div class="bg-grid__item" [class.is-default]="t.defaultBackgroundIndex === i">
+                  <div class="bg-grid__thumb" [style.background-image]="'url(' + url + ')'"></div>
+                  @if (t.defaultBackgroundIndex === i) {
+                    <div class="bg-grid__check">
+                      <lucide-icon [img]="CheckIcon" [size]="20"></lucide-icon>
                     </div>
+                  }
+                  <div class="bg-grid__actions">
+                    <button
+                      type="button"
+                      class="bg-grid__action-btn"
+                      [class.is-active]="t.defaultBackgroundIndex === i"
+                      (click)="onSetDefaultBackground(i)"
+                      [attr.aria-label]="
+                        t.defaultBackgroundIndex === i
+                          ? 'Убрать из дефолтных'
+                          : 'Сделать по умолчанию'
+                      "
+                    >
+                      <lucide-icon
+                        [img]="t.defaultBackgroundIndex === i ? StarFilledIcon : StarIcon"
+                        [size]="14"
+                      ></lucide-icon>
+                    </button>
+                    <button
+                      type="button"
+                      class="bg-grid__action-btn bg-grid__action-btn--danger"
+                      (click)="onRemoveBackground(i)"
+                      aria-label="Удалить фон"
+                    >
+                      <lucide-icon [img]="CloseSmallIcon" [size]="14"></lucide-icon>
+                    </button>
                   </div>
-                }
-              </div>
-            }
-            <label class="bg-upload">
-              <input
-                #bgFileInput
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                class="bg-file-input"
-                (change)="onFileChange($event)"
-              />
-              <span class="bg-upload__inner">
-                <lucide-icon [img]="UploadIcon" [size]="16"></lucide-icon>
-                <span class="bg-upload__text">Загрузить фон</span>
-              </span>
-            </label>
-          </section>
-        </div>
+                </div>
+              }
+            </div>
+          }
+          <label class="bg-upload">
+            <input
+              #bgFileInput
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              class="bg-file-input"
+              (change)="onFileChange($event)"
+            />
+            <span class="bg-upload__inner">
+              <lucide-icon [img]="UploadIcon" [size]="14"></lucide-icon>
+              <span class="bg-upload__text">Загрузить фон</span>
+            </span>
+          </label>
+        </section>
       } @else if (!block() && selectedCount() > 0) {
-        <!-- Multi-select mode -->
-        <div class="inspector__multi">
-          <p class="inspector__multi-count">Выбрано: {{ selectedCount() }}</p>
+        <!-- Mode C: multi-select -->
+        <section class="insp-section" data-test="insp-section-context">
+          <h3 class="insp-section__title" data-test="insp-section-header">Контекст</h3>
+          <p class="insp-context__label">Выбрано: {{ selectedCount() }}</p>
+          @if (grouped()) {
+            <p class="inspector__group-badge" data-test="inspector-group-badge">
+              Группа из {{ selectedCount() }} блоков
+            </p>
+          }
+        </section>
 
-          <!-- Margin controls -->
-          <div class="inspector__section">
-            <span class="inspector__section-title">Отступы</span>
+        <section class="insp-section" data-test="insp-section-geometry">
+          <h3 class="insp-section__title" data-test="insp-section-header">Геометрия</h3>
+          <div class="margin-controls">
+            <label class="margin-controls__item">
+              <span class="margin-controls__label">Слева</span>
+              <div class="margin-controls__input-row">
+                <input
+                  class="field__input field__input--small pi-focus-ring"
+                  type="number"
+                  min="0"
+                  [value]="multiMarginLeftPx()"
+                  (input)="onMultiMarginLeftInput($event)"
+                  placeholder="—"
+                />
+                <span class="margin-controls__unit">px</span>
+              </div>
+            </label>
+            <label class="margin-controls__item">
+              <span class="margin-controls__label">Справа</span>
+              <div class="margin-controls__input-row">
+                <input
+                  class="field__input field__input--small pi-focus-ring"
+                  type="number"
+                  min="0"
+                  [value]="multiMarginRightPx()"
+                  (input)="onMultiMarginRightInput($event)"
+                  placeholder="—"
+                />
+                <span class="margin-controls__unit">px</span>
+              </div>
+            </label>
+          </div>
+          <button
+            type="button"
+            class="field__reset-btn pi-focus-ring"
+            (click)="onMultiResetMargins()"
+          >
+            <lucide-icon [img]="ResetIcon" [size]="12"></lucide-icon>
+            Сбросить отступы
+          </button>
+        </section>
+
+        <section class="insp-section" data-test="insp-section-group">
+          <h3 class="insp-section__title" data-test="insp-section-header">Группа</h3>
+          @if (grouped()) {
+            <app-pi-button variant="outline" size="sm" (click)="ungroupSelected.emit()">
+              Разгруппировать
+            </app-pi-button>
+          } @else {
+            <app-pi-button
+              variant="outline"
+              size="sm"
+              (click)="groupSelected.emit()"
+              [disabled]="layerOrderTargets().length < 2"
+            >
+              Сгруппировать
+            </app-pi-button>
+          }
+        </section>
+
+        @if (layerOrderTargets().length > 0) {
+          <section class="insp-section" data-test="insp-section-layer">
+            <h3 class="insp-section__title" data-test="insp-section-header">Слой</h3>
+            <div class="layer-order-actions">
+              <button
+                type="button"
+                class="layer-order-btn pi-focus-ring"
+                (click)="onLayerOrder('front')"
+                title="На передний план"
+                aria-label="На передний план"
+              >
+                <lucide-icon [img]="LayerFrontIcon" [size]="14"></lucide-icon>
+              </button>
+              <button
+                type="button"
+                class="layer-order-btn pi-focus-ring"
+                (click)="onLayerOrder('raise')"
+                title="Выше"
+                aria-label="Выше"
+              >
+                <lucide-icon [img]="LayerRaiseIcon" [size]="14"></lucide-icon>
+              </button>
+              <button
+                type="button"
+                class="layer-order-btn pi-focus-ring"
+                (click)="onLayerOrder('lower')"
+                title="Ниже"
+                aria-label="Ниже"
+              >
+                <lucide-icon [img]="LayerLowerIcon" [size]="14"></lucide-icon>
+              </button>
+              <button
+                type="button"
+                class="layer-order-btn pi-focus-ring"
+                (click)="onLayerOrder('back')"
+                title="На задний план"
+                aria-label="На задний план"
+              >
+                <lucide-icon [img]="LayerBackIcon" [size]="14"></lucide-icon>
+              </button>
+            </div>
+          </section>
+        }
+
+        <section class="insp-section insp-section--danger" data-test="insp-section-danger">
+          <h3 class="insp-section__title" data-test="insp-section-header">Опасная зона</h3>
+          <app-pi-button
+            variant="destructive"
+            size="sm"
+            (click)="deleteSelected.emit()"
+            ariaLabel="Удалить выбранные блоки"
+          >
+            Удалить ({{ selectedCount() }})
+          </app-pi-button>
+        </section>
+      } @else if (block(); as b) {
+        <!-- Mode D: single block -->
+        <section class="insp-section" data-test="insp-section-context">
+          <h3 class="insp-section__title" data-test="insp-section-header">Контекст</h3>
+          <div class="insp-context__row">
+            <span class="inspector__type-pill">{{ typeLabel(b) }}</span>
+            @if (b.groupId) {
+              <span class="insp-context__group" data-test="inspector-ingroup-readonly"
+                >В группе</span
+              >
+            }
+          </div>
+          <label class="field">
+            <span class="field__label">Заголовок</span>
+            <input
+              class="field__input pi-focus-ring"
+              type="text"
+              [value]="title()"
+              (input)="onTitleInput($event)"
+              placeholder="Необязательно"
+            />
+          </label>
+          <label class="field field--row">
+            <span class="field__label">Активен</span>
+            <app-pi-switch [checked]="isActive()" (checkedChange)="onIsActiveChange($event)" />
+          </label>
+        </section>
+
+        <section class="insp-section" data-test="insp-section-geometry">
+          <h3 class="insp-section__title" data-test="insp-section-header">Геометрия</h3>
+          @if (b.layout) {
+            <div class="margin-controls margin-controls--grid">
+              <label class="margin-controls__item">
+                <span class="margin-controls__label">X</span>
+                <div class="margin-controls__input-row">
+                  <input
+                    class="field__input field__input--small pi-focus-ring"
+                    type="number"
+                    min="0"
+                    [value]="layoutXpx()"
+                    (input)="onLayoutXInput($event)"
+                  />
+                  <span class="margin-controls__unit">px</span>
+                </div>
+              </label>
+              <label class="margin-controls__item">
+                <span class="margin-controls__label">Y</span>
+                <div class="margin-controls__input-row">
+                  <input
+                    class="field__input field__input--small pi-focus-ring"
+                    type="number"
+                    min="0"
+                    [value]="layoutYpx()"
+                    (input)="onLayoutYInput($event)"
+                  />
+                  <span class="margin-controls__unit">px</span>
+                </div>
+              </label>
+              <label class="margin-controls__item">
+                <span class="margin-controls__label">Ширина</span>
+                <div class="margin-controls__input-row">
+                  <input
+                    class="field__input field__input--small pi-focus-ring"
+                    type="number"
+                    min="20"
+                    [value]="layoutWidthPx()"
+                    (input)="onLayoutWidthInput($event)"
+                  />
+                  <span class="margin-controls__unit">px</span>
+                </div>
+              </label>
+              <label class="margin-controls__item">
+                <span class="margin-controls__label">Высота</span>
+                <div class="margin-controls__input-row">
+                  <input
+                    class="field__input field__input--small pi-focus-ring"
+                    type="number"
+                    min="20"
+                    [value]="layoutHeightPx()"
+                    (input)="onLayoutHeightInput($event)"
+                  />
+                  <span class="margin-controls__unit">px</span>
+                </div>
+              </label>
+            </div>
+          } @else if (b.type === 'image' && imageOverlay()) {
+            <label class="field">
+              <span class="field__label">Позиция X (px)</span>
+              <input
+                class="field__input pi-focus-ring"
+                type="number"
+                min="0"
+                max="2000"
+                [value]="overlayLeft()"
+                (input)="onOverlayLeftInput($event)"
+              />
+            </label>
+            <label class="field">
+              <span class="field__label">Позиция Y (px)</span>
+              <input
+                class="field__input pi-focus-ring"
+                type="number"
+                min="0"
+                max="2000"
+                [value]="overlayTop()"
+                (input)="onOverlayTopInput($event)"
+              />
+            </label>
+            <label class="field">
+              <span class="field__label">Ширина (px)</span>
+              <input
+                class="field__input pi-focus-ring"
+                type="number"
+                min="50"
+                max="2000"
+                [value]="imageWidth() ?? ''"
+                (input)="onImageWidthInput($event)"
+                placeholder="Авто"
+              />
+            </label>
+            <label class="field">
+              <span class="field__label">Высота (px)</span>
+              <input
+                class="field__input pi-focus-ring"
+                type="number"
+                min="20"
+                max="2000"
+                [value]="imageHeight() ?? ''"
+                (input)="onImageHeightInput($event)"
+                placeholder="Авто"
+              />
+            </label>
+          } @else if (b.type === 'image') {
+            <label class="field">
+              <span class="field__label">Ширина (px)</span>
+              <input
+                class="field__input pi-focus-ring"
+                type="number"
+                min="50"
+                max="2000"
+                [value]="imageWidth() ?? ''"
+                (input)="onImageWidthInput($event)"
+                placeholder="Авто"
+              />
+            </label>
+            <label class="field">
+              <span class="field__label">Высота (px)</span>
+              <input
+                class="field__input pi-focus-ring"
+                type="number"
+                min="20"
+                max="2000"
+                [value]="imageHeight() ?? ''"
+                (input)="onImageHeightInput($event)"
+                placeholder="Авто"
+              />
+            </label>
+          } @else if (b.type === 'signature') {
+            <label class="field">
+              <span class="field__label">Высота (px)</span>
+              <input
+                class="field__input pi-focus-ring"
+                type="number"
+                min="20"
+                max="1200"
+                [value]="height()"
+                (input)="onHeightInput($event)"
+              />
+            </label>
+          } @else {
             <div class="margin-controls">
               <label class="margin-controls__item">
                 <span class="margin-controls__label">Слева</span>
@@ -280,9 +529,9 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                     class="field__input field__input--small pi-focus-ring"
                     type="number"
                     min="0"
-                    [value]="multiMarginLeftPx()"
-                    (input)="onMultiMarginLeftInput($event)"
-                    placeholder="—"
+                    [max]="maxMarginLeftPx()"
+                    [value]="marginLeftPx()"
+                    (input)="onMarginLeftInput($event)"
                   />
                   <span class="margin-controls__unit">px</span>
                 </div>
@@ -294,9 +543,9 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                     class="field__input field__input--small pi-focus-ring"
                     type="number"
                     min="0"
-                    [value]="multiMarginRightPx()"
-                    (input)="onMultiMarginRightInput($event)"
-                    placeholder="—"
+                    [max]="maxMarginRightPx()"
+                    [value]="marginRightPx()"
+                    (input)="onMarginRightInput($event)"
                   />
                   <span class="margin-controls__unit">px</span>
                 </div>
@@ -305,114 +554,121 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
             <button
               type="button"
               class="field__reset-btn pi-focus-ring"
-              (click)="onMultiResetMargins()"
+              (click)="onResetMargins()"
+              [disabled]="marginLeftPx() === 0 && marginRightPx() === 0"
             >
               <lucide-icon [img]="ResetIcon" [size]="12"></lucide-icon>
               Сбросить отступы
             </button>
-          </div>
+          }
+        </section>
 
-          <!-- TZ-DOC-272: explicit editor-only group actions. -->
-          <div class="inspector__section">
-            <span class="inspector__section-title">Группа</span>
-            @if (grouped()) {
-              <p class="inspector__group-badge">Группа из {{ selectedCount() }} блоков</p>
-              <app-pi-button variant="outline" size="sm" (click)="ungroupSelected.emit()">
-                Разгруппировать
-              </app-pi-button>
-            } @else {
-              <app-pi-button
-                variant="outline"
-                size="sm"
-                (click)="groupSelected.emit()"
-                [disabled]="layerOrderTargets().length < 2"
-              >
-                Сгруппировать
-              </app-pi-button>
-            }
-          </div>
-
-          <!-- TZ-DOC-271: group layer order (multi-select) — operates on the
-               selected positioned blocks as a unit. -->
-          @if (layerOrderTargets().length > 0) {
-            <div class="inspector__section">
-              <span class="inspector__section-title">Порядок слоёв</span>
-              <div class="layer-order-actions">
-                <button
-                  type="button"
-                  class="layer-order-btn"
-                  (click)="onLayerOrder('front')"
-                  title="На передний план"
-                >
-                  На передний план
-                </button>
-                <button
-                  type="button"
-                  class="layer-order-btn"
-                  (click)="onLayerOrder('raise')"
-                  title="Выше"
-                >
-                  Выше
-                </button>
-                <button
-                  type="button"
-                  class="layer-order-btn"
-                  (click)="onLayerOrder('lower')"
-                  title="Ниже"
-                >
-                  Ниже
-                </button>
-                <button
-                  type="button"
-                  class="layer-order-btn"
-                  (click)="onLayerOrder('back')"
-                  title="На задний план"
-                >
-                  На задний план
-                </button>
-              </div>
+        <section class="insp-section" data-test="insp-section-content">
+          <h3 class="insp-section__title" data-test="insp-section-header">Содержимое</h3>
+          @if (b.type === 'text' || b.type === 'header') {
+            <label class="field">
+              <span class="field__label">Текст</span>
+              <textarea
+                class="field__textarea pi-focus-ring"
+                rows="4"
+                [value]="content()"
+                (input)="onContentInput($event)"
+                placeholder="Текст блока…"
+              ></textarea>
+            </label>
+          }
+          @if (b.type === 'image') {
+            <div class="field">
+              <span class="field__label">Изображение</span>
+              @if (imageUrl()) {
+                <div class="image-preview">
+                  <img [src]="imageUrl()" alt="Превью" class="image-preview__img" />
+                  <button
+                    type="button"
+                    class="image-preview__remove"
+                    (click)="onRemoveImage()"
+                    title="Удалить изображение"
+                  >
+                    <lucide-icon [img]="CloseIcon" [size]="14"></lucide-icon>
+                  </button>
+                </div>
+              }
+              <label class="bg-upload">
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  class="bg-file-input"
+                  (change)="onImageUpload($event)"
+                />
+                <span class="bg-upload__inner">
+                  <lucide-icon [img]="UploadIcon" [size]="14"></lucide-icon>
+                  <span class="bg-upload__text">{{
+                    imageUrl() ? 'Заменить' : 'Загрузить фото'
+                  }}</span>
+                </span>
+              </label>
             </div>
           }
-
-          <!-- Delete (separated by divider, at the bottom) -->
-          <div class="inspector__section inspector__section--danger">
-            <app-pi-button
-              variant="destructive"
-              size="sm"
-              (click)="deleteSelected.emit()"
-              ariaLabel="Удалить выбранные блоки"
-            >
-              Удалить ({{ selectedCount() }})
+          @if (b.type === 'table' && settingsTableId(); as tid) {
+            <div class="field">
+              <span class="field__label">Шаблон таблицы</span>
+              <div class="badge">
+                <span class="badge__label">ID</span>
+                <span class="badge__value">{{ tid }}</span>
+              </div>
+              <p class="field__hint">Для смены шаблона — удалите блок и добавьте заново.</p>
+            </div>
+          }
+          @if (b.dataBinding; as db) {
+            <div class="field">
+              <span class="field__label">Привязка к данным</span>
+              <div class="badge-row">
+                <div class="badge">
+                  <span class="badge__label">Источник</span>
+                  <span class="badge__value">{{ db.source }}</span>
+                </div>
+                @if (db.field) {
+                  <div class="badge">
+                    <span class="badge__label">Поле</span>
+                    <span class="badge__value">{{ db.field }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+            @if (db.source === 'static') {
+              <label class="field">
+                <span class="field__label">Значение</span>
+                <input
+                  class="field__input pi-focus-ring"
+                  type="text"
+                  [value]="db.value ?? ''"
+                  (input)="onBindingValueInput($event)"
+                />
+              </label>
+            }
+          }
+          @if (b.type === 'text' || b.type === 'table') {
+            <app-pi-button variant="outline" size="sm" (click)="editSelected.emit()">
+              Редактировать
             </app-pi-button>
-          </div>
-        </div>
-      } @else {
-        <div class="inspector__form">
-          <!-- Title -->
-          <label class="field">
-            <span class="field__label">Заголовок</span>
-            <input
-              class="field__input pi-focus-ring"
-              type="text"
-              [value]="title()"
-              (input)="onTitleInput($event)"
-              placeholder="Необязательно"
-            />
-          </label>
+          }
+          @if (
+            b.type !== 'text' &&
+            b.type !== 'header' &&
+            b.type !== 'image' &&
+            b.type !== 'table' &&
+            !b.dataBinding
+          ) {
+            <p class="insp-hint">Нет полей содержимого для этого типа</p>
+          }
+        </section>
 
-          <!-- isActive -->
-          <label class="field field--row">
-            <span class="field__label">Активен</span>
-            <app-pi-switch [checked]="isActive()" (checkedChange)="onIsActiveChange($event)" />
-          </label>
-
-          <!-- showLine -->
+        <section class="insp-section" data-test="insp-section-style">
+          <h3 class="insp-section__title" data-test="insp-section-header">Стиль</h3>
           <label class="field field--row">
             <span class="field__label">Линия снизу</span>
             <app-pi-switch [checked]="showLine()" (checkedChange)="onShowLineChange($event)" />
           </label>
-
-          <!-- TZ-DOC-273: block background color + opacity -->
           <div class="field">
             <div class="field__row-header">
               <span class="field__label">Фон блока</span>
@@ -445,83 +701,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
               </button>
             </div>
           </div>
-
-          <!-- Content (text/header) -->
-          @if (block()!.type === 'text' || block()!.type === 'header') {
-            <label class="field">
-              <span class="field__label">Содержимое</span>
-              <textarea
-                class="field__textarea pi-focus-ring"
-                rows="4"
-                [value]="content()"
-                (input)="onContentInput($event)"
-                placeholder="Текст блока…"
-              ></textarea>
-            </label>
-          }
-
-          <!-- Image upload + controls -->
-          @if (block()!.type === 'image') {
-            <div class="field">
-              <span class="field__label">Изображение</span>
-              @if (imageUrl()) {
-                <div class="image-preview">
-                  <img [src]="imageUrl()" alt="Превью" class="image-preview__img" />
-                  <button
-                    type="button"
-                    class="image-preview__remove"
-                    (click)="onRemoveImage()"
-                    title="Удалить изображение"
-                  >
-                    <lucide-icon [img]="CloseIcon" [size]="14"></lucide-icon>
-                  </button>
-                </div>
-              }
-              <label class="bg-upload">
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  class="bg-upload__input"
-                  (change)="onImageUpload($event)"
-                />
-                <span class="bg-upload__inner">
-                  <lucide-icon [img]="UploadIcon" [size]="14"></lucide-icon>
-                  <span class="bg-upload__text">{{
-                    imageUrl() ? 'Заменить' : 'Загрузить фото'
-                  }}</span>
-                </span>
-              </label>
-            </div>
-
-            <!-- Width -->
-            <label class="field">
-              <span class="field__label">Ширина (px)</span>
-              <input
-                class="field__input pi-focus-ring"
-                type="number"
-                min="50"
-                max="2000"
-                [value]="imageWidth() ?? ''"
-                (input)="onImageWidthInput($event)"
-                placeholder="Авто"
-              />
-            </label>
-
-            <!-- Height -->
-            <label class="field">
-              <span class="field__label">Высота (px)</span>
-              <input
-                class="field__input pi-focus-ring"
-                type="number"
-                min="20"
-                max="2000"
-                [value]="imageHeight() ?? ''"
-                (input)="onImageHeightInput($event)"
-                placeholder="Авто"
-              />
-            </label>
-
-            <!-- Overlay toggle -->
+          @if (b.type === 'image') {
             <label class="field field--row">
               <span class="field__label">Поверх других блоков</span>
               <app-pi-switch
@@ -529,255 +709,64 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 (checkedChange)="onImageOverlayToggle($event)"
               />
             </label>
-
-            <!-- Overlay position (only when overlay is ON) -->
-            @if (imageOverlay()) {
-              <label class="field">
-                <span class="field__label">Позиция X (px)</span>
-                <input
-                  class="field__input pi-focus-ring"
-                  type="number"
-                  min="0"
-                  max="2000"
-                  [value]="overlayLeft()"
-                  (input)="onOverlayLeftInput($event)"
-                />
-              </label>
-              <label class="field">
-                <span class="field__label">Позиция Y (px)</span>
-                <input
-                  class="field__input pi-focus-ring"
-                  type="number"
-                  min="0"
-                  max="2000"
-                  [value]="overlayTop()"
-                  (input)="onOverlayTopInput($event)"
-                />
-              </label>
-            }
           }
+        </section>
 
-          <!-- Height (signature only) -->
-          @if (block()!.type === 'signature') {
-            <label class="field">
-              <span class="field__label">Высота (px)</span>
-              <input
-                class="field__input pi-focus-ring"
-                type="number"
-                min="20"
-                max="1200"
-                [value]="height()"
-                (input)="onHeightInput($event)"
-              />
-            </label>
-          }
-
-          <!-- Height slider removed for spacer (TZ-DOC-319) -->
-
-          <!-- Table template info -->
-          @if (block()!.type === 'table' && settingsTableId(); as tid) {
-            <div class="field">
-              <span class="field__label">Шаблон таблицы</span>
-              <div class="badge">
-                <span class="badge__label">ID</span>
-                <span class="badge__value">{{ tid }}</span>
-              </div>
-              <p class="field__hint">Для смены шаблона — удалите блок и добавьте заново.</p>
-            </div>
-          }
-
-          <!-- Data binding info (read-only badges) -->
-          @if (block()!.dataBinding; as b) {
-            <div class="field">
-              <span class="field__label">Привязка к данным</span>
-              <div class="badge-row">
-                <div class="badge">
-                  <span class="badge__label">Источник</span>
-                  <span class="badge__value">{{ b.source }}</span>
-                </div>
-                @if (b.field) {
-                  <div class="badge">
-                    <span class="badge__label">Поле</span>
-                    <span class="badge__value">{{ b.field }}</span>
-                  </div>
-                }
-              </div>
-            </div>
-            @if (b.source === 'static') {
-              <label class="field">
-                <span class="field__label">Значение</span>
-                <input
-                  class="field__input pi-focus-ring"
-                  type="text"
-                  [value]="b.value ?? ''"
-                  (input)="onBindingValueInput($event)"
-                />
-              </label>
-            }
-          }
-
-          <!-- TZ-259.4: canonical positioned blocks use layout (px fields
-               below); legacy flow margin section is hidden for them. -->
-          @if (block()!.layout) {
-            <div class="inspector__section">
-              <span class="inspector__section-title">Позиция и размер (px)</span>
-              <div class="margin-controls margin-controls--grid">
-                <label class="margin-controls__item">
-                  <span class="margin-controls__label">X</span>
-                  <div class="margin-controls__input-row">
-                    <input
-                      class="field__input field__input--small pi-focus-ring"
-                      type="number"
-                      min="0"
-                      [value]="layoutXpx()"
-                      (input)="onLayoutXInput($event)"
-                    />
-                    <span class="margin-controls__unit">px</span>
-                  </div>
-                </label>
-                <label class="margin-controls__item">
-                  <span class="margin-controls__label">Y</span>
-                  <div class="margin-controls__input-row">
-                    <input
-                      class="field__input field__input--small pi-focus-ring"
-                      type="number"
-                      min="0"
-                      [value]="layoutYpx()"
-                      (input)="onLayoutYInput($event)"
-                    />
-                    <span class="margin-controls__unit">px</span>
-                  </div>
-                </label>
-                <label class="margin-controls__item">
-                  <span class="margin-controls__label">Ширина</span>
-                  <div class="margin-controls__input-row">
-                    <input
-                      class="field__input field__input--small pi-focus-ring"
-                      type="number"
-                      min="20"
-                      [value]="layoutWidthPx()"
-                      (input)="onLayoutWidthInput($event)"
-                    />
-                    <span class="margin-controls__unit">px</span>
-                  </div>
-                </label>
-                <label class="margin-controls__item">
-                  <span class="margin-controls__label">Высота</span>
-                  <div class="margin-controls__input-row">
-                    <input
-                      class="field__input field__input--small pi-focus-ring"
-                      type="number"
-                      min="20"
-                      [value]="layoutHeightPx()"
-                      (input)="onLayoutHeightInput($event)"
-                    />
-                    <span class="margin-controls__unit">px</span>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <!-- TZ-DOC-271: layer order for canonical positioned blocks. -->
-            <div class="inspector__section">
-              <span class="inspector__section-title">Порядок слоёв</span>
-              <div class="layer-order-actions">
-                <button
-                  type="button"
-                  class="layer-order-btn"
-                  (click)="onLayerOrder('front')"
-                  title="На передний план"
-                >
-                  На передний план
-                </button>
-                <button
-                  type="button"
-                  class="layer-order-btn"
-                  (click)="onLayerOrder('raise')"
-                  title="Выше"
-                >
-                  Выше
-                </button>
-                <button
-                  type="button"
-                  class="layer-order-btn"
-                  (click)="onLayerOrder('lower')"
-                  title="Ниже"
-                >
-                  Ниже
-                </button>
-                <button
-                  type="button"
-                  class="layer-order-btn"
-                  (click)="onLayerOrder('back')"
-                  title="На задний план"
-                >
-                  На задний план
-                </button>
-              </div>
-            </div>
-          } @else {
-            <!-- Margin controls (flow model — legacy) -->
-            <div class="inspector__section">
-              <span class="inspector__section-title">Отступы</span>
-              <div class="margin-controls">
-                <label class="margin-controls__item">
-                  <span class="margin-controls__label">Слева</span>
-                  <div class="margin-controls__input-row">
-                    <input
-                      class="field__input field__input--small pi-focus-ring"
-                      type="number"
-                      min="0"
-                      [max]="maxMarginLeftPx()"
-                      [value]="marginLeftPx()"
-                      (input)="onMarginLeftInput($event)"
-                    />
-                    <span class="margin-controls__unit">px</span>
-                  </div>
-                </label>
-                <label class="margin-controls__item">
-                  <span class="margin-controls__label">Справа</span>
-                  <div class="margin-controls__input-row">
-                    <input
-                      class="field__input field__input--small pi-focus-ring"
-                      type="number"
-                      min="0"
-                      [max]="maxMarginRightPx()"
-                      [value]="marginRightPx()"
-                      (input)="onMarginRightInput($event)"
-                    />
-                    <span class="margin-controls__unit">px</span>
-                  </div>
-                </label>
-              </div>
+        @if (b.layout) {
+          <section class="insp-section" data-test="insp-section-layer">
+            <h3 class="insp-section__title" data-test="insp-section-header">Слой</h3>
+            <div class="layer-order-actions">
               <button
                 type="button"
-                class="field__reset-btn pi-focus-ring"
-                (click)="onResetMargins()"
-                [disabled]="marginLeftPx() === 0 && marginRightPx() === 0"
+                class="layer-order-btn pi-focus-ring"
+                (click)="onLayerOrder('front')"
+                title="На передний план"
+                aria-label="На передний план"
               >
-                <lucide-icon [img]="ResetIcon" [size]="12"></lucide-icon>
-                Сбросить отступы
+                <lucide-icon [img]="LayerFrontIcon" [size]="14"></lucide-icon>
+              </button>
+              <button
+                type="button"
+                class="layer-order-btn pi-focus-ring"
+                (click)="onLayerOrder('raise')"
+                title="Выше"
+                aria-label="Выше"
+              >
+                <lucide-icon [img]="LayerRaiseIcon" [size]="14"></lucide-icon>
+              </button>
+              <button
+                type="button"
+                class="layer-order-btn pi-focus-ring"
+                (click)="onLayerOrder('lower')"
+                title="Ниже"
+                aria-label="Ниже"
+              >
+                <lucide-icon [img]="LayerLowerIcon" [size]="14"></lucide-icon>
+              </button>
+              <button
+                type="button"
+                class="layer-order-btn pi-focus-ring"
+                (click)="onLayerOrder('back')"
+                title="На задний план"
+                aria-label="На задний план"
+              >
+                <lucide-icon [img]="LayerBackIcon" [size]="14"></lucide-icon>
               </button>
             </div>
-          }
+          </section>
+        }
 
-          <!-- Actions -->
-          <div class="inspector__section inspector__section--actions">
-            @if (block()!.type === 'text' || block()!.type === 'table') {
-              <app-pi-button variant="outline" size="sm" (click)="editSelected.emit()">
-                Редактировать
-              </app-pi-button>
-            }
-            <app-pi-button
-              variant="destructive"
-              size="sm"
-              (click)="onDelete()"
-              ariaLabel="Удалить блок"
-            >
-              Удалить блок
-            </app-pi-button>
-          </div>
-        </div>
+        <section class="insp-section insp-section--danger" data-test="insp-section-danger">
+          <h3 class="insp-section__title" data-test="insp-section-header">Опасная зона</h3>
+          <app-pi-button
+            variant="destructive"
+            size="sm"
+            (click)="onDelete()"
+            ariaLabel="Удалить блок"
+          >
+            Удалить блок
+          </app-pi-button>
+        </section>
       }
     </aside>
   `,
@@ -789,39 +778,42 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         flex-shrink: 0;
         height: 100%;
         overflow-y: auto;
-        background: var(--color-paper, #f8f9fa);
-        border-left: 1px solid var(--color-rule, #d0c5af);
+        background: var(--color-paper);
+        border-left: 1px solid var(--color-rule);
       }
 
-      /* ── Header ── */
       .inspector__header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 16px 16px 12px;
-        border-bottom: 1px solid var(--color-rule, #d0c5af);
+        gap: 8px;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--color-rule);
         position: sticky;
         top: 0;
-        background: var(--color-paper, #f8f9fa);
+        background: var(--color-paper-2);
         z-index: 10;
+        min-height: 36px;
+        box-sizing: border-box;
       }
 
       .inspector__title {
-        font-family: 'Hanken Grotesk', sans-serif;
-        font-size: 20px;
+        font-size: 13px;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: -0.01em;
-        color: var(--color-ink, #191c1d);
+        letter-spacing: 0.06em;
+        color: var(--color-ink);
         margin: 0;
+        font-family: inherit;
       }
 
       .inspector__type-pill {
         font-size: 10px;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        background: var(--color-paper-2, #e1e3e4);
-        color: var(--color-ink, #191c1d);
+        background: var(--color-paper);
+        color: var(--color-ink);
+        border: 1px solid var(--color-rule);
         padding: 2px 8px;
         border-radius: 2px;
         font-weight: 600;
@@ -831,150 +823,102 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 28px;
-        height: 28px;
+        width: 24px;
+        height: 24px;
         background: transparent;
-        border: none;
+        border: 1px solid transparent;
         border-radius: 2px;
         cursor: pointer;
-        color: var(--color-muted, #7f7663);
+        color: var(--color-muted);
         transition: all 100ms ease;
       }
 
       .inspector__close:hover {
-        background: var(--color-paper-2, #e1e3e4);
-        color: var(--color-ink, #191c1d);
+        background: color-mix(in oklch, var(--color-sunrise-soft) 40%, transparent);
+        color: var(--color-ink);
+        border-color: var(--color-rule);
       }
 
-      /* ── Empty state ── */
-      .inspector__empty {
-        padding: 48px 16px;
-        text-align: center;
+      .insp-section {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--color-rule);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
       }
 
-      .inspector__empty-title {
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--color-muted, #7f7663);
-        margin: 0 0 4px;
-      }
-
-      .inspector__empty-hint {
-        font-size: 12px;
-        color: var(--color-muted, #7f7663);
+      .insp-section__title {
         margin: 0;
-      }
-
-      /* ── Multi-select ── */
-      .inspector__multi {
-        padding: 16px;
-        text-align: center;
-      }
-
-      .inspector__multi-count {
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--color-sunrise-warm, #735c00);
-        margin: 0 0 16px;
-      }
-
-      /* ── Sections ── */
-      .inspector__section {
-        padding: 12px 0;
-        border-top: 1px solid var(--color-rule, #d0c5af);
-        text-align: left;
-      }
-
-      .inspector__section:first-of-type {
-        border-top: none;
-        padding-top: 0;
-      }
-
-      .inspector__section-title {
-        display: block;
         font-size: 11px;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--color-muted, #7f7663);
-        margin-bottom: 10px;
+        letter-spacing: 0.06em;
+        color: var(--color-muted);
+        font-family: inherit;
       }
 
-      .inspector__section--danger {
-        margin-top: auto;
-        padding-top: 16px;
+      .insp-section--danger {
+        border-bottom: none;
       }
 
-      .inspector__section--actions {
+      .insp-context__label {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--color-ink);
+      }
+
+      .insp-context__row {
         display: flex;
+        align-items: center;
         gap: 8px;
         flex-wrap: wrap;
       }
 
-      /* ── Form container ── */
-      .inspector__form {
-        padding: 16px;
-        display: flex;
-        flex-direction: column;
-        gap: 24px;
-      }
-
-      /* ── Properties sections ── */
-      .props-section {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-      }
-
-      .props-section--last {
-        padding-bottom: 24px;
-      }
-
-      .props-section__header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      .props-section__number {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 11px;
-        font-weight: 500;
-        line-height: 14px;
-        letter-spacing: 0.05em;
-        color: var(--color-sunrise-warm, #735c00);
-      }
-
-      .props-section__title {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 11px;
+      .insp-context__group {
+        font-size: 10px;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--color-ink, #191c1d);
-        margin: 0;
+        letter-spacing: 0.04em;
+        color: var(--color-muted);
+        border: 1px solid var(--color-rule);
+        border-radius: 2px;
+        padding: 2px 6px;
       }
 
-      /* ── Fields ── */
+      .insp-hint {
+        margin: 0;
+        font-size: 12px;
+        color: var(--color-muted);
+      }
+
+      .insp-hint--muted {
+        font-size: 11px;
+      }
+
       .field {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
       }
 
       .field--row {
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
+        gap: 8px;
       }
 
       .field__label {
-        font-family: 'JetBrains Mono', monospace;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         font-size: 10px;
-        font-weight: 500;
+        font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
-        color: var(--color-muted, #7f7663);
+        letter-spacing: 0.06em;
+        color: var(--color-muted);
+        font-family: inherit;
       }
 
       .field__row-header {
@@ -984,49 +928,52 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
       }
 
       .field__value {
-        font-family: 'JetBrains Mono', monospace;
         font-size: 10px;
-        font-weight: 500;
-        letter-spacing: 0.05em;
-        color: var(--color-ink, #191c1d);
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: var(--color-ink);
+        font-family: inherit;
       }
 
       .field__input,
       .field__textarea {
         width: 100%;
-        padding: 10px 12px;
-        background: var(--color-paper, #f8f9fa);
-        color: var(--color-ink, #191c1d);
-        border: 1px solid var(--color-rule, #d0c5af);
+        height: 30px;
+        padding: 4px 8px;
+        background: var(--color-paper);
+        color: var(--color-ink);
+        border: 1px solid var(--color-rule);
         border-radius: 2px;
-        font-size: 14px;
-        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        font-family: inherit;
         box-sizing: border-box;
-        transition: border-color 120ms ease;
-      }
-
-      .field__input:focus {
-        outline: none;
-        border-color: var(--color-sunrise-warm, #735c00);
-      }
-
-      .field__input::placeholder {
-        color: var(--color-muted, #7f7663);
+        transition: border-color 100ms ease;
       }
 
       .field__textarea {
+        height: auto;
+        min-height: 72px;
         resize: vertical;
-        font-family: ui-monospace, monospace;
-        font-size: 12px;
+        padding: 8px;
       }
 
-      /* ── Slider ── */
+      .field__input:focus,
+      .field__textarea:focus {
+        outline: none;
+        border-color: var(--color-ink);
+      }
+
+      .field__input::placeholder,
+      .field__textarea::placeholder {
+        color: var(--color-muted);
+      }
+
       .field__slider {
         width: 100%;
         height: 2px;
         -webkit-appearance: none;
         appearance: none;
-        background: var(--color-rule, #d0c5af);
+        background: var(--color-rule);
         border-radius: 1px;
         outline: none;
         cursor: pointer;
@@ -1037,7 +984,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         width: 12px;
         height: 12px;
         border-radius: 50%;
-        background: var(--color-sunrise-warm, #735c00);
+        background: var(--color-ink);
         cursor: pointer;
         border: none;
       }
@@ -1046,21 +993,9 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         width: 12px;
         height: 12px;
         border-radius: 50%;
-        background: var(--color-sunrise-warm, #735c00);
+        background: var(--color-ink);
         cursor: pointer;
         border: none;
-      }
-
-      .field__slider::-moz-range-track {
-        height: 2px;
-        background: var(--color-rule, #d0c5af);
-        border-radius: 1px;
-      }
-
-      .field__slider-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
       }
 
       .field__input--small {
@@ -1071,11 +1006,10 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
 
       .field__hint {
         font-size: 11px;
-        color: var(--color-muted, #7f7663);
-        margin: 4px 0 0;
+        color: var(--color-muted);
+        margin: 0;
       }
 
-      /* ── Badges ── */
       .badge-row {
         display: flex;
         gap: 6px;
@@ -1086,38 +1020,30 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        background: var(--color-paper-2, #e1e3e4);
+        background: var(--color-paper-2);
         padding: 2px 6px;
-        border: 1px solid var(--color-rule, #d0c5af);
+        border: 1px solid var(--color-rule);
         border-radius: 2px;
         font-size: 11px;
       }
 
       .badge__label {
-        color: var(--color-muted, #7f7663);
+        color: var(--color-muted);
         text-transform: uppercase;
         letter-spacing: 0.05em;
         font-weight: 600;
       }
 
       .badge__value {
-        color: var(--color-ink, #191c1d);
-        font-family: ui-monospace, monospace;
+        color: var(--color-ink);
+        font-family: inherit;
       }
 
-      .inspector__actions {
-        margin-top: 8px;
-        padding-top: 12px;
-        border-top: 1px solid var(--color-rule, #d0c5af);
-      }
-
-      /* ── Margin controls ── */
       .margin-controls {
         display: flex;
         gap: 12px;
       }
 
-      /* TZ-259.4: 2×2 grid for the four canonical layout fields (X/Y/Ш/В). */
       .margin-controls--grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -1136,7 +1062,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        color: var(--color-muted, #7f7663);
+        color: var(--color-muted);
         text-align: center;
       }
 
@@ -1149,7 +1075,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
 
       .margin-controls__unit {
         font-size: 10px;
-        color: var(--color-muted, #7f7663);
+        color: var(--color-muted);
         flex-shrink: 0;
       }
 
@@ -1157,22 +1083,23 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        margin-top: 6px;
+        align-self: flex-start;
         padding: 4px 8px;
+        height: 24px;
         font-size: 11px;
         font-weight: 500;
-        color: var(--color-muted, #7f7663);
-        background: transparent;
-        border: 1px solid var(--color-rule, #d0c5af);
+        font-family: inherit;
+        color: var(--color-ink);
+        background: var(--color-paper-2);
+        border: 1px solid var(--color-rule);
         border-radius: 2px;
         cursor: pointer;
         transition: all 100ms ease;
       }
 
       .field__reset-btn:hover:not(:disabled) {
-        color: var(--color-ink, #191c1d);
-        border-color: var(--color-ink, #191c1d);
-        background: var(--color-paper-2, #e1e3e4);
+        border-color: var(--color-ink);
+        background: color-mix(in oklch, var(--color-sunrise-soft) 35%, transparent);
       }
 
       .field__reset-btn:disabled {
@@ -1180,19 +1107,17 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         cursor: not-allowed;
       }
 
-      /* TZ-DOC-273: block background color + opacity controls. */
       .block-bg-row {
         display: flex;
         align-items: center;
         gap: 10px;
-        margin-top: 8px;
       }
 
       .block-bg-swatch {
-        width: 36px;
-        height: 32px;
+        width: 28px;
+        height: 28px;
         padding: 2px;
-        border: 1px solid var(--color-rule, #d0c5af);
+        border: 1px solid var(--color-rule);
         border-radius: 2px;
         background: transparent;
         cursor: pointer;
@@ -1207,19 +1132,22 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         border-radius: 1px;
       }
 
-      /* TZ-DOC-271: compact layer-order actions (front/raise/lower/back). */
       .layer-order-actions {
         display: flex;
-        gap: 6px;
+        gap: 4px;
         flex-wrap: wrap;
       }
 
       .layer-order-btn {
-        padding: 4px 8px;
-        font-size: 11px;
-        font-weight: 500;
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        font-family: inherit;
         color: var(--color-ink);
-        background: var(--color-paper);
+        background: var(--color-paper-2);
         border: 1px solid var(--color-rule);
         border-radius: 2px;
         cursor: pointer;
@@ -1227,8 +1155,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
       }
 
       .layer-order-btn:hover:not(:disabled) {
-        color: var(--color-paper);
-        background: var(--color-ink);
+        background: color-mix(in oklch, var(--color-sunrise-soft) 40%, transparent);
         border-color: var(--color-ink);
       }
 
@@ -1237,137 +1164,23 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         cursor: not-allowed;
       }
 
-      /* TZ-DOC-272: editor-only group badge. */
       .inspector__group-badge {
-        margin: 0 0 8px;
+        margin: 0;
         padding: 4px 8px;
         font-size: 11px;
         font-weight: 500;
-        color: var(--color-gold);
-        background: var(--color-gold-soft);
-        border: 1px solid var(--color-gold);
-        border-radius: 2px;
-        text-align: center;
-      }
-
-      /* ── Orientation buttons ── */
-      .orientation-btns {
-        display: flex;
-        gap: 8px;
-      }
-
-      .orientation-btn {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        padding: 10px 16px;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 10px;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        border: 1px solid var(--color-rule, #d0c5af);
-        border-radius: 2px;
-        background: var(--color-paper, #f8f9fa);
-        color: var(--color-muted, #7f7663);
-        cursor: pointer;
-        transition: all 120ms ease;
-      }
-
-      .orientation-btn:hover {
-        border-color: var(--color-ink, #191c1d);
-        color: var(--color-ink, #191c1d);
-      }
-
-      .orientation-btn.is-active {
-        background: var(--color-ink, #191c1d);
-        border-color: var(--color-ink, #191c1d);
-        color: var(--color-paper, #f8f9fa);
-      }
-
-      .orientation-btn__label {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 10px;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-      }
-
-      /* ── Page size buttons ── */
-      .pagesize-btns {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-      }
-
-      .pagesize-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 8px 12px;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 10px;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        border: 1px solid var(--color-rule, #d0c5af);
-        border-radius: 2px;
-        background: var(--color-paper, #f8f9fa);
-        color: var(--color-muted, #7f7663);
-        cursor: pointer;
-        transition: all 120ms ease;
-      }
-
-      .pagesize-btn:hover {
-        border-color: var(--color-ink, #191c1d);
-        color: var(--color-ink, #191c1d);
-      }
-
-      .pagesize-btn.is-active {
-        background: var(--color-sunrise-warm, #735c00);
-        border-color: var(--color-sunrise-warm, #735c00);
-        color: var(--color-paper, #f8f9fa);
-      }
-
-      /* ── Toggle rows (checkboxes) ── */
-      .toggle-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 8px 0;
-        border-bottom: 1px solid rgba(208, 197, 175, 0.3);
-      }
-
-      .toggle-row:last-child {
-        border-bottom: none;
-      }
-
-      .toggle-row__left {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        color: var(--color-muted, #7f7663);
-      }
-
-      .toggle-row__label {
-        font-family: 'Inter', sans-serif;
-        font-size: 14px;
-        font-weight: 400;
-        color: var(--color-ink, #191c1d);
-      }
-
-      .toggle-checkbox {
-        width: 18px;
-        height: 18px;
-        accent-color: var(--color-sunrise-warm, #735c00);
-        cursor: pointer;
-        border: 1px solid var(--color-rule, #d0c5af);
+        color: var(--color-ink);
+        background: var(--color-paper-2);
+        border: 1px solid var(--color-rule);
         border-radius: 2px;
       }
 
-      /* ── Background grid ── */
+      .snap-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
       .bg-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
@@ -1377,19 +1190,19 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
       .bg-grid__item {
         position: relative;
         aspect-ratio: 1;
-        border: 1px solid var(--color-rule, #d0c5af);
+        border: 1px solid var(--color-rule);
         border-radius: 2px;
         overflow: hidden;
         cursor: pointer;
-        transition: border-color 120ms ease;
+        transition: border-color 100ms ease;
       }
 
       .bg-grid__item:hover {
-        border-color: var(--color-ink, #191c1d);
+        border-color: var(--color-ink);
       }
 
       .bg-grid__item.is-default {
-        border-color: var(--color-sunrise-warm, #735c00);
+        border-color: var(--color-ink);
         border-width: 2px;
       }
 
@@ -1399,7 +1212,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
-        background-color: var(--color-paper-2, #e1e3e4);
+        background-color: var(--color-paper-2);
       }
 
       .bg-grid__check {
@@ -1408,8 +1221,8 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         display: flex;
         align-items: center;
         justify-content: center;
-        background: rgba(115, 92, 0, 0.1);
-        color: var(--color-sunrise-warm, #735c00);
+        background: color-mix(in oklch, var(--color-ink) 12%, transparent);
+        color: var(--color-ink);
       }
 
       .bg-grid__actions {
@@ -1419,13 +1232,10 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         display: flex;
         gap: 4px;
         opacity: 0;
-        transition: opacity 120ms ease;
+        transition: opacity 100ms ease;
       }
 
-      .bg-grid__item:hover .bg-grid__actions {
-        opacity: 1;
-      }
-
+      .bg-grid__item:hover .bg-grid__actions,
       .bg-grid__item.is-default .bg-grid__actions {
         opacity: 1;
       }
@@ -1436,32 +1246,31 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: rgba(255, 255, 255, 0.8);
-        border: none;
+        background: var(--color-paper);
+        border: 1px solid var(--color-rule);
         border-radius: 2px;
         cursor: pointer;
-        color: var(--color-muted, #7f7663);
+        color: var(--color-muted);
         transition: all 100ms ease;
         padding: 0;
       }
 
       .bg-grid__action-btn:hover {
-        background: rgba(255, 255, 255, 1);
-        color: var(--color-ink, #191c1d);
+        color: var(--color-ink);
+        border-color: var(--color-ink);
       }
 
       .bg-grid__action-btn.is-active {
-        color: var(--color-sunrise-warm, #735c00);
+        color: var(--color-ink);
       }
 
       .bg-grid__action-btn--danger:hover {
-        color: var(--color-destructive, #ba1a1a);
+        color: var(--color-destructive);
+        border-color: var(--color-destructive);
       }
 
-      /* ── Upload button ── */
       .bg-upload {
         display: block;
-        margin-top: 8px;
         cursor: pointer;
       }
 
@@ -1483,26 +1292,34 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         justify-content: center;
         gap: 8px;
         width: 100%;
-        padding: 12px 16px;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 10px;
-        font-weight: 500;
+        height: 28px;
+        padding: 0 12px;
+        font-size: 11px;
+        font-weight: 600;
+        font-family: inherit;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
-        color: var(--color-sunrise-warm, #735c00);
-        background: transparent;
-        border: 1px dashed var(--color-rule, #d0c5af);
+        letter-spacing: 0.04em;
+        color: var(--color-ink);
+        background: var(--color-paper-2);
+        border: 1px solid var(--color-rule);
         border-radius: 2px;
-        cursor: pointer;
-        transition: all 120ms ease;
+        box-sizing: border-box;
+        transition: all 100ms ease;
       }
 
       .bg-upload__inner:hover {
-        border-color: var(--color-sunrise-warm, #735c00);
-        background: rgba(115, 92, 0, 0.05);
+        border-color: var(--color-ink);
+        background: color-mix(in oklch, var(--color-sunrise-soft) 35%, transparent);
       }
 
-      /* ═══ Image preview in inspector ═══ */
+      .bg-upload__text {
+        font-family: inherit;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
       .image-preview {
         position: relative;
         display: inline-block;
@@ -1547,59 +1364,41 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         border-color: var(--color-destructive);
       }
 
-      .bg-upload__text {
-        font-family: 'JetBrains Mono', monospace;
+      .summary-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
 
-        /* ═══ Document Summary — TZ-211 ═══ */
-        .summary-section {
-          margin-top: 16px;
-          padding: 12px;
-          background: var(--color-paper-2);
-          border: 1px solid var(--color-rule);
-          border-radius: 2px;
-        }
+      .summary-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
 
-        .summary-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 8px;
-          margin-top: 8px;
-        }
+      .summary-item--full {
+        grid-column: 1 / -1;
+      }
 
-        .summary-item {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-        }
-
-        .summary-item--full {
-          grid-column: 1 / -1;
-        }
-
-        .summary-item__label {
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 10px;
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          color: var(--color-muted);
-        }
-
-        .summary-item__value {
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 14px;
-          font-weight: 600;
-          color: var(--color-ink);
-        }
-
-        .summary-item__value--small {
-          font-size: 11px;
-          font-weight: 400;
-          color: var(--color-muted-strong);
-        }
+      .summary-item__label {
         font-size: 10px;
-        font-weight: 500;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.06em;
+        color: var(--color-muted);
+        font-family: inherit;
+      }
+
+      .summary-item__value {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--color-ink);
+        font-family: inherit;
+      }
+
+      .summary-item__value--small {
+        font-size: 11px;
+        font-weight: 400;
+        color: var(--color-muted);
       }
     `,
   ],
@@ -1681,17 +1480,23 @@ export class BuilderInspectorComponent {
   /** TZ-DOC-272: emitted when the user clicks «Разгруппировать». */
   readonly ungroupSelected = output<void>();
 
+  // TZ-DOC-333: upload-first photo persist for image blocks (never blob:).
+  private readonly blocksSvc = inject(TemplateBlocksService);
+  private readonly toast = inject(PiToastService);
+
   // Icons
   protected readonly ResetIcon = RotateCcw;
   protected readonly HashIcon = Hash;
-  protected readonly FileTextIcon = FileText;
-  protected readonly EyeIcon = Eye;
   protected readonly UploadIcon = Upload;
   protected readonly CloseIcon = X;
   protected readonly CheckIcon = Check;
   protected readonly StarIcon = Star;
   protected readonly StarFilledIcon = Star;
   protected readonly CloseSmallIcon = X;
+  protected readonly LayerFrontIcon = ChevronsUp;
+  protected readonly LayerRaiseIcon = ChevronUp;
+  protected readonly LayerLowerIcon = ChevronDown;
+  protected readonly LayerBackIcon = ChevronsDown;
 
   // Local form-state signals (mirror the selected block for fast edits).
   protected readonly title = signal<string>('');
@@ -1998,11 +1803,37 @@ export class BuilderInspectorComponent {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
-    // Create a local object URL for immediate display
-    const url = URL.createObjectURL(file);
-    this.imageUrl.set(url);
-    this.patchSettings({ imageUrl: url });
     input.value = '';
+
+    const b = this.block();
+    if (!b?._id) {
+      this.toast.error('Сначала сохраните блок, затем загрузите фото.');
+      return;
+    }
+    const blockId = b._id;
+
+    // TZ-DOC-333: `blob:` URLs are session-local and the backend rejects
+    // them on PATCH (400). Flow: optimistic object-URL preview → upload via
+    // POST /template-blocks/:id/image (server persists settings.imageUrl) →
+    // emit the canonical /uploads/... URL against the CAPTURED block id (not
+    // `this.block()` — selection may change while the request is in flight,
+    // and patchSettings re-reads the current block). On failure revert the
+    // preview and release the object URL — no blob ever reaches persist.
+    const previous = this.imageUrl();
+    const localUrl = URL.createObjectURL(file);
+    this.imageUrl.set(localUrl);
+    this.blocksSvc.uploadImage(blockId, file).subscribe((res) => {
+      if (res.ok) {
+        URL.revokeObjectURL(localUrl);
+        this.imageUrl.set(res.data.url);
+        const current = (b.settings ?? {}) as Record<string, unknown>;
+        this.update.emit({ _id: blockId, settings: { ...current, imageUrl: res.data.url } });
+      } else {
+        URL.revokeObjectURL(localUrl);
+        this.imageUrl.set(previous);
+        this.toast.error(extractErrorMessage(res.error));
+      }
+    });
   }
 
   protected onRemoveImage(): void {

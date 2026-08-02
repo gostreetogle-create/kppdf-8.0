@@ -5233,3 +5233,11 @@ convertToOrder: guard accepted + strip unitPrice (COPY FK + inline snapshot prod
 Closed partial: pi-workers.service + spec + docs. Page+dialog reverted (PiDialogService generic typing). See tasks/_archive/2026-08/TZ-WORKERS-302-...done.md.
 ## 2026-08-02 — TZ-PRODUCTS-301-export-mismatch closeout
 Fix tsc/ng-build блокера: import/inject `PiColorReferencesService` в color-references-form-dialog + `sortOrder?: number` в ColorReference interface/payloads. Gates: jest 24/24 PASS, tsc 0 ошибок в scope (49 в чужих proposals WIP), ng build FAIL только на TZ-DEPLOY-301 proposals — disclosed. See tasks/_archive/2026-08/TZ-PRODUCTS-301-export-mismatch-fix.done.md.
+
+## [2026-08-02] — TZ-DOC-332 Builder Inspector IA/visual canon
+
+**Исполнитель:** local executor
+**Статус:** DONE (archive)
+
+Правая панель «Свойства»: единый chrome как у tool-pane; режимы A–D; snap/pageNumbering → pi-switch; geometry first; Edit ≠ Delete. Spec section-order; docs обновлены.
+

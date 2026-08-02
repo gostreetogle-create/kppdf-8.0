@@ -23,7 +23,7 @@ Completed work belongs under `tasks/_archive/2026-08/`.
 | [TZ-DOC-325](../tasks/_archive/2026-08/TZ-DOC-325-builder-insert-palette.done.md) | Document Constructor · builder chrome | — | **DONE** (archive; top palette) | — | — |
 | [TZ-DOC-326](TZ-DOC-326-textblock-categoryid-ui.md) | Document Constructor · categoryId UI | P1 | after 325/316 | TZ-DOC-323 done, 316 | **A2-3** |
 | [TZ-DOC-331](../tasks/_archive/2026-08/TZ-DOC-331-builder-group-drag-by-groupid.done.md) | Document Constructor · group drag | — | **DONE** (archive) | — | — |
-| [TZ-DOC-332](TZ-DOC-332-builder-inspector-ia-visual-canon.md) | Document Constructor · inspector UX | **P0** | Ready — right pane IA + visual canon | mirror tool-pane chrome | **A2-5** |
+| [TZ-DOC-332](../tasks/_archive/2026-08/TZ-DOC-332-builder-inspector-ia-visual-canon.done.md) | Document Constructor · inspector UX | — | **DONE** (archive) | — | — |
 | [TZ-DOC-333](../tasks/_archive/2026-08/TZ-DOC-333-persist-template-block-photos.done.md) | Document Constructor · photo persist | — | **DONE** (archive) | — | — |
 | [TZ-DOC-334](../tasks/_archive/2026-08/TZ-DOC-334-text-block-categories-nav.done.md) | Document Constructor · categories nav | — | **DONE** (archive) | — | — |
 | [TZ-DOC-335](../tasks/_archive/2026-08/TZ-DOC-335-builder-ux-empty-states-deeplink.done.md) | Document Constructor · builder UX | — | **DONE** (archive) | — | — |

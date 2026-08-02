@@ -1,104 +1,80 @@
 # Компонент: Инспектор свойств (BuilderInspectorComponent)
 
-**Краткое описание:** Правая боковая панель (320px) с редактором свойств выбранного блока на холсте. Сигнал-связанные поля (без FormGroup), каждое изменение через `effect()` эмитит `(update)` родителю.
+**Краткое описание:** Правая панель «Свойства» конструктора документов. Визуальный канон зеркалит верхнюю палитру (`BuilderToolPane`): 13px uppercase brand, hairline-секции, компактные контролы, `var(--color-*)`, без Inter/hex. Signal-bound поля; родитель (`BuilderPage`) делает PATCH.
 
 ## Route
 
-Нет собственного роута. Всегда рендерится как дочерний компонент `BuilderPage`.
+Нет собственного роута. Дочерний компонент `BuilderPage`.
 
 ```
-BuilderPage (3-pane layout)
-├── BuilderToolPaneComponent     (слева, 280px)
+BuilderPage
+├── BuilderToolPaneComponent     (сверху, палитра)
 ├── BuilderCanvasComponent       (центр)
 └── BuilderInspectorComponent   ← этот компонент (справа, 320px)
 ```
 
 ## API endpoints
 
-Нет прямых API-вызовов. Все изменения эмитятся родителю (`BuilderPage`), который делает PATCH через `TemplateBlocksService`.
+Прямых вызовов нет, кроме upload изображения блока через `TemplateBlocksService.uploadImage` (DOC-333). Остальные изменения — outputs родителю.
 
-## Inputs
+## Inputs (основные)
 
 | Input | Тип | Назначение |
 |-------|-----|-----------|
-| `block` | `TemplateBlock \| null` | Текущий выбранный блок (null = ничего не выбрано) |
-| `selectedCount` | `number` | Количество блоков в multi-select режиме |
+| `block` | `TemplateBlock \| null` | Single-select блок |
+| `selectedCount` / `selectedBlocks` | multi | Multi-select |
+| `templateSelected` / `template` | template mode | Свойства шаблона |
+| `allBlocks` | `TemplateBlock[]` | Сводка + layer order |
+| `snapEnabled` / `gridSize` / `boundaryPadding` | snap | Привязка к сетке |
+| `grouped` | `boolean` | Badge / ungroup |
 
-## Outputs
+## Outputs (основные)
 
-| Output | Тип данных | Назначение |
-|--------|-----------|-----------|
-| `update` | `Partial<TemplateBlock> & { _id: string }` | Изменение поля блока (из сигнала) |
-| `delete` | `string` | Удалить блок по _id |
-| `deleteSelected` | `void` | Удалить все выбранные (multi-select) |
-| `editSelected` | `void` | Открыть редактор (текст/таблица) |
+`update`, `delete`, `deleteSelected`, `editSelected`, `templateUpdate`, `uploadBackground`, `removeBackground`, `setDefaultBackground`, `snapSettingsChange`, `closePanel`, `layoutOrderChange`, `groupSelected`, `ungroupSelected`, `multiMarginUpdate`, `marginReset`.
 
-## Редактируемые поля (по типу блока)
+## Режимы IA (DOC-332)
 
-### Общие (все типы, кроме spacer)
+Один chrome: `.insp-section` + `data-test="insp-section-header"`.
 
-| Поле | Контрол | Сигнал |
-|------|---------|--------|
-| `title` | `<input type="text">` | `title` |
-| `isActive` | `<app-pi-switch>` | `isActive` |
-| `showLine` | `<app-pi-switch>` | `showLine` |
+| Mode | Условие | Секции сверху вниз |
+|------|---------|-------------------|
+| **A Document** | нет блока, count=0, не template | Контекст («Документ» + сводка) → Привязка к сетке |
+| **B Template** | `templateSelected` | Контекст («Шаблон») → Стиль страницы → Фон |
+| **C Multi** | count>0, нет single block | Контекст → Геометрия → Группа → Слой → Опасная зона |
+| **D Single** | `block` set | Контекст → **Геометрия** → Содержимое → Стиль → Слой → Опасная зона |
 
-### text / header
+Правила:
 
-| Поле | Контрол | Сигнал |
-|------|---------|--------|
-| `content` | `<textarea rows="6">` | `content` |
-
-### image / signature
-
-| Поле | Контрол | Сигнал |
-|------|---------|--------|
-| `height` | `<input type="number">` | `height` |
-
-### spacer
-
-| Поле | Контрол | Сигнал |
-|------|---------|--------|
-| `height` | `<input type="range">` + `<input type="number">` | `height` |
-
-### table
-
-| Поле | Контрол | Сигнал |
-|------|---------|--------|
-| `settings.tableTemplateId` | readonly badge (неизменяемо) | `settingsTableId` (computed) |
-
-### dataBinding
-
-| Поле | Контрол | Сигнал |
-|------|---------|--------|
-| `dataBinding.source` | readonly badge | — |
-| `dataBinding.field` | readonly badge | — |
-| `dataBinding.format` | `<app-pi-select>` (text/date/currency/number) | `onFormatChange` |
-| `dataBinding.value` | `<input type="text">` (только для source='static') | `bindingValue` |
+- Empty: нет hero «Ничего не выбрано»; hint допустим под сводкой.
+- Single: Edit (outline) в «Содержимое»; Delete только в «Опасная зона».
+- Snap + pageNumbering → `app-pi-switch` (не native checkbox).
+- Image overlay XY не дублирует layout XY (layout побеждает).
 
 ## Состояния
 
-| Состояние | Условие | Отображается |
-|-----------|---------|-------------|
-| **Empty** | `block === null && selectedCount === 0` | «Ничего не выбрано» + hint |
-| **Multi-select** | `block === null && selectedCount > 0` | «Выбрано: N» + кнопка «Удалить» |
-| **Single select** | `block !== null` | Форма редактирования |
+| Состояние | UI |
+|-----------|-----|
+| Empty / document | Mode A |
+| Template selected | Mode B + close в header |
+| Multi-select | Mode C |
+| Single select | Mode D |
 
 ## Особенности
 
-- **Signal-bound, без FormGroup** — каждое поле — отдельный сигнал. `effect()` гидратирует сигналы при смене блока, поля эмитят `(update)` при каждом input
-- **Без auto-save** — только эмит событий. Родитель (BuilderPage) сам решает, когда сохранять
-- **Multi-select** — при `selectedCount() > 0` показывает количество и кнопку удаления (блок === null)
-- **Readonly badges** — `settings.tableTemplateId` и `dataBinding.source/field` отображаются как badge, изменить нельзя (только через удаление/пересоздание блока)
-- **Spacer** — уникальный UI: range slider + числовой input для высоты; не показывает title/isActive/showLine
-- **Format select** — `DATA_BINDING_FORMATS`: text, date, currency, number
+- Signal-bound, без FormGroup; `effect()` гидратирует поля при смене блока.
+- Layer: компактный icon-toolbar (front/raise/lower/back).
+- Upload/reset: ink outline + sunrise-soft hover (как tool-pane).
+- Readonly badges: `tableTemplateId`, dataBinding source/field; optional «В группе» при `groupId`.
 
 ## TZ reference
 
 | TZ | Что сделано |
 |----|------------|
-| TZ-86 Phase D.1 | Базовая реализация инспектора (поля, форма, эмит событий) |
+| TZ-86 Phase D.1 | Базовый инспектор |
+| TZ-DOC-311 | Cleanup TOC/header/footer; pageNumbering остаётся |
+| TZ-DOC-333 | Upload-first photo persist |
+| **TZ-DOC-332** | IA modes A–D + visual canon parity with tool-pane |
 
 ---
 
-_Создано: 2026-07-19. Компонент без роута, дочерний BuilderPage._
+_Обновлено: 2026-08-02 (DOC-332)._
