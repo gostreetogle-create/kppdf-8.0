@@ -9,8 +9,9 @@
 ## Route
 
 ```
-/doc-constructor/builder       → выбор шаблона (список)
-/doc-constructor/builder/:id   → редактор конкретного шаблона
+/doc-constructor/builder                     → редирект на /doc-constructor/templates (TZ-DOC-324)
+                                              (без :id не показывается — реестр единый)
+/doc-constructor/builder/:id                 → редактор конкретного шаблона
 ```
 
 ## Query params

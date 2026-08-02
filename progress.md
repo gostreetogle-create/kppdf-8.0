@@ -5210,3 +5210,22 @@ absent — rollback tests would be a separate TZ.
 Archive: `tasks/_archive/2026-08/Z-001-inventory-write-transactions.done.md`.
 Lock: `.mimocode/locks/Z-001-inventory-write-transactions.lock` (DONE).
 Push: NO.
+
+## 2026-08-02 — TZ-DOC-324 DONE (doc-constructor IA refactor)
+
+**Тип:** Frontend Layer-3 IA/UX refactor — single source of CRUD, pure editor pattern.
+
+**Результат:** Два реестра шаблонов (BuilderPage picker на `/builder` + TemplatesPage реестр на `/templates`) → один. Builder — pure editor для конкретного `:id`. App.routes redirect `/builder → /templates` через `pathMatch: 'full'`. Nav-пункт «Конструктор» удалён (вход — действие «Открыть» в реестре). Из BuilderPage убраны `@if (!templateId())`-ветка и CRUD-методы (create/duplicate/delete/pick) ~150 строк; spec переписан (TZ-DOC-268/310 регрессы переехали в templates.page покрытие).
+
+**Pre-state changeset** (минус из BuilderPage):
+- `@if (!templateId()) { ... } @else { ... }` — целиком удалена @if-ветка (110 строк шаблона).
+- 5 методов: `onCreateTemplate`, `doCreateTemplate`, `onDuplicateTemplate`, `onDeleteTemplate`, `onTemplatePick`.
+- 2 сигнала: `isCreating`, `templateListRes` (+ httpResource).
+- 1 computed: `templateListErrorMessage`.
+- 2 imports: `Plus` (lucide-angular), `PiSectionComponent`.
+- 1 declaration: `PlusIcon = Plus`.
+
+**Архив:** `tasks/_archive/2026-08/TZ-DOC-324-builder-templates-ia.done.md`; lock: `.mimocode/locks/TZ-DOC-324-builder-templates-ia.lock` (DONE, оба commit hash); checklist: `docs/agent-checklists/TZ-DOC-324.md` с добавленным `## Executor report (auto)` блоком (по post-hoc-overlay паттерну).
+
+**Ограничения:** pre-existing ng-build blocker от TZ-WORKERS-302 (people.page.ts unterminated strings) — out of scope, не fix-force. TZ-DOC-317/318/326 UX chain unblocked (Builder теперь чисто editor).
+

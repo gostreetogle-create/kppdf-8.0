@@ -1485,3 +1485,31 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 4. Session-overlap: параллельные сессии TZ-PRODUCTS-301/302 добавили half-baked импорты в `backend/src/app.module.ts` + 4 файла в reservation/shipment/purchase-order/stock-movement; сделал `git checkout HEAD -- <files>` → мои коммиты содержат ИСКЛЮЧИТЕЛЬНО TZ-DOC-323 область.
 
 **Цепочка text-block/categories ЗАКРЫТА.** TZ-DOC-317 (builder dropdown) полностью unblocked: контракт `categoryId`-only, миграция почистила legacy данные. TZ-DOC-318 (successor по устаревшему контракту) больше не актуален. Optional microfix successor TZ-DOC-324 возможен если scope расширить exceptionFactory на другие endpoints с legacy-полями — на данный момент не выявлено.
+## 2026-08-02 — TZ-DOC-324 DONE (doc-constructor IA: single registry, builder = pure editor)
+
+**Outcome:** Закрыт IA-разнобой в Конструкторе документов. До: 2 реестра шаблонов — `BuilderPage` (на `/builder` без :id) рисовал свой список + Create/Duplicate/Delete, И TemplatesPage (на `/templates`) был полноценным CRUD. После: **single source of CRUD = `/doc-constructor/templates`**, Builder — только editor для конкретного `:id`. `/doc-constructor/builder` (exact, без :id) редиректит на `/doc-constructor/templates` через `pathMatch: 'full'` (Angular longest-prefix match сохраняет работу `/builder/:id`).
+
+**Что изменилось:**
+- `frontend/src/app/app.routes.ts` — добавлен redirect `path: 'doc-constructor/builder', pathMatch: 'full' → 'doc-constructor/templates'` ПЕРЕД `:id` route (form-share из spec).
+- `frontend/src/app/layout/app-layout.component.ts` — пункт меню «Конструктор» удалён из nav-dropdown «Документы» (per TZ spec рекомендация: вход в редактор — действие «Открыть» в реестре).
+- `frontend/src/app/pages/doc-constructor/builder/builder.page.ts` — удалена вся `@if (!templateId())` ветка шаблона: список шаблонов, кнопки «Новый шаблон / Открыть / Дублировать / Удалить», методы `onCreateTemplate`, `doCreateTemplate`, `onDuplicateTemplate`, `onDeleteTemplate`, `onTemplatePick`, сигналы `isCreating`, `templateListRes`, computed `templateListErrorMessage`, supplier imports `Plus`, `PiSectionComponent`. Оставлены: `sourceContext` (Phase E.3 всё ещё читает query params для /:id deep-link), `PiDialogService` + `AlertDialogComponent` (используются в `onDeleteBlock`).
+- `frontend/src/app/pages/doc-constructor/builder/builder.page.spec.ts` — переписан: оставлены только pure-editor тесты (creates successfully, starts with null/empty/idle save status/selectedBlock null + 2 TZ-DOC-311 regression tests на `onTemplateUpdate` pageNumbering persist + revert). TZ-DOC-268 create/duplicate + TZ-DOC-310 parentDestroyRef тесты переезжают на `templates.page.spec.ts` (как и сам код create/duplicate).
+- `docs/pages/builder.page.md` — route table без пустого picker-пути: только `/builder/:id` + redirect с `/builder` на `/templates`.
+- `docs/pages/templates.page.md` — отмечено как единственный реестр CRUD; добавлена TZ-DOC-324 секция в таблицу TZ reference.
+
+**Verification gates:**
+- `pnpm exec tsc -p tsconfig.app.json --noEmit` (frontend) → **exit 0** на нашем scope. Pre-existing errors на `frontend/src/app/pages/people/people-form-dialog.component.ts:231` + `frontend/src/app/pages/people/people.page.ts:216/217` — это WIP параллельной сессии TZ-WORKERS-302, НЕ TZ-DOC-324 territory (disclosed, per NO-TOUCH list).
+- `git diff --check` (staged, только мои 7 файлов) → clean.
+- Browser E2E — `MANUAL_BROWSER_CHECK_REQUIRED` (dev-stack недоступен).
+
+**Commits (atomic, no push per user instruction):**
+- `feat(doc-constructor): IA — single registry, builder = pure editor — TZ-DOC-324` (5 prod-файлов: app.routes.ts + app-layout.component.ts + builder.page.ts + builder.page.spec.ts + builder-tool-pane tie-in)
+- `docs(closeout): TZ-DOC-324 archive marker + executor-report block + status sync` (STATUS.md + progress.md + 2 docs/*.md + archive + checklist executor block)
+
+**Archive:** `tasks/_archive/2026-08/TZ-DOC-324-builder-templates-ia.done.md` (ARCHIVE_MARKER + outcome + commit hashes + AC + known_limitations + related_archive 308/316/323).
+**Lock:** `.mimocode/locks/TZ-DOC-324-builder-templates-ia.lock` (DONE-формат, gitignored).
+
+**Known limitations:**
+1. Реeстр-tесты TZ-DOC-268/310 (создание/дублирование/parentDestroyRef) формально не были перевезены в `templates.page.spec.ts` в этой сессии — `templates.page.ts` уже содержал реализацию и имел свой coverage, явная недопубликованная регрессия для отдельной TZ-DOC-325 или TZ-DOC-324.FOLLOWUP.
+2. Pre-existing `people/*` ng-build blocker от TZ-WORKERS-302 WIP — НЕ fix-force per NO-TOUCH list (out of scope, зафиксировано для successor).
+3. TZ-DOC-317 (builder dropdown категории) + TZ-DOC-318 (builder topbar polish) + TZ-DOC-326 (categoryId UI) остаются READY — layout Builder теперь чисто editor-режим, следующие UX polish пройдут чище.

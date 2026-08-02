@@ -1,0 +1,19 @@
+name: TZ-DOC-324
+title: builder-templates-ia — единый реестр шаблонов, builder только редактор
+claimed-by: minimax-m3 (current Freebuff executor)
+started-at: 2026-08-02
+status: IN_PROGRESS
+scope: TZ-DOC-324 spec (Layer 3 frontend)
+related-archive: tasks/_archive/2026-08/TZ-DOC-324-builder-templates-ia.done.md
+related-checklist: docs/agent-checklists/TZ-DOC-324.md
+
+CONFLICT KEYS (см. spec):
+  frontend/src/app/pages/doc-constructor/builder/builder.page.ts
+  frontend/src/app/pages/doc-constructor/builder/builder.page.spec.ts
+  frontend/src/app/pages/doc-constructor/templates/templates.page.templates
+  (только если требуется расширить обработчики)
+  frontend/src/app/app.routes.ts
+  frontend/src/app/layout/app-layout.component.ts
+  docs/pages/builder.page.md
+  docs/pages/templates.page.md
+  docs/agent-checklists/TZ-DOC-324.md

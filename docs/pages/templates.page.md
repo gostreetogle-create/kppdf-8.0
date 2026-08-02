@@ -1,11 +1,13 @@
 # Страница: Реестр шаблонов (TemplatesPage)
 
-**Краткое описание:** Реестр шаблонов документов. Создание, дублирование, настройка активности, переход в конструктор.
+**Краткое описание:** **Единственный реестр CRUD для шаблонов документов.** Создание, дублирование, активация/деактивация, переход в конструктор. Builder — только editor (см. TZ-DOC-324 IA-refactor).
 
 ## Route
 
 ```
-/doc-constructor/templates — «KPPDF — Реестр шаблонов»
+/doc-constructor/templates                          — «KPPDF — Реестр шаблонов» (single source of CRUD)
+/doc-constructor/builder                           — редирект на /templates (TZ-DOC-324)
+/doc-constructor/builder/:id                       — только редактор (CRUD = здесь)
 ```
 
 ## API endpoints
@@ -67,6 +69,7 @@
 |----|------------|
 | TZ-86 | Первая реализация (Phase D) |
 | TZ-DOC-308 | Категория шаблона: колонка в реестре, фильтр по категории, выбор категории в setup-диалоге (default auto-select, required, duplicate сохраняет категорию) |
+| TZ-DOC-324 | **IA:** этот реестр стал единственным местом CRUD для шаблонов. Builder (бывший дубль-picker на /builder без :id) возвращает редирект на /templates. Тесты TZ-DOC-268/310/310B на create/duplicate перенесены в `templates.page.spec.ts`. |
 
 ---
 
