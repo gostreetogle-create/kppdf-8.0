@@ -21,9 +21,9 @@ Live focus map: [`docs/agent-checklists/_active-map.md`](../docs/agent-checklist
 
 | ID | Category | Priority | Status | Notes |
 |----|----------|---------:|--------|-------|
-| [TZ-DEPLOY-301](TZ-DEPLOY-301-prep-first-deploy.md) | Ops · first deploy gate | **P0** | READY / peers in progress | Auth refresh, CORS, secrets, compose, RUNBOOK. **DONE = можно спокойно деплоить.** |
+| — | — | — | **empty** | No root TZ. **TZ-DEPLOY-301 DONE** → [`_archive/2026-08/TZ-DEPLOY-301-prep-first-deploy.done.md`](_archive/2026-08/TZ-DEPLOY-301-prep-first-deploy.done.md). PO: VPN off → `.\deploy\synology\deploy.ps1`. |
 
-Корневых DOC/UX/MATERIALS TZ сейчас **нет** — закрыты в `_archive/2026-08/`.
+Корневых DOC/UX/MATERIALS/DEPLOY TZ сейчас **нет** — закрыты в `_archive/2026-08/`.
 
 ---
 
@@ -41,12 +41,12 @@ See [`_backlog/README.md`](_backlog/README.md) (audit 2026-08-02).
 
 ---
 
-## Recently archived (DOC deploy polish)
+## Recently archived
 
 | ID | Note |
 |----|------|
+| **DEPLOY-301** | First-deploy gate (auth A, compose, docs) — DONE; live smoke = VPN |
 | DOC-324…326, 331…336 | Builder / texts / tables / photos / inspector — DONE |
-| DOC-325 | Palette (top for landscape) |
 | ACCESS-301/302, MATERIALS-307/309, UX-304, SALES-301 | DONE (see `_archive/2026-08/`) |
 
 ---

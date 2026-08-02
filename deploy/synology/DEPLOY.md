@@ -1,9 +1,9 @@
 # KPPDF 8.0 — Документация деплоя
 
-> **Source of truth** для деплоя v8.
-> Секреты: [`CREDENTIALS.md`](./CREDENTIALS.md) (gitignore).
-> Краткий чеклист: [`RUNBOOK.md`](./RUNBOOK.md)
-> Последнее обновление: 2026-07-25
+> **Source of truth** для деплоя v8.  
+> **Старт:** [`README.md`](./README.md) · чеклист [`RUNBOOK.md`](./RUNBOOK.md)  
+> Секреты: [`CREDENTIALS.md`](./CREDENTIALS.md) (gitignore).  
+> Последнее обновление: 2026-08-02
 
 ---
 
@@ -94,12 +94,12 @@ VPS (193.222.62.240) и VM (192.168.1.103) в разных сетях. Synology 
 
 ## 4. SSH доступ
 
-| Сервер | Команда | Пароль | Доступ |
-|--------|---------|--------|--------|
-| VPS | `ssh root@193.222.62.240` | `serenaubxuekin` | Из интернета |
-| VM | `ssh tiit@192.168.1.103` | `Tg30121986` | Только из LAN |
+| Сервер | Команда | Секреты |
+|--------|---------|---------|
+| VPS | `ssh root@193.222.62.240` | см. `CREDENTIALS.md` |
+| VM | `ssh -i %USERPROFILE%\.ssh\kppdf80-vm tiit@192.168.1.103` | ключ / пароль в `CREDENTIALS.md` |
 
-**SSH-ключ (VM → VPS):** ed25519, уже в `authorized_keys` на VPS.
+**Не хранить пароли в этом файле.** VM доступна по LAN; при включённом VPN часто недоступна.
 
 ---
 
@@ -210,17 +210,23 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 ## 8. Конфигурация (.env на VM)
 
-Файл: `/opt/kppdf-8.0/.env`
+Файл: `/opt/kppdf-8.0/.env` — **генерируется `deploy.py` из локального `config.env`**.
+
+Обязательные ключи:
 
 ```
-JWT_SECRET=014fd3108b0a0142b212f4385464fa4cf29f041461cf04c9608c9fcfb4db0578
-JWT_REFRESH_SECRET=ceb70bc50ef132a421e536ff9bda8582387e073ca3f96dbfff3c4272a5298bba
-CORS_ORIGIN=https://sport-set.ru,http://kppdf-crm.ru,https://kppdf-crm.ru,http://193.222.62.240
+JWT_SECRET=<64 hex>
+JWT_REFRESH_SECRET=<другой 64 hex>
+ADMIN_PASSWORD=<сильный, ≥12, НЕ demo-default>
+CORS_ORIGIN=https://kppdf-crm.ru
 KPPDF_DATA_DIR=/var/lib/kppdf80
-ADMIN_PASSWORD=admin-change-me-immediately-in-production
+TRUST_PROXY=1
 ```
 
-**Важно:** После изменения `.env` нужно **пересоздать** контейнер (не просто restart):
+Значения — только в gitignored `deploy/synology/config.env` / `CREDENTIALS.md`.
+
+После ручного изменения `.env` на сервере:
+
 ```bash
 cd /opt/kppdf-8.0 && sudo docker compose -f docker-compose.prod.yml up -d --force-recreate --no-deps backend
 ```
@@ -231,44 +237,43 @@ cd /opt/kppdf-8.0 && sudo docker compose -f docker-compose.prod.yml up -d --forc
 
 ### 9.1 Первичная настройка (один раз)
 
-```bash
-# На VM: установка Docker, каталогов, firewall
-sudo bash deploy/synology/server-setup-ubuntu.sh
+См. [`INSTALL.md`](./INSTALL.md) и [`README.md`](./README.md).
 
-# На VM: настройка туннеля (SSH ключ, autossh, systemd)
-scp deploy/synology/setup-tunnel-vm.sh tiit@192.168.1.103:/tmp/
-ssh tiit@192.168.1.103 "bash /tmp/setup-tunnel-vm.sh"
+Кратко: Docker на VM (`server-setup-ubuntu.sh`), туннель `kppdf-tunnel`, SSL на VPS, локально `config.env` + SSH-ключ.
 
-# На VPS: SSL сертификат
-certbot --nginx -d kppdf-crm.ru --non-interactive --agree-tos --email admin@kppdf-crm.ru --redirect
-```
+### 9.2 Обновление приложения (канон)
 
-### 9.2 Обновление приложения
+**Одна команда (рекомендуется):**
 
-**Node.js (рекомендуется):**
 ```powershell
-node deploy/synology/deploy-node.cjs
-```
-
-**PowerShell:**
-```powershell
+.\deploy\synology\deploy.ps1
+# или
 .\deploy\synology\deploy.ps1 -Seed
 ```
 
-**Python (legacy):**
-```powershell
-python deploy/synology/deploy.py --host 192.168.1.103 --seed
+```bash
+./deploy/synology/deploy.sh
+./deploy/synology/deploy.sh --seed
 ```
+
+Эквивалент:
+
+```powershell
+pip install -r deploy/synology/requirements.txt
+python deploy/synology/deploy.py
+```
+
+> Устаревшие пути `deploy-node.cjs` / старый `deploy.ps1` без wrapper — **не использовать**. Канон: `deploy.py` + `deploy.ps1`/`deploy.sh`.
 
 ### 9.3 Что делает деплой
 
-1. Angular build → `frontend/browser/`
-2. Архив: `backend/`, `frontend/`, `docker-compose.prod.yml`
-3. SSH upload на VM → `/opt/kppdf-8.0/`
-4. Запись `.env`
-5. `docker compose build --no-cache backend && up -d`
-6. Health check
-7. Копирование frontend
+1. `pnpm --dir frontend build` → копия в `frontend/browser/`
+2. Архив: `backend/`, `frontend/browser/`, `docker-compose.prod.yml`, `backup.sh`
+3. SSH (ключ или пароль) → upload в `/opt/kppdf-8.0/`
+4. Запись `.env` из `config.env`
+5. Опционально `--wipe` (app + mongo data)
+6. `docker compose build backend && up -d` + ожидание rs0
+7. Health `/api/health/ready` + пробный login admin
 
 ---
 
@@ -276,25 +281,18 @@ python deploy/synology/deploy.py --host 192.168.1.103 --seed
 
 ```bash
 # 1. Backend (на VM):
-curl http://localhost:3000/api/health
+curl http://localhost:3000/api/health/ready
 # → {"status":"ok","info":{"mongo":{"status":"up"},...}}
 
 # 2. Туннель (с VPS):
-curl -4 -s http://127.0.0.1:4200/api/health
-# → JSON
+curl -4 -s http://127.0.0.1:4200/api/health/ready
 
-# 3. HTTPS (из браузера):
-https://kppdf-crm.ru/              # → страница логина
-https://kppdf-crm.ru/api/health    # → JSON
-
-# 4. HTTP → HTTPS редирект:
-http://kppdf-crm.ru/               # → 301 → https://kppdf-crm.ru/
-
-# 5. robots.txt:
-https://kppdf-crm.ru/robots.txt    # → User-agent: *
+# 3. HTTPS:
+https://kppdf-crm.ru/
+https://kppdf-crm.ru/api/health/ready
 ```
 
-**Логин:** `admin` / `admin-change-me-immediately-in-production`
+**Логин:** `admin` + пароль из `CREDENTIALS.md` (не demo-default / не admin123).
 
 ---
 
@@ -344,8 +342,19 @@ certbot renew --dry-run
 | `/opt/kppdf-8.0/.env` | JWT + CORS конфиг |
 | `/opt/kppdf-8.0/docker-compose.prod.yml` | Docker Compose production |
 | `/var/lib/kppdf80/mongodb/` | MongoDB data (сохраняется) |
-| `/var/lib/kppdf80/uploads/` | Загруженные файлы |
+| `/var/lib/kppdf80/uploads/` | Загруженные файлы (**volume**, не в git / не в image) |
 | `/var/lib/kppdf80/backups/` | Ручные бэкапы |
+
+### Uploads / медиа (важно для деплоя)
+
+- Обычный деплой / rebuild контейнеров **не** удаляет `/var/lib/kppdf80/uploads/`.
+- Флаг `--wipe` / `-Wipe` удаляет mongo **и** uploads — только demo/dev, не на живых данных.
+- Перед рискованными операциями: `backup.sh` (mongo + uploads).
+- Канон подпапок:
+  - `uploads/document-templates/{templateId}/` — фоны шаблонов;
+  - `uploads/template-blocks/{blockId}/` — фото блоков конструктора (**TZ-DOC-333 закрыт**: upload через `POST /template-blocks/:id/image`, в Mongo пишется `/uploads/template-blocks/...`; `blob:`/`data:` в `settings.imageUrl` → 400).
+- Устаревшие `blob:` URL из Mongo рендерятся как «нет изображения» (soft-guard); ручной cleanup не обязателен.
+- Аудит: `docs/audits/DOC-333-photo-persist-audit.md`.
 
 ---
 
@@ -361,7 +370,7 @@ certbot renew --dry-run
 | Mongo | 7.x (AVX required) | **4.4** (AVX-free) |
 | SSL | Нет | **Let's Encrypt + HTTP/2** |
 | Туннель | Нет | **autossh + systemd** |
-| Деплой | deploy.py | deploy-node.cjs |
+| Деплой | deploy.py | **deploy.ps1 / deploy.sh → deploy.py** |
 | Домен | sport-set.ru | **kppdf-crm.ru** |
 
 ---
@@ -370,6 +379,7 @@ certbot renew --dry-run
 
 | Дата | Событие |
 |------|---------|
+| 2026-08-02 | Clean wipe+deploy; auth refresh в body; CSP/CSS; one-command `deploy.ps1`/`deploy.sh`; README; **TZ-DOC-333** — persist фото блоков (disk `uploads/template-blocks/` + reject blob) |
 | 2026-07-25 | **v5** — HTTPS (Let's Encrypt), HTTP/2, gzip, кеширование статики, robots.txt |
 | 2026-07-25 | **v4** — Туннель создан, CORS исправлен, всё работает |
 | 2026-07-25 | **v3** — VPS подготовлен, setup-tunnel-vm.sh создан |

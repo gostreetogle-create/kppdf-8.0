@@ -1,14 +1,11 @@
 # KPPDF 8.0 — Установка с нуля
 
-> Пошаговая инструкция для нового развёртывания.
-> Краткий чеклист: [`RUNBOOK.md`](./RUNBOOK.md)
-> Полная документация: [`DEPLOY.md`](./DEPLOY.md)
+> Пошаговая инструкция для нового развёртывания.  
+> **Обычный update:** [`README.md`](./README.md) · чеклист [`RUNBOOK.md`](./RUNBOOK.md) · архитектура [`DEPLOY.md`](./DEPLOY.md)
 
 ---
 
 ## 1. Обзор
-
-KPPDF 8.0 работает на 3 серверах:
 
 | Сервер | Роль |
 |--------|------|
@@ -20,125 +17,58 @@ KPPDF 8.0 работает на 3 серверах:
 
 ## 2. Подготовка VM (один раз)
 
-### 2.1 Установка Docker
+### 2.1 Docker
 
 ```bash
 ssh tiit@192.168.1.103
-sudo bash deploy/synology/server-setup-ubuntu.sh
+# скопировать и запустить server-setup-ubuntu.sh из репо
+sudo bash server-setup-ubuntu.sh
 ```
 
-Скрипт установит Docker, создаст каталоги, настроит UFW.
+### 2.2 Туннель к VPS
 
-### 2.2 Настройка туннеля
-
-```bash
-# Скопировать скрипт:
-scp deploy/synology/setup-tunnel-vm.sh tiit@192.168.1.103:/tmp/
-
-# Запустить на VM:
-ssh tiit@192.168.1.103 "bash /tmp/setup-tunnel-vm.sh"
-```
-
-Что делает:
-- Генерирует SSH-ключ (если нет)
-- Добавляет публичный ключ на VPS
-- Устанавливает autossh
-- Создаёт systemd-сервис `kppdf-tunnel`
+Если сервис `kppdf-tunnel` уже есть — пропусти. Иначе см. `DEPLOY.md` § SSH Reverse Tunnel / autossh.
 
 ### 2.3 SSL на VPS
 
 ```bash
 ssh root@193.222.62.240
-apt-get install -y certbot python3-certbot-nginx
 certbot --nginx -d kppdf-crm.ru --non-interactive --agree-tos --email admin@kppdf-crm.ru --redirect
 ```
 
-Автопродление настроено автоматически через `certbot.timer`.
-
 ---
 
-## 3. Первый деплой
-
-### 3.1 Конфиг деплоя
+## 3. Первый деплой с dev-машины
 
 ```powershell
+pip install -r deploy/synology/requirements.txt
 copy deploy\synology\config.env.example deploy\synology\config.env
+copy deploy\synology\CREDENTIALS.example.md deploy\synology\CREDENTIALS.md
+# заполнить config.env (JWT, ADMIN_PASSWORD, SSH key/password, CORS=https://kppdf-crm.ru)
+
+# чистая установка (только пока нет реальных данных):
+.\deploy\synology\deploy.ps1 -Wipe -Seed
 ```
 
-Заполнить `deploy/synology/config.env` (уже заполнен — см. `CREDENTIALS.md`).
-
-### 3.2 Деплой
+После успеха: в `config.env` оставить `WIPE=false`. Дальше только:
 
 ```powershell
-# Node.js (рекомендуется):
-node deploy/synology/deploy-node.cjs
-
-# Или PowerShell:
-.\deploy\synology\deploy.ps1 -Seed
-
-# Или Python:
-pip install paramiko
-python deploy/synology/deploy.py --host 192.168.1.103 --seed
+.\deploy\synology\deploy.ps1
 ```
-
-Скрипт:
-1. Собирает Angular frontend
-2. Создаёт архив
-3. Загружает на VM
-4. Записывает `.env`
-5. Пересобирает и запускает Docker
-6. Проверяет health
 
 ---
 
 ## 4. Проверка
 
-```bash
-# 1. Backend (на VM):
-curl http://localhost:3000/api/health
-# → {"status":"ok","info":{"mongo":{"status":"up"},...}}
-
-# 2. Туннель (с VPS):
-curl -4 -s http://127.0.0.1:4200/api/health
-# → JSON
-
-# 3. HTTPS (из браузера):
-https://kppdf-crm.ru/
-https://kppdf-crm.ru/api/health
-
-# 4. Логин:
-# admin / admin-change-me-immediately-in-production
-```
+- https://kppdf-crm.ru/api/health/ready → ok
+- Логин `admin` + пароль из `CREDENTIALS.md`
+- Ctrl+F5 если кэш старого CSS
 
 ---
 
-## 5. Что переживает обновление
-
-| Путь | Содержимое | При деплое |
-|------|------------|------------|
-| `/opt/kppdf-8.0/` | Код | **Перезаписывается** |
-| `/var/lib/kppdf80/mongodb/` | База данных | **Сохраняется** |
-| `/var/lib/kppdf80/uploads/` | Файлы | **Сохраняется** |
-| `/var/lib/kppdf80/backups/` | Бэкапы | **Сохраняется** |
-
-`docker compose down` без `-v` не удаляет bind-mount данные.
-
----
-
-## 6. Бэкап
+## 5. Бэкап
 
 ```bash
 ssh tiit@192.168.1.103
 cd /opt/kppdf-8.0 && sudo bash backup.sh
-# → /var/lib/kppdf80/backups/mongo-YYYY-MM-DD_HHMM/
-```
-
----
-
-## 7. Обновление
-
-```powershell
-# С dev-машины:
-node deploy/synology/deploy-node.cjs
-# Без --seed — база не перезаписывается.
 ```

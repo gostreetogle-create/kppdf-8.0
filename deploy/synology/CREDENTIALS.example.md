@@ -18,8 +18,8 @@ copy deploy\synology\CREDENTIALS.example.md deploy\synology\CREDENTIALS.md
 | Docker bridge | `172.17.0.1` (не для SSH) |
 | WAN IP | `193.222.62.240` (SSH auth fail с dev-машины) |
 | Пользователь | `tiit` |
-| Пароль | `<DEPLOY_PASSWORD>` — см. kppdf-3.0 `deploy/synology/config.env` |
-| SSH-ключи (Windows) | `%USERPROFILE%\.ssh\id_ed25519`, `kppdf40-vps` |
+| Пароль | `<DEPLOY_PASSWORD>` — см. gitignored `CREDENTIALS.md` / `config.env` |
+| SSH-ключи (Windows) | `%USERPROFILE%\.ssh\kppdf80-vm` |
 
 ---
 
@@ -29,12 +29,14 @@ copy deploy\synology\CREDENTIALS.example.md deploy\synology\CREDENTIALS.md
 |------------|----------|
 | `DEPLOY_HOST` | **`192.168.1.103`** (LAN) — основной; WAN `193.222.62.240` не работает |
 | `DEPLOY_USER` | `tiit` |
-| `DEPLOY_PASSWORD` | SSH-пароль |
+| `DEPLOY_PASSWORD` | SSH-пароль (или `DEPLOY_SSH_KEY`) |
+| `DEPLOY_SSH_KEY` | путь к приватному ключу `kppdf80-vm` |
 | `REMOTE_DIR` | `/opt/kppdf-8.0` |
 | `KPPDF_DATA_DIR` | `/var/lib/kppdf80` |
-| `JWT_SECRET` | 64 hex, см. kppdf-3.0 или `python -c "import secrets; print(secrets.token_hex(32))"` |
+| `JWT_SECRET` | 64 hex |
 | `JWT_REFRESH_SECRET` | отдельная 64 hex строка |
-| `CORS_ORIGIN` | `https://sport-set.ru` |
+| `ADMIN_PASSWORD` | ≥12 символов, не demo-default |
+| `CORS_ORIGIN` | `https://kppdf-crm.ru` |
 
 ---
 
@@ -42,11 +44,10 @@ copy deploy\synology\CREDENTIALS.example.md deploy\synology\CREDENTIALS.md
 
 | Поле | Значение |
 |------|----------|
-| URL prod | https://sport-set.ru |
+| URL prod | https://kppdf-crm.ru |
 | URL LAN | http://192.168.1.103:3000 |
 | Admin login | `admin` |
-| Admin password (default v8) | `admin-change-me-immediately-in-production` |
-| Admin password (legacy v3 deploy) | `admin123` — если на сервере ещё старый seed |
+| Admin password | из `config.env` `ADMIN_PASSWORD` (не demo-default) |
 
 > После первого входа смените пароль admin в production.
 
@@ -65,7 +66,7 @@ sudo docker ps
 
 | | |
 |---|---|
-| Домен | sport-set.ru |
+| Домен | kppdf-crm.ru |
 | Tunnel | cloudflared на Ubuntu VM (см. kppdf-3.0 deploy/synology/tunnel_*.py) |
 
 ---
@@ -85,5 +86,5 @@ _Заполнить после первого успешного deploy:_
 
 - Дата успешного деплоя: ___
 - Рабочий SSH-хост (LAN/WAN): ___
-- Версия образа backend: ___
+- One-command: `.\deploy\synology\deploy.ps1` (см. `README.md`)
 - Примечания: ___

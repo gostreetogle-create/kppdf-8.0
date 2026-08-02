@@ -57,6 +57,14 @@ Run **before** every production rollout:
    the real secret and confirm exit 0 (no throw).
 5. `OPERATIONAL ACTION REQUIRED` — rotate secrets once per quarter at
    minimum; rotate **immediately** on any suspected leak.
+6. Confirm `CORS_ORIGIN` (preferred) or legacy `CORS_ORIGINS` lists the
+   canonical public origin **`https://kppdf-crm.ru`** (comma-separated
+   if multi-origin). See `deploy/synology/RUNBOOK.md` and
+   `docker-compose.prod.yml`.
+7. Confirm compose has **no** banned `ADMIN_PASSWORD` default — require
+   host env (`${ADMIN_PASSWORD:?…}`). Auth refresh contract: **variant A**
+   — login/register JSON includes `refresh` (FE localStorage); cookie
+   optional (`path: /api/auth`).
 
 ---
 

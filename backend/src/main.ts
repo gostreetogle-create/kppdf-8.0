@@ -67,15 +67,28 @@ async function bootstrap() {
 
   app.useLogger(app.get(PinoLogger));
 
-  // Helmet with CSP and HSTS hardening
+  // Helmet with CSP and HSTS hardening.
+  // NOTE: Angular production (beasties) may emit
+  //   <link rel="stylesheet" media="print" onload="this.media='all'">
+  // which needs script-src-attr. Prefer disabling inlineCritical in
+  // angular.json; keep a narrow allow here so a rebuild without that
+  // flag does not blank the UI again.
   app.use(
     helmet({
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
           scriptSrc: ["'self'"],
+          scriptSrcAttr: ["'unsafe-inline'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
           imgSrc: ["'self'", 'data:', 'blob:'],
+          fontSrc: ["'self'", 'data:'],
+          connectSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          baseUri: ["'self'"],
+          formAction: ["'self'"],
+          frameAncestors: ["'self'"],
+          upgradeInsecureRequests: [],
         },
       },
       hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },

@@ -30,6 +30,14 @@
                 { "type": "anyScript", "maximumWarning": "50kB", "maximumError": "500kB" }
               ],
               "outputHashing": "all",
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                },
+                "fonts": true
+              },
               "fileReplacements": [
                 {
                   "replace": "src/app/core/api.tokens.ts",

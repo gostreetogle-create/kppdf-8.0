@@ -1,3 +1,12 @@
+## [2026-08-02] — Завершено: TZ-DEPLOY-301 (prep first deploy gate)
+**Исполнитель:** local-executor
+**Статус:** Выполнено / Проверено (code AC; live smoke blocked LAN/VPN)
+**Что сделано кратко:** Auth variant A — login/register JSON includes refresh; FE already stores/refreshes. Compose requires ADMIN_PASSWORD/JWT env (no banned default); healthcheck /api/health/ready; canon domain kppdf-crm.ru; deploy.py pnpm FE build; DEPLOY/RUNBOOK scrubbed; secrets checklist in RUNBOOK.
+**Затронутые файлы/папки:** backend/src/modules/auth/*, frontend/src/app/core/auth.service.ts, docker-compose.prod.yml, deploy/synology/*, .env.example, backend/.env.example, docs/SECURITY-OPERATIONS.md, docs/agent-checklists/TZ-DEPLOY-301.md, ARCHITECTURE.md, progress.md, tasks/
+**Известные ограничения:** VM 192.168.1.103 smoke blocked (VPN/LAN). Pre-existing FE tsc TS2729 in work-type-form-dialog (out of scope). HttpOnly-only refresh = DEPLOY-302.
+
+---
+
 ﻿## [2026-08-02] — TZ-DOC-336 Texts/Tables shell + dialog FormField canon
 
 **Исполнитель:** local-executor

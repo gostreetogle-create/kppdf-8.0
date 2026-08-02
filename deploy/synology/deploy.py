@@ -3,6 +3,7 @@ KPPDF 8.0 - Deploy to Synology NAS / Ubuntu server
 
 Usage:
     python deploy/synology/deploy.py [--seed]
+    python deploy/synology/deploy.py --wipe --seed
     python deploy/synology/deploy.py --password YOUR_PASSWORD --seed
     python deploy/synology/deploy.py --platform ubuntu --seed
 
@@ -10,13 +11,13 @@ Config: deploy/synology/config.env (copy from config.env.example)
 
 Steps:
     1. Load config.env
-    2. Build Angular frontend (npm run build)
-    3. Create archive (backend/ + shared/ + frontend/ + docker-compose.prod.yml)
-    4. Connect via paramiko
-    5. Upload & extract + .env (JWT secrets)
-    6. Docker build + up
-    7. Health check + seed (optional)
-    8. Verify API + frontend
+    2. Build Angular frontend (pnpm --dir frontend build)
+    3. Create archive (backend/ + frontend/browser + docker-compose.prod.yml)
+    4. Connect via paramiko (password or DEPLOY_SSH_KEY)
+    5. Optional wipe of REMOTE_DIR + mongo data
+    6. Upload & extract + .env (JWT + ADMIN_PASSWORD)
+    7. Docker build + up
+    8. Health check + seed (optional) + verify API/frontend/login
 """
 
 import argparse
@@ -77,36 +78,53 @@ def resolve_settings(args, cfg):
         fail("Unknown platform: " + platform + ". Use ubuntu or synology.")
 
     defaults = PLATFORMS[platform]
-    host = args.host or cfg.get("DEPLOY_HOST") or "192.168.1.134"
-    user = args.user or cfg.get("DEPLOY_USER") or "ubuntu"
+    host = args.host or cfg.get("DEPLOY_HOST") or "192.168.1.103"
+    user = args.user or cfg.get("DEPLOY_USER") or "tiit"
     password = args.password or cfg.get("DEPLOY_PASSWORD") or None
+    ssh_key = cfg.get("DEPLOY_SSH_KEY") or None
+    if ssh_key:
+        ssh_key = os.path.expandvars(os.path.expanduser(ssh_key))
+        if not os.path.isfile(ssh_key):
+            fail("DEPLOY_SSH_KEY not found: " + ssh_key)
     remote_dir = cfg.get("REMOTE_DIR") or defaults["remote_dir"]
     data_dir = cfg.get("KPPDF_DATA_DIR") or defaults["data_dir"]
     docker = cfg.get("DOCKER_CMD") or defaults["docker"]
     seed = args.seed or cfg.get("SEED", "").lower() in ("true", "1", "yes")
-    cors = cfg.get("CORS_ORIGIN") or "https://sport-set.ru"
+    wipe = args.wipe or cfg.get("WIPE", "").lower() in ("true", "1", "yes")
+    cors = cfg.get("CORS_ORIGIN") or "https://kppdf-crm.ru"
 
     jwt_secret = cfg.get("JWT_SECRET", "")
     jwt_refresh = cfg.get("JWT_REFRESH_SECRET", "")
+    admin_password = cfg.get("ADMIN_PASSWORD", "")
     if not jwt_secret or "CHANGE_ME" in jwt_secret:
         jwt_secret = secrets.token_hex(32)
         warn("JWT_SECRET auto-generated — save it in config.env!")
     if not jwt_refresh or "CHANGE_ME" in jwt_refresh:
         jwt_refresh = secrets.token_hex(32)
         warn("JWT_REFRESH_SECRET auto-generated — save it in config.env!")
+    if (
+        not admin_password
+        or "CHANGE_ME" in admin_password
+        or admin_password == "admin-change-me-immediately-in-production"
+    ):
+        admin_password = "Kp8-" + secrets.token_urlsafe(16)
+        warn("ADMIN_PASSWORD auto-generated — save it in config.env / CREDENTIALS.md!")
 
     return {
         "platform": platform,
         "host": host,
         "user": user,
         "password": password,
+        "ssh_key": ssh_key,
         "remote_dir": remote_dir,
         "data_dir": data_dir,
         "docker": docker,
         "seed": seed,
+        "wipe": wipe,
         "cors": cors,
         "jwt_secret": jwt_secret,
         "jwt_refresh": jwt_refresh,
+        "admin_password": admin_password,
     }
 
 
@@ -132,10 +150,11 @@ def fail(msg):
 class RemoteHost:
     """SSH connection via paramiko (supports password & key auth)."""
 
-    def __init__(self, host, user, password=None, docker="docker"):
+    def __init__(self, host, user, password=None, docker="docker", ssh_key=None):
         self.host = host
         self.user = user
         self.password = password
+        self.ssh_key = ssh_key
         self.docker = docker
         self._ssh = None
 
@@ -143,19 +162,26 @@ class RemoteHost:
         import paramiko
         self._ssh = paramiko.SSHClient()
         self._ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        kwargs = {"hostname": self.host, "username": self.user, "timeout": 15}
-        if self.password:
+        kwargs = {
+            "hostname": self.host,
+            "username": self.user,
+            "timeout": 15,
+            "allow_agent": False,
+            "look_for_keys": False,
+        }
+        if self.ssh_key:
+            kwargs["key_filename"] = self.ssh_key
+        elif self.password:
             kwargs["password"] = self.password
-            kwargs["allow_agent"] = False
-            kwargs["look_for_keys"] = False
         else:
             kwargs["allow_agent"] = True
             kwargs["look_for_keys"] = True
         try:
             self._ssh.connect(**kwargs)
-            ok("Connected to " + self.user + "@" + self.host)
+            via = "key" if self.ssh_key else ("password" if self.password else "agent")
+            ok("Connected to " + self.user + "@" + self.host + " (" + via + ")")
         except paramiko.AuthenticationException:
-            fail("Auth failed. Use --password or setup SSH keys.")
+            fail("Auth failed. Set DEPLOY_SSH_KEY or DEPLOY_PASSWORD / --password.")
         except Exception as e:
             fail("Connection failed: " + str(e))
 
@@ -185,10 +211,14 @@ class RemoteHost:
         remote_path = remote_dir + "/" + filename
 
         try:
+            scp_cmd = [
+                "scp", "-o", "ConnectTimeout=10", "-o", "StrictHostKeyChecking=no",
+            ]
+            if self.ssh_key:
+                scp_cmd.extend(["-i", self.ssh_key])
+            scp_cmd.extend([local_path, self.user + "@" + self.host + ":" + remote_path])
             result = subprocess.run(
-                ["scp", "-o", "ConnectTimeout=10", "-o", "StrictHostKeyChecking=no",
-                 local_path, self.user + "@" + self.host + ":" + remote_path],
-                capture_output=True, text=True, timeout=120)
+                scp_cmd, capture_output=True, text=True, timeout=120)
             if result.returncode == 0:
                 ok("Uploaded via SCP")
                 return
@@ -242,10 +272,12 @@ class RemoteHost:
         return self.exec(full, timeout=timeout)
 
     def docker_compose(self, remote_dir, action, timeout=300):
+        # Always run from remote_dir; keep compound actions as one bash -c script.
         docker_cmd = (
-            "export PATH=/usr/local/bin:/usr/bin:/sbin:$PATH && "
-            "cd " + remote_dir + " && "
-            + self.docker + " compose -f docker-compose.prod.yml " + action
+            "export PATH=/usr/local/bin:/usr/bin:/sbin:$PATH; "
+            "cd " + remote_dir + " || exit 1; "
+            "DC='" + self.docker + " compose -f docker-compose.prod.yml'; "
+            + action
         )
         return self.exec_sudo(docker_cmd, timeout=timeout)
 
@@ -253,16 +285,16 @@ class RemoteHost:
 # -- Frontend build -----------------------------------------------------
 
 def build_frontend(project_root):
-    log("Building Angular frontend...")
-    frontend_root = project_root / "frontend"
+    log("Building Angular frontend (pnpm)...")
+    # Prefer workspace root: pnpm --dir frontend build
     result = subprocess.run(
-        ["npm", "run", "build"],
-        cwd=str(frontend_root),
-        capture_output=True, text=True, timeout=300,
+        ["pnpm", "--dir", "frontend", "build"],
+        cwd=str(project_root),
+        capture_output=True, text=True, timeout=600,
         shell=(os.name == "nt"))
     if result.returncode != 0:
         err_lines = (result.stderr or result.stdout or "").strip().split("\n")
-        for line in err_lines[-8:]:
+        for line in err_lines[-12:]:
             print("   " + line)
         fail("Angular build failed")
     ok("Angular build OK")
@@ -288,11 +320,13 @@ def build_frontend(project_root):
 
 def create_archive(archive_path, project_root):
     log("Creating archive...")
-    items = ["backend/", "frontend/", "docker-compose.prod.yml"]
+    # Only ship built browser assets + backend sources (Docker builds BE image).
+    items = ["backend/", "frontend/browser/", "docker-compose.prod.yml"]
     exclude = [
         "backend/node_modules", "backend/dist", "backend/.git",
         "backend/src/__tests__", "backend/.env", "backend/.env.local",
         "backend/coverage",
+        "frontend/node_modules", "frontend/dist", "frontend/.angular",
     ]
 
     def excluded(rel):
@@ -333,8 +367,10 @@ def make_env_file(settings):
     return (
         "JWT_SECRET=" + settings["jwt_secret"] + "\n"
         "JWT_REFRESH_SECRET=" + settings["jwt_refresh"] + "\n"
+        "ADMIN_PASSWORD=" + settings["admin_password"] + "\n"
         "CORS_ORIGIN=" + settings["cors"] + "\n"
         "KPPDF_DATA_DIR=" + settings["data_dir"] + "\n"
+        "TRUST_PROXY=1\n"
     )
 
 
@@ -344,14 +380,63 @@ def ensure_data_dirs(remote, settings):
     user = settings["user"]
     log("Ensuring data dirs: " + data_dir)
     cmd = (
-        "mkdir -p " + data_dir + "/mongodb " + data_dir + "/media " + data_dir + "/backups && "
+        "mkdir -p " + data_dir + "/mongodb " + data_dir + "/uploads "
+        + data_dir + "/media " + data_dir + "/backups && "
         "chown -R 999:999 " + data_dir + "/mongodb && "
-        "chown -R " + user + ":" + user + " " + data_dir + "/media " + data_dir + "/backups"
+        "chown -R " + user + ":" + user + " " + data_dir + "/uploads "
+        + data_dir + "/media " + data_dir + "/backups"
     )
     r = remote.exec_sudo(cmd, timeout=30)
-    ok("Data dirs ready: mongodb/, media/, backups/")
+    ok("Data dirs ready: mongodb/, uploads/, media/, backups/")
     if r and "ERR:" in r:
         warn(r[:150])
+
+
+def wipe_remote(remote, settings):
+    """Stop stack and delete app dir + mongo data (dev/demo wipe only)."""
+    remote_dir = settings["remote_dir"]
+    data_dir = settings["data_dir"]
+    log("WIPE: stopping containers and clearing " + remote_dir + " + mongo data")
+    remote.exec_sudo(
+        "cd " + remote_dir + " && "
+        + remote.docker + " compose -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true",
+        timeout=120,
+    )
+    remote.exec_sudo(
+        remote.docker + " rm -f kppdf-backend kppdf-mongo 2>/dev/null || true",
+        timeout=60,
+    )
+    remote.exec_sudo(
+        "rm -rf " + remote_dir + "/* " + remote_dir + "/.[!.]* 2>/dev/null || true; "
+        "rm -rf " + data_dir + "/mongodb/* " + data_dir + "/uploads/* 2>/dev/null || true; "
+        "mkdir -p " + remote_dir + " " + data_dir + "/mongodb " + data_dir + "/uploads "
+        + data_dir + "/backups; "
+        "chown -R 999:999 " + data_dir + "/mongodb; "
+        "chown -R " + settings["user"] + ":" + settings["user"] + " " + remote_dir + " "
+        + data_dir + "/uploads " + data_dir + "/backups",
+        timeout=120,
+    )
+    ok("Wipe complete (app + mongo data cleared)")
+
+
+def wait_for_replica_set(remote, max_wait=60):
+    """After wipe, ensure rs0 is initiated before backend can connect."""
+    log("Waiting for Mongo replica set rs0...")
+    for i in range(max_wait // 5):
+        status = remote.exec(
+            remote.docker
+            + " exec kppdf-mongo mongo --quiet --eval "
+            + "'try{print(rs.status().ok)}catch(e){print(0)}'",
+            timeout=15,
+        )
+        if status.strip().startswith("1"):
+            ok("Replica set ready")
+            return True
+        time.sleep(5)
+        if i % 2 == 0:
+            log("  rs not ready yet (" + str((i + 1) * 5) + "s)")
+    warn("Replica set not ready — backend may fail to connect")
+    return False
 
 
 # -- Verification helpers -----------------------------------------------
@@ -383,7 +468,7 @@ def wait_for_backend(remote, max_wait=90):
     log("Waiting for backend (up to " + str(max_wait) + "s)...")
     for i in range(max_wait // 5):
         time.sleep(5)
-        h = remote.exec("curl -sf http://localhost:3000/api/health", timeout=10)
+        h = remote.exec("curl -sf http://localhost:3000/api/health/ready", timeout=10)
         if h and ("ok" in h.lower() or '"status"' in h.lower()):
             ok("Backend ready!")
             return True
@@ -402,6 +487,11 @@ def main():
     parser.add_argument("--password", default=None)
     parser.add_argument("--platform", choices=["ubuntu", "synology"], default=None)
     parser.add_argument("--seed", action="store_true")
+    parser.add_argument(
+        "--wipe",
+        action="store_true",
+        help="Stop stack and delete REMOTE_DIR + mongo data before deploy (dev/demo only)",
+    )
     parser.add_argument("--skip-build", action="store_true")
     args = parser.parse_args()
 
@@ -415,6 +505,8 @@ def main():
     print("  Host: " + settings["host"])
     print("  App:  " + settings["remote_dir"])
     print("  Data: " + settings["data_dir"])
+    if settings["wipe"]:
+        print("  Mode: WIPE (clean install)")
     print()
 
     print("Step 1/8: Verify source code...")
@@ -440,10 +532,12 @@ def main():
     print("Step 4/8: Connect...")
     remote = RemoteHost(
         settings["host"], settings["user"], settings["password"],
-        docker=settings["docker"])
+        docker=settings["docker"], ssh_key=settings.get("ssh_key"))
     remote.remote_dir = settings["remote_dir"]
     remote.connect()
     remote.exec("mkdir -p " + settings["remote_dir"])
+    if settings["wipe"]:
+        wipe_remote(remote, settings)
     ensure_data_dirs(remote, settings)
 
     print()
@@ -453,7 +547,7 @@ def main():
 
     env_content = make_env_file(settings)
     remote.upload_text(env_content, settings["remote_dir"] + "/.env")
-    ok(".env uploaded (JWT secrets)")
+    ok(".env uploaded (JWT + ADMIN_PASSWORD)")
 
     r = remote.exec(
         "cd " + settings["remote_dir"] + " && tar xzf " + ARCHIVE_NAME + " && "
@@ -463,19 +557,26 @@ def main():
 
     print()
     print("Step 6/8: Docker build & start...")
-    if args.skip_build:
-        r = remote.docker_compose(settings["remote_dir"], "up -d", timeout=120)
-    else:
-        r = remote.docker_compose(
-            settings["remote_dir"],
-            "down 2>/dev/null; build --no-cache backend && up -d",
-            timeout=600)
-    ok("Docker: " + (r[:200] if r else "ok"))
+    # Use $DC set by docker_compose(); never append bare tokens after compose subcommand.
+    r = remote.docker_compose(
+        settings["remote_dir"],
+        "$DC down --remove-orphans 2>/dev/null || true; "
+        "$DC build --no-cache backend && $DC up -d",
+        timeout=900)
+    ok("Docker: " + (r[:400] if r else "ok"))
+    if r and ("ERR:" in r or "error" in r.lower() or "Error" in r):
+        warn("Compose output may contain errors — continuing to health wait")
 
-    backend_ok = wait_for_backend(remote)
+    # Give mongo-init a moment, then confirm rs0 (critical after --wipe).
+    time.sleep(5)
+    wait_for_replica_set(remote, max_wait=90)
+
+    backend_ok = wait_for_backend(remote, max_wait=180)
 
     if not backend_ok:
-        warn("Backend not ready — check logs on server")
+        logs = remote.exec(
+            remote.docker + " logs --tail 80 kppdf-backend 2>&1", timeout=30)
+        warn("Backend logs:\n" + (logs[:1500] if logs else "(empty)"))
         remote.close()
         fail("Deploy incomplete")
 
@@ -485,7 +586,7 @@ def main():
         ensure_mongodb_running(remote, settings["remote_dir"])
         remote.exec(remote.docker + " restart kppdf-backend", timeout=30)
         time.sleep(5)
-        wait_for_backend(remote)
+        wait_for_backend(remote, max_wait=120)
         ok("Bootstrap restart done")
     else:
         print()
@@ -493,20 +594,24 @@ def main():
 
     print()
     print("Step 8/8: Verify...")
-    h = remote.exec("curl -sf http://localhost:3000/api/health", timeout=10)
+    h = remote.exec("curl -sf http://localhost:3000/api/health/ready", timeout=10)
     ok("Health: " + (h[:80] if h else "no response"))
 
     log("Verifying auth...")
+    admin_pw = settings["admin_password"].replace("'", "'\\''")
     login = remote.exec(
         "curl -sf -X POST http://localhost:3000/api/auth/login "
         "-H 'Content-Type: application/json' "
-        "-d '{\"username\":\"admin\",\"password\":\"admin123\"}'",
+        "-d '{\"username\":\"admin\",\"password\":\"" + admin_pw + "\"}'",
         timeout=15,
     )
-    if "accessToken" in login or "access" in login:
-        ok("Auth login OK")
+    if login and ("\"access\"" in login or "access" in login) and "refresh" in login:
+        ok("Auth login OK (access + refresh in body)")
+    elif login and ("access" in login):
+        warn("Auth login returned access but no refresh — check DEPLOY-301 Option A")
+        ok("Auth login partial: " + login[:100])
     else:
-        warn("Auth verify: " + (login[:120] if login else "no response"))
+        warn("Auth verify: " + (login[:200] if login else "no response"))
 
     log("Verifying frontend...")
     front_status = remote.exec(
@@ -524,12 +629,15 @@ def main():
     print("  API:      http://" + settings["host"] + ":3000/api/health")
     print("  Frontend: http://" + settings["host"] + ":3000/")
     print("  Prod:     " + settings["cors"])
-    print("  Auth:     admin / admin123")
+    print("  Auth:     admin / (see CREDENTIALS.md ADMIN_PASSWORD)")
     print()
-    print("  Data:   " + settings["data_dir"] + "/ (mongodb, media, backups)")
+    print("  Data:   " + settings["data_dir"] + "/ (mongodb, uploads, backups)")
     print()
     print("  SSH:")
-    print("    ssh " + settings["user"] + "@" + settings["host"])
+    if settings.get("ssh_key"):
+        print("    ssh -i " + settings["ssh_key"] + " " + settings["user"] + "@" + settings["host"])
+    else:
+        print("    ssh " + settings["user"] + "@" + settings["host"])
     print("    cd " + settings["remote_dir"])
     print("    " + settings["docker"] + " compose -f docker-compose.prod.yml ps|logs")
     print("    bash " + settings["remote_dir"] + "/backup.sh")

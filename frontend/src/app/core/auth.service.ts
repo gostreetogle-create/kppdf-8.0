@@ -15,6 +15,8 @@ export interface AuthUser {
   permissions: string[];
   /** TZ-238 */
   organizationId?: string | null;
+  /** TZ-ACCESS-301: page ACL from role — delivered by /auth/me. */
+  pages?: string[];
 }
 
 interface LoginResponse {
@@ -64,7 +66,7 @@ export class AuthService {
    * Called once via `provideAppInitializer`. If a token is present in
    * localStorage, validate it against /auth/me. If the access token has
    * expired (401) but a refresh token is still valid, transparently
-   * refresh and retry /auth/me — long-lived sessions survive access-
+   * refresh and retry /auth/me â€” long-lived sessions survive access-
    * token expiry without forcing re-login. On any unrecoverable error
    * clear state and let the AuthGuard redirect to /login.
    *
@@ -73,7 +75,7 @@ export class AuthService {
    * loop, so the refresh logic lives here.
    *
    * Error-handling note: 401/400 from /auth/me and /auth/refresh are
-   * EXPECTED at bootstrap with no valid session — this is normal first-
+   * EXPECTED at bootstrap with no valid session â€” this is normal first-
    * load behaviour, not an error condition. We still log them via
    * Chrome's network panel (browser-level, unavoidable) but suppress
    * RxJS's default "unhandled error in observable" log + the zone.js
@@ -104,8 +106,8 @@ export class AuthService {
       return;
     }
 
-    // 401 with a refresh token → try to refresh, then retry /auth/me.
-    // Any other status (400, 403, 5xx, network) → give up and clear.
+    // 401 with a refresh token â†’ try to refresh, then retry /auth/me.
+    // Any other status (400, 403, 5xx, network) â†’ give up and clear.
     if (meResult.status === 401 && this.refreshToken()) {
       try {
         await this.refresh();
@@ -132,7 +134,7 @@ export class AuthService {
     // Use silentPost so the observable never errors and RxJS's global
     // unhandled-error log is suppressed. On failure we throw the
     // HttpErrorResponse so the caller (LoginPage.onSubmit) can show
-    // a toast via its existing try/catch — this preserves the user-
+    // a toast via its existing try/catch â€” this preserves the user-
     // visible error UX (bad credentials, etc.) while keeping the
     // console clean.
     const res = await firstValueFrom(
@@ -149,7 +151,7 @@ export class AuthService {
   }
 
   async logout(): Promise<void> {
-    // silentPost never errors, so no try/catch needed — the network
+    // silentPost never errors, so no try/catch needed â€” the network
     // call is fire-and-forget. The observable emits a SilentResult
     // value (which we ignore) and then completes; RxJS's global
     // unhandled-error log is suppressed.
@@ -206,8 +208,8 @@ export class AuthService {
         // observable whose catchError sees HttpErrorResponse errors).
         // The fallback wraps any unexpected error in an HttpErrorResponse-
         // shaped error so the async function's throw type stays uniform
-        // (`HttpErrorResponse`, not a 2-way union) — this keeps the
-        // interceptor's `catchError((error: HttpErrorResponse) => …)`
+        // (`HttpErrorResponse`, not a 2-way union) â€” this keeps the
+        // interceptor's `catchError((error: HttpErrorResponse) => â€¦)`
         // parameter narrow without a type assertion. `status: 0` is the
         // conventional sentinel for "unknown / non-HTTP error" and the
         // interceptor's `if (error.status !== 401)` check correctly

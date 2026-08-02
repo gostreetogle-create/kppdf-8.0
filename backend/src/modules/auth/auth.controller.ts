@@ -90,7 +90,7 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async logout(@CurrentUser() me: AuthenticatedUser, @Res({ passthrough: true }) res: Response) {
     await this.auth.logout(me.id);
-    res.clearCookie('refreshToken', { path: '/auth' });
+    res.clearCookie('refreshToken', { path: '/api/auth' });
     return { ok: true };
   }
 

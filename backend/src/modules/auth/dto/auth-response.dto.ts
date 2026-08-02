@@ -27,10 +27,14 @@ export interface AuthUserPayload {
   fullName?: string | null;
   /** TZ-238 */
   organizationId?: string | null;
+  /** TZ-ACCESS-301: page ACL — visible nav pages from role. */
+  pages?: string[];
 }
 
 export interface AuthResponse {
   access: string;
+  /** Refresh JWT for Bearer refresh flow (FE stores in localStorage). */
+  refresh: string;
   user: AuthUserPayload;
 }
 

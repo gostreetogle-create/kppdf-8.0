@@ -9,6 +9,7 @@ import { Response } from 'express';
 import * as bcrypt from 'bcryptjs';
 import { UserDocument } from '../user/user.schema';
 import { UserService } from '../user/user.service';
+import { RoleService } from '../role/role.service';
 import { LoginSoftlockService } from '../../common/login-softlock/login-softlock.service';
 import { AuthResponse, AccessTokenResponse, AuthUserPayload } from './dto/auth-response.dto';
 import { LoginDto } from './dto/login.dto';
@@ -47,6 +48,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly softlock: LoginSoftlockService,
+    private readonly roles: RoleService,
   ) {}
 
   async register(dto: RegisterDto, res: Response): Promise<AuthResponse> {
@@ -182,7 +184,8 @@ export class AuthService {
    */
   async getMe(userId: string): Promise<AuthUserPayload> {
     const user = await this.findActiveUserOrThrow(userId);
-    return this.toAuthUser(user);
+    const role = await this.roles.findByName(user.role);
+    return this.toAuthUser(user, role?.pages ?? []);
   }
 
   async logout(userId: string): Promise<void> {
@@ -213,24 +216,27 @@ export class AuthService {
   }
 
   private async buildAuthResponse(user: UserDocument, res: Response): Promise<AuthResponse> {
-    const [access, refresh] = await Promise.all([
+    const [access, refresh, role] = await Promise.all([
       this.signAccess(user),
       this.signRefresh(user),
+      this.roles.findByName(user.role),
     ]);
     this.setRefreshCookie(res, refresh);
     return {
       access,
-      user: this.toAuthUser(user),
+      refresh,
+      user: this.toAuthUser(user, role?.pages ?? []),
     };
   }
 
   private setRefreshCookie(res: Response, token: string): void {
+    // path must match global prefix (/api) + auth controller base (/auth)
     res.cookie('refreshToken', token, {
       httpOnly: true,
       secure: true,
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: '/auth',
+      path: '/api/auth',
     });
   }
 
@@ -261,7 +267,7 @@ export class AuthService {
     );
   }
 
-  private toAuthUser(user: UserDocument): AuthUserPayload {
+  private toAuthUser(user: UserDocument, pages: string[] = []): AuthUserPayload {
     return {
       id: user.id,
       username: user.username,
@@ -269,6 +275,8 @@ export class AuthService {
       displayName: user.displayName,
       role: user.role,
       permissions: user.permissions ?? [],
+      // TZ-ACCESS-301: page ACL delivered via /auth/me.
+      pages,
       // TZ-92.1: optional fields preserved from UserDocument. Null is the
       // pre-TZ-92.1 default for users created before phone/fullName fields
       // were added to RegisterDto.

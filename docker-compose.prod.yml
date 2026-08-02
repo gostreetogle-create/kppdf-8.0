@@ -1,4 +1,7 @@
 # KPPDF 8.0 — Production stack (Ubuntu VM on Synology / bare Ubuntu)
+# Canonical public origin: https://kppdf-crm.ru  (set CORS_ORIGIN accordingly)
+# Secrets (JWT_*, ADMIN_PASSWORD) MUST come from host env / .env — no insecure defaults.
+# Health: /api/health/ready (mongo-only) — avoids RSS/disk restart loops on small VMs.
 # Up:   sudo docker compose -f docker-compose.prod.yml up -d --build
 # Logs: sudo docker compose -f docker-compose.prod.yml logs -f backend
 
@@ -24,9 +27,13 @@ services:
       mongo:
         condition: service_healthy
     restart: "no"
+    # rs.status() returns {ok:0} (does NOT throw) when unset — must check .ok
     entrypoint: >-
       sh -c "mongo --host mongo:27017 --eval
-      'try { rs.status() } catch (e) { rs.initiate({_id: \"rs0\", members: [{_id: 0, host: \"mongo:27017\"}]}) }'"
+      'var s=null; try { s=rs.status(); } catch(e) { s={ok:0}; }
+      if (!s || s.ok!==1) {
+        printjson(rs.initiate({_id:\"rs0\", members:[{_id:0, host:\"mongo:27017\"}]}));
+      } else { print(\"rs already ok\"); }'"
 
   backend:
     build:
@@ -52,12 +59,13 @@ services:
       MONGO_REPLICA_SET: rs0
       JWT_SECRET: "${JWT_SECRET:?JWT_SECRET is required}"
       JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET is required}"
-      CORS_ORIGIN: "${CORS_ORIGIN:-https://sport-set.ru}"
-      ADMIN_PASSWORD: "${ADMIN_PASSWORD:-admin-change-me-immediately-in-production}"
+      CORS_ORIGIN: "${CORS_ORIGIN:-https://kppdf-crm.ru}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}"
       FRONTEND_PATH: /app/frontend
       LOG_LEVEL: info
+      TRUST_PROXY: "${TRUST_PROXY:-1}"
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/api/health', r => process.exit(r.statusCode===200?0:1)).on('error', () => process.exit(1))"]
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/api/health/ready', r => process.exit(r.statusCode===200?0:1)).on('error', () => process.exit(1))"]
       interval: 15s
       timeout: 10s
       retries: 6

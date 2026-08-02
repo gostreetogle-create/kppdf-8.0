@@ -76,6 +76,12 @@ function buildAuthService(opts: BuildOpts = {}): {
   softlock: LoginSoftlockService;
 } {
   const users = new FakeUserService();
+  if (opts.user !== undefined) {
+    users.findByUsername = async () => opts.user as never;
+  }
+  if (opts.verifyResult !== undefined) {
+    users.verifyPassword = async () => opts.verifyResult as boolean;
+  }
   const jwt = { signAsync: async () => 'mock-token' } as unknown as JwtService;
   const config = {
     get: (key: string) => {
@@ -87,11 +93,13 @@ function buildAuthService(opts: BuildOpts = {}): {
   } as unknown as ConfigService;
   const softlock = new LoginSoftlockService();
   softlock.__resetForTests();
+  const rolesMock = { findByName: jest.fn().mockResolvedValue(null) };
   const svc = new AuthService(
     users as unknown as UserService,
     jwt,
     config,
     softlock,
+    rolesMock as any,
   );
   return { svc, users, softlock };
 }
@@ -229,11 +237,13 @@ describe('AuthService (TZ-249 §2.2-2.4)', () => {
       } as unknown as ConfigService;
       const softlock = new LoginSoftlockService();
       softlock.__resetForTests();
+      const rolesMock = { findByName: jest.fn().mockResolvedValue(null) };
       const svc = new AuthService(
         users as unknown as UserService,
         jwt,
         config,
         softlock,
+        rolesMock as any,
       );
       const before = softlock['entries'].size;
       await expect(
@@ -309,6 +319,37 @@ describe('AuthService (TZ-249 §2.2-2.4)', () => {
       };
       await svc.register(dto, mockRes());
       expect(users.lastCreateArgs.role).toBe('user');
+    });
+  });
+
+  describe('login() — refresh in JSON body (TZ-DEPLOY-301 variant A)', () => {
+    it('returns access + refresh JWTs in the response body', async () => {
+      const userDoc = {
+        id: 'u1',
+        username: 'alice',
+        email: 'a@example.com',
+        displayName: 'A',
+        role: 'user',
+        permissions: [] as string[],
+        isActive: true,
+        refreshTokenVersion: 0,
+        phone: null,
+        fullName: null,
+        lastLoginAt: null,
+        save: async () => undefined,
+      };
+      const { svc } = buildAuthService({
+        user: userDoc,
+        verifyResult: true,
+      });
+      const body = await svc.login(
+        { username: 'alice', password: 'correct' },
+        mockRes(),
+        '127.0.0.1',
+      );
+      expect(body.access).toBe('mock-token');
+      expect(body.refresh).toBe('mock-token');
+      expect(body.user.username).toBe('alice');
     });
   });
 });
