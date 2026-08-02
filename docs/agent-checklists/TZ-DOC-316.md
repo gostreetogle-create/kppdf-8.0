@@ -79,3 +79,11 @@ $ bash OrchestratorKit/verify-status.sh
   successor, НЕ запускался (явное «не параллельно» в спеке).
 - TZ-DOC-318 (миграция legacy enum `category` → `categoryId`) — successor, не
   часть этой задачи; legacy enum остаётся в схеме (backward compat).
+
+## Executor report (auto) — TZ-DOC-316
+
+status: DONE
+commits: e6494fec0978160a58015928137067e2b2cdc27a (feat) + 34faa441655e57735772ebab5454f0748379076a (closeout)
+gates: tsc-be=PASS; tsc-fe=PASS; jest=5 suites/48 tests PASS; ng-build(scope)=exit 0; git-diff-check=clean; verify-status=PASS
+known: rebased on e00be99 до старта; browser E2E=MANUAL_REQUIRED; TZ-DOC-317 successor НЕ запускался параллельно (явная инструкция)
+ask: —
