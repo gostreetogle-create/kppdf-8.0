@@ -53,7 +53,7 @@ outcome: DONE
 closed_at: 2026-08-02
 closed_by: autonomous-frontend-agent (Buffy)
 source_task: tasks/TZ-PRODUCTS-302-product-form-dialog-rework.md
-implementation_commit: <filled-on-commit>
+implementation_commit: 4b3b4e8
 prerequisite: TZ-PRODUCTS-301 (610fd4b) — PiColorReferencesService + справочник «Цвета»
 verification:
   - frontend_tsc: PASS

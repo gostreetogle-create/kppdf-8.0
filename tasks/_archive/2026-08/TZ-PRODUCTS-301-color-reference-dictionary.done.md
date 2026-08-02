@@ -61,7 +61,7 @@ outcome: DONE
 closed_at: 2026-08-02
 closed_by: autonomous-backend+frontend-agent (Buffy)
 source_task: tasks/TZ-PRODUCTS-301-color-reference-dictionary.md
-implementation_commit: <filled-on-commit>
+implementation_commit: 610fd4b
 verification:
   - backend_tsc: PASS
   - jest_color_reference: 34/34 PASS
