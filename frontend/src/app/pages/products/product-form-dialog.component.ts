@@ -1,6 +1,15 @@
-import { ChangeDetectionStrategy, Component, inject, signal, OnDestroy } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  Injector,
+  signal,
+  OnDestroy,
+} from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Observable } from 'rxjs';
 import { Router } from '@angular/router';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
@@ -9,8 +18,9 @@ import { InputComponent } from '../../shared/ui/input/input.component';
 import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
-import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
-import { extractErrorMessage } from '../../core/silent-http';
+import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
+import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
+import { extractErrorMessage, type SilentResult } from '../../core/silent-http';
 import {
   Product,
   ProductKind,
@@ -23,8 +33,16 @@ import {
   ColorReferencesService,
 } from '../../shared/services/pi-color-references.service';
 import { Photo, PhotosService } from '../../shared/services/photos.service';
+import {
+  ProductModule,
+  ProductModulesService,
+} from '../../shared/services/pi-product-modules.service';
+import { ProductModulePickerDialogComponent } from './product-module-picker-dialog.component';
 
 type Result = Product | null | undefined;
+
+/** Product as the dialog receives it (backend may populate module ids). */
+type ProductWithModules = Product & { productModuleIds?: Array<string | ProductModule> };
 
 /** Slug системного цвета «Не выбран» (seed TZ-PRODUCTS-301, isDefault=true). */
 const SYSTEM_DEFAULT_COLOR_SLUG = 'ne-vybran';
@@ -56,9 +74,19 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
  *                          listPrice, isActive
  *   3. Габариты          — L/W/H + unit (full width)
  *   4. Дополнительно     — weightKg + Цвет (RAL) dropdown
- *   5. Изображения       — photo upload (TZ-MATERIALS-306 pattern; Product
+ *   5. Модули в составе  — M:N editor: cards of attached modules (name,
+ *                          article, N материалов) + remove; «+ Добавить
+ *                          модуль» reuses ProductModulePickerDialog with
+ *                          exclusions (TZ-PRODUCTS-303)
+ *   6. Изображения       — photo upload (TZ-MATERIALS-306 pattern; Product
  *                          has `photoIds` only — no mainPhotoId on backend)
- *   6. Описание и заметки — description, notes textareas
+ *   7. Описание и заметки — description, notes textareas
+ *
+ * Module persistence (TZ-PRODUCTS-303): the bulk `productModuleIds[]`
+ * PATCH is NOT accepted by the backend DTO whitelist (Create/Update DTO
+ * have no such field) — modules are synced via the ATOMIC endpoints
+ * POST/DELETE /products/:id/modules (race-safe $addToSet/$pull), diffing
+ * the dialog-open snapshot against the final selection on submit.
  *
  * RAL dropdown (TZ-PRODUCTS-302):
  *   - colors come from `ColorReferencesService.list({ activeOnly: true })`
@@ -337,6 +365,57 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
           </div>
         </div>
 
+        <!-- ─── Модули в составе (TZ-PRODUCTS-303) ─── -->
+        <div>
+          <div class="flex items-baseline justify-between mb-form-row">
+            <p class="eyebrow">Модули в составе</p>
+            <app-pi-button
+              type="button"
+              variant="outline"
+              size="sm"
+              (click)="openModulePicker()"
+              [disabled]="modulesLoading()"
+              data-test="add-module"
+            >
+              + Добавить модуль
+            </app-pi-button>
+          </div>
+          @if (modulesLoading()) {
+            <p class="text-xs text-muted-foreground">Загрузка модулей…</p>
+          } @else if (modulesError()) {
+            <p class="text-xs text-destructive">{{ modulesError() }}</p>
+          } @else if (attachedModules().length === 0) {
+            <p class="text-xs text-muted-foreground">
+              Нет модулей в составе. Нажмите «+ Добавить модуль».
+            </p>
+          } @else {
+            <div class="space-y-2">
+              @for (m of attachedModules(); track m._id) {
+                <div
+                  class="flex items-center gap-3 p-2 hairline rounded-sm bg-paper-2/30"
+                  [attr.data-test]="'module-card-' + m._id"
+                >
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium truncate">{{ m.name }}</p>
+                    <p class="text-xs text-muted-foreground">
+                      {{ m.article ?? '—' }} · {{ m.materials.length }} материалов
+                    </p>
+                  </div>
+                  <app-pi-button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    [attr.aria-label]="'Удалить модуль ' + m.name"
+                    (click)="removeModule(m._id)"
+                  >
+                    ×
+                  </app-pi-button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
         <!-- ─── Изображения ─── -->
         <div>
           <div class="flex items-baseline justify-between mb-form-row">
@@ -454,10 +533,14 @@ export class ProductFormDialogComponent implements OnDestroy {
   private readonly categoriesService = inject(CategoriesService);
   private readonly colorsService = inject(ColorReferencesService);
   private readonly photosService = inject(PhotosService);
+  private readonly modulesSvc = inject(ProductModulesService);
   private readonly toast = inject(PiToastService);
   private readonly router = inject(Router);
+  private readonly dialog = inject(PiDialogService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
   private readonly ref = inject<DialogRef<Result>>(PI_DIALOG_REF);
-  private readonly data = inject<Product | null>(PI_DIALOG_DATA);
+  private readonly data = inject<ProductWithModules | null>(PI_DIALOG_DATA);
 
   protected readonly isEdit = signal<boolean>(this.data != null);
   protected readonly submitting = signal<boolean>(false);
@@ -481,6 +564,36 @@ export class ProductFormDialogComponent implements OnDestroy {
   private readonly newlyUploadedIds = signal<string[]>([]);
   /** Flag: was the form submitted? If false at destroy, clean up newlyUploadedIds. */
   private submitted = false;
+
+  /** Module catalog (all modules) — attached cards render from the selection. */
+  protected readonly modulesCatalog = signal<ProductModule[]>([]);
+  protected readonly modulesLoading = signal<boolean>(false);
+  protected readonly modulesError = signal<string | null>(null);
+  /** Selected module ids (M:N) — synced on submit via atomic endpoints. */
+  protected readonly selectedModuleIds = signal<string[]>([]);
+  /** Snapshot of module ids at dialog open (edit mode) — for the submit diff. */
+  private originalModuleIds: string[] = [];
+
+  /**
+   * Cards for the «Модули в составе» section. Ids NOT found in the catalog
+   * (catalog still loading, failed, or the module was picked via the
+   * picker's own list) render a minimal fallback card so the selection is
+   * never invisible/unremovable — syncModules still attaches it on submit.
+   */
+  protected readonly attachedModules = computed<ProductModule[]>(() => {
+    const catalog = this.modulesCatalog();
+    return this.selectedModuleIds().map((id) => {
+      const found = catalog.find((m) => m._id === id);
+      if (found) return found;
+      return {
+        _id: id,
+        name: 'Модуль',
+        article: undefined,
+        materials: [],
+        workTypes: [],
+      } as ProductModule;
+    });
+  });
 
   protected readonly form = this.fb.group({
     name: this.fb.control('', [
@@ -514,6 +627,7 @@ export class ProductFormDialogComponent implements OnDestroy {
   constructor() {
     this.loadCategories();
     this.loadColors();
+    this.loadModules();
     if (this.data) {
       this.patchFromData(this.data);
     }
@@ -569,7 +683,7 @@ export class ProductFormDialogComponent implements OnDestroy {
     });
   }
 
-  private patchFromData(p: Product): void {
+  private patchFromData(p: ProductWithModules): void {
     this.form.patchValue({
       name: p.name,
       sku: p.sku ?? null,
@@ -589,6 +703,13 @@ export class ProductFormDialogComponent implements OnDestroy {
       description: p.description ?? null,
       notes: p.notes ?? null,
     });
+    // TZ-PRODUCTS-303: seed the module selection from attached modules
+    // (backend may populate ProductModule[] or return plain string ids).
+    const moduleIds = (p.productModuleIds ?? [])
+      .map((id) => normalizeId(id))
+      .filter((id): id is string => typeof id === 'string' && id.length > 0);
+    this.originalModuleIds = moduleIds;
+    this.selectedModuleIds.set(moduleIds);
     // Photos: backend may populate photoIds as `Photo` objects (detail
     // route) or return plain string ids (list route). Normalize, then load.
     const ids = (p.photoIds ?? [])
@@ -627,6 +748,40 @@ export class ProductFormDialogComponent implements OnDestroy {
   protected openColorReferences(): void {
     this.ref.close(null);
     this.router.navigate(['/color-references']);
+  }
+
+  // ─── Modules (TZ-PRODUCTS-303) ───
+
+  private loadModules(): void {
+    this.modulesLoading.set(true);
+    this.modulesError.set(null);
+    this.modulesSvc.list().subscribe((res) => {
+      this.modulesLoading.set(false);
+      if (res.ok) {
+        this.modulesCatalog.set(res.data ?? []);
+      } else {
+        this.modulesCatalog.set([]);
+        this.modulesError.set(extractErrorMessage(res.error));
+      }
+    });
+  }
+
+  /** Reuse the existing single-module picker (TZ-83 Phase D) with exclusions. */
+  protected openModulePicker(): void {
+    const ref = this.dialog.open<string | null>(ProductModulePickerDialogComponent, {
+      data: { productId: this.data?._id ?? '', excludeIds: this.selectedModuleIds() },
+      width: 'lg',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (moduleId) => this.addModule(moduleId));
+  }
+
+  protected addModule(moduleId: string): void {
+    this.selectedModuleIds.update((cur) => (cur.includes(moduleId) ? cur : [...cur, moduleId]));
+  }
+
+  protected removeModule(moduleId: string): void {
+    this.selectedModuleIds.update((cur) => cur.filter((id) => id !== moduleId));
   }
 
   // ─── Photos ───
@@ -762,12 +917,43 @@ export class ProductFormDialogComponent implements OnDestroy {
       if (res.ok) {
         this.submitted = true;
         this.applyPendingPhotoDeletions();
-        this.toast.success(this.isEdit() ? 'Продукт обновлён' : 'Продукт создан');
-        this.ref.close(res.data);
+        this.syncModules(res.data);
       } else {
         this.errorMessage.set(extractErrorMessage(res.error));
         this.submitting.set(false);
       }
+    });
+  }
+
+  /**
+   * TZ-PRODUCTS-303: sync the M:N module selection via the ATOMIC
+   * endpoints (POST/DELETE /products/:id/modules) — the bulk
+   * `productModuleIds[]` PATCH is rejected by the DTO whitelist. Diff the
+   * dialog-open snapshot vs the final selection, attach added + detach
+   * removed, then close (module sync failures are reported via toast but
+   * do not block closing — the product itself was already saved).
+   */
+  private syncModules(saved: Product): void {
+    const target = this.selectedModuleIds();
+    const toAdd = target.filter((id) => !this.originalModuleIds.includes(id));
+    const toRemove = this.originalModuleIds.filter((id) => !target.includes(id));
+    const ops: Observable<SilentResult<unknown>>[] = [
+      ...toAdd.map((id) => this.modulesSvc.attachToProduct(saved._id, id)),
+      ...toRemove.map((id) => this.modulesSvc.detachFromProduct(saved._id, id)),
+    ];
+    if (ops.length === 0) {
+      this.toast.success(this.isEdit() ? 'Продукт обновлён' : 'Продукт создан');
+      this.ref.close(saved);
+      return;
+    }
+    forkJoin(ops).subscribe((results) => {
+      const failed = results.filter((r) => !r.ok).length;
+      if (failed > 0) {
+        this.toast.error(`Продукт сохранён, но ${failed} операций с модулями не удались`);
+      } else {
+        this.toast.success(this.isEdit() ? 'Продукт обновлён' : 'Продукт создан');
+      }
+      this.ref.close(saved);
     });
   }
 

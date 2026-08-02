@@ -104,6 +104,32 @@ contract). Поля сгруппированы по eyebrow-секциям: «О
 | TZ-104.3 | Миграция на pi-table + server-side pagination |
 | TZ-104.4.2 | Typed TemplateRef (устранён `any`) |
 | TZ-PRODUCTS-302 | Content-диалог 1000px, секции, categoryId select, RAL dropdown, фото |
+| TZ-PRODUCTS-303 | Секция «Модули в составе»: карточки привязанных модулей + атомарная синхронизация |
+
+## Редактор модулей в диалоге товара (TZ-PRODUCTS-303)
+
+Секция «Модули в составе» в `product-form-dialog.component.ts` реализует M:N
+привязку модулей к товару карточками (паттерн TZ-MODULES-301):
+
+- **Карточка модуля** — имя, артикул, количество материалов в составе, кнопка
+  удаления (×). Пустое состояние: «Нет модулей в составе».
+- **Кнопка «+ Добавить модуль»** — открывает существующий
+  `ProductModulePickerDialogComponent` с `excludeIds` = текущий выбор
+  (уже привязанные недоступны — дубликат невозможен).
+- **Каталог** загружается один раз через `ProductModulesService.list()`;
+  карточки рендерятся из `selectedModuleIds` + каталога (`attachedModules` computed).
+- **Сохранение — атомарные endpoints** (не bulk PATCH):
+  `POST /products/:id/modules {moduleId}` и `DELETE /products/:id/modules/:moduleId`
+  (`ProductModulesService.attachToProduct` / `detachFromProduct`).
+  Причина: `UpdateProductDto` (whitelist) не содержит `productModuleIds` —
+  bulk PATCH вернул бы 400. Синхронизация на submit — diff снапшота при
+  открытии vs финальный выбор: attach добавленных + detach удалённых.
+- **Ошибки синхронизации** не блокируют закрытие диалога (товар уже сохранён),
+  но показываются toast-ом.
+
+Контракт: `ProductModule` (pi-product-modules.service.ts) — `_id, name, article?,
+workTypes[], materials[]`. Backend M:N через `Product.productModuleIds[]`
+(populate в findById, reverse-lookup `GET /modules?productId=X`).
 
 ## Особенности
 
