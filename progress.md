@@ -5272,3 +5272,17 @@ TZ-WORKERS-302 (не мой scope, disclosure в ARCHIVE).
 **Commit:** conventional commit `feat(builder): filter text-blocks by category in picker (TZ-DOC-317)` (NO push).
 
 **Ограничения:** Browser E2E MANUAL_BROWSER_CHECK_REQUIRED; legacy enum в UI picker не пробрасывается (TZ-DOC-318 successor, разблокирован).
+
+## 2026-08-02 — TZ-DOC-318 DONE (Builder topbar: URL persistence + breadcrumb badge)
+
+**Что:** поверх TZ-DOC-317: (b) URL persistence — параметр переименован `?category=` → `?categoryId=`, read в queryParamMap subscribe + write в effect с replaceUrl/merge + snapshot loop-guard (F5-refresh и shareable-ссылка открывают builder с активным фильтром); (c) breadcrumb badge — чип `builder-category-chip` в верхней панели (только когда templateId есть), лейбл lookup по categories, клик → сброс фильтра; (a) two-picker sync подтверждён (tool-pane читает из BuilderTextFilterService, единый источник правды).
+
+**Merge/rebase:** 316/317-цепочка rebase-нута на новый main с TZ-DOC-324 (pure-editor rewrite builder.page.ts). Конфликты builder.page.ts/­spec разрешены: восстановлен import-блок (324 оставил broken marker `/* _TZ_DOC_324_APPLIED_ */`), добавлен BuilderToolPaneComponent в imports (ng build TS2345: $event=Event), убран orphaned `}` и stale `(categoryChanged)` binding. Новые SHA цепочки: 0f30417 (316) → 2676e25 → 5d42dee → db54813 (317) → e50f2c6 → 29d2a4c.
+
+**Архив:** `tasks/_archive/2026-08/TZ-DOC-318-builder-texts-topbar-category-filter.done.md`; lock `.mimocode/locks/TZ-DOC-318-builder-texts-topbar-category-filter.lock`; checklist `docs/agent-checklists/TZ-DOC-318.md` (с Executor report).
+
+**Gates:** frontend tsc PASS; backend tsc PASS (sanity, backend не тронут); jest targeted 5 suites/45 PASS; ng build PASS; diff-check PASS; verify-status.sh PASS.
+
+**Commit:** conventional commits `feat(builder): text-category topbar polish — sync + URL persist + breadcrumb (TZ-DOC-318)` + `docs(closeout): TZ-DOC-318 archive + executor-report + status sync` (NO push).
+
+**Ограничения:** Browser E2E MANUAL_BROWSER_CHECK_REQUIRED; legacy enum → TZ-DOC-326 successor; pre-existing flakes (button.component, pi-showcase-card) вне scope; rebase обновил SHA 316/317 (архивы ссылаются на pre-rebase SHA — контент идентичен).
