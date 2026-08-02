@@ -75,6 +75,7 @@
 | TZ-PRODUCTS-302 | Rework ProductFormDialog → content-variant 1000px, секции, RAL dropdown из справочника цветов |
 | TZ-PRODUCTS-303 | «Модули в составе» в диалоге товара: карточки модулей + мульти-picker + атомарные POST/DELETE |
 | TZ-PRODUCTS-304 | Expandable-строки каталога: клик по строке разворачивает карточки модулей, ссылка на `/modules/:id` |
+| TZ-PRODUCTS-305 | Карточки-витрины: toggle list ↔ grid (sm showcase-карточки, localStorage persistence) |
 
 ## Особенности
 
@@ -163,6 +164,34 @@ TZ-MODULES-301 (карточки-строки, как material-cards в module-d
   аффорданс, не конфликтует с toggle).
 - **Backend НЕ менялся:** `list()` уже populate `productModuleIds`
   (product.service.ts:72).
+
+## Карточки-витрины / toggle list ↔ grid (TZ-PRODUCTS-305)
+
+Каталог товаров получил переключение вида: **list** (pi-table, дефолт) ↔
+**grid** (sm showcase-карточки). Переиспользуемый `PiShowcaseCardComponent`
+(три размерных варианта sm/md/lg, `shared/ui/card/pi-showcase-card.component.ts`,
+перенесён идентичным контентом из part-1 `e00be99`) — общий UI Kit для
+карточек-витрин товара/модуля/материала.
+
+- **Toggle в тулбаре:** кнопки `ListIcon` / `GridIcon` (lucide), `data-test`
+  `view-list-button` / `view-grid-button`, `aria-pressed` для a11y.
+- **Состояние:** `viewMode: signal<'list' | 'grid'>`, выбор персистится в
+  localStorage (`pi-products-view-mode`) — паттерн `snapSettings` из builder
+  (load/save в try/catch, дефолт `list`).
+- **Grid-вид:** сетка `grid-cols-1 md:2 xl:3 gap-4`; каждая ячейка —
+  `<a [routerLink]="['/products', id]">` с `app-pi-showcase-card size="sm"`:
+  - `eyebrow` — метка вида (Товар/Услуга/Работа);
+  - `title` — название; `description` — SKU · подкатегория;
+  - `sc-actions-sm` слот — `app-pi-avatar` (инициалы по названию, т.к. фото =
+    отдельная сущность в list-payload) + badge статуса (`statusLabel`/
+    `statusBadgeClass`, muted для Неактивен/Архив/Черновик) + цена
+    (`formatPrice`);
+  - loading / empty state (`grid-loading` / `grid-empty`) по образцу pi-table.
+- **Template-refs хоустированы из `@if/@else`** на корень компонента —
+  `@ViewChild({ static: true })` резолвится независимо от viewMode
+  (иначе row-actions/name-ссылки терялись в grid-режиме).
+- **md/lg варианты** компонента готовы для будущих витрин (детальные
+  страницы — отдельными TZ).
 
 ---
 

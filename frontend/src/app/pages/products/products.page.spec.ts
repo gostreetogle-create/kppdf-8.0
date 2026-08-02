@@ -122,11 +122,13 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    localStorage.clear();
     await setup();
   });
 
   afterEach(() => {
     httpMock.verify();
+    localStorage.clear();
   });
 
   it('row click toggles expandedId and renders the expanded modules row', async () => {
@@ -244,5 +246,129 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
 
     expect(comp.expandedId()).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test="expanded-row"]')).toBeFalsy();
+  });
+
+  // ─── TZ-PRODUCTS-305: view toggle (list ↔ grid) + showcase cards ───
+
+  it('view-grid button switches to grid and renders sm showcase cards', async () => {
+    const fixture = await renderPage();
+    const comp = fixture.componentInstance as unknown as { viewMode: () => string };
+
+    expect(comp.viewMode()).toBe('list');
+    const gridBtn = fixture.nativeElement.querySelector(
+      '[data-test="view-grid-button"]',
+    ) as HTMLElement;
+    gridBtn.click();
+    fixture.detectChanges();
+
+    expect(comp.viewMode()).toBe('grid');
+    expect(fixture.nativeElement.querySelector('[data-test="products-grid"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="showcase-cell-p1"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="showcase-cell-p2"]')).toBeTruthy();
+    // pi-table is hidden in grid mode
+    expect(fixture.nativeElement.querySelector('app-pi-table')).toBeFalsy();
+  });
+
+  it('grid card shows name, price, status badge and avatar initials', async () => {
+    const fixture = await renderPage();
+    const gridBtn = fixture.nativeElement.querySelector(
+      '[data-test="view-grid-button"]',
+    ) as HTMLElement;
+    gridBtn.click();
+    fixture.detectChanges();
+
+    const card = fixture.nativeElement.querySelector(
+      '[data-test="showcase-cell-p1"]',
+    ) as HTMLElement;
+    expect(card.textContent).toContain('Окно ПВХ');
+    // avatar initials derived from name (PiAvatar monogram)
+    expect(fixture.nativeElement.querySelector('[data-test="showcase-avatar"]')).toBeTruthy();
+    // price formatted via formatPrice (PRODUCTS[0].listPrice undefined → empty)
+    expect(
+      fixture.nativeElement.querySelector('[data-test="showcase-price"]'),
+    ).toBeTruthy();
+  });
+
+  it('grid status badge shows isActive=false as «Неактивен»', async () => {
+    const fixture = await renderPage();
+    const gridBtn = fixture.nativeElement.querySelector(
+      '[data-test="view-grid-button"]',
+    ) as HTMLElement;
+    gridBtn.click();
+    fixture.detectChanges();
+
+    const badge = fixture.nativeElement.querySelector(
+      '[data-test="showcase-status"]',
+    ) as HTMLElement;
+    // PRODUCTS fixtures have no status and isActive is undefined → statusLabel '' → badge hidden
+    expect(badge).toBeNull();
+  });
+
+  it('grid card routerLink points to /products/:id', async () => {
+    const fixture = await renderPage();
+    const gridBtn = fixture.nativeElement.querySelector(
+      '[data-test="view-grid-button"]',
+    ) as HTMLElement;
+    gridBtn.click();
+    fixture.detectChanges();
+
+    const cell = fixture.nativeElement.querySelector(
+      '[data-test="showcase-cell-p1"]',
+    ) as HTMLAnchorElement;
+    expect(cell.getAttribute('href')).toBe('/products/p1');
+  });
+
+  it('grid view is persisted to localStorage on toggle', async () => {
+    const fixture = await renderPage();
+    const gridBtn = fixture.nativeElement.querySelector(
+      '[data-test="view-grid-button"]',
+    ) as HTMLElement;
+    gridBtn.click();
+    fixture.detectChanges();
+
+    expect(localStorage.getItem('pi-products-view-mode')).toBe('grid');
+  });
+
+  it('pre-saved grid view mode renders grid on first load', async () => {
+    localStorage.setItem('pi-products-view-mode', 'grid');
+    const fixture = await renderPage();
+    const comp = fixture.componentInstance as unknown as { viewMode: () => string };
+
+    expect(comp.viewMode()).toBe('grid');
+    expect(fixture.nativeElement.querySelector('[data-test="products-grid"]')).toBeTruthy();
+  });
+
+  it('view-list button switches back to pi-table and persists list mode', async () => {
+    localStorage.setItem('pi-products-view-mode', 'grid');
+    const fixture = await renderPage();
+    const comp = fixture.componentInstance as unknown as { viewMode: () => string };
+
+    const listBtn = fixture.nativeElement.querySelector(
+      '[data-test="view-list-button"]',
+    ) as HTMLElement;
+    listBtn.click();
+    fixture.detectChanges();
+
+    expect(comp.viewMode()).toBe('list');
+    expect(fixture.nativeElement.querySelector('app-pi-table')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="products-grid"]')).toBeFalsy();
+    expect(localStorage.getItem('pi-products-view-mode')).toBe('list');
+  });
+
+  it('grid empty state renders when no products', async () => {
+    const fixture = TestBed.createComponent(ProductsPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush({ items: [], total: 0, page: 1, limit: 50 });
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const gridBtn = fixture.nativeElement.querySelector(
+      '[data-test="view-grid-button"]',
+    ) as HTMLElement;
+    gridBtn.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="grid-empty"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="products-grid"]')).toBeFalsy();
   });
 });
