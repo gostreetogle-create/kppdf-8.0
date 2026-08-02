@@ -36,7 +36,7 @@ See [`_backlog/README.md`](_backlog/README.md) (audit 2026-08-02).
 | Production / Gantt | PRODUCTION-301…307, vision/GANT |
 | Commerce lifecycle | CORE-301, INVENTORY-301, PROCUREMENT, SHIPPING, DOC-330 |
 | People | UX-306 (rewrite) |
-| Access residual | ACCESS-303 (route gates), ACCESS-304 verification |
+| Access residual | ACCESS-304 verification (nav mostly done); ACCESS-303 **DONE** |
 | Z-series | `_backlog/z-series/` |
 
 ---

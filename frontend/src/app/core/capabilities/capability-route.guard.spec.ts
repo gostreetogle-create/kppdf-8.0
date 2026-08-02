@@ -23,7 +23,7 @@ import { ALL_PERMISSION_KEYS } from './capabilities.metadata';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const capabilityRouteGuard: any = _capabilityRouteGuard;
 
-function invoke(routeData: { capabilities?: string[] }): boolean | UrlTree {
+function invoke(routeData: { capabilities?: string[]; pageKey?: string }): boolean | UrlTree {
   return TestBed.runInInjectionContext(() =>
     capabilityRouteGuard(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -144,5 +144,47 @@ describe('capabilityRouteGuard (TZ-256 §ШАГ 2)', () => {
 
   it('Router instance is well-formed (sanity)', () => {
     expect(TestBed.inject(Router)).toBeDefined();
+  });
+
+  // ── TZ-ACCESS-303: pageKey vs user.pages ──────────────────────────
+
+  it('TZ-ACCESS-303: bypasses pageKey when user.pages is undefined', () => {
+    TestBed.inject(AuthService).user.set({
+      id: 'a',
+      username: 'a',
+      email: 'a@x',
+      displayName: 'A',
+      role: 'user',
+      permissions: [],
+    });
+    expect(invoke({ pageKey: 'materials' })).toBe(true);
+  });
+
+  it('TZ-ACCESS-303: allows when pageKey is in user.pages', () => {
+    TestBed.inject(AuthService).user.set({
+      id: 'a',
+      username: 'a',
+      email: 'a@x',
+      displayName: 'A',
+      role: 'manager',
+      permissions: [],
+      pages: ['materials', 'orders'],
+    });
+    expect(invoke({ pageKey: 'materials' })).toBe(true);
+  });
+
+  it('TZ-ACCESS-303: worker without materials → /forbidden', () => {
+    TestBed.inject(AuthService).user.set({
+      id: 'w',
+      username: 'w',
+      email: 'w@x',
+      displayName: 'W',
+      role: 'user',
+      permissions: [],
+      pages: ['doc-texts', 'doc-documents'],
+    });
+    const result = invoke({ pageKey: 'materials' });
+    expect(result instanceof UrlTree).toBe(true);
+    expect((result as UrlTree).toString()).toBe('/forbidden');
   });
 });

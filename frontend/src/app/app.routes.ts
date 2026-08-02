@@ -124,24 +124,32 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'materials' },
       {
         path: 'materials',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'materials' },
         loadComponent: () =>
           import('./pages/materials/materials.page').then((m) => m.MaterialsPage),
         title: 'KPPDF — Материалы',
       },
       {
         path: 'organizations',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'organizations' },
         loadComponent: () =>
           import('./pages/organizations/organizations.page').then((m) => m.OrganizationsPage),
         title: 'KPPDF — Организации',
       },
       {
         path: 'dictionaries',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'dictionaries' },
         loadComponent: () =>
           import('./pages/dictionaries/dictionaries.page').then((m) => m.DictionariesPage),
         title: 'KPPDF — Справочники',
       },
       {
         path: 'categories',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'categories' },
         loadComponent: () =>
           import('./pages/dictionaries/categories.page').then((m) => m.CategoriesPage),
         title: 'KPPDF — Категории',
@@ -149,6 +157,8 @@ export const routes: Routes = [
       {
         // TZ-DOC-308 — категории шаблонов документов (справочник).
         path: 'doc-template-categories',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'doc-template-categories' },
         loadComponent: () =>
           import('./pages/dictionaries/document-template-categories.page').then(
             (m) => m.DocumentTemplateCategoriesPage,
@@ -158,6 +168,8 @@ export const routes: Routes = [
       {
         // TZ-DOC-334 — категории текстовых блоков (page from DOC-316; route+nav gap).
         path: 'dictionaries/text-block-categories',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'text-block-categories' },
         loadComponent: () =>
           import('./pages/dictionaries/text-block-categories.page').then(
             (m) => m.TextBlockCategoriesPage,
@@ -169,13 +181,16 @@ export const routes: Routes = [
         // reads are also available to users via the API for the product
         // form RAL dropdown (TZ-PRODUCTS-302).
         path: 'dictionaries/color-references',
-        canMatch: [authGuard, adminOnlyRouteGuard],
+        canMatch: [capabilityRouteGuard, adminOnlyRouteGuard],
+        data: { pageKey: 'color-references' },
         loadComponent: () =>
           import('./pages/dictionaries/color-references.page').then((m) => m.ColorReferencesPage),
         title: 'KPPDF — Цвета',
       },
       {
         path: 'products',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'products' },
         loadComponent: () => import('./pages/products/products.page').then((m) => m.ProductsPage),
         title: 'KPPDF — Продукция',
       },
@@ -185,6 +200,8 @@ export const routes: Routes = [
         // AppLayout (не вложенный в ProductsPage). Angular 20 матчит по
         // longest-prefix; /products/:id выигрывает у /products для непустых id.
         path: 'products/:id',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'products' },
         loadComponent: () =>
           import('./pages/products/product-detail.page').then((m) => m.ProductDetailPage),
         title: 'KPPDF — Товар',
@@ -192,6 +209,8 @@ export const routes: Routes = [
       {
         // TZ-83 Phase C: список модулей продукции.
         path: 'modules',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'modules' },
         loadComponent: () => import('./pages/modules/modules.page').then((m) => m.ModulesPage),
         title: 'KPPDF — Модули',
       },
@@ -200,6 +219,8 @@ export const routes: Routes = [
         // Объявлена ПОСЛЕ '/modules' (Angular 20 router матчит по
         // longest-prefix; :id без children — sibling, не child).
         path: 'modules/:id',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'modules' },
         loadComponent: () =>
           import('./pages/modules/module-detail.page').then((m) => m.ModuleDetailPage),
         title: 'KPPDF — Модуль',
@@ -209,12 +230,16 @@ export const routes: Routes = [
         // Полноценный CRUD (normHours, rate, workCenterId) — не помещается
         // в inline-форму dictionaries.page; вынесен в самостоятельный route.
         path: 'work-types',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'work-types' },
         loadComponent: () =>
           import('./pages/work-types/work-types.page').then((m) => m.WorkTypesPage),
         title: 'KPPDF — Виды работ',
       },
       {
         path: 'orders',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'orders' },
         loadComponent: () => import('./pages/orders/orders.page').then((m) => m.OrdersPage),
         title: 'KPPDF — Заказы',
       },
@@ -223,25 +248,32 @@ export const routes: Routes = [
         // существующего QuotationModule (single API — дубль не создавался).
         // Admin/manager surface: мутации @Roles('admin','manager').
         path: 'proposals',
-        canMatch: [authGuard, adminOnlyRouteGuard],
+        canMatch: [capabilityRouteGuard, adminOnlyRouteGuard],
+        data: { pageKey: 'proposals' },
         loadComponent: () =>
           import('./pages/commercial/proposals/proposals.page').then((m) => m.ProposalsPage),
         title: 'KPPDF — КП',
       },
       {
         path: 'contracts',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'contracts' },
         loadComponent: () =>
           import('./pages/contracts/contracts.page').then((m) => m.ContractsPage),
         title: 'KPPDF — Договоры',
       },
       {
         path: 'doc-constructor/templates',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'doc-templates' },
         loadComponent: () =>
           import('./pages/doc-constructor/templates/templates.page').then((m) => m.TemplatesPage),
         title: 'KPPDF — Шаблоны документов',
       },
       {
         path: 'doc-constructor/documents',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'doc-documents' },
         loadComponent: () =>
           import('./pages/doc-constructor/documents/documents.page').then((m) => m.DocumentsPage),
         title: 'KPPDF — Сохранённые документы',
@@ -249,6 +281,8 @@ export const routes: Routes = [
       {
         // TZ-86 Phase C.1 — texts sub-page CRUD.
         path: 'doc-constructor/texts',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'doc-texts' },
         loadComponent: () =>
           import('./pages/doc-constructor/texts/texts.page').then((m) => m.TextsPage),
         title: 'KPPDF — Конструктор: Тексты',
@@ -256,6 +290,8 @@ export const routes: Routes = [
       {
         // TZ-86 Phase C.3 — table-templates sub-page CRUD.
         path: 'doc-constructor/tables',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'doc-tables' },
         loadComponent: () =>
           import('./pages/doc-constructor/tables/tables.page').then((m) => m.TablesPage),
         title: 'KPPDF — Конструктор: Таблицы',
@@ -270,7 +306,10 @@ export const routes: Routes = [
       },
       {
         // Builder canvas with a specific template id.
+        // pageKey = doc-templates (same grant as registry; open via Шаблоны).
         path: 'doc-constructor/builder/:id',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'doc-templates' },
         loadComponent: () =>
           import('./pages/doc-constructor/builder/builder.page').then((m) => m.BuilderPage),
         title: 'KPPDF — Конструктор',
@@ -278,6 +317,8 @@ export const routes: Routes = [
       // TZ-101: Inventory Operations
       {
         path: 'inventory',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'inventory' },
         loadComponent: () =>
           import('./pages/inventory/inventory-dashboard.page').then(
             (m) => m.InventoryDashboardPage,
@@ -286,12 +327,16 @@ export const routes: Routes = [
       },
       {
         path: 'storage-items',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'storage-items' },
         loadComponent: () =>
           import('./pages/inventory/storage-items.page').then((m) => m.StorageItemsPage),
         title: 'KPPDF — Остатки',
       },
       {
         path: 'stock-movements',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'stock-movements' },
         loadComponent: () =>
           import('./pages/inventory/stock-movements.page').then((m) => m.StockMovementsPage),
         title: 'KPPDF — Движения',
@@ -302,19 +347,19 @@ export const routes: Routes = [
       // per TZ-256 §ШАГ 3 nav filter).
       {
         path: 'admin/users',
-        canMatch: [authGuard, capabilityRouteGuard],
+        canMatch: [capabilityRouteGuard],
         // TZ-262 (2026-08-02): gate выровнен с backend GET /api/admin/users
         // (@Permissions('user:admin') — LIST перечисляет всех пользователей;
         // user:read зарезервирован для self-service). user:read без user:admin
         // теперь не проходит гейт → /forbidden, а не тупик 403 на странице.
-        data: { capabilities: ['user:admin'] },
+        data: { pageKey: 'admin-users', capabilities: ['user:admin'] },
         loadComponent: () => import('./pages/admin/users-admin.page').then((m) => m.UsersAdminPage),
         title: 'KPPDF — Пользователи',
       },
       {
         path: 'admin/roles',
-        canMatch: [authGuard, capabilityRouteGuard],
-        data: { capabilities: ['role:read'] },
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'admin-roles', capabilities: ['role:read'] },
         loadComponent: () => import('./pages/admin/roles-admin.page').then((m) => m.RolesAdminPage),
         title: 'KPPDF — Роли',
       },
@@ -325,6 +370,8 @@ export const routes: Routes = [
       // Falls through to `** → ''` if no admin/* wildcard later exists.
       {
         path: 'admin',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'admin-users' },
         loadComponent: () =>
           import('./pages/admin/_admin-placeholder.page').then((m) => m.AdminPlaceholderPage),
         title: 'KPPDF — Администрирование',

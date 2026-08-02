@@ -8,6 +8,41 @@ import { RoleService } from '../../modules/role/role.service';
 import { UserService } from '../../modules/user/user.service';
 import { PermissionsService } from '../../modules/permissions/permissions.service';
 
+/** TZ-ACCESS-301: page ACL ? default pages per system role. */
+const ADMIN_PAGES = [
+  'products', 'modules', 'materials', 'work-types',
+  'organizations', 'proposals', 'contracts', 'orders',
+  'dictionaries', 'categories', 'doc-template-categories', 'text-block-categories', 'color-references',
+  'doc-templates', 'doc-texts', 'doc-tables', 'doc-documents',
+  'inventory', 'storage-items', 'stock-movements',
+  'people',
+  'admin-users', 'admin-roles',
+] as const;
+
+const DIRECTOR_PAGES = [
+  'products', 'modules', 'materials', 'work-types',
+  'organizations', 'proposals', 'contracts', 'orders',
+  'dictionaries', 'categories', 'doc-template-categories', 'text-block-categories', 'color-references',
+  'doc-templates', 'doc-texts', 'doc-tables', 'doc-documents',
+  'inventory', 'storage-items', 'stock-movements',
+  'people',
+  // no admin-*
+] as const;
+
+const MANAGER_PAGES = [
+  'products', 'modules', 'materials', 'work-types',
+  'organizations', 'proposals', 'contracts', 'orders',
+  'dictionaries', 'doc-template-categories', 'text-block-categories',
+  'doc-templates', 'doc-texts', 'doc-tables', 'doc-documents',
+  'inventory', 'storage-items', 'stock-movements',
+  'people',
+] as const;
+
+const WORKER_PAGES = [
+  'doc-texts',
+  'doc-documents',
+] as const;
+
 const SYSTEM_ROLES = [
   {
     name: 'admin',
@@ -16,6 +51,16 @@ const SYSTEM_ROLES = [
     permissions: ['*'], // wildcard; RolesGuard and Permission check expand it later
     isSystem: true,
     sortOrder: 0,
+    pages: [...ADMIN_PAGES],
+  },
+  {
+    name: 'director',
+    label: '????????',
+    description: 'Full operational access, no user/role management',
+    permissions: [],
+    isSystem: true,
+    sortOrder: 5,
+    pages: [...DIRECTOR_PAGES],
   },
   {
     name: 'manager',
@@ -24,14 +69,16 @@ const SYSTEM_ROLES = [
     permissions: [],
     isSystem: true,
     sortOrder: 10,
+    pages: [...MANAGER_PAGES],
   },
   {
     name: 'user',
     label: 'User',
-    description: 'Self-service profile only',
+    description: 'Worker ? self-service + document access',
     permissions: [],
     isSystem: true,
     sortOrder: 100,
+    pages: [...WORKER_PAGES],
   },
 ] as const;
 
@@ -58,7 +105,28 @@ export class AdminSeed implements OnApplicationBootstrap {
   private async seedRoles(): Promise<void> {
     for (const r of SYSTEM_ROLES) {
       const existing = await this.roles.findByName(r.name);
-      if (existing) continue;
+      if (existing) {
+        // TZ-ACCESS-303: merge newly catalogued pageKeys into system roles
+        // (idempotent ? only adds missing keys, never removes director grants).
+        const desired = [...(r.pages ?? [])];
+        const have = new Set(existing.pages ?? []);
+        const missing = desired.filter((p) => !have.has(p));
+        if (missing.length > 0) {
+          try {
+            await this.roles.update(existing.id, {
+              pages: [...(existing.pages ?? []), ...missing],
+            });
+            this.logger.log(
+              `System role pages merged: ${r.name} (+${missing.join(',')})`,
+            );
+          } catch (err) {
+            this.logger.warn(
+              `Could not merge pages for ${r.name}: ${(err as Error).message}`,
+            );
+          }
+        }
+        continue;
+      }
 
       // For 'admin' role, expand '*' to all permission keys
       const permissions =
@@ -76,6 +144,7 @@ export class AdminSeed implements OnApplicationBootstrap {
           isSystem: r.isSystem,
           isActive: true,
           sectionIds: [],
+          pages: [...(r.pages ?? [])],
         });
         this.logger.log(`System role created: ${r.name}`);
       } catch (err) {
@@ -94,13 +163,13 @@ export class AdminSeed implements OnApplicationBootstrap {
     }
 
     const username = this.config.get<string>('admin.username') ?? 'admin';
-    // TZ-91 §4 Phase A.4: warn + skip if ADMIN_PASSWORD < 8 chars (avoid weak admin on fresh bootstrap).
+    // TZ-91 �4 Phase A.4: warn + skip if ADMIN_PASSWORD < 8 chars (avoid weak admin on fresh bootstrap).
     const password = this.config.get<string>('admin.password') ?? '';
     if (!password || password.length < 8) {
       this.logger.warn(
         `[ADMIN-SEED] ADMIN_PASSWORD too short or unset (${password?.length ?? 0} chars, need >= 8). ` +
         `Admin user NOT created. Set ADMIN_PASSWORD in .env (>= 8 chars) then restart. ` +
-        `Bootstrap CONTINUES — app will run without admin until password is fixed.`,
+        `Bootstrap CONTINUES ? app will run without admin until password is fixed.`,
       );
       return;
     }
@@ -118,7 +187,7 @@ export class AdminSeed implements OnApplicationBootstrap {
         fullName: 'Default Administrator',
       });
       this.logger.warn(
-        `⚠️  Default admin user created (username: "${username}"). ` +
+        `??  Default admin user created (username: "${username}"). ` +
           `CHANGE THE PASSWORD IMMEDIATELY in production!`,
       );
     } catch (err) {
