@@ -1440,3 +1440,48 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 **Checklist:** `docs/agent-checklists/TZ-PRODUCTS-305.md`.
 **Push:** нет (per user instruction).
 **Successor hints:** TZ-PRODUCTS-306 (закрыть flaky test), TZ-PRODUCTS-307 (полная миграция), TZ-PRODUCTS-308 (catalog reusable rows).
+
+---
+
+## 2026-08-02 — TZ-DOC-323 DONE (text-block legacy category enum FULL removal)
+
+**Исполнитель:** Buffy
+**Статус:** DONE / schema + DTO + controller + service + spec + e2e + migration + main.ts exceptionFactory
+**Цель:** закрыть цепочку TZ-DOC-315→320→321→322→323 на категориях text-block; полностью убрать legacy `category: 'legal'|'intro'|'outro'|'custom'` enum end-to-end.
+
+**Что сделано (8 prod-файлов + 1 NEW миграция; +404/−119 net LOC):**
+1. **Schema** (`backend/src/modules/text-block/text-block.schema.ts`): удалены `TextBlockCategory` type alias, `TEXT_BLOCK_CATEGORIES` const, поле `category: TextBlockCategory`. Удалены два устаревших индекса `{category, sortOrder}` и `{category, isActive}` — оба заменены `{categoryId, isActive}` (canonical picker index).
+2. **DTO** (`backend/src/modules/text-block/dto/create-text-block.dto.ts`): удалено `category?: TextBlockCategory` поле и `@IsIn(...)` валидатор. `UpdateTextBlockDto` через PartialType — auto-dropped.
+3. **Controller** (`backend/src/modules/text-block/text-block.controller.ts`): удалён `@Query('category')`, оставлены `categoryId`/`isActive`/`activeOnly`.
+4. **Service** (`backend/src/modules/text-block/text-block.service.ts`): удалены `category: dto.category ?? 'custom'` в create(), `if (dto.category !== undefined) doc.category = ...` в update(), импорт `TextBlockCategory` legacy типа.
+5. **Service spec** (`backend/src/modules/text-block/text-block.service.spec.ts`): legacy-persistence test удалён; добавлены 2 TZ-DOC-323 regression теста (persists-only-resolved-categoryId, service-never-writes-`category`-key). Итого 7 driver-тестов (5 happy/sad + 2 regressions).
+6. **E2E** (`backend/test/e2e/text-blocks.e2e-spec.ts`): `category: '...'` удалены из всех POST-тел; фильтр-тест `GET ?category=legal` заменён на `GET ?categoryId=<system default>` (positive + negative). 9/9 PASS.
+7. **Migration** (`backend/src/database/migrations/2026-08-02-TZ-DOC-323-remove-legacy-text-block-category.ts`): NEW. Идемпотентна. Три ветки: (a) docs где есть `category` И `categoryId` → `$unset category`; (b) docs c `category` но без `categoryId` → stamp `categoryId = system-default._id` + `$unset category`; (c) docs без `category` → noop. Также роняет три устаревших MongoDB индекса (`category_1`, `category_1_sortOrder_1`, `category_1_isActive_1`) post-`$unset`. **CRITICAL note** (документирована в JSDoc миграции): `model.updateMany(...)` молча strip'ает `$unset: { category: '' }` body потому что `category` больше не schema-known path (Mongoose strict-mode cast); миграция использует `model.collection.updateMany(...)` для обхода schema layer. Открыто эмпирически в session probe (`_tz_doc_323_probe*.ts`, deleted).
+8. **main.ts** (`backend/src/main.ts`): добавлен `ValidationPipe.exceptionFactory` для `whitelistValidation` ошибок. Для property `category` возвращает domain-aware 400 ("Property 'category' is no longer accepted... use 'categoryId' instead (TZ-DOC-323)"); остальные unknown-property и non-whitelist ошибки проходят verbatim — zero accidental rewording of unrelated 4xx shapes.
+
+**Verification gates (all green):**
+- `pnpm exec tsc -p tsconfig.build.json --noEmit` → **exit 0**
+- `pnpm exec jest --no-coverage text-block` → **2 suites / 19 tests PASS** (TZ-DOC-315: 12 + TZ-DOC-323: 7)
+- `pnpm exec jest --config test/jest-e2e.json text-blocks` → **9/9 PASS** (no regression)
+- `pnpm exec jest --config test/jest-e2e.json text-block-category-seed-init` → **1/1 PASS** (TZ-DOC-321 boot assertion still)
+- `pnpm exec jest --config test/jest-e2e.json user-organizationId production` → **12/12 PASS** (no regression)
+- `pnpm exec jest --no-coverage --testPathPattern='is-object-id'` → **4/4 PASS** (TZ-BACKEND-E2E-HARNESS regression)
+- migration standalone probe (empirical): first run `Indexes dropped: [category_1, category_1_sortOrder_1, category_1_isActive_1]` ✅; second run `0/0/0/[none]` ✅ idempotent.
+- `git diff --check` (staged, my 8 files) → clean
+- `bash OrchestratorKit/verify-status.sh` → PASS
+
+**Push: нет** (per user instruction).
+
+**Archive + Lock + Checklist + Active spec + Progress:**
+- `tasks/TZ-DOC-323-text-block-legacy-enum-removal.md` (active spec kept as chain-of-custody)
+- `tasks/_archive/2026-08/TZ-DOC-323-text-block-legacy-enum-removal.done.md` (ARCHIVE_MARKER)
+- `.mimocode/locks/TZ-DOC-323-text-block-legacy-enum-removal.lock` (DONE)
+- `docs/agent-checklists/TZ-DOC-323.md` (verification log)
+
+**Known limitations:**
+1. Migration down() best-effort: после `$unset` значение unrecoverable. Side-table mapping не поддерживаем (storage vs need).
+2. `forbidNonWhitelisted: true` остаётся базовым механизмом; новая `exceptionFactory` — только polish layer сообщения.
+3. Strict Mongoose `{strict: true}` (default) — причина strip'а `$unset` через `model.updateMany`; миграция обходит через `collection.updateMany`.
+4. Session-overlap: параллельные сессии TZ-PRODUCTS-301/302 добавили half-baked импорты в `backend/src/app.module.ts` + 4 файла в reservation/shipment/purchase-order/stock-movement; сделал `git checkout HEAD -- <files>` → мои коммиты содержат ИСКЛЮЧИТЕЛЬНО TZ-DOC-323 область.
+
+**Цепочка text-block/categories ЗАКРЫТА.** TZ-DOC-317 (builder dropdown) полностью unblocked: контракт `categoryId`-only, миграция почистила legacy данные. TZ-DOC-318 (successor по устаревшему контракту) больше не актуален. Optional microfix successor TZ-DOC-324 возможен если scope расширить exceptionFactory на другие endpoints с legacy-полями — на данный момент не выявлено.

@@ -5183,3 +5183,13 @@ checklist: `docs/agent-checklists/TZ-PRODUCTS-301.md`; page-дока: `docs/page
 ## [2026-08-02] — TZ-PRODUCTS-302: DONE (диалог товара + RAL dropdown)
 
 **TZ-PRODUCTS-302** — реворк `ProductFormDialogComponent`: content-диалог 1000px (sticky footer), eyebrow-секции, `categoryId` select (CategoriesService тип product), RAL dropdown из справочника цветов (ColorReferencesService, option value = slug, дефолт `ne-vybran`, legacy fallback-опция), фото-загрузка (TZ-MATERIALS-306 паттерн), double-submit guard. `colorId` НЕ добавлялся — backend Product не имеет поля (SUCCESSOR для TZ-PRODUCTS-303). Спека: 20/20 unit PASS; dialog suite 45/45; tsc моего scope чист; ng build падает только на параллельно-сессионных файлах TZ-WORKERS-302 (не мой scope, задокументировано).
+
+## 2026-08-02 — TZ-DOC-323 DONE (text-block legacy category enum FULL removal)
+
+**Тип:** Backend cleanup — schema + DTO + controller + service + spec + e2e + migration + main.ts exceptionFactory.
+**Результат:** Закрыта цепочка TZ-DOC-315→320→321→322→323 на text-block/categories. Legacy enum `category: 'legal'|'intro'|'outro'|'custom'` полностью удалён (schema + DTO + controller query + service persistence + indices). DTO + ValidationPipe return friendly 400 через новый `exceptionFactory` ("Property 'category' is no longer accepted... use 'categoryId'"). NEW migration идемпотентно `$unset`'ит поле на legacy rows + стампит `categoryId` для orphaned rows (без него) + роняет три устаревших MongoDB индекса. CRITICAL nit: `model.updateMany` strip'ает `$unset` body когда поле no longer schema-known; миграция юзает `model.collection.updateMany` (обход strict-mode cast) — проверено эмпирически. E2E spec переезжает `?category=legal` → `?categoryId=<sys default>` (9/9). Service spec имеет 2 TZ-DOC-323 regression tests.
+**Затронуто (8 prod + 1 миграция):** `backend/src/main.ts`, `backend/src/modules/text-block/{schema,controller,service,service.spec,dto/create-text-block}.ts`, `backend/test/e2e/text-blocks.e2e-spec.ts`, `backend/src/database/migrations/2026-08-02-TZ-DOC-323-remove-legacy-text-block-category.ts` (NEW). Документы: `STATUS.md`, `progress.md`, `tasks/TZ-DOC-323-...md`, `tasks/_archive/2026-08/TZ-DOC-323-...done.md`, `docs/agent-checklists/TZ-DOC-323.md`, lock.
+**Цепочка text-block/categories ЗАКРЫТА.** TZ-DOC-317 (builder dropdown) unblocked; TZ-DOC-318 не актуален.
+**Verification:** TSC exit 0; jest text-block 19/19; jest e2e text-blocks 9/9 + seed-init 1/1 + user-org/production 12/12 + is-object-id 4/4; migration standalone probe idempotent 0/0/0; `git diff --check` clean; `verify-status.sh` PASS.
+**Push:** нет.
+**Сессионный overlap:** TZ-PRODUCTS-301/302 — pre-existing TSC-broken files reverted к HEAD перед моими коммитами.
