@@ -35,7 +35,7 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
  * Three collapsible accordion-tabs:
  *   1. **Тексты** — list TextBlock items via httpResource.
  *   2. **Таблицы** — list TableTemplate items via httpResource.
- *   3. **Отступ** — spacer block add button.
+ *   3. _Отступ removed in TZ-DOC-319_
  *
  * Phase D.2.2 (drag-from-palette): each palette list is wrapped in
  * `cdkDropList` with `[cdkDropListConnectedTo]="['canvas-droplist']"`. Each
@@ -166,22 +166,7 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         }
       </section>
 
-      <!-- Section 3: Spacer -->
-      <section class="tool-pane__section">
-        <div class="tool-pane__spacer-row">
-          <span class="tool-pane__spacer-icon">—</span>
-          <span class="tool-pane__spacer-label">Отступ</span>
-          <button
-            type="button"
-            class="tool-pane__add pi-focus-ring"
-            aria-label="Добавить отступ"
-            title="Добавить отступ"
-            (click)="onAddBlockType('spacer')"
-          >
-            <lucide-icon [img]="PlusIcon" [size]="14"></lucide-icon>
-          </button>
-        </div>
-      </section>
+      <!-- Section 3 removed (TZ-DOC-319) -->
     </aside>
   `,
   styles: [
@@ -243,27 +228,7 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         background: var(--color-paper-2);
       }
 
-      .tool-pane__spacer-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 16px;
-        cursor: default;
-      }
-
-      .tool-pane__spacer-icon {
-        font-size: 14px;
-        color: var(--color-muted-foreground-strong);
-        width: 14px;
-        text-align: center;
-      }
-
-      .tool-pane__spacer-label {
-        flex: 1;
-        font-size: 12px;
-        font-weight: 500;
-        color: var(--color-ink);
-      }
+      /* .tool-pane__spacer-* rules removed (TZ-DOC-319) */
 
       .tool-pane__section {
         border-bottom: 1px solid var(--color-rule);
@@ -433,7 +398,7 @@ export class BuilderToolPaneComponent {
 
   // Static palette data
   protected readonly blockTypeItems = (
-    ['header', 'text', 'table', 'image', 'signature', 'spacer'] as const
+    ['header', 'text', 'table', 'image', 'signature'] as const
   ).map((t) => ({
     type: t as BlockType,
     label: BLOCK_TYPE_LABELS[t],

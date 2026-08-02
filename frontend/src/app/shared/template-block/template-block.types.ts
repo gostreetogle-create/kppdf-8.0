@@ -28,7 +28,7 @@ import type { TextBlockColumn } from '../services/pi-text-blocks.service';
 import type { BlockLayout, BlockSource } from './template-block-layout';
 export type { BlockLayout, BlockSource } from './template-block-layout';
 
-export type BlockType = 'header' | 'text' | 'table' | 'image' | 'signature' | 'spacer';
+export type BlockType = 'header' | 'text' | 'table' | 'image' | 'signature';
 
 export const BLOCK_TYPES: readonly BlockType[] = [
   'header',
@@ -36,7 +36,6 @@ export const BLOCK_TYPES: readonly BlockType[] = [
   'table',
   'image',
   'signature',
-  'spacer',
 ] as const;
 
 export type DataBindingSource =
@@ -160,7 +159,6 @@ export const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
   table: 'Таблица',
   image: 'Изображение',
   signature: 'Подпись',
-  spacer: 'Отступ',
 };
 
 /**
@@ -172,5 +170,4 @@ export const BLOCK_TYPE_HINTS: Record<BlockType, string> = {
   table: 'Шаблон таблицы с колонками',
   image: 'Картинка из библиотеки',
   signature: 'Место для подписи / печати',
-  spacer: 'Вертикальный отступ между блоками',
 };

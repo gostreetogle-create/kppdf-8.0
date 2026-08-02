@@ -510,8 +510,6 @@ import {
                 loading="lazy"
               />
             </div>
-          } @else if (block().type === 'spacer') {
-            <div class="block-renderer__spacer" [style.height.px]="block().height ?? 40"></div>
           } @else if (state.hasColumns()) {
             @if (block().content) {
               <div class="block-renderer__content block-renderer__content--preamble">

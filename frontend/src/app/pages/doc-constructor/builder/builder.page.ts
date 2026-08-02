@@ -324,10 +324,7 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
             />
           </div>
 
-          <!-- Отступ button -->
-          <button type="button" class="builder-toolbar__btn" (click)="onAddSpacer()">
-            — Отступ
-          </button>
+          <!-- Отступ button removed (TZ-DOC-319) -->
         </div>
       </div>
 
@@ -1003,10 +1000,6 @@ export class BuilderPage {
     });
   }
 
-  protected onAddSpacer(): void {
-    this.onAddBlock({ source: 'block-type', type: 'spacer' });
-  }
-
   protected onPhotoFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -1233,7 +1226,7 @@ export class BuilderPage {
           ...base,
           type: payload.type,
           content: '',
-          height: payload.type === 'spacer' ? 40 : undefined,
+          height: undefined,
         };
       case 'text-block':
         return {

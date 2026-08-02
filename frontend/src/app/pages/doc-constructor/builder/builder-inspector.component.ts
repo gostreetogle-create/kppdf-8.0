@@ -388,71 +388,63 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         </div>
       } @else {
         <div class="inspector__form">
-          <!-- Title (not for spacer) -->
-          @if (block()!.type !== 'spacer') {
-            <label class="field">
-              <span class="field__label">Заголовок</span>
-              <input
-                class="field__input pi-focus-ring"
-                type="text"
-                [value]="title()"
-                (input)="onTitleInput($event)"
-                placeholder="Необязательно"
-              />
-            </label>
-          }
+          <!-- Title -->
+          <label class="field">
+            <span class="field__label">Заголовок</span>
+            <input
+              class="field__input pi-focus-ring"
+              type="text"
+              [value]="title()"
+              (input)="onTitleInput($event)"
+              placeholder="Необязательно"
+            />
+          </label>
 
-          <!-- isActive (not for spacer) -->
-          @if (block()!.type !== 'spacer') {
-            <label class="field field--row">
-              <span class="field__label">Активен</span>
-              <app-pi-switch [checked]="isActive()" (checkedChange)="onIsActiveChange($event)" />
-            </label>
-          }
+          <!-- isActive -->
+          <label class="field field--row">
+            <span class="field__label">Активен</span>
+            <app-pi-switch [checked]="isActive()" (checkedChange)="onIsActiveChange($event)" />
+          </label>
 
-          <!-- showLine (not for spacer) -->
-          @if (block()!.type !== 'spacer') {
-            <label class="field field--row">
-              <span class="field__label">Линия снизу</span>
-              <app-pi-switch [checked]="showLine()" (checkedChange)="onShowLineChange($event)" />
-            </label>
-          }
+          <!-- showLine -->
+          <label class="field field--row">
+            <span class="field__label">Линия снизу</span>
+            <app-pi-switch [checked]="showLine()" (checkedChange)="onShowLineChange($event)" />
+          </label>
 
-          <!-- TZ-DOC-273: block background color + opacity (not for spacer) -->
-          @if (block()!.type !== 'spacer') {
-            <div class="field">
-              <div class="field__row-header">
-                <span class="field__label">Фон блока</span>
-                <span class="field__value">{{ blockBgOpacityPercent() }}%</span>
-              </div>
-              <div class="block-bg-row">
-                <input
-                  type="color"
-                  class="block-bg-swatch pi-focus-ring"
-                  [value]="blockBgColorHex()"
-                  (input)="onBlockBgColorInput($event)"
-                  aria-label="Цвет фона блока"
-                />
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="5"
-                  class="field__slider"
-                  [value]="blockBgOpacityPercent()"
-                  (input)="onBlockBgOpacityInput($event)"
-                />
-                <button
-                  type="button"
-                  class="field__reset-btn"
-                  (click)="onBlockBgReset()"
-                  [disabled]="!hasBlockBg()"
-                >
-                  Сбросить
-                </button>
-              </div>
+          <!-- TZ-DOC-273: block background color + opacity -->
+          <div class="field">
+            <div class="field__row-header">
+              <span class="field__label">Фон блока</span>
+              <span class="field__value">{{ blockBgOpacityPercent() }}%</span>
             </div>
-          }
+            <div class="block-bg-row">
+              <input
+                type="color"
+                class="block-bg-swatch pi-focus-ring"
+                [value]="blockBgColorHex()"
+                (input)="onBlockBgColorInput($event)"
+                aria-label="Цвет фона блока"
+              />
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                class="field__slider"
+                [value]="blockBgOpacityPercent()"
+                (input)="onBlockBgOpacityInput($event)"
+              />
+              <button
+                type="button"
+                class="field__reset-btn"
+                (click)="onBlockBgReset()"
+                [disabled]="!hasBlockBg()"
+              >
+                Сбросить
+              </button>
+            </div>
+          </div>
 
           <!-- Content (text/header) -->
           @if (block()!.type === 'text' || block()!.type === 'header') {
@@ -580,31 +572,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
             </label>
           }
 
-          <!-- Height slider (spacer) -->
-          @if (block()!.type === 'spacer') {
-            <label class="field">
-              <span class="field__label">Высота: {{ height() }}px</span>
-              <div class="field__slider-row">
-                <input
-                  type="range"
-                  min="10"
-                  max="500"
-                  step="5"
-                  [value]="height()"
-                  (input)="onHeightInput($event)"
-                  class="field__slider"
-                />
-                <input
-                  class="field__input field__input--small pi-focus-ring"
-                  type="number"
-                  min="10"
-                  max="1000"
-                  [value]="height()"
-                  (input)="onHeightInput($event)"
-                />
-              </div>
-            </label>
-          }
+          <!-- Height slider removed for spacer (TZ-DOC-319) -->
 
           <!-- Table template info -->
           @if (block()!.type === 'table' && settingsTableId(); as tid) {

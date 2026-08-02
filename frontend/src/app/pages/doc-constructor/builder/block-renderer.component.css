@@ -398,26 +398,7 @@
 
 /* TZ-DOC-269: snap feedback stays a strict outline — no glow filter. */
 
-/* Spacer block */
-.block-renderer__spacer {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 16px;
-}
-.block-renderer__spacer-line {
-  flex: 1;
-  height: 1px;
-  background: var(--color-rule);
-}
-.block-renderer__spacer-label {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--color-muted-foreground-strong);
-  white-space: nowrap;
-}
+/* Spacer block removed (TZ-DOC-319) */
 
 /* Multi-column grid layout */
 .block-renderer__columns {
@@ -659,8 +640,5 @@
   .block-renderer__size-editor,
   .block-renderer__checkbox {
     display: none !important;
-  }
-  .block-renderer__spacer {
-    break-inside: avoid;
   }
 }
