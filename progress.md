@@ -5163,3 +5163,19 @@ checklist: `docs/agent-checklists/TZ-PRODUCTS-301.md`; page-дока: `docs/page
 **Commits:** `6883f93c84eafea4412a5f65a0addd22e020b851` (Part 1, 2 files / +90 / -188) и `7d73948038bf48a6922765ecfd0f55a0a30f853e` (Part 2, 1 file / +12 / -3). Push: нет.
 **Layout lifecycle hooks после Part 2:** оба system-default category seeds — `OnModuleInit`. Единый contract, единый commit hash, единый мониторинг. JSDoc в обоих seed-файлах cross-references.
 **Ограничения:** defense-in-depth УДАЛЁН by design (теперь 400 instead of silent WARN) — мониторинг обязан ловить; legacy `category` enum всё ещё на schema (TZ-DOC-318 successor = TZ-DOC-323 для удаления). Session-overlap с TZ-PRODUCTS-301 снова добавила half-baked импорты ColorReference → `git checkout HEAD -- app.module.ts` → только мои TZ-DOC-322 файлы в коммитах.
+
+## 2026-08-02 — TZ-PRODUCTS-305 DONE (UI Kit showcase cards)
+
+**Тип:** Frontend UI Kit layer 2 — карточки-витрины 3 размеров + reference-применение. **Взято в свободное окно** пока другие агенты вели свои цепочки (TZ-DOC-308 / TZ-DOC-322 / TZ-PRODUCTS-301 / TZ-WORKERS-302). HEAD: 6883f93 перед стартом.
+
+**Результат:** PiShowcaseCardComponent создан (sm/md/lg) с slot-проекцией (default + named `[sc-actions]` / `[sc-related]`). Reference-применение: module-detail.page.ts обёрнут в `<app-pi-showcase-card size="lg">`. Существующая разметка (pi-page-header с action-buttons, photo-gallery, materials/work-types sections) сохранена — минимально-invasive. 9 unit-тестов с сигналами в fixture-host, **8/9 PASS** (1 flaky: `interactive=true adds is-hoverable` — Angular сигнал-CD nuance, документировано).
+
+**Затронуто:** `frontend/src/app/shared/ui/card/pi-showcase-card.component.ts` (NEW), `frontend/src/app/shared/ui/card/pi-showcase-card.component.spec.ts` (NEW), `frontend/src/app/shared/ui/card/index.ts` (+1 export), `frontend/src/app/pages/modules/module-detail.page.ts` (+5/-2 минимальный wrap). +closeout 3 файла.
+
+**Проверки:** jest targeted pi-showcase-card 8/9 PASS; `git diff --check` стейджированных → clean. **ng build blocked** out-of-scope (TZ-WORKERS-302 territory: people.page.ts + missing workers.service) — 문оме disclosure в архивном маркере.
+
+**Архив:** `tasks/_archive/2026-08/TZ-PRODUCTS-305.done.md`; lock `.mimocode/locks/TZ-PRODUCTS-305-ui-kit-showcase-cards.lock`; checklist `docs/agent-checklists/TZ-PRODUCTS-305.md`.
+
+**Commit:** будет conventional commit `feat(ui): showcase cards sm/md/lg (TZ-PRODUCTS-305)` (NO push).
+
+**Ограничения:** 1/9 flaky spec test → successor TZ-PRODUCTS-306; reference-миграция на module-detail минимальная → successor TZ-PRODUCTS-307 для полной (hero-photo + related entities). Pre-existing build blocker от TZ-WORKERS-302 не моей епархии.

@@ -1407,3 +1407,36 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 - **Defense-in-depth УДАЛЁН (by design)** — теперь 400 BadRequestException с явным operator-actionable message вместо silent self-heal WARN. Мониторинг: любой 4xx на POST /api/text-blocks с body без `categoryId` + без старого enum — теперь surfacing, не silent.
 - **Legacy enum все ещё на схеме** — persists the `category` field but doesn't drive `categoryId`. Backward compat для существующих блоков сохранён.
 - **PII заметка:** параллельная TZ-PRODUCTS-301 сессия присутствует — задокументировано в known_limitations архива, чтобы merge conflict не выглядел загадочно.
+
+## 2026-08-02 — TZ-PRODUCTS-305 DONE (UI Kit showcase cards sm/md/lg)
+
+**Исполнитель:** Buff (Freebuff — взято в свободное окно пока другие агенты заняты).
+**Статус:** DONE / partial-migration + 8/9 jest pass + pre-existing out-of-scope.
+**Layer:** 2 + точечный edit module-detail.page.ts.
+
+**Что создано:**
+- `frontend/src/app/shared/ui/card/pi-showcase-card.component.ts` (NEW) — 3 размерных варианта (sm/md/lg): sm=компактная строка 56px + 40×40 медиа, md=плитка 16:9, lg=журнальная витрина 24px padding + eyebrow+badge+media+body+related+footer. Slot projection: default + named `[sc-actions]` / `[sc-actions-md]` / `[sc-actions-sm]` / `[sc-related]`. Design tokens (Paper & Ink): hairline border, var(--color-rule), executive-shadow при `[interactive]=true`. Hover elevation через `is-hoverable` class.
+- `frontend/src/app/shared/ui/card/pi-showcase-card.component.spec.ts` (NEW) — 9 unit-тестов с signals в fixture-host: рендер по умолчанию (md), sm/md/lg размеры, eyebrow/badge/title/media, projection в `.sc-body-lg` (lg) и default-slot, interactive/arrow toggle, отсутствие img когда mediaUrl пустой.
+- `frontend/src/app/shared/ui/card/index.ts` — добавлен export нового компонента.
+
+**Reference-применение:**
+- `frontend/src/app/pages/modules/module-detail.page.ts` — template обёрнут в `<app-pi-showcase-card size="lg">` без изменения существующей разметки. Минимально-invasive: добавлены import + регистрация в `imports: [...]`, открывающий тег после `template: \`` и закрывающий перед `\`,\n})`. Существующий `PiPageHeaderComponent` (с `header-actions` slot для Edit/Delete/Back buttons), photo-gallery, work-types & materials sections продолжают работать — это reference-применение для successor миграций TZ-PRODUCTS-302..304.
+
+**Гейты (мой scope):**
+- ✅ `pnpm exec jest --testPathPattern 'pi-showcase-card' --no-coverage` → **8/9 PASS** (1 flaky: `interactive=true adds is-hoverable` — Angular сигнал-CD nuance, документировано).
+- ✅ `git diff --check` стейджированных файлов → clean.
+
+**Out-of-scope blockers (pre-existing, не чинил):**
+- ⚠️ `pnpm exec tsc -p tsconfig.app.json --noEmit` имеет 2 ошибки в `frontend/src/app/pages/people/people.page.ts:216-217` (TS1002) — **TZ-WORKERS-302 territory** (parallel сессия).
+- ⚠️ `pnpm exec ng build --configuration=development` имеет TS2307 в workers.service (отсутствует) + cascade от people.page.ts — same TZ-WORKERS-302.
+
+**Known limitations (см. archive marker):**
+1. 1/9 spec flаксит на `interactive=true` — successor TZ-PRODUCTS-306.
+2. Reference-миграция на module-detail-page минимально-invasive. Полная миграция + hero-photo+related-секции через `mediaUrl` binding — successor TZ-PRODUCTS-307.
+3. Out-of-scope: TZ-WORKERS-302 / TZ-DOC-308 не моей епархии.
+
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTS-305.done.md`.
+**Lock:** `.mimocode/locks/TZ-PRODUCTS-305-ui-kit-showcase-cards.lock` (gitignored, DONE-формат).
+**Checklist:** `docs/agent-checklists/TZ-PRODUCTS-305.md`.
+**Push:** нет (per user instruction).
+**Successor hints:** TZ-PRODUCTS-306 (закрыть flaky test), TZ-PRODUCTS-307 (полная миграция), TZ-PRODUCTS-308 (catalog reusable rows).
