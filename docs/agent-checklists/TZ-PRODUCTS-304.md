@@ -73,3 +73,11 @@ MANUAL_BROWSER_CHECK_REQUIRED — live flow не запускался (dev-stack
 - TZ-WORKERS-302 (parallel session) — people.page.ts/workers.service.ts; здесь ng build exit 0.
 - `frontend` полный jest: 1 pre-existing failure в `button.component.spec.ts` — НЕ регрессия (852/853 PASS).
 - pi-table artifact: когда одна строка развёрнута, под остальными строками рендерится пустой `<tr bg-paper-2 hairline-b>` (структурное ограничение единого `expandedRow` template; паттерн TZ-MODULES-302, pi-table НЕ менялся по ТЗ).
+
+## Executor report (auto) — TZ-PRODUCTS-304
+
+status: DONE
+commits: 84ad25c60ed112b7450d4f3dc5cdcfc7c398c839 + 43abb5435d39be752f300c869fdc0962e3ce73fa
+gates: tsc=PASS; jest=48/48; ng-build=PASS; git-diff-check=PASS; verify-status.sh=PASS
+known: button.spec pre-existing baseline-failure (не регрессия); TZ-DOC-308/TZ-WORKERS-302 pre-existing, ng build exit 0
+ask: —

@@ -63,7 +63,7 @@ closed_at: 2026-08-02
 closed_by: autonomous-frontend-agent (Buffy)
 source_task: tasks/TZ-PRODUCTS-304-products-catalog-expandable-modules.md
 implementation_commit: 84ad25c60ed112b7450d4f3dc5cdcfc7c398c839
-closeout_commit: <closeout-sha>
+closeout_commit: 43abb5435d39be752f300c869fdc0962e3ce73fa
 prerequisite: TZ-PRODUCTS-303 (243aeda) — module cards editor in product dialog
 scope_before: каталог товаров без expandable-строк; (rowClick) «latent» (не подписан); колонок 7
 scope_after: клик по строке разворачивает карточки модулей (инициалы/имя/артикул/N материалов), routerLink /modules/:id, empty state, колонка «Модулей», toggle expandedId; колонок 8
