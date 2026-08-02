@@ -223,18 +223,19 @@ export const routes: Routes = [
         title: 'KPPDF — Конструктор: Таблицы',
       },
       {
-        // TZ-86 Phase D.1 — builder canvas (3-pane) picker state.
-        // No :id → shows template-list picker; selecting navigates to
-        // /doc-constructor/builder/:id (see BuilderPage empty state).
+        // TZ-DOC-324 (IA): /doc-constructor/builder без :id — это дубль
+        // реестра. Single source of CRUD = /doc-constructor/templates.
+        // Builder — только редактор для конкретного :id (следующий route).
+        // pathMatch: 'full' гарантирует, что redirect жадно не съедает
+        // /doc-constructor/builder/:id (Angular longest-prefix match).
         path: 'doc-constructor/builder',
-        loadComponent: () =>
-          import('./pages/doc-constructor/builder/builder.page').then((m) => m.BuilderPage),
-        title: 'KPPDF — Конструктор: Сборка',
+        pathMatch: 'full',
+        redirectTo: 'doc-constructor/templates',
       },
       {
         // TZ-86 Phase D.1 — builder canvas with a specific template id.
-        // Longest-prefix match in Angular 20 wins over the bare /builder
-        // route above, so :id takes precedence for non-empty ids.
+        // Чистый editor-режим: empty-state-picker'а больше нет,
+        // сюда попадаем только через «Открыть» из реестра /templates.
         path: 'doc-constructor/builder/:id',
         loadComponent: () =>
           import('./pages/doc-constructor/builder/builder.page').then((m) => m.BuilderPage),

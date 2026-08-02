@@ -1,15 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
-import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
-import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { of } from 'rxjs';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { BuilderPage } from './builder.page';
-import {
-  TemplateSetupDialogComponent,
-  type TemplateSetupResult,
-} from './template-setup-dialog.component';
 import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
 import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
 import { PiToastService } from '../../../shared/ui/toast';
@@ -23,14 +16,14 @@ describe('BuilderPage', () => {
     queryParamMap: of({ get: () => null }),
   };
 
-  // Hoisted test doubles (TZ-DOC-268 regression tests need to assert calls).
+  // TZ-DOC-324 (IA): builder.page is now pure editor for /:id. CRUD для
+  // шаблонов (create/duplicate/delete) перенесён в TemplatesPage, поэтому
+  // related TZ-DOC-268/310 regression tests теперь живут там.
+  // Эти тесты остаются — они о pure editor-функциональности.
+
   const navigate = jest.fn();
   const toastSuccess = jest.fn();
   const toastError = jest.fn();
-  const dialogSpy = { open: jest.fn() };
-  const templatesSvcCreate = jest
-    .fn()
-    .mockReturnValue(of({ ok: true, data: { _id: 'tpl-1' } as never }));
   const templatesSvcUpdate = jest
     .fn()
     .mockReturnValue(of({ ok: true, data: { _id: 'tpl-1' } as never }));
@@ -60,7 +53,7 @@ describe('BuilderPage', () => {
           useValue: {
             list: () => of({ ok: true, data: { items: [], total: 0 } }),
             findById: templatesSvcFindById,
-            create: templatesSvcCreate,
+            create: jest.fn().mockReturnValue(of({ ok: true, data: { _id: 'tpl-1' } })),
             update: templatesSvcUpdate,
             remove: () => of({ ok: true, data: undefined }),
             uploadBackground: () => of({ ok: true, data: { url: '', backgroundImage: [] } }),
@@ -70,7 +63,7 @@ describe('BuilderPage', () => {
           },
         },
         { provide: PiToastService, useValue: { success: toastSuccess, error: toastError } },
-        { provide: PiDialogService, useValue: dialogSpy },
+        { provide: PiDialogService, useValue: { open: jest.fn() } },
       ],
     })
       .overrideComponent(BuilderPage, {
@@ -84,7 +77,12 @@ describe('BuilderPage', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('starts with null templateId (shows template picker)', () => {
+  it('starts with null templateId (pure editor — picker moved to TemplatesPage)', () => {
+    // TZ-DOC-324: /builder без :id → редирект на /templates, поэтому
+    // BuilderPage больше не показывает picker-ветку в template. Однако
+    // signal templateId всё равно null на пустом init — это нормально,
+    // важно что в template больше нет if(!templateId()) блока (verified
+    // by code-reviewer + tsc build).
     const fixture = TestBed.createComponent(BuilderPage);
     const comp = fixture.componentInstance as unknown as { templateId: () => string | null };
     expect(comp.templateId()).toBeNull();
@@ -110,140 +108,6 @@ describe('BuilderPage', () => {
       selectedBlock: () => { _id: string } | null;
     };
     expect(comp.selectedBlock()).toBeNull();
-  });
-
-  // ═══ TZ-DOC-268: template-creation dialog lifecycle regression tests ═══
-
-  /** Build a fake DialogRef whose `closed` signal we control. */
-  function fakeDialogRef<T>() {
-    const closed = signal<T | undefined>(undefined);
-    return { closed };
-  }
-
-  it('TZ-DOC-268: confirm closes the setup dialog and creates exactly one template', () => {
-    const { closed } = fakeDialogRef<TemplateSetupResult>();
-    dialogSpy.open.mockReturnValue({ closed, close: jest.fn() });
-
-    const fixture = TestBed.createComponent(BuilderPage);
-    fixture.detectChanges();
-    const comp = fixture.componentInstance as unknown as {
-      onCreateTemplate: () => void;
-      isCreating: () => boolean;
-    };
-
-    comp.onCreateTemplate();
-    expect(dialogSpy.open).toHaveBeenCalledWith(
-      TemplateSetupDialogComponent,
-      expect.objectContaining({ data: { mode: 'create' } }),
-    );
-
-    // Simulate the user clicking «Создать» in the dialog → close with result.
-    // TestBed.flushEffects() dispatches the toObservable-backed
-    // onDialogCloseOnce callback + the forkJoin HTTP calls synchronously
-    // (established pattern — see materials.page.spec.ts / categories.page.spec.ts).
-    // No whenStable(): all flows below are synchronous once the HTTP
-    // responses are flushed via HttpTestingController.
-    closed.set({ pageSize: 'A4', orientation: 'portrait' });
-    fixture.detectChanges();
-    TestBed.flushEffects();
-
-    // The create flow fires GET /organizations?limit=1 + GET /doc-types,
-    // then templatesSvc.create() once, then navigates to the new template.
-    const httpMock = TestBed.inject(HttpTestingController);
-    httpMock
-      .expectOne((req) => req.method === 'GET' && req.url.includes('/organizations'))
-      .flush({ items: [{ _id: 'org-1' }] });
-    httpMock
-      .expectOne((req) => req.method === 'GET' && req.url.includes('/doc-types'))
-      .flush([{ _id: 'dt-1' }]);
-
-    expect(templatesSvcCreate).toHaveBeenCalledTimes(1);
-    expect(templatesSvcCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ organizationId: 'org-1', docTypeId: 'dt-1' }),
-    );
-    expect(navigate).toHaveBeenCalledWith(['/doc-constructor/builder', 'tpl-1']);
-    expect(comp.isCreating()).toBe(false);
-  });
-
-  it('TZ-DOC-268: cancel (close without value) does NOT POST or navigate', () => {
-    const { closed } = fakeDialogRef<TemplateSetupResult>();
-    dialogSpy.open.mockReturnValue({ closed, close: jest.fn() });
-
-    const fixture = TestBed.createComponent(BuilderPage);
-    fixture.detectChanges();
-    const comp = fixture.componentInstance as unknown as { onCreateTemplate: () => void };
-
-    comp.onCreateTemplate();
-    // Cancel / Escape / backdrop → close() with no value.
-    closed.set(undefined);
-    fixture.detectChanges();
-    TestBed.flushEffects();
-
-    expect(templatesSvcCreate).not.toHaveBeenCalled();
-    expect(navigate).not.toHaveBeenCalled();
-    expect(toastError).not.toHaveBeenCalled();
-  });
-
-  it('TZ-DOC-268: a second confirm emission cannot create a duplicate template', () => {
-    const { closed } = fakeDialogRef<TemplateSetupResult>();
-    dialogSpy.open.mockReturnValue({ closed, close: jest.fn() });
-
-    const fixture = TestBed.createComponent(BuilderPage);
-    fixture.detectChanges();
-    const comp = fixture.componentInstance as unknown as { onCreateTemplate: () => void };
-
-    comp.onCreateTemplate();
-    closed.set({ pageSize: 'A4', orientation: 'portrait' });
-    fixture.detectChanges();
-    TestBed.flushEffects();
-
-    const httpMock = TestBed.inject(HttpTestingController);
-    httpMock
-      .expectOne((req) => req.method === 'GET' && req.url.includes('/organizations'))
-      .flush({ items: [{ _id: 'org-1' }] });
-    httpMock
-      .expectOne((req) => req.method === 'GET' && req.url.includes('/doc-types'))
-      .flush([{ _id: 'dt-1' }]);
-    expect(templatesSvcCreate).toHaveBeenCalledTimes(1);
-
-    // A stale second emission (the dialog was already closed once) must not
-    // re-fire the callback — onDialogCloseOnce uses filter+take(1).
-    closed.set({ pageSize: 'A5', orientation: 'landscape' });
-    fixture.detectChanges();
-    TestBed.flushEffects();
-    expect(templatesSvcCreate).toHaveBeenCalledTimes(1);
-  });
-
-  it('TZ-DOC-268: API failure during create resets isCreating and shows an error', () => {
-    const { closed } = fakeDialogRef<TemplateSetupResult>();
-    dialogSpy.open.mockReturnValue({ closed, close: jest.fn() });
-
-    const fixture = TestBed.createComponent(BuilderPage);
-    fixture.detectChanges();
-    const comp = fixture.componentInstance as unknown as {
-      onCreateTemplate: () => void;
-      isCreating: () => boolean;
-    };
-
-    comp.onCreateTemplate();
-    closed.set({ pageSize: 'A4', orientation: 'portrait' });
-    fixture.detectChanges();
-    TestBed.flushEffects();
-
-    const httpMock = TestBed.inject(HttpTestingController);
-    httpMock
-      .expectOne((req) => req.method === 'GET' && req.url.includes('/organizations'))
-      .flush(null, { status: 500, statusText: 'Server Error' });
-    // forkJoin errors on the first failure and cancels the sibling request —
-    // flushing a cancelled request throws, so assert the cancellation instead.
-    const docTypesReq = httpMock.expectOne(
-      (req) => req.method === 'GET' && req.url.includes('/doc-types'),
-    );
-    expect(docTypesReq.cancelled).toBe(true);
-
-    expect(comp.isCreating()).toBe(false);
-    expect(templatesSvcCreate).not.toHaveBeenCalled();
-    expect(toastError).toHaveBeenCalled();
   });
 
   // ═══ TZ-DOC-311: template property persistence regression tests ═══
@@ -274,45 +138,5 @@ describe('BuilderPage', () => {
     comp.onTemplateUpdate({ pageNumbering: true });
     expect(templatesSvcUpdate).toHaveBeenCalled();
     expect(templatesSvcFindById).toHaveBeenCalledWith('tpl-1');
-  });
-
-  // ═══ TZ-DOC-310: dialog.open passes parentDestroyRef + single-POST contract ═══
-
-  it('TZ-DOC-310: onCreateTemplate passes parentDestroyRef so overlay dies on navigation', () => {
-    const { closed } = fakeDialogRef<TemplateSetupResult>();
-    dialogSpy.open.mockReturnValue({ closed, close: jest.fn() });
-
-    const fixture = TestBed.createComponent(BuilderPage);
-    fixture.detectChanges();
-    const comp = fixture.componentInstance as unknown as { onCreateTemplate: () => void };
-
-    comp.onCreateTemplate();
-    expect(dialogSpy.open).toHaveBeenCalledWith(
-      TemplateSetupDialogComponent,
-      expect.objectContaining({
-        data: { mode: 'create' },
-        parentDestroyRef: expect.anything(),
-      }),
-    );
-  });
-
-  it('TZ-DOC-310: onDuplicateTemplate passes parentDestroyRef too', () => {
-    const { closed } = fakeDialogRef<TemplateSetupResult>();
-    dialogSpy.open.mockReturnValue({ closed, close: jest.fn() });
-
-    const fixture = TestBed.createComponent(BuilderPage);
-    fixture.detectChanges();
-    const comp = fixture.componentInstance as unknown as {
-      onDuplicateTemplate: (t: { _id: string }) => void;
-    };
-
-    comp.onDuplicateTemplate({ _id: 'tpl-1' });
-    expect(dialogSpy.open).toHaveBeenCalledWith(
-      TemplateSetupDialogComponent,
-      expect.objectContaining({
-        data: { mode: 'duplicate' },
-        parentDestroyRef: expect.anything(),
-      }),
-    );
   });
 });

@@ -102,7 +102,11 @@ const NAV_CATEGORIES: NavCategory[] = [
     label: 'Документы',
     icon: FileText,
     items: [
-      { path: '/doc-constructor/builder', label: 'Конструктор' },
+      // TZ-DOC-324 (IA: реестр ↔ редактор): «Конструктор» убран из nav —
+      // вход в редактор только через действие «Открыть» в реестре
+      // /doc-constructor/templates. Прямой пункт меню создавал иллюзию
+      // двух «кабинетов шаблонов». /doc-constructor/builder (без :id)
+      // редиректит на /templates (см. app.routes.ts).
       { path: '/doc-constructor/templates', label: 'Шаблоны' },
       { path: '/doc-constructor/texts', label: 'Текстовые блоки' },
       { path: '/doc-constructor/tables', label: 'Шаблоны таблиц' },

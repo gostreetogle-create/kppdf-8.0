@@ -1,60 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  Injector,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
-import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
-import {
-  Subject,
-  catchError,
-  debounceTime,
-  forkJoin,
-  groupBy,
-  map,
-  mergeMap,
-  of,
-  switchMap,
-  tap,
-  timer,
-} from 'rxjs';
-import {
-  LucideAngularModule,
-  FileText,
-  Plus,
-  RefreshCw,
-  Check,
-  AlertCircle,
-  Loader2,
-  Trash2,
-  Table as TableIcon,
-  Eye,
-  Pencil,
-  Image as ImageIcon,
-} from 'lucide-angular';
-import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
-import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
-import { API_BASE_URL } from '../../../core/api.tokens';
-import { extractErrorMessage, SilentResult } from '../../../core/silent-http';
-import { blockKey, type TemplateBlock } from '../../../shared/template-block/template-block.types';
-import { defaultBlockLayout } from '../../../shared/template-block/template-block-layout';
-import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
-import { PiPageHeaderComponent } from '../../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../../shared/page/pi-section.component';
-import { ButtonComponent } from '../../../shared/ui/button/button.component';
-import { PiToastService } from '../../../shared/ui/toast';
-import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
-import { AlertDialogComponent } from '../../../shared/ui/dialog/pi-alert-dialog.component';
-import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
-import {
-  TemplateSetupDialogComponent,
-  type TemplateSetupResult,
-} from './template-setup-dialog.component';
+/* _TZ_DOC_324_APPLIED_ */
 import type { AddBlockPayload } from './builder.types';
 import { BuilderCanvasComponent } from './builder-canvas.component';
 import { BuilderInspectorComponent } from './builder-inspector.component';
@@ -96,7 +40,6 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
   imports: [
     LucideAngularModule,
     PiPageHeaderComponent,
-    PiSectionComponent,
     ButtonComponent,
     BuilderCanvasComponent,
     BuilderInspectorComponent,
@@ -105,109 +48,12 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
     '(document:click)': 'onDocumentClick($event)',
   },
   template: `
-    @if (!templateId()) {
-      <app-pi-page-header
-        eyebrow="раздел · конструктор документов"
-        title="Конструктор документов"
-        [subtitle]="headerSubtitle()"
-      />
-
-      <app-pi-section
-        title="Выберите шаблон"
-        description="Список доступных шаблонов для редактирования"
-      >
-        <div slot="actions">
-          <app-pi-button
-            variant="default"
-            size="sm"
-            [disabled]="isCreating()"
-            (click)="onCreateTemplate()"
-            data-test="create-template-button-header"
-          >
-            <lucide-icon [img]="PlusIcon" [size]="14"></lucide-icon>
-            {{ isCreating() ? 'Создание…' : 'Новый шаблон' }}
-          </app-pi-button>
-        </div>
-        @if (templateListRes.isLoading()) {
-          <p class="empty-state">Загрузка шаблонов…</p>
-        } @else if (templateListRes.error()) {
-          <p class="empty-state empty-state--error">
-            Не удалось загрузить шаблоны: {{ templateListErrorMessage() }}
-          </p>
-        } @else if (templateListRes.value() && templateListRes.value()!.length > 0) {
-          <div class="hairline rounded-sm overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead class="hairline-b">
-                <tr>
-                  <th class="pi-cell eyebrow text-left">Название</th>
-                  <th class="pi-cell eyebrow text-right w-40">Действия</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (t of templateListRes.value()!; track t._id) {
-                  <tr
-                    class="pi-table-row pi-table-row-odd group cursor-pointer"
-                    (click)="onTemplatePick(t._id)"
-                  >
-                    <td class="pi-cell font-medium">{{ t.name }}</td>
-                    <td class="pi-cell text-right">
-                      <div
-                        class="flex items-center justify-end gap-2"
-                        (click)="$event.stopPropagation()"
-                      >
-                        <app-pi-button
-                          variant="outline"
-                          size="sm"
-                          (click)="onTemplatePick(t._id)"
-                          data-test="open-template"
-                        >
-                          Открыть
-                        </app-pi-button>
-                        <app-pi-button
-                          variant="outline"
-                          size="sm"
-                          (click)="onDuplicateTemplate(t)"
-                          data-test="duplicate-template"
-                        >
-                          Дублировать
-                        </app-pi-button>
-                        <app-pi-button
-                          variant="destructive"
-                          size="sm"
-                          (click)="onDeleteTemplate(t)"
-                          data-test="delete-template"
-                        >
-                          Удалить
-                        </app-pi-button>
-                      </div>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        } @else {
-          <div class="empty-state">
-            <div class="pi-dashed-panel max-w-sm mx-auto p-6 mb-4 flex flex-col items-center gap-3">
-              <span class="eyebrow text-sunrise-warm">Нет шаблонов</span>
-              <p class="text-sm text-muted-foreground">
-                Создайте первый шаблон документа для начала работы с конструктором.
-              </p>
-              <app-pi-button
-                variant="default"
-                size="sm"
-                [disabled]="isCreating()"
-                (click)="onCreateTemplate()"
-                data-test="create-template-button"
-              >
-                <lucide-icon [img]="PlusIcon" [size]="14"></lucide-icon>
-                {{ isCreating() ? 'Создание…' : '+ Создать шаблон' }}
-              </app-pi-button>
-            </div>
-          </div>
-        }
-      </app-pi-section>
-    } @else {
+    <!--
+      TZ-DOC-324 (IA): BuilderPage is now pure editor for /:id.
+      The empty-state template picker is gone — registry CRUD lives at
+      /doc-constructor/templates (TemplatesPage). /doc-constructor/builder
+      exact path redirects there (see app.routes.ts).
+    -->
       <!-- Builder toolbar — horizontal dropdowns for adding blocks -->
       <div class="builder-toolbar">
         <div class="builder-toolbar__title">
@@ -330,6 +176,10 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
 
       <!-- Main builder area: canvas + inspector -->
       <div class="builder-shell">
+        <app-builder-tool-pane
+          (addBlock)="onAddBlock($event)"
+          (categoryChanged)="onBuilderCategoryFilterChange($event)"
+        ></app-builder-tool-pane>
         <app-builder-canvas
           [blocks]="blocks()"
           [selectedId]="selectedId()"
@@ -647,7 +497,6 @@ export class BuilderPage {
 
   // Icons
   protected readonly FileTextIcon = FileText;
-  protected readonly PlusIcon = Plus;
   protected readonly RefreshIcon = RefreshCw;
   protected readonly CheckIcon = Check;
   protected readonly AlertIcon = AlertCircle;
@@ -665,7 +514,6 @@ export class BuilderPage {
   protected readonly selectedId = signal<string | null>(null);
   protected readonly selectedIds = signal<Set<string>>(new Set());
   protected readonly isLoading = signal<boolean>(false);
-  protected readonly isCreating = signal<boolean>(false);
   protected readonly saveStatus = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
   /** When true, inspector shows template properties instead of block properties */
   protected readonly templateSelected = signal<boolean>(false);
@@ -763,17 +611,6 @@ export class BuilderPage {
 
   protected readonly orientation = computed<'portrait' | 'landscape'>(() => {
     return this.template()?.orientation ?? 'portrait';
-  });
-
-  // httpResource for the template picker (only used when no :id).
-  protected readonly templateListRes = httpResource<DocumentTemplate[]>(
-    () => '/api/document-templates',
-    { defaultValue: [] },
-  );
-
-  protected readonly templateListErrorMessage = computed<string>(() => {
-    const err = this.templateListRes.error() as HttpErrorResponse | null;
-    return err ? extractErrorMessage(err) : '';
   });
 
   constructor() {
@@ -1164,41 +1001,6 @@ export class BuilderPage {
           this.blocks.update((arr) => arr.filter((b) => b.tempId !== newBlock.tempId));
         },
       });
-  }
-
-  protected onDuplicateTemplate(t: DocumentTemplate): void {
-    const ref = this.dialog.open<TemplateSetupResult>(TemplateSetupDialogComponent, {
-      data: { mode: 'duplicate' },
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (result) => {
-      if (!result) return;
-      this.http
-        .post<DocumentTemplate>(`${this.baseUrl}/document-templates/${t._id}/duplicate`, {})
-        .subscribe({
-          next: (copy) => {
-            // Apply chosen format/orientation to the duplicate
-            this.templatesSvc
-              .update(copy._id, {
-                pageSize: result.pageSize,
-                orientation: result.orientation,
-              })
-              .subscribe({
-                next: () => {
-                  this.toast.success('Копия шаблона создана');
-                  this.templateListRes.reload();
-                },
-                error: () => {
-                  this.toast.success('Копия шаблона создана');
-                  this.templateListRes.reload();
-                },
-              });
-          },
-          error: (err: HttpErrorResponse) => {
-            this.toast.error(extractErrorMessage(err));
-          },
-        });
-    });
   }
 
   /**
@@ -1631,66 +1433,6 @@ export class BuilderPage {
   // Misc handlers
   // ─────────────────────────────────────────────────────────────
   /** TZ-87 B.2: Fetch first org + docType, then create template and navigate. */
-  protected onCreateTemplate(): void {
-    const ref = this.dialog.open<TemplateSetupResult>(TemplateSetupDialogComponent, {
-      data: { mode: 'create' },
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (result) => {
-      if (!result) return;
-      this.isCreating.set(true);
-      const org$ = this.http.get<{ items: { _id: string }[] }>(
-        `${this.baseUrl}/organizations?limit=1`,
-      );
-      const dt$ = this.http.get<{ _id: string }[]>(`${this.baseUrl}/doc-types`);
-      forkJoin([org$, dt$])
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: ([orgRes, dtRes]) => {
-            const orgId = orgRes?.items?.[0]?._id;
-            const docTypeId = dtRes?.[0]?._id;
-            if (!orgId || !docTypeId) {
-              this.toast.error('Не найдены организация или тип документа. Сначала создайте их.');
-              this.isCreating.set(false);
-              return;
-            }
-            this.doCreateTemplate(orgId, docTypeId, result);
-          },
-          error: (err) => {
-            this.isCreating.set(false);
-            this.toast.error('Ошибка загрузки: ' + extractErrorMessage(err));
-          },
-        });
-    });
-  }
-
-  /** Actually create the template with resolved refs. */
-  private doCreateTemplate(orgId: string, docTypeId: string, settings: TemplateSetupResult): void {
-    this.templatesSvc
-      .create({
-        name: `Шаблон ${new Date().toLocaleDateString('ru-RU')}`,
-        organizationId: orgId,
-        docTypeId: docTypeId,
-        pageSize: settings.pageSize,
-        orientation: settings.orientation,
-        isActive: true,
-      })
-      .subscribe({
-        next: (res) => {
-          this.isCreating.set(false);
-          if (res.ok) {
-            this.toast.success('Шаблон создан');
-            this.router.navigate(['/doc-constructor/builder', res.data._id]);
-          } else {
-            this.toast.error(extractErrorMessage(res.error));
-          }
-        },
-        error: (err: HttpErrorResponse) => {
-          this.isCreating.set(false);
-          this.toast.error(extractErrorMessage(err));
-        },
-      });
-  }
 
   /** Handle snap settings changes from the inspector (persisted to localStorage). */
   protected onSnapSettingsChange(settings: {
@@ -1719,43 +1461,6 @@ export class BuilderPage {
    * Phase E.3: preserve ?source + ?sourceId query params when navigating
    * from the empty-state picker to a specific /builder/:id route.
    */
-  protected onTemplatePick(value: string | null): void {
-    if (!value) return;
-    const ctx = this.sourceContext();
-    if (ctx) {
-      this.router.navigate(['/doc-constructor/builder', value], {
-        queryParams: { source: ctx.source, sourceId: ctx.sourceId },
-      });
-    } else {
-      this.router.navigate(['/doc-constructor/builder', value]);
-    }
-  }
-
-  protected onDeleteTemplate(t: DocumentTemplate): void {
-    const ref = this.dialog.open(AlertDialogComponent, {
-      data: {
-        title: 'Удалить шаблон?',
-        description: `«${t.name}» и все его блоки будут удалены.`,
-        confirmLabel: 'Удалить',
-        variant: 'destructive',
-      },
-      width: 'sm',
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (ok) => {
-      if (!ok) return;
-      this.templatesSvc.remove(t._id).subscribe((res) => {
-        if (res.ok) {
-          this.toast.success('Шаблон удалён');
-          this.templateListRes.reload();
-        } else {
-          this.toast.error(
-            extractErrorMessage(res.error as import('@angular/common/http').HttpErrorResponse),
-          );
-        }
-      });
-    });
-  }
 
   /**
    * Auto-save result handler. Uses early-return on `!res.ok` so TypeScript
