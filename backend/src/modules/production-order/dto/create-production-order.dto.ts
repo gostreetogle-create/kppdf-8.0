@@ -3,8 +3,13 @@ import { IsObjectId } from '../../../common/decorators/is-object-id.decorator';
 import { ToObjectId } from '../../../common/decorators/to-object-id.decorator';
 
 export class CreateProductionOrderDto {
+  /**
+   * Keep the public HTTP contract as a string so `IsObjectId` validates the
+   * original 24-hex value. The production service converts it at its
+   * persistence boundary; transforming this field before validation made a
+   * valid productId fail with 400 (TZ-BACKEND-E2E-HARNESS).
+   */
   @IsObjectId()
-  @ToObjectId()
   productId!: string;
 
   @IsNumber()
