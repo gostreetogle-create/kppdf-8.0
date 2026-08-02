@@ -794,9 +794,11 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 - TZ-DOC-311 ✅ (legacy enum `category` сохраняется в схеме; миграция в successor).
 - TZ-MATERIALS-*, Admin/RBAC, sanitize-html, TZ-278, Z-backlog, TZ-BACKEND-E2E-HARNESS, документные таблицы (`document-table-type`) НЕ затрагиваются.
 
-**STATUS:** ⏳ READY — spec committed, execution pending.
+**STATUS:** ✅ DONE (315/316), ⏳ READY (317).
 
 ### Document Constructor — TZ-DOC-315..317 (2026-08-02) — Категории текстовых блоков
+
+**TZ-DOC-316 (UI dictionary + picker): ✅ DONE — 2026-08-02.** `PiTextBlockCategoriesService` (кэш активного каталога по TZ-DOC-309, БЕЗ shareReplay), dedicated page `/dictionaries/text-block-categories` (CRUD, system-lock, loading/error/empty, поиск), form-dialog (variant=content, 1000px, whitelist, double-submit guard), select «Категория» в редакторе блока (auto-select default, «Не выбрана» → null → categoryId не отправляется), колонка «Категория» + dropdown-фильтр на `/doc-constructor/texts`, route + nav item. Gates: frontend tsc PASS, backend tsc PASS, jest 5 suites/48 PASS, ng build PASS, git diff --check PASS, verify-status.sh PASS. Archive: `tasks/_archive/2026-08/TZ-DOC-316-text-block-category-reference-and-picker.done.md`. Lock: `.mimocode/locks/TZ-DOC-316-text-block-category-reference-and-picker.lock`. Successor: TZ-DOC-317 (builder picker dropdown «Категория»).
 
 **TZ-DOC-315 (backend domain contract): ⏳ DONE — 2026-08-02.** `backend/src/modules/text-block-category/` создан как зеркало TZ-DOC-307 (sparse-unique `{organizationId, slug}`, system «Общее», `assertAssignable`, `resolveDefault`). `TextBlock` расширен опциональным `categoryId?: Types.ObjectId` (legacy enum сохранён для backward-compat). `CreateTextBlockDto` принимает `categoryId` (whitelist). `text-block.service.ts` через inject `TextBlockCategoryService` теперь резолвит server-side default, когда клиент не прислал id. `TextBlockCategoriesSeed` в bootstrap регистрирует системную «Общее». `app.module.ts` импортирует модуль и регистрирует seed. Backend tsc exit 0; jest targeted на text-block-category 12/12 PASS; полный frontend/backend rebuild без регрессии по архитектуре. Archive: `tasks/_archive/2026-08/TZ-DOC-315.done.md`. Lock: `.mimocode/locks/TZ-DOC-315-text-block-category.lock`. Successor: TZ-DOC-316 (UI dictionary + picker в каталоге/редакторе).
 
@@ -814,6 +816,7 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 | TZ-PRODUCTS-302 | 2026-08-02 | Диалог товара — content-вариант 1000px, секции по категориям, categoryId select, RAL dropdown из справочника цветов, фото-загрузка | `tasks/_archive/2026-08/TZ-PRODUCTS-302-product-form-dialog-rework.done.md` |
 | TZ-PRODUCTS-303 | 2026-08-02 | Редактор модулей в диалоге товара — секция «Модули в составе»: карточки модулей (имя, артикул, N материалов), добавление через ProductModulePicker, удаление, атомарная M:N-синхронизация POST/DELETE /products/:id/modules (diff snapshot vs selection) | `tasks/_archive/2026-08/TZ-PRODUCTS-303-product-modules-cards-editor.done.md` |
 | TZ-DOC-311 | 2026-08-02 | Свойства шаблона — pageNumbering сохраняется; «Оглавление/Шапка/Подвал» убраны из UI (backward-compatible, без миграции) | `tasks/_archive/2026-08/TZ-DOC-311.done.md` |
+| TZ-DOC-316 | 2026-08-02 | Категории текстов — справочник `/dictionaries/text-block-categories` + form-dialog + select в редакторе блока + колонка/фильтр на `/doc-constructor/texts` (PiTextBlockCategoriesService с кэшем активного каталога) | `tasks/_archive/2026-08/TZ-DOC-316-text-block-category-reference-and-picker.done.md` |
 | TZ-DOC-309 | 2026-08-02 | Диалог создания шаблона — мгновенное открытие (кэш активных категорий в сервисе, инвалидация на CRUD) | `tasks/_archive/2026-08/TZ-DOC-309.done.md` |
 | TZ-DOC-310 | 2026-08-02 | Диалог создания — закрытие с первого клика; видимая валидация категории; parentDestroyRef в 4 open() | `tasks/_archive/2026-08/TZ-DOC-310-template-dialog-one-click-close.done.md` |
 | TZ-102 | 2026-07-19 | Backend route gaps (Currency module + Modules rename + Inventory summary) | `tasks/_archive/2026-07/TZ-102.md.done` |

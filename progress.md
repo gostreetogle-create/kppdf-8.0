@@ -5247,3 +5247,16 @@ PATCH `productModuleIds[]` невозможен (UpdateProductDto whitelist → 
 сохранён). Спека: 34/34 unit PASS (dialog), 42/42 products/module suites;
 tsc scope чист; ng build падает только на параллельно-сессионных файлах
 TZ-WORKERS-302 (не мой scope, disclosure в ARCHIVE).
+## 2026-08-02 — TZ-DOC-316 DONE (TextBlockCategory: справочник + picker)
+
+**Результат:** справочник «Категории текстов» `/dictionaries/text-block-categories` (TextBlockCategoriesPage: CRUD, system-lock, loading/error/empty, поиск name+slug) + form-dialog (variant=content 1000px, whitelist, double-submit guard) + select «Категория» в редакторе блока (auto-select default, «Не выбрана» → null → categoryId НЕ отправляется) + колонка «Категория» и dropdown-фильтр на `/doc-constructor/texts`. Сервис PiTextBlockCategoriesService зеркалит TZ-DOC-309 cache (Map + in-flight share + generation guard + инвалидация) БЕЗ shareReplay (replay скрывает cross-tab changes). Route + nav item «Категории текстов».
+
+**Затронуто:** 3 новых frontend-файла (+spec) — service, page, form-dialog; изменено: text-block-editor (select), texts.page (колонка+фильтр), pi-text-blocks.service (categoryId), app.routes, app-layout; создано 2 новых spec (editor, texts.page). Backend НЕ трогался (TZ-DOC-315 closed).
+
+**Проверки:** frontend tsc PASS; backend tsc sanity PASS; jest targeted 5 suites/48 PASS; ng build --configuration=development PASS; git diff --check clean; OrchestratorKit/verify-status.sh PASS.
+
+**Архив:** `tasks/_archive/2026-08/TZ-DOC-316-text-block-category-reference-and-picker.done.md`; lock `.mimocode/locks/TZ-DOC-316-text-block-category-reference-and-picker.lock`; checklist `docs/agent-checklists/TZ-DOC-316.md`.
+
+**Commit:** conventional commit `feat(text-block): categories reference and picker (TZ-DOC-316)` (NO push).
+
+**Ограничения:** Browser E2E MANUAL_BROWSER_CHECK_REQUIRED (dev-stack credentials недоступны); TZ-DOC-317 (builder picker dropdown) — successor, не запускался (явное «не параллельно»); TZ-DOC-318 (миграция legacy enum) — successor.

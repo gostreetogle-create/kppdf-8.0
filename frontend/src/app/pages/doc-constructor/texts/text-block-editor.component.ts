@@ -21,6 +21,7 @@ import {
   signal,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import {
@@ -35,6 +36,10 @@ import {
   type TextBlock,
   type TextBlockColumn,
 } from '../../../shared/services/pi-text-blocks.service';
+import {
+  TextBlockCategoriesService,
+  type TextBlockCategory,
+} from '../../../shared/services/pi-text-block-categories.service';
 import type { DataSourcesResponse } from '../../../shared/services/pi-registry.service';
 import { extractErrorMessage } from '../../../core/silent-http';
 import {
@@ -57,6 +62,29 @@ import {
       </header>
 
       <div class="tbe-meta">
+        <div class="tbe-meta-category">
+          <label class="eyebrow text-muted-foreground" for="tbe-category">Категория</label>
+          <select
+            id="tbe-category"
+            class="tbe-category-select"
+            [value]="selectedCategoryId() ?? ''"
+            (change)="onCategoryChange($event)"
+            [disabled]="categoryLoading()"
+            aria-label="Категория текстового блока"
+            data-test="tbe-category-select"
+          >
+            <option value="">
+              {{ categoryLoading() ? 'Загрузка…' : 'Не выбрана (будет назначена автоматически)' }}
+            </option>
+            @for (cat of categories(); track cat._id) {
+              <option [value]="cat._id">{{ cat.name }}</option>
+            }
+          </select>
+          @if (!categoryLoading() && categories().length === 0) {
+            <span class="tbe-category-empty">Категорий нет — создайте в справочнике</span>
+          }
+        </div>
+
         <div class="tbe-meta-name">
           <label class="eyebrow text-muted-foreground" for="tbe-name">Название блока</label>
           <input
@@ -230,6 +258,12 @@ import {
     .tbe-input:focus { outline: none; border-color: var(--color-ink); outline: 1px solid var(--color-sunrise-warm); outline-offset: -1px; }
     .tbe-error { font-size: 12px; color: var(--color-destructive); }
 
+    .tbe-meta-category { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; min-width: 220px; }
+    .tbe-category-select { padding: 12px 16px; font-size: 14px; font-family: inherit; color: var(--color-ink); background: var(--color-paper); border: 1px solid var(--color-rule); border-radius: 0; cursor: pointer; }
+    .tbe-category-select:focus { outline: none; border-color: var(--color-ink); outline: 1px solid var(--color-sunrise-warm); outline-offset: -1px; }
+    .tbe-category-select:disabled { opacity: 0.6; cursor: default; }
+    .tbe-category-empty { font-size: 12px; color: var(--color-muted-foreground-strong); }
+
     .tbe-meta-cols { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
     .tbe-col-seg { display: flex; border: 1px solid var(--color-ink); }
     .tbe-col-seg-btn { min-width: 40px; padding: 12px 14px; font-family: ui-monospace, monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; background: var(--color-paper); color: var(--color-ink); border: none; border-left: 1px solid var(--color-rule); cursor: pointer; }
@@ -296,6 +330,7 @@ export class TextBlockEditorComponent {
 
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly service = inject(TextBlocksService);
+  private readonly categoryService = inject(TextBlockCategoriesService);
   private readonly toast = inject(PiToastService);
   private readonly dialog = inject(PiDialogService);
   private readonly destroyRef = inject(DestroyRef);
@@ -306,6 +341,9 @@ export class TextBlockEditorComponent {
 
   protected readonly columnsCount = signal<number>(1);
   protected readonly columns = signal<TextBlockColumn[]>([]);
+  protected readonly categories = signal<TextBlockCategory[]>([]);
+  protected readonly categoryLoading = signal(true);
+  protected readonly selectedCategoryId = signal<string | null>(null);
   protected readonly activeColIndex = signal<number>(0);
   protected readonly saving = signal<boolean>(false);
   protected readonly errorMessage = signal<string | null>(null);
@@ -343,8 +381,31 @@ export class TextBlockEditorComponent {
   protected readonly columnOptions = computed(() => Array.from({ length: 8 }, (_, i) => i + 1));
 
   constructor() {
+    // TZ-DOC-316 — load the ACTIVE catalog for the category picker once per
+    // editor instance. For a NEW block auto-select the server-side default
+    // (active isDefault category) so the user sees the same behaviour the
+    // backend would apply; existing blocks keep their own categoryId.
+    this.categoryService
+      .list({ activeOnly: true })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        this.categoryLoading.set(false);
+        if (!res.ok) return;
+        const cats = res.data ?? [];
+        this.categories.set(cats);
+        const existingId = this.block()?.categoryId;
+        if (existingId) {
+          this.selectedCategoryId.set(existingId);
+        } else if (!this.selectedCategoryId()) {
+          const def = cats.find((c) => c.isDefault && c.isActive);
+          if (def) this.selectedCategoryId.set(def._id);
+        }
+      });
     // Init handled by initEffect (signal inputs set AFTER constructor)
   }
+
+  /** Block whose inputs were already applied — prevents effect feedback loops. */
+  private initializedBlockId: string | null = null;
 
   private readonly initEffect = effect(() => {
     const existing = this.block();
@@ -354,8 +415,16 @@ export class TextBlockEditorComponent {
       }
       return;
     }
+    // Apply block inputs exactly ONCE per block id. The effect must NOT read
+    // selectedCategoryId (that would re-trigger it on every user change and
+    // clobber the user's «Не выбрана» / re-selection with the block value).
+    if (existing._id === this.initializedBlockId) return;
+    this.initializedBlockId = existing._id;
     this.nameControl.setValue(existing.name);
     this.activeControl.setValue(existing.isActive);
+    if (existing.categoryId) {
+      this.selectedCategoryId.set(existing.categoryId);
+    }
     if (existing.columns && existing.columns.length > 0) {
       this.columns.set(
         existing.columns.map((c) => ({
@@ -498,6 +567,13 @@ export class TextBlockEditorComponent {
     });
   }
 
+  protected onCategoryChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    // «Не выбрана» (empty) → null → categoryId NOT sent; the backend
+    // resolveDefault assigns the org/system default on create.
+    this.selectedCategoryId.set(value ? value : null);
+  }
+
   protected onCancel(): void { this.cancel.emit(); }
 
   protected onSave(): void {
@@ -511,6 +587,10 @@ export class TextBlockEditorComponent {
       columns: cols,
       content: cols.length === 1 ? cols[0].content : '',
     };
+    // TZ-DOC-316 — include categoryId ONLY when the user explicitly selected
+    // one; undefined is omitted so the server applies its default (AC #10).
+    const categoryId = this.selectedCategoryId();
+    if (categoryId) payload.categoryId = categoryId;
     const obs = this.block()
       ? this.service.update(this.block()!._id, payload)
       : this.service.create(payload);

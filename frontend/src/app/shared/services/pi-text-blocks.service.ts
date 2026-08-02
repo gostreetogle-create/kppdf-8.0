@@ -31,6 +31,12 @@ export interface TextBlock {
   slug: string;
   category: TextBlockCategory;
   tags: string[];
+  /**
+   * TZ-DOC-315 — FK → TextBlockCategory. Populated server-side on create
+   * (resolveDefault) unless an explicit id is sent. Legacy blocks keep
+   * `category` (enum) for backward compatibility.
+   */
+  categoryId?: string;
   /** Simple content (HTML) — used for single-column blocks. */
   content?: string;
   /** Multi-column layout — when set, render columns instead of content. */

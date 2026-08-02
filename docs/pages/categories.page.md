@@ -59,6 +59,7 @@
 |----|------------|
 | TZ-114 | Categories page — drag-reorder UI + optimistic update |
 | TZ-DOC-308 | Новый справочник «Категории шаблонов» (`/doc-template-categories`, `DocumentTemplateCategoriesPage`) — плоский CRUD категорий шаблонов документов, ОТДЕЛЬНО от этого дерева; материалы/продукция не затронуты |
+| TZ-DOC-316 | Ещё один плоский справочник «Категории текстов» (`/dictionaries/text-block-categories`, `TextBlockCategoriesPage`) — категории текстовых блоков, питает select в редакторе блока и фильтр `/doc-constructor/texts`; от этого дерева и от TZ-DOC-308 не зависит |
 
 ---
 
