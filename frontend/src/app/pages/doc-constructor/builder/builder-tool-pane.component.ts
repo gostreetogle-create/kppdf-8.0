@@ -1,11 +1,13 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   computed,
   inject,
   output,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse, httpResource } from '@angular/common/http';
 import { CdkDrag, CdkDropList } from '@angular/cdk/drag-drop';
 import {
@@ -17,7 +19,12 @@ import {
   Minus,
 } from 'lucide-angular';
 import { TextBlocksService } from '../../../shared/services/pi-text-blocks.service';
+import {
+  TextBlockCategoriesService,
+  type TextBlockCategory,
+} from '../../../shared/services/pi-text-block-categories.service';
 import { TableTemplatesService } from '../../../shared/services/pi-table-templates.service';
+import { BuilderTextFilterService } from './builder-text-filter.service';
 import { extractErrorMessage } from '../../../core/silent-http';
 import {
   BLOCK_TYPE_LABELS,
@@ -72,6 +79,23 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
           <span class="tool-pane__section-title">Тексты</span>
         </button>
         @if (isOpen('texts')) {
+          <div class="tool-pane__filter">
+            <label class="tool-pane__filter-label" for="tb-category-filter">Категория</label>
+            <select
+              id="tb-category-filter"
+              class="tool-pane__filter-select"
+              [value]="selectedCategoryId() ?? ''"
+              (change)="onCategoryChange($event)"
+              [disabled]="categoryLoading()"
+              aria-label="Фильтр текстов по категории"
+              data-test="tool-pane-category-filter"
+            >
+              <option value="">Все</option>
+              @for (cat of categories(); track cat._id) {
+                <option [value]="cat._id">{{ cat.name }}</option>
+              }
+            </select>
+          </div>
           @if (textsRes.isLoading()) {
             <p class="tool-pane__loading">Загрузка…</p>
           } @else if (textsRes.error()) {
@@ -108,7 +132,9 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
               }
             </ul>
           } @else {
-            <p class="tool-pane__empty">Нет сохранённых текстов</p>
+            <p class="tool-pane__empty">
+              {{ selectedCategoryId() ? 'Нет блоков в этой категории' : 'Нет сохранённых текстов' }}
+            </p>
           }
         }
       </section>
@@ -259,6 +285,44 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         flex: 1;
       }
 
+      .tool-pane__filter {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 16px 8px;
+      }
+
+      .tool-pane__filter-label {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--color-muted);
+      }
+
+      .tool-pane__filter-select {
+        flex: 1;
+        min-width: 0;
+        padding: 4px 8px;
+        font-size: 12px;
+        font-family: inherit;
+        color: var(--color-ink);
+        background: var(--color-paper);
+        border: 1px solid var(--color-rule);
+        cursor: pointer;
+      }
+
+      .tool-pane__filter-select:focus {
+        outline: none;
+        outline: 1px solid var(--color-sunrise-warm);
+        outline-offset: -1px;
+      }
+
+      .tool-pane__filter-select:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+
       .tool-pane__list {
         list-style: none;
         margin: 0;
@@ -372,8 +436,11 @@ export class BuilderToolPaneComponent {
   readonly addBlock = output<AddBlockPayload>();
 
   // DI
+  private readonly destroyRef = inject(DestroyRef);
   private readonly textBlocks = inject(TextBlocksService);
   private readonly tableTemplates = inject(TableTemplatesService);
+  private readonly textBlockCategories = inject(TextBlockCategoriesService);
+  private readonly textFilter = inject(BuilderTextFilterService);
 
   // Icons
   protected readonly DatabaseIcon = Database;
@@ -405,10 +472,37 @@ export class BuilderToolPaneComponent {
     hint: BLOCK_TYPE_HINTS[t],
   }));
 
-  // httpResource for live data
-  protected readonly textsRes = httpResource<TextBlock[]>(() => '/api/text-blocks?isActive=true', {
-    defaultValue: [],
-  });
+  // TZ-DOC-317 — active categories for the filter dropdown (TZ-DOC-309 cache).
+  protected readonly categories = signal<TextBlockCategory[]>([]);
+  protected readonly categoryLoading = signal(true);
+  protected readonly selectedCategoryId = computed(() => this.textFilter.categoryId());
+
+  constructor() {
+    // TZ-DOC-309 pattern: reuse the cached active catalog from the service
+    // (never a raw duplicate GET on every builder open).
+    this.textBlockCategories
+      .list({ activeOnly: true })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        this.categoryLoading.set(false);
+        if (res.ok) this.categories.set(res.data ?? []);
+      });
+  }
+
+  protected onCategoryChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    // «Все» (empty) → null → no categoryId param on the request.
+    this.textFilter.categoryId.set(value ? value : null);
+  }
+
+  // httpResource for live data. The «Тексты» URL is rebuilt whenever the
+  // shared filter categoryId changes → server-side Mongo filter (TZ-DOC-315).
+  protected readonly textsRes = httpResource<TextBlock[]>(() => {
+    const cat = this.textFilter.categoryId();
+    return cat
+      ? `/api/text-blocks?isActive=true&categoryId=${encodeURIComponent(cat)}`
+      : '/api/text-blocks?isActive=true';
+  }, { defaultValue: [] });
   protected readonly tablesRes = httpResource<TableTemplate[]>(
     () => '/api/table-templates?isActive=true',
     { defaultValue: [] },

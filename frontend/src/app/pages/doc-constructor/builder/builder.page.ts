@@ -1,4 +1,60 @@
-/* _TZ_DOC_324_APPLIED_ */
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  Injector,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
+import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
+import {
+  Subject,
+  catchError,
+  debounceTime,
+  forkJoin,
+  groupBy,
+  map,
+  mergeMap,
+  of,
+  switchMap,
+  tap,
+  timer,
+} from 'rxjs';
+import {
+  LucideAngularModule,
+  FileText,
+  RefreshCw,
+  Check,
+  AlertCircle,
+  Loader2,
+  Trash2,
+  Table as TableIcon,
+  Eye,
+  Pencil,
+  Image as ImageIcon,
+} from 'lucide-angular';
+import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
+import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
+import {
+  TextBlockCategoriesService,
+  type TextBlockCategory,
+} from '../../../shared/services/pi-text-block-categories.service';
+import { BuilderTextFilterService } from './builder-text-filter.service';
+import { API_BASE_URL } from '../../../core/api.tokens';
+import { extractErrorMessage, SilentResult } from '../../../core/silent-http';
+import { blockKey, type TemplateBlock } from '../../../shared/template-block/template-block.types';
+import { defaultBlockLayout } from '../../../shared/template-block/template-block-layout';
+import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
+import { PiPageHeaderComponent } from '../../../shared/page/pi-page-header.component';
+import { ButtonComponent } from '../../../shared/ui/button/button.component';
+import { PiToastService } from '../../../shared/ui/toast';
+import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
+import { AlertDialogComponent } from '../../../shared/ui/dialog/pi-alert-dialog.component';
+import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
 import type { AddBlockPayload } from './builder.types';
 import { BuilderCanvasComponent } from './builder-canvas.component';
 import { BuilderInspectorComponent } from './builder-inspector.component';
@@ -95,6 +151,23 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
             </button>
             @if (openDropdown() === 'texts') {
               <div class="builder-dropdown__panel">
+                <label class="builder-dropdown__filter-label" for="bd-text-category-filter"
+                  >Категория</label
+                >
+                <select
+                  id="bd-text-category-filter"
+                  class="builder-dropdown__filter-select"
+                  [value]="selectedCategoryId() ?? ''"
+                  (change)="onCategoryChange($event)"
+                  [disabled]="categoryLoading()"
+                  aria-label="Фильтр текстов по категории"
+                  data-test="builder-text-category-filter"
+                >
+                  <option value="">Все</option>
+                  @for (cat of categories(); track cat._id) {
+                    <option [value]="cat._id">{{ cat.name }}</option>
+                  }
+                </select>
                 @if (textsRes.isLoading()) {
                   <p class="builder-dropdown__loading">Загрузка…</p>
                 } @else if (textsRes.error()) {
@@ -113,7 +186,9 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
                     </button>
                   }
                 } @else {
-                  <p class="builder-dropdown__empty">Нет текстов</p>
+                  <p class="builder-dropdown__empty">
+                    {{ selectedCategoryId() ? 'Нет текстов в этой категории' : 'Нет текстов' }}
+                  </p>
                 }
               </div>
             }
@@ -377,6 +452,34 @@ import { BuilderInspectorComponent } from './builder-inspector.component';
         border-color: var(--color-ink);
       }
 
+      .builder-dropdown__filter-label {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--color-muted);
+        margin: 0 0 4px;
+        display: block;
+      }
+
+      .builder-dropdown__filter-select {
+        width: 100%;
+        padding: 6px 8px;
+        font-size: 12px;
+        font-family: inherit;
+        color: var(--color-ink);
+        background: var(--color-paper);
+        border: 1px solid var(--color-rule);
+        margin-bottom: 4px;
+        cursor: pointer;
+      }
+
+      .builder-dropdown__filter-select:focus {
+        outline: none;
+        outline: 1px solid var(--color-sunrise-warm);
+        outline-offset: -1px;
+      }
+
       .builder-dropdown__panel {
         position: absolute;
         top: 100%;
@@ -544,10 +647,29 @@ export class BuilderPage {
   // Dropdown state for inline toolbar
   protected readonly openDropdown = signal<string | null>(null);
 
-  // httpResources for inline toolbar dropdowns
+  // TZ-DOC-317 — shared category filter for the «Тексты» surfaces (pane + dropdown).
+  protected readonly textFilter = inject(BuilderTextFilterService);
+  private readonly textBlockCategories = inject(TextBlockCategoriesService);
+  protected readonly categories = signal<TextBlockCategory[]>([]);
+  protected readonly categoryLoading = signal(true);
+  protected readonly selectedCategoryId = computed(() => this.textFilter.categoryId());
+
+  protected onCategoryChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    // «Все» (empty) → null → no categoryId param on the request.
+    this.textFilter.categoryId.set(value ? value : null);
+  }
+
+  // httpResources for inline toolbar dropdowns. The «Тексты» URL is rebuilt
+  // whenever the shared filter categoryId changes (server-side filter).
   protected readonly textsRes = httpResource<
     Array<{ _id: string; name: string; category?: string; content?: string; columns?: unknown[] }>
-  >(() => '/api/text-blocks?isActive=true', { defaultValue: [] });
+  >(() => {
+    const cat = this.textFilter.categoryId();
+    return cat
+      ? `/api/text-blocks?isActive=true&categoryId=${encodeURIComponent(cat)}`
+      : '/api/text-blocks?isActive=true';
+  }, { defaultValue: [] });
   protected readonly tablesRes = httpResource<
     Array<{
       _id: string;
@@ -614,6 +736,16 @@ export class BuilderPage {
   });
 
   constructor() {
+    // TZ-DOC-317 — active catalog for the «Тексты» filter dropdowns
+    // (TZ-DOC-309 cache reuse, never a raw duplicate GET).
+    this.textBlockCategories
+      .list({ activeOnly: true })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        this.categoryLoading.set(false);
+        if (res.ok) this.categories.set(res.data ?? []);
+      });
+
     // 1) Initialize save$ pipeline (groupBy _id → debounce 1500 → switchMap).
     //    D.2.3: `tap` before switchMap to set 'saving'; success path sets
     //    'saved' (auto-revert to 'idle' after 2s via timer), failure sets 'error'.
@@ -635,6 +767,10 @@ export class BuilderPage {
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const id = params.get('id');
       this.templateId.set(id);
+      // TZ-DOC-317 step f: switching templates resets the «Тексты» category
+      // filter back to «Все». A category selected for template A is a UX
+      // dead-end on template B (B may have no blocks in that category).
+      this.textFilter.reset();
       this.blocks.set([]);
       this.template.set(null);
       this.selectedId.set(null);
@@ -642,10 +778,19 @@ export class BuilderPage {
       if (id) this.loadBlocks(id);
     });
 
-    // Phase E.3: read ?source + ?sourceId query params (preserved across
-    // template-pick navigation). Logged for future use; binding logic is
-    // out of scope until the doc-template service supports pre-binding.
+    // TZ-DOC-317 step e: two-way bind `?category=<id>` query param ↔
+    // shared filter signal. Read on URL change (refresh preserves the
+    // selection); write happens in the effect() below so this subscribe
+    // is the read-side only. Setting the signal to the same value is a
+    // no-op (Angular signal equality for primitives), so the round-trip
+    // is loop-free in steady state.
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((qp) => {
+      const category = qp.get('category');
+      this.textFilter.categoryId.set(category ?? null);
+
+      // Phase E.3: read ?source + ?sourceId query params (preserved across
+      // template-pick navigation). Logged for future use; binding logic is
+      // out of scope until the doc-template service supports pre-binding.
       const source = qp.get('source');
       const sourceId = qp.get('sourceId');
       if (source && sourceId) {
@@ -653,6 +798,28 @@ export class BuilderPage {
       } else {
         this.sourceContext.set(null);
       }
+    });
+
+    // TZ-DOC-317 step e (write side): whenever the shared filter signal
+    // changes, write ?category=<id> to the URL. `replaceUrl: true` keeps
+    // the back button clean (router state is for navigation, not filter
+    // ticks). `category: null` removes the param (Angular treats null
+    // in queryParams as a removal under merge).
+    //
+    // Loop guard: skip the write when the URL already carries the same
+    // value (covers the initial effect emission on creation, where the
+    // read-side subscription has already synced categoryId ← URL).
+    effect(() => {
+      const c = this.textFilter.categoryId();
+      const current = this.route.snapshot.queryParamMap.get('category');
+      const desired = c ?? null;
+      if ((current ?? null) === desired) return;
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { category: desired },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
     });
   }
 

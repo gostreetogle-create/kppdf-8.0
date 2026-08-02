@@ -55,6 +55,11 @@ export interface TextBlockListResponse {
 export interface TextBlockListParams {
   /** Optional filter: only return blocks from this category (used by canvas tab). */
   category?: TextBlockCategory;
+  /**
+   * TZ-DOC-315/317 — FK filter by TextBlockCategory id (server-side Mongo
+   * filter). The builder text picker sends this when a category is chosen.
+   */
+  categoryId?: string;
   /** If true, server-side: only return isActive=true. */
   activeOnly?: boolean;
   /** Free-text search across name + slug + content (backend route param if implemented). */
@@ -82,6 +87,7 @@ export class TextBlocksService {
   list(params: TextBlockListParams = {}): Observable<SilentResult<TextBlockListResponse>> {
     let httpParams = new HttpParams();
     if (params.category) httpParams = httpParams.set('category', params.category);
+    if (params.categoryId) httpParams = httpParams.set('categoryId', params.categoryId);
     if (params.activeOnly) httpParams = httpParams.set('activeOnly', 'true');
     if (params.search) httpParams = httpParams.set('search', params.search);
     return silentGet<TextBlock[]>(this.http, `${this.baseUrl}/text-blocks`, {

@@ -20,6 +20,7 @@
 |----------|-----|-----------|
 | `source` | `string` | Источник контекста (order/contract) |
 | `sourceId` | `string` | ID источника |
+| `category` | `string` (ObjectId) | Фильтр «Текстов» по `TextBlockCategory._id` в tool-pane picker и в inline toolbar dropdown (TZ-DOC-317). `null`/отсутствие = «Все». Двусторонняя синхронизация с `BuilderTextFilterService.categoryId` через `effect()` + `Router.navigate({ queryParamsHandling: 'merge', replaceUrl: true })` — refresh страницы сохраняет выбор. При смене `:id` шаблона фильтр сбрасывается на «Все». |
 
 ## Layout
 
@@ -336,6 +337,17 @@ patchBlockSettings(blockId, { settings })
 | «Фото» | File input → `onPhotoFileSelected()` → создаёт image-блок с `overlay: true` |
 | «— Отступ» | Добавляет spacer-блок |
 | Editor/Preview | Переключение режима просмотра |
+
+### Тексты: фильтр по категории (TZ-DOC-317)
+
+И в тулбаре (inline dropdown), и в левой палитре `BuilderToolPaneComponent` секция «Тексты» теперь содержит dropdown «Категория» над списком блоков:
+
+- Опции — активные категории из `TextBlockCategoriesService.list({ activeOnly: true })` (TZ-DOC-309-кэш активного каталога, повторных GET при переоткрытии builder нет).
+- «Все» (default) → запрос `/api/text-blocks?isActive=true` без `categoryId`.
+- Конкретная категория → `/api/text-blocks?isActive=true&categoryId=<id>` — серверный Mongo-фильтр (backend TZ-DOC-315), без fallback на полный список после фильтрации.
+- Состояние фильтра живёт в `BuilderTextFilterService` (shared signal `categoryId`), чтобы tool-pane и inline dropdown были синхронизированы (один источник правды, без event-plumbing).
+- Пустой результат в выбранной категории → empty state «Нет блоков в этой категории».
+- Ошибка `/text-block-categories` (4xx/5xx) не ломает picker: dropdown показывает «Все».
 
 Dropdown закрывается при клике вне `.builder-dropdown` (через `@HostListener('document:click')`)
 
