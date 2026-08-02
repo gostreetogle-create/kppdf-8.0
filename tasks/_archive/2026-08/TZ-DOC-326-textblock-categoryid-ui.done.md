@@ -8,8 +8,8 @@ Single-pass residual sweep removing every legacy text-block `category` enum path
 
 ## Commits
 
-- commit: `<feat-sha>` — feat(texts): remove legacy text-block category enum — categoryId only (TZ-DOC-326)
-- closeout_commit: `<closeout-sha>` — docs(closeout): TZ-DOC-326 archive + verification log + executor-report + status sync
+- commit: 26a314a46c9509a9119d567302df512c3dd24918 — feat(texts): remove legacy text-block category enum — categoryId only (TZ-DOC-326)
+- closeout_commit: e0dbf84fe1fe43af01af1afb762df96dcfa011df — docs(closeout): TZ-DOC-326 archive + verification log + executor-report + status sync
 
 ## What was done (spec ШАГ 1–4)
 

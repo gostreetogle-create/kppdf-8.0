@@ -27,7 +27,7 @@ Frontend-only residual sweep: remove the legacy text-block `category` enum ('leg
 ## Executor report (auto) — TZ-DOC-326
 
 status: DONE
-commits: <feat-sha> + <closeout-sha>
+commits: 26a314a46c9509a9119d567302df512c3dd24918 + e0dbf84fe1fe43af01af1afb762df96dcfa011df
 gates: tsc-fe=PASS; tsc-be=PASS; jest targeted=5/40 PASS; jest full=898 PASS (2 pre-existing flakes disclosed); ng-build=exit 0 (0 warnings); git-diff-check=clean; verify-status=PASS
 known: residual grep 0 hits; legacy strings only in backend TZ-DOC-323 docs; Browser E2E=MANUAL_REQUIRED
 ask: —
