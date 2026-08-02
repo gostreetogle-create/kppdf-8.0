@@ -115,8 +115,8 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
                 >
                   <div class="tool-pane__item-text">
                     <span class="tool-pane__item-label">{{ t.name }}</span>
-                    @if (t.category) {
-                      <span class="tool-pane__item-hint">{{ t.category }}</span>
+                    @if (categoryName(t.categoryId); as name) {
+                      <span class="tool-pane__item-hint">{{ name }}</span>
                     }
                   </div>
                   <button
@@ -477,6 +477,13 @@ export class BuilderToolPaneComponent {
   protected readonly categoryLoading = signal(true);
   protected readonly selectedCategoryId = computed(() => this.textFilter.categoryId());
 
+  // TZ-DOC-326 — item hint resolves the categoryId FK → friendly name via
+  // the loaded catalog (the legacy `category` enum was removed in 323).
+  protected categoryName(id: string | undefined): string | undefined {
+    if (!id) return undefined;
+    return this.categories().find((c) => c._id === id)?.name;
+  }
+
   constructor() {
     // TZ-DOC-309 pattern: reuse the cached active catalog from the service
     // (never a raw duplicate GET on every builder open).
@@ -497,12 +504,15 @@ export class BuilderToolPaneComponent {
 
   // httpResource for live data. The «Тексты» URL is rebuilt whenever the
   // shared filter categoryId changes → server-side Mongo filter (TZ-DOC-315).
-  protected readonly textsRes = httpResource<TextBlock[]>(() => {
-    const cat = this.textFilter.categoryId();
-    return cat
-      ? `/api/text-blocks?isActive=true&categoryId=${encodeURIComponent(cat)}`
-      : '/api/text-blocks?isActive=true';
-  }, { defaultValue: [] });
+  protected readonly textsRes = httpResource<TextBlock[]>(
+    () => {
+      const cat = this.textFilter.categoryId();
+      return cat
+        ? `/api/text-blocks?isActive=true&categoryId=${encodeURIComponent(cat)}`
+        : '/api/text-blocks?isActive=true';
+    },
+    { defaultValue: [] },
+  );
   protected readonly tablesRes = httpResource<TableTemplate[]>(
     () => '/api/table-templates?isActive=true',
     { defaultValue: [] },

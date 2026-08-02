@@ -14,10 +14,8 @@ import {
  * TZ-86 Phase C — TextBlock (extended for visual constructor).
  *
  * Supports both simple HTML content and multi-column layouts.
- * `slug`, `category`, `tags`, `sortOrder` are optional (UI no longer exposes them).
+ * `slug`, `tags`, `sortOrder` are optional (UI no longer exposes them).
  */
-export type TextBlockCategory = 'legal' | 'intro' | 'outro' | 'custom';
-
 export interface TextBlockColumn {
   id: string;
   content: string;
@@ -29,12 +27,11 @@ export interface TextBlock {
   _id: string;
   name: string;
   slug: string;
-  category: TextBlockCategory;
   tags: string[];
   /**
-   * TZ-DOC-315 — FK → TextBlockCategory. Populated server-side on create
-   * (resolveDefault) unless an explicit id is sent. Legacy blocks keep
-   * `category` (enum) for backward compatibility.
+   * TZ-DOC-315/323 — FK → TextBlockCategory. Populated server-side on create
+   * (resolveDefault) unless an explicit id is sent. The legacy `category`
+   * enum was removed in TZ-DOC-323.
    */
   categoryId?: string;
   /** Simple content (HTML) — used for single-column blocks. */
@@ -53,8 +50,6 @@ export interface TextBlockListResponse {
 }
 
 export interface TextBlockListParams {
-  /** Optional filter: only return blocks from this category (used by canvas tab). */
-  category?: TextBlockCategory;
   /**
    * TZ-DOC-315/317 — FK filter by TextBlockCategory id (server-side Mongo
    * filter). The builder text picker sends this when a category is chosen.
@@ -86,7 +81,6 @@ export class TextBlocksService {
 
   list(params: TextBlockListParams = {}): Observable<SilentResult<TextBlockListResponse>> {
     let httpParams = new HttpParams();
-    if (params.category) httpParams = httpParams.set('category', params.category);
     if (params.categoryId) httpParams = httpParams.set('categoryId', params.categoryId);
     if (params.activeOnly) httpParams = httpParams.set('activeOnly', 'true');
     if (params.search) httpParams = httpParams.set('search', params.search);

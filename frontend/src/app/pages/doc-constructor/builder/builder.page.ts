@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
+import { HttpErrorResponse, httpResource } from '@angular/common/http';
 import {
   Subject,
   catchError,
@@ -49,8 +49,6 @@ import { extractErrorMessage, SilentResult } from '../../../core/silent-http';
 import { blockKey, type TemplateBlock } from '../../../shared/template-block/template-block.types';
 import { defaultBlockLayout } from '../../../shared/template-block/template-block-layout';
 import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
-import { PiPageHeaderComponent } from '../../../shared/page/pi-page-header.component';
-import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { PiToastService } from '../../../shared/ui/toast';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../../shared/ui/dialog/pi-alert-dialog.component';
@@ -96,8 +94,6 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     LucideAngularModule,
-    PiPageHeaderComponent,
-    ButtonComponent,
     BuilderCanvasComponent,
     BuilderInspectorComponent,
     BuilderToolPaneComponent,
@@ -190,8 +186,8 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
                     (click)="onAddTextBlock(t); closeDropdown()"
                   >
                     <span class="builder-dropdown__item-label">{{ t.name }}</span>
-                    @if (t.category) {
-                      <span class="builder-dropdown__item-hint">{{ t.category }}</span>
+                    @if (categoryName(t.categoryId); as name) {
+                      <span class="builder-dropdown__item-hint">{{ name }}</span>
                     }
                   </button>
                 }
@@ -619,7 +615,6 @@ export class BuilderPage {
   // DI
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly blocksSvc = inject(TemplateBlocksService);
   private readonly templatesSvc = inject(DocumentTemplatesService);
@@ -698,6 +693,13 @@ export class BuilderPage {
     return this.categories().find((c) => c._id === id)?.name ?? 'Все';
   });
 
+  // TZ-DOC-326 — dropdown item hint resolves the categoryId FK → friendly
+  // name via the loaded catalog (the legacy `category` enum was removed in 323).
+  protected categoryName(id: string | undefined): string | undefined {
+    if (!id) return undefined;
+    return this.categories().find((c) => c._id === id)?.name;
+  }
+
   protected onCategoryChipReset(): void {
     this.textFilter.categoryId.set(null);
   }
@@ -705,7 +707,7 @@ export class BuilderPage {
   // httpResources for inline toolbar dropdowns. The «Тексты» URL is rebuilt
   // whenever the shared filter categoryId changes (server-side filter).
   protected readonly textsRes = httpResource<
-    Array<{ _id: string; name: string; category?: string; content?: string; columns?: unknown[] }>
+    Array<{ _id: string; name: string; categoryId?: string; content?: string; columns?: unknown[] }>
   >(
     () => {
       const cat = this.textFilter.categoryId();

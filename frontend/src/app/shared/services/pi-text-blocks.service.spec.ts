@@ -48,7 +48,7 @@ describe('TextBlocksService', () => {
         _id: 'tb1',
         name: 'Стандартные условия',
         slug: 'standartnye-usloviya',
-        category: 'legal',
+        categoryId: 'cat-1',
         tags: [],
         content: '# Условия',
         isActive: true,
@@ -58,7 +58,7 @@ describe('TextBlocksService', () => {
         _id: 'tb2',
         name: 'Архивный текст',
         slug: 'arhivnyj-tekst',
-        category: 'custom',
+        categoryId: 'cat-2',
         tags: [],
         content: '# Старое',
         isActive: false,
@@ -81,7 +81,7 @@ describe('TextBlocksService', () => {
         _id: 'tb1',
         name: 'Стандартные условия',
         slug: 'standartnye-usloviya',
-        category: 'legal',
+        categoryId: 'cat-1',
         tags: [],
         content: '# Условия',
         isActive: true,
@@ -91,7 +91,7 @@ describe('TextBlocksService', () => {
         _id: 'tb2',
         name: 'Архивный текст',
         slug: 'arhivnyj-tekst',
-        category: 'custom',
+        categoryId: 'cat-2',
         tags: [],
         content: '# Старое',
         isActive: false,
@@ -102,9 +102,7 @@ describe('TextBlocksService', () => {
 
   it('TZ-DOC-317: list({categoryId, activeOnly}) sends categoryId HttpParams', () => {
     svc.list({ categoryId: 'cat-1', activeOnly: true }).subscribe();
-    const req = httpMock.expectOne(
-      (r) => r.method === 'GET' && r.url.endsWith('/text-blocks'),
-    );
+    const req = httpMock.expectOne((r) => r.method === 'GET' && r.url.endsWith('/text-blocks'));
     expect(req.request.params.get('categoryId')).toBe('cat-1');
     expect(req.request.params.get('activeOnly')).toBe('true');
     expect(req.request.urlWithParams).toContain('categoryId=cat-1');
@@ -113,9 +111,7 @@ describe('TextBlocksService', () => {
 
   it('TZ-DOC-317: list({categoryId}) omits categoryId when not set', () => {
     svc.list({ activeOnly: true }).subscribe();
-    const req = httpMock.expectOne(
-      (r) => r.method === 'GET' && r.url.endsWith('/text-blocks'),
-    );
+    const req = httpMock.expectOne((r) => r.method === 'GET' && r.url.endsWith('/text-blocks'));
     expect(req.request.params.has('categoryId')).toBe(false);
     expect(req.request.params.get('activeOnly')).toBe('true');
     req.flush([]);
@@ -123,11 +119,11 @@ describe('TextBlocksService', () => {
 
   it('create() POSTs body and returns TextBlock on 2xx', () => {
     svc
-      .create({ name: 'Реквизиты сторон', category: 'legal', content: '# Реквизиты' } as never)
+      .create({ name: 'Реквизиты сторон', categoryId: 'cat-1', content: '# Реквизиты' } as never)
       .subscribe((res) => {
         if (res.ok) {
           expect(res.data.name).toBe('Реквизиты сторон');
-          expect(res.data.category).toBe('legal');
+          expect(res.data.categoryId).toBe('cat-1');
           expect(res.data.slug).toBe('rekvizity-storon');
         }
       });
@@ -135,14 +131,14 @@ describe('TextBlocksService', () => {
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({
       name: 'Реквизиты сторон',
-      category: 'legal',
+      categoryId: 'cat-1',
       content: '# Реквизиты',
     });
     req.flush({
       _id: 'tb3',
       name: 'Реквизиты сторон',
       slug: 'rekvizity-storon',
-      category: 'legal',
+      categoryId: 'cat-1',
       tags: [],
       content: '# Реквизиты',
       isActive: true,
@@ -166,7 +162,7 @@ describe('TextBlocksService', () => {
       _id: 'tb1',
       name: 'Обновлённое название',
       slug: 'standartnye-usloviya',
-      category: 'legal',
+      categoryId: 'cat-1',
       tags: [],
       content: '# Условия',
       isActive: false,

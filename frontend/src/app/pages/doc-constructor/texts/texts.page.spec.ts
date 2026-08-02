@@ -23,14 +23,56 @@ describe('TextsPage (TZ-DOC-316 category column + filter)', () => {
   const error = jest.fn();
 
   const categories = [
-    { _id: 'cat-1', name: 'Общее', slug: 'obshchee', isActive: true, isSystem: true, isDefault: true, sortOrder: 0 },
-    { _id: 'cat-2', name: 'Реквизиты контрагента', slug: 'rekvizity', isActive: true, isSystem: false, isDefault: false, sortOrder: 10 },
+    {
+      _id: 'cat-1',
+      name: 'Общее',
+      slug: 'obshchee',
+      isActive: true,
+      isSystem: true,
+      isDefault: true,
+      sortOrder: 0,
+    },
+    {
+      _id: 'cat-2',
+      name: 'Реквизиты контрагента',
+      slug: 'rekvizity',
+      isActive: true,
+      isSystem: false,
+      isDefault: false,
+      sortOrder: 10,
+    },
   ];
 
   const blocks = [
-    { _id: 'b1', name: 'Блок общий', slug: 'b1', category: 'custom', categoryId: 'cat-1', tags: [], columns: [], isActive: true, sortOrder: 0 },
-    { _id: 'b2', name: 'Реквизиты', slug: 'b2', category: 'custom', categoryId: 'cat-2', tags: [], columns: [], isActive: true, sortOrder: 1 },
-    { _id: 'b3', name: 'Без категории', slug: 'b3', category: 'custom', tags: [], columns: [], isActive: true, sortOrder: 2 },
+    {
+      _id: 'b1',
+      name: 'Блок общий',
+      slug: 'b1',
+      categoryId: 'cat-1',
+      tags: [],
+      columns: [],
+      isActive: true,
+      sortOrder: 0,
+    },
+    {
+      _id: 'b2',
+      name: 'Реквизиты',
+      slug: 'b2',
+      categoryId: 'cat-2',
+      tags: [],
+      columns: [],
+      isActive: true,
+      sortOrder: 1,
+    },
+    {
+      _id: 'b3',
+      name: 'Без категории',
+      slug: 'b3',
+      tags: [],
+      columns: [],
+      isActive: true,
+      sortOrder: 2,
+    },
   ];
 
   let blockSvc: { list: jest.Mock; findById: jest.Mock; remove: jest.Mock };
@@ -108,8 +150,6 @@ describe('TextsPage (TZ-DOC-316 category column + filter)', () => {
   it('composes search with the category filter', () => {
     const { comp } = createComp();
     comp.categoryFilter.set('cat-1');
-    const input = { set: (v: string) => void 0 } as unknown;
-    void input;
     // Drive via the same signal the search input writes to.
     (comp as unknown as { searchQuery: { set(v: string): void } }).searchQuery.set('общий');
     expect(comp.sortedRows()).toHaveLength(1);
