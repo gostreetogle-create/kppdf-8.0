@@ -4,7 +4,7 @@ closed_at: 2026-08-02
 closed_by: Buffy
 tz_id: TZ-DOC-317-builder-texts-filter-by-category
 commit: 64999af830572acbf352c19a7dc6c5befbb1d38f — feat(builder): filter text-blocks by category in picker (TZ-DOC-317)
-closeout_commit: <filled-on-closeout>
+closeout_commit: eefb7b6cf0031f32b43c205a693bec9115fc0647 — docs(closeout): TZ-DOC-317 archive + verification log + status sync
 verification:
   - acceptance criteria: TZ-DOC-317 §Критерии приёмки 1..16 — covered (см. ниже)
   - backend tsc (tsc -p tsconfig.build.json --noEmit): PASS (exit 0, sanity, backend NOT touched)
