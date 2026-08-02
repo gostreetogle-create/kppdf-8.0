@@ -102,10 +102,17 @@ curl http://192.168.1.103:3000/api/health/ready
 | Ping/SSH VM timeout | Выключить VPN |
 | Сайт без CSS + CSP `script-src-attr` | Уже починено в BE/FE; Ctrl+F5. Не должно повторяться |
 | Login 401 | Неверный пароль **или** softlock (~15 мин после 5 ошибок). Верный пароль в CREDENTIALS; либо `python deploy/synology/reset-admin-password.py` |
+| `/api/auth/me` 401 сразу после деплоя | Stale access после ротации JWT — refresh / re-login (Ctrl+F5) |
+| `Default text-block category unavailable` | Seed `TextBlockCategoriesSeed` (slug `obshchee`) не в AppModule или категория inactive — см. README §уроки вечера |
+| `POST /organizations` 500 «INN must be…» | Клиент не прислал ИНН; validation должна быть 400. Шаблоны: авто-org с `7707083893` |
+| Два `docker build --no-cache` / VM «мёртвая» | Убить лишние build, один деплой с кэшем; на VM только kppdf compose |
 | 502 на домене | Tunnel: на VPS `ss -tlnp \| grep :4200`; на VM `sudo systemctl restart kppdf-tunnel` |
 | Backend unhealthy / mongo timeout | `rs.status()` на mongo; compose `mongo-init` должен поднять rs0 |
 | Compose «не поднял» контейнеры | Смотри `deploy.py` docker шаг; не должно быть bare `build` вне `$DC` |
 | Access expire → /login | Auth variant A: refresh JWT в JSON body. Если всё ещё падает — смотри softlock / секреты |
+
+Деплой-канон и быстрый путь: [`README.md`](./README.md) (§флаги + уроки вечера).  
+LM Studio local helper: [`docs/agents/LM-STUDIO-AGENT.md`](../../docs/agents/LM-STUDIO-AGENT.md).
 
 ---
 

@@ -64,7 +64,13 @@ export class BlockRendererStateService {
     const b = this.block();
     if (b.type !== 'image') return null;
     const s = b.settings as Record<string, unknown> | undefined;
-    return (s?.['imageUrl'] as string) ?? null;
+    const url = (s?.['imageUrl'] as string) ?? null;
+    // TZ-DOC-333 soft-guard: legacy blocks may still carry a session-local
+    // `blob:` URL persisted before the upload endpoint existed. Render it as
+    // «no image» instead of a broken <img> — the block resolves to a real
+    // /uploads/... URL once the photo is (re)uploaded via the inspector.
+    if (url && (url.startsWith('blob:') || url.startsWith('data:'))) return null;
+    return url;
   });
 
   readonly imageWidth = computed<number | null>(() => {

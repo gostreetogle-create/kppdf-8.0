@@ -175,5 +175,10 @@ export class CreateTemplateBlockDto {
   @Type(() => BlockSourceDto)
   source?: BlockSourceDto;
 
+  /** Persistent flat group id; null clears membership. */
+  @IsOptional()
+  @IsString()
+  groupId?: string | null;
+
   @IsOptional() @IsBoolean() isActive?: boolean;
 }

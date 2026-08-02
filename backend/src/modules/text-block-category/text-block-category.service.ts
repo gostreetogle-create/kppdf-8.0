@@ -228,7 +228,10 @@ export class TextBlockCategoryService {
     }
     return this.model
       .findOne({
-        organizationId: { $exists: false },
+        $or: [
+          { organizationId: { $exists: false } },
+          { organizationId: null },
+        ],
         isActive: true,
         isDefault: true,
       })

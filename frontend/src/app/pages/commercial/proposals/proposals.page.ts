@@ -28,7 +28,10 @@ import { createSearchState } from '../../../shared/util/search';
 import { pluralize, formatDate, formatPrice } from '../../../shared/util/format';
 import { createLookupTable } from '../../../shared/util/lookup-table';
 import { ColumnDef, SortDirection, TableComponent } from '../../../shared/ui/pi-table.component';
-import { Counterparty, CounterpartyService } from '../../../shared/services/pi-counterparty.service';
+import {
+  Counterparty,
+  CounterpartyService,
+} from '../../../shared/services/pi-counterparty.service';
 import {
   Proposal,
   ProposalStatus,
@@ -205,9 +208,11 @@ function counterpartyIdOf(row: Proposal): string {
               class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring
                      disabled:opacity-30 disabled:cursor-not-allowed"
               [disabled]="!canConvertToOrder(row)"
-              [attr.aria-label]="canConvertToOrder(row)
-                ? 'Преобразовать КП ' + row.number + ' в заказ'
-                : 'Только принятые КП можно преобразовать в заказ'"
+              [attr.aria-label]="
+                canConvertToOrder(row)
+                  ? 'Преобразовать КП ' + row.number + ' в заказ'
+                  : 'Только принятые КП можно преобразовать в заказ'
+              "
               [attr.data-test]="'convert-button-' + row._id"
               (click)="onConvertToOrder(row)"
             >
@@ -279,8 +284,7 @@ export class ProposalsPage implements OnInit {
   protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
   protected readonly error = computed<string | null>(() => {
     const err = this.listRes.error() as
-      | import('@angular/common/http').HttpErrorResponse
-      | undefined;
+      import('@angular/common/http').HttpErrorResponse | undefined;
     return err ? extractErrorMessage(err) : null;
   });
 
@@ -324,9 +328,7 @@ export class ProposalsPage implements OnInit {
   protected readonly visibleCount = computed<number>(() => this.sortedRows().length);
 
   protected readonly emptyMessage = computed(() =>
-    this.searchQuery()
-      ? 'Ничего не найдено.'
-      : 'Нет КП. Нажмите «Создать», чтобы добавить первое.',
+    this.searchQuery() ? 'Ничего не найдено.' : 'Нет КП. Нажмите «Создать», чтобы добавить первое.',
   );
 
   // ─── Column definitions ────────────────────────────────────────────
@@ -507,7 +509,7 @@ export class ProposalsPage implements OnInit {
   }
 
   protected onCreateDocument(row: Proposal): void {
-    this.router.navigate(['/doc-constructor/builder'], {
+    this.router.navigate(['/doc-constructor/templates'], {
       queryParams: { source: 'quotation', sourceId: row._id },
     });
   }

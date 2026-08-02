@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe, Logger, BadRequestException } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger as PinoLogger } from 'nestjs-pino';
@@ -210,7 +210,9 @@ async function bootstrap() {
             );
           }
         }
-        return lines.length ? new Error(lines.join('; ')) : new Error('Validation failed');
+        return lines.length
+          ? new BadRequestException(lines.join('; '))
+          : new BadRequestException('Validation failed');
       },
     }),
   );

@@ -37,5 +37,7 @@
 - tsc: PASS (`pnpm exec tsc -p tsconfig.app.json --noEmit`) — unblocked by optional `pageKey` on `PiNavDropdownItem` (pre-existing layout usage)
 - jest: PASS — 95 tests / 6 suites
 - browser smoke: SKIPPED (no live server)
+- commit SHA: `1b62f7387b730ffcec96eae7bf4a7b9969af3600`
 - archive: `tasks/_archive/2026-08/TZ-DOC-336-texts-tables-shell-dialog-canon.done.md`
 - outcome: DONE
+- pushed: main

@@ -154,6 +154,13 @@ export class TemplateBlock {
   source?: BlockSource;
 
   /**
+   * Persistent editor group membership (flat groups). Same UUID on N blocks
+   * means they select/move together until explicitly ungrouped.
+   */
+  @Prop({ type: String, default: null, index: true })
+  groupId?: string | null;
+
+  /**
    * TZ-86 Phase A.3 — Optional live-data binding. Absent for static-template
    * blocks (Phase D canvas treats null binding as «render literal content»).
    */

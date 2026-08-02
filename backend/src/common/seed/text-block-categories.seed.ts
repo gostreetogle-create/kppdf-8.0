@@ -46,13 +46,34 @@ export class TextBlockCategoriesSeed implements OnModuleInit {
       .findOne({ slug: SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG })
       .exec();
     if (existing) {
-      this.logger.log(
-        `System default «${SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG}» already present, skip`,
-      );
+      // Repair soft-broken system row (inactive / not default) so resolveDefault works.
+      let repaired = false;
+      if (!existing.isActive) {
+        existing.isActive = true;
+        repaired = true;
+      }
+      if (!existing.isDefault) {
+        existing.isDefault = true;
+        repaired = true;
+      }
+      if (!existing.isSystem) {
+        existing.isSystem = true;
+        repaired = true;
+      }
+      if (repaired) {
+        await existing.save();
+        this.logger.log(
+          `Repaired system default «${SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG}» (active/default/system)`,
+        );
+      } else {
+        this.logger.log(
+          `System default «${SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG}» already present, skip`,
+        );
+      }
       return;
     }
     await this.model.create({
-      organizationId: undefined,
+      // organizationId intentionally absent → system (global) scope.
       name: 'Общее',
       slug: SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG,
       isSystem: true,

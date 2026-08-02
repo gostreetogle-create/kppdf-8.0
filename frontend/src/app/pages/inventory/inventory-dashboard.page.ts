@@ -6,7 +6,11 @@ import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-s
 import { PiToastService } from '../../shared/ui/toast';
 import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
-import { StorageItem, type StorageItemsListResponse } from './storage-items.service';
+import {
+  StorageItem,
+  storageItemName,
+  type StorageItemsListResponse,
+} from './storage-items.service';
 import { Warehouse } from './warehouses.service';
 
 /**
@@ -62,7 +66,7 @@ import { Warehouse } from './warehouses.service';
           <table class="w-full text-sm">
             <thead class="hairline-b">
               <tr>
-                <th class="eyebrow py-3 px-4 text-left">Продукт</th>
+                <th class="eyebrow py-3 px-4 text-left">Продукт/Материал</th>
                 <th class="eyebrow py-3 px-4 text-left">Склад</th>
                 <th class="eyebrow py-3 px-4 text-right">Остаток</th>
                 <th class="eyebrow py-3 px-4 text-right">Минимум</th>
@@ -71,7 +75,7 @@ import { Warehouse } from './warehouses.service';
             <tbody>
               @for (item of lowStockItems(); track item._id) {
                 <tr class="hairline-b hover:bg-paper-2 transition-colors">
-                  <td class="py-3 px-4">{{ item.product?.name ?? '—' }}</td>
+                  <td class="py-3 px-4">{{ storageItemName(item) }}</td>
                   <td class="py-3 px-4 text-muted-foreground">{{ item.warehouse?.name ?? '—' }}</td>
                   <td class="py-3 px-4 text-right font-mono text-destructive">
                     {{ item.quantity }}
@@ -89,6 +93,9 @@ import { Warehouse } from './warehouses.service';
 export class InventoryDashboardPage {
   private readonly toast = inject(PiToastService);
   private readonly baseUrl = inject(API_BASE_URL);
+
+  // TZ-MATERIALS-308: helper-доступен шаблону (Продукт/Материал в low-stock).
+  protected readonly storageItemName = storageItemName;
 
   protected readonly allItemsRes = httpResource<StorageItemsListResponse>(() => ({
     url: `${this.baseUrl}/storage-items`,

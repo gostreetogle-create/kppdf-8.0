@@ -327,6 +327,49 @@ rg -i '(embedding|vector.?search|cosine|ANN)' backend/src frontend/src
 - **Event logging:** connected / disconnected / reconnected / error → NestJS Logger → Pino (через main.ts useLogger)
 - **FIXME (TZ-43):** legacy single-field `Schema.index({ field: 1 })` calls cleaned up в 6 schemas (product/material/organization/counterparty/category/certificate). Compound indexes сохранены. Если в production Mongo есть legacy duplicate `name_1` index — требуется ручной `db.<coll>.dropIndex('name_1')`.
 
+## Snapshot-on-transition immutability pattern (TZ-CORE-301)
+
+**Problem:** FK-only references on stage transitions leak catalog edits into
+archived orders / specifications / shipments. Q9 default: **denormalize per
+stage**, not a mega-collection (docs/compose/plans/2026-08-02-shop-customer-lifecycle.md §3 / §7 #16).
+
+**Helper:** `backend/src/common/snapshot/snapshot.helper.ts` — pure functions,
+SessionRunner-friendly (no DI, no DB writes; caller embeds the snapshot into
+its own stage document inside the same transaction):
+
+- `createInlineSnapshot(payload, { stage, sourceId?, capturedAt? })` →
+  `{ data: Readonly<T>, _snapshot: { stage, capturedAt, sourceId, hash, version: 1 } }`
+  where `data` is a **deep-frozen** clone (`structuredClone` + recursive
+  `Object.freeze`) and `hash` is a sha256 fingerprint over a stable,
+  key-sorted serialization.
+- `snapshotHash(value)` / `snapshotMatches(stored, current)` — integrity
+  verification (tamper detection after capture).
+- `cloneImmutable(value)` — deep-freeze helper for embedding stage payloads.
+
+**Contract — what we store per stage (order / specification / shipment):**
+
+```ts
+_snapshot: {
+  stage: 'order' | 'specification' | 'shipment' | string;
+  capturedAt: string;   // ISO date
+  sourceId: string | null;
+  hash: string;         // sha256 of the frozen payload
+  version: 1;
+}
+```
+
+**Reference impl:** unit spec `snapshot.helper.spec.ts` demonstrates a
+transition capture (order payload → immutable snapshot) and verifies that
+post-capture catalog edits cannot mutate the frozen data nor pass
+`snapshotMatches`. A thin service method on the real transition
+(КП→Order hook point) is the successor step when the corresponding
+feature TZ lands (PRODUCTION-301 / ARCHIVE-301).
+
+**Explicit non-goals (known_limitation):** no full catalog denormalization
+migration; no mega-collection; legacy Proposal/Quotation merge untouched.
+
+---
+
 ## DI Audit (TZ-45)
 - **`backend/scripts/audit-di.ts`** — статический анализатор DI cascade багов (~140 lines, regex-based).
 - **Алгоритм:** build reverse index `className → {moduleFile, isGlobal}` из `*.module.ts` providers → parse `*.service.ts` constructors → extract injected types → check `imports: [...]` consumer module содержит provider module name.

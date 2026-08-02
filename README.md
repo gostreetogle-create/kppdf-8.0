@@ -1,7 +1,5 @@
 # kppdf-8.0
 
-[![CI](https://github.com/user/kppdf-8.0/actions/workflows/ci.yml/badge.svg)](https://github.com/user/kppdf-8.0/actions/workflows/ci.yml)
-
 > **ERP-система для управления коммерческими предложениями, договорами, производством, складом, закупками и тендерами.**
 > Активная стадия: Angular 20 SPA + NestJS 10 backend + MongoDB Replica Set.
 > Дизайн-система: Paper & Ink (OKLCH, hairline, anti-bling).
@@ -287,8 +285,9 @@ frontend/src/app/shared/ui/
 - [`progress.md`](progress.md) — журнал прогресса
 - [`OrchestratorKit/README.md`](OrchestratorKit/README.md) — описание kit-а для AI-агентов
 - [`OrchestratorKit/QUICKSTART.md`](OrchestratorKit/QUICKSTART.md) — 5 шагов от нуля до первого TZ
-- [`deploy/synology/DEPLOY.md`](deploy/synology/DEPLOY.md) — деплой на Synology/Ubuntu VM (шаги, troubleshooting)
-- [`deploy/synology/RUNBOOK.md`](deploy/synology/RUNBOOK.md) — краткий чеклист деплоя
+- [`deploy/synology/README.md`](deploy/synology/README.md) — **деплой одной командой** (`deploy.ps1` / `deploy.sh`)
+- [`deploy/synology/RUNBOOK.md`](deploy/synology/RUNBOOK.md) — краткий чеклист / troubleshooting
+- [`deploy/synology/DEPLOY.md`](deploy/synology/DEPLOY.md) — архитектура VPS+tunnel+VM
 - [`deploy/synology/CREDENTIALS.example.md`](deploy/synology/CREDENTIALS.example.md) — шаблон секретов (реальные → `CREDENTIALS.md`, gitignore)
 
 ---

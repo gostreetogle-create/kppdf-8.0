@@ -278,6 +278,17 @@ export class ModuleMaterialsFormDialogComponent {
     });
   }
 
+  /** TZ-MATERIALS-309: ���������� Set immutable dimension-����� ��� ��������� � ������ idx. */
+  protected immutableDimsForIdx(idx: number): Set<string> {
+    const row = this.materialsArray.at(idx);
+    if (!row) return new Set();
+    const matId = row.get('materialId')?.value as string;
+    if (!matId) return new Set();
+    const mat = this.materialsCatalog().find((m) => m._id === matId);
+    if (!mat?.dimensions) return new Set();
+    return new Set(mat.dimensions.filter((d) => d.isImmutable).map((d) => d.type));
+  }
+
   protected onCancel(): void {
     this.ref.close(null);
   }

@@ -86,3 +86,6 @@ docs/
 - `OrchestratorKit/` — система оркестрации задач
 - `ARCHITECTURE.md` — архитектура проекта
 - `STATUS.md` — статус всех задач
+- **`deploy/synology/README.md`** — деплой одной командой (`deploy.ps1` / `deploy.sh`)
+- **`SESSION-2026-08-02-DEPLOY.md`** — карта вечернего деплоя / фиксов / завтрашний чеклист
+- **`agents/LM-STUDIO-AGENT.md`** — локальный Qwen helper (LIMITED_HELPER)

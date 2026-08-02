@@ -3,6 +3,8 @@ import {
   Component,
   DestroyRef,
   Injector,
+  TemplateRef,
+  ViewChild,
   computed,
   inject,
   signal,
@@ -11,13 +13,13 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
-import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../shared/ui/switch/switch.component';
 import { PiToastService } from '../../shared/ui/toast';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
+import { TableComponent, ColumnDef } from '../../shared/ui/pi-table.component';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
 import {
@@ -40,6 +42,9 @@ const RU_CATEGORIES = ['категория', 'категории', 'катего
  * Distinct from the generic Category page (materials/products tree): this
  * is a flat, template-only dictionary. It powers the category dropdown in
  * the template setup dialog and the templates registry filter.
+ *
+ * TZ-UX-304: migrated from raw <table> to <app-pi-table> (pattern:
+ * color-references.page.ts / dictionaries.page.ts).
  */
 @Component({
   selector: 'app-document-template-categories-page',
@@ -48,10 +53,10 @@ const RU_CATEGORIES = ['категория', 'категории', 'катего
     PiPageHeaderComponent,
     PiSectionComponent,
     PiToolbarComponent,
-    PiEmptyStateComponent,
     PiRowActionsComponent,
     ButtonComponent,
     SwitchComponent,
+    TableComponent,
   ],
   template: `
     <app-pi-page-header
@@ -76,96 +81,84 @@ const RU_CATEGORIES = ['категория', 'категории', 'катего
     </app-pi-toolbar>
 
     <app-pi-section title="Каталог" eyebrow="I">
-      @if (loading()) {
-        <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
-      } @else if (error()) {
+      <app-pi-table
+        [data]="visible()"
+        [columns]="columns"
+        [cellTemplates]="tpls()"
+        [rowActions]="rowActionsTpl"
+        [total]="visible().length"
+        [loading]="loading()"
+        [emptyMessage]="
+          searchQuery() ? 'Ничего не найдено.' : 'Нет категорий шаблонов. Создайте первую.'
+        "
+        [initialSortKey]="'name'"
+        [initialSortDir]="'asc'"
+        ariaLabel="Категории шаблонов"
+        data-test="template-categories-table"
+      />
+
+      @if (error()) {
         <div
           role="alert"
-          class="hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+          class="hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive mt-3"
         >
           <p>{{ error() }}</p>
           <app-pi-button class="mt-3" variant="outline" size="sm" (click)="reload()">
             Повторить
           </app-pi-button>
         </div>
-      } @else if (visible().length === 0) {
-        <app-pi-empty-state
-          [colspan]="1"
-          [message]="
-            searchQuery() ? 'Ничего не найдено.' : 'Нет категорий шаблонов. Создайте первую.'
-          "
-        />
-      } @else {
-        <div class="hairline rounded-sm overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="hairline-b">
-              <tr>
-                <th class="pi-cell eyebrow text-left">Название</th>
-                <th class="pi-cell eyebrow text-left">Slug</th>
-                <th class="pi-cell eyebrow text-center w-20">Активна</th>
-                <th class="pi-cell eyebrow text-center w-24">По умолчанию</th>
-                <th class="pi-cell eyebrow text-right w-28">Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (c of visible(); track c._id) {
-                <tr class="pi-table-row pi-table-row-odd group" [class.opacity-50]="!c.isActive">
-                  <td class="pi-cell font-medium">
-                    <span class="inline-flex items-center gap-2">
-                      {{ c.name }}
-                      @if (c.isSystem) {
-                        <span
-                          class="eyebrow hairline rounded-sm px-1.5 py-0.5 text-muted-foreground"
-                          title="Системная категория"
-                          >системная</span
-                        >
-                      }
-                    </span>
-                  </td>
-                  <td class="pi-cell font-mono text-xs text-muted-foreground">{{ c.slug }}</td>
-                  <td class="pi-cell text-center">
-                    <app-pi-switch
-                      [checked]="c.isActive"
-                      [disabled]="c.isSystem"
-                      [ariaLabel]="(c.isActive ? 'Деактивировать ' : 'Активировать ') + c.name"
-                      (checkedChange)="onToggleActive(c, $event)"
-                      data-test="category-active-switch"
-                    />
-                  </td>
-                  <td class="pi-cell text-center">
-                    @if (c.isDefault) {
-                      <span
-                        class="text-sunrise-warm"
-                        aria-label="Категория по умолчанию"
-                        title="По умолчанию"
-                        >★</span
-                      >
-                    } @else {
-                      <span class="text-muted-foreground/40" aria-hidden="true">☆</span>
-                    }
-                  </td>
-                  <td class="pi-cell text-right">
-                    <app-pi-row-actions
-                      [row]="c"
-                      [showEdit]="!c.isSystem"
-                      [editLabel]="c.isSystem ? 'Системная — нельзя изменять' : 'Переименовать'"
-                      [deleteLabel]="c.isSystem ? 'Системная — нельзя удалить' : 'Удалить'"
-                      [deleteDisabled]="c.isSystem"
-                      [deleteTitle]="
-                        c.isSystem
-                          ? 'Системная категория управляется сервером'
-                          : 'Категорию с шаблонами нельзя удалить (409)'
-                      "
-                      (edit)="openEdit($event)"
-                      (delete)="onDelete($event)"
-                    />
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
       }
+
+      <ng-template #rowActionsTpl let-c>
+        <app-pi-row-actions
+          [row]="c"
+          [editLabel]="c.isSystem ? 'Системная — нельзя изменять' : 'Переименовать'"
+          [deleteLabel]="c.isSystem ? 'Системная — нельзя удалить' : 'Удалить'"
+          [deleteDisabled]="c.isSystem"
+          [deleteTitle]="
+            c.isSystem
+              ? 'Системная категория управляется сервером'
+              : 'Категорию с шаблонами нельзя удалить (409)'
+          "
+          [dataTestEdit]="'edit-cat-' + c.slug"
+          [dataTestDelete]="'delete-cat-' + c.slug"
+          (edit)="openEdit($event)"
+          (delete)="onDelete($event)"
+        />
+      </ng-template>
+
+      <ng-template #nameTpl let-c>
+        <span class="inline-flex items-center gap-2">
+          <span class="font-medium">{{ c.name }}</span>
+          @if (c.isSystem) {
+            <span
+              class="eyebrow hairline rounded-sm px-1.5 py-0.5 text-muted-foreground"
+              title="Системная категория"
+              >системная</span
+            >
+          }
+        </span>
+      </ng-template>
+
+      <ng-template #defaultTpl let-c>
+        @if (c.isDefault) {
+          <span class="text-sunrise-warm" aria-label="Категория по умолчанию" title="По умолчанию"
+            >★</span
+          >
+        } @else {
+          <span class="text-muted-foreground/40" aria-hidden="true">☆</span>
+        }
+      </ng-template>
+
+      <ng-template #activeSwitchTpl let-c>
+        <app-pi-switch
+          [checked]="c.isActive"
+          [disabled]="c.isSystem"
+          [ariaLabel]="(c.isActive ? 'Деактивировать ' : 'Активировать ') + c.name"
+          (checkedChange)="onToggleActive(c, $event)"
+          data-test="category-active-switch"
+        />
+      </ng-template>
     </app-pi-section>
   `,
 })
@@ -189,6 +182,35 @@ export class DocumentTemplateCategoriesPage {
     if (!q) return list;
     return list.filter((c) => c.name.toLowerCase().includes(q));
   });
+
+  /** TZ-UX-304: pi-table column definitions (replaces raw <table>). */
+  protected readonly columns: ColumnDef<DocumentTemplateCategory>[] = [
+    { key: 'name', label: 'Название', sortable: true, sticky: 'left' },
+    { key: 'slug', label: 'Slug', sortable: true, cellClass: 'font-mono text-xs' },
+    { key: 'isActive', label: 'Активна', align: 'center', width: '5rem', sortable: true },
+    { key: 'isDefault', label: 'По умолчанию', align: 'center', width: '6rem' },
+  ];
+
+  @ViewChild('rowActionsTpl', { static: true })
+  protected readonly rowActionsTpl!: TemplateRef<{ $implicit: DocumentTemplateCategory }>;
+
+  @ViewChild('nameTpl', { static: true })
+  protected readonly nameTpl!: TemplateRef<{ $implicit: DocumentTemplateCategory }>;
+
+  @ViewChild('defaultTpl', { static: true })
+  protected readonly defaultTpl!: TemplateRef<{ $implicit: DocumentTemplateCategory }>;
+
+  @ViewChild('activeSwitchTpl', { static: true })
+  protected readonly activeSwitchTpl!: TemplateRef<{ $implicit: DocumentTemplateCategory }>;
+
+  /** TZ-UX-304: per-column rich templates via pi-table [cellTemplates]. */
+  protected readonly tpls = computed<
+    Record<string, TemplateRef<{ $implicit: DocumentTemplateCategory }>>
+  >(() => ({
+    name: this.nameTpl,
+    isDefault: this.defaultTpl,
+    isActive: this.activeSwitchTpl,
+  }));
 
   constructor() {
     this.reload();

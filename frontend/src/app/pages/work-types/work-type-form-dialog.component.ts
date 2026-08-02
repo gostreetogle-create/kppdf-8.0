@@ -13,6 +13,14 @@ import { WorkType, WorkTypesService } from '../../shared/services/pi-work-types.
 import { extractErrorMessage } from '../../core/silent-http';
 
 /**
+ * TZ-PRODUCTION-302: empty/0 → null (unknown); otherwise must be integer ≥ 1.
+ */
+function daysValidator(c: { value: number | null }): { invalidDays: true } | null {
+  if (c.value == null || c.value === 0) return null;
+  return Number.isInteger(c.value) && c.value >= 1 ? null : { invalidDays: true };
+}
+
+/**
  * TZ-83 Phase B: WorkTypeFormDialog.
  *
  * Create/edit form. Standard ReactiveFormsModule + NonNullableFormBuilder.
@@ -109,6 +117,28 @@ import { extractErrorMessage } from '../../core/silent-http';
           </app-pi-form-field>
         </div>
 
+        <div class="grid grid-cols-2 gap-form-field">
+          <app-pi-form-field
+            label="Дней (календарных)"
+            htmlFor="wt-days"
+            [hint]="'Оценка длительности для Gantt. Пусто — неизвестно.'"
+          >
+            <app-pi-input
+              id="wt-days"
+              type="number"
+              min="1"
+              formControlName="days"
+              placeholder="—"
+              data-test="days-input"
+            />
+          </app-pi-form-field>
+          <div class="flex items-end pb-2">
+            <p class="text-xs text-muted-foreground">
+              Оставьте пустым, если срок ещё не определён.
+            </p>
+          </div>
+        </div>
+
         <div class="flex items-center gap-2">
           <app-pi-checkbox
             formControlName="isActive"
@@ -164,6 +194,7 @@ export class WorkTypeFormDialogComponent {
     description: this.fb.control<string>(this.data?.description ?? ''),
     defaultDurationHours: this.fb.control<number | null>(this.data?.defaultDurationHours ?? null),
     hourlyRate: this.fb.control<number | null>(this.data?.hourlyRate ?? null),
+    days: this.fb.control<number | null>(this.data?.days ?? null, [daysValidator]),
     isActive: this.fb.control<boolean>(this.data?.isActive ?? true),
   });
 
@@ -180,6 +211,7 @@ export class WorkTypeFormDialogComponent {
       description: v.description || undefined,
       defaultDurationHours: v.defaultDurationHours ?? undefined,
       hourlyRate: v.hourlyRate ?? undefined,
+      days: v.days == null || v.days === 0 ? null : v.days,
       isActive: v.isActive,
     };
     this.submitting.set(true);

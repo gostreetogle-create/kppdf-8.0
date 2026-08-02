@@ -30,7 +30,7 @@ import { ColumnDef, SortDirection, TableComponent } from '../../shared/ui/pi-tab
 import { WorkType, WorkTypesService } from '../../shared/services/pi-work-types.service';
 import { WorkTypeFormDialogComponent } from './work-type-form-dialog.component';
 
-type SortKey = 'name' | 'section' | 'department' | 'hourlyRate' | null;
+type SortKey = 'name' | 'section' | 'department' | 'hourlyRate' | 'days' | null;
 
 const PAGE_SIZE = 20;
 
@@ -52,6 +52,8 @@ function accessorFor(key: Exclude<SortKey, null>): (row: WorkType) => unknown {
       return (r) => r.department;
     case 'hourlyRate':
       return (r) => r.hourlyRate;
+    case 'days':
+      return (r) => r.days;
     default:
       return (r) => r.name;
   }
@@ -189,7 +191,8 @@ export class WorkTypesPage implements OnInit {
     (w: WorkType, q: string) =>
       w.name.toLowerCase().includes(q) ||
       (w.section ?? '').toLowerCase().includes(q) ||
-      (w.department ?? '').toLowerCase().includes(q),
+      (w.department ?? '').toLowerCase().includes(q) ||
+      String(w.days ?? '').includes(q),
   );
   protected readonly searchQuery = this.search.searchQuery;
 
@@ -237,6 +240,13 @@ export class WorkTypesPage implements OnInit {
     {
       key: 'hourlyRate',
       label: 'Час/₽',
+      sortable: true,
+      align: 'right',
+      cellClass: 'empty-cell font-mono text-xs',
+    },
+    {
+      key: 'days',
+      label: 'Дней',
       sortable: true,
       align: 'right',
       cellClass: 'empty-cell font-mono text-xs',

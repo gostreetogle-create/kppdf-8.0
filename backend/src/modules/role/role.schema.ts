@@ -26,6 +26,10 @@ export class Role {
   @Prop({ type: [String], default: [] })
   sectionIds!: string[];
 
+  /** TZ-ACCESS-301: page ACL — visible nav pages for this role. */
+  @Prop({ type: [String], default: [] })
+  pages!: string[];
+
   @Prop({ default: true })
   isActive!: boolean;
 }

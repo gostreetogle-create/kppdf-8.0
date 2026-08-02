@@ -72,9 +72,26 @@ Preflight (опционально): `.\deploy\synology\preflight.ps1`
 | `.\deploy\synology\deploy.ps1` | Update (без wipe) |
 | `.\deploy\synology\deploy.ps1 -Seed` | Update + restart bootstrap seeds |
 | `.\deploy\synology\deploy.ps1 -Wipe -Seed` | **Снос** app+mongo и чистая установка |
-| `.\deploy\synology\deploy.ps1 -SkipBuild` | Без пересборки Angular (только backend/архив) |
+| `.\deploy\synology\deploy.ps1 -SkipBuild` | Без пересборки Angular (уже есть `frontend/browser/`) |
+
+Эквивалент Python:
+
+```powershell
+python -u deploy/synology/deploy.py --skip-build          # быстрый update
+python -u deploy/synology/deploy.py --no-cache            # полный docker rebuild (медленно)
+python -u deploy/synology/deploy.py --wipe --seed         # чистая БД
+```
 
 > **`-Wipe` только пока система не в реальной работе.** Когда PO скажет «работаем» — wipe запрещён.
+
+### Как устроен быстрый путь (канон)
+
+1. **Angular собирается локально** (`pnpm --dir frontend build` → `frontend/browser/`).
+2. В tar уходит: `backend/` (исходники) + `frontend/browser/` + `docker-compose.prod.yml`.
+3. На VM: `docker compose build backend` **с кэшем слоёв** (по умолчанию) → `up -d`.
+4. **Не** запускать два деплоя параллельно и **не** злоупотреблять `--no-cache` — на маленькой VM два `--no-cache` зависают и душат CPU.
+
+`--no-cache` нужен только если менялись `backend/Dockerfile` / lockfile / базовый image.
 
 ---
 
@@ -109,3 +126,34 @@ https://kppdf-crm.ru/api/health/ready
 4. Prod: сильный `ADMIN_PASSWORD` в `.env` (не demo-default) — иначе boot fail.
 5. После wipe Mongo нужен **replica set rs0** (`mongo-init` в compose уже исправлен).
 6. Не коммитить `config.env` / `CREDENTIALS.md`.
+
+## Уроки вечернего деплоя (2026-08-02, post-wipe)
+
+7. **Один деплой за раз.** Два параллельных `docker build --no-cache` на VM = зависание; на сервере не должно крутиться ничего лишнего кроме compose-стека kppdf (`kppdf-backend`, `kppdf-mongo`; `mongo-init` — one-shot Exited 0).
+8. По умолчанию **кэшированный** `docker compose build backend` (минуты). Полный `--no-cache` — исключение.
+9. После wipe/ротации JWT: краткий **401 на `/api/auth/me`** нормален (stale access) → refresh/re-login. Пароль только из `CREDENTIALS.md`.
+10. **ИНН обязателен** для `POST /organizations`. Автосоздание «Основной организации» из шаблонов документов шлёт валидный ИНН `7707083893` (не убирать `@IsINN()`).
+11. ValidationPipe должен кидать **`BadRequestException`** (400), не голый `Error` (иначе 500 на валидации).
+12. **`TextBlockCategoriesSeed` обязан быть в `AppModule.providers`** + `TextBlockCategoryModule` в `imports`. Без этого: `Default text-block category unavailable` (slug `obshchee`). Seed сам чинит inactive/non-default system row.
+13. DevFixturesSeed в `NODE_ENV=production` **не** создаёт demo-org — на проде org появляется через UI/шаблоны или admin.
+14. Локальный LM Studio agent: `docs/agents/LM-STUDIO-AGENT.md`, trust **LIMITED_HELPER**, `pnpm lmstudio:check`.
+
+### Smoke после деплоя
+
+```powershell
+curl.exe -sf http://192.168.1.103:3000/api/health/ready
+# UI: https://kppdf-crm.ru/  — Ctrl+F5, login admin / CREDENTIALS.md
+# Создать шаблон документа (пустое org → авто-org с ИНН)
+# Создать текстовый блок без categoryId → должен взять «Общее» (obshchee)
+```
+
+### Если VM «мёртвая» (нет контейнеров, крутятся build)
+
+```powershell
+# с ПК (VPN off), один процесс:
+$env:PYTHONUNBUFFERED='1'
+python -u deploy/synology/deploy.py --skip-build   # если FE уже собран
+# или полный: .\deploy\synology\deploy.ps1
+```
+
+На VM ожидаемо только: `kppdf-backend`, `kppdf-mongo` (+ exited `mongo-init`).

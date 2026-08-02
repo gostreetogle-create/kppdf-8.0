@@ -53,4 +53,40 @@ export const PERMISSIONS = [
   { key: 'system:write', section: 'system', action: 'write', description: 'Edit system settings / flags' },
 ] as const;
 
+
+/** TZ-ACCESS-301: page-ACL catalog — 1:1 with nav items in app-layout. */
+export const PAGE_KEYS = [
+  // Каталог
+  'products',
+  'modules',
+  'materials',
+  'work-types',
+  // Сделки
+  'organizations',
+  'proposals',
+  'contracts',
+  'orders',
+  // Справочники
+  'dictionaries',
+  'categories',
+  'doc-template-categories',
+  'color-references',
+  // Документы
+  'doc-templates',
+  'doc-texts',
+  'doc-tables',
+  'doc-documents',
+  // Склад
+  'inventory',
+  'storage-items',
+  'stock-movements',
+  // Люди
+  'people',
+  // Администрирование
+  'admin-users',
+  'admin-roles',
+] as const;
+
+export type PageKey = (typeof PAGE_KEYS)[number];
 export type PermissionKey = (typeof PERMISSIONS)[number]['key'];
+

@@ -172,7 +172,7 @@ describe('BuilderToolPaneComponent (TZ-DOC-317 category filter)', () => {
     TestBed.flushEffects();
     fixture.detectChanges();
 
-    const empty = fixture.nativeElement.querySelector('.tool-pane__empty');
+    const empty = fixture.nativeElement.querySelector('[data-test="tool-pane-texts-empty"]');
     expect(empty).toBeTruthy();
     expect(empty.textContent).toContain('Нет блоков в этой категории');
   });
@@ -198,5 +198,38 @@ describe('BuilderToolPaneComponent (TZ-DOC-317 category filter)', () => {
     TestBed.flushEffects();
     fixture.detectChanges();
     expect(select.disabled).toBe(false);
+  });
+
+  it('renders Groups section and emits selectGroup / ungroupGroup', async () => {
+    const fixture = TestBed.createComponent(BuilderToolPaneComponent);
+    const selectSpy = jest.fn();
+    const ungroupSpy = jest.fn();
+    fixture.componentRef.setInput('groups', [{ groupId: 'g1', label: 'Группа 1', count: 3 }]);
+    fixture.componentInstance.selectGroup.subscribe(selectSpy);
+    fixture.componentInstance.ungroupGroup.subscribe(ungroupSpy);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    // Drain initial httpResource requests so afterEach verify() stays clean.
+    httpMock
+      .expectOne((r) => r.method === 'GET' && r.url.includes('/text-block-categories'))
+      .flush(fakeCategories);
+    httpMock.expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks')).flush([]);
+    httpMock.expectOne((r) => r.method === 'GET' && r.url.includes('/table-templates')).flush([]);
+    await tickMicrotask();
+
+    (fixture.componentInstance as unknown as { toggle: (k: string) => void }).toggle('groups');
+    fixture.detectChanges();
+
+    const list = fixture.nativeElement.querySelector('[data-test="tool-pane-groups-list"]');
+    expect(list).toBeTruthy();
+    expect(list.textContent).toContain('Группа 1');
+    expect(list.textContent).toContain('3 блоков');
+
+    fixture.nativeElement.querySelector('[data-test="tool-pane-group-select"]').click();
+    expect(selectSpy).toHaveBeenCalledWith('g1');
+
+    fixture.nativeElement.querySelector('[data-test="tool-pane-group-ungroup"]').click();
+    expect(ungroupSpy).toHaveBeenCalledWith('g1');
   });
 });

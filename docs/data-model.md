@@ -392,7 +392,7 @@
 | `description` | `string` | — |
 | `price` | `number` | Цена (legacy) |
 | `pricePerUnit` | `number` | Цена за единицу. Всегда в **RUB** — поле валюты отсутствует (см. политику ниже). |
-| `stockQty` | `number` | ⚠️ **LEGACY (deprecated)** — остаток. Создание/редактирование материала больше не отправляет это поле (TZ-MATERIALS-304). Canonical owner остатка — складской `StorageItem.quantity` (склад/приходы/расходы). Поле сохранено в schema/DTO только для backward compatibility старых записей/API; не является источником истины. Связь material→stock пока отсутствует: `StorageItem.productId` ссылается на продукт, не на материал (см. TZ-MATERIALS-308). |
+| `stockQty` | `number` | ⚠️ **LEGACY (deprecated)** — остаток. Создание/редактирование материала больше не отправляет это поле (TZ-MATERIALS-304). Canonical owner остатка — складской `StorageItem.quantity` (склад/приходы/расходы). Поле сохранено в schema/DTO только для backward compatibility старых записей/API; не является источником истины. Связь material→stock реализована в **TZ-MATERIALS-308**: `StorageItem.materialId` (nullable, XOR с `productId`), движения и dashboard учитывают материал-позиции. |
 | `dimensions` | `Dimension[]` | Габариты (см. `Dimension`). Массив, не объект. |
 | `mainPhotoId` | `ObjectId?` | FK → `Photo`. Главное фото (используется в карточках). Выбирается галочкой из `photoIds[]`. |
 | `photoIds` | `ObjectId[]` | FK → `Photos` |
@@ -748,6 +748,7 @@ dimensions: [
 | `defaultDurationHours` | `number` | — |
 | `workCenterId` | `ObjectId` | FK → `WorkCenter` |
 | `hourlyRate` | `number` | Ставка по умолчанию |
+| `days` | `number?` | Календарные дни для Gantt-оценки. Null допустим (срок неизвестен — stuck path, TZ-PRODUCTION-302); >0 при заполнении |
 | `createdAt` | `Date` | — |
 | `updatedAt` | `Date` | — |
 
@@ -1165,7 +1166,8 @@ dimensions: [
 |------|-----|-------------|
 | `id` | `ObjectId` | PK |
 | `warehouseId` | `ObjectId` | FK → `Warehouse` |
-| `productId` | `ObjectId` | FK → `Product` |
+| `productId` | `ObjectId?` | FK → `Product`. XOR с `materialId` (TZ-MATERIALS-308): ровно одно из двух обязано быть задано (серверная валидация) |
+| `materialId` | `ObjectId?` | FK → `Material`. **TZ-MATERIALS-308** — nullable, sparse-индекс, уникальность `(warehouseId, materialId, zoneName)`; populated в ответах API |
 | `name` | `string` | — |
 | `description` / `notes` | `string` | — |
 | `photos` | `array` | — |
@@ -1222,7 +1224,8 @@ dimensions: [
 | `id` | `ObjectId` | PK |
 | `type` | `string` | — |
 | `date` | `Date` | — |
-| `productId` | `ObjectId` | — |
+| `productId` | `ObjectId?` | FK → `Product`. XOR с `materialId` (TZ-MATERIALS-308) |
+| `materialId` | `ObjectId?` | FK → `Material`. **TZ-MATERIALS-308** — материал-движения (приход/расход/перемещение), populated в ответах |
 | `warehouseId` | `ObjectId` | — |
 | `qty` | `number` | — |
 | `cost` | `number` | — |

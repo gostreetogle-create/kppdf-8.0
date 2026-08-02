@@ -27,6 +27,8 @@ export interface WorkType {
   isActive: boolean;
   department?: string;
   defaultDurationHours?: number;
+  /** Calendar days for Gantt estimation (TZ-PRODUCTION-302). Null allowed. */
+  days?: number | null;
   workCenterId?: string | { _id: string; name: string };
   hourlyRate?: number;
   createdAt?: string;

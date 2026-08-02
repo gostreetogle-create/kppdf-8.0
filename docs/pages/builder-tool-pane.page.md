@@ -1,16 +1,17 @@
 # Компонент: Панель инструментов (BuilderToolPaneComponent)
 
-**Краткое описание:** Левая боковая панель (280px) с палитрой блоков для конструктора документов. Пять collapsible секций: тексты, таблицы, отступы, data-binding, декорации (фон). Drag-and-drop элементов на холст.
+**Краткое описание:** Верхняя горизонтальная полоса палитры (полная ширина) для конструктора документов. Вкладки: группы, тексты, таблицы, фото. Drag-and-drop элементов на холст.
 
 ## Route
 
 Нет собственного роута. Всегда рендерится как дочерний компонент `BuilderPage`.
 
 ```
-BuilderPage (3-pane layout)
-├── BuilderToolPaneComponent   ← этот компонент (слева, 280px)
-├── BuilderCanvasComponent     (центр)
-└── BuilderInspectorComponent  (справа, 320px)
+BuilderPage (top palette + canvas | inspector)
+├── BuilderToolPaneComponent   ← верхняя палитра (полная ширина)
+└── builder-shell
+    ├── BuilderCanvasComponent     (центр, flex-1)
+    └── BuilderInspectorComponent  (справа, 320px)
 ```
 
 ## API endpoints

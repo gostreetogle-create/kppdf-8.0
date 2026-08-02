@@ -20,7 +20,10 @@
     "prepare": "husky",
     "lint-staged": "lint-staged",
     "team-room": "node OrchestratorKit/team-room/cli.mjs",
-    "team-room:open": "node OrchestratorKit/team-room/cli.mjs open"
+    "team-room:open": "node OrchestratorKit/team-room/cli.mjs open",
+    "lmstudio:check": "node scripts/lmstudio-agent/run.mjs --check",
+    "lmstudio:eval": "node scripts/lmstudio-agent/run.mjs --eval",
+    "lmstudio": "node scripts/lmstudio-agent/run.mjs"
   },
   "lint-staged": {
     "frontend/**/*.ts": [

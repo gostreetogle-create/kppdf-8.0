@@ -53,6 +53,7 @@ import {
   OVERLAY_DEFAULT_WIDTH,
   OVERLAY_DEFAULT_HEIGHT,
 } from './block-renderer-state.service';
+import { resolvePositionedDragPeers } from './builder-group-drag';
 
 /**
  * TZ-235.B — BlockRenderer (thin host).
@@ -553,6 +554,8 @@ export class BlockRendererComponent {
   readonly selected = input<boolean>(false);
   readonly multiSelected = input<boolean>(false);
   readonly groupBlocks = input<TemplateBlock[]>([]);
+  /** Full canvas block list — used to resolve persisted groupId drag peers. */
+  readonly allBlocks = input<TemplateBlock[]>([]);
   readonly layoutDragDelta = input<{ dx: number; dy: number } | null>(null);
   readonly layoutDragBlockIds = input<ReadonlySet<string>>(new Set());
   readonly snapEnabled = input<boolean>(true);
@@ -780,13 +783,20 @@ export class BlockRendererComponent {
     const startLayout = this.block().layout;
     const paper = target.closest('.pi-canvas-page-paper') as HTMLElement | null;
     if (!startLayout || !paper) return;
-    const selectedGroup = this.groupBlocks();
-    const draggedKey = blockKey(this.block());
-    const isGroupDrag =
-      selectedGroup.length > 1 && selectedGroup.some((b) => blockKey(b) === draggedKey);
-    const groupLayouts = (isGroupDrag ? selectedGroup : [this.block()])
+
+    // TZ-DOC-331: peers from persisted groupId (full list), not selection race.
+    const peers = resolvePositionedDragPeers(this.block(), this.allBlocks(), this.groupBlocks());
+    const groupLayouts = peers
       .filter((b) => b.layout)
       .map((b) => ({ block: b, layout: b.layout! }));
+    if (groupLayouts.length === 0) return;
+
+    const isGroupDrag = groupLayouts.length > 1;
+    // Sync full-group selection before/during drag (click often suppressed).
+    if (this.block().groupId || isGroupDrag) {
+      this.select.emit(this.block());
+    }
+
     const startX = event.clientX;
     const startY = event.clientY;
     this.state.positionedDragActive.set(true);

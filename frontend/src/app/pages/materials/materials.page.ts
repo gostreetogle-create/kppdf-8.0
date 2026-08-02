@@ -179,7 +179,7 @@ const PAGE_SIZE = 50;
             <a
               [routerLink]="['/storage-items']"
               [queryParams]="{ materialId: row._id }"
-              class="inline-flex items-center gap-1 text-ink-1 underline decoration-dotted underline-offset-4 hover:text-primary transition-colors"
+              class="inline-flex items-center gap-1 text-primary underline decoration-dotted underline-offset-4 transition-colors"
               [attr.aria-label]="'Остатки на складе: ' + row.name"
             >
               Склад →

@@ -41,3 +41,15 @@ git status --short                          # посмотреть чужие н
 - `pwd` содержит `.freebuff/worktrees` → ты в песочнице: переоткрой сессию из `D:\kppdf-8.0`.
 - `git branch --show-current` ≠ `main` → переключись на `main` или переоткрой сессию.
 - `git log --oneline -1` старше, чем ожидаемый HEAD → `git fetch origin && git merge origin/main`.
+
+## Локальный LM Studio (опционально)
+
+Draft-helper на той же машине (не Cursor cloud). Доверие: **LIMITED_HELPER**.
+
+```powershell
+# LM Studio → Developer Running, model qwen2.5-coder-14b, port 1234
+pnpm lmstudio:check
+pnpm lmstudio -- --task "Explain pageKey in 3 bullets" --with frontend/src/app/core/capabilities/capability-route.guard.ts
+```
+
+Канон: `docs/agents/LM-STUDIO-AGENT.md`.

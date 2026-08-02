@@ -293,6 +293,18 @@ flowBlocks    = computed(() => blocks.filter(b => !isOverlayBlock(b)))
 | `backgroundImages` | `string[]` | Фоны с учётом defaultBackgroundIndex |
 | `orientation` | `'portrait' \| 'landscape'` | Ориентация шаблона |
 | `templateListErrorMessage` | `string` | Ошибка загрузки списка шаблонов |
+| `selectionIsPersistedGroup` | `boolean` | Selection = одна flat-группа (`groupId`) |
+| `paletteGroups` | `{ groupId, label, count }[]` | Список групп для левой палитры |
+
+### Persistent groups (TZ-DOC-331)
+
+- Membership: `TemplateBlock.groupId` (UUID shared by members; `null` = alone).
+- Select / mousedown-drag on a member expands selection to **all** same-`groupId` blocks.
+- Positioned drag peers are resolved by `resolvePositionedDragPeers()` from the
+  **full** canvas list (`allBlocks`), not from ephemeral selection — so the first
+  drag after canvas-click still moves the whole group.
+- Canvas click clears selection only; never clears `groupId`.
+- Ungroup only via inspector / palette buttons.
 
 ## Auto-save architecture
 

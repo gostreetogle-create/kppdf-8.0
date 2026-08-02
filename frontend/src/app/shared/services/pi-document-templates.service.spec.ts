@@ -120,9 +120,12 @@ describe('DocumentTemplatesService', () => {
     expect(listTypes.request.method).toBe('GET');
     listTypes.flush([]);
 
-    svc.createOrganization({ name: 'Org', shortName: 'Org', isActive: true }).subscribe();
+    svc
+      .createOrganization({ name: 'Org', shortName: 'Org', inn: '7707083893', isActive: true })
+      .subscribe();
     const createOrg = httpMock.expectOne('http://test/api/organizations');
     expect(createOrg.request.method).toBe('POST');
+    expect(createOrg.request.body).toEqual(expect.objectContaining({ inn: '7707083893' }));
     createOrg.flush({ _id: 'org1', name: 'Org' });
 
     svc.createDocType({ name: 'КП', slug: 'kp', description: 'КП', isActive: true }).subscribe();

@@ -1,0 +1,8 @@
+{
+  "trust": "LIMITED_HELPER",
+  "reviewedAt": "2026-08-02",
+  "model": "qwen/qwen2.5-coder-14b",
+  "summary": "Keep as local draft helper. Do not trust alone for security review, TZ, archive, deploy.",
+  "ok": ["pure TS helpers", "explain --with snippets", "draft test ideas"],
+  "notOkAlone": ["security review", "architecture", "TZ authoring", "Layer-3", "archive/deploy/git"]
+}

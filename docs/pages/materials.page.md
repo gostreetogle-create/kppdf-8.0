@@ -71,6 +71,7 @@
 | `photoTpl` | `mainPhotoId` | `<img>` или `<pi-empty-tile>` |
 | `supplierTpl` | `supplierId` | Название организации (lookup) |
 | `dimsTpl` | `dimensions` | `L 3000мм × W 2000мм × T 2мм` |
+| `stockTpl` | `stockQty` (legacy-key) | **TZ-MATERIALS-308** — ссылка «Склад →» на `/storage-items?materialId=<id>` |
 | `rowActionsTpl` | (actions) | Copy / Edit / Delete (TZ-MATERIALS-310 добавил copy slot) |
 
 ## Идентификация: «Артикул» vs «Внутренний код материала»
@@ -83,14 +84,18 @@
   Категория передаётся как `categoryId`, а при редактировании populated-ссылка нормализуется в ID без потери значения.
   Активная категория с другим типом, отключённая категория или категория без префикса отклоняются до создания материала.
 
-## Column definitions (8 колонок)
+## Column definitions (9 колонок)
 
-`mainPhotoId` (96px, center) → `name` (sticky, sortable) → `article` (sortable) → `sku` (sortable) → `unit` (sortable) → `supplierId` (cellTemplate) → `dimensions` (cellTemplate) → `pricePerUnit` (sortable, numeric, right)
+`mainPhotoId` (96px, center) → `name` (sticky, sortable) → `article` (sortable) → `sku` (sortable) → `unit` (sortable) → `supplierId` (cellTemplate) → `dimensions` (cellTemplate) → `pricePerUnit` (sortable, numeric, right) → `stockQty`-key (cellTemplate «Склад», TZ-MATERIALS-308)
 
-> **Остаток (TZ-MATERIALS-304):** колонка `stockQty` убрана из списка материалов — остаток
+> **Остаток (TZ-MATERIALS-304):** числовая колонка `stockQty` убрана из списка материалов — остаток
 > управляется только в разделе «Склад» (`StorageItem.quantity`, приходы/расходы). `Material.stockQty`
-> остаётся в schema/DTO как legacy (backward compatibility), но не отображается и не вводится.
-> Связь материал→склад отсутствует (`StorageItem.productId` → продукт; см. TZ-MATERIALS-308).
+> остаётся в schema/DTO как legacy (backward compatibility), не отображается и не вводится.
+> **TZ-MATERIALS-308:** вместо числовой колонки добавлена read-only ссылка «Склад →», ведущая на
+> `/storage-items?materialId=<id>` (остатки этого материала). Ключ колонки — legacy `stockQty`
+> (ColumnDef.key требует `keyof Material`; виртуальные ключи типом запрещены).
+> Связь материал→склад реализована: `StorageItem.materialId` (XOR с `productId`), приход/расход
+> через stock-movements, метрики inventory-dashboard учитывают материал-позиции.
 
 ## TZ reference
 
@@ -102,6 +107,7 @@
 | TZ-MATERIALS-303 | Понятный код/идентификация (article vs sku) |
 | TZ-MATERIALS-307 | Серверная генерация SKU через CounterService |
 | TZ-MATERIALS-310 | **Кнопка «Копировать»** (server-side clone, без фото) |
+| **TZ-MATERIALS-308** | **Связка материал→склад**: колонка-ссылка «Склад», фильтр `?materialId=` на остатках |
 
 ## Кнопка «Копировать» — TZ-MATERIALS-310
 
@@ -137,4 +143,4 @@ Audit: `@AuditAction({ action: 'duplicate', entityType: 'Material', idParam: 'id
 
 ---
 
-_Создано: 2026-07-19. Последнее обновление: 2026-08-02 (TZ-MATERIALS-307 → TZ-MATERIALS-310 — Copy action)._
+_Создано: 2026-07-19. Последнее обновление: 2026-08-02 (TZ-MATERIALS-307 → 310 → 308 — материал-склад)._

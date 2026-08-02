@@ -373,6 +373,8 @@ export class TemplatesPage {
               this.svc.createOrganization({
                 name: 'Основная организация',
                 shortName: 'Основная',
+                // Valid 10-digit INN (checksum) — CreateOrganizationDto requires @IsINN()
+                inn: '7707083893',
                 isActive: true,
               }),
             ),

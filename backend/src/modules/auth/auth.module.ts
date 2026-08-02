@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { UserModule } from '../user/user.module';
+import { RoleModule } from '../role/role.module';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -12,6 +13,8 @@ import { LoginSoftlockService } from '../../common/login-softlock/login-softlock
 @Module({
   imports: [
     UserModule,
+    // ACCESS-301+: AuthService resolves role.pages via RoleService.findByName
+    RoleModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

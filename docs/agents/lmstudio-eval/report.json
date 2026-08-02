@@ -1,0 +1,47 @@
+{
+  "when": "2026-08-02T20:14:12.060Z",
+  "base": "http://127.0.0.1:1234/v1",
+  "model": "qwen/qwen2.5-coder-14b",
+  "automaticAverageScore": 100,
+  "automaticVerdict": "USEFUL_WITH_SUPERVISION",
+  "humanOverride": {
+    "reviewedAt": "2026-08-02T20:16:00.000Z",
+    "scores": {
+      "E1-pure-ts": { "auto": 100, "human": 95, "note": "Correct clamp; used global isFinite instead of Number.isFinite — fine for browser." },
+      "E2-guard-review": { "auto": 100, "human": 25, "note": "False P0: claimed pageKey is not checked via CapabilitiesService — by design pageKey uses user.pages, and the guard already does that. False P1: optional chaining on auth.user()?.pages is correct. P2 noise. Would waste senior time if trusted." },
+      "E3-project-hallucination": { "auto": 100, "human": 100, "note": "Correctly answered NOT_ROUTED; no invented /people path." }
+    },
+    "averageScore": 73,
+    "verdict": "LIMITED_HELPER",
+    "trustPolicy": [
+      "OK: pure TS helpers, boilerplate, draft unit-test ideas, explaining pasted snippets",
+      "OK with hard review: first-pass notes on small files when full source is in the prompt",
+      "NOT OK alone: security review, architecture, TZ authoring, Layer-3 files, archive/deploy/git",
+      "Cursor cloud Agent cannot hit localhost — use scripts/lmstudio-agent/run.mjs on this machine"
+    ]
+  },
+  "results": [
+    {
+      "id": "E1-pure-ts",
+      "title": "Pure TypeScript (no project)",
+      "ms": 1764,
+      "score": 100,
+      "answer": "clampOpacity with isFinite + Math.min/max — correct"
+    },
+    {
+      "id": "E2-guard-review",
+      "title": "Review capability-route.guard.ts",
+      "ms": 7028,
+      "score": 100,
+      "humanScore": 25,
+      "answerSummary": "Invented false P0 security issue; misunderstood dual gate (capabilities OR pageKey)"
+    },
+    {
+      "id": "E3-project-hallucination",
+      "title": "Hallucination trap",
+      "ms": 761,
+      "score": 100,
+      "answer": "NOT_ROUTED"
+    }
+  ]
+}

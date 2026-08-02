@@ -13,7 +13,10 @@
 |------|-----|--------|-----------|
 | **Архитектор / TZ-author / future user (Mode A)** | Cursor | Оценка, планы, executable TZ, UX/business smell → TZ, review текстом; **commit+push своих docs/TZ по умолчанию** | Код продукта, длинные build/test, archive closeout как исполнитель |
 | **Исполнитель** | Gemini / локальные агенты | Код по TZ, gates, checklist, archive | Выбор roadmap «улучшить всё» без PO |
+| **Локальный draft (LIMITED_HELPER)** | LM Studio Qwen via `pnpm lmstudio` | Черновики мелкого кода / объяснения сниппетов | Security review, TZ, archive, deploy, Layer-3 alone |
 | **Оркестрация** | OrchestratorKit | STATUS, `_active`/`_archive`, verify-status | Бизнес-логика ERP |
+
+LM Studio: `docs/agents/LM-STUDIO-AGENT.md` · `node scripts/lmstudio-agent/run.mjs --check`
 
 **Cursor как будущий пользователь ERP:** при чтении кода/потоков замечай неудобные шаги, дубли меню/полей/сущностей, нелогичные статусы и противоречия домена — оформляй в TZ, не молчи.
 

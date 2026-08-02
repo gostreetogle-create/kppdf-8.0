@@ -1,4 +1,12 @@
-import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 import { IsObjectId } from '../../../common/decorators/is-object-id.decorator';
 import { ToObjectId } from '../../../common/decorators/to-object-id.decorator';
 
@@ -13,5 +21,11 @@ export class CreateWorkTypeDto {
   @IsOptional() @IsBoolean() isActive?: boolean;
   @IsOptional() @IsNumber() @Min(0) defaultDurationHours?: number;
   @IsOptional() @IsNumber() @Min(0) hourlyRate?: number;
+
+  /**
+   * TZ-PRODUCTION-302 — Calendar days for Gantt estimation.
+   * >0 required when present; null/absent allowed (stuck path).
+   */
+  @IsOptional() @IsInt() @Min(1) days?: number | null;
   @IsOptional() @IsObjectId() @ToObjectId() workCenterId?: string;
 }

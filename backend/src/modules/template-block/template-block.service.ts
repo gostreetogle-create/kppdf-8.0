@@ -1,6 +1,9 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { randomUUID } from 'node:crypto';
+import { join } from 'node:path';
+import { promises as fs } from 'node:fs';
 import { TemplateBlock, TemplateBlockDocument } from './template-block.schema';
 import { CreateTemplateBlockDto } from './dto/create-template-block.dto';
 import { UpdateTemplateBlockDto } from './dto/update-template-block.dto';
@@ -33,12 +36,13 @@ export class TemplateBlockService {
       })),
       height: dto.height,
       showLine: dto.showLine ?? false,
-      settings: dto.settings,
+      settings: this.sanitizeSettings(dto.settings),
       dataBinding: dto.dataBinding,
       layout: dto.layout
         ? (this.assertSupportedPage(dto.layout.page), normalizeBlockLayout(dto.layout))
         : undefined,
       source: this.normalizeSource(dto.source),
+      groupId: dto.groupId ?? null,
       isActive: dto.isActive ?? true,
     });
   }
@@ -110,13 +114,14 @@ export class TemplateBlockService {
     }
     if (dto.height !== undefined) doc.height = dto.height;
     if (dto.showLine !== undefined) doc.showLine = dto.showLine;
-    if (dto.settings !== undefined) doc.settings = dto.settings;
+    if (dto.settings !== undefined) doc.settings = this.sanitizeSettings(dto.settings);
     if (dto.dataBinding !== undefined) doc.dataBinding = dto.dataBinding;
     if (dto.layout !== undefined) {
       this.assertSupportedPage(dto.layout.page);
       doc.layout = normalizeBlockLayout({ ...doc.layout, ...dto.layout });
     }
     if (dto.source !== undefined) doc.source = this.normalizeSource(dto.source);
+    if (dto.groupId !== undefined) doc.groupId = dto.groupId;
     if (dto.isActive !== undefined) doc.isActive = dto.isActive;
     return doc.save();
   }
@@ -201,6 +206,133 @@ export class TemplateBlockService {
   private assertSupportedPage(page: number | undefined): void {
     if (page !== undefined && page !== 1) {
       throw new BadRequestException('Only page 1 is currently supported by the document builder');
+    }
+  }
+
+  /**
+   * TZ-DOC-333 — reject ephemeral image URLs on create/update.
+   *
+   * `settings.imageUrl` may only be:
+   *   - absent / null / ''  → no image (or remove existing);
+   *   - a `/uploads/...` path → persisted disk URL (canonical).
+   * Anything else (`blob:`, `data:`, absolute http(s), relative paths) is
+   * rejected with a 400 and an actionable message. Browser `blob:` URLs are
+   * session-local and would render as broken images after reload — the FE
+   * must upload via `POST /template-blocks/:id/image` and persist only the
+   * returned `/uploads/...` URL.
+   */
+  private sanitizeSettings(
+    settings: Record<string, unknown> | undefined,
+  ): Record<string, unknown> | undefined {
+    if (!settings) return settings;
+    const imageUrl = settings['imageUrl'];
+    if (imageUrl === undefined || imageUrl === null || imageUrl === '') {
+      return settings;
+    }
+    if (typeof imageUrl !== 'string') {
+      throw new BadRequestException(
+        'settings.imageUrl должен быть строкой: пустая строка (удалить фото) или URL вида /uploads/...',
+      );
+    }
+    if (!imageUrl.startsWith('/uploads/')) {
+      throw new BadRequestException(
+        `settings.imageUrl содержит недопустимый URL. Разрешён только путь вида /uploads/template-blocks/... . Временные blob:/data: URL сохранять нельзя — загрузите файл через POST /template-blocks/:id/image.`,
+      );
+    }
+    if (imageUrl.split('/').includes('..')) {
+      throw new BadRequestException(
+        'settings.imageUrl содержит недопустимый путь (../): путь не должен покидать каталог /uploads/.',
+      );
+    }
+    return settings;
+  }
+
+  /**
+   * TZ-DOC-333 — MIME → extension map for generated filenames. NEVER trust
+   * `file.originalname`; derive the extension from the server-validated MIME
+   * (controller `fileFilter` enforces the whitelist first). Mirrors the
+   * DocumentTemplate `uploadBackground` reference implementation.
+   */
+  private static readonly MIME_TO_EXT: Record<string, string> = {
+    'image/png': 'png',
+    'image/jpeg': 'jpg',
+    'image/webp': 'webp',
+  };
+
+  /**
+   * Exact shape of a persisted block-photo URL. Used as the ONLY allowlist
+   * for the replace-unlink, so `..`/absolute/foreign paths can never escape
+   * `uploads/template-blocks/{blockId}/`.
+   */
+  private static readonly BLOCK_IMAGE_URL_RE =
+    /^\/uploads\/template-blocks\/[a-f0-9]{24}\/[a-f0-9-]{36}\.(png|jpg|webp)$/;
+
+  /**
+   * TZ-DOC-333 — persist a photo for an image block.
+   *
+   * Mirror of `DocumentTemplateService.uploadBackground` (canonical storage
+   * pattern), with 1 block → 1 «current» imageUrl (replace semantics):
+   *
+   *   1. `findById(id)` → 404 on missing/invalid block.
+   *   2. Derive safe filename `${randomUUID()}.${ext}` (no user input).
+   *   3. Write buffer to `uploads/template-blocks/{id}/{filename}` BEFORE the
+   *      DB write so a failed save leaves a concrete file to unlink.
+   *   4. Set `settings.imageUrl = /uploads/template-blocks/{id}/{filename}`
+   *      via `doc.save()` (audit plugin fires the same as update()).
+   *   5. Best-effort `fs.unlink()` of the PREVIOUS block image (only paths
+   *      inside `/uploads/template-blocks/` are ever touched).
+   *   6. On save() failure → best-effort unlink of the orphan file + re-throw.
+   *
+   * Returns `{ url }` — the shape `TemplateBlocksService.uploadImage` (FE)
+   * already expects. main.ts `useStaticAssets` serves `/uploads/*`.
+   */
+  async uploadImage(id: string, file: Express.Multer.File): Promise<{ url: string }> {
+    const doc = await this.findById(id);
+
+    const ext = TemplateBlockService.MIME_TO_EXT[file.mimetype];
+    if (!ext) {
+      // Defense-in-depth: controller's fileFilter already rejects non-whitelisted MIME.
+      throw new BadRequestException(
+        `Недопустимый MIME-тип файла: ${file.mimetype}. Ожидается image/png | image/jpeg | image/webp.`,
+      );
+    }
+
+    const filename = `${randomUUID()}.${ext}`;
+    const dirPath = join(process.cwd(), 'uploads', 'template-blocks', id);
+    const filePath = join(dirPath, filename);
+    const publicUrl = `/uploads/template-blocks/${id}/${filename}`;
+
+    await fs.mkdir(dirPath, { recursive: true });
+    await fs.writeFile(filePath, file.buffer);
+
+    try {
+      const settings = (doc.settings ?? {}) as Record<string, unknown>;
+      const previousUrl = settings['imageUrl'];
+      doc.settings = { ...settings, imageUrl: publicUrl };
+      await doc.save();
+
+      // Replace semantics: best-effort unlink of the previous block image.
+      // STRICT shape check — an attacker-controlled value like
+      // /uploads/template-blocks/../../secret must never reach fs.unlink
+      // even though sanitizeSettings already rejects `..` on writes (defense
+      // in depth for legacy/duplicated records).
+      if (
+        typeof previousUrl === 'string' &&
+        TemplateBlockService.BLOCK_IMAGE_URL_RE.test(previousUrl)
+      ) {
+        await fs.unlink(join(process.cwd(), previousUrl)).catch(() => {});
+      }
+      return { url: publicUrl };
+    } catch (err) {
+      // Best-effort cleanup of the orphan file before surfacing the error.
+      await fs.unlink(filePath).catch((unlinkErr) => {
+        // Don't shadow the original error.
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[uploadImage] Failed to unlink orphan file ${filePath}: ${String(unlinkErr)}`,
+        );
+      });
+      throw err;
     }
   }
 

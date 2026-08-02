@@ -595,7 +595,7 @@ export class ContractsPage implements OnInit {
   }
 
   protected onCreateDocument(row: Contract): void {
-    this.router.navigate(['/doc-constructor/builder'], {
+    this.router.navigate(['/doc-constructor/templates'], {
       queryParams: { source: 'contract', sourceId: row._id },
     });
   }

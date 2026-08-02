@@ -583,7 +583,7 @@ export class OrdersPage implements OnInit {
   }
 
   protected onCreateDocument(row: Order): void {
-    this.router.navigate(['/doc-constructor/builder'], {
+    this.router.navigate(['/doc-constructor/templates'], {
       queryParams: { source: 'order', sourceId: row._id },
     });
   }

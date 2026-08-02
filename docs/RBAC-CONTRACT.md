@@ -245,6 +245,69 @@ read logging. This endpoint opts in with `auditRead: true`, so successful
 catalog access produces an audit record without changing behavior for other
 read-only routes.
 
+
+## Page ACL (TZ-ACCESS-301)
+
+Page-level access control sits **above** fine-grained permission keys. A
+role's `pages: string[]` array determines which navigation sections are
+visible in the UI.
+
+### Canonical PAGE_KEYS catalog
+
+Defined in `backend/src/common/seed/permissions.constants.ts` (1:1 with
+`app-layout.component.ts` nav items):
+
+| Page key | Nav section | Description |
+|----------|-------------|-------------|
+| `products` | Каталог | Products registry |
+| `modules` | Каталог | Product modules |
+| `materials` | Каталог | Materials dictionary |
+| `work-types` | Каталог | Work types |
+| `organizations` | Сделки | Counterparty organizations |
+| `proposals` | Сделки | Commercial proposals (КП) |
+| `contracts` | Сделки | Contracts |
+| `orders` | Сделки | Orders |
+| `dictionaries` | Справочники | All dictionaries |
+| `categories` | Справочники | Categories |
+| `doc-template-categories` | Справочники | Template categories |
+| `color-references` | Справочники | Color references (RAL) |
+| `doc-templates` | Документы | Document templates |
+| `doc-texts` | Документы | Text blocks |
+| `doc-tables` | Документы | Table templates |
+| `doc-documents` | Документы | Document archive |
+| `inventory` | Склад | Inventory overview |
+| `storage-items` | Склад | Storage items |
+| `stock-movements` | Склад | Stock movements |
+| `people` | Люди | People directory |
+| `admin-users` | Администрирование | User management |
+| `admin-roles` | Администрирование | Role management |
+
+### Default page assignments
+
+| Role | Pages |
+|------|-------|
+| `admin` | All 23 pages (full access) |
+| `director` | All except `admin-users`, `admin-roles` |
+| `manager` | Catalog + Deals + Dictionaries + Documents + Inventory + People |
+| `user` (Worker) | `doc-texts`, `doc-documents` |
+
+### Delivery
+
+`GET /auth/me` returns `pages: string[]` in the `AuthUserPayload`. The
+frontend `app-layout.component.ts` filters `NAV_CATEGORIES` using these
+pages (via `CapabilitiesService`). Roles seeded at first boot via
+`admin.seed.ts`.
+
+### Extension
+
+Adding a new page:
+1. Add the key to `PAGE_KEYS` in `permissions.constants.ts`.
+2. Add the nav item to `NAV_CATEGORIES` in `app-layout.component.ts`.
+3. Update default role pages in `admin.seed.ts`.
+
+Removing a page: remove from all three locations and audit existing
+role documents for stale keys.
+
 ## 12. Maintenance
 
 `TZ-254` is the **last chance** to fix contract semantics WITHOUT a

@@ -1,5 +1,10 @@
 # ORCHESTRATION CHECKLIST — gemma-4-12b-qat как local executor для kppdf-8.0
 
+> **2026-08 update:** актуальный локальный harness — `docs/agents/LM-STUDIO-AGENT.md` +
+> `scripts/lmstudio-agent/run.mjs` (модель по умолчанию `qwen/qwen2.5-coder-14b`, trust
+> **LIMITED_HELPER**). Ниже — исторический checklist под gemma-4-12b-qat / `orchestrate.py`;
+> не считать его единственным каноном.
+
 **Версия:** 2026-07-12 (TZ-87 docs sync + session)  
 **Архитектор:** Buffy (cloud minimax-m3)  
 **Worker:** local gemma-4-12b-qat @ LM Studio `http://localhost:1234/v1/chat/completions`  

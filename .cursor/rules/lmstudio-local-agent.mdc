@@ -1,0 +1,14 @@
+---
+description: When/how to use the local LM Studio (Qwen) helper for kppdf
+alwaysApply: false
+---
+
+# Local LM Studio agent
+
+If PO asks to use the local Qwen/LM Studio model:
+
+1. Ensure LM Studio server is Running on `http://127.0.0.1:1234`.
+2. Run from repo root: `node scripts/lmstudio-agent/run.mjs --task "..."`.
+3. Treat output as **draft only** — verify against the real tree before applying.
+4. Do **not** configure Cursor Override Base URL to localhost (cloud Agent cannot reach it without a tunnel). Prefer the script harness.
+5. Never let LM Studio alone archive TZ, push, or deploy.

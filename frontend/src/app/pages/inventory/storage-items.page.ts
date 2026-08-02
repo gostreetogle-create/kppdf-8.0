@@ -1,15 +1,18 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   computed,
   inject,
   signal,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
+import { ActivatedRoute } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PiEntityListComponent } from '../../shared/dsl/entity-list/entity-list.component';
 import { ColumnDef } from '../../shared/ui/pi-table.component';
 import { API_BASE_URL } from '../../core/api.tokens';
-import { StorageItem } from './storage-items.service';
+import { StorageItem, storageItemName } from './storage-items.service';
 import { Warehouse } from './warehouses.service';
 
 /**
@@ -35,6 +38,10 @@ import { Warehouse } from './warehouses.service';
       [hideSearch]="true"
       emptyMessage="Нет данных об остатках."
     >
+      @if (materialName()) {
+        <span hint>Материал: {{ materialName() }}</span>
+      }
+
       <select
         filters
         class="pi-input"
@@ -52,15 +59,52 @@ import { Warehouse } from './warehouses.service';
 })
 export class StorageItemsPage {
   private readonly baseUrl = inject(API_BASE_URL);
+  private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
+
+  // ── Material filter (TZ-MATERIALS-308) ──
+  // Переход со страницы материалов: /storage-items?materialId=<id>.
+  // Read-only фильтр — количество меняется только в складе.
+  protected readonly materialId = signal<string>('');
 
   // ── Warehouse filter ──
 
   protected readonly selectedWarehouse = signal<string>('');
 
   protected readonly listParams = computed((): Record<string, string> => {
+    const params: Record<string, string> = {};
     const warehouseId = this.selectedWarehouse();
-    return warehouseId ? { warehouseId } : {};
+    if (warehouseId) params['warehouseId'] = warehouseId;
+    const materialId = this.materialId();
+    if (materialId) params['materialId'] = materialId;
+    return params;
   });
+
+  protected readonly materialName = computed<string>(() => {
+    const materialId = this.materialId();
+    return materialId ? (this.materialsLookup()[materialId] ?? '') : '';
+  });
+
+  // ── Materials lookup (для подписи фильтра) ──
+  // Небольшой lookup по /materials для подписи фильтра (TZ-MATERIALS-308).
+  protected readonly materialsRes = httpResource<MaterialsListEnvelope>(() => ({
+    url: `${this.baseUrl}/materials`,
+    params: { limit: '200' },
+  }));
+
+  protected readonly materialsLookup = computed<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    for (const m of this.materialsRes.value()?.items ?? []) map[m._id] = m.name;
+    return map;
+  });
+
+  constructor() {
+    // TZ-MATERIALS-308: поддержка перехода со страницы материалов
+    // (/storage-items?materialId=<id>). Read-only — только фильтрация.
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      this.materialId.set(params.get('materialId') ?? '');
+    });
+  }
 
   protected onWarehouseChange(event: Event): void {
     const value = (event.target as HTMLSelectElement).value;
@@ -73,18 +117,16 @@ export class StorageItemsPage {
     url: `${this.baseUrl}/warehouses`,
   }));
 
-  protected readonly warehouses = computed<Warehouse[]>(
-    () => this.warehousesRes.value() ?? [],
-  );
+  protected readonly warehouses = computed<Warehouse[]>(() => this.warehousesRes.value() ?? []);
 
   // ── Column definitions ──
 
   protected readonly columns: ColumnDef<StorageItem>[] = [
     {
       key: 'product',
-      label: 'Продукт',
+      label: 'Продукт/Материал',
       sortable: true,
-      accessor: (row) => row.product?.name ?? '—',
+      accessor: (row) => storageItemName(row),
     },
     {
       key: 'warehouse',
@@ -120,4 +162,9 @@ export class StorageItemsPage {
       width: '6rem',
     },
   ];
+}
+
+/** Малый срез /materials для подписи фильтра по материалу (TZ-MATERIALS-308). */
+interface MaterialsListEnvelope {
+  items?: { _id: string; name: string }[];
 }

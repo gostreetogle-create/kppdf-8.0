@@ -19,8 +19,14 @@ import { PiToastService } from './shared/ui/toast';
 /**
  * Global error handler — catches unhandled errors, reports to Sentry (if DSN set), and shows a toast.
  * Sentry is lazy-loaded to avoid pulling ~300KB into the initial bundle.
+ *
+ * `PiToastService` is resolved at construction time (injection context).
+ * Calling `inject()` inside `handleError` caused NG0203 when Angular
+ * invoked the handler from a late async/error callback.
  */
-class GlobalErrorHandler implements ErrorHandler {
+export class GlobalErrorHandler implements ErrorHandler {
+  private readonly toast = inject(PiToastService);
+
   handleError(error: unknown): void {
     // TZ-157: Capture unhandled errors in Sentry (lazy-loaded)
     if (window.__SENTRY_DSN__) {
@@ -29,10 +35,9 @@ class GlobalErrorHandler implements ErrorHandler {
       });
     }
 
-    const toast = inject(PiToastService);
     const message = error instanceof Error ? error.message : 'Произошла непредвиденная ошибка';
     console.error('[GlobalErrorHandler]', error);
-    toast.error(message, { duration: 5000 });
+    this.toast.error(message, { duration: 5000 });
   }
 }
 

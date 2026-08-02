@@ -1,0 +1,139 @@
+import { Test } from '@nestjs/testing';
+import { getModelToken } from '@nestjs/mongoose';
+import { NotFoundException } from '@nestjs/common';
+import { Types } from 'mongoose';
+import { WorkTypeService } from './work-type.service';
+import { WorkType } from './work-type.schema';
+
+/**
+ * TZ-PRODUCTION-302 — Unit spec for WorkTypeService.days.
+ *
+ * Hermetic fake-модель (без Mongo). Покрывает AC:
+ *  - days сохраняется round-trip (create + update);
+ *  - null допустим (stuck path, unknown duration);
+ *  - legacy-запись без days открывается (backward compat).
+ */
+
+type MockDoc = Record<string, unknown> & {
+  _id: Types.ObjectId;
+  save: jest.Mock;
+};
+
+class FakeWorkTypeModel {
+  public store: Map<string, MockDoc> = new Map();
+
+  reset() {
+    this.store.clear();
+  }
+
+  makeDoc(partial: Record<string, unknown> = {}): MockDoc {
+    const _id = (partial._id as Types.ObjectId) ?? new Types.ObjectId();
+    const doc: MockDoc = {
+      ...partial,
+      _id,
+      save: jest.fn(async () => doc),
+    };
+    this.store.set(String(_id), doc);
+    return doc;
+  }
+
+  create = jest.fn(async (doc: Record<string, unknown>) => {
+    return this.makeDoc(doc);
+  });
+
+  findById = jest.fn((id: string) => ({
+    exec: jest.fn(async () => {
+      const doc = this.store.get(String(id));
+      if (!doc) return null;
+      return doc;
+    }),
+  }));
+
+  find = jest.fn(() => ({
+    sort: jest.fn(() => ({ exec: jest.fn(async () => Array.from(this.store.values())) })),
+  }));
+
+  updateOne = jest.fn(
+    (filter: Record<string, unknown>, update: Record<string, unknown>) => {
+      const target = Array.from(this.store.values()).find(
+        (d) => String(d._id) === String(filter._id),
+      );
+      if (target) {
+        const set = (update.$set ?? {}) as Record<string, unknown>;
+        Object.entries(set).forEach(([k, v]) => {
+          (target as Record<string, unknown>)[k] = v;
+        });
+      }
+      return { exec: jest.fn(async () => ({ modifiedCount: target ? 1 : 0 })) };
+    },
+  );
+}
+
+describe('WorkTypeService (TZ-PRODUCTION-302)', () => {
+  let service: WorkTypeService;
+  let model: FakeWorkTypeModel;
+
+  beforeEach(async () => {
+    model = new FakeWorkTypeModel();
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        WorkTypeService,
+        { provide: getModelToken(WorkType.name), useValue: model },
+      ],
+    }).compile();
+    service = moduleRef.get(WorkTypeService);
+  });
+
+  describe('days round-trip', () => {
+    it('create persists days value', async () => {
+      const created = await service.create({ name: 'Покраска', days: 3 });
+      expect(created.days).toBe(3);
+    });
+
+    it('create allows null days (stuck path)', async () => {
+      const created = await service.create({ name: 'Сборка', days: null });
+      expect(created.days).toBeNull();
+    });
+
+    it('create without days leaves days undefined (legacy default null)', async () => {
+      const created = await service.create({ name: 'Раскрой' });
+      expect(created.days).toBeUndefined();
+    });
+
+    it('update changes days and persists null explicitly', async () => {
+      const doc = model.makeDoc({
+        _id: new Types.ObjectId(),
+        name: 'Сварка',
+        days: 5,
+      });
+      const updated = await service.update(String(doc._id), { days: 8 });
+      expect(updated.days).toBe(8);
+
+      const cleared = await service.update(String(doc._id), { days: null });
+      expect(cleared.days).toBeNull();
+    });
+
+    it('update without days key keeps existing days', async () => {
+      const doc = model.makeDoc({
+        _id: new Types.ObjectId(),
+        name: 'Сварка',
+        days: 5,
+      });
+      const updated = await service.update(String(doc._id), { hourlyRate: 120 });
+      expect(updated.days).toBe(5);
+    });
+
+    it('404 on unknown id', async () => {
+      await expect(
+        service.update(String(new Types.ObjectId()), { days: 2 }),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('legacy doc without days still opens (backward compat)', async () => {
+      const legacy = model.makeDoc({ _id: new Types.ObjectId(), name: 'Старый' });
+      const found = await service.findById(String(legacy._id));
+      expect(found.name).toBe('Старый');
+      expect(found.days).toBeUndefined();
+    });
+  });
+});

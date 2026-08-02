@@ -50,6 +50,13 @@ export class CreateRoleDto {
   sectionIds?: string[];
 
   @ApiPropertyOptional({ description: 'Активна ли роль' })
+  /** TZ-ACCESS-301: page ACL — visible nav pages for this role. */
+  @ApiPropertyOptional({ type: [String], description: "Страницы, доступные роли (page ACL)" })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  pages?: string[];
+
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;

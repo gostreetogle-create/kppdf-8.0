@@ -23,7 +23,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | `/materials` | materials.page.md | MATERIALS-*, **UX-305 DONE**, **MATERIALS-308 DONE** (Склад link) |
 | `/products`, `/products/:id` | products.page.md | PRODUCTS-* |
 | `/modules`, `/modules/:id` | modules*.page.md | MODULES-* |
-| `/work-types` | work-types.page.md | WORKTYPES-*, **UX-305 DONE** |
+| `/work-types` | work-types.page.md | WORKTYPES-*, **UX-305 DONE**, **PRODUCTION-302 DONE** (days) |
 | `/people` or `/workers` | (pending) | WORKERS-302, **UX-306** (blocked) |
 
 ## Deals / orgs
@@ -83,6 +83,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | [JOURNEY-301 DONE](../tasks/_archive/2026-08/TZ-JOURNEY-301.done.md) | all | Flow gap map (docs) |
 | [SALES-301](../tasks/TZ-SALES-301-proposal-thin-ui.md) | /proposals (NEW) | Thin КП list |
 | GANT | parked | `_backlog/vision/GANT-calendar.md` |
+| **[CORE-301](../tasks/_backlog/TZ-CORE-301-snapshot-immutability-pattern.md)** | backend/common | Snapshot-on-transition immutability helper (foundational) |
 | **[DEPLOY-301](../tasks/TZ-DEPLOY-301-prep-first-deploy.md)** | ops | **Gate перед первым деплоем** (auth/CORS/secrets/compose) |
 
 Audit note (doc-constructor detail): `DOC-CONSTRUCTOR-UX-AUDIT.md`

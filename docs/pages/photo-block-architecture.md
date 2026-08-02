@@ -1,6 +1,13 @@
 # Фото-блок: Overlay-архитектура
 
 > **Назначение:** Документация реализации overlay-фотографий в конструкторе документов — как работает загрузка, позиционирование, resize, snap-to-grid, boundary clamp и сохранение.
+>
+> **✅ Persist (2026-08-02, TZ-DOC-333):** фото блока загружается на диск
+> `uploads/template-blocks/{blockId}/{uuid}.{ext}`, в Mongo пишется
+> `settings.imageUrl = /uploads/template-blocks/{blockId}/…` — **никогда** `blob:`.
+> Загрузка: `POST /api/template-blocks/:id/image` (зеркало `upload-background`).
+> Аудит: [`docs/audits/DOC-333-photo-persist-audit.md`](../audits/DOC-333-photo-persist-audit.md) ·
+> чеклист: [`docs/agent-checklists/TZ-DOC-333.md`](../agent-checklists/TZ-DOC-333.md).
 
 ## Architecture overview
 
@@ -158,7 +165,7 @@ effect(() => {
 
 ## Сохранение (auto-save)
 
-### Pipeline
+### Pipeline (позиция/размер)
 
 ```
 overlayMove/overlayResize emit
@@ -171,6 +178,29 @@ overlayMove/overlayResize emit
 - **1500ms debounce** — группирует множественные изменения в один запрос
 - **switchMap** — отменяет предыдущий запрос, если новый пришёл до ответа
 - Все `block.settings.*` поля (overlayLeft, overlayTop, imageWidth, imageHeight) проходят через этот pipeline
+
+### Photo file (upload-first, TZ-DOC-333)
+
+```
+Палитра → Фото (BuilderPage.onPhotoFile)
+  / Inspector → «Загрузить/Заменить» (BuilderInspector.onImageUpload)
+  → optimistic blob preview (только UI memory)
+  → POST /api/template-blocks/:id/image   (multipart, поле «file», png|jpeg|webp ≤ 5MB)
+      backend: uploads/template-blocks/{blockId}/{uuid}.{ext}
+               + settings.imageUrl = /uploads/template-blocks/{blockId}/{file}
+  → локальный блок: settings.imageUrl = вернувшийся /uploads/... URL
+  → URL.revokeObjectURL(blob)  (после swap)
+```
+
+Правила:
+- `blob:` / `data:` в `settings.imageUrl` на create/update → **400** (backend
+  `TemplateBlockService.sanitizeSettings`); разрешён только `''` (удалить) или
+  `/uploads/...`.
+- create блока НЕ отправляет blob: сначала persist блока, потом upload по `_id`.
+- Ошибка upload → toast + локальный `imageUrl: ''` (reload показывает пусто,
+  а не битую картинку).
+- Старые `blob:`/`data:` URL, уже записанные в Mongo, рендерятся как «нет
+  изображения» (soft-guard в `block-renderer-state.service.ts`).
 
 ## localStorage
 
@@ -212,6 +242,7 @@ interface SnapSettings {
 | TZ-211 | Базовая реализация overlay-фото (загрузка, resize, drag, overlay toggle) |
 | (snap) | Snap-to-grid + блокировка по краям + отступ от краёв |
 | (bugfix) | Кеширование DOM при drag, сигналы вместо direct DOM при resize, scrollHeight |
+| TZ-DOC-333 | Persist фото блока: `POST /template-blocks/:id/image` + диск `uploads/template-blocks/{blockId}/` + reject `blob:`/`data:` (400); upload-first в палитре и инспекторе; soft-guard рендера |
 
 ## Известные ограничения
 

@@ -2,8 +2,11 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { BehaviorSubject } from 'rxjs';
 
 import { StorageItemsPage } from './storage-items.page';
+import { storageItemName } from './storage-items.service';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { PiToastService } from '../../shared/ui/toast';
 
@@ -11,6 +14,12 @@ describe('StorageItemsPage (Wave 3 — PiEntityListComponent)', () => {
   let httpMock: HttpTestingController;
   const baseUrl = '/api';
   const warehousesUrl = `${baseUrl}/warehouses`;
+  const materialsUrl = `${baseUrl}/materials`;
+
+  // TZ-MATERIALS-308: BehaviorSubject-роутер — тест может пушить query.
+  const routeQuerySubject = new BehaviorSubject<{ get: (k: string) => string | null }>({
+    get: () => null,
+  });
 
   /**
    * Flush the pending HTTP request (only warehouses; storage-items is no longer
@@ -23,15 +32,20 @@ describe('StorageItemsPage (Wave 3 — PiEntityListComponent)', () => {
    */
   function flushAll(): void {
     httpMock.expectOne((r) => r.url === warehousesUrl && r.method === 'GET').flush([]);
+    // TZ-MATERIALS-308: страница также тянет материалы для подписи фильтра.
+    httpMock.expectOne((r) => r.url === materialsUrl && r.method === 'GET').flush({ items: [] });
   }
 
   beforeEach(async () => {
+    // TZ-MATERIALS-308: сброс query-параметра между тестами.
+    routeQuerySubject.next({ get: () => null });
     await TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([]), withFetch()),
         provideHttpClientTesting(),
         { provide: API_BASE_URL, useValue: baseUrl },
         { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
+        { provide: ActivatedRoute, useValue: { queryParamMap: routeQuerySubject.asObservable() } },
       ],
     })
       .overrideComponent(StorageItemsPage, {
@@ -65,6 +79,8 @@ describe('StorageItemsPage (Wave 3 — PiEntityListComponent)', () => {
         { _id: 'w1', name: 'Основной' },
         { _id: 'w2', name: 'Резервный' },
       ]);
+    // TZ-MATERIALS-308: страница также тянет материалы для подписи фильтра.
+    httpMock.expectOne((r) => r.url === materialsUrl && r.method === 'GET').flush({ items: [] });
 
     // Angular 20 httpResource flushes an observable sync, but its internal
     // Resource.status flips to 'resolved' on a Zone microtask. Without
@@ -86,6 +102,49 @@ describe('StorageItemsPage (Wave 3 — PiEntityListComponent)', () => {
       selectedWarehouse: { (): string; set: (v: string) => void };
     };
     expect(comp.selectedWarehouse()).toBe('');
+  });
+
+  it('listParams включает materialId из query-параметра (TZ-MATERIALS-308)', async () => {
+    const fixture = TestBed.createComponent(StorageItemsPage);
+    fixture.detectChanges();
+    flushAll();
+
+    // Push materialId в query-параметр после создания компонента.
+    routeQuerySubject.next({ get: (k: string) => (k === 'materialId' ? 'mat-1' : null) });
+    await fixture.whenStable();
+
+    const comp = fixture.componentInstance as unknown as {
+      materialId: { (): string };
+      listParams: () => Record<string, string>;
+    };
+    expect(comp.materialId()).toBe('mat-1');
+    expect(comp.listParams()).toEqual({ materialId: 'mat-1' });
+  });
+
+  it('storageItemName отображает имя материала (populated materialId)', () => {
+    const name = storageItemName({
+      _id: 'si1',
+      warehouseId: 'w1',
+      materialId: { _id: 'm1', name: 'Стекло 4мм', unit: 'м2' },
+      quantity: 5,
+      reservedQty: 0,
+      minQuantity: 0,
+      isActive: true,
+    });
+    expect(name).toBe('Стекло 4мм');
+  });
+
+  it('storageItemName отображает имя продукта когда materialId отсутствует', () => {
+    const name = storageItemName({
+      _id: 'si2',
+      warehouseId: 'w1',
+      productId: { _id: 'p1', name: 'Столешница' },
+      quantity: 5,
+      reservedQty: 0,
+      minQuantity: 0,
+      isActive: true,
+    });
+    expect(name).toBe('Столешница');
   });
 
   it('onWarehouseChange sets the selected warehouse signal', () => {

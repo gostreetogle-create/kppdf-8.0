@@ -120,14 +120,15 @@ describe('DocumentTemplateCategoriesPage (TZ-DOC-308)', () => {
     expect(c.error()).toBe('Не удалось загрузить категории');
   });
 
-  it('renders an empty state when there are no categories and no search', () => {
+  it('renders empty table when there are no categories and no search', () => {
     service.list.mockReturnValue(of(ok([])));
     const fixture = TestBed.createComponent(DocumentTemplateCategoriesPage);
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
     const c = fixture.componentInstance as unknown as { visible: () => unknown[] };
     expect(c.visible()).toEqual([]);
-    expect(el.querySelector('app-pi-empty-state')).toBeTruthy();
+    // TZ-UX-304: pi-table handles empty state via [emptyMessage], not app-pi-empty-state
+    expect(el.querySelector('app-pi-table')).toBeTruthy();
   });
 
   it('filters categories by search query', () => {

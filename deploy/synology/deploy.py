@@ -91,6 +91,11 @@ def resolve_settings(args, cfg):
     docker = cfg.get("DOCKER_CMD") or defaults["docker"]
     seed = args.seed or cfg.get("SEED", "").lower() in ("true", "1", "yes")
     wipe = args.wipe or cfg.get("WIPE", "").lower() in ("true", "1", "yes")
+    no_cache = getattr(args, "no_cache", False) or cfg.get("DOCKER_NO_CACHE", "").lower() in (
+        "true",
+        "1",
+        "yes",
+    )
     cors = cfg.get("CORS_ORIGIN") or "https://kppdf-crm.ru"
 
     jwt_secret = cfg.get("JWT_SECRET", "")
@@ -121,6 +126,7 @@ def resolve_settings(args, cfg):
         "docker": docker,
         "seed": seed,
         "wipe": wipe,
+        "no_cache": no_cache,
         "cors": cors,
         "jwt_secret": jwt_secret,
         "jwt_refresh": jwt_refresh,
@@ -493,6 +499,11 @@ def main():
         help="Stop stack and delete REMOTE_DIR + mongo data before deploy (dev/demo only)",
     )
     parser.add_argument("--skip-build", action="store_true")
+    parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="Docker build --no-cache (slow; only when Dockerfile/deps changed)",
+    )
     args = parser.parse_args()
 
     project_root = Path(__file__).resolve().parent.parent.parent
@@ -560,8 +571,12 @@ def main():
     # Use $DC set by docker_compose(); never append bare tokens after compose subcommand.
     r = remote.docker_compose(
         settings["remote_dir"],
+        # Default: cached layer rebuild (minutes). Use --no-cache only when
+        # deps/Dockerfile changed — full rebuild on small Synology VMs is 10–20+ min
+        # and parallel deploys fighting --no-cache hang the host.
         "$DC down --remove-orphans 2>/dev/null || true; "
-        "$DC build --no-cache backend && $DC up -d",
+        + ("$DC build --no-cache backend && $DC up -d" if settings.get("no_cache")
+           else "$DC build backend && $DC up -d"),
         timeout=900)
     ok("Docker: " + (r[:400] if r else "ok"))
     if r and ("ERR:" in r or "error" in r.lower() or "Error" in r):

@@ -1,15 +1,9 @@
-# TZ-253 — Dependabot configuration.
+# Dependabot — npm/docker only (no GitHub Actions workflows in this repo).
 #
 # Policy:
-#   - Backend (NestJS/Mongoose): weekly npm audit, auto-PR for patches/minor for low/moderate;
-#     separate manual triage for high/critical.
-#   - Frontend (Angular 20): same policy.
-#   - Repository-level GH Actions / Docker: best-effort weekly scan.
-#
-# Required `package.json` manifest files:
-#   - /package.json (monorepo root, both backend + frontend tools)
-#   - /backend/package.json
-#   - /frontend/package.json
+#   - Backend / frontend npm: weekly PRs for patches/minor.
+#   - Docker: best-effort weekly scan.
+# GitHub Actions CI is intentionally not used (minutes/billing).
 
 version: 2
 updates:
@@ -24,8 +18,6 @@ updates:
     labels:
       - "dependencies"
       - "backend"
-    # Patch-only auto-bump for low/moderate advisories.
-    # High/critical requires manual review per TZ-253 §1 PR POLICY.
     versioning-strategy: "increase"
 
   - package-ecosystem: "npm"
@@ -52,16 +44,6 @@ updates:
     labels:
       - "dependencies"
       - "frontend"
-    versioning-strategy: "increase"
-
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 3
-    labels:
-      - "dependencies"
-      - "ci"
     versioning-strategy: "increase"
 
   - package-ecosystem: "docker"

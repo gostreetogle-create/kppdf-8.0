@@ -198,6 +198,7 @@ export class DocumentTemplatesService {
   createOrganization(payload: {
     name: string;
     shortName: string;
+    inn: string;
     isActive: boolean;
   }): Observable<SilentResult<OrganizationOption>> {
     return silentPost<OrganizationOption>(this.http, `${this.baseUrl}/organizations`, payload);

@@ -16,8 +16,12 @@ export interface StorageItem {
   description?: string;
   warehouseId: string;
   warehouse?: { _id: string; name: string };
-  productId: string;
+  /** Продукт-позиция: ObjectId строкой ИЛИ populated-документ (TZ-MATERIALS-308). */
+  productId?: string | { _id: string; name: string; sku?: string };
   product?: { _id: string; name: string; sku?: string };
+  /** Материал-позиция (XOR с productId). Populated-документ от бэкенда. */
+  materialId?: string | { _id: string; name: string; sku?: string; unit?: string };
+  material?: { _id: string; name: string; sku?: string; unit?: string };
   zoneName?: string;
   quantity: number;
   reservedQty: number;
@@ -27,6 +31,14 @@ export interface StorageItem {
   photos?: string[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+/** Отображаемое имя позиции: продукт ИЛИ материал (XOR). */
+export function storageItemName(item: StorageItem): string {
+  const product = typeof item.productId === 'object' ? item.productId : item.product;
+  const material = typeof item.materialId === 'object' ? item.materialId : item.material;
+  const name = product?.name ?? material?.name ?? item.name;
+  return name ?? '—';
 }
 
 export interface StorageItemsListResponse {

@@ -23,19 +23,17 @@
   background: rgba(128, 128, 128, 0.05);
 }
 
-/* TZ-DOC-269: Selected — STRICT, noticeably thicker gold frame.
-   Border (1px) + inset ring (1px) = crisp 2px frame with no glow and
-   no drop shadow; border-box stays 1px so the block does not shift. */
+/* Selected — thin ink outline (no gold “bling” frame). */
 .block-renderer.is-selected {
-  border-color: var(--color-gold);
-  background: rgba(255, 255, 255, 0.5);
-  box-shadow: inset 0 0 0 1px var(--color-gold);
+  border-color: var(--color-ink);
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: none;
 }
 
-/* TZ-211: Multi-selected — gold-soft background */
+/* Multi-selected — same ink language, slightly stronger fill */
 .block-renderer.is-multi-selected {
-  border-color: var(--color-gold);
-  background: rgba(255, 255, 255, 0.7);
+  border-color: var(--color-ink);
+  background: color-mix(in srgb, var(--color-paper) 85%, var(--color-ink));
 }
 
 /* Multi-select checkbox */
@@ -277,7 +275,7 @@
 .block-renderer--positioned:hover,
 .block-renderer--positioned.is-selected,
 .block-renderer--positioned.is-multi-selected {
-  background: color-mix(in srgb, var(--color-paper) 96%, var(--color-gold));
+  background: color-mix(in srgb, var(--color-paper) 94%, var(--color-ink));
 }
 
 .block-renderer--overlay {
@@ -302,9 +300,9 @@
 
 /* Selection ring for overlay blocks */
 .block-renderer--overlay.is-selected .block-renderer__image-wrap--overlay {
-  outline: 2px solid var(--color-gold);
-  outline-offset: 2px;
-  border-radius: 2px;
+  outline: 1px solid var(--color-ink);
+  outline-offset: 1px;
+  border-radius: 1px;
 }
 
 .block-renderer__image-wrap--overlay {
@@ -467,93 +465,94 @@
 
 .block-renderer__resize-side--left:hover,
 .block-renderer__resize-side--left.is-dragging {
-  border-left-color: var(--color-gold);
+  border-left-color: var(--color-ink);
   opacity: 1;
 }
 
 .block-renderer__resize-side--right:hover,
 .block-renderer__resize-side--right.is-dragging {
-  border-right-color: var(--color-gold);
+  border-right-color: var(--color-ink);
   opacity: 1;
 }
 
-/* ═══ TZ-259.4: canonical (positioned) resize handles ═══ */
+/* ═══ Canonical (positioned) resize handles — small ink dots ═══ */
 .block-renderer__resize {
   position: absolute;
   z-index: 12;
   background: var(--color-paper);
-  border: 1px solid var(--color-gold);
-  border-radius: 1px;
+  border: 1px solid var(--color-ink);
+  border-radius: 50%;
   opacity: 0;
   transition: opacity 120ms ease;
   touch-action: none;
 }
 
-.block-renderer--positioned:hover .block-renderer__resize,
 .block-renderer--positioned.is-selected .block-renderer__resize {
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 .block-renderer__resize:hover {
   opacity: 1;
-  background: var(--color-gold-soft);
+  background: var(--color-ink);
 }
 
-/* Edges */
+/* Edges — thin rails, less “boxy” than corner squares */
 .block-renderer__resize--n,
 .block-renderer__resize--s {
-  left: 8px;
-  right: 8px;
-  height: 7px;
+  left: 10px;
+  right: 10px;
+  height: 4px;
+  border-radius: 2px;
   cursor: ns-resize;
 }
 .block-renderer__resize--n {
-  top: -4px;
+  top: -2px;
 }
 .block-renderer__resize--s {
-  bottom: -4px;
+  bottom: -2px;
 }
 .block-renderer__resize--e,
 .block-renderer__resize--w {
-  top: 8px;
-  bottom: 8px;
-  width: 7px;
+  top: 10px;
+  bottom: 10px;
+  width: 4px;
+  border-radius: 2px;
   cursor: ew-resize;
 }
 .block-renderer__resize--e {
-  right: -4px;
+  right: -2px;
 }
 .block-renderer__resize--w {
-  left: -4px;
+  left: -2px;
 }
 
-/* Corners — TZ-DOC-269: strict squares, no decorative circles. */
+/* Corners — compact circles */
 .block-renderer__resize--nw,
 .block-renderer__resize--ne,
 .block-renderer__resize--sw,
 .block-renderer__resize--se {
-  width: 11px;
-  height: 11px;
-  border-radius: 1px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
 }
 .block-renderer__resize--nw {
-  top: -5px;
-  left: -5px;
+  top: -3px;
+  left: -3px;
   cursor: nwse-resize;
 }
 .block-renderer__resize--ne {
-  top: -5px;
-  right: -5px;
+  top: -3px;
+  right: -3px;
   cursor: nesw-resize;
 }
 .block-renderer__resize--sw {
-  bottom: -5px;
-  left: -5px;
+  bottom: -3px;
+  left: -3px;
   cursor: nesw-resize;
 }
 .block-renderer__resize--se {
-  bottom: -5px;
-  right: -5px;
+  bottom: -3px;
+  right: -3px;
   cursor: nwse-resize;
 }
 

@@ -211,6 +211,8 @@ import { RequestMethod } from '@nestjs/common';
     DocumentTemplateModule,
     // TZ-DOC-307: категории шаблонов документов (отдельная сущность)
     DocumentTemplateCategoryModule,
+    // TZ-DOC-315/321: категории текстовых блоков + system «Общее» seed wiring
+    TextBlockCategoryModule,
     // TZ-PRODUCTS-301: справочник цветов (RAL) — продуктовая словарная сущность
     ColorReferenceModule,
     TemplateBlockModule,
@@ -276,6 +278,8 @@ import { RequestMethod } from '@nestjs/common';
     DevFixturesSeed,
     // TZ-DOC-307: системная default-категория шаблонов «Общее»
     DocumentTemplateCategoriesSeed,
+    // TZ-DOC-315/321: системная default-категория текстовых блоков «Общее»
+    TextBlockCategoriesSeed,
     // TZ-PRODUCTS-301: системный default-цвет «Не выбран»
     ColorReferencesSeed,
     // TZ-105.2: idempotent orphan FK migration (OnApplicationBootstrap lifecycle,

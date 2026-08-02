@@ -116,6 +116,11 @@ export interface TemplateBlock {
   layout?: BlockLayout;
   /** Canonical source reference; legacy blocks may omit this field. */
   source?: BlockSource | null;
+  /**
+   * Persistent flat group membership. Same UUID on multiple blocks → they
+   * select and move together until explicitly ungrouped.
+   */
+  groupId?: string | null;
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;

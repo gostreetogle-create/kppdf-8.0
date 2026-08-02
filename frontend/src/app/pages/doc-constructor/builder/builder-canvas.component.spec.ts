@@ -59,6 +59,7 @@ class BlockRendererStub {
   selected = input<boolean>(false);
   multiSelected = input<boolean>(false);
   groupBlocks = input<TemplateBlock[]>([]);
+  allBlocks = input<TemplateBlock[]>([]);
   layoutDragDelta = input<{ dx: number; dy: number } | null>(null);
   layoutDragBlockIds = input<ReadonlySet<string>>(new Set());
   snapEnabled = input<boolean>(true);

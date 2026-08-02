@@ -15,6 +15,7 @@ description: >-
 |---|---|---|
 | **Cursor** | `.cursor/rules/cursor-architect.mdc` + `cursor-usage` + `tz-authoring` + **`docs/TZ-AUTHORING.md`** | Mode A: TZ/планы/UX-smell notes/review; **commit+push своих docs**; **не** код продукта |
 | **Gemini / локальные** | корневой `GEMINI.md` + этот skill (секции ниже) | Executor: код, gates, archive |
+| **LM Studio (Qwen local)** | `docs/agents/LM-STUDIO-AGENT.md` + `scripts/lmstudio-agent/run.mjs` | Draft helper only; **LIMITED_HELPER** — не archive/deploy/security review alone |
 
 Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `executing-plans` / `tdd` / `run-project-checks` / `verification-before-completion` для собственной имплементации.
 
@@ -75,6 +76,7 @@ Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `
 | Worktree isolation | `using-git-worktrees` |
 | Работа с PDF | `pdf` |
 | Project gates | `run-project-checks` |
+| Local Qwen via LM Studio | `docs/agents/LM-STUDIO-AGENT.md` (`node scripts/lmstudio-agent/run.mjs`) |
 
 ## Проверки
 

@@ -37,15 +37,17 @@
 
 - **3 параллельных httpResource** — storage-items, low-stock, warehouses
 - **4 metric cards** — склады / позиции / мало остатков (red) / резервы
-- **Low stock table** — inline `<table>` с продуктом, складом, остатком, минимумом
+- **Low stock table** — inline `<table>` с **«Продукт/Материал»** (TZ-MATERIALS-308: `storageItemName`), складом, остатком, минимумом
 - **Error handling** — 3 отдельных `errorEffect` для toast, 1 `error` computed для inline
 - **No CRUD** — read-only dashboard (нет create/edit/delete)
+- **TZ-MATERIALS-308** — метрики и low-stock учитывают материал-позиции (`StorageItem.materialId`); low-stock отдаёт envelope `{items,total}`
 
 ## TZ reference
 
 | TZ | Что сделано |
 |----|------------|
 | TZ-115 | httpResource migration + error effects |
+| **TZ-MATERIALS-308** | Отображение материала-позиций в low-stock, envelope-контракт |
 
 ---
 

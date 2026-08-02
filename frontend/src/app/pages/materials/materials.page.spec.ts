@@ -143,6 +143,33 @@ describe('MaterialsPage (httpResource refactor)', () => {
   });
 
   // ──────────────────────────────────────────────────────────────────────
+  // 0. TZ-MATERIALS-308 — колонка «Склад» зарегистрирована
+  //
+  // NG0101 guard: тест живёт ПЕРВЫМ в сюите (до теста 4, который оставляет
+  // debounced-search таймер; после него flushEffects даёт рекурсивный tick).
+  // Колонки и cellTemplates — статическая конфигурация; HTTP не нужен,
+  // но pending GET сливаем, чтобы httpMock.verify() в afterEach прошёл.
+  // ──────────────────────────────────────────────────────────────────────
+  it('регистрирует колонку «Склад» с cellTemplate (TZ-MATERIALS-308)', async () => {
+    const fixture = TestBed.createComponent(MaterialsPage);
+    fixture.detectChanges();
+    flushEffects();
+
+    const comp = fixture.componentInstance as unknown as {
+      cols: { key: string; label?: string }[];
+      cellTemplates: Record<string, unknown>;
+    };
+    const stockCol = comp.cols.find((c) => c.key === 'stockQty');
+    expect(stockCol).toBeDefined();
+    expect(stockCol!.label).toBe('Склад');
+    expect(comp.cellTemplates['stockQty']).toBeDefined();
+
+    // Слить pending GET /materials, иначе httpMock.verify() упадёт.
+    httpMock.expectOne(matchListGet).flush({ items: [], total: 0, page: 1, limit: 50 });
+    await tickMicrotask();
+  });
+
+  // ──────────────────────────────────────────────────────────────────────
   // 1. Initial load
   // ──────────────────────────────────────────────────────────────────────
   it('fires an initial GET /api/materials on creation', async () => {
@@ -284,7 +311,7 @@ describe('MaterialsPage (httpResource refactor)', () => {
   });
 
   // ──────────────────────────────────────────────────────────────────────
-  // 5. reload() — REMOVED
+  // 6. reload() — REMOVED
   //
   // The exact same NG0101 (`ApplicationRef.tick is called recursively`)
   // that affected the earlier 401/500 versions of this test surfaced

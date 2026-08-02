@@ -94,6 +94,7 @@ describe('Warehouse (e2e)', () => {
       .send({ minQuantity: 50 });
     const res = await request(app.getHttpServer()).get('/api/inventory/low-stock').set(authHeader(token));
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
+    // TZ-MATERIALS-308: low-stock returns canonical envelope { items, total }.
+    expect(Array.isArray(res.body.items)).toBe(true);
   });
 });

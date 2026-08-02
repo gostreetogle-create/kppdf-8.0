@@ -34,18 +34,22 @@ export class StorageItemController {
   }
 
   @Get('storage-items')
-  findAll(
+  async findAll(
     @Query('warehouseId') warehouseId?: string,
     @Query('productId') productId?: string,
     @Query('materialId') materialId?: string,
     @Query('lowStock') lowStock?: string,
   ) {
-    return this.service.findAll(
+    // TZ-MATERIALS-308: canonical paginated envelope { items, total } — the
+    // frontend (PiEntityListComponent / dashboard) already expects this shape;
+    // previously a bare array was returned (TZ-232.C mismatch).
+    const items = await this.service.findAll(
       warehouseId,
       productId,
       lowStock === 'true' || lowStock === '1',
       materialId,
     );
+    return { items, total: items.length };
   }
 
   @Get('storage-items/:id')

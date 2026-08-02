@@ -121,7 +121,10 @@ export class InventoryController {
 
   @Get('low-stock')
   @Roles('admin', 'manager', 'user')
-  lowStock() {
-    return this.storage.findAll(undefined, undefined, true);
+  async lowStock() {
+    // TZ-MATERIALS-308: canonical envelope { items, total } — matches the
+    // frontend contract (inventory-dashboard reads .items).
+    const items = await this.storage.findAll(undefined, undefined, true);
+    return { items, total: items.length };
   }
 }

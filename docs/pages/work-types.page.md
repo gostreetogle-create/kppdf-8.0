@@ -37,7 +37,7 @@
 
 | Сигнал | Тип | Назначение |
 |--------|-----|-----------|
-| `sort` | `SortState<'name'\|'section'\|'department'\|'hourlyRate'>` | Клиентская сортировка |
+| `sort` | `SortState<'name'\|'section'\|'department'\|'hourlyRate'\|'days'>` | Клиентская сортировка |
 | `searchQuery` | `Signal<string>` | Поиск (без debounce, через `createClientSearchState`) |
 | `listRes` | `HttpResource<WorkType[]>` | GET /api/work-types |
 
@@ -56,7 +56,8 @@
 | TZ | Что сделано |
 |----|------------|
 | TZ-83 | Первая реализация |
+| TZ-PRODUCTION-302 | Поле `days` (календарные дни) — schema/DTO/service + FE-диалог + колонка «Дней»; >0 или null (stuck path) |
 
 ---
 
-_Создано: 2026-07-19._
+_Создано: 2026-07-19. Обновлено: 2026-08-02 (TZ-PRODUCTION-302)._
