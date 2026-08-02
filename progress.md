@@ -5108,3 +5108,10 @@ E2E-сценарии с созданием данных помечены MANUAL_
 **Архив:** `tasks/_archive/2026-08/TZ-DOC-320-text-block-enum-resolution-fallback.done.md`; lock: `.mimocode/locks/TZ-DOC-320-text-block-enum-resolution-fallback.lock` (gitignored).
 **Commit:** `b6ee278decbf6fa3077b6fe7f0768190f5bbae37` — `feat(text-block): migrate legacy enum → categoryId with default-resolve — TZ-DOC-320` — 2 files / +311 / -3. Push: нет.
 **Ограничения:** TZ-DOC-315 seed остаётся unwired (successor TZ-DOC-321); интеграционный order-flake не моя епархия; CP1251 в seed-файле pre-existing observation.
+
+## 2026-08-02 — TZ-DOC-320 amendment (defense-in-depth)
+
+**Trigger:** independent code review (code-reviewer-minimax-m3) on commit `b6ee278`.
+**Изменения:** оба `findOne` в `TextBlockService.create()` теперь требуют `isActive: true` (legacy slug-map + `ensureSystemDefault()` helper). Это защищает от случая «админ деактивировал системную «Общее»» — ранее сервис бы привязал TextBlock к неактивной категории. Также убран dead-code placeholder тест #8 (`exclude-unused-import lint`); unit spec сократился с 8 до 7 driver tests.
+**Проверки:** tsc exit 0; jest text-block 2 suites / 19 tests PASS; jest e2e text-blocks 9/9 PASS; regression 12/12 (user-org+production) + 4/4 (is-object-id).
+**Commit:** `19a4b68d732d10ab615eeb189c45be461f1dbae4` — `chore(text-block): TZ-DOC-320 amendment — isActive guards + spec cleanup` — 2 files / +7 / -12. Push: нет.

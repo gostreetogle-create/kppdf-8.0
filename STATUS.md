@@ -1286,6 +1286,7 @@ Autonomous-codebuff-agent (Buffy) выполнила inventory + triage всех
 - ✅ `git diff --check` (staged) → clean.
 
 **Commit:** `b6ee278decbf6fa3077b6fe7f0768190f5bbae37` — `feat(text-block): migrate legacy enum → categoryId with default-resolve — TZ-DOC-320` — 2 files / +311 / -3.
+**Amendment (code-review follow-up):** `19a4b68d732d10ab615eeb189c45be461f1dbae4` — `chore(text-block): TZ-DOC-320 amendment — isActive guards + spec cleanup` — 2 files / +7 / -12. Добавлен `isActive: true` в обе `findOne` проверки (`LEGACY_CATEGORY_SLUG` lookup + `ensureSystemDefault()`) для защиты от неактивной системной категории; убран dead-code placeholder тест #8 и неиспользуемый `BadRequestException` import.
 **Archive:** `tasks/_archive/2026-08/TZ-DOC-320-text-block-enum-resolution-fallback.done.md` (с ARCHIVE_MARKER + commit hash).
 **Lock:** `.mimocode/locks/TZ-DOC-320-text-block-enum-resolution-fallback.lock` (gitignored, паттерн DONE-lock).
 **Push:** НЕТ (per user instruction).
