@@ -6,7 +6,14 @@
 
 ```
 /doc-constructor/tables — «KPPDF — Шаблоны таблиц»
+/doc-constructor/tables?editId=<tableTemplateId> — auto-open диалога (из builder, TZ-DOC-335)
 ```
+
+## Query params
+
+| Параметр | Тип | Назначение |
+|----------|-----|-----------|
+| `editId` | `string` | ID шаблона таблицы — открывает форму редактирования при навигации из конструктора |
 
 ## API endpoints
 

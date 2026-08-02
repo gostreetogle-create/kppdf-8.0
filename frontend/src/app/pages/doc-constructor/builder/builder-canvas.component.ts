@@ -79,7 +79,7 @@ import {
           <div class="canvas-dropzone__empty" aria-live="polite">
             <p class="canvas-dropzone__empty-title">Холст пуст</p>
             <p class="canvas-dropzone__empty-hint">
-              Добавьте блоки из выпадающих списков выше. Кликните в любое место холста для свойств
+              Добавьте блоки из палитры выше (Тексты / Таблицы / Фото). Клик по холсту — свойства
               шаблона.
             </p>
           </div>
@@ -90,6 +90,7 @@ import {
               [selected]="blockKey(block) === selectedId()"
               [multiSelected]="selectedIds().has(blockKey(block))"
               [groupBlocks]="selectedBlocks()"
+              [allBlocks]="blocks()"
               [layoutDragDelta]="layoutDragDelta()"
               [layoutDragBlockIds]="layoutDragBlockIds()"
               [preview]="isPreview()"
@@ -106,12 +107,24 @@ import {
 
       <!-- Canonical positioned blocks share the paper coordinate system. -->
       <div class="canvas-layout-layer" (click)="onCanvasClick($event)">
+        @if (groupOutlineStyle(); as outline) {
+          <div
+            class="canvas-group-outline"
+            [style.left.%]="outline.left"
+            [style.top.%]="outline.top"
+            [style.width.%]="outline.width"
+            [style.height.%]="outline.height"
+            aria-hidden="true"
+            data-test="canvas-group-outline"
+          ></div>
+        }
         @for (block of positionedBlocks(); track blockKey(block)) {
           <app-block-renderer
             [block]="block"
             [selected]="blockKey(block) === selectedId()"
             [multiSelected]="selectedIds().has(blockKey(block))"
             [groupBlocks]="selectedBlocks()"
+            [allBlocks]="blocks()"
             [layoutDragDelta]="layoutDragDelta()"
             [layoutDragBlockIds]="layoutDragBlockIds()"
             [preview]="isPreview()"
@@ -203,19 +216,23 @@ import {
           <span class="canvas-align-toolbar__sep" aria-hidden="true"></span>
           <button
             type="button"
-            class="canvas-align-toolbar__btn"
+            class="canvas-align-toolbar__btn canvas-align-toolbar__btn--labeled"
             (click)="onAlign('same-width')"
-            title="Сделать одинаковую ширину"
+            title="Сделать одинаковую ширину (по самому широкому блоку)"
+            aria-label="Одинаковая ширина"
           >
             <lucide-icon [img]="MoveHorizontalIcon" [size]="14"></lucide-icon>
+            <span class="canvas-align-toolbar__label">Шир.</span>
           </button>
           <button
             type="button"
-            class="canvas-align-toolbar__btn"
+            class="canvas-align-toolbar__btn canvas-align-toolbar__btn--labeled"
             (click)="onAlign('same-height')"
-            title="Сделать одинаковую высоту"
+            title="Сделать одинаковую высоту (по самому высокому блоку)"
+            aria-label="Одинаковая высота"
           >
             <lucide-icon [img]="MoveVerticalIcon" [size]="14"></lucide-icon>
+            <span class="canvas-align-toolbar__label">Выс.</span>
           </button>
         </div>
       }
@@ -228,6 +245,7 @@ import {
             [selected]="blockKey(block) === selectedId()"
             [multiSelected]="selectedIds().has(blockKey(block))"
             [groupBlocks]="selectedBlocks()"
+            [allBlocks]="blocks()"
             [layoutDragDelta]="layoutDragDelta()"
             [layoutDragBlockIds]="layoutDragBlockIds()"
             (select)="onSelect($event)"
@@ -445,6 +463,21 @@ import {
         outline-offset: -1px;
       }
 
+      .canvas-align-toolbar__btn--labeled {
+        width: auto;
+        min-width: 26px;
+        padding: 0 6px;
+        gap: 4px;
+      }
+
+      .canvas-align-toolbar__label {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        line-height: 1;
+      }
+
       .canvas-align-toolbar__sep {
         width: 1px;
         height: 16px;
@@ -459,6 +492,17 @@ import {
         pointer-events: none;
         background: rgba(196, 156, 20, 0.12);
         border: 1px solid var(--color-gold);
+      }
+
+      /* Persistent group: one shared ink bbox around members. */
+      .canvas-group-outline {
+        position: absolute;
+        z-index: 5;
+        pointer-events: none;
+        box-sizing: border-box;
+        border: 1px solid var(--color-ink);
+        outline: 1px solid color-mix(in oklch, var(--color-ink) 25%, transparent);
+        outline-offset: 2px;
       }
     `,
 
@@ -602,6 +646,52 @@ export class BuilderCanvasComponent {
     if (this.selectedIds().size < 2 || this.isPreview()) return false;
     const positioned = this.selectedBlocks().filter((b) => !!b.layout);
     return positioned.length >= 2;
+  });
+
+  /**
+   * Shared bbox (%) for a persisted group selection. Includes live drag
+   * delta so the outline tracks group moves.
+   */
+  protected readonly groupOutlineStyle = computed<{
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  } | null>(() => {
+    if (this.isPreview()) return null;
+    const selected = this.selectedBlocks().filter((b) => !!b.layout);
+    if (selected.length < 2) return null;
+    const gid = selected[0]?.groupId;
+    if (!gid || !selected.every((b) => b.groupId === gid)) return null;
+
+    const delta = this.layoutDragDelta();
+    const dragIds = this.layoutDragBlockIds();
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const b of selected) {
+      const layout = b.layout!;
+      const key = blockKey(b);
+      const dx = delta && dragIds.has(key) ? delta.dx : 0;
+      const dy = delta && dragIds.has(key) ? delta.dy : 0;
+      const x = layout.x + dx;
+      const y = layout.y + dy;
+      const w = layout.width;
+      const h = layout.height ?? 0.06;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x + w);
+      maxY = Math.max(maxY, y + h);
+    }
+    if (!Number.isFinite(minX)) return null;
+    const pad = 0.004;
+    return {
+      left: (minX - pad) * 100,
+      top: (minY - pad) * 100,
+      width: (maxX - minX + pad * 2) * 100,
+      height: (maxY - minY + pad * 2) * 100,
+    };
   });
 
   /**

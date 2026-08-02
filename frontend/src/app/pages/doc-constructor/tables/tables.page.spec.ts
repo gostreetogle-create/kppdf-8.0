@@ -2,6 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { of } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { TablesPage } from './tables.page';
 import {
@@ -67,10 +69,13 @@ describe('TablesPage', () => {
             remove: jest.fn().mockReturnValue({
               subscribe: (cb: (r: { ok: boolean }) => void) => cb({ ok: true }),
             }),
+            findById: jest.fn().mockReturnValue(of({ ok: true, data: fakeTemplates[0] })),
           },
         },
         { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
         { provide: PiDialogService, useValue: dialogSpy },
+        { provide: ActivatedRoute, useValue: { queryParams: of({}) } },
+        { provide: Router, useValue: { navigate: jest.fn() } },
       ],
     })
       .overrideComponent(TablesPage, {

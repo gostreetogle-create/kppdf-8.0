@@ -11,6 +11,7 @@ import {
   OnInit,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
+import { RouterLink } from '@angular/router';
 import { LucideAngularModule, RefreshCw } from 'lucide-angular';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
@@ -89,6 +90,7 @@ const PAGE_SIZE = 50;
     PiRowActionsComponent,
     ButtonComponent,
     TableComponent,
+    RouterLink,
   ],
   template: `
     <app-pi-page-header
@@ -172,6 +174,18 @@ const PAGE_SIZE = 50;
             <span class="font-mono text-xs whitespace-nowrap">{{ dimensionsSummary(row) }}</span>
           </ng-template>
 
+          <!-- ───── Stock cell (TZ-MATERIALS-308, read-only link) ───── -->
+          <ng-template #stockTpl let-row>
+            <a
+              [routerLink]="['/storage-items']"
+              [queryParams]="{ materialId: row._id }"
+              class="inline-flex items-center gap-1 text-ink-1 underline decoration-dotted underline-offset-4 hover:text-primary transition-colors"
+              [attr.aria-label]="'Остатки на складе: ' + row.name"
+            >
+              Склад →
+            </a>
+          </ng-template>
+
           <!-- ───── Row actions cluster ───── -->
           <ng-template #rowActionsTpl let-row>
             <app-pi-row-actions
@@ -250,6 +264,8 @@ export class MaterialsPage implements OnInit {
   private readonly supplierTplRef!: TemplateRef<{ $implicit: Material }>;
   @ViewChild('dimsTpl', { static: true })
   private readonly dimsTplRef!: TemplateRef<{ $implicit: Material }>;
+  @ViewChild('stockTpl', { static: true })
+  private readonly stockTplRef!: TemplateRef<{ $implicit: Material }>;
   @ViewChild('rowActionsTpl', { static: true })
   private readonly rowActionsTplRef!: TemplateRef<{ $implicit: Material }>;
 
@@ -340,6 +356,11 @@ export class MaterialsPage implements OnInit {
       width: '128px',
       format: (r) => formatPrice(r.pricePerUnit),
     },
+    {
+      key: 'stockQty',
+      label: 'Склад',
+      cellClass: 'empty-cell' /* non-sortable, cellTemplate */,
+    },
   ];
 
   ngOnInit(): void {
@@ -351,6 +372,7 @@ export class MaterialsPage implements OnInit {
       mainPhotoId: this.photoTplRef,
       supplierId: this.supplierTplRef,
       dimensions: this.dimsTplRef,
+      stockQty: this.stockTplRef,
     };
     this.rowActionsTplBinding = this.rowActionsTplRef;
   }

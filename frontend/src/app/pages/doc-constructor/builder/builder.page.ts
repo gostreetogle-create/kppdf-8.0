@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { HttpErrorResponse, httpResource } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   Subject,
   catchError,
@@ -24,19 +24,7 @@ import {
   tap,
   timer,
 } from 'rxjs';
-import {
-  LucideAngularModule,
-  FileText,
-  RefreshCw,
-  Check,
-  AlertCircle,
-  Loader2,
-  Trash2,
-  Table as TableIcon,
-  Eye,
-  Pencil,
-  Image as ImageIcon,
-} from 'lucide-angular';
+import { LucideAngularModule, Eye, Pencil } from 'lucide-angular';
 import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
 import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
 import {
@@ -63,12 +51,13 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
  *
  * TZ-86 Phase D.1 + D.2 — `BuilderPage` (3-pane shell, state orchestrator).
  *
- * Layout (280 + 1fr + 320):
- *   ┌──────────┬──────────────────────────┬──────────────┐
- *   │ Tool     │ Canvas                   │ Inspector    │
- *   │ Pane     │ (cdkDropList id=…)       │              │
- *   │ 280px    │ flex-1                   │ 320px        │
- *   └──────────┴──────────────────────────┴──────────────┘
+ * Layout (top palette + canvas | inspector):
+ *   ┌────────────────────────────────────────────────────┐
+ *   │ ToolPane — horizontal palette (full width)         │
+ *   ├──────────────────────────┬─────────────────────────┤
+ *   │ Canvas (cdkDropList id=…)│ Inspector (320px)       │
+ *   │ flex-1                   │                         │
+ *   └──────────────────────────┴─────────────────────────┘
  *
  * Phase D.2 additions:
  *   1. **Background image** — `template` signal holds the full DocumentTemplate
@@ -98,9 +87,6 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
     BuilderInspectorComponent,
     BuilderToolPaneComponent,
   ],
-  host: {
-    '(document:click)': 'onDocumentClick($event)',
-  },
   template: `
     <!--
       TZ-DOC-324 (IA): BuilderPage is now pure editor for /:id.
@@ -108,9 +94,19 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
       /doc-constructor/templates (TemplatesPage). /doc-constructor/builder
       exact path redirects there (see app.routes.ts).
     -->
-    <!-- Builder toolbar — horizontal dropdowns for adding blocks -->
+    <!-- Builder toolbar — title + editor/preview only (add blocks: top palette) -->
     <div class="builder-toolbar">
       <div class="builder-toolbar__title">
+        <button
+          type="button"
+          class="builder-back pi-focus-ring"
+          (click)="goToTemplates()"
+          data-test="builder-back-templates"
+          title="К списку шаблонов"
+          aria-label="К списку шаблонов"
+        >
+          ← Шаблоны
+        </button>
         <span class="text-xs text-muted-foreground">{{ headerSubtitle() }}</span>
         @if (templateId()) {
           <button
@@ -126,8 +122,24 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
         }
       </div>
 
-      <!-- TZ-211: View mode toggle -->
       <div class="builder-view-toggle">
+        @switch (saveStatus()) {
+          @case ('saving') {
+            <span class="status-chip status-chip--saving" data-test="builder-save-status"
+              >Сохранение…</span
+            >
+          }
+          @case ('saved') {
+            <span class="status-chip status-chip--saved" data-test="builder-save-status"
+              >Сохранено</span
+            >
+          }
+          @case ('error') {
+            <span class="status-chip status-chip--error" data-test="builder-save-status"
+              >Ошибка сохранения</span
+            >
+          }
+        }
         <button
           type="button"
           class="builder-view-toggle__btn"
@@ -147,117 +159,19 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
           Превью
         </button>
       </div>
-
-      <div class="builder-toolbar__actions">
-        <!-- Тексты dropdown -->
-        <div class="builder-dropdown">
-          <button type="button" class="builder-dropdown__trigger" (click)="toggleDropdown('texts')">
-            <lucide-icon [img]="FileTextIcon" [size]="14"></lucide-icon>
-            Тексты
-          </button>
-          @if (openDropdown() === 'texts') {
-            <div class="builder-dropdown__panel">
-              <label class="builder-dropdown__filter-label" for="bd-text-category-filter"
-                >Категория</label
-              >
-              <select
-                id="bd-text-category-filter"
-                class="builder-dropdown__filter-select"
-                [value]="selectedCategoryId() ?? ''"
-                (change)="onCategoryChange($event)"
-                [disabled]="categoryLoading()"
-                aria-label="Фильтр текстов по категории"
-                data-test="builder-text-category-filter"
-              >
-                <option value="">Все</option>
-                @for (cat of categories(); track cat._id) {
-                  <option [value]="cat._id">{{ cat.name }}</option>
-                }
-              </select>
-              @if (textsRes.isLoading()) {
-                <p class="builder-dropdown__loading">Загрузка…</p>
-              } @else if (textsRes.error()) {
-                <p class="builder-dropdown__error">Ошибка загрузки</p>
-              } @else if (textsRes.value() && textsRes.value()!.length > 0) {
-                @for (t of textsRes.value(); track t._id) {
-                  <button
-                    type="button"
-                    class="builder-dropdown__item"
-                    (click)="onAddTextBlock(t); closeDropdown()"
-                  >
-                    <span class="builder-dropdown__item-label">{{ t.name }}</span>
-                    @if (categoryName(t.categoryId); as name) {
-                      <span class="builder-dropdown__item-hint">{{ name }}</span>
-                    }
-                  </button>
-                }
-              } @else {
-                <p class="builder-dropdown__empty">
-                  {{ selectedCategoryId() ? 'Нет текстов в этой категории' : 'Нет текстов' }}
-                </p>
-              }
-            </div>
-          }
-        </div>
-
-        <!-- Таблицы dropdown -->
-        <div class="builder-dropdown">
-          <button
-            type="button"
-            class="builder-dropdown__trigger"
-            (click)="toggleDropdown('tables')"
-          >
-            <lucide-icon [img]="TableIcon" [size]="14"></lucide-icon>
-            Таблицы
-          </button>
-          @if (openDropdown() === 'tables') {
-            <div class="builder-dropdown__panel">
-              @if (tablesRes.isLoading()) {
-                <p class="builder-dropdown__loading">Загрузка…</p>
-              } @else if (tablesRes.error()) {
-                <p class="builder-dropdown__error">Ошибка загрузки</p>
-              } @else if (tablesRes.value() && tablesRes.value()!.length > 0) {
-                @for (t of tablesRes.value(); track t._id) {
-                  <button
-                    type="button"
-                    class="builder-dropdown__item"
-                    (click)="onAddTableTemplate(t); closeDropdown()"
-                  >
-                    <span class="builder-dropdown__item-label">{{ t.name }}</span>
-                    @if (t.description) {
-                      <span class="builder-dropdown__item-hint">{{ t.description }}</span>
-                    }
-                  </button>
-                }
-              } @else {
-                <p class="builder-dropdown__empty">Нет таблиц</p>
-              }
-            </div>
-          }
-        </div>
-
-        <!-- Фото button (file picker) -->
-        <div class="builder-dropdown">
-          <button type="button" class="builder-toolbar__btn" (click)="photoInput.click()">
-            <lucide-icon [img]="ImageIcon" [size]="14"></lucide-icon>
-            Фото
-          </button>
-          <input
-            #photoInput
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            class="sr-only"
-            (change)="onPhotoFileSelected($event)"
-          />
-        </div>
-
-        <!-- Отступ button removed (TZ-DOC-319) -->
-      </div>
     </div>
+
+    <!-- Top horizontal palette -->
+    <app-builder-tool-pane
+      [groups]="paletteGroups()"
+      (addBlock)="onAddBlock($event)"
+      (photoSelected)="onPhotoFile($event)"
+      (selectGroup)="onSelectGroup($event)"
+      (ungroupGroup)="onUngroupById($event)"
+    ></app-builder-tool-pane>
 
     <!-- Main builder area: canvas + inspector -->
     <div class="builder-shell">
-      <app-builder-tool-pane (addBlock)="onAddBlock($event)"></app-builder-tool-pane>
       <app-builder-canvas
         [blocks]="blocks()"
         [selectedId]="selectedId()"
@@ -299,7 +213,7 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
           [gridSize]="gridSize()"
           [boundaryPadding]="boundaryPadding()"
           [gridVisible]="false"
-          [grouped]="editorGroupedIds() !== null"
+          [grouped]="selectionIsPersistedGroup()"
           (snapSettingsChange)="onSnapSettingsChange($event)"
           (layoutOrderChange)="onLayoutChanges($event)"
           (groupSelected)="onGroupSelected()"
@@ -403,6 +317,24 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
         gap: 8px;
       }
 
+      .builder-back {
+        display: inline-flex;
+        align-items: center;
+        height: 28px;
+        padding: 0 8px;
+        border: 1px solid var(--color-rule);
+        border-radius: 2px;
+        background: var(--color-paper);
+        color: var(--color-ink);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .builder-back:hover {
+        background: var(--color-sunrise-soft);
+      }
+
       .builder-category-chip {
         display: inline-flex;
         align-items: center;
@@ -424,145 +356,9 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
         background: color-mix(in oklch, var(--color-sunrise-soft) 55%, transparent);
       }
 
-      .builder-toolbar__actions {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        flex: 1;
-      }
-
-      .builder-toolbar__btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 10px;
-        font-size: 12px;
-        font-weight: 500;
-        color: var(--color-ink);
-        background: var(--color-paper);
-        border: 1px solid var(--color-rule);
-        border-radius: 2px;
-        cursor: pointer;
-        transition: all 100ms ease;
-        white-space: nowrap;
-      }
-
-      .builder-toolbar__btn:hover {
-        background: var(--color-paper-3);
-        border-color: var(--color-ink);
-      }
-
-      /* ═══ Dropdown — TZ-211: Design System ═══ */
-      .builder-dropdown {
-        position: relative;
-      }
-
-      .builder-dropdown__trigger {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 10px;
-        font-size: 12px;
-        font-weight: 500;
-        color: var(--color-ink);
-        background: var(--color-paper);
-        border: 1px solid var(--color-rule);
-        border-radius: 2px;
-        cursor: pointer;
-        transition: all 100ms ease;
-        white-space: nowrap;
-      }
-
-      .builder-dropdown__trigger:hover {
-        background: var(--color-paper-3);
-        border-color: var(--color-ink);
-      }
-
-      .builder-dropdown__filter-label {
-        font-size: 10px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--color-muted);
-        margin: 0 0 4px;
-        display: block;
-      }
-
-      .builder-dropdown__filter-select {
-        width: 100%;
-        padding: 6px 8px;
-        font-size: 12px;
-        font-family: inherit;
-        color: var(--color-ink);
-        background: var(--color-paper);
-        border: 1px solid var(--color-rule);
-        margin-bottom: 4px;
-        cursor: pointer;
-      }
-
-      .builder-dropdown__filter-select:focus {
-        outline: none;
-        outline: 1px solid var(--color-sunrise-warm);
-        outline-offset: -1px;
-      }
-
-      .builder-dropdown__panel {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        z-index: 100;
-        min-width: 220px;
-        max-height: 320px;
-        overflow-y: auto;
-        background: var(--color-paper);
-        border: 1px solid var(--color-rule);
-        border-radius: 4px;
-        margin-top: 2px;
-        box-shadow: var(--shadow-executive);
-      }
-
-      .builder-dropdown__item {
-        display: flex;
-        flex-direction: column;
-        gap: 1px;
-        width: 100%;
-        padding: 6px 12px;
-        text-align: left;
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        transition: background 100ms ease;
-      }
-
-      .builder-dropdown__item:hover {
-        background: var(--color-paper-3);
-      }
-
-      .builder-dropdown__item-label {
-        font-size: 12px;
-        color: var(--color-ink);
-      }
-
-      .builder-dropdown__item-hint {
-        font-size: 10px;
-        color: var(--color-muted);
-      }
-
-      .builder-dropdown__loading,
-      .builder-dropdown__error,
-      .builder-dropdown__empty {
-        padding: 8px 12px;
-        font-size: 12px;
-        color: var(--color-muted);
-        margin: 0;
-      }
-
-      .builder-dropdown__error {
-        color: var(--color-destructive);
-      }
-
       /* ═══ View Mode Toggle — TZ-211 ═══ */
       .builder-view-toggle {
+        margin-left: auto;
         display: flex;
         align-items: center;
         gap: 0;
@@ -624,16 +420,8 @@ export class BuilderPage {
   private readonly injector = inject(Injector);
 
   // Icons
-  protected readonly FileTextIcon = FileText;
-  protected readonly RefreshIcon = RefreshCw;
-  protected readonly CheckIcon = Check;
-  protected readonly AlertIcon = AlertCircle;
-  protected readonly LoaderIcon = Loader2;
-  protected readonly TrashIcon = Trash2;
-  protected readonly TableIcon = TableIcon;
   protected readonly EyeIcon = Eye;
   protected readonly EditIcon = Pencil;
-  protected readonly ImageIcon = ImageIcon;
 
   // State
   protected readonly templateId = signal<string | null>(null);
@@ -661,16 +449,8 @@ export class BuilderPage {
    * отображается ни на одном из path render.
    */
   protected readonly showGrid = signal<boolean>(false);
-  /**
-   * TZ-DOC-272: EDITOR-ONLY group marker (no backend persistence — the
-   * TemplateBlock schema has no group field; a real persisted group is a
-   * successor TZ). When non-null, the selected blocks are treated as an
-   * explicit group (shared group-drag, batch margin/align, group badge).
-   */
-  protected readonly editorGroupedIds = signal<ReadonlySet<string> | null>(null);
 
   // Dropdown state for inline toolbar
-  protected readonly openDropdown = signal<string | null>(null);
 
   // TZ-DOC-317 — shared category filter for the «Тексты» surfaces (pane + dropdown).
   protected readonly textFilter = inject(BuilderTextFilterService);
@@ -703,29 +483,6 @@ export class BuilderPage {
   protected onCategoryChipReset(): void {
     this.textFilter.categoryId.set(null);
   }
-
-  // httpResources for inline toolbar dropdowns. The «Тексты» URL is rebuilt
-  // whenever the shared filter categoryId changes (server-side filter).
-  protected readonly textsRes = httpResource<
-    Array<{ _id: string; name: string; categoryId?: string; content?: string; columns?: unknown[] }>
-  >(
-    () => {
-      const cat = this.textFilter.categoryId();
-      return cat
-        ? `/api/text-blocks?isActive=true&categoryId=${encodeURIComponent(cat)}`
-        : '/api/text-blocks?isActive=true';
-    },
-    { defaultValue: [] },
-  );
-  protected readonly tablesRes = httpResource<
-    Array<{
-      _id: string;
-      name: string;
-      description?: string;
-      columns?: unknown[];
-      sampleRows?: unknown[][];
-    }>
-  >(() => '/api/table-templates?isActive=true', { defaultValue: [] });
 
   // Auto-save Subject — grouped by _id, debounced per group.
   private readonly save$ = new Subject<{ _id: string; patch: Partial<TemplateBlock> }>();
@@ -761,12 +518,51 @@ export class BuilderPage {
     return this.blocks().filter((b) => ids.has(blockKey(b)));
   });
 
+  /** True when current multi-selection is exactly one persisted group. */
+  protected readonly selectionIsPersistedGroup = computed<boolean>(() => {
+    const selected = this.selectedBlocks();
+    if (selected.length < 2) return false;
+    const gid = selected[0]?.groupId;
+    if (!gid) return false;
+    return selected.every((b) => b.groupId === gid);
+  });
+
+  /** Palette list: one entry per distinct non-null groupId. */
+  protected readonly paletteGroups = computed<
+    Array<{ groupId: string; label: string; count: number; memberKeys: string[] }>
+  >(() => {
+    const map = new Map<string, TemplateBlock[]>();
+    for (const b of this.blocks()) {
+      const gid = b.groupId;
+      if (!gid) continue;
+      const list = map.get(gid) ?? [];
+      list.push(b);
+      map.set(gid, list);
+    }
+    let i = 0;
+    return Array.from(map.entries()).map(([groupId, members]) => {
+      i += 1;
+      return {
+        groupId,
+        label: `Группа ${i}`,
+        count: members.length,
+        memberKeys: members.map((m) => blockKey(m)),
+      };
+    });
+  });
+
   protected readonly headerSubtitle = computed<string>(() => {
     const id = this.templateId();
-    if (!id) return 'Выберите шаблон для редактирования';
+    if (!id) return 'Загрузка шаблона…';
+    const name = this.template()?.name?.trim();
     const count = this.blocks().length;
-    return `Шаблон ${id.slice(-6)} · ${count} ${pluralBlocks(count)}`;
+    const label = name && name.length > 0 ? name : `Шаблон ${id.slice(-6)}`;
+    return `${label} · ${count} ${pluralBlocks(count)}`;
   });
+
+  protected goToTemplates(): void {
+    void this.router.navigate(['/doc-constructor/templates']);
+  }
 
   /** D.2.1: derived background images from template — respects defaultBackgroundIndex. */
   protected readonly backgroundImages = computed<string[]>(() => {
@@ -796,6 +592,10 @@ export class BuilderPage {
     // 1) Initialize save$ pipeline (groupBy _id → debounce 1500 → switchMap).
     //    D.2.3: `tap` before switchMap to set 'saving'; success path sets
     //    'saved' (auto-revert to 'idle' after 2s via timer), failure sets 'error'.
+    //    TZ-DOC-333 belt-and-braces: a transient blob:/data: imageUrl could
+    //    still ride in a settings PATCH emitted during the create→upload
+    //    window (before the local block is swapped to the /uploads/ URL) —
+    //    the backend 400s those, so scrub them here too.
     this.save$
       .pipe(
         tap(() => this.saveStatus.set('saving')),
@@ -803,7 +603,9 @@ export class BuilderPage {
         mergeMap((group$) =>
           group$.pipe(
             debounceTime(1500),
-            switchMap(({ _id, patch }) => this.blocksSvc.update(_id, patch)),
+            switchMap(({ _id, patch }) =>
+              this.blocksSvc.update(_id, this.sanitizeOutgoingPatch(patch)),
+            ),
           ),
         ),
         takeUntilDestroyed(this.destroyRef),
@@ -822,7 +624,15 @@ export class BuilderPage {
       this.template.set(null);
       this.selectedId.set(null);
       this.saveStatus.set('idle');
-      if (id) this.loadBlocks(id);
+      if (id) {
+        this.loadBlocks(id);
+      } else {
+        // Bare /builder is redirected in routes; defense if somehow opened without :id.
+        void this.router.navigate(['/doc-constructor/templates'], {
+          queryParamsHandling: 'preserve',
+          replaceUrl: true,
+        });
+      }
     });
 
     // TZ-DOC-318 step b: two-way bind `?categoryId=<id>` query param ↔
@@ -1003,60 +813,8 @@ export class BuilderPage {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Inline toolbar dropdown handlers
-  // ─────────────────────────────────────────────────────────────
-  protected toggleDropdown(name: string): void {
-    this.openDropdown.update((current) => (current === name ? null : name));
-  }
-
-  protected closeDropdown(): void {
-    this.openDropdown.set(null);
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────────────────────────────
-  // Dropdown закрытие при клике вне dropdown (TZ-170 §4.1)
-  // HostListener('document:click') - Dropdown открывается только пока триггер в @Component template.
-  // Stope propagation на dropdown контейнере, чтобы click через dropdown panel не закрывал его.
-  // ─────────────────────────────────────────────────────────────
-  onDocumentClick(event: MouseEvent): void {
-    if (this.openDropdown() === null) return;
-    const target = event.target as HTMLElement;
-    if (target.closest('.builder-dropdown')) return;
-    this.openDropdown.set(null);
-  }
-
-  protected onAddTextBlock(t: {
-    _id: string;
-    name: string;
-    content?: string;
-    columns?: unknown[];
-  }): void {
-    this.onAddBlock({
-      source: 'text-block',
-      textBlock: t as import('../../../shared/services/pi-text-blocks.service').TextBlock,
-    });
-  }
-
-  protected onAddTableTemplate(t: {
-    _id: string;
-    name: string;
-    columns?: unknown[];
-    sampleRows?: unknown[][];
-  }): void {
-    this.onAddBlock({
-      source: 'table-template',
-      tableTemplate:
-        t as import('../../../shared/services/pi-table-templates.service').TableTemplate,
-    });
-  }
-
-  protected onPhotoFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
+  protected onPhotoFile(file: File): void {
     const localUrl = URL.createObjectURL(file);
-    // Create an image block with a local preview URL (will be replaced after upload)
     const tempId = crypto.randomUUID();
     const block: TemplateBlock = {
       tempId,
@@ -1072,7 +830,6 @@ export class BuilderPage {
       settings: { imageUrl: localUrl, overlay: true },
     };
     this.insertNewBlock(block, file);
-    input.value = '';
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -1096,6 +853,24 @@ export class BuilderPage {
     this.blocks.update((arr) => [...arr, newBlock]);
     this.selectedId.set(blockKey(newBlock));
 
+    // TZ-DOC-333: `blob:` URLs are session-local and the backend now rejects
+    // them on create/update (400). When a photo file will be uploaded right
+    // after persist, send the block WITHOUT `settings.imageUrl` — the upload
+    // endpoint writes the canonical /uploads/... URL into Mongo itself.
+    // The blob stays in the local block only as an optimistic preview.
+    const settingsForCreate: Record<string, unknown> | undefined = newBlock.settings
+      ? { ...newBlock.settings }
+      : undefined;
+    if (file && settingsForCreate && 'imageUrl' in settingsForCreate) {
+      delete settingsForCreate['imageUrl'];
+    }
+    const blobUrl = newBlock.settings?.['imageUrl'];
+    const revokeBlob = (): void => {
+      if (typeof blobUrl === 'string' && blobUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(blobUrl);
+      }
+    };
+
     this.blocksSvc
       .add(tid, {
         type: newBlock.type,
@@ -1104,7 +879,7 @@ export class BuilderPage {
         ...(newBlock.content ? { content: newBlock.content } : {}),
         ...(newBlock.height ? { height: newBlock.height } : {}),
         showLine: newBlock.showLine,
-        ...(newBlock.settings ? { settings: newBlock.settings } : {}),
+        ...(settingsForCreate ? { settings: settingsForCreate } : {}),
         ...(newBlock.dataBinding ? { dataBinding: newBlock.dataBinding } : {}),
         ...(newBlock.layout ? { layout: newBlock.layout } : {}),
         ...(newBlock.source ? { source: newBlock.source } : {}),
@@ -1122,11 +897,16 @@ export class BuilderPage {
           );
           this.selectedId.set(res.data._id ?? null);
 
-          // Upload file to server if provided (e.g. photo upload)
+          // Upload file to server if provided (e.g. photo upload). TZ-DOC-333:
+          // the endpoint persists settings.imageUrl itself; on success we swap
+          // the local blob preview for the canonical /uploads/... URL and
+          // release the object URL. On failure we drop the dead blob from the
+          // local block so a reload never shows a broken image.
           if (file && res.data._id) {
             this.blocksSvc.uploadImage(res.data._id, file).subscribe({
               next: (uploadRes) => {
                 if (uploadRes.ok) {
+                  revokeBlob();
                   this.blocks.update((arr) =>
                     arr.map((b) =>
                       b._id === res.data._id
@@ -1138,10 +918,19 @@ export class BuilderPage {
                     ),
                   );
                 } else {
+                  revokeBlob();
+                  this.blocks.update((arr) =>
+                    arr.map((b) =>
+                      b._id === res.data._id
+                        ? { ...b, settings: { ...(b.settings ?? {}), imageUrl: '' } }
+                        : b,
+                    ),
+                  );
                   this.toast.error(extractErrorMessage(uploadRes.error));
                 }
               },
               error: () => {
+                revokeBlob();
                 this.toast.error('Не удалось загрузить изображение на сервер');
               },
             });
@@ -1157,7 +946,8 @@ export class BuilderPage {
   private insertBlock(payload: AddBlockPayload, insertIndex: number): void {
     const tid = this.templateId();
     if (!tid) {
-      this.toast.error('Сначала выберите шаблон');
+      this.toast.error('Шаблон ещё не открыт. Создайте или откройте его в «Шаблоны».');
+      void this.router.navigate(['/doc-constructor/templates']);
       return;
     }
     const order = insertIndex; // temporary; server will reassign on reorder
@@ -1292,9 +1082,18 @@ export class BuilderPage {
   // Canvas → select / reorder
   // ─────────────────────────────────────────────────────────────
   protected onSelect(block: TemplateBlock): void {
+    this.templateSelected.set(false);
+    const gid = block.groupId;
+    if (gid) {
+      const keys = this.blocks()
+        .filter((b) => b.groupId === gid)
+        .map((b) => blockKey(b));
+      this.selectedIds.set(new Set(keys));
+      this.selectedId.set(null);
+      return;
+    }
     this.selectedId.set(blockKey(block));
     this.selectedIds.set(new Set());
-    this.templateSelected.set(false);
   }
 
   protected onMultiSelect(block: TemplateBlock): void {
@@ -1304,7 +1103,18 @@ export class BuilderPage {
     // Ctrl/Cmd group selection, then toggle the clicked block.
     const currentId = this.selectedId();
     if (currentId && ids.size === 0) ids.add(currentId);
-    if (ids.has(key)) {
+    // If clicking a persisted-group member with Ctrl, toggle the whole group.
+    if (block.groupId) {
+      const members = this.blocks()
+        .filter((b) => b.groupId === block.groupId)
+        .map((b) => blockKey(b));
+      const allSelected = members.every((k) => ids.has(k));
+      if (allSelected) {
+        for (const k of members) ids.delete(k);
+      } else {
+        for (const k of members) ids.add(k);
+      }
+    } else if (ids.has(key)) {
       ids.delete(key);
     } else {
       ids.add(key);
@@ -1315,31 +1125,106 @@ export class BuilderPage {
   }
 
   protected onCanvasClick(): void {
-    // Always clear block selection and show template properties
+    // Clear selection only — do NOT clear groupId membership.
     this.selectedId.set(null);
     this.selectedIds.set(new Set());
     this.templateSelected.set(true);
   }
 
   /**
-   * TZ-DOC-272: marquee drag finished → replace the selection with the
-   * intersecting blocks (editor group semantics live in the page state).
+   * Marquee drag finished → replace the selection with the
+   * intersecting blocks (expand any hit group members to full groups).
    */
   protected onMarqueeSelect(ids: string[]): void {
-    this.selectedIds.set(new Set(ids));
+    const expanded = new Set<string>();
+    const byKey = new Map(this.blocks().map((b) => [blockKey(b), b]));
+    for (const id of ids) {
+      const block = byKey.get(id);
+      if (!block) {
+        expanded.add(id);
+        continue;
+      }
+      if (block.groupId) {
+        for (const b of this.blocks()) {
+          if (b.groupId === block.groupId) expanded.add(blockKey(b));
+        }
+      } else {
+        expanded.add(id);
+      }
+    }
+    this.selectedIds.set(expanded);
     this.selectedId.set(null);
-    this.templateSelected.set(ids.length === 0);
+    this.templateSelected.set(expanded.size === 0);
   }
 
-  /** TZ-DOC-272: mark the current multi-selection as an explicit (editor-only) group. */
+  /** Persist a flat group for the current multi-selection. */
   protected onGroupSelected(): void {
-    if (this.selectedIds().size < 2) return;
-    this.editorGroupedIds.set(new Set(this.selectedIds()));
+    const selected = this.selectedBlocks().filter((b) => !!b.layout);
+    if (selected.length < 2) return;
+    const groupId =
+      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `group-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    this.applyGroupId(selected, groupId);
   }
 
-  /** TZ-DOC-272: dissolve the editor group — blocks edit independently again. */
+  /** Clear groupId on the currently selected persisted group (or multi-select). */
   protected onUngroupSelected(): void {
-    this.editorGroupedIds.set(null);
+    const selected = this.selectedBlocks();
+    if (selected.length === 0) return;
+    const gid = selected[0]?.groupId;
+    const targets =
+      gid && selected.every((b) => b.groupId === gid)
+        ? this.blocks().filter((b) => b.groupId === gid)
+        : selected;
+    this.applyGroupId(targets, null);
+  }
+
+  protected onSelectGroup(groupId: string): void {
+    const keys = this.blocks()
+      .filter((b) => b.groupId === groupId)
+      .map((b) => blockKey(b));
+    if (keys.length === 0) return;
+    this.selectedIds.set(new Set(keys));
+    this.selectedId.set(null);
+    this.templateSelected.set(false);
+  }
+
+  protected onUngroupById(groupId: string): void {
+    const targets = this.blocks().filter((b) => b.groupId === groupId);
+    this.applyGroupId(targets, null);
+  }
+
+  private applyGroupId(targets: TemplateBlock[], groupId: string | null): void {
+    if (targets.length === 0) return;
+    const keys = new Set(targets.map((b) => blockKey(b)));
+    this.blocks.update((arr) => arr.map((b) => (keys.has(blockKey(b)) ? { ...b, groupId } : b)));
+
+    const ops = targets
+      .filter((b): b is TemplateBlock & { _id: string } => !!b._id)
+      .map((b) => this.blocksSvc.update(b._id, { groupId }));
+    if (ops.length === 0) return;
+
+    this.saveStatus.set('saving');
+    forkJoin(ops).subscribe({
+      next: (results) => {
+        const failed = results.some((r) => !r.ok);
+        if (failed) {
+          this.saveStatus.set('error');
+          this.toast.error('Не удалось сохранить группу');
+          return;
+        }
+        this.saveStatus.set('saved');
+        const myTick = ++this.savedTick;
+        timer(2000).subscribe(() => {
+          if (myTick === this.savedTick) this.saveStatus.set('idle');
+        });
+      },
+      error: () => {
+        this.saveStatus.set('error');
+        this.toast.error('Не удалось сохранить группу');
+      },
+    });
   }
 
   protected onEditSelected(): void {
@@ -1359,10 +1244,18 @@ export class BuilderPage {
         }
         break;
       }
-      case 'table':
-        // Table block — navigate to tables page for editing
-        this.router.navigate(['/doc-constructor/tables']);
+      case 'table': {
+        const tableId =
+          block.source?.kind === 'table-template' ? block.source.refId : block.dataBinding?.value;
+        if (tableId) {
+          this.router.navigate(['/doc-constructor/tables'], {
+            queryParams: { editId: tableId },
+          });
+        } else {
+          this.router.navigate(['/doc-constructor/tables']);
+        }
         break;
+      }
       default:
         break;
     }
@@ -1452,6 +1345,23 @@ export class BuilderPage {
     });
   }
 
+  /**
+   * TZ-DOC-333 belt-and-braces: scrub any ephemeral `blob:`/`data:` imageUrl
+   * from an outgoing settings PATCH. The normal photo flow already swaps the
+   * local block to the canonical /uploads/... URL before any debounced save,
+   * but during the create→upload window a position/size change could still
+   * carry the optimistic blob — the backend rejects those with 400.
+   */
+  private sanitizeOutgoingPatch(patch: Partial<TemplateBlock>): Partial<TemplateBlock> {
+    if (!patch.settings) return patch;
+    const settings = patch.settings as Record<string, unknown>;
+    const url = settings['imageUrl'];
+    if (typeof url === 'string' && (url.startsWith('blob:') || url.startsWith('data:'))) {
+      return { ...patch, settings: { ...settings, imageUrl: '' } };
+    }
+    return patch;
+  }
+
   // ─────────────────────────────────────────────────────────────
   // Inspector → update / delete
   // ─────────────────────────────────────────────────────────────
@@ -1513,7 +1423,20 @@ export class BuilderPage {
     this.blocksSvc.updateLayouts(tid, updates).subscribe({
       next: (res) => {
         if (res.ok) {
-          if (res.data) this.blocks.set(res.data);
+          // Prefer server list, but keep local groupId if the payload omits it
+          // (defensive: layout-only $set must never wipe membership).
+          if (res.data) {
+            const prevById = new Map(previous.map((b) => [b._id, b]));
+            this.blocks.set(
+              res.data.map((server) => {
+                const prev = server._id ? prevById.get(server._id) : undefined;
+                if (prev?.groupId && (server.groupId === undefined || server.groupId === null)) {
+                  return { ...server, groupId: prev.groupId };
+                }
+                return server;
+              }),
+            );
+          }
           this.saveStatus.set('saved');
           const myTick = ++this.savedTick;
           timer(2000).subscribe(() => {

@@ -90,9 +90,11 @@ const NAV_CATEGORIES: NavCategory[] = [
     icon: BookOpen,
     items: [
       { path: '/dictionaries', label: 'Все справочники' },
-      
+
       { path: '/categories', label: 'Категории' },
       { path: '/doc-template-categories', label: 'Категории шаблонов' },
+      // TZ-DOC-334: категории текстовых блоков (DOC-316 page wiring).
+      { path: '/dictionaries/text-block-categories', label: 'Категории текстов' },
       // TZ-PRODUCTS-301: справочник цветов (RAL) — иконка Palette.
       { path: '/dictionaries/color-references', label: 'Цвета', icon: Palette },
     ],
@@ -102,12 +104,13 @@ const NAV_CATEGORIES: NavCategory[] = [
     // шаблоны таблиц и 3-pane builder canvas. FileText иконка
     // (lucide-angular@0.460). Active-category алгоритм в
     // PiNavDropdownComponent использует path === url || url.startsWith(path + '/'),
-    // поэтому /doc-constructor/builder/:id матчится по '/doc-constructor/builder'.
+    // Active-category: /doc-constructor/builder/:id still matches templates
+    // via startsWith only if we kept a builder nav item; registry is entry.
     id: 'docs',
     label: 'Документы',
     icon: FileText,
     items: [
-      { path: '/doc-constructor/builder', label: 'Конструктор' },
+      // Registry first: create/open a template, then land on /builder/:id.
       { path: '/doc-constructor/templates', label: 'Шаблоны' },
       { path: '/doc-constructor/texts', label: 'Текстовые блоки' },
       { path: '/doc-constructor/tables', label: 'Шаблоны таблиц' },

@@ -7,6 +7,7 @@ import { BehaviorSubject, of } from 'rxjs';
 
 import { BuilderPage } from './builder.page';
 import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
+import type { TemplateBlock } from '../../../shared/template-block/template-block.types';
 import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
 import { TextBlockCategoriesService } from '../../../shared/services/pi-text-block-categories.service';
 import { BuilderTextFilterService } from './builder-text-filter.service';
@@ -61,9 +62,34 @@ describe('BuilderPage', () => {
   const templatesSvcFindById = jest.fn().mockReturnValue(of({ ok: true, data: null }));
   // Hoisted mock so TZ-DOC-318 tests can seed a catalog for the badge lookup.
   const catSvcList = jest.fn().mockReturnValue(of({ ok: true, data: [] }));
+  const blocksSvcUpdate = jest.fn().mockReturnValue(of({ ok: true, data: {} as never }));
+  // TZ-DOC-333: hoisted photo-flow mocks (create returns a persisted block,
+  // upload returns a canonical /uploads/... URL).
+  const blocksSvcAdd = jest.fn();
+  const blocksSvcUploadImage = jest.fn();
+  const createObjectURLSpy = jest.fn(() => 'blob:mock-1');
+  const revokeObjectURLSpy = jest.fn();
+  const createdBlock = (id: string) => ({
+    _id: id,
+    templateId: 'tpl-1',
+    type: 'image' as const,
+    order: 0,
+    showLine: false,
+    isActive: true,
+    settings: { overlay: true },
+  });
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    // Node 18 / jsdom lacks globalThis.crypto.randomUUID — onPhotoFile (photo
+    // upload) relies on it for tempId. Stub it for the whole suite.
+    if (typeof globalThis.crypto?.randomUUID !== 'function') {
+      Object.defineProperty(globalThis, 'crypto', {
+        writable: true,
+        configurable: true,
+        value: { ...(globalThis.crypto ?? {}), randomUUID: () => 'temp-uuid-1' },
+      });
+    }
     // Test isolation: the describe-scoped BehaviorSubjects retain state from
     // the previous test (e.g. `categoryId=cat-7` seeded by TZ-DOC-318 URL
     // tests) and would leak into the next fixture. Reset both to empty.
@@ -72,6 +98,14 @@ describe('BuilderPage', () => {
     // The catalog mock's implementation survives `clearAllMocks` — reset the
     // default (empty) so badge-lookup tests don't inherit a seeded catalog.
     catSvcList.mockReturnValue(of({ ok: true, data: [] }));
+    blocksSvcUpdate.mockReturnValue(of({ ok: true, data: {} as never }));
+    // TZ-DOC-333: default photo-flow implementations + URL object spies.
+    blocksSvcAdd.mockReturnValue(of({ ok: true, data: createdBlock('block-1') as never }));
+    blocksSvcUploadImage.mockReturnValue(
+      of({ ok: true, data: { url: '/uploads/template-blocks/block-1/a.png' } }),
+    );
+    Object.defineProperty(URL, 'createObjectURL', { writable: true, value: createObjectURLSpy });
+    Object.defineProperty(URL, 'revokeObjectURL', { writable: true, value: revokeObjectURLSpy });
     await TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([]), withFetch()),
@@ -83,10 +117,12 @@ describe('BuilderPage', () => {
           provide: TemplateBlocksService,
           useValue: {
             listByTemplate: () => of({ ok: true, data: [] }),
-            add: () => of({ ok: true, data: {} as never }),
-            update: () => of({ ok: true, data: {} as never }),
+            add: blocksSvcAdd,
+            update: blocksSvcUpdate,
+            updateLayouts: jest.fn().mockReturnValue(of({ ok: true, data: null })),
             remove: () => of({ ok: true, data: undefined }),
             reorder: () => of({ ok: true, data: undefined }),
+            uploadImage: blocksSvcUploadImage,
           },
         },
         {
@@ -191,71 +227,40 @@ describe('BuilderPage', () => {
 
   // ═══ TZ-DOC-317: shared category filter rebuilds the «Тексты» URL ═══
 
-  it('TZ-DOC-317: inline texts dropdown includes the category filter', async () => {
+  it('TZ-DOC-317: left palette texts section includes the category filter', async () => {
     const fixture = TestBed.createComponent(BuilderPage);
     fixture.detectChanges();
     const comp = fixture.componentInstance as unknown as {
       templateId: { set: (v: string | null) => void };
-      openDropdown: { set: (v: string | null) => void };
       selectedCategoryId: () => string | null;
     };
-    // The toolbar (and its dropdowns) only render when a template is loaded.
+    // Tool pane (and its filter) only meaningful when a template is loaded.
+    // Child panes are stubbed via NO_ERRORS_SCHEMA in this suite — DOM filter
+    // coverage lives in builder-tool-pane.component.spec.ts.
     comp.templateId.set('tpl-1');
-    comp.openDropdown.set('texts');
     fixture.detectChanges();
-
-    const select: HTMLSelectElement = fixture.nativeElement.querySelector(
-      '#bd-text-category-filter',
-    );
-    expect(select).toBeTruthy();
     expect(comp.selectedCategoryId()).toBeNull();
-    // «Все» is the only option while the mock catalog returns [].
-    const options = Array.from(select.querySelectorAll('option'));
-    expect(options.map((o) => o.textContent?.trim())).toEqual(['Все']);
   });
 
-  it('TZ-DOC-317: changing the shared filter categoryId rebuilds the texts request URL', async () => {
+  it('TZ-DOC-335: BuilderPage no longer owns texts/tables httpResources (palette does)', async () => {
     const fixture = TestBed.createComponent(BuilderPage);
     fixture.detectChanges();
     TestBed.flushEffects();
     const httpMock = TestBed.inject(HttpTestingController);
-
-    // Initial GET fires on creation without categoryId — flush it first.
-    httpMock.expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks')).flush([]);
-
-    const filter = TestBed.inject(BuilderTextFilterService);
-    filter.categoryId.set('cat-9');
-    fixture.detectChanges();
-    TestBed.flushEffects(); // httpResource re-dispatches with the new URL.
-
-    const req = httpMock.expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks'));
-    expect(req.request.urlWithParams).toContain('categoryId=cat-9');
-    expect(req.request.urlWithParams).toContain('isActive=true');
-    req.flush([]);
+    const textReqs = httpMock.match((r) => r.method === 'GET' && r.url.includes('/text-blocks'));
+    const tableReqs = httpMock.match(
+      (r) => r.method === 'GET' && r.url.includes('/table-templates'),
+    );
+    expect(textReqs).toHaveLength(0);
+    expect(tableReqs).toHaveLength(0);
   });
 
-  it('TZ-DOC-317: resetting the filter to null drops categoryId from the URL', async () => {
+  it('TZ-DOC-335: goToTemplates navigates to templates registry', async () => {
     const fixture = TestBed.createComponent(BuilderPage);
-    fixture.detectChanges();
-    TestBed.flushEffects();
-    const httpMock = TestBed.inject(HttpTestingController);
-
-    // Initial GET fires on creation without categoryId — flush it first.
-    httpMock.expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks')).flush([]);
-
-    const filter = TestBed.inject(BuilderTextFilterService);
-    filter.categoryId.set('cat-9');
-    fixture.detectChanges();
-    TestBed.flushEffects();
-    httpMock.expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks')).flush([]);
-
-    filter.reset();
-    fixture.detectChanges();
-    TestBed.flushEffects();
-    const req = httpMock.expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks'));
-    expect(req.request.urlWithParams).not.toContain('categoryId');
-    expect(req.request.urlWithParams).toContain('isActive=true');
-    req.flush([]);
+    const router = TestBed.inject(Router);
+    const navigate = jest.spyOn(router, 'navigate').mockResolvedValue(true);
+    (fixture.componentInstance as unknown as { goToTemplates: () => void }).goToTemplates();
+    expect(navigate).toHaveBeenCalledWith(['/doc-constructor/templates']);
   });
 
   // ────────────────────────────────────────────────────────────────────
@@ -454,5 +459,230 @@ describe('BuilderPage', () => {
     fixture.detectChanges();
     TestBed.flushEffects();
     expect(filter.categoryId()).toBeNull();
+  });
+
+  describe('persistent block groups', () => {
+    type PageApi = {
+      blocks: { set: (v: unknown[]) => void; (): unknown[] };
+      selectedIds: { set: (v: Set<string>) => void; (): Set<string> };
+      selectedId: { set: (v: string | null) => void; (): string | null };
+      onSelect: (b: unknown) => void;
+      onGroupSelected: () => void;
+      onUngroupSelected: () => void;
+      onCanvasClick: () => void;
+      onSelectGroup: (id: string) => void;
+      selectionIsPersistedGroup: () => boolean;
+      paletteGroups: () => Array<{ groupId: string; count: number }>;
+    };
+
+    function layoutBlock(id: string, order: number, groupId?: string | null) {
+      return {
+        _id: id,
+        templateId: 'tpl-1',
+        type: 'text',
+        order,
+        showLine: false,
+        isActive: true,
+        groupId: groupId ?? null,
+        layout: { x: 0.1 * order, y: 0.1, width: 0.2, height: 0.1, zIndex: order },
+      };
+    }
+
+    it('group → all members share one groupId and persist via update', () => {
+      const fixture = TestBed.createComponent(BuilderPage);
+      const comp = fixture.componentInstance as unknown as PageApi;
+      const a = layoutBlock('a', 1);
+      const b = layoutBlock('b', 2);
+      comp.blocks.set([a, b]);
+      comp.selectedIds.set(new Set(['a', 'b']));
+      comp.selectedId.set(null);
+
+      comp.onGroupSelected();
+
+      const updated = comp.blocks() as Array<{ _id: string; groupId?: string | null }>;
+      expect(updated[0].groupId).toBeTruthy();
+      expect(updated[0].groupId).toBe(updated[1].groupId);
+      expect(comp.selectionIsPersistedGroup()).toBe(true);
+      expect(comp.paletteGroups()).toHaveLength(1);
+      expect(blocksSvcUpdate).toHaveBeenCalledTimes(2);
+      expect(blocksSvcUpdate).toHaveBeenCalledWith('a', {
+        groupId: updated[0].groupId,
+      });
+    });
+
+    it('select member → selects entire group; canvas click clears selection only', () => {
+      const fixture = TestBed.createComponent(BuilderPage);
+      const comp = fixture.componentInstance as unknown as PageApi;
+      const gid = 'g-persist-1';
+      const a = layoutBlock('a', 1, gid);
+      const b = layoutBlock('b', 2, gid);
+      const c = layoutBlock('c', 3, null);
+      comp.blocks.set([a, b, c]);
+
+      comp.onSelect(a);
+      expect(comp.selectedId()).toBeNull();
+      expect([...comp.selectedIds()].sort()).toEqual(['a', 'b']);
+      expect(comp.selectionIsPersistedGroup()).toBe(true);
+
+      comp.onCanvasClick();
+      expect(comp.selectedIds().size).toBe(0);
+      const after = comp.blocks() as Array<{ groupId?: string | null }>;
+      expect(after[0].groupId).toBe(gid);
+      expect(after[1].groupId).toBe(gid);
+    });
+
+    it('ungroup → clears groupId on members and persists null', () => {
+      const fixture = TestBed.createComponent(BuilderPage);
+      const comp = fixture.componentInstance as unknown as PageApi;
+      const gid = 'g-persist-2';
+      comp.blocks.set([layoutBlock('a', 1, gid), layoutBlock('b', 2, gid)]);
+      comp.selectedIds.set(new Set(['a', 'b']));
+      comp.selectedId.set(null);
+
+      comp.onUngroupSelected();
+
+      const updated = comp.blocks() as Array<{ groupId?: string | null }>;
+      expect(updated.every((b) => b.groupId == null)).toBe(true);
+      expect(comp.paletteGroups()).toHaveLength(0);
+      expect(blocksSvcUpdate).toHaveBeenCalledWith('a', { groupId: null });
+      expect(blocksSvcUpdate).toHaveBeenCalledWith('b', { groupId: null });
+    });
+
+    it('selectGroup from palette selects all members', () => {
+      const fixture = TestBed.createComponent(BuilderPage);
+      const comp = fixture.componentInstance as unknown as PageApi;
+      const gid = 'g-palette';
+      comp.blocks.set([layoutBlock('a', 1, gid), layoutBlock('b', 2, gid)]);
+
+      comp.onSelectGroup(gid);
+      expect([...comp.selectedIds()].sort()).toEqual(['a', 'b']);
+    });
+
+    it('layoutChanges updates layouts for all peers and preserves groupId', () => {
+      const fixture = TestBed.createComponent(BuilderPage);
+      const comp = fixture.componentInstance as unknown as PageApi & {
+        templateId: { set: (v: string | null) => void };
+        onLayoutChanges: (
+          changes: Array<{
+            block: TemplateBlock;
+            layout: NonNullable<TemplateBlock['layout']>;
+          }>,
+        ) => void;
+      };
+      const gid = 'g-drag-peers';
+      const a = layoutBlock('a', 1, gid);
+      const b = layoutBlock('b', 2, gid);
+      comp.templateId.set('tpl-1');
+      comp.blocks.set([a, b]);
+      // Empty selection — mirrors first mousedown before expand.
+      comp.selectedIds.set(new Set());
+      comp.selectedId.set(null);
+
+      // Simulate renderer emitting multi-peer layoutChanges after group drag.
+      const dx = 0.05;
+      comp.onLayoutChanges([
+        {
+          block: a,
+          layout: { ...a.layout!, x: a.layout!.x + dx, y: a.layout!.y },
+        },
+        {
+          block: b,
+          layout: { ...b.layout!, x: b.layout!.x + dx, y: b.layout!.y },
+        },
+      ]);
+
+      const after = comp.blocks() as Array<{
+        _id: string;
+        groupId?: string | null;
+        layout?: { x: number };
+      }>;
+      expect(after.find((x) => x._id === 'a')?.layout?.x).toBeCloseTo(0.15);
+      expect(after.find((x) => x._id === 'b')?.layout?.x).toBeCloseTo(0.25);
+      expect(after.every((x) => x.groupId === gid)).toBe(true);
+
+      // Selection sync path used at drag start (select.emit → onSelect).
+      comp.onSelect(a);
+      expect([...comp.selectedIds()].sort()).toEqual(['a', 'b']);
+      expect(comp.selectionIsPersistedGroup()).toBe(true);
+    });
+  });
+
+  // ═══ TZ-DOC-333: photo blocks persist via /uploads/... (never blob:) ═══
+
+  describe('photo upload (TZ-DOC-333)', () => {
+    type PhotoApi = {
+      templateId: { set: (v: string | null) => void };
+      onPhotoFile: (file: File) => void;
+      blocks: () => TemplateBlock[];
+    };
+
+    it('create payload omits the blob: imageUrl; upload happens after persist', () => {
+      const fixture = TestBed.createComponent(BuilderPage);
+      fixture.detectChanges();
+      const comp = fixture.componentInstance as unknown as PhotoApi;
+      comp.templateId.set('tpl-1');
+      fixture.detectChanges();
+
+      const file = new File(['x'], 'photo.png', { type: 'image/png' });
+      comp.onPhotoFile(file);
+
+      // The create body must NOT carry the blob preview URL (backend 400s on it).
+      expect(blocksSvcAdd).toHaveBeenCalledWith(
+        'tpl-1',
+        expect.objectContaining({
+          settings: expect.not.objectContaining({ imageUrl: expect.any(String) }),
+        }),
+      );
+      const payload = blocksSvcAdd.mock.calls[0][1] as {
+        settings?: Record<string, unknown>;
+      };
+      expect(payload.settings).toEqual({ overlay: true });
+
+      // Upload fires after the block is persisted, targeting the new _id.
+      expect(blocksSvcUploadImage).toHaveBeenCalledWith('block-1', file);
+
+      // Local block swaps blob → canonical /uploads/ URL; blob is released.
+      const block = comp.blocks().find((b) => b._id === 'block-1');
+      expect(block?.settings?.['imageUrl']).toBe('/uploads/template-blocks/block-1/a.png');
+      expect(revokeObjectURLSpy).toHaveBeenCalledWith('blob:mock-1');
+    });
+
+    it('upload failure drops the dead blob and toasts (no blob reaches the persist path)', () => {
+      blocksSvcUploadImage.mockReturnValueOnce(of({ ok: false, error: { status: 400 } as never }));
+      const fixture = TestBed.createComponent(BuilderPage);
+      fixture.detectChanges();
+      const comp = fixture.componentInstance as unknown as PhotoApi;
+      comp.templateId.set('tpl-1');
+      fixture.detectChanges();
+
+      const file = new File(['x'], 'photo.png', { type: 'image/png' });
+      comp.onPhotoFile(file);
+
+      // Block stays on canvas but shows no image — reload shows empty, not broken.
+      const block = comp.blocks().find((b) => b._id === 'block-1');
+      expect(block?.settings?.['imageUrl']).toBe('');
+      expect(revokeObjectURLSpy).toHaveBeenCalledWith('blob:mock-1');
+      expect(toastError).toHaveBeenCalled();
+    });
+
+    it('sanitizeOutgoingPatch scrubs transient blob:/data: imageUrl from settings PATCHes', () => {
+      const fixture = TestBed.createComponent(BuilderPage);
+      const comp = fixture.componentInstance as unknown as {
+        sanitizeOutgoingPatch: (p: Partial<TemplateBlock>) => Partial<TemplateBlock>;
+      };
+
+      const scrubbed = comp.sanitizeOutgoingPatch({
+        settings: { imageUrl: 'blob:http://localhost:4200/x', overlay: true },
+      });
+      expect((scrubbed.settings as Record<string, unknown>)['imageUrl']).toBe('');
+      expect((scrubbed.settings as Record<string, unknown>)['overlay']).toBe(true);
+
+      const kept = comp.sanitizeOutgoingPatch({
+        settings: { imageUrl: '/uploads/template-blocks/b1/a.png', overlay: true },
+      });
+      expect((kept.settings as Record<string, unknown>)['imageUrl']).toBe(
+        '/uploads/template-blocks/b1/a.png',
+      );
+    });
   });
 });

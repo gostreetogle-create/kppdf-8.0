@@ -7,7 +7,10 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse, httpResource } from '@angular/common/http';
+import { filter, map, switchMap } from 'rxjs';
 import { PiRowActionsComponent } from '../../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { PiDialogService, type DialogRef } from '../../../shared/ui/dialog/pi-dialog.service';
@@ -381,7 +384,33 @@ export class TablesPage {
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly baseUrl = inject(API_BASE_URL);
+
+  constructor() {
+    // TZ-DOC-335: auto-open editor when navigated from builder with editId.
+    this.route.queryParams
+      .pipe(
+        map((p) => p['editId'] as string | undefined),
+        filter((id): id is string => !!id),
+        switchMap((id) => this.service.findById(id)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((res) => {
+        if (res.ok) {
+          this.openEdit(res.data);
+          void this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: { editId: null },
+            queryParamsHandling: 'merge',
+            replaceUrl: true,
+          });
+        } else {
+          this.toast.error(extractErrorMessage(res.error as HttpErrorResponse));
+        }
+      });
+  }
 
   private readonly listRes = httpResource<TableTemplate[]>(() => ({
     url: `${this.baseUrl}/table-templates`,

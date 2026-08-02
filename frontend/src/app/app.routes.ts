@@ -128,7 +128,7 @@ export const routes: Routes = [
           import('./pages/materials/materials.page').then((m) => m.MaterialsPage),
         title: 'KPPDF — Материалы',
       },
-{
+      {
         path: 'organizations',
         loadComponent: () =>
           import('./pages/organizations/organizations.page').then((m) => m.OrganizationsPage),
@@ -156,15 +156,22 @@ export const routes: Routes = [
         title: 'KPPDF — Категории шаблонов',
       },
       {
+        // TZ-DOC-334 — категории текстовых блоков (page from DOC-316; route+nav gap).
+        path: 'dictionaries/text-block-categories',
+        loadComponent: () =>
+          import('./pages/dictionaries/text-block-categories.page').then(
+            (m) => m.TextBlockCategoriesPage,
+          ),
+        title: 'KPPDF — Категории текстов',
+      },
+      {
         // TZ-PRODUCTS-301 — справочник цветов (RAL). Admin/manager page;
         // reads are also available to users via the API for the product
         // form RAL dropdown (TZ-PRODUCTS-302).
         path: 'dictionaries/color-references',
         canMatch: [authGuard, adminOnlyRouteGuard],
         loadComponent: () =>
-          import('./pages/dictionaries/color-references.page').then(
-            (m) => m.ColorReferencesPage,
-          ),
+          import('./pages/dictionaries/color-references.page').then((m) => m.ColorReferencesPage),
         title: 'KPPDF — Цвета',
       },
       {
@@ -254,18 +261,15 @@ export const routes: Routes = [
         title: 'KPPDF — Конструктор: Таблицы',
       },
       {
-        // TZ-86 Phase D.1 — builder canvas (3-pane) picker state.
-        // No :id → shows template-list picker; selecting navigates to
-        // /doc-constructor/builder/:id (see BuilderPage empty state).
+        // TZ-DOC-324: bare /builder has no editor without :id — send users to
+        // the template registry (create / open). Query params (source/sourceId)
+        // are preserved by the router on redirect.
         path: 'doc-constructor/builder',
-        loadComponent: () =>
-          import('./pages/doc-constructor/builder/builder.page').then((m) => m.BuilderPage),
-        title: 'KPPDF — Конструктор: Сборка',
+        redirectTo: 'doc-constructor/templates',
+        pathMatch: 'full',
       },
       {
-        // TZ-86 Phase D.1 — builder canvas with a specific template id.
-        // Longest-prefix match in Angular 20 wins over the bare /builder
-        // route above, so :id takes precedence for non-empty ids.
+        // Builder canvas with a specific template id.
         path: 'doc-constructor/builder/:id',
         loadComponent: () =>
           import('./pages/doc-constructor/builder/builder.page').then((m) => m.BuilderPage),

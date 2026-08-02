@@ -26,6 +26,8 @@
 | DELETE | `/api/text-blocks/:id` | Удалить |
 | GET | `/api/text-block-categories` | Категории текстов (TZ-DOC-315 backend; используется для колонки/фильтра) |
 
+Справочник категорий (CRUD): [`/dictionaries/text-block-categories`](../..) — меню «Справочники → Категории текстов» (TZ-DOC-334).
+
 ## Dialogs
 
 | Компонент | Режим | Данные |

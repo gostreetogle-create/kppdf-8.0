@@ -4,10 +4,12 @@ import {
   DestroyRef,
   computed,
   inject,
+  input,
   output,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
 import { HttpErrorResponse, httpResource } from '@angular/common/http';
 import { CdkDrag, CdkDropList } from '@angular/cdk/drag-drop';
 import {
@@ -15,8 +17,11 @@ import {
   Database,
   FileText,
   Table as TableIcon,
+  Image as ImageIcon,
+  Layers,
   Plus,
   Minus,
+  Ungroup,
 } from 'lucide-angular';
 import { TextBlocksService } from '../../../shared/services/pi-text-blocks.service';
 import {
@@ -37,13 +42,16 @@ import type { TextBlock } from '../../../shared/services/pi-text-blocks.service'
 import type { TableTemplate } from '../../../shared/services/pi-table-templates.service';
 
 /**
- * TZ-86 Phase D.1 + D.2 — `BuilderToolPane` (left pane).
+ * TZ-86 Phase D.1 + D.2 — `BuilderToolPane` (top horizontal palette).
  *
- * Three collapsible accordion-tabs:
- *   1. **Тексты** — list TextBlock items via httpResource.
- *   2. **Таблицы** — list TableTemplate items via httpResource.
- *   3. _Отступ removed in TZ-DOC-319_
+ * Four exclusive tabs (one open at a time):
+ *   1. **Группы** — persisted flat groups via groupId.
+ *   2. **Тексты** — list TextBlock items via httpResource.
+ *   3. **Таблицы** — list TableTemplate items via httpResource.
+ *   4. **Фото** — file picker → parent inserts overlay image block.
  *
+ * Top-toolbar duplicates (Тексты/Таблицы/Фото) were removed — palette is the
+ * single add entry point.
  * Phase D.2.2 (drag-from-palette): each palette list is wrapped in
  * `cdkDropList` with `[cdkDropListConnectedTo]="['canvas-droplist']"`. Each
  * item is a `cdkDrag` with `[cdkDragData]="<AddBlockPayload>"`. Dropping
@@ -59,26 +67,106 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
   selector: 'app-builder-tool-pane',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideAngularModule, CdkDropList, CdkDrag],
+  imports: [LucideAngularModule, CdkDropList, CdkDrag, RouterLink],
   template: `
     <aside class="tool-pane" aria-label="Палитра блоков">
-      <header class="tool-pane__header">
-        <h2 class="tool-pane__title">Палитра</h2>
-        <p class="tool-pane__subtitle">Перетащите блок на холст или нажмите «+»</p>
-      </header>
+      <div class="tool-pane__bar">
+        <span class="tool-pane__brand">Палитра</span>
+        <div class="tool-pane__tabs" role="tablist" aria-label="Секции палитры">
+          <button
+            type="button"
+            role="tab"
+            class="tool-pane__tab pi-focus-ring"
+            [class.is-active]="isOpen('groups')"
+            (click)="toggle('groups')"
+            [attr.aria-selected]="isOpen('groups')"
+            [attr.aria-expanded]="isOpen('groups')"
+            data-test="tool-pane-groups-toggle"
+          >
+            <lucide-icon [img]="LayersIcon" [size]="14"></lucide-icon>
+            <span>Группы</span>
+            @if (groups().length > 0) {
+              <span class="tool-pane__tab-count">{{ groups().length }}</span>
+            }
+          </button>
+          <button
+            type="button"
+            role="tab"
+            class="tool-pane__tab pi-focus-ring"
+            [class.is-active]="isOpen('texts')"
+            (click)="toggle('texts')"
+            [attr.aria-selected]="isOpen('texts')"
+            [attr.aria-expanded]="isOpen('texts')"
+          >
+            <lucide-icon [img]="FileTextIcon" [size]="14"></lucide-icon>
+            <span>Тексты</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            class="tool-pane__tab pi-focus-ring"
+            [class.is-active]="isOpen('tables')"
+            (click)="toggle('tables')"
+            [attr.aria-selected]="isOpen('tables')"
+            [attr.aria-expanded]="isOpen('tables')"
+          >
+            <lucide-icon [img]="TableIconSvg" [size]="14"></lucide-icon>
+            <span>Таблицы</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            class="tool-pane__tab pi-focus-ring"
+            [class.is-active]="isOpen('photo')"
+            (click)="toggle('photo')"
+            [attr.aria-selected]="isOpen('photo')"
+            [attr.aria-expanded]="isOpen('photo')"
+          >
+            <lucide-icon [img]="ImageIconSvg" [size]="14"></lucide-icon>
+            <span>Фото</span>
+          </button>
+        </div>
+      </div>
 
-      <!-- Section 1: Text-blocks (drag-enabled) -->
-      <section class="tool-pane__section" [class.is-open]="isOpen('texts')">
-        <button
-          type="button"
-          class="tool-pane__section-toggle pi-focus-ring"
-          (click)="toggle('texts')"
-          [attr.aria-expanded]="isOpen('texts')"
-        >
-          <lucide-icon [img]="FileTextIcon" [size]="14"></lucide-icon>
-          <span class="tool-pane__section-title">Тексты</span>
-        </button>
-        @if (isOpen('texts')) {
+      @if (isOpen('groups')) {
+        <div class="tool-pane__panel" role="tabpanel">
+          @if (groups().length === 0) {
+            <p class="tool-pane__empty" data-test="tool-pane-groups-empty">
+              Нет групп. Выделите 2+ блока и нажмите «Сгруппировать».
+            </p>
+          } @else {
+            <ul class="tool-pane__list" data-test="tool-pane-groups-list">
+              @for (g of groups(); track g.groupId) {
+                <li class="tool-pane__item tool-pane__item--group">
+                  <button
+                    type="button"
+                    class="tool-pane__group-select pi-focus-ring"
+                    (click)="selectGroup.emit(g.groupId)"
+                    [attr.aria-label]="'Выделить ' + g.label"
+                    data-test="tool-pane-group-select"
+                  >
+                    <span class="tool-pane__item-label">{{ g.label }}</span>
+                    <span class="tool-pane__item-hint">{{ g.count }} блоков</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="tool-pane__add pi-focus-ring"
+                    [attr.aria-label]="'Разгруппировать ' + g.label"
+                    title="Разгруппировать"
+                    (click)="ungroupGroup.emit(g.groupId); $event.stopPropagation()"
+                    data-test="tool-pane-group-ungroup"
+                  >
+                    <lucide-icon [img]="UngroupIcon" [size]="14"></lucide-icon>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      }
+
+      @if (isOpen('texts')) {
+        <div class="tool-pane__panel" role="tabpanel">
           <div class="tool-pane__filter">
             <label class="tool-pane__filter-label" for="tb-category-filter">Категория</label>
             <select
@@ -132,25 +220,26 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
               }
             </ul>
           } @else {
-            <p class="tool-pane__empty">
-              {{ selectedCategoryId() ? 'Нет блоков в этой категории' : 'Нет сохранённых текстов' }}
-            </p>
+            <div class="tool-pane__empty" data-test="tool-pane-texts-empty">
+              <p>
+                {{
+                  selectedCategoryId() ? 'Нет блоков в этой категории' : 'Нет сохранённых текстов'
+                }}
+              </p>
+              <a
+                class="tool-pane__empty-link pi-focus-ring"
+                routerLink="/doc-constructor/texts"
+                data-test="tool-pane-texts-cta"
+              >
+                Создать текстовый блок →
+              </a>
+            </div>
           }
-        }
-      </section>
+        </div>
+      }
 
-      <!-- Section 3: Table templates (drag-enabled) -->
-      <section class="tool-pane__section" [class.is-open]="isOpen('tables')">
-        <button
-          type="button"
-          class="tool-pane__section-toggle pi-focus-ring"
-          (click)="toggle('tables')"
-          [attr.aria-expanded]="isOpen('tables')"
-        >
-          <lucide-icon [img]="TableIconSvg" [size]="14"></lucide-icon>
-          <span class="tool-pane__section-title">Таблицы</span>
-        </button>
-        @if (isOpen('tables')) {
+      @if (isOpen('tables')) {
+        <div class="tool-pane__panel" role="tabpanel">
           @if (tablesRes.isLoading()) {
             <p class="tool-pane__loading">Загрузка…</p>
           } @else if (tablesRes.error()) {
@@ -187,109 +276,157 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
               }
             </ul>
           } @else {
-            <p class="tool-pane__empty">Нет сохранённых шаблонов таблиц</p>
+            <div class="tool-pane__empty" data-test="tool-pane-tables-empty">
+              <p>Нет сохранённых шаблонов таблиц</p>
+              <a
+                class="tool-pane__empty-link pi-focus-ring"
+                routerLink="/doc-constructor/tables"
+                data-test="tool-pane-tables-cta"
+              >
+                Создать шаблон таблицы →
+              </a>
+            </div>
           }
-        }
-      </section>
+        </div>
+      }
 
-      <!-- Section 3 removed (TZ-DOC-319) -->
+      @if (isOpen('photo')) {
+        <div class="tool-pane__panel" role="tabpanel">
+          <div class="tool-pane__photo">
+            <p class="tool-pane__empty">PNG, JPEG или WebP — файл станет блоком на холсте.</p>
+            <button
+              type="button"
+              class="tool-pane__upload-button pi-focus-ring"
+              (click)="photoInput.click()"
+              data-test="tool-pane-photo-upload"
+            >
+              <lucide-icon [img]="ImageIconSvg" [size]="14"></lucide-icon>
+              Загрузить фото
+            </button>
+            <input
+              #photoInput
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              class="sr-only"
+              (change)="onPhotoInput($event)"
+            />
+          </div>
+        </div>
+      }
     </aside>
   `,
   styles: [
     `
       :host {
         display: block;
-        width: 280px;
+        width: 100%;
         flex-shrink: 0;
-        height: 100%;
-        overflow-y: auto;
         background: var(--color-paper);
-        border-right: 1px solid var(--color-rule);
-      }
-
-      .tool-pane__header {
-        padding: 16px 16px 8px;
         border-bottom: 1px solid var(--color-rule);
       }
 
-      .tool-pane__title {
-        font-size: 13px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--color-ink);
-        margin: 0 0 4px;
-      }
-
-      .tool-pane__subtitle {
-        font-size: 11px;
-        color: var(--color-muted);
-        margin: 0;
-      }
-
-      .tool-pane__quick-add {
-        padding: 8px 16px;
-        border-bottom: 1px solid var(--color-rule);
-      }
-
-      .tool-pane__quick-btn {
+      .tool-pane__bar {
         display: flex;
         align-items: center;
-        gap: 6px;
-        width: 100%;
-        padding: 8px 12px;
-        font-size: 12px;
-        font-weight: 500;
-        border: 1px dashed var(--color-rule);
-        border-radius: 4px;
-        background: var(--color-paper);
-        color: var(--color-muted-foreground-strong);
-        cursor: pointer;
-        transition: all 150ms ease;
-      }
-
-      .tool-pane__quick-btn:hover {
-        border-color: var(--color-ink);
-        color: var(--color-ink);
+        gap: 12px;
+        padding: 4px 12px;
         background: var(--color-paper-2);
-      }
-
-      /* .tool-pane__spacer-* rules removed (TZ-DOC-319) */
-
-      .tool-pane__section {
         border-bottom: 1px solid var(--color-rule);
+        min-height: 36px;
       }
 
-      .tool-pane__section-toggle {
+      .tool-pane__brand {
+        flex-shrink: 0;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--color-ink);
+      }
+
+      .tool-pane__tabs {
         display: flex;
         align-items: center;
-        gap: 8px;
-        width: 100%;
-        padding: 10px 16px;
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        color: var(--color-ink);
-        font-size: 12px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        text-align: left;
+        gap: 2px;
+        flex-wrap: wrap;
+        min-width: 0;
       }
 
-      .tool-pane__section-toggle:hover {
+      .tool-pane__tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 2px;
+        cursor: pointer;
+        color: var(--color-muted);
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-family: inherit;
+        transition:
+          color 100ms ease,
+          background 100ms ease,
+          border-color 100ms ease;
+      }
+
+      .tool-pane__tab:hover {
+        color: var(--color-ink);
         background: color-mix(in oklch, var(--color-sunrise-soft) 40%, transparent);
       }
 
-      .tool-pane__section-title {
+      .tool-pane__tab.is-active {
+        color: var(--color-ink);
+        background: var(--color-paper);
+        border-color: var(--color-rule);
+      }
+
+      .tool-pane__tab-count {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--color-muted);
+        background: var(--color-paper);
+        border: 1px solid var(--color-rule);
+        border-radius: 2px;
+        padding: 0 5px;
+        line-height: 16px;
+      }
+
+      .tool-pane__panel {
+        max-height: 148px;
+        overflow-y: auto;
+        padding: 6px 12px 8px;
+        background: var(--color-paper);
+      }
+
+      .tool-pane__item--group {
+        cursor: default;
+      }
+
+      .tool-pane__group-select {
         flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        align-items: flex-start;
+        padding: 0;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        text-align: left;
+        font: inherit;
+        color: inherit;
       }
 
       .tool-pane__filter {
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 4px 16px 8px;
+        margin-bottom: 6px;
       }
 
       .tool-pane__filter-label {
@@ -303,6 +440,7 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
       .tool-pane__filter-select {
         flex: 1;
         min-width: 0;
+        max-width: 240px;
         padding: 4px 8px;
         font-size: 12px;
         font-family: inherit;
@@ -326,16 +464,25 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
       .tool-pane__list {
         list-style: none;
         margin: 0;
-        padding: 4px 0 8px;
+        padding: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: stretch;
       }
 
       .tool-pane__item {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 6px 16px;
+        gap: 6px;
+        padding: 4px 8px;
+        border: 1px solid var(--color-rule);
+        border-radius: 2px;
+        background: var(--color-paper-2);
         transition: background 100ms ease;
         cursor: grab;
+        max-width: 220px;
+        min-width: 0;
       }
 
       .tool-pane__item:hover {
@@ -351,11 +498,11 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         min-width: 0;
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 1px;
       }
 
       .tool-pane__item-label {
-        font-size: 13px;
+        font-size: 12px;
         color: var(--color-ink);
         overflow: hidden;
         text-overflow: ellipsis;
@@ -372,8 +519,8 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
 
       .tool-pane__add {
         flex-shrink: 0;
-        width: 24px;
-        height: 24px;
+        width: 22px;
+        height: 22px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -391,27 +538,80 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         border-color: var(--color-ink);
       }
 
-      .tool-pane__subgroup {
-        padding: 4px 0 8px;
-      }
-
-      .tool-pane__subgroup-title {
-        font-size: 10px;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--color-muted);
-        margin: 4px 16px 4px;
-        font-weight: 600;
-      }
-
       .tool-pane__loading,
       .tool-pane__error,
       .tool-pane__empty,
       .tool-pane__hint {
-        padding: 8px 16px;
+        padding: 4px 0;
         font-size: 12px;
         color: var(--color-muted);
         margin: 0;
+      }
+
+      .tool-pane__empty p {
+        margin: 0 0 6px;
+      }
+
+      .tool-pane__empty-link {
+        display: inline-flex;
+        align-items: center;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--color-ink);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+      }
+
+      .tool-pane__empty-link:hover {
+        color: var(--color-sunrise-warm, var(--color-ink));
+      }
+
+      .tool-pane__photo {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 12px;
+      }
+
+      .tool-pane__photo .tool-pane__empty {
+        padding: 0;
+        flex: 1;
+        min-width: 180px;
+      }
+
+      .tool-pane__upload-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-family: inherit;
+        color: var(--color-ink);
+        background: var(--color-paper-2);
+        border: 1px solid var(--color-rule);
+        border-radius: 2px;
+        cursor: pointer;
+        transition:
+          background 100ms ease,
+          border-color 100ms ease;
+      }
+
+      .tool-pane__upload-button:hover {
+        border-color: var(--color-ink);
+        background: color-mix(in oklch, var(--color-sunrise-soft) 35%, transparent);
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
       }
 
       .tool-pane__error {
@@ -424,16 +624,24 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         background: var(--color-paper);
         border: 1px solid var(--color-ink);
         opacity: 0.9;
-        padding: 6px 16px;
-        font-size: 13px;
+        padding: 6px 12px;
+        font-size: 12px;
         color: var(--color-ink);
       }
     `,
   ],
 })
 export class BuilderToolPaneComponent {
+  /** Persisted flat groups derived from blocks with a shared groupId. */
+  readonly groups = input<
+    Array<{ groupId: string; label: string; count: number; memberKeys?: string[] }>
+  >([]);
+
   // Outputs
   readonly addBlock = output<AddBlockPayload>();
+  readonly photoSelected = output<File>();
+  readonly selectGroup = output<string>();
+  readonly ungroupGroup = output<string>();
 
   // DI
   private readonly destroyRef = inject(DestroyRef);
@@ -446,21 +654,35 @@ export class BuilderToolPaneComponent {
   protected readonly DatabaseIcon = Database;
   protected readonly FileTextIcon = FileText;
   protected readonly TableIconSvg = TableIcon;
+  protected readonly ImageIconSvg = ImageIcon;
+  protected readonly LayersIcon = Layers;
   protected readonly PlusIcon = Plus;
   protected readonly MinusIcon = Minus;
+  protected readonly UngroupIcon = Ungroup;
 
   // D.2.2: cdkDropListConnectedTo target — imported from builder-canvas so
   // the id string is single-sourced (see code-reviewer nit 2 on D.2).
   protected readonly canvasDroplistId = [CANVAS_DROPLIST_ID];
 
-  // Tab state
+  // Tab state — exclusive: at most one tab open
   private readonly open = signal<Record<string, boolean>>({
+    groups: false,
     texts: false,
     tables: false,
+    photo: false,
   });
   protected readonly isOpen = (k: string): boolean => this.open()[k] === true;
   protected readonly toggle = (k: string): void => {
-    this.open.update((s) => ({ ...s, [k]: !s[k] }));
+    this.open.update((s) => {
+      const next = !s[k];
+      return {
+        groups: false,
+        texts: false,
+        tables: false,
+        photo: false,
+        [k]: next,
+      };
+    });
   };
 
   // Static palette data
@@ -539,5 +761,13 @@ export class BuilderToolPaneComponent {
 
   protected onAddFromTable(t: TableTemplate): void {
     this.addBlock.emit({ source: 'table-template', tableTemplate: t });
+  }
+
+  protected onPhotoInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.photoSelected.emit(file);
+    input.value = '';
   }
 }
