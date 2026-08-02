@@ -736,6 +736,14 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 | TZ-MATERIALS-306 | 2026-08-02 | Материалы — фото и надёжное сохранение: save guard (submitting||uploading), mixed upload, main photo ∈ photoIds, orphan cleanup | `tasks/_archive/2026-08/TZ-MATERIALS-306.done.md` |
 | TZ-DOC-307 | 2026-08-02 | Категории шаблонов — доменный контракт (отдельная сущность DocumentTemplateCategory, categoryId в DocumentTemplate, server-side default, RBAC, backfill migration) | `tasks/_archive/2026-08/TZ-DOC-307.done.md` |
 | TZ-DOC-308 | 2026-08-02 | Категории шаблонов — UI: справочник-страница, выбор категории в setup-диалоге (default auto-select), колонка + фильтр в реестре шаблонов, form-dialog, тесты | `tasks/_archive/2026-08/TZ-DOC-308.done.md` |
+| TZ-DOC-268 | 2026-08-02 | Builder — диалог создания шаблона закрывается после одного клика, без дубликата POST; regression-тесты | `tasks/_archive/2026-08/TZ-DOC-268.done.md` |
+| TZ-DOC-269 | 2026-08-02 | Builder — строгая рамка выделения, opt-in сетка, snap/guides проверены; тесты + ревью | `tasks/_archive/2026-08/TZ-DOC-269.done.md` |
+| TZ-DOC-270 | 2026-08-02 | Builder — удержание изображения внутри рамки (clip-контейнер vs resize-handles), NaN-safe corner resize | `tasks/_archive/2026-08/TZ-DOC-270.done.md` |
+| TZ-DOC-271 | 2026-08-02 | Builder — порядок слоёв (front/back/raise/lower) через computeLayerOrder, rollback при ошибке API | `tasks/_archive/2026-08/TZ-DOC-271.done.md` |
+| TZ-DOC-272 | 2026-08-02 | Builder — marquee-выделение + editor-only group/ungroup (persistence НЕ имитируется) | `tasks/_archive/2026-08/TZ-DOC-272.done.md` |
+| TZ-DOC-273 | 2026-08-02 | Builder — фон и прозрачность блоков: строгий hex, кламп opacity, зеркальная валидация в сгенерированном HTML | `tasks/_archive/2026-08/TZ-DOC-273.done.md` |
+| TZ-ADMIN-275 | 2026-08-02 | Role form — подтверждённые hex-fallback убраны из var() (токены глобальные), 0×hex, tsc/build/jest PASS | `tasks/_archive/2026-08/TZ-ADMIN-275.done.md` |
+| TZ-279 | 2026-08-02 | Workflow — дубль build-команды устранён: check:build удалён, канон build:dev, docs синхронизированы (заказан как TZ-276, номер занят другой сессией) | `tasks/_archive/2026-08/TZ-279.done.md` |
 
 ## 🚀 Следующие шаги (предложения)
 

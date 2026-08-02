@@ -4979,3 +4979,17 @@ backend 50/50 targeted + 315/315 full PASS (регресс-прогон конт
 **Известные ограничения:** browser smoke check — см. отчёт сессии (dev-стек :4200/:3000 поднят; глубокие
 E2E-сценарии с созданием данных помечены MANUAL_BROWSER_CHECK_REQUIRED).
 ---
+
+## 2026-08-02 — Builder batch TZ-DOC-268..273 + TZ-ADMIN-275 + TZ-279 (DONE, commits c1241af + 058ff7c)
+
+- TZ-DOC-268: диалог создания шаблона закрывается после одного клика, дубликат POST исключён; regression-тесты.
+- TZ-DOC-269: строгая hairline-рамка выделения (без glow), opt-in сетка (gridVisible), snap/guides работают при скрытой сетке.
+- TZ-DOC-270: изображение удерживается внутри рамки — внутренний clip-контейнер, внешний wrap overflow:visible (handles кликабельны); computeCornerResize NaN/zero-safe.
+- TZ-DOC-271: порядок слоёв front/back/raise/lower через чистый computeLayerOrder (remove-and-reinsert, группы единым блоком); rollback при ошибке API; zIndex персистентен.
+- TZ-DOC-272: marquee-выделение (intersect/contain, Escape, pointer capture) + editor-only group/ungroup; persistence НЕ имитируется (editor-only, документировано).
+- TZ-DOC-273: фон/прозрачность блоков — строгий hex (#RGB/#RRGGBB), кламп opacity [0,1], отклонение CSS-injection/NaN; зеркальная blockBackgroundStyle в backend build() (generated HTML использует те же значения); inspector: swatch + slider 0-100 + reset.
+- TZ-ADMIN-275: hex-fallback убраны из var() в role-form-dialog (токены глобальные), 0×hex.
+- TZ-279: дубль build-команды устранён — check:build удалён, канон build:dev; pre-commit/ARCHITECTURE синхронизированы. (Заказан как TZ-276; номер занят файлом другой сессии — переименован в TZ-279.)
+- TZ-DOC-274 (browser acceptance): DEFERRED, MANUAL_BROWSER_CHECK_REQUIRED.
+- Верификация: FE jest 699/699, BE jest 320/320, tsc FE+BE 0, ng build 0, git diff --check 0, verify-status PASS.
+- Внешний блокер: frontend/src/app/pages/dictionaries/categories.page.ts — незакоммиченная правка параллельной сессии, duplicate identifier 'destroyRef' (TS2300) ломает полный frontend tsc; НЕ включена в коммиты.

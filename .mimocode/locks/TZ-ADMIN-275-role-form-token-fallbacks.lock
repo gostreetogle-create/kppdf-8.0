@@ -1,0 +1,13 @@
+LOCK
+task: TZ-ADMIN-275
+outcome: DONE
+locked_at: 2026-08-02
+locked_by: Buffy
+commit: 058ff7c
+verification:
+  - acceptance criteria: PASS
+  - frontend jest: PASS (699/699 full)
+  - backend jest: PASS (320/320 full)
+  - ng build (development): PASS
+  - archive: CREATED
+  - STATUS.md: UPDATED
