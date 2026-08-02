@@ -20,6 +20,7 @@ export interface ColorReference {
   isActive: boolean;
   isSystem: boolean;
   isDefault: boolean;
+  sortOrder?: number;
   organizationId?: string;
   deletedAt?: string;
   createdAt?: string;
@@ -116,6 +117,7 @@ export class PiColorReferencesService {
     description?: string;
     isActive?: boolean;
     isDefault?: boolean;
+    sortOrder?: number;
   }): Observable<SilentResult<ColorReference>> {
     return silentPost<ColorReference>(
       this.http,
@@ -133,6 +135,7 @@ export class PiColorReferencesService {
       description?: string;
       isActive?: boolean;
       isDefault?: boolean;
+      sortOrder?: number;
     },
   ): Observable<SilentResult<ColorReference>> {
     return silentPatch<ColorReference>(

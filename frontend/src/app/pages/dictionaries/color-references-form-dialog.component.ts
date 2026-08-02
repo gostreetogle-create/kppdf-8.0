@@ -11,7 +11,7 @@ import { PiToastService } from '../../shared/ui/toast';
 import { extractErrorMessage } from '../../core/silent-http';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import {
-  ColorReferencesService,
+  PiColorReferencesService,
   ColorReference,
 } from '../../shared/services/pi-color-references.service';
 
@@ -194,7 +194,7 @@ const HEX_PATTERN = /^#[0-9a-fA-F]{6}$/;
 })
 export class ColorReferenceFormDialogComponent {
   private readonly fb = inject(NonNullableFormBuilder);
-  private readonly service = inject(ColorReferencesService);
+  private readonly service = inject(PiColorReferencesService);
   private readonly toast = inject(PiToastService);
   private readonly ref = inject<DialogRef<Result>>(PI_DIALOG_REF);
   private readonly data = inject<ColorReference | null>(PI_DIALOG_DATA);
@@ -283,6 +283,8 @@ export class ColorReferenceFormDialogComponent {
       ? this.service.update(this.data._id, payload)
       : this.service.create(payload);
 
+    // Typed-result pattern: `res` is SilentResult<ColorReference>, not
+    // `unknown` — the explicit generic flows from update()/create() above.
     obs.subscribe((res) => {
       if (res.ok) {
         this.toast.success(this.isEdit() ? 'Цвет обновлён' : 'Цвет создан');
