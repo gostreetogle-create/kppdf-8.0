@@ -135,3 +135,9 @@ known_limitation:
 Промпт:
 «Прочитай `GEMINI.md` и `tasks/TZ-DOC-335-builder-ux-empty-states-deeplink.md`.
 Checklist `docs/agent-checklists/TZ-DOC-335.md` до правок. Выполни.»
+
+ARCHIVE_MARKER
+outcome: DONE
+date: 2026-08-02
+commit: b975b10db9f4312eca97f16ba3c64d24c24396c4
+notes: empty copy, CTAs, table editId, back link, dead httpResource removed

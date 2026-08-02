@@ -130,3 +130,9 @@ known_limitation:
 «Прочитай `GEMINI.md`, `docs/AI-AGENT-GUIDE.md` и
 `tasks/TZ-DOC-334-text-block-categories-nav.md`. Создай checklist
 `docs/agent-checklists/TZ-DOC-334.md` до правок. Выполни TZ.»
+
+ARCHIVE_MARKER
+outcome: DONE
+date: 2026-08-02
+commit: b975b10db9f4312eca97f16ba3c64d24c24396c4
+notes: route+nav wired; page already existed (DOC-316 gap)
