@@ -29,7 +29,6 @@ import {
   CategoriesService,
 } from '../../shared/services/categories.service';
 import { CategoryFormDialogComponent } from './category-form-dialog.component';
-import { DocumentTemplateCategoriesService } from '../../shared/services/pi-document-template-categories.service';
 
 const TYPE_LABELS: Record<Category['type'], string> = {
   material: 'Материал',
@@ -368,8 +367,6 @@ const TYPE_COLORS: Record<Category['type'], string> = {
 })
 export class CategoriesPage {
   private readonly service = inject(CategoriesService);
-  // docCatService: in-progress integration by a parallel session — do not remove until completed.
-  private readonly docCatService = inject(DocumentTemplateCategoriesService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
