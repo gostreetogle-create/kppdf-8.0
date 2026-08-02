@@ -3,8 +3,8 @@ outcome: DONE
 closed_at: 2026-08-02
 closed_by: Buffy
 tz_id: TZ-DOC-318-builder-texts-topbar-category-filter
-commit: <feat-sha> — feat(builder): text-category topbar polish — sync + URL persist + breadcrumb (TZ-DOC-318)
-closeout_commit: <closeout-sha> — docs(closeout): TZ-DOC-318 archive + executor-report + status sync
+commit: d459e0764fca2ebc0873130efea0a3de10ef616f — feat(builder): text-category topbar polish — sync + URL persist + breadcrumb (TZ-DOC-318)
+closeout_commit: d407fc8b3e68c57d385f20c881f77961c2cadbae — docs(closeout): TZ-DOC-318 archive + verification log + executor-report + status sync
 verification:
   - acceptance criteria: TZ-DOC-318 §Критерии приёмки 1..14 — covered (см. ниже)
   - backend tsc (tsc -p tsconfig.build.json --noEmit): PASS (exit 0, sanity, backend NOT touched)
