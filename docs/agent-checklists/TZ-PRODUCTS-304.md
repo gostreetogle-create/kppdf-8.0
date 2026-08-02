@@ -55,7 +55,7 @@
 
 ## Executor report (auto) — TZ-PRODUCTS-304
 status: DONE
-commits: <FEAT_SHA> (feat) + 443cbf3 (closeout)
+commits: 2dc09f2 (feat) + 443cbf3 (closeout)
 gates: products.page jest=11/11; products+pi-table jest=71/71; tsc (scope) clean; ng build FAIL only на TZ-WORKERS-302/TZ-DOC WIP (people.page.ts unterminated + index.ts→workers.service + builder/* — out of scope); git-diff-check=PASS; verify-status=PASS
 known: chevron встроен в nameTpl (ColumnDef key требует keyof Product — отдельной колонки нет); lazy-фетч только для строковых id вне cache; populated-строки не фетчатся; retry при ошибке; pi-table НЕ изменён
 ask: —
