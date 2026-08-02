@@ -109,10 +109,9 @@ export class PiDialogComponent {
    * equivalent so callers don't have to memorize the table.
    */
   readonly panelClass = computed<string>(() => {
-    // 8px radius matches --dialog-radius token (TZ-90 §A.1 / Decision 4).
-    // bg-paper + hairline mirror the CDK panel's outer treatment so the inner
-    // content div is never transparent against the backdrop.
-    const base = 'bg-paper hairline rounded-lg overflow-hidden flex flex-col';
+    // The shell owns the viewport boundary. Header/footer are non-shrinking;
+    // the body receives the remaining height and becomes the only scroll region.
+    const base = 'bg-paper hairline rounded-lg overflow-hidden flex flex-col max-h-[90vh] min-h-0';
     return `${base} ${this.dimensionClass()}`;
   });
 
@@ -126,42 +125,42 @@ export class PiDialogComponent {
   readonly headerClass = computed<string>(() => {
     const v = this.variant();
     const hairlineB = 'hairline-b';
-    if (v === 'alert') return `flex items-center justify-between ${hairlineB} px-4 py-3`;
-    if (v === 'content') return `flex items-center justify-between ${hairlineB} px-6 py-4 bg-paper`;
-    return `flex items-center justify-between ${hairlineB} px-6 py-4`;
+    const base = `flex items-center justify-between ${hairlineB} shrink-0`;
+    if (v === 'alert') return `${base} px-4 py-3`;
+    if (v === 'content') return `${base} px-6 py-4 bg-paper`;
+    return `${base} px-6 py-4`;
   });
 
   /**
-   * Body padding per variant:
-   *   - alert: компактнее (px-4 py-3, no overflow — alert bodies are short)
-   *   - form:    px-6 py-6
-   *   - content: px-6 py-6 + overflow-y-auto (long scrollable body)
-   *   - destructive: px-6 py-6
+   * Body padding per variant. Form/content/destructive bodies share the
+   * canonical scroll contract: flex: 1, min-height: 0 and overflow-y:auto.
+   * This keeps long forms usable without moving action buttons off-screen.
    */
   readonly bodyClass = computed<string>(() => {
     const v = this.variant();
-    if (v === 'alert') return 'px-4 py-3 text-sm text-ink';
-    if (v === 'content') return 'px-6 py-6 text-sm text-ink overflow-y-auto';
-    return 'px-6 py-6 text-sm text-ink';
+    if (v === 'alert') return 'px-4 py-3 text-sm text-ink flex-1 min-h-0 overflow-y-auto';
+    if (v === 'content') return 'px-6 py-6 text-sm text-ink flex-1 min-h-0 overflow-y-auto';
+    return 'px-6 py-6 text-sm text-ink flex-1 min-h-0 overflow-y-auto';
   });
 
   /**
-   * Footer padding per variant:
-   *   - alert: компактнее (px-4 py-3)
-   *   - form:    px-6 py-4
-   *   - content: px-6 py-4 + bg-paper + position: sticky (long scrollable body)
-   *   - destructive: px-6 py-4
+   * Footer padding per variant. TL;DR: the footer is ALWAYS a non-shrinking
+   * sibling of the body, anchored to the bottom of the panel via the
+   * flex column, AND additionally `sticky bottom-0 bg-paper` so that any
+   * inner-form content (PiRows inside PiDialogs that grow on add) cannot
+   * visually push «Сохранить/Отмена» off-screen.
    *
-   * bg-paper is required on the `content` sticky footer (and the sticky-style
-   * header) so body content doesn't bleed through when the body scrolls.
-   * Mirrors headerClass treatment for the content variant.
+   * The flex-column + min-h-0 contract in bodyClass guarantees the scroll
+   * region is the body, not the panel — combined with `sticky bottom-0`
+   * the actions are visually pinned even on very long forms.
    */
   readonly footerClass = computed<string>(() => {
     const v = this.variant();
-    const hairlineT = 'hairline-t';
-    const base = `${hairlineT} px-6 py-4 flex justify-end gap-3 items-center`;
-    if (v === 'alert') return `hairline-t px-4 py-3 flex justify-end gap-3 items-center`;
-    if (v === 'content') return `${base} bg-paper sticky bottom-0`;
+    const base =
+      'hairline-t px-6 py-4 flex justify-end gap-3 items-center shrink-0 sticky bottom-0 bg-paper';
+    if (v === 'alert') {
+      return 'hairline-t px-4 py-3 flex justify-end gap-3 items-center shrink-0 sticky bottom-0 bg-paper';
+    }
     return base;
   });
 
@@ -180,7 +179,7 @@ export class PiDialogComponent {
 
   /**
    * Internal: maps (variant, width) → CSS dimension class per the
-   * canonical 4×4 table. Unsupported combos (e.g. alert × md) fall back
+   * canonical 4×4 table. Unsupported combos (e.g. alert × xl) fall back
    * to the closest supported equivalent.
    *
    * NOTE: spec lists certain combos as "NOT SUPPORTED" but the practical
