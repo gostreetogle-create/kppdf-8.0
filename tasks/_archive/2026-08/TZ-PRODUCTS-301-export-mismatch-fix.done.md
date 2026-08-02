@@ -6,7 +6,7 @@
 - **outcome:** DONE
 - **closed_at:** 2026-08-02
 - **implementation_commit:** b3beb13
-- **closeout_commit:** <CLOSEOUT_SHA>
+- **closeout_commit:** e2a4308e5dfb907181f8b68a000ac590c437a1f4
 - **scope_before:** tsc/ng-build заблокированы 4 ошибками в `color-references-form-dialog.component.ts` (TS2724 нет экспорта `ColorReferencesService`, TS2339 нет `sortOrder` на `ColorReference`, TS2571/TS7006 нетипизированный submit) — long-running блокер для всей frontend-сборки.
 - **scope_after:** блокер снят — файл компилируется, jest 24/24, tsc 0 ошибок в скоупе.
 

@@ -23,7 +23,7 @@
 
 ## Executor report (auto) — TZ-PRODUCTS-301-export-mismatch
 status: DONE
-commits: b3beb13 (fix) + <CLOSEOUT_SHA> (closeout)
+commits: b3beb13 (fix) + e2a4308e5dfb907181f8b68a000ac590c437a1f4 (closeout)
 gates: jest 24/24 PASS; tsc 0 errors в моём scope (49 в чужих proposals WIP); ng build FAIL только на TZ-DEPLOY-301 proposals — out of scope; diff-check clean; verify-status PASS
 known: backend sortOrder gap → successor; plural form-dialog = orphaned dead code (fixed to compile); sortOrder только в frontend, backend 400 если отправить
 ask: —
