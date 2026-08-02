@@ -5178,3 +5178,19 @@ E2E-сценарии с созданием данных помечены MANUAL_
 **Архив:** tasks/_archive/2026-08/TZ-PRODUCTS-303-product-modules-cards-editor.done.md; lock: .mimocode/locks/TZ-PRODUCTS-303-product-modules-cards-editor.lock (gitignored).
 
 **Ограничения:** TZ-DOC-308 categories.page.ts pre-existing blocker — не fix-force; TZ-WORKERS-302 (parallel session) — здесь ng build exit 0. Карточка модуля без фото (плейсхолдер) — у GET /modules нет photo в payload (фото = отдельная сущность). Push: нет.
+
+## 2026-08-02 — TZ-PRODUCTS-304 DONE (expandable catalog rows with modules)
+
+**Статус:** DONE. Layer 3 (frontend). Зависимость TZ-PRODUCTS-303 (243aeda) выполнена. Backend НЕ трогался (populate productModuleIds готов, product.service.ts:72).
+
+**Тип:** Каталог товаров получил expandable-строки: `expandedId` сигнал + `onRowClick` toggle (повторный клик сворачивает), `(rowClick)` подписка, `[expandedRow]="expandedId() ? expandedTpl : null"` (свёрнутые строки без пустых `<tr>`). Развёрнутый контент — карточки модулей (инициалы-аватар, имя, артикул, «N материалов», routerLink `/modules/:id`), empty state. Добавлена колонка «Модулей» (count productModuleIds.length). pi-table НЕ менялся (паттерн TZ-MODULES-302).
+
+**Затронуто:** products.page.ts (+8 тестов в NEW products.page.spec.ts с реальным рендером pi-table через provideHttpClientTesting+provideRouter), docs/pages/products.page.md (секция Expandable-строки + TZ-строка + Column definitions sync).
+
+**Исправления по review:** stale docblock «7 visible columns» → 8; docs Column definitions sync; комментарий count-vs-modulesOf (raw length vs populated objects); +1 тест row-actions не раскрывают.
+
+**Проверки:** backend tsc exit 0 (sanity); frontend tsc exit 0; jest products 3 suites/48 tests PASS; полный frontend jest 852/853 PASS (единственный fail — pre-existing button.component.spec.ts, не регрессия); ng build dev exit 0; git diff --check clean; OrchestratorKit/verify-status.sh PASS.
+
+**Архив:** tasks/_archive/2026-08/TZ-PRODUCTS-304-products-catalog-expandable-modules.done.md; lock: .mimocode/locks/TZ-PRODUCTS-304-products-catalog-expandable-modules.lock (gitignored).
+
+**Ограничения:** pi-table artifact — при развёрнутой строке под остальными пустой <tr> (структурное ограничение единого expandedRow template, паттерн TZ-MODULES-302, pi-table НЕ менялся по ТЗ). TZ-DOC-308/TZ-WORKERS-302 — pre-existing, ng build exit 0. Push: нет.
