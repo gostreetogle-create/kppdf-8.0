@@ -89,20 +89,81 @@
   opacity: 0.5;
 }
 
+/* ═══ Preview / final surface — no editor chrome frames ═══
+   Borders + frosted panel fill are editor-only. Preview & print show clean
+   content. Explicit user fill stays via inline [style.background-color]. */
+.block-renderer.is-preview,
+.block-renderer.is-preview:hover,
+.block-renderer.is-preview.is-selected,
+.block-renderer.is-preview.is-multi-selected,
+.block-renderer--overlay.is-preview,
+.block-renderer--overlay.is-preview:hover,
+.block-renderer--overlay.is-preview.is-selected {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background-color: transparent;
+  cursor: default;
+}
+
+.block-renderer.is-preview .block-renderer__chrome,
+.block-renderer.is-preview .block-renderer__delete,
+.block-renderer.is-preview .block-renderer__checkbox,
+.block-renderer.is-preview .block-renderer__resize,
+.block-renderer.is-preview .block-renderer__resize-side,
+.block-renderer.is-preview .block-renderer__corner-resize,
+.block-renderer.is-preview .block-renderer__size-editor,
+.block-renderer.is-preview .block-renderer__drag-handle,
+.block-renderer.is-preview .block-renderer__lock-badge {
+  display: none !important;
+}
+
+/* Locked geometry — still selectable, no move chrome (handled in template). */
+.block-renderer.is-locked:not(.is-preview) {
+  cursor: default;
+}
+
+.block-renderer__lock-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 2px;
+  color: var(--color-gold);
+  background: color-mix(in oklch, var(--color-paper) 88%, transparent);
+  border: 1px solid color-mix(in oklch, var(--color-gold) 45%, transparent);
+  pointer-events: none;
+}
+
+.block-renderer--overlay.is-preview .block-renderer__image-wrap--overlay {
+  outline: none !important;
+}
+
 .block-renderer__body {
   flex: 1;
   min-width: 0;
+  position: relative;
+}
+
+/* Editor-only binding chip — absolute, does not push document text out of frame */
+.block-renderer__chrome {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  z-index: 2;
+  pointer-events: none;
+  display: flex;
+  gap: 4px;
+  opacity: 0.85;
 }
 
 .block-renderer__header {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--color-muted);
-  margin-bottom: 4px;
+  display: none; /* type labels removed from canvas — type lives in inspector */
 }
 
 .block-renderer__type {
@@ -258,23 +319,41 @@
 .block-renderer--positioned {
   position: absolute;
   min-width: 0;
-  min-height: 0;
+  /* height:auto — рамка растёт с контентом; min-height из layout (см. template) */
+  height: auto;
   margin: 0;
   padding: 10px 12px;
-  /* TZ-259.4: overflow must be VISIBLE so the resize handles (placed just
-     outside the box at -4/-5px) are neither clipped nor unclickable. In the
-     editor, overflowing block content shows freely; print CSS hides the
-     editor chrome and the server renderer clamps to the layout box. */
+  /* Overflow visible keeps resize handles clickable; after auto-fit the box
+     matches content so spill below the gold frame should not happen. */
   overflow: visible;
   box-sizing: border-box;
   cursor: move;
   transform-origin: center;
+  background: transparent;
+}
+
+/* Editor-only frosted panel — hidden in .is-preview (final/print surface) */
+.block-renderer--positioned:not(.is-preview) {
   background: color-mix(in srgb, var(--color-paper) 88%, transparent);
 }
 
-.block-renderer--positioned:hover,
-.block-renderer--positioned.is-selected,
-.block-renderer--positioned.is-multi-selected {
+.block-renderer--positioned .block-renderer__image-wrap {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  overflow: hidden;
+}
+
+.block-renderer--positioned .block-renderer__image {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.block-renderer--positioned:not(.is-preview):hover,
+.block-renderer--positioned:not(.is-preview).is-selected,
+.block-renderer--positioned:not(.is-preview).is-multi-selected {
   background: color-mix(in srgb, var(--color-paper) 94%, var(--color-ink));
 }
 
@@ -623,21 +702,32 @@
   border-color: var(--color-gold);
 }
 
-/* Print: hide editor-only elements */
+/* Print: hide editor-only chrome — same clean contract as .is-preview */
 @media print {
-  .block-renderer {
+  .block-renderer,
+  .block-renderer--positioned,
+  .block-renderer--overlay {
     border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
     border-radius: 0 !important;
-    padding: 0 !important;
-    margin-left: 0 !important;
-    width: 100% !important;
     background: transparent !important;
-    break-inside: avoid;
+    cursor: default !important;
   }
   .block-renderer__resize-side,
   .block-renderer__resize,
   .block-renderer__size-editor,
-  .block-renderer__checkbox {
+  .block-renderer__checkbox,
+  .block-renderer__delete,
+  .block-renderer__chrome,
+  .block-renderer__drag-handle,
+  .block-renderer__corner-resize {
     display: none !important;
+  }
+  .block-renderer:not(.block-renderer--positioned):not(.block-renderer--overlay) {
+    padding: 0 !important;
+    margin-left: 0 !important;
+    width: 100% !important;
+    break-inside: avoid;
   }
 }

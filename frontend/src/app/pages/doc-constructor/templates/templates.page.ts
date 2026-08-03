@@ -152,7 +152,7 @@ const PAGE_SIZE = 10;
                         title="По умолчанию"
                         >★</span
                       >
-                    } @else {
+                    } @else if (t.isActive) {
                       <button
                         type="button"
                         class="pi-icon-btn pi-focus-ring text-muted-foreground hover:text-sunrise-warm"
@@ -161,6 +161,8 @@ const PAGE_SIZE = 10;
                       >
                         ☆
                       </button>
+                    } @else {
+                      <span class="text-muted-foreground" title="Сначала включите шаблон">☆</span>
                     }
                   </td>
                   <td class="pi-cell text-right">
@@ -407,7 +409,7 @@ export class TemplatesPage {
                   categoryId: settings.categoryId,
                   pageSize: settings.pageSize,
                   orientation: settings.orientation,
-                  isActive: false,
+                  isActive: true,
                 })
                 .pipe(map((result) => ({ kind: 'create-result' as const, result })));
             }),
@@ -431,18 +433,23 @@ export class TemplatesPage {
   }
 
   protected onToggleActive(t: DocumentTemplate, active: boolean): void {
+    // Optimistic list update keeps the switch model in sync with row data.
+    this.items.update((arr) => arr.map((x) => (x._id === t._id ? { ...x, isActive: active } : x)));
     this.svc.update(t._id, { isActive: active }).subscribe((res) => {
-      if (res.ok) {
-        this.items.update((arr) =>
-          arr.map((x) => (x._id === t._id ? { ...x, isActive: active } : x)),
-        );
-      } else {
+      if (!res.ok) {
         this.toast.error(extractErrorMessage(res.error));
+        this.items.update((arr) =>
+          arr.map((x) => (x._id === t._id ? { ...x, isActive: !active } : x)),
+        );
       }
     });
   }
 
   protected onSetDefault(t: DocumentTemplate): void {
+    if (!t.isActive) {
+      this.toast.error('Сначала включите шаблон (Активен), затем назначьте по умолчанию');
+      return;
+    }
     this.svc.setDefault(t._id).subscribe((res) => {
       if (res.ok) {
         this.toast.success('Шаблон по умолчанию');

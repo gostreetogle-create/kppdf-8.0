@@ -204,7 +204,7 @@ const TYPE_COLORS: Record<Category['type'], string> = {
                   >
                     <button
                       type="button"
-                      class="pi-icon-btn pi-focus-ring"
+                      class="pi-icon-btn pi-icon-btn-edit pi-focus-ring"
                       [attr.aria-label]="'Редактировать ' + node.name"
                       (click)="openEdit(node)"
                     >
@@ -299,7 +299,7 @@ const TYPE_COLORS: Record<Category['type'], string> = {
                           >
                             <button
                               type="button"
-                              class="pi-icon-btn pi-focus-ring"
+                              class="pi-icon-btn pi-icon-btn-edit pi-focus-ring"
                               [attr.aria-label]="'Редактировать ' + child.name"
                               (click)="openEdit(child)"
                             >

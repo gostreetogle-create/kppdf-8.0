@@ -235,7 +235,7 @@ export class AuthService {
       httpOnly: true,
       secure: true,
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
       path: '/api/auth',
     });
   }
@@ -262,7 +262,7 @@ export class AuthService {
       {
         secret: this.config.get<string>('jwt.refreshSecret'),
         expiresIn:
-          this.config.get<string>('jwt.refreshExpiresIn') ?? '7d',
+          this.config.get<string>('jwt.refreshExpiresIn') ?? '30d',
       },
     );
   }

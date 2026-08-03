@@ -18,13 +18,13 @@
 
 LM Studio: `docs/agents/LM-STUDIO-AGENT.md` · `node scripts/lmstudio-agent/run.mjs --check`
 
-**Cursor как будущий пользователь ERP:** при чтении кода/потоков замечай неудобные шаги, дубли меню/полей/сущностей, нелогичные статусы и противоречия домена — оформляй в TZ, не молчи.
+**Cursor как будущий пользователь ERP:** при чтении кода/потоков замечай неудобные шаги, дубли меню/полей/сущностей, нелогичные статусы и противоречия домена — оформляй в TZ, не молчи. Сверяй с планом PO в **`docs/PO-DIARY.md`**.
 
 **Git:** Cursor коммитит и пушит только свои артефакты (rules, skills, `tasks` спеки, checklists). Чужой half-baked `*.ts` не трогать.
 
 Контракты:
 
-- Cursor: `.cursor/rules/cursor-architect.mdc`, `.agents/skills/cursor-usage/SKILL.md`, `.agents/skills/tz-authoring/SKILL.md`, **`docs/TZ-AUTHORING.md`**
+- Cursor: `.cursor/rules/cursor-architect.mdc`, `.cursor/rules/po-diary.mdc`, `.agents/skills/cursor-usage/SKILL.md`, `.agents/skills/tz-authoring/SKILL.md`, **`docs/TZ-AUTHORING.md`**, **`docs/PO-DIARY.md`**
 - Исполнитель: корневой `GEMINI.md`, `.agents/skills/kppdf-project/SKILL.md`, при kit-flow — `OrchestratorKit/AGENTS.md`
 
 Если ты Cursor и тебя просят имплементировать — отказ по Mode A + путь/черновик TZ для локального агента.
@@ -38,6 +38,7 @@ LM Studio: `docs/agents/LM-STUDIO-AGENT.md` · `node scripts/lmstudio-agent/run.
 ```
 0. docs/how-to-connect-ai.md       ← ПЕРВЫМ: рабочая папка main, запрет .freebuff/worktrees, ритуал старта
 1. docs/AI-AGENT-GUIDE.md          ← Ты здесь. Обязательные паттерны, запреты, ритуалы.
+1a. docs/PO-DIARY.md               ← Кто PO, планка качества, как хочет работать (канон §1–§4)
 1b. docs/TZ-AUTHORING.md           ← Если ПИШЕШЬ или правишь TZ (канон имён, unique, preflight)
 2. ARCHITECTURE.md                  ← Полная архитектура: схема, конвенции, зоны ответственности.
 3. docs/DEVELOPMENT-PATTERNS.md     ← Конкретные код-паттерны: SilentResult, defineEntity, SubmitGuard.
@@ -47,6 +48,9 @@ LM Studio: `docs/agents/LM-STUDIO-AGENT.md` · `node scripts/lmstudio-agent/run.
 7. docs/pages/README.md             ← Какие страницы есть, их статус.
 8. docs/pages/<name>.page.md        ← Документация конкретной страницы (если работаешь с ней).
 ```
+
+**PO Diary:** после сессии, где появилось новое понимание владельца (вкус, отказ, «как хочу»),
+обнови `docs/PO-DIARY.md` §5 (+ канон при необходимости). Правило Cursor: `.cursor/rules/po-diary.mdc`.
 
 **TZ authors (Cursor / любой ИИ):** перед созданием `tasks/TZ-*.md` — всегда
 `docs/TZ-AUTHORING.md` + skill `.agents/skills/tz-authoring/SKILL.md`.

@@ -23,7 +23,7 @@ Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `
 
 1. Прочитать `GEMINI.md`.
 2. Прочитать `README.md`, `ARCHITECTURE.md`, `STACK.md`,
-   `docs/AI-AGENT-GUIDE.md`, `docs/DEVELOPMENT-PATTERNS.md`.
+   `docs/AI-AGENT-GUIDE.md`, **`docs/PO-DIARY.md` §1–§4**, `docs/DEVELOPMENT-PATTERNS.md`.
 3. Для TZ-flow прочитать `OrchestratorKit/AGENTS.md` и
    `OrchestratorKit/_templates/TZF-00.txt`.
 4. Проверить `git status`, worktree, активные TZ, архивы и conflict keys.
@@ -32,6 +32,8 @@ Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `
 7. Проверить typecheck, tests, lint, а для UI — browser/DOM-сценарий.
 8. Провести review diff.
 9. Архивировать только после прохождения gates.
+10. Если сессия дала **новое** понимание PO (вкус, отказ, планка показа) —
+    обновить `docs/PO-DIARY.md` §5 (и канон §1–§4 при стабильном инсайте).
 
 `TZ-232.A`, `TZ-232.N` и `TZ-232.B` не реализуй повторно без доказанного
 дефекта. Wave A не означает завершение родительского `TZ-232`.

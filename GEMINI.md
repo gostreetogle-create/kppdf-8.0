@@ -1,6 +1,8 @@
 # GEMINI.md — рабочий контракт Gemini для kppdf-8.0
 
-Ты работаешь в корне репозитория `kppdf-8.0`. Этот файл является главным проектным контекстом Gemini. Перед началом прочитай `README.md`, `ARCHITECTURE.md`, `STACK.md`, `docs/AI-AGENT-GUIDE.md`, `docs/DEVELOPMENT-PATTERNS.md`, `progress.md`, релевантные `docs/pages/*.page.md`, а для TZ-flow — `OrchestratorKit/AGENTS.md` и `OrchestratorKit/_templates/TZF-00.txt`.
+Ты работаешь в корне репозитория `kppdf-8.0`. Этот файл является главным проектным контекстом Gemini. Перед началом прочитай `README.md`, `ARCHITECTURE.md`, `STACK.md`, `docs/AI-AGENT-GUIDE.md`, **`docs/PO-DIARY.md` (§1–§4 — кто PO и планка качества)**, `docs/DEVELOPMENT-PATTERNS.md`, `progress.md`, релевантные `docs/pages/*.page.md`, а для TZ-flow — `OrchestratorKit/AGENTS.md` и `OrchestratorKit/_templates/TZF-00.txt`.
+
+Если сессия дала новое понимание владельца продукта — обнови `docs/PO-DIARY.md` §5 (коротко, без стенограммы).
 
 ## Роль и Definition of Done
 

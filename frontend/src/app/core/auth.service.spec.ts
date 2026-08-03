@@ -149,7 +149,7 @@ describe('AuthService', () => {
   // ─── bootstrap() ─────────────────────────────────────────────────
 
   describe('bootstrap()', () => {
-    it('early-returns if no access token in localStorage', async () => {
+    it('early-returns if no tokens in localStorage', async () => {
       const service = makeServiceWithoutTokens();
 
       // No tokens seeded → bootstrap should not make any HTTP call.
@@ -159,6 +159,26 @@ describe('AuthService', () => {
       httpMock.expectNone(meUrl);
       httpMock.expectNone(refreshUrl);
       expect(service.user()).toBeNull();
+      expectNoConsoleError();
+    });
+
+    it('renews session when only refresh token is present', async () => {
+      const service = makeServiceWithTokens(null, 'refresh-1');
+
+      const promise = service.bootstrap();
+      await tick();
+
+      const refreshReq = httpMock.expectOne(refreshUrl);
+      expect(refreshReq.request.headers.get('Authorization')).toBe('Bearer refresh-1');
+      refreshReq.flush({ access: 'access-2' });
+      await tick();
+
+      const meReq = httpMock.expectOne(meUrl);
+      meReq.flush(fakeUser);
+      await promise;
+
+      expect(service.accessToken()).toBe('access-2');
+      expect(service.user()).toEqual(fakeUser);
       expectNoConsoleError();
     });
 
@@ -259,7 +279,7 @@ describe('AuthService', () => {
       expectNoConsoleError();
     });
 
-    it('clears state on non-401 from /auth/me (e.g. 500)', async () => {
+    it('keeps tokens on non-401 from /auth/me (e.g. 500) so a backend blip does not force re-login', async () => {
       const service = makeServiceWithTokens('access-1', 'refresh-1');
 
       const promise = service.bootstrap();
@@ -274,8 +294,24 @@ describe('AuthService', () => {
       expect(service.user()).toBeNull();
       // No refresh attempted for non-401 status.
       httpMock.expectNone(refreshUrl);
-      expect(localStorage.getItem(ACCESS_KEY)).toBeNull();
-      expect(localStorage.getItem(REFRESH_KEY)).toBeNull();
+      // Tokens MUST survive — previously bootstrap() cleared on any failure.
+      expect(localStorage.getItem(ACCESS_KEY)).toBe('access-1');
+      expect(localStorage.getItem(REFRESH_KEY)).toBe('refresh-1');
+      expectNoConsoleError();
+    });
+
+    it('keeps tokens when /auth/me fails with network error (status 0)', async () => {
+      const service = makeServiceWithTokens('access-1', 'refresh-1');
+
+      const promise = service.bootstrap();
+
+      httpMock.expectOne(meUrl).error(new ProgressEvent('error'));
+
+      await promise;
+
+      expect(service.user()).toBeNull();
+      expect(localStorage.getItem(ACCESS_KEY)).toBe('access-1');
+      expect(localStorage.getItem(REFRESH_KEY)).toBe('refresh-1');
       expectNoConsoleError();
     });
 

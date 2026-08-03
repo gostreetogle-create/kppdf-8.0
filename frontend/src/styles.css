@@ -13,8 +13,9 @@
  *   4) `@layer base` overrides Tailwind defaults (no shadows, sharper radii).
  *   5) `@utility` registrations add editorial primitives (eyebrow, hairline-).
  *   6) `prefers-reduced-motion` global safety net.
- *   7) `@layer base .dark` block — TZ-THEME-33 dark mode vars, applied via
- *      <html class="dark">.
+ *   7) Dark mode — `@custom-variant dark` + `@layer theme` `@variant dark`
+ *      overrides via `--color-*-override` (Tailwind v4: `@theme` vars live in
+ *      `@layer theme`; plain `@layer base .dark { --color-paper }` loses).
  * ============================================================================= */
 
 @import '@fontsource/hanken-grotesk/400.css';
@@ -27,6 +28,9 @@
 @import '@fontsource-variable/jetbrains-mono';
 
 @import 'tailwindcss';
+
+/* Class-based dark (ThemeService toggles <html class="dark">), not OS-only. */
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* =============================================================================
  * HAIRLINE-FIRST BORDER CONVENTION (TZ-AUDIT-8)
@@ -83,13 +87,25 @@
   /* === Dialog System (TZ-90A) === */
   --dialog-bg: var(--color-paper);
   --dialog-text: var(--color-ink);
-  --dialog-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);
   --dialog-radius: 8px;
   --overlay-bg: oklch(0% 0 0 / 0.5);
   --overlay-bg-fallback: rgb(0 0 0 / 0.5);
 
+  /* Elevated surfaces — clean tonal lift (no marble texture).
+     Pearl/noise experiment failed visual review → flat paper-2. */
+  --pi-marble-noise: none;
+  --pi-marble-veins: none;
+  --pi-marble-sheen: none;
+  --pi-bg-elevated: var(--color-paper-2);
+  --pi-bg-elevated-size: auto;
+  --pi-bg-elevated-blend: normal;
+  --pi-marble-image-blend: normal;
+
   /* === Executive Shadow (Logomock — TZ-210.A) === */
   --shadow-executive: 0 4px 20px -2px rgba(18, 21, 24, 0.05), 0 2px 6px -1px rgba(18, 21, 24, 0.03);
+
+  /* Light dialogs — soft depth + gold edge whisper */
+  --dialog-shadow: 0 12px 40px oklch(0.35 0.02 260 / 0.12), 0 0 0 1px oklch(0.72 0.12 86 / 0.16);
 
   /* === Status Colors (Logomock — TZ-210.A) === */
   --color-success: #16a34a;
@@ -130,13 +146,9 @@
      control. Gold accent matches design ref's primary action color. */
   --focus-ring-shadow: 0 0 0 2px var(--color-paper), 0 0 0 4px var(--color-gold);
 
-  /* Hover-state tokens for `.pi-icon-btn` (TZ-AUDIT-6 — kill
-     duplication of `background-color / color / border-color`
-     between the default and danger variants). The `:hover` rule
-     below applies all three; default values mean fg/border stay
-     `inherit` for the base variant, and the `.pi-icon-btn-danger`
-     override flips them to destructive. Single hover rule,
-     variant-specific token values. */
+  /* Hover-state tokens for `.pi-icon-btn` (TZ-AUDIT-6).
+     Semantic variants (danger / edit / copy / doc) set resting
+     color + override these hover tokens; one `:hover` rule applies. */
   --pi-btn-hover-bg: var(--color-paper-2);
   --pi-btn-hover-fg: inherit;
   --pi-btn-hover-border: inherit;
@@ -158,81 +170,61 @@
   --touch-comfortable: 40px; /* w-10 h-10 */
   --touch-a11y: 44px; /* iOS HIG */
 
-  /* === Paper Elevation (Logomock — TZ-210.A) ===
-     Light mode defaults. Dark mode overrides in .dark block. */
-  --color-paper-3: #e9ecef;
-  --color-paper-4: #dee2e6;
+  /* === Paper Elevation — cool graphite steps (not warm cream).
+     Dark must use *-override (same cascade rule as paper/ink). === */
+  --color-paper-3: var(--color-paper-3-override, oklch(0.92 0.006 260));
+  --color-paper-4: var(--color-paper-4-override, oklch(0.895 0.007 260));
 
-  /* === Gold Hover (Logomock — TZ-210.A) === */
-  --color-gold-hover: #a8821b;
+  /* === Gold Hover — richer brand gold on light === */
+  --color-gold-hover: oklch(0.62 0.14 86);
 }
 
 @theme inline {
-  /* === Palette (TZ-96: Design Reference alignment) ===
-     Paper & Ink naming preserved for backward compat.
-     Values mapped to design reference Material Design 3 tokens. */
-  --color-paper: var(--color-paper-override, oklch(0.972 0.01 80)); /* #F8F9FA — surface */
+  /* === Palette — cool Paper & Ink (light defaults; dark via *-override) ===
+     Hue ~260 graphite family — без тёплого крема hue 80. */
+  --color-paper: var(--color-paper-override, oklch(0.978 0.003 260)); /* cool near-white canvas */
   --color-paper-2: var(
     --color-paper-2-override,
-    oklch(0.955 0.008 80)
-  ); /* #F3F4F5 — surface-container-low */
-  --color-ink: var(
-    --color-ink-override,
-    oklch(0.12 0.008 260)
-  ); /* #191C1D — on-surface / charcoal */
-  --color-rule: var(--color-rule-override, oklch(0.81 0.015 260)); /* #C3C6D7 — outline-variant */
-  --color-muted: var(--color-muted-override, oklch(0.37 0.01 260)); /* #52555C — tertiary */
-  --color-destructive: var(
-    --color-destructive-override,
-    oklch(0.637 0.22 25)
-  ); /* #EF4444 — error */
-  --color-accent-warm: var(
-    --color-accent-warm-override,
-    oklch(0.78 0.12 85)
-  ); /* #D4AF37 — gold (design ref primary) */
+    oklch(0.942 0.005 260)
+  ); /* elevated panels — visibly lifted */
+  --color-ink: var(--color-ink-override, oklch(0.18 0.01 260)); /* charcoal on-surface */
+  --color-rule: var(
+    --color-rule-override,
+    oklch(0.8 0.028 86)
+  ); /* quiet frames: cool gray + gold whisper */
+  --color-muted: var(--color-muted-override, oklch(0.42 0.012 260));
+  --color-destructive: var(--color-destructive-override, oklch(0.637 0.22 25));
+  --color-accent-warm: var(--color-accent-warm-override, oklch(0.7 0.135 86));
   --color-accent-cool: var(--color-accent-cool-override, oklch(0.55 0.12 250));
 
-  /* === Gold accent (Design Reference — TZ-96) ===
-     KPPDF brand gold, used for primary actions, active states,
-     focus rings, and brand identity. */
-  --color-gold: var(--color-gold-override, oklch(0.78 0.12 85)); /* #D4AF37 */
-  --color-gold-soft: var(
-    --color-gold-soft-override,
-    oklch(0.78 0.12 85 / 0.1)
-  ); /* Gold 10% opacity */
+  /* === Gold accent — real gold on cool paper === */
+  --color-gold: var(--color-gold-override, oklch(0.7 0.135 86));
+  --color-gold-soft: var(--color-gold-soft-override, oklch(0.7 0.135 86 / 0.12));
 
-  /* === Sunrise palette (TZ-NEW + TZ-AUDIT-9) ===
-     Kept for backward compat. New components should prefer gold tokens. */
-  --color-sunrise: var(--color-sunrise-override, oklch(0.78 0.12 85)); /* ← aligned to gold */
-  --color-sunrise-soft: var(--color-sunrise-soft-override, oklch(0.95 0.045 80));
-  --color-sunrise-warm: var(
-    --color-sunrise-warm-override,
-    oklch(0.78 0.12 85)
-  ); /* ← aligned to gold */
-  --color-sunrise-glow: var(--color-sunrise-glow-override, oklch(0.82 0.14 85)); /* brighter gold */
-  --color-sunrise-mist: var(--color-sunrise-mist-override, oklch(0.97 0.035 80));
+  /* === Sunrise palette (compat → gold) === */
+  --color-sunrise: var(--color-sunrise-override, oklch(0.7 0.135 86));
+  --color-sunrise-soft: var(--color-sunrise-soft-override, oklch(0.95 0.03 86));
+  --color-sunrise-warm: var(--color-sunrise-warm-override, oklch(0.7 0.135 86));
+  --color-sunrise-glow: var(--color-sunrise-glow-override, oklch(0.78 0.14 86));
+  --color-sunrise-mist: var(--color-sunrise-mist-override, oklch(0.97 0.02 260));
 
-  /* === Surface container hierarchy (Design Reference — TZ-96) === */
-  --color-surface-lowest: oklch(1 0 0); /* #FFFFFF */
-  --color-surface-low: oklch(0.955 0.008 80); /* #F3F4F5 */
-  --color-surface: oklch(0.94 0.006 80); /* #EDEEEF */
-  --color-surface-high: oklch(0.915 0.005 80); /* #E7E8E9 */
-  --color-surface-highest: oklch(0.895 0.004 80); /* #E1E3E4 */
+  /* === Surface container hierarchy === */
+  --color-surface-lowest: oklch(1 0 0);
+  --color-surface-low: oklch(0.955 0.005 260);
+  --color-surface: oklch(0.942 0.005 260);
+  --color-surface-high: oklch(0.92 0.006 260);
+  --color-surface-highest: oklch(0.895 0.007 260);
 
-  /* === Muted foreground (secondary text) — WCAG AA 4.5:1 on paper === */
-  --color-muted-foreground: var(
-    --color-muted-foreground-override,
-    oklch(0.28 0.012 260)
-  ); /* ~#33364A — 5.2:1 on paper */
-  /* === Muted foreground STRONG — TZ-96: design ref outline for small text === */
+  /* === Muted foreground === */
+  --color-muted-foreground: var(--color-muted-foreground-override, oklch(0.4 0.014 260));
   --color-muted-foreground-strong: var(
     --color-muted-foreground-strong-override,
-    oklch(0.38 0.015 260)
-  ); /* ~#5A5D6E — 6.5:1 on paper */
+    oklch(0.32 0.015 260)
+  );
 
-  /* === Paper Elevation (Logomock — TZ-210.A) === */
-  --color-paper-3: var(--color-paper-3);
-  --color-paper-4: var(--color-paper-4);
+  /* === Paper Elevation — override pattern (never circular self-ref) === */
+  --color-paper-3: var(--color-paper-3-override, oklch(0.92 0.006 260));
+  --color-paper-4: var(--color-paper-4-override, oklch(0.895 0.007 260));
 
   /* === Status Colors (Logomock — TZ-210.A) === */
   --color-success: var(--color-success);
@@ -389,53 +381,13 @@
       color 0.2s ease; /* TZ-210.B: smooth theme transition */
   }
 
-  /* TZ-210.A dark mode — Obsidian Slate (Logomock integration).
-     5-elevation surface hierarchy with polished gold accent.
-     Applied via <html class="dark">. NEVER use body.dark or :root.dark. */
-  .dark {
-    /* === 5-Elevation Obsidian Slate surfaces === */
-    --color-paper: #0b0e11; /* Elevation 0: Base Canvas */
-    --color-paper-2: #12161a; /* Elevation 1: Cards & Surfaces */
-    --color-paper-3: #181d23; /* Elevation 2: Controls & Containers */
-    --color-paper-4: #20262e; /* Elevation 3: Active Highlights */
+  .dark ::selection {
+    background: oklch(0.84 0.145 86 / 0.32);
+    color: var(--color-ink);
+  }
 
-    /* === Text & Borders === */
-    --color-ink: #f0f4f8; /* High-contrast neutral text */
-    --color-rule: #262e38; /* Subtle 1px borders */
-    --color-muted: #8c96a6; /* Secondary text */
-    --color-muted-strong: #c1c9d6; /* Strong secondary text */
-
-    /* === Gold accent (brighter for dark) === */
-    --color-gold: #e2b842;
-    --color-gold-hover: #f0c755;
-    --color-gold-soft: rgba(226, 184, 66, 0.16);
-
-    /* === Status colors === */
-    --color-destructive: #ef4444;
-    --color-destructive-soft: rgba(239, 68, 68, 0.15);
-    --color-success: #22c55e;
-    --color-success-soft: rgba(34, 197, 94, 0.15);
-    --color-info: #38bdf8;
-    --color-info-soft: rgba(56, 189, 248, 0.15);
-    --color-warning: #f59e0b;
-    --color-warning-soft: rgba(245, 158, 11, 0.15);
-
-    /* === Accents (aligned to gold) === */
-    --color-accent-warm: #e2b842;
-    --color-accent-cool: oklch(0.6 0.1 250);
-    --color-sunrise: #e2b842;
-    --color-sunrise-soft: #12161a;
-    --color-sunrise-warm: #e2b842;
-    --color-sunrise-glow: #f0c755;
-    --color-sunrise-mist: #0e1215;
-
-    /* === Secondary text === */
-    --color-muted-foreground: #8c96a6;
-    --color-muted-foreground-strong: #c1c9d6;
-
-    /* === Shadows === */
-    --dialog-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-    --shadow-executive: 0 8px 32px -4px rgba(0, 0, 0, 0.6), 0 2px 8px -2px rgba(0, 0, 0, 0.4);
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.84 0.145 86 / 0.45);
   }
 
   /* === Universal border-color (Logomock — TZ-210.B) === */
@@ -452,6 +404,108 @@
   h6 {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
+  }
+}
+
+/* Midnight Paper & Champagne — Tailwind v4 dark wiring.
+   MUST use --color-*-override + @variant dark so @theme inline
+   `var(--color-X-override, light)` resolves. Plain @layer base .dark
+   { --color-paper } loses to @theme (cream page + dark native inputs). */
+@layer theme {
+  :root,
+  :host {
+    @variant dark {
+      color-scheme: dark;
+
+      /* Surfaces — cool graphite; panels lifted vs void (no marble texture) */
+      --color-paper-override: oklch(0.18 0.006 260);
+      --color-paper-2-override: oklch(0.26 0.008 260);
+      --color-paper-3-override: oklch(0.31 0.009 260);
+      --color-paper-4-override: oklch(0.36 0.01 260);
+
+      --pi-marble-noise: none;
+      --pi-marble-veins: none;
+      --pi-marble-sheen: none;
+      --pi-bg-elevated: var(--color-paper-2);
+      --pi-bg-elevated-size: auto;
+      --pi-bg-elevated-blend: normal;
+      --pi-marble-image-blend: normal;
+
+      /* Text — нейтрально-светлый, без жёлтого крема */
+      --color-ink-override: oklch(0.95 0.004 260);
+      --color-muted-override: oklch(0.74 0.01 260);
+      --color-muted-foreground-override: oklch(0.8 0.01 260);
+      --color-muted-foreground-strong-override: oklch(0.88 0.008 260);
+      --color-muted-strong: oklch(0.88 0.008 260);
+
+      /* Quiet frames — graphite + whisper of gold (default hairline) */
+      --color-rule-override: oklch(0.46 0.045 86);
+
+      /* Real gold — тёплый акцент на холодном графите */
+      --color-gold-override: oklch(0.84 0.145 86);
+      --color-gold-hover: oklch(0.9 0.15 88);
+      --color-gold-soft-override: oklch(0.84 0.145 86 / 0.22);
+      --color-accent-warm-override: oklch(0.84 0.145 86);
+      --color-accent-cool-override: oklch(0.7 0.05 245);
+
+      --color-sunrise-override: oklch(0.84 0.145 86);
+      --color-sunrise-warm-override: oklch(0.84 0.145 86);
+      --color-sunrise-glow-override: oklch(0.9 0.12 90);
+      --color-sunrise-soft-override: oklch(0.28 0.035 86);
+      --color-sunrise-mist-override: oklch(0.24 0.02 260);
+
+      /* Status */
+      --color-destructive-override: oklch(0.7 0.17 25);
+      --color-destructive-soft: oklch(0.7 0.17 25 / 0.14);
+      --color-success: oklch(0.74 0.12 155);
+      --color-success-soft: oklch(0.74 0.12 155 / 0.14);
+      --color-info: oklch(0.74 0.08 230);
+      --color-info-soft: oklch(0.74 0.08 230 / 0.14);
+      --color-warning: oklch(0.78 0.12 75);
+      --color-warning-soft: oklch(0.78 0.12 75 / 0.14);
+
+      /* Depth — нейтральная тень + gold edge на диалогах */
+      --dialog-shadow:
+        0 16px 48px oklch(0.1 0.01 260 / 0.55), 0 0 0 1px oklch(0.84 0.145 86 / 0.18);
+      --shadow-executive:
+        0 12px 40px -6px oklch(0.1 0.01 260 / 0.5), 0 2px 10px -2px oklch(0.1 0.01 260 / 0.35);
+      --overlay-bg: oklch(0.12 0.01 260 / 0.58);
+      --overlay-bg-fallback: rgb(14 15 18 / 0.58);
+      --focus-ring-shadow: 0 0 0 2px var(--color-paper), 0 0 0 4px oklch(0.84 0.145 86 / 0.65);
+    }
+  }
+}
+
+/* Border roles (both themes):
+   - Quiet = --color-rule (gold-whisper hairlines)
+   - Emphasis / border-ink = gold (единый акцент, не near-white / не жёсткий black)
+   - Brand / sunrise-warm / focus = full gold
+   - Danger = destructive */
+@layer utilities {
+  .border-ink,
+  .border-t-ink,
+  .border-b-ink,
+  .border-l-ink,
+  .border-r-ink,
+  .border-x-ink,
+  .border-y-ink,
+  .hover\:border-ink:hover,
+  .focus\:border-ink:focus,
+  .focus-visible\:border-ink:focus-visible {
+    border-color: var(--color-gold);
+  }
+
+  .ring-ink,
+  .focus-visible\:ring-ink:focus-visible,
+  .focus\:ring-ink:focus {
+    --tw-ring-color: var(--color-gold);
+  }
+
+  /* Elevated panels — flat tonal lift (marble experiment removed) */
+  .pi-marble {
+    background: var(--pi-bg-elevated);
+    background-size: var(--pi-bg-elevated-size);
+    background-blend-mode: var(--pi-bg-elevated-blend);
   }
 }
 
@@ -541,6 +595,8 @@
  *   - `pi-input`   — search box + form field shared shell
  *   - `pi-cell`    — table cell padding/typography shared shell
  *   - `pi-icon-btn`— small 32×32 hairline-bordered editorial action button
+    (semantic: `pi-icon-btn-edit` gold, `pi-icon-btn-copy` info,
+    `pi-icon-btn-doc` cool, `pi-icon-btn-danger` destructive at rest)
  *
  * Apply with: <input class="pi-input"> OR <td class="pi-cell">.
  *
@@ -632,21 +688,51 @@
     color: var(--color-muted);
   }
 
-  /* ---- pi-icon-btn modifiers (hover, danger hover, focus) ----
-     TZ-AUDIT-6: hover rule is declared ONCE. The danger variant
-     just overrides the three `--pi-btn-hover-*` tokens; no
-     duplication of `background-color / color / border-color`
-     between the two. */
+  /* ---- pi-icon-btn modifiers (semantic colors + hover + focus) ----
+     Resting color carries meaning (delete=red, edit=gold, copy=info).
+     Hover still uses --pi-btn-hover-* so one :hover rule covers all. */
   .pi-icon-btn:hover {
     background-color: var(--pi-btn-hover-bg);
     color: var(--pi-btn-hover-fg);
     border-color: var(--pi-btn-hover-border);
   }
+
+  /* Delete / destructive — always red, not only on hover */
   .pi-icon-btn-danger {
+    color: var(--color-destructive);
+    border-color: color-mix(in oklch, var(--color-destructive) 40%, var(--color-rule));
     --pi-btn-hover-bg: var(--color-destructive);
     --pi-btn-hover-fg: var(--color-paper);
     --pi-btn-hover-border: var(--color-destructive);
   }
+
+  /* Edit — brand gold */
+  .pi-icon-btn-edit {
+    color: var(--color-gold);
+    border-color: color-mix(in oklch, var(--color-gold) 45%, var(--color-rule));
+    --pi-btn-hover-bg: color-mix(in oklch, var(--color-gold) 16%, var(--color-paper));
+    --pi-btn-hover-fg: var(--color-gold);
+    --pi-btn-hover-border: var(--color-gold);
+  }
+
+  /* Copy / duplicate — info blue */
+  .pi-icon-btn-copy {
+    color: var(--color-info);
+    border-color: color-mix(in oklch, var(--color-info) 45%, var(--color-rule));
+    --pi-btn-hover-bg: color-mix(in oklch, var(--color-info) 14%, var(--color-paper));
+    --pi-btn-hover-fg: var(--color-info);
+    --pi-btn-hover-border: var(--color-info);
+  }
+
+  /* Document / open — cool accent */
+  .pi-icon-btn-doc {
+    color: var(--color-accent-cool);
+    border-color: color-mix(in oklch, var(--color-accent-cool) 45%, var(--color-rule));
+    --pi-btn-hover-bg: color-mix(in oklch, var(--color-accent-cool) 14%, var(--color-paper));
+    --pi-btn-hover-fg: var(--color-accent-cool);
+    --pi-btn-hover-border: var(--color-accent-cool);
+  }
+
   .pi-icon-btn:focus-visible {
     outline: none;
     box-shadow: var(--focus-ring-shadow);
@@ -972,7 +1058,10 @@
 
   .pi-overlay-panel {
     pointer-events: auto;
-    background-color: var(--dialog-bg);
+    /* Elevated surface: flat paper-2 (both themes). */
+    background: var(--pi-bg-elevated);
+    background-size: var(--pi-bg-elevated-size);
+    background-blend-mode: var(--pi-bg-elevated-blend);
     color: var(--dialog-text);
     border-radius: var(--dialog-radius) !important;
     box-shadow: var(--dialog-shadow) !important;

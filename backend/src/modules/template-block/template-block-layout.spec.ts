@@ -69,7 +69,7 @@ describe('template-block-layout', () => {
       x: 0.08,
       y: 0.04,
       width: 0.84,
-      height: 0.06,
+      height: 0.12,
       zIndex: 1,
       rotation: 0,
     });

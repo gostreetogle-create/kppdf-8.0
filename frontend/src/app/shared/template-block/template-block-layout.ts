@@ -122,13 +122,14 @@ export function clampLayoutDelta(
 /** Default placement for a newly inserted block, stacked below existing blocks. */
 export function defaultBlockLayout(index: number): BlockLayout {
   const row = Math.max(0, Math.floor(index));
-  const y = Math.min(0.9, 0.04 + row * 0.08);
+  const y = Math.min(0.85, 0.04 + row * 0.12);
   return normalizeBlockLayout({
     page: 1,
     x: 0.08,
     y,
     width: 0.84,
-    height: 0.06,
+    // Starter min-height; block-renderer auto-fits to content after paint.
+    height: 0.12,
     zIndex: 1,
     rotation: 0,
   });

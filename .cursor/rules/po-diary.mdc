@@ -1,0 +1,29 @@
+---
+description: PO Diary — read PO intent; update after sessions with new PO insights
+alwaysApply: true
+---
+
+# PO Diary (обязательно)
+
+Source of truth for **who the product owner is** and **what quality bar he wants**:
+
+→ **`docs/PO-DIARY.md`**
+
+## Start of session
+
+Before proposing UX or priorities, read `docs/PO-DIARY.md` §1–§4 (canon).  
+Do not make PO re-explain character, demo pride, or “how I want it”.
+
+## End of session
+
+If this chat produced a **new** insight about PO (taste, refusal, quality bar, working style):
+
+1. Append a dated entry at the top of §5 in `docs/PO-DIARY.md` (3–7 bullets, no transcript).
+2. If it is stable, also update §1–§4 (keep canon short).
+3. Never log secrets/passwords.
+
+Skip the update when nothing new about PO was learned.
+
+## Why
+
+PO’s gap with AI is usually **intent**, not coding skill. The diary closes that gap across chats.

@@ -121,6 +121,11 @@ export interface TemplateBlock {
    * select and move together until explicitly ungrouped.
    */
   groupId?: string | null;
+  /**
+   * Geometry lock. When true: no move / resize / delete on the canvas
+   * until unlocked from the inspector «Геометрия» section.
+   */
+  locked?: boolean;
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;

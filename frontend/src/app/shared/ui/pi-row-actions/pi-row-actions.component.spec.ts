@@ -106,14 +106,8 @@ describe('PiRowActionsComponent', () => {
   function editButton(
     fixture: ComponentFixture<PiRowActionsComponent<TestRow>>,
   ): HTMLButtonElement | null {
-    // Semantic selector: pick the button that exposes an aria-label
-    // (the edit button) and exclude the delete button by its
-    // danger-variant class. More robust than the old
-    // `button:not(.pi-icon-btn-danger)` selector: if a third button
-    // (e.g. a "view" action) is added without an aria-label, the test
-    // still resolves to the correct edit button.
     return fixture.nativeElement.querySelector(
-      'button[aria-label]:not(.pi-icon-btn-danger)',
+      'button.pi-icon-btn-edit',
     ) as HTMLButtonElement | null;
   }
 
@@ -257,6 +251,30 @@ describe('PiRowActionsComponent', () => {
     it('forwards editLabel to the edit button aria-label', async () => {
       const fixture = await createFixture({ editLabel: 'Редактировать Test Row' });
       expect(editButton(fixture)?.getAttribute('aria-label')).toBe('Редактировать Test Row');
+    });
+
+    it('applies semantic icon-btn variants (edit=gold, delete=danger)', async () => {
+      const fixture = await createFixture({
+        showEdit: true,
+        dataTestEdit: 'edit-1',
+        dataTestDelete: 'delete-1',
+      });
+      const edit = fixture.nativeElement.querySelector(
+        'button[data-test="edit-1"]',
+      ) as HTMLButtonElement;
+      const del = deleteButton(fixture);
+      expect(edit.className).toContain('pi-icon-btn-edit');
+      expect(del.className).toContain('pi-icon-btn-danger');
+    });
+
+    it('applies copy semantic variant when copyLabel is set', async () => {
+      const fixture = await createFixture({
+        copyLabel: 'Копировать',
+        dataTestCopy: 'copy-1',
+      });
+      const copy = copyButton(fixture);
+      expect(copy).toBeTruthy();
+      expect(copy!.className).toContain('pi-icon-btn-copy');
     });
 
     it('forwards deleteLabel to the delete button aria-label', async () => {

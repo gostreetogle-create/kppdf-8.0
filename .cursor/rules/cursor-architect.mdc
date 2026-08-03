@@ -49,4 +49,5 @@ Goal: do not leave unpushed architecture work that can be lost. Skip push only i
 
 `.agents/skills/cursor-usage/SKILL.md` · `.agents/skills/tz-authoring/SKILL.md`  
 **Перед любой новой TZ:** `docs/TZ-AUTHORING.md` (канон имён / unique / preflight).  
+**Перед UX/приоритетами:** `docs/PO-DIARY.md` §1–§4; после сессии с новым инсайтом про PO — обновить §5 (см. `.cursor/rules/po-diary.mdc`).  
 Executor: `GEMINI.md` + `OrchestratorKit/AGENTS.md`

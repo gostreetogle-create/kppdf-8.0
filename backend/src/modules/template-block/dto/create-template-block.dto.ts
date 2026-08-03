@@ -180,5 +180,10 @@ export class CreateTemplateBlockDto {
   @IsString()
   groupId?: string | null;
 
+  /** Geometry lock — blocks move/resize/delete on the canvas. */
+  @IsOptional()
+  @IsBoolean()
+  locked?: boolean;
+
   @IsOptional() @IsBoolean() isActive?: boolean;
 }

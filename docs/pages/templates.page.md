@@ -52,10 +52,10 @@
 
 - **Inline `<table>`** — НЕ pi-table, кастомная таблица
 - **Client-side pagination** — pageSize = 10
-- **Create flow** — ensureOrg (INN `7707083893`) + docType → POST create (`pageSize` A3\|A4\|A5) → navigate to builder
+- **Create flow** — ensureOrg (INN `7707083893`) + docType → POST create (`pageSize` A3\|A4\|A5, **`isActive: true`**) → navigate to builder
 - **Duplicate** — setup (без category) → POST /duplicate → PATCH pageSize/orientation → navigate to builder
-- **isActive switch** — inline toggle + optimistic update
-- **Default star** — ★ (активен) / ☆ (кнопка для set-default)
+- **isActive switch** — optimistic update + rollback on PATCH error
+- **Default star** — ★ только смысл «по умолчанию»; ☆ set-default **только если isActive**; иначе toast / muted ☆
 - **Doc type resolution** — `docTypeName()`: populated object or '—'
 - **RxJS subscription** — manual subscribe (не httpResource)
 - **Category column** — отображает имя категории (populated `categoryId`); «—» если нет

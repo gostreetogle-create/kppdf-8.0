@@ -94,7 +94,7 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
       /doc-constructor/templates (TemplatesPage). /doc-constructor/builder
       exact path redirects there (see app.routes.ts).
     -->
-    <!-- Builder toolbar — title + editor/preview only (add blocks: top palette) -->
+    <!-- Builder toolbar — title + editor/preview (add blocks: left palette rail) -->
     <div class="builder-toolbar">
       <div class="builder-toolbar__title">
         <button
@@ -145,6 +145,7 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
           class="builder-view-toggle__btn"
           [class.builder-view-toggle__btn--active]="viewMode() === 'editor'"
           (click)="viewMode.set('editor')"
+          [attr.aria-pressed]="viewMode() === 'editor'"
         >
           <lucide-icon [img]="EditIcon" [size]="13"></lucide-icon>
           Редактор
@@ -154,6 +155,7 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
           class="builder-view-toggle__btn"
           [class.builder-view-toggle__btn--active]="viewMode() === 'preview'"
           (click)="viewMode.set('preview')"
+          [attr.aria-pressed]="viewMode() === 'preview'"
         >
           <lucide-icon [img]="EyeIcon" [size]="13"></lucide-icon>
           Превью
@@ -161,17 +163,16 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
       </div>
     </div>
 
-    <!-- Top horizontal palette -->
-    <app-builder-tool-pane
-      [groups]="paletteGroups()"
-      (addBlock)="onAddBlock($event)"
-      (photoSelected)="onPhotoFile($event)"
-      (selectGroup)="onSelectGroup($event)"
-      (ungroupGroup)="onUngroupById($event)"
-    ></app-builder-tool-pane>
-
-    <!-- Main builder area: canvas + inspector -->
+    <!-- Main builder area: left palette rail | canvas | inspector -->
     <div class="builder-shell">
+      <app-builder-tool-pane
+        [groups]="paletteGroups()"
+        (addBlock)="onAddBlock($event)"
+        (photoSelected)="onPhotoFile($event)"
+        (selectGroup)="onSelectGroup($event)"
+        (ungroupGroup)="onUngroupById($event)"
+      ></app-builder-tool-pane>
+
       <app-builder-canvas
         [blocks]="blocks()"
         [selectedId]="selectedId()"
@@ -246,6 +247,7 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
         display: flex;
         flex: 1;
         min-height: 0;
+        position: relative;
       }
 
       .header-actions {
@@ -307,7 +309,9 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
         gap: 12px;
         padding: 6px 12px;
         border-bottom: 1px solid var(--color-rule);
-        background: var(--color-paper-2);
+        background: var(--pi-bg-elevated);
+        background-size: var(--pi-bg-elevated-size);
+        background-blend-mode: var(--pi-bg-elevated-blend);
       }
 
       .builder-toolbar__title {
@@ -356,13 +360,13 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
         background: color-mix(in oklch, var(--color-sunrise-soft) 55%, transparent);
       }
 
-      /* ═══ View Mode Toggle — TZ-211 ═══ */
+      /* ═══ View Mode Toggle — graphite track + gold labels (dark-safe) ═══ */
       .builder-view-toggle {
         margin-left: auto;
         display: flex;
         align-items: center;
         gap: 0;
-        background: var(--color-paper-3);
+        background: var(--color-paper-2);
         border: 1px solid var(--color-rule);
         border-radius: 2px;
         padding: 1px;
@@ -378,10 +382,13 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
         font-family: var(--font-mono);
         color: var(--color-muted);
         background: transparent;
-        border: none;
+        border: 1px solid transparent;
         border-radius: 1px;
         cursor: pointer;
-        transition: all 100ms ease;
+        transition:
+          color 100ms ease,
+          background 100ms ease,
+          border-color 100ms ease;
         white-space: nowrap;
       }
 
@@ -390,17 +397,20 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
       }
 
       .builder-view-toggle__btn--active {
-        background: var(--color-paper);
+        background: color-mix(in oklch, var(--color-gold) 22%, var(--color-paper));
         color: var(--color-ink);
+        border-color: color-mix(in oklch, var(--color-gold) 55%, var(--color-rule));
         font-weight: 600;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+        box-shadow: none;
       }
 
       /* ═══ Inspector Panel — TZ-211: Design System ═══ */
       .builder-inspector-panel {
         width: 320px;
         flex-shrink: 0;
-        background: var(--color-paper-2);
+        background: var(--pi-bg-elevated);
+        background-size: var(--pi-bg-elevated-size);
+        background-blend-mode: var(--pi-bg-elevated-blend);
         border-left: 1px solid var(--color-rule);
         overflow-y: auto;
       }
@@ -814,6 +824,7 @@ export class BuilderPage {
   }
 
   protected onPhotoFile(file: File): void {
+    if (this.viewMode() === 'preview') return;
     const localUrl = URL.createObjectURL(file);
     const tempId = crypto.randomUUID();
     const block: TemplateBlock = {
@@ -836,11 +847,13 @@ export class BuilderPage {
   // Tool pane → add block (Phase D.1) / drop from palette (D.2.2)
   // ─────────────────────────────────────────────────────────────
   protected onAddBlock(payload: AddBlockPayload): void {
+    if (this.viewMode() === 'preview') return;
     return this.insertBlock(payload, this.blocks().length);
   }
 
   /** D.2.2: drag-from-palette handler — adds block at the dropped index. */
   protected onDropAdd(event: { payload: AddBlockPayload; insertIndex: number }): void {
+    if (this.viewMode() === 'preview') return;
     const idx = Math.max(0, Math.min(event.insertIndex, this.blocks().length));
     this.insertBlock(event.payload, idx);
   }
@@ -1266,6 +1279,12 @@ export class BuilderPage {
     if (ids.size === 0) return;
 
     const previous = this.blocks();
+    const locked = previous.filter((b) => ids.has(blockKey(b)) && b.locked);
+    if (locked.length > 0) {
+      this.toast.warning('Среди выбранных есть заблокированные — разблокируйте их в Геометрии');
+      return;
+    }
+
     const toDelete = previous.filter((b) => ids.has(blockKey(b)));
     const remaining = previous.filter((b) => !ids.has(blockKey(b)));
 
@@ -1538,6 +1557,10 @@ export class BuilderPage {
 
   protected onDeleteBlock(id: string): void {
     const block = this.blocks().find((b) => b._id === id);
+    if (block?.locked) {
+      this.toast.warning('Сначала разблокируйте блок в свойствах → Геометрия');
+      return;
+    }
     const blockTitle = block?.title || block?.type || 'блок';
     const ref = this.dialog.open(AlertDialogComponent, {
       data: {
@@ -1608,11 +1631,15 @@ export class BuilderPage {
    */
   private handleSaveResult(res: SilentResult<TemplateBlock>): void {
     if (!res.ok) {
-      const code = res.error.status;
-      if (code === 409) {
-        this.toast.error('Конфликт: шаблон изменён другим пользователем');
-      } else {
-        this.toast.error(`Ошибка сохранения: ${extractErrorMessage(res.error)}`);
+      // One toast per error streak — multi-block patches must not stack toasts.
+      const alreadyError = this.saveStatus() === 'error';
+      if (!alreadyError) {
+        const code = res.error.status;
+        if (code === 409) {
+          this.toast.error('Конфликт: шаблон изменён другим пользователем');
+        } else {
+          this.toast.error(`Ошибка сохранения: ${extractErrorMessage(res.error)}`);
+        }
       }
       this.saveStatus.set('error');
       return;

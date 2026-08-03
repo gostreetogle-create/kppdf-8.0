@@ -28,6 +28,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  computed,
   effect,
   inject,
   input,
@@ -36,7 +37,7 @@ import {
 } from '@angular/core';
 import { CdkDrag } from '@angular/cdk/drag-drop';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideAngularModule, Lock } from 'lucide-angular';
 import {
   blockKey,
   type BlockLayout,
@@ -81,26 +82,30 @@ import { resolvePositionedDragPeers } from './builder-group-drag';
     @if (state.isPositioned()) {
       <div
         class="group block-renderer block-renderer--positioned"
+        [class.is-preview]="preview()"
+        [class.is-locked]="!!block().locked"
         [class.is-selected]="selected()"
         [class.is-multi-selected]="multiSelected()"
         [class.is-inactive]="!block().isActive"
         [attr.data-block-type]="block().type"
-        [attr.aria-selected]="selected() || multiSelected()"
+        [attr.aria-pressed]="selected() || multiSelected() ? true : null"
         role="button"
         tabindex="0"
         [style.left.%]="state.layoutLeft()"
         [style.top.%]="state.layoutTop()"
         [style.width.%]="state.layoutWidth()"
-        [style.height.%]="state.layoutHeight()"
+        [style.min-height.%]="state.layoutHeight()"
+        [style.height.%]="state.layoutResize() ? state.layoutHeight() : null"
         [style.z-index]="state.layoutZIndex()"
         [style.transform]="'rotate(' + state.layoutRotation() + 'deg)'"
+        [style.background-color]="state.blockBgColor() || null"
         (click)="onSelect($event)"
-        (mousedown)="!preview() && onPositionedDragStart($event)"
-        (dblclick)="!preview() && onLayoutDblClick($event)"
+        (mousedown)="!frozen() && onPositionedDragStart($event)"
+        (dblclick)="!frozen() && onLayoutDblClick($event)"
         (keydown.enter)="onSelect($event)"
         (keydown.space)="onSelect($event)"
       >
-        @if (selected() && !preview()) {
+        @if (selected() && !frozen()) {
           <!-- TZ-259.4: canonical resize handles — edges + corners -->
           @for (h of RESIZE_HANDLES; track h) {
             <div
@@ -112,13 +117,23 @@ import { resolvePositionedDragPeers } from './builder-group-drag';
             ></div>
           }
         }
-        @if (!preview()) {
+        @if (block().locked && !preview()) {
+          <div
+            class="block-renderer__lock-badge"
+            title="Геометрия заблокирована"
+            aria-hidden="true"
+          >
+            <lucide-icon [img]="LockIcon" [size]="11"></lucide-icon>
+          </div>
+        }
+        @if (!frozen()) {
           <div
             class="block-renderer__delete"
             (click)="onDeleteClick($event)"
             (keydown.enter)="onDeleteClick($event)"
             (mousedown)="$event.stopPropagation()"
             title="Удалить блок"
+            aria-label="Удалить блок"
             role="button"
             tabindex="-1"
           >
@@ -137,7 +152,7 @@ import { resolvePositionedDragPeers } from './builder-group-drag';
             </svg>
           </div>
         }
-        @if (sizeEditOpen() && !preview()) {
+        @if (sizeEditOpen() && !frozen()) {
           <!-- TZ-259.4: double-click size editor (px) -->
           <div
             class="block-renderer__size-editor"
@@ -153,6 +168,7 @@ import { resolvePositionedDragPeers } from './builder-group-drag';
                 min="20"
                 [value]="sizeEditWidthPx()"
                 (input)="onSizeEditInput($event, 'w')"
+                aria-label="Ширина блока в пикселях"
               />
             </label>
             <label class="block-renderer__size-editor-field">
@@ -162,6 +178,7 @@ import { resolvePositionedDragPeers } from './builder-group-drag';
                 min="20"
                 [value]="sizeEditHeightPx()"
                 (input)="onSizeEditInput($event, 'h')"
+                aria-label="Высота блока в пикселях"
               />
             </label>
             <button
@@ -174,14 +191,11 @@ import { resolvePositionedDragPeers } from './builder-group-drag';
           </div>
         }
         <div class="block-renderer__body">
-          @if (!preview()) {
-            <div class="block-renderer__header">
-              <span class="block-renderer__type">{{ state.typeLabel() }}</span>
-              @if (state.bindingBadge()) {
-                <span class="block-renderer__binding" [title]="state.bindingBadgeTooltip()">{{
-                  state.bindingBadge()
-                }}</span>
-              }
+          @if (!preview() && state.bindingBadge()) {
+            <div class="block-renderer__chrome" aria-hidden="true">
+              <span class="block-renderer__binding" [title]="state.bindingBadgeTooltip()">{{
+                state.bindingBadge()
+              }}</span>
             </div>
           }
           @if (block().type === 'image' && state.imageUrl()) {
@@ -193,7 +207,8 @@ import { resolvePositionedDragPeers } from './builder-group-drag';
                 draggable="false"
                 loading="lazy"
                 [style.width]="'100%'"
-                [style.height]="'100%'"
+                [style.height]="'auto'"
+                (load)="onPositionedContentReady()"
               />
             </div>
           } @else if (block().type === 'table' && state.tableColumns().length > 0) {
@@ -254,29 +269,41 @@ import { resolvePositionedDragPeers } from './builder-group-drag';
     } @else if (state.isOverlay()) {
       <div
         class="group block-renderer block-renderer--overlay"
+        [class.is-preview]="preview()"
+        [class.is-locked]="!!block().locked"
         [class.is-selected]="selected()"
         [class.is-inactive]="!block().isActive"
         [attr.data-block-type]="block().type"
-        [attr.aria-selected]="selected()"
+        [attr.aria-pressed]="selected() ? true : null"
         [attr.role]="'button'"
         [attr.tabindex]="'0'"
         [style.left.px]="state.dragActive() ? state.dragLeft() : state.overlayLeft()"
         [style.top.px]="state.dragActive() ? state.dragTop() : state.overlayTop()"
         [style.background-color]="state.blockBgColor() || null"
         (click)="onSelect($event)"
-        (mousedown)="!preview() && onOverlayDragStart($event)"
+        (mousedown)="!frozen() && onOverlayDragStart($event)"
         (keydown.enter)="onSelect($event)"
         (keydown.space)="onSelect($event)"
         (keydown.arrowUp)="onArrowKey($event, 'up')"
         (keydown.arrowDown)="onArrowKey($event, 'down')"
       >
-        @if (!preview()) {
+        @if (block().locked && !preview()) {
+          <div
+            class="block-renderer__lock-badge"
+            title="Геометрия заблокирована"
+            aria-hidden="true"
+          >
+            <lucide-icon [img]="LockIcon" [size]="11"></lucide-icon>
+          </div>
+        }
+        @if (!frozen()) {
           <div
             class="block-renderer__delete"
             (click)="onDeleteClick($event)"
             (keydown.enter)="onDeleteClick($event)"
             (mousedown)="$event.stopPropagation()"
             title="Удалить блок"
+            aria-label="Удалить блок"
             role="button"
             tabindex="-1"
           >
@@ -321,7 +348,7 @@ import { resolvePositionedDragPeers } from './builder-group-drag';
                 "
               />
             </div>
-            @if (selected()) {
+            @if (selected() && !frozen()) {
               <div
                 class="block-renderer__corner-resize"
                 (mousedown)="onCornerResizeStart($event)"
@@ -341,9 +368,6 @@ import { resolvePositionedDragPeers } from './builder-group-drag';
           </div>
         } @else {
           <div class="block-renderer__body">
-            <div class="block-renderer__header">
-              <span class="block-renderer__type">{{ state.typeLabel() }}</span>
-            </div>
             <div
               class="block-renderer__content"
               [innerHTML]="byPassHtml(state.renderedContent())"
@@ -356,13 +380,15 @@ import { resolvePositionedDragPeers } from './builder-group-drag';
       <div
         cdkDrag
         cdkDragLockAxis="y"
+        [cdkDragDisabled]="frozen()"
         [class.is-preview]="preview()"
+        [class.is-locked]="!!block().locked"
         class="group block-renderer"
         [class.is-selected]="selected()"
         [class.is-multi-selected]="multiSelected()"
         [class.is-inactive]="!block().isActive"
         [attr.data-block-type]="block().type"
-        [attr.aria-selected]="selected() || multiSelected()"
+        [attr.aria-pressed]="selected() || multiSelected() ? true : null"
         [attr.role]="'button'"
         [attr.tabindex]="'0'"
         [style.width.%]="state.currentWidth()"
@@ -374,7 +400,7 @@ import { resolvePositionedDragPeers } from './builder-group-drag';
         (keydown.arrowUp)="onArrowKey($event, 'up')"
         (keydown.arrowDown)="onArrowKey($event, 'down')"
       >
-        @if (selected() && !preview()) {
+        @if (selected() && !frozen()) {
           <div
             class="block-renderer__resize-side block-renderer__resize-side--left"
             (mousedown)="onResizeStart($event, 'left')"
@@ -388,7 +414,16 @@ import { resolvePositionedDragPeers } from './builder-group-drag';
             title="Перетащите влево для отступа справа"
           ></div>
         }
-        @if (!preview()) {
+        @if (block().locked && !preview()) {
+          <div
+            class="block-renderer__lock-badge"
+            title="Геометрия заблокирована"
+            aria-hidden="true"
+          >
+            <lucide-icon [img]="LockIcon" [size]="11"></lucide-icon>
+          </div>
+        }
+        @if (!frozen()) {
           <div
             class="block-renderer__checkbox"
             [class.is-visible]="multiSelected()"
@@ -426,13 +461,14 @@ import { resolvePositionedDragPeers } from './builder-group-drag';
             </svg>
           </div>
         }
-        @if (!preview()) {
+        @if (!frozen()) {
           <div
             class="block-renderer__delete"
             (click)="onDeleteClick($event)"
             (keydown.enter)="onDeleteClick($event)"
             (mousedown)="$event.stopPropagation()"
             title="Удалить блок"
+            aria-label="Удалить блок"
             role="button"
             tabindex="-1"
           >
@@ -530,14 +566,13 @@ import { resolvePositionedDragPeers } from './builder-group-drag';
               }
             </div>
           } @else {
-            <div class="block-renderer__header">
-              <span class="block-renderer__type">{{ state.typeLabel() }}</span>
-              @if (state.bindingBadge()) {
+            @if (!preview() && state.bindingBadge()) {
+              <div class="block-renderer__chrome" aria-hidden="true">
                 <span class="block-renderer__binding" [title]="state.bindingBadgeTooltip()">{{
                   state.bindingBadge()
                 }}</span>
-              }
-            </div>
+              </div>
+            }
             <div
               class="block-renderer__content"
               [innerHTML]="byPassHtml(state.renderedContent())"
@@ -563,6 +598,14 @@ export class BlockRendererComponent {
   readonly boundaryPadding = input<number>(0);
   /** TZ-259.2: when true, render print-preview — no editor chrome, no drag. */
   readonly preview = input<boolean>(false);
+
+  /**
+   * Preview OR geometry lock — no move / resize / delete chrome.
+   * Selection still works so the user can unlock from the inspector.
+   */
+  protected readonly frozen = computed(() => this.preview() || !!this.block().locked);
+
+  protected readonly LockIcon = Lock;
 
   // ── Outputs ──
   readonly select = output<TemplateBlock>();
@@ -621,6 +664,10 @@ export class BlockRendererComponent {
   protected readonly sizeEditWidthPx = signal(0);
   protected readonly sizeEditHeightPx = signal(0);
 
+  /** One-shot auto-fit key so we persist layout.height to match content. */
+  private lastAutoFitKey: string | null = null;
+  private autoFitTimer: ReturnType<typeof setTimeout> | null = null;
+
   constructor() {
     // Sync block input → service
     effect(() => this.state.block.set(this.block()));
@@ -654,6 +701,16 @@ export class BlockRendererComponent {
       const ml = typeof s?.['marginLeft'] === 'number' ? s['marginLeft'] : 0;
       this.state.currentWidth.set(Math.max(20, Math.min(100, w)));
       this.state.currentMarginLeft.set(Math.max(0, Math.min(80, ml)));
+    });
+
+    // After insert / content change: grow layout.height to fit the painted box
+    // so the gold frame matches text/table/photo (was default 0.06 → spill below).
+    effect(() => {
+      if (this.preview()) return;
+      if (!this.state.isPositioned()) return;
+      const key = this.contentFitKey();
+      if (!key || key === this.lastAutoFitKey) return;
+      this.scheduleAutoFit(key);
     });
 
     // Auto-clear local drag override when settings catch up
@@ -704,6 +761,7 @@ export class BlockRendererComponent {
   protected onDeleteClick(event: Event): void {
     event.stopPropagation();
     event.preventDefault();
+    if (this.frozen()) return;
     const id = this.block()._id;
     if (id) this.deleteRequest.emit(id);
   }
@@ -786,6 +844,8 @@ export class BlockRendererComponent {
 
     // TZ-DOC-331: peers from persisted groupId (full list), not selection race.
     const peers = resolvePositionedDragPeers(this.block(), this.allBlocks(), this.groupBlocks());
+    // Geometry lock on any peer freezes the whole drag set.
+    if (peers.some((p) => !!p.locked)) return;
     const groupLayouts = peers
       .filter((b) => b.layout)
       .map((b) => ({ block: b, layout: b.layout! }));
@@ -980,7 +1040,74 @@ export class BlockRendererComponent {
       height: Math.min(1, this.sizeEditHeightPx() / Math.max(1, paper.clientHeight)),
     });
     this.sizeEditOpen.set(false);
+    this.lastAutoFitKey = this.contentFitKey();
     this.layoutChanges.emit([{ block: this.block(), layout: next }]);
+  }
+
+  /** Image finished loading — re-measure frame to natural aspect height. */
+  protected onPositionedContentReady(): void {
+    if (this.frozen() || !this.state.isPositioned()) return;
+    this.lastAutoFitKey = null;
+    this.scheduleAutoFit(this.contentFitKey());
+  }
+
+  private contentFitKey(): string {
+    const b = this.block();
+    if (!b.layout) return '';
+    return [
+      blockKey(b),
+      b.type,
+      b.content ?? '',
+      String(b.columns?.length ?? 0),
+      this.state.imageUrl() ?? '',
+      String(this.state.tableRows().length),
+    ].join('|');
+  }
+
+  private scheduleAutoFit(key: string): void {
+    if (!key) return;
+    if (this.autoFitTimer) clearTimeout(this.autoFitTimer);
+    this.autoFitTimer = setTimeout(() => {
+      this.autoFitTimer = null;
+      this.runAutoFit(key);
+    }, 48);
+  }
+
+  /**
+   * Persist layout.height so the gold frame / PDF box match painted content.
+   * Default insert height is ~0.06 (too short) → content spilled below the frame.
+   */
+  private runAutoFit(key: string): void {
+    if (this.frozen() || this.state.layoutResize()) return;
+    if (key !== this.contentFitKey()) return;
+
+    const root = this.host.nativeElement as HTMLElement;
+    const host = root.querySelector('.block-renderer--positioned') as HTMLElement | null;
+    const paper = root.closest('.pi-canvas-page-paper') as HTMLElement | null;
+    const layout = this.block().layout;
+    if (!host || !paper || !layout || paper.clientHeight <= 0) return;
+
+    // height:auto already wraps content — measure the painted box
+    const contentPx = Math.ceil(host.getBoundingClientRect().height);
+    if (!(contentPx > 0)) return;
+
+    const needed = contentPx / paper.clientHeight;
+    const current = layout.height ?? 0.06;
+    const pad = 0.01;
+    if (needed <= current + 0.005) {
+      this.lastAutoFitKey = key;
+      return;
+    }
+
+    const maxH = Math.max(0.001, 1 - layout.y);
+    const nextH = Math.min(maxH, needed + pad);
+    this.lastAutoFitKey = key;
+    this.layoutChanges.emit([
+      {
+        block: this.block(),
+        layout: normalizeBlockLayout({ ...layout, height: nextH }),
+      },
+    ]);
   }
 
   protected resizeHandleTitle(handle: LayoutResizeHandle): string {

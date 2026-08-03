@@ -140,9 +140,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
           ),
         ),
         catchError(() => {
-          // Refresh failed: state was already cleared inside auth.refresh().
-          // Route to /login unless we're already on it (avoid push/pop churn).
-          if (!router.url.startsWith('/login')) {
+          // Refresh failed. Navigate to /login only when the session was
+          // actually wiped (auth rejection). Network blips keep tokens —
+          // bouncing to /login would fight publicOnlyGuard (still authed).
+          if (!auth.accessToken() && !auth.refreshToken() && !router.url.startsWith('/login')) {
             void router.navigate(['/login']);
           }
           // Surface the original 401 to the caller (e.g. so it can show a toast).

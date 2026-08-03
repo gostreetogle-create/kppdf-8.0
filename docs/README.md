@@ -9,7 +9,9 @@
 docs/
 ├── README.md                      ← этот файл (индекс docs/)
 ├── AI-AGENT-GUIDE.md              ← онбординг ИИ-агента
+├── PO-DIARY.md                    ← [канон] кто PO, планка качества, лог сессий
 ├── TZ-AUTHORING.md                ← [канон] как писать техзадачи (domain preflight)
+├── DARK-THEME.md                  ← канон светлой/тёмной темы (графит + gold)
 ├── add-new-page.md                ← инструкция: как создать новую страницу
 ├── architecture-audit-2026-07.md  ← полный аудит архитектуры (2026-07-05)
 ├── data-model.md                  ← модель данных: 89 сущностей, 11 доменов
@@ -90,5 +92,6 @@ docs/
 - **`STABILIZATION-WAVE-2026-08.md`** — волна полок + пакет TZ (шаблон КП)
 - **`DIALOG-COOKBOOK.md`** — канон PiDialog (обязателен агентам)
 - **`UX-FORM-CANON.md`** — валидация без прыжков layout (красная рамка, не выталкивающий текст)
+- **`DARK-THEME.md`** — канон светлой и тёмной темы (Cool Graphite & Gold)
 - **`SESSION-2026-08-02-DEPLOY.md`** — карта вечернего деплоя / фиксов / завтрашний чеклист
 - **`agents/LM-STUDIO-AGENT.md`** — локальный Qwen helper (LIMITED_HELPER)

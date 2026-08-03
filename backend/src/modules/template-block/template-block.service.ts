@@ -43,6 +43,7 @@ export class TemplateBlockService {
         : undefined,
       source: this.normalizeSource(dto.source),
       groupId: dto.groupId ?? null,
+      locked: dto.locked ?? false,
       isActive: dto.isActive ?? true,
     });
   }
@@ -122,6 +123,7 @@ export class TemplateBlockService {
     }
     if (dto.source !== undefined) doc.source = this.normalizeSource(dto.source);
     if (dto.groupId !== undefined) doc.groupId = dto.groupId;
+    if (dto.locked !== undefined) doc.locked = dto.locked;
     if (dto.isActive !== undefined) doc.isActive = dto.isActive;
     return doc.save();
   }

@@ -1,14 +1,15 @@
 # Компонент: Инспектор свойств (BuilderInspectorComponent)
 
-**Краткое описание:** Правая панель «Свойства» конструктора документов. Визуальный канон зеркалит верхнюю палитру (`BuilderToolPane`): 13px uppercase brand, hairline-секции, компактные контролы, `var(--color-*)`, без Inter/hex. Signal-bound поля; родитель (`BuilderPage`) делает PATCH.
+**Краткое описание:** Правая панель «Свойства» конструктора. Visual canon Paper & Ink.
+Signal-bound поля; родитель (`BuilderPage`) делает PATCH.
 
 ## Route
 
-Нет собственного роута. Дочерний компонент `BuilderPage`.
+Нет собственного роута. Дочерний `BuilderPage`.
 
 ```
 BuilderPage
-├── BuilderToolPaneComponent     (сверху, палитра)
+├── BuilderToolPaneComponent     (слева, rail + flyout)
 ├── BuilderCanvasComponent       (центр)
 └── BuilderInspectorComponent   ← этот компонент (справа, 320px)
 ```
@@ -40,8 +41,14 @@ BuilderPage
 |------|---------|-------------------|
 | **A Document** | нет блока, count=0, не template | Контекст («Документ» + сводка) → Привязка к сетке |
 | **B Template** | `templateSelected` | Контекст («Шаблон») → Стиль страницы → Фон |
-| **C Multi** | count>0, нет single block | Контекст → Геометрия → Группа → Слой → Опасная зона |
-| **D Single** | `block` set | Контекст → **Геометрия** → Содержимое → Стиль → Слой → Опасная зона |
+| **C Multi** | count>0, нет single block | Контекст → Геометрия (+lock) → Группа → Слой → Опасная зона |
+| **D Single** | `block` set | Контекст → **Геометрия (+lock)** → Содержимое → Стиль → Слой → Опасная зона |
+
+### Geometry lock (2026-08-03)
+
+- Toggle «Заблокировать / Разблокировать» в «Геометрия» → PATCH `{ locked }`.
+- При `selectionLocked()`: geometry inputs, margins, layer buttons, delete, image overlay — disabled.
+- Смысл: поставить блок → закрепить → не сдвинуть мышкой случайно (не путать с preview).
 
 Правила:
 

@@ -20,6 +20,8 @@ import {
   ChevronUp,
   ChevronDown,
   ChevronsDown,
+  Lock,
+  Unlock,
 } from 'lucide-angular';
 import {
   BLOCK_TYPE_LABELS,
@@ -106,7 +108,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 (checkedChange)="onSnapEnabledChange($event)"
               />
             </label>
-            <div class="field">
+            <label class="field">
               <span class="field__label">Шаг сетки (px)</span>
               <input
                 class="field__input pi-focus-ring"
@@ -117,8 +119,8 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 [value]="localGridSize()"
                 (input)="onGridSizeInput($event)"
               />
-            </div>
-            <div class="field">
+            </label>
+            <label class="field">
               <span class="field__label">Отступ от краёв (px)</span>
               <input
                 class="field__input pi-focus-ring"
@@ -128,7 +130,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 [value]="localBoundaryPadding()"
                 (input)="onBoundaryPaddingInput($event)"
               />
-            </div>
+            </label>
           </div>
         </section>
       } @else if (templateSelected() && template(); as t) {
@@ -141,7 +143,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
 
         <section class="insp-section" data-test="insp-section-page-style">
           <h3 class="insp-section__title" data-test="insp-section-header">Стиль страницы</h3>
-          <div class="field">
+          <label class="field">
             <div class="field__row-header">
               <span class="field__label">Прозрачность фона</span>
               <span class="field__value">{{ opacityPercent() }}%</span>
@@ -154,8 +156,9 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
               [value]="t.backgroundOpacity"
               (input)="onOpacityInput($event)"
               class="field__slider"
+              aria-label="Прозрачность фона"
             />
-          </div>
+          </label>
           <label class="field field--row">
             <span class="field__label">
               <lucide-icon [img]="HashIcon" [size]="14"></lucide-icon>
@@ -238,6 +241,20 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
 
         <section class="insp-section" data-test="insp-section-geometry">
           <h3 class="insp-section__title" data-test="insp-section-header">Геометрия</h3>
+          <button
+            type="button"
+            class="lock-toggle pi-focus-ring"
+            [class.lock-toggle--on]="selectionLocked()"
+            (click)="onToggleLock()"
+            data-test="insp-lock-toggle"
+            [attr.aria-pressed]="selectionLocked()"
+          >
+            <lucide-icon
+              [img]="selectionLocked() ? LockIcon : UnlockIcon"
+              [size]="13"
+            ></lucide-icon>
+            {{ selectionLocked() ? 'Разблокировать' : 'Заблокировать' }}
+          </button>
           <div class="margin-controls">
             <label class="margin-controls__item">
               <span class="margin-controls__label">Слева</span>
@@ -248,6 +265,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                   min="0"
                   [value]="multiMarginLeftPx()"
                   (input)="onMultiMarginLeftInput($event)"
+                  [disabled]="selectionLocked()"
                   placeholder="—"
                 />
                 <span class="margin-controls__unit">px</span>
@@ -262,6 +280,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                   min="0"
                   [value]="multiMarginRightPx()"
                   (input)="onMultiMarginRightInput($event)"
+                  [disabled]="selectionLocked()"
                   placeholder="—"
                 />
                 <span class="margin-controls__unit">px</span>
@@ -272,6 +291,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
             type="button"
             class="field__reset-btn pi-focus-ring"
             (click)="onMultiResetMargins()"
+            [disabled]="selectionLocked()"
           >
             <lucide-icon [img]="ResetIcon" [size]="12"></lucide-icon>
             Сбросить отступы
@@ -306,6 +326,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 (click)="onLayerOrder('front')"
                 title="На передний план"
                 aria-label="На передний план"
+                [disabled]="selectionLocked()"
               >
                 <lucide-icon [img]="LayerFrontIcon" [size]="14"></lucide-icon>
               </button>
@@ -315,6 +336,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 (click)="onLayerOrder('raise')"
                 title="Выше"
                 aria-label="Выше"
+                [disabled]="selectionLocked()"
               >
                 <lucide-icon [img]="LayerRaiseIcon" [size]="14"></lucide-icon>
               </button>
@@ -324,6 +346,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 (click)="onLayerOrder('lower')"
                 title="Ниже"
                 aria-label="Ниже"
+                [disabled]="selectionLocked()"
               >
                 <lucide-icon [img]="LayerLowerIcon" [size]="14"></lucide-icon>
               </button>
@@ -333,6 +356,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 (click)="onLayerOrder('back')"
                 title="На задний план"
                 aria-label="На задний план"
+                [disabled]="selectionLocked()"
               >
                 <lucide-icon [img]="LayerBackIcon" [size]="14"></lucide-icon>
               </button>
@@ -346,9 +370,10 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
             variant="destructive"
             size="sm"
             (click)="deleteSelected.emit()"
+            [disabled]="selectionLocked()"
             ariaLabel="Удалить выбранные блоки"
           >
-            Удалить ({{ selectedCount() }})
+            {{ selectionLocked() ? 'Сначала разблокируйте' : 'Удалить (' + selectedCount() + ')' }}
           </app-pi-button>
         </section>
       } @else if (block(); as b) {
@@ -381,6 +406,20 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
 
         <section class="insp-section" data-test="insp-section-geometry">
           <h3 class="insp-section__title" data-test="insp-section-header">Геометрия</h3>
+          <button
+            type="button"
+            class="lock-toggle pi-focus-ring"
+            [class.lock-toggle--on]="selectionLocked()"
+            (click)="onToggleLock()"
+            data-test="insp-lock-toggle"
+            [attr.aria-pressed]="selectionLocked()"
+          >
+            <lucide-icon
+              [img]="selectionLocked() ? LockIcon : UnlockIcon"
+              [size]="13"
+            ></lucide-icon>
+            {{ selectionLocked() ? 'Разблокировать' : 'Заблокировать' }}
+          </button>
           @if (b.layout) {
             <div class="margin-controls margin-controls--grid">
               <label class="margin-controls__item">
@@ -392,6 +431,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                     min="0"
                     [value]="layoutXpx()"
                     (input)="onLayoutXInput($event)"
+                    [disabled]="selectionLocked()"
                   />
                   <span class="margin-controls__unit">px</span>
                 </div>
@@ -405,6 +445,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                     min="0"
                     [value]="layoutYpx()"
                     (input)="onLayoutYInput($event)"
+                    [disabled]="selectionLocked()"
                   />
                   <span class="margin-controls__unit">px</span>
                 </div>
@@ -418,6 +459,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                     min="20"
                     [value]="layoutWidthPx()"
                     (input)="onLayoutWidthInput($event)"
+                    [disabled]="selectionLocked()"
                   />
                   <span class="margin-controls__unit">px</span>
                 </div>
@@ -431,6 +473,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                     min="20"
                     [value]="layoutHeightPx()"
                     (input)="onLayoutHeightInput($event)"
+                    [disabled]="selectionLocked()"
                   />
                   <span class="margin-controls__unit">px</span>
                 </div>
@@ -446,6 +489,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 max="2000"
                 [value]="overlayLeft()"
                 (input)="onOverlayLeftInput($event)"
+                [disabled]="selectionLocked()"
               />
             </label>
             <label class="field">
@@ -457,6 +501,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 max="2000"
                 [value]="overlayTop()"
                 (input)="onOverlayTopInput($event)"
+                [disabled]="selectionLocked()"
               />
             </label>
             <label class="field">
@@ -469,6 +514,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 [value]="imageWidth() ?? ''"
                 (input)="onImageWidthInput($event)"
                 placeholder="Авто"
+                [disabled]="selectionLocked()"
               />
             </label>
             <label class="field">
@@ -481,6 +527,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 [value]="imageHeight() ?? ''"
                 (input)="onImageHeightInput($event)"
                 placeholder="Авто"
+                [disabled]="selectionLocked()"
               />
             </label>
           } @else if (b.type === 'image') {
@@ -494,6 +541,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 [value]="imageWidth() ?? ''"
                 (input)="onImageWidthInput($event)"
                 placeholder="Авто"
+                [disabled]="selectionLocked()"
               />
             </label>
             <label class="field">
@@ -506,6 +554,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 [value]="imageHeight() ?? ''"
                 (input)="onImageHeightInput($event)"
                 placeholder="Авто"
+                [disabled]="selectionLocked()"
               />
             </label>
           } @else if (b.type === 'signature') {
@@ -518,6 +567,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 max="1200"
                 [value]="height()"
                 (input)="onHeightInput($event)"
+                [disabled]="selectionLocked()"
               />
             </label>
           } @else {
@@ -532,6 +582,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                     [max]="maxMarginLeftPx()"
                     [value]="marginLeftPx()"
                     (input)="onMarginLeftInput($event)"
+                    [disabled]="selectionLocked()"
                   />
                   <span class="margin-controls__unit">px</span>
                 </div>
@@ -546,6 +597,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                     [max]="maxMarginRightPx()"
                     [value]="marginRightPx()"
                     (input)="onMarginRightInput($event)"
+                    [disabled]="selectionLocked()"
                   />
                   <span class="margin-controls__unit">px</span>
                 </div>
@@ -555,7 +607,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
               type="button"
               class="field__reset-btn pi-focus-ring"
               (click)="onResetMargins()"
-              [disabled]="marginLeftPx() === 0 && marginRightPx() === 0"
+              [disabled]="selectionLocked() || (marginLeftPx() === 0 && marginRightPx() === 0)"
             >
               <lucide-icon [img]="ResetIcon" [size]="12"></lucide-icon>
               Сбросить отступы
@@ -690,6 +742,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 class="field__slider"
                 [value]="blockBgOpacityPercent()"
                 (input)="onBlockBgOpacityInput($event)"
+                aria-label="Прозрачность фона блока"
               />
               <button
                 type="button"
@@ -707,6 +760,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
               <app-pi-switch
                 [checked]="imageOverlay()"
                 (checkedChange)="onImageOverlayToggle($event)"
+                [disabled]="selectionLocked()"
               />
             </label>
           }
@@ -722,6 +776,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 (click)="onLayerOrder('front')"
                 title="На передний план"
                 aria-label="На передний план"
+                [disabled]="selectionLocked()"
               >
                 <lucide-icon [img]="LayerFrontIcon" [size]="14"></lucide-icon>
               </button>
@@ -731,6 +786,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 (click)="onLayerOrder('raise')"
                 title="Выше"
                 aria-label="Выше"
+                [disabled]="selectionLocked()"
               >
                 <lucide-icon [img]="LayerRaiseIcon" [size]="14"></lucide-icon>
               </button>
@@ -740,6 +796,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 (click)="onLayerOrder('lower')"
                 title="Ниже"
                 aria-label="Ниже"
+                [disabled]="selectionLocked()"
               >
                 <lucide-icon [img]="LayerLowerIcon" [size]="14"></lucide-icon>
               </button>
@@ -749,6 +806,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                 (click)="onLayerOrder('back')"
                 title="На задний план"
                 aria-label="На задний план"
+                [disabled]="selectionLocked()"
               >
                 <lucide-icon [img]="LayerBackIcon" [size]="14"></lucide-icon>
               </button>
@@ -763,8 +821,9 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
             size="sm"
             (click)="onDelete()"
             ariaLabel="Удалить блок"
+            [disabled]="selectionLocked()"
           >
-            Удалить блок
+            {{ selectionLocked() ? 'Сначала разблокируйте' : 'Удалить блок' }}
           </app-pi-button>
         </section>
       }
@@ -778,7 +837,9 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         flex-shrink: 0;
         height: 100%;
         overflow-y: auto;
-        background: var(--color-paper);
+        background: var(--pi-bg-elevated);
+        background-size: var(--pi-bg-elevated-size);
+        background-blend-mode: var(--pi-bg-elevated-blend);
         border-left: 1px solid var(--color-rule);
       }
 
@@ -791,7 +852,9 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         border-bottom: 1px solid var(--color-rule);
         position: sticky;
         top: 0;
-        background: var(--color-paper-2);
+        background: var(--pi-bg-elevated);
+        background-size: var(--pi-bg-elevated-size);
+        background-blend-mode: var(--pi-bg-elevated-blend);
         z-index: 10;
         min-height: 36px;
         box-sizing: border-box;
@@ -1042,6 +1105,44 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
       .margin-controls {
         display: flex;
         gap: 12px;
+      }
+
+      .lock-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 10px;
+        padding: 6px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        font-family: var(--font-mono);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--color-gold);
+        background: color-mix(in oklch, var(--color-gold) 10%, var(--color-paper));
+        border: 1px solid color-mix(in oklch, var(--color-gold) 40%, var(--color-rule));
+        border-radius: 2px;
+        cursor: pointer;
+        transition:
+          background 120ms ease,
+          border-color 120ms ease,
+          color 120ms ease;
+      }
+
+      .lock-toggle:hover {
+        background: color-mix(in oklch, var(--color-gold) 18%, var(--color-paper));
+      }
+
+      .lock-toggle--on {
+        color: var(--color-paper);
+        background: var(--color-gold);
+        border-color: var(--color-gold);
+      }
+
+      .lock-toggle--on:hover {
+        filter: brightness(1.05);
       }
 
       .margin-controls--grid {
@@ -1497,6 +1598,29 @@ export class BuilderInspectorComponent {
   protected readonly LayerRaiseIcon = ChevronUp;
   protected readonly LayerLowerIcon = ChevronDown;
   protected readonly LayerBackIcon = ChevronsDown;
+  protected readonly LockIcon = Lock;
+  protected readonly UnlockIcon = Unlock;
+
+  /** True when the single selected block — or every multi-selected block — is locked. */
+  protected readonly selectionLocked = computed(() => {
+    const b = this.block();
+    if (b) return !!b.locked;
+    const sel = this.selectedBlocks();
+    return sel.length > 0 && sel.every((x) => !!x.locked);
+  });
+
+  /** Toggle geometry lock for current selection (single or multi). */
+  protected onToggleLock(): void {
+    const next = !this.selectionLocked();
+    const single = this.block();
+    if (single?._id) {
+      this.update.emit({ _id: single._id, locked: next });
+      return;
+    }
+    for (const sb of this.selectedBlocks()) {
+      if (sb._id) this.update.emit({ _id: sb._id, locked: next });
+    }
+  }
 
   // Local form-state signals (mirror the selected block for fast edits).
   protected readonly title = signal<string>('');
@@ -1661,6 +1785,7 @@ export class BuilderInspectorComponent {
   }
 
   protected onHeightInput(event: Event): void {
+    if (this.selectionLocked()) return;
     const v = Number((event.target as HTMLInputElement).value) || 100;
     this.height.set(v);
     this.patch({ height: v });
@@ -1732,6 +1857,7 @@ export class BuilderInspectorComponent {
   }
 
   protected onDelete(): void {
+    if (this.selectionLocked()) return;
     const b = this.block();
     if (!b?._id) return;
     this.delete.emit(b._id);
@@ -1844,6 +1970,7 @@ export class BuilderInspectorComponent {
   }
 
   protected onImageWidthInput(event: Event): void {
+    if (this.selectionLocked()) return;
     const v = (event.target as HTMLInputElement).value;
     const num = v ? Number(v) : null;
     this.imageWidth.set(num);
@@ -1851,6 +1978,7 @@ export class BuilderInspectorComponent {
   }
 
   protected onImageHeightInput(event: Event): void {
+    if (this.selectionLocked()) return;
     const v = (event.target as HTMLInputElement).value;
     const num = v ? Number(v) : null;
     this.imageHeight.set(num);
@@ -1858,17 +1986,20 @@ export class BuilderInspectorComponent {
   }
 
   protected onImageOverlayToggle(checked: boolean): void {
+    if (this.selectionLocked()) return;
     this.imageOverlay.set(checked);
     this.patchSettings({ overlay: checked });
   }
 
   protected onOverlayLeftInput(event: Event): void {
+    if (this.selectionLocked()) return;
     const v = Number((event.target as HTMLInputElement).value) || 0;
     this.overlayLeft.set(v);
     this.patchSettings({ overlayLeft: v });
   }
 
   protected onOverlayTopInput(event: Event): void {
+    if (this.selectionLocked()) return;
     const v = Number((event.target as HTMLInputElement).value) || 0;
     this.overlayTop.set(v);
     this.patchSettings({ overlayTop: v });
@@ -1902,6 +2033,7 @@ export class BuilderInspectorComponent {
    * reindex), so a no-op action produces zero network traffic.
    */
   protected onLayerOrder(mode: LayerOrderMode): void {
+    if (this.selectionLocked()) return;
     const targets = this.layerOrderTargets();
     if (targets.length === 0) return;
     const targetIds = new Set(targets.map((b) => blockKey(b)));
@@ -1937,24 +2069,28 @@ export class BuilderInspectorComponent {
   // ── TZ-259.4: canonical layout geometry handlers (positioned blocks) ──
 
   protected onLayoutXInput(event: Event): void {
+    if (this.selectionLocked()) return;
     const px = Number((event.target as HTMLInputElement).value) || 0;
     this.layoutXpx.set(Math.max(0, px));
     this.emitLayoutPatch();
   }
 
   protected onLayoutYInput(event: Event): void {
+    if (this.selectionLocked()) return;
     const px = Number((event.target as HTMLInputElement).value) || 0;
     this.layoutYpx.set(Math.max(0, px));
     this.emitLayoutPatch();
   }
 
   protected onLayoutWidthInput(event: Event): void {
+    if (this.selectionLocked()) return;
     const px = Number((event.target as HTMLInputElement).value) || 0;
     this.layoutWidthPx.set(Math.max(20, px));
     this.emitLayoutPatch();
   }
 
   protected onLayoutHeightInput(event: Event): void {
+    if (this.selectionLocked()) return;
     const px = Number((event.target as HTMLInputElement).value) || 0;
     this.layoutHeightPx.set(Math.max(20, px));
     this.emitLayoutPatch();
@@ -1979,6 +2115,7 @@ export class BuilderInspectorComponent {
   // ── Margin handlers (single block) ──
 
   protected onMarginLeftInput(event: Event): void {
+    if (this.selectionLocked()) return;
     const px = Number((event.target as HTMLInputElement).value) || 0;
     const percent = Math.max(0, Math.min(80, (px / this.paperWidth()) * 100));
     const rightPercent = 100 - this.blockWidth() - this.blockMarginLeft();
@@ -1989,6 +2126,7 @@ export class BuilderInspectorComponent {
   }
 
   protected onMarginRightInput(event: Event): void {
+    if (this.selectionLocked()) return;
     const px = Number((event.target as HTMLInputElement).value) || 0;
     const rightPercent = Math.max(0, Math.min(80, (px / this.paperWidth()) * 100));
     const newWidth = Math.max(20, 100 - this.blockMarginLeft() - rightPercent);
@@ -1997,6 +2135,7 @@ export class BuilderInspectorComponent {
   }
 
   protected onResetMargins(): void {
+    if (this.selectionLocked()) return;
     this.blockWidth.set(100);
     this.blockMarginLeft.set(0);
     this.emitMarginSettings();
@@ -2016,18 +2155,21 @@ export class BuilderInspectorComponent {
   // ── Margin handlers (multi-select) ──
 
   protected onMultiMarginLeftInput(event: Event): void {
+    if (this.selectionLocked()) return;
     const px = Number((event.target as HTMLInputElement).value) || 0;
     const percent = Math.max(0, Math.min(80, (px / this.paperWidth()) * 100));
     this.emitMultiMarginPatch({ marginLeft: Math.round(percent) });
   }
 
   protected onMultiMarginRightInput(event: Event): void {
+    if (this.selectionLocked()) return;
     const px = Number((event.target as HTMLInputElement).value) || 0;
     const rightPercent = Math.max(0, Math.min(80, (px / this.paperWidth()) * 100));
     this.emitMultiMarginPatch({ rightMarginPercent: Math.round(rightPercent) });
   }
 
   protected onMultiResetMargins(): void {
+    if (this.selectionLocked()) return;
     this.emitMultiMarginPatch({ marginLeft: 0, rightMarginPercent: 0 });
   }
 

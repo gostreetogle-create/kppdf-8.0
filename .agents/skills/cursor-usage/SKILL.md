@@ -46,18 +46,21 @@ description: >-
 ## Чтение
 
 1. `docs/AI-AGENT-GUIDE.md` § ролей  
-2. **Если пишешь TZ:** `docs/TZ-AUTHORING.md` (обязательно) + skill `tz-authoring`  
-3. Целевой `tasks/<TZ>.md`  
-4. `docs/agent-checklists/_active-map.md`  
-5. Эталон спеки: `tasks/Z-001-inventory-write-transactions.md` /
+2. **`docs/PO-DIARY.md` §1–§4** — кто PO, планка качества, как хочет работать (обязательно)  
+3. **Если пишешь TZ:** `docs/TZ-AUTHORING.md` (обязательно) + skill `tz-authoring`  
+4. Целевой `tasks/<TZ>.md`  
+5. `docs/agent-checklists/_active-map.md`  
+6. Эталон спеки: `tasks/Z-001-inventory-write-transactions.md` /
    `tasks/_backlog/z-series/backend/inventory/Z-001-inventory-write-transactions.md`
 
 ## Цикл
 
-1. Цель PO → 2. Спека / smell-note → 3. One-liner исполнителю → 4. Commit+push своих файлов.
+1. Цель PO → 2. Спека / smell-note / (при явном «сделай» — исполнение в рамках сессии) → 3. One-liner исполнителю при Mode A → 4. Commit+push своих docs/TZ.
+5. **Конец сессии:** если новое понимание PO — обновить `docs/PO-DIARY.md` §5 (+ канон при необходимости).
 
 Z-001 active: `tasks/Z-001-inventory-write-transactions.md` (исполнитель local).  
-Mode A: hard ban на product code. Updated: 2026-08-02.
+Mode A: hard ban на product code **пока PO не сказал явно имплементировать в этом чате**.  
+PO Diary: `.cursor/rules/po-diary.mdc`. Updated: 2026-08-03.
 
 ## Executor report (auto) — read + ≤200-token verdict
 

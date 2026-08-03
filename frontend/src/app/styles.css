@@ -9,7 +9,7 @@
 :root {
   --dialog-bg: var(--color-paper); /* opaque panel surface */
   --dialog-text: var(--color-ink); /* AAA contrast on --dialog-bg (TZ-AUDIT-9) */
-  --dialog-shadow: 0 8px 32px rgba(0, 0, 0, 0.24); /* light-mode shadow (per user spec) */
+  --dialog-shadow: 0 12px 40px oklch(0.35 0.02 260 / 0.12), 0 0 0 1px oklch(0.72 0.12 86 / 0.16);
   --dialog-radius: 8px; /* consistent radius — 8px is desktop-app standard */
   --overlay-bg: oklch(0% 0 0 / 0.5); /* 50% dimmer (desktop-app, replaces editorial 30%) */
   --overlay-bg-fallback: rgb(0 0 0 / 0.5); /* CSS Color L4 fallback on L5 parse failure */
@@ -17,8 +17,8 @@
   --font-heading-dialog: 'display';
 }
 .dark {
-  /* Dark surfaces need a heavier shadow to visually detach from the muted backdrop. */
-  --dialog-shadow: 0 8px 32px rgba(0, 0, 0, 0.48);
+  /* Cool graphite + gold edge */
+  --dialog-shadow: 0 16px 48px oklch(0.1 0.01 260 / 0.55), 0 0 0 1px oklch(0.84 0.145 86 / 0.18);
 }
 @layer components {
   .pi-overlay-backdrop {

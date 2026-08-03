@@ -48,7 +48,8 @@ export class AuthService {
   readonly accessToken = signal<string | null>(this.read(ACCESS_KEY));
   readonly refreshToken = signal<string | null>(this.read(REFRESH_KEY));
   readonly user = signal<AuthUser | null>(null);
-  readonly isAuthenticated = computed(() => !!this.accessToken());
+  /** Session alive if we have access OR a refresh token to renew it. */
+  readonly isAuthenticated = computed(() => !!this.accessToken() || !!this.refreshToken());
 
   /**
    * Single-flight: while a refresh is in progress, every concurrent caller
@@ -60,37 +61,37 @@ export class AuthService {
    */
   private refreshInFlight: Promise<string> | null = null;
 
+  /**
+   * Set when bootstrap kept tokens after a transient /auth/me failure
+   * (network/5xx) without hydrating `user`. Cleared on login, clear, or
+   * successful hydrate — so refresh() does not spam /auth/me on every
+   * normal token rotation.
+   */
+  private needsUserHydration = false;
+
   // --- lifecycle ---
 
   /**
-   * Called once via `provideAppInitializer`. If a token is present in
-   * localStorage, validate it against /auth/me. If the access token has
-   * expired (401) but a refresh token is still valid, transparently
-   * refresh and retry /auth/me â€” long-lived sessions survive access-
-   * token expiry without forcing re-login. On any unrecoverable error
-   * clear state and let the AuthGuard redirect to /login.
+   * Called once via `provideAppInitializer`. Restores session from
+   * localStorage: valid access → /auth/me; expired access + refresh →
+   * refresh then /auth/me; refresh-only → refresh then /auth/me.
    *
-   * Note: the `authInterceptor` deliberately skips its own refresh
-   * handling for /auth/me (see its docstring) to avoid an infinite
-   * loop, so the refresh logic lives here.
-   *
-   * Error-handling note: 401/400 from /auth/me and /auth/refresh are
-   * EXPECTED at bootstrap with no valid session â€” this is normal first-
-   * load behaviour, not an error condition. We still log them via
-   * Chrome's network panel (browser-level, unavoidable) but suppress
-   * RxJS's default "unhandled error in observable" log + the zone.js
-   * stack trace that follows it, by catching at the Observable level
-   * with `catchError` and converting errors to plain values. The
-   * bootstrap flow then inspects the status code and acts accordingly.
+   * Tokens are cleared ONLY on definitive auth rejection (401/403).
+   * Network blips and 5xx must NOT wipe the refresh token — otherwise
+   * every backend restart / proxy hiccup forces a full re-login.
    */
   async bootstrap(): Promise<void> {
-    if (!this.accessToken()) return;
+    if (!this.accessToken() && !this.refreshToken()) return;
 
-    // Suppress RxJS global error log: catch at the Observable level
-    // and convert to a plain `{ ok, status }` value. The HTTP call may
-    // still log its 4xx via the browser's network panel (unavoidable),
-    // but the rxjs+zone.js stack trace that previously followed it is
-    // gone.
+    // Renew access before /auth/me when missing or JWT past exp.
+    if (this.refreshToken() && (!this.accessToken() || this.isAccessExpired())) {
+      try {
+        await this.refresh();
+      } catch {
+        return; // auth failure → refresh() cleared; network → tokens kept
+      }
+    }
+
     const meResult = await firstValueFrom(
       this.http.get<AuthUser>(`${this.baseUrl}/auth/me`).pipe(
         map((user) => ({ ok: true as const, user })),
@@ -103,16 +104,14 @@ export class AuthService {
 
     if (meResult.ok) {
       this.user.set(meResult.user);
+      this.needsUserHydration = false;
       return;
     }
 
-    // 401 with a refresh token â†’ try to refresh, then retry /auth/me.
-    // Any other status (400, 403, 5xx, network) â†’ give up and clear.
+    // 401 with a refresh token → try to refresh, then retry /auth/me.
     if (meResult.status === 401 && this.refreshToken()) {
       try {
         await this.refresh();
-        // refresh() updated the access token signal; retry /auth/me
-        // with the same silent-error pattern.
         const retry = await firstValueFrom(
           this.http
             .get<AuthUser>(`${this.baseUrl}/auth/me`)
@@ -120,14 +119,28 @@ export class AuthService {
         );
         if (retry) {
           this.user.set(retry);
+          this.needsUserHydration = false;
           return;
         }
+        // Refresh OK but /me still rejected → session unusable.
+        this.clear();
       } catch {
-        // refresh() clears on its own failure; nothing else to do.
+        // refresh() clears on auth failure; network errors keep tokens.
+        if (this.refreshToken() || this.accessToken()) {
+          this.needsUserHydration = true;
+        }
       }
+      return;
     }
 
-    this.clear();
+    // Definitive unauthenticated without refresh.
+    if (meResult.status === 401 || meResult.status === 403) {
+      this.clear();
+      return;
+    }
+
+    // Transient (network status 0, 5xx, …): keep tokens for the next load.
+    this.needsUserHydration = true;
   }
 
   async login(username: string, password: string): Promise<void> {
@@ -148,6 +161,7 @@ export class AuthService {
     }
     this.setTokens(res.data.access, res.data.refresh);
     this.user.set(res.data.user);
+    this.needsUserHydration = false;
   }
 
   async logout(): Promise<void> {
@@ -202,7 +216,13 @@ export class AuthService {
       );
 
       if (!res.ok) {
-        this.clear();
+        // Wipe local session only on definitive auth rejection.
+        // status 0 (network) / 5xx must keep refresh so a backend blip
+        // does not force re-login.
+        const status = res.error instanceof HttpErrorResponse ? res.error.status : 0;
+        if (status === 401 || status === 403 || status === 400) {
+          this.clear();
+        }
         // Runtime + type guard: refresh() in practice always rejects
         // with an HttpErrorResponse (the only source is the http.post
         // observable whose catchError sees HttpErrorResponse errors).
@@ -226,12 +246,36 @@ export class AuthService {
 
       // Keep the existing refresh token; only the access token rotates.
       this.setTokens(res.access, refresh);
+      // Recover profile after a transient bootstrap miss (tokens kept, user null).
+      void this.hydrateUserIfNeeded();
       return res.access;
     })().finally(() => {
       this.refreshInFlight = null;
     });
 
     return this.refreshInFlight;
+  }
+
+  /** Load /auth/me only after bootstrap marked a zombie (tokens, no user). */
+  private async hydrateUserIfNeeded(): Promise<void> {
+    if (!this.needsUserHydration || this.user() || !this.accessToken()) return;
+    try {
+      const me = await firstValueFrom(
+        this.http.get<AuthUser>(`${this.baseUrl}/auth/me`).pipe(catchError(() => of(null))),
+      );
+      if (me) {
+        this.user.set(me);
+        this.needsUserHydration = false;
+      }
+    } catch {
+      // leave user null; logout still available via isAuthenticated
+    }
+  }
+
+  /** Public recovery: tokens exist but `user` is null (zombie after backend blip). */
+  ensureUser(): Promise<void> {
+    this.needsUserHydration = true;
+    return this.hydrateUserIfNeeded();
   }
 
   // --- helpers ---
@@ -252,7 +296,27 @@ export class AuthService {
     this.accessToken.set(null);
     this.refreshToken.set(null);
     this.user.set(null);
+    this.needsUserHydration = false;
     localStorage.removeItem(ACCESS_KEY);
     localStorage.removeItem(REFRESH_KEY);
+  }
+
+  /**
+   * True when access JWT is past `exp` (30s skew).
+   * Non-JWT / malformed tokens → false (let /auth/me decide; tests use opaque stubs).
+   */
+  private isAccessExpired(): boolean {
+    const token = this.accessToken();
+    if (!token) return true;
+    const parts = token.split('.');
+    if (parts.length !== 3 || !parts[1]) return false;
+    try {
+      const json = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
+      const payload = JSON.parse(json) as { exp?: number };
+      if (typeof payload.exp !== 'number') return false;
+      return payload.exp * 1000 <= Date.now() + 30_000;
+    } catch {
+      return false;
+    }
   }
 }

@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  afterNextRender,
+} from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -177,7 +183,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     <div class="h-screen bg-paper text-ink font-body flex flex-col overflow-hidden">
       <div class="pi-page-frame w-full flex-1 flex flex-col min-h-0">
         <header
-          class="sticky top-0 z-30 bg-paper/95 supports-[backdrop-filter]:backdrop-blur-sm
+          class="sticky top-0 z-30 pi-marble supports-[backdrop-filter]:backdrop-blur-sm
                  hairline-b pi-edge-bleed shrink-0"
         >
           <div class="h-14 flex items-center justify-between gap-4">
@@ -211,9 +217,9 @@ const NAV_CATEGORIES: NavCategory[] = [
                 <span class="font-mono text-[10px] tracking-wider"> UI Kit </span>
               </a>
               <app-theme-toggle />
-              @if (user(); as u) {
+              @if (isAuthenticated()) {
                 <span class="text-sm text-muted-foreground hidden sm:inline">
-                  {{ u.displayName || u.username }}
+                  {{ user()?.displayName || user()?.username || 'Сессия' }}
                 </span>
                 <button
                   type="button"
@@ -229,18 +235,24 @@ const NAV_CATEGORIES: NavCategory[] = [
           </div>
         </header>
 
-        <main class="flex-1 min-w-0 pt-page-y overflow-y-auto">
+        <main
+          class="flex-1 min-w-0 min-h-0 flex flex-col overflow-y-auto"
+          [class.pt-page-y]="!denseMain()"
+          [class.pt-0]="denseMain()"
+        >
           <router-outlet />
         </main>
 
-        <footer
-          class="border-t hairline border-sunrise-warm py-2 px-page-x
-                 font-mono text-[10px] uppercase tracking-[0.12em]
-                 text-muted-foreground flex flex-wrap justify-between gap-2 shrink-0"
-        >
-          <span>© 2026 KPPDF · 8.0</span>
-          <span>Внутренний сервис · 2026</span>
-        </footer>
+        @if (!denseMain()) {
+          <footer
+            class="border-t hairline border-sunrise-warm py-2 px-page-x
+                   font-mono text-[10px] uppercase tracking-[0.12em]
+                   text-muted-foreground flex flex-wrap justify-between gap-2 shrink-0"
+          >
+            <span>© 2026 KPPDF · 8.0</span>
+            <span>Внутренний сервис · 2026</span>
+          </footer>
+        }
       </div>
     </div>
   `,
@@ -254,6 +266,17 @@ export class AppLayoutComponent {
   private readonly router = inject(Router);
 
   protected readonly user = this.auth.user;
+  /** Tokens present — show logout even if /auth/me has not hydrated user yet. */
+  protected readonly isAuthenticated = this.auth.isAuthenticated;
+
+  constructor() {
+    // Backend was down at bootstrap → tokens kept, user null. Retry once UI mounts.
+    afterNextRender(() => {
+      if (this.isAuthenticated() && !this.user()) {
+        void this.auth.ensureUser();
+      }
+    });
+  }
 
   /**
    * TZ-256 §ШАГ 3 — capability-filtered nav as a `computed` signal.
@@ -291,6 +314,12 @@ export class AppLayoutComponent {
   );
 
   /**
+   * Full-bleed workspace routes (builder): no main top padding / site footer.
+   * Catalog pages keep `pt-page-y` + footer.
+   */
+  protected readonly denseMain = computed(() => isDenseWorkspaceUrl(this.currentUrl()));
+
+  /**
    * Returns the id of the active category when ANY of its sub-paths is
    * the current URL (with `/` boundary check). Null when on a route not
    * covered by any nav category (e.g. `/login`).
@@ -315,4 +344,10 @@ export class AppLayoutComponent {
     await this.auth.logout();
     await this.router.navigateByUrl('/login');
   }
+}
+
+/** Builder (and similar) workspaces sit flush under the app header. */
+function isDenseWorkspaceUrl(url: string): boolean {
+  const path = url.split('?')[0] ?? url;
+  return /(^|\/)doc-constructor\/builder(\/|$)/.test(path);
 }

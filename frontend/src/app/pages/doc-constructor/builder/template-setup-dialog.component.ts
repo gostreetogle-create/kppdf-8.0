@@ -185,7 +185,8 @@ export interface TemplateSetupData {
       .chip--active {
         background: var(--color-sunrise-warm, #735c00);
         border-color: var(--color-sunrise-warm, #735c00);
-        color: white;
+        /* paper (not white): dark theme gold is light — white text would dissolve */
+        color: var(--color-paper, #191c1d);
       }
     `,
   ],

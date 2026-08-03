@@ -17,12 +17,14 @@ import { ChangeDetectionStrategy, Component, output, input } from '@angular/core
  *
  * Visual contract:
  *  - `flex items-center justify-end gap-2` cluster
- *  - Copy button: `pi-icon-btn` (neutral ink-on-paper hover) + Copy SVG glyph
- *  - Document button: `pi-icon-btn` (neutral) + inline FileText SVG glyph
- *  - Edit button: `pi-icon-btn` (neutral) + ✎ glyph
- *  - Delete button: `pi-icon-btn pi-icon-btn-danger`
- *    (paper→destructive hover state) + × glyph
+ *  - Copy: `pi-icon-btn pi-icon-btn-copy` (info blue) + Copy SVG
+ *  - Document: `pi-icon-btn pi-icon-btn-doc` (cool accent) + FileText SVG
+ *  - Edit: `pi-icon-btn pi-icon-btn-edit` (gold) + ✎
+ *  - Delete: `pi-icon-btn pi-icon-btn-danger` (destructive red at rest) + ×
  *  - All focused via `.pi-focus-ring` for keyboard a11y
+ *
+ * Semantic colors live in `styles.css` (`.pi-icon-btn-*`) — one place for
+ * the whole app / UI kit, not per-page overrides.
  *
  * Icon strategy: edit/delete buttons use lightweight Unicode glyphs
  * (\u270E ✎ / \u00D7 ×). Copy and document glyphs are inline SVGs mirroring
@@ -59,7 +61,7 @@ import { ChangeDetectionStrategy, Component, output, input } from '@angular/core
       @if (copyLabel() && !loading()) {
         <button
           type="button"
-          class="pi-icon-btn pi-focus-ring"
+          class="pi-icon-btn pi-icon-btn-copy pi-focus-ring"
           [attr.aria-label]="copyLabel()"
           [attr.data-test]="dataTestCopy()"
           (click)="copy.emit(row())"
@@ -84,7 +86,7 @@ import { ChangeDetectionStrategy, Component, output, input } from '@angular/core
       @if (documentLabel() && !loading()) {
         <button
           type="button"
-          class="pi-icon-btn pi-focus-ring"
+          class="pi-icon-btn pi-icon-btn-doc pi-focus-ring"
           [attr.aria-label]="documentLabel()"
           [attr.data-test]="dataTestDocument()"
           (click)="document.emit(row())"
@@ -121,7 +123,7 @@ import { ChangeDetectionStrategy, Component, output, input } from '@angular/core
         @if (showEdit()) {
           <button
             type="button"
-            class="pi-icon-btn pi-focus-ring"
+            class="pi-icon-btn pi-icon-btn-edit pi-focus-ring"
             [attr.aria-label]="editLabel()"
             [attr.data-test]="dataTestEdit()"
             (click)="edit.emit(row())"

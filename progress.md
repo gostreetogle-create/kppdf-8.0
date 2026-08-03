@@ -1,3 +1,30 @@
+## [2026-08-03] — PO Diary + pre-deploy constructor polish docs
+**Исполнитель:** Cursor (docs) + session polish
+**Статус:** Документация; продукт-полировка в WIP (деплой по сигналу PO)
+**Что сделано кратко:** Заведён живой `docs/PO-DIARY.md` (канон PO + лог) и вшит в AI-AGENT-GUIDE / GEMINI / kppdf-project / cursor-usage / `.cursor/rules/po-diary.mdc`. Обновлены builder page docs (left rail, lock, denseMain, preview read-only), DARK-THEME (без marble), progress.
+**Затронутые файлы:** `docs/PO-DIARY.md`, `docs/AI-AGENT-GUIDE.md`, `docs/README.md`, `docs/DARK-THEME.md`, `docs/pages/builder*.page.md`, `GEMINI.md`, `.agents/skills/*`, `.cursor/rules/*`
+**Критерии:** агент читает дневник на старте; обновляет §5 при новом инсайте про PO
+**Известные ограничения:** product `*.ts` polish ещё не закоммичен — деплой после VPN off по команде PO
+
+---
+
+## [2026-08-03] — Dark theme: wiring fix (Tailwind v4)
+**Исполнитель:** local-executor
+**Статус:** Build OK; PO — hard refresh + toggle dark на Materials
+**Что сделано кратко:** Корневой баг — `@layer base .dark { --color-paper }` проигрывал `@theme`. Переведено на `@custom-variant dark` + `@layer theme` `@variant dark` через `--color-*-override` (Midnight Paper & Champagne). Документ `docs/DARK-THEME.md` обновлён.
+**Затронутые файлы:** `frontend/src/styles.css`, `docs/DARK-THEME.md`
+
+---
+
+## [2026-08-03] — Dark theme: Midnight Paper & Champagne
+**Исполнитель:** local-executor
+**Статус:** Токены в styles.css; visual smoke = PO после toggle / deploy
+**Что сделано кратко:** Убран холодный Obsidian Slate. Тёмный режим: тёплый noir + угольные elevations + тонкое champagne gold; dialog edge; selection; docs/DARK-THEME.md.
+**Затронутые файлы:** `frontend/src/styles.css`, `frontend/src/app/styles.css`, `docs/DARK-THEME.md`
+**Известные ограничения:** Светлая тема — отдельный проход по согласованию PO
+
+---
+
 ## [2026-08-03] — Текстовые блоки: editor UX polish
 **Исполнитель:** local-executor
 **Статус:** Выполнено / tsc+jest PASS (live smoke = после деплоя)

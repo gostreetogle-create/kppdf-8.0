@@ -885,9 +885,9 @@ export class DocumentTemplateService {
         @page { size: ${isLandscape ? 'landscape' : 'portrait'}; margin: 0; }
         body { font-family: 'Times New Roman', serif; width: ${pageWidth}; min-height: ${pageMinHeight}; margin: 0 auto; padding: 20px; position: relative; box-sizing: border-box; }
         h1, h2, h3 { margin: 8px 0; }
-        .block { margin: 12px 0; padding: 8px 0; border-bottom: 1px solid #eee; position: relative; z-index: 1; }
+        .block { margin: 12px 0; padding: 8px 0; position: relative; z-index: 1; }
         .doc-content { position: relative; min-height: ${pageMinHeight}; }
-        .block--positioned { margin: 0; box-sizing: border-box; }
+        .block--positioned { margin: 0; box-sizing: border-box; border: none; background: transparent; }
         table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: left; }
         .doc-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: ${template.backgroundOpacity ?? 0.3}; }

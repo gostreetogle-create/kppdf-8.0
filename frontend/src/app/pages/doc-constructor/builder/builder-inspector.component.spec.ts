@@ -198,6 +198,33 @@ describe('BuilderInspectorComponent (TZ-DOC-311 / DOC-332)', () => {
     expect(danger?.textContent).not.toContain('Редактировать');
   });
 
+  it('geometry section exposes lock toggle; click emits locked patch', () => {
+    const f = TestBed.createComponent(BuilderInspectorComponent);
+    const block = {
+      _id: 'b1',
+      templateId: 'tpl-1',
+      type: 'text',
+      order: 0,
+      showLine: false,
+      isActive: true,
+      locked: false,
+      layout: { x: 0.1, y: 0.1, width: 0.5, height: 0.1, zIndex: 1 },
+    } as TemplateBlock;
+    f.componentRef.setInput('block', block);
+    f.detectChanges();
+
+    const btn = f.nativeElement.querySelector(
+      '[data-test="insp-lock-toggle"]',
+    ) as HTMLButtonElement | null;
+    expect(btn).toBeTruthy();
+    expect(btn!.textContent).toContain('Заблокировать');
+
+    const updates: Array<Partial<TemplateBlock> & { _id: string }> = [];
+    f.componentInstance.update.subscribe((p) => updates.push(p));
+    btn!.click();
+    expect(updates).toEqual([{ _id: 'b1', locked: true }]);
+  });
+
   it('TZ-DOC-333: onImageUpload uploads via service and patches settings with the server URL', () => {
     const block = {
       _id: 'b1',

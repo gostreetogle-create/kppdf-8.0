@@ -134,26 +134,9 @@ export class InventoryDashboardPage {
   });
 
   private readonly errorEffect = effect(() => {
-    const err = this.allItemsRes.error() as
-      import('@angular/common/http').HttpErrorResponse | undefined;
-    if (err) {
-      this.toast.error(extractErrorMessage(err));
-    }
-  });
-
-  private readonly lowStockErrorEffect = effect(() => {
-    const err = this.lowStockRes.error() as
-      import('@angular/common/http').HttpErrorResponse | undefined;
-    if (err) {
-      this.toast.error(extractErrorMessage(err));
-    }
-  });
-
-  private readonly warehousesErrorEffect = effect(() => {
-    const err = this.warehousesRes.error() as
-      import('@angular/common/http').HttpErrorResponse | undefined;
-    if (err) {
-      this.toast.error(extractErrorMessage(err));
+    const msg = this.error();
+    if (msg) {
+      this.toast.error(msg);
     }
   });
 }

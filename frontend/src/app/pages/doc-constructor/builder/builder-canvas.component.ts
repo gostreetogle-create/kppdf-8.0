@@ -79,8 +79,8 @@ import {
           <div class="canvas-dropzone__empty" aria-live="polite">
             <p class="canvas-dropzone__empty-title">Холст пуст</p>
             <p class="canvas-dropzone__empty-hint">
-              Добавьте блоки из палитры выше (Тексты / Таблицы / Фото). Клик по холсту — свойства
-              шаблона.
+              Добавьте блоки из палитры слева (иконки Тексты / Таблицы / Фото). Клик по холсту —
+              свойства шаблона.
             </p>
           </div>
         } @else {
@@ -1055,6 +1055,9 @@ export class BuilderCanvasComponent {
   }
 
   protected onDrop(event: CdkDragDrop<TemplateBlock[]>): void {
+    // Preview is read-only: no reorder and no palette inserts.
+    if (this.isPreview()) return;
+
     if (event.previousContainer === event.container) {
       const flow = [...this.flowBlocks()];
       if (event.previousIndex === event.currentIndex) return;

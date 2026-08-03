@@ -155,6 +155,9 @@ Paper & Ink — это **editorial / dashboard / docs / settings** — не ever
 
 ## Recent palette changes
 
+**Midnight Paper & Champagne (2026-08-03) — dark mode rewrite:**  
+Холодный Obsidian Slate и тёплый cream canvas заменены на единую OKLCH-семью **Cool Graphite & Gold** (hue ~260 + gold hue ~86) для light и dark. Канон: [`DARK-THEME.md`](./DARK-THEME.md).
+
 Палитра постепенно сдвигается от cool-neutral B&W (v1) к warm cream + sunrise accents (v2). Полная история в `progress.md` (найдите по дате).
 
 **TZ-WARMUP-100 (2026-07-07) — soft-warm palette pivot:**

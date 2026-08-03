@@ -216,20 +216,18 @@ export class BlockRendererStateService {
 
   readonly renderedContent = computed<string>(() => {
     const b = this.block();
-    const parts: string[] = [];
-    if (b.title) parts.push(b.title);
-    if (b.content) parts.push(b.content);
-    if (!parts.length) {
-      const placeholders: Record<BlockType, string> = {
-        header: 'Заголовок без текста',
-        text: 'Текстовый блок без содержимого',
-        table: 'Таблица без шаблона',
-        image: 'Изображение не выбрано',
-        signature: 'Место для подписи',
-      };
-      return placeholders[b.type] ?? '—';
-    }
-    return parts.join(' · ');
+    // Canvas shows document body only. `title` is catalog metadata (e.g. text-block
+    // name) — never paint it into the template frame.
+    if (b.content?.trim()) return b.content;
+    if (b.type !== 'text' && b.title?.trim()) return b.title;
+    const placeholders: Record<BlockType, string> = {
+      header: 'Заголовок без текста',
+      text: 'Текстовый блок без содержимого',
+      table: 'Таблица без шаблона',
+      image: 'Изображение не выбрано',
+      signature: 'Место для подписи',
+    };
+    return placeholders[b.type] ?? '—';
   }); // ═══════════════════════════════════════════════════════════
   //  Drag geometry (TZ-237.MAGNETIC-GRID-r0)
   // ═══════════════════════════════════════════════════════════

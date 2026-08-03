@@ -161,6 +161,13 @@ export class TemplateBlock {
   groupId?: string | null;
 
   /**
+   * Geometry lock — when true the block cannot be moved, resized, or deleted
+   * on the builder canvas until unlocked in the inspector.
+   */
+  @Prop({ default: false })
+  locked!: boolean;
+
+  /**
    * TZ-86 Phase A.3 — Optional live-data binding. Absent for static-template
    * blocks (Phase D canvas treats null binding as «render literal content»).
    */

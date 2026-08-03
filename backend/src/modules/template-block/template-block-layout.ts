@@ -110,9 +110,9 @@ export function defaultBlockLayout(index: number): BlockLayout {
   return normalizeBlockLayout({
     page: 1,
     x: 0.08,
-    y: Math.min(0.9, 0.04 + row * 0.08),
+    y: Math.min(0.85, 0.04 + row * 0.12),
     width: 0.84,
-    height: 0.06,
+    height: 0.12,
     zIndex: 1,
     rotation: 0,
   });
