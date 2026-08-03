@@ -106,7 +106,7 @@ interface ClientPreviewModel {
       [title]="dialogTitle()"
       variant="form"
       [width]="'xl'"
-      [maxWidth]="'1400px'"
+      [maxWidth]="'min(1400px, calc(100vw - 2rem))'"
       [showClose]="true"
     >
       <div body class="ttd-body" [formGroup]="form">

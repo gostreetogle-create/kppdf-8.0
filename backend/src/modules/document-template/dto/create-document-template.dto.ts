@@ -21,8 +21,9 @@ export class CreateDocumentTemplateDto {
   @IsOptional() @IsBoolean() isDefault?: boolean;
   @IsOptional() @IsBoolean() isActive?: boolean;
 
-  @IsOptional() @IsIn(['A4', 'A5', 'Letter', 'Legal'])
-  pageSize?: 'A4' | 'A5' | 'Letter' | 'Legal';
+  /** TZ-DOC-337 — canon aligned with schema + setup chips (ISO paper). */
+  @IsOptional() @IsIn(['A3', 'A4', 'A5'])
+  pageSize?: 'A3' | 'A4' | 'A5';
 
   @IsOptional() @IsArray() @IsString({ each: true })
   backgroundImage?: string[];

@@ -87,7 +87,7 @@ interface DimensionFormGroup extends FormGroup {
     <app-pi-dialog
       [title]="isEdit() ? 'Редактировать материал' : 'Создать материал'"
       [variant]="'content'"
-      [maxWidth]="'1000px'"
+      [maxWidth]="'min(1000px, calc(100vw - 2rem))'"
     >
       <form
         body

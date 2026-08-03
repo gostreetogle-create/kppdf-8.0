@@ -23,6 +23,7 @@ import {
 import { httpResource } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { merge } from 'rxjs';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
 import {
@@ -98,12 +99,11 @@ import {
           <input
             id="tbe-name"
             class="tbe-input"
+            [class.tbe-input--invalid]="nameInvalid()"
+            [attr.aria-invalid]="nameInvalid() ? true : null"
             [formControl]="nameControl"
             placeholder="Например: Технические характеристики"
           />
-          @if (nameControl.invalid && (nameControl.dirty || nameControl.touched)) {
-            <span class="tbe-error">Введите название</span>
-          }
         </div>
 
         <div class="tbe-meta-cols">
@@ -138,31 +138,6 @@ import {
           <span class="tbe-toolbar-badge eyebrow">Колонка #{{ activeColIndex() + 1 }}</span>
           <span class="tbe-toolbar-sep" aria-hidden="true"></span>
           <div class="tbe-toolbar-group" role="toolbar" aria-label="Форматирование">
-            <button
-              type="button"
-              class="tbe-tool"
-              [class.is-active]="toolbarStates().h1"
-              (click)="runCmd('h1')"
-            >
-              H1
-            </button>
-            <button
-              type="button"
-              class="tbe-tool"
-              [class.is-active]="toolbarStates().h2"
-              (click)="runCmd('h2')"
-            >
-              H2
-            </button>
-            <button
-              type="button"
-              class="tbe-tool"
-              [class.is-active]="toolbarStates().h3"
-              (click)="runCmd('h3')"
-            >
-              H3
-            </button>
-            <span class="tbe-toolbar-sep" aria-hidden="true"></span>
             <button
               type="button"
               class="tbe-tool"
@@ -437,9 +412,12 @@ import {
         outline: 1px solid var(--color-sunrise-warm);
         outline-offset: -1px;
       }
-      .tbe-error {
-        font-size: 12px;
-        color: var(--color-destructive);
+      .tbe-input--invalid {
+        border-color: var(--color-destructive);
+      }
+      .tbe-input--invalid:focus {
+        border-color: var(--color-destructive);
+        outline-color: var(--color-destructive);
       }
 
       .tbe-meta-category {
@@ -685,7 +663,13 @@ import {
         flex: 1 1 auto;
         display: flex;
         flex-direction: column;
-        min-height: 0;
+        min-height: 240px;
+      }
+      .tbe-col-editor ::ng-deep app-pi-rich-text {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        min-height: 240px;
       }
       .tbe-col-editor ::ng-deep .pi-rte-editor {
         flex: 1 1 auto;
@@ -696,6 +680,7 @@ import {
       }
       .tbe-col-editor ::ng-deep .pi-rte-editor .ProseMirror {
         font-size: inherit !important;
+        min-height: 216px;
       }
       .tbe-col.is-active ::ng-deep .pi-rte-editor {
         border: 2px solid var(--color-sunrise-warm);
@@ -811,12 +796,20 @@ export class TextBlockEditorComponent {
     bold: false,
     italic: false,
     underline: false,
-    h1: false,
-    h2: false,
-    h3: false,
     alignLeft: false,
     alignCenter: false,
     alignRight: false,
+  });
+
+  private readonly nameFormTick = signal(0);
+  private readonly nameAttempted = signal(false);
+  protected readonly nameInvalid = computed(() => {
+    this.nameFormTick();
+    this.nameAttempted();
+    return (
+      this.nameControl.invalid &&
+      (this.nameControl.dirty || this.nameControl.touched || this.nameAttempted())
+    );
   });
 
   protected readonly registryRes = httpResource<DataSourcesResponse>(
@@ -846,6 +839,10 @@ export class TextBlockEditorComponent {
   protected readonly columnOptions = computed(() => Array.from({ length: 8 }, (_, i) => i + 1));
 
   constructor() {
+    merge(this.nameControl.valueChanges, this.nameControl.statusChanges)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.nameFormTick.update((n) => n + 1));
+
     // TZ-DOC-316 — load the ACTIVE catalog for the category picker once per
     // editor instance. For a NEW block auto-select the server-side default
     // (active isDefault category) so the user sees the same behaviour the
@@ -962,9 +959,7 @@ export class TextBlockEditorComponent {
     );
   }
 
-  protected runCmd(
-    cmd: 'bold' | 'italic' | 'underline' | 'h1' | 'h2' | 'h3' | 'left' | 'center' | 'right',
-  ): void {
+  protected runCmd(cmd: 'bold' | 'italic' | 'underline' | 'left' | 'center' | 'right'): void {
     const ed = this.editors?.get(this.activeColIndex());
     if (!ed) return;
     if (!this.editorFocused()) {
@@ -980,15 +975,6 @@ export class TextBlockEditorComponent {
         break;
       case 'underline':
         ed.toggleUnderline();
-        break;
-      case 'h1':
-        ed.toggleHeading(1);
-        break;
-      case 'h2':
-        ed.toggleHeading(2);
-        break;
-      case 'h3':
-        ed.toggleHeading(3);
         break;
       case 'left':
         ed.setTextAlign('left');
@@ -1059,6 +1045,7 @@ export class TextBlockEditorComponent {
       const token = `{{${sel.source}.${sel.field.key}}}`;
       requestAnimationFrame(() => {
         this.editors?.get(colIndex)?.insertContent(token);
+        this.toast.success(`Вставлено ${token}`);
       });
     });
   }
@@ -1076,7 +1063,9 @@ export class TextBlockEditorComponent {
 
   protected onSave(): void {
     if (this.nameControl.invalid || this.saving()) {
+      this.nameAttempted.set(true);
       this.nameControl.markAsTouched();
+      this.nameFormTick.update((n) => n + 1);
       return;
     }
     this.saving.set(true);

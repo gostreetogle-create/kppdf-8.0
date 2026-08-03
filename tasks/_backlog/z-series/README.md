@@ -83,18 +83,13 @@ Read/list endpoints оформлены кто во что горазд: одни
 
 | Приоритет | TZ        | Кратко                                       | Effort   |
 |-----------|-----------|----------------------------------------------|----------|
-| P0        | Z-001     | Транзакции на inventory write-путях — **ACTIVATED** → `tasks/Z-001-inventory-write-transactions.md` (исполнитель local/Gemini; Cursor = Mode A spec only) | 4–6 ч    |
-| P0        | Z-002     | Оживление defineEntity + CRUD-консолидация   | 6–8 ч    |
-| P1        | Z-006     | Shared UI-примитивы (error-state, table)     | 3–4 ч    |
+| P0        | Z-001     | Транзакции на inventory write-путях — **DONE** (archive) | — |
+| **PARKED** | **Z-002** | Оживление defineEntity — **PARKED** до конца Stabilization Wave ([STABILIZATION-WAVE-2026-08](../../../docs/STABILIZATION-WAVE-2026-08.md)); не брать без явного PO | 6–8 ч    |
+| P1        | Z-006     | Shared UI-примитивы (error-state, table) — после волны | 3–4 ч    |
 | P1        | Z-003     | Generic CRUD-база + soft-delete унификация   | 6–10 ч   |
 | P2        | Z-004     | Domain events для order/inventory            | 8–12 ч   |
 | P2        | Z-005     | EAV: принять решение (adopt/remove)          | 2–4 ч    |
 | P3        | Z-007     | RBAC read-policy унификация                  | 3–5 ч    |
 
-Z-001 и Z-002 — это изменения, которые предотвратят реальный ущерб
-(данные) и реальную потерю скорости разработки (бойлерплейт). Их —
-в первую очередь.
-
-ПРИМЕЧАНИЕ ДЛЯ PO: каждый Z-NNN — self-contained ТЗ, можно выдавать
-независимо, но Z-002 → Z-006 (фронт) и Z-003 → Z-004 (бэкенд) лучше
-идут парами. Серия не блокирует текущие TZ-274..280.
+**2026-08-03:** Stabilization Wave (DOC-337…PROC-301) имеет приоритет над Z-002/Z-006.
+Z-002 не «полки» — dead DSL distraction until PO kill-or-revive after calm base.

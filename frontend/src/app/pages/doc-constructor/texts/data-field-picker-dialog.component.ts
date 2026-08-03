@@ -45,9 +45,10 @@ const GROUP_LABELS: Record<DataSourceDescriptor['group'], string> = {
         <div class="dfpd-hint">
           <span class="dfpd-hint-icon" aria-hidden="true">ⓘ</span>
           <p class="dfpd-hint-text">
-            Колонка <strong>#{{ data.columnIndex + 1 }}</strong> — выберите источник, затем поле.
-            Будет вставлен токен вида
+            Колонка <strong>#{{ data.columnIndex + 1 }}</strong> — источник слева, поле справа. Клик
+            по полю сразу вставляет токен
             <code class="dfpd-hint-token">{{ previewToken() }}</code>
+            в текст колонки.
           </p>
         </div>
 
@@ -121,7 +122,7 @@ const GROUP_LABELS: Record<DataSourceDescriptor['group'], string> = {
       <div footer class="dfpd-footer">
         <app-pi-button variant="ghost" (click)="onCancel()">Отмена</app-pi-button>
         <app-pi-button variant="default" [disabled]="!canInsert()" (click)="confirmInsert()">
-          Вставить токен
+          Вставить выбранное
         </app-pi-button>
       </div>
     </app-pi-dialog>

@@ -93,6 +93,20 @@ curl http://192.168.1.103:3000/api/health/ready
 
 Логин: `admin` + пароль из **CREDENTIALS.md** (не admin123).
 
+### Stabilization Wave smoke (TZ-PROC-301)
+
+```text
+VPN OFF
+1. GET /api/health/ready → ok
+2. Login admin (CREDENTIALS.md)
+3. Templates → Создать → A4 → builder opens
+4. Add one text block → save (no category unavailable)
+5. Texts: create block without categoryId → default «Общее»
+6. Only one deploy at a time; docker ps = kppdf-backend + kppdf-mongo
+```
+
+Канон волны: [`docs/STABILIZATION-WAVE-2026-08.md`](../../docs/STABILIZATION-WAVE-2026-08.md).
+
 ---
 
 ## Типичные проблемы

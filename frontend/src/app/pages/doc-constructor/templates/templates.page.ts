@@ -341,6 +341,10 @@ export class TemplatesPage {
   }
 
   private createWithSettings(settings: TemplateSetupResult): void {
+    if (!settings.categoryId) {
+      this.toast.error('Выберите категорию шаблона');
+      return;
+    }
     this.creating.set(true);
 
     type SetupId = SilentResult<string>;

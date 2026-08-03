@@ -1,7 +1,7 @@
 # Page ↔ TZ index
 
 **Purpose:** Search by page/route to find which tasks touched or will touch it.  
-**Updated:** 2026-08-02 (Cursor lightweight UX sweep — UX-301/302/303/305 + JOURNEY-301 archived)
+**Updated:** 2026-08-03 (Stabilization Wave DOC-337…341 / UX-DIALOG-301 / PROC-301)
 
 How to use: `Ctrl+F` по route или имени страницы. Новые TZ обязаны указывать
 `PAGES:` / `PAGE_DOCS:` в шапке (см. `tz-authoring`).
@@ -10,10 +10,10 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 
 | Route | Page doc | TZs |
 |-------|----------|-----|
-| `/doc-constructor/builder`, `/builder/:id` | builder.page.md, builder-tool-pane, builder-inspector | DOC-324, DOC-325, DOC-326, DOC-317/318, DOC-319 done, DOC-331 done, **DOC-332 done** (inspector IA/visual canon), DOC-333 done, DOC-335 done |
-| `/doc-constructor/templates` | templates.page.md | DOC-324, DOC-308 done, **DOC-336 done** (copy slot) |
+| `/doc-constructor/builder`, `/builder/:id` | builder.page.md, builder-tool-pane, builder-inspector | DOC-324, DOC-325, DOC-326, DOC-317/318, DOC-319 done, DOC-331 done, **DOC-332 done**, DOC-333 done, DOC-335 done; create **не** на builder (DOC-341) |
+| `/doc-constructor/templates` | templates.page.md | DOC-324, DOC-308 done, DOC-336 done, **DOC-337…339 done** (pageSize/category/duplicate), DOC-341 docs |
 | `/doc-constructor/texts` | texts.page.md | DOC-316, DOC-326, **DOC-336 done** (shell+editor polish) |
-| `/doc-constructor/tables` | tables.page.md | **DOC-335** done (editId), **DOC-336 done** (shell+dialog) |
+| `/doc-constructor/tables` | tables.page.md | **DOC-335** done (editId), **DOC-336 done** (shell+dialog), **UX-DIALOG-301** (375px clamp) |
 | `/doc-constructor/documents` | documents.page.md | **UX-303 DONE** |
 
 ## Catalog / production
@@ -69,9 +69,19 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | [UX-303 DONE](../tasks/_archive/2026-08/TZ-UX-303.done.md) | documents, dictionaries | Unify labels |
 | [UX-304](../tasks/TZ-UX-304-reference-pi-table.md) | color-references, doc-template-categories | pi-table |
 | [UX-305 DONE](../tasks/_archive/2026-08/TZ-UX-305.done.md) | orgs, work-types, storage, materials | Fix page.md |
-| [UX-306](../tasks/TZ-UX-306-people-route-align.md) | people/workers | Route+nav align (blocked) |
+| [UX-306](../tasks/_backlog/TZ-UX-306-people-route-align.md) | people/workers | Route+nav align (**PARKED** Stabilization Wave) |
 | [DOC-324..326](../docs/agent-checklists/DOC-CONSTRUCTOR-UX-AUDIT.md) | builder/templates/texts | Prior audit |
 | [DOC-334 audit](../docs/audits/DOC-334-doc-constructor-ui-polish-audit.md) | builder/texts/tables/categories | Deploy polish queue 334→335→332→336 |
+
+## Stabilization Wave (2026-08-03)
+
+| TZ | Pages | One-liner |
+|----|-------|-----------|
+| DOC-337…339 | templates + setup dialog + DTO | pageSize A3–A5; system categories; duplicate honesty |
+| DOC-340 / UX-DIALOG-301 | pi-dialog + form dialogs | `min(…, 100vw - 2rem)` |
+| DOC-341 | templates/builder page.md | create only on templates |
+| PROC-301 | SESSION + RUNBOOK | post-deploy smoke AC |
+| Canon | [`STABILIZATION-WAVE-2026-08.md`](../STABILIZATION-WAVE-2026-08.md) | DoD vertical path |
 
 ## Vision / access / sales (2026-08-02)
 

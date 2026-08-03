@@ -98,15 +98,12 @@
 
 Файл: `frontend/src/app/pages/doc-constructor/builder/builder.page.ts`
 
-**Выбранный шаблон (экран 1):**
-- `templateListRes` — `httpResource<DocumentTemplate[]>` на `/api/document-templates`
-- Кнопка «Новый шаблон» → `onCreateTemplate()` → `TemplateSetupDialogComponent` → `doCreateTemplate()`
-- Открытие/дублирование/удаление шаблона
-
-**Редактор (экран 2):**
+**Редактор (только `/builder/:id`, TZ-DOC-324 + Stabilization Wave):**
+- Create / duplicate / delete шаблона — **не здесь**. CRUD = `/doc-constructor/templates` → `TemplateSetupDialogComponent` → navigate на `/builder/:id`.
 - Загружает блоки через `loadBlocks(id)` при смене `templateId`
 - Управляет состоянием: `blocks`, `selectedId`, `selectedIds`, `template`, `saveStatus`
 - Прокидывает inputs/outputs между Canvas и Inspector
+- `TemplateSetupDialogComponent` живёт рядом в папке builder, но открывается со страницы templates
 
 ### `BuilderCanvasComponent` — холст
 

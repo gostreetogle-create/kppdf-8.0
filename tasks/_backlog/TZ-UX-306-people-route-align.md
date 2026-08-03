@@ -2,18 +2,21 @@
 TZ-UX-306: People/Workers — orphan UI vs route (стык с WORKERS-302)
 ═══════════════════════════════════════════════════════════════
 
+> **PARKED for Stabilization Wave (2026-08-03).**  
+> Execute only after DOC-337…340 + UX-DIALOG-301 (or explicit PO).  
+> Canon: [`docs/STABILIZATION-WAVE-2026-08.md`](../../docs/STABILIZATION-WAVE-2026-08.md)  
+> Dialog API: [`docs/DIALOG-COOKBOOK.md`](../../docs/DIALOG-COOKBOOK.md) — no invent PiDialog.
+
 РОЛЬ АГЕНТА: Frontend routing
-ЗАВИСИМОСТИ: TZ-WORKERS-301 DONE; согласовать с tasks/TZ-WORKERS-302-*.md
-  (не дублировать карточку — только route/nav/align path)
+ЗАВИСИМОСТИ: TZ-WORKERS-301 DONE; Stabilization Wave vertical DONE preferred
 LAYER: 3
-PAGES: /people OR /workers (канон выбрать)
-PAGE_DOCS: workers.page.md или people (как решит 302)
+PAGES: /people
+PAGE_DOCS: docs/pages/people.page.md
 
 CONFLICT KEYS:
 frontend/src/app/app.routes.ts;
 frontend/src/app/layout/app-layout.component.ts;
 frontend/src/app/pages/people/;
-tasks/TZ-WORKERS-302-people-page-and-person-card.md;
 docs/agent-checklists/TZ-UX-306.md
 
 ═══════════════════════════════════════════════════════════════

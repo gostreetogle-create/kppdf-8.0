@@ -36,6 +36,7 @@
  */
 import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import {
   TemplateSetupDialogComponent,
@@ -53,6 +54,7 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
   let close: jest.Mock;
   let ref: DialogRef<TemplateSetupResult>;
   let listMock: jest.Mock;
+  let navigate: jest.Mock;
 
   const CATS = [
     {
@@ -60,7 +62,7 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
       name: 'Общие',
       slug: 'common',
       isActive: true,
-      isSystem: false,
+      isSystem: true,
       isDefault: true,
       sortOrder: 0,
     },
@@ -69,14 +71,25 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
       name: 'Коммерческие предложения',
       slug: 'commercial-proposals',
       isActive: true,
-      isSystem: false,
+      isSystem: true,
       isDefault: false,
       sortOrder: 10,
+    },
+    {
+      _id: 'cat-org',
+      name: 'Чужая org',
+      slug: 'org-scoped',
+      isActive: true,
+      isSystem: false,
+      isDefault: false,
+      sortOrder: 20,
+      organizationId: 'org-other',
     },
   ];
 
   beforeEach(async () => {
     close = jest.fn();
+    navigate = jest.fn();
     ref = {
       closed: signal<TemplateSetupResult | undefined>(undefined),
       close: (v?: TemplateSetupResult) => close(v),
@@ -90,6 +103,7 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
       providers: [
         { provide: PI_DIALOG_DATA, useValue: { mode: 'create' } },
         { provide: PI_DIALOG_REF, useValue: ref },
+        { provide: Router, useValue: { navigate } },
         {
           provide: DocumentTemplateCategoriesService,
           useValue: { list: listMock },
@@ -128,6 +142,7 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
     categoryId: () => string;
     canConfirm: () => boolean;
     confirmAttempted: () => boolean;
+    categories: () => Array<{ _id: string; name: string }>;
   } {
     return fixture.componentInstance as unknown as {
       onConfirm: () => void;
@@ -137,6 +152,7 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
       categoryId: () => string;
       canConfirm: () => boolean;
       confirmAttempted: () => boolean;
+      categories: () => Array<{ _id: string; name: string }>;
     };
   }
 
@@ -327,9 +343,13 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
   // ═══ TZ-DOC-310: one-click close + visible validation ═══
 
   it('confirm without a category NEVER closes the dialog (no silent swallow)', () => {
-    // Categories present, but the user has not picked one (no default).
-    listMock.mockReturnValue(of({ ok: true, data: [CATS[1]] })); // only cat-2, not default
+    listMock.mockReturnValue(of({ ok: true, data: [CATS[1]] })); // only cat-2
     createFixture();
+    // Clear auto-selected first category to simulate empty pick.
+    (
+      fixture.componentInstance as unknown as { categoryId: { set: (v: string) => void } }
+    ).categoryId.set('');
+    fixture.detectChanges();
 
     expect(handlers().categoryId()).toBe('');
     // Catalog is ready, so the button is ENABLED on purpose — a real click
@@ -347,6 +367,10 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
   it('selecting a category after a failed attempt clears the hint and enables confirm', () => {
     listMock.mockReturnValue(of({ ok: true, data: [CATS[1]] }));
     createFixture();
+    (
+      fixture.componentInstance as unknown as { categoryId: { set: (v: string) => void } }
+    ).categoryId.set('');
+    fixture.detectChanges();
 
     handlers().onConfirm();
     expect(handlers().confirmAttempted()).toBe(true);
@@ -392,5 +416,65 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
     expect(handlers().canConfirm()).toBe(false);
     handlers().onConfirm();
     expect(close).not.toHaveBeenCalled();
+  });
+
+  it('filters out org-scoped categories from the create picker (TZ-DOC-338)', () => {
+    listMock.mockReturnValue(of({ ok: true, data: CATS }));
+    createFixture();
+    const ids = handlers()
+      .categories()
+      .map((c) => c._id);
+    expect(ids).toEqual(['cat-1', 'cat-2']);
+    expect(ids).not.toContain('cat-org');
+  });
+
+  describe('duplicate mode (TZ-DOC-339)', () => {
+    beforeEach(async () => {
+      TestBed.resetTestingModule();
+      close = jest.fn();
+      navigate = jest.fn();
+      ref = {
+        closed: signal<TemplateSetupResult | undefined>(undefined),
+        close: (v?: TemplateSetupResult) => close(v),
+      } as DialogRef<TemplateSetupResult>;
+      listMock = jest.fn().mockReturnValue(of({ ok: true, data: CATS }));
+
+      await TestBed.configureTestingModule({
+        imports: [TemplateSetupDialogComponent],
+        schemas: [NO_ERRORS_SCHEMA],
+        providers: [
+          {
+            provide: PI_DIALOG_DATA,
+            useValue: { mode: 'duplicate' },
+          },
+          { provide: PI_DIALOG_REF, useValue: ref },
+          { provide: Router, useValue: { navigate } },
+          {
+            provide: DocumentTemplateCategoriesService,
+            useValue: { list: listMock },
+          },
+        ],
+      })
+        .overrideComponent(TemplateSetupDialogComponent, {
+          set: {
+            imports: [FormFieldComponent, ButtonComponent, PiDialogComponent],
+            schemas: [NO_ERRORS_SCHEMA],
+          },
+        })
+        .compileComponents();
+    });
+
+    it('does not load categories and confirms without categoryId', () => {
+      createFixture();
+      expect(listMock).not.toHaveBeenCalled();
+      expect(handlers().canConfirm()).toBe(true);
+      handlers().onConfirm();
+      expect(close).toHaveBeenCalledWith({
+        pageSize: 'A4',
+        orientation: 'portrait',
+      });
+      const payload = close.mock.calls[0][0] as TemplateSetupResult;
+      expect(payload.categoryId).toBeUndefined();
+    });
   });
 });

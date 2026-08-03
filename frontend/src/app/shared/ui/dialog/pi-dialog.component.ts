@@ -199,36 +199,37 @@ export class PiDialogComponent {
       return 'w-full'; // width controlled by [style.max-width]
     }
 
+    // TZ-DOC-340 — clamp every tier to viewport (mobile 375px).
     // === FORM (T2) — all 4 widths supported ===
     if (v === 'form') {
       return {
-        sm: 'w-[360px]',
-        md: 'w-[480px]',
-        lg: 'w-[640px]',
-        xl: 'w-[800px]',
+        sm: 'w-[min(360px,calc(100vw-2rem))]',
+        md: 'w-[min(480px,calc(100vw-2rem))]',
+        lg: 'w-[min(640px,calc(100vw-2rem))]',
+        xl: 'w-[min(800px,calc(100vw-2rem))]',
       }[w];
     }
 
     // === ALERT (T1) — sm only, fallback to sm ===
     if (v === 'alert') {
-      return 'w-[360px]'; // sm per spec; md/lg/xl → sm fallback
+      return 'w-[min(360px,calc(100vw-2rem))]';
     }
 
     // === CONTENT (T3) — xl only, fallback to max-w 800 ===
     if (v === 'content') {
-      return 'max-w-[800px]'; // xl per spec; sm/md/lg → max-w 800 fallback
+      return 'w-full max-w-[min(800px,calc(100vw-2rem))]';
     }
 
     // === DESTRUCTIVE (T4) — md default, lg supported; sm/xl → md fallback ===
     if (v === 'destructive') {
       return {
-        sm: 'w-[480px]', // fallback to md
-        md: 'w-[480px]',
-        lg: 'w-[640px]',
-        xl: 'w-[480px]', // fallback to md
+        sm: 'w-[min(480px,calc(100vw-2rem))]',
+        md: 'w-[min(480px,calc(100vw-2rem))]',
+        lg: 'w-[min(640px,calc(100vw-2rem))]',
+        xl: 'w-[min(480px,calc(100vw-2rem))]',
       }[w];
     }
 
-    return 'w-[480px]'; // ultimate fallback
+    return 'w-[min(480px,calc(100vw-2rem))]';
   }
 }

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../../shared/ui/form-field/form-field.component';
 import { PiDialogComponent } from '../../../shared/ui/dialog/pi-dialog.component';
@@ -10,10 +11,11 @@ import { DocumentTemplateCategory } from '../../../shared/services/pi-document-t
 export type PageSize = 'A3' | 'A4' | 'A5';
 export type Orientation = 'portrait' | 'landscape';
 
+/** Create requires categoryId; duplicate omits it (source category kept server-side). */
 export interface TemplateSetupResult {
   pageSize: PageSize;
   orientation: Orientation;
-  categoryId: string;
+  categoryId?: string;
 }
 
 export interface TemplateSetupData {
@@ -24,6 +26,9 @@ export interface TemplateSetupData {
  * Dialog for choosing page size and orientation when creating or duplicating
  * a document template. Opened via PiDialogService.open().
  * TZ-DOC-336 — FormField + chips aria-pressed / pi-focus-ring.
+ * TZ-DOC-337 — pageSize A3|A4|A5.
+ * TZ-DOC-338 — system categories only (assignable to any org).
+ * TZ-DOC-339 — duplicate hides category.
  */
 @Component({
   selector: 'app-template-setup-dialog',
@@ -40,36 +45,49 @@ export interface TemplateSetupData {
     >
       <div body>
         <div class="setup-form">
-          <app-pi-form-field
-            label="Категория шаблона"
-            htmlFor="template-category"
-            [required]="true"
-            [error]="confirmAttempted() && !categoryId() ? 'Выберите категорию' : null"
-          >
-            @if (categoriesLoading()) {
-              <span class="text-xs text-muted-foreground">Загрузка категорий…</span>
-            } @else if (categoriesError()) {
-              <span class="text-xs text-destructive">{{ categoriesError() }}</span>
-            } @else if (categories().length === 0) {
-              <span class="text-xs text-muted-foreground"
-                >Нет активных категорий. Создайте категорию в разделе «Справочники».</span
-              >
-            } @else {
-              <select
-                id="template-category"
-                class="pi-input w-full"
-                [value]="categoryId()"
-                (change)="onCategoryChange($event)"
-                [class.border-destructive]="confirmAttempted() && !categoryId()"
-                aria-label="Категория шаблона"
-              >
-                <option value="" disabled>— выберите категорию —</option>
-                @for (cat of categories(); track cat._id) {
-                  <option [value]="cat._id">{{ cat.name }}</option>
-                }
-              </select>
-            }
-          </app-pi-form-field>
+          @if (isCreate()) {
+            <app-pi-form-field
+              label="Категория шаблона"
+              htmlFor="template-category"
+              [required]="true"
+              [error]="confirmAttempted() && !categoryId() ? 'Выберите категорию' : null"
+            >
+              @if (categoriesLoading()) {
+                <span class="text-xs text-muted-foreground">Загрузка категорий…</span>
+              } @else if (categoriesError()) {
+                <span class="text-xs text-destructive">{{ categoriesError() }}</span>
+              } @else if (categories().length === 0) {
+                <div class="text-xs text-muted-foreground flex flex-col gap-2">
+                  <span>Нет активных системных категорий.</span>
+                  <button
+                    type="button"
+                    class="text-left text-xs underline text-ink pi-focus-ring"
+                    (click)="goCategoriesDictionary()"
+                  >
+                    Открыть справочник категорий шаблонов
+                  </button>
+                </div>
+              } @else {
+                <select
+                  id="template-category"
+                  class="pi-input w-full"
+                  [value]="categoryId()"
+                  (change)="onCategoryChange($event)"
+                  [class.border-destructive]="confirmAttempted() && !categoryId()"
+                  aria-label="Категория шаблона"
+                >
+                  <option value="" disabled>— выберите категорию —</option>
+                  @for (cat of categories(); track cat._id) {
+                    <option [value]="cat._id">{{ cat.name }}</option>
+                  }
+                </select>
+              }
+            </app-pi-form-field>
+          } @else {
+            <p class="text-xs text-muted-foreground">
+              Категория копируется с исходного шаблона. Можно сменить формат и ориентацию.
+            </p>
+          }
 
           <div class="field">
             <span class="field__label" id="page-size-label">Формат страницы</span>
@@ -176,6 +194,7 @@ export class TemplateSetupDialogComponent {
   readonly data = inject<TemplateSetupData>(PI_DIALOG_DATA);
   private readonly ref = inject<DialogRef<TemplateSetupResult>>(PI_DIALOG_REF);
   private readonly categoriesSvc = inject(DocumentTemplateCategoriesService);
+  private readonly router = inject(Router);
 
   protected readonly pageSizes: PageSize[] = ['A3', 'A4', 'A5'];
   protected readonly orientations = [
@@ -189,26 +208,19 @@ export class TemplateSetupDialogComponent {
   protected readonly categories = signal<DocumentTemplateCategory[]>([]);
   protected readonly categoriesLoading = signal(true);
   protected readonly categoriesError = signal<string | null>(null);
-
-  /**
-   * TZ-DOC-310 — tracks that the user pressed «Создать» while no category
-   * was chosen, so the «Выберите категорию» hint is visible in every state
-   * (loading, error, empty, ready-without-selection) instead of being
-   * silently swallowed by the old bare `if (!categoryId()) return;`.
-   */
   protected readonly confirmAttempted = signal(false);
-
-  /**
-   * TZ-DOC-268: submit guard. A double-click on «Создать» before the CDK
-   * overlay finishes teardown could fire `onConfirm` twice. `ref.close()` is
-   * idempotent (the service ignores a second close), but the guard makes the
-   * intent explicit and unit-testable: the FIRST confirm wins, everything
-   * after it is a no-op — no second dialog result, no second template POST.
-   */
   protected readonly submitted = signal(false);
 
+  protected isCreate(): boolean {
+    return this.data.mode !== 'duplicate';
+  }
+
   constructor() {
-    this.loadCategories();
+    if (this.isCreate()) {
+      this.loadCategories();
+    } else {
+      this.categoriesLoading.set(false);
+    }
   }
 
   private loadCategories(): void {
@@ -217,8 +229,10 @@ export class TemplateSetupDialogComponent {
     this.categoriesSvc.list({ activeOnly: true }).subscribe((res) => {
       this.categoriesLoading.set(false);
       if (res.ok) {
-        this.categories.set(res.data ?? []);
-        const defaultCat = res.data?.find((c) => c.isDefault);
+        // TZ-DOC-338 — system-only (no organizationId): assignable to any org after ensureOrg.
+        const systemOnly = (res.data ?? []).filter((c) => !c.organizationId);
+        this.categories.set(systemOnly);
+        const defaultCat = systemOnly.find((c) => c.isDefault) ?? systemOnly[0];
         if (defaultCat) {
           this.categoryId.set(defaultCat._id);
         }
@@ -228,17 +242,14 @@ export class TemplateSetupDialogComponent {
     });
   }
 
-  /**
-   * TZ-DOC-310 — the confirm button is disabled only while the dialog cannot
-   * meaningfully proceed (catalog loading / failed / empty, or already
-   * submitted). When the catalog is ready but no category is chosen yet, the
-   * button stays ENABLED on purpose: a click then surfaces the visible
-   * «Выберите категорию» hint instead of being silently swallowed — the
-   * original «dialog waits for a second click» symptom. During loading the
-   * button cannot be pressed at all.
-   */
+  protected goCategoriesDictionary(): void {
+    this.ref.close();
+    void this.router.navigate(['/doc-template-categories']);
+  }
+
   protected canConfirm(): boolean {
     if (this.submitted()) return false;
+    if (!this.isCreate()) return true;
     if (this.categoriesLoading()) return false;
     if (this.categoriesError()) return false;
     if (this.categories().length === 0) return false;
@@ -252,17 +263,23 @@ export class TemplateSetupDialogComponent {
 
   protected onConfirm(): void {
     if (this.submitted()) return;
-    if (!this.categoryId()) {
-      // TZ-DOC-310: never close / never create without a category — show the
-      // visible hint instead (single, testable validation rule).
-      this.confirmAttempted.set(true);
+    if (this.isCreate()) {
+      if (!this.categoryId()) {
+        this.confirmAttempted.set(true);
+        return;
+      }
+      this.submitted.set(true);
+      this.ref.close({
+        pageSize: this.pageSize(),
+        orientation: this.orientation(),
+        categoryId: this.categoryId(),
+      });
       return;
     }
     this.submitted.set(true);
     this.ref.close({
       pageSize: this.pageSize(),
       orientation: this.orientation(),
-      categoryId: this.categoryId(),
     });
   }
 

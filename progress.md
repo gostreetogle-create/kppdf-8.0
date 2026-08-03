@@ -1,3 +1,22 @@
+## [2026-08-03] — Текстовые блоки: editor UX polish
+**Исполнитель:** local-executor
+**Статус:** Выполнено / tsc+jest PASS (live smoke = после деплоя)
+**Что сделано кратко:** Пустой холст кликабелен + TipTap Placeholder; убраны H1–H3 (размер через «Шрифт»); название — красная рамка без прыгающей подписи; вставка поля → toast; канон `docs/UX-FORM-CANON.md`.
+**Затронутые файлы:** `pi-rich-text-editor.component.ts`, `text-block-editor.component.ts`, `data-field-picker-dialog.component.ts`, `docs/UX-FORM-CANON.md`, `DIALOG-COOKBOOK`, `texts.page.md`
+**Критерии:** клик по середине колонки → фокус; нет H1–H3; invalid name не двигает layout; toast после insert field
+
+---
+
+## [2026-08-03] — Завершено: Stabilization Wave (DOC-337…341 + UX-DIALOG-301 + PROC-301)
+**Исполнитель:** local-executor
+**Статус:** Выполнено / Проверено (unit + tsc; live prod smoke = checklist PROC-301 после деплоя)
+**Что сделано кратко:** Закрыта вертикаль «создать шаблон КП»: pageSize A3|A4|A5 в Create DTO; create dialog — только system categories + empty CTA; duplicate без ложного category; PiDialog/form dialogs `min(…, 100vw-2rem)`; docs + deploy smoke checklist; Z-002/UX-306 PARKED.
+**Затронутые файлы/папки:** backend create-document-template.dto; template-setup-dialog + templates.page + specs; pi-dialog; material/product/table form dialogs; docs/STABILIZATION-WAVE, DIALOG-COOKBOOK, SESSION, RUNBOOK, page.md; tasks/_archive/2026-08/TZ-DOC-337…341, UX-DIALOG-301, PROC-301
+**Критерии приёмки:** AC волны DoD отмечены в STABILIZATION-WAVE; jest 38 PASS; FE/BE tsc PASS
+**Известные ограничения:** Live 375px/prod create smoke — PO после следующего деплоя по PROC-301 checklist
+
+---
+
 ## [2026-08-02] — Завершено: TZ-DEPLOY-301 (prep first deploy gate)
 **Исполнитель:** local-executor
 **Статус:** Выполнено / Проверено (code AC; live smoke blocked LAN/VPN)

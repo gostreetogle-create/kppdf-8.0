@@ -48,3 +48,19 @@
 3. Login `admin` / `CREDENTIALS.md`
 4. Smoke: materials, doc templates (create), text blocks
 5. Обычный update: `.\deploy\synology\deploy.ps1` (без `-Wipe`)
+
+## Stabilization Wave smoke (TZ-PROC-301)
+
+Канон: [`docs/STABILIZATION-WAVE-2026-08.md`](./STABILIZATION-WAVE-2026-08.md). После деплоя:
+
+```text
+VPN OFF
+1. GET /api/health/ready → ok
+2. Login admin (CREDENTIALS.md)
+3. Templates → Создать → A4 → builder opens
+4. Add one text block → save (no category unavailable)
+5. Texts: create block without categoryId → default «Общее»
+6. Only one deploy at a time; docker ps = kppdf-backend + kppdf-mongo
+```
+
+Optional UI check: DevTools 375px — template setup / materials dialog: панель целиком, footer виден.

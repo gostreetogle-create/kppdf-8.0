@@ -185,11 +185,13 @@ describe('TemplatesPage', () => {
       onCreate: () => void;
       creating: () => boolean;
     };
-    const closed = signal<{ pageSize: 'A4'; orientation: 'portrait' } | undefined>(undefined);
+    const closed = signal<
+      { pageSize: 'A4'; orientation: 'portrait'; categoryId: string } | undefined
+    >(undefined);
     dialogSpy.open.mockReturnValue({ closed, close: jest.fn() });
 
     instance.onCreate();
-    closed.set({ pageSize: 'A4', orientation: 'portrait' });
+    closed.set({ pageSize: 'A4', orientation: 'portrait', categoryId: 'cat-1' });
     fixture.detectChanges();
     await fixture.whenStable();
 
@@ -273,7 +275,7 @@ describe('TemplatesPage', () => {
     service.create.mockReturnValue(of(fail('Не удалось сохранить шаблон')));
 
     instance.onCreate();
-    closed.set({ pageSize: 'A4', orientation: 'portrait' });
+    closed.set({ pageSize: 'A4', orientation: 'portrait', categoryId: 'cat-1' });
     fixture.detectChanges();
     await fixture.whenStable();
 
@@ -295,13 +297,17 @@ describe('TemplatesPage', () => {
     dialogSpy.open.mockReturnValue({ closed, close: jest.fn() });
 
     instance.onCreate();
-    closed.set({ pageSize: 'A5', orientation: 'landscape' });
+    closed.set({ pageSize: 'A5', orientation: 'landscape', categoryId: 'cat-1' });
     fixture.detectChanges();
     await fixture.whenStable();
 
     expect(service.create).toHaveBeenCalledTimes(1);
     expect(service.create).toHaveBeenCalledWith(
-      expect.objectContaining({ pageSize: 'A5', orientation: 'landscape' }),
+      expect.objectContaining({
+        pageSize: 'A5',
+        orientation: 'landscape',
+        categoryId: 'cat-1',
+      }),
     );
     expect(instance.creating()).toBe(false);
     expect(navigate).toHaveBeenCalledWith(['/doc-constructor/builder', 'dt3']);
@@ -332,13 +338,13 @@ describe('TemplatesPage', () => {
     dialogSpy.open.mockReturnValue({ closed, close: jest.fn() });
 
     instance.onCreate();
-    closed.set({ pageSize: 'A4', orientation: 'portrait' });
+    closed.set({ pageSize: 'A4', orientation: 'portrait', categoryId: 'cat-1' });
     fixture.detectChanges();
     await fixture.whenStable();
     expect(service.create).toHaveBeenCalledTimes(1);
 
     // A stale second emission must not re-fire the callback (filter+take(1)).
-    closed.set({ pageSize: 'A4', orientation: 'portrait' });
+    closed.set({ pageSize: 'A4', orientation: 'portrait', categoryId: 'cat-1' });
     fixture.detectChanges();
     await fixture.whenStable();
     expect(service.create).toHaveBeenCalledTimes(1);

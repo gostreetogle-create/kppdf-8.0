@@ -2,8 +2,8 @@
  * TZ-104.6 — `PiRichTextEditorComponent`
  *
  * Минималистичный редактор для текстовых блоков документа.
- * Только самое необходимое: заголовки, жирный/курсив/подчёркивание,
- * выравнивание. Без цвета, выделения, списков и шрифтов.
+ * Жирный/курсив/подчёркивание + выравнивание. Размер — через fontSize колонки.
+ * H1–H3 убраны (Stabilization / texts polish): дублировали «Шрифт».
  */
 
 import {
@@ -23,21 +23,32 @@ import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
+import { Placeholder } from '@tiptap/extensions/placeholder';
 
-export const DEFAULT_EXTENSIONS = [
-  StarterKit.configure({
-    heading: { levels: [1, 2, 3] },
-    underline: false,
-    bulletList: false,
-    orderedList: false,
-    code: false,
-    codeBlock: false,
-    blockquote: false,
-    horizontalRule: false,
-  }),
-  Underline,
-  TextAlign.configure({ types: ['heading', 'paragraph'] }),
-];
+export function createRichTextExtensions(placeholderText: string) {
+  return [
+    StarterKit.configure({
+      heading: false,
+      underline: false,
+      bulletList: false,
+      orderedList: false,
+      code: false,
+      codeBlock: false,
+      blockquote: false,
+      horizontalRule: false,
+    }),
+    Underline,
+    TextAlign.configure({ types: ['paragraph'] }),
+    Placeholder.configure({
+      placeholder: placeholderText,
+      emptyEditorClass: 'is-editor-empty',
+      emptyNodeClass: 'is-empty',
+    }),
+  ];
+}
+
+/** @deprecated Prefer createRichTextExtensions — kept for rare direct imports. */
+export const DEFAULT_EXTENSIONS = createRichTextExtensions('Напишите текст…');
 
 @Component({
   selector: 'app-pi-rich-text',
@@ -46,47 +57,15 @@ export const DEFAULT_EXTENSIONS = [
   template: `
     <div
       class="pi-rte"
+      [attr.data-placeholder]="placeholder()"
       [class.pi-rte--focused]="focused()"
       [class.pi-rte--selected]="selected()"
       [class.pi-rte--compact]="compact()"
       [class.pi-rte--chromeless]="!showToolbar()"
-      (mousedown)="activate.emit()"
+      (mousedown)="onShellMouseDown($event)"
     >
       @if (showToolbar()) {
         <div class="pi-rte-toolbar" role="toolbar" aria-label="Форматирование текста">
-          <!-- Heading levels -->
-          <div class="pi-rte-group">
-            <button
-              type="button"
-              class="pi-rte-btn"
-              [class.is-active]="activeStates().h1"
-              (click)="toggleHeading(1)"
-              title="Заголовок 1"
-            >
-              H<sub>1</sub>
-            </button>
-            <button
-              type="button"
-              class="pi-rte-btn"
-              [class.is-active]="activeStates().h2"
-              (click)="toggleHeading(2)"
-              title="Заголовок 2"
-            >
-              H<sub>2</sub>
-            </button>
-            <button
-              type="button"
-              class="pi-rte-btn"
-              [class.is-active]="activeStates().h3"
-              (click)="toggleHeading(3)"
-              title="Заголовок 3"
-            >
-              H<sub>3</sub>
-            </button>
-          </div>
-
-          <div class="pi-rte-sep"></div>
-
           <!-- Inline: bold / italic / underline -->
           <div class="pi-rte-group">
             <button
@@ -174,13 +153,21 @@ export const DEFAULT_EXTENSIONS = [
         </div>
       }
 
-      <div #editorEl class="pi-rte-editor" [class.pi-rte-editor--compact]="compact()"></div>
+      <div
+        #editorEl
+        class="pi-rte-editor"
+        [class.pi-rte-editor--compact]="compact()"
+        (mousedown)="onEditorSurfaceMouseDown($event)"
+      ></div>
     </div>
   `,
   styles: [
     `
       :host {
-        display: block;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: inherit;
         --pi-rte-editor-border: oklch(0.22 0.08 260);
         --pi-rte-editor-border-selected: oklch(0.32 0.14 260);
       }
@@ -192,6 +179,10 @@ export const DEFAULT_EXTENSIONS = [
       /* ── Container ── */
       .pi-rte {
         position: relative;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: inherit;
         border: 1.5px solid oklch(var(--color-ink) / 0.85);
         border-radius: 5px;
         background: oklch(var(--color-paper));
@@ -322,6 +313,9 @@ export const DEFAULT_EXTENSIONS = [
 
       /* ── Editor content ── */
       .pi-rte-editor {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
         padding: 12px 14px;
         min-height: 52px;
         font-size: 14px;
@@ -336,39 +330,11 @@ export const DEFAULT_EXTENSIONS = [
         min-height: 38px;
         font-size: 13px;
       }
-      .pi-rte-editor--compact {
-        padding: 10px 12px;
-        min-height: 38px;
-        font-size: 13px;
-      }
       .pi-rte-editor p {
         margin: 0 0 6px;
       }
       .pi-rte-editor p:last-child {
         margin-bottom: 0;
-      }
-      :host ::ng-deep .pi-rte-editor h1 {
-        font-size: 26px;
-        font-weight: 700;
-        margin: 0 0 10px;
-        line-height: 1.2;
-        letter-spacing: -0.02em;
-        color: var(--color-ink);
-      }
-      :host ::ng-deep .pi-rte-editor h2 {
-        font-size: 21px;
-        font-weight: 650;
-        margin: 0 0 8px;
-        line-height: 1.25;
-        letter-spacing: -0.01em;
-        color: var(--color-ink);
-      }
-      :host ::ng-deep .pi-rte-editor h3 {
-        font-size: 17px;
-        font-weight: 600;
-        margin: 0 0 6px;
-        line-height: 1.3;
-        color: var(--color-ink);
       }
       .pi-rte-editor strong {
         font-weight: 700;
@@ -382,13 +348,17 @@ export const DEFAULT_EXTENSIONS = [
 
       .pi-rte-editor .ProseMirror {
         outline: none;
-        min-height: 52px;
+        flex: 1 1 auto;
+        min-height: 100%;
+        height: 100%;
+        cursor: text;
       }
       .pi-rte-editor--compact .ProseMirror {
-        min-height: 38px;
+        min-height: 100%;
       }
-      /* TipTap placeholder */
-      .pi-rte-editor .ProseMirror p.is-editor-empty:first-child::before {
+      /* TipTap Placeholder extension */
+      .pi-rte-editor .ProseMirror p.is-empty:first-child::before,
+      .pi-rte-editor .ProseMirror.is-editor-empty p:first-child::before {
         content: attr(data-placeholder);
         float: left;
         color: oklch(var(--color-muted-foreground-strong));
@@ -396,6 +366,9 @@ export const DEFAULT_EXTENSIONS = [
         height: 0;
         font-weight: 400;
         font-style: italic;
+      }
+      .pi-rte-editor .ProseMirror.is-editor-empty::before {
+        content: none;
       }
     `,
   ],
@@ -426,7 +399,7 @@ export class PiRichTextEditorComponent implements AfterViewInit, OnDestroy {
 
     this.editor = new Editor({
       element: el,
-      extensions: DEFAULT_EXTENSIONS,
+      extensions: createRichTextExtensions(this.placeholder()),
       content: this.value() || '',
       editorProps: {
         attributes: { 'data-placeholder': this.placeholder() },
@@ -464,9 +437,25 @@ export class PiRichTextEditorComponent implements AfterViewInit, OnDestroy {
     this.editor?.destroy();
   }
 
+  /** Click anywhere in the tall empty panel → focus caret (not only the top line). */
+  protected onShellMouseDown(event: MouseEvent): void {
+    this.activate.emit();
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('.pi-rte-toolbar')) return;
+  }
+
+  protected onEditorSurfaceMouseDown(event: MouseEvent): void {
+    this.activate.emit();
+    // Click on padding / empty surface below the paragraph still focuses.
+    if (event.target === this.editorEl()?.nativeElement) {
+      event.preventDefault();
+      this.focusEditor();
+    }
+  }
+
   /** Focus this editor instance (used by parent toolbar). */
   focusEditor(): void {
-    this.editor?.chain().focus().run();
+    this.editor?.chain().focus('end').run();
   }
 
   /** Remember caret before opening a dialog (focus is lost on blur). */
@@ -476,14 +465,17 @@ export class PiRichTextEditorComponent implements AfterViewInit, OnDestroy {
     this.savedSelection = { from, to };
   }
 
-  /** Insert plain text / token at cursor (or saved caret). */
+  /** Insert plain text / token at cursor (or saved caret / end). */
   insertContent(text: string): void {
     const ed = this.editor;
     if (!ed) return;
 
     let chain = ed.chain().focus();
     if (this.savedSelection) {
-      chain = chain.setTextSelection(this.savedSelection);
+      const max = ed.state.doc.content.size;
+      const from = Math.min(this.savedSelection.from, max);
+      const to = Math.min(this.savedSelection.to, max);
+      chain = chain.setTextSelection({ from, to });
       this.savedSelection = null;
     }
     chain.insertContent(text).run();
@@ -519,9 +511,6 @@ export class PiRichTextEditorComponent implements AfterViewInit, OnDestroy {
   toggleUnderline(): void {
     this.editor?.chain().focus().toggleUnderline().run();
   }
-  toggleHeading(level: 1 | 2 | 3): void {
-    this.editor?.chain().focus().toggleHeading({ level }).run();
-  }
   setTextAlign(align: 'left' | 'center' | 'right'): void {
     this.editor?.chain().focus().setTextAlign(align).run();
   }
@@ -536,9 +525,6 @@ export class PiRichTextEditorComponent implements AfterViewInit, OnDestroy {
       bold: ed.isActive('bold'),
       italic: ed.isActive('italic'),
       underline: ed.isActive('underline'),
-      h1: ed.isActive('heading', { level: 1 }),
-      h2: ed.isActive('heading', { level: 2 }),
-      h3: ed.isActive('heading', { level: 3 }),
       alignLeft: ed.isActive({ textAlign: 'left' }),
       alignCenter: ed.isActive({ textAlign: 'center' }),
       alignRight: ed.isActive({ textAlign: 'right' }),
@@ -552,9 +538,6 @@ export interface ActiveStates {
   bold: boolean;
   italic: boolean;
   underline: boolean;
-  h1: boolean;
-  h2: boolean;
-  h3: boolean;
   alignLeft: boolean;
   alignCenter: boolean;
   alignRight: boolean;
@@ -564,9 +547,6 @@ const DEFAULT_ACTIVE: ActiveStates = {
   bold: false,
   italic: false,
   underline: false,
-  h1: false,
-  h2: false,
-  h3: false,
   alignLeft: false,
   alignCenter: false,
   alignRight: false,

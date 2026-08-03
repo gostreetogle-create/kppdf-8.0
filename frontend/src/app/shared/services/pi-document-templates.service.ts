@@ -20,7 +20,7 @@ import {
  * parametrized by:
  *   - `organizationId`: our side (FK → Organization)
  *   - `docTypeId`: meta-classifier (FK → DocType — «КП» / «Договор» / «Акт»)
- *   - `pageSize`: A4 | A5 | Letter | Legal
+ *   - `pageSize`: A3 | A4 | A5 (TZ-DOC-337 canon)
  *   - `backgroundImage[]`: array of `/uploads/...` URLs (Phase A.6)
  *
  * Block composition (`TemplateBlock[]`) is NOT exposed on DocumentTemplate

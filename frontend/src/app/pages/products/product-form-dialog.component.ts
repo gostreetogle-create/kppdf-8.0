@@ -121,7 +121,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
     <app-pi-dialog
       [title]="isEdit() ? 'Редактировать продукт' : 'Создать продукт'"
       [variant]="'content'"
-      [maxWidth]="'1000px'"
+      [maxWidth]="'min(1000px, calc(100vw - 2rem))'"
     >
       <form
         body
@@ -388,9 +388,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
                         </a>
                       }
                     } @else if (filteredColors().length === 0) {
-                      <p class="px-3 py-2 text-xs text-muted-foreground">
-                        Ничего не найдено.
-                      </p>
+                      <p class="px-3 py-2 text-xs text-muted-foreground">Ничего не найдено.</p>
                     } @else {
                       @for (c of filteredColors(); track c._id) {
                         <button
@@ -663,9 +661,7 @@ export class ProductFormDialogComponent implements OnDestroy {
     const q = this.colorSearch().trim().toLowerCase();
     const list = this.colors();
     if (!q) return list;
-    return list.filter(
-      (c) => c.name.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q),
-    );
+    return list.filter((c) => c.name.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q));
   });
 
   /**
