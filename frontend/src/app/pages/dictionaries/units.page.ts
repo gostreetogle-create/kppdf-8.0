@@ -10,9 +10,13 @@ import {
   signal,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../shared/page/pi-section.component';
+import {
+  NonNullableFormBuilder,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import { PiDictionaryShellComponent } from '../../shared/page/pi-dictionary-shell.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../shared/ui/switch/switch.component';
@@ -26,118 +30,104 @@ import { API_BASE_URL } from '../../core/api.tokens';
 import { Unit, UnitsService, type UnitsListResponse } from './units.service';
 
 /**
- * Полная документация страницы: docs/pages/dictionaries.page.md
+ * TZ-DICT-304 — Units page on /dictionaries/units.
  *
- * TZ-NEW DictionariesPage — каталог единиц измерения (Units).
- *
- * Сейчас содержит только один справочник — `units`. Архитектура готова
- * к расширению: в будущем сюда можно добавить «Категории материалов»,
- * «Статусы документов» и т.д. — через добавление табов или секций.
- *
- * CRUD: создание, деактивация, удаление (системные юниты нельзя удалить).
+ * D1–D2 chrome: PiDictionaryShell with sticky tools bar (search + filter + add).
+ * CRUD: create (inline), toggle active, delete. Client-side sort/filter.
  */
 @Component({
-  selector: 'app-dictionaries-page',
+  selector: 'app-units-page',
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
-    PiPageHeaderComponent,
-    PiSectionComponent,
+    FormsModule,
+    PiDictionaryShellComponent,
     PiRowActionsComponent,
     ButtonComponent,
     SwitchComponent,
     TableComponent,
   ],
   template: `
-    <app-pi-page-header
-      eyebrow="раздел · справочники"
-      title="Справочники"
-      description="Словари значений для выпадающих списков. Единицы измерения — добавление, редактирование, деактивация."
-    />
-
-    <app-pi-section title="Единицы измерения" hint="системные юниты нельзя удалить" eyebrow="I">
+    <app-pi-dictionary-shell [title]="'Единицы измерения'" [totalLabel]="totalLabel()">
       @if (error()) {
         <div
           role="alert"
-          class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+          class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
         >
           {{ error() }}
         </div>
       }
 
-      <!-- ───── Форма добавления ───── -->
-      <form
-        [formGroup]="form"
-        (ngSubmit)="onAdd()"
-        class="mb-section p-4 hairline rounded-sm bg-paper-2/30"
-        data-test="add-unit-form"
-      >
-        <p class="eyebrow mb-3">Новая единица</p>
-        <div class="grid grid-cols-1 sm:grid-cols-5 gap-form-field items-end">
-          <label class="block">
-            <span class="eyebrow block mb-1.5">Ключ <span class="text-destructive">*</span></span>
-            <input
-              id="u-key"
-              type="text"
-              formControlName="key"
-              placeholder="m, mm, km…"
-              maxlength="32"
-              autocomplete="off"
-              class="pi-input w-full mono"
-            />
-          </label>
-          <label class="block">
-            <span class="eyebrow block mb-1.5"
-              >Название <span class="text-destructive">*</span></span
-            >
-            <input
-              id="u-label"
-              type="text"
-              formControlName="label"
-              placeholder="Метр"
-              maxlength="128"
-              autocomplete="off"
-              class="pi-input w-full"
-            />
-          </label>
-          <label class="block">
-            <span class="eyebrow block mb-1.5">Символ</span>
-            <input
-              id="u-symbol"
-              type="text"
-              formControlName="symbol"
-              placeholder="м"
-              maxlength="16"
-              autocomplete="off"
-              class="pi-input w-full"
-            />
-          </label>
-          <label class="block">
-            <span class="eyebrow block mb-1.5">Категория</span>
-            <input
-              id="u-category"
-              type="text"
-              formControlName="category"
-              placeholder="length / mass / volume…"
-              maxlength="32"
-              autocomplete="off"
-              class="pi-input w-full"
-            />
-          </label>
-          <app-pi-button
-            type="submit"
-            variant="default"
-            [disabled]="form.invalid || adding()"
-            data-test="add-button"
-          >
-            {{ adding() ? 'Добавление…' : '+ Добавить' }}
-          </app-pi-button>
-        </div>
-      </form>
+      <!-- Sticky tools: search + filter + compact add -->
+      <div tools class="flex items-end gap-form-field flex-wrap w-full" [formGroup]="form">
+        <input
+          type="search"
+          [ngModel]="searchQuery()"
+          [ngModelOptions]="{ standalone: true }"
+          (ngModelChange)="searchQuery.set($event)"
+          placeholder="Поиск по названию или ключу…"
+          aria-label="Поиск единиц"
+          class="pi-input w-56"
+          data-test="search-input"
+        />
+        <input
+          type="text"
+          [ngModel]="categoryFilter()"
+          [ngModelOptions]="{ standalone: true }"
+          (ngModelChange)="categoryFilter.set($event)"
+          placeholder="Фильтр по категории…"
+          aria-label="Фильтр по категории"
+          class="pi-input w-36"
+          data-test="category-filter"
+        />
+        <span class="flex-1"></span>
+        <input
+          type="text"
+          formControlName="key"
+          placeholder="Ключ *"
+          maxlength="32"
+          class="pi-input w-20 mono"
+          aria-label="Ключ единицы"
+        />
+        <input
+          type="text"
+          formControlName="label"
+          placeholder="Название *"
+          maxlength="128"
+          class="pi-input w-28"
+          aria-label="Название единицы"
+        />
+        <input
+          type="text"
+          formControlName="symbol"
+          placeholder="Символ"
+          maxlength="16"
+          class="pi-input w-16"
+          aria-label="Символ единицы"
+        />
+        <input
+          type="text"
+          formControlName="category"
+          placeholder="Категория"
+          maxlength="32"
+          class="pi-input w-28"
+          aria-label="Категория единицы"
+        />
+        <app-pi-button
+          type="button"
+          variant="default"
+          (click)="onAdd()"
+          [disabled]="form.invalid || adding()"
+          data-test="add-button"
+        >
+          {{ adding() ? '…' : '+ Добавить' }}
+        </app-pi-button>
+      </div>
 
-      <!-- ───── pi-table ───── -->
+      <!-- Data table -->
       <app-pi-table
-        [data]="sortedUnits()"
+        [data]="filteredUnits()"
         [columns]="columns"
         [cellTemplates]="tpls()"
         [rowActions]="rowActionsTpl"
@@ -171,10 +161,10 @@ import { Unit, UnitsService, type UnitsListResponse } from './units.service';
           data-test="active-switch"
         />
       </ng-template>
-    </app-pi-section>
+    </app-pi-dictionary-shell>
   `,
 })
-export class DictionariesPage {
+export class UnitsPage {
   private readonly service = inject(UnitsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
@@ -183,7 +173,6 @@ export class DictionariesPage {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly baseUrl = inject(API_BASE_URL);
 
-  /** Server list via httpResource. */
   protected readonly listRes = httpResource<UnitsListResponse>(() => ({
     url: `${this.baseUrl}/units`,
     params: { page: 1, limit: 100 },
@@ -199,17 +188,31 @@ export class DictionariesPage {
 
   protected readonly adding = signal<boolean>(false);
 
-  /** Client-side sort by sortOrder then key. */
-  protected readonly sortedUnits = computed<Unit[]>(() => {
+  protected readonly searchQuery = signal<string>('');
+  protected readonly categoryFilter = signal<string>('');
+
+  protected readonly totalLabel = computed(() => {
+    const n = this.data().length;
+    const f = this.filteredUnits().length;
+    return f !== n ? `${f} из ${n} записей` : n ? `${n} записей` : '';
+  });
+
+  protected readonly filteredUnits = computed<Unit[]>(() => {
+    const q = this.searchQuery().trim().toLowerCase();
+    const cat = this.categoryFilter().trim().toLowerCase();
     return this.data()
-      .slice()
+      .filter((u) => {
+        if (q && !u.label.toLowerCase().includes(q) && !u.key.toLowerCase().includes(q))
+          return false;
+        if (cat && (!u.category || !u.category.toLowerCase().includes(cat))) return false;
+        return true;
+      })
       .sort((a, b) => {
         if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
         return a.key.localeCompare(b.key);
       });
   });
 
-  /** Column defs — with isActive switch column via cellTemplates. */
   protected readonly columns: ColumnDef<Unit>[] = [
     {
       key: 'key',
@@ -228,10 +231,6 @@ export class DictionariesPage {
   @ViewChild('rowActionsTpl', { static: true })
   protected readonly rowActionsTpl!: TemplateRef<{ $implicit: Unit }>;
 
-  /**
-   * Per-column rich templates: isActive switch column.
-   * Mapped via `[cellTemplates]="tpls"` binding on pi-table.
-   */
   @ViewChild('activeSwitchTpl', { static: true })
   protected readonly activeSwitchTpl!: TemplateRef<{ $implicit: Unit }>;
 
@@ -309,9 +308,5 @@ export class DictionariesPage {
         }
       });
     });
-  }
-
-  protected reload(): void {
-    this.listRes.reload();
   }
 }

@@ -1,0 +1,15 @@
+# Lock file
+Locked as of 2026-08-04 — TZ-CATALOG-304: composition migration + write lock + cost dual-read.
+
+Owner: Basher + Cursor Architect
+Protected files:
+- backend/src/database/migrations/2026-08-04-TZ-CATALOG-304-composition-migrate.ts
+- backend/src/modules/product/product.service.ts
+- backend/src/modules/product-module/product-module.service.ts
+- backend/src/modules/cost-calculation/cost-calculation.service.ts
+- backend/src/modules/cost-calculation/cost-calculation.module.ts
+- backend/test/e2e/products-attach-modules.e2e-spec.ts
+- backend/test/e2e/product-modules.e2e-spec.ts
+- backend/test/e2e/cost-calculation.e2e-spec.ts
+
+Unlock: only via orchestrator approval (successor TZ).

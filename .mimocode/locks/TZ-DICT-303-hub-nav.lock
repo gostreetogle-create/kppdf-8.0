@@ -1,0 +1,12 @@
+# Lock file
+Locked as of 2026-08-04 — TZ-DICT-303: hub + nav + units route.
+
+Owner: buffy + Cursor Architect
+Protected files:
+- frontend/src/app/pages/dictionaries/dictionaries-hub.page.ts
+- frontend/src/app/pages/dictionaries/units.page.ts
+- frontend/src/app/app.routes.ts
+- frontend/src/app/layout/app-layout.component.ts
+- frontend/src/app/shared/ui/menu/pi-nav-dropdown.component.ts
+
+Unlock: only via orchestrator approval (successor TZ).

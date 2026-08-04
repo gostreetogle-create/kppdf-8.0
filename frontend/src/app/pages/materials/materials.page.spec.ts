@@ -269,6 +269,10 @@ describe('MaterialsPage (httpResource refactor)', () => {
   // dispatching has no effect. The signal is the public contract —
   // "set debouncedSearch=steel → re-fetch with search=steel" — so we
   // exercise the resource's reactivity through it directly.
+  //
+  // TZ-CATALOG-316 kindFilter re-fire lives in materials.page-316.spec.ts
+  // (own suite): a second settled→signal→flushEffects in THIS file
+  // trips NG0101 and poisons ApplicationRef for the next it().
   // ──────────────────────────────────────────────────────────────────────
   it('re-fires GET with search=steel when debouncedSearch flips', async () => {
     const fixture = TestBed.createComponent(MaterialsPage);
@@ -311,7 +315,7 @@ describe('MaterialsPage (httpResource refactor)', () => {
   });
 
   // ──────────────────────────────────────────────────────────────────────
-  // 6. reload() — REMOVED
+  // 5. reload() — REMOVED
   //
   // The exact same NG0101 (`ApplicationRef.tick is called recursively`)
   // that affected the earlier 401/500 versions of this test surfaced
@@ -327,27 +331,8 @@ describe('MaterialsPage (httpResource refactor)', () => {
   // ──────────────────────────────────────────────────────────────────────
 
   // ──────────────────────────────────────────────────────────────────────
-  // 6. silent-error pipeline — one fixture per status
-  //
-  // The key contract we actually verify here: on 4xx/5xx, the resource
-  // transitions to its error state and `comp.error()` surfaces the
-  // message. We don't assert `console.error` was NOT called, because in
-  // async TestBed setups Angular's zone can sometimes log
-  // `ExpressionChangedAfterItHasBeenCheckedError` (NG0101) during the
-  // state transition — that's Angular framework noise, not our
-  // silent-error pipeline leaking. The inline-banner contract is what
-  // matters for the user-visible behaviour, and that's what we check.
+  // silent-error pipeline follow-ups — dropped (see tests 2/3).
   // ──────────────────────────────────────────────────────────────────────
-  // Two separate `it()` blocks would have tested the for-loop boundary
-  // but the TaskBed/jest combination surfaces NG0101 on the moment the
-  // resource transitions into its error state inside an `async` test
-  // unless the prior iteration's `flushEffects()` already drained the
-  // microtask scheduler. Tests 2/3 above already verify the same
-  // 401/500 → error() banner contract — they keep the second
-  // `flushEffects()` (matching the success path) and pass cleanly.
-  // We've dropped the dedicated 6/7 follow-up tests to stay with the
-  // confirmed-good sync pattern (success path of tests 1,4,5 mirrors
-  // the failure path of tests 2,3 verbatim).
 });
 
 // Local helper: `TestBed.flushEffects()` (Angular 20+) drains the

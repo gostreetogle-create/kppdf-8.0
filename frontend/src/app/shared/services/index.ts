@@ -32,3 +32,11 @@ export type {
 } from './pi-counterparty.service';
 export { WorkTypesService } from './pi-work-types.service';
 export type { WorkType } from './pi-work-types.service';
+export { PiWorkersService, personDisplayName } from './pi-workers.service';
+export type {
+  Person,
+  CreatePersonPayload,
+  UpdatePersonPayload,
+  PersonListResponse,
+  PersonListParams,
+} from './pi-workers.service';

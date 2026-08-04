@@ -383,7 +383,12 @@ export class ModulesPage implements OnInit {
       key: 'materials',
       label: 'Материалов',
       cellClass: 'text-muted-foreground',
-      format: (r) => String(r.materials?.length ?? 0),
+      // Dual-read (TZ-CATALOG-317): непустой composition (material-линии)
+      // имеет приоритет над legacy materials[].
+      format: (r) => {
+        const lines = (r.composition ?? []).filter((l) => l.lineType === 'material');
+        return String(lines.length > 0 ? lines.length : (r.materials?.length ?? 0));
+      },
     },
     {
       key: 'workTypes',

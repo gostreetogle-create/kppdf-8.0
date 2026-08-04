@@ -102,6 +102,23 @@ describe('DocumentTemplateCategoriesPage (TZ-DOC-308)', () => {
     expect(createComp()).toBeTruthy();
   });
 
+  it('renders the PiDictionaryShell chrome with sticky search + CTA (TZ-DICT-307)', () => {
+    const fixture = TestBed.createComponent(DocumentTemplateCategoriesPage);
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    const shell = el.querySelector('app-pi-dictionary-shell');
+    expect(shell).toBeTruthy();
+    const search = shell?.querySelector('input[aria-label="Поиск категорий шаблонов"]');
+    expect(search).toBeTruthy();
+    expect((search as HTMLInputElement | null | undefined)?.getAttribute('placeholder')).toBe(
+      'Поиск по названию…',
+    );
+    expect(shell?.querySelector('app-pi-button[data-test="create-category-button"]')).toBeTruthy();
+    // D1 canon: old prose chrome (page-header / section) must be gone.
+    expect(el.querySelector('app-pi-page-header')).toBeFalsy();
+    expect(el.querySelector('app-pi-section')).toBeFalsy();
+  });
+
   it('loads categories on creation', () => {
     const c = createComp<{ items: () => DocumentTemplateCategory[]; loading: () => boolean }>();
     expect(c.items().length).toBe(3);

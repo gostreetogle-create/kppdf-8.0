@@ -58,7 +58,7 @@ type Result = TextBlockCategory | null | undefined;
     <app-pi-dialog
       [title]="isEdit() ? 'Редактировать категорию текста' : 'Создать категорию текста'"
       [variant]="'content'"
-      [maxWidth]="'1000px'"
+      [maxWidth]="'min(1120px, calc(100vw - 2rem))'"
     >
       <form
         body

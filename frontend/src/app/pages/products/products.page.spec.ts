@@ -20,6 +20,7 @@ import { of } from 'rxjs';
 
 import { ProductsPage } from './products.page';
 import { ProductsService } from '../../shared/services/products.service';
+import { ProductModulesService } from '../../shared/services/pi-product-modules.service';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { API_BASE_URL } from '../../core/api.tokens';
@@ -98,6 +99,10 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
         provideRouter([]),
         { provide: API_BASE_URL, useValue: baseUrl },
         { provide: ProductsService, useValue: productsSvc },
+        {
+          provide: ProductModulesService,
+          useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) },
+        },
         { provide: PiDialogService, useValue: dialogSpy },
         { provide: PiToastService, useValue: toastSpy },
       ],
@@ -216,9 +221,7 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-test="expanded-empty"]')).toBeTruthy();
-    expect(
-      fixture.nativeElement.querySelector('[data-test="module-card-mod1"]'),
-    ).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('[data-test="module-card-mod1"]')).toBeFalsy();
   });
 
   it('«Модулей» column formats the count from productModuleIds.length', async () => {
@@ -284,9 +287,7 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
     // avatar initials derived from name (PiAvatar monogram)
     expect(fixture.nativeElement.querySelector('[data-test="showcase-avatar"]')).toBeTruthy();
     // price formatted via formatPrice (PRODUCTS[0].listPrice undefined → empty)
-    expect(
-      fixture.nativeElement.querySelector('[data-test="showcase-price"]'),
-    ).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="showcase-price"]')).toBeTruthy();
   });
 
   it('grid status badge shows isActive=false as «Неактивен»', async () => {

@@ -1,6 +1,6 @@
 # Страница: Цвета (ColorReferencesPage)
 
-**Краткое описание:** Справочник цветов (RAL) — CRUD-страница для словаря цветов, используемого в RAL-выпадающем списке товара (TZ-PRODUCTS-302).
+**Краткое описание:** Справочник цветов (RAL) на `/dictionaries/color-references`. D1–D2 chrome: PiDictionaryShell (компактный title + sticky tools — поиск, фильтр активности, CTA). CRUD через диалоги; системный цвет «Не выбран» read-only (system-color contract). Каталог используется в RAL-выпадающем списке товара (TZ-PRODUCTS-302).
 
 ## Route
 
@@ -9,6 +9,15 @@
 ```
 
 Защита: `authGuard` + `adminOnlyRouteGuard` (admin/manager). Чтение через API доступно и `user`-ролям — RAL-dropdown в диалоге товара открыт каждому авторизованному пользователю (backend `@Roles('user','admin','manager')` на read).
+
+## Chrome
+
+| Компонент | Назначение |
+|-----------|-----------|
+| `PiDictionaryShell` | title «Цвета (RAL)» + `totalLabel` + sticky tools (D1–D2, без eyebrow/description) |
+| Search input | Поиск по названию или slug (client-side) |
+| Active filter | select «Все / Только активные / Только неактивные» |
+| CTA | «+ Создать цвет» → `ColorReferenceFormDialogComponent` (create) |
 
 ## API endpoints
 
@@ -57,13 +66,17 @@
 | `loading` | `Signal<boolean>` | Загрузка |
 | `error` | `Signal<string\|null>` | Ошибка загрузки |
 | `searchQuery` | `Signal<string>` | Поиск по name/slug |
+| `activeFilter` | `Signal<'all'\|'active'\|'inactive'>` | Фильтр по активности |
 | `page` | `Signal<number>` | Клиентская пагинация (pageSize=100) |
 
 ## Computed
 
 | Computed | Трансформация |
 |----------|--------------|
-| `visible` | filter (name/slug search) → sort (name, затем slug) → slice по странице |
+| `filtered` | search (name/slug) + active filter → sort (name, затем slug) |
+| `visible` | slice `filtered` по странице (pageSize=100) |
+| `totalLabel` | «N цветов» / «N из M цветов» (компактный total, D2) |
+| `emptyMessage` | «Ничего не найдено.» при фильтрах / «Нет цветов. Создайте первый.» |
 
 ## Column definitions
 
@@ -85,4 +98,4 @@
 
 ---
 
-_Создано: 2026-08-02 (TZ-PRODUCTS-301)._
+_Создано: 2026-08-02 (TZ-PRODUCTS-301). · Обновлено: 2026-08-04 (TZ-DICT-306, shell cutover)._

@@ -32,7 +32,7 @@ const HEX_PATTERN = /^#[0-9a-fA-F]{6}$/;
  *   - System colors are read-only: the page disables edit/delete for them;
  *     this dialog is only opened for non-system colors.
  *
- * Layout: `variant="content"` + `[maxWidth]="'1000px'"` — wide dialog with
+ * Layout: `variant="content"` + `[maxWidth]="'min(1120px, calc(100vw - 2rem))'"` — wide dialog with
  * internal body scroll and an ALWAYS-VISIBLE sticky footer (Save/Cancel).
  * The shared PiDialogComponent content template provides `overflow-y-auto`
  * on the body and `sticky bottom-0 bg-paper` on the footer (TZ-MATERIALS
@@ -55,7 +55,7 @@ const HEX_PATTERN = /^#[0-9a-fA-F]{6}$/;
     <app-pi-dialog
       [title]="isEdit() ? 'Редактировать цвет' : 'Создать цвет'"
       [variant]="'content'"
-      [maxWidth]="'1000px'"
+      [maxWidth]="'min(1120px, calc(100vw - 2rem))'"
     >
       <form
         body

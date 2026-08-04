@@ -31,6 +31,9 @@ import { createLookupTable } from '../../shared/util/lookup-table';
 import { ColumnDef, TableComponent } from '../../shared/ui/pi-table.component';
 import {
   Material,
+  MATERIAL_KIND_LABELS,
+  MATERIAL_KINDS,
+  type MaterialKind,
   MaterialsService,
   type MaterialsListResponse,
 } from '../../shared/services/materials.service';
@@ -111,6 +114,21 @@ const PAGE_SIZE = 50;
         data-test="search-input"
         class="pi-input w-64"
       />
+      <!-- TZ-CATALOG-316: kind filter — server attaches ?materialKind= to GET /materials -->
+      <select
+        id="materials-kind-filter"
+        name="materials-kind-filter"
+        [value]="kindFilter() ?? ''"
+        (change)="onKindFilterChange($event)"
+        aria-label="Фильтр по типу материала"
+        data-test="kind-filter"
+        class="pi-input w-40"
+      >
+        <option value="">Все типы</option>
+        @for (k of KIND_OPTIONS; track k) {
+          <option [value]="k">{{ kindLabel(k) }}</option>
+        }
+      </select>
       <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
         + Создать
       </app-pi-button>
@@ -122,7 +140,7 @@ const PAGE_SIZE = 50;
 
     <app-pi-section
       title="Каталог"
-      hint="сортировка · клик по заголовку · габариты: L=Длина W=Ширина H=Высота T=Толщина Ø=Диаметр D=Глубина"
+      hint="сортировка · клик по заголовку · габариты: Д. Ш. В. Т. Ø Г."
       eyebrow="I"
     >
       @if (error()) {
@@ -167,6 +185,11 @@ const PAGE_SIZE = 50;
           <!-- ───── Supplier cell (lookup name) ───── -->
           <ng-template #supplierTpl let-row>
             {{ supplierNameOf(row) ?? '' }}
+          </ng-template>
+
+          <!-- ───── TZ-CATALOG-316: kind cell (Russian short label; — for unset) ───── -->
+          <ng-template #kindTpl let-row>
+            {{ kindLabelOf(row) ?? '' }}
           </ng-template>
 
           <!-- ───── Dimensions cell (font-mono glyphs) ───── -->
@@ -237,6 +260,14 @@ export class MaterialsPage implements OnInit {
   protected readonly page = this.pageSig.asReadonly();
 
   /**
+   * TZ-CATALOG-316: kind filter signal — when set, the resource
+   * attaches `?materialKind=<value>` to the GET request. `null` =
+   * "All" (no param sent).
+   */
+  private readonly kindFilterSig = signal<MaterialKind | null>(null);
+  protected readonly kindFilter = this.kindFilterSig.asReadonly();
+
+  /**
    * Public exposure of the debounced search signal. Required so the
    * `materials.page.spec.ts` test #4 can drive the resource's
    * auto-refire contract via `comp.debouncedSearch.set('steel')` (the
@@ -262,6 +293,9 @@ export class MaterialsPage implements OnInit {
   private readonly photoTplRef!: TemplateRef<{ $implicit: Material }>;
   @ViewChild('supplierTpl', { static: true })
   private readonly supplierTplRef!: TemplateRef<{ $implicit: Material }>;
+  // TZ-CATALOG-316: 301 fields column also rendered via TemplateRef<{ $implicit: Material }>
+  @ViewChild('kindTpl', { static: true })
+  private readonly kindTplRef!: TemplateRef<{ $implicit: Material }>;
   @ViewChild('dimsTpl', { static: true })
   private readonly dimsTplRef!: TemplateRef<{ $implicit: Material }>;
   @ViewChild('stockTpl', { static: true })
@@ -275,17 +309,29 @@ export class MaterialsPage implements OnInit {
   protected rowActionsTplBinding: TemplateRef<{ $implicit: Material }> | null = null;
 
   /**
-   * Single `computed()` that batches `page` + `limit` + `search`
-   * signal reads. httpResource reads `listParams()` and auto-refires
-   * when any signal it depends on changes; with these three signals
-   * collapsed into ONE computed, Angular 20 schedules a single re-fire
-   * per CD cycle instead of 3.
+   * Single `computed()` that batches `page` + `limit` + `search` +
+   * `materialKind` signal reads. httpResource reads `listParams()` and
+   * auto-refires when any signal it depends on changes; with these
+   * signals collapsed into ONE computed, Angular 20 schedules a single
+   * re-fire per CD cycle instead of N.
+   *
+   * Built explicitly (not via spread) so the return type is
+   * `Record<string, string | number | boolean>` — required by
+   * `httpResource`'s `params` overload (it rejects `null`/`undefined`
+   * per-key). The boolean-to-omit dance below keeps falsy
+   * `kindFilter() | debouncedSearch()` out of the query string.
    */
-  private readonly listParams = computed(() => ({
-    page: this.pageSig(),
-    limit: PAGE_SIZE,
-    ...(this.search.debouncedSearch() ? { search: this.search.debouncedSearch() } : {}),
-  }));
+  private readonly listParams = computed(() => {
+    const params: Record<string, string | number | boolean> = {
+      page: this.pageSig(),
+      limit: PAGE_SIZE,
+    };
+    const search = this.search.debouncedSearch();
+    if (search) params['search'] = search;
+    const kind = this.kindFilterSig();
+    if (kind) params['materialKind'] = kind;
+    return params;
+  });
 
   protected readonly listRes = httpResource<MaterialsListResponse>(() => ({
     url: `${this.baseUrl}/materials`,
@@ -337,6 +383,8 @@ export class MaterialsPage implements OnInit {
     { key: 'article', label: 'Артикул', sortable: true, cellClass: 'empty-cell' },
     { key: 'sku', label: 'Внутренний код', sortable: true, cellClass: 'empty-cell' },
     { key: 'unit', label: 'Ед.', sortable: true, width: '60px' },
+    // TZ-CATALOG-316: catalog-leaf classification column.
+    { key: 'materialKind', label: 'Тип', width: '110px', cellClass: 'empty-cell' },
     {
       key: 'supplierId',
       label: 'Поставщик',
@@ -363,6 +411,12 @@ export class MaterialsPage implements OnInit {
     },
   ];
 
+  /** Toolbar options for the kind filter dropdown — same order as MATERIAL_KINDS. */
+  protected readonly KIND_OPTIONS = MATERIAL_KINDS;
+  protected kindLabel(k: MaterialKind): string {
+    return MATERIAL_KIND_LABELS[k];
+  }
+
   ngOnInit(): void {
     // Build cell-template map + row-actions binding AFTER the static
     // @ViewChild fields resolve (static:true resolves BEFORE
@@ -371,6 +425,7 @@ export class MaterialsPage implements OnInit {
     this.cellTemplates = {
       mainPhotoId: this.photoTplRef,
       supplierId: this.supplierTplRef,
+      materialKind: this.kindTplRef,
       dimensions: this.dimsTplRef,
       stockQty: this.stockTplRef,
     };
@@ -398,6 +453,18 @@ export class MaterialsPage implements OnInit {
     );
   }
 
+  /**
+   * TZ-CATALOG-316: render a row's `materialKind` as a short Russian
+   * label. Legacy rows without kind (server sends `null | undefined`)
+   * return `null` so the empty-cell style shows "—" muted instead of
+   * leaving a visible "другое" banner they didn't ask for.
+   */
+  protected kindLabelOf(row: Material): string | null {
+    const k = row.materialKind;
+    if (!k) return null;
+    return MATERIAL_KIND_LABELS[k] ?? null;
+  }
+
   protected dimensionsSummary(row: Material): string {
     if (!row.dimensions || row.dimensions.length === 0) return '';
     return row.dimensions.map((d) => `${typeLetter(d.type)} ${formatVal(d.value)}`).join(' × ');
@@ -413,6 +480,27 @@ export class MaterialsPage implements OnInit {
     // Reset to first page when search query changes so the user doesn't
     // land on an out-of-range page of a (possibly empty) filter set.
     this.pageSig.set(1);
+  }
+
+  /**
+   * TZ-CATALOG-316: when the user picks a kind from the toolbar select,
+   * set the signal; httpResource auto-refires with `?materialKind=…`.
+   * Empty string → null (drop the param so server returns all kinds);
+   * any valid value → filter; invalid → no-op (defensive).
+   */
+  protected onKindFilterChange(event: Event): void {
+    const v = (event.target as HTMLSelectElement).value;
+    if (!v) {
+      this.kindFilterSig.set(null);
+    } else if ((MATERIAL_KINDS as readonly string[]).includes(v)) {
+      this.kindFilterSig.set(v as MaterialKind);
+    }
+    // Reset to page 1 only when needed — unconditional set(1) while already
+    // on page 1 double-fires listParams → httpResource and trips NG0101 in
+    // TestBed.flushEffects (materials.page.spec TZ-CATALOG-316).
+    if (this.pageSig() !== 1) {
+      this.pageSig.set(1);
+    }
   }
 
   protected onPageChange(p: number): void {
@@ -517,20 +605,21 @@ export class MaterialsPage implements OnInit {
 }
 
 // ─── Local helpers (no need to export) ───
+/** UI-сокращения габаритов (русские; в API type остаётся length/width/…). */
 function typeLetter(t: string): string {
   switch (t) {
     case 'length':
-      return 'L';
+      return 'Д.';
     case 'width':
-      return 'W';
+      return 'Ш.';
     case 'height':
-      return 'H';
+      return 'В.';
     case 'thickness':
-      return 'T';
+      return 'Т.';
     case 'diameter':
       return 'Ø';
     case 'depth':
-      return 'D';
+      return 'Г.';
     default:
       return t;
   }

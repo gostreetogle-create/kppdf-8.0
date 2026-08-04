@@ -45,8 +45,23 @@ git worktree list --porcelain
 
 2. Проверь активные TZ, архивы и active markers. Сопоставь task-файл, STATUS, архив, код, тесты, документацию, зависимости и conflict keys.
 3. Не реализуй уже подтверждённую работу повторно. В частности, `TZ-232.A`, `TZ-232.N`, `TZ-232.B` не трогай повторно без доказанного дефекта; Wave A не означает закрытие всего родительского `TZ-232`.
-4. До первой правки создай или обнови `docs/agent-checklists/<TASK-ID>.md` с acceptance criteria, статусом до начала, conflict keys, планом, командами и фактическими результатами.
-5. Проверь, что другой агент не изменяет те же файлы. Общие конфликтные файлы: `progress.md`, `ARCHITECTURE.md`, root `STATUS.md`, `OrchestratorKit/STATUS.md`, `frontend/src/app/core/*`, `frontend/src/app/shared/*` и builder-файлы.
+4. До первой правки создай или обнови `docs/agent-checklists/<TASK-ID>.md` по шаблону
+   `docs/agent-checklists/_TEMPLATE.md` с acceptance criteria, статусом, conflict keys,
+   планом, командами и фактическими результатами.
+5. **Claim protocol (ОБЯЗАТЕЛЬНО, до кода):**
+   - Скопируй/убедись, что TZ лежит в `tasks/_active/<TASK-ID>.md`.
+   - В checklist: Status = `CLAIMED / IN PROGRESS`.
+   - Заполни **Claim slot**: `agent_id`, `claimed_at` (ISO-8601), `workspace: D:\kppdf-8.0`,
+     `team_room_claim: yes|no|unavailable`.
+   - Прочитай `docs/agent-checklists/_active-map.md` + весь `tasks/_active/` —
+     если те же conflict keys уже CLAIMED другим — **СТОП**, не правь.
+   - Team Room: `claim <TASK-ID>` best-effort; отсутствие CLI ≠ пропуск Claim slot.
+   - Без заполненного Claim slot **запрещено** писать product-код.
+6. Проверь, что другой агент не изменяет те же файлы. Общие конфликтные файлы: `progress.md`, `ARCHITECTURE.md`, root `STATUS.md`, `OrchestratorKit/STATUS.md`, `frontend/src/app/core/*`, `frontend/src/app/shared/*` и builder-файлы.
+
+Доска: `docs/agent-checklists/_active-map.md`. Review inbox волны (если есть) —
+`CATALOG-WAVE1-REVIEW.md` / `DICT-WAVE1-REVIEW.md`. Архив **только после**
+Cursor/PO Verdict PASS, если TZ это требует.
 
 ## Проверки
 

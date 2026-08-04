@@ -7,20 +7,29 @@ import { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
 import {
+  CompositionLine,
   MaterialInModule,
   ProductModulesService,
 } from '../../shared/services/pi-product-modules.service';
 import { Material, MaterialsService } from '../../shared/services/materials.service';
-import { extractErrorMessage } from '../../core/silent-http';
+import { extractErrorMessage, SilentResult } from '../../core/silent-http';
+import { forkJoin, Observable } from 'rxjs';
+import { concatMap } from 'rxjs/operators';
 
 /**
- * TZ-83 Phase C: ModuleMaterialsFormDialog.
+ * TZ-83 Phase C + TZ-CATALOG-317: ModuleMaterialsFormDialog.
  *
  * Поведение:
- *  - input: { moduleId, materials: MaterialInModule[] } (current state)
+ *  - input: { moduleId, materials: MaterialInModule[], composition?: CompositionLine[] }
+ *    (current state; composition — канонический состав модуля)
  *  - FormArray: каждая строка = material picker + quantity + unit +
  *    override length/width/height/unit (4 необязательных поля)
- *  - save: PATCH /product-modules/:id { materials: [...] }
+ *  - seed: dual-read — непустой composition (lineType=material) → строки из
+ *    линий (с lineId); иначе legacy materials[]
+ *  - save: composition API (TZ-CATALOG-302/317):
+ *      DELETE /modules/:id/composition/:lineId  — убранные линии
+ *      POST   /modules/:id/composition          — новые строки
+ *      PATCH  /modules/:id/composition/:lineId  — изменённые (qty/unit/…)
  *    overrideDimensions сохраняется только если хотя бы одно поле заполнено
  *
  * Зачем separate dialog от ModuleFormDialog:
@@ -173,9 +182,11 @@ import { extractErrorMessage } from '../../core/silent-http';
 export class ModuleMaterialsFormDialogComponent {
   protected readonly ref =
     inject<DialogRef<null | { materials: MaterialInModule[] }>>(PI_DIALOG_REF);
-  protected readonly data = inject<{ moduleId: string; materials: MaterialInModule[] }>(
-    PI_DIALOG_DATA,
-  );
+  protected readonly data = inject<{
+    moduleId: string;
+    materials: MaterialInModule[];
+    composition?: CompositionLine[];
+  }>(PI_DIALOG_DATA);
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly modules = inject(ProductModulesService);
   private readonly materialsSvc = inject(MaterialsService);
@@ -185,9 +196,29 @@ export class ModuleMaterialsFormDialogComponent {
   protected readonly formError = signal<string | null>(null);
   protected readonly materialsCatalog = signal<Material[]>([]);
 
+  /** Исходные material-линии состава (для diff на save; пуст на legacy). */
+  private originalComposition: CompositionLine[] = [];
+
   protected readonly form = this.fb.group({
-    materials: this.fb.array((this.data.materials ?? []).map((m) => this.rowGroup(m))),
+    materials: this.fb.array(this.seedRows()),
   });
+
+  private seedRows(): { lineId?: string } & MaterialInModule[] {
+    const lines = (this.data.composition ?? []).filter((l) => l.lineType === 'material');
+    if (lines.length > 0) {
+      this.originalComposition = lines;
+      return lines.map((l) => ({
+        lineId: l._id,
+        materialId: l.refId,
+        quantity: l.quantity ?? 1,
+        unit: l.unit ?? 'шт',
+        isPurchased: l.isPurchased ?? true,
+        overrideDimensions: l.overrideDimensions,
+        sortOrder: l.sortOrder ?? 0,
+      }));
+    }
+    return this.data.materials ?? [];
+  }
 
   protected get materialsArray(): FormArray {
     return this.form.controls.materials as FormArray;
@@ -200,8 +231,9 @@ export class ModuleMaterialsFormDialogComponent {
     });
   }
 
-  private rowGroup(m: MaterialInModule) {
+  private rowGroup(m: MaterialInModule & { lineId?: string }) {
     return this.fb.group({
+      lineId: this.fb.control<string | null>(m.lineId ?? null),
       materialId: this.fb.control<string>(
         typeof m.materialId === 'string' ? m.materialId : m.materialId._id,
         [Validators.required],
@@ -233,6 +265,33 @@ export class ModuleMaterialsFormDialogComponent {
     );
   }
 
+  private rowValue(idx: number): MaterialInModule & { lineId?: string } {
+    const r = this.materialsArray.at(idx).getRawValue();
+    return {
+      lineId: r.lineId ?? undefined,
+      materialId: r.materialId,
+      quantity: r.quantity,
+      unit: r.unit || undefined,
+      isPurchased: r.isPurchased,
+      sortOrder: idx,
+      overrideDimensions: (() => {
+        const od = r.overrideDimensions as
+          { length?: number; width?: number; height?: number; unit?: string } | undefined;
+        const hasOverride =
+          od != null &&
+          (od.length != null || od.width != null || od.height != null || !!od.unit?.trim());
+        return hasOverride
+          ? {
+              length: od?.length ?? undefined,
+              width: od?.width ?? undefined,
+              height: od?.height ?? undefined,
+              unit: od?.unit || undefined,
+            }
+          : undefined;
+      })(),
+    };
+  }
+
   protected removeRow(idx: number): void {
     this.materialsArray.removeAt(idx);
   }
@@ -242,40 +301,84 @@ export class ModuleMaterialsFormDialogComponent {
       this.form.markAllAsTouched();
       return;
     }
-    const raw = this.form.getRawValue().materials ?? [];
-    const payload: MaterialInModule[] = raw.map((r, i) => {
-      const od = r.overrideDimensions;
-      const hasOverride =
-        od.length != null || od.width != null || od.height != null || !!od.unit?.trim();
-      return {
-        materialId: r.materialId,
-        quantity: r.quantity,
-        unit: r.unit || undefined,
-        isPurchased: r.isPurchased,
-        sortOrder: i,
-        overrideDimensions: hasOverride
-          ? {
-              length: od.length ?? undefined,
-              width: od.width ?? undefined,
-              height: od.height ?? undefined,
-              unit: od.unit || undefined,
-            }
-          : undefined,
-      };
-    });
+    const rows = (this.form.getRawValue().materials ?? []).map((_, i) => this.rowValue(i));
 
-    this.submitting.set(true);
-    this.modules.update(this.data.moduleId, { materials: payload }).subscribe((res) => {
-      this.submitting.set(false);
-      if (res.ok) {
-        this.toast.success('Материалы обновлены');
-        this.ref.close({ materials: res.data?.materials ?? payload });
-      } else {
-        const msg = extractErrorMessage(res.error);
-        this.formError.set(msg);
-        this.toast.error(msg);
+    // Diff против исходных material-линий состава (TZ-CATALOG-317):
+    //   - линий больше нет в форме → DELETE
+    //   - строка с lineId → PATCH (qty/unit/…)
+    //   - новая строка (или legacy → первая запись) → POST
+    const keptLineIds = new Set(rows.map((r) => r.lineId).filter((id): id is string => !!id));
+    const calls: Observable<SilentResult<unknown>>[] = [];
+    this.originalComposition.forEach((line) => {
+      if (!keptLineIds.has(line._id)) {
+        calls.push(this.modules.removeModuleCompositionLine(this.data.moduleId, line._id));
       }
     });
+    rows.forEach((r) => {
+      if (r.lineId) {
+        calls.push(
+          this.modules.updateModuleCompositionLine(this.data.moduleId, r.lineId, {
+            quantity: r.quantity,
+            unit: r.unit,
+            isPurchased: r.isPurchased,
+            overrideDimensions: r.overrideDimensions,
+            sortOrder: r.sortOrder,
+          }),
+        );
+      } else {
+        calls.push(
+          this.modules.addModuleCompositionLine(this.data.moduleId, {
+            lineType: 'material',
+            refId: typeof r.materialId === 'string' ? r.materialId : r.materialId._id,
+            quantity: r.quantity,
+            unit: r.unit,
+            isPurchased: r.isPurchased,
+            overrideDimensions: r.overrideDimensions,
+            sortOrder: r.sortOrder,
+          }),
+        );
+      }
+    });
+
+    const payload: MaterialInModule[] = rows.map((r, i) => ({
+      materialId: r.materialId,
+      quantity: r.quantity,
+      unit: r.unit,
+      isPurchased: r.isPurchased,
+      sortOrder: i,
+      overrideDimensions: r.overrideDimensions,
+    }));
+
+    this.submitting.set(true);
+    if (calls.length === 0) {
+      this.submitting.set(false);
+      this.toast.success('Материалы обновлены');
+      this.ref.close({ materials: payload });
+      return;
+    }
+    this.modules
+      .update(this.data.moduleId, { materials: payload })
+      .pipe(
+        // best-effort: если PATCH materials ещё работает (pre-304) — сохраняем
+        // legacy-зеркало; если 400 (post-304) — состав всё равно записан через
+        // composition выше, и dual-read покажет линию.
+        concatMap(() => (calls.length > 1 ? forkJoin(calls) : calls[0])),
+      )
+      .subscribe((res) => {
+        this.submitting.set(false);
+        if (Array.isArray(res) ? res.every((r) => r.ok) : res.ok) {
+          this.toast.success('Материалы обновлены');
+          this.ref.close({ materials: payload });
+        } else {
+          const first = Array.isArray(res) ? res[0] : res;
+          const msg =
+            first && 'error' in first
+              ? extractErrorMessage(first.error)
+              : 'Не удалось обновить материалы';
+          this.formError.set(msg);
+          this.toast.error(msg);
+        }
+      });
   }
 
   /** TZ-MATERIALS-309: ���������� Set immutable dimension-����� ��� ��������� � ������ idx. */

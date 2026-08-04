@@ -2,7 +2,7 @@
  * TZ-PRODUCTS-302 — ProductFormDialogComponent tests.
  *
  * Locks the reworked content-dialog contract:
- *   - variant="content" + maxWidth 1000px (wide DSL, sticky footer);
+ *   - variant="content" + maxWidth 1120px (wide DSL, sticky footer);
  *   - sections render with eyebrow headers;
  *   - RAL dropdown loads ACTIVE colors from PiColorReferencesService
  *     (cached activeOnly catalog), search filters the list, selecting a
@@ -60,11 +60,12 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
   let photosSvc: { list: jest.Mock; upload: jest.Mock; remove: jest.Mock };
   let modulesSvc: {
     list: jest.Mock;
-    attachToProduct: jest.Mock;
-    detachFromProduct: jest.Mock;
+    getProductComposition: jest.Mock;
+    addProductCompositionLine: jest.Mock;
+    updateProductCompositionLine: jest.Mock;
+    removeProductCompositionLine: jest.Mock;
   };
   let dialogSvc: { open: jest.Mock };
-  let authSvc: { user: ReturnType<typeof signal<null>> };
 
   function ref<T>(): DialogRef<T> {
     return {
@@ -89,7 +90,14 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
         {
           provide: AuthService,
           useValue: {
-            user: signal({ role: userRole, permissions: [], username: 't', displayName: 'T', id: 'x', email: 't@t' }),
+            user: signal({
+              role: userRole,
+              permissions: [],
+              username: 't',
+              displayName: 'T',
+              id: 'x',
+              email: 't@t',
+            }),
           },
         },
         { provide: PiToastService, useValue: { success, error } },
@@ -142,6 +150,8 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     openModulePicker: () => void;
     addModules: (ids: string[]) => void;
     removeModule: (id: string) => void;
+    moduleQty: (id: string) => number;
+    setModuleQty: (id: string, e: Event) => void;
     form: { markAsDirty: () => void; dirty: boolean };
   } {
     return fixture.componentInstance as unknown as {
@@ -165,6 +175,8 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
       openModulePicker: () => void;
       addModules: (ids: string[]) => void;
       removeModule: (id: string) => void;
+      moduleQty: (id: string) => number;
+      setModuleQty: (id: string, e: Event) => void;
       form: { markAsDirty: () => void; dirty: boolean };
     };
   }
@@ -175,17 +187,31 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     error = jest.fn();
     productsSvc = {
       create: jest.fn().mockReturnValue(of({ ok: true, data: { _id: 'p1', name: 'Продукт' } })),
-      update: jest
-        .fn()
-        .mockReturnValue(of({ ok: true, data: { _id: 'p-edit', name: 'Продукт' } })),
+      update: jest.fn().mockReturnValue(of({ ok: true, data: { _id: 'p-edit', name: 'Продукт' } })),
     };
     categoriesSvc = {
       list: jest.fn().mockReturnValue(
         of({
           ok: true,
           data: [
-            { _id: 'cat-1', name: 'Двери', slug: 'doors', type: 'product', skuPrefix: 'D', sortOrder: 0, isActive: true },
-            { _id: 'cat-2', name: 'Окна', slug: 'windows', type: 'product', skuPrefix: 'W', sortOrder: 1, isActive: true },
+            {
+              _id: 'cat-1',
+              name: 'Двери',
+              slug: 'doors',
+              type: 'product',
+              skuPrefix: 'D',
+              sortOrder: 0,
+              isActive: true,
+            },
+            {
+              _id: 'cat-2',
+              name: 'Окна',
+              slug: 'windows',
+              type: 'product',
+              skuPrefix: 'W',
+              sortOrder: 1,
+              isActive: true,
+            },
           ],
         }),
       ),
@@ -200,8 +226,10 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     };
     modulesSvc = {
       list: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
-      attachToProduct: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
-      detachFromProduct: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
+      getProductComposition: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
+      addProductCompositionLine: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
+      updateProductCompositionLine: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
+      removeProductCompositionLine: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
     };
     dialogSvc = {
       open: jest.fn().mockReturnValue({
@@ -209,15 +237,12 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
         close: jest.fn(),
       }),
     };
-    authSvc = {
-      user: signal(null),
-    };
   });
 
-  it('smoke: instantiates in create mode with content-variant 1000px dialog', async () => {
+  it('smoke: instantiates in create mode with content-variant wide dialog', async () => {
     await setup(null);
     expect(fixture.componentInstance).toBeTruthy();
-    // The dialog template binds variant="content" + maxWidth 1000px.
+    // The dialog template binds variant="content" + maxWidth 1120px.
     expect(fixture.nativeElement.querySelector('app-pi-dialog')).toBeTruthy();
   });
 
@@ -331,7 +356,9 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
       }),
     );
     await setup(null);
-    instance().onPhotoSelect({ target: { files: [new File(['x'], 'a.jpg')], value: '' } } as unknown as Event);
+    instance().onPhotoSelect({
+      target: { files: [new File(['x'], 'a.jpg')], value: '' },
+    } as unknown as Event);
     expect(photosSvc.upload).toHaveBeenCalledTimes(1);
     expect(instance().photos()).toHaveLength(1);
 
@@ -347,7 +374,9 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
       of({ ok: true, data: { _id: 'ph-2', storageUrl: 'http://x/2.jpg' } }),
     );
     await setup(null);
-    instance().onPhotoSelect({ target: { files: [new File(['x'], 'b.jpg')], value: '' } } as unknown as Event);
+    instance().onPhotoSelect({
+      target: { files: [new File(['x'], 'b.jpg')], value: '' },
+    } as unknown as Event);
     expect(instance().photos()).toHaveLength(1);
 
     instance().removePhoto('ph-2');
@@ -456,8 +485,20 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
   // ── TZ-PRODUCTS-303: «Модули в составе» ─────────────────────────────
 
   const MODULES = [
-    { _id: 'm1', name: 'Рама', article: 'R-1', materials: [{ materialId: 'x1' }, { materialId: 'x2' }], workTypes: [] },
-    { _id: 'm2', name: 'Стеклопакет', article: 'SP-2', materials: [{ materialId: 'y1' }], workTypes: [] },
+    {
+      _id: 'm1',
+      name: 'Рама',
+      article: 'R-1',
+      materials: [{ materialId: 'x1' }, { materialId: 'x2' }],
+      workTypes: [],
+    },
+    {
+      _id: 'm2',
+      name: 'Стеклопакет',
+      article: 'SP-2',
+      materials: [{ materialId: 'y1' }],
+      workTypes: [],
+    },
     { _id: 'm3', name: 'Фурнитура', article: 'F-3', materials: [], workTypes: [] },
   ] as const;
 
@@ -483,7 +524,11 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     expect(instance().attachedModules()).toHaveLength(0);
 
     instance().addModules(['m1', 'm3']);
-    expect(instance().attachedModules().map((m) => (m as { _id: string })._id)).toEqual(['m1', 'm3']);
+    expect(
+      instance()
+        .attachedModules()
+        .map((m) => (m as { _id: string })._id),
+    ).toEqual(['m1', 'm3']);
     expect(instance().form.dirty).toBe(true);
   });
 
@@ -500,7 +545,11 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     await setup(null);
     instance().addModules(['m1', 'm2']);
     instance().removeModule('m1');
-    expect(instance().attachedModules().map((m) => (m as { _id: string })._id)).toEqual(['m2']);
+    expect(
+      instance()
+        .attachedModules()
+        .map((m) => (m as { _id: string })._id),
+    ).toEqual(['m2']);
     expect(instance().form.dirty).toBe(true);
   });
 
@@ -515,7 +564,7 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     expect(instance().attachedModules()).toHaveLength(2);
   });
 
-  it('modules: edit with STRING productModuleIds resolves cards from the catalog (async, no silent detach)', async () => {
+  it('modules: edit with STRING productModuleIds resolves cards from the catalog (async, no silent delete)', async () => {
     modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
     await setup({
       _id: 'p-strings',
@@ -525,14 +574,15 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
       productModuleIds: ['m1', 'm3'], // unpopulated (string ids)
     });
     // The catalog resolves asynchronously; the pending ids must still land.
-    expect(instance().attachedModules().map((m) => (m as { _id: string })._id)).toEqual([
-      'm1',
-      'm3',
-    ]);
+    expect(
+      instance()
+        .attachedModules()
+        .map((m) => (m as { _id: string })._id),
+    ).toEqual(['m1', 'm3']);
 
     // And on submit they must NOT be treated as removed (no DELETE for unseen modules).
     instance().onSubmit();
-    expect(modulesSvc.detachFromProduct).not.toHaveBeenCalled();
+    expect(modulesSvc.removeProductCompositionLine).not.toHaveBeenCalled();
     expect(close).toHaveBeenCalled();
   });
 
@@ -542,12 +592,12 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     formControls().unit.setValue('шт');
     instance().onSubmit();
     expect(productsSvc.create).toHaveBeenCalledTimes(1);
-    expect(modulesSvc.attachToProduct).not.toHaveBeenCalled();
-    expect(modulesSvc.detachFromProduct).not.toHaveBeenCalled();
+    expect(modulesSvc.addProductCompositionLine).not.toHaveBeenCalled();
+    expect(modulesSvc.removeProductCompositionLine).not.toHaveBeenCalled();
     expect(close).toHaveBeenCalled();
   });
 
-  it('modules: create submit with one attached module POSTs attach after the product save', async () => {
+  it('modules: create submit with one attached module POSTs a composition line after the product save', async () => {
     modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
     await setup(null);
     formControls().name.setValue('С модулем');
@@ -555,37 +605,87 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     instance().addModules(['m1']);
     instance().onSubmit();
     expect(productsSvc.create).toHaveBeenCalledTimes(1);
-    // Atomic POST /products/:id/modules with the created product id.
-    expect(modulesSvc.attachToProduct).toHaveBeenCalledWith('p1', 'm1');
-    expect(modulesSvc.detachFromProduct).not.toHaveBeenCalled();
+    // Composition POST /products/:id/composition with the created product id.
+    expect(modulesSvc.addProductCompositionLine).toHaveBeenCalledWith('p1', {
+      lineType: 'module',
+      refId: 'm1',
+      quantity: 1,
+    });
+    expect(modulesSvc.removeProductCompositionLine).not.toHaveBeenCalled();
     expect(close).toHaveBeenCalled();
   });
 
-  it('modules: edit submit with a changed set fires DELETE for removed + POST for added', async () => {
+  it('modules: edit submit with a changed set POSTs added modules via composition', async () => {
     modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
     await setup({
       _id: 'p-mod-edit',
       name: 'С модулями',
       kind: 'good',
       unit: 'шт',
-      productModuleIds: [MODULES[0], MODULES[1]], // originally m1 + m2
+      productModuleIds: [MODULES[0], MODULES[1]], // originally m1 + m2 (legacy)
     });
     instance().removeModule('m2'); // removed from the draft
     instance().addModules(['m3']); // added to the draft
     instance().onSubmit();
     expect(productsSvc.update).toHaveBeenCalledTimes(1);
-    // diff: m1 stays, m2 → DELETE, m3 → POST. The productsSvc.update mock
-    // returns { _id: 'p-edit' } (its hardcoded fixture), so the atomic
-    // module calls target that id.
-    expect(modulesSvc.detachFromProduct).toHaveBeenCalledWith('p-edit', 'm2');
-    expect(modulesSvc.attachToProduct).toHaveBeenCalledWith('p-edit', 'm3');
-    expect(modulesSvc.attachToProduct).not.toHaveBeenCalledWith('p-edit', 'm1');
+    // legacy-товар (composition пуст): diff по черновику — m3 POST,
+    // m2 legacy-привязка остаётся до миграции 304.
+    expect(modulesSvc.addProductCompositionLine).toHaveBeenCalledWith('p-edit', {
+      lineType: 'module',
+      refId: 'm3',
+      quantity: 1,
+    });
+    expect(modulesSvc.removeProductCompositionLine).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalled();
+  });
+
+  it('modules: edit with composition data seeds qty and PATCHes changed lines', async () => {
+    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
+    await setup({
+      _id: 'p-comp',
+      name: 'С составом',
+      kind: 'good',
+      unit: 'шт',
+      composition: [
+        { _id: 'cl1', lineType: 'module', refId: 'm1', quantity: 2, sortOrder: 0 },
+        { _id: 'cl2', lineType: 'module', refId: 'm2', quantity: 1, sortOrder: 1 },
+      ],
+    });
+    expect(
+      instance()
+        .attachedModules()
+        .map((m) => (m as { _id: string })._id),
+    ).toEqual(['m1', 'm2']);
+    expect(instance().moduleQty('m1')).toBe(2);
+
+    instance().setModuleQty('m1', { target: { value: '3' } } as unknown as Event);
+    instance().removeModule('m2'); // DELETE
+    instance().addModules(['m3']); // POST
+    instance().onSubmit();
+    expect(productsSvc.update).toHaveBeenCalledTimes(1);
+    // productsSvc.update mock возвращает { _id: 'p-edit' } — именно этот id
+    // идёт в composition-вызовы (как и в legacy attach-тестах).
+    expect(modulesSvc.updateProductCompositionLine).toHaveBeenCalledWith('p-edit', 'cl1', {
+      quantity: 3,
+    });
+    expect(modulesSvc.removeProductCompositionLine).toHaveBeenCalledWith('p-edit', 'cl2');
+    expect(modulesSvc.addProductCompositionLine).toHaveBeenCalledWith('p-edit', {
+      lineType: 'module',
+      refId: 'm3',
+      quantity: 1,
+    });
     expect(close).toHaveBeenCalled();
   });
 
   it('modules: openModulePicker opens the MULTI picker with excludeIds of the current draft', async () => {
     modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
-    await setup({ _id: 'p-pick', name: 'P', kind: 'good', unit: 'шт', productModuleIds: [MODULES[0]] });
+    await setup({
+      _id: 'p-pick',
+      name: 'P',
+      kind: 'good',
+      unit: 'шт',
+      productModuleIds: [MODULES[0]],
+    });
     instance().openModulePicker();
     expect(dialogSvc.open).toHaveBeenCalledTimes(1);
     const [component, config] = dialogSvc.open.mock.calls[0];
@@ -601,7 +701,7 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     instance().addModules(['m1']);
     instance().onCancel();
     expect(close).toHaveBeenCalledWith(null);
-    expect(modulesSvc.attachToProduct).not.toHaveBeenCalled();
+    expect(modulesSvc.addProductCompositionLine).not.toHaveBeenCalled();
     expect(productsSvc.create).not.toHaveBeenCalled();
   });
 });

@@ -30,7 +30,7 @@ describe('ProductModulePhotos (TZ-83 Phase E)', () => {
     const m = await request(app.getHttpServer())
       .post('/api/modules')
       .set(authHeader(adminToken))
-      .send({ name: 'E2E Photos Module', materials: [], workTypes: [] })
+      .send({ name: 'E2E Photos Module', workTypes: [] })
       .expect(201);
     testModuleId = m.body._id;
   });

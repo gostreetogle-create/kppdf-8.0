@@ -10,9 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../shared/page/pi-section.component';
-import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
+import { PiDictionaryShellComponent } from '../../shared/page/pi-dictionary-shell.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../shared/ui/switch/switch.component';
@@ -32,6 +30,15 @@ import { pluralRu } from '../../shared/util/russian-plural';
 const RU_CATEGORIES = ['категория', 'категории', 'категорий'] as const;
 
 /**
+ * Genitive form for «N категорий» after «из» («0 из 3 категорий»,
+ * «0 из 1 категории»). pluralRu() returns the nominative, which is
+ * wrong in the «X из Y …» construction (review nit, TZ-DICT-307).
+ */
+function pluralGenitive(n: number): string {
+  return n % 10 === 1 && n % 100 !== 11 ? 'категории' : 'категорий';
+}
+
+/**
  * TZ-DOC-308 — справочник категорий шаблонов документов.
  *
  * CRUD over `/document-template-categories` (admin mutations, admin/manager
@@ -43,44 +50,49 @@ const RU_CATEGORIES = ['категория', 'категории', 'катего
  * is a flat, template-only dictionary. It powers the category dropdown in
  * the template setup dialog and the templates registry filter.
  *
- * TZ-UX-304: migrated from raw <table> to <app-pi-table> (pattern:
- * color-references.page.ts / dictionaries.page.ts).
+ * TZ-DICT-307: cut over to PiDictionaryShell (D1–D2 canon) — compact title
+ * + sticky tools bar (search + CTA), prose header/section removed.
  */
 @Component({
   selector: 'app-document-template-categories-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    PiPageHeaderComponent,
-    PiSectionComponent,
-    PiToolbarComponent,
+    PiDictionaryShellComponent,
     PiRowActionsComponent,
     ButtonComponent,
     SwitchComponent,
     TableComponent,
   ],
   template: `
-    <app-pi-page-header
-      eyebrow="раздел · справочники"
-      title="Категории шаблонов"
-      description="Классификация шаблонов документов. Выбор категории — в настройках шаблона и фильтре реестра."
-    />
+    <app-pi-dictionary-shell [title]="'Категории шаблонов'" [totalLabel]="totalLabel()">
+      <!-- Sticky tools: search + primary CTA -->
+      <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        <input
+          type="search"
+          class="pi-input w-72"
+          placeholder="Поиск по названию…"
+          [value]="searchQuery()"
+          (input)="onSearch($event)"
+          aria-label="Поиск категорий шаблонов"
+        />
+        <span class="flex-1"></span>
+        <app-pi-button variant="default" (click)="openCreate()" data-test="create-category-button">
+          + Создать категорию
+        </app-pi-button>
+      </div>
 
-    <app-pi-toolbar>
-      <input
-        type="search"
-        class="pi-input w-72"
-        placeholder="Поиск по названию…"
-        [value]="searchQuery()"
-        (input)="onSearch($event)"
-        aria-label="Поиск категорий шаблонов"
-      />
-      <app-pi-button variant="default" (click)="openCreate()" data-test="create-category-button">
-        + Создать категорию
-      </app-pi-button>
-      <span hint>{{ visible().length }} {{ totalLabel(visible().length) }}</span>
-    </app-pi-toolbar>
+      @if (error()) {
+        <div
+          role="alert"
+          class="hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+        >
+          <p>{{ error() }}</p>
+          <app-pi-button class="mt-3" variant="outline" size="sm" (click)="reload()">
+            Повторить
+          </app-pi-button>
+        </div>
+      }
 
-    <app-pi-section title="Каталог" eyebrow="I">
       <app-pi-table
         [data]="visible()"
         [columns]="columns"
@@ -96,18 +108,6 @@ const RU_CATEGORIES = ['категория', 'категории', 'катего
         ariaLabel="Категории шаблонов"
         data-test="template-categories-table"
       />
-
-      @if (error()) {
-        <div
-          role="alert"
-          class="hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive mt-3"
-        >
-          <p>{{ error() }}</p>
-          <app-pi-button class="mt-3" variant="outline" size="sm" (click)="reload()">
-            Повторить
-          </app-pi-button>
-        </div>
-      }
 
       <ng-template #rowActionsTpl let-c>
         <app-pi-row-actions
@@ -159,7 +159,7 @@ const RU_CATEGORIES = ['категория', 'категории', 'катего
           data-test="category-active-switch"
         />
       </ng-template>
-    </app-pi-section>
+    </app-pi-dictionary-shell>
   `,
 })
 export class DocumentTemplateCategoriesPage {
@@ -181,6 +181,16 @@ export class DocumentTemplateCategoriesPage {
       .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'ru'));
     if (!q) return list;
     return list.filter((c) => c.name.toLowerCase().includes(q));
+  });
+
+  /** TZ-DICT-307: compact muted count for the shell title (D2 canon). */
+  protected readonly totalLabel = computed(() => {
+    const total = this.items().length;
+    const shown = this.visible().length;
+    if (total === 0) return '';
+    return shown !== total
+      ? `${shown} из ${total} ${pluralGenitive(total)}`
+      : `${total} ${pluralRu(total, RU_CATEGORIES)}`;
   });
 
   /** TZ-UX-304: pi-table column definitions (replaces raw <table>). */
@@ -230,10 +240,6 @@ export class DocumentTemplateCategoriesPage {
           this.error.set(extractErrorMessage(res.error));
         }
       });
-  }
-
-  protected totalLabel(n: number): string {
-    return pluralRu(n, RU_CATEGORIES);
   }
 
   protected onSearch(e: Event): void {

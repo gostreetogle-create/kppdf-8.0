@@ -5,8 +5,9 @@ import { API_BASE_URL } from '../../core/api.tokens';
 import { ProductModulesService } from './pi-product-modules.service';
 
 /**
- * TZ-83 Phase E.2: ProductModulesService smoke tests.
- * Verifies CRUD endpoints + atomic attach/detach helpers (TZ-83 § D.3).
+ * TZ-83 Phase E.2 + TZ-CATALOG-317: ProductModulesService smoke tests.
+ * Verifies CRUD endpoints + composition CRUD (TZ-CATALOG-302/317) and the
+ * deprecated throwing stubs of legacy attach/detach.
  */
 describe('ProductModulesService', () => {
   let svc: ProductModulesService;
@@ -42,18 +43,64 @@ describe('ProductModulesService', () => {
     req.flush({ _id: 'mod1', name: 'Module A', materials: [], workTypes: [] });
   });
 
-  it('attachToProduct POSTs { moduleId } to /products/:id/modules', () => {
-    svc.attachToProduct('prod1', 'mod1').subscribe();
-    const req = httpMock.expectOne('http://test/api/products/prod1/modules');
-    expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ moduleId: 'mod1' });
-    req.flush({ ok: true });
+  it('attachToProduct is deprecated and THROWS (TZ-CATALOG-317)', () => {
+    expect(() => svc.attachToProduct('prod1', 'mod1')).toThrow(/attachToProduct is deprecated/);
   });
 
-  it('detachFromProduct DELETEs /products/:id/modules/:moduleId', () => {
-    svc.detachFromProduct('prod1', 'mod1').subscribe();
-    const req = httpMock.expectOne('http://test/api/products/prod1/modules/mod1');
+  it('detachFromProduct is deprecated and THROWS (TZ-CATALOG-317)', () => {
+    expect(() => svc.detachFromProduct('prod1', 'mod1')).toThrow(/detachFromProduct is deprecated/);
+  });
+
+  it('getProductComposition GETs /products/:id/composition', () => {
+    svc.getProductComposition('prod1').subscribe((res) => {
+      if (res.ok) expect(res.data.length).toBe(1);
+    });
+    const req = httpMock.expectOne('http://test/api/products/prod1/composition');
+    expect(req.request.method).toBe('GET');
+    req.flush([{ _id: 'l1', lineType: 'module', refId: 'mod1', quantity: 2, sortOrder: 0 }]);
+  });
+
+  it('addProductCompositionLine POSTs line to /products/:id/composition', () => {
+    svc
+      .addProductCompositionLine('prod1', {
+        lineType: 'module',
+        refId: 'mod1',
+        quantity: 2,
+      })
+      .subscribe();
+    const req = httpMock.expectOne('http://test/api/products/prod1/composition');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ lineType: 'module', refId: 'mod1', quantity: 2 });
+    req.flush([]);
+  });
+
+  it('updateProductCompositionLine PATCHes /products/:id/composition/:lineId', () => {
+    svc.updateProductCompositionLine('prod1', 'l1', { quantity: 3 }).subscribe();
+    const req = httpMock.expectOne('http://test/api/products/prod1/composition/l1');
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ quantity: 3 });
+    req.flush([]);
+  });
+
+  it('removeProductCompositionLine DELETEs /products/:id/composition/:lineId', () => {
+    svc.removeProductCompositionLine('prod1', 'l1').subscribe();
+    const req = httpMock.expectOne('http://test/api/products/prod1/composition/l1');
     expect(req.request.method).toBe('DELETE');
     req.flush(null, { status: 204, statusText: 'No Content' });
+  });
+
+  it('module composition: add/remove routes go to /modules/:id/composition', () => {
+    svc
+      .addModuleCompositionLine('mod1', { lineType: 'material', refId: 'mat1', quantity: 1 })
+      .subscribe();
+    const post = httpMock.expectOne('http://test/api/modules/mod1/composition');
+    expect(post.request.method).toBe('POST');
+    expect(post.request.body).toEqual({ lineType: 'material', refId: 'mat1', quantity: 1 });
+    post.flush([]);
+
+    svc.removeModuleCompositionLine('mod1', 'l9').subscribe();
+    const del = httpMock.expectOne('http://test/api/modules/mod1/composition/l9');
+    expect(del.request.method).toBe('DELETE');
+    del.flush(null, { status: 204, statusText: 'No Content' });
   });
 });

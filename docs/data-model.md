@@ -375,6 +375,30 @@
 
 ## 4. Products & Materials (Продукция и материалы)
 
+> **CATALOG Phase 1 (канон 2026-08-04):** `tasks/TZ-CATALOG-300.md` + Wave 1
+> `tasks/TZ-CATALOG-301`…`305`, оркестрация `tasks/CATALOG-WAVE1.md`.  
+> Состав: refs+qty в `composition[]`; Product→Product да; Product→raw нет;
+> `materialKind` на Material; depth max 8; Excel — desktop Wave 4.
+
+### CATALOG Phase 1 — решения (кратко)
+
+| ID | Правило |
+|----|---------|
+| D1 | Product → Product (комплекс): qty + `unitPriceOverride`; `isComplex` вычисляемый |
+| D2 | Product → Material(raw) запрещён |
+| D3 | Детали/метизы/покупные = `Material.materialKind` (без Part) |
+| D4 | Depth: корень 0, max child 8; смешанный путь; циклы запрещены |
+| F1 | Embedded `composition[]` (не deep-clone) |
+| F2 | Фото из Excel — не web Phase 1 |
+| Масса | Канон поля: **`weightKg`** |
+
+Целевые поля Material (добавляет TZ-CATALOG-301): `materialKind`
+(`raw|part|fastener|purchased|other`), `assortment`, `standardRef`,
+`materialGrade`, `weightKg`. Legacy без kind → migration `other`.
+
+Целевой состав (302+): `CompositionLine` с `_id`, `lineType`, `refId`,
+`quantity`, `sortOrder`, …; ≤1000 строк; единственный write после 304.
+
 ### `Material` (Материал)
 
 **Глобальный справочник материалов.**

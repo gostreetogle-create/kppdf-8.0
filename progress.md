@@ -1,3 +1,166 @@
+## [2026-08-04] — TZ-CATALOG-305 DONE: Product→Product + unitPriceOverride (Architect PASS)
+**Исполнитель:** Buffy + Cursor (tsc + 38 unit + archive)
+**Статус:** PASS; archive `TZ-CATALOG-305.done.md`
+**Что сделано кратко:** lineType=product; override; isComplex; module 400; cycles.
+**Критерии:** AC 305; Catalog Wave 1 BE complete
+**Известные ограничения:** commit по PO; next FE DICT-308
+
+---
+
+## [2026-08-04] — Design: Group Chip Workspace (справочники → тираж)
+**Исполнитель:** Cursor Mode A (docs)
+**Статус:** спека записана; код не стартован
+**Что сделано кратко:** SoT паттерна chips+таблица; PO-DIARY; DICT Wave 1.5 карта 308–311.
+**Файлы:** `docs/superpowers/specs/2026-08-04-group-chip-workspace-design.md`, PO-DIARY §5, DICT-WAVE1, backlog dictionaries
+**Критерии:** документирован тираж «если понравится — везде так»
+**Известные ограничения:** код после «стартуем код» / TZ-DICT-308
+
+---
+
+## [2026-08-04] — TZ-DICT-304 DONE: Units shell closeout (Architect PASS)
+**Исполнитель:** buffy (code, crash) + Cursor (formControl fix + spec + archive)
+**Статус:** PASS; archive `TZ-DICT-304.done.md`
+**Что сделано кратко:** shell D1–D2; dead page gone; inline add form bindings fixed; units.spec 2/2.
+**Критерии:** AC 304; DICT Wave 1 cutovers complete
+**Известные ограничения:** commit по PO
+
+---
+
+## [2026-08-04] — TZ-DICT-307 DONE: Doc+Text cats PiDictionaryShell (Architect PASS)
+**Исполнитель:** buffy + Cursor (tsc + jest 26/26 + archive)
+**Статус:** PASS; archive `TZ-DICT-307.done.md`
+**Что сделано кратко:** обе страницы → shell + sticky search/CTA; genitive totalLabel.
+**Критерии:** AC 307; pageKeys intact
+**Известные ограничения:** commit по PO; остался DICT-304
+
+---
+
+## [2026-08-04] — TZ-DICT-306 DONE: Colors PiDictionaryShell (Architect PASS)
+**Исполнитель:** buffy + Cursor (tsc + jest 18/18 + archive)
+**Статус:** PASS; archive `TZ-DICT-306.done.md`
+**Что сделано кратко:** shell + sticky search/active/CTA; system-color contract.
+**Критерии:** AC 306
+**Известные ограничения:** commit по PO
+
+---
+
+## [2026-08-04] — TZ-DICT-305 DONE: Categories PiDictionaryShell (Architect PASS)
+**Исполнитель:** buffy + Cursor (tsc + jest 11/11 + archive)
+**Статус:** PASS; archive `TZ-DICT-305.done.md`
+**Что сделано кратко:** shell + sticky search/type/CTA; CDK drag; type filter.
+**Критерии:** AC 305; known limit drag-while-filtered documented
+**Известные ограничения:** commit по PO
+
+---
+
+## [2026-08-04] — TZ-CATALOG-304 DONE: composition migrate + write lock + cost dual-read (Architect PASS)
+**Исполнитель:** Basher (core) + Cursor closeout (tsc + 8 unit + 25 e2e + archive)
+**Статус:** PASS; archive `TZ-CATALOG-304.done.md`
+**Что сделано кратко:** migrate skip-if-nonempty; legacy attach/materials reject; cost composition-first; 309 overrides on composition; e2e bleed fixed.
+**Критерии:** AC 304; next CATALOG-305; prod-apply PO-gated
+**Известные ограничения:** nested cost recursion → 305; commit по PO
+
+---
+
+## [2026-08-04] — Agent ops: claim gaps audit + canon fix
+**Исполнитель:** Cursor (docs)
+**Статус:** docs PASS
+**Что сделано кратко:** Аудит дыр CLAIM; канон в GEMINI / AI-AGENT-GUIDE / kppdf-project / tz-authoring / how-to-connect; шаблон `_TEMPLATE.md`.
+**Файлы:** `docs/audits/2026-08-04-agent-ops-claim-gaps.md`, `docs/agent-checklists/_TEMPLATE.md`, + правки канона
+**Критерии:** claimed_at обязателен до кода; handoff-промпт без CLAIM = неполный
+**Известные ограничения:** velocity board не делали (PO не просил)
+
+---
+
+## [2026-08-04] — TZ-DICT-303 DONE: hub + nav + units route (Architect PASS)
+**Исполнитель:** buffy + Cursor (tsc + jest 65/65 + archive)
+**Статус:** PASS; archive `TZ-DICT-303.done.md`
+**Что сделано кратко:** hub `/dictionaries`; Units `/dictionaries/units`; nav groups + separatorLabel.
+**Критерии:** AC 303; next ∥ DICT-304…307
+**Известные ограничения:** dead `dictionaries.page.ts` → DICT-304; commit по PO
+
+---
+
+## [2026-08-04] — TZ-DICT-302 DONE: PiDictionaryShell (Architect PASS)
+
+**Исполнитель:** buffy + Cursor (tsc + jest 6/6 + archive)
+**Статус:** PASS; archive `TZ-DICT-302.done.md`
+**Что сделано кратко:** shared dictionary chrome (title + sticky tools + content); без eyebrow/description.
+**Критерии:** AC DICT-302; next DICT-303
+**Известные ограничения:** optional flex для totalLabel; commit по PO
+
+---
+
+## [2026-08-04] — DICT Wave 1: audit + TZ pack (Mode A)
+**Исполнитель:** Cursor
+**Статус:** docs ready; код не писался
+**Что сделано кратко:** Audit справочников; канон TZ-DICT-300; волна 301–307; RESERVED DICT-302 в `_active`; ∥ CATALOG-304.
+**Файлы:** `docs/audits/2026-08-04-dictionaries-ux-ia-audit.md`, `tasks/TZ-DICT-300.md`, `tasks/DICT-WAVE1.md`, `tasks/_backlog/dictionaries/*`
+**Критерии:** executable TZ + conflict keys; PO может кормить FE-агента
+**Известные ограничения:** page cutovers после shell PASS; не путать DICT-304 с CATALOG-304
+
+---
+
+## [2026-08-04] — TZ-CATALOG-317 DONE: FE composition cutover (Architect PASS)
+**Исполнитель:** buffy/freebuff-fe + Cursor (tsc + targeted jest 63/63 + archive)
+**Статус:** PASS; archive `TZ-CATALOG-317.done.md`
+**Что сделано кратко:** FE composition CRUD; attach stubs; dual-read composition-first; GATE 304 снят.
+**Затронутые файлы:** `pi-product-modules.service*`, pages products/modules, page docs
+**Критерии:** AC 317; Verdict PASS
+**Известные ограничения:** legacy detail detach toast до migrate 304; commit по PO
+
+---
+
+## [2026-08-04] — TZ-CATALOG-303 DONE: Graph guards (Architect PASS)
+**Исполнитель:** backend AI + Cursor (re-run unit 7/7 + e2e 15/15 + archive)
+**Статус:** PASS; archive `TZ-CATALOG-303.done.md`
+**Что сделано кратко:** CatalogGraphService cycle/depth≤8 + tree API; guards на composition + attachModule.
+**Затронутые файлы:** `backend/src/modules/catalog-graph/**`, product/*, product-module/*
+**Критерии:** AC 303; Verdict PASS in CATALOG-WAVE1-REVIEW
+**Известные ограничения:** 304 GATE 317; optional `catalogGraph?.` nit на Module service; commit по PO
+
+---
+
+## [2026-08-04] — TZ-CATALOG-302 DONE: Composition API (Architect PASS)
+**Исполнитель:** backend AI + Cursor (re-run e2e 6/6 + archive)
+**Статус:** PASS / composition-line 4/4 + catalog-composition 6/6; archive `TZ-CATALOG-302.done.md`
+**Что сделано кратко:** composition[] CRUD Product+Module; raw reject; dedup qty++; dual-read. Fix: `plainCompositionLine` before `$set`.
+**Затронутые файлы:** `backend/src/modules/catalog/composition-line.*`, product/*, product-module/*, `catalog-composition.e2e-spec.ts`
+**Критерии:** AC 302; Cursor Verdict PASS in CATALOG-WAVE1-REVIEW
+**Известные ограничения:** 303 next; Module plain-map nit optional; commit по PO
+
+---
+
+## [2026-08-04] — TZ-CATALOG-316 DONE: Material FE 301 fields
+**Исполнитель:** Gemini (код, сессия оборвалась) + Cursor (gates/NG0101 closeout + archive)
+**Статус:** PASS / jest 52/52 + fe tsc; archive `TZ-CATALOG-316.done.md`
+**Что сделано кратко:** FE Material interface/form/колонка «Тип»/фильтр `?materialKind=` под BE-301. Suite kindFilter вынесен в `materials.page-316.spec.ts` (NG0101 при двух settled→flushEffects в одном describe).
+**Затронутые файлы:** `materials.service*`, `material-form-dialog*`, `materials.page*`, `materials.page-316.spec.ts`, `docs/pages/materials.page.md`
+**Критерии:** AC 316; 302 conflict keys не трогались
+**Известные ограничения:** 317 после PASS 302; commit по слову PO
+
+---
+
+## [2026-08-04] — Architect PASS: TZ-CATALOG-301 (Material fields)
+**Исполнитель:** другой ИИ (код) + Cursor (review + e2e unblock)
+**Статус:** PASS / e2e 6/6 после `docker start kppdf-mongo`; commit не делался
+**Что сделано кратко:** materialKind/assortment/standardRef/materialGrade/weightKg + migration legacy→other + filter + tests. Scope чистый. Checklist обновлён Architect verdict.
+**Затронутые файлы:** `backend/src/modules/material/*`, migration 301, `materials.e2e-spec.ts`, `docs/agent-checklists/TZ-CATALOG-301.md`
+**Критерии:** AC TZ-301; Product/FE не тронуты
+**Известные ограничения:** 302 не стартовать без PO; archive/commit — по команде PO
+
+---
+
+## [2026-08-04] — CATALOG Wave 1: master + child-TZ + оркестрация (docs)
+**Исполнитель:** Cursor (Mode A)
+**Статус:** Документация готова; код 301 у другого ИИ
+**Что сделано кратко:** Принят `TZ-CATALOG-300` (D1–D4, weightKg, peer впитан). Созданы executable `TZ-CATALOG-301`…`305`, карта `CATALOG-WAVE1.md`, блок в `data-model.md` §4, checklists, `_active-map`. Параллель backend запрещена.
+**Затронутые файлы:** `tasks/TZ-CATALOG-300`…`305`, `tasks/CATALOG-WAVE1.md`, `tasks/README.md`, `docs/data-model.md`, `docs/PO-DIARY.md`, `docs/agent-checklists/TZ-CATALOG-301`…`305`, `_active-map.md`
+**Критерии:** один SoT; 301 можно исполнять; 302+ парк
+**Известные ограничения:** product-код 301+ не в этом коммите Cursor; ждать Executor report
+
+---
+
 ## [2026-08-03] — PO Diary + pre-deploy constructor polish docs
 **Исполнитель:** Cursor (docs) + session polish
 **Статус:** Документация; продукт-полировка в WIP (деплой по сигналу PO)
@@ -5317,4 +5480,34 @@ Fix tsc/ng-build Р±Р»РѕРєРµСЂР°: import/inject `PiColorReferencesS
 
 РџСЂР°РІР°СЏ РїР°РЅРµР»СЊ В«РЎРІРѕР№СЃС‚РІР°В»: РµРґРёРЅС‹Р№ chrome РєР°Рє Сѓ tool-pane; СЂРµР¶РёРјС‹ AвЂ“D; snap/pageNumbering в†’ pi-switch; geometry first; Edit в‰  Delete. Spec section-order; docs РѕР±РЅРѕРІР»РµРЅС‹.
 
+
+
+## 2026-08-04 — TZ-MATERIALS-311 / TZ-ACCESS-304 / TZ-RBAC-304 (small-tech batch) — DONE
+
+PO: закрыть небольшие технические задачи.
+
+- **TZ-MATERIALS-311**: один type габарита на материал (FE unique rows + BE 400); jest 33+20 PASS. Архив: `tasks/_archive/2026-08/TZ-MATERIALS-311.done.md`.
+- **TZ-ACCESS-304**: completion AC — `AppNavItem.pageKey` обязателен на app-shell nav; filter pages уже был. Архив: `tasks/_archive/2026-08/TZ-ACCESS-304.done.md`.
+- **TZ-RBAC-304**: RBAC-CONTRACT + unit getMe `pages[]`; код уже отдавал pages. Архив: `tasks/_archive/2026-08/TZ-RBAC-304.done.md`.
+
+Push: нет.
+
+
+## 2026-08-04 — TZ-UX-306 (/people) — DONE
+
+Пока другой ИИ делает CATALOG-302+: закрыт orphan People follow-up.
+
+- `PiWorkersService` выровнен под Worker API (lastName/firstName, envelope, SilentResult).
+- Страница `/people` + form dialog (PiDialog + parentDestroyRef) + nav «Люди» + pageKey=people.
+- Gates: jest pi-workers 6/6; fe tsc PASS.
+- Review inbox для волны каталога: `docs/agent-checklists/CATALOG-WAVE1-REVIEW.md`.
+
+Архив: `tasks/_archive/2026-08/TZ-UX-306.done.md`. Push: нет.
+
+
+## 2026-08-04 — TZ-CATALOG-319 (catalog docs sync) — DONE
+
+Docs-only: modules hard-delete; module photos → `/product-module-photos`; stub `product-detail.page.md`; PAGE-TZ-INDEX + materials note (316); backlog README.
+
+Архив: `tasks/_archive/2026-08/TZ-CATALOG-319.done.md`. Push: нет.
 

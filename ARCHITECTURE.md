@@ -115,6 +115,7 @@
 | Deploy / Synology | `deploy/synology/`, `docker-compose.prod.yml` | **TZ-DEPLOY-301:** one-command `deploy.ps1`→`deploy.py` (pnpm FE build), canon `kppdf-crm.ru`, secrets via gitignored `config.env`, health `/api/health/ready`, auth refresh variant A |
 | OrchestratorKit | `OrchestratorKit/` | TZ workflow automation, templates, archives (AGENTS.md, TZF-00, verify-status.sh, auto-archive.sh, STATUS.md) |
 | Data-model consolidation | `tasks/TZ-199..205.md`, `tasks/_archive/2026-07/`, `OrchestratorKit/STATUS.md`, `OrchestratorKit/TZ-199..205.txt` | Successor-TZ batch grounded в `docs/data-model-audit.md` (2026-07-25). 9 split-TZ covering entity-pair consolidation, audit-log unification и security prerequisite. Будущий scope (отдельные TZ-кандидаты): §1.2 #16 (Client/Counterparty legalForm normalization), §4.6 (FSM `EntityStatus`→`statusId:ObjectId`), §1.1 #8 (Operation/RoutingStep merge), §3.2 (ProductPricing + WarehouseAccess Zones). Marker files (`TZ-199..205.txt`) — paired companion требуется per `AGENTS.md §3 ✅ ТРОГАЮ`. |
+| Catalog composition (Wave 1) | `tasks/TZ-CATALOG-300`…`305`, `tasks/CATALOG-WAVE1.md`, `docs/data-model.md` §4 CATALOG | Канон состава Material/Module/Product/Complex. Backend 301→305 строго по порядку; Cursor Mode A = спека + review 303/304; код — локальный исполнитель. UI/Excel — Wave 2–4. **TZ-MATERIALS-311 (2026-08-04):** у Material каждый `dimensions[].type` уникален (FE + BE 400). |
 
 ## 4. Открытые вопросы / отложенные задачи
 

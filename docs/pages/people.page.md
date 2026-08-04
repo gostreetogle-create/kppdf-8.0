@@ -1,69 +1,42 @@
-# /people — «Люди» (TZ-WORKERS-302)
+# /people — «Люди» (TZ-UX-306 / WORKERS-302.FOLLOWUP)
 
-**Route:** `/people`
-**Capability gate:** `material:read` (новое использование готового ключа — поскольку /people используется для владельцев материалов без admin role)
-**Layer:** 3 (frontend)
-**Source-of-truth:** `tasks/TZ-WORKERS-302-people-page-and-person-card.md`
+**Route:** `/people`  
+**pageKey:** `people` (seeded in admin/manager/user)  
+**Layer:** 3 (frontend)  
+**API:** `GET/POST/PATCH/DELETE /api/workers` (TZ-WORKERS-301)
 
 ## Описание
 
-Каталог «Люди» хранит сотрудников, контактных лиц, привязанных к поставщикам. Это единая сущность для всего проекта — продавцы, проектировщики, контактные лица организаций живут здесь.
+Единый справочник людей поверх сущности `Worker`: ФИО (`lastName` /
+`firstName` / `patronymic`), должность, отдел, email, телефон, notes,
+isActive.
 
-Используется в карточках:
-- Материалов (владелец)
-- Поставщиков (контактное лицо)
-- Заказов (ответственный)
-- Документов (автор)
+## Колонки
 
-## Колонки таблицы
+| Колонка | Источник |
+|---------|----------|
+| ФИО | `personDisplayName(lastName, firstName, patronymic)` |
+| Должность | `position` |
+| Email | `email` |
+| Активен | `isActive` (inline switch) |
 
-| Колонка | Тип | Источник |
-|---|---|---|
-| Имя | string | `Person.name` |
-| Должность | string | `Person.position` |
-| Email | string | `Person.email` |
-| Активен | bool | `Person.isActive` |
+## Диалог
 
-## Фильтры
+PiDialog `width=lg`, `parentDestroyRef` обязателен. Поля: ФИО, должность,
+отдел, email, телефон, заметки, активен. Double-submit guard.
 
-- Поиск по `name + email + position` (case-insensitive)
-- Только активные (`activeOnly=true`) — дефолт `true`
+## Файлы
 
-## Диалог редактирования
-
-Содержимое: content-диалог 1000px (по Paper & Ink DSL), секции:
-
-| Секция | Поля |
-|---|---|
-| Основное | `name` (required, 2–120), `email` (optional, ≤120), `position` (optional, ≤120) |
-| Заметки | `notes` (optional, ≤500) |
-
-Footer: «Отмена» + «Сохранить» (double-submit guard).
-
-## Сервисы
-
-| Сервис | Backend endpoint | Назначение |
-|---|---|---|
-| `PiWorkersService.list(activeOnly?, supplierId?, q?)` | `GET /api/workers` | Список с фильтрами |
-| `PiWorkersService.get(id)` | `GET /api/workers/:id` | Одна запись |
-| `PiWorkersService.create(payload)` | `POST /api/workers` | Создать |
-| `PiWorkersService.update(id, patch)` | `PATCH /api/workers/:id` | Частичное обновление |
-| `PiWorkersService.remove(id)` | `DELETE /api/workers/:id` | Soft-delete |
+```
+frontend/src/app/pages/people/people.page.ts
+frontend/src/app/pages/people/people-form-dialog.component.ts
+frontend/src/app/shared/services/pi-workers.service.ts
+frontend/src/app/app.routes.ts
+frontend/src/app/layout/app-layout.component.ts
+```
 
 ## Известные ограничения
 
-- Backend `/api/workers` endpoint зависит от TZ-WORKERS-301 (предполагался closed в архиве, но на момент этой реализации фактическая дисковая реплика пустая). Frontend готов; backend stub остаётся отдельной TZ-WORKERS-301 follow-up задачей.
-- При запуске без backend — list вернёт 404, форма save рейзит error toast (нельзя создать запись). Navigation работает.
-- WerckerEditor / WorkTypeIntegration не в этом TZ — будут в TZ-WORKTYPES-301/302.
-
-## Files
-
-```
-frontend/src/app/pages/people/people.page.ts                              (page)
-frontend/src/app/pages/people/people-form-dialog.component.ts             (dialog)
-frontend/src/app/shared/services/pi-workers.service.ts                    (service)
-frontend/src/app/shared/services/pi-workers.service.spec.ts               (service spec)
-frontend/src/app/app.routes.ts                                            (route added)
-frontend/src/app/layout/app-layout.component.ts                           (nav entry added)
-docs/pages/people.page.md                                                 (this file)
-```
+- supplierId / workTypeIds / ratePerHour не в форме Phase 1 (можно добавить
+  successor-TZ).
+- List limit=100 client-side; server pagination envelope уже есть.

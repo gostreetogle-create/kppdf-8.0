@@ -2,22 +2,39 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { API_BASE_URL } from '../../core/api.tokens';
-import { PiWorkersService, type Person, type CreatePersonPayload } from './pi-workers.service';
+import {
+  PiWorkersService,
+  personDisplayName,
+  type CreatePersonPayload,
+  type Person,
+} from './pi-workers.service';
 
-const BASE = 'http://localhost:3000';
+const BASE = 'http://test/api';
 
 function makePayload(): CreatePersonPayload {
   return {
-    name: 'Иван Иванов',
+    lastName: 'Иванов',
+    firstName: 'Иван',
+    patronymic: 'Иванович',
     email: 'ivan@example.com',
     position: 'Сварщик',
-    supplierId: undefined,
-    workTypeIds: [],
     notes: 'test note',
   };
 }
 
-describe('PiWorkersService', () => {
+function makePerson(overrides: Partial<Person> = {}): Person {
+  return {
+    _id: '507f1f77bcf86cd799439011',
+    lastName: 'Иванов',
+    firstName: 'Иван',
+    isActive: true,
+    createdAt: '',
+    updatedAt: '',
+    ...overrides,
+  };
+}
+
+describe('PiWorkersService (TZ-UX-306)', () => {
   let service: PiWorkersService;
   let http: HttpTestingController;
 
@@ -36,54 +53,63 @@ describe('PiWorkersService', () => {
 
   afterEach(() => http.verify());
 
-  it('list() hits /api/workers with activeOnly=true', () => {
-    service.list({ activeOnly: true }).subscribe();
-    const req = http.expectOne((r) => r.url === `${BASE}/api/workers` && r.params.get('activeOnly') === 'true');
-    expect(req.request.method).toBe('GET');
-    req.flush([]);
+  it('personDisplayName joins last/first/patronymic', () => {
+    expect(personDisplayName(makePerson({ patronymic: 'Петрович' }))).toBe('Иванов Иван Петрович');
   });
 
-  it('list() passes q and supplierId params', () => {
-    service.list({ q: 'Иван', supplierId: '507f1f77bcf86cd799439011' }).subscribe();
-    const req = http.expectOne((r) => {
-      const p = r.params;
-      return r.url === `${BASE}/api/workers`
-        && p.get('q') === 'Иван'
-        && p.get('supplierId') === '507f1f77bcf86cd799439011';
+  it('list() hits /workers with isActive + search params', () => {
+    service.list({ isActive: true, search: 'Иван', page: 1, limit: 50 }).subscribe((res) => {
+      expect(res.ok).toBe(true);
+      if (res.ok) expect(res.data.items.length).toBe(1);
     });
-    req.flush([]);
-  });
-
-  it('get() hits /api/workers/:id', () => {
-    const id = '507f1f77bcf86cd799439011';
-    service.get(id).subscribe((p: Person) => expect(p._id).toBe(id));
-    const req = http.expectOne(`${BASE}/api/workers/${id}`);
+    const req = http.expectOne((r) => {
+      return (
+        r.url === `${BASE}/workers` &&
+        r.params.get('isActive') === 'true' &&
+        r.params.get('search') === 'Иван' &&
+        r.params.get('limit') === '50'
+      );
+    });
     expect(req.request.method).toBe('GET');
-    req.flush({ _id: id, name: 'X', isActive: true, createdAt: '', updatedAt: '' } as Person);
+    req.flush({ items: [makePerson()], total: 1, page: 1, limit: 50 });
   });
 
-  it('create() POSTs payload', () => {
+  it('get() hits /workers/:id', () => {
+    const id = '507f1f77bcf86cd799439011';
+    service.get(id).subscribe((res) => {
+      expect(res.ok).toBe(true);
+      if (res.ok) expect(res.data._id).toBe(id);
+    });
+    const req = http.expectOne(`${BASE}/workers/${id}`);
+    expect(req.request.method).toBe('GET');
+    req.flush(makePerson({ _id: id }));
+  });
+
+  it('create() POSTs Worker-shaped payload', () => {
     const payload = makePayload();
-    service.create(payload).subscribe((p: Person) => expect(p.name).toBe(payload.name));
-    const req = http.expectOne(`${BASE}/api/workers`);
+    service.create(payload).subscribe((res) => {
+      expect(res.ok).toBe(true);
+      if (res.ok) expect(res.data.lastName).toBe('Иванов');
+    });
+    const req = http.expectOne(`${BASE}/workers`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(payload);
-    req.flush({ _id: 'x', name: payload.name, isActive: true, createdAt: '', updatedAt: '' } as Person);
+    req.flush(makePerson(payload));
   });
 
   it('update() PATCHes', () => {
     const id = '507f1f77bcf86cd799439011';
-    service.update(id, { isActive: false }).subscribe();
-    const req = http.expectOne(`${BASE}/api/workers/${id}`);
+    service.update(id, { isActive: false }).subscribe((res) => expect(res.ok).toBe(true));
+    const req = http.expectOne(`${BASE}/workers/${id}`);
     expect(req.request.method).toBe('PATCH');
     expect(req.request.body).toEqual({ isActive: false });
-    req.flush({ _id: id, name: 'X', isActive: false, createdAt: '', updatedAt: '' } as Person);
+    req.flush(makePerson({ _id: id, isActive: false }));
   });
 
   it('remove() DELETEs', () => {
     const id = '507f1f77bcf86cd799439011';
-    service.remove(id).subscribe();
-    const req = http.expectOne(`${BASE}/api/workers/${id}`);
+    service.remove(id).subscribe((res) => expect(res.ok).toBe(true));
+    const req = http.expectOne(`${BASE}/workers/${id}`);
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
   });

@@ -20,6 +20,9 @@ import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import {
   Material,
   MaterialDimensionType,
+  MaterialKind,
+  MATERIAL_KIND_LABELS,
+  MATERIAL_KINDS,
   MaterialsService,
 } from '../../shared/services/materials.service';
 import { PhotosService, type Photo } from '../../shared/services/photos.service';
@@ -37,6 +40,23 @@ const DIMENSION_TYPES: { value: MaterialDimensionType; label: string }[] = [
   { value: 'depth', label: 'Глубина' },
 ];
 
+/**
+ * Empty-string sentinel for the materialKind control in the form.
+ *
+ * The form control is a plain string (no `null`) so a plain `<select>`
+ * with `@for`-driven options works without template-typing gymnastics
+ * (matches the existing `unit` selector pattern). On submit we map
+ * `''` → field omitted from payload; legacy rows without kind stay
+ * un-set rather than forced to `other` (server backfills `other`
+ * itself on missing/null — see TZ-CATALOG-301).
+ */
+const KIND_NULL_SENTINEL = '';
+/** Selector options for «Тип материала», keyed by canonical kind + sentinel for unknown. */
+const KIND_OPTIONS: { value: typeof KIND_NULL_SENTINEL | MaterialKind; label: string }[] = [
+  { value: KIND_NULL_SENTINEL, label: '— не указан —' },
+  ...MATERIAL_KINDS.map((k) => ({ value: k, label: MATERIAL_KIND_LABELS[k] })),
+];
+
 interface DimensionFormGroup extends FormGroup {
   controls: {
     type: FormControl<MaterialDimensionType>;
@@ -49,7 +69,7 @@ interface DimensionFormGroup extends FormGroup {
  * MaterialFormDialogComponent — wide structured layout (TZ-MATERIALS-301).
  *
  * Layout:
- *  - `variant="content"` + `[maxWidth]="'1000px'"` — wide dialog with
+ *  - `variant="content"` + `[maxWidth]="'min(1120px, …)'"` — wide dialog with
  *    internal body scroll and an ALWAYS-VISIBLE sticky footer (Save/Cancel).
  *    The shared PiDialogComponent content template already provides
  *    `overflow-y-auto` on the body and `sticky bottom-0 bg-paper` on the
@@ -87,20 +107,23 @@ interface DimensionFormGroup extends FormGroup {
     <app-pi-dialog
       [title]="isEdit() ? 'Редактировать материал' : 'Создать материал'"
       [variant]="'content'"
-      [maxWidth]="'min(1000px, calc(100vw - 2rem))'"
+      [maxWidth]="'min(1120px, calc(100vw - 2rem))'"
     >
       <form
         body
         [formGroup]="form"
         (ngSubmit)="onSubmit()"
-        class="space-y-form-field"
+        class="space-y-5"
         data-test="material-form"
       >
         <!-- ─── Two-column layout: basics (left) + optional (right) ─── -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-form-field items-start">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
           <!-- ─── LEFT: обязательные основные данные ─── -->
-          <div class="space-y-form-field">
-            <p class="eyebrow">Основные данные</p>
+          <section
+            class="space-y-form-field rounded-sm bg-paper-2/40 p-3 border-l-[3px] border-l-gold"
+            aria-labelledby="mat-sec-basics"
+          >
+            <p id="mat-sec-basics" class="eyebrow text-ink">Основные данные</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
               <app-pi-form-field
                 label="Название"
@@ -125,7 +148,7 @@ interface DimensionFormGroup extends FormGroup {
               </app-pi-form-field>
 
               <app-pi-form-field
-                label="Единица измерения"
+                label="Единица"
                 htmlFor="mat-unit"
                 [required]="true"
                 [error]="errorFor('unit')"
@@ -138,9 +161,9 @@ interface DimensionFormGroup extends FormGroup {
                 >
                   <option value="" disabled>— выберите —</option>
                   @if (unitsLoading()) {
-                    <option value="" disabled>Загрузка единиц…</option>
+                    <option value="" disabled>Загрузка…</option>
                   } @else if (unitsError()) {
-                    <option value="" disabled>Ошибка загрузки единиц</option>
+                    <option value="" disabled>Ошибка загрузки</option>
                     @if (unitFallback(); as fb) {
                       <option [value]="fb" disabled>{{ fb }} (неактивна)</option>
                     }
@@ -155,11 +178,6 @@ interface DimensionFormGroup extends FormGroup {
                     }
                   }
                 </select>
-                @if (units().length === 0 && !unitsLoading() && !unitsError()) {
-                  <span class="block text-xs text-muted-foreground mt-1"
-                    >Нет активных единиц — добавьте в разделе «Справочники».</span
-                  >
-                }
               </app-pi-form-field>
 
               <app-pi-form-field
@@ -167,15 +185,47 @@ interface DimensionFormGroup extends FormGroup {
                 htmlFor="mat-sku"
                 [error]="errorFor('sku')"
               >
-                <app-pi-input id="mat-sku" formControlName="sku" placeholder="Например, M-0001" />
-                <span class="block text-xs text-muted-foreground mt-1"
-                  >Необязательное поле. Уникальный системный код для поиска — заполняется вручную
-                  или будет генерироваться сервером автоматически.</span
+                <app-pi-input id="mat-sku" formControlName="sku" placeholder="M-0001" />
+              </app-pi-form-field>
+
+              <!-- ─── TZ-CATALOG-301 / 316: catalog-leaf classification ─── -->
+              <app-pi-form-field
+                label="Тип материала"
+                htmlFor="mat-materialKind"
+                hint="Сырьё, деталь, метиз, покупное — для классификации и фильтра."
+              >
+                <select
+                  id="mat-materialKind"
+                  formControlName="materialKind"
+                  class="pi-input w-full"
+                  data-test="material-kind-select"
                 >
+                  @for (opt of KIND_OPTIONS; track opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                  }
+                </select>
+              </app-pi-form-field>
+
+              <!-- ─── TZ-CATALOG-301 / 316: масса в кг (≥ 0) ─── -->
+              <app-pi-form-field
+                label="Масса, кг"
+                htmlFor="mat-weightKg"
+                [error]="errorFor('weightKg')"
+              >
+                <app-pi-input
+                  id="mat-weightKg"
+                  type="number"
+                  formControlName="weightKg"
+                  placeholder="0.00"
+                  step="0.001"
+                  min="0"
+                  [invalid]="hasError('weightKg')"
+                  ariaLabel="Масса в килограммах"
+                />
               </app-pi-form-field>
 
               <app-pi-form-field
-                label="Цена за единицу, ₽"
+                label="Цена, ₽"
                 htmlFor="mat-price"
                 [error]="errorFor('pricePerUnit')"
               >
@@ -188,30 +238,69 @@ interface DimensionFormGroup extends FormGroup {
                 />
               </app-pi-form-field>
 
-              <div class="hairline rounded-sm bg-paper-2 px-3 py-2">
-                <p class="text-xs text-muted-foreground">Остаток на складе</p>
-                <p class="text-sm">
-                  Управляется в разделе «Склад» и не вводится при создании материала.
-                </p>
-              </div>
+              <p class="sm:col-span-2 text-[11px] text-muted-foreground leading-snug">
+                Остаток — в разделе «Склад».
+              </p>
             </div>
-          </div>
+          </section>
 
           <!-- ─── RIGHT: необязательные данные ─── -->
-          <div class="space-y-form-field">
-            <p class="eyebrow">Дополнительно</p>
+          <section
+            class="space-y-form-field rounded-sm bg-paper p-3 hairline border-l-[3px] border-l-ink/25"
+            aria-labelledby="mat-sec-extra"
+          >
+            <p id="mat-sec-extra" class="eyebrow text-ink">Дополнительно</p>
 
-            <app-pi-form-field
-              label="Поставщик"
-              htmlFor="mat-supplier"
-              hint="Только организации с типом «Поставщик». Управление в разделе «Организации»."
-            >
+            <!-- ─── TZ-CATALOG-301 / 316: технические справочные поля ─── -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-form-field">
+              <app-pi-form-field
+                label="Сортамент"
+                htmlFor="mat-assortment"
+                [error]="errorFor('assortment')"
+                hint="Профиль: труба, лист, уголок…"
+              >
+                <app-pi-input
+                  id="mat-assortment"
+                  formControlName="assortment"
+                  placeholder="Лист, Труба…"
+                  [invalid]="hasError('assortment')"
+                />
+              </app-pi-form-field>
+              <app-pi-form-field
+                label="Стандарт"
+                htmlFor="mat-standardRef"
+                [error]="errorFor('standardRef')"
+                hint="ГОСТ, ASTM, DIN…"
+              >
+                <app-pi-input
+                  id="mat-standardRef"
+                  formControlName="standardRef"
+                  placeholder="ГОСТ 19904-90"
+                  [invalid]="hasError('standardRef')"
+                />
+              </app-pi-form-field>
+              <app-pi-form-field
+                label="Марка"
+                htmlFor="mat-materialGrade"
+                [error]="errorFor('materialGrade')"
+                hint="Ст 3, AISI 304…"
+              >
+                <app-pi-input
+                  id="mat-materialGrade"
+                  formControlName="materialGrade"
+                  placeholder="Ст3"
+                  [invalid]="hasError('materialGrade')"
+                />
+              </app-pi-form-field>
+            </div>
+
+            <app-pi-form-field label="Поставщик" htmlFor="mat-supplier">
               <select id="mat-supplier" formControlName="supplierId" class="pi-input w-full">
                 <option [ngValue]="null">— не указан —</option>
                 @if (suppliersLoading()) {
-                  <option [ngValue]="null" disabled>Загрузка поставщиков…</option>
+                  <option [ngValue]="null" disabled>Загрузка…</option>
                 } @else if (suppliersError()) {
-                  <option [ngValue]="null" disabled>Ошибка загрузки поставщиков</option>
+                  <option [ngValue]="null" disabled>Ошибка загрузки</option>
                 } @else {
                   @for (s of suppliers(); track s._id) {
                     <option [ngValue]="s._id">
@@ -251,9 +340,9 @@ interface DimensionFormGroup extends FormGroup {
             <!-- ─── Photos ─── -->
             <div>
               <div class="flex items-baseline justify-between mb-form-row">
-                <p class="eyebrow">Фотографии</p>
+                <p class="eyebrow">Фото</p>
                 <label
-                  class="inline-flex items-center gap-1 min-h-touch px-control-x py-control-y text-xs hairline rounded-sm bg-paper hover:bg-paper-2 cursor-pointer transition-colors"
+                  class="inline-flex items-center gap-1 min-h-touch px-control-x py-control-y text-xs hairline rounded-sm bg-paper-2 hover:bg-paper cursor-pointer transition-colors"
                 >
                   <span>+ Загрузить</span>
                   <input
@@ -269,11 +358,6 @@ interface DimensionFormGroup extends FormGroup {
 
               @if (uploading()) {
                 <p class="text-xs text-muted-foreground">Загрузка…</p>
-              }
-              @if (photos().length === 0 && !uploading()) {
-                <p class="text-xs text-muted-foreground">
-                  Нет фото. Можно загрузить несколько, выбрать «главное» (используется в карточках).
-                </p>
               }
               <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 @for (p of photos(); track p._id; let i = $index) {
@@ -314,33 +398,33 @@ interface DimensionFormGroup extends FormGroup {
                 }
               </div>
             </div>
-          </div>
+          </section>
         </div>
 
         <!-- ─── Dimensions (full-width section) ─── -->
-        <div>
+        <section
+          class="rounded-sm bg-paper-2/30 p-3 border-l-[3px] border-l-sunrise-warm hairline-t"
+          aria-labelledby="mat-sec-dims"
+        >
           <div class="flex items-baseline justify-between mb-form-row">
-            <p class="eyebrow">Габариты</p>
+            <p id="mat-sec-dims" class="eyebrow text-ink">Габариты</p>
             <app-pi-button
               type="button"
               variant="outline"
               size="sm"
+              [disabled]="!canAddDimension()"
               (click)="addDimension()"
               data-test="add-dimension"
+              [attr.title]="canAddDimension() ? null : 'Все типы габаритов уже добавлены'"
             >
               + Добавить размер
             </app-pi-button>
           </div>
-          @if (dimensionsArray.controls.length === 0) {
-            <p class="text-xs text-muted-foreground">
-              Нет габаритов. Нажмите «+ Добавить размер» для ввода длины, ширины, толщины и т.п.
-            </p>
-          }
           <div formArrayName="dimensions" class="space-y-2">
             @for (dimGroup of dimensionsArray.controls; track $index; let i = $index) {
               <div
                 [formGroupName]="i"
-                class="grid grid-cols-12 gap-2 items-center p-2 hairline rounded-sm bg-paper-2/30"
+                class="grid grid-cols-12 gap-2 items-center p-2 hairline rounded-sm bg-paper"
                 [attr.data-test]="'dimension-row-' + i"
               >
                 <select
@@ -350,7 +434,7 @@ interface DimensionFormGroup extends FormGroup {
                   class="col-span-4 h-8 px-3 text-xs hairline rounded-sm bg-paper pi-focus-ring"
                   [attr.aria-label]="'Тип габарита ' + (i + 1)"
                 >
-                  @for (opt of DIMENSION_TYPES; track opt.value) {
+                  @for (opt of dimensionTypeOptionsFor(i); track opt.value) {
                     <option [value]="opt.value">{{ opt.label }}</option>
                   }
                 </select>
@@ -365,6 +449,7 @@ interface DimensionFormGroup extends FormGroup {
                 />
                 <label
                   class="col-span-4 inline-flex items-center gap-2 min-h-touch px-control-x text-sm cursor-pointer"
+                  title="Нельзя менять в модулях/изделиях (например толщина листа)"
                 >
                   <input
                     [attr.id]="'mat-dim-immutable-' + i"
@@ -388,11 +473,7 @@ interface DimensionFormGroup extends FormGroup {
               </div>
             }
           </div>
-          <p class="text-xs text-muted-foreground mt-2">
-            <span class="eyebrow text-sunrise-warm">?</span>
-            «Неизменяемый» — downstream не может менять (например, толщина листа).
-          </p>
-        </div>
+        </section>
 
         @if (errorMessage()) {
           <p role="alert" class="text-xs text-destructive">
@@ -424,6 +505,12 @@ export class MaterialFormDialogComponent implements OnDestroy {
     }
   }
   protected readonly DIMENSION_TYPES = DIMENSION_TYPES;
+  /**
+   * TZ-CATALOG-316: bind KIND_OPTIONS into the template so the
+   * `<select formControlName="materialKind">` can iterate of it.
+   * Re-exposing the module-level const keeps template-source simple.
+   */
+  protected readonly KIND_OPTIONS = KIND_OPTIONS;
 
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly service = inject(MaterialsService);
@@ -476,6 +563,17 @@ export class MaterialFormDialogComponent implements OnDestroy {
     article: this.fb.control<string | null>(null, [Validators.maxLength(64)]),
     unit: this.fb.control('', [Validators.required, Validators.maxLength(32)]),
     sku: this.fb.control<string | null>(null),
+    // TZ-CATALOG-301 / 316 — new fields on FE:
+    // `materialKind` is a free string ('' sentinel = no kind selected).
+    // `weightKg` is a number ≥ 0 (BE validates Min(0); FE mirrors).
+    // The three reference strings match the BE Length(0, 256) cap so
+    // pasting a too-long ГОСТ number is caught at save with a red
+    // border + sr-only error rather than a round-trip 400.
+    materialKind: this.fb.control<string>(KIND_NULL_SENTINEL),
+    weightKg: this.fb.control<number | null>(null, [Validators.min(0)]),
+    assortment: this.fb.control<string | null>(null, [Validators.maxLength(256)]),
+    standardRef: this.fb.control<string | null>(null, [Validators.maxLength(256)]),
+    materialGrade: this.fb.control<string | null>(null, [Validators.maxLength(256)]),
     pricePerUnit: this.fb.control<number | null>(null, [Validators.min(0)]),
     supplierId: this.fb.control<string | null>(null),
     dimensions: this.fb.array<DimensionFormGroup>([]),
@@ -538,13 +636,33 @@ export class MaterialFormDialogComponent implements OnDestroy {
       article: m.article ?? null,
       unit: m.unit,
       sku: m.sku ?? null,
+      // TZ-CATALOG-301 / 316:
+      //  - `materialKind`: server may send `null | undefined | ''` for
+      //    legacy rows — we treat them all as "— не указан —"
+      //    (KIND_NULL_SENTINEL), so the select is never blank and
+      //    `onPayload()` correctly OMITS the field on save (server
+      //    backfills `other` on its own).
+      //  - `weightKg`: BE schema allows `undefined`; FE coerces to `null`
+      //    so the number input's placeholder ("0.00") shows on edit.
+      //  - assortment / standardRef / materialGrade: free-text, optional.
+      materialKind:
+        m.materialKind && (MATERIAL_KINDS as readonly string[]).includes(m.materialKind)
+          ? m.materialKind
+          : KIND_NULL_SENTINEL,
+      weightKg: m.weightKg ?? null,
+      assortment: m.assortment ?? null,
+      standardRef: m.standardRef ?? null,
+      materialGrade: m.materialGrade ?? null,
       pricePerUnit: m.pricePerUnit ?? null,
       supplierId: m.supplierId ?? null,
       description: m.description ?? null,
       notes: m.notes ?? null,
     });
-    // Dimensions
-    (m.dimensions ?? []).forEach((d) => {
+    // Dimensions — один type на материал (дубликаты из legacy срезаем)
+    const seen = new Set<MaterialDimensionType>();
+    for (const d of m.dimensions ?? []) {
+      if (seen.has(d.type)) continue;
+      seen.add(d.type);
       this.dimensionsArray.push(
         this.fb.group({
           type: this.fb.control<MaterialDimensionType>(d.type, Validators.required),
@@ -552,7 +670,7 @@ export class MaterialFormDialogComponent implements OnDestroy {
           isImmutable: this.fb.control<boolean>(!!d.isImmutable),
         }) as DimensionFormGroup,
       );
-    });
+    }
     // Photos
     const ids = m.photoIds ?? [];
     if (ids.length > 0) {
@@ -576,13 +694,30 @@ export class MaterialFormDialogComponent implements OnDestroy {
 
   // ─── Dimensions ───
 
+  /** Можно добавить строку, только пока есть свободный тип (Д./Ш./В.…). */
+  protected canAddDimension(): boolean {
+    return this.nextUnusedDimensionType() != null;
+  }
+
+  /**
+   * В select строки — текущий тип + ещё не занятые (нельзя выбрать второй «В.»).
+   */
+  protected dimensionTypeOptionsFor(rowIndex: number): typeof DIMENSION_TYPES {
+    const current = this.dimensionsArray.at(rowIndex)?.controls.type.value;
+    const usedElsewhere = new Set(
+      this.dimensionsArray.controls
+        .map((g, i) => (i === rowIndex ? null : g.controls.type.value))
+        .filter((t): t is MaterialDimensionType => t != null),
+    );
+    return DIMENSION_TYPES.filter((t) => t.value === current || !usedElsewhere.has(t.value));
+  }
+
   addDimension(): void {
+    const type = this.nextUnusedDimensionType();
+    if (!type) return;
     this.dimensionsArray.push(
       this.fb.group({
-        type: this.fb.control<MaterialDimensionType>(
-          this.nextUnusedDimensionType(),
-          Validators.required,
-        ),
+        type: this.fb.control<MaterialDimensionType>(type, Validators.required),
         value: this.fb.control<number>(0, [Validators.required, Validators.min(0)]),
         isImmutable: this.fb.control<boolean>(false),
       }) as DimensionFormGroup,
@@ -590,16 +725,12 @@ export class MaterialFormDialogComponent implements OnDestroy {
   }
 
   /**
-   * TZ-MATERIALS-305: the next dimension type not yet present in the row set,
-   * in the canonical order Длина → Ширина → Высота → Толщина → Диаметр → Глубина.
-   * When all six types are already present, falls back to 'length' — repeated
-   * rows are an explicitly documented behavior (each user click still creates
-   * exactly one row; the button is a component `click` Output, no double fire).
+   * Следующий свободный тип в порядке Длина → … → Глубина.
+   * Если все шесть заняты — null (седьмой ряд не создаём).
    */
-  private nextUnusedDimensionType(): MaterialDimensionType {
+  private nextUnusedDimensionType(): MaterialDimensionType | null {
     const used = new Set(this.dimensionsArray.controls.map((g) => g.controls.type.value));
-    const firstUnused = DIMENSION_TYPES.find((t) => !used.has(t.value));
-    return firstUnused?.value ?? 'length';
+    return DIMENSION_TYPES.find((t) => !used.has(t.value))?.value ?? null;
   }
 
   removeDimension(i: number): void {
@@ -708,11 +839,18 @@ export class MaterialFormDialogComponent implements OnDestroy {
       return;
     }
     const v = this.form.getRawValue();
-    const dimensions = (v.dimensions ?? []).map((d) => ({
+    const dimensionsRaw = (v.dimensions ?? []).map((d) => ({
       type: d.type,
       value: Number(d.value),
       isImmutable: !!d.isImmutable,
     }));
+    // Один type на материал — защита от дублей в payload
+    const seenTypes = new Set<string>();
+    const dimensions = dimensionsRaw.filter((d) => {
+      if (seenTypes.has(d.type)) return false;
+      seenTypes.add(d.type);
+      return true;
+    });
     const photoIds = this.photos().map((p) => p._id);
     const mainPhotoId = this.mainPhotoId();
 
@@ -722,6 +860,15 @@ export class MaterialFormDialogComponent implements OnDestroy {
     };
     if (v.article) payload.article = v.article;
     if (v.sku) payload.sku = v.sku;
+    // TZ-CATALOG-301 / 316 — new fields on FE;
+    // empty-string sentinel → field omitted; non-empty → typed value.
+    if (v.materialKind && v.materialKind !== KIND_NULL_SENTINEL) {
+      payload.materialKind = v.materialKind as MaterialKind;
+    }
+    if (v.weightKg != null) payload.weightKg = Number(v.weightKg);
+    if (v.assortment) payload.assortment = v.assortment;
+    if (v.standardRef) payload.standardRef = v.standardRef;
+    if (v.materialGrade) payload.materialGrade = v.materialGrade;
     if (v.pricePerUnit != null) payload.pricePerUnit = v.pricePerUnit;
     if (v.supplierId) payload.supplierId = v.supplierId;
     if (dimensions.length > 0) payload.dimensions = dimensions;

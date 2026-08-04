@@ -40,6 +40,7 @@ LM Studio: `docs/agents/LM-STUDIO-AGENT.md` · `node scripts/lmstudio-agent/run.
 1. docs/AI-AGENT-GUIDE.md          ← Ты здесь. Обязательные паттерны, запреты, ритуалы.
 1a. docs/PO-DIARY.md               ← Кто PO, планка качества, как хочет работать (канон §1–§4)
 1b. docs/TZ-AUTHORING.md           ← Если ПИШЕШЬ или правишь TZ (канон имён, unique, preflight)
+1c. docs/AUDIT-METHODOLOGY.md      ← Если АУДИТИШЬ домен / миграцию / чужой diff (не реализация)
 2. ARCHITECTURE.md                  ← Полная архитектура: схема, конвенции, зоны ответственности.
 3. docs/DEVELOPMENT-PATTERNS.md     ← Конкретные код-паттерны: SilentResult, defineEntity, SubmitGuard.
 4. STACK.md                         ← Технологический стек (актуален на 2026-07).
@@ -54,6 +55,23 @@ LM Studio: `docs/agents/LM-STUDIO-AGENT.md` · `node scripts/lmstudio-agent/run.
 
 **TZ authors (Cursor / любой ИИ):** перед созданием `tasks/TZ-*.md` — всегда
 `docs/TZ-AUTHORING.md` + skill `.agents/skills/tz-authoring/SKILL.md`.
+
+**Auditors:** перед крупным audit report — `docs/AUDIT-METHODOLOGY.md`.
+Аудит ≠ реализация: evidence + child-TZ, product-код «заодно» запрещён.
+
+### 1.3a Бронь задачи (CLAIM) — исполнителю
+
+До **любой** правки product-кода:
+
+1. Workspace = `D:\kppdf-8.0` (не `.freebuff/worktrees`).
+2. TZ в `tasks/_active/<TASK-ID>.md`.
+3. Checklist по `docs/agent-checklists/_TEMPLATE.md`:
+   Status `CLAIMED / IN PROGRESS` + **Claim slot** (`agent_id`, `claimed_at` ISO, workspace).
+4. Сверь `_active-map.md` и чужие `_active` conflict keys → конфликт = STOP.
+5. Team Room `claim` — best-effort; **не** замена Claim slot в checklist.
+6. READY FOR REVIEW → ждать Cursor/PO PASS → только потом archive/lock.
+
+Подробности дыр (зачем так): `docs/audits/2026-08-04-agent-ops-claim-gaps.md`.
 
 ### 1.3 Где что лежит
 
@@ -72,6 +90,9 @@ LM Studio: `docs/agents/LM-STUDIO-AGENT.md` · `node scripts/lmstudio-agent/run.
 | `docs/pages/` | Документация по каждой странице |
 | `tasks/` | TZ-задачи (активные) |
 | `tasks/_archive/` | Архив завершённых задач |
+| `docs/agent-checklists/_TEMPLATE.md` | Шаблон checklist + Claim slot |
+| `docs/agent-checklists/_active-map.md` | Кто сейчас CLAIMED / RESERVED |
+| `docs/audits/2026-08-04-agent-ops-claim-gaps.md` | Аудит дыр claim/closeout |
 | `OrchestratorKit/` | Система оркестрации задач (не трогать без TZ) |
 
 ---

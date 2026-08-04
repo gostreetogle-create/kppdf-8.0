@@ -164,9 +164,42 @@ describe('MaterialService (TZ-MATERIALS-303/307)', () => {
       });
       await expect(service.create(dto())).rejects.toThrow('network down');
     });
+
+    it('rejects duplicate dimension types on create', async () => {
+      const { service, create } = buildService();
+      await expect(
+        service.create(
+          dto({
+            dimensions: [
+              { type: 'thickness', value: 4 },
+              { type: 'thickness', value: 6 },
+            ],
+          } as Partial<CreateMaterialDto>),
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(create).not.toHaveBeenCalled();
+    });
   });
 
   describe('update', () => {
+    it('rejects duplicate dimension types on update', async () => {
+      const save = jest.fn();
+      const { service } = buildService({
+        findById: jest.fn().mockReturnValue({
+          exec: jest.fn().mockResolvedValue(doc({ save })),
+        }),
+      });
+      await expect(
+        service.update('507f1f77bcf86cd799439011', {
+          dimensions: [
+            { type: 'height', value: 10 },
+            { type: 'height', value: 20 },
+          ],
+        } as UpdateMaterialDto),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(save).not.toHaveBeenCalled();
+    });
+
     it('maps an E11000 raised by doc.save() to 409 Conflict', async () => {
       const save = jest.fn().mockRejectedValue({ code: 11000, message: 'E11000 duplicate key' });
       const { service } = buildService({

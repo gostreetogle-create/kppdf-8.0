@@ -17,7 +17,20 @@
 | Метод | Endpoint | Назначение |
 |-------|----------|-----------|
 | GET | `/api/modules` | Список (flat array) |
-| DELETE | `/api/modules/:id` | Удаление (soft delete) |
+| GET | `/api/modules/:id/composition` | Состав модуля (dual-read: composition, иначе legacy materials[]) |
+| POST | `/api/modules/:id/composition` | Добавить линию состава (lineType=material) |
+| PATCH | `/api/modules/:id/composition/:lineId` | Обновить линию (quantity/unit/…) |
+| DELETE | `/api/modules/:id/composition/:lineId` | Удалить линию состава |
+| DELETE | `/api/modules/:id` | **Hard delete** (`deleteOne`) — soft-delete Module = TZ-CATALOG-314 |
+
+> **TZ-CATALOG-317:** материалы модуля читаются dual-read (непустой
+> `composition` → material-линии, иначе legacy `materials[]`); редактирование
+> «Изменить состав» пишет через composition-эндпоинты. Legacy `PATCH materials[]`
+> остаётся best-effort зеркалом до миграции 304.
+
+> **TZ-CATALOG-319:** раньше в docs ошибочно писали «soft delete». Факт кода:
+> `ProductModuleService.remove` → `doc.deleteOne()`. Material/Product пишут
+> `deletedAt`, но list-фильтр удалённых — тоже зона 314.
 
 ## Dialogs
 
@@ -31,6 +44,7 @@
 | Сервис | Методы |
 |--------|--------|
 | `ProductModulesService` | `list()`, `findById(id)`, `create(payload)`, `update(id, payload)`, `remove(id)` |
+| `ProductModulesService` | `getModuleComposition(id)`, `addModuleCompositionLine(id, dto)`, `updateModuleCompositionLine(id, lineId, dto)`, `removeModuleCompositionLine(id, lineId)` (composition CRUD) |
 
 ## State (signals)
 
@@ -67,7 +81,8 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 |----|------------|
 | TZ-104.3 | Миграция на pi-table (batch-2-B-flat) |
 | TZ-104.4.2 | Typed TemplateRef + lockstep sort |
+| TZ-CATALOG-319 | Docs: hard-delete Module (не soft) |
 
 ---
 
-_Создано: 2026-07-19._
+_Создано: 2026-07-19. Обновлено: 2026-08-04 (TZ-CATALOG-319)._

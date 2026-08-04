@@ -32,7 +32,7 @@ const HEX_RE = /^#[0-9a-fA-F]{6}$/;
  *   - Copy flow: the page passes `{ ...c, _id: undefined }` — the dialog
  *     detects create-mode by the missing `_id` and pre-fills the fields.
  *
- * Layout: `variant="content"` + `[maxWidth]="'1000px'"` — wide dialog with
+ * Layout: `variant="content"` + `[maxWidth]="'min(1120px, calc(100vw - 2rem))'"` — wide dialog with
  * internal body scroll and an ALWAYS-VISIBLE sticky footer (Save/Cancel).
  * The shared PiDialogComponent content template already provides the
  * flex-column + min-h-0 + overflow-y-auto body and `sticky bottom-0 bg-paper`
@@ -60,7 +60,7 @@ const HEX_RE = /^#[0-9a-fA-F]{6}$/;
     <app-pi-dialog
       [title]="isEdit() ? 'Редактировать цвет' : 'Создать цвет'"
       [variant]="'content'"
-      [maxWidth]="'1000px'"
+      [maxWidth]="'min(1120px, calc(100vw - 2rem))'"
     >
       <form
         body
@@ -217,10 +217,7 @@ export class ColorReferenceFormDialogComponent {
   protected readonly errorMessage = signal<string | null>(null);
 
   protected readonly form = this.fb.group({
-    name: this.fb.control(this.data?.name ?? '', [
-      Validators.required,
-      Validators.maxLength(128),
-    ]),
+    name: this.fb.control(this.data?.name ?? '', [Validators.required, Validators.maxLength(128)]),
     slug: this.fb.control(this.data?.slug ?? '', [
       Validators.maxLength(64),
       Validators.pattern(/^[a-z0-9-]+$/),
@@ -253,7 +250,9 @@ export class ColorReferenceFormDialogComponent {
       return `Максимум ${c.errors['maxlength'].requiredLength} символов`;
     }
     if (c.errors?.['pattern']) {
-      return name === 'hex' ? 'Формат: #RRGGBB (например, #F4F4F4)' : 'Только строчные латинские, цифры, дефис';
+      return name === 'hex'
+        ? 'Формат: #RRGGBB (например, #F4F4F4)'
+        : 'Только строчные латинские, цифры, дефис';
     }
     return 'Некорректное значение';
   }

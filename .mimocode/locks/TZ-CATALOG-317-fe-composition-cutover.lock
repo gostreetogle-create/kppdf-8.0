@@ -1,0 +1,12 @@
+# Lock file
+Locked as of 2026-08-04 — TZ-CATALOG-317: FE composition cutover.
+
+Owner: buffy/freebuff-fe + Cursor Architect
+Protected files:
+- frontend/src/app/shared/services/pi-product-modules.service.ts
+- frontend/src/app/pages/products/**
+- frontend/src/app/pages/modules/**
+- docs/pages/products.page.md
+- docs/pages/modules.page.md
+
+Unlock: only via orchestrator approval (successor TZ).

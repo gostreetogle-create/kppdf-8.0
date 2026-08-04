@@ -1,0 +1,10 @@
+# Lock file
+Locked as of 2026-08-04 — TZ-DICT-302: PiDictionaryShell.
+
+Owner: buffy + Cursor Architect
+Protected files:
+- frontend/src/app/shared/page/pi-dictionary-shell.component.ts
+- frontend/src/app/shared/page/pi-dictionary-shell.component.spec.ts
+- frontend/src/app/shared/page/index.ts
+
+Unlock: only via orchestrator approval (successor TZ).

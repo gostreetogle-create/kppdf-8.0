@@ -25,7 +25,6 @@ describe('Materials (e2e)', () => {
 
   describe('GET /materials', () => {
     it('returns paginated list of materials', async () => {
-      // Seed two materials
       await request(app.getHttpServer())
         .post('/api/materials')
         .set(authHeader(token))
@@ -56,8 +55,44 @@ describe('Materials (e2e)', () => {
       expect(res.body.name).toBe('Steklo 4mm');
     });
 
+    it('creates and updates TZ-CATALOG-301 technical fields', async () => {
+      const created = await request(app.getHttpServer())
+        .post('/api/materials')
+        .set(authHeader(token))
+        .send({
+          name: 'Лист Ст3',
+          unit: 'кг',
+          materialKind: 'raw',
+          assortment: 'Лист',
+          standardRef: 'ГОСТ 19903-2015',
+          materialGrade: 'Ст3',
+          weightKg: 12.5,
+        });
+
+      expect([200, 201]).toContain(created.status);
+      expect(created.body.materialKind).toBe('raw');
+      expect(created.body.weightKg).toBe(12.5);
+
+      const updated = await request(app.getHttpServer())
+        .patch(`/api/materials/${created.body._id}`)
+        .set(authHeader(token))
+        .send({ materialGrade: 'AISI 304', weightKg: 13.5 });
+
+      expect(updated.status).toBe(200);
+      expect(updated.body.materialGrade).toBe('AISI 304');
+      expect(updated.body.weightKg).toBe(13.5);
+    });
+
+    it('rejects invalid materialKind and negative weightKg', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/materials')
+        .set(authHeader(token))
+        .send({ name: 'Invalid', unit: 'шт', materialKind: 'unknown', weightKg: -1 });
+
+      expect(res.status).toBe(400);
+    });
+
     it('without admin role returns 403', async () => {
-      // Create a non-admin user
       const userRes = await request(app.getHttpServer())
         .post('/api/users')
         .set(authHeader(token))
@@ -68,7 +103,6 @@ describe('Materials (e2e)', () => {
           password: 'viewerpass123',
           role: 'user',
         });
-      // Login as that user
       const loginRes = await request(app.getHttpServer())
         .post('/api/auth/login')
         .send({ username: 'viewer_e2e', password: 'viewerpass123' });

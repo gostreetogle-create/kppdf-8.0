@@ -65,16 +65,24 @@ describe('CostCalculation (TZ-85 Phase E)', () => {
       .set(authHeader(adminToken))
       .send({
         name: 'Корпус шкафа',
-        materials: [
-          { materialId: material1Id, quantity: 4, unit: 'шт', isPurchased: true, sortOrder: 0 },
-          { materialId: material2Id, quantity: 12, unit: 'м', isPurchased: true, sortOrder: 1 },
-        ],
         workTypes: [
           { workTypeId, estimatedHours: 2.5, sortOrder: 0 },
         ],
       })
       .expect(201);
     moduleId = mod.body._id;
+
+    // Composition is the only runtime write path after TZ-CATALOG-304.
+    await request(app.getHttpServer())
+      .post(`/api/modules/${moduleId}/composition`)
+      .set(authHeader(adminToken))
+      .send({ lineType: 'material', refId: material1Id, quantity: 4, unit: 'шт', isPurchased: true })
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/modules/${moduleId}/composition`)
+      .set(authHeader(adminToken))
+      .send({ lineType: 'material', refId: material2Id, quantity: 12, unit: 'м', isPurchased: true })
+      .expect(201);
 
     // 4. Create Product and attach module
     const prod = await request(app.getHttpServer())
@@ -85,9 +93,9 @@ describe('CostCalculation (TZ-85 Phase E)', () => {
     productId = prod.body._id;
 
     await request(app.getHttpServer())
-      .post(`/api/products/${productId}/modules`)
+      .post(`/api/products/${productId}/composition`)
       .set(authHeader(adminToken))
-      .send({ moduleId })
+      .send({ lineType: 'module', refId: moduleId, quantity: 1 })
       .expect(201);
   });
 

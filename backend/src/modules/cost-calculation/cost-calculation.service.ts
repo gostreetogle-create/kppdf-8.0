@@ -39,19 +39,38 @@ import { WorkType, WorkTypeDocument } from '../work-type/work-type.schema';
  * This keeps the breakdown UI clean: one row per logical "лист ЛДСП 16мм"
  * instead of N duplicated rows.
  *
+ * TZ-CATALOG-304: create() dual-reads composition-first with legacy fallback
+ * (productModuleIds / module.materials[]) until the cleanup successor.
+ *
  * @see TZ-83 (foundation: 5 atomic commits at `752ace3`).
  * @see TZ-85 §4.A.2 for the algorithm pseudocode.
  */
+type CostLine = {
+  lineType: 'module' | 'material';
+  refId: Types.ObjectId | string;
+  quantity?: number;
+  unit?: string;
+};
+type ProductCostSource = { composition?: CostLine[]; productModuleIds?: Types.ObjectId[] };
+type ModuleMaterialCostSource = { materialId: Types.ObjectId | string; quantity?: number; unit?: string };
+type ModuleWorkCostSource = { workTypeId: Types.ObjectId | string; estimatedHours?: number };
+type ModuleCostSource = { composition?: CostLine[]; materials?: ModuleMaterialCostSource[]; workTypes?: ModuleWorkCostSource[] };
+type MaterialCostSource = { _id: Types.ObjectId; name: string; pricePerUnit?: number };
+type WorkTypeCostSource = { _id: Types.ObjectId; name: string; hourlyRate?: number };
+
 @Injectable()
 export class CostCalculationService {
   constructor(
     @InjectModel(CostCalculation.name)
     private readonly model: Model<CostCalculationDocument>,
-    // TZ-85A: single source for the rollup. The nested populate chain
-    // `productModuleIds → materials.materialId | workTypes.workTypeId` is the
-    // canonical pattern also used in `ProductService.findById` (TZ-83 Review #1).
     @InjectModel(Product.name)
     private readonly productModel: Model<ProductDocument>,
+    @InjectModel(ProductModuleEntity.name)
+    private readonly productModuleModel: Model<ProductModuleDocument>,
+    @InjectModel(Material.name)
+    private readonly materialModel: Model<MaterialDocument>,
+    @InjectModel(WorkType.name)
+    private readonly workTypeModel: Model<WorkTypeDocument>,
   ) {}
 
   /**
@@ -81,98 +100,108 @@ export class CostCalculationService {
     dto: CreateCostCalculationDto,
   ): Promise<CostCalculationDocument> {
     const productObjectId = new Types.ObjectId(dto.productId);
-
-    // TZ-85A.2: deep populate of the module tree. `select` keeps the
-    // payload tight — we only need name + pricePerUnit on Material and
-    // name + hourlyRate on WorkType. The `as unknown as` casts on the
-    // result handle Mongoose's loss of structural typing across the
-    // populate chain (same pattern as ProductService.attachModule).
     const product = await this.productModel
       .findById(productObjectId)
-      .populate({
-        path: 'productModuleIds',
-        populate: [
-          {
-            path: 'materials.materialId',
-            model: 'Material',
-            select: 'name pricePerUnit',
-          },
-          {
-            path: 'workTypes.workTypeId',
-            model: 'WorkType',
-            select: 'name hourlyRate',
-          },
-        ],
-      })
-      .exec();
-    if (!product) {
-      throw new NotFoundException(`Product ${dto.productId} not found`);
-    }
+      .select('composition productModuleIds')
+      .lean()
+      .exec() as ProductCostSource | null;
+    if (!product) throw new NotFoundException(`Product ${dto.productId} not found`);
 
-    const matMap = new Map<string, CostMaterial>();
+    const materialMap = new Map<string, CostMaterial>();
     const laborMap = new Map<string, CostLabor>();
-    const modules =
-      (product.productModuleIds as unknown as ProductModuleDocument[]) ?? [];
-
-    for (const mod of modules) {
-      // ── materials: aggregate by materialId ──
-      for (const mat of mod.materials ?? []) {
-        const material = mat.materialId as unknown as MaterialDocument | null;
-        if (!material) continue; // orphan ref → skip silently (TZ-85A risk #1)
-        const id = material._id.toString();
-        const qty = mat.quantity ?? 0;
-        const lineTotal = (material.pricePerUnit ?? 0) * qty;
-        const prev = matMap.get(id);
-        if (prev) {
-          prev.quantity += qty;
-          prev.total += lineTotal;
-        } else {
-          matMap.set(id, {
-            materialId: material._id,
-            materialName: material.name,
-            quantity: qty,
-            unit: mat.unit,
-            pricePerUnit: material.pricePerUnit ?? 0,
-            total: lineTotal,
-          });
-        }
+    const addMaterial = async (refId: Types.ObjectId | string, quantity: number, unit?: string): Promise<void> => {
+      if (!Types.ObjectId.isValid(String(refId))) return;
+      const material = await this.materialModel
+        .findById(new Types.ObjectId(String(refId)))
+        .select('name pricePerUnit')
+        .lean()
+        .exec() as MaterialCostSource | null;
+      if (!material) return;
+      const key = String(material._id);
+      const total = (material.pricePerUnit ?? 0) * quantity;
+      const previous = materialMap.get(key);
+      if (previous) {
+        previous.quantity += quantity;
+        previous.total += total;
+      } else {
+        materialMap.set(key, {
+          materialId: material._id,
+          materialName: material.name,
+          quantity,
+          unit,
+          pricePerUnit: material.pricePerUnit ?? 0,
+          total,
+        });
       }
+    };
+    const addLabor = async (refId: Types.ObjectId | string, hours: number): Promise<void> => {
+      if (!Types.ObjectId.isValid(String(refId))) return;
+      const workType = await this.workTypeModel
+        .findById(new Types.ObjectId(String(refId)))
+        .select('name hourlyRate')
+        .lean()
+        .exec() as WorkTypeCostSource | null;
+      if (!workType) return;
+      const key = String(workType._id);
+      const total = (workType.hourlyRate ?? 0) * hours;
+      const previous = laborMap.get(key);
+      if (previous) {
+        previous.hours += hours;
+        previous.total += total;
+      } else {
+        laborMap.set(key, {
+          workTypeId: workType._id,
+          workTypeName: workType.name,
+          hours,
+          hourlyRate: workType.hourlyRate ?? 0,
+          total,
+        });
+      }
+    };
 
-      // ── labor: aggregate by workTypeId ──
-      for (const wt of mod.workTypes ?? []) {
-        const workType = wt.workTypeId as unknown as WorkTypeDocument | null;
-        if (!workType) continue;
-        const id = workType._id.toString();
-        const hours = wt.estimatedHours ?? 0;
-        const lineTotal = (workType.hourlyRate ?? 0) * hours;
-        const prev = laborMap.get(id);
-        if (prev) {
-          prev.hours += hours;
-          prev.total += lineTotal;
-        } else {
-          laborMap.set(id, {
-            workTypeId: workType._id,
-            workTypeName: workType.name,
-            hours,
-            hourlyRate: workType.hourlyRate ?? 0,
-            total: lineTotal,
-          });
-        }
+    const productComposition = product.composition ?? [];
+    for (const line of productComposition.filter((item) => item.lineType === 'material')) {
+      await addMaterial(line.refId, line.quantity ?? 1, line.unit);
+    }
+    const moduleLines = productComposition.length
+      ? productComposition.filter((item) => item.lineType === 'module')
+      : (product.productModuleIds ?? []).map((refId) => ({ lineType: 'module' as const, refId, quantity: 1 }));
+    const moduleIds = moduleLines.map((line) => line.refId).filter((refId) => Types.ObjectId.isValid(String(refId)));
+    const modules = await this.productModuleModel
+      .find({ _id: { $in: moduleIds.map((id) => new Types.ObjectId(String(id))) } })
+      .select('composition materials workTypes')
+      .lean()
+      .exec() as ModuleCostSource[];
+    const modulesById = new Map(modules.map((module) => [String((module as ModuleCostSource & { _id?: Types.ObjectId })._id), module]));
+
+    for (const moduleLine of moduleLines) {
+      const module = modulesById.get(String(moduleLine.refId));
+      if (!module) continue;
+      const multiplier = moduleLine.quantity ?? 1;
+      const composition = module.composition ?? [];
+      const materialLines = composition.length
+        ? composition.filter((line) => line.lineType === 'material')
+        : (module.materials ?? []).map((line) => ({
+            lineType: 'material' as const,
+            refId: line.materialId,
+            quantity: line.quantity,
+            unit: line.unit,
+          }));
+      for (const line of materialLines) {
+        await addMaterial(line.refId, (line.quantity ?? 1) * multiplier, line.unit);
+      }
+      for (const workType of module.workTypes ?? []) {
+        await addLabor(workType.workTypeId, (workType.estimatedHours ?? 0) * multiplier);
       }
     }
 
-    const materials = Array.from(matMap.values());
+    const materials = Array.from(materialMap.values());
     const labor = Array.from(laborMap.values());
-    const totalMaterialCost = materials.reduce((s, m) => s + m.total, 0);
-    const totalLaborCost = labor.reduce((s, l) => s + l.total, 0);
+    const totalMaterialCost = materials.reduce((sum, row) => sum + row.total, 0);
+    const totalLaborCost = labor.reduce((sum, row) => sum + row.total, 0);
     const overheadPercent = dto.overheadPercent ?? 10;
     const overheadCost = (totalMaterialCost * overheadPercent) / 100;
     const totalCost = totalMaterialCost + totalLaborCost + overheadCost;
-
-    // `isActive` defaults to `false` per schema (no explicit write needed).
-    // `bomId` / `bomVersion` / `techProcessId` deliberately omitted — there
-    // is no longer a source for them. The schema keeps them as optional
-    // for legacy docs that pre-date TZ-85A.
     return this.model.create({
       productId: productObjectId,
       materials,

@@ -15,10 +15,12 @@
 | 2 | **Inventory Dashboard** | `inventory-dashboard.page.md` | `/dashboard` | Складская панель |
 | 3 | **Materials** | `materials.page.md` | `/materials` | Справочник материалов |
 | 4 | **Products** | `products.page.md` | `/products` | Каталог продукции |
+| 4a | **Product Detail** | `product-detail.page.md` | `/products/:id` | Карточка изделия (stub 319) |
 | 5 | **Orders** | `orders.page.md` | `/orders` | Заказы |
 | 6 | **Contracts** | `contracts.page.md` | `/contracts` | Договоры |
 | 7 | **Organizations** | `organizations.page.md` | `/organizations` | Организации |
 | 8 | **Work Types** | `work-types.page.md` | `/work-types` | Виды работ |
+| 8a | **People** | `people.page.md` | `/people` | Люди (Worker; UX-306) |
 | 9 | **Modules** | `modules.page.md` | `/modules` | Модули продукции |
 | 10 | **Module Detail** | `module-detail.page.md` | `/modules/:id` | Детали модуля |
 | 11 | **Dictionaries** | `dictionaries.page.md` | `/dictionaries` | Справочники (units) |

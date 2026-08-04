@@ -2,6 +2,11 @@
 
 **Краткое описание:** Справочник материалов с серверной пагинацией, поиском, фото, поставщиками, габаритами.
 
+> **TZ-CATALOG-301 (BE DONE):** на API уже есть `materialKind`, `assortment`,
+> `standardRef`, `materialGrade`, `weightKg` (+ filter `?materialKind=`).
+> **FE форма/типы этих полей — TZ-CATALOG-316 DONE** (не Wave 2 UI tree).
+> Уникальные типы габаритов (один length/width/… на материал) — **MATERIALS-311**.
+
 ## Route
 
 ```
@@ -16,11 +21,17 @@
 
 | Метод | Endpoint | Назначение |
 |-------|----------|-----------|
-| GET | `/api/materials` | Список (page/limit/search/categoryId) |
+| GET | `/api/materials` | Список (page/limit/search/categoryId/**materialKind**) |
 | DELETE | `/api/materials/:id` | Удаление (soft delete) |
 | POST | `/api/materials/:id/duplicate` | **TZ-MATERIALS-310** — серверный клон (без фото) |
 
 Ответ GET: `{ items: Material[], total: number, page: number, limit: number }`
+
+> **TZ-CATALOG-301 (BE DONE, 2026-08-04) — поля ниже добавлены на backend:**
+> `Material.materialKind` (`'raw' | 'part' | 'fastener' | 'purchased' | 'other'`), `Material.assortment` (профиль, ≤256), `Material.standardRef` (ГОСТ/ASTM, ≤256), `Material.materialGrade` (марка, ≤256), `Material.weightKg` (кг, ≥0).
+> Поле `materialKind` индексировано (`sparse: true`) и поддерживается фильтром `?materialKind=…` (`MaterialsController.list`).
+> Миграция `2026-08-04-TZ-CATALOG-301-material-fields.ts` бэкфилит legacy rows на `kind = 'other'` idempotent.
+> **FE типы/форма/фильтр этих полей — TZ-CATALOG-316 DONE** (это же описание страницы).
 
 ## Dialogs
 
@@ -51,18 +62,20 @@
 |--------|-----|-----------|
 | `pageSig` | `Signal<number>` | Текущая страница (1-indexed) |
 | `search` | `SearchState` | Debounced поиск (300ms) |
+| `kindFilterSig` | `Signal<MaterialKind \| null>` | **TZ-CATALOG-316** — фильтр `?materialKind=` (null = «Все типы») |
 | `listRes` | `HttpResource<MaterialsListResponse>` | GET /api/materials |
 
 ## Computed
 
 | Computed | Трансформация |
 |----------|--------------|
-| `listParams` | `{ page, limit: 50, search? }` |
+| `listParams` | `{ page, limit: 50, search?, materialKind? }` |
 | `data` | `listRes.value()?.items ?? []` |
 | `total` | `listRes.value()?.total ?? 0` |
 | `loading` | `listRes.isLoading()` |
 | `error` | `extractErrorMessage(listRes.error())` |
 | `debouncedSearch` | публичный (для теста) |
+| `kindFilter` | публичный (read-only alias на `kindFilterSig`) |
 
 ## Cell templates (pi-table)
 
@@ -70,7 +83,8 @@
 |-----|---------|-----------|
 | `photoTpl` | `mainPhotoId` | `<img>` или `<pi-empty-tile>` |
 | `supplierTpl` | `supplierId` | Название организации (lookup) |
-| `dimsTpl` | `dimensions` | `L 3000мм × W 2000мм × T 2мм` |
+| `kindTpl` | `materialKind` | **TZ-CATALOG-316** — короткий русский лейбл kinds (`сырьё`, `деталь`…); для legacy без kind — пусто (empty-cell) |
+| `dimsTpl` | `dimensions` | `Д. 3000мм × Ш. 2000мм × Т. 2мм` |
 | `stockTpl` | `stockQty` (legacy-key) | **TZ-MATERIALS-308** — ссылка «Склад →» на `/storage-items?materialId=<id>` |
 | `rowActionsTpl` | (actions) | Copy / Edit / Delete (TZ-MATERIALS-310 добавил copy slot) |
 
@@ -84,9 +98,9 @@
   Категория передаётся как `categoryId`, а при редактировании populated-ссылка нормализуется в ID без потери значения.
   Активная категория с другим типом, отключённая категория или категория без префикса отклоняются до создания материала.
 
-## Column definitions (9 колонок)
+## Column definitions (10 колонок)
 
-`mainPhotoId` (96px, center) → `name` (sticky, sortable) → `article` (sortable) → `sku` (sortable) → `unit` (sortable) → `supplierId` (cellTemplate) → `dimensions` (cellTemplate) → `pricePerUnit` (sortable, numeric, right) → `stockQty`-key (cellTemplate «Склад», TZ-MATERIALS-308)
+`mainPhotoId` (96px, center) → `name` (sticky, sortable) → `article` (sortable) → `sku` (sortable) → `unit` (sortable, 60px) → **`materialKind`** (**TZ-CATALOG-316**, 110px, cellTemplate «Тип» — сырьё/деталь/метиз/покупное/другое; legacy без kind — пусто с `empty-cell`) → `supplierId` (cellTemplate) → `dimensions` (cellTemplate) → `pricePerUnit` (sortable, numeric, right) → `stockQty`-key (cellTemplate «Склад», TZ-MATERIALS-308)
 
 > **Остаток (TZ-MATERIALS-304):** числовая колонка `stockQty` убрана из списка материалов — остаток
 > управляется только в разделе «Склад» (`StorageItem.quantity`, приходы/расходы). `Material.stockQty`
@@ -108,6 +122,8 @@
 | TZ-MATERIALS-307 | Серверная генерация SKU через CounterService |
 | TZ-MATERIALS-310 | **Кнопка «Копировать»** (server-side clone, без фото) |
 | **TZ-MATERIALS-308** | **Связка материал→склад**: колонка-ссылка «Склад», фильтр `?materialId=` на остатках |
+| **TZ-CATALOG-301** | **Backend-only**: `materialKind` + `assortment` + `standardRef` + `materialGrade` + `weightKg` + filter `?materialKind=` + legacy migration к `other` (idempotent). Predecessor для 316. |
+| **TZ-CATALOG-316** | **FE Material §301**: расширил `Material` interface + payload + filter; `MaterialFormDialogComponent` — секции «Тип материала / Масса, кг» (left) и «Сортамент / Стандарт / Марка» (right), валидация `weightKg ≥ 0`; 10-я колонка «Тип» на `/materials`; toolbar-фильтр по kind. UX-FORM-CANON, Paper & Ink. |
 
 ## Кнопка «Копировать» — TZ-MATERIALS-310
 
@@ -143,4 +159,4 @@ Audit: `@AuditAction({ action: 'duplicate', entityType: 'Material', idParam: 'id
 
 ---
 
-_Создано: 2026-07-19. Последнее обновление: 2026-08-02 (TZ-MATERIALS-307 → 310 → 308 — материал-склад)._
+_Создано: 2026-07-19. Последнее обновление: 2026-08-04 (TZ-CATALOG-316 → FE §301: kind/weightKg/assortment/standardRef/materialGrade, колонка «Тип», toolbar-фильтр; 316 закрыт после 301 архивации BE-полей)._

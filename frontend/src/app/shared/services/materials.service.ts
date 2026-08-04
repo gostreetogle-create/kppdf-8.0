@@ -20,6 +20,28 @@ export interface MaterialDimension {
   isImmutable?: boolean;
 }
 
+/**
+ * Catalog leaf classification (TZ-CATALOG-301 backend contract).
+ *
+ * - `raw` — Сырьё (sheet/bar before any cutting).
+ * - `part` — Деталь (manufactured cut/formed piece with assortment + dims).
+ * - `fastener` — Метиз (bolts, nuts, washers, etc.).
+ * - `purchased` — Покупное изделие (bought finished item, not manufactured).
+ * - `other` — Default for legacy rows upgraded by the 301 migration; new
+ *   rows should pick an explicit kind when possible so the UI badge is real.
+ */
+export const MATERIAL_KINDS = ['raw', 'part', 'fastener', 'purchased', 'other'] as const;
+export type MaterialKind = (typeof MATERIAL_KINDS)[number];
+
+/** Short Russian label per MaterialKind — used in UI lists / sort headers. */
+export const MATERIAL_KIND_LABELS: Record<MaterialKind, string> = {
+  raw: 'сырьё',
+  part: 'деталь',
+  fastener: 'метиз',
+  purchased: 'покупное',
+  other: 'другое',
+};
+
 export interface Material {
   _id: string;
   name: string;
@@ -35,6 +57,20 @@ export interface Material {
   mainPhotoId?: string | Photo;
   supplierId?: string;
   notes?: string;
+  /**
+   * TZ-CATALOG-301 / 316: catalog leaf classification. Optional in FE —
+   * legacy rows without kind are valid (server backfills to `other`);
+   * FE displays "— не указан —" in edit dialog when missing.
+   */
+  materialKind?: MaterialKind | null;
+  /** Assortment / профиль (труба, лист, уголок…). Free-text, optional. */
+  assortment?: string;
+  /** Стандарт / regulatory reference (ГОСТ, ASTM…). Free-text, optional. */
+  standardRef?: string;
+  /** Марка материала (Ст3, AISI 304…). Free-text, optional. */
+  materialGrade?: string;
+  /** Масса в килограммах. Server validates `min: 0`. */
+  weightKg?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -51,6 +87,8 @@ export interface MaterialsListParams {
   limit?: number;
   search?: string;
   categoryId?: string;
+  /** TZ-CATALOG-301: server-side filter `?materialKind=`. */
+  materialKind?: MaterialKind;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -64,6 +102,7 @@ export class MaterialsService {
       .set('limit', String(params.limit ?? 50));
     if (params.search) httpParams = httpParams.set('search', params.search);
     if (params.categoryId) httpParams = httpParams.set('categoryId', params.categoryId);
+    if (params.materialKind) httpParams = httpParams.set('materialKind', params.materialKind);
     return silentGet<MaterialsListResponse>(this.http, `${this.baseUrl}/materials`, {
       params: httpParams,
     });

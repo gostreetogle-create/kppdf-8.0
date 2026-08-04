@@ -5,25 +5,25 @@ import { ProductService } from './product.service';
 import { ProductController } from './product.controller';
 import { ProductSubroutesController } from './product-subroutes.controller';
 import { Category, CategorySchema } from '../category/category.schema';
-import {
-  ProductModule as ProductModuleEntity,
-  ProductModuleSchema,
-} from '../product-module/product-module.schema';
+import { ProductModule as ProductModuleEntity, ProductModuleSchema } from '../product-module/product-module.schema';
+import { Material, MaterialSchema } from '../material/material.schema';
 import { CounterModule } from '../counter/counter.module';
+import { CompositionLineService } from '../catalog/composition-line.service';
+import { CatalogGraphModule } from '../catalog-graph/catalog-graph.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Product.name, schema: ProductSchema },
       { name: Category.name, schema: CategorySchema },
-      // TZ-83 Фаза D.3: модель ProductModule зарегистрирована здесь
-      // для atomic attachModule/detachModule endpoint guards.
       { name: ProductModuleEntity.name, schema: ProductModuleSchema },
+      { name: Material.name, schema: MaterialSchema },
     ]),
     CounterModule,
+    CatalogGraphModule,
   ],
   controllers: [ProductController, ProductSubroutesController],
-  providers: [ProductService],
+  providers: [ProductService, CompositionLineService],
   exports: [ProductService, MongooseModule],
 })
 export class ProductModule {}

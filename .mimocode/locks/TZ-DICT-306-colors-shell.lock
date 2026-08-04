@@ -1,0 +1,10 @@
+# Lock file
+Locked as of 2026-08-04 — TZ-DICT-306: Color references Dictionary Shell cutover.
+
+Owner: buffy + Cursor Architect
+Protected files:
+- frontend/src/app/pages/dictionaries/color-references.page.ts
+- frontend/src/app/pages/dictionaries/color-references.page.spec.ts
+- docs/pages/color-references.page.md
+
+Unlock: only via orchestrator approval (successor TZ).

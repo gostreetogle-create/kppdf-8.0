@@ -8,9 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../shared/page/pi-section.component';
-import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
+import { PiDictionaryShellComponent } from '../../shared/page/pi-dictionary-shell.component';
 import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
@@ -30,6 +28,15 @@ import { pluralRu } from '../../shared/util/russian-plural';
 const RU_CATEGORIES = ['категория', 'категории', 'категорий'] as const;
 
 /**
+ * Genitive form for «N категорий» after «из» («0 из 3 категорий»,
+ * «0 из 1 категории»). pluralRu() returns the nominative, which is
+ * wrong in the «X из Y …» construction (review nit, TZ-DICT-307).
+ */
+function pluralGenitive(n: number): string {
+  return n % 10 === 1 && n % 100 !== 11 ? 'категории' : 'категорий';
+}
+
+/**
  * TZ-DOC-316 — справочник категорий текстовых блоков.
  *
  * CRUD over `/text-block-categories` (admin mutations, admin/manager
@@ -42,42 +49,38 @@ const RU_CATEGORIES = ['категория', 'категории', 'катего
  * (TZ-DOC-308): this is a flat, text-block-only dictionary. It powers the
  * category select in the block editor and the registry filter on
  * `/doc-constructor/texts`.
+ *
+ * TZ-DICT-307: cut over to PiDictionaryShell (D1–D2 canon) — compact title
+ * + sticky tools bar (search + CTA), prose header/section removed.
  */
 @Component({
   selector: 'app-text-block-categories-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    PiPageHeaderComponent,
-    PiSectionComponent,
-    PiToolbarComponent,
+    PiDictionaryShellComponent,
     PiEmptyStateComponent,
     PiRowActionsComponent,
     ButtonComponent,
     SwitchComponent,
   ],
   template: `
-    <app-pi-page-header
-      eyebrow="раздел · справочники"
-      title="Категории текстов"
-      description="Группировка текстовых блоков по назначению. Выбор категории — в редакторе блока и фильтре каталога."
-    />
+    <app-pi-dictionary-shell [title]="'Категории текстов'" [totalLabel]="totalLabel()">
+      <!-- Sticky tools: search + primary CTA -->
+      <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        <input
+          type="search"
+          class="pi-input w-72"
+          placeholder="Поиск по названию или slug…"
+          [value]="searchQuery()"
+          (input)="onSearch($event)"
+          aria-label="Поиск категорий текстов"
+        />
+        <span class="flex-1"></span>
+        <app-pi-button variant="default" (click)="openCreate()" data-test="create-category-button">
+          + Создать категорию
+        </app-pi-button>
+      </div>
 
-    <app-pi-toolbar>
-      <input
-        type="search"
-        class="pi-input w-72"
-        placeholder="Поиск по названию или slug…"
-        [value]="searchQuery()"
-        (input)="onSearch($event)"
-        aria-label="Поиск категорий текстов"
-      />
-      <app-pi-button variant="default" (click)="openCreate()" data-test="create-category-button">
-        + Создать категорию
-      </app-pi-button>
-      <span hint>{{ visible().length }} {{ totalLabel(visible().length) }}</span>
-    </app-pi-toolbar>
-
-    <app-pi-section title="Каталог" eyebrow="I">
       @if (loading()) {
         <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
       } @else if (error()) {
@@ -93,7 +96,9 @@ const RU_CATEGORIES = ['категория', 'категории', 'катего
       } @else if (visible().length === 0) {
         <app-pi-empty-state
           [colspan]="1"
-          [message]="searchQuery() ? 'Ничего не найдено.' : 'Нет категорий текстов. Создайте первую.'"
+          [message]="
+            searchQuery() ? 'Ничего не найдено.' : 'Нет категорий текстов. Создайте первую.'
+          "
         />
       } @else {
         <div class="hairline rounded-sm overflow-x-auto">
@@ -164,7 +169,7 @@ const RU_CATEGORIES = ['категория', 'категории', 'катего
           </table>
         </div>
       }
-    </app-pi-section>
+    </app-pi-dictionary-shell>
   `,
 })
 export class TextBlockCategoriesPage {
@@ -185,9 +190,17 @@ export class TextBlockCategoriesPage {
       .slice()
       .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'ru'));
     if (!q) return list;
-    return list.filter(
-      (c) => c.name.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q),
-    );
+    return list.filter((c) => c.name.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q));
+  });
+
+  /** TZ-DICT-307: compact muted count for the shell title (D2 canon). */
+  protected readonly totalLabel = computed(() => {
+    const total = this.items().length;
+    const shown = this.visible().length;
+    if (total === 0) return '';
+    return shown !== total
+      ? `${shown} из ${total} ${pluralGenitive(total)}`
+      : `${total} ${pluralRu(total, RU_CATEGORIES)}`;
   });
 
   constructor() {
@@ -208,10 +221,6 @@ export class TextBlockCategoriesPage {
           this.error.set(extractErrorMessage(res.error));
         }
       });
-  }
-
-  protected totalLabel(n: number): string {
-    return pluralRu(n, RU_CATEGORIES);
   }
 
   protected onSearch(e: Event): void {

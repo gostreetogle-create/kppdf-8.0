@@ -1,0 +1,10 @@
+# Lock file
+Locked as of 2026-08-04 — TZ-DICT-305: Categories Dictionary Shell cutover.
+
+Owner: buffy + Cursor Architect
+Protected files:
+- frontend/src/app/pages/dictionaries/categories.page.ts
+- frontend/src/app/pages/dictionaries/categories.page.spec.ts
+- docs/pages/categories.page.md
+
+Unlock: only via orchestrator approval (successor TZ).

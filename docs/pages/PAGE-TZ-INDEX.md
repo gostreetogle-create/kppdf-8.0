@@ -1,7 +1,7 @@
 # Page ↔ TZ index
 
 **Purpose:** Search by page/route to find which tasks touched or will touch it.  
-**Updated:** 2026-08-03 (Stabilization Wave DOC-337…341 / UX-DIALOG-301 / PROC-301)
+**Updated:** 2026-08-04 (CATALOG Wave 1 docs; UI pages — после 305)
 
 How to use: `Ctrl+F` по route или имени страницы. Новые TZ обязаны указывать
 `PAGES:` / `PAGE_DOCS:` в шапке (см. `tz-authoring`).
@@ -20,11 +20,20 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 
 | Route | Page doc | TZs |
 |-------|----------|-----|
-| `/materials` | materials.page.md | MATERIALS-*, **UX-305 DONE**, **MATERIALS-308 DONE** (Склад link) |
-| `/products`, `/products/:id` | products.page.md | PRODUCTS-* |
-| `/modules`, `/modules/:id` | modules*.page.md | MODULES-* |
+| `/materials` | materials.page.md | MATERIALS-*; **CATALOG-301** BE DONE; **FE поля 301 = TZ-CATALOG-316** (∥ Wave 1) |
+| `/materials/:id` | (pending → 312) | CATALOG Wave 2 |
+| `/products` | products.page.md | PRODUCTS-*; composition backend **302…305**; FE cutover **317** |
+| `/products/:id` | **product-detail.page.md** | stub TZ-CATALOG-319; detail UI exists |
+| `/modules`, `/modules/:id` | modules.page.md, module-detail.page.md | MODULES-*; hard-delete Module (docs fixed 319); photos `/product-module-photos` |
 | `/work-types` | work-types.page.md | WORKTYPES-*, **UX-305 DONE**, **PRODUCTION-302 DONE** (days) |
-| `/people` or `/workers` | (pending) | WORKERS-302, **UX-306** (blocked) |
+| `/people` | people.page.md | **UX-306 DONE** (Worker API) |
+
+**Catalog audits / backlog:**  
+[`2026-08-04-catalog-coherence-audit.md`](../audits/2026-08-04-catalog-coherence-audit.md) ·  
+[`2026-08-04-catalog-readiness-fe-be.md`](../audits/2026-08-04-catalog-readiness-fe-be.md) ·  
+[`_backlog/catalog/README.md`](../../tasks/_backlog/catalog/README.md) (316/317/319 + Wave 2) ·  
+Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVIEW.md)
+
 
 ## Deals / orgs
 
@@ -69,7 +78,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | [UX-303 DONE](../tasks/_archive/2026-08/TZ-UX-303.done.md) | documents, dictionaries | Unify labels |
 | [UX-304](../tasks/TZ-UX-304-reference-pi-table.md) | color-references, doc-template-categories | pi-table |
 | [UX-305 DONE](../tasks/_archive/2026-08/TZ-UX-305.done.md) | orgs, work-types, storage, materials | Fix page.md |
-| [UX-306](../tasks/_backlog/TZ-UX-306-people-route-align.md) | people/workers | Route+nav align (**PARKED** Stabilization Wave) |
+| [UX-306 DONE](../tasks/_archive/2026-08/TZ-UX-306.done.md) | people | Route+nav+dialog |
 | [DOC-324..326](../docs/agent-checklists/DOC-CONSTRUCTOR-UX-AUDIT.md) | builder/templates/texts | Prior audit |
 | [DOC-334 audit](../docs/audits/DOC-334-doc-constructor-ui-polish-audit.md) | builder/texts/tables/categories | Deploy polish queue 334→335→332→336 |
 

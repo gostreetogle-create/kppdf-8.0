@@ -7,6 +7,10 @@ import {
 import { CostCalculationService } from './cost-calculation.service';
 import { CostCalculationController } from './cost-calculation.controller';
 import { ProductModule } from '../product/product.module';
+import { Product, ProductSchema } from '../product/product.schema';
+import { ProductModule as ProductModuleEntity, ProductModuleSchema } from '../product-module/product-module.schema';
+import { Material, MaterialSchema } from '../material/material.schema';
+import { WorkType, WorkTypeSchema } from '../work-type/work-type.schema';
 
 /**
  * TZ-85 Phase A: module DI update.
@@ -31,6 +35,10 @@ import { ProductModule } from '../product/product.module';
   imports: [
     MongooseModule.forFeature([
       { name: CostCalculation.name, schema: CostCalculationSchema },
+      { name: Product.name, schema: ProductSchema },
+      { name: ProductModuleEntity.name, schema: ProductModuleSchema },
+      { name: Material.name, schema: MaterialSchema },
+      { name: WorkType.name, schema: WorkTypeSchema },
     ]),
     ProductModule,
   ],

@@ -17,7 +17,17 @@
 | Метод | Endpoint | Назначение |
 |-------|----------|-----------|
 | GET | `/api/products` | Список (page/limit/search/sortBy/sortOrder) |
+| GET | `/api/products/:id/composition` | Состав (dual-read: composition, иначе legacy productModuleIds) |
+| POST | `/api/products/:id/composition` | Добавить/upsert линию состава (TZ-CATALOG-302/317) |
+| PATCH | `/api/products/:id/composition/:lineId` | Обновить линию (quantity и др.) |
+| DELETE | `/api/products/:id/composition/:lineId` | Удалить линию состава |
 | DELETE | `/api/products/:id` | Удаление (soft delete) |
+
+> **TZ-CATALOG-317:** UI пишет состав только через composition-эндпоинты.
+> Legacy `POST/DELETE /api/products/:id/modules` (attach/detach) deprecated →
+> `ProductModulesService.attachToProduct/detachFromProduct` бросают ошибку. Список
+> и detail читают состав dual-read: непустой `composition` имеет приоритет над
+> `productModuleIds`.
 
 Ответ GET: `{ items: Product[], total: number, page: number, limit: number }`
 
@@ -33,6 +43,8 @@
 | Сервис | Методы |
 |--------|--------|
 | `ProductsService` | `list(params)`, `findById(id)`, `create(payload)`, `update(id, payload)`, `remove(id)` |
+| `ProductModulesService` | `getProductComposition(id)`, `addProductCompositionLine(id, dto)`, `updateProductCompositionLine(id, lineId, dto)`, `removeProductCompositionLine(id, lineId)` (composition CRUD) |
+| `ProductModulesService` (deprecated) | `attachToProduct` / `detachFromProduct` — бросают ошибку (TZ-CATALOG-317) |
 
 ## State (signals)
 
@@ -195,4 +207,10 @@ TZ-MODULES-301 (карточки-строки, как material-cards в module-d
 
 ---
 
-_Создано: 2026-07-19. Последнее обновление: 2026-08-02._
+_Создано: 2026-07-19. Последнее обновление: 2026-08-04 (TZ-CATALOG-319: link detail stub + composition gates)._
+
+## Related
+
+- Detail route: [`product-detail.page.md`](./product-detail.page.md)
+- Composition FE cutover: **TZ-CATALOG-317** (после 302; GATE до 304)
+- Soft-delete list filter: **TZ-CATALOG-314**

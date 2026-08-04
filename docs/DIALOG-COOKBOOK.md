@@ -15,7 +15,7 @@ const destroyRef = inject(DestroyRef);
 const ref = dialogs.open<Result, Data>(MyDialogComponent, {
   data: { ... },
   parentDestroyRef: destroyRef, // обязательно для route/tab destroy
-  // maxWidth: 'min(1000px, calc(100vw - 2rem))' — для широких form на mobile
+  // maxWidth: 'min(1120px, calc(100vw - 2rem))' — для широких form на mobile
 });
 ```
 

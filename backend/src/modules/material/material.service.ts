@@ -24,6 +24,7 @@ export class MaterialService {
   ) {}
 
   async create(dto: CreateMaterialDto): Promise<MaterialDocument> {
+    this.assertUniqueDimensionTypes(dto.dimensions);
     let sku = dto.sku;
     const category = dto.categoryId
       ? await this.loadAssignableMaterialCategory(dto.categoryId)
@@ -44,7 +45,14 @@ export class MaterialService {
     }
   }
 
-  async findAll(q: { page?: number; limit?: number; search?: string; categoryId?: string; supplierId?: string } = {}) {
+  async findAll(q: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    categoryId?: string;
+    supplierId?: string;
+    materialKind?: CreateMaterialDto['materialKind'];
+  } = {}) {
     const page = Math.max(1, q.page ?? 1);
     const limit = Math.min(100, Math.max(1, q.limit ?? 20));
     const filter: Record<string, unknown> = {};
@@ -55,6 +63,7 @@ export class MaterialService {
     }
     if (q.categoryId) filter.categoryId = new Types.ObjectId(q.categoryId);
     if (q.supplierId) filter.supplierId = new Types.ObjectId(q.supplierId);
+    if (q.materialKind) filter.materialKind = q.materialKind;
     const [items, total] = await Promise.all([
       this.model.find(filter)
         .populate('categoryId')
@@ -86,6 +95,7 @@ export class MaterialService {
   async update(id: string, dto: UpdateMaterialDto): Promise<MaterialDocument> {
     if (!Types.ObjectId.isValid(id)) throw new NotFoundException(`Material ${id} not found`);
     if (dto.categoryId) await this.loadAssignableMaterialCategory(dto.categoryId);
+    if (dto.dimensions !== undefined) this.assertUniqueDimensionTypes(dto.dimensions);
     const doc = await this.model.findById(id).exec();
     if (!doc) throw new NotFoundException(`Material ${id} not found`);
     Object.assign(doc, dto);
@@ -107,6 +117,27 @@ export class MaterialService {
       );
     }
     return category;
+  }
+
+  /**
+   * Один type на материал (length/width/height/…): дубликаты → 400.
+   * UI тоже запрещает; backend — источник правды.
+   */
+  private assertUniqueDimensionTypes(
+    dimensions?: Array<{ type?: string }> | null,
+  ): void {
+    if (!dimensions?.length) return;
+    const seen = new Set<string>();
+    for (const d of dimensions) {
+      const t = d?.type;
+      if (!t) continue;
+      if (seen.has(t)) {
+        throw new BadRequestException(
+          `Габарит «${t}» указан дважды. У материала каждый тип размера только один раз.`,
+        );
+      }
+      seen.add(t);
+    }
   }
 
   /** Map Mongo duplicate-key errors to the API's conflict contract. */
@@ -180,10 +211,6 @@ export class MaterialService {
         ? `${baseName}${SUFFIX}`
         : `${baseName.slice(0, 256 - SUFFIX.length)}${SUFFIX}`;
 
-    // Regenerate SKU only when the source has a material category with a prefix.
-    // If the category lookup fails for any reason (e.g. category was deleted),
-    // we deliberately leave the clone sku-less — the user can fix in the
-    // edit dialog. This matches the safe-fallback policy of create().
     let nextSku: string | undefined;
     const rawCatId = copiableFields.categoryId;
     if (rawCatId) {
@@ -196,8 +223,6 @@ export class MaterialService {
           nextSku = await this.counter.next('Material', category.skuPrefix);
         }
       } catch {
-        // Counter / category lookup failure SHOULD NOT block duplication —
-        // user can edit the resulting record to assign a code later.
         nextSku = undefined;
       }
     }

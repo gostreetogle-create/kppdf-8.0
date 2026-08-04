@@ -187,7 +187,7 @@ import { PiShowcaseCardComponent } from '../../shared/ui/card';
         <!-- III. Материалы -->
         <app-pi-section
           title="Материалы"
-          [hint]="m.materials.length ? 'Override-габариты показаны курсивом' : ''"
+          [hint]="materialRows().length ? 'Override-габариты показаны курсивом' : ''"
           eyebrow="III"
         >
           <div class="flex justify-end mb-2">
@@ -212,17 +212,17 @@ import { PiShowcaseCardComponent } from '../../shared/ui/card';
                 </tr>
               </thead>
               <tbody>
-                @for (m2 of m.materials; track $index) {
+                @for (row of materialRows(); track $index) {
                   <tr class="pi-table-row pi-table-row-odd last:border-0">
                     <td class="pi-cell align-top">
-                      {{ materialName(m2.materialId) }}
+                      {{ materialName(row.materialId) }}
                     </td>
-                    <td class="pi-cell-numeric align-top font-mono">{{ m2.quantity }}</td>
-                    <td class="pi-cell align-top">{{ m2.unit ?? 'шт' }}</td>
+                    <td class="pi-cell-numeric align-top font-mono">{{ row.quantity }}</td>
+                    <td class="pi-cell align-top">{{ row.unit ?? 'шт' }}</td>
                     <td class="pi-cell align-top text-xs italic empty-cell">
-                      {{ overrideDims(m2) }}
+                      {{ overrideDims(row) }}
                     </td>
-                    <td class="pi-cell align-top text-center">{{ m2.isPurchased ? '✓' : '—' }}</td>
+                    <td class="pi-cell align-top text-center">{{ row.isPurchased ? '✓' : '—' }}</td>
                   </tr>
                 } @empty {
                   <app-pi-empty-state
@@ -307,13 +307,41 @@ export class ModuleDetailPage {
     if (!m) return '';
     const dims = m.dimensions;
     if (!dims || (dims.width == null && dims.height == null && dims.depth == null)) {
-      return `Модуль — ${m.workTypes?.length ?? 0} работ, ${m.materials?.length ?? 0} материалов`;
+      return `Модуль — ${m.workTypes?.length ?? 0} работ, ${this.materialRows().length} материалов`;
     }
     const parts: string[] = [];
     if (dims.width != null) parts.push(`W ${dims.width}`);
     if (dims.height != null) parts.push(`H ${dims.height}`);
     if (dims.depth != null) parts.push(`D ${dims.depth}`);
     return `Модуль ${parts.join(' × ')} ${dims.unit ?? ''}`;
+  });
+
+  /**
+   * Dual-read материалов модуля (TZ-CATALOG-317): непустой composition
+   * (lineType=material) имеет приоритет над legacy materials[].
+   */
+  protected readonly materialRows = computed<
+    {
+      materialId: unknown;
+      quantity: number;
+      unit?: string;
+      isPurchased?: boolean;
+      overrideDimensions?: { length?: number; width?: number; height?: number; unit?: string };
+    }[]
+  >(() => {
+    const m = this.module();
+    if (!m) return [];
+    const lines = (m.composition ?? []).filter((l) => l.lineType === 'material');
+    if (lines.length > 0) {
+      return lines.map((l) => ({
+        materialId: l.refId,
+        quantity: l.quantity ?? 1,
+        unit: l.unit,
+        isPurchased: l.isPurchased ?? true,
+        overrideDimensions: l.overrideDimensions,
+      }));
+    }
+    return m.materials ?? [];
   });
 
   /** photos отдельным сигналом, обновляется через reloadPhotos(). */
@@ -444,7 +472,11 @@ export class ModuleDetailPage {
     const m = this.module();
     if (!m) return;
     const ref = this.dialog.open(ModuleMaterialsFormDialogComponent, {
-      data: { moduleId: m._id, materials: m.materials ?? [] },
+      data: {
+        moduleId: m._id,
+        materials: m.materials ?? [],
+        composition: m.composition ?? [],
+      },
       width: 'xl',
       parentDestroyRef: this.destroyRef,
     });

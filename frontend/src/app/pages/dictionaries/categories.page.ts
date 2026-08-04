@@ -10,9 +10,7 @@ import {
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { CdkDropList, CdkDrag, CdkDragDrop } from '@angular/cdk/drag-drop';
-import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../shared/page/pi-section.component';
-import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
+import { PiDictionaryShellComponent } from '../../shared/page/pi-dictionary-shell.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
@@ -42,49 +40,58 @@ const TYPE_COLORS: Record<Category['type'], string> = {
   general: 'bg-muted-foreground/20 text-muted-foreground',
 };
 
+type TypeFilter = 'all' | Category['type'];
+
 /**
+ * TZ-DICT-305 — Categories page on PiDictionaryShell (D1–D2 chrome).
+ *
+ * Sticky tools: search + type filter + primary CTA. CDK drag-drop reorder
+ * preserved on two levels (root + children). Header/section bloat removed:
+ * compact H1 from the shell, no eyebrow/description/section chrome.
+ *
  * Полная документация страницы: docs/pages/categories.page.md
  */
 @Component({
   selector: 'app-categories-page',
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    CdkDropList,
-    CdkDrag,
-    PiPageHeaderComponent,
-    PiSectionComponent,
-    PiToolbarComponent,
-    ButtonComponent,
-  ],
+  imports: [CdkDropList, CdkDrag, PiDictionaryShellComponent, ButtonComponent],
   template: `
-    <app-pi-page-header
-      eyebrow="раздел · справочники"
-      title="Категории"
-      description="Классификация материалов и продукции. Перетаскивайте для изменения порядка."
-    />
-
-    <app-pi-toolbar>
-      <input
-        type="search"
-        [value]="searchQuery()"
-        (input)="onSearchInput($event)"
-        placeholder="Поиск по названию…"
-        aria-label="Поиск категорий"
-        class="pi-input w-64"
-      />
-      <app-pi-button variant="default" (click)="openCreate()">+ Создать</app-pi-button>
-      <span hint>{{ total() }} {{ totalLabel(total()) }}</span>
-    </app-pi-toolbar>
-
-    <app-pi-section title="Каталог" hint="Перетаскивайте строки для изменения порядка" eyebrow="I">
+    <app-pi-dictionary-shell [title]="'Категории'" [totalLabel]="totalLabel()">
       @if (error()) {
         <div
           role="alert"
-          class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+          class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
         >
           {{ error() }}
         </div>
       }
+
+      <!-- Sticky tools: search + type filter + CTA -->
+      <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        <input
+          type="search"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          placeholder="Поиск по названию…"
+          aria-label="Поиск категорий"
+          class="pi-input w-64"
+        />
+        <select
+          [value]="typeFilter()"
+          (change)="onTypeFilterChange($event)"
+          aria-label="Фильтр по типу"
+          class="pi-input w-40"
+          data-test="type-filter"
+        >
+          <option value="all">Все типы</option>
+          <option value="material">Материал</option>
+          <option value="product">Продукция</option>
+          <option value="general">Общая</option>
+        </select>
+        <span class="flex-1"></span>
+        <app-pi-button variant="default" (click)="openCreate()">+ Создать</app-pi-button>
+      </div>
 
       @if (treeData().length === 0 && !loading()) {
         <div class="py-12 text-center text-muted-foreground text-sm">
@@ -324,7 +331,7 @@ const TYPE_COLORS: Record<Category['type'], string> = {
           </div>
         </div>
       }
-    </app-pi-section>
+    </app-pi-dictionary-shell>
   `,
   styles: [
     `
@@ -376,6 +383,9 @@ export class CategoriesPage {
   private readonly search = createSearchState(300);
   protected readonly searchQuery = this.search.searchQuery;
 
+  /** Type filter: 'all' | material | product | general. */
+  protected readonly typeFilter = signal<TypeFilter>('all');
+
   // ─── Expanded state for parent nodes ───
   protected readonly expandedIds = signal<Set<string>>(new Set());
 
@@ -392,24 +402,33 @@ export class CategoriesPage {
     return err ? extractErrorMessage(err) : null;
   });
 
-  // ─── Client-side search filter (filters tree) ───
+  // ─── Client-side filters (search + type) ───
   protected readonly treeData = computed<CategoryTreeNode[]>(() => {
     const q = this.search.debouncedSearch().trim().toLowerCase();
-    if (!q) return this.allTreeData();
-    return this.filterTree(this.allTreeData(), q);
+    const t = this.typeFilter();
+    return this.filterTree(this.allTreeData(), q, t);
   });
 
   protected readonly total = computed<number>(() => this.countNodes(this.treeData()));
 
+  protected readonly totalLabel = computed(() => {
+    const n = this.countNodes(this.allTreeData());
+    const f = this.total();
+    if (f === n) return n ? `${n} ${pluralize(n, ['категория', 'категории', 'категорий'])}` : '';
+    return `${f} из ${n} ${pluralize(n, ['категории', 'категорий', 'категорий'])}`;
+  });
+
   protected readonly emptyMessage = computed(() =>
-    this.searchQuery() ? 'Ничего не найдено.' : 'Нет категорий. Создайте первую.',
+    this.searchQuery() || this.typeFilter() !== 'all'
+      ? 'Ничего не найдено.'
+      : 'Нет категорий. Создайте первую.',
   );
 
   constructor() {
     this.destroyRef.onDestroy(() => this.search.destroy());
     effect(() => {
       const q = this.search.debouncedSearch().trim().toLowerCase();
-      if (q) {
+      if (q || this.typeFilter() !== 'all') {
         const ids = this.collectParentIds(this.allTreeData());
         this.expandedIds.set(ids);
       }
@@ -417,15 +436,21 @@ export class CategoriesPage {
   }
 
   // ─── Tree helpers ───
-  private filterTree(nodes: CategoryTreeNode[], query: string): CategoryTreeNode[] {
+  private filterTree(
+    nodes: CategoryTreeNode[],
+    query: string,
+    type: TypeFilter,
+  ): CategoryTreeNode[] {
     return nodes
       .map((node) => {
-        const children = this.filterTree(node.children, query);
-        const matchesSelf =
+        const children = this.filterTree(node.children, query, type);
+        const matchesType = type === 'all' || node.type === type;
+        const matchesSearch =
+          !query ||
           node.name.toLowerCase().includes(query) ||
           node.slug.toLowerCase().includes(query) ||
           node.skuPrefix.toLowerCase().includes(query);
-        if (matchesSelf || children.length > 0) {
+        if ((matchesType && matchesSearch) || children.length > 0) {
           return { ...node, children };
         }
         return null;
@@ -470,12 +495,13 @@ export class CategoriesPage {
     return TYPE_COLORS[type] ?? '';
   }
 
-  protected totalLabel(n: number): string {
-    return pluralize(n, ['категория', 'категории', 'категорий']);
-  }
-
   protected onSearchInput(event: Event): void {
     this.search.onSearchInput(event);
+  }
+
+  protected onTypeFilterChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.typeFilter.set(value === 'all' ? 'all' : (value as Category['type']));
   }
 
   // ─── Drag-drop: root reorder ───

@@ -15,12 +15,17 @@ import { AuditAction } from '../../common/interceptors/audit.interceptor';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { CreateCompositionLineDto, UpdateCompositionLineDto } from '../catalog/composition-line.dto';
+import { CatalogGraphService, MAX_DEPTH } from '../catalog-graph/catalog-graph.service';
 import { ProductService } from './product.service';
 
 @ApiTags('Справочники — Продукты')
 @Controller('products')
 export class ProductController {
-  constructor(private readonly service: ProductService) {}
+  constructor(
+    private readonly service: ProductService,
+    private readonly catalogGraph: CatalogGraphService,
+  ) {}
 
   @Get()
   @Roles('admin', 'manager')
@@ -37,25 +42,44 @@ export class ProductController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   list(
-    @Query('page') page = '1',
-    @Query('limit') limit = '20',
-    @Query('search') search?: string,
-    @Query('categoryId') categoryId?: string,
-    @Query('status') status?: string,
-    @Query('isActive') isActive?: string,
-    @Query('sortBy') sortBy?: string,
+    @Query('page') page = '1', @Query('limit') limit = '20', @Query('search') search?: string,
+    @Query('categoryId') categoryId?: string, @Query('status') status?: string,
+    @Query('isActive') isActive?: string, @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'asc' | 'desc',
   ) {
     return this.service.findAll({
-      page: parseInt(page, 10),
-      limit: parseInt(limit, 10),
-      search,
-      categoryId,
-      status,
+      page: parseInt(page, 10), limit: parseInt(limit, 10), search, categoryId, status,
       isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
-      sortBy,
-      sortOrder,
+      sortBy, sortOrder,
     });
+  }
+
+  @Get(':id/composition')
+  @Roles('admin', 'manager', 'user')
+  getComposition(@Param('id') id: string) { return this.service.getComposition(id); }
+
+  @Post(':id/composition')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'add-composition-line', entityType: 'Product', idParam: 'id' })
+  addComposition(@Param('id') id: string, @Body() dto: CreateCompositionLineDto) { return this.service.addComposition(id, dto); }
+
+  @Patch(':id/composition/:lineId')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'update-composition-line', entityType: 'Product', idParam: 'id' })
+  updateComposition(@Param('id') id: string, @Param('lineId') lineId: string, @Body() dto: UpdateCompositionLineDto) {
+    return this.service.updateComposition(id, lineId, dto);
+  }
+
+  @Delete(':id/composition/:lineId')
+  @Roles('admin', 'manager')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @AuditAction({ action: 'remove-composition-line', entityType: 'Product', idParam: 'id' })
+  async removeComposition(@Param('id') id: string, @Param('lineId') lineId: string) { await this.service.removeComposition(id, lineId); }
+
+  @Get(':id/tree')
+  @Roles('admin', 'manager', 'user')
+  getTree(@Param('id') id: string, @Query('maxDepth') maxDepth?: string) {
+    return this.catalogGraph.getTree('product', id, maxDepth === undefined ? MAX_DEPTH : Number(maxDepth));
   }
 
   @Get(':id')
@@ -64,9 +88,7 @@ export class ProductController {
   @ApiResponse({ status: 200, description: 'Product found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Product not found' })
-  findOne(@Param('id') id: string) {
-    return this.service.findById(id);
-  }
+  findOne(@Param('id') id: string) { return this.service.findById(id); }
 
   @Post()
   @Roles('admin', 'manager')
@@ -75,9 +97,7 @@ export class ProductController {
   @ApiResponse({ status: 201, description: 'Product created' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
-  create(@Body() dto: CreateProductDto) {
-    return this.service.create(dto);
-  }
+  create(@Body() dto: CreateProductDto) { return this.service.create(dto); }
 
   @Patch(':id')
   @Roles('admin', 'manager')
@@ -87,9 +107,7 @@ export class ProductController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Product not found' })
-  update(@Param('id') id: string, @Body() dto: UpdateProductDto) {
-    return this.service.update(id, dto);
-  }
+  update(@Param('id') id: string, @Body() dto: UpdateProductDto) { return this.service.update(id, dto); }
 
   @Delete(':id')
   @Roles('admin', 'manager')
@@ -100,54 +118,29 @@ export class ProductController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Product not found' })
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
-  }
+  remove(@Param('id') id: string) { return this.service.remove(id); }
 
-  /**
-   * TZ-83 Фаза D.3: atomic attachModule / detachModule endpoints.
-   * Используют MongoDB $addToSet / $pull — race-condition-safe,
-   * в отличие от naive PATCH с заменой всего массива productModuleIds.
-   *
-   * Нюанс маршрутизации: Express позволяет коллизию `:id` и `:moduleId`,
-   * поэтому detachModule объявлен ПОСЛЕ `findOne` (NestJS роутит по pathname,
-   * не по method) — порядок важен для матчинга.
-   */
   @Post(':productId/modules')
   @Roles('admin', 'manager')
-  @AuditAction({
-    action: 'attach-module',
-    entityType: 'Product',
-    idParam: 'productId',
-  })
+  @AuditAction({ action: 'attach-module', entityType: 'Product', idParam: 'productId' })
   @ApiOperation({ summary: 'Attach a module to a product' })
   @ApiResponse({ status: 201, description: 'Module attached' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Product or module not found' })
-  attachModule(
-    @Param('productId') productId: string,
-    @Body() body: { moduleId: string },
-  ) {
+  attachModule(@Param('productId') productId: string, @Body() body: { moduleId: string }) {
     return this.service.attachModule(productId, body.moduleId);
   }
 
   @Delete(':productId/modules/:moduleId')
   @Roles('admin', 'manager')
-  @AuditAction({
-    action: 'detach-module',
-    entityType: 'Product',
-    idParam: 'productId',
-  })
+  @AuditAction({ action: 'detach-module', entityType: 'Product', idParam: 'productId' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Detach a module from a product' })
   @ApiResponse({ status: 204, description: 'Module detached' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
-  detachModule(
-    @Param('productId') productId: string,
-    @Param('moduleId') moduleId: string,
-  ) {
+  detachModule(@Param('productId') productId: string, @Param('moduleId') moduleId: string) {
     return this.service.detachModule(productId, moduleId);
   }
 }

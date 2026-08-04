@@ -1,0 +1,10 @@
+# Lock file
+Locked as of 2026-08-04 — TZ-CATALOG-305: Product→Product composition.
+
+Owner: Buffy + Cursor Architect
+Protected files:
+- backend/src/modules/catalog/composition-line.*
+- backend/src/modules/product/product.service.ts
+- backend/src/modules/product-module/product-module.service.ts
+
+Unlock: only via orchestrator approval (successor TZ).

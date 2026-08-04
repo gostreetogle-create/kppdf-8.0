@@ -5,6 +5,8 @@ import { ProductModuleService } from './product-module.service';
 import { ProductModuleController } from './product-module.controller';
 import { Product, ProductSchema } from '../product/product.schema';
 import { Material, MaterialSchema } from '../material/material.schema';
+import { CompositionLineService } from '../catalog/composition-line.service';
+import { CatalogGraphModule } from '../catalog-graph/catalog-graph.module';
 
 /**
  * TZ-83: ProductModuleService uses Product for M:N reverse lookup and
@@ -17,9 +19,10 @@ import { Material, MaterialSchema } from '../material/material.schema';
       { name: Product.name, schema: ProductSchema },
       { name: Material.name, schema: MaterialSchema },
     ]),
+    CatalogGraphModule,
   ],
   controllers: [ProductModuleController],
-  providers: [ProductModuleService],
+  providers: [ProductModuleService, CompositionLineService],
   exports: [ProductModuleService, MongooseModule],
 })
 export class ProductModuleModule {}

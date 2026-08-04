@@ -21,6 +21,7 @@ import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
 import {
+  CompositionLine,
   ProductModule,
   ProductModulesService,
 } from '../../shared/services/pi-product-modules.service';
@@ -33,18 +34,21 @@ import { CostCalculationDetailDialogComponent } from './cost-calculation-detail-
 import { Photo } from '../../shared/services/photos.service';
 
 /**
- * TZ-83 Phase D: ProductDetailPage.
+ * TZ-83 Phase D + TZ-CATALOG-317: ProductDetailPage.
  *
  * Структура:
  *   I.   Основное       — name, sku, kind, status, цены, описание
  *   II.  Габариты и вес — dimensions, weightKg, ralCode
  *   III. Фотогалерея    — галерея из product.photoIds[]
- *   IV.  Модули ⭐      — таблица привязанных модулей (с их фото);
- *                        кнопки «+ Привязать» (picker) и «Отвязать»
+ *   IV.  Модули ⭐      — таблица модулей в составе (dual-read:
+ *                        непустой `composition` → строки состава,
+ *                        иначе legacy `productModuleIds`);
+ *                        кнопки «+ Модуль» (picker) и «Убрать»
  *
- * attach/detach — атомарные через Product Module endpoints:
- *   POST   /products/:id/modules   {moduleId}
- *   DELETE /products/:id/modules/:moduleId
+ * Writes идут через composition API (TZ-CATALOG-302/317):
+ *   POST   /products/:id/composition  { lineType:'module', refId, quantity }
+ *   DELETE /products/:id/composition/:lineId
+ * Legacy attach/detach (/products/:id/modules) deprecated → throw.
  */
 @Component({
   selector: 'app-product-detail-page',
@@ -147,7 +151,7 @@ import { Photo } from '../../shared/services/photos.service';
       <app-pi-section
         title="Модули"
         [hint]="
-          p.productModuleIds?.length
+          attachedModules().length
             ? 'один модуль может использоваться в нескольких товарах (M:N)'
             : ''
         "
@@ -160,7 +164,7 @@ import { Photo } from '../../shared/services/photos.service';
             (click)="openPicker()"
             data-test="attach-module"
           >
-            + Привязать модуль
+            + Модуль в состав
           </app-pi-button>
         </div>
         <div class="hairline rounded-sm overflow-x-auto">
@@ -169,41 +173,43 @@ import { Photo } from '../../shared/services/photos.service';
               <tr>
                 <th class="pi-cell eyebrow text-left">Модуль</th>
                 <th class="pi-cell eyebrow text-left">Артикул</th>
+                <th class="pi-cell-numeric eyebrow w-24">Кол-во</th>
                 <th class="pi-cell-numeric eyebrow w-32">Материалов</th>
                 <th class="pi-cell-numeric eyebrow w-32">Работ</th>
                 <th class="pi-cell eyebrow w-40 text-right">Действия</th>
               </tr>
             </thead>
             <tbody>
-              @for (m of attachedModules(); track m._id) {
+              @for (row of attachedModules(); track row.module._id) {
                 <tr class="pi-table-row pi-table-row-odd last:border-0">
-                  <td class="pi-cell align-top font-medium">{{ m.name }}</td>
+                  <td class="pi-cell align-top font-medium">{{ row.module.name }}</td>
                   <td class="pi-cell align-top font-mono text-xs empty-cell">
-                    {{ m.article ?? '—' }}
+                    {{ row.module.article ?? '—' }}
                   </td>
-                  <td class="pi-cell-numeric align-top">{{ m.materials.length }}</td>
-                  <td class="pi-cell-numeric align-top">{{ m.workTypes.length }}</td>
+                  <td class="pi-cell-numeric align-top font-mono">{{ row.quantity }}</td>
+                  <td class="pi-cell-numeric align-top">{{ row.module.materials.length }}</td>
+                  <td class="pi-cell-numeric align-top">{{ row.module.workTypes.length }}</td>
                   <td class="pi-cell align-top text-right">
                     <button
                       type="button"
-                      (click)="openModuleDetail(m)"
+                      (click)="openModuleDetail(row.module)"
                       class="eyebrow text-ink hover:text-sunrise-warm mr-3"
                     >
                       Открыть
                     </button>
                     <button
                       type="button"
-                      (click)="onDetach(m)"
+                      (click)="onDetach(row)"
                       class="eyebrow text-destructive hover:underline"
                     >
-                      Отвязать
+                      Убрать
                     </button>
                   </td>
                 </tr>
               } @empty {
                 <app-pi-empty-state
-                  [colspan]="5"
-                  message="Нет привязанных модулей. Нажмите «Привязать модуль»."
+                  [colspan]="6"
+                  message="Нет модулей в составе. Нажмите «+ Модуль в состав»."
                   state="empty"
                 />
               }
@@ -354,6 +360,7 @@ export class ProductDetailPage {
     ralCode?: string;
     photoIds?: Array<string | Photo>;
     productModuleIds?: ProductModule[];
+    composition?: CompositionLine[];
   }>(() => ({
     url: `${this.baseUrl}/products/${this.idString()}`,
   }));
@@ -377,21 +384,60 @@ export class ProductDetailPage {
     return p.photoIds.filter((id): id is Photo => typeof id !== 'string');
   });
 
-  protected readonly attachedModules = computed<ProductModule[]>(() => {
+  /** Каталог модулей — для резолва имён composition-линий (refId → module). */
+  protected readonly moduleCatalog = signal<ProductModule[]>([]);
+
+  /**
+   * Dual-read список модулей в составе (TZ-CATALOG-317):
+   *  - непустой `product.composition` (lineType=module) → резолвим refId
+   *    через каталог модулей (линии без каталога скрываем — нет имени);
+   *  - иначе legacy `productModuleIds` (populated объекты).
+   * Строки содержат module + (если из состава) lineId и quantity.
+   */
+  protected readonly attachedModules = computed<
+    { module: ProductModule; lineId?: string; quantity: number }[]
+  >(() => {
     const p = this.product();
-    if (!p?.productModuleIds) return [];
-    return p.productModuleIds.filter(
-      (m): m is ProductModule =>
-        typeof m === 'object' &&
-        m !== null &&
-        '_id' in m &&
-        typeof (m as { _id: unknown })._id === 'string',
-    );
+    if (!p) return [];
+    const moduleLines = (p.composition ?? []).filter((l) => l.lineType === 'module');
+    if (moduleLines.length > 0) {
+      const byId = new Map(this.moduleCatalog().map((m) => [m._id, m]));
+      return moduleLines
+        .map((l) => {
+          const module = byId.get(l.refId);
+          return module ? { module, lineId: l._id, quantity: l.quantity ?? 1 } : null;
+        })
+        .filter((r): r is { module: ProductModule; lineId: string; quantity: number } => r != null);
+    }
+    return (p.productModuleIds ?? [])
+      .filter((m): m is ProductModule => typeof m === 'object' && m !== null && '_id' in m)
+      .map((module) => ({ module, quantity: 1 }));
+  });
+
+  /** Карта lineId по moduleId для удаления линии состава. */
+  private readonly compositionLineByModule = computed<Map<string, string>>(() => {
+    const p = this.product();
+    const lines = p?.composition ?? [];
+    const map = new Map<string, string>();
+    lines.forEach((l) => {
+      if (l.lineType === 'module') map.set(l.refId, l._id);
+    });
+    return map;
   });
 
   protected readonly costRes = httpResource<CostCalculation[]>(() => ({
     url: `${this.baseUrl}/products/${this.idString()}/cost-calculations`,
   }));
+
+  constructor() {
+    this.loadModuleCatalog();
+  }
+
+  private loadModuleCatalog(): void {
+    this.modulesSvc.list().subscribe((res) => {
+      if (res.ok) this.moduleCatalog.set(res.data);
+    });
+  }
   protected readonly costList = computed<CostCalculation[]>(() => this.costRes.value() ?? []);
   protected readonly recalculating = signal<boolean>(false);
 
@@ -407,41 +453,56 @@ export class ProductDetailPage {
     const pid = this.idString();
     if (!pid) return;
     const ref = this.dialog.open<string | null>(ProductModulePickerDialogComponent, {
-      data: { productId: pid, excludeIds: this.attachedModules().map((m) => m._id) },
+      data: {
+        productId: pid,
+        excludeIds: this.attachedModules().map((r) => r.module._id),
+      },
       width: 'lg',
       parentDestroyRef: this.destroyRef,
     });
     onDialogCloseOnce(ref, this.injector, (chosenId) => {
-      this.attachModule(chosenId);
+      this.addCompositionModule(chosenId);
     });
   }
 
-  private attachModule(moduleId: string): void {
-    this.modulesSvc.attachToProduct(this.idString(), moduleId).subscribe((res) => {
-      if (res.ok) {
-        this.toast.success('Модуль привязан');
-        this.productRes.reload();
-      } else {
-        this.toast.error(extractErrorMessage(res.error));
-      }
-    });
+  private addCompositionModule(moduleId: string): void {
+    this.modulesSvc
+      .addProductCompositionLine(this.idString(), {
+        lineType: 'module',
+        refId: moduleId,
+        quantity: 1,
+      })
+      .subscribe((res) => {
+        if (res.ok) {
+          this.toast.success('Модуль добавлен в состав');
+          this.productRes.reload();
+        } else {
+          this.toast.error(extractErrorMessage(res.error));
+        }
+      });
   }
 
-  protected onDetach(m: ProductModule): void {
+  protected onDetach(row: { module: ProductModule; lineId?: string; quantity: number }): void {
     const ref = this.dialog.open<boolean>(AlertDialogComponent, {
       data: {
-        title: 'Отвязать модуль?',
-        description: `Отвязать «${m.name}» от этого товара? Модуль останется в каталоге.`,
-        confirmLabel: 'Отвязать',
+        title: 'Убрать модуль из состава?',
+        description: `Убрать «${row.module.name}» из состава этого товара? Модуль останется в каталоге.`,
+        confirmLabel: 'Убрать',
         variant: 'destructive',
       },
       width: 'sm',
       parentDestroyRef: this.destroyRef,
     });
     onDialogCloseOnce(ref, this.injector, () => {
-      this.modulesSvc.detachFromProduct(this.idString(), m._id).subscribe((res) => {
+      const lineId = row.lineId ?? this.compositionLineByModule().get(row.module._id);
+      if (!lineId) {
+        // legacy-привязка без composition-линии: детач невозможен до миграции 304
+        this.toast.error('Состав ещё в legacy-формате — обновите состав через форму товара');
+        return;
+      }
+      this.modulesSvc.removeProductCompositionLine(this.idString(), lineId).subscribe((res) => {
         if (res.ok) {
-          this.toast.success('Модуль отвязан');
+          this.toast.success('Модуль убран из состава');
           this.productRes.reload();
         } else {
           this.toast.error(extractErrorMessage(res.error));

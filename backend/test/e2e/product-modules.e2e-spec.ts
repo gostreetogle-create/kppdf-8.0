@@ -35,7 +35,7 @@ describe('ProductModules (TZ-83 Phase E)', () => {
    * переопределен @HttpCode() декоратором). Никакого helper не нужно —
    * `.expect(201)` это canonical NestJS behavior.
    */
-  it('CRUD round-trip preserves materials[] override', async () => {
+  it('CRUD round-trip preserves module fields while composition is authoritative', async () => {
     const create = await request(app.getHttpServer())
       .post('/api/modules')
       .set(authHeader(adminToken))
@@ -44,7 +44,6 @@ describe('ProductModules (TZ-83 Phase E)', () => {
         article: 'TEST-MOD-001',
         dimensions: { width: 100, height: 50, depth: 30, unit: 'мм' },
         weight: 1.2,
-        materials: [],
         workTypes: [],
       })
       .expect(201);
@@ -71,7 +70,7 @@ describe('ProductModules (TZ-83 Phase E)', () => {
       .expect(204);
   });
 
-  it('GET /modules?productId filters via Product.productModuleIds[] (M:N reverse)', async () => {
+  it('GET /modules?productId filters via Product composition module lines', async () => {
     // создать 2 модуля, привязать к продукту, проверить фильтр
     const productRes = await request(app.getHttpServer())
       .post('/api/products')
@@ -83,18 +82,18 @@ describe('ProductModules (TZ-83 Phase E)', () => {
     const m1 = await request(app.getHttpServer())
       .post('/api/modules')
       .set(authHeader(adminToken))
-      .send({ name: 'E2E Fil 1', materials: [], workTypes: [] })
+      .send({ name: 'E2E Fil 1', workTypes: [] })
       .expect(201);
     const m2 = await request(app.getHttpServer())
       .post('/api/modules')
       .set(authHeader(adminToken))
-      .send({ name: 'E2E Fil 2', materials: [], workTypes: [] })
+      .send({ name: 'E2E Fil 2', workTypes: [] })
       .expect(201);
 
     await request(app.getHttpServer())
-      .post(`/api/products/${productId}/modules`)
+      .post(`/api/products/${productId}/composition`)
       .set(authHeader(adminToken))
-      .send({ moduleId: m1.body._id })
+      .send({ lineType: 'module', refId: m1.body._id, quantity: 1 })
       .expect(201);
 
     const filtered = await request(app.getHttpServer())
@@ -105,10 +104,6 @@ describe('ProductModules (TZ-83 Phase E)', () => {
     expect(filtered.body[0]._id).toBe(m1.body._id);
 
     // cleanup
-    await request(app.getHttpServer())
-      .delete(`/api/products/${productId}/modules/${m1.body._id}`)
-      .set(authHeader(adminToken))
-      .expect(204);
     await request(app.getHttpServer())
       .delete(`/api/modules/${m1.body._id}`)
       .set(authHeader(adminToken))

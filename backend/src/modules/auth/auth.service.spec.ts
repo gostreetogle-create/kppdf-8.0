@@ -56,6 +56,9 @@ class FakeUserService {
   async findByUsername(_username: string) {
     return null;
   }
+  async findById(_id: string) {
+    return null;
+  }
   async verifyPassword(_user: never, _plain: string) {
     return false;
   }
@@ -350,6 +353,92 @@ describe('AuthService (TZ-249 §2.2-2.4)', () => {
       expect(body.access).toBe('mock-token');
       expect(body.refresh).toBe('mock-token');
       expect(body.user.username).toBe('alice');
+    });
+  });
+
+  describe('getMe() — pages[] (TZ-RBAC-304)', () => {
+    it('returns pages from the role projection and never leaks secrets', async () => {
+      const userDoc = {
+        id: 'u-me',
+        username: 'alice',
+        email: 'a@example.com',
+        displayName: 'A',
+        role: 'manager',
+        permissions: ['product:read'],
+        isActive: true,
+        refreshTokenVersion: 7,
+        passwordHash: 'secret-hash',
+        phone: null,
+        fullName: null,
+        organizationId: null,
+      };
+      const users = new FakeUserService();
+      users.findById = async () => userDoc as never;
+      const jwt = { signAsync: async () => 'mock-token' } as unknown as JwtService;
+      const config = {
+        get: (key: string) => {
+          if (key === 'nodeEnv') return 'production';
+          if (key === 'jwt.secret') return 'a-strong-test-jwt-secret-32-chars-x';
+          if (key === 'jwt.refreshSecret') return 'a-strong-test-refresh-secret-32-chars';
+          return undefined;
+        },
+      } as unknown as ConfigService;
+      const softlock = new LoginSoftlockService();
+      softlock.__resetForTests();
+      const rolesMock = {
+        findByName: jest.fn().mockResolvedValue({
+          name: 'manager',
+          pages: ['products', 'materials'],
+        }),
+      };
+      const svc = new AuthService(
+        users as unknown as UserService,
+        jwt,
+        config,
+        softlock,
+        rolesMock as any,
+      );
+
+      const me = await svc.getMe('u-me');
+      expect(me.pages).toEqual(['products', 'materials']);
+      expect(me.permissions).toEqual(['product:read']);
+      expect(me).not.toHaveProperty('passwordHash');
+      expect(me).not.toHaveProperty('refreshTokenVersion');
+    });
+
+    it('returns pages=[] when the role has no page ACL', async () => {
+      const userDoc = {
+        id: 'u-me-2',
+        username: 'bob',
+        email: 'b@example.com',
+        displayName: 'B',
+        role: 'user',
+        permissions: [],
+        isActive: true,
+        refreshTokenVersion: 0,
+        phone: null,
+        fullName: null,
+        organizationId: null,
+      };
+      const users = new FakeUserService();
+      users.findById = async () => userDoc as never;
+      const jwt = { signAsync: async () => 'mock-token' } as unknown as JwtService;
+      const config = {
+        get: () => undefined,
+      } as unknown as ConfigService;
+      const softlock = new LoginSoftlockService();
+      softlock.__resetForTests();
+      const rolesMock = { findByName: jest.fn().mockResolvedValue(null) };
+      const svc = new AuthService(
+        users as unknown as UserService,
+        jwt,
+        config,
+        softlock,
+        rolesMock as any,
+      );
+
+      const me = await svc.getMe('u-me-2');
+      expect(me.pages).toEqual([]);
     });
   });
 });

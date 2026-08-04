@@ -169,6 +169,32 @@ describe('CategoriesPage', () => {
 
     expect(comp.allTreeData().length).toBe(2);
   });
+
+  it('filters tree data by type when type filter changes', async () => {
+    const fixture = TestBed.createComponent(CategoriesPage);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    httpMock.expectOne(matchTreeGet).flush(fakeTree);
+    await tickMicrotask();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      typeFilter: { set(v: string): void };
+      treeData: () => CategoryTreeNode[];
+    };
+
+    // No type in fakeTree matches 'general' → empty filtered tree
+    comp.typeFilter.set('general');
+    fixture.detectChanges();
+    expect(comp.treeData().length).toBe(0);
+
+    // 'material' matches both root nodes (plus child) → kept
+    comp.typeFilter.set('material');
+    fixture.detectChanges();
+    expect(comp.treeData().length).toBe(2);
+  });
 });
 
 function flattenNames(nodes: CategoryTreeNode[]): string[] {

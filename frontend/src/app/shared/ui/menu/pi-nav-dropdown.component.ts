@@ -33,6 +33,11 @@ export interface PiNavDropdownItem {
   /** When true, item is rendered muted/disabled with title='скоро' tooltip. */
   disabled?: boolean;
   /**
+   * TZ-DICT-303: optional group separator rendered ABOVE this item.
+   * Renders as a non-interactive eyebrow label dividing sections.
+   */
+  separatorLabel?: string;
+  /**
    * TZ-256 §ШАГ 3 — Optional OR-list of canonical permission keys.
    * When omitted (or empty) the item is publicly visible inside the
    * nav dropdown (caller is responsible for capability filtering at
@@ -111,6 +116,11 @@ export interface PiNavDropdownItem {
           class="bg-paper hairline rounded-sm min-w-[200px] py-1"
         >
           @for (item of items(); track item.path) {
+            @if (item.separatorLabel) {
+              <span role="separator" class="block px-3 pt-2.5 pb-1 eyebrow opacity-50">
+                {{ item.separatorLabel }}
+              </span>
+            }
             @if (item.disabled) {
               <span
                 role="menuitem"

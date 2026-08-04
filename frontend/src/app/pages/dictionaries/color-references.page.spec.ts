@@ -136,6 +136,48 @@ describe('ColorReferencesPage (TZ-PRODUCTS-301)', () => {
     expect(c.visible()[0]._id).toBe('color2');
   });
 
+  it('filters colors by active state', () => {
+    const c = createComp<{
+      activeFilter: { set: (v: 'all' | 'active' | 'inactive') => void };
+      visible: () => { _id: string }[];
+    }>();
+    c.activeFilter.set('active');
+    expect(c.visible().map((x) => x._id)).toEqual(['color1', 'color2']);
+    c.activeFilter.set('inactive');
+    expect(c.visible().map((x) => x._id)).toEqual(['color3']);
+  });
+
+  it('resets pagination to page 1 when the active filter changes', () => {
+    const c = createComp<{
+      onActiveFilterChange: (v: 'all' | 'active' | 'inactive') => void;
+      page: { set: (v: number) => void; (): number };
+    }>();
+    c.page.set(2);
+    c.onActiveFilterChange('active');
+    expect(c.page()).toBe(1);
+  });
+
+  it('renders the sticky tools bar: search + active filter + CTA', () => {
+    const fixture = TestBed.createComponent(ColorReferencesPage);
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelector('[data-test="search-input"]')).toBeTruthy();
+    const select = el.querySelector<HTMLSelectElement>('[data-test="active-filter"]');
+    expect(select).toBeTruthy();
+    expect(select?.options.length).toBe(3);
+    expect(el.querySelector('[data-test="create-color-button"]')).toBeTruthy();
+  });
+
+  it('reports compact total label (N цветов / N из M цветов)', () => {
+    const c = createComp<{
+      totalLabel: () => string;
+      activeFilter: { set: (v: 'all' | 'active' | 'inactive') => void };
+    }>();
+    expect(c.totalLabel()).toBe('3 цвета');
+    c.activeFilter.set('active');
+    expect(c.totalLabel()).toBe('2 из 3 цветов');
+  });
+
   it('sorts by name then slug (ru collation: Cyrillic before Latin)', () => {
     const c = createComp<{ visible: () => { _id: string }[] }>();
     expect(c.visible().map((x) => x._id)).toEqual(['color1', 'color3', 'color2']);

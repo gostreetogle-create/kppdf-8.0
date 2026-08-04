@@ -28,6 +28,9 @@ git status --short                          # посмотреть чужие н
 2. Синхронизируйся с main перед началом работы (команды выше).
 3. Если в дереве есть чужие незакоммиченные правки (README.md, STATUS.md, desktop/*, tasks/*) — это параллельная работа других агентов: **не трогай и не коммить их**; коммить только свои файлы поимённо (`git add <файлы>`).
 4. main может уезжать вперёд, пока ты работаешь — перед коммитом повтори `git fetch origin && git merge origin/main`.
+5. **До кода:** CLAIM по `docs/agent-checklists/_TEMPLATE.md` —
+   `tasks/_active/<TASK-ID>.md` + checklist Claim slot (`agent_id`, `claimed_at` ISO).
+   Доска: `docs/agent-checklists/_active-map.md`. Без CLAIM — не кодить.
 
 ## Запреты
 

@@ -12,6 +12,9 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
+import { MATERIAL_KINDS, type MaterialKind } from '../material.schema';
+
+export { MATERIAL_KINDS };
 
 const DIMENSION_TYPES = [
   'length',
@@ -57,6 +60,35 @@ export class CreateMaterialDto {
   @IsString()
   @Length(0, 64)
   sku?: string;
+
+  @ApiPropertyOptional({ enum: MATERIAL_KINDS, description: 'Тип каталожной позиции' })
+  @IsOptional()
+  @IsIn(MATERIAL_KINDS)
+  materialKind?: MaterialKind;
+
+  @ApiPropertyOptional({ description: 'Сортамент или тип позиции (например, труба/лист)' })
+  @IsOptional()
+  @IsString()
+  @Length(0, 256)
+  assortment?: string;
+
+  @ApiPropertyOptional({ description: 'Нормативный стандарт: ГОСТ, ASTM и т.п.' })
+  @IsOptional()
+  @IsString()
+  @Length(0, 256)
+  standardRef?: string;
+
+  @ApiPropertyOptional({ description: 'Марка материала: Ст3, AISI 304 и т.п.' })
+  @IsOptional()
+  @IsString()
+  @Length(0, 256)
+  materialGrade?: string;
+
+  @ApiPropertyOptional({ example: 1.5, description: 'Масса в килограммах' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  weightKg?: number;
 
   @ApiProperty({ example: 'м2', description: 'Единица измерения' })
   @IsString()

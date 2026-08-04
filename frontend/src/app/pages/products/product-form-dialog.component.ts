@@ -40,6 +40,7 @@ import { AuthService } from '../../core/auth.service';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import {
+  CompositionLine,
   ProductModule,
   ProductModulesService,
 } from '../../shared/services/pi-product-modules.service';
@@ -121,7 +122,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
     <app-pi-dialog
       [title]="isEdit() ? 'Редактировать продукт' : 'Создать продукт'"
       [variant]="'content'"
-      [maxWidth]="'min(1000px, calc(100vw - 2rem))'"
+      [maxWidth]="'min(1120px, calc(100vw - 2rem))'"
     >
       <form
         body
@@ -429,6 +430,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
             <div>
               <p class="eyebrow">Состав</p>
               <p class="text-sm font-medium">Модули в составе</p>
+              <p class="text-xs text-muted-foreground">количество — на единицу товара</p>
             </div>
             <app-pi-button
               type="button"
@@ -468,6 +470,17 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
                       {{ m.article ?? '—' }} · {{ m.materials.length }} материалов
                     </p>
                   </div>
+                  <label class="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
+                    <span class="eyebrow">Кол-во</span>
+                    <app-pi-input
+                      type="number"
+                      class="w-20"
+                      [value]="'' + moduleQty(m._id)"
+                      (valueChange)="setModuleQty(m._id, $event)"
+                      aria-label="Количество модуля в составе"
+                      data-test="module-qty"
+                    />
+                  </label>
                   <app-pi-button
                     type="button"
                     variant="destructive"
@@ -702,6 +715,10 @@ export class ProductFormDialogComponent implements OnDestroy {
   private readonly moduleCatalog = signal<ProductModule[]>([]);
   /** Строковые moduleIds из данных товара — резолвятся после загрузки каталога. */
   private pendingStringModuleIds: string[] = [];
+  /** Кол-во каждой линии (по moduleId) — composition quantity, default 1. */
+  private readonly moduleQuantities = signal<Record<string, number>>({});
+  /** Состав-снимок исходных module-линий (для diff на submit; пуст на legacy). */
+  private originalComposition: CompositionLine[] = [];
 
   // ─── Photos ───
   protected readonly photos = signal<Photo[]>([]);
@@ -823,6 +840,24 @@ export class ProductFormDialogComponent implements OnDestroy {
    * молча пропадут из черновика и на submit превратятся в DELETE).
    */
   private seedAttachedModules(): void {
+    const moduleLines = (this.data?.composition ?? []).filter(
+      (l): l is CompositionLine & { lineType: 'module' } => l.lineType === 'module',
+    );
+    // Dual-read (TZ-CATALOG-317): composition-first, legacy productModuleIds
+    // только пока состав не мигрирован (TZ-CATALOG-304).
+    if (moduleLines.length > 0) {
+      this.originalComposition = moduleLines;
+      const qty: Record<string, number> = {};
+      const stringIds: string[] = [];
+      moduleLines.forEach((l) => {
+        qty[l.refId] = l.quantity ?? 1;
+        stringIds.push(l.refId);
+      });
+      this.moduleQuantities.set(qty);
+      this.pendingStringModuleIds = stringIds;
+      this.resolvePendingStringModuleIds();
+      return;
+    }
     const raw = this.data?.productModuleIds ?? [];
     if (raw.length === 0) return;
     const objects: ProductModule[] = [];
@@ -888,13 +923,24 @@ export class ProductFormDialogComponent implements OnDestroy {
   protected addModules(ids: string[]): void {
     if (ids.length === 0) return;
     const byId = new Map(this.moduleCatalog().map((m) => [m._id, m]));
+    const fresh: ProductModule[] = [];
     this.attachedModules.update((cur) => {
       const existing = new Set(cur.map((m) => m._id));
-      const fresh = ids
+      const items = ids
         .map((id) => byId.get(id))
         .filter((m): m is ProductModule => m !== undefined && !existing.has(m._id));
-      return fresh.length > 0 ? [...cur, ...fresh] : cur;
+      fresh.push(...items);
+      return items.length > 0 ? [...cur, ...items] : cur;
     });
+    if (fresh.length > 0) {
+      this.moduleQuantities.update((q) => {
+        const next = { ...q };
+        fresh.forEach((m) => {
+          if (next[m._id] == null) next[m._id] = 1;
+        });
+        return next;
+      });
+    }
     // dirty-state tracking: добавление модулей → «Сохранить» активна
     this.form.markAsDirty();
   }
@@ -902,6 +948,26 @@ export class ProductFormDialogComponent implements OnDestroy {
   /** Удаляет карточку из черновика (само привязывание не трогаем до submit). */
   protected removeModule(id: string): void {
     this.attachedModules.update((cur) => cur.filter((m) => m._id !== id));
+    this.moduleQuantities.update((q) => {
+      const next = { ...q };
+      delete next[id];
+      return next;
+    });
+    this.form.markAsDirty();
+  }
+
+  /** Текущее количество модуля (composition quantity; default 1). */
+  protected moduleQty(moduleId: string): number {
+    return this.moduleQuantities()[moduleId] ?? 1;
+  }
+
+  /** Обновляет количество линии (composition quantity). Минимум 0.000001 как в DTO. */
+  protected setModuleQty(moduleId: string, rawValue: string | Event): void {
+    const text =
+      typeof rawValue === 'string' ? rawValue : (rawValue.target as HTMLInputElement).value;
+    const raw = Number(text);
+    const qty = Number.isFinite(raw) ? Math.max(0.000001, raw) : 1;
+    this.moduleQuantities.update((q) => ({ ...q, [moduleId]: qty }));
     this.form.markAsDirty();
   }
 
@@ -1070,30 +1136,54 @@ export class ProductFormDialogComponent implements OnDestroy {
   }
 
   /**
-   * Атомарная синхронизация «модули в составе» после успешного save
-   * (TZ-PRODUCTS-303). Контракт зафиксирован по коду:
-   *   POST   /products/:productId/modules  body { moduleId }  — attach ($addToSet)
-   *   DELETE /products/:productId/modules/:moduleId          — detach ($pull)
-   *   backend/src/modules/product/product.controller.ts:128-151
-   * (CreateProductDto НЕ содержит productModuleIds → bulk PATCH с
-   * массивом не поддерживается whitelist-валидацией; используем атомарные
-   * endpoints — race-safe, см. product.service.ts:138-186).
+   * Синхронизация «модули в составе» через composition API (TZ-CATALOG-317).
+   * Контракт зафиксирован по коду:
+   *   POST   /products/:productId/composition  { lineType:'module', refId, quantity }
+   *   PATCH  /products/:productId/composition/:lineId  { quantity }
+   *   DELETE /products/:productId/composition/:lineId
+   *   backend/src/modules/product/product.controller.ts (TZ-CATALOG-302)
    *
-   * Diff исходных привязок (data.productModuleIds) против черновика:
-   * удалённые → DELETE, добавленные → POST. Возвращает true если все
-   * операции ok (silent-http, никогда не бросают).
+   * Diff исходного состава (data.composition module-линии; на legacy —
+   * пуст, тогда каждый модуль черновика добавляется POST'ом как новая
+   * composition-линия) против черновика: удалённые → DELETE, новые → POST,
+   * изменённое quantity → PATCH. Возвращает true если все операции ok
+   * (silent-http, никогда не бросают).
    */
   private syncModules(productId: string): Observable<boolean> {
-    const originalIds = new Set(
-      (this.data?.productModuleIds ?? []).map((m) => (typeof m === 'string' ? m : m._id)),
-    );
     const draftIds = new Set(this.attachedModules().map((m) => m._id));
-    const toDetach = [...originalIds].filter((id) => !draftIds.has(id));
-    const toAttach = [...draftIds].filter((id) => !originalIds.has(id));
-    const calls: Observable<SilentResult<unknown>>[] = [
-      ...toDetach.map((id) => this.modulesService.detachFromProduct(productId, id)),
-      ...toAttach.map((id) => this.modulesService.attachToProduct(productId, id)),
-    ];
+    const originalByRef = new Map(this.originalComposition.map((l) => [l.refId, l]));
+    const calls: Observable<SilentResult<unknown>>[] = [];
+
+    // Удаление: линии состава, которых больше нет в черновике → DELETE.
+    this.originalComposition.forEach((line) => {
+      if (!draftIds.has(line.refId)) {
+        calls.push(this.modulesService.removeProductCompositionLine(productId, line._id));
+      }
+    });
+
+    // Добавление/изменение: для каждого модуля черновика.
+    this.attachedModules().forEach((m) => {
+      const qty = this.moduleQuantities()[m._id] ?? 1;
+      const existing = originalByRef.get(m._id);
+      if (existing) {
+        if (existing.quantity !== qty) {
+          calls.push(
+            this.modulesService.updateProductCompositionLine(productId, existing._id, {
+              quantity: qty,
+            }),
+          );
+        }
+      } else {
+        calls.push(
+          this.modulesService.addProductCompositionLine(productId, {
+            lineType: 'module',
+            refId: m._id,
+            quantity: qty,
+          }),
+        );
+      }
+    });
+
     if (calls.length === 0) return of(true);
     return forkJoin(calls).pipe(map((results) => results.every((r) => r.ok)));
   }

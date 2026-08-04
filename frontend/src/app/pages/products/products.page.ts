@@ -6,6 +6,7 @@ import {
   TemplateRef,
   ViewChild,
   computed,
+  effect,
   inject,
   signal,
   OnInit,
@@ -34,7 +35,10 @@ import {
   ProductsService,
   type ProductsListResponse,
 } from '../../shared/services/products.service';
-import { ProductModule } from '../../shared/services/pi-product-modules.service';
+import {
+  ProductModule,
+  ProductModulesService,
+} from '../../shared/services/pi-product-modules.service';
 import { ProductFormDialogComponent } from './product-form-dialog.component';
 
 /** Server-side pagination page size for /products endpoint. */
@@ -240,10 +244,7 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
                       data-test="showcase-avatar"
                     />
                     @if (statusLabel(row)) {
-                      <span
-                        [class]="statusBadgeClass(row)"
-                        data-test="showcase-status"
-                      >
+                      <span [class]="statusBadgeClass(row)" data-test="showcase-status">
                         {{ statusLabel(row) }}
                       </span>
                     }
@@ -357,12 +358,26 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
 export class ProductsPage implements OnInit {
   constructor() {
     this.destroyRef.onDestroy(() => this.search.destroy());
+    // Dual-read (TZ-CATALOG-317): каталог модулей грузим лениво — только
+    // когда в списке появились composition-линии (после миграции 304).
+    // effect() реактивно следит за data() (HTTP-ответ приходит асинхронно).
+    effect(() => {
+      const needsCatalog = this.data().some((p) =>
+        (p.composition ?? []).some((l) => l.lineType === 'module'),
+      );
+      if (needsCatalog && this.moduleCatalog().length === 0) {
+        this.modulesService.list().subscribe((res) => {
+          if (res.ok) this.moduleCatalog.set(res.data);
+        });
+      }
+    });
   }
   private readonly service = inject(ProductsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
   private readonly baseUrl = inject(API_BASE_URL);
+  private readonly modulesService = inject(ProductModulesService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly RefreshIcon = RefreshCw;
@@ -518,7 +533,12 @@ export class ProductsPage implements OnInit {
       numeric: true,
       align: 'right',
       width: '80px',
-      format: (r) => String(r.productModuleIds?.length ?? 0),
+      // Dual-read (TZ-CATALOG-317): непустой composition (module-линии)
+      // имеет приоритет над legacy productModuleIds.
+      format: (r) => {
+        const lines = (r.composition ?? []).filter((l) => l.lineType === 'module');
+        return String(lines.length > 0 ? lines.length : (r.productModuleIds?.length ?? 0));
+      },
     },
     {
       key: 'stockQty',
@@ -653,12 +673,21 @@ export class ProductsPage implements OnInit {
     this.expandedId.update((cur) => (cur === row._id ? null : row._id));
   }
 
+  /** Каталог модулей — для резолва имён composition-линий в expand. */
+  protected readonly moduleCatalog = signal<ProductModule[]>([]);
+
   /**
-   * Populated ProductModule объекты из `productModuleIds` (строки-ids,
-   * если populate не прошёл, отфильтровываем). Используется в
-   * expandedTpl для карточек модулей.
+   * Dual-read модули товара для expandedTpl (TZ-CATALOG-317):
+   *  - непустой `row.composition` (lineType=module) → резолвим refId через
+   *    каталог модулей (линии без каталога скрываем);
+   *  - иначе legacy `productModuleIds` (populated объекты).
    */
   protected modulesOf(row: Product): ProductModule[] {
+    const lines = (row.composition ?? []).filter((l) => l.lineType === 'module');
+    if (lines.length > 0) {
+      const byId = new Map(this.moduleCatalog().map((m) => [m._id, m]));
+      return lines.map((l) => byId.get(l.refId)).filter((m): m is ProductModule => !!m);
+    }
     return (row.productModuleIds ?? []).filter(
       (m): m is ProductModule => typeof m === 'object' && m !== null && '_id' in m,
     );
@@ -696,8 +725,7 @@ export class ProductsPage implements OnInit {
 
   /** Класс бейджа статуса: muted для неактивных/архива, иначе default. */
   protected statusBadgeClass(row: Product): string {
-    const muted =
-      row.isActive === false || row.status === 'archived' || row.status === 'draft';
+    const muted = row.isActive === false || row.status === 'archived' || row.status === 'draft';
     const base =
       'text-[10px] font-medium uppercase tracking-wide hairline rounded-full px-2 py-0.5 bg-paper-2';
     return `${base} ${muted ? 'text-muted-foreground' : 'text-ink'}`;

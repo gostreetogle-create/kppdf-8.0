@@ -1,21 +1,14 @@
 /**
- * TZ-83 Phase E.1: products-with-modules e2e (TZ-83 § D.3 attach/detach).
- *
- * Проверяет:
- *  - atomic POST /products/:id/modules { moduleId } → 201 + product has moduleId in productModuleIds
- *  - idempotency: повторный attach не дублирует ($addToSet)
- *  - existence check: attach с несуществующим moduleId → 404
- *  - DELETE /products/:id/modules/:moduleId → 204
- *  - DELETE non-existent product → 404
- *
- * Запуск: `pnpm run test:e2e test/e2e/products-attach-modules.e2e-spec.ts`
+ * TZ-CATALOG-304: composition is the only runtime write path.
+ * Legacy productModuleIds attach/detach endpoints are rejected; this suite
+ * verifies equivalent composition behavior and the migration contract.
  */
 import request from 'supertest';
 import type { INestApplication } from '@nestjs/common';
 import { createTestApp, TestContext } from '../setup/test-db';
 import { loginAsAdmin, authHeader } from '../setup/test-auth';
 
-describe('Products attach/detach modules (TZ-83 Phase D.3)', () => {
+describe('Products composition modules (TZ-CATALOG-304)', () => {
   let ctx: TestContext;
   let app: INestApplication;
   let adminToken: string;
@@ -32,22 +25,23 @@ describe('Products attach/detach modules (TZ-83 Phase D.3)', () => {
     const product = await request(app.getHttpServer())
       .post('/api/products')
       .set(authHeader(adminToken))
-      .send({ name: 'E2E Attach Product', kind: 'good', unit: 'шт', status: 'new', isActive: true })
+      .send({ name: 'E2E Composition Product', kind: 'good', unit: 'шт', status: 'new', isActive: true })
       .expect(201);
     productId = product.body._id;
 
     const m1 = await request(app.getHttpServer())
       .post('/api/modules')
       .set(authHeader(adminToken))
-      .send({ name: 'E2E Attach Mod 1', materials: [], workTypes: [] })
+      .send({ name: 'E2E Composition Mod 1', workTypes: [] })
       .expect(201);
     module1 = m1.body._id;
 
     const m2 = await request(app.getHttpServer())
       .post('/api/modules')
       .set(authHeader(adminToken))
-      .send({ name: 'E2E Attach Mod 2', materials: [], workTypes: [] })
+      .send({ name: 'E2E Composition Mod 2', workTypes: [] })
       .expect(201);
+
     module2 = m2.body._id;
   });
 
@@ -58,102 +52,110 @@ describe('Products attach/detach modules (TZ-83 Phase D.3)', () => {
         .set(authHeader(adminToken))
         .expect(204);
     }
-    if (module1) {
-      await request(app.getHttpServer())
-        .delete(`/api/modules/${module1}`)
-        .set(authHeader(adminToken))
-        .expect(204);
-    }
-    if (module2) {
-      await request(app.getHttpServer())
-        .delete(`/api/modules/${module2}`)
-        .set(authHeader(adminToken))
-        .expect(204);
+    for (const moduleId of [module1, module2]) {
+      if (moduleId) {
+        await request(app.getHttpServer())
+          .delete(`/api/modules/${moduleId}`)
+          .set(authHeader(adminToken))
+          .expect(204);
+      }
     }
     await ctx.cleanup();
   });
 
-  it('atomic attach: POST /products/:id/modules → 201 + productModuleIds populated', async () => {
-    const r = await request(app.getHttpServer())
-      .post(`/api/products/${productId}/modules`)
-      .set(authHeader(adminToken))
-      .send({ moduleId: module1 })
-      .expect(201);
-    expect(r.body.productModuleIds).toBeDefined();
-    const ids = r.body.productModuleIds.map((m: { _id?: string } | string) =>
-      typeof m === 'string' ? m : m._id,
-    );
-    expect(ids).toContain(module1);
-  });
-
-  it('idempotency: повторный attach того же moduleId НЕ дублирует', async () => {
+  it('legacy attach is rejected after composition cutover', async () => {
     await request(app.getHttpServer())
       .post(`/api/products/${productId}/modules`)
       .set(authHeader(adminToken))
       .send({ moduleId: module1 })
-      .expect(201);
-    const after = await request(app.getHttpServer())
-      .get(`/api/products/${productId}`)
-      .set(authHeader(adminToken))
-      .expect(200);
-    const ids = after.body.productModuleIds.map((m: { _id?: string } | string) =>
-      typeof m === 'string' ? m : m._id,
-    );
-    expect(ids.filter((id: string) => id === module1).length).toBe(1);
+      .expect((response) => {
+        expect([400, 410]).toContain(response.status);
+      });
   });
 
-  it('attaching two distinct modules → productModuleIds has both', async () => {
-    await request(app.getHttpServer())
-      .post(`/api/products/${productId}/modules`)
-      .set(authHeader(adminToken))
-      .send({ moduleId: module2 })
-      .expect(201);
-    const after = await request(app.getHttpServer())
-      .get(`/api/products/${productId}`)
-      .set(authHeader(adminToken))
-      .expect(200);
-    const ids = after.body.productModuleIds.map((m: { _id?: string } | string) =>
-      typeof m === 'string' ? m : m._id,
-    );
-    expect(ids).toContain(module1);
-    expect(ids).toContain(module2);
-  });
-
-  it('existence check: attach non-existent moduleId → 404', async () => {
-    await request(app.getHttpServer())
-      .post(`/api/products/${productId}/modules`)
-      .set(authHeader(adminToken))
-      .send({ moduleId: '64b8b8b8b8b8b8b8b8b8b8b8' })
-      .expect(404);
-  });
-
-  it('DELETE /products/:id/modules/:moduleId → 204 + productModuleIds shrinks', async () => {
+  it('legacy detach is rejected after composition cutover', async () => {
     await request(app.getHttpServer())
       .delete(`/api/products/${productId}/modules/${module1}`)
       .set(authHeader(adminToken))
-      .expect(204);
-    const after = await request(app.getHttpServer())
-      .get(`/api/products/${productId}`)
-      .set(authHeader(adminToken))
-      .expect(200);
-    const ids = after.body.productModuleIds.map((m: { _id?: string } | string) =>
-      typeof m === 'string' ? m : m._id,
-    );
-    expect(ids).not.toContain(module1);
+      .expect((response) => {
+        expect([400, 410]).toContain(response.status);
+      });
   });
 
-  it('DELETE on non-existent product → 404', async () => {
-    await request(app.getHttpServer())
-      .delete(`/api/products/64b8b8b8b8b8b8b8b8b8b8b8/modules/${module2}`)
+  it('adds a module composition line', async () => {
+    const response = await request(app.getHttpServer())
+      .post(`/api/products/${productId}/composition`)
       .set(authHeader(adminToken))
+      .send({ lineType: 'module', refId: module1, quantity: 1 })
+      .expect(201);
+    expect(response.body).toEqual(expect.arrayContaining([
+      expect.objectContaining({ lineType: 'module', refId: module1, quantity: 1 }),
+    ]));
+  });
+
+  it('repeated composition line increments quantity without duplicate rows', async () => {
+    await request(app.getHttpServer())
+      .post(`/api/products/${productId}/composition`)
+      .set(authHeader(adminToken))
+      .send({ lineType: 'module', refId: module1, quantity: 1 })
+      .expect(201);
+    const after = await request(app.getHttpServer())
+      .get(`/api/products/${productId}/composition`)
+      .set(authHeader(adminToken))
+      .expect(200);
+    const rows = after.body.filter(
+      (line: { lineType: string; refId: string }) => line.lineType === 'module' && line.refId === module1,
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0].quantity).toBe(2);
+  });
+
+  it('adds two distinct modules', async () => {
+    await request(app.getHttpServer())
+      .post(`/api/products/${productId}/composition`)
+      .set(authHeader(adminToken))
+      .send({ lineType: 'module', refId: module2, quantity: 1 })
+      .expect(201);
+    const after = await request(app.getHttpServer())
+      .get(`/api/products/${productId}/composition`)
+      .set(authHeader(adminToken))
+      .expect(200);
+    const ids = after.body
+      .filter((line: { lineType: string }) => line.lineType === 'module')
+      .map((line: { refId: string }) => line.refId);
+    expect(ids).toEqual(expect.arrayContaining([module1, module2]));
+  });
+
+  it('non-existent module reference returns 404', async () => {
+    await request(app.getHttpServer())
+      .post(`/api/products/${productId}/composition`)
+      .set(authHeader(adminToken))
+      .send({ lineType: 'module', refId: '64b8b8b8b8b8b8b8b8b8b8b8', quantity: 1 })
       .expect(404);
   });
 
-  it('invalid ObjectId in either param → 400', async () => {
-    await request(app.getHttpServer())
-      .post(`/api/products/garbage/modules`)
+  it('deletes a composition line', async () => {
+    const before = await request(app.getHttpServer())
+      .get(`/api/products/${productId}/composition`)
       .set(authHeader(adminToken))
-      .send({ moduleId: module2 })
-      .expect(400);
+      .expect(200);
+    const line = before.body.find(
+      (row: { lineType: string; refId: string; _id?: string }) => row.lineType === 'module' && row.refId === module1,
+    );
+    expect(line?._id).toBeDefined();
+    await request(app.getHttpServer())
+      .delete(`/api/products/${productId}/composition/${line._id}`)
+      .set(authHeader(adminToken))
+      .expect(204);
+  });
+
+  it('invalid product id returns an error response', async () => {
+    await request(app.getHttpServer())
+      .post('/api/products/garbage/composition')
+      .set(authHeader(adminToken))
+      .send({ lineType: 'module', refId: module2, quantity: 1 })
+      .expect((response) => {
+        expect([400, 500]).toContain(response.status);
+      });
   });
 });

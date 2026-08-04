@@ -101,6 +101,10 @@ export class ButtonComponent {
 
   onClick(event: MouseEvent): void {
     if (this.disabled()) return;
+    // TZ-MATERIALS-305 / user report: without stopPropagation the click can
+    // bubble to an outer host listener and fire the parent (click) twice
+    // (e.g. «Добавить размер» → length+width in one gesture).
+    event.stopPropagation();
     this.click.emit(event);
   }
 }

@@ -49,11 +49,12 @@ Examples (taken verbatim from the seeded catalog):
 | `user:admin` | Admin user directory list/create/role/password resets (`/api/admin/users*`) | Must not be confused with В«any authenticated userВ» |
 
 Code already documents this split (`frontend/.../app.routes.ts` admin/users gate;
-`users-admin.controller.ts` comments). `/auth/me` today returns `permissions[]`
-but **not** yet `pages[]` вЂ” page ACL delivery is `TZ-ACCESS-301` + `TZ-RBAC-304`.
+`users-admin.controller.ts` comments). `/auth/me` returns `permissions[]` **and**
+`pages: string[]` (effective role page ACL via `AuthService.toAuthUser` вЂ”
+TZ-ACCESS-301 + TZ-RBAC-304). Empty array is valid when the role has no pages.
 
-There is **no** dedicated `_backlog/` TZ solely named `/me`; do not invent a
-parallel endpoint вЂ” extend `/auth/me`.
+There is **no** dedicated `/users/me` CRUD endpoint вЂ” self-service stays on
+`GET /auth/me`; do not invent a parallel surface.
 
 ## 2. Three-action semantics
 
@@ -259,28 +260,28 @@ Defined in `backend/src/common/seed/permissions.constants.ts` (1:1 with
 
 | Page key | Nav section | Description |
 |----------|-------------|-------------|
-| `products` | Каталог | Products registry |
-| `modules` | Каталог | Product modules |
-| `materials` | Каталог | Materials dictionary |
-| `work-types` | Каталог | Work types |
-| `organizations` | Сделки | Counterparty organizations |
-| `proposals` | Сделки | Commercial proposals (КП) |
-| `contracts` | Сделки | Contracts |
-| `orders` | Сделки | Orders |
-| `dictionaries` | Справочники | All dictionaries |
-| `categories` | Справочники | Categories |
-| `doc-template-categories` | Справочники | Template categories |
-| `color-references` | Справочники | Color references (RAL) |
-| `doc-templates` | Документы | Document templates |
-| `doc-texts` | Документы | Text blocks |
-| `doc-tables` | Документы | Table templates |
-| `doc-documents` | Документы | Document archive |
-| `inventory` | Склад | Inventory overview |
-| `storage-items` | Склад | Storage items |
-| `stock-movements` | Склад | Stock movements |
-| `people` | Люди | People directory |
-| `admin-users` | Администрирование | User management |
-| `admin-roles` | Администрирование | Role management |
+| `products` | пїЅпїЅпїЅпїЅпїЅпїЅпїЅ | Products registry |
+| `modules` | пїЅпїЅпїЅпїЅпїЅпїЅпїЅ | Product modules |
+| `materials` | пїЅпїЅпїЅпїЅпїЅпїЅпїЅ | Materials dictionary |
+| `work-types` | пїЅпїЅпїЅпїЅпїЅпїЅпїЅ | Work types |
+| `organizations` | пїЅпїЅпїЅпїЅпїЅпїЅ | Counterparty organizations |
+| `proposals` | пїЅпїЅпїЅпїЅпїЅпїЅ | Commercial proposals (пїЅпїЅ) |
+| `contracts` | пїЅпїЅпїЅпїЅпїЅпїЅ | Contracts |
+| `orders` | пїЅпїЅпїЅпїЅпїЅпїЅ | Orders |
+| `dictionaries` | пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ | All dictionaries |
+| `categories` | пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ | Categories |
+| `doc-template-categories` | пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ | Template categories |
+| `color-references` | пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ | Color references (RAL) |
+| `doc-templates` | пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ | Document templates |
+| `doc-texts` | пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ | Text blocks |
+| `doc-tables` | пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ | Table templates |
+| `doc-documents` | пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ | Document archive |
+| `inventory` | пїЅпїЅпїЅпїЅпїЅ | Inventory overview |
+| `storage-items` | пїЅпїЅпїЅпїЅпїЅ | Storage items |
+| `stock-movements` | пїЅпїЅпїЅпїЅпїЅ | Stock movements |
+| `people` | пїЅпїЅпїЅпїЅ | People directory |
+| `admin-users` | пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ | User management |
+| `admin-roles` | пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ | Role management |
 
 ### Default page assignments
 

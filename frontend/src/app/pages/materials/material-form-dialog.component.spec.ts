@@ -417,7 +417,7 @@ describe('MaterialFormDialogComponent (TZ-MATERIALS-301)', () => {
     expect(types).toEqual(['length', 'height']);
   });
 
-  it('falls back to length when all six dimension types are present (TZ-MATERIALS-305)', async () => {
+  it('does not add a seventh row when all six dimension types are present', async () => {
     const material: Material = {
       _id: 'm1',
       name: 'Стекло',
@@ -432,11 +432,27 @@ describe('MaterialFormDialogComponent (TZ-MATERIALS-301)', () => {
       ],
     };
     const { comp } = await setup(material);
+    expect(comp.canAddDimension()).toBe(false);
     comp.addDimension();
+    expect(comp.dimensionsArray.controls.length).toBe(6);
+  });
+
+  it('dedupes duplicate dimension types when patching edit data', async () => {
+    const material: Material = {
+      _id: 'm1',
+      name: 'Лист',
+      unit: 'kg',
+      dimensions: [
+        { type: 'thickness', value: 2 },
+        { type: 'thickness', value: 4 },
+        { type: 'width', value: 1000 },
+      ],
+    };
+    const { comp } = await setup(material);
     const types = comp.dimensionsArray.controls.map(
       (g) => (g as { controls: { type: { value: string } } }).controls.type.value,
     );
-    expect(types[6]).toBe('length');
+    expect(types).toEqual(['thickness', 'width']);
   });
 
   it('preserves isImmutable in the payload (TZ-MATERIALS-305)', async () => {
@@ -524,5 +540,120 @@ describe('MaterialFormDialogComponent (TZ-MATERIALS-301)', () => {
     comp.onCancel();
     expect(create).not.toHaveBeenCalled();
     expect(close).toHaveBeenCalledWith(null);
+  });
+
+  // ─────────────────────────────────────────────────────────────────
+  // TZ-CATALOG-316 — FE Material 301 fields
+  //
+  // The dialog now carries `materialKind`, `weightKg`, `assortment`,
+  // `standardRef`, `materialGrade` through the form and into the
+  // create/update payload. The payload OMITS the field when the
+  // empty-string sentinel is selected (legacy no-kind path).
+  // weightKg follows server `Min(0)` so 0 is acceptable, —5 is not.
+  // ─────────────────────────────────────────────────────────────────
+
+  /** Typed helpers — keep tests readable without casting at every call. */
+  function setFormValue(comp: Harness, name: string, v: unknown): void {
+    (comp.form.controls[name] as unknown as { setValue(v: unknown): void }).setValue(v);
+  }
+  function readFormValue(comp: Harness, name: string): unknown {
+    return (comp.form.controls[name] as unknown as { value: unknown }).value;
+  }
+  function touchForm(comp: Harness, name: string): void {
+    (comp.form.controls[name] as unknown as { markAsTouched(): void }).markAsTouched();
+  }
+
+  describe('TZ-CATALOG-316 (Material FE 301 fields)', () => {
+    it('create: round-trips materialKind + weightKg + assortment/standardRef/materialGrade', async () => {
+      const { comp, create } = await setup(null);
+      comp.form.controls['name'].setValue('Лист Ст3');
+      comp.form.controls['unit'].setValue('m2');
+      setFormValue(comp, 'materialKind', 'raw');
+      setFormValue(comp, 'weightKg', 1.5);
+      setFormValue(comp, 'assortment', 'Лист');
+      setFormValue(comp, 'standardRef', 'ГОСТ 19904-90');
+      setFormValue(comp, 'materialGrade', 'Ст3');
+      comp.onSubmit();
+      const payload = create.mock.calls[0][0];
+      expect(payload.materialKind).toBe('raw');
+      expect(payload.weightKg).toBe(1.5);
+      expect(payload.assortment).toBe('Лист');
+      expect(payload.standardRef).toBe('ГОСТ 19904-90');
+      expect(payload.materialGrade).toBe('Ст3');
+    });
+
+    it('create: empty materialKind sentinel stays omitted from payload (legacy no-kind)', async () => {
+      const { comp, create } = await setup(null);
+      comp.form.controls['name'].setValue('Стекло');
+      comp.form.controls['unit'].setValue('m2');
+      comp.onSubmit();
+      const payload = create.mock.calls[0][0];
+      expect(payload.materialKind).toBeUndefined();
+      expect(payload.weightKg).toBeUndefined();
+      expect(payload.assortment).toBeUndefined();
+      expect(payload.standardRef).toBeUndefined();
+      expect(payload.materialGrade).toBeUndefined();
+    });
+
+    it('create: weightKg = 0 is valid (server Min(0) allowed)', async () => {
+      const { comp, create } = await setup(null);
+      comp.form.controls['name'].setValue('Стекло');
+      comp.form.controls['unit'].setValue('m2');
+      setFormValue(comp, 'weightKg', 0);
+      comp.onSubmit();
+      expect(create).toHaveBeenCalledTimes(1);
+    });
+
+    it('create: weightKg < 0 invalid → hasError(weightKg)=true and submit is blocked', async () => {
+      const { comp, create } = await setup(null);
+      comp.form.controls['name'].setValue('Стекло');
+      comp.form.controls['unit'].setValue('m2');
+      setFormValue(comp, 'weightKg', -5);
+      touchForm(comp, 'weightKg');
+      comp.onSubmit();
+      // form.invalid → onSubmit marks all touched and returns without POST
+      expect(create).not.toHaveBeenCalled();
+      expect(comp.hasError('weightKg')).toBe(true);
+    });
+
+    it('edit: prefills all 301 fields from a saved material', async () => {
+      const material: Material = {
+        _id: 'm1',
+        name: 'Лист Ст3',
+        unit: 'kg',
+        materialKind: 'raw',
+        weightKg: 12.5,
+        assortment: 'Лист горячекатаный',
+        standardRef: 'ГОСТ 19903-2015',
+        materialGrade: 'Ст3',
+      };
+      const { comp } = await setup(material);
+      expect(readFormValue(comp, 'materialKind')).toBe('raw');
+      expect(readFormValue(comp, 'weightKg')).toBe(12.5);
+      expect(readFormValue(comp, 'assortment')).toBe('Лист горячекатаный');
+      expect(readFormValue(comp, 'standardRef')).toBe('ГОСТ 19903-2015');
+      expect(readFormValue(comp, 'materialGrade')).toBe('Ст3');
+    });
+
+    it('edit: legacy material without materialKind opens cleanly; kind control = empty sentinel', async () => {
+      const material: Material = { _id: 'm1', name: 'Стекло 4мм', unit: 'm2' };
+      const { comp } = await setup(material);
+      // The `— не указан —` option in the select stores KIND_NULL_SENTINEL ('') on the control.
+      expect(readFormValue(comp, 'materialKind')).toBe('');
+    });
+
+    it('edit: update payload includes 301 fields (round-trip)', async () => {
+      const material: Material = { _id: 'm1', name: 'Стекло 4мм', unit: 'm2' };
+      const { comp, update } = await setup(material);
+      setFormValue(comp, 'materialKind', 'part');
+      setFormValue(comp, 'weightKg', 0.6);
+      setFormValue(comp, 'standardRef', 'ГОСТ 111-2001');
+      comp.onSubmit();
+      const [idArg, payload] = update.mock.calls[0];
+      expect(idArg).toBe('m1');
+      expect(payload.materialKind).toBe('part');
+      expect(payload.weightKg).toBe(0.6);
+      expect(payload.standardRef).toBe('ГОСТ 111-2001');
+    });
   });
 });

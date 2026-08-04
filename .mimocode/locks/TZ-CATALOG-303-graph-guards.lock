@@ -1,0 +1,14 @@
+# Lock file
+Locked as of 2026-08-04 — TZ-CATALOG-303: Graph guards cycle + depth≤8.
+
+Owner: backend executor + Cursor Architect
+Protected files:
+- backend/src/modules/catalog-graph/**
+- backend/src/modules/product/product.service.ts
+- backend/src/modules/product/product.controller.ts
+- backend/src/modules/product/product.module.ts
+- backend/src/modules/product-module/product-module.service.ts
+- backend/src/modules/product-module/product-module.controller.ts
+- backend/src/modules/product-module/product-module.module.ts
+
+Unlock: only via orchestrator approval (successor TZ).

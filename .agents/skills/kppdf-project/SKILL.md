@@ -27,12 +27,15 @@ Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `
 3. Для TZ-flow прочитать `OrchestratorKit/AGENTS.md` и
    `OrchestratorKit/_templates/TZF-00.txt`.
 4. Проверить `git status`, worktree, активные TZ, архивы и conflict keys.
-5. Создать `docs/agent-checklists/<TASK-ID>.md` до первой правки.
-6. Не дублировать уже подтверждённую работу.
-7. Проверить typecheck, tests, lint, а для UI — browser/DOM-сценарий.
-8. Провести review diff.
-9. Архивировать только после прохождения gates.
-10. Если сессия дала **новое** понимание PO (вкус, отказ, планка показа) —
+5. **CLAIM:** `tasks/_active/<TASK-ID>.md` + checklist Status CLAIMED + Claim slot
+   (`agent_id`, `claimed_at` ISO) по `docs/agent-checklists/_TEMPLATE.md`
+   **до** первой правки кода. Без slot — не кодить.
+6. Создать/обновить `docs/agent-checklists/<TASK-ID>.md` (acceptance, gates, report).
+7. Не дублировать уже подтверждённую работу.
+8. Проверить typecheck, tests, lint, а для UI — browser/DOM-сценарий.
+9. Провести review diff.
+10. Архивировать только после прохождения gates **и** Cursor/PO PASS (если TZ требует).
+11. Если сессия дала **новое** понимание PO (вкус, отказ, планка показа) —
     обновить `docs/PO-DIARY.md` §5 (и канон §1–§4 при стабильном инсайте).
 
 `TZ-232.A`, `TZ-232.N` и `TZ-232.B` не реализуй повторно без доказанного

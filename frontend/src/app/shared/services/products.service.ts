@@ -9,7 +9,7 @@ import {
   silentPost,
   SilentResult,
 } from '../../core/silent-http';
-import type { ProductModule } from './pi-product-modules.service';
+import type { CompositionLine, ProductModule } from './pi-product-modules.service';
 
 export type ProductKind = 'good' | 'service' | 'work';
 export type ProductStatus = 'new' | 'active' | 'archived' | 'draft';
@@ -48,6 +48,12 @@ export interface Product {
    * полные ProductModule объекты (populated). TZ-PRODUCTS-303.
    */
   productModuleIds?: Array<string | ProductModule>;
+  /**
+   * Канонический состав (TZ-CATALOG-302/317). Список/detail используют
+   * dual-read: непустой `composition` имеет приоритет над legacy
+   * `productModuleIds` (зеркало backend dualRead).
+   */
+  composition?: CompositionLine[];
   hasPassport?: boolean;
   hasDrawing?: boolean;
   isActive?: boolean;

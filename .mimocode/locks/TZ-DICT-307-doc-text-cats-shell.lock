@@ -1,0 +1,11 @@
+# Lock file
+Locked as of 2026-08-04 — TZ-DICT-307: doc-template + text-block categories shell.
+
+Owner: buffy + Cursor Architect
+Protected files:
+- frontend/src/app/pages/dictionaries/document-template-categories.page.ts
+- frontend/src/app/pages/dictionaries/document-template-categories.page.spec.ts
+- frontend/src/app/pages/dictionaries/text-block-categories.page.ts
+- frontend/src/app/pages/dictionaries/text-block-categories.page.spec.ts
+
+Unlock: only via orchestrator approval (successor TZ).

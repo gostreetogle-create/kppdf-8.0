@@ -19,11 +19,17 @@
 | Метод | Endpoint | Назначение |
 |-------|----------|-----------|
 | GET | `/api/modules/:id` | Детали модуля (populated materials + workTypes) |
-| DELETE | `/api/modules/:id` | Удаление модуля |
-| GET | `/api/modules/:id/photos` | Список фото |
-| PUT | `/api/modules/:id/photos/:photoId/main` | Установить главное фото |
-| DELETE | `/api/modules/:id/photos/:photoId` | Удалить фото |
-| POST | `/api/modules/:id/photos` | Добавить фото по URL |
+| DELETE | `/api/modules/:id` | Hard delete модуля (см. modules.page.md) |
+| GET | `/api/product-module-photos?productModuleId=` | Список фото модуля |
+| POST | `/api/product-module-photos` | Привязать фото (`productModuleId`, `photoId` / url) |
+| POST | `/api/product-module-photos/:id/main` | Сделать главным |
+| PATCH | `/api/product-module-photos/:id` | Обновить метаданные (не isMain) |
+| DELETE | `/api/product-module-photos/:id` | Отвязать/удалить запись фото |
+
+> **TZ-CATALOG-319:** старые пути `/api/modules/:id/photos*` в коде **нет**.
+> Живой API — коллекция `ProductModulePhoto` + `ProductModulePhotosService`
+> → `/product-module-photos`. Унификация с `photoIds` на Product/Material — **313**.
+
 
 ## Dialogs
 
@@ -73,7 +79,8 @@
 | TZ | Что сделано |
 |----|------------|
 | TZ-83 | Первая реализация (Phase C) |
+| TZ-CATALOG-319 | Docs: photo API → `/product-module-photos` |
 
 ---
 
-_Создано: 2026-07-19._
+_Создано: 2026-07-19. Обновлено: 2026-08-04 (TZ-CATALOG-319)._

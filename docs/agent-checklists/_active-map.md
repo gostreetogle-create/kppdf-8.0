@@ -1,24 +1,15 @@
 # Active map — focus
 
-**Updated:** 2026-08-03 (Stabilization Wave **DONE**)
+**Updated:** 2026-08-04 — CATALOG-305 DONE; DICT-308 RESERVED
 
-**Rule:** max **1** execution stream on templates/dialog Layer-3. Index: `tasks/README.md`.  
-Canon: [`docs/STABILIZATION-WAVE-2026-08.md`](../STABILIZATION-WAVE-2026-08.md)
+## Now
 
-## Now (root)
+| Stream | TZ | Status |
+|--------|-----|--------|
+| Catalog BE Wave 1 | 301–305 | **DONE** |
+| DICT FE | **DICT-308** Group Chip Workspace | `_active` (код) |
+| UI docs ∥ | **TZ-UI-TABLE-301** Table kit design | **RESERVED** `_active` (docs only) |
 
-Пусто. Вертикаль шаблона закрыта кодом + docs. Следующий слот — только по явному PO.
+## Pattern SoT
 
-## Parked
-
-UX-306 People · PRODUCTION/Gantt · **Z-002 DSL** · commerce chains — `tasks/_backlog/`
-
-## Done (do not reopen)
-
-**DOC-337…341 · UX-DIALOG-301 · PROC-301** · DEPLOY-301 · DOC-324…336 · ACCESS-301…303 · MATERIALS-307/309 · UX-301…305 · SALES-301 · Z-001
-
-## Conflict snapshot
-
-```
-(no active Layer-3 conflict on templates/pi-dialog)
-```
+`docs/superpowers/specs/2026-08-04-group-chip-workspace-design.md`

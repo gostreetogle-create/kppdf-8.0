@@ -4,15 +4,10 @@ import { optimisticLockPlugin } from '../../common/mongoose';
 
 export type MaterialDocument = HydratedDocument<Material>;
 
-/**
- * Один измеряемый габарит материала. Используется в `Material.dimensions[]`.
- *
- * `type` — что измеряем (длина / ширина / высота / толщина / диаметр / глубина).
- * `value` — числовое значение (в мм, конвенция — мм везде).
- * `isImmutable` — если true, downstream-операции (продукция, модули) не могут
- * изменить это значение. Пример: толщина листа металла 2 мм — её нельзя
- * «раскатать», но длину и ширину можно резать.
- */
+export const MATERIAL_KINDS = ['raw', 'part', 'fastener', 'purchased', 'other'] as const;
+export type MaterialKind = (typeof MATERIAL_KINDS)[number];
+
+/** One measured material dimension; values use the project-wide millimetre convention. */
 @Schema({ _id: false })
 export class Dimension {
   @Prop({
@@ -38,11 +33,27 @@ export class Material {
   @Prop({ index: true })
   article?: string;
 
+  /** Classification of the catalog leaf; legacy rows are backfilled to `other`. */
+  @Prop({ type: String, enum: MATERIAL_KINDS, index: true, required: false })
+  materialKind?: MaterialKind | null;
+
+  @Prop({ index: true, sparse: true })
+  assortment?: string;
+
+  @Prop({ index: true, sparse: true })
+  standardRef?: string;
+
+  @Prop({ index: true, sparse: true })
+  materialGrade?: string;
+
+  @Prop({ type: Number, min: 0 })
+  weightKg?: number;
+
   @Prop({ unique: true, sparse: true, index: true })
   sku?: string;
 
   @Prop({ required: true })
-  unit!: string; // FK → Unit.key (m2/m3/kg/sheet/pcs/...)
+  unit!: string;
 
   @Prop({ type: Types.ObjectId, ref: 'Category', index: true })
   categoryId?: Types.ObjectId;
@@ -50,10 +61,6 @@ export class Material {
   @Prop()
   description?: string;
 
-  /**
-   * Цена за единицу. Всегда в RUB — поле валюты отсутствует по политике
-   * (см. docs/data-model.md «Политики → Валюта — всегда RUB»).
-   */
   @Prop({ default: 0 })
   pricePerUnit?: number;
 
@@ -66,7 +73,6 @@ export class Material {
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Photo' }], default: [] })
   photoIds!: Types.ObjectId[];
 
-  /** Главное фото (отмечается галочкой в форме; используется в карточках). */
   @Prop({ type: Types.ObjectId, ref: 'Photo' })
   mainPhotoId?: Types.ObjectId;
 
@@ -76,17 +82,13 @@ export class Material {
   @Prop()
   notes?: string;
 
-  /** TZ-240: organization this material belongs to. Null/undefined for system (TZ-seeded shared) records. */
   @Prop({ required: false, sparse: true, index: true })
   organizationId?: Types.ObjectId;
 
-  /** TZ-240: marks the record as system-shared (visible across orgs). Created only via admin/seed. */
   @Prop({ default: false })
   isSystem?: boolean;
 }
 
 export const MaterialSchema = SchemaFactory.createForClass(Material);
 MaterialSchema.plugin(optimisticLockPlugin);
-
-// Индекс для частого запроса «все материалы конкретного поставщика».
 MaterialSchema.index({ supplierId: 1 });

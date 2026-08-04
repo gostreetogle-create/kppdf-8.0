@@ -11,6 +11,7 @@ docs/
 ├── AI-AGENT-GUIDE.md              ← онбординг ИИ-агента
 ├── PO-DIARY.md                    ← [канон] кто PO, планка качества, лог сессий
 ├── TZ-AUTHORING.md                ← [канон] как писать техзадачи (domain preflight)
+├── AUDIT-METHODOLOGY.md           ← [канон] методика инженерного аудита → child-TZ
 ├── DARK-THEME.md                  ← канон светлой/тёмной темы (графит + gold)
 ├── add-new-page.md                ← инструкция: как создать новую страницу
 ├── architecture-audit-2026-07.md  ← полный аудит архитектуры (2026-07-05)
@@ -61,6 +62,7 @@ docs/
 |-----------|-------|-----------|
 | **AI Agent Guide** | `AI-AGENT-GUIDE.md` | **ОБЯЗАТЕЛЬНО К ПРОЧТЕНИЮ** — онбординг AI-агента: паттерны, запреты, чек-лист |
 | **TZ Authoring** | `TZ-AUTHORING.md` | **Как писать TZ** — канон имён (Counterparty≠Organization), unique, preflight; skill: `.agents/skills/tz-authoring` |
+| **Audit methodology** | `AUDIT-METHODOLOGY.md` | **Как аудитить** перед крупными миграциями/TZ: режимы, preflight, evidence, P0–P3 → child-TZ; отчёты в `docs/audits/` |
 | **Архитектура** | `architecture-audit-2026-07.md` | Полный срез архитектуры |
 | **Модель данных** | `data-model.md`, `data-model-audit.md` | Entity-relationship model |
 | **Разработка** | `DEVELOPMENT-PATTERNS.md`, `add-new-page.md` | Как писать код |
@@ -74,6 +76,7 @@ docs/
 
 1. `docs/AI-AGENT-GUIDE.md` — **ОБЯЗАТЕЛЬНО** (онбординг, паттерны, запреты)
 1b. `docs/TZ-AUTHORING.md` — **если пишешь TZ** (канон имён / unique / preflight)
+1c. `docs/AUDIT-METHODOLOGY.md` — **если аудитишь** домен / миграцию / чужой diff (не путать с реализацией)
 2. `ARCHITECTURE.md` (корень проекта) — общая архитектура
 3. `docs/DEVELOPMENT-PATTERNS.md` — как писать код (SilentResult, defineEntity, SubmitGuard, EntityList, httpResource)
 4. `docs/data-model.md` — модель данных
@@ -91,6 +94,7 @@ docs/
 - **`deploy/synology/README.md`** — деплой одной командой (`deploy.ps1` / `deploy.sh`)
 - **`STABILIZATION-WAVE-2026-08.md`** — волна полок + пакет TZ (шаблон КП)
 - **`DIALOG-COOKBOOK.md`** — канон PiDialog (обязателен агентам)
+- **`AUDIT-METHODOLOGY.md`** — методика аудита → child-TZ (перед крупными миграциями)
 - **`UX-FORM-CANON.md`** — валидация без прыжков layout (красная рамка, не выталкивающий текст)
 - **`DARK-THEME.md`** — канон светлой и тёмной темы (Cool Graphite & Gold)
 - **`SESSION-2026-08-02-DEPLOY.md`** — карта вечернего деплоя / фиксов / завтрашний чеклист

@@ -83,7 +83,22 @@ cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit
 1. Путь к файлу
 2. Conflict keys (кратко)
 3. Кому отдавать (backend/frontend) и deps
-4. One-liner: «Прочитай `docs/AI-AGENT-GUIDE.md`, `docs/TZ-AUTHORING.md` (если правишь спеку) и `<path>`, выполни TZ»
+4. **Handoff-промпт обязан начинаться с CLAIM-блока** (иначе агент пропустит бронь):
+
+```text
+CLAIM первым (до кода):
+1) Get-Location + git rev-parse → D:\kppdf-8.0
+2) tasks/_active/<TASK-ID>.md + checklist по docs/agent-checklists/_TEMPLATE.md
+3) Status CLAIMED; Claim slot: agent_id + claimed_at (ISO) + workspace
+4) _active-map + чужие _active keys → конфликт = STOP
+5) Team Room claim best-effort
+Затем: прочитай docs/AI-AGENT-GUIDE.md + <TZ path> и выполни TZ.
+Archive только после Cursor/PO PASS если TZ требует review.
+```
+
+5. One-liner для PO: «Скопируй промпт агенту; доска `_active-map`.»
+
+Канон дыр: `docs/audits/2026-08-04-agent-ops-claim-gaps.md`.
 
 ## Executor report (auto) — required before archive
 
