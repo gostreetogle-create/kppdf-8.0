@@ -4,6 +4,26 @@
 
 ## Inbox
 
+## TZ-DICT-311 — DONE
+
+date: 2026-08-05
+archive: tasks/_archive/2026-08/TZ-DICT-311.done.md
+note: hub → measurements; DictionariesHubPage deleted
+### Verdict TZ-DICT-311
+status: PASS
+required_fixes: none
+
+## TZ-DICT-310 — DONE
+
+date: 2026-08-05
+archive: tasks/_archive/2026-08/TZ-DICT-310.done.md
+gates: fe tsc PASS; jest 105/105
+note: slim — leaf pages host PiGroupWorkspace chips; group aliases; nav 4 groups
+### Verdict TZ-DICT-310
+status: PASS
+notes: Documents 2 chips; classification/appearance 1 chip each.
+required_fixes: none
+
 ## TZ-DICT-309 — DONE
 
 date: 2026-08-05

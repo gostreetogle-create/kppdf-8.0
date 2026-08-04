@@ -10,8 +10,9 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { PiDictionaryShellComponent } from '../../shared/page/pi-dictionary-shell.component';
+import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
+import { APPEARANCE_CHIPS } from './dictionary-group-chips';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../shared/ui/switch/switch.component';
 import { PiToastService } from '../../shared/ui/toast';
@@ -32,11 +33,8 @@ const RU_COLORS = ['цвет', 'цвета', 'цветов'] as const;
 type ActiveFilter = 'all' | 'active' | 'inactive';
 
 /**
- * TZ-DICT-306 — справочник цветов (RAL) на PiDictionaryShell.
- *
- * D1–D2 chrome: compact H1 + totalLabel; sticky tools bar = search +
- * active filter + primary CTA. No eyebrow/description/section bloat
- * (DICT-300 canon).
+ * TZ-DICT-306 — справочник цветов (RAL); TZ-DICT-310 — Group Chip Workspace
+ * (appearance group, chip «Цвета»).
  *
  * CRUD over `/color-references` (admin/manager mutations, user reads —
  * backend RBAC). System colors («Не выбран», seed-managed) are shown but
@@ -52,14 +50,14 @@ type ActiveFilter = 'all' | 'active' | 'inactive';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FormsModule,
-    PiDictionaryShellComponent,
+    PiGroupWorkspaceComponent,
     PiRowActionsComponent,
     ButtonComponent,
     SwitchComponent,
     TableComponent,
   ],
   template: `
-    <app-pi-dictionary-shell [title]="'Цвета (RAL)'" [totalLabel]="totalLabel()">
+    <app-pi-group-workspace [chips]="chips" [activeId]="'colors'">
       @if (error()) {
         <div
           role="alert"
@@ -177,10 +175,11 @@ type ActiveFilter = 'all' | 'active' | 'inactive';
           data-test="color-active-switch"
         />
       </ng-template>
-    </app-pi-dictionary-shell>
+    </app-pi-group-workspace>
   `,
 })
 export class ColorReferencesPage {
+  protected readonly chips = APPEARANCE_CHIPS;
   private readonly svc = inject(PiColorReferencesService);
   private readonly toast = inject(PiToastService);
   private readonly dialog = inject(PiDialogService);

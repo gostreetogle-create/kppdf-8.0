@@ -99,18 +99,22 @@ describe('TextBlockCategoriesPage (TZ-DOC-316)', () => {
     expect(createComp()).toBeTruthy();
   });
 
-  it('renders the PiDictionaryShell chrome with sticky search + CTA (TZ-DICT-307)', () => {
+  it('renders the PiGroupWorkspace chrome with sticky search + CTA (TZ-DICT-310)', () => {
     const fixture = TestBed.createComponent(TextBlockCategoriesPage);
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
-    const shell = el.querySelector('app-pi-dictionary-shell');
+    const shell = el.querySelector('app-pi-group-workspace');
     expect(shell).toBeTruthy();
-    const search = shell?.querySelector('input[aria-label="Поиск категорий текстов"]');
+    const page = fixture.componentInstance as unknown as {
+      chips: readonly { id: string; label: string }[];
+    };
+    expect(page.chips.map((c) => c.id)).toEqual(['doc-templates', 'text-blocks']);
+    const search = el.querySelector('input[aria-label="Поиск категорий текстов"]');
     expect(search).toBeTruthy();
     expect((search as HTMLInputElement | null | undefined)?.getAttribute('placeholder')).toBe(
       'Поиск по названию или slug…',
     );
-    expect(shell?.querySelector('app-pi-button[data-test="create-category-button"]')).toBeTruthy();
+    expect(el.querySelector('app-pi-button[data-test="create-category-button"]')).toBeTruthy();
     // D1 canon: old prose chrome (page-header / section) must be gone.
     expect(el.querySelector('app-pi-page-header')).toBeFalsy();
     expect(el.querySelector('app-pi-section')).toBeFalsy();

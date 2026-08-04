@@ -1,33 +1,22 @@
-# Страница: Справочники — Обзор (DictionariesHubPage)
+# Страница: Справочники (hub retired)
 
-**Краткое описание:** Hub-страница справочников на `/dictionaries`. Карточки-ссылки на разделы. После **TZ-DICT-308** основной вход из nav — **группы** (Классификация / Измерения / Оформление / Документы); hub остаётся до DICT-311 (redirect).
-
-## Route
+**Статус:** после **TZ-DICT-311** card-hub удалён.
 
 ```
-/dictionaries — «KPPDF — Справочники» (hub cards)
-/dictionaries/measurements — группа «Измерения» (Group Chip Workspace, пилот)
+/dictionaries → redirect → /dictionaries/measurements
 ```
 
-## Chrome
+Основной вход — nav «Справочники» по группам (DICT-310):
 
-| Компонент | Назначение |
-|-----------|-----------|
-| `PiDictionaryShell` | title «Справочники», без description |
-| Card grid | карточки-ссылки с заголовком и описанием |
-| Nav «Справочники» | dropdown **по группам** (не плоский список всех leaf) |
+| Группа | Alias route | Body |
+|--------|-------------|------|
+| Классификация | `/dictionaries/classification` → `/categories` | chip Категории |
+| Измерения | `/dictionaries/measurements` | chip Единицы |
+| Оформление | `/dictionaries/appearance` → color-references | chip Цвета |
+| Документы | `/dictionaries/documents-ref` → doc-template-cats | chips шаблоны / тексты |
 
-## Маршруты (все разделы)
-
-| Раздел / группа | Route |
-|-----------------|-------|
-| Классификация | `/categories` |
-| Измерения (пилот chips) | `/dictionaries/measurements` |
-| Единицы (legacy shell) | `/dictionaries/units` |
-| Цвета (RAL) / Оформление | `/dictionaries/color-references` |
-| Категории шаблонов / Документы | `/doc-template-categories` |
-| Категории текстов | `/dictionaries/text-block-categories` |
+SoT: `docs/superpowers/specs/2026-08-04-group-chip-workspace-design.md`
 
 ---
 
-_Обновлено: 2026-08-04 (TZ-DICT-303/304/308)._
+_Обновлено: 2026-08-05 (TZ-DICT-310/311)._

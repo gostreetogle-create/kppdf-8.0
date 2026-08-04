@@ -10,8 +10,9 @@ import {
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { CdkDropList, CdkDrag, CdkDragDrop } from '@angular/cdk/drag-drop';
-import { PiDictionaryShellComponent } from '../../shared/page/pi-dictionary-shell.component';
+import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { CLASSIFICATION_CHIPS } from './dictionary-group-chips';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
 import { PiToastService } from '../../shared/ui/toast';
@@ -43,11 +44,11 @@ const TYPE_COLORS: Record<Category['type'], string> = {
 type TypeFilter = 'all' | Category['type'];
 
 /**
- * TZ-DICT-305 — Categories page on PiDictionaryShell (D1–D2 chrome).
+ * TZ-DICT-305 — Categories CRUD/tree; TZ-DICT-310 — Group Chip Workspace chrome
+ * (classification group, chip «Категории»). No H1/path; sticky chips + tools.
  *
  * Sticky tools: search + type filter + primary CTA. CDK drag-drop reorder
- * preserved on two levels (root + children). Header/section bloat removed:
- * compact H1 from the shell, no eyebrow/description/section chrome.
+ * preserved on two levels (root + children).
  *
  * Полная документация страницы: docs/pages/categories.page.md
  */
@@ -55,9 +56,9 @@ type TypeFilter = 'all' | Category['type'];
   selector: 'app-categories-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CdkDropList, CdkDrag, PiDictionaryShellComponent, ButtonComponent],
+  imports: [CdkDropList, CdkDrag, PiGroupWorkspaceComponent, ButtonComponent],
   template: `
-    <app-pi-dictionary-shell [title]="'Категории'" [totalLabel]="totalLabel()">
+    <app-pi-group-workspace [chips]="chips" [activeId]="'categories'">
       @if (error()) {
         <div
           role="alert"
@@ -331,7 +332,7 @@ type TypeFilter = 'all' | Category['type'];
           </div>
         </div>
       }
-    </app-pi-dictionary-shell>
+    </app-pi-group-workspace>
   `,
   styles: [
     `
@@ -373,6 +374,7 @@ type TypeFilter = 'all' | Category['type'];
   ],
 })
 export class CategoriesPage {
+  protected readonly chips = CLASSIFICATION_CHIPS;
   private readonly service = inject(CategoriesService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);

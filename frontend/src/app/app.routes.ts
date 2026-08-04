@@ -139,14 +139,12 @@ export const routes: Routes = [
         title: 'KPPDF — Организации',
       },
       {
+        // TZ-DICT-311: hub cards retired — default group = Измерения.
         path: 'dictionaries',
-        canMatch: [capabilityRouteGuard],
-        data: { pageKey: 'dictionaries' },
-        loadComponent: () =>
-          import('./pages/dictionaries/dictionaries-hub.page').then((m) => m.DictionariesHubPage),
-        title: 'KPPDF — Справочники',
+        redirectTo: 'dictionaries/measurements',
+        pathMatch: 'full',
       },
-      // TZ-DICT-308: Group Chip Workspace routes
+      // TZ-DICT-308/310: Group Chip Workspace routes
       {
         path: 'dictionaries/measurements',
         canMatch: [capabilityRouteGuard],
@@ -162,6 +160,22 @@ export const routes: Routes = [
         // Note: redirectTo cannot combine with canMatch (Angular NG04014).
         path: 'dictionaries/units',
         redirectTo: 'dictionaries/measurements',
+        pathMatch: 'full',
+      },
+      // TZ-DICT-310: group alias routes → first chip of each group
+      {
+        path: 'dictionaries/classification',
+        redirectTo: 'categories',
+        pathMatch: 'full',
+      },
+      {
+        path: 'dictionaries/appearance',
+        redirectTo: 'dictionaries/color-references',
+        pathMatch: 'full',
+      },
+      {
+        path: 'dictionaries/documents-ref',
+        redirectTo: 'doc-template-categories',
         pathMatch: 'full',
       },
       {

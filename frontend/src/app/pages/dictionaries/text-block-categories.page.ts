@@ -8,9 +8,10 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { PiDictionaryShellComponent } from '../../shared/page/pi-dictionary-shell.component';
+import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
 import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
+import { DOCUMENTS_REF_CHIPS } from './dictionary-group-chips';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../shared/ui/switch/switch.component';
 import { PiToastService } from '../../shared/ui/toast';
@@ -50,21 +51,21 @@ function pluralGenitive(n: number): string {
  * category select in the block editor and the registry filter on
  * `/doc-constructor/texts`.
  *
- * TZ-DICT-307: cut over to PiDictionaryShell (D1–D2 canon) — compact title
- * + sticky tools bar (search + CTA), prose header/section removed.
+ * TZ-DICT-307 / TZ-DICT-310: Group Chip Workspace (documents-ref group,
+ * chip «Категории текстов»). Sibling chip → document-template categories.
  */
 @Component({
   selector: 'app-text-block-categories-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    PiDictionaryShellComponent,
+    PiGroupWorkspaceComponent,
     PiEmptyStateComponent,
     PiRowActionsComponent,
     ButtonComponent,
     SwitchComponent,
   ],
   template: `
-    <app-pi-dictionary-shell [title]="'Категории текстов'" [totalLabel]="totalLabel()">
+    <app-pi-group-workspace [chips]="chips" [activeId]="'text-blocks'">
       <!-- Sticky tools: search + primary CTA -->
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
@@ -169,10 +170,11 @@ function pluralGenitive(n: number): string {
           </table>
         </div>
       }
-    </app-pi-dictionary-shell>
+    </app-pi-group-workspace>
   `,
 })
 export class TextBlockCategoriesPage {
+  protected readonly chips = DOCUMENTS_REF_CHIPS;
   private readonly svc = inject(TextBlockCategoriesService);
   private readonly toast = inject(PiToastService);
   private readonly dialog = inject(PiDialogService);

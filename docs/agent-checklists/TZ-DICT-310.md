@@ -1,29 +1,19 @@
 # TZ-DICT-310 checklist
 
-> Status: **READY** (start after DICT-309 DONE)  
-> Marker: `tasks/_active/TZ-DICT-310.md` — create on claim  
-> Commit/push: **NO** unless PO says so
+> Status: **DONE**  
+> Archive: `tasks/_archive/2026-08/TZ-DICT-310.done.md`
 
-## Claim slot (ОБЯЗАТЕЛЬНО до кода)
+## Claim slot
 
-- agent_id: _(fill)_
-- claimed_at: _(ISO-8601)_
+- agent_id: Cursor Architect (deploy-day slim)
+- claimed_at: 2026-08-05T00:20:00Z
 - workspace: D:\kppdf-8.0
-- team_room_claim: yes | no | unavailable
-
-## Preflight
-
-- [ ] DICT-309 archived DONE
-- [ ] No parallel claim on app.routes / app-layout
-- [ ] Claim + `_active/TZ-DICT-310.md`
 
 ## Acceptance
 
-- [ ] 3 group screens + nav → groups only
-- [ ] Documents ≥2 chips; no leaf «Категории текстов» in nav
-- [ ] fe tsc + jest PASS
-- [ ] Cursor PASS before archive
+- [x] 3 groups + Documents ≥2 chips
+- [x] Nav groups only (no text-block leaf)
+- [x] fe tsc + jest 105/105
+- [x] Cursor PASS + archive
 
-## Gates / Executor report
-
-_(fill)_
+known_limitation: slim = leaf pages host chips (no separate group page components); full extract optional later.

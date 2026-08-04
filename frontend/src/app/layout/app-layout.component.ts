@@ -112,25 +112,19 @@ const NAV_CATEGORIES: NavCategory[] = [
     label: 'Справочники',
     icon: BookOpen,
     items: [
-      // TZ-DICT-308: nav groups — Классификация / Измерения / Оформление / Документы.
-      { path: '/categories', pageKey: 'categories', label: 'Классификация' },
+      // TZ-DICT-310: nav → group alias routes (chips on leaf pages).
+      { path: '/dictionaries/classification', pageKey: 'categories', label: 'Классификация' },
       { path: '/dictionaries/measurements', pageKey: 'dictionaries', label: 'Измерения' },
       {
-        path: '/dictionaries/color-references',
+        path: '/dictionaries/appearance',
         pageKey: 'color-references',
         label: 'Оформление',
         icon: Palette,
       },
       {
-        path: '/doc-template-categories',
+        path: '/dictionaries/documents-ref',
         pageKey: 'doc-template-categories',
         label: 'Документы',
-        separatorLabel: 'Шаблоны / Тексты',
-      },
-      {
-        path: '/dictionaries/text-block-categories',
-        pageKey: 'text-block-categories',
-        label: 'Категории текстов',
       },
     ],
   },

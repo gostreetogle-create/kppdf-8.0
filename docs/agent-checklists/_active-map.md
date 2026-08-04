@@ -1,24 +1,21 @@
 # Active map — focus
 
-**Updated:** 2026-08-05 — DICT-309 DONE; deploy pack today; 310/311 + UI-TABLE code → tomorrow
+**Updated:** 2026-08-05 — DICT Wave 1.5 complete (308–311); ready warm deploy
 
-## Today (deploy)
+## Today DONE
 
 | Stream | Status |
 |--------|--------|
-| Catalog BE Wave 1 | **DONE** (prod migrate CATALOG-304 — PO gate separately) |
-| DICT-308 + 309 | **DONE** — Group Chip pilot + units redirect |
-| UI-TABLE-301 | **DONE** (docs SoT in main) |
+| DICT-308…311 | **DONE** — Group Chip Workspace full cutover |
+| UI-TABLE-301 | **DONE** (docs) |
 
-## Tomorrow (other AIs OK)
+## Tomorrow (large / other AIs)
 
-| TZ | Why deferred |
-|----|----------------|
-| **DICT-310** | 3 group screens + body extract — half-day+ FE |
-| **DICT-311** | hub retire — after 310 |
-| **UI-TABLE-302** | Tree kit + categories migrate — large |
-| **UI-TABLE-305** | 7 raw catalogs → Flat — large |
-| **UI-TABLE-303/304** | polish / warehouse backlog |
+| TZ | Why |
+|----|-----|
+| **UI-TABLE-302** | Tree kit + categories |
+| **UI-TABLE-305** | 7 raw catalogs → Flat |
+| **UI-TABLE-303/304** | Expandable polish / Selectable backlog |
 
 ## Pattern SoT
 

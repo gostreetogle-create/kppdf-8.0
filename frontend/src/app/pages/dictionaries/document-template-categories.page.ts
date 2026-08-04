@@ -10,8 +10,9 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { PiDictionaryShellComponent } from '../../shared/page/pi-dictionary-shell.component';
+import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
+import { DOCUMENTS_REF_CHIPS } from './dictionary-group-chips';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../shared/ui/switch/switch.component';
 import { PiToastService } from '../../shared/ui/toast';
@@ -50,21 +51,21 @@ function pluralGenitive(n: number): string {
  * is a flat, template-only dictionary. It powers the category dropdown in
  * the template setup dialog and the templates registry filter.
  *
- * TZ-DICT-307: cut over to PiDictionaryShell (D1–D2 canon) — compact title
- * + sticky tools bar (search + CTA), prose header/section removed.
+ * TZ-DICT-307 / TZ-DICT-310: Group Chip Workspace (documents-ref group,
+ * chip «Категории шаблонов»). Sibling chip → text-block categories.
  */
 @Component({
   selector: 'app-document-template-categories-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    PiDictionaryShellComponent,
+    PiGroupWorkspaceComponent,
     PiRowActionsComponent,
     ButtonComponent,
     SwitchComponent,
     TableComponent,
   ],
   template: `
-    <app-pi-dictionary-shell [title]="'Категории шаблонов'" [totalLabel]="totalLabel()">
+    <app-pi-group-workspace [chips]="chips" [activeId]="'doc-templates'">
       <!-- Sticky tools: search + primary CTA -->
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
@@ -159,10 +160,11 @@ function pluralGenitive(n: number): string {
           data-test="category-active-switch"
         />
       </ng-template>
-    </app-pi-dictionary-shell>
+    </app-pi-group-workspace>
   `,
 })
 export class DocumentTemplateCategoriesPage {
+  protected readonly chips = DOCUMENTS_REF_CHIPS;
   private readonly svc = inject(DocumentTemplateCategoriesService);
   private readonly toast = inject(PiToastService);
   private readonly dialog = inject(PiDialogService);

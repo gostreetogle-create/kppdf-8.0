@@ -1,3 +1,12 @@
+## [2026-08-05] — TZ-DICT-310+311 DONE: group screens + hub retire
+**Исполнитель:** Cursor (deploy-day slim)
+**Статус:** PASS; archives `TZ-DICT-310.done.md`, `TZ-DICT-311.done.md`
+**Что сделано кратко:** PiGroupWorkspace на leaf; alias routes; hub→measurements; 105/105.
+**Критерии:** AC 310/311 slim
+**Известные ограничения:** UI-TABLE code → tomorrow
+
+---
+
 ## [2026-08-05] — TZ-DICT-309 DONE: units → measurements cutover
 **Исполнитель:** Cursor (deploy-day)
 **Статус:** PASS; archive `TZ-DICT-309.done.md`

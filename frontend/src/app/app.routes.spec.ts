@@ -72,4 +72,24 @@ describe('app.routes (TZ-92b contract)', () => {
     expect(units!.redirectTo).toBe('dictionaries/measurements');
     expect(units!.loadComponent).toBeUndefined();
   });
+
+  it('TZ-DICT-311: /dictionaries hub redirects to measurements', () => {
+    const operational = router.config.find((r) => r.path === '');
+    const hub = operational?.children?.find((c) => c.path === 'dictionaries');
+    expect(hub).toBeTruthy();
+    expect(hub!.redirectTo).toBe('dictionaries/measurements');
+    expect(hub!.loadComponent).toBeUndefined();
+  });
+
+  it('TZ-DICT-310: group alias routes redirect to first chip', () => {
+    const operational = router.config.find((r) => r.path === '');
+    const classification = operational?.children?.find(
+      (c) => c.path === 'dictionaries/classification',
+    );
+    const appearance = operational?.children?.find((c) => c.path === 'dictionaries/appearance');
+    const docsRef = operational?.children?.find((c) => c.path === 'dictionaries/documents-ref');
+    expect(classification?.redirectTo).toBe('categories');
+    expect(appearance?.redirectTo).toBe('dictionaries/color-references');
+    expect(docsRef?.redirectTo).toBe('doc-template-categories');
+  });
 });
