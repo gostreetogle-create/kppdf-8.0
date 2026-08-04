@@ -23,7 +23,9 @@
 | 8a | **People** | `people.page.md` | `/people` | Люди (Worker; UX-306) |
 | 9 | **Modules** | `modules.page.md` | `/modules` | Модули продукции |
 | 10 | **Module Detail** | `module-detail.page.md` | `/modules/:id` | Детали модуля |
-| 11 | **Dictionaries** | `dictionaries.page.md` | `/dictionaries` | Справочники (units) |
+| 11 | **Dictionaries** | `dictionaries.page.md` | `/dictionaries` | Hub справочников (до DICT-311) |
+| 11a | **Measurements group** | `measurements-group.page.md` | `/dictionaries/measurements` | Group Chip Workspace пилот (DICT-308) |
+| 11b | **Units** | `units.page.md` | `/dictionaries/units` | Единицы (legacy shell) |
 | 12 | **Categories** | `categories.page.md` | `/categories` | Категории (tree) |
 | 13 | **Storage Items** | `storage-items.page.md` | `/storage-items` | Предметы хранения |
 | 14 | **Stock Movements** | `stock-movements.page.md` | `/stock-movements` | Движения остатков |

@@ -1,0 +1,13 @@
+# Lock file
+Locked as of 2026-08-04 — TZ-DICT-308: Group Chip Workspace shell + nav + measurements pilot.
+
+Owner: Buffy + Cursor Architect
+Protected files:
+- frontend/src/app/shared/page/pi-group-workspace.component.ts
+- frontend/src/app/pages/dictionaries/measurements-group.page.ts
+- frontend/src/app/pages/dictionaries/measurements-group.page.spec.ts
+- frontend/src/app/app.routes.ts (measurements route)
+- frontend/src/app/layout/app-layout.component.ts (Справочники groups)
+- frontend/src/app/shared/page/index.ts
+
+Unlock: only via orchestrator approval (successor TZ DICT-309…311).

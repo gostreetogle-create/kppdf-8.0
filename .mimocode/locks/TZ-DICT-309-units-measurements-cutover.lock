@@ -1,0 +1,10 @@
+# Lock file
+Locked as of 2026-08-05 — TZ-DICT-309: units → measurements cutover.
+
+Owner: Cursor Architect
+Protected files:
+- frontend/src/app/app.routes.ts (units redirect)
+- frontend/src/app/pages/dictionaries/measurements-group.page.ts (canonical units UX)
+- DELETED: units.page.ts / units.page.spec.ts
+
+Unlock: successor DICT-310/311 or orchestrator.

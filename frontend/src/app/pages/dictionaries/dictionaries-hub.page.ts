@@ -15,9 +15,9 @@ const HUB_CARDS: HubCard[] = [
     description: 'Дерево категорий материалов, drag-and-drop сортировка',
   },
   {
-    route: '/dictionaries/units',
+    route: '/dictionaries/measurements',
     label: 'Единицы измерения',
-    description: 'Словарь единиц (м, кг, шт, м²…) — добавление, деактивация',
+    description: 'Словарь единиц (м, кг, шт, м²…) — группа «Измерения»',
   },
   {
     route: '/dictionaries/color-references',

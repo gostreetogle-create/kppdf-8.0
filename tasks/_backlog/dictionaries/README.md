@@ -1,20 +1,15 @@
 # Dictionaries backlog (DICT)
 
 Канон Wave 1: `tasks/TZ-DICT-300.md` · `tasks/DICT-WAVE1.md`  
-**Новый IA-паттерн (после Wave 1):**  
+**IA-паттерн:**  
 [`docs/superpowers/specs/2026-08-04-group-chip-workspace-design.md`](../../docs/superpowers/specs/2026-08-04-group-chip-workspace-design.md)
 
 | ID | Title | Status |
 |----|-------|--------|
-| **302** | Dictionary List Shell | **DONE** archive |
-| **303** | Hub + nav + units route | **DONE** archive |
-| **304** | Units polish + dead file | **DONE** archive |
-| **305** | Categories cutover | **DONE** archive |
-| **306** | Colors cutover | **DONE** archive |
-| **307** | Doc+Text cats cutover | **DONE** archive |
-| **308** | Group Chip Workspace shell + nav groups | **NEXT** (после OK PO на спеку / «стартуем код») |
-| **309** | Group screen: Измерения (units…) | after 308 |
-| **310** | Groups: Классификация / Оформление / Документы | after 308 |
-| **311** | Retire old hub cards; redirects | after 309–310 |
+| **302…307** | Shell cutovers | **DONE** |
+| **308** | Group Chip Workspace shell + nav + measurements pilot | **DONE** |
+| **309** | Measurements cutover (units → group) | **DONE** |
+| **310** | Groups: Классификация / Оформление / Документы | **tomorrow** (large) |
+| **311** | Retire hub `/dictionaries` | **tomorrow** (after 310) |
 
-∥ CATALOG backend: OK.
+∥ CATALOG backend: OK. ∥ UI-TABLE-302/305: OK if no shared conflict keys.

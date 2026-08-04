@@ -47,11 +47,13 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 
 | Route | Page doc | TZs |
 |-------|----------|-----|
-| `/dictionaries` | dictionaries.page.md | **UX-303 DONE**, UX-304 sibling |
-| `/categories` | categories.page.md | **UX-302 DONE** |
-| `/doc-template-categories` | — | **UX-304** |
-| `/dictionaries/text-block-categories` | — | DOC-316 (page), **DOC-334** (route+nav gap) |
-| `/color-references` | color-references.page.md | PRODUCTS-301, **UX-304** |
+| `/dictionaries` | dictionaries.page.md | UX-303; **DICT-303/308**; **DICT-311** (retire hub) |
+| `/dictionaries/measurements` | measurements-group.page.md | **DICT-308 DONE**, **DICT-309** (units cutover) |
+| `/dictionaries/units` | units.page.md | DICT-304 DONE; **DICT-309** → redirect |
+| `/categories` | categories.page.md | UX-302; DICT-305; **DICT-310** (classification group) |
+| `/doc-template-categories` | — | UX-304; DICT-307; **DICT-310** (documents-ref chip) |
+| `/dictionaries/text-block-categories` | — | DOC-334; DICT-307; **DICT-310** (documents-ref chip) |
+| `/dictionaries/color-references` | color-references.page.md | PRODUCTS-301; DICT-306; **DICT-310** (appearance group) |
 
 ## Warehouse
 

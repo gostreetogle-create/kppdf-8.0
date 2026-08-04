@@ -12,11 +12,14 @@ import {
 import { httpResource } from '@angular/common/http';
 import {
   NonNullableFormBuilder,
-  FormsModule,
   ReactiveFormsModule,
+  FormsModule,
   Validators,
 } from '@angular/forms';
-import { PiDictionaryShellComponent } from '../../shared/page/pi-dictionary-shell.component';
+import {
+  PiGroupWorkspaceComponent,
+  type GroupChip,
+} from '../../shared/page/pi-group-workspace.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../shared/ui/switch/switch.component';
@@ -30,26 +33,26 @@ import { API_BASE_URL } from '../../core/api.tokens';
 import { Unit, UnitsService, type UnitsListResponse } from './units.service';
 
 /**
- * TZ-DICT-304 — Units page on /dictionaries/units.
+ * TZ-DICT-308 — Measurements group page (/dictionaries/measurements).
  *
- * D1–D2 chrome: PiDictionaryShell with sticky tools bar (search + filter + add).
- * CRUD: create (inline), toggle active, delete. Client-side sort/filter.
+ * Pilot for Group Chip Workspace: chips row (Единицы) + units table.
+ * No H1 title, no path breadcrumbs — just chips + tools + table.
  */
 @Component({
-  selector: 'app-units-page',
+  selector: 'app-measurements-group-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
     FormsModule,
-    PiDictionaryShellComponent,
+    PiGroupWorkspaceComponent,
     PiRowActionsComponent,
     ButtonComponent,
     SwitchComponent,
     TableComponent,
   ],
   template: `
-    <app-pi-dictionary-shell [title]="'Единицы измерения'" [totalLabel]="totalLabel()">
+    <app-pi-group-workspace [chips]="chips" [activeId]="'units'">
       @if (error()) {
         <div
           role="alert"
@@ -161,10 +164,10 @@ import { Unit, UnitsService, type UnitsListResponse } from './units.service';
           data-test="active-switch"
         />
       </ng-template>
-    </app-pi-dictionary-shell>
+    </app-pi-group-workspace>
   `,
 })
-export class UnitsPage {
+export class MeasurementsGroupPage {
   private readonly service = inject(UnitsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
@@ -172,6 +175,10 @@ export class UnitsPage {
   private readonly injector = inject(Injector);
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly baseUrl = inject(API_BASE_URL);
+
+  protected readonly chips: readonly GroupChip[] = [
+    { id: 'units', label: 'Единицы', route: '/dictionaries/measurements' },
+  ];
 
   protected readonly listRes = httpResource<UnitsListResponse>(() => ({
     url: `${this.baseUrl}/units`,
@@ -187,15 +194,8 @@ export class UnitsPage {
   });
 
   protected readonly adding = signal<boolean>(false);
-
   protected readonly searchQuery = signal<string>('');
   protected readonly categoryFilter = signal<string>('');
-
-  protected readonly totalLabel = computed(() => {
-    const n = this.data().length;
-    const f = this.filteredUnits().length;
-    return f !== n ? `${f} из ${n} записей` : n ? `${n} записей` : '';
-  });
 
   protected readonly filteredUnits = computed<Unit[]>(() => {
     const q = this.searchQuery().trim().toLowerCase();

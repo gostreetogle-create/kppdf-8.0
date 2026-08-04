@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   Palette,
   Warehouse,
+  Users,
 } from 'lucide-angular';
 
 /**
@@ -35,11 +36,20 @@ import {
   type PiNavDropdownItem,
 } from '../shared/ui/menu/pi-nav-dropdown.component';
 
+/**
+ * TZ-ACCESS-304: every app-shell nav item must carry `pageKey` so
+ * `navCategories` can hide entries without a page grant from `/auth/me`.
+ * Shared `PiNavDropdownItem.pageKey` stays optional for kit/demo menus.
+ */
+interface AppNavItem extends Omit<PiNavDropdownItem, 'pageKey'> {
+  pageKey: string;
+}
+
 interface NavCategory {
   id: string;
   label: string;
   icon: LucideIcon;
-  items: PiNavDropdownItem[];
+  items: AppNavItem[];
 }
 
 /**
@@ -69,6 +79,7 @@ const NAV_CATEGORIES: NavCategory[] = [
       { path: '/modules', pageKey: 'modules', label: 'Модули' },
       { path: '/materials', pageKey: 'materials', label: 'Материалы' },
       { path: '/work-types', pageKey: 'work-types', label: 'Виды работ' },
+      { path: '/people', pageKey: 'people', label: 'Люди', icon: Users },
     ],
   },
   {
@@ -96,30 +107,30 @@ const NAV_CATEGORIES: NavCategory[] = [
     ],
   },
   {
+    // TZ-DICT-303: nav groups — Обзор / Классификация / Измерения / Оформление / Документы.
     id: 'reference',
     label: 'Справочники',
     icon: BookOpen,
     items: [
-      { path: '/dictionaries', pageKey: 'dictionaries', label: 'Все справочники' },
-
-      { path: '/categories', pageKey: 'categories', label: 'Категории' },
+      // TZ-DICT-308: nav groups — Классификация / Измерения / Оформление / Документы.
+      { path: '/categories', pageKey: 'categories', label: 'Классификация' },
+      { path: '/dictionaries/measurements', pageKey: 'dictionaries', label: 'Измерения' },
+      {
+        path: '/dictionaries/color-references',
+        pageKey: 'color-references',
+        label: 'Оформление',
+        icon: Palette,
+      },
       {
         path: '/doc-template-categories',
         pageKey: 'doc-template-categories',
-        label: 'Категории шаблонов',
+        label: 'Документы',
+        separatorLabel: 'Шаблоны / Тексты',
       },
-      // TZ-DOC-334: категории текстовых блоков (DOC-316 page wiring).
       {
         path: '/dictionaries/text-block-categories',
         pageKey: 'text-block-categories',
         label: 'Категории текстов',
-      },
-      // TZ-PRODUCTS-301: справочник цветов (RAL) — иконка Palette.
-      {
-        path: '/dictionaries/color-references',
-        pageKey: 'color-references',
-        label: 'Цвета',
-        icon: Palette,
       },
     ],
   },
@@ -296,7 +307,7 @@ export class AppLayoutComponent {
     return NAV_CATEGORIES.map((cat) => ({
       ...cat,
       items: cat.items.filter((item) => {
-        if (pages && (item as any).pageKey && !pages.includes((item as any).pageKey)) return false;
+        if (pages && item.pageKey && !pages.includes(item.pageKey)) return false;
         if (!this.caps.hasAny(item.capabilities)) return false;
         return true;
       }),

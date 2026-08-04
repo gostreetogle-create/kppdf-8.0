@@ -64,4 +64,12 @@ describe('app.routes (TZ-92b contract)', () => {
     const guards = (loginRoute!.canMatch ?? []).map((g) => g.name ?? 'anonymous');
     expect(guards).toContain('publicOnlyGuard');
   });
+
+  it('TZ-DICT-309: /dictionaries/units redirects to measurements', () => {
+    const operational = router.config.find((r) => r.path === '');
+    const units = operational?.children?.find((c) => c.path === 'dictionaries/units');
+    expect(units).toBeTruthy();
+    expect(units!.redirectTo).toBe('dictionaries/measurements');
+    expect(units!.loadComponent).toBeUndefined();
+  });
 });

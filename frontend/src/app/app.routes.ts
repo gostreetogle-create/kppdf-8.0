@@ -143,8 +143,26 @@ export const routes: Routes = [
         canMatch: [capabilityRouteGuard],
         data: { pageKey: 'dictionaries' },
         loadComponent: () =>
-          import('./pages/dictionaries/dictionaries.page').then((m) => m.DictionariesPage),
+          import('./pages/dictionaries/dictionaries-hub.page').then((m) => m.DictionariesHubPage),
         title: 'KPPDF — Справочники',
+      },
+      // TZ-DICT-308: Group Chip Workspace routes
+      {
+        path: 'dictionaries/measurements',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'dictionaries' },
+        loadComponent: () =>
+          import('./pages/dictionaries/measurements-group.page').then(
+            (m) => m.MeasurementsGroupPage,
+          ),
+        title: 'KPPDF — Измерения',
+      },
+      {
+        // TZ-DICT-309: legacy /dictionaries/units → Group Chip Workspace (measurements).
+        // Note: redirectTo cannot combine with canMatch (Angular NG04014).
+        path: 'dictionaries/units',
+        redirectTo: 'dictionaries/measurements',
+        pathMatch: 'full',
       },
       {
         path: 'categories',
@@ -235,6 +253,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/work-types/work-types.page').then((m) => m.WorkTypesPage),
         title: 'KPPDF — Виды работ',
+      },
+      {
+        // TZ-UX-306 / WORKERS-302.FOLLOWUP — каталог «Люди» (Worker API).
+        path: 'people',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'people' },
+        loadComponent: () => import('./pages/people/people.page').then((m) => m.PeoplePage),
+        title: 'KPPDF — Люди',
       },
       {
         path: 'orders',

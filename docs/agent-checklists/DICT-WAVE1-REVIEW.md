@@ -4,6 +4,43 @@
 
 ## Inbox
 
+## TZ-DICT-309 — DONE
+
+date: 2026-08-05
+workspace: D:\kppdf-8.0
+executor: Cursor Architect (deploy-day)
+archive: tasks/_archive/2026-08/TZ-DICT-309.done.md
+gates:
+  - fe tsc: PASS
+  - jest routes+dictionaries+measurements: 93/93 PASS
+note: units redirect; UnitsPage deleted; canonical = measurements group
+next: DONE — 310/311 tomorrow
+
+### Verdict TZ-DICT-309
+status: PASS
+notes: NG04014 fixed (no canMatch on redirect); hub card points to measurements.
+required_fixes: none
+
+## TZ-DICT-308 — DONE
+
+date: 2026-08-04
+workspace: D:\kppdf-8.0
+executor: Buffy + Cursor Architect PASS
+archive: tasks/_archive/2026-08/TZ-DICT-308.done.md
+checklist: docs/agent-checklists/TZ-DICT-308.md
+gates:
+  - fe tsc: PASS (Cursor re-run, exit 0)
+  - jest dictionaries + pi-dictionary-shell + measurements-group: 83/83 PASS (10 suites)
+  - code review: PASS (shell + nav + pilot)
+conflict_disclosure: PiGroupWorkspace NEW; MeasurementsGroupPage NEW; app.routes + app-layout Справочники; shared/page/index export
+note: Пилот Group Chip Workspace — Измерения/Единицы. Chips жёлтый (sunrise-warm), sticky, без H1/path. Nav по группам. Тираж → DICT-309…311.
+next: DONE — archived after Cursor PASS
+
+### Verdict TZ-DICT-308
+status: PASS
+notes: SoT §2 соблюдён на пилоте; fe tsc + 83/83 verified; inactive chip hairline optional polish; Documents still exposes leaf «Категории текстов» (P1 restore) — подчистить в DICT-310; UnitsPage duplication + hard-coded tools `top` — known limits OK for pilot.
+required_fixes: none (docs closeout by Cursor)
+
 ## TZ-DICT-304 — DONE
 
 date: 2026-08-04

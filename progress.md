@@ -1,3 +1,40 @@
+## [2026-08-05] — TZ-DICT-309 DONE: units → measurements cutover
+**Исполнитель:** Cursor (deploy-day)
+**Статус:** PASS; archive `TZ-DICT-309.done.md`
+**Что сделано кратко:** redirect /units; UnitsPage removed; 93/93 jest.
+**Критерии:** AC 309
+**Известные ограничения:** DICT-310/311 + UI-TABLE code → tomorrow
+
+---
+
+## [2026-08-05] — Authored DICT-309…311 (PO start Wave 1.5 remainder)
+**Исполнитель:** Cursor Mode A (docs/TZ only)
+**Статус:** 309 RESERVED `_active`; 310/311 READY sequential
+**Что сделано кратко:** TZ+checklists; UI-TABLE-301 SoT already in main (DONE).
+**Файлы:** `tasks/TZ-DICT-309.md`…`311.md`, checklists, active-map, PAGE-TZ-INDEX
+**Критерии:** executable TZ; no product code
+**Известные ограничения:** код — Buffy claim 309; ∥ UI-TABLE-302 OK after PO
+
+---
+
+## [2026-08-04] — TZ-UI-TABLE-301 DONE: Table kit design SoT (Architect PASS)
+**Исполнитель:** Cursor Mode A (docs; Buffy files missing in main — authored here)
+**Статус:** PASS; archive `TZ-UI-TABLE-301.done.md`
+**Что сделано кратко:** Flat/Expandable/Tree SoT; as-is map; child 302–305; PO-DIARY.
+**Критерии:** AC docs-only; no frontend/src
+**Известные ограничения:** код table kit — по старту PO (302/305 first)
+
+---
+
+## [2026-08-04] — TZ-DICT-308 DONE: Group Chip Workspace pilot (Architect PASS)
+**Исполнитель:** Buffy + Cursor (tsc + 83 jest + archive)
+**Статус:** PASS; archive `TZ-DICT-308.done.md`
+**Что сделано кратко:** PiGroupWorkspace; nav Справочники по группам; пилот Измерения/Единицы.
+**Критерии:** SoT §2; fe tsc; 83/83; Cursor PASS
+**Известные ограничения:** tools `top` hard-coded; UnitsPage duplication; Документы leaf «Категории текстов» → 310; next DICT-309…311
+
+---
+
 ## [2026-08-04] — TZ-CATALOG-305 DONE: Product→Product + unitPriceOverride (Architect PASS)
 **Исполнитель:** Buffy + Cursor (tsc + 38 unit + archive)
 **Статус:** PASS; archive `TZ-CATALOG-305.done.md`

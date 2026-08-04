@@ -1,11 +1,10 @@
 # DICT Wave 1 — оркестрация справочников
 
 > Канон: [`TZ-DICT-300.md`](TZ-DICT-300.md)  
-> Audit: [`docs/audits/2026-08-04-dictionaries-ux-ia-audit.md`](../docs/audits/2026-08-04-dictionaries-ux-ia-audit.md)  
 > Review inbox: [`docs/agent-checklists/DICT-WAVE1-REVIEW.md`](../docs/agent-checklists/DICT-WAVE1-REVIEW.md)  
 > **Wave 1 cutovers 302–307: DONE.**  
-> **Next IA:** [`docs/superpowers/specs/2026-08-04-group-chip-workspace-design.md`](../docs/superpowers/specs/2026-08-04-group-chip-workspace-design.md) → DICT-308+ (Group Chip Workspace).  
-> **∥ CATALOG:** FE DICT можно параллелить с backend CATALOG-305 (разные keys).
+> **308: DONE** (pilot). **309 RESERVED** → 310 → 311.  
+> SoT: [`docs/superpowers/specs/2026-08-04-group-chip-workspace-design.md`](../docs/superpowers/specs/2026-08-04-group-chip-workspace-design.md)
 
 ## Карта Wave 1 (закрыта)
 
@@ -13,11 +12,13 @@
 |----|-------|--------|
 | **DICT-302…307** | Shell + pages | **DONE** |
 
-## Wave 1.5 — Group chips (после старта PO)
+## Wave 1.5 — Group chips
 
 | ID | Title | Статус |
 |----|-------|--------|
-| **DICT-308** | Group Chip Workspace + nav | NEXT |
-| **DICT-309…311** | Group screens + retire hub | after 308 |
+| **DICT-308** | Shell + nav + measurements pilot | **DONE** |
+| **DICT-309** | units → measurements cutover | **DONE** |
+| **DICT-310** | Classification / Appearance / Documents groups | **tomorrow** |
+| **DICT-311** | Retire hub cards | **tomorrow** (after 310) |
 
-См. backlog: `tasks/_backlog/dictionaries/README.md`
+См. `tasks/TZ-DICT-309.md` … `311.md` · backlog `tasks/_backlog/dictionaries/README.md`
