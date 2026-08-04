@@ -122,3 +122,7 @@ vendor/
 # by broader ignore patterns (e.g., tmp/, stitch_*, or future additions).
 # If you add a new docs/ subdirectory, it is automatically protected.
 !docs/**
+
+# Local PO data dumps (never commit)
+tasks/Данные/
+
