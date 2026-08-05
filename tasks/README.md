@@ -14,7 +14,7 @@
 | TZ-CATALOG-310 (where-used API) | **DONE** → `_archive/2026-08/` |
 | Warehouse pack B (write flows) | **DONE** (docs/`SECTION-READINESS.md`; no TZ stub) |
 
-`_active/`: empty · map: `docs/agent-checklists/_active-map.md`  
+`_active/`: see `docs/agent-checklists/_active-map.md` (may hold Catalog Wave 2 claim)  
 Policy: empty queue → **propose** deploy readiness · **no** auto `deploy.ps1`
 
 ## Still in `tasks/` root (intentional)
@@ -27,7 +27,8 @@ Policy: empty queue → **propose** deploy readiness · **no** auto `deploy.ps1`
 
 ## Parked (do not start without PO)
 
-- `_backlog/catalog/` Wave 2 remaining: **313 → 314 → 312 → 311 → 315** (310 archived, source removed)
+- `_backlog/catalog/` Wave 2: **313 (may be IN PROGRESS)** → 314 → 312 → 311 → 315
+- `_backlog/desktop/` **MCP socket TZD-11…15** + parked import TZD-01…10 — vision `docs/superpowers/specs/2026-08-05-desktop-mcp-agent-vision.md`
 - `_backlog/` other Z / procurement / etc.
 - TZ-UI-TABLE-304 Selectable/dense
 

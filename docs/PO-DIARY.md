@@ -85,6 +85,13 @@
 
 ## 5. Лог сессий (новые сверху)
 
+### 2026-08-05 — Desktop MCP agent socket (vision + TZD-11…15)
+- Менеджер = любой User с доступом; Cursor не обязателен.
+- MCP = универсальная розетка над тем же backend; модель (Ollama/cloud) — следующий слой.
+- Безопасность: propose→confirm; Mutation Journal (кольцо ~50), не full backup на каждое удаление.
+- Спека: `docs/superpowers/specs/2026-08-05-desktop-mcp-agent-vision.md`
+- TZ: `tasks/_backlog/desktop/TZD-11`…`TZD-15`
+
 ### 2026-08-05 — Склад READY TO USE* (pack B)
 - Закрыты must-have: реестр `/warehouses`, поставить на склад, приход/расход, корректировка, журнал.
 - Корректировка только через `POST /storage-items/:id/adjust` (не silent qty).

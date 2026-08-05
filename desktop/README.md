@@ -112,8 +112,12 @@ desktop/
 | v0.3 | Excel-импорт: xlsx/papaparse → таблица (диалог + drag&drop) | ✅ DONE `157846c`+`305c27f`+`60fd4b8` |
 | v0.4 | AI-pipeline: Ollama/remote, нормализация, подтверждение | ⏳ TZD-01 |
 | v0.5 | Батч-отправка + прогресс + отчёт об ошибках | ⏳ TZD-02 |
+| MCP | Универсальная розетка агента (localhost tools) | ⏳ **TZD-11…15** |
 
-Полный контекст, roadmap и DEFERRED-пункты — **`tasks/TZD-00.md`** (мастер-задача десктопа).
+Полный контекст v0.1–v0.3 — **`tasks/_archive/2026-08/TZD-00.done.md`**.  
+MCP vision + safety (propose/confirm, mutation journal):  
+**[`docs/superpowers/specs/2026-08-05-desktop-mcp-agent-vision.md`](../docs/superpowers/specs/2026-08-05-desktop-mcp-agent-vision.md)**  
+Очередь: **`tasks/_backlog/desktop/`** (TZD-11…15). Импорт TZD-01…10 — PARKED до PO.
 
 ## Запуск
 
