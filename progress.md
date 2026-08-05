@@ -1,3 +1,23 @@
+## [2026-08-05] — TZD-05 DONE: Web «Подключить десктоп» — pairing JSON packet
+**Исполнитель:** Buffy
+**Статус:** DONE; archive created; commit pending
+**Что сделано кратко:** Кнопка «Десктоп» в хедере (Monitor icon); dialog с JSON-пакетом + Copy/Close; apiBaseUrl = backend origin (dev: http://127.0.0.1:3000, prod: window.location.origin); RU-ошибки на истёкший/отсутствующий токен; pure FE, без нового backend-эндпоинта.
+**Gates:** FE tsc (tsconfig.app.json) PASS; jest pairing-dialog 8/8 PASS.
+**Archive:** `tasks/_archive/2026-08/TZD-05.done.md`
+**Next:** TZD-11/12 уже на main; TZD-14 desktop autostart или следующий backlog.
+
+---
+
+## [2026-08-05] — TZD-13 DONE: MCP writes + mutation journal
+**Исполнитель:** Cursor / Auto (desktop/MCP owner)
+**Статус:** DONE on main after push
+**Что сделано кратко:** Backend MutationJournal (propose→confirm→undo, ring 50) для Material; MCP write tools; docs connect+safety; unit default `шт`.
+**Gates:** backend tsc PASS; jest 5/5; mcp tests 8/8.
+**Archive:** `tasks/_archive/2026-08/TZD-13.done.md`
+**Next:** TZD-14 autostart MCP in Tauri (usability). FE pairing TZD-05 parallel.
+
+---
+
 ## [2026-08-05] — TZD-12 DONE: MCP read tools
 **Исполнитель:** Cursor / Auto
 **Статус:** DONE; archive; on main after push

@@ -4,6 +4,7 @@ import {
   computed,
   inject,
   afterNextRender,
+  isDevMode,
 } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs/operators';
@@ -11,6 +12,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import {
   LucideAngularModule,
   LogOut,
+  Monitor,
   Package,
   Briefcase,
   BookOpen,
@@ -31,6 +33,10 @@ type LucideIcon = typeof Package;
 import { AuthService } from '../core/auth.service';
 import { CapabilitiesService } from '../core/capabilities/capabilities.service';
 import { ThemeToggleComponent } from './theme-toggle.component';
+import { PiDialogService } from '../shared/ui/dialog/pi-dialog.service';
+import { PiToastService } from '../shared/ui/toast/pi-toast.service';
+import { PairingDialogComponent } from '../pages/desktop/pairing-dialog.component';
+import { API_BASE_URL } from '../core/api.tokens';
 import {
   PiNavDropdownComponent,
   type PiNavDropdownItem,
@@ -264,6 +270,19 @@ const NAV_CATEGORIES: NavCategory[] = [
             <div class="flex items-center gap-3 shrink-0">
               <app-theme-toggle />
               @if (isAuthenticated()) {
+                <button
+                  type="button"
+                  class="pi-icon-btn gap-1 px-2 w-auto pi-focus-ring"
+                  aria-label="Подключить десктоп"
+                  title="Подключить десктоп"
+                  (click)="onDesktopPairing()"
+                  data-test="desktop-pairing-button"
+                >
+                  <lucide-angular [img]="monitorIcon" [size]="12" aria-hidden="true" />
+                  <span class="hidden sm:inline font-mono text-[10px] tracking-wider">
+                    Десктоп
+                  </span>
+                </button>
                 <span class="text-sm text-muted-foreground hidden sm:inline">
                   {{ user()?.displayName || user()?.username || 'Сессия' }}
                 </span>
@@ -305,10 +324,14 @@ const NAV_CATEGORIES: NavCategory[] = [
 })
 export class AppLayoutComponent {
   protected readonly logOutIcon = LogOut;
+  protected readonly monitorIcon = Monitor;
 
   private readonly auth = inject(AuthService);
   private readonly caps = inject(CapabilitiesService);
   private readonly router = inject(Router);
+  private readonly dialog = inject(PiDialogService);
+  private readonly toast = inject(PiToastService);
+  private readonly apiBaseUrlToken = inject(API_BASE_URL);
 
   protected readonly user = this.auth.user;
   /** Tokens present — show logout even if /auth/me has not hydrated user yet. */
@@ -396,6 +419,95 @@ export class AppLayoutComponent {
   protected async onLogout(): Promise<void> {
     await this.auth.logout();
     await this.router.navigateByUrl('/login');
+  }
+
+  /**
+   * TZD-05: build the desktop pairing JSON from current session and open the dialog.
+   *
+   * Fields per desktop/docs/PAIRING.md:
+   *   apiBaseUrl  — backend origin (dev: http://127.0.0.1:3000 from proxy config;
+   *                 prod: window.location.origin, or API_BASE_URL if absolute).
+   *   apiKey      — current JWT access token.
+   *   username    — from /auth/me profile.
+   *   expiresAt   — ISO-8601 from JWT `exp` claim.
+   *
+   * RU errors for: no token, expired token, missing username (user not hydrated).
+   */
+  protected onDesktopPairing(): void {
+    const token = this.auth.accessToken();
+    if (!token) {
+      this.toast.error('Нет активного токена доступа — войдите заново.');
+      return;
+    }
+
+    const user = this.auth.user();
+    if (!user?.username) {
+      this.toast.error('Профиль пользователя ещё не загружен — подождите и попробуйте снова.');
+      return;
+    }
+
+    const expiresAt = this.extractJwtExp(token);
+    if (!expiresAt) {
+      this.toast.error('Не удалось прочитать срок действия токена — войдите заново.');
+      return;
+    }
+
+    if (new Date(expiresAt).getTime() <= Date.now()) {
+      this.toast.error('Токен доступа истёк — войдите заново и повторите.');
+      return;
+    }
+
+    const pairingJson = JSON.stringify(
+      {
+        apiBaseUrl: this.resolveApiBaseUrl(),
+        apiKey: token,
+        username: user.username,
+        expiresAt,
+      },
+      null,
+      2,
+    );
+
+    this.dialog.open(PairingDialogComponent, {
+      data: pairingJson,
+      width: 'lg',
+      ariaLabel: 'Паринг десктопа',
+    });
+  }
+
+  /**
+   * Resolve the backend origin for pairing.
+   * - Prod: window.location.origin (same-origin serving).
+   * - Dev:  http://127.0.0.1:3000 (Nest default; matches proxy.conf.json target).
+   * - If API_BASE_URL is an absolute URL, use its origin instead.
+   */
+  private resolveApiBaseUrl(): string {
+    const token = this.apiBaseUrlToken;
+    if (/^https?:\/\//.test(token)) {
+      try {
+        return new URL(token).origin;
+      } catch {
+        // fall through
+      }
+    }
+    if (isDevMode()) {
+      return 'http://127.0.0.1:3000';
+    }
+    return window.location.origin;
+  }
+
+  /** Decode JWT `exp` claim → ISO-8601 string, or null on failure. */
+  private extractJwtExp(token: string): string | null {
+    const parts = token.split('.');
+    if (parts.length !== 3 || !parts[1]) return null;
+    try {
+      const json = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
+      const payload = JSON.parse(json) as { exp?: number };
+      if (typeof payload.exp !== 'number') return null;
+      return new Date(payload.exp * 1000).toISOString();
+    } catch {
+      return null;
+    }
   }
 }
 
