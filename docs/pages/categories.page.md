@@ -1,6 +1,6 @@
 # Страница: Категории (CategoriesPage)
 
-**Краткое описание:** Древовидный справочник категорий (материалы/продукция/общие) с CDK drag-drop reorder на двух уровнях (корневые + подкатегории). Chrome по канону D1–D2: PiDictionaryShell — компактный H1 + sticky-бар (поиск + фильтр по типу + CTA).
+**Краткое описание:** Древовидный справочник категорий (материалы/продукция/общие) на Group Chip Workspace с shared Tree table-kit, двумя уровнями (корневые + подкатегории), CDK drag-drop reorder и фильтрами.
 
 ## Route
 
@@ -37,41 +37,46 @@
 | Сигнал | Тип | Назначение |
 |--------|-----|-----------|
 | `search` | `SearchState` | Debounced поиск (300ms) |
-| `typeFilter` | `Signal<'all' | Category['type']>` | Фильтр по типу (Все типы / Материал / Продукция / Общая) |
+| `typeFilter` | `Signal<'all' | Category['type']>` | Фильтр по типу |
 | `expandedIds` | `Signal<Set<string>>` | Раскрытые узлы дерева |
-| `treeRes` | `HttpResource<CategoryTreeNode[]>` | GET /api/categories/tree |
+| `treeRes` | `HttpResource<CategoryTreeNode[]>` | GET `/api/categories/tree` |
 | `allTreeData` | `computed` | Сырые данные |
-| `treeData` | `computed` | Отфильтрованные (поиск + тип) |
-| `totalLabel` | `computed` | Компактный счётчик для shell (totalLabel) |
+| `treeData` | `computed` | Отфильтрованные данные |
+| `totalLabel` | `computed` | Компактный счётчик |
 
-## Chrome (TZ-DICT-305)
+## Chrome and Tree kit (TZ-UI-TABLE-302)
 
-- **PiDictionaryShell** — компактный H1 «Категории» + muted `totalLabel`; без eyebrow/description.
-- **Sticky tools** — search + select «Тип» (all/material/product/general) + CTA «+ Создать»; прилипают под header (top-14).
-- **Убран bloat** — нет `pi-section` «Каталог» с title/hint/eyebrow, нет дублирующего счётчика в toolbar (переехал в `totalLabel`).
-- **CDK drag сохранён** — root + nested child reorder с optimistic update (без изменений).
+- `PiGroupWorkspace` — внешний chrome: chip «Категории», sticky tools, поиск, фильтр типа, CTA.
+- `PiTableTreeComponent` (`app-pi-table-tree`) — shared Tree variant: единый header/row visual, nested rows, indent, expand/collapse, loading/empty и capability flag `dragReorder`.
+- `CategoriesPage` передаёт только columns, templates, filtered data и callbacks persistence; page-local `<table>`/grid chrome удалён.
+- MVP поддерживает два уровня, как исходный экран categories.
 
 ## Особенности
 
-- **Tree view** — два уровня: корневые + дети (nested)
-- **CDK drag-drop** — `CdkDropList` + `CdkDrag` на двух уровнях
-- **Drag handle** — grip-иконка (6 точек SVG)
-- **Optimistic update** — reorder сразу обновляет UI, затем API
-- **Expand/collapse** — chevron icons с rotate-90 анимацией
-- **Client-side search** — фильтрует дерево по name/slug/skuPrefix; auto-expand родителей
-- **Client-side type filter** — фильтрует дерево по `type`; при активном фильтре (или поиске) родители авто-раскрываются; пустой результат → «Ничего не найдено.»
-- **Type badges** — цветные badge: material (warm), product (cool), general (muted)
-- **Row actions** — edit/delete через pi-icon-btn (не pi-row-actions)
+- **Tree view** — два уровня: корневые + дети.
+- **Expand/collapse** — chevron и `expandedIds`; поиск/фильтр автоматически раскрывает родителей.
+- **CDK drag-drop** — Tree kit отдаёт parent-aware drop event; root и child reorder сохраняют прежние API и optimistic update.
+- **Client-side search** — фильтрация по name/slug/skuPrefix.
+- **Client-side type filter** — `material` / `product` / `general`; пустой результат → «Ничего не найдено.»
+- **Type badges** — Paper & Ink token classes для material/product/general.
+- **Row actions** — shared kit slot с edit/delete кнопками.
+
+## Known limits
+
+- Reorder при активном поиске/тип-фильтре использует индексы видимого дерева; это прежнее ограничение filtered drag-сценария и не меняет API-контракт.
+- Глубина больше двух уровней остаётся отдельным следующим расширением Tree kit.
 
 ## TZ reference
 
 | TZ | Что сделано |
 |----|------------|
 | TZ-114 | Categories page — drag-reorder UI + optimistic update |
-| TZ-DICT-305 | Cutover на PiDictionaryShell (D1–D2): sticky tools search + type filter + CTA; bloat убран; CDK drag сохранён |
-| TZ-DOC-308 | Новый справочник «Категории шаблонов» (`/doc-template-categories`, `DocumentTemplateCategoriesPage`) — плоский CRUD категорий шаблонов документов, ОТДЕЛЬНО от этого дерева; материалы/продукция не затронуты |
-| TZ-DOC-316 | Ещё один плоский справочник «Категории текстов» (`/dictionaries/text-block-categories`, `TextBlockCategoriesPage`) — категории текстовых блоков, питает select в редакторе блока и фильтр `/doc-constructor/texts`; от этого дерева и от TZ-DOC-308 не зависит |
+| TZ-DICT-305 | Старый page-local chrome/search/type filter |
+| TZ-DICT-310 | Group Chip Workspace classification group |
+| TZ-UI-TABLE-302 | Shared Tree kit + migration categories |
+| TZ-DOC-308 | Отдельный плоский справочник категорий шаблонов |
+| TZ-DOC-316 | Отдельный плоский справочник категорий текстов |
 
 ---
 
-_Создано: 2026-07-19._
+_Обновлено: 2026-08-05 (TZ-UI-TABLE-302 READY FOR REVIEW)._

@@ -4,6 +4,43 @@
 
 ## Inbox
 
+## TZ-DICT-312 — DONE
+
+date: 2026-08-05
+workspace: D:\\kppdf-8.0
+executor: openai/gpt-5.6-luna (Buffy) + Cursor Architect PASS
+archive: tasks/_archive/2026-08/TZ-DICT-312.done.md
+checklist: docs/agent-checklists/TZ-DICT-312.md
+gates:
+  - fe tsc: PASS (Cursor re-run)
+  - jest combined review batch: 119/119 PASS
+conflict_disclosure: pi-group-workspace sticky stack; app-layout denseMain dictionary routes
+note: denseMain + top-0 chips/tools; CTA min-width:0. Browser smoke optional for PO.
+next: DONE
+
+### Verdict TZ-DICT-312
+status: PASS
+notes: Adaptive sticky stack + dense dictionary routes address gap; hard-code 6.25rem gone; CTA protection present. tsc+jest verified.
+required_fixes: none
+
+## TZ-UI-TABLE-302 — DONE
+
+date: 2026-08-05
+workspace: D:\\kppdf-8.0
+executor: openai/gpt-5.6-luna (Buffy) + Cursor Architect PASS
+archive: tasks/_archive/2026-08/TZ-UI-TABLE-302.done.md
+checklist: docs/agent-checklists/TZ-UI-TABLE-302.md
+gates:
+  - fe tsc: PASS (Cursor re-run)
+  - jest pi-table-tree + categories + related: in 119/119 PASS
+note: PiTableTree 2-level MVP; dragReorder flag; CategoriesPage migrated
+next: DONE — UI-TABLE-305 remains backlog
+
+### Verdict TZ-UI-TABLE-302
+status: PASS
+notes: Shared tree kit + categories migrate; drag capability preserved; gates green. Known: 2-level MVP + filtered-drag index limit documented.
+required_fixes: none
+
 ## TZ-DICT-311 — DONE
 
 date: 2026-08-05

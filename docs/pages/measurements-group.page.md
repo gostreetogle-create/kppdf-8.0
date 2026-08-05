@@ -14,10 +14,12 @@ Legacy `/dictionaries/units` → **redirect** на эту страницу (TZ-D
 
 | Компонент | Назначение |
 |-----------|-----------|
-| `PiGroupWorkspace` | chips группы + sticky tools + body |
+| `PiGroupWorkspace` | chips группы + adaptive sticky tools + body |
 | Chip «Единицы» | единственный chip пилота (`activeId=units`) |
 | Tools | search + category filter + inline add + CTA |
 | `app-pi-table` | список единиц |
+
+Для DICT-312 route использует dense main без page top padding. Chips и tools находятся в одном sticky `top-0` стеке внутри scroll-контейнера `main`; при wrap chips tools не перекрываются и не требуют фиксированного `top`.
 
 ## SoT
 
@@ -25,4 +27,4 @@ Legacy `/dictionaries/units` → **redirect** на эту страницу (TZ-D
 
 ---
 
-_Обновлено: 2026-08-04 (TZ-DICT-308)._
+_Обновлено: 2026-08-05 (TZ-DICT-312 READY FOR REVIEW)._

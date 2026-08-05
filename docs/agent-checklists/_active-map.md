@@ -1,23 +1,24 @@
-# Active map — focus
+# SESSION QUEUE — close board (no mid-stops)
 
-**Updated:** 2026-08-05 — DICT Wave 1.5 complete (308–311); ready warm deploy
+**Updated:** 2026-08-05 · Cursor authored specs · deploy ONLY after queue empty
 
-## Today DONE
+## Must finish (in order)
 
-| Stream | Status |
-|--------|--------|
-| DICT-308…311 | **DONE** — Group Chip Workspace full cutover |
-| UI-TABLE-301 | **DONE** (docs) |
+| # | TZ | Status now |
+|---|-----|------------|
+| 0 | DICT-312 + UI-TABLE-302 | **DONE** (archived; commit with this wave) |
+| 1 | **TZ-UI-TABLE-305** | READY — raw→Flat (7 pages) |
+| 2 | **TZ-UI-TABLE-303** | READY — Expandable polish |
 
-## Tomorrow (large / other AIs)
+## Explicitly NOT in this wave (do not ask PO)
 
-| TZ | Why |
-|----|-----|
-| **UI-TABLE-302** | Tree kit + categories |
-| **UI-TABLE-305** | 7 raw catalogs → Flat |
-| **UI-TABLE-303/304** | Expandable polish / Selectable backlog |
+| TZ | Why skip |
+|----|----------|
+| **TZ-UI-TABLE-304** | Selectable/dense — backlog until warehouse ask (SoT). Leave status backlog. |
 
-## Pattern SoT
+## Done when
 
-- Group chips: `docs/superpowers/specs/2026-08-04-group-chip-workspace-design.md`
-- Table kit: `docs/superpowers/specs/2026-08-04-table-kit-design.md`
+- `_active/` empty
+- 305 + 303 in `tasks/_archive/2026-08/*.done.md`
+- code committed + pushed on `main`
+- THEN tell PO: «очередь пуста — можно тёплый деплой»

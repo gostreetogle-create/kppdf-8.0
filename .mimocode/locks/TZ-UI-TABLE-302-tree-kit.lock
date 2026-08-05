@@ -1,0 +1,7 @@
+# Lock file
+Locked as of 2026-08-05 — TZ-UI-TABLE-302 Tree kit + categories.
+
+Owner: Buffy + Cursor Architect
+Protected:
+- frontend/src/app/shared/ui/pi-table-tree.component.ts
+- frontend/src/app/pages/dictionaries/categories.page.ts

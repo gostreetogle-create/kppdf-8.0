@@ -1,0 +1,7 @@
+# Lock file
+Locked as of 2026-08-05 — TZ-DICT-312 Group Chip polish (gap + sticky stack + CTA).
+
+Owner: Buffy + Cursor Architect
+Protected:
+- frontend/src/app/shared/page/pi-group-workspace.component.ts
+- frontend/src/app/layout/app-layout.component.ts (denseMain dictionary routes)

@@ -14,10 +14,10 @@ import { RouterLink } from '@angular/router';
  *   - default slot: body content (table, tree)
  *
  * Key behaviour:
- *   - Chips row is sticky under app header (top-14).
+ *   - Chips + tools form one sticky stack under the app header (top-0 inside main).
  *   - Active chip = sunrise-warm (yellow), inactive = muted.
- *   - Chips wrap to multiple rows; body shifts down.
- *   - Tools row is sticky below chips.
+ *   - Chips wrap to multiple rows; the stack grows with the wrapped row.
+ *   - Tools never needs a hand-maintained offset below chips.
  *   - NO H1 title, NO path breadcrumbs.
  *   - Border (hairline-b) separates chips+tools from body.
  *
@@ -29,38 +29,37 @@ import { RouterLink } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   template: `
-    <!-- Chips: sticky row under app header -->
-    <div
-      class="group-chips sticky top-14 z-20
-             flex items-center gap-1.5 flex-wrap
-             py-2 bg-paper"
-    >
-      @for (chip of chips(); track chip.id) {
-        <a
-          [routerLink]="chip.route"
-          class="group-chip inline-flex items-center gap-1 px-3 py-1.5
-                 text-sm rounded-sm transition-colors
-                 pi-focus-ring cursor-pointer no-underline"
-          [class.bg-sunrise-warm]="activeId() === chip.id"
-          [class.text-paper]="activeId() === chip.id"
-          [class.text-ink]="activeId() !== chip.id"
-          [class.hover:bg-paper-2]="activeId() !== chip.id"
-          [attr.aria-current]="activeId() === chip.id ? 'page' : undefined"
-          (click)="chipClick.emit(chip.id)"
-        >
-          {{ chip.label }}
-        </a>
-      }
-    </div>
+    <!-- One adaptive sticky stack: its height follows chip wrapping. -->
+    <div class="group-chrome sticky top-0 z-20 bg-paper">
+      <div
+        class="group-chips flex items-center gap-1.5 flex-wrap
+               py-2 min-w-0"
+      >
+        @for (chip of chips(); track chip.id) {
+          <a
+            [routerLink]="chip.route"
+            class="group-chip inline-flex items-center gap-1 px-3 py-1.5
+                   text-sm rounded-sm transition-colors
+                   pi-focus-ring cursor-pointer no-underline"
+            [class.bg-sunrise-warm]="activeId() === chip.id"
+            [class.text-paper]="activeId() === chip.id"
+            [class.text-ink]="activeId() !== chip.id"
+            [class.hover:bg-paper-2]="activeId() !== chip.id"
+            [attr.aria-current]="activeId() === chip.id ? 'page' : undefined"
+            (click)="chipClick.emit(chip.id)"
+          >
+            {{ chip.label }}
+          </a>
+        }
+      </div>
 
-    <!-- Tools: sticky bar below chips (top-14 + ~1 chip row = 6.25rem) -->
-    <div
-      class="group-tools sticky z-10
-             flex items-center gap-form-field flex-wrap
-             hairline-b py-3 bg-paper"
-      style="top: 6.25rem"
-    >
-      <ng-content select="[tools]" />
+      <!-- Tools stays in the same sticky stack; no chip-row offset can drift. -->
+      <div
+        class="group-tools flex items-center gap-form-field flex-wrap
+               hairline-b py-3 min-w-0"
+      >
+        <ng-content select="[tools]" />
+      </div>
     </div>
 
     <!-- Body content -->
@@ -72,6 +71,12 @@ import { RouterLink } from '@angular/router';
     `
       :host {
         display: block;
+        width: 100%;
+        min-width: 0;
+      }
+
+      .group-tools > * {
+        min-width: 0;
       }
     `,
   ],

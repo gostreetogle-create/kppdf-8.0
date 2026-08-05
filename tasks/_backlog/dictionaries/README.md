@@ -11,5 +11,6 @@
 | **309** | Measurements cutover (units → group) | **DONE** |
 | **310** | Groups: Классификация / Оформление / Документы | **DONE** (slim) |
 | **311** | Retire hub `/dictionaries` | **DONE** |
+| **312** | Group Chip polish: gap under nav + CTA clip | **DONE** |
 
 ∥ CATALOG backend: OK. ∥ UI-TABLE-302/305: OK if no shared conflict keys.

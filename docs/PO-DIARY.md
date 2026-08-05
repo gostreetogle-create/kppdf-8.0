@@ -88,6 +88,11 @@
 - Body Group Chip Workspace = одна из table variants (слои не пересекаются).
 - Дальше код: 302 Tree, 303 Expandable polish, 305 raw→Flat — по старту PO.
 
+### 2026-08-05 — Deploy warm + Group Chip polish backlog
+- Warm deploy OK (health/FE 200), но UX косяк на справочниках после 308–311.
+- Smell: **пустое пространство** между главным меню и chips; CTA «+ Создать категорию» **обрезан** справа.
+- Завтра: **TZ-DICT-312** (`tasks/TZ-DICT-312.md`) — gap + tools/CTA; потом крупные UI-TABLE-302/305.
+
 ### 2026-08-04 — Справочники: убрать «простыню», люксовый list chrome
 
 - Smell: eyebrow + длинные description + section hints съедают пол-экрана; нет sticky search/filter/sort у таблиц.

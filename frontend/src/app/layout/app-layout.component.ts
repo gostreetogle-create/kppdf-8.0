@@ -319,8 +319,9 @@ export class AppLayoutComponent {
   );
 
   /**
-   * Full-bleed workspace routes (builder): no main top padding / site footer.
-   * Catalog pages keep `pt-page-y` + footer.
+   * Full-bleed workspace routes (builder and Group Chip dictionaries): no
+   * main top padding / site footer. Group Chip chrome must begin directly
+   * below the app header instead of inheriting the catalog page gutter.
    */
   protected readonly denseMain = computed(() => isDenseWorkspaceUrl(this.currentUrl()));
 
@@ -351,8 +352,17 @@ export class AppLayoutComponent {
   }
 }
 
-/** Builder (and similar) workspaces sit flush under the app header. */
+/** Builder and Group Chip dictionary workspaces sit flush under the app header. */
 function isDenseWorkspaceUrl(url: string): boolean {
   const path = url.split('?')[0] ?? url;
-  return /(^|\/)doc-constructor\/builder(\/|$)/.test(path);
+  return (
+    /(^|\/)doc-constructor\/builder(\/|$)/.test(path) ||
+    [
+      '/dictionaries/measurements',
+      '/categories',
+      '/dictionaries/color-references',
+      '/doc-template-categories',
+      '/dictionaries/text-block-categories',
+    ].some((route) => path === route || path.startsWith(route + '/'))
+  );
 }
