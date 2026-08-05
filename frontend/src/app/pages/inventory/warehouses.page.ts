@@ -79,7 +79,7 @@ const TYPE_LABELS: Record<string, string> = {
         <app-pi-table
           [data]="filtered()"
           [columns]="columns"
-          [templates]="tpls()"
+          [cellTemplates]="tpls()"
           [rowActions]="rowActionsTpl"
           [loading]="loading()"
           [total]="filtered().length"
