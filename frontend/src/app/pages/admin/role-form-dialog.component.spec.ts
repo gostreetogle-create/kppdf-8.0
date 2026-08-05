@@ -7,7 +7,11 @@ import { provideHttpClient, withFetch } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
-import { RoleFormDialogComponent, type RoleFormData } from './role-form-dialog.component';
+import {
+  RoleFormDialogComponent,
+  regroupPermissions,
+  type RoleFormData,
+} from './role-form-dialog.component';
 import type {
   PermissionCatalogResponse,
   PermissionSection,
@@ -29,13 +33,17 @@ const CATALOG: PermissionCatalogResponse = {
     {
       section: 'user',
       permissions: [
-        { key: 'user:read', action: 'read', description: 'View users' },
-        { key: 'user:admin', action: 'admin', description: 'Delete users / change roles' },
+        { key: 'user:read', action: 'read', description: 'Смотреть список пользователей' },
+        { key: 'user:admin', action: 'admin', description: 'Удалять пользователей и менять роли' },
       ],
     },
     {
+      section: 'role',
+      permissions: [{ key: 'role:read', action: 'read', description: 'Смотреть список ролей' }],
+    },
+    {
       section: 'material',
-      permissions: [{ key: 'material:read', action: 'read', description: 'View materials' }],
+      permissions: [{ key: 'material:read', action: 'read', description: 'Смотреть материалы' }],
     },
   ],
 };
@@ -101,9 +109,21 @@ describe('RoleFormDialogComponent', () => {
     await fixture.whenStable();
     expect(comp.catalogLoading()).toBe(false);
     expect(comp.catalogError()).toBeNull();
-    expect(comp.sections().length).toBe(2);
+    expect(comp.sections().length).toBe(3);
     expect(comp.sections()[0].section).toBe('user');
     httpMock.verify();
+  });
+
+  it('regroupPermissions merges user+role into Администрирование', () => {
+    const groups = regroupPermissions(CATALOG.sections);
+    expect(groups[0].id).toBe('admin');
+    expect(groups[0].title).toBe('Администрирование');
+    expect(groups[0].permissions.map((p) => p.key)).toEqual([
+      'user:read',
+      'user:admin',
+      'role:read',
+    ]);
+    expect(groups.some((g) => g.id === 'catalog')).toBe(true);
   });
 
   it('loadCatalog: on HTTP error sets catalogError', async () => {

@@ -10,6 +10,12 @@ import {
   type PermissionCatalogEntry,
   type PermissionSection,
 } from '../../shared/services/pi-permissions.service';
+import {
+  PERMISSION_ACTION_RU,
+  PERMISSION_GROUP_TITLE_RU,
+  ROLE_FORM_COPY,
+  permissionLabelRu,
+} from './permission-labels.ru';
 
 export interface RoleFormData {
   mode: 'create' | 'edit';
@@ -30,17 +36,48 @@ export interface RoleFormResult {
   permissions: string[];
 }
 
+/** Display group for the checkbox matrix (merged API sections). */
+export interface PermissionDisplayGroup {
+  id: string;
+  title: string;
+  permissions: PermissionCatalogEntry[];
+}
+
+const ACTION_RU = PERMISSION_ACTION_RU;
+
+/** Preferred order of display groups in the role dialog. */
+const GROUP_ORDER = [
+  'admin',
+  'catalog',
+  'warehouse',
+  'sales',
+  'production',
+  'procurement',
+  'document',
+  'finance',
+  'system',
+] as const;
+
+const SECTION_TO_GROUP: Record<string, string> = {
+  user: 'admin',
+  role: 'admin',
+  product: 'catalog',
+  category: 'catalog',
+  material: 'catalog',
+  warehouse: 'warehouse',
+  sales: 'sales',
+  production: 'production',
+  procurement: 'procurement',
+  document: 'document',
+  finance: 'finance',
+  system: 'system',
+};
+
 /**
- * TZ-256.B + TZ-257.B — role create/edit form dialog.
+ * Role create/edit dialog — RU permission matrix, wide layout.
  *
- * Create mode requires `name` (lowercase slug); edit mode locks the
- * original name. Permissions are edited via a checkbox catalogue
- * grouped by section, fetched from `GET /api/admin/permissions` — the
- * single source of truth shared with the backend seeder/validator —
- * instead of a free-text comma list.
- *
- * Rendered inside `PiDialogComponent` (variant=form) via the
- * `PI_DIALOG_DATA` / `PI_DIALOG_REF` tokens from `PiDialogService.open()`.
+ * Permissions = capability keys (смотреть / менять / полный доступ по разделам),
+ * not the nav page-ACL list (pages[]). Grouped for managers.
  */
 @Component({
   selector: 'pi-role-form-dialog',
@@ -50,7 +87,8 @@ export interface RoleFormResult {
   template: `
     <app-pi-dialog
       [title]="data.mode === 'create' ? 'Новая роль' : 'Редактирование роли'"
-      [width]="'lg'"
+      [width]="'xl'"
+      [maxWidth]="'1120px'"
       variant="form"
       [showClose]="true"
       [animate]="false"
@@ -99,8 +137,13 @@ export interface RoleFormResult {
 
           <div class="role-form__permissions">
             <div class="role-form__permissions-head">
-              <span class="field__label">Permissions</span>
-              <span class="field__hint">{{ selectedCount() }} выбрано</span>
+              <div>
+                <span class="field__label">{{ copy.permissionsHeading }}</span>
+                <p class="role-form__logic-hint">{{ copy.logicHint }}</p>
+              </div>
+              <span class="field__hint" data-test="role-form-selected-count"
+                >{{ selectedCount() }} выбрано</span
+              >
             </div>
 
             @if (catalogLoading()) {
@@ -108,22 +151,22 @@ export interface RoleFormResult {
             } @else if (catalogError(); as err) {
               <p class="field__error" data-test="role-form-catalog-error">{{ err }}</p>
             } @else {
-              <div class="role-form__sections">
-                @for (s of sections(); track s.section) {
+              <div class="role-form__sections" data-test="role-form-sections">
+                @for (g of groups(); track g.id) {
                   <fieldset class="role-form__section">
                     <legend class="role-form__section-title">
-                      {{ sectionLabel(s.section) }}
+                      {{ g.title }}
                       <button
                         type="button"
                         class="role-form__select-all"
-                        (click)="toggleSection(s, !sectionAllSelected(s))"
+                        (click)="toggleGroup(g, !groupAllSelected(g))"
                         data-test="role-form-section-toggle"
                       >
-                        {{ sectionAllSelected(s) ? 'снять все' : 'все' }}
+                        {{ groupAllSelected(g) ? copy.clearAll : copy.selectAll }}
                       </button>
                     </legend>
                     <div class="role-form__section-grid">
-                      @for (p of s.permissions; track p.key) {
+                      @for (p of g.permissions; track p.key) {
                         <label class="role-form__perm">
                           <input
                             type="checkbox"
@@ -133,8 +176,8 @@ export interface RoleFormResult {
                             data-test="role-form-perm"
                           />
                           <span class="role-form__perm-body">
-                            <span class="role-form__perm-key">{{ p.key }}</span>
-                            <span class="role-form__perm-desc">{{ p.description }}</span>
+                            <span class="role-form__perm-title">{{ permissionLabel(p.key) }}</span>
+                            <span class="role-form__perm-meta">{{ actionLabel(p.action) }}</span>
                           </span>
                         </label>
                       }
@@ -234,45 +277,59 @@ export interface RoleFormResult {
       .role-form__permissions {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
       }
 
       .role-form__permissions-head {
         display: flex;
-        align-items: baseline;
+        align-items: flex-start;
         justify-content: space-between;
+        gap: 16px;
+      }
+
+      .role-form__logic-hint {
+        margin: 6px 0 0;
+        max-width: 52rem;
+        font-size: 12px;
+        line-height: 1.45;
+        color: var(--color-muted-foreground);
       }
 
       .role-form__sections {
         display: flex;
         flex-direction: column;
-        gap: 14px;
-        max-height: 300px;
+        gap: 0;
+        max-height: min(58vh, 560px);
         overflow-y: auto;
         padding-right: 4px;
+        border-top: 1px solid var(--color-rule);
       }
 
       .role-form__section {
-        border: 1px solid var(--color-rule);
-        border-radius: 3px;
-        padding: 10px 12px 12px;
+        border: none;
+        border-bottom: 1px solid var(--color-rule);
+        border-radius: 0;
+        padding: 14px 4px 16px;
         margin: 0;
+      }
+
+      .role-form__section:last-child {
+        border-bottom: none;
       }
 
       .role-form__section-title {
         display: flex;
         align-items: center;
-        gap: 10px;
-        font-size: 11px;
+        gap: 12px;
+        font-size: 12px;
         font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.04em;
         color: var(--color-ink);
-        padding: 0 4px;
+        padding: 0 2px 4px;
       }
 
       .role-form__select-all {
-        font-size: 10px;
+        font-size: 11px;
         font-family: 'JetBrains Mono', monospace;
         color: var(--color-muted-foreground);
         background: none;
@@ -289,18 +346,32 @@ export interface RoleFormResult {
 
       .role-form__section-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 6px 14px;
-        margin-top: 8px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px 12px;
+        margin-top: 10px;
+      }
+
+      @media (min-width: 1100px) {
+        .role-form__section-grid {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 720px) {
+        .role-form__section-grid {
+          grid-template-columns: 1fr 1fr;
+        }
       }
 
       .role-form__perm {
         display: flex;
         align-items: flex-start;
         gap: 8px;
-        padding: 4px 6px;
-        border-radius: 2px;
+        padding: 8px 8px;
+        border: 1px solid var(--color-rule);
+        border-radius: 3px;
         cursor: pointer;
+        min-height: 3.25rem;
       }
 
       .role-form__perm:hover {
@@ -318,19 +389,20 @@ export interface RoleFormResult {
       .role-form__perm-body {
         display: flex;
         flex-direction: column;
-        gap: 1px;
+        gap: 2px;
         min-width: 0;
       }
 
-      .role-form__perm-key {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 11px;
+      .role-form__perm-title {
+        font-size: 12px;
+        line-height: 1.35;
         color: var(--color-ink);
-        word-break: break-all;
       }
 
-      .role-form__perm-desc {
-        font-size: 11px;
+      .role-form__perm-meta {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        letter-spacing: 0.04em;
         color: var(--color-muted-foreground);
       }
     `,
@@ -346,6 +418,11 @@ export class RoleFormDialogComponent {
   protected readonly description = signal<string>(this.data.role?.description ?? '');
   protected readonly error = signal<string | null>(null);
   protected readonly submitting = signal(false);
+  protected readonly copy = ROLE_FORM_COPY;
+
+  protected permissionLabel(key: string): string {
+    return permissionLabelRu(key);
+  }
 
   protected onNameInput(event: Event): void {
     this.name.set((event.target as HTMLInputElement).value);
@@ -359,7 +436,10 @@ export class RoleFormDialogComponent {
     this.description.set((event.target as HTMLInputElement).value);
   }
 
+  /** Raw API sections (kept for tests / debugging). */
   protected readonly sections = signal<PermissionSection[]>([]);
+  /** Grouped RU categories for the checkbox matrix. */
+  protected readonly groups = signal<PermissionDisplayGroup[]>([]);
   protected readonly catalogLoading = signal(true);
   protected readonly catalogError = signal<string | null>(null);
   protected readonly selected = signal<Set<string>>(new Set(this.data.role?.permissions ?? []));
@@ -373,6 +453,7 @@ export class RoleFormDialogComponent {
       const res = await firstValueFrom(this.catalogService.getCatalog());
       if (res.ok) {
         this.sections.set(res.data.sections);
+        this.groups.set(regroupPermissions(res.data.sections));
         this.catalogError.set(null);
       } else {
         this.catalogError.set(this.describe(res.error));
@@ -400,10 +481,28 @@ export class RoleFormDialogComponent {
     this.selected.set(next);
   }
 
+  protected groupAllSelected(g: PermissionDisplayGroup): boolean {
+    return g.permissions.length > 0 && g.permissions.every((p) => this.selected().has(p.key));
+  }
+
+  protected toggleGroup(g: PermissionDisplayGroup, select: boolean): void {
+    const next = new Set(this.selected());
+    for (const p of g.permissions) {
+      if (select) {
+        next.add(p.key);
+      } else {
+        next.delete(p.key);
+      }
+    }
+    this.selected.set(next);
+  }
+
+  /** @deprecated use groupAllSelected — kept for existing unit tests */
   protected sectionAllSelected(s: PermissionSection): boolean {
     return s.permissions.length > 0 && s.permissions.every((p) => this.selected().has(p.key));
   }
 
+  /** @deprecated use toggleGroup — kept for existing unit tests */
   protected toggleSection(s: PermissionSection, select: boolean): void {
     const next = new Set(this.selected());
     for (const p of s.permissions) {
@@ -416,23 +515,8 @@ export class RoleFormDialogComponent {
     this.selected.set(next);
   }
 
-  /** Human-readable Russian label for a permission section key. */
-  protected sectionLabel(section: string): string {
-    const labels: Record<string, string> = {
-      user: 'Пользователи и роли',
-      role: 'Пользователи и роли',
-      product: 'Продукция',
-      category: 'Категории',
-      material: 'Материалы',
-      production: 'Производство',
-      warehouse: 'Склад',
-      procurement: 'Закупки',
-      sales: 'Продажи',
-      document: 'Документы',
-      finance: 'Финансы',
-      system: 'Система',
-    };
-    return labels[section] ?? section;
+  protected actionLabel(action: string): string {
+    return ACTION_RU[action] ?? action;
   }
 
   protected readonly canSubmit = (): boolean => {
@@ -477,5 +561,33 @@ export class RoleFormDialogComponent {
   }
 }
 
-// Re-export for the page's type imports.
+/** Merge API sections into manager-facing RU categories. */
+export function regroupPermissions(sections: PermissionSection[]): PermissionDisplayGroup[] {
+  const buckets = new Map<string, PermissionDisplayGroup>();
+  for (const s of sections) {
+    const groupId = SECTION_TO_GROUP[s.section] ?? s.section;
+    const meta = {
+      id: groupId,
+      title: PERMISSION_GROUP_TITLE_RU[groupId] ?? groupId,
+    };
+    const bucket = buckets.get(meta.id) ?? {
+      id: meta.id,
+      title: meta.title,
+      permissions: [],
+    };
+    bucket.permissions.push(...s.permissions);
+    buckets.set(meta.id, bucket);
+  }
+  const ordered: PermissionDisplayGroup[] = [];
+  for (const id of GROUP_ORDER) {
+    const g = buckets.get(id);
+    if (g?.permissions.length) ordered.push(g);
+    buckets.delete(id);
+  }
+  for (const g of buckets.values()) {
+    if (g.permissions.length) ordered.push(g);
+  }
+  return ordered;
+}
+
 export type { PermissionCatalogEntry };
