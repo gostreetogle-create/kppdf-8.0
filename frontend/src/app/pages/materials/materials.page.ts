@@ -14,7 +14,7 @@ import { httpResource } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule, RefreshCw } from 'lucide-angular';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
-import { CATALOG_SECTION_CHIPS } from '../catalog/catalog-group-chips';
+import { CATALOG_ENTITY_SECTION_CHIPS, CATALOG_TOC_CHIPS } from '../catalog/catalog-group-chips';
 import { PiEmptyTileComponent } from '../../shared/ui/pi-empty-tile/pi-empty-tile.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
@@ -93,7 +93,7 @@ const PAGE_SIZE = 50;
     RouterLink,
   ],
   template: `
-    <app-pi-group-workspace [chips]="chips" activeId="materials">
+    <app-pi-group-workspace [toc]="toc" tocActiveId="materials" [chips]="chips">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           id="materials-search"
@@ -184,6 +184,17 @@ const PAGE_SIZE = 50;
           <span class="font-mono text-xs whitespace-nowrap">{{ dimensionsSummary(row) }}</span>
         </ng-template>
 
+        <!-- ───── Name cell with detail link (TZ-CATALOG-312) ───── -->
+        <ng-template #nameTpl let-row>
+          <a
+            [routerLink]="['/materials', row._id]"
+            class="text-ink hover:text-sunrise-warm underline decoration-dotted underline-offset-4 transition-colors"
+            [attr.aria-label]="'Открыть ' + row.name"
+          >
+            {{ row.name }}
+          </a>
+        </ng-template>
+
         <!-- ───── Stock cell (TZ-MATERIALS-308, read-only link) ───── -->
         <ng-template #stockTpl let-row>
           <a
@@ -221,7 +232,8 @@ export class MaterialsPage implements OnInit {
     this.photosLookup.load();
     this.destroyRef.onDestroy(() => this.search.destroy());
   }
-  protected readonly chips = CATALOG_SECTION_CHIPS;
+  protected readonly toc = CATALOG_TOC_CHIPS;
+  protected readonly chips = CATALOG_ENTITY_SECTION_CHIPS;
   private readonly service = inject(MaterialsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
@@ -283,6 +295,8 @@ export class MaterialsPage implements OnInit {
   // TZ-CATALOG-316: 301 fields column also rendered via TemplateRef<{ $implicit: Material }>
   @ViewChild('kindTpl', { static: true })
   private readonly kindTplRef!: TemplateRef<{ $implicit: Material }>;
+  @ViewChild('nameTpl', { static: true })
+  private readonly nameTplRef!: TemplateRef<{ $implicit: Material }>;
   @ViewChild('dimsTpl', { static: true })
   private readonly dimsTplRef!: TemplateRef<{ $implicit: Material }>;
   @ViewChild('stockTpl', { static: true })
@@ -411,6 +425,7 @@ export class MaterialsPage implements OnInit {
     // invariance trap and Angular's signal-binding name-collision.
     this.cellTemplates = {
       mainPhotoId: this.photoTplRef,
+      name: this.nameTplRef,
       supplierId: this.supplierTplRef,
       materialKind: this.kindTplRef,
       dimensions: this.dimsTplRef,

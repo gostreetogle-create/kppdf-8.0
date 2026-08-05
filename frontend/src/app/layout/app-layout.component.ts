@@ -544,7 +544,7 @@ function isDenseWorkspaceUrl(url: string): boolean {
     '/admin/users',
     '/admin/roles',
   ];
-  const listOnlyNoDetail = new Set(['/products', '/modules', '/materials']);
+  const listOnlyNoDetail = new Set(['/products', '/modules']);
   return denseExactOrPrefix.some((route) => {
     if (path === route) return true;
     // List pages only — keep detail routes (/products/:id) on normal chrome.

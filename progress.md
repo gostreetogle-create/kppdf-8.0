@@ -19,6 +19,15 @@
 
 ---
 
+## [2026-08-05] — TZ-CATALOG-312 DONE: Material detail page /materials/:id
+**Исполнитель:** Buffy
+**Статус:** DONE
+**Что сделано кратко:** Карточка материала /materials/:id (4 секции: основное, габариты, склад, where-used backlinks). Роут + ссылка из списка материалов. Паттерн product/module detail.
+**Gates:** FE tsc PASS; jest material-detail 6/6 PASS.
+**Next:** TZ-CATALOG-314 (soft-delete) или TZ-CATALOG-311.
+
+---
+
 ## [2026-08-05] — TZD-05 DONE: Web «Подключить десктоп» — pairing JSON packet
 **Исполнитель:** Buffy
 **Статус:** DONE; archive created; commit pending

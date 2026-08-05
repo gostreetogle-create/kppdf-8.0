@@ -72,6 +72,16 @@ export const routes: Routes = [
         title: 'KPPDF — Материалы',
       },
       {
+        // TZ-CATALOG-312: material detail card.
+        // AFTER /materials (Angular longest-prefix: :id wins over empty path).
+        path: 'materials/:id',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'materials' },
+        loadComponent: () =>
+          import('./pages/materials/material-detail.page').then((m) => m.MaterialDetailPage),
+        title: 'KPPDF — Материал',
+      },
+      {
         path: 'organizations',
         canMatch: [capabilityRouteGuard],
         data: { pageKey: 'organizations' },
