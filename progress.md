@@ -1,3 +1,14 @@
+## [2026-08-06] — TZ-CATALOG-313 DONE: Photo/document attachment unify
+**Исполнитель:** Buffy / openai/gpt-5.6-luna
+**Статус:** DONE; PO accepted READY FOR REVIEW; archive + lock created.
+**Что сделано кратко:** Добавлен typed CatalogAttachment для Product/ProductModule/Material; ProductModule получил photoIds/mainPhotoId; ProductModulePhoto и legacy document collections сохранены; legacy module-photo paths используют non-destructive dual-write для общих Photo references.
+**Gates:** backend tsc PASS; focused Jest 3 suites / 15 tests PASS; scoped ESLint PASS; diff --check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-313.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-313-attachments.lock`
+**Commit:** pending closeout commit
+
+---
+
 ## [2026-08-05] — TZD-05 DONE: Web «Подключить десктоп» — pairing JSON packet
 **Исполнитель:** Buffy
 **Статус:** DONE; archive created; commit pending

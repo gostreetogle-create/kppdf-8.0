@@ -52,6 +52,9 @@ export class ProductModule {
   @Prop({ type: ModuleDimensionsSchemaFactory }) dimensions?: { width?: number; height?: number; depth?: number; unit?: string };
   @Prop({ default: 0 }) weight?: number;
   @Prop({ default: 0 }) sortOrder!: number;
+  /** Canonical catalog photo references; ProductModulePhoto remains available for legacy reads/writes. */
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Photo' }], default: [] }) photoIds!: Types.ObjectId[];
+  @Prop({ type: Types.ObjectId, ref: 'Photo' }) mainPhotoId?: Types.ObjectId;
   @Prop({ type: [ModuleWorkTypeSchemaFactory], default: [] }) workTypes!: { workTypeId: Types.ObjectId; estimatedHours: number; sortOrder: number }[];
   /** Legacy embedded material rows retained for TZ-CATALOG-302 dual-read and TZ-CATALOG-304 migration. */
   @Prop({ type: [ModuleMaterialSchemaFactory], default: [] }) materials!: { materialId: Types.ObjectId; quantity: number; unit: string; isPurchased: boolean; overrideDimensions?: { length?: number; width?: number; height?: number; unit?: string }; sortOrder: number }[];

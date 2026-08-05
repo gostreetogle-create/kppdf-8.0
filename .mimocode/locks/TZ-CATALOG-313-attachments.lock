@@ -1,0 +1,9 @@
+# TZ-CATALOG-313 lock
+
+status: DONE
+owner: Buffy / openai/gpt-5.6-luna
+closed_at: 2026-08-06T00:00:00Z
+scope: typed catalog attachments + ProductModule canonical photo references + non-destructive legacy bridge
+archive: tasks/_archive/2026-08/TZ-CATALOG-313.done.md
+commit: pending closeout commit
+push: pending closeout push

@@ -5,6 +5,7 @@ import {
   ProductModulePhoto,
   ProductModulePhotoDocument,
 } from './product-module-photo.schema';
+import { ProductModule, ProductModuleDocument } from '../product-module/product-module.schema';
 
 export interface UpsertProductModulePhotoDto {
   productModuleId: string;
@@ -20,36 +21,41 @@ export class ProductModulePhotoService {
   constructor(
     @InjectModel(ProductModulePhoto.name)
     private readonly model: Model<ProductModulePhotoDocument>,
+    @InjectModel(ProductModule.name)
+    private readonly moduleModel: Model<ProductModuleDocument>,
   ) {}
 
-  async upsert(
-    dto: UpsertProductModulePhotoDto,
-  ): Promise<ProductModulePhotoDocument> {
+  async upsert(dto: UpsertProductModulePhotoDto): Promise<ProductModulePhotoDocument> {
     if (!dto.url && !dto.photoId) {
       throw new BadRequestException('At least one of url or photoId is required');
     }
+    const productModuleId = this.toObjectId(dto.productModuleId, 'Invalid productModuleId');
+    await this.assertModuleExists(productModuleId);
+    const photoId = dto.photoId ? this.toObjectId(dto.photoId, 'Invalid photoId') : undefined;
     if (dto.isMain) {
-      // Atomic: demote other mains for this module BEFORE inserting the new main.
-      await this.model
-        .updateMany(
-          { productModuleId: new Types.ObjectId(dto.productModuleId) },
-          { $set: { isMain: false } },
-        )
-        .exec();
+      await this.model.updateMany({ productModuleId }, { $set: { isMain: false } }).exec();
     }
-    return this.model.create({
-      productModuleId: new Types.ObjectId(dto.productModuleId),
-      photoId: dto.photoId ? new Types.ObjectId(dto.photoId) : undefined,
+    const created = await this.model.create({
+      productModuleId,
+      photoId,
       url: dto.url,
       caption: dto.caption,
       isMain: dto.isMain ?? false,
       sortOrder: dto.sortOrder ?? 0,
     });
+    if (photoId) {
+      await this.moduleModel.updateOne(
+        { _id: productModuleId },
+        {
+          $addToSet: { photoIds: photoId },
+          ...(dto.isMain ? { $set: { mainPhotoId: photoId } } : {}),
+        },
+      ).exec();
+    }
+    return created;
   }
 
-  async findByProductModule(
-    productModuleId: string,
-  ): Promise<ProductModulePhotoDocument[]> {
+  async findByProductModule(productModuleId: string): Promise<ProductModulePhotoDocument[]> {
     if (!Types.ObjectId.isValid(productModuleId)) return [];
     return this.model
       .find({ productModuleId: new Types.ObjectId(productModuleId) })
@@ -67,49 +73,75 @@ export class ProductModulePhotoService {
     return doc;
   }
 
-  async update(
-    id: string,
-    dto: Partial<UpsertProductModulePhotoDto>,
-  ): Promise<ProductModulePhotoDocument> {
+  async update(id: string, dto: Partial<UpsertProductModulePhotoDto>): Promise<ProductModulePhotoDocument> {
     const doc = await this.findById(id);
-    // TZ-83 Review #5: PATCH /:id не должен менять `isMain` — иначе модуль
-    // может остаться без main photo. Используйте POST /:id/main для назначения
-    // нового главного фото. Strip через non-mutating destructure-rest (rew #1).
-    const { isMain: _isMainIgnored, ...safeDto } = dto;
+    const safeDto = { ...dto };
+    delete safeDto.isMain;
+    let nextPhotoId = this.asObjectId(doc.photoId);
     if (safeDto.photoId !== undefined) {
-      doc.photoId = safeDto.photoId
-        ? new Types.ObjectId(safeDto.photoId)
-        : (undefined as unknown as Types.ObjectId);
+      nextPhotoId = safeDto.photoId ? this.toObjectId(safeDto.photoId, 'Invalid photoId') : undefined;
+      doc.photoId = nextPhotoId;
     }
     if (safeDto.url !== undefined) doc.url = safeDto.url;
     if (safeDto.caption !== undefined) doc.caption = safeDto.caption;
     if (safeDto.sortOrder !== undefined) doc.sortOrder = safeDto.sortOrder;
-    return doc.save();
+    const saved = await doc.save();
+    // Compatibility-first: never pull a canonical reference automatically. It may
+    // be shared by another legacy row or have been added by the canonical API.
+    if (nextPhotoId) {
+      await this.moduleModel.updateOne(
+        { _id: doc.productModuleId },
+        { $addToSet: { photoIds: nextPhotoId } },
+      ).exec();
+    }
+    return saved;
   }
 
-  /**
-   * TZ-83 Фаза A.7: атомарный setMain.
-   * Делает photoId "главной" для модуля — все остальные становятся isMain=false
-   * в той же транзакции (две операции но в пределах одного event loop).
-   * Race condition крайне маловероятен (см. TZ-83 §5 риски).
-   */
   async setMain(id: string): Promise<ProductModulePhotoDocument> {
     const doc = await this.findById(id);
-    await this.model
-      .updateMany(
-        {
-          productModuleId: doc.productModuleId,
-          _id: { $ne: doc._id },
-        },
-        { $set: { isMain: false } },
-      )
-      .exec();
+    await this.model.updateMany(
+      { productModuleId: doc.productModuleId, _id: { $ne: doc._id } },
+      { $set: { isMain: false } },
+    ).exec();
     doc.isMain = true;
-    return doc.save();
+    const saved = await doc.save();
+    const photoId = this.asObjectId(saved.photoId);
+    if (photoId) {
+      await this.moduleModel.updateOne(
+        { _id: saved.productModuleId },
+        { $set: { mainPhotoId: photoId }, $addToSet: { photoIds: photoId } },
+      ).exec();
+    }
+    // URL-only legacy main photos remain represented by the legacy row; the
+    // canonical Photo reference is intentionally left unchanged.
+    return saved;
   }
 
   async remove(id: string): Promise<void> {
     const doc = await this.findById(id);
+    // Do not pull photoIds: a canonical reference may be shared with another
+    // legacy row or may have been explicitly selected by the canonical API.
     await doc.deleteOne();
+  }
+
+  private async assertModuleExists(id: Types.ObjectId): Promise<void> {
+    const module = await this.moduleModel.findById(id).select('_id').exec();
+    if (!module) throw new NotFoundException(`ProductModule ${id} not found`);
+  }
+
+  private toObjectId(value: string, message: string): Types.ObjectId {
+    if (!Types.ObjectId.isValid(value)) throw new BadRequestException(message);
+    return new Types.ObjectId(value);
+  }
+
+  private asObjectId(value: unknown): Types.ObjectId | undefined {
+    if (!value) return undefined;
+    if (value instanceof Types.ObjectId) return value;
+    if (typeof value === 'string' && Types.ObjectId.isValid(value)) return new Types.ObjectId(value);
+    if (typeof value === 'object' && value && '_id' in value) {
+      const id = String((value as { _id: unknown })._id);
+      return Types.ObjectId.isValid(id) ? new Types.ObjectId(id) : undefined;
+    }
+    return undefined;
   }
 }
