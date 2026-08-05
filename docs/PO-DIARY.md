@@ -97,6 +97,11 @@
 - Уже на main: TZD-11 foundation, TZD-12 reads, TZD-13 propose/confirm/undo + journal.
 - Дальше критично для пользы: **TZD-14** (MCP из Tauri без ручного pnpm) + **TZD-05** (кнопка pairing в вебе).
 
+### 2026-08-06 — Стоп ночи: 314 в WT, завтра DAY-07
+- Buffy оборвался (free session / Calpost); 314 READY FOR REVIEW, **не** закоммичен.
+- Завтра: closeout 314 → TZ-CATALOG-320; скрипт дня в backlog `TZ-DAY-2026-08-07-…`.
+- 311/склад/MCP не трогать до отдельного сигнала.
+
 ### 2026-08-06 — Каталог: каскад и «детали» не забыты
 - Module→module, Product→product, «детали/покупные» = `Material.materialKind` (не Part) — канон `TZ-CATALOG-300`, BE уже есть.
 - Не хватало UI: спеки **320** (gap в диалогах) → **311** (CompositionTree).

@@ -39,7 +39,8 @@ Wave 1: `tasks/CATALOG-WAVE1.md` · Review inbox: `docs/agent-checklists/CATALOG
 | **313** | Photo unify | 305 | средняя | **DONE** |
 | **314** | Soft-delete / archive | 304 | средняя | review / close |
 | **312** | Material detail | 310 | средняя | DONE / park per map |
-| **320** | FE gap: каскад + детали в диалогах | 317+314 | средняя | **NEXT FE** · `_backlog/catalog/TZ-CATALOG-320.md` |
+| **320** | FE gap: каскад + детали в диалогах | 317+314 | средняя | после DAY-07 / 314 on origin · `_backlog/catalog/TZ-CATALOG-320.md` |
+| **DAY-07** | Closeout 314 + start 320 | — | session | **`_backlog/catalog/TZ-DAY-2026-08-07-catalog-314-closeout-then-320.md`** |
 | **311** | CompositionTree / Editor (полная) | **320** | тяжёлая | PARKED до 320 · full spec in file |
 | **315** | Lists polish + a11y | 311 | лёгкая | park |
 

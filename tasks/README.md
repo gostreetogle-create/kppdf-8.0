@@ -27,7 +27,7 @@ Policy: empty queue → **propose** deploy readiness · **no** auto `deploy.ps1`
 
 ## Parked (do not start without PO)
 
-- `_backlog/catalog/` Wave 2 FE composition: **320** (каскад+детали в диалогах) → **311** (CompositionTree) → **315**; BE archive **314** close first
+- `_backlog/catalog/` **завтра:** `TZ-DAY-2026-08-07-catalog-314-closeout-then-320.md` (close 314 → 320); потом 311 → 315
 - `_backlog/desktop/` **MCP socket TZD-11…15** + parked import TZD-01…10 — vision `docs/superpowers/specs/2026-08-05-desktop-mcp-agent-vision.md`
 - `_backlog/` other Z / procurement / etc.
 - TZ-UI-TABLE-304 Selectable/dense
