@@ -898,6 +898,18 @@ agent fallback. See `OrchestratorKit/_archive/2026-07/TZ-82.done.txt`
 > **Security audit reference (TZ-205, 2026-07-25):** brute-force protection on /auth/login, bcrypt-hashed User.passwordHash, refresh-token version revocation, and /auth/me projection hardening are documented in [docs/security-audit.md](docs/security-audit.md). TZ-202.B unblocked from this prerequisite; remaining gate is PO + senior security engineer cosign per AGENTS.md §7.5.
 
 
+## Desktop MCP socket (TZD-11)
+
+Local MCP host for any MCP client (not Cursor-specific):
+
+- Package: `desktop/mcp` (`@kppdf/desktop-mcp`), workspace member of `desktop/`
+- Transports: Streamable HTTP (`127.0.0.1:9743` default) + stdio
+- Auth: same pairing JWT as desktop (`KPPDF_API_KEY`); HTTP requires matching Bearer
+- Tools (foundation): `kppdf_ping` → `/api/auth/me` (fallback `/api/health`)
+- Docs: `desktop/docs/MCP.md`
+- Vision: `docs/superpowers/specs/2026-08-05-desktop-mcp-agent-vision.md`
+- Follow-ups: TZD-12 reads · TZD-13 writes/journal · TZD-14 host UI · TZD-15 inbox
+
 ## Inventory transaction contract (Z-001)
 
 The accounting/warehouse domain guarantees the following atomicity for

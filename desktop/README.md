@@ -62,8 +62,12 @@ desktop/
 │   └── system-prompts/
 │       ├── general.md     ← черновик системного промпта AI
 │       └── entities.md    ← карта полей сущностей (по реальным схемам backend)
+├── mcp/                   ← MCP socket host (TZD-11): HTTP + stdio, pairing JWT
+│   ├── package.json       ← @kppdf/desktop-mcp (+ @modelcontextprotocol/sdk)
+│   └── src/               ← http-server / stdio-server / tools (kppdf_ping)
 └── docs/
     ├── PAIRING.md         ← контракт связи веб↔десктоп
+    ├── MCP.md             ← connect string, env, tools
     └── AI-PROVIDERS.md    ← Ollama локально / удалённый endpoint
 ```
 
@@ -83,6 +87,10 @@ desktop/
   Данные не покидают машину. Поднятие модели — [docs/AI-PROVIDERS.md](docs/AI-PROVIDERS.md).
 - **Удалённый OpenAI-совместимый** endpoint — из конфига (ключ в app-data).
 - Абстракция `core/ai/providers.ts`: один клиент, два источника.
+
+## MCP socket (TZD-11+)
+
+Локальная «розетка» для любого MCP-клиента: [docs/MCP.md](docs/MCP.md) · пакет `desktop/mcp/`.
 
 ## AI-импорт (пайплайн)
 
@@ -112,7 +120,7 @@ desktop/
 | v0.3 | Excel-импорт: xlsx/papaparse → таблица (диалог + drag&drop) | ✅ DONE `157846c`+`305c27f`+`60fd4b8` |
 | v0.4 | AI-pipeline: Ollama/remote, нормализация, подтверждение | ⏳ TZD-01 |
 | v0.5 | Батч-отправка + прогресс + отчёт об ошибках | ⏳ TZD-02 |
-| MCP | Универсальная розетка агента (localhost tools) | ⏳ **TZD-11…15** |
+| MCP | Универсальная розетка агента (localhost tools) | ✅ TZD-11 foundation; ⏳ TZD-12…15 |
 
 Полный контекст v0.1–v0.3 — **`tasks/_archive/2026-08/TZD-00.done.md`**.  
 MCP vision + safety (propose/confirm, mutation journal):  

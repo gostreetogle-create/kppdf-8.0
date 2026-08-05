@@ -2,7 +2,7 @@
 TZD-11: MCP server foundation (local socket + auth + tool registry)
 ═══════════════════════════════════════════════════════════════
 
-> PARKED until PO «делай TZD-11». LAYER 2 · Desktop/MCP.
+> DONE 2026-08-05 → `tasks/_archive/2026-08/TZD-11.done.md`. LAYER 2 · Desktop/MCP.
 > CONFLICT: `desktop/**` (new mcp/ package or src); optional `backend/src/modules/desktop/**` for pairing token only if missing.
 > Vision: `docs/superpowers/specs/2026-08-05-desktop-mcp-agent-vision.md`
 

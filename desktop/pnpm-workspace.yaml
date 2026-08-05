@@ -1,4 +1,8 @@
-# Разрешение build-скриптов для esbuild (нужен Vite).
-# Та же конвенция, что в frontend/pnpm-workspace.yaml.
+# Workspace: Tauri app + MCP host package (TZD-11).
+# allowBuilds: same convention as frontend/pnpm-workspace.yaml.
+packages:
+  - '.'
+  - 'mcp'
+
 allowBuilds:
   esbuild: true
