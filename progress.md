@@ -1,3 +1,14 @@
+## [2026-08-05] — TZD-12 DONE: MCP read tools
+**Исполнитель:** Cursor / Auto
+**Статус:** DONE; archive; on main after push
+**Что сделано кратко:** 6 read-only MCP tools поверх существующих GET (materials/products/storage-items/warehouses) + slim product fields; обновлён `desktop/docs/MCP.md`.
+**Gates:** `pnpm typecheck` PASS; `pnpm test` 7/7 PASS.
+**Archive:** `tasks/_archive/2026-08/TZD-12.done.md`
+**Lock:** `.mimocode/locks/TZD-12-mcp-reads.lock`
+**Next:** TZD-13 writes + journal. Параллельно: TZD-05.
+
+---
+
 ## [2026-08-05] — TZD-11 DONE: MCP server foundation
 **Исполнитель:** Cursor / Auto
 **Статус:** DONE; archive + lock; on main `de27bf2` (TZD-12 unblocked)

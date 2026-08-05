@@ -2,7 +2,7 @@
 TZD-12: MCP read tools (org-scoped catalog & warehouse)
 ═══════════════════════════════════════════════════════════════
 
-> PARKED. After TZD-11. LAYER 2.
+> DONE 2026-08-05 → `tasks/_archive/2026-08/TZD-12.done.md`. LAYER 2.
 > CONFLICT: `desktop/mcp/**` only (call existing REST). НЕ менять Nest schemas.
 > Vision: `docs/superpowers/specs/2026-08-05-desktop-mcp-agent-vision.md`
 

@@ -5,6 +5,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { backendGetJson, BackendError } from './backend.js';
 import type { McpRuntimeConfig } from './config.js';
+import { registerReadTools } from './read-tools.js';
+import { toolFail, toolOk } from './tool-result.js';
 
 export function createKppdfMcpServer(cfg: McpRuntimeConfig): McpServer {
   const server = new McpServer({
@@ -33,32 +35,19 @@ export function createKppdfMcpServer(cfg: McpRuntimeConfig): McpServer {
             throw err;
           }
         }
-        return {
-          content: [
-            {
-              type: 'text' as const,
-              text: JSON.stringify(
-                {
-                  ok: true,
-                  path,
-                  apiBaseUrl: cfg.apiBaseUrl,
-                  result: payload,
-                },
-                null,
-                2,
-              ),
-            },
-          ],
-        };
+        return toolOk({
+          ok: true,
+          path,
+          apiBaseUrl: cfg.apiBaseUrl,
+          result: payload,
+        });
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          isError: true,
-          content: [{ type: 'text' as const, text: `kppdf_ping failed: ${message}` }],
-        };
+        return toolFail('kppdf_ping', err);
       }
     },
   );
+
+  registerReadTools(server, cfg);
 
   return server;
 }

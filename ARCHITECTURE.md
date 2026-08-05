@@ -905,10 +905,10 @@ Local MCP host for any MCP client (not Cursor-specific):
 - Package: `desktop/mcp` (`@kppdf/desktop-mcp`), workspace member of `desktop/`
 - Transports: Streamable HTTP (`127.0.0.1:9743` default) + stdio
 - Auth: same pairing JWT as desktop (`KPPDF_API_KEY`); HTTP requires matching Bearer
-- Tools (foundation): `kppdf_ping` → `/api/auth/me` (fallback `/api/health`)
+- Tools: `kppdf_ping` + TZD-12 reads (`kppdf_list_materials`, `kppdf_get_material`, `kppdf_list_products`, `kppdf_get_product`, `kppdf_list_storage_items`, `kppdf_list_warehouses`)
 - Docs: `desktop/docs/MCP.md`
 - Vision: `docs/superpowers/specs/2026-08-05-desktop-mcp-agent-vision.md`
-- Follow-ups: TZD-12 reads · TZD-13 writes/journal · TZD-14 host UI · TZD-15 inbox
+- Follow-ups: TZD-13 writes/journal · TZD-14 host UI · TZD-15 inbox
 
 ## Inventory transaction contract (Z-001)
 

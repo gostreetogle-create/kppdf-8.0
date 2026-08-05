@@ -1,6 +1,6 @@
 # KPPDF Desktop MCP socket
 
-> TZD-11 foundation. Vision: `docs/superpowers/specs/2026-08-05-desktop-mcp-agent-vision.md`
+> TZD-11 foundation + TZD-12 read tools. Vision: `docs/superpowers/specs/2026-08-05-desktop-mcp-agent-vision.md`
 
 Local MCP host so **any** MCP-capable client (not only Cursor) can call KPPDF tools
 using the same **pairing JWT** as the desktop app.
@@ -39,13 +39,19 @@ pnpm start:stdio
 - Health: `GET http://127.0.0.1:9743/healthz`
 - Every MCP HTTP request must send: `Authorization: Bearer <same pairing JWT>`
 
-## Tools (TZD-11)
+## Tools
 
 | Tool | Access | Description |
 |------|--------|-------------|
-| `kppdf_ping` | read | `GET /api/auth/me` (fallback `/api/health`) with pairing token |
+| `kppdf_ping` | read | `GET /api/auth/me` (fallback `/api/health`) |
+| `kppdf_list_materials` | read | `GET /api/materials?page&limit&search` |
+| `kppdf_get_material` | read | `GET /api/materials/:id` |
+| `kppdf_list_products` | read | `GET /api/products?page&limit&search` (minimal fields) |
+| `kppdf_get_product` | read | `GET /api/products/:id` (minimal fields) |
+| `kppdf_list_storage_items` | read | `GET /api/storage-items` (`warehouseId` / `materialId` / `productId` optional) |
+| `kppdf_list_warehouses` | read | `GET /api/warehouses` |
 
-Read catalog tools → **TZD-12**. Writes / journal → **TZD-13**. Desktop autostart → **TZD-14**.
+Writes / mutation journal → **TZD-13**. Desktop autostart → **TZD-14**. Inbox → **TZD-15**.
 
 ## Security
 
@@ -53,3 +59,4 @@ Read catalog tools → **TZD-12**. Writes / journal → **TZD-13**. Desktop auto
 - LAN bind is opt-in and warned.
 - No tool runs without configured pairing key; HTTP rejects mismatched Bearer.
 - Server never bypasses backend RBAC — it only forwards the user JWT.
+- Org scope = whatever the pairing token allows (no wider).
