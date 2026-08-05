@@ -14,7 +14,7 @@ description: >-
 | Агент | Контракт | Режим |
 |---|---|---|
 | **Cursor** | `.cursor/rules/cursor-architect.mdc` + `cursor-usage` + `tz-authoring` + **`docs/TZ-AUTHORING.md`** | Mode A: TZ/планы/UX-smell notes/review; **commit+push своих docs**; **не** код продукта |
-| **Gemini / локальные** | корневой `GEMINI.md` + этот skill (секции ниже) | Executor: код, gates, archive |
+| **Gemini / локальные** | корневой `GEMINI.md` + этот skill + **`kppdf-executor-loop`** | Executor: код, gates, archive, continuous queue; deploy only on explicit PO |
 | **LM Studio (Qwen local)** | `docs/agents/LM-STUDIO-AGENT.md` + `scripts/lmstudio-agent/run.mjs` | Draft helper only; **LIMITED_HELPER** — не archive/deploy/security review alone |
 
 Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `executing-plans` / `tdd` / `run-project-checks` / `verification-before-completion` для собственной имплементации.

@@ -1,20 +1,23 @@
 # Active TZ backlog index
 
-**Verified:** 2026-08-04 · `D:\kppdf-8.0`
+**Verified:** 2026-08-05 · `D:\kppdf-8.0`
 
-## Catalog Wave 1
+## Closed this session wave
 
-Канон: [`TZ-CATALOG-300.md`](TZ-CATALOG-300.md) · [`CATALOG-WAVE1.md`](CATALOG-WAVE1.md)  
-**Now:** TZ-CATALOG-304 (migration) · then 305  
-**DONE:** 301–303 · 316 · 317 · 319
+| Stream | Status |
+|--------|--------|
+| DICT 308–312 (Group chips + polish) | **DONE** archived |
+| UI-TABLE 301–303, 305 | **DONE** archived |
+| UI-TABLE 304 | **SKIP** (склад backlog) |
+| Catalog Wave 1 (302–305, 316/317/319) | **DONE** archived |
 
-## Dictionaries Wave 1.5 (Group chips)
+`_active/`: empty · map: `docs/agent-checklists/_active-map.md`  
+Policy: empty queue → **propose** deploy readiness · **no** auto `deploy.ps1`
 
-Канон: [`TZ-DICT-300.md`](TZ-DICT-300.md) · [`DICT-WAVE1.md`](DICT-WAVE1.md)  
-SoT: [`docs/superpowers/specs/2026-08-04-group-chip-workspace-design.md`](../docs/superpowers/specs/2026-08-04-group-chip-workspace-design.md)  
-**DONE:** 302–308 · **NOW:** [`TZ-DICT-309.md`](TZ-DICT-309.md) RESERVED → 310 → 311  
-Table kit docs: [`TZ-UI-TABLE-301`](../docs/superpowers/specs/2026-08-04-table-kit-design.md) **DONE**
+## Parked (do not start without PO)
 
-## Catalog Wave 2 (parked)
+- `_backlog/catalog/` Wave 2 (310…315)
+- `_backlog/` other Z / procurement / etc.
+- TZ-UI-TABLE-304 Selectable/dense
 
-[`_backlog/catalog/`](_backlog/catalog/) — 310…315
+Root `tasks/TZ-*.md` stubs may remain as sources after archive — that is not an open queue.
