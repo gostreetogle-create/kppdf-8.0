@@ -4,7 +4,6 @@ import { httpResource } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
-import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
@@ -47,13 +46,7 @@ interface WhereUsedPage {
   selector: 'app-material-detail-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    PiPageHeaderComponent,
-    PiSectionComponent,
-    PiEmptyStateComponent,
-    ButtonComponent,
-    RouterLink,
-  ],
+  imports: [PiPageHeaderComponent, PiSectionComponent, ButtonComponent, RouterLink],
   template: `
     <app-pi-page-header
       [eyebrow]="'материал'"
