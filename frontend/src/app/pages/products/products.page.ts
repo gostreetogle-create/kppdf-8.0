@@ -14,9 +14,8 @@ import {
 import { httpResource } from '@angular/common/http';
 import { LucideAngularModule, LayoutGrid, List, RefreshCw } from 'lucide-angular';
 import { RouterLink } from '@angular/router';
-import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../shared/page/pi-section.component';
-import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
+import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import { CATALOG_SECTION_CHIPS } from '../catalog/catalog-group-chips';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
@@ -125,9 +124,7 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
   imports: [
     LucideAngularModule,
     RouterLink,
-    PiPageHeaderComponent,
-    PiSectionComponent,
-    PiToolbarComponent,
+    PiGroupWorkspaceComponent,
     PiRowActionsComponent,
     ButtonComponent,
     TableComponent,
@@ -135,69 +132,64 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
     AvatarComponent,
   ],
   template: `
-    <app-pi-page-header
-      eyebrow="раздел · продукция"
-      title="Продукция"
-      description="Каталог готовой продукции: товары, услуги, работы. Цены, себестоимость, габариты."
-    />
-
-    <app-pi-toolbar>
-      <input
-        id="products-search"
-        type="search"
-        name="products-search"
-        [value]="searchQuery()"
-        (input)="onSearchInput($event)"
-        placeholder="Поиск по названию или SKU…"
-        aria-label="Поиск продукции"
-        data-test="search-input"
-        class="pi-input w-72"
-      />
-      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
-        + Создать
-      </app-pi-button>
-      <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
-        <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
-      </app-pi-button>
-      <div
-        class="flex items-center gap-0.5 hairline rounded-sm p-0.5"
-        role="group"
-        aria-label="Вид каталога"
-        data-test="view-toggle"
-      >
-        <button
-          type="button"
-          (click)="setViewMode('list')"
-          [attr.aria-pressed]="viewMode() === 'list'"
-          [class]="
-            viewMode() === 'list'
-              ? 'min-h-touch min-w-8 px-2 rounded-sm bg-paper-2 text-ink transition-colors'
-              : 'min-h-touch min-w-8 px-2 rounded-sm text-muted-foreground hover:bg-paper-2/60 hover:text-ink transition-colors'
-          "
-          aria-label="Показать списком"
-          data-test="view-list-button"
+    <app-pi-group-workspace [chips]="chips" activeId="products">
+      <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        <input
+          id="products-search"
+          type="search"
+          name="products-search"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          placeholder="Поиск по названию или SKU…"
+          aria-label="Поиск продукции"
+          data-test="search-input"
+          class="pi-input w-72"
+        />
+        <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
+          + Создать
+        </app-pi-button>
+        <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
+          <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
+        </app-pi-button>
+        <div
+          class="flex items-center gap-0.5 hairline rounded-sm p-0.5"
+          role="group"
+          aria-label="Вид каталога"
+          data-test="view-toggle"
         >
-          <lucide-icon [img]="ListIcon" [size]="16"></lucide-icon>
-        </button>
-        <button
-          type="button"
-          (click)="setViewMode('grid')"
-          [attr.aria-pressed]="viewMode() === 'grid'"
-          [class]="
-            viewMode() === 'grid'
-              ? 'min-h-touch min-w-8 px-2 rounded-sm bg-paper-2 text-ink transition-colors'
-              : 'min-h-touch min-w-8 px-2 rounded-sm text-muted-foreground hover:bg-paper-2/60 hover:text-ink transition-colors'
-          "
-          aria-label="Показать карточками"
-          data-test="view-grid-button"
-        >
-          <lucide-icon [img]="GridIcon" [size]="16"></lucide-icon>
-        </button>
+          <button
+            type="button"
+            (click)="setViewMode('list')"
+            [attr.aria-pressed]="viewMode() === 'list'"
+            [class]="
+              viewMode() === 'list'
+                ? 'min-h-touch min-w-8 px-2 rounded-sm bg-paper-2 text-ink transition-colors'
+                : 'min-h-touch min-w-8 px-2 rounded-sm text-muted-foreground hover:bg-paper-2/60 hover:text-ink transition-colors'
+            "
+            aria-label="Показать списком"
+            data-test="view-list-button"
+          >
+            <lucide-icon [img]="ListIcon" [size]="16"></lucide-icon>
+          </button>
+          <button
+            type="button"
+            (click)="setViewMode('grid')"
+            [attr.aria-pressed]="viewMode() === 'grid'"
+            [class]="
+              viewMode() === 'grid'
+                ? 'min-h-touch min-w-8 px-2 rounded-sm bg-paper-2 text-ink transition-colors'
+                : 'min-h-touch min-w-8 px-2 rounded-sm text-muted-foreground hover:bg-paper-2/60 hover:text-ink transition-colors'
+            "
+            aria-label="Показать карточками"
+            data-test="view-grid-button"
+          >
+            <lucide-icon [img]="GridIcon" [size]="16"></lucide-icon>
+          </button>
+        </div>
+        <span class="flex-1"></span>
+        <span class="text-xs text-muted-foreground">{{ total() }} {{ totalLabel(total()) }}</span>
       </div>
-      <span hint>{{ total() }} {{ totalLabel(total()) }}</span>
-    </app-pi-toolbar>
 
-    <app-pi-section title="Каталог" hint="сортировка · клик по заголовку" eyebrow="I">
       @if (error()) {
         <div
           role="alert"
@@ -258,107 +250,105 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
           </div>
         }
       } @else {
-        <div class="overflow-x-auto hairline rounded-sm">
-          <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
-            ← Таблица широкая — прокручивайте горизонтально →
-          </p>
-          <app-pi-table
-            [data]="data()"
-            [columns]="cols"
-            [loading]="loading()"
-            [total]="total()"
-            [page]="page()"
-            [pageSize]="pageSize"
-            [emptyMessage]="emptyMessage()"
-            [ariaLabel]="'Список продукции'"
-            [cellTemplates]="cellTemplates"
-            [rowActions]="rowActionsTplBinding"
-            [localSort]="false"
-            [initialSortKey]="'name'"
-            [initialSortDir]="'asc'"
-            (pageChange)="onPageChange($event)"
-            (sortChange)="onSortChange($event)"
-            (rowClick)="onRowClick($event)"
-            [expandedRow]="expandedTpl"
-            [expandedRowWhen]="isExpandedRow"
-            [expandedRowLabel]="expandedRowLabel"
-          ></app-pi-table>
-        </div>
+        <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
+          ← Таблица широкая — прокручивайте горизонтально →
+        </p>
+        <app-pi-table
+          [data]="data()"
+          [columns]="cols"
+          [loading]="loading()"
+          [total]="total()"
+          [page]="page()"
+          [pageSize]="pageSize"
+          [emptyMessage]="emptyMessage()"
+          [ariaLabel]="'Список продукции'"
+          [cellTemplates]="cellTemplates"
+          [rowActions]="rowActionsTplBinding"
+          [localSort]="false"
+          [initialSortKey]="'name'"
+          [initialSortDir]="'asc'"
+          (pageChange)="onPageChange($event)"
+          (sortChange)="onSortChange($event)"
+          (rowClick)="onRowClick($event)"
+          [expandedRow]="expandedTpl"
+          [expandedRowWhen]="isExpandedRow"
+          [expandedRowLabel]="expandedRowLabel"
+        ></app-pi-table>
       }
-    </app-pi-section>
 
-    <!-- ───── Template refs (hoisted out of @if/@else so the
+      <!-- ───── Template refs (hoisted out of @if/@else so the
          @ViewChild({ static: true }) queries resolve) ───── -->
-    <!-- Name cell (routerLink to detail page). The (click) propagates
+      <!-- Name cell (routerLink to detail page). The (click) propagates
          to the row <tr>. pi-table wraps each row with
          (click)="onRowClick(row)" so without stopPropagation the
          navigation would also fire rowClick — the stopPropagation
          makes the cell template robust against row-level click. -->
-    <ng-template #nameTpl let-row>
-      <a
-        [routerLink]="['/products', row._id]"
-        (click)="$event.stopPropagation()"
-        class="text-ink hover:text-sunrise-warm hover:underline"
-        [attr.aria-label]="'Открыть ' + row.name"
-        data-test="open-row-link"
-        >{{ row.name }}</a
-      >
-    </ng-template>
-
-    <!-- ───── Row actions cluster ───── -->
-    <ng-template #rowActionsTpl let-row>
-      <app-pi-row-actions
-        [row]="row"
-        [editLabel]="'Редактировать ' + row.name"
-        [deleteLabel]="'Удалить ' + row.name"
-        [dataTestEdit]="'edit-button-' + row._id"
-        [dataTestDelete]="'delete-button-' + row._id"
-        (edit)="openEdit($event)"
-        (delete)="onDelete($event)"
-      />
-    </ng-template>
-
-    <!-- ───── Expanded row: модули в составе (TZ-PRODUCTS-304) ───── -->
-    <ng-template #expandedTpl let-row>
-      @if (expandedId() === row._id) {
-        <div
-          class="px-4 py-3"
-          data-test="expanded-content"
-          [attr.aria-label]="'Состав товара: ' + row.name"
+      <ng-template #nameTpl let-row>
+        <a
+          [routerLink]="['/products', row._id]"
+          (click)="$event.stopPropagation()"
+          class="text-ink hover:text-sunrise-warm hover:underline"
+          [attr.aria-label]="'Открыть ' + row.name"
+          data-test="open-row-link"
+          >{{ row.name }}</a
         >
-          @if (modulesOf(row).length === 0) {
-            <p class="text-xs text-muted-foreground" data-test="expanded-empty">
-              Нет модулей в составе. Откройте товар, чтобы привязать модули.
-            </p>
-          } @else {
-            <div class="flex flex-wrap gap-2">
-              @for (m of modulesOf(row); track m._id) {
-                <a
-                  [routerLink]="['/modules', m._id]"
-                  class="inline-flex items-center gap-2 min-h-touch px-2 py-1.5 text-sm hairline rounded-sm bg-paper hover:bg-paper-2 hover:shadow-sm transition-all"
-                  [attr.aria-label]="'Открыть модуль ' + m.name"
-                  [attr.data-test]="'module-card-' + m._id"
-                >
-                  <span
-                    class="w-7 h-7 rounded-sm hairline bg-paper-2 flex items-center justify-center text-muted-foreground text-xs font-medium shrink-0"
-                    aria-hidden="true"
+      </ng-template>
+
+      <!-- ───── Row actions cluster ───── -->
+      <ng-template #rowActionsTpl let-row>
+        <app-pi-row-actions
+          [row]="row"
+          [editLabel]="'Редактировать ' + row.name"
+          [deleteLabel]="'Удалить ' + row.name"
+          [dataTestEdit]="'edit-button-' + row._id"
+          [dataTestDelete]="'delete-button-' + row._id"
+          (edit)="openEdit($event)"
+          (delete)="onDelete($event)"
+        />
+      </ng-template>
+
+      <!-- ───── Expanded row: модули в составе (TZ-PRODUCTS-304) ───── -->
+      <ng-template #expandedTpl let-row>
+        @if (expandedId() === row._id) {
+          <div
+            class="px-4 py-3"
+            data-test="expanded-content"
+            [attr.aria-label]="'Состав товара: ' + row.name"
+          >
+            @if (modulesOf(row).length === 0) {
+              <p class="text-xs text-muted-foreground" data-test="expanded-empty">
+                Нет модулей в составе. Откройте товар, чтобы привязать модули.
+              </p>
+            } @else {
+              <div class="flex flex-wrap gap-2">
+                @for (m of modulesOf(row); track m._id) {
+                  <a
+                    [routerLink]="['/modules', m._id]"
+                    class="inline-flex items-center gap-2 min-h-touch px-2 py-1.5 text-sm hairline rounded-sm bg-paper hover:bg-paper-2 hover:shadow-sm transition-all"
+                    [attr.aria-label]="'Открыть модуль ' + m.name"
+                    [attr.data-test]="'module-card-' + m._id"
                   >
-                    {{ (m.name || 'M').charAt(0).toUpperCase() }}
-                  </span>
-                  <span class="font-medium truncate max-w-40">{{ m.name }}</span>
-                  <span class="font-mono text-xs text-muted-foreground empty-cell">
-                    {{ m.article ?? '—' }}
-                  </span>
-                  <span class="text-xs text-muted-foreground">
-                    {{ m.materials.length }} материалов
-                  </span>
-                </a>
-              }
-            </div>
-          }
-        </div>
-      }
-    </ng-template>
+                    <span
+                      class="w-7 h-7 rounded-sm hairline bg-paper-2 flex items-center justify-center text-muted-foreground text-xs font-medium shrink-0"
+                      aria-hidden="true"
+                    >
+                      {{ (m.name || 'M').charAt(0).toUpperCase() }}
+                    </span>
+                    <span class="font-medium truncate max-w-40">{{ m.name }}</span>
+                    <span class="font-mono text-xs text-muted-foreground empty-cell">
+                      {{ m.article ?? '—' }}
+                    </span>
+                    <span class="text-xs text-muted-foreground">
+                      {{ m.materials.length }} материалов
+                    </span>
+                  </a>
+                }
+              </div>
+            }
+          </div>
+        }
+      </ng-template>
+    </app-pi-group-workspace>
   `,
 })
 export class ProductsPage implements OnInit {
@@ -378,6 +368,7 @@ export class ProductsPage implements OnInit {
       }
     });
   }
+  protected readonly chips = CATALOG_SECTION_CHIPS;
   private readonly service = inject(ProductsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);

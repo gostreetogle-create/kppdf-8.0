@@ -12,9 +12,8 @@ import {
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { LucideAngularModule, RefreshCw } from 'lucide-angular';
-import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../shared/page/pi-section.component';
-import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
+import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import { CATALOG_SECTION_CHIPS } from '../catalog/catalog-group-chips';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../shared/ui/switch/switch.component';
@@ -73,47 +72,36 @@ function accessorFor(key: Exclude<SortKey, null>): (row: WorkType) => unknown {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     LucideAngularModule,
-    PiPageHeaderComponent,
-    PiSectionComponent,
-    PiToolbarComponent,
+    PiGroupWorkspaceComponent,
     PiRowActionsComponent,
     ButtonComponent,
     SwitchComponent,
     TableComponent,
   ],
   template: `
-    <app-pi-page-header
-      eyebrow="раздел · справочники"
-      title="Виды работ"
-      description="Справочник видов работ с нормативами часов, ставкой и привязкой к рабочему центру. Используется в составе модулей продукции."
-    />
+    <app-pi-group-workspace [chips]="chips" activeId="work-types">
+      <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        <input
+          id="work-types-search"
+          type="search"
+          name="work-types-search"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          placeholder="Поиск по названию…"
+          aria-label="Поиск видов работ"
+          data-test="search-input"
+          class="pi-input w-64"
+        />
+        <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
+          + Создать
+        </app-pi-button>
+        <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
+          <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
+        </app-pi-button>
+        <span class="flex-1"></span>
+        <span class="text-xs text-muted-foreground">{{ total() }} {{ totalLabel(total()) }}</span>
+      </div>
 
-    <app-pi-toolbar>
-      <input
-        id="work-types-search"
-        type="search"
-        name="work-types-search"
-        [value]="searchQuery()"
-        (input)="onSearchInput($event)"
-        placeholder="Поиск по названию…"
-        aria-label="Поиск видов работ"
-        data-test="search-input"
-        class="pi-input w-64"
-      />
-      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
-        + Создать
-      </app-pi-button>
-      <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
-        <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
-      </app-pi-button>
-      <span hint>{{ total() }} {{ totalLabel(total()) }}</span>
-    </app-pi-toolbar>
-
-    <app-pi-section
-      title="Каталог"
-      hint="сортировка · клик по заголовку · деактивированные — приглушены"
-      eyebrow="I"
-    >
       @if (error()) {
         <div
           role="alert"
@@ -123,54 +111,53 @@ function accessorFor(key: Exclude<SortKey, null>): (row: WorkType) => unknown {
         </div>
       }
 
-      <div class="overflow-x-auto hairline rounded-sm">
-        <app-pi-table
-          [data]="paginatedRows()"
-          [columns]="cols"
-          [loading]="loading()"
-          [total]="total()"
-          [page]="page()"
-          [pageSize]="pageSize"
-          [emptyMessage]="emptyMessage()"
-          [ariaLabel]="'Список видов работ'"
-          [cellTemplates]="cellTemplates"
-          [rowActions]="rowActionsTplBinding"
-          [localSort]="false"
-          [initialSortKey]="'name'"
-          [initialSortDir]="'asc'"
-          (pageChange)="onPageChange($event)"
-          (sortChange)="onSortChange($event)"
-        >
-          <ng-template #rowActionsTpl let-row>
-            <app-pi-row-actions
-              [row]="row"
-              [editLabel]="'Редактировать ' + row.name"
-              [deleteLabel]="'Удалить ' + row.name"
-              [dataTestEdit]="'edit-button-' + row._id"
-              [dataTestDelete]="'delete-button-' + row._id"
-              (edit)="openEdit($event)"
-              (delete)="onDelete($event)"
-            />
-          </ng-template>
+      <app-pi-table
+        [data]="paginatedRows()"
+        [columns]="cols"
+        [loading]="loading()"
+        [total]="total()"
+        [page]="page()"
+        [pageSize]="pageSize"
+        [emptyMessage]="emptyMessage()"
+        [ariaLabel]="'Список видов работ'"
+        [cellTemplates]="cellTemplates"
+        [rowActions]="rowActionsTplBinding"
+        [localSort]="false"
+        [initialSortKey]="'name'"
+        [initialSortDir]="'asc'"
+        (pageChange)="onPageChange($event)"
+        (sortChange)="onSortChange($event)"
+      >
+        <ng-template #rowActionsTpl let-row>
+          <app-pi-row-actions
+            [row]="row"
+            [editLabel]="'Редактировать ' + row.name"
+            [deleteLabel]="'Удалить ' + row.name"
+            [dataTestEdit]="'edit-button-' + row._id"
+            [dataTestDelete]="'delete-button-' + row._id"
+            (edit)="openEdit($event)"
+            (delete)="onDelete($event)"
+          />
+        </ng-template>
 
-          <ng-template #isActiveTpl let-row>
-            <app-pi-switch
-              [checked]="row.isActive"
-              [id]="'switch-' + row._id"
-              [ariaLabel]="(row.isActive ? 'Деактивировать ' : 'Активировать ') + row.name"
-              (checkedChange)="onToggleActive(row, $event)"
-              data-test="active-switch"
-            />
-          </ng-template>
-        </app-pi-table>
-      </div>
-    </app-pi-section>
+        <ng-template #isActiveTpl let-row>
+          <app-pi-switch
+            [checked]="row.isActive"
+            [id]="'switch-' + row._id"
+            [ariaLabel]="(row.isActive ? 'Деактивировать ' : 'Активировать ') + row.name"
+            (checkedChange)="onToggleActive(row, $event)"
+            data-test="active-switch"
+          />
+        </ng-template>
+      </app-pi-table>
+    </app-pi-group-workspace>
   `,
 })
 export class WorkTypesPage implements OnInit {
   constructor() {
     this.destroyRef.onDestroy(() => this.search.destroy());
   }
+  protected readonly chips = CATALOG_SECTION_CHIPS;
   private readonly service = inject(WorkTypesService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);

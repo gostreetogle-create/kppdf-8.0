@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
 import { CreateCompositionLineDto, UpdateCompositionLineDto } from '../catalog/composition-line.dto';
 import { CatalogGraphService, MAX_DEPTH } from '../catalog-graph/catalog-graph.service';
 import { ProductModuleService, UpsertProductModuleDto } from './product-module.service';
@@ -26,6 +27,12 @@ export class ProductModuleController {
   @Get()
   @Roles('admin', 'manager')
   list(@Query('productId') productId?: string) { return this.service.findAll(productId); }
+
+  @Get(':id/where-used')
+  @Roles('admin', 'manager', 'user')
+  getWhereUsed(@Param('id') id: string, @Query('page') page = '1', @Query('limit') limit = '20', @CurrentUser() user: AuthenticatedUser) {
+    return this.catalogGraph.getWhereUsed('module', id, { page: parseInt(page, 10), limit: parseInt(limit, 10), organizationId: user.organizationId });
+  }
 
   @Get(':id/composition')
   @Roles('admin', 'manager')

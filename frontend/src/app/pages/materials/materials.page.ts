@@ -13,9 +13,8 @@ import {
 import { httpResource } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule, RefreshCw } from 'lucide-angular';
-import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../shared/page/pi-section.component';
-import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
+import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import { CATALOG_SECTION_CHIPS } from '../catalog/catalog-group-chips';
 import { PiEmptyTileComponent } from '../../shared/ui/pi-empty-tile/pi-empty-tile.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
@@ -86,9 +85,7 @@ const PAGE_SIZE = 50;
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     LucideAngularModule,
-    PiPageHeaderComponent,
-    PiSectionComponent,
-    PiToolbarComponent,
+    PiGroupWorkspaceComponent,
     PiEmptyTileComponent,
     PiRowActionsComponent,
     ButtonComponent,
@@ -96,53 +93,44 @@ const PAGE_SIZE = 50;
     RouterLink,
   ],
   template: `
-    <app-pi-page-header
-      eyebrow="раздел · каталог"
-      title="Материалы"
-      description="Справочник материалов: номенклатура, поставщики, габариты, фото, цены, остатки."
-    />
+    <app-pi-group-workspace [chips]="chips" activeId="materials">
+      <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        <input
+          id="materials-search"
+          type="search"
+          name="materials-search"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          placeholder="Поиск по названию…"
+          aria-label="Поиск материалов"
+          data-test="search-input"
+          class="pi-input w-64"
+        />
+        <!-- TZ-CATALOG-316: kind filter — server attaches ?materialKind= to GET /materials -->
+        <select
+          id="materials-kind-filter"
+          name="materials-kind-filter"
+          [value]="kindFilter() ?? ''"
+          (change)="onKindFilterChange($event)"
+          aria-label="Фильтр по типу материала"
+          data-test="kind-filter"
+          class="pi-input w-40"
+        >
+          <option value="">Все типы</option>
+          @for (k of KIND_OPTIONS; track k) {
+            <option [value]="k">{{ kindLabel(k) }}</option>
+          }
+        </select>
+        <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
+          + Создать
+        </app-pi-button>
+        <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
+          <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
+        </app-pi-button>
+        <span class="flex-1"></span>
+        <span class="text-xs text-muted-foreground">{{ total() }} {{ totalLabel(total()) }}</span>
+      </div>
 
-    <app-pi-toolbar>
-      <input
-        id="materials-search"
-        type="search"
-        name="materials-search"
-        [value]="searchQuery()"
-        (input)="onSearchInput($event)"
-        placeholder="Поиск по названию…"
-        aria-label="Поиск материалов"
-        data-test="search-input"
-        class="pi-input w-64"
-      />
-      <!-- TZ-CATALOG-316: kind filter — server attaches ?materialKind= to GET /materials -->
-      <select
-        id="materials-kind-filter"
-        name="materials-kind-filter"
-        [value]="kindFilter() ?? ''"
-        (change)="onKindFilterChange($event)"
-        aria-label="Фильтр по типу материала"
-        data-test="kind-filter"
-        class="pi-input w-40"
-      >
-        <option value="">Все типы</option>
-        @for (k of KIND_OPTIONS; track k) {
-          <option [value]="k">{{ kindLabel(k) }}</option>
-        }
-      </select>
-      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
-        + Создать
-      </app-pi-button>
-      <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
-        <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
-      </app-pi-button>
-      <span hint>{{ total() }} {{ totalLabel(total()) }}</span>
-    </app-pi-toolbar>
-
-    <app-pi-section
-      title="Каталог"
-      hint="сортировка · клик по заголовку · габариты: Д. Ш. В. Т. Ø Г."
-      eyebrow="I"
-    >
       @if (error()) {
         <div
           role="alert"
@@ -151,82 +139,80 @@ const PAGE_SIZE = 50;
           {{ error() }}
         </div>
       }
-      <div class="overflow-x-auto hairline rounded-sm">
-        <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
-          ← Таблица широкая — прокручивайте горизонтально →
-        </p>
-        <app-pi-table
-          [data]="data()"
-          [columns]="cols"
-          [loading]="loading()"
-          [total]="total()"
-          [page]="page()"
-          [pageSize]="pageSize"
-          [emptyMessage]="emptyMessage()"
-          [ariaLabel]="'Список материалов'"
-          [cellTemplates]="cellTemplates"
-          [rowActions]="rowActionsTplBinding"
-          (pageChange)="onPageChange($event)"
-        >
-          <!-- ───── Photo cell ───── -->
-          <ng-template #photoTpl let-row>
-            @if (mainPhotoOf(row); as mp) {
-              <img
-                [src]="mp.storageUrl"
-                [alt]="mp.originalFilename || row.name"
-                class="block w-20 h-20 object-cover hairline rounded-sm"
-                loading="lazy"
-              />
-            } @else {
-              <app-pi-empty-tile [sizePx]="80" />
-            }
-          </ng-template>
-
-          <!-- ───── Supplier cell (lookup name) ───── -->
-          <ng-template #supplierTpl let-row>
-            {{ supplierNameOf(row) ?? '' }}
-          </ng-template>
-
-          <!-- ───── TZ-CATALOG-316: kind cell (Russian short label; — for unset) ───── -->
-          <ng-template #kindTpl let-row>
-            {{ kindLabelOf(row) ?? '' }}
-          </ng-template>
-
-          <!-- ───── Dimensions cell (font-mono glyphs) ───── -->
-          <ng-template #dimsTpl let-row>
-            <span class="font-mono text-xs whitespace-nowrap">{{ dimensionsSummary(row) }}</span>
-          </ng-template>
-
-          <!-- ───── Stock cell (TZ-MATERIALS-308, read-only link) ───── -->
-          <ng-template #stockTpl let-row>
-            <a
-              [routerLink]="['/storage-items']"
-              [queryParams]="{ materialId: row._id }"
-              class="inline-flex items-center gap-1 text-primary underline decoration-dotted underline-offset-4 transition-colors"
-              [attr.aria-label]="'Остатки на складе: ' + row.name"
-            >
-              Склад →
-            </a>
-          </ng-template>
-
-          <!-- ───── Row actions cluster ───── -->
-          <ng-template #rowActionsTpl let-row>
-            <app-pi-row-actions
-              [row]="row"
-              [copyLabel]="'Копировать ' + row.name"
-              [editLabel]="'Редактировать ' + row.name"
-              [deleteLabel]="'Удалить ' + row.name"
-              [dataTestCopy]="'copy-button-' + row._id"
-              [dataTestEdit]="'edit-button-' + row._id"
-              [dataTestDelete]="'delete-button-' + row._id"
-              (copy)="onCopy($event)"
-              (edit)="openEdit($event)"
-              (delete)="onDelete($event)"
+      <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
+        ← Таблица широкая — прокручивайте горизонтально →
+      </p>
+      <app-pi-table
+        [data]="data()"
+        [columns]="cols"
+        [loading]="loading()"
+        [total]="total()"
+        [page]="page()"
+        [pageSize]="pageSize"
+        [emptyMessage]="emptyMessage()"
+        [ariaLabel]="'Список материалов'"
+        [cellTemplates]="cellTemplates"
+        [rowActions]="rowActionsTplBinding"
+        (pageChange)="onPageChange($event)"
+      >
+        <!-- ───── Photo cell ───── -->
+        <ng-template #photoTpl let-row>
+          @if (mainPhotoOf(row); as mp) {
+            <img
+              [src]="mp.storageUrl"
+              [alt]="mp.originalFilename || row.name"
+              class="block w-20 h-20 object-cover hairline rounded-sm"
+              loading="lazy"
             />
-          </ng-template>
-        </app-pi-table>
-      </div>
-    </app-pi-section>
+          } @else {
+            <app-pi-empty-tile [sizePx]="80" />
+          }
+        </ng-template>
+
+        <!-- ───── Supplier cell (lookup name) ───── -->
+        <ng-template #supplierTpl let-row>
+          {{ supplierNameOf(row) ?? '' }}
+        </ng-template>
+
+        <!-- ───── TZ-CATALOG-316: kind cell (Russian short label; — for unset) ───── -->
+        <ng-template #kindTpl let-row>
+          {{ kindLabelOf(row) ?? '' }}
+        </ng-template>
+
+        <!-- ───── Dimensions cell (font-mono glyphs) ───── -->
+        <ng-template #dimsTpl let-row>
+          <span class="font-mono text-xs whitespace-nowrap">{{ dimensionsSummary(row) }}</span>
+        </ng-template>
+
+        <!-- ───── Stock cell (TZ-MATERIALS-308, read-only link) ───── -->
+        <ng-template #stockTpl let-row>
+          <a
+            [routerLink]="['/storage-items']"
+            [queryParams]="{ materialId: row._id }"
+            class="inline-flex items-center gap-1 text-primary underline decoration-dotted underline-offset-4 transition-colors"
+            [attr.aria-label]="'Остатки на складе: ' + row.name"
+          >
+            Склад →
+          </a>
+        </ng-template>
+
+        <!-- ───── Row actions cluster ───── -->
+        <ng-template #rowActionsTpl let-row>
+          <app-pi-row-actions
+            [row]="row"
+            [copyLabel]="'Копировать ' + row.name"
+            [editLabel]="'Редактировать ' + row.name"
+            [deleteLabel]="'Удалить ' + row.name"
+            [dataTestCopy]="'copy-button-' + row._id"
+            [dataTestEdit]="'edit-button-' + row._id"
+            [dataTestDelete]="'delete-button-' + row._id"
+            (copy)="onCopy($event)"
+            (edit)="openEdit($event)"
+            (delete)="onDelete($event)"
+          />
+        </ng-template>
+      </app-pi-table>
+    </app-pi-group-workspace>
   `,
 })
 export class MaterialsPage implements OnInit {
@@ -235,6 +221,7 @@ export class MaterialsPage implements OnInit {
     this.photosLookup.load();
     this.destroyRef.onDestroy(() => this.search.destroy());
   }
+  protected readonly chips = CATALOG_SECTION_CHIPS;
   private readonly service = inject(MaterialsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);

@@ -12,9 +12,8 @@ import {
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../shared/page/pi-section.component';
-import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
+import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import { CATALOG_SECTION_CHIPS } from '../catalog/catalog-group-chips';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
@@ -152,44 +151,30 @@ function moduleDimensions(row: ProductModule): string {
 @Component({
   selector: 'app-modules-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    PiPageHeaderComponent,
-    PiSectionComponent,
-    PiToolbarComponent,
-    PiRowActionsComponent,
-    ButtonComponent,
-    TableComponent,
-  ],
+  imports: [PiGroupWorkspaceComponent, PiRowActionsComponent, ButtonComponent, TableComponent],
   template: `
-    <app-pi-page-header
-      eyebrow="раздел · каталог"
-      title="Модули"
-      description="Составные части продукции: материалы + виды работ. Модуль переиспользуется между товарами."
-    />
+    <app-pi-group-workspace [chips]="chips" activeId="modules">
+      <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        <input
+          id="modules-search"
+          type="search"
+          name="modules-search"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          placeholder="Поиск по названию или артикулу…"
+          aria-label="Поиск модулей"
+          data-test="search-input"
+          class="pi-input w-72"
+        />
+        <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
+          + Создать
+        </app-pi-button>
+        <span class="flex-1"></span>
+        <span class="text-xs text-muted-foreground"
+          >{{ visibleCount() }} {{ totalLabel(visibleCount()) }}</span
+        >
+      </div>
 
-    <app-pi-toolbar>
-      <input
-        id="modules-search"
-        type="search"
-        name="modules-search"
-        [value]="searchQuery()"
-        (input)="onSearchInput($event)"
-        placeholder="Поиск по названию или артикулу…"
-        aria-label="Поиск модулей"
-        data-test="search-input"
-        class="pi-input w-72"
-      />
-      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
-        + Создать
-      </app-pi-button>
-      <span hint>{{ visibleCount() }} {{ totalLabel(visibleCount()) }}</span>
-    </app-pi-toolbar>
-
-    <app-pi-section
-      title="Каталог модулей"
-      hint="сортировка · клик по строке → детальная страница"
-      eyebrow="I"
-    >
       @if (error()) {
         <div
           role="alert"
@@ -199,49 +184,48 @@ function moduleDimensions(row: ProductModule): string {
         </div>
       }
 
-      <div class="overflow-x-auto hairline rounded-sm">
-        <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
-          ← Таблица широкая — прокручивайте горизонтально →
-        </p>
-        <app-pi-table
-          [data]="paginatedRows()"
-          [columns]="cols"
-          [loading]="loading()"
-          [total]="total()"
-          [page]="page()"
-          [pageSize]="pageSize"
-          [emptyMessage]="emptyMessage()"
-          [ariaLabel]="'Список модулей'"
-          [cellTemplates]="cellTemplates"
-          [rowActions]="rowActionsTplBinding"
-          [localSort]="false"
-          [initialSortKey]="'name'"
-          [initialSortDir]="'asc'"
-          (pageChange)="onPageChange($event)"
-          (sortChange)="onSortChange($event)"
-          (rowClick)="onRowClick($event)"
-        >
-          <!-- ───── Row actions cluster ───── -->
-          <ng-template #rowActionsTpl let-row>
-            <app-pi-row-actions
-              [row]="row"
-              [editLabel]="'Редактировать ' + row.name"
-              [deleteLabel]="'Удалить ' + row.name"
-              [dataTestEdit]="'edit-button-' + row._id"
-              [dataTestDelete]="'delete-button-' + row._id"
-              (edit)="openEdit($event)"
-              (delete)="onDelete($event)"
-            />
-          </ng-template>
-        </app-pi-table>
-      </div>
-    </app-pi-section>
+      <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
+        ← Таблица широкая — прокручивайте горизонтально →
+      </p>
+      <app-pi-table
+        [data]="paginatedRows()"
+        [columns]="cols"
+        [loading]="loading()"
+        [total]="total()"
+        [page]="page()"
+        [pageSize]="pageSize"
+        [emptyMessage]="emptyMessage()"
+        [ariaLabel]="'Список модулей'"
+        [cellTemplates]="cellTemplates"
+        [rowActions]="rowActionsTplBinding"
+        [localSort]="false"
+        [initialSortKey]="'name'"
+        [initialSortDir]="'asc'"
+        (pageChange)="onPageChange($event)"
+        (sortChange)="onSortChange($event)"
+        (rowClick)="onRowClick($event)"
+      >
+        <!-- ───── Row actions cluster ───── -->
+        <ng-template #rowActionsTpl let-row>
+          <app-pi-row-actions
+            [row]="row"
+            [editLabel]="'Редактировать ' + row.name"
+            [deleteLabel]="'Удалить ' + row.name"
+            [dataTestEdit]="'edit-button-' + row._id"
+            [dataTestDelete]="'delete-button-' + row._id"
+            (edit)="openEdit($event)"
+            (delete)="onDelete($event)"
+          />
+        </ng-template>
+      </app-pi-table>
+    </app-pi-group-workspace>
   `,
 })
 export class ModulesPage implements OnInit {
   constructor() {
     this.destroyRef.onDestroy(() => this.search.destroy());
   }
+  protected readonly chips = CATALOG_SECTION_CHIPS;
   private readonly service = inject(ProductModulesService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);

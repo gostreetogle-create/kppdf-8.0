@@ -155,6 +155,7 @@
 | **TZ-UI-TABLE-303** | Expandable polish (API/UX паритет products → переиспользование) | средний |
 | **TZ-UI-TABLE-304** | Selectable + dense для склада (когда PO/склад попросит) | backlog |
 | **TZ-UI-TABLE-305** | Raw-каталоги §4.2 → Flat | высокий (визуальный долг) |
+| **Card grid (body mode)** | Не отдельный table primitive: `PiShowcaseCard` grid в tools toggle (продукция). Фото в Flat — cell template + `PiEmptyTile`. | каталог 2026-08-05 |
 
 Подробные TZ пишет Cursor Mode A по старту PO; этот файл — только карта.
 

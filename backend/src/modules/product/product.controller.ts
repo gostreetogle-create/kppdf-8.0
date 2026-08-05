@@ -13,6 +13,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateCompositionLineDto, UpdateCompositionLineDto } from '../catalog/composition-line.dto';
@@ -52,6 +53,15 @@ export class ProductController {
       isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
       sortBy, sortOrder,
     });
+  }
+
+  @Get(':id/where-used')
+  @Roles('admin', 'manager', 'user')
+  @ApiOperation({ summary: 'List products that use this product' })
+  @ApiQuery({ name: 'page', required: false, description: 'Page number' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Items per page, max 100' })
+  getWhereUsed(@Param('id') id: string, @Query('page') page = '1', @Query('limit') limit = '20', @CurrentUser() user: AuthenticatedUser) {
+    return this.catalogGraph.getWhereUsed('product', id, { page: parseInt(page, 10), limit: parseInt(limit, 10), organizationId: user.organizationId });
   }
 
   @Get(':id/composition')

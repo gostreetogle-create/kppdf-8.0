@@ -11,9 +11,8 @@ import {
   signal,
 } from '@angular/core';
 import { LucideAngularModule, RefreshCw } from 'lucide-angular';
-import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../shared/page/pi-section.component';
-import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
+import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import { CATALOG_SECTION_CHIPS } from '../catalog/catalog-group-chips';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../shared/ui/switch/switch.component';
@@ -43,43 +42,36 @@ const PAGE_SIZE = 20;
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     LucideAngularModule,
-    PiPageHeaderComponent,
-    PiSectionComponent,
-    PiToolbarComponent,
+    PiGroupWorkspaceComponent,
     PiRowActionsComponent,
     ButtonComponent,
     SwitchComponent,
     TableComponent,
   ],
   template: `
-    <app-pi-page-header
-      eyebrow="раздел · справочники"
-      title="Люди"
-      description="Сотрудники и контактные лица: ФИО, должность, email. Используются в материалах, поставщиках и видах работ."
-    />
+    <app-pi-group-workspace [chips]="chips" activeId="people">
+      <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        <input
+          id="people-search"
+          type="search"
+          name="people-search"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          placeholder="Поиск по ФИО, email, должности…"
+          aria-label="Поиск людей"
+          data-test="search-input"
+          class="pi-input w-72"
+        />
+        <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
+          + Создать
+        </app-pi-button>
+        <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
+          <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
+        </app-pi-button>
+        <span class="flex-1"></span>
+        <span class="text-xs text-muted-foreground">{{ total() }} {{ totalLabel(total()) }}</span>
+      </div>
 
-    <app-pi-toolbar>
-      <input
-        id="people-search"
-        type="search"
-        name="people-search"
-        [value]="searchQuery()"
-        (input)="onSearchInput($event)"
-        placeholder="Поиск по ФИО, email, должности…"
-        aria-label="Поиск людей"
-        data-test="search-input"
-        class="pi-input w-72"
-      />
-      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
-        + Создать
-      </app-pi-button>
-      <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
-        <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
-      </app-pi-button>
-      <span hint>{{ total() }} {{ totalLabel(total()) }}</span>
-    </app-pi-toolbar>
-
-    <app-pi-section title="Каталог" hint="клик по заголовку — сортировка" eyebrow="I">
       @if (error()) {
         <div
           role="alert"
@@ -89,55 +81,54 @@ const PAGE_SIZE = 20;
         </div>
       }
 
-      <div class="overflow-x-auto hairline rounded-sm">
-        <app-pi-table
-          [data]="paginatedRows()"
-          [columns]="cols"
-          [loading]="loading()"
-          [total]="total()"
-          [page]="page()"
-          [pageSize]="pageSize"
-          [emptyMessage]="emptyMessage()"
-          [ariaLabel]="'Список людей'"
-          [cellTemplates]="cellTemplates"
-          [rowActions]="rowActionsTplBinding"
-          [localSort]="false"
-          [initialSortKey]="'lastName'"
-          [initialSortDir]="'asc'"
-          (pageChange)="onPageChange($event)"
-          (sortChange)="onSortChange($event)"
-        >
-          <ng-template #rowActionsTpl let-row>
-            <app-pi-row-actions
-              [row]="row"
-              [editLabel]="'Редактировать ' + displayName(row)"
-              [deleteLabel]="'Удалить ' + displayName(row)"
-              [dataTestEdit]="'edit-button-' + row._id"
-              [dataTestDelete]="'delete-button-' + row._id"
-              (edit)="openEdit($event)"
-              (delete)="onDelete($event)"
-            />
-          </ng-template>
+      <app-pi-table
+        [data]="paginatedRows()"
+        [columns]="cols"
+        [loading]="loading()"
+        [total]="total()"
+        [page]="page()"
+        [pageSize]="pageSize"
+        [emptyMessage]="emptyMessage()"
+        [ariaLabel]="'Список людей'"
+        [cellTemplates]="cellTemplates"
+        [rowActions]="rowActionsTplBinding"
+        [localSort]="false"
+        [initialSortKey]="'lastName'"
+        [initialSortDir]="'asc'"
+        (pageChange)="onPageChange($event)"
+        (sortChange)="onSortChange($event)"
+      >
+        <ng-template #rowActionsTpl let-row>
+          <app-pi-row-actions
+            [row]="row"
+            [editLabel]="'Редактировать ' + displayName(row)"
+            [deleteLabel]="'Удалить ' + displayName(row)"
+            [dataTestEdit]="'edit-button-' + row._id"
+            [dataTestDelete]="'delete-button-' + row._id"
+            (edit)="openEdit($event)"
+            (delete)="onDelete($event)"
+          />
+        </ng-template>
 
-          <ng-template #nameTpl let-row>
-            <span class="font-medium">{{ displayName(row) }}</span>
-          </ng-template>
+        <ng-template #nameTpl let-row>
+          <span class="font-medium">{{ displayName(row) }}</span>
+        </ng-template>
 
-          <ng-template #isActiveTpl let-row>
-            <app-pi-switch
-              [checked]="row.isActive"
-              [id]="'people-switch-' + row._id"
-              [ariaLabel]="(row.isActive ? 'Деактивировать ' : 'Активировать ') + displayName(row)"
-              (checkedChange)="onToggleActive(row, $event)"
-              data-test="active-switch"
-            />
-          </ng-template>
-        </app-pi-table>
-      </div>
-    </app-pi-section>
+        <ng-template #isActiveTpl let-row>
+          <app-pi-switch
+            [checked]="row.isActive"
+            [id]="'people-switch-' + row._id"
+            [ariaLabel]="(row.isActive ? 'Деактивировать ' : 'Активировать ') + displayName(row)"
+            (checkedChange)="onToggleActive(row, $event)"
+            data-test="active-switch"
+          />
+        </ng-template>
+      </app-pi-table>
+    </app-pi-group-workspace>
   `,
 })
 export class PeoplePage implements OnInit {
+  protected readonly chips = CATALOG_SECTION_CHIPS;
   private readonly service = inject(PiWorkersService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);

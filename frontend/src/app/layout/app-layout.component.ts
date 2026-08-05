@@ -50,6 +50,11 @@ interface NavCategory {
   label: string;
   icon: LucideIcon;
   items: AppNavItem[];
+  /**
+   * Group Chip Workspace entry: render a direct link (no dropdown).
+   * `items` still drive ACL filtering + active-category matching.
+   */
+  entryPath?: string;
 }
 
 /**
@@ -74,6 +79,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     id: 'catalog',
     label: 'Каталог',
     icon: Package,
+    entryPath: '/products',
     items: [
       { path: '/products', pageKey: 'products', label: 'Продукция' },
       { path: '/modules', pageKey: 'modules', label: 'Модули' },
@@ -107,12 +113,12 @@ const NAV_CATEGORIES: NavCategory[] = [
     ],
   },
   {
-    // TZ-DICT-303: nav groups — Обзор / Классификация / Измерения / Оформление / Документы.
+    // Group Chip Workspace: chips on leaf pages; top-nav is entry only.
     id: 'reference',
     label: 'Справочники',
     icon: BookOpen,
+    entryPath: '/dictionaries/classification',
     items: [
-      // TZ-DICT-310: nav → group alias routes (chips on leaf pages).
       { path: '/dictionaries/classification', pageKey: 'categories', label: 'Классификация' },
       { path: '/dictionaries/measurements', pageKey: 'dictionaries', label: 'Измерения' },
       {
@@ -125,6 +131,19 @@ const NAV_CATEGORIES: NavCategory[] = [
         path: '/dictionaries/documents-ref',
         pageKey: 'doc-template-categories',
         label: 'Документы',
+      },
+      // Leaf paths also match active category when user deep-links.
+      { path: '/categories', pageKey: 'categories', label: 'Категории' },
+      { path: '/dictionaries/color-references', pageKey: 'color-references', label: 'Цвета' },
+      {
+        path: '/doc-template-categories',
+        pageKey: 'doc-template-categories',
+        label: 'Категории шаблонов',
+      },
+      {
+        path: '/dictionaries/text-block-categories',
+        pageKey: 'doc-template-categories',
+        label: 'Категории текстов',
       },
     ],
   },
@@ -202,13 +221,36 @@ const NAV_CATEGORIES: NavCategory[] = [
               aria-label="Главная навигация"
             >
               @for (cat of navCategories(); track cat.id) {
-                <app-pi-nav-dropdown
-                  [label]="cat.label"
-                  [icon]="cat.icon"
-                  [items]="cat.items"
-                  [active]="activeCategoryId() === cat.id"
-                  [ariaLabel]="cat.label"
-                />
+                @if (cat.entryPath) {
+                  <a
+                    [routerLink]="cat.entryPath"
+                    class="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-sm
+                           transition-colors pi-focus-ring cursor-pointer no-underline"
+                    [class.bg-sunrise-warm]="activeCategoryId() === cat.id"
+                    [class.text-paper]="activeCategoryId() === cat.id"
+                    [class.text-ink]="activeCategoryId() !== cat.id"
+                    [class.hover:bg-paper-2]="activeCategoryId() !== cat.id"
+                    [attr.aria-current]="activeCategoryId() === cat.id ? 'page' : undefined"
+                    [attr.aria-label]="cat.label"
+                    [attr.data-test]="'nav-entry-' + cat.id"
+                  >
+                    <lucide-angular
+                      [img]="cat.icon"
+                      [size]="14"
+                      class="opacity-80"
+                      aria-hidden="true"
+                    />
+                    <span>{{ cat.label }}</span>
+                  </a>
+                } @else {
+                  <app-pi-nav-dropdown
+                    [label]="cat.label"
+                    [icon]="cat.icon"
+                    [items]="cat.items"
+                    [active]="activeCategoryId() === cat.id"
+                    [ariaLabel]="cat.label"
+                  />
+                }
               }
             </nav>
 
@@ -352,17 +394,31 @@ export class AppLayoutComponent {
   }
 }
 
-/** Builder and Group Chip dictionary workspaces sit flush under the app header. */
+/** Builder + Group Chip workspaces sit flush under the app header. */
 function isDenseWorkspaceUrl(url: string): boolean {
   const path = url.split('?')[0] ?? url;
-  return (
-    /(^|\/)doc-constructor\/builder(\/|$)/.test(path) ||
-    [
-      '/dictionaries/measurements',
-      '/categories',
-      '/dictionaries/color-references',
-      '/doc-template-categories',
-      '/dictionaries/text-block-categories',
-    ].some((route) => path === route || path.startsWith(route + '/'))
-  );
+  if (/(^|\/)doc-constructor\/builder(\/|$)/.test(path)) return true;
+  const denseExactOrPrefix = [
+    '/dictionaries/measurements',
+    '/dictionaries/classification',
+    '/dictionaries/appearance',
+    '/dictionaries/documents-ref',
+    '/categories',
+    '/dictionaries/color-references',
+    '/doc-template-categories',
+    '/dictionaries/text-block-categories',
+    '/products',
+    '/modules',
+    '/materials',
+    '/work-types',
+    '/people',
+  ];
+  return denseExactOrPrefix.some((route) => {
+    if (path === route) return true;
+    // List pages only — keep detail routes (/products/:id) on normal chrome.
+    if (route === '/products' || route === '/modules' || route === '/materials') {
+      return false;
+    }
+    return path.startsWith(route + '/');
+  });
 }

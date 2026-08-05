@@ -13,6 +13,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
 import { CreateMaterialDto, MATERIAL_KINDS } from './dto/create-material.dto';
 import { UpdateMaterialDto } from './dto/update-material.dto';
 import { MaterialService } from './material.service';
@@ -39,13 +40,16 @@ export class MaterialController {
     @Query('categoryId') categoryId?: string,
     @Query('materialKind') materialKind?: CreateMaterialDto['materialKind'],
   ) {
-    return this.service.findAll({
-      page: parseInt(page, 10),
-      limit: parseInt(limit, 10),
-      search,
-      categoryId,
-      materialKind,
-    });
+    return this.service.findAll({ page: parseInt(page, 10), limit: parseInt(limit, 10), search, categoryId, materialKind });
+  }
+
+  @Get(':id/where-used')
+  @Roles('admin', 'manager', 'user')
+  @ApiOperation({ summary: 'List catalog parents that use this material' })
+  @ApiQuery({ name: 'page', required: false, description: 'Page number' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Page size, max 100' })
+  getWhereUsed(@Param('id') id: string, @Query('page') page = '1', @Query('limit') limit = '20', @CurrentUser() user: AuthenticatedUser) {
+    return this.service.getWhereUsed(id, { page: parseInt(page, 10), limit: parseInt(limit, 10), organizationId: user.organizationId });
   }
 
   @Get(':id')
@@ -54,9 +58,7 @@ export class MaterialController {
   @ApiResponse({ status: 200, description: 'Material found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Material not found' })
-  findOne(@Param('id') id: string) {
-    return this.service.findById(id);
-  }
+  findOne(@Param('id') id: string) { return this.service.findById(id); }
 
   @Post()
   @Roles('admin', 'manager')
@@ -65,9 +67,7 @@ export class MaterialController {
   @ApiResponse({ status: 201, description: 'Material created' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
-  create(@Body() dto: CreateMaterialDto) {
-    return this.service.create(dto);
-  }
+  create(@Body() dto: CreateMaterialDto) { return this.service.create(dto); }
 
   @Patch(':id')
   @Roles('admin', 'manager')
@@ -77,9 +77,7 @@ export class MaterialController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Material not found' })
-  update(@Param('id') id: string, @Body() dto: UpdateMaterialDto) {
-    return this.service.update(id, dto);
-  }
+  update(@Param('id') id: string, @Body() dto: UpdateMaterialDto) { return this.service.update(id, dto); }
 
   @Delete(':id')
   @Roles('admin', 'manager')
@@ -90,9 +88,7 @@ export class MaterialController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Material not found' })
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
-  }
+  remove(@Param('id') id: string) { return this.service.remove(id); }
 
   @Post(':id/duplicate')
   @Roles('admin', 'manager')
@@ -103,7 +99,5 @@ export class MaterialController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Material not found' })
-  duplicate(@Param('id') id: string) {
-    return this.service.duplicate(id);
-  }
+  duplicate(@Param('id') id: string) { return this.service.duplicate(id); }
 }

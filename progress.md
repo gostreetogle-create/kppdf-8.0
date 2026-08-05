@@ -1,3 +1,14 @@
+## [2026-08-05] — TZ-CATALOG-UI-301 DONE: Catalog Group Chip Workspace
+**Исполнитель:** Cursor Architect (+ FE subagent)
+**Статус:** DONE
+**Что сделано кратко:** Каталог (продукция/модули/материалы/виды работ/люди) на `PiGroupWorkspace`; top-nav Каталог и Справочники — entry без dropdown; SoT + DEVELOPMENT-PATTERNS §18; table mapping Expandable+Card grid / Flat+photo.
+**Gates:** fe tsc PASS; jest catalog list specs PASS (32).
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-UI-301.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-UI-301-group-chip.lock`
+**Canon:** `docs/superpowers/specs/2026-08-05-group-chip-workspace-canon.md`
+
+---
+
 ## [2026-08-05] — TZ-UI-TABLE-303 DONE: shared Expandable contract
 **Исполнитель:** openai/gpt-5.6-luna (Buffy)
 **Статус:** DONE; archive + lock created per session close-board

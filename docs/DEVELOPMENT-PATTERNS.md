@@ -1138,3 +1138,28 @@ paramsToHttpParams({
 - [ ] Focus-ring: `pi-focus-ring` (НЕ `focus-visible:ring-2 ring-ink...`)
 - [ ] Никаких `border-2`, `border-4`
 - [ ] Селектор: `app-<name>-page` (kebab), класс: `<Name>Page` (PascalCase)
+
+## 18. Group Chip Workspace (IA chrome)
+
+**SoT:** `docs/superpowers/specs/2026-08-05-group-chip-workspace-canon.md`
+
+Когда у раздела несколько соседних списков:
+
+1. Top-nav — **entry link** (`NavCategory.entryPath`), без dropdown.
+2. Страница — `PiGroupWorkspace`: optional `[toc]` + `[chips]` + `[tools]` + body.
+3. Без H1 / `PiPageHeader` / path-breadcrumbs / `PiSection` «простыни».
+4. Таблица — `app-pi-table` / tree / expandable; поверхность `pi-table-surface`.
+5. Карточки с фото — **body mode** (grid + `PiShowcaseCard`), не новый table primitive без нужды.
+6. List routes в `isDenseWorkspaceUrl`; detail `/:id` — обычный gutter.
+
+Конфиги chips: `dictionary-group-chips.ts`, `catalog/catalog-group-chips.ts`.
+
+```ts
+// ✅
+<app-pi-group-workspace [chips]="CATALOG_SECTION_CHIPS" activeId="products">
+  <div tools>...</div>
+  <app-pi-table ... />
+</app-pi-group-workspace>
+
+// ❌ новый уникальный chrome только для каталога
+```

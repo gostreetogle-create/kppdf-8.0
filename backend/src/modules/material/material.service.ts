@@ -12,6 +12,7 @@ import { UpdateMaterialDto } from './dto/update-material.dto';
 import { Material, MaterialDocument } from './material.schema';
 import { CounterService } from '../counter/counter.service';
 import { Category, CategoryDocument } from '../category/category.schema';
+import { CatalogGraphService } from '../catalog-graph/catalog-graph.service';
 
 @Injectable()
 export class MaterialService {
@@ -21,38 +22,21 @@ export class MaterialService {
     @InjectModel(Material.name) private readonly model: Model<MaterialDocument>,
     @InjectModel(Category.name) private readonly categoryModel: Model<CategoryDocument>,
     private readonly counter: CounterService,
+    private readonly catalogGraph: CatalogGraphService,
   ) {}
 
   async create(dto: CreateMaterialDto): Promise<MaterialDocument> {
     this.assertUniqueDimensionTypes(dto.dimensions);
     let sku = dto.sku;
-    const category = dto.categoryId
-      ? await this.loadAssignableMaterialCategory(dto.categoryId)
-      : null;
+    const category = dto.categoryId ? await this.loadAssignableMaterialCategory(dto.categoryId) : null;
     if (!sku && category) {
-      if (!category.skuPrefix) {
-        throw new BadRequestException(
-          `У категории «${category.name}» не настроен префикс внутреннего кода материала`,
-        );
-      }
+      if (!category.skuPrefix) throw new BadRequestException(`У категории «${category.name}» не настроен префикс внутреннего кода материала`);
       sku = await this.counter.next('Material', category.skuPrefix);
     }
-
-    try {
-      return await this.model.create({ ...dto, sku });
-    } catch (err) {
-      this.rethrowDuplicateSku(err);
-    }
+    try { return await this.model.create({ ...dto, sku }); } catch (err) { this.rethrowDuplicateSku(err); }
   }
 
-  async findAll(q: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    categoryId?: string;
-    supplierId?: string;
-    materialKind?: CreateMaterialDto['materialKind'];
-  } = {}) {
+  async findAll(q: { page?: number; limit?: number; search?: string; categoryId?: string; supplierId?: string; materialKind?: CreateMaterialDto['materialKind'] } = {}) {
     const page = Math.max(1, q.page ?? 1);
     const limit = Math.min(100, Math.max(1, q.limit ?? 20));
     const filter: Record<string, unknown> = {};
@@ -65,29 +49,19 @@ export class MaterialService {
     if (q.supplierId) filter.supplierId = new Types.ObjectId(q.supplierId);
     if (q.materialKind) filter.materialKind = q.materialKind;
     const [items, total] = await Promise.all([
-      this.model.find(filter)
-        .populate('categoryId')
-        .populate('photoIds')
-        .populate('mainPhotoId')
-        .populate('supplierId')
-        .sort({ name: 1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .lean()
-        .exec(),
+      this.model.find(filter).populate('categoryId').populate('photoIds').populate('mainPhotoId').populate('supplierId').sort({ name: 1 }).skip((page - 1) * limit).limit(limit).lean().exec(),
       this.model.countDocuments(filter).exec(),
     ]);
     return { items, total, page, limit };
   }
 
+  async getWhereUsed(id: string, options: { page?: number; limit?: number; organizationId?: string | null } = {}) {
+    return this.catalogGraph.getWhereUsed('material', id, options);
+  }
+
   async findById(id: string): Promise<MaterialDocument> {
     if (!Types.ObjectId.isValid(id)) throw new NotFoundException(`Material ${id} not found`);
-    const doc = await this.model.findById(id)
-      .populate('categoryId')
-      .populate('photoIds')
-      .populate('mainPhotoId')
-      .populate('supplierId')
-      .exec();
+    const doc = await this.model.findById(id).populate('categoryId').populate('photoIds').populate('mainPhotoId').populate('supplierId').exec();
     if (!doc) throw new NotFoundException(`Material ${id} not found`);
     return doc;
   }
@@ -99,53 +73,30 @@ export class MaterialService {
     const doc = await this.model.findById(id).exec();
     if (!doc) throw new NotFoundException(`Material ${id} not found`);
     Object.assign(doc, dto);
-    try {
-      return await doc.save();
-    } catch (err) {
-      this.rethrowDuplicateSku(err);
-    }
+    try { return await doc.save(); } catch (err) { this.rethrowDuplicateSku(err); }
   }
 
   private async loadAssignableMaterialCategory(categoryId: string): Promise<CategoryDocument> {
     const category = await this.categoryModel.findById(categoryId).exec();
-    if (!category) {
-      throw new BadRequestException(`Категория материала ${categoryId} не найдена`);
-    }
-    if (category.type !== 'material' || category.isActive === false) {
-      throw new BadRequestException(
-        `Категория «${category.name}» недоступна для создания материала`,
-      );
-    }
+    if (!category) throw new BadRequestException(`Категория материала ${categoryId} не найдена`);
+    if (category.type !== 'material' || category.isActive === false) throw new BadRequestException(`Категория «${category.name}» недоступна для создания материала`);
     return category;
   }
 
-  /**
-   * Один type на материал (length/width/height/…): дубликаты → 400.
-   * UI тоже запрещает; backend — источник правды.
-   */
-  private assertUniqueDimensionTypes(
-    dimensions?: Array<{ type?: string }> | null,
-  ): void {
+  private assertUniqueDimensionTypes(dimensions?: Array<{ type?: string }> | null): void {
     if (!dimensions?.length) return;
     const seen = new Set<string>();
     for (const d of dimensions) {
       const t = d?.type;
       if (!t) continue;
-      if (seen.has(t)) {
-        throw new BadRequestException(
-          `Габарит «${t}» указан дважды. У материала каждый тип размера только один раз.`,
-        );
-      }
+      if (seen.has(t)) throw new BadRequestException(`Габарит «${t}» указан дважды. У материала каждый тип размера только один раз.`);
       seen.add(t);
     }
   }
 
-  /** Map Mongo duplicate-key errors to the API's conflict contract. */
   private rethrowDuplicateSku(err: unknown): never {
     const code = (err as { code?: number })?.code;
-    if (code === 11000) {
-      throw new ConflictException('Материал с таким внутренним кодом уже существует');
-    }
+    if (code === 11000) throw new ConflictException('Материал с таким внутренним кодом уже существует');
     throw err;
   }
 
@@ -153,92 +104,28 @@ export class MaterialService {
     if (!Types.ObjectId.isValid(id)) throw new NotFoundException(`Material ${id} not found`);
     const doc = await this.model.findById(id).exec();
     if (!doc) throw new NotFoundException(`Material ${id} not found`);
-    await this.model
-      .updateOne({ _id: doc._id }, { $set: { deletedAt: new Date() } })
-      .exec();
+    await this.model.updateOne({ _id: doc._id }, { $set: { deletedAt: new Date() } }).exec();
   }
 
-  /**
-   * TZ-MATERIALS-310: server-side duplicate of a material record.
-   *
-   * Contract (mirrors DocumentTemplate duplicate + ProductService patterns):
-   *  - new `_id` (auto); `name` becomes `${oldName} (копия)`, truncated to 256
-   *    to honour the schema Length(1,256) constraint;
-   *  - `sku`: regenerated via CounterService if the source's `categoryId`
-   *    is assignable AND has a non-empty `skuPrefix` — otherwise the clone
-   *    is left without an internal code so the user can fill it in (avoids
-   *    forcing a code from an unconnected default counter);
-   *  - `article`: copied as-is (user-controlled, may repeat);
-   *  - `<all other scalar fields>`: copied verbatim;
-   *  - `photoIds`/`mainPhotoId`: explicitly NOT copied — photos are
-   *    managed separately and must be re-uploaded by the user to avoid
-   *    orphan references / mixed-upload conflicts (TZ-MATERIALS-306
-   *    contract follows the same rationale as PhotoModuleDocument);
-   *  - `createdAt`/`updatedAt`/`organizationId`/`isSystem`/`deletedAt`:
-   *    intentionally dropped — clone inherits current org/user context at
-   *    create time and auto timestamps.
-   *
-   * Audit: `@AuditAction({ action: 'duplicate' })` at the controller
-   * records the source id and the new clone's id.
-   */
   async duplicate(sourceId: string): Promise<MaterialDocument> {
-    if (!Types.ObjectId.isValid(sourceId)) {
-      throw new NotFoundException(`Material ${sourceId} not found`);
-    }
+    if (!Types.ObjectId.isValid(sourceId)) throw new NotFoundException(`Material ${sourceId} not found`);
     const source = await this.model.findById(sourceId).exec();
     if (!source) throw new NotFoundException(`Material ${sourceId} not found`);
-
-    const sourceObj = (source.toObject
-      ? source.toObject()
-      : source) as unknown as Record<string, unknown>;
-    const {
-      _id: _ignoredId,
-      sku: _ignoredSourceSku,
-      photoIds: _ignoredPhotos,
-      mainPhotoId: _ignoredMainPhoto,
-      deletedAt: _ignoredDeletedAt,
-      createdAt: _ignoredCreatedAt,
-      updatedAt: _ignoredUpdatedAt,
-      organizationId: _legacy_org,
-      isSystem: _ignoredIsSystem,
-      ...copiableFields
-    } = sourceObj;
-
+    const sourceObj = (source.toObject ? source.toObject() : source) as unknown as Record<string, unknown>;
+    const { _id: _ignoredId, sku: _ignoredSourceSku, photoIds: _ignoredPhotos, mainPhotoId: _ignoredMainPhoto, deletedAt: _ignoredDeletedAt, createdAt: _ignoredCreatedAt, updatedAt: _ignoredUpdatedAt, organizationId: _legacy_org, isSystem: _ignoredIsSystem, ...copiableFields } = sourceObj;
     const baseName = String(copiableFields.name ?? 'Материал');
     const SUFFIX = ' (копия)';
-    const copiedName =
-      baseName.length + SUFFIX.length <= 256
-        ? `${baseName}${SUFFIX}`
-        : `${baseName.slice(0, 256 - SUFFIX.length)}${SUFFIX}`;
-
+    const copiedName = baseName.length + SUFFIX.length <= 256 ? `${baseName}${SUFFIX}` : `${baseName.slice(0, 256 - SUFFIX.length)}${SUFFIX}`;
     let nextSku: string | undefined;
     const rawCatId = copiableFields.categoryId;
     if (rawCatId) {
-      const categoryId = String(
-        (rawCatId as Types.ObjectId)?.toString?.() ?? rawCatId,
-      );
+      const categoryId = String((rawCatId as Types.ObjectId)?.toString?.() ?? rawCatId);
       try {
         const category = await this.loadAssignableMaterialCategory(categoryId);
-        if (category.skuPrefix) {
-          nextSku = await this.counter.next('Material', category.skuPrefix);
-        }
-      } catch {
-        nextSku = undefined;
-      }
+        if (category.skuPrefix) nextSku = await this.counter.next('Material', category.skuPrefix);
+      } catch { nextSku = undefined; }
     }
-
-    const payload: Record<string, unknown> = {
-      ...copiableFields,
-      name: copiedName,
-      ...(nextSku ? { sku: nextSku } : {}),
-      photoIds: [],
-      mainPhotoId: undefined,
-    };
-
-    try {
-      return await this.model.create(payload);
-    } catch (err) {
-      this.rethrowDuplicateSku(err);
-    }
+    const payload: Record<string, unknown> = { ...copiableFields, name: copiedName, ...(nextSku ? { sku: nextSku } : {}), photoIds: [], mainPhotoId: undefined };
+    try { return await this.model.create(payload); } catch (err) { this.rethrowDuplicateSku(err); }
   }
 }
