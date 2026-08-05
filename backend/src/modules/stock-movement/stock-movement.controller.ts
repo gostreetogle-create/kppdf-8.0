@@ -24,7 +24,7 @@ export class StockMovementController {
   }
 
   @Get('stock-movements')
-  findAll(
+  async findAll(
     @Query('warehouseId') warehouseId?: string,
     @Query('productId') productId?: string,
     @Query('materialId') materialId?: string,
@@ -32,7 +32,8 @@ export class StockMovementController {
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
-    return this.service.findAll(
+    // Canonical envelope { items, total } — matches storage-items / low-stock.
+    const items = await this.service.findAll(
       warehouseId,
       productId,
       type,
@@ -40,6 +41,7 @@ export class StockMovementController {
       to ? new Date(to) : undefined,
       materialId,
     );
+    return { items, total: items.length };
   }
 
   @Get('inventory/movements/summary')

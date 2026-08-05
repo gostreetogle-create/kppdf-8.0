@@ -14,7 +14,7 @@ export interface StorageItem {
   _id: string;
   name?: string;
   description?: string;
-  warehouseId: string;
+  warehouseId: string | { _id: string; name: string };
   warehouse?: { _id: string; name: string };
   /** Продукт-позиция: ObjectId строкой ИЛИ populated-документ (TZ-MATERIALS-308). */
   productId?: string | { _id: string; name: string; sku?: string };
@@ -39,6 +39,15 @@ export function storageItemName(item: StorageItem): string {
   const material = typeof item.materialId === 'object' ? item.materialId : item.material;
   const name = product?.name ?? material?.name ?? item.name;
   return name ?? '—';
+}
+
+/** Склад: populated warehouseId или вложенный warehouse. */
+export function storageItemWarehouseName(item: StorageItem): string {
+  if (item.warehouse?.name) return item.warehouse.name;
+  if (item.warehouseId && typeof item.warehouseId === 'object' && item.warehouseId.name) {
+    return item.warehouseId.name;
+  }
+  return '—';
 }
 
 export interface StorageItemsListResponse {
@@ -75,10 +84,25 @@ export class StorageItemsService {
     return silentGet<StorageItem>(this.http, `${this.baseUrl}/storage-items/${id}`);
   }
 
-  create(payload: Partial<StorageItem>): Observable<SilentResult<StorageItem>> {
+  /** Prefer {@link createForMaterial} / {@link createForProduct}. */
+  createForMaterial(
+    materialId: string,
+    payload: Partial<StorageItem>,
+  ): Observable<SilentResult<StorageItem>> {
     return silentPost<StorageItem>(
       this.http,
-      `${this.baseUrl}/products/${payload.productId}/storage-items`,
+      `${this.baseUrl}/materials/${materialId}/storage-items`,
+      payload,
+    );
+  }
+
+  createForProduct(
+    productId: string,
+    payload: Partial<StorageItem>,
+  ): Observable<SilentResult<StorageItem>> {
+    return silentPost<StorageItem>(
+      this.http,
+      `${this.baseUrl}/products/${productId}/storage-items`,
       payload,
     );
   }

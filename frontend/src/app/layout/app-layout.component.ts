@@ -92,6 +92,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     id: 'deals',
     label: 'Сделки',
     icon: Briefcase,
+    entryPath: '/organizations',
     items: [
       { path: '/organizations', pageKey: 'organizations', label: 'Организации' },
       // TZ-SALES-301: КП (коммерческие предложения) — thin UI над
@@ -106,10 +107,12 @@ const NAV_CATEGORIES: NavCategory[] = [
     id: 'warehouse',
     label: 'Склад',
     icon: Warehouse,
+    entryPath: '/storage-items',
     items: [
       { path: '/inventory', pageKey: 'inventory', label: 'Дашборд' },
       { path: '/storage-items', pageKey: 'storage-items', label: 'Остатки' },
       { path: '/stock-movements', pageKey: 'stock-movements', label: 'Движения' },
+      { path: '/warehouses', pageKey: 'inventory', label: 'Склады' },
     ],
   },
   {
@@ -157,12 +160,15 @@ const NAV_CATEGORIES: NavCategory[] = [
     id: 'docs',
     label: 'Документы',
     icon: FileText,
+    entryPath: '/doc-constructor/templates',
     items: [
       // Registry first: create/open a template, then land on /builder/:id.
       { path: '/doc-constructor/templates', pageKey: 'doc-templates', label: 'Шаблоны' },
       { path: '/doc-constructor/texts', pageKey: 'doc-texts', label: 'Текстовые блоки' },
       { path: '/doc-constructor/tables', pageKey: 'doc-tables', label: 'Шаблоны таблиц' },
       { path: '/doc-constructor/documents', pageKey: 'doc-documents', label: 'Архив документов' },
+      // Match-only: keep Docs category active inside builder (no TOC chip).
+      { path: '/doc-constructor/builder', pageKey: 'doc-templates', label: 'Конструктор' },
     ],
   },
   {
@@ -172,6 +178,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     id: 'admin',
     label: 'Администрирование',
     icon: ShieldCheck,
+    entryPath: '/admin/users',
     items: [
       {
         path: '/admin/users',
@@ -255,14 +262,6 @@ const NAV_CATEGORIES: NavCategory[] = [
             </nav>
 
             <div class="flex items-center gap-3 shrink-0">
-              <a
-                routerLink="/kit"
-                class="pi-icon-btn gap-1 px-2 w-auto pi-focus-ring"
-                aria-label="UI Kit"
-              >
-                <lucide-angular [img]="shieldCheckIcon" [size]="12" aria-hidden="true" />
-                <span class="font-mono text-[10px] tracking-wider"> UI Kit </span>
-              </a>
               <app-theme-toggle />
               @if (isAuthenticated()) {
                 <span class="text-sm text-muted-foreground hidden sm:inline">
@@ -306,7 +305,6 @@ const NAV_CATEGORIES: NavCategory[] = [
 })
 export class AppLayoutComponent {
   protected readonly logOutIcon = LogOut;
-  protected readonly shieldCheckIcon = ShieldCheck;
 
   private readonly auth = inject(AuthService);
   private readonly caps = inject(CapabilitiesService);
@@ -340,14 +338,21 @@ export class AppLayoutComponent {
   /** TZ-ACCESS-302: filter nav by user pages (from /auth/me) AND capabilities. */
   protected readonly navCategories = computed<readonly NavCategory[]>(() => {
     const pages = this.user()?.pages;
-    return NAV_CATEGORIES.map((cat) => ({
-      ...cat,
-      items: cat.items.filter((item) => {
+    return NAV_CATEGORIES.map((cat) => {
+      const items = cat.items.filter((item) => {
         if (pages && item.pageKey && !pages.includes(item.pageKey)) return false;
         if (!this.caps.hasAny(item.capabilities)) return false;
         return true;
-      }),
-    })).filter((cat) => cat.items.length > 0);
+      });
+      // Entry link: prefer declared entryPath if still visible, else first item
+      // (admin caps may hide /admin/users while /admin/roles remains).
+      const entryPath = cat.entryPath
+        ? items.some((i) => i.path === cat.entryPath)
+          ? cat.entryPath
+          : items[0]?.path
+        : undefined;
+      return { ...cat, items, entryPath };
+    }).filter((cat) => cat.items.length > 0);
   });
 
   /** Source of truth: signal-mapped URL from Router NavigationEnd events. */
@@ -412,13 +417,26 @@ function isDenseWorkspaceUrl(url: string): boolean {
     '/materials',
     '/work-types',
     '/people',
+    '/organizations',
+    '/proposals',
+    '/contracts',
+    '/orders',
+    '/inventory',
+    '/storage-items',
+    '/stock-movements',
+    '/warehouses',
+    '/doc-constructor/templates',
+    '/doc-constructor/texts',
+    '/doc-constructor/tables',
+    '/doc-constructor/documents',
+    '/admin/users',
+    '/admin/roles',
   ];
+  const listOnlyNoDetail = new Set(['/products', '/modules', '/materials']);
   return denseExactOrPrefix.some((route) => {
     if (path === route) return true;
     // List pages only — keep detail routes (/products/:id) on normal chrome.
-    if (route === '/products' || route === '/modules' || route === '/materials') {
-      return false;
-    }
+    if (listOnlyNoDetail.has(route)) return false;
     return path.startsWith(route + '/');
   });
 }

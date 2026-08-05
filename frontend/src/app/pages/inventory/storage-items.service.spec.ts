@@ -91,4 +91,42 @@ describe('StorageItemsService', () => {
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
   });
+
+  it('createForMaterial() POSTs /api/materials/:id/storage-items', () => {
+    svc
+      .createForMaterial('m1', { warehouseId: 'w1', quantity: 5, minQuantity: 1 })
+      .subscribe((res) => {
+        if (res.ok) expect(res.data.quantity).toBe(5);
+      });
+    const req = httpMock.expectOne('http://test/api/materials/m1/storage-items');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ warehouseId: 'w1', quantity: 5, minQuantity: 1 });
+    req.flush({
+      _id: 'si3',
+      quantity: 5,
+      reservedQty: 0,
+      minQuantity: 1,
+      isActive: true,
+      warehouseId: 'w1',
+      materialId: 'm1',
+    });
+  });
+
+  it('adjust() POSTs /api/storage-items/:id/adjust', () => {
+    svc.adjust('si1', { delta: -2, reason: 'инвентаризация' }).subscribe((res) => {
+      if (res.ok) expect(res.data.quantity).toBe(98);
+    });
+    const req = httpMock.expectOne('http://test/api/storage-items/si1/adjust');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ delta: -2, reason: 'инвентаризация' });
+    req.flush({
+      _id: 'si1',
+      quantity: 98,
+      reservedQty: 0,
+      minQuantity: 10,
+      isActive: true,
+      warehouseId: 'w1',
+      productId: 'p1',
+    });
+  });
 });

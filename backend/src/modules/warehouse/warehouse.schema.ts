@@ -27,6 +27,9 @@ export class Warehouse {
 
   @Prop({ type: [Types.ObjectId], ref: 'Role', default: [] })
   roleIds!: Types.ObjectId[];
+
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
 }
 
 export const WarehouseSchema = SchemaFactory.createForClass(Warehouse);

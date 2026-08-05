@@ -26,10 +26,7 @@ export const adminOnlyRouteGuard: CanMatchFn = () => {
  *
  * Layouts:
  *   /login   — public, publicOnlyGuard bounces authed users to /
- *   /kit/*   — UI-Kit (KitLayoutComponent). Hidden from main nav;
- *              preserved for site-building work and design review.
  *   /*       — operational site (AppLayoutComponent, authGuard).
- *              `''` → /materials (user's stated landing).
  *   **       → redirect to /, then authGuard decides login vs home.
  *
  * TZ-83 routes (rollout per phase commits — TZ-83A→B→C→D):
@@ -59,62 +56,6 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./shared/ui/forbidden/forbidden.page').then((m) => m.ForbiddenPage),
     title: 'KPPDF — Доступ ограничен',
-  },
-  {
-    // TZ-92b: /kit/* is intentionally PUBLIC (no canMatch guard).
-    // This is the UI-Kit showcase — design tokens, component demos, theme editor,
-    // code preview. No sensitive data; no backend mutations. Safe to expose to
-    // browser-use and external reviewers. DO NOT add canMatch: [authGuard] here.
-    // See tasks/TZ-92b.md for the reasoning + tests.
-    path: 'kit',
-    loadComponent: () => import('./layout/kit-layout.component').then((m) => m.KitLayoutComponent),
-    children: [
-      { path: '', pathMatch: 'full', redirectTo: 'overview' },
-      {
-        path: 'overview',
-        loadComponent: () => import('./pages/overview/overview.page').then((m) => m.OverviewPage),
-        title: 'Paper & Ink — Обзор',
-      },
-      {
-        path: 'foundations',
-        loadComponent: () =>
-          import('./pages/foundations/foundations.page').then((m) => m.FoundationsPage),
-        title: 'Paper & Ink — Tokens',
-      },
-      {
-        path: 'basics',
-        loadComponent: () => import('./pages/basics/basics.page').then((m) => m.BasicsPage),
-        title: 'Paper & Ink — Базовые',
-      },
-      {
-        path: 'forms',
-        loadComponent: () => import('./pages/forms/forms.page').then((m) => m.FormsPage),
-        title: 'Paper & Ink — Формы',
-      },
-      {
-        path: 'overlays',
-        loadComponent: () => import('./pages/overlays/overlays.page').then((m) => m.OverlaysPage),
-        title: 'Paper & Ink — Оверлеи',
-      },
-      {
-        path: 'navigation',
-        loadComponent: () =>
-          import('./pages/navigation/navigation.page').then((m) => m.NavigationPage),
-        title: 'Paper & Ink — Навигация',
-      },
-      {
-        path: 'playground/theme',
-        loadComponent: () =>
-          import('./pages/playground/theme-editor.page').then((m) => m.ThemeEditorPage),
-        title: 'Paper & Ink — Theme Editor',
-      },
-      {
-        path: 'playground/code',
-        loadComponent: () =>
-          import('./pages/playground/code-preview.page').then((m) => m.CodePreviewPage),
-        title: 'Paper & Ink — Code Preview',
-      },
-    ],
   },
   {
     path: '',
@@ -380,6 +321,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/inventory/stock-movements.page').then((m) => m.StockMovementsPage),
         title: 'KPPDF — Движения',
+      },
+      {
+        path: 'warehouses',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'inventory' },
+        loadComponent: () =>
+          import('./pages/inventory/warehouses.page').then((m) => m.WarehousesPage),
+        title: 'KPPDF — Склады',
       },
       // TZ-257 — admin module (read-only slice). Routes are
       // capability-gated AND role-gated server-side. The frontend

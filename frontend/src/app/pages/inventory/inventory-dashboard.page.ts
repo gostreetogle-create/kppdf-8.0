@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { httpResource } from '@angular/common/http';
-import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../shared/page/pi-section.component';
+import { RouterLink } from '@angular/router';
+import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import { WAREHOUSE_ENTITY_SECTION_CHIPS, WAREHOUSE_TOC_CHIPS } from './warehouse-group-chips';
 import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
+import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { ColumnDef, TableComponent } from '../../shared/ui/pi-table.component';
 import { PiToastService } from '../../shared/ui/toast';
 import { extractErrorMessage } from '../../core/silent-http';
@@ -10,6 +12,7 @@ import { API_BASE_URL } from '../../core/api.tokens';
 import {
   StorageItem,
   storageItemName,
+  storageItemWarehouseName,
   type StorageItemsListResponse,
 } from './storage-items.service';
 import { Warehouse } from './warehouses.service';
@@ -20,15 +23,31 @@ import { Warehouse } from './warehouses.service';
 @Component({
   selector: 'app-inventory-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiPageHeaderComponent, PiSectionComponent, PiEmptyStateComponent, TableComponent],
+  imports: [
+    PiGroupWorkspaceComponent,
+    PiEmptyStateComponent,
+    TableComponent,
+    ButtonComponent,
+    RouterLink,
+  ],
   template: `
-    <app-pi-page-header
-      eyebrow="07 · склад"
-      title="Склад"
-      description="Управление остатками, перемещениями и резервами."
-    />
+    <app-pi-group-workspace [toc]="toc" tocActiveId="inventory" [chips]="chips">
+      <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        <span class="text-sm text-muted-foreground">
+          {{ warehouses().length }} складов · {{ totalItems() }} позиций
+        </span>
+        <span class="flex-1"></span>
+        <a routerLink="/warehouses" class="contents">
+          <app-pi-button variant="outline" size="sm">Склады</app-pi-button>
+        </a>
+        <a routerLink="/storage-items" class="contents">
+          <app-pi-button variant="outline" size="sm">Остатки</app-pi-button>
+        </a>
+        <a routerLink="/stock-movements" class="contents">
+          <app-pi-button variant="default" size="sm">Движения</app-pi-button>
+        </a>
+      </div>
 
-    <app-pi-section title="Сводка" eyebrow="I">
       @if (error()) {
         <div
           role="alert"
@@ -37,33 +56,45 @@ import { Warehouse } from './warehouses.service';
           {{ error() }}
         </div>
       }
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="hairline rounded-sm p-4">
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <a
+          routerLink="/warehouses"
+          class="hairline rounded-sm p-4 block hover:bg-muted/40 transition-colors no-underline text-inherit"
+          data-test="kpi-warehouses"
+        >
           <span class="eyebrow text-muted-foreground">Складов</span>
           <p class="text-2xl font-mono mt-1">{{ warehouses().length }}</p>
-        </div>
-        <div class="hairline rounded-sm p-4">
+        </a>
+        <a
+          routerLink="/storage-items"
+          class="hairline rounded-sm p-4 block hover:bg-muted/40 transition-colors no-underline text-inherit"
+          data-test="kpi-positions"
+        >
           <span class="eyebrow text-muted-foreground">Позиций</span>
           <p class="text-2xl font-mono mt-1">{{ totalItems() }}</p>
-        </div>
-        <div class="hairline rounded-sm p-4">
+        </a>
+        <a
+          routerLink="/storage-items"
+          class="hairline rounded-sm p-4 block hover:bg-muted/40 transition-colors no-underline text-inherit"
+          data-test="kpi-low-stock"
+        >
           <span class="eyebrow text-muted-foreground">Мало остатков</span>
           <p class="text-2xl font-mono mt-1 text-destructive">{{ lowStockCount() }}</p>
-        </div>
+        </a>
         <div class="hairline rounded-sm p-4">
           <span class="eyebrow text-muted-foreground">Зарезервировано</span>
           <p class="text-2xl font-mono mt-1">{{ totalReserved() }}</p>
         </div>
       </div>
-    </app-pi-section>
 
-    <app-pi-section title="Мало остатков" eyebrow="II">
+      <h2 class="eyebrow text-muted-foreground mb-3">Мало остатков</h2>
       @if (lowStockLoading()) {
         <p class="text-sm text-muted-foreground">Загрузка...</p>
       } @else if (lowStockItems().length === 0) {
         <app-pi-empty-state [colspan]="1" message="Все позиции в норме." eyebrow="OK" />
       } @else {
-        <div class="hairline rounded-sm overflow-x-auto">
+        <div class="pi-table-surface overflow-x-auto">
           <app-pi-table
             [data]="lowStockItems()"
             [columns]="columns"
@@ -75,14 +106,16 @@ import { Warehouse } from './warehouses.service';
           />
         </div>
       }
-    </app-pi-section>
+    </app-pi-group-workspace>
   `,
 })
 export class InventoryDashboardPage {
   private readonly toast = inject(PiToastService);
   private readonly baseUrl = inject(API_BASE_URL);
 
-  // TZ-MATERIALS-308: helper-доступен шаблону (Продукт/Материал в low-stock).
+  protected readonly toc = WAREHOUSE_TOC_CHIPS;
+  protected readonly chips = WAREHOUSE_ENTITY_SECTION_CHIPS;
+
   protected readonly storageItemName = storageItemName;
 
   protected readonly allItemsRes = httpResource<StorageItemsListResponse>(() => ({
@@ -99,7 +132,7 @@ export class InventoryDashboardPage {
 
   protected readonly columns: ColumnDef<StorageItem>[] = [
     { key: '_id', label: 'Продукт/Материал', accessor: (item) => this.storageItemName(item) },
-    { key: 'warehouse', label: 'Склад', accessor: (item) => item.warehouse?.name ?? '—' },
+    { key: 'warehouse', label: 'Склад', accessor: (item) => storageItemWarehouseName(item) },
     {
       key: 'quantity',
       label: 'Остаток',
@@ -117,9 +150,6 @@ export class InventoryDashboardPage {
     () => this.lowStockRes.value()?.items ?? [],
   );
   protected readonly warehouses = computed<Warehouse[]>(() => this.warehousesRes.value() ?? []);
-  protected readonly loading = computed<boolean>(
-    () => this.allItemsRes.isLoading() || this.warehousesRes.isLoading(),
-  );
   protected readonly lowStockLoading = computed<boolean>(() => this.lowStockRes.isLoading());
   protected readonly totalItems = computed(() => this.allItems().length);
   protected readonly lowStockCount = computed(() => this.lowStockItems().length);

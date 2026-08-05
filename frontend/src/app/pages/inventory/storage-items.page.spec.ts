@@ -2,123 +2,144 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 
 import { StorageItemsPage } from './storage-items.page';
 import { storageItemName } from './storage-items.service';
 import { API_BASE_URL } from '../../core/api.tokens';
+import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
 import { PiToastService } from '../../shared/ui/toast';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 
-describe('StorageItemsPage (Wave 3 — PiEntityListComponent)', () => {
+describe('StorageItemsPage (PiGroupWorkspace)', () => {
   let httpMock: HttpTestingController;
+  let router: Router;
   const baseUrl = '/api';
+  const storageItemsUrl = `${baseUrl}/storage-items`;
   const warehousesUrl = `${baseUrl}/warehouses`;
   const materialsUrl = `${baseUrl}/materials`;
 
-  // TZ-MATERIALS-308: BehaviorSubject-роутер — тест может пушить query.
   const routeQuerySubject = new BehaviorSubject<{ get: (k: string) => string | null }>({
     get: () => null,
   });
 
-  /**
-   * Flush the pending HTTP request (only warehouses; storage-items is no longer
-   * triggered by the page itself — after Wave 3 migration to <app-pi-entity-list>,
-   * the spec overrides the page with NO_ERRORS_SCHEMA + imports:[], so the child
-   * PiEntityListComponent is not instantiated and therefore does not issue its
-   * own `/api/storage-items` request. Entity-list behavior is covered by its
-   * own specs (entity-list.component.spec.ts). Must be called after
-   * fixture.detectChanges().
-   */
-  function flushAll(): void {
-    httpMock.expectOne((r) => r.url === warehousesUrl && r.method === 'GET').flush([]);
-    // TZ-MATERIALS-308: страница также тянет материалы для подписи фильтра.
-    httpMock.expectOne((r) => r.url === materialsUrl && r.method === 'GET').flush({ items: [] });
+  function flushInit(warehouses: unknown[] = []): void {
+    httpMock
+      .expectOne((r) => r.url.startsWith(storageItemsUrl) && r.method === 'GET')
+      .flush({ items: [], total: 0 });
+    httpMock
+      .expectOne((r) => r.url.startsWith(warehousesUrl) && r.method === 'GET')
+      .flush(warehouses);
+    httpMock
+      .expectOne((r) => r.url.startsWith(materialsUrl) && r.method === 'GET')
+      .flush({ items: [] });
+  }
+
+  function flushPendingStorage(): void {
+    for (const req of httpMock.match(
+      (r) => r.url.startsWith(storageItemsUrl) && r.method === 'GET',
+    )) {
+      req.flush({ items: [], total: 0 });
+    }
   }
 
   beforeEach(async () => {
-    // TZ-MATERIALS-308: сброс query-параметра между тестами.
     routeQuerySubject.next({ get: () => null });
     await TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([]), withFetch()),
         provideHttpClientTesting(),
+        provideRouter([]),
         { provide: API_BASE_URL, useValue: baseUrl },
         { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
+        { provide: PiDialogService, useValue: { open: jest.fn() } },
         { provide: ActivatedRoute, useValue: { queryParamMap: routeQuerySubject.asObservable() } },
       ],
     })
       .overrideComponent(StorageItemsPage, {
-        set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
+        set: { imports: [PiGroupWorkspaceComponent], schemas: [NO_ERRORS_SCHEMA] },
       })
       .compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
+    router = TestBed.inject(Router);
+    jest.spyOn(router, 'navigate').mockResolvedValue(true);
   });
 
   afterEach(() => {
     httpMock.verify();
   });
 
-  it('creates the component and flushes the warehouses HTTP request', () => {
+  it('creates the component and flushes HTTP requests', () => {
     const fixture = TestBed.createComponent(StorageItemsPage);
     fixture.detectChanges();
-    flushAll();
+    flushInit();
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('loads warehouses on init for the filter dropdown', async () => {
+  it('loads warehouses and builds filter chips (≤8)', async () => {
     const fixture = TestBed.createComponent(StorageItemsPage);
     fixture.detectChanges();
-
-    // Wave 3 spec: the page no longer triggers /api/storage-items on its own
-    // (that's the entity-list child's responsibility, covered separately).
-    httpMock
-      .expectOne((r) => r.url === warehousesUrl && r.method === 'GET')
-      .flush([
-        { _id: 'w1', name: 'Основной' },
-        { _id: 'w2', name: 'Резервный' },
-      ]);
-    // TZ-MATERIALS-308: страница также тянет материалы для подписи фильтра.
-    httpMock.expectOne((r) => r.url === materialsUrl && r.method === 'GET').flush({ items: [] });
-
-    // Angular 20 httpResource flushes an observable sync, but its internal
-    // Resource.status flips to 'resolved' on a Zone microtask. Without
-    // awaiting stability, warehousesRes.value() may still report undefined
-    // (→ warehouses() falls back to []). Drain microtasks before reading.
+    flushInit([
+      { _id: 'w1', name: 'Основной' },
+      { _id: 'w2', name: 'Резервный' },
+    ]);
     await fixture.whenStable();
+    fixture.detectChanges();
 
     const comp = fixture.componentInstance as unknown as {
       warehouses: () => unknown[];
+      sectionChips: () => { id: string }[];
+      useWarehouseSelect: () => boolean;
     };
     expect(comp.warehouses().length).toBe(2);
+    expect(comp.useWarehouseSelect()).toBe(false);
+    expect(comp.sectionChips().map((c) => c.id)).toEqual(['all', 'w1', 'w2']);
   });
 
   it('selectedWarehouse starts empty', () => {
     const fixture = TestBed.createComponent(StorageItemsPage);
     fixture.detectChanges();
-    flushAll();
+    flushInit();
     const comp = fixture.componentInstance as unknown as {
-      selectedWarehouse: { (): string; set: (v: string) => void };
+      selectedWarehouse: { (): string };
+      activeChipId: () => string;
     };
     expect(comp.selectedWarehouse()).toBe('');
+    expect(comp.activeChipId()).toBe('all');
   });
 
   it('listParams включает materialId из query-параметра (TZ-MATERIALS-308)', async () => {
     const fixture = TestBed.createComponent(StorageItemsPage);
     fixture.detectChanges();
-    flushAll();
-
-    // Push materialId в query-параметр после создания компонента.
-    routeQuerySubject.next({ get: (k: string) => (k === 'materialId' ? 'mat-1' : null) });
-    await fixture.whenStable();
+    flushInit();
 
     const comp = fixture.componentInstance as unknown as {
-      materialId: { (): string };
+      materialId: { (): string; set: (v: string) => void };
       listParams: () => Record<string, string>;
     };
+    comp.materialId.set('mat-1');
     expect(comp.materialId()).toBe('mat-1');
     expect(comp.listParams()).toEqual({ materialId: 'mat-1' });
+    flushPendingStorage();
+  });
+
+  it('listParams включает warehouseId из query', async () => {
+    const fixture = TestBed.createComponent(StorageItemsPage);
+    fixture.detectChanges();
+    flushInit();
+
+    const comp = fixture.componentInstance as unknown as {
+      selectedWarehouse: { (): string; set: (v: string) => void };
+      listParams: () => Record<string, string>;
+      activeChipId: () => string;
+    };
+    comp.selectedWarehouse.set('w1');
+    expect(comp.selectedWarehouse()).toBe('w1');
+    expect(comp.listParams()).toEqual({ warehouseId: 'w1' });
+    expect(comp.activeChipId()).toBe('w1');
+    flushPendingStorage();
   });
 
   it('storageItemName отображает имя материала (populated materialId)', () => {
@@ -147,49 +168,40 @@ describe('StorageItemsPage (Wave 3 — PiEntityListComponent)', () => {
     expect(name).toBe('Столешница');
   });
 
-  it('onWarehouseChange sets the selected warehouse signal', () => {
+  it('onWarehouseChange navigates with warehouseId query', () => {
     const fixture = TestBed.createComponent(StorageItemsPage);
     fixture.detectChanges();
-    flushAll();
+    flushInit();
 
     const comp = fixture.componentInstance as unknown as {
-      selectedWarehouse: { (): string; set: (v: string) => void };
+      onWarehouseChange: (e: Event) => void;
     };
-
-    // Simulate user selecting a warehouse in the dropdown
-    comp.selectedWarehouse.set('w1');
-    expect(comp.selectedWarehouse()).toBe('w1');
+    const select = document.createElement('select');
+    const opt = document.createElement('option');
+    opt.value = 'w1';
+    select.appendChild(opt);
+    select.value = 'w1';
+    comp.onWarehouseChange({ target: select } as unknown as Event);
+    expect(router.navigate).toHaveBeenCalled();
   });
 
   it('listParams returns empty when no warehouse selected', () => {
     const fixture = TestBed.createComponent(StorageItemsPage);
     fixture.detectChanges();
-    flushAll();
+    flushInit();
     const comp = fixture.componentInstance as unknown as {
       listParams: () => Record<string, string>;
     };
     expect(comp.listParams()).toEqual({});
   });
 
-  it('listParams returns warehouseId when warehouse selected', () => {
+  it('renders group workspace TOC in the template', () => {
     const fixture = TestBed.createComponent(StorageItemsPage);
     fixture.detectChanges();
-    flushAll();
-
-    const comp = fixture.componentInstance as unknown as {
-      selectedWarehouse: { set: (v: string) => void };
-      listParams: () => Record<string, string>;
-    };
-    comp.selectedWarehouse.set('w1');
-    expect(comp.listParams()).toEqual({ warehouseId: 'w1' });
-  });
-
-  it('renders pi-entity-list component in the template', () => {
-    const fixture = TestBed.createComponent(StorageItemsPage);
-    fixture.detectChanges();
-    flushAll();
+    flushInit();
 
     const rootEl = fixture.nativeElement as HTMLElement;
-    expect(rootEl.querySelector('app-pi-entity-list')).toBeTruthy();
+    expect(rootEl.querySelector('app-pi-group-workspace')).toBeTruthy();
+    expect(rootEl.querySelector('[data-test="group-toc"]')).toBeTruthy();
   });
 });

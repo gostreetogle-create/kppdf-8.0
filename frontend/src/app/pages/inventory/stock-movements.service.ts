@@ -9,9 +9,11 @@ export type MovementType = 'in' | 'out' | 'adjust' | 'transfer';
 export interface StockMovement {
   _id: string;
   type: MovementType;
-  productId: string;
+  productId?: string | { _id: string; name: string; sku?: string };
   product?: { _id: string; name: string; sku?: string };
-  warehouseId: string;
+  materialId?: string | { _id: string; name: string; sku?: string };
+  material?: { _id: string; name: string; sku?: string };
+  warehouseId: string | { _id: string; name: string };
   warehouse?: { _id: string; name: string };
   zoneName?: string;
   qty: number;
@@ -19,6 +21,16 @@ export interface StockMovement {
   note?: string;
   date: string;
   createdAt?: string;
+}
+
+export interface CreateStockMovementPayload {
+  type: 'in' | 'out';
+  warehouseId: string;
+  qty: number;
+  materialId?: string;
+  productId?: string;
+  zoneName?: string;
+  documentRef?: string;
 }
 
 export interface StockMovementsListResponse {
@@ -67,7 +79,7 @@ export class StockMovementsService {
     });
   }
 
-  create(payload: Partial<StockMovement>): Observable<SilentResult<StockMovement>> {
+  create(payload: CreateStockMovementPayload): Observable<SilentResult<StockMovement>> {
     return silentPost<StockMovement>(this.http, `${this.baseUrl}/stock-movements`, payload);
   }
 

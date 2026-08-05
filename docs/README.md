@@ -10,6 +10,7 @@ docs/
 ├── README.md                      ← этот файл (индекс docs/)
 ├── AI-AGENT-GUIDE.md              ← онбординг ИИ-агента
 ├── PO-DIARY.md                    ← [канон] кто PO, планка качества, лог сессий
+├── SECTION-READINESS.md           ← [канон] какие разделы READY TO USE / что осталось
 ├── TZ-AUTHORING.md                ← [канон] как писать техзадачи (domain preflight)
 ├── AUDIT-METHODOLOGY.md           ← [канон] методика инженерного аудита → child-TZ
 ├── DARK-THEME.md                  ← канон светлой/тёмной темы (графит + gold)

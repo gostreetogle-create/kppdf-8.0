@@ -34,7 +34,10 @@ export class WarehouseService {
   }
 
   async findAll(): Promise<WarehouseDocument[]> {
-    return this.model.find().sort({ name: 1 }).exec();
+    return this.model
+      .find({ $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }] })
+      .sort({ name: 1 })
+      .exec();
   }
 
   async findById(id: string): Promise<WarehouseDocument> {

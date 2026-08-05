@@ -1,18 +1,23 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
+  Injector,
   computed,
   effect,
   inject,
   signal,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
-import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../shared/page/pi-section.component';
-import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
+import { ActivatedRoute } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import { STOCK_MOVEMENT_TYPE_CHIPS, WAREHOUSE_TOC_CHIPS } from './warehouse-group-chips';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { TableComponent, ColumnDef } from '../../shared/ui/pi-table.component';
 import { PiToastService } from '../../shared/ui/toast';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
 import {
@@ -20,41 +25,62 @@ import {
   MovementType,
   type StockMovementsListResponse,
 } from './stock-movements.service';
+import { StockMovementFormDialogComponent } from './stock-movement-form-dialog.component';
+import { StorageAdjustPickDialogComponent } from './storage-adjust-pick-dialog.component';
+
+/** Normalize BE array or envelope into list items. */
+export function normalizeMovementsList(
+  value: StockMovementsListResponse | StockMovement[] | null | undefined,
+): StockMovement[] {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  return value.items ?? [];
+}
+
+function populatedName(
+  idOrDoc: string | { _id?: string; name?: string } | undefined,
+  nested?: { name?: string },
+): string {
+  if (nested?.name) return nested.name;
+  if (idOrDoc && typeof idOrDoc === 'object' && idOrDoc.name) return idOrDoc.name;
+  return '—';
+}
 
 /**
  * Полная документация страницы: docs/pages/stock-movements.page.md
+ *
+ * Type filter on section chips (?type=). Create: +Приход / +Расход / +Корр.
  */
 @Component({
   selector: 'app-stock-movements-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    PiPageHeaderComponent,
-    PiSectionComponent,
-    PiToolbarComponent,
-    ButtonComponent,
-    TableComponent,
-  ],
+  imports: [PiGroupWorkspaceComponent, TableComponent, ButtonComponent],
   template: `
-    <app-pi-page-header
-      eyebrow="07 · склад"
-      title="Движения на складе"
-      description="Журнал приходов, расходов и перемещений."
-    />
+    <app-pi-group-workspace
+      [toc]="toc"
+      tocActiveId="stock-movements"
+      [chips]="chips"
+      [activeId]="activeChipId()"
+    >
+      <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        <span class="text-sm text-muted-foreground">{{ totalItems() }} записей</span>
+        <span class="flex-1"></span>
+        <app-pi-button variant="outline" size="sm" (click)="openIn()" data-test="movement-in">
+          + Приход
+        </app-pi-button>
+        <app-pi-button variant="outline" size="sm" (click)="openOut()" data-test="movement-out">
+          + Расход
+        </app-pi-button>
+        <app-pi-button
+          variant="outline"
+          size="sm"
+          (click)="openAdjust()"
+          data-test="movement-adjust"
+        >
+          + Корр.
+        </app-pi-button>
+      </div>
 
-    <app-pi-section title="Фильтры" eyebrow="I">
-      <app-pi-toolbar>
-        <select class="pi-input" [value]="selectedType()" (change)="onTypeChange($event)">
-          <option value="">Все типы</option>
-          <option value="in">Приход</option>
-          <option value="out">Расход</option>
-          <option value="adjust">Корректировка</option>
-          <option value="transfer">Перемещение</option>
-        </select>
-        <app-pi-button variant="ghost" size="sm" (click)="clearFilters()">Сбросить</app-pi-button>
-      </app-pi-toolbar>
-    </app-pi-section>
-
-    <app-pi-section title="Движения" [hint]="totalItems() + ' записей'" eyebrow="II">
       @if (error()) {
         <div
           role="alert"
@@ -63,40 +89,49 @@ import {
           {{ error() }}
         </div>
       }
-      <div class="overflow-x-auto hairline rounded-sm">
+
+      <div class="pi-table-surface overflow-x-auto">
         <app-pi-table
           [data]="items()"
           [columns]="columns"
           [loading]="loading()"
           [total]="items().length"
           [pageSize]="50"
-          [emptyMessage]="'Нет движений.'"
+          [emptyMessage]="'Нет движений. Проведите приход или расход.'"
           [initialSortKey]="'date'"
           [initialSortDir]="'desc'"
           ariaLabel="Движения на складе"
           data-test="stock-movements-table"
         />
       </div>
-    </app-pi-section>
+    </app-pi-group-workspace>
   `,
 })
 export class StockMovementsPage {
   private readonly toast = inject(PiToastService);
   private readonly baseUrl = inject(API_BASE_URL);
+  private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly dialog = inject(PiDialogService);
+  private readonly injector = inject(Injector);
+
+  protected readonly toc = WAREHOUSE_TOC_CHIPS;
+  protected readonly chips = STOCK_MOVEMENT_TYPE_CHIPS;
 
   protected readonly selectedType = signal<string>('');
+  protected readonly activeChipId = computed(() => this.selectedType() || 'all');
 
   private readonly listParams = computed((): Record<string, string> => {
     const type = this.selectedType();
     return type ? { type } : {};
   });
 
-  protected readonly listRes = httpResource<StockMovementsListResponse>(() => ({
+  protected readonly listRes = httpResource<StockMovementsListResponse | StockMovement[]>(() => ({
     url: `${this.baseUrl}/stock-movements`,
     params: this.listParams(),
   }));
 
-  protected readonly items = computed<StockMovement[]>(() => this.listRes.value()?.items ?? []);
+  protected readonly items = computed(() => normalizeMovementsList(this.listRes.value()));
   protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
   protected readonly totalItems = computed(() => this.items().length);
   protected readonly error = computed<string | null>(() => {
@@ -105,13 +140,21 @@ export class StockMovementsPage {
     return err ? extractErrorMessage(err) : null;
   });
 
-  private readonly errorEffect = effect(() => {
-    const err = this.listRes.error() as
-      import('@angular/common/http').HttpErrorResponse | undefined;
-    if (err) {
-      this.toast.error(extractErrorMessage(err));
-    }
-  });
+  constructor() {
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const type = params.get('type') ?? '';
+      const allowed = new Set(['', 'in', 'out', 'adjust', 'transfer']);
+      this.selectedType.set(allowed.has(type) ? type : '');
+    });
+
+    effect(() => {
+      const err = this.listRes.error() as
+        import('@angular/common/http').HttpErrorResponse | undefined;
+      if (err) {
+        this.toast.error(extractErrorMessage(err));
+      }
+    });
+  }
 
   protected readonly columns: ColumnDef<StockMovement>[] = [
     {
@@ -129,8 +172,20 @@ export class StockMovementsPage {
       width: '7rem',
       accessor: (row) => this.typeLabel(row.type),
     },
-    { key: 'product', label: 'Продукт', accessor: (row) => row.product?.name ?? '—' },
-    { key: 'warehouse', label: 'Склад', accessor: (row) => row.warehouse?.name ?? '—' },
+    {
+      key: 'product',
+      label: 'Номенклатура',
+      accessor: (row) => {
+        const material = populatedName(row.materialId, row.material);
+        if (material !== '—') return material;
+        return populatedName(row.productId, row.product);
+      },
+    },
+    {
+      key: 'warehouse',
+      label: 'Склад',
+      accessor: (row) => populatedName(row.warehouseId, row.warehouse),
+    },
     { key: 'qty', label: 'Кол-во', align: 'right', numeric: true, width: '6rem' },
     {
       key: 'documentRef',
@@ -140,13 +195,28 @@ export class StockMovementsPage {
     },
   ];
 
-  protected onTypeChange(event: Event): void {
-    const value = (event.target as HTMLSelectElement).value;
-    this.selectedType.set(value);
+  protected openIn(): void {
+    const ref = this.dialog.open(StockMovementFormDialogComponent, {
+      data: { mode: 'in' },
+      width: 'md',
+    });
+    onDialogCloseOnce(ref, this.injector, () => this.listRes.reload());
   }
 
-  protected clearFilters(): void {
-    this.selectedType.set('');
+  protected openOut(): void {
+    const ref = this.dialog.open(StockMovementFormDialogComponent, {
+      data: { mode: 'out' },
+      width: 'md',
+    });
+    onDialogCloseOnce(ref, this.injector, () => this.listRes.reload());
+  }
+
+  protected openAdjust(): void {
+    const ref = this.dialog.open(StorageAdjustPickDialogComponent, {
+      data: null,
+      width: 'md',
+    });
+    onDialogCloseOnce(ref, this.injector, () => this.listRes.reload());
   }
 
   protected typeLabel(type: MovementType): string {

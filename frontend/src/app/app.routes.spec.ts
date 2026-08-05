@@ -3,13 +3,9 @@ import { provideRouter, Router } from '@angular/router';
 import { routes } from './app.routes';
 
 /**
- * TZ-92b: route accessibility contract.
- *
- * The /kit/* route subtree is intentionally PUBLIC (no authGuard).
- * These tests pin that contract so future contributors can't accidentally
- * add canMatch: [authGuard] and break browser-use visual verify.
+ * Route accessibility contract (post UI-Kit showcase removal).
  */
-describe('app.routes (TZ-92b contract)', () => {
+describe('app.routes', () => {
   let router: Router;
 
   beforeEach(() => {
@@ -19,37 +15,9 @@ describe('app.routes (TZ-92b contract)', () => {
     router = TestBed.inject(Router);
   });
 
-  const publicKitPaths = [
-    '/kit',
-    '/kit/overview',
-    '/kit/foundations',
-    '/kit/basics',
-    '/kit/forms',
-    '/kit/overlays',
-    '/kit/navigation',
-    '/kit/playground/theme',
-    '/kit/playground/code',
-  ];
-
-  it.each(publicKitPaths)(
-    '%s should NOT have canMatch that blocks anonymous access',
-    async (path) => {
-      const kitRoute = router.config.find((r) => r.path === 'kit');
-      expect(kitRoute).toBeTruthy();
-
-      if (path === '/kit') {
-        const guards = (kitRoute!.canMatch ?? []).map((g) => g.name ?? 'anonymous');
-        expect(guards).not.toContain('authGuard');
-        return;
-      }
-
-      const childPath = path.replace('/kit/', '');
-      const child = kitRoute!.children?.find((c) => c.path === childPath);
-      expect(child).toBeTruthy();
-      const guards = (child!.canMatch ?? []).map((g) => g.name ?? 'anonymous');
-      expect(guards).not.toContain('authGuard');
-    },
-  );
+  it('does not register /kit showcase routes', () => {
+    expect(router.config.find((r) => r.path === 'kit')).toBeUndefined();
+  });
 
   it('operational site (/*) still requires authGuard', () => {
     const operationalRoute = router.config.find((r) => r.path === '');
@@ -81,15 +49,10 @@ describe('app.routes (TZ-92b contract)', () => {
     expect(hub!.loadComponent).toBeUndefined();
   });
 
-  it('TZ-DICT-310: group alias routes redirect to first chip', () => {
+  it('warehouse routes include /warehouses registry', () => {
     const operational = router.config.find((r) => r.path === '');
-    const classification = operational?.children?.find(
-      (c) => c.path === 'dictionaries/classification',
-    );
-    const appearance = operational?.children?.find((c) => c.path === 'dictionaries/appearance');
-    const docsRef = operational?.children?.find((c) => c.path === 'dictionaries/documents-ref');
-    expect(classification?.redirectTo).toBe('categories');
-    expect(appearance?.redirectTo).toBe('dictionaries/color-references');
-    expect(docsRef?.redirectTo).toBe('doc-template-categories');
+    const warehouses = operational?.children?.find((c) => c.path === 'warehouses');
+    expect(warehouses).toBeTruthy();
+    expect(warehouses!.data?.['pageKey']).toBe('inventory');
   });
 });
