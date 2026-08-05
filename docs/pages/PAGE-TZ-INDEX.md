@@ -21,10 +21,10 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | Route | Page doc | TZs |
 |-------|----------|-----|
 | `/materials` | materials.page.md | MATERIALS-*; **CATALOG-301** BE DONE; **FE поля 301 = TZ-CATALOG-316**; **CATALOG-UI-301** Group Chip |
-| `/materials/:id` | (pending → 312) | CATALOG Wave 2 |
-| `/products` | products.page.md | PRODUCTS-*; composition **302…305**; FE **317**; **CATALOG-UI-301** Group Chip + Card grid |
-| `/products/:id` | **product-detail.page.md** | stub TZ-CATALOG-319; detail UI exists |
-| `/modules`, `/modules/:id` | modules.page.md, module-detail.page.md | MODULES-*; **CATALOG-UI-301** list chrome; photos `/product-module-photos` |
+| `/materials/:id` | material detail (312) | CATALOG Wave 2 |
+| `/products` | products.page.md | PRODUCTS-*; composition **302…305**; FE **317**; gap **320**; tree **311**; **CATALOG-UI-301** |
+| `/products/:id` | **product-detail.page.md** | 319 stub docs; detail UI; **320** complex/cascade; **311** tree |
+| `/modules`, `/modules/:id` | modules.page.md, module-detail.page.md | MODULES-*; photos; **320** module→module; **311** tree |
 | `/work-types` | work-types.page.md | WORKTYPES-*, **UX-305 DONE**, **PRODUCTION-302 DONE**; **CATALOG-UI-301** |
 | `/people` | people.page.md | **UX-306 DONE**; **CATALOG-UI-301** |
 

@@ -32,19 +32,21 @@ Wave 1: `tasks/CATALOG-WAVE1.md` · Review inbox: `docs/agent-checklists/CATALOG
 
 ## Wave 2 (после 305)
 
-| ID | Title | После | Тяжесть |
-|----|-------|-------|---------|
-| 306 | Audit trail | — | docs |
-| **310** | Where-used API | 305 | средняя |
-| **311** | CompositionTree / Editor (полная) | 317+ | тяжёлая |
-| **312** | Material detail | 310 | средняя |
-| **313** | Photo unify | 305 | средняя |
-| **314** | Soft-delete / archive | 304 | средняя |
-| **315** | Lists polish + a11y | 311 | лёгкая |
+| ID | Title | После | Тяжесть | Status |
+|----|-------|-------|---------|--------|
+| 306 | Audit trail | — | docs | park |
+| **310** | Where-used API | 305 | средняя | **DONE** |
+| **313** | Photo unify | 305 | средняя | **DONE** |
+| **314** | Soft-delete / archive | 304 | средняя | review / close |
+| **312** | Material detail | 310 | средняя | DONE / park per map |
+| **320** | FE gap: каскад + детали в диалогах | 317+314 | средняя | **NEXT FE** · `_backlog/catalog/TZ-CATALOG-320.md` |
+| **311** | CompositionTree / Editor (полная) | **320** | тяжёлая | PARKED до 320 · full spec in file |
+| **315** | Lists polish + a11y | 311 | лёгкая | park |
 
 ## Правила
 
-- Не un-park 311 UI tree на legacy.
-- Не prod-apply 304 без 317 (или redirect-моста в 304 report).
-- Не параллелить backend 302–305.
-- Cursor: review inbox; 316 если свободен.
+- Порядок FE состава: **320 → 311 → 315** (не стартовать 311 до 320 DONE).
+- Не un-park 311 UI tree на legacy-only UI (после 317+320 ok).
+- Не параллелить 320 с 314 на `pages/products/**` + `pages/modules/**`.
+- Не параллелить backend 302–305 (уже DONE).
+- Cursor: review inbox; 320 handoff после закрытия 314.
