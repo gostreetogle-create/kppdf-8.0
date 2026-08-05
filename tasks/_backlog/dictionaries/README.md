@@ -6,11 +6,8 @@
 
 | ID | Title | Status |
 |----|-------|--------|
-| **302…307** | Shell cutovers | **DONE** |
-| **308** | Group Chip Workspace shell + nav + measurements pilot | **DONE** |
-| **309** | Measurements cutover (units → group) | **DONE** |
-| **310** | Groups: Классификация / Оформление / Документы | **DONE** (slim) |
-| **311** | Retire hub `/dictionaries` | **DONE** |
-| **312** | Group Chip polish: gap under nav + CTA clip | **DONE** |
+| **301** | (see stub) | parked / see file |
+| **302…307** | Shell cutovers | **DONE** → `_archive/2026-08/` (sources removed) |
+| **308…312** | Group Chip Workspace wave | **DONE** → `_archive/2026-08/` (sources removed) |
 
 ∥ CATALOG backend: OK. ∥ UI-TABLE-302/305: OK if no shared conflict keys.
