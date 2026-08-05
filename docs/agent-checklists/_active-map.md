@@ -1,39 +1,33 @@
-# SESSION QUEUE — closed wave
+# SESSION QUEUE — Catalog Wave 2 (PO start 2026-08-05)
 
-**Updated:** 2026-08-05 · READY TO PROPOSE DEPLOY · no auto-deploy
+**Updated:** 2026-08-05 · previous DICT/UI-TABLE wave CLOSED · new queue below
 
-## Wave (all DONE)
+## Closed previous wave (do not redo)
 
-| # | TZ | Status |
-|---|---|---|
-| 0 | DICT-312 + UI-TABLE-302 | **DONE** |
-| 1 | TZ-UI-TABLE-305 | **DONE** |
-| 2 | TZ-UI-TABLE-303 | **DONE** |
-| — | TZ-UI-TABLE-304 | **SKIP** (склад) |
+DICT-308…312 · UI-TABLE-301…303,305 · Catalog Wave 1 · **SKIP** UI-TABLE-304
 
-## Board
+## Must finish (in order) — Catalog Wave 2
 
-- [x] `_active/` empty
-- [x] archives + locks for wave
-- [x] `main` pushed (`8b9ffdd`+)
-- [x] **готово предложить деплой**
-- [ ] production deploy — только явная команда PO
+| # | TZ | Source | Notes |
+|---|-----|--------|--------|
+| 1 | **TZ-CATALOG-310** | `tasks/_backlog/catalog/TZ-CATALOG-310.md` | Where-used API (BE read) — first |
+| 2 | **TZ-CATALOG-313** | `tasks/_backlog/catalog/TZ-CATALOG-313.md` | Photo/docs unify |
+| 3 | **TZ-CATALOG-314** | `tasks/_backlog/catalog/TZ-CATALOG-314.md` | Soft-delete / archive consistency |
+| 4 | **TZ-CATALOG-312** | `tasks/_backlog/catalog/TZ-CATALOG-312.md` | Material detail FE (needs 310) |
+| 5 | **TZ-CATALOG-311** | `tasks/_backlog/catalog/TZ-CATALOG-311.md` | CompositionTree/Editor (heavy FE) |
+| 6 | **TZ-CATALOG-315** | `tasks/_backlog/catalog/TZ-CATALOG-315.md` | Lists polish + a11y |
 
-## Checkpoint (authoritative)
+## Out of scope this queue
 
-- DONE: DICT-308…312 + UI-TABLE-301…303, 305 archived; audit clean; `_active/` empty
-- IN PROGRESS: none
-- NOT DONE: production deploy (не запускать без явной команды PO)
-- NEXT: idle / wait new TZ queue or explicit deploy command
-- HEAD: `b4d2865d9bd3b5a183b3be0bc4a825c5092006ff`
-- Blockers: none for coding
-- Do not commit: `__pycache__/`, `tasks/Данные/`
+- Deploy / wipe / «поехали»
+- TZ-UI-TABLE-304
+- PRODUCTION-* / Z-series / commerce chain (later wave)
+- Re-doing archived DICT/UI-TABLE
 
-## Checkpoint 2026-08-05T17:43:55Z
-- DONE: audit clean; DICT-308…312 + UI-TABLE-301…303, 305 archived and locked
-- IN PROGRESS: none
-- NOT DONE: production deploy
-- NEXT: idle; wait for new TZ queue or explicit deploy command
-- HEAD: b4d2865d9bd3b5a183b3be0bc4a825c5092006ff
-- Blockers: none for coding
-- _active/: empty
+## Rules
+
+- Skill: `.agents/skills/kppdf-executor-continuous/SKILL.md`
+- CLAIM → code → gates → archive → commit+push → next; no mid-queue stops
+- Empty queue end → propose deploy readiness; **no** auto `deploy.ps1`
+- Checkpoint `_active-map.md` every ~5–7 min
+- Do not commit `__pycache__/`, `tasks/Данные/`
