@@ -9,6 +9,7 @@ import { SelectComponent } from '../../shared/ui/select/select.component';
 import { SelectOptionComponent } from '../../shared/ui/select/select-option.component';
 import { CheckboxComponent } from '../../shared/ui/checkbox/checkbox.component';
 import { PiToastService } from '../../shared/ui/toast';
+import { ColumnDef, TableComponent } from '../../shared/ui/pi-table.component';
 
 interface InventoryRow {
   id: string;
@@ -40,6 +41,7 @@ type SortDir = 'asc' | 'desc';
     SelectComponent,
     SelectOptionComponent,
     CheckboxComponent,
+    TableComponent,
   ],
   template: `
     <app-pi-page-header
@@ -117,86 +119,18 @@ type SortDir = 'asc' | 'desc';
     <!-- ───── Section II. Data table ───── -->
     <app-pi-section title="Data table" hint="sortable · paginated · 10 rows" eyebrow="II">
       <div class="hairline rounded-sm overflow-hidden">
-        <table class="w-full text-sm">
-          <thead class="hairline-b">
-            <tr>
-              <th
-                class="pi-cell font-display font-semibold cursor-pointer group text-left"
-                (click)="setSort('name')"
-              >
-                Название
-                <span
-                  [class.text-sunrise-warm]="isSortedBy('name')"
-                  class="ml-1 opacity-40 group-hover:opacity-70"
-                  >{{ sortIndicator('name') }}</span
-                >
-              </th>
-              <th
-                class="pi-cell-numeric font-display font-semibold cursor-pointer group"
-                (click)="setSort('qty')"
-              >
-                Кол-во
-                <span
-                  [class.text-sunrise-warm]="isSortedBy('qty')"
-                  class="ml-1 opacity-40 group-hover:opacity-70"
-                  >{{ sortIndicator('qty') }}</span
-                >
-              </th>
-              <th
-                class="pi-cell font-display font-semibold cursor-pointer group text-left"
-                (click)="setSort('status')"
-              >
-                Статус
-                <span
-                  [class.text-sunrise-warm]="isSortedBy('status')"
-                  class="ml-1 opacity-40 group-hover:opacity-70"
-                  >{{ sortIndicator('status') }}</span
-                >
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of pagedRows(); track row.id) {
-              <tr class="pi-table-row pi-table-row-odd last:border-0">
-                <td class="pi-cell">{{ row.name }}</td>
-                <td class="pi-cell-numeric font-mono text-xs">{{ row.qty }}</td>
-                <td class="pi-cell">
-                  <span class="eyebrow text-[10px]">{{ statusLabel(row.status) }}</span>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-
-        <div class="flex items-center justify-between px-4 py-form-field hairline-t">
-          <span class="text-xs text-muted-foreground">
-            Page {{ page() }} / {{ totalPages() }} · {{ data().length }} rows
-          </span>
-          <nav class="flex items-center gap-1" aria-label="Pagination">
-            <app-pi-button
-              size="sm"
-              variant="outline"
-              [disabled]="page() === 1"
-              (click)="page.set(page() - 1)"
-              >‹ Prev</app-pi-button
-            >
-            @for (p of pageNumbers(); track p) {
-              <app-pi-button
-                size="sm"
-                [variant]="p === page() ? 'default' : 'outline'"
-                (click)="page.set(p)"
-                >{{ p }}</app-pi-button
-              >
-            }
-            <app-pi-button
-              size="sm"
-              variant="outline"
-              [disabled]="page() === totalPages()"
-              (click)="page.set(page() + 1)"
-              >Next ›</app-pi-button
-            >
-          </nav>
-        </div>
+        <app-pi-table
+          [data]="pagedRows()"
+          [columns]="columns"
+          [total]="data().length"
+          [page]="page()"
+          [pageSize]="pageSize"
+          ariaLabel="Демонстрационная таблица запасов"
+          data-test="forms-table"
+          (pageChange)="onPageChange($event)"
+          [localSort]="false"
+          (sortChange)="onSortChange($event)"
+        />
       </div>
     </app-pi-section>
 
@@ -276,6 +210,17 @@ export class FormsPage {
   protected readonly sortKey = signal<SortKey>(null);
   protected readonly sortDir = signal<SortDir>('asc');
 
+  protected readonly columns: ColumnDef<InventoryRow>[] = [
+    { key: 'name', label: 'Название', sortable: true },
+    { key: 'qty', label: 'Кол-во', sortable: true, numeric: true, align: 'right' },
+    {
+      key: 'status',
+      label: 'Статус',
+      sortable: true,
+      format: (row) => this.statusLabel(row.status),
+    },
+  ];
+
   protected readonly pagedRows = signal<InventoryRow[]>([]);
   protected readonly totalPages = signal(1);
   protected readonly pageNumbers = signal<number[]>([]);
@@ -303,6 +248,18 @@ export class FormsPage {
       this.sortKey.set(null);
       this.sortDir.set('asc');
     }
+    this.page.set(1);
+    this.recompute();
+  }
+
+  protected onPageChange(page: number): void {
+    this.page.set(page);
+    this.recompute();
+  }
+
+  protected onSortChange(event: { key: string; dir: 'asc' | 'desc' | null }): void {
+    this.sortKey.set(event.dir === null ? null : (event.key as Exclude<SortKey, null>));
+    this.sortDir.set(event.dir === 'desc' ? 'desc' : 'asc');
     this.page.set(1);
     this.recompute();
   }

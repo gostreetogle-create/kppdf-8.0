@@ -3,6 +3,7 @@ import { httpResource } from '@angular/common/http';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
+import { ColumnDef, TableComponent } from '../../shared/ui/pi-table.component';
 import { PiToastService } from '../../shared/ui/toast';
 import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
@@ -19,7 +20,7 @@ import { Warehouse } from './warehouses.service';
 @Component({
   selector: 'app-inventory-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiPageHeaderComponent, PiSectionComponent, PiEmptyStateComponent],
+  imports: [PiPageHeaderComponent, PiSectionComponent, PiEmptyStateComponent, TableComponent],
   template: `
     <app-pi-page-header
       eyebrow="07 · склад"
@@ -62,29 +63,16 @@ import { Warehouse } from './warehouses.service';
       } @else if (lowStockItems().length === 0) {
         <app-pi-empty-state [colspan]="1" message="Все позиции в норме." eyebrow="OK" />
       } @else {
-        <div class="hairline rounded-sm overflow-hidden">
-          <table class="w-full text-sm">
-            <thead class="hairline-b">
-              <tr>
-                <th class="eyebrow py-3 px-4 text-left">Продукт/Материал</th>
-                <th class="eyebrow py-3 px-4 text-left">Склад</th>
-                <th class="eyebrow py-3 px-4 text-right">Остаток</th>
-                <th class="eyebrow py-3 px-4 text-right">Минимум</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (item of lowStockItems(); track item._id) {
-                <tr class="hairline-b hover:bg-paper-2 transition-colors">
-                  <td class="py-3 px-4">{{ storageItemName(item) }}</td>
-                  <td class="py-3 px-4 text-muted-foreground">{{ item.warehouse?.name ?? '—' }}</td>
-                  <td class="py-3 px-4 text-right font-mono text-destructive">
-                    {{ item.quantity }}
-                  </td>
-                  <td class="py-3 px-4 text-right font-mono">{{ item.minQuantity }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
+        <div class="hairline rounded-sm overflow-x-auto">
+          <app-pi-table
+            [data]="lowStockItems()"
+            [columns]="columns"
+            [loading]="lowStockLoading()"
+            [total]="lowStockItems().length"
+            [localSort]="false"
+            ariaLabel="Позиции с низким остатком"
+            data-test="inventory-low-stock-table"
+          />
         </div>
       }
     </app-pi-section>
@@ -108,6 +96,19 @@ export class InventoryDashboardPage {
   protected readonly warehousesRes = httpResource<Warehouse[]>(() => ({
     url: `${this.baseUrl}/warehouses`,
   }));
+
+  protected readonly columns: ColumnDef<StorageItem>[] = [
+    { key: '_id', label: 'Продукт/Материал', accessor: (item) => this.storageItemName(item) },
+    { key: 'warehouse', label: 'Склад', accessor: (item) => item.warehouse?.name ?? '—' },
+    {
+      key: 'quantity',
+      label: 'Остаток',
+      numeric: true,
+      align: 'right',
+      cellClass: 'text-destructive',
+    },
+    { key: 'minQuantity', label: 'Минимум', numeric: true, align: 'right' },
+  ];
 
   protected readonly allItems = computed<StorageItem[]>(
     () => this.allItemsRes.value()?.items ?? [],

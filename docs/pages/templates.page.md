@@ -50,7 +50,7 @@
 
 ## Особенности
 
-- **Inline `<table>`** — НЕ pi-table, кастомная таблица
+- **`app-pi-table`** — shared Flat kit with typed columns, status/default cell templates, row actions and client-side page navigation
 - **Client-side pagination** — pageSize = 10
 - **Create flow** — ensureOrg (INN `7707083893`) + docType → POST create (`pageSize` A3\|A4\|A5, **`isActive: true`**) → navigate to builder
 - **Duplicate** — setup (без category) → POST /duplicate → PATCH pageSize/orientation → navigate to builder

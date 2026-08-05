@@ -3,6 +3,8 @@ import {
   Component,
   DestroyRef,
   Injector,
+  TemplateRef,
+  ViewChild,
   computed,
   inject,
   signal,
@@ -36,6 +38,7 @@ import {
   DocumentTemplateCategory,
 } from '../../../shared/services/pi-document-template-categories.service';
 import { pluralRu } from '../../../shared/util/russian-plural';
+import { ColumnDef, TableComponent } from '../../../shared/ui/pi-table.component';
 
 const RU_TEMPLATES = ['шаблон', 'шаблона', 'шаблонов'] as const;
 const PAGE_SIZE = 10;
@@ -54,6 +57,7 @@ const PAGE_SIZE = 10;
     PiRowActionsComponent,
     ButtonComponent,
     SwitchComponent,
+    TableComponent,
   ],
   template: `
     <app-pi-page-header
@@ -93,6 +97,37 @@ const PAGE_SIZE = 10;
       <span hint>{{ filtered().length }} {{ totalLabel(filtered().length) }}</span>
     </app-pi-toolbar>
 
+    <ng-template #activeTpl let-t>
+      <app-pi-switch [checked]="t.isActive" (checkedChange)="onToggleActive(t, $event)" />
+    </ng-template>
+    <ng-template #defaultTpl let-t>
+      @if (t.isDefault) {
+        <span class="text-sunrise-warm" aria-label="Шаблон по умолчанию">★</span>
+      } @else if (t.isActive) {
+        <button
+          type="button"
+          class="pi-icon-btn pi-focus-ring"
+          aria-label="Сделать шаблоном по умолчанию"
+          (click)="onSetDefault(t)"
+        >
+          ☆
+        </button>
+      } @else {
+        <span class="text-muted-foreground">☆</span>
+      }
+    </ng-template>
+    <ng-template #rowActionsTpl let-t>
+      <app-pi-row-actions
+        [row]="t"
+        copyLabel="Дублировать"
+        editLabel="Конструктор"
+        deleteLabel="Удалить"
+        (copy)="onDuplicate($event)"
+        (edit)="onEdit($event)"
+        (delete)="onDelete($event)"
+      />
+    </ng-template>
+
     <app-pi-section title="Каталог" eyebrow="I">
       @if (loading()) {
         <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
@@ -115,96 +150,21 @@ const PAGE_SIZE = 10;
         />
       } @else {
         <div class="hairline rounded-sm overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="hairline-b">
-              <tr>
-                <th class="pi-cell eyebrow text-left">Название</th>
-                <th class="pi-cell eyebrow text-left">Категория</th>
-                <th class="pi-cell eyebrow text-left">Тип документа</th>
-                <th class="pi-cell eyebrow text-left w-24">Формат</th>
-                <th class="pi-cell eyebrow text-center w-24">Активен</th>
-                <th class="pi-cell eyebrow text-center w-28">По умолчанию</th>
-                <th class="pi-cell eyebrow text-right w-40">Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (t of pageRows(); track t._id) {
-                <tr class="pi-table-row pi-table-row-odd group" [class.opacity-50]="!t.isActive">
-                  <td class="pi-cell font-medium">{{ t.name }}</td>
-                  <td class="pi-cell text-muted-foreground">{{ categoryName(t) }}</td>
-                  <td class="pi-cell text-muted-foreground">{{ docTypeName(t) }}</td>
-                  <td class="pi-cell">
-                    <span class="eyebrow hairline rounded-sm px-2 py-0.5 font-mono">{{
-                      t.pageSize
-                    }}</span>
-                  </td>
-                  <td class="pi-cell text-center">
-                    <app-pi-switch
-                      [checked]="t.isActive"
-                      (checkedChange)="onToggleActive(t, $event)"
-                    />
-                  </td>
-                  <td class="pi-cell text-center">
-                    @if (t.isDefault) {
-                      <span
-                        class="text-sunrise-warm"
-                        aria-label="Шаблон по умолчанию"
-                        title="По умолчанию"
-                        >★</span
-                      >
-                    } @else if (t.isActive) {
-                      <button
-                        type="button"
-                        class="pi-icon-btn pi-focus-ring text-muted-foreground hover:text-sunrise-warm"
-                        aria-label="Сделать шаблоном по умолчанию"
-                        (click)="onSetDefault(t)"
-                      >
-                        ☆
-                      </button>
-                    } @else {
-                      <span class="text-muted-foreground" title="Сначала включите шаблон">☆</span>
-                    }
-                  </td>
-                  <td class="pi-cell text-right">
-                    <app-pi-row-actions
-                      [row]="t"
-                      copyLabel="Дублировать"
-                      editLabel="Конструктор"
-                      deleteLabel="Удалить"
-                      (copy)="onDuplicate($event)"
-                      (edit)="onEdit($event)"
-                      (delete)="onDelete($event)"
-                    />
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
+          <app-pi-table
+            [data]="pageRows()"
+            [columns]="columns"
+            [cellTemplates]="cellTemplates()"
+            [rowActions]="rowActionsTpl"
+            [total]="filtered().length"
+            [page]="pageIndex() + 1"
+            [pageSize]="PAGE_SIZE"
+            (pageChange)="pageIndex.set($event - 1)"
+            [localSort]="true"
+            [loading]="loading()"
+            ariaLabel="Каталог шаблонов"
+            data-test="templates-table"
+          />
         </div>
-
-        @if (filtered().length > PAGE_SIZE) {
-          <div class="mt-4 flex items-center justify-between gap-4">
-            <span class="eyebrow text-muted-foreground">{{ rangeLabel() }}</span>
-            <div class="flex gap-2">
-              <app-pi-button
-                variant="outline"
-                size="sm"
-                [disabled]="pageIndex() === 0"
-                (click)="prevPage()"
-              >
-                ←
-              </app-pi-button>
-              <app-pi-button
-                variant="outline"
-                size="sm"
-                [disabled]="pageIndex() >= totalPages() - 1"
-                (click)="nextPage()"
-              >
-                →
-              </app-pi-button>
-            </div>
-          </div>
-        }
       }
     </app-pi-section>
   `,
@@ -228,6 +188,28 @@ export class TemplatesPage {
   protected readonly searchQuery = signal('');
   protected readonly categoryFilter = signal('');
   protected readonly pageIndex = signal(0);
+
+  protected readonly columns: ColumnDef<DocumentTemplate>[] = [
+    { key: 'name', label: 'Название', cellClass: 'font-medium' },
+    { key: 'categoryId', label: 'Категория', accessor: (row) => this.categoryName(row) },
+    { key: 'docTypeId', label: 'Тип документа', accessor: (row) => this.docTypeName(row) },
+    { key: 'pageSize', label: 'Формат', cellClass: 'font-mono text-xs' },
+    { key: 'isActive', label: 'Активен', align: 'center' },
+    { key: 'isDefault', label: 'По умолчанию', align: 'center' },
+  ];
+  @ViewChild('activeTpl', { static: true }) private readonly activeTpl!: TemplateRef<{
+    $implicit: DocumentTemplate;
+  }>;
+  @ViewChild('defaultTpl', { static: true }) private readonly defaultTpl!: TemplateRef<{
+    $implicit: DocumentTemplate;
+  }>;
+  @ViewChild('rowActionsTpl', { static: true }) protected readonly rowActionsTpl!: TemplateRef<{
+    $implicit: DocumentTemplate;
+  }>;
+  protected readonly cellTemplates = computed(() => ({
+    isActive: this.activeTpl,
+    isDefault: this.defaultTpl,
+  }));
 
   protected readonly filtered = computed(() => {
     const q = this.searchQuery().trim().toLowerCase();

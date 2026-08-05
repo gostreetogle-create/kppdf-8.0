@@ -3,6 +3,8 @@ import {
   Component,
   DestroyRef,
   Injector,
+  TemplateRef,
+  ViewChild,
   computed,
   inject,
   signal,
@@ -33,6 +35,7 @@ import {
   type TableTemplateDialogConfig,
 } from './table-template-dialog.component';
 import { pluralRu } from '../../../shared/util/russian-plural';
+import { ColumnDef, TableComponent } from '../../../shared/ui/pi-table.component';
 
 const RU_TEMPLATES = ['шаблон', 'шаблона', 'шаблонов'] as const;
 
@@ -56,6 +59,7 @@ type SortDir = 'asc' | 'desc';
     PiRowActionsComponent,
     ButtonComponent,
     SwitchComponent,
+    TableComponent,
   ],
   template: `
     <app-pi-page-header
@@ -91,6 +95,26 @@ type SortDir = 'asc' | 'desc';
       </div>
     }
 
+    <ng-template #activeTpl let-row>
+      <app-pi-switch
+        [checked]="row.isActive"
+        [id]="'switch-' + row._id"
+        [ariaLabel]="(row.isActive ? 'Деактивировать ' : 'Активировать ') + row.name"
+        (checkedChange)="onToggleActive(row, $event)"
+      />
+    </ng-template>
+    <ng-template #rowActionsTpl let-row>
+      <app-pi-row-actions
+        [row]="row"
+        [copyLabel]="'Копировать ' + row.name"
+        [editLabel]="'Редактировать ' + row.name"
+        [deleteLabel]="'Удалить ' + row.name"
+        (copy)="onCopy($event)"
+        (edit)="openEdit($event)"
+        (delete)="onDelete($event)"
+      />
+    </ng-template>
+
     <app-pi-section title="Каталог" eyebrow="I">
       @if (loading() && sortedRows().length === 0) {
         <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
@@ -103,70 +127,18 @@ type SortDir = 'asc' | 'desc';
         />
       } @else {
         <div class="hairline rounded-sm overflow-x-auto">
-          <table class="w-full text-sm min-w-[800px]">
-            <thead class="hairline-b">
-              <tr>
-                <th class="pi-cell eyebrow text-left cursor-pointer" (click)="setSort('name')">
-                  Название <span class="opacity-40">{{ sortIcon('name') }}</span>
-                </th>
-                <th class="pi-cell eyebrow text-left cursor-pointer" (click)="setSort('category')">
-                  Категория <span class="opacity-40">{{ sortIcon('category') }}</span>
-                </th>
-                <th class="pi-cell eyebrow text-center">Колонок</th>
-                <th class="pi-cell eyebrow text-center">Образцов</th>
-                <th
-                  class="pi-cell eyebrow text-center cursor-pointer"
-                  (click)="setSort('sortOrder')"
-                >
-                  Порядок <span class="opacity-40">{{ sortIcon('sortOrder') }}</span>
-                </th>
-                <th class="pi-cell eyebrow text-center w-24">Активен</th>
-                <th class="pi-cell eyebrow text-right w-40">Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of sortedRows(); track row._id) {
-                <tr
-                  class="pi-table-row pi-table-row-odd group"
-                  [class.opacity-50]="!row.isActive"
-                  [attr.data-test]="'table-row-' + row._id"
-                >
-                  <td class="pi-cell font-medium">{{ row.name }}</td>
-                  <td class="pi-cell text-muted-foreground">{{ categoryLabel(row.category) }}</td>
-                  <td class="pi-cell text-center font-mono text-xs">{{ row.columns.length }}</td>
-                  <td class="pi-cell text-center font-mono text-xs">
-                    {{ row.sampleRows?.length ?? 0 }}
-                  </td>
-                  <td class="pi-cell text-center font-mono text-xs text-muted-foreground">
-                    {{ row.sortOrder }}
-                  </td>
-                  <td class="pi-cell text-center">
-                    <app-pi-switch
-                      [checked]="row.isActive"
-                      [id]="'switch-' + row._id"
-                      [ariaLabel]="(row.isActive ? 'Деактивировать ' : 'Активировать ') + row.name"
-                      (checkedChange)="onToggleActive(row, $event)"
-                      data-test="active-switch"
-                    />
-                  </td>
-                  <td class="pi-cell text-right">
-                    <app-pi-row-actions
-                      [row]="row"
-                      [copyLabel]="'Копировать ' + row.name"
-                      [editLabel]="'Редактировать ' + row.name"
-                      [deleteLabel]="'Удалить ' + row.name"
-                      [dataTestCopy]="'copy-button-' + row._id"
-                      [dataTestEdit]="'edit-button-' + row._id"
-                      [dataTestDelete]="'delete-button-' + row._id"
-                      (copy)="onCopy($event)"
-                      (edit)="openEdit($event)"
-                      (delete)="onDelete($event)"
-                    />
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
+          <app-pi-table
+            [data]="sortedRows()"
+            [columns]="columns"
+            [cellTemplates]="cellTemplates()"
+            [rowActions]="rowActionsTpl"
+            [total]="sortedRows().length"
+            [loading]="loading()"
+            [localSort]="false"
+            (sortChange)="onSortChange($event)"
+            ariaLabel="Каталог шаблонов таблиц"
+            data-test="tables-table"
+          />
         </div>
       }
     </app-pi-section>
@@ -221,6 +193,39 @@ export class TablesPage {
   protected readonly sortKey = signal<SortKey>('name');
   protected readonly sortDir = signal<SortDir>('asc');
 
+  protected readonly columns: ColumnDef<TableTemplate>[] = [
+    { key: 'name', label: 'Название', sortable: true, cellClass: 'font-medium' },
+    {
+      key: 'category',
+      label: 'Категория',
+      sortable: true,
+      accessor: (row) => this.categoryLabel(row.category),
+    },
+    {
+      key: 'columns',
+      label: 'Колонок',
+      accessor: (row) => row.columns.length,
+      numeric: true,
+      align: 'center',
+    },
+    {
+      key: 'sampleRows',
+      label: 'Образцов',
+      accessor: (row) => row.sampleRows?.length ?? 0,
+      numeric: true,
+      align: 'center',
+    },
+    { key: 'sortOrder', label: 'Порядок', sortable: true, numeric: true, align: 'center' },
+    { key: 'isActive', label: 'Активен', align: 'center' },
+  ];
+  @ViewChild('activeTpl', { static: true }) private readonly activeTpl!: TemplateRef<{
+    $implicit: TableTemplate;
+  }>;
+  @ViewChild('rowActionsTpl', { static: true }) protected readonly rowActionsTpl!: TemplateRef<{
+    $implicit: TableTemplate;
+  }>;
+  protected readonly cellTemplates = computed(() => ({ isActive: this.activeTpl }));
+
   private readonly visible = computed<TableTemplate[]>(() => {
     const q = this.searchQuery().trim().toLowerCase();
     if (!q) return this.data();
@@ -249,8 +254,15 @@ export class TablesPage {
     this.searchQuery.set((event.target as HTMLInputElement).value);
   }
 
-  protected setSort(key: Exclude<SortKey, null>): void {
-    if (this.sortKey() !== key) {
+  protected onSortChange(event: { key: string; dir: 'asc' | 'desc' | null }): void {
+    this.setSort(event.key as Exclude<SortKey, null>, event.dir);
+  }
+
+  protected setSort(key: Exclude<SortKey, null>, direction?: SortDir | null): void {
+    if (direction !== undefined) {
+      this.sortKey.set(direction === null ? null : key);
+      this.sortDir.set(direction === 'desc' ? 'desc' : 'asc');
+    } else if (this.sortKey() !== key) {
       this.sortKey.set(key);
       this.sortDir.set('asc');
     } else if (this.sortDir() === 'asc') {

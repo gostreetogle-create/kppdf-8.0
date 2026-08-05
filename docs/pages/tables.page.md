@@ -50,6 +50,7 @@
 ## Особенности
 
 - **Pi page chrome (TZ-DOC-336)** — `PiPageHeader` + `PiToolbar` + `PiSection` + `PiEmptyState` + `PiRowActions`
+- **`app-pi-table`** — shared Flat kit with typed columns, active-state cell template, row actions and kit-consistent loading/empty behavior
 - **Inline search** — без debounce, мгновенный фильтр
 - **Two create modes** — «Новая таблица» + «Из существующих данных» (registry)
 - **Copy** — `PiRowActions` `(copy)` / `copyLabel` (не hand-rolled icon)

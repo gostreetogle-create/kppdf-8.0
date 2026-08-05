@@ -127,9 +127,12 @@ describe('TextsPage (TZ-DOC-316 category column + filter)', () => {
     expect(comp.categoryName('cat-2')).toBe('Реквизиты контрагента');
     expect(comp.categoryName('missing')).toBeUndefined();
     const el: HTMLElement = fixture.nativeElement;
-    const badges = el.querySelectorAll('.texts-category-badge');
-    expect(badges.length).toBeGreaterThanOrEqual(2);
-    expect(badges[1].textContent).toContain('Реквизиты контрагента');
+    // The page now delegates row chrome to app-pi-table. With the real
+    // primitive overridden in this focused unit test, assert the lookup
+    // contract directly instead of coupling the test to projected markup.
+    expect(comp.categoryName('cat-1')).toBe('Общее');
+    expect(comp.categoryName('cat-2')).toBe('Реквизиты контрагента');
+    expect(el.querySelector('app-pi-table')).toBeTruthy();
   });
 
   it('filters rows by categoryId when the dropdown changes', () => {

@@ -39,7 +39,7 @@
 
 ## Особенности
 
-- **Inline `<table>`** — НЕ pi-table, кастомная
+- **`app-pi-table`** — shared Flat kit with status/action templates and client-side pagination
 - **Period filter** — `<input type="month">` для фильтрации по дате
 - **Client-side pagination** — pageSize = 10
 - **Status dots** — cool (final) / warm (draft)

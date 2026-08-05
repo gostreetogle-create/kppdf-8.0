@@ -3,6 +3,8 @@ import {
   Component,
   DestroyRef,
   Injector,
+  TemplateRef,
+  ViewChild,
   computed,
   inject,
   signal,
@@ -28,6 +30,7 @@ import {
 } from '../../../shared/services/pi-text-block-categories.service';
 import { TextBlockEditorComponent } from './text-block-editor.component';
 import { pluralRu, RU_BLOCKS, RU_COLUMNS } from '../../../shared/util/russian-plural';
+import { ColumnDef, TableComponent } from '../../../shared/ui/pi-table.component';
 
 type SortDir = 'asc' | 'desc';
 
@@ -46,6 +49,7 @@ type SortDir = 'asc' | 'desc';
     PiRowActionsComponent,
     ButtonComponent,
     TextBlockEditorComponent,
+    TableComponent,
   ],
   template: `
     @if (error()) {
@@ -107,6 +111,39 @@ type SortDir = 'asc' | 'desc';
     </app-pi-toolbar>
 
     <app-pi-section title="Сохранённые блоки" eyebrow="I">
+      <ng-template #categoryTpl let-row>
+        @if (row.categoryId; as catId) {
+          @if (categoryName(catId); as name) {
+            <span class="texts-category-badge eyebrow hairline rounded-sm px-2 py-0.5">{{
+              name
+            }}</span>
+          } @else {
+            —
+          }
+        } @else {
+          —
+        }
+      </ng-template>
+      <ng-template #statusTpl let-row>
+        <span class="inline-flex items-center gap-2 text-sm">
+          <span
+            class="inline-block h-2 w-2 rounded-full shrink-0"
+            [class.bg-accent-cool]="row.isActive"
+            [class.bg-muted-foreground]="!row.isActive"
+            aria-hidden="true"
+          ></span>
+          {{ row.isActive ? 'Активен' : 'Архив' }}
+        </span>
+      </ng-template>
+      <ng-template #rowActionsTpl let-row>
+        <app-pi-row-actions
+          [row]="row"
+          [editLabel]="'Редактировать'"
+          [deleteLabel]="'Удалить'"
+          (edit)="openEdit(row)"
+          (delete)="onDelete(row)"
+        />
+      </ng-template>
       @if (loading() && data().length === 0) {
         <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
       } @else if (sortedRows().length === 0 && !loading()) {
@@ -119,70 +156,17 @@ type SortDir = 'asc' | 'desc';
           "
         />
       } @else {
-        <div class="hairline rounded-sm overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="hairline-b">
-              <tr>
-                <th class="pi-cell eyebrow text-left">Название</th>
-                <th class="pi-cell eyebrow text-left">Категория</th>
-                <th class="pi-cell eyebrow text-left">Конфигурация</th>
-                <th class="pi-cell eyebrow text-left">Статус</th>
-                <th class="pi-cell eyebrow text-right w-40">Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of sortedRows(); track row._id) {
-                <tr
-                  class="pi-table-row pi-table-row-odd group"
-                  [class.opacity-50]="!row.isActive"
-                  [class.border-l-4]="editingId() === row._id"
-                  [class.border-sunrise-warm]="editingId() === row._id"
-                  (click)="openEdit(row)"
-                  [attr.data-test]="'text-row-' + row._id"
-                >
-                  <td class="pi-cell font-medium">{{ row.name }}</td>
-                  <td class="pi-cell text-muted-foreground">
-                    @if (row.categoryId; as catId) {
-                      @if (categoryName(catId); as name) {
-                        <span
-                          class="texts-category-badge eyebrow hairline rounded-sm px-2 py-0.5"
-                          >{{ name }}</span
-                        >
-                      } @else {
-                        —
-                      }
-                    } @else {
-                      —
-                    }
-                  </td>
-                  <td class="pi-cell font-mono text-xs text-muted-foreground uppercase">
-                    {{ columnConfigUpper(row.columns?.length || 1) }}
-                  </td>
-                  <td class="pi-cell">
-                    <span class="inline-flex items-center gap-2 text-sm">
-                      <span
-                        class="inline-block h-2 w-2 rounded-full shrink-0"
-                        [class.bg-accent-cool]="row.isActive"
-                        [class.bg-muted-foreground]="!row.isActive"
-                        aria-hidden="true"
-                      ></span>
-                      {{ row.isActive ? 'Активен' : 'Архив' }}
-                    </span>
-                  </td>
-                  <td class="pi-cell text-right" (click)="$event.stopPropagation()">
-                    <app-pi-row-actions
-                      [row]="row"
-                      [editLabel]="'Редактировать'"
-                      [deleteLabel]="'Удалить'"
-                      (edit)="openEdit(row)"
-                      (delete)="onDelete(row)"
-                    />
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+        <app-pi-table
+          [data]="sortedRows()"
+          [columns]="columns"
+          [cellTemplates]="cellTemplates()"
+          [rowActions]="rowActionsTpl"
+          [total]="sortedRows().length"
+          [loading]="loading()"
+          ariaLabel="Текстовые блоки"
+          data-test="texts-table"
+          (rowClick)="openEdit($event)"
+        />
       }
     </app-pi-section>
   `,
@@ -247,6 +231,28 @@ export class TextsPage {
 
   protected readonly searchQuery = signal<string>('');
   protected readonly sortDir = signal<SortDir>('asc');
+
+  protected readonly columns: ColumnDef<TextBlock>[] = [
+    { key: 'name', label: 'Название', cellClass: 'font-medium' },
+    { key: 'categoryId', label: 'Категория', accessor: (row) => row.categoryId ?? '—' },
+    {
+      key: 'columns',
+      label: 'Конфигурация',
+      accessor: (row) => this.columnConfigUpper(row.columns?.length || 1),
+      cellClass: 'font-mono text-xs text-muted-foreground',
+    },
+    { key: 'isActive', label: 'Статус' },
+  ];
+  @ViewChild('rowActionsTpl', { static: true })
+  protected readonly rowActionsTpl!: TemplateRef<{ $implicit: TextBlock }>;
+  @ViewChild('categoryTpl', { static: true })
+  protected readonly categoryTpl!: TemplateRef<{ $implicit: TextBlock }>;
+  @ViewChild('statusTpl', { static: true })
+  protected readonly statusTpl!: TemplateRef<{ $implicit: TextBlock }>;
+  protected readonly cellTemplates = computed(() => ({
+    categoryId: this.categoryTpl,
+    isActive: this.statusTpl,
+  }));
 
   protected readonly categories = signal<TextBlockCategory[]>([]);
   protected readonly categoryFilter = signal<string>('');

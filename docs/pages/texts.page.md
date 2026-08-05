@@ -114,7 +114,7 @@
 - **Pi page chrome (TZ-DOC-336)** — `PiPageHeader` + `PiToolbar` + `PiSection` + `PiEmptyState` + `PiRowActions`
 - **Editor zone** — full-page `TextBlockEditorComponent` над каталогом (не modal; known_limitation → successor)
 - **RxJS reload pattern** — `Subject<void>` + `switchMap` + `takeUntilDestroyed` (НЕ httpResource)
-- **Catalog table** — Paper & Ink `pi-cell` / `pi-table-row`; status dots; row click → editor
+- **Catalog table** — `app-pi-table` Flat kit; category/status cell templates; row click → editor
 - **TipTap editor** — B/I/U, H1-H3, Lucide AlignLeft/Center/Right + aria-label; «Активен» = `app-pi-switch`
 - **Pluralization** — `pluralRu(n, RU_BLOCKS)`
 - **Auto-open from builder** — query param `editId` автоматически открывает редактор

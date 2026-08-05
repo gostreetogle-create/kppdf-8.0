@@ -3,6 +3,8 @@ import {
   Component,
   DestroyRef,
   Injector,
+  TemplateRef,
+  ViewChild,
   computed,
   inject,
   signal,
@@ -25,6 +27,7 @@ import {
 } from '../../shared/services/pi-text-block-categories.service';
 import { TextBlockCategoryFormDialogComponent } from './text-block-category-form-dialog.component';
 import { pluralRu } from '../../shared/util/russian-plural';
+import { ColumnDef, TableComponent } from '../../shared/ui/pi-table.component';
 
 const RU_CATEGORIES = ['категория', 'категории', 'категорий'] as const;
 
@@ -63,9 +66,50 @@ function pluralGenitive(n: number): string {
     PiRowActionsComponent,
     ButtonComponent,
     SwitchComponent,
+    TableComponent,
   ],
   template: `
     <app-pi-group-workspace [chips]="chips" [activeId]="'text-blocks'">
+      <ng-template #nameTpl let-c>
+        <span class="inline-flex items-center gap-2 font-medium">
+          {{ c.name }}
+          @if (c.isSystem) {
+            <span class="eyebrow hairline rounded-sm px-1.5 py-0.5 text-muted-foreground"
+              >системная</span
+            >
+          }
+          @if (c.isDefault) {
+            <span class="eyebrow hairline rounded-sm px-1.5 py-0.5 text-sunrise-warm"
+              >по умолчанию</span
+            >
+          }
+        </span>
+      </ng-template>
+      <ng-template #activeTpl let-c>
+        <app-pi-switch
+          [checked]="c.isActive"
+          [disabled]="c.isSystem"
+          [ariaLabel]="(c.isActive ? 'Деактивировать ' : 'Активировать ') + c.name"
+          (checkedChange)="onToggleActive(c, $event)"
+          data-test="category-active-switch"
+        />
+      </ng-template>
+      <ng-template #actionsTpl let-c>
+        <app-pi-row-actions
+          [row]="c"
+          [showEdit]="!c.isSystem"
+          [editLabel]="c.isSystem ? 'Системная — нельзя изменять' : 'Редактировать'"
+          [deleteLabel]="c.isSystem ? 'Системная — нельзя удалить' : 'Удалить'"
+          [deleteDisabled]="c.isSystem"
+          [deleteTitle]="
+            c.isSystem
+              ? 'Системная категория управляется сервером'
+              : 'Категорию, которую используют блоки, удалить нельзя (409)'
+          "
+          (edit)="openEdit($event)"
+          (delete)="onDelete($event)"
+        />
+      </ng-template>
       <!-- Sticky tools: search + primary CTA -->
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
@@ -102,73 +146,19 @@ function pluralGenitive(n: number): string {
           "
         />
       } @else {
-        <div class="hairline rounded-sm overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="hairline-b">
-              <tr>
-                <th class="pi-cell eyebrow text-left">Название</th>
-                <th class="pi-cell eyebrow text-left">Slug</th>
-                <th class="pi-cell eyebrow text-left">Описание</th>
-                <th class="pi-cell eyebrow text-center w-20">Активна</th>
-                <th class="pi-cell eyebrow text-right w-28">Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (c of visible(); track c._id) {
-                <tr class="pi-table-row pi-table-row-odd group" [class.opacity-50]="!c.isActive">
-                  <td class="pi-cell font-medium">
-                    <span class="inline-flex items-center gap-2">
-                      {{ c.name }}
-                      @if (c.isSystem) {
-                        <span
-                          class="eyebrow hairline rounded-sm px-1.5 py-0.5 text-muted-foreground"
-                          title="Системная категория — управляется сервером"
-                          >системная</span
-                        >
-                      }
-                      @if (c.isDefault) {
-                        <span
-                          class="eyebrow hairline rounded-sm px-1.5 py-0.5 text-sunrise-warm"
-                          title="Категория по умолчанию для новых блоков"
-                          >по умолчанию</span
-                        >
-                      }
-                    </span>
-                  </td>
-                  <td class="pi-cell font-mono text-xs text-muted-foreground">{{ c.slug }}</td>
-                  <td class="pi-cell text-muted-foreground">
-                    {{ c.description || '—' }}
-                  </td>
-                  <td class="pi-cell text-center">
-                    <app-pi-switch
-                      [checked]="c.isActive"
-                      [disabled]="c.isSystem"
-                      [ariaLabel]="(c.isActive ? 'Деактивировать ' : 'Активировать ') + c.name"
-                      (checkedChange)="onToggleActive(c, $event)"
-                      data-test="category-active-switch"
-                    />
-                  </td>
-                  <td class="pi-cell text-right">
-                    <app-pi-row-actions
-                      [row]="c"
-                      [showEdit]="!c.isSystem"
-                      [editLabel]="c.isSystem ? 'Системная — нельзя изменять' : 'Редактировать'"
-                      [deleteLabel]="c.isSystem ? 'Системная — нельзя удалить' : 'Удалить'"
-                      [deleteDisabled]="c.isSystem"
-                      [deleteTitle]="
-                        c.isSystem
-                          ? 'Системная категория управляется сервером'
-                          : 'Категорию, которую используют блоки, удалить нельзя (409)'
-                      "
-                      (edit)="openEdit($event)"
-                      (delete)="onDelete($event)"
-                    />
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+        <app-pi-table
+          [data]="visible()"
+          [columns]="columns"
+          [cellTemplates]="tpls()"
+          [rowActions]="rowActionsTpl"
+          [total]="visible().length"
+          [emptyMessage]="
+            searchQuery() ? 'Ничего не найдено.' : 'Нет категорий текстов. Создайте первую.'
+          "
+          [loading]="loading()"
+          ariaLabel="Категории текстов"
+          data-test="text-block-categories-table"
+        />
       }
     </app-pi-group-workspace>
   `,
@@ -186,6 +176,29 @@ export class TextBlockCategoriesPage {
   protected readonly error = signal<string | null>(null);
   protected readonly searchQuery = signal('');
 
+  protected readonly columns: ColumnDef<TextBlockCategory>[] = [
+    { key: 'name', label: 'Название' },
+    { key: 'slug', label: 'Slug', cellClass: 'font-mono text-xs text-muted-foreground' },
+    { key: 'description', label: 'Описание' },
+    { key: 'isActive', label: 'Активна', align: 'center', width: '5rem' },
+  ];
+
+  @ViewChild('nameTpl', { static: true }) protected readonly nameTpl!: TemplateRef<{
+    $implicit: TextBlockCategory;
+  }>;
+  @ViewChild('activeTpl', { static: true }) protected readonly activeTpl!: TemplateRef<{
+    $implicit: TextBlockCategory;
+  }>;
+  @ViewChild('actionsTpl', { static: true }) protected readonly rowActionsTpl!: TemplateRef<{
+    $implicit: TextBlockCategory;
+  }>;
+  protected readonly tpls = computed<Record<string, TemplateRef<{ $implicit: TextBlockCategory }>>>(
+    () => ({
+      name: this.nameTpl,
+      isActive: this.activeTpl,
+    }),
+  );
+
   protected readonly visible = computed(() => {
     const q = this.searchQuery().trim().toLowerCase();
     const list = this.items()
@@ -194,6 +207,10 @@ export class TextBlockCategoriesPage {
     if (!q) return list;
     return list.filter((c) => c.name.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q));
   });
+
+  protected typeLabel(c: TextBlockCategory): string {
+    return c.isActive ? 'Активна' : 'Архив';
+  }
 
   /** TZ-DICT-307: compact muted count for the shell title (D2 canon). */
   protected readonly totalLabel = computed(() => {

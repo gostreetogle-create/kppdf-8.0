@@ -3,6 +3,8 @@ import {
   Component,
   DestroyRef,
   Injector,
+  TemplateRef,
+  ViewChild,
   computed,
   inject,
   signal,
@@ -19,6 +21,7 @@ import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../../shared/ui/dialog/pi-alert-dialog.component';
 import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../../core/silent-http';
+import { ColumnDef, TableComponent } from '../../../shared/ui/pi-table.component';
 import {
   GeneratedDocument,
   GeneratedDocumentsService,
@@ -39,6 +42,7 @@ const PAGE_SIZE = 10;
     PiEmptyStateComponent,
     PiRowActionsComponent,
     ButtonComponent,
+    TableComponent,
   ],
   template: `
     <app-pi-page-header
@@ -66,6 +70,27 @@ const PAGE_SIZE = 10;
       <span hint>{{ filtered().length }} записей</span>
     </app-pi-toolbar>
 
+    <ng-template #statusTpl let-doc>
+      <span class="inline-flex items-center gap-2">
+        <span
+          class="inline-block w-2 h-2 rounded-full shrink-0"
+          [class.bg-accent-cool]="doc.status === 'final'"
+          [class.bg-sunrise-warm]="doc.status === 'draft'"
+        ></span>
+        <span>{{ statusLabel(doc) }}</span>
+      </span>
+    </ng-template>
+    <ng-template #rowActionsTpl let-doc>
+      <app-pi-row-actions
+        [row]="doc"
+        documentLabel="Открыть"
+        [showEdit]="false"
+        deleteLabel="Удалить"
+        (document)="onView($event)"
+        (delete)="onDelete($event)"
+      />
+    </ng-template>
+
     <app-pi-section title="Журнал генерации" eyebrow="I">
       @if (loading()) {
         <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
@@ -87,73 +112,21 @@ const PAGE_SIZE = 10;
         />
       } @else {
         <div class="hairline rounded-sm overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="hairline-b">
-              <tr>
-                <th class="pi-cell eyebrow text-left w-40">Номер документа</th>
-                <th class="pi-cell eyebrow text-left">Название шаблона</th>
-                <th class="pi-cell eyebrow text-left w-32">Дата создания</th>
-                <th class="pi-cell eyebrow text-left w-36">Статус</th>
-                <th class="pi-cell eyebrow text-right w-32">Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (doc of pageRows(); track doc._id) {
-                <tr class="pi-table-row pi-table-row-odd group">
-                  <td class="pi-cell font-mono text-xs">{{ doc.number }}</td>
-                  <td class="pi-cell font-medium">{{ displayTemplateName(doc) }}</td>
-                  <td class="pi-cell text-muted-foreground font-mono text-xs">
-                    {{ formatDate(doc.createdAt) }}
-                  </td>
-                  <td class="pi-cell">
-                    <span class="inline-flex items-center gap-2">
-                      <span
-                        class="inline-block w-2 h-2 rounded-full shrink-0"
-                        [class.bg-accent-cool]="doc.status === 'final'"
-                        [class.bg-sunrise-warm]="doc.status === 'draft'"
-                      ></span>
-                      <span>{{ statusLabel(doc) }}</span>
-                    </span>
-                  </td>
-                  <td class="pi-cell text-right">
-                    <app-pi-row-actions
-                      [row]="doc"
-                      documentLabel="Открыть"
-                      [showEdit]="false"
-                      deleteLabel="Удалить"
-                      (document)="onView($event)"
-                      (delete)="onDelete($event)"
-                    />
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
+          <app-pi-table
+            [data]="pageRows()"
+            [columns]="columns"
+            [cellTemplates]="cellTemplates()"
+            [rowActions]="rowActionsTpl"
+            [total]="filtered().length"
+            [page]="pageIndex() + 1"
+            [pageSize]="PAGE_SIZE"
+            (pageChange)="pageIndex.set($event - 1)"
+            [localSort]="false"
+            [loading]="loading()"
+            ariaLabel="Журнал сформированных документов"
+            data-test="documents-table"
+          />
         </div>
-
-        @if (filtered().length > PAGE_SIZE) {
-          <div class="mt-4 flex items-center justify-between gap-4">
-            <span class="eyebrow text-muted-foreground">{{ rangeLabel() }}</span>
-            <div class="flex gap-2">
-              <app-pi-button
-                variant="outline"
-                size="sm"
-                [disabled]="pageIndex() === 0"
-                (click)="prevPage()"
-              >
-                ←
-              </app-pi-button>
-              <app-pi-button
-                variant="outline"
-                size="sm"
-                [disabled]="pageIndex() >= totalPages() - 1"
-                (click)="nextPage()"
-              >
-                →
-              </app-pi-button>
-            </div>
-          </div>
-        }
       }
     </app-pi-section>
   `,
@@ -173,6 +146,30 @@ export class DocumentsPage {
   protected readonly searchQuery = signal('');
   protected readonly periodMonth = signal('');
   protected readonly pageIndex = signal(0);
+
+  protected readonly columns: ColumnDef<GeneratedDocument>[] = [
+    { key: 'number', label: 'Номер документа', cellClass: 'font-mono text-xs' },
+    {
+      key: 'templateName',
+      label: 'Название шаблона',
+      accessor: (doc) => this.displayTemplateName(doc),
+      cellClass: 'font-medium',
+    },
+    {
+      key: 'createdAt',
+      label: 'Дата создания',
+      accessor: (doc) => this.formatDate(doc.createdAt),
+      cellClass: 'font-mono text-xs text-muted-foreground',
+    },
+    { key: 'status', label: 'Статус' },
+  ];
+  @ViewChild('statusTpl', { static: true }) private readonly statusTpl!: TemplateRef<{
+    $implicit: GeneratedDocument;
+  }>;
+  @ViewChild('rowActionsTpl', { static: true }) protected readonly rowActionsTpl!: TemplateRef<{
+    $implicit: GeneratedDocument;
+  }>;
+  protected readonly cellTemplates = computed(() => ({ status: this.statusTpl }));
 
   protected readonly filtered = computed(() => {
     const q = this.searchQuery().trim().toLowerCase();
