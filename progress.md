@@ -1,3 +1,14 @@
+## [2026-08-05] — TZ-CATALOG-310 DONE: Where-used API
+**Исполнитель:** Buffy / openai-gpt-5.6-luna
+**Статус:** DONE; archive + lock created; commit/push pending
+**Что сделано кратко:** Добавлены authenticated read-only where-used routes для Product, Module, Material и WorkType; общий paginated response, org scope для owned parent records, legacy composition fallback, orphan tolerance и Swagger docs.
+**Gates:** backend tsc PASS; focused Jest 4 suites / 46 tests PASS; scoped ESLint PASS (0 errors, 6 existing test-mock warnings); diff --check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-310.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-310-where-used.lock`
+**Known limit:** ProductModule/WorkType остаются shared, так как текущие схемы не имеют organizationId.
+
+---
+
 ## [2026-08-05] — TZ-CATALOG-UI-301 DONE: Catalog Group Chip Workspace
 **Исполнитель:** Cursor Architect (+ FE subagent)
 **Статус:** DONE

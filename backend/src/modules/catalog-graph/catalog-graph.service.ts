@@ -88,9 +88,14 @@ export class CatalogGraphService {
         }, undefined, '_id name composition') as Promise<LeanParent[]>,
       ]);
       for (const parent of products) {
-        const lines = parent.composition?.length
-          ? parent.composition.filter((item) => item.lineType === 'module' && String(item.refId) === id)
-          : (parent.productModuleIds ?? []).filter((refId) => String(refId) === id).map(() => ({ quantity: 1, sortOrder: 0, unit: undefined }));
+        const canonicalLines = (parent.composition ?? []).filter(
+          (item) => item.lineType === 'module' && String(item.refId) === id,
+        );
+        const lines = canonicalLines.length > 0
+          ? canonicalLines
+          : (parent.productModuleIds ?? [])
+              .filter((refId) => String(refId) === id)
+              .map(() => ({ quantity: 1, sortOrder: 0, unit: undefined }));
         for (const line of lines) rows.push(this.toWhereUsedItem(parent, 'product', kind, line.quantity, line.unit, line.sortOrder));
       }
       for (const parent of modules) {
@@ -111,9 +116,18 @@ export class CatalogGraphService {
         }, scope, '_id name composition') as Promise<LeanParent[]>,
       ]);
       for (const parent of modules) {
-        const lines = parent.composition?.length
-          ? parent.composition.filter((item) => item.lineType === 'material' && String(item.refId) === id)
-          : (parent.materials ?? []).filter((item) => String(item.materialId) === id).map((item) => ({ quantity: item.quantity ?? 1, unit: item.unit, sortOrder: item.sortOrder ?? 0 }));
+        const canonicalLines = (parent.composition ?? []).filter(
+          (item) => item.lineType === 'material' && String(item.refId) === id,
+        );
+        const lines = canonicalLines.length > 0
+          ? canonicalLines
+          : (parent.materials ?? [])
+              .filter((item) => String(item.materialId) === id)
+              .map((item) => ({
+                quantity: item.quantity ?? 1,
+                unit: item.unit,
+                sortOrder: item.sortOrder ?? 0,
+              }));
         for (const line of lines) rows.push(this.toWhereUsedItem(parent, 'module', kind, line.quantity, line.unit, line.sortOrder));
       }
       for (const parent of products) {
@@ -122,8 +136,10 @@ export class CatalogGraphService {
         }
       }
     } else {
-      // WorkType is currently a shared dictionary without organizationId.
-      // Therefore no org predicate is added until the schema gains ownership.
+      // ProductModule and WorkType are currently shared catalog records without
+      // organizationId. Their backlinks are intentionally global until ownership
+      // is added to those schemas; organization scope still applies to Product
+      // and Material parent collections above.
       const parents = await this.findParents(this.moduleModel, { 'workTypes.workTypeId': objectId }, undefined, '_id name workTypes') as LeanParent[];
       for (const parent of parents) {
         for (const workType of (parent.workTypes ?? []).filter((item) => String(item.workTypeId) === id)) {

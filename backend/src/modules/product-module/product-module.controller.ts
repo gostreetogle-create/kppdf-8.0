@@ -10,6 +10,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
@@ -17,6 +18,7 @@ import { CreateCompositionLineDto, UpdateCompositionLineDto } from '../catalog/c
 import { CatalogGraphService, MAX_DEPTH } from '../catalog-graph/catalog-graph.service';
 import { ProductModuleService, UpsertProductModuleDto } from './product-module.service';
 
+@ApiTags('Справочники — Модули')
 @Controller('modules')
 export class ProductModuleController {
   constructor(
@@ -30,6 +32,11 @@ export class ProductModuleController {
 
   @Get(':id/where-used')
   @Roles('admin', 'manager', 'user')
+  @ApiOperation({ summary: 'List catalog parents that use this module' })
+  @ApiQuery({ name: 'page', required: false, description: 'Page number' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Page size, max 100' })
+  @ApiResponse({ status: 200, description: 'Paginated module backlinks' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   getWhereUsed(@Param('id') id: string, @Query('page') page = '1', @Query('limit') limit = '20', @CurrentUser() user: AuthenticatedUser) {
     return this.catalogGraph.getWhereUsed('module', id, { page: parseInt(page, 10), limit: parseInt(limit, 10), organizationId: user.organizationId });
   }

@@ -66,6 +66,7 @@ function createService(overrides: Record<string, unknown> = {}) {
   model.findById = jest.fn();
   model.updateOne = jest.fn();
   const counter = { next: jest.fn().mockResolvedValue('ORD-0001') };
+  const shipmentModel = { create: jest.fn() };
   const reservationService = { create: jest.fn(), release: jest.fn() };
   const shipmentService = { create: jest.fn() };
   const sessionRunner = { run: jest.fn() };
@@ -80,6 +81,7 @@ function createService(overrides: Record<string, unknown> = {}) {
   return {
     service: new OrderService(
       dependencies.model as never,
+      shipmentModel as never,
       dependencies.counter as never,
       dependencies.reservationService as never,
       dependencies.shipmentService as never,

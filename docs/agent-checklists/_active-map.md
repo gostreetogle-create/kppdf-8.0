@@ -1,30 +1,35 @@
 # SESSION QUEUE — Catalog UI workspace + Catalog Wave 2 BE
 
-**Updated:** 2026-08-05 · Catalog list chrome cutover in progress / done this session
+**Updated:** 2026-08-05 · TZ-CATALOG-310 archived; next Catalog Wave 2 task is 313
 
 ## Closed earlier
 
-DICT-308…312 · UI-TABLE-301…303,305 · SKIP 304
+DICT-308…312 · UI-TABLE-301…303,305 · SKIP 304 · TZ-CATALOG-UI-301
 
-## Catalog UI (this session)
+## Checkpoint 2026-08-05T21:00:00Z
 
-| # | TZ | Status |
-|---|-----|--------|
-| 0 | **TZ-CATALOG-UI-301** | **DONE** — Group Chip Workspace on catalog lists; top-nav entry (no dropdown) for Каталог + Справочники |
+- DONE: TZ-CATALOG-310 — Where-used API; archive and lock present; gates green.
+- IN PROGRESS: none; next claim is TZ-CATALOG-313.
+- NOT DONE: TZ-CATALOG-313, 314, 312, 311, 315; deploy remains out of scope.
+- NEXT: claim `TZ-CATALOG-313` and read its executable task/checklist.
+- HEAD: `6e27fd0fd72471462957cd8329b9a23adc770cb7` (TZ-310 closeout changes uncommitted; unrelated workspace changes preserved).
+- Blockers: none.
+- _active/: empty after removing `TZ-CATALOG-310.md`.
 
-## Catalog Wave 2 BE (other executor — continue)
+## Catalog Wave 2 (strict order)
 
-| # | TZ | Source | Notes |
+| # | TZ | Source | Status |
 |---|-----|--------|--------|
-| 1 | TZ-CATALOG-310 | backlog | Where-used API |
-| 2 | TZ-CATALOG-313 | backlog | Photo unify |
-| 3 | TZ-CATALOG-314 | backlog | Soft-delete |
-| 4 | TZ-CATALOG-312 | backlog | Material detail |
-| 5 | TZ-CATALOG-311 | backlog | CompositionTree |
-| 6 | TZ-CATALOG-315 | backlog | Lists polish |
+| 1 | **TZ-CATALOG-310** | archived `tasks/_archive/2026-08/TZ-CATALOG-310.done.md` | **DONE** |
+| 2 | **TZ-CATALOG-313** | `tasks/_backlog/catalog/TZ-CATALOG-313.md` | READY |
+| 3 | **TZ-CATALOG-314** | `tasks/_backlog/catalog/TZ-CATALOG-314.md` | PARKED |
+| 4 | **TZ-CATALOG-312** | `tasks/_backlog/catalog/TZ-CATALOG-312.md` | PARKED |
+| 5 | **TZ-CATALOG-311** | `tasks/_backlog/catalog/TZ-CATALOG-311.md` | PARKED |
+| 6 | **TZ-CATALOG-315** | `tasks/_backlog/catalog/TZ-CATALOG-315.md` | PARKED |
 
-## Rules
+## Out of scope
 
-- Skill: `kppdf-executor-continuous`
-- No auto-deploy; no UI-TABLE-304
-- Canon: `docs/superpowers/specs/2026-08-05-group-chip-workspace-canon.md`
+- Deploy / wipe / `deploy.ps1`
+- TZ-UI-TABLE-304
+- PRODUCTION-* / Z-series / commerce
+- `__pycache__/` and `tasks/Данные/`

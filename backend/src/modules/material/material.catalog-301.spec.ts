@@ -2,10 +2,7 @@ import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { MaterialService } from './material.service';
 import { CreateMaterialDto } from './dto/create-material.dto';
-
-function query<T>(value: T) {
-  return { exec: jest.fn().mockResolvedValue(value) };
-}
+import type { CatalogGraphService } from '../catalog-graph/catalog-graph.service';
 
 function buildService() {
   const materialModel = {
@@ -14,8 +11,9 @@ function buildService() {
   } as any;
   const categoryModel = { findById: jest.fn() } as any;
   const counter = { next: jest.fn() } as any;
+  const catalogGraph = { getWhereUsed: jest.fn() } as unknown as CatalogGraphService;
   return {
-    service: new MaterialService(materialModel, categoryModel, counter),
+    service: new MaterialService(materialModel, categoryModel, counter, catalogGraph),
     materialModel,
   };
 }

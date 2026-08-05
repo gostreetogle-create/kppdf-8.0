@@ -60,6 +60,8 @@ export class ProductController {
   @ApiOperation({ summary: 'List products that use this product' })
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page, max 100' })
+  @ApiResponse({ status: 200, description: 'Paginated product backlinks' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   getWhereUsed(@Param('id') id: string, @Query('page') page = '1', @Query('limit') limit = '20', @CurrentUser() user: AuthenticatedUser) {
     return this.catalogGraph.getWhereUsed('product', id, { page: parseInt(page, 10), limit: parseInt(limit, 10), organizationId: user.organizationId });
   }

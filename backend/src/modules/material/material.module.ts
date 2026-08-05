@@ -5,10 +5,12 @@ import { MaterialService } from './material.service';
 import { MaterialController } from './material.controller';
 import { CounterModule } from '../counter/counter.module';
 import { Category, CategorySchema } from '../category/category.schema';
+import { CatalogGraphModule } from '../catalog-graph/catalog-graph.module';
 
 @Module({
   imports: [
     CounterModule,
+    CatalogGraphModule,
     MongooseModule.forFeature([
       { name: Material.name, schema: MaterialSchema },
       { name: Category.name, schema: CategorySchema },

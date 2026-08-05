@@ -3,6 +3,7 @@ import { Types } from 'mongoose';
 import { MaterialService } from './material.service';
 import type { CreateMaterialDto } from './dto/create-material.dto';
 import type { UpdateMaterialDto } from './dto/update-material.dto';
+import type { CatalogGraphService } from '../catalog-graph/catalog-graph.service';
 
 const CATEGORY_ID = new Types.ObjectId().toString();
 
@@ -27,7 +28,8 @@ function buildService(
   const model = { create, findById, updateOne } as any;
   const categoryModel = { findById: categoryFindById } as any;
   const counter = { next: counterNext } as any;
-  const service = new MaterialService(model, categoryModel, counter);
+  const catalogGraph = { getWhereUsed: jest.fn() } as unknown as CatalogGraphService;
+  const service = new MaterialService(model, categoryModel, counter, catalogGraph);
   return { service, create, findById, updateOne, categoryFindById, counterNext };
 }
 
@@ -96,7 +98,7 @@ describe('MaterialService (TZ-MATERIALS-303/307)', () => {
     });
 
     it('rejects an unknown category before generating or creating a material', async () => {
-      const { service, create, categoryFindById, counterNext } = buildService({
+      const { service, create, counterNext } = buildService({
         categoryFindById: jest.fn().mockReturnValue(query(null)),
       });
 
@@ -128,7 +130,7 @@ describe('MaterialService (TZ-MATERIALS-303/307)', () => {
     });
 
     it('rejects a category without a SKU prefix before creating a material', async () => {
-      const { service, create, categoryFindById, counterNext } = buildService({
+      const { service, create, counterNext } = buildService({
         categoryFindById: jest.fn().mockReturnValue(
           query({
             _id: CATEGORY_ID,
