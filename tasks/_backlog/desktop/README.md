@@ -4,25 +4,25 @@
 Мастер-контекст (архив): `tasks/_archive/2026-08/TZD-00.done.md`  
 Код: `desktop/`
 
-## Streams
+## Open (parked until PO)
 
-| Stream | IDs | Status |
-|--------|-----|--------|
-| Import / AI pipeline (from TZD-00) | TZD-01…04, 06…10 | PARKED until PO resumes |
-| **Web pairing (parallel OK)** | **TZD-05** | READY — no conflict with MCP |
-| **MCP agent socket** | **TZD-11…15** | TZD-11–13 DONE; TZD-14…15 READY |
+| ID | File | Notes |
+|----|------|-------|
+| **TZD-14** | `TZD-14-desktop-host-mcp-autostart.md` | после вечернего web deploy |
+| **TZD-15** | `TZD-15-agent-inbox-workspace.md` | после 14 |
 
-## Parallel hint
+## Done (stubs removed from backlog — see archive)
 
-- **TZD-05** (web pairing) ∥ safe vs MCP.
-- **Owner:** Cursor owns desktop/MCP end-to-end (usable product, not stubs).
+| ID | Archive |
+|----|---------|
+| TZD-05 | `tasks/_archive/2026-08/TZD-05.done.md` |
+| TZD-11 | `tasks/_archive/2026-08/TZD-11.done.md` |
+| TZD-12 | `tasks/_archive/2026-08/TZD-12.done.md` |
+| TZD-13 | `tasks/_archive/2026-08/TZD-13.done.md` |
 
-## MCP order
+Import stream TZD-01…04, 06…10 — PARKED (не в этой папке как active stubs).
 
-1. TZD-11 foundation ✅ DONE  
-2. TZD-12 reads ✅ DONE  
-3. TZD-13 writes + mutation journal ✅ DONE  
-4. TZD-14 desktop host autostart  
-5. TZD-15 inbox workspace  
+## Rules
 
-Do not start without PO «делай TZD-NN». Empty `_active` ≠ auto-start.
+- Owner: Cursor owns desktop/MCP end-to-end.
+- Do not start without PO «делай TZD-NN». Never `git add .` with чужой dirty.

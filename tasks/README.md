@@ -1,35 +1,36 @@
 # Active TZ backlog index
 
-**Verified:** 2026-08-05 · `D:\kppdf-8.0`  
-**Hygiene:** DONE root stubs removed after archive (keep only open/index sources).
+**Verified:** 2026-08-06 night · `D:\kppdf-8.0`  
+**Hygiene:** DONE stubs removed from `_backlog` after archive; open queue only.
 
-## Closed this session wave
+## Board
 
-| Stream | Status |
-|--------|--------|
-| DICT 308–312 (Group chips + polish) | **DONE** → `_archive/2026-08/` |
-| UI-TABLE 301–303, 305 | **DONE** → `_archive/2026-08/` |
-| UI-TABLE 304 | **SKIP** (склад backlog) |
-| Catalog Wave 1 (302–305, 316/317/319) | **DONE** → `_archive/2026-08/` |
-| TZ-CATALOG-310 (where-used API) | **DONE** → `_archive/2026-08/` |
-| Warehouse pack B (write flows) | **DONE** (docs/`SECTION-READINESS.md`; no TZ stub) |
+See `docs/agent-checklists/_active-map.md`.
 
-`_active/`: see `docs/agent-checklists/_active-map.md` (may hold Catalog Wave 2 claim)  
-Policy: empty queue → **propose** deploy readiness · **no** auto `deploy.ps1`
+**Tonight stop (314):** `docs/agent-handoff-2026-08-06-TZ-CATALOG-314.md`  
+**Tomorrow script:** `tasks/_backlog/catalog/TZ-DAY-2026-08-07-catalog-314-closeout-then-320.md`
+
+## Closed (recent)
+
+| Stream | Archive |
+|--------|---------|
+| Catalog Wave 1 (301–305, 316/317/319) | `_archive/2026-08/` |
+| CATALOG-310, 312, 313 | `_archive/2026-08/` |
+| TZD-05, 11, 12, 13 | `_archive/2026-08/` |
+| Warehouse pack B | docs/`SECTION-READINESS.md` |
 
 ## Still in `tasks/` root (intentional)
 
-| File | Why kept |
-|------|----------|
+| File | Why |
+|------|-----|
 | `CATALOG-WAVE1.md` / `DICT-WAVE1.md` | wave indexes |
-| `TZ-CATALOG-300.md` / `TZ-DICT-300.md` | canon / umbrella specs |
+| `TZ-CATALOG-300.md` / `TZ-DICT-300.md` | canon |
 | `README.md` | this index |
 
-## Parked (do not start without PO)
+## Parked open
 
-- `_backlog/catalog/` **завтра:** `TZ-DAY-2026-08-07-catalog-314-closeout-then-320.md` (close 314 → 320); потом 311 → 315
-- `_backlog/desktop/` **MCP socket TZD-11…15** + parked import TZD-01…10 — vision `docs/superpowers/specs/2026-08-05-desktop-mcp-agent-vision.md`
-- `_backlog/` other Z / procurement / etc.
-- TZ-UI-TABLE-304 Selectable/dense
+- Catalog: 314 (closeout) → 320 → 311 → 315
+- Desktop: TZD-14, TZD-15 only in `_backlog/desktop/`
+- Other: Z-series, procurement, UI-TABLE-304
 
-**Rule:** after archive, delete the root/`_backlog` source stub so the folder count matches the open queue.
+**Rule:** after archive, delete `_backlog` source stub (keep archive). Never `git add .` with чужой dirty.

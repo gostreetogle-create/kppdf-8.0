@@ -6,6 +6,10 @@ TZ-DAY-2026-08-07: Закрыть CATALOG-314 → выполнить CATALOG-320
 > Сегодня (2026-08-06 ночь): сессия Freebuff оборвалась («No active free session» /
 > Calpost). Код 314 **есть в working tree**, gates заявлены PASS, **коммита/archive нет**.
 > Склад / MCP / UI-kit dirty — на паузе, не трогать.
+>
+> **Канон stop/resume по 314 (детали conflict keys + allowlist):**  
+> `docs/agent-handoff-2026-08-06-TZ-CATALOG-314.md`  
+> Этот DAY-07 = оркестрация A→B; handoff = чеклист closeout 314.
 
 РОЛЬ АГЕНТА: Backend closeout (часть A) → Frontend UI Engineer (часть B)
 
@@ -19,7 +23,7 @@ LAYER: 4 затем 3 (последовательно, не параллельн
 
 | Item | Fact |
 |------|------|
-| HEAD docs | `2ddf106` (TZ-320/311 specs) — на origin |
+| HEAD docs | `a0d54f5` (DAY-07 script) — на origin; 320/311 specs с `2ddf106` |
 | TZ-CATALOG-314 code | **uncommitted** в WT: soft-delete/`deletedAt`, org-scope, archive guards, `catalog-314.archive.spec.ts` |
 | Claim | `tasks/_active/TZ-CATALOG-314.md` — READY FOR REVIEW |
 | Checklist | `docs/agent-checklists/TZ-CATALOG-314.md` — gates PASS; closeout **не** сделан |
@@ -37,7 +41,8 @@ active marker + checklist READY FOR REVIEW; conflict-key files modified/untracke
 ЧАСТЬ A — TZ-CATALOG-314 closeout (сначала)
 ═══════════════════════════════════════════════════════════════
 
-Источник спеки: `tasks/_backlog/catalog/TZ-CATALOG-314.md` + active + checklist.
+Источник: `docs/agent-handoff-2026-08-06-TZ-CATALOG-314.md` + `tasks/_active/TZ-CATALOG-314.md` + checklist.
+(Backlog `TZ-CATALOG-314.md` = pointer only.)
 
 ### A0. CLAIM / preflight
 

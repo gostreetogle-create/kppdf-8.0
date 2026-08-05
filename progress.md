@@ -1,3 +1,14 @@
+## [2026-08-06] — TZ-CATALOG-314 READY FOR REVIEW: Archive / soft-delete / auth consistency
+**Исполнитель:** Buffy / openai/gpt-5.6-luna
+**Статус:** READY FOR REVIEW; commit/push pending PO; archive and lock not created.
+**Что сделано кратко:** ProductModule hard-delete заменён на non-destructive archive; Product/Material/WorkType/Category получили active-read filtering и archive markers; structured references in orders, quotations, BOMs, cost calculations, purchasing, workers, and catalog composition block archive with conflict; Product/Material/Category CRUD and Product composition/tree routes now receive organization scope; explicit catalog mutation roles retained; archived modules reject legacy photo writes without breaking 313 dual-write.
+**Legacy:** ProductModulePhoto, ProductPassport, InventorFile, and existing ProductModule legacy composition/photo references preserved; opaque HTML/design/build snapshots are not parsed because archive is non-destructive.
+**Gates:** backend tsc PASS; focused Jest 6 suites / 49 tests PASS; scoped ESLint PASS; scoped diff --check PASS.
+**Review:** code review completed; blockers closed for Product composition org scope and archived ProductModulePhoto writes.
+**Next:** PO/Cursor review; only after PASS: closeout archive marker, lock, scoped commit and push.
+
+---
+
 ## [2026-08-06] — TZD-13 DONE: MCP writes + mutation journal
 **Исполнитель:** Cursor / Auto (desktop/MCP owner)
 **Статус:** DONE; archive; push with closeout
@@ -24,7 +35,10 @@
 **Статус:** DONE
 **Что сделано кратко:** Карточка материала /materials/:id (4 секции: основное, габариты, склад, where-used backlinks). Роут + ссылка из списка материалов. Паттерн product/module detail.
 **Gates:** FE tsc PASS; jest material-detail 6/6 PASS.
-**Next:** TZ-CATALOG-314 (soft-delete) или TZ-CATALOG-311.
+**Commit:** `7eb60f4`
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-312.done.md` (hygiene 2026-08-06: stale `_active` + backlog stub removed)
+**Lock:** `.mimocode/locks/TZ-CATALOG-312-material-detail.lock`
+**Next:** TZ-CATALOG-314 closeout (DAY-07) → 320.
 
 ---
 
@@ -53,7 +67,7 @@
 **Статус:** DONE; archive; on main after push
 **Что сделано кратко:** 6 read-only MCP tools поверх существующих GET (materials/products/storage-items/warehouses) + slim product fields; обновлён `desktop/docs/MCP.md`.
 **Gates:** `pnpm typecheck` PASS; `pnpm test` 7/7 PASS.
-**Archive:** `tasks/_archive/2026-08/TZD-12.done.md`
+**Archive:** `tasks/_archive/2026-08-05/TZD-12.done.md`
 **Lock:** `.mimocode/locks/TZD-12-mcp-reads.lock`
 **Next:** TZD-13 writes + journal. Параллельно: TZD-05.
 
@@ -71,7 +85,7 @@
 ---
 
 ## [2026-08-05] — TZ-CATALOG-310 DONE: Where-used API
-**Исполнитель:** Buffy / openai-gpt-5.6-luna
+**Исполнитель:** Buffy / openai/gpt-5.6-luna
 **Статус:** DONE; archive + lock created; commit/push pending
 **Что сделано кратко:** Добавлены authenticated read-only where-used routes для Product, Module, Material и WorkType; общий paginated response, org scope для owned parent records, legacy composition fallback, orphan tolerance и Swagger docs.
 **Gates:** backend tsc PASS; focused Jest 4 suites / 46 tests PASS; scoped ESLint PASS (0 errors, 6 existing test-mock warnings); diff --check PASS.
@@ -113,7 +127,7 @@
 ---
 
 ## [2026-08-05] — TZ-UI-TABLE-302 READY FOR REVIEW: shared Tree kit + categories
-**Исполнитель:** openai/gpt-5.6-luna (Buffy)
+**Исполнитель:** openai-gpt-5.6-luna (Buffy)
 **Статус:** READY FOR REVIEW; Cursor PASS → archive; не DONE
 **Что сделано кратко:** добавлен `app-pi-table-tree` для nested rows, indent, expand/collapse и drag capability; CategoriesPage переведён с page-local grid/CDK markup на kit, reorder API сохранён.
 **Gates:** fe tsc PASS; targeted jest 6 suites / 59 tests PASS; diff --check PASS.
@@ -123,7 +137,7 @@
 ---
 
 ## [2026-08-05] — TZ-DICT-312 READY FOR REVIEW: Group Chip chrome polish
-**Исполнитель:** openai/gpt-5.6-luna (Buffy)
+**Исполнитель:** openai-gpt-5.6-luna (Buffy)
 **Статус:** READY FOR REVIEW; Cursor PASS → archive; не DONE
 **Что сделано кратко:** убран gap header→chips через dense main для dictionary group routes; chips+tools собраны в адаптивный sticky top-0 stack; CTA tools защищён от правого clip.
 **Gates:** fe tsc PASS; targeted jest 10 suites / 91 tests PASS; diff --check PASS.
@@ -148,5 +162,3 @@
 **Файлы:** `tasks/TZ-DICT-312.md`, checklist, active-map, PO-DIARY
 **Критерии:** executable TZ
 **Известные ограничения:** не чинить сегодня без запроса PO
-
----
