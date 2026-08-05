@@ -1,3 +1,13 @@
+## [2026-08-06] — TZD-13 DONE: MCP writes + mutation journal
+**Исполнитель:** Cursor / Auto (desktop/MCP owner)
+**Статус:** DONE; archive; push with closeout
+**Что сделано кратко:** Backend MutationJournal (propose→confirm→undo Material, ring 50); MCP write tools; MCP.md connect+safety; unit default `шт`.
+**Gates:** backend tsc PASS; jest 5/5; mcp tests 8/8.
+**Archive:** `tasks/_archive/2026-08/TZD-13.done.md`
+**Next:** TZD-14 Tauri MCP autostart (после вечернего деплоя web — можно отдельно).
+
+---
+
 ## [2026-08-06] — TZ-CATALOG-313 DONE: Photo/document attachment unify
 **Исполнитель:** Buffy / openai/gpt-5.6-luna
 **Статус:** DONE; PO accepted READY FOR REVIEW; archive + lock created.

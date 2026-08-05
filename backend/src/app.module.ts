@@ -30,6 +30,7 @@ import { ProductModuleModule } from './modules/product-module/product-module.mod
 import { ProductModulePhotoModule } from './modules/product-module-photo/product-module-photo.module';
 import { PhotosModule } from './modules/photos/photos.module';
 import { AttachmentModule } from './modules/attachments/attachment.module';
+import { MutationJournalModule } from './modules/mutation-journal/mutation-journal.module';
 import { BomModule } from './modules/bom/bom.module';
 import { WorkCenterModule } from './modules/work-center/work-center.module';
 import { WorkTypeModule } from './modules/work-type/work-type.module';
@@ -179,6 +180,7 @@ import { RequestMethod } from '@nestjs/common';
     ProductModulePhotoModule, // TZ-83 Фаза A.7: новая entity
     PhotosModule,
     AttachmentModule,
+    MutationJournalModule,
     BomModule,
     WorkCenterModule,
     WorkTypeModule,

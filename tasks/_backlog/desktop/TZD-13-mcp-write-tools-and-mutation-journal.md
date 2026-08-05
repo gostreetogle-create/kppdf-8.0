@@ -2,7 +2,7 @@
 TZD-13: MCP write tools + propose/confirm + mutation journal
 ═══════════════════════════════════════════════════════════════
 
-> PARKED. After TZD-11 (+ preferably TZD-12). LAYER 2–3.
+> DONE 2026-08-05 → `tasks/_archive/2026-08/TZD-13.done.md`. LAYER 2–3.
 > CONFLICT: `desktop/mcp/**`; `backend/src/modules/mutation-journal/**` (new) OR `desktop-agent/**`.
 > Vision §4 — ring buffer undo, not full DB backup.
 

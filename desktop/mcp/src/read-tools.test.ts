@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import { withQuery } from './query.js';
 import { slimProduct, slimProductList, toolFail, toolOk } from './tool-result.js';
 import { READ_TOOL_NAMES } from './read-tools.js';
+import { WRITE_TOOL_NAMES } from './write-tools.js';
 
 describe('withQuery', () => {
   it('omits empty values and encodes params', () => {
@@ -53,5 +54,13 @@ describe('read tool registry', () => {
     assert.ok(READ_TOOL_NAMES.length >= 5);
     assert.ok(READ_TOOL_NAMES.includes('kppdf_list_materials'));
     assert.ok(READ_TOOL_NAMES.includes('kppdf_list_warehouses'));
+  });
+});
+
+describe('write tool registry', () => {
+  it('exposes propose/confirm/undo tools', () => {
+    assert.ok(WRITE_TOOL_NAMES.includes('kppdf_propose_material_create'));
+    assert.ok(WRITE_TOOL_NAMES.includes('kppdf_confirm_proposal'));
+    assert.ok(WRITE_TOOL_NAMES.includes('kppdf_undo_mutation'));
   });
 });

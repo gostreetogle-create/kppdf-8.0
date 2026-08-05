@@ -1,62 +1,82 @@
 # KPPDF Desktop MCP socket
 
-> TZD-11 foundation + TZD-12 read tools. Vision: `docs/superpowers/specs/2026-08-05-desktop-mcp-agent-vision.md`
+> TZD-11…13. Vision: `docs/superpowers/specs/2026-08-05-desktop-mcp-agent-vision.md`  
+> Owner track: Cursor (desktop/MCP) — usable for managers, not a demo stub.
 
-Local MCP host so **any** MCP-capable client (not only Cursor) can call KPPDF tools
-using the same **pairing JWT** as the desktop app.
+Local MCP host so **any** MCP-capable client can call KPPDF tools with the same
+**pairing JWT** as the desktop app. Source of truth = Nest backend (RBAC unchanged).
 
-## Requirements
+## Как подключить (менеджер, 3 шага)
 
-- Node 18+
-- Backend kppdf reachable
-- Pairing packet fields → env (see below)
+1. **Паринг** — JSON `{ apiBaseUrl, apiKey, username, expiresAt }` из веба (кнопка «Подключить десктоп», TZD-05) или вручную после логина.
+2. **Запуск MCP** на машине менеджера:
+   ```bat
+   cd desktop\mcp
+   pnpm install
+   set KPPDF_API_BASE_URL=http://127.0.0.1:3000
+   set KPPDF_API_KEY=<apiKey из pairing JSON>
+   pnpm start
+   ```
+3. **Клиент MCP** → `http://127.0.0.1:9743/mcp` + заголовок `Authorization: Bearer <тот же apiKey>`.
+
+Проверка: `GET http://127.0.0.1:9743/healthz` → `{ ok: true }`.  
+Инструмент `kppdf_ping` должен вернуть профиль `/api/auth/me`.
 
 ## Env
 
 | Variable | Required | Default | Meaning |
 |----------|----------|---------|---------|
 | `KPPDF_API_BASE_URL` | yes | — | e.g. `http://127.0.0.1:3000` |
-| `KPPDF_API_KEY` | yes | — | pairing JWT (`apiKey` from pairing JSON) |
+| `KPPDF_API_KEY` | yes | — | pairing JWT |
 | `KPPDF_MCP_PORT` | no | `9743` | listen port |
 | `KPPDF_MCP_HOST` | no | `127.0.0.1` | bind address |
-| `KPPDF_MCP_ALLOW_LAN` | no | off | if `1`/`true`, may bind `0.0.0.0` |
+| `KPPDF_MCP_ALLOW_LAN` | no | off | `1`/`true` → may bind `0.0.0.0` |
+| `MUTATION_JOURNAL_RING_SIZE` | no | `50` | backend ring (applied/undone) |
 
-## Start
+Stdio: `pnpm start:stdio` (для клиентов, которые спавнят процесс).
 
-```bash
-cd desktop/mcp
-pnpm install
-# HTTP (recommended for LAN/local IP clients)
-set KPPDF_API_BASE_URL=http://127.0.0.1:3000
-set KPPDF_API_KEY=<pairing-jwt>
-pnpm start
+## Tools — read (TZD-12)
 
-# Stdio (process-spawned clients)
-pnpm start:stdio
-```
+| Tool | Description |
+|------|-------------|
+| `kppdf_ping` | `GET /api/auth/me` (fallback `/api/health`) |
+| `kppdf_list_materials` | `GET /api/materials?page&limit&search` |
+| `kppdf_get_material` | `GET /api/materials/:id` |
+| `kppdf_list_products` / `kppdf_get_product` | products, minimal fields |
+| `kppdf_list_storage_items` | optional `warehouseId` / `materialId` / `productId` |
+| `kppdf_list_warehouses` | `GET /api/warehouses` |
 
-- MCP endpoint: `POST http://127.0.0.1:9743/mcp`
-- Health: `GET http://127.0.0.1:9743/healthz`
-- Every MCP HTTP request must send: `Authorization: Bearer <same pairing JWT>`
+## Tools — write safety (TZD-13)
 
-## Tools
+**Никогда** не пишем в SoT из «голого» create-tool. Только:
 
-| Tool | Access | Description |
-|------|--------|-------------|
-| `kppdf_ping` | read | `GET /api/auth/me` (fallback `/api/health`) |
-| `kppdf_list_materials` | read | `GET /api/materials?page&limit&search` |
-| `kppdf_get_material` | read | `GET /api/materials/:id` |
-| `kppdf_list_products` | read | `GET /api/products?page&limit&search` (minimal fields) |
-| `kppdf_get_product` | read | `GET /api/products/:id` (minimal fields) |
-| `kppdf_list_storage_items` | read | `GET /api/storage-items` (`warehouseId` / `materialId` / `productId` optional) |
-| `kppdf_list_warehouses` | read | `GET /api/warehouses` |
+| Tool | Effect |
+|------|--------|
+| `kppdf_propose_material_create` | Proposal only (`name`, optional `unit` default `шт`) |
+| `kppdf_propose_material_update` | Proposal + before snapshot |
+| `kppdf_confirm_proposal` | Apply Material POST/PATCH + journal `applied` |
+| `kppdf_cancel_proposal` | Drop proposal, no SoT change |
+| `kppdf_undo_mutation` | Revert last / by id (create→soft-delete; update→restore before) |
+| `kppdf_list_mutations` | Recent applied/undone (ring) |
 
-Writes / mutation journal → **TZD-13**. Desktop autostart → **TZD-14**. Inbox → **TZD-15**.
+Backend: `POST /api/mutation-journal/proposals`, `…/confirm`, `…/undo`, `GET /api/mutation-journal`.
+
+### Правила
+
+1. Unconfirmed propose **does not** mutate materials.
+2. Ring ~50 batches per org (oldest evicted) — not full DB backup.
+3. Same JWT/RBAC as web (`admin`/`manager`).
+4. Default bind **loopback**; LAN only with explicit flag.
+5. Orders / Production / Gantt — out of scope here.
+
+## Follow-ups
+
+- **TZD-14** — Tauri autostart MCP + show URL/token in UI (без ручного `pnpm start`).
+- **TZD-15** — inbox folder → propose fills.
+- **TZD-05** — web pairing button (parallel FE).
 
 ## Security
 
-- Default bind **loopback only**.
-- LAN bind is opt-in and warned.
-- No tool runs without configured pairing key; HTTP rejects mismatched Bearer.
-- Server never bypasses backend RBAC — it only forwards the user JWT.
-- Org scope = whatever the pairing token allows (no wider).
+- Fail closed without matching Bearer.
+- Server forwards user JWT only — never bypasses RBAC.
+- Org scope = token scope.
