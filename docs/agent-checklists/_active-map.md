@@ -1,6 +1,6 @@
 # SESSION QUEUE — close board (no mid-stops)
 
-**Updated:** 2026-08-05 · executor session · deploy ONLY after queue empty
+**Updated:** 2026-08-05 · queue closed · waiting PO deploy gate
 
 ## Must finish (in order)
 
@@ -18,7 +18,21 @@
 
 ## Done when
 
-- `_active/` empty
-- 305 + 303 in `tasks/_archive/2026-08/*.done.md`
-- code committed + pushed on `main`
-- **READY FOR DEPLOY** — deploy itself was not run
+- [x] `_active/` empty
+- [x] 305 + 303 in `tasks/_archive/2026-08/*.done.md`
+- [x] code committed + pushed on `main`
+- [x] **READY FOR DEPLOY** — deploy itself was not run (PO gate)
+
+---
+
+## Checkpoint 2026-08-05T20:30+03:00 (Cursor / PO sync)
+
+- **DONE:** TZ-UI-TABLE-305, TZ-UI-TABLE-303; session close-board checked; `main` = `origin/main` = `497fbdd`
+- **IN PROGRESS:** none
+- **NOT DONE:** warm deploy (`deploy/synology/deploy.ps1`, no wipe) — waiting explicit PO «поехали» / VPN off
+- **NEXT:** on PO deploy OK → warm deploy + smoke health/FE; else idle / new TZ queue from PO
+- **HEAD:** `497fbddae37d0c7fb1663776ede5ad24e7bf69c4`
+- **_active/:** empty
+- **Locks:** `TZ-UI-TABLE-302-tree-kit`, `TZ-UI-TABLE-305-flat-kit`, `TZ-UI-TABLE-303-expandable`
+- **Do not commit:** `deploy/synology/__pycache__/`, `tasks/Данные/`
+- **Blockers:** none (only PO deploy decision)
