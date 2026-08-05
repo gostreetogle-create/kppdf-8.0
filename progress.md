@@ -1,6 +1,6 @@
 ## [2026-08-05] — TZD-11 DONE: MCP server foundation
 **Исполнитель:** Cursor / Auto
-**Статус:** DONE; archive + lock; commit pending → push for TZD-12 unblock
+**Статус:** DONE; archive + lock; on main `de27bf2` (TZD-12 unblocked)
 **Что сделано кратко:** Пакет `desktop/mcp` (`@kppdf/desktop-mcp`): Streamable HTTP на `127.0.0.1:9743` + stdio; auth pairing JWT (`KPPDF_API_KEY` + Bearer); tool `kppdf_ping`; docs `desktop/docs/MCP.md`; workspace member в `desktop/pnpm-workspace.yaml`.
 **Gates:** `pnpm typecheck` PASS; `pnpm test` 2/2 PASS; smoke `/healthz` ok + Bearer mismatch → 401.
 **Archive:** `tasks/_archive/2026-08/TZD-11.done.md`
