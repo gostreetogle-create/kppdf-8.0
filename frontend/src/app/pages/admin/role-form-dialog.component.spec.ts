@@ -190,6 +190,17 @@ describe('RoleFormDialogComponent', () => {
     httpMock.verify();
   });
 
+  it('selectAllPermissions / clearAllPermissions cover the whole catalog', async () => {
+    const { comp, fixture, httpMock } = await setup({ mode: 'create' });
+    httpMock.expectOne('/api/admin/permissions').flush(CATALOG);
+    await fixture.whenStable();
+    (comp as unknown as { selectAllPermissions: () => void }).selectAllPermissions();
+    expect(comp.selectedCount()).toBe(4);
+    (comp as unknown as { clearAllPermissions: () => void }).clearAllPermissions();
+    expect(comp.selectedCount()).toBe(0);
+    httpMock.verify();
+  });
+
   it('toggleSection selects/unselects all permissions of a section', async () => {
     const { comp, fixture, httpMock } = await setup({ mode: 'create' });
     httpMock.expectOne('/api/admin/permissions').flush(CATALOG);

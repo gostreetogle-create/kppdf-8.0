@@ -137,13 +137,37 @@ const SECTION_TO_GROUP: Record<string, string> = {
 
           <div class="role-form__permissions">
             <div class="role-form__permissions-head">
-              <div>
+              <div class="role-form__permissions-intro">
                 <span class="field__label">{{ copy.permissionsHeading }}</span>
                 <p class="role-form__logic-hint">{{ copy.logicHint }}</p>
               </div>
-              <span class="field__hint" data-test="role-form-selected-count"
-                >{{ selectedCount() }} выбрано</span
-              >
+              <div class="role-form__permissions-actions">
+                <span class="field__hint" data-test="role-form-selected-count"
+                  >{{ selectedCount() }} выбрано</span
+                >
+                <div class="role-form__permissions-btns">
+                  <app-pi-button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    [disabled]="catalogLoading() || !!catalogError()"
+                    (click)="selectAllPermissions()"
+                    data-test="role-form-select-all"
+                  >
+                    {{ copy.selectAll }}
+                  </app-pi-button>
+                  <app-pi-button
+                    variant="ghost"
+                    size="sm"
+                    type="button"
+                    [disabled]="catalogLoading() || !!catalogError() || selectedCount() === 0"
+                    (click)="clearAllPermissions()"
+                    data-test="role-form-clear-all"
+                  >
+                    {{ copy.clearAll }}
+                  </app-pi-button>
+                </div>
+              </div>
             </div>
 
             @if (catalogLoading()) {
@@ -285,6 +309,26 @@ const SECTION_TO_GROUP: Record<string, string> = {
         align-items: flex-start;
         justify-content: space-between;
         gap: 16px;
+      }
+
+      .role-form__permissions-intro {
+        min-width: 0;
+        flex: 1;
+      }
+
+      .role-form__permissions-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+
+      .role-form__permissions-btns {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
       }
 
       .role-form__logic-hint {
@@ -479,6 +523,22 @@ export class RoleFormDialogComponent {
       next.add(key);
     }
     this.selected.set(next);
+  }
+
+  /** Select every permission across all groups. */
+  protected selectAllPermissions(): void {
+    const next = new Set<string>();
+    for (const g of this.groups()) {
+      for (const p of g.permissions) {
+        next.add(p.key);
+      }
+    }
+    this.selected.set(next);
+  }
+
+  /** Clear the entire selection. */
+  protected clearAllPermissions(): void {
+    this.selected.set(new Set());
   }
 
   protected groupAllSelected(g: PermissionDisplayGroup): boolean {
