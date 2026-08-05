@@ -35,6 +35,11 @@ export class WorkType {
 
   @Prop({ default: 0 })
   hourlyRate?: number;
+
+  /** TZ-CATALOG-314 archive marker; legacy rows without this field remain active. */
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
 }
 
 export const WorkTypeSchema = SchemaFactory.createForClass(WorkType);
+WorkTypeSchema.index({ deletedAt: 1, name: 1 });

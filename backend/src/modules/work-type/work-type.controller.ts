@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Delete,
-  Param,
-  Patch,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Get, Delete, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { WorkTypeService } from './work-type.service';
@@ -23,6 +14,7 @@ export class WorkTypeController {
   constructor(private readonly service: WorkTypeService, private readonly catalogGraph: CatalogGraphService) {}
 
   @Get()
+  @Roles('admin', 'manager')
   findAll(@Query('workCenterId') workCenterId?: string) { return this.service.findAll(workCenterId); }
 
   @Get(':id/where-used')
@@ -32,11 +24,10 @@ export class WorkTypeController {
   @ApiQuery({ name: 'limit', required: false, description: 'Page size, max 100' })
   @ApiResponse({ status: 200, description: 'Paginated work-type backlinks' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  getWhereUsed(@Param('id') id: string, @Query('page') page = '1', @Query('limit') limit = '20', @CurrentUser() user: AuthenticatedUser) {
-    return this.catalogGraph.getWhereUsed('workType', id, { page: parseInt(page, 10), limit: parseInt(limit, 10), organizationId: user.organizationId });
-  }
+  getWhereUsed(@Param('id') id: string, @Query('page') page = '1', @Query('limit') limit = '20', @CurrentUser() user: AuthenticatedUser) { return this.catalogGraph.getWhereUsed('workType', id, { page: parseInt(page, 10), limit: parseInt(limit, 10), organizationId: user.organizationId }); }
 
   @Get(':id')
+  @Roles('admin', 'manager', 'user')
   findOne(@Param('id') id: string) { return this.service.findById(id); }
 
   @Post()
@@ -46,11 +37,13 @@ export class WorkTypeController {
 
   @Patch(':id')
   @Roles('admin', 'manager')
-  @AuditAction({ action: 'update', entityType: 'WorkType' })
+  @AuditAction({ action: 'update', entityType: 'WorkType', idParam: 'id' })
   update(@Param('id') id: string, @Body() dto: UpdateWorkTypeDto) { return this.service.update(id, dto); }
 
   @Delete(':id')
   @Roles('admin', 'manager')
-  @AuditAction({ action: 'delete', entityType: 'WorkType' })
+  @AuditAction({ action: 'archive', entityType: 'WorkType', idParam: 'id' })
+  @ApiOperation({ summary: 'Archive a work type without hard delete' })
+  @ApiResponse({ status: 409, description: 'Work type is referenced by history' })
   remove(@Param('id') id: string) { return this.service.remove(id); }
 }

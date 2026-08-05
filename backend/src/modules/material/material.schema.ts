@@ -82,6 +82,10 @@ export class Material {
   @Prop()
   notes?: string;
 
+  /** TZ-CATALOG-314 archive marker; legacy rows without this field remain active. */
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
+
   @Prop({ required: false, sparse: true, index: true })
   organizationId?: Types.ObjectId;
 
@@ -92,3 +96,4 @@ export class Material {
 export const MaterialSchema = SchemaFactory.createForClass(Material);
 MaterialSchema.plugin(optimisticLockPlugin);
 MaterialSchema.index({ supplierId: 1 });
+MaterialSchema.index({ deletedAt: 1, organizationId: 1 });

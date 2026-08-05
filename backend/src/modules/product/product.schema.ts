@@ -50,6 +50,8 @@ export class Product {
   composition!: CompositionLine[];
 
   @Prop({ default: true }) isActive!: boolean;
+  /** TZ-CATALOG-314 archive marker; legacy rows without this field remain active. */
+  @Prop({ type: Date, default: null, index: true }) deletedAt?: Date | null;
   @Prop() purpose?: string;
   @Prop() installation?: string;
   @Prop({ required: false, sparse: true, index: true }) organizationId?: Types.ObjectId;
@@ -59,3 +61,4 @@ export class Product {
 export const ProductSchema = SchemaFactory.createForClass(Product);
 ProductSchema.plugin(optimisticLockPlugin);
 ProductSchema.index({ status: 1, isActive: 1 });
+ProductSchema.index({ deletedAt: 1, organizationId: 1 });

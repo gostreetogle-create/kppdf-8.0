@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { ProductModule, ProductModuleDocument } from './product-module.schema';
@@ -33,6 +33,7 @@ export class ProductModuleService {
   }
 
   async findAll(productId?: string): Promise<ProductModuleDocument[]> {
+    const activeFilter: Record<string, unknown> = { deletedAt: null };
     if (productId) {
       if (!Types.ObjectId.isValid(productId)) return [];
       const product = await this.productModel.findById(productId).select('composition productModuleIds').lean();
@@ -41,15 +42,15 @@ export class ProductModuleService {
         ? product.composition.filter((line) => line.lineType === 'module').map((line) => line.refId)
         : product.productModuleIds;
       if (moduleIds.length === 0) return [];
-      return this.model.find({ _id: { $in: moduleIds } }).populate('workTypes.workTypeId').populate({ path: 'materials.materialId', select: 'name photoIds unit dimensions materialKind' }).sort({ sortOrder: 1 }).exec();
+      return this.model.find({ ...activeFilter, _id: { $in: moduleIds } }).populate('workTypes.workTypeId').populate({ path: 'materials.materialId', select: 'name photoIds unit dimensions materialKind' }).sort({ sortOrder: 1 }).exec();
     }
-    return this.model.find().populate('workTypes.workTypeId').populate({ path: 'materials.materialId', select: 'name photoIds unit dimensions materialKind' }).sort({ sortOrder: 1 }).exec();
+    return this.model.find(activeFilter).populate('workTypes.workTypeId').populate({ path: 'materials.materialId', select: 'name photoIds unit dimensions materialKind' }).sort({ sortOrder: 1 }).exec();
   }
 
   async findById(id: string): Promise<ProductModuleDocument> {
     if (!Types.ObjectId.isValid(id)) throw new NotFoundException(`ProductModule ${id} not found`);
     const doc = await this.model.findById(id).populate('workTypes.workTypeId').populate({ path: 'materials.materialId', select: 'name photoIds unit dimensions materialKind' }).exec();
-    if (!doc) throw new NotFoundException(`ProductModule ${id} not found`);
+    if (!doc || doc.deletedAt) throw new NotFoundException(`ProductModule ${id} not found`);
     return doc;
   }
 
@@ -113,7 +114,13 @@ export class ProductModuleService {
     await doc.save();
   }
 
-  async remove(id: string): Promise<void> { const doc = await this.findById(id); await doc.deleteOne(); }
+  async remove(id: string): Promise<void> {
+    const doc = await this.findById(id);
+    const boms = await this.model.db.collection('boms').findOne({ 'components.productComponentId': doc._id });
+    const productRefs = await this.model.db.collection('products').findOne({ $or: [{ composition: { $elemMatch: { lineType: 'module', refId: doc._id } } }, { productModuleIds: doc._id }] });
+    if (boms || productRefs) throw new ConflictException('ProductModule is referenced by catalog history and cannot be archived');
+    await this.model.updateOne({ _id: doc._id, deletedAt: null }, { $set: { deletedAt: new Date() } }).exec();
+  }
 
   /** Non-empty materials[] is legacy write path (TZ-CATALOG-304). Empty array is treated as omit. */
   private rejectLegacyMaterialsWrite(materials: MaterialInModuleDto[] | undefined): void {
@@ -125,41 +132,24 @@ export class ProductModuleService {
   /** TZ-MATERIALS-309 override rules, applied on composition material lines after 304 cutover. */
   private async assertCompositionMaterialOverrides(line: CompositionLineDocumentShape): Promise<void> {
     if (line.lineType !== 'material') return;
-    await this.assertMaterialsAndOverridesAllowed([{
-      materialId: String(line.refId),
-      overrideDimensions: line.overrideDimensions,
-    }]);
+    await this.assertMaterialsAndOverridesAllowed([{ materialId: String(line.refId), overrideDimensions: line.overrideDimensions }]);
   }
 
   private async assertMaterialsAndOverridesAllowed(materials: MaterialInModuleDto[]): Promise<void> {
     for (const row of materials) {
-      if (!Types.ObjectId.isValid(row.materialId)) {
-        throw new BadRequestException(`Некорректный materialId: ${row.materialId}`);
-      }
+      if (!Types.ObjectId.isValid(row.materialId)) throw new BadRequestException(`Некорректный materialId: ${row.materialId}`);
     }
     const ids = [...new Set(materials.map((m) => m.materialId))];
     if (ids.length === 0) return;
-    const docs = await this.materialModel
-      .find({ _id: { $in: ids.map((id) => new Types.ObjectId(id)) } })
-      .select('name dimensions')
-      .lean()
-      .exec();
+    const docs = await this.materialModel.find({ _id: { $in: ids.map((id) => new Types.ObjectId(id)) } }).select('name dimensions').lean().exec();
     const byId = new Map(docs.map((material) => [String(material._id), material]));
     for (const row of materials) {
       const material = byId.get(row.materialId);
-      if (!material) {
-        throw new BadRequestException(`Материал ${row.materialId} не найден`);
-      }
-      const immutable = new Set(
-        (material.dimensions ?? [])
-          .filter((dimension) => dimension.isImmutable)
-          .map((dimension) => dimension.type),
-      );
+      if (!material) throw new BadRequestException(`Материал ${row.materialId} не найден`);
+      const immutable = new Set((material.dimensions ?? []).filter((dimension) => dimension.isImmutable).map((dimension) => dimension.type));
       for (const key of ['length', 'width', 'height'] as DimensionKey[]) {
         if (row.overrideDimensions?.[key] !== undefined && immutable.has(key)) {
-          throw new BadRequestException(
-            `Размер «${key}» материала «${material.name}» неизменяем и не может быть переопределён в модуле`,
-          );
+          throw new BadRequestException(`Размер «${key}» материала «${material.name}» неизменяем и не может быть переопределён в модуле`);
         }
       }
     }

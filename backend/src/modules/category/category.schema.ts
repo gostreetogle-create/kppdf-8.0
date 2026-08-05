@@ -34,6 +34,10 @@ export class Category {
   @Prop()
   description?: string;
 
+  /** TZ-CATALOG-314 archive marker; legacy rows without this field remain active. */
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
+
   /** TZ-240: organization this category belongs to. Null/undefined for system (TZ-seeded shared) records. */
   @Prop({ required: false, sparse: true, index: true })
   organizationId?: Types.ObjectId;
@@ -46,3 +50,4 @@ export class Category {
 export const CategorySchema = SchemaFactory.createForClass(Category);
 CategorySchema.plugin(optimisticLockPlugin);
 CategorySchema.index({ type: 1, slug: 1 }, { unique: true });
+CategorySchema.index({ deletedAt: 1, organizationId: 1 });

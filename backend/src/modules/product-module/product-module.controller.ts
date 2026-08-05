@@ -1,15 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Param,
-  Patch,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -21,10 +10,7 @@ import { ProductModuleService, UpsertProductModuleDto } from './product-module.s
 @ApiTags('Справочники — Модули')
 @Controller('modules')
 export class ProductModuleController {
-  constructor(
-    private readonly service: ProductModuleService,
-    private readonly catalogGraph: CatalogGraphService,
-  ) {}
+  constructor(private readonly service: ProductModuleService, private readonly catalogGraph: CatalogGraphService) {}
 
   @Get()
   @Roles('admin', 'manager')
@@ -37,9 +23,7 @@ export class ProductModuleController {
   @ApiQuery({ name: 'limit', required: false, description: 'Page size, max 100' })
   @ApiResponse({ status: 200, description: 'Paginated module backlinks' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  getWhereUsed(@Param('id') id: string, @Query('page') page = '1', @Query('limit') limit = '20', @CurrentUser() user: AuthenticatedUser) {
-    return this.catalogGraph.getWhereUsed('module', id, { page: parseInt(page, 10), limit: parseInt(limit, 10), organizationId: user.organizationId });
-  }
+  getWhereUsed(@Param('id') id: string, @Query('page') page = '1', @Query('limit') limit = '20', @CurrentUser() user: AuthenticatedUser) { return this.catalogGraph.getWhereUsed('module', id, { page: parseInt(page, 10), limit: parseInt(limit, 10), organizationId: user.organizationId }); }
 
   @Get(':id/composition')
   @Roles('admin', 'manager')
@@ -53,9 +37,7 @@ export class ProductModuleController {
   @Patch(':id/composition/:lineId')
   @Roles('admin', 'manager')
   @AuditAction({ action: 'update-composition-line', entityType: 'ProductModule', idParam: 'id' })
-  updateComposition(@Param('id') id: string, @Param('lineId') lineId: string, @Body() dto: UpdateCompositionLineDto) {
-    return this.service.updateComposition(id, lineId, dto);
-  }
+  updateComposition(@Param('id') id: string, @Param('lineId') lineId: string, @Body() dto: UpdateCompositionLineDto) { return this.service.updateComposition(id, lineId, dto); }
 
   @Delete(':id/composition/:lineId')
   @Roles('admin', 'manager')
@@ -65,9 +47,7 @@ export class ProductModuleController {
 
   @Get(':id/tree')
   @Roles('admin', 'manager')
-  getTree(@Param('id') id: string, @Query('maxDepth') maxDepth?: string) {
-    return this.catalogGraph.getTree('module', id, maxDepth === undefined ? MAX_DEPTH : Number(maxDepth));
-  }
+  getTree(@Param('id') id: string, @Query('maxDepth') maxDepth?: string) { return this.catalogGraph.getTree('module', id, maxDepth === undefined ? MAX_DEPTH : Number(maxDepth)); }
 
   @Get(':id')
   @Roles('admin', 'manager')
@@ -85,7 +65,10 @@ export class ProductModuleController {
 
   @Delete(':id')
   @Roles('admin', 'manager')
-  @AuditAction({ action: 'delete', entityType: 'ProductModule', idParam: 'id' })
+  @AuditAction({ action: 'archive', entityType: 'ProductModule', idParam: 'id' })
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Archive a product module without hard delete' })
+  @ApiResponse({ status: 204, description: 'Product module archived' })
+  @ApiResponse({ status: 409, description: 'Product module is referenced by history' })
   remove(@Param('id') id: string) { return this.service.remove(id); }
 }

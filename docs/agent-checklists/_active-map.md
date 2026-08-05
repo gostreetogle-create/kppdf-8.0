@@ -1,34 +1,26 @@
 # SESSION QUEUE — Catalog Wave 2
 
-**Updated:** 2026-08-06 night · hygiene pass · Buffy stop fixed in DAY-07
+**Updated:** 2026-08-06 · TZ-CATALOG-314 DONE (closeout for deploy)
 
 ## `_active/` сейчас
 
-| Marker | Status |
-|--------|--------|
-| `TZ-CATALOG-314.md` | **READY FOR REVIEW** — код в WT, gates PASS, **нет** commit/archive/push |
+*(пусто по catalog Wave 2)*
 
-Других active catalog markers **нет** (stale 312 claim удалён; 312 → archive).
+## Checkpoint
 
-## Checkpoint — где остановился Buffy (канон)
-
-| Файл | Роль |
-|------|------|
-| `docs/agent-handoff-2026-08-06-TZ-CATALOG-314.md` | **Stop/resume 314** (keys, gates, allowlist, запреты) |
-| `tasks/_backlog/catalog/TZ-DAY-2026-08-07-…320.md` | **Завтра A→B**: closeout 314 → claim 320 |
-
-Кратко: 313 DONE (`cde79fc`); 314 READY FOR REVIEW в WT без commit; session dead — стоп; завтра handoff→DAY-07.
+- **314 DONE** — soft-delete/archive + org-scope; on origin after closeout commit
+- Stop handoff (historical): `docs/agent-handoff-2026-08-06-TZ-CATALOG-314.md`
+- **Next FE:** `TZ-CATALOG-320` (DAY-07 часть B) — после деплоя / по сигналу PO
+- 311 → 315 parked
 
 ## Очередь
 
 | # | TZ | Status |
 |---|-----|--------|
-| DONE | 310, 312, 313 | archive |
-| **NOW** | **314** | READY FOR REVIEW / uncommitted |
-| **TOMORROW** | **DAY-07** → 320 | script in backlog |
-| NEXT | 311 → 315 | parked |
+| DONE | 310, 312, 313, **314** | archive |
+| NEXT | **320** | backlog after deploy |
+| LATER | 311 → 315 | parked |
 
-## Out of scope tonight / tomorrow script
+## Out of scope
 
-- Deploy, склад, MCP/TZD-14, UI-kit dirty, `tasks/Данные`
-- CompositionTree **311** (после 320)
+- Deploy wipe, MCP/TZD-14 until PO, UI-kit dirty, `tasks/Данные`

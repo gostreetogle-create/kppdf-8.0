@@ -52,6 +52,8 @@ export class ProductModule {
   @Prop({ type: ModuleDimensionsSchemaFactory }) dimensions?: { width?: number; height?: number; depth?: number; unit?: string };
   @Prop({ default: 0 }) weight?: number;
   @Prop({ default: 0 }) sortOrder!: number;
+  /** TZ-CATALOG-314 archive marker; legacy rows without this field remain active. */
+  @Prop({ type: Date, default: null, index: true }) deletedAt?: Date | null;
   /** Canonical catalog photo references; ProductModulePhoto remains available for legacy reads/writes. */
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Photo' }], default: [] }) photoIds!: Types.ObjectId[];
   @Prop({ type: Types.ObjectId, ref: 'Photo' }) mainPhotoId?: Types.ObjectId;
@@ -64,3 +66,4 @@ export class ProductModule {
 
 export const ProductModuleSchema = SchemaFactory.createForClass(ProductModule);
 ProductModuleSchema.index({ sortOrder: 1 });
+ProductModuleSchema.index({ deletedAt: 1, sortOrder: 1 });

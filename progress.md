@@ -1,11 +1,11 @@
-## [2026-08-06] — TZ-CATALOG-314 READY FOR REVIEW: Archive / soft-delete / auth consistency
-**Исполнитель:** Buffy / openai/gpt-5.6-luna
-**Статус:** READY FOR REVIEW; commit/push pending PO; archive and lock not created.
-**Что сделано кратко:** ProductModule hard-delete заменён на non-destructive archive; Product/Material/WorkType/Category получили active-read filtering и archive markers; structured references in orders, quotations, BOMs, cost calculations, purchasing, workers, and catalog composition block archive with conflict; Product/Material/Category CRUD and Product composition/tree routes now receive organization scope; explicit catalog mutation roles retained; archived modules reject legacy photo writes without breaking 313 dual-write.
-**Legacy:** ProductModulePhoto, ProductPassport, InventorFile, and existing ProductModule legacy composition/photo references preserved; opaque HTML/design/build snapshots are not parsed because archive is non-destructive.
-**Gates:** backend tsc PASS; focused Jest 6 suites / 49 tests PASS; scoped ESLint PASS; scoped diff --check PASS.
-**Review:** code review completed; blockers closed for Product composition org scope and archived ProductModulePhoto writes.
-**Next:** PO/Cursor review; only after PASS: closeout archive marker, lock, scoped commit and push.
+## [2026-08-06] — TZ-CATALOG-314 DONE: Archive / soft-delete / auth consistency
+**Исполнитель:** Buffy (implement) + Cursor (closeout / PO deploy path)
+**Статус:** DONE
+**Что сделано кратко:** ProductModule hard-delete → soft archive; deletedAt + active-read на Product/Material/WorkType/Category/Module; 409 на structured refs; org-scope на owned CRUD + Product composition/tree; 313 photo dual-write сохранён.
+**Gates (closeout):** backend tsc PASS; focused Jest 5/46 PASS; scoped ESLint PASS; diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-314.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-314-archive.lock`
+**Next:** deploy; затем TZ-CATALOG-320.
 
 ---
 
