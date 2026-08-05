@@ -12,7 +12,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
-import { DOCUMENTS_REF_CHIPS } from './dictionary-group-chips';
+import { DOCUMENTS_REF_CHIPS, DICTIONARY_TOC_CHIPS } from './dictionary-group-chips';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../shared/ui/switch/switch.component';
 import { PiToastService } from '../../shared/ui/toast';
@@ -65,7 +65,12 @@ function pluralGenitive(n: number): string {
     TableComponent,
   ],
   template: `
-    <app-pi-group-workspace [chips]="chips" [activeId]="'doc-templates'">
+    <app-pi-group-workspace
+      [toc]="toc"
+      tocActiveId="documents-ref"
+      [chips]="chips"
+      activeId="doc-templates"
+    >
       <!-- Sticky tools: search + primary CTA -->
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
@@ -164,6 +169,7 @@ function pluralGenitive(n: number): string {
   `,
 })
 export class DocumentTemplateCategoriesPage {
+  protected readonly toc = DICTIONARY_TOC_CHIPS;
   protected readonly chips = DOCUMENTS_REF_CHIPS;
   private readonly svc = inject(DocumentTemplateCategoriesService);
   private readonly toast = inject(PiToastService);

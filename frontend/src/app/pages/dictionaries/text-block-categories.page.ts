@@ -13,7 +13,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
 import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
-import { DOCUMENTS_REF_CHIPS } from './dictionary-group-chips';
+import { DOCUMENTS_REF_CHIPS, DICTIONARY_TOC_CHIPS } from './dictionary-group-chips';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../shared/ui/switch/switch.component';
 import { PiToastService } from '../../shared/ui/toast';
@@ -69,7 +69,12 @@ function pluralGenitive(n: number): string {
     TableComponent,
   ],
   template: `
-    <app-pi-group-workspace [chips]="chips" [activeId]="'text-blocks'">
+    <app-pi-group-workspace
+      [toc]="toc"
+      tocActiveId="documents-ref"
+      [chips]="chips"
+      activeId="text-blocks"
+    >
       <ng-template #nameTpl let-c>
         <span class="inline-flex items-center gap-2 font-medium">
           {{ c.name }}
@@ -164,6 +169,7 @@ function pluralGenitive(n: number): string {
   `,
 })
 export class TextBlockCategoriesPage {
+  protected readonly toc = DICTIONARY_TOC_CHIPS;
   protected readonly chips = DOCUMENTS_REF_CHIPS;
   private readonly svc = inject(TextBlockCategoriesService);
   private readonly toast = inject(PiToastService);

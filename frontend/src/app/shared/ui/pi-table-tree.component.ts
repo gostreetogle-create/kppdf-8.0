@@ -72,86 +72,88 @@ export interface TreeDropEvent<T> {
     }
   `,
   template: `
-    <div role="table" [attr.aria-label]="ariaLabel()" class="w-full border-collapse text-sm">
-      <div
-        role="row"
-        class="grid gap-2 px-3 py-3 hairline-b bg-paper text-left"
-        [style.grid-template-columns]="gridTemplate()"
-      >
-        @for (col of columns(); track col.key) {
-          <div
-            role="columnheader"
-            class="eyebrow select-none"
-            [class.text-right]="col.align === 'right'"
-            [class.text-center]="col.align === 'center'"
-          >
-            {{ col.label }}
-          </div>
-        }
-        @if (rowActions()) {
-          <div role="columnheader" class="eyebrow text-right w-24">
-            <span class="sr-only">Действия</span>
-          </div>
-        }
-      </div>
-
-      @if (loading()) {
-        @for (row of skeletonRows; track row) {
-          <div role="row" class="hairline-b px-3 py-3" data-test="tree-skeleton-row">
-            <div class="h-3 bg-paper-2 rounded-sm animate-pulse"></div>
-          </div>
-        }
-      } @else if (data().length === 0) {
-        <div class="py-12 px-3 text-center text-muted-foreground" data-test="tree-empty-state">
-          {{ emptyMessage() }}
-        </div>
-      } @else {
+    <div class="pi-table-surface overflow-x-auto" data-test="pi-table-surface">
+      <div role="table" [attr.aria-label]="ariaLabel()" class="w-full border-collapse text-sm">
         <div
-          cdkDropList
-          [cdkDropListData]="data()"
-          [cdkDropListDisabled]="!dragReorder()"
-          (cdkDropListDropped)="onDrop(null, $event)"
-          class="divide-y divide-rule"
-          data-test="tree-root-list"
+          role="row"
+          class="grid gap-2 px-3 py-3 hairline-b bg-paper text-left"
+          [style.grid-template-columns]="gridTemplate()"
         >
-          @for (row of data(); track rowKeyOf(row)) {
+          @for (col of columns(); track col.key) {
             <div
-              cdkDrag
-              [cdkDragDisabled]="!dragReorder()"
-              [cdkDragData]="row"
-              [cdkDragPreviewClass]="'tree-drag-preview'"
-              class="bg-paper"
-              [attr.data-test]="'tree-node-' + rowKeyOf(row)"
+              role="columnheader"
+              class="eyebrow select-none"
+              [class.text-right]="col.align === 'right'"
+              [class.text-center]="col.align === 'center'"
             >
-              <ng-container *ngTemplateOutlet="treeRow; context: { $implicit: row, level: 0 }" />
-              @if (isExpanded(row) && childRowsOf(row).length > 0) {
-                <div
-                  cdkDropList
-                  [cdkDropListData]="childRowsOf(row)"
-                  [cdkDropListDisabled]="!dragReorder()"
-                  (cdkDropListDropped)="onDrop(row, $event)"
-                  class="divide-y divide-rule/50 bg-muted/20"
-                  [attr.data-test]="'tree-children-' + rowKeyOf(row)"
-                >
-                  @for (child of childRowsOf(row); track rowKeyOf(child)) {
-                    <div
-                      cdkDrag
-                      [cdkDragDisabled]="!dragReorder()"
-                      [cdkDragData]="child"
-                      [cdkDragPreviewClass]="'tree-drag-preview'"
-                      [attr.data-test]="'tree-node-' + rowKeyOf(child)"
-                    >
-                      <ng-container
-                        *ngTemplateOutlet="treeRow; context: { $implicit: child, level: 1 }"
-                      />
-                    </div>
-                  }
-                </div>
-              }
+              {{ col.label }}
+            </div>
+          }
+          @if (rowActions()) {
+            <div role="columnheader" class="eyebrow text-right w-24">
+              <span class="sr-only">Действия</span>
             </div>
           }
         </div>
-      }
+
+        @if (loading()) {
+          @for (row of skeletonRows; track row) {
+            <div role="row" class="hairline-b px-3 py-3" data-test="tree-skeleton-row">
+              <div class="h-3 bg-paper-2 rounded-sm animate-pulse"></div>
+            </div>
+          }
+        } @else if (data().length === 0) {
+          <div class="py-12 px-3 text-center text-muted-foreground" data-test="tree-empty-state">
+            {{ emptyMessage() }}
+          </div>
+        } @else {
+          <div
+            cdkDropList
+            [cdkDropListData]="data()"
+            [cdkDropListDisabled]="!dragReorder()"
+            (cdkDropListDropped)="onDrop(null, $event)"
+            class="divide-y divide-rule"
+            data-test="tree-root-list"
+          >
+            @for (row of data(); track rowKeyOf(row)) {
+              <div
+                cdkDrag
+                [cdkDragDisabled]="!dragReorder()"
+                [cdkDragData]="row"
+                [cdkDragPreviewClass]="'tree-drag-preview'"
+                class="bg-paper"
+                [attr.data-test]="'tree-node-' + rowKeyOf(row)"
+              >
+                <ng-container *ngTemplateOutlet="treeRow; context: { $implicit: row, level: 0 }" />
+                @if (isExpanded(row) && childRowsOf(row).length > 0) {
+                  <div
+                    cdkDropList
+                    [cdkDropListData]="childRowsOf(row)"
+                    [cdkDropListDisabled]="!dragReorder()"
+                    (cdkDropListDropped)="onDrop(row, $event)"
+                    class="divide-y divide-rule/50 bg-muted/20"
+                    [attr.data-test]="'tree-children-' + rowKeyOf(row)"
+                  >
+                    @for (child of childRowsOf(row); track rowKeyOf(child)) {
+                      <div
+                        cdkDrag
+                        [cdkDragDisabled]="!dragReorder()"
+                        [cdkDragData]="child"
+                        [cdkDragPreviewClass]="'tree-drag-preview'"
+                        [attr.data-test]="'tree-node-' + rowKeyOf(child)"
+                      >
+                        <ng-container
+                          *ngTemplateOutlet="treeRow; context: { $implicit: child, level: 1 }"
+                        />
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
     </div>
 
     <ng-template #treeRow let-row let-level="level">

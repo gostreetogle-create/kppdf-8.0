@@ -20,6 +20,7 @@ import {
   PiGroupWorkspaceComponent,
   type GroupChip,
 } from '../../shared/page/pi-group-workspace.component';
+import { DICTIONARY_TOC_CHIPS } from './dictionary-group-chips';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../shared/ui/switch/switch.component';
@@ -52,7 +53,7 @@ import { Unit, UnitsService, type UnitsListResponse } from './units.service';
     TableComponent,
   ],
   template: `
-    <app-pi-group-workspace [chips]="chips" [activeId]="'units'">
+    <app-pi-group-workspace [toc]="toc" tocActiveId="measurements" [chips]="chips" activeId="units">
       @if (error()) {
         <div
           role="alert"
@@ -176,6 +177,7 @@ export class MeasurementsGroupPage {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly baseUrl = inject(API_BASE_URL);
 
+  protected readonly toc = DICTIONARY_TOC_CHIPS;
   protected readonly chips: readonly GroupChip[] = [
     { id: 'units', label: 'Единицы', route: '/dictionaries/measurements' },
   ];

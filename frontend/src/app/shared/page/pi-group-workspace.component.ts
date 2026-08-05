@@ -2,26 +2,15 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 import { RouterLink } from '@angular/router';
 
 /**
- * TZ-DICT-308 PiGroupWorkspace — group chip workspace shell.
+ * PiGroupWorkspace — group chip workspace shell (DICT-308+).
  *
- * Replaces PiDictionaryShell for multi-section group pages (e.g. Справочники).
+ * Chrome (sticky under app header):
+ *   1) Optional TOC row — dictionary groups (Классификация / Измерения / …)
+ *   2) Section chips — siblings inside the active group
+ *   3) Tools slot — search / filters / CTA
+ *   4) Body — table / tree
  *
- * API:
- *   - chips: group chip configs (id, label, route)
- *   - activeId: which chip is currently active (yellow highlight)
- *   - chipClick: emitted when a chip is clicked
- *   - [tools] slot: sticky toolbar (search, filters, CTA)
- *   - default slot: body content (table, tree)
- *
- * Key behaviour:
- *   - Chips + tools form one sticky stack under the app header (top-0 inside main).
- *   - Active chip = sunrise-warm (yellow), inactive = muted.
- *   - Chips wrap to multiple rows; the stack grows with the wrapped row.
- *   - Tools never needs a hand-maintained offset below chips.
- *   - NO H1 title, NO path breadcrumbs.
- *   - Border (hairline-b) separates chips+tools from body.
- *
- * Standalone + OnPush + signal-based.
+ * Both chip rows are dense (compact height). TOC is slightly smaller than section chips.
  */
 @Component({
   selector: 'app-pi-group-workspace',
@@ -29,17 +18,44 @@ import { RouterLink } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   template: `
-    <!-- One adaptive sticky stack: its height follows chip wrapping. -->
     <div class="group-chrome sticky top-0 z-20 bg-paper">
+      @if (toc().length > 0) {
+        <nav
+          class="group-toc flex items-center gap-1 flex-wrap pt-1.5 pb-0.5 min-w-0"
+          aria-label="Группы справочников"
+          data-test="group-toc"
+        >
+          @for (chip of toc(); track chip.id) {
+            <a
+              [routerLink]="chip.route"
+              class="group-toc-chip inline-flex items-center px-2 py-0.5
+                     text-[11px] leading-4 font-medium tracking-wide rounded-sm
+                     transition-colors pi-focus-ring cursor-pointer no-underline"
+              [class.bg-ink]="tocActiveId() === chip.id"
+              [class.text-paper]="tocActiveId() === chip.id"
+              [class.text-muted-foreground]="tocActiveId() !== chip.id"
+              [class.hover:text-ink]="tocActiveId() !== chip.id"
+              [class.hover:bg-paper-2]="tocActiveId() !== chip.id"
+              [attr.aria-current]="tocActiveId() === chip.id ? 'page' : undefined"
+              (click)="tocClick.emit(chip.id)"
+            >
+              {{ chip.label }}
+            </a>
+          }
+        </nav>
+      }
+
       <div
-        class="group-chips flex items-center gap-1.5 flex-wrap
-               py-2 min-w-0"
+        class="group-chips flex items-center gap-1 flex-wrap
+               pt-0.5 pb-1.5 min-w-0"
+        [class.pt-1.5]="toc().length === 0"
+        data-test="group-chips"
       >
         @for (chip of chips(); track chip.id) {
           <a
             [routerLink]="chip.route"
-            class="group-chip inline-flex items-center gap-1 px-3 py-1.5
-                   text-sm rounded-sm transition-colors
+            class="group-chip inline-flex items-center gap-1 px-2.5 py-0.5
+                   text-xs leading-5 rounded-sm transition-colors
                    pi-focus-ring cursor-pointer no-underline"
             [class.bg-sunrise-warm]="activeId() === chip.id"
             [class.text-paper]="activeId() === chip.id"
@@ -53,17 +69,15 @@ import { RouterLink } from '@angular/router';
         }
       </div>
 
-      <!-- Tools stays in the same sticky stack; no chip-row offset can drift. -->
       <div
         class="group-tools flex items-center gap-form-field flex-wrap
-               hairline-b py-3 min-w-0"
+               hairline-b py-2 min-w-0"
       >
         <ng-content select="[tools]" />
       </div>
     </div>
 
-    <!-- Body content -->
-    <div class="group-body pt-4">
+    <div class="group-body pt-3">
       <ng-content />
     </div>
   `,
@@ -82,22 +96,25 @@ import { RouterLink } from '@angular/router';
   ],
 })
 export class PiGroupWorkspaceComponent {
-  /** Group chip configs. */
+  /** Top TOC: sibling groups (optional). Empty = hide row. */
+  readonly toc = input<readonly GroupChip[]>([]);
+
+  /** Active TOC group id. */
+  readonly tocActiveId = input<string | null>(null);
+
+  /** Section chips inside the current group. */
   readonly chips = input.required<readonly GroupChip[]>();
 
-  /** Currently active chip id (yellow highlight). */
+  /** Currently active section chip id (yellow). */
   readonly activeId = input.required<string>();
 
-  /** Emitted when a chip is clicked. Used for analytics or side effects. */
+  readonly tocClick = output<string>();
   readonly chipClick = output<string>();
 }
 
-/** Chip configuration for a group section. */
+/** Chip configuration for TOC or section row. */
 export interface GroupChip {
-  /** Unique chip id (e.g. 'units'). */
   id: string;
-  /** Display label (e.g. 'Единицы'). */
   label: string;
-  /** RouterLink path for the chip. */
   route: string;
 }

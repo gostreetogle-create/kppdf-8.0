@@ -13,7 +13,7 @@ import {
 import { httpResource } from '@angular/common/http';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
-import { CLASSIFICATION_CHIPS } from './dictionary-group-chips';
+import { CLASSIFICATION_CHIPS, DICTIONARY_TOC_CHIPS } from './dictionary-group-chips';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
 import { PiToastService } from '../../shared/ui/toast';
@@ -46,7 +46,12 @@ type TypeFilter = 'all' | Category['type'];
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PiTableTreeComponent, PiGroupWorkspaceComponent, ButtonComponent],
   template: `
-    <app-pi-group-workspace [chips]="chips" [activeId]="'categories'">
+    <app-pi-group-workspace
+      [toc]="toc"
+      tocActiveId="classification"
+      [chips]="chips"
+      activeId="categories"
+    >
       @if (error()) {
         <div
           role="alert"
@@ -126,6 +131,7 @@ type TypeFilter = 'all' | Category['type'];
   `,
 })
 export class CategoriesPage {
+  protected readonly toc = DICTIONARY_TOC_CHIPS;
   protected readonly chips = CLASSIFICATION_CHIPS;
   private readonly service = inject(CategoriesService);
   private readonly dialog = inject(PiDialogService);

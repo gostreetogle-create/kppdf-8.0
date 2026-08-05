@@ -57,196 +57,198 @@ export type SelectionMode = 'none' | 'single' | 'multi';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NgTemplateOutlet],
   template: `
-    <table
-      role="table"
-      [attr.aria-label]="ariaLabel()"
-      [attr.aria-busy]="loading() ? 'true' : null"
-      class="w-full border-collapse text-sm"
-    >
-      <thead class="hairline-b">
-        <tr>
-          @if (selectionMode() !== 'none') {
-            <th class="w-10 py-3 px-3 text-left">
-              @if (selectionMode() === 'multi') {
-                <input
-                  type="checkbox"
-                  [checked]="isAllSelected()"
-                  [indeterminate]="isSomeSelected() && !isAllSelected()"
-                  (change)="toggleAll($event)"
-                  name="table-select-all"
-                  aria-label="Выбрать всё"
-                  class="align-middle"
-                />
-              }
-            </th>
-          }
-          @for (col of columns(); track col.key) {
-            <th
-              class="eyebrow py-3 px-3 select-none"
-              [class.text-left]="(col.align ?? 'left') === 'left'"
-              [class.text-right]="col.align === 'right'"
-              [class.text-center]="col.align === 'center'"
-              [class.cursor-pointer]="col.sortable"
-              [class.sticky]="col.sticky"
-              [class.left-0]="col.sticky === 'left'"
-              [class.right-0]="col.sticky === 'right'"
-              [class.z-10]="col.sticky"
-              [class.bg-paper]="col.sticky"
-              [style.width]="col.width ?? null"
-              (click)="col.sortable && onSort(col.key)"
-            >
-              <span>{{ col.label }}</span>
-              @if (col.sortable) {
-                <span class="ml-1 font-mono text-[10px] text-muted-foreground" aria-hidden="true">
-                  {{ sortIcon(col.key) }}
-                </span>
-              }
-            </th>
-          }
-          @if (rowActions()) {
-            <th
-              class="eyebrow py-3 px-3 text-right w-24"
-              [class.sticky]="true"
-              [class.right-0]="true"
-              [class.z-10]="true"
-              [class.bg-paper]="true"
-            >
-              <span class="sr-only">Действия</span>
-            </th>
-          }
-        </tr>
-      </thead>
-      <tbody>
-        @if (loading()) {
-          @for (skel of skeletonRows; track $index) {
-            <tr class="hairline-b" data-test="table-skeleton-row">
-              <td [attr.colspan]="visibleColumns() + (rowActions() ? 1 : 0)" class="py-3 px-3">
-                <div class="h-3 bg-paper-2 rounded-sm animate-pulse w-full"></div>
-              </td>
-            </tr>
-          }
-        } @else {
-          @for (row of sortedData(); track rowKeyOf(row, $index)) {
-            <tr
-              class="hairline-b hover:bg-paper-2 transition-colors cursor-pointer"
-              (click)="onRowClick(row)"
-              [attr.data-test]="'table-row-' + rowKeyOf(row, $index)"
-              [attr.aria-expanded]="expandedRow() ? isExpandedRow(row) : null"
-              [attr.tabindex]="expandedRow() ? 0 : null"
-              (keydown)="onRowKeydown(row, $event)"
-            >
-              @if (selectionMode() !== 'none') {
-                <td class="py-3 px-3 align-middle" (click)="$event.stopPropagation()">
+    <div class="pi-table-surface overflow-x-auto" data-test="pi-table-surface">
+      <table
+        role="table"
+        [attr.aria-label]="ariaLabel()"
+        [attr.aria-busy]="loading() ? 'true' : null"
+        class="w-full border-collapse text-sm"
+      >
+        <thead class="hairline-b">
+          <tr>
+            @if (selectionMode() !== 'none') {
+              <th class="w-10 py-3 px-3 text-left">
+                @if (selectionMode() === 'multi') {
                   <input
                     type="checkbox"
-                    [attr.id]="'table-select-' + rowKeyOf(row, $index)"
-                    [attr.name]="'table-select-' + rowKeyOf(row, $index)"
-                    [checked]="isRowSelected(row)"
-                    (change)="toggleRow(row, $event)"
-                    aria-label="Выбрать строку"
+                    [checked]="isAllSelected()"
+                    [indeterminate]="isSomeSelected() && !isAllSelected()"
+                    (change)="toggleAll($event)"
+                    name="table-select-all"
+                    aria-label="Выбрать всё"
+                    class="align-middle"
                   />
+                }
+              </th>
+            }
+            @for (col of columns(); track col.key) {
+              <th
+                class="eyebrow py-3 px-3 select-none"
+                [class.text-left]="(col.align ?? 'left') === 'left'"
+                [class.text-right]="col.align === 'right'"
+                [class.text-center]="col.align === 'center'"
+                [class.cursor-pointer]="col.sortable"
+                [class.sticky]="col.sticky"
+                [class.left-0]="col.sticky === 'left'"
+                [class.right-0]="col.sticky === 'right'"
+                [class.z-10]="col.sticky"
+                [class.pi-table-sticky-bg]="col.sticky"
+                [style.width]="col.width ?? null"
+                (click)="col.sortable && onSort(col.key)"
+              >
+                <span>{{ col.label }}</span>
+                @if (col.sortable) {
+                  <span class="ml-1 font-mono text-[10px] text-muted-foreground" aria-hidden="true">
+                    {{ sortIcon(col.key) }}
+                  </span>
+                }
+              </th>
+            }
+            @if (rowActions()) {
+              <th
+                class="eyebrow py-3 px-3 text-right w-24"
+                [class.sticky]="true"
+                [class.right-0]="true"
+                [class.z-10]="true"
+                [class.pi-table-sticky-bg]="true"
+              >
+                <span class="sr-only">Действия</span>
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @if (loading()) {
+            @for (skel of skeletonRows; track $index) {
+              <tr class="hairline-b" data-test="table-skeleton-row">
+                <td [attr.colspan]="visibleColumns() + (rowActions() ? 1 : 0)" class="py-3 px-3">
+                  <div class="h-3 bg-paper-2 rounded-sm animate-pulse w-full"></div>
                 </td>
+              </tr>
+            }
+          } @else {
+            @for (row of sortedData(); track rowKeyOf(row, $index)) {
+              <tr
+                class="hairline-b hover:bg-paper-2 transition-colors cursor-pointer"
+                (click)="onRowClick(row)"
+                [attr.data-test]="'table-row-' + rowKeyOf(row, $index)"
+                [attr.aria-expanded]="expandedRow() ? isExpandedRow(row) : null"
+                [attr.tabindex]="expandedRow() ? 0 : null"
+                (keydown)="onRowKeydown(row, $event)"
+              >
+                @if (selectionMode() !== 'none') {
+                  <td class="py-3 px-3 align-middle" (click)="$event.stopPropagation()">
+                    <input
+                      type="checkbox"
+                      [attr.id]="'table-select-' + rowKeyOf(row, $index)"
+                      [attr.name]="'table-select-' + rowKeyOf(row, $index)"
+                      [checked]="isRowSelected(row)"
+                      (change)="toggleRow(row, $event)"
+                      aria-label="Выбрать строку"
+                    />
+                  </td>
+                }
+                @for (col of columns(); track col.key) {
+                  <td
+                    class="py-3 px-3 align-top"
+                    [class.tabular-nums]="col.numeric"
+                    [class.text-right]="col.align === 'right'"
+                    [class.text-center]="col.align === 'center'"
+                    [class.sticky]="col.sticky"
+                    [class.left-0]="col.sticky === 'left'"
+                    [class.right-0]="col.sticky === 'right'"
+                    [class.z-10]="col.sticky"
+                    [class.pi-table-sticky-bg]="col.sticky"
+                    [class]="col.cellClass ?? ''"
+                  >
+                    @if (cellTemplates()[col.key]; as tpl) {
+                      <ng-container *ngTemplateOutlet="tpl; context: { $implicit: row }" />
+                    } @else {
+                      {{ formatCell(col, row) }}
+                    }
+                  </td>
+                }
+                @if (rowActions()) {
+                  <td
+                    class="py-3 px-3 align-top text-right"
+                    (click)="$event.stopPropagation()"
+                    data-test="row-actions-cell"
+                  >
+                    <ng-container *ngTemplateOutlet="rowActions()!; context: { $implicit: row }" />
+                  </td>
+                }
+              </tr>
+              @if (expandedRow() && isExpandedRow(row)) {
+                <tr class="pi-table-expanded-row" data-test="expanded-row">
+                  <td
+                    [attr.colspan]="visibleColumns() + (rowActions() ? 1 : 0)"
+                    class="bg-paper-2 p-0 hairline-b"
+                    role="region"
+                    [attr.aria-label]="expandedRowLabel()(row)"
+                  >
+                    <ng-container *ngTemplateOutlet="expandedRow()!; context: { $implicit: row }" />
+                  </td>
+                </tr>
               }
-              @for (col of columns(); track col.key) {
-                <td
-                  class="py-3 px-3 align-top"
-                  [class.tabular-nums]="col.numeric"
-                  [class.text-right]="col.align === 'right'"
-                  [class.text-center]="col.align === 'center'"
-                  [class.sticky]="col.sticky"
-                  [class.left-0]="col.sticky === 'left'"
-                  [class.right-0]="col.sticky === 'right'"
-                  [class.z-10]="col.sticky"
-                  [class.bg-paper]="col.sticky"
-                  [class]="col.cellClass ?? ''"
-                >
-                  @if (cellTemplates()[col.key]; as tpl) {
-                    <ng-container *ngTemplateOutlet="tpl; context: { $implicit: row }" />
-                  } @else {
-                    {{ formatCell(col, row) }}
-                  }
-                </td>
-              }
-              @if (rowActions()) {
-                <td
-                  class="py-3 px-3 align-top text-right"
-                  (click)="$event.stopPropagation()"
-                  data-test="row-actions-cell"
-                >
-                  <ng-container *ngTemplateOutlet="rowActions()!; context: { $implicit: row }" />
-                </td>
-              }
-            </tr>
-            @if (expandedRow() && isExpandedRow(row)) {
-              <tr class="pi-table-expanded-row" data-test="expanded-row">
+            }
+            @if (sortedData().length === 0) {
+              <tr data-test="empty-state-row">
                 <td
                   [attr.colspan]="visibleColumns() + (rowActions() ? 1 : 0)"
-                  class="bg-paper-2 p-0 hairline-b"
-                  role="region"
-                  [attr.aria-label]="expandedRowLabel()(row)"
+                  class="py-12 px-3 text-center text-muted-foreground"
                 >
-                  <ng-container *ngTemplateOutlet="expandedRow()!; context: { $implicit: row }" />
+                  @if (emptyTemplate()) {
+                    <ng-container *ngTemplateOutlet="emptyTemplate()!" data-test="custom-empty" />
+                  } @else {
+                    <div
+                      class="max-w-sm mx-auto p-6 pi-dashed-panel flex flex-col items-center gap-1"
+                      data-test="default-empty"
+                    >
+                      <span class="eyebrow text-sunrise-warm">00</span>
+                      <span class="text-sm">{{ emptyMessage() }}</span>
+                    </div>
+                  }
                 </td>
               </tr>
             }
           }
-          @if (sortedData().length === 0) {
-            <tr data-test="empty-state-row">
-              <td
-                [attr.colspan]="visibleColumns() + (rowActions() ? 1 : 0)"
-                class="py-12 px-3 text-center text-muted-foreground"
-              >
-                @if (emptyTemplate()) {
-                  <ng-container *ngTemplateOutlet="emptyTemplate()!" data-test="custom-empty" />
-                } @else {
-                  <div
-                    class="max-w-sm mx-auto p-6 pi-dashed-panel flex flex-col items-center gap-1"
-                    data-test="default-empty"
-                  >
-                    <span class="eyebrow text-sunrise-warm">00</span>
-                    <span class="text-sm">{{ emptyMessage() }}</span>
-                  </div>
-                }
-              </td>
-            </tr>
+        </tbody>
+      </table>
+      <div class="hairline-t px-3 py-3 flex items-center justify-between gap-2">
+        <div class="text-xs text-muted-foreground">
+          <ng-content select="[caption]" />
+        </div>
+        <div class="flex items-center gap-2">
+          @if (showPager()) {
+            <span class="text-xs text-muted-foreground tabular-nums" data-test="pager-info">
+              {{ pageRangeStart() }}–{{ pageRangeEnd() }} из {{ total() }}
+            </span>
+            <button
+              type="button"
+              class="pi-icon-btn pi-focus-ring"
+              [disabled]="page() <= 1"
+              (click)="goToPage(page() - 1)"
+              aria-label="Предыдущая страница"
+              data-test="pager-prev"
+            >
+              <span aria-hidden="true">←</span>
+            </button>
+            <span class="text-xs tabular-nums" data-test="pager-page" aria-label="Текущая страница">
+              {{ page() }} / {{ totalPages() }}
+            </span>
+            <button
+              type="button"
+              class="pi-icon-btn pi-focus-ring"
+              [disabled]="page() >= totalPages()"
+              (click)="goToPage(page() + 1)"
+              aria-label="Следующая страница"
+              data-test="pager-next"
+            >
+              <span aria-hidden="true">→</span>
+            </button>
           }
-        }
-      </tbody>
-    </table>
-    <div class="hairline-t px-3 py-3 flex items-center justify-between gap-2">
-      <div class="text-xs text-muted-foreground">
-        <ng-content select="[caption]" />
-      </div>
-      <div class="flex items-center gap-2">
-        @if (showPager()) {
-          <span class="text-xs text-muted-foreground tabular-nums" data-test="pager-info">
-            {{ pageRangeStart() }}–{{ pageRangeEnd() }} из {{ total() }}
-          </span>
-          <button
-            type="button"
-            class="pi-icon-btn pi-focus-ring"
-            [disabled]="page() <= 1"
-            (click)="goToPage(page() - 1)"
-            aria-label="Предыдущая страница"
-            data-test="pager-prev"
-          >
-            <span aria-hidden="true">←</span>
-          </button>
-          <span class="text-xs tabular-nums" data-test="pager-page" aria-label="Текущая страница">
-            {{ page() }} / {{ totalPages() }}
-          </span>
-          <button
-            type="button"
-            class="pi-icon-btn pi-focus-ring"
-            [disabled]="page() >= totalPages()"
-            (click)="goToPage(page() + 1)"
-            aria-label="Следующая страница"
-            data-test="pager-next"
-          >
-            <span aria-hidden="true">→</span>
-          </button>
-        }
-        <ng-content select="[footer]" />
+          <ng-content select="[footer]" />
+        </div>
       </div>
     </div>
   `,

@@ -23,10 +23,25 @@ class TestHostComponent {
   ] as const;
 }
 
+@Component({
+  standalone: true,
+  imports: [PiGroupWorkspaceComponent],
+  template: `
+    <app-pi-group-workspace [toc]="toc" tocActiveId="g1" [chips]="chips" activeId="first" />
+  `,
+})
+class TocHostComponent {
+  readonly toc = [
+    { id: 'g1', label: 'Классификация', route: '/g1' },
+    { id: 'g2', label: 'Измерения', route: '/g2' },
+  ] as const;
+  readonly chips = [{ id: 'first', label: 'Категории', route: '/first' }] as const;
+}
+
 describe('PiGroupWorkspaceComponent (TZ-DICT-312)', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TestHostComponent],
+      imports: [TestHostComponent, TocHostComponent],
       providers: [provideRouter([])],
     }).compileComponents();
   });
@@ -46,6 +61,21 @@ describe('PiGroupWorkspaceComponent (TZ-DICT-312)', () => {
     expect(chrome?.contains(chips)).toBe(true);
     expect(chrome?.contains(tools)).toBe(true);
     expect(root.querySelector('[style*="6.25rem"]')).toBeFalsy();
+    expect(root.querySelector('[data-test="group-toc"]')).toBeFalsy();
+  });
+
+  it('renders dense TOC above section chips when toc is provided', () => {
+    const fixture = TestBed.createComponent(TocHostComponent);
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    const toc = root.querySelector('[data-test="group-toc"]');
+    const chips = root.querySelector('[data-test="group-chips"]');
+    expect(toc).toBeTruthy();
+    expect(chips).toBeTruthy();
+    expect(toc?.textContent).toContain('Классификация');
+    expect(chips?.textContent).toContain('Категории');
+    expect(toc?.querySelector('.group-toc-chip')?.className).toContain('text-[11px]');
+    expect(chips?.querySelector('.group-chip')?.className).toContain('text-xs');
   });
 
   it('keeps projected tools and CTA inside the workspace width', () => {

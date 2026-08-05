@@ -1162,6 +1162,17 @@
   background-color: transparent;
 }
 
+/* Subtle table surface — separates grid from page canvas without heavy cards. */
+@utility pi-table-surface {
+  background-color: color-mix(in oklch, var(--color-paper-2) 70%, var(--color-paper));
+  border: 1px solid var(--color-rule);
+  border-radius: 2px;
+}
+
+@utility pi-table-sticky-bg {
+  background-color: color-mix(in oklch, var(--color-paper-2) 70%, var(--color-paper));
+}
+
 /* TZ-UI-TABLE-302 fix: CDK moves drag preview to <body>; host styles do not apply. */
 .cdk-drag-preview.tree-drag-preview {
   box-sizing: border-box;

@@ -12,7 +12,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
-import { APPEARANCE_CHIPS } from './dictionary-group-chips';
+import { APPEARANCE_CHIPS, DICTIONARY_TOC_CHIPS } from './dictionary-group-chips';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../shared/ui/switch/switch.component';
 import { PiToastService } from '../../shared/ui/toast';
@@ -57,7 +57,7 @@ type ActiveFilter = 'all' | 'active' | 'inactive';
     TableComponent,
   ],
   template: `
-    <app-pi-group-workspace [chips]="chips" [activeId]="'colors'">
+    <app-pi-group-workspace [toc]="toc" tocActiveId="appearance" [chips]="chips" activeId="colors">
       @if (error()) {
         <div
           role="alert"
@@ -179,6 +179,7 @@ type ActiveFilter = 'all' | 'active' | 'inactive';
   `,
 })
 export class ColorReferencesPage {
+  protected readonly toc = DICTIONARY_TOC_CHIPS;
   protected readonly chips = APPEARANCE_CHIPS;
   private readonly svc = inject(PiColorReferencesService);
   private readonly toast = inject(PiToastService);

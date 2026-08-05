@@ -1,9 +1,16 @@
 import type { GroupChip } from '../../shared/page/pi-group-workspace.component';
 
 /**
- * TZ-DICT-310 — shared chip configs for dictionary Group Chip Workspace screens.
- * Pages pick activeId; nav points at group alias routes (or first chip).
+ * Shared chip configs for dictionary Group Chip Workspace screens.
  */
+
+/** Top TOC — dictionary groups (row 1). */
+export const DICTIONARY_TOC_CHIPS: readonly GroupChip[] = [
+  { id: 'classification', label: 'Классификация', route: '/dictionaries/classification' },
+  { id: 'measurements', label: 'Измерения', route: '/dictionaries/measurements' },
+  { id: 'appearance', label: 'Оформление', route: '/dictionaries/appearance' },
+  { id: 'documents-ref', label: 'Документы', route: '/dictionaries/documents-ref' },
+];
 
 export const CLASSIFICATION_CHIPS: readonly GroupChip[] = [
   { id: 'categories', label: 'Категории', route: '/categories' },
