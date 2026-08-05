@@ -26,7 +26,7 @@
 | Variant | Способности | Типичные экраны |
 |---------|-------------|-----------------|
 | **Flat** | sort, row actions, pagination, loading/empty, sticky cols, cell templates | materials, units, colors, orders, … |
-| **Expandable row** | Flat + подстрока (`expandedRow` TemplateRef) | products (состав модулей); modules/work-types при необходимости |
+| **Expandable row** | Flat + подстрока (`expandedRow` TemplateRef), active-row predicate (`expandedRowWhen`), keyboard/a11y contract | products (состав модулей); modules/work-types при необходимости |
 | **Tree** | вложенность, expand/collapse; **drag-reorder = capability flag** | categories (сейчас CDK custom) |
 | **Selectable** *(backlog)* | `selectionMode: single \| multi` + bulk bar | склад / массовые операции — **когда PO попросит** |
 | **Dense** *(backlog)* | уменьшенный py/gap, тот же chrome | плотные складские гриды — по запросу |
@@ -34,7 +34,7 @@
 ### Уже в коде `app-pi-table` (as-is API)
 
 - Flat: columns, sort, rowActions, page/total/pageSize, loading, empty, sticky, cellTemplates.
-- Expandable: `expandedRow` input (потребитель: **products**).
+- Expandable: `expandedRow` + `expandedRowWhen` + `expandedRowLabel` inputs (потребитель: **products**).
 - Selectable: `selectionMode` API есть, **0 потребителей** на страницах → не продвигать UI до склада.
 - Tree: **нет** в kit — только custom `categories.page`.
 

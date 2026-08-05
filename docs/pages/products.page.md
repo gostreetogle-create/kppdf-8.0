@@ -87,6 +87,7 @@
 | TZ-PRODUCTS-302 | Rework ProductFormDialog → content-variant 1000px, секции, RAL dropdown из справочника цветов |
 | TZ-PRODUCTS-303 | «Модули в составе» в диалоге товара: карточки модулей + мульти-picker + атомарные POST/DELETE |
 | TZ-PRODUCTS-304 | Expandable-строки каталога: клик по строке разворачивает карточки модулей, ссылка на `/modules/:id` |
+| TZ-UI-TABLE-303 | Shared Expandable contract: active-row predicate, single-expand behavior, keyboard/a11y semantics |
 | TZ-PRODUCTS-305 | Карточки-витрины: toggle list ↔ grid (sm showcase-карточки, localStorage persistence) |
 
 ## Особенности
@@ -155,14 +156,16 @@ TZ-MODULES-301 (карточки-строки, как material-cards в module-d
 ## Expandable-строки (TZ-PRODUCTS-304)
 
 Клик по строке товара в каталоге РАЗВОРАЧИВАЕТ/СВОРАЧИВАЕТ список
-привязанных модулей (паттерн TZ-MODULES-302: pi-table `expandedRow` +
-сигнал `expandedId` + conditional template на странице).
+привязанных модулей (shared `app-pi-table` Expandable contract: `expandedRow`
++ `expandedRowWhen` predicate + `expandedId` signal + conditional template).
 
 - **Состояние:** `expandedId: signal<string | null>` — `_id` развёрнутого
   товара; повторный клик по той же строке сворачивает (null).
 - **Подключение:** `(rowClick)="onRowClick($event)"` (pi-table эмитит строку)
-  + `[expandedRow]="expandedId() ? expandedTpl : null"` — свёрнутые строки
-  БЕЗ пустых `<tr>` (template передаётся только при развёрнутой строке).
+  + `[expandedRow]="expandedTpl"` + `[expandedRowWhen]="isExpandedRow"` —
+  kit создаёт ровно одну detail-row для активного товара, без пустых строк.
+- **A11y:** expandable rows expose `tabindex="0"`, `aria-expanded`, Enter/Space
+  activation; detail region is named «Состав товара: {name}».
 - **Развёрнутый контент** (`#expandedTpl`): карточки модулей — инициалы-аватар
   (у `GET /modules` нет фото — отдельная сущность `ProductModulePhoto`), имя,
   артикул, «N материалов»; клик по карточке → `routerLink` `/modules/:id`

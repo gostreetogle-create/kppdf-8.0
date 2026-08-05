@@ -146,6 +146,9 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
 
     expect(comp.expandedId()).toBe('p1');
     expect(fixture.nativeElement.querySelector('[data-test="expanded-row"]')).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="expanded-row"] [role="region"]'),
+    ).toBeTruthy();
   });
 
   it('second click on the same row collapses (expandedId → null)', async () => {
@@ -178,7 +181,29 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
     fixture.detectChanges();
 
     expect(comp.expandedId()).toBe('p2');
+    expect(fixture.nativeElement.querySelectorAll('[data-test="expanded-row"]')).toHaveLength(1);
     expect(fixture.nativeElement.querySelector('[data-test="expanded-row"]')).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="expanded-row"] [role="region"]'),
+    ).toBeTruthy();
+  });
+
+  it('expanded rows are keyboard-toggleable and expose an accessible region name', async () => {
+    const fixture = await renderPage();
+    const comp = fixture.componentInstance as unknown as { expandedId: () => string | null };
+    const row = fixture.nativeElement.querySelector('[data-test="table-row-p1"]') as HTMLElement;
+
+    expect(row.getAttribute('tabindex')).toBe('0');
+    expect(row.getAttribute('aria-expanded')).toBe('false');
+    row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    fixture.detectChanges();
+
+    expect(comp.expandedId()).toBe('p1');
+    expect(row.getAttribute('aria-expanded')).toBe('true');
+    const expanded = fixture.nativeElement.querySelector(
+      '[data-test="expanded-row"] [role="region"]',
+    ) as HTMLElement;
+    expect(expanded.getAttribute('aria-label')).toBe('Состав товара: Окно ПВХ');
   });
 
   it('expanded module cards render name, article and «N материалов»', async () => {

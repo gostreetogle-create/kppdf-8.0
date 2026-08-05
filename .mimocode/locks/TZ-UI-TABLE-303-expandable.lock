@@ -1,0 +1,6 @@
+TZ-UI-TABLE-303
+status: DONE
+closed_at: 2026-08-05
+executor: openai/gpt-5.6-luna (Buffy)
+archive: tasks/_archive/2026-08/TZ-UI-TABLE-303.done.md
+verification: tsc PASS; jest 4 suites / 45 tests PASS

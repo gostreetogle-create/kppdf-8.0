@@ -4,6 +4,46 @@
 
 ## Inbox
 
+## TZ-UI-TABLE-303 — DONE
+
+date: 2026-08-05
+workspace: D:\\kppdf-8.0
+executor: openai/gpt-5.6-luna (Buffy)
+archive: tasks/_archive/2026-08/TZ-UI-TABLE-303.done.md
+checklist: docs/agent-checklists/TZ-UI-TABLE-303.md
+gates:
+  - fe tsc: PASS
+  - jest pi-table|products.page: 4 suites / 45/45 tests PASS
+conflict_disclosure: shared pi-table Expandable contract and ProductsPage only; no backend/deploy.
+note: active-row predicate prevents empty detail rows; keyboard/a11y contract is documented and tested.
+next: queue empty — READY FOR DEPLOY
+
+### Verdict TZ-UI-TABLE-303
+status: DONE
+notes: Shared Expandable contract and Products consumer pass focused gates.
+required_fixes: none
+
+## TZ-UI-TABLE-305 — DONE
+
+date: 2026-08-05
+workspace: D:\\kppdf-8.0
+executor: openai/gpt-5.6-luna (Buffy)
+archive: tasks/_archive/2026-08/TZ-UI-TABLE-305.done.md
+checklist: docs/agent-checklists/TZ-UI-TABLE-305.md
+gates:
+  - fe tsc: PASS
+  - jest targeted: 11 suites / 86/86 tests PASS
+  - raw registry scan: PASS
+conflict_disclosure: seven registry page keys, matching specs/docs, no backend or deploy changes; Products/shared expandable work is separate TZ-UI-TABLE-303.
+note: all seven raw registry tables use app-pi-table Flat; page-local sorting/pagination ownership preserved.
+next: queue empty — READY FOR DEPLOY
+
+### Verdict TZ-UI-TABLE-305
+status: DONE
+notes: Session close-board authorizes self-archive after green gates; dedicated smoke coverage added for Documents, Forms and Inventory Dashboard.
+required_fixes: none
+
+
 ## TZ-DICT-312 — DONE
 
 date: 2026-08-05

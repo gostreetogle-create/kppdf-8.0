@@ -120,7 +120,7 @@ export type SelectionMode = 'none' | 'single' | 'multi';
         @if (loading()) {
           @for (skel of skeletonRows; track $index) {
             <tr class="hairline-b" data-test="table-skeleton-row">
-              <td [attr.colspan]="visibleColumns()" class="py-3 px-3">
+              <td [attr.colspan]="visibleColumns() + (rowActions() ? 1 : 0)" class="py-3 px-3">
                 <div class="h-3 bg-paper-2 rounded-sm animate-pulse w-full"></div>
               </td>
             </tr>
@@ -131,6 +131,9 @@ export type SelectionMode = 'none' | 'single' | 'multi';
               class="hairline-b hover:bg-paper-2 transition-colors cursor-pointer"
               (click)="onRowClick(row)"
               [attr.data-test]="'table-row-' + rowKeyOf(row, $index)"
+              [attr.aria-expanded]="expandedRow() ? isExpandedRow(row) : null"
+              [attr.tabindex]="expandedRow() ? 0 : null"
+              (keydown)="onRowKeydown(row, $event)"
             >
               @if (selectionMode() !== 'none') {
                 <td class="py-3 px-3 align-middle" (click)="$event.stopPropagation()">
@@ -174,11 +177,13 @@ export type SelectionMode = 'none' | 'single' | 'multi';
                 </td>
               }
             </tr>
-            @if (expandedRow()) {
-              <tr>
+            @if (expandedRow() && isExpandedRow(row)) {
+              <tr class="pi-table-expanded-row" data-test="expanded-row">
                 <td
                   [attr.colspan]="visibleColumns() + (rowActions() ? 1 : 0)"
                   class="bg-paper-2 p-0 hairline-b"
+                  role="region"
+                  [attr.aria-label]="expandedRowLabel()(row)"
                 >
                   <ng-container *ngTemplateOutlet="expandedRow()!; context: { $implicit: row }" />
                 </td>
@@ -252,6 +257,10 @@ export class TableComponent<T> implements OnInit {
   readonly selectionMode = input<SelectionMode>('none');
   readonly ariaLabel = input<string>('Таблица');
   readonly expandedRow = input<TemplateRef<{ $implicit: T }> | null>(null);
+  /** Predicate for the active detail row; defaults to every row for backwards compatibility. */
+  readonly expandedRowWhen = input<(row: T) => boolean>(() => true);
+  /** Accessible name for the expanded detail region. */
+  readonly expandedRowLabel = input<(row: T) => string | null>(() => 'Развёрнутая строка');
 
   // ─── TZ-104.3 Phase A additions ────────────────────────────────────
   /**
@@ -557,6 +566,16 @@ export class TableComponent<T> implements OnInit {
     if (checked) data.forEach((row) => next.add(this.keyOf(row)));
     this.selectedKeys.set(next);
     this.emitSelectionChange();
+  }
+
+  isExpandedRow(row: T): boolean {
+    return this.expandedRowWhen()(row);
+  }
+
+  onRowKeydown(row: T, event: KeyboardEvent): void {
+    if (!this.expandedRow() || (event.key !== 'Enter' && event.key !== ' ')) return;
+    event.preventDefault();
+    this.onRowClick(row);
   }
 
   onRowClick(row: T): void {

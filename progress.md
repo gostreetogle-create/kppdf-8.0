@@ -1,3 +1,23 @@
+## [2026-08-05] — TZ-UI-TABLE-303 DONE: shared Expandable contract
+**Исполнитель:** openai/gpt-5.6-luna (Buffy)
+**Статус:** DONE; archive + lock created per session close-board
+**Что сделано кратко:** `app-pi-table` получил active-row predicate and named detail-region API; Products теперь single-expand с keyboard Enter/Space, `aria-expanded` and one detail row.
+**Gates:** fe tsc PASS; targeted Jest 4 suites / 45 tests PASS; diff --check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UI-TABLE-303.done.md`
+**Lock:** `.mimocode/locks/TZ-UI-TABLE-303-expandable.lock`
+
+---
+
+## [2026-08-05] — TZ-UI-TABLE-305 DONE: raw registries on shared Flat kit
+**Исполнитель:** openai/gpt-5.6-luna (Buffy)
+**Статус:** DONE; archive + lock created per session close-board
+**Что сделано кратко:** семь raw registry tables переведены на `app-pi-table`; CRUD, filters, actions, loading/empty, sorting and pagination preserved. Added focused smoke specs for Documents, Forms and Inventory Dashboard.
+**Gates:** fe tsc PASS; targeted Jest 11 suites / 86 tests PASS; raw registry scan PASS; diff --check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UI-TABLE-305.done.md`
+**Lock:** `.mimocode/locks/TZ-UI-TABLE-305-flat-kit.lock`
+
+---
+
 ## [2026-08-05] — TZ-UI-TABLE-302 READY FOR REVIEW: shared Tree kit + categories
 **Исполнитель:** openai/gpt-5.6-luna (Buffy)
 **Статус:** READY FOR REVIEW; Cursor PASS → archive; не DONE

@@ -279,7 +279,9 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
             (pageChange)="onPageChange($event)"
             (sortChange)="onSortChange($event)"
             (rowClick)="onRowClick($event)"
-            [expandedRow]="expandedId() ? expandedTpl : null"
+            [expandedRow]="expandedTpl"
+            [expandedRowWhen]="isExpandedRow"
+            [expandedRowLabel]="expandedRowLabel"
           ></app-pi-table>
         </div>
       }
@@ -319,7 +321,11 @@ const STATUS_LABELS: Record<NonNullable<Product['status']>, string> = {
     <!-- ───── Expanded row: модули в составе (TZ-PRODUCTS-304) ───── -->
     <ng-template #expandedTpl let-row>
       @if (expandedId() === row._id) {
-        <div class="px-4 py-3" data-test="expanded-row">
+        <div
+          class="px-4 py-3"
+          data-test="expanded-content"
+          [attr.aria-label]="'Состав товара: ' + row.name"
+        >
           @if (modulesOf(row).length === 0) {
             <p class="text-xs text-muted-foreground" data-test="expanded-empty">
               Нет модулей в составе. Откройте товар, чтобы привязать модули.
@@ -661,8 +667,15 @@ export class ProductsPage implements OnInit {
 
   // ─── Expandable rows (TZ-PRODUCTS-304) ──────────────────────────────
 
-  /** _id развёрнутого товара; null = все свёрнуты. */
+  /**
+   * Single-expand state for the shared Expandable table variant.
+   * `null` keeps all detail rows collapsed; selecting another product
+   * moves the open detail row rather than stacking multiple panels.
+   */
   protected readonly expandedId = signal<string | null>(null);
+
+  protected readonly isExpandedRow = (row: Product): boolean => this.expandedId() === row._id;
+  protected readonly expandedRowLabel = (row: Product): string => `Состав товара: ${row.name}`;
 
   /**
    * Клик по строке — toggle expand. Повторный клик по той же строке
