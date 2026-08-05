@@ -86,7 +86,7 @@ type TypeFilter = 'all' | Category['type'];
         [expandedIds]="expandedIds()"
         [cellTemplates]="tpls()"
         [rowActions]="rowActionsTpl"
-        [dragReorder]="true"
+        [dragReorder]="canDragReorder()"
         [loading]="loading()"
         [emptyMessage]="emptyMessage()"
         ariaLabel="Дерево категорий"
@@ -165,6 +165,10 @@ export class CategoriesPage {
     this.searchQuery() || this.typeFilter() !== 'all'
       ? 'Ничего не найдено.'
       : 'Нет категорий. Создайте первую.',
+  );
+  /** Drag only on the full unfiltered tree so drop indices match server order. */
+  protected readonly canDragReorder = computed(
+    () => !this.search.debouncedSearch().trim() && this.typeFilter() === 'all',
   );
   protected readonly columns: ColumnDef<CategoryTreeNode>[] = [
     { key: 'name', label: 'Название' },

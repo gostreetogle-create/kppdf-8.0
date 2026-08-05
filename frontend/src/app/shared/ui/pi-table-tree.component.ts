@@ -20,15 +20,57 @@ export interface TreeDropEvent<T> {
 /**
  * Tree variant of the Paper & Ink table kit.
  *
- * The primitive owns tree chrome, expansion, indentation, and optional
- * drag-reorder capability. The page supplies only columns, data, and cells.
- * MVP intentionally supports the two levels used by CategoriesPage.
+ * Drag structure: each node is one `cdkDrag`. Nested child drop-lists live
+ * *inside* the parent drag item (not as siblings in the root list). Sibling
+ * nested lists previously broke CDK sorting transforms and stacked rows.
  */
 @Component({
   selector: 'app-pi-table-tree',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CdkDropList, CdkDrag, CdkDragHandle, NgTemplateOutlet],
+  styles: `
+    :host {
+      display: block;
+    }
+
+    .tree-drag-preview {
+      box-sizing: border-box;
+      display: grid;
+      gap: 0.5rem;
+      align-items: center;
+      padding: 0.625rem 0.75rem;
+      background: var(--color-paper, #fff);
+      border: 1px solid var(--color-rule, #e5e5e5);
+      box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.2);
+      border-radius: 2px;
+    }
+
+    .cdk-drag-placeholder {
+      position: relative;
+      min-height: 2.75rem;
+      opacity: 1;
+      background: color-mix(in oklch, var(--color-gold, #c4a35a) 18%, transparent);
+      border: 1px dashed var(--color-gold, #c4a35a);
+      border-radius: 2px;
+    }
+
+    .cdk-drag-placeholder > * {
+      visibility: hidden;
+    }
+
+    .cdk-drag-animating {
+      transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+    }
+
+    .cdk-drop-list-dragging .cdk-drag:not(.cdk-drag-placeholder) {
+      transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+    }
+
+    .cdk-drag-disabled {
+      cursor: default;
+    }
+  `,
   template: `
     <div role="table" [attr.aria-label]="ariaLabel()" class="w-full border-collapse text-sm">
       <div
@@ -55,13 +97,8 @@ export interface TreeDropEvent<T> {
 
       @if (loading()) {
         @for (row of skeletonRows; track row) {
-          <div
-            role="row"
-            class="hairline-b px-3 py-3"
-            [style.grid-template-columns]="gridTemplate()"
-            data-test="tree-skeleton-row"
-          >
-            <div class="h-3 bg-paper-2 rounded-sm animate-pulse col-span-full"></div>
+          <div role="row" class="hairline-b px-3 py-3" data-test="tree-skeleton-row">
+            <div class="h-3 bg-paper-2 rounded-sm animate-pulse"></div>
           </div>
         }
       } @else if (data().length === 0) {
@@ -78,23 +115,40 @@ export interface TreeDropEvent<T> {
           data-test="tree-root-list"
         >
           @for (row of data(); track rowKeyOf(row)) {
-            <ng-container *ngTemplateOutlet="treeRow; context: { $implicit: row, level: 0 }" />
-            @if (isExpanded(row) && childRowsOf(row).length > 0) {
-              <div
-                cdkDropList
-                [cdkDropListData]="childRowsOf(row)"
-                [cdkDropListDisabled]="!dragReorder()"
-                (cdkDropListDropped)="onDrop(row, $event)"
-                class="divide-y divide-rule/50 bg-muted/20 pl-8"
-                [attr.data-test]="'tree-children-' + rowKeyOf(row)"
-              >
-                @for (child of childRowsOf(row); track rowKeyOf(child)) {
-                  <ng-container
-                    *ngTemplateOutlet="treeRow; context: { $implicit: child, level: 1 }"
-                  />
-                }
-              </div>
-            }
+            <div
+              cdkDrag
+              [cdkDragDisabled]="!dragReorder()"
+              [cdkDragData]="row"
+              [cdkDragPreviewClass]="'tree-drag-preview'"
+              class="bg-paper"
+              [attr.data-test]="'tree-node-' + rowKeyOf(row)"
+            >
+              <ng-container *ngTemplateOutlet="treeRow; context: { $implicit: row, level: 0 }" />
+              @if (isExpanded(row) && childRowsOf(row).length > 0) {
+                <div
+                  cdkDropList
+                  [cdkDropListData]="childRowsOf(row)"
+                  [cdkDropListDisabled]="!dragReorder()"
+                  (cdkDropListDropped)="onDrop(row, $event)"
+                  class="divide-y divide-rule/50 bg-muted/20"
+                  [attr.data-test]="'tree-children-' + rowKeyOf(row)"
+                >
+                  @for (child of childRowsOf(row); track rowKeyOf(child)) {
+                    <div
+                      cdkDrag
+                      [cdkDragDisabled]="!dragReorder()"
+                      [cdkDragData]="child"
+                      [cdkDragPreviewClass]="'tree-drag-preview'"
+                      [attr.data-test]="'tree-node-' + rowKeyOf(child)"
+                    >
+                      <ng-container
+                        *ngTemplateOutlet="treeRow; context: { $implicit: child, level: 1 }"
+                      />
+                    </div>
+                  }
+                </div>
+              }
+            </div>
           }
         </div>
       }
@@ -102,9 +156,6 @@ export interface TreeDropEvent<T> {
 
     <ng-template #treeRow let-row let-level="level">
       <div
-        cdkDrag
-        [cdkDragDisabled]="!dragReorder()"
-        [cdkDragData]="row"
         role="row"
         class="grid gap-2 px-3 py-2.5 items-center hover:bg-paper-2 transition-colors group"
         [style.grid-template-columns]="gridTemplate()"
@@ -126,7 +177,7 @@ export interface TreeDropEvent<T> {
                   <button
                     type="button"
                     class="w-5 h-5 inline-flex items-center justify-center rounded text-muted-foreground hover:text-ink pi-focus-ring shrink-0"
-                    (click)="toggleExpanded(row)"
+                    (click)="toggleExpanded(row); $event.stopPropagation()"
                     [attr.aria-label]="isExpanded(row) ? 'Свернуть' : 'Развернуть'"
                     [attr.aria-expanded]="isExpanded(row)"
                   >
@@ -138,7 +189,7 @@ export interface TreeDropEvent<T> {
                 @if (dragReorder()) {
                   <span
                     cdkDragHandle
-                    class="text-muted-foreground/50 hover:text-muted-foreground cursor-grab active:cursor-grabbing"
+                    class="text-muted-foreground/50 hover:text-muted-foreground cursor-grab active:cursor-grabbing select-none"
                     aria-hidden="true"
                     >⋮⋮</span
                   >
@@ -215,6 +266,7 @@ export class PiTableTreeComponent<T> {
     this.expandedChange.emit(next);
   }
   protected onDrop(parent: T | null, event: CdkDragDrop<T[]>): void {
+    if (event.previousContainer !== event.container) return;
     if (event.previousIndex === event.currentIndex) return;
     this.drop.emit({
       parent,

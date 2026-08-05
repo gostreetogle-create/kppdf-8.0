@@ -64,12 +64,13 @@ describe('PiTableTreeComponent (TZ-UI-TABLE-302)', () => {
     const tree = fixture.debugElement.query(
       (debugElement) => debugElement.componentInstance instanceof PiTableTreeComponent,
     ).componentInstance as PiTableTreeComponent<TreeRow>;
+    const container = {} as never;
     tree['onDrop'](component.rows[0], {
       previousIndex: 0,
       currentIndex: 1,
       item: {} as never,
-      container: {} as never,
-      previousContainer: {} as never,
+      container,
+      previousContainer: container,
       isPointerOverContainer: true,
       distance: { x: 0, y: 0 },
     });
@@ -77,5 +78,16 @@ describe('PiTableTreeComponent (TZ-UI-TABLE-302)', () => {
     expect(component.drops[0].parent?._id).toBe('root');
     expect(component.drops[0].previousIndex).toBe(0);
     expect(component.drops[0].currentIndex).toBe(1);
+  });
+
+  it('keeps nested child drop-list inside the parent drag node (not a root sibling)', () => {
+    const fixture = TestBed.createComponent(TreeHostComponent);
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    const parentNode = el.querySelector('[data-test="tree-node-root"]');
+    const childList = el.querySelector('[data-test="tree-children-root"]');
+    expect(parentNode).toBeTruthy();
+    expect(childList).toBeTruthy();
+    expect(parentNode?.contains(childList)).toBe(true);
   });
 });
