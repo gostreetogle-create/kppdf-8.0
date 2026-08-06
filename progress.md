@@ -1,3 +1,15 @@
+## [2026-08-06] — TZ-CATALOG-311 DONE: Unified CompositionTree + CompositionEditor
+**Исполнитель:** Buffy (implement) + Cursor (PASS / land / closeout)
+**Статус:** DONE on main
+**Что сделано кратко:** Shared CompositionTree/Editor; getProductTree/getModuleTree; lazy depth-refetch + expand state; product/module detail; depth warn; soft jest/docs.
+**Gates:** agent focused Jest PASS; tsc clean on land base.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-311.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-311-composition-tree.lock`
+**Commit:** `c36eebf` (from `cd900c4`)
+**Next:** optional 315; Production 303 independent.
+
+---
+
 ## [2026-08-06] — TZD-15 DONE: Agent inbox workspace (drop → audit → propose fills)
 **Исполнитель:** Buffy (desktop/MCP) + Cursor (land on main)
 **Статус:** DONE; archive + lock; on main
