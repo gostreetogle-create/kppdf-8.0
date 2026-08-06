@@ -6,6 +6,7 @@
 **Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-303.done.md`
 **Lock:** `.mimocode/locks/TZ-PRODUCTION-303-gantt-board-page.lock`
 **Checklist:** `docs/agent-checklists/TZ-PRODUCTION-303.md`
+**Commit:** `08e7a45` on main
 **Next:** PO browser smoke `/production`; then TZ-PRODUCTION-304+.
 
 ---
