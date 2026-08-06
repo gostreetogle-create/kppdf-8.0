@@ -97,6 +97,12 @@
 - Уже на main: TZD-11 foundation, TZD-12 reads, TZD-13 propose/confirm/undo + journal.
 - Дальше критично для пользы: **TZD-14** (MCP из Tauri без ручного pnpm) + **TZD-05** (кнопка pairing в вебе).
 
+### 2026-08-06 evening — Склад UX walkthrough
+- Дашборд: дубль кнопок vs TOC → убрать (WAREHOUSE-UX-301).
+- Остатки: фильтр склада уже ок; движения — добавить такой же фильтр.
+- Тип склада = фиксированный enum (не справочник); нужна RU-подсказка, default main.
+- Owner/ACL — later vision, не сейчас.
+
 ### 2026-08-06 evening — Production Cockpit Lego
 - Одно пространство производства = shell + блоки (не монолит).
 - Design + umbrella TZ-PRODUCTION-300; first code = 303 (rail+Gantt оценка).
