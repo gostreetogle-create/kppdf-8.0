@@ -1,7 +1,7 @@
 # TZD-16 checklist
 
-> Status: **CLAIMED / IN PROGRESS**  
-> Marker: `tasks/_active/TZD-16.md`  
+> Status: **CLAIMED / IN PROGRESS**
+> Marker: `tasks/_active/TZD-16.md`
 > Commit/push: **YES — PO explicitly requested scoped commit/push**
 
 ## Claim slot
