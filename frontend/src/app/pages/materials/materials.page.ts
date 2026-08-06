@@ -14,7 +14,7 @@ import { httpResource } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule, RefreshCw } from 'lucide-angular';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
-import { CATALOG_ENTITY_SECTION_CHIPS, CATALOG_TOC_CHIPS } from '../catalog/catalog-group-chips';
+import { CATALOG_SECTION_CHIPS } from '../catalog/catalog-group-chips';
 import { PiEmptyTileComponent } from '../../shared/ui/pi-empty-tile/pi-empty-tile.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
@@ -93,7 +93,7 @@ const PAGE_SIZE = 50;
     RouterLink,
   ],
   template: `
-    <app-pi-group-workspace [toc]="toc" tocActiveId="materials" [chips]="chips">
+    <app-pi-group-workspace [chips]="chips" activeId="materials">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           id="materials-search"
@@ -232,8 +232,7 @@ export class MaterialsPage implements OnInit {
     this.photosLookup.load();
     this.destroyRef.onDestroy(() => this.search.destroy());
   }
-  protected readonly toc = CATALOG_TOC_CHIPS;
-  protected readonly chips = CATALOG_ENTITY_SECTION_CHIPS;
+  protected readonly chips = CATALOG_SECTION_CHIPS;
   private readonly service = inject(MaterialsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
