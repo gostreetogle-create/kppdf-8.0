@@ -50,6 +50,11 @@ import {
  */
 interface AppNavItem extends Omit<PiNavDropdownItem, 'pageKey'> {
   pageKey: string;
+  /**
+   * When set, item is visible only if `user.role` is one of these names
+   * (mirrors Nest `@Roles(...)` — UX only; server still enforces).
+   */
+  systemRoles?: readonly string[];
 }
 
 interface NavCategory {
@@ -202,12 +207,14 @@ const NAV_CATEGORIES: NavCategory[] = [
         // (@Permissions('user:admin')). user:read без user:admin → пункт
         // скрыт из меню (TZ-256 §0 «FRONTEND VISIBILITY = UX»).
         capabilities: ['user:admin'],
+        systemRoles: ['admin'],
       },
       {
         path: '/admin/roles',
         pageKey: 'admin-roles',
         label: 'Роли',
         capabilities: ['role:read'],
+        systemRoles: ['admin'],
       },
     ],
   },
@@ -373,6 +380,10 @@ export class AppLayoutComponent {
       const items = cat.items.filter((item) => {
         if (pages && item.pageKey && !pages.includes(item.pageKey)) return false;
         if (!this.caps.hasAny(item.capabilities)) return false;
+        if (item.systemRoles && item.systemRoles.length > 0) {
+          const role = this.user()?.role;
+          if (!role || !item.systemRoles.includes(role)) return false;
+        }
         return true;
       });
       // Entry link: prefer declared entryPath if still visible, else first item

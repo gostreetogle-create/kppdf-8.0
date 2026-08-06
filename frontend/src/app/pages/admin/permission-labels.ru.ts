@@ -85,9 +85,21 @@ export const ROLE_LABEL_RU: Record<string, string> = {
   user: '\u041f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044c',
 };
 
-/** RU label for a role in the user-form select (system roles + custom). */
+/** RU label for a role in the user-form select / roles table (system + custom). */
 export function roleLabelRu(name: string, apiLabel?: string): string {
-  return ROLE_LABEL_RU[name] ?? (apiLabel && apiLabel.trim() ? apiLabel : name);
+  const system = ROLE_LABEL_RU[name];
+  if (system) return system;
+  const trimmed = (apiLabel ?? '').trim();
+  // Reject empty / mojibake / placeholder corruption (Windows encoding drift).
+  if (!trimmed || /�/.test(trimmed) || /^\?{2,}$/.test(trimmed)) return name;
+  return trimmed;
+}
+
+/** Compact summary for roles table permissions column (keys stay canonical). */
+export function permissionsSummary(permissions: readonly string[]): string {
+  if (!permissions.length) return '—';
+  if (permissions.length <= 3) return permissions.join(', ');
+  return `${permissions.length} прав · ${permissions.slice(0, 2).join(', ')}…`;
 }
 
 export const ROLE_FORM_COPY = {

@@ -360,14 +360,24 @@ export const routes: Routes = [
         // (@Permissions('user:admin') — LIST перечисляет всех пользователей;
         // user:read зарезервирован для self-service). user:read без user:admin
         // теперь не проходит гейт → /forbidden, а не тупик 403 на странице.
-        data: { pageKey: 'admin-users', capabilities: ['user:admin'] },
+        data: {
+          pageKey: 'admin-users',
+          capabilities: ['user:admin'],
+          // Mirror backend `@Roles('admin')` on users-admin controller.
+          systemRoles: ['admin'],
+        },
         loadComponent: () => import('./pages/admin/users-admin.page').then((m) => m.UsersAdminPage),
         title: 'KPPDF — Пользователи',
       },
       {
         path: 'admin/roles',
         canMatch: [capabilityRouteGuard],
-        data: { pageKey: 'admin-roles', capabilities: ['role:read'] },
+        data: {
+          pageKey: 'admin-roles',
+          capabilities: ['role:read'],
+          // Mirror backend `@Roles('admin')` on roles/permissions admin.
+          systemRoles: ['admin'],
+        },
         loadComponent: () => import('./pages/admin/roles-admin.page').then((m) => m.RolesAdminPage),
         title: 'KPPDF — Роли',
       },

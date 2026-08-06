@@ -62,7 +62,7 @@ const SYSTEM_ROLES = [
   },
   {
     name: 'director',
-    label: '????????',
+    label: 'Director',
     description: 'Full operational access, no user/role management',
     permissions: [...DIRECTOR_PERMISSIONS],
     isSystem: true,

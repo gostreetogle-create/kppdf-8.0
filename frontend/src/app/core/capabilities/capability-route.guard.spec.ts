@@ -23,7 +23,11 @@ import { ALL_PERMISSION_KEYS } from './capabilities.metadata';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const capabilityRouteGuard: any = _capabilityRouteGuard;
 
-function invoke(routeData: { capabilities?: string[]; pageKey?: string }): boolean | UrlTree {
+function invoke(routeData: {
+  capabilities?: string[];
+  pageKey?: string;
+  systemRoles?: string[];
+}): boolean | UrlTree {
   return TestBed.runInInjectionContext(() =>
     capabilityRouteGuard(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -184,6 +188,84 @@ describe('capabilityRouteGuard (TZ-256 §ШАГ 2)', () => {
       pages: ['doc-texts', 'doc-documents'],
     });
     const result = invoke({ pageKey: 'materials' });
+    expect(result instanceof UrlTree).toBe(true);
+    expect((result as UrlTree).toString()).toBe('/forbidden');
+  });
+
+  // ── Admin systemRoles (mirror backend @Roles('admin')) ─────────────
+
+  it('systemRoles: admin passes /admin/roles gate with role:read + admin-roles page', () => {
+    TestBed.inject(AuthService).user.set({
+      id: 'a',
+      username: 'a',
+      email: 'a@x',
+      displayName: 'A',
+      role: 'admin',
+      permissions: [],
+      pages: ['admin-users', 'admin-roles'],
+    });
+    expect(
+      invoke({
+        pageKey: 'admin-roles',
+        capabilities: ['role:read'],
+        systemRoles: ['admin'],
+      }),
+    ).toBe(true);
+  });
+
+  it('systemRoles: manager with role:read + admin-roles page → /forbidden', () => {
+    TestBed.inject(AuthService).user.set({
+      id: 'm',
+      username: 'm',
+      email: 'm@x',
+      displayName: 'M',
+      role: 'manager',
+      permissions: ['role:read', 'role:write'],
+      pages: ['admin-roles', 'admin-users'],
+    });
+    const result = invoke({
+      pageKey: 'admin-roles',
+      capabilities: ['role:read'],
+      systemRoles: ['admin'],
+    });
+    expect(result instanceof UrlTree).toBe(true);
+    expect((result as UrlTree).toString()).toBe('/forbidden');
+  });
+
+  it('systemRoles: director without admin role → /forbidden even with production:read', () => {
+    TestBed.inject(AuthService).user.set({
+      id: 'd',
+      username: 'd',
+      email: 'd@x',
+      displayName: 'D',
+      role: 'director',
+      permissions: ['production:read'],
+      pages: ['production', 'admin-roles'],
+    });
+    const result = invoke({
+      pageKey: 'admin-roles',
+      capabilities: ['role:read'],
+      systemRoles: ['admin'],
+    });
+    expect(result instanceof UrlTree).toBe(true);
+    expect((result as UrlTree).toString()).toBe('/forbidden');
+  });
+
+  it('systemRoles: missing admin-roles page → /forbidden for admin', () => {
+    TestBed.inject(AuthService).user.set({
+      id: 'a',
+      username: 'a',
+      email: 'a@x',
+      displayName: 'A',
+      role: 'admin',
+      permissions: [],
+      pages: ['admin-users'],
+    });
+    const result = invoke({
+      pageKey: 'admin-roles',
+      capabilities: ['role:read'],
+      systemRoles: ['admin'],
+    });
     expect(result instanceof UrlTree).toBe(true);
     expect((result as UrlTree).toString()).toBe('/forbidden');
   });

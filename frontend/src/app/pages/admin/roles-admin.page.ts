@@ -20,7 +20,8 @@ import {
   silentPost,
   type SilentResult,
 } from '../../core/silent-http';
-import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
+import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import { ADMIN_ENTITY_SECTION_CHIPS, ADMIN_TOC_CHIPS } from './admin-group-chips';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiToastService } from '../../shared/ui/toast';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
@@ -34,6 +35,7 @@ import {
   type RoleFormData,
   type RoleFormResult,
 } from './role-form-dialog.component';
+import { permissionsSummary, roleLabelRu } from './permission-labels.ru';
 
 /**
  * TZ-256.B — `roles-admin.page` (full CRUD surface).
@@ -56,17 +58,10 @@ const PAGE_SIZE = 50;
   selector: 'pi-roles-admin-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiPageHeaderComponent, ButtonComponent, PiRowActionsComponent, TableComponent],
+  imports: [PiGroupWorkspaceComponent, ButtonComponent, PiRowActionsComponent, TableComponent],
   template: `
-    <app-pi-page-header
-      eyebrow="администрирование"
-      title="Роли"
-      subtitle="Управление ролями и их набором прав"
-      data-testid="roles-admin-header"
-    />
-
-    <section class="pi-page-frame pi-edge-bleed py-page-y">
-      <div class="flex items-center justify-between gap-3 mb-4">
+    <app-pi-group-workspace [toc]="toc" tocActiveId="roles" [chips]="chips" activeId="">
+      <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           type="search"
           class="pi-input w-72"
@@ -92,55 +87,56 @@ const PAGE_SIZE = 50;
           {{ err }}
         </p>
       }
-      <div class="overflow-x-auto hairline rounded-sm">
-        <app-pi-table
-          [data]="roles()"
-          [columns]="cols"
-          [loading]="loading()"
-          [total]="total()"
-          [page]="page()"
-          [pageSize]="pageSize"
-          [emptyMessage]="searchQuery() ? 'Ничего не найдено.' : 'Роли не найдены.'"
-          [ariaLabel]="'Список ролей'"
-          [rowActions]="rowActionsTplBinding"
-          (pageChange)="onPageChange($event)"
-        >
-          <ng-template #rowActionsTpl let-r>
-            @if (!r.isSystem) {
-              <div class="flex items-center justify-end gap-2">
-                @if (loadingRowId() === r.id) {
-                  <span
-                    class="text-xs text-muted-foreground"
-                    role="status"
-                    aria-label="Загрузка"
-                    data-test="roles-admin-row-loading"
-                  >
-                    Загрузка…
-                  </span>
-                }
-                <app-pi-row-actions
-                  [row]="r"
-                  [showEdit]="caps.hasAny(['role:write'])"
-                  [showDelete]="caps.hasAny(['role:admin'])"
-                  [loading]="loadingRowId() === r.id"
-                  editLabel="Редактировать"
-                  dataTestEdit="roles-admin-edit"
-                  deleteLabel="Удалить"
-                  dataTestDelete="roles-admin-delete"
-                  (edit)="onEdit($event)"
-                  (delete)="onDelete($event)"
-                />
-              </div>
-            } @else {
-              <span class="text-xs text-muted-foreground">read-only</span>
-            }
-          </ng-template>
-        </app-pi-table>
-      </div>
-    </section>
+      <app-pi-table
+        [data]="roles()"
+        [columns]="cols"
+        [loading]="loading()"
+        [total]="total()"
+        [page]="page()"
+        [pageSize]="pageSize"
+        [emptyMessage]="searchQuery() ? 'Ничего не найдено.' : 'Роли не найдены.'"
+        [ariaLabel]="'Список ролей'"
+        [rowActions]="rowActionsTplBinding"
+        (pageChange)="onPageChange($event)"
+      >
+        <ng-template #rowActionsTpl let-r>
+          @if (!r.isSystem) {
+            <div class="flex items-center justify-end gap-2">
+              @if (loadingRowId() === r.id) {
+                <span
+                  class="text-xs text-muted-foreground"
+                  role="status"
+                  aria-label="Загрузка"
+                  data-test="roles-admin-row-loading"
+                >
+                  Загрузка…
+                </span>
+              }
+              <app-pi-row-actions
+                [row]="r"
+                [showEdit]="caps.hasAny(['role:write'])"
+                [showDelete]="caps.hasAny(['role:admin'])"
+                [loading]="loadingRowId() === r.id"
+                editLabel="Редактировать"
+                dataTestEdit="roles-admin-edit"
+                deleteLabel="Удалить"
+                dataTestDelete="roles-admin-delete"
+                (edit)="onEdit($event)"
+                (delete)="onDelete($event)"
+              />
+            </div>
+          } @else {
+            <span class="text-xs text-muted-foreground">read-only</span>
+          }
+        </ng-template>
+      </app-pi-table>
+    </app-pi-group-workspace>
   `,
 })
 export class RolesAdminPage implements OnInit {
+  protected readonly toc = ADMIN_TOC_CHIPS;
+  protected readonly chips = ADMIN_ENTITY_SECTION_CHIPS;
+
   private readonly http = inject(HttpClient);
   private readonly rolesService = inject(PiRolesService);
   private readonly baseUrl = inject(API_BASE_URL);
@@ -162,11 +158,15 @@ export class RolesAdminPage implements OnInit {
 
   protected readonly cols: ColumnDef<ClientRole>[] = [
     { key: 'name', label: 'Имя', sticky: 'left', cellClass: 'font-mono text-xs' },
-    { key: 'label', label: 'Название' },
+    {
+      key: 'label',
+      label: 'Название',
+      format: (r) => roleLabelRu(r.name, r.label),
+    },
     {
       key: 'permissions',
-      label: 'Permissions',
-      format: (r) => (r.permissions.length > 0 ? r.permissions.join(', ') : '—'),
+      label: 'Права',
+      format: (r) => permissionsSummary(r.permissions),
     },
     {
       key: 'isSystem',

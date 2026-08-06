@@ -150,7 +150,7 @@ const SECTION_TO_GROUP: Record<string, string> = {
                     variant="outline"
                     size="sm"
                     type="button"
-                    [disabled]="catalogLoading() || !!catalogError()"
+                    [disabled]="catalogLoading() || !!catalogError() || groups().length === 0"
                     (click)="selectAllPermissions()"
                     data-test="role-form-select-all"
                   >
@@ -174,6 +174,15 @@ const SECTION_TO_GROUP: Record<string, string> = {
               <p class="text-sm text-muted-foreground">Загрузка каталога…</p>
             } @else if (catalogError(); as err) {
               <p class="field__error" data-test="role-form-catalog-error">{{ err }}</p>
+            } @else if (groups().length === 0) {
+              <p
+                class="text-sm text-muted-foreground"
+                role="status"
+                data-test="role-form-catalog-empty"
+              >
+                Каталог прав пуст — обратитесь к администратору. Создание роли без прав не
+                рекомендуется.
+              </p>
             } @else {
               <div class="role-form__sections" data-test="role-form-sections">
                 @for (g of groups(); track g.id) {
@@ -583,6 +592,10 @@ export class RoleFormDialogComponent {
     const name = this.name().trim();
     if (this.data.mode === 'create' && !/^[a-z][a-z0-9_-]{1,63}$/.test(name)) return false;
     if (this.label().trim().length < 2) return false;
+    // Block create/edit while catalog is loading or failed; allow empty
+    // selection only when catalog actually loaded with sections (or empty
+    // catalog with explicit empty-state — still allow name/label-only role).
+    if (this.catalogLoading() || this.catalogError()) return false;
     return true;
   };
 

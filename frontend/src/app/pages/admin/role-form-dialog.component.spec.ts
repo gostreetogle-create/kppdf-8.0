@@ -137,6 +137,23 @@ describe('RoleFormDialogComponent', () => {
     httpMock.verify();
   });
 
+  it('loadCatalog: empty sections shows empty state and still allows name/label submit gate', async () => {
+    const { comp, fixture, httpMock } = await setup({ mode: 'create' });
+    httpMock.expectOne('/api/admin/permissions').flush({ sections: [] });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(comp.catalogLoading()).toBe(false);
+    expect(comp.catalogError()).toBeNull();
+    expect(comp.sections().length).toBe(0);
+    expect(fixture.nativeElement.textContent).toContain('Каталог прав пуст');
+    comp.name.set('packer');
+    comp.label.set('Упаковщик');
+    expect((fixture.componentInstance as unknown as { canSubmit: () => boolean }).canSubmit()).toBe(
+      true,
+    );
+    httpMock.verify();
+  });
+
   it('keeps the dialog open and blocks duplicate submit on API error', async () => {
     const pending = new Subject<SilentResult<unknown>>();
     const submit = jest.fn(() => pending.asObservable());
