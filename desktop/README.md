@@ -3,10 +3,12 @@
 Десктоп-компаньон kppdf-8.0: **массовый ввод данных через AI** с сохранением
 единого backend (multi-device — актуальные данные везде: веб, десктоп, телефон).
 
-> **Статус: v0.4 (2026-08-06).** Готово: скелет (v0.1), паринг + конфиг (v0.2),
+> **Статус: v0.5 (2026-08-06).** Готово: скелет (v0.1), паринг + конфиг (v0.2),
 > Excel/CSV-импорт + UI (v0.3), **MCP host в приложении (TZD-14)**: автозапуск при
-> подключении, статус/URL/копирование, порт и LAN в config.ts, stop on quit.
-> Дальше — AI-pipeline (v0.4) и батч+прогресс (v0.5).
+> подключении, статус/URL/копирование, порт и LAN в config.ts, stop on quit,
+> **Inbox для агента (TZD-15)**: каталог-капельница → аудит → propose (без записи
+> в SoT) → confirm/cancel через журнал; MCP `kppdf_inbox_list` / `kppdf_inbox_propose_file`;
+> файл → processed/ или failed/ + лог. Дальше — AI-pipeline и батч+прогресс.
 > Задачи десктопа ведутся с префиксом `TZD-NN` (см. `tasks/TZD-00.md`).
 
 ---
@@ -46,10 +48,11 @@ desktop/
 │   ├── main.ts            ← точка входа Svelte
 │   ├── App.svelte         ← окно-заглушка (Подключение / AI-импорт, disabled)
 │   ├── core/
-│   │   ├── config.ts      ← конфиг (apiBaseUrl, apiKey, aiProvider, mcp{port,allowLan}), load/save в app-data (v2)
+│   │   ├── config.ts      ← конфиг (apiBaseUrl, apiKey, aiProvider, mcp{port,allowLan}, inbox{dir}), load/save в app-data (v3)
 │   │   ├── api.ts         ← fetch-обёртка: Bearer + idempotencyKey()
 │   │   ├── pairing.ts     ← parsePairing(): валидация JSON-пакета паринга
 │   │   ├── mcpHost.ts     ← TZD-14: жизненный цикл MCP host (spawn/stop/restart, статус)
+│   │   ├── inbox.ts       ← TZD-15: scan/audit/propose/confirm/cancel/move + лог inbox
 │   │   ├── pipeline.ts    ← стаб: parse → normalize → confirm → batchPost
 │   │   └── ai/
 │   │       ├── types.ts   ← ChatMessage/ChatRequest/ChatResponse (OpenAI-совм.)

@@ -54,6 +54,7 @@ pnpm start
 | `KPPDF_MCP_PORT` | no | `9743` | listen port |
 | `KPPDF_MCP_HOST` | no | `127.0.0.1` | bind address |
 | `KPPDF_MCP_ALLOW_LAN` | no | off | `1`/`true` → may bind `0.0.0.0` |
+| `KPPDF_INBOX_DIR` | no | — | inbox dir for `kppdf_inbox_*` tools (desktop sets it) |
 | `MUTATION_JOURNAL_RING_SIZE` | no | `50` | backend ring (applied/undone) |
 
 Stdio: `pnpm start:stdio` (для клиентов, которые спавнят процесс).
@@ -82,7 +83,16 @@ Stdio: `pnpm start:stdio` (для клиентов, которые спавня�
 | `kppdf_undo_mutation` | Revert last / by id (create→soft-delete; update→restore before) |
 | `kppdf_list_mutations` | Recent applied/undone (ring) |
 
-Backend: `POST /api/mutation-journal/proposals`, `…/confirm`, `…/undo`, `GET /api/mutation-journal`.
+## Tools — inbox (TZD-15)
+
+| Tool | Effect |
+|------|--------|
+| `kppdf_inbox_list` | List files in the desktop inbox dir (`KPPDF_INBOX_DIR`), excludes processed/failed |
+| `kppdf_inbox_propose_file` | Parse `xlsx/csv/tsv/txt` from inbox → `material.create` **proposal per row** (no SoT write; confirm via `kppdf_confirm_proposal`) |
+
+Column mapping (RU + EN): `наименование/name/текст`, `ед. изм./unit`, `артикул/article`, `sku/код`, `категория/categoryId`. Строки без наименования пропускаются и возвращаются как `skipped`. Путь к файлу защищён от path-traversal.
+
+Inbox-папка настраивается в десктоп-приложении (карточка «Inbox — файлы для агента»): выбрать каталог или сбросить на app-data/inbox. Тот же каталог передаётся MCP host через `KPPDF_INBOX_DIR` при автозапуске.
 
 ### Правила
 
@@ -94,8 +104,8 @@ Backend: `POST /api/mutation-journal/proposals`, `…/confirm`, `…/undo`, `GET
 
 ## Follow-ups
 
+- **TZD-15** ✅ DONE (2026-08-06) — inbox workspace: файл → аудит → propose (без записи в SoT) → confirm/cancel через журнал; `kppdf_inbox_list` / `kppdf_inbox_propose_file`; файл → processed/ или failed/ + лог; каталог в config.ts (v3).
 - **TZD-14** ✅ DONE (2026-08-06) — Tauri autostart MCP + статус/URL/копирование в UI; порт/bind в config.ts (v2); stop on quit; LAN по умолчанию OFF.
-- **TZD-15** — inbox folder → propose fills (следующий).
 - **TZD-05** ✅ DONE — web pairing button.
 
 ## Security

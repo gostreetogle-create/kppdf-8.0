@@ -60,6 +60,12 @@ importers:
       express:
         specifier: ^5.2.1
         version: 5.2.1
+      papaparse:
+        specifier: ^5.4.1
+        version: 5.5.4
+      xlsx:
+        specifier: ^0.18.5
+        version: 0.18.5
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -70,6 +76,9 @@ importers:
       '@types/node':
         specifier: ^26.1.2
         version: 26.1.2
+      '@types/papaparse':
+        specifier: ^5.5.2
+        version: 5.5.2
       tsx:
         specifier: ^4.23.5
         version: 4.23.5

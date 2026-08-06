@@ -1,3 +1,15 @@
+## [2026-08-06] — TZD-15 DONE: Agent inbox workspace (drop → audit → propose fills)
+**Исполнитель:** Buffy (desktop/MCP) + Cursor (land on main)
+**Статус:** DONE; archive + lock; on main
+**Что сделано кратко:** Inbox drop→audit→propose→confirm (journal only, no silent SoT); MCP kppdf_inbox_*; config v3 inbox.dir; busy-guard.
+**Gates:** desktop typecheck/svelte-check/build PASS; mcp 17/17; cargo check PASS.
+**Archive:** `tasks/_archive/2026-08/TZD-15.done.md`
+**Lock:** `.mimocode/locks/TZD-15-agent-inbox-workspace.lock`
+**Commit (Freebuff):** `594833f` · **on main:** (cherry-pick)
+**Next:** **TZD-16** (pairing download).
+
+---
+
 ## [2026-08-06] — TZ-WAREHOUSE-UX-301 DONE: Dashboard dedupe + movements warehouse filter + type help
 **Исполнитель:** Buffy (Freebuff executor) + Cursor (land on main)
 **Статус:** DONE; archive + lock; on main
