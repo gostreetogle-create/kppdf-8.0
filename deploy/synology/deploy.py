@@ -22,6 +22,7 @@ Steps:
 
 import argparse
 import base64
+import json
 import os
 import secrets
 import shutil
@@ -97,6 +98,7 @@ def resolve_settings(args, cfg):
         "yes",
     )
     cors = cfg.get("CORS_ORIGIN") or "https://kppdf-crm.ru"
+    desktop_download_url = cfg.get("DESKTOP_DOWNLOAD_URL")
 
     jwt_secret = cfg.get("JWT_SECRET", "")
     jwt_refresh = cfg.get("JWT_REFRESH_SECRET", "")
@@ -128,6 +130,7 @@ def resolve_settings(args, cfg):
         "wipe": wipe,
         "no_cache": no_cache,
         "cors": cors,
+        "desktop_download_url": desktop_download_url,
         "jwt_secret": jwt_secret,
         "jwt_refresh": jwt_refresh,
         "admin_password": admin_password,
@@ -289,6 +292,20 @@ class RemoteHost:
 
 
 # -- Frontend build -----------------------------------------------------
+
+def inject_desktop_download_url(project_root, configured_url):
+    """Inject DESKTOP_DOWNLOAD_URL into the built SPA without committing config."""
+    index_path = project_root / "frontend" / "browser" / "index.html"
+    if not index_path.exists():
+        fail("frontend/browser/index.html not found for desktop download URL injection")
+    value = "undefined" if configured_url is None else json.dumps(configured_url)
+    html = index_path.read_text(encoding="utf-8")
+    marker = "window.__DESKTOP_DOWNLOAD_URL__ = undefined;"
+    if marker not in html:
+        fail("desktop download URL runtime marker not found in built index.html")
+    index_path.write_text(html.replace(marker, f"window.__DESKTOP_DOWNLOAD_URL__ = {value};", 1), encoding="utf-8")
+    ok("Desktop installer URL injected" if configured_url is not None else "Desktop installer URL uses default")
+
 
 def build_frontend(project_root):
     log("Building Angular frontend (pnpm)...")
@@ -531,9 +548,11 @@ def main():
         print()
         print("Step 2/8: Build Angular frontend...")
         build_frontend(project_root)
+        inject_desktop_download_url(project_root, settings.get("desktop_download_url"))
     else:
         print()
         print("Step 2/8: Skip frontend build (--skip-build)")
+        inject_desktop_download_url(project_root, settings.get("desktop_download_url"))
 
     print()
     print("Step 3/8: Create archive...")

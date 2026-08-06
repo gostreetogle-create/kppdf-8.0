@@ -5,6 +5,17 @@ import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tok
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { PiToastService } from '../../shared/ui/toast/pi-toast.service';
+import { DESKTOP_DOWNLOAD_URL } from '../../core/desktop-download-url';
+
+const DESKTOP_INSTALLER_UNAVAILABLE_HINT = 'Установщик скоро будет на сервере';
+
+function normalizeDownloadUrl(value: string): string {
+  return value.trim();
+}
+
+function openDownload(url: string): void {
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
 
 /**
  * TZD-05: pairing-dialog — shows the JSON pairing packet for desktop connection.
@@ -55,11 +66,28 @@ import { PiToastService } from '../../shared/ui/toast/pi-toast.service';
         }
       </div>
 
-      <div footer class="flex justify-between items-center w-full">
-        <span class="text-xs text-muted-foreground">
-          {{ copied() ? '✓ Скопировано' : '' }}
-        </span>
-        <div class="flex gap-3">
+      <div footer class="flex justify-between items-center w-full gap-3">
+        <div class="flex flex-col gap-1 min-w-0">
+          <span class="text-xs text-muted-foreground">
+            {{ copied() ? '✓ Скопировано' : '' }}
+          </span>
+          @if (!downloadUrl) {
+            <span class="text-xs text-muted-foreground" data-test="pairing-download-hint">
+              {{ installerUnavailableHint }}
+            </span>
+          }
+        </div>
+        <div class="flex flex-wrap justify-end gap-3">
+          <button
+            type="button"
+            class="pi-btn pi-btn-outline pi-focus-ring"
+            [disabled]="!downloadUrl"
+            [attr.aria-label]="downloadUrl ? 'Скачать приложение' : installerUnavailableHint"
+            (click)="onDownload()"
+            data-test="pairing-download-button"
+          >
+            Скачать приложение
+          </button>
           <button
             type="button"
             class="pi-btn pi-btn-ink pi-focus-ring flex items-center gap-2"
@@ -94,7 +122,10 @@ export class PairingDialogComponent {
   private readonly data: string = inject(PI_DIALOG_DATA) as string;
   private readonly ref = inject<DialogRef<void>>(PI_DIALOG_REF);
   private readonly toast = inject(PiToastService);
+  private readonly configuredDownloadUrl = inject(DESKTOP_DOWNLOAD_URL);
 
+  protected readonly downloadUrl = normalizeDownloadUrl(this.configuredDownloadUrl);
+  protected readonly installerUnavailableHint = DESKTOP_INSTALLER_UNAVAILABLE_HINT;
   protected readonly pairingJson = signal<string>(this.data ?? '{}');
   protected readonly copied = signal(false);
   protected readonly copyError = signal<string | null>(null);
@@ -140,6 +171,12 @@ export class PairingDialogComponent {
           'Не удалось скопировать. Выделите текст вручную (Ctrl+A) и нажмите Ctrl+C.',
         );
       });
+  }
+
+  protected onDownload(): void {
+    if (this.downloadUrl) {
+      openDownload(this.downloadUrl);
+    }
   }
 
   protected onClose(): void {

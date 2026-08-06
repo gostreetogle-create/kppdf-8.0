@@ -15,6 +15,10 @@ import { signal } from '@angular/core';
 import { PairingDialogComponent } from './pairing-dialog.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast/pi-toast.service';
+import {
+  DEFAULT_DESKTOP_DOWNLOAD_URL,
+  DESKTOP_DOWNLOAD_URL,
+} from '../../core/desktop-download-url';
 
 describe('PairingDialogComponent', () => {
   let fixture: ComponentFixture<PairingDialogComponent>;
@@ -23,6 +27,7 @@ describe('PairingDialogComponent', () => {
   let refCloseSpy: jest.Mock;
   let clipboardWriteTextSpy: jest.Mock;
   let execCommandSpy: jest.Mock;
+  let windowOpenSpy: jest.SpyInstance;
 
   const pairingJson = JSON.stringify(
     {
@@ -35,11 +40,15 @@ describe('PairingDialogComponent', () => {
     2,
   );
 
-  function createFixture(json: string): ComponentFixture<PairingDialogComponent> {
+  function createFixture(
+    json: string,
+    downloadUrl: string = DEFAULT_DESKTOP_DOWNLOAD_URL,
+  ): ComponentFixture<PairingDialogComponent> {
     return TestBed.configureTestingModule({
       imports: [PairingDialogComponent],
       providers: [
         { provide: PI_DIALOG_DATA, useValue: json },
+        { provide: DESKTOP_DOWNLOAD_URL, useValue: downloadUrl },
         {
           provide: PI_DIALOG_REF,
           useValue: { close: refCloseSpy, closed: signal(undefined) },
@@ -66,6 +75,7 @@ describe('PairingDialogComponent', () => {
 
     execCommandSpy = jest.fn();
     document.execCommand = execCommandSpy;
+    windowOpenSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
   });
 
   afterEach(() => {
@@ -88,6 +98,50 @@ describe('PairingDialogComponent', () => {
     fixture.detectChanges();
     const pre = fixture.nativeElement.querySelector('[data-test="pairing-json-block"]');
     expect(pre.textContent).toContain('{}');
+  });
+
+  // ─── download ────────────────────────────────────────────────────
+
+  it('opens the configured installer URL in a new tab', () => {
+    fixture = createFixture(pairingJson, 'https://downloads.example.test/kppdf.exe');
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('[data-test="pairing-download-button"]');
+    button.click();
+
+    expect(windowOpenSpy).toHaveBeenCalledWith(
+      'https://downloads.example.test/kppdf.exe',
+      '_blank',
+      'noopener,noreferrer',
+    );
+  });
+
+  it('uses the same-origin default installer URL', () => {
+    fixture = createFixture(pairingJson);
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('[data-test="pairing-download-button"]');
+    expect(button.disabled).toBe(false);
+    button.click();
+
+    expect(windowOpenSpy).toHaveBeenCalledWith(
+      DEFAULT_DESKTOP_DOWNLOAD_URL,
+      '_blank',
+      'noopener,noreferrer',
+    );
+  });
+
+  it('disables installer download and shows a hint for an empty URL', () => {
+    fixture = createFixture(pairingJson, '   ');
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('[data-test="pairing-download-button"]');
+    const hint = fixture.nativeElement.querySelector('[data-test="pairing-download-hint"]');
+
+    expect(button.disabled).toBe(true);
+    expect(hint.textContent).toContain('Установщик скоро будет на сервере');
+    button.click();
+    expect(windowOpenSpy).not.toHaveBeenCalled();
   });
 
   // ─── copy ────────────────────────────────────────────────────────
