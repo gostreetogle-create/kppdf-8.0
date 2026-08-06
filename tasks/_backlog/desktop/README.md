@@ -8,8 +8,8 @@
 
 | ID | File | Notes |
 |----|------|-------|
-| **TZD-14** | `TZD-14-desktop-host-mcp-autostart.md` | после вечернего web deploy |
-| **TZD-15** | `TZD-15-agent-inbox-workspace.md` | после 14 |
+| **TZD-14** | `TZD-14-desktop-host-mcp-autostart.md` | **IN FLIGHT** (parallel agent #3) — после DONE → TZD-15 |
+| **TZD-15** | `TZD-15-agent-inbox-workspace.md` | PARKED до 14 on origin |
 
 ## Done (stubs removed from backlog — see archive)
 

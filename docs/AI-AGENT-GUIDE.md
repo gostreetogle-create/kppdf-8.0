@@ -90,6 +90,8 @@ LM Studio: `docs/agents/LM-STUDIO-AGENT.md` · `node scripts/lmstudio-agent/run.
 | `docs/pages/` | Документация по каждой странице |
 | `tasks/` | TZ-задачи (активные) |
 | `tasks/_archive/` | Архив завершённых задач |
+| `docs/DEVELOPMENT-PATTERNS.md` | Паттерны кода |
+| `docs/FEATURE-INTEGRATION-CHECKLIST.md` | **MANDATORY** списки при новой странице/праве/модуле/MCP |
 | `docs/agent-checklists/_TEMPLATE.md` | Шаблон checklist + Claim slot |
 | `docs/agent-checklists/_active-map.md` | Кто сейчас CLAIMED / RESERVED |
 | `docs/audits/2026-08-04-agent-ops-claim-gaps.md` | Аудит дыр claim/closeout |
@@ -98,6 +100,12 @@ LM Studio: `docs/agents/LM-STUDIO-AGENT.md` · `node scripts/lmstudio-agent/run.
 ---
 
 ## 2. 📐 Обязательные паттерны (НАРУШАТЬ НЕЛЬЗЯ)
+
+### 2.0 Feature integration (списки проекта)
+
+Перед DONE любой фичи со страницей, правом, модулем или MCP-tool —
+пройти [`FEATURE-INTEGRATION-CHECKLIST.md`](./FEATURE-INTEGRATION-CHECKLIST.md).
+Иначе nav / RBAC / диалог ролей / page docs разъедутся.
 
 ### 2.1 Standalone components
 

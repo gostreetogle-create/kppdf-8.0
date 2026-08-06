@@ -97,6 +97,11 @@
 - Уже на main: TZD-11 foundation, TZD-12 reads, TZD-13 propose/confirm/undo + journal.
 - Дальше критично для пользы: **TZD-14** (MCP из Tauri без ручного pnpm) + **TZD-05** (кнопка pairing в вебе).
 
+### 2026-08-06 evening — 3 parallel executors + Cursor docs
+- #1 catalog FE 320→311; #2 ADMIN-306; #3 TZD-14 desktop MCP.
+- Cursor: Feature Integration Checklist on origin + active-map; не перехватывать их CONFLICT KEYS.
+- TZD-15 только после 14 DONE.
+
 ### 2026-08-06 — Стоп ночи: 314 в WT, завтра DAY-07
 - Buffy оборвался (free session / Calpost); 314 READY FOR REVIEW, **не** закоммичен.
 - Завтра: closeout 314 → TZ-CATALOG-320; скрипт дня в backlog `TZ-DAY-2026-08-07-…`.

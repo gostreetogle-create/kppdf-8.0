@@ -301,12 +301,23 @@ pages (via `CapabilitiesService`). Roles seeded at first boot via
 
 ### Extension
 
+Adding a new page **or** a new permission key — follow
+[`FEATURE-INTEGRATION-CHECKLIST.md`](./FEATURE-INTEGRATION-CHECKLIST.md)
+(mandatory). Short form:
+
 Adding a new page:
 1. Add the key to `PAGE_KEYS` in `permissions.constants.ts`.
 2. Add the nav item to `NAV_CATEGORIES` in `app-layout.component.ts`.
 3. Update default role pages in `admin.seed.ts`.
+4. Add `docs/pages/<name>.page.md` + index row.
 
-Removing a page: remove from all three locations and audit existing
+Adding a new `section:action` permission:
+1. Append to `PERMISSIONS` in `permissions.constants.ts`.
+2. Add RU label in `frontend/src/app/pages/admin/permission-labels.ru.ts`
+   (keep seed descriptions ASCII; UI copy is Unicode-escaped).
+3. Wire `@Permissions` + FE capabilities as needed.
+
+Removing a page: remove from all PAGE_KEYS / nav / seed locations and audit existing
 role documents for stale keys.
 
 ## 12. Maintenance

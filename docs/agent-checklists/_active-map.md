@@ -1,27 +1,36 @@
-# SESSION QUEUE — Catalog Wave 2
+# SESSION QUEUE — parallel agents 2026-08-06 evening
 
-**Updated:** 2026-08-06 evening · next = 320 → 311 long FE session
+**Updated:** 2026-08-06 · Cursor docs track ∥ Buffy FE catalog ∥ Buffy admin ∥ Buffy desktop
 
-## `_active/` сейчас
+## Parallel claims (do not steal keys)
 
-*(пусто — исполнитель CLAIM 320 первым)*
+| Agent | TZ | Zone | Status |
+|-------|-----|------|--------|
+| **#1 FE catalog** | **320 → 311** | `frontend/.../products|modules|pi-product-modules` + page docs | Freebuff worktree claim |
+| **#2 FE admin** | **ADMIN-306** | `frontend/.../admin/` (+ careful routes) | claimed by second agent |
+| **#3 Desktop** | **TZD-14** | `desktop/**` only | claimed by third agent |
+| **Cursor** | docs / checklist / map | `docs/**`, `tasks/_backlog` specs — **no** product TS | this session |
 
-## Checkpoint
+## Canonical `_active/` on main disk
 
-- **314 DONE** на main (деплой был)
-- Демо на сервере: префикс «Тест ·» / `DEMO5-*`
-- **Сегодня:** `tasks/_backlog/catalog/TZ-DAY-2026-08-06e-session-320-311.md`
-  → **320** (обязательно) → **311** (если успеет) → 315 опц.
+May lag Freebuff worktrees — trust worktree markers until merge. After each DONE: sync archive + map to `origin/main`.
 
-## Очередь
+## Next after parallels land
 
-| # | TZ | Status |
-|---|-----|--------|
-| DONE | 310, 312, 313, 314 | archive |
-| **NOW** | **320** | backlog → claim |
-| NEXT | **311** | after 320 on origin |
-| LATER | 315 | after 311 |
+| TZ | After |
+|----|--------|
+| **311** | 320 DONE on origin |
+| **315** | 311 |
+| **TZD-15** | TZD-14 DONE (Cursor or executor) |
 
-## Out of scope today
+## Out of scope / do not mix
 
-- Deploy wipe, MCP/TZD-14, UI-kit dirty, `tasks/Данные`, backend 314 revisit
+- Deploy wipe, `tasks/Данные`, UI-kit removal dirty into any TZ commit
+- `git add .`
+- PRODUCTS-306 / PRODUCTION-303 while admin has `app.routes` / catalog has product form
+
+## Cursor deliverables this pass
+
+- `docs/FEATURE-INTEGRATION-CHECKLIST.md` on origin + wired guides
+- `scripts/seed-demo-five.mjs` (server demo×5 helper)
+- This map

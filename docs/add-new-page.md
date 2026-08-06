@@ -1,6 +1,9 @@
 # Добавить новую страницу
 
-> **5-шаговый tutorial**: от `mkdir` до видимой в browser страницы.
+> **5-шаговый tutorial**: от `mkdir` до видимой в browser страницы.  
+> **Обязательно вместе с этим:** полный чеклист внедрения  
+> [`FEATURE-INTEGRATION-CHECKLIST.md`](./FEATURE-INTEGRATION-CHECKLIST.md)  
+> (PAGE_KEYS, seed pages, capabilities, page.md, RU labels прав если нужны).
 
 ## Шаг 1: создать файл
 

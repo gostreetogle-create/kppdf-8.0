@@ -1120,6 +1120,10 @@ paramsToHttpParams({
 
 ## 17. Чек-лист перед коммитом
 
+**Сначала** — тип изменения: пройти
+[`docs/FEATURE-INTEGRATION-CHECKLIST.md`](./FEATURE-INTEGRATION-CHECKLIST.md)
+(страница / право / модуль / MCP). Иначе фича «висит» вне nav, RBAC и диалога ролей.
+
 - [ ] `cd frontend && pnpm exec tsc --noEmit` — exit 0
 - [ ] `cd backend && pnpm exec tsc --noEmit` — exit 0
 - [ ] Все компоненты: `standalone: true`, `ChangeDetectionStrategy.OnPush`
@@ -1152,7 +1156,11 @@ paramsToHttpParams({
 5. Карточки с фото — **body mode** (grid + `PiShowcaseCard`), не новый table primitive без нужды.
 6. List routes в `isDenseWorkspaceUrl`; detail `/:id` — обычный gutter.
 
-Конфиги chips: `dictionary-group-chips.ts`, `catalog/catalog-group-chips.ts`.
+Конфиги chips: `dictionary-group-chips.ts`, `catalog/catalog-group-chips.ts`,
+`deals/deals-group-chips.ts`, `inventory/warehouse-group-chips.ts`,
+`doc-constructor/docs-group-chips.ts`, `admin/admin-group-chips.ts`.
+
+TOC row = peers / groups (ink). Section row = sub-pages inside peer (warm); hide when empty.
 
 ```ts
 // ✅

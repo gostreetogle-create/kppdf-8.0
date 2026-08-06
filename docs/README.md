@@ -20,6 +20,7 @@ docs/
 ├── data-model-audit.md            ← аудит data model + предложения по консолидации
 ├── design-spec.md                 ← [NEW] design spec (бренд, цвета, типографика, компоненты)
 ├── DEVELOPMENT-PATTERNS.md        ← паттерны кодирования (SilentResult, CRUD, формы, API)
+├── FEATURE-INTEGRATION-CHECKLIST.md ← [канон] обязательные списки при новой фиче/странице/праве
 ├── ORCHESTRATION_CHECKLIST.md     ← чек-лист для OrchestratorKit
 ├── openhands-cloud-api.md         ← [NEW] подключение к OpenHands Cloud API (делегирование задач другому AI-агенту)
 ├── paper-and-ink.md               ← дизайн-система Paper & Ink (OKLCH, токены, WCAG)
