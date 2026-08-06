@@ -1,0 +1,3299 @@
+[
+  {
+    "yougileTaskId": "78ca2b03-1514-4eec-b3d7-09bdcbf48e70",
+    "taskCode": "D-12",
+    "taskCommon": "ID-64",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3903 ЗНП 12-26 поз 1",
+    "deadlineMs": 1791633600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": true,
+      "position": "1",
+      "sku": "3903",
+      "name": null,
+      "qty": null,
+      "unit": "Малая навигационная стела\" в границах общественной территории \"Уникальная лесопарковая зона \"Мэздах\", табло информационное водонепроницаемое",
+      "dimsRaw": null,
+      "finish": "8\nшт\n600х145х2200\nБетонирование\nматериал: сталь, деревоТехописание прилагается",
+      "description": "8\nшт\n600х145х2200\nБетонирование\nматериал: сталь, деревоТехописание прилагается\n\nПозиция в ЗНП: 1",
+      "photoFileId": "88e9d052-d9c1-478b-82d1-3d00b83d4ba6"
+    },
+    "photo": {
+      "file": "photos/D-12-3903.png",
+      "bytes": 15085,
+      "yougileFileId": "88e9d052-d9c1-478b-82d1-3d00b83d4ba6"
+    },
+    "productDraft": {
+      "sku": "3903",
+      "name": "Чертежи 3903 ЗНП 12-26 поз 1",
+      "kind": "good",
+      "unit": "Малая навигационная стела\" в границах общественной территории \"Уникальная лесопарковая зона \"Мэздах\", табло информационное водонепроницаемое",
+      "status": "active",
+      "description": "8\nшт\n600х145х2200\nБетонирование\nматериал: сталь, деревоТехописание прилагается\n\nПозиция в ЗНП: 1",
+      "installation": "8",
+      "hasDrawing": true,
+      "notes": "YouGile D-12\nКолонка: На распределении\nПоз: 1\nЧертежи 3903 ЗНП 12-26 поз 1",
+      "source": {
+        "yougileTaskId": "78ca2b03-1514-4eec-b3d7-09bdcbf48e70",
+        "taskCode": "D-12",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-12-3903.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "1c9620f2-d740-4201-955d-7899a6da3552",
+    "taskCode": "D-13",
+    "taskCommon": "ID-65",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3904 ЗНП 12-26 поз 2",
+    "deadlineMs": 1791633600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "2",
+      "sku": "3904",
+      "name": "\"Навигационная стела\" в границах общественной территории \"Уникальная лесопарковая зона\"Мэздах\" Табло информационное водонепроницаемое",
+      "qty": 4,
+      "unit": "шт",
+      "dimsRaw": "1650х?х2200",
+      "finish": "Бетонирование\nматериал: сталь, деревоТехописание прилагается",
+      "description": "Бетонирование\nматериал: сталь, деревоТехописание прилагается\n\nПозиция в ЗНП: 2",
+      "photoFileId": "ed8c0b21-054d-49f9-b12b-690eace0ea90"
+    },
+    "photo": {
+      "file": "photos/D-13-3904.png",
+      "bytes": 14864,
+      "yougileFileId": "ed8c0b21-054d-49f9-b12b-690eace0ea90"
+    },
+    "productDraft": {
+      "sku": "3904",
+      "name": "\"Навигационная стела\" в границах общественной территории \"Уникальная лесопарковая зона\"Мэздах\" Табло информационное водонепроницаемое",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Бетонирование\nматериал: сталь, деревоТехописание прилагается\n\nПозиция в ЗНП: 2",
+      "installation": "Бетонирование",
+      "hasDrawing": true,
+      "notes": "YouGile D-13\nКолонка: На распределении\nПоз: 2\nЧертежи 3904 ЗНП 12-26 поз 2",
+      "source": {
+        "yougileTaskId": "1c9620f2-d740-4201-955d-7899a6da3552",
+        "taskCode": "D-13",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-13-3904.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "63cb7022-9cb2-428c-87f3-cb8d295e1a10",
+    "taskCode": "D-14",
+    "taskCommon": "ID-66",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3403 ЗНП 12-26 поз 3",
+    "deadlineMs": 1791633600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "3",
+      "sku": "3403",
+      "name": "Скамья городская                                                                               (Скамья \"CHOICE SHADOW \")",
+      "qty": 14,
+      "unit": "шт",
+      "dimsRaw": "1500х580х850",
+      "dimensions": {
+        "length": 1500,
+        "width": 580,
+        "height": 850,
+        "unit": "мм"
+      },
+      "finish": "Анкер\nТехописание прилагается",
+      "description": "Анкер\nТехописание прилагается\n\nПозиция в ЗНП: 3",
+      "photoFileId": "422ac75e-02f7-4348-bd14-9b8f0d9b8a4f"
+    },
+    "photo": {
+      "file": "photos/D-14-3403.png",
+      "bytes": 20042,
+      "yougileFileId": "422ac75e-02f7-4348-bd14-9b8f0d9b8a4f"
+    },
+    "productDraft": {
+      "sku": "3403",
+      "name": "Скамья городская                                                                               (Скамья \"CHOICE SHADOW \")",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Анкер\nТехописание прилагается\n\nПозиция в ЗНП: 3",
+      "dimensions": {
+        "length": 1500,
+        "width": 580,
+        "height": 850,
+        "unit": "мм"
+      },
+      "hasDrawing": true,
+      "notes": "YouGile D-14\nКолонка: На распределении\nПоз: 3\nЧертежи 3403 ЗНП 12-26 поз 3",
+      "source": {
+        "yougileTaskId": "63cb7022-9cb2-428c-87f3-cb8d295e1a10",
+        "taskCode": "D-14",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-14-3403.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "452873d2-b7ed-45a9-88f5-399f40d765f9",
+    "taskCode": "D-15",
+    "taskCommon": "ID-67",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3502 ЗНП 12-26 поз 4",
+    "deadlineMs": 1791633600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "4",
+      "sku": "3502",
+      "name": "Урна уличная (\"CHOICE SHADOW \")",
+      "qty": 18,
+      "unit": "шт",
+      "dimsRaw": "600х300х860",
+      "dimensions": {
+        "length": 600,
+        "width": 300,
+        "height": 860,
+        "unit": "мм"
+      },
+      "finish": "Анкер\nматериал: сталь 3мм.Техописание прилагается",
+      "description": "Анкер\nматериал: сталь 3мм.Техописание прилагается\n\nПозиция в ЗНП: 4",
+      "photoFileId": "828b48de-0d57-4ddd-9691-ee1d5a280bfb"
+    },
+    "photo": {
+      "file": "photos/D-15-3502.png",
+      "bytes": 11237,
+      "yougileFileId": "828b48de-0d57-4ddd-9691-ee1d5a280bfb"
+    },
+    "productDraft": {
+      "sku": "3502",
+      "name": "Урна уличная (\"CHOICE SHADOW \")",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Анкер\nматериал: сталь 3мм.Техописание прилагается\n\nПозиция в ЗНП: 4",
+      "dimensions": {
+        "length": 600,
+        "width": 300,
+        "height": 860,
+        "unit": "мм"
+      },
+      "hasDrawing": true,
+      "notes": "YouGile D-15\nКолонка: На распределении\nПоз: 4\nЧертежи 3502 ЗНП 12-26 поз 4",
+      "source": {
+        "yougileTaskId": "452873d2-b7ed-45a9-88f5-399f40d765f9",
+        "taskCode": "D-15",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-15-3502.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "b691ada1-91f2-4207-8cf6-48549d1d099e",
+    "taskCode": "D-24",
+    "taskCommon": "ID-76",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3504 ЗНП 11-26 поз 1",
+    "deadlineMs": 1790337600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "1",
+      "sku": "3504",
+      "name": "Арт Объект: деревянная урна",
+      "qty": 29,
+      "unit": "шт",
+      "dimsRaw": "420х420х590",
+      "dimensions": {
+        "length": 420,
+        "width": 420,
+        "height": 590,
+        "unit": "мм"
+      },
+      "finish": "Анкер\nНет\nСогласовать",
+      "description": "Анкер\nНет\nСогласовать\n\nПозиция в ЗНП: 1",
+      "photoFileId": "d021bb9e-027a-47df-affc-e88a4d481f8e"
+    },
+    "photo": {
+      "file": "photos/D-24-3504.png",
+      "bytes": 13345,
+      "yougileFileId": "d021bb9e-027a-47df-affc-e88a4d481f8e"
+    },
+    "productDraft": {
+      "sku": "3504",
+      "name": "Арт Объект: деревянная урна",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Анкер\nНет\nСогласовать\n\nПозиция в ЗНП: 1",
+      "dimensions": {
+        "length": 420,
+        "width": 420,
+        "height": 590,
+        "unit": "мм"
+      },
+      "hasDrawing": true,
+      "notes": "YouGile D-24\nКолонка: На распределении\nПоз: 1\nЧертежи 3504 ЗНП 11-26 поз 1",
+      "source": {
+        "yougileTaskId": "b691ada1-91f2-4207-8cf6-48549d1d099e",
+        "taskCode": "D-24",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-24-3504.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "90b05ba4-380d-46db-9aae-f6206910fee6",
+    "taskCode": "D-25",
+    "taskCommon": "ID-77",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3906 ЗНП 11-26 поз 2",
+    "deadlineMs": 1790337600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "2",
+      "sku": "3906",
+      "name": "Деревянная табличка на цепи",
+      "qty": 4,
+      "unit": "шт",
+      "dimsRaw": "2000х?х1400",
+      "finish": "Бетонирование\nНет\nСогласовать",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 2",
+      "photoFileId": "54a1660b-1f76-4270-8ecd-89d1db6b534c"
+    },
+    "photo": {
+      "file": "photos/D-25-3906.png",
+      "bytes": 20483,
+      "yougileFileId": "54a1660b-1f76-4270-8ecd-89d1db6b534c"
+    },
+    "productDraft": {
+      "sku": "3906",
+      "name": "Деревянная табличка на цепи",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 2",
+      "installation": "Бетонирование",
+      "hasDrawing": true,
+      "notes": "YouGile D-25\nКолонка: На распределении\nПоз: 2\nЧертежи 3906 ЗНП 11-26 поз 2",
+      "source": {
+        "yougileTaskId": "90b05ba4-380d-46db-9aae-f6206910fee6",
+        "taskCode": "D-25",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-25-3906.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "a90d4a26-f00c-40b1-8666-1ce5090bcee0",
+    "taskCode": "D-26",
+    "taskCommon": "ID-78",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3207 ЗНП 11-26 поз 4",
+    "deadlineMs": 1790337600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "4",
+      "sku": "3207",
+      "name": "Стелла (смета)",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "2700х?х6000",
+      "finish": "Бетонирование\nНет\nСогласовать",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 4",
+      "photoFileId": "1c991e34-2e7e-4c4f-8245-8aceb06d6833"
+    },
+    "photo": {
+      "file": "photos/D-26-3207.png",
+      "bytes": 7208,
+      "yougileFileId": "1c991e34-2e7e-4c4f-8245-8aceb06d6833"
+    },
+    "productDraft": {
+      "sku": "3207",
+      "name": "Стелла (смета)",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 4",
+      "installation": "Бетонирование",
+      "hasDrawing": true,
+      "notes": "YouGile D-26\nКолонка: На распределении\nПоз: 4\nЧертежи 3207 ЗНП 11-26 поз 4",
+      "source": {
+        "yougileTaskId": "a90d4a26-f00c-40b1-8666-1ce5090bcee0",
+        "taskCode": "D-26",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-26-3207.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "a738f2dc-4735-4747-9735-8cbbc06390b8",
+    "taskCode": "D-28",
+    "taskCommon": "ID-80",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3213 ЗНП 11-26 поз 6",
+    "deadlineMs": 1790337600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "6",
+      "sku": "3213",
+      "name": "Арт объект: Деревянные качели 2800 (смета)",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "2800х?х?",
+      "finish": "Бетонирование\nНет\nСогласовать",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 6",
+      "photoFileId": "e9844059-7214-4d45-b5d0-da3a77bf9926"
+    },
+    "photo": {
+      "file": "photos/D-28-3213.png",
+      "bytes": 5012,
+      "yougileFileId": "e9844059-7214-4d45-b5d0-da3a77bf9926"
+    },
+    "productDraft": {
+      "sku": "3213",
+      "name": "Арт объект: Деревянные качели 2800 (смета)",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 6",
+      "installation": "Бетонирование",
+      "hasDrawing": true,
+      "notes": "YouGile D-28\nКолонка: На распределении\nПоз: 6\nЧертежи 3213 ЗНП 11-26 поз 6",
+      "source": {
+        "yougileTaskId": "a738f2dc-4735-4747-9735-8cbbc06390b8",
+        "taskCode": "D-28",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-28-3213.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "0d8df30d-60fb-4caa-95a8-475063fc07a3",
+    "taskCode": "D-29",
+    "taskCommon": "ID-81",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 6001 ЗНП 11-26 поз 7",
+    "deadlineMs": 1790337600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "7",
+      "sku": "6001",
+      "name": "Игровой элемент 2     2600х2200 (смета)",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "?х2200х2600",
+      "finish": "Бетонирование\nНет\nСогласовать",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 7",
+      "photoFileId": "e73c8665-8a54-4d7c-84e3-c9f954321922"
+    },
+    "photo": {
+      "file": "photos/D-29-6001.png",
+      "bytes": 18416,
+      "yougileFileId": "e73c8665-8a54-4d7c-84e3-c9f954321922"
+    },
+    "productDraft": {
+      "sku": "6001",
+      "name": "Игровой элемент 2     2600х2200 (смета)",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 7",
+      "installation": "Бетонирование",
+      "hasDrawing": true,
+      "notes": "YouGile D-29\nКолонка: На распределении\nПоз: 7\nЧертежи 6001 ЗНП 11-26 поз 7",
+      "source": {
+        "yougileTaskId": "0d8df30d-60fb-4caa-95a8-475063fc07a3",
+        "taskCode": "D-29",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-29-6001.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "0b1eb594-4b15-44ee-8163-e6a00b425c3f",
+    "taskCode": "D-30",
+    "taskCommon": "ID-82",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 6102 ЗНП 11-26 поз 8",
+    "deadlineMs": 1790337600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "8",
+      "sku": "6102",
+      "name": "Игровой комплекс 2    5000х2200 (смета)",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": null,
+      "finish": "?х?х?\nБетонирование\nНет\nСогласовать",
+      "description": "?х?х?\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 8",
+      "photoFileId": "d7330df0-e030-4ca3-9d16-e0d541601b6c"
+    },
+    "photo": {
+      "file": "photos/D-30-6102.png",
+      "bytes": 18945,
+      "yougileFileId": "d7330df0-e030-4ca3-9d16-e0d541601b6c"
+    },
+    "productDraft": {
+      "sku": "6102",
+      "name": "Игровой комплекс 2    5000х2200 (смета)",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "?х?х?\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 8",
+      "installation": "?х?х?",
+      "hasDrawing": true,
+      "notes": "YouGile D-30\nКолонка: На распределении\nПоз: 8\nЧертежи 6102 ЗНП 11-26 поз 8",
+      "source": {
+        "yougileTaskId": "0b1eb594-4b15-44ee-8163-e6a00b425c3f",
+        "taskCode": "D-30",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-30-6102.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "30c0ddeb-c266-40f7-9c61-332a4eda362b",
+    "taskCode": "D-31",
+    "taskCommon": "ID-83",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 6103 ЗНП 11-26 поз 9",
+    "deadlineMs": 1790337600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "9",
+      "sku": "6103",
+      "name": "Игровой комплекс 3  6100х4100 (смета)",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": null,
+      "finish": "?х?х?\nБетонирование\nНет\nСогласовать",
+      "description": "?х?х?\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 9",
+      "photoFileId": "020a258b-8014-49f8-a599-08104869d341"
+    },
+    "photo": {
+      "file": "photos/D-31-6103.png",
+      "bytes": 22263,
+      "yougileFileId": "020a258b-8014-49f8-a599-08104869d341"
+    },
+    "productDraft": {
+      "sku": "6103",
+      "name": "Игровой комплекс 3  6100х4100 (смета)",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "?х?х?\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 9",
+      "installation": "?х?х?",
+      "hasDrawing": true,
+      "notes": "YouGile D-31\nКолонка: На распределении\nПоз: 9\nЧертежи 6103 ЗНП 11-26 поз 9",
+      "source": {
+        "yougileTaskId": "30c0ddeb-c266-40f7-9c61-332a4eda362b",
+        "taskCode": "D-31",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-31-6103.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "cba86a49-f495-4530-ae7a-4257ab53ec3b",
+    "taskCode": "D-35",
+    "taskCommon": "ID-87",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3208 ЗНП 11-26 поз 12",
+    "deadlineMs": 1790337600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "12",
+      "sku": "3208",
+      "name": "Качели 1    3200х2200 (смета)",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "3200х1200х2200",
+      "dimensions": {
+        "length": 3200,
+        "width": 1200,
+        "height": 2200,
+        "unit": "мм"
+      },
+      "finish": "Бетонирование\nНет\nСогласовать",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 12",
+      "photoFileId": "d853cd61-a88a-4afe-bcf7-ea091583fde4"
+    },
+    "photo": {
+      "file": "photos/D-35-3208.png",
+      "bytes": 10910,
+      "yougileFileId": "d853cd61-a88a-4afe-bcf7-ea091583fde4"
+    },
+    "productDraft": {
+      "sku": "3208",
+      "name": "Качели 1    3200х2200 (смета)",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 12",
+      "dimensions": {
+        "length": 3200,
+        "width": 1200,
+        "height": 2200,
+        "unit": "мм"
+      },
+      "installation": "Бетонирование",
+      "hasDrawing": true,
+      "notes": "YouGile D-35\nКолонка: На распределении\nПоз: 12\nЧертежи 3208 ЗНП 11-26 поз 12",
+      "source": {
+        "yougileTaskId": "cba86a49-f495-4530-ae7a-4257ab53ec3b",
+        "taskCode": "D-35",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-35-3208.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "3479be03-10e9-4b47-b0c5-f613a02af916",
+    "taskCode": "D-36",
+    "taskCommon": "ID-88",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3209 ЗНП 11-26 поз 14",
+    "deadlineMs": 1790337600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "14",
+      "sku": "3209",
+      "name": "Качели 3 (смета)",
+      "qty": 3,
+      "unit": "шт",
+      "dimsRaw": "3200х500х4000",
+      "dimensions": {
+        "length": 3200,
+        "width": 500,
+        "height": 4000,
+        "unit": "мм"
+      },
+      "finish": "Бетонирование\nНет\nСогласовать",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 14",
+      "photoFileId": "5bed989b-e86e-4f95-8f99-9883ec8e4246"
+    },
+    "photo": {
+      "file": "photos/D-36-3209.png",
+      "bytes": 16413,
+      "yougileFileId": "5bed989b-e86e-4f95-8f99-9883ec8e4246"
+    },
+    "productDraft": {
+      "sku": "3209",
+      "name": "Качели 3 (смета)",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 14",
+      "dimensions": {
+        "length": 3200,
+        "width": 500,
+        "height": 4000,
+        "unit": "мм"
+      },
+      "installation": "Бетонирование",
+      "hasDrawing": true,
+      "notes": "YouGile D-36\nКолонка: На распределении\nПоз: 14\nЧертежи 3209 ЗНП 11-26 поз 14",
+      "source": {
+        "yougileTaskId": "3479be03-10e9-4b47-b0c5-f613a02af916",
+        "taskCode": "D-36",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-36-3209.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "f2ced64a-0905-40f7-af74-7e04f42b48e7",
+    "taskCode": "D-39",
+    "taskCommon": "ID-91",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3214 ЗНП 11-26 поз 17",
+    "deadlineMs": 1790337600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "17",
+      "sku": "3214",
+      "name": "Прочие МАФы 4 (смета)",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": null,
+      "finish": "?х?х?\nБетонирование\nНет\nСогласовать",
+      "description": "?х?х?\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 17",
+      "photoFileId": "e1984724-a506-4d9b-8de2-4f8d08d7f458"
+    },
+    "photo": {
+      "file": "photos/D-39-3214.png",
+      "bytes": 23442,
+      "yougileFileId": "e1984724-a506-4d9b-8de2-4f8d08d7f458"
+    },
+    "productDraft": {
+      "sku": "3214",
+      "name": "Прочие МАФы 4 (смета)",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "?х?х?\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 17",
+      "installation": "?х?х?",
+      "hasDrawing": true,
+      "notes": "YouGile D-39\nКолонка: На распределении\nПоз: 17\nЧертежи 3214 ЗНП 11-26 поз 17",
+      "source": {
+        "yougileTaskId": "f2ced64a-0905-40f7-af74-7e04f42b48e7",
+        "taskCode": "D-39",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-39-3214.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "f1c3a242-2205-4480-b00a-ef59f714164a",
+    "taskCode": "D-41",
+    "taskCommon": "ID-93",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3216 ЗНП 11-26 поз 19",
+    "deadlineMs": 1790337600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "19",
+      "sku": "3216",
+      "name": "Ограждение деревянное 28 м.п.",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "?х?х1200",
+      "finish": "Бетонирование\nНет\nСогласовать\nДля Экотропы 120 м.п. поз 18",
+      "description": "Бетонирование\nНет\nСогласовать\nДля Экотропы 120 м.п. поз 18\n\nПозиция в ЗНП: 19",
+      "photoFileId": "9430c81d-a8bd-43d1-b553-fbea6abf340e"
+    },
+    "photo": {
+      "file": "photos/D-41-3216.png",
+      "bytes": 29308,
+      "yougileFileId": "9430c81d-a8bd-43d1-b553-fbea6abf340e"
+    },
+    "productDraft": {
+      "sku": "3216",
+      "name": "Ограждение деревянное 28 м.п.",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Бетонирование\nНет\nСогласовать\nДля Экотропы 120 м.п. поз 18\n\nПозиция в ЗНП: 19",
+      "installation": "Бетонирование",
+      "hasDrawing": true,
+      "notes": "YouGile D-41\nКолонка: На распределении\nПоз: 19\nЧертежи 3216 ЗНП 11-26 поз 19",
+      "source": {
+        "yougileTaskId": "f1c3a242-2205-4480-b00a-ef59f714164a",
+        "taskCode": "D-41",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-41-3216.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "450b0967-09f4-4432-943f-1ef0482f087d",
+    "taskCode": "D-57",
+    "taskCommon": "ID-129",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3506 ЗНП 17-26 поз 1",
+    "deadlineMs": 1789041600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "1",
+      "sku": "3506",
+      "name": "Урна",
+      "qty": 8,
+      "unit": "шт",
+      "dimsRaw": "420x420x940",
+      "dimensions": {
+        "length": 420,
+        "width": 420,
+        "height": 940,
+        "unit": "мм"
+      },
+      "finish": "Материал: Сосна, метал мм",
+      "description": "Материал: Сосна, метал мм\n\nПозиция в ЗНП: 1",
+      "photoFileId": "3177a0f3-504e-4a0b-bbae-3200c898146f"
+    },
+    "photo": {
+      "file": "photos/D-57-3506.png",
+      "bytes": 12418,
+      "yougileFileId": "3177a0f3-504e-4a0b-bbae-3200c898146f"
+    },
+    "productDraft": {
+      "sku": "3506",
+      "name": "Урна",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Материал: Сосна, метал мм\n\nПозиция в ЗНП: 1",
+      "dimensions": {
+        "length": 420,
+        "width": 420,
+        "height": 940,
+        "unit": "мм"
+      },
+      "hasDrawing": true,
+      "notes": "YouGile D-57\nКолонка: На распределении\nПоз: 1\nЧертежи 3506 ЗНП 17-26 поз 1",
+      "source": {
+        "yougileTaskId": "450b0967-09f4-4432-943f-1ef0482f087d",
+        "taskCode": "D-57",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-57-3506.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "07e30c1b-c7f6-47f0-90ed-29a02710be30",
+    "taskCode": "D-59",
+    "taskCommon": "ID-131",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3104 ЗНП 17-26 поз 3",
+    "deadlineMs": 1789041600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "3",
+      "sku": "3104",
+      "name": "Пергола с качелью",
+      "qty": 2,
+      "unit": "шт",
+      "dimsRaw": "6400х3500х3000",
+      "dimensions": {
+        "length": 6400,
+        "width": 3500,
+        "height": 3000,
+        "unit": "мм"
+      },
+      "finish": "Каркас из стальной трубы 160х160х4. Порошковая покраска ral 9005.  Крыша из бруса 40х40. Качели из бруса 40х40. Покрытие масло, цвет “Бисквит”. Подсветка 24V по контуру в алюминевом профиле. Блок питания в комплекте.",
+      "description": "Каркас из стальной трубы 160х160х4. Порошковая покраска ral 9005.  Крыша из бруса 40х40. Качели из бруса 40х40. Покрытие масло, цвет “Бисквит”. Подсветка 24V по контуру в алюминевом профиле. Блок питания в комплекте.\n\nПозиция в ЗНП: 3",
+      "photoFileId": "d369f349-cabd-46de-8f73-a8a8615f180e"
+    },
+    "photo": {
+      "file": "photos/D-59-3104.png",
+      "bytes": 43757,
+      "yougileFileId": "d369f349-cabd-46de-8f73-a8a8615f180e"
+    },
+    "productDraft": {
+      "sku": "3104",
+      "name": "Пергола с качелью",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Каркас из стальной трубы 160х160х4. Порошковая покраска ral 9005.  Крыша из бруса 40х40. Качели из бруса 40х40. Покрытие масло, цвет “Бисквит”. Подсветка 24V по контуру в алюминевом профиле. Блок питания в комплекте.\n\nПозиция в ЗНП: 3",
+      "dimensions": {
+        "length": 6400,
+        "width": 3500,
+        "height": 3000,
+        "unit": "мм"
+      },
+      "hasDrawing": true,
+      "notes": "YouGile D-59\nКолонка: На распределении\nПоз: 3\nЧертежи 3104 ЗНП 17-26 поз 3",
+      "source": {
+        "yougileTaskId": "07e30c1b-c7f6-47f0-90ed-29a02710be30",
+        "taskCode": "D-59",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-59-3104.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "e88b896d-36db-4e58-ba3b-c6d710ab1c4b",
+    "taskCode": "D-60",
+    "taskCommon": "ID-132",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 5302 ЗНП 17-26 поз 4",
+    "deadlineMs": 1789041600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "4",
+      "sku": "5302",
+      "name": "Качалка-балансир",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "4000 x 480 x 1150",
+      "dimensions": {
+        "length": 4000,
+        "width": 480,
+        "height": 1150,
+        "unit": "мм"
+      },
+      "finish": "Материал: Лиственница, нержавеющая сталь",
+      "description": "Материал: Лиственница, нержавеющая сталь\n\nПозиция в ЗНП: 4",
+      "photoFileId": "dbbc9e26-f4b0-4d3e-996c-3c9ee50c80ad"
+    },
+    "photo": {
+      "file": "photos/D-60-5302.png",
+      "bytes": 10026,
+      "yougileFileId": "dbbc9e26-f4b0-4d3e-996c-3c9ee50c80ad"
+    },
+    "productDraft": {
+      "sku": "5302",
+      "name": "Качалка-балансир",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Материал: Лиственница, нержавеющая сталь\n\nПозиция в ЗНП: 4",
+      "dimensions": {
+        "length": 4000,
+        "width": 480,
+        "height": 1150,
+        "unit": "мм"
+      },
+      "hasDrawing": true,
+      "notes": "YouGile D-60\nКолонка: На распределении\nПоз: 4\nЧертежи 5302 ЗНП 17-26 поз 4",
+      "source": {
+        "yougileTaskId": "e88b896d-36db-4e58-ba3b-c6d710ab1c4b",
+        "taskCode": "D-60",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-60-5302.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "6d82b89a-1738-41d8-a32d-39fc8d995afd",
+    "taskCode": "D-61",
+    "taskCommon": "ID-133",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 5402 ЗНП 17-26 поз 5",
+    "deadlineMs": 1789041600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "5",
+      "sku": "5402",
+      "name": "Качалка мотоцикл",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "770 x 325 x 735",
+      "dimensions": {
+        "length": 770,
+        "width": 325,
+        "height": 735,
+        "unit": "мм"
+      },
+      "finish": "Лиственница, нержавеющая сталь",
+      "description": "Лиственница, нержавеющая сталь\n\nПозиция в ЗНП: 5",
+      "photoFileId": "fb135339-f8b1-4ec9-bb97-1573ea14f5f1"
+    },
+    "photo": {
+      "file": "photos/D-61-5402.png",
+      "bytes": 12728,
+      "yougileFileId": "fb135339-f8b1-4ec9-bb97-1573ea14f5f1"
+    },
+    "productDraft": {
+      "sku": "5402",
+      "name": "Качалка мотоцикл",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Лиственница, нержавеющая сталь\n\nПозиция в ЗНП: 5",
+      "dimensions": {
+        "length": 770,
+        "width": 325,
+        "height": 735,
+        "unit": "мм"
+      },
+      "hasDrawing": true,
+      "notes": "YouGile D-61\nКолонка: На распределении\nПоз: 5\nЧертежи 5402 ЗНП 17-26 поз 5",
+      "source": {
+        "yougileTaskId": "6d82b89a-1738-41d8-a32d-39fc8d995afd",
+        "taskCode": "D-61",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-61-5402.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "22070915-7014-4d63-bd50-8b50e9cd8e20",
+    "taskCode": "D-62",
+    "taskCommon": "ID-134",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 5202 ЗНП 17-26 поз 6",
+    "deadlineMs": 1789041600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "6",
+      "sku": "5202",
+      "name": "Карусель",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "1540 х 1540 х 825",
+      "dimensions": {
+        "length": 1540,
+        "width": 1540,
+        "height": 825,
+        "unit": "мм"
+      },
+      "finish": "Лиственница, нержавеющая сталь",
+      "description": "Лиственница, нержавеющая сталь\n\nПозиция в ЗНП: 6",
+      "photoFileId": "fedbc55c-6be8-4b80-8016-ca980d0eee03"
+    },
+    "photo": {
+      "file": "photos/D-62-5202.png",
+      "bytes": 15121,
+      "yougileFileId": "fedbc55c-6be8-4b80-8016-ca980d0eee03"
+    },
+    "productDraft": {
+      "sku": "5202",
+      "name": "Карусель",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Лиственница, нержавеющая сталь\n\nПозиция в ЗНП: 6",
+      "dimensions": {
+        "length": 1540,
+        "width": 1540,
+        "height": 825,
+        "unit": "мм"
+      },
+      "hasDrawing": true,
+      "notes": "YouGile D-62\nКолонка: На распределении\nПоз: 6\nЧертежи 5202 ЗНП 17-26 поз 6",
+      "source": {
+        "yougileTaskId": "22070915-7014-4d63-bd50-8b50e9cd8e20",
+        "taskCode": "D-62",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-62-5202.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "826bc06d-688c-4c0f-90d8-39864e8a8cee",
+    "taskCode": "D-63",
+    "taskCommon": "ID-135",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 6105 ЗНП 17-26 поз 7",
+    "deadlineMs": 1789041600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "7",
+      "sku": "6105",
+      "name": "Детский игровой комплекс",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "5980 х 5265 х 3965",
+      "dimensions": {
+        "length": 5980,
+        "width": 5265,
+        "height": 3965,
+        "unit": "мм"
+      },
+      "finish": "Материал: древесина хвойных пород,  канат армированный, сталь. Окрашено: порошковой эмалью.",
+      "description": "Материал: древесина хвойных пород,  канат армированный, сталь. Окрашено: порошковой эмалью.\n\nПозиция в ЗНП: 7",
+      "photoFileId": "0ddc1e4c-8ee0-4131-86ad-856706f86e23"
+    },
+    "photo": {
+      "file": "photos/D-63-6105.png",
+      "bytes": 15523,
+      "yougileFileId": "0ddc1e4c-8ee0-4131-86ad-856706f86e23"
+    },
+    "productDraft": {
+      "sku": "6105",
+      "name": "Детский игровой комплекс",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Материал: древесина хвойных пород,  канат армированный, сталь. Окрашено: порошковой эмалью.\n\nПозиция в ЗНП: 7",
+      "dimensions": {
+        "length": 5980,
+        "width": 5265,
+        "height": 3965,
+        "unit": "мм"
+      },
+      "hasDrawing": true,
+      "notes": "YouGile D-63\nКолонка: На распределении\nПоз: 7\nЧертежи 6105 ЗНП 17-26 поз 7",
+      "source": {
+        "yougileTaskId": "826bc06d-688c-4c0f-90d8-39864e8a8cee",
+        "taskCode": "D-63",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-63-6105.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "b8b39c56-9bbb-420c-a906-79e9f05b8059",
+    "taskCode": "D-2",
+    "taskCommon": "ID-54",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3101 ЗНП 3-26 поз 1",
+    "deadlineMs": 1788091200000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 3,
+    "passport": {
+      "parseWeak": false,
+      "position": "1",
+      "sku": "3101",
+      "name": "Пергола с подвесами (1 гнездо, 1 скамейка со спинкой)",
+      "qty": 3,
+      "unit": "шт",
+      "dimsRaw": "6150х2200х2600",
+      "dimensions": {
+        "length": 6150,
+        "width": 2200,
+        "height": 2600,
+        "unit": "мм"
+      },
+      "finish": "Бетонирование\nМет: RAL 9005Дерево: масло YS M303/T24\nГнездо с заглушки ру 1000 мм",
+      "description": "Бетонирование\nМет: RAL 9005Дерево: масло YS M303/T24\nГнездо с заглушки ру 1000 мм\n\nПозиция в ЗНП: 1",
+      "photoFileId": "ca2e22c2-058f-4c2b-a5a3-4dbb16133a92"
+    },
+    "photo": {
+      "file": "photos/D-2-3101.png",
+      "bytes": 23157,
+      "yougileFileId": "ca2e22c2-058f-4c2b-a5a3-4dbb16133a92"
+    },
+    "productDraft": {
+      "sku": "3101",
+      "name": "Пергола с подвесами (1 гнездо, 1 скамейка со спинкой)",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Бетонирование\nМет: RAL 9005Дерево: масло YS M303/T24\nГнездо с заглушки ру 1000 мм\n\nПозиция в ЗНП: 1",
+      "dimensions": {
+        "length": 6150,
+        "width": 2200,
+        "height": 2600,
+        "unit": "мм"
+      },
+      "installation": "Бетонирование",
+      "hasDrawing": true,
+      "notes": "YouGile D-2\nКолонка: На распределении\nПоз: 1\nЧертежи 3101 ЗНП 3-26 поз 1",
+      "source": {
+        "yougileTaskId": "b8b39c56-9bbb-420c-a906-79e9f05b8059",
+        "taskCode": "D-2",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-2-3101.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "466adc2f-f5ce-40bb-b62d-4cbda5e622fe",
+    "taskCode": "D-45",
+    "taskCommon": "ID-115",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 5301 ЗНП 15-26 поз 2",
+    "deadlineMs": 1785931200000,
+    "completed": false,
+    "archived": false,
+    "stickers": {},
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "2",
+      "sku": "5301",
+      "name": "Качалка-балансир \"Мишка\"",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "2600х550х?",
+      "finish": "Подбираем аналоги из Дикома",
+      "description": "Подбираем аналоги из Дикома\n\nПозиция в ЗНП: 2",
+      "photoFileId": "f9ce1f00-18b4-4004-9390-0e5e8418c3be"
+    },
+    "photo": {
+      "file": "photos/D-45-5301.png",
+      "bytes": 19734,
+      "yougileFileId": "f9ce1f00-18b4-4004-9390-0e5e8418c3be"
+    },
+    "productDraft": {
+      "sku": "5301",
+      "name": "Качалка-балансир \"Мишка\"",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Подбираем аналоги из Дикома\n\nПозиция в ЗНП: 2",
+      "hasDrawing": true,
+      "notes": "YouGile D-45\nКолонка: На распределении\nПоз: 2\nЧертежи 5301 ЗНП 15-26 поз 2",
+      "source": {
+        "yougileTaskId": "466adc2f-f5ce-40bb-b62d-4cbda5e622fe",
+        "taskCode": "D-45",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-45-5301.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "19042c00-46b3-4bd4-9f02-3a371477580b",
+    "taskCode": "D-46",
+    "taskCommon": "ID-116",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3907 ЗНП 15-26 поз 3",
+    "deadlineMs": 1785931200000,
+    "completed": false,
+    "archived": false,
+    "stickers": {},
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "3",
+      "sku": "3907",
+      "name": "Стенд",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "1150х60х2300",
+      "dimensions": {
+        "length": 1150,
+        "width": 60,
+        "height": 2300,
+        "unit": "мм"
+      },
+      "finish": "(с УФ печатью информации о площадке)",
+      "description": "(с УФ печатью информации о площадке)\n\nПозиция в ЗНП: 3",
+      "photoFileId": "116e0572-c083-4007-aef1-d4f7b21725aa"
+    },
+    "photo": {
+      "file": "photos/D-46-3907.png",
+      "bytes": 17207,
+      "yougileFileId": "116e0572-c083-4007-aef1-d4f7b21725aa"
+    },
+    "productDraft": {
+      "sku": "3907",
+      "name": "Стенд",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "(с УФ печатью информации о площадке)\n\nПозиция в ЗНП: 3",
+      "dimensions": {
+        "length": 1150,
+        "width": 60,
+        "height": 2300,
+        "unit": "мм"
+      },
+      "hasDrawing": true,
+      "notes": "YouGile D-46\nКолонка: На распределении\nПоз: 3\nЧертежи 3907 ЗНП 15-26 поз 3",
+      "source": {
+        "yougileTaskId": "19042c00-46b3-4bd4-9f02-3a371477580b",
+        "taskCode": "D-46",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-46-3907.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "87f30c4e-a529-452c-bcd3-d2f01291c199",
+    "taskCode": "D-49",
+    "taskCommon": "ID-119",
+    "columnId": "e140e808-4ddd-44e6-bca1-d7f06c73700b",
+    "columnName": "На распределении",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 5101 ЗНП 15-26 поз 6",
+    "deadlineMs": 1785931200000,
+    "completed": false,
+    "archived": false,
+    "stickers": {},
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": null,
+      "sku": "5101",
+      "name": "Качели двойные со спинкой",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "2820х1500х2100",
+      "dimensions": {
+        "length": 2820,
+        "width": 1500,
+        "height": 2100,
+        "unit": "мм"
+      },
+      "finish": "Подбираем аналоги из Дикома",
+      "description": "Подбираем аналоги из Дикома",
+      "photoFileId": "af1e8ec4-ad5d-430a-91ab-0902c1d19be3"
+    },
+    "photo": {
+      "file": "photos/D-49-5101.png",
+      "bytes": 7833,
+      "yougileFileId": "af1e8ec4-ad5d-430a-91ab-0902c1d19be3"
+    },
+    "productDraft": {
+      "sku": "5101",
+      "name": "Качели двойные со спинкой",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Подбираем аналоги из Дикома",
+      "dimensions": {
+        "length": 2820,
+        "width": 1500,
+        "height": 2100,
+        "unit": "мм"
+      },
+      "hasDrawing": true,
+      "notes": "YouGile D-49\nКолонка: На распределении\nЧертежи 5101 ЗНП 15-26 поз 6",
+      "source": {
+        "yougileTaskId": "87f30c4e-a529-452c-bcd3-d2f01291c199",
+        "taskCode": "D-49",
+        "columnName": "На распределении",
+        "photoFile": "photos/D-49-5101.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "d41452fd-b10e-4c40-a0c3-5c0ee41edb0c",
+    "taskCode": "D-11",
+    "taskCommon": "ID-63",
+    "columnId": "592a445c-1775-4200-8186-cea8bf0b03ef",
+    "columnName": "В работе",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3202 ЗНП 9-26 поз 1",
+    "deadlineMs": 1786363200000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 3,
+    "passport": {
+      "parseWeak": false,
+      "position": "1",
+      "sku": "3202",
+      "name": "Нестационарные торговые объекты",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "7400х4700х3770",
+      "dimensions": {
+        "length": 7400,
+        "width": 4700,
+        "height": 3770,
+        "unit": "мм"
+      },
+      "finish": "Техописание прилагается",
+      "description": "Техописание прилагается\n\nПозиция в ЗНП: 1",
+      "photoFileId": "60c65a25-c0a4-4745-a0bf-54eab95d6970"
+    },
+    "photo": {
+      "file": "photos/D-11-3202.png",
+      "bytes": 34536,
+      "yougileFileId": "60c65a25-c0a4-4745-a0bf-54eab95d6970"
+    },
+    "productDraft": {
+      "sku": "3202",
+      "name": "Нестационарные торговые объекты",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Техописание прилагается\n\nПозиция в ЗНП: 1",
+      "dimensions": {
+        "length": 7400,
+        "width": 4700,
+        "height": 3770,
+        "unit": "мм"
+      },
+      "hasDrawing": true,
+      "notes": "YouGile D-11\nКолонка: В работе\nПоз: 1\nЧертежи 3202 ЗНП 9-26 поз 1",
+      "source": {
+        "yougileTaskId": "d41452fd-b10e-4c40-a0c3-5c0ee41edb0c",
+        "taskCode": "D-11",
+        "columnName": "В работе",
+        "photoFile": "photos/D-11-3202.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "8b4eb295-d057-440e-8445-041ed0f21739",
+    "taskCode": "D-37",
+    "taskCommon": "ID-89",
+    "columnId": "592a445c-1775-4200-8186-cea8bf0b03ef",
+    "columnName": "В работе",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3211 ЗНП 11-26 поз 15",
+    "deadlineMs": 1790337600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "2e83e4cb93b6"
+    },
+    "chatMessageCount": 3,
+    "passport": {
+      "parseWeak": false,
+      "position": "15",
+      "sku": "3211",
+      "name": "Арт объект: деревянный гамак (смета)",
+      "qty": 3,
+      "unit": "шт",
+      "dimsRaw": "2100х600х1000",
+      "dimensions": {
+        "length": 2100,
+        "width": 600,
+        "height": 1000,
+        "unit": "мм"
+      },
+      "finish": "Бетонирование\nНет\nСогласовать",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 15",
+      "photoFileId": "9b9a8af8-53ea-441d-b4ab-13435b67608d"
+    },
+    "photo": {
+      "file": "photos/D-37-3211.png",
+      "bytes": 20947,
+      "yougileFileId": "9b9a8af8-53ea-441d-b4ab-13435b67608d"
+    },
+    "productDraft": {
+      "sku": "3211",
+      "name": "Арт объект: деревянный гамак (смета)",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 15",
+      "dimensions": {
+        "length": 2100,
+        "width": 600,
+        "height": 1000,
+        "unit": "мм"
+      },
+      "installation": "Бетонирование",
+      "hasDrawing": true,
+      "notes": "YouGile D-37\nКолонка: В работе\nПоз: 15\nЧертежи 3211 ЗНП 11-26 поз 15",
+      "source": {
+        "yougileTaskId": "8b4eb295-d057-440e-8445-041ed0f21739",
+        "taskCode": "D-37",
+        "columnName": "В работе",
+        "photoFile": "photos/D-37-3211.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "85382550-c02f-4c4e-808a-06c6f4590bc0",
+    "taskCode": "D-38",
+    "taskCommon": "ID-90",
+    "columnId": "592a445c-1775-4200-8186-cea8bf0b03ef",
+    "columnName": "В работе",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3212 ЗНП 11-26 поз 16",
+    "deadlineMs": 1790337600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 3,
+    "passport": {
+      "parseWeak": false,
+      "position": "16",
+      "sku": "3212",
+      "name": "Шезлонг 3   (по смете без размера)",
+      "qty": 7,
+      "unit": "шт",
+      "dimsRaw": "1000х700х1400",
+      "dimensions": {
+        "length": 1000,
+        "width": 700,
+        "height": 1400,
+        "unit": "мм"
+      },
+      "finish": "Свободностоящий\nНет\nСогласовать",
+      "description": "Свободностоящий\nНет\nСогласовать\n\nПозиция в ЗНП: 16",
+      "photoFileId": "aedd6220-0054-4607-a168-ae09310e13bf"
+    },
+    "photo": {
+      "file": "photos/D-38-3212.png",
+      "bytes": 23451,
+      "yougileFileId": "aedd6220-0054-4607-a168-ae09310e13bf"
+    },
+    "productDraft": {
+      "sku": "3212",
+      "name": "Шезлонг 3   (по смете без размера)",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Свободностоящий\nНет\nСогласовать\n\nПозиция в ЗНП: 16",
+      "dimensions": {
+        "length": 1000,
+        "width": 700,
+        "height": 1400,
+        "unit": "мм"
+      },
+      "hasDrawing": true,
+      "notes": "YouGile D-38\nКолонка: В работе\nПоз: 16\nЧертежи 3212 ЗНП 11-26 поз 16",
+      "source": {
+        "yougileTaskId": "85382550-c02f-4c4e-808a-06c6f4590bc0",
+        "taskCode": "D-38",
+        "columnName": "В работе",
+        "photoFile": "photos/D-38-3212.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "d15ee977-db43-4200-8be2-3ade275f8367",
+    "taskCode": "D-40",
+    "taskCommon": "ID-92",
+    "columnId": "592a445c-1775-4200-8186-cea8bf0b03ef",
+    "columnName": "В работе",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3215 ЗНП 11-26 поз 18",
+    "deadlineMs": 1790337600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "18",
+      "sku": "3215",
+      "name": "Экотропа 120 м.п.",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "?х1200х?",
+      "finish": "Бетонирование\nНет\nСогласовать",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 18",
+      "photoFileId": "7557751d-acf1-4631-bb75-8f6d7bacef50"
+    },
+    "photo": {
+      "file": "photos/D-40-3215.png",
+      "bytes": 26794,
+      "yougileFileId": "7557751d-acf1-4631-bb75-8f6d7bacef50"
+    },
+    "productDraft": {
+      "sku": "3215",
+      "name": "Экотропа 120 м.п.",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 18",
+      "installation": "Бетонирование",
+      "hasDrawing": true,
+      "notes": "YouGile D-40\nКолонка: В работе\nПоз: 18\nЧертежи 3215 ЗНП 11-26 поз 18",
+      "source": {
+        "yougileTaskId": "d15ee977-db43-4200-8be2-3ade275f8367",
+        "taskCode": "D-40",
+        "columnName": "В работе",
+        "photoFile": "photos/D-40-3215.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "bc0a7b02-dae3-4a90-a788-0c404b11afb5",
+    "taskCode": "D-58",
+    "taskCommon": "ID-130",
+    "columnId": "592a445c-1775-4200-8186-cea8bf0b03ef",
+    "columnName": "В работе",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3409 ЗНП 17-26 поз 2",
+    "deadlineMs": 1789041600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "2",
+      "sku": "3409",
+      "name": "Скамейка",
+      "qty": 6,
+      "unit": "шт",
+      "dimsRaw": "1500x610x860",
+      "dimensions": {
+        "length": 1500,
+        "width": 610,
+        "height": 860,
+        "unit": "мм"
+      },
+      "finish": "Материал: Сосна, металл",
+      "description": "Материал: Сосна, металл\n\nПозиция в ЗНП: 2",
+      "photoFileId": "4dd65e53-2cc9-40ad-bc50-b69c6b66815a"
+    },
+    "photo": {
+      "file": "photos/D-58-3409.png",
+      "bytes": 18397,
+      "yougileFileId": "4dd65e53-2cc9-40ad-bc50-b69c6b66815a"
+    },
+    "productDraft": {
+      "sku": "3409",
+      "name": "Скамейка",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Материал: Сосна, металл\n\nПозиция в ЗНП: 2",
+      "dimensions": {
+        "length": 1500,
+        "width": 610,
+        "height": 860,
+        "unit": "мм"
+      },
+      "hasDrawing": true,
+      "notes": "YouGile D-58\nКолонка: В работе\nПоз: 2\nЧертежи 3409 ЗНП 17-26 поз 2",
+      "source": {
+        "yougileTaskId": "bc0a7b02-dae3-4a90-a788-0c404b11afb5",
+        "taskCode": "D-58",
+        "columnName": "В работе",
+        "photoFile": "photos/D-58-3409.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "d1184d10-294f-497f-8a66-2c42d57cb9dd",
+    "taskCode": "D-64",
+    "taskCommon": "ID-147",
+    "columnId": "592a445c-1775-4200-8186-cea8bf0b03ef",
+    "columnName": "В работе",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3308 ЗНП 18-26 поз 1 Ограждение Староминский район",
+    "deadlineMs": 1786363200000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 0,
+    "passport": {
+      "parseWeak": true
+    },
+    "photo": null,
+    "productDraft": null
+  },
+  {
+    "yougileTaskId": "934f06c6-e03c-4384-9727-3470656a2097",
+    "taskCode": "D-16",
+    "taskCommon": "ID-68",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3503 ЗНП 10-26 поз 1",
+    "deadlineMs": 1790337600000,
+    "completed": true,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 5,
+    "passport": {
+      "parseWeak": false,
+      "position": "1",
+      "sku": "3503",
+      "name": "Урна",
+      "qty": 3,
+      "unit": "шт",
+      "dimsRaw": "445х445х690",
+      "dimensions": {
+        "length": 445,
+        "width": 445,
+        "height": 690,
+        "unit": "мм"
+      },
+      "finish": "Анкер\nНет\nСогласовать",
+      "description": "Анкер\nНет\nСогласовать\n\nПозиция в ЗНП: 1",
+      "photoFileId": "63a7f621-fe03-4a0a-9efe-8552c76c1757"
+    },
+    "photo": {
+      "file": "photos/D-16-3503.png",
+      "bytes": 10646,
+      "yougileFileId": "63a7f621-fe03-4a0a-9efe-8552c76c1757"
+    },
+    "productDraft": {
+      "sku": "3503",
+      "name": "Урна",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Анкер\nНет\nСогласовать\n\nПозиция в ЗНП: 1",
+      "dimensions": {
+        "length": 445,
+        "width": 445,
+        "height": 690,
+        "unit": "мм"
+      },
+      "hasDrawing": true,
+      "notes": "YouGile D-16\nКолонка: Завершены\nПоз: 1\nЧертежи 3503 ЗНП 10-26 поз 1",
+      "source": {
+        "yougileTaskId": "934f06c6-e03c-4384-9727-3470656a2097",
+        "taskCode": "D-16",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-16-3503.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "e67f71ee-bd0f-492e-8759-50b0893e3030",
+    "taskCode": "D-18",
+    "taskCommon": "ID-70",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3203 ЗНП 10-26 поз 3",
+    "deadlineMs": 1790337600000,
+    "completed": true,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "0f3f27bce720"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "3",
+      "sku": "3203",
+      "name": "Деревянный мост из лиственницы",
+      "qty": 2,
+      "unit": "шт",
+      "dimsRaw": "3000х1500х?",
+      "finish": "Бетонирование\nНет\nСогласовать",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 3",
+      "photoFileId": "8fa41b4e-b0ae-4151-8958-54cd84d7f911"
+    },
+    "photo": {
+      "file": "photos/D-18-3203.png",
+      "bytes": 25026,
+      "yougileFileId": "8fa41b4e-b0ae-4151-8958-54cd84d7f911"
+    },
+    "productDraft": {
+      "sku": "3203",
+      "name": "Деревянный мост из лиственницы",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 3",
+      "installation": "Бетонирование",
+      "hasDrawing": true,
+      "notes": "YouGile D-18\nКолонка: Завершены\nПоз: 3\nЧертежи 3203 ЗНП 10-26 поз 3",
+      "source": {
+        "yougileTaskId": "e67f71ee-bd0f-492e-8759-50b0893e3030",
+        "taskCode": "D-18",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-18-3203.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "561df1d1-6307-40c0-94c6-28b953044926",
+    "taskCode": "D-22",
+    "taskCommon": "ID-74",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3905 ЗНП 10-26 поз 7",
+    "deadlineMs": 1790337600000,
+    "completed": true,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "7",
+      "sku": "3905",
+      "name": "Арт объект: Деревянные указатели",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "1100х?х1200",
+      "finish": "Бетонирование\nНет\nСогласовать",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 7",
+      "photoFileId": "8dda65d1-0704-406f-b2fa-fb8320744be6"
+    },
+    "photo": {
+      "file": "photos/D-22-3905.png",
+      "bytes": 16615,
+      "yougileFileId": "8dda65d1-0704-406f-b2fa-fb8320744be6"
+    },
+    "productDraft": {
+      "sku": "3905",
+      "name": "Арт объект: Деревянные указатели",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 7",
+      "installation": "Бетонирование",
+      "hasDrawing": true,
+      "notes": "YouGile D-22\nКолонка: Завершены\nПоз: 7\nЧертежи 3905 ЗНП 10-26 поз 7",
+      "source": {
+        "yougileTaskId": "561df1d1-6307-40c0-94c6-28b953044926",
+        "taskCode": "D-22",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-22-3905.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "fb608fb4-c304-4c57-9a2f-3082618f4134",
+    "taskCode": "D-34",
+    "taskCommon": "ID-86",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3406 ЗНП 11-26 поз 11.2",
+    "deadlineMs": 1790337600000,
+    "completed": true,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 4,
+    "passport": {
+      "parseWeak": true,
+      "position": null,
+      "sku": null,
+      "name": "11.2",
+      "qty": 3406,
+      "unit": "шт",
+      "dimsRaw": null,
+      "finish": "Скамья для шахматного стола\n4\nшт\n?х?х?\nАнкер\nНет\nСогласовать",
+      "description": "Скамья для шахматного стола\n4\nшт\n?х?х?\nАнкер\nНет\nСогласовать",
+      "photoFileId": "ecad9fe1-070c-4e0b-8f4b-52a30af097b0"
+    },
+    "photo": {
+      "file": "photos/D-34-nosku.png",
+      "bytes": 8150,
+      "yougileFileId": "ecad9fe1-070c-4e0b-8f4b-52a30af097b0"
+    },
+    "productDraft": null
+  },
+  {
+    "yougileTaskId": "b457ff9f-06b2-40c0-b095-e09ec2b79bff",
+    "taskCode": "D-33",
+    "taskCommon": "ID-85",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3601 ЗНП 11-26 поз 11.1",
+    "deadlineMs": 1790337600000,
+    "completed": true,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 3,
+    "passport": {
+      "parseWeak": true,
+      "position": null,
+      "sku": null,
+      "name": "11.1",
+      "qty": 3601,
+      "unit": "шт",
+      "dimsRaw": null,
+      "finish": "Шахматный стол\n2\nшт\n?х?х?\nАнкер\nНет\nСогласовать",
+      "description": "Шахматный стол\n2\nшт\n?х?х?\nАнкер\nНет\nСогласовать",
+      "photoFileId": "635eb740-1136-41e3-9d6a-2edfe0ccb489"
+    },
+    "photo": {
+      "file": "photos/D-33-nosku.png",
+      "bytes": 9662,
+      "yougileFileId": "635eb740-1136-41e3-9d6a-2edfe0ccb489"
+    },
+    "productDraft": null
+  },
+  {
+    "yougileTaskId": "bee4c684-64a8-4481-8425-d135b8dd252b",
+    "taskCode": "D-32",
+    "taskCommon": "ID-84",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3210 ЗНП 11-26 поз 10",
+    "deadlineMs": 1790337600000,
+    "completed": true,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 3,
+    "passport": {
+      "parseWeak": false,
+      "position": "10",
+      "sku": "3210",
+      "name": "Игровой элемент 3 (смета)",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "2700х1100х900",
+      "dimensions": {
+        "length": 2700,
+        "width": 1100,
+        "height": 900,
+        "unit": "мм"
+      },
+      "finish": "Бетонирование\nНет\nСогласовать",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 10",
+      "photoFileId": "a23a76f7-8c30-4c98-ae0a-ee8edc420450"
+    },
+    "photo": {
+      "file": "photos/D-32-3210.png",
+      "bytes": 3503,
+      "yougileFileId": "a23a76f7-8c30-4c98-ae0a-ee8edc420450"
+    },
+    "productDraft": {
+      "sku": "3210",
+      "name": "Игровой элемент 3 (смета)",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 10",
+      "dimensions": {
+        "length": 2700,
+        "width": 1100,
+        "height": 900,
+        "unit": "мм"
+      },
+      "installation": "Бетонирование",
+      "hasDrawing": true,
+      "notes": "YouGile D-32\nКолонка: Завершены\nПоз: 10\nЧертежи 3210 ЗНП 11-26 поз 10",
+      "source": {
+        "yougileTaskId": "bee4c684-64a8-4481-8425-d135b8dd252b",
+        "taskCode": "D-32",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-32-3210.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "105aa823-4df3-414e-a3f3-e4f7cb853a3b",
+    "taskCode": "D-21",
+    "taskCommon": "ID-73",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3204 ЗНП 10-26 поз 6",
+    "deadlineMs": 1790337600000,
+    "completed": true,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "0f3f27bce720"
+    },
+    "chatMessageCount": 3,
+    "passport": {
+      "parseWeak": false,
+      "position": "6",
+      "sku": "3204",
+      "name": "Арка",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "4500х?х4500",
+      "finish": "Бетонирование\nНет\nСогласовать",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 6",
+      "photoFileId": "e6fee679-02eb-4e4e-bee0-c4a7521eaf71"
+    },
+    "photo": {
+      "file": "photos/D-21-3204.png",
+      "bytes": 24034,
+      "yougileFileId": "e6fee679-02eb-4e4e-bee0-c4a7521eaf71"
+    },
+    "productDraft": {
+      "sku": "3204",
+      "name": "Арка",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 6",
+      "installation": "Бетонирование",
+      "hasDrawing": true,
+      "notes": "YouGile D-21\nКолонка: Завершены\nПоз: 6\nЧертежи 3204 ЗНП 10-26 поз 6",
+      "source": {
+        "yougileTaskId": "105aa823-4df3-414e-a3f3-e4f7cb853a3b",
+        "taskCode": "D-21",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-21-3204.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "4fd09776-6129-46e3-9008-9420ec308085",
+    "taskCode": "D-19",
+    "taskCommon": "ID-71",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3405 ЗНП 10-26 поз 4",
+    "deadlineMs": 1790337600000,
+    "completed": true,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "0f3f27bce720"
+    },
+    "chatMessageCount": 3,
+    "passport": {
+      "parseWeak": false,
+      "position": "4",
+      "sku": "3405",
+      "name": "Скамья Улитка",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "3000х2000х3000",
+      "dimensions": {
+        "length": 3000,
+        "width": 2000,
+        "height": 3000,
+        "unit": "мм"
+      },
+      "finish": "Бетонирование\nНет\nСогласовать",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 4",
+      "photoFileId": "99efa4cf-3029-4f1b-b404-eeb674aa0678"
+    },
+    "photo": {
+      "file": "photos/D-19-3405.png",
+      "bytes": 14726,
+      "yougileFileId": "99efa4cf-3029-4f1b-b404-eeb674aa0678"
+    },
+    "productDraft": {
+      "sku": "3405",
+      "name": "Скамья Улитка",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 4",
+      "dimensions": {
+        "length": 3000,
+        "width": 2000,
+        "height": 3000,
+        "unit": "мм"
+      },
+      "installation": "Бетонирование",
+      "hasDrawing": true,
+      "notes": "YouGile D-19\nКолонка: Завершены\nПоз: 4\nЧертежи 3405 ЗНП 10-26 поз 4",
+      "source": {
+        "yougileTaskId": "4fd09776-6129-46e3-9008-9420ec308085",
+        "taskCode": "D-19",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-19-3405.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "716a9a24-76a4-40fd-b1ec-5f5847c2fd9b",
+    "taskCode": "D-23",
+    "taskCommon": "ID-75",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3206 ЗНП 10-26 поз 8",
+    "deadlineMs": 1790337600000,
+    "completed": true,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "0f3f27bce720"
+    },
+    "chatMessageCount": 4,
+    "passport": {
+      "parseWeak": false,
+      "position": "8",
+      "sku": "3206",
+      "name": "Качели 2",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "3000х1000х2000",
+      "dimensions": {
+        "length": 3000,
+        "width": 1000,
+        "height": 2000,
+        "unit": "мм"
+      },
+      "finish": "Бетонирование\nНет\nСогласовать",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 8",
+      "photoFileId": "604ff19a-bf46-4089-8dc8-2a0c43405103"
+    },
+    "photo": {
+      "file": "photos/D-23-3206.png",
+      "bytes": 8161,
+      "yougileFileId": "604ff19a-bf46-4089-8dc8-2a0c43405103"
+    },
+    "productDraft": {
+      "sku": "3206",
+      "name": "Качели 2",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 8",
+      "dimensions": {
+        "length": 3000,
+        "width": 1000,
+        "height": 2000,
+        "unit": "мм"
+      },
+      "installation": "Бетонирование",
+      "hasDrawing": true,
+      "notes": "YouGile D-23\nКолонка: Завершены\nПоз: 8\nЧертежи 3206 ЗНП 10-26 поз 8",
+      "source": {
+        "yougileTaskId": "716a9a24-76a4-40fd-b1ec-5f5847c2fd9b",
+        "taskCode": "D-23",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-23-3206.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "045791e0-be41-406a-8252-ba03a919902a",
+    "taskCode": "D-4",
+    "taskCommon": "ID-56",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3401 ЗНП 5-26 поз 1.2",
+    "deadlineMs": 1782907200000,
+    "completed": true,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 3,
+    "passport": {
+      "parseWeak": true,
+      "position": null,
+      "sku": null,
+      "name": "1.2",
+      "qty": 3401,
+      "unit": "шт",
+      "dimsRaw": null,
+      "finish": "Скамейка\n6\nшт\n3000х?х?\nАнкер\nНет\nМет RAL 9005Согласовать",
+      "description": "Скамейка\n6\nшт\n3000х?х?\nАнкер\nНет\nМет RAL 9005Согласовать",
+      "photoFileId": "2604b0ab-12bf-4fd2-a40e-dde568c27021"
+    },
+    "photo": {
+      "file": "photos/D-4-nosku.png",
+      "bytes": 35886,
+      "yougileFileId": "2604b0ab-12bf-4fd2-a40e-dde568c27021"
+    },
+    "productDraft": null
+  },
+  {
+    "yougileTaskId": "cf1f54b7-bf5b-406a-a91b-56156420502b",
+    "taskCode": "D-3",
+    "taskCommon": "ID-55",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3102 ЗНП 5-26 поз 1.1",
+    "deadlineMs": 1782907200000,
+    "completed": true,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 3,
+    "passport": {
+      "parseWeak": true,
+      "position": null,
+      "sku": null,
+      "name": "1.1",
+      "qty": 3102,
+      "unit": "шт",
+      "dimsRaw": null,
+      "finish": "Пергола\n6\nшт\n5000х3000х1500\nБетонирование\nНет\nМет RAL 9005Согласовать",
+      "description": "Пергола\n6\nшт\n5000х3000х1500\nБетонирование\nНет\nМет RAL 9005Согласовать",
+      "photoFileId": "702e18f3-9288-4530-a718-c729caae3d6d"
+    },
+    "photo": {
+      "file": "photos/D-3-nosku.png",
+      "bytes": 29926,
+      "yougileFileId": "702e18f3-9288-4530-a718-c729caae3d6d"
+    },
+    "productDraft": null
+  },
+  {
+    "yougileTaskId": "7e9d86dd-80f1-42a4-9007-a0917ac1e40d",
+    "taskCode": "D-5",
+    "taskCommon": "ID-57",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3501 ЗНП 5-26 поз 1.3",
+    "deadlineMs": 1782907200000,
+    "completed": true,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 4,
+    "passport": {
+      "parseWeak": true,
+      "position": null,
+      "sku": null,
+      "name": "1.3",
+      "qty": 3501,
+      "unit": "шт",
+      "dimsRaw": null,
+      "finish": "Урна\n6\nшт\n?х?х?\nАнкер\nНет\nМет RAL 9005Согласовать",
+      "description": "Урна\n6\nшт\n?х?х?\nАнкер\nНет\nМет RAL 9005Согласовать",
+      "photoFileId": "a4b0890c-658c-4105-99a0-a5ad6a0fe2fe"
+    },
+    "photo": {
+      "file": "photos/D-5-nosku.png",
+      "bytes": 20160,
+      "yougileFileId": "a4b0890c-658c-4105-99a0-a5ad6a0fe2fe"
+    },
+    "productDraft": null
+  },
+  {
+    "yougileTaskId": "033f7717-7c05-41d6-87bd-71b2b4a530b3",
+    "taskCode": "D-7",
+    "taskCommon": "ID-59",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3103 ЗНП 7-26 поз 1",
+    "deadlineMs": 1785585600000,
+    "completed": true,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 3,
+    "passport": {
+      "parseWeak": false,
+      "position": "1",
+      "sku": "3103",
+      "name": "Пергола Г-образная",
+      "qty": 5,
+      "unit": "шт",
+      "dimsRaw": "3000х1200х3000",
+      "dimensions": {
+        "length": 3000,
+        "width": 1200,
+        "height": 3000,
+        "unit": "мм"
+      },
+      "finish": "Бетонирование\nСогласование",
+      "description": "Бетонирование\nСогласование\n\nПозиция в ЗНП: 1",
+      "photoFileId": "3c6cde66-8636-4aab-941d-4703fda1a471"
+    },
+    "photo": {
+      "file": "photos/D-7-3103.png",
+      "bytes": 17647,
+      "yougileFileId": "3c6cde66-8636-4aab-941d-4703fda1a471"
+    },
+    "productDraft": {
+      "sku": "3103",
+      "name": "Пергола Г-образная",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Бетонирование\nСогласование\n\nПозиция в ЗНП: 1",
+      "dimensions": {
+        "length": 3000,
+        "width": 1200,
+        "height": 3000,
+        "unit": "мм"
+      },
+      "installation": "Бетонирование",
+      "hasDrawing": true,
+      "notes": "YouGile D-7\nКолонка: Завершены\nПоз: 1\nЧертежи 3103 ЗНП 7-26 поз 1",
+      "source": {
+        "yougileTaskId": "033f7717-7c05-41d6-87bd-71b2b4a530b3",
+        "taskCode": "D-7",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-7-3103.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "90d909ba-1d5c-46d0-b718-2e425204f127",
+    "taskCode": "D-20",
+    "taskCommon": "ID-72",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3205 ЗНП 10-26 поз 5",
+    "deadlineMs": 1790337600000,
+    "completed": true,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "0f3f27bce720"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "5",
+      "sku": "3205",
+      "name": "Качели городские Wood",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "3000х700х2550",
+      "dimensions": {
+        "length": 3000,
+        "width": 700,
+        "height": 2550,
+        "unit": "мм"
+      },
+      "finish": "Бетонирование\nНет\nСогласовать",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 5",
+      "photoFileId": "7605d9e5-482b-4026-9586-0e17b89b604c"
+    },
+    "photo": {
+      "file": "photos/D-20-3205.png",
+      "bytes": 3516,
+      "yougileFileId": "7605d9e5-482b-4026-9586-0e17b89b604c"
+    },
+    "productDraft": {
+      "sku": "3205",
+      "name": "Качели городские Wood",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 5",
+      "dimensions": {
+        "length": 3000,
+        "width": 700,
+        "height": 2550,
+        "unit": "мм"
+      },
+      "installation": "Бетонирование",
+      "hasDrawing": true,
+      "notes": "YouGile D-20\nКолонка: Завершены\nПоз: 5\nЧертежи 3205 ЗНП 10-26 поз 5",
+      "source": {
+        "yougileTaskId": "90d909ba-1d5c-46d0-b718-2e425204f127",
+        "taskCode": "D-20",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-20-3205.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "96052137-06db-47c0-bef5-fad70b4045bc",
+    "taskCode": "D-17",
+    "taskCommon": "ID-69",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3404 ЗНП 10-26 поз 2",
+    "deadlineMs": 1790337600000,
+    "completed": true,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "2",
+      "sku": "3404",
+      "name": "Скамья Ultu",
+      "qty": 3,
+      "unit": "шт",
+      "dimsRaw": "2100х870х900",
+      "dimensions": {
+        "length": 2100,
+        "width": 870,
+        "height": 900,
+        "unit": "мм"
+      },
+      "finish": "Анкер\nНет\nСогласовать",
+      "description": "Анкер\nНет\nСогласовать\n\nПозиция в ЗНП: 2",
+      "photoFileId": "da4f15f7-a89b-4576-b2b7-62b1fd55282a"
+    },
+    "photo": {
+      "file": "photos/D-17-3404.png",
+      "bytes": 14919,
+      "yougileFileId": "da4f15f7-a89b-4576-b2b7-62b1fd55282a"
+    },
+    "productDraft": {
+      "sku": "3404",
+      "name": "Скамья Ultu",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Анкер\nНет\nСогласовать\n\nПозиция в ЗНП: 2",
+      "dimensions": {
+        "length": 2100,
+        "width": 870,
+        "height": 900,
+        "unit": "мм"
+      },
+      "hasDrawing": true,
+      "notes": "YouGile D-17\nКолонка: Завершены\nПоз: 2\nЧертежи 3404 ЗНП 10-26 поз 2",
+      "source": {
+        "yougileTaskId": "96052137-06db-47c0-bef5-fad70b4045bc",
+        "taskCode": "D-17",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-17-3404.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "ee80c1af-8869-4f33-a549-d04031fb0060",
+    "taskCode": "D-1",
+    "taskCommon": "ID-53",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3201 ЗНП 2-26 поз 1",
+    "deadlineMs": 1781524800000,
+    "completed": true,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 7,
+    "passport": {
+      "parseWeak": true,
+      "position": null,
+      "sku": null,
+      "name": null,
+      "qty": null,
+      "unit": "шт",
+      "dimsRaw": null,
+      "finish": "",
+      "photoFileId": "4d7768f3-3d36-4b80-b403-b9999700f4c4"
+    },
+    "photo": {
+      "file": "photos/D-1-nosku.png",
+      "bytes": 85478,
+      "yougileFileId": "4d7768f3-3d36-4b80-b403-b9999700f4c4"
+    },
+    "productDraft": null
+  },
+  {
+    "yougileTaskId": "0b495309-5827-4d0d-8cf6-8098a1a70a1e",
+    "taskCode": "D-48",
+    "taskCommon": "ID-118",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3505 ЗНП 15-26 поз 5",
+    "deadlineMs": 1785931200000,
+    "completed": true,
+    "archived": false,
+    "stickers": {},
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": true,
+      "position": "5",
+      "sku": "3505",
+      "name": null,
+      "qty": null,
+      "unit": "Модена - Уличные урны",
+      "dimsRaw": null,
+      "finish": "2\nшт\n385×385×460\nНесущий элемент: материал метал. Сидение: древесина хвойных пород обработанная спец. защитным маслом. Наличее кованных элементовhttps://rtbaza.ru/catalog/litter-bins/kovka/modena",
+      "description": "2\nшт\n385×385×460\nНесущий элемент: материал метал. Сидение: древесина хвойных пород обработанная спец. защитным маслом. Наличее кованных элементовhttps://rtbaza.ru/catalog/litter-bins/kovka/modena\n\nПозиция в ЗНП: 5",
+      "photoFileId": "a139d9c0-9d1f-4ca3-bd9c-2176304b509f"
+    },
+    "photo": {
+      "file": "photos/D-48-3505.png",
+      "bytes": 41409,
+      "yougileFileId": "a139d9c0-9d1f-4ca3-bd9c-2176304b509f"
+    },
+    "productDraft": {
+      "sku": "3505",
+      "name": "Чертежи 3505 ЗНП 15-26 поз 5",
+      "kind": "good",
+      "unit": "Модена - Уличные урны",
+      "status": "active",
+      "description": "2\nшт\n385×385×460\nНесущий элемент: материал метал. Сидение: древесина хвойных пород обработанная спец. защитным маслом. Наличее кованных элементовhttps://rtbaza.ru/catalog/litter-bins/kovka/modena\n\nПозиция в ЗНП: 5",
+      "hasDrawing": true,
+      "notes": "YouGile D-48\nКолонка: Завершены\nПоз: 5\nЧертежи 3505 ЗНП 15-26 поз 5",
+      "source": {
+        "yougileTaskId": "0b495309-5827-4d0d-8cf6-8098a1a70a1e",
+        "taskCode": "D-48",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-48-3505.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "f055d177-e070-4f3b-920b-eeeb1c7c4a59",
+    "taskCode": "D-47",
+    "taskCommon": "ID-117",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3407 ЗНП 15-26 поз 4",
+    "deadlineMs": 1785931200000,
+    "completed": true,
+    "archived": false,
+    "stickers": {},
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "4",
+      "sku": "3407",
+      "name": "Бордо - Кованые скамейки (сосна)",
+      "qty": 2,
+      "unit": "шт",
+      "dimsRaw": "2000×675×840",
+      "dimensions": {
+        "length": 2000,
+        "width": 675,
+        "height": 840,
+        "unit": "мм"
+      },
+      "finish": "Несущий элемент: материал метал. Сидение: древесина хвойных пород обработанная спец. защитным маслом. Наличее кованных элементовhttps://dor-m.ru/catalog/detail/1809/?ysclid=mqugs6gzzx668143777&oid=1811",
+      "description": "Несущий элемент: материал метал. Сидение: древесина хвойных пород обработанная спец. защитным маслом. Наличее кованных элементовhttps://dor-m.ru/catalog/detail/1809/?ysclid=mqugs6gzzx668143777&oid=1811\n\nПозиция в ЗНП: 4",
+      "photoFileId": "c2f719af-05d4-4094-a109-6d0f66270022"
+    },
+    "photo": {
+      "file": "photos/D-47-3407.png",
+      "bytes": 42919,
+      "yougileFileId": "c2f719af-05d4-4094-a109-6d0f66270022"
+    },
+    "productDraft": {
+      "sku": "3407",
+      "name": "Бордо - Кованые скамейки (сосна)",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Несущий элемент: материал метал. Сидение: древесина хвойных пород обработанная спец. защитным маслом. Наличее кованных элементовhttps://dor-m.ru/catalog/detail/1809/?ysclid=mqugs6gzzx668143777&oid=1811\n\nПозиция в ЗНП: 4",
+      "dimensions": {
+        "length": 2000,
+        "width": 675,
+        "height": 840,
+        "unit": "мм"
+      },
+      "hasDrawing": true,
+      "notes": "YouGile D-47\nКолонка: Завершены\nПоз: 4\nЧертежи 3407 ЗНП 15-26 поз 4",
+      "source": {
+        "yougileTaskId": "f055d177-e070-4f3b-920b-eeeb1c7c4a59",
+        "taskCode": "D-47",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-47-3407.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "2d071696-281a-4a1b-926d-2a710f5e0990",
+    "taskCode": "D-52",
+    "taskCommon": "ID-122",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3303 ЗНП 15-26 поз 9",
+    "deadlineMs": 1785931200000,
+    "completed": true,
+    "archived": false,
+    "stickers": {},
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "9",
+      "sku": "3303",
+      "name": "Ограждение тип 6 H-500 (МФ 95.6.01)",
+      "qty": 23,
+      "unit": "шт",
+      "dimsRaw": "2000х?х500",
+      "finish": "",
+      "description": "Позиция в ЗНП: 9",
+      "photoFileId": "2bd38927-d6ca-4b9e-af00-dd7a28fa5513"
+    },
+    "photo": {
+      "file": "photos/D-52-3303.png",
+      "bytes": 15229,
+      "yougileFileId": "2bd38927-d6ca-4b9e-af00-dd7a28fa5513"
+    },
+    "productDraft": {
+      "sku": "3303",
+      "name": "Ограждение тип 6 H-500 (МФ 95.6.01)",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Позиция в ЗНП: 9",
+      "hasDrawing": true,
+      "notes": "YouGile D-52\nКолонка: Завершены\nПоз: 9\nЧертежи 3303 ЗНП 15-26 поз 9",
+      "source": {
+        "yougileTaskId": "2d071696-281a-4a1b-926d-2a710f5e0990",
+        "taskCode": "D-52",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-52-3303.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "29074e19-126b-42b0-ba2f-ac6806c77a45",
+    "taskCode": "D-55",
+    "taskCommon": "ID-125",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3306 ЗНП 15-26 поз.11",
+    "deadlineMs": 1785931200000,
+    "completed": true,
+    "archived": false,
+    "stickers": {},
+    "chatMessageCount": 1,
+    "passport": {
+      "parseWeak": true,
+      "position": null,
+      "sku": null,
+      "name": "Столбик угловой",
+      "qty": null,
+      "unit": "шт",
+      "dimsRaw": null,
+      "finish": "",
+      "photoFileId": null
+    },
+    "photo": null,
+    "productDraft": null
+  },
+  {
+    "yougileTaskId": "0bfe9a6e-530b-4f20-840d-af763a597efe",
+    "taskCode": "D-54",
+    "taskCommon": "ID-124",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3305 ЗНП 15-26 поз 11",
+    "deadlineMs": 1785931200000,
+    "completed": true,
+    "archived": false,
+    "stickers": {},
+    "chatMessageCount": 1,
+    "passport": {
+      "parseWeak": false,
+      "position": "11",
+      "sku": "3305",
+      "name": "Столбик промежуточный",
+      "qty": 22,
+      "unit": "шт",
+      "dimsRaw": null,
+      "finish": "?х?х?",
+      "description": "?х?х?\n\nПозиция в ЗНП: 11",
+      "photoFileId": "9b310d53-83a6-4a3e-a690-84df10924a1c"
+    },
+    "photo": {
+      "file": "photos/D-54-3305.png",
+      "bytes": 2774,
+      "yougileFileId": "9b310d53-83a6-4a3e-a690-84df10924a1c"
+    },
+    "productDraft": {
+      "sku": "3305",
+      "name": "Столбик промежуточный",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "?х?х?\n\nПозиция в ЗНП: 11",
+      "hasDrawing": true,
+      "notes": "YouGile D-54\nКолонка: Завершены\nПоз: 11\nЧертежи 3305 ЗНП 15-26 поз 11",
+      "source": {
+        "yougileTaskId": "0bfe9a6e-530b-4f20-840d-af763a597efe",
+        "taskCode": "D-54",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-54-3305.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "50a7b8aa-ad54-47ca-9419-356592256086",
+    "taskCode": "D-6",
+    "taskCommon": "ID-58",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3402 ЗНП 6-26 поз 1",
+    "deadlineMs": 1785412800000,
+    "completed": true,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "1",
+      "sku": "3402",
+      "name": "Лавочка",
+      "qty": 12,
+      "unit": "шт",
+      "dimsRaw": "2100х640х770",
+      "dimensions": {
+        "length": 2100,
+        "width": 640,
+        "height": 770,
+        "unit": "мм"
+      },
+      "finish": "Анкер\nСогласовать\nДерево лиственница",
+      "description": "Анкер\nСогласовать\nДерево лиственница\n\nПозиция в ЗНП: 1",
+      "photoFileId": "905224cb-c8f3-4b0d-b401-78058937d78f"
+    },
+    "photo": {
+      "file": "photos/D-6-3402.png",
+      "bytes": 31404,
+      "yougileFileId": "905224cb-c8f3-4b0d-b401-78058937d78f"
+    },
+    "productDraft": {
+      "sku": "3402",
+      "name": "Лавочка",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Анкер\nСогласовать\nДерево лиственница\n\nПозиция в ЗНП: 1",
+      "dimensions": {
+        "length": 2100,
+        "width": 640,
+        "height": 770,
+        "unit": "мм"
+      },
+      "hasDrawing": true,
+      "notes": "YouGile D-6\nКолонка: Завершены\nПоз: 1\nЧертежи 3402 ЗНП 6-26 поз 1",
+      "source": {
+        "yougileTaskId": "50a7b8aa-ad54-47ca-9419-356592256086",
+        "taskCode": "D-6",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-6-3402.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "5d367a00-c1ef-46af-8dc3-ed9e8b72d31e",
+    "taskCode": "D-53",
+    "taskCommon": "ID-123",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3304 ЗНП 15-26 поз 10",
+    "deadlineMs": 1785931200000,
+    "completed": true,
+    "archived": false,
+    "stickers": {},
+    "chatMessageCount": 1,
+    "passport": {
+      "parseWeak": false,
+      "position": "10",
+      "sku": "3304",
+      "name": "Столбик конечный",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": null,
+      "finish": "?х?х?",
+      "description": "?х?х?\n\nПозиция в ЗНП: 10",
+      "photoFileId": "f801e08f-b90f-4023-81c2-5e79d4858457"
+    },
+    "photo": {
+      "file": "photos/D-53-3304.png",
+      "bytes": 2376,
+      "yougileFileId": "f801e08f-b90f-4023-81c2-5e79d4858457"
+    },
+    "productDraft": {
+      "sku": "3304",
+      "name": "Столбик конечный",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "?х?х?\n\nПозиция в ЗНП: 10",
+      "hasDrawing": true,
+      "notes": "YouGile D-53\nКолонка: Завершены\nПоз: 10\nЧертежи 3304 ЗНП 15-26 поз 10",
+      "source": {
+        "yougileTaskId": "5d367a00-c1ef-46af-8dc3-ed9e8b72d31e",
+        "taskCode": "D-53",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-53-3304.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "ce417f0e-f6b0-487e-8e62-f3fac567b724",
+    "taskCode": "D-8",
+    "taskCommon": "ID-60",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 1101 ЗНП 7-26 поз 2",
+    "deadlineMs": 1785585600000,
+    "completed": true,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "2",
+      "sku": "1101",
+      "name": "Ворота мини-футбольные",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": null,
+      "finish": "пара\n3000х1000х2000\nсвободностоящий\nRAL 9003",
+      "description": "пара\n3000х1000х2000\nсвободностоящий\nRAL 9003\n\nПозиция в ЗНП: 2",
+      "photoFileId": "659234e4-425c-4a3c-ae50-ba5038cbf96e"
+    },
+    "photo": {
+      "file": "photos/D-8-1101.png",
+      "bytes": 18729,
+      "yougileFileId": "659234e4-425c-4a3c-ae50-ba5038cbf96e"
+    },
+    "productDraft": {
+      "sku": "1101",
+      "name": "Ворота мини-футбольные",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "пара\n3000х1000х2000\nсвободностоящий\nRAL 9003\n\nПозиция в ЗНП: 2",
+      "hasDrawing": true,
+      "notes": "YouGile D-8\nКолонка: Завершены\nПоз: 2\nЧертежи 1101 ЗНП 7-26 поз 2",
+      "source": {
+        "yougileTaskId": "ce417f0e-f6b0-487e-8e62-f3fac567b724",
+        "taskCode": "D-8",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-8-1101.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "3f0316d1-a4e2-40bd-b57a-6570e5cddca7",
+    "taskCode": "D-43",
+    "taskCommon": "ID-96",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 1118 ЗНП 13-26 поз 1",
+    "deadlineMs": 1783425600000,
+    "completed": true,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "1",
+      "sku": "1118",
+      "name": "Стойки волейбольные с механизмом плавнойрегулировки высоты и лебедочным механизмомнатяжения",
+      "qty": 1,
+      "unit": "компл",
+      "dimsRaw": null,
+      "finish": "Бетонирование\nD трубы 89 мм, (для прямого бетонирования, без закладных стаканов)",
+      "description": "Бетонирование\nD трубы 89 мм, (для прямого бетонирования, без закладных стаканов)\n\nПозиция в ЗНП: 1",
+      "photoFileId": "cb69c72a-3a24-4621-8049-ff7fcef01208"
+    },
+    "photo": {
+      "file": "photos/D-43-1118.png",
+      "bytes": 19171,
+      "yougileFileId": "cb69c72a-3a24-4621-8049-ff7fcef01208"
+    },
+    "productDraft": {
+      "sku": "1118",
+      "name": "Стойки волейбольные с механизмом плавнойрегулировки высоты и лебедочным механизмомнатяжения",
+      "kind": "good",
+      "unit": "компл",
+      "status": "active",
+      "description": "Бетонирование\nD трубы 89 мм, (для прямого бетонирования, без закладных стаканов)\n\nПозиция в ЗНП: 1",
+      "installation": "Бетонирование",
+      "hasDrawing": true,
+      "notes": "YouGile D-43\nКолонка: Завершены\nПоз: 1\nЧертежи 1118 ЗНП 13-26 поз 1",
+      "source": {
+        "yougileTaskId": "3f0316d1-a4e2-40bd-b57a-6570e5cddca7",
+        "taskCode": "D-43",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-43-1118.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "fe6f626e-9066-410a-afe0-122b30e7c48e",
+    "taskCode": "D-51",
+    "taskCommon": "ID-121",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 5201 ЗНП 15-26 поз 8",
+    "deadlineMs": 1785931200000,
+    "completed": true,
+    "archived": false,
+    "stickers": {},
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "8",
+      "sku": "5201",
+      "name": "Карусель",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "1500х1500х?",
+      "finish": "Подбираем аналоги из Дикома",
+      "description": "Подбираем аналоги из Дикома\n\nПозиция в ЗНП: 8",
+      "photoFileId": "0d230f21-bf1b-48f0-b068-0271a4b9360c"
+    },
+    "photo": {
+      "file": "photos/D-51-5201.png",
+      "bytes": 9540,
+      "yougileFileId": "0d230f21-bf1b-48f0-b068-0271a4b9360c"
+    },
+    "productDraft": {
+      "sku": "5201",
+      "name": "Карусель",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Подбираем аналоги из Дикома\n\nПозиция в ЗНП: 8",
+      "hasDrawing": true,
+      "notes": "YouGile D-51\nКолонка: Завершены\nПоз: 8\nЧертежи 5201 ЗНП 15-26 поз 8",
+      "source": {
+        "yougileTaskId": "fe6f626e-9066-410a-afe0-122b30e7c48e",
+        "taskCode": "D-51",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-51-5201.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "4dba4970-31bb-4f79-a1e3-f8603190fd0b",
+    "taskCode": "D-9",
+    "taskCommon": "ID-61",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3801 ЗНП 8-26 поз 1",
+    "deadlineMs": 1784980800000,
+    "completed": true,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "1",
+      "sku": "3801",
+      "name": "Велопарковки на территории МО \"Город Майкоп\"",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "?х550х630",
+      "finish": "нержавеющая сталь AISI304, боковые опоры: камень с рисунком, диаметр трубы основания: 50,8мм, диаметр трубы колец:25мм, количество мест 5, размеры: ширина между кольцами 200мм, диаметр колец 55см",
+      "description": "нержавеющая сталь AISI304, боковые опоры: камень с рисунком, диаметр трубы основания: 50,8мм, диаметр трубы колец:25мм, количество мест 5, размеры: ширина между кольцами 200мм, диаметр колец 55см\n\nПозиция в ЗНП: 1",
+      "photoFileId": "6fb17b31-e0c4-4a30-afb9-99f115d049c4"
+    },
+    "photo": {
+      "file": "photos/D-9-3801.png",
+      "bytes": 23474,
+      "yougileFileId": "6fb17b31-e0c4-4a30-afb9-99f115d049c4"
+    },
+    "productDraft": {
+      "sku": "3801",
+      "name": "Велопарковки на территории МО \"Город Майкоп\"",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "нержавеющая сталь AISI304, боковые опоры: камень с рисунком, диаметр трубы основания: 50,8мм, диаметр трубы колец:25мм, количество мест 5, размеры: ширина между кольцами 200мм, диаметр колец 55см\n\nПозиция в ЗНП: 1",
+      "hasDrawing": true,
+      "notes": "YouGile D-9\nКолонка: Завершены\nПоз: 1\nЧертежи 3801 ЗНП 8-26 поз 1",
+      "source": {
+        "yougileTaskId": "4dba4970-31bb-4f79-a1e3-f8603190fd0b",
+        "taskCode": "D-9",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-9-3801.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "3fc5a10a-052f-4930-933c-50ce98ea2f63",
+    "taskCode": "D-10",
+    "taskCommon": "ID-62",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3802 ЗНП 8-26 поз 2",
+    "deadlineMs": 1784980800000,
+    "completed": true,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "2",
+      "sku": "3802",
+      "name": "Велопарковки на территории МО \"Город Майкоп\"",
+      "qty": 3,
+      "unit": "шт",
+      "dimsRaw": "270х80х900",
+      "dimensions": {
+        "length": 270,
+        "width": 80,
+        "height": 900,
+        "unit": "мм"
+      },
+      "finish": "материал:  нержавеющая сталь AISI304",
+      "description": "материал:  нержавеющая сталь AISI304\n\nПозиция в ЗНП: 2",
+      "photoFileId": "fbef9337-01e0-4f8e-ae0e-dca9f305bcf0"
+    },
+    "photo": {
+      "file": "photos/D-10-3802.png",
+      "bytes": 16485,
+      "yougileFileId": "fbef9337-01e0-4f8e-ae0e-dca9f305bcf0"
+    },
+    "productDraft": {
+      "sku": "3802",
+      "name": "Велопарковки на территории МО \"Город Майкоп\"",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "материал:  нержавеющая сталь AISI304\n\nПозиция в ЗНП: 2",
+      "dimensions": {
+        "length": 270,
+        "width": 80,
+        "height": 900,
+        "unit": "мм"
+      },
+      "hasDrawing": true,
+      "notes": "YouGile D-10\nКолонка: Завершены\nПоз: 2\nЧертежи 3802 ЗНП 8-26 поз 2",
+      "source": {
+        "yougileTaskId": "3fc5a10a-052f-4930-933c-50ce98ea2f63",
+        "taskCode": "D-10",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-10-3802.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "d5305bac-0f04-42b4-b3be-05f8645bf790",
+    "taskCode": "D-56",
+    "taskCommon": "ID-126",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 3408 ЗНП 16-26 поз 15",
+    "deadlineMs": 1785585600000,
+    "completed": true,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 7,
+    "passport": {
+      "parseWeak": false,
+      "position": "15",
+      "sku": "3408",
+      "name": "Скамья парковая",
+      "qty": 6,
+      "unit": "шт",
+      "dimsRaw": "2000х1030х800",
+      "dimensions": {
+        "length": 2000,
+        "width": 1030,
+        "height": 800,
+        "unit": "мм"
+      },
+      "finish": "анкер",
+      "description": "анкер\n\nПозиция в ЗНП: 15",
+      "photoFileId": "2127b856-9ce1-479a-8da5-e0b042caf971"
+    },
+    "photo": {
+      "file": "photos/D-56-3408.png",
+      "bytes": 14036,
+      "yougileFileId": "2127b856-9ce1-479a-8da5-e0b042caf971"
+    },
+    "productDraft": {
+      "sku": "3408",
+      "name": "Скамья парковая",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "анкер\n\nПозиция в ЗНП: 15",
+      "dimensions": {
+        "length": 2000,
+        "width": 1030,
+        "height": 800,
+        "unit": "мм"
+      },
+      "hasDrawing": true,
+      "notes": "YouGile D-56\nКолонка: Завершены\nПоз: 15\nЧертежи 3408 ЗНП 16-26 поз 15",
+      "source": {
+        "yougileTaskId": "d5305bac-0f04-42b4-b3be-05f8645bf790",
+        "taskCode": "D-56",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-56-3408.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "405eeb51-0679-440f-930e-6d2d6ae32790",
+    "taskCode": "D-44",
+    "taskCommon": "ID-114",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 6104 ЗНП 15-26 поз 1",
+    "deadlineMs": 1785931200000,
+    "completed": true,
+    "archived": false,
+    "stickers": {},
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "1",
+      "sku": "6104",
+      "name": "Игровой комплекс",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": null,
+      "finish": "?х?х?\nРазмеры и наполнение по видео, конструктив и дизайн из имеющихся решений.",
+      "description": "?х?х?\nРазмеры и наполнение по видео, конструктив и дизайн из имеющихся решений.\n\nПозиция в ЗНП: 1",
+      "photoFileId": "16fa34c1-dcea-4f20-8278-44157fa05a86"
+    },
+    "photo": {
+      "file": "photos/D-44-6104.png",
+      "bytes": 25203,
+      "yougileFileId": "16fa34c1-dcea-4f20-8278-44157fa05a86"
+    },
+    "productDraft": {
+      "sku": "6104",
+      "name": "Игровой комплекс",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "?х?х?\nРазмеры и наполнение по видео, конструктив и дизайн из имеющихся решений.\n\nПозиция в ЗНП: 1",
+      "hasDrawing": true,
+      "notes": "YouGile D-44\nКолонка: Завершены\nПоз: 1\nЧертежи 6104 ЗНП 15-26 поз 1",
+      "source": {
+        "yougileTaskId": "405eeb51-0679-440f-930e-6d2d6ae32790",
+        "taskCode": "D-44",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-44-6104.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "6a8ee51e-e5fe-4cc1-8401-5767ec99578e",
+    "taskCode": "D-50",
+    "taskCommon": "ID-120",
+    "columnId": "9060a110-e740-4436-8b15-00a97bb2ea76",
+    "columnName": "Завершены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 5401 ЗНП 15-26 поз 7",
+    "deadlineMs": 1785931200000,
+    "completed": true,
+    "archived": false,
+    "stickers": {},
+    "chatMessageCount": 2,
+    "passport": {
+      "parseWeak": false,
+      "position": "7",
+      "sku": "5401",
+      "name": "Качалка",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": null,
+      "finish": "?х?х?\nПодбираем аналоги из Дикома",
+      "description": "?х?х?\nПодбираем аналоги из Дикома\n\nПозиция в ЗНП: 7",
+      "photoFileId": "a5281f76-2d49-4b25-8ae9-7b2b10fb006c"
+    },
+    "photo": {
+      "file": "photos/D-50-5401.png",
+      "bytes": 9202,
+      "yougileFileId": "a5281f76-2d49-4b25-8ae9-7b2b10fb006c"
+    },
+    "productDraft": {
+      "sku": "5401",
+      "name": "Качалка",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "?х?х?\nПодбираем аналоги из Дикома\n\nПозиция в ЗНП: 7",
+      "hasDrawing": true,
+      "notes": "YouGile D-50\nКолонка: Завершены\nПоз: 7\nЧертежи 5401 ЗНП 15-26 поз 7",
+      "source": {
+        "yougileTaskId": "6a8ee51e-e5fe-4cc1-8401-5767ec99578e",
+        "taskCode": "D-50",
+        "columnName": "Завершены",
+        "photoFile": "photos/D-50-5401.png"
+      }
+    }
+  },
+  {
+    "yougileTaskId": "5cc5b105-d06a-412e-a2bd-76d78597654b",
+    "taskCode": "D-27",
+    "taskCommon": "ID-79",
+    "columnId": "b15692a0-905b-4e1a-8408-aaee9c506c1a",
+    "columnName": "Приостановлены",
+    "boardId": "3f29cdfe-6f8f-450c-b465-0e00b6913173",
+    "titleRaw": "Чертежи 6101 ЗНП 11-26 поз 5",
+    "deadlineMs": 1790337600000,
+    "completed": false,
+    "archived": false,
+    "stickers": {
+      "d6f3b45d-e665-4520-9668-88b4c4b94e92": "3282cf0f2a02"
+    },
+    "chatMessageCount": 13,
+    "passport": {
+      "parseWeak": false,
+      "position": "5",
+      "sku": "6101",
+      "name": "Игровой комплекс 1       10500х4400 (смета)",
+      "qty": 1,
+      "unit": "шт",
+      "dimsRaw": "10500х?х4400",
+      "finish": "Бетонирование\nНет\nСогласовать",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 5",
+      "photoFileId": "c35e3f0c-504f-4024-bca6-fe0ca2eb7704"
+    },
+    "photo": {
+      "file": "photos/D-27-6101.png",
+      "bytes": 4863,
+      "yougileFileId": "c35e3f0c-504f-4024-bca6-fe0ca2eb7704"
+    },
+    "productDraft": {
+      "sku": "6101",
+      "name": "Игровой комплекс 1       10500х4400 (смета)",
+      "kind": "good",
+      "unit": "шт",
+      "status": "active",
+      "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 5",
+      "installation": "Бетонирование",
+      "hasDrawing": true,
+      "notes": "YouGile D-27\nКолонка: Приостановлены\nПоз: 5\nЧертежи 6101 ЗНП 11-26 поз 5",
+      "source": {
+        "yougileTaskId": "5cc5b105-d06a-412e-a2bd-76d78597654b",
+        "taskCode": "D-27",
+        "columnName": "Приостановлены",
+        "photoFile": "photos/D-27-6101.png"
+      }
+    }
+  }
+]

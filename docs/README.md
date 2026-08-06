@@ -74,6 +74,7 @@ docs/
 | **Референсы** | `reference/` (5 файлов) | HTML-прототипы, скриншоты, примеры документов |
 | **Интеграции** | `openhands-cloud-api.md` | Подключение к OpenHands Cloud API, делегирование задач другому AI-агенту |
 | **Интеграции** | [`yougile/`](./yougile/README.md) | YouGile (UGL) REST API v2 — карточки/доски, legacy-источники на D:, env |
+| **Интеграции** | [`yougile/GAP-AND-REPLACEMENT.md`](./yougile/GAP-AND-REPLACEMENT.md) | Аудит пробелов vs «Рабочая»; где вести в kppdf, чтобы уйти от UGL |
 
 ## Рекомендуемый порядок чтения для AI-агента / разработчика
 

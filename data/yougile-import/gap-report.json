@@ -1,0 +1,451 @@
+{
+  "generatedAt": "2026-08-06T20:43:59.939Z",
+  "mongoProductCount": 3,
+  "yougileUniqueSkus": 55,
+  "summary": {
+    "missing_product": 55,
+    "product_no_photo": 0,
+    "ok": 0,
+    "parse_weak_tasks": 10
+  },
+  "rows": [
+    {
+      "sku": "1101",
+      "name": "Ворота мини-футбольные",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "1118",
+      "name": "Стойки волейбольные с механизмом плавнойрегулировки высоты и лебедочным механизмомнатяжения",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3101",
+      "name": "Пергола с подвесами (1 гнездо, 1 скамейка со спинкой)",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3103",
+      "name": "Пергола Г-образная",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3104",
+      "name": "Пергола с качелью",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3202",
+      "name": "Нестационарные торговые объекты",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3203",
+      "name": "Деревянный мост из лиственницы",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3204",
+      "name": "Арка",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3205",
+      "name": "Качели городские Wood",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3206",
+      "name": "Качели 2",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3207",
+      "name": "Стелла (смета)",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3208",
+      "name": "Качели 1    3200х2200 (смета)",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3209",
+      "name": "Качели 3 (смета)",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3210",
+      "name": "Игровой элемент 3 (смета)",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3211",
+      "name": "Арт объект: деревянный гамак (смета)",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3212",
+      "name": "Шезлонг 3   (по смете без размера)",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3213",
+      "name": "Арт объект: Деревянные качели 2800 (смета)",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3214",
+      "name": "Прочие МАФы 4 (смета)",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3215",
+      "name": "Экотропа 120 м.п.",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3216",
+      "name": "Ограждение деревянное 28 м.п.",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3303",
+      "name": "Ограждение тип 6 H-500 (МФ 95.6.01)",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3304",
+      "name": "Столбик конечный",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3305",
+      "name": "Столбик промежуточный",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3402",
+      "name": "Лавочка",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3403",
+      "name": "Скамья городская                                                                               (Скамья \"CHOICE SHADOW \")",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3404",
+      "name": "Скамья Ultu",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3405",
+      "name": "Скамья Улитка",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3407",
+      "name": "Бордо - Кованые скамейки (сосна)",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3408",
+      "name": "Скамья парковая",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3409",
+      "name": "Скамейка",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3502",
+      "name": "Урна уличная (\"CHOICE SHADOW \")",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3503",
+      "name": "Урна",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3504",
+      "name": "Арт Объект: деревянная урна",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3505",
+      "name": "Чертежи 3505 ЗНП 15-26 поз 5",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3506",
+      "name": "Урна",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3801",
+      "name": "Велопарковки на территории МО \"Город Майкоп\"",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3802",
+      "name": "Велопарковки на территории МО \"Город Майкоп\"",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3903",
+      "name": "Чертежи 3903 ЗНП 12-26 поз 1",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3904",
+      "name": "\"Навигационная стела\" в границах общественной территории \"Уникальная лесопарковая зона\"Мэздах\" Табло информационное водонепроницаемое",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3905",
+      "name": "Арт объект: Деревянные указатели",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3906",
+      "name": "Деревянная табличка на цепи",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "3907",
+      "name": "Стенд",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "5101",
+      "name": "Качели двойные со спинкой",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "5201",
+      "name": "Карусель",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "5202",
+      "name": "Карусель",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "5301",
+      "name": "Качалка-балансир \"Мишка\"",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "5302",
+      "name": "Качалка-балансир",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "5401",
+      "name": "Качалка",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "5402",
+      "name": "Качалка мотоцикл",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "6001",
+      "name": "Игровой элемент 2     2600х2200 (смета)",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "6101",
+      "name": "Игровой комплекс 1       10500х4400 (смета)",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "6102",
+      "name": "Игровой комплекс 2    5000х2200 (смета)",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "6103",
+      "name": "Игровой комплекс 3  6100х4100 (смета)",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "6104",
+      "name": "Игровой комплекс",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    },
+    {
+      "sku": "6105",
+      "name": "Детский игровой комплекс",
+      "status": "missing_product",
+      "hasLocalPhoto": true,
+      "mongoName": null
+    }
+  ],
+  "parseWeakTasks": [
+    {
+      "taskCode": "D-12",
+      "title": "Чертежи 3903 ЗНП 12-26 поз 1",
+      "column": "На распределении"
+    },
+    {
+      "taskCode": "D-64",
+      "title": "Чертежи 3308 ЗНП 18-26 поз 1 Ограждение Староминский район",
+      "column": "В работе"
+    },
+    {
+      "taskCode": "D-34",
+      "title": "Чертежи 3406 ЗНП 11-26 поз 11.2",
+      "column": "Завершены"
+    },
+    {
+      "taskCode": "D-33",
+      "title": "Чертежи 3601 ЗНП 11-26 поз 11.1",
+      "column": "Завершены"
+    },
+    {
+      "taskCode": "D-4",
+      "title": "Чертежи 3401 ЗНП 5-26 поз 1.2",
+      "column": "Завершены"
+    },
+    {
+      "taskCode": "D-3",
+      "title": "Чертежи 3102 ЗНП 5-26 поз 1.1",
+      "column": "Завершены"
+    },
+    {
+      "taskCode": "D-5",
+      "title": "Чертежи 3501 ЗНП 5-26 поз 1.3",
+      "column": "Завершены"
+    },
+    {
+      "taskCode": "D-1",
+      "title": "Чертежи 3201 ЗНП 2-26 поз 1",
+      "column": "Завершены"
+    },
+    {
+      "taskCode": "D-48",
+      "title": "Чертежи 3505 ЗНП 15-26 поз 5",
+      "column": "Завершены"
+    },
+    {
+      "taskCode": "D-55",
+      "title": "Чертежи 3306 ЗНП 15-26 поз.11",
+      "column": "Завершены"
+    }
+  ],
+  "note": "Local Mongo only has 3 DEMO SKUs without photos — all YouGile articles are missing_product until seed."
+}
