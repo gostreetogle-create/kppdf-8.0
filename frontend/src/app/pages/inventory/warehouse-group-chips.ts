@@ -6,7 +6,8 @@ import type { GroupChip } from '../../shared/page/pi-group-workspace.component';
  * use these extra params when they render filter chips themselves.
  */
 export interface QueryGroupChip extends GroupChip {
-  queryParams?: Record<string, string | number | boolean | null>;
+  /** Align with GroupChip — router query values are string | null. */
+  queryParams?: Record<string, string | null>;
 }
 
 export const WAREHOUSE_TOC_CHIPS: readonly GroupChip[] = [
