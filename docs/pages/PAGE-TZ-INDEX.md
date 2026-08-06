@@ -60,8 +60,10 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 
 | Route | Page doc | TZs |
 |-------|----------|-----|
-| `/inventory` | inventory-dashboard.page.md | **UX-301 DONE**, **MATERIALS-308 DONE** (material в low-stock) |
-| `/storage-items` | storage-items.page.md | **UX-301 DONE**, **UX-305 DONE**, **MATERIALS-308 DONE** (material-позиции + фильтр) |
+| `/inventory` | inventory-dashboard.page.md | **UX-301 DONE**; **WAREHOUSE-UX-301** (dedupe TOC buttons) |
+| `/storage-items` | storage-items.page.md | **UX-301 DONE**, **UX-305 DONE**, **MATERIALS-308 DONE** (фильтр склада ✅) |
+| `/stock-movements` | stock-movements.page.md | type filter ✅; **WAREHOUSE-UX-301** +warehouse filter |
+| `/warehouses` | warehouses.page.md (pending doc) | CRUD; **WAREHOUSE-UX-301** type help |
 | `/stock-movements` | stock-movements.page.md | **UX-301 DONE**, Z-001 (backend) |
 
 ## Admin / auth
