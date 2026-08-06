@@ -1,3 +1,15 @@
+## [2026-08-06] — TZ-PRODUCTION-303 DONE: Production Cockpit shell + Gantt plan-estimate
+**Исполнитель:** Cursor (implement + land; PO «добиваем до конца»)
+**Статус:** DONE on main (scoped)
+**Что сделано кратко:** `/production` dense cockpit; orders rail (ACTIVE_COMMERCIAL + selected RO); Gantt bars по `WorkType.days` через FE facade (composition-first); ×N display; PAGE_KEYS+seed+`production:read`; director на GET products/modules/work-types; lifecycle north-star в PO-DIARY/design.
+**Gates:** FE jest production|gantt|cockpit 14/14 PASS; FE tsc PASS; BE tsc build PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-303.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-303-gantt-board-page.lock`
+**Checklist:** `docs/agent-checklists/TZ-PRODUCTION-303.md`
+**Next:** PO browser smoke `/production`; then TZ-PRODUCTION-304+.
+
+---
+
 ## [2026-08-06] — TZ-CATALOG-311 DONE: Unified CompositionTree + CompositionEditor
 **Исполнитель:** Buffy (implement) + Cursor (PASS / land / closeout)
 **Статус:** DONE on main

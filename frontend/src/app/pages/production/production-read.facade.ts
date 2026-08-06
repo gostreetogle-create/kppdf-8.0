@@ -1,0 +1,303 @@
+/**
+ * TZ-PRODUCTION-303 lock H — thin FE read facade.
+ * Order → Product → direct modules → WorkType.days.
+ * Never touches ProductionOrder / OrderTask.
+ */
+import { Injectable, inject, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+import { OrdersService, type Order, type OrderStatus } from '../orders/orders.service';
+import { ProductsService, type Product } from '../../shared/services/products.service';
+import {
+  ProductModulesService,
+  type CompositionLine,
+  type ProductModule,
+  type WorkTypeInModule,
+} from '../../shared/services/pi-product-modules.service';
+import { WorkTypesService, type WorkType } from '../../shared/services/pi-work-types.service';
+import {
+  buildGanttBars,
+  type GanttBar,
+  type OrderEstimateInput,
+  type DirectModuleRef,
+  type ModuleWorkTypeRef,
+} from './gantt-bar.model';
+
+export interface ProductionReadState {
+  loading: boolean;
+  error: string | null;
+  warnings: string[];
+  orders: Order[];
+  bars: GanttBar[];
+}
+
+function refId(value: string | { _id?: string } | null | undefined): string | null {
+  if (!value) return null;
+  if (typeof value === 'string') return value;
+  return value._id ?? null;
+}
+
+function sortLines(lines: CompositionLine[]): CompositionLine[] {
+  return [...lines].sort((a, b) => {
+    const so = (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+    if (so !== 0) return so;
+    return String(a._id).localeCompare(String(b._id));
+  });
+}
+
+/** Composition-first dual-read: non-empty composition wins over legacy productModuleIds. */
+export function extractDirectModuleIds(product: Product): {
+  moduleIds: string[];
+  usedLegacy: boolean;
+} {
+  const composition = product.composition ?? [];
+  if (composition.length > 0) {
+    const moduleIds = sortLines(composition)
+      .filter((l) => l.lineType === 'module')
+      .map((l) => l.refId)
+      .filter(Boolean);
+    return { moduleIds, usedLegacy: false };
+  }
+
+  const legacy = product.productModuleIds ?? [];
+  const moduleIds = legacy
+    .map((m) => (typeof m === 'string' ? m : m._id))
+    .filter((id): id is string => !!id);
+  return { moduleIds, usedLegacy: moduleIds.length > 0 };
+}
+
+function mapModuleWorkTypes(
+  mod: ProductModule,
+  workTypeById: Map<string, WorkType>,
+): ModuleWorkTypeRef[] {
+  const rows: WorkTypeInModule[] = [...(mod.workTypes ?? [])].sort(
+    (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0),
+  );
+  return rows.map((wt, idx) => {
+    const id = refId(wt.workTypeId) ?? `unknown-wt-${idx}`;
+    const populated = typeof wt.workTypeId === 'object' ? wt.workTypeId : null;
+    const catalog = workTypeById.get(id);
+    const name = populated?.name ?? catalog?.name ?? id;
+    const days = catalog?.days ?? populated?.days ?? null;
+    return {
+      workTypeId: id,
+      workTypeName: name,
+      estimatedHours: wt.estimatedHours,
+      days,
+      sortOrder: wt.sortOrder ?? idx,
+    };
+  });
+}
+
+@Injectable()
+export class ProductionReadFacade {
+  private readonly ordersApi = inject(OrdersService);
+  private readonly productsApi = inject(ProductsService);
+  private readonly modulesApi = inject(ProductModulesService);
+  private readonly workTypesApi = inject(WorkTypesService);
+
+  private readonly productCache = new Map<string, Product | null>();
+  private readonly moduleCache = new Map<string, ProductModule | null>();
+  private workTypesCache: Map<string, WorkType> | null = null;
+  private workTypesInflight: Promise<Map<string, WorkType>> | null = null;
+  private productInflight = new Map<string, Promise<Product | null>>();
+  private moduleInflight = new Map<string, Promise<ProductModule | null>>();
+
+  readonly state = signal<ProductionReadState>({
+    loading: false,
+    error: null,
+    warnings: [],
+    orders: [],
+    bars: [],
+  });
+
+  clearCaches(): void {
+    this.productCache.clear();
+    this.moduleCache.clear();
+    this.workTypesCache = null;
+    this.workTypesInflight = null;
+    this.productInflight.clear();
+    this.moduleInflight.clear();
+  }
+
+  async loadOrders(): Promise<Order[]> {
+    this.patch({ loading: true, error: null });
+    const res = await firstValueFrom(this.ordersApi.list());
+    if (!res.ok) {
+      this.patch({
+        loading: false,
+        error: 'Не удалось загрузить заказы',
+        orders: [],
+        bars: [],
+      });
+      return [];
+    }
+    const orders = res.data ?? [];
+    this.patch({ loading: false, orders });
+    return orders;
+  }
+
+  /**
+   * Build estimate bars for one order, or for all provided orders (active multi).
+   */
+  async loadBarsForOrders(orders: Order[]): Promise<GanttBar[]> {
+    this.patch({ loading: true, error: null, warnings: [] });
+    const warnings: string[] = [];
+    try {
+      const workTypes = await this.getWorkTypesMap();
+      const bars: GanttBar[] = [];
+
+      for (const order of orders) {
+        const input = await this.buildOrderEstimate(order, workTypes, warnings);
+        bars.push(...buildGanttBars(input));
+      }
+
+      this.patch({ loading: false, bars, warnings: [...warnings] });
+      return bars;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Ошибка загрузки оценки';
+      this.patch({ loading: false, error: message, bars: [] });
+      return [];
+    }
+  }
+
+  private patch(partial: Partial<ProductionReadState>): void {
+    this.state.update((s) => ({ ...s, ...partial }));
+  }
+
+  private async getWorkTypesMap(): Promise<Map<string, WorkType>> {
+    if (this.workTypesCache) return this.workTypesCache;
+    if (this.workTypesInflight) return this.workTypesInflight;
+
+    this.workTypesInflight = (async () => {
+      const res = await firstValueFrom(this.workTypesApi.list({ activeOnly: false }));
+      const map = new Map<string, WorkType>();
+      if (res.ok) {
+        for (const wt of res.data?.items ?? []) {
+          map.set(wt._id, wt);
+        }
+      }
+      this.workTypesCache = map;
+      return map;
+    })();
+
+    try {
+      return await this.workTypesInflight;
+    } finally {
+      this.workTypesInflight = null;
+    }
+  }
+
+  private async getProduct(id: string, warnings: string[]): Promise<Product | null> {
+    if (this.productCache.has(id)) return this.productCache.get(id) ?? null;
+    const inflight = this.productInflight.get(id);
+    if (inflight) return inflight;
+
+    const promise = (async () => {
+      const res = await firstValueFrom(this.productsApi.findById(id));
+      if (!res.ok || !res.data) {
+        warnings.push(`Изделие ${id} недоступно`);
+        this.productCache.set(id, null);
+        return null;
+      }
+      this.productCache.set(id, res.data);
+      return res.data;
+    })();
+
+    this.productInflight.set(id, promise);
+    try {
+      return await promise;
+    } finally {
+      this.productInflight.delete(id);
+    }
+  }
+
+  private async getModule(id: string, warnings: string[]): Promise<ProductModule | null> {
+    if (this.moduleCache.has(id)) return this.moduleCache.get(id) ?? null;
+    const inflight = this.moduleInflight.get(id);
+    if (inflight) return inflight;
+
+    const promise = (async () => {
+      const res = await firstValueFrom(this.modulesApi.findById(id));
+      if (!res.ok || !res.data) {
+        warnings.push(`Модуль ${id} недоступен`);
+        this.moduleCache.set(id, null);
+        return null;
+      }
+      this.moduleCache.set(id, res.data);
+      return res.data;
+    })();
+
+    this.moduleInflight.set(id, promise);
+    try {
+      return await promise;
+    } finally {
+      this.moduleInflight.delete(id);
+    }
+  }
+
+  private async buildOrderEstimate(
+    order: Order,
+    workTypes: Map<string, WorkType>,
+    warnings: string[],
+  ): Promise<OrderEstimateInput> {
+    const items = order.items ?? [];
+    const estimateItems = [];
+
+    for (let orderItemIndex = 0; orderItemIndex < items.length; orderItemIndex++) {
+      const item = items[orderItemIndex];
+      const productId = item.productId;
+      if (!productId) {
+        warnings.push(`Заказ ${order.number}: позиция ${orderItemIndex + 1} без изделия`);
+        continue;
+      }
+
+      const product = await this.getProduct(productId, warnings);
+      if (!product) continue;
+
+      const { moduleIds, usedLegacy } = extractDirectModuleIds(product);
+      if (usedLegacy) {
+        warnings.push(
+          `Изделие «${product.name}»: состав через legacy productModuleIds (dual-read)`,
+        );
+      }
+      if (moduleIds.length === 0) {
+        warnings.push(`Изделие «${product.name}»: нет прямых модулей`);
+      }
+
+      const modules: DirectModuleRef[] = [];
+      for (let mi = 0; mi < moduleIds.length; mi++) {
+        const moduleId = moduleIds[mi];
+        const mod = await this.getModule(moduleId, warnings);
+        if (!mod) continue;
+
+        const compositionSort =
+          (product.composition ?? []).find((l) => l.lineType === 'module' && l.refId === moduleId)
+            ?.sortOrder ?? mi;
+
+        modules.push({
+          moduleId: mod._id,
+          moduleName: mod.name,
+          sortOrder: compositionSort,
+          workTypes: mapModuleWorkTypes(mod, workTypes),
+        });
+      }
+
+      estimateItems.push({
+        orderItemIndex,
+        productId,
+        productName: item.productName ?? product.name,
+        quantity: item.quantity ?? 1,
+        modules,
+      });
+    }
+
+    return {
+      orderId: order._id,
+      orderNumber: order.number,
+      status: order.status as OrderStatus,
+      plannedDate: order.plannedDate,
+      date: order.date,
+      items: estimateItems,
+    };
+  }
+}

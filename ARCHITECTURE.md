@@ -122,7 +122,7 @@
 | # | Вопрос | Статус | Контекст |
 |---|--------|--------|---------|
 | 1 | Дубликаты в data model (16 пар) | 📋 Документированы | `docs/data-model.md` § «Дубликаты». Proposal/Quotation, SupplierOrder/PurchaseOrder, Role/Roles и др. требуют консолидации. |
-| 2 | Operational pages — растут | 📋 В работе | Реализованы **9 фич × 11 routes**: materials, organizations, dictionaries, **categories**, products [+ TZ-83 detail], orders, contracts + **TZ-83**: work-types, modules [+ detail]. В плане: warehouse, production, procurement — каждая как list+detail. |
+| 2 | Operational pages — растут | 📋 В работе | Реализованы materials, organizations, dictionaries, categories, products, orders, contracts, work-types, modules, people, **production cockpit `/production` (TZ-PRODUCTION-303: rail + Gantt план-оценка)**. В плане: warehouse hardening, production 304+, procurement. |
 | 3 | E2E тесты не запускались | 📋 Отложено | 7 suites созданы (TZ-17), но не запускались регулярно. Нужен CI pipeline. |
 | 4 | SSR / hydration | ❌ REJECTED | TZ-80 — out of scope. SPA CSR через `start.mjs --prod` static server. |
 | 5 | Browser-use smoke test | ⏳ DEFERRED | TZ-82 — зависит от dev server. Можно запустить независимо через `ng serve`. |

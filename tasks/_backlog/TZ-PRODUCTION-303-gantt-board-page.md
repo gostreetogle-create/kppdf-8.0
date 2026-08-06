@@ -2,10 +2,25 @@
 TZ-PRODUCTION-303: Cockpit shell + orders rail + Gantt bars (Lego #1)
 ═══════════════════════════════════════════════════════════════
 
-STATUS: BACKLOG (parked) — un-park только по PO «стартуем Гант».
+STATUS: DONE (2026-08-06 — landed; archive `tasks/_archive/2026-08/TZ-PRODUCTION-303.done.md`).
+ACTIVE: _(removed)_
+CHECKLIST: `docs/agent-checklists/TZ-PRODUCTION-303.md`
+AUDIT LOCKS: `tasks/_backlog/TZ-PRODUCTION-303-gantt-board-page.audit-2026-08-06.md` (A–J)
 CANON: `tasks/_backlog/TZ-PRODUCTION-300-production-cockpit-lego.md`
 DESIGN: `docs/superpowers/specs/2026-08-06-production-cockpit-lego-design.md`
 SOURCE: shop-customer-lifecycle §2 S5; PO Lego 2026-08-06
+
+### A–J contract summary (frozen)
+
+- **A/C** — 7 real Order statuses; `ACTIVE_COMMERCIAL_ORDER_STATUSES` = draft/confirmed/in_production/ready; no `planned` on Order.
+- **B** — `visualAnchor = plannedDate ?? date ?? today`; sequential visual pack by sortOrder; timezone-safe date-only.
+- **D** — duration = `WorkType.days` only; never convert `estimatedHours`; null/0/invalid → no-term.
+- **E** — no ProductionOrder/OrderTask read/write/infer.
+- **F** — dense `/production`; sticky Gantt labels; no double scroll.
+- **G** — page doc + PAGE-TZ-INDEX + README + SECTION-READINESS + FEATURE §A.
+- **H** — FE facade Orders+Products+Modules+WorkTypes; composition-first dual-read; cache/dedupe; partial warnings.
+- **I** — quantity as `×N` display only; do **not** multiply days; bar id includes occurrence.
+- **J** — PAGE_KEYS.production + seed; route pageKey+`production:read`; director on facade GET Roles.
 
 РОЛЬ АГЕНТА: Frontend (Angular 20) — shell + 2 blocks; thin read API only if missing.
 

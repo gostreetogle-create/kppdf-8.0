@@ -14,7 +14,7 @@ export class WorkTypeController {
   constructor(private readonly service: WorkTypeService, private readonly catalogGraph: CatalogGraphService) {}
 
   @Get()
-  @Roles('admin', 'manager')
+  @Roles('admin', 'director', 'manager')
   findAll(@Query('workCenterId') workCenterId?: string) { return this.service.findAll(workCenterId); }
 
   @Get(':id/where-used')

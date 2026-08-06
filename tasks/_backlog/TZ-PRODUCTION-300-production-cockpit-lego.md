@@ -40,6 +40,10 @@ LOCKED (D1–D4)
 | **D3** | Phase 1 bars = **оценка** из Order + modules + `WorkType.days`; не full Schedule SoT. |
 | **D4** | Child TZ plug into slots: 303 shell+rail+gantt → 304 stuck → 305 check-in → 306 auto → 307 completion. |
 
+**Lifecycle north-star (PO 2026-08-06):** КП → заказ (изделия) → модули/workTypes → Гант
+(автозаполнение людьми **первым**, ручной путь проектировщика **вторым**) → склад/отгрузка.
+Не расширяет Phase 1; successor waves + demo seed при e2e-тестах.
+
 ═══════════════════════════════════════════════════════════════
 ЧТО ДЕЛАТЬ (этот docs-TZ)
 ═══════════════════════════════════════════════════════════════

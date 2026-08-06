@@ -3,7 +3,9 @@
  * `permissions` collection on first start and to validate role updates.
  *
  * Format: `<section>:<action>` where action is read|write|admin.
- * Human RU labels for admin UI: frontend/.../permission-labels.ru.ts
+ * Human RU labels for admin UI: `frontend/src/app/pages/admin/permission-labels.ru.ts`
+ *
+ * When adding a key or page: update `docs/FEATURE-INTEGRATION-CHECKLIST.md` (sections B / A).
  */
 export const PERMISSIONS = [
   { key: 'user:read', section: 'user', action: 'read', description: 'View users' },
@@ -44,6 +46,7 @@ export const PAGE_KEYS = [
   'doc-templates', 'doc-texts', 'doc-tables', 'doc-documents',
   'inventory', 'storage-items', 'stock-movements',
   'people',
+  'production',
   'admin-users', 'admin-roles',
 ] as const;
 

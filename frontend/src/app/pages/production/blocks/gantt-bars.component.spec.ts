@@ -1,0 +1,55 @@
+import { TestBed } from '@angular/core/testing';
+import { GanttBarsComponent } from './gantt-bars.component';
+import type { GanttBar } from '../gantt-bar.model';
+
+describe('GanttBarsComponent', () => {
+  const sample: GanttBar = {
+    id: 'o1:0:p1:m1:wt1:1',
+    orderId: 'o1',
+    orderNumber: 'ORD-1',
+    orderStatus: 'confirmed',
+    orderItemIndex: 0,
+    productId: 'p1',
+    productName: 'Стол',
+    moduleId: 'm1',
+    moduleName: 'Каркас',
+    workTypeId: 'wt1',
+    workTypeName: 'Сварка',
+    occurrence: 1,
+    quantity: 1,
+    quantityLabel: null,
+    days: 2,
+    noTerm: false,
+    startDate: '2026-08-01',
+    endDate: '2026-08-02',
+    usedFallbackToday: false,
+    workerLabel: '—',
+  };
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [GanttBarsComponent],
+    });
+  });
+
+  it('renders legend and a bar with required range', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.textContent).toContain('План-оценка');
+    expect(el.querySelector('[data-test="gantt-legend"]')).toBeTruthy();
+    expect(el.querySelector('[data-test="gantt-bar"]')).toBeTruthy();
+  });
+
+  it('shows empty state when no bars', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', []);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-02');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('состав для оценки пуст');
+  });
+});

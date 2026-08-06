@@ -1,23 +1,23 @@
 # SESSION QUEUE — 2026-08-06 night
 
-**Updated:** 2026-08-06 · **311 + TZD-15 landing** · **PRODUCTION-303 IN WORK (Cursor)**
+**Updated:** 2026-08-06 · **PRODUCTION-303 DONE** · TZD-16 on origin · next: browser smoke PO + 304+ / TZD-16
 
 ## Parallel claims
 
 | Agent | TZ | Zone | Status |
 |-------|-----|------|--------|
-| **#1 FE catalog** | **311** | composition tree | **DONE on main** (land) |
+| **#1 FE catalog** | **311** | composition tree | **DONE on main** |
 | **#2** | warehouse/admin | — | **DONE** — closed |
-| **#3 Desktop** | **TZD-15** → **TZD-16** | `desktop/**` | **15 DONE** — next **TZD-16** (download) |
-| **Cursor** | **PRODUCTION-303** + closeouts | `/production` + docs | **IN WORK** |
+| **#3 Desktop** | **TZD-16** | pairing download | **on origin** (`873a70b`) — confirm closeout |
+| **Cursor** | **PRODUCTION-303** | `/production` cockpit + Gantt | **DONE** (archive + lock) |
 
 ## Later
 
 | TZ | After |
 |----|--------|
 | **315** | optional polish after 311 |
-| **TZD-16** | GO for desktop agent |
-| **PRODUCTION-304+** | after 303 |
+| **PRODUCTION-304+** | after PO browser smoke on 303 |
+| **TZD-16 closeout** | if agent left archive pending |
 
 ## Rules
 

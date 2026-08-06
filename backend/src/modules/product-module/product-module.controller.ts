@@ -13,7 +13,7 @@ export class ProductModuleController {
   constructor(private readonly service: ProductModuleService, private readonly catalogGraph: CatalogGraphService) {}
 
   @Get()
-  @Roles('admin', 'manager')
+  @Roles('admin', 'director', 'manager')
   list(@Query('productId') productId?: string) { return this.service.findAll(productId); }
 
   @Get(':id/where-used')
@@ -50,7 +50,7 @@ export class ProductModuleController {
   getTree(@Param('id') id: string, @Query('maxDepth') maxDepth?: string) { return this.catalogGraph.getTree('module', id, maxDepth === undefined ? MAX_DEPTH : Number(maxDepth)); }
 
   @Get(':id')
-  @Roles('admin', 'manager')
+  @Roles('admin', 'director', 'manager')
   findOne(@Param('id') id: string) { return this.service.findById(id); }
 
   @Post()

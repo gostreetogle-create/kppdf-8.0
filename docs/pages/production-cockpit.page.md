@@ -1,0 +1,78 @@
+# Страница: Производство / Cockpit (`ProductionCockpitPage`)
+
+**Краткое описание:** Lego shell `/production` — слева заказы (rail), справа план-оценка Ганта по `WorkType.days`. Не факт цеха; без ProductionOrder/OrderTask.
+
+### Route
+
+```
+/production — KPPDF — Производство
+```
+
+`data.pageKey = production`, `data.capabilities = ['production:read']`
+
+### Query params
+
+| Параметр | Тип | Назначение |
+|----------|-----|-----------|
+| — | — | (none — всё через сигналы context) |
+
+### API endpoints (read-only facade)
+
+| Метод | Endpoint | Назначение |
+|-------|----------|-----------|
+| GET | `/api/orders` | Список коммерческих заказов |
+| GET | `/api/products/:id` | Изделие + composition (dual-read) |
+| GET | `/api/modules/:id` | Модуль + workTypes |
+| GET | `/api/work-types` | Справочник дней (`days`) |
+
+### Blocks
+
+| Block | Файл | Роль |
+|-------|------|------|
+| orders-rail | `blocks/orders-rail.component.ts` | Список / поиск / «Все активные» |
+| gantt-bars | `blocks/gantt-bars.component.ts` | Timeline-оценка, zoom day/week |
+
+### Services / context
+
+| Сервис | Методы |
+|--------|--------|
+| `ProductionCockpitContext` | selectedOrderId, search, activeOnly, zoom |
+| `ProductionReadFacade` | loadOrders, loadBarsForOrders (cache/dedupe) |
+| `OrdersService` | list() (existing, providedIn root) |
+
+### State (signals)
+
+| Сигнал | Назначение |
+|--------|-----------|
+| `ctx.selectedOrderId` | null = все активные |
+| `ctx.activeOnly` | фильтр ACTIVE_COMMERCIAL_ORDER_STATUSES |
+| `facade.state` | orders / bars / warnings / loading / error |
+
+### Business locks (A–J)
+
+- Duration = `WorkType.days` only; quantity → `×N` display (не умножает дни).
+- `visualAnchor = plannedDate ?? date ?? today`.
+- No `planned` Order status; no ProductionOrder/OrderTask.
+
+### TZ reference
+
+| TZ | Что сделано |
+|----|------------|
+| TZ-PRODUCTION-303 | Shell + rail + gantt + PAGE_KEYS + director read Roles |
+| TZ-PRODUCTION-302 | WorkType.days |
+| TZ-PRODUCTION-304+ | stuck / check-in / auto-chain (plug-ins) |
+
+### Known limitations
+
+- Worker column = «—».
+- Нет drag-reschedule / assign writes / ProductionSchedule SoT.
+- Browser smoke зависит от живого API/Mongo.
+
+### Smoke для PO (после land)
+
+1. Войти как admin (или director/manager с `production` page + `production:read`).
+2. Nav «Производство» → `/production`.
+3. Слева список активных заказов; поиск; галка «Все активные».
+4. Клик по заказу с изделием (модули + workTypes с `days`) → справа полоски «План-оценка».
+5. Заказ без days → штриховка «без срока»; quantity >1 → `×N` без умножения дней.
+6. Dense layout: без двойного скролла страницы.

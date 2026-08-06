@@ -16,6 +16,7 @@ const ADMIN_PAGES = [
   'doc-templates', 'doc-texts', 'doc-tables', 'doc-documents',
   'inventory', 'storage-items', 'stock-movements',
   'people',
+  'production',
   'admin-users', 'admin-roles',
 ] as const;
 
@@ -26,6 +27,7 @@ const DIRECTOR_PAGES = [
   'doc-templates', 'doc-texts', 'doc-tables', 'doc-documents',
   'inventory', 'storage-items', 'stock-movements',
   'people',
+  'production',
   // no admin-*
 ] as const;
 
@@ -36,7 +38,12 @@ const MANAGER_PAGES = [
   'doc-templates', 'doc-texts', 'doc-tables', 'doc-documents',
   'inventory', 'storage-items', 'stock-movements',
   'people',
+  'production',
 ] as const;
+
+/** TZ-PRODUCTION-303 lock J  cockpit FE capability gate for director/manager. */
+const DIRECTOR_PERMISSIONS = ['production:read'] as const;
+const MANAGER_PERMISSIONS = ['production:read'] as const;
 
 const WORKER_PAGES = [
   'doc-texts',
@@ -57,7 +64,7 @@ const SYSTEM_ROLES = [
     name: 'director',
     label: '????????',
     description: 'Full operational access, no user/role management',
-    permissions: [],
+    permissions: [...DIRECTOR_PERMISSIONS],
     isSystem: true,
     sortOrder: 5,
     pages: [...DIRECTOR_PAGES],
@@ -66,7 +73,7 @@ const SYSTEM_ROLES = [
     name: 'manager',
     label: 'Manager',
     description: 'Read/write most resources, no user management',
-    permissions: [],
+    permissions: [...MANAGER_PERMISSIONS],
     isSystem: true,
     sortOrder: 10,
     pages: [...MANAGER_PAGES],
@@ -107,21 +114,31 @@ export class AdminSeed implements OnApplicationBootstrap {
       const existing = await this.roles.findByName(r.name);
       if (existing) {
         // TZ-ACCESS-303: merge newly catalogued pageKeys into system roles
-        // (idempotent ? only adds missing keys, never removes director grants).
+        // (idempotent — only adds missing keys, never removes director grants).
         const desired = [...(r.pages ?? [])];
         const have = new Set(existing.pages ?? []);
         const missing = desired.filter((p) => !have.has(p));
-        if (missing.length > 0) {
+        const desiredPerms = [...(r.permissions ?? [])].filter((p) => p !== '*');
+        const havePerms = new Set(existing.permissions ?? []);
+        const missingPerms = desiredPerms.filter((p) => !havePerms.has(p));
+        if (missing.length > 0 || missingPerms.length > 0) {
           try {
-            await this.roles.update(existing.id, {
-              pages: [...(existing.pages ?? []), ...missing],
-            });
+            const patch: { pages?: string[]; permissions?: string[] } = {};
+            if (missing.length > 0) {
+              patch.pages = [...(existing.pages ?? []), ...missing];
+            }
+            if (missingPerms.length > 0) {
+              patch.permissions = [...(existing.permissions ?? []), ...missingPerms];
+            }
+            await this.roles.update(existing.id, patch);
             this.logger.log(
-              `System role pages merged: ${r.name} (+${missing.join(',')})`,
+              `System role merged: ${r.name}` +
+                (missing.length ? ` pages(+${missing.join(',')})` : '') +
+                (missingPerms.length ? ` perms(+${missingPerms.join(',')})` : ''),
             );
           } catch (err) {
             this.logger.warn(
-              `Could not merge pages for ${r.name}: ${(err as Error).message}`,
+              `Could not merge role ${r.name}: ${(err as Error).message}`,
             );
           }
         }
@@ -163,7 +180,7 @@ export class AdminSeed implements OnApplicationBootstrap {
     }
 
     const username = this.config.get<string>('admin.username') ?? 'admin';
-    // TZ-91 §4 Phase A.4: warn + skip if ADMIN_PASSWORD < 8 chars (avoid weak admin on fresh bootstrap).
+    // TZ-91 4 Phase A.4: warn + skip if ADMIN_PASSWORD < 8 chars (avoid weak admin on fresh bootstrap).
     const password = this.config.get<string>('admin.password') ?? '';
     if (!password || password.length < 8) {
       this.logger.warn(

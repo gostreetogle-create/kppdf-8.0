@@ -36,8 +36,9 @@
 | 19 | **Builder** | `builder.page.md` | `/doc-constructor/builder` | Редактор документа (3-pane) |
 | 20 | **Builder Tool Pane** | `builder-tool-pane.page.md` | _дочерний BuilderPage_ | Левая панель: палитра блоков |
 | 21 | **Builder Inspector** | `builder-inspector.page.md` | _дочерний BuilderPage_ | Правая панель: свойства блока |
+| 22 | **Production Cockpit** | `production-cockpit.page.md` | `/production` | Гант план-оценка (PRODUCTION-303) |
 
-> 19 бизнес-страниц + 2 дочерних компонента = 21 документированы.
+> 20 бизнес-страниц + 2 дочерних компонента = 22 документированы.
 > Playground-страницы (`/kit/*`) сняты — UI showcase больше не в продукте.
 
 ## Правила
@@ -52,4 +53,4 @@
 
 ---
 
-_Создано: 2026-07-19. Актуально: 21/21 бизнес-страниц документированы._
+_Создано: 2026-07-19. Актуально: 22/22 страниц документированы (вкл. Production Cockpit)._

@@ -1,7 +1,9 @@
 # Production Cockpit — Lego shell + Gantt (design)
 
 **Status:** APPROVED direction by PO 2026-08-06 (composability / «Лего»).  
-**Not** an implementation start signal — un-park `TZ-PRODUCTION-303` only when PO says «стартуем Гант» (after catalog 320/311 wave preferred).  
+**303:** **UN-PARKED** 2026-08-06 — IN WORK (`tasks/_active/TZ-PRODUCTION-303.md`).  
+**Locks:** audit A–J (statuses / anchor / days-only / no ProductionOrder / dense / docs / **FE facade** / **quantity ×N** / **director RBAC**).  
+**Color:** colorful OKLCH bars by workType (PO OK).  
 **Canon vision:** `docs/product-vision-lite.md` (Гант = later).  
 **Umbrella TZ:** `tasks/_backlog/TZ-PRODUCTION-300-production-cockpit-lego.md`  
 **First build TZ:** `tasks/_backlog/TZ-PRODUCTION-303-gantt-board-page.md`
@@ -76,6 +78,13 @@ Bars Phase 1 = **оценка** из уже существующих данны�
 UI обязательно помечает: «План-оценка по дням видов работ» (не факт цеха).
 
 Позже (отдельный TZ / Wave): immutable snapshot schedule, auto-layout, manager assign writes.
+
+**PO lifecycle north-star (2026-08-06, не scope 303):**  
+КП (будущий полный раздел) → заказ с изделиями → модули/workTypes → Гант  
+(1) **автозаполнение** свободными людьми по видам работ,  
+(2) **ручной** путь (проектировщик / этап) когда авто нельзя сразу,  
+→ готовность → склад / отгрузка / отгрузочные документы.  
+Cockpit остаётся Lego: подключаем блоки, не переписываем монолит. Демо-seed для e2e переходов — отдельным TZ при тесте.
 
 ### 3.5 Out of scope (cockpit Phase 1)
 

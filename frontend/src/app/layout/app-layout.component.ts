@@ -21,6 +21,7 @@ import {
   Palette,
   Warehouse,
   Users,
+  Factory,
 } from 'lucide-angular';
 
 /**
@@ -107,6 +108,13 @@ const NAV_CATEGORIES: NavCategory[] = [
       { path: '/contracts', pageKey: 'contracts', label: 'Договоры' },
       { path: '/orders', pageKey: 'orders', label: 'Заказы' },
     ],
+  },
+  {
+    id: 'production',
+    label: 'Производство',
+    icon: Factory,
+    entryPath: '/production',
+    items: [{ path: '/production', pageKey: 'production', label: 'Производство' }],
   },
   {
     // TZ-UX-301: warehouse routes existed without menu entry — restore.
@@ -533,6 +541,7 @@ function isDenseWorkspaceUrl(url: string): boolean {
     '/proposals',
     '/contracts',
     '/orders',
+    '/production',
     '/inventory',
     '/storage-items',
     '/stock-movements',

@@ -235,6 +235,15 @@ export const routes: Routes = [
         title: 'KPPDF — Заказы',
       },
       {
+        // TZ-PRODUCTION-303 — Production Cockpit (estimate Gantt).
+        path: 'production',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'production', capabilities: ['production:read'] },
+        loadComponent: () =>
+          import('./pages/production/production-cockpit.page').then((m) => m.ProductionCockpitPage),
+        title: 'KPPDF — Производство',
+      },
+      {
         // TZ-SALES-301 — КП (коммерческие предложения). Thin UI поверх
         // существующего QuotationModule (single API — дубль не создавался).
         // Admin/manager surface: мутации @Roles('admin','manager').
