@@ -41,6 +41,7 @@ import {
 } from '../../shared/services/materials.service';
 import { CostCalculationDetailDialogComponent } from './cost-calculation-detail-dialog.component';
 import { Photo } from '../../shared/services/photos.service';
+import { CompositionEditorComponent } from '../../shared/ui/composition/composition-editor.component';
 
 /**
  * TZ-83 Phase D + TZ-CATALOG-317: ProductDetailPage.
@@ -62,7 +63,13 @@ import { Photo } from '../../shared/services/photos.service';
 @Component({
   selector: 'app-product-detail-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiPageHeaderComponent, PiSectionComponent, PiEmptyStateComponent, ButtonComponent],
+  imports: [
+    PiPageHeaderComponent,
+    PiSectionComponent,
+    PiEmptyStateComponent,
+    ButtonComponent,
+    CompositionEditorComponent,
+  ],
   template: `
     <app-pi-page-header
       [eyebrow]="'товар'"
@@ -166,111 +173,110 @@ import { Photo } from '../../shared/services/photos.service';
         "
         eyebrow="IV"
       >
-        <div class="flex justify-end mb-2">
+        <app-composition-editor
+          [parentId]="p._id"
+          parentKind="product"
+          data-test="product-composition-editor"
+        />
+        <div class="mt-3 flex justify-end">
           <app-pi-button
-            variant="default"
-            type="button"
-            (click)="openPicker()"
-            data-test="attach-module"
-          >
-            + Модуль в состав
-          </app-pi-button>
-          <app-pi-button
-            variant="outline"
+            variant="ghost"
             type="button"
             (click)="openCompositionPicker()"
-            data-test="add-composition-line"
+            data-test="quick-composition-edit"
           >
-            + Добавить материал / изделие
+            Быстрое добавление
           </app-pi-button>
         </div>
-        @if (isComplex()) {
-          <span
-            class="inline-flex items-center mb-2 px-2 py-1 text-xs hairline rounded-sm bg-sunrise-warm/10 text-sunrise-warm"
-            data-test="complex-badge"
-            >Комплекс</span
-          >
-        }
-        @if (compositionLines().length > 0) {
-          <div class="mb-3 hairline rounded-sm overflow-x-auto">
-            <table class="w-full text-sm min-w-[560px]">
+        <div class="hidden">
+          @if (isComplex()) {
+            <span
+              class="inline-flex items-center mb-2 px-2 py-1 text-xs hairline rounded-sm bg-sunrise-warm/10 text-sunrise-warm"
+              data-test="complex-badge"
+              >Комплекс</span
+            >
+          }
+          @if (compositionLines().length > 0) {
+            <div class="mb-3 hairline rounded-sm overflow-x-auto">
+              <table class="w-full text-sm min-w-[560px]">
+                <thead class="hairline-b">
+                  <tr>
+                    <th class="pi-cell eyebrow text-left">Тип</th>
+                    <th class="pi-cell eyebrow text-left">Элемент</th>
+                    <th class="pi-cell-numeric eyebrow">Кол-во</th>
+                    <th class="pi-cell-numeric eyebrow">Цена</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (line of compositionLines(); track line._id) {
+                    <tr class="pi-table-row pi-table-row-odd">
+                      <td class="pi-cell">
+                        {{
+                          line.lineType === 'product'
+                            ? 'Изделие'
+                            : line.lineType === 'material'
+                              ? 'Материал'
+                              : 'Модуль'
+                        }}
+                      </td>
+                      <td class="pi-cell font-medium">{{ compositionRefLabel(line) }}</td>
+                      <td class="pi-cell-numeric font-mono">{{ line.quantity }}</td>
+                      <td class="pi-cell-numeric font-mono">{{ productLinePrice(line) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+          <div class="hairline rounded-sm overflow-x-auto">
+            <table class="w-full text-sm min-w-[640px]">
               <thead class="hairline-b">
                 <tr>
-                  <th class="pi-cell eyebrow text-left">Тип</th>
-                  <th class="pi-cell eyebrow text-left">Элемент</th>
-                  <th class="pi-cell-numeric eyebrow">Кол-во</th>
-                  <th class="pi-cell-numeric eyebrow">Цена</th>
+                  <th class="pi-cell eyebrow text-left">Модуль</th>
+                  <th class="pi-cell eyebrow text-left">Артикул</th>
+                  <th class="pi-cell-numeric eyebrow w-24">Кол-во</th>
+                  <th class="pi-cell-numeric eyebrow w-32">Материалов</th>
+                  <th class="pi-cell-numeric eyebrow w-32">Работ</th>
+                  <th class="pi-cell eyebrow w-40 text-right">Действия</th>
                 </tr>
               </thead>
               <tbody>
-                @for (line of compositionLines(); track line._id) {
-                  <tr class="pi-table-row pi-table-row-odd">
-                    <td class="pi-cell">
-                      {{
-                        line.lineType === 'product'
-                          ? 'Изделие'
-                          : line.lineType === 'material'
-                            ? 'Материал'
-                            : 'Модуль'
-                      }}
+                @for (row of attachedModules(); track row.module._id) {
+                  <tr class="pi-table-row pi-table-row-odd last:border-0">
+                    <td class="pi-cell align-top font-medium">{{ row.module.name }}</td>
+                    <td class="pi-cell align-top font-mono text-xs empty-cell">
+                      {{ row.module.article ?? '—' }}
                     </td>
-                    <td class="pi-cell font-medium">{{ compositionRefLabel(line) }}</td>
-                    <td class="pi-cell-numeric font-mono">{{ line.quantity }}</td>
-                    <td class="pi-cell-numeric font-mono">{{ line.unitPriceOverride ?? '—' }}</td>
+                    <td class="pi-cell-numeric align-top font-mono">{{ row.quantity }}</td>
+                    <td class="pi-cell-numeric align-top">{{ row.module.materials.length }}</td>
+                    <td class="pi-cell-numeric align-top">{{ row.module.workTypes.length }}</td>
+                    <td class="pi-cell align-top text-right">
+                      <button
+                        type="button"
+                        (click)="openModuleDetail(row.module)"
+                        class="eyebrow text-ink hover:text-sunrise-warm mr-3"
+                      >
+                        Открыть
+                      </button>
+                      <button
+                        type="button"
+                        (click)="onDetach(row)"
+                        class="eyebrow text-destructive hover:underline"
+                      >
+                        Убрать
+                      </button>
+                    </td>
                   </tr>
+                } @empty {
+                  <app-pi-empty-state
+                    [colspan]="6"
+                    message="Нет модулей в составе. Нажмите «+ Модуль в состав»."
+                    state="empty"
+                  />
                 }
               </tbody>
             </table>
           </div>
-        }
-        <div class="hairline rounded-sm overflow-x-auto">
-          <table class="w-full text-sm min-w-[640px]">
-            <thead class="hairline-b">
-              <tr>
-                <th class="pi-cell eyebrow text-left">Модуль</th>
-                <th class="pi-cell eyebrow text-left">Артикул</th>
-                <th class="pi-cell-numeric eyebrow w-24">Кол-во</th>
-                <th class="pi-cell-numeric eyebrow w-32">Материалов</th>
-                <th class="pi-cell-numeric eyebrow w-32">Работ</th>
-                <th class="pi-cell eyebrow w-40 text-right">Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of attachedModules(); track row.module._id) {
-                <tr class="pi-table-row pi-table-row-odd last:border-0">
-                  <td class="pi-cell align-top font-medium">{{ row.module.name }}</td>
-                  <td class="pi-cell align-top font-mono text-xs empty-cell">
-                    {{ row.module.article ?? '—' }}
-                  </td>
-                  <td class="pi-cell-numeric align-top font-mono">{{ row.quantity }}</td>
-                  <td class="pi-cell-numeric align-top">{{ row.module.materials.length }}</td>
-                  <td class="pi-cell-numeric align-top">{{ row.module.workTypes.length }}</td>
-                  <td class="pi-cell align-top text-right">
-                    <button
-                      type="button"
-                      (click)="openModuleDetail(row.module)"
-                      class="eyebrow text-ink hover:text-sunrise-warm mr-3"
-                    >
-                      Открыть
-                    </button>
-                    <button
-                      type="button"
-                      (click)="onDetach(row)"
-                      class="eyebrow text-destructive hover:underline"
-                    >
-                      Убрать
-                    </button>
-                  </td>
-                </tr>
-              } @empty {
-                <app-pi-empty-state
-                  [colspan]="6"
-                  message="Нет модулей в составе. Нажмите «+ Модуль в состав»."
-                  state="empty"
-                />
-              }
-            </tbody>
-          </table>
         </div>
       </app-pi-section>
 
@@ -514,6 +520,10 @@ export class ProductDetailPage {
 
   protected materialKindLabel(kind: Material['materialKind']): string {
     return kind ? (MATERIAL_KIND_LABELS[kind] ?? kind) : 'тип не указан';
+  }
+
+  protected productLinePrice(line: CompositionLine): number | string {
+    return line.lineType === 'product' ? (line.unitPriceOverride ?? '—') : '—';
   }
 
   protected compositionRefLabel(line: CompositionLine): string {

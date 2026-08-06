@@ -7,11 +7,6 @@ import {
   ProductModulesService,
 } from './pi-product-modules.service';
 
-/**
- * TZ-83 Phase E.2 + TZ-CATALOG-317: ProductModulesService smoke tests.
- * Verifies CRUD endpoints + composition CRUD (TZ-CATALOG-302/317) and the
- * deprecated throwing stubs of legacy attach/detach.
- */
 describe('ProductModulesService', () => {
   let svc: ProductModulesService;
   let httpMock: HttpTestingController;
@@ -46,11 +41,33 @@ describe('ProductModulesService', () => {
     req.flush({ _id: 'mod1', name: 'Module A', materials: [], workTypes: [] });
   });
 
-  it('attachToProduct is deprecated and THROWS (TZ-CATALOG-317)', () => {
+  it('getProductTree() GETs the product tree and forwards maxDepth', () => {
+    svc.getProductTree('prod1', 6).subscribe((res) => {
+      if (res.ok) expect(res.data.kind).toBe('product');
+    });
+    const req = httpMock.expectOne(
+      (request) => request.url === 'http://test/api/products/prod1/tree',
+    );
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('maxDepth')).toBe('6');
+    req.flush({ _id: 'prod1', name: 'Product', kind: 'product', quantity: 1, children: [] });
+  });
+
+  it('getModuleTree() GETs the module tree without optional params by default', () => {
+    svc.getModuleTree('mod1').subscribe((res) => {
+      if (res.ok) expect(res.data.children).toEqual([]);
+    });
+    const req = httpMock.expectOne('http://test/api/modules/mod1/tree');
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.has('maxDepth')).toBe(false);
+    req.flush({ _id: 'mod1', name: 'Module', kind: 'module', quantity: 1, children: [] });
+  });
+
+  it('attachToProduct is deprecated and THROWS', () => {
     expect(() => svc.attachToProduct('prod1', 'mod1')).toThrow(/attachToProduct is deprecated/);
   });
 
-  it('detachFromProduct is deprecated and THROWS (TZ-CATALOG-317)', () => {
+  it('detachFromProduct is deprecated and THROWS', () => {
     expect(() => svc.detachFromProduct('prod1', 'mod1')).toThrow(/detachFromProduct is deprecated/);
   });
 
@@ -63,13 +80,9 @@ describe('ProductModulesService', () => {
     req.flush([{ _id: 'l1', lineType: 'module', refId: 'mod1', quantity: 2, sortOrder: 0 }]);
   });
 
-  it('addProductCompositionLine POSTs line to /products/:id/composition', () => {
+  it('addProductCompositionLine POSTs a module line', () => {
     svc
-      .addProductCompositionLine('prod1', {
-        lineType: 'module',
-        refId: 'mod1',
-        quantity: 2,
-      })
+      .addProductCompositionLine('prod1', { lineType: 'module', refId: 'mod1', quantity: 2 })
       .subscribe();
     const req = httpMock.expectOne('http://test/api/products/prod1/composition');
     expect(req.request.method).toBe('POST');

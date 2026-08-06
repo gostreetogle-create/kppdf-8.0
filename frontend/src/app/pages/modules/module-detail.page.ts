@@ -37,6 +37,7 @@ import {
 import { ModuleFormDialogComponent } from './module-form-dialog.component';
 import { ModuleMaterialsFormDialogComponent } from './module-materials-form-dialog.component';
 import { PiShowcaseCardComponent } from '../../shared/ui/card';
+import { CompositionEditorComponent } from '../../shared/ui/composition/composition-editor.component';
 
 /**
  * Полная документация страницы: docs/pages/module-detail.page.md
@@ -62,6 +63,7 @@ import { PiShowcaseCardComponent } from '../../shared/ui/card';
     PiEmptyTileComponent,
     ButtonComponent,
     PiShowcaseCardComponent,
+    CompositionEditorComponent,
   ],
   template: `
     <app-pi-showcase-card size="lg" data-test="module-showcase">
@@ -195,17 +197,22 @@ import { PiShowcaseCardComponent } from '../../shared/ui/card';
           [hint]="materialRows().length ? 'Override-габариты показаны курсивом' : ''"
           eyebrow="III"
         >
-          <div class="flex justify-end mb-2">
+          <app-composition-editor
+            [parentId]="m._id"
+            parentKind="module"
+            data-test="module-composition-editor"
+          />
+          <div class="mt-3 flex justify-end">
             <app-pi-button
-              variant="default"
+              variant="ghost"
               type="button"
               (click)="openMaterialsEditor()"
-              data-test="edit-materials"
+              data-test="quick-composition-edit"
             >
-              Изменить состав
+              Быстрое редактирование
             </app-pi-button>
           </div>
-          <div class="hairline rounded-sm overflow-x-auto">
+          <div class="hidden">
             <table class="w-full text-sm min-w-[640px]">
               <thead class="hairline-b">
                 <tr>

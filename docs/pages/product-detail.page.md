@@ -39,7 +39,13 @@
 
 ## Состав изделия (TZ-CATALOG-320)
 
-Detail показывает canonical `composition[]`: модуль, non-raw Material (kind-лейбл сырьё/деталь/метиз/покупное/другое) и дочернее изделие. Product-линия с `unitPriceOverride >= 0` даёт derived-бейдж «Комплекс»; self-reference и raw Material исключены пикером. Полное lazy-дерево состава — successor `TZ-CATALOG-311`.
+Detail показывает canonical `composition[]`: модуль, non-raw Material (kind-лейбл сырьё/деталь/метиз/покупное/другое) и дочернее изделие. Product-линия с `unitPriceOverride >= 0` даёт derived-бейдж «Комплекс»; self-reference и raw Material исключены пикером. Единое lazy-дерево состава реализовано в рамках `TZ-CATALOG-311`.
+
+## Дерево состава (TZ-CATALOG-311)
+
+Секция «Состав» использует общий `CompositionEditor`: корневой узел загружается через `GET /products/:id/tree?maxDepth=8`, дочерние module/product/material узлы показываются вложенно с русскими labels. Материалы получают `materialKind`; product-ребёнок даёт бейдж «Комплекс». Быстрое редактирование количества, добавление и удаление используют тот же composition API, что и формы TZ-CATALOG-320. При глубине более 5 отображается предупреждение, а ошибки лимита глубины, cycle и self-reference показываются текстом API.
+
+Полный hard limit дерева — 8 уровней (`tasks/TZ-CATALOG-300.md` §3.1); cost/mass rollup и order snapshot остаются вне scope.
 
 ## Известные ограничения
 

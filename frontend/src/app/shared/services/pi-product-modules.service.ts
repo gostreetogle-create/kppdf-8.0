@@ -52,6 +52,17 @@ export interface WorkTypeInModule {
   sortOrder: number;
 }
 
+export interface CompositionTreeNode {
+  _id: string;
+  name: string;
+  kind: 'product' | 'module' | 'material';
+  lineType?: 'module' | 'material' | 'product';
+  materialKind?: Material['materialKind'];
+  quantity: number;
+  unit?: string;
+  children: CompositionTreeNode[];
+}
+
 export interface ProductModule {
   _id: string;
   name: string;
@@ -213,6 +224,28 @@ export class ProductModulesService {
 
   findById(id: string): Observable<SilentResult<ProductModule>> {
     return silentGet<ProductModule>(this.http, `${this.baseUrl}/modules/${id}`);
+  }
+
+  getProductTree(
+    productId: string,
+    maxDepth?: number,
+  ): Observable<SilentResult<CompositionTreeNode>> {
+    return silentGet<CompositionTreeNode>(
+      this.http,
+      `${this.baseUrl}/products/${productId}/tree`,
+      maxDepth == null ? {} : { params: new HttpParams().set('maxDepth', maxDepth) },
+    );
+  }
+
+  getModuleTree(
+    moduleId: string,
+    maxDepth?: number,
+  ): Observable<SilentResult<CompositionTreeNode>> {
+    return silentGet<CompositionTreeNode>(
+      this.http,
+      `${this.baseUrl}/modules/${moduleId}/tree`,
+      maxDepth == null ? {} : { params: new HttpParams().set('maxDepth', maxDepth) },
+    );
   }
 
   create(payload: ProductModuleUpsertDto): Observable<SilentResult<ProductModule>> {

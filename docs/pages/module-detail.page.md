@@ -68,7 +68,11 @@
 
 Редактор состава (dialog «Состав модуля») умеет **материал + дочерний модуль**, RU kind на материалах, self-id родителя недоступен. Save — composition API.
 
-**Known limitation (страница detail):** таблица на `/modules/:id` пока показывает только `lineType=material` (секция «Материалы»). Дочерние модули видны/редактируются в dialog; единый список + lazy CompositionTree — successor `TZ-CATALOG-311`.
+## Дерево состава (TZ-CATALOG-311)
+
+Секция состава использует общий `CompositionEditor`: `GET /modules/:id/tree?maxDepth=8` строит вложенное дерево module/material, а quick-edit добавляет, изменяет количество и удаляет линии через существующий composition API. Product-линии для модуля недоступны; material-узлы показывают русские kind labels. При глубине более 5 отображается предупреждение, ошибки depth/cycle/self-reference не замалчиваются.
+
+Полный hard limit дерева — 8 уровней (`tasks/TZ-CATALOG-300.md` §3.1); cost/mass rollup и order snapshot остаются вне scope.
 
 ## Особенности
 
