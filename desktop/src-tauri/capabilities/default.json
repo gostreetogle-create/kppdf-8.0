@@ -17,6 +17,18 @@
     {
       "identifier": "fs:scope",
       "allow": ["$APPDATA", "$APPDATA/**", "$HOME/**"]
+    },
+    "shell:allow-kill",
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        {
+          "name": "node",
+          "cmd": "node",
+          "args": true,
+          "sidecar": false
+        }
+      ]
     }
   ]
 }

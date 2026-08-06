@@ -3,8 +3,10 @@
 Десктоп-компаньон kppdf-8.0: **массовый ввод данных через AI** с сохранением
 единого backend (multi-device — актуальные данные везде: веб, десктоп, телефон).
 
-> **Статус: v0.3 (2026-08-01).** Готово: скелет (v0.1), паринг + конфиг (v0.2),
-> Excel/CSV-импорт + UI (v0.3). Дальше — AI-pipeline (v0.4) и батч+прогресс (v0.5).
+> **Статус: v0.4 (2026-08-06).** Готово: скелет (v0.1), паринг + конфиг (v0.2),
+> Excel/CSV-импорт + UI (v0.3), **MCP host в приложении (TZD-14)**: автозапуск при
+> подключении, статус/URL/копирование, порт и LAN в config.ts, stop on quit.
+> Дальше — AI-pipeline (v0.4) и батч+прогресс (v0.5).
 > Задачи десктопа ведутся с префиксом `TZD-NN` (см. `tasks/TZD-00.md`).
 
 ---
@@ -44,9 +46,10 @@ desktop/
 │   ├── main.ts            ← точка входа Svelte
 │   ├── App.svelte         ← окно-заглушка (Подключение / AI-импорт, disabled)
 │   ├── core/
-│   │   ├── config.ts      ← конфиг (apiBaseUrl, apiKey, aiProvider), load/save в app-data
+│   │   ├── config.ts      ← конфиг (apiBaseUrl, apiKey, aiProvider, mcp{port,allowLan}), load/save в app-data (v2)
 │   │   ├── api.ts         ← fetch-обёртка: Bearer + idempotencyKey()
 │   │   ├── pairing.ts     ← parsePairing(): валидация JSON-пакета паринга
+│   │   ├── mcpHost.ts     ← TZD-14: жизненный цикл MCP host (spawn/stop/restart, статус)
 │   │   ├── pipeline.ts    ← стаб: parse → normalize → confirm → batchPost
 │   │   └── ai/
 │   │       ├── types.ts   ← ChatMessage/ChatRequest/ChatResponse (OpenAI-совм.)
@@ -57,7 +60,7 @@ desktop/
 │   └── importers/
 │       ├── index.ts       ← реестр импортёров (excel/csv/text/pdf)
 │       ├── excel.ts csv.ts text.ts pdf.ts  ← стабы parse(file) → RawRow[], TODO
-├── src-tauri/             ← Rust-оболочка Tauri 2 (dialog + fs плагины)
+├── src-tauri/             ← Rust-оболочка Tauri 2 (dialog + fs + shell плагины)
 ├── ai/
 │   └── system-prompts/
 │       ├── general.md     ← черновик системного промпта AI
@@ -118,9 +121,10 @@ desktop/
 | v0.1 | **Скелет**: структура, конфиги, типы, стабы | ✅ DONE `850b716` |
 | v0.2 | Паринг + конфиг: вставка JSON, app-data, проверка /auth/me | ✅ DONE `574bb2b` (+CORS `71a0d70`) |
 | v0.3 | Excel-импорт: xlsx/papaparse → таблица (диалог + drag&drop) | ✅ DONE `157846c`+`305c27f`+`60fd4b8` |
-| v0.4 | AI-pipeline: Ollama/remote, нормализация, подтверждение | ⏳ TZD-01 |
+| v0.4 | MCP host в приложении: автозапуск при паринге, статус UI, порт/LAN в конфиге | ✅ DONE (TZD-14) |
+| v0.5 | AI-pipeline: Ollama/remote, нормализация, подтверждение | ⏳ TZD-01 |
 | v0.5 | Батч-отправка + прогресс + отчёт об ошибках | ⏳ TZD-02 |
-| MCP | Универсальная розетка агента (localhost tools) | ✅ TZD-11–13; ⏳ TZD-14…15 |
+| MCP | Универсальная розетка агента (localhost tools) | ✅ TZD-11–14; ⏳ TZD-15 |
 
 Полный контекст v0.1–v0.3 — **`tasks/_archive/2026-08/TZD-00.done.md`**.  
 MCP vision + safety (propose/confirm, mutation journal):  

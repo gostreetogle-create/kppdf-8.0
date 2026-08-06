@@ -1,12 +1,23 @@
 <script lang="ts">
   // v0.2 — «Подключение» (паринг + /auth/me). v0.3 — «Импорт» (excel/csv → таблица).
   import { onMount } from 'svelte';
+  import { getCurrentWindow } from '@tauri-apps/api/window';
   import { open } from '@tauri-apps/plugin-dialog';
   import { readFile } from '@tauri-apps/plugin-fs';
   import { apiGet, ApiError } from './core/api';
   import { loadConfig, saveConfig, type AppConfig } from './core/config';
   import { parsePairing } from './core/pairing';
   import { importerFor, type RawRow } from './importers';
+  import {
+    MCP_PORT_MAX,
+    MCP_PORT_MIN,
+    McpHostController,
+    mcpEndpoint,
+    validateMcpPort,
+    type McpHostState,
+    type McpHostStatus,
+  } from './core/mcpHost';
+  import { DEFAULT_MCP_PORT } from './core/config';
 
   // Placeholder вынесен в JS: фигурные скобки в атрибуте Svelte парсит как выражение.
   const pairingPlaceholder =
@@ -17,16 +28,119 @@
   let connecting = $state(false);
   let connected = $state<{ username: string; apiBaseUrl: string } | null>(null);
 
+  // MCP host (TZD-14): автозапуск при подключённом аккаунте, статус + настройки.
+  let mcp: McpHostController;
+  let mcpState = $state<McpHostState>({
+    status: 'stopped',
+    port: DEFAULT_MCP_PORT,
+    allowLan: false,
+  });
+  let mcpPortInput = $state(String(DEFAULT_MCP_PORT));
+  let mcpError = $state('');
+  let mcpCopied = $state(false);
+
+  const MCP_STATUS_LABEL: Record<McpHostStatus, string> = {
+    stopped: 'Остановлен',
+    starting: 'Запускается…',
+    running: 'Запущен',
+    stopping: 'Останавливается…',
+    error: 'Ошибка',
+  };
+
+  /** Старт MCP host с текущими настройками конфига (порт из поля ввода). */
+  async function startMcp() {
+    const cfg = await loadConfig();
+    if (!cfg.apiKey || !cfg.apiBaseUrl) {
+      mcpError = 'MCP недоступен: сначала подключите аккаунт.';
+      return;
+    }
+    const port = Number(mcpPortInput);
+    const portError = validateMcpPort(port);
+    if (portError) {
+      mcpError = portError;
+      return;
+    }
+    mcpError = '';
+    await saveConfig({ ...cfg, mcp: { ...cfg.mcp, port } });
+    mcp.setPrefs(port, cfg.mcp.allowLan);
+    await mcp.start({
+      apiBaseUrl: cfg.apiBaseUrl,
+      apiKey: cfg.apiKey,
+      port,
+      allowLan: cfg.mcp.allowLan,
+    });
+  }
+
+  async function stopMcp() {
+    await mcp.stop();
+  }
+
+  async function restartMcp() {
+    await startMcp(); // start() сам останавливает предыдущий процесс
+  }
+
+  /** Применить введённый порт: сохранить + перезапустить host. */
+  async function applyMcpPort() {
+    const port = Number(mcpPortInput);
+    const portError = validateMcpPort(port);
+    if (portError) {
+      mcpError = portError;
+      return;
+    }
+    mcpError = '';
+    const cfg = await loadConfig();
+    await saveConfig({ ...cfg, mcp: { ...cfg.mcp, port } });
+    mcp.setPrefs(port, cfg.mcp.allowLan);
+    if (mcpState.status === 'running' || mcpState.status === 'error') {
+      await restartMcp();
+    }
+  }
+
+  /** Переключение LAN-bind: сохранить + перезапустить host. */
+  async function toggleMcpLan() {
+    const cfg = await loadConfig();
+    const allowLan = !cfg.mcp.allowLan;
+    await saveConfig({ ...cfg, mcp: { ...cfg.mcp, allowLan } });
+    mcp.setPrefs(cfg.mcp.port, allowLan);
+    if (mcpState.status === 'running' || mcpState.status === 'error') {
+      await restartMcp();
+    }
+  }
+
+  async function copyMcpUrl() {
+    try {
+      await navigator.clipboard.writeText(mcpEndpoint(mcpState.port));
+      mcpCopied = true;
+      setTimeout(() => (mcpCopied = false), 1500);
+    } catch {
+      mcpError = 'Не удалось скопировать — скопируйте адрес вручную.';
+    }
+  }
+
   // Импорт
   let importRows = $state<RawRow[]>([]);
   let importError = $state('');
   let importing = $state(false);
 
   onMount(async () => {
+    mcp = new McpHostController((state) => {
+      mcpState = state;
+    });
+    // Остановка MCP при закрытии окна/выходе из приложения.
+    // (Плагин shell дополнительно убивает дочерние процессы на RunEvent::Exit —
+    // это страховка на случай сбоя.)
+    await getCurrentWindow().onCloseRequested(() => {
+      mcp.dispose();
+    });
+
     // Восстанавливаем сохранённое подключение (живой ли токен — покажет первый запрос).
     const cfg = await loadConfig();
     if (cfg.apiKey && cfg.username) {
       connected = { username: cfg.username, apiBaseUrl: cfg.apiBaseUrl };
+      mcpPortInput = String(cfg.mcp.port);
+      mcp.setPrefs(cfg.mcp.port, cfg.mcp.allowLan);
+      // Автостарт MCP host для подключённого (paired) десктопа — без терминала.
+      await startMcp();
     }
   });
 
@@ -46,12 +160,16 @@
         apiKey: p.apiKey,
         username: p.username,
         aiProvider: existing.aiProvider,
+        mcp: existing.mcp,
       };
       // Проверка: токен живой? 401 → «подключение устарело».
       await apiGet({ baseUrl: p.apiBaseUrl, apiKey: p.apiKey }, '/api/auth/me');
       await saveConfig(config);
       connected = { username: p.username, apiBaseUrl: p.apiBaseUrl };
       pairingJson = '';
+      mcpError = '';
+      // Подключённый (paired) десктоп автоматически поднимает MCP host.
+      await startMcp();
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         errors = ['Подключение устарело — сгенерируйте новый паринг.'];
@@ -66,6 +184,7 @@
   }
 
   async function disconnect() {
+    await mcp.stop();
     const cfg = await loadConfig();
     await saveConfig({ ...cfg, apiKey: undefined, username: undefined });
     connected = null;
@@ -182,6 +301,96 @@
     </article>
 
     <article class="card">
+      <h2>MCP — локальный доступ для AI</h2>
+
+      {#if !connected}
+        <p>MCP не запущен: сначала подключите аккаунт (карточка «Подключение» выше).</p>
+      {:else}
+        <div class="mcp-status">
+          <span class="mcp-badge mcp-badge--{mcpState.status}" aria-live="polite">
+            {MCP_STATUS_LABEL[mcpState.status]}
+          </span>
+        </div>
+
+        {#if mcpError}
+          <p class="errors" role="alert">{mcpError}</p>
+        {/if}
+        {#if mcpState.status === 'error' && mcpState.lastError}
+          <p class="errors" role="alert">{mcpState.lastError}</p>
+        {/if}
+
+        <p class="mcp-url">
+          <code>{mcpEndpoint(mcpState.port)}</code>
+          <button class="btn btn--small" type="button" onclick={copyMcpUrl}>
+            {mcpCopied ? 'Скопировано ✓' : 'Копировать'}
+          </button>
+        </p>
+        <p class="hint">
+          Любой MCP-клиент подключается по этому адресу с заголовком
+          <code>Authorization: Bearer &lt;apiKey из паринга&gt;</code>. Токен тот же, что у десктопа;
+          права — те же, что у пользователя в вебе.
+        </p>
+
+        <label class="mcp-field">
+          Порт
+          <input
+            class="mcp-port"
+            type="number"
+            min={MCP_PORT_MIN}
+            max={MCP_PORT_MAX}
+            bind:value={mcpPortInput}
+            aria-label="Порт MCP host"
+          />
+          <button
+            class="btn btn--small"
+            type="button"
+            onclick={applyMcpPort}
+            disabled={mcpState.status === 'starting' || mcpState.status === 'stopping'}
+          >
+            Применить порт
+          </button>
+        </label>
+
+        <label class="mcp-lan">
+          <input type="checkbox" checked={mcpState.allowLan} onchange={toggleMcpLan} />
+          Разрешить доступ по локальной сети (LAN)
+        </label>
+        {#if mcpState.allowLan}
+          <p class="hint mcp-warn">
+            MCP слушает 0.0.0.0:{mcpState.port} — с других машин подключайтесь по IP этого
+            компьютера. Включайте только в доверенной сети.
+          </p>
+        {/if}
+
+        <div class="mcp-actions">
+          {#if mcpState.status === 'running' || mcpState.status === 'starting'}
+            <button
+              class="btn"
+              type="button"
+              onclick={stopMcp}
+              disabled={mcpState.status === 'starting'}
+            >
+              Остановить
+            </button>
+          {/if}
+          {#if mcpState.status === 'stopped' || mcpState.status === 'error'}
+            <button class="btn btn--primary" type="button" onclick={startMcp}>
+              Запустить MCP
+            </button>
+          {/if}
+          <button
+            class="btn"
+            type="button"
+            onclick={restartMcp}
+            disabled={mcpState.status === 'starting' || mcpState.status === 'stopping'}
+          >
+            Перезапустить
+          </button>
+        </div>
+      {/if}
+    </article>
+
+    <article class="card">
       <h2>Импорт</h2>
       <p>Файл → парсинг → таблица предпросмотра. Подтверждение и отправка — будущие TZ.</p>
 
@@ -213,7 +422,7 @@
   </section>
 
   <footer class="shell__footer">
-    <p>v0.3 — паринг и импорт Excel/CSV работают, отправка на сервер помечена TODO.</p>
+    <p>v0.4 — паринг, импорт Excel/CSV и MCP host (TZD-14): автозапуск при подключении, отправка на сервер помечена TODO.</p>
   </footer>
 </main>
 
@@ -351,6 +560,110 @@
 
   .status__url {
     color: #5a6a78;
+    font-size: 0.8rem;
+  }
+
+  .mcp-status {
+    margin: 0 0 0.75rem;
+  }
+
+  .mcp-badge {
+    display: inline-block;
+    padding: 0.2rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .mcp-badge--stopped {
+    background: #eef1f4;
+    color: #5a6a78;
+  }
+
+  .mcp-badge--starting,
+  .mcp-badge--stopping {
+    background: #fdf3dd;
+    color: #8a6d1a;
+  }
+
+  .mcp-badge--running {
+    background: #e6f4ea;
+    color: #1e7d43;
+  }
+
+  .mcp-badge--error {
+    background: #fdf0ef;
+    color: #a12b23;
+  }
+
+  .mcp-url {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .mcp-url code {
+    font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+    font-size: 0.9rem;
+    background: #fbfcfd;
+    border: 1px solid #d9dee3;
+    border-radius: 6px;
+    padding: 0.2rem 0.45rem;
+  }
+
+  .hint {
+    color: #7a8794;
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
+
+  .hint code {
+    font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+    font-size: 0.78rem;
+  }
+
+  .mcp-warn {
+    color: #8a6d1a;
+  }
+
+  .mcp-field {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.75rem 0;
+    color: #44535f;
+    font-size: 0.9rem;
+  }
+
+  .mcp-port {
+    width: 6rem;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid #b7c0c8;
+    border-radius: 8px;
+    font: inherit;
+  }
+
+  .mcp-lan {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.75rem 0;
+    font-size: 0.9rem;
+    color: #44535f;
+    cursor: pointer;
+  }
+
+  .mcp-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+  }
+
+  .btn--small {
+    padding: 0.25rem 0.6rem;
     font-size: 0.8rem;
   }
 

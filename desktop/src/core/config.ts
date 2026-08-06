@@ -24,6 +24,14 @@ export interface AiProviderConfig {
   model: string;
 }
 
+/** Настройки MCP host (TZD-14): порт и разрешение LAN-биндинга. */
+export interface McpHostConfig {
+  /** Порт HTTP MCP host (127.0.0.1:<port>/mcp). */
+  port: number;
+  /** Bind 0.0.0.0 (доступ по локальной сети). По умолчанию выключено. */
+  allowLan: boolean;
+}
+
 export interface AppConfig {
   /** Базовый URL backend kppdf (например https://app.kppdf.ru). */
   apiBaseUrl: string;
@@ -32,14 +40,28 @@ export interface AppConfig {
   /** Имя пользователя, для которого выдан токен. */
   username?: string;
   aiProvider: AiProviderConfig;
+  /** MCP host: порт + bind (сохраняется между запусками). */
+  mcp: McpHostConfig;
 }
 
-/** Версия формата файла конфига; инкремент при несовместимых изменениях. */
-export const CONFIG_VERSION = 1;
+/** Порт MCP host по умолчанию (совпадает с KPPDF_MCP_PORT в desktop/mcp). */
+export const DEFAULT_MCP_PORT = 9743;
+
+export const DEFAULT_MCP_CONFIG: McpHostConfig = {
+  port: DEFAULT_MCP_PORT,
+  allowLan: false,
+};
+
+/**
+ * Версия формата файла конфига; инкремент при несовместимых изменениях.
+ * v2 (TZD-14): добавлен блок `mcp` { port, allowLan }.
+ */
+export const CONFIG_VERSION = 2;
 
 export const DEFAULT_CONFIG: AppConfig = {
   apiBaseUrl: '',
   aiProvider: { ...OLLAMA_DEFAULT },
+  mcp: { ...DEFAULT_MCP_CONFIG },
 };
 
 const CONFIG_FILENAME = 'config.json';
@@ -48,6 +70,7 @@ function cloneDefault(): AppConfig {
   return {
     ...DEFAULT_CONFIG,
     aiProvider: { ...DEFAULT_CONFIG.aiProvider },
+    mcp: { ...DEFAULT_CONFIG.mcp },
   };
 }
 
@@ -77,6 +100,17 @@ export async function loadConfig(): Promise<AppConfig> {
  * Миграция формата: нормализует поля независимо от version.
  * TODO(migration): при version < CONFIG_VERSION — пошаговые апгрейды полей.
  */
+/** Нормализует блок mcp из файла (v1 конфиги без mcp получают дефолт). */
+function migrateMcp(raw: unknown): McpHostConfig {
+  const mcp =
+    raw && typeof raw === 'object' ? (raw as Partial<McpHostConfig>) : undefined;
+  const port =
+    typeof mcp?.port === 'number' && Number.isInteger(mcp.port) && mcp.port > 0 && mcp.port <= 65535
+      ? mcp.port
+      : DEFAULT_MCP_PORT;
+  return { port, allowLan: mcp?.allowLan === true };
+}
+
 function migrate(parsed: { version?: number } & Partial<AppConfig>): AppConfig {
   const cfg: AppConfig = {
     apiBaseUrl:
@@ -87,6 +121,7 @@ function migrate(parsed: { version?: number } & Partial<AppConfig>): AppConfig {
       parsed.aiProvider && typeof parsed.aiProvider === 'object'
         ? parsed.aiProvider
         : { ...DEFAULT_CONFIG.aiProvider },
+    mcp: migrateMcp(parsed.mcp),
   };
   return cfg;
 }

@@ -1,14 +1,14 @@
 # SESSION QUEUE — parallel agents 2026-08-06 evening
 
-**Updated:** 2026-08-06 · **TZ-CATALOG-320 DONE on main** (tsc waive: pre-existing chips)
+**Updated:** 2026-08-06 · **TZD-14 DONE on main** · **320 DONE** · next **311** / **TZD-15**
 
 ## Parallel claims
 
 | Agent | TZ | Zone | Status |
 |-------|-----|------|--------|
-| **#1 FE catalog** | **320** → next **311** | products/modules/composition | **320 DONE** — start **311** |
+| **#1 FE catalog** | **311** | products/modules/composition tree | **GO** after 320 |
 | **#2 FE admin** | **ADMIN-306** | admin + routes | **DONE on main** `69d8a22` |
-| **#3 Desktop** | **TZD-14** | `desktop/**` | IN FLIGHT / claim |
+| **#3 Desktop** | **TZD-14** → **TZD-15** | `desktop/**` | **14 DONE** — **GO TZD-15** |
 | **Cursor** | docs / merge / review | docs + closeouts | active |
 
 ## Next free for agent #2 (if continuing)
@@ -25,7 +25,7 @@ Or **close agent #2**.
 |----|--------|
 | **311** | **now** (320 on main) |
 | **315** | 311 |
-| **TZD-15** | TZD-14 DONE |
+| **TZD-15** | **now** (14 on main) |
 | **PRODUCTION-303** | PO «стартуем Гант» |
 
 ## Rules

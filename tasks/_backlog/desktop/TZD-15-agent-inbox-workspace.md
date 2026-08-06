@@ -2,9 +2,9 @@
 TZD-15: Agent inbox workspace (drop folder → audit → propose fills)
 ═══════════════════════════════════════════════════════════════
 
-> PARKED until **TZD-14 DONE** on origin. LAYER 2 · desktop.
+> **GO** — TZD-14 DONE on origin/main. LAYER 2 · desktop.
 > CONFLICT: `desktop/src/**`; `desktop/mcp/**`; `desktop/src/importers/**`; `desktop/docs/MCP.md`
-> Vision §1, §5. Owner track: Cursor after 14, or same executor if PO continues desktop stream.
+> Vision §1, §5. Same desktop executor (#3) or Cursor.
 
 РОЛЬ АГЕНТА: executor (Tauri + MCP).
 

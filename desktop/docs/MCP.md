@@ -1,26 +1,49 @@
 # KPPDF Desktop MCP socket
 
-> TZD-11…13. Vision: `docs/superpowers/specs/2026-08-05-desktop-mcp-agent-vision.md`  
+> TZD-11…14. Vision: `docs/superpowers/specs/2026-08-05-desktop-mcp-agent-vision.md`
 > Owner track: Cursor (desktop/MCP) — usable for managers, not a demo stub.
 
 Local MCP host so **any** MCP-capable client can call KPPDF tools with the same
 **pairing JWT** as the desktop app. Source of truth = Nest backend (RBAC unchanged).
 
-## Как подключить (менеджер, 3 шага)
+## Как подключить (менеджер) — через приложение, без терминала
 
-1. **Паринг** — JSON `{ apiBaseUrl, apiKey, username, expiresAt }` из веба (кнопка «Подключить десктоп», TZD-05) или вручную после логина.
-2. **Запуск MCP** на машине менеджера:
-   ```bat
-   cd desktop\mcp
-   pnpm install
-   set KPPDF_API_BASE_URL=http://127.0.0.1:3000
-   set KPPDF_API_KEY=<apiKey из pairing JSON>
-   pnpm start
-   ```
-3. **Клиент MCP** → `http://127.0.0.1:9743/mcp` + заголовок `Authorization: Bearer <тот же apiKey>`.
+1. **Паринг** — в вебе кнопка «Подключить десктоп» (TZD-05) даёт JSON
+   `{ apiBaseUrl, apiKey, username, expiresAt }`; вставьте его в KPPDF Desktop
+   (карточка «Подключение»).
+2. **MCP запускается автоматически** — при подключённом аккаунте десктоп сам
+   поднимает MCP host на `127.0.0.1:<порт>` (по умолчанию **9743**), терминал
+   не нужен. В карточке «MCP — локальный доступ для AI» видны статус
+   (Запущен / Остановлен / Ошибка), адрес и кнопка «Копировать».
+3. **Любой MCP-клиент** (Cursor, Claude Desktop, любой другой) →
+   `http://127.0.0.1:9743/mcp` + заголовок `Authorization: Bearer <тот же apiKey>`.
+
+Опции в карточке MCP:
+
+- **Порт** — меняется полем «Порт» + «Применить порт»; сохраняется в app-data.
+- **LAN** — выключен по умолчанию (только `127.0.0.1`). Включается чекбоксом;
+  тогда host слушает `0.0.0.0:<порт>` и доступен с других машин по IP этого ПК
+  (только доверенная сеть).
+- **Остановить / Перезапустить** — ручное управление.
+- При **закрытии приложения** MCP останавливается автоматически.
+- Неподключённый десктоп MCP **не запускает** (карточка показывает причину).
 
 Проверка: `GET http://127.0.0.1:9743/healthz` → `{ ok: true }`.  
 Инструмент `kppdf_ping` должен вернуть профиль `/api/auth/me`.
+
+## Запуск вручную (dev fallback)
+
+```bat
+cd desktop\mcp
+pnpm install
+set KPPDF_API_BASE_URL=http://127.0.0.1:3000
+set KPPDF_API_KEY=<apiKey из pairing JSON>
+pnpm start
+```
+
+> Dev-стадия: приложение запускает MCP из папки репозитория `desktop/mcp`
+> (Node + tsx). В собранный инсталлятор Node сейчас не бандлится — упаковка
+> рантайма (sidecar) в бэклоге.
 
 ## Env
 
@@ -71,9 +94,9 @@ Backend: `POST /api/mutation-journal/proposals`, `…/confirm`, `…/undo`, `GET
 
 ## Follow-ups
 
-- **TZD-14** — Tauri autostart MCP + show URL/token in UI (без ручного `pnpm start`).
-- **TZD-15** — inbox folder → propose fills.
-- **TZD-05** — web pairing button (parallel FE).
+- **TZD-14** ✅ DONE (2026-08-06) — Tauri autostart MCP + статус/URL/копирование в UI; порт/bind в config.ts (v2); stop on quit; LAN по умолчанию OFF.
+- **TZD-15** — inbox folder → propose fills (следующий).
+- **TZD-05** ✅ DONE — web pairing button.
 
 ## Security
 

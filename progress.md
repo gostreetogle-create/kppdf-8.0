@@ -1,3 +1,16 @@
+## [2026-08-06] — TZD-14 DONE: Desktop hosts MCP (autostart + status UI)
+**Исполнитель:** Buffy (deepseek-v4-flash, desktop/MCP executor, session №3) + Cursor (land on main)
+**Статус:** DONE; archive + lock; on main
+**Что сделано кратко:** Tauri сам запускает MCP host при паринге (spawn `node …/tsx …/http-server.ts` через tauri-plugin-shell, CREATE_NO_WINDOW). UI: статус, URL+copy, порт, LAN OFF default, start/stop/restart; stop on quit; config v2 `mcp {port,allowLan}`; MCP.md без Cursor.
+**Gates:** desktop typecheck/svelte-check/build PASS; mcp 8/8; cargo check PASS; MCP smoke healthz/auth PASS.
+**Archive:** `tasks/_archive/2026-08/TZD-14.done.md`
+**Lock:** `.mimocode/locks/TZD-14-desktop-mcp-autostart.lock`
+**Commit (Freebuff):** `0cfca55` · **on main:** (cherry-pick)
+**Known limits:** Node не в MSI; icons/ pre-existing gap.
+**Next:** **TZD-15** GO (agent inbox).
+
+---
+
 ## [2026-08-06] — TZ-CATALOG-320 DONE: FE composition gap (cascade / details / complex)
 **Исполнитель:** Buffy (implement) + Cursor (PASS review / closeout / tsc waive)
 **Статус:** DONE
@@ -19,6 +32,8 @@
 **Lock:** `.mimocode/locks/TZ-ADMIN-306-role-select-hub.lock`
 **Commit (Freebuff):** `68b6cc9` · **on main:** `69d8a22` (cherry-pick)
 **Next:** optional WAREHOUSE-UX-301 or close agent.
+
+---
 
 ## [2026-08-06] — TZ-CATALOG-314 DONE: Archive / soft-delete / auth consistency
 **Исполнитель:** Buffy (implement) + Cursor (closeout / PO deploy path)

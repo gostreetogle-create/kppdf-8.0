@@ -1,0 +1,4 @@
+TZD-14
+closed: 2026-08-06
+commit: 0cfca55 (landed on main via cherry-pick)
+zone: desktop MCP host autostart + status UI when paired
