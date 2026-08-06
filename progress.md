@@ -5,7 +5,7 @@
 **Gates:** FE Jest 2 suites / 14 tests PASS; FE tsc/ESLint/Prettier PASS; desktop typecheck/svelte-check PASS; `pnpm tauri build` SOFT WAIVE — отсутствует pre-existing `desktop/src-tauri/icons/icon.ico`.
 **Archive:** `tasks/_archive/2026-08/TZD-16.done.md`
 **Lock:** `.mimocode/locks/TZD-16-pairing-download-installer.lock`
-**Commits:** `873a70b`, `3d12fdf`, `103e7f1`; closeout `pending`
+**Commits:** `873a70b`, `3d12fdf`, `103e7f1`; closeout `4c34814`
 **Next:** `/production` verification / PO browser smoke; TZD-16.1 only if a real installer artifact is required.
 
 ---
