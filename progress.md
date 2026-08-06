@@ -1,3 +1,15 @@
+## [2026-08-06] — TZ-CATALOG-320 DONE: FE composition gap (cascade / details / complex)
+**Исполнитель:** Buffy (implement) + Cursor (PASS review / closeout / tsc waive)
+**Статус:** DONE
+**Что сделано кратко:** Composition `module|material|product` + product-only `unitPriceOverride`; модуль — материалы+дочерние модули; изделие — модуль+non-raw+product + «Комплекс»; fix `formGroupName="dimensions"`; 4 page docs.
+**Gates:** focused Jest 5/53 PASS; scoped eslint/prettier PASS; full-app tsc **WAIVED** (pre-existing warehouse/materials chips, не conflict keys 320).
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-320.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-320-composition-gap.lock`
+**Commit:** `07ced5f`
+**Next:** TZ-CATALOG-311 (CompositionTree). Soft: module-detail table ещё только materials.
+
+---
+
 ## [2026-08-06] — TZ-ADMIN-306 DONE: Role select from API + /admin hub cleanup
 **Исполнитель:** Buffy (Freebuff worktree a405897c, parallel session #2)
 **Статус:** DONE

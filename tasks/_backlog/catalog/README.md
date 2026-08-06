@@ -15,17 +15,16 @@ Wave 1 index: `tasks/CATALOG-WAVE1.md` (backend 301–305 **DONE**)
 
 | ID | Title | Status |
 |----|-------|--------|
-| **320** | FE gap: каскад + детали | **NEXT** · full TZ |
-| **311** | CompositionTree | after 320 · full TZ |
+| **311** | CompositionTree | **NEXT** · full TZ |
 | **315** | Lists polish + a11y | after 311 · stub |
 | **306** | Coherence audit trail | discussion only |
 
 ## Done (archive only — backlog stubs removed)
 
-310 where-used · 312 material detail · 313 attachments · **314 soft-delete** · Wave1 301–305 · 316/317/319 · UI-301
+310 where-used · 312 material detail · 313 attachments · **314 soft-delete** · **320 FE composition gap** · Wave1 301–305 · 316/317/319 · UI-301
 
 ## Rules
 
-- Order: **320 → 311 → 315**
-- Never parallel 320+311
+- Order: **311 → 315** (320 DONE on main `07ced5f`)
+- Never parallel overlapping product/module form conflict keys without map claim
 - Never `git add .` while чужой dirty present
