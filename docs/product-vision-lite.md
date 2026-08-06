@@ -28,7 +28,7 @@ flowchart TB
     Stock[Склад_остатки_отгрузка]
   end
   subgraph later [Позже_не_сейчас]
-    Gant[Гант_календарь_цеха]
+    Gant[Production_Cockpit_Lego_Gantt]
     PayFlag[Флаг_оплаты_проектный_ОК]
   end
   subgraph out [Не_наше]
@@ -52,7 +52,7 @@ flowchart TB
 1. Менеджер готовит **КП** (одна сущность, не три дубля в модели).  
 2. КП подтвердили → **Заказ**.  
 3. Заказ → модули / виды работ → люди (когда People готовы).  
-4. Позже (backlog): диаграмма Ганта / календарь автораспределения после оплаты и «проектный ОК».  
+4. Позже: **Production Cockpit** (Lego shell + Гант) — design `docs/superpowers/specs/2026-08-06-production-cockpit-lego-design.md`; first code TZ-PRODUCTION-303.  
 5. Документы: шаблон → сформированный PDF/HTML по сделке.  
 6. Склад: остатки/движения по мере необходимости, не второй SAP.
 

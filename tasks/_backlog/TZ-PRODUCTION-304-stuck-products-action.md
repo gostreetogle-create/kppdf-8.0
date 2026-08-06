@@ -2,16 +2,17 @@
 TZ-PRODUCTION-304: Stuck products — Gantt inline alarm
 ═══════════════════════════════════════════════════════════════
 
-STATUS: BACKLOG (parked) — не active в tasks/ до PO un-park.
+STATUS: BACKLOG (parked) — plug-in **after TZ-PRODUCTION-303** cockpit shell.
+CANON: TZ-PRODUCTION-300 Lego; DESIGN: 2026-08-06-production-cockpit-lego-design.md
 SOURCE: docs/compose/plans/2026-08-02-shop-customer-lifecycle.md §2 S5 / §7 #9
-MODE A: Q4 → inline alarm on Gantt (не separate board)
+MODE A: Q4 → inline alarm on Gantt block (не separate board)
 
-РОЛЬ АГЕНТА: Frontend Gantt alarm
-ЗАВИСИМОСТИ: TZ-PRODUCTION-303
+РОЛЬ АГЕНТА: Frontend — block `stuck-alarm` into existing `gantt-bars` slot
+ЗАВИСИМОСТИ: TZ-PRODUCTION-303 DONE (shell exists)
 LAYER: 3
 
 CONFLICT KEYS:
-frontend gantt / production page (same as 303);
+frontend/src/app/pages/production/** (gantt-bars / stuck block);
 docs/agent-checklists/TZ-PRODUCTION-304.md
 
 ═══════════════════════════════════════════════════════════════

@@ -97,6 +97,11 @@
 - Уже на main: TZD-11 foundation, TZD-12 reads, TZD-13 propose/confirm/undo + journal.
 - Дальше критично для пользы: **TZD-14** (MCP из Tauri без ручного pnpm) + **TZD-05** (кнопка pairing в вебе).
 
+### 2026-08-06 evening — Production Cockpit Lego
+- Одно пространство производства = shell + блоки (не монолит).
+- Design + umbrella TZ-PRODUCTION-300; first code = 303 (rail+Gantt оценка).
+- Un-park только по «стартуем Гант»; после 320 предпочтительно.
+
 ### 2026-08-06 evening — 3 parallel executors + Cursor docs
 - #1 catalog FE 320→311; #2 ADMIN-306; #3 TZD-14 desktop MCP.
 - Cursor: Feature Integration Checklist on origin + active-map; не перехватывать их CONFLICT KEYS.

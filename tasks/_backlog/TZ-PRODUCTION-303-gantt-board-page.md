@@ -1,45 +1,100 @@
 ═══════════════════════════════════════════════════════════════
-TZ-PRODUCTION-303: Gantt board page (S5 visualization)
+TZ-PRODUCTION-303: Cockpit shell + orders rail + Gantt bars (Lego #1)
 ═══════════════════════════════════════════════════════════════
 
-STATUS: BACKLOG (parked) — не active в tasks/ до PO un-park.
-SOURCE: docs/compose/plans/2026-08-02-shop-customer-lifecycle.md §2 S5 / §7 #8
-UNPARK: tasks/_backlog/vision/GANT-calendar.md when deps met
+STATUS: BACKLOG (parked) — un-park только по PO «стартуем Гант».
+CANON: `tasks/_backlog/TZ-PRODUCTION-300-production-cockpit-lego.md`
+DESIGN: `docs/superpowers/specs/2026-08-06-production-cockpit-lego-design.md`
+SOURCE: shop-customer-lifecycle §2 S5; PO Lego 2026-08-06
 
-РОЛЬ АГЕНТА: Frontend Gantt page
-ЗАВИСИМОСТИ: TZ-PRODUCTION-302; People linked (WORKERS-*)
+РОЛЬ АГЕНТА: Frontend (Angular 20) — shell + 2 blocks; thin read API only if missing.
+
+ЗАВИСИМОСТИ:
+- TZ-PRODUCTION-302 DONE (`WorkType.days`)
+- People / WorkTypes UI exist
+- Prefer TZ-CATALOG-320 on origin (composition richer for bars)
+- DEFER if `_active` holds ADMIN-306 / other claim on `app.routes.ts` / `app-layout`
+
 LAYER: 3
 
+PAGES: /production
+PAGE_DOCS: production-cockpit.page.md (создать)
+
 CONFLICT KEYS:
-frontend/src/app/pages/production/ (or gantt NEW);
+frontend/src/app/pages/production/** (NEW);
 frontend/src/app/app.routes.ts;
 frontend/src/app/layout/app-layout.component.ts;
-docs/pages/ (gantt/production page.md);
-docs/agent-checklists/TZ-PRODUCTION-303.md
+backend/src/common/seed/permissions.constants.ts (PAGE_KEYS);
+backend/src/common/seed/admin.seed.ts (pages defaults);
+docs/pages/production-cockpit.page.md;
+docs/pages/PAGE-TZ-INDEX.md;
+docs/FEATURE-INTEGRATION-CHECKLIST.md (§A);
+docs/SECTION-READINESS.md (строка Производство);
+docs/agent-checklists/TZ-PRODUCTION-303.md;
+tasks/_active/TZ-PRODUCTION-303.md;
+progress.md
+
+Проверено: WorkType.days round-trip; Orders list API; no /production route yet.
 
 ═══════════════════════════════════════════════════════════════
-ИСХОДНОЕ СОСТОЯНИЕ
+ИСХОДНОЕ
 ═══════════════════════════════════════════════════════════════
 
-Нет страницы Ганта. Vision: 🔜 READY_WHEN_DEPS. Нужна lite-визуализация
-bars по module/workType/days + слоты работников. Paper & Ink, не MS Project.
+Нет страницы производства. Нужен **не** толстый Гант-монолит, а:
+
+1. `ProductionCockpitPage` shell со слотами LEFT + MAIN.
+2. Block `orders-rail` — список заказов + поиск; выбор заказа в context.
+3. Block `gantt-bars` — timeline-оценка по модулям/workTypes/`days`.
+4. Shared `ProductionCockpitContext` (signals).
 
 ═══════════════════════════════════════════════════════════════
 ЧТО ДЕЛАТЬ
 ═══════════════════════════════════════════════════════════════
 
-ШАГ 1 — Route /production/gantt (+ nav + ACCESS page key).
-ШАГ 2 — Bars by module / workType / days from PRODUCTION-302.
-ШАГ 3 — Worker assignment slots (People).
-ШАГ 4 — Paper & Ink lite layout; не overbuild.
+ШАГ 1 — Shell + route + nav + PAGE_KEYS + seed pages + Feature Checklist §A  
+  RU: «Производство». Empty state: «Выберите заказ или покажите все».
+
+ШАГ 2 — `orders-rail`  
+  Read existing orders API; клик задаёт `selectedOrderId`; фильтр «все активные».
+
+ШАГ 3 — `gantt-bars`  
+  Для выбранного заказа (или multi если просто): полоски module × workType.  
+  Длина ≈ `WorkType.days` (календарные); если days null — bar «без срока» (hook для 304).  
+  Лейбл UI: «План-оценка» (не факт).  
+  Worker column: имена из People **если** связь уже есть; иначе «—» / stub (не блочить).
+
+ШАГ 4 — Context wiring + Paper & Ink; 375px usable; focus rings.  
+ШАГ 5 — Page doc + SECTION-READINESS: Производство = SHELL / MVP BUILD.  
+ШАГ 6 — FE tsc + focused jest (shell context + rail select filters bars).
 
 ═══════════════════════════════════════════════════════════════
-КРИТЕРИИ ПРИЁМКИ
+НЕ
 ═══════════════════════════════════════════════════════════════
 
-1. Page renders schedule for at least one order/module happy-path.
-2. Nav visible for Director/Manager (и production role если есть).
-3. Executor report.
+- Full `ProductionSchedule` schema / auto-assign engine (306+).
+- Stuck dialog (304), check-in (305), shipping (307).
+- God-component: вся логика в одном 2kLOC file — блоки отдельные.
+- Catalog 320/311 files; desktop; admin role dialog.
+- `git add .` чужого dirty.
 
-known_limitation: Not MS Project clone. Stuck/check-in — 304/305.
-ПРОМПТ: GEMINI.md + этот файл. Push: по PO.
+═══════════════════════════════════════════════════════════════
+ACCEPTANCE
+═══════════════════════════════════════════════════════════════
+
+1. `/production` открывается; nav виден Director/Manager.
+2. Слева заказы; клик фильтрует/фокусирует Гант справа.
+3. Хотя бы один happy-path заказ с модулями/workTypes рисует bars по `days`.
+4. Явная подпись что это оценка, не факт цеха.
+5. Feature Integration Checklist §A отмечен в checklist.
+6. FE tsc + focused tests PASS; scoped commit only.
+
+known_limitation: Auto-layout / assign writes / stuck / check-in = 304+.  
+Successor: TZ-PRODUCTION-304 plugs into same gantt bars.
+
+Verification:
+```text
+cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit
+cd frontend && pnpm test -- --testPathPattern="production|gantt|cockpit"
+```
+
+ПРОМПТ: GEMINI.md + этот файл + TZ-PRODUCTION-300 + design spec. Push: по PO.

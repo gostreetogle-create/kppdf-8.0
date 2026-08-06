@@ -27,6 +27,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | `/modules`, `/modules/:id` | modules.page.md, module-detail.page.md | MODULES-*; photos; **320** module→module; **311** tree |
 | `/work-types` | work-types.page.md | WORKTYPES-*, **UX-305 DONE**, **PRODUCTION-302 DONE**; **CATALOG-UI-301** |
 | `/people` | people.page.md | **UX-306 DONE**; **CATALOG-UI-301** |
+| `/production` | production-cockpit.page.md (pending 303) | **PRODUCTION-300** Lego canon; **303** shell+Gantt (parked); 304–307 plug-ins |
 
 **Catalog audits / backlog:**  
 [`2026-08-04-catalog-coherence-audit.md`](../audits/2026-08-04-catalog-coherence-audit.md) ·  
