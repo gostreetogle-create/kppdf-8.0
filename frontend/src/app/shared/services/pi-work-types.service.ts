@@ -29,6 +29,8 @@ export interface WorkType {
   defaultDurationHours?: number;
   /** Calendar days for Gantt estimation (TZ-PRODUCTION-302). Null allowed. */
   days?: number | null;
+  /** Optional Gantt/UI accent hue 0–359. Absent → hash from id. */
+  accentHue?: number | null;
   workCenterId?: string | { _id: string; name: string };
   hourlyRate?: number;
   createdAt?: string;

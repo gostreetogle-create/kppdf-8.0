@@ -79,14 +79,29 @@ function mapModuleWorkTypes(
     const catalog = workTypeById.get(id);
     const name = populated?.name ?? catalog?.name ?? id;
     const days = catalog?.days ?? populated?.days ?? null;
+    const accentHue = catalog?.accentHue ?? null;
     return {
       workTypeId: id,
       workTypeName: name,
       estimatedHours: wt.estimatedHours,
       days,
       sortOrder: wt.sortOrder ?? idx,
+      accentHue,
     };
   });
+}
+
+function firstPhotoUrl(
+  photoIds?: Array<string | { storageUrl?: string; _id?: string }> | null,
+  mainPhotoId?: string | { storageUrl?: string } | null,
+): string | null {
+  if (mainPhotoId && typeof mainPhotoId === 'object' && mainPhotoId.storageUrl) {
+    return mainPhotoId.storageUrl;
+  }
+  for (const p of photoIds ?? []) {
+    if (p && typeof p === 'object' && p.storageUrl) return p.storageUrl;
+  }
+  return null;
 }
 
 @Injectable()
@@ -180,6 +195,24 @@ export class ProductionReadFacade {
     const out = new Map<string, string>();
     for (const [wtId, names] of byWt) {
       out.set(wtId, names.join(', ') || '—');
+    }
+    return out;
+  }
+
+  /** First product photo per order (for collapsed rail icons). */
+  async getOrderThumbMap(orders: Order[]): Promise<Map<string, string>> {
+    const out = new Map<string, string>();
+    const warnings: string[] = [];
+    for (const order of orders) {
+      const first = order.items?.[0];
+      const productId = first?.productId;
+      if (!productId) continue;
+      const product = await this.getProduct(productId, warnings);
+      if (!product) continue;
+      const url = firstPhotoUrl(
+        product.photoIds as Array<string | { storageUrl?: string }> | undefined,
+      );
+      if (url) out.set(order._id, url);
     }
     return out;
   }
@@ -303,6 +336,10 @@ export class ProductionReadFacade {
           moduleName: mod.name,
           sortOrder: compositionSort,
           workTypes: mapModuleWorkTypes(mod, workTypes),
+          modulePhotoUrl: firstPhotoUrl(
+            (mod as { photoIds?: Array<string | { storageUrl?: string }> }).photoIds,
+            (mod as { mainPhotoId?: string | { storageUrl?: string } }).mainPhotoId,
+          ),
         });
       }
 
@@ -312,6 +349,9 @@ export class ProductionReadFacade {
         productName: item.productName ?? product.name,
         quantity: item.quantity ?? 1,
         modules,
+        productPhotoUrl: firstPhotoUrl(
+          product.photoIds as Array<string | { storageUrl?: string }> | undefined,
+        ),
       });
     }
 

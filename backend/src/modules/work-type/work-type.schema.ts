@@ -30,6 +30,13 @@ export class WorkType {
   @Prop({ type: Number, default: null })
   days?: number | null;
 
+  /**
+   * Optional accent hue (0–359) for Gantt bars + inspector wash.
+   * Null/absent → deterministic hash from _id on the client.
+   */
+  @Prop({ type: Number, default: null, min: 0, max: 359 })
+  accentHue?: number | null;
+
   @Prop({ type: Types.ObjectId, ref: 'WorkCenter', index: true })
   workCenterId?: Types.ObjectId;
 

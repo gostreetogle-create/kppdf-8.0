@@ -8,6 +8,7 @@ import {
   signal,
   effect,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { OrdersService, type Order, type OrderPriority } from '../../orders/orders.service';
@@ -17,32 +18,50 @@ import { extractErrorMessage } from '../../../core/silent-http';
 import { ProductionReadFacade } from '../production-read.facade';
 import {
   ORDER_STATUS_LABELS,
+  workTypeOklch,
+  workTypeWash,
   type OrderEstimateInput,
   type DirectModuleRef,
 } from '../gantt-bar.model';
 import type { OrderStatus } from '../../orders/orders.service';
 
-const PRIORITIES: { value: OrderPriority; label: string }[] = [
-  { value: 'low', label: 'Низкий' },
-  { value: 'normal', label: 'Обычный' },
-  { value: 'high', label: 'Высокий' },
-  { value: 'urgent', label: 'Срочный' },
+const PRIORITIES: { value: OrderPriority; label: string; hint: string }[] = [
+  {
+    value: 'low',
+    label: 'Низкий',
+    hint: 'Можно сдвинуть в очереди; фильтр rail «Низкий».',
+  },
+  {
+    value: 'normal',
+    label: 'Обычный',
+    hint: 'Стандартная срочность заказа в списке и фильтре.',
+  },
+  {
+    value: 'high',
+    label: 'Высокий',
+    hint: 'Выделяется в rail; фильтр «Высокий». На шкалу дней не влияет.',
+  },
+  {
+    value: 'urgent',
+    label: 'Срочный',
+    hint: 'Максимальная срочность в списке/фильтре. Длительность полос — от дней вида работ.',
+  },
 ];
 
 /**
  * Right-hand order inspector for Production Cockpit.
- * Tree: product → module → work type (+ days edit, workers from facade labels).
  */
 @Component({
   selector: 'app-order-inspector',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent],
+  imports: [ButtonComponent, RouterLink],
   template: `
     <aside
-      class="flex flex-col h-full min-h-0 w-[22rem] shrink-0 border-l hairline bg-paper"
+      class="flex flex-col h-full min-h-0 w-[20rem] xl:w-[22rem] shrink-0 border-l hairline bg-paper"
       data-test="order-inspector"
       aria-label="Карточка заказа на Ганте"
+      (click)="$event.stopPropagation()"
     >
       <header class="shrink-0 px-3 py-2 border-b hairline flex items-start gap-2">
         <div class="min-w-0 flex-1">
@@ -51,14 +70,14 @@ const PRIORITIES: { value: OrderPriority; label: string }[] = [
           </div>
           <div class="text-[11px] text-muted-foreground">
             {{ statusLabel(order().status) }}
-            @if (readOnly()) {
-              <span class="text-amber-700 dark:text-amber-400"> · только просмотр</span>
+            @if (estimateReadOnly()) {
+              <span class="text-amber-700 dark:text-amber-400"> · оценка read-only</span>
             }
           </div>
         </div>
         <button
           type="button"
-          class="pi-btn pi-btn-ghost pi-focus-ring !text-xs !px-2 !py-1 shrink-0"
+          class="pi-btn pi-btn-ghost pi-focus-ring !text-sm !px-2 !py-1 shrink-0"
           (click)="closed.emit()"
           aria-label="Закрыть панель"
           data-test="inspector-close"
@@ -70,11 +89,11 @@ const PRIORITIES: { value: OrderPriority; label: string }[] = [
       <div class="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-4 text-sm">
         <section class="space-y-2" data-test="inspector-meta">
           <label class="block text-xs text-muted-foreground">
-            Приоритет
+            Приоритет заказа
             <select
               class="pi-input w-full mt-1 text-sm"
               [value]="priorityDraft()"
-              [disabled]="readOnly() || saving()"
+              [disabled]="!canEditOrder() || saving()"
               (change)="onPriority($event)"
               data-test="inspector-priority"
             >
@@ -83,18 +102,25 @@ const PRIORITIES: { value: OrderPriority; label: string }[] = [
               }
             </select>
           </label>
+          <p
+            class="text-[11px] text-muted-foreground leading-snug"
+            data-test="inspector-priority-hint"
+          >
+            {{ priorityHint() }} Не длина полоски на календаре — только важность в списке и фильтре
+            слева.
+          </p>
           <label class="block text-xs text-muted-foreground">
-            План. дата (якорь Ганта)
+            План. дата (якорь шкалы Ганта)
             <input
               type="date"
               class="pi-input w-full mt-1 text-sm"
               [value]="plannedDraft()"
-              [disabled]="readOnly() || saving()"
+              [disabled]="!canEditOrder() || saving()"
               (change)="onPlanned($event)"
               data-test="inspector-planned-date"
             />
           </label>
-          @if (!readOnly()) {
+          @if (canEditOrder()) {
             <app-pi-button
               variant="default"
               size="sm"
@@ -105,6 +131,10 @@ const PRIORITIES: { value: OrderPriority; label: string }[] = [
             >
               {{ saving() ? 'Сохранение…' : 'Сохранить заказ' }}
             </app-pi-button>
+          } @else {
+            <p class="text-[11px] text-muted-foreground">
+              Правка заказа — роли admin / manager (как на API).
+            </p>
           }
         </section>
 
@@ -117,51 +147,108 @@ const PRIORITIES: { value: OrderPriority; label: string }[] = [
               Нет позиций или у изделий нет модулей.
             </p>
           } @else {
-            <ul class="space-y-1">
+            <ul class="space-y-2">
               @for (item of tree()!.items; track item.orderItemIndex) {
-                <li class="border hairline rounded-sm">
-                  <button
-                    type="button"
-                    class="w-full text-left px-2 py-1.5 pi-focus-ring flex items-center gap-1"
-                    (click)="toggle('p-' + item.orderItemIndex)"
-                    [attr.data-test]="'inspector-product-' + item.orderItemIndex"
-                  >
-                    <span class="text-[10px] w-3">{{
-                      expanded().has('p-' + item.orderItemIndex) ? '▾' : '▸'
-                    }}</span>
-                    <span class="font-medium truncate flex-1">{{ item.productName }}</span>
-                    <span class="font-mono text-[10px] text-muted-foreground"
-                      >×{{ item.quantity }}</span
+                <li class="border hairline rounded-sm overflow-hidden bg-paper">
+                  <div class="flex items-stretch">
+                    <button
+                      type="button"
+                      class="flex-1 min-w-0 text-left px-2 py-2.5 pi-focus-ring flex items-center gap-2 hover:bg-paper-2"
+                      (click)="toggle('p-' + item.orderItemIndex)"
+                      [attr.aria-expanded]="expanded().has('p-' + item.orderItemIndex)"
+                      [attr.data-test]="'inspector-product-' + item.orderItemIndex"
                     >
-                  </button>
+                      <span
+                        class="inline-flex items-center justify-center w-7 h-7 shrink-0 rounded-sm border hairline text-sm font-semibold text-ink bg-paper-2"
+                        aria-hidden="true"
+                        >{{ expanded().has('p-' + item.orderItemIndex) ? '−' : '+' }}</span
+                      >
+                      @if (item.productPhotoUrl) {
+                        <img
+                          [src]="item.productPhotoUrl"
+                          alt=""
+                          class="w-9 h-9 rounded-sm object-cover border hairline shrink-0"
+                        />
+                      } @else {
+                        <span
+                          class="w-9 h-9 rounded-sm border hairline shrink-0 bg-paper-2 text-[10px] flex items-center justify-center text-muted-foreground"
+                          >изд.</span
+                        >
+                      }
+                      <span class="min-w-0 flex-1">
+                        <span class="font-medium block truncate">{{ item.productName }}</span>
+                        <span class="text-[10px] text-muted-foreground"
+                          >Изделие · нажмите строку</span
+                        >
+                      </span>
+                      <span class="font-mono text-[10px] text-muted-foreground shrink-0"
+                        >×{{ item.quantity }}</span
+                      >
+                    </button>
+                    <a
+                      class="shrink-0 px-2 flex items-center text-[11px] text-ink underline-offset-2 hover:underline border-l hairline pi-focus-ring"
+                      [routerLink]="['/products', item.productId]"
+                      data-test="inspector-open-product"
+                      title="Открыть карточку изделия"
+                      >→</a
+                    >
+                  </div>
                   @if (expanded().has('p-' + item.orderItemIndex)) {
-                    <ul class="border-t hairline bg-paper-2/30">
+                    <ul class="border-t hairline">
                       @for (mod of item.modules; track mod.moduleId) {
                         <li>
-                          <button
-                            type="button"
-                            class="w-full text-left pl-5 pr-2 py-1.5 pi-focus-ring flex items-center gap-1 text-xs"
-                            (click)="toggle('m-' + mod.moduleId)"
-                            [attr.data-test]="'inspector-module-' + mod.moduleId"
-                          >
-                            <span class="text-[10px] w-3">{{
-                              expanded().has('m-' + mod.moduleId) ? '▾' : '▸'
-                            }}</span>
-                            <span class="truncate">{{ mod.moduleName }}</span>
-                          </button>
+                          <div class="flex items-stretch">
+                            <button
+                              type="button"
+                              class="flex-1 min-w-0 text-left pl-3 pr-2 py-2 pi-focus-ring flex items-center gap-2 hover:bg-paper-2 text-xs"
+                              (click)="toggle('m-' + mod.moduleId)"
+                              [attr.aria-expanded]="expanded().has('m-' + mod.moduleId)"
+                              [attr.data-test]="'inspector-module-' + mod.moduleId"
+                            >
+                              <span
+                                class="inline-flex items-center justify-center w-6 h-6 shrink-0 rounded-sm border hairline text-xs font-semibold bg-paper-2"
+                                aria-hidden="true"
+                                >{{ expanded().has('m-' + mod.moduleId) ? '−' : '+' }}</span
+                              >
+                              @if (mod.modulePhotoUrl) {
+                                <img
+                                  [src]="mod.modulePhotoUrl"
+                                  alt=""
+                                  class="w-8 h-8 rounded-sm object-cover border hairline shrink-0"
+                                />
+                              }
+                              <span class="truncate font-medium">{{ mod.moduleName }}</span>
+                            </button>
+                            <a
+                              class="shrink-0 px-2 flex items-center text-[11px] underline-offset-2 hover:underline border-l hairline pi-focus-ring"
+                              [routerLink]="['/modules', mod.moduleId]"
+                              data-test="inspector-open-module"
+                              title="Открыть карточку модуля"
+                              >→</a
+                            >
+                          </div>
                           @if (expanded().has('m-' + mod.moduleId)) {
                             <ul class="border-t hairline">
                               @for (wt of mod.workTypes; track wt.workTypeId) {
                                 <li
-                                  class="pl-8 pr-2 py-2 space-y-1 border-b hairline last:border-0"
+                                  class="pl-4 pr-2 py-2.5 space-y-1.5 border-b hairline last:border-0"
+                                  [style.background]="wtWash(wt.workTypeId, wt.accentHue)"
                                   [attr.data-test]="'inspector-wt-' + wt.workTypeId"
                                 >
-                                  <div class="text-xs font-medium">{{ wt.workTypeName }}</div>
-                                  <div class="text-[10px] text-muted-foreground">
-                                    Люди:
-                                    {{ workerLabel(wt.workTypeId) }}
+                                  <div class="flex items-center gap-2">
+                                    <span
+                                      class="w-3 h-3 rounded-sm shrink-0 border hairline"
+                                      [style.background]="wtFill(wt.workTypeId, wt.accentHue)"
+                                      aria-hidden="true"
+                                    ></span>
+                                    <div class="text-xs font-medium truncate">
+                                      {{ wt.workTypeName }}
+                                    </div>
                                   </div>
-                                  <label class="flex items-center gap-2 text-[11px]">
+                                  <div class="text-[10px] text-muted-foreground pl-5">
+                                    Люди: {{ workerLabel(wt.workTypeId) }}
+                                  </div>
+                                  <label class="flex items-center gap-2 text-[11px] pl-5">
                                     <span class="text-muted-foreground shrink-0">Дни</span>
                                     <input
                                       type="number"
@@ -169,13 +256,14 @@ const PRIORITIES: { value: OrderPriority; label: string }[] = [
                                       step="1"
                                       class="pi-input !py-0.5 !text-xs w-16"
                                       [value]="daysDraft(wt.workTypeId, wt.days)"
-                                      [disabled]="readOnly() || daysSaving()"
+                                      [disabled]="!canEditCatalog() || daysSaving()"
                                       (change)="onDaysChange(wt.workTypeId, $event)"
                                       [attr.data-test]="'inspector-days-' + wt.workTypeId"
                                     />
                                   </label>
-                                  <p class="text-[10px] text-muted-foreground/80">
-                                    Дни — справочник вида работ (влияют на все заказы с этим видом).
+                                  <p class="text-[10px] text-muted-foreground/80 pl-5">
+                                    Цвет = вид работ (как полоска на Ганте). Дни — справочник, на
+                                    все заказы с этим видом.
                                   </p>
                                 </li>
                               } @empty {
@@ -202,7 +290,12 @@ const PRIORITIES: { value: OrderPriority; label: string }[] = [
 })
 export class OrderInspectorComponent {
   readonly order = input.required<Order>();
-  readonly readOnly = input(false);
+  /** Status shipped/delivered/cancelled — estimate view hint. */
+  readonly estimateReadOnly = input(false);
+  /** Mirror BE @Roles(admin|manager) for order PATCH. */
+  readonly canEditOrder = input(false);
+  /** Catalog WorkType.days — typically admin/manager. */
+  readonly canEditCatalog = input(false);
   readonly workerLabels = input<ReadonlyMap<string, string>>(new Map());
   readonly closed = output<void>();
   readonly changed = output<void>();
@@ -228,6 +321,11 @@ export class OrderInspectorComponent {
     return this.priorityDraft() !== (o.priority ?? 'normal') || this.plannedDraft() !== planned;
   });
 
+  protected readonly priorityHint = computed(() => {
+    const hit = PRIORITIES.find((p) => p.value === this.priorityDraft());
+    return hit?.hint ?? '';
+  });
+
   constructor() {
     effect(() => {
       const o = this.order();
@@ -244,6 +342,14 @@ export class OrderInspectorComponent {
 
   protected workerLabel(workTypeId: string): string {
     return this.workerLabels().get(workTypeId) ?? '—';
+  }
+
+  protected wtWash(workTypeId: string, hue?: number | null): string {
+    return workTypeWash(workTypeId, hue);
+  }
+
+  protected wtFill(workTypeId: string, hue?: number | null): string {
+    return workTypeOklch(workTypeId, 0.12, 0.72, hue);
   }
 
   protected daysDraft(workTypeId: string, days: number | null | undefined): number | string {
@@ -268,7 +374,7 @@ export class OrderInspectorComponent {
   }
 
   protected async saveMeta(): Promise<void> {
-    if (this.readOnly() || this.saving()) return;
+    if (!this.canEditOrder() || this.saving()) return;
     this.saving.set(true);
     const planned = this.plannedDraft();
     const res = await firstValueFrom(
@@ -287,7 +393,7 @@ export class OrderInspectorComponent {
   }
 
   protected async onDaysChange(workTypeId: string, ev: Event): Promise<void> {
-    if (this.readOnly()) return;
+    if (!this.canEditCatalog()) return;
     const raw = (ev.target as HTMLInputElement).value;
     const days = Math.floor(Number(raw));
     if (!Number.isFinite(days) || days < 1) {

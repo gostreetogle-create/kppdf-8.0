@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Max,
   Min,
 } from 'class-validator';
 import { IsObjectId } from '../../../common/decorators/is-object-id.decorator';
@@ -27,5 +28,7 @@ export class CreateWorkTypeDto {
    * >0 required when present; null/absent allowed (stuck path).
    */
   @IsOptional() @IsInt() @Min(1) days?: number | null;
+  /** Gantt accent hue 0–359; null clears to auto. */
+  @IsOptional() @IsInt() @Min(0) @Max(359) accentHue?: number | null;
   @IsOptional() @IsObjectId() @ToObjectId() workCenterId?: string;
 }

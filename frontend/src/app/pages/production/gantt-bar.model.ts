@@ -103,6 +103,8 @@ export interface ModuleWorkTypeRef {
   estimatedHours?: number | null;
   days: number | null | undefined;
   sortOrder: number;
+  /** Optional catalog accent (0–359). Null → hash from id. */
+  accentHue?: number | null;
 }
 
 export interface DirectModuleRef {
@@ -110,6 +112,7 @@ export interface DirectModuleRef {
   moduleName: string;
   sortOrder: number;
   workTypes: ModuleWorkTypeRef[];
+  modulePhotoUrl?: string | null;
 }
 
 export interface OrderItemEstimateInput {
@@ -118,6 +121,7 @@ export interface OrderItemEstimateInput {
   productName: string;
   quantity: number;
   modules: DirectModuleRef[];
+  productPhotoUrl?: string | null;
 }
 
 export interface OrderEstimateInput {
@@ -151,6 +155,7 @@ export interface GanttBar {
   endDate: string;
   usedFallbackToday: boolean;
   workerLabel: string;
+  accentHue?: number | null;
 }
 
 function sortByOrderThenIndex<T extends { sortOrder: number }>(
@@ -215,6 +220,7 @@ export function buildGanttBars(order: OrderEstimateInput, today: Date = new Date
           endDate: formatDateOnly(end),
           usedFallbackToday,
           workerLabel: '—',
+          accentHue: wt.accentHue ?? null,
         });
 
         // Sequential visual pack: advance only when we have a positive day span.
@@ -229,14 +235,28 @@ export function buildGanttBars(order: OrderEstimateInput, today: Date = new Date
   return bars;
 }
 
-/** Stable OKLCH fill from workTypeId (colorful bars — PO OK). */
-export function workTypeOklch(workTypeId: string, chroma = 0.12, lightness = 0.72): string {
+/** Stable OKLCH fill from workTypeId (colorful bars — PO OK). Optional catalog hue. */
+export function workTypeOklch(
+  workTypeId: string,
+  chroma = 0.12,
+  lightness = 0.72,
+  hueOverride?: number | null,
+): string {
   let h = 0;
-  for (let i = 0; i < workTypeId.length; i++) {
-    h = (h * 31 + workTypeId.charCodeAt(i)) >>> 0;
+  if (hueOverride != null && Number.isFinite(hueOverride)) {
+    h = ((Math.round(hueOverride) % 360) + 360) % 360;
+  } else {
+    for (let i = 0; i < workTypeId.length; i++) {
+      h = (h * 31 + workTypeId.charCodeAt(i)) >>> 0;
+    }
+    h = h % 360;
   }
-  const hue = h % 360;
-  return `oklch(${lightness} ${chroma} ${hue})`;
+  return `oklch(${lightness} ${chroma} ${h})`;
+}
+
+/** Soft wash for inspector cards (same hue family as bars). */
+export function workTypeWash(workTypeId: string, hueOverride?: number | null): string {
+  return workTypeOklch(workTypeId, 0.06, 0.94, hueOverride);
 }
 
 export function filterOrdersForRail<

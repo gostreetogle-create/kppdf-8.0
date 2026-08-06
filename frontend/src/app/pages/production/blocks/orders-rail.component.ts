@@ -21,126 +21,186 @@ const PRIORITY_OPTS: { value: OrderPriority | 'all'; label: string }[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col h-full min-h-0 border-r hairline bg-paper">
-      <div class="p-3 space-y-2 shrink-0">
-        <label class="text-xs font-medium text-muted-foreground" for="prod-order-search"
-          >Заказы</label
-        >
-        <input
-          id="prod-order-search"
-          type="search"
-          class="pi-input w-full text-sm"
-          placeholder="Поиск по номеру…"
-          [value]="ctx.search()"
-          (input)="onSearch($event)"
-          data-test="orders-rail-search"
-        />
-        <label class="flex items-center gap-2 text-xs text-ink cursor-pointer">
-          <input
-            type="checkbox"
-            class="pi-focus-ring"
-            [checked]="ctx.activeOnly()"
-            (change)="onActiveToggle($event)"
-            data-test="orders-rail-active-only"
-          />
-          Все активные
-        </label>
-        <label class="block text-[11px] text-muted-foreground">
-          Приоритет
-          <select
-            class="pi-input w-full mt-0.5 text-xs"
-            [value]="ctx.priorityFilter()"
-            (change)="onPriority($event)"
-            data-test="orders-rail-priority"
-          >
-            @for (p of priorityOpts; track p.value) {
-              <option [value]="p.value">{{ p.label }}</option>
-            }
-          </select>
-        </label>
-        <div class="grid grid-cols-2 gap-1">
-          <label class="block text-[11px] text-muted-foreground">
-            С
-            <input
-              type="date"
-              class="pi-input w-full mt-0.5 text-xs"
-              [value]="ctx.dateFrom() ?? ''"
-              (change)="onDateFrom($event)"
-              data-test="orders-rail-date-from"
-            />
-          </label>
-          <label class="block text-[11px] text-muted-foreground">
-            По
-            <input
-              type="date"
-              class="pi-input w-full mt-0.5 text-xs"
-              [value]="ctx.dateTo() ?? ''"
-              (change)="onDateTo($event)"
-              data-test="orders-rail-date-to"
-            />
-          </label>
-        </div>
-      </div>
-      <ul class="flex-1 overflow-y-auto min-h-0" role="listbox" aria-label="Список заказов">
-        <li class="px-3 pb-1">
+      @if (collapsed()) {
+        <div class="flex flex-col items-center gap-1 py-2 px-1" data-test="orders-rail-collapsed">
           <button
             type="button"
-            class="w-full text-left text-xs px-2 py-1.5 rounded-sm border hairline pi-focus-ring"
+            class="w-10 h-10 rounded-sm border hairline pi-focus-ring text-xs"
+            (click)="expandRail.emit()"
+            title="Развернуть список"
+            data-test="orders-rail-expand"
+          >
+            »»
+          </button>
+          <button
+            type="button"
+            class="w-10 h-10 rounded-sm border hairline pi-focus-ring text-[10px]"
             [class.bg-paper-2]="ctx.selectedOrderId() === null"
             (click)="selectAll.emit()"
-            data-test="orders-rail-all"
+            title="Все активные"
+            data-test="orders-rail-all-icon"
           >
-            Все активные (оценка)
+            все
           </button>
-        </li>
-        @for (o of visible(); track o._id) {
-          <li>
+          @for (o of visible(); track o._id) {
             <button
               type="button"
-              role="option"
-              class="w-full text-left px-3 py-2.5 pi-focus-ring border-b hairline hover:bg-paper-2 transition-colors"
-              [class.bg-paper-2]="ctx.selectedOrderId() === o._id"
-              [attr.aria-selected]="ctx.selectedOrderId() === o._id"
+              class="w-10 h-10 rounded-sm border hairline pi-focus-ring overflow-hidden relative"
+              [class.ring-2]="ctx.selectedOrderId() === o._id"
               (click)="select.emit(o._id)"
-              [attr.data-test]="'orders-rail-item-' + o._id"
+              [attr.title]="o.number"
+              [attr.data-test]="'orders-rail-icon-' + o._id"
             >
-              <div class="flex items-center justify-between gap-2">
-                <span class="text-sm font-medium truncate">{{ o.number }}</span>
-                <span
-                  class="shrink-0 w-2 h-2 rounded-full"
-                  [style.background]="statusPip(o.status)"
-                  [attr.title]="statusLabel(o.status)"
-                ></span>
-              </div>
-              <div class="text-[11px] text-muted-foreground mt-0.5 flex gap-2 flex-wrap">
-                <span>{{ statusLabel(o.status) }}</span>
-                @if (o.priority && o.priority !== 'normal') {
-                  <span>{{ priorityLabel(o.priority) }}</span>
-                }
-                @if (isReadOnly(o.status)) {
-                  <span class="text-amber-700 dark:text-amber-400">только оценка</span>
-                }
-              </div>
+              @if (thumbs().get(o._id); as src) {
+                <img [src]="src" alt="" class="w-full h-full object-cover" />
+              } @else {
+                <span class="text-[9px] leading-tight px-0.5 break-all">{{
+                  shortNum(o.number)
+                }}</span>
+              }
+              <span
+                class="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 rounded-full"
+                [style.background]="statusPip(o.status)"
+              ></span>
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="p-3 space-y-2 shrink-0">
+          <label class="text-xs font-medium text-muted-foreground" for="prod-order-search"
+            >Заказы</label
+          >
+          <input
+            id="prod-order-search"
+            type="search"
+            class="pi-input w-full text-sm"
+            placeholder="Поиск по номеру…"
+            [value]="ctx.search()"
+            (input)="onSearch($event)"
+            data-test="orders-rail-search"
+          />
+          <label class="flex items-center gap-2 text-xs text-ink cursor-pointer">
+            <input
+              type="checkbox"
+              class="pi-focus-ring"
+              [checked]="ctx.activeOnly()"
+              (change)="onActiveToggle($event)"
+              data-test="orders-rail-active-only"
+            />
+            Все активные
+          </label>
+          <label class="block text-[11px] text-muted-foreground">
+            Приоритет
+            <select
+              class="pi-input w-full mt-0.5 text-xs"
+              [value]="ctx.priorityFilter()"
+              (change)="onPriority($event)"
+              data-test="orders-rail-priority"
+            >
+              @for (p of priorityOpts; track p.value) {
+                <option [value]="p.value">{{ p.label }}</option>
+              }
+            </select>
+          </label>
+          <p class="text-[10px] text-muted-foreground leading-snug">
+            Приоритет — важность в списке/фильтре, не длина полосок на Ганте.
+          </p>
+          <div class="grid grid-cols-2 gap-1">
+            <label class="block text-[11px] text-muted-foreground">
+              С
+              <input
+                type="date"
+                class="pi-input w-full mt-0.5 text-xs"
+                [value]="ctx.dateFrom() ?? ''"
+                (change)="onDateFrom($event)"
+                data-test="orders-rail-date-from"
+              />
+            </label>
+            <label class="block text-[11px] text-muted-foreground">
+              По
+              <input
+                type="date"
+                class="pi-input w-full mt-0.5 text-xs"
+                [value]="ctx.dateTo() ?? ''"
+                (change)="onDateTo($event)"
+                data-test="orders-rail-date-to"
+              />
+            </label>
+          </div>
+        </div>
+        <ul class="flex-1 overflow-y-auto min-h-0" role="listbox" aria-label="Список заказов">
+          <li class="px-3 pb-1">
+            <button
+              type="button"
+              class="w-full text-left text-xs px-2 py-1.5 rounded-sm border hairline pi-focus-ring"
+              [class.bg-paper-2]="ctx.selectedOrderId() === null"
+              (click)="selectAll.emit()"
+              data-test="orders-rail-all"
+            >
+              Все активные (оценка)
             </button>
           </li>
-        } @empty {
-          <li class="p-4 text-sm text-muted-foreground space-y-1" data-test="orders-rail-empty">
-            <div>В базе нет активных заказов под фильтр.</div>
-            <div class="text-xs opacity-80">
-              Создайте заказ в «Сделки» или запустите
-              <code class="font-mono">node scripts/seed-local-demo.mjs</code>
-            </div>
-          </li>
-        }
-      </ul>
+          @for (o of visible(); track o._id) {
+            <li>
+              <button
+                type="button"
+                role="option"
+                class="w-full text-left px-3 py-2.5 pi-focus-ring border-b hairline hover:bg-paper-2 transition-colors flex gap-2 items-start"
+                [class.bg-paper-2]="ctx.selectedOrderId() === o._id"
+                [attr.aria-selected]="ctx.selectedOrderId() === o._id"
+                (click)="select.emit(o._id)"
+                [attr.data-test]="'orders-rail-item-' + o._id"
+              >
+                @if (thumbs().get(o._id); as src) {
+                  <img
+                    [src]="src"
+                    alt=""
+                    class="w-9 h-9 rounded-sm object-cover border hairline shrink-0"
+                  />
+                }
+                <span class="min-w-0 flex-1">
+                  <span class="flex items-center justify-between gap-2">
+                    <span class="text-sm font-medium truncate">{{ o.number }}</span>
+                    <span
+                      class="shrink-0 w-2 h-2 rounded-full"
+                      [style.background]="statusPip(o.status)"
+                      [attr.title]="statusLabel(o.status)"
+                    ></span>
+                  </span>
+                  <span class="text-[11px] text-muted-foreground mt-0.5 flex gap-2 flex-wrap">
+                    <span>{{ statusLabel(o.status) }}</span>
+                    @if (o.priority && o.priority !== 'normal') {
+                      <span>{{ priorityLabel(o.priority) }}</span>
+                    }
+                    @if (isReadOnly(o.status)) {
+                      <span class="text-amber-700 dark:text-amber-400">только оценка</span>
+                    }
+                  </span>
+                </span>
+              </button>
+            </li>
+          } @empty {
+            <li class="p-4 text-sm text-muted-foreground space-y-1" data-test="orders-rail-empty">
+              <div>В базе нет активных заказов под фильтр.</div>
+              <div class="text-xs opacity-80">
+                Создайте заказ в «Сделки» или
+                <code class="font-mono">node scripts/seed-local-demo.mjs</code>
+              </div>
+            </li>
+          }
+        </ul>
+      }
     </div>
   `,
 })
 export class OrdersRailComponent {
   readonly orders = input.required<Order[]>();
+  readonly collapsed = input(false);
+  readonly thumbs = input<ReadonlyMap<string, string>>(new Map());
   readonly select = output<string>();
   readonly selectAll = output<void>();
-  /** Parent refreshes multi-order Gantt when filters change. */
   readonly filtersChanged = output<void>();
+  readonly expandRail = output<void>();
 
   protected readonly ctx = inject(ProductionCockpitContext);
   protected readonly priorityOpts = PRIORITY_OPTS;
@@ -155,6 +215,11 @@ export class OrdersRailComponent {
       dateTo: this.ctx.dateTo(),
     }),
   );
+
+  protected shortNum(n: string): string {
+    const parts = n.split('-');
+    return parts[parts.length - 1]?.slice(-4) || n.slice(-4);
+  }
 
   protected statusLabel(s: OrderStatus): string {
     return ORDER_STATUS_LABELS[s] ?? s;

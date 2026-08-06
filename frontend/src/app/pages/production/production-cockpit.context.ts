@@ -20,6 +20,8 @@ export class ProductionCockpitContext {
   /** ISO date-only range on plannedDate ?? date. */
   readonly dateFrom = signal<string | null>(null);
   readonly dateTo = signal<string | null>(null);
+  /** Collapsed rail = icon strip for more calendar width. */
+  readonly railCollapsed = signal(false);
 
   selectOrder(id: string | null): void {
     this.selectedOrderId.set(id);
@@ -47,5 +49,13 @@ export class ProductionCockpitContext {
 
   setDateTo(value: string | null): void {
     this.dateTo.set(value || null);
+  }
+
+  toggleRailCollapsed(): void {
+    this.railCollapsed.update((v) => !v);
+  }
+
+  setRailCollapsed(value: boolean): void {
+    this.railCollapsed.set(value);
   }
 }

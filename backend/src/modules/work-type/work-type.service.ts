@@ -30,7 +30,7 @@ export class WorkTypeService {
 
   async update(id: string, dto: UpdateWorkTypeDto): Promise<WorkTypeDocument> {
     const doc = await this.findById(id);
-    if (dto.name !== undefined) doc.name = dto.name; if (dto.section !== undefined) doc.section = dto.section; if (dto.description !== undefined) doc.description = dto.description; if (dto.isActive !== undefined) doc.isActive = dto.isActive; if (dto.department !== undefined) doc.department = dto.department; if (dto.defaultDurationHours !== undefined) doc.defaultDurationHours = dto.defaultDurationHours; if (dto.hourlyRate !== undefined) doc.hourlyRate = dto.hourlyRate; if (dto.days !== undefined) doc.days = dto.days; if (dto.workCenterId !== undefined) doc.workCenterId = dto.workCenterId ? new Types.ObjectId(dto.workCenterId) : (undefined as unknown as Types.ObjectId);
+    if (dto.name !== undefined) doc.name = dto.name; if (dto.section !== undefined) doc.section = dto.section; if (dto.description !== undefined) doc.description = dto.description; if (dto.isActive !== undefined) doc.isActive = dto.isActive; if (dto.department !== undefined) doc.department = dto.department; if (dto.defaultDurationHours !== undefined) doc.defaultDurationHours = dto.defaultDurationHours; if (dto.hourlyRate !== undefined) doc.hourlyRate = dto.hourlyRate; if (dto.days !== undefined) doc.days = dto.days; if (dto.accentHue !== undefined) doc.accentHue = dto.accentHue; if (dto.workCenterId !== undefined) doc.workCenterId = dto.workCenterId ? new Types.ObjectId(dto.workCenterId) : (undefined as unknown as Types.ObjectId);
     return doc.save();
   }
 

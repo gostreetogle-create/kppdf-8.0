@@ -33,9 +33,15 @@
 | gantt-bars | `blocks/gantt-bars.component.ts` | Timeline-оценка, zoom day/week (day ≈36px) |
 | order-inspector | `blocks/order-inspector.component.ts` | Панель заказа: мета + дерево товар→модуль→вид работ |
 
-### Inspector (2026-08-06)
+### Inspector UX (follow-up 2026-08-06 evening)
 
-Клик по заказу в rail открывает правую панель: приоритет, план. дата, иерархия состава, дни вида работ (справочник), люди по `Worker.workTypeIds`. Drag полосок **не** в этой волне (нет order-level duration). Spec: `docs/superpowers/specs/2026-08-06-production-gantt-inspector-design.md`.
+- Приоритет = важность в списке/фильтре (**не** длина полосок); подсказка в UI.
+- Виды работ: wash/цвет как на Ганте; опц. `WorkType.accentHue` в форме вида работ.
+- Раскрытие дерева: крупные «+ / −», клик по всей строке; «→» в карточку `/products/:id` / `/modules/:id`.
+- Фото изделия/модуля в дереве и иконки в свёрнутом rail (если есть `storageUrl`).
+- Клик по области Ганта закрывает правую панель; rail сворачивается («« список» / «☰ заказы»).
+- Шире календарь: rail `w-56` / collapsed `w-14`, header компактнее.
+- Правка заказа/дней: роли **admin|manager** (зеркало BE `@Roles`).
 
 ### Services / context
 

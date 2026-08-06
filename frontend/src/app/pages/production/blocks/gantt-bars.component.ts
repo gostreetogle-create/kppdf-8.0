@@ -139,7 +139,9 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
                   [class.border-muted-foreground]="row.bar.noTerm"
                   [style.left.px]="row.leftPx"
                   [style.width.px]="row.widthPx"
-                  [style.background]="row.bar.noTerm ? 'transparent' : fill(row.bar.workTypeId)"
+                  [style.background]="
+                    row.bar.noTerm ? 'transparent' : fill(row.bar.workTypeId, row.bar.accentHue)
+                  "
                   [style.backgroundImage]="
                     row.bar.noTerm
                       ? 'repeating-linear-gradient(135deg, transparent, transparent 4px, oklch(0.7 0.02 250 / 0.35) 4px, oklch(0.7 0.02 250 / 0.35) 8px)'
@@ -256,8 +258,8 @@ export class GanttBarsComponent {
     return Math.max(0, Math.min(this.totalDays(), t)) * this.pxPerDay();
   });
 
-  protected fill(workTypeId: string): string {
-    return workTypeOklch(workTypeId);
+  protected fill(workTypeId: string, hue?: number | null): string {
+    return workTypeOklch(workTypeId, 0.12, 0.72, hue);
   }
 
   protected barTitle(b: GanttBar): string {

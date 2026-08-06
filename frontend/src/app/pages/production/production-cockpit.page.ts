@@ -7,6 +7,7 @@ import {
   signal,
   computed,
 } from '@angular/core';
+import { AuthService } from '../../core/auth.service';
 import { OrdersRailComponent } from './blocks/orders-rail.component';
 import { GanttBarsComponent } from './blocks/gantt-bars.component';
 import { OrderInspectorComponent } from './blocks/order-inspector.component';
@@ -42,10 +43,20 @@ function isReadOnlyEstimateStatus(status: OrderStatus): boolean {
       data-test="production-cockpit"
     >
       <header
-        class="shrink-0 flex flex-wrap items-center gap-3 px-4 py-2 border-b hairline bg-paper"
+        class="shrink-0 flex flex-wrap items-center gap-2 px-3 py-1.5 border-b hairline bg-paper"
       >
         <h1 class="text-base font-semibold text-ink">Производство</h1>
         <span class="text-xs text-muted-foreground">Кокпит · план-оценка</span>
+        <button
+          type="button"
+          class="pi-btn pi-btn-ghost pi-focus-ring !text-xs !px-2 !py-1"
+          (click)="ctx.toggleRailCollapsed()"
+          [attr.aria-pressed]="ctx.railCollapsed()"
+          data-test="rail-collapse-toggle"
+          title="Свернуть/развернуть список заказов"
+        >
+          {{ ctx.railCollapsed() ? '☰ заказы' : '« список' }}
+        </button>
         <span class="flex-1"></span>
         <div class="flex items-center gap-1 text-xs">
           <button
@@ -76,15 +87,26 @@ function isReadOnlyEstimateStatus(status: OrderStatus): boolean {
       }
 
       <div class="flex flex-1 min-h-0 overflow-hidden">
-        <aside class="w-64 shrink-0 min-h-0 flex flex-col">
+        <aside
+          class="shrink-0 min-h-0 flex flex-col transition-[width] duration-200"
+          [class.w-14]="ctx.railCollapsed()"
+          [class.w-56]="!ctx.railCollapsed()"
+        >
           <app-orders-rail
             [orders]="orders()"
+            [collapsed]="ctx.railCollapsed()"
+            [thumbs]="orderThumbs()"
             (select)="onSelect($event)"
             (selectAll)="onSelectAll()"
             (filtersChanged)="onFiltersChanged()"
+            (expandRail)="ctx.setRailCollapsed(false)"
           />
         </aside>
-        <main class="flex-1 min-w-0 min-h-0 flex flex-col relative">
+        <main
+          class="flex-1 min-w-0 min-h-0 flex flex-col relative"
+          data-test="gantt-main"
+          (click)="onMainClick()"
+        >
           @if (facade.state().loading) {
             <div
               class="absolute inset-0 z-10 flex items-center justify-center text-sm text-muted-foreground bg-paper/70"
@@ -106,7 +128,9 @@ function isReadOnlyEstimateStatus(status: OrderStatus): boolean {
         @if (inspectorOrder(); as ord) {
           <app-order-inspector
             [order]="ord"
-            [readOnly]="readOnly()"
+            [estimateReadOnly]="readOnly()"
+            [canEditOrder]="canEditOrder()"
+            [canEditCatalog]="canEditOrder()"
             [workerLabels]="workerLabels()"
             (closed)="closeInspector()"
             (changed)="onInspectorChanged()"
@@ -119,6 +143,7 @@ function isReadOnlyEstimateStatus(status: OrderStatus): boolean {
 export class ProductionCockpitPage implements OnInit {
   protected readonly ctx = inject(ProductionCockpitContext);
   protected readonly facade = inject(ProductionReadFacade);
+  private readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly orders = signal<Order[]>([]);
@@ -128,7 +153,13 @@ export class ProductionCockpitPage implements OnInit {
   protected readonly usedTodayFallback = signal(false);
   protected readonly readOnly = signal(false);
   protected readonly workerLabels = signal<ReadonlyMap<string, string>>(new Map());
+  protected readonly orderThumbs = signal<ReadonlyMap<string, string>>(new Map());
   protected readonly inspectorOpen = signal(false);
+
+  protected readonly canEditOrder = computed(() => {
+    const role = this.auth.user()?.role;
+    return role === 'admin' || role === 'manager';
+  });
 
   protected readonly inspectorOrder = computed(() => {
     if (!this.inspectorOpen()) return null;
@@ -140,6 +171,10 @@ export class ProductionCockpitPage implements OnInit {
   ngOnInit(): void {
     void this.bootstrap();
     this.destroyRef.onDestroy(() => this.facade.clearCaches());
+  }
+
+  protected onMainClick(): void {
+    if (this.inspectorOpen()) this.closeInspector();
   }
 
   protected async onSelect(id: string): Promise<void> {
@@ -175,6 +210,7 @@ export class ProductionCockpitPage implements OnInit {
     const list = await this.facade.loadOrders();
     this.orders.set(list);
     this.workerLabels.set(await this.facade.getWorkerLabelsMap());
+    this.orderThumbs.set(await this.facade.getOrderThumbMap(list));
     await this.onSelectAll();
   }
 
@@ -183,6 +219,7 @@ export class ProductionCockpitPage implements OnInit {
     const list = await this.facade.loadOrders();
     this.orders.set(list);
     this.workerLabels.set(await this.facade.getWorkerLabelsMap());
+    this.orderThumbs.set(await this.facade.getOrderThumbMap(list));
     const id = this.ctx.selectedOrderId();
     if (id) {
       const order = list.find((o) => o._id === id);

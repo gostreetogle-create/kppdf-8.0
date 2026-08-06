@@ -139,6 +139,35 @@ function daysValidator(c: { value: number | null }): { invalidDays: true } | nul
           </div>
         </div>
 
+        <fieldset data-test="accent-hue-fieldset">
+          <legend class="text-sm font-medium mb-1">Цвет на Ганте</legend>
+          <p class="text-xs text-muted-foreground mb-2">
+            Один оттенок для полосок и карточек в кокпите. «Авто» — по id.
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="h-8 px-2 text-xs rounded-sm border hairline pi-focus-ring"
+              [class.ring-2]="form.controls.accentHue.value == null"
+              (click)="form.controls.accentHue.setValue(null)"
+              data-test="accent-hue-auto"
+            >
+              Авто
+            </button>
+            @for (h of huePresets; track h) {
+              <button
+                type="button"
+                class="w-8 h-8 rounded-sm border hairline pi-focus-ring"
+                [style.background]="hueSwatch(h)"
+                [class.ring-2]="form.controls.accentHue.value === h"
+                (click)="form.controls.accentHue.setValue(h)"
+                [attr.aria-label]="'Оттенок ' + h"
+                [attr.data-test]="'accent-hue-' + h"
+              ></button>
+            }
+          </div>
+        </fieldset>
+
         <div class="flex items-center gap-2">
           <app-pi-checkbox
             formControlName="isActive"
@@ -195,8 +224,15 @@ export class WorkTypeFormDialogComponent {
     defaultDurationHours: this.fb.control<number | null>(this.data?.defaultDurationHours ?? null),
     hourlyRate: this.fb.control<number | null>(this.data?.hourlyRate ?? null),
     days: this.fb.control<number | null>(this.data?.days ?? null, [daysValidator]),
+    accentHue: this.fb.control<number | null>(this.data?.accentHue ?? null),
     isActive: this.fb.control<boolean>(this.data?.isActive ?? true),
   });
+
+  protected readonly huePresets = [30, 85, 145, 200, 250, 300, 340] as const;
+
+  protected hueSwatch(h: number): string {
+    return `oklch(0.78 0.12 ${h})`;
+  }
 
   protected onSubmit(): void {
     if (this.form.invalid) {
@@ -212,6 +248,7 @@ export class WorkTypeFormDialogComponent {
       defaultDurationHours: v.defaultDurationHours ?? undefined,
       hourlyRate: v.hourlyRate ?? undefined,
       days: v.days == null || v.days === 0 ? null : v.days,
+      accentHue: v.accentHue,
       isActive: v.isActive,
     };
     this.submitting.set(true);
