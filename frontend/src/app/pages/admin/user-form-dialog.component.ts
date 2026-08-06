@@ -1,10 +1,19 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { Observable } from 'rxjs';
+import { firstValueFrom, Observable } from 'rxjs';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { extractErrorMessage, type SilentResult } from '../../core/silent-http';
+import { PiRolesService, type AdminRole } from '../../shared/services/pi-roles.service';
+import { roleLabelRu, SYSTEM_ROLE_ORDER } from './permission-labels.ru';
+
+export interface RoleOption {
+  name: string;
+  label: string;
+}
+
+const ROLE_PAGE_SIZE = 200;
 
 export interface UserFormData {
   mode: 'create' | 'edit';
@@ -105,12 +114,20 @@ export interface UserFormResult {
               class="field__input"
               [value]="role()"
               (change)="onRoleChange($event)"
+              [disabled]="rolesLoading()"
               data-test="user-form-role"
             >
-              @for (r of roles; track r) {
-                <option [value]="r">{{ r }}</option>
+              @if (rolesLoading()) {
+                <option value="" disabled>Загрузка ролей…</option>
+              } @else {
+                @for (opt of roleOptions(); track opt.name) {
+                  <option [value]="opt.name">{{ opt.label }}</option>
+                }
               }
             </select>
+            @if (rolesError(); as err) {
+              <span class="field__error" data-test="user-form-roles-error">{{ err }}</span>
+            }
           </label>
 
           <label class="field field--inline">
@@ -214,8 +231,17 @@ export interface UserFormResult {
 export class UserFormDialogComponent {
   readonly data = inject<UserFormData>(PI_DIALOG_DATA);
   private readonly ref = inject<DialogRef<UserFormResult>>(PI_DIALOG_REF);
+  private readonly rolesService = inject(PiRolesService);
 
-  protected readonly roles = ['user', 'manager', 'admin'];
+  /**
+   * TZ-ADMIN-306 — role dropdown = live API list (system + custom).
+   * Loaded once from `PiRolesService.list` (GET /admin/roles); the value
+   * is the role `name` (matches the create-user contract), the label is
+   * RU via `roleLabelRu` (system roles) or the custom role `label`.
+   */
+  protected readonly roleOptions = signal<RoleOption[]>([]);
+  protected readonly rolesLoading = signal(true);
+  protected readonly rolesError = signal<string | null>(null);
 
   protected readonly username = signal<string>(this.data.user?.username ?? '');
   protected readonly displayName = signal<string>(this.data.user?.displayName ?? '');
@@ -225,6 +251,31 @@ export class UserFormDialogComponent {
   protected readonly isActive = signal<boolean>(this.data.user?.isActive ?? true);
   protected readonly error = signal<string | null>(null);
   protected readonly submitting = signal(false);
+
+  constructor() {
+    void this.loadRoles();
+  }
+
+  private async loadRoles(): Promise<void> {
+    const res = await firstValueFrom(this.rolesService.list({ page: 1, limit: ROLE_PAGE_SIZE }));
+    if (res.ok) {
+      this.roleOptions.set(mergeRoles(res.data.items, this.role()));
+      this.rolesError.set(null);
+    } else {
+      // Never block the form on a roles-list failure: fall back to
+      // the canonical system roles so create/edit still works.
+      this.roleOptions.set(
+        mergeRoles(
+          SYSTEM_ROLE_ORDER.map(
+            (name): AdminRole => ({ id: name, name, label: name, permissions: [], isSystem: true }),
+          ),
+          this.role(),
+        ),
+      );
+      this.rolesError.set(extractErrorMessage(res.error));
+    }
+    this.rolesLoading.set(false);
+  }
 
   protected onUsernameInput(event: Event): void {
     this.username.set((event.target as HTMLInputElement).value);
@@ -290,4 +341,41 @@ export class UserFormDialogComponent {
   protected onCancel(): void {
     this.ref.close();
   }
+}
+
+/**
+ * Build the dropdown option list from the roles API response.
+ *
+ * - System roles come first in `SYSTEM_ROLE_ORDER`, then custom roles
+ *   sorted by RU label.
+ * - The currently selected role is always kept in the list (edit mode
+ *   with a deleted/renamed role must still render the current value).
+ */
+export function mergeRoles(items: AdminRole[], currentRole: string): RoleOption[] {
+  const system = new Set(SYSTEM_ROLE_ORDER);
+  const known = new Set<string>();
+  const options: RoleOption[] = [];
+
+  for (const name of SYSTEM_ROLE_ORDER) {
+    const role = items.find((r) => r.name === name);
+    const label = role ? roleLabelRu(role.name, role.label) : roleLabelRu(name);
+    options.push({ name, label });
+    known.add(name);
+  }
+
+  const custom = items
+    .filter((r) => !system.has(r.name))
+    .map((r) => ({ name: r.name, label: roleLabelRu(r.name, r.label) }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'ru'));
+  for (const opt of custom) {
+    options.push(opt);
+    known.add(opt.name);
+  }
+
+  // Edit-mode safety: a role absent from the API list stays selectable.
+  if (currentRole && !known.has(currentRole)) {
+    options.push({ name: currentRole, label: currentRole });
+  }
+
+  return options;
 }

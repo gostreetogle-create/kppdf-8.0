@@ -78,6 +78,18 @@ export const PERMISSION_ACTION_RU: Record<string, string> = {
   admin: '\u041f\u043e\u043b\u043d\u044b\u0439 \u0434\u043e\u0441\u0442\u0443\u043f',
 };
 
+export const ROLE_LABEL_RU: Record<string, string> = {
+  admin: '\u0410\u0434\u043c\u0438\u043d\u0438\u0441\u0442\u0440\u0430\u0442\u043e\u0440',
+  director: '\u0414\u0438\u0440\u0435\u043a\u0442\u043e\u0440',
+  manager: '\u041c\u0435\u043d\u0435\u0434\u0436\u0435\u0440',
+  user: '\u041f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044c',
+};
+
+/** RU label for a role in the user-form select (system roles + custom). */
+export function roleLabelRu(name: string, apiLabel?: string): string {
+  return ROLE_LABEL_RU[name] ?? (apiLabel && apiLabel.trim() ? apiLabel : name);
+}
+
 export const ROLE_FORM_COPY = {
   permissionsHeading: '\u041f\u0440\u0430\u0432\u0430 \u0434\u043e\u0441\u0442\u0443\u043f\u0430',
   logicHint:
@@ -89,3 +101,6 @@ export const ROLE_FORM_COPY = {
 export function permissionLabelRu(key: string, fallback?: string): string {
   return PERMISSION_LABEL_RU[key] ?? fallback ?? key;
 }
+
+/** Canonical system-role order for the user-form dropdown. */
+export const SYSTEM_ROLE_ORDER: readonly string[] = ['admin', 'director', 'manager', 'user'];

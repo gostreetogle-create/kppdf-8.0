@@ -7,7 +7,7 @@
 | Agent | TZ | Zone | Status |
 |-------|-----|------|--------|
 | **#1 FE catalog** | **320 → 311** | `frontend/.../products|modules|pi-product-modules` + page docs | Freebuff worktree claim |
-| **#2 FE admin** | **ADMIN-306** | `frontend/.../admin/` (+ careful routes) | claimed by second agent |
+| **#2 FE admin** | **ADMIN-306** | `frontend/.../admin/` (+ careful routes) | **DONE** 2026-08-06 (archive + lock + progress) |
 | **#3 Desktop** | **TZD-14** | `desktop/**` only | claimed by third agent |
 | **Cursor** | docs / checklist / map | `docs/**`, `tasks/_backlog` specs — **no** product TS | this session |
 
