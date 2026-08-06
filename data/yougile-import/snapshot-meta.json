@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-08-06T20:43:25.051Z",
+  "fetchedAt": "2026-08-06T20:55:20.565Z",
   "companyId": "8916810e-b907-424b-907d-0eb5515f7765",
   "board": {
     "name": "Рабочая",
@@ -23,6 +23,7 @@
       }
     ]
   },
+  "photoPolicy": "Prefer first image-only chat message (YouGile «Сделать обложкой»); reject passport table scrapes (ultra-wide / tiny height).",
   "counts": {
     "tasks": 63,
     "byColumn": {
@@ -31,8 +32,9 @@
       "Завершены": 31,
       "Приостановлены": 1
     },
-    "withPhoto": 61,
-    "parseWeak": 10,
-    "uniqueSkus": 55
+    "withPhoto": 52,
+    "coverHeuristic": 52,
+    "parseWeak": 9,
+    "uniqueSkus": 56
   }
 }

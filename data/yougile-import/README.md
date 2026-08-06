@@ -34,7 +34,13 @@ node data/yougile-import/snapshot.mjs
 | название («Пергола…») | `name` |
 | габариты | `dimensions` (мм) |
 | отделка / опции | `description` (+ при необходимости `ralCode`) |
-| фото user-data | файл в `photos/` → потом `POST /api/photos/upload` |
+| **обложка** | фото из чата с «Сделать обложкой» → отдельное image-only сообщение (не скрин строки паспорта) |
 | код `D-64`, колонка, title «Чертежи…» | `notes` / source (очередь работ ≠ sku) |
 
-Архитектура замены UGL: [`docs/yougile/GAP-AND-REPLACEMENT.md`](../../docs/yougile/GAP-AND-REPLACEMENT.md).
+### Важно про фото
+
+Раньше ошибочно брался **первый** `user-data/…` из текста паспорта — это часто скрин таблицы (~1369×94).  
+Сейчас: приоритет **image-only** сообщений чата + отсев «полосок» по высоте PNG. REST API флаг обложки не отдаёт.
+
+Пересъёмка: `node data/yougile-import/snapshot.mjs`  
+Обновить фото в локальной Mongo: `node data/yougile-import/seed-photos-fix.mjs`  

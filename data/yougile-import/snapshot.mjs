@@ -33,7 +33,6 @@ const BOARD = {
 
 function parseChatPassport(text) {
   if (!text) return { parseWeak: true };
-  const fileMatch = text.match(/user-data\/([0-9a-f-]{36})\//i);
   const lines = text
     .split(/\r?\n/)
     .map((l) => l.replace(/\u00a0/g, ' ').trim())
@@ -65,7 +64,8 @@ function parseChatPassport(text) {
   if (clean[i] && /^\d+([.,]\d+)?$/.test(clean[i])) {
     qty = Number(clean[i++].replace(',', '.'));
   }
-  if (clean[i] && /^(шт|кг|м|м2|компл|комплект)/i.test(clean[i])) {
+  // Unit must be short (API max 16). Long lines are mis-parsed titles → description.
+  if (clean[i] && /^(шт|кг|м|м2|м²|компл|комплект)\b/i.test(clean[i]) && clean[i].length <= 16) {
     unit = clean[i++];
   }
   if (clean[i] && /\d/.test(clean[i]) && /[xх×]/.test(clean[i])) {
@@ -93,8 +93,91 @@ function parseChatPassport(text) {
     dimensions,
     finish,
     description: descriptionParts.join('\n\n') || undefined,
-    photoFileId: fileMatch?.[1] || null,
   };
+}
+
+/**
+ * YouGile REST не отдаёт флаг «обложка».
+ * Обложку ставят через чат («Сделать обложкой») — это почти всегда
+ * отдельное сообщение только с файлом, а НЕ картинка из строки паспорта
+ * (скрин таблицы ~1369×94 / preview *x24).
+ */
+function extractChatImages(messages) {
+  const out = [];
+  for (const m of messages || []) {
+    const text = String(m.text || '').trim();
+    if (!text) continue;
+    const isImageOnly = /^\/root\/#file:\/user-data\//i.test(text);
+    const re =
+      /user-data\/([0-9a-f-]{36})\/image\.png(?:%3Fpreviews%5B%5D%3D-256-preview%40(\d+)x(\d+))?/gi;
+    let match;
+    while ((match = re.exec(text)) !== null) {
+      const previewW = match[2] ? Number(match[2]) : null;
+      const previewH = match[3] ? Number(match[3]) : null;
+      out.push({
+        fileId: match[1],
+        isImageOnly,
+        isStripPreview: previewH != null && previewH < 80,
+        previewW,
+        previewH,
+        messageId: m.id,
+      });
+    }
+  }
+  return out;
+}
+
+function pngDimensions(buf) {
+  if (!buf || buf.length < 24 || buf[0] !== 0x89) return null;
+  return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+}
+
+function isLikelyCoverPng(buf) {
+  const d = pngDimensions(buf);
+  if (!d) return false;
+  // Reject passport table scrapes and other ultra-wide strips
+  if (d.height < 150) return false;
+  if (d.width / d.height > 6) return false;
+  return true;
+}
+
+function rankCoverCandidates(images) {
+  // 1) dedicated chat images (cover workflow)
+  // 2) any non-strip embeds
+  // 3) leftovers
+  const pure = images.filter((i) => i.isImageOnly && !i.isStripPreview);
+  if (pure.length) return pure;
+  const nonStrip = images.filter((i) => !i.isStripPreview);
+  if (nonStrip.length) return nonStrip;
+  return images;
+}
+
+async function downloadCoverPhoto(token, images, dest) {
+  const ranked = rankCoverCandidates(images);
+  const tried = [];
+  for (const cand of ranked) {
+    const url = `https://ru.yougile.com/user-data/${cand.fileId}/image.png`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) {
+      tried.push({ fileId: cand.fileId, error: res.status });
+      continue;
+    }
+    const buf = Buffer.from(await res.arrayBuffer());
+    const dims = pngDimensions(buf);
+    if (!isLikelyCoverPng(buf)) {
+      tried.push({ fileId: cand.fileId, rejected: 'strip-or-tiny', dims });
+      continue;
+    }
+    fs.writeFileSync(dest, buf);
+    return {
+      bytes: buf.length,
+      yougileFileId: cand.fileId,
+      dims,
+      isImageOnly: cand.isImageOnly,
+      tried,
+    };
+  }
+  return { error: 'no suitable cover image', tried, candidates: ranked.length };
 }
 
 function parseDims(raw) {
@@ -145,19 +228,41 @@ async function main() {
     const page = await api(base, token, `/tasks?columnId=${col.id}&limit=100&offset=0`);
     for (const t of page.content || []) {
       const chat = await api(base, token, `/chats/${t.id}/messages`);
-      const msgWithText = (chat.content || []).find((m) => m.text && String(m.text).trim());
-      const passport = parseChatPassport(msgWithText?.text || '');
+      const messages = chat.content || [];
+      // Passport lives in the first non-image-only text message
+      const passportMsg = messages.find((m) => {
+        const text = String(m.text || '').trim();
+        return text && !/^\/root\/#file:\/user-data\//i.test(text);
+      });
+      const passport = parseChatPassport(passportMsg?.text || '');
+      const images = extractChatImages(messages);
+
       let photoLocal = null;
-      if (passport.photoFileId) {
-        const fname = `${t.idTaskProject || t.id}-${passport.sku || 'nosku'}.png`;
-        const dest = path.join(photosDir, fname);
+      const fname = `${t.idTaskProject || t.id}-${passport.sku || 'nosku'}.png`;
+      const dest = path.join(photosDir, fname);
+      if (images.length) {
         try {
-          const size = await downloadPhoto(token, passport.photoFileId, dest);
-          photoLocal = { file: `photos/${fname}`, bytes: size, yougileFileId: passport.photoFileId };
+          const cover = await downloadCoverPhoto(token, images, dest);
+          if (cover.yougileFileId) {
+            photoLocal = {
+              file: `photos/${fname}`,
+              bytes: cover.bytes,
+              yougileFileId: cover.yougileFileId,
+              dims: cover.dims,
+              pick: 'chat-image-only-cover-heuristic',
+              isImageOnly: cover.isImageOnly,
+              rejected: cover.tried,
+            };
+          } else {
+            photoLocal = cover;
+          }
         } catch (e) {
-          photoLocal = { error: String(e.message || e), yougileFileId: passport.photoFileId };
+          photoLocal = { error: String(e.message || e) };
         }
       }
+
+      const safeUnit =
+        passport.unit && String(passport.unit).length <= 16 ? passport.unit : 'шт';
 
       const row = {
         yougileTaskId: t.id,
@@ -171,7 +276,8 @@ async function main() {
         completed: !!t.completed,
         archived: !!t.archived,
         stickers: t.stickers || {},
-        chatMessageCount: (chat.content || []).length,
+        chatMessageCount: messages.length,
+        chatImages: images,
         passport,
         photo: photoLocal,
         productDraft: passport.sku
@@ -179,12 +285,12 @@ async function main() {
               sku: String(passport.sku),
               name: passport.name || t.title,
               kind: 'good',
-              unit: passport.unit || 'шт',
+              unit: safeUnit,
               status: 'active',
               description: passport.description,
               dimensions: passport.dimensions,
               installation: passport.finish?.match(/бетон|монтаж|установ/i)
-                ? passport.finish.split('\n')[0]
+                ? passport.finish.split('\n')[0].slice(0, 256)
                 : undefined,
               hasDrawing: true,
               notes: [
@@ -200,6 +306,8 @@ async function main() {
                 taskCode: t.idTaskProject,
                 columnName: col.name,
                 photoFile: photoLocal?.file || null,
+                photoFileId: photoLocal?.yougileFileId || null,
+                photoPick: photoLocal?.pick || null,
               },
             }
           : null,
@@ -212,7 +320,7 @@ async function main() {
         products.push(row.productDraft);
       }
 
-      // YouGile: ≤50 req/min — ~3 calls/task (list already done; chat+photo)
+      // YouGile: ≤50 req/min — chat + 1–N photo downloads
       await new Promise((r) => setTimeout(r, 1300));
     }
   }
@@ -234,12 +342,15 @@ async function main() {
     fetchedAt: new Date().toISOString(),
     companyId: process.env.YOUGILE_COMPANY_ID || null,
     board: BOARD,
+    photoPolicy:
+      'Prefer first image-only chat message (YouGile «Сделать обложкой»); reject passport table scrapes (ultra-wide / tiny height).',
     counts: {
       tasks: rawTasks.length,
       byColumn: Object.fromEntries(
         BOARD.columns.map((c) => [c.name, rawTasks.filter((t) => t.columnId === c.id).length]),
       ),
       withPhoto: rawTasks.filter((t) => t.photo?.file).length,
+      coverHeuristic: rawTasks.filter((t) => t.photo?.pick === 'chat-image-only-cover-heuristic').length,
       parseWeak: rawTasks.filter((t) => t.passport?.parseWeak).length,
       uniqueSkus: unique.size,
     },

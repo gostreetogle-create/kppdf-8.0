@@ -12,24 +12,28 @@
       "yougileTaskId": "ce417f0e-f6b0-487e-8e62-f3fac567b724",
       "taskCode": "D-8",
       "columnName": "Завершены",
-      "photoFile": "photos/D-8-1101.png"
+      "photoFile": "photos/D-8-1101.png",
+      "photoFileId": "200bef15-2ea0-4c87-a895-61a3ac6cc2f5",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
     "sku": "1118",
     "name": "Стойки волейбольные с механизмом плавнойрегулировки высоты и лебедочным механизмомнатяжения",
     "kind": "good",
-    "unit": "компл",
+    "unit": "шт",
     "status": "active",
-    "description": "Бетонирование\nD трубы 89 мм, (для прямого бетонирования, без закладных стаканов)\n\nПозиция в ЗНП: 1",
-    "installation": "Бетонирование",
+    "description": "компл\nБетонирование\nD трубы 89 мм, (для прямого бетонирования, без закладных стаканов)\n\nПозиция в ЗНП: 1",
+    "installation": "компл",
     "hasDrawing": true,
     "notes": "YouGile D-43\nКолонка: Завершены\nПоз: 1\nЧертежи 1118 ЗНП 13-26 поз 1",
     "source": {
       "yougileTaskId": "3f0316d1-a4e2-40bd-b57a-6570e5cddca7",
       "taskCode": "D-43",
       "columnName": "Завершены",
-      "photoFile": "photos/D-43-1118.png"
+      "photoFile": "photos/D-43-1118.png",
+      "photoFileId": "3bba6964-ff40-4de0-a223-d7e9d019ab14",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -38,21 +42,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Бетонирование\nМет: RAL 9005Дерево: масло YS M303/T24\nГнездо с заглушки ру 1000 мм\n\nПозиция в ЗНП: 1",
-    "dimensions": {
-      "length": 6150,
-      "width": 2200,
-      "height": 2600,
-      "unit": "мм"
-    },
-    "installation": "Бетонирование",
+    "description": "шт\n6150х2200х2600\nБетонирование\nМет: RAL 9005Дерево: масло YS M303/T24\nГнездо с заглушки ру 1000 мм\n\nПозиция в ЗНП: 1",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-2\nКолонка: На распределении\nПоз: 1\nЧертежи 3101 ЗНП 3-26 поз 1",
     "source": {
       "yougileTaskId": "b8b39c56-9bbb-420c-a906-79e9f05b8059",
       "taskCode": "D-2",
       "columnName": "На распределении",
-      "photoFile": "photos/D-2-3101.png"
+      "photoFile": "photos/D-2-3101.png",
+      "photoFileId": "09185a07-c5f3-4c3e-b84b-2f30e7f6908b",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -61,21 +61,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Бетонирование\nСогласование\n\nПозиция в ЗНП: 1",
-    "dimensions": {
-      "length": 3000,
-      "width": 1200,
-      "height": 3000,
-      "unit": "мм"
-    },
-    "installation": "Бетонирование",
+    "description": "шт\n3000х1200х3000\nБетонирование\nСогласование\n\nПозиция в ЗНП: 1",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-7\nКолонка: Завершены\nПоз: 1\nЧертежи 3103 ЗНП 7-26 поз 1",
     "source": {
       "yougileTaskId": "033f7717-7c05-41d6-87bd-71b2b4a530b3",
       "taskCode": "D-7",
       "columnName": "Завершены",
-      "photoFile": "photos/D-7-3103.png"
+      "photoFile": "photos/D-7-3103.png",
+      "photoFileId": "02db722b-22f2-4e8b-bf73-105b387f07c9",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -84,20 +80,34 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Каркас из стальной трубы 160х160х4. Порошковая покраска ral 9005.  Крыша из бруса 40х40. Качели из бруса 40х40. Покрытие масло, цвет “Бисквит”. Подсветка 24V по контуру в алюминевом профиле. Блок питания в комплекте.\n\nПозиция в ЗНП: 3",
-    "dimensions": {
-      "length": 6400,
-      "width": 3500,
-      "height": 3000,
-      "unit": "мм"
-    },
+    "description": "шт\n6400х3500х3000\nКаркас из стальной трубы 160х160х4. Порошковая покраска ral 9005.  Крыша из бруса 40х40. Качели из бруса 40х40. Покрытие масло, цвет “Бисквит”. Подсветка 24V по контуру в алюминевом профиле. Блок питания в комплекте.\n\nПозиция в ЗНП: 3",
     "hasDrawing": true,
     "notes": "YouGile D-59\nКолонка: На распределении\nПоз: 3\nЧертежи 3104 ЗНП 17-26 поз 3",
     "source": {
       "yougileTaskId": "07e30c1b-c7f6-47f0-90ed-29a02710be30",
       "taskCode": "D-59",
       "columnName": "На распределении",
-      "photoFile": "photos/D-59-3104.png"
+      "photoFile": "photos/D-59-3104.png",
+      "photoFileId": "7590657d-a866-43cc-af2c-63dd41045811",
+      "photoPick": "chat-image-only-cover-heuristic"
+    }
+  },
+  {
+    "sku": "3201",
+    "name": "Скамейка на цепях",
+    "kind": "good",
+    "unit": "шт",
+    "status": "active",
+    "description": "шт\n2400х1200х2500\nНет\nНет\nRAL 8017\nСкамейка уголок 60*40длинна 130 см Спинка 54 смСиденье 49 смДоска длинна 131 смШирина 9 смТолщина 2 смДлинна цепи на сиденье 150 смНа спинуку 114 см\n\nПозиция в ЗНП: 1",
+    "hasDrawing": true,
+    "notes": "YouGile D-1\nКолонка: Завершены\nПоз: 1\nЧертежи 3201 ЗНП 2-26 поз 1",
+    "source": {
+      "yougileTaskId": "ee80c1af-8869-4f33-a549-d04031fb0060",
+      "taskCode": "D-1",
+      "columnName": "Завершены",
+      "photoFile": "photos/D-1-3201.png",
+      "photoFileId": "f9838e90-775b-42a7-a102-5a848008cf64",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -106,20 +116,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Техописание прилагается\n\nПозиция в ЗНП: 1",
-    "dimensions": {
-      "length": 7400,
-      "width": 4700,
-      "height": 3770,
-      "unit": "мм"
-    },
+    "description": "шт\n7400х4700х3770\nТехописание прилагается\n\nПозиция в ЗНП: 1",
     "hasDrawing": true,
     "notes": "YouGile D-11\nКолонка: В работе\nПоз: 1\nЧертежи 3202 ЗНП 9-26 поз 1",
     "source": {
       "yougileTaskId": "d41452fd-b10e-4c40-a0c3-5c0ee41edb0c",
       "taskCode": "D-11",
       "columnName": "В работе",
-      "photoFile": "photos/D-11-3202.png"
+      "photoFile": "photos/D-11-3202.png",
+      "photoFileId": "9703fef8-1390-48f2-a6c0-d07b50322018",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -128,15 +134,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 3",
-    "installation": "Бетонирование",
+    "description": "шт\n3000х1500х?\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 3",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-18\nКолонка: Завершены\nПоз: 3\nЧертежи 3203 ЗНП 10-26 поз 3",
     "source": {
       "yougileTaskId": "e67f71ee-bd0f-492e-8759-50b0893e3030",
       "taskCode": "D-18",
       "columnName": "Завершены",
-      "photoFile": "photos/D-18-3203.png"
+      "photoFile": "photos/D-18-3203.png",
+      "photoFileId": "1709d918-4d2f-48d2-b174-0b5e10118c77",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -145,15 +153,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 6",
-    "installation": "Бетонирование",
+    "description": "шт\n4500х?х4500\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 6",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-21\nКолонка: Завершены\nПоз: 6\nЧертежи 3204 ЗНП 10-26 поз 6",
     "source": {
       "yougileTaskId": "105aa823-4df3-414e-a3f3-e4f7cb853a3b",
       "taskCode": "D-21",
       "columnName": "Завершены",
-      "photoFile": "photos/D-21-3204.png"
+      "photoFile": "photos/D-21-3204.png",
+      "photoFileId": "917fc96f-2f00-44ef-b3f7-535d0ddf8ce9",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -162,21 +172,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 5",
-    "dimensions": {
-      "length": 3000,
-      "width": 700,
-      "height": 2550,
-      "unit": "мм"
-    },
-    "installation": "Бетонирование",
+    "description": "шт\n3000х700х2550\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 5",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-20\nКолонка: Завершены\nПоз: 5\nЧертежи 3205 ЗНП 10-26 поз 5",
     "source": {
       "yougileTaskId": "90d909ba-1d5c-46d0-b718-2e425204f127",
       "taskCode": "D-20",
       "columnName": "Завершены",
-      "photoFile": "photos/D-20-3205.png"
+      "photoFile": "photos/D-20-3205.png",
+      "photoFileId": "9f6b898b-716f-45f0-9f22-ef3740499532",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -185,21 +191,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 8",
-    "dimensions": {
-      "length": 3000,
-      "width": 1000,
-      "height": 2000,
-      "unit": "мм"
-    },
-    "installation": "Бетонирование",
+    "description": "шт\n3000х1000х2000\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 8",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-23\nКолонка: Завершены\nПоз: 8\nЧертежи 3206 ЗНП 10-26 поз 8",
     "source": {
       "yougileTaskId": "716a9a24-76a4-40fd-b1ec-5f5847c2fd9b",
       "taskCode": "D-23",
       "columnName": "Завершены",
-      "photoFile": "photos/D-23-3206.png"
+      "photoFile": "photos/D-23-3206.png",
+      "photoFileId": "b8d04e54-2408-42c8-a70b-da8804946ac4",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -208,15 +210,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 4",
-    "installation": "Бетонирование",
+    "description": "шт\n2700х?х6000\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 4",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-26\nКолонка: На распределении\nПоз: 4\nЧертежи 3207 ЗНП 11-26 поз 4",
     "source": {
       "yougileTaskId": "a90d4a26-f00c-40b1-8666-1ce5090bcee0",
       "taskCode": "D-26",
       "columnName": "На распределении",
-      "photoFile": "photos/D-26-3207.png"
+      "photoFile": "photos/D-26-3207.png",
+      "photoFileId": "077bb2ee-ee10-4444-a12e-50055284fa80",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -225,21 +229,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 12",
-    "dimensions": {
-      "length": 3200,
-      "width": 1200,
-      "height": 2200,
-      "unit": "мм"
-    },
-    "installation": "Бетонирование",
+    "description": "шт\n3200х1200х2200\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 12",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-35\nКолонка: На распределении\nПоз: 12\nЧертежи 3208 ЗНП 11-26 поз 12",
     "source": {
       "yougileTaskId": "cba86a49-f495-4530-ae7a-4257ab53ec3b",
       "taskCode": "D-35",
       "columnName": "На распределении",
-      "photoFile": "photos/D-35-3208.png"
+      "photoFile": "photos/D-35-3208.png",
+      "photoFileId": "058691ce-c0ce-4232-ad1e-4978236737ef",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -248,21 +248,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 14",
-    "dimensions": {
-      "length": 3200,
-      "width": 500,
-      "height": 4000,
-      "unit": "мм"
-    },
-    "installation": "Бетонирование",
+    "description": "шт\n3200х500х4000\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 14",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-36\nКолонка: На распределении\nПоз: 14\nЧертежи 3209 ЗНП 11-26 поз 14",
     "source": {
       "yougileTaskId": "3479be03-10e9-4b47-b0c5-f613a02af916",
       "taskCode": "D-36",
       "columnName": "На распределении",
-      "photoFile": "photos/D-36-3209.png"
+      "photoFile": "photos/D-36-3209.png",
+      "photoFileId": "1082940f-6500-4702-b27a-0a3000708aea",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -271,21 +267,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 10",
-    "dimensions": {
-      "length": 2700,
-      "width": 1100,
-      "height": 900,
-      "unit": "мм"
-    },
-    "installation": "Бетонирование",
+    "description": "шт\n2700х1100х900\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 10",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-32\nКолонка: Завершены\nПоз: 10\nЧертежи 3210 ЗНП 11-26 поз 10",
     "source": {
       "yougileTaskId": "bee4c684-64a8-4481-8425-d135b8dd252b",
       "taskCode": "D-32",
       "columnName": "Завершены",
-      "photoFile": "photos/D-32-3210.png"
+      "photoFile": "photos/D-32-3210.png",
+      "photoFileId": "7d0cb54e-d063-4ca2-ba16-fc9f7a907043",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -294,21 +286,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 15",
-    "dimensions": {
-      "length": 2100,
-      "width": 600,
-      "height": 1000,
-      "unit": "мм"
-    },
-    "installation": "Бетонирование",
+    "description": "шт\n2100х600х1000\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 15",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-37\nКолонка: В работе\nПоз: 15\nЧертежи 3211 ЗНП 11-26 поз 15",
     "source": {
       "yougileTaskId": "8b4eb295-d057-440e-8445-041ed0f21739",
       "taskCode": "D-37",
       "columnName": "В работе",
-      "photoFile": "photos/D-37-3211.png"
+      "photoFile": "photos/D-37-3211.png",
+      "photoFileId": "1e491306-514e-41f7-94f6-25bf8a05e7d2",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -317,20 +305,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Свободностоящий\nНет\nСогласовать\n\nПозиция в ЗНП: 16",
-    "dimensions": {
-      "length": 1000,
-      "width": 700,
-      "height": 1400,
-      "unit": "мм"
-    },
+    "description": "шт\n1000х700х1400\nСвободностоящий\nНет\nСогласовать\n\nПозиция в ЗНП: 16",
     "hasDrawing": true,
     "notes": "YouGile D-38\nКолонка: В работе\nПоз: 16\nЧертежи 3212 ЗНП 11-26 поз 16",
     "source": {
       "yougileTaskId": "85382550-c02f-4c4e-808a-06c6f4590bc0",
       "taskCode": "D-38",
       "columnName": "В работе",
-      "photoFile": "photos/D-38-3212.png"
+      "photoFile": "photos/D-38-3212.png",
+      "photoFileId": "ba054c54-4a68-48ef-8cd4-dbd2e9f80ce0",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -339,15 +323,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 6",
-    "installation": "Бетонирование",
+    "description": "шт\n2800х?х?\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 6",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-28\nКолонка: На распределении\nПоз: 6\nЧертежи 3213 ЗНП 11-26 поз 6",
     "source": {
       "yougileTaskId": "a738f2dc-4735-4747-9735-8cbbc06390b8",
       "taskCode": "D-28",
       "columnName": "На распределении",
-      "photoFile": "photos/D-28-3213.png"
+      "photoFile": "photos/D-28-3213.png",
+      "photoFileId": "e7bd3bc5-f306-4ebe-94f3-589c1bd967d2",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -356,15 +342,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "?х?х?\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 17",
-    "installation": "?х?х?",
+    "description": "шт\n?х?х?\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 17",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-39\nКолонка: На распределении\nПоз: 17\nЧертежи 3214 ЗНП 11-26 поз 17",
     "source": {
       "yougileTaskId": "f2ced64a-0905-40f7-af74-7e04f42b48e7",
       "taskCode": "D-39",
       "columnName": "На распределении",
-      "photoFile": "photos/D-39-3214.png"
+      "photoFile": "photos/D-39-3214.png",
+      "photoFileId": "ab387069-ac9b-4701-9673-04d07ed35a86",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -373,15 +361,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 18",
-    "installation": "Бетонирование",
+    "description": "шт\n?х1200х?\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 18",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-40\nКолонка: В работе\nПоз: 18\nЧертежи 3215 ЗНП 11-26 поз 18",
     "source": {
       "yougileTaskId": "d15ee977-db43-4200-8be2-3ade275f8367",
       "taskCode": "D-40",
       "columnName": "В работе",
-      "photoFile": "photos/D-40-3215.png"
+      "photoFile": "photos/D-40-3215.png",
+      "photoFileId": "cbb94739-8b30-41de-8017-4308e017033b",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -390,15 +380,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Бетонирование\nНет\nСогласовать\nДля Экотропы 120 м.п. поз 18\n\nПозиция в ЗНП: 19",
-    "installation": "Бетонирование",
+    "description": "шт\n?х?х1200\nБетонирование\nНет\nСогласовать\nДля Экотропы 120 м.п. поз 18\n\nПозиция в ЗНП: 19",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-41\nКолонка: На распределении\nПоз: 19\nЧертежи 3216 ЗНП 11-26 поз 19",
     "source": {
       "yougileTaskId": "f1c3a242-2205-4480-b00a-ef59f714164a",
       "taskCode": "D-41",
       "columnName": "На распределении",
-      "photoFile": "photos/D-41-3216.png"
+      "photoFile": "photos/D-41-3216.png",
+      "photoFileId": "0fd057d0-9b74-4cfe-b556-63f05afacd0a",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -407,14 +399,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Позиция в ЗНП: 9",
+    "description": "шт\n2000х?х500\n\nПозиция в ЗНП: 9",
     "hasDrawing": true,
     "notes": "YouGile D-52\nКолонка: Завершены\nПоз: 9\nЧертежи 3303 ЗНП 15-26 поз 9",
     "source": {
       "yougileTaskId": "2d071696-281a-4a1b-926d-2a710f5e0990",
       "taskCode": "D-52",
       "columnName": "Завершены",
-      "photoFile": "photos/D-52-3303.png"
+      "photoFile": null,
+      "photoFileId": null,
+      "photoPick": null
     }
   },
   {
@@ -423,14 +417,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "?х?х?\n\nПозиция в ЗНП: 10",
+    "description": "шт\n?х?х?\n\nПозиция в ЗНП: 10",
     "hasDrawing": true,
     "notes": "YouGile D-53\nКолонка: Завершены\nПоз: 10\nЧертежи 3304 ЗНП 15-26 поз 10",
     "source": {
       "yougileTaskId": "5d367a00-c1ef-46af-8dc3-ed9e8b72d31e",
       "taskCode": "D-53",
       "columnName": "Завершены",
-      "photoFile": "photos/D-53-3304.png"
+      "photoFile": null,
+      "photoFileId": null,
+      "photoPick": null
     }
   },
   {
@@ -439,14 +435,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "?х?х?\n\nПозиция в ЗНП: 11",
+    "description": "шт\n?х?х?\n\nПозиция в ЗНП: 11",
     "hasDrawing": true,
     "notes": "YouGile D-54\nКолонка: Завершены\nПоз: 11\nЧертежи 3305 ЗНП 15-26 поз 11",
     "source": {
       "yougileTaskId": "0bfe9a6e-530b-4f20-840d-af763a597efe",
       "taskCode": "D-54",
       "columnName": "Завершены",
-      "photoFile": "photos/D-54-3305.png"
+      "photoFile": null,
+      "photoFileId": null,
+      "photoPick": null
     }
   },
   {
@@ -455,20 +453,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Анкер\nСогласовать\nДерево лиственница\n\nПозиция в ЗНП: 1",
-    "dimensions": {
-      "length": 2100,
-      "width": 640,
-      "height": 770,
-      "unit": "мм"
-    },
+    "description": "шт\n2100х640х770\nАнкер\nСогласовать\nДерево лиственница\n\nПозиция в ЗНП: 1",
     "hasDrawing": true,
     "notes": "YouGile D-6\nКолонка: Завершены\nПоз: 1\nЧертежи 3402 ЗНП 6-26 поз 1",
     "source": {
       "yougileTaskId": "50a7b8aa-ad54-47ca-9419-356592256086",
       "taskCode": "D-6",
       "columnName": "Завершены",
-      "photoFile": "photos/D-6-3402.png"
+      "photoFile": "photos/D-6-3402.png",
+      "photoFileId": "aca3ed03-4242-49cd-b33f-f0180c862bb2",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -477,20 +471,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Анкер\nТехописание прилагается\n\nПозиция в ЗНП: 3",
-    "dimensions": {
-      "length": 1500,
-      "width": 580,
-      "height": 850,
-      "unit": "мм"
-    },
+    "description": "шт\n1500х580х850\nАнкер\nТехописание прилагается\n\nПозиция в ЗНП: 3",
     "hasDrawing": true,
     "notes": "YouGile D-14\nКолонка: На распределении\nПоз: 3\nЧертежи 3403 ЗНП 12-26 поз 3",
     "source": {
       "yougileTaskId": "63cb7022-9cb2-428c-87f3-cb8d295e1a10",
       "taskCode": "D-14",
       "columnName": "На распределении",
-      "photoFile": "photos/D-14-3403.png"
+      "photoFile": "photos/D-14-3403.png",
+      "photoFileId": "3730aecd-900b-4ba6-93e8-e9b00292e09a",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -499,20 +489,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Анкер\nНет\nСогласовать\n\nПозиция в ЗНП: 2",
-    "dimensions": {
-      "length": 2100,
-      "width": 870,
-      "height": 900,
-      "unit": "мм"
-    },
+    "description": "шт\n2100х870х900\nАнкер\nНет\nСогласовать\n\nПозиция в ЗНП: 2",
     "hasDrawing": true,
     "notes": "YouGile D-17\nКолонка: Завершены\nПоз: 2\nЧертежи 3404 ЗНП 10-26 поз 2",
     "source": {
       "yougileTaskId": "96052137-06db-47c0-bef5-fad70b4045bc",
       "taskCode": "D-17",
       "columnName": "Завершены",
-      "photoFile": "photos/D-17-3404.png"
+      "photoFile": "photos/D-17-3404.png",
+      "photoFileId": "3f06d2b0-8af3-40a4-a4ad-eb566fcd66d5",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -521,21 +507,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 4",
-    "dimensions": {
-      "length": 3000,
-      "width": 2000,
-      "height": 3000,
-      "unit": "мм"
-    },
-    "installation": "Бетонирование",
+    "description": "шт\n3000х2000х3000\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 4",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-19\nКолонка: Завершены\nПоз: 4\nЧертежи 3405 ЗНП 10-26 поз 4",
     "source": {
       "yougileTaskId": "4fd09776-6129-46e3-9008-9420ec308085",
       "taskCode": "D-19",
       "columnName": "Завершены",
-      "photoFile": "photos/D-19-3405.png"
+      "photoFile": "photos/D-19-3405.png",
+      "photoFileId": "8a0c4ab8-01f6-4bd1-9401-9bed764cb932",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -544,20 +526,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Несущий элемент: материал метал. Сидение: древесина хвойных пород обработанная спец. защитным маслом. Наличее кованных элементовhttps://dor-m.ru/catalog/detail/1809/?ysclid=mqugs6gzzx668143777&oid=1811\n\nПозиция в ЗНП: 4",
-    "dimensions": {
-      "length": 2000,
-      "width": 675,
-      "height": 840,
-      "unit": "мм"
-    },
+    "description": "шт\n2000×675×840\nНесущий элемент: материал метал. Сидение: древесина хвойных пород обработанная спец. защитным маслом. Наличее кованных элементовhttps://dor-m.ru/catalog/detail/1809/?ysclid=mqugs6gzzx668143777&oid=1811\n\nПозиция в ЗНП: 4",
     "hasDrawing": true,
     "notes": "YouGile D-47\nКолонка: Завершены\nПоз: 4\nЧертежи 3407 ЗНП 15-26 поз 4",
     "source": {
       "yougileTaskId": "f055d177-e070-4f3b-920b-eeeb1c7c4a59",
       "taskCode": "D-47",
       "columnName": "Завершены",
-      "photoFile": "photos/D-47-3407.png"
+      "photoFile": "photos/D-47-3407.png",
+      "photoFileId": "103135e0-edd8-43b5-9895-a6c92d0fbf7a",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -566,20 +544,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "анкер\n\nПозиция в ЗНП: 15",
-    "dimensions": {
-      "length": 2000,
-      "width": 1030,
-      "height": 800,
-      "unit": "мм"
-    },
+    "description": "шт\n2000х1030х800\nанкер\n\nПозиция в ЗНП: 15",
     "hasDrawing": true,
     "notes": "YouGile D-56\nКолонка: Завершены\nПоз: 15\nЧертежи 3408 ЗНП 16-26 поз 15",
     "source": {
       "yougileTaskId": "d5305bac-0f04-42b4-b3be-05f8645bf790",
       "taskCode": "D-56",
       "columnName": "Завершены",
-      "photoFile": "photos/D-56-3408.png"
+      "photoFile": "photos/D-56-3408.png",
+      "photoFileId": "c5808806-53a1-43fc-b494-2c184999ea06",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -588,20 +562,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Материал: Сосна, металл\n\nПозиция в ЗНП: 2",
-    "dimensions": {
-      "length": 1500,
-      "width": 610,
-      "height": 860,
-      "unit": "мм"
-    },
+    "description": "шт\n1500x610x860\nМатериал: Сосна, металл\n\nПозиция в ЗНП: 2",
     "hasDrawing": true,
     "notes": "YouGile D-58\nКолонка: В работе\nПоз: 2\nЧертежи 3409 ЗНП 17-26 поз 2",
     "source": {
       "yougileTaskId": "bc0a7b02-dae3-4a90-a788-0c404b11afb5",
       "taskCode": "D-58",
       "columnName": "В работе",
-      "photoFile": "photos/D-58-3409.png"
+      "photoFile": "photos/D-58-3409.png",
+      "photoFileId": "27ed2d08-6d90-4970-92bd-56d740622565",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -610,20 +580,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Анкер\nматериал: сталь 3мм.Техописание прилагается\n\nПозиция в ЗНП: 4",
-    "dimensions": {
-      "length": 600,
-      "width": 300,
-      "height": 860,
-      "unit": "мм"
-    },
+    "description": "шт\n600х300х860\nАнкер\nматериал: сталь 3мм.Техописание прилагается\n\nПозиция в ЗНП: 4",
     "hasDrawing": true,
     "notes": "YouGile D-15\nКолонка: На распределении\nПоз: 4\nЧертежи 3502 ЗНП 12-26 поз 4",
     "source": {
       "yougileTaskId": "452873d2-b7ed-45a9-88f5-399f40d765f9",
       "taskCode": "D-15",
       "columnName": "На распределении",
-      "photoFile": "photos/D-15-3502.png"
+      "photoFile": "photos/D-15-3502.png",
+      "photoFileId": "ebd78acb-ce19-4132-b0a9-1a9d2bda650a",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -632,20 +598,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Анкер\nНет\nСогласовать\n\nПозиция в ЗНП: 1",
-    "dimensions": {
-      "length": 445,
-      "width": 445,
-      "height": 690,
-      "unit": "мм"
-    },
+    "description": "шт\n445х445х690\nАнкер\nНет\nСогласовать\n\nПозиция в ЗНП: 1",
     "hasDrawing": true,
     "notes": "YouGile D-16\nКолонка: Завершены\nПоз: 1\nЧертежи 3503 ЗНП 10-26 поз 1",
     "source": {
       "yougileTaskId": "934f06c6-e03c-4384-9727-3470656a2097",
       "taskCode": "D-16",
       "columnName": "Завершены",
-      "photoFile": "photos/D-16-3503.png"
+      "photoFile": "photos/D-16-3503.png",
+      "photoFileId": "419f9fdc-0834-4733-8b30-73409b5027ab",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -654,36 +616,34 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Анкер\nНет\nСогласовать\n\nПозиция в ЗНП: 1",
-    "dimensions": {
-      "length": 420,
-      "width": 420,
-      "height": 590,
-      "unit": "мм"
-    },
+    "description": "шт\n420х420х590\nАнкер\nНет\nСогласовать\n\nПозиция в ЗНП: 1",
     "hasDrawing": true,
     "notes": "YouGile D-24\nКолонка: На распределении\nПоз: 1\nЧертежи 3504 ЗНП 11-26 поз 1",
     "source": {
       "yougileTaskId": "b691ada1-91f2-4207-8cf6-48549d1d099e",
       "taskCode": "D-24",
       "columnName": "На распределении",
-      "photoFile": "photos/D-24-3504.png"
+      "photoFile": "photos/D-24-3504.png",
+      "photoFileId": "4fb0c90b-359e-49e9-9daa-3dcd974a095b",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
     "sku": "3505",
     "name": "Чертежи 3505 ЗНП 15-26 поз 5",
     "kind": "good",
-    "unit": "Модена - Уличные урны",
+    "unit": "шт",
     "status": "active",
-    "description": "2\nшт\n385×385×460\nНесущий элемент: материал метал. Сидение: древесина хвойных пород обработанная спец. защитным маслом. Наличее кованных элементовhttps://rtbaza.ru/catalog/litter-bins/kovka/modena\n\nПозиция в ЗНП: 5",
+    "description": "Модена - Уличные урны\n2\nшт\n385×385×460\nНесущий элемент: материал метал. Сидение: древесина хвойных пород обработанная спец. защитным маслом. Наличее кованных элементовhttps://rtbaza.ru/catalog/litter-bins/kovka/modena\n\nПозиция в ЗНП: 5",
     "hasDrawing": true,
     "notes": "YouGile D-48\nКолонка: Завершены\nПоз: 5\nЧертежи 3505 ЗНП 15-26 поз 5",
     "source": {
       "yougileTaskId": "0b495309-5827-4d0d-8cf6-8098a1a70a1e",
       "taskCode": "D-48",
       "columnName": "Завершены",
-      "photoFile": "photos/D-48-3505.png"
+      "photoFile": "photos/D-48-3505.png",
+      "photoFileId": "09f64e46-0352-409b-85a0-8ced5dc5a027",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -692,20 +652,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Материал: Сосна, метал мм\n\nПозиция в ЗНП: 1",
-    "dimensions": {
-      "length": 420,
-      "width": 420,
-      "height": 940,
-      "unit": "мм"
-    },
+    "description": "шт\n420x420x940\nМатериал: Сосна, метал мм\n\nПозиция в ЗНП: 1",
     "hasDrawing": true,
     "notes": "YouGile D-57\nКолонка: На распределении\nПоз: 1\nЧертежи 3506 ЗНП 17-26 поз 1",
     "source": {
       "yougileTaskId": "450b0967-09f4-4432-943f-1ef0482f087d",
       "taskCode": "D-57",
       "columnName": "На распределении",
-      "photoFile": "photos/D-57-3506.png"
+      "photoFile": "photos/D-57-3506.png",
+      "photoFileId": "eeadcf46-e508-4f6e-9e86-ee00028b28ba",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -714,14 +670,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "нержавеющая сталь AISI304, боковые опоры: камень с рисунком, диаметр трубы основания: 50,8мм, диаметр трубы колец:25мм, количество мест 5, размеры: ширина между кольцами 200мм, диаметр колец 55см\n\nПозиция в ЗНП: 1",
+    "description": "шт\n?х550х630\nнержавеющая сталь AISI304, боковые опоры: камень с рисунком, диаметр трубы основания: 50,8мм, диаметр трубы колец:25мм, количество мест 5, размеры: ширина между кольцами 200мм, диаметр колец 55см\n\nПозиция в ЗНП: 1",
     "hasDrawing": true,
     "notes": "YouGile D-9\nКолонка: Завершены\nПоз: 1\nЧертежи 3801 ЗНП 8-26 поз 1",
     "source": {
       "yougileTaskId": "4dba4970-31bb-4f79-a1e3-f8603190fd0b",
       "taskCode": "D-9",
       "columnName": "Завершены",
-      "photoFile": "photos/D-9-3801.png"
+      "photoFile": "photos/D-9-3801.png",
+      "photoFileId": "2f4e86b0-0d68-4608-8563-f7115d856d0f",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -730,37 +688,35 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "материал:  нержавеющая сталь AISI304\n\nПозиция в ЗНП: 2",
-    "dimensions": {
-      "length": 270,
-      "width": 80,
-      "height": 900,
-      "unit": "мм"
-    },
+    "description": "шт\n270х80х900\nматериал:  нержавеющая сталь AISI304\n\nПозиция в ЗНП: 2",
     "hasDrawing": true,
     "notes": "YouGile D-10\nКолонка: Завершены\nПоз: 2\nЧертежи 3802 ЗНП 8-26 поз 2",
     "source": {
       "yougileTaskId": "3fc5a10a-052f-4930-933c-50ce98ea2f63",
       "taskCode": "D-10",
       "columnName": "Завершены",
-      "photoFile": "photos/D-10-3802.png"
+      "photoFile": "photos/D-10-3802.png",
+      "photoFileId": "4ec9caec-7059-490f-893c-30bd58526263",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
     "sku": "3903",
     "name": "Чертежи 3903 ЗНП 12-26 поз 1",
     "kind": "good",
-    "unit": "Малая навигационная стела\" в границах общественной территории \"Уникальная лесопарковая зона \"Мэздах\", табло информационное водонепроницаемое",
+    "unit": "шт",
     "status": "active",
-    "description": "8\nшт\n600х145х2200\nБетонирование\nматериал: сталь, деревоТехописание прилагается\n\nПозиция в ЗНП: 1",
-    "installation": "8",
+    "description": "Малая навигационная стела\" в границах общественной территории \"Уникальная лесопарковая зона \"Мэздах\", табло информационное водонепроницаемое\n8\nшт\n600х145х2200\nБетонирование\nматериал: сталь, деревоТехописание прилагается\n\nПозиция в ЗНП: 1",
+    "installation": "Малая навигационная стела\" в границах общественной территории \"Уникальная лесопарковая зона \"Мэздах\", табло информационное водонепроницаемое",
     "hasDrawing": true,
     "notes": "YouGile D-12\nКолонка: На распределении\nПоз: 1\nЧертежи 3903 ЗНП 12-26 поз 1",
     "source": {
       "yougileTaskId": "78ca2b03-1514-4eec-b3d7-09bdcbf48e70",
       "taskCode": "D-12",
       "columnName": "На распределении",
-      "photoFile": "photos/D-12-3903.png"
+      "photoFile": "photos/D-12-3903.png",
+      "photoFileId": "7444e72e-aeba-41f2-a805-fe358488b8b0",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -769,15 +725,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Бетонирование\nматериал: сталь, деревоТехописание прилагается\n\nПозиция в ЗНП: 2",
-    "installation": "Бетонирование",
+    "description": "шт\n1650х?х2200\nБетонирование\nматериал: сталь, деревоТехописание прилагается\n\nПозиция в ЗНП: 2",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-13\nКолонка: На распределении\nПоз: 2\nЧертежи 3904 ЗНП 12-26 поз 2",
     "source": {
       "yougileTaskId": "1c9620f2-d740-4201-955d-7899a6da3552",
       "taskCode": "D-13",
       "columnName": "На распределении",
-      "photoFile": "photos/D-13-3904.png"
+      "photoFile": "photos/D-13-3904.png",
+      "photoFileId": "12ac3efe-7831-48f8-8a08-b304ed306047",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -786,15 +744,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 7",
-    "installation": "Бетонирование",
+    "description": "шт\n1100х?х1200\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 7",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-22\nКолонка: Завершены\nПоз: 7\nЧертежи 3905 ЗНП 10-26 поз 7",
     "source": {
       "yougileTaskId": "561df1d1-6307-40c0-94c6-28b953044926",
       "taskCode": "D-22",
       "columnName": "Завершены",
-      "photoFile": "photos/D-22-3905.png"
+      "photoFile": "photos/D-22-3905.png",
+      "photoFileId": "6280c10f-781b-440a-85db-05cbc0e0286f",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -803,15 +763,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 2",
-    "installation": "Бетонирование",
+    "description": "шт\n2000х?х1400\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 2",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-25\nКолонка: На распределении\nПоз: 2\nЧертежи 3906 ЗНП 11-26 поз 2",
     "source": {
       "yougileTaskId": "90b05ba4-380d-46db-9aae-f6206910fee6",
       "taskCode": "D-25",
       "columnName": "На распределении",
-      "photoFile": "photos/D-25-3906.png"
+      "photoFile": "photos/D-25-3906.png",
+      "photoFileId": "0c85d674-fef3-47fe-bc04-5d849d618ab8",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -820,20 +782,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "(с УФ печатью информации о площадке)\n\nПозиция в ЗНП: 3",
-    "dimensions": {
-      "length": 1150,
-      "width": 60,
-      "height": 2300,
-      "unit": "мм"
-    },
+    "description": "шт\n1150х60х2300\n(с УФ печатью информации о площадке)\n\nПозиция в ЗНП: 3",
     "hasDrawing": true,
     "notes": "YouGile D-46\nКолонка: На распределении\nПоз: 3\nЧертежи 3907 ЗНП 15-26 поз 3",
     "source": {
       "yougileTaskId": "19042c00-46b3-4bd4-9f02-3a371477580b",
       "taskCode": "D-46",
       "columnName": "На распределении",
-      "photoFile": "photos/D-46-3907.png"
+      "photoFile": null,
+      "photoFileId": null,
+      "photoPick": null
     }
   },
   {
@@ -842,20 +800,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Подбираем аналоги из Дикома",
-    "dimensions": {
-      "length": 2820,
-      "width": 1500,
-      "height": 2100,
-      "unit": "мм"
-    },
+    "description": "шт\n2820х1500х2100\nПодбираем аналоги из Дикома",
     "hasDrawing": true,
     "notes": "YouGile D-49\nКолонка: На распределении\nЧертежи 5101 ЗНП 15-26 поз 6",
     "source": {
       "yougileTaskId": "87f30c4e-a529-452c-bcd3-d2f01291c199",
       "taskCode": "D-49",
       "columnName": "На распределении",
-      "photoFile": "photos/D-49-5101.png"
+      "photoFile": null,
+      "photoFileId": null,
+      "photoPick": null
     }
   },
   {
@@ -864,14 +818,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Подбираем аналоги из Дикома\n\nПозиция в ЗНП: 8",
+    "description": "шт\n1500х1500х?\nПодбираем аналоги из Дикома\n\nПозиция в ЗНП: 8",
     "hasDrawing": true,
     "notes": "YouGile D-51\nКолонка: Завершены\nПоз: 8\nЧертежи 5201 ЗНП 15-26 поз 8",
     "source": {
       "yougileTaskId": "fe6f626e-9066-410a-afe0-122b30e7c48e",
       "taskCode": "D-51",
       "columnName": "Завершены",
-      "photoFile": "photos/D-51-5201.png"
+      "photoFile": null,
+      "photoFileId": null,
+      "photoPick": null
     }
   },
   {
@@ -880,20 +836,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Лиственница, нержавеющая сталь\n\nПозиция в ЗНП: 6",
-    "dimensions": {
-      "length": 1540,
-      "width": 1540,
-      "height": 825,
-      "unit": "мм"
-    },
+    "description": "шт\n1540 х 1540 х 825\nЛиственница, нержавеющая сталь\n\nПозиция в ЗНП: 6",
     "hasDrawing": true,
     "notes": "YouGile D-62\nКолонка: На распределении\nПоз: 6\nЧертежи 5202 ЗНП 17-26 поз 6",
     "source": {
       "yougileTaskId": "22070915-7014-4d63-bd50-8b50e9cd8e20",
       "taskCode": "D-62",
       "columnName": "На распределении",
-      "photoFile": "photos/D-62-5202.png"
+      "photoFile": "photos/D-62-5202.png",
+      "photoFileId": "69ea0275-9ae4-45bb-9779-8cdcc0d0530e",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -902,14 +854,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Подбираем аналоги из Дикома\n\nПозиция в ЗНП: 2",
+    "description": "шт\n2600х550х?\nПодбираем аналоги из Дикома\n\nПозиция в ЗНП: 2",
     "hasDrawing": true,
     "notes": "YouGile D-45\nКолонка: На распределении\nПоз: 2\nЧертежи 5301 ЗНП 15-26 поз 2",
     "source": {
       "yougileTaskId": "466adc2f-f5ce-40bb-b62d-4cbda5e622fe",
       "taskCode": "D-45",
       "columnName": "На распределении",
-      "photoFile": "photos/D-45-5301.png"
+      "photoFile": null,
+      "photoFileId": null,
+      "photoPick": null
     }
   },
   {
@@ -918,20 +872,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Материал: Лиственница, нержавеющая сталь\n\nПозиция в ЗНП: 4",
-    "dimensions": {
-      "length": 4000,
-      "width": 480,
-      "height": 1150,
-      "unit": "мм"
-    },
+    "description": "шт\n4000 x 480 x 1150\nМатериал: Лиственница, нержавеющая сталь\n\nПозиция в ЗНП: 4",
     "hasDrawing": true,
     "notes": "YouGile D-60\nКолонка: На распределении\nПоз: 4\nЧертежи 5302 ЗНП 17-26 поз 4",
     "source": {
       "yougileTaskId": "e88b896d-36db-4e58-ba3b-c6d710ab1c4b",
       "taskCode": "D-60",
       "columnName": "На распределении",
-      "photoFile": "photos/D-60-5302.png"
+      "photoFile": "photos/D-60-5302.png",
+      "photoFileId": "f6425d11-2dbb-40a6-aa49-01d1e00e0670",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -940,14 +890,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "?х?х?\nПодбираем аналоги из Дикома\n\nПозиция в ЗНП: 7",
+    "description": "шт\n?х?х?\nПодбираем аналоги из Дикома\n\nПозиция в ЗНП: 7",
     "hasDrawing": true,
     "notes": "YouGile D-50\nКолонка: Завершены\nПоз: 7\nЧертежи 5401 ЗНП 15-26 поз 7",
     "source": {
       "yougileTaskId": "6a8ee51e-e5fe-4cc1-8401-5767ec99578e",
       "taskCode": "D-50",
       "columnName": "Завершены",
-      "photoFile": "photos/D-50-5401.png"
+      "photoFile": null,
+      "photoFileId": null,
+      "photoPick": null
     }
   },
   {
@@ -956,20 +908,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Лиственница, нержавеющая сталь\n\nПозиция в ЗНП: 5",
-    "dimensions": {
-      "length": 770,
-      "width": 325,
-      "height": 735,
-      "unit": "мм"
-    },
+    "description": "шт\n770 x 325 x 735\nЛиственница, нержавеющая сталь\n\nПозиция в ЗНП: 5",
     "hasDrawing": true,
     "notes": "YouGile D-61\nКолонка: На распределении\nПоз: 5\nЧертежи 5402 ЗНП 17-26 поз 5",
     "source": {
       "yougileTaskId": "6d82b89a-1738-41d8-a32d-39fc8d995afd",
       "taskCode": "D-61",
       "columnName": "На распределении",
-      "photoFile": "photos/D-61-5402.png"
+      "photoFile": "photos/D-61-5402.png",
+      "photoFileId": "f0721b7c-06d5-4e83-996b-0f9a3b880c6e",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -978,15 +926,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 7",
-    "installation": "Бетонирование",
+    "description": "шт\n?х2200х2600\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 7",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-29\nКолонка: На распределении\nПоз: 7\nЧертежи 6001 ЗНП 11-26 поз 7",
     "source": {
       "yougileTaskId": "0d8df30d-60fb-4caa-95a8-475063fc07a3",
       "taskCode": "D-29",
       "columnName": "На распределении",
-      "photoFile": "photos/D-29-6001.png"
+      "photoFile": "photos/D-29-6001.png",
+      "photoFileId": "f6db09dd-d60b-4f5e-a83f-14fbdd540d02",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -995,15 +945,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Бетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 5",
-    "installation": "Бетонирование",
+    "description": "шт\n10500х?х4400\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 5",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-27\nКолонка: Приостановлены\nПоз: 5\nЧертежи 6101 ЗНП 11-26 поз 5",
     "source": {
       "yougileTaskId": "5cc5b105-d06a-412e-a2bd-76d78597654b",
       "taskCode": "D-27",
       "columnName": "Приостановлены",
-      "photoFile": "photos/D-27-6101.png"
+      "photoFile": "photos/D-27-6101.png",
+      "photoFileId": "8884039d-b925-4552-aea3-27242d311eaa",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -1012,15 +964,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "?х?х?\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 8",
-    "installation": "?х?х?",
+    "description": "шт\n?х?х?\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 8",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-30\nКолонка: На распределении\nПоз: 8\nЧертежи 6102 ЗНП 11-26 поз 8",
     "source": {
       "yougileTaskId": "0b1eb594-4b15-44ee-8163-e6a00b425c3f",
       "taskCode": "D-30",
       "columnName": "На распределении",
-      "photoFile": "photos/D-30-6102.png"
+      "photoFile": "photos/D-30-6102.png",
+      "photoFileId": "00085760-3dab-4f85-9b3c-e3acf0ed1977",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -1029,15 +983,17 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "?х?х?\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 9",
-    "installation": "?х?х?",
+    "description": "шт\n?х?х?\nБетонирование\nНет\nСогласовать\n\nПозиция в ЗНП: 9",
+    "installation": "шт",
     "hasDrawing": true,
     "notes": "YouGile D-31\nКолонка: На распределении\nПоз: 9\nЧертежи 6103 ЗНП 11-26 поз 9",
     "source": {
       "yougileTaskId": "30c0ddeb-c266-40f7-9c61-332a4eda362b",
       "taskCode": "D-31",
       "columnName": "На распределении",
-      "photoFile": "photos/D-31-6103.png"
+      "photoFile": "photos/D-31-6103.png",
+      "photoFileId": "725779d9-1cfc-4c6a-8bab-19bf4aebd27c",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   },
   {
@@ -1046,14 +1002,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "?х?х?\nРазмеры и наполнение по видео, конструктив и дизайн из имеющихся решений.\n\nПозиция в ЗНП: 1",
+    "description": "шт\n?х?х?\nРазмеры и наполнение по видео, конструктив и дизайн из имеющихся решений.\n\nПозиция в ЗНП: 1",
     "hasDrawing": true,
     "notes": "YouGile D-44\nКолонка: Завершены\nПоз: 1\nЧертежи 6104 ЗНП 15-26 поз 1",
     "source": {
       "yougileTaskId": "405eeb51-0679-440f-930e-6d2d6ae32790",
       "taskCode": "D-44",
       "columnName": "Завершены",
-      "photoFile": "photos/D-44-6104.png"
+      "photoFile": null,
+      "photoFileId": null,
+      "photoPick": null
     }
   },
   {
@@ -1062,20 +1020,16 @@
     "kind": "good",
     "unit": "шт",
     "status": "active",
-    "description": "Материал: древесина хвойных пород,  канат армированный, сталь. Окрашено: порошковой эмалью.\n\nПозиция в ЗНП: 7",
-    "dimensions": {
-      "length": 5980,
-      "width": 5265,
-      "height": 3965,
-      "unit": "мм"
-    },
+    "description": "шт\n5980 х 5265 х 3965\nМатериал: древесина хвойных пород,  канат армированный, сталь. Окрашено: порошковой эмалью.\n\nПозиция в ЗНП: 7",
     "hasDrawing": true,
     "notes": "YouGile D-63\nКолонка: На распределении\nПоз: 7\nЧертежи 6105 ЗНП 17-26 поз 7",
     "source": {
       "yougileTaskId": "826bc06d-688c-4c0f-90d8-39864e8a8cee",
       "taskCode": "D-63",
       "columnName": "На распределении",
-      "photoFile": "photos/D-63-6105.png"
+      "photoFile": "photos/D-63-6105.png",
+      "photoFileId": "1ca19e09-7662-48be-801d-72ca970201d3",
+      "photoPick": "chat-image-only-cover-heuristic"
     }
   }
 ]
