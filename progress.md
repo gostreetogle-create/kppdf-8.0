@@ -5,8 +5,8 @@
 **Gates:** FE tsc на allowlist PASS (0 ошибок pages/admin + app.routes); focused Jest 4 suites / 45 tests PASS; full-repo tsc red ×9 — pre-existing group-chips WIP parallel session #1 (не трогал).
 **Archive:** `tasks/_archive/2026-08/TZ-ADMIN-306.done.md`
 **Lock:** `.mimocode/locks/TZ-ADMIN-306-role-select-hub.lock`
-
----
+**Commit (Freebuff):** `68b6cc9` · **on main:** `69d8a22` (cherry-pick)
+**Next:** optional WAREHOUSE-UX-301 or close agent.
 
 ## [2026-08-06] — TZ-CATALOG-314 DONE: Archive / soft-delete / auth consistency
 **Исполнитель:** Buffy (implement) + Cursor (closeout / PO deploy path)

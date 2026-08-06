@@ -1,0 +1,4 @@
+TZ-ADMIN-306
+closed: 2026-08-06
+commit: 69d8a22 (cherry-pick of 68b6cc9 onto main)
+zone: admin role select from API + /admin hub redirect
