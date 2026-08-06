@@ -73,6 +73,7 @@ docs/
 | **Миграции** | `pi-table-migration-recipe.md` | Рецепт pi-table |
 | **Референсы** | `reference/` (5 файлов) | HTML-прототипы, скриншоты, примеры документов |
 | **Интеграции** | `openhands-cloud-api.md` | Подключение к OpenHands Cloud API, делегирование задач другому AI-агенту |
+| **Интеграции** | [`yougile/`](./yougile/README.md) | YouGile (UGL) REST API v2 — карточки/доски, legacy-источники на D:, env |
 
 ## Рекомендуемый порядок чтения для AI-агента / разработчика
 

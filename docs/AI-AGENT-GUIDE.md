@@ -87,6 +87,7 @@ LM Studio: `docs/agents/LM-STUDIO-AGENT.md` · `node scripts/lmstudio-agent/run.
 | `backend/src/common/` | Guards, interceptors, decorators, seeds |
 | `backend/src/database/` | Connection, plugins (softDelete, audit) |
 | `docs/` | Вся документация |
+| `docs/yougile/` | YouGile (UGL) API v2 — интеграции / legacy / env (секреты только в `.env.local`) |
 | `docs/pages/` | Документация по каждой странице |
 | `tasks/` | TZ-задачи (активные) |
 | `tasks/_archive/` | Архив завершённых задач |
