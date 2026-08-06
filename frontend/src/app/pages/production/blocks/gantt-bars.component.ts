@@ -53,102 +53,131 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
 
       @if (!bars().length) {
         <div
-          class="flex-1 flex items-center justify-center p-8 text-sm text-muted-foreground"
+          class="shrink-0 px-3 py-1.5 text-xs text-muted-foreground border-b hairline bg-paper-2/40"
           data-test="gantt-empty"
+          role="status"
         >
-          Выберите заказ — состав для оценки пуст
-        </div>
-      } @else {
-        <div class="flex-1 min-h-0 overflow-auto">
-          <div class="flex" [style.minWidth.px]="timelineMinWidth()">
-            <div class="sticky left-0 z-[2] w-48 shrink-0 border-r hairline bg-paper">
-              <div
-                class="h-7 border-b hairline px-2 flex items-end pb-1 text-[10px] text-muted-foreground"
-              >
-                Шкала
-              </div>
-              @for (row of rows(); track row.bar.id) {
-                <div
-                  class="h-11 px-2 py-2 text-xs border-b hairline"
-                  [class.bg-black/[0.02]]="row.alt"
-                >
-                  <div class="font-medium truncate text-ink">{{ row.bar.moduleName }}</div>
-                  <div class="text-muted-foreground truncate">
-                    {{ row.bar.workTypeName }}
-                    @if (row.bar.quantityLabel) {
-                      <span class="ml-1 font-mono">{{ row.bar.quantityLabel }}</span>
-                    }
-                  </div>
-                  <div class="text-[10px] text-muted-foreground">{{ row.bar.workerLabel }}</div>
-                </div>
-              }
-            </div>
-
-            <div class="relative flex-1 min-w-0">
-              <div
-                class="relative h-7 border-b hairline sticky top-0 bg-paper z-10"
-                data-test="gantt-scale"
-              >
-                @for (tick of scaleTicks(); track tick.key) {
-                  <div
-                    class="absolute top-0 bottom-0 border-l hairline text-[10px] text-muted-foreground pl-0.5 overflow-hidden"
-                    [style.left.px]="tick.leftPx"
-                    [style.width.px]="tick.widthPx"
-                    [attr.data-test]="'gantt-tick-' + tick.key"
-                  >
-                    {{ tick.label }}
-                  </div>
-                }
-                <div
-                  class="absolute top-0 bottom-0 w-px bg-destructive/70 z-[1]"
-                  [style.left.px]="todayLeftPx()"
-                  title="Сегодня"
-                  data-test="gantt-today-marker"
-                ></div>
-              </div>
-
-              @for (row of rows(); track row.bar.id) {
-                <div
-                  class="relative h-11 border-b hairline"
-                  [class.bg-black/[0.02]]="row.alt"
-                  [attr.data-test]="'gantt-row-' + row.bar.id"
-                >
-                  <div
-                    class="absolute top-1.5 bottom-1.5 rounded-sm text-[10px] px-1.5 flex items-center overflow-hidden text-ink/90"
-                    [class.border]="row.bar.noTerm"
-                    [class.border-dashed]="row.bar.noTerm"
-                    [class.border-muted-foreground]="row.bar.noTerm"
-                    [style.left.px]="row.leftPx"
-                    [style.width.px]="row.widthPx"
-                    [style.background]="row.bar.noTerm ? 'transparent' : fill(row.bar.workTypeId)"
-                    [style.backgroundImage]="
-                      row.bar.noTerm
-                        ? 'repeating-linear-gradient(135deg, transparent, transparent 4px, oklch(0.7 0.02 250 / 0.35) 4px, oklch(0.7 0.02 250 / 0.35) 8px)'
-                        : null
-                    "
-                    [attr.title]="barTitle(row.bar)"
-                    [attr.data-test]="row.bar.noTerm ? 'gantt-bar-no-term' : 'gantt-bar'"
-                  >
-                    @if (!row.bar.noTerm) {
-                      <span class="truncate">{{ row.bar.days }}д</span>
-                    } @else {
-                      <span class="truncate text-muted-foreground">без срока</span>
-                    }
-                  </div>
-                </div>
-              }
-            </div>
-          </div>
-        </div>
-
-        <div
-          class="shrink-0 px-3 py-2 border-t hairline text-[10px] text-muted-foreground"
-          data-test="gantt-legend"
-        >
-          Цвет полоски = вид работ (OKLCH) · штриховка = без WorkType.days · ×N = количество в
-          заказе (дни не умножаются) · День/Неделя меняет плотность шкалы
+          Нет полос оценки — календарь всё равно показан. Выберите заказ слева или заведите состав
+          изделия (модули → виды работ с днями).
         </div>
       }
+
+      <div class="flex-1 min-h-0 overflow-auto">
+        <div class="flex" [style.minWidth.px]="timelineMinWidth()">
+          <div class="sticky left-0 z-[2] w-48 shrink-0 border-r hairline bg-paper">
+            <div
+              class="h-7 border-b hairline px-2 flex items-end pb-1 text-[10px] text-muted-foreground"
+            >
+              Работа / модуль
+            </div>
+            @for (row of rows(); track row.bar.id) {
+              <div
+                class="h-11 px-2 py-2 text-xs border-b hairline"
+                [class.bg-black/[0.02]]="row.alt"
+              >
+                <div class="font-medium truncate text-ink">{{ row.bar.moduleName }}</div>
+                <div class="text-muted-foreground truncate">
+                  {{ row.bar.workTypeName }}
+                  @if (row.bar.quantityLabel) {
+                    <span class="ml-1 font-mono">{{ row.bar.quantityLabel }}</span>
+                  }
+                </div>
+                <div class="text-[10px] text-muted-foreground">{{ row.bar.workerLabel }}</div>
+              </div>
+            } @empty {
+              @for (ph of emptyPlaceholders; track ph) {
+                <div
+                  class="h-11 px-2 py-2 text-xs border-b hairline text-muted-foreground/70"
+                  [class.bg-black/[0.02]]="ph % 2 === 1"
+                  data-test="gantt-placeholder-row"
+                >
+                  <div class="truncate">—</div>
+                </div>
+              }
+            }
+          </div>
+
+          <div class="relative flex-1 min-w-0">
+            <div
+              class="relative h-7 border-b hairline sticky top-0 bg-paper z-10"
+              data-test="gantt-scale"
+            >
+              @for (tick of scaleTicks(); track tick.key) {
+                <div
+                  class="absolute top-0 bottom-0 border-l hairline text-[10px] text-muted-foreground pl-0.5 overflow-hidden"
+                  [style.left.px]="tick.leftPx"
+                  [style.width.px]="tick.widthPx"
+                  [attr.data-test]="'gantt-tick-' + tick.key"
+                >
+                  {{ tick.label }}
+                </div>
+              }
+              <div
+                class="absolute top-0 bottom-0 w-px bg-destructive/70 z-[1]"
+                [style.left.px]="todayLeftPx()"
+                title="Сегодня"
+                data-test="gantt-today-marker"
+              ></div>
+            </div>
+
+            @for (row of rows(); track row.bar.id) {
+              <div
+                class="relative h-11 border-b hairline"
+                [class.bg-black/[0.02]]="row.alt"
+                [attr.data-test]="'gantt-row-' + row.bar.id"
+              >
+                @for (grid of dayGrid(); track grid.key) {
+                  <div
+                    class="absolute top-0 bottom-0 border-l hairline opacity-40"
+                    [style.left.px]="grid.leftPx"
+                  ></div>
+                }
+                <div
+                  class="absolute top-1.5 bottom-1.5 rounded-sm text-[10px] px-1.5 flex items-center overflow-hidden text-ink/90"
+                  [class.border]="row.bar.noTerm"
+                  [class.border-dashed]="row.bar.noTerm"
+                  [class.border-muted-foreground]="row.bar.noTerm"
+                  [style.left.px]="row.leftPx"
+                  [style.width.px]="row.widthPx"
+                  [style.background]="row.bar.noTerm ? 'transparent' : fill(row.bar.workTypeId)"
+                  [style.backgroundImage]="
+                    row.bar.noTerm
+                      ? 'repeating-linear-gradient(135deg, transparent, transparent 4px, oklch(0.7 0.02 250 / 0.35) 4px, oklch(0.7 0.02 250 / 0.35) 8px)'
+                      : null
+                  "
+                  [attr.title]="barTitle(row.bar)"
+                  [attr.data-test]="row.bar.noTerm ? 'gantt-bar-no-term' : 'gantt-bar'"
+                >
+                  @if (!row.bar.noTerm) {
+                    <span class="truncate">{{ row.bar.days }}д</span>
+                  } @else {
+                    <span class="truncate text-muted-foreground">без срока</span>
+                  }
+                </div>
+              </div>
+            } @empty {
+              @for (ph of emptyPlaceholders; track ph) {
+                <div class="relative h-11 border-b hairline" [class.bg-black/[0.02]]="ph % 2 === 1">
+                  @for (grid of dayGrid(); track grid.key) {
+                    <div
+                      class="absolute top-0 bottom-0 border-l hairline opacity-40"
+                      [style.left.px]="grid.leftPx"
+                    ></div>
+                  }
+                </div>
+              }
+            }
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="shrink-0 px-3 py-2 border-t hairline text-[10px] text-muted-foreground"
+        data-test="gantt-legend"
+      >
+        Красная линия = сегодня · цвет полоски = вид работ · штриховка = без WorkType.days · ×N =
+        количество (дни не умножаются) · День/Неделя — плотность шкалы
+      </div>
     </div>
   `,
 })
@@ -162,6 +191,9 @@ export class GanttBarsComponent {
   readonly readOnly = input(false);
   readonly today = input(formatDateOnly(new Date()));
 
+  /** Empty-board placeholder lanes so the calendar never looks like a blank page. */
+  protected readonly emptyPlaceholders = [0, 1, 2, 3, 4, 5] as const;
+
   protected readonly totalDays = computed(() =>
     Math.max(1, dayDiff(this.rangeStart(), this.rangeEnd())),
   );
@@ -169,6 +201,16 @@ export class GanttBarsComponent {
   protected readonly pxPerDay = computed(() => GANTT_PX_PER_DAY[this.zoom()]);
 
   protected readonly timelineMinWidth = computed(() => this.totalDays() * this.pxPerDay() + 192);
+
+  protected readonly dayGrid = computed(() => {
+    const total = this.totalDays();
+    const px = this.pxPerDay();
+    const out: Array<{ key: string; leftPx: number }> = [];
+    for (let i = 0; i < total; i++) {
+      out.push({ key: `g${i}`, leftPx: i * px });
+    }
+    return out;
+  });
 
   protected readonly scaleTicks = computed(() => {
     const start = this.rangeStart();

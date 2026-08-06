@@ -77,8 +77,12 @@ function isReadOnlyEstimateStatus(status: OrderStatus): boolean {
             </button>
           </li>
         } @empty {
-          <li class="p-4 text-sm text-muted-foreground" data-test="orders-rail-empty">
-            Нет заказов по фильтру
+          <li class="p-4 text-sm text-muted-foreground space-y-1" data-test="orders-rail-empty">
+            <div>В базе нет активных заказов под фильтр.</div>
+            <div class="text-xs opacity-80">
+              Создайте заказ в «Сделки» или запустите
+              <code class="font-mono">node scripts/seed-local-demo.mjs</code>
+            </div>
           </li>
         }
       </ul>

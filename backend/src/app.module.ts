@@ -106,6 +106,7 @@ import { CategoriesSeed } from './common/seed/categories.seed';
 import { WarehouseSeed } from './common/seed/warehouse.seed';
 import { CurrenciesSeed } from './common/seed/currencies.seed';
 import { DevFixturesSeed } from './common/seed/dev-fixtures.seed';
+import { LocalDemoSeed } from './common/seed/local-demo.seed';
 import { DocumentTemplateCategoriesSeed } from './common/seed/document-template-categories.seed';
 import { TextBlockCategoriesSeed } from './common/seed/text-block-categories.seed';
 import { ColorReferencesSeed } from './common/seed/color-references.seed';
@@ -280,6 +281,7 @@ import { RequestMethod } from '@nestjs/common';
     WarehouseSeed,
     CurrenciesSeed,
     DevFixturesSeed,
+    LocalDemoSeed,
     // TZ-DOC-307: системная default-категория шаблонов «Общее»
     DocumentTemplateCategoriesSeed,
     // TZ-DOC-315/321: системная default-категория текстовых блоков «Общее»

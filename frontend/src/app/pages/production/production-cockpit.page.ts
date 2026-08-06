@@ -79,29 +79,24 @@ function isReadOnlyEstimateStatus(status: OrderStatus): boolean {
             (selectAll)="onSelectAll()"
           />
         </aside>
-        <main class="flex-1 min-w-0 min-h-0 flex flex-col">
+        <main class="flex-1 min-w-0 min-h-0 flex flex-col relative">
           @if (facade.state().loading) {
-            <div class="flex-1 flex items-center justify-center text-sm text-muted-foreground">
+            <div
+              class="absolute inset-0 z-10 flex items-center justify-center text-sm text-muted-foreground bg-paper/70"
+              data-test="cockpit-loading"
+            >
               Считаем оценку…
             </div>
-          } @else if (!showBoard()) {
-            <div
-              class="flex-1 flex items-center justify-center p-8 text-sm text-muted-foreground text-center"
-              data-test="cockpit-empty"
-            >
-              Выберите заказ или покажите все
-            </div>
-          } @else {
-            <app-gantt-bars
-              [bars]="bars()"
-              [rangeStart]="rangeStart()"
-              [rangeEnd]="rangeEnd()"
-              [zoom]="ctx.zoom()"
-              [warnings]="facade.state().warnings"
-              [usedTodayFallback]="usedTodayFallback()"
-              [readOnly]="readOnly()"
-            />
           }
+          <app-gantt-bars
+            [bars]="bars()"
+            [rangeStart]="rangeStart()"
+            [rangeEnd]="rangeEnd()"
+            [zoom]="ctx.zoom()"
+            [warnings]="facade.state().warnings"
+            [usedTodayFallback]="usedTodayFallback()"
+            [readOnly]="readOnly()"
+          />
         </main>
       </div>
     </div>
@@ -114,14 +109,17 @@ export class ProductionCockpitPage implements OnInit {
 
   protected readonly orders = signal<Order[]>([]);
   protected readonly bars = signal<GanttBar[]>([]);
-  protected readonly rangeStart = signal(formatDateOnly(new Date()));
-  protected readonly rangeEnd = signal(formatDateOnly(new Date()));
+  protected readonly rangeStart = signal(defaultRangeStart());
+  protected readonly rangeEnd = signal(defaultRangeEnd());
   protected readonly usedTodayFallback = signal(false);
   protected readonly readOnly = signal(false);
-  protected readonly showBoard = signal(false);
 
   ngOnInit(): void {
-    void this.facade.loadOrders().then((list) => this.orders.set(list));
+    void this.facade.loadOrders().then(async (list) => {
+      this.orders.set(list);
+      // Open calendar on «all active» immediately — never leave a blank main pane.
+      await this.onSelectAll();
+    });
     this.destroyRef.onDestroy(() => this.facade.clearCaches());
   }
 
@@ -148,11 +146,9 @@ export class ProductionCockpitPage implements OnInit {
     const built = await this.facade.loadBarsForOrders(target);
     this.bars.set(built);
     this.usedTodayFallback.set(built.some((b) => b.usedFallbackToday));
-    this.showBoard.set(true);
     if (built.length === 0) {
-      const today = formatDateOnly(new Date());
-      this.rangeStart.set(today);
-      this.rangeEnd.set(today);
+      this.rangeStart.set(defaultRangeStart());
+      this.rangeEnd.set(defaultRangeEnd());
       return;
     }
     let start = built[0]!.startDate;
@@ -162,9 +158,21 @@ export class ProductionCockpitPage implements OnInit {
       const e = b.noTerm ? b.startDate : b.endDate;
       if (e > end) end = e;
     }
-    this.rangeStart.set(start);
-    this.rangeEnd.set(addDays(end, 1));
+    // Pad horizon so today + a usable calendar window are always visible.
+    const paddedStart = minDate(start, defaultRangeStart());
+    const paddedEnd = maxDate(addDays(end, 1), defaultRangeEnd());
+    this.rangeStart.set(paddedStart);
+    this.rangeEnd.set(paddedEnd);
   }
+}
+
+/** ~2 weeks forward from today-2 — readable day grid on first paint. */
+function defaultRangeStart(): string {
+  return addDays(formatDateOnly(new Date()), -2);
+}
+
+function defaultRangeEnd(): string {
+  return addDays(formatDateOnly(new Date()), 14);
 }
 
 function addDays(dateOnly: string, days: number): string {
@@ -172,4 +180,12 @@ function addDays(dateOnly: string, days: number): string {
   const dt = new Date(y!, m! - 1, d!);
   dt.setDate(dt.getDate() + days);
   return formatDateOnly(dt);
+}
+
+function minDate(a: string, b: string): string {
+  return a < b ? a : b;
+}
+
+function maxDate(a: string, b: string): string {
+  return a > b ? a : b;
 }

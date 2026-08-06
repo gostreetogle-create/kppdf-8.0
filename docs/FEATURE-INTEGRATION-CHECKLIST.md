@@ -79,7 +79,7 @@
 - [x] Новый read/write tool → `desktop/mcp/src/*-tools.ts` + таблица в `desktop/docs/MCP.md` — **TZD-15**: `kppdf_inbox_list`, `kppdf_inbox_propose_file` (`desktop/mcp/src/inbox-tools.ts`) + таблица в MCP.md ✅
 - [x] Write-путь → propose/confirm + mutation journal (не silent SoT write) — **TZD-15**: inbox propose → `/api/mutation-journal/proposals` (`material.create`, toolName `kppdf_inbox_propose_file`), confirm/cancel — те же эндпоинты журнала; десктоп-кнопки «Подтвердить / Отменить» ✅
 - [x] Env / connect docs, если меняется порт/auth — **TZD-15**: `KPPDF_INBOX_DIR` в таблице Env (MCP.md) + карточка «Inbox» в десктопе ✅
-- [ ] Ops: демо-данные на стенде — опц. `node scripts/seed-demo-five.mjs --base http://HOST:3000` (префикс «Тест ·»)
+- [ ] Ops: демо-данные на стенде — опц. `node scripts/seed-demo-five.mjs --base http://HOST:3000` (префикс «Тест ·»); локально для Ганта/каталога — `node scripts/seed-local-demo.mjs` (маркер `DEMO-LOCAL`, пишет в Mongo через API; boot-seed `LocalDemoSeed`, off: `LOCAL_DEMO_SEED=0`)
 
 ## F. Перед «DONE / archive»
 

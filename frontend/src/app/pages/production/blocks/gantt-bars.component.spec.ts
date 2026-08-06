@@ -44,13 +44,17 @@ describe('GanttBarsComponent', () => {
     expect(el.querySelector('[data-test="gantt-bar"]')).toBeTruthy();
   });
 
-  it('shows empty state when no bars', () => {
+  it('keeps calendar scale visible when no bars', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', []);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
-    fixture.componentRef.setInput('rangeEnd', '2026-08-02');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-16');
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('состав для оценки пуст');
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelector('[data-test="gantt-scale"]')).toBeTruthy();
+    expect(el.querySelector('[data-test="gantt-today-marker"]')).toBeTruthy();
+    expect(el.querySelector('[data-test="gantt-empty"]')).toBeTruthy();
+    expect(el.querySelectorAll('[data-test="gantt-placeholder-row"]').length).toBeGreaterThan(0);
   });
 
   it('day vs week zoom changes px density and scale hint', () => {
