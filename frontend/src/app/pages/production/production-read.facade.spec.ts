@@ -5,6 +5,7 @@ import { OrdersService } from '../orders/orders.service';
 import { ProductsService } from '../../shared/services/products.service';
 import { ProductModulesService } from '../../shared/services/pi-product-modules.service';
 import { WorkTypesService } from '../../shared/services/pi-work-types.service';
+import { PiWorkersService } from '../../shared/services/pi-workers.service';
 
 describe('ProductionReadFacade', () => {
   it('extractDirectModuleIds prefers non-empty composition over legacy', () => {
@@ -116,6 +117,27 @@ describe('ProductionReadFacade', () => {
         }),
       ),
     };
+    const workersApi = {
+      list: jest.fn().mockReturnValue(
+        of({
+          ok: true,
+          data: {
+            items: [
+              {
+                _id: 'w1',
+                lastName: 'Иванов',
+                firstName: 'Иван',
+                isActive: true,
+                workTypeIds: ['wt1'],
+              },
+            ],
+            total: 1,
+            page: 1,
+            limit: 200,
+          },
+        }),
+      ),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -124,6 +146,7 @@ describe('ProductionReadFacade', () => {
         { provide: ProductsService, useValue: productsApi },
         { provide: ProductModulesService, useValue: modulesApi },
         { provide: WorkTypesService, useValue: workTypesApi },
+        { provide: PiWorkersService, useValue: workersApi },
       ],
     });
 
@@ -136,11 +159,13 @@ describe('ProductionReadFacade', () => {
     expect(bars[0].days).toBe(2);
     expect(bars[0].quantityLabel).toBe('×2');
     expect(bars[0].noTerm).toBe(false);
+    expect(bars[0].workerLabel).toContain('Иванов');
 
-    // Second load hits caches (still one product/module/workTypes call).
+    // Second load hits caches (still one product/module/workTypes/workers call).
     await facade.loadBarsForOrders(orders);
     expect(productsApi.findById).toHaveBeenCalledTimes(1);
     expect(modulesApi.findById).toHaveBeenCalledTimes(1);
     expect(workTypesApi.list).toHaveBeenCalledTimes(1);
+    expect(workersApi.list).toHaveBeenCalledTimes(1);
   });
 });

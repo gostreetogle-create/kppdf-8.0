@@ -5,13 +5,16 @@ import {
   inject,
   OnInit,
   signal,
+  computed,
 } from '@angular/core';
 import { OrdersRailComponent } from './blocks/orders-rail.component';
 import { GanttBarsComponent } from './blocks/gantt-bars.component';
+import { OrderInspectorComponent } from './blocks/order-inspector.component';
 import { ProductionCockpitContext } from './production-cockpit.context';
 import { ProductionReadFacade } from './production-read.facade';
 import {
   ACTIVE_COMMERCIAL_ORDER_STATUSES,
+  filterOrdersForRail,
   formatDateOnly,
   isActiveCommercialOrderStatus,
   type GanttBar,
@@ -23,15 +26,16 @@ function isReadOnlyEstimateStatus(status: OrderStatus): boolean {
 }
 
 /**
- * Production Cockpit — Lego shell (TZ-PRODUCTION-303).
+ * Production Cockpit — Lego shell (TZ-PRODUCTION-303 + inspector wave).
  * Docs: docs/pages/production-cockpit.page.md
+ * Spec: docs/superpowers/specs/2026-08-06-production-gantt-inspector-design.md
  */
 @Component({
   selector: 'app-production-cockpit-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [ProductionCockpitContext, ProductionReadFacade],
-  imports: [OrdersRailComponent, GanttBarsComponent],
+  imports: [OrdersRailComponent, GanttBarsComponent, OrderInspectorComponent],
   template: `
     <div
       class="flex flex-col h-[calc(100dvh-3.5rem)] min-h-0 overflow-hidden"
@@ -77,6 +81,7 @@ function isReadOnlyEstimateStatus(status: OrderStatus): boolean {
             [orders]="orders()"
             (select)="onSelect($event)"
             (selectAll)="onSelectAll()"
+            (filtersChanged)="onFiltersChanged()"
           />
         </aside>
         <main class="flex-1 min-w-0 min-h-0 flex flex-col relative">
@@ -98,6 +103,15 @@ function isReadOnlyEstimateStatus(status: OrderStatus): boolean {
             [readOnly]="readOnly()"
           />
         </main>
+        @if (inspectorOrder(); as ord) {
+          <app-order-inspector
+            [order]="ord"
+            [readOnly]="readOnly()"
+            [workerLabels]="workerLabels()"
+            (closed)="closeInspector()"
+            (changed)="onInspectorChanged()"
+          />
+        }
       </div>
     </div>
   `,
@@ -113,18 +127,24 @@ export class ProductionCockpitPage implements OnInit {
   protected readonly rangeEnd = signal(defaultRangeEnd());
   protected readonly usedTodayFallback = signal(false);
   protected readonly readOnly = signal(false);
+  protected readonly workerLabels = signal<ReadonlyMap<string, string>>(new Map());
+  protected readonly inspectorOpen = signal(false);
+
+  protected readonly inspectorOrder = computed(() => {
+    if (!this.inspectorOpen()) return null;
+    const id = this.ctx.selectedOrderId();
+    if (!id) return null;
+    return this.orders().find((o) => o._id === id) ?? null;
+  });
 
   ngOnInit(): void {
-    void this.facade.loadOrders().then(async (list) => {
-      this.orders.set(list);
-      // Open calendar on «all active» immediately — never leave a blank main pane.
-      await this.onSelectAll();
-    });
+    void this.bootstrap();
     this.destroyRef.onDestroy(() => this.facade.clearCaches());
   }
 
   protected async onSelect(id: string): Promise<void> {
     this.ctx.selectOrder(id);
+    this.inspectorOpen.set(true);
     const order = this.orders().find((o) => o._id === id);
     if (!order) return;
     this.readOnly.set(isReadOnlyEstimateStatus(order.status));
@@ -133,13 +153,62 @@ export class ProductionCockpitPage implements OnInit {
 
   protected async onSelectAll(): Promise<void> {
     this.ctx.selectOrder(null);
+    this.inspectorOpen.set(false);
     this.readOnly.set(false);
-    const active = this.orders().filter((o) => {
+    await this.applyFilteredActive();
+  }
+
+  protected closeInspector(): void {
+    this.inspectorOpen.set(false);
+  }
+
+  protected async onFiltersChanged(): Promise<void> {
+    if (this.ctx.selectedOrderId()) return;
+    await this.applyFilteredActive();
+  }
+
+  protected async onInspectorChanged(): Promise<void> {
+    await this.reloadOrdersKeepingSelection();
+  }
+
+  private async bootstrap(): Promise<void> {
+    const list = await this.facade.loadOrders();
+    this.orders.set(list);
+    this.workerLabels.set(await this.facade.getWorkerLabelsMap());
+    await this.onSelectAll();
+  }
+
+  private async reloadOrdersKeepingSelection(): Promise<void> {
+    this.facade.clearCaches();
+    const list = await this.facade.loadOrders();
+    this.orders.set(list);
+    this.workerLabels.set(await this.facade.getWorkerLabelsMap());
+    const id = this.ctx.selectedOrderId();
+    if (id) {
+      const order = list.find((o) => o._id === id);
+      if (order) {
+        this.readOnly.set(isReadOnlyEstimateStatus(order.status));
+        await this.applyBars([order]);
+        return;
+      }
+    }
+    await this.applyFilteredActive();
+  }
+
+  private async applyFilteredActive(): Promise<void> {
+    const filtered = filterOrdersForRail(this.orders(), {
+      activeOnly: true,
+      search: this.ctx.search(),
+      selectedOrderId: null,
+      priority: this.ctx.priorityFilter(),
+      dateFrom: this.ctx.dateFrom(),
+      dateTo: this.ctx.dateTo(),
+    }).filter((o) => {
       if (!isActiveCommercialOrderStatus(o.status)) return false;
       if (o.isActive === false) return false;
       return (ACTIVE_COMMERCIAL_ORDER_STATUSES as readonly string[]).includes(o.status);
     });
-    await this.applyBars(active);
+    await this.applyBars(filtered);
   }
 
   private async applyBars(target: Order[]): Promise<void> {
@@ -158,7 +227,6 @@ export class ProductionCockpitPage implements OnInit {
       const e = b.noTerm ? b.startDate : b.endDate;
       if (e > end) end = e;
     }
-    // Pad horizon so today + a usable calendar window are always visible.
     const paddedStart = minDate(start, defaultRangeStart());
     const paddedEnd = maxDate(addDays(end, 1), defaultRangeEnd());
     this.rangeStart.set(paddedStart);
@@ -166,7 +234,6 @@ export class ProductionCockpitPage implements OnInit {
   }
 }
 
-/** ~2 weeks forward from today-2 — readable day grid on first paint. */
 function defaultRangeStart(): string {
   return addDays(formatDateOnly(new Date()), -2);
 }

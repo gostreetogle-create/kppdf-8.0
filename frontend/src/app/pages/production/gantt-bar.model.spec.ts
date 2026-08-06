@@ -174,4 +174,46 @@ describe('gantt-bar.model', () => {
     });
     expect(search.map((o) => o._id)).toEqual(['3']);
   });
+
+  it('rail filter supports priority and date range on plannedDate', () => {
+    const orders = [
+      {
+        _id: '1',
+        number: 'A',
+        status: 'confirmed' as const,
+        priority: 'urgent',
+        plannedDate: '2026-08-10',
+      },
+      {
+        _id: '2',
+        number: 'B',
+        status: 'confirmed' as const,
+        priority: 'low',
+        plannedDate: '2026-08-01',
+      },
+      {
+        _id: '3',
+        number: 'C',
+        status: 'draft' as const,
+        priority: 'urgent',
+        date: '2026-08-12',
+      },
+    ];
+    const byPriority = filterOrdersForRail(orders, {
+      activeOnly: true,
+      search: '',
+      selectedOrderId: null,
+      priority: 'urgent',
+    });
+    expect(byPriority.map((o) => o._id).sort()).toEqual(['1', '3']);
+
+    const byDate = filterOrdersForRail(orders, {
+      activeOnly: true,
+      search: '',
+      selectedOrderId: null,
+      dateFrom: '2026-08-09',
+      dateTo: '2026-08-11',
+    });
+    expect(byDate.map((o) => o._id)).toEqual(['1']);
+  });
 });

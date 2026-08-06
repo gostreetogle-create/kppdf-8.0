@@ -4,8 +4,8 @@ import type { GanttZoom } from '../production-cockpit.context';
 
 /** Pixels per calendar day — day zoom is denser, week packs the same span. */
 export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
-  day: 48,
-  week: 14,
+  day: 36,
+  week: 12,
 };
 
 @Component({

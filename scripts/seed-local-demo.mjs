@@ -342,8 +342,17 @@ async function main() {
     ['Козлова', 'Анна'],
     ['Орлов', 'Олег'],
   ];
+  const wtIdList = Object.values(workTypes)
+    .map((w) => w?._id)
+    .filter(Boolean);
   for (const [idx, [lastName, firstName]] of people.entries()) {
-    await ensureBy(
+    const workTypeIds =
+      wtIdList.length === 0
+        ? []
+        : [wtIdList[idx % wtIdList.length], wtIdList[(idx + 1) % wtIdList.length]].filter(
+            (v, i, a) => a.indexOf(v) === i,
+          );
+    const r = await ensureBy(
       `worker ${lastName}`,
       '/workers?limit=100',
       '/workers',
@@ -359,8 +368,13 @@ async function main() {
         grade: `${(idx % 3) + 3}-й разряд`,
         phone: `+7 (900) 100-20-0${idx + 1}`,
         isActive: true,
+        workTypeIds,
       },
     );
+    if (r.doc && workTypeIds.length && !(r.doc.workTypeIds?.length)) {
+      await req('PATCH', `/workers/${r.doc._id}`, { workTypeIds });
+      console.log(`  ~ worker ${lastName}: workTypeIds patched`);
+    }
   }
 
   // ── Warehouses ────────────────────────────────────────────────

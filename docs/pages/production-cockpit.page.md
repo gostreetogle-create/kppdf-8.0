@@ -29,16 +29,21 @@
 
 | Block | Файл | Роль |
 |-------|------|------|
-| orders-rail | `blocks/orders-rail.component.ts` | Список / поиск / «Все активные» |
-| gantt-bars | `blocks/gantt-bars.component.ts` | Timeline-оценка, zoom day/week |
+| orders-rail | `blocks/orders-rail.component.ts` | Список / поиск / приоритет / даты / «Все активные» |
+| gantt-bars | `blocks/gantt-bars.component.ts` | Timeline-оценка, zoom day/week (day ≈36px) |
+| order-inspector | `blocks/order-inspector.component.ts` | Панель заказа: мета + дерево товар→модуль→вид работ |
+
+### Inspector (2026-08-06)
+
+Клик по заказу в rail открывает правую панель: приоритет, план. дата, иерархия состава, дни вида работ (справочник), люди по `Worker.workTypeIds`. Drag полосок **не** в этой волне (нет order-level duration). Spec: `docs/superpowers/specs/2026-08-06-production-gantt-inspector-design.md`.
 
 ### Services / context
 
 | Сервис | Методы |
 |--------|--------|
-| `ProductionCockpitContext` | selectedOrderId, search, activeOnly, zoom |
-| `ProductionReadFacade` | loadOrders, loadBarsForOrders (cache/dedupe) |
-| `OrdersService` | list() (existing, providedIn root) |
+| `ProductionCockpitContext` | selectedOrderId, search, activeOnly, zoom, priorityFilter, dateFrom/To |
+| `ProductionReadFacade` | loadOrders, loadBarsForOrders, buildOrderEstimatePublic, getWorkerLabelsMap |
+| `OrdersService` | list() / update() |
 
 ### State (signals)
 

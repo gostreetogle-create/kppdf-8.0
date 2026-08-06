@@ -70,6 +70,7 @@ export class LocalDemoSeed implements OnModuleInit {
     const modules = await this.ensureModules(workTypes);
     const products = await this.ensureProducts(modules);
     await this.ensureWorkers();
+    await this.ensureWorkersWithWorkTypes(workTypes);
     await this.ensureWarehouses();
     await this.ensureOrders(cp._id as Types.ObjectId, products);
     this.logger.log(`LocalDemoSeed ready (marker ${MARK})`);
@@ -265,7 +266,28 @@ export class LocalDemoSeed implements OnModuleInit {
         grade: `${(idx % 3) + 3}-й разряд`,
         phone: `+7 (900) 100-20-0${idx + 1}`,
         isActive: true,
+        workTypeIds: [], // filled after work types exist — see seedAll order
       });
+    }
+  }
+
+  private async ensureWorkersWithWorkTypes(
+    workTypes: Record<string, Types.ObjectId>,
+  ): Promise<void> {
+    const ids = Object.values(workTypes);
+    if (!ids.length) return;
+    const people = await this.workerModel.find({ department: `${PREFIX}Цех` }).exec();
+    let i = 0;
+    for (const w of people) {
+      if (w.workTypeIds?.length) {
+        i++;
+        continue;
+      }
+      w.workTypeIds = [ids[i % ids.length]!, ids[(i + 1) % ids.length]!].filter(
+        (v, idx, a) => a.findIndex((x) => String(x) === String(v)) === idx,
+      );
+      await w.save();
+      i++;
     }
   }
 

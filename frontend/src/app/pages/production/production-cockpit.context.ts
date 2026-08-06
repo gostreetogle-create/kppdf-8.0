@@ -1,8 +1,9 @@
 /**
- * TZ-PRODUCTION-303 — shared cockpit signals (shell + blocks).
+ * TZ-PRODUCTION-303+ — shared cockpit signals (shell + blocks).
  * No domain fetch logic here — facade owns reads.
  */
 import { Injectable, signal } from '@angular/core';
+import type { OrderPriority } from '../orders/orders.service';
 
 export type GanttZoom = 'day' | 'week';
 
@@ -14,11 +15,11 @@ export class ProductionCockpitContext {
   readonly activeOnly = signal(true);
   readonly zoom = signal<GanttZoom>('day');
   readonly workerIdFilter = signal<string | null>(null);
-  /** ISO date-only range hint for future filters (unused in 303 layout engine). */
-  readonly dateRange = signal<{ from: string | null; to: string | null }>({
-    from: null,
-    to: null,
-  });
+  /** `all` = no priority filter. */
+  readonly priorityFilter = signal<OrderPriority | 'all'>('all');
+  /** ISO date-only range on plannedDate ?? date. */
+  readonly dateFrom = signal<string | null>(null);
+  readonly dateTo = signal<string | null>(null);
 
   selectOrder(id: string | null): void {
     this.selectedOrderId.set(id);
@@ -34,5 +35,17 @@ export class ProductionCockpitContext {
 
   setZoom(zoom: GanttZoom): void {
     this.zoom.set(zoom);
+  }
+
+  setPriorityFilter(value: OrderPriority | 'all'): void {
+    this.priorityFilter.set(value);
+  }
+
+  setDateFrom(value: string | null): void {
+    this.dateFrom.set(value || null);
+  }
+
+  setDateTo(value: string | null): void {
+    this.dateTo.set(value || null);
   }
 }

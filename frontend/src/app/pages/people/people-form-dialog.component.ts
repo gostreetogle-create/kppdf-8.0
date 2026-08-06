@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { CheckboxComponent } from '../../shared/ui/checkbox/checkbox.component';
@@ -14,6 +14,7 @@ import {
   Person,
   PiWorkersService,
 } from '../../shared/services/pi-workers.service';
+import { WorkTypesService, type WorkType } from '../../shared/services/pi-work-types.service';
 import { extractErrorMessage } from '../../core/silent-http';
 
 /**
@@ -140,6 +141,36 @@ import { extractErrorMessage } from '../../core/silent-http';
           </app-pi-form-field>
         </div>
 
+        <fieldset class="space-y-2" data-test="work-types-fieldset">
+          <legend class="text-sm font-medium text-ink">Виды работ</legend>
+          <p class="text-xs text-muted-foreground">
+            К какому виду работ привязан человек — так он появится на диаграмме Ганта.
+          </p>
+          @if (workTypesLoading()) {
+            <p class="text-xs text-muted-foreground">Загрузка видов работ…</p>
+          } @else if (!workTypes().length) {
+            <p class="text-xs text-muted-foreground">Справочник видов работ пуст.</p>
+          } @else {
+            <div class="max-h-40 overflow-y-auto border hairline rounded-sm p-2 space-y-1.5">
+              @for (wt of workTypes(); track wt._id) {
+                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    class="pi-focus-ring"
+                    [checked]="selectedWorkTypeIds().has(wt._id)"
+                    (change)="toggleWorkType(wt._id, $event)"
+                    [attr.data-test]="'work-type-' + wt._id"
+                  />
+                  <span>{{ wt.name }}</span>
+                  @if (wt.days != null) {
+                    <span class="text-[11px] text-muted-foreground">{{ wt.days }}д</span>
+                  }
+                </label>
+              }
+            </div>
+          }
+        </fieldset>
+
         <app-pi-form-field label="Заметки" htmlFor="p-notes">
           <app-pi-textarea
             id="p-notes"
@@ -177,16 +208,20 @@ import { extractErrorMessage } from '../../core/silent-http';
     </app-pi-dialog>
   `,
 })
-export class PeopleFormDialogComponent {
+export class PeopleFormDialogComponent implements OnInit {
   private readonly data = inject<Person | null>(PI_DIALOG_DATA);
   private readonly ref = inject<DialogRef<Person | null>>(PI_DIALOG_REF);
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly service = inject(PiWorkersService);
+  private readonly workTypesApi = inject(WorkTypesService);
   private readonly toast = inject(PiToastService);
 
   protected readonly isEdit = this.data != null;
   protected readonly submitting = signal(false);
   protected readonly formError = signal<string | null>(null);
+  protected readonly workTypes = signal<WorkType[]>([]);
+  protected readonly workTypesLoading = signal(true);
+  protected readonly selectedWorkTypeIds = signal(new Set<string>(this.data?.workTypeIds ?? []));
 
   protected readonly form = this.fb.group({
     lastName: this.fb.control(this.data?.lastName ?? '', [
@@ -206,6 +241,21 @@ export class PeopleFormDialogComponent {
     isActive: this.fb.control(this.data?.isActive ?? true),
   });
 
+  ngOnInit(): void {
+    this.workTypesApi.list({ activeOnly: true }).subscribe((res) => {
+      this.workTypesLoading.set(false);
+      if (res.ok) this.workTypes.set(res.data?.items ?? []);
+    });
+  }
+
+  protected toggleWorkType(id: string, ev: Event): void {
+    const checked = (ev.target as HTMLInputElement).checked;
+    const next = new Set(this.selectedWorkTypeIds());
+    if (checked) next.add(id);
+    else next.delete(id);
+    this.selectedWorkTypeIds.set(next);
+  }
+
   protected onSubmit(): void {
     if (this.submitting()) return;
     if (this.form.invalid) {
@@ -223,6 +273,7 @@ export class PeopleFormDialogComponent {
       phone: v.phone.trim() || undefined,
       notes: v.notes.trim() || undefined,
       isActive: v.isActive,
+      workTypeIds: [...this.selectedWorkTypeIds()],
     };
     this.submitting.set(true);
     this.formError.set(null);

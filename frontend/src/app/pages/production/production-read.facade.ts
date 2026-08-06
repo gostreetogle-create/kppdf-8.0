@@ -14,6 +14,7 @@ import {
   type WorkTypeInModule,
 } from '../../shared/services/pi-product-modules.service';
 import { WorkTypesService, type WorkType } from '../../shared/services/pi-work-types.service';
+import { PiWorkersService, personDisplayName } from '../../shared/services/pi-workers.service';
 import {
   buildGanttBars,
   type GanttBar,
@@ -94,11 +95,14 @@ export class ProductionReadFacade {
   private readonly productsApi = inject(ProductsService);
   private readonly modulesApi = inject(ProductModulesService);
   private readonly workTypesApi = inject(WorkTypesService);
+  private readonly workersApi = inject(PiWorkersService);
 
   private readonly productCache = new Map<string, Product | null>();
   private readonly moduleCache = new Map<string, ProductModule | null>();
   private workTypesCache: Map<string, WorkType> | null = null;
   private workTypesInflight: Promise<Map<string, WorkType>> | null = null;
+  private workersByWtCache: Map<string, string[]> | null = null;
+  private workersInflight: Promise<Map<string, string[]>> | null = null;
   private productInflight = new Map<string, Promise<Product | null>>();
   private moduleInflight = new Map<string, Promise<ProductModule | null>>();
 
@@ -115,6 +119,8 @@ export class ProductionReadFacade {
     this.moduleCache.clear();
     this.workTypesCache = null;
     this.workTypesInflight = null;
+    this.workersByWtCache = null;
+    this.workersInflight = null;
     this.productInflight.clear();
     this.moduleInflight.clear();
   }
@@ -144,11 +150,12 @@ export class ProductionReadFacade {
     const warnings: string[] = [];
     try {
       const workTypes = await this.getWorkTypesMap();
+      const workersByWt = await this.getWorkersByWorkType();
       const bars: GanttBar[] = [];
 
       for (const order of orders) {
         const input = await this.buildOrderEstimate(order, workTypes, warnings);
-        bars.push(...buildGanttBars(input));
+        bars.push(...applyWorkerLabels(buildGanttBars(input), workersByWt));
       }
 
       this.patch({ loading: false, bars, warnings: [...warnings] });
@@ -158,6 +165,23 @@ export class ProductionReadFacade {
       this.patch({ loading: false, error: message, bars: [] });
       return [];
     }
+  }
+
+  /** Public tree for order inspector (same estimate path as Gantt). */
+  async buildOrderEstimatePublic(order: Order): Promise<OrderEstimateInput> {
+    const warnings: string[] = [];
+    const workTypes = await this.getWorkTypesMap();
+    return this.buildOrderEstimate(order, workTypes, warnings);
+  }
+
+  /** Map workTypeId → «Иванов Иван, …» for inspector + bars. */
+  async getWorkerLabelsMap(): Promise<Map<string, string>> {
+    const byWt = await this.getWorkersByWorkType();
+    const out = new Map<string, string>();
+    for (const [wtId, names] of byWt) {
+      out.set(wtId, names.join(', ') || '—');
+    }
+    return out;
   }
 
   private patch(partial: Partial<ProductionReadState>): void {
@@ -300,4 +324,39 @@ export class ProductionReadFacade {
       items: estimateItems,
     };
   }
+
+  private async getWorkersByWorkType(): Promise<Map<string, string[]>> {
+    if (this.workersByWtCache) return this.workersByWtCache;
+    if (this.workersInflight) return this.workersInflight;
+
+    this.workersInflight = (async () => {
+      const res = await firstValueFrom(this.workersApi.list({ limit: 200, isActive: true }));
+      const map = new Map<string, string[]>();
+      if (res.ok) {
+        for (const person of res.data?.items ?? []) {
+          const name = personDisplayName(person);
+          for (const wtId of person.workTypeIds ?? []) {
+            const list = map.get(wtId) ?? [];
+            list.push(name);
+            map.set(wtId, list);
+          }
+        }
+      }
+      this.workersByWtCache = map;
+      return map;
+    })();
+
+    try {
+      return await this.workersInflight;
+    } finally {
+      this.workersInflight = null;
+    }
+  }
+}
+
+function applyWorkerLabels(bars: GanttBar[], workersByWt: Map<string, string[]>): GanttBar[] {
+  return bars.map((b) => ({
+    ...b,
+    workerLabel: (workersByWt.get(b.workTypeId) ?? []).join(', ') || '—',
+  }));
 }

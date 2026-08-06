@@ -240,7 +240,15 @@ export function workTypeOklch(workTypeId: string, chroma = 0.12, lightness = 0.7
 }
 
 export function filterOrdersForRail<
-  T extends { status: OrderStatus; isActive?: boolean; _id: string; number?: string },
+  T extends {
+    status: OrderStatus;
+    isActive?: boolean;
+    _id: string;
+    number?: string;
+    priority?: string;
+    plannedDate?: string | null;
+    date?: string | null;
+  },
 >(
   orders: T[],
   opts: {
@@ -248,14 +256,27 @@ export function filterOrdersForRail<
     search: string;
     /** Keep selected even if filtered out (completed/cancelled stay visible). */
     selectedOrderId: string | null;
+    priority?: string | 'all' | null;
+    dateFrom?: string | null;
+    dateTo?: string | null;
   },
 ): T[] {
   const q = opts.search.trim().toLowerCase();
+  const priority = opts.priority && opts.priority !== 'all' ? opts.priority : null;
+  const from = opts.dateFrom || null;
+  const to = opts.dateTo || null;
   return orders.filter((o) => {
     if (opts.selectedOrderId && o._id === opts.selectedOrderId) return true;
     if (opts.activeOnly) {
       if (!isActiveCommercialOrderStatus(o.status)) return false;
       if (o.isActive === false) return false;
+    }
+    if (priority && (o.priority ?? 'normal') !== priority) return false;
+    if (from || to) {
+      const anchor = (o.plannedDate || o.date || '').slice(0, 10);
+      if (!anchor) return false;
+      if (from && anchor < from) return false;
+      if (to && anchor > to) return false;
     }
     if (!q) return true;
     const hay = `${o._id} ${o.number ?? ''}`.toLowerCase();
