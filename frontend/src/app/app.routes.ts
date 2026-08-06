@@ -362,18 +362,14 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/admin/roles-admin.page').then((m) => m.RolesAdminPage),
         title: 'KPPDF — Роли',
       },
-      // TZ-256.A remainder — `/admin` placeholder route (sibling to
-      // admin/users + admin/roles). Catches exact `/admin` deep links;
-      // sub-paths (`/admin/users`, `/admin/roles`) keep matching their
-      // explicit sibling routes above (longer-prefix win in Angular 20).
-      // Falls through to `** → ''` if no admin/* wildcard later exists.
+      // TZ-ADMIN-306 — `/admin` deep links go straight to the real users
+      // registry (placeholder page retired; the fake "in development" copy
+      // is gone). The target route carries its own capability gate, so
+      // non-admin visitors still land on /forbidden.
       {
         path: 'admin',
-        canMatch: [capabilityRouteGuard],
-        data: { pageKey: 'admin-users' },
-        loadComponent: () =>
-          import('./pages/admin/_admin-placeholder.page').then((m) => m.AdminPlaceholderPage),
-        title: 'KPPDF — Администрирование',
+        redirectTo: 'admin/users',
+        pathMatch: 'full',
       },
     ],
   },

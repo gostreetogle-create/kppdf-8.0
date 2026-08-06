@@ -1,3 +1,13 @@
+## [2026-08-06] — TZ-ADMIN-306 DONE: Role select from API + /admin hub cleanup
+**Исполнитель:** Buffy (Freebuff worktree a405897c, parallel session #2)
+**Статус:** DONE
+**Что сделано кратко:** User-form role <select> загружается из GET /admin/roles (PiRolesService): value=role name, RU-лейблы (системные: Администратор/Директор/Менеджер/Пользователь + custom label), системные первыми, edit-mode safety; `/admin` → redirect `/admin/users`, фейковый placeholder удалён.
+**Gates:** FE tsc на allowlist PASS (0 ошибок pages/admin + app.routes); focused Jest 4 suites / 45 tests PASS; full-repo tsc red ×9 — pre-existing group-chips WIP parallel session #1 (не трогал).
+**Archive:** `tasks/_archive/2026-08/TZ-ADMIN-306.done.md`
+**Lock:** `.mimocode/locks/TZ-ADMIN-306-role-select-hub.lock`
+
+---
+
 ## [2026-08-06] — TZ-CATALOG-314 DONE: Archive / soft-delete / auth consistency
 **Исполнитель:** Buffy (implement) + Cursor (closeout / PO deploy path)
 **Статус:** DONE
