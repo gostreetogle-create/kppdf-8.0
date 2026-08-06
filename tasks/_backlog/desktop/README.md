@@ -8,7 +8,8 @@
 
 | ID | File | Notes |
 |----|------|-------|
-| **TZD-15** | `TZD-15-agent-inbox-workspace.md` | **GO** — TZD-14 on main; agent inbox next |
+| **TZD-15** | `TZD-15-agent-inbox-workspace.md` | **GO** — agent inbox (in flight / claim) |
+| **TZD-16** | `TZD-16-pairing-download-installer.md` | READY — кнопка «Скачать» в pairing + static на Synology |
 
 ## Done (stubs removed from backlog — see archive)
 
