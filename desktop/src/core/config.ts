@@ -32,6 +32,12 @@ export interface McpHostConfig {
   allowLan: boolean;
 }
 
+/** Настройки inbox-папки (TZD-15): куда класть файлы для агента. */
+export interface InboxConfig {
+  /** Абсолютный путь каталога; пустая строка = app-data/inbox по умолчанию. */
+  dir?: string;
+}
+
 export interface AppConfig {
   /** Базовый URL backend kppdf (например https://app.kppdf.ru). */
   apiBaseUrl: string;
@@ -42,6 +48,8 @@ export interface AppConfig {
   aiProvider: AiProviderConfig;
   /** MCP host: порт + bind (сохраняется между запусками). */
   mcp: McpHostConfig;
+  /** Inbox (TZD-15): каталог для файлов агента. */
+  inbox: InboxConfig;
 }
 
 /** Порт MCP host по умолчанию (совпадает с KPPDF_MCP_PORT в desktop/mcp). */
@@ -55,13 +63,15 @@ export const DEFAULT_MCP_CONFIG: McpHostConfig = {
 /**
  * Версия формата файла конфига; инкремент при несовместимых изменениях.
  * v2 (TZD-14): добавлен блок `mcp` { port, allowLan }.
+ * v3 (TZD-15): добавлен блок `inbox` { dir }.
  */
-export const CONFIG_VERSION = 2;
+export const CONFIG_VERSION = 3;
 
 export const DEFAULT_CONFIG: AppConfig = {
   apiBaseUrl: '',
   aiProvider: { ...OLLAMA_DEFAULT },
   mcp: { ...DEFAULT_MCP_CONFIG },
+  inbox: {},
 };
 
 const CONFIG_FILENAME = 'config.json';
@@ -71,6 +81,7 @@ function cloneDefault(): AppConfig {
     ...DEFAULT_CONFIG,
     aiProvider: { ...DEFAULT_CONFIG.aiProvider },
     mcp: { ...DEFAULT_CONFIG.mcp },
+    inbox: { ...DEFAULT_CONFIG.inbox },
   };
 }
 
@@ -111,6 +122,14 @@ function migrateMcp(raw: unknown): McpHostConfig {
   return { port, allowLan: mcp?.allowLan === true };
 }
 
+/** Нормализует блок inbox из файла (старые конфиги без inbox → дефолт). */
+function migrateInbox(raw: unknown): InboxConfig {
+  const inbox =
+    raw && typeof raw === 'object' ? (raw as Partial<InboxConfig>) : undefined;
+  const dir = typeof inbox?.dir === 'string' && inbox.dir.trim() ? inbox.dir : undefined;
+  return { dir };
+}
+
 function migrate(parsed: { version?: number } & Partial<AppConfig>): AppConfig {
   const cfg: AppConfig = {
     apiBaseUrl:
@@ -122,6 +141,7 @@ function migrate(parsed: { version?: number } & Partial<AppConfig>): AppConfig {
         ? parsed.aiProvider
         : { ...DEFAULT_CONFIG.aiProvider },
     mcp: migrateMcp(parsed.mcp),
+    inbox: migrateInbox(parsed.inbox),
   };
   return cfg;
 }

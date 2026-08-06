@@ -8,7 +8,7 @@
 |-------|-----|------|--------|
 | **#1 FE catalog** | **311** | products/modules/composition tree | **GO** after 320 |
 | **#2 FE admin** | **ADMIN-306** | admin + routes | **DONE on main** `69d8a22` |
-| **#3 Desktop** | **TZD-14** → **TZD-15** | `desktop/**` | **14 DONE** — **GO TZD-15** |
+| **#3 Desktop** | **TZD-15** | `desktop/**` | **15 DONE** 2026-08-06T17:19:18Z — archive + lock; next по PO |
 | **Cursor** | docs / merge / review | docs + closeouts | active |
 
 ## Next free for agent #2 (if continuing)

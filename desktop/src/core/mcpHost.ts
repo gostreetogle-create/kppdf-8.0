@@ -32,6 +32,8 @@ export interface McpStartOptions {
   allowLan: boolean;
   /** Каталог пакета desktop/mcp; по умолчанию вычисляется из resourceDir. */
   hostDir?: string;
+  /** Каталог inbox агента (TZD-15); передаётся host-процессу как KPPDF_INBOX_DIR. */
+  inboxDir?: string;
 }
 
 export const MCP_PORT_MIN = 1024;
@@ -157,6 +159,7 @@ export class McpHostController {
           KPPDF_API_KEY: opts.apiKey,
           KPPDF_MCP_PORT: String(opts.port),
           KPPDF_MCP_ALLOW_LAN: opts.allowLan ? '1' : '0',
+          ...(opts.inboxDir ? { KPPDF_INBOX_DIR: opts.inboxDir } : {}),
         },
       });
 

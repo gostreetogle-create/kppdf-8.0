@@ -1,3 +1,16 @@
+## [2026-08-06] — TZD-15 DONE: Agent inbox workspace (drop → audit → propose fills)
+**Исполнитель:** Buffy (deepseek-v4-flash, desktop/MCP executor, session №3)
+**Статус:** DONE; archive + lock; worktree clean
+**Что сделано кратко:** Inbox-папка (app-data default + user pick, config v3): poll 4s находит xlsx/csv/tsv/txt; audit парсит через существующие импортёры (txt реализован); propose — только proposal material.create через journal (НЕ silent SoT write); confirm/cancel — TZD-13 журнал; файл → processed/ или failed/ + inbox.log. MCP: `kppdf_inbox_list`, `kppdf_inbox_propose_file` (propose-only, path-traversal guard); десктоп передаёт KPPDF_INBOX_DIR host-процессу. UI-карточка «Inbox» со статусами и кнопками.
+**Gates:** desktop typecheck/svelte-check/build PASS; mcp typecheck + 17/17 tests (9 новых); cargo check PASS; MCP live smoke (tools/list + inbox_list + 401) PASS.
+**Archive:** `tasks/_archive/2026-08/TZD-15.done.md`
+**Lock:** `.mimocode/locks/TZD-15-agent-inbox-workspace.lock`
+**Review:** code-reviewer (deepseek-flash) — 2 HIGH (inbox dir не передавался в MCP host; double-click propose) исправлены + 4 LOW (skippedRows, dangling proposals, dead code, unused param); gates перезапущены PASS.
+**Known limits:** watch = poll 4s (не нативный fs-watch); propose по строке — последовательные POST; MCP-рантайм не в MSI (pre-existing).
+**Next:** desktop backlog пуст — TZD-15 последний; далее по PO.
+
+---
+
 ## [2026-08-06] — TZD-14 DONE: Desktop hosts MCP (autostart + status UI)
 **Исполнитель:** Buffy (deepseek-v4-flash, desktop/MCP executor, session №3) + Cursor (land on main)
 **Статус:** DONE; archive + lock; on main
