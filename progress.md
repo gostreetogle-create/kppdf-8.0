@@ -1,3 +1,15 @@
+## [2026-08-06] — TZ-WAREHOUSE-UX-301 DONE: Dashboard dedupe + movements warehouse filter + type help
+**Исполнитель:** Buffy (Freebuff executor) + Cursor (land on main)
+**Статус:** DONE; archive + lock; on main
+**Что сделано кратко:** /inventory без дубля TOC-кнопок в tools; /stock-movements фильтр склада (chips ≤8 / select >8, warehouseId+type к API, type chips через chipClick); форма склада: default type=main + RU-подсказка; фикс TS2353 → QueryGroupChip.
+**Gates:** FE tsc PASS по зоне TZ; jest 5/25 PASS. Catalog-дрейф materials.page.ts вне scope.
+**Archive:** `tasks/_archive/2026-08/TZ-WAREHOUSE-UX-301.done.md`
+**Lock:** `.mimocode/locks/TZ-WAREHOUSE-UX-301-archive.lock`
+**Commit (Freebuff):** `65a936f` · **on main:** (cherry-pick feat + closeout)
+**Next:** optional catalog tsc-hygiene; ACL warehouse — отдельные TZ.
+
+---
+
 ## [2026-08-06] — TZD-14 DONE: Desktop hosts MCP (autostart + status UI)
 **Исполнитель:** Buffy (deepseek-v4-flash, desktop/MCP executor, session №3) + Cursor (land on main)
 **Статус:** DONE; archive + lock; on main

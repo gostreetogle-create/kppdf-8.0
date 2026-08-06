@@ -1,0 +1,7 @@
+TZ-WAREHOUSE-UX-301
+status: DONE
+closed_at: 2026-08-06
+executor: Buffy (Freebuff) + Cursor land
+archive: tasks/_archive/2026-08/TZ-WAREHOUSE-UX-301.done.md
+commit: 65a936f (feat) / landed on main via cherry-pick
+zone: frontend inventory dashboard, movements, chips, warehouse form + docs

@@ -1,6 +1,6 @@
 # TZ-WAREHOUSE-UX-301 checklist
 
-> Status: **CLAIMED / IN PROGRESS** (→ DONE в closeout-коммите)
+> Status: **DONE**
 > Marker: `tasks/_active/TZ-WAREHOUSE-UX-301.md`
 > Commit/push: scoped commit + push (PO instructed) — allowlist only, never `git add .`
 
@@ -45,15 +45,22 @@
 
 ## Executor report
 
-- что сделано / conflict disclosure / known limits — заполняется в closeout
+- status: DONE
+- commit: 65a936f (feat) + 6d085cb (merge origin/main)
+- files: 11 (code+docs commit 1) + 5 closeout (archive/lock/progress/map/checklist)
+- gates: FE tsc=PASS по зоне TZ; jest=25/25 PASS (5 suites); diff-check=clean
+- known_issues:
+  - pre-existing catalog tsc-дрейф `materials.page.ts` ← `catalog-group-chips.ts` на origin/main — зона параллельного потока CATALOG-320/311, НЕ тронут (disclose)
+  - storage-items chips (≤8) не передают queryParams при клике (shared workspace рендерит только route) — pre-existing, вне scope; на Движениях type chips подключены через chipClick
+- ask_architect: 320/311 — починить materials.page.ts импорт (CATALOG_SECTION_CHIPS) или явно верифицировать tsc-waive
 
 ## Review handoff
 
-- [ ] READY FOR REVIEW в checkpoint (`_active-map.md`)
-- [ ] **Не** archive до Cursor Verdict PASS (если TZ требует review)
+- [x] READY FOR REVIEW в checkpoint (`_active-map.md`) — выполнено
+- [x] Архивация по прямой инструкции PO (archive + scoped commit/push)
 
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + удалить `_active`
+- [x] Status = DONE
+- closed_at: 2026-08-06T23:10:00Z
