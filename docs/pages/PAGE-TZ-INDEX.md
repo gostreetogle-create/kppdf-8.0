@@ -1,7 +1,7 @@
 # Page ↔ TZ index
 
 **Purpose:** Search by page/route to find which tasks touched or will touch it.  
-**Updated:** 2026-08-04 (CATALOG Wave 1 docs; UI pages — после 305)
+**Updated:** 2026-08-06 (WAREHOUSE-UX-301: warehouse filter, warehouses page doc)
 
 How to use: `Ctrl+F` по route или имени страницы. Новые TZ обязаны указывать
 `PAGES:` / `PAGE_DOCS:` в шапке (см. `tz-authoring`).
@@ -60,11 +60,10 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 
 | Route | Page doc | TZs |
 |-------|----------|-----|
-| `/inventory` | inventory-dashboard.page.md | **UX-301 DONE**; **WAREHOUSE-UX-301** (dedupe TOC buttons) |
+| `/inventory` | inventory-dashboard.page.md | **UX-301 DONE**; **WAREHOUSE-UX-301 DONE** (dedupe TOC buttons) |
 | `/storage-items` | storage-items.page.md | **UX-301 DONE**, **UX-305 DONE**, **MATERIALS-308 DONE** (фильтр склада ✅) |
-| `/stock-movements` | stock-movements.page.md | type filter ✅; **WAREHOUSE-UX-301** +warehouse filter |
-| `/warehouses` | warehouses.page.md (pending doc) | CRUD; **WAREHOUSE-UX-301** type help |
-| `/stock-movements` | stock-movements.page.md | **UX-301 DONE**, Z-001 (backend) |
+| `/stock-movements` | stock-movements.page.md | type filter ✅; **WAREHOUSE-UX-301 DONE** (+warehouse filter) |
+| `/warehouses` | warehouses.page.md | CRUD; **WAREHOUSE-UX-301 DONE** (type default main + hint; page doc created) |
 
 ## Admin / auth
 

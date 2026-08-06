@@ -9,10 +9,16 @@ import {
   signal,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
-import { STOCK_MOVEMENT_TYPE_CHIPS, WAREHOUSE_TOC_CHIPS } from './warehouse-group-chips';
+import {
+  WAREHOUSE_CHIP_MAX,
+  WAREHOUSE_TOC_CHIPS,
+  STOCK_MOVEMENT_TYPE_CHIPS,
+  buildMovementWarehouseFilterChips,
+  type QueryGroupChip,
+} from './warehouse-group-chips';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { TableComponent, ColumnDef } from '../../shared/ui/pi-table.component';
 import { PiToastService } from '../../shared/ui/toast';
@@ -27,6 +33,7 @@ import {
 } from './stock-movements.service';
 import { StockMovementFormDialogComponent } from './stock-movement-form-dialog.component';
 import { StorageAdjustPickDialogComponent } from './storage-adjust-pick-dialog.component';
+import { Warehouse } from './warehouses.service';
 
 /** Normalize BE array or envelope into list items. */
 export function normalizeMovementsList(
@@ -54,15 +61,51 @@ function populatedName(
 @Component({
   selector: 'app-stock-movements-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiGroupWorkspaceComponent, TableComponent, ButtonComponent],
+  imports: [PiGroupWorkspaceComponent, TableComponent, ButtonComponent, RouterLink],
   template: `
     <app-pi-group-workspace
       [toc]="toc"
       tocActiveId="stock-movements"
       [chips]="chips"
       [activeId]="activeChipId()"
+      (chipClick)="onTypeChip($event)"
     >
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        @if (useWarehouseSelect()) {
+          <select
+            class="pi-input"
+            [value]="selectedWarehouse()"
+            (change)="onWarehouseChange($event)"
+            aria-label="Фильтр по складу"
+            data-test="movement-warehouse-select"
+          >
+            <option value="">Все склады</option>
+            @for (wh of warehouses(); track wh._id) {
+              <option [value]="wh._id">{{ wh.name }}</option>
+            }
+          </select>
+        } @else {
+          <nav
+            class="flex items-center gap-1 flex-wrap"
+            aria-label="Фильтр по складу"
+            data-test="movement-warehouse-chips"
+          >
+            @for (chip of warehouseChips(); track chip.id) {
+              <a
+                [routerLink]="chip.route"
+                [queryParams]="chip.queryParams"
+                class="group-chip inline-flex items-center gap-1 px-2.5 py-0.5 text-xs leading-5 rounded-sm transition-colors pi-focus-ring cursor-pointer no-underline"
+                [class.bg-sunrise-warm]="activeWarehouseChipId() === chip.id"
+                [class.text-paper]="activeWarehouseChipId() === chip.id"
+                [class.text-ink]="activeWarehouseChipId() !== chip.id"
+                [class.hover:bg-paper-2]="activeWarehouseChipId() !== chip.id"
+                [attr.aria-current]="activeWarehouseChipId() === chip.id ? 'page' : undefined"
+              >
+                {{ chip.label }}
+              </a>
+            }
+          </nav>
+        }
         <span class="text-sm text-muted-foreground">{{ totalItems() }} записей</span>
         <span class="flex-1"></span>
         <app-pi-button variant="outline" size="sm" (click)="openIn()" data-test="movement-in">
@@ -111,6 +154,7 @@ export class StockMovementsPage {
   private readonly toast = inject(PiToastService);
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(PiDialogService);
   private readonly injector = inject(Injector);
@@ -119,11 +163,33 @@ export class StockMovementsPage {
   protected readonly chips = STOCK_MOVEMENT_TYPE_CHIPS;
 
   protected readonly selectedType = signal<string>('');
+  protected readonly selectedWarehouse = signal<string>('');
   protected readonly activeChipId = computed(() => this.selectedType() || 'all');
+  protected readonly activeWarehouseChipId = computed(() => this.selectedWarehouse() || 'all');
+
+  protected readonly warehousesRes = httpResource<Warehouse[]>(() => ({
+    url: `${this.baseUrl}/warehouses`,
+  }));
+
+  protected readonly warehouses = computed<Warehouse[]>(() => this.warehousesRes.value() ?? []);
+
+  protected readonly useWarehouseSelect = computed(
+    () => this.warehouses().length > WAREHOUSE_CHIP_MAX,
+  );
+
+  protected readonly warehouseChips = computed<readonly QueryGroupChip[]>(() =>
+    this.useWarehouseSelect()
+      ? []
+      : buildMovementWarehouseFilterChips(this.warehouses(), this.selectedType()),
+  );
 
   private readonly listParams = computed((): Record<string, string> => {
+    const params: Record<string, string> = {};
     const type = this.selectedType();
-    return type ? { type } : {};
+    if (type) params['type'] = type;
+    const warehouseId = this.selectedWarehouse();
+    if (warehouseId) params['warehouseId'] = warehouseId;
+    return params;
   });
 
   protected readonly listRes = httpResource<StockMovementsListResponse | StockMovement[]>(() => ({
@@ -145,6 +211,7 @@ export class StockMovementsPage {
       const type = params.get('type') ?? '';
       const allowed = new Set(['', 'in', 'out', 'adjust', 'transfer']);
       this.selectedType.set(allowed.has(type) ? type : '');
+      this.selectedWarehouse.set(params.get('warehouseId') ?? '');
     });
 
     effect(() => {
@@ -194,6 +261,33 @@ export class StockMovementsPage {
       accessor: (row) => row.documentRef ?? '—',
     },
   ];
+
+  /**
+   * Type chips are rendered by the shared workspace (route-only links), so
+   * the click is handled here to set ?type= and preserve the warehouse filter.
+   */
+  protected onTypeChip(id: string): void {
+    const allowed = new Set(['', 'in', 'out', 'adjust', 'transfer']);
+    if (!allowed.has(id)) return;
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        type: id === 'all' ? null : id,
+        warehouseId: this.selectedWarehouse() || null,
+      },
+    });
+  }
+
+  protected onWarehouseChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        warehouseId: value || null,
+        type: this.selectedType() || null,
+      },
+    });
+  }
 
   protected openIn(): void {
     const ref = this.dialog.open(StockMovementFormDialogComponent, {

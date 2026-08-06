@@ -5,7 +5,7 @@
 ## Route
 
 ```
-/dashboard — «KPPDF — Склад»
+/inventory — «KPPDF — Склад»
 ```
 
 ## API endpoints
@@ -36,7 +36,8 @@
 ## Особенности
 
 - **3 параллельных httpResource** — storage-items, low-stock, warehouses
-- **4 metric cards** — склады / позиции / мало остатков (red) / резервы
+- **4 metric cards** — склады / позиции / мало остатков (red) / резервы (cards — routerLink, остаются)
+- **Tools без дубля TOC** — TZ-WAREHOUSE-UX-301: кнопки «Склады/Остатки/Движения» убраны (навигация уже в TOC); остался счётчик «N складов · M позиций»
 - **Low stock table** — `app-pi-table` с **«Продукт/Материал»** (TZ-MATERIALS-308: `storageItemName`), складом, остатком, минимумом
 - **Error handling** — 3 отдельных `errorEffect` для toast, 1 `error` computed для inline
 - **No CRUD** — read-only dashboard (нет create/edit/delete)
@@ -48,6 +49,7 @@
 |----|------------|
 | TZ-115 | httpResource migration + error effects |
 | **TZ-MATERIALS-308** | Отображение материала-позиций в low-stock, envelope-контракт |
+| **TZ-WAREHOUSE-UX-301** | Убран дубль TOC-кнопок из tools (dedupe) |
 
 ---
 

@@ -4,7 +4,6 @@ import { RouterLink } from '@angular/router';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
 import { WAREHOUSE_ENTITY_SECTION_CHIPS, WAREHOUSE_TOC_CHIPS } from './warehouse-group-chips';
 import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
-import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { ColumnDef, TableComponent } from '../../shared/ui/pi-table.component';
 import { PiToastService } from '../../shared/ui/toast';
 import { extractErrorMessage } from '../../core/silent-http';
@@ -27,7 +26,6 @@ import { Warehouse } from './warehouses.service';
     PiGroupWorkspaceComponent,
     PiEmptyStateComponent,
     TableComponent,
-    ButtonComponent,
     RouterLink,
   ],
   template: `
@@ -36,16 +34,6 @@ import { Warehouse } from './warehouses.service';
         <span class="text-sm text-muted-foreground">
           {{ warehouses().length }} складов · {{ totalItems() }} позиций
         </span>
-        <span class="flex-1"></span>
-        <a routerLink="/warehouses" class="contents">
-          <app-pi-button variant="outline" size="sm">Склады</app-pi-button>
-        </a>
-        <a routerLink="/storage-items" class="contents">
-          <app-pi-button variant="outline" size="sm">Остатки</app-pi-button>
-        </a>
-        <a routerLink="/stock-movements" class="contents">
-          <app-pi-button variant="default" size="sm">Движения</app-pi-button>
-        </a>
       </div>
 
       @if (error()) {

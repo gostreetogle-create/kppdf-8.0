@@ -65,7 +65,11 @@ const WAREHOUSE_TYPES: { value: WarehouseType; label: string }[] = [
           />
         </app-pi-form-field>
 
-        <app-pi-form-field label="Тип" htmlFor="wh-type">
+        <app-pi-form-field
+          label="Тип"
+          htmlFor="wh-type"
+          hint="Классификация для отчётов и подписей: Основной — главный склад; Производство/цех — запасы в цехе; Транзит — перевалочная точка; Филиал — удалённый склад; Другой — прочее. На движения не влияет."
+        >
           <select id="wh-type" class="pi-input w-full" formControlName="type" data-test="wh-type">
             @for (t of types; track t.value) {
               <option [value]="t.value">{{ t.label }}</option>
@@ -142,7 +146,7 @@ export class WarehouseFormDialogComponent {
 
   protected readonly form = this.fb.group({
     name: this.fb.control(this.data?.name ?? '', [Validators.required, Validators.maxLength(128)]),
-    type: this.fb.control<WarehouseType>((this.data?.type as WarehouseType) || 'production'),
+    type: this.fb.control<WarehouseType>((this.data?.type as WarehouseType) || 'main'),
     address: this.fb.control(this.data?.address ?? ''),
     zonesText: this.fb.control((this.data?.zoneNames ?? []).join(', ')),
     description: this.fb.control(this.data?.description ?? '', [Validators.maxLength(512)]),
