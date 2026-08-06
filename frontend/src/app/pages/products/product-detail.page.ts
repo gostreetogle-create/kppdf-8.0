@@ -30,6 +30,15 @@ import {
   CostCalculationsService,
 } from '../../shared/services/pi-cost-calculations.service';
 import { ProductModulePickerDialogComponent } from './product-module-picker-dialog.component';
+import {
+  ProductCompositionPickerDialogComponent,
+  ProductCompositionPickerResult,
+} from './product-composition-picker-dialog.component';
+import {
+  Material,
+  MATERIAL_KIND_LABELS,
+  MaterialsService,
+} from '../../shared/services/materials.service';
 import { CostCalculationDetailDialogComponent } from './cost-calculation-detail-dialog.component';
 import { Photo } from '../../shared/services/photos.service';
 
@@ -149,7 +158,7 @@ import { Photo } from '../../shared/services/photos.service';
 
       <!-- IV. Модули -->
       <app-pi-section
-        title="Модули"
+        title="Состав"
         [hint]="
           attachedModules().length
             ? 'один модуль может использоваться в нескольких товарах (M:N)'
@@ -166,7 +175,54 @@ import { Photo } from '../../shared/services/photos.service';
           >
             + Модуль в состав
           </app-pi-button>
+          <app-pi-button
+            variant="outline"
+            type="button"
+            (click)="openCompositionPicker()"
+            data-test="add-composition-line"
+          >
+            + Добавить материал / изделие
+          </app-pi-button>
         </div>
+        @if (isComplex()) {
+          <span
+            class="inline-flex items-center mb-2 px-2 py-1 text-xs hairline rounded-sm bg-sunrise-warm/10 text-sunrise-warm"
+            data-test="complex-badge"
+            >Комплекс</span
+          >
+        }
+        @if (compositionLines().length > 0) {
+          <div class="mb-3 hairline rounded-sm overflow-x-auto">
+            <table class="w-full text-sm min-w-[560px]">
+              <thead class="hairline-b">
+                <tr>
+                  <th class="pi-cell eyebrow text-left">Тип</th>
+                  <th class="pi-cell eyebrow text-left">Элемент</th>
+                  <th class="pi-cell-numeric eyebrow">Кол-во</th>
+                  <th class="pi-cell-numeric eyebrow">Цена</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (line of compositionLines(); track line._id) {
+                  <tr class="pi-table-row pi-table-row-odd">
+                    <td class="pi-cell">
+                      {{
+                        line.lineType === 'product'
+                          ? 'Изделие'
+                          : line.lineType === 'material'
+                            ? 'Материал'
+                            : 'Модуль'
+                      }}
+                    </td>
+                    <td class="pi-cell font-medium">{{ compositionRefLabel(line) }}</td>
+                    <td class="pi-cell-numeric font-mono">{{ line.quantity }}</td>
+                    <td class="pi-cell-numeric font-mono">{{ line.unitPriceOverride ?? '—' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
         <div class="hairline rounded-sm overflow-x-auto">
           <table class="w-full text-sm min-w-[640px]">
             <thead class="hairline-b">
@@ -331,6 +387,7 @@ export class ProductDetailPage {
   private readonly injector = inject(Injector);
   private readonly modulesSvc = inject(ProductModulesService);
   private readonly costSvc = inject(CostCalculationsService);
+  private readonly materialsSvc = inject(MaterialsService);
   private readonly baseUrl = inject(API_BASE_URL);
 
   private readonly id = toSignal(this.route.paramMap, {
@@ -394,6 +451,13 @@ export class ProductDetailPage {
    *  - иначе legacy `productModuleIds` (populated объекты).
    * Строки содержат module + (если из состава) lineId и quantity.
    */
+  protected readonly isComplex = computed(() =>
+    (this.product()?.composition ?? []).some((line) => line.lineType === 'product'),
+  );
+
+  protected readonly compositionLines = computed(() => this.product()?.composition ?? []);
+  protected readonly materialCatalog = signal<Material[]>([]);
+
   protected readonly attachedModules = computed<
     { module: ProductModule; lineId?: string; quantity: number }[]
   >(() => {
@@ -431,6 +495,9 @@ export class ProductDetailPage {
 
   constructor() {
     this.loadModuleCatalog();
+    this.materialsSvc.list({ limit: 200 }).subscribe((res) => {
+      if (res.ok) this.materialCatalog.set(res.data.items);
+    });
   }
 
   private loadModuleCatalog(): void {
@@ -443,6 +510,54 @@ export class ProductDetailPage {
 
   protected onBack(): void {
     this.router.navigate(['/products']);
+  }
+
+  protected materialKindLabel(kind: Material['materialKind']): string {
+    return kind ? (MATERIAL_KIND_LABELS[kind] ?? kind) : 'тип не указан';
+  }
+
+  protected compositionRefLabel(line: CompositionLine): string {
+    if (line.lineType !== 'material')
+      return line.lineType === 'product' ? `Изделие · ${line.refId}` : `Модуль · ${line.refId}`;
+    const material = this.materialCatalog().find((item) => item._id === line.refId);
+    return material
+      ? `${material.name} · ${this.materialKindLabel(material.materialKind)}`
+      : `Материал · ${line.refId} · тип не указан`;
+  }
+
+  protected openCompositionPicker(): void {
+    const pid = this.idString();
+    if (!pid) return;
+    const ref = this.dialog.open<ProductCompositionPickerResult | null>(
+      ProductCompositionPickerDialogComponent,
+      {
+        data: { productId: pid },
+        width: 'lg',
+        parentDestroyRef: this.destroyRef,
+      },
+    );
+    onDialogCloseOnce(ref, this.injector, (result) => {
+      if (!result) return;
+      const payload =
+        result.lineType === 'product'
+          ? {
+              lineType: 'product' as const,
+              refId: result.refId,
+              quantity: 1,
+              ...(result.unitPriceOverride != null
+                ? { unitPriceOverride: result.unitPriceOverride }
+                : {}),
+            }
+          : { lineType: result.lineType, refId: result.refId, quantity: 1 };
+      this.modulesSvc.addProductCompositionLine(pid, payload).subscribe((res) => {
+        if (res.ok) {
+          this.toast.success('Строка добавлена в состав');
+          this.productRes.reload();
+        } else {
+          this.toast.error(extractErrorMessage(res.error));
+        }
+      });
+    });
   }
 
   protected openModuleDetail(m: ProductModule): void {

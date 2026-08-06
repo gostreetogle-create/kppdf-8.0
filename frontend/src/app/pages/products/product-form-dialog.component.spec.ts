@@ -27,6 +27,7 @@ import { ProductModulesService } from '../../shared/services/pi-product-modules.
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { AuthService } from '../../core/auth.service';
 import { PiToastService } from '../../shared/ui/toast';
+import { MaterialsService } from '../../shared/services/materials.service';
 
 const ACTIVE_COLORS = [
   {
@@ -58,6 +59,7 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
   let categoriesSvc: { list: jest.Mock };
   let colorsSvc: { list: jest.Mock };
   let photosSvc: { list: jest.Mock; upload: jest.Mock; remove: jest.Mock };
+  let materialsSvc: { list: jest.Mock };
   let modulesSvc: {
     list: jest.Mock;
     getProductComposition: jest.Mock;
@@ -86,6 +88,7 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
         { provide: PiColorReferencesService, useValue: colorsSvc },
         { provide: PhotosService, useValue: photosSvc },
         { provide: ProductModulesService, useValue: modulesSvc },
+        { provide: MaterialsService, useValue: materialsSvc },
         { provide: PiDialogService, useValue: dialogSvc },
         {
           provide: AuthService,
@@ -145,6 +148,9 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     onPhotoSelect: (e: Event) => void;
     ngOnDestroy: () => void;
     attachedModules: () => unknown[];
+    compositionRows: () => unknown[];
+    isComplex: () => boolean;
+    compositionLabel: (line: unknown) => string;
     modulesLoading: () => boolean;
     modulesError: () => string | null;
     openModulePicker: () => void;
@@ -170,6 +176,9 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
       onPhotoSelect: (e: Event) => void;
       ngOnDestroy: () => void;
       attachedModules: () => unknown[];
+      compositionRows: () => unknown[];
+      isComplex: () => boolean;
+      compositionLabel: (line: unknown) => string;
       modulesLoading: () => boolean;
       modulesError: () => string | null;
       openModulePicker: () => void;
@@ -224,6 +233,7 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
       upload: jest.fn(),
       remove: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
     };
+    materialsSvc = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [] } })) };
     modulesSvc = {
       list: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
       getProductComposition: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
@@ -675,6 +685,31 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
       quantity: 1,
     });
     expect(close).toHaveBeenCalled();
+  });
+
+  it('composition: product line derives the Комплекс badge and preserves its price override', async () => {
+    await setup({
+      _id: 'p-parent',
+      name: 'Комплекс',
+      kind: 'good',
+      unit: 'шт',
+      composition: [
+        {
+          _id: 'product-line',
+          lineType: 'product',
+          refId: 'p-child',
+          quantity: 1,
+          sortOrder: 0,
+          unitPriceOverride: 1250,
+        },
+      ],
+    });
+    expect(instance().isComplex()).toBe(true);
+    expect(instance().compositionRows()).toHaveLength(1);
+    expect(
+      (instance().compositionRows()[0] as { unitPriceOverride: number }).unitPriceOverride,
+    ).toBe(1250);
+    expect(instance().compositionLabel({ lineType: 'product', refId: 'p-child' })).toBe('Изделие');
   });
 
   it('modules: openModulePicker opens the MULTI picker with excludeIds of the current draft', async () => {

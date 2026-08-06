@@ -41,10 +41,20 @@ import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import {
   CompositionLine,
+  CompositionLineUpsertDto,
   ProductModule,
   ProductModulesService,
 } from '../../shared/services/pi-product-modules.service';
+import {
+  ProductCompositionPickerDialogComponent,
+  ProductCompositionPickerResult,
+} from './product-composition-picker-dialog.component';
 import { ProductModulePickerDialogComponent } from './product-module-picker-dialog.component';
+import {
+  MATERIAL_KIND_LABELS,
+  Material,
+  MaterialsService,
+} from '../../shared/services/materials.service';
 
 type Result = Product | null | undefined;
 
@@ -429,8 +439,10 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
           <div class="flex items-baseline justify-between mb-form-row">
             <div>
               <p class="eyebrow">Состав</p>
-              <p class="text-sm font-medium">Модули в составе</p>
-              <p class="text-xs text-muted-foreground">количество — на единицу товара</p>
+              <p class="text-sm font-medium">Модули, материалы и изделия</p>
+              <p class="text-xs text-muted-foreground">
+                сырьё добавляется только через модуль; детали = Material.materialKind
+              </p>
             </div>
             <app-pi-button
               type="button"
@@ -447,54 +459,89 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
             <p class="text-xs text-muted-foreground" role="status">Загрузка модулей…</p>
           } @else if (attachedModules().length === 0 && modulesError()) {
             <p class="text-xs text-destructive" role="alert">{{ modulesError() }}</p>
-          } @else if (attachedModules().length === 0) {
-            <p class="text-xs text-muted-foreground">
-              Нет модулей в составе. Нажмите «+ Добавить модуль».
-            </p>
-          } @else {
-            <div class="space-y-2">
-              @for (m of attachedModules(); track m._id) {
+          }
+          <div class="space-y-2">
+            @if (isComplex()) {
+              <span
+                class="inline-flex items-center px-2 py-1 text-xs hairline rounded-sm bg-sunrise-warm/10 text-sunrise-warm"
+                data-test="complex-badge"
+                >Комплекс</span
+              >
+            }
+            <div class="flex gap-2">
+              <app-pi-button
+                type="button"
+                variant="outline"
+                size="sm"
+                (click)="openCompositionPicker()"
+                data-test="add-composition-line"
+                >+ Добавить в состав</app-pi-button
+              >
+            </div>
+            @if (attachedModules().length === 0 && !modulesLoading() && !modulesError()) {
+              <p class="text-xs text-muted-foreground">
+                Нет модулей в составе. Добавьте строку состава.
+              </p>
+            }
+            @for (line of compositionRows(); track line._id) {
+              @if (line.lineType !== 'module') {
                 <div
                   class="flex items-center gap-3 p-2 hairline rounded-sm bg-paper-2/30"
-                  [attr.data-test]="'module-card-' + m._id"
+                  [attr.data-test]="'composition-line-' + line._id"
                 >
-                  <div
-                    class="w-10 h-10 rounded-sm hairline bg-paper flex items-center justify-center text-muted-foreground text-sm font-medium shrink-0"
-                    aria-hidden="true"
-                  >
-                    {{ (m.name || 'M').charAt(0).toUpperCase() }}
-                  </div>
                   <div class="min-w-0 flex-1">
-                    <p class="text-sm font-medium truncate">{{ m.name }}</p>
+                    <p class="text-sm font-medium">{{ compositionLabel(line) }}</p>
                     <p class="text-xs text-muted-foreground">
-                      {{ m.article ?? '—' }} · {{ m.materials.length }} материалов
+                      {{ line.refId }} · количество {{ line.quantity }}
                     </p>
                   </div>
-                  <label class="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
-                    <span class="eyebrow">Кол-во</span>
-                    <app-pi-input
-                      type="number"
-                      class="w-20"
-                      [value]="'' + moduleQty(m._id)"
-                      (valueChange)="setModuleQty(m._id, $event)"
-                      aria-label="Количество модуля в составе"
-                      data-test="module-qty"
-                    />
-                  </label>
-                  <app-pi-button
-                    type="button"
-                    variant="destructive"
-                    size="icon"
-                    [attr.aria-label]="'Удалить модуль ' + m.name"
-                    (click)="removeModule(m._id)"
-                    data-test="remove-module"
-                  >
-                    ×
-                  </app-pi-button>
+                  @if (line.lineType === 'product') {
+                    <span class="text-xs font-mono">Цена: {{ line.unitPriceOverride ?? '—' }}</span>
+                  }
                 </div>
               }
-            </div>
-          }
+            }
+            @for (m of attachedModules(); track m._id) {
+              <div
+                class="flex items-center gap-3 p-2 hairline rounded-sm bg-paper-2/30"
+                [attr.data-test]="'module-card-' + m._id"
+              >
+                <div
+                  class="w-10 h-10 rounded-sm hairline bg-paper flex items-center justify-center text-muted-foreground text-sm font-medium shrink-0"
+                  aria-hidden="true"
+                >
+                  {{ (m.name || 'M').charAt(0).toUpperCase() }}
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-medium truncate">{{ m.name }}</p>
+                  <p class="text-xs text-muted-foreground">
+                    {{ m.article ?? '—' }} · {{ m.materials.length }} материалов
+                  </p>
+                </div>
+                <label class="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
+                  <span class="eyebrow">Кол-во</span>
+                  <app-pi-input
+                    type="number"
+                    class="w-20"
+                    [value]="'' + moduleQty(m._id)"
+                    (valueChange)="setModuleQty(m._id, $event)"
+                    aria-label="Количество модуля в составе"
+                    data-test="module-qty"
+                  />
+                </label>
+                <app-pi-button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  [attr.aria-label]="'Удалить модуль ' + m.name"
+                  (click)="removeModule(m._id)"
+                  data-test="remove-module"
+                >
+                  ×
+                </app-pi-button>
+              </div>
+            }
+          </div>
         </div>
 
         <!-- ─── 7. Описание/Заметки ─── -->
@@ -609,6 +656,10 @@ export class ProductFormDialogComponent implements OnDestroy {
     this.loadPhotos();
     this.loadModules();
     this.seedAttachedModules();
+    this.compositionLines.set(this.data?.composition ?? []);
+    this.materialsService.list({ limit: 200 }).subscribe((res) => {
+      if (res.ok) this.materialCatalog.set(res.data.items);
+    });
     if (this.data) {
       this.form.patchValue({
         name: this.data.name,
@@ -645,6 +696,7 @@ export class ProductFormDialogComponent implements OnDestroy {
   private readonly colorsService = inject(PiColorReferencesService);
   private readonly photosService = inject(PhotosService);
   private readonly modulesService = inject(ProductModulesService);
+  private readonly materialsService = inject(MaterialsService);
   private readonly dialog = inject(PiDialogService);
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
@@ -719,6 +771,12 @@ export class ProductFormDialogComponent implements OnDestroy {
   private readonly moduleQuantities = signal<Record<string, number>>({});
   /** Состав-снимок исходных module-линий (для diff на submit; пуст на legacy). */
   private originalComposition: CompositionLine[] = [];
+  private readonly compositionLines = signal<CompositionLine[]>([]);
+  private readonly materialCatalog = signal<Material[]>([]);
+  protected readonly compositionRows = computed(() => this.compositionLines());
+  protected readonly isComplex = computed(() =>
+    this.compositionLines().some((line) => line.lineType === 'product'),
+  );
 
   // ─── Photos ───
   protected readonly photos = signal<Photo[]>([]);
@@ -900,6 +958,54 @@ export class ProductFormDialogComponent implements OnDestroy {
         return [...cur, ...resolved.filter((m) => !existing.has(m._id))];
       });
     }
+  }
+
+  protected compositionLabel(line: CompositionLine): string {
+    if (line.lineType === 'product') return 'Изделие';
+    if (line.lineType === 'module') return 'Модуль';
+    const material = this.materialCatalog().find((item) => item._id === line.refId);
+    return material
+      ? `Материал · ${material.materialKind ? MATERIAL_KIND_LABELS[material.materialKind] : 'тип не указан'}`
+      : 'Материал';
+  }
+
+  /** Opens the product/module/material composition picker. */
+  protected openCompositionPicker(): void {
+    const productId = this.data?._id;
+    if (!productId) {
+      this.toast.error('Сначала сохраните изделие, затем добавляйте материалы и изделия в состав');
+      return;
+    }
+    const ref = this.dialog.open<ProductCompositionPickerResult | null>(
+      ProductCompositionPickerDialogComponent,
+      {
+        data: { productId },
+        width: 'lg',
+        parentDestroyRef: this.destroyRef,
+      },
+    );
+    onDialogCloseOnce(ref, this.injector, (result) => {
+      if (!result) return;
+      const dto: CompositionLineUpsertDto =
+        result.lineType === 'product'
+          ? {
+              lineType: 'product',
+              refId: result.refId,
+              quantity: 1,
+              ...(result.unitPriceOverride != null
+                ? { unitPriceOverride: result.unitPriceOverride }
+                : {}),
+            }
+          : { lineType: result.lineType, refId: result.refId, quantity: 1 };
+      this.modulesService.addProductCompositionLine(productId, dto).subscribe((res) => {
+        if (res.ok) {
+          this.compositionLines.set(res.data);
+          this.toast.success('Строка добавлена в состав');
+        } else {
+          this.toast.error(extractErrorMessage(res.error));
+        }
+      });
+    });
   }
 
   /** Открывает мульти-picker модулей; результат — массив moduleId[]. */

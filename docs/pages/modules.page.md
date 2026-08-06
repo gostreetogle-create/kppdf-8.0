@@ -66,6 +66,10 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 
 `name` (sticky, sortable) → `article` (sortable) → `dimensions` (formatted: W×H×D) → `materials` (count) → `workTypes` (count)
 
+## Состав модуля (TZ-CATALOG-320)
+
+Редактор состава допускает `material` и дочерний `module`; текущий модуль исключается из списка. Материал в пикере получает kind-лейбл: сырьё, деталь, метиз, покупное, другое. Каноническая запись идёт через `/modules/:id/composition`; полный lazy CompositionTree остаётся в `TZ-CATALOG-311`.
+
 ## Особенности
 
 - **Client-side pagination** — flat array от backend
@@ -85,4 +89,4 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 
 ---
 
-_Создано: 2026-07-19. Обновлено: 2026-08-04 (TZ-CATALOG-319)._
+_Создано: 2026-07-19. Обновлено: 2026-08-06 (TZ-CATALOG-320)._

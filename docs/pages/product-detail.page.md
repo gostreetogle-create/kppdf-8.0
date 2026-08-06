@@ -37,6 +37,10 @@
 | `ProductModulesService` | list/attach/detach (legacy) |
 | `CostCalculationsService` | rollup (сейчас legacy materials[]) |
 
+## Состав изделия (TZ-CATALOG-320)
+
+Detail показывает canonical `composition[]`: модуль, non-raw Material (kind-лейбл сырьё/деталь/метиз/покупное/другое) и дочернее изделие. Product-линия с `unitPriceOverride >= 0` даёт derived-бейдж «Комплекс»; self-reference и raw Material исключены пикером. Полное lazy-дерево состава — successor `TZ-CATALOG-311`.
+
 ## Известные ограничения
 
 - Нет отдельного полного page.md-контракта секций (этот stub закрывает дыру индекса).
@@ -54,4 +58,4 @@
 
 ---
 
-_Создано: 2026-08-04 (TZ-CATALOG-319)._
+_Создано: 2026-08-04. Обновлено: 2026-08-06 (TZ-CATALOG-320)._

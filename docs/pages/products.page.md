@@ -210,7 +210,11 @@ TZ-MODULES-301 (карточки-строки, как material-cards в module-d
 
 ---
 
-_Создано: 2026-07-19. Последнее обновление: 2026-08-04 (TZ-CATALOG-319: link detail stub + composition gates)._
+_Создано: 2026-07-19. Последнее обновление: 2026-08-06 (TZ-CATALOG-320: composition cascade and material kinds)._
+
+## Состав изделия (TZ-CATALOG-320)
+
+Изделие может содержать `module`, `material` только с `materialKind != raw`, и `product` (комплекс). Детали, метизы и покупные позиции — это `Material` с kind `part`, `fastener`, `purchased` или `other`, отдельной сущности Part нет. Пикер исключает текущее изделие и сырьё; для product-линии доступен неотрицательный `unitPriceOverride`. Полное lazy-дерево и редактор состава — successor `TZ-CATALOG-311`.
 
 ## Related
 

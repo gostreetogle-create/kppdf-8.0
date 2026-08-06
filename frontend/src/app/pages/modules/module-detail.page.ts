@@ -26,6 +26,11 @@ import {
   ProductModulesService,
 } from '../../shared/services/pi-product-modules.service';
 import {
+  MATERIAL_KIND_LABELS,
+  Material,
+  MaterialsService,
+} from '../../shared/services/materials.service';
+import {
   ProductModulePhoto,
   ProductModulePhotosService,
 } from '../../shared/services/pi-product-module-photos.service';
@@ -204,7 +209,7 @@ import { PiShowcaseCardComponent } from '../../shared/ui/card';
             <table class="w-full text-sm min-w-[640px]">
               <thead class="hairline-b">
                 <tr>
-                  <th class="pi-cell eyebrow text-left">Материал</th>
+                  <th class="pi-cell eyebrow text-left">Материал / kind</th>
                   <th class="pi-cell-numeric eyebrow w-20">Кол-во</th>
                   <th class="pi-cell eyebrow w-16">Ед.</th>
                   <th class="pi-cell eyebrow w-32 text-left">Габариты (override)</th>
@@ -216,6 +221,9 @@ import { PiShowcaseCardComponent } from '../../shared/ui/card';
                   <tr class="pi-table-row pi-table-row-odd last:border-0">
                     <td class="pi-cell align-top">
                       {{ materialName(row.materialId) }}
+                      @if (materialKind(row.materialId); as kind) {
+                        <span class="ml-1 text-xs text-muted-foreground">· {{ kind }}</span>
+                      }
                     </td>
                     <td class="pi-cell-numeric align-top font-mono">{{ row.quantity }}</td>
                     <td class="pi-cell align-top">{{ row.unit ?? 'шт' }}</td>
@@ -272,6 +280,9 @@ import { PiShowcaseCardComponent } from '../../shared/ui/card';
 export class ModuleDetailPage {
   constructor() {
     this.reloadPhotos();
+    this.materialsSvc.list({ limit: 200 }).subscribe((res) => {
+      if (res.ok) this.materialCatalog.set(res.data.items);
+    });
   }
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -280,6 +291,7 @@ export class ModuleDetailPage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly modulesSvc = inject(ProductModulesService);
+  private readonly materialsSvc = inject(MaterialsService);
   private readonly photosSvc = inject(ProductModulePhotosService);
   private readonly baseUrl = inject(API_BASE_URL);
 
@@ -337,8 +349,8 @@ export class ModuleDetailPage {
         materialId: l.refId,
         quantity: l.quantity ?? 1,
         unit: l.unit,
-        isPurchased: l.isPurchased ?? true,
-        overrideDimensions: l.overrideDimensions,
+        isPurchased: l.lineType === 'material' ? (l.isPurchased ?? true) : true,
+        overrideDimensions: l.lineType === 'material' ? l.overrideDimensions : undefined,
       }));
     }
     return m.materials ?? [];
@@ -346,6 +358,7 @@ export class ModuleDetailPage {
 
   /** photos отдельным сигналом, обновляется через reloadPhotos(). */
   protected readonly photos = signal<ProductModulePhoto[]>([]);
+  protected readonly materialCatalog = signal<Material[]>([]);
 
   private reloadPhotos(): void {
     const mid = this.idString();
@@ -450,6 +463,23 @@ export class ModuleDetailPage {
   }
 
   // ── Материалы ────────────────────────────────────────────────────
+  protected materialKind(materialId: unknown): string {
+    const id =
+      typeof materialId === 'string'
+        ? materialId
+        : materialId && typeof materialId === 'object' && '_id' in materialId
+          ? String((materialId as { _id: string })._id)
+          : null;
+    const material = id
+      ? this.materialCatalog().find((item) => item._id === id)
+      : materialId && typeof materialId === 'object' && 'materialKind' in materialId
+        ? (materialId as Material)
+        : undefined;
+    return material?.materialKind
+      ? (MATERIAL_KIND_LABELS[material.materialKind] ?? material.materialKind)
+      : 'тип не указан';
+  }
+
   protected materialName(materialId: unknown): string {
     if (typeof materialId === 'string') return `(id ${materialId})`;
     if (materialId && typeof materialId === 'object' && 'name' in materialId) {

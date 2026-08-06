@@ -2,7 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { API_BASE_URL } from '../../core/api.tokens';
-import { ProductModulesService } from './pi-product-modules.service';
+import {
+  isValidProductUnitPriceOverride,
+  ProductModulesService,
+} from './pi-product-modules.service';
 
 /**
  * TZ-83 Phase E.2 + TZ-CATALOG-317: ProductModulesService smoke tests.
@@ -71,6 +74,51 @@ describe('ProductModulesService', () => {
     const req = httpMock.expectOne('http://test/api/products/prod1/composition');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ lineType: 'module', refId: 'mod1', quantity: 2 });
+    req.flush([]);
+  });
+
+  it('accepts only finite non-negative product unit price overrides', () => {
+    expect(isValidProductUnitPriceOverride(undefined)).toBe(true);
+    expect(isValidProductUnitPriceOverride(0)).toBe(true);
+    expect(isValidProductUnitPriceOverride(1250)).toBe(true);
+    expect(isValidProductUnitPriceOverride(-1)).toBe(false);
+    expect(isValidProductUnitPriceOverride(Number.NaN)).toBe(false);
+  });
+
+  it('rejects invalid product price overrides before sending HTTP', () => {
+    expect(() =>
+      svc.addProductCompositionLine('prod1', {
+        lineType: 'product',
+        refId: 'child-product',
+        quantity: 1,
+        unitPriceOverride: -1,
+      }),
+    ).toThrow(/unitPriceOverride/);
+    expect(() =>
+      svc.updateProductCompositionLine('prod1', 'line-1', {
+        quantity: 1,
+        unitPriceOverride: -1,
+      }),
+    ).toThrow(/unitPriceOverride/);
+  });
+
+  it('addProductCompositionLine supports product lines and unit price override', () => {
+    svc
+      .addProductCompositionLine('prod1', {
+        lineType: 'product',
+        refId: 'child-product',
+        quantity: 2,
+        unitPriceOverride: 1250,
+      })
+      .subscribe();
+    const req = httpMock.expectOne('http://test/api/products/prod1/composition');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({
+      lineType: 'product',
+      refId: 'child-product',
+      quantity: 2,
+      unitPriceOverride: 1250,
+    });
     req.flush([]);
   });
 

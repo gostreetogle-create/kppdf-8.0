@@ -78,49 +78,92 @@ export interface CompositionOverrideDimensions {
   unit?: string;
 }
 
-/** Одна строка состава (TZ-CATALOG-302): lineType=module | material. `_id` — id линии для CRUD. */
-export interface CompositionLine {
+/** Common persisted fields for every composition line. */
+interface CompositionLineBase {
   _id: string;
-  lineType: 'module' | 'material';
-  /** Id ссылки: ProductModule (module) или Material (material). Backend НЕ populate — строка ObjectId. */
+  /** Id ссылки: ProductModule, Material или Product. Backend НЕ populate — строка ObjectId. */
   refId: string;
   quantity: number;
   sortOrder: number;
   unit?: string;
-  overrideDimensions?: CompositionOverrideDimensions;
-  isPurchased?: boolean;
   sourcePosition?: string;
   sourceCode?: string;
   notes?: string;
+}
+
+/** Product composition lines may carry a non-negative price override. */
+export interface ProductCompositionLine extends CompositionLineBase {
+  lineType: 'product';
+  unitPriceOverride?: number;
+}
+
+/** Module/material lines intentionally cannot carry product pricing fields. */
+export interface ModuleOrMaterialCompositionLine extends CompositionLineBase {
+  lineType: 'module' | 'material';
+  overrideDimensions?: CompositionOverrideDimensions;
+  isPurchased?: boolean;
+}
+
+/** Одна строка состава (TZ-CATALOG-320). `_id` — id линии для CRUD. */
+export type CompositionLine = ProductCompositionLine | ModuleOrMaterialCompositionLine;
+
+/** Runtime guard for the product-only pricing invariant. */
+export function isValidProductUnitPriceOverride(value: number | undefined): boolean {
+  return value == null || (Number.isFinite(value) && value >= 0);
 }
 
 /** Body для POST /products/:id/composition и /modules/:id/composition. */
-export interface CompositionLineUpsertDto {
-  lineType: 'module' | 'material';
-  refId: string;
-  quantity: number;
-  sortOrder?: number;
-  unit?: string;
-  overrideDimensions?: CompositionOverrideDimensions;
-  isPurchased?: boolean;
-  sourcePosition?: string;
-  sourceCode?: string;
-  notes?: string;
-}
+export type CompositionLineUpsertDto =
+  | {
+      lineType: 'product';
+      refId: string;
+      quantity: number;
+      unitPriceOverride?: number;
+      sortOrder?: number;
+      unit?: string;
+      notes?: string;
+    }
+  | {
+      lineType: 'module' | 'material';
+      refId: string;
+      quantity: number;
+      sortOrder?: number;
+      unit?: string;
+      overrideDimensions?: CompositionOverrideDimensions;
+      isPurchased?: boolean;
+      sourcePosition?: string;
+      sourceCode?: string;
+      notes?: string;
+    };
 
-/** Body для PATCH .../composition/:lineId — все поля optional. */
-export interface CompositionLineUpdateDto {
-  lineType?: 'module' | 'material';
-  refId?: string;
-  quantity?: number;
-  sortOrder?: number;
-  unit?: string;
-  overrideDimensions?: CompositionOverrideDimensions;
-  isPurchased?: boolean;
-  sourcePosition?: string;
-  sourceCode?: string;
-  notes?: string;
-}
+/**
+ * The product branch deliberately owns unitPriceOverride. This prevents
+ * module/material writes from accidentally carrying product pricing context.
+ */
+
+/** Body для PATCH .../composition/:lineId — discriminated by the optional lineType. */
+export type CompositionLineUpdateDto =
+  | {
+      lineType?: 'product';
+      refId?: string;
+      unitPriceOverride?: number;
+      quantity?: number;
+      sortOrder?: number;
+      unit?: string;
+      notes?: string;
+    }
+  | {
+      lineType?: 'module' | 'material';
+      refId?: string;
+      quantity?: number;
+      sortOrder?: number;
+      unit?: string;
+      overrideDimensions?: CompositionOverrideDimensions;
+      isPurchased?: boolean;
+      sourcePosition?: string;
+      sourceCode?: string;
+      notes?: string;
+    };
 
 export interface ProductModuleUpsertDto {
   name: string;
@@ -228,6 +271,9 @@ export class ProductModulesService {
     productId: string,
     dto: CompositionLineUpsertDto,
   ): Observable<SilentResult<CompositionLine[]>> {
+    if ('unitPriceOverride' in dto && !isValidProductUnitPriceOverride(dto.unitPriceOverride)) {
+      throw new Error('unitPriceOverride must be a finite non-negative number for product lines');
+    }
     return silentPost<CompositionLine[]>(
       this.http,
       `${this.baseUrl}/products/${productId}/composition`,
@@ -241,6 +287,9 @@ export class ProductModulesService {
     lineId: string,
     dto: CompositionLineUpdateDto,
   ): Observable<SilentResult<CompositionLine[]>> {
+    if ('unitPriceOverride' in dto && !isValidProductUnitPriceOverride(dto.unitPriceOverride)) {
+      throw new Error('unitPriceOverride must be a finite non-negative number for product lines');
+    }
     return silentPatch<CompositionLine[]>(
       this.http,
       `${this.baseUrl}/products/${productId}/composition/${lineId}`,

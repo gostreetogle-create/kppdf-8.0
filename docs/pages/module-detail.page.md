@@ -64,6 +64,12 @@
 | III | Материалы | III | Таблица материалов, габариты-override, isPurchased |
 | IV | Виды работ | IV | Таблица workTypes с estimatedHours и sortOrder |
 
+## Состав модуля (TZ-CATALOG-320)
+
+Редактор состава (dialog «Состав модуля») умеет **материал + дочерний модуль**, RU kind на материалах, self-id родителя недоступен. Save — composition API.
+
+**Known limitation (страница detail):** таблица на `/modules/:id` пока показывает только `lineType=material` (секция «Материалы»). Дочерние модули видны/редактируются в dialog; единый список + lazy CompositionTree — successor `TZ-CATALOG-311`.
+
 ## Особенности
 
 - **httpResource с route param** — `idString` computed → GET /api/modules/:id
@@ -83,4 +89,4 @@
 
 ---
 
-_Создано: 2026-07-19. Обновлено: 2026-08-04 (TZ-CATALOG-319)._
+_Создано: 2026-07-19. Обновлено: 2026-08-06 (TZ-CATALOG-320)._

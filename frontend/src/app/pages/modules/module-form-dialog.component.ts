@@ -78,7 +78,7 @@ import { extractErrorMessage } from '../../core/silent-http';
           </app-pi-form-field>
         </div>
 
-        <div>
+        <div formGroupName="dimensions">
           <p class="eyebrow mb-form-row">Габариты модуля</p>
           <div class="grid grid-cols-4 gap-form-field">
             <app-pi-form-field label="Ширина" htmlFor="mod-width">
