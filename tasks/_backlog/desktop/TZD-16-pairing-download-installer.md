@@ -2,6 +2,8 @@
 TZD-16: Web pairing dialog — «Скачать приложение» + раздача установщика
 ═══════════════════════════════════════════════════════════════
 
+STATUS: DONE (2026-08-06) · archive: `tasks/_archive/2026-08/TZD-16.done.md`
+
 > READY · LAYER 2 · web FE + deploy static (не параллелить с TZD-15 на `desktop/src/**` UI
 > без согласования — этот TZ трогает **веб** pairing + **раздачу файла**, не inbox).
 > Vision: `desktop/docs/PAIRING.md`, кнопка «Подключить десктоп» уже в layout.

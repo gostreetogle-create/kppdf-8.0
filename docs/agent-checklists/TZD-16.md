@@ -1,6 +1,6 @@
 # TZD-16 checklist
 
-> Status: **CLAIMED / IN PROGRESS**
+> Status: **DONE**
 > Marker: `tasks/_active/TZD-16.md`
 > Commit/push: **YES — PO explicitly requested scoped commit/push**
 
@@ -23,7 +23,7 @@
 
 ## Acceptance
 
-- [ ] Local `cd desktop && pnpm tauri build` attempted; `.exe`/`.msi` stay outside git (currently blocked by missing `desktop/src-tauri/icons/icon.ico`).
+- [x] Local `cd desktop && pnpm tauri build` attempted; `.exe`/`.msi` stay outside git — **SOFT WAIVE**: pre-existing missing `desktop/src-tauri/icons/icon.ico`.
 - [x] `desktop/dist-installers/` is ignored.
 - [x] Pairing dialog has `Скачать приложение`, `data-test="pairing-download-button"`.
 - [x] Download URL uses `DESKTOP_DOWNLOAD_URL`; default is `/downloads/kppdf-desktop-setup.exe`.
@@ -53,12 +53,13 @@
 ## Review handoff
 
 - [x] READY FOR REVIEW after all applicable gates are evidenced; Tauri bundle remains blocked by missing icon asset.
-- [ ] Cursor/PO review before closeout/archive where required.
+- [x] Cursor/PO closeout instruction received; archive approved with soft icon waiver.
 
 ## Closeout
 
-- [ ] Archive `tasks/_archive/2026-08/TZD-16.done.md` with `ARCHIVE_MARKER`.
-- [ ] Create `.mimocode/locks/TZD-16-*.lock`.
-- [ ] Update `progress.md`.
-- [ ] Remove `tasks/_active/TZD-16.md` only after archive.
-- [ ] Status = DONE.
+- [x] Archive `tasks/_archive/2026-08/TZD-16.done.md` with `ARCHIVE_MARKER`.
+- [x] Create `.mimocode/locks/TZD-16-pairing-download-installer.lock`.
+- [x] Update `progress.md`.
+- [x] Remove `tasks/_active/TZD-16.md` only after archive.
+- [x] Status = DONE.
+- closed_at: 2026-08-06
