@@ -22,14 +22,9 @@ import { Warehouse } from './warehouses.service';
 @Component({
   selector: 'app-inventory-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    PiGroupWorkspaceComponent,
-    PiEmptyStateComponent,
-    TableComponent,
-    RouterLink,
-  ],
+  imports: [PiGroupWorkspaceComponent, PiEmptyStateComponent, TableComponent, RouterLink],
   template: `
-    <app-pi-group-workspace [toc]="toc" tocActiveId="inventory" [chips]="chips">
+    <app-pi-group-workspace [toc]="toc" tocActiveId="inventory" [chips]="chips" activeId="">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <span class="text-sm text-muted-foreground">
           {{ warehouses().length }} складов · {{ totalItems() }} позиций

@@ -1,12 +1,23 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { formatDateOnly, workTypeOklch, type GanttBar } from '../gantt-bar.model';
+import type { GanttZoom } from '../production-cockpit.context';
+
+/** Pixels per calendar day — day zoom is denser, week packs the same span. */
+export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
+  day: 48,
+  week: 14,
+};
 
 @Component({
   selector: 'app-gantt-bars',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="flex flex-col h-full min-h-0 bg-[oklch(0.985_0.005_95)] dark:bg-paper">
+    <div
+      class="flex flex-col h-full min-h-0 bg-[oklch(0.985_0.005_95)] dark:bg-paper"
+      [attr.data-zoom]="zoom()"
+      data-test="gantt-bars-root"
+    >
       <div
         class="shrink-0 px-3 py-2 flex flex-wrap items-center gap-3 border-b hairline text-xs text-muted-foreground"
       >
@@ -14,6 +25,9 @@ import { formatDateOnly, workTypeOklch, type GanttBar } from '../gantt-bar.model
           >План-оценка по дням видов работ</span
         >
         <span class="opacity-80">не факт цеха · WorkType.days</span>
+        <span class="opacity-70" data-test="gantt-zoom-hint">
+          масштаб: {{ zoom() === 'day' ? 'день' : 'неделя' }}
+        </span>
         @if (usedTodayFallback()) {
           <span class="text-amber-800 dark:text-amber-300" data-test="gantt-today-fallback"
             >Дата начала не задана — показано от сегодня</span
@@ -46,23 +60,17 @@ import { formatDateOnly, workTypeOklch, type GanttBar } from '../gantt-bar.model
         </div>
       } @else {
         <div class="flex-1 min-h-0 overflow-auto">
-          <div class="min-w-[640px]">
-            <div class="relative h-6 border-b hairline sticky top-0 bg-paper z-10">
+          <div class="flex" [style.minWidth.px]="timelineMinWidth()">
+            <div class="sticky left-0 z-[2] w-48 shrink-0 border-r hairline bg-paper">
               <div
-                class="absolute top-0 bottom-0 w-px bg-destructive/70"
-                [style.left.%]="todayPct()"
-                title="Сегодня"
-                data-test="gantt-today-marker"
-              ></div>
-            </div>
-            @for (row of rows(); track row.bar.id) {
-              <div
-                class="flex items-stretch border-b hairline"
-                [class.bg-black/[0.02]]="row.alt"
-                [attr.data-test]="'gantt-row-' + row.bar.id"
+                class="h-7 border-b hairline px-2 flex items-end pb-1 text-[10px] text-muted-foreground"
               >
+                Шкала
+              </div>
+              @for (row of rows(); track row.bar.id) {
                 <div
-                  class="sticky left-0 z-[1] w-48 shrink-0 px-2 py-2 text-xs bg-paper border-r hairline"
+                  class="h-11 px-2 py-2 text-xs border-b hairline"
+                  [class.bg-black/[0.02]]="row.alt"
                 >
                   <div class="font-medium truncate text-ink">{{ row.bar.moduleName }}</div>
                   <div class="text-muted-foreground truncate">
@@ -73,14 +81,45 @@ import { formatDateOnly, workTypeOklch, type GanttBar } from '../gantt-bar.model
                   </div>
                   <div class="text-[10px] text-muted-foreground">{{ row.bar.workerLabel }}</div>
                 </div>
-                <div class="relative flex-1 h-11">
+              }
+            </div>
+
+            <div class="relative flex-1 min-w-0">
+              <div
+                class="relative h-7 border-b hairline sticky top-0 bg-paper z-10"
+                data-test="gantt-scale"
+              >
+                @for (tick of scaleTicks(); track tick.key) {
+                  <div
+                    class="absolute top-0 bottom-0 border-l hairline text-[10px] text-muted-foreground pl-0.5 overflow-hidden"
+                    [style.left.px]="tick.leftPx"
+                    [style.width.px]="tick.widthPx"
+                    [attr.data-test]="'gantt-tick-' + tick.key"
+                  >
+                    {{ tick.label }}
+                  </div>
+                }
+                <div
+                  class="absolute top-0 bottom-0 w-px bg-destructive/70 z-[1]"
+                  [style.left.px]="todayLeftPx()"
+                  title="Сегодня"
+                  data-test="gantt-today-marker"
+                ></div>
+              </div>
+
+              @for (row of rows(); track row.bar.id) {
+                <div
+                  class="relative h-11 border-b hairline"
+                  [class.bg-black/[0.02]]="row.alt"
+                  [attr.data-test]="'gantt-row-' + row.bar.id"
+                >
                   <div
                     class="absolute top-1.5 bottom-1.5 rounded-sm text-[10px] px-1.5 flex items-center overflow-hidden text-ink/90"
                     [class.border]="row.bar.noTerm"
                     [class.border-dashed]="row.bar.noTerm"
                     [class.border-muted-foreground]="row.bar.noTerm"
-                    [style.left.%]="row.leftPct"
-                    [style.width.%]="row.widthPct"
+                    [style.left.px]="row.leftPx"
+                    [style.width.px]="row.widthPx"
                     [style.background]="row.bar.noTerm ? 'transparent' : fill(row.bar.workTypeId)"
                     [style.backgroundImage]="
                       row.bar.noTerm
@@ -97,16 +136,17 @@ import { formatDateOnly, workTypeOklch, type GanttBar } from '../gantt-bar.model
                     }
                   </div>
                 </div>
-              </div>
-            }
+              }
+            </div>
           </div>
         </div>
+
         <div
           class="shrink-0 px-3 py-2 border-t hairline text-[10px] text-muted-foreground"
           data-test="gantt-legend"
         >
           Цвет полоски = вид работ (OKLCH) · штриховка = без WorkType.days · ×N = количество в
-          заказе (дни не умножаются)
+          заказе (дни не умножаются) · День/Неделя меняет плотность шкалы
         </div>
       }
     </div>
@@ -116,15 +156,45 @@ export class GanttBarsComponent {
   readonly bars = input.required<GanttBar[]>();
   readonly rangeStart = input.required<string>();
   readonly rangeEnd = input.required<string>();
+  readonly zoom = input<GanttZoom>('day');
   readonly warnings = input<string[]>([]);
   readonly usedTodayFallback = input(false);
   readonly readOnly = input(false);
   readonly today = input(formatDateOnly(new Date()));
 
+  protected readonly totalDays = computed(() =>
+    Math.max(1, dayDiff(this.rangeStart(), this.rangeEnd())),
+  );
+
+  protected readonly pxPerDay = computed(() => GANTT_PX_PER_DAY[this.zoom()]);
+
+  protected readonly timelineMinWidth = computed(() => this.totalDays() * this.pxPerDay() + 192);
+
+  protected readonly scaleTicks = computed(() => {
+    const start = this.rangeStart();
+    const total = this.totalDays();
+    const px = this.pxPerDay();
+    const weekMode = this.zoom() === 'week';
+    const ticks: Array<{ key: string; label: string; leftPx: number; widthPx: number }> = [];
+    for (let i = 0; i < total; i++) {
+      const date = addDays(start, i);
+      const dow = utcDow(date);
+      if (weekMode && dow !== 1 && i !== 0) continue;
+      const span = weekMode ? Math.min(7, total - i) : 1;
+      ticks.push({
+        key: date,
+        label: weekMode ? `н.${isoWeek(date)}` : shortDay(date),
+        leftPx: i * px,
+        widthPx: span * px,
+      });
+    }
+    return ticks;
+  });
+
   protected readonly rows = computed(() => {
     const start = this.rangeStart();
-    const end = this.rangeEnd();
-    const total = Math.max(1, dayDiff(start, end));
+    const total = this.totalDays();
+    const px = this.pxPerDay();
     return this.bars().map((bar, idx) => {
       const left = dayDiff(start, bar.startDate);
       const span = bar.noTerm
@@ -133,18 +203,15 @@ export class GanttBarsComponent {
       return {
         bar,
         alt: idx % 2 === 1,
-        leftPct: (left / total) * 100,
-        widthPct: Math.min(100 - (left / total) * 100, (span / total) * 100),
+        leftPx: left * px,
+        widthPx: Math.max(px * 0.5, span * px),
       };
     });
   });
 
-  protected readonly todayPct = computed(() => {
-    const start = this.rangeStart();
-    const end = this.rangeEnd();
-    const total = Math.max(1, dayDiff(start, end));
-    const t = dayDiff(start, this.today());
-    return Math.max(0, Math.min(100, (t / total) * 100));
+  protected readonly todayLeftPx = computed(() => {
+    const t = dayDiff(this.rangeStart(), this.today());
+    return Math.max(0, Math.min(this.totalDays(), t)) * this.pxPerDay();
   });
 
   protected fill(workTypeId: string): string {
@@ -163,4 +230,33 @@ function dayDiff(a: string, b: string): number {
   const da = Date.UTC(pa[0]!, pa[1]! - 1, pa[2]!);
   const db = Date.UTC(pb[0]!, pb[1]! - 1, pb[2]!);
   return Math.round((db - da) / 86400000);
+}
+
+function addDays(dateOnly: string, days: number): string {
+  const [y, m, d] = dateOnly.split('-').map(Number);
+  const dt = new Date(Date.UTC(y!, m! - 1, d!));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  const yy = dt.getUTCFullYear();
+  const mm = String(dt.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getUTCDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
+}
+
+function utcDow(dateOnly: string): number {
+  const [y, m, d] = dateOnly.split('-').map(Number);
+  return new Date(Date.UTC(y!, m! - 1, d!)).getUTCDay();
+}
+
+function shortDay(dateOnly: string): string {
+  const [, m, d] = dateOnly.split('-');
+  return `${d}.${m}`;
+}
+
+function isoWeek(dateOnly: string): number {
+  const [y, m, d] = dateOnly.split('-').map(Number);
+  const dt = new Date(Date.UTC(y!, m! - 1, d!));
+  const dayNum = dt.getUTCDay() || 7;
+  dt.setUTCDate(dt.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(dt.getUTCFullYear(), 0, 1));
+  return Math.ceil(((dt.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 }

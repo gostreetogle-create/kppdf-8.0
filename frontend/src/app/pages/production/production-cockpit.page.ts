@@ -96,6 +96,7 @@ function isReadOnlyEstimateStatus(status: OrderStatus): boolean {
               [bars]="bars()"
               [rangeStart]="rangeStart()"
               [rangeEnd]="rangeEnd()"
+              [zoom]="ctx.zoom()"
               [warnings]="facade.state().warnings"
               [usedTodayFallback]="usedTodayFallback()"
               [readOnly]="readOnly()"

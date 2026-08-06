@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { GanttBarsComponent } from './gantt-bars.component';
+import { GanttBarsComponent, GANTT_PX_PER_DAY } from './gantt-bars.component';
 import type { GanttBar } from '../gantt-bar.model';
 
 describe('GanttBarsComponent', () => {
@@ -51,5 +51,30 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('rangeEnd', '2026-08-02');
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('состав для оценки пуст');
+  });
+
+  it('day vs week zoom changes px density and scale hint', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-15');
+    fixture.componentRef.setInput('zoom', 'day');
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement.querySelector(
+      '[data-test="gantt-bars-root"]',
+    ) as HTMLElement;
+    expect(root.getAttribute('data-zoom')).toBe('day');
+    expect(fixture.nativeElement.textContent).toContain('масштаб: день');
+    expect(fixture.componentInstance['pxPerDay']()).toBe(GANTT_PX_PER_DAY.day);
+
+    fixture.componentRef.setInput('zoom', 'week');
+    fixture.detectChanges();
+    expect(root.getAttribute('data-zoom')).toBe('week');
+    expect(fixture.nativeElement.textContent).toContain('масштаб: неделя');
+    expect(fixture.componentInstance['pxPerDay']()).toBe(GANTT_PX_PER_DAY.week);
+    expect(fixture.componentInstance['timelineMinWidth']()).toBeLessThan(
+      14 * GANTT_PX_PER_DAY.day + 192,
+    );
   });
 });
