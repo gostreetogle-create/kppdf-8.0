@@ -98,7 +98,11 @@ def resolve_settings(args, cfg):
         "yes",
     )
     cors = cfg.get("CORS_ORIGIN") or "https://kppdf-crm.ru"
-    desktop_download_url = cfg.get("DESKTOP_DOWNLOAD_URL")
+    desktop_download_url = (
+        cfg["DESKTOP_DOWNLOAD_URL"]
+        if "DESKTOP_DOWNLOAD_URL" in cfg
+        else os.environ.get("DESKTOP_DOWNLOAD_URL")
+    )
 
     jwt_secret = cfg.get("JWT_SECRET", "")
     jwt_refresh = cfg.get("JWT_REFRESH_SECRET", "")

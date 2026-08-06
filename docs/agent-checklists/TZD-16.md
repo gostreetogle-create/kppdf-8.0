@@ -30,7 +30,7 @@
 - [x] Empty configured URL disables button and shows Russian hint.
 - [x] Jest covers configured URL, default URL, empty URL, and download activation.
 - [x] `PAIRING.md`, `desktop/README.md`, and Synology static path note describe download → install → paste JSON and Node limitation.
-- [x] Deployment config documents optional `DESKTOP_DOWNLOAD_URL`; `deploy.py` injects it into the built SPA without committing runtime config.
+- [x] Deployment config documents optional `DESKTOP_DOWNLOAD_URL`; `deploy.py` injects it into the built SPA without committing runtime config (config.env value takes precedence; process environment is fallback).
 - [x] Scoped FE/desktop typecheck/check/lint/format gates pass or are documented as blocked.
 - [x] No production/catalog/warehouse/desktop inbox/MCP changes.
 

@@ -112,7 +112,9 @@ Windows installer files are published separately from the application bundle. Co
 to `frontend/browser/downloads/` before packaging (the backend serves that
 built frontend directory at `/downloads/`), so it is available at
 `https://<host>/downloads/kppdf-desktop-setup.exe`. Set `DESKTOP_DOWNLOAD_URL` in
-`deploy/synology/config.env`; `deploy.py` injects it into the built SPA. Do not
+`deploy/synology/config.env` (or the `DESKTOP_DOWNLOAD_URL` process environment
+variable); `deploy.py` injects it into the built SPA. Leave it unset for the
+same-origin default, or set it explicitly empty to disable the button. Do not
 commit the `.exe`/`.msi` artifact. The desktop MCP host still requires Node.js on the user's
 machine until a separate sidecar-bundling task lands.
 
