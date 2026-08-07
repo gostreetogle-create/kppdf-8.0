@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { CompositionTreeNode } from '../../services/pi-product-modules.service';
 import {
@@ -6,6 +14,7 @@ import {
   catalogKindOklch,
   catalogKindWash,
 } from '../catalog/catalog-kind-oklch';
+import { CatalogAppearanceService } from '../catalog/catalog-appearance.service';
 
 export type CompositionTreeExpandEvent = { node: CompositionTreeNode; expanded: boolean };
 
@@ -133,8 +142,10 @@ export class CompositionTreeComponent {
 
   private readonly expanded = signal(new Set<string>());
   private lastRootId: string | null = null;
+  private readonly appearance = inject(CatalogAppearanceService);
 
   constructor() {
+    this.appearance.load()?.subscribe();
     effect(() => {
       const rootNode = this.root();
       if (!rootNode || rootNode.kind === 'material') return;
@@ -151,19 +162,25 @@ export class CompositionTreeComponent {
   }
 
   protected kindBorder(node: CompositionTreeNode): string {
-    return catalogKindBorder(node.kind, node.materialKind);
+    return catalogKindBorder(node.kind, node.materialKind, this.appearance.palette());
   }
 
   protected kindAccent(node: CompositionTreeNode): string {
-    return catalogKindOklch(node.kind, node.materialKind);
+    return catalogKindOklch(node.kind, node.materialKind, 0.11, 0.62, this.appearance.palette());
   }
 
   protected rowWash(node: CompositionTreeNode): string {
     if (this.selectedId() === node._id) {
-      const solid = catalogKindOklch(node.kind, node.materialKind, 0.1, 0.72);
+      const solid = catalogKindOklch(
+        node.kind,
+        node.materialKind,
+        0.1,
+        0.72,
+        this.appearance.palette(),
+      );
       return solid.replace(/\)$/, ' / 0.28)');
     }
-    return catalogKindWash(node.kind, node.materialKind);
+    return catalogKindWash(node.kind, node.materialKind, this.appearance.palette());
   }
 
   protected onRowMouseDown(event: MouseEvent): void {

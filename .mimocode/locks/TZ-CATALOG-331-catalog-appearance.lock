@@ -1,0 +1,8 @@
+TZ-CATALOG-331
+closed: 2026-08-08
+outcome: DONE
+zone: catalog appearance settings + organization-scoped kind palette
+route: /catalog/appearance
+checklist: docs/agent-checklists/TZ-CATALOG-331.md
+archive: tasks/_archive/2026-08/TZ-CATALOG-331.done.md
+commit: pending closeout commit

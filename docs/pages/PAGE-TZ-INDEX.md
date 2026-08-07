@@ -23,8 +23,9 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | `/materials` | materials.page.md | MATERIALS-*; **CATALOG-301** BE DONE; **FE поля 301 = TZ-CATALOG-316**; **CATALOG-UI-301** Group Chip |
 | `/materials/:id` | material detail (312) | CATALOG Wave 2 |
 | `/products` | products.page.md | PRODUCTS-*; composition **302…305**; FE **317**; gap **320**; tree **311**; **CATALOG-UI-301** |
-| `/products/:id` | **product-detail.page.md** | 319 stub docs; detail UI; **320** complex/cascade; **311** tree |
+| `/products/:id` | **product-detail.page.md** | 319 stub docs; detail UI; **320** complex/cascade; **311** tree; **330–331** kind palette |
 | `/modules`, `/modules/:id` | modules.page.md, module-detail.page.md | MODULES-*; photos; **320** module→module; **311** tree |
+| `/catalog/appearance` | **catalog-appearance.page.md** | **CATALOG-331** kind palette settings (admin) |
 | `/work-types` | work-types.page.md | WORKTYPES-*, **UX-305 DONE**, **PRODUCTION-302 DONE**; **CATALOG-UI-301** |
 | `/people` | people.page.md | **UX-306 DONE**; **CATALOG-UI-301** |
 | `/production` | production-cockpit.page.md | **300** Lego; **303 DONE**; **303.1 READY** hotfix+`?q=`; parked **308/309/310**; drawings **DRAWINGS-301**; 304–307 plug-ins later |

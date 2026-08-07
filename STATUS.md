@@ -13,6 +13,12 @@
 - Moved the project passport to `docs/project-passport.md`; `TZ-CLEANUP-R2` is archived as DONE after all cleanup acceptance criteria and verification gates.
 - `tasks/` is intended to contain only real active `TZ-*.md` files. Roadmap prose elsewhere is historical context, not an active task claim.
 
+## [2026-08-08] — TZ-CATALOG-331 DONE: catalog appearance settings
+**Статус:** DONE on main; deploy НЕ выполнялся
+**Route:** `/catalog/appearance`
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-331.done.md`
+**Gates:** FE/BE tsc, targeted Jest, scoped ESLint, Angular dev build, `git diff --check` PASS; browser admin smoke remains.
+
 ## ✅ Завершённые этапы
 
 ### Backend (TZ-01..TZ-18)

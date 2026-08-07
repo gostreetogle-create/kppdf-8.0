@@ -1,3 +1,14 @@
+## [2026-08-08] — TZ-CATALOG-331 DONE: catalog appearance settings
+**Исполнитель:** Buffy / canonical executor (`agent-3e757640b7`)
+**Статус:** DONE on main; deploy НЕ выполнялся
+**Что сделано кратко:** Добавлен admin-only `/catalog/appearance` с preset hue для изделия/модуля/материала/сырья; сохранение organization-scoped через существующий settings API (`catalog.appearance.<organizationId>`), global/code defaults fallback; reactive palette подключена к CompositionTree и BOM inspector; RAL и Gantt не затрагивались.
+**Gates:** frontend/backend tsc PASS; targeted Jest FE 3 suites / 6 tests PASS; backend setting Jest 2 tests PASS; scoped ESLint без `--fix` PASS; Angular dev build PASS с pre-existing NG8113 в DocumentsPage; `git diff --check` PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-331.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-331-catalog-appearance.lock`
+**Known limits:** browser authenticated-admin smoke save/reload + light/dark остаётся перед финальным deploy-readiness.
+
+---
+
 ## [2026-08-08] — TZD-20 DONE: MCP client JSON copy (Cursor / LM Studio)
 **Исполнитель:** cursor-composer-tzd20 (Cursor PASS → archive)
 **Статус:** DONE on main

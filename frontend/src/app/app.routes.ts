@@ -35,6 +35,12 @@ export const adminOnlyRouteGuard: CanMatchFn = () => {
  *   /modules/:id  — module detail (4 sections) (Phase C)
  *   /products/:id — product detail + modules   (Phase D)
  */
+export const catalogAppearanceAdminGuard: CanMatchFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return auth.user()?.role === 'admin' ? true : router.parseUrl('/forbidden');
+};
+
 export const routes: Routes = [
   {
     path: 'login',
@@ -169,6 +175,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/dictionaries/color-references.page').then((m) => m.ColorReferencesPage),
         title: 'KPPDF — Цвета',
+      },
+      {
+        path: 'catalog/appearance',
+        canMatch: [capabilityRouteGuard, catalogAppearanceAdminGuard],
+        data: { pageKey: 'products' },
+        loadComponent: () =>
+          import('./pages/catalog/catalog-appearance.page').then((m) => m.CatalogAppearancePage),
+        title: 'KPPDF — Оформление каталога',
       },
       {
         path: 'products',

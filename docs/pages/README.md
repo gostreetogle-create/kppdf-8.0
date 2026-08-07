@@ -16,6 +16,7 @@
 | 3 | **Materials** | `materials.page.md` | `/materials` | Справочник материалов |
 | 4 | **Products** | `products.page.md` | `/products` | Каталог продукции |
 | 4a | **Product Detail** | `product-detail.page.md` | `/products/:id` | Карточка изделия (stub 319) |
+| 4b | **Catalog Appearance** | `catalog-appearance.page.md` | `/catalog/appearance` | Палитра типов каталога (CATALOG-331) |
 | 5 | **Orders** | `orders.page.md` | `/orders` | Заказы |
 | 6 | **Contracts** | `contracts.page.md` | `/contracts` | Договоры |
 | 7 | **Organizations** | `organizations.page.md` | `/organizations` | Организации |
