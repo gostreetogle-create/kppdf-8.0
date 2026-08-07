@@ -1,3 +1,15 @@
+## [2026-08-08] — TZ-COST-301 DONE: WorkType hourlyRate required
+**Исполнитель:** cursor-composer-cost301 (Cursor PASS → archive)
+**Статус:** DONE on main
+**Что сделано кратко:** `hourlyRate` обязателен в create/update DTO и FE-форме; колонка «₽/час»; boot backfill missing→0; Виды работ остаются в Каталоге.
+**Gates:** backend tsc PASS; frontend tsc PASS; jest work-type.service 8/8 PASS
+**Archive:** `tasks/_archive/2026-08/TZ-COST-301.done.md`
+**Lock:** `.mimocode/locks/TZ-COST-301-work-type-hourly-rate-required.lock`
+**Commit:** PENDING
+**Known limits:** `0` разрешён; COST-302 только по PO; CostCalculation не трогали
+
+---
+
 ## [2026-08-08] — TZ-CATALOG-331 DONE: catalog appearance settings
 **Исполнитель:** Buffy / canonical executor (`agent-3e757640b7`)
 **Статус:** DONE on main; deploy НЕ выполнялся

@@ -21,7 +21,8 @@ export class CreateWorkTypeDto {
   @IsOptional() @IsString() department?: string;
   @IsOptional() @IsBoolean() isActive?: boolean;
   @IsOptional() @IsNumber() @Min(0) defaultDurationHours?: number;
-  @IsOptional() @IsNumber() @Min(0) hourlyRate?: number;
+  /** TZ-COST-301 — обязательная расценка ₽/час (≥ 0; 0 = явно бесплатно). */
+  @IsNumber() @Min(0) hourlyRate!: number;
 
   /**
    * TZ-PRODUCTION-302 — Calendar days for Gantt estimation.

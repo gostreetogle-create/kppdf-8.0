@@ -106,12 +106,22 @@ function daysValidator(c: { value: number | null }): { invalidDays: true } | nul
               data-test="duration-input"
             />
           </app-pi-form-field>
-          <app-pi-form-field label="Ставка (₽/час)" htmlFor="wt-hourly-rate">
+          <app-pi-form-field
+            label="Ставка, ₽/час"
+            htmlFor="wt-hourly-rate"
+            [required]="true"
+            [error]="
+              form.controls.hourlyRate.invalid && form.controls.hourlyRate.touched
+                ? 'Укажите ставку (≥ 0)'
+                : ''
+            "
+          >
             <app-pi-input
               id="wt-hourly-rate"
               type="number"
               formControlName="hourlyRate"
               placeholder="0"
+              [invalid]="form.controls.hourlyRate.invalid && form.controls.hourlyRate.touched"
               data-test="rate-input"
             />
           </app-pi-form-field>
@@ -223,7 +233,10 @@ export class WorkTypeFormDialogComponent {
     department: this.fb.control<string>(this.data?.department ?? ''),
     description: this.fb.control<string>(this.data?.description ?? ''),
     defaultDurationHours: this.fb.control<number | null>(this.data?.defaultDurationHours ?? null),
-    hourlyRate: this.fb.control<number | null>(this.data?.hourlyRate ?? null),
+    hourlyRate: this.fb.control<number | null>(this.data?.hourlyRate ?? null, [
+      Validators.required,
+      Validators.min(0),
+    ]),
     days: this.fb.control<number | null>(this.data?.days ?? null, [daysValidator]),
     accentHue: this.fb.control<number | null>(this.data?.accentHue ?? null),
     isActive: this.fb.control<boolean>(this.data?.isActive ?? true),
@@ -247,7 +260,7 @@ export class WorkTypeFormDialogComponent {
       department: v.department || undefined,
       description: v.description || undefined,
       defaultDurationHours: v.defaultDurationHours ?? undefined,
-      hourlyRate: v.hourlyRate ?? undefined,
+      hourlyRate: v.hourlyRate as number,
       days: v.days == null || v.days === 0 ? null : v.days,
       accentHue: v.accentHue,
       isActive: v.isActive,

@@ -79,7 +79,7 @@ function accessorFor(key: Exclude<SortKey, null>): (row: WorkType) => unknown {
     TableComponent,
   ],
   template: `
-    <app-pi-group-workspace [chips]="chips" activeId="work-types">
+    <app-pi-group-workspace [chips]="chips" activeId="work-types" pathLabel="Каталог">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           id="work-types-search"
@@ -226,10 +226,10 @@ export class WorkTypesPage implements OnInit {
     { key: 'department', label: 'Отдел', sortable: true, cellClass: 'empty-cell' },
     {
       key: 'hourlyRate',
-      label: 'Час/₽',
+      label: '₽/час',
       sortable: true,
       align: 'right',
-      cellClass: 'empty-cell font-mono text-xs',
+      cellClass: 'font-mono text-xs',
     },
     {
       key: 'days',
@@ -298,14 +298,17 @@ export class WorkTypesPage implements OnInit {
   }
 
   protected onToggleActive(wt: WorkType, checked: boolean): void {
-    this.service.update(wt._id, { isActive: checked }).subscribe((res) => {
-      if (res.ok) {
-        this.toast.success(checked ? `«${wt.name}» активирован` : `«${wt.name}» деактивирован`);
-        this.listRes.reload();
-      } else {
-        this.toast.error(extractErrorMessage(res.error));
-      }
-    });
+    // TZ-COST-301: PATCH требует hourlyRate — шлём текущую (legacy → 0).
+    this.service
+      .update(wt._id, { isActive: checked, hourlyRate: wt.hourlyRate ?? 0 })
+      .subscribe((res) => {
+        if (res.ok) {
+          this.toast.success(checked ? `«${wt.name}» активирован` : `«${wt.name}» деактивирован`);
+          this.listRes.reload();
+        } else {
+          this.toast.error(extractErrorMessage(res.error));
+        }
+      });
   }
 
   protected onDelete(wt: WorkType): void {

@@ -1,40 +1,61 @@
 # TZ-COST-301 checklist
 
-> Status: **RESERVED**
-> Marker: `tasks/_active/TZ-COST-301.md` (при CLAIM)
+> Status: **DONE**
+> Marker: archived — `tasks/_archive/2026-08/TZ-COST-301.done.md`
 > TZ: `tasks/_backlog/cost/TZ-COST-301-work-type-hourly-rate-required.md`
-> Review: да · Commit/push: после PASS / по PO
+> Commit/push: YES (PO 2026-08-08)
+> READY FOR REVIEW: 2026-08-07T23:10:00Z
+> closed_at: 2026-08-07T23:19:00Z
 
 ## Claim slot
 
-- agent_id:
-- claimed_at:
+- agent_id: cursor-composer-cost301
+- claimed_at: 2026-08-07T23:02:03Z
 - workspace: D:\kppdf-8.0
-- team_room_claim:
+- team_room_claim: unavailable (Unknown task: TZ-COST-301; sync tasks first)
 
 ## Preflight
 
-- [ ] Get-Location + git rev-parse → D:\kppdf-8.0
-- [ ] Нет чужого CLAIM на work-type keys
-- [ ] Аудит канон прочитан (Виды работ остаются в Каталоге)
-- [ ] `_active/TZ-COST-301.md` + Status CLAIMED
+- [x] Get-Location + git rev-parse → D:\kppdf-8.0
+- [x] Нет чужого CLAIM на work-type keys (peer 332 = lists only)
+- [x] Аудит канон прочитан (Виды работ остаются в Каталоге)
+- [x] `_active/TZ-COST-301.md` (removed at archive)
 
 ## Acceptance
 
-- [ ] hourlyRate required BE
-- [ ] FE validators + колонка списка
-- [ ] backfill / default 0 для legacy
-- [ ] Не тронут CostCalculation / appearance / desktop
+- [x] hourlyRate required BE (Create + Update DTO `@IsNumber @Min(0)`)
+- [x] FE validators + колонка списка «₽/час»
+- [x] backfill / default 0 для legacy (`onModuleInit` updateMany)
+- [x] Не тронут CostCalculation / appearance / desktop
+- [x] Виды работ не перенесены из Каталога
 
 ## Gates
 
-- [ ] backend tsc
-- [ ] frontend tsc
+- [x] backend tsc (`tsconfig.build.json --noEmit`) PASS
+- [x] frontend tsc (`tsconfig.app.json --noEmit`) PASS
+- [x] jest `work-type.service.spec.ts` 8/8 PASS
 
 ## Review handoff
 
-- [ ] READY FOR REVIEW → Cursor PASS → archive
+- [x] READY FOR REVIEW
+- [x] Cursor PASS → archive
+
+## Closeout
+
+- [x] archive + lock + progress + удалить `_active`
+- [x] Status = DONE
+- closed_at: 2026-08-07T23:19:00Z
+
+## Executor report
+
+- BE: Create/Update DTO require `hourlyRate`; schema `required: true, default: 0`;
+  `WorkTypeService.onModuleInit` idempotent backfill missing/null → 0.
+- FE: form label «Ставка, ₽/час» + required/min(0); list column «₽/час»;
+  isActive toggle PATCH includes `hourlyRate`.
+- Docs: `work-types.page.md` — ставка обязательна; Каталог, не Справочники.
+- Conflict disclosure: parallel TZ-CATALOG-332 (lists) — no overlap.
+- known_limitation: `0` allowed; CostCalculation → TZ-COST-302 **only on PO**.
 
 ## Executor report (auto)
 
-_(после commit)_
+- commit: PENDING

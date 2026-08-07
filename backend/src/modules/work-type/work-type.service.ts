@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { WorkType, WorkTypeDocument } from './work-type.schema';
@@ -6,8 +6,23 @@ import { CreateWorkTypeDto } from './dto/create-work-type.dto';
 import { UpdateWorkTypeDto } from './dto/update-work-type.dto';
 
 @Injectable()
-export class WorkTypeService {
+export class WorkTypeService implements OnModuleInit {
+  private readonly logger = new Logger(WorkTypeService.name);
+
   constructor(@InjectModel(WorkType.name) private readonly model: Model<WorkTypeDocument>) {}
+
+  /** TZ-COST-301 — idempotent: missing/null hourlyRate → 0. */
+  async onModuleInit(): Promise<void> {
+    const res = await this.model
+      .updateMany(
+        { $or: [{ hourlyRate: { $exists: false } }, { hourlyRate: null }] },
+        { $set: { hourlyRate: 0 } },
+      )
+      .exec();
+    if (res.modifiedCount > 0) {
+      this.logger.log(`TZ-COST-301 backfill hourlyRate=0 for ${res.modifiedCount} work type(s)`);
+    }
+  }
 
   async create(dto: CreateWorkTypeDto): Promise<WorkTypeDocument> {
     return this.model.create({ ...dto, workCenterId: dto.workCenterId ? new Types.ObjectId(dto.workCenterId) : undefined });

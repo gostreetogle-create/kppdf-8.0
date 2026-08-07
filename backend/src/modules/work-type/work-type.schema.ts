@@ -40,8 +40,9 @@ export class WorkType {
   @Prop({ type: Types.ObjectId, ref: 'WorkCenter', index: true })
   workCenterId?: Types.ObjectId;
 
-  @Prop({ default: 0 })
-  hourlyRate?: number;
+  /** TZ-COST-301 — расценка ₽/час; legacy без поля → backfill 0 на boot. */
+  @Prop({ type: Number, required: true, default: 0, min: 0 })
+  hourlyRate!: number;
 
   /** TZ-CATALOG-314 archive marker; legacy rows without this field remain active. */
   @Prop({ type: Date, default: null, index: true })

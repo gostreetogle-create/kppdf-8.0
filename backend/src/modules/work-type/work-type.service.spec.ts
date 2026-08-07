@@ -67,6 +67,10 @@ class FakeWorkTypeModel {
       return { exec: jest.fn(async () => ({ modifiedCount: target ? 1 : 0 })) };
     },
   );
+
+  updateMany = jest.fn(() => ({
+    exec: jest.fn(async () => ({ modifiedCount: 0, matchedCount: 0 })),
+  }));
 }
 
 describe('WorkTypeService (TZ-PRODUCTION-302)', () => {
@@ -86,18 +90,19 @@ describe('WorkTypeService (TZ-PRODUCTION-302)', () => {
 
   describe('days round-trip', () => {
     it('create persists days value', async () => {
-      const created = await service.create({ name: 'Покраска', days: 3 });
+      const created = await service.create({ name: 'Покраска', days: 3, hourlyRate: 0 });
       expect(created.days).toBe(3);
     });
 
     it('create allows null days (stuck path)', async () => {
-      const created = await service.create({ name: 'Сборка', days: null });
+      const created = await service.create({ name: 'Сборка', days: null, hourlyRate: 0 });
       expect(created.days).toBeNull();
     });
 
     it('create without days leaves days undefined (legacy default null)', async () => {
-      const created = await service.create({ name: 'Раскрой' });
+      const created = await service.create({ name: 'Раскрой', hourlyRate: 100 });
       expect(created.days).toBeUndefined();
+      expect(created.hourlyRate).toBe(100);
     });
 
     it('update changes days and persists null explicitly', async () => {
@@ -105,11 +110,12 @@ describe('WorkTypeService (TZ-PRODUCTION-302)', () => {
         _id: new Types.ObjectId(),
         name: 'Сварка',
         days: 5,
+        hourlyRate: 0,
       });
-      const updated = await service.update(String(doc._id), { days: 8 });
+      const updated = await service.update(String(doc._id), { days: 8, hourlyRate: 0 });
       expect(updated.days).toBe(8);
 
-      const cleared = await service.update(String(doc._id), { days: null });
+      const cleared = await service.update(String(doc._id), { days: null, hourlyRate: 0 });
       expect(cleared.days).toBeNull();
     });
 
@@ -118,14 +124,16 @@ describe('WorkTypeService (TZ-PRODUCTION-302)', () => {
         _id: new Types.ObjectId(),
         name: 'Сварка',
         days: 5,
+        hourlyRate: 50,
       });
       const updated = await service.update(String(doc._id), { hourlyRate: 120 });
       expect(updated.days).toBe(5);
+      expect(updated.hourlyRate).toBe(120);
     });
 
     it('404 on unknown id', async () => {
       await expect(
-        service.update(String(new Types.ObjectId()), { days: 2 }),
+        service.update(String(new Types.ObjectId()), { days: 2, hourlyRate: 0 }),
       ).rejects.toBeInstanceOf(NotFoundException);
     });
 
@@ -134,6 +142,17 @@ describe('WorkTypeService (TZ-PRODUCTION-302)', () => {
       const found = await service.findById(String(legacy._id));
       expect(found.name).toBe('Старый');
       expect(found.days).toBeUndefined();
+    });
+  });
+
+  describe('TZ-COST-301 hourlyRate backfill', () => {
+    it('onModuleInit sets hourlyRate=0 when missing', async () => {
+      model.makeDoc({ _id: new Types.ObjectId(), name: 'Legacy' });
+      model.updateMany = jest.fn(() => ({
+        exec: jest.fn(async () => ({ modifiedCount: 1, matchedCount: 1 })),
+      }));
+      await service.onModuleInit();
+      expect(model.updateMany).toHaveBeenCalled();
     });
   });
 });
