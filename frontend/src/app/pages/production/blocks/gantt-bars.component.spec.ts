@@ -44,6 +44,20 @@ describe('GanttBarsComponent', () => {
     expect(el.querySelector('[data-test="gantt-bar"]')).toBeTruthy();
   });
 
+  it('shows order number on labels and work-type legend', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.textContent).toContain('ORD-1');
+    expect(el.textContent).toContain('Стол');
+    expect(el.querySelector('[data-test="gantt-worktype-legend"]')?.textContent).toContain(
+      'Сварка',
+    );
+  });
+
   it('keeps calendar scale visible when no bars', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', []);
@@ -78,7 +92,7 @@ describe('GanttBarsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('масштаб: неделя');
     expect(fixture.componentInstance['pxPerDay']()).toBe(GANTT_PX_PER_DAY.week);
     expect(fixture.componentInstance['timelineMinWidth']()).toBeLessThan(
-      14 * GANTT_PX_PER_DAY.day + 192,
+      14 * GANTT_PX_PER_DAY.day + 224,
     );
   });
 });

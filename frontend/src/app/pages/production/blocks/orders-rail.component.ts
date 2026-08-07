@@ -257,6 +257,7 @@ export class OrdersRailComponent {
 
   protected onSearch(ev: Event): void {
     this.ctx.setSearch((ev.target as HTMLInputElement).value);
+    this.filtersChanged.emit();
   }
 
   protected onActiveToggle(ev: Event): void {

@@ -13,14 +13,9 @@ import { GanttBarsComponent } from './blocks/gantt-bars.component';
 import { OrderInspectorComponent } from './blocks/order-inspector.component';
 import { ProductionCockpitContext } from './production-cockpit.context';
 import { ProductionReadFacade } from './production-read.facade';
-import {
-  ACTIVE_COMMERCIAL_ORDER_STATUSES,
-  filterOrdersForRail,
-  formatDateOnly,
-  isActiveCommercialOrderStatus,
-  type GanttBar,
-} from './gantt-bar.model';
+import { filterOrdersForRail, formatDateOnly, type GanttBar } from './gantt-bar.model';
 import type { Order, OrderStatus } from '../orders/orders.service';
+import { CapabilitiesService } from '../../core/capabilities/capabilities.service';
 
 function isReadOnlyEstimateStatus(status: OrderStatus): boolean {
   return status === 'shipped' || status === 'delivered' || status === 'cancelled';
@@ -58,7 +53,43 @@ function isReadOnlyEstimateStatus(status: OrderStatus): boolean {
           {{ ctx.railCollapsed() ? '☰ заказы' : '« список' }}
         </button>
         <span class="flex-1"></span>
-        <div class="flex items-center gap-1 text-xs">
+        <div class="flex flex-wrap items-center gap-1 text-xs">
+          <button
+            type="button"
+            class="pi-btn pi-btn-ghost pi-focus-ring !text-xs !px-2 !py-1"
+            (click)="onRefresh()"
+            data-test="gantt-refresh"
+            title="Обновить оценку"
+          >
+            Обновить
+          </button>
+          <button
+            type="button"
+            class="pi-btn pi-btn-ghost pi-focus-ring !text-xs !px-2 !py-1"
+            (click)="onResetFilters()"
+            data-test="gantt-reset-filters"
+            title="Сбросить поиск и фильтры"
+          >
+            Сброс фильтров
+          </button>
+          <button
+            type="button"
+            class="pi-btn pi-btn-ghost pi-focus-ring !text-xs !px-2 !py-1"
+            (click)="onToday()"
+            data-test="gantt-today"
+            title="Показать сегодня в горизонте"
+          >
+            Сегодня
+          </button>
+          <button
+            type="button"
+            class="pi-btn pi-btn-ghost pi-focus-ring !text-xs !px-2 !py-1"
+            (click)="onFitHorizon()"
+            data-test="gantt-fit"
+            title="Подогнать шкалу под полосы"
+          >
+            Весь горизонт
+          </button>
           <button
             type="button"
             class="pi-btn pi-btn-ghost pi-focus-ring !text-xs !px-2 !py-1"
@@ -123,6 +154,7 @@ function isReadOnlyEstimateStatus(status: OrderStatus): boolean {
             [warnings]="facade.state().warnings"
             [usedTodayFallback]="usedTodayFallback()"
             [readOnly]="readOnly()"
+            (selectOrder)="onSelect($event)"
           />
         </main>
         @if (inspectorOrder(); as ord) {
@@ -130,7 +162,7 @@ function isReadOnlyEstimateStatus(status: OrderStatus): boolean {
             [order]="ord"
             [estimateReadOnly]="readOnly()"
             [canEditOrder]="canEditOrder()"
-            [canEditCatalog]="canEditOrder()"
+            [canEditCatalog]="canEditCatalog()"
             [workerLabels]="workerLabels()"
             (closed)="closeInspector()"
             (changed)="onInspectorChanged()"
@@ -144,6 +176,7 @@ export class ProductionCockpitPage implements OnInit {
   protected readonly ctx = inject(ProductionCockpitContext);
   protected readonly facade = inject(ProductionReadFacade);
   private readonly auth = inject(AuthService);
+  private readonly caps = inject(CapabilitiesService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly orders = signal<Order[]>([]);
@@ -160,6 +193,11 @@ export class ProductionCockpitPage implements OnInit {
     const role = this.auth.user()?.role;
     return role === 'admin' || role === 'manager';
   });
+
+  /** Catalog WorkType.days — production:write or admin/manager role (BE Roles). */
+  protected readonly canEditCatalog = computed(
+    () => this.canEditOrder() || this.caps.hasAny(['production:write']),
+  );
 
   protected readonly inspectorOrder = computed(() => {
     if (!this.inspectorOpen()) return null;
@@ -206,6 +244,36 @@ export class ProductionCockpitPage implements OnInit {
     await this.reloadOrdersKeepingSelection();
   }
 
+  protected async onRefresh(): Promise<void> {
+    await this.reloadOrdersKeepingSelection();
+  }
+
+  protected async onResetFilters(): Promise<void> {
+    this.ctx.resetFilters();
+    if (this.ctx.selectedOrderId()) return;
+    await this.applyFilteredActive();
+  }
+
+  /** Ensure «today» lies inside the visible range (does not change bars). */
+  protected onToday(): void {
+    const today = formatDateOnly(new Date());
+    if (today < this.rangeStart()) this.rangeStart.set(addDays(today, -2));
+    if (today > this.rangeEnd()) this.rangeEnd.set(addDays(today, 14));
+  }
+
+  /** Re-fit timeline to current bars (same logic as after load). */
+  protected async onFitHorizon(): Promise<void> {
+    const id = this.ctx.selectedOrderId();
+    if (id) {
+      const order = this.orders().find((o) => o._id === id);
+      if (order) {
+        await this.applyBars([order]);
+        return;
+      }
+    }
+    await this.applyFilteredActive();
+  }
+
   private async bootstrap(): Promise<void> {
     const list = await this.facade.loadOrders();
     this.orders.set(list);
@@ -233,17 +301,14 @@ export class ProductionCockpitPage implements OnInit {
   }
 
   private async applyFilteredActive(): Promise<void> {
+    // Same filter function as rail — never hardcode activeOnly:true here.
     const filtered = filterOrdersForRail(this.orders(), {
-      activeOnly: true,
+      activeOnly: this.ctx.activeOnly(),
       search: this.ctx.search(),
       selectedOrderId: null,
       priority: this.ctx.priorityFilter(),
       dateFrom: this.ctx.dateFrom(),
       dateTo: this.ctx.dateTo(),
-    }).filter((o) => {
-      if (!isActiveCommercialOrderStatus(o.status)) return false;
-      if (o.isActive === false) return false;
-      return (ACTIVE_COMMERCIAL_ORDER_STATUSES as readonly string[]).includes(o.status);
     });
     await this.applyBars(filtered);
   }

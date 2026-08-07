@@ -245,206 +245,222 @@ const KIND_LABELS: Record<Product['kind'], string> = {
         </div>
       }
 
-      <div class="flex gap-3 items-start" data-test="products-layout">
-        <!-- Left filter strip (~1.5–2cm collapsed) — expands right -->
-        <aside
-          class="shrink-0 sticky top-2 z-10"
-          [class]="
-            filtersOpen()
-              ? 'w-56 hairline rounded-sm bg-paper p-2'
-              : 'w-12 hairline rounded-sm bg-paper p-1'
-          "
-          data-test="filters-rail"
-          [attr.aria-expanded]="filtersOpen()"
-        >
+      <div class="relative" data-test="products-layout">
+        @if (filtersOpen()) {
           <button
             type="button"
-            class="flex w-full min-h-touch items-center justify-center gap-2 rounded-sm text-ink hover:bg-paper-2 transition-colors"
-            (click)="toggleFiltersRail()"
-            [attr.aria-label]="filtersOpen() ? 'Свернуть фильтры' : 'Открыть фильтры'"
-            data-test="filters-rail-toggle"
+            class="absolute inset-0 z-20 border-0 cursor-default bg-ink/15 dark:bg-ink/35"
+            aria-label="Закрыть фильтры"
+            data-test="filters-backdrop"
+            (click)="closeFilters()"
+          ></button>
+        }
+
+        <div class="relative z-0 flex gap-3 items-start">
+          <!-- Узкая полоска всегда w-12; панель — оверлей поверх карточек -->
+          <aside
+            class="relative z-30 shrink-0 w-12"
+            data-test="filters-rail"
+            [attr.aria-expanded]="filtersOpen()"
           >
-            <lucide-icon [img]="FilterIcon" [size]="18"></lucide-icon>
-            @if (filtersOpen()) {
-              <span class="text-xs font-medium">Фильтры</span>
-            }
-          </button>
-          @if (filtersOpen()) {
-            <div class="mt-2 flex flex-col gap-2" data-test="filters-rail-panel">
-              <label
-                class="text-[10px] uppercase tracking-wide text-muted-foreground"
-                for="rail-status"
-                >Статус</label
-              >
-              <select
-                id="rail-status"
-                class="pi-input w-full text-sm"
-                [value]="statusFilter() ?? ''"
-                (change)="onStatusFilterChange($event)"
-              >
-                <option value="">Все</option>
-                @for (s of STATUS_OPTIONS; track s) {
-                  <option [value]="s">{{ STATUS_LABELS[s] }}</option>
-                }
-              </select>
-              <label
-                class="text-[10px] uppercase tracking-wide text-muted-foreground"
-                for="rail-active"
-                >Активность</label
-              >
-              <select
-                id="rail-active"
-                class="pi-input w-full text-sm"
-                [value]="activeFilterValue()"
-                (change)="onActiveFilterChange($event)"
-              >
-                <option value="">Все</option>
-                <option value="true">Активные</option>
-                <option value="false">Неактивные</option>
-              </select>
-              <label
-                class="text-[10px] uppercase tracking-wide text-muted-foreground"
-                for="rail-category"
-                >Категория</label
-              >
-              <select
-                id="rail-category"
-                class="pi-input w-full text-sm"
-                [value]="categoryFilter() ?? ''"
-                (change)="onCategoryFilterChange($event)"
-              >
-                <option value="">Все</option>
-                @for (c of categories(); track c._id) {
-                  <option [value]="c._id">{{ c.name }}</option>
-                }
-              </select>
-              <label
-                class="text-[10px] uppercase tracking-wide text-muted-foreground"
-                for="rail-sort"
-                >Сортировка</label
-              >
-              <select
-                id="rail-sort"
-                class="pi-input w-full text-sm"
-                [value]="sortSelectValue()"
-                (change)="onRailSortChange($event)"
-                data-test="rail-sort"
-              >
-                <option value="name:asc">Название ↑</option>
-                <option value="name:desc">Название ↓</option>
-                <option value="listPrice:asc">Цена ↑</option>
-                <option value="listPrice:desc">Цена ↓</option>
-              </select>
+            <div class="sticky top-2 hairline rounded-sm bg-paper p-1">
               <button
                 type="button"
-                class="text-xs text-muted-foreground hover:text-ink underline decoration-dotted min-h-touch"
-                (click)="clearFilters()"
-                data-test="clear-filters"
+                class="flex w-full min-h-touch items-center justify-center rounded-sm text-ink hover:bg-paper-2 transition-colors pi-focus-ring"
+                (click)="toggleFiltersRail(); $event.stopPropagation()"
+                [attr.aria-label]="filtersOpen() ? 'Свернуть фильтры' : 'Открыть фильтры'"
+                data-test="filters-rail-toggle"
               >
-                Сбросить
+                <lucide-icon [img]="FilterIcon" [size]="18"></lucide-icon>
               </button>
             </div>
-          }
-        </aside>
 
-        <div class="min-w-0 flex-1">
-          @if (viewMode() === 'grid') {
-            @if (loading()) {
-              <p class="text-sm text-muted-foreground py-8 text-center" data-test="grid-loading">
-                Загрузка…
-              </p>
-            } @else if (data().length === 0) {
-              <p class="text-sm text-muted-foreground py-8 text-center" data-test="grid-empty">
-                {{ emptyMessage() }}
-              </p>
-            } @else {
+            @if (filtersOpen()) {
               <div
-                class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch"
-                data-test="products-grid"
+                class="absolute left-full top-0 ml-2 w-56 hairline rounded-sm bg-paper p-3 shadow-md"
+                data-test="filters-rail-panel"
+                role="dialog"
+                aria-label="Фильтры каталога"
+                (click)="$event.stopPropagation()"
               >
-                @for (row of data(); track row._id) {
-                  <a
-                    [routerLink]="['/products', row._id]"
-                    class="block min-w-0 h-full"
-                    [attr.aria-label]="'Открыть ' + row.name"
-                    [attr.data-test]="'showcase-cell-' + row._id"
+                <div class="text-xs font-medium text-ink mb-2">Фильтры</div>
+                <div class="flex flex-col gap-2">
+                  <label
+                    class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                    for="rail-status"
+                    >Статус</label
                   >
-                    <app-pi-showcase-card
-                      class="h-full"
-                      size="md"
-                      [title]="row.name"
-                      [description]="gridDescription(row)"
-                      [eyebrow]="gridEyebrow(row)"
-                      [mediaUrl]="mainPhotoUrl(row)"
-                      [interactive]="true"
-                      [arrow]="false"
-                    >
-                      <span sc-actions-md class="flex items-center gap-2 justify-between w-full">
-                        <span class="font-medium" data-test="showcase-price">
-                          {{ gridPrice(row) }}
-                        </span>
-                        <span class="text-xs text-muted-foreground">{{ row.unit }}</span>
-                      </span>
-                    </app-pi-showcase-card>
-                  </a>
-                }
-              </div>
-              @if (total() > pageSize) {
-                <div
-                  class="mt-4 flex items-center justify-end gap-2"
-                  data-test="grid-pager"
-                  role="navigation"
-                  aria-label="Страницы каталога"
-                >
-                  <span class="text-xs text-muted-foreground tabular-nums" data-test="pager-info">
-                    {{ pageRangeLabel() }}
-                  </span>
-                  <app-pi-button
-                    variant="ghost"
-                    size="sm"
-                    [disabled]="page() <= 1"
-                    (click)="onPageChange(page() - 1)"
-                    data-test="pager-prev"
-                    >Назад</app-pi-button
+                  <select
+                    id="rail-status"
+                    class="pi-input w-full text-sm"
+                    [value]="statusFilter() ?? ''"
+                    (change)="onStatusFilterChange($event)"
                   >
-                  <span class="text-xs tabular-nums" data-test="pager-page">{{ page() }}</span>
-                  <app-pi-button
-                    variant="ghost"
-                    size="sm"
-                    [disabled]="page() >= totalPages()"
-                    (click)="onPageChange(page() + 1)"
-                    data-test="pager-next"
-                    >Далее</app-pi-button
+                    <option value="">Все</option>
+                    @for (s of STATUS_OPTIONS; track s) {
+                      <option [value]="s">{{ STATUS_LABELS[s] }}</option>
+                    }
+                  </select>
+                  <label
+                    class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                    for="rail-active"
+                    >Активность</label
                   >
+                  <select
+                    id="rail-active"
+                    class="pi-input w-full text-sm"
+                    [value]="activeFilterValue()"
+                    (change)="onActiveFilterChange($event)"
+                  >
+                    <option value="">Все</option>
+                    <option value="true">Активные</option>
+                    <option value="false">Неактивные</option>
+                  </select>
+                  <label
+                    class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                    for="rail-category"
+                    >Категория</label
+                  >
+                  <select
+                    id="rail-category"
+                    class="pi-input w-full text-sm"
+                    [value]="categoryFilter() ?? ''"
+                    (change)="onCategoryFilterChange($event)"
+                  >
+                    <option value="">Все</option>
+                    @for (c of categories(); track c._id) {
+                      <option [value]="c._id">{{ c.name }}</option>
+                    }
+                  </select>
+                  <label
+                    class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                    for="rail-sort"
+                    >Сортировка</label
+                  >
+                  <select
+                    id="rail-sort"
+                    class="pi-input w-full text-sm"
+                    [value]="sortSelectValue()"
+                    (change)="onRailSortChange($event)"
+                    data-test="rail-sort"
+                  >
+                    <option value="name:asc">Название ↑</option>
+                    <option value="name:desc">Название ↓</option>
+                    <option value="listPrice:asc">Цена ↑</option>
+                    <option value="listPrice:desc">Цена ↓</option>
+                  </select>
+                  <button
+                    type="button"
+                    class="text-xs text-muted-foreground hover:text-ink underline decoration-dotted min-h-touch"
+                    (click)="clearFilters()"
+                    data-test="clear-filters"
+                  >
+                    Сбросить
+                  </button>
                 </div>
-              }
+              </div>
             }
-          } @else {
-            <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
-              ← Таблица широкая — прокручивайте горизонтально →
-            </p>
-            <app-pi-table
-              [data]="data()"
-              [columns]="cols"
-              [loading]="loading()"
-              [total]="total()"
-              [page]="page()"
-              [pageSize]="pageSize"
-              [emptyMessage]="emptyMessage()"
-              [ariaLabel]="'Список продукции'"
-              [cellTemplates]="cellTemplates"
-              [rowActions]="rowActionsTplBinding"
-              [localSort]="false"
-              [initialSortKey]="'name'"
-              [initialSortDir]="'asc'"
-              (pageChange)="onPageChange($event)"
-              (sortChange)="onSortChange($event)"
-              (rowClick)="onRowClick($event)"
-              [expandedRow]="expandedTpl"
-              [expandedRowWhen]="isExpandedRow"
-              [expandedRowLabel]="expandedRowLabel"
-            ></app-pi-table>
-          }
+          </aside>
+
+          <div class="min-w-0 flex-1">
+            @if (viewMode() === 'grid') {
+              @if (loading()) {
+                <p class="text-sm text-muted-foreground py-8 text-center" data-test="grid-loading">
+                  Загрузка…
+                </p>
+              } @else if (data().length === 0) {
+                <p class="text-sm text-muted-foreground py-8 text-center" data-test="grid-empty">
+                  {{ emptyMessage() }}
+                </p>
+              } @else {
+                <div
+                  class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch"
+                  data-test="products-grid"
+                >
+                  @for (row of data(); track row._id) {
+                    <a
+                      [routerLink]="['/products', row._id]"
+                      class="block min-w-0 h-full"
+                      [attr.aria-label]="'Открыть ' + row.name"
+                      [attr.data-test]="'showcase-cell-' + row._id"
+                    >
+                      <app-pi-showcase-card
+                        class="h-full"
+                        size="md"
+                        [title]="row.name"
+                        [description]="gridDescription(row)"
+                        [eyebrow]="gridEyebrow(row)"
+                        [mediaUrl]="mainPhotoUrl(row)"
+                        [interactive]="true"
+                        [arrow]="false"
+                      >
+                        <span sc-actions-md class="flex items-center gap-2 justify-between w-full">
+                          <span class="font-medium" data-test="showcase-price">
+                            {{ gridPrice(row) }}
+                          </span>
+                          <span class="text-xs text-muted-foreground">{{ row.unit }}</span>
+                        </span>
+                      </app-pi-showcase-card>
+                    </a>
+                  }
+                </div>
+                @if (total() > pageSize) {
+                  <div
+                    class="mt-4 flex items-center justify-end gap-2"
+                    data-test="grid-pager"
+                    role="navigation"
+                    aria-label="Страницы каталога"
+                  >
+                    <span class="text-xs text-muted-foreground tabular-nums" data-test="pager-info">
+                      {{ pageRangeLabel() }}
+                    </span>
+                    <app-pi-button
+                      variant="ghost"
+                      size="sm"
+                      [disabled]="page() <= 1"
+                      (click)="onPageChange(page() - 1)"
+                      data-test="pager-prev"
+                      >Назад</app-pi-button
+                    >
+                    <span class="text-xs tabular-nums" data-test="pager-page">{{ page() }}</span>
+                    <app-pi-button
+                      variant="ghost"
+                      size="sm"
+                      [disabled]="page() >= totalPages()"
+                      (click)="onPageChange(page() + 1)"
+                      data-test="pager-next"
+                      >Далее</app-pi-button
+                    >
+                  </div>
+                }
+              }
+            } @else {
+              <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
+                ← Таблица широкая — прокручивайте горизонтально →
+              </p>
+              <app-pi-table
+                [data]="data()"
+                [columns]="cols"
+                [loading]="loading()"
+                [total]="total()"
+                [page]="page()"
+                [pageSize]="pageSize"
+                [emptyMessage]="emptyMessage()"
+                [ariaLabel]="'Список продукции'"
+                [cellTemplates]="cellTemplates"
+                [rowActions]="rowActionsTplBinding"
+                [localSort]="false"
+                [initialSortKey]="'name'"
+                [initialSortDir]="'asc'"
+                (pageChange)="onPageChange($event)"
+                (sortChange)="onSortChange($event)"
+                (rowClick)="onRowClick($event)"
+                [expandedRow]="expandedTpl"
+                [expandedRowWhen]="isExpandedRow"
+                [expandedRowLabel]="expandedRowLabel"
+              ></app-pi-table>
+            }
+          </div>
         </div>
       </div>
 
@@ -581,6 +597,10 @@ export class ProductsPage implements OnInit {
 
   protected toggleFiltersRail(): void {
     this.filtersOpen.update((v) => !v);
+  }
+
+  protected closeFilters(): void {
+    this.filtersOpen.set(false);
   }
 
   protected readonly pageSize = PAGE_SIZE;

@@ -1,5 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { formatDateOnly, workTypeOklch, type GanttBar } from '../gantt-bar.model';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import {
+  formatDateOnly,
+  ORDER_STATUS_LABELS,
+  workTypeOklch,
+  type GanttBar,
+} from '../gantt-bar.model';
+import type { OrderStatus } from '../../orders/orders.service';
 import type { GanttZoom } from '../production-cockpit.context';
 
 /** Pixels per calendar day — day zoom is denser, week packs the same span. */
@@ -17,6 +23,7 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
       class="flex flex-col h-full min-h-0 bg-[oklch(0.985_0.005_95)] dark:bg-paper"
       [attr.data-zoom]="zoom()"
       data-test="gantt-bars-root"
+      (click)="$event.stopPropagation()"
     >
       <div
         class="shrink-0 px-3 py-2 flex flex-wrap items-center gap-3 border-b hairline text-xs text-muted-foreground"
@@ -24,7 +31,7 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
         <span class="font-medium text-ink" data-test="gantt-estimate-label"
           >План-оценка по дням видов работ</span
         >
-        <span class="opacity-80">не факт цеха · WorkType.days</span>
+        <span class="opacity-80">календарные дни · не факт цеха · выходные не исключаются</span>
         <span class="opacity-70" data-test="gantt-zoom-hint">
           масштаб: {{ zoom() === 'day' ? 'день' : 'неделя' }}
         </span>
@@ -51,6 +58,23 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
         </div>
       }
 
+      @if (legendItems().length) {
+        <div
+          class="shrink-0 px-3 py-1.5 flex flex-wrap gap-x-3 gap-y-1 border-b hairline text-[10px]"
+          data-test="gantt-worktype-legend"
+        >
+          @for (item of legendItems(); track item.id) {
+            <span class="inline-flex items-center gap-1">
+              <span
+                class="w-2.5 h-2.5 rounded-sm border hairline shrink-0"
+                [style.background]="item.color"
+              ></span>
+              {{ item.name }}
+            </span>
+          }
+        </div>
+      }
+
       @if (!bars().length) {
         <div
           class="shrink-0 px-3 py-1.5 text-xs text-muted-foreground border-b hairline bg-paper-2/40"
@@ -64,26 +88,41 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
 
       <div class="flex-1 min-h-0 overflow-auto">
         <div class="flex" [style.minWidth.px]="timelineMinWidth()">
-          <div class="sticky left-0 z-[2] w-48 shrink-0 border-r hairline bg-paper">
+          <div class="sticky left-0 z-[2] w-56 shrink-0 border-r hairline bg-paper">
             <div
               class="h-7 border-b hairline px-2 flex items-end pb-1 text-[10px] text-muted-foreground"
             >
-              Работа / модуль
+              Заказ / изделие / работа
             </div>
             @for (row of rows(); track row.bar.id) {
-              <div
-                class="h-11 px-2 py-2 text-xs border-b hairline"
+              <button
+                type="button"
+                class="h-11 w-full px-2 py-1.5 text-xs border-b hairline text-left pi-focus-ring hover:bg-paper-2"
                 [class.bg-black/[0.02]]="row.alt"
+                [class.border-t-2]="row.orderBoundary"
+                (click)="selectOrder.emit(row.bar.orderId)"
+                [attr.data-test]="'gantt-label-' + row.bar.id"
               >
-                <div class="font-medium truncate text-ink">{{ row.bar.moduleName }}</div>
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span
+                    class="w-1.5 h-1.5 rounded-full shrink-0"
+                    [style.background]="statusPip(row.bar.orderStatus)"
+                    [attr.title]="statusLabel(row.bar.orderStatus)"
+                    aria-hidden="true"
+                  ></span>
+                  <span class="font-medium truncate text-ink">{{ row.bar.orderNumber }}</span>
+                </div>
                 <div class="text-muted-foreground truncate">
+                  {{ row.bar.productName }} · {{ row.bar.moduleName }}
+                </div>
+                <div class="text-[10px] text-muted-foreground truncate">
                   {{ row.bar.workTypeName }}
                   @if (row.bar.quantityLabel) {
                     <span class="ml-1 font-mono">{{ row.bar.quantityLabel }}</span>
                   }
+                  · {{ row.bar.workerLabel }}
                 </div>
-                <div class="text-[10px] text-muted-foreground">{{ row.bar.workerLabel }}</div>
-              </div>
+              </button>
             } @empty {
               @for (ph of emptyPlaceholders; track ph) {
                 <div
@@ -122,9 +161,11 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
 
             @for (row of rows(); track row.bar.id) {
               <div
-                class="relative h-11 border-b hairline"
+                class="relative h-11 border-b hairline cursor-pointer"
                 [class.bg-black/[0.02]]="row.alt"
+                [class.border-t-2]="row.orderBoundary"
                 [attr.data-test]="'gantt-row-' + row.bar.id"
+                (click)="selectOrder.emit(row.bar.orderId)"
               >
                 @for (grid of dayGrid(); track grid.key) {
                   <div
@@ -148,6 +189,7 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
                       : null
                   "
                   [attr.title]="barTitle(row.bar)"
+                  [attr.aria-label]="barTitle(row.bar)"
                   [attr.data-test]="row.bar.noTerm ? 'gantt-bar-no-term' : 'gantt-bar'"
                 >
                   @if (!row.bar.noTerm) {
@@ -177,8 +219,8 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
         class="shrink-0 px-3 py-2 border-t hairline text-[10px] text-muted-foreground"
         data-test="gantt-legend"
       >
-        Красная линия = сегодня · цвет полоски = вид работ · штриховка = без WorkType.days · ×N =
-        количество (дни не умножаются) · День/Неделя — плотность шкалы
+        Красная линия = сегодня · цвет = вид работ (легенда выше) · штриховка = без WorkType.days ·
+        ×N = количество · клик по строке/полосе открывает заказ
       </div>
     </div>
   `,
@@ -192,8 +234,8 @@ export class GanttBarsComponent {
   readonly usedTodayFallback = input(false);
   readonly readOnly = input(false);
   readonly today = input(formatDateOnly(new Date()));
+  readonly selectOrder = output<string>();
 
-  /** Empty-board placeholder lanes so the calendar never looks like a blank page. */
   protected readonly emptyPlaceholders = [0, 1, 2, 3, 4, 5] as const;
 
   protected readonly totalDays = computed(() =>
@@ -202,7 +244,7 @@ export class GanttBarsComponent {
 
   protected readonly pxPerDay = computed(() => GANTT_PX_PER_DAY[this.zoom()]);
 
-  protected readonly timelineMinWidth = computed(() => this.totalDays() * this.pxPerDay() + 192);
+  protected readonly timelineMinWidth = computed(() => this.totalDays() * this.pxPerDay() + 224);
 
   protected readonly dayGrid = computed(() => {
     const total = this.totalDays();
@@ -212,6 +254,19 @@ export class GanttBarsComponent {
       out.push({ key: `g${i}`, leftPx: i * px });
     }
     return out;
+  });
+
+  protected readonly legendItems = computed(() => {
+    const seen = new Map<string, { id: string; name: string; color: string }>();
+    for (const b of this.bars()) {
+      if (seen.has(b.workTypeId)) continue;
+      seen.set(b.workTypeId, {
+        id: b.workTypeId,
+        name: b.workTypeName,
+        color: workTypeOklch(b.workTypeId, 0.12, 0.72, b.accentHue),
+      });
+    }
+    return [...seen.values()];
   });
 
   protected readonly scaleTicks = computed(() => {
@@ -239,14 +294,21 @@ export class GanttBarsComponent {
     const start = this.rangeStart();
     const total = this.totalDays();
     const px = this.pxPerDay();
-    return this.bars().map((bar, idx) => {
+    const sorted = [...this.bars()].sort((a, b) => {
+      const o = a.orderNumber.localeCompare(b.orderNumber);
+      if (o !== 0) return o;
+      return a.startDate.localeCompare(b.startDate);
+    });
+    return sorted.map((bar, idx) => {
       const left = dayDiff(start, bar.startDate);
       const span = bar.noTerm
         ? Math.max(1, Math.round(total * 0.04))
         : Math.max(1, dayDiff(bar.startDate, bar.endDate) + 1);
+      const prev = idx > 0 ? sorted[idx - 1] : null;
       return {
         bar,
         alt: idx % 2 === 1,
+        orderBoundary: !!prev && prev.orderId !== bar.orderId,
         leftPx: left * px,
         widthPx: Math.max(px * 0.5, span * px),
       };
@@ -262,9 +324,35 @@ export class GanttBarsComponent {
     return workTypeOklch(workTypeId, 0.12, 0.72, hue);
   }
 
+  protected statusLabel(s: OrderStatus): string {
+    return ORDER_STATUS_LABELS[s] ?? s;
+  }
+
+  protected statusPip(s: OrderStatus): string {
+    switch (s) {
+      case 'draft':
+        return 'oklch(0.65 0.02 250)';
+      case 'confirmed':
+        return 'oklch(0.62 0.14 230)';
+      case 'in_production':
+        return 'oklch(0.65 0.16 85)';
+      case 'ready':
+        return 'oklch(0.62 0.15 145)';
+      case 'shipped':
+        return 'oklch(0.55 0.08 280)';
+      case 'delivered':
+        return 'oklch(0.5 0.05 150)';
+      case 'cancelled':
+        return 'oklch(0.55 0.14 25)';
+      default:
+        return 'oklch(0.6 0.02 250)';
+    }
+  }
+
   protected barTitle(b: GanttBar): string {
-    if (b.noTerm) return `${b.moduleName} · ${b.workTypeName} — без срока`;
-    return `${b.moduleName} · ${b.workTypeName} · ${b.startDate}→${b.endDate} · ${b.days}д ${b.quantityLabel ?? ''}`.trim();
+    const head = `${b.orderNumber} · ${this.statusLabel(b.orderStatus)} · ${b.productName} · ${b.moduleName} · ${b.workTypeName}`;
+    if (b.noTerm) return `${head} — без срока`;
+    return `${head} · ${b.startDate}→${b.endDate} · ${b.days}д ${b.quantityLabel ?? ''}`.trim();
   }
 }
 

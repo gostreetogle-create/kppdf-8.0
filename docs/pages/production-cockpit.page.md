@@ -41,13 +41,20 @@
 - Фото изделия/модуля в дереве и иконки в свёрнутом rail (если есть `storageUrl`).
 - Клик по области Ганта закрывает правую панель; rail сворачивается («« список» / «☰ заказы»).
 - Шире календарь: rail `w-56` / collapsed `w-14`, header компактнее.
-- Правка заказа/дней: роли **admin|manager** (зеркало BE `@Roles`).
+- Правка заказа: роли **admin|manager**. Дни вида работ: confirm «для всех заказов» + rollback; UX-gate `production:write` или admin|manager.
+
+### Audit hotfix (2026-08-06 late) — см. `docs/audits/2026-08-06-production-gantt-verdict-response.md`
+
+- Единый `filterOrdersForRail` для rail и multi-order bars; поиск пересчитывает Гант.
+- На полосах: номер заказа, изделие, status pip, легенда WorkType, 7 hue buckets.
+- Toolbar: Обновить / Сброс фильтров / Сегодня / Весь горизонт.
+- Даты = **календарная** оценка (выходные не исключаются) — не факт цеха.
 
 ### Services / context
 
 | Сервис | Методы |
 |--------|--------|
-| `ProductionCockpitContext` | selectedOrderId, search, activeOnly, zoom, priorityFilter, dateFrom/To |
+| `ProductionCockpitContext` | selectedOrderId, search, activeOnly, zoom, priorityFilter, dateFrom/To, resetFilters |
 | `ProductionReadFacade` | loadOrders, loadBarsForOrders, buildOrderEstimatePublic, getWorkerLabelsMap |
 | `OrdersService` | list() / update() |
 
@@ -71,11 +78,12 @@
 |----|------------|
 | TZ-PRODUCTION-303 | Shell + rail + gantt + PAGE_KEYS + director read Roles |
 | TZ-PRODUCTION-302 | WorkType.days |
+| TZ-PRODUCTION-308…310 | backlog polish / safe edit / a11y (см. audit response) |
 | TZ-PRODUCTION-304+ | stuck / check-in / auto-chain (plug-ins) |
 
 ### Known limitations
 
-- Worker column = «—».
+- Полная keyboard-семантика grid и BE-контракт `production:write` на WorkTypes — в 308–309.
 - Нет drag-reschedule / assign writes / ProductionSchedule SoT.
 - Browser smoke зависит от живого API/Mongo.
 
@@ -83,8 +91,8 @@
 
 | Режим | Поведение |
 |-------|-----------|
-| День | ~48px/день, подписи дат на шкале |
-| Неделя | ~14px/день, подписи недель — плотнее весь горизонт |
+| День | ~36px/день, подписи дат на шкале |
+| Неделя | ~12px/день, подписи недель — плотнее весь горизонт |
 
 ### Smoke для PO (после land)
 

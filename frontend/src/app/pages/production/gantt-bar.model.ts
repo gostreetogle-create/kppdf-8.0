@@ -235,22 +235,42 @@ export function buildGanttBars(order: OrderEstimateInput, today: Date = new Date
   return bars;
 }
 
-/** Stable OKLCH fill from workTypeId (colorful bars — PO OK). Optional catalog hue. */
+/**
+ * Stable WorkType palette — max 7 hues (design note).
+ * Hash / accentHue snap to nearest bucket so legend stays readable.
+ */
+export const WORK_TYPE_HUE_BUCKETS = [25, 75, 130, 185, 230, 285, 330] as const;
+
+export function snapWorkTypeHue(raw: number): number {
+  const h = ((Math.round(raw) % 360) + 360) % 360;
+  let best: number = WORK_TYPE_HUE_BUCKETS[0]!;
+  let bestDist = 360;
+  for (const bucket of WORK_TYPE_HUE_BUCKETS) {
+    const dist = Math.min(Math.abs(h - bucket), 360 - Math.abs(h - bucket));
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = bucket;
+    }
+  }
+  return best;
+}
+
+/** Stable OKLCH fill from workTypeId. Optional catalog accentHue (snapped to 7 buckets). */
 export function workTypeOklch(
   workTypeId: string,
   chroma = 0.12,
   lightness = 0.72,
   hueOverride?: number | null,
 ): string {
-  let h = 0;
+  let raw = 0;
   if (hueOverride != null && Number.isFinite(hueOverride)) {
-    h = ((Math.round(hueOverride) % 360) + 360) % 360;
+    raw = hueOverride;
   } else {
     for (let i = 0; i < workTypeId.length; i++) {
-      h = (h * 31 + workTypeId.charCodeAt(i)) >>> 0;
+      raw = (raw * 31 + workTypeId.charCodeAt(i)) >>> 0;
     }
-    h = h % 360;
   }
+  const h = snapWorkTypeHue(raw);
   return `oklch(${lightness} ${chroma} ${h})`;
 }
 

@@ -58,4 +58,13 @@ export class ProductionCockpitContext {
   setRailCollapsed(value: boolean): void {
     this.railCollapsed.set(value);
   }
+
+  /** Reset rail filters (keeps selection / zoom). */
+  resetFilters(): void {
+    this.search.set('');
+    this.activeOnly.set(true);
+    this.priorityFilter.set('all');
+    this.dateFrom.set(null);
+    this.dateTo.set(null);
+  }
 }

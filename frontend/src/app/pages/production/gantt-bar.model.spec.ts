@@ -50,6 +50,20 @@ describe('gantt-bar.model', () => {
     expect(fallback.anchor.getDate()).toBe(6);
   });
 
+  it('snaps workType hues to at most 7 stable buckets', async () => {
+    const { WORK_TYPE_HUE_BUCKETS, snapWorkTypeHue, workTypeOklch } =
+      await import('./gantt-bar.model');
+    expect(WORK_TYPE_HUE_BUCKETS).toHaveLength(7);
+    expect(snapWorkTypeHue(0)).toBe(WORK_TYPE_HUE_BUCKETS[0]);
+    expect(snapWorkTypeHue(100)).toBe(75);
+    expect(snapWorkTypeHue(120)).toBe(130);
+    const a = workTypeOklch('wt-aaaaaaaa');
+    const b = workTypeOklch('wt-bbbbbbbb');
+    expect(a).toMatch(/^oklch\(/);
+    expect(WORK_TYPE_HUE_BUCKETS.some((h) => a.includes(` ${h})`))).toBe(true);
+    expect(WORK_TYPE_HUE_BUCKETS.some((h) => b.includes(` ${h})`))).toBe(true);
+  });
+
   it('treats null/0/invalid days as no-term', () => {
     expect(normalizeWorkTypeDays(null)).toBeNull();
     expect(normalizeWorkTypeDays(undefined)).toBeNull();

@@ -326,7 +326,7 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
     expect(keys).not.toContain('kind');
   });
 
-  it('filters rail toggles open', async () => {
+  it('filters rail toggles open as overlay', async () => {
     const fixture = await renderPage();
     const toggle = fixture.nativeElement.querySelector(
       '[data-test="filters-rail-toggle"]',
@@ -335,6 +335,22 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
     toggle.click();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-test="filters-rail-panel"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="filters-backdrop"]')).toBeTruthy();
+  });
+
+  it('filters backdrop click closes overlay', async () => {
+    const fixture = await renderPage();
+    const toggle = fixture.nativeElement.querySelector(
+      '[data-test="filters-rail-toggle"]',
+    ) as HTMLElement;
+    toggle.click();
+    fixture.detectChanges();
+    const backdrop = fixture.nativeElement.querySelector(
+      '[data-test="filters-backdrop"]',
+    ) as HTMLElement;
+    backdrop.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="filters-rail-panel"]')).toBeFalsy();
   });
 
   it('grid card routerLink points to /products/:id', async () => {

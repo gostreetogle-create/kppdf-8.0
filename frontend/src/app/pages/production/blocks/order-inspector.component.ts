@@ -74,6 +74,13 @@ const PRIORITIES: { value: OrderPriority; label: string; hint: string }[] = [
               <span class="text-amber-700 dark:text-amber-400"> · оценка read-only</span>
             }
           </div>
+          <a
+            class="text-[11px] underline-offset-2 hover:underline text-ink"
+            [routerLink]="['/orders']"
+            [queryParams]="{ q: order().number }"
+            data-test="inspector-open-order"
+            >Открыть в списке заказов</a
+          >
         </div>
         <button
           type="button"
@@ -394,10 +401,21 @@ export class OrderInspectorComponent {
 
   protected async onDaysChange(workTypeId: string, ev: Event): Promise<void> {
     if (!this.canEditCatalog()) return;
-    const raw = (ev.target as HTMLInputElement).value;
+    const inputEl = ev.target as HTMLInputElement;
+    const raw = inputEl.value;
     const days = Math.floor(Number(raw));
+    const previous = this.daysDraft(workTypeId, this.findTreeDays(workTypeId));
     if (!Number.isFinite(days) || days < 1) {
       this.toast.error('Дни: целое число ≥ 1');
+      inputEl.value = String(previous);
+      return;
+    }
+    const ok = window.confirm(
+      'Изменить норматив вида работ (дни) для ВСЕХ заказов с этим видом?\n\n' +
+        'Это правка справочника WorkType, не только текущего заказа.',
+    );
+    if (!ok) {
+      inputEl.value = String(previous);
       return;
     }
     this.daysOverrides.update((m) => ({ ...m, [workTypeId]: days }));
@@ -406,12 +424,30 @@ export class OrderInspectorComponent {
     this.daysSaving.set(false);
     if (!res.ok) {
       this.toast.error(extractErrorMessage(res.error));
+      this.daysOverrides.update((m) => {
+        const next = { ...m };
+        if (typeof previous === 'number') next[workTypeId] = previous;
+        else delete next[workTypeId];
+        return next;
+      });
+      inputEl.value = String(previous);
       return;
     }
-    this.toast.success('Дни вида работ обновлены');
+    this.toast.success('Норматив дней вида работ обновлён (глобально)');
     this.facade.clearCaches();
     await this.reloadTree(this.order());
     this.changed.emit();
+  }
+
+  private findTreeDays(workTypeId: string): number | null | undefined {
+    for (const item of this.tree()?.items ?? []) {
+      for (const mod of item.modules) {
+        for (const wt of mod.workTypes) {
+          if (wt.workTypeId === workTypeId) return wt.days;
+        }
+      }
+    }
+    return undefined;
   }
 
   private async reloadTree(order: Order): Promise<void> {
