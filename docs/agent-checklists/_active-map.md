@@ -18,7 +18,7 @@
 | **TZD-19** graph + integrity | PARK |
 
 ## Checkpoint 2026-08-08T00:40Z
-- DONE: TZD-20 (mcp.json clipboard) — Cursor PASS → archive
+- DONE: TZD-20 (mcp.json clipboard) @ `f3ca1007947e2e727af4f24a05ac4f8ace71aade`
 - Peer active: TZ-CATALOG-331 (FE catalog)
 - NEXT: idle until PO (TZD-18 / other)
 - Deploy: NO

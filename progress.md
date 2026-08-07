@@ -5,8 +5,8 @@
 **Gates:** desktop typecheck PASS; svelte-check PASS; snippet tests 4/4 PASS
 **Archive:** `tasks/_archive/2026-08/TZD-20.done.md`
 **Lock:** `.mimocode/locks/TZD-20-mcp-client-json-copy.lock`
-**Commit:** PENDING
-**Known limits:** JWT ~15m; disk write mcp.json — successor; package.json test script may be local-only if not staged
+**Commit:** `f3ca1007947e2e727af4f24a05ac4f8ace71aade`
+**Known limits:** JWT ~15m; disk write mcp.json — successor; `package.json` test script left unstaged (run via mcp tsx)
 
 ---
 
