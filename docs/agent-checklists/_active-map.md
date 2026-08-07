@@ -25,12 +25,14 @@
 |------|------|
 | TZ-COST-302/303 | **only on PO** (after 301 DONE) |
 | **TZD-21** pairing keys TTL | `tasks/_backlog/desktop/TZD-21-…` |
+| **TZD-22** AI Import Task (точка сборки) | `tasks/_backlog/desktop/TZD-22-ai-import-task.md` |
 | TZD-18/19 | PARK |
+| TZD-23 | PARK (после TZD-22) — matching + HITL |
 
-## Checkpoint 2026-08-07T23:40Z
-- DONE: TZ-CATALOG-333 (nest + BOM legend); TZ-COST-301; TZ-CATALOG-332
+## Checkpoint 2026-08-08 (Import Task)
+- DONE: TZ-CATALOG-333; TZ-COST-301; TZD-17…20
 - IN WORK: none
-- NEXT: idle / COST-302 only on PO / TZD-21
+- NEXT: TZD-22 (hybrid import foundation) или TZD-21 (pairing) — по PO
 - Deploy: NO
 - Blockers: none
 - _active/: empty
