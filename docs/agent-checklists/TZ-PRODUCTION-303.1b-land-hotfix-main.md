@@ -30,14 +30,14 @@
 - [x] Angular development build PASS (pre-existing `NG8113` warning in `DocumentsPage`)
 - [x] `git diff --check` PASS
 - [x] archive created; active marker removed; lock created (gitignored by convention)
-- [x] push main: pending final closeout commit
+- [x] push main: `fac21a7` → `origin/main`
 - [x] deploy NO
 
 ## Executor report (auto)
 
 ```
-commit: pending final closeout commit
-push: pending final closeout commit
+commit: `fac21a7`
+push: `origin/main` updated to `fac21a7`
 landed_base: cde23a5
 landed_deeplink: c622db5
 working_tree_cleanup: duplicate compact inspector link removed
