@@ -10,7 +10,7 @@
 | TZD-17 … TZD-20 | archives + locks · TZD-20 `f3ca100` |
 | TZ-CATALOG-330 | archive + lock |
 | TZ-CATALOG-331 | archive + lock · `d70461d` |
-| **TZ-CATALOG-332** kind colors | archive + lock · commit pending |
+| **TZ-CATALOG-332** kind colors | archive + lock · `23c47b0c564bfba55cff9619818fb54b63d32239` |
 | **TZ-COST-301** hourlyRate required | archive + lock · `79edbea3c4c7957cb8ce7973f9acb1a29e2ca1a6` |
 
 ## IN WORK
@@ -28,7 +28,7 @@
 | TZD-18/19 | PARK |
 
 ## Checkpoint 2026-08-08T00:00Z
-- DONE: TZ-COST-301; TZ-CATALOG-332 closeout in progress
-- IN WORK: none after archive/active cleanup
-- NEXT: CLAIM TZ-CATALOG-333 only after this closeout
+- DONE: TZ-COST-301; TZ-CATALOG-332 @ `23c47b0c564bfba55cff9619818fb54b63d32239`
+- IN WORK: none
+- NEXT: CLAIM TZ-CATALOG-333 when PO explicitly starts it
 - Deploy: NO

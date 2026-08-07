@@ -1,7 +1,7 @@
 # TZ-CATALOG-332 checklist
 
 > Status: **DONE**
-> Marker: `tasks/_active/TZ-CATALOG-332.md`
+> Marker: archived; `tasks/_active/TZ-CATALOG-332.md` removed
 > Commit/push: **YES** per PO queue instruction
 
 ## Claim slot
@@ -47,7 +47,8 @@
 
 ## Executor report
 
-- Cursor PASS received from PO; closeout commit pending SHA.
+- Cursor PASS received from PO.
+- commit: `23c47b0c564bfba55cff9619818fb54b63d32239`
 
 ## Review handoff
 
