@@ -190,8 +190,9 @@ function daysValidator(c: { value: number | null }): { invalidDays: true } | nul
         </app-pi-button>
         <app-pi-button
           variant="default"
-          type="submit"
+          type="button"
           [disabled]="form.invalid || submitting()"
+          (click)="onSubmit()"
           data-test="submit-button"
         >
           {{ submitting() ? 'Сохранение…' : isEdit ? 'Сохранить' : 'Создать' }}

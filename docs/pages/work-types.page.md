@@ -43,13 +43,13 @@
 
 ## Особенности
 
-- **Inline `<table>`** — НЕ использует `<app-pi-table>`
-- **Client-side search** — `createClientSearchState` фильтрует по `name`, `section`, `department`
-- **Client-side sort** — `createSortState` с 4 ключами
-- **isActive switch** — `<app-pi-switch>` inline toggle, вызывает `PATCH /api/work-types/:id`
-- **Деактивированные строки** — `opacity-50` CSS-класс
-- **Row actions** — `<app-pi-row-actions>` внутри custom `<table>`
-- **Flat array** — backend возвращает `WorkType[]`, не `{ items, total, page, limit }`
+- **`app-pi-table`** + client-side search/sort/paginate (flat array с бэка)
+- **isActive switch** — inline toggle → `PATCH /api/work-types/:id`
+- **Цвет на Ганте (`accentHue`)** — пресеты в форме; OKLCH на полосках кокпита
+  (`workTypeOklch`). После смены цвета обновить страницу Производства (каталог
+  видов в facade кэшируется до reload).
+- **Диалог:** кнопка «Сохранить» в footer вызывает `(click)="onSubmit()"` —
+  она **вне** `<form>`, поэтому `type="submit"` не срабатывает (баг 2026-08-07).
 
 ## TZ reference
 
@@ -57,6 +57,7 @@
 |----|------------|
 | TZ-83 | Первая реализация |
 | TZ-PRODUCTION-302 | Поле `days` (календарные дни) — schema/DTO/service + FE-диалог + колонка «Дней»; >0 или null (stuck path) |
+| — | `accentHue` для цвета на Ганте; фикс Save вне form (2026-08-07) |
 
 ---
 
