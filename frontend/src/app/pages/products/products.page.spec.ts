@@ -21,6 +21,7 @@ import { of } from 'rxjs';
 import { ProductsPage } from './products.page';
 import { ProductsService } from '../../shared/services/products.service';
 import { ProductModulesService } from '../../shared/services/pi-product-modules.service';
+import { CategoriesService } from '../../shared/services/categories.service';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { API_BASE_URL } from '../../core/api.tokens';
@@ -101,6 +102,10 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
         { provide: ProductsService, useValue: productsSvc },
         {
           provide: ProductModulesService,
+          useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) },
+        },
+        {
+          provide: CategoriesService,
           useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) },
         },
         { provide: PiDialogService, useValue: dialogSpy },
@@ -276,9 +281,9 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
     expect(fixture.nativeElement.querySelector('[data-test="expanded-row"]')).toBeFalsy();
   });
 
-  // ─── TZ-PRODUCTS-305: view toggle (list ↔ grid) + showcase cards ───
+  // ─── Catalog UX: view toggle, columns, filters rail ───
 
-  it('view-grid button switches to grid and renders sm showcase cards', async () => {
+  it('view-grid button switches to grid and renders md showcase cards', async () => {
     const fixture = await renderPage();
     const comp = fixture.componentInstance as unknown as { viewMode: () => string };
 
@@ -292,12 +297,10 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
     expect(comp.viewMode()).toBe('grid');
     expect(fixture.nativeElement.querySelector('[data-test="products-grid"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="showcase-cell-p1"]')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('[data-test="showcase-cell-p2"]')).toBeTruthy();
-    // pi-table is hidden in grid mode
     expect(fixture.nativeElement.querySelector('app-pi-table')).toBeFalsy();
   });
 
-  it('grid card shows name, price, status badge and avatar initials', async () => {
+  it('grid card shows name and price', async () => {
     const fixture = await renderPage();
     const gridBtn = fixture.nativeElement.querySelector(
       '[data-test="view-grid-button"]',
@@ -309,25 +312,29 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
       '[data-test="showcase-cell-p1"]',
     ) as HTMLElement;
     expect(card.textContent).toContain('Окно ПВХ');
-    // avatar initials derived from name (PiAvatar monogram)
-    expect(fixture.nativeElement.querySelector('[data-test="showcase-avatar"]')).toBeTruthy();
-    // price formatted via formatPrice (PRODUCTS[0].listPrice undefined → empty)
     expect(fixture.nativeElement.querySelector('[data-test="showcase-price"]')).toBeTruthy();
   });
 
-  it('grid status badge shows isActive=false as «Неактивен»', async () => {
+  it('table keeps photo+name and hides sku/status/stock/kind', async () => {
     const fixture = await renderPage();
-    const gridBtn = fixture.nativeElement.querySelector(
-      '[data-test="view-grid-button"]',
-    ) as HTMLElement;
-    gridBtn.click();
-    fixture.detectChanges();
+    const comp = fixture.componentInstance as unknown as { cols: { key: string }[] };
+    const keys = comp.cols.map((c) => c.key);
+    expect(keys).toEqual(expect.arrayContaining(['photoIds', 'name', 'unit', 'listPrice']));
+    expect(keys).not.toContain('sku');
+    expect(keys).not.toContain('status');
+    expect(keys).not.toContain('stockQty');
+    expect(keys).not.toContain('kind');
+  });
 
-    const badge = fixture.nativeElement.querySelector(
-      '[data-test="showcase-status"]',
+  it('filters rail toggles open', async () => {
+    const fixture = await renderPage();
+    const toggle = fixture.nativeElement.querySelector(
+      '[data-test="filters-rail-toggle"]',
     ) as HTMLElement;
-    // PRODUCTS fixtures have no status and isActive is undefined → statusLabel '' → badge hidden
-    expect(badge).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="filters-rail-panel"]')).toBeFalsy();
+    toggle.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="filters-rail-panel"]')).toBeTruthy();
   });
 
   it('grid card routerLink points to /products/:id', async () => {

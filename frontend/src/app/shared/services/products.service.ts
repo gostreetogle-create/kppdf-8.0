@@ -10,6 +10,7 @@ import {
   SilentResult,
 } from '../../core/silent-http';
 import type { CompositionLine, ProductModule } from './pi-product-modules.service';
+import type { Photo } from './photos.service';
 
 export type ProductKind = 'good' | 'service' | 'work';
 export type ProductStatus = 'new' | 'active' | 'archived' | 'draft';
@@ -38,7 +39,8 @@ export interface Product {
   stockQty?: number;
   description?: string;
   notes?: string;
-  photoIds?: string[];
+  /** List/detail populate: ObjectId strings or Photo docs with storageUrl. */
+  photoIds?: Array<string | Photo>;
   dimensions?: ProductDimensions;
   weightKg?: number;
   /** Explicitly nullable: choosing «Не выбран» clears ralCode to `null` (TZ-PRODUCTS-302). */

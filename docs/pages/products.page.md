@@ -183,7 +183,8 @@ TZ-MODULES-301 (карточки-строки, как material-cards в module-d
 ## Карточки-витрины / toggle list ↔ grid (TZ-PRODUCTS-305)
 
 Каталог товаров получил переключение вида: **list** (pi-table, дефолт) ↔
-**grid** (sm showcase-карточки). Переиспользуемый `PiShowcaseCardComponent`
+**grid** (md showcase-карточки с `mediaUrl` из populate `photoIds`).
+Переиспользуемый `PiShowcaseCardComponent`.
 (три размерных варианта sm/md/lg, `shared/ui/card/pi-showcase-card.component.ts`,
 перенесён идентичным контентом из part-1 `e00be99`) — общий UI Kit для
 карточек-витрин товара/модуля/материала.
@@ -194,23 +195,21 @@ TZ-MODULES-301 (карточки-строки, как material-cards в module-d
   localStorage (`pi-products-view-mode`) — паттерн `snapSettings` из builder
   (load/save в try/catch, дефолт `list`).
 - **Grid-вид:** сетка `grid-cols-1 md:2 xl:3 gap-4`; каждая ячейка —
-  `<a [routerLink]="['/products', id]">` с `app-pi-showcase-card size="sm"`:
-  - `eyebrow` — метка вида (Товар/Услуга/Работа);
-  - `title` — название; `description` — SKU · подкатегория;
-  - `sc-actions-sm` слот — `app-pi-avatar` (инициалы по названию, т.к. фото =
-    отдельная сущность в list-payload) + badge статуса (`statusLabel`/
-    `statusBadgeClass`, muted для Неактивен/Архив/Черновик) + цена
-    (`formatPrice`);
-  - loading / empty state (`grid-loading` / `grid-empty`) по образцу pi-table.
-- **Template-refs хоустированы из `@if/@else`** на корень компонента —
-  `@ViewChild({ static: true })` резолвится независимо от viewMode
-  (иначе row-actions/name-ссылки терялись в grid-режиме).
-- **md/lg варианты** компонента готовы для будущих витрин (детальные
-  страницы — отдельными TZ).
+  `<a [routerLink]="['/products', id]">` с `app-pi-showcase-card size="md"`:
+  - `mediaUrl` — первое populate-фото (`photoIds[].storageUrl`);
+  - `eyebrow` — вид; `title` — название; `description` — подкатегория · N мод.;
+  - `sc-actions-md` — цена + ед.; pager под сеткой при `total > pageSize`;
+  - loading / empty (`grid-loading` / `grid-empty`).
+- **Таблица (2026-08-07):** Фото · Название · Ед. · Цена · Модулей
+  (без SKU / Вид / Статус / Остаток).
+- **Фильтры:** select статус/активность/категория в tools + левая полоска
+  `filters-rail` (`w-12` → панель с теми же фильтрами + сортировка).
+- **Template-refs** на корне — `@ViewChild({ static: true })` независимо от viewMode.
+- **API list:** `status`, `isActive`, `categoryId` + search/sort/page.
 
 ---
 
-_Создано: 2026-07-19. Последнее обновление: 2026-08-06 (TZ-CATALOG-320: composition cascade and material kinds)._
+_Создано: 2026-07-19. Последнее обновление: 2026-08-07 (catalog UX: photo/filters/grid pager)._
 
 ## Состав изделия (TZ-CATALOG-320)
 
