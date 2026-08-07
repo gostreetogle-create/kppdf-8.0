@@ -768,11 +768,23 @@ function spawnDetached(cmd, args, cwd, name, envExtra = {}) {
     if (useTui()) renderStatus();
   }
   const dirName = cwd.split(/[\\/]/).pop();
+  /** TZ-OPS-301: vite proxy race until backend health is ready. */
+  const isFrontendProxyRaceNoise = (line) => {
+    if (!line.includes('http proxy error')) return false;
+    return line.includes('ECONNREFUSED') || line.includes('AggregateError');
+  };
+  const shouldSuppressFrontendProxy = (line) =>
+    name === 'frontend' &&
+    state.services.backend?.status !== 'ready' &&
+    isFrontendProxyRaceNoise(line);
+
   const onChunk = (b) => {
     const chunk = b.toString();
     if (name) {
       for (const line of chunk.split('\n')) {
-        if (line.trim()) pushLog(name, line);
+        if (!line.trim()) continue;
+        if (shouldSuppressFrontendProxy(line)) continue;
+        pushLog(name, line);
       }
     }
     if (useTui()) {
@@ -781,7 +793,21 @@ function spawnDetached(cmd, args, cwd, name, envExtra = {}) {
     } else {
       // Non-TUI: passthrough с префиксом [name]
       const prefix = name ? `[${name}] ` : `[${dirName}] `;
-      process.stdout.write(prefix + chunk);
+      if (name === 'frontend' && state.services.backend?.status !== 'ready') {
+        const parts = chunk.split('\n');
+        for (let i = 0; i < parts.length; i++) {
+          const line = parts[i];
+          const last = i === parts.length - 1;
+          if (isFrontendProxyRaceNoise(line)) continue;
+          if (last && line === '' && parts.length > 1) {
+            process.stdout.write('\n');
+            continue;
+          }
+          process.stdout.write(prefix + line + (last ? '' : '\n'));
+        }
+      } else {
+        process.stdout.write(prefix + chunk);
+      }
     }
   };
   child.stdout.on('data', onChunk);

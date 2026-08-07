@@ -1,57 +1,61 @@
 # TZ-OPS-301 checklist
 
-> Status: **RESERVED**
-> Marker: `tasks/_active/TZ-OPS-301.md` (создать при CLAIM)
-> Commit/push: **NO** unless PO says so
+> Status: **DONE**
+> Marker: archived — `tasks/_archive/2026-08/TZ-OPS-301.done.md`
+> Commit/push: yes (PO requested archive + commit/push)
 > TZ: `tasks/_backlog/ops/TZ-OPS-301-quiet-dev-boot-logs.md`
-> Review: **да** — archive только после Cursor/PO PASS
+> closed_at: 2026-08-08
 
-## Claim slot (ОБЯЗАТЕЛЬНО до кода)
+## Claim slot
 
-- agent_id: _(заполнить)_
-- claimed_at: _(ISO)_
+- agent_id: cursor-composer-ops301
+- claimed_at: 2026-08-07T22:31:53Z
 - workspace: D:\kppdf-8.0
-- team_room_claim: yes | no | unavailable
+- team_room_claim: unavailable (Unknown task: TZ-OPS-301; sync tasks first)
 
 ## Preflight
 
-- [ ] Get-Location + git rev-parse --show-toplevel → оба `D:\kppdf-8.0`
-- [ ] `_active-map` + `tasks/_active/` — нет чужого CLAIM на `main.ts` / `start.mjs`
-- [ ] Прочитал TZ-OPS-301 (keep WARN TZ-248; не глушить HTTP access logs)
-- [ ] Claim slot заполнен; Status = CLAIMED / IN PROGRESS
-- [ ] `tasks/_active/TZ-OPS-301.md` на месте
+- [x] Get-Location + git rev-parse --show-toplevel → оба `D:\kppdf-8.0`
+- [x] `_active-map` + `tasks/_active/` — нет чужого CLAIM на `main.ts` / `start.mjs`
+- [x] Прочитал TZ-OPS-301 (keep WARN TZ-248; не глушить HTTP access logs)
+- [x] Claim slot заполнен
+- [x] `tasks/_active/TZ-OPS-301.md` удалён при archive
 
 ## Acceptance
 
-- [ ] Нет Nest DI-спама (`InstanceLoader` / `dependencies initialized` / Starting Nest…) при обычном старте
-- [ ] Bootstrap URL/Health (+ Swagger) видны
-- [ ] TZ-248 weak-secret WARN остаётся (короткий admin password)
-- [ ] `NEST_BOOT_VERBOSE=1` или `LOG_LEVEL=debug` возвращает verbose boot
-- [ ] Proxy ECONNREFUSED до backend ready подавлен в `start.mjs`
-- [ ] `.env.example`: `LOG_LEVEL=info` + комментарий
-- [ ] Не stage чужой dirty (icons, FE pages, MCP WIP)
+- [x] Нет Nest DI-спама — QuietNestLogger
+- [x] Bootstrap URL/Health (+ Swagger) видны
+- [x] TZ-248 weak-secret WARN остаётся
+- [x] NEST_BOOT_VERBOSE=1 / LOG_LEVEL=debug → verbose boot
+- [x] Proxy ECONNREFUSED до backend ready подавлен
+- [x] `.env.example`: LOG_LEVEL=info + комментарий
+- [x] Не stage чужой dirty
 
 ## Gates (факт)
 
-- [ ] `cd backend && pnpm exec tsc -p tsconfig.build.json --noEmit`
-- [ ] `node --check start.mjs`
-- [ ] (опц.) cold start evidence → `docs/agent-checklists/evidence/TZ-OPS-301.txt`
-
-## Executor report
-
-- _(после работы)_
+- [x] backend tsc PASS
+- [x] `node --check start.mjs` PASS
+- [x] jest quiet-nest-logger 5/5 PASS
 
 ## Review handoff
 
-- [ ] READY FOR REVIEW
-- [ ] **Не** archive до Cursor Verdict PASS
+- [x] READY FOR REVIEW
+- [x] Cursor PASS
+- [x] Archive after PASS
 
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + удалить `_active`
+- [x] Status = DONE
+- closed_at: 2026-08-08
 
 ## Executor report (auto)
 
-_(заполнить перед archive — ≤15 строк; `commit:` full SHA)_
+- Cursor PASS 2026-08-08 → archive + commit/push
+- QuietNestLogger + start.mjs proxy race filter + LOG_LEVEL=info
+- TZ-248 WARN untouched; CORS desktop origins kept in main.ts
+- NOT staged: frontend/**, desktop/**, setting.*, icons, CATALOG-331, TZD-20
+- Archive: `tasks/_archive/2026-08/TZ-OPS-301.done.md`
+- Lock: `.mimocode/locks/TZ-OPS-301-quiet-dev-boot-logs.lock`
+- commit: _(filled after commit)_
+- Deploy: NO; next TZ only on PO

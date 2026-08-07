@@ -1,3 +1,14 @@
+## [2026-08-08] — TZ-OPS-301 DONE: Quiet local boot logs (Nest DI + proxy race)
+**Исполнитель:** cursor-composer-ops301 (Cursor PASS → archive)
+**Статус:** DONE on main
+**Что сделано кратко:** QuietNestLogger глушит Nest DI INFO; `start.mjs` не печатает vite proxy ECONNREFUSED до backend ready; `.env.example` LOG_LEVEL=info. TZ-248 WARN сохранён.
+**Gates:** backend tsc PASS; `node --check start.mjs` PASS; jest quiet-nest-logger 5/5 PASS
+**Archive:** `tasks/_archive/2026-08/TZ-OPS-301.done.md`
+**Lock:** `.mimocode/locks/TZ-OPS-301-quiet-dev-boot-logs.lock`
+**Known limits:** HTTP pino-http access logs вне scope; cold-start evidence optional
+
+---
+
 ## [2026-08-08] — TZD-17 DONE: MCP semantic domain layer (schema + validate + inbox audit)
 **Исполнитель:** cursor-composer-tzd17 (Cursor PASS → archive)
 **Статус:** DONE on main

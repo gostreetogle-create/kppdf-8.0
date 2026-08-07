@@ -13,6 +13,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { MulterExceptionFilter } from './common/filters/multer-exception.filter';
 import { VersionConflictFilter } from './common/filters/version-conflict.filter';
 import { ThrottlerBehindAuthGuard } from './common/guards/throttler-behind-auth.guard';
+import { createQuietNestLogger } from './common/logging/quiet-nest-logger';
 import { SecretValidationService } from './config/secret-validation.service';
 
 async function bootstrap() {
@@ -65,7 +66,10 @@ async function bootstrap() {
     bufferLogs: true,
   });
 
-  app.useLogger(app.get(PinoLogger));
+  // TZ-OPS-301: mute Nest DI INFO spam (InstanceLoader / RoutesResolver / …).
+  // warn/error always pass; NEST_BOOT_VERBOSE=1 or LOG_LEVEL=debug → full dump.
+  // TZ-248 secret WARN runs above via Nest Logger before create — untouched.
+  app.useLogger(createQuietNestLogger(app.get(PinoLogger)));
 
   // Helmet with CSP and HSTS hardening.
   // NOTE: Angular production (beasties) may emit
@@ -105,10 +109,18 @@ async function bootstrap() {
 
   // TZ-91 §4 Phase A.6: CORS multi-origin — read CORS_ORIGIN (preferred, new convention) or
   // CORS_ORIGINS (legacy, deprecated). Comma-separated list, trimmed, empty handlers dropped.
-  // Desktop (Tauri 2): dev origin http://localhost:1420, prod tauri://localhost / https://tauri.localhost.
+  // Desktop (Tauri 2):
+  // - dev: http://localhost:1420
+  // - Windows packaged WebView2: http://tauri.localhost (default scheme)
+  // - macOS/Linux / optional https scheme: tauri://localhost, https://tauri.localhost
   const corsEnv = process.env.CORS_ORIGIN ?? process.env.CORS_ORIGINS ?? 'http://localhost:3000,http://localhost:4200';
   const corsOrigins = corsEnv.split(',').map((o) => o.trim()).filter(Boolean);
-  for (const desktopOrigin of ['http://localhost:1420', 'tauri://localhost', 'https://tauri.localhost']) {
+  for (const desktopOrigin of [
+    'http://localhost:1420',
+    'http://tauri.localhost',
+    'tauri://localhost',
+    'https://tauri.localhost',
+  ]) {
     if (!corsOrigins.includes(desktopOrigin)) corsOrigins.push(desktopOrigin);
   }
   app.enableCors({
