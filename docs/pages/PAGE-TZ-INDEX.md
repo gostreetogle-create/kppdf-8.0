@@ -1,7 +1,7 @@
 # Page ↔ TZ index
 
 **Purpose:** Search by page/route to find which tasks touched or will touch it.  
-**Updated:** 2026-08-06 (WAREHOUSE-UX-301: warehouse filter, warehouses page doc)
+**Updated:** 2026-08-07 (PRODUCTION-303.1 hotfix closeout + 308–310 / drawings parked)
 
 How to use: `Ctrl+F` по route или имени страницы. Новые TZ обязаны указывать
 `PAGES:` / `PAGE_DOCS:` в шапке (см. `tz-authoring`).
@@ -27,7 +27,8 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | `/modules`, `/modules/:id` | modules.page.md, module-detail.page.md | MODULES-*; photos; **320** module→module; **311** tree |
 | `/work-types` | work-types.page.md | WORKTYPES-*, **UX-305 DONE**, **PRODUCTION-302 DONE**; **CATALOG-UI-301** |
 | `/people` | people.page.md | **UX-306 DONE**; **CATALOG-UI-301** |
-| `/production` | production-cockpit.page.md | **PRODUCTION-300** Lego; **303 DONE** shell+Gantt (план-оценка); 304–307 plug-ins |
+| `/production` | production-cockpit.page.md | **300** Lego; **303 DONE**; **303.1 READY** hotfix+`?q=`; parked **308/309/310**; drawings **DRAWINGS-301**; 304–307 plug-ins later |
+| `/orders` | orders.page.md | ORDERS-*; **303.1** deep-link `?q=` from inspector |
 
 **Catalog audits / backlog:**  
 [`2026-08-04-catalog-coherence-audit.md`](../audits/2026-08-04-catalog-coherence-audit.md) ·  

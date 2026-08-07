@@ -88,6 +88,13 @@
 
 ## 5. Лог сессий (новые сверху)
 
+### 2026-08-07 — Stabilize-first: закрыть WIP двумя ИИ, фичи в park
+- PO запутался от слишком многих параллельных задач → правило: **сначала hotfix/долг**, потом север.
+- Два ИИ сегодня: executor = 303.1 (Gantt WIP + `?q=`), Cursor = TZ/map/smoke, **без** product-кода.
+- Новое (308–310, drawings, shipping, drag) — только `_backlog`, бан до smoke.
+- Peer-audit файл обещан, на диске не был → security park без P0 insert.
+- Источник: план stabilize-then-split + `tasks/HANDOFF-PRODUCTION-303.1-executor-prompt.md`.
+
 ### 2026-08-07 — First-look audit: «никто нормально не доделал»
 - PO хочет **жёсткий аудит с нуля**: что чинить / доделывать, не энциклопедию.
 - Надежда на Cursor именно в **приоритетах и честности дыр**, не в очередном коде «фич».

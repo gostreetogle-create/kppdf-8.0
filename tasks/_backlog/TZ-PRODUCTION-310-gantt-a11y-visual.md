@@ -1,44 +1,51 @@
 ═══════════════════════════════════════════════════════════════
-TZ-SHIPPING-301: Shipping board + doc attach (S6)
+TZ-PRODUCTION-310: Gantt visual + a11y (grid / focus / non-color)
 ═══════════════════════════════════════════════════════════════
 
-STATUS: BACKLOG (parked) — не active в tasks/ до PO un-park.
-HARD BAN (2026-08-07 stabilize): не стартовать до DONE 303.1 + стабильного показа Ганта;
-  deps на PRODUCTION-307 остаются; не смешивать с Gantt CONFLICT KEYS.
-SOURCE: docs/compose/plans/2026-08-02-shop-customer-lifecycle.md §2 S6 / §7 #13;
-  docs/audits/2026-08-07-first-look-project-audit.md
+STATUS: BACKLOG (parked) — после TZ-PRODUCTION-308
+ACTIVE: не создавать до un-park
+SOURCE: docs/audits/2026-08-06-production-gantt-verdict-response.md
+PLAN: stabilize-then-split 2026-08-07
 
-РОЛЬ АГЕНТА: Frontend + backend shipping
-ЗАВИСИМОСТИ: TZ-PRODUCTION-307; TZ-DOC-330 (parallel OK for glue)
+РОЛЬ АГЕНТА: Frontend a11y
+ЗАВИСИМОСТИ: TZ-PRODUCTION-308 DONE
 LAYER: 3
 
+PAGES: /production
+PAGE_DOCS: production-cockpit.page.md
+
 CONFLICT KEYS:
-frontend shipping UI;
-backend shipment module;
-docs/agent-checklists/TZ-SHIPPING-301.md
-
-═══════════════════════════════════════════════════════════════
-ИСХОДНОЕ СОСТОЯНИЕ
-═══════════════════════════════════════════════════════════════
-
-S6 board: ready / waiting / shipped + prepare docs + print/ship.
-Partial shipment UI may exist — нужен board + attach filled doc.
+frontend/src/app/pages/production/blocks/gantt-bars.component.ts;
+frontend/src/app/pages/production/blocks/gantt-bars.component.spec.ts;
+frontend/src/app/pages/production/production-cockpit.page.ts;
+docs/pages/production-cockpit.page.md;
+docs/agent-checklists/TZ-PRODUCTION-310.md;
+progress.md
 
 ═══════════════════════════════════════════════════════════════
 ЧТО ДЕЛАТЬ
 ═══════════════════════════════════════════════════════════════
 
-ШАГ 1 — Shipping board page (status chips).
-ШАГ 2 — Attach filled doc (from DOC-330 generate).
-ШАГ 3 — Dispatch → ARCHIVE-301 (Z-001 transactions for dispatch).
+ШАГ 1 — CLAIM  
+ШАГ 2 — `role=grid` (или согласованный pattern) на полосах + Enter/Space  
+ШАГ 3 — focus-visible rings (pi-focus-ring), без ловушек  
+ШАГ 4 — паттерны/подписи не только цветом (легенда уже есть — усилить)  
+ШАГ 5 — weekend shading **только если** есть производственный календарь SoT;
+  иначе explicit НЕ делать и known_limitation  
+
+═══════════════════════════════════════════════════════════════
+НЕ ИЗМЕНЯТЬ
+═══════════════════════════════════════════════════════════════
+
+- drag/resize; order-level days (309)
+- invent production calendar в этом TZ
 
 ═══════════════════════════════════════════════════════════════
 КРИТЕРИИ ПРИЁМКИ
 ═══════════════════════════════════════════════════════════════
 
-1. Board usable for ready→shipped happy-path.
-2. Doc attach + dispatch works.
-3. Executor report.
+1. Keyboard-only smoke полосы → inspector  
+2. tsc + targeted jest PASS  
+3. Archive + report  
 
-known_limitation: Z-001 transactions for dispatch. No carrier tracking API.
-ПРОМПТ: GEMINI.md + этот файл. Push: по PO.
+known_limitation: weekend shading без календаря — out.
