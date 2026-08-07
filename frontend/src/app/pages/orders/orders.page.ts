@@ -12,7 +12,8 @@ import {
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { LucideAngularModule, RefreshCw } from 'lucide-angular';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
@@ -164,9 +165,9 @@ function counterpartyIdOf(row: Order): string {
  *   TemplateRef invariance broke the binding. TZ-104.4.2 re-typed
  *   pi-table so the strict Order typing now flows through.
  *
- *  Standalone + OnPush + signal-based. No tests for the orders
- *  page yet (no `orders.page.spec.ts`); v1 acceptance is visual
- *  smoke + tsc.
+ *  Standalone + OnPush + signal-based. The `?q=` query parameter is
+ *  applied to the same debounced search state as the toolbar input,
+ *  so inspector deep-links and manual search share one filter path.
  */
 @Component({
   selector: 'app-orders-page',
@@ -267,6 +268,12 @@ function counterpartyIdOf(row: Order): string {
 export class OrdersPage implements OnInit {
   constructor() {
     this.counterpartiesLookup.load();
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const query = params.get('q') ?? '';
+      this.search.searchQuery.set(query);
+      this.search.debouncedSearch.set(query.trim());
+      this.pageSig.set(1);
+    });
     this.destroyRef.onDestroy(() => this.search.destroy());
   }
   private readonly service = inject(OrdersService);
@@ -276,6 +283,7 @@ export class OrdersPage implements OnInit {
   private readonly injector = inject(Injector);
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly RefreshIcon = RefreshCw;

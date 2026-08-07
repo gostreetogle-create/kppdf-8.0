@@ -14,7 +14,9 @@
 
 | Параметр | Тип | Назначение |
 |----------|-----|-----------|
-| — | — | (none — всё через сигналы context) |
+| `q` | `string` | Deep-link из инспектора: открывает `/orders?q=<номер>` и применяет номер к поиску списка заказов |
+
+`q` относится к переходу из inspector в `/orders`; сам `/production` его не читает.
 
 ### API endpoints (read-only facade)
 
@@ -42,6 +44,7 @@
 - Клик по области Ганта закрывает правую панель; rail сворачивается («« список» / «☰ заказы»).
 - Шире календарь: rail `w-56` / collapsed `w-14`, header компактнее.
 - Правка заказа: роли **admin|manager**. Дни вида работ: confirm «для всех заказов» + rollback; UX-gate `production:write` или admin|manager.
+- Ссылка «Открыть заказ» в inspector ведёт в `/orders?q=<номер>`; OrdersPage применяет `q` через тот же search state, что и поле поиска.
 
 ### Audit hotfix (2026-08-06 late) — см. `docs/audits/2026-08-06-production-gantt-verdict-response.md`
 
@@ -77,6 +80,7 @@
 | TZ | Что сделано |
 |----|------------|
 | TZ-PRODUCTION-303 | Shell + rail + gantt + PAGE_KEYS + director read Roles |
+| TZ-PRODUCTION-303.1 | Closeout: inspector `/orders?q=` deep-link + Gantt hotfix documentation |
 | TZ-PRODUCTION-302 | WorkType.days |
 | TZ-PRODUCTION-308…310 | backlog polish / safe edit / a11y (см. audit response) |
 | TZ-PRODUCTION-304+ | stuck / check-in / auto-chain (plug-ins) |
