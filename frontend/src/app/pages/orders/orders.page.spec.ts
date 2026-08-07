@@ -2,7 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { of } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
+import { BehaviorSubject, of } from 'rxjs';
 
 import { OrdersPage } from './orders.page';
 import { OrdersService, Order } from './orders.service';
@@ -16,6 +17,9 @@ describe('OrdersPage', () => {
   const baseUrl = '/api';
   const listUrl = `${baseUrl}/orders`;
   const dialogSpy = { open: jest.fn().mockReturnValue({}) };
+  const queryParamSubject = new BehaviorSubject<{ get: (key: string) => string | null }>({
+    get: () => null,
+  });
 
   const fakeOrders: Order[] = [
     {
@@ -45,11 +49,13 @@ describe('OrdersPage', () => {
 
   beforeEach(async () => {
     dialogSpy.open.mockClear();
+    queryParamSubject.next({ get: () => null });
     await TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([]), withFetch()),
         provideHttpClientTesting(),
         { provide: API_BASE_URL, useValue: baseUrl },
+        { provide: ActivatedRoute, useValue: { queryParamMap: queryParamSubject.asObservable() } },
         {
           provide: OrdersService,
           useValue: {
@@ -140,6 +146,44 @@ describe('OrdersPage', () => {
 
     const comp = fixture.componentInstance as unknown as { error: () => string | null };
     expect(() => comp.error()).not.toThrow();
+  });
+
+  it('applies an initial ?q= to the existing search filter', async () => {
+    queryParamSubject.next({ get: (key) => (key === 'q' ? 'ORD-002' : null) });
+    const fixture = TestBed.createComponent(OrdersPage);
+    fixture.detectChanges();
+
+    httpMock.expectOne(matchListGet).flush(fakeOrders);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      searchQuery: () => string;
+      filteredRows: () => Order[];
+    };
+    expect(comp.searchQuery()).toBe('ORD-002');
+    expect(comp.filteredRows().map((row) => row.number)).toEqual(['ORD-002']);
+  });
+
+  it('clears the deep-link filter when q is removed', async () => {
+    const fixture = TestBed.createComponent(OrdersPage);
+    fixture.detectChanges();
+
+    httpMock.expectOne(matchListGet).flush(fakeOrders);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    queryParamSubject.next({ get: (key) => (key === 'q' ? 'ORD-002' : null) });
+    fixture.detectChanges();
+    queryParamSubject.next({ get: () => null });
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      searchQuery: () => string;
+      filteredRows: () => Order[];
+    };
+    expect(comp.searchQuery()).toBe('');
+    expect(comp.filteredRows()).toHaveLength(2);
   });
 
   it('create button triggers openCreate', async () => {
