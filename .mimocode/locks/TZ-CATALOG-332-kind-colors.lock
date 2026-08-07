@@ -4,4 +4,5 @@ outcome: DONE
 zone: catalog kind markers on Products / Modules / Materials lists and composition picker
 checklist: docs/agent-checklists/TZ-CATALOG-332.md
 archive: tasks/_archive/2026-08/TZ-CATALOG-332.done.md
-commit: 23c47b0c564bfba55cff9619818fb54b63d32239
+implementation_commit: 23c47b0c564bfba55cff9619818fb54b63d32239
+closeout_commit: 06d74f7e9423d6c879d5bafc2ea4bc8ea62e2565

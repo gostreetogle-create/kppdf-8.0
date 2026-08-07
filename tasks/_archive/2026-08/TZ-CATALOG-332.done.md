@@ -22,7 +22,8 @@
 ## Closeout
 
 - Archive + checklist + progress + active-map synchronized.
-- Commit: `23c47b0c564bfba55cff9619818fb54b63d32239`.
+- Implementation commit: `23c47b0c564bfba55cff9619818fb54b63d32239`.
+- Closeout commit: `06d74f7e9423d6c879d5bafc2ea4bc8ea62e2565`.
 - Commit SHA is recorded in the checklist, progress and lock after commit.
 - Deploy not performed.
 

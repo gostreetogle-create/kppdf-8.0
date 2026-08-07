@@ -5,7 +5,7 @@
 **Gates:** frontend tsc PASS; related Jest 5 suites / 33 tests PASS; scoped ESLint PASS; diff --check PASS.
 **Archive:** `tasks/_archive/2026-08/TZ-CATALOG-332.done.md`
 **Lock:** `.mimocode/locks/TZ-CATALOG-332-kind-colors.lock`
-**Commit:** `23c47b0c564bfba55cff9619818fb54b63d32239`
+**Commits:** implementation `23c47b0c564bfba55cff9619818fb54b63d32239`; closeout `06d74f7e9423d6c879d5bafc2ea4bc8ea62e2565`
 
 ---
 

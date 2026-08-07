@@ -48,7 +48,8 @@
 ## Executor report
 
 - Cursor PASS received from PO.
-- commit: `23c47b0c564bfba55cff9619818fb54b63d32239`
+- implementation commit: `23c47b0c564bfba55cff9619818fb54b63d32239`
+- closeout commit: `06d74f7e9423d6c879d5bafc2ea4bc8ea62e2565`
 
 ## Review handoff
 
