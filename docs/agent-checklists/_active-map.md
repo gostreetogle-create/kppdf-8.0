@@ -18,7 +18,7 @@
 | **TZD-19** graph + integrity | PARK |
 
 ## Checkpoint 2026-08-08T00:35Z
-- DONE: TZ-OPS-301 (quiet Nest DI + proxy race)
+- DONE: TZ-OPS-301 (quiet Nest DI + proxy race) @ `f12c2d8e227f3c38aa97775b96f10192684dbe54`
 - READY FOR REVIEW: TZD-20
 - Peer active: TZ-CATALOG-331 (FE catalog)
 - NEXT: idle until PO (TZD-20 PASS / TZD-18 / other)

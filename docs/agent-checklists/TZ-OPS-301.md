@@ -57,5 +57,5 @@
 - NOT staged: frontend/**, desktop/**, setting.*, icons, CATALOG-331, TZD-20
 - Archive: `tasks/_archive/2026-08/TZ-OPS-301.done.md`
 - Lock: `.mimocode/locks/TZ-OPS-301-quiet-dev-boot-logs.lock`
-- commit: _(filled after commit)_
+- commit: `f12c2d8e227f3c38aa97775b96f10192684dbe54`
 - Deploy: NO; next TZ only on PO

@@ -1,5 +1,6 @@
 TZ-OPS-301
 closed: 2026-08-08
+commit: f12c2d8e227f3c38aa97775b96f10192684dbe54
 zone: quiet Nest boot logs + start.mjs proxy race filter
 checklist: docs/agent-checklists/TZ-OPS-301.md
 archive: tasks/_archive/2026-08/TZ-OPS-301.done.md

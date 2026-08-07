@@ -5,6 +5,7 @@
 **Gates:** backend tsc PASS; `node --check start.mjs` PASS; jest quiet-nest-logger 5/5 PASS
 **Archive:** `tasks/_archive/2026-08/TZ-OPS-301.done.md`
 **Lock:** `.mimocode/locks/TZ-OPS-301-quiet-dev-boot-logs.lock`
+**Commit:** `f12c2d8e227f3c38aa97775b96f10192684dbe54`
 **Known limits:** HTTP pino-http access logs вне scope; cold-start evidence optional
 
 ---
