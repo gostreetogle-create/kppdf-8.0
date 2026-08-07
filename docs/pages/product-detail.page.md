@@ -2,10 +2,10 @@
 
 **Имя UI:** Карточка изделия · **Route:** `/products/:id`  
 **Baseline v1:** [`docs/audits/2026-08-07-product-detail-baseline-v1.md`](../audits/2026-08-07-product-detail-baseline-v1.md)  
-**UX-аудит (варианты v2):** [`docs/audits/2026-08-07-product-detail-ux-audit.md`](../audits/2026-08-07-product-detail-ux-audit.md)
+**UX-аудит:** [`docs/audits/2026-08-07-product-detail-ux-audit.md`](../audits/2026-08-07-product-detail-ux-audit.md)
 
-**Краткое описание:** панель управления изделием — паспорт + состав
-(товар → модули/детали/дочерние изделия) + фото + себестоимость.
+**Краткое описание:** интерактивная панель сборки изделия — паспорт + BOM
+(дерево + инспектор) + фото + себестоимость на одной странице.
 
 ## Route
 
@@ -13,12 +13,16 @@
 /products/:id — «KPPDF — Изделие»
 ```
 
-## UI layout (baseline v1, 2026-08-07)
+## UI layout (variant A, 2026-08-07)
 
 1. **Nav:** `Каталог / <имя>` (`PiPageChrome`).
-2. **Split xl:** слева sticky-паспорт; справа **Состав** + аккордеон Фото / Себестоимость.
-3. **Состав:** `CompositionEditor` (дерево + picker + select); add пока на корень Product.
-4. Лейблы kind/status на русском.
+2. **Split xl:** слева sticky-паспорт; справа **BOM-панель** + аккордеон Фото / Себестоимость.
+3. **BOM (`ProductBomPanel`):**
+   - дерево состава (клик = выбор; › = раскрыть/свернуть);
+   - инспектор справа: qty, «+ Из каталога» **в выбранный узел**, убрать, ссылка на карточку;
+   - add в **product** → product composition API; add в **module** → module composition API;
+   - picker с `restrictToModule` скрывает вкладку «изделие» и разрешает сырьё.
+4. Фото / себестоимость — свёрнутый аккордеон (не конкурируют с деревом).
 
 ## Бизнес-правила состава (канон)
 
@@ -34,16 +38,16 @@
 | Метод | Endpoint | Назначение |
 |-------|----------|-----------|
 | GET | `/api/products/:id` | Детали |
-| GET/POST/PATCH/DELETE | `/api/products/:id/composition` | Состав |
+| GET/POST/PATCH/DELETE | `/api/products/:id/composition` | Состав изделия |
 | GET | `/api/products/:id/tree` | Дерево |
-| GET/POST… | `/api/modules/:id/composition` | Состав модуля (для add-in-context v2) |
+| GET/POST/PATCH/DELETE | `/api/modules/:id/composition` | Состав модуля (add-in-context) |
 
-## Известные ограничения (v1)
+## Известные ограничения
 
-- Add в контекст выбранного модуля с карточки изделия — цель v2 (см. UX-аудит вариант A).
 - Загрузка фото с detail — Phase E.
-- Where-used на изделии — не в UI v1.
+- Where-used на изделии — не в UI.
+- Глубокое дерево подгружается по expand (depth +2, max 8).
 
 ---
 
-_Создано: 2026-08-04. Обновлено: 2026-08-07 (baseline v1 + имя «Карточка изделия»)._
+_Создано: 2026-08-04. Обновлено: 2026-08-07 (variant A BOM panel)._
