@@ -45,7 +45,7 @@ cd desktop/mcp && pnpm test       → PASS (31/31)
 - Cursor PASS 2026-08-08 → archive + commit/push
 - DONE: schema + categories + validate + inbox audit (TZD-17 only)
 - NOT staged: inbox.ts (audit не зависит), http-server.ts, App.svelte, icons, frontend/**
-- commit: _(filled after push)_
+- commit: `e88667f` (pushed main)
 - Archive: `tasks/_archive/2026-08/TZD-17.done.md`
 - Lock: `.mimocode/locks/TZD-17-mcp-semantic-domain-layer.lock`
 - TZD-18/19: not started (await PO)

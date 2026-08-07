@@ -15,7 +15,7 @@
 - IN PROGRESS: none (desktop MCP)
 - NOT DONE: TZD-18, TZD-19 (PARK)
 - NEXT: idle until PO says «делай TZD-18» (or other)
-- HEAD: main (TZD-17 commit/push this session)
+- HEAD: main @ `e88667f` (TZD-17)
 - Blockers: none
 - _active/: empty (TZD-17 removed)
 - Deploy: NO

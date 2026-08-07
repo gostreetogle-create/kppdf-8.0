@@ -5,6 +5,7 @@
 **Gates:** `desktop/mcp` typecheck PASS; tests 31/31 PASS
 **Archive:** `tasks/_archive/2026-08/TZD-17.done.md`
 **Lock:** `.mimocode/locks/TZD-17-mcp-semantic-domain-layer.lock`
+**Commit:** `e88667f`
 **Known limits:** TZD-18/19 PARK до команды PO; encoding WIP в `inbox.ts` не в коммите
 
 ---
