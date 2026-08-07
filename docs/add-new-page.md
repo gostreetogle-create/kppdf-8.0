@@ -78,7 +78,8 @@ pnpm dev
 - [ ] Все inputs через `input<T>()` / `input.required<T>()` (НЕ `@Input()` decorator)
 - [ ] Никаких `any`, `OnInit`, `OnDestroy` — только `effect()`, `computed()`, `afterNextRender()`
 - [ ] Никаких `box-shadow`, `drop-shadow`, `#[hex]`, `bg-white`, `border-dashed`
-- [ ] Используй `<pi-page-header>` + `<pi-section>` (TZ-68)
+- [ ] Используй `<app-pi-page-chrome>` (крошки + компактный H1) на ERP; kit — `<app-pi-page-header size="display">` (см. `docs/pages/page-chrome.md`)
+- [ ] Используй `<pi-section>` для смысловых блоков (не для пустых «простыней»)
 - [ ] Page selector — `app-<name>-page` (lowercase, kebab)
 - [ ] Class name — `<Name>Page` (PascalCase, exported)
 - [ ] `pnpm exec tsc --noEmit` exit 0

@@ -353,6 +353,45 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
     expect(fixture.nativeElement.querySelector('[data-test="filters-rail-panel"]')).toBeFalsy();
   });
 
+  it('filters panel stays open when interacting with selects', async () => {
+    const fixture = await renderPage();
+    const toggle = fixture.nativeElement.querySelector(
+      '[data-test="filters-rail-toggle"]',
+    ) as HTMLElement;
+    toggle.click();
+    fixture.detectChanges();
+
+    const panel = fixture.nativeElement.querySelector(
+      '[data-test="filters-rail-panel"]',
+    ) as HTMLElement;
+    const sort = fixture.nativeElement.querySelector(
+      '[data-test="rail-sort"]',
+    ) as HTMLSelectElement;
+    expect(panel).toBeTruthy();
+    expect(sort).toBeTruthy();
+
+    panel.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    sort.value = 'listPrice:desc';
+    sort.dispatchEvent(new Event('change', { bubbles: true }));
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush({
+      items: PRODUCTS,
+      total: PRODUCTS.length,
+      page: 1,
+      limit: 50,
+    });
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="filters-rail-panel"]')).toBeTruthy();
+    // Panel must sit outside the dimmed content column (not under backdrop).
+    const rail = fixture.nativeElement.querySelector('[data-test="filters-rail"]') as HTMLElement;
+    const contentCol = fixture.nativeElement.querySelector('[data-test="filters-backdrop"]')
+      ?.parentElement as HTMLElement | undefined;
+    expect(rail.contains(panel)).toBe(true);
+    expect(contentCol?.contains(panel)).toBe(false);
+  });
+
   it('grid card routerLink points to /products/:id', async () => {
     const fixture = await renderPage();
     const gridBtn = fixture.nativeElement.querySelector(

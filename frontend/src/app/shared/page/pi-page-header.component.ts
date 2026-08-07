@@ -1,44 +1,45 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 /**
- * TZ-68 PiPageHeader — editorial page header.
+ * TZ-68 PiPageHeader — editorial page header (compact by default).
  *
- * One per page (single H1). Hierarchy:
- *  - eyebrow (mono, uppercase) — short section number + label.
- *  - h1 (font-display, 5xl, tracking-tight) — the page title.
- *  - subtitle (font-display, xl, muted) — optional subtitle.
- *  - description (max-w 58ch, leading-relaxed) — optional descriptive paragraph.
- *  - version (eyebrow with hairline border, rounded-sm) — optional badge.
- *
- * A11y: single H1 per page (SEO + screen-reader navigation).
- *
- * Standalone + OnPush + signal-based.
+ * PO 2026-08-07: no text-5xl «простыни». Use size="display" only on kit demos.
+ * Prefer app-pi-page-chrome (crumbs + title) on ERP screens.
  */
 @Component({
   selector: 'app-pi-page-header',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <header class="pt-header-y pb-header-y hairline-b">
-      <p class="eyebrow mb-4">{{ eyebrow() }}</p>
-      <h1 class="font-display font-bold text-5xl tracking-tight leading-[1.05]">
+    <header class="pt-2 pb-4 hairline-b mb-4">
+      <p class="eyebrow mb-2">{{ eyebrow() }}</p>
+      <h1
+        class="font-display font-bold tracking-tight leading-snug break-words"
+        [class.text-xl]="size() === 'compact'"
+        [class.sm:text-2xl]="size() === 'compact'"
+        [class.text-3xl]="size() === 'display'"
+        [class.sm:text-4xl]="size() === 'display'"
+      >
         {{ title() }}
       </h1>
       @if (subtitle()) {
-        <p class="mt-4 font-display text-xl text-muted-foreground tracking-tight">
+        <p class="mt-2 font-display text-base text-muted-foreground tracking-tight">
           {{ subtitle() }}
         </p>
       }
       @if (description()) {
-        <p class="mt-6 max-w-[58ch] text-base text-muted-foreground font-body leading-relaxed">
+        <p class="mt-2 max-w-[58ch] text-sm text-muted-foreground font-body leading-relaxed">
           {{ description() }}
         </p>
       }
       @if (version()) {
-        <span class="mt-6 inline-block eyebrow hairline rounded-sm px-2 py-1">
+        <span class="mt-3 inline-block eyebrow hairline rounded-sm px-2 py-1">
           {{ version() }}
         </span>
       }
+      <div class="mt-3 flex flex-wrap gap-2">
+        <ng-content select="[header-actions]" />
+      </div>
     </header>
   `,
   styles: [
@@ -55,4 +56,6 @@ export class PiPageHeaderComponent {
   readonly subtitle = input<string>('');
   readonly description = input<string>('');
   readonly version = input<string>('');
+  /** compact = ERP default; display = UI-kit showcase only */
+  readonly size = input<'compact' | 'display'>('compact');
 }

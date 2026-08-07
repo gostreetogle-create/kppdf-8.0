@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { CompositionTreeNode } from '../../services/pi-product-modules.service';
 
@@ -27,7 +27,13 @@ export type CompositionTreeExpandEvent = { node: CompositionTreeNode; expanded: 
 
     <ng-template #nodeTemplate let-node let-depth="depth" let-path="path">
       <div
-        class="hairline rounded-sm bg-paper transition-colors"
+        class="rounded-sm transition-colors border-l-2"
+        [class.border-sunrise-warm]="node.kind === 'product'"
+        [class.bg-sunrise-warm/5]="node.kind === 'product'"
+        [class.border-ink]="node.kind === 'module'"
+        [class.bg-paper-2]="node.kind === 'module'"
+        [class.border-ink/30]="node.kind === 'material'"
+        [class.bg-paper]="node.kind === 'material'"
         [class.bg-sunrise-warm/10]="depth > 5"
         [attr.data-test]="'composition-tree-node-' + node._id"
         role="treeitem"
@@ -35,7 +41,7 @@ export type CompositionTreeExpandEvent = { node: CompositionTreeNode; expanded: 
         [attr.aria-expanded]="node.kind !== 'material' ? isExpanded(node) : null"
       >
         <div
-          class="flex items-center gap-2 px-3 py-2 min-h-10"
+          class="flex items-center gap-2 px-3 py-2 min-h-10 hairline rounded-sm"
           [style.padding-left.rem]="depth * 1.25 + 0.75"
         >
           @if (node.kind !== 'material') {
@@ -46,11 +52,23 @@ export type CompositionTreeExpandEvent = { node: CompositionTreeNode; expanded: 
               (click)="toggle(node)"
               data-test="composition-tree-toggle"
             >
-              <span [class.rotate-90]="isExpanded(node)" aria-hidden="true">›</span>
+              <span
+                class="inline-block transition-transform"
+                [class.rotate-90]="isExpanded(node)"
+                aria-hidden="true"
+                >›</span
+              >
             </button>
           } @else {
             <span class="w-6" aria-hidden="true"></span>
           }
+          <span
+            class="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-sm hairline"
+            [class.text-sunrise-warm]="node.kind === 'product'"
+            [class.text-ink]="node.kind === 'module'"
+            [class.text-muted-foreground]="node.kind === 'material'"
+            >{{ kindShort(node) }}</span
+          >
           <span class="min-w-0 flex-1">
             <span class="font-medium">{{ node.name }}</span>
             <span class="ml-2 text-xs text-muted-foreground">{{ kindLabel(node) }}</span>
@@ -65,7 +83,7 @@ export type CompositionTreeExpandEvent = { node: CompositionTreeNode; expanded: 
           }
         </div>
         @if (isExpanded(node) && node.children.length > 0) {
-          <div class="space-y-1 pb-1" role="group">
+          <div class="space-y-1 pb-1 pl-1" role="group">
             @for (child of node.children; track child._id + ':' + $index) {
               <ng-container
                 *ngTemplateOutlet="
@@ -86,6 +104,20 @@ export class CompositionTreeComponent {
   readonly expandedChange = output<CompositionTreeExpandEvent>();
 
   private readonly expanded = signal(new Set<string>());
+  private lastRootId: string | null = null;
+
+  constructor() {
+    effect(() => {
+      const rootNode = this.root();
+      if (!rootNode || rootNode.kind === 'material') return;
+      if (this.lastRootId === rootNode._id) return;
+      this.lastRootId = rootNode._id;
+      const next = new Set(this.expanded());
+      next.add(rootNode._id);
+      this.expanded.set(next);
+      // Seed only — do not emit (parent would refetch / tests toggle from collapsed).
+    });
+  }
 
   protected isExpanded(node: CompositionTreeNode): boolean {
     return this.expanded().has(node._id);
@@ -98,6 +130,12 @@ export class CompositionTreeComponent {
     else next.delete(node._id);
     this.expanded.set(next);
     this.expandedChange.emit({ node, expanded });
+  }
+
+  protected kindShort(node: CompositionTreeNode): string {
+    if (node.kind === 'product') return 'изд';
+    if (node.kind === 'module') return 'мод';
+    return 'мат';
   }
 
   protected kindLabel(node: CompositionTreeNode): string {

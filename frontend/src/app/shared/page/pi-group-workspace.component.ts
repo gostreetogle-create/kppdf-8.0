@@ -19,6 +19,11 @@ import { RouterLink } from '@angular/router';
   imports: [RouterLink],
   template: `
     <div class="group-chrome sticky top-0 z-20 bg-paper">
+      @if (pathLabel()) {
+        <p class="eyebrow pt-1.5 pb-0 text-muted-foreground m-0" data-test="group-path-label">
+          {{ pathLabel() }}
+        </p>
+      }
       @if (toc().length > 0) {
         <nav
           class="group-toc flex items-center gap-1 flex-wrap pt-1.5 pb-0.5 min-w-0"
@@ -96,6 +101,12 @@ import { RouterLink } from '@angular/router';
   ],
 })
 export class PiGroupWorkspaceComponent {
+  /**
+   * Optional section path label above chips (e.g. «Каталог», «Справочники»).
+   * Complements chips; not a deep path-breadcrumb tree.
+   */
+  readonly pathLabel = input<string>('');
+
   /** Top TOC: sibling groups (optional). Empty = hide row. */
   readonly toc = input<readonly GroupChip[]>([]);
 

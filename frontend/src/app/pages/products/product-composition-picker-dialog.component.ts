@@ -59,12 +59,24 @@ export interface ProductCompositionPickerData {
         }
         @if (!loading() && !error()) {
           <label class="block"
+            ><span class="eyebrow block mb-1.5">Поиск</span>
+            <input
+              class="pi-input w-full"
+              type="search"
+              [value]="query()"
+              (input)="onQuery($event)"
+              placeholder="Название, артикул, SKU…"
+              data-test="composition-picker-search"
+            />
+          </label>
+          <label class="block"
             ><span class="eyebrow block mb-1.5">Что добавить</span>
             <select
               class="pi-input w-full"
               [value]="selectedId()"
               (change)="onSelectionChange($event)"
               data-test="composition-picker-select"
+              size="8"
             >
               <option value="">— выбрать —</option>
               @for (item of available(); track item.id) {
@@ -75,6 +87,11 @@ export interface ProductCompositionPickerData {
           @if (activeKind() === 'material') {
             <p class="text-xs text-muted-foreground">
               Сырьё запрещено на изделии: доступны только детали, метизы, покупное и другое.
+            </p>
+          }
+          @if (activeKind() === 'product') {
+            <p class="text-xs text-muted-foreground">
+              Добавление изделия сделает текущий товар комплексом.
             </p>
           }
           @if (validationError()) {
@@ -118,12 +135,13 @@ export class ProductCompositionPickerDialogComponent {
 
   protected readonly kinds = [
     { value: 'module', label: 'Модуль' },
-    { value: 'material', label: 'Материал' },
-    { value: 'product', label: 'Изделие' },
+    { value: 'material', label: 'Деталь / материал' },
+    { value: 'product', label: 'Изделие (комплекс)' },
   ] as const;
   protected readonly activeKind = signal<'module' | 'material' | 'product'>('module');
   protected readonly selectedId = signal('');
   protected readonly unitPriceOverride = signal('');
+  protected readonly query = signal('');
   protected readonly validationError = signal<string | null>(null);
   protected readonly modules = signal<ProductModule[]>([]);
   protected readonly materials = signal<Material[]>([]);
@@ -132,20 +150,28 @@ export class ProductCompositionPickerDialogComponent {
   protected readonly error = signal<string | null>(null);
 
   protected readonly available = computed(() => {
+    const q = this.query().trim().toLowerCase();
+    const filter = (label: string) => !q || label.toLowerCase().includes(q);
     if (this.activeKind() === 'module')
-      return this.modules().map((item) => ({
-        id: item._id,
-        label: `${item.name} · ${item.article ?? '—'}`,
-      }));
+      return this.modules()
+        .map((item) => ({
+          id: item._id,
+          label: `${item.name} · ${item.article ?? '—'}`,
+        }))
+        .filter((item) => filter(item.label));
     if (this.activeKind() === 'material')
-      return this.materials().map((item) => ({
+      return this.materials()
+        .map((item) => ({
+          id: item._id,
+          label: `${item.name} · ${item.materialKind ? MATERIAL_KIND_LABELS[item.materialKind] : 'тип не указан'}`,
+        }))
+        .filter((item) => filter(item.label));
+    return this.products()
+      .map((item) => ({
         id: item._id,
-        label: `${item.name} · ${item.materialKind ? MATERIAL_KIND_LABELS[item.materialKind] : 'тип не указан'}`,
-      }));
-    return this.products().map((item) => ({
-      id: item._id,
-      label: `${item.name} · ${item.sku ?? '—'}`,
-    }));
+        label: `${item.name} · ${item.sku ?? '—'}`,
+      }))
+      .filter((item) => filter(item.label));
   });
 
   constructor() {
@@ -181,7 +207,12 @@ export class ProductCompositionPickerDialogComponent {
     this.activeKind.set(kind);
     this.selectedId.set('');
     this.unitPriceOverride.set('');
+    this.query.set('');
     this.validationError.set(null);
+  }
+
+  protected onQuery(event: Event): void {
+    this.query.set((event.target as HTMLInputElement).value);
   }
 
   protected onSelectionChange(event: Event): void {

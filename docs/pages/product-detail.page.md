@@ -1,8 +1,11 @@
-# Страница: Детали продукции (ProductDetailPage)
+# Страница: Карточка изделия (ProductDetailPage)
 
-**Краткое описание:** Карточка изделия `/products/:id` — основное, модули
-(attach/detach legacy до cutover), себестоимость. Page.md-stub: маршрут и UI
-давно есть; полный контракт догоняется волной CATALOG.
+**Имя UI:** Карточка изделия · **Route:** `/products/:id`  
+**Baseline v1:** [`docs/audits/2026-08-07-product-detail-baseline-v1.md`](../audits/2026-08-07-product-detail-baseline-v1.md)  
+**UX-аудит (варианты v2):** [`docs/audits/2026-08-07-product-detail-ux-audit.md`](../audits/2026-08-07-product-detail-ux-audit.md)
+
+**Краткое описание:** панель управления изделием — паспорт + состав
+(товар → модули/детали/дочерние изделия) + фото + себестоимость.
 
 ## Route
 
@@ -10,58 +13,37 @@
 /products/:id — «KPPDF — Изделие»
 ```
 
-## Route params
+## UI layout (baseline v1, 2026-08-07)
 
-| Параметр | Тип | Назначение |
-|----------|-----|-----------|
-| `id` | `string` | MongoDB ObjectId продукта |
+1. **Nav:** `Каталог / <имя>` (`PiPageChrome`).
+2. **Split xl:** слева sticky-паспорт; справа **Состав** + аккордеон Фото / Себестоимость.
+3. **Состав:** `CompositionEditor` (дерево + picker + select); add пока на корень Product.
+4. Лейблы kind/status на русском.
 
-## API (факт на 2026-08-04)
+## Бизнес-правила состава (канон)
+
+| Родитель | Можно | Нельзя |
+|----------|-------|--------|
+| Product | module, material≠raw, **product** (комплекс) | raw; self-ref; cycles |
+| Module | module, material (в т.ч. raw) | product-линия |
+
+Источник: `docs/compose/plans/2026-08-04-catalog-composition-vision.md` D1–D3.
+
+## API
 
 | Метод | Endpoint | Назначение |
 |-------|----------|-----------|
-| GET | `/api/products/:id` | Детали (+ nested populate modules) |
-| POST | `/api/products/:id/modules` | Attach module (legacy `productModuleIds`) |
-| DELETE | `/api/products/:id/modules/:moduleId` | Detach |
-| … | cost-calculations (nested) | Пересчёт себестоимости |
+| GET | `/api/products/:id` | Детали |
+| GET/POST/PATCH/DELETE | `/api/products/:id/composition` | Состав |
+| GET | `/api/products/:id/tree` | Дерево |
+| GET/POST… | `/api/modules/:id/composition` | Состав модуля (для add-in-context v2) |
 
-> **CATALOG Wave 1:** после **302** появится `/products/:id/composition`.  
-> FE cutover на composition — **TZ-CATALOG-317** (GATE до prod **304**).  
-> Product→Product lines — **305**. UI CompositionEditor — **311**.
+## Известные ограничения (v1)
 
-## Services (FE)
-
-| Сервис | Роль |
-|--------|------|
-| `ProductsService` | CRUD product |
-| `ProductModulesService` | list/attach/detach (legacy) |
-| `CostCalculationsService` | rollup (сейчас legacy materials[]) |
-
-## Состав изделия (TZ-CATALOG-320)
-
-Detail показывает canonical `composition[]`: модуль, non-raw Material (kind-лейбл сырьё/деталь/метиз/покупное/другое) и дочернее изделие. Product-линия с `unitPriceOverride >= 0` даёт derived-бейдж «Комплекс»; self-reference и raw Material исключены пикером. Единое lazy-дерево состава реализовано в рамках `TZ-CATALOG-311`.
-
-## Дерево состава (TZ-CATALOG-311)
-
-Секция «Состав» использует общий `CompositionEditor`: корневой узел загружается через `GET /products/:id/tree?maxDepth=8`, дочерние module/product/material узлы показываются вложенно с русскими labels. Материалы получают `materialKind`; product-ребёнок даёт бейдж «Комплекс». Быстрое редактирование количества, добавление и удаление используют тот же composition API, что и формы TZ-CATALOG-320. При глубине более 5 отображается предупреждение, а ошибки лимита глубины, cycle и self-reference показываются текстом API.
-
-Полный hard limit дерева — 8 уровней (`tasks/TZ-CATALOG-300.md` §3.1); cost/mass rollup и order snapshot остаются вне scope.
-
-## Известные ограничения
-
-- Нет отдельного полного page.md-контракта секций (этот stub закрывает дыру индекса).
-- Soft-delete Product: `deletedAt` пишется, list-filter — зона **314**.
-- Page doc создан **TZ-CATALOG-319**.
-
-## TZ reference
-
-| TZ | Что |
-|----|-----|
-| TZ-83 | product detail + attach |
-| CATALOG-302…305 | composition backend |
-| CATALOG-317 | FE cutover |
-| CATALOG-319 | этот stub |
+- Add в контекст выбранного модуля с карточки изделия — цель v2 (см. UX-аудит вариант A).
+- Загрузка фото с detail — Phase E.
+- Where-used на изделии — не в UI v1.
 
 ---
 
-_Создано: 2026-08-04. Обновлено: 2026-08-06 (TZ-CATALOG-320)._
+_Создано: 2026-08-04. Обновлено: 2026-08-07 (baseline v1 + имя «Карточка изделия»)._

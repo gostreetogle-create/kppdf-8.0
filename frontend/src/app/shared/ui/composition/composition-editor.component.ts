@@ -11,15 +11,19 @@ import {
   CompositionTreeNode,
   CompositionLine,
   CompositionLineUpsertDto,
+  ProductModule,
   ProductModulesService,
 } from '../../services/pi-product-modules.service';
-import { Material, MaterialsService } from '../../services/materials.service';
+import { Material, MATERIAL_KIND_LABELS, MaterialsService } from '../../services/materials.service';
+import { Product, ProductsService } from '../../services/products.service';
 import { extractErrorMessage } from '../../../core/silent-http';
 import { PiToastService } from '../toast';
 import { ButtonComponent } from '../button/button.component';
 import { CompositionTreeComponent } from './composition-tree.component';
 
 export type CompositionEditorParent = 'product' | 'module';
+
+type CatalogOption = { id: string; label: string };
 
 @Component({
   selector: 'app-composition-editor',
@@ -61,7 +65,7 @@ export type CompositionEditorParent = 'product' | 'module';
       <app-composition-tree [root]="treeWithKinds()" (expandedChange)="onExpand($event)" />
       @if (lines().length > 0) {
         <div class="space-y-2" data-test="composition-editor-lines">
-          <p class="eyebrow">Быстрое редактирование</p>
+          <p class="eyebrow">Количество в составе</p>
           @for (line of lines(); track line._id) {
             <div class="flex flex-wrap items-center gap-2 hairline rounded-sm px-3 py-2">
               <span class="min-w-32 flex-1 text-sm">{{ lineLabel(line) }}</span>
@@ -86,9 +90,42 @@ export type CompositionEditorParent = 'product' | 'module';
           }
         </div>
       }
-      <div class="hairline rounded-sm p-3 space-y-2" data-test="composition-editor-add">
-        <p class="eyebrow">Добавить строку</p>
-        <div class="grid grid-cols-1 sm:grid-cols-[8rem_1fr_7rem_auto] gap-2 items-end">
+      <div
+        class="hairline rounded-sm p-3 space-y-3 bg-paper-2/40"
+        data-test="composition-editor-add"
+      >
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p class="eyebrow m-0">Добавить в состав</p>
+          <app-pi-button
+            variant="outline"
+            size="sm"
+            type="button"
+            (click)="reload()"
+            data-test="composition-reload"
+          >
+            Обновить
+          </app-pi-button>
+        </div>
+        <p class="text-xs text-muted-foreground m-0">
+          @if (parentKind() === 'product') {
+            Можно: модуль, деталь/метиз/покупное, другое изделие (станет комплексом). Сырьё — только
+            через модуль.
+          } @else {
+            Можно: дочерний модуль или материал/деталь. Изделие в модуль класть нельзя.
+          }
+        </p>
+        <label class="block">
+          <span class="eyebrow block mb-1">Поиск</span>
+          <input
+            class="pi-input w-full"
+            type="search"
+            [value]="catalogQuery()"
+            (input)="onCatalogQuery($event)"
+            placeholder="Название или артикул…"
+            data-test="composition-catalog-search"
+          />
+        </label>
+        <div class="grid grid-cols-1 sm:grid-cols-[8rem_1fr_6rem_auto] gap-2 items-end">
           <label class="block">
             <span class="eyebrow block mb-1">Тип</span>
             <select
@@ -102,15 +139,19 @@ export type CompositionEditorParent = 'product' | 'module';
               }
             </select>
           </label>
-          <label class="block">
-            <span class="eyebrow block mb-1">ID элемента</span>
-            <input
+          <label class="block min-w-0">
+            <span class="eyebrow block mb-1">Элемент</span>
+            <select
               class="pi-input w-full"
               [value]="draftRefId()"
-              (input)="onRefIdChange($event)"
-              placeholder="ObjectId"
-              data-test="composition-ref-id"
-            />
+              (change)="onRefSelect($event)"
+              data-test="composition-ref-select"
+            >
+              <option value="">— выбрать —</option>
+              @for (opt of filteredCatalogOptions(); track opt.id) {
+                <option [value]="opt.id">{{ opt.label }}</option>
+              }
+            </select>
           </label>
           <label class="block">
             <span class="eyebrow block mb-1">Кол-во</span>
@@ -128,25 +169,15 @@ export type CompositionEditorParent = 'product' | 'module';
             size="sm"
             type="button"
             (click)="addDraftLine()"
+            [disabled]="!draftRefId()"
             data-test="composition-add"
           >
             Добавить
           </app-pi-button>
         </div>
-        <p class="text-xs text-muted-foreground">
-          Для материала укажите ID каталога; сырьё в состав изделия не добавляется.
-        </p>
-      </div>
-      <div class="flex justify-end">
-        <app-pi-button
-          variant="outline"
-          size="sm"
-          type="button"
-          (click)="reload()"
-          data-test="composition-reload"
-        >
-          Обновить состав
-        </app-pi-button>
+        @if (filteredCatalogOptions().length === 0 && catalogQuery().trim()) {
+          <p class="text-xs text-muted-foreground m-0">Ничего не найдено по запросу.</p>
+        }
       </div>
     </section>
   `,
@@ -170,15 +201,61 @@ export class CompositionEditorComponent {
   protected readonly draftType = signal<CompositionLineUpsertDto['lineType']>('module');
   protected readonly draftRefId = signal('');
   protected readonly draftQuantity = signal('1');
+  protected readonly catalogQuery = signal('');
   private readonly materials = signal<Material[]>([]);
+  private readonly modules = signal<ProductModule[]>([]);
+  private readonly products = signal<Product[]>([]);
 
   private readonly service = inject(ProductModulesService);
   private readonly materialsService = inject(MaterialsService);
+  private readonly productsService = inject(ProductsService);
   private readonly toast = inject(PiToastService);
+
+  protected readonly catalogOptions = computed<CatalogOption[]>(() => {
+    const type = this.draftType();
+    const selfId = this.parentId();
+    if (type === 'module') {
+      return this.modules()
+        .filter((m) => m._id !== selfId)
+        .map((m) => ({
+          id: m._id,
+          label: `${m.name}${m.article ? ' · ' + m.article : ''}`,
+        }));
+    }
+    if (type === 'material') {
+      const list =
+        this.parentKind() === 'product'
+          ? this.materials().filter((m) => m.materialKind !== 'raw')
+          : this.materials();
+      return list.map((m) => ({
+        id: m._id,
+        label: `${m.name}${m.materialKind ? ' · ' + (MATERIAL_KIND_LABELS[m.materialKind] ?? m.materialKind) : ''}`,
+      }));
+    }
+    return this.products()
+      .filter((p) => p._id !== selfId)
+      .map((p) => ({
+        id: p._id,
+        label: `${p.name}${p.sku ? ' · SKU ' + p.sku : ''}`,
+      }));
+  });
+
+  protected readonly filteredCatalogOptions = computed(() => {
+    const q = this.catalogQuery().trim().toLowerCase();
+    const opts = this.catalogOptions();
+    if (!q) return opts.slice(0, 200);
+    return opts.filter((o) => o.label.toLowerCase().includes(q)).slice(0, 200);
+  });
 
   constructor() {
     this.materialsService.list({ limit: 200 }).subscribe((response) => {
       if (response.ok) this.materials.set(response.data.items);
+    });
+    this.service.list().subscribe((response) => {
+      if (response.ok) this.modules.set(response.data);
+    });
+    this.productsService.list({ limit: 200 }).subscribe((response) => {
+      if (response.ok) this.products.set(response.data.items);
     });
     effect(() => {
       const id = this.parentId();
@@ -186,7 +263,8 @@ export class CompositionEditorComponent {
     });
   }
 
-  protected reload(): void {
+  /** Public for parent pages after external picker. */
+  reload(): void {
     this.load();
   }
 
@@ -197,26 +275,37 @@ export class CompositionEditorComponent {
   }
 
   protected lineTypeLabel(type: CompositionLineUpsertDto['lineType']): string {
-    return type === 'product' ? 'Изделие' : type === 'module' ? 'Модуль' : 'Материал';
+    return type === 'product' ? 'Изделие' : type === 'module' ? 'Модуль' : 'Материал / деталь';
   }
 
   protected lineLabel(line: CompositionLine): string {
     const type = this.lineTypeLabel(line.lineType);
-    if (line.lineType !== 'material') return `${type} · ${line.refId}`;
+    if (line.lineType === 'module') {
+      const mod = this.modules().find((item) => item._id === line.refId);
+      return mod ? `${type} · ${mod.name}` : `${type} · ${line.refId}`;
+    }
+    if (line.lineType === 'product') {
+      const prod = this.products().find((item) => item._id === line.refId);
+      return prod ? `${type} · ${prod.name}` : `${type} · ${line.refId}`;
+    }
     const material = this.materials().find((item) => item._id === line.refId);
-    return material
-      ? `${type} · ${material.name} · ${material.materialKind ?? 'тип не указан'}`
-      : `${type} · ${line.refId}`;
+    return material ? `${type} · ${material.name}` : `${type} · ${line.refId}`;
   }
 
   protected onTypeChange(event: Event): void {
     this.draftType.set(
       (event.target as HTMLSelectElement).value as CompositionLineUpsertDto['lineType'],
     );
+    this.draftRefId.set('');
+    this.catalogQuery.set('');
   }
 
-  protected onRefIdChange(event: Event): void {
-    this.draftRefId.set((event.target as HTMLInputElement).value);
+  protected onCatalogQuery(event: Event): void {
+    this.catalogQuery.set((event.target as HTMLInputElement).value);
+  }
+
+  protected onRefSelect(event: Event): void {
+    this.draftRefId.set((event.target as HTMLSelectElement).value);
   }
 
   protected onQuantityChange(event: Event): void {
@@ -228,7 +317,7 @@ export class CompositionEditorComponent {
     const quantity = Number(this.draftQuantity());
     const lineType = this.draftType();
     if (!refId || !Number.isFinite(quantity) || quantity <= 0) {
-      this.showMessage('Укажите ID элемента и положительное количество.');
+      this.showMessage('Выберите элемент и укажите положительное количество.');
       return;
     }
     if (lineType === 'product' && this.parentKind() === 'module') {
@@ -290,6 +379,7 @@ export class CompositionEditorComponent {
   protected onExpand(event: { node: CompositionTreeNode; expanded: boolean }): void {
     if (!event.expanded) return;
     const depth = this.depthOf(event.node);
+    if (depth < 0) return;
     if (depth > 5) {
       this.warning.set(
         'Глубина состава больше 5 уровней. Проверьте структуру перед дальнейшим расширением.',
@@ -320,40 +410,19 @@ export class CompositionEditorComponent {
     };
     treeRequest.subscribe((response) => {
       treeDone = true;
-      if (response.ok) {
-        this.tree.set(response.data);
-        if (this.hasDepthWarning(response.data))
-          this.warning.set('Глубина состава больше 5 уровней. Проверьте структуру.');
-      } else this.showMessage(extractErrorMessage(response.error));
+      if (response.ok) this.tree.set(response.data);
+      else {
+        this.tree.set(null);
+        this.showMessage(extractErrorMessage(response.error));
+      }
       finish();
     });
     lineRequest.subscribe((response) => {
       lineDone = true;
       if (response.ok) this.lines.set(response.data);
-      else this.showMessage(extractErrorMessage(response.error));
+      else this.lines.set([]);
       finish();
     });
-  }
-
-  private showMessage(message: string): void {
-    this.error.set(message);
-    this.toast.error(message);
-  }
-
-  private enrichMaterialKinds(node: CompositionTreeNode | null): CompositionTreeNode | null {
-    if (!node) return null;
-    return {
-      ...node,
-      materialKind:
-        node.kind === 'material'
-          ? this.materials().find((material) => material._id === node._id)?.materialKind
-          : undefined,
-      children: node.children.map((child) => this.enrichMaterialKinds(child)!),
-    };
-  }
-
-  private hasDepthWarning(node: CompositionTreeNode, depth = 0): boolean {
-    return depth > 5 || node.children.some((child) => this.hasDepthWarning(child, depth + 1));
   }
 
   private depthOf(target: CompositionTreeNode, node = this.tree(), depth = 0): number {
@@ -364,5 +433,21 @@ export class CompositionEditorComponent {
       if (result !== -1) return result;
     }
     return -1;
+  }
+
+  private enrichMaterialKinds(node: CompositionTreeNode | null): CompositionTreeNode | null {
+    if (!node) return null;
+    const material =
+      node.kind === 'material' ? this.materials().find((item) => item._id === node._id) : undefined;
+    return {
+      ...node,
+      materialKind: node.materialKind ?? material?.materialKind,
+      children: node.children.map((child) => this.enrichMaterialKinds(child)!),
+    };
+  }
+
+  private showMessage(message: string): void {
+    this.error.set(message);
+    this.toast.error(message);
   }
 }

@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { CompositionEditorComponent } from './composition-editor.component';
 import { ProductModulesService } from '../../services/pi-product-modules.service';
 import { MaterialsService } from '../../services/materials.service';
+import { ProductsService } from '../../services/products.service';
 import { PiToastService } from '../toast';
 
 describe('CompositionEditorComponent (TZ-CATALOG-311)', () => {
@@ -63,6 +64,7 @@ describe('CompositionEditorComponent (TZ-CATALOG-311)', () => {
       updateModuleCompositionLine: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
       removeProductCompositionLine: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
       removeModuleCompositionLine: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
+      list: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
     };
     toast = { error: jest.fn() };
     await TestBed.configureTestingModule({
@@ -72,6 +74,10 @@ describe('CompositionEditorComponent (TZ-CATALOG-311)', () => {
         { provide: ProductModulesService, useValue: service },
         {
           provide: MaterialsService,
+          useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [] } })) },
+        },
+        {
+          provide: ProductsService,
           useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [] } })) },
         },
         { provide: PiToastService, useValue: toast },
@@ -104,10 +110,18 @@ describe('CompositionEditorComponent (TZ-CATALOG-311)', () => {
       draftRefId: { set: (value: string) => void };
       addDraftLine: () => void;
     };
+    // Root is auto-expanded (folder-open UX); collapse then expand to trigger deeper fetch.
+    expect(
+      fixture.nativeElement
+        .querySelector('[data-test="composition-tree-node-m1"]')
+        ?.getAttribute('aria-expanded'),
+    ).toBe('true');
     const toggle = fixture.nativeElement.querySelector(
       '[data-test="composition-tree-toggle"]',
     ) as HTMLButtonElement;
     expect(toggle).toBeTruthy();
+    toggle.click();
+    fixture.detectChanges();
     toggle.click();
     fixture.detectChanges();
     expect(service.getModuleTree).toHaveBeenCalledWith('m1', 2);

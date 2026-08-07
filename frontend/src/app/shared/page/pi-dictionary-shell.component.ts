@@ -26,7 +26,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   template: `
     <!-- Title: compact H1 without eyebrow / description -->
     <div class="dictionary-header pb-4">
-      <h1 class="font-display font-bold text-3xl tracking-tight leading-tight">
+      <h1 class="font-display font-bold text-xl sm:text-2xl tracking-tight leading-tight">
         {{ title() }}
       </h1>
       @if (totalLabel()) {

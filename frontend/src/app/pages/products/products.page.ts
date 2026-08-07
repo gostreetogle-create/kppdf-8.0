@@ -137,7 +137,7 @@ const KIND_LABELS: Record<Product['kind'], string> = {
     PiEmptyTileComponent,
   ],
   template: `
-    <app-pi-group-workspace [chips]="chips" activeId="products">
+    <app-pi-group-workspace [chips]="chips" activeId="products" pathLabel="Каталог">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           id="products-search"
@@ -245,124 +245,137 @@ const KIND_LABELS: Record<Product['kind'], string> = {
         </div>
       }
 
-      <div class="relative" data-test="products-layout">
-        @if (filtersOpen()) {
-          <button
-            type="button"
-            class="absolute inset-0 z-20 border-0 cursor-default bg-ink/15 dark:bg-ink/35"
-            aria-label="Закрыть фильтры"
-            data-test="filters-backdrop"
-            (click)="closeFilters()"
-          ></button>
-        }
+      <div class="relative flex gap-3 items-start" data-test="products-layout">
+        <!-- Узкая полоска + панель ВЫШЕ затемнения (z-40); иначе клики/селекты ломаются -->
+        <aside
+          class="relative z-40 shrink-0 w-12"
+          data-test="filters-rail"
+          [attr.aria-expanded]="filtersOpen()"
+        >
+          <div class="sticky top-2 hairline rounded-sm bg-paper p-1 shadow-sm">
+            <button
+              type="button"
+              class="flex w-full min-h-touch items-center justify-center rounded-sm text-ink hover:bg-paper-2 transition-colors pi-focus-ring"
+              (click)="toggleFiltersRail()"
+              [attr.aria-label]="filtersOpen() ? 'Свернуть фильтры' : 'Открыть фильтры'"
+              data-test="filters-rail-toggle"
+            >
+              <lucide-icon [img]="FilterIcon" [size]="18"></lucide-icon>
+            </button>
+          </div>
 
-        <div class="relative z-0 flex gap-3 items-start">
-          <!-- Узкая полоска всегда w-12; панель — оверлей поверх карточек -->
-          <aside
-            class="relative z-30 shrink-0 w-12"
-            data-test="filters-rail"
-            [attr.aria-expanded]="filtersOpen()"
-          >
-            <div class="sticky top-2 hairline rounded-sm bg-paper p-1">
-              <button
-                type="button"
-                class="flex w-full min-h-touch items-center justify-center rounded-sm text-ink hover:bg-paper-2 transition-colors pi-focus-ring"
-                (click)="toggleFiltersRail(); $event.stopPropagation()"
-                [attr.aria-label]="filtersOpen() ? 'Свернуть фильтры' : 'Открыть фильтры'"
-                data-test="filters-rail-toggle"
-              >
-                <lucide-icon [img]="FilterIcon" [size]="18"></lucide-icon>
-              </button>
-            </div>
-
-            @if (filtersOpen()) {
-              <div
-                class="absolute left-full top-0 ml-2 w-56 hairline rounded-sm bg-paper p-3 shadow-md"
-                data-test="filters-rail-panel"
-                role="dialog"
-                aria-label="Фильтры каталога"
-                (click)="$event.stopPropagation()"
-              >
-                <div class="text-xs font-medium text-ink mb-2">Фильтры</div>
-                <div class="flex flex-col gap-2">
-                  <label
-                    class="text-[10px] uppercase tracking-wide text-muted-foreground"
-                    for="rail-status"
-                    >Статус</label
-                  >
-                  <select
-                    id="rail-status"
-                    class="pi-input w-full text-sm"
-                    [value]="statusFilter() ?? ''"
-                    (change)="onStatusFilterChange($event)"
-                  >
-                    <option value="">Все</option>
-                    @for (s of STATUS_OPTIONS; track s) {
-                      <option [value]="s">{{ STATUS_LABELS[s] }}</option>
-                    }
-                  </select>
-                  <label
-                    class="text-[10px] uppercase tracking-wide text-muted-foreground"
-                    for="rail-active"
-                    >Активность</label
-                  >
-                  <select
-                    id="rail-active"
-                    class="pi-input w-full text-sm"
-                    [value]="activeFilterValue()"
-                    (change)="onActiveFilterChange($event)"
-                  >
-                    <option value="">Все</option>
-                    <option value="true">Активные</option>
-                    <option value="false">Неактивные</option>
-                  </select>
-                  <label
-                    class="text-[10px] uppercase tracking-wide text-muted-foreground"
-                    for="rail-category"
-                    >Категория</label
-                  >
-                  <select
-                    id="rail-category"
-                    class="pi-input w-full text-sm"
-                    [value]="categoryFilter() ?? ''"
-                    (change)="onCategoryFilterChange($event)"
-                  >
-                    <option value="">Все</option>
-                    @for (c of categories(); track c._id) {
-                      <option [value]="c._id">{{ c.name }}</option>
-                    }
-                  </select>
-                  <label
-                    class="text-[10px] uppercase tracking-wide text-muted-foreground"
-                    for="rail-sort"
-                    >Сортировка</label
-                  >
-                  <select
-                    id="rail-sort"
-                    class="pi-input w-full text-sm"
-                    [value]="sortSelectValue()"
-                    (change)="onRailSortChange($event)"
-                    data-test="rail-sort"
-                  >
-                    <option value="name:asc">Название ↑</option>
-                    <option value="name:desc">Название ↓</option>
-                    <option value="listPrice:asc">Цена ↑</option>
-                    <option value="listPrice:desc">Цена ↓</option>
-                  </select>
-                  <button
-                    type="button"
-                    class="text-xs text-muted-foreground hover:text-ink underline decoration-dotted min-h-touch"
-                    (click)="clearFilters()"
-                    data-test="clear-filters"
-                  >
-                    Сбросить
-                  </button>
-                </div>
+          @if (filtersOpen()) {
+            <div
+              class="absolute left-full top-0 ml-2 z-40 w-64 min-h-[22rem] max-h-[min(36rem,80vh)] overflow-y-auto hairline rounded-sm bg-paper p-4 shadow-lg"
+              data-test="filters-rail-panel"
+              role="dialog"
+              aria-label="Фильтры каталога"
+              (pointerdown)="$event.stopPropagation()"
+              (click)="$event.stopPropagation()"
+            >
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <div class="text-sm font-medium text-ink">Фильтры</div>
+                <button
+                  type="button"
+                  class="text-xs text-muted-foreground hover:text-ink pi-focus-ring rounded-sm px-1 min-h-touch"
+                  (click)="closeFilters()"
+                  aria-label="Закрыть"
+                  data-test="filters-panel-close"
+                >
+                  Закрыть
+                </button>
               </div>
-            }
-          </aside>
+              <div class="flex flex-col gap-3">
+                <label
+                  class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                  for="rail-status"
+                  >Статус</label
+                >
+                <select
+                  id="rail-status"
+                  class="pi-input w-full text-sm"
+                  [value]="statusFilter() ?? ''"
+                  (change)="onStatusFilterChange($event)"
+                >
+                  <option value="">Все</option>
+                  @for (s of STATUS_OPTIONS; track s) {
+                    <option [value]="s">{{ STATUS_LABELS[s] }}</option>
+                  }
+                </select>
+                <label
+                  class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                  for="rail-active"
+                  >Активность</label
+                >
+                <select
+                  id="rail-active"
+                  class="pi-input w-full text-sm"
+                  [value]="activeFilterValue()"
+                  (change)="onActiveFilterChange($event)"
+                >
+                  <option value="">Все</option>
+                  <option value="true">Активные</option>
+                  <option value="false">Неактивные</option>
+                </select>
+                <label
+                  class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                  for="rail-category"
+                  >Категория</label
+                >
+                <select
+                  id="rail-category"
+                  class="pi-input w-full text-sm"
+                  [value]="categoryFilter() ?? ''"
+                  (change)="onCategoryFilterChange($event)"
+                >
+                  <option value="">Все</option>
+                  @for (c of categories(); track c._id) {
+                    <option [value]="c._id">{{ c.name }}</option>
+                  }
+                </select>
+                <label
+                  class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                  for="rail-sort"
+                  >Сортировка</label
+                >
+                <select
+                  id="rail-sort"
+                  class="pi-input w-full text-sm"
+                  [value]="sortSelectValue()"
+                  (change)="onRailSortChange($event)"
+                  data-test="rail-sort"
+                >
+                  <option value="name:asc">Название ↑</option>
+                  <option value="name:desc">Название ↓</option>
+                  <option value="listPrice:asc">Цена ↑</option>
+                  <option value="listPrice:desc">Цена ↓</option>
+                </select>
+                <button
+                  type="button"
+                  class="text-xs text-muted-foreground hover:text-ink underline decoration-dotted min-h-touch self-start"
+                  (click)="clearFilters()"
+                  data-test="clear-filters"
+                >
+                  Сбросить
+                </button>
+              </div>
+            </div>
+          }
+        </aside>
 
-          <div class="min-w-0 flex-1">
+        <div class="relative min-w-0 flex-1">
+          @if (filtersOpen()) {
+            <button
+              type="button"
+              class="absolute inset-0 z-20 border-0 cursor-default bg-ink/20 dark:bg-ink/40"
+              aria-label="Закрыть фильтры"
+              data-test="filters-backdrop"
+              (pointerdown)="closeFilters()"
+              (click)="closeFilters()"
+            ></button>
+          }
+
+          <div class="relative z-0">
             @if (viewMode() === 'grid') {
               @if (loading()) {
                 <p class="text-sm text-muted-foreground py-8 text-center" data-test="grid-loading">

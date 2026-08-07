@@ -3,17 +3,19 @@ import {
   Component,
   DestroyRef,
   Injector,
+  ViewChild,
   computed,
   inject,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { httpResource } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
+import { AccordionComponent } from '../../shared/ui/pi-accordion.component';
+import { AccordionItemComponent } from '../../shared/ui/pi-accordion-item.component';
+import { PiPageChromeComponent, type PageCrumb } from '../../shared/page/pi-page-chrome.component';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
 import { PiToastService } from '../../shared/ui/toast';
@@ -42,6 +44,20 @@ import {
 import { CostCalculationDetailDialogComponent } from './cost-calculation-detail-dialog.component';
 import { Photo } from '../../shared/services/photos.service';
 import { CompositionEditorComponent } from '../../shared/ui/composition/composition-editor.component';
+import { ProductKind, ProductStatus } from '../../shared/services/products.service';
+
+const STATUS_LABELS: Record<ProductStatus, string> = {
+  new: 'Новый',
+  active: 'Активный',
+  archived: 'Архив',
+  draft: 'Черновик',
+};
+
+const KIND_LABELS: Record<ProductKind, string> = {
+  good: 'Товар',
+  service: 'Услуга',
+  work: 'Работа',
+};
 
 /**
  * TZ-83 Phase D + TZ-CATALOG-317: ProductDetailPage.
@@ -64,24 +80,16 @@ import { CompositionEditorComponent } from '../../shared/ui/composition/composit
   selector: 'app-product-detail-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    PiPageHeaderComponent,
-    PiSectionComponent,
+    RouterLink,
     PiEmptyStateComponent,
     ButtonComponent,
     CompositionEditorComponent,
+    AccordionComponent,
+    AccordionItemComponent,
+    PiPageChromeComponent,
   ],
   template: `
-    <app-pi-page-header
-      [eyebrow]="'товар'"
-      [title]="product()?.name ?? 'Загрузка…'"
-      [description]="productDescription()"
-    >
-      <span header-actions>
-        <app-pi-button variant="ghost" type="button" (click)="onBack()" data-test="back-button">
-          ← К продукции
-        </app-pi-button>
-      </span>
-    </app-pi-page-header>
+    <app-pi-page-chrome [crumbs]="detailCrumbs()" data-test="product-detail-nav" />
 
     @if (loadError()) {
       <div
@@ -90,301 +98,297 @@ import { CompositionEditorComponent } from '../../shared/ui/composition/composit
       >
         {{ loadError() }}
       </div>
-      <div class="py-12 text-center text-muted-foreground text-sm">
-        Товар не найден. Вернитесь к списку продукции.
-        <button
-          type="button"
-          (click)="onBack()"
-          class="block mx-auto mt-2 text-ink hover:text-sunrise-warm underline"
+      <div class="py-8 text-center text-muted-foreground text-sm">
+        Товар не найден.
+        <a routerLink="/products" class="block mt-2 text-ink hover:text-sunrise-warm underline"
+          >← К каталогу</a
         >
-          ← К продукции
-        </button>
       </div>
     }
 
-    <!-- I. Основное -->
     @if (product(); as p) {
-      <app-pi-section title="Основное" eyebrow="I">
-        <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-          <dt class="eyebrow">SKU</dt>
-          <dd class="font-mono empty-cell">{{ p.sku ?? '—' }}</dd>
-          <dt class="eyebrow">Тип</dt>
-          <dd class="empty-cell">{{ p.kind ?? '—' }}</dd>
-          <dt class="eyebrow">Статус</dt>
-          <dd class="empty-cell">{{ p.status ?? '—' }}</dd>
-          <dt class="eyebrow">Цена прайс</dt>
-          <dd class="font-mono empty-cell">{{ p.listPrice ?? '—' }} ₽</dd>
-          <dt class="eyebrow">Цена база</dt>
-          <dd class="font-mono empty-cell">{{ p.basePrice ?? '—' }} ₽</dd>
-          <dt class="eyebrow">Себестоимость</dt>
-          <dd class="font-mono empty-cell">{{ p.costPrice ?? '—' }} ₽</dd>
-          <dt class="eyebrow">Активен</dt>
-          <dd>{{ p.isActive ? '✓' : '—' }}</dd>
-        </dl>
-      </app-pi-section>
-
-      <!-- II. Габариты -->
-      <app-pi-section title="Габариты и вес" eyebrow="II">
-        <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-          <dt class="eyebrow">Длина</dt>
-          <dd class="font-mono empty-cell">
-            {{ p.dimensions?.length ?? '—' }} {{ p.dimensions?.unit ?? '' }}
-          </dd>
-          <dt class="eyebrow">Ширина</dt>
-          <dd class="font-mono empty-cell">
-            {{ p.dimensions?.width ?? '—' }} {{ p.dimensions?.unit ?? '' }}
-          </dd>
-          <dt class="eyebrow">Высота</dt>
-          <dd class="font-mono empty-cell">
-            {{ p.dimensions?.height ?? '—' }} {{ p.dimensions?.unit ?? '' }}
-          </dd>
-          <dt class="eyebrow">Вес (кг)</dt>
-          <dd class="font-mono empty-cell">{{ p.weightKg ?? '—' }}</dd>
-          <dt class="eyebrow">RAL</dt>
-          <dd class="font-mono empty-cell">{{ p.ralCode ?? '—' }}</dd>
-        </dl>
-      </app-pi-section>
-
-      <!-- III. Фотогалерея -->
-      <app-pi-section title="Фотогалерея" eyebrow="III">
-        <div class="flex flex-wrap gap-3">
-          @for (ph of mainPhotos(); track ph._id) {
-            <figure>
+      <div
+        class="grid grid-cols-1 xl:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)] gap-5 items-start"
+        data-test="product-detail-layout"
+      >
+        <!-- Левая колонка: карточка товара -->
+        <section
+          class="hairline rounded-sm bg-paper overflow-hidden xl:sticky xl:top-3"
+          data-test="product-hero"
+        >
+          <div
+            class="bg-paper-2 flex items-center justify-center aspect-[4/3] max-h-52"
+            data-test="product-hero-photo"
+          >
+            @if (mainPhotos()[0]; as cover) {
               <img
-                [src]="ph.storageUrl"
-                [alt]="ph.originalFilename ?? 'фото'"
-                class="block w-32 h-32 object-cover hairline rounded-sm"
+                [src]="cover.storageUrl"
+                [alt]="cover.originalFilename ?? p.name"
+                class="block w-full h-full object-cover"
                 loading="lazy"
               />
-            </figure>
-          } @empty {
-            <p class="eyebrow text-muted-foreground">Нет фото. В Phase E добавим загрузку.</p>
-          }
-        </div>
-      </app-pi-section>
-
-      <!-- IV. Модули -->
-      <app-pi-section
-        title="Состав"
-        [hint]="
-          attachedModules().length
-            ? 'один модуль может использоваться в нескольких товарах (M:N)'
-            : ''
-        "
-        eyebrow="IV"
-      >
-        <app-composition-editor
-          [parentId]="p._id"
-          parentKind="product"
-          data-test="product-composition-editor"
-        />
-        <div class="mt-3 flex justify-end">
-          <app-pi-button
-            variant="ghost"
-            type="button"
-            (click)="openCompositionPicker()"
-            data-test="quick-composition-edit"
-          >
-            Быстрое добавление
-          </app-pi-button>
-        </div>
-        <div class="hidden">
-          @if (isComplex()) {
-            <span
-              class="inline-flex items-center mb-2 px-2 py-1 text-xs hairline rounded-sm bg-sunrise-warm/10 text-sunrise-warm"
-              data-test="complex-badge"
-              >Комплекс</span
-            >
-          }
-          @if (compositionLines().length > 0) {
-            <div class="mb-3 hairline rounded-sm overflow-x-auto">
-              <table class="w-full text-sm min-w-[560px]">
-                <thead class="hairline-b">
-                  <tr>
-                    <th class="pi-cell eyebrow text-left">Тип</th>
-                    <th class="pi-cell eyebrow text-left">Элемент</th>
-                    <th class="pi-cell-numeric eyebrow">Кол-во</th>
-                    <th class="pi-cell-numeric eyebrow">Цена</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (line of compositionLines(); track line._id) {
-                    <tr class="pi-table-row pi-table-row-odd">
-                      <td class="pi-cell">
-                        {{
-                          line.lineType === 'product'
-                            ? 'Изделие'
-                            : line.lineType === 'material'
-                              ? 'Материал'
-                              : 'Модуль'
-                        }}
-                      </td>
-                      <td class="pi-cell font-medium">{{ compositionRefLabel(line) }}</td>
-                      <td class="pi-cell-numeric font-mono">{{ line.quantity }}</td>
-                      <td class="pi-cell-numeric font-mono">{{ productLinePrice(line) }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
+            } @else {
+              <span class="text-xs text-muted-foreground px-3 text-center">Нет фото</span>
+            }
+          </div>
+          <div class="p-4 space-y-3">
+            <div class="space-y-1.5">
+              <p class="eyebrow m-0">товар</p>
+              <h1
+                class="font-display text-lg sm:text-xl tracking-tight text-ink leading-snug break-words"
+                data-test="product-title"
+              >
+                {{ p.name }}
+              </h1>
+              <p class="text-xs text-muted-foreground font-mono m-0">
+                {{ p.sku ? 'SKU ' + p.sku : 'без SKU' }}
+                · {{ kindLabel(p.kind) }}
+              </p>
             </div>
-          }
-          <div class="hairline rounded-sm overflow-x-auto">
-            <table class="w-full text-sm min-w-[640px]">
-              <thead class="hairline-b">
-                <tr>
-                  <th class="pi-cell eyebrow text-left">Модуль</th>
-                  <th class="pi-cell eyebrow text-left">Артикул</th>
-                  <th class="pi-cell-numeric eyebrow w-24">Кол-во</th>
-                  <th class="pi-cell-numeric eyebrow w-32">Материалов</th>
-                  <th class="pi-cell-numeric eyebrow w-32">Работ</th>
-                  <th class="pi-cell eyebrow w-40 text-right">Действия</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (row of attachedModules(); track row.module._id) {
-                  <tr class="pi-table-row pi-table-row-odd last:border-0">
-                    <td class="pi-cell align-top font-medium">{{ row.module.name }}</td>
-                    <td class="pi-cell align-top font-mono text-xs empty-cell">
-                      {{ row.module.article ?? '—' }}
-                    </td>
-                    <td class="pi-cell-numeric align-top font-mono">{{ row.quantity }}</td>
-                    <td class="pi-cell-numeric align-top">{{ row.module.materials.length }}</td>
-                    <td class="pi-cell-numeric align-top">{{ row.module.workTypes.length }}</td>
-                    <td class="pi-cell align-top text-right">
-                      <button
-                        type="button"
-                        (click)="openModuleDetail(row.module)"
-                        class="eyebrow text-ink hover:text-sunrise-warm mr-3"
-                      >
-                        Открыть
-                      </button>
-                      <button
-                        type="button"
-                        (click)="onDetach(row)"
-                        class="eyebrow text-destructive hover:underline"
-                      >
-                        Убрать
-                      </button>
-                    </td>
-                  </tr>
-                } @empty {
-                  <app-pi-empty-state
-                    [colspan]="6"
-                    message="Нет модулей в составе. Нажмите «+ Модуль в состав»."
-                    state="empty"
-                  />
-                }
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </app-pi-section>
 
-      <!-- V. Себестоимость -->
-      <app-pi-section
-        title="Себестоимость"
-        eyebrow="V"
-        hint="снимки расчёта: материалы × кол-во + работы × часы + накладные"
-      >
-        <div class="flex justify-end mb-2">
-          <app-pi-button
-            variant="default"
-            type="button"
-            (click)="recalculate()"
-            [disabled]="recalculating()"
-            data-test="recalculate-button"
+            <div class="flex flex-wrap gap-1.5">
+              @if (isComplex()) {
+                <span
+                  class="inline-flex items-center px-2 py-0.5 text-[11px] hairline rounded-sm bg-sunrise-warm/10 text-sunrise-warm"
+                  data-test="complex-badge"
+                  >Комплекс</span
+                >
+              }
+              <span
+                class="inline-flex items-center px-2 py-0.5 text-[11px] hairline rounded-sm"
+                [class.bg-sunrise-warm/10]="p.isActive"
+                [class.text-sunrise-warm]="p.isActive"
+                [class.text-muted-foreground]="!p.isActive"
+                data-test="product-active-badge"
+              >
+                {{ p.isActive ? 'Активен' : 'Неактивен' }}
+              </span>
+              @if (p.status) {
+                <span
+                  class="inline-flex items-center px-2 py-0.5 text-[11px] hairline rounded-sm text-muted-foreground"
+                  data-test="product-status-badge"
+                  >{{ statusLabel(p.status) }}</span
+                >
+              }
+            </div>
+
+            <dl class="grid grid-cols-2 gap-2 text-sm" data-test="product-hero-prices">
+              <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
+                <dt class="eyebrow truncate">Прайс</dt>
+                <dd class="font-mono font-medium text-sm truncate empty-cell">
+                  {{ p.listPrice != null ? formatRuble(p.listPrice) : '—' }}
+                </dd>
+              </div>
+              <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
+                <dt class="eyebrow truncate">База</dt>
+                <dd class="font-mono text-sm truncate empty-cell">
+                  {{ p.basePrice != null ? formatRuble(p.basePrice) : '—' }}
+                </dd>
+              </div>
+              <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
+                <dt class="eyebrow truncate">Себест.</dt>
+                <dd class="font-mono text-sm truncate empty-cell">
+                  {{ p.costPrice != null ? formatRuble(p.costPrice) : '—' }}
+                </dd>
+              </div>
+              <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
+                <dt class="eyebrow truncate">В составе</dt>
+                <dd class="font-mono font-medium text-sm" data-test="product-module-count">
+                  {{ compositionSummary() }}
+                </dd>
+              </div>
+            </dl>
+
+            <dl
+              class="flex flex-col gap-1 text-xs text-muted-foreground"
+              data-test="product-hero-dims"
+            >
+              <div class="flex justify-between gap-2">
+                <span class="eyebrow shrink-0">Д×Ш×В</span>
+                <span class="font-mono text-ink text-right empty-cell">{{
+                  dimensionsLabel(p)
+                }}</span>
+              </div>
+              <div class="flex justify-between gap-2">
+                <span class="eyebrow shrink-0">Вес</span>
+                <span class="font-mono text-ink text-right empty-cell">{{
+                  p.weightKg != null ? p.weightKg + ' кг' : '—'
+                }}</span>
+              </div>
+              <div class="flex justify-between gap-2">
+                <span class="eyebrow shrink-0">RAL</span>
+                <span class="font-mono text-ink text-right empty-cell">{{ p.ralCode ?? '—' }}</span>
+              </div>
+            </dl>
+          </div>
+        </section>
+
+        <!-- Правая колонка: состав + вторичные блоки -->
+        <div class="min-w-0 space-y-4">
+          <section
+            class="hairline rounded-sm bg-paper p-4 space-y-3"
+            data-test="product-composition-panel"
           >
-            {{ recalculating() ? 'Расчёт…' : 'Пересчитать' }}
-          </app-pi-button>
-        </div>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 class="font-display text-base tracking-tight m-0">Состав</h2>
+                <p class="text-xs text-muted-foreground m-0 mt-0.5">
+                  Товар → модули → материалы. Раскрывайте уровни как папки.
+                </p>
+              </div>
+              <app-pi-button
+                variant="default"
+                type="button"
+                (click)="openCompositionPicker()"
+                data-test="quick-composition-edit"
+              >
+                Добавить из каталога
+              </app-pi-button>
+            </div>
+            <app-composition-editor
+              #compositionEditor
+              [parentId]="p._id"
+              parentKind="product"
+              data-test="product-composition-editor"
+            />
+          </section>
 
-        @if (costList().length > 0) {
-          <div class="hairline rounded-sm overflow-x-auto">
-            <table class="w-full text-sm min-w-[640px]">
-              <thead class="hairline-b">
-                <tr>
-                  <th class="pi-cell eyebrow text-left">Дата</th>
-                  <th class="pi-cell-numeric eyebrow w-32">Материалы</th>
-                  <th class="pi-cell-numeric eyebrow w-32">Работы</th>
-                  <th class="pi-cell-numeric eyebrow w-32">Накладные</th>
-                  <th class="pi-cell-numeric eyebrow w-40">Итого</th>
-                  <th class="pi-cell eyebrow w-24">Статус</th>
-                  <th class="pi-cell eyebrow w-32 text-right">Действия</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (cc of costList(); track cc._id) {
-                  <tr
-                    class="pi-table-row pi-table-row-odd last:border-0"
-                    [class.bg-sunrise-warm/10]="cc.isActive"
-                  >
-                    <td class="pi-cell align-top">
-                      {{ formatDate(cc.calculatedAt || cc.createdAt) }}
-                    </td>
-                    <td class="pi-cell-numeric align-top font-mono">
-                      {{ formatRuble(cc.totalMaterialCost) }}
-                    </td>
-                    <td class="pi-cell-numeric align-top font-mono">
-                      {{ formatRuble(cc.totalLaborCost) }}
-                    </td>
-                    <td class="pi-cell-numeric align-top font-mono text-muted-foreground">
-                      {{ cc.overheadPercent }}% → {{ formatRuble(cc.overheadCost) }}
-                    </td>
-                    <td class="pi-cell-numeric align-top font-mono font-medium">
-                      {{ formatRuble(cc.totalCost) }}
-                    </td>
-                    <td class="pi-cell align-top">
-                      @if (cc.isActive) {
-                        <span
-                          class="inline-flex items-center gap-1 text-xs font-medium text-sunrise-warm"
-                          >● Активен</span
-                        >
-                      } @else {
-                        <span class="text-xs text-muted-foreground">—</span>
-                      }
-                    </td>
-                    <td class="pi-cell align-top text-right">
-                      <button
-                        type="button"
-                        (click)="openBreakdown(cc)"
-                        class="eyebrow text-ink hover:text-sunrise-warm mr-3"
-                      >
-                        Детали
-                      </button>
-                      @if (!cc.isActive) {
-                        <button
-                          type="button"
-                          (click)="activateSnapshot(cc)"
-                          class="eyebrow text-muted-foreground hover:text-ink mr-3"
-                        >
-                          Активировать
-                        </button>
-                      }
-                      <button
-                        type="button"
-                        (click)="onDeleteCalc(cc)"
-                        class="eyebrow text-destructive hover:underline"
-                      >
-                        Удалить
-                      </button>
-                    </td>
-                  </tr>
+          <app-pi-accordion [multi]="true" data-test="product-cascade">
+            <app-pi-accordion-item
+              title="Фото"
+              index="01"
+              [meta]="photoMeta()"
+              [expanded]="openPhotos()"
+              (expandedChange)="openPhotos.set($event)"
+            >
+              <div class="flex flex-wrap gap-3" data-test="product-photo-gallery">
+                @for (ph of mainPhotos(); track ph._id) {
+                  <figure class="m-0">
+                    <img
+                      [src]="ph.storageUrl"
+                      [alt]="ph.originalFilename ?? 'фото'"
+                      class="block w-36 h-36 object-cover hairline rounded-sm bg-paper-2"
+                      loading="lazy"
+                    />
+                  </figure>
+                } @empty {
+                  <p class="text-sm text-muted-foreground">Нет фото у этого товара.</p>
                 }
-              </tbody>
-            </table>
-          </div>
-        } @else {
-          <app-pi-empty-state
-            [colspan]="7"
-            message="Нет расчётов себестоимости. Нажмите «Пересчитать»."
-            state="empty"
-          />
-        }
-      </app-pi-section>
+              </div>
+            </app-pi-accordion-item>
+
+            <app-pi-accordion-item
+              title="Себестоимость"
+              index="02"
+              [meta]="costMeta()"
+              [expanded]="openCost()"
+              (expandedChange)="openCost.set($event)"
+            >
+              <div class="flex justify-end mb-3">
+                <app-pi-button
+                  variant="default"
+                  type="button"
+                  (click)="recalculate()"
+                  [disabled]="recalculating()"
+                  data-test="recalculate-button"
+                >
+                  {{ recalculating() ? 'Расчёт…' : 'Пересчитать' }}
+                </app-pi-button>
+              </div>
+
+              @if (costList().length > 0) {
+                <div class="hairline rounded-sm overflow-x-auto">
+                  <table class="w-full text-sm min-w-[640px]">
+                    <thead class="hairline-b">
+                      <tr>
+                        <th class="pi-cell eyebrow text-left">Дата</th>
+                        <th class="pi-cell-numeric eyebrow w-32">Материалы</th>
+                        <th class="pi-cell-numeric eyebrow w-32">Работы</th>
+                        <th class="pi-cell-numeric eyebrow w-32">Накладные</th>
+                        <th class="pi-cell-numeric eyebrow w-40">Итого</th>
+                        <th class="pi-cell eyebrow w-24">Статус</th>
+                        <th class="pi-cell eyebrow w-32 text-right">Действия</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (cc of costList(); track cc._id) {
+                        <tr
+                          class="pi-table-row pi-table-row-odd last:border-0"
+                          [class.bg-sunrise-warm/10]="cc.isActive"
+                        >
+                          <td class="pi-cell align-top">
+                            {{ formatDate(cc.calculatedAt || cc.createdAt) }}
+                          </td>
+                          <td class="pi-cell-numeric align-top font-mono">
+                            {{ formatRuble(cc.totalMaterialCost) }}
+                          </td>
+                          <td class="pi-cell-numeric align-top font-mono">
+                            {{ formatRuble(cc.totalLaborCost) }}
+                          </td>
+                          <td class="pi-cell-numeric align-top font-mono text-muted-foreground">
+                            {{ cc.overheadPercent }}% → {{ formatRuble(cc.overheadCost) }}
+                          </td>
+                          <td class="pi-cell-numeric align-top font-mono font-medium">
+                            {{ formatRuble(cc.totalCost) }}
+                          </td>
+                          <td class="pi-cell align-top">
+                            @if (cc.isActive) {
+                              <span
+                                class="inline-flex items-center gap-1 text-xs font-medium text-sunrise-warm"
+                                >● Активен</span
+                              >
+                            } @else {
+                              <span class="text-xs text-muted-foreground">—</span>
+                            }
+                          </td>
+                          <td class="pi-cell align-top text-right">
+                            <button
+                              type="button"
+                              (click)="openBreakdown(cc)"
+                              class="eyebrow text-ink hover:text-sunrise-warm mr-3"
+                            >
+                              Детали
+                            </button>
+                            @if (!cc.isActive) {
+                              <button
+                                type="button"
+                                (click)="activateSnapshot(cc)"
+                                class="eyebrow text-muted-foreground hover:text-ink mr-3"
+                              >
+                                Активировать
+                              </button>
+                            }
+                            <button
+                              type="button"
+                              (click)="onDeleteCalc(cc)"
+                              class="eyebrow text-destructive hover:underline"
+                            >
+                              Удалить
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              } @else {
+                <app-pi-empty-state
+                  [colspan]="7"
+                  message="Нет расчётов себестоимости. Нажмите «Пересчитать»."
+                  state="empty"
+                />
+              }
+            </app-pi-accordion-item>
+          </app-pi-accordion>
+        </div>
+      </div>
     }
   `,
 })
 export class ProductDetailPage {
+  @ViewChild('compositionEditor')
+  private compositionEditor?: CompositionEditorComponent;
+
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly dialog = inject(PiDialogService);
@@ -435,11 +439,42 @@ export class ProductDetailPage {
     return err ? extractErrorMessage(err) : null;
   });
 
-  protected readonly productDescription = computed<string>(() => {
-    const p = this.product();
-    if (!p) return '';
-    return p.sku ? `Товар · SKU ${p.sku}` : 'Товар';
+  /** Cascade accordion: фото/себестоимость свёрнуты; состав всегда на виду. */
+  protected readonly openPhotos = signal(false);
+  protected readonly openCost = signal(false);
+
+  protected readonly detailCrumbs = computed<PageCrumb[]>(() => [
+    { label: 'Каталог', link: '/products' },
+    { label: this.product()?.name ?? 'Товар' },
+  ]);
+
+  protected readonly photoMeta = computed(() => {
+    const n = this.mainPhotos().length;
+    return n ? `${n}` : 'нет';
   });
+
+  protected compositionSummary(): string {
+    const n = this.compositionLines().length || this.attachedModules().length;
+    return n ? String(n) : '0';
+  }
+
+  protected statusLabel(status: string): string {
+    return STATUS_LABELS[status as ProductStatus] ?? status;
+  }
+
+  protected kindLabel(kind?: string): string {
+    if (!kind) return '—';
+    return KIND_LABELS[kind as ProductKind] ?? kind;
+  }
+
+  protected dimensionsLabel(p: {
+    dimensions?: { length?: number; width?: number; height?: number; unit?: string };
+  }): string {
+    const d = p.dimensions;
+    if (!d || (d.length == null && d.width == null && d.height == null)) return '—';
+    const unit = d.unit ? ` ${d.unit}` : '';
+    return `${d.length ?? '—'}×${d.width ?? '—'}×${d.height ?? '—'}${unit}`;
+  }
 
   protected readonly mainPhotos = computed<Photo[]>(() => {
     const p = this.product();
@@ -512,6 +547,10 @@ export class ProductDetailPage {
     });
   }
   protected readonly costList = computed<CostCalculation[]>(() => this.costRes.value() ?? []);
+  protected readonly costMeta = computed(() => {
+    const n = this.costList().length;
+    return n ? `${n}` : 'нет';
+  });
   protected readonly recalculating = signal<boolean>(false);
 
   protected onBack(): void {
@@ -563,6 +602,7 @@ export class ProductDetailPage {
         if (res.ok) {
           this.toast.success('Строка добавлена в состав');
           this.productRes.reload();
+          this.compositionEditor?.reload();
         } else {
           this.toast.error(extractErrorMessage(res.error));
         }
