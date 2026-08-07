@@ -8,17 +8,19 @@ Wave 1 index: `tasks/CATALOG-WAVE1.md` (backend 301–305 **DONE**)
 
 | Doc | Role |
 |-----|------|
+| `TZ-DAY-2026-08-07-catalog-kind-colors-330-332.md` | **COLORS WAVE:** 330 → 331 → 332 |
 | `docs/agent-handoff-2026-08-06-TZ-CATALOG-314.md` | historical 314 stop |
-| `TZ-DAY-2026-08-06e-session-320-311.md` | **сегодня:** 320 → 311 |
+| `TZ-DAY-2026-08-06e-session-320-311.md` | historical 320 → 311 |
 
 ## Open queue
 
 | ID | Title | Status |
 |----|-------|--------|
-| **311** | CompositionTree | **NEXT** · full TZ |
-| **315** | Lists polish + a11y | after 311 · stub |
-| **330** | Kind colors on composition tree | park · audit `docs/audits/2026-08-07-catalog-entity-colors-audit.md` |
+| **330** | Kind colors on composition tree | **COLORS WAVE START** |
 | **331** | Оформление каталога (persist + hue UI) | after 330 |
+| **332** | Kind colors on lists + picker | after 331 |
+| **311** | CompositionTree | defer if conflicts with 330 keys |
+| **315** | Lists polish + a11y | after 332 if overlapping lists |
 | **306** | Coherence audit trail | discussion only |
 
 ## Done (archive only — backlog stubs removed)
@@ -27,6 +29,7 @@ Wave 1 index: `tasks/CATALOG-WAVE1.md` (backend 301–305 **DONE**)
 
 ## Rules
 
-- Order: **311 → 315** (320 DONE on main `07ced5f`)
-- Never parallel overlapping product/module form conflict keys without map claim
+- Colors wave: **330 → 331 → 332** (see TZ-DAY)
+- Never mix RAL (`color_references`) with catalog kind hues
+- Never parallel overlapping conflict keys without map claim
 - Never `git add .` while чужой dirty present
