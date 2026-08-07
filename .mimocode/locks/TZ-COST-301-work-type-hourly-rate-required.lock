@@ -1,6 +1,6 @@
 TZ-COST-301
 closed: 2026-08-08
-commit: PENDING
+commit: 79edbea3c4c7957cb8ce7973f9acb1a29e2ca1a6
 zone: work-type hourlyRate required (BE+FE)
 checklist: docs/agent-checklists/TZ-COST-301.md
 archive: tasks/_archive/2026-08/TZ-COST-301.done.md

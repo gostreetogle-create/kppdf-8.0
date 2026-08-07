@@ -5,7 +5,7 @@
 **Gates:** backend tsc PASS; frontend tsc PASS; jest work-type.service 8/8 PASS
 **Archive:** `tasks/_archive/2026-08/TZ-COST-301.done.md`
 **Lock:** `.mimocode/locks/TZ-COST-301-work-type-hourly-rate-required.lock`
-**Commit:** PENDING
+**Commit:** `79edbea3c4c7957cb8ce7973f9acb1a29e2ca1a6`
 **Known limits:** `0` разрешён; COST-302 только по PO; CostCalculation не трогали
 
 ---
