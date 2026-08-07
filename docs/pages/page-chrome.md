@@ -56,6 +56,7 @@ Group Chip Workspace **не** дублирует deep path-breadcrumb вмест
 ## См. также
 
 - Каталожный выпадающий список: [`ui-overflow-select.md`](./ui-overflow-select.md)
+- Дерево состава (строка = кнопка): [`ui-composition-tree.md`](./ui-composition-tree.md)
 
 ---
 

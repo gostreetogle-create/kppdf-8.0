@@ -18,7 +18,7 @@
 1. **Nav:** `Каталог / <имя>` (`PiPageChrome`).
 2. **Split xl:** слева sticky-паспорт; справа **BOM-панель** + аккордеон Фото / Себестоимость.
 3. **BOM (`ProductBomPanel`):**
-   - дерево состава (клик = выбор; › = раскрыть/свернуть);
+   - дерево: **`app-composition-tree`** — клик по всей строке ([канон](./ui-composition-tree.md));
    - инспектор справа: qty, «+ Из каталога» **в выбранный узел**, убрать, ссылка на карточку;
    - add в **product** → product composition API; add в **module** → module composition API;
    - picker с `restrictToModule` скрывает вкладку «изделие» и разрешает сырьё;
