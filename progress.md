@@ -5,6 +5,7 @@
 **Gates:** frontend tsc PASS; Jest composition-tree 3/3 PASS
 **Archive:** `tasks/_archive/2026-08/TZ-CATALOG-334.done.md`
 **Lock:** `.mimocode/locks/TZ-CATALOG-334-composition-block-cohesion.lock`
+**Commit:** `0f90243`
 **Cursor Verdict:** PASS
 
 ---

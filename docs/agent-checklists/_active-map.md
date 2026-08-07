@@ -8,7 +8,7 @@
 |------|------------|
 | TZ-OPS-301 | `f12c2d8` |
 | TZD-17 … TZD-20 | archives |
-| TZ-CATALOG-330 … **334** | 334 · nest cohesion PASS |
+| TZ-CATALOG-330 … **334** | 334 · `0f90243` |
 | TZ-COST-301 | `79edbea` |
 | TZ-PRODUCTION-303.1 / 303.1b | archives (root copies removed) |
 
@@ -48,7 +48,7 @@ _(empty)_
 - READY FOR REVIEW: **TZ-COST-302**, **TZD-22** (archive only after Cursor/PO PASS)
 - NOT DONE: TZ-COST-303, TZD-21; TZD-23 park
 - NEXT: Cursor PASS → archive 302 and/or 22
-- HEAD: (pending 334 commit)
+- HEAD: `0f90243` (+ uncommitted TZD-22 / COST-302 peer WIP)
 - Blockers: none · Team Room claim 334 unavailable (best-effort send)
 - _active/: TZ-COST-302.md, TZD-22.md
 - Deploy: NO
