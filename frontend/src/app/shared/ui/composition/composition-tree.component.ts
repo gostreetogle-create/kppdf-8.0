@@ -1,6 +1,11 @@
 import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { CompositionTreeNode } from '../../services/pi-product-modules.service';
+import {
+  catalogKindBorder,
+  catalogKindOklch,
+  catalogKindWash,
+} from '../catalog/catalog-kind-oklch';
 
 export type CompositionTreeExpandEvent = { node: CompositionTreeNode; expanded: boolean };
 
@@ -13,6 +18,7 @@ export type CompositionTreeSelectEvent = {
 /**
  * Composition tree — canon: docs/pages/ui-composition-tree.md
  * Whole-row hit target; no text selection; › is indicator only.
+ * Kind wash: docs/audits/2026-08-07-catalog-entity-colors-audit.md (TZ-330).
  */
 @Component({
   selector: 'app-composition-tree',
@@ -43,10 +49,9 @@ export type CompositionTreeSelectEvent = {
     <ng-template #nodeTemplate let-node let-depth="depth" let-parent="parent">
       <div
         class="rounded-sm transition-colors border-l-2"
-        [class.border-sunrise-warm]="node.kind === 'product'"
-        [class.border-ink]="node.kind === 'module'"
-        [class.border-ink/30]="node.kind === 'material'"
+        [style.border-left-color]="kindBorder(node)"
         [attr.data-test]="'composition-tree-node-' + node._id"
+        [attr.data-kind]="node.kind"
         role="treeitem"
         [attr.aria-level]="depth + 1"
         [attr.aria-expanded]="node.kind !== 'material' ? isExpanded(node) : null"
@@ -55,12 +60,9 @@ export type CompositionTreeSelectEvent = {
         <div
           class="flex items-center gap-1.5 px-2 py-1.5 min-h-9 hairline rounded-sm cursor-pointer select-none pi-focus-ring"
           [style.padding-left.rem]="depth * 1.1 + 0.5"
-          [class.bg-sunrise-warm/15]="selectedId() === node._id"
+          [style.background]="rowWash(node)"
           [class.ring-1]="selectedId() === node._id"
           [class.ring-sunrise-warm/40]="selectedId() === node._id"
-          [class.bg-paper-2]="selectedId() !== node._id && node.kind === 'module'"
-          [class.bg-sunrise-warm/5]="selectedId() !== node._id && node.kind === 'product'"
-          [class.bg-paper]="selectedId() !== node._id && node.kind === 'material'"
           [class.bg-sunrise-warm/10]="depth > 5"
           (mousedown)="onRowMouseDown($event)"
           (click)="onRowClick(node, parent, depth)"
@@ -82,10 +84,9 @@ export type CompositionTreeSelectEvent = {
             <span class="w-6 shrink-0" aria-hidden="true"></span>
           }
           <span
-            class="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-sm hairline"
-            [class.text-sunrise-warm]="node.kind === 'product'"
-            [class.text-ink]="node.kind === 'module'"
-            [class.text-muted-foreground]="node.kind === 'material'"
+            class="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-sm hairline font-medium"
+            [style.color]="kindAccent(node)"
+            [style.border-color]="kindAccent(node)"
             >{{ kindShort(node) }}</span
           >
           <span class="min-w-0 flex-1 truncate">
@@ -142,7 +143,6 @@ export class CompositionTreeComponent {
       const next = new Set(this.expanded());
       next.add(rootNode._id);
       this.expanded.set(next);
-      // Seed only — do not emit (parent would refetch / tests toggle from collapsed).
     });
   }
 
@@ -150,8 +150,23 @@ export class CompositionTreeComponent {
     return this.expanded().has(node._id);
   }
 
+  protected kindBorder(node: CompositionTreeNode): string {
+    return catalogKindBorder(node.kind, node.materialKind);
+  }
+
+  protected kindAccent(node: CompositionTreeNode): string {
+    return catalogKindOklch(node.kind, node.materialKind);
+  }
+
+  protected rowWash(node: CompositionTreeNode): string {
+    if (this.selectedId() === node._id) {
+      const solid = catalogKindOklch(node.kind, node.materialKind, 0.1, 0.72);
+      return solid.replace(/\)$/, ' / 0.28)');
+    }
+    return catalogKindWash(node.kind, node.materialKind);
+  }
+
   protected onRowMouseDown(event: MouseEvent): void {
-    // Button-like hit target: suppress native text selection on click/drag.
     event.preventDefault();
   }
 
@@ -163,9 +178,6 @@ export class CompositionTreeComponent {
     const alreadySelected = this.selectedId() === node._id;
     this.selectedChange.emit({ node, parent, depth });
     if (node.kind === 'material') return;
-    // Whole row is the hit target (no need to aim at ›).
-    // Collapsed → open. Same selected row again (or no selection mode) → close.
-    // Other already-open node → keep open, just select.
     if (!this.isExpanded(node)) {
       this.setExpanded(node, true);
     } else if (alreadySelected || this.selectedId() == null) {

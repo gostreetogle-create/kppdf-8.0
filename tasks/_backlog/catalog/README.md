@@ -16,9 +16,9 @@ Wave 1 index: `tasks/CATALOG-WAVE1.md` (backend 301–305 **DONE**)
 
 | ID | Title | Status |
 |----|-------|--------|
-| **330** | Kind colors on composition tree | **COLORS WAVE START** |
-| **331** | Оформление каталога (persist + hue UI) | after 330 |
+| **331** | Оформление каталога (persist + hue UI) | **NEXT** after 330 DONE |
 | **332** | Kind colors on lists + picker | after 331 |
+| **330** | Kind colors on composition tree | **DONE** → `_archive/2026-08/TZ-CATALOG-330.done.md` |
 | **311** | CompositionTree | defer if conflicts with 330 keys |
 | **315** | Lists polish + a11y | after 332 if overlapping lists |
 | **306** | Coherence audit trail | discussion only |

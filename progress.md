@@ -1,3 +1,13 @@
+## [2026-08-07] — TZ-CATALOG-330 DONE: kind colors on composition tree
+**Исполнитель:** Cursor (session catalog colors wave)
+**Статус:** DONE on main
+**Что сделано кратко:** `catalogKindOklch` defaults (product/module/material/raw); wash+border+бейдж на `composition-tree`; точка kind в BOM inspector. Persist UI → 331.
+**Gates:** Jest catalog-kind-oklch + bom-panel + composition-editor PASS
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-330.done.md`
+**Known limits:** цвета только из кода; экран «Оформление» — TZ-331
+
+---
+
 ## [2026-08-07] — TZ-PRODUCTION-303.1b DONE: land Gantt hotfix + orders ?q= deep-link on main
 **Исполнитель:** Buffy / canonical executor (`agent-3e757640b7`)
 **Статус:** DONE on `main`; deep-link landed, Gantt hotfix preserved from `cde23a5`, deploy НЕ выполнялся

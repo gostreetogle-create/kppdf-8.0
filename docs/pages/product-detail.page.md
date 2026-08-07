@@ -19,6 +19,7 @@
 2. **Split xl:** слева sticky-паспорт; справа **BOM-панель** + аккордеон Фото / Себестоимость.
 3. **BOM (`ProductBomPanel`):**
    - дерево: **`app-composition-tree`** — клик по всей строке ([канон](./ui-composition-tree.md));
+     kind-цвета (изд/мод/мат) через `catalogKindOklch` (TZ-330);
    - инспектор справа: qty, «+ Из каталога» **в выбранный узел**, убрать, ссылка на карточку;
    - add в **product** → product composition API; add в **module** → module composition API;
    - picker с `restrictToModule` скрывает вкладку «изделие» и разрешает сырьё;

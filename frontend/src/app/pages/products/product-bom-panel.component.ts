@@ -31,6 +31,7 @@ import {
   ProductCompositionPickerDialogComponent,
   type ProductCompositionPickerResult,
 } from './product-composition-picker-dialog.component';
+import { catalogKindOklch } from '../../shared/ui/catalog/catalog-kind-oklch';
 
 /**
  * Interactive BOM panel (variant A): tree + inspector + add-in-context.
@@ -91,7 +92,15 @@ import {
       >
         @if (selected(); as sel) {
           <div class="space-y-1">
-            <p class="eyebrow m-0">Выбрано</p>
+            <p class="eyebrow m-0 flex items-center gap-2">
+              <span
+                class="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+                [style.background]="inspectorAccent(sel.node)"
+                aria-hidden="true"
+                data-test="bom-inspector-kind-dot"
+              ></span>
+              Выбрано
+            </p>
             <p class="font-medium text-sm m-0 break-words" data-test="bom-inspector-name">
               {{ sel.node.name }}
             </p>
@@ -254,6 +263,10 @@ export class ProductBomPanelComponent {
     if (node.materialKind === 'purchased') return 'Покупное';
     if (node.materialKind === 'raw') return 'Сырьё';
     return 'Материал';
+  }
+
+  protected inspectorAccent(node: CompositionTreeNode): string {
+    return catalogKindOklch(node.kind, node.materialKind);
   }
 
   protected canAddInto(node: CompositionTreeNode): boolean {
