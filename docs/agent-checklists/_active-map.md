@@ -1,21 +1,24 @@
-# SESSION QUEUE — 2026-08-08 post-TZD-17
+# SESSION QUEUE — 2026-08-08 · quiet boot TZ + desktop
 
-**Updated:** 2026-08-08 · TZD-17 Cursor PASS → archived
+**Updated:** 2026-08-08 · TZ-OPS-301 READY (quiet Nest boot)
+
+## Ops / DX
+
+| Item | Status |
+|------|--------|
+| **TZ-OPS-301** quiet local boot logs | **READY** — `tasks/_backlog/ops/TZ-OPS-301-quiet-dev-boot-logs.md` · checklist `docs/agent-checklists/TZ-OPS-301.md` |
 
 ## Desktop / MCP
 
 | Item | Status |
 |------|--------|
-| **TZD-17** semantic domain layer | **DONE** — `tasks/_archive/2026-08/TZD-17.done.md` · lock `.mimocode/locks/TZD-17-mcp-semantic-domain-layer.lock` |
-| **TZD-18** batch scale | **PARK / NEXT** — `tasks/_backlog/desktop/TZD-18-mcp-batch-scale.md` — **не стартовать без PO** |
-| TZD-19 graph + integrity | PARK (after 18 / PO) |
+| **TZD-17** semantic domain layer | **DONE** — `tasks/_archive/2026-08/TZD-17.done.md` |
+| **TZD-20** mcp.json copy for Cursor/LM Studio | **READY** — `tasks/_backlog/desktop/TZD-20-mcp-client-json-copy.md` |
+| **TZD-18** batch scale | PARK — не без PO |
+| **TZD-19** graph + integrity | PARK |
 
-## Checkpoint 2026-08-08T00:25Z
-- DONE: TZD-17 (schema/categories/validate/audit) — Cursor PASS, archived
-- IN PROGRESS: none (desktop MCP)
-- NOT DONE: TZD-18, TZD-19 (PARK)
-- NEXT: idle until PO says «делай TZD-18» (or other)
-- HEAD: main @ `e88667f` (TZD-17)
-- Blockers: none
-- _active/: empty (TZD-17 removed)
+## Checkpoint
+- NEXT (DX): PO «делай TZ-OPS-301» — тихий boot (Nest DI + proxy race)
+- NEXT (desktop): «делай TZD-20» или «делай TZD-18»
+- CONFLICT OPS-301: `backend/src/main.ts`, `start.mjs`, `.env.example` (+ optional quiet-logger)
 - Deploy: NO
