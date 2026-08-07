@@ -359,17 +359,18 @@ const KIND_LABELS: Record<Product['kind'], string> = {
               </p>
             } @else {
               <div
-                class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+                class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch"
                 data-test="products-grid"
               >
                 @for (row of data(); track row._id) {
                   <a
                     [routerLink]="['/products', row._id]"
-                    class="block min-w-0"
+                    class="block min-w-0 h-full"
                     [attr.aria-label]="'Открыть ' + row.name"
                     [attr.data-test]="'showcase-cell-' + row._id"
                   >
                     <app-pi-showcase-card
+                      class="h-full"
                       size="md"
                       [title]="row.name"
                       [description]="gridDescription(row)"
@@ -448,17 +449,22 @@ const KIND_LABELS: Record<Product['kind'], string> = {
       </div>
 
       <ng-template #photoTpl let-row>
-        @if (mainPhotoOf(row); as mp) {
-          <img
-            [src]="mp.storageUrl"
-            [alt]="mp.originalFilename || row.name"
-            class="block w-16 h-16 object-cover hairline rounded-sm"
-            loading="lazy"
-            data-test="product-photo"
-          />
-        } @else {
-          <app-pi-empty-tile [sizePx]="64" />
-        }
+        <div
+          class="flex items-center justify-center w-[5.5rem] h-[5.5rem] mx-auto"
+          data-test="product-photo-cell"
+        >
+          @if (mainPhotoOf(row); as mp) {
+            <img
+              [src]="mp.storageUrl"
+              [alt]="mp.originalFilename || row.name"
+              class="block w-[5.5rem] h-[5.5rem] object-cover hairline rounded-sm"
+              loading="lazy"
+              data-test="product-photo"
+            />
+          } @else {
+            <app-pi-empty-tile [sizePx]="88" />
+          }
+        </div>
       </ng-template>
 
       <ng-template #nameTpl let-row>
@@ -626,7 +632,7 @@ export class ProductsPage implements OnInit {
   );
 
   protected readonly cols: ColumnDef<Product>[] = [
-    { key: 'photoIds', label: 'Фото', width: '80px', align: 'center' },
+    { key: 'photoIds', label: 'Фото', width: '104px', align: 'center' },
     { key: 'name', label: 'Название', sortable: true, sticky: 'left', width: '240px' },
     { key: 'unit', label: 'Ед.', width: '64px' },
     {

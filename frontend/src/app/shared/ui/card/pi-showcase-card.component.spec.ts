@@ -153,6 +153,16 @@ describe('PiShowcaseCardComponent — TZ-PRODUCTS-305', () => {
     expect(article.classList.contains('is-hoverable')).toBe(true);
   });
 
+  it('size="md" reserves media slot even without mediaUrl', () => {
+    host.size.set('md');
+    host.mediaUrl.set('');
+    fixture.detectChanges();
+    const media = fixture.nativeElement.querySelector('[data-test="showcase-media"]');
+    expect(media).toBeTruthy();
+    expect(media.classList.contains('sc-media--empty')).toBe(true);
+    expect(media.querySelector('img')).toBeNull();
+  });
+
   it('no media img when mediaUrl empty', () => {
     host.size.set('lg');
     host.mediaUrl.set('');

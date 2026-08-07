@@ -78,13 +78,19 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
           @if (title()) {
             <h3 class="sc-title-md font-display" data-test="title">{{ title() }}</h3>
           }
-          @if (mediaUrl()) {
-            <div class="sc-media sc-media--md">
+          <div
+            class="sc-media sc-media--md"
+            [class.sc-media--empty]="!mediaUrl()"
+            data-test="showcase-media"
+          >
+            @if (mediaUrl()) {
               <img [src]="mediaUrl()" [alt]="title() || ''" loading="lazy" />
-            </div>
-          }
+            }
+          </div>
           @if (description()) {
-            <p class="sc-desc-md" data-test="description">{{ description() }}</p>
+            <p class="sc-desc-md" data-test="description" [attr.title]="description()">
+              {{ description() }}
+            </p>
           }
           <ng-content />
           @if (hasActionsMd()) {
@@ -147,6 +153,7 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
     `
       :host {
         display: block;
+        height: 100%;
       }
 
       article {
@@ -160,7 +167,9 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
         cursor: pointer;
         transition:
           transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
-          box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
+          border-color 200ms ease,
+          background-color 200ms ease;
       }
       article.is-hoverable:hover {
         transform: translateY(-1px);
@@ -240,18 +249,36 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
         gap: 6px;
       }
 
-      /* md */
+      /* md — equal-height catalog tiles */
       article.size-md {
-        padding: 16px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 14px 14px 12px;
+        background: var(--color-paper-2, #f3efe6);
+        border-color: color-mix(
+          in oklab,
+          var(--color-rule, #e7e3da) 85%,
+          var(--color-ink, #1a1815)
+        );
+        box-shadow: inset 0 1px 0 color-mix(in oklab, var(--color-paper, #fafafa) 55%, transparent);
       }
-      article.size-md.size-md-with-media {
-        /* placeholder for future variant hooks */
+      article.size-md.is-hoverable:hover {
+        background: var(--color-paper, #fafafa);
+        border-color: color-mix(
+          in oklab,
+          var(--color-rule, #e7e3da) 60%,
+          var(--color-ink, #1a1815)
+        );
+        box-shadow: 0 8px 20px -12px color-mix(in oklab, var(--color-ink, #1a1815) 28%, transparent);
       }
       .sc-head-md {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 8px;
+        min-height: 1.25rem;
+        flex-shrink: 0;
       }
       .sc-head-md-left {
         display: flex;
@@ -263,26 +290,61 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
         font-size: 16px;
         font-weight: 600;
         color: var(--color-ink, #1a1815);
-        margin: 4px 0 0;
+        margin: 6px 0 0;
         line-height: 1.3;
+        min-height: calc(1.3em * 2);
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+        flex-shrink: 0;
       }
       .sc-media--md {
-        margin: 12px 0 0;
+        margin: 10px 0 0;
         aspect-ratio: 16 / 9;
         border-radius: 4px;
         overflow: hidden;
-        background: var(--color-paper-2, #f3efe6);
+        background: color-mix(
+          in oklab,
+          var(--color-paper, #fafafa) 70%,
+          var(--color-paper-2, #f3efe6)
+        );
+        border: 1px solid var(--color-rule, #e7e3da);
+        flex-shrink: 0;
+      }
+      .sc-media--md.sc-media--empty {
+        background: linear-gradient(
+          135deg,
+          color-mix(in oklab, var(--color-paper-2, #f3efe6) 80%, var(--color-rule, #e7e3da)),
+          var(--color-paper, #fafafa)
+        );
       }
       .sc-desc-md {
         font-size: 13px;
         color: var(--color-muted-foreground, #797063);
         margin: 8px 0 0;
         line-height: 1.4;
+        min-height: calc(1.4em * 2);
+        max-height: calc(1.4em * 2);
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+        transition: max-height 180ms ease;
+        flex-shrink: 0;
+      }
+      article.size-md.is-hoverable:hover .sc-desc-md {
+        -webkit-line-clamp: unset;
+        max-height: 6.5em;
+        overflow: auto;
       }
       .sc-footer-md {
-        margin-top: 12px;
+        margin-top: auto;
+        padding-top: 12px;
         display: flex;
         gap: 8px;
+        flex-shrink: 0;
+        border-top: 1px solid color-mix(in oklab, var(--color-rule, #e7e3da) 80%, transparent);
       }
 
       /* lg */
@@ -363,13 +425,10 @@ export class PiShowcaseCardComponent {
   readonly hostClass = computed(() => {
     const cls = [`size-${this.size()}`];
     if (this.interactive()) cls.push('is-hoverable');
+    if (this.size() === 'md' && this.mediaUrl()) cls.push('size-md-with-media');
     return cls.join(' ');
   });
 
-  // Slot detection: True if a slot was provided. SPEC: actions-md и actions-sm
-  // существуют ТОЛЬКО когда родитель положил внутрь. Чтобы не показывать пустой
-  // footer, проверяем через DI ContentChildren (не через текст-парсинг).
-  // Для упрощения — мы всегда пробуем рендерить; родитель решает что внутри.
   readonly hasActionsMd = computed(() => true);
   readonly hasActionsLg = computed(() => true);
 }
