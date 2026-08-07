@@ -816,6 +816,7 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 
 | TZ | Дата | Описание | Архив |
 |---|---|---|---|
+| TZ-PRODUCTION-303.1b | 2026-08-07 | Main landing: Gantt hotfix (rail↔bars sync, WorkType.days rollback, bar context/legend/toolbar/ACL UX) + inspector `/orders?q=<номер>` deep-link; catalog polish preserved | `tasks/_archive/2026-08/TZ-PRODUCTION-303.1b-land-hotfix-main.done.md` |
 | TZ-PRODUCTION-303.1 | 2026-08-07 | Gantt closeout: inspector `/orders?q=<номер>` deep-link, OrdersPage query-param search, production docs | `tasks/_archive/2026-08/TZ-PRODUCTION-303.1-gantt-hotfix-closeout.done.md` |
 | TZ-PRODUCTS-301 | 2026-08-02 | Справочник «Цвета» (RAL) — ColorReference entity (sparse-unique {organizationId, slug}, hex, soft-delete) + seed «Не выбран» + страница /dictionaries/color-references (pi-table, copy/edit/delete) | `tasks/_archive/2026-08/TZ-PRODUCTS-301-color-reference-dictionary.done.md` |
 | TZ-PRODUCTS-302 | 2026-08-02 | ProductFormDialog — content-диалог 1000px + секции по категориям + RAL dropdown из справочника цветов (slug → ralCode, «Не выбран» → null, явный null в PATCH, атомарное удаление фото) | `tasks/_archive/2026-08/TZ-PRODUCTS-302-product-form-dialog-rework.done.md` |

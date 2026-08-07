@@ -68,16 +68,8 @@ const PRIORITIES: { value: OrderPriority; label: string; hint: string }[] = [
           <div class="text-sm font-semibold text-ink truncate" data-test="inspector-order-number">
             {{ order().number }}
           </div>
-          <div class="text-[11px] text-muted-foreground flex items-center gap-2 flex-wrap">
-            <span>{{ statusLabel(order().status) }}</span>
-            <a
-              class="text-ink underline underline-offset-2 pi-focus-ring"
-              [routerLink]="['/orders']"
-              [queryParams]="{ q: order().number }"
-              data-test="inspector-open-order"
-              title="Открыть заказ в списке"
-              >Открыть заказ</a
-            >
+          <div class="text-[11px] text-muted-foreground">
+            {{ statusLabel(order().status) }}
             @if (estimateReadOnly()) {
               <span class="text-amber-700 dark:text-amber-400"> · оценка read-only</span>
             }

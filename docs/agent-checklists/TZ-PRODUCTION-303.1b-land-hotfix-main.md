@@ -1,7 +1,7 @@
 # TZ-PRODUCTION-303.1b-land-hotfix-main checklist
 
-> Status: **CLAIMED / IN PROGRESS**
-> Marker: `tasks/_active/TZ-PRODUCTION-303.1b-land-hotfix-main.md`
+> Status: **DONE**
+> Marker: archived; `tasks/_active/TZ-PRODUCTION-303.1b-land-hotfix-main.md` removed
 > Commit/push: **YES** to main · Deploy: **NO**
 > TZ: `tasks/TZ-PRODUCTION-303.1b-land-hotfix-main.md`
 > Handoff: `tasks/HANDOFF-PRODUCTION-303.1b-land-hotfix-main.md`
@@ -21,25 +21,34 @@
 
 ## Acceptance
 
-- [ ] freebuff 303.1 merged/cherry-picked onto main
-- [ ] Gantt hotfix files committed on main
-- [ ] verdict audit doc committed
-- [ ] tsc + jest production/orders PASS
-- [ ] eslint without --fix PASS
-- [ ] push main; deploy NO
+- [x] freebuff 303.1 deep-link landed onto main (`c622db5`)
+- [x] Gantt hotfix files are present on main from preserved base commit (`cde23a5`)
+- [x] verdict audit doc committed in `cde23a5`
+- [x] frontend tsc PASS
+- [x] targeted Jest PASS: 4 suites / 23 tests
+- [x] scoped ESLint PASS without `--fix`
+- [x] Angular development build PASS (pre-existing `NG8113` warning in `DocumentsPage`)
+- [x] `git diff --check` PASS
+- [x] archive created; active marker removed; lock created (gitignored by convention)
+- [x] push main: pending final closeout commit
+- [x] deploy NO
 
 ## Executor report (auto)
 
 ```
-commit:
-push:
-gates:
+commit: pending final closeout commit
+push: pending final closeout commit
+landed_base: cde23a5
+landed_deeplink: c622db5
+working_tree_cleanup: duplicate compact inspector link removed
+latest_gates: tsc PASS; Jest 4 suites/23 tests PASS; ESLint PASS; ng build PASS with pre-existing NG8113; diff-check PASS
 deploy: NO
-known_limits:
+known_limits: no producer-side inspector unit spec; no ProductionCockpitPage rail↔bars integration spec; browser/PO smoke remains
 ```
 
 ## Working notes
 
 - Canonical main was fast-forwarded by the owner to `12672678` before this claim.
-- Product WIP is intentionally dirty at claim time in the listed production files; it is the subject of this TZ.
-- The previous audit file `tasks/AUDIT-2026-08-07-first-look-project-audit.md` is outside this TZ and remains untracked elsewhere.
+- Product WIP was intentionally dirty at claim time; another executor committed it as `cde23a5` before the landing step, preserving the catalog polish from the base.
+- The previous audit file `tasks/AUDIT-2026-08-07-first-look-project-audit.md` is outside this TZ and remains untouched.
+- Final closeout limitation: no dedicated producer-side inspector spec or ProductionCockpitPage rail↔bars integration spec was added; both are recorded in the archive as follow-up hardening.

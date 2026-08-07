@@ -1,3 +1,15 @@
+## [2026-08-07] — TZ-PRODUCTION-303.1b DONE: land Gantt hotfix + orders ?q= deep-link on main
+**Исполнитель:** Buffy / canonical executor (`agent-3e757640b7`)
+**Статус:** DONE on `main`; deep-link landed, Gantt hotfix preserved from `cde23a5`, deploy НЕ выполнялся
+**Что сделано кратко:** В main подтверждены Gantt hotfix (rail↔bars filter sync, WorkType.days confirm+rollback, bar context, legend/palette, toolbar, ACL UX) и deep-link `/orders?q=<номер>` через `OrdersPage` search state. Catalog polish из базы сохранён; `products/**` этой задачей не менялся. Дублированная компактная ссылка в inspector удалена, оставлена одна полная ссылка.
+**Gates:** frontend tsc PASS; targeted Jest 4 suites / 23 tests PASS; scoped ESLint без `--fix` PASS; Angular development build PASS с pre-existing NG8113 warning в DocumentsPage; `git diff --check` PASS.
+**Commits:** `cde23a5` base Gantt hotfix + catalog preservation; `c622db5` deep-link landing; `c6e2a29` prior closeout evidence; final landing closeout commit recorded in checklist.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-303.1b-land-hotfix-main.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-303.1b-land-hotfix-main.lock`
+**Known limits:** producer-side inspector unit spec and ProductionCockpitPage rail↔bars integration spec remain follow-up hardening; browser/PO smoke remains.
+
+---
+
 ## [2026-08-07] — TZ-PRODUCTION-303.1 DONE: Gantt closeout + orders ?q= deep-link
 **Исполнитель:** Buffy / Freebuff executor (`agent-d4d9f3dbfd`)
 **Статус:** DONE; Gantt hotfix history already on main, deep-link wired and documented
