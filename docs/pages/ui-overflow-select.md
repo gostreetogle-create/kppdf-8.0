@@ -59,6 +59,10 @@
 
 Компонент: `frontend/src/app/shared/ui/overflow-select/pi-overflow-select.component.ts`
 
+## См. также
+
+- Дерево состава (строка = кнопка): [`ui-composition-tree.md`](./ui-composition-tree.md)
+
 ## Фраза для агента / PO
 
 > «Выпадающий список — по канону overflow-select»  
