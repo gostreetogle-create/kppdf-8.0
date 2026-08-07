@@ -80,7 +80,7 @@ SHA дописать после коммита в § ниже.
 
 ### SHA
 
-_(заполняется после commit)_
+`a8bfa606135719e1a08ad54fb39a1c83af5b013d` — `feat(catalog): product detail baseline v1 — карточка изделия`
 
 ---
 
