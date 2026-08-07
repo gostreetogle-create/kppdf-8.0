@@ -5,7 +5,7 @@
 **Gates:** FE tsc PASS; targeted Jest 4 suites / 20 tests PASS; scoped ESLint без `--fix` PASS; `git diff --check` PASS; development build PASS с pre-existing NG8113 warning в DocumentsPage. Scoped Prettier check выявил pre-existing formatting drift в трёх затронутых больших TS-файлах и не использовался как success gate.
 **Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-303.1-gantt-hotfix-closeout.done.md`
 **Lock:** `.mimocode/locks/TZ-PRODUCTION-303.1-gantt-hotfix-closeout.lock`
-**Commit:** final closeout SHA is reported by executor after the last metadata commit; deploy НЕ выполнялся.
+**Commit:** `f731957` implementation closeout; metadata finalized in the follow-up documentation commit; deploy НЕ выполнялся.
 **Known limits:** handoff-referenced `docs/audits/2026-08-06-production-gantt-verdict-response.md` отсутствует на branch; producer-side inspector unit spec не добавлялся, так как отдельный spec path не входит в CONFLICT KEYS.
 
 ---

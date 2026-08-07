@@ -23,7 +23,8 @@ verification:
 checklist: docs/agent-checklists/TZ-PRODUCTION-303.1-gantt-hotfix-closeout.md
 source_was: tasks/_active/TZ-PRODUCTION-303.1-gantt-hotfix-closeout.md
 lock: .mimocode/locks/TZ-PRODUCTION-303.1-gantt-hotfix-closeout.lock
-commit: final closeout SHA is reported by executor after the last metadata commit
+implementation_commit: f731957
+metadata: finalized in the follow-up documentation commit
 
 ## Summary
 
