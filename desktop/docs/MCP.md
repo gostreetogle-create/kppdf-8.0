@@ -31,6 +31,11 @@ Local MCP host so **any** MCP-capable client can call KPPDF tools with the same
 Проверка: `GET http://127.0.0.1:9743/healthz` → `{ ok: true }`.  
 Инструмент `kppdf_ping` должен вернуть профиль `/api/auth/me`.
 
+> **Cursor / Streamable HTTP:** MCP host отвечает на `GET|DELETE /mcp` кодом
+> **405** (POST-only, без SSE stream). Ответ **404** на GET ломает клиент Cursor
+> («Failed to open SSE stream: Not Found»). LM Studio обычно переживает POST-only
+> мягче; всё равно нужен актуальный Desktop/MCP с этим поведением.
+
 ## Запуск вручную (dev fallback)
 
 ```bat
@@ -70,6 +75,19 @@ Stdio: `pnpm start:stdio` (для клиентов, которые спавня�
 | `kppdf_list_storage_items` | optional `warehouseId` / `materialId` / `productId` |
 | `kppdf_list_warehouses` | `GET /api/warehouses` |
 
+## Tools — domain / validate (TZD-17)
+
+**Validate / audit never write SoT and never create proposals.**
+
+| Tool | Effect |
+|------|--------|
+| `kppdf_get_domain_schema` | Static material rules: required `name`, `MATERIAL_KINDS`, recommended units, category/skuPrefix rules. Version `tzd-17`. Read-only. |
+| `kppdf_list_categories` | `GET /api/categories?type=material` → `id`, `name`, `type`, `isActive`, `skuPrefix` (null if empty). Client-side page/limit/search. |
+| `kppdf_validate_material` | Dry-run create checks (name, category active/type/skuPrefix, materialKind, duplicate warn). **No** proposal POST, **no** SoT. |
+| `kppdf_inbox_audit_file` | Parse inbox file → per-row validate report. **0** journal proposals. |
+
+`kppdf_inbox_propose_file` accepts optional `mode`: `propose` (default, SoT-safe proposals) \| `validate` (≡ audit, 0 proposals).
+
 ## Tools — write safety (TZD-13)
 
 **Никогда** не пишем в SoT из «голого» create-tool. Только:
@@ -83,12 +101,13 @@ Stdio: `pnpm start:stdio` (для клиентов, которые спавня�
 | `kppdf_undo_mutation` | Revert last / by id (create→soft-delete; update→restore before) |
 | `kppdf_list_mutations` | Recent applied/undone (ring) |
 
-## Tools — inbox (TZD-15)
+## Tools — inbox (TZD-15 + TZD-17)
 
 | Tool | Effect |
 |------|--------|
 | `kppdf_inbox_list` | List files in the desktop inbox dir (`KPPDF_INBOX_DIR`), excludes processed/failed |
-| `kppdf_inbox_propose_file` | Parse `xlsx/csv/tsv/txt` from inbox → `material.create` **proposal per row** (no SoT write; confirm via `kppdf_confirm_proposal`) |
+| `kppdf_inbox_audit_file` | Parse + validate rows only — **no proposals, no SoT** (TZD-17) |
+| `kppdf_inbox_propose_file` | Default: parse → `material.create` **proposal per row**. Optional `mode=validate` ≡ audit (0 proposals). Confirm via `kppdf_confirm_proposal` |
 
 Column mapping (RU + EN): `наименование/name/текст`, `ед. изм./unit`, `артикул/article`, `sku/код`, `категория/categoryId`. Строки без наименования пропускаются и возвращаются как `skipped`. Путь к файлу защищён от path-traversal.
 
@@ -104,6 +123,8 @@ Inbox-папка настраивается в десктоп-приложени
 
 ## Follow-ups
 
+- **TZD-17** ✅ DONE (2026-08-08) — semantic domain layer: `kppdf_get_domain_schema`, `kppdf_list_categories`, `kppdf_validate_material`, `kppdf_inbox_audit_file` (+ propose `mode=validate`). Validate/audit ≠ proposal ≠ SoT.
+- **TZD-18 / TZD-19** PARK — batch scale / graph integrity (start only on PO command).
 - **TZD-15** ✅ DONE (2026-08-06) — inbox workspace: файл → аудит → propose (без записи в SoT) → confirm/cancel через журнал; `kppdf_inbox_list` / `kppdf_inbox_propose_file`; файл → processed/ или failed/ + лог; каталог в config.ts (v3).
 - **TZD-14** ✅ DONE (2026-08-06) — Tauri autostart MCP + статус/URL/копирование в UI; порт/bind в config.ts (v2); stop on quit; LAN по умолчанию OFF.
 - **TZD-05** ✅ DONE — web pairing button.

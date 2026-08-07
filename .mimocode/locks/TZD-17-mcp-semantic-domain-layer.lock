@@ -1,0 +1,5 @@
+TZD-17
+closed: 2026-08-08
+zone: desktop/mcp semantic domain layer (schema + validate + inbox audit)
+checklist: docs/agent-checklists/TZD-17.md
+archive: tasks/_archive/2026-08/TZD-17.done.md

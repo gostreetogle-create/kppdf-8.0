@@ -1,3 +1,14 @@
+## [2026-08-08] — TZD-17 DONE: MCP semantic domain layer (schema + validate + inbox audit)
+**Исполнитель:** cursor-composer-tzd17 (Cursor PASS → archive)
+**Статус:** DONE on main
+**Что сделано кратко:** `kppdf_get_domain_schema`, `kppdf_list_categories`, `kppdf_validate_material`, `kppdf_inbox_audit_file` + propose `mode=validate`. Validate/audit не создают proposal и не пишут SoT.
+**Gates:** `desktop/mcp` typecheck PASS; tests 31/31 PASS
+**Archive:** `tasks/_archive/2026-08/TZD-17.done.md`
+**Lock:** `.mimocode/locks/TZD-17-mcp-semantic-domain-layer.lock`
+**Known limits:** TZD-18/19 PARK до команды PO; encoding WIP в `inbox.ts` не в коммите
+
+---
+
 ## [2026-08-07] — TZ-CATALOG-330 DONE: kind colors on composition tree
 **Исполнитель:** Cursor (session catalog colors wave)
 **Статус:** DONE on main
