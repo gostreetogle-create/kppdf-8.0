@@ -8,7 +8,7 @@ TZ-COST-302: Рекурсивный rollup себестоимости + sync cos
 > Цель: parent cost = sum(children); модуль без ручной «цены»;
 > activate CostCalculation пишет `Product.costPrice`.
 
-STATUS: READY after 301 (не claim параллельно с 301 на cost-calculation.service)
+STATUS: READY (301 DONE — можно CLAIM)
 
 РОЛЬ АГЕНТА: Backend (cost-calculation + product-module preview) + тонкий FE
 

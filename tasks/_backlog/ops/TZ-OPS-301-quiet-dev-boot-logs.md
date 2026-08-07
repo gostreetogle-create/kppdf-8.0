@@ -14,7 +14,7 @@ TZ-OPS-301: Quiet local boot logs (Nest DI spam)
 > `start.mjs` (passthrough без `--tail`; TUI `--tail` уже тихий);
 > `tasks/_archive/2026-07/TZ-44.md.done` (DEP0190 / shell — не дублировать).
 
-STATUS: READY (выдавать по «делай TZ-OPS-301»)
+STATUS: DONE — archive `tasks/_archive/2026-08/TZ-OPS-301.done.md` · `f12c2d8`
 
 РОЛЬ АГЕНТА: Backend / DevOps (Nest bootstrap + start orchestrator)
 

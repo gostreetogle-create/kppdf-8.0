@@ -16,10 +16,10 @@ Wave 1 index: `tasks/CATALOG-WAVE1.md` (backend 301–305 **DONE**)
 
 | ID | Title | Status |
 |----|-------|--------|
+| **330** | Kind colors on composition tree | **DONE** |
 | **331** | Оформление каталога (persist + hue UI) | **DONE** |
-| **332** | Kind colors on lists + picker | IN WORK |
-| **333** | Containment outlines (рамки состава) | READY — audit `docs/audits/2026-08-08-composition-containment-outline.md` |
-| **330** | Kind colors on composition tree | **DONE** → `_archive/2026-08/TZ-CATALOG-330.done.md` |
+| **332** | Kind colors on lists + picker | **DONE** |
+| **333** | Containment outlines (рамки состава) | **DONE** · `f2aedfd` |
 | **311** | CompositionTree | defer if conflicts with 330 keys |
 | **315** | Lists polish + a11y | after 332 if overlapping lists |
 | **306** | Coherence audit trail | discussion only |

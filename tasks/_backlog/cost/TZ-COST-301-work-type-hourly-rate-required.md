@@ -9,7 +9,7 @@ TZ-COST-301: WorkType hourlyRate обязателен
 > Проверено: `work-type.schema.ts` (`hourlyRate?`); create/update DTO `@IsOptional`;
 > `work-type-form-dialog` — поле без required; CostCalculation использует `hourlyRate ?? 0`.
 
-STATUS: READY (выдавать по «делай TZ-COST-301» / NEXT волны)
+STATUS: DONE — archive `tasks/_archive/2026-08/TZ-COST-301.done.md` · `79edbea`
 
 РОЛЬ АГЕНТА: Backend + Frontend (work-types)
 
