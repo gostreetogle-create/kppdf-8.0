@@ -1,6 +1,6 @@
 # SESSION QUEUE — 2026-08-08 hygiene
 
-**Updated:** 2026-08-08T00:05:00Z · COST-302 + TZD-22 READY FOR REVIEW
+**Updated:** 2026-08-08T00:10:00Z · TZ-CATALOG-334 DONE
 
 ## DONE recently (archive + lock on main)
 
@@ -8,7 +8,7 @@
 |------|------------|
 | TZ-OPS-301 | `f12c2d8` |
 | TZD-17 … TZD-20 | archives |
-| TZ-CATALOG-330 … **333** | 333 · `f2aedfd` |
+| TZ-CATALOG-330 … **334** | 334 · nest cohesion PASS |
 | TZ-COST-301 | `79edbea` |
 | TZ-PRODUCTION-303.1 / 303.1b | archives (root copies removed) |
 
@@ -16,9 +16,8 @@
 
 | Priority | ID | Path |
 |----------|-----|------|
-| 1 | **TZ-CATALOG-334** | nest visual cohesion (пачки) · `tasks/_backlog/catalog/TZ-CATALOG-334-…` |
-| 2 | **TZ-COST-303** | after 302 archive · UI visibility |
-| 3 | **TZD-21** | `tasks/_backlog/desktop/TZD-21-…` |
+| 1 | **TZ-COST-303** | after 302 archive · UI visibility |
+| 2 | **TZD-21** | `tasks/_backlog/desktop/TZD-21-…` |
 
 ## IN PROGRESS (CLAIMED)
 
@@ -43,13 +42,13 @@ _(empty)_
 
 `tasks/TZ-CATALOG-300.md`, `tasks/TZ-DICT-300.md` — индексы волн, оставить в корне.
 
-## Checkpoint 2026-08-08T00:05:00Z
-- DONE: TZ-COST-301
+## Checkpoint 2026-08-08T00:10:00Z
+- DONE: TZ-CATALOG-334 (nest cohesion)
 - IN PROGRESS: _(none)_
 - READY FOR REVIEW: **TZ-COST-302**, **TZD-22** (archive only after Cursor/PO PASS)
 - NOT DONE: TZ-COST-303, TZD-21; TZD-23 park
 - NEXT: Cursor PASS → archive 302 and/or 22
-- HEAD: 6c5d169 (+ uncommitted TZD-22 / COST-302)
-- Blockers: none · Team Room claim TZD-22 unavailable
+- HEAD: (pending 334 commit)
+- Blockers: none · Team Room claim 334 unavailable (best-effort send)
 - _active/: TZ-COST-302.md, TZD-22.md
 - Deploy: NO

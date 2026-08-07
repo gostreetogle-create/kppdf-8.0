@@ -1,3 +1,14 @@
+## [2026-08-08] — TZ-CATALOG-334 DONE: composition nest visual cohesion
+**Исполнитель:** cursor-composer-catalog334 (Cursor PASS → archive)
+**Статус:** DONE on main; deploy НЕ выполнялся
+**Что сделано кратко:** Усилен визуал `.comp-tree__nest`: sibling gap, left rail 3px kind, stronger wash, indent детей. Expand/клик без изменений. Не Excel.
+**Gates:** frontend tsc PASS; Jest composition-tree 3/3 PASS
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-334.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-334-composition-block-cohesion.lock`
+**Cursor Verdict:** PASS
+
+---
+
 ## [2026-08-08] — TZ-CATALOG-333 DONE: composition containment nest
 **Исполнитель:** agent-3e757640b7 (Cursor PASS → archive)
 **Статус:** DONE on main; deploy НЕ выполнялся

@@ -4,7 +4,7 @@ import { CompositionTreeNode } from '../../services/pi-product-modules.service';
 import { CatalogAppearanceService } from '../catalog/catalog-appearance.service';
 import { of } from 'rxjs';
 
-describe('CompositionTreeComponent (TZ-CATALOG-333 nest)', () => {
+describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
   let fixture: ComponentFixture<CompositionTreeComponent>;
 
   const tree: CompositionTreeNode = {
@@ -113,6 +113,12 @@ describe('CompositionTreeComponent (TZ-CATALOG-333 nest)', () => {
     ) as HTMLElement | null;
     expect(moduleNest).toBeTruthy();
     expect(moduleNest!.getAttribute('data-parent-kind')).toBe('module');
+    // TZ-334 cohesion classes: sibling gap + left rail + children indent
+    expect(moduleNest!.classList.contains('comp-tree__nest')).toBe(true);
+    expect(moduleNest!.classList.contains('space-y-3')).toBe(true);
+    expect(moduleNest!.classList.contains('border-l-[3px]')).toBe(true);
+    expect(moduleNest!.classList.contains('pl-3')).toBe(true);
+    expect(moduleNest!.classList.contains('mb-3')).toBe(true);
     // Both materials inside the same nest
     expect(moduleNest!.querySelector('[data-test="composition-tree-node-mat1"]')).toBeTruthy();
     expect(moduleNest!.querySelector('[data-test="composition-tree-node-mat2"]')).toBeTruthy();

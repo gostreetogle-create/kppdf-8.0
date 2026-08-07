@@ -29,6 +29,7 @@ export type CompositionTreeSelectEvent = {
  * Whole-row hit target; no text selection; › is indicator only.
  * Kind wash: docs/audits/2026-08-07-catalog-entity-colors-audit.md (TZ-330).
  * Containment nest: docs/audits/2026-08-08-composition-containment-outline.md (TZ-333).
+ * Nest cohesion (gap/rail/indent): docs/audits/2026-08-08-composition-block-cohesion-visual.md (TZ-334).
  */
 @Component({
   selector: 'app-composition-tree',
@@ -120,9 +121,10 @@ export type CompositionTreeSelectEvent = {
         </div>
         @if (isExpanded(node) && node.children.length > 0) {
           <div
-            class="comp-tree__nest ml-2 mr-0.5 mt-1 mb-1 space-y-1.5 rounded-md border border-solid p-2 pl-1"
+            class="comp-tree__nest ml-2.5 mr-1 mt-1.5 mb-3 space-y-3 rounded-md border border-solid border-l-[3px] pt-2.5 pr-2.5 pb-2.5 pl-3"
             [style.background]="nestWash(node)"
             [style.border-color]="nestBorder(node)"
+            [style.border-left-color]="kindBorder(node)"
             role="group"
             data-test="composition-tree-nest"
             [attr.data-parent-kind]="node.kind"
@@ -191,9 +193,10 @@ export class CompositionTreeComponent {
     return catalogKindWash(node.kind, node.materialKind, this.appearance.palette());
   }
 
-  /** Soft containment panel wash — parent kind, readable on light/dark paper. */
+  /** Soft containment panel wash — parent kind; slightly stronger than row wash (TZ-334). */
   protected nestWash(node: CompositionTreeNode): string {
-    return catalogKindWash(node.kind, node.materialKind, this.appearance.palette());
+    const base = catalogKindWash(node.kind, node.materialKind, this.appearance.palette());
+    return base.replace(/\/\s*[\d.]+\)$/, '/ 0.22)');
   }
 
   protected nestBorder(node: CompositionTreeNode): string {

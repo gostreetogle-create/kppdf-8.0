@@ -20,7 +20,7 @@
 3. **BOM (`ProductBomPanel`):**
    - дерево: **`app-composition-tree`** — клик по всей строке ([канон](./ui-composition-tree.md));
      kind-цвета (изд/мод/мат) через `catalogKindOklch` (TZ-330);
-     раскрытые дети — в nest-рамках принадлежности (TZ-333), не в Excel-колонках;
+     раскрытые дети — в nest-рамках принадлежности (TZ-333), пачки с gap/rail (TZ-334), не в Excel-колонках;
    - легенда kind (точки) над деревом;
    - инспектор справа: qty, «+ Из каталога» **в выбранный узел**, убрать, ссылка на карточку;
    - add в **product** → product composition API; add в **module** → module composition API;
@@ -54,4 +54,4 @@
 
 ---
 
-_Создано: 2026-08-04. Обновлено: 2026-08-08 (TZ-333 containment nest + kind legend)._
+_Создано: 2026-08-04. Обновлено: 2026-08-08 (TZ-333 nest · TZ-334 cohesion + kind legend)._

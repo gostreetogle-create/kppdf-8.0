@@ -30,6 +30,11 @@
    детей. Свёрнуто → nest нет в DOM. Module-in-module = рамка в рамке.
    Не Excel-колонки. Канон смысла:
    [`docs/audits/2026-08-08-composition-containment-outline.md`](../audits/2026-08-08-composition-containment-outline.md).
+10. **Пачки / cohesion (TZ-334):** соседние nest читаются как отдельные блоки —
+    sibling gap (`space-y-3` / `mb-3`), left rail 3px `catalogKindBorder(parent)`,
+    усиленный wash, indent детей внутри nest (`pl-3`). Expand/клик без изменений.
+    Канон:
+    [`docs/audits/2026-08-08-composition-block-cohesion-visual.md`](../audits/2026-08-08-composition-block-cohesion-visual.md).
 
 ## Запрещено
 
@@ -45,6 +50,7 @@
 | Каталожный dropdown | [`ui-overflow-select.md`](./ui-overflow-select.md) |
 | Карточка изделия / BOM | [`product-detail.page.md`](./product-detail.page.md) |
 | Containment outline | [`../audits/2026-08-08-composition-containment-outline.md`](../audits/2026-08-08-composition-containment-outline.md) |
+| Nest cohesion / пачки | [`../audits/2026-08-08-composition-block-cohesion-visual.md`](../audits/2026-08-08-composition-block-cohesion-visual.md) |
 
 ## Фраза для агента / PO
 
@@ -53,4 +59,4 @@
 
 ---
 
-_Создано: 2026-08-07. Обновлено: 2026-08-08 (TZ-333 containment nest)._
+_Создано: 2026-08-07. Обновлено: 2026-08-08 (TZ-333 nest · TZ-334 cohesion)._
