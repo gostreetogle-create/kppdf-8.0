@@ -85,6 +85,19 @@ describe('ProductBomPanelComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-test="bom-add-into"]')).toBeTruthy();
   });
 
+  it('shows compact kind legend above the tree', () => {
+    fixture.componentRef.setInput('productId', 'p1');
+    fixture.detectChanges();
+    const legend = fixture.nativeElement.querySelector(
+      '[data-test="bom-kind-legend"]',
+    ) as HTMLElement | null;
+    expect(legend).toBeTruthy();
+    expect(legend!.textContent).toContain('Изделие');
+    expect(legend!.textContent).toContain('Модуль');
+    expect(legend!.textContent).toContain('Деталь/мат');
+    expect(legend!.textContent).toContain('Сырьё');
+  });
+
   it('selecting a module shows qty + add-into', () => {
     fixture.componentRef.setInput('productId', 'p1');
     fixture.detectChanges();

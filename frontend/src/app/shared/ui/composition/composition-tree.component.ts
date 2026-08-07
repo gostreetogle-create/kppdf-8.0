@@ -28,6 +28,7 @@ export type CompositionTreeSelectEvent = {
  * Composition tree — canon: docs/pages/ui-composition-tree.md
  * Whole-row hit target; no text selection; › is indicator only.
  * Kind wash: docs/audits/2026-08-07-catalog-entity-colors-audit.md (TZ-330).
+ * Containment nest: docs/audits/2026-08-08-composition-containment-outline.md (TZ-333).
  */
 @Component({
   selector: 'app-composition-tree',
@@ -98,7 +99,7 @@ export type CompositionTreeSelectEvent = {
             [style.border-color]="kindAccent(node)"
             >{{ kindShort(node) }}</span
           >
-          <span class="min-w-0 flex-1 truncate">
+          <span class="min-w-0 flex-1 truncate" [attr.title]="node.name">
             <span class="font-medium text-sm">{{ node.name }}</span>
             @if (node.quantity !== 1) {
               <span class="ml-1.5 text-[11px] font-mono text-muted-foreground"
@@ -118,7 +119,14 @@ export type CompositionTreeSelectEvent = {
           }
         </div>
         @if (isExpanded(node) && node.children.length > 0) {
-          <div class="space-y-0.5 pb-0.5" role="group">
+          <div
+            class="comp-tree__nest ml-2 mr-0.5 mt-1 mb-1 space-y-1.5 rounded-md border border-solid p-2 pl-1"
+            [style.background]="nestWash(node)"
+            [style.border-color]="nestBorder(node)"
+            role="group"
+            data-test="composition-tree-nest"
+            [attr.data-parent-kind]="node.kind"
+          >
             @for (child of node.children; track child._id + ':' + $index) {
               <ng-container
                 *ngTemplateOutlet="
@@ -181,6 +189,21 @@ export class CompositionTreeComponent {
       return solid.replace(/\)$/, ' / 0.28)');
     }
     return catalogKindWash(node.kind, node.materialKind, this.appearance.palette());
+  }
+
+  /** Soft containment panel wash — parent kind, readable on light/dark paper. */
+  protected nestWash(node: CompositionTreeNode): string {
+    return catalogKindWash(node.kind, node.materialKind, this.appearance.palette());
+  }
+
+  protected nestBorder(node: CompositionTreeNode): string {
+    return catalogKindOklch(
+      node.kind,
+      node.materialKind,
+      0.08,
+      0.58,
+      this.appearance.palette(),
+    ).replace(/\)$/, ' / 0.45)');
   }
 
   protected onRowMouseDown(event: MouseEvent): void {

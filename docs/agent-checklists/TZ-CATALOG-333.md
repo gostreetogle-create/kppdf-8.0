@@ -1,39 +1,47 @@
 # TZ-CATALOG-333 checklist
 
-> Status: **RESERVED**
-> Marker: `tasks/_active/TZ-CATALOG-333.md` (при CLAIM)
+> Status: **DONE**
+> Marker: archived; `tasks/_active/TZ-CATALOG-333.md` removed
 > TZ: `tasks/_backlog/catalog/TZ-CATALOG-333-composition-containment-outline.md`
 > Design: `docs/audits/2026-08-08-composition-containment-outline.md`
+> Archive: `tasks/_archive/2026-08/TZ-CATALOG-333.done.md`
+> Commit/push: **pending PO** (peer WIP not staged)
 
 ## Claim slot
 
-- agent_id:
-- claimed_at:
-- workspace: D:\kppdf-8.0
-- team_room_claim:
+- agent_id: `agent-3e757640b7`
+- claimed_at: `2026-08-07T23:31:12Z`
+- closed_at: `2026-08-07T23:40:00Z`
+- workspace: `D:\kppdf-8.0`
+- team_room_claim: unavailable (Unknown task: TZ-CATALOG-333 — sync tasks first)
+- cursor_verdict: **PASS**
 
 ## Preflight
 
-- [ ] Workspace D:\kppdf-8.0
-- [ ] Проверить `_active`: 332 vs composition-tree keys — конфликт = STOP/DEFER
-- [ ] Аудит containment прочитан (не Excel-колонки)
-- [ ] Status CLAIMED + `_active` marker
+- [x] Workspace `D:\kppdf-8.0`
+- [x] Checklist + backlog TZ + audit read
+- [x] `_active` empty at claim; TZ-CATALOG-332 DONE — kind-oklch conflict снята
+- [x] Status CLAIMED + marker before code
 
 ## Acceptance
 
-- [ ] Nest frame around expanded children
-- [ ] Module-in-module nested frames
-- [ ] Kind legend on BOM
-- [ ] composition-tree click canon intact
-- [ ] catalogKindOklch only
+- [x] Nest frame around expanded children
+- [x] Module-in-module nested frames
+- [x] Kind legend on BOM
+- [x] composition-tree click canon intact
+- [x] catalogKindOklch only
 
 ## Gates
 
-- [ ] FE tsc
-- [ ] specs
+- [x] FE tsc PASS
+- [x] specs PASS (composition-tree + bom-panel + composition-editor = 9)
 
-## Review → archive after Cursor PASS
+## Executor report
 
-## Executor report (auto)
+- Nest `.comp-tree__nest` + BOM legend; docs updated; no desktop/COST/Excel.
+- Cursor PASS → archive + lock.
 
-_(после commit)_
+## Review handoff
+
+- [x] Cursor PASS
+- [x] archive + lock + progress + remove `_active`

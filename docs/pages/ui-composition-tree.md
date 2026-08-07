@@ -25,12 +25,18 @@
 8. **Цвет по kind (TZ-330):** wash строки + цвет бейджа/бордера через
    `catalogKindOklch` (`shared/ui/catalog/catalog-kind-oklch.ts`). Не RAL.
    Persist пресетов → TZ-331.
+9. **Containment outlines (TZ-333):** раскрытый узел с детьми рисует
+   `.comp-tree__nest` — hairline рамка + wash kind **родителя** вокруг списка
+   детей. Свёрнуто → nest нет в DOM. Module-in-module = рамка в рамке.
+   Не Excel-колонки. Канон смысла:
+   [`docs/audits/2026-08-08-composition-containment-outline.md`](../audits/2026-08-08-composition-containment-outline.md).
 
 ## Запрещено
 
 - Раскрывать только по 16×16 стрелке («прицеливание»).
 - Оставлять native text-selection на кликабельной строке дерева.
 - Путать с editable-полем: здесь строка — control, не параграф для копирования.
+- Фиксированные 3 колонки «Изделие | Модуль | Материал» (Excel rowspan).
 
 ## Связь с другими канонами
 
@@ -38,6 +44,7 @@
 |------|----------|
 | Каталожный dropdown | [`ui-overflow-select.md`](./ui-overflow-select.md) |
 | Карточка изделия / BOM | [`product-detail.page.md`](./product-detail.page.md) |
+| Containment outline | [`../audits/2026-08-08-composition-containment-outline.md`](../audits/2026-08-08-composition-containment-outline.md) |
 
 ## Фраза для агента / PO
 
@@ -46,4 +53,4 @@
 
 ---
 
-_Создано: 2026-08-07. Источник: Карточка изделия → Состав._
+_Создано: 2026-08-07. Обновлено: 2026-08-08 (TZ-333 containment nest)._

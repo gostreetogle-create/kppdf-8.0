@@ -76,6 +76,23 @@ import { catalogKindOklch } from '../../shared/ui/catalog/catalog-kind-oklch';
           <p class="py-3 text-center text-xs text-muted-foreground">Обновление состава…</p>
         }
 
+        <ul
+          class="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-1.5 hairline-b text-[11px] text-muted-foreground m-0 list-none"
+          data-test="bom-kind-legend"
+          aria-label="Легенда видов"
+        >
+          @for (item of kindLegend; track item.label) {
+            <li class="inline-flex items-center gap-1.5">
+              <span
+                class="inline-block w-2 h-2 rounded-full shrink-0"
+                [style.background]="item.color"
+                aria-hidden="true"
+              ></span>
+              <span>{{ item.label }}</span>
+            </li>
+          }
+        </ul>
+
         <div class="p-2 max-h-[min(32rem,60vh)] overflow-y-auto">
           <app-composition-tree
             [root]="tree()"
@@ -222,6 +239,14 @@ export class ProductBomPanelComponent {
     (this.tree()?.children ?? []).some((c) => c.kind === 'product'),
   );
   protected readonly selectedNodeId = computed(() => this.selected()?.node?._id ?? null);
+
+  /** Compact kind legend — colors = catalogKindOklch (not sketch hues). */
+  protected readonly kindLegend = [
+    { label: 'Изделие', color: catalogKindOklch('product') },
+    { label: 'Модуль', color: catalogKindOklch('module') },
+    { label: 'Деталь/мат', color: catalogKindOklch('material', 'part') },
+    { label: 'Сырьё', color: catalogKindOklch('material', 'raw') },
+  ] as const;
 
   constructor() {
     effect(() => {

@@ -1,0 +1,8 @@
+TZ-CATALOG-333
+closed: 2026-08-08
+outcome: DONE
+zone: composition-tree containment nest + BOM kind legend
+checklist: docs/agent-checklists/TZ-CATALOG-333.md
+archive: tasks/_archive/2026-08/TZ-CATALOG-333.done.md
+cursor_verdict: PASS
+implementation_commit: pending-PO
