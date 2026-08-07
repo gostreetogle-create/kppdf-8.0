@@ -10,13 +10,39 @@ Local MCP host so **any** MCP-capable client can call KPPDF tools with the same
 
 1. **Паринг** — в вебе кнопка «Подключить десктоп» (TZD-05) даёт JSON
    `{ apiBaseUrl, apiKey, username, expiresAt }`; вставьте его в KPPDF Desktop
-   (карточка «Подключение»).
+   (карточка «Подключение»).  
+   **Паринг ≠ mcp.json** — pairing-пакет только для Desktop; клиентам AI нужен
+   отдельный фрагмент (см. ниже).
 2. **MCP запускается автоматически** — при подключённом аккаунте десктоп сам
    поднимает MCP host на `127.0.0.1:<порт>` (по умолчанию **9743**), терминал
    не нужен. В карточке «MCP — локальный доступ для AI» видны статус
-   (Запущен / Остановлен / Ошибка), адрес и кнопка «Копировать».
-3. **Любой MCP-клиент** (Cursor, Claude Desktop, любой другой) →
-   `http://127.0.0.1:9743/mcp` + заголовок `Authorization: Bearer <тот же apiKey>`.
+   (Запущен / Остановлен / Ошибка), адрес и кнопка «Копировать» (только URL).
+3. **Подключение Cursor / LM Studio** (один JSON на оба клиента):
+   1) Desktop paired + MCP **Запущен**  
+   2) Кнопка **«Скопировать mcp.json»** (полный файл) или **«Только фрагмент»**
+      для вставки внутрь существующего `mcpServers`  
+   3) Вставьте в клиент → **Reload MCP** → включите сервер `kppdf`  
+   4) Несколько клиентов на один host — OK (stateless POST)  
+   После **нового паринга** или **смены порта** — скопируйте снова и Reload.
+   JWT (~15 мин): при **401** обновите паринг в Desktop и mcp.json в клиенте.  
+   Desktop **не пишет** в `~\.cursor\mcp.json` / пути LM Studio — только clipboard.
+4. Вручную (без кнопки): URL `http://127.0.0.1:<порт>/mcp` + заголовок
+   `Authorization: Bearer <тот же apiKey>`.
+
+Пример полного `mcp.json` (порт подставьте актуальный из карточки):
+
+```json
+{
+  "mcpServers": {
+    "kppdf": {
+      "url": "http://127.0.0.1:9743/mcp",
+      "headers": {
+        "Authorization": "Bearer <apiKey из паринга>"
+      }
+    }
+  }
+}
+```
 
 Опции в карточке MCP:
 
@@ -34,7 +60,10 @@ Local MCP host so **any** MCP-capable client can call KPPDF tools with the same
 > **Cursor / Streamable HTTP:** MCP host отвечает на `GET|DELETE /mcp` кодом
 > **405** (POST-only, без SSE stream). Ответ **404** на GET ломает клиент Cursor
 > («Failed to open SSE stream: Not Found»). LM Studio обычно переживает POST-only
-> мягче; всё равно нужен актуальный Desktop/MCP с этим поведением.
+> мягче; всё равно нужен актуальный Desktop/MCP с этим поведением. Исходники:
+> `desktop/mcp/src/http-server.ts` (staging `desktop/mcp-runtime/` при сборке).
+> Если установленный AppData ещё отдаёт 404 — переустановите setup или скопируйте
+> актуальный `http-server.ts` в runtime.
 
 ## Запуск вручную (dev fallback)
 
@@ -123,6 +152,8 @@ Inbox-папка настраивается в десктоп-приложени
 
 ## Follow-ups
 
+- **TZD-20** ✅ DONE (2026-08-08) — кнопка «Скопировать mcp.json» / фрагмент в Desktop;
+  один HTTP-формат для Cursor + LM Studio; clipboard only (не пишет в чужие mcp.json).
 - **TZD-17** ✅ DONE (2026-08-08) — semantic domain layer: `kppdf_get_domain_schema`, `kppdf_list_categories`, `kppdf_validate_material`, `kppdf_inbox_audit_file` (+ propose `mode=validate`). Validate/audit ≠ proposal ≠ SoT.
 - **TZD-18 / TZD-19** PARK — batch scale / graph integrity (start only on PO command).
 - **TZD-15** ✅ DONE (2026-08-06) — inbox workspace: файл → аудит → propose (без записи в SoT) → confirm/cancel через журнал; `kppdf_inbox_list` / `kppdf_inbox_propose_file`; файл → processed/ или failed/ + лог; каталог в config.ts (v3).

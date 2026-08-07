@@ -30,6 +30,7 @@
     type McpHostState,
     type McpHostStatus,
   } from './core/mcpHost';
+  import { buildMcpClientSnippet } from './core/mcpClientSnippet';
   import { DEFAULT_MCP_PORT } from './core/config';
 
   // Placeholder вынесен в JS: фигурные скобки в атрибуте Svelte парсит как выражение.
@@ -51,6 +52,43 @@
   let mcpPortInput = $state(String(DEFAULT_MCP_PORT));
   let mcpError = $state('');
   let mcpCopied = $state(false);
+  let mcpJsonCopied = $state(false);
+  let mcpFragmentCopied = $state(false);
+  /** apiKey из конфига — нужен для mcp.json (не храним в connected). */
+  let pairedApiKey = $state<string | undefined>(undefined);
+
+  /** Подсказка внизу белой зоны (над футером версии) — по наведению на кнопки. */
+  const HINT_IDLE = 'Наведите на кнопку — здесь появится, что она сделает.';
+  let uiHint = $state(HINT_IDLE);
+  function showHint(text: string) {
+    uiHint = text;
+  }
+  function clearHint() {
+    uiHint = HINT_IDLE;
+  }
+  const HINTS = {
+    connect: 'Проверит токен на сервере и сохранит подключение. После этого MCP стартует сам.',
+    disconnect: 'Забудет сохранённый токен на этом ПК. Сервер и данные не трогает.',
+    startMcp: 'Поднимет локальный MCP для AI. Если порт занят — сам найдёт свободный.',
+    stopMcp: 'Остановит локальный MCP. Веб-сервер kppdf и inbox не затрагиваются.',
+    restartMcp: 'Остановит и снова запустит MCP (удобно после смены настроек).',
+    copyMcp: 'Скопирует адрес MCP в буфер обмена для внешнего AI-клиента.',
+    copyMcpJson:
+      'Скопирует готовый mcp.json (url + Bearer) для Cursor и LM Studio — один формат на оба клиента.',
+    copyMcpFragment:
+      'Скопирует только фрагмент «kppdf»: {…} для вставки внутрь существующего mcpServers.',
+    applyPort: 'Сохранит предпочтительный порт и перезапустит MCP, если он уже был запущен.',
+    pickInbox: 'Выберет другую папку Inbox вместо каталога по умолчанию.',
+    resetInbox: 'Вернёт папку Inbox к стандартной в данных приложения.',
+    scanInbox: 'Сейчас перечитает файлы в папке Inbox.',
+    audit: 'Только прочитает файл и покажет таблицу. В базу ничего не пишет.',
+    propose:
+      'Отправит строки на сервер как черновики (proposals). В справочник материалов ещё НЕ попадёт — нужен «Подтвердить».',
+    confirm: 'Запишет предложенные черновики в справочник материалов на сервере. Это уже реальное создание.',
+    cancel: 'Снимет черновики без записи в базу. Файл уйдёт в «отклонённые».',
+    discard: 'Переместит файл в папку «отклонённые» без записи на сервер.',
+    pickFile: 'Откроет диалог выбора файла для локального предпросмотра (не Inbox).',
+  } as const;
 
   const MCP_STATUS_LABEL: Record<McpHostStatus, string> = {
     stopped: 'Остановлен',
@@ -60,30 +98,39 @@
     error: 'Ошибка',
   };
 
-  /** Старт MCP host с текущими настройками конфига (порт из поля ввода). */
+  /** Старт MCP: сам подберёт свободный порт; LAN выключен (надёжный one-click). */
   async function startMcp() {
     const cfg = await loadConfig();
     if (!cfg.apiKey || !cfg.apiBaseUrl) {
       mcpError = 'MCP недоступен: сначала подключите аккаунт.';
       return;
     }
-    const port = Number(mcpPortInput);
-    const portError = validateMcpPort(port);
-    if (portError) {
-      mcpError = portError;
-      return;
-    }
+    const preferred = Number(mcpPortInput);
+    const port = validateMcpPort(preferred) === null ? preferred : DEFAULT_MCP_PORT;
     mcpError = '';
-    await saveConfig({ ...cfg, mcp: { ...cfg.mcp, port } });
-    mcp.setPrefs(port, cfg.mcp.allowLan);
+    // Клиентский режим: LAN только если явно включён в «Дополнительно».
+    const allowLan = cfg.mcp.allowLan === true;
+    mcp.setPrefs(port, allowLan);
     const inboxDir = await resolveInboxDir(cfg);
     await mcp.start({
       apiBaseUrl: cfg.apiBaseUrl,
       apiKey: cfg.apiKey,
       port,
-      allowLan: cfg.mcp.allowLan,
+      allowLan,
       inboxDir,
+      onPortChosen: async (chosen) => {
+        mcpPortInput = String(chosen);
+        await saveConfig({ ...cfg, mcp: { ...cfg.mcp, port: chosen, allowLan } });
+      },
     });
+    // Если порт не менялся — всё равно синхронизируем фактический.
+    const st = mcp.getState();
+    if (st.status === 'running' && st.port !== cfg.mcp.port) {
+      mcpPortInput = String(st.port);
+      await saveConfig({ ...cfg, mcp: { ...cfg.mcp, port: st.port, allowLan } });
+    } else if (st.status === 'running') {
+      await saveConfig({ ...cfg, mcp: { ...cfg.mcp, port: st.port, allowLan } });
+    }
   }
 
   async function stopMcp() {
@@ -129,6 +176,35 @@
       setTimeout(() => (mcpCopied = false), 1500);
     } catch {
       mcpError = 'Не удалось скопировать — скопируйте адрес вручную.';
+    }
+  }
+
+  function canCopyMcpJson(): boolean {
+    return Boolean(connected && pairedApiKey && mcpState.port > 0);
+  }
+
+  async function copyMcpJson(mode: 'full' | 'fragment') {
+    if (!canCopyMcpJson() || !pairedApiKey) {
+      mcpError = 'Сначала подключите паринг — без apiKey mcp.json не собрать.';
+      return;
+    }
+    try {
+      const text = buildMcpClientSnippet({
+        port: mcpState.port,
+        apiKey: pairedApiKey,
+        mode,
+      });
+      await navigator.clipboard.writeText(text);
+      if (mode === 'full') {
+        mcpJsonCopied = true;
+        setTimeout(() => (mcpJsonCopied = false), 2000);
+      } else {
+        mcpFragmentCopied = true;
+        setTimeout(() => (mcpFragmentCopied = false), 2000);
+      }
+      uiHint = 'Скопировано — вставьте в Cursor / LM Studio mcp.json';
+    } catch {
+      mcpError = 'Не удалось скопировать mcp.json — соберите вручную по подсказке в docs.';
     }
   }
 
@@ -391,19 +467,23 @@
     mcp = new McpHostController((state) => {
       mcpState = state;
     });
-    // Остановка MCP при закрытии окна/выходе из приложения.
-    // (Плагин shell дополнительно убивает дочерние процессы на RunEvent::Exit —
-    // это страховка на случай сбоя.)
+    // Остановка MCP при закрытии окна. В Tauri 2 onCloseRequested сам
+    // вызывает destroy() после handler — нужны ACL allow-close/destroy.
     await getCurrentWindow().onCloseRequested(() => {
       disposed = true;
       stopInboxWatcher();
-      mcp.dispose();
+      try {
+        mcp?.dispose();
+      } catch {
+        // не блокируем закрытие окна из‑за MCP
+      }
     });
 
     // Восстанавливаем сохранённое подключение (живой ли токен — покажет первый запрос).
     const cfg = await loadConfig();
     if (cfg.apiKey && cfg.username) {
       connected = { username: cfg.username, apiBaseUrl: cfg.apiBaseUrl };
+      pairedApiKey = cfg.apiKey;
       mcpPortInput = String(cfg.mcp.port);
       mcp.setPrefs(cfg.mcp.port, cfg.mcp.allowLan);
       // Автостарт MCP host для подключённого (paired) десктопа — без терминала.
@@ -438,6 +518,7 @@
       await apiGet({ baseUrl: p.apiBaseUrl, apiKey: p.apiKey }, '/api/auth/me');
       await saveConfig(config);
       connected = { username: p.username, apiBaseUrl: p.apiBaseUrl };
+      pairedApiKey = p.apiKey;
       pairingJson = '';
       mcpError = '';
       // Подключённый (paired) десктоп автоматически поднимает MCP host.
@@ -448,7 +529,11 @@
       } else if (err instanceof ApiError) {
         errors = [`Сервер ответил ошибкой ${err.status} — проверьте URL и доступность.`];
       } else {
-        errors = ['Не удалось подключиться — проверьте URL, сеть и сервер.'];
+        const detail = err instanceof Error ? err.message : String(err);
+        errors = [
+          'Не удалось подключиться — проверьте URL, сеть и сервер.',
+          detail ? `Детали: ${detail}` : '',
+        ].filter(Boolean);
       }
     } finally {
       connecting = false;
@@ -460,6 +545,7 @@
     const cfg = await loadConfig();
     await saveConfig({ ...cfg, apiKey: undefined, username: undefined });
     connected = null;
+    pairedApiKey = undefined;
     pairingJson = '';
     errors = [];
   }
@@ -547,7 +633,17 @@
           Подключено: <strong>{connected.username}</strong>
           <span class="status__url">{connected.apiBaseUrl}</span>
         </p>
-        <button class="btn" type="button" onclick={disconnect}>Отключить</button>
+        <button
+          class="btn"
+          type="button"
+          onclick={disconnect}
+          onmouseenter={() => showHint(HINTS.disconnect)}
+          onmouseleave={clearHint}
+          onfocus={() => showHint(HINTS.disconnect)}
+          onblur={clearHint}
+        >
+          Отключить
+        </button>
       {:else}
         <p>Вставьте паринг-JSON из веб-клиента (кнопка «Подключить десктоп»).</p>
         <textarea
@@ -566,7 +662,16 @@
           </ul>
         {/if}
 
-        <button class="btn btn--primary" type="button" onclick={connect} disabled={connecting}>
+        <button
+          class="btn btn--primary"
+          type="button"
+          onclick={connect}
+          disabled={connecting}
+          onmouseenter={() => showHint(HINTS.connect)}
+          onmouseleave={clearHint}
+          onfocus={() => showHint(HINTS.connect)}
+          onblur={clearHint}
+        >
           {connecting ? 'Проверяем…' : 'Подключиться'}
         </button>
       {/if}
@@ -593,46 +698,59 @@
 
         <p class="mcp-url">
           <code>{mcpEndpoint(mcpState.port)}</code>
-          <button class="btn btn--small" type="button" onclick={copyMcpUrl}>
-            {mcpCopied ? 'Скопировано ✓' : 'Копировать'}
-          </button>
-        </p>
-        <p class="hint">
-          Любой MCP-клиент подключается по этому адресу с заголовком
-          <code>Authorization: Bearer &lt;apiKey из паринга&gt;</code>. Токен тот же, что у десктопа;
-          права — те же, что у пользователя в вебе.
-        </p>
-
-        <label class="mcp-field">
-          Порт
-          <input
-            class="mcp-port"
-            type="number"
-            min={MCP_PORT_MIN}
-            max={MCP_PORT_MAX}
-            bind:value={mcpPortInput}
-            aria-label="Порт MCP host"
-          />
           <button
             class="btn btn--small"
             type="button"
-            onclick={applyMcpPort}
-            disabled={mcpState.status === 'starting' || mcpState.status === 'stopping'}
+            onclick={copyMcpUrl}
+            onmouseenter={() => showHint(HINTS.copyMcp)}
+            onmouseleave={clearHint}
+            onfocus={() => showHint(HINTS.copyMcp)}
+            onblur={clearHint}
           >
-            Применить порт
+            {mcpCopied ? 'Скопировано ✓' : 'Копировать'}
           </button>
-        </label>
+        </p>
 
-        <label class="mcp-lan">
-          <input type="checkbox" checked={mcpState.allowLan} onchange={toggleMcpLan} />
-          Разрешить доступ по локальной сети (LAN)
-        </label>
-        {#if mcpState.allowLan}
-          <p class="hint mcp-warn">
-            MCP слушает 0.0.0.0:{mcpState.port} — с других машин подключайтесь по IP этого
-            компьютера. Включайте только в доверенной сети.
+        <div class="mcp-json-actions">
+          <button
+            class="btn btn--small btn--primary"
+            type="button"
+            data-test="mcp-copy-json"
+            onclick={() => copyMcpJson('full')}
+            disabled={!canCopyMcpJson()}
+            onmouseenter={() => showHint(HINTS.copyMcpJson)}
+            onmouseleave={clearHint}
+            onfocus={() => showHint(HINTS.copyMcpJson)}
+            onblur={clearHint}
+          >
+            {mcpJsonCopied ? 'Скопировано ✓' : 'Скопировать mcp.json'}
+          </button>
+          <button
+            class="btn btn--small"
+            type="button"
+            data-test="mcp-copy-fragment"
+            onclick={() => copyMcpJson('fragment')}
+            disabled={!canCopyMcpJson()}
+            onmouseenter={() => showHint(HINTS.copyMcpFragment)}
+            onmouseleave={clearHint}
+            onfocus={() => showHint(HINTS.copyMcpFragment)}
+            onblur={clearHint}
+          >
+            {mcpFragmentCopied ? 'Скопировано ✓' : 'Только фрагмент'}
+          </button>
+        </div>
+        {#if !pairedApiKey}
+          <p class="hint">Сначала подключите паринг — без токена mcp.json не собрать.</p>
+        {:else}
+          <p class="hint mcp-connect-hint">
+            Один JSON подходит для Cursor и LM Studio. После нового паринга или смены порта —
+            скопируйте снова и Reload MCP в клиенте. JWT живёт ~15 минут: при 401 обновите
+            паринг и mcp.json. Несколько клиентов на один host — OK.
           </p>
         {/if}
+        <p class="hint">
+          При запуске порт подбирается сам, если занят. Обычно достаточно кнопки «Запустить MCP».
+        </p>
 
         <div class="mcp-actions">
           {#if mcpState.status === 'running' || mcpState.status === 'starting'}
@@ -641,12 +759,24 @@
               type="button"
               onclick={stopMcp}
               disabled={mcpState.status === 'starting'}
+              onmouseenter={() => showHint(HINTS.stopMcp)}
+              onmouseleave={clearHint}
+              onfocus={() => showHint(HINTS.stopMcp)}
+              onblur={clearHint}
             >
               Остановить
             </button>
           {/if}
           {#if mcpState.status === 'stopped' || mcpState.status === 'error'}
-            <button class="btn btn--primary" type="button" onclick={startMcp}>
+            <button
+              class="btn btn--primary"
+              type="button"
+              onclick={startMcp}
+              onmouseenter={() => showHint(HINTS.startMcp)}
+              onmouseleave={clearHint}
+              onfocus={() => showHint(HINTS.startMcp)}
+              onblur={clearHint}
+            >
               Запустить MCP
             </button>
           {/if}
@@ -655,10 +785,57 @@
             type="button"
             onclick={restartMcp}
             disabled={mcpState.status === 'starting' || mcpState.status === 'stopping'}
+            onmouseenter={() => showHint(HINTS.restartMcp)}
+            onmouseleave={clearHint}
+            onfocus={() => showHint(HINTS.restartMcp)}
+            onblur={clearHint}
           >
             Перезапустить
           </button>
         </div>
+
+        <details class="mcp-advanced">
+          <summary>Дополнительно (порт, LAN)</summary>
+          <div class="mcp-controls">
+            <label class="mcp-field">
+              Предпочтительный порт
+              <input
+                class="mcp-port"
+                type="number"
+                min={MCP_PORT_MIN}
+                max={MCP_PORT_MAX}
+                bind:value={mcpPortInput}
+                aria-label="Порт MCP host"
+              />
+              <button
+                class="btn btn--small"
+                type="button"
+                onclick={applyMcpPort}
+                disabled={mcpState.status === 'starting' || mcpState.status === 'stopping'}
+                onmouseenter={() => showHint(HINTS.applyPort)}
+                onmouseleave={clearHint}
+                onfocus={() => showHint(HINTS.applyPort)}
+                onblur={clearHint}
+              >
+                Применить
+              </button>
+            </label>
+            <label
+              class="mcp-lan"
+              onmouseenter={() =>
+                showHint(
+                  'LAN: MCP будет доступен с других ПК в сети по IP. Включайте только в доверенной сети.',
+                )}
+              onmouseleave={clearHint}
+            >
+              <input type="checkbox" checked={mcpState.allowLan} onchange={toggleMcpLan} />
+              Доступ по LAN (только доверенная сеть)
+            </label>
+            {#if mcpState.allowLan}
+              <p class="hint mcp-warn">Слушает 0.0.0.0:{mcpState.port} — подключайтесь по IP этого ПК.</p>
+            {/if}
+          </div>
+        </details>
       {/if}
     </article>
 
@@ -666,7 +843,16 @@
       <h2>Импорт</h2>
       <p>Файл → парсинг → таблица предпросмотра. Подтверждение и отправка — будущие TZ.</p>
 
-      <button class="btn btn--primary" type="button" onclick={pickFile} disabled={importing}>
+      <button
+        class="btn btn--primary"
+        type="button"
+        onclick={pickFile}
+        disabled={importing}
+        onmouseenter={() => showHint(HINTS.pickFile)}
+        onmouseleave={clearHint}
+        onfocus={() => showHint(HINTS.pickFile)}
+        onblur={clearHint}
+      >
         {importing ? 'Читаем…' : 'Выбрать файл'}
       </button>
 
@@ -694,17 +880,46 @@
 
     <article class="card card--wide">
       <h2>Inbox — файлы для агента</h2>
-      <p>
-        Положите файл (<code>xlsx / csv / tsv / txt</code>) в каталог inbox — десктоп
-        обнаружит его, разберёт и предложит строки как материалы (без записи в базу).
-        Подтверждение — только после вашего согласия, через журнал изменений.
+      <p class="card__lead">
+        Файл в папку → <strong>Разобрать</strong> → <strong>Предложить</strong> (черновик) →
+        <strong>Подтвердить</strong> / <strong>Отменить</strong>.
       </p>
 
       <div class="inbox-dir">
         <code class="inbox-dir__path" title={inboxDir}>{inboxDir || '…'}</code>
-        <button class="btn btn--small" type="button" onclick={pickInboxDir}>Выбрать папку…</button>
-        <button class="btn btn--small" type="button" onclick={resetInboxDir}>По умолчанию</button>
-        <button class="btn btn--small" type="button" onclick={() => refreshInbox()}>Сканировать</button>
+        <button
+          class="btn btn--small"
+          type="button"
+          onclick={pickInboxDir}
+          onmouseenter={() => showHint(HINTS.pickInbox)}
+          onmouseleave={clearHint}
+          onfocus={() => showHint(HINTS.pickInbox)}
+          onblur={clearHint}
+        >
+          Выбрать папку…
+        </button>
+        <button
+          class="btn btn--small"
+          type="button"
+          onclick={resetInboxDir}
+          onmouseenter={() => showHint(HINTS.resetInbox)}
+          onmouseleave={clearHint}
+          onfocus={() => showHint(HINTS.resetInbox)}
+          onblur={clearHint}
+        >
+          По умолчанию
+        </button>
+        <button
+          class="btn btn--small"
+          type="button"
+          onclick={() => refreshInbox()}
+          onmouseenter={() => showHint(HINTS.scanInbox)}
+          onmouseleave={clearHint}
+          onfocus={() => showHint(HINTS.scanInbox)}
+          onblur={clearHint}
+        >
+          Сканировать
+        </button>
       </div>
 
       {#if inboxError}
@@ -747,6 +962,10 @@
                     type="button"
                     onclick={() => auditFile(file)}
                     disabled={inboxBusy}
+                    onmouseenter={() => showHint(HINTS.audit)}
+                    onmouseleave={clearHint}
+                    onfocus={() => showHint(HINTS.audit)}
+                    onblur={clearHint}
                   >
                     Разобрать
                   </button>
@@ -757,6 +976,10 @@
                     type="button"
                     onclick={() => proposeFile(file)}
                     disabled={inboxBusy}
+                    onmouseenter={() => showHint(HINTS.propose)}
+                    onmouseleave={clearHint}
+                    onfocus={() => showHint(HINTS.propose)}
+                    onblur={clearHint}
                   >
                     Предложить строки
                   </button>
@@ -767,6 +990,10 @@
                     type="button"
                     onclick={() => confirmFile(file)}
                     disabled={inboxBusy}
+                    onmouseenter={() => showHint(HINTS.confirm)}
+                    onmouseleave={clearHint}
+                    onfocus={() => showHint(HINTS.confirm)}
+                    onblur={clearHint}
                   >
                     Подтвердить ({file.proposalIds.length})
                   </button>
@@ -775,6 +1002,10 @@
                     type="button"
                     onclick={() => cancelFile(file)}
                     disabled={inboxBusy}
+                    onmouseenter={() => showHint(HINTS.cancel)}
+                    onmouseleave={clearHint}
+                    onfocus={() => showHint(HINTS.cancel)}
+                    onblur={clearHint}
                   >
                     Отменить
                   </button>
@@ -785,8 +1016,12 @@
                     type="button"
                     onclick={() => discardFile(file)}
                     disabled={inboxBusy}
+                    onmouseenter={() => showHint(HINTS.discard)}
+                    onmouseleave={clearHint}
+                    onfocus={() => showHint(HINTS.discard)}
+                    onblur={clearHint}
                   >
-                    Убрать в failed
+                    Убрать в «отклонённые»
                   </button>
                 {/if}
               </div>
@@ -804,14 +1039,16 @@
     </article>
   </section>
 
+  <div class="shell__hint" role="status" aria-live="polite">{uiHint}</div>
+
   <footer class="shell__footer">
     <p>v0.5 — паринг, импорт, MCP host (TZD-14) и inbox для агента (TZD-15): файл → аудит → предложение → подтверждение через журнал изменений.</p>
   </footer>
 </main>
 
-<!-- Таблица предпросмотра: первые 10 строк + счётчик. -->
+<!-- Таблица предпросмотра: первые строки + внутренний скролл (окно не «ломается»). -->
 {#snippet PreviewTable(rows: RawRow[])}
-  {@const preview = rows.slice(0, 10)}
+  {@const preview = rows.slice(0, 8)}
   {@const columns = preview.length > 0 ? Object.keys(preview[0]) : []}
   <div class="table-wrap">
     <table>
@@ -833,8 +1070,8 @@
       </tbody>
     </table>
   </div>
-  {#if rows.length > 10}
-    <p class="import-more">…и ещё {rows.length - 10} строк (всего {rows.length})</p>
+  {#if rows.length > 8}
+    <p class="import-more">…и ещё {rows.length - 8} строк (всего {rows.length})</p>
   {/if}
 {/snippet}
 
@@ -857,53 +1094,109 @@
 
   .shell {
     min-height: 100vh;
+    height: 100vh;
     display: flex;
     flex-direction: column;
-    padding: 2rem 2.5rem;
+    padding: 1rem 1.25rem 0.75rem;
+    overflow: hidden;
   }
 
   .shell__header {
     border-bottom: 1px solid #d9dee3;
-    padding-bottom: 1rem;
-    margin-bottom: 1.5rem;
+    padding-bottom: 0.65rem;
+    margin-bottom: 0.85rem;
+    flex-shrink: 0;
   }
 
   h1 {
     margin: 0;
-    font-size: 1.75rem;
+    font-size: 1.35rem;
     letter-spacing: -0.01em;
   }
 
   .shell__subtitle {
-    margin: 0.35rem 0 0;
+    margin: 0.2rem 0 0;
     color: #5a6a78;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
   }
 
   .cards {
+    flex: 1;
+    min-height: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-    gap: 1.25rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: minmax(220px, auto) 1fr;
+    gap: 0.85rem;
+    align-items: stretch;
+    overflow: hidden;
   }
 
   .card {
     background: #ffffff;
     border: 1px solid #d9dee3;
     border-radius: 10px;
-    padding: 1.25rem 1.5rem;
+    padding: 0.9rem 1rem;
     box-shadow: 0 1px 2px rgb(16 24 40 / 0.04);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: auto;
   }
 
   .card h2 {
-    margin: 0 0 0.5rem;
-    font-size: 1.1rem;
+    margin: 0 0 0.4rem;
+    font-size: 1rem;
   }
 
-  .card p {
-    margin: 0 0 1rem;
+  .card p,
+  .card__lead {
+    margin: 0 0 0.65rem;
     color: #44535f;
-    font-size: 0.9rem;
-    line-height: 1.45;
+    font-size: 0.82rem;
+    line-height: 1.4;
+  }
+
+  .mcp-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .mcp-advanced {
+    margin-top: 0.75rem;
+    font-size: 0.82rem;
+    color: #44535f;
+  }
+
+  .mcp-advanced summary {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .mcp-advanced[open] summary {
+    margin-bottom: 0.5rem;
+  }
+
+  .mcp-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: auto;
+    padding-top: 0.5rem;
+  }
+
+  .errors {
+    margin: 0 0 0.65rem;
+    padding: 0.5rem 0.7rem;
+    list-style: none;
+    border-radius: 8px;
+    background: #fdf0ef;
+    border: 1px solid #f2c8c4;
+    color: #a12b23;
+    font-size: 0.78rem;
+    max-height: 4.5rem;
+    overflow: auto;
   }
 
   .pairing {
@@ -918,17 +1211,6 @@
     resize: vertical;
     margin-bottom: 0.75rem;
     font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
-  }
-
-  .errors {
-    margin: 0 0 0.75rem;
-    padding: 0.6rem 0.9rem;
-    list-style: none;
-    border-radius: 8px;
-    background: #fdf0ef;
-    border: 1px solid #f2c8c4;
-    color: #a12b23;
-    font-size: 0.85rem;
   }
 
   .errors li + li {
@@ -996,15 +1278,21 @@
     padding: 0.2rem 0.45rem;
   }
 
+  .mcp-json-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin: 0.35rem 0 0.5rem;
+  }
+
+  .mcp-connect-hint {
+    margin: 0 0 0.5rem;
+  }
+
   .hint {
     color: #7a8794;
     font-size: 0.8rem;
     line-height: 1.5;
-  }
-
-  .hint code {
-    font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
-    font-size: 0.78rem;
   }
 
   .mcp-warn {
@@ -1032,17 +1320,10 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin: 0.75rem 0;
-    font-size: 0.9rem;
+    margin: 0.35rem 0;
+    font-size: 0.82rem;
     color: #44535f;
     cursor: pointer;
-  }
-
-  .mcp-actions {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    margin-top: 0.75rem;
   }
 
   .btn--small {
@@ -1063,6 +1344,7 @@
 
   .card--wide {
     grid-column: 1 / -1;
+    min-height: 0;
   }
 
   .inbox-dir {
@@ -1214,9 +1496,11 @@
   }
 
   .table-wrap {
-    overflow-x: auto;
+    overflow: auto;
+    max-height: 11rem;
     border: 1px solid #d9dee3;
     border-radius: 8px;
+    flex-shrink: 0;
   }
 
   table {
@@ -1277,10 +1561,39 @@
     background: #2c3a49;
   }
 
-  .shell__footer {
-    margin-top: auto;
-    padding-top: 1.5rem;
-    color: #7a8794;
+  .shell__hint {
+    flex-shrink: 0;
+    margin-top: 0.35rem;
+    min-height: 2.4rem;
+    padding: 0.45rem 0.65rem;
+    border-radius: 8px;
+    background: #eef2f5;
+    border: 1px solid #dde3e8;
+    color: #334155;
     font-size: 0.8rem;
+    line-height: 1.35;
+  }
+
+  .shell__footer {
+    flex-shrink: 0;
+    margin-top: 0.4rem;
+    padding-top: 0.45rem;
+    border-top: 1px solid #e4e8ec;
+    color: #7a8794;
+    font-size: 0.72rem;
+  }
+
+  @media (max-width: 1100px) {
+    .cards {
+      grid-template-columns: 1fr;
+      grid-template-rows: none;
+      overflow: auto;
+    }
+
+    .shell {
+      height: auto;
+      min-height: 100vh;
+      overflow: auto;
+    }
   }
 </style>

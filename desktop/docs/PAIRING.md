@@ -25,6 +25,17 @@ URL сервера и токеном доступа — и сохраняет е
 [Подключено: AI-импорт работает]
 ```
 
+## Паринг ≠ mcp.json (TZD-20)
+
+| Что | Куда | Формат |
+|-----|------|--------|
+| **Паринг-пакет** | только в карточку «Подключение» Desktop | `{ apiBaseUrl, apiKey, username, expiresAt }` |
+| **mcp.json клиента** | Cursor / LM Studio (clipboard из карточки MCP) | `mcpServers.kppdf` = `url` + `Authorization: Bearer <apiKey>` |
+
+Не вставляйте pairing object целиком в `mcpServers` — клиент упадёт.
+После паринга: MCP **Запущен** → **«Скопировать mcp.json»** → вставить в клиент → Reload.
+Токен (~15 мин JWT): при 401 — новый паринг + снова скопировать mcp.json.
+
 ## Формат паринг-пакета
 
 ```json

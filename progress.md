@@ -1,3 +1,15 @@
+## [2026-08-08] — TZD-20 DONE: MCP client JSON copy (Cursor / LM Studio)
+**Исполнитель:** cursor-composer-tzd20 (Cursor PASS → archive)
+**Статус:** DONE on main
+**Что сделано кратко:** `buildMcpClientSnippet` full+fragment; кнопки «Скопировать mcp.json» / «Только фрагмент» в Desktop; docs connect; clipboard only (не пишет в чужие mcp.json). GET /mcp 405 уже был sync.
+**Gates:** desktop typecheck PASS; svelte-check PASS; snippet tests 4/4 PASS
+**Archive:** `tasks/_archive/2026-08/TZD-20.done.md`
+**Lock:** `.mimocode/locks/TZD-20-mcp-client-json-copy.lock`
+**Commit:** PENDING
+**Known limits:** JWT ~15m; disk write mcp.json — successor; package.json test script may be local-only if not staged
+
+---
+
 ## [2026-08-08] — TZ-OPS-301 DONE: Quiet local boot logs (Nest DI + proxy race)
 **Исполнитель:** cursor-composer-ops301 (Cursor PASS → archive)
 **Статус:** DONE on main
