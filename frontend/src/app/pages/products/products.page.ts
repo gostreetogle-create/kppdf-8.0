@@ -42,6 +42,7 @@ import {
 import { CategoriesService, type Category } from '../../shared/services/categories.service';
 import type { Photo } from '../../shared/services/photos.service';
 import { ProductFormDialogComponent } from './product-form-dialog.component';
+import { CatalogKindMarkerComponent } from '../../shared/ui/catalog/catalog-kind-marker.component';
 
 /** Server-side pagination page size for /products endpoint. */
 const PAGE_SIZE = 50;
@@ -135,9 +136,10 @@ const KIND_LABELS: Record<Product['kind'], string> = {
     TableComponent,
     PiShowcaseCardComponent,
     PiEmptyTileComponent,
+    CatalogKindMarkerComponent,
   ],
   template: `
-    <app-pi-group-workspace [chips]="chips" activeId="products" pathLabel="Каталог">
+    <app-pi-group-workspace [chips]="chips" activeId="products">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           id="products-search"
@@ -497,14 +499,16 @@ const KIND_LABELS: Record<Product['kind'], string> = {
       </ng-template>
 
       <ng-template #nameTpl let-row>
-        <a
-          [routerLink]="['/products', row._id]"
-          (click)="$event.stopPropagation()"
-          class="text-ink hover:text-sunrise-warm hover:underline"
-          [attr.aria-label]="'Открыть ' + row.name"
-          data-test="open-row-link"
-          >{{ row.name }}</a
-        >
+        <app-catalog-kind-marker kind="product">
+          <a
+            [routerLink]="['/products', row._id]"
+            (click)="$event.stopPropagation()"
+            class="text-ink hover:text-sunrise-warm hover:underline"
+            [attr.aria-label]="'Открыть ' + row.name"
+            data-test="open-row-link"
+            >{{ row.name }}</a
+          >
+        </app-catalog-kind-marker>
       </ng-template>
 
       <ng-template #rowActionsTpl let-row>

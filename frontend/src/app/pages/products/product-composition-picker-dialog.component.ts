@@ -16,6 +16,7 @@ import {
   MaterialsService,
 } from '../../shared/services/materials.service';
 import { extractErrorMessage } from '../../core/silent-http';
+import { CatalogKindMarkerComponent } from '../../shared/ui/catalog/catalog-kind-marker.component';
 
 export type ProductCompositionPickerResult =
   | { lineType: 'module'; refId: string }
@@ -33,13 +34,19 @@ type PickerKind = 'product' | 'module' | 'material';
 /**
  * Catalog picker for composition lines.
  * Fixed xl shell — tab switch must not resize the dialog.
- * Dropdown: app-pi-overflow-select (docs/pages/ui-overflow-select.md).
+ * The options remain in a bounded list so the picker stays stable while kind markers
+ * provide the same visual language as catalog tables.
  */
 @Component({
   selector: 'app-product-composition-picker-dialog',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, PiDialogComponent, PiOverflowSelectComponent],
+  imports: [
+    ButtonComponent,
+    PiDialogComponent,
+    PiOverflowSelectComponent,
+    CatalogKindMarkerComponent,
+  ],
   template: `
     <app-pi-dialog [title]="dialogTitle" [width]="'xl'" [variant]="'form'">
       <div body class="space-y-4">
@@ -58,7 +65,9 @@ type PickerKind = 'product' | 'module' | 'material';
               [attr.aria-selected]="activeKind() === kind.value"
               (click)="selectKind(kind.value)"
             >
-              {{ kind.label }}
+              <app-catalog-kind-marker [kind]="kind.value">
+                {{ kind.label }}
+              </app-catalog-kind-marker>
             </button>
           }
         </div>

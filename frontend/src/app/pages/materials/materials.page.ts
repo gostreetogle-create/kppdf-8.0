@@ -39,6 +39,7 @@ import {
 import { Photo, PhotosService } from '../../shared/services/photos.service';
 import { Organization, OrganizationsService } from '../../shared/services/organizations.service';
 import { MaterialFormDialogComponent } from './material-form-dialog.component';
+import { CatalogKindMarkerComponent } from '../../shared/ui/catalog/catalog-kind-marker.component';
 
 /** Server-side pagination page size for /materials endpoint. */
 const PAGE_SIZE = 50;
@@ -91,6 +92,7 @@ const PAGE_SIZE = 50;
     ButtonComponent,
     TableComponent,
     RouterLink,
+    CatalogKindMarkerComponent,
   ],
   template: `
     <app-pi-group-workspace [chips]="chips" activeId="materials">
@@ -186,13 +188,15 @@ const PAGE_SIZE = 50;
 
         <!-- ───── Name cell with detail link (TZ-CATALOG-312) ───── -->
         <ng-template #nameTpl let-row>
-          <a
-            [routerLink]="['/materials', row._id]"
-            class="text-ink hover:text-sunrise-warm underline decoration-dotted underline-offset-4 transition-colors"
-            [attr.aria-label]="'Открыть ' + row.name"
-          >
-            {{ row.name }}
-          </a>
+          <app-catalog-kind-marker kind="material" [materialKind]="row.materialKind">
+            <a
+              [routerLink]="['/materials', row._id]"
+              class="text-ink hover:text-sunrise-warm underline decoration-dotted underline-offset-4 transition-colors"
+              [attr.aria-label]="'Открыть ' + row.name"
+            >
+              {{ row.name }}
+            </a>
+          </app-catalog-kind-marker>
         </ng-template>
 
         <!-- ───── Stock cell (TZ-MATERIALS-308, read-only link) ───── -->

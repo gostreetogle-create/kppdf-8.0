@@ -30,6 +30,7 @@ import {
   ProductModulesService,
 } from '../../shared/services/pi-product-modules.service';
 import { ModuleFormDialogComponent } from './module-form-dialog.component';
+import { CatalogKindMarkerComponent } from '../../shared/ui/catalog/catalog-kind-marker.component';
 
 /**
  * SortKey union intentionally narrow: matches the pre-migration
@@ -151,7 +152,13 @@ function moduleDimensions(row: ProductModule): string {
 @Component({
   selector: 'app-modules-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiGroupWorkspaceComponent, PiRowActionsComponent, ButtonComponent, TableComponent],
+  imports: [
+    PiGroupWorkspaceComponent,
+    PiRowActionsComponent,
+    ButtonComponent,
+    TableComponent,
+    CatalogKindMarkerComponent,
+  ],
   template: `
     <app-pi-group-workspace [chips]="chips" activeId="modules">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
@@ -205,6 +212,10 @@ function moduleDimensions(row: ProductModule): string {
         (sortChange)="onSortChange($event)"
         (rowClick)="onRowClick($event)"
       >
+        <ng-template #nameTpl let-row>
+          <app-catalog-kind-marker kind="module">{{ row.name }}</app-catalog-kind-marker>
+        </ng-template>
+
         <!-- ───── Row actions cluster ───── -->
         <ng-template #rowActionsTpl let-row>
           <app-pi-row-actions
@@ -350,6 +361,7 @@ export class ModulesPage implements OnInit {
       label: 'Название',
       sortable: true,
       sticky: 'left',
+      cellClass: 'catalog-kind-name-cell',
     },
     {
       key: 'article',
@@ -390,6 +402,8 @@ export class ModulesPage implements OnInit {
    * needed beyond row-actions), but we still type the field for
    * parity with the contracts pattern — `{}` initial assignment.
    */
+  @ViewChild('nameTpl', { static: true })
+  private readonly nameTplRef!: TemplateRef<{ $implicit: ProductModule }>;
   @ViewChild('rowActionsTpl', { static: true })
   private readonly rowActionsTplRef!: TemplateRef<{ $implicit: ProductModule }>;
 
@@ -402,7 +416,7 @@ export class ModulesPage implements OnInit {
     // Build cell-templates map + row-actions binding AFTER static
     // @ViewChild fields resolve. Avoids TemplateRef<C> invariance
     // trap and Angular's signal-binding name-collision.
-    this.cellTemplates = {};
+    this.cellTemplates = { name: this.nameTplRef };
     this.rowActionsTplBinding = this.rowActionsTplRef;
   }
 

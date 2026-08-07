@@ -2,6 +2,10 @@
 
 **Краткое описание:** Справочник материалов с серверной пагинацией, поиском, фото, поставщиками, габаритами.
 
+## TZ-CATALOG-332 — визуальный маркер типа
+
+В ссылке названия строки отображается тонкая полоска `material`. Для сырья (`materialKind = raw`) helper использует отдельный hue, остальные материалы используют общий material hue. Это UI-легенда каталога; она не связана с RAL, `ralCode` или физическим цветом.
+
 > **TZ-CATALOG-301 (BE DONE):** на API уже есть `materialKind`, `assortment`,
 > `standardRef`, `materialGrade`, `weightKg` (+ filter `?materialKind=`).
 > **FE форма/типы этих полей — TZ-CATALOG-316 DONE** (не Wave 2 UI tree).

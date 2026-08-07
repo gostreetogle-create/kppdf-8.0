@@ -1,3 +1,14 @@
+## [2026-08-08] — TZ-CATALOG-332 READY CLOSEOUT
+**Исполнитель:** Buffy / agent-3e757640b7 (Cursor PASS)
+**Статус:** DONE; commit/push выполняются в текущем closeout
+**Что сделано кратко:** Общий тонкий kind-marker подключён к спискам Products/Modules/Materials и вкладкам composition picker; `PiOverflowSelect` и `materialKind`-контракт сохранены. RAL, Gantt, BOM, desktop, COST и TZ-333 не затрагивались.
+**Gates:** frontend tsc PASS; related Jest 5 suites / 33 tests PASS; scoped ESLint PASS; diff --check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-332.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-332-kind-colors.lock`
+**Commit:** pending closeout commit
+
+---
+
 ## [2026-08-08] — TZ-COST-301 DONE: WorkType hourlyRate required
 **Исполнитель:** cursor-composer-cost301 (Cursor PASS → archive)
 **Статус:** DONE on main
