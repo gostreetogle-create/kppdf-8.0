@@ -2,7 +2,7 @@
 TZ-CATALOG-333: Composition containment outlines (nested frames)
 ═══════════════════════════════════════════════════════════════
 
-> READY · LAYER 2–3 · FE composition-tree + BOM panel · review before archive
+> DONE · LAYER 2–3 · archived `tasks/_archive/2026-08/TZ-CATALOG-333.done.md` · `f2aedfd`
 >
 > PO sketches 2026-08-08: рамки «что внутри чего»; колонки = смысл уровней;
 > design = Cursor canon в `docs/audits/2026-08-08-composition-containment-outline.md`
@@ -11,7 +11,8 @@ TZ-CATALOG-333: Composition containment outlines (nested frames)
 > Проверено: `composition-tree.component.ts` (indent + kind wash 330);
 > `product-bom-panel.component.ts`; `docs/pages/ui-composition-tree.md`.
 
-STATUS: READY (после/параллельно 332 — conflict на composition-tree / BOM:
+STATUS: DONE — archive `tasks/_archive/2026-08/TZ-CATALOG-333.done.md` · `f2aedfd`
+(исторически: после/параллельно 332 — conflict на composition-tree / BOM:
   если 332 IN WORK на lists only → 333 OK; если 332 трогает
   `catalog-kind-oklch` / tree — согласовать или DEFER 333 до archive 332)
 
