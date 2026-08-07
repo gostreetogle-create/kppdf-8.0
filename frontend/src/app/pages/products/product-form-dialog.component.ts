@@ -980,7 +980,7 @@ export class ProductFormDialogComponent implements OnDestroy {
       ProductCompositionPickerDialogComponent,
       {
         data: { productId },
-        width: 'lg',
+        width: 'xl',
         parentDestroyRef: this.destroyRef,
       },
     );

@@ -1,0 +1,482 @@
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  Injector,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
+import { RouterLink } from '@angular/router';
+import {
+  CompositionLine,
+  CompositionLineUpsertDto,
+  CompositionTreeNode,
+  ProductModulesService,
+} from '../../shared/services/pi-product-modules.service';
+import { extractErrorMessage } from '../../core/silent-http';
+import { PiToastService } from '../../shared/ui/toast';
+import { ButtonComponent } from '../../shared/ui/button/button.component';
+import {
+  CompositionTreeComponent,
+  type CompositionTreeSelectEvent,
+} from '../../shared/ui/composition/composition-tree.component';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
+import {
+  ProductCompositionPickerDialogComponent,
+  type ProductCompositionPickerResult,
+} from './product-composition-picker-dialog.component';
+
+/**
+ * Interactive BOM panel (variant A): tree + inspector + add-in-context.
+ * Карточка изделия — одно место собрать товар целиком.
+ */
+@Component({
+  selector: 'app-product-bom-panel',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ButtonComponent, CompositionTreeComponent, RouterLink],
+  template: `
+    <section
+      class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(14rem,18rem)] gap-3 items-start"
+      data-test="product-bom-panel"
+    >
+      <div class="hairline rounded-sm bg-paper min-w-0 overflow-hidden">
+        <div
+          class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 hairline-b bg-paper-2/50"
+        >
+          <div>
+            <h2 class="font-display text-base tracking-tight m-0">Состав</h2>
+            <p class="text-[11px] text-muted-foreground m-0">
+              Кликни строку — выбрать и раскрыть · справа — действия
+            </p>
+          </div>
+          @if (isComplex()) {
+            <span
+              class="inline-flex items-center px-2 py-0.5 text-[11px] hairline rounded-sm bg-sunrise-warm/10 text-sunrise-warm"
+              data-test="composition-complex-badge"
+              >Комплекс</span
+            >
+          }
+        </div>
+
+        @if (warning()) {
+          <p class="px-3 py-2 text-xs text-sunrise-warm" role="status">{{ warning() }}</p>
+        }
+        @if (error()) {
+          <p class="px-3 py-2 text-sm text-destructive" role="alert">{{ error() }}</p>
+        }
+        @if (loading()) {
+          <p class="py-3 text-center text-xs text-muted-foreground">Обновление состава…</p>
+        }
+
+        <div class="p-2 max-h-[min(32rem,60vh)] overflow-y-auto">
+          <app-composition-tree
+            [root]="tree()"
+            [selectedId]="selectedNodeId()"
+            (expandedChange)="onExpand($event)"
+            (selectedChange)="onSelect($event)"
+          />
+        </div>
+      </div>
+
+      <aside
+        class="hairline rounded-sm bg-paper p-3 space-y-3 lg:sticky lg:top-3"
+        data-test="bom-inspector"
+      >
+        @if (selected(); as sel) {
+          <div class="space-y-1">
+            <p class="eyebrow m-0">Выбрано</p>
+            <p class="font-medium text-sm m-0 break-words" data-test="bom-inspector-name">
+              {{ sel.node.name }}
+            </p>
+            <p class="text-xs text-muted-foreground m-0">{{ kindLabel(sel.node) }}</p>
+          </div>
+
+          @if (sel.depth > 0) {
+            <label class="block">
+              <span class="eyebrow block mb-1">Количество</span>
+              <input
+                class="pi-input w-full"
+                type="number"
+                min="0.0001"
+                [value]="sel.node.quantity"
+                (change)="onQtyChange($event)"
+                data-test="bom-inspector-qty"
+              />
+            </label>
+          }
+
+          @if (canAddInto(sel.node)) {
+            <div class="space-y-2">
+              <p class="eyebrow m-0">Добавить внутрь</p>
+              <p class="text-[11px] text-muted-foreground m-0">{{ addHint(sel.node) }}</p>
+              <app-pi-button
+                variant="default"
+                size="sm"
+                type="button"
+                class="w-full"
+                (click)="openAddPicker()"
+                data-test="bom-add-into"
+              >
+                + Из каталога
+              </app-pi-button>
+            </div>
+          } @else if (sel.node.kind === 'material') {
+            <p class="text-xs text-muted-foreground m-0">
+              Материал — конечный узел. Добавлять внутрь нельзя.
+            </p>
+          }
+
+          <div class="flex flex-col gap-1.5 pt-1 hairline-t">
+            @if (sel.node.kind === 'module') {
+              <a
+                [routerLink]="['/modules', sel.node._id]"
+                class="text-xs text-ink hover:text-sunrise-warm underline decoration-dotted"
+                data-test="bom-open-module"
+                >Открыть карточку модуля</a
+              >
+            }
+            @if (sel.node.kind === 'product' && sel.depth > 0) {
+              <a
+                [routerLink]="['/products', sel.node._id]"
+                class="text-xs text-ink hover:text-sunrise-warm underline decoration-dotted"
+                data-test="bom-open-product"
+                >Открыть карточку изделия</a
+              >
+            }
+            @if (sel.depth > 0) {
+              <button
+                type="button"
+                class="text-left text-xs text-destructive hover:underline"
+                (click)="removeSelected()"
+                data-test="bom-remove"
+              >
+                Убрать из состава
+              </button>
+            }
+          </div>
+        } @else {
+          <p class="eyebrow m-0">Инспектор</p>
+          <p class="text-sm text-muted-foreground m-0">
+            Выбери узел в дереве — здесь появятся добавление и количество.
+          </p>
+          <app-pi-button
+            variant="default"
+            size="sm"
+            type="button"
+            class="w-full"
+            (click)="selectRootAndAdd()"
+            data-test="bom-add-root"
+          >
+            + В корень изделия
+          </app-pi-button>
+        }
+
+        <button
+          type="button"
+          class="text-xs text-muted-foreground hover:text-ink underline decoration-dotted"
+          (click)="reload()"
+          data-test="bom-reload"
+        >
+          Обновить дерево
+        </button>
+      </aside>
+    </section>
+  `,
+})
+export class ProductBomPanelComponent {
+  readonly productId = input.required<string>();
+  readonly changed = output<void>();
+
+  private readonly service = inject(ProductModulesService);
+  private readonly toast = inject(PiToastService);
+  private readonly dialog = inject(PiDialogService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
+
+  protected readonly tree = signal<CompositionTreeNode | null>(null);
+  protected readonly rootLines = signal<CompositionLine[]>([]);
+  protected readonly loading = signal(false);
+  protected readonly warning = signal<string | null>(null);
+  protected readonly error = signal<string | null>(null);
+  protected readonly selected = signal<CompositionTreeSelectEvent | null>(null);
+  private readonly requestedDepth = signal(2);
+  private readonly moduleLinesCache = signal(new Map<string, CompositionLine[]>());
+
+  protected readonly isComplex = computed(() =>
+    (this.tree()?.children ?? []).some((c) => c.kind === 'product'),
+  );
+  protected readonly selectedNodeId = computed(() => this.selected()?.node?._id ?? null);
+
+  constructor() {
+    effect(() => {
+      const id = this.productId();
+      if (!id) return;
+      untracked(() => this.load());
+    });
+  }
+
+  reload(): void {
+    this.load();
+  }
+
+  protected onSelect(event: CompositionTreeSelectEvent): void {
+    this.selected.set(event);
+    if (event.node.kind === 'module') this.ensureModuleLines(event.node._id);
+    if (event.parent?.kind === 'module') this.ensureModuleLines(event.parent._id);
+  }
+
+  protected onExpand(event: { node: CompositionTreeNode; expanded: boolean }): void {
+    if (!event.expanded) return;
+    const depth = this.depthOf(event.node);
+    if (depth < 0) return;
+    if (depth > 5) {
+      this.warning.set('Глубина больше 5 уровней — проверьте структуру.');
+    }
+    const nextDepth = Math.min(8, Math.max(2, depth + 2));
+    if (nextDepth > this.requestedDepth()) {
+      this.requestedDepth.set(nextDepth);
+      this.load();
+    }
+  }
+
+  protected kindLabel(node: CompositionTreeNode): string {
+    if (node.kind === 'product') return 'Изделие';
+    if (node.kind === 'module') return 'Модуль';
+    if (node.materialKind === 'part') return 'Деталь';
+    if (node.materialKind === 'fastener') return 'Метиз';
+    if (node.materialKind === 'purchased') return 'Покупное';
+    if (node.materialKind === 'raw') return 'Сырьё';
+    return 'Материал';
+  }
+
+  protected canAddInto(node: CompositionTreeNode): boolean {
+    return node.kind === 'product' || node.kind === 'module';
+  }
+
+  protected addHint(node: CompositionTreeNode): string {
+    if (node.kind === 'product') {
+      return 'Модуль, деталь/метиз/покупное или другое изделие (комплекс).';
+    }
+    return 'Дочерний модуль или материал (в т.ч. сырьё).';
+  }
+
+  protected selectRootAndAdd(): void {
+    const root = this.tree();
+    if (!root) return;
+    this.selected.set({ node: root, parent: null, depth: 0 });
+    this.openAddPicker();
+  }
+
+  protected openAddPicker(): void {
+    const sel = this.selected();
+    if (!sel || !this.canAddInto(sel.node)) return;
+    const parentKind = sel.node.kind === 'module' ? 'module' : 'product';
+    const parentId = sel.node._id;
+
+    const ref = this.dialog.open<ProductCompositionPickerResult | null>(
+      ProductCompositionPickerDialogComponent,
+      {
+        data: {
+          productId: parentKind === 'product' ? parentId : this.productId(),
+          restrictToModule: parentKind === 'module',
+        },
+        width: 'xl',
+        parentDestroyRef: this.destroyRef,
+      },
+    );
+
+    onDialogCloseOnce(ref, this.injector, (result) => {
+      if (!result) return;
+      if (parentKind === 'module' && result.lineType === 'product') {
+        this.toast.error('Изделие нельзя добавить в состав модуля.');
+        return;
+      }
+      const dto: CompositionLineUpsertDto =
+        result.lineType === 'product'
+          ? {
+              lineType: 'product',
+              refId: result.refId,
+              quantity: 1,
+              ...(result.unitPriceOverride != null
+                ? { unitPriceOverride: result.unitPriceOverride }
+                : {}),
+            }
+          : { lineType: result.lineType, refId: result.refId, quantity: 1 };
+
+      const req =
+        parentKind === 'product'
+          ? this.service.addProductCompositionLine(parentId, dto)
+          : this.service.addModuleCompositionLine(parentId, dto);
+
+      req.subscribe((res) => {
+        if (res.ok) {
+          this.toast.success('Добавлено в состав');
+          this.moduleLinesCache.set(new Map());
+          this.load();
+          this.changed.emit();
+        } else {
+          this.toast.error(extractErrorMessage(res.error));
+        }
+      });
+    });
+  }
+
+  protected onQtyChange(event: Event): void {
+    const sel = this.selected();
+    if (!sel || sel.depth === 0 || !sel.parent) return;
+    const quantity = Number((event.target as HTMLInputElement).value);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      this.toast.error('Количество должно быть положительным.');
+      return;
+    }
+    this.withLine(sel, (line, parent) => {
+      const req =
+        parent.kind === 'product'
+          ? this.service.updateProductCompositionLine(parent._id, line._id, { quantity })
+          : this.service.updateModuleCompositionLine(parent._id, line._id, { quantity });
+      req.subscribe((res) => {
+        if (res.ok) {
+          this.load();
+          this.changed.emit();
+        } else this.toast.error(extractErrorMessage(res.error));
+      });
+    });
+  }
+
+  protected removeSelected(): void {
+    const sel = this.selected();
+    if (!sel || sel.depth === 0 || !sel.parent) return;
+    this.withLine(sel, (line, parent) => {
+      const req =
+        parent.kind === 'product'
+          ? this.service.removeProductCompositionLine(parent._id, line._id)
+          : this.service.removeModuleCompositionLine(parent._id, line._id);
+      req.subscribe((res) => {
+        if (res.ok) {
+          this.selected.set(null);
+          this.moduleLinesCache.set(new Map());
+          this.load();
+          this.changed.emit();
+          this.toast.success('Убрано из состава');
+        } else this.toast.error(extractErrorMessage(res.error));
+      });
+    });
+  }
+
+  private withLine(
+    sel: CompositionTreeSelectEvent,
+    run: (line: CompositionLine, parent: CompositionTreeNode) => void,
+  ): void {
+    const parent = sel.parent;
+    if (!parent) return;
+    const apply = (lines: CompositionLine[]): void => {
+      const wantType =
+        sel.node.kind === 'product'
+          ? 'product'
+          : sel.node.kind === 'module'
+            ? 'module'
+            : 'material';
+      const line = lines.find((l) => l.refId === sel.node._id && l.lineType === wantType);
+      if (!line) {
+        this.toast.error('Не найдена строка состава.');
+        return;
+      }
+      run(line, parent);
+    };
+
+    if (parent.kind === 'product') {
+      apply(this.rootLines());
+      return;
+    }
+    const cached = this.moduleLinesCache().get(parent._id);
+    if (cached) {
+      apply(cached);
+      return;
+    }
+    this.service.getModuleComposition(parent._id).subscribe((res) => {
+      if (!res.ok) {
+        this.toast.error(extractErrorMessage(res.error));
+        return;
+      }
+      const next = new Map(this.moduleLinesCache());
+      next.set(parent._id, res.data);
+      this.moduleLinesCache.set(next);
+      apply(res.data);
+    });
+  }
+
+  private ensureModuleLines(moduleId: string): void {
+    if (this.moduleLinesCache().has(moduleId)) return;
+    this.service.getModuleComposition(moduleId).subscribe((res) => {
+      if (!res.ok) return;
+      const next = new Map(this.moduleLinesCache());
+      next.set(moduleId, res.data);
+      this.moduleLinesCache.set(next);
+    });
+  }
+
+  private load(): void {
+    const id = this.productId();
+    this.loading.set(true);
+    this.error.set(null);
+    let treeDone = false;
+    let lineDone = false;
+    const finish = (): void => {
+      if (treeDone && lineDone) this.loading.set(false);
+    };
+    this.service.getProductTree(id, this.requestedDepth()).subscribe((res) => {
+      treeDone = true;
+      if (res.ok) {
+        this.tree.set(res.data);
+        const prevId = this.selected()?.node?._id;
+        if (prevId) {
+          const restored = this.findSelectEvent(res.data, prevId);
+          this.selected.set(restored ?? { node: res.data, parent: null, depth: 0 });
+        } else {
+          this.selected.set({ node: res.data, parent: null, depth: 0 });
+        }
+      } else {
+        this.tree.set(null);
+        this.error.set(extractErrorMessage(res.error));
+      }
+      finish();
+    });
+    this.service.getProductComposition(id).subscribe((res) => {
+      lineDone = true;
+      if (res.ok) this.rootLines.set(res.data);
+      else this.rootLines.set([]);
+      finish();
+    });
+  }
+
+  private findSelectEvent(
+    root: CompositionTreeNode,
+    id: string,
+    parent: CompositionTreeNode | null = null,
+    depth = 0,
+  ): CompositionTreeSelectEvent | null {
+    if (root._id === id) return { node: root, parent, depth };
+    for (const child of root.children) {
+      const found = this.findSelectEvent(child, id, root, depth + 1);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  private depthOf(target: CompositionTreeNode, node = this.tree(), depth = 0): number {
+    if (!node) return -1;
+    if (node._id === target._id) return depth;
+    for (const child of node.children) {
+      const r = this.depthOf(target, child, depth + 1);
+      if (r !== -1) return r;
+    }
+    return -1;
+  }
+}

@@ -3,7 +3,6 @@ import {
   Component,
   DestroyRef,
   Injector,
-  ViewChild,
   computed,
   inject,
   signal,
@@ -31,11 +30,6 @@ import {
   CostCalculation,
   CostCalculationsService,
 } from '../../shared/services/pi-cost-calculations.service';
-import { ProductModulePickerDialogComponent } from './product-module-picker-dialog.component';
-import {
-  ProductCompositionPickerDialogComponent,
-  ProductCompositionPickerResult,
-} from './product-composition-picker-dialog.component';
 import {
   Material,
   MATERIAL_KIND_LABELS,
@@ -43,7 +37,7 @@ import {
 } from '../../shared/services/materials.service';
 import { CostCalculationDetailDialogComponent } from './cost-calculation-detail-dialog.component';
 import { Photo } from '../../shared/services/photos.service';
-import { CompositionEditorComponent } from '../../shared/ui/composition/composition-editor.component';
+import { ProductBomPanelComponent } from './product-bom-panel.component';
 import { ProductKind, ProductStatus } from '../../shared/services/products.service';
 
 const STATUS_LABELS: Record<ProductStatus, string> = {
@@ -83,7 +77,7 @@ const KIND_LABELS: Record<ProductKind, string> = {
     RouterLink,
     PiEmptyStateComponent,
     ButtonComponent,
-    CompositionEditorComponent,
+    ProductBomPanelComponent,
     AccordionComponent,
     AccordionItemComponent,
     PiPageChromeComponent,
@@ -223,35 +217,13 @@ const KIND_LABELS: Record<ProductKind, string> = {
           </div>
         </section>
 
-        <!-- Правая колонка: состав + вторичные блоки -->
+        <!-- Правая колонка: состав (BOM) + вторичные блоки -->
         <div class="min-w-0 space-y-4">
-          <section
-            class="hairline rounded-sm bg-paper p-4 space-y-3"
+          <app-product-bom-panel
+            [productId]="p._id"
+            (changed)="onBomChanged()"
             data-test="product-composition-panel"
-          >
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h2 class="font-display text-base tracking-tight m-0">Состав</h2>
-                <p class="text-xs text-muted-foreground m-0 mt-0.5">
-                  Товар → модули → материалы. Раскрывайте уровни как папки.
-                </p>
-              </div>
-              <app-pi-button
-                variant="default"
-                type="button"
-                (click)="openCompositionPicker()"
-                data-test="quick-composition-edit"
-              >
-                Добавить из каталога
-              </app-pi-button>
-            </div>
-            <app-composition-editor
-              #compositionEditor
-              [parentId]="p._id"
-              parentKind="product"
-              data-test="product-composition-editor"
-            />
-          </section>
+          />
 
           <app-pi-accordion [multi]="true" data-test="product-cascade">
             <app-pi-accordion-item
@@ -386,9 +358,6 @@ const KIND_LABELS: Record<ProductKind, string> = {
   `,
 })
 export class ProductDetailPage {
-  @ViewChild('compositionEditor')
-  private compositionEditor?: CompositionEditorComponent;
-
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly dialog = inject(PiDialogService);
@@ -574,106 +543,12 @@ export class ProductDetailPage {
       : `Материал · ${line.refId} · тип не указан`;
   }
 
-  protected openCompositionPicker(): void {
-    const pid = this.idString();
-    if (!pid) return;
-    const ref = this.dialog.open<ProductCompositionPickerResult | null>(
-      ProductCompositionPickerDialogComponent,
-      {
-        data: { productId: pid },
-        width: 'lg',
-        parentDestroyRef: this.destroyRef,
-      },
-    );
-    onDialogCloseOnce(ref, this.injector, (result) => {
-      if (!result) return;
-      const payload =
-        result.lineType === 'product'
-          ? {
-              lineType: 'product' as const,
-              refId: result.refId,
-              quantity: 1,
-              ...(result.unitPriceOverride != null
-                ? { unitPriceOverride: result.unitPriceOverride }
-                : {}),
-            }
-          : { lineType: result.lineType, refId: result.refId, quantity: 1 };
-      this.modulesSvc.addProductCompositionLine(pid, payload).subscribe((res) => {
-        if (res.ok) {
-          this.toast.success('Строка добавлена в состав');
-          this.productRes.reload();
-          this.compositionEditor?.reload();
-        } else {
-          this.toast.error(extractErrorMessage(res.error));
-        }
-      });
-    });
+  protected onBomChanged(): void {
+    this.productRes.reload();
   }
 
   protected openModuleDetail(m: ProductModule): void {
     this.router.navigate(['/modules', m._id]);
-  }
-
-  protected openPicker(): void {
-    const pid = this.idString();
-    if (!pid) return;
-    const ref = this.dialog.open<string | null>(ProductModulePickerDialogComponent, {
-      data: {
-        productId: pid,
-        excludeIds: this.attachedModules().map((r) => r.module._id),
-      },
-      width: 'lg',
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (chosenId) => {
-      this.addCompositionModule(chosenId);
-    });
-  }
-
-  private addCompositionModule(moduleId: string): void {
-    this.modulesSvc
-      .addProductCompositionLine(this.idString(), {
-        lineType: 'module',
-        refId: moduleId,
-        quantity: 1,
-      })
-      .subscribe((res) => {
-        if (res.ok) {
-          this.toast.success('Модуль добавлен в состав');
-          this.productRes.reload();
-        } else {
-          this.toast.error(extractErrorMessage(res.error));
-        }
-      });
-  }
-
-  protected onDetach(row: { module: ProductModule; lineId?: string; quantity: number }): void {
-    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
-      data: {
-        title: 'Убрать модуль из состава?',
-        description: `Убрать «${row.module.name}» из состава этого товара? Модуль останется в каталоге.`,
-        confirmLabel: 'Убрать',
-        variant: 'destructive',
-      },
-      width: 'sm',
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, () => {
-      const lineId = row.lineId ?? this.compositionLineByModule().get(row.module._id);
-      if (!lineId) {
-        // legacy-привязка без composition-линии: детач невозможен до миграции 304
-        this.toast.error('Состав ещё в legacy-формате — обновите состав через форму товара');
-        return;
-      }
-      this.modulesSvc.removeProductCompositionLine(this.idString(), lineId).subscribe((res) => {
-        if (res.ok) {
-          this.toast.success('Модуль убран из состава');
-          this.productRes.reload();
-        } else {
-          this.toast.error(extractErrorMessage(res.error));
-        }
-      });
-    });
   }
 
   // ── TZ-85 Phase C: Себестоимость ──────────────────────────────────────

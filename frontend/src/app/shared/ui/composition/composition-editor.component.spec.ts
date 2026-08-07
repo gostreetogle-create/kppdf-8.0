@@ -110,19 +110,25 @@ describe('CompositionEditorComponent (TZ-CATALOG-311)', () => {
       draftRefId: { set: (value: string) => void };
       addDraftLine: () => void;
     };
-    // Root is auto-expanded (folder-open UX); collapse then expand to trigger deeper fetch.
+    // Root is auto-expanded (folder-open UX); collapse then expand via row click.
     expect(
       fixture.nativeElement
         .querySelector('[data-test="composition-tree-node-m1"]')
         ?.getAttribute('aria-expanded'),
     ).toBe('true');
-    const toggle = fixture.nativeElement.querySelector(
-      '[data-test="composition-tree-toggle"]',
-    ) as HTMLButtonElement;
-    expect(toggle).toBeTruthy();
-    toggle.click();
+    const row = fixture.nativeElement.querySelector(
+      '[data-test="composition-tree-node-m1"] > [data-test="composition-tree-row"]',
+    ) as HTMLElement;
+    expect(row).toBeTruthy();
+    // already selected root: second click collapses
+    row.click();
     fixture.detectChanges();
-    toggle.click();
+    expect(
+      fixture.nativeElement
+        .querySelector('[data-test="composition-tree-node-m1"]')
+        ?.getAttribute('aria-expanded'),
+    ).toBe('false');
+    row.click();
     fixture.detectChanges();
     expect(service.getModuleTree).toHaveBeenCalledWith('m1', 2);
     expect(
