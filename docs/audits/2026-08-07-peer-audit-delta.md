@@ -18,3 +18,9 @@
 Если PO положит peer-файл позже: Cursor читает → при **доказанном** P0 security (auth bypass / cross-org read) — отдельная thin TZ **до** демо; иначе backlog. Не смешивать с production Gantt CONFLICT KEYS.
 
 **Статус шага 0:** CLOSED без P0 security insert (evidence отсутствует).
+
+## Re-check 2026-08-07 (Cursor wait while 303.1 in flight)
+
+Повторный поиск `tasks/AUDIT-2026-08-07-first-look-project-audit.md` — **всё ещё MISSING**.  
+Stub park: `tasks/_backlog/TZ-SECURITY-MT-FOLLOWUP-park.md`. Не блокирует executor 303.1.
+
