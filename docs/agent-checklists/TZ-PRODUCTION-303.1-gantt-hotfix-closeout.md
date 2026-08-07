@@ -51,7 +51,8 @@
 ## Executor report (auto)
 
 ```
-commit: final closeout SHA is reported by executor after the last metadata commit
+implementation_commit: `f731957`
+metadata: this checklist is finalized in the follow-up documentation commit
 change: OrdersPage ?q= deep-link + inspector link + production page docs
 gates: tsc PASS; targeted Jest 4/20 PASS; scoped ESLint PASS; ng build PASS with pre-existing NG8113; diff --check PASS
 prettier: FAIL/known pre-existing formatting drift; no mutating formatter run
