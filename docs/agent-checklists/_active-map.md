@@ -1,24 +1,25 @@
-# SESSION QUEUE — 2026-08-08 · post TZD-20
+# SESSION QUEUE — 2026-08-08 · cost hierarchy wave
 
-**Updated:** 2026-08-08 · TZD-20 Cursor PASS → archived
+**Updated:** 2026-08-08 · audit cost + TZ-COST-301 READY
 
-## Ops / DX
-
-| Item | Status |
-|------|--------|
-| **TZ-OPS-301** quiet local boot logs | **DONE** — `tasks/_archive/2026-08/TZ-OPS-301.done.md` · lock `.mimocode/locks/TZ-OPS-301-quiet-dev-boot-logs.lock` |
-
-## Desktop / MCP
+## Cost / себестоимость
 
 | Item | Status |
 |------|--------|
-| **TZD-17** semantic domain layer | **DONE** — `tasks/_archive/2026-08/TZD-17.done.md` |
-| **TZD-20** mcp.json copy for Cursor/LM Studio | **DONE** — `tasks/_archive/2026-08/TZD-20.done.md` · lock `.mimocode/locks/TZD-20-mcp-client-json-copy.lock` |
-| **TZD-18** batch scale | PARK — не без PO |
-| **TZD-19** graph + integrity | PARK |
+| Audit | `docs/audits/2026-08-08-catalog-cost-pricing-hierarchy.md` |
+| **TZ-COST-301** hourlyRate required | **READY** — `tasks/_backlog/cost/TZ-COST-301-…` |
+| **TZ-COST-302** recursive rollup | after 301 |
+| **TZ-COST-303** UI visibility | after 302 |
 
-## Checkpoint 2026-08-08T00:40Z
-- DONE: TZD-20 (mcp.json clipboard) @ `f3ca1007947e2e727af4f24a05ac4f8ace71aade`
-- Peer active: TZ-CATALOG-331 (FE catalog)
-- NEXT: idle until PO (TZD-18 / other)
+## Peer / other
+
+| Item | Status |
+|------|--------|
+| TZ-CATALOG-331 | peer `_active` (appearance) — не конфликтует с COST-301 |
+| TZ-OPS-301 / TZD-17 / TZD-20 | DONE |
+| TZD-18/19 | PARK |
+
+## Checkpoint
+- NEXT: «делай TZ-COST-301»
+- Канон: Виды работ = Каталог; себест. ≠ listPrice
 - Deploy: NO
