@@ -1,6 +1,6 @@
 # Product vision (lite) — kppdf для небольшого цеха
 
-**Статус:** канон для приоритизации TZ (2026-08-02). Не ТЗ на реализацию Ганта.  
+**Статус:** канон для приоритизации TZ (обновлён 2026-08-07: gap-map vs код). Не полный ТЗ на drag-Гант.  
 **Масштаб:** ~10 пользователей. Сварка / покраска / дерево / отгрузка / КП / офис-документы.  
 **Вне scope:** бухгалтерия, тяжёлый ERP-зоопарк, fine-grained «кнопка × кнопка» ACL.
 
@@ -52,31 +52,31 @@ flowchart TB
 1. Менеджер готовит **КП** (одна сущность, не три дубля в модели).  
 2. КП подтвердили → **Заказ**.  
 3. Заказ → модули / виды работ → люди (когда People готовы).  
-4. Позже: **Production Cockpit** (Lego shell + Гант) — design `docs/superpowers/specs/2026-08-06-production-cockpit-lego-design.md`; first code TZ-PRODUCTION-303.  
+4. **Production Cockpit** `/production` (Lego shell + plan-estimate Гант) — design `docs/superpowers/specs/2026-08-06-production-cockpit-lego-design.md`; код TZ-PRODUCTION-303 (+ hotfix 2026-08-06). Drag/resize — только после PRODUCTION-309.  
 5. Документы: шаблон → сформированный PDF/HTML по сделке.  
 6. Склад: остатки/движения по мере необходимости, не второй SAP.
 
-Сейчас в UI **нет** маршрута КП — это дыра потока №1. Гант — **не** сейчас.
+**Факт UI (2026-08-07):** маршруты КП (`/proposals`) и Ганта (`/production`) **есть**. Дыры №1 теперь: **проектирование/чертежи**, **reserve glue**, **отгрузка board**.
 
-## Карта потока → страницы (gap map, TZ-JOURNEY-301 + lifecycle plan 2026-08-02)
+## Карта потока → страницы (gap map, sync 2026-08-07)
 
 Статус легенда: ✅ UI есть · 🔶 half · ⛔ нет UI · 🅿️ parked · 🔜 ready-when-deps (спека есть, ждать цепочку).
 
 | Шаг потока | Страница сейчас | Статус | Successor |
 |------------|-----------------|--------|-----------|
-| **КП** | — | ⛔ | TZ-SALES-301 |
-| **Заказ** | `/orders` | ✅ | TZ-ORDERS-301 (конверсия из КП) |
+| **КП** | `/proposals` | ✅ | SALES-301 DONE; polish only |
+| **Заказ** | `/orders` | ✅ | ORDERS-301 DONE (конверсия из КП) |
 | **Договор** | `/contracts` | ✅ *optional* | Не обязательный stage цепочки; юридический артефакт рядом с КП/заказом (см. lifecycle §10 #1) |
-| **Проектирование** | — | ⛔ | TZ-PRODUCTION-301 (+ PRODUCTS-306 skip-flag) |
+| **Проектирование / чертежи** | — (каталог `/products` ≠ канбан) | ⛔ | TZ-PRODUCTION-301 / YouGile replacement в cockpit |
 | **Specification** (снимок состава) | — | ⛔ | внутри PRODUCTION-301 / CORE-301 snapshots |
 | **Склад reserve** | inventory routes ✅, glue ⛔ | 🔶 | TZ-INVENTORY-301 → PROCUREMENT-301 |
-| **Производство / Гант** | — | 🔜 | PRODUCTION-302…307; [`GANT-calendar.md`](../tasks/_backlog/vision/GANT-calendar.md) |
+| **Производство / Гант** | `/production` | 🔶 plan-estimate | PRODUCTION-308…310; drag после 309; [`GANT-calendar.md`](../tasks/_backlog/vision/GANT-calendar.md) |
 | **Отгрузка + docs** | shipment partial | 🔶 | TZ-SHIPPING-301 + TZ-DOC-330 (order→template glue) |
 | **Архив lifecycle** | documents page ✅, S7 link ⛔ | 🔶 | TZ-ARCHIVE-301 |
-| **Модули / виды работ / люди** | routes ✅ / people 🔶 | ✅/🔶 | MODULES / WORKTYPES / WORKERS / UX-306 |
+| **Модули / виды работ / люди** | routes ✅ | ✅ | polish only |
 | **Auto-fill doc template** | DocConstructor ✅, order glue ⛔ | 🔶 | TZ-DOC-330 |
 
-**Дыры №1:** КП без UI; проектирование/спека без UI; snapshot-immutability pattern (CORE-301) до цепочки.
+**Дыры №1:** проектирование/канбан чертежей; склад reserve→заказ; отгрузка board; snapshot-immutability (CORE-301) до полной цепочки.
 
 ```mermaid
 flowchart LR
@@ -92,8 +92,8 @@ flowchart LR
 
 ## Что делаем сейчас vs паркуем
 
-**Сейчас (лёгкие TZ):** page-ACL, закрытие UX-дыр меню, doc-constructor 324–326, People route, склад в nav, один КП-контур.  
-**Парк:** Гант/календарь, авторазнос задач, проектный «готово к запуску», закупки/тендеры, финансы.
+**Сейчас:** стабилизация `/production` (hotfix → smoke → 308/309), данные под демо, deep-link заказов, чертежи в cockpit.  
+**Парк:** drag-Гант до 309, авторазнос задач, отгрузка board до un-park SHIPPING-301, закупки/тендеры, финансы.
 
 ## Индекс задач
 
