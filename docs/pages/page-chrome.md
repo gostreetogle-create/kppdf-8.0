@@ -53,6 +53,10 @@ Group Chip Workspace **не** дублирует deep path-breadcrumb вмест
 только лёгкий `pathLabel` раздела. Deep path — на detail и на «простынных»
 списках без chips (сделки/документы до cutover на group workspace).
 
+## См. также
+
+- Каталожный выпадающий список: [`ui-overflow-select.md`](./ui-overflow-select.md)
+
 ---
 
 _Создано: 2026-08-07._

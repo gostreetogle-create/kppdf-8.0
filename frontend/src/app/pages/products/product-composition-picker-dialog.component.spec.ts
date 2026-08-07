@@ -92,11 +92,26 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320)', () => {
 
   it('excludes the current product and raw materials', () => {
     const component = instance();
-    expect(component.available()).toEqual([{ id: 'm1', label: 'Модуль · —' }]);
+    expect(component.activeKind()).toBe('product');
+    expect(component.available()).toEqual([{ id: 'p2', label: 'Дочернее изделие · без SKU' }]);
+    component.selectKind('module' as never);
+    expect(component.available()).toEqual([{ id: 'm1', label: 'Модуль · без артикула' }]);
     component.selectKind('material' as never);
     expect(component.available()).toEqual([{ id: 'part', label: 'Кронштейн · деталь' }]);
-    component.selectKind('product' as never);
-    expect(component.available()).toEqual([{ id: 'p2', label: 'Дочернее изделие · —' }]);
+  });
+
+  it('shows tabs in order: изделие → модуль → деталь', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    const tabs = Array.from(el.querySelectorAll('[role="tab"]')).map((t) =>
+      (t.textContent ?? '').trim(),
+    );
+    expect(tabs).toEqual(['Изделие', 'Модуль', 'Деталь']);
+  });
+
+  it('uses overflow-select for catalog pick', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('[data-test="composition-picker-select"]')).toBeTruthy();
+    expect(el.querySelector('[data-test="pi-overflow-select-trigger"]')).toBeTruthy();
   });
 
   it('submits product line with a non-negative unit price override', () => {
