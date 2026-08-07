@@ -17,6 +17,8 @@ Wave 1 index: `tasks/CATALOG-WAVE1.md` (backend 301–305 **DONE**)
 |----|-------|--------|
 | **311** | CompositionTree | **NEXT** · full TZ |
 | **315** | Lists polish + a11y | after 311 · stub |
+| **330** | Kind colors on composition tree | park · audit `docs/audits/2026-08-07-catalog-entity-colors-audit.md` |
+| **331** | Оформление каталога (persist + hue UI) | after 330 |
 | **306** | Coherence audit trail | discussion only |
 
 ## Done (archive only — backlog stubs removed)
