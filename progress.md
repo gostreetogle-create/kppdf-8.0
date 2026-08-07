@@ -1,10 +1,11 @@
 ## [2026-08-08] — TZ-CATALOG-333 DONE: composition containment nest
 **Исполнитель:** agent-3e757640b7 (Cursor PASS → archive)
-**Статус:** DONE; commit pending PO (peer WIP not staged)
+**Статус:** DONE on main; deploy НЕ выполнялся
 **Что сделано кратко:** Раскрытые узлы `app-composition-tree` оборачивают детей в `.comp-tree__nest` (hairline + wash kind родителя); module-in-module = рамка в рамке; на BOM — компактная легенда kind через `catalogKindOklch`. Клик по строке сохранён. Не Excel-колонки, не COST/desktop.
 **Gates:** frontend tsc PASS; Jest composition-tree + bom-panel + composition-editor 3/9 PASS
 **Archive:** `tasks/_archive/2026-08/TZ-CATALOG-333.done.md`
 **Lock:** `.mimocode/locks/TZ-CATALOG-333-composition-containment.lock`
+**Commit:** `f2aedfdbec37c4ab16d733643085153f21fb6c6a`
 **Cursor Verdict:** PASS
 
 ---

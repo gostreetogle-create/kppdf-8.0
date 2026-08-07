@@ -22,7 +22,8 @@
 ## Closeout
 
 - Archive + lock + progress + active-map + checklist DONE
-- Commit: pending PO request (dirty peer WIP excluded; stage only CONFLICT KEYS)
+- Implementation commit: `f2aedfdbec37c4ab16d733643085153f21fb6c6a`
+- Peer WIP / desktop / COST not staged
 
 ARCHIVE_MARKER
 outcome: DONE

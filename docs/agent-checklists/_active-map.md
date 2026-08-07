@@ -1,6 +1,6 @@
 # SESSION QUEUE — 2026-08-08
 
-**Updated:** 2026-08-08 · TZ-CATALOG-333 Cursor PASS → archived (commit pending PO)
+**Updated:** 2026-08-08 · TZ-CATALOG-333 Cursor PASS → archived · `f2aedfdbec37c4ab16d733643085153f21fb6c6a`
 
 ## DONE (archive + lock)
 
@@ -12,7 +12,7 @@
 | TZ-CATALOG-331 | archive + lock · `d70461d` |
 | **TZ-CATALOG-332** kind colors | archive + lock · `23c47b0c564bfba55cff9619818fb54b63d32239` |
 | **TZ-COST-301** hourlyRate required | archive + lock · `79edbea3c4c7957cb8ce7973f9acb1a29e2ca1a6` |
-| **TZ-CATALOG-333** containment nest | archive + lock · commit pending PO |
+| **TZ-CATALOG-333** containment nest | archive + lock · `f2aedfdbec37c4ab16d733643085153f21fb6c6a` |
 
 ## IN WORK
 
@@ -30,7 +30,7 @@
 ## Checkpoint 2026-08-07T23:40Z
 - DONE: TZ-CATALOG-333 (nest + BOM legend); TZ-COST-301; TZ-CATALOG-332
 - IN WORK: none
-- NEXT: idle / PO commit 333 keys / COST-302 only on PO / TZD-21
+- NEXT: idle / COST-302 only on PO / TZD-21
 - Deploy: NO
 - Blockers: none
 - _active/: empty

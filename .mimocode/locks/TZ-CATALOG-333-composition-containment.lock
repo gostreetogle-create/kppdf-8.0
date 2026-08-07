@@ -5,4 +5,4 @@ zone: composition-tree containment nest + BOM kind legend
 checklist: docs/agent-checklists/TZ-CATALOG-333.md
 archive: tasks/_archive/2026-08/TZ-CATALOG-333.done.md
 cursor_verdict: PASS
-implementation_commit: pending-PO
+implementation_commit: f2aedfdbec37c4ab16d733643085153f21fb6c6a
