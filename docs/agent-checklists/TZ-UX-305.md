@@ -1,9 +1,9 @@
-# TZ-UX-305 checklist
+# TZ-UX-305 — Nav equal width full labels
+
+**TZ:** `tasks/_backlog/TZ-UX-305-nav-equal-width-full-labels.md`  
+**Status:** RESERVED
 
 ## Acceptance
-- [ ] Four page.md files match code
-- [ ] Executor appends `## Executor report (auto)` before archive
 
-## Executor report (auto)
-
-_(executor fills)_
+- [ ] Full RU labels; equal button widths
+- [ ] tsc + nav-order; archive; push

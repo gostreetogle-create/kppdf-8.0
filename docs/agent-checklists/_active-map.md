@@ -21,7 +21,9 @@
 
 | ID | Status |
 |----|--------|
-| **TZ-UX-302** | chrome unify — **NEXT** (if PO queue) |
+| **TZ-ADMIN-302** | system role all-checked read-only — **NEXT** |
+| **TZ-UX-305** | nav equal width + full labels — **∥ ADMIN-302** |
+| **TZ-UX-302** | chrome unify (after 305) |
 | TZ-UX-303 | design-system chrome audit (docs) |
 | TZ-SALES-304 | KP family UI after PO probes |
 
