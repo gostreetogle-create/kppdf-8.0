@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-DICT-314 DONE: form profiles BE API (S/M/L)
+
+**Исполнитель:** continuous-executor-composer (self PASS → archive)
+**Статус:** DONE on main; deploy НЕ
+**Что сделано кратко:** FormProfile schema + unique org/entity/size; GET list/one + PUT; seed defaults audit §4; LockedRequired 400; jest 12/12.
+**Gates:** BE tsc PASS; jest form-profiles 12/12
+**Archive:** `tasks/_archive/2026-08/TZ-DICT-314.done.md`
+**Lock:** `.mimocode/locks/TZ-DICT-314-form-profiles-api.lock`
+**Cursor Verdict:** PASS (executor self)
+
 ## [2026-08-08] — TZ-COST-305 DONE: product-line в CostCalculation
 
 **Исполнитель:** continuous-executor-composer (self PASS → archive)

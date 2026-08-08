@@ -12,6 +12,7 @@ import { RoleModule } from './modules/role/role.module';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { SettingModule } from './modules/setting/setting.module';
+import { FormProfilesModule } from './modules/form-profiles/form-profiles.module';
 import { FeatureFlagModule } from './modules/feature-flag/feature-flag.module';
 import { DesktopModule } from './modules/desktop/desktop.module';
 import { StatusModule } from './modules/status/status.module';
@@ -165,6 +166,7 @@ import { RequestMethod } from '@nestjs/common';
     UserModule,
     AuthModule,
     SettingModule,
+    FormProfilesModule, // TZ-DICT-314: QuickCreate form profiles S/M/L
     FeatureFlagModule,
     DesktopModule,
     StatusModule,

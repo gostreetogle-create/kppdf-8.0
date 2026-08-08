@@ -98,7 +98,7 @@
 
 | Зона | Файлы | Описание |
 |------|-------|----------|
-| Backend API | `backend/src/modules/` | 19 feature modules (TZ-102: +Currency), CRUD endpoints. Modules route: `/modules` (renamed from `/product-modules`). |
+| Backend API | `backend/src/modules/` | Feature modules, CRUD endpoints. Modules route: `/modules`. **TZ-DICT-314:** `form-profiles` — org-scoped QuickCreate field matrices (product\|module × S\|M\|L), LockedRequired enforced on PUT. |
 | Backend common | `backend/src/common/` | Guards, interceptors, decorators, seeds. **CurrenciesSeed (TZ-102):** idempotent RUB/USD/EUR seed. |
 | Backend database | `backend/src/database/` | Connection, plugins (softDelete, audit, userContext) |
 | Backend scripts | `backend/scripts/` | `audit-di.ts` — DI cascade analyzer |
