@@ -13,7 +13,7 @@ import {
 import { httpResource } from '@angular/common/http';
 import { LucideAngularModule, RefreshCw } from 'lucide-angular';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
-import { CATALOG_SECTION_CHIPS } from '../catalog/catalog-group-chips';
+import { PRODUCTION_SECTION_CHIPS } from '../production/production-group-chips';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../shared/ui/switch/switch.component';
@@ -79,7 +79,7 @@ function accessorFor(key: Exclude<SortKey, null>): (row: WorkType) => unknown {
     TableComponent,
   ],
   template: `
-    <app-pi-group-workspace [chips]="chips" activeId="work-types" pathLabel="Каталог">
+    <app-pi-group-workspace [chips]="chips" activeId="work-types" pathLabel="Цех">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           id="work-types-search"
@@ -157,7 +157,7 @@ export class WorkTypesPage implements OnInit {
   constructor() {
     this.destroyRef.onDestroy(() => this.search.destroy());
   }
-  protected readonly chips = CATALOG_SECTION_CHIPS;
+  protected readonly chips = PRODUCTION_SECTION_CHIPS;
   private readonly service = inject(WorkTypesService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);

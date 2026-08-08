@@ -13,9 +13,8 @@ import {
 import { httpResource } from '@angular/common/http';
 import { LucideAngularModule, RefreshCw } from 'lucide-angular';
 import { Router } from '@angular/router';
-import { PiPageHeaderComponent } from '../../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../../shared/page/pi-section.component';
-import { PiToolbarComponent } from '../../../shared/page/pi-toolbar.component';
+import { PiGroupWorkspaceComponent } from '../../../shared/page/pi-group-workspace.component';
+import { DEALS_SECTION_CHIPS } from '../deals-group-chips';
 import { PiRowActionsComponent } from '../../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { PiDialogService, type DialogRef } from '../../../shared/ui/dialog/pi-dialog.service';
@@ -121,125 +120,124 @@ function counterpartyIdOf(row: Proposal): string {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     LucideAngularModule,
-    PiPageHeaderComponent,
-    PiSectionComponent,
-    PiToolbarComponent,
+    PiGroupWorkspaceComponent,
     PiRowActionsComponent,
     ButtonComponent,
     TableComponent,
   ],
   template: `
-    <app-pi-page-header
-      eyebrow="раздел · сделки"
-      title="КП"
-      description="Коммерческие предложения покупателям. Цены и состав фиксируются на момент создания — изменения каталога не влияют на выданные КП."
-    />
-
-    <app-pi-toolbar>
-      <input
-        id="proposals-search"
-        type="search"
-        name="proposals-search"
-        [value]="searchQuery()"
-        (input)="onSearchInput($event)"
-        placeholder="Поиск по номеру или названию…"
-        aria-label="Поиск КП"
-        data-test="search-input"
-        class="pi-input w-72"
-      />
-      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
-        + Создать
-      </app-pi-button>
-      <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
-        <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
-      </app-pi-button>
-      <span hint>{{ visibleCount() }} {{ totalLabel(visibleCount()) }}</span>
-    </app-pi-toolbar>
-
-    <app-pi-section title="Список КП" hint="сортировка · клик по заголовку" eyebrow="I">
-      @if (error()) {
-        <div
-          role="alert"
-          class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+    <app-pi-group-workspace pathLabel="Сделки" [chips]="chips" activeId="proposals">
+      <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        <input
+          id="proposals-search"
+          type="search"
+          name="proposals-search"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          placeholder="Поиск по номеру или названию…"
+          aria-label="Поиск КП"
+          data-test="search-input"
+          class="pi-input w-72"
+        />
+        <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
+          + Создать
+        </app-pi-button>
+        <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
+          <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
+        </app-pi-button>
+        <span class="flex-1"></span>
+        <span class="text-xs text-muted-foreground"
+          >{{ visibleCount() }} {{ totalLabel(visibleCount()) }}</span
         >
-          {{ error() }}
-        </div>
-      }
-
-      <div class="overflow-x-auto hairline rounded-sm">
-        <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
-          ← Таблица широкая — прокручивайте горизонтально →
-        </p>
-        <app-pi-table
-          [data]="paginatedRows()"
-          [columns]="cols"
-          [loading]="loading()"
-          [total]="total()"
-          [page]="page()"
-          [pageSize]="pageSize"
-          [emptyMessage]="emptyMessage()"
-          [ariaLabel]="'Список КП'"
-          [cellTemplates]="cellTemplates"
-          [rowActions]="rowActionsTplBinding"
-          [localSort]="false"
-          [initialSortKey]="'date'"
-          [initialSortDir]="'desc'"
-          (pageChange)="onPageChange($event)"
-          (sortChange)="onSortChange($event)"
-        >
-          <ng-template #counterpartyTpl let-row>
-            {{ counterpartyNameOf(row) ?? '—' }}
-          </ng-template>
-
-          <ng-template #statusTpl let-row>
-            <span
-              class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium"
-              [class]="statusBadgeClass(row.status)"
-            >
-              {{ statusLabel(row.status) }}
-            </span>
-          </ng-template>
-
-          <!-- TZ-ORDERS-301: convert accepted КП → Заказ. Enabled ONLY for
-               accepted proposals (backend enforces the same guard). -->
-          <ng-template #convertTpl let-row>
-            <button
-              type="button"
-              class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring
-                     disabled:opacity-30 disabled:cursor-not-allowed"
-              [disabled]="!canConvertToOrder(row)"
-              [attr.aria-label]="
-                canConvertToOrder(row)
-                  ? 'Преобразовать КП ' + row.number + ' в заказ'
-                  : 'Только принятые КП можно преобразовать в заказ'
-              "
-              [attr.data-test]="'convert-button-' + row._id"
-              (click)="onConvertToOrder(row)"
-            >
-              В заказ
-            </button>
-          </ng-template>
-
-          <ng-template #rowActionsTpl let-row>
-            <app-pi-row-actions
-              [row]="row"
-              [documentLabel]="'Создать документ для КП ' + row.number"
-              [dataTestDocument]="'document-button-' + row._id"
-              [editLabel]="'Редактировать КП ' + row.number"
-              [deleteLabel]="'Удалить КП ' + row.number"
-              [dataTestEdit]="'edit-button-' + row._id"
-              [dataTestDelete]="'delete-button-' + row._id"
-              (document)="onCreateDocument($event)"
-              (edit)="openEdit($event)"
-              (delete)="onDelete($event)"
-            />
-          </ng-template>
-        </app-pi-table>
       </div>
-    </app-pi-section>
+
+      <div class="pi-table-surface hairline rounded-sm overflow-hidden">
+        @if (error()) {
+          <div
+            role="alert"
+            class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+          >
+            {{ error() }}
+          </div>
+        }
+
+        <div class="overflow-x-auto hairline rounded-sm">
+          <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
+            ← Таблица широкая — прокручивайте горизонтально →
+          </p>
+          <app-pi-table
+            [data]="paginatedRows()"
+            [columns]="cols"
+            [loading]="loading()"
+            [total]="total()"
+            [page]="page()"
+            [pageSize]="pageSize"
+            [emptyMessage]="emptyMessage()"
+            [ariaLabel]="'Список КП'"
+            [cellTemplates]="cellTemplates"
+            [rowActions]="rowActionsTplBinding"
+            [localSort]="false"
+            [initialSortKey]="'date'"
+            [initialSortDir]="'desc'"
+            (pageChange)="onPageChange($event)"
+            (sortChange)="onSortChange($event)"
+          >
+            <ng-template #counterpartyTpl let-row>
+              {{ counterpartyNameOf(row) ?? '—' }}
+            </ng-template>
+
+            <ng-template #statusTpl let-row>
+              <span
+                class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium"
+                [class]="statusBadgeClass(row.status)"
+              >
+                {{ statusLabel(row.status) }}
+              </span>
+            </ng-template>
+
+            <!-- TZ-ORDERS-301: convert accepted КП → Заказ. Enabled ONLY for
+               accepted proposals (backend enforces the same guard). -->
+            <ng-template #convertTpl let-row>
+              <button
+                type="button"
+                class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring
+                     disabled:opacity-30 disabled:cursor-not-allowed"
+                [disabled]="!canConvertToOrder(row)"
+                [attr.aria-label]="
+                  canConvertToOrder(row)
+                    ? 'Преобразовать КП ' + row.number + ' в заказ'
+                    : 'Только принятые КП можно преобразовать в заказ'
+                "
+                [attr.data-test]="'convert-button-' + row._id"
+                (click)="onConvertToOrder(row)"
+              >
+                В заказ
+              </button>
+            </ng-template>
+
+            <ng-template #rowActionsTpl let-row>
+              <app-pi-row-actions
+                [row]="row"
+                [documentLabel]="'Создать документ для КП ' + row.number"
+                [dataTestDocument]="'document-button-' + row._id"
+                [editLabel]="'Редактировать КП ' + row.number"
+                [deleteLabel]="'Удалить КП ' + row.number"
+                [dataTestEdit]="'edit-button-' + row._id"
+                [dataTestDelete]="'delete-button-' + row._id"
+                (document)="onCreateDocument($event)"
+                (edit)="openEdit($event)"
+                (delete)="onDelete($event)"
+              />
+            </ng-template>
+          </app-pi-table>
+        </div>
+      </div>
+    </app-pi-group-workspace>
   `,
 })
 export class ProposalsPage implements OnInit {
+  protected readonly chips = DEALS_SECTION_CHIPS;
+
   constructor() {
     this.counterpartiesLookup.load();
     this.destroyRef.onDestroy(() => this.search.destroy());

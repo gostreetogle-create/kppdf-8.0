@@ -13,9 +13,8 @@ import {
 import { httpResource } from '@angular/common/http';
 import { LucideAngularModule, RefreshCw } from 'lucide-angular';
 import { Router } from '@angular/router';
-import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../shared/page/pi-section.component';
-import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
+import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import { DEALS_SECTION_CHIPS } from '../commercial/deals-group-chips';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
@@ -171,103 +170,102 @@ function organizationIdOf(row: Contract): string {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     LucideAngularModule,
-    PiPageHeaderComponent,
-    PiSectionComponent,
-    PiToolbarComponent,
+    PiGroupWorkspaceComponent,
     PiRowActionsComponent,
     ButtonComponent,
     TableComponent,
   ],
   template: `
-    <app-pi-page-header
-      eyebrow="раздел · договоры"
-      title="Договоры"
-      description="Договоры с покупателями. Связь «наша организация ↔ контрагент», позиции, срок действия."
-    />
-
-    <app-pi-toolbar>
-      <input
-        id="contracts-search"
-        type="search"
-        name="contracts-search"
-        [value]="searchQuery()"
-        (input)="onSearchInput($event)"
-        placeholder="Поиск по номеру, названию, контрагенту…"
-        aria-label="Поиск договоров"
-        data-test="search-input"
-        class="pi-input w-80"
-      />
-      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
-        + Создать
-      </app-pi-button>
-      <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
-        <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
-      </app-pi-button>
-      <span hint>{{ visibleCount() }} {{ totalLabel(visibleCount()) }}</span>
-    </app-pi-toolbar>
-
-    <app-pi-section title="Реестр" hint="сортировка · клик по заголовку" eyebrow="I">
-      @if (error()) {
-        <div
-          role="alert"
-          class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+    <app-pi-group-workspace pathLabel="Сделки" [chips]="chips" activeId="contracts">
+      <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        <input
+          id="contracts-search"
+          type="search"
+          name="contracts-search"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          placeholder="Поиск по номеру, названию, контрагенту…"
+          aria-label="Поиск договоров"
+          data-test="search-input"
+          class="pi-input w-80"
+        />
+        <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
+          + Создать
+        </app-pi-button>
+        <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
+          <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
+        </app-pi-button>
+        <span class="flex-1"></span>
+        <span class="text-xs text-muted-foreground"
+          >{{ visibleCount() }} {{ totalLabel(visibleCount()) }}</span
         >
-          {{ error() }}
-        </div>
-      }
-
-      <div class="overflow-x-auto hairline rounded-sm">
-        <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
-          ← Таблица широкая — прокручивайте горизонтально →
-        </p>
-        <app-pi-table
-          [data]="paginatedRows()"
-          [columns]="cols"
-          [loading]="loading()"
-          [total]="total()"
-          [page]="page()"
-          [pageSize]="pageSize"
-          [emptyMessage]="emptyMessage()"
-          [ariaLabel]="'Список договоров'"
-          [cellTemplates]="cellTemplates"
-          [rowActions]="rowActionsTplBinding"
-          [localSort]="false"
-          [initialSortKey]="'expiresAt'"
-          [initialSortDir]="'desc'"
-          (pageChange)="onPageChange($event)"
-          (sortChange)="onSortChange($event)"
-        >
-          <!-- ───── Counterparty (customer) lookup cell ───── -->
-          <ng-template #counterpartyTpl let-row>
-            {{ counterpartyNameOf(row) ?? '—' }}
-          </ng-template>
-
-          <!-- ───── Organization lookup cell ───── -->
-          <ng-template #organizationTpl let-row>
-            {{ organizationNameOf(row) ?? '—' }}
-          </ng-template>
-
-          <!-- ───── Row actions cluster ───── -->
-          <ng-template #rowActionsTpl let-row>
-            <app-pi-row-actions
-              [row]="row"
-              [documentLabel]="'Создать документ для договора ' + row.number"
-              [dataTestDocument]="'document-button-' + row._id"
-              [editLabel]="'Редактировать договор ' + row.number"
-              [deleteLabel]="'Удалить договор ' + row.number"
-              [dataTestEdit]="'edit-button-' + row._id"
-              [dataTestDelete]="'delete-button-' + row._id"
-              (document)="onCreateDocument($event)"
-              (edit)="openEdit($event)"
-              (delete)="onDelete($event)"
-            />
-          </ng-template>
-        </app-pi-table>
       </div>
-    </app-pi-section>
+
+      <div class="pi-table-surface hairline rounded-sm overflow-hidden">
+        @if (error()) {
+          <div
+            role="alert"
+            class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+          >
+            {{ error() }}
+          </div>
+        }
+
+        <div class="overflow-x-auto hairline rounded-sm">
+          <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
+            ← Таблица широкая — прокручивайте горизонтально →
+          </p>
+          <app-pi-table
+            [data]="paginatedRows()"
+            [columns]="cols"
+            [loading]="loading()"
+            [total]="total()"
+            [page]="page()"
+            [pageSize]="pageSize"
+            [emptyMessage]="emptyMessage()"
+            [ariaLabel]="'Список договоров'"
+            [cellTemplates]="cellTemplates"
+            [rowActions]="rowActionsTplBinding"
+            [localSort]="false"
+            [initialSortKey]="'expiresAt'"
+            [initialSortDir]="'desc'"
+            (pageChange)="onPageChange($event)"
+            (sortChange)="onSortChange($event)"
+          >
+            <!-- ───── Counterparty (customer) lookup cell ───── -->
+            <ng-template #counterpartyTpl let-row>
+              {{ counterpartyNameOf(row) ?? '—' }}
+            </ng-template>
+
+            <!-- ───── Organization lookup cell ───── -->
+            <ng-template #organizationTpl let-row>
+              {{ organizationNameOf(row) ?? '—' }}
+            </ng-template>
+
+            <!-- ───── Row actions cluster ───── -->
+            <ng-template #rowActionsTpl let-row>
+              <app-pi-row-actions
+                [row]="row"
+                [documentLabel]="'Создать документ для договора ' + row.number"
+                [dataTestDocument]="'document-button-' + row._id"
+                [editLabel]="'Редактировать договор ' + row.number"
+                [deleteLabel]="'Удалить договор ' + row.number"
+                [dataTestEdit]="'edit-button-' + row._id"
+                [dataTestDelete]="'delete-button-' + row._id"
+                (document)="onCreateDocument($event)"
+                (edit)="openEdit($event)"
+                (delete)="onDelete($event)"
+              />
+            </ng-template>
+          </app-pi-table>
+        </div>
+      </div>
+    </app-pi-group-workspace>
   `,
 })
 export class ContractsPage implements OnInit {
+  protected readonly chips = DEALS_SECTION_CHIPS;
+
   constructor() {
     this.counterpartiesLookup.load();
     this.organizationsLookup.load();

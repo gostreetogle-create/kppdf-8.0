@@ -14,8 +14,8 @@ import { httpResource } from '@angular/common/http';
 import { LucideAngularModule, RefreshCw } from 'lucide-angular';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { PiPageChromeComponent } from '../../shared/page/pi-page-chrome.component';
-import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
+import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import { DEALS_SECTION_CHIPS } from '../commercial/deals-group-chips';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
@@ -174,104 +174,106 @@ function counterpartyIdOf(row: Order): string {
   imports: [
     LucideAngularModule,
     RouterLink,
-    PiPageChromeComponent,
-    PiToolbarComponent,
+    PiGroupWorkspaceComponent,
     PiRowActionsComponent,
     ButtonComponent,
     TableComponent,
   ],
   template: `
-    <app-pi-page-chrome [crumbs]="crumbs" />
-
-    <app-pi-toolbar>
-      <input
-        id="orders-search"
-        type="search"
-        name="orders-search"
-        [value]="searchQuery()"
-        (input)="onSearchInput($event)"
-        placeholder="Поиск по номеру заказа…"
-        aria-label="Поиск заказов"
-        data-test="search-input"
-        class="pi-input w-72"
-      />
-      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
-        + Создать
-      </app-pi-button>
-      <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
-        <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
-      </app-pi-button>
-      <span hint>{{ visibleCount() }} {{ totalLabel(visibleCount()) }}</span>
-    </app-pi-toolbar>
-
-    <div class="pi-table-surface hairline rounded-sm overflow-hidden">
-      @if (error()) {
-        <div
-          role="alert"
-          class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+    <app-pi-group-workspace pathLabel="Сделки" [chips]="chips" activeId="orders">
+      <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        <input
+          id="orders-search"
+          type="search"
+          name="orders-search"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          placeholder="Поиск по номеру заказа…"
+          aria-label="Поиск заказов"
+          data-test="search-input"
+          class="pi-input w-72"
+        />
+        <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
+          + Создать заказ
+        </app-pi-button>
+        <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
+          <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
+        </app-pi-button>
+        <span class="flex-1"></span>
+        <span class="text-xs text-muted-foreground"
+          >{{ visibleCount() }} {{ totalLabel(visibleCount()) }}</span
         >
-          {{ error() }}
-        </div>
-      }
-
-      <div class="overflow-x-auto hairline rounded-sm">
-        <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
-          ← Таблица широкая — прокручивайте горизонтально →
-        </p>
-        <app-pi-table
-          [data]="paginatedRows()"
-          [columns]="cols"
-          [loading]="loading()"
-          [total]="total()"
-          [page]="page()"
-          [pageSize]="pageSize"
-          [emptyMessage]="emptyMessage()"
-          [ariaLabel]="'Список заказов'"
-          [cellTemplates]="cellTemplates"
-          [rowActions]="rowActionsTplBinding"
-          [localSort]="false"
-          [initialSortKey]="'date'"
-          [initialSortDir]="'desc'"
-          (pageChange)="onPageChange($event)"
-          (sortChange)="onSortChange($event)"
-        >
-          <!-- ───── Number → detail ───── -->
-          <ng-template #numberTpl let-row>
-            <a
-              class="text-ink hover:text-sunrise-warm underline-offset-2 hover:underline font-mono"
-              [routerLink]="['/orders', row._id]"
-              [attr.data-test]="'order-link-' + row._id"
-              >{{ row.number }}</a
-            >
-          </ng-template>
-
-          <!-- ───── Counterparty lookup cell ───── -->
-          <ng-template #counterpartyTpl let-row>
-            {{ counterpartyNameOf(row) ?? '—' }}
-          </ng-template>
-
-          <!-- ───── Row actions cluster ───── -->
-          <ng-template #rowActionsTpl let-row>
-            <app-pi-row-actions
-              [row]="row"
-              [documentLabel]="'Создать документ для заказа ' + row.number"
-              [dataTestDocument]="'document-button-' + row._id"
-              [editLabel]="'Редактировать заказ ' + row.number"
-              [deleteLabel]="'Удалить заказ ' + row.number"
-              [dataTestEdit]="'edit-button-' + row._id"
-              [dataTestDelete]="'delete-button-' + row._id"
-              (document)="onCreateDocument($event)"
-              (edit)="openEdit($event)"
-              (delete)="onDelete($event)"
-            />
-          </ng-template>
-        </app-pi-table>
       </div>
-    </div>
+
+      <div class="pi-table-surface hairline rounded-sm overflow-hidden">
+        @if (error()) {
+          <div
+            role="alert"
+            class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+          >
+            {{ error() }}
+          </div>
+        }
+
+        <div class="overflow-x-auto hairline rounded-sm">
+          <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
+            ← Таблица широкая — прокручивайте горизонтально →
+          </p>
+          <app-pi-table
+            [data]="paginatedRows()"
+            [columns]="cols"
+            [loading]="loading()"
+            [total]="total()"
+            [page]="page()"
+            [pageSize]="pageSize"
+            [emptyMessage]="emptyMessage()"
+            [ariaLabel]="'Список заказов'"
+            [cellTemplates]="cellTemplates"
+            [rowActions]="rowActionsTplBinding"
+            [localSort]="false"
+            [initialSortKey]="'date'"
+            [initialSortDir]="'desc'"
+            (pageChange)="onPageChange($event)"
+            (sortChange)="onSortChange($event)"
+          >
+            <!-- ───── Number → detail ───── -->
+            <ng-template #numberTpl let-row>
+              <a
+                class="text-ink hover:text-sunrise-warm underline-offset-2 hover:underline font-mono"
+                [routerLink]="['/orders', row._id]"
+                [attr.data-test]="'order-link-' + row._id"
+                >{{ row.number }}</a
+              >
+            </ng-template>
+
+            <!-- ───── Counterparty lookup cell ───── -->
+            <ng-template #counterpartyTpl let-row>
+              {{ counterpartyNameOf(row) ?? '—' }}
+            </ng-template>
+
+            <!-- ───── Row actions cluster ───── -->
+            <ng-template #rowActionsTpl let-row>
+              <app-pi-row-actions
+                [row]="row"
+                [documentLabel]="'Создать документ для заказа ' + row.number"
+                [dataTestDocument]="'document-button-' + row._id"
+                [editLabel]="'Редактировать заказ ' + row.number"
+                [deleteLabel]="'Удалить заказ ' + row.number"
+                [dataTestEdit]="'edit-button-' + row._id"
+                [dataTestDelete]="'delete-button-' + row._id"
+                (document)="onCreateDocument($event)"
+                (edit)="openEdit($event)"
+                (delete)="onDelete($event)"
+              />
+            </ng-template>
+          </app-pi-table>
+        </div>
+      </div>
+    </app-pi-group-workspace>
   `,
 })
 export class OrdersPage implements OnInit {
-  protected readonly crumbs = [{ label: 'Сделки', link: '/orders' }, { label: 'Заказы' }] as const;
+  protected readonly chips = DEALS_SECTION_CHIPS;
 
   constructor() {
     this.counterpartiesLookup.load();
@@ -410,7 +412,7 @@ export class OrdersPage implements OnInit {
   protected readonly emptyMessage = computed(() =>
     this.searchQuery()
       ? 'Ничего не найдено.'
-      : 'Нет заказов. Нажмите «Создать», чтобы добавить первый.',
+      : 'Нет заказов. Нажмите «+ Создать заказ», чтобы добавить первый.',
   );
 
   // ─── Column definitions ────────────────────────────────────────────

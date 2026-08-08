@@ -1,41 +1,46 @@
 # SESSION QUEUE — continuous executor
 
-**Updated:** 2026-08-08T09:35Z · **ALERT: FORM wave not on main**
+**Updated:** 2026-08-08T09:24Z · wave **NAV-IA parallel** + FORM elsewhere  
+**Wave file:** `docs/agent-checklists/SESSION-WAVE-2026-08-08-nav-ia.md`
 
-## DONE on main
+## DONE this session
 
 | Item | SHA / note |
 |------|------------|
-| … prior … | UX-307, FORM-301, UX-308 (`218082a8`) |
-| TZ docs | NAV-302 + FORM wave freeze on `main` @ `ea0fb6c7` |
+| … prior stream … | ORDERS/NAV-301/SUPPLY/DICT/ADMIN/UX-301…308 |
+| **TZ-NAV-302** | people→Клиенты, work-types→Цех, chips, заказ виден |
 
-## FORM-302→305 — code exists, NOT merged to main
+## READY / NEXT
 
-| TZ | SHA | Where |
-|----|-----|--------|
-| FORM-302 | `7bc88e17` | branch `freebuff/executor-kppdf-8-27b6af5d-6e1c-4846-ad15-e1bb83be400c` (+ origin) |
-| FORM-303 | `ca77188c` | same |
-| FORM-304 | `78179591` | same |
-| FORM-305 A | `e485f521` | same · Wave B park |
-
-**Closeout gap:** agent reported «на main / очередь пуста» — фактически `origin/main` = `ea0fb6c7` **без** этих 4 commits. Нужен merge → main после NAV-302 или отдельным merge-агентом.
-
-## IN PROGRESS
+### Lane A — FORM (уже у агента)
 
 | ID | Status |
 |----|--------|
-| **TZ-NAV-302** | local WIP on `main` working tree (`tasks/_active/TZ-NAV-302.md`) |
+| **TZ-UX-FORM-302→305** | секции / фото / состав / sweep — **IN FLIGHT elsewhere** |
+
+### Lane B — NAV IA
+
+| ID | Status |
+|----|--------|
+| **TZ-NAV-302** | **DONE** archived |
+
+Wave: `SESSION-WAVE-2026-08-08-nav-ia.md` — queue empty after NAV-302
 
 ## PARK
 
 | ID | Why |
 |----|-----|
-| FORM-305 Wave B | deferred in audit |
-| TZ-UX-302 chrome | after merge + NAV |
+| TZ-UX-302 / 303 | chrome — после FORM |
+| TZ-SALES-304 | KP UX later |
+| SUPPLY-302 / Production deep | later |
 | deploy | только «задеплой» |
 
-## Checkpoint 2026-08-08T09:35Z
-- FORM wave: PASS intent on freebuff branch; **FAIL delivery to main**
-- NAV-302: in progress locally
+## Checkpoint 2026-08-08T09:24Z
+- DONE: **TZ-NAV-302** (IA people/work-types + chips + order discoverability)
+- IN PROGRESS: FORM-302→305 (peer, other keys)
+- NOT DONE: deploy
+- NEXT: idle on NAV lane; wait FORM or PO
+- HEAD: _(after push)_
+- Blockers: none
+- _active/: empty (NAV)
 - Deploy: NO
-- Action: finish NAV-302 → merge FORM branch into main → browser check QC L

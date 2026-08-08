@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-NAV-302 DONE: people→Клиенты, work-types→Цех, chips
+
+- Menu + yellow highlight: `/people` under Клиенты; `/work-types` under Цех
+- Section chips: Клиенты / Цех / Сделки (PiGroupWorkspace reuse)
+- Orders: «+ Создать заказ» + empty hint; deals chip path from КП
+- Gates: jest `app-layout.nav-order` + frontend tsc PASS; Deploy NO
+
+**Archive:** `tasks/_archive/2026-08/TZ-NAV-302.done.md`  
+**Lock:** `.mimocode/locks/TZ-NAV-302-ia-people-worktypes-chips.lock`
+
 ## [2026-08-08] — TZ-UX-308 DONE: Nav «Справ.» yellow on /categories
 
 **Исполнитель:** agent-3e757640b7 (self PASS → archive; PO CLAIM)

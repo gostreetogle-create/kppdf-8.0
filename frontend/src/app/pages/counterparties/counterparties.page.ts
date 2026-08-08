@@ -8,63 +8,64 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { PiPageChromeComponent, type PageCrumb } from '../../shared/page/pi-page-chrome.component';
-import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
+import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import { CLIENTS_SECTION_CHIPS } from '../clients/clients-group-chips';
 import { ColumnDef, TableComponent } from '../../shared/ui/pi-table.component';
 import { extractErrorMessage } from '../../core/silent-http';
 import { Counterparty, CounterpartyService } from '../../shared/services/pi-counterparty.service';
 
 /**
  * TZ-NAV-301 — thin Заказчики list (Counterparty API).
+ * TZ-NAV-302 — Клиенты chips (Заказчики | Люди).
  * Sites / quick-create live in ORDERS-303 — not this page.
  */
 @Component({
   selector: 'app-counterparties-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiPageChromeComponent, PiToolbarComponent, TableComponent],
+  imports: [PiGroupWorkspaceComponent, TableComponent],
   template: `
-    <app-pi-page-chrome [crumbs]="crumbs" />
-
-    <app-pi-toolbar>
-      <span hint>{{ total() }} заказчик{{ totalLabel() }}</span>
-    </app-pi-toolbar>
-
-    @if (error()) {
-      <div
-        role="alert"
-        class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
-        data-test="counterparties-error"
-      >
-        {{ error() }}
+    <app-pi-group-workspace pathLabel="Клиенты" [chips]="chips" activeId="counterparties">
+      <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        <span class="text-xs text-muted-foreground">{{ total() }} заказчик{{ totalLabel() }}</span>
       </div>
-    }
 
-    <div
-      class="pi-table-surface hairline rounded-sm overflow-hidden"
-      data-test="counterparties-page"
-    >
-      <app-pi-table
-        [data]="rows()"
-        [columns]="cols"
-        [loading]="loading()"
-        [total]="total()"
-        [page]="1"
-        [pageSize]="200"
-        emptyMessage="Заказчиков пока нет. API готов — полный CRUD и объекты (площадки) в ORDERS-303."
-      />
-    </div>
+      @if (error()) {
+        <div
+          role="alert"
+          class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+          data-test="counterparties-error"
+        >
+          {{ error() }}
+        </div>
+      }
 
-    <p class="mt-3 text-sm text-muted-foreground" data-test="counterparties-sites-note">
-      Объекты / площадки — в волне ORDERS-303 (карточка заказчика).
-    </p>
+      <div
+        class="pi-table-surface hairline rounded-sm overflow-hidden"
+        data-test="counterparties-page"
+      >
+        <app-pi-table
+          [data]="rows()"
+          [columns]="cols"
+          [loading]="loading()"
+          [total]="total()"
+          [page]="1"
+          [pageSize]="200"
+          emptyMessage="Заказчиков пока нет. API готов — полный CRUD и объекты (площадки) в ORDERS-303."
+        />
+      </div>
+
+      <p class="mt-3 text-sm text-muted-foreground" data-test="counterparties-sites-note">
+        Объекты / площадки — в волне ORDERS-303 (карточка заказчика).
+      </p>
+    </app-pi-group-workspace>
   `,
 })
 export class CounterpartiesPage implements OnInit {
   private readonly api = inject(CounterpartyService);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly crumbs: PageCrumb[] = [{ label: 'Клиенты' }, { label: 'Заказчики' }];
+  protected readonly chips = CLIENTS_SECTION_CHIPS;
 
   protected readonly cols: ColumnDef<Counterparty>[] = [
     { key: 'name', label: 'Название', sortable: false },

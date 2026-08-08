@@ -7,12 +7,14 @@ import {
   signal,
   computed,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { OrdersRailComponent } from './blocks/orders-rail.component';
 import { GanttBarsComponent } from './blocks/gantt-bars.component';
 import { OrderInspectorComponent } from './blocks/order-inspector.component';
 import { ProductionCockpitContext } from './production-cockpit.context';
 import { ProductionReadFacade } from './production-read.facade';
+import { PRODUCTION_SECTION_CHIPS } from './production-group-chips';
 import { filterOrdersForRail, formatDateOnly, type GanttBar } from './gantt-bar.model';
 import type { Order, OrderStatus } from '../orders/orders.service';
 import { CapabilitiesService } from '../../core/capabilities/capabilities.service';
@@ -31,7 +33,7 @@ function isReadOnlyEstimateStatus(status: OrderStatus): boolean {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [ProductionCockpitContext, ProductionReadFacade],
-  imports: [OrdersRailComponent, GanttBarsComponent, OrderInspectorComponent],
+  imports: [OrdersRailComponent, GanttBarsComponent, OrderInspectorComponent, RouterLink],
   template: `
     <div
       class="flex flex-col h-[calc(100dvh-3.5rem)] min-h-0 overflow-hidden"
@@ -40,7 +42,30 @@ function isReadOnlyEstimateStatus(status: OrderStatus): boolean {
       <header
         class="shrink-0 flex flex-wrap items-center gap-2 px-3 py-1.5 border-b hairline bg-paper"
       >
-        <h1 class="text-base font-semibold text-ink">Производство</h1>
+        <div class="mr-2 min-w-0">
+          <p class="eyebrow text-muted-foreground m-0 pt-0.5" data-test="group-path-label">Цех</p>
+          <nav
+            class="group-chips flex items-center gap-1 flex-wrap pt-0.5"
+            aria-label="Раздел Цех"
+            data-test="group-chips"
+          >
+            @for (chip of chips; track chip.id) {
+              <a
+                [routerLink]="chip.route"
+                class="group-chip inline-flex items-center gap-1 px-2.5 py-0.5
+                       text-xs leading-5 rounded-sm transition-colors
+                       pi-focus-ring cursor-pointer no-underline"
+                [class.bg-sunrise-warm]="chip.id === 'production'"
+                [class.text-paper]="chip.id === 'production'"
+                [class.text-ink]="chip.id !== 'production'"
+                [class.hover:bg-paper-2]="chip.id !== 'production'"
+                [attr.aria-current]="chip.id === 'production' ? 'page' : undefined"
+              >
+                {{ chip.label }}
+              </a>
+            }
+          </nav>
+        </div>
         <span class="text-xs text-muted-foreground">Кокпит · план-оценка</span>
         <button
           type="button"
@@ -173,6 +198,7 @@ function isReadOnlyEstimateStatus(status: OrderStatus): boolean {
   `,
 })
 export class ProductionCockpitPage implements OnInit {
+  protected readonly chips = PRODUCTION_SECTION_CHIPS;
   protected readonly ctx = inject(ProductionCockpitContext);
   protected readonly facade = inject(ProductionReadFacade);
   private readonly auth = inject(AuthService);

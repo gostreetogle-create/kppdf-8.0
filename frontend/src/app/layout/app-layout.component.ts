@@ -103,7 +103,6 @@ const NAV_CATEGORIES: NavCategory[] = [
       { path: '/products', pageKey: 'products', label: 'Продукция' },
       { path: '/modules', pageKey: 'modules', label: 'Модули' },
       { path: '/materials', pageKey: 'materials', label: 'Материалы' },
-      { path: '/work-types', pageKey: 'work-types', label: 'Виды работ' },
       {
         path: '/catalog/appearance',
         pageKey: 'products',
@@ -120,9 +119,11 @@ const NAV_CATEGORIES: NavCategory[] = [
     entryPath: '/counterparties',
     items: [
       { path: '/counterparties', pageKey: 'counterparties', label: 'Заказчики' },
-      // Sites CRUD → ORDERS-303; keep clients hub on counterparties for now.
+      // TZ-NAV-302: Люди рядом с заказчиками (не в Цехе).
+      { path: '/people', pageKey: 'people', label: 'Люди', icon: Users },
     ],
   },
+
   {
     id: 'deals',
     label: 'Сделки',
@@ -160,7 +161,8 @@ const NAV_CATEGORIES: NavCategory[] = [
     entryPath: '/production',
     items: [
       { path: '/production', pageKey: 'production', label: 'Гант' },
-      { path: '/people', pageKey: 'people', label: 'Люди', icon: Users },
+      // TZ-NAV-302: Виды работ в Цехе (не в Каталоге).
+      { path: '/work-types', pageKey: 'work-types', label: 'Виды работ' },
     ],
   },
   {
@@ -598,6 +600,7 @@ function isDenseWorkspaceUrl(url: string): boolean {
     '/work-types',
     '/catalog/appearance',
     '/people',
+    '/counterparties',
     '/organizations',
     '/proposals',
     '/contracts',
