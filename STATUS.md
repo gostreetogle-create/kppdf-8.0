@@ -13,6 +13,11 @@
 - Moved the project passport to `docs/project-passport.md`; `TZ-CLEANUP-R2` is archived as DONE after all cleanup acceptance criteria and verification gates.
 - `tasks/` is intended to contain only real active `TZ-*.md` files. Roadmap prose elsewhere is historical context, not an active task claim.
 
+## [2026-08-08] — TZD-18 DONE: batch propose/confirm + scaled ImportTask (desktop wave #3)
+**Статус:** DONE on main; deploy НЕ
+**Archive:** `tasks/_archive/2026-08/TZD-18.done.md`
+**Gates:** BE tsc PASS; jest journal+import-task 22/22; MCP test 47/47; MCP tsc PASS
+
 ## [2026-08-08] — TZD-26 DONE: columns ready/unfit + AI reshape (desktop wave #2)
 **Статус:** DONE on main; deploy НЕ
 **Archive:** `tasks/_archive/2026-08/TZD-26.done.md`

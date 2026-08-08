@@ -48,18 +48,24 @@ export interface ApplyPlanDeps {
     status?: string;
     aiReport?: { rows?: AiPlanRow[] } | null;
   }>;
-  proposeCreate(payload: {
+  /** Batch propose (TZD-18) — backend all-or-nothing per chunk. */
+  proposeBatch(
+    chunk: BatchProposalItem[],
+  ): Promise<{ proposalIds: string[]; errors?: Array<{ index: number; error: string }> }>;
+  setProposals(taskId: string, proposalIds: string[]): Promise<unknown>;
+}
+
+export interface BatchProposalItem {
+  rowIndex: number;
+  kind: 'material.create' | 'material.update';
+  create?: {
     name: string;
     unit?: string;
     article?: string;
     sku?: string;
     notes?: string;
-  }): Promise<{ proposalId?: string }>;
-  proposeUpdate(payload: {
-    id: string;
-    patch: Record<string, unknown>;
-  }): Promise<{ proposalId?: string }>;
-  setProposals(taskId: string, proposalIds: string[]): Promise<unknown>;
+  };
+  update?: { id: string; patch: Record<string, unknown> };
 }
 
 export interface ApplyPlanResult {
@@ -68,9 +74,13 @@ export interface ApplyPlanResult {
   skipped: number;
   doubts: number;
   proposalIds?: string[];
+  batchCalls?: number;
   note?: string;
   task?: unknown;
 }
+
+/** TZD-18: apply_plan бьёт план на чанки по 100 для propose-batch. */
+export const APPLY_PLAN_CHUNK_SIZE = 100;
 
 function pickPatch(src?: AiPlanRow['proposed']): Record<string, unknown> {
   const out: Record<string, unknown> = {};
@@ -83,8 +93,9 @@ function pickPatch(src?: AiPlanRow['proposed']): Record<string, unknown> {
 }
 
 /**
- * TZD-23 HITL apply: only awaiting_user + userOk:true may propose.
- * new→propose_create, update→propose_update, skip/doubt→none.
+ * TZD-23 + TZD-18 HITL apply: only awaiting_user + userOk:true may propose.
+ * new→create-item, update→update-item, skip/doubt→none. Items бьются на
+ * чанки по APPLY_PLAN_CHUNK_SIZE и отправляются через propose-batch.
  */
 export async function applyImportTaskPlan(
   deps: ApplyPlanDeps,
@@ -112,7 +123,7 @@ export async function applyImportTaskPlan(
   }
 
   const rows = Array.isArray(task?.aiReport?.rows) ? task.aiReport!.rows! : [];
-  const proposalIds: string[] = [];
+  const items: BatchProposalItem[] = [];
   let skipped = 0;
   let doubts = 0;
 
@@ -132,14 +143,17 @@ export async function applyImportTaskPlan(
         skipped += 1;
         continue;
       }
-      const created = await deps.proposeCreate({
-        name,
-        unit: src.unit?.trim() || 'шт',
-        article: src.article,
-        sku: src.sku,
-        notes: src.notes,
+      items.push({
+        rowIndex: row.rowIndex,
+        kind: 'material.create',
+        create: {
+          name,
+          unit: src.unit?.trim() || 'шт',
+          article: src.article,
+          sku: src.sku,
+          notes: src.notes,
+        },
       });
-      if (created?.proposalId) proposalIds.push(created.proposalId);
       continue;
     }
     if (row.decision === 'update') {
@@ -152,12 +166,41 @@ export async function applyImportTaskPlan(
         skipped += 1;
         continue;
       }
-      const updated = await deps.proposeUpdate({
-        id: row.materialId,
-        patch,
+      items.push({
+        rowIndex: row.rowIndex,
+        kind: 'material.update',
+        update: { id: row.materialId, patch },
       });
-      if (updated?.proposalId) proposalIds.push(updated.proposalId);
     }
+  }
+
+  if (!items.length) {
+    return {
+      ok: true,
+      proposed: 0,
+      skipped,
+      doubts,
+      note: 'No proposals to create (all skip/doubt/empty) — status unchanged',
+    };
+  }
+
+  const proposalIds: string[] = [];
+  let batchCalls = 0;
+  for (let i = 0; i < items.length; i += APPLY_PLAN_CHUNK_SIZE) {
+    const chunk = items.slice(i, i + APPLY_PLAN_CHUNK_SIZE);
+    batchCalls += 1;
+    const res = await deps.proposeBatch(chunk);
+    if (res.errors && res.errors.length > 0) {
+      return {
+        ok: false,
+        proposed: 0,
+        skipped,
+        doubts,
+        batchCalls,
+        note: `propose-batch chunk ${batchCalls} failed (${res.errors.length} error(s)) — nothing linked, task stays awaiting_user`,
+      };
+    }
+    for (const p of res.proposalIds ?? []) proposalIds.push(p);
   }
 
   if (!proposalIds.length) {
@@ -177,6 +220,7 @@ export async function applyImportTaskPlan(
     skipped,
     doubts,
     proposalIds,
+    batchCalls,
     task: taskAfter,
   };
 }
@@ -191,28 +235,29 @@ export function createApplyPlanBackendDeps(
         cfg.apiKey,
         `/api/import-tasks/${encodeURIComponent(id)}`,
       ) as Promise<{ status?: string; aiReport?: { rows?: AiPlanRow[] } | null }>,
-    proposeCreate: async (payload) =>
-      backendPostJson(
+    proposeBatch: async (chunk) => {
+      const items = chunk.map((item) => {
+        if (item.kind === 'material.update') {
+          return {
+            kind: 'material.update' as const,
+            toolName: 'kppdf_import_task_apply_plan',
+            update: item.update,
+          };
+        }
+        return {
+          kind: 'material.create' as const,
+          toolName: 'kppdf_import_task_apply_plan',
+          create: item.create,
+        };
+      });
+      const result = (await backendPostJson(
         cfg.apiBaseUrl,
         cfg.apiKey,
-        '/api/mutation-journal/proposals',
-        {
-          kind: 'material.create',
-          toolName: 'kppdf_import_task_apply_plan',
-          create: payload,
-        },
-      ) as Promise<{ proposalId?: string }>,
-    proposeUpdate: async (payload) =>
-      backendPostJson(
-        cfg.apiBaseUrl,
-        cfg.apiKey,
-        '/api/mutation-journal/proposals',
-        {
-          kind: 'material.update',
-          toolName: 'kppdf_import_task_apply_plan',
-          update: payload,
-        },
-      ) as Promise<{ proposalId?: string }>,
+        '/api/mutation-journal/propose-batch',
+        { items },
+      )) as { proposalIds: string[]; errors?: Array<{ index: number; error: string }> };
+      return { proposalIds: result.proposalIds ?? [], errors: result.errors };
+    },
     setProposals: async (taskId, proposalIds) =>
       backendPatchJson(
         cfg.apiBaseUrl,
@@ -315,7 +360,7 @@ export function registerImportTaskTools(
       inputSchema: {
         fileName: z.string().min(1),
         fileType: FILE_TYPE_ENUM,
-        rows: z.array(rowSchema).min(1).max(500),
+        rows: z.array(rowSchema).min(1).max(2000),
         summary: z.string().optional(),
         contentHash: z.string().optional(),
         inboxPath: z.string().optional(),
@@ -474,7 +519,7 @@ export function registerImportTaskTools(
         '(kppdf_import_task_set_report) before apply_plan. 0 journal writes.',
       inputSchema: {
         id: z.string().min(1),
-        rows: z.array(rowSchema).min(1).max(500).describe('Reshaped rows (same shape as create)'),
+        rows: z.array(rowSchema).min(1).max(2000).describe('Reshaped rows (same shape as create)'),
         columnMap: z
           .record(z.string(), z.string().nullable())
           .optional()

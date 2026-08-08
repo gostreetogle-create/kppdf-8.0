@@ -132,6 +132,9 @@ Stdio: `pnpm start:stdio` (для клиентов, которые спавня�
 | `kppdf_cancel_proposal` | Drop proposal, no SoT change |
 | `kppdf_undo_mutation` | Revert last / by id (create→soft-delete; update→restore before) |
 | `kppdf_list_mutations` | Recent applied/undone (ring) |
+| `kppdf_propose_material_batch` | TZD-18 — `POST /api/mutation-journal/propose-batch` (50–500 items одним вызовом; all-or-nothing best-effort — при ошибке откат; опц. `idempotencyKey`); **0** SoT |
+| `kppdf_confirm_batch` | TZD-18 — `POST /api/mutation-journal/confirm-batch` (SoT write шаг) |
+| `kppdf_cancel_batch` | TZD-18 — `POST /api/mutation-journal/cancel-batch` (без SoT) |
 
 ## Tools — import task / AI assembly (TZD-22 + TZD-23)
 
@@ -149,6 +152,7 @@ Expert path `kppdf_inbox_propose_file` remains (proposals without DB matching).
 | `kppdf_import_task_set_report` | TZD-23 — `PATCH /api/import-tasks/:id/report`: matching plan (`counts` + per-row `new/skip/update/doubt`) → `awaiting_user`. **0** journal writes |
 | `kppdf_import_task_apply_plan` | TZD-23 — requires `status=awaiting_user` **and** `userOk:true`; `new`→propose_create, `update`→propose_update, skip/doubt — нет; links `proposalIds` + `status=applying` |
 | `kppdf_import_task_reshape` | TZD-26 — `PATCH /api/import-tasks/:id/rows`: replace rows + `columnMap`/`reshapeNote` (только `draft/ready_for_ai/analyzing/awaiting_user`); сбрасывает `aiReport` → обязателен re-match; **0** journal |
+| `kppdf_import_task_apply_plan` (v2) | TZD-18 — внутри использует `propose-batch` чанками по **100**; лимит ImportTask поднят до **2000** строк |
 
 ### Column ready / unfit + AI reshape (TZD-26)
 
@@ -190,7 +194,7 @@ Desktop UI: after **Разобрать** — button **«Создать зада�
 |------|--------|
 | `kppdf_inbox_list` | List files in the desktop inbox dir (`KPPDF_INBOX_DIR`), excludes processed/failed |
 | `kppdf_inbox_audit_file` | Parse + validate rows only — **no proposals, no SoT** (TZD-17) |
-| `kppdf_inbox_propose_file` | Default: parse → `material.create` **proposal per row**. Optional `mode=validate` ≡ audit (0 proposals). Confirm via `kppdf_confirm_proposal` |
+| `kppdf_inbox_propose_file` | Default: parse → `material.create` **proposal per row**. Optional `mode=validate` ≡ audit (0 proposals). TZD-18: опц. `limit`/`offset` для обработки среза файла. Confirm via `kppdf_confirm_proposal` |
 
 Column mapping (RU + EN): `наименование/name/текст`, `ед. изм./unit`, `артикул/article`, `sku/код`, `категория/categoryId`. Строки без наименования пропускаются и возвращаются как `skipped`. Путь к файлу защищён от path-traversal.
 
@@ -206,6 +210,7 @@ Inbox-папка настраивается в десктоп-приложени
 
 ## Follow-ups
 
+- **TZD-18** ✅ DONE (2026-08-08, wave #3) — batch: `propose-batch` / `confirm-batch` / `cancel-batch` (all-or-nothing + idempotencyKey); MCP `kppdf_propose_material_batch` / `kppdf_confirm_batch` / `kppdf_cancel_batch`; `apply_plan` чанками по 100; ImportTask cap **2000**; `inbox_propose_file` limit/offset.
 - **TZD-26** ✅ DONE (2026-08-08, wave #2) — column ready/unfit: `kppdf_inbox_classify_columns` (canon|unknown|conflict + mapping + sample) + `kppdf_import_task_reshape` (`PATCH /api/import-tasks/:id/rows`, сброс aiReport, 0 journal); protocol Column ready/reshape выше.
 - **TZD-23** ✅ DONE (2026-08-08, wave #1) — matching/HITL brain: `PATCH /api/import-tasks/:id/report` + `/proposals`; MCP `kppdf_import_task_set_report` + `kppdf_import_task_apply_plan` (userOk gate; skip/doubt не propose); Variant C protocol выше.
 - **TZD-22** ✅ DONE — Import Task assembly: BE `/api/import-tasks` +

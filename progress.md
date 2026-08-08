@@ -1,3 +1,13 @@
+## [2026-08-08] — TZD-18 DONE: batch propose/confirm + scaled ImportTask (wave #3)
+
+**Исполнитель:** buffy-desktop-ex (Freebuff desktop executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** `POST /api/mutation-journal/propose-batch|confirm-batch|cancel-batch` (all-or-nothing + idempotencyKey); MCP `kppdf_propose_material_batch`/`confirm_batch`/`cancel_batch`; `apply_plan` чанками по 100; ImportTask cap 500→2000; inbox limit/offset.
+**Gates:** BE tsc PASS; jest journal+import-task 22/22; MCP test 47/47; MCP tsc PASS.
+**Archive:** `tasks/_archive/2026-08/TZD-18.done.md`
+**Lock:** `.mimocode/locks/TZD-18-mcp-batch-scale.lock`
+**Known:** Deploy NO. Next TZD-19 (graph).
+
 ## [2026-08-08] — TZD-26 DONE: columns ready/unfit + AI reshape (wave #2)
 
 **Исполнитель:** buffy-desktop-ex (Freebuff desktop executor)

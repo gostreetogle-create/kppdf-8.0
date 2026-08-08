@@ -78,9 +78,39 @@ describe('ImportTaskService (TZD-22)', () => {
     expect(arg.aiReport).toBeNull();
   });
 
-  it('create rejects >500 rows', async () => {
+  it('create accepts 600 rows (TZD-18 cap ≥600)', async () => {
+    const rows = Array.from({ length: 600 }, (_, i) => ({
+      rowIndex: i,
+      raw: { name: `R${i}` },
+      name: `R${i}`,
+    }));
+    const { service, create } = buildService({
+      create: jest.fn().mockResolvedValue({
+        _id: '507f1f77bcf86cd799439033',
+        createdByUserId: user.id,
+        organizationId: user.organizationId,
+        source: { fileName: 'big.csv', fileType: 'csv' },
+        status: 'ready_for_ai',
+        rows,
+        summary: 'big.csv · 600 строк',
+        aiReport: null,
+        proposalIds: [],
+        toObject() {
+          return this;
+        },
+      }),
+    });
+    const view = await service.create(
+      { source: { fileName: 'big.csv', fileType: 'csv' }, rows },
+      user,
+    );
+    expect(view.rowCount).toBe(600);
+    expect(create).toHaveBeenCalled();
+  });
+
+  it('create rejects >2000 rows (TZD-18)', async () => {
     const { service } = buildService();
-    const rows = Array.from({ length: 501 }, (_, i) => ({
+    const rows = Array.from({ length: 2001 }, (_, i) => ({
       rowIndex: i,
       raw: { name: `R${i}` },
       name: `R${i}`,

@@ -10,7 +10,11 @@ import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
-import { CreateProposalDto } from './dto/create-proposal.dto';
+import {
+  CreateProposalDto,
+  ProposeBatchDto,
+  ProposalIdsBatchDto,
+} from './dto/create-proposal.dto';
 import { MutationJournalService } from './mutation-journal.service';
 
 @ApiTags('Mutation journal (MCP propose/confirm)')
@@ -24,6 +28,40 @@ export class MutationJournalController {
   @ApiOperation({ summary: 'Propose a material create/update (no SoT write yet)' })
   propose(@Body() dto: CreateProposalDto, @CurrentUser() user: AuthenticatedUser) {
     return this.service.propose(dto, user);
+  }
+
+  @Post('propose-batch')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'create', entityType: 'MutationJournal' })
+  @ApiOperation({
+    summary: 'TZD-18 — batch propose (all-or-nothing best-effort; no SoT write)',
+  })
+  proposeBatch(
+    @Body() dto: ProposeBatchDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.proposeBatch(dto, user);
+  }
+
+  @Post('confirm-batch')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'update', entityType: 'MutationJournal' })
+  @ApiOperation({ summary: 'TZD-18 — batch confirm (applies materials via journal)' })
+  confirmBatch(
+    @Body() dto: ProposalIdsBatchDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.confirmBatch(dto, user);
+  }
+
+  @Post('cancel-batch')
+  @Roles('admin', 'manager')
+  @ApiOperation({ summary: 'TZD-18 — batch cancel (no SoT change)' })
+  cancelBatch(
+    @Body() dto: ProposalIdsBatchDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.cancelBatch(dto, user);
   }
 
   @Post('proposals/:id/confirm')

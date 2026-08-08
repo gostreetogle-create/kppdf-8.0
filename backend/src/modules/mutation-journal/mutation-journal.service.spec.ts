@@ -4,6 +4,7 @@ import { MutationJournalService } from './mutation-journal.service';
 function buildService(opts: {
   create?: jest.Mock;
   findByIdDoc?: any;
+  findById?: jest.Mock;
   findOne?: jest.Mock;
   countDocuments?: jest.Mock;
   deleteMany?: jest.Mock;
@@ -26,9 +27,11 @@ function buildService(opts: {
     exec: jest.fn().mockResolvedValue([]),
   };
 
-  const findById = jest.fn().mockImplementation(() => ({
-    exec: jest.fn().mockResolvedValue(opts.findByIdDoc ?? null),
-  }));
+  const findById =
+    opts.findById ??
+    jest.fn().mockImplementation(() => ({
+      exec: jest.fn().mockResolvedValue(opts.findByIdDoc ?? null),
+    }));
 
   const model = {
     create,
@@ -150,6 +153,181 @@ describe('MutationJournalService (TZD-13)', () => {
     await expect(service.confirm('507f1f77bcf86cd799439033', user)).rejects.toBeInstanceOf(
       BadRequestException,
     );
+  });
+
+  it('proposeBatch 50 items → 50 ids, no SoT writes (TZD-18)', async () => {
+    const { service, materials, create } = buildService({
+      create: jest.fn().mockImplementation((_payload: any) =>
+        Promise.resolve({
+          _id: '507f1f77bcf86cd799439100',
+          status: 'proposed',
+          kind: 'material.create',
+          toolName: 'kppdf_propose_material_batch',
+          entityType: 'Material',
+          payload: { name: 'X' },
+          expiresAt: new Date(Date.now() + 60_000),
+        }),
+      ),
+      findById: jest.fn().mockImplementation(() => ({
+        exec: jest.fn().mockResolvedValue(null),
+      })),
+    });
+
+    const items = Array.from({ length: 50 }, (_, i) => ({
+      kind: 'material.create' as const,
+      create: { name: `M${i}` },
+    }));
+    const result = await service.proposeBatch({ items }, user);
+
+    expect(result.proposalIds).toHaveLength(50);
+    expect(result.errors).toEqual([]);
+    expect(materials.create).not.toHaveBeenCalled();
+    expect(create).toHaveBeenCalledTimes(50);
+  });
+
+  it('proposeBatch rolls back created proposals on item error (TZD-18)', async () => {
+    const createdDoc: any = {
+      _id: '507f1f77bcf86cd799439100',
+      status: 'proposed',
+      kind: 'material.create',
+      toolName: 't',
+      actorUserId: user.id,
+      organizationId: user.organizationId,
+      entityType: 'Material',
+      payload: { name: 'Good' },
+      expiresAt: new Date(Date.now() + 60_000),
+      save: jest.fn(),
+    };
+    const { service, create } = buildService({
+      create: jest.fn().mockImplementation((_payload: any) =>
+        Promise.resolve({
+          _id: '507f1f77bcf86cd799439100',
+          status: 'proposed',
+          kind: 'material.create',
+          toolName: 't',
+          actorUserId: user.id,
+          organizationId: user.organizationId,
+          entityType: 'Material',
+          payload: { name: 'Good' },
+          expiresAt: new Date(Date.now() + 60_000),
+          toObject: () => ({ _id: '507f1f77bcf86cd799439100' }),
+        }),
+      ),
+      findByIdDoc: createdDoc,
+    });
+
+    const result = await service.proposeBatch(
+      {
+        items: [
+          { kind: 'material.create', create: { name: 'Good' } },
+          // второй item падает: без имени
+          { kind: 'material.create', create: { name: '  ' } },
+        ],
+      },
+      user,
+    );
+
+    expect(result.proposalIds).toEqual([]);
+    expect(result.errors).toHaveLength(1);
+    expect(createdDoc.status).toBe('cancelled'); // откат созданного
+    expect(create).toHaveBeenCalledTimes(1);
+  });
+
+  it('proposeBatch idempotencyKey returns existing proposals on retry (TZD-18)', async () => {
+    const { service, create } = buildService({
+      create: jest.fn().mockImplementation((_payload: any) =>
+        Promise.resolve({
+          _id: '507f1f77bcf86cd799439200',
+          status: 'proposed',
+          kind: 'material.create',
+          toolName: 't',
+          entityType: 'Material',
+          payload: { name: 'X' },
+          expiresAt: new Date(Date.now() + 60_000),
+        }),
+      ),
+    });
+    const leanChain = {
+      sort: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      lean: jest.fn().mockReturnThis(),
+      exec: jest
+        .fn()
+        .mockResolvedValueOnce([{ _id: '507f1f77bcf86cd799439200' }])
+        .mockResolvedValueOnce([]),
+    };
+    (service as any).model.find = jest.fn().mockReturnValue(leanChain);
+
+    const first = await service.proposeBatch(
+      { items: [{ kind: 'material.create', create: { name: 'X' } }], idempotencyKey: 'k1' },
+      user,
+    );
+    expect(first.proposalIds).toEqual(['507f1f77bcf86cd799439200']);
+    expect(first.note).toContain('idempotency hit');
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('confirmBatch applies materials; cancelBatch does not write SoT (TZD-18)', async () => {
+    const makeDoc = (id: string) => {
+      const doc: any = {
+        _id: id,
+        status: 'proposed',
+        kind: 'material.create',
+        toolName: 't',
+        actorUserId: user.id,
+        organizationId: user.organizationId,
+        entityType: 'Material',
+        payload: { name: 'Oak', unit: 'шт' },
+        expiresAt: new Date(Date.now() + 60_000),
+        save: jest.fn(),
+      };
+      return doc;
+    };
+    const doc1 = makeDoc('507f1f77bcf86cd799439301');
+    const doc2 = makeDoc('507f1f77bcf86cd799439302');
+    const doc3 = makeDoc('507f1f77bcf86cd799439303');
+    const findById = jest.fn().mockImplementation((id: string) => ({
+      exec: jest.fn().mockResolvedValue(
+        id === '507f1f77bcf86cd799439301'
+          ? doc1
+          : id === '507f1f77bcf86cd799439302'
+            ? doc2
+            : doc3,
+      ),
+    }));
+    const { service, materials } = buildService({
+      findById,
+      materialsCreate: jest.fn().mockImplementation((p: any) =>
+        Promise.resolve({
+          _id: '507f1f77bcf86cd799439400',
+          name: p.name,
+          toObject: () => ({ name: p.name }),
+        }),
+      ),
+    });
+
+    const confirmed = await service.confirmBatch(
+      {
+        ids: [
+          '507f1f77bcf86cd799439301',
+          '507f1f77bcf86cd799439302',
+        ],
+      },
+      user,
+    );
+    expect(confirmed.applied).toBe(2);
+    expect(confirmed.failed).toEqual([]);
+    expect(materials.create).toHaveBeenCalledTimes(2);
+    expect(doc1.status).toBe('applied');
+
+    const cancelled = await service.cancelBatch(
+      { ids: ['507f1f77bcf86cd799439303'] },
+      user,
+    );
+    expect(cancelled.cancelled).toBe(1);
+    expect(doc3.status).toBe('cancelled');
+    expect(materials.create).toHaveBeenCalledTimes(2); // cancel не пишет SoT
   });
 
   it('enforceRing deletes overflow', async () => {

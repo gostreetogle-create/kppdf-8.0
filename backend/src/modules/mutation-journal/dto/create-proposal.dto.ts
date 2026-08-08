@@ -1,6 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
   IsIn,
   IsMongoId,
   IsObject,
@@ -72,4 +75,39 @@ export class CreateProposalDto {
   @IsOptional()
   @IsString()
   toolName?: string;
+}
+
+// ── TZD-18: batch propose/confirm/cancel ──────────────────────────────────────
+
+/**
+ * POST /api/mutation-journal/propose-batch (TZD-18).
+ * All-or-nothing best-effort: если хоть один item падает — созданные
+ * proposals откатываются (cancel) и возвращаются errors. SoT не пишется.
+ */
+export class ProposeBatchDto {
+  @ApiProperty({ type: [CreateProposalDto], minItems: 1, maxItems: 500 })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(500)
+  @ValidateNested({ each: true })
+  @Type(() => CreateProposalDto)
+  items!: CreateProposalDto[];
+
+  @ApiPropertyOptional({
+    description: 'Повторный вызов с тем же ключом вернёт те же proposalIds (dedup по предложенным)',
+  })
+  @IsOptional()
+  @IsString()
+  @Length(1, 128)
+  idempotencyKey?: string;
+}
+
+/** Для confirm-batch / cancel-batch. */
+export class ProposalIdsBatchDto {
+  @ApiProperty({ type: [String], minItems: 1, maxItems: 500 })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(500)
+  @IsMongoId({ each: true })
+  ids!: string[];
 }

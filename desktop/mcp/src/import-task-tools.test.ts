@@ -4,6 +4,7 @@ import {
   applyImportTaskPlan,
   IMPORT_TASK_TOOL_NAMES,
   type ApplyPlanDeps,
+  type BatchProposalItem,
 } from './import-task-tools.js';
 
 describe('import-task tools (TZD-22 + TZD-23)', () => {
@@ -193,24 +194,28 @@ describe('import-task tools (TZD-22 + TZD-23)', () => {
   });
 });
 
-describe('applyImportTaskPlan (TZD-23 HITL gate)', () => {
+describe('applyImportTaskPlan (TZD-23 HITL gate + TZD-18 chunks)', () => {
   function makeDeps(overrides: Partial<ApplyPlanDeps> = {}): {
     deps: ApplyPlanDeps;
-    calls: { creates: unknown[]; updates: unknown[]; setProposals: unknown[]; gets: number };
+    calls: {
+      chunks: BatchProposalItem[][];
+      setProposals: unknown[];
+      gets: number;
+    };
   } {
-    const calls = { creates: [] as unknown[], updates: [] as unknown[], setProposals: [] as unknown[], gets: 0 };
+    const calls = { chunks: [] as BatchProposalItem[][], setProposals: [] as unknown[], gets: 0 };
+    let seq = 0;
     const deps: ApplyPlanDeps = {
       getTask: async () => {
         calls.gets += 1;
         return { status: 'awaiting_user', aiReport: { rows: [] } };
       },
-      proposeCreate: async (payload) => {
-        calls.creates.push(payload);
-        return { proposalId: `p-${calls.creates.length}` };
-      },
-      proposeUpdate: async (payload) => {
-        calls.updates.push(payload);
-        return { proposalId: `u-${calls.updates.length}` };
+      proposeBatch: async (chunk) => {
+        calls.chunks.push(chunk);
+        return {
+          proposalIds: chunk.map((item) => `p-${++seq}`),
+          errors: undefined,
+        };
       },
       setProposals: async (taskId, ids) => {
         calls.setProposals.push({ taskId, ids });
@@ -230,7 +235,7 @@ describe('applyImportTaskPlan (TZD-23 HITL gate)', () => {
     assert.equal(result.ok, false);
     assert.equal(result.proposed, 0);
     assert.equal(calls.gets, 0);
-    assert.equal(calls.creates.length, 0);
+    assert.equal(calls.chunks.length, 0);
     assert.equal(calls.setProposals.length, 0);
     assert.match(result.note ?? '', /userOk=true/);
   });
@@ -242,11 +247,11 @@ describe('applyImportTaskPlan (TZD-23 HITL gate)', () => {
     const result = await applyImportTaskPlan(deps, { id: 't1', userOk: true });
     assert.equal(result.ok, false);
     assert.equal(result.proposed, 0);
-    assert.equal(calls.creates.length, 0);
+    assert.equal(calls.chunks.length, 0);
     assert.match(result.note ?? '', /awaiting_user/);
   });
 
-  it('fixture 2 new + 1 skip + 1 update + 1 doubt → 3 proposes, applying', async () => {
+  it('fixture 2 new + 1 skip + 1 update + 1 doubt → 3 proposes, applying, 1 chunk', async () => {
     const { deps, calls } = makeDeps({
       getTask: async () => ({
         status: 'awaiting_user',
@@ -273,17 +278,66 @@ describe('applyImportTaskPlan (TZD-23 HITL gate)', () => {
     assert.equal(result.proposed, 3);
     assert.equal(result.skipped, 1);
     assert.equal(result.doubts, 1);
-    assert.deepEqual(result.proposalIds, ['p-1', 'p-2', 'u-1']);
-    assert.equal(calls.creates.length, 2);
-    assert.equal(calls.updates.length, 1);
-    assert.deepEqual(calls.updates[0], {
+    assert.equal(result.batchCalls, 1);
+    assert.deepEqual(result.proposalIds, ['p-1', 'p-2', 'p-3']);
+    assert.equal(calls.chunks.length, 1);
+    assert.equal(calls.chunks[0].length, 3);
+    const updateItem = calls.chunks[0].find((i) => i.kind === 'material.update');
+    assert.ok(updateItem);
+    assert.deepEqual(updateItem.update, {
       id: '507f1f77bcf86cd799439044',
       patch: { unit: 'кг' },
     });
     assert.deepEqual(calls.setProposals, [
-      { taskId: 't1', ids: ['p-1', 'p-2', 'u-1'] },
+      { taskId: 't1', ids: ['p-1', 'p-2', 'p-3'] },
     ]);
     assert.equal((result.task as { status?: string })?.status, 'applying');
+  });
+
+  it('120-row plan → ≤3 batch calls (chunk 100) (TZD-18)', async () => {
+    const rows = Array.from({ length: 120 }, (_, i) => ({
+      rowIndex: i,
+      decision: 'new' as const,
+      proposed: { name: `М${i}` },
+    }));
+    const { deps, calls } = makeDeps({
+      getTask: async () => ({ status: 'awaiting_user', aiReport: { rows } }),
+    });
+
+    const result = await applyImportTaskPlan(deps, { id: 't1', userOk: true });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.proposed, 120);
+    assert.equal(calls.chunks.length, 2);
+    assert.ok(result.batchCalls !== undefined && result.batchCalls <= 3);
+    assert.equal(calls.chunks[0].length, 100);
+    assert.equal(calls.chunks[1].length, 20);
+    assert.equal((result.proposalIds ?? []).length, 120);
+  });
+
+  it('chunk error → ok:false, nothing linked, setProposals NOT called', async () => {
+    const rows = Array.from({ length: 105 }, (_, i) => ({
+      rowIndex: i,
+      decision: 'new' as const,
+      proposed: { name: `М${i}` },
+    }));
+    const { deps, calls } = makeDeps({
+      getTask: async () => ({ status: 'awaiting_user', aiReport: { rows } }),
+      proposeBatch: async (chunk) => {
+        calls.chunks.push(chunk);
+        if (calls.chunks.length === 1) {
+          return { proposalIds: chunk.map((_, i) => `p-${i}`), errors: undefined };
+        }
+        return { proposalIds: [], errors: [{ index: 0, error: 'boom' }] };
+      },
+    });
+
+    const result = await applyImportTaskPlan(deps, { id: 't1', userOk: true });
+
+    assert.equal(result.ok, false);
+    assert.equal(result.proposed, 0);
+    assert.equal(calls.setProposals.length, 0);
+    assert.match(result.note ?? '', /failed/);
   });
 
   it('doubt-only plan → ok:true, 0 proposes, setProposals NOT called', async () => {
@@ -304,7 +358,7 @@ describe('applyImportTaskPlan (TZD-23 HITL gate)', () => {
     assert.equal(result.ok, true);
     assert.equal(result.proposed, 0);
     assert.equal(result.doubts, 2);
-    assert.equal(calls.creates.length, 0);
+    assert.equal(calls.chunks.length, 0);
     assert.equal(calls.setProposals.length, 0);
     assert.match(result.note ?? '', /No proposals/);
   });
@@ -328,6 +382,7 @@ describe('applyImportTaskPlan (TZD-23 HITL gate)', () => {
     assert.equal(result.proposed, 1);
     assert.equal(result.skipped, 2);
     assert.deepEqual(result.proposalIds, ['p-1']);
-    assert.equal(calls.updates.length, 0);
+    assert.equal(calls.chunks.length, 1);
+    assert.equal(calls.chunks[0].length, 1);
   });
 });

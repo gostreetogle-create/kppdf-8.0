@@ -253,10 +253,10 @@ export async function createImportTaskFromRows(
     contentHash?: string;
   },
 ): Promise<CreateImportTaskResult> {
-  if (opts.rows.length < 1 || opts.rows.length > 500) {
+  if (opts.rows.length < 1 || opts.rows.length > 2000) {
     throw new Error(
-      opts.rows.length > 500
-        ? 'Слишком много строк (>500) — разбейте файл или дождитесь TZD-18.'
+      opts.rows.length > 2000
+        ? 'Слишком много строк (>2000) — разбейте файл на несколько задач импорта.'
         : 'Нет строк для задачи импорта.',
     );
   }

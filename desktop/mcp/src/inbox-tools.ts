@@ -299,9 +299,22 @@ export function registerInboxTools(server: McpServer, cfg: McpRuntimeConfig): vo
           .enum(['propose', 'validate'])
           .optional()
           .describe('propose (default) | validate (audit only, 0 proposals)'),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(10000)
+          .optional()
+          .describe('TZD-18: max rows to process from the file (default all)'),
+        offset: z
+          .number()
+          .int()
+          .min(0)
+          .optional()
+          .describe('TZD-18: skip first N rows (0-based)'),
       },
     },
-    async ({ fileName, mode }) => {
+    async ({ fileName, mode, limit, offset }) => {
       try {
         const resolvedMode = mode ?? 'propose';
         if (resolvedMode === 'validate') {
@@ -321,7 +334,9 @@ export function registerInboxTools(server: McpServer, cfg: McpRuntimeConfig): vo
           );
         }
         const data = await readInboxFile(dir, fileName);
-        const rows = await parseInboxBytes(fileName, data);
+        const parsed = await parseInboxBytes(fileName, data);
+        const start = Math.max(0, offset ?? 0);
+        const rows = limit !== undefined ? parsed.slice(start, start + limit) : parsed.slice(start);
 
         const proposed: Array<{ name: string; proposalId?: string }> = [];
         const skipped: Array<{ row: string; reason: string }> = [];

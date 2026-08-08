@@ -15,7 +15,18 @@ export const WRITE_TOOL_NAMES = [
   'kppdf_cancel_proposal',
   'kppdf_undo_mutation',
   'kppdf_list_mutations',
+  'kppdf_propose_material_batch',
+  'kppdf_confirm_batch',
+  'kppdf_cancel_batch',
 ] as const;
+
+const batchItemSchema = z.object({
+  name: z.string().min(1).describe('Material name'),
+  unit: z.string().optional().describe('Unit (default шт)'),
+  article: z.string().optional(),
+  sku: z.string().optional(),
+  categoryId: z.string().optional(),
+});
 
 export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): void {
   server.registerTool(
@@ -86,6 +97,92 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
         return toolOk({ ok: true, proposal: result });
       } catch (err) {
         return toolFail('kppdf_propose_material_update', err);
+      }
+    },
+  );
+
+  server.registerTool(
+    'kppdf_propose_material_batch',
+    {
+      title: 'Propose material create (batch)',
+      description:
+        'TZD-18: creates material.create PROPOSALS for many rows in one backend call ' +
+        '(all-or-nothing best-effort — on error created proposals are rolled back). ' +
+        'No SoT write until kppdf_confirm_batch. Optional idempotencyKey for safe retries.',
+      inputSchema: {
+        items: z.array(batchItemSchema).min(1).max(500),
+        idempotencyKey: z.string().optional(),
+      },
+    },
+    async ({ items, idempotencyKey }) => {
+      try {
+        const result = await backendPostJson(
+          cfg.apiBaseUrl,
+          cfg.apiKey,
+          '/api/mutation-journal/propose-batch',
+          {
+            items: items.map((item) => ({
+              kind: 'material.create',
+              toolName: 'kppdf_propose_material_batch',
+              create: item,
+            })),
+            ...(idempotencyKey ? { idempotencyKey } : {}),
+          },
+        );
+        return toolOk({ ok: true, ...((result as object) ?? {}) });
+      } catch (err) {
+        return toolFail('kppdf_propose_material_batch', err);
+      }
+    },
+  );
+
+  server.registerTool(
+    'kppdf_confirm_batch',
+    {
+      title: 'Confirm proposals (batch)',
+      description:
+        'TZD-18: applies many proposals via the journal (POST confirm-batch). ' +
+        'This is the SoT write step — only call after the user approved the plan.',
+      inputSchema: {
+        ids: z.array(z.string().min(1)).min(1).max(500),
+      },
+    },
+    async ({ ids }) => {
+      try {
+        const result = await backendPostJson(
+          cfg.apiBaseUrl,
+          cfg.apiKey,
+          '/api/mutation-journal/confirm-batch',
+          { ids },
+        );
+        return toolOk({ ok: true, ...((result as object) ?? {}) });
+      } catch (err) {
+        return toolFail('kppdf_confirm_batch', err);
+      }
+    },
+  );
+
+  server.registerTool(
+    'kppdf_cancel_batch',
+    {
+      title: 'Cancel proposals (batch)',
+      description:
+        'TZD-18: cancels many pending proposals in one backend call. No SoT change.',
+      inputSchema: {
+        ids: z.array(z.string().min(1)).min(1).max(500),
+      },
+    },
+    async ({ ids }) => {
+      try {
+        const result = await backendPostJson(
+          cfg.apiBaseUrl,
+          cfg.apiKey,
+          '/api/mutation-journal/cancel-batch',
+          { ids },
+        );
+        return toolOk({ ok: true, ...((result as object) ?? {}) });
+      } catch (err) {
+        return toolFail('kppdf_cancel_batch', err);
       }
     },
   );

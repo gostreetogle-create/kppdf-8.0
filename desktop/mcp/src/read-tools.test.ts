@@ -63,4 +63,10 @@ describe('write tool registry', () => {
     assert.ok(WRITE_TOOL_NAMES.includes('kppdf_confirm_proposal'));
     assert.ok(WRITE_TOOL_NAMES.includes('kppdf_undo_mutation'));
   });
+
+  it('exposes batch tools (TZD-18)', () => {
+    assert.ok(WRITE_TOOL_NAMES.includes('kppdf_propose_material_batch'));
+    assert.ok(WRITE_TOOL_NAMES.includes('kppdf_confirm_batch'));
+    assert.ok(WRITE_TOOL_NAMES.includes('kppdf_cancel_batch'));
+  });
 });

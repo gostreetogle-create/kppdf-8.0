@@ -22,7 +22,7 @@ import {
   ImportTaskStatus,
 } from './import-task.schema';
 
-const MAX_ROWS = 500;
+const MAX_ROWS = 2000; // TZD-18: bulk опт — было 500
 
 @Injectable()
 export class ImportTaskService {
@@ -40,7 +40,7 @@ export class ImportTaskService {
     }
     if (!dto.rows?.length || dto.rows.length > MAX_ROWS) {
       throw new BadRequestException(
-        `rows.length must be 1..${MAX_ROWS} — split the file / TZD-18`,
+        `rows.length must be 1..${MAX_ROWS} — split the file (cap TZD-18)`,
       );
     }
 

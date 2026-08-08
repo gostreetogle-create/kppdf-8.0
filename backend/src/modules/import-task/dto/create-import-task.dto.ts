@@ -89,11 +89,11 @@ export class CreateImportTaskDto {
   @Type(() => ImportTaskSourceDto)
   source!: ImportTaskSourceDto;
 
-  @ApiProperty({ type: [ImportTaskRowDto], minItems: 1, maxItems: 500 })
+  @ApiProperty({ type: [ImportTaskRowDto], minItems: 1, maxItems: 2000 })
   @IsArray()
   @ArrayMinSize(1)
-  @ArrayMaxSize(500, {
-    message: 'rows.length must be ≤500 — split the file or use TZD-18 chunk',
+  @ArrayMaxSize(2000, {
+    message: 'rows.length must be ≤2000 (TZD-18) — split larger files into multiple tasks',
   })
   @ValidateNested({ each: true })
   @Type(() => ImportTaskRowDto)
@@ -275,11 +275,11 @@ export class PatchImportTaskProposalsDto {
  * Resetting aiReport forces re-match after reshape.
  */
 export class PatchImportTaskRowsDto {
-  @ApiProperty({ type: [ImportTaskRowDto], minItems: 1, maxItems: 500 })
+  @ApiProperty({ type: [ImportTaskRowDto], minItems: 1, maxItems: 2000 })
   @IsArray()
   @ArrayMinSize(1)
-  @ArrayMaxSize(500, {
-    message: 'rows.length must be ≤500 — split the file or use TZD-18 chunk',
+  @ArrayMaxSize(2000, {
+    message: 'rows.length must be ≤2000 (TZD-18) — split larger files into multiple tasks',
   })
   @ValidateNested({ each: true })
   @Type(() => ImportTaskRowDto)

@@ -64,6 +64,10 @@ export class MutationJournal {
 
   @Prop()
   expiresAt?: Date;
+
+  /** TZD-18 — batch idempotency marker (optional; set on propose-batch items). */
+  @Prop({ index: true })
+  idempotencyKey?: string;
 }
 
 export const MutationJournalSchema = SchemaFactory.createForClass(MutationJournal);

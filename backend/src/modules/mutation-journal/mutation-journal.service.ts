@@ -11,7 +11,11 @@ import { AuthenticatedUser } from '../../common/decorators/current-user.decorato
 import { MaterialService } from '../material/material.service';
 import { CreateMaterialDto } from '../material/dto/create-material.dto';
 import { UpdateMaterialDto } from '../material/dto/update-material.dto';
-import { CreateProposalDto } from './dto/create-proposal.dto';
+import {
+  CreateProposalDto,
+  ProposeBatchDto,
+  ProposalIdsBatchDto,
+} from './dto/create-proposal.dto';
 import {
   MutationJournal,
   MutationJournalDocument,
@@ -53,6 +57,18 @@ export class MutationJournalService {
         ? new Types.ObjectId(user.organizationId)
         : undefined;
 
+    // single propose → no idempotency marker
+    return this.proposeOne(dto, user, orgId, toolName);
+  }
+
+  private async proposeOne(
+    dto: CreateProposalDto,
+    user: AuthenticatedUser,
+    orgId: Types.ObjectId | undefined,
+    toolName: string,
+    idempotencyKey?: string,
+  ) {
+
     if (dto.kind === 'material.create') {
       if (!dto.create?.name?.trim()) {
         throw new BadRequestException('create.name is required for material.create');
@@ -72,6 +88,7 @@ export class MutationJournalService {
         before: null,
         after: null,
         expiresAt: new Date(Date.now() + PROPOSAL_TTL_MS),
+        ...(idempotencyKey ? { idempotencyKey } : {}),
       });
       return this.toProposalView(doc);
     }
@@ -94,11 +111,115 @@ export class MutationJournalService {
         before,
         after: null,
         expiresAt: new Date(Date.now() + PROPOSAL_TTL_MS),
+        ...(idempotencyKey ? { idempotencyKey } : {}),
       });
       return this.toProposalView(doc);
     }
 
     throw new BadRequestException(`Unsupported kind: ${dto.kind}`);
+  }
+
+  /**
+   * TZD-18 — batch propose. SoT не пишется. Best-effort all-or-nothing:
+   * при ошибке любого item созданные proposals откатываются (cancel) и
+   * возвращаются errors. С idempotencyKey повторный вызов вернёт те же id.
+   */
+  async proposeBatch(dto: ProposeBatchDto, user: AuthenticatedUser) {
+    if (!user?.id || !Types.ObjectId.isValid(user.id)) {
+      throw new ForbiddenException('Authenticated user required');
+    }
+    const orgId =
+      user.organizationId && Types.ObjectId.isValid(user.organizationId)
+        ? new Types.ObjectId(user.organizationId)
+        : undefined;
+    const toolName = 'kppdf_propose_material_batch';
+
+    if (dto.idempotencyKey) {
+      const existing = await this.model
+        .find({
+          idempotencyKey: dto.idempotencyKey,
+          actorUserId: new Types.ObjectId(user.id),
+          status: 'proposed',
+          ...(orgId ? { organizationId: orgId } : {}),
+        })
+        .lean()
+        .exec();
+      if (existing.length > 0) {
+        return {
+          proposalIds: existing.map((e) => String(e._id)),
+          errors: [],
+          note: 'idempotency hit — returned existing proposals',
+        };
+      }
+    }
+
+    const proposalIds: string[] = [];
+    const errors: Array<{ index: number; error: string }> = [];
+    for (let i = 0; i < dto.items.length; i++) {
+      const item = dto.items[i];
+      try {
+        const view = await this.proposeOne(
+          item,
+          user,
+          orgId,
+          item.toolName ?? toolName,
+          dto.idempotencyKey,
+        );
+        proposalIds.push(view.proposalId);
+      } catch (err) {
+        errors.push({
+          index: i,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    if (errors.length > 0) {
+      // all-or-nothing best-effort: откатываем созданное
+      for (const id of proposalIds) {
+        try {
+          await this.cancel(id, user);
+        } catch {
+          // cancel идемпотентен — пропускаем
+        }
+      }
+      return {
+        proposalIds: [],
+        errors,
+        note: `Rolled back ${proposalIds.length} created proposal(s) — fix items and retry`,
+      };
+    }
+
+    return { proposalIds, errors };
+  }
+
+  /** TZD-18 — batch confirm. По-одному; ошибки собираются, остальные применяются. */
+  async confirmBatch(dto: ProposalIdsBatchDto, user: AuthenticatedUser) {
+    const failed: Array<{ id: string; error: string }> = [];
+    let applied = 0;
+    for (const id of dto.ids) {
+      try {
+        await this.confirm(id, user);
+        applied += 1;
+      } catch (err) {
+        failed.push({ id, error: err instanceof Error ? err.message : String(err) });
+      }
+    }
+    return { applied, failed };
+  }
+
+  /** TZD-18 — batch cancel. SoT не меняется. */
+  async cancelBatch(dto: ProposalIdsBatchDto, user: AuthenticatedUser) {
+    let cancelled = 0;
+    for (const id of dto.ids) {
+      try {
+        await this.cancel(id, user);
+        cancelled += 1;
+      } catch {
+        // уже не-proposed — пропускаем (идемпотентно)
+      }
+    }
+    return { cancelled };
   }
 
   async confirm(proposalId: string, user: AuthenticatedUser) {
