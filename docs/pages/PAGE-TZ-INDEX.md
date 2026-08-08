@@ -111,6 +111,12 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 |-----------------|----------|-----|
 | `/products/:id` BOM + Себест. | product-detail.page.md; ui-composition-tree.md | COST-301…303 done; **COST-304** audit; **CATALOG-335** dark depth; pattern → **ORDERS-302** PARK |
 
+## Dictionaries / form profiles
+
+| Route / surface | Page doc | TZs |
+|-----------------|----------|-----|
+| `/dictionaries/*` (+ future form-profiles) | dictionaries.page.md; DICT-300 | **DICT-313** audit quick-create S/M/L; 314–316 after |
+
 ## Vision / access / sales (2026-08-02)
 
 | TZ | Pages | One-liner |

@@ -9,5 +9,7 @@
 | **301** | (see stub) | parked / see file |
 | **302…307** | Shell cutovers | **DONE** → `_archive/2026-08/` (sources removed) |
 | **308…312** | Group Chip Workspace wave | **DONE** → `_archive/2026-08/` (sources removed) |
+| **313** | Quick-create form profiles (S/M/L) — **audit** | **READY** · завтра |
+| **314…316** | BE + settings UI + QuickCreate wire | after 313 decisions |
 
 ∥ CATALOG backend: OK. ∥ UI-TABLE-302/305: OK if no shared conflict keys.

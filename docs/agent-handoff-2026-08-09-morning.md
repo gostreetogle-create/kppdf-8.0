@@ -2,28 +2,34 @@
 
 ## Вердикт TZD-24
 
-**PASS.** feat `1ae611e` · closeout `08424a1` · archive `tasks/_archive/2026-08/TZD-24.done.md`.  
-Deploy **не** катили — zip на Synology volume только по «задеплой».
+**PASS.** feat `1ae611e` · closeout `08424a1`.  
+Deploy **не** катили — zip на Synology только по «задеплой».
 
 ## Очередь
 
-1. **TZ-COST-304** — аудит: сумма при вставке изделия vs себестоимость (docs → решения → 305).
-2. **TZ-CATALOG-335** — dark composition depth (скрин монохрома).
-3. По PO: **deploy** и/или **TZD-21**.
+1. **TZ-COST-304** — аудит: сумма при вставке изделия vs себестоимость → D1–D5 → draft 305.
+2. **TZ-CATALOG-335** — dark composition depth (не монохром).
+3. **TZ-DICT-313** — аудит: профили быстрых create-форм S/M/L в Справочниках → draft 314–316.
+4. По PO: **deploy** и/или **TZD-21**.
 
 ## Не терять (PARK / SoT)
 
-- Composition cascade → Заказы: **TZ-ORDERS-302** + pattern lock audit + скрин в `docs/pages/assets/`.
-- Канон UI: `docs/pages/ui-composition-tree.md` §Переиспользование.
+- Composition cascade → Заказы: **TZ-ORDERS-302** + pattern lock + скрин.
+- Quick-create forms: **DICT-313** (настройки галочками; диалоги в точках «Добавить»).
 
 ## Промпты
 
 ```text
 # 304
 docs/PO-DIARY.md §1–§4 + tasks/_backlog/cost/TZ-COST-304-product-line-cost-audit.md
-→ checklist TZ-COST-304 → audit docs only → D1–D5 → draft COST-305 → commit/push docs
+→ checklist → audit docs → D1–D5 → draft COST-305 → commit/push docs
 
 # 335
 GEMINI.md + tasks/_backlog/catalog/TZ-CATALOG-335-composition-tree-dark-depth.md
-→ checklist → dark nest depth → gates → archive (no deploy)
+→ checklist → dark nest → gates → archive (no deploy)
+
+# 313
+docs/PO-DIARY.md §1–§4 + tasks/TZ-DICT-300.md +
+tasks/_backlog/dictionaries/TZ-DICT-313-quick-create-form-profiles-audit.md
+→ checklist TZ-DICT-313 → audit docs → D1–D8 → draft 314–316 → commit/push docs
 ```
