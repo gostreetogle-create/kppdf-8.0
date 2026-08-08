@@ -36,6 +36,7 @@ import { CapabilitiesService } from '../core/capabilities/capabilities.service';
 import { ThemeToggleComponent } from './theme-toggle.component';
 import { PiDialogService } from '../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../shared/ui/toast/pi-toast.service';
+import { PiNotificationBellComponent } from '../shared/ui/notifications/pi-notification-bell.component';
 import { PairingDialogComponent } from '../pages/desktop/pairing-dialog.component';
 import { API_BASE_URL } from '../core/api.tokens';
 import {
@@ -236,6 +237,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     LucideAngularModule,
     ThemeToggleComponent,
     PiNavDropdownComponent,
+    PiNotificationBellComponent,
   ],
   template: `
     <div class="h-screen bg-paper text-ink font-body flex flex-col overflow-hidden">
@@ -289,6 +291,7 @@ const NAV_CATEGORIES: NavCategory[] = [
             </nav>
 
             <div class="flex items-center gap-3 shrink-0">
+              <app-pi-notification-bell />
               <app-theme-toggle />
               @if (isAuthenticated()) {
                 <button

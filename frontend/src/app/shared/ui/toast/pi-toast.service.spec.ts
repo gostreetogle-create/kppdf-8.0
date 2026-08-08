@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { PiToastService } from './pi-toast.service';
+import { PiNotificationCenterService } from '../notifications/pi-notification-center.service';
 
 /**
  * TZ-NEW: Unit tests for PiToastService.
@@ -64,10 +65,22 @@ describe('PiToastService', () => {
       expect(queue[0].variant).toBe('default');
     });
 
-    it('default duration is 4000ms', () => {
+    it('default duration is 4000ms for default variant', () => {
       service.show('Hi');
       const queue = snapshot() as Array<{ duration: number }>;
       expect(queue[0].duration).toBe(4000);
+    });
+
+    it('default duration is 8000ms for error variant', () => {
+      service.error('Boom');
+      const queue = snapshot() as Array<{ duration: number }>;
+      expect(queue[0].duration).toBe(8000);
+    });
+
+    it('mirrors into notification inbox', () => {
+      const inbox = TestBed.inject(PiNotificationCenterService);
+      service.error('Cycle');
+      expect(inbox.items().some((n) => n.title === 'Cycle')).toBe(true);
     });
 
     it('multiple shows enqueue in order (FIFO)', () => {
