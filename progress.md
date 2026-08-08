@@ -1036,3 +1036,13 @@ BOM inspector — вклад строки material/module read-only.
 **Gates:** targeted Jest 35 PASS; scoped ESLint 0 errors (one existing architecture warning); Prettier PASS; diff-check PASS. Full FE tsc has one unrelated baseline error from existing materials list WIP importing untracked `material-dimensions` helper.
 **Archive:** `tasks/_archive/2026-08/TZ-UI-SELECT-301.done.md`
 **Lock:** `.mimocode/locks/TZ-UI-SELECT-301.lock`
+
+---
+
+## [2026-08-08] — TZ-UX-COMPOSE-301 DONE: Module composition discoverability
+**Исполнитель:** Buffy (freebuff claim worktree)
+**Статус:** DONE; archive + lock + checklist; commit/push в этом closeout
+**Что сделано кратко:** ModuleForm показывает hint «Состав (модули и материалы) — на карточке модуля или в QC L»; picker `restrictToModule` открывается на вкладке **Материал** (Модуль остаётся) + hint «модуль или материал»; при выборе материала/листа в дереве кнопка «+ В корень изделия/модуля» остаётся доступной (`bom-add-root-into`) — нет тупика. Матрица включённости задокументирована в module/product-detail. Бонус-фикс: quick-create spec override дополнен `PiOverflowSelectComponent` (падал полный сьют после SELECT-301).
+**Gates:** tsc PASS; targeted Jest 20/20 PASS; полный сьют 129 suites / 1212 tests PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-COMPOSE-301.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-COMPOSE-301.lock`

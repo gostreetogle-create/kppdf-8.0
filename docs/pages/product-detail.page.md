@@ -38,6 +38,11 @@
    - инспектор справа: qty, **вклад в себест.** (материал: `price×qty`; модуль: `cost-preview×qty`;
      product-line: `unitPriceOverride×qty` иначе `child.costPrice×qty`, TZ-COST-305),
      «+ Из каталога» **в выбранный узел**, убрать, ссылка на карточку;
+     **TZ-UX-COMPOSE-301:** если выбран материал/лист (add-into недоступен) —
+     кнопка **«+ В корень изделия»** остаётся видимой (`bom-add-root-into`),
+     чтобы не было тупика;
+   - **матрица включённости (PO):** модуль → модуль **или** материал;
+     изделие → изделие **или** модуль (материал/«деталь» в UI остаётся);
    - add в **product** → product composition API; add в **module** → module composition API;
    - picker с `restrictToModule` скрывает вкладку «изделие» и разрешает сырьё;
    - выбор из каталога: **`app-pi-overflow-select`** ([канон](./ui-overflow-select.md));

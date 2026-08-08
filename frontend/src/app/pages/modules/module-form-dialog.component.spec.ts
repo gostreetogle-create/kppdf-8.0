@@ -48,6 +48,15 @@ describe('ModuleFormDialogComponent (TZ-CATALOG-320)', () => {
     fixture.detectChanges();
   });
 
+  it('TZ-UX-COMPOSE-301: shows composition hint (состав на карточке / QC L)', () => {
+    const hint = fixture.nativeElement.querySelector(
+      '[data-test="composition-hint"]',
+    ) as HTMLElement | null;
+    expect(hint).toBeTruthy();
+    expect(hint!.textContent).toContain('модули и материалы');
+    expect(hint!.textContent).toContain('карточке модуля');
+  });
+
   it('keeps dimensions nested and submits width/height/depth/unit without missing-control errors', () => {
     const component = fixture.componentInstance as unknown as {
       form: { controls: { dimensions: { getRawValue: () => Record<string, unknown> } } };

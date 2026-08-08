@@ -14,6 +14,7 @@ describe('ProductBomPanelComponent', () => {
   let service: Record<string, jest.Mock>;
   let materials: Record<string, jest.Mock>;
   let products: Record<string, jest.Mock>;
+  let dialogService: { open: jest.Mock };
 
   const tree = {
     _id: 'p1',
@@ -112,6 +113,12 @@ describe('ProductBomPanelComponent', () => {
       ),
     };
 
+    dialogService = {
+      open: jest.fn().mockReturnValue({
+        closed: signal<unknown>(undefined),
+        close: jest.fn(),
+      }),
+    };
     await TestBed.configureTestingModule({
       imports: [ProductBomPanelComponent],
       schemas: [NO_ERRORS_SCHEMA],
@@ -121,11 +128,36 @@ describe('ProductBomPanelComponent', () => {
         { provide: MaterialsService, useValue: materials },
         { provide: ProductsService, useValue: products },
         { provide: PiToastService, useValue: { success: jest.fn(), error: jest.fn() } },
-        { provide: PiDialogService, useValue: { open: jest.fn() } },
+        { provide: PiDialogService, useValue: dialogService },
       ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ProductBomPanelComponent);
+  });
+
+  it('TZ-UX-COMPOSE-301: root add stays reachable when a material leaf is selected', () => {
+    fixture.componentRef.setInput('productId', 'p1');
+    fixture.detectChanges();
+    const mat = tree.children[0].children[0];
+    const comp = fixture.componentInstance as unknown as {
+      onSelect: (e: {
+        node: typeof mat;
+        parent: (typeof tree.children)[0];
+        depth: number;
+      }) => void;
+    };
+    comp.onSelect({ node: mat, parent: tree.children[0], depth: 2 });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="bom-add-into"]')).toBeNull();
+    const rootBtn = fixture.nativeElement.querySelector(
+      '[data-test="bom-add-root-into"]',
+    ) as HTMLElement | null;
+    expect(rootBtn).toBeTruthy();
+    expect(rootBtn!.textContent).toContain('В корень изделия');
+    rootBtn!.click();
+    fixture.detectChanges();
+    expect(dialogService.open).toHaveBeenCalled();
   });
 
   it('loads tree and selects product root in inspector', () => {

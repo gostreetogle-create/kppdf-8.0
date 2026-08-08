@@ -191,6 +191,18 @@ interface LineCostHint {
                 >
                   + Из каталога
                 </app-pi-button>
+              } @else {
+                <!-- TZ-UX-COMPOSE-301: у листа/материала нет add-into → всегда доступен «в корень». -->
+                <app-pi-button
+                  variant="default"
+                  size="sm"
+                  type="button"
+                  class="block w-full [&_button]:w-full [&_button]:justify-start [&_button]:px-3"
+                  (click)="selectRootAndAdd()"
+                  data-test="bom-add-root-into"
+                >
+                  {{ rootAddLabel() }}
+                </app-pi-button>
               }
 
               @if (canEditSelected(sel.node)) {

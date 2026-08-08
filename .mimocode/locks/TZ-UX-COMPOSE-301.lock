@@ -1,0 +1,7 @@
+TZ-UX-COMPOSE-301
+closed: 2026-08-08
+zone: module composition discoverability (hint + picker default + root-add)
+checklist: docs/agent-checklists/TZ-UX-COMPOSE-301.md
+archive: tasks/_archive/2026-08/TZ-UX-COMPOSE-301.done.md
+commit: pending
+known-limitation: none (full FE tsc + 129 suites PASS)

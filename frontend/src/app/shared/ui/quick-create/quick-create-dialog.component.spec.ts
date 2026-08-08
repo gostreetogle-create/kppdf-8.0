@@ -29,6 +29,7 @@ import { FIELD_KEY_LABEL_RU } from '../../services/form-profiles.service';
 import { FIELD_CAPACITY, spanForKey } from './field-capacity';
 import { PiFormSectionComponent } from '../form-section';
 import { PiPhotoDropzoneComponent } from '../photo';
+import { PiOverflowSelectComponent } from '../overflow-select/pi-overflow-select.component';
 import { ProductBomPanelComponent } from '../../../pages/products/product-bom-panel.component';
 import type { Photo } from '../../services/photos.service';
 
@@ -179,7 +180,14 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
     })
       .overrideComponent(QuickCreateDialogComponent, {
         set: {
-          imports: [PiFormSectionComponent, PiPhotoDropzoneComponent, ProductBomPanelComponent],
+          imports: [
+            PiFormSectionComponent,
+            PiPhotoDropzoneComponent,
+            ProductBomPanelComponent,
+            // TZ-UI-SELECT-301: категория — overflow-select; override обязан включать его,
+            // иначе NO_ERRORS_SCHEMA рендерит пустой элемент без data-test.
+            PiOverflowSelectComponent,
+          ],
           schemas: [NO_ERRORS_SCHEMA],
         },
       })
@@ -337,7 +345,14 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
     })
       .overrideComponent(QuickCreateDialogComponent, {
         set: {
-          imports: [PiFormSectionComponent, PiPhotoDropzoneComponent, ProductBomPanelComponent],
+          imports: [
+            PiFormSectionComponent,
+            PiPhotoDropzoneComponent,
+            ProductBomPanelComponent,
+            // TZ-UI-SELECT-301: категория — overflow-select; override обязан включать его,
+            // иначе NO_ERRORS_SCHEMA рендерит пустой элемент без data-test.
+            PiOverflowSelectComponent,
+          ],
           schemas: [NO_ERRORS_SCHEMA],
         },
       })
@@ -467,7 +482,14 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
     })
       .overrideComponent(QuickCreateDialogComponent, {
         set: {
-          imports: [PiFormSectionComponent, PiPhotoDropzoneComponent, ProductBomPanelComponent],
+          imports: [
+            PiFormSectionComponent,
+            PiPhotoDropzoneComponent,
+            ProductBomPanelComponent,
+            // TZ-UI-SELECT-301: категория — overflow-select; override обязан включать его,
+            // иначе NO_ERRORS_SCHEMA рендерит пустой элемент без data-test.
+            PiOverflowSelectComponent,
+          ],
           schemas: [NO_ERRORS_SCHEMA],
         },
       })

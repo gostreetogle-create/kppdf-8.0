@@ -86,6 +86,12 @@ export interface ProductCompositionPickerData {
           }
         </div>
 
+        @if (data.restrictToModule) {
+          <p class="text-xs text-muted-foreground m-0 leading-snug" data-test="picker-inclusion-hint">
+            В состав модуля можно добавить модуль или материал.
+          </p>
+        }
+
         @if (loading()) {
           <p role="status" class="text-xs text-muted-foreground py-8 text-center">
             Загрузка каталога…
@@ -207,8 +213,9 @@ export class ProductCompositionPickerDialogComponent {
   protected readonly visibleKinds: { value: PickerKind; label: string }[] = this.data
     .restrictToModule
     ? [
-        { value: 'module', label: 'Модуль' },
+        // TZ-UX-COMPOSE-301: для модуля материал — первая вкладка (смысл цеха), модуль остаётся.
         { value: 'material', label: 'Материал' },
+        { value: 'module', label: 'Модуль' },
       ]
     : [
         { value: 'product', label: 'Изделие' },
@@ -224,7 +231,8 @@ export class ProductCompositionPickerDialogComponent {
   protected readonly closeLabel = this.data.onAdded ? 'Закрыть' : 'Отмена';
 
   protected readonly activeKind = signal<PickerKind>(
-    this.data.restrictToModule ? 'module' : 'product',
+    // TZ-UX-COMPOSE-301: restrictToModule открывается на «Материал» — первая по смыслу.
+    this.data.restrictToModule ? 'material' : 'product',
   );
   protected readonly selectedId = signal('');
   protected readonly unitPriceOverride = signal('');

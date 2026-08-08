@@ -318,3 +318,63 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)
     expect(component.unitPriceOverride()).toBe('');
   });
 });
+
+describe('ProductCompositionPickerDialogComponent restrictToModule (TZ-UX-COMPOSE-301)', () => {
+  let fixture: ComponentFixture<ProductCompositionPickerDialogComponent>;
+
+  function ref<T>(): DialogRef<T> {
+    return {
+      closed: signal<T | undefined>(undefined),
+      close: jest.fn(),
+    } as DialogRef<T>;
+  }
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ProductCompositionPickerDialogComponent],
+      schemas: [NO_ERRORS_SCHEMA],
+      providers: [
+        { provide: PI_DIALOG_DATA, useValue: { productId: 'm1', restrictToModule: true } },
+        { provide: PI_DIALOG_REF, useValue: ref() },
+        {
+          provide: ProductModulesService,
+          useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) },
+        },
+        {
+          provide: MaterialsService,
+          useValue: {
+            list: jest.fn().mockReturnValue(
+              of({
+                ok: true,
+                data: {
+                  items: [
+                    { _id: 'raw', name: 'Сталь листовая', unit: 'кг', materialKind: 'raw' },
+                  ],
+                },
+              }),
+            ),
+          },
+        },
+        { provide: ProductsService, useValue: { list: jest.fn() } },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(ProductCompositionPickerDialogComponent);
+    fixture.detectChanges();
+  });
+
+  it('opens on the material tab first; module tab remains available', () => {
+    const comp = fixture.componentInstance as unknown as { activeKind: () => string };
+    expect(comp.activeKind()).toBe('material');
+    const tabs = Array.from(fixture.nativeElement.querySelectorAll('[role="tab"]')).map((t) =>
+      (t.textContent ?? '').trim(),
+    );
+    expect(tabs).toEqual(['Материал', 'Модуль']);
+  });
+
+  it('shows the inclusion hint «модуль или материал»', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    const hint = el.querySelector('[data-test="picker-inclusion-hint"]');
+    expect(hint).toBeTruthy();
+    expect(hint!.textContent).toContain('модуль или материал');
+  });
+});

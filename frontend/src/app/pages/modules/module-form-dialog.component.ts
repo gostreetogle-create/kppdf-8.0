@@ -209,6 +209,14 @@ import { extractErrorMessage } from '../../core/silent-http';
           </div>
         </app-pi-form-section>
 
+        <!-- TZ-UX-COMPOSE-301: состав не редактируется в форме — на карточке / QC L -->
+        <app-pi-form-section title="Состав" headingId="module-sec-composition" tone="neutral">
+          <p class="text-sm text-muted-foreground" data-test="composition-hint">
+            Состав (модули и материалы) собирается на карточке модуля или в быстром
+            создании (профиль L).
+          </p>
+        </app-pi-form-section>
+
         @if (formError()) {
           <p role="alert" class="text-xs text-destructive">
             {{ formError() }}
