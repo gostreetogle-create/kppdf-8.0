@@ -1,5 +1,16 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-08T19:55:00Z · WIP cleared — PRODUCT-EDITOR unblocked
+- DONE: landed session WIP (product PATCH coerce, cost one-active, admin email/ACL chips) so CONFLICT KEYS for 308 are clean
+- IN PROGRESS: none
+- NOT DONE: TZ-PRODUCTS-308 → TZ-PRODUCTS-309
+- NEXT: `tasks/_backlog/product-editor/TZ-PRODUCTS-308-izdelie-dense-fulleditor.md` — **claimable** (worktree clean)
+- Prompt: `tasks/_backlog/product-editor/PROMPT-CONTINUOUS.md`
+- Blockers: none (prior DEFER: dirty product-form-dialog — resolved by commit, not discard)
+- _active/: empty
+- Ban: Product schema rename · second BOM write-path · deploy
+- Deploy: NO
+
 ## Checkpoint 2026-08-08T19:40:00Z · WAVE-PRODUCT-EDITOR READY
 - DONE: prior Party/Shop/Catalog waves idle
 - IN PROGRESS: none
