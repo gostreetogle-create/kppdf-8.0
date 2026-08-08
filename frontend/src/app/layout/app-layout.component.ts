@@ -62,8 +62,10 @@ interface AppNavItem extends Omit<PiNavDropdownItem, 'pageKey'> {
 
 interface NavCategory {
   id: string;
-  /** Full RU name — visible caption + aria-label / title (TZ-UX-305). */
+  /** Full RU — aria-label / title (TZ-UX-307). */
   label: string;
+  /** Visible caption under icon — may be abbreviated (TZ-UX-307). */
+  shortLabel: string;
   icon: LucideIcon;
   items: AppNavItem[];
   /**
@@ -89,6 +91,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   {
     id: 'catalog',
     label: 'Каталог',
+    shortLabel: 'Каталог',
     icon: Package,
     entryPath: '/products',
     items: [
@@ -107,6 +110,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   {
     id: 'clients',
     label: 'Клиенты',
+    shortLabel: 'Клиенты',
     icon: Users,
     entryPath: '/counterparties',
     items: [
@@ -117,6 +121,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   {
     id: 'deals',
     label: 'Сделки',
+    shortLabel: 'Сделки',
     icon: Briefcase,
     entryPath: '/proposals',
     items: [
@@ -129,6 +134,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   {
     id: 'design',
     label: 'Проектирование',
+    shortLabel: 'Проект',
     icon: PenLine,
     entryPath: '/design',
     items: [{ path: '/design', pageKey: 'design', label: 'Очередь' }],
@@ -136,6 +142,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   {
     id: 'supply',
     label: 'Снабжение',
+    shortLabel: 'Снабж.',
     icon: ShoppingCart,
     entryPath: '/supply',
     items: [{ path: '/supply', pageKey: 'supply', label: 'Закупки' }],
@@ -143,6 +150,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   {
     id: 'production',
     label: 'Производство',
+    shortLabel: 'Цех',
     icon: Factory,
     entryPath: '/production',
     items: [
@@ -153,6 +161,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   {
     id: 'warehouse',
     label: 'Склад',
+    shortLabel: 'Склад',
     icon: Warehouse,
     entryPath: '/storage-items',
     items: [
@@ -166,6 +175,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   {
     id: 'docs',
     label: 'Документы',
+    shortLabel: 'Докум.',
     icon: FileText,
     entryPath: '/doc-constructor/templates',
     items: [
@@ -181,6 +191,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     // TZ-UX-304: after Docs (settings last, before Admin).
     id: 'reference',
     label: 'Справочники',
+    shortLabel: 'Справ.',
     icon: BookOpen,
     entryPath: '/dictionaries/classification',
     items: [
@@ -214,7 +225,8 @@ const NAV_CATEGORIES: NavCategory[] = [
   },
   {
     id: 'admin',
-    label: 'Админ',
+    label: 'Администрирование',
+    shortLabel: 'Админ',
     icon: ShieldCheck,
     entryPath: '/admin/users',
     items: [
@@ -244,8 +256,11 @@ const NAV_CATEGORIES: NavCategory[] = [
 /** TZ-UX-304 — exported for unit test of L→R category order. */
 export const NAV_CATEGORY_ORDER: readonly string[] = NAV_CATEGORIES.map((c) => c.id);
 
-/** TZ-UX-305 — full RU captions (no abbreviated shortLabel). */
+/** TZ-UX-307 — full RU for aria/title. */
 export const NAV_CATEGORY_LABELS: readonly string[] = NAV_CATEGORIES.map((c) => c.label);
+
+/** TZ-UX-307 — visible short captions under icon. */
+export const NAV_CATEGORY_SHORT_LABELS: readonly string[] = NAV_CATEGORIES.map((c) => c.shortLabel);
 
 @Component({
   selector: 'app-app-layout',
@@ -266,7 +281,7 @@ export const NAV_CATEGORY_LABELS: readonly string[] = NAV_CATEGORIES.map((c) => 
           class="sticky top-0 z-30 pi-marble supports-[backdrop-filter]:backdrop-blur-sm
                  hairline-b pi-edge-bleed shrink-0"
         >
-          <div class="h-16 flex items-center justify-between gap-2 min-w-0">
+          <div class="h-14 flex items-center justify-between gap-2 min-w-0">
             <a
               routerLink="/"
               class="flex items-center gap-2 min-w-0 shrink-0 max-w-[9.5rem] sm:max-w-none"
@@ -278,7 +293,7 @@ export const NAV_CATEGORY_LABELS: readonly string[] = NAV_CATEGORIES.map((c) => 
             </a>
 
             <!--
-              TZ-UX-305: equal-width columns from longest label (grid 1fr + w-max).
+              TZ-UX-307: equal-width columns from longest shortLabel (grid 1fr + w-max).
               Right cluster stays outside this grid (shrink-0).
             -->
             <nav
@@ -290,11 +305,11 @@ export const NAV_CATEGORY_LABELS: readonly string[] = NAV_CATEGORIES.map((c) => 
               <div class="grid grid-flow-col auto-cols-fr gap-1 w-max max-w-full items-stretch">
                 @for (cat of navCategories(); track cat.id) {
                   @if (cat.entryPath) {
-                    <!-- TZ-UX-304/305: rect + icon top + full caption; equal column width. -->
+                    <!-- TZ-UX-307: compact rect + icon + shortLabel; full RU in aria/title. -->
                     <a
                       [routerLink]="cat.entryPath"
-                      class="inline-flex flex-col items-center justify-center gap-0.5 w-full
-                             h-12 px-2 py-1.5
+                      class="inline-flex flex-col items-center justify-center gap-px w-full
+                             h-10 px-1.5 py-1
                              rounded-sm hairline transition-colors pi-focus-ring
                              cursor-pointer no-underline"
                       [class.bg-sunrise-warm]="activeCategoryId() === cat.id"
@@ -309,21 +324,22 @@ export const NAV_CATEGORY_LABELS: readonly string[] = NAV_CATEGORIES.map((c) => 
                     >
                       <lucide-angular
                         [img]="cat.icon"
-                        [size]="14"
+                        [size]="12"
                         class="opacity-90 shrink-0"
                         aria-hidden="true"
                       />
                       <span
-                        class="block w-full text-center text-[9px] min-[1280px]:text-[10px]
-                               leading-tight font-medium whitespace-nowrap"
+                        class="block w-full text-center text-[9px] leading-none
+                               font-medium whitespace-nowrap"
                         aria-hidden="true"
                       >
-                        {{ cat.label }}
+                        {{ cat.shortLabel }}
                       </span>
                     </a>
                   } @else {
                     <app-pi-nav-dropdown
                       [label]="cat.label"
+                      [shortLabel]="cat.shortLabel"
                       [icon]="cat.icon"
                       [items]="cat.items"
                       [active]="activeCategoryId() === cat.id"

@@ -1,10 +1,14 @@
-import { NAV_CATEGORY_LABELS, NAV_CATEGORY_ORDER } from './app-layout.component';
+import {
+  NAV_CATEGORY_LABELS,
+  NAV_CATEGORY_ORDER,
+  NAV_CATEGORY_SHORT_LABELS,
+} from './app-layout.component';
 
 /**
  * TZ-UX-304 — L→R order = product cycle + frequency; Dictionaries after Docs.
- * TZ-UX-305 — full RU captions (no «Проект.» shortLabel).
+ * TZ-UX-307 — shortLabel under icon; full RU in NAV_CATEGORY_LABELS (aria/title).
  */
-describe('NAV_CATEGORY_ORDER (TZ-UX-304/305)', () => {
+describe('NAV_CATEGORY_ORDER (TZ-UX-304/307)', () => {
   it('lists top categories left→right as lifecycle / usage flow', () => {
     expect([...NAV_CATEGORY_ORDER]).toEqual([
       'catalog',
@@ -20,7 +24,19 @@ describe('NAV_CATEGORY_ORDER (TZ-UX-304/305)', () => {
     ]);
   });
 
-  it('uses full RU labels without abbreviated shortLabel forms', () => {
+  it('uses shortLabel captions and full RU labels for aria/title', () => {
+    expect([...NAV_CATEGORY_SHORT_LABELS]).toEqual([
+      'Каталог',
+      'Клиенты',
+      'Сделки',
+      'Проект',
+      'Снабж.',
+      'Цех',
+      'Склад',
+      'Докум.',
+      'Справ.',
+      'Админ',
+    ]);
     expect([...NAV_CATEGORY_LABELS]).toEqual([
       'Каталог',
       'Клиенты',
@@ -31,10 +47,7 @@ describe('NAV_CATEGORY_ORDER (TZ-UX-304/305)', () => {
       'Склад',
       'Документы',
       'Справочники',
-      'Админ',
+      'Администрирование',
     ]);
-    for (const label of NAV_CATEGORY_LABELS) {
-      expect(label.endsWith('.')).toBe(false);
-    }
   });
 });

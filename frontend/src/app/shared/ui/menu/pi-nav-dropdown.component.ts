@@ -77,7 +77,7 @@ export interface PiNavDropdownItem {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, LucideAngularModule, MenuTriggerDirective],
-  // TZ-UX-305: compact trigger is the grid cell (equal column width from longest label).
+  // TZ-UX-305/307: compact trigger is the grid cell (equal column width from shortLabel).
   host: {
     '[class.contents]': 'compact()',
   },
@@ -88,12 +88,12 @@ export interface PiNavDropdownItem {
       class="inline-flex items-center justify-center rounded-sm
              transition-colors pi-focus-ring cursor-pointer hairline"
       [class.flex-col]="compact()"
-      [class.gap-0.5]="compact()"
+      [class.gap-px]="compact()"
       [class.gap-1]="!compact()"
-      [class.h-12]="compact()"
+      [class.h-10]="compact()"
       [class.w-full]="compact()"
-      [class.px-2]="compact()"
-      [class.py-1.5]="compact()"
+      [class.px-1.5]="compact()"
+      [class.py-1]="compact()"
       [class.px-3]="!compact()"
       [class.py-1.5]="!compact()"
       [class.text-sm]="!compact()"
@@ -108,7 +108,7 @@ export interface PiNavDropdownItem {
     >
       <lucide-angular
         [img]="icon()"
-        [size]="compact() ? 14 : 15"
+        [size]="compact() ? 12 : 15"
         class="opacity-90 shrink-0"
         aria-hidden="true"
       />
@@ -121,13 +121,13 @@ export interface PiNavDropdownItem {
           aria-hidden="true"
         />
       } @else {
-        <!-- TZ-UX-305: full RU caption; equal width from parent grid. -->
+        <!-- TZ-UX-307: shortLabel caption; full RU in aria/title. -->
         <span
-          class="block w-full text-center text-[9px] min-[1280px]:text-[10px]
-                 leading-tight font-medium whitespace-nowrap"
+          class="block w-full text-center text-[9px] leading-none
+                 font-medium whitespace-nowrap"
           aria-hidden="true"
         >
-          {{ label() }}
+          {{ shortLabel() || label() }}
         </span>
         <span class="sr-only">{{ label() }}</span>
       }
@@ -191,7 +191,10 @@ export interface PiNavDropdownItem {
   `,
 })
 export class PiNavDropdownComponent {
+  /** Full RU — title / fallback; compact aria uses ariaLabel when set. */
   readonly label = input.required<string>();
+  /** TZ-UX-307 — visible compact caption (may be abbreviated). */
+  readonly shortLabel = input<string>('');
   /** Lucide icon reference — passed in by the layout (e.g. `Package`, `Briefcase`). */
   readonly icon = input.required<LucideIcon>();
   readonly items = input.required<readonly PiNavDropdownItem[]>();
@@ -199,7 +202,7 @@ export class PiNavDropdownComponent {
   readonly active = input<boolean>(false);
   readonly ariaLabel = input<string>('');
   /**
-   * TZ-UX-304/305 — icon + full caption under (rect); kit/demo menus keep `compact=false`.
+   * TZ-UX-304/307 — icon + shortLabel under (rect); kit/demo menus keep `compact=false`.
    * Default false keeps kit/demo menus with horizontal labels.
    */
   readonly compact = input<boolean>(false);
