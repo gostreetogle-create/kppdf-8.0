@@ -12,11 +12,15 @@ import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../../shared/ui/form-field/form-field.component';
 import { InputComponent } from '../../../shared/ui/input/input.component';
 import { TextareaComponent } from '../../../shared/ui/textarea/textarea.component';
+import { PiFormSectionComponent } from '../../../shared/ui/form-section';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../../shared/ui/toast';
 import type { DialogRef } from '../../../shared/ui/dialog/pi-dialog.service';
 import { extractErrorMessage } from '../../../core/silent-http';
-import { Counterparty, CounterpartyService } from '../../../shared/services/pi-counterparty.service';
+import {
+  Counterparty,
+  CounterpartyService,
+} from '../../../shared/services/pi-counterparty.service';
 import { Organization, OrganizationsService } from '../../../shared/services/organizations.service';
 import { Product, ProductsService } from '../../../shared/services/products.service';
 import {
@@ -78,6 +82,7 @@ interface ItemFormGroup extends FormGroup {
     FormFieldComponent,
     InputComponent,
     TextareaComponent,
+    PiFormSectionComponent,
   ],
   template: `
     <app-pi-dialog [title]="isEdit() ? 'Редактировать КП' : 'Создать КП'" [width]="'lg'">
@@ -88,214 +93,222 @@ interface ItemFormGroup extends FormGroup {
         class="space-y-form-field overflow-y-auto min-h-0"
         data-test="proposal-form"
       >
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
-          <app-pi-form-field
-            label="Наша организация"
-            htmlFor="pr-org"
-            [required]="true"
-            [error]="errorFor('organizationId')"
-          >
-            <select
-              id="pr-org"
-              formControlName="organizationId"
-              class="pi-input w-full"
-              [class.border-destructive]="hasError('organizationId')"
+        <app-pi-form-section title="Основные данные" headingId="proposal-sec-basics" tone="gold">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
+            <app-pi-form-field
+              label="Наша организация"
+              htmlFor="pr-org"
+              [required]="true"
+              [error]="errorFor('organizationId')"
             >
-              <option value="" disabled>— выберите —</option>
-              @for (o of organizations(); track o._id) {
-                <option [value]="o._id">{{ o.name }}{{ o.inn ? ' · ИНН ' + o.inn : '' }}</option>
-              }
-            </select>
-          </app-pi-form-field>
+              <select
+                id="pr-org"
+                formControlName="organizationId"
+                class="pi-input w-full"
+                [class.border-destructive]="hasError('organizationId')"
+              >
+                <option value="" disabled>— выберите —</option>
+                @for (o of organizations(); track o._id) {
+                  <option [value]="o._id">{{ o.name }}{{ o.inn ? ' · ИНН ' + o.inn : '' }}</option>
+                }
+              </select>
+            </app-pi-form-field>
 
-          <app-pi-form-field
-            label="Контрагент"
-            htmlFor="pr-cp"
-            [required]="true"
-            [error]="errorFor('counterpartyId')"
-          >
-            <select
-              id="pr-cp"
-              formControlName="counterpartyId"
-              class="pi-input w-full"
-              [class.border-destructive]="hasError('counterpartyId')"
+            <app-pi-form-field
+              label="Контрагент"
+              htmlFor="pr-cp"
+              [required]="true"
+              [error]="errorFor('counterpartyId')"
             >
-              <option value="" disabled>— выберите —</option>
-              @for (cp of counterparties(); track cp._id) {
-                <option [value]="cp._id">
-                  {{ cp.name }}{{ cp.inn ? ' · ИНН ' + cp.inn : '' }}
-                </option>
-              }
-            </select>
-          </app-pi-form-field>
+              <select
+                id="pr-cp"
+                formControlName="counterpartyId"
+                class="pi-input w-full"
+                [class.border-destructive]="hasError('counterpartyId')"
+              >
+                <option value="" disabled>— выберите —</option>
+                @for (cp of counterparties(); track cp._id) {
+                  <option [value]="cp._id">
+                    {{ cp.name }}{{ cp.inn ? ' · ИНН ' + cp.inn : '' }}
+                  </option>
+                }
+              </select>
+            </app-pi-form-field>
 
-          <app-pi-form-field
-            label="Номер"
-            htmlFor="pr-number"
-            hint="Если не задан — генерируется автоматически"
-          >
-            <app-pi-input id="pr-number" formControlName="number" placeholder="Номер КП" />
-          </app-pi-form-field>
+            <app-pi-form-field
+              label="Номер"
+              htmlFor="pr-number"
+              hint="Если не задан — генерируется автоматически"
+            >
+              <app-pi-input id="pr-number" formControlName="number" placeholder="Номер КП" />
+            </app-pi-form-field>
 
-          <app-pi-form-field label="Название" htmlFor="pr-title">
-            <app-pi-input id="pr-title" formControlName="title" placeholder="Название КП" />
-          </app-pi-form-field>
+            <app-pi-form-field label="Название" htmlFor="pr-title">
+              <app-pi-input id="pr-title" formControlName="title" placeholder="Название КП" />
+            </app-pi-form-field>
 
-          <app-pi-form-field label="Дата" htmlFor="pr-date">
-            <app-pi-input
-              id="pr-date"
-              type="text"
-              formControlName="date"
-              placeholder="ГГГГ-ММ-ДД"
-            />
-          </app-pi-form-field>
+            <app-pi-form-field label="Дата" htmlFor="pr-date">
+              <app-pi-input
+                id="pr-date"
+                type="text"
+                formControlName="date"
+                placeholder="ГГГГ-ММ-ДД"
+              />
+            </app-pi-form-field>
 
-          <app-pi-form-field label="Действует до" htmlFor="pr-validUntil">
-            <app-pi-input
-              id="pr-validUntil"
-              type="text"
-              formControlName="validUntil"
-              placeholder="ГГГГ-ММ-ДД"
-            />
-          </app-pi-form-field>
+            <app-pi-form-field label="Действует до" htmlFor="pr-validUntil">
+              <app-pi-input
+                id="pr-validUntil"
+                type="text"
+                formControlName="validUntil"
+                placeholder="ГГГГ-ММ-ДД"
+              />
+            </app-pi-form-field>
 
-          <app-pi-form-field label="Статус" htmlFor="pr-status">
-            <select id="pr-status" formControlName="status" class="pi-input w-full">
-              @for (opt of STATUS_OPTIONS; track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
-              }
-            </select>
-          </app-pi-form-field>
+            <app-pi-form-field label="Статус" htmlFor="pr-status">
+              <select id="pr-status" formControlName="status" class="pi-input w-full">
+                @for (opt of STATUS_OPTIONS; track opt.value) {
+                  <option [value]="opt.value">{{ opt.label }}</option>
+                }
+              </select>
+            </app-pi-form-field>
 
-          <app-pi-form-field label="Скидка" htmlFor="pr-discountType">
-            <select id="pr-discountType" formControlName="discountType" class="pi-input w-full">
-              @for (opt of DISCOUNT_OPTIONS; track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
-              }
-            </select>
-          </app-pi-form-field>
+            <app-pi-form-field label="Скидка" htmlFor="pr-discountType">
+              <select id="pr-discountType" formControlName="discountType" class="pi-input w-full">
+                @for (opt of DISCOUNT_OPTIONS; track opt.value) {
+                  <option [value]="opt.value">{{ opt.label }}</option>
+                }
+              </select>
+            </app-pi-form-field>
 
-          <app-pi-form-field label="Скидка %" htmlFor="pr-discountPercent">
-            <app-pi-input
-              id="pr-discountPercent"
-              type="number"
-              formControlName="discountPercent"
-              placeholder="0"
-            />
-          </app-pi-form-field>
+            <app-pi-form-field label="Скидка %" htmlFor="pr-discountPercent">
+              <app-pi-input
+                id="pr-discountPercent"
+                type="number"
+                formControlName="discountPercent"
+                placeholder="0"
+              />
+            </app-pi-form-field>
 
-          <app-pi-form-field label="Скидка ₽" htmlFor="pr-discountAmount">
-            <app-pi-input
-              id="pr-discountAmount"
-              type="number"
-              formControlName="discountAmount"
-              placeholder="0"
-            />
-          </app-pi-form-field>
-        </div>
+            <app-pi-form-field label="Скидка ₽" htmlFor="pr-discountAmount">
+              <app-pi-input
+                id="pr-discountAmount"
+                type="number"
+                formControlName="discountAmount"
+                placeholder="0"
+              />
+            </app-pi-form-field>
+          </div>
+        </app-pi-form-section>
 
         <!-- ─── Items ─── -->
-        <div>
-          <div class="flex items-baseline justify-between mb-form-row">
-            <p class="eyebrow">Позиции <span class="text-destructive">*</span></p>
-            <app-pi-button
-              type="button"
-              variant="outline"
-              size="sm"
-              (click)="addItem()"
-              data-test="add-item"
-            >
-              + Добавить позицию
-            </app-pi-button>
-          </div>
-
-          @if (itemsArray.length === 0) {
-            <p class="text-xs text-muted-foreground">
-              Нет позиций. Backend требует хотя бы одну. Нажмите «+ Добавить позицию».
-            </p>
-          }
-
-          <div formArrayName="items" class="space-y-2">
-            @for (itemGroup of itemsArray.controls; track $index; let i = $index) {
-              <div
-                [formGroupName]="i"
-                class="grid grid-cols-12 gap-2 items-end p-2 hairline rounded-sm bg-paper-2/30"
-                [attr.data-test]="'item-row-' + i"
+        <app-pi-form-section title="Позиции" headingId="proposal-sec-items" tone="neutral">
+          <div>
+            <div class="flex items-baseline justify-between mb-form-row">
+              <p class="text-sm font-medium">Позиции <span class="text-destructive">*</span></p>
+              <app-pi-button
+                type="button"
+                variant="outline"
+                size="sm"
+                (click)="addItem()"
+                data-test="add-item"
               >
-                <label class="col-span-12 sm:col-span-5 block">
-                  <span class="eyebrow block mb-1.5">Продукт</span>
-                  <select
-                    [attr.id]="'pr-item-product-' + i"
-                    [attr.name]="'item-product-' + i"
-                    formControlName="productId"
-                    (change)="onProductPick(i, $any($event.target).value)"
-                    class="h-8 px-3 text-xs hairline rounded-sm bg-paper pi-focus-ring w-full"
-                    [attr.aria-label]="'Продукт ' + (i + 1)"
-                  >
-                    <option value="" disabled>— выберите —</option>
-                    @for (p of products(); track p._id) {
-                      <option [value]="p._id">{{ p.name }}{{ p.sku ? ' · ' + p.sku : '' }}</option>
-                    }
-                  </select>
-                </label>
+                + Добавить позицию
+              </app-pi-button>
+            </div>
 
-                <label class="col-span-6 sm:col-span-2 block">
-                  <span class="eyebrow block mb-1.5">Кол-во</span>
-                  <app-pi-input
-                    type="number"
-                    formControlName="quantity"
-                    size="sm"
-                    placeholder="0"
-                    [attr.aria-label]="'Количество ' + (i + 1)"
-                  />
-                </label>
-
-                <label class="col-span-6 sm:col-span-2 block">
-                  <span class="eyebrow block mb-1.5">Цена ₽</span>
-                  <app-pi-input
-                    type="number"
-                    formControlName="unitPrice"
-                    size="sm"
-                    placeholder="0"
-                    [attr.aria-label]="'Цена за единицу ' + (i + 1)"
-                  />
-                </label>
-
-                <label class="col-span-8 sm:col-span-2 block">
-                  <span class="eyebrow block mb-1.5">Ед.</span>
-                  <app-pi-input
-                    formControlName="unit"
-                    size="sm"
-                    placeholder="шт"
-                    [attr.aria-label]="'Единица ' + (i + 1)"
-                  />
-                </label>
-
-                <app-pi-button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  [attr.aria-label]="'Удалить позицию ' + (i + 1)"
-                  (click)="removeItem(i)"
-                  data-test="remove-item"
-                >
-                  ×
-                </app-pi-button>
-              </div>
+            @if (itemsArray.length === 0) {
+              <p class="text-xs text-muted-foreground">
+                Нет позиций. Backend требует хотя бы одну. Нажмите «+ Добавить позицию».
+              </p>
             }
+
+            <div formArrayName="items" class="space-y-2">
+              @for (itemGroup of itemsArray.controls; track $index; let i = $index) {
+                <div
+                  [formGroupName]="i"
+                  class="grid grid-cols-12 gap-2 items-end p-2 hairline rounded-sm bg-paper-2/30"
+                  [attr.data-test]="'item-row-' + i"
+                >
+                  <label class="col-span-12 sm:col-span-5 block">
+                    <span class="eyebrow block mb-1.5">Продукт</span>
+                    <select
+                      [attr.id]="'pr-item-product-' + i"
+                      [attr.name]="'item-product-' + i"
+                      formControlName="productId"
+                      (change)="onProductPick(i, $any($event.target).value)"
+                      class="h-8 px-3 text-xs hairline rounded-sm bg-paper pi-focus-ring w-full"
+                      [attr.aria-label]="'Продукт ' + (i + 1)"
+                    >
+                      <option value="" disabled>— выберите —</option>
+                      @for (p of products(); track p._id) {
+                        <option [value]="p._id">
+                          {{ p.name }}{{ p.sku ? ' · ' + p.sku : '' }}
+                        </option>
+                      }
+                    </select>
+                  </label>
+
+                  <label class="col-span-6 sm:col-span-2 block">
+                    <span class="eyebrow block mb-1.5">Кол-во</span>
+                    <app-pi-input
+                      type="number"
+                      formControlName="quantity"
+                      size="sm"
+                      placeholder="0"
+                      [attr.aria-label]="'Количество ' + (i + 1)"
+                    />
+                  </label>
+
+                  <label class="col-span-6 sm:col-span-2 block">
+                    <span class="eyebrow block mb-1.5">Цена ₽</span>
+                    <app-pi-input
+                      type="number"
+                      formControlName="unitPrice"
+                      size="sm"
+                      placeholder="0"
+                      [attr.aria-label]="'Цена за единицу ' + (i + 1)"
+                    />
+                  </label>
+
+                  <label class="col-span-8 sm:col-span-2 block">
+                    <span class="eyebrow block mb-1.5">Ед.</span>
+                    <app-pi-input
+                      formControlName="unit"
+                      size="sm"
+                      placeholder="шт"
+                      [attr.aria-label]="'Единица ' + (i + 1)"
+                    />
+                  </label>
+
+                  <app-pi-button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    [attr.aria-label]="'Удалить позицию ' + (i + 1)"
+                    (click)="removeItem(i)"
+                    data-test="remove-item"
+                  >
+                    ×
+                  </app-pi-button>
+                </div>
+              }
+            </div>
           </div>
-        </div>
+        </app-pi-form-section>
 
         <!-- ─── Notes ─── -->
-        <app-pi-form-field label="Заметки" htmlFor="pr-notes">
-          <app-pi-textarea
-            id="pr-notes"
-            formControlName="notes"
-            [rows]="2"
-            [maxLength]="2000"
-            ariaLabel="Заметки"
-          />
-        </app-pi-form-field>
+        <app-pi-form-section title="Заметки" headingId="proposal-sec-notes" tone="neutral">
+          <app-pi-form-field label="Заметки" htmlFor="pr-notes">
+            <app-pi-textarea
+              id="pr-notes"
+              formControlName="notes"
+              [rows]="2"
+              [maxLength]="2000"
+              ariaLabel="Заметки"
+            />
+          </app-pi-form-field>
+        </app-pi-form-section>
 
         @if (errorMessage()) {
           <p role="alert" class="text-xs text-destructive">
@@ -393,7 +406,8 @@ export class ProposalFormDialogComponent {
   private patchFromData(p: Proposal): void {
     const orgId =
       typeof p.organizationId === 'string' ? p.organizationId : (p.organizationId?._id ?? '');
-    const cpId = typeof p.counterpartyId === 'string' ? p.counterpartyId : (p.counterpartyId?._id ?? '');
+    const cpId =
+      typeof p.counterpartyId === 'string' ? p.counterpartyId : (p.counterpartyId?._id ?? '');
     this.form.patchValue({
       organizationId: orgId,
       counterpartyId: cpId,

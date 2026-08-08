@@ -13,6 +13,11 @@ PO: материал уже «по полочкам»; изделие QuickCreat
 
 ## Эталон разметки (Material)
 
+Общий примитив — standalone `PiFormSectionComponent` (`app-pi-form-section`,
+`frontend/src/app/shared/ui/form-section/`). Он принимает `title`, `headingId` и
+визуальный `tone`, а содержимое остаётся обычным projected form content — без
+изменения FormControl names или payload.
+
 Секция:
 
 - `<section class="space-y-form-field rounded-sm bg-paper-2/40 p-3 border-l-[3px] border-l-gold">`

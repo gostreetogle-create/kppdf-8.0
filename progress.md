@@ -1,3 +1,43 @@
+## [2026-08-08] — TZ-UX-FORM-305 DONE: form-dialog sections sweep Wave A
+
+**Исполнитель:** Buffy / agent-acfffc1331 (landed main via TZ-GIT-301)
+**Статус:** DONE on main; deploy НЕ
+**Что:** Wave A form-dialogs получили общий `PiFormSection`: Product, Module, color/category/document/text categories, Order, Proposal, People, Warehouse и Stock Movement. Payload/API/FormControl/business logic не изменялись; outliers вынесены в audit.
+**Gates:** FE tsc PASS; Angular development build PASS; targeted Jest 5 suites / 58 tests PASS; scoped ESLint PASS with one pre-existing order raw-HttpClient warning; scoped Prettier PASS; diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-FORM-305.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-FORM-305-dialog-sections-sweep.lock`
+**Known:** Wave B deferred and listed in `docs/audits/2026-08-08-dialog-layout-canon.md`; Material remains canon reference. Deploy: NO.
+
+## [2026-08-08] — TZ-UX-FORM-304 DONE: QuickCreate L composition reuse
+
+**Исполнитель:** Buffy / agent-acfffc1331 (landed main via TZ-GIT-301)
+**Статус:** DONE on main; deploy НЕ
+**Что:** Product QuickCreate L после create остаётся в том же окне с живым `productId`; секция «Состав» напрямую переиспользует `ProductBomPanel`, включая picker/actions; «Готово» закрывает, пустой BOM допустим; max-width состава ограничен `min(1100px, 100vw - 2rem)`.
+**Gates:** FE tsc PASS; Angular development build PASS; targeted Jest QuickCreate + BOM 18/18 PASS; scoped ESLint/Prettier PASS; diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-FORM-304.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-FORM-304-quickcreate-L-composition.lock`
+**Known:** Module L remains product-only and closes after create; extending that flow was outside the required Product L path. Deploy: NO.
+
+## [2026-08-08] — TZ-UX-FORM-303 DONE: QuickCreate L photo dropzone
+
+**Исполнитель:** Buffy / agent-acfffc1331 (landed main via TZ-GIT-301)
+**Статус:** DONE on main; deploy НЕ
+**Что:** Добавлен shared `app-pi-photo-dropzone` с drag/drop, picker, preview/remove и PhotosService upload. Product QuickCreate L показывает фото в секции «Дополнительно» и передаёт `photoIds` в create; новые upload IDs чистятся при cancel/destroy.
+**Gates:** FE tsc PASS; Angular development build PASS; targeted Jest 2 suites / 14 tests PASS; scoped ESLint PASS; diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-FORM-303.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-FORM-303-quickcreate-L-photo.lock`
+**Known:** FullEditor migration deferred because its Layer-3 file is outside the minimal AC path; module photos remain out of scope. Deploy: NO.
+
+## [2026-08-08] — TZ-UX-FORM-302 DONE: Shared form sections for Material and QuickCreate
+
+**Исполнитель:** Buffy / agent-acfffc1331 (landed main via TZ-GIT-301)
+**Статус:** DONE on main; deploy НЕ
+**Что:** Добавлен shared `app-pi-form-section`; Material dialog переведён на него; QuickCreate M/L получил секции «Основные данные / Габариты / Дополнительно» с пустыми группами hidden. FORM-301 capacity/packing сохранён.
+**Gates:** FE tsc PASS; Angular development build PASS; targeted Jest 2 suites / 49 tests PASS; scoped ESLint PASS; diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-FORM-302.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-FORM-302-form-sections-canon-quickcreate.lock`
+**Known:** FORM-303 photo, FORM-304 BOM, FORM-305 sweep не затрагивались. Deploy: NO.
+
 ## [2026-08-08] — TZ-NAV-302 DONE: people→Клиенты, work-types→Цех, chips
 
 - Menu + yellow highlight: `/people` under Клиенты; `/work-types` under Цех

@@ -46,7 +46,7 @@ const ref = dialogs.open<Result, Data>(MyDialogComponent, {
 
 **Ёмкость полей (внутри kind B):** наивная сетка «всем 50%» запрещена для коротких чисел (Д/Ш/В/вес). Канон span/упаковки: [`pages/ui-form-field-capacity.md`](./pages/ui-form-field-capacity.md) · аудит [`audits/2026-08-08-form-field-capacity-canon.md`](./audits/2026-08-08-form-field-capacity-canon.md) · TZ-UX-FORM-301.
 
-**Секции формы:** эталон — диалог материала (Основные данные / Дополнительно / Габариты). Канон: [`pages/ui-form-sections-canon.md`](./pages/ui-form-sections-canon.md). Сначала shared-примитив (FORM-302), потом sweep всех окон (FORM-305).
+**Секции формы:** эталон — диалог материала (Основные данные / Дополнительно / Габариты). Канон: [`pages/ui-form-sections-canon.md`](./pages/ui-form-sections-canon.md). Shared-примитив — `app-pi-form-section` (`PiFormSectionComponent`); сначала он и QuickCreate (FORM-302), потом sweep всех окон (FORM-305).
 
 Opener `dialog.open(..., { width })` не должен **перебивать** ширину, которую уже решает компонент (например QuickCreate `SIZE_TO_WIDTH`).
 

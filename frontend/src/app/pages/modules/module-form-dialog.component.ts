@@ -5,6 +5,7 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
 import { InputComponent } from '../../shared/ui/input/input.component';
 import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
+import { PiFormSectionComponent } from '../../shared/ui/form-section';
 import { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
@@ -41,6 +42,7 @@ import { extractErrorMessage } from '../../core/silent-http';
     InputComponent,
     TextareaComponent,
     PiDialogComponent,
+    PiFormSectionComponent,
   ],
   template: `
     <app-pi-dialog [title]="isEdit ? 'Редактировать модуль' : 'Создать модуль'" [width]="'lg'">
@@ -51,156 +53,161 @@ import { extractErrorMessage } from '../../core/silent-http';
         class="space-y-form-field overflow-y-auto min-h-0"
         data-test="module-form"
       >
-        <div class="grid grid-cols-2 gap-form-field">
-          <app-pi-form-field
-            label="Название"
-            htmlFor="mod-name"
-            [required]="true"
-            [error]="
-              form.controls.name.invalid && form.controls.name.touched ? 'Обязательное поле' : ''
-            "
-          >
-            <app-pi-input
-              id="mod-name"
-              formControlName="name"
-              placeholder="Название модуля"
-              [invalid]="form.controls.name.invalid && form.controls.name.touched"
-              data-test="name-input"
-            />
-          </app-pi-form-field>
-          <app-pi-form-field label="Артикул" htmlFor="mod-article">
-            <app-pi-input
-              id="mod-article"
-              formControlName="article"
-              placeholder="Артикул"
-              data-test="article-input"
-            />
-          </app-pi-form-field>
-        </div>
-
-        <div formGroupName="dimensions">
-          <p class="eyebrow mb-form-row">Габариты модуля</p>
-          <div class="grid grid-cols-4 gap-form-field">
-            <app-pi-form-field label="Ширина" htmlFor="mod-width">
-              <app-pi-input
-                id="mod-width"
-                type="number"
-                formControlName="width"
-                placeholder="0"
-                data-test="dim-width"
-              />
-            </app-pi-form-field>
-            <app-pi-form-field label="Высота" htmlFor="mod-height">
-              <app-pi-input
-                id="mod-height"
-                type="number"
-                formControlName="height"
-                placeholder="0"
-                data-test="dim-height"
-              />
-            </app-pi-form-field>
-            <app-pi-form-field label="Глубина" htmlFor="mod-depth">
-              <app-pi-input
-                id="mod-depth"
-                type="number"
-                formControlName="depth"
-                placeholder="0"
-                data-test="dim-depth"
-              />
-            </app-pi-form-field>
-            <app-pi-form-field label="Ед." htmlFor="mod-dim-unit">
-              <app-pi-input
-                id="mod-dim-unit"
-                formControlName="unit"
-                placeholder="мм"
-                data-test="dim-unit"
-              />
-            </app-pi-form-field>
-          </div>
-        </div>
-
-        <app-pi-form-field label="Вес (кг)" htmlFor="mod-weight">
-          <app-pi-input
-            id="mod-weight"
-            type="number"
-            formControlName="weight"
-            placeholder="0"
-            data-test="weight-input"
-          />
-        </app-pi-form-field>
-
-        <app-pi-form-field label="Заметки / описание" htmlFor="mod-notes">
-          <app-pi-textarea
-            id="mod-notes"
-            [rows]="3"
-            formControlName="notes"
-            data-test="notes-input"
-          />
-        </app-pi-form-field>
-
-        <div>
-          <div class="flex items-baseline justify-between mb-form-row">
-            <p class="eyebrow">Виды работ в составе</p>
-            <app-pi-button
-              type="button"
-              variant="outline"
-              size="sm"
-              (click)="addWorkType()"
-              data-test="wt-add"
+        <app-pi-form-section title="Основные данные" headingId="module-sec-basics" tone="gold">
+          <div class="grid grid-cols-2 gap-form-field">
+            <app-pi-form-field
+              label="Название"
+              htmlFor="mod-name"
+              [required]="true"
+              [error]="
+                form.controls.name.invalid && form.controls.name.touched ? 'Обязательное поле' : ''
+              "
             >
-              + Добавить вид работы
-            </app-pi-button>
+              <app-pi-input
+                id="mod-name"
+                formControlName="name"
+                placeholder="Название модуля"
+                [invalid]="form.controls.name.invalid && form.controls.name.touched"
+                data-test="name-input"
+              />
+            </app-pi-form-field>
+            <app-pi-form-field label="Артикул" htmlFor="mod-article">
+              <app-pi-input
+                id="mod-article"
+                formControlName="article"
+                placeholder="Артикул"
+                data-test="article-input"
+              />
+            </app-pi-form-field>
           </div>
-          <div formArrayName="workTypes" class="space-y-2">
-            @for (ctrl of workTypesArray.controls; track $index) {
-              <div
-                [formGroupName]="$index"
-                class="grid grid-cols-12 gap-2 items-end p-2 hairline rounded-sm bg-paper-2/30"
+        </app-pi-form-section>
+
+        <app-pi-form-section title="Габариты" headingId="module-sec-dimensions" tone="dimensions">
+          <div formGroupName="dimensions">
+            <div class="grid grid-cols-4 gap-form-field">
+              <app-pi-form-field label="Ширина" htmlFor="mod-width">
+                <app-pi-input
+                  id="mod-width"
+                  type="number"
+                  formControlName="width"
+                  placeholder="0"
+                  data-test="dim-width"
+                />
+              </app-pi-form-field>
+              <app-pi-form-field label="Высота" htmlFor="mod-height">
+                <app-pi-input
+                  id="mod-height"
+                  type="number"
+                  formControlName="height"
+                  placeholder="0"
+                  data-test="dim-height"
+                />
+              </app-pi-form-field>
+              <app-pi-form-field label="Глубина" htmlFor="mod-depth">
+                <app-pi-input
+                  id="mod-depth"
+                  type="number"
+                  formControlName="depth"
+                  placeholder="0"
+                  data-test="dim-depth"
+                />
+              </app-pi-form-field>
+              <app-pi-form-field label="Ед." htmlFor="mod-dim-unit">
+                <app-pi-input
+                  id="mod-dim-unit"
+                  formControlName="unit"
+                  placeholder="мм"
+                  data-test="dim-unit"
+                />
+              </app-pi-form-field>
+            </div>
+          </div>
+        </app-pi-form-section>
+
+        <app-pi-form-section title="Дополнительно" headingId="module-sec-extra" tone="neutral">
+          <app-pi-form-field label="Вес (кг)" htmlFor="mod-weight">
+            <app-pi-input
+              id="mod-weight"
+              type="number"
+              formControlName="weight"
+              placeholder="0"
+              data-test="weight-input"
+            />
+          </app-pi-form-field>
+
+          <app-pi-form-field label="Заметки / описание" htmlFor="mod-notes">
+            <app-pi-textarea
+              id="mod-notes"
+              [rows]="3"
+              formControlName="notes"
+              data-test="notes-input"
+            />
+          </app-pi-form-field>
+
+          <div>
+            <div class="flex items-baseline justify-between mb-form-row">
+              <p class="eyebrow">Виды работ в составе</p>
+              <app-pi-button
+                type="button"
+                variant="outline"
+                size="sm"
+                (click)="addWorkType()"
+                data-test="wt-add"
               >
-                <label class="block col-span-6">
-                  <span class="eyebrow block mb-1.5">Вид работы</span>
-                  <select
-                    class="pi-input w-full"
-                    formControlName="workTypeId"
-                    data-test="wt-select"
-                  >
-                    <option value="">— не выбрано —</option>
-                    @for (wt of workTypesCatalog(); track wt._id) {
-                      <option [value]="wt._id">{{ wt.name }}</option>
-                    }
-                  </select>
-                </label>
-                <label class="block col-span-3">
-                  <span class="eyebrow block mb-1.5">Норма (ч)</span>
-                  <app-pi-input
-                    type="number"
-                    formControlName="estimatedHours"
-                    placeholder="0"
-                    data-test="wt-hours"
-                  />
-                </label>
-                <label class="block col-span-2">
-                  <span class="eyebrow block mb-1.5">Сорт.</span>
-                  <app-pi-input
-                    type="number"
-                    formControlName="sortOrder"
-                    placeholder="0"
-                    data-test="wt-sort"
-                  />
-                </label>
-                <app-pi-button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  (click)="removeWorkType($index)"
-                  aria-label="Удалить строку"
+                + Добавить вид работы
+              </app-pi-button>
+            </div>
+            <div formArrayName="workTypes" class="space-y-2">
+              @for (ctrl of workTypesArray.controls; track $index) {
+                <div
+                  [formGroupName]="$index"
+                  class="grid grid-cols-12 gap-2 items-end p-2 hairline rounded-sm bg-paper-2/30"
                 >
-                  ×
-                </app-pi-button>
-              </div>
-            }
+                  <label class="block col-span-6">
+                    <span class="eyebrow block mb-1.5">Вид работы</span>
+                    <select
+                      class="pi-input w-full"
+                      formControlName="workTypeId"
+                      data-test="wt-select"
+                    >
+                      <option value="">— не выбрано —</option>
+                      @for (wt of workTypesCatalog(); track wt._id) {
+                        <option [value]="wt._id">{{ wt.name }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="block col-span-3">
+                    <span class="eyebrow block mb-1.5">Норма (ч)</span>
+                    <app-pi-input
+                      type="number"
+                      formControlName="estimatedHours"
+                      placeholder="0"
+                      data-test="wt-hours"
+                    />
+                  </label>
+                  <label class="block col-span-2">
+                    <span class="eyebrow block mb-1.5">Сорт.</span>
+                    <app-pi-input
+                      type="number"
+                      formControlName="sortOrder"
+                      placeholder="0"
+                      data-test="wt-sort"
+                    />
+                  </label>
+                  <app-pi-button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    (click)="removeWorkType($index)"
+                    aria-label="Удалить строку"
+                  >
+                    ×
+                  </app-pi-button>
+                </div>
+              }
+            </div>
           </div>
-        </div>
+        </app-pi-form-section>
 
         @if (formError()) {
           <p role="alert" class="text-xs text-destructive">

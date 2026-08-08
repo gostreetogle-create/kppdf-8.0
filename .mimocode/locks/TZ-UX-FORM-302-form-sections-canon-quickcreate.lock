@@ -1,0 +1,12 @@
+# Lock file
+Locked as of 2026-08-08 — TZ-UX-FORM-302: form sections canon → QuickCreate.
+
+Owner: Buffy / agent-acfffc1331
+Protected files:
+- frontend/src/app/shared/ui/form-section/
+- frontend/src/app/shared/ui/quick-create/quick-create-dialog.component.ts
+- frontend/src/app/pages/materials/material-form-dialog.component.ts
+- docs/pages/ui-form-sections-canon.md
+- docs/DIALOG-COOKBOOK.md
+
+Unlock: only via orchestrator approval (successor TZ).

@@ -9,6 +9,7 @@ import { OrganizationsService } from '../../shared/services/organizations.servic
 import { PhotosService } from '../../shared/services/photos.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { Unit, UnitsService } from '../../pages/dictionaries/units.service';
+import { PiFormSectionComponent } from '../../shared/ui/form-section';
 
 /**
  * TZ-MATERIALS-301 — MaterialFormDialogComponent unit spec.
@@ -155,7 +156,7 @@ async function setup(
     ],
   })
     .overrideComponent(MaterialFormDialogComponent, {
-      set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
+      set: { imports: [PiFormSectionComponent], schemas: [NO_ERRORS_SCHEMA] },
     })
     .compileComponents();
 
@@ -165,11 +166,16 @@ async function setup(
 }
 
 describe('MaterialFormDialogComponent (TZ-MATERIALS-301)', () => {
-  it('instantiates in create mode (template compiles — NG5xxx regression guard)', async () => {
+  it('instantiates in create mode and renders the shared Material sections', async () => {
     const { comp, fixture } = await setup(null);
     fixture.detectChanges();
     expect(comp).toBeTruthy();
     expect(comp.isEdit()).toBe(false);
+    const sections = fixture.nativeElement.querySelectorAll('app-pi-form-section');
+    expect(sections).toHaveLength(3);
+    expect(fixture.nativeElement.textContent).toContain('Основные данные');
+    expect(fixture.nativeElement.textContent).toContain('Дополнительно');
+    expect(fixture.nativeElement.textContent).toContain('Габариты');
   });
 
   it('instantiates in edit mode and prefills required fields', async () => {

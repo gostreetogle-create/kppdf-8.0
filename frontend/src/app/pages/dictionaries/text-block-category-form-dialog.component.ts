@@ -5,6 +5,7 @@ import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
 import { InputComponent } from '../../shared/ui/input/input.component';
 import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
+import { PiFormSectionComponent } from '../../shared/ui/form-section';
 import { SwitchComponent } from '../../shared/ui/switch/switch.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
@@ -53,6 +54,7 @@ type Result = TextBlockCategory | null | undefined;
     InputComponent,
     TextareaComponent,
     SwitchComponent,
+    PiFormSectionComponent,
   ],
   template: `
     <app-pi-dialog
@@ -67,105 +69,113 @@ type Result = TextBlockCategory | null | undefined;
         class="space-y-form-field"
         data-test="text-block-category-form"
       >
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field items-start">
-          <div class="space-y-form-field">
-            <p class="eyebrow">Основное</p>
+        <app-pi-form-section
+          title="Основные данные"
+          headingId="text-category-sec-basics"
+          tone="gold"
+        >
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field items-start">
+            <div class="space-y-form-field">
+              <app-pi-form-field
+                label="Название"
+                htmlFor="tbc-name"
+                [required]="true"
+                [error]="errorFor('name')"
+              >
+                <app-pi-input
+                  id="tbc-name"
+                  formControlName="name"
+                  placeholder="Реквизиты контрагента"
+                  [invalid]="hasError('name')"
+                />
+              </app-pi-form-field>
 
+              <app-pi-form-field
+                label="Slug (ключ)"
+                htmlFor="tbc-slug"
+                hint="Необязательно — сервер сгенерирует из названия. Строчные латинские, цифры, дефис."
+                [error]="errorFor('slug')"
+              >
+                <app-pi-input
+                  id="tbc-slug"
+                  formControlName="slug"
+                  placeholder="rekvizity-kontragenta"
+                  [invalid]="hasError('slug')"
+                />
+              </app-pi-form-field>
+            </div>
+
+            <div class="space-y-form-field">
+              <app-pi-form-field label="Описание" htmlFor="tbc-description">
+                <app-pi-textarea
+                  id="tbc-description"
+                  formControlName="description"
+                  [rows]="2"
+                  [maxLength]="512"
+                  [invalid]="hasError('description')"
+                  ariaLabel="Описание категории текста"
+                />
+              </app-pi-form-field>
+
+              @if (isSystem()) {
+                <p class="text-sm text-muted-foreground">
+                  <span class="eyebrow hairline rounded-sm px-1.5 py-0.5 text-muted-foreground"
+                    >системная</span
+                  >
+                  — управляется сервером, изменить нельзя
+                </p>
+              }
+            </div>
+          </div>
+        </app-pi-form-section>
+
+        <app-pi-form-section
+          title="Дополнительно"
+          headingId="text-category-sec-extra"
+          tone="neutral"
+        >
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-form-field items-center">
             <app-pi-form-field
-              label="Название"
-              htmlFor="tbc-name"
-              [required]="true"
-              [error]="errorFor('name')"
+              label="Активна"
+              htmlFor="tbc-isActive"
+              hint="Неактивные недоступны в редакторе блока"
             >
-              <app-pi-input
-                id="tbc-name"
-                formControlName="name"
-                placeholder="Реквизиты контрагента"
-                [invalid]="hasError('name')"
+              <app-pi-switch
+                id="tbc-isActive"
+                [checked]="form.controls.isActive.value"
+                (checkedChange)="onIsActiveChange($event)"
+                ariaLabel="Категория активна"
               />
             </app-pi-form-field>
 
             <app-pi-form-field
-              label="Slug (ключ)"
-              htmlFor="tbc-slug"
-              hint="Необязательно — сервер сгенерирует из названия. Строчные латинские, цифры, дефис."
-              [error]="errorFor('slug')"
+              label="По умолчанию для новых блоков"
+              htmlFor="tbc-isDefault"
+              hint="Одна активная категория по умолчанию на область"
             >
-              <app-pi-input
-                id="tbc-slug"
-                formControlName="slug"
-                placeholder="rekvizity-kontragenta"
-                [invalid]="hasError('slug')"
+              <app-pi-switch
+                id="tbc-isDefault"
+                [checked]="form.controls.isDefault.value"
+                (checkedChange)="onIsDefaultChange($event)"
+                ariaLabel="Категория по умолчанию"
+              />
+            </app-pi-form-field>
+
+            <app-pi-form-field label="Порядок сортировки" htmlFor="tbc-sortOrder">
+              <input
+                id="tbc-sortOrder"
+                type="number"
+                formControlName="sortOrder"
+                min="0"
+                class="pi-input w-full mono"
               />
             </app-pi-form-field>
           </div>
 
-          <div class="space-y-form-field">
-            <p class="eyebrow">Статус</p>
-
-            <app-pi-form-field label="Описание" htmlFor="tbc-description">
-              <app-pi-textarea
-                id="tbc-description"
-                formControlName="description"
-                [rows]="2"
-                [maxLength]="512"
-                [invalid]="hasError('description')"
-                ariaLabel="Описание категории текста"
-              />
-            </app-pi-form-field>
-
-            @if (isSystem()) {
-              <p class="text-sm text-muted-foreground">
-                <span class="eyebrow hairline rounded-sm px-1.5 py-0.5 text-muted-foreground"
-                  >системная</span
-                >
-                — управляется сервером, изменить нельзя
-              </p>
-            }
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-form-field items-center">
-          <app-pi-form-field
-            label="Активна"
-            htmlFor="tbc-isActive"
-            hint="Неактивные недоступны в редакторе блока"
-          >
-            <app-pi-switch
-              id="tbc-isActive"
-              [checked]="form.controls.isActive.value"
-              (checkedChange)="onIsActiveChange($event)"
-              ariaLabel="Категория активна"
-            />
-          </app-pi-form-field>
-
-          <app-pi-form-field
-            label="По умолчанию для новых блоков"
-            htmlFor="tbc-isDefault"
-            hint="Одна активная категория по умолчанию на область"
-          >
-            <app-pi-switch
-              id="tbc-isDefault"
-              [checked]="form.controls.isDefault.value"
-              (checkedChange)="onIsDefaultChange($event)"
-              ariaLabel="Категория по умолчанию"
-            />
-          </app-pi-form-field>
-
-          <app-pi-form-field label="Порядок сортировки" htmlFor="tbc-sortOrder">
-            <input
-              id="tbc-sortOrder"
-              type="number"
-              formControlName="sortOrder"
-              min="0"
-              class="pi-input w-full mono"
-            />
-          </app-pi-form-field>
-        </div>
-
-        @if (errorMessage()) {
-          <p role="alert" class="text-xs text-destructive">{{ errorMessage() }}</p>
-        }
+          @if (errorMessage()) {
+            <p role="alert" class="text-xs text-destructive">{{ errorMessage() }}</p>
+          }
+        </app-pi-form-section>
       </form>
 
       <div footer class="flex gap-3">

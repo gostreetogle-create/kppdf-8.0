@@ -5,6 +5,7 @@ import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
 import { InputComponent } from '../../shared/ui/input/input.component';
 import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
+import { PiFormSectionComponent } from '../../shared/ui/form-section';
 import { SwitchComponent } from '../../shared/ui/switch/switch.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
@@ -50,6 +51,7 @@ const HEX_PATTERN = /^#[0-9a-fA-F]{6}$/;
     InputComponent,
     TextareaComponent,
     SwitchComponent,
+    PiFormSectionComponent,
   ],
   template: `
     <app-pi-dialog
@@ -64,118 +66,118 @@ const HEX_PATTERN = /^#[0-9a-fA-F]{6}$/;
         class="space-y-form-field"
         data-test="color-reference-form"
       >
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field items-start">
-          <div class="space-y-form-field">
-            <p class="eyebrow">Основные данные</p>
-
-            <app-pi-form-field
-              label="Название"
-              htmlFor="cr-name"
-              [required]="true"
-              [error]="errorFor('name')"
-            >
-              <app-pi-input
-                id="cr-name"
-                formControlName="name"
-                placeholder="RAL 9003 (Сигнальный белый)"
-                [invalid]="hasError('name')"
-              />
-            </app-pi-form-field>
-
-            <app-pi-form-field
-              label="Slug (ключ)"
-              htmlFor="cr-slug"
-              hint="Необязательно — сервер сгенерирует из названия. Строчные латинские, цифры, дефис."
-              [error]="errorFor('slug')"
-            >
-              <app-pi-input
-                id="cr-slug"
-                formControlName="slug"
-                placeholder="ral-9003-signal-white"
-                [invalid]="hasError('slug')"
-              />
-            </app-pi-form-field>
-          </div>
-
-          <div class="space-y-form-field">
-            <p class="eyebrow">Цвет и свойства</p>
-
-            <app-pi-form-field
-              label="Цвет (HEX)"
-              htmlFor="cr-hex"
-              [required]="true"
-              hint="#RRGGBB — например #FFFFFF"
-              [error]="errorFor('hex')"
-            >
-              <div class="flex items-center gap-2">
-                <input
-                  id="cr-hex"
-                  formControlName="hex"
-                  class="pi-input w-full mono"
-                  [class.border-destructive]="hasError('hex')"
-                  placeholder="#FFFFFF"
-                  data-test="cr-hex"
+        <app-pi-form-section title="Основные данные" headingId="color-sec-basics" tone="gold">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field items-start">
+            <div class="space-y-form-field">
+              <app-pi-form-field
+                label="Название"
+                htmlFor="cr-name"
+                [required]="true"
+                [error]="errorFor('name')"
+              >
+                <app-pi-input
+                  id="cr-name"
+                  formControlName="name"
+                  placeholder="RAL 9003 (Сигнальный белый)"
+                  [invalid]="hasError('name')"
                 />
-                <label
-                  class="shrink-0 inline-flex items-center gap-1 min-h-touch px-2 hairline rounded-sm bg-paper hover:bg-paper-2 cursor-pointer transition-colors"
-                  [attr.aria-label]="'Выбрать цвет'"
-                >
+              </app-pi-form-field>
+
+              <app-pi-form-field
+                label="Slug (ключ)"
+                htmlFor="cr-slug"
+                hint="Необязательно — сервер сгенерирует из названия. Строчные латинские, цифры, дефис."
+                [error]="errorFor('slug')"
+              >
+                <app-pi-input
+                  id="cr-slug"
+                  formControlName="slug"
+                  placeholder="ral-9003-signal-white"
+                  [invalid]="hasError('slug')"
+                />
+              </app-pi-form-field>
+            </div>
+
+            <div class="space-y-form-field">
+              <app-pi-form-field
+                label="Цвет (HEX)"
+                htmlFor="cr-hex"
+                [required]="true"
+                hint="#RRGGBB — например #FFFFFF"
+                [error]="errorFor('hex')"
+              >
+                <div class="flex items-center gap-2">
                   <input
-                    type="color"
-                    class="w-8 h-8 cursor-pointer border-0 bg-transparent p-0"
-                    [value]="normalizedHex()"
-                    (input)="onPickerInput($event)"
-                    aria-label="Палитра"
+                    id="cr-hex"
+                    formControlName="hex"
+                    class="pi-input w-full mono"
+                    [class.border-destructive]="hasError('hex')"
+                    placeholder="#FFFFFF"
+                    data-test="cr-hex"
                   />
-                </label>
-              </div>
+                  <label
+                    class="shrink-0 inline-flex items-center gap-1 min-h-touch px-2 hairline rounded-sm bg-paper hover:bg-paper-2 cursor-pointer transition-colors"
+                    [attr.aria-label]="'Выбрать цвет'"
+                  >
+                    <input
+                      type="color"
+                      class="w-8 h-8 cursor-pointer border-0 bg-transparent p-0"
+                      [value]="normalizedHex()"
+                      (input)="onPickerInput($event)"
+                      aria-label="Палитра"
+                    />
+                  </label>
+                </div>
+              </app-pi-form-field>
+
+              <app-pi-form-field
+                label="Описание"
+                htmlFor="cr-description"
+                [error]="errorFor('description')"
+              >
+                <app-pi-textarea
+                  id="cr-description"
+                  formControlName="description"
+                  [rows]="2"
+                  [maxLength]="512"
+                  [invalid]="hasError('description')"
+                  ariaLabel="Описание цвета"
+                />
+              </app-pi-form-field>
+            </div>
+          </div>
+        </app-pi-form-section>
+
+        <app-pi-form-section title="Дополнительно" headingId="color-sec-extra" tone="neutral">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field items-center">
+            <app-pi-form-field
+              label="Цвет по умолчанию"
+              htmlFor="cr-isDefault"
+              hint="Автоподстановка для новых товаров"
+            >
+              <app-pi-switch
+                id="cr-isDefault"
+                [checked]="form.controls.isDefault.value"
+                (checkedChange)="onIsDefaultChange($event)"
+                ariaLabel="Цвет по умолчанию"
+              />
             </app-pi-form-field>
 
-            <app-pi-form-field
-              label="Описание"
-              htmlFor="cr-description"
-              [error]="errorFor('description')"
-            >
-              <app-pi-textarea
-                id="cr-description"
-                formControlName="description"
-                [rows]="2"
-                [maxLength]="512"
-                [invalid]="hasError('description')"
-                ariaLabel="Описание цвета"
+            <app-pi-form-field label="Порядок сортировки" htmlFor="cr-sortOrder">
+              <input
+                id="cr-sortOrder"
+                type="number"
+                formControlName="sortOrder"
+                min="0"
+                class="pi-input w-full mono"
               />
             </app-pi-form-field>
           </div>
-        </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field items-center">
-          <app-pi-form-field
-            label="Цвет по умолчанию"
-            htmlFor="cr-isDefault"
-            hint="Автоподстановка для новых товаров"
-          >
-            <app-pi-switch
-              id="cr-isDefault"
-              [checked]="form.controls.isDefault.value"
-              (checkedChange)="onIsDefaultChange($event)"
-              ariaLabel="Цвет по умолчанию"
-            />
-          </app-pi-form-field>
-
-          <app-pi-form-field label="Порядок сортировки" htmlFor="cr-sortOrder">
-            <input
-              id="cr-sortOrder"
-              type="number"
-              formControlName="sortOrder"
-              min="0"
-              class="pi-input w-full mono"
-            />
-          </app-pi-form-field>
-        </div>
-
-        @if (errorMessage()) {
-          <p role="alert" class="text-xs text-destructive">{{ errorMessage() }}</p>
-        }
+          @if (errorMessage()) {
+            <p role="alert" class="text-xs text-destructive">{{ errorMessage() }}</p>
+          }
+        </app-pi-form-section>
       </form>
 
       <div footer class="flex gap-3">

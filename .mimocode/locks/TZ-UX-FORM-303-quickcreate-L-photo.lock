@@ -1,0 +1,9 @@
+# Lock file
+Locked as of 2026-08-08 — TZ-UX-FORM-303: QuickCreate L photo.
+
+Owner: Buffy / agent-acfffc1331
+Protected files:
+- frontend/src/app/shared/ui/photo/
+- frontend/src/app/shared/ui/quick-create/quick-create-dialog.component.ts
+
+Unlock: only via orchestrator approval (successor TZ).

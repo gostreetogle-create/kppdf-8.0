@@ -6,6 +6,7 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
 import { InputComponent } from '../../shared/ui/input/input.component';
 import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
+import { PiFormSectionComponent } from '../../shared/ui/form-section';
 import { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
@@ -32,6 +33,7 @@ import { extractErrorMessage } from '../../core/silent-http';
     InputComponent,
     TextareaComponent,
     PiDialogComponent,
+    PiFormSectionComponent,
   ],
   template: `
     <app-pi-dialog
@@ -55,140 +57,154 @@ import { extractErrorMessage } from '../../core/silent-http';
           </div>
         }
 
-        <div class="grid grid-cols-1 gap-form-field sm:grid-cols-3">
-          <app-pi-form-field
-            label="Фамилия"
-            htmlFor="p-last"
-            [required]="true"
-            [error]="
-              form.controls.lastName.invalid && form.controls.lastName.touched
-                ? 'Обязательное поле'
-                : ''
-            "
-          >
-            <app-pi-input
-              id="p-last"
-              formControlName="lastName"
-              placeholder="Иванов"
-              [invalid]="form.controls.lastName.invalid && form.controls.lastName.touched"
-              data-test="last-name-input"
-            />
-          </app-pi-form-field>
-          <app-pi-form-field
-            label="Имя"
-            htmlFor="p-first"
-            [required]="true"
-            [error]="
-              form.controls.firstName.invalid && form.controls.firstName.touched
-                ? 'Обязательное поле'
-                : ''
-            "
-          >
-            <app-pi-input
-              id="p-first"
-              formControlName="firstName"
-              placeholder="Иван"
-              [invalid]="form.controls.firstName.invalid && form.controls.firstName.touched"
-              data-test="first-name-input"
-            />
-          </app-pi-form-field>
-          <app-pi-form-field label="Отчество" htmlFor="p-patronymic">
-            <app-pi-input
-              id="p-patronymic"
-              formControlName="patronymic"
-              placeholder="Иванович"
-              data-test="patronymic-input"
-            />
-          </app-pi-form-field>
-        </div>
+        <app-pi-form-section title="Основные данные" headingId="people-sec-basics" tone="gold">
+          <div class="grid grid-cols-1 gap-form-field sm:grid-cols-3">
+            <app-pi-form-field
+              label="Фамилия"
+              htmlFor="p-last"
+              [required]="true"
+              [error]="
+                form.controls.lastName.invalid && form.controls.lastName.touched
+                  ? 'Обязательное поле'
+                  : ''
+              "
+            >
+              <app-pi-input
+                id="p-last"
+                formControlName="lastName"
+                placeholder="Иванов"
+                [invalid]="form.controls.lastName.invalid && form.controls.lastName.touched"
+                data-test="last-name-input"
+              />
+            </app-pi-form-field>
+            <app-pi-form-field
+              label="Имя"
+              htmlFor="p-first"
+              [required]="true"
+              [error]="
+                form.controls.firstName.invalid && form.controls.firstName.touched
+                  ? 'Обязательное поле'
+                  : ''
+              "
+            >
+              <app-pi-input
+                id="p-first"
+                formControlName="firstName"
+                placeholder="Иван"
+                [invalid]="form.controls.firstName.invalid && form.controls.firstName.touched"
+                data-test="first-name-input"
+              />
+            </app-pi-form-field>
+            <app-pi-form-field label="Отчество" htmlFor="p-patronymic">
+              <app-pi-input
+                id="p-patronymic"
+                formControlName="patronymic"
+                placeholder="Иванович"
+                data-test="patronymic-input"
+              />
+            </app-pi-form-field>
+          </div>
+        </app-pi-form-section>
 
-        <div class="grid grid-cols-1 gap-form-field sm:grid-cols-2">
-          <app-pi-form-field label="Должность" htmlFor="p-position">
-            <app-pi-input
-              id="p-position"
-              formControlName="position"
-              placeholder="Менеджер"
-              data-test="position-input"
+        <app-pi-form-section
+          title="Контакты и должность"
+          headingId="people-sec-contact"
+          tone="neutral"
+        >
+          <div class="grid grid-cols-1 gap-form-field sm:grid-cols-2">
+            <app-pi-form-field label="Должность" htmlFor="p-position">
+              <app-pi-input
+                id="p-position"
+                formControlName="position"
+                placeholder="Менеджер"
+                data-test="position-input"
+              />
+            </app-pi-form-field>
+            <app-pi-form-field label="Отдел" htmlFor="p-department">
+              <app-pi-input
+                id="p-department"
+                formControlName="department"
+                placeholder="Цех"
+                data-test="department-input"
+              />
+            </app-pi-form-field>
+          </div>
+
+          <div class="grid grid-cols-1 gap-form-field sm:grid-cols-2">
+            <app-pi-form-field label="Email" htmlFor="p-email">
+              <app-pi-input
+                id="p-email"
+                type="email"
+                formControlName="email"
+                placeholder="name@example.com"
+                data-test="email-input"
+              />
+            </app-pi-form-field>
+            <app-pi-form-field label="Телефон" htmlFor="p-phone">
+              <app-pi-input
+                id="p-phone"
+                formControlName="phone"
+                placeholder="+7 …"
+                data-test="phone-input"
+              />
+            </app-pi-form-field>
+          </div>
+        </app-pi-form-section>
+
+        <app-pi-form-section
+          title="Виды работ и заметки"
+          headingId="people-sec-work"
+          tone="neutral"
+        >
+          <fieldset class="space-y-2" data-test="work-types-fieldset">
+            <legend class="text-sm font-medium text-ink">Виды работ</legend>
+            <p class="text-xs text-muted-foreground">
+              К какому виду работ привязан человек — так он появится на диаграмме Ганта.
+            </p>
+            @if (workTypesLoading()) {
+              <p class="text-xs text-muted-foreground">Загрузка видов работ…</p>
+            } @else if (!workTypes().length) {
+              <p class="text-xs text-muted-foreground">Справочник видов работ пуст.</p>
+            } @else {
+              <div class="max-h-40 overflow-y-auto border hairline rounded-sm p-2 space-y-1.5">
+                @for (wt of workTypes(); track wt._id) {
+                  <label class="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      class="pi-focus-ring"
+                      [checked]="selectedWorkTypeIds().has(wt._id)"
+                      (change)="toggleWorkType(wt._id, $event)"
+                      [attr.data-test]="'work-type-' + wt._id"
+                    />
+                    <span>{{ wt.name }}</span>
+                    @if (wt.days != null) {
+                      <span class="text-[11px] text-muted-foreground">{{ wt.days }}д</span>
+                    }
+                  </label>
+                }
+              </div>
+            }
+          </fieldset>
+
+          <app-pi-form-field label="Заметки" htmlFor="p-notes">
+            <app-pi-textarea
+              id="p-notes"
+              [rows]="3"
+              formControlName="notes"
+              [maxLength]="500"
+              data-test="notes-input"
             />
           </app-pi-form-field>
-          <app-pi-form-field label="Отдел" htmlFor="p-department">
-            <app-pi-input
-              id="p-department"
-              formControlName="department"
-              placeholder="Цех"
-              data-test="department-input"
+
+          <div class="flex items-center gap-2">
+            <app-pi-checkbox
+              formControlName="isActive"
+              ariaLabel="Активен"
+              data-test="active-checkbox"
             />
-          </app-pi-form-field>
-        </div>
-
-        <div class="grid grid-cols-1 gap-form-field sm:grid-cols-2">
-          <app-pi-form-field label="Email" htmlFor="p-email">
-            <app-pi-input
-              id="p-email"
-              type="email"
-              formControlName="email"
-              placeholder="name@example.com"
-              data-test="email-input"
-            />
-          </app-pi-form-field>
-          <app-pi-form-field label="Телефон" htmlFor="p-phone">
-            <app-pi-input
-              id="p-phone"
-              formControlName="phone"
-              placeholder="+7 …"
-              data-test="phone-input"
-            />
-          </app-pi-form-field>
-        </div>
-
-        <fieldset class="space-y-2" data-test="work-types-fieldset">
-          <legend class="text-sm font-medium text-ink">Виды работ</legend>
-          <p class="text-xs text-muted-foreground">
-            К какому виду работ привязан человек — так он появится на диаграмме Ганта.
-          </p>
-          @if (workTypesLoading()) {
-            <p class="text-xs text-muted-foreground">Загрузка видов работ…</p>
-          } @else if (!workTypes().length) {
-            <p class="text-xs text-muted-foreground">Справочник видов работ пуст.</p>
-          } @else {
-            <div class="max-h-40 overflow-y-auto border hairline rounded-sm p-2 space-y-1.5">
-              @for (wt of workTypes(); track wt._id) {
-                <label class="flex items-center gap-2 text-sm cursor-pointer">
-                  <input
-                    type="checkbox"
-                    class="pi-focus-ring"
-                    [checked]="selectedWorkTypeIds().has(wt._id)"
-                    (change)="toggleWorkType(wt._id, $event)"
-                    [attr.data-test]="'work-type-' + wt._id"
-                  />
-                  <span>{{ wt.name }}</span>
-                  @if (wt.days != null) {
-                    <span class="text-[11px] text-muted-foreground">{{ wt.days }}д</span>
-                  }
-                </label>
-              }
-            </div>
-          }
-        </fieldset>
-
-        <app-pi-form-field label="Заметки" htmlFor="p-notes">
-          <app-pi-textarea
-            id="p-notes"
-            [rows]="3"
-            formControlName="notes"
-            [maxLength]="500"
-            data-test="notes-input"
-          />
-        </app-pi-form-field>
-
-        <div class="flex items-center gap-2">
-          <app-pi-checkbox
-            formControlName="isActive"
-            ariaLabel="Активен"
-            data-test="active-checkbox"
-          />
-          <span class="text-sm">Активен</span>
-        </div>
+            <span class="text-sm">Активен</span>
+          </div>
+        </app-pi-form-section>
       </form>
 
       <div footer class="flex justify-end gap-2">
