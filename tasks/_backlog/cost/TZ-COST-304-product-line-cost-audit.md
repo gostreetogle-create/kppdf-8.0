@@ -15,7 +15,7 @@ TZ-COST-304: Аудит — цена при вставке изделия в с�
 > сознательно отложила `product→product` в cost (`later` в аудите 08-08).
 > UI уже умеет `unitPriceOverride` на product-line (CATALOG-305), cost — нет.
 
-STATUS: READY (выдавать Cursor Mode A / аудитору; **не** executor-код)
+STATUS: DONE (docs) → `tasks/_archive/2026-08/TZ-COST-304.done.md` · successor COST-305
 
 РОЛЬ АГЕНТА: Cursor architect — аудит + decision table + successor TZ.
 Исполнитель кода **не** стартует, пока нет решений в §Deliverable.

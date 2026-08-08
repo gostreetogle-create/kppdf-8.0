@@ -109,7 +109,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 
 | Route / surface | Page doc | TZs |
 |-----------------|----------|-----|
-| `/products/:id` BOM + Себест. | product-detail.page.md; ui-composition-tree.md | COST-301…303 done; **COST-304** audit; **CATALOG-335** dark; pattern → **ORDERS-302** PARK |
+| `/products/:id` BOM + Себест. | product-detail.page.md; ui-composition-tree.md | COST-301…304 done; **COST-305** product-line in cost (RESERVED); **CATALOG-335** dark; pattern → **ORDERS-302** PARK |
 | `/modules/:id` | module-detail.page.md | **CATALOG-336 P0** — parity с product detail A+ |
 
 ## Dictionaries / form profiles
