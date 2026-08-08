@@ -35,4 +35,4 @@
 - Blockers: none
 - _active/: empty
 - Deploy: NO (await PO «задеплой»)
-- HEAD: (post-commit)
+- HEAD: 518b8e0 (TZ-DICT-316)
