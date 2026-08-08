@@ -83,6 +83,7 @@
 - [x] Connect helper (mcp.json clipboard) — **TZD-20**: `buildMcpClientSnippet` + кнопки «Скопировать mcp.json» / «Только фрагмент» в `App.svelte`; docs Cursor/LM Studio = один JSON; **не** автозапись в `~\.cursor\mcp.json` ✅
 - [x] Import Task (AI assembly) — **TZD-22**: BE `backend/src/modules/import-task/**` + `/api/import-tasks`; Desktop «Создать задачу для ИИ»; MCP `kppdf_import_task_list|get|create|set_status`; **не** matching (→ TZD-23); propose path сохранён ✅
 - [x] Windows install/update docs + NSIS preinstall stop Desktop/MCP — `desktop/docs/INSTALL.md` + `src-tauri/windows/hooks.nsh` (нет locked `esbuild.exe` при update) ✅
+- [x] Desktop pairing keys (TTL / multi / revoke) — **TZD-21**: opaque `kppd_…` + `/api/desktop/pairing-keys`; session JWT больше не в пакете; PAIRING.md / MCP.md ✅
 - [ ] Ops: демо-данные на стенде — опц. `node scripts/seed-demo-five.mjs --base http://HOST:3000` (префикс «Тест ·»); локально для Ганта/каталога — `node scripts/seed-local-demo.mjs` (маркер `DEMO-LOCAL`, пишет в Mongo через API; boot-seed `LocalDemoSeed`, off: `LOCAL_DEMO_SEED=0`)
 
 ## F. Перед «DONE / archive»

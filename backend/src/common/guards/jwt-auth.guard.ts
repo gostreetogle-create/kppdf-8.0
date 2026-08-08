@@ -11,6 +11,10 @@ import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { User, UserDocument } from '../../modules/user/user.schema';
 import { Role, RoleDocument } from '../../modules/role/role.schema';
 import { userActivityCache } from './user-activity-cache';
+import {
+  DesktopPairingKeyService,
+  isPairingKeyBearer,
+} from '../../modules/desktop/desktop-pairing-key.service';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -18,6 +22,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     private readonly reflector: Reflector,
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     @InjectModel(Role.name) private readonly roleModel: Model<RoleDocument>,
+    private readonly pairingKeys: DesktopPairingKeyService,
   ) {
     super();
   }
@@ -32,41 +37,43 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       return true;
     }
 
-    const ok = await super.canActivate(context);
-    if (!ok) {
-      return false;
+    const req = context.switchToHttp().getRequest<{
+      headers: { authorization?: string };
+      user?: { id?: string; role?: string };
+    }>();
+    const header = req.headers?.authorization ?? '';
+    const bearer = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+
+    if (bearer && isPairingKeyBearer(bearer)) {
+      req.user = await this.pairingKeys.authenticateBearer(bearer);
+    } else {
+      const ok = await super.canActivate(context);
+      if (!ok) {
+        return false;
+      }
     }
 
-    const req = context.switchToHttp().getRequest<{ user: { id?: string; role?: string } }>();
     const userId = req.user?.id;
     if (!userId) {
       throw new UnauthorizedException('No user context');
     }
 
-    const activity = await userActivityCache.getOrFetch(
-      userId,
-      async () => {
-        const dbUser = await this.userModel.findById(userId).lean().exec();
-        if (!dbUser || dbUser.isActive === false) {
-          return { active: false, reason: 'user_inactive' };
+    const activity = await userActivityCache.getOrFetch(userId, async () => {
+      const dbUser = await this.userModel.findById(userId).lean().exec();
+      if (!dbUser || dbUser.isActive === false) {
+        return { active: false, reason: 'user_inactive' };
+      }
+      if (dbUser.role) {
+        const role = await this.roleModel.findOne({ name: dbUser.role }).lean().exec();
+        if (!role || role.isActive === false) {
+          return { active: false, reason: 'role_inactive' };
         }
-        if (dbUser.role) {
-          const role = await this.roleModel
-            .findOne({ name: dbUser.role })
-            .lean()
-            .exec();
-          if (!role || role.isActive === false) {
-            return { active: false, reason: 'role_inactive' };
-          }
-        }
-        return { active: true };
-      },
-    );
+      }
+      return { active: true };
+    });
 
     if (!activity.active) {
-      throw new UnauthorizedException(
-        `User access revoked: ${activity.reason}`,
-      );
+      throw new UnauthorizedException(`User access revoked: ${activity.reason}`);
     }
 
     return true;

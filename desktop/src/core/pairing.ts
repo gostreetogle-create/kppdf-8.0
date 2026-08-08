@@ -3,17 +3,21 @@
  * который генерирует веб-клиент (кнопка «Подключить десктоп»).
  *
  * Контракт формата — см. docs/PAIRING.md.
+ * TZD-21: apiKey = opaque desktop pairing key (`kppd_…`); expiresAt may be null (never).
  */
 
 export interface PairingPayload {
   /** Базовый URL сервера (https://app.kppdf.ru). */
   apiBaseUrl: string;
-  /** Bearer-токен доступа (JWT). */
+  /** Bearer pairing key (opaque `kppd_…`), not session JWT. */
   apiKey: string;
-  /** Имя пользователя, для которого выдан токен. */
+  /** Имя пользователя, для которого выдан ключ. */
   username: string;
-  /** ISO-дата истечения токена; паринг не должен приниматься после неё. */
-  expiresAt: string;
+  /**
+   * ISO-дата истечения; `null` = без срока (TTL never).
+   * После даты паринг не должен приниматься.
+   */
+  expiresAt: string | null;
 }
 
 export interface PairingResult {
@@ -50,7 +54,6 @@ export function parsePairing(json: string): PairingResult {
   const apiBaseUrl = str('apiBaseUrl');
   const apiKey = str('apiKey');
   const username = str('username');
-  const expiresAt = str('expiresAt');
 
   if (!apiBaseUrl) {
     errors.push('Отсутствует поле apiBaseUrl.');
@@ -66,15 +69,20 @@ export function parsePairing(json: string): PairingResult {
     errors.push('Отсутствует поле username.');
   }
 
-  if (!expiresAt) {
-    errors.push('Отсутствует поле expiresAt.');
-  } else {
-    const exp = Date.parse(expiresAt);
+  let expiresAt: string | null = null;
+  if (obj.expiresAt === null || obj.expiresAt === undefined || obj.expiresAt === 'never') {
+    expiresAt = null;
+  } else if (typeof obj.expiresAt === 'string' && obj.expiresAt !== '') {
+    const exp = Date.parse(obj.expiresAt);
     if (Number.isNaN(exp)) {
-      errors.push('expiresAt должен быть датой в формате ISO 8601.');
+      errors.push('expiresAt должен быть датой в формате ISO 8601 или null.');
     } else if (exp < Date.now()) {
       errors.push('Паринг просрочен — сгенерируйте новый в веб-клиенте.');
+    } else {
+      expiresAt = obj.expiresAt;
     }
+  } else {
+    errors.push('expiresAt должен быть ISO 8601 строкой или null (без срока).');
   }
 
   if (errors.length > 0) {
@@ -83,7 +91,7 @@ export function parsePairing(json: string): PairingResult {
 
   return {
     ok: true,
-    payload: { apiBaseUrl: apiBaseUrl!, apiKey: apiKey!, username: username!, expiresAt: expiresAt! },
+    payload: { apiBaseUrl: apiBaseUrl!, apiKey: apiKey!, username: username!, expiresAt },
     errors,
   };
 }

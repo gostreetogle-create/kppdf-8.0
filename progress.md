@@ -8,6 +8,15 @@
 **Lock:** `.mimocode/locks/TZ-COST-305-product-line-in-cost.lock`
 **Cursor Verdict:** PASS (executor self)
 
+## [2026-08-08] — TZD-21 DONE: desktop pairing keys (TTL/multi/revoke)
+
+**Исполнитель:** continuous-executor-composer (self PASS → archive)
+**Статус:** DONE on main; deploy НЕ
+**Что сделано кратко:** Opaque `kppd_…` keys; API issue/list/revoke; dual Bearer in JwtAuthGuard; FE dialog; expiresAt null; docs.
+**Gates:** BE tsc + jest 6/6; FE tsc + pairing 4/4; desktop tsc
+**Archive:** `tasks/_archive/2026-08/TZD-21.done.md`
+**Cursor Verdict:** PASS
+
 ## [2026-08-08] — TZ-DICT-313 DONE: quick-create form profiles audit
 
 **Исполнитель:** continuous-executor-composer (docs PASS → archive)

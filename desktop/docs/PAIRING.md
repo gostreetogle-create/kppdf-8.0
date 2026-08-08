@@ -1,133 +1,85 @@
 # Паринг веб ↔ десктоп (контракт)
 
 > Документ описывает **контракт связи** между веб-клиентом kppdf и
-> десктоп-компаньоном. Веб-диалог уже показывает готовый JSON и ссылку на
-> установщик; этот документ фиксирует формат и последовательность действий.
+> десктоп-компаньоном. **TZD-21:** `apiKey` — отдельный desktop pairing key
+> (`kppd_…`), не session JWT (~15m).
 
 ---
 
 ## Идея
 
-Веб-клиент работает в браузере с «человеческим» входом (логин/пароль). Десктоп
-не должен просить пароль: он получает от веба **готовый паринг-пакет** — JSON с
-URL сервера и токеном доступа — и сохраняет его локально в app-data.
+Веб выдаёт **pairing key** с выбранным TTL; десктоп сохраняет пакет локально
+и ходит на API с `Authorization: Bearer <apiKey>`.
 
 ```
-[Веб: кнопка «Подключить десктоп»]
-        │  генерирует JSON (копировать)
+[Веб: «Десктоп» → TTL → Выпустить ключ]
+        │  JSON { apiBaseUrl, apiKey, username, expiresAt|null }
         ▼
-[Пользователь вставляет JSON в десктоп]
-        │  parsePairing() валидирует формат
+[Десктоп: parsePairing → app-data]
+        │  GET /auth/me
         ▼
-[Десктоп сохраняет конфиг в app-data]
-        │  GET /auth/me — проверка, что токен живой
-        ▼
-[Подключено: AI-импорт работает]
+[Подключено]
 ```
 
 ## Паринг ≠ mcp.json (TZD-20)
 
 | Что | Куда | Формат |
 |-----|------|--------|
-| **Паринг-пакет** | только в карточку «Подключение» Desktop | `{ apiBaseUrl, apiKey, username, expiresAt }` |
-| **mcp.json клиента** | Cursor / LM Studio (clipboard из карточки MCP) | `mcpServers.kppdf` = `url` + `Authorization: Bearer <apiKey>` |
+| **Паринг-пакет** | карточка «Подключение» Desktop | `{ apiBaseUrl, apiKey, username, expiresAt }` |
+| **mcp.json** | Cursor / LM Studio | `mcpServers.kppdf` = url + `Bearer <apiKey>` |
 
-Не вставляйте pairing object целиком в `mcpServers` — клиент упадёт.
-После паринга: MCP **Запущен** → **«Скопировать mcp.json»** → вставить в клиент → Reload.
-Токен (~15 мин JWT): при 401 — новый паринг + снова скопировать mcp.json.
+При 401: проверьте revoke/expiry → выпустите новый ключ → снова mcp.json.
 
 ## Формат паринг-пакета
 
 ```json
 {
   "apiBaseUrl": "https://app.kppdf.ru",
-  "apiKey": "<JWT-access-token>",
+  "apiKey": "kppd_…",
   "username": "ivanov",
-  "expiresAt": "2026-08-01T12:00:00.000Z"
+  "expiresAt": "2026-09-07T12:00:00.000Z"
 }
 ```
 
+`expiresAt: null` — ключ без срока (`ttl: never`); отзывать вручную.
+
 | Поле | Тип | Обязательное | Описание |
 |---|---|---|---|
-| `apiBaseUrl` | string | ✅ | Базовый URL сервера kppdf |
-| `apiKey` | string | ✅ | JWT access-токен (Bearer) |
-| `username` | string | ✅ | Имя пользователя, для которого выдан токен |
-| `expiresAt` | string | ✅ | ISO-8601 дата истечения токена |
+| `apiBaseUrl` | string | ✅ | Базовый URL сервера |
+| `apiKey` | string | ✅ | Opaque pairing key (`kppd_…`), **не** session JWT |
+| `username` | string | ✅ | Владелец ключа |
+| `expiresAt` | string \| null | ✅ | ISO-8601 или `null` (never) |
 
-Валидация на десктопе — `desktop/src/core/pairing.ts` (`parsePairing`):
-некорректный JSON, отсутствующие/пустые поля, не-URL `apiBaseUrl`,
-просроченный `expiresAt` → человекочитаемые ошибки на русском.
+## API (TZD-21)
 
-## Эндпоинты
+Все под session JWT пользователя (self-service):
 
-| Метод | Путь | Доступ | Назначение |
-|---|---|---|---|
-| `POST` | `/api/auth/login` | public | Вход по логину/паролю (веб) |
-| `GET` | `/api/auth/me` | JWT | Проверка токена + профиль (десктоп при подключении) |
-| `POST` | `/api/auth/refresh` | refresh-token | Продление access-токена |
-| `GET` | `/api/registry/data-sources` | JWT | Схемы сущностей для AI-нормализации |
-| `POST` | `/api/desktop/pairing` | JWT (админ) | **Будущая TZ**: выпуск/отзыв паринг-токена для десктопа |
+| Method | Path | Body / result |
+|--------|------|----------------|
+| `POST` | `/api/desktop/pairing-keys` | `{ ttl, label?, apiBaseUrl }` → plaintext key **once** + `pairing` packet |
+| `GET` | `/api/desktop/pairing-keys` | list **without** secret (prefix, label, dates) |
+| `POST` | `/api/desktop/pairing-keys/:id/revoke` | revoke one key |
+| `POST` | `/api/desktop/pairing` | alias of issue |
 
-## Получение паринг-пакета (веб)
+TTL presets: `1d` \| `7d` \| `30d` (default) \| `90d` \| `never`.  
+Multi-key: до 10 активных; новый **не** отзывает старые.
 
-После входа в веб-клиент нажмите кнопку **🖥 Десктоп** в правой части хедера
-(рядом с именем пользователя и кнопкой «Выйти»). В диалоге:
+Auth: Bearer `kppd_…` принимается тем же `JwtAuthGuard` (lookup hash); иначе JWT.
 
-1. Нажмите **«Скачать приложение»** и установите Windows `.exe`.
-2. Вернитесь к диалогу и нажмите **«Скопировать»**.
-3. Вставьте JSON в десктоп-компаньон и подтвердите подключение.
+## Получение пакета (веб)
 
-Если установщик ещё не опубликован, кнопка отключена с подсказкой «Установщик
-скоро будет на сервере»; JSON можно скопировать отдельно.
+1. Хедер → **Десктоп**
+2. Выбрать срок (default 30д) / метку → **Выпустить ключ**
+3. **Скопировать** JSON → вставить в Desktop
+4. Список ключей в том же диалоге → **Отозвать**
 
-Реализация: `frontend/src/app/pages/desktop/pairing-dialog.component.ts`
-(чистый FE — новый backend-эндпоинт не создаётся). URL берётся из runtime
-`window.__DESKTOP_DOWNLOAD_URL__`, который `deploy/synology/deploy.py`
-заполняет из `DESKTOP_DOWNLOAD_URL`; если значение отсутствует, используется
-`/downloads/kppdf-desktop-setup.zip`, а если явно пустое — кнопка отключена.
-
-`apiBaseUrl` в пакете:
-- **production**: `window.location.origin` (фронтенд и бэкенд на одном origin).
-- **development**: `http://127.0.0.1:3000` (стандартный порт Nest, совпадает с
-  `proxy.conf.json → target`). Если бэкенд на другом хосте/порту — поправьте
-  вручную перед вставкой в десктоп.
+Новый ключ не отключает старые. Session JWT в пакет **не** кладётся.
 
 ## Смена сервера / переподключение
 
-- Паринг **не хранит пароль** — только токен. Токен имеет срок жизни
-  (`expiresAt`); после истечения нужно перегенерировать пакет в вебе.
-- Смена сервера = вставка нового паринг-пакета; старый конфиг перезаписывается.
-- При смене сервера **локальный конфиг и ключи стираются** вместе с пакетом
-  (нет лишних доверенных баз).
-- Отзыв: админ в вебе отзывает токен — следующий запрос десктопа получит 401,
-  десктоп покажет «подключение устарело, сгенерируйте новый паринг».
+- После revoke/expiry — новый выпуск + повторный paste в Desktop / mcp.json.
+- Desktop auto-refresh ключа — out of scope (successor).
 
-## Скачать и опубликовать установщик
+---
 
-Полный канон сборки, путей, AppData и **обновления без locked esbuild**:  
-**[INSTALL.md](./INSTALL.md)**.
-
-Кратко:
-
-```text
-cd desktop
-pnpm tauri build
-```
-
-Артефакт: `desktop/src-tauri/target/release/bundle/nsis/*.exe`  
-(копия для выдачи: `desktop/dist-installers/kppdf-desktop-setup.exe`).  
-На сервер: `frontend/browser/downloads/kppdf-desktop-setup.zip` (+ `.exe`) →  
-кнопка → `/downloads/kppdf-desktop-setup.zip` (внутри ZIP — setup.exe).
-
-Перед копированием файлов NSIS останавливает Desktop + MCP (`src-tauri/windows/hooks.nsh`) —
-иначе update падает на занятом `mcp-runtime\…\esbuild.exe`.
-
-В продакшене `DESKTOP_DOWNLOAD_URL` указывает на этот путь. Без bundled Node MCP
-требует Node.js на машине клиента.
-
-## Безопасность
-
-- Токен хранится в app-data (файл с правами текущего пользователя), не в коде.
-- Клиент не доверяется: все права проверяет сервер (RBAC, см. RBAC-CONTRACT.md).
-- Каждый POST от десктопа несёт `Idempotency-Key` (per-row) — повторная отправка
-  не создаст дубликатов.
+_Обновлено: 2026-08-08 · TZD-21_

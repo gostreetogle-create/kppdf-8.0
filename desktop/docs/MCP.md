@@ -4,7 +4,7 @@
 > Owner track: Cursor (desktop/MCP) — usable for managers, not a demo stub.
 
 Local MCP host so **any** MCP-capable client can call KPPDF tools with the same
-**pairing JWT** as the desktop app. Source of truth = Nest backend (RBAC unchanged).
+**pairing key** (`kppd_…`, TZD-21) as the desktop app. Source of truth = Nest backend (RBAC unchanged).
 
 Установка / обновление Windows (NSIS, AppData, stop MCP перед update):  
 **[INSTALL.md](./INSTALL.md)**. Паринг-пакет: **[PAIRING.md](./PAIRING.md)**.
@@ -27,7 +27,7 @@ Local MCP host so **any** MCP-capable client can call KPPDF tools with the same
    3) Вставьте в клиент → **Reload MCP** → включите сервер `kppdf`  
    4) Несколько клиентов на один host — OK (stateless POST)  
    После **нового паринга** или **смены порта** — скопируйте снова и Reload.
-   JWT (~15 мин): при **401** обновите паринг в Desktop и mcp.json в клиенте.  
+   Pairing key: при **401** проверьте revoke/expiry → новый ключ в вебе → снова mcp.json.
    Desktop **не пишет** в `~\.cursor\mcp.json` / пути LM Studio — только clipboard.
 4. Вручную (без кнопки): URL `http://127.0.0.1:<порт>/mcp` + заголовок
    `Authorization: Bearer <тот же apiKey>`.
@@ -87,7 +87,7 @@ pnpm start
 | Variable | Required | Default | Meaning |
 |----------|----------|---------|---------|
 | `KPPDF_API_BASE_URL` | yes | — | e.g. `http://127.0.0.1:3000` |
-| `KPPDF_API_KEY` | yes | — | pairing JWT |
+| `KPPDF_API_KEY` | yes | — | pairing key (`kppd_…`) |
 | `KPPDF_MCP_PORT` | no | `9743` | listen port |
 | `KPPDF_MCP_HOST` | no | `127.0.0.1` | bind address |
 | `KPPDF_MCP_ALLOW_LAN` | no | off | `1`/`true` → may bind `0.0.0.0` |

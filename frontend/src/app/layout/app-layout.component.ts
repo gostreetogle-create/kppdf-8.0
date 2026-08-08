@@ -450,20 +450,10 @@ export class AppLayoutComponent {
   }
 
   /**
-   * TZD-05: build the desktop pairing JSON from current session and open the dialog.
-   *
-   * Fields per desktop/docs/PAIRING.md:
-   *   apiBaseUrl  — backend origin (dev: http://127.0.0.1:3000 from proxy config;
-   *                 prod: window.location.origin, or API_BASE_URL if absolute).
-   *   apiKey      — current JWT access token.
-   *   username    — from /auth/me profile.
-   *   expiresAt   — ISO-8601 from JWT `exp` claim.
-   *
-   * RU errors for: no token, expired token, missing username (user not hydrated).
+   * TZD-21: open pairing dialog to issue dedicated desktop keys (not session JWT).
    */
   protected onDesktopPairing(): void {
-    const token = this.auth.accessToken();
-    if (!token) {
+    if (!this.auth.accessToken()) {
       this.toast.error('Нет активного токена доступа — войдите заново.');
       return;
     }
@@ -474,30 +464,11 @@ export class AppLayoutComponent {
       return;
     }
 
-    const expiresAt = this.extractJwtExp(token);
-    if (!expiresAt) {
-      this.toast.error('Не удалось прочитать срок действия токена — войдите заново.');
-      return;
-    }
-
-    if (new Date(expiresAt).getTime() <= Date.now()) {
-      this.toast.error('Токен доступа истёк — войдите заново и повторите.');
-      return;
-    }
-
-    const pairingJson = JSON.stringify(
-      {
-        apiBaseUrl: this.resolveApiBaseUrl(),
-        apiKey: token,
-        username: user.username,
-        expiresAt,
-      },
-      null,
-      2,
-    );
-
     this.dialog.open(PairingDialogComponent, {
-      data: pairingJson,
+      data: {
+        apiBaseUrl: this.resolveApiBaseUrl(),
+        username: user.username,
+      },
       width: 'lg',
       ariaLabel: 'Паринг десктопа',
     });
@@ -522,20 +493,6 @@ export class AppLayoutComponent {
       return 'http://127.0.0.1:3000';
     }
     return window.location.origin;
-  }
-
-  /** Decode JWT `exp` claim → ISO-8601 string, or null on failure. */
-  private extractJwtExp(token: string): string | null {
-    const parts = token.split('.');
-    if (parts.length !== 3 || !parts[1]) return null;
-    try {
-      const json = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
-      const payload = JSON.parse(json) as { exp?: number };
-      if (typeof payload.exp !== 'number') return null;
-      return new Date(payload.exp * 1000).toISOString();
-    } catch {
-      return null;
-    }
   }
 }
 

@@ -13,6 +13,7 @@ import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { SettingModule } from './modules/setting/setting.module';
 import { FeatureFlagModule } from './modules/feature-flag/feature-flag.module';
+import { DesktopModule } from './modules/desktop/desktop.module';
 import { StatusModule } from './modules/status/status.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { PersonModule } from './modules/person/person.module';
@@ -165,6 +166,7 @@ import { RequestMethod } from '@nestjs/common';
     AuthModule,
     SettingModule,
     FeatureFlagModule,
+    DesktopModule,
     StatusModule,
     AuditModule,
     PersonModule,
