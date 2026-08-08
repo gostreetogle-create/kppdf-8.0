@@ -11,9 +11,11 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { SetOrderLineReadyDto } from './dto/set-order-line-ready.dto';
 import { ReserveStockDto } from './dto/reserve-stock.dto';
 import { AuditAction } from '../../common/decorators/audit-action.decorator';
 import { RequireOrgScope } from '../../common/decorators/require-org-scope.decorator';
@@ -59,6 +61,18 @@ export class OrderController {
   @ApiResponse({ status: 403, description: 'Forbidden' })
   create(@Body() dto: CreateOrderDto) {
     return this.service.create(dto);
+  }
+
+  @Patch(':id/items/:lineIndex/ready')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'line_ready', entityType: 'Order', idParam: 'id' })
+  setLineReady(
+    @Param('id') id: string,
+    @Param('lineIndex') lineIndex: string,
+    @Body() dto: SetOrderLineReadyDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.setLineReady(id, lineIndex, dto.readyForWork, user.id);
   }
 
   @Patch(':id')

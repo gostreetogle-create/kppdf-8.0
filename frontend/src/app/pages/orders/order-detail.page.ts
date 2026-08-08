@@ -108,6 +108,15 @@ type PopulatedOwner =
               @if (row.ship) {
                 <span> · Отгрузка: {{ row.ship }}</span>
               }
+              <button
+                type="button"
+                class="ml-2 underline underline-offset-2 hover:text-ink"
+                [disabled]="readyBusy() === row.index"
+                (click)="toggleLineReady(row.index)"
+                [attr.data-test]="'order-line-ready-' + row.index"
+              >
+                {{ row.ready ? 'Готово к работе' : 'Отметить готовым' }}
+              </button>
             </p>
           }
         </section>
@@ -164,6 +173,7 @@ export class OrderDetailPage {
   protected readonly selectedId = signal<string | null>(null);
   private readonly requestedDepth = signal(INITIAL_TREE_DEPTH);
   private loadSeq = 0;
+  protected readonly readyBusy = signal<number | null>(null);
 
   protected readonly hasLines = computed(() => (this.order()?.items?.length ?? 0) > 0);
 
@@ -182,22 +192,21 @@ export class OrderDetailPage {
 
   protected readonly lineMetaRows = computed(() => {
     const items = this.order()?.items ?? [];
-    return items
-      .map((it, index) => {
-        const owner = this.ownerDisplay(it.ownerUserId);
-        const ship = it.plannedShipDate ? formatDate(it.plannedShipDate) : '';
-        if (!owner && !ship) return null;
-        const title =
-          (it.productName ?? '').trim() ||
-          (it.productId ? `Изделие ${it.productId.slice(0, 8)}…` : `Позиция ${index + 1}`);
-        return {
-          key: `${index}:${it.productId ?? 'x'}`,
-          title,
-          owner,
-          ship,
-        };
-      })
-      .filter((row): row is NonNullable<typeof row> => row != null);
+    return items.map((it, index) => {
+      const owner = this.ownerDisplay(it.ownerUserId);
+      const ship = it.plannedShipDate ? formatDate(it.plannedShipDate) : '';
+      const title =
+        (it.productName ?? '').trim() ||
+        (it.productId ? `Изделие ${it.productId.slice(0, 8)}…` : `Позиция ${index + 1}`);
+      return {
+        key: `${index}:${it.productId ?? 'x'}`,
+        title,
+        owner,
+        ship,
+        index,
+        ready: Boolean(it.readyForWork),
+      };
+    });
   });
 
   protected readonly crumbs = computed<PageCrumb[]>(() => {
@@ -271,6 +280,21 @@ export class OrderDetailPage {
 
   protected formatOrderDate(date: string | undefined): string {
     return formatDate(date);
+  }
+
+  protected toggleLineReady(index: number): void {
+    const current = this.order();
+    if (!current || this.readyBusy() !== null) return;
+    const item = current.items?.[index];
+    if (!item) return;
+    this.readyBusy.set(index);
+    this.orders
+      .setLineReady(current._id, index, !item.readyForWork)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        this.readyBusy.set(null);
+        if (res.ok) this.order.set(res.data);
+      });
   }
 
   protected onSelect(ev: CompositionTreeSelectEvent): void {

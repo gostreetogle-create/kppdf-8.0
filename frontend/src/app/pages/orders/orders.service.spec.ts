@@ -57,6 +57,19 @@ describe('OrdersService', () => {
     req.flush({ _id: 'o3', number: 'ORD-003', status: 'draft', items: [] });
   });
 
+  it('setLineReady() PATCHes one order line', () => {
+    svc.setLineReady('o1', 0, true).subscribe();
+    const req = httpMock.expectOne('http://test/api/orders/o1/items/0/ready');
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ readyForWork: true });
+    req.flush({
+      _id: 'o1',
+      number: 'ORD-001',
+      status: 'confirmed',
+      items: [{ readyForWork: true }],
+    });
+  });
+
   it('update() PATCHes /api/orders/:id', () => {
     svc.update('o1', { status: 'confirmed' }).subscribe((res) => {
       if (res.ok) expect(res.data.status).toBe('confirmed');

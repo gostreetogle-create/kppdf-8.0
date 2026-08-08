@@ -27,6 +27,9 @@ export interface OrderItem {
   ownerUserId?: string | { _id: string; displayName?: string; username?: string };
   /** TZ-ORDERS-303: плановая дата отгрузки позиции. */
   plannedShipDate?: string;
+  readyForWork?: boolean;
+  readyAt?: string;
+  readyByUserId?: string | { _id: string; displayName?: string; username?: string };
 }
 
 export interface Order {
@@ -92,6 +95,16 @@ export class OrdersService {
 
   create(payload: Partial<Order>): Observable<SilentResult<Order>> {
     return silentPost<Order>(this.http, `${this.baseUrl}/orders`, payload);
+  }
+
+  setLineReady(
+    id: string,
+    lineIndex: number,
+    readyForWork: boolean,
+  ): Observable<SilentResult<Order>> {
+    return silentPatch<Order>(this.http, `${this.baseUrl}/orders/${id}/items/${lineIndex}/ready`, {
+      readyForWork,
+    });
   }
 
   update(id: string, payload: Partial<Order>): Observable<SilentResult<Order>> {

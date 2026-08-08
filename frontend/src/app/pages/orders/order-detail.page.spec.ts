@@ -28,6 +28,7 @@ describe('OrderDetailPage (TZ-ORDERS-302)', () => {
         quantity: 2,
         unit: 'шт',
         unitPrice: 9999,
+        readyForWork: true,
       },
     ],
   };
@@ -92,6 +93,7 @@ describe('OrderDetailPage (TZ-ORDERS-302)', () => {
     const cmp = fixture.componentInstance;
     expect(cmp['order']()?.number).toBe('З-100');
     expect(cmp['loadError']()).toBeNull();
+    expect(cmp['lineMetaRows']()[0].ready).toBe(true);
 
     const roots = cmp['lineRoots']();
     expect(roots.length).toBe(1);

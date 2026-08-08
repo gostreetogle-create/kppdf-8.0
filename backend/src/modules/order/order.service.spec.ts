@@ -16,6 +16,9 @@ interface MockOrderItem {
   unit?: string;
   unitPrice?: number;
   total: number;
+  readyForWork?: boolean;
+  readyAt?: Date;
+  readyByUserId?: Types.ObjectId;
 }
 
 /** Minimal mock Mongoose document (toObject-free). */
@@ -266,6 +269,47 @@ describe('OrderService — TZ-ORDERS-301', () => {
       expect(doc.notes).toBe('новая заметка');
       expect(doc.priority).toBe('urgent');
       expect(doc.save).toHaveBeenCalled();
+      expect(result).toBe(doc);
+    });
+  });
+
+  describe('line readiness (TZ-ORDERS-304)', () => {
+    it('preserves readiness metadata when an ordinary item update omits the flag', async () => {
+      const { service, model } = createService();
+      const readyAt = new Date('2026-08-08T10:00:00.000Z');
+      const readyByUserId = new Types.ObjectId();
+      const doc = orderDoc({
+        status: 'confirmed',
+        items: [{ productId: new Types.ObjectId(), quantity: 1, total: 0, readyForWork: true, readyAt, readyByUserId }],
+      });
+      model.findById.mockReturnValue(mockQuery(doc));
+      await service.update(doc._id.toString(), { items: [{ productId: doc.items[0].productId.toString(), quantity: 2 }] } as never);
+      expect(doc.items[0].readyForWork).toBe(true);
+      expect(doc.items[0].readyAt).toBe(readyAt);
+      expect(doc.items[0].readyByUserId).toBe(readyByUserId);
+    });
+
+    it('clears readiness metadata when explicitly toggled off', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({
+        status: 'confirmed',
+        items: [{ productId: new Types.ObjectId(), quantity: 1, total: 0, readyForWork: true, readyAt: new Date(), readyByUserId: new Types.ObjectId() }],
+      });
+      model.findById.mockReturnValue(mockQuery(doc));
+      await service.update(doc._id.toString(), { items: [{ productId: doc.items[0].productId.toString(), quantity: 2, readyForWork: false }] } as never);
+      expect(doc.items[0].readyForWork).toBe(false);
+      expect(doc.items[0].readyAt).toBeUndefined();
+      expect(doc.items[0].readyByUserId).toBeUndefined();
+    });
+
+    it('toggles one line without changing the whole order status', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({ status: 'confirmed', items: [{ productId: new Types.ObjectId(), quantity: 1, total: 0 }] });
+      model.findById.mockReturnValueOnce(mockQuery(doc)).mockReturnValueOnce(mockQuery(doc));
+      const result = await service.setLineReady(doc._id.toString(), '0', true, new Types.ObjectId().toString());
+      expect(doc.items[0].readyForWork).toBe(true);
+      expect(doc.items[0].readyAt).toBeInstanceOf(Date);
+      expect(doc.status).toBe('confirmed');
       expect(result).toBe(doc);
     });
   });

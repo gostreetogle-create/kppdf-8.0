@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsDateString, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsDateString, IsIn, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 import { IsObjectId } from '../../../common/decorators/is-object-id.decorator';
 
 export class OrderItemDto {
@@ -35,6 +35,11 @@ export class OrderItemDto {
   @ApiPropertyOptional({ description: 'Плановая дата отгрузки позиции (ISO date)' })
   @IsOptional() @IsDateString()
   plannedShipDate?: string;
+
+
+  @ApiPropertyOptional({ description: 'Готово к работе на уровне линии' })
+  @IsOptional() @IsBoolean()
+  readyForWork?: boolean;
 }
 
 export class CreateOrderDto {

@@ -31,6 +31,16 @@ export class OrderItem {
   /** TZ-ORDERS-303 D16: плановая дата отгрузки позиции. */
   @Prop()
   plannedShipDate?: Date;
+
+  /** TZ-ORDERS-304 D8: line-level readiness gate. */
+  @Prop({ default: false })
+  readyForWork!: boolean;
+
+  @Prop({ type: Date })
+  readyAt?: Date;
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  readyByUserId?: Types.ObjectId;
 }
 
 const OrderItemSchema = SchemaFactory.createForClass(OrderItem);

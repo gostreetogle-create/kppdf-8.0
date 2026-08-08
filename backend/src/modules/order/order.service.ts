@@ -27,8 +27,11 @@ export class OrderService {
     private readonly sites: SiteService,
   ) {}
 
-  private mapItems(dtoItems: CreateOrderDto['items']): OrderItem[] {
-    return dtoItems.map((i) => ({
+  private mapItems(
+    dtoItems: CreateOrderDto['items'],
+    previousItems: OrderItem[] = [],
+  ): OrderItem[] {
+    return dtoItems.map((i, index) => ({
       productId: new Types.ObjectId(i.productId),
       productName: i.productName,
       productSku: i.productSku,
@@ -38,6 +41,19 @@ export class OrderService {
       total: (i.quantity ?? 0) * (i.unitPrice ?? 0),
       ownerUserId: i.ownerUserId ? new Types.ObjectId(i.ownerUserId) : undefined,
       plannedShipDate: i.plannedShipDate ? new Date(i.plannedShipDate) : undefined,
+      readyForWork: i.readyForWork ?? previousItems[index]?.readyForWork ?? false,
+      readyAt:
+        i.readyForWork === undefined
+          ? previousItems[index]?.readyAt
+          : i.readyForWork
+            ? previousItems[index]?.readyAt
+            : undefined,
+      readyByUserId:
+        i.readyForWork === undefined
+          ? previousItems[index]?.readyByUserId
+          : i.readyForWork
+            ? previousItems[index]?.readyByUserId
+            : undefined,
     }));
   }
 
@@ -124,6 +140,31 @@ export class OrderService {
     return doc;
   }
 
+  async setLineReady(
+    id: string,
+    lineIndex: string,
+    readyForWork: boolean,
+    userId: string,
+  ): Promise<OrderDocument> {
+    const doc = await this.findByIdRaw(id);
+    if (!['draft', 'confirmed'].includes(doc.status)) {
+      throw new BadRequestException(`Order in status \"${doc.status}\" cannot change line readiness`);
+    }
+    const index = Number(lineIndex);
+    if (!Number.isInteger(index) || index < 0 || index >= doc.items.length) {
+      throw new NotFoundException(`Order line ${lineIndex} not found`);
+    }
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new BadRequestException('Invalid userId for line readiness');
+    }
+    const line = doc.items[index];
+    line.readyForWork = readyForWork;
+    line.readyAt = readyForWork ? new Date() : undefined;
+    line.readyByUserId = readyForWork ? new Types.ObjectId(userId) : undefined;
+    await doc.save();
+    return this.findById(id);
+  }
+
   async update(id: string, dto: UpdateOrderDto): Promise<OrderDocument> {
     const doc = await this.findByIdRaw(id);
     if (
@@ -157,7 +198,7 @@ export class OrderService {
       await this.sites.assertBelongsTo(doc.siteId.toString(), nextCounterparty);
     }
     if (dto.items !== undefined) {
-      doc.items = this.mapItems(dto.items);
+      doc.items = this.mapItems(dto.items, doc.items);
       doc.total = doc.items.reduce((s, i) => s + i.total, 0);
     }
     return doc.save();
