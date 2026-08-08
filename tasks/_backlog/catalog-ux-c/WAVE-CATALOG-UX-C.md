@@ -53,8 +53,8 @@ PO устал лазить по страницам: модуль «Редакт�
 
 ## Checkpoint
 
-- [ ] COMPOSE-301 DONE  
-- [ ] DIALOG-305 DONE  
-- [ ] CATALOG-337 DONE  
-- [ ] PRODUCTS-307 DONE  
-- [ ] DIALOG-304 DONE  
+- [x] COMPOSE-301 DONE (61975a99)  
+- [x] DIALOG-305 DONE (f49e80c9)  
+- [ ] CATALOG-337 — SKIP: FACT-304 ещё IN WORK (`tasks/_active/TZ-UX-FACT-304.md`)  
+- [x] PRODUCTS-307 DONE (d6ddd19a)  
+- [x] DIALOG-304 DONE (0b692559)  
