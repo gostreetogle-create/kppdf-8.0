@@ -27,11 +27,11 @@ _(empty)_
 | deploy | только «задеплой» |
 
 ## Checkpoint 2026-08-08T06:30Z
-- DONE: 336, 335, 304(prior), 313, TZD-21
+- DONE: 336 (`ab225fa`), 335 (`973c6e3`), 304(prior), 313 (`1948eef`), TZD-21 (`0d94505`)
 - IN PROGRESS: none
 - NOT DONE: none in READY
 - NEXT: idle — готово предложить деплой
-- HEAD: (TZD-21 commit)
+- HEAD: `0d94505`
 - Blockers: none
 - _active/: empty
 - Deploy: NO (await PO)
