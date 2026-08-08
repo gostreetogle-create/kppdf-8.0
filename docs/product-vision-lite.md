@@ -80,15 +80,19 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-  KP[КП] --> ZAK[Заказ]
-  ZAK --> DES[Проектирование]
-  DES --> SPEC[Specification]
-  SPEC --> RES[Склад_reserve]
-  RES --> PROD[Производство_Гант]
-  PROD --> SHIP[Отгрузка_документы]
-  SHIP --> ARCH[Архив]
+  CAT[Каталог_полка] --> KP[КП_витрина]
+  KP -->|в_работу| ZAK[Заказ]
+  ZAK -->|без_КП_вход| KPStub[Stub_КП]
+  ZAK --> READY{Готов?}
+  READY -->|нет| DES[Проектировщик]
+  DES --> READY
+  READY -->|да_или_модуль| SUP[Снабжение]
+  SUP --> PROD[Гант_задачи]
+  PROD --> WH[Склад_ГП_модули]
+  WH --> SHIP[Отгрузка_частичная]
   ZAK -.->|optional| DOG[Договор]
 ```
+Канон словами: [`docs/audits/2026-08-08-sales-to-shop-flow-canon.md`](./audits/2026-08-08-sales-to-shop-flow-canon.md).
 
 ## Что делаем сейчас vs паркуем
 
