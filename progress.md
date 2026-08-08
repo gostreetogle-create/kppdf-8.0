@@ -53,7 +53,7 @@
 **Gates:** backend tsc PASS; frontend tsc PASS; jest cost-calculation + product-module 14/14 PASS
 **Archive:** `tasks/_archive/2026-08/TZ-COST-302.done.md`
 **Lock:** `.mimocode/locks/TZ-COST-302-recursive-cost-rollup.lock`
-**Commit:** PENDING
+**Commit:** `96761553fc2f2dfc643c66c61bdede539fd3b183`
 **Known limits:** COST-303 только по PO; product→product lines PARK; deploy NO
 
 ---

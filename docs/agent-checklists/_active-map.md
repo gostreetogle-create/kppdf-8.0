@@ -11,7 +11,7 @@
 | **TZD-22** | `e64e81fca6514e0ad2ad9ae6a9b9a8820a7d8871` |
 | TZ-CATALOG-330 … **334** | 334 on main |
 | TZ-COST-301 | `79edbea` |
-| **TZ-COST-302** | PENDING (this closeout) |
+| **TZ-COST-302** | `96761553fc2f2dfc643c66c61bdede539fd3b183` |
 | TZ-PRODUCTION-303.1 / 303.1b | archives |
 
 ## READY (не сделано — выдавать по PO)
@@ -47,7 +47,7 @@ _(empty)_
 - READY FOR REVIEW: _(none)_
 - NOT DONE: TZ-COST-303 (PO only), TZD-21; TZD-23 park
 - NEXT: idle / wait PO (COST-303 or TZD-21); **no deploy**
-- HEAD: PENDING COST-302 closeout
+- HEAD: 96761553fc2f2dfc643c66c61bdede539fd3b183 (COST-302)
 - Blockers: none
 - _active/: _(empty)_
 - Deploy: NO
