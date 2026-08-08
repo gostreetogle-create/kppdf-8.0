@@ -197,7 +197,11 @@ export class CatalogGraphService {
   private async maxDescendantDepth(refId: string, lineType: LineType, activePath: Set<string>, cycleCheckKey: string, ignoredEdge?: IgnoredEdge): Promise<number> {
     if (lineType === 'material') return 0;
     const key = `${lineType}:${refId}`;
-    if (key === cycleCheckKey || activePath.has(key)) throw new BadRequestException('Цикл в составе: дочерний элемент ссылается на элемент текущего пути');
+    if (key === cycleCheckKey || activePath.has(key)) {
+      throw new BadRequestException(
+        'Цикл в составе: выбранный элемент уже содержит текущий узел в своём дереве (или наоборот). Например, нельзя вложить «Финиш» в «Панель», если «Панель» уже внутри «Финиш». Выберите другой модуль или материал.',
+      );
+    }
     const nextPath = new Set(activePath).add(key);
     let maxChild = 0;
     for (const child of await this.getChildren(refId, lineType, ignoredEdge)) {
