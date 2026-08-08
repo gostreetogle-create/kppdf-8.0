@@ -36,8 +36,18 @@ describe('CostCalculationService (TZ-COST-302)', () => {
     };
 
     const model = {
-      create: jest.fn().mockImplementation(async (doc: unknown) => doc),
+      create: jest.fn().mockImplementation(async (doc: Record<string, unknown>) => ({
+        ...doc,
+        _id: calcId,
+        save: jest.fn().mockImplementation(async function (this: Record<string, unknown>) {
+          return this;
+        }),
+      })),
       findById: jest.fn(),
+      findOne: jest.fn().mockReturnValue({
+        sort: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue(null),
+      }),
       updateMany: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue({}) }),
       updateOne: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue({}) }),
       find: jest.fn(),
@@ -162,11 +172,11 @@ describe('CostCalculationService (TZ-COST-302)', () => {
     expect(result.totalMaterialCost).toBe(100);
   });
 
-  it('activate syncs Product.costPrice = totalCost', async () => {
-    const { service, productModel } = build({
+  it('activate syncs Product.costPrice = totalCost and clears other actives by ObjectId', async () => {
+    const { service, productModel, model } = build({
       calcDoc: {
         _id: calcId,
-        productId,
+        productId, // raw ObjectId (also covers populated via resolveProductId)
         totalCost: 4242,
         isActive: false,
       },
@@ -174,9 +184,33 @@ describe('CostCalculationService (TZ-COST-302)', () => {
 
     const saved = await service.activate(String(calcId));
     expect(saved.isActive).toBe(true);
+    expect(model.updateMany).toHaveBeenCalledWith(
+      { productId, _id: { $ne: calcId }, isActive: true },
+      { $set: { isActive: false } },
+    );
     expect(productModel.updateOne).toHaveBeenCalledWith(
       { _id: productId },
       { $set: { costPrice: 4242 } },
+    );
+  });
+
+  it('activate resolves populated productId to ObjectId', async () => {
+    const { service, model, productModel } = build({
+      calcDoc: {
+        _id: calcId,
+        productId: { _id: productId, name: 'Изделие' },
+        totalCost: 100,
+        isActive: false,
+      },
+    });
+    await service.activate(String(calcId));
+    expect(model.updateMany).toHaveBeenCalledWith(
+      { productId, _id: { $ne: calcId }, isActive: true },
+      { $set: { isActive: false } },
+    );
+    expect(productModel.updateOne).toHaveBeenCalledWith(
+      { _id: productId },
+      { $set: { costPrice: 100 } },
     );
   });
 

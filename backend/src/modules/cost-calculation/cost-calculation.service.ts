@@ -141,7 +141,7 @@ export class CostCalculationService {
     );
     const totalCost =
       totalMaterialCost + totalLaborCost + overheadCost + totalProductLineCost;
-    return this.model.create({
+    const created = await this.model.create({
       productId: productObjectId,
       materials,
       totalMaterialCost,
@@ -155,7 +155,21 @@ export class CostCalculationService {
       calculatedAt: new Date(),
       notes: dto.notes,
       infos: maps.infos,
+      isActive: false,
     });
+    // One active snapshot per product: new recalculation wins.
+    await this.model
+      .updateMany(
+        { productId: productObjectId, _id: { $ne: created._id }, isActive: true },
+        { $set: { isActive: false } },
+      )
+      .exec();
+    created.isActive = true;
+    const saved = await created.save();
+    await this.productModel
+      .updateOne({ _id: productObjectId }, { $set: { costPrice: totalCost } })
+      .exec();
+    return saved;
   }
 
   /**
@@ -192,7 +206,9 @@ export class CostCalculationService {
     productId?: string,
     isActive?: boolean,
   ): Promise<CostCalculationDocument[]> {
-    const filter: Record<string, unknown> = {};
+    const filter: Record<string, unknown> = {
+      $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }],
+    };
     if (productId) {
       if (!Types.ObjectId.isValid(productId)) return [];
       filter.productId = new Types.ObjectId(productId);
@@ -210,7 +226,9 @@ export class CostCalculationService {
       throw new NotFoundException(`CostCalculation ${id} not found`);
     }
     const doc = await this.model.findById(id).populate('productId').exec();
-    if (!doc) throw new NotFoundException(`CostCalculation ${id} not found`);
+    if (!doc || doc.deletedAt) {
+      throw new NotFoundException(`CostCalculation ${id} not found`);
+    }
     return doc;
   }
 
@@ -235,28 +253,56 @@ export class CostCalculationService {
 
   async activate(id: string): Promise<CostCalculationDocument> {
     const doc = await this.findById(id);
+    const productId = this.resolveProductId(doc);
     await this.model
       .updateMany(
-        { productId: doc.productId, _id: { $ne: doc._id }, isActive: true },
+        { productId, _id: { $ne: doc._id }, isActive: true },
         { $set: { isActive: false } },
       )
       .exec();
     doc.isActive = true;
     const saved = await doc.save();
     await this.productModel
-      .updateOne(
-        { _id: doc.productId },
-        { $set: { costPrice: doc.totalCost } },
-      )
+      .updateOne({ _id: productId }, { $set: { costPrice: doc.totalCost } })
       .exec();
     return saved;
   }
 
   async remove(id: string): Promise<void> {
     const doc = await this.findById(id);
+    const productId = this.resolveProductId(doc);
+    const wasActive = doc.isActive;
     await this.model
-      .updateOne({ _id: doc._id }, { $set: { deletedAt: new Date() } })
+      .updateOne(
+        { _id: doc._id },
+        { $set: { deletedAt: new Date(), isActive: false } },
+      )
       .exec();
+    if (!wasActive) return;
+    // Promote the newest remaining snapshot so the product keeps one active cost.
+    const next = await this.model
+      .findOne({
+        productId,
+        _id: { $ne: doc._id },
+        $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }],
+      })
+      .sort({ createdAt: -1 })
+      .exec();
+    if (next) {
+      await this.activate(String(next._id));
+    }
+  }
+
+  /** findById populates productId — never pass the populated doc into ObjectId filters. */
+  private resolveProductId(doc: CostCalculationDocument): Types.ObjectId {
+    const raw: unknown = doc.productId;
+    if (raw instanceof Types.ObjectId) return raw;
+    if (typeof raw === 'object' && raw !== null && '_id' in raw) {
+      const id = (raw as { _id: unknown })._id;
+      if (id instanceof Types.ObjectId) return id;
+      return new Types.ObjectId(String(id));
+    }
+    return new Types.ObjectId(String(raw));
   }
 
   private newMaps(): RollupMaps {

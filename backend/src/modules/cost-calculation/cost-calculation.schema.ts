@@ -120,6 +120,10 @@ export class CostCalculation {
   @Prop()
   notes?: string;
 
+  /** Soft-delete marker — excluded from list queries. */
+  @Prop({ index: true })
+  deletedAt?: Date;
+
   /** Non-fatal rollup notes (e.g. cycle skips, missing child cost). TZ-COST-302/305. */
   @Prop({ type: [String], default: [] })
   infos?: string[];

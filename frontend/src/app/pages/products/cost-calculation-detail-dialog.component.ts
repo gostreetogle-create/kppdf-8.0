@@ -24,9 +24,9 @@ interface DialogData {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ButtonComponent, PiDialogComponent],
   template: `
-    <app-pi-dialog title="Себестоимость — снимок" [width]="'xl'" [variant]="'content'">
-      <div body>
-        <p class="text-sm text-muted-foreground mb-6">
+    <app-pi-dialog title="Себестоимость — снимок" [width]="'lg'" [variant]="'content'">
+      <div body class="space-y-5">
+        <p class="text-sm text-muted-foreground m-0">
           {{ formatDate(cc.calculatedAt || cc.createdAt) }}
           @if (cc.isActive) {
             <span class="ml-2 inline-flex items-center gap-1 text-xs font-medium text-sunrise-warm"
@@ -37,7 +37,7 @@ interface DialogData {
 
         <!-- 1. Материалы -->
         @if (cc.materials.length > 0) {
-          <section class="mb-6">
+          <section>
             <h3 class="eyebrow mb-2">Материалы</h3>
             <div class="hairline rounded-sm overflow-x-auto">
               <table class="w-full text-sm">
@@ -80,7 +80,7 @@ interface DialogData {
 
         <!-- 2. Трудоёмкость -->
         @if (cc.labor.length > 0) {
-          <section class="mb-6">
+          <section>
             <h3 class="eyebrow mb-2">Трудоёмкость</h3>
             <div class="hairline rounded-sm overflow-x-auto">
               <table class="w-full text-sm">
@@ -120,23 +120,31 @@ interface DialogData {
         }
 
         <!-- 3. Накладные + 4. Итого -->
-        <section class="border hairline rounded-sm p-4 bg-paper-2/50">
-          <dl class="grid grid-cols-[1fr_auto] gap-y-2 text-sm">
-            <dt class="eyebrow">Материалы</dt>
-            <dd class="font-mono text-right">{{ formatRuble(cc.totalMaterialCost) }}</dd>
-            <dt class="eyebrow">Работы</dt>
-            <dd class="font-mono text-right">{{ formatRuble(cc.totalLaborCost) }}</dd>
-            <dt class="eyebrow">Накладные ({{ cc.overheadPercent }}%)</dt>
-            <dd class="font-mono text-right text-muted-foreground">
+        <section class="border hairline rounded-sm px-4 py-3.5 bg-paper-2/50">
+          <dl class="grid grid-cols-[minmax(0,1fr)_auto] gap-x-6 gap-y-2.5 text-sm items-baseline">
+            <dt class="eyebrow text-muted-foreground">Материалы</dt>
+            <dd class="font-mono text-right tabular-nums min-w-[7rem]">
+              {{ formatRuble(cc.totalMaterialCost) }}
+            </dd>
+            <dt class="eyebrow text-muted-foreground">Работы</dt>
+            <dd class="font-mono text-right tabular-nums min-w-[7rem]">
+              {{ formatRuble(cc.totalLaborCost) }}
+            </dd>
+            <dt class="eyebrow text-muted-foreground">Накладные ({{ cc.overheadPercent }}%)</dt>
+            <dd class="font-mono text-right tabular-nums text-muted-foreground min-w-[7rem]">
               {{ formatRuble(cc.overheadCost) }}
             </dd>
-            <dt class="eyebrow font-semibold border-t hairline pt-2 mt-1">Итого себестоимость</dt>
-            <dd class="font-mono text-right font-semibold text-lg border-t hairline pt-2 mt-1">
+            <dt class="eyebrow font-semibold text-ink border-t hairline pt-3 mt-1">
+              Итого себестоимость
+            </dt>
+            <dd
+              class="font-mono text-right font-semibold text-base tabular-nums border-t hairline pt-3 mt-1 min-w-[7rem]"
+            >
               {{ formatRuble(cc.totalCost) }}
             </dd>
           </dl>
           @if (cc.notes) {
-            <p class="mt-3 text-xs text-muted-foreground italic">{{ cc.notes }}</p>
+            <p class="mt-3 text-xs text-muted-foreground italic px-0.5">{{ cc.notes }}</p>
           }
         </section>
       </div>

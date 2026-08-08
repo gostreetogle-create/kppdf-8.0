@@ -655,11 +655,13 @@ export class ProductDetailPage {
       width: 'sm',
       parentDestroyRef: this.destroyRef,
     });
-    onDialogCloseOnce(ref, this.injector, () => {
+    onDialogCloseOnce(ref, this.injector, (confirmed) => {
+      if (!confirmed) return;
       this.costSvc.remove(cc._id).subscribe((res) => {
         if (res.ok) {
           this.toast.success('Расчёт удалён');
           this.costRes.reload();
+          this.productRes.reload();
         } else {
           this.toast.error(extractErrorMessage(res.error));
         }
