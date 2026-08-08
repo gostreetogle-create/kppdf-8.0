@@ -27,6 +27,7 @@
 
 | № | Название | Closed | Archive |
 |---|----------|--------|---------|
+| TZ-UX-DETAIL-301 | Product passport cleanup | 2026-08-08 | `tasks/_archive/2026-08/TZ-UX-DETAIL-301.done.md` |
 | TZ-UX-310 | Design system chrome drift audit | 2026-08-08 | `tasks/_archive/2026-08/TZ-UX-310.done.md` |
 | TZ-UX-309 | Page chrome unify (logistics/design/docs) | 2026-08-08 | `tasks/_archive/2026-08/TZ-UX-309.done.md` |
 | TZ-CATALOG-DEDUP-304 | Detail edit opener (FullEditor) | 2026-08-08 | `tasks/_archive/2026-08/TZ-CATALOG-DEDUP-304.done.md` |

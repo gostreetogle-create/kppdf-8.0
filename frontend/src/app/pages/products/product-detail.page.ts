@@ -40,6 +40,7 @@ import { Photo } from '../../shared/services/photos.service';
 import { ProductBomPanelComponent } from './product-bom-panel.component';
 import { ProductFormDialogComponent } from './product-form-dialog.component';
 import { Product, ProductKind, ProductStatus } from '../../shared/services/products.service';
+import { PiFactCardComponent, PiFactStackComponent } from '../../shared/ui/fact-card';
 
 const STATUS_LABELS: Record<ProductStatus, string> = {
   new: 'Новый',
@@ -82,6 +83,8 @@ const KIND_LABELS: Record<ProductKind, string> = {
     AccordionComponent,
     AccordionItemComponent,
     PiPageChromeComponent,
+    PiFactCardComponent,
+    PiFactStackComponent,
   ],
   template: `
     <app-pi-page-chrome [crumbs]="detailCrumbs()" data-test="product-detail-nav">
@@ -155,16 +158,16 @@ const KIND_LABELS: Record<ProductKind, string> = {
                 </p>
               </div>
 
-              <div class="flex flex-wrap gap-1.5">
+              <div class="flex flex-wrap gap-1.5 items-center">
                 @if (isComplex()) {
                   <span
-                    class="inline-flex items-center px-2 py-0.5 text-[11px] hairline rounded-sm bg-sunrise-warm/10 text-sunrise-warm"
+                    class="inline-flex items-center px-2 py-0.5 text-xs hairline rounded-sm bg-sunrise-warm/10 text-sunrise-warm"
                     data-test="complex-badge"
                     >Комплекс</span
                   >
                 }
                 <span
-                  class="inline-flex items-center px-2 py-0.5 text-[11px] hairline rounded-sm"
+                  class="inline-flex items-center px-2 py-0.5 text-xs hairline rounded-sm"
                   [class.bg-sunrise-warm/10]="p.isActive"
                   [class.text-sunrise-warm]="p.isActive"
                   [class.text-muted-foreground]="!p.isActive"
@@ -174,66 +177,39 @@ const KIND_LABELS: Record<ProductKind, string> = {
                 </span>
                 @if (p.status) {
                   <span
-                    class="inline-flex items-center px-2 py-0.5 text-[11px] hairline rounded-sm text-muted-foreground"
+                    class="inline-flex items-center px-2 py-0.5 text-xs hairline rounded-sm text-muted-foreground"
                     data-test="product-status-badge"
                     >{{ statusLabel(p.status) }}</span
                   >
                 }
+                <span
+                  class="inline-flex items-center px-2 py-0.5 text-xs hairline rounded-sm text-muted-foreground font-mono"
+                  data-test="product-module-count"
+                >
+                  В составе: {{ compositionSummary() }}
+                </span>
               </div>
 
-              <dl class="grid grid-cols-2 gap-2 text-sm" data-test="product-hero-prices">
-                <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
-                  <dt class="eyebrow truncate">Прайс</dt>
-                  <dd
-                    class="font-mono font-medium text-sm truncate empty-cell"
-                    data-test="product-list-price"
-                  >
-                    {{ p.listPrice != null ? formatRuble(p.listPrice) : '—' }}
-                  </dd>
-                </div>
-                <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
-                  <dt class="eyebrow truncate">Себест.</dt>
-                  <dd class="font-mono text-sm truncate empty-cell" data-test="product-cost-price">
-                    {{ p.costPrice != null ? formatRuble(p.costPrice) : '—' }}
-                  </dd>
-                </div>
-                <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
-                  <dt class="eyebrow truncate">База</dt>
-                  <dd class="font-mono text-sm truncate empty-cell">
-                    {{ p.basePrice != null ? formatRuble(p.basePrice) : '—' }}
-                  </dd>
-                </div>
-                <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
-                  <dt class="eyebrow truncate">В составе</dt>
-                  <dd class="font-mono font-medium text-sm" data-test="product-module-count">
-                    {{ compositionSummary() }}
-                  </dd>
-                </div>
-              </dl>
-
-              <dl
-                class="flex flex-col gap-1 text-xs text-muted-foreground"
-                data-test="product-hero-dims"
-              >
-                <div class="flex justify-between gap-2">
-                  <span class="eyebrow shrink-0">Д×Ш×В</span>
-                  <span class="font-mono text-ink text-right empty-cell">{{
-                    dimensionsLabel(p)
-                  }}</span>
-                </div>
-                <div class="flex justify-between gap-2">
-                  <span class="eyebrow shrink-0">Вес</span>
-                  <span class="font-mono text-ink text-right empty-cell">{{
-                    p.weightKg != null ? p.weightKg + ' кг' : '—'
-                  }}</span>
-                </div>
-                <div class="flex justify-between gap-2">
-                  <span class="eyebrow shrink-0">RAL</span>
-                  <span class="font-mono text-ink text-right empty-cell">{{
-                    p.ralCode ?? '—'
-                  }}</span>
-                </div>
-              </dl>
+              <app-pi-fact-stack title="Паспорт" dataTest="product-hero-dims">
+                <app-pi-fact-card
+                  label="Д×Ш×В"
+                  [value]="dimensionsLabel(p)"
+                  mono
+                  dataTest="product-dim-hwl"
+                />
+                <app-pi-fact-card
+                  label="Вес"
+                  [value]="p.weightKg != null ? p.weightKg + ' кг' : '—'"
+                  mono
+                  dataTest="product-weight"
+                />
+                <app-pi-fact-card
+                  label="RAL"
+                  [value]="p.ralCode ?? '—'"
+                  mono
+                  dataTest="product-ral"
+                />
+              </app-pi-fact-stack>
             </div>
           </section>
 

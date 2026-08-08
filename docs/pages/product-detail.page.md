@@ -33,7 +33,7 @@
    - выбор из каталога: **`app-pi-overflow-select`** ([канон](./ui-overflow-select.md));
    - product-line picker: лейбл **«Цена в составе, ₽»**; default = `costPrice` → `listPrice`;
      пишет только `composition[].unitPriceOverride` (не карточку ребёнка).
-4. Паспорт: **Прайс** (`listPrice`) рядом с **Себест.** (`costPrice`); База отдельно.
+4. Паспорт (DETAIL-301): фото, имя, badges, **В составе** (count); габариты/вес/RAL через FactCard. Цены — в блоке Себестоимость (DETAIL-302).
 5. Фото / себестоимость (журнал расчётов) — слева под паспортом, не под деревом.
 
 ## Цена в составе vs себестоимость (канон TZ-COST-305)

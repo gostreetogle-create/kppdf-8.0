@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-DETAIL-301 DONE: product passport cleanup
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** убраны ₽-плитки из hero; dims/вес/RAL через FactCard; «В составе» meta.
+**Gates:** FE tsc PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-DETAIL-301.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-DETAIL-301-product-passport-cleanup.lock`
+**Known:** Deploy NO. Next DETAIL-302.
+
 ## [2026-08-08] — TZ-UX-310 DONE: chrome drift audit
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor)
