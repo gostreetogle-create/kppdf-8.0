@@ -13,22 +13,29 @@
 | **TZ-UX-FORM-301** | field capacity packing |
 | **TZ-UX-308** | Справ. yellow on /categories |
 
-## READY / NEXT (STRICT wave only)
+## READY / NEXT
+
+### Lane A — FORM (уже у агента)
 
 | ID | Status |
 |----|--------|
-| **TZ-UX-FORM-302** | секции = эталон Material → QC — **NEXT** |
-| **TZ-UX-FORM-303** | QC L фото |
-| **TZ-UX-FORM-304** | QC L состав (reuse BOM) |
-| **TZ-UX-FORM-305** | sweep form-dialogs (wave A required) |
+| **TZ-UX-FORM-302→305** | секции / фото / состав / sweep — **IN FLIGHT elsewhere** |
 
-## PARK (не брать в этой волне)
+### Lane B — NAV IA (параллель OK)
+
+| ID | Status |
+|----|--------|
+| **TZ-NAV-302** | people→clients, work-types→цех, chips, заказ виден — **READY parallel** |
+
+Wave: `SESSION-WAVE-2026-08-08-nav-ia.md`
+
+## PARK
 
 | ID | Why |
 |----|-----|
-| TZ-UX-302 / 303 | chrome — после волны |
-| TZ-SALES-304 | после PO probes |
-| SUPPLY-302 / Production | later |
+| TZ-UX-302 / 303 | chrome — после FORM |
+| TZ-SALES-304 | KP UX later |
+| SUPPLY-302 / Production deep | later |
 | deploy | только «задеплой» |
 
 ## PARK
