@@ -20,12 +20,14 @@ describe('CostCalculationService (TZ-COST-302)', () => {
 
   function build(overrides: {
     product?: unknown;
+    productsById?: Record<string, unknown>;
     modulesById?: Record<string, unknown>;
     materialsById?: Record<string, unknown>;
     workTypesById?: Record<string, unknown>;
     calcDoc?: Record<string, unknown>;
   } = {}) {
     const modulesById = overrides.modulesById ?? {};
+    const productsById = overrides.productsById ?? {};
     const materialsById = overrides.materialsById ?? {
       [String(materialId)]: { _id: materialId, name: 'Лист', pricePerUnit: 100 },
     };
@@ -41,15 +43,19 @@ describe('CostCalculationService (TZ-COST-302)', () => {
       find: jest.fn(),
     };
     const productModel = {
-      findById: jest.fn().mockReturnValue(
-        leanExec(
+      findById: jest.fn().mockImplementation((id: Types.ObjectId) => {
+        const key = String(id);
+        if (Object.prototype.hasOwnProperty.call(productsById, key)) {
+          return leanExec(productsById[key]);
+        }
+        return leanExec(
           overrides.product ?? {
             composition: [
               { lineType: 'module', refId: parentModuleId, quantity: 1 },
             ],
           },
-        ),
-      ),
+        );
+      }),
       updateOne: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue({}) }),
     };
     const productModuleModel = {
@@ -211,5 +217,136 @@ describe('CostCalculationService (TZ-COST-302)', () => {
     await expect(
       service.previewModuleCost(String(parentModuleId)),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  describe('TZ-COST-305 product-line contribution', () => {
+    const childProductId = new Types.ObjectId();
+
+    it('includes unitPriceOverride × qty in totalCost (not in overhead base)', async () => {
+      const { service } = build({
+        product: {
+          composition: [
+            {
+              lineType: 'product',
+              refId: childProductId,
+              quantity: 2,
+              unitPriceOverride: 1500,
+            },
+          ],
+        },
+        productsById: {
+          [String(childProductId)]: {
+            _id: childProductId,
+            name: 'Дочернее',
+            costPrice: 999,
+          },
+        },
+      });
+
+      const result = await service.create({
+        productId: String(productId),
+        overheadPercent: 10,
+      });
+
+      expect(result.totalMaterialCost).toBe(0);
+      expect(result.overheadCost).toBe(0);
+      expect(result.totalProductLineCost).toBe(3000);
+      expect(result.productLines).toEqual([
+        expect.objectContaining({
+          quantity: 2,
+          unitCost: 1500,
+          total: 3000,
+          source: 'override',
+        }),
+      ]);
+      expect(result.totalCost).toBe(3000);
+    });
+
+    it('falls back to child.costPrice × qty when override empty', async () => {
+      const { service } = build({
+        product: {
+          composition: [
+            { lineType: 'product', refId: childProductId, quantity: 3 },
+          ],
+        },
+        productsById: {
+          [String(childProductId)]: {
+            _id: childProductId,
+            name: 'Дочернее',
+            costPrice: 400,
+          },
+        },
+      });
+
+      const result = await service.create({
+        productId: String(productId),
+        overheadPercent: 10,
+      });
+
+      expect(result.totalProductLineCost).toBe(1200);
+      expect(result.productLines?.[0]).toEqual(
+        expect.objectContaining({ source: 'costPrice', unitCost: 400, total: 1200 }),
+      );
+      expect(result.totalCost).toBe(1200);
+      expect(result.overheadCost).toBe(0);
+    });
+
+    it('contrib 0 + infos when override and child.costPrice both empty', async () => {
+      const { service } = build({
+        product: {
+          composition: [
+            { lineType: 'product', refId: childProductId, quantity: 1 },
+          ],
+        },
+        productsById: {
+          [String(childProductId)]: {
+            _id: childProductId,
+            name: 'Пустое',
+            costPrice: null,
+          },
+        },
+      });
+
+      const result = await service.create({ productId: String(productId) });
+
+      expect(result.totalProductLineCost).toBe(0);
+      expect(result.productLines?.[0]?.source).toBe('none');
+      expect(result.infos?.some((i: string) => i.includes('вклад 0'))).toBe(true);
+      expect(result.totalCost).toBe(0);
+    });
+
+    it('regression: material+module rollup unchanged when no product-lines', async () => {
+      const { service } = build({
+        modulesById: {
+          [String(parentModuleId)]: {
+            _id: parentModuleId,
+            composition: [
+              { lineType: 'material', refId: materialId, quantity: 2, unit: 'шт' },
+            ],
+            workTypes: [{ workTypeId, estimatedHours: 1 }],
+            materials: [],
+          },
+        },
+        product: {
+          composition: [
+            { lineType: 'module', refId: parentModuleId, quantity: 1 },
+            { lineType: 'material', refId: materialId, quantity: 1 },
+          ],
+        },
+      });
+
+      const result = await service.create({
+        productId: String(productId),
+        overheadPercent: 10,
+      });
+
+      // materials: module 2×100 + root 1×100 = 300; labor 500; overhead 30
+      expect(result.totalMaterialCost).toBe(300);
+      expect(result.totalLaborCost).toBe(500);
+      expect(result.overheadCost).toBe(30);
+      expect(result.totalProductLineCost).toBe(0);
+      expect(result.productLines).toEqual([]);
+      expect(result.totalCost).toBe(830);
+    });
   });
 });

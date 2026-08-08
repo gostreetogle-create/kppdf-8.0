@@ -25,13 +25,27 @@
      kind-цвета на бейдже/rail (изд/мод/мат) через `catalogKindOklch` (TZ-330);
      раскрытые дети — в nest-рамках принадлежности (TZ-333), пачки с gap/rail (TZ-334), не в Excel-колонках;
    - легенда kind (точки) над деревом;
-   - инспектор справа: qty, **вклад в себест.** (материал: `price×qty`; модуль: `cost-preview×qty`, TZ-COST-303),
+   - инспектор справа: qty, **вклад в себест.** (материал: `price×qty`; модуль: `cost-preview×qty`;
+     product-line: `unitPriceOverride×qty` иначе `child.costPrice×qty`, TZ-COST-305),
      «+ Из каталога» **в выбранный узел**, убрать, ссылка на карточку;
    - add в **product** → product composition API; add в **module** → module composition API;
    - picker с `restrictToModule` скрывает вкладку «изделие» и разрешает сырьё;
-   - выбор из каталога: **`app-pi-overflow-select`** ([канон](./ui-overflow-select.md)).
+   - выбор из каталога: **`app-pi-overflow-select`** ([канон](./ui-overflow-select.md));
+   - product-line picker: лейбл **«Цена в составе, ₽»**; default = `costPrice` → `listPrice`;
+     пишет только `composition[].unitPriceOverride` (не карточку ребёнка).
 4. Паспорт: **Прайс** (`listPrice`) рядом с **Себест.** (`costPrice`); База отдельно.
 5. Фото / себестоимость (журнал расчётов) — слева под паспортом, не под деревом.
+
+## Цена в составе vs себестоимость (канон TZ-COST-305)
+
+| | Поле | Роль |
+|--|------|------|
+| Диалог вставки изделия | `unitPriceOverride` на линии родителя | Snapshot «цена в этом составе» |
+| Карточка ребёнка | `costPrice` / `listPrice` | Не меняются из picker |
+| CostCalculation | bucket `productLines` + `totalProductLineCost` | `override×qty` иначе `costPrice×qty`; иначе 0 + `infos` |
+| Накладные % | только от materials | product-line **не** в базе overhead |
+
+Аудит решений D1–D5: [`docs/audits/2026-08-09-product-line-cost-vs-override.md`](../audits/2026-08-09-product-line-cost-vs-override.md).
 
 ## Бизнес-правила состава (канон)
 
@@ -62,4 +76,4 @@
 
 ---
 
-_Создано: 2026-08-04. Обновлено: 2026-08-08 (TZ-COST-303 cost visibility · TZ-333/334)._
+_Создано: 2026-08-04. Обновлено: 2026-08-08 (TZ-COST-305 product-line · TZ-COST-303 · TZ-333/334)._

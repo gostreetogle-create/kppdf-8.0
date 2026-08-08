@@ -21,6 +21,7 @@ import {
   ProductModulesService,
 } from '../../shared/services/pi-product-modules.service';
 import { MaterialsService } from '../../shared/services/materials.service';
+import { ProductsService } from '../../shared/services/products.service';
 import { extractErrorMessage } from '../../core/silent-http';
 import { PiToastService } from '../../shared/ui/toast';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
@@ -269,6 +270,7 @@ export class ProductBomPanelComponent {
 
   private readonly service = inject(ProductModulesService);
   private readonly materials = inject(MaterialsService);
+  private readonly products = inject(ProductsService);
   private readonly toast = inject(PiToastService);
   private readonly dialog = inject(PiDialogService);
   private readonly destroyRef = inject(DestroyRef);
@@ -529,13 +531,14 @@ export class ProductBomPanelComponent {
   }
 
   /**
-   * TZ-COST-303: read-only contribution of the selected BOM line.
-   * material → pricePerUnit × qty; module → cost-preview.totalCost × qty.
-   * Root product / nested product: no hint (product cost is on passport).
+   * TZ-COST-303/305: read-only contribution of the selected BOM line.
+   * material → pricePerUnit × qty; module → cost-preview.totalCost × qty;
+   * nested product → unitPriceOverride×qty else child.costPrice×qty.
+   * Root product: no hint (passport cost).
    */
   private refreshLineCost(sel: CompositionTreeSelectEvent | null): void {
     const seq = ++this.lineCostSeq;
-    if (!sel || sel.depth === 0 || sel.node.kind === 'product') {
+    if (!sel || sel.depth === 0) {
       this.lineCostHint.set(null);
       return;
     }
@@ -546,6 +549,11 @@ export class ProductBomPanelComponent {
       totalLabel: '—',
       formula: '',
     });
+
+    if (sel.node.kind === 'product') {
+      this.resolveProductLineCost(sel, qty, seq);
+      return;
+    }
 
     if (sel.node.kind === 'material') {
       this.materials
@@ -598,6 +606,85 @@ export class ProductBomPanelComponent {
           });
         });
     }
+  }
+
+  /** TZ-COST-305 D1=b — inspector hint for product-in-product line. */
+  private resolveProductLineCost(sel: CompositionTreeSelectEvent, qty: number, seq: number): void {
+    const finishOverrideOrFetch = (override: number | undefined): void => {
+      if (seq !== this.lineCostSeq) return;
+      if (override != null && Number.isFinite(override)) {
+        this.lineCostHint.set({
+          loading: false,
+          totalLabel: formatPrice(override * qty) || '—',
+          formula: `цена в составе ${formatPrice(override) || '0.00 ₽'} × ${qty}`,
+        });
+        return;
+      }
+      this.products
+        .findById(sel.node._id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((res) => {
+          if (seq !== this.lineCostSeq) return;
+          if (!res.ok) {
+            this.lineCostHint.set({
+              loading: false,
+              totalLabel: '—',
+              formula: '',
+              error: extractErrorMessage(res.error),
+            });
+            return;
+          }
+          const cost = res.data.costPrice;
+          if (cost != null && Number.isFinite(cost)) {
+            this.lineCostHint.set({
+              loading: false,
+              totalLabel: formatPrice(cost * qty) || '—',
+              formula: `себест. ребёнка ${formatPrice(cost) || '0.00 ₽'} × ${qty}`,
+            });
+            return;
+          }
+          this.lineCostHint.set({
+            loading: false,
+            totalLabel: formatPrice(0) || '0.00 ₽',
+            formula: 'нет цены в составе и нет себест. ребёнка',
+          });
+        });
+    };
+
+    const fromLines = (lines: CompositionLine[]): void => {
+      const line = lines.find((l) => l.refId === sel.node._id && l.lineType === 'product');
+      const override =
+        line && 'unitPriceOverride' in line && line.unitPriceOverride != null
+          ? line.unitPriceOverride
+          : undefined;
+      finishOverrideOrFetch(override);
+    };
+
+    const parent = sel.parent;
+    if (!parent) {
+      finishOverrideOrFetch(undefined);
+      return;
+    }
+    if (parent.kind === 'product') {
+      fromLines(this.rootLines());
+      return;
+    }
+    const cached = this.moduleLinesCache().get(parent._id);
+    if (cached) {
+      fromLines(cached);
+      return;
+    }
+    this.service.getModuleComposition(parent._id).subscribe((res) => {
+      if (seq !== this.lineCostSeq) return;
+      if (!res.ok) {
+        finishOverrideOrFetch(undefined);
+        return;
+      }
+      const next = new Map(this.moduleLinesCache());
+      next.set(parent._id, res.data);
+      this.moduleLinesCache.set(next);
+      fromLines(res.data);
+    });
   }
 
   private load(): void {

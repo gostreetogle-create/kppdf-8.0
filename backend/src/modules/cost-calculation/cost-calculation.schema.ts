@@ -44,6 +44,32 @@ export class CostLabor {
 
 const CostLaborSchema = SchemaFactory.createForClass(CostLabor);
 
+/** TZ-COST-305: product-line contribution snapshot (complex BOM). */
+export type CostProductLineSource = 'override' | 'costPrice' | 'none';
+
+@Schema({ _id: false })
+export class CostProductLine {
+  @Prop({ type: Types.ObjectId, ref: 'Product', required: true })
+  productId!: Types.ObjectId;
+
+  @Prop()
+  productName?: string;
+
+  @Prop({ default: 1 })
+  quantity!: number;
+
+  @Prop({ default: 0 })
+  unitCost!: number;
+
+  @Prop({ default: 0 })
+  total!: number;
+
+  @Prop({ required: true, enum: ['override', 'costPrice', 'none'] })
+  source!: CostProductLineSource;
+}
+
+const CostProductLineSchema = SchemaFactory.createForClass(CostProductLine);
+
 export type CostCalculationDocument = HydratedDocument<CostCalculation>;
 
 @Schema({ collection: 'costcalculations', timestamps: true })
@@ -72,6 +98,13 @@ export class CostCalculation {
   @Prop({ default: 0 })
   totalLaborCost!: number;
 
+  /** TZ-COST-305: product-in-product lines (not in overhead base). */
+  @Prop({ type: [CostProductLineSchema], default: [] })
+  productLines!: CostProductLine[];
+
+  @Prop({ default: 0 })
+  totalProductLineCost!: number;
+
   @Prop({ default: 10 })
   overheadPercent!: number;
 
@@ -87,7 +120,7 @@ export class CostCalculation {
   @Prop()
   notes?: string;
 
-  /** Non-fatal rollup notes (e.g. cycle skips). TZ-COST-302. */
+  /** Non-fatal rollup notes (e.g. cycle skips, missing child cost). TZ-COST-302/305. */
   @Prop({ type: [String], default: [] })
   infos?: string[];
 }

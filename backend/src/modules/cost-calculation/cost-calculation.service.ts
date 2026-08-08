@@ -6,6 +6,8 @@ import {
   CostCalculationDocument,
   CostMaterial,
   CostLabor,
+  CostProductLine,
+  CostProductLineSource,
 } from './cost-calculation.schema';
 import { CreateCostCalculationDto } from './dto/create-cost-calculation.dto';
 import { UpdateCostCalculationDto } from './dto/update-cost-calculation.dto';
@@ -18,22 +20,26 @@ import { Material, MaterialDocument } from '../material/material.schema';
 import { WorkType, WorkTypeDocument } from '../work-type/work-type.schema';
 
 /**
- * TZ-85 Phase A + TZ-COST-302: CostCalculationService.
+ * TZ-85 Phase A + TZ-COST-302/305: CostCalculationService.
  *
  * Rollup walks Product → modules (recursive nested `lineType=module` × qty)
  * → materials + labor. Cycles skip with warn in `infos` (no 500).
  *
+ * TZ-COST-305: product-lines contribute override×qty else child.costPrice×qty
+ * (else 0 + infos). Product-line bucket is NOT in the overhead% base.
+ *
  * Overhead canon A (TZ-COST-302): overheadPercent applies only to
- * totalMaterialCost — not labor.
+ * totalMaterialCost — not labor, not productLines.
  *
  * Snapshot: each create() persists a new immutable CostCalculation.
  * activate() marks one active and syncs Product.costPrice = totalCost.
  */
 type CostLine = {
-  lineType: 'module' | 'material';
+  lineType: 'module' | 'material' | 'product';
   refId: Types.ObjectId | string;
   quantity?: number;
   unit?: string;
+  unitPriceOverride?: number;
 };
 type ProductCostSource = { composition?: CostLine[]; productModuleIds?: Types.ObjectId[] };
 type ModuleMaterialCostSource = { materialId: Types.ObjectId | string; quantity?: number; unit?: string };
@@ -46,6 +52,11 @@ type ModuleCostSource = {
 };
 type MaterialCostSource = { _id: Types.ObjectId; name: string; pricePerUnit?: number };
 type WorkTypeCostSource = { _id: Types.ObjectId; name: string; hourlyRate?: number };
+type ChildProductCostSource = {
+  _id: Types.ObjectId;
+  name?: string;
+  costPrice?: number | null;
+};
 
 type RollupMaps = {
   materialMap: Map<string, CostMaterial>;
@@ -112,22 +123,32 @@ export class CostCalculationService {
       await this.walkModule(maps, String(moduleLine.refId), moduleLine.quantity ?? 1, new Set());
     }
 
+    const productLines: CostProductLine[] = [];
+    for (const line of productComposition.filter((item) => item.lineType === 'product')) {
+      const row = await this.buildProductLine(maps, line);
+      if (row) productLines.push(row);
+    }
+
     const materials = Array.from(maps.materialMap.values());
     const labor = Array.from(maps.laborMap.values());
     const totalMaterialCost = materials.reduce((sum, row) => sum + row.total, 0);
     const totalLaborCost = labor.reduce((sum, row) => sum + row.total, 0);
+    const totalProductLineCost = productLines.reduce((sum, row) => sum + row.total, 0);
     const overheadPercent = dto.overheadPercent ?? 10;
     const overheadCost = CostCalculationService.overheadFromMaterials(
       totalMaterialCost,
       overheadPercent,
     );
-    const totalCost = totalMaterialCost + totalLaborCost + overheadCost;
+    const totalCost =
+      totalMaterialCost + totalLaborCost + overheadCost + totalProductLineCost;
     return this.model.create({
       productId: productObjectId,
       materials,
       totalMaterialCost,
       labor,
       totalLaborCost,
+      productLines,
+      totalProductLineCost,
       overheadPercent,
       overheadCost,
       totalCost,
@@ -205,8 +226,9 @@ export class CostCalculationService {
         doc.totalMaterialCost,
         dto.overheadPercent,
       );
+      const productLineBucket = doc.totalProductLineCost ?? 0;
       doc.totalCost =
-        doc.totalMaterialCost + doc.totalLaborCost + doc.overheadCost;
+        doc.totalMaterialCost + doc.totalLaborCost + doc.overheadCost + productLineBucket;
     }
     return doc.save();
   }
@@ -242,6 +264,53 @@ export class CostCalculationService {
       materialMap: new Map(),
       laborMap: new Map(),
       infos: [],
+    };
+  }
+
+  /**
+   * TZ-COST-305 D1=b: override×qty else child.costPrice×qty else 0 + infos.
+   * Does not recurse into child composition.
+   */
+  private async buildProductLine(
+    maps: RollupMaps,
+    line: CostLine,
+  ): Promise<CostProductLine | null> {
+    const ref = String(line.refId);
+    if (!Types.ObjectId.isValid(ref)) return null;
+    const qty = line.quantity ?? 1;
+    const child = (await this.productModel
+      .findById(new Types.ObjectId(ref))
+      .select('name costPrice')
+      .lean()
+      .exec()) as ChildProductCostSource | null;
+
+    let source: CostProductLineSource;
+    let unitCost: number;
+    if (line.unitPriceOverride != null && Number.isFinite(line.unitPriceOverride)) {
+      source = 'override';
+      unitCost = line.unitPriceOverride;
+    } else if (
+      child?.costPrice != null &&
+      Number.isFinite(child.costPrice)
+    ) {
+      source = 'costPrice';
+      unitCost = child.costPrice;
+    } else {
+      source = 'none';
+      unitCost = 0;
+      const label = child?.name ? `"${child.name}"` : ref;
+      maps.infos.push(
+        `product-line ${label}: нет цены в составе и нет себест. ребёнка — вклад 0`,
+      );
+    }
+
+    return {
+      productId: child?._id ?? new Types.ObjectId(ref),
+      productName: child?.name,
+      quantity: qty,
+      unitCost,
+      total: unitCost * qty,
+      source,
     };
   }
 

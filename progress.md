@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-COST-305 DONE: product-line в CostCalculation
+
+**Исполнитель:** continuous-executor-composer (self PASS → archive)
+**Статус:** DONE on main; deploy НЕ
+**Что сделано кратко:** bucket productLines; override×qty иначе child.costPrice×qty (+infos); overhead без product-line; picker «Цена в составе» + prefill; BOM inspector hint.
+**Gates:** BE tsc PASS; jest cost-calculation 10/10; FE tsc PASS; jest picker+bom 12/12
+**Archive:** `tasks/_archive/2026-08/TZ-COST-305.done.md`
+**Lock:** `.mimocode/locks/TZ-COST-305-product-line-in-cost.lock`
+**Cursor Verdict:** PASS (executor self)
+
 ## [2026-08-08] — TZ-DICT-313 DONE: quick-create form profiles audit
 
 **Исполнитель:** continuous-executor-composer (docs PASS → archive)

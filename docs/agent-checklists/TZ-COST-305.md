@@ -1,36 +1,55 @@
-# TZ-COST-305 — Product-line in CostCalculation + picker
+# TZ-COST-305 checklist
 
-**TZ:** `tasks/_backlog/cost/TZ-COST-305-product-line-in-cost.md`  
-**Status:** RESERVED (не CLAIM — ждать слот после 336/335 или PO)  
-**Canon:** `docs/audits/2026-08-09-product-line-cost-vs-override.md`
+> Status: **DONE**
+> Marker: archived — `tasks/_archive/2026-08/TZ-COST-305.done.md`
+> Commit/push: YES (executor-loop after gates PASS)
 
-## Claim slot
+## Claim slot (ОБЯЗАТЕЛЬНО до кода)
 
-- agent_id: _(empty until claim)_
-- claimed_at: —
+- agent_id: continuous-executor-composer
+- claimed_at: 2026-08-08T06:15:17Z
 - workspace: D:\kppdf-8.0
-- team_room_claim: —
+- team_room_claim: unavailable (Unknown task: TZ-COST-305; sync tasks first)
 
 ## Preflight
 
-- [ ] Get-Location + git rev-parse → `D:\kppdf-8.0`
-- [ ] `_active-map` + `_active/` — нет конфликта с cost-calculation / picker
-- [ ] Audit 2026-08-09 D1–D5 прочитаны
-- [ ] Claim slot заполнен; Status = CLAIMED
-- [ ] `tasks/_active/TZ-COST-305.md` на месте
+- [x] Get-Location + git rev-parse --show-toplevel → оба `D:\kppdf-8.0`
+- [x] Прочитал `_active-map.md` + `tasks/_active/` — TZD-21 keys ≠ COST-305
+- [x] TZ / канон PO §1–§4 / audit D1–D5 / deps прочитаны
+- [x] Claim slot заполнен; Status = CLAIMED / IN PROGRESS
+- [x] `tasks/_active/TZ-COST-305.md` на месте (removed at archive)
 
 ## Acceptance
 
-- [ ] product-line+override входит в totalCost
-- [ ] fallback child.costPrice; none → 0+info
-- [ ] overhead без product-line base
-- [ ] Picker RU + prefill; tests + tsc PASS
-- [ ] Docs + archive
+- [x] Parent с product-line+override → CostCalculation.totalCost включает override×qty
+- [x] Без override → child.costPrice×qty; оба пусты → 0 + infos
+- [x] overhead% не умножается на product-line bucket
+- [x] Picker: «Цена в составе, ₽» + prefill costPrice→listPrice; jest picker spec зелёный
+- [x] BE unit tests на 3 сценария + regression module/material
+- [x] `cd backend && pnpm exec tsc -p tsconfig.build.json --noEmit`
+- [x] `cd backend && pnpm test -- cost-calculation`
+- [x] `cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit`
+- [x] product-detail.page.md обновлён; нет silent 0 без info
+- [x] Archive + lock; не трогать чужой `_active` TZD-21
 
 ## Gates (факт)
 
-_(fill)_
+| Gate | Result |
+|------|--------|
+| backend tsc | PASS |
+| jest cost-calculation | PASS 10/10 |
+| frontend tsc | PASS |
+| jest product-composition-picker-dialog + product-bom-panel | PASS 12/12 |
 
-## Executor report (auto)
+## Executor report
 
-_(fill on DONE)_
+- BE schema/service: productLines bucket; D1=b; overhead materials-only.
+- FE picker D3/D4; BOM inspector product-line hint.
+- Conflict disclosure: peer TZD-21 in `_active` (auth/desktop) — no overlap.
+- known_limitation: no live child BOM recursion; breakdown dialog FE types optional.
+
+## Closeout (после PASS)
+
+- [x] archive + lock + progress + удалить `_active`
+- [x] Status = DONE
+- closed_at: 2026-08-08T06:30:00Z

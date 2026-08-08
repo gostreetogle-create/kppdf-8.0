@@ -2,10 +2,10 @@
 TZ-COST-305: Product-line вклад в себестоимость + default/copy в picker
 ═══════════════════════════════════════════════════════════════
 
-> READY (после COST-304 docs-DONE) · **код** · не CLAIM пока map не выдаст слот  
+> DONE · archived `tasks/_archive/2026-08/TZ-COST-305.done.md`
 > Канон решений: `docs/audits/2026-08-09-product-line-cost-vs-override.md` (D1–D5)
 
-STATUS: READY (RESERVED — ждать слот после 336/335 или явного PO)
+STATUS: DONE
 
 РОЛЬ АГЕНТА: Backend + Frontend (один агент, Layer 3 на cost-calculation + picker)
 

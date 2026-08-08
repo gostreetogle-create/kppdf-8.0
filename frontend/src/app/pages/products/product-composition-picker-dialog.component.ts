@@ -105,7 +105,7 @@ type PickerKind = 'product' | 'module' | 'material';
               <app-pi-overflow-select
                 [items]="available()"
                 [value]="selectedId()"
-                (valueChange)="selectedId.set($event)"
+                (valueChange)="onSelectItem($event)"
                 placeholder="— выбрать —"
                 ariaLabel="Что добавить"
                 dataTest="composition-picker-select"
@@ -126,7 +126,7 @@ type PickerKind = 'product' | 'module' | 'material';
           <div class="min-h-[4.5rem]">
             @if (activeKind() === 'product') {
               <label class="block max-w-xs">
-                <span class="eyebrow block mb-1.5">Цена переопределения, ₽</span>
+                <span class="eyebrow block mb-1.5">Цена в составе, ₽</span>
                 <input
                   class="pi-input w-full"
                   type="number"
@@ -137,6 +137,9 @@ type PickerKind = 'product' | 'module' | 'material';
                   placeholder="необязательно"
                   data-test="unit-price-override"
                 />
+                <p class="text-[11px] text-muted-foreground m-0 mt-1.5 leading-snug">
+                  Входит в себестоимость родителя. Карточку ребёнка не меняет.
+                </p>
               </label>
             }
           </div>
@@ -281,6 +284,17 @@ export class ProductCompositionPickerDialogComponent {
     this.validationError.set(null);
   }
 
+  /** Prefill «Цена в составе» from child costPrice → listPrice (D3). Does not PATCH child. */
+  protected onSelectItem(id: string): void {
+    this.selectedId.set(id);
+    this.validationError.set(null);
+    if (this.activeKind() !== 'product' || !id) {
+      return;
+    }
+    const product = this.products().find((item) => item._id === id);
+    this.unitPriceOverride.set(defaultCompositionPrice(product));
+  }
+
   protected onQuery(event: Event): void {
     this.query.set((event.target as HTMLInputElement).value);
   }
@@ -296,7 +310,7 @@ export class ProductCompositionPickerDialogComponent {
       const rawPrice = this.unitPriceOverride().trim();
       const unitPriceOverride = rawPrice === '' ? undefined : Number(rawPrice);
       if (!isValidProductUnitPriceOverride(unitPriceOverride)) {
-        this.validationError.set('Цена переопределения не может быть отрицательной.');
+        this.validationError.set('Цена в составе не может быть отрицательной.');
         return;
       }
       const product = this.products().find((item) => item._id === id);
@@ -313,4 +327,18 @@ export class ProductCompositionPickerDialogComponent {
   protected onCancel(): void {
     this.ref.close(null);
   }
+}
+
+/** D3: costPrice → listPrice → empty. Never writes to child card. */
+export function defaultCompositionPrice(
+  product: Pick<Product, 'costPrice' | 'listPrice'> | undefined,
+): string {
+  if (!product) return '';
+  if (product.costPrice != null && Number.isFinite(product.costPrice)) {
+    return String(product.costPrice);
+  }
+  if (product.listPrice != null && Number.isFinite(product.listPrice)) {
+    return String(product.listPrice);
+  }
+  return '';
 }

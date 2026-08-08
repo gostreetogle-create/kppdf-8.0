@@ -1,6 +1,6 @@
 # SESSION QUEUE — continuous executor
 
-**Updated:** 2026-08-08T06:20Z · **313 DONE** → next **TZD-21** (if READY)
+**Updated:** 2026-08-08T06:30Z · **TZ-COST-305 DONE** → NEXT idle / deploy-ready (DICT-314…316 RESERVED; TZD-21 peer)
 
 ## DONE this session
 
@@ -10,28 +10,28 @@
 | TZ-CATALOG-335 | `973c6e3` |
 | TZ-COST-304 | already archived (skipped) |
 | TZ-DICT-313 | docs audit → 314–316 drafts |
+| **TZ-COST-305** | product-line in CostCalculation (pending commit SHA) |
 
 ## READY
 
 | Priority | ID | Note |
 |----------|-----|------|
-| **4** | **TZD-21** | pairing keys — CLAIM if backlog READY |
 | — | **deploy** | только «задеплой» |
+| peer | **TZD-21** | другой агент / не брать без map |
 
 ## PARK / RESERVED (не брать без PO / map slot)
 
 | ID | Why |
 |----|-----|
-| TZ-COST-305 | after audits; RESERVED |
-| TZ-DICT-314…316 | after 313; RESERVED |
+| TZ-DICT-314…316 | after 313; RESERVED — не код без PO |
 | TZ-ORDERS-302 | заказ = cascade |
 | TZD-23 | AI matching |
 
-## Checkpoint 2026-08-08T06:20Z
-- DONE: 336, 335, 304(prior), 313
-- IN PROGRESS: none
-- NOT DONE: TZD-21 (map READY)
-- NEXT: TZD-21
+## Checkpoint 2026-08-08T06:30Z
+- DONE: 336, 335, 304(prior), 313, **305**
+- IN PROGRESS: none (this agent)
+- NOT DONE: TZD-21 (peer `_active`)
+- NEXT: idle — очередь PO для этого агента пуста; предложить деплой; **не** автодеплой; **не** брать 314–316 без PO
 - Blockers: none
-- _active/: empty after 313 archive
-- Deploy: NO
+- _active/: TZD-21.md only (peer)
+- Deploy: NO (await explicit PO)

@@ -8,7 +8,7 @@ import { ProductModulesService } from '../../shared/services/pi-product-modules.
 import { MaterialsService } from '../../shared/services/materials.service';
 import { ProductsService } from '../../shared/services/products.service';
 
-describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320)', () => {
+describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)', () => {
   let fixture: ComponentFixture<ProductCompositionPickerDialogComponent>;
   let close: jest.Mock;
 
@@ -63,7 +63,21 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320)', () => {
                 data: {
                   items: [
                     { _id: 'p1', name: 'Текущий', kind: 'good', unit: 'шт' },
-                    { _id: 'p2', name: 'Дочернее изделие', kind: 'good', unit: 'шт' },
+                    {
+                      _id: 'p2',
+                      name: 'Дочернее изделие',
+                      kind: 'good',
+                      unit: 'шт',
+                      costPrice: 800,
+                      listPrice: 1200,
+                    },
+                    {
+                      _id: 'p3',
+                      name: 'Только прайс',
+                      kind: 'good',
+                      unit: 'шт',
+                      listPrice: 500,
+                    },
                   ],
                 },
               }),
@@ -81,19 +95,24 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320)', () => {
     activeKind: () => string;
     selectedId: () => string;
     unitPriceOverride: () => string;
+    onSelectItem: (id: string) => void;
   } {
     return fixture.componentInstance as unknown as Record<string, (...args: never[]) => unknown> & {
       available: () => unknown[];
       activeKind: () => string;
       selectedId: () => string;
       unitPriceOverride: () => string;
+      onSelectItem: (id: string) => void;
     };
   }
 
   it('excludes the current product and raw materials', () => {
     const component = instance();
     expect(component.activeKind()).toBe('product');
-    expect(component.available()).toEqual([{ id: 'p2', label: 'Дочернее изделие · без SKU' }]);
+    expect(component.available()).toEqual([
+      { id: 'p2', label: 'Дочернее изделие · без SKU' },
+      { id: 'p3', label: 'Только прайс · без SKU' },
+    ]);
     component.selectKind('module' as never);
     expect(component.available()).toEqual([{ id: 'm1', label: 'Модуль · без артикула' }]);
     component.selectKind('material' as never);
@@ -112,6 +131,21 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320)', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('[data-test="composition-picker-select"]')).toBeTruthy();
     expect(el.querySelector('[data-test="pi-overflow-select-trigger"]')).toBeTruthy();
+  });
+
+  it('labels price field as Цена в составе', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.textContent).toContain('Цена в составе, ₽');
+    expect(el.textContent).toContain('Карточку ребёнка не меняет');
+  });
+
+  it('prefills costPrice then listPrice on product select (D3)', () => {
+    const component = instance();
+    component.selectKind('product' as never);
+    component.onSelectItem('p2');
+    expect(component.unitPriceOverride()).toBe('800');
+    component.onSelectItem('p3');
+    expect(component.unitPriceOverride()).toBe('500');
   });
 
   it('submits product line with a non-negative unit price override', () => {

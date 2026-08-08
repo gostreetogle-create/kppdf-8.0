@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 import { ProductBomPanelComponent } from './product-bom-panel.component';
 import { ProductModulesService } from '../../shared/services/pi-product-modules.service';
 import { MaterialsService } from '../../shared/services/materials.service';
+import { ProductsService } from '../../shared/services/products.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 
@@ -12,6 +13,7 @@ describe('ProductBomPanelComponent', () => {
   let fixture: ComponentFixture<ProductBomPanelComponent>;
   let service: Record<string, jest.Mock>;
   let materials: Record<string, jest.Mock>;
+  let products: Record<string, jest.Mock>;
 
   const tree = {
     _id: 'p1',
@@ -101,6 +103,14 @@ describe('ProductBomPanelComponent', () => {
         }),
       ),
     };
+    products = {
+      findById: jest.fn().mockReturnValue(
+        of({
+          ok: true,
+          data: { _id: 'p2', name: 'Дочернее', costPrice: 400, listPrice: 600 },
+        }),
+      ),
+    };
 
     await TestBed.configureTestingModule({
       imports: [ProductBomPanelComponent],
@@ -109,6 +119,7 @@ describe('ProductBomPanelComponent', () => {
         provideRouter([]),
         { provide: ProductModulesService, useValue: service },
         { provide: MaterialsService, useValue: materials },
+        { provide: ProductsService, useValue: products },
         { provide: PiToastService, useValue: { success: jest.fn(), error: jest.fn() } },
         { provide: PiDialogService, useValue: { open: jest.fn() } },
       ],

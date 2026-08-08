@@ -282,11 +282,12 @@ rg -i '(embedding|vector.?search|cosine|ANN)' backend/src frontend/src
 
 ### Cost formula
 
-`totalCost = Σ materials + Σ labor + overhead`  
-**Overhead canon A (TZ-COST-302):** `overheadCost = totalMaterialCost × overheadPercent / 100` (только от материалов, не от labor).
+`totalCost = Σ materials + Σ labor + overhead + Σ productLines`  
+**Overhead canon A (TZ-COST-302):** `overheadCost = totalMaterialCost × overheadPercent / 100` (только от материалов, не от labor / productLines).
 
 Recursive module rollup: nested `composition` lines with `lineType=module` × qty; cycles skip + `infos[]` warn. `activate` → `Product.costPrice = totalCost`. Module read-only: `GET /api/modules/:id/cost-preview`.
-**UI visibility (TZ-COST-303):** product list/detail show Себест. (`costPrice`) next to Прайс (`listPrice`); module list = hint «см. карточку» (no batch preview); BOM inspector = material `price×qty` / module `preview×qty` read-only.
+**Product-line (TZ-COST-305):** `productLines[]` + `totalProductLineCost`; вклад = `unitPriceOverride×qty` иначе `child.costPrice×qty` (иначе 0 + `infos`). Не в базе overhead%.
+**UI visibility (TZ-COST-303/305):** product list/detail show Себест. (`costPrice`) next to Прайс (`listPrice`); module list = hint «см. карточку» (no batch preview); BOM inspector = material `price×qty` / module `preview×qty` / product-line override|costPrice×qty read-only.
 
 ### Backend (NestJS)
 
