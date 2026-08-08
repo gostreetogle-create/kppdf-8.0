@@ -121,22 +121,19 @@ describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
     ) as HTMLElement | null;
     expect(moduleNest).toBeTruthy();
     expect(moduleNest!.getAttribute('data-parent-kind')).toBe('module');
-    // TZ-334 cohesion classes: sibling gap + left rail + children indent
+    // Unified open card: nest flush under row (no mt gap); sibling gap on node
     expect(moduleNest!.classList.contains('comp-tree__nest')).toBe(true);
-    expect(moduleNest!.classList.contains('space-y-4')).toBe(true);
+    expect(moduleNest!.classList.contains('space-y-3')).toBe(true);
     expect(moduleNest!.classList.contains('border-l-[5px]')).toBe(true);
-    expect(moduleNest!.classList.contains('ml-5')).toBe(true);
-    expect(moduleNest!.classList.contains('pl-5')).toBe(true);
-    expect(moduleNest!.classList.contains('mb-3')).toBe(true);
-    expect(moduleNest!.classList.contains('overflow-hidden')).toBe(true);
-    expect(moduleNest!.classList.contains('rounded-lg')).toBe(true);
+    expect(moduleNest!.classList.contains('mt-0')).toBe(true);
+    expect(moduleNest!.classList.contains('pl-4')).toBe(true);
+    const pack = fixture.nativeElement.querySelector(
+      '[data-test="composition-tree-node-m1"]',
+    ) as HTMLElement;
+    expect(pack.classList.contains('mb-3')).toBe(true);
+    expect(pack.classList.contains('hairline')).toBe(true);
+    expect(pack.classList.contains('overflow-hidden')).toBe(true);
     expect(moduleNest!.getAttribute('data-nest-depth')).toBe('1');
-    expect(fixture.componentInstance.nestSurface(0)).toContain('4%');
-    expect(fixture.componentInstance.nestSurface(1)).toContain('8%');
-    expect(fixture.componentInstance.nestSurface(2)).toContain('13%');
-    expect(fixture.componentInstance.nestSurface(1)).toContain('linear-gradient');
-    expect(fixture.componentInstance.nestSurface(1)).toContain('color-ink');
-    expect(fixture.componentInstance.nestSurface(0)).toContain('color-rule');
     // Both materials inside the same nest
     expect(moduleNest!.querySelector('[data-test="composition-tree-node-mat1"]')).toBeTruthy();
     expect(moduleNest!.querySelector('[data-test="composition-tree-node-mat2"]')).toBeTruthy();

@@ -26,10 +26,10 @@
 8. **Цвет по kind (TZ-330):** только бейдж ИЗД/МОД/МАТ (текст + рамка) и
    left rail nest — **строка/карточка белая** (`--color-paper`), без kind-wash.
    Не RAL. Persist пресетов → TZ-331.
-9. **Containment outlines (TZ-333+):** `.comp-tree__nest` — мягкий каскад
-   Paper & Ink (`ink`/`rule` → paper: ~4% / 8% / 13% / 18%), без резкого серого.
-   Kind — непрозрачные строки + rail. Свёрнуто → nest нет в DOM.
-10. **Пачки / cohesion:** sibling gap, rail 5px, `ml-5`/`pl-5`.
+9. **Containment:** раскрытый узел = **одна карточка** (шапка + nest без зазора
+   `mt-0`; общая hairline-рамка на node). Nest — мягкий каскад Paper & Ink
+   (~4/8/13/18%), rail 5px. Kind — бейдж + rail. Свёрнуто → nest нет в DOM.
+10. **Пачки:** sibling gap (`mb-3` на раскрытом node), `space-y-3` внутри nest.
 
 ## Запрещено
 

@@ -55,7 +55,10 @@ export type CompositionTreeSelectEvent = {
 
     <ng-template #nodeTemplate let-node let-depth="depth" let-parent="parent">
       <div
-        class="rounded-sm transition-colors"
+        class="rounded-md transition-colors"
+        [class.hairline]="isExpanded(node) && node.children.length > 0"
+        [class.overflow-hidden]="isExpanded(node) && node.children.length > 0"
+        [class.mb-3]="isExpanded(node) && node.children.length > 0"
         [attr.data-test]="'composition-tree-node-' + node._id"
         [attr.data-kind]="node.kind"
         role="treeitem"
@@ -66,7 +69,16 @@ export type CompositionTreeSelectEvent = {
         [attr.aria-selected]="selectedId() === node._id"
       >
         <div
-          class="flex items-center gap-1.5 px-2 py-1.5 min-h-9 hairline rounded-sm cursor-pointer select-none pi-focus-ring"
+          class="flex items-center gap-1.5 px-2 py-1.5 min-h-9 cursor-pointer select-none pi-focus-ring"
+          [class.hairline]="!(isExpanded(node) && node.children.length > 0)"
+          [class.rounded-sm]="!(isExpanded(node) && node.children.length > 0)"
+          [class.rounded-none]="isExpanded(node) && node.children.length > 0"
+          [class.border-b]="isExpanded(node) && node.children.length > 0"
+          [style.border-bottom-color]="
+            isExpanded(node) && node.children.length > 0
+              ? 'color-mix(in oklch, var(--color-rule) 45%, transparent)'
+              : null
+          "
           [style.padding-left.rem]="depth * 1.1 + 0.5"
           [style.background]="rowWash(node)"
           [class.ring-1]="selectedId() === node._id"
@@ -118,7 +130,7 @@ export type CompositionTreeSelectEvent = {
         </div>
         @if (isExpanded(node) && node.children.length > 0) {
           <div
-            class="comp-tree__nest ml-5 mr-1 mt-2 mb-3 space-y-4 overflow-hidden rounded-lg border border-solid border-l-[5px] border-[color-mix(in_oklch,var(--color-rule)_55%,transparent)] pt-2.5 pr-2.5 pb-2.5 pl-5 shadow-[0_1px_0_color-mix(in_oklch,var(--color-rule)_35%,transparent),0_8px_18px_-10px_color-mix(in_oklch,var(--color-ink,_oklch(0.25_0.02_260))_22%,transparent)]"
+            class="comp-tree__nest mt-0 space-y-3 border-solid border-l-[5px] pt-2 pr-2.5 pb-2.5 pl-4"
             [style.background]="nestSurface(depth)"
             [style.border-left-color]="kindBorder(node)"
             role="group"
