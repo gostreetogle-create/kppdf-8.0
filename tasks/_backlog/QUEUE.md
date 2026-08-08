@@ -1,10 +1,13 @@
 # Очередь
 
+**Универсальный промпт (любой агент / продолжение после обрыва):**  
+→ [`tasks/PROMPT-UNIVERSAL-CONTINUOUS.md`](../PROMPT-UNIVERSAL-CONTINUOUS.md)
+
 ## Параллель
 
 | Агент | Волна | Статус |
 |-------|--------|--------|
-| **A — Party-docs** | `party-docs/WAVE-PARTY-DOCS.md` | **READY** #1 PARTY-301 → … → #7 DESKTOP-SOT · промпт `PROMPT-CONTINUOUS.md` · **INN-301 PARKED** |
+| **A — Party-docs** | `party-docs/WAVE-PARTY-DOCS.md` | **READY** #1 PARTY-301 → … → #7 DESKTOP-SOT · узкий промпт `PROMPT-CONTINUOUS.md` · **INN-301 PARKED** |
 | **B — Shop north** | `shop-north-b/WAVE-SHOP-NORTH-B.md` | проверить живость; не перехватывать FACT/FORM если агент жив |
 | **C — Catalog UX** | `catalog-ux-c/WAVE-CATALOG-UX-C.md` | COMPOSE/DIALOG/337/307/304 — вероятно DONE; не воскрешать |
 

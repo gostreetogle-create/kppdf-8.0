@@ -14,7 +14,8 @@
 - **READY A:** `tasks/_backlog/party-docs/WAVE-PARTY-DOCS.md`
   PARTY-301 → 302 → 303 → ORDERS-306 → ORG-ASSETS-301 → 302 → DESKTOP-SOT-301
   · INN-301 **PARKED**
-- **Prompt:** `tasks/_backlog/party-docs/PROMPT-CONTINUOUS.md`
+- **Prompt (universal handoff):** `tasks/PROMPT-UNIVERSAL-CONTINUOUS.md`
+- **Prompt (wave-only):** `tasks/_backlog/party-docs/PROMPT-CONTINUOUS.md`
 - **Ban:** deploy; claim INN; commit mcp-runtime до SOT
 - Deploy: NO
 

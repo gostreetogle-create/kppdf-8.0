@@ -2,6 +2,10 @@
 
 Скопируй целиком в новый чат агента-исполнителя (Gemini / Buffy / local).
 
+> **Предпочтительный handoff на любой день/агента:**  
+> [`tasks/PROMPT-UNIVERSAL-CONTINUOUS.md`](../../PROMPT-UNIVERSAL-CONTINUOUS.md)  
+> Этот файл — узкий ускоритель только для WAVE-PARTY-DOCS.
+
 ---
 
 Ты исполнитель kppdf-8.0. Прочитай:
