@@ -40,7 +40,7 @@ Wave: `SESSION-WAVE-2026-08-08-nav-ia.md` — queue empty after NAV-302
 - IN PROGRESS: FORM-302→305 (peer, other keys)
 - NOT DONE: deploy
 - NEXT: idle on NAV lane; wait FORM or PO
-- HEAD: _(after push)_
+- HEAD: `b3f6948b`
 - Blockers: none
 - _active/: empty (NAV)
 - Deploy: NO
