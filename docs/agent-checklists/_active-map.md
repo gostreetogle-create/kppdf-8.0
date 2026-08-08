@@ -41,13 +41,13 @@ _(empty)_
 
 `tasks/TZ-CATALOG-300.md`, `tasks/TZ-DICT-300.md` — индексы волн, оставить в корне.
 
-## Checkpoint 2026-08-08T00:22:00Z
-- DONE: TZ-COST-301…**303**, TZD-22, CATALOG-334
+## Checkpoint 2026-08-08T00:35:00Z
+- DONE: TZ-COST-301…**303**, TZD-22, CATALOG-334; composition UX polish
 - IN PROGRESS: _(none)_
 - READY FOR REVIEW: _(none)_
 - NOT DONE: TZD-21; TZD-23 park
 - NEXT: idle / TZD-21 по PO; **no deploy**
-- HEAD: `cec4804` (COST-303 feat) + `112ba0d` (ARCHITECTURE/backlog closeout)
+- HEAD: `55b098d` · COST-303 feat `cec4804`
 - Blockers: none
 - _active/: _(empty)_
 - Deploy: NO
