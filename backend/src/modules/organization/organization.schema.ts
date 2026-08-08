@@ -98,6 +98,20 @@ export class Organization {
 
   @Prop()
   passportDivisionCode?: string;
+
+  /**
+   * TZ-PARTY-301: «наша фирма» — organization used as the issuer side of
+   * documents. One per instance under the current single-org policy.
+   */
+  @Prop({ default: false, index: true })
+  isOurCompany!: boolean;
+
+  /**
+   * TZ-PARTY-301: soft-delete marker. `remove()` wrote it before this TZ
+   * without a schema field, so strict mode silently dropped it.
+   */
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
 }
 
 export const OrganizationSchema = SchemaFactory.createForClass(Organization);

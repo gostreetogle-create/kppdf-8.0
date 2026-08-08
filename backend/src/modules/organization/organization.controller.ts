@@ -12,6 +12,10 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
+import {
+  AuthenticatedUser,
+  CurrentUser,
+} from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
@@ -36,8 +40,23 @@ export class OrganizationController {
     @Query('limit') limit = '20',
     @Query('search') search?: string,
     @Query('type') type?: string,
+    @CurrentUser() user?: AuthenticatedUser,
   ) {
-    return this.service.findAll({ page: parseInt(page, 10), limit: parseInt(limit, 10), search, type });
+    return this.service.findAll(
+      { page: parseInt(page, 10), limit: parseInt(limit, 10), search, type },
+      user,
+    );
+  }
+
+  /** TZ-PARTY-301 — «наша фирма» for documents. Declared before `:id`. */
+  @Get('current')
+  @Roles('admin', 'manager', 'user')
+  @ApiOperation({ summary: 'Get the organization used as our own company' })
+  @ApiResponse({ status: 200, description: 'Our organization' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Our organization is not configured' })
+  findCurrent(@CurrentUser() user?: AuthenticatedUser) {
+    return this.service.findCurrent(user);
   }
 
   @Get(':id')
@@ -46,8 +65,8 @@ export class OrganizationController {
   @ApiResponse({ status: 200, description: 'Organization found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Organization not found' })
-  findOne(@Param('id') id: string) {
-    return this.service.findById(id);
+  findOne(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
+    return this.service.findById(id, user);
   }
 
   @Post()
@@ -69,8 +88,12 @@ export class OrganizationController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Organization not found' })
-  update(@Param('id') id: string, @Body() dto: UpdateOrganizationDto) {
-    return this.service.update(id, dto);
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateOrganizationDto,
+    @CurrentUser() user?: AuthenticatedUser,
+  ) {
+    return this.service.update(id, dto, user);
   }
 
   @Delete(':id')
@@ -82,7 +105,7 @@ export class OrganizationController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Organization not found' })
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  remove(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
+    return this.service.remove(id, user);
   }
 }

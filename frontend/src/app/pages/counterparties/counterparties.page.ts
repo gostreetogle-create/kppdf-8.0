@@ -3,6 +3,8 @@ import {
   Component,
   DestroyRef,
   OnInit,
+  TemplateRef,
+  ViewChild,
   computed,
   inject,
   signal,
@@ -10,6 +12,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
 import { CLIENTS_SECTION_CHIPS } from '../clients/clients-group-chips';
+import { BadgeComponent } from '../../shared/ui/badge/badge.component';
 import { ColumnDef, TableComponent } from '../../shared/ui/pi-table.component';
 import { extractErrorMessage } from '../../core/silent-http';
 import { Counterparty, CounterpartyService } from '../../shared/services/pi-counterparty.service';
@@ -17,17 +20,23 @@ import { Counterparty, CounterpartyService } from '../../shared/services/pi-coun
 /**
  * TZ-NAV-301 — thin Заказчики list (Counterparty API).
  * TZ-NAV-302 — Клиенты chips (Заказчики | Люди).
+ * TZ-PARTY-301 — badge «временный» on quick-created (stub) INNs.
  * Sites / quick-create live in ORDERS-303 — not this page.
  */
 @Component({
   selector: 'app-counterparties-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiGroupWorkspaceComponent, TableComponent],
+  imports: [PiGroupWorkspaceComponent, TableComponent, BadgeComponent],
   template: `
     <app-pi-group-workspace pathLabel="Клиенты" [chips]="chips" activeId="counterparties">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <span class="text-xs text-muted-foreground">{{ total() }} заказчик{{ totalLabel() }}</span>
+        @if (stubCount() > 0) {
+          <span class="text-xs text-muted-foreground" data-test="counterparties-stub-count">
+            · {{ stubCount() }} с временным ИНН
+          </span>
+        }
       </div>
 
       @if (error()) {
@@ -40,6 +49,21 @@ import { Counterparty, CounterpartyService } from '../../shared/services/pi-coun
         </div>
       }
 
+      <ng-template #innTpl let-row>
+        <span class="inline-flex items-center gap-2 flex-wrap">
+          <span class="font-mono">{{ row.inn || '—' }}</span>
+          @if (row.innIsStub) {
+            <app-pi-badge
+              variant="outline"
+              title="ИНН сгенерирован при быстром создании — заменить на реальный"
+              data-test="counterparty-inn-stub"
+            >
+              временный
+            </app-pi-badge>
+          }
+        </span>
+      </ng-template>
+
       <div
         class="pi-table-surface hairline rounded-sm overflow-hidden"
         data-test="counterparties-page"
@@ -47,6 +71,7 @@ import { Counterparty, CounterpartyService } from '../../shared/services/pi-coun
         <app-pi-table
           [data]="rows()"
           [columns]="cols"
+          [cellTemplates]="cellTemplates()"
           [loading]="loading()"
           [total]="total()"
           [page]="1"
@@ -70,13 +95,20 @@ export class CounterpartiesPage implements OnInit {
   protected readonly cols: ColumnDef<Counterparty>[] = [
     { key: 'name', label: 'Название', sortable: false },
     { key: 'shortName', label: 'Краткое', sortable: false, cellClass: 'empty-cell' },
-    { key: 'inn', label: 'ИНН', sortable: false, cellClass: 'font-mono empty-cell' },
+    { key: 'inn', label: 'ИНН', sortable: false },
   ];
+
+  @ViewChild('innTpl', { static: true }) private readonly innTpl!: TemplateRef<{
+    $implicit: Counterparty;
+  }>;
+  protected readonly cellTemplates = computed(() => ({ inn: this.innTpl }));
 
   protected readonly rows = signal<Counterparty[]>([]);
   protected readonly total = signal(0);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
+
+  protected readonly stubCount = computed(() => this.rows().filter((r) => r.innIsStub).length);
 
   protected readonly totalLabel = computed(() => {
     const n = this.total();

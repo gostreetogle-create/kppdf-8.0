@@ -469,6 +469,28 @@ migration; no mega-collection; legacy Proposal/Quotation merge untouched.
 - **@IsINN() валидатор:** декоратор с контрольной суммой ФНС для 10/12-значных ИНН.
 - **Seeds:** 4 OrgRole (our-company/partner/holding/branch), 4 CounterpartyRole (customer/supplier/contractor/manufacturer).
 
+### Party hygiene (TZ-PARTY-301, 2026-08-08)
+
+- **Tenant-stamp:** `organizationId` / `isSystem` контрагента приходят **только** из JWT
+  (`withoutTenantFields` в `counterparty.service.ts`); body-поля игнорируются и в create, и в
+  quick-create, и в update — переставить контрагента в другой tenant через API нельзя.
+- **Org-scope (IDOR):** `Counterparty` get/update/delete и `Organization` list/get/update/delete
+  отдают **404**, а не 403, на чужой tenant. Записи без `organizationId` (legacy / `isSystem`)
+  остаются общими. Политика — одна «наша» Org на `user.organizationId`.
+- **Soft-delete:** `deletedAt` теперь есть в схемах Organization + Counterparty (до этого
+  `remove()` писал поле, которого нет → strict-mode no-op, «удалённая» запись жила в списке).
+  Списки и `findById` фильтруют `deletedAt: null`.
+- **INN uniqueness:** глобальный `unique` на `Counterparty.inn` снят — уникальность
+  per-tenant через compound `{organizationId, inn}` sparse unique. Иначе первый tenant
+  «занимал» ИНН реальной компании для всех остальных.
+- **Stub INN:** `innIsStub` (quick-create ставит `true`, ручной ввод ИНН в update снимает);
+  на `/counterparties` бейдж «временный» + счётчик в тулбаре.
+- **«Наша фирма»:** `Organization.isOurCompany` + `GET /organizations/current`
+  (JWT-org → `isOurCompany` → единственная Org → иначе 404 с явной подсказкой настроить).
+- **Миграция:** `backend/src/database/migrations/2026-08-08-TZ-PARTY-301-party-hygiene.ts`
+  (drop `inn_1`, отчёт коллизий `{organizationId, inn}`, backfill `innIsStub`, разметка
+  единственной Org как «наша»). Идемпотентна.
+
 ---
 
 ## Frontend UI Kit (`frontend/src/app/shared/ui/` — current)

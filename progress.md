@@ -1,3 +1,31 @@
+## [2026-08-08] — TZ-PARTY-301 DONE: party hygiene (tenant · soft-delete · INN · stub badge)
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor, WAVE-PARTY-DOCS #1)
+**Статус:** DONE; deploy НЕ
+**Что:** Контрагенты и организации перестали быть дырой в multi-tenant. `organizationId`/`isSystem`
+больше не читаются из body (mass-assign guard) — только из JWT, в т.ч. в quick-create. Чужой
+Counterparty/Organization отдаёт **404**, а не 403 (IDOR закрыт), записи без `organizationId`
+остаются общими legacy. `deletedAt` добавлен в обе схемы — до этого `remove()` писал поле, которого
+нет в schema, и strict-mode молча его выкидывал: «удалённый» контрагент оставался в списке.
+Глобальный unique на `Counterparty.inn` снят (первый tenant «занимал» ИНН реальной компании для
+всех) — уникальность per-tenant через compound `{organizationId, inn}` sparse unique + миграция с
+отчётом коллизий. Quick-created ИНН помечается `innIsStub`, на `/counterparties` бейдж «временный»
+и счётчик в тулбаре; ручной ввод ИНН снимает флаг. Для документов появилась «наша фирма»:
+`Organization.isOurCompany` + `GET /organizations/current` (JWT-org → флаг → единственная Org →
+иначе 404 с подсказкой настроить, без угадывания).
+**Затронуто:** `backend/src/modules/counterparty/*` (service/controller/schema/spec),
+`backend/src/modules/organization/*` (service/controller/schema/dto + новый spec),
+`backend/src/database/migrations/2026-08-08-TZ-PARTY-301-party-hygiene.ts` (+ spec),
+`frontend/src/app/pages/counterparties/counterparties.page.ts` (+ spec),
+`frontend/src/app/shared/services/pi-counterparty.service.ts`, ARCHITECTURE.md, checklist, lock.
+**Gates:** backend tsc PASS; backend jest 31/31 (counterparty, organization, migration) PASS;
+targeted ESLint 0 errors; frontend tsc PASS; Angular development build PASS; counterparties.page 3/3 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-PARTY-301.done.md`
+**Lock:** `.mimocode/locks/TZ-PARTY-301-party-hygiene.lock`
+**Известные ограничения:** `Organization.inn` остаётся глобально unique (Org = сам tenant,
+single-org политика). Миграция запускается вручную (`npx ts-node backend/src/database/migrations/2026-08-08-TZ-PARTY-301-party-hygiene.ts`),
+не bootstrap-hook. FullEditor карточек — TZ-PARTY-302/303; undelete UI вне TZ. deploy NO.
+
 ## [2026-08-08] — TZD-30 DONE: MCP text-block drafts + category shelves
 
 **Исполнитель:** agent-d782972d63 (Freebuff desktop executor)

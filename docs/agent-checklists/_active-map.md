@@ -1,5 +1,17 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-08T15:58:00Z · WAVE-PARTY-DOCS #1 DONE
+- DONE: TZ-PARTY-301 — party hygiene (tenant-stamp, IDOR 404, soft-delete, per-tenant INN, stub badge, `GET /organizations/current`)
+- IN PROGRESS: none
+- NOT DONE: #2 TZ-PARTY-302 → #3 303 → #4 ORDERS-306 → #5 ASSETS-301 → #6 ASSETS-302 → #7 DESKTOP-SOT-301; INN-301 **PARKED**
+- NEXT: TZ-PARTY-302 (`tasks/_backlog/party-docs/TZ-PARTY-302-org-fulleditor.md`)
+- HEAD: post TZ-PARTY-301 commit on `main`
+- Blockers: none. Team Room claim unavailable (registry syncs only `tasks/*.md`)
+- _active/: empty
+- Archive: `tasks/_archive/2026-08/TZ-PARTY-301.done.md` · lock `.mimocode/locks/TZ-PARTY-301-party-hygiene.lock`
+- Ban: `desktop/mcp-runtime/**` (до DESKTOP-SOT-301) · claim INN-301 · deploy
+- Deploy: NO
+
 ## Checkpoint 2026-08-08 · TZD-30 DONE
 - **DONE:** TZD-30 — MCP text-block drafts + category create
 - **Agent:** agent-d782972d63 · workspace `D:\kppdf-8.0`

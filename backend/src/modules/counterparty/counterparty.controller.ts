@@ -42,36 +42,40 @@ export class CounterpartyController {
 
   @Get(':id')
   @Roles('admin', 'manager', 'user')
-  findOne(@Param('id') id: string) {
-    return this.service.findById(id);
+  findOne(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
+    return this.service.findById(id, user);
   }
 
   @Post('quick')
   @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'Counterparty' })
-  quickCreate(@Body() dto: QuickCreatePartyDto) {
-    return this.service.quickCreateParty(dto);
+  quickCreate(@Body() dto: QuickCreatePartyDto, @CurrentUser() user?: AuthenticatedUser) {
+    return this.service.quickCreateParty(dto, user);
   }
 
   @Post()
   @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'Counterparty' })
-  create(@Body() dto: CreateCounterpartyDto) {
-    return this.service.create(dto);
+  create(@Body() dto: CreateCounterpartyDto, @CurrentUser() user?: AuthenticatedUser) {
+    return this.service.create(dto, user);
   }
 
   @Patch(':id')
   @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'Counterparty', idParam: 'id' })
-  update(@Param('id') id: string, @Body() dto: UpdateCounterpartyDto) {
-    return this.service.update(id, dto);
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateCounterpartyDto,
+    @CurrentUser() user?: AuthenticatedUser,
+  ) {
+    return this.service.update(id, dto, user);
   }
 
   @Delete(':id')
   @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'Counterparty', idParam: 'id' })
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  remove(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
+    return this.service.remove(id, user);
   }
 }

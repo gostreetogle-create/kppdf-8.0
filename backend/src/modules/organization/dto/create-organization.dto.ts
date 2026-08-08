@@ -121,4 +121,7 @@ export class CreateOrganizationDto {
   @IsOptional() @Type(() => Date) @IsDate() passportIssuedAt?: Date;
   @ApiPropertyOptional({ description: 'Код подразделения' })
   @IsOptional() @IsString() passportDivisionCode?: string;
+
+  @ApiPropertyOptional({ description: 'TZ-PARTY-301 — «наша фирма» для документов' })
+  @IsOptional() @IsBoolean() isOurCompany?: boolean;
 }

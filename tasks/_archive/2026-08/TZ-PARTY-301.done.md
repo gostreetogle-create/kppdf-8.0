@@ -2,12 +2,12 @@
 TZ-PARTY-301: Party hygiene (tenant · delete · INN index · stub)
 ═══════════════════════════════════════════════════════════════
 
-STATUS: READY · WAVE-PARTY-DOCS #1
+STATUS: DONE · WAVE-PARTY-DOCS #1
 DEPENDS ON: нет (фундамент)
 LAYER: 3–4
 CHECKLIST: docs/agent-checklists/TZ-PARTY-301.md
 PAGES: /counterparties ; /organizations
-PAGE_DOCS: (обновить при закрытии)
+PAGE_DOCS: ARCHITECTURE.md §Organizations & Contacts → Party hygiene (TZ-PARTY-301)
 
 РОЛЬ: Backend + thin FE badge
 
@@ -57,3 +57,35 @@ docs/agent-checklists/TZ-PARTY-301.md;
 5. Badge stub виден.  
 6. Gates: `cd backend && pnpm exec tsc -p tsconfig.build.json --noEmit` + targeted jest counterparty/organization.  
 7. Archive + commit/push; deploy NO.
+
+## ARCHIVE_MARKER
+outcome: DONE
+closed_at: 2026-08-08
+closed_by: agent-3e757640b7 (Cursor executor)
+protected_files:
+  - backend/src/modules/counterparty/counterparty.service.ts
+  - backend/src/modules/counterparty/counterparty.controller.ts
+  - backend/src/modules/counterparty/counterparty.schema.ts
+  - backend/src/modules/counterparty/counterparty.spec.ts
+  - backend/src/modules/organization/organization.service.ts
+  - backend/src/modules/organization/organization.controller.ts
+  - backend/src/modules/organization/organization.schema.ts
+  - backend/src/modules/organization/organization.spec.ts
+  - backend/src/database/migrations/2026-08-08-TZ-PARTY-301-party-hygiene.ts
+  - frontend/src/app/pages/counterparties/counterparties.page.ts
+verification:
+  - acceptance criteria: PASS (1–6)
+  - backend typecheck: PASS (`pnpm exec tsc -p tsconfig.build.json --noEmit`)
+  - backend tests: PASS (31 — counterparty, organization, migration)
+  - backend lint: 0 errors (45 pre-existing `any` warnings в spec-моках)
+  - frontend typecheck + development build: PASS
+  - frontend tests: PASS (counterparties.page 3/3)
+  - checklist: UPDATED (docs/agent-checklists/TZ-PARTY-301.md)
+  - progress.md: UPDATED
+  - ARCHITECTURE.md: UPDATED (§Organizations & Contacts → Party hygiene)
+  - desktop/mcp-runtime: NOT TOUCHED
+  - deploy: NO
+notes: Tenant fields больше не читаются из body (withoutTenantFields). Чужой tenant = 404,
+  не 403. Global unique `inn_1` снимается миграцией; per-tenant уникальность через compound
+  sparse index. `Organization.inn` остаётся глобально unique — Org и есть tenant. Миграция
+  ручная (ts-node), не bootstrap-hook.

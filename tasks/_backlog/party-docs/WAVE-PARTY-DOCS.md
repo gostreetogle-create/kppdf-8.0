@@ -1,6 +1,6 @@
 # WAVE-PARTY-DOCS — фирма · клиенты · stub-КП · vault · печать
 
-**Статус волны:** READY для исполнителя (с `#1`)  
+**Статус волны:** IN WORK — `#1` DONE, следующий `#2` TZ-PARTY-302  
 **План-источник:** `C:\Users\User\.cursor\plans\firm_clients_sales_docs_mega_a1b2c3d4.plan.md`  
 **Curator:** `docs/audits/plan-reviews/FIRM-MEGA-CURATOR-SUMMARY.md`  
 **Промпт агенту:** [`PROMPT-CONTINUOUS.md`](./PROMPT-CONTINUOUS.md)
@@ -9,7 +9,7 @@
 
 | # | TZ | Файл | После чего | Parallel? |
 |---|-----|------|------------|-----------|
-| 1 | TZ-PARTY-301 | `TZ-PARTY-301-hygiene.md` | — | нет |
+| 1 | TZ-PARTY-301 | ✅ DONE → `tasks/_archive/2026-08/TZ-PARTY-301.done.md` | — | нет |
 | 2 | TZ-PARTY-302 | `TZ-PARTY-302-org-fulleditor.md` | **301 DONE** | с 303/306 после 301 |
 | 3 | TZ-PARTY-303 | `TZ-PARTY-303-counterparty-fulleditor.md` | **301 DONE** (лучше после 302) | с 302/306 |
 | 4 | TZ-ORDERS-306 | `TZ-ORDERS-306-stub-commercial.md` | **301 DONE** | с 302/303; sole `order.service` |

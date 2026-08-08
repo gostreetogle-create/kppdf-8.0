@@ -1,3 +1,4 @@
+import { NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { CounterpartyService } from './counterparty.service';
 
@@ -111,5 +112,185 @@ describe('CounterpartyService (TZ-241 org-scoping)', () => {
       expect((cond as Record<string, unknown>).organizationId).toBeUndefined();
       expect((cond as Record<string, unknown>).isSystem).toBeUndefined();
     }
+  });
+});
+
+describe('CounterpartyService (TZ-PARTY-301 tenant hygiene)', () => {
+  const ownOrgId = new Types.ObjectId().toString();
+  const otherOrgId = new Types.ObjectId().toString();
+
+  function makeModel(doc: unknown) {
+    return {
+      create: jest
+        .fn()
+        .mockImplementation((payload: Record<string, unknown>) =>
+          Promise.resolve({ _id: new Types.ObjectId(), ...payload }),
+        ),
+      findOne: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(doc) }),
+      updateOne: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue({}) }),
+    };
+  }
+
+  function makeDoc(organizationId: string | null, extra: Record<string, unknown> = {}) {
+    return {
+      _id: new Types.ObjectId(),
+      inn: '7701234567',
+      innIsStub: true,
+      organizationId: organizationId ? new Types.ObjectId(organizationId) : undefined,
+      save: jest.fn().mockImplementation(function (this: unknown) {
+        return Promise.resolve(this);
+      }),
+      ...extra,
+    };
+  }
+
+  it('create stamps organizationId from the JWT and ignores the body', async () => {
+    const model = makeModel(null);
+    const service = new CounterpartyService(model as any, { create: jest.fn() } as any);
+
+    await service.create(
+      {
+        name: 'ООО Ромашка',
+        roles: ['customer'],
+        inn: '7701234567',
+        organizationId: otherOrgId,
+        isSystem: true,
+      } as any,
+      { organizationId: ownOrgId, role: 'manager' },
+    );
+
+    const payload = model.create.mock.calls[0][0] as Record<string, unknown>;
+    expect(String(payload.organizationId)).toBe(ownOrgId);
+    expect(payload.isSystem).toBe(false);
+    expect(payload.innIsStub).toBe(false);
+  });
+
+  it('quickCreateParty always stamps the user organization and flags the stub INN', async () => {
+    const model = makeModel(null);
+    const sites = { create: jest.fn().mockResolvedValue({ _id: 'site-1' }) };
+    const service = new CounterpartyService(model as any, sites as any);
+
+    const { counterparty } = await service.quickCreateParty(
+      { name: 'Иванов', address: 'Краснодар, ул. Мира 1' } as any,
+      { organizationId: ownOrgId, role: 'manager' },
+    );
+
+    const payload = counterparty as unknown as Record<string, unknown>;
+    expect(String(payload.organizationId)).toBe(ownOrgId);
+    expect(payload.innIsStub).toBe(true);
+    expect(payload.roles).toEqual(['customer']);
+  });
+
+  it('quickCreateParty checks INN clashes inside the tenant only', async () => {
+    const model = makeModel(null);
+    const service = new CounterpartyService(model as any, {
+      create: jest.fn().mockResolvedValue({}),
+    } as any);
+
+    await service.quickCreateParty(
+      { name: 'Иванов', address: 'Краснодар' } as any,
+      { organizationId: ownOrgId, role: 'manager' },
+    );
+
+    const clashFilter = model.findOne.mock.calls[0][0] as Record<string, unknown>;
+    expect(String(clashFilter.organizationId)).toBe(ownOrgId);
+    expect(clashFilter.inn).toBeDefined();
+  });
+
+  it('findById hides another tenant counterparty behind 404 (IDOR)', async () => {
+    const model = makeModel(makeDoc(otherOrgId));
+    const service = new CounterpartyService(model as any, { create: jest.fn() } as any);
+
+    await expect(
+      service.findById(new Types.ObjectId().toString(), {
+        organizationId: ownOrgId,
+        role: 'manager',
+      }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('findById returns own tenant counterparty and skips deleted rows', async () => {
+    const doc = makeDoc(ownOrgId);
+    const model = makeModel(doc);
+    const service = new CounterpartyService(model as any, { create: jest.fn() } as any);
+
+    const id = new Types.ObjectId().toString();
+    await expect(
+      service.findById(id, { organizationId: ownOrgId, role: 'manager' }),
+    ).resolves.toBe(doc);
+    expect(model.findOne).toHaveBeenCalledWith({ _id: id, deletedAt: null });
+  });
+
+  it('findById still serves legacy records without organizationId', async () => {
+    const doc = makeDoc(null);
+    const model = makeModel(doc);
+    const service = new CounterpartyService(model as any, { create: jest.fn() } as any);
+
+    await expect(
+      service.findById(new Types.ObjectId().toString(), {
+        organizationId: ownOrgId,
+        role: 'manager',
+      }),
+    ).resolves.toBe(doc);
+  });
+
+  it('update cannot move a counterparty to another tenant', async () => {
+    const doc = makeDoc(ownOrgId);
+    const model = makeModel(doc);
+    const service = new CounterpartyService(model as any, { create: jest.fn() } as any);
+
+    await service.update(
+      new Types.ObjectId().toString(),
+      { organizationId: otherOrgId, name: 'Новое имя' } as any,
+      { organizationId: ownOrgId, role: 'manager' },
+    );
+
+    expect(String(doc.organizationId)).toBe(ownOrgId);
+    expect((doc as unknown as Record<string, unknown>).name).toBe('Новое имя');
+  });
+
+  it('update with a real INN clears the stub flag', async () => {
+    const doc = makeDoc(ownOrgId);
+    const model = makeModel(doc);
+    const service = new CounterpartyService(model as any, { create: jest.fn() } as any);
+
+    await service.update(
+      new Types.ObjectId().toString(),
+      { inn: '7809876543' } as any,
+      { organizationId: ownOrgId, role: 'manager' },
+    );
+
+    expect(doc.innIsStub).toBe(false);
+  });
+
+  it('remove soft-deletes by writing deletedAt', async () => {
+    const doc = makeDoc(ownOrgId);
+    const model = makeModel(doc);
+    const service = new CounterpartyService(model as any, { create: jest.fn() } as any);
+
+    await service.remove(new Types.ObjectId().toString(), {
+      organizationId: ownOrgId,
+      role: 'manager',
+    });
+
+    const [filter, update] = model.updateOne.mock.calls[0] as [
+      Record<string, unknown>,
+      Record<string, Record<string, unknown>>,
+    ];
+    expect(filter._id).toBe(doc._id);
+    expect(update.$set.deletedAt).toBeInstanceOf(Date);
+  });
+
+  it('remove refuses another tenant counterparty', async () => {
+    const model = makeModel(makeDoc(otherOrgId));
+    const service = new CounterpartyService(model as any, { create: jest.fn() } as any);
+
+    await expect(
+      service.remove(new Types.ObjectId().toString(), {
+        organizationId: ownOrgId,
+        role: 'manager',
+      }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(model.updateOne).not.toHaveBeenCalled();
   });
 });

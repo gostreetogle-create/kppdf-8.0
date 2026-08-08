@@ -18,6 +18,12 @@ export function generateQuickInnStub(): string {
   return `${base}${check}`;
 }
 
+/** Tenant context taken from the JWT, never from the request body. */
+export interface CounterpartyActor {
+  organizationId?: string | null;
+  role?: string;
+}
+
 @Injectable()
 export class CounterpartyService {
   private readonly logger = new Logger(CounterpartyService.name);
@@ -27,19 +33,34 @@ export class CounterpartyService {
     private readonly sites: SiteService,
   ) {}
 
-  async create(dto: CreateCounterpartyDto): Promise<CounterpartyDocument> {
-    return this.model.create(dto);
+  async create(
+    dto: CreateCounterpartyDto,
+    user?: CounterpartyActor,
+  ): Promise<CounterpartyDocument> {
+    return this.model.create({
+      ...this.withoutTenantFields(dto),
+      innIsStub: false,
+      isSystem: false,
+      deletedAt: null,
+      ...this.tenantStamp(user),
+    });
   }
 
   /**
    * TZ-ORDERS-303: имя+тел+адрес → Counterparty + Site.
+   * TZ-PARTY-301: organizationId comes from the JWT and the generated INN is
+   * flagged as a stub so the UI can say «ИНН временный».
    */
   async quickCreateParty(
     dto: QuickCreatePartyDto,
+    user?: CounterpartyActor,
   ): Promise<{ counterparty: CounterpartyDocument; site: SiteDocument }> {
+    const stamp = this.tenantStamp(user);
     let inn = generateQuickInnStub();
     for (let attempt = 0; attempt < 5; attempt++) {
-      const clash = await this.model.findOne({ inn }).exec();
+      const clash = await this.model
+        .findOne({ inn, organizationId: stamp.organizationId ?? null })
+        .exec();
       if (!clash) break;
       inn = generateQuickInnStub();
     }
@@ -48,7 +69,10 @@ export class CounterpartyService {
       phone: dto.phone?.trim() || undefined,
       roles: ['customer'],
       inn,
+      innIsStub: true,
       isActive: true,
+      deletedAt: null,
+      ...stamp,
     });
     const site = await this.sites.create({
       counterpartyId: counterparty._id.toString(),
@@ -60,7 +84,7 @@ export class CounterpartyService {
 
   async findAll(
     q: { page?: number; limit?: number; search?: string; role?: string } = {},
-    user?: { organizationId?: string | null; role?: string },
+    user?: CounterpartyActor,
   ) {
     const page = Math.max(1, q.page ?? 1);
     const limit = Math.min(100, Math.max(1, q.limit ?? 20));
@@ -99,27 +123,67 @@ export class CounterpartyService {
     return { items, total, page, limit };
   }
 
-  async findById(id: string): Promise<CounterpartyDocument> {
+  /**
+   * TZ-PARTY-301: a counterparty of another tenant is indistinguishable from a
+   * missing one (404, never 403) — that is what closes the IDOR.
+   */
+  async findById(id: string, user?: CounterpartyActor): Promise<CounterpartyDocument> {
     if (!Types.ObjectId.isValid(id)) throw new NotFoundException(`Counterparty ${id} not found`);
-    const doc = await this.model.findById(id).exec();
-    if (!doc) throw new NotFoundException(`Counterparty ${id} not found`);
+    const doc = await this.model.findOne({ _id: id, deletedAt: null }).exec();
+    if (!doc || !this.isVisibleTo(doc, user)) {
+      throw new NotFoundException(`Counterparty ${id} not found`);
+    }
     return doc;
   }
 
-  async findByInn(inn: string): Promise<CounterpartyDocument | null> {
-    return this.model.findOne({ inn }).exec();
+  async findByInn(inn: string, user?: CounterpartyActor): Promise<CounterpartyDocument | null> {
+    const filter: Record<string, unknown> = { inn, deletedAt: null };
+    if (user?.organizationId) {
+      filter.organizationId = new Types.ObjectId(user.organizationId);
+    }
+    return this.model.findOne(filter).exec();
   }
 
-  async update(id: string, dto: UpdateCounterpartyDto): Promise<CounterpartyDocument> {
-    const doc = await this.findById(id);
-    Object.assign(doc, dto);
+  async update(
+    id: string,
+    dto: UpdateCounterpartyDto,
+    user?: CounterpartyActor,
+  ): Promise<CounterpartyDocument> {
+    const doc = await this.findById(id, user);
+    const payload = this.withoutTenantFields(dto);
+    const previousInn = doc.inn;
+    Object.assign(doc, payload);
+    // A hand-entered INN replaces the quick-create stub.
+    if (payload.inn && payload.inn !== previousInn) doc.innIsStub = false;
     return doc.save();
   }
 
-  async remove(id: string): Promise<void> {
-    const doc = await this.findById(id);
+  async remove(id: string, user?: CounterpartyActor): Promise<void> {
+    const doc = await this.findById(id, user);
     await this.model
       .updateOne({ _id: doc._id }, { $set: { deletedAt: new Date() } })
       .exec();
+  }
+
+  /** Mass-assign guard: tenant fields are decided by the JWT, not the client. */
+  private withoutTenantFields<T extends object>(
+    dto: T,
+  ): Omit<T, 'organizationId' | 'isSystem'> {
+    const payload = { ...dto } as Record<string, unknown>;
+    delete payload.organizationId;
+    delete payload.isSystem;
+    return payload as Omit<T, 'organizationId' | 'isSystem'>;
+  }
+
+  /** organizationId is never taken from the request body (mass-assign guard). */
+  private tenantStamp(user?: CounterpartyActor): { organizationId?: Types.ObjectId } {
+    if (!user?.organizationId) return {};
+    return { organizationId: new Types.ObjectId(user.organizationId) };
+  }
+
+  private isVisibleTo(doc: CounterpartyDocument, user?: CounterpartyActor): boolean {
+    if (!user?.organizationId) return true;
+    if (!doc.organizationId) return true; // legacy / system shared records
+    return doc.organizationId.toString() === user.organizationId;
   }
 }
