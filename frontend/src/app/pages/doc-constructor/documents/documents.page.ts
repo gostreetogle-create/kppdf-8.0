@@ -10,11 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  PiPageChromeComponent,
-  type PageCrumb,
-} from '../../../shared/page/pi-page-chrome.component';
-import { PiToolbarComponent } from '../../../shared/page/pi-toolbar.component';
+import { PiGroupWorkspaceComponent } from '../../../shared/page/pi-group-workspace.component';
 import { PiEmptyStateComponent } from '../../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { PiRowActionsComponent } from '../../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { PiToastService } from '../../../shared/ui/toast';
@@ -27,6 +23,7 @@ import {
   GeneratedDocument,
   GeneratedDocumentsService,
 } from '../../../shared/services/pi-generated-documents.service';
+import { DOCUMENTS_SECTION_CHIPS } from './documents-group-chips';
 
 const PAGE_SIZE = 10;
 
@@ -37,100 +34,96 @@ const PAGE_SIZE = 10;
   selector: 'app-documents-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    PiPageChromeComponent,
-    PiToolbarComponent,
+    PiGroupWorkspaceComponent,
     PiEmptyStateComponent,
     PiRowActionsComponent,
     TableComponent,
   ],
   template: `
-    <app-pi-page-chrome [crumbs]="crumbs" />
-
-    <app-pi-toolbar>
-      <input
-        type="search"
-        class="pi-input w-72"
-        placeholder="Поиск по номеру или названию…"
-        [value]="searchQuery()"
-        (input)="onSearch($event)"
-        aria-label="Поиск документов"
-      />
-      <input
-        type="month"
-        class="pi-input w-44"
-        [value]="periodMonth()"
-        (change)="onPeriodChange($event)"
-        aria-label="Фильтр по периоду"
-      />
-      <span hint>{{ filtered().length }} записей</span>
-    </app-pi-toolbar>
-
-    <ng-template #statusTpl let-doc>
-      <span class="inline-flex items-center gap-2">
-        <span
-          class="inline-block w-2 h-2 rounded-full shrink-0"
-          [class.bg-accent-cool]="doc.status === 'final'"
-          [class.bg-sunrise-warm]="doc.status === 'draft'"
-        ></span>
-        <span>{{ statusLabel(doc) }}</span>
-      </span>
-    </ng-template>
-    <ng-template #rowActionsTpl let-doc>
-      <app-pi-row-actions
-        [row]="doc"
-        documentLabel="Открыть"
-        [showEdit]="false"
-        deleteLabel="Удалить"
-        (document)="onView($event)"
-        (delete)="onDelete($event)"
-      />
-    </ng-template>
-
-    <div class="pi-table-surface hairline rounded-sm overflow-hidden">
-      @if (loading()) {
-        <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
-      } @else if (error()) {
-        <div
-          role="alert"
-          class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
-        >
-          {{ error() }}
-        </div>
-      } @else if (filtered().length === 0) {
-        <app-pi-empty-state
-          [colspan]="1"
-          [message]="
-            searchQuery() || periodMonth()
-              ? 'Ничего не найдено.'
-              : 'Нет сохранённых документов. Сгенерируйте документ в конструкторе.'
-          "
+    <app-pi-group-workspace pathLabel="Документы" [chips]="chips" activeId="documents">
+      <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        <input
+          type="search"
+          class="pi-input w-72"
+          placeholder="Поиск по номеру или названию…"
+          [value]="searchQuery()"
+          (input)="onSearch($event)"
+          aria-label="Поиск документов"
         />
-      } @else {
-        <div class="hairline rounded-sm overflow-x-auto">
-          <app-pi-table
-            [data]="pageRows()"
-            [columns]="columns"
-            [cellTemplates]="cellTemplates()"
-            [rowActions]="rowActionsTpl"
-            [total]="filtered().length"
-            [page]="pageIndex() + 1"
-            [pageSize]="PAGE_SIZE"
-            (pageChange)="pageIndex.set($event - 1)"
-            [localSort]="false"
-            [loading]="loading()"
-            ariaLabel="Журнал сформированных документов"
-            data-test="documents-table"
+        <input
+          type="month"
+          class="pi-input w-44"
+          [value]="periodMonth()"
+          (change)="onPeriodChange($event)"
+          aria-label="Фильтр по периоду"
+        />
+        <span class="text-xs text-muted-foreground">{{ filtered().length }} записей</span>
+      </div>
+
+      <ng-template #statusTpl let-doc>
+        <span class="inline-flex items-center gap-2">
+          <span
+            class="inline-block w-2 h-2 rounded-full shrink-0"
+            [class.bg-accent-cool]="doc.status === 'final'"
+            [class.bg-sunrise-warm]="doc.status === 'draft'"
+          ></span>
+          <span>{{ statusLabel(doc) }}</span>
+        </span>
+      </ng-template>
+      <ng-template #rowActionsTpl let-doc>
+        <app-pi-row-actions
+          [row]="doc"
+          documentLabel="Открыть"
+          [showEdit]="false"
+          deleteLabel="Удалить"
+          (document)="onView($event)"
+          (delete)="onDelete($event)"
+        />
+      </ng-template>
+
+      <div class="pi-table-surface hairline rounded-sm overflow-hidden">
+        @if (loading()) {
+          <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
+        } @else if (error()) {
+          <div
+            role="alert"
+            class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+          >
+            {{ error() }}
+          </div>
+        } @else if (filtered().length === 0) {
+          <app-pi-empty-state
+            [colspan]="1"
+            [message]="
+              searchQuery() || periodMonth()
+                ? 'Ничего не найдено.'
+                : 'Нет сохранённых документов. Сгенерируйте документ в конструкторе.'
+            "
           />
-        </div>
-      }
-    </div>
+        } @else {
+          <div class="hairline rounded-sm overflow-x-auto">
+            <app-pi-table
+              [data]="pageRows()"
+              [columns]="columns"
+              [cellTemplates]="cellTemplates()"
+              [rowActions]="rowActionsTpl"
+              [total]="filtered().length"
+              [page]="pageIndex() + 1"
+              [pageSize]="PAGE_SIZE"
+              (pageChange)="pageIndex.set($event - 1)"
+              [localSort]="false"
+              [loading]="loading()"
+              ariaLabel="Журнал сформированных документов"
+              data-test="documents-table"
+            />
+          </div>
+        }
+      </div>
+    </app-pi-group-workspace>
   `,
 })
 export class DocumentsPage {
-  protected readonly crumbs: PageCrumb[] = [
-    { label: 'Документы', link: '/documents' },
-    { label: 'Сформированные' },
-  ];
+  protected readonly chips = DOCUMENTS_SECTION_CHIPS;
 
   protected readonly PAGE_SIZE = PAGE_SIZE;
 

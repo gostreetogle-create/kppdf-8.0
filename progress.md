@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-309 DONE: page chrome unify
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** supply/shipping/design/documents → PiGroupWorkspace pathLabel+chips; docs/pages/ui-page-chrome.md.
+**Gates:** FE tsc PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-309.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-309-page-chrome-unify.lock`
+**Known:** Deploy NO. Next UX-310.
+
 ## [2026-08-08] — TZ-CATALOG-DEDUP-304 DONE: detail edit opener
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor)

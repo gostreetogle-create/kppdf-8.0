@@ -27,6 +27,7 @@
 
 | № | Название | Closed | Archive |
 |---|----------|--------|---------|
+| TZ-UX-309 | Page chrome unify (logistics/design/docs) | 2026-08-08 | `tasks/_archive/2026-08/TZ-UX-309.done.md` |
 | TZ-CATALOG-DEDUP-304 | Detail edit opener (FullEditor) | 2026-08-08 | `tasks/_archive/2026-08/TZ-CATALOG-DEDUP-304.done.md` |
 | TZ-UX-FORM-306 | Module QuickCreate L + BomPanel | 2026-08-08 | `tasks/_archive/2026-08/TZ-UX-FORM-306.done.md` |
 | TZ-CATALOG-DEDUP-303 | Delete orphan CompositionEditor | 2026-08-08 | `tasks/_archive/2026-08/TZ-CATALOG-DEDUP-303.done.md` |
