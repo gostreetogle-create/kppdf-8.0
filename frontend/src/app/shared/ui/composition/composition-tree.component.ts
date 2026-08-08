@@ -123,11 +123,13 @@ export type CompositionTreeSelectEvent = {
         </div>
         @if (isExpanded(node) && node.children.length > 0) {
           <div
-            class="comp-tree__nest ml-5 mr-1 mt-2 mb-3 space-y-4 rounded-md border border-solid border-l-[5px] border-[color-mix(in_oklch,var(--color-rule)_50%,transparent)] bg-[color-mix(in_oklch,var(--color-paper-2)_68%,transparent)] pt-2.5 pr-2.5 pb-2.5 pl-5 shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--color-rule)_28%,transparent)]"
+            class="comp-tree__nest ml-5 mr-1 mt-2 mb-3 space-y-4 overflow-hidden rounded-lg border border-solid border-l-[5px] border-[color-mix(in_oklch,var(--color-rule)_55%,transparent)] pt-2.5 pr-2.5 pb-2.5 pl-5 shadow-[0_1px_0_color-mix(in_oklch,var(--color-rule)_35%,transparent),0_8px_18px_-10px_color-mix(in_oklch,var(--color-ink,_oklch(0.25_0.02_260))_22%,transparent)]"
+            [style.background]="nestSurface(depth)"
             [style.border-left-color]="kindBorder(node)"
             role="group"
             data-test="composition-tree-nest"
             [attr.data-parent-kind]="node.kind"
+            [attr.data-nest-depth]="depth"
           >
             @for (child of node.children; track child._id + ':' + $index) {
               <ng-container
@@ -191,6 +193,22 @@ export class CompositionTreeComponent {
       return solid.replace(/\)$/, ' / 0.28)');
     }
     return catalogKindWash(node.kind, node.materialKind, this.appearance.palette());
+  }
+
+  /**
+   * Nest = magazine card stack by depth (paper → paper-4), not kind flood.
+   * Soft diagonal gradient + rounded frame so the rail “ends” with the card.
+   */
+  protected nestSurface(depth: number): string {
+    const step = Math.min(Math.max(depth, 0), 3);
+    const layers: ReadonlyArray<readonly [string, string]> = [
+      ['var(--color-paper)', 'var(--color-paper-2)'],
+      ['var(--color-paper-2)', 'var(--color-paper-3)'],
+      ['var(--color-paper-3)', 'var(--color-paper-4)'],
+      ['var(--color-paper-4)', 'var(--color-paper-3)'],
+    ];
+    const [from, to] = layers[step]!;
+    return `linear-gradient(160deg, ${from} 0%, ${to} 72%, color-mix(in oklch, ${to} 88%, var(--color-rule)) 100%)`;
   }
 
   protected onRowMouseDown(event: MouseEvent): void {

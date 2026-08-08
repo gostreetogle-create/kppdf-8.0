@@ -128,8 +128,13 @@ describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
     expect(moduleNest!.classList.contains('ml-5')).toBe(true);
     expect(moduleNest!.classList.contains('pl-5')).toBe(true);
     expect(moduleNest!.classList.contains('mb-3')).toBe(true);
-    // Neutral nest wash (not kind-pink flood)
-    expect(Array.from(moduleNest!.classList).some((c) => c.includes('paper-2'))).toBe(true);
+    expect(moduleNest!.classList.contains('overflow-hidden')).toBe(true);
+    expect(moduleNest!.classList.contains('rounded-lg')).toBe(true);
+    expect(moduleNest!.getAttribute('data-nest-depth')).toBe('1');
+    expect(fixture.componentInstance.nestSurface(1)).toContain('linear-gradient');
+    expect(fixture.componentInstance.nestSurface(1)).toContain('paper-2');
+    expect(fixture.componentInstance.nestSurface(0)).toContain('paper)');
+    expect(fixture.componentInstance.nestSurface(2)).toContain('paper-3');
     // Both materials inside the same nest
     expect(moduleNest!.querySelector('[data-test="composition-tree-node-mat1"]')).toBeTruthy();
     expect(moduleNest!.querySelector('[data-test="composition-tree-node-mat2"]')).toBeTruthy();

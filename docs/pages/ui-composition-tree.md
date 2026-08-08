@@ -27,16 +27,15 @@
    `catalogKindOklch` (`shared/ui/catalog/catalog-kind-oklch.ts`). Не RAL.
    Persist пресетов → TZ-331.
 9. **Containment outlines (TZ-333+):** раскрытый узел с детьми рисует
-   `.comp-tree__nest` — нейтральная paper-подложка + hairline рамка; kind
-   **не** заливает панель (иначе «всё розовое»). Свёрнуто → nest нет в DOM.
-   Module-in-module = рамка в рамке. Не Excel-колонки. Канон смысла:
+   `.comp-tree__nest` — **журнальная карточка**: диагональный paper-градиент
+   по `data-nest-depth` (paper→paper-4), тень + `rounded-lg`/`overflow-hidden`
+   (rail заканчивается с рамкой). Kind **не** заливает панель — только
+   толстый left rail + цвета строк. Свёрнуто → nest нет в DOM.
+   Module-in-module = карточка в карточке. Не Excel-колонки.
+   Канон смысла:
    [`docs/audits/2026-08-08-composition-containment-outline.md`](../audits/2026-08-08-composition-containment-outline.md).
-10. **Пачки / cohesion (TZ-334+):** соседние nest — отдельные блоки
-    (`space-y-4` / `mb-3`), толстый left rail 5px `catalogKindBorder(parent)`,
-    inset hairline, сдвиг (`ml-5` / `pl-5`). Цвет kind — на **строках** и
-    rail, не на заливке nest. Expand/клик без изменений.
-    Канон:
-    [`docs/audits/2026-08-08-composition-block-cohesion-visual.md`](../audits/2026-08-08-composition-block-cohesion-visual.md).
+10. **Пачки / cohesion (TZ-334+):** sibling gap (`space-y-4` / `mb-3`), rail 5px,
+    сдвиг (`ml-5` / `pl-5`). Каскад глубины — градиентом paper-ступени, не kind-wash.
 
 ## Запрещено
 
