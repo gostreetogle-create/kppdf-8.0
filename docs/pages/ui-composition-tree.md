@@ -13,6 +13,19 @@
 вложенные справочники), где строка = действие (выбрать / раскрыть), а не
 текстовое поле для копирования.
 
+### Переиспользование (PO 2026-08-08 — не потерять)
+
+Тот же каскад (изделие→изделие→модуль→деталь, card-within-card + rail)
+— **образец** для других вложенностей. Первый foreseen consumer:
+
+- **Заказ:** chrome «Заказ №…» вместо «Состав»; корни = изделия заказа;
+  внутри — их состав целиком. Статусы на узлах — later.
+  TZ: `tasks/_backlog/TZ-ORDERS-302-order-detail-composition-tree.md` (PARK).
+- Pattern lock: [`../audits/2026-08-08-composition-cascade-pattern-lock.md`](../audits/2026-08-08-composition-cascade-pattern-lock.md)
+- Скрин-эталон (dark): [`assets/composition-tree-cascade-dark-2026-08-08.png`](./assets/composition-tree-cascade-dark-2026-08-08.png)
+
+Правило: новые экраны **подключают** `app-composition-tree`, не копируют CSS.
+
 ## Обязательное поведение (AC)
 
 1. **Hit-target = вся строка** (бейдж + имя + qty), не только ›.
@@ -38,6 +51,12 @@
 - Путать с editable-полем: здесь строка — control, не параграф для копирования.
 - Фиксированные 3 колонки «Изделие | Модуль | Материал» (Excel rowspan).
 
+## Тёмная тема (smell → TZ-CATALOG-335)
+
+На dark nest `color-mix(ink→paper)` даёт **слабый серый каскад** (мало chroma /
+мало шага L) — PO: «слишком монохромно». Kind rail/бейджи есть, но уровни
+слабее, чем на light. Чинить **только dark depth**, без возврата kind-wash на nest.
+
 ## Связь с другими канонами
 
 | Тема | Документ |
@@ -46,12 +65,15 @@
 | Карточка изделия / BOM | [`product-detail.page.md`](./product-detail.page.md) |
 | Containment outline | [`../audits/2026-08-08-composition-containment-outline.md`](../audits/2026-08-08-composition-containment-outline.md) |
 | Nest cohesion / пачки | [`../audits/2026-08-08-composition-block-cohesion-visual.md`](../audits/2026-08-08-composition-block-cohesion-visual.md) |
+| Pattern → Orders | [`../audits/2026-08-08-composition-cascade-pattern-lock.md`](../audits/2026-08-08-composition-cascade-pattern-lock.md) |
+| Dark depth | **TZ-CATALOG-335** |
 
 ## Фраза для агента / PO
 
 > «Дерево / строки состава — по канону composition-tree»  
-> = открыть этот файл и править `app-composition-tree` (или клонировать поведение).
+> = открыть этот файл и править `app-composition-tree` (или клонировать поведение).  
+> Заказ целиком — тот же паттерн (ORDERS-302), не второе дерево.
 
 ---
 
-_Создано: 2026-08-07. Обновлено: 2026-08-08 (TZ-333 nest · TZ-334 cohesion)._
+_Создано: 2026-08-07. Обновлено: 2026-08-08 (333/334 · pattern lock Orders · dark 335)._

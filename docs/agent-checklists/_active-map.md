@@ -1,53 +1,42 @@
-# SESSION QUEUE — 2026-08-08 hygiene
+# SESSION QUEUE — end of 2026-08-08 → завтра
 
-**Updated:** 2026-08-08 · TZ-COST-304 READY (завтра, docs audit)
+**Updated:** 2026-08-08 night · TZD-24 PASS verified · pattern lock + tomorrow TZs
 
 ## DONE recently (archive + lock on main)
 
 | Item | SHA / note |
 |------|------------|
-| TZ-OPS-301 | `f12c2d8` |
-| TZD-17 … TZD-20 | archives |
-| **TZD-22** | `e64e81f` |
-| TZ-CATALOG-330 … **334** | 334 on main |
 | TZ-COST-301…**303** | `cec4804` |
-| **TZD-24** | archive / zip download |
-| TZ-PRODUCTION-303.1 / 303.1b | archives |
+| **TZD-24** | feat `1ae611e` · docs closeout `08424a1` · **Cursor PASS** |
+| TZ-CATALOG-330…**334** | nest cascade sample locked |
+| TZD-22 | `e64e81f` |
 
-## READY (не сделано — выдавать по PO)
+## READY — завтра (порядок)
 
-| Priority | ID | Path |
-|----------|-----|------|
-| 0 | **TZ-COST-304** | `tasks/_backlog/cost/TZ-COST-304-product-line-cost-audit.md` (docs · завтра) |
-| 1 | **TZD-21** | `tasks/_backlog/desktop/TZD-21-desktop-pairing-keys-ttl.md` |
+| Priority | ID | Path | Note |
+|----------|-----|------|------|
+| 0 | **TZ-COST-304** | `tasks/_backlog/cost/TZ-COST-304-product-line-cost-audit.md` | docs audit · сумма в составе ≠ себест. |
+| 1 | **TZ-CATALOG-335** | `tasks/_backlog/catalog/TZ-CATALOG-335-composition-tree-dark-depth.md` | dark cascade не монохром |
+| 2 | **TZD-21** | `tasks/_backlog/desktop/TZD-21-desktop-pairing-keys-ttl.md` | по PO |
+| — | **deploy** | только явная команда PO | zip на volume после TZD-24 |
 
-## IN PROGRESS (CLAIMED)
+## PARK (зафиксировано, не терять)
 
-_(empty)_
+| ID | Path | Why |
+|----|------|-----|
+| **TZ-ORDERS-302** | `tasks/_backlog/TZ-ORDERS-302-order-detail-composition-tree.md` | заказ = тот же composition cascade |
+| TZ-COST-305 | after 304 decisions | product-line in cost |
+| TZD-23 | after PO | AI matching HITL |
 
-## READY FOR REVIEW
+## Pattern lock (не TZ, SoT)
 
-_(empty)_
+`docs/audits/2026-08-08-composition-cascade-pattern-lock.md`  
+`docs/pages/ui-composition-tree.md` §Переиспользование  
+Скрин: `docs/pages/assets/composition-tree-cascade-dark-2026-08-08.png`
 
-## PARK (не трогать без un-park)
-
-| Stream | Items |
-|--------|--------|
-| Desktop | TZD-18, TZD-19, **TZD-23** (только по PO, после 22 DONE) |
-| Cost | TZ-COST-305 (после решений 304) |
-| Production | 300–310, DRAWINGS-301, … |
-| Other | SHIPPING-301, INVENTORY-301, PROCUREMENT-301, ARCHIVE-301, DOC-330, RBAC-302/303, … |
-
-## Masters (не задачи в очереди)
-
-`tasks/TZ-CATALOG-300.md`, `tasks/TZ-DICT-300.md` — индексы волн, оставить в корне.
-
-## Checkpoint 2026-08-08 (COST-304 queued)
-- DONE: TZ-COST-301…303, TZD-22, TZD-24, CATALOG-334
-- IN PROGRESS: _(none)_
-- READY FOR REVIEW: _(none)_
-- NOT DONE: **TZ-COST-304** (product-line «сумма» vs себест.); TZD-21; TZD-23 park
-- NEXT: **TZ-COST-304 audit завтра** → TZ-COST-305 → TZD-21
-- Blockers: на стенде override в составе не входит в CostCalculation (ожидаемо до 305)
-- _active/: _(empty)_
-- Deploy: NO until PO
+## Checkpoint EOD 2026-08-08
+- TZD-24: **PASS** (smoke zip / 404 / SPA skip) — deploy ещё нужен для prod volume
+- Composition cascade = канон на Orders (302 PARK)
+- Dark smell → 335 READY
+- COST-304 READY (аудит цены вставки)
+- _active/: empty · Deploy: **NO**

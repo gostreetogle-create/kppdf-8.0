@@ -109,7 +109,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 
 | Route / surface | Page doc | TZs |
 |-----------------|----------|-----|
-| `/products/:id` BOM + Себест. | product-detail.page.md | COST-301…303 done; **COST-304** audit product-line override vs rollup; 305 after |
+| `/products/:id` BOM + Себест. | product-detail.page.md; ui-composition-tree.md | COST-301…303 done; **COST-304** audit; **CATALOG-335** dark depth; pattern → **ORDERS-302** PARK |
 
 ## Vision / access / sales (2026-08-02)
 
