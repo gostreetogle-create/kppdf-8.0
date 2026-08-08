@@ -27,7 +27,7 @@ Deploy: NO
 - DONE: TZ-UX-311
 - IN PROGRESS: none
 - NEXT: TZ-UX-309
-- HEAD: (pending push)
+- HEAD: `2f90305d`
 - Blockers: none
 - _active/: empty
 - Deploy: NO
