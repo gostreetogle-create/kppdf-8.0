@@ -103,14 +103,14 @@ export type CompositionTreeSelectEvent = {
           <span class="min-w-0 flex-1 truncate" [attr.title]="node.name">
             <span class="font-medium text-sm">{{ node.name }}</span>
             @if (node.quantity !== 1) {
-              <span class="ml-1.5 text-[11px] font-mono text-muted-foreground"
+              <span class="ml-1.5 text-xs font-mono font-medium tabular-nums text-foreground/75"
                 >× {{ node.quantity }}{{ node.unit ? ' ' + node.unit : '' }}</span
               >
             }
           </span>
           @if (node.kind !== 'material' && node.children.length > 0) {
             <span
-              class="shrink-0 text-[10px] font-mono text-muted-foreground tabular-nums"
+              class="shrink-0 text-xs font-mono font-medium tabular-nums text-foreground/70"
               aria-hidden="true"
               >{{ node.children.length }}</span
             >
@@ -121,9 +121,7 @@ export type CompositionTreeSelectEvent = {
         </div>
         @if (isExpanded(node) && node.children.length > 0) {
           <div
-            class="comp-tree__nest ml-5 mr-1 mt-2 mb-3 space-y-4 rounded-md border border-solid border-l-[3px] pt-2.5 pr-2.5 pb-2.5 pl-5"
-            [style.background]="nestWash(node)"
-            [style.border-color]="nestBorder(node)"
+            class="comp-tree__nest ml-5 mr-1 mt-2 mb-3 space-y-4 rounded-md border border-solid border-l-[5px] border-[color-mix(in_oklch,var(--color-rule)_50%,transparent)] bg-[color-mix(in_oklch,var(--color-paper-2)_68%,transparent)] pt-2.5 pr-2.5 pb-2.5 pl-5 shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--color-rule)_28%,transparent)]"
             [style.border-left-color]="kindBorder(node)"
             role="group"
             data-test="composition-tree-nest"
@@ -191,22 +189,6 @@ export class CompositionTreeComponent {
       return solid.replace(/\)$/, ' / 0.28)');
     }
     return catalogKindWash(node.kind, node.materialKind, this.appearance.palette());
-  }
-
-  /** Soft containment panel wash — parent kind; slightly stronger than row wash (TZ-334). */
-  protected nestWash(node: CompositionTreeNode): string {
-    const base = catalogKindWash(node.kind, node.materialKind, this.appearance.palette());
-    return base.replace(/\/\s*[\d.]+\)$/, '/ 0.22)');
-  }
-
-  protected nestBorder(node: CompositionTreeNode): string {
-    return catalogKindOklch(
-      node.kind,
-      node.materialKind,
-      0.08,
-      0.58,
-      this.appearance.palette(),
-    ).replace(/\)$/, ' / 0.45)');
   }
 
   protected onRowMouseDown(event: MouseEvent): void {

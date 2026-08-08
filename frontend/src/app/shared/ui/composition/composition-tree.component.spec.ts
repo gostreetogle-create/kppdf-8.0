@@ -116,10 +116,12 @@ describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
     // TZ-334 cohesion classes: sibling gap + left rail + children indent
     expect(moduleNest!.classList.contains('comp-tree__nest')).toBe(true);
     expect(moduleNest!.classList.contains('space-y-4')).toBe(true);
-    expect(moduleNest!.classList.contains('border-l-[3px]')).toBe(true);
+    expect(moduleNest!.classList.contains('border-l-[5px]')).toBe(true);
     expect(moduleNest!.classList.contains('ml-5')).toBe(true);
     expect(moduleNest!.classList.contains('pl-5')).toBe(true);
     expect(moduleNest!.classList.contains('mb-3')).toBe(true);
+    // Neutral nest wash (not kind-pink flood)
+    expect(Array.from(moduleNest!.classList).some((c) => c.includes('paper-2'))).toBe(true);
     // Both materials inside the same nest
     expect(moduleNest!.querySelector('[data-test="composition-tree-node-mat1"]')).toBeTruthy();
     expect(moduleNest!.querySelector('[data-test="composition-tree-node-mat2"]')).toBeTruthy();

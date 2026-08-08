@@ -25,15 +25,15 @@
 8. **Цвет по kind (TZ-330):** wash строки + цвет бейджа/бордера через
    `catalogKindOklch` (`shared/ui/catalog/catalog-kind-oklch.ts`). Не RAL.
    Persist пресетов → TZ-331.
-9. **Containment outlines (TZ-333):** раскрытый узел с детьми рисует
-   `.comp-tree__nest` — hairline рамка + wash kind **родителя** вокруг списка
-   детей. Свёрнуто → nest нет в DOM. Module-in-module = рамка в рамке.
-   Не Excel-колонки. Канон смысла:
+9. **Containment outlines (TZ-333+):** раскрытый узел с детьми рисует
+   `.comp-tree__nest` — нейтральная paper-подложка + hairline рамка; kind
+   **не** заливает панель (иначе «всё розовое»). Свёрнуто → nest нет в DOM.
+   Module-in-module = рамка в рамке. Не Excel-колонки. Канон смысла:
    [`docs/audits/2026-08-08-composition-containment-outline.md`](../audits/2026-08-08-composition-containment-outline.md).
-10. **Пачки / cohesion (TZ-334+):** соседние nest читаются как отдельные блоки —
-    sibling gap (`space-y-4` / `mb-3`), left rail 3px `catalogKindBorder(parent)`,
-    усиленный wash, сдвиг nest вправо (`ml-5`) + indent внутри (`pl-5`).
-    Expand/клик без изменений.
+10. **Пачки / cohesion (TZ-334+):** соседние nest — отдельные блоки
+    (`space-y-4` / `mb-3`), толстый left rail 5px `catalogKindBorder(parent)`,
+    inset hairline, сдвиг (`ml-5` / `pl-5`). Цвет kind — на **строках** и
+    rail, не на заливке nest. Expand/клик без изменений.
     Канон:
     [`docs/audits/2026-08-08-composition-block-cohesion-visual.md`](../audits/2026-08-08-composition-block-cohesion-visual.md).
 
