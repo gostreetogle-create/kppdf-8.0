@@ -111,6 +111,12 @@
 
 ## 5. Лог сессий (новые сверху)
 
+### 2026-08-08 — Два агента: Desktop + Shop-north-B
+- Один агент = desktop TZD-23…29; второй (сильнее) = параллельная волна без пересечения keys.
+- Shop-north-B: SUPPLY-302 → ORDERS-304/305 → SALES-302 → FACT-303/304 → FORM-307.
+- Не давать второму desktop/journal; не SALES-304; не Gantt.
+- Источник: PO «нагрузи освободившегося».
+
 ### 2026-08-08 — Desktop wave READY: «умный опт» = 23→29 подряд
 - PO хочет сразу executable волну, не «потом TZD-23».
 - READY: `tasks/_backlog/desktop/WAVE-DESKTOP-BULK-IMPORT.md` (23 match/HITL → 26 reshape → 18 batch → 19 graph → 27 products → 28 doc draft → 29 todos).

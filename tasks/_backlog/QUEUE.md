@@ -1,16 +1,17 @@
 # Очередь
 
-## NEXT
+## Параллель (два агента)
 
-1. **WAVE Desktop bulk-import («умный опт»)** — непрерывный прогон  
-   Master: `tasks/_backlog/desktop/WAVE-DESKTOP-BULK-IMPORT.md`  
-   Порядок: **TZD-23 → 26 → 18 → 19 → 27 → 28 → 29**  
-   Audit: `docs/audits/2026-08-08-desktop-bulk-import-vision-audit.md`  
-   **Только из** `D:\kppdf-8.0` на `main` (или wt на том же SHA).  
-   **Не** из `D:\kppdf-8.0\merge`.
+| Агент | Волна | Старт |
+|-------|--------|--------|
+| **A — Desktop** | `tasks/_backlog/desktop/WAVE-DESKTOP-BULK-IMPORT.md` | TZD-23→29 |
+| **B — Shop north** | `tasks/_backlog/shop-north-b/WAVE-SHOP-NORTH-B.md` | SUPPLY-302→…→FORM-307 |
+
+Оба только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
 ## Не брать
 
-- **TZ-GIT-302** — CANCELLED (`tasks/_archive/2026-08/TZ-GIT-302.cancelled.md`)
-- merge freebuff `27b6af5d…` → main
-- SALES-304 · Order/КП bulk · deploy без команды PO
+- TZ-GIT-302 CANCELLED · freebuff long-haul merge  
+- SALES-304 (RESERVED) · SHIPPING-301 · PRODUCTION-308…310  
+- чужой desktop / journal / import-task (агент B)  
+- deploy без команды PO
