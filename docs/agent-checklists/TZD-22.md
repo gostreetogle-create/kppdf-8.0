@@ -44,7 +44,7 @@ cd desktop && pnpm typecheck                               → PASS
 - MCP `kppdf_import_task_{list,get,create,set_status}` + `backendPatchJson`
 - Docs MCP/FEATURE/backlog; no matching (TZD-23)
 - Conflict disclosure: COST-302 keys disjoint; Team Room claim unavailable
-- commit: PENDING
+- commit: e64e81fca6514e0ad2ad9ae6a9b9a8820a7d8871
 
 ## Closeout
 

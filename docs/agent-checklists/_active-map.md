@@ -8,7 +8,7 @@
 |------|------------|
 | TZ-OPS-301 | `f12c2d8` |
 | TZD-17 … TZD-20 | archives |
-| **TZD-22** | archive `tasks/_archive/2026-08/TZD-22.done.md` (SHA after push) |
+| **TZD-22** | `e64e81fca6514e0ad2ad9ae6a9b9a8820a7d8871` |
 | TZ-CATALOG-330 … **334** | 334 on main |
 | TZ-COST-301 | `79edbea` |
 | TZ-PRODUCTION-303.1 / 303.1b | archives |
@@ -48,7 +48,7 @@ _(empty)_
 - READY FOR REVIEW: **TZ-COST-302**
 - NOT DONE: TZ-COST-303, TZD-21; TZD-23 park until PO
 - NEXT: Cursor PASS on COST-302 → archive; TZD-21 only on PO; **no TZD-23 / no deploy**
-- HEAD: (see TZD-22 commit after push)
+- HEAD: e64e81fca6514e0ad2ad9ae6a9b9a8820a7d8871 (TZD-22)
 - Blockers: none
 - _active/: TZ-COST-302.md
 - Deploy: NO

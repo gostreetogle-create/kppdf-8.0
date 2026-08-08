@@ -5,7 +5,7 @@
 **Gates:** backend tsc PASS; jest import-task 6/6 PASS; desktop/mcp test 33/33 PASS; desktop typecheck PASS
 **Archive:** `tasks/_archive/2026-08/TZD-22.done.md`
 **Lock:** `.mimocode/locks/TZD-22-ai-import-task.lock`
-**Commit:** PENDING
+**Commit:** `e64e81fca6514e0ad2ad9ae6a9b9a8820a7d8871`
 **Cursor Verdict:** PASS
 **Known limits:** no matching/chat; no web UI task list; TZD-23 park until PO
 

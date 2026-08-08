@@ -3,4 +3,4 @@ closed: 2026-08-08
 zone: import-task BE + Desktop AI task button + MCP import-task tools
 checklist: docs/agent-checklists/TZD-22.md
 archive: tasks/_archive/2026-08/TZD-22.done.md
-commit: PENDING
+commit: e64e81fca6514e0ad2ad9ae6a9b9a8820a7d8871
