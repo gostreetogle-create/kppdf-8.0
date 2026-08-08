@@ -1,26 +1,19 @@
-# Завтра 2026-08-09 — handoff
+# Завтра 2026-08-09 — handoff (updated mid-session 08)
 
-## P0 (делать первым)
+## DONE this session (continuous executor)
 
-**TZ-CATALOG-336** — карточка модуля как изделие: слева паспорт/фото/себест.,
-справа каскадный BOM (`app-composition-tree`).  
-`tasks/_backlog/catalog/TZ-CATALOG-336-module-detail-parity.md`
+- **TZ-CATALOG-336** module A+ · `ab225fa`
+- **TZ-CATALOG-335** dark nest · `973c6e3`
+- **TZ-COST-304** already archived (skip)
+- **TZ-DICT-313** audit → 314–316 drafts (this closeout)
 
-```text
-GEMINI.md + docs/pages/product-detail.page.md +
-tasks/_backlog/catalog/TZ-CATALOG-336-module-detail-parity.md
-→ checklist TZ-CATALOG-336 → layout parity → gates → archive (no deploy)
-```
+## NEXT / PARK
 
-## Затем
-
-1. **TZ-CATALOG-335** — dark nest (не монохром)  
-2. **TZ-COST-304** — audit сумма в составе vs себест. (docs)  
-3. **TZ-DICT-313** — audit быстрые формы S/M/L (docs)  
-4. По PO: deploy / TZD-21
+1. **TZD-21** pairing keys — if still READY on map / PO
+2. Deploy — only explicit PO
+3. COST-305 / DICT-314…316 — RESERVED until map slot
+4. ORDERS-302 PARK
 
 ## Не терять
 
-- ORDERS-302 PARK — заказ тем же деревом  
-- TZD-24 PASS — zip на prod только после deploy  
-- Pattern lock + скрин cascade
+- Pattern lock cascade; TZD-24 zip only after deploy

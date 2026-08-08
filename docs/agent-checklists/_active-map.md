@@ -1,44 +1,37 @@
-# SESSION QUEUE — 2026-08-09 wave
+# SESSION QUEUE — continuous executor
 
-**Updated:** 2026-08-08 · **COST-304 DONE (docs)** · NEXT code **COST-305**
+**Updated:** 2026-08-08T06:20Z · **313 DONE** → next **TZD-21** (if READY)
 
-## DONE recently
+## DONE this session
 
-| Item | Note |
-|------|------|
-| **TZ-COST-304** | docs audit D1–D5 → [2026-08-09](../audits/2026-08-09-product-line-cost-vs-override.md) · archive |
-| **TZ-CATALOG-335** | dark nest depth |
-| **TZ-CATALOG-336** | module = product A+ · `ab225fa` |
-| TZ-COST-301…303 | done |
-| **TZD-24** | PASS `1ae611e` |
+| Item | SHA / note |
+|------|------------|
+| TZ-CATALOG-336 | `ab225fa` |
+| TZ-CATALOG-335 | `973c6e3` |
+| TZ-COST-304 | already archived (skipped) |
+| TZ-DICT-313 | docs audit → 314–316 drafts |
 
 ## READY
 
-| Priority | ID | Path | Note |
-|----------|-----|------|------|
-| **1** | **TZ-COST-305** | `tasks/_backlog/cost/TZ-COST-305-product-line-in-cost.md` | NEXT code · checklist RESERVED→CLAIM |
-| 2 | **TZ-DICT-313** | quick-create form profiles (docs) | Cursor/docs ok ∥ |
-| 3 | **TZD-21** | pairing keys | по PO |
-| — | **deploy** | zip на volume | только «задеплой» |
+| Priority | ID | Note |
+|----------|-----|------|
+| **4** | **TZD-21** | pairing keys — CLAIM if backlog READY |
+| — | **deploy** | только «задеплой» |
 
-## PARK
+## PARK / RESERVED (не брать без PO / map slot)
 
 | ID | Why |
 |----|-----|
-| TZ-ORDERS-302 | заказ = composition cascade (образец готов: 335 dark) |
-| DICT-314…316 | after DICT-313 audit |
+| TZ-COST-305 | after audits; RESERVED |
+| TZ-DICT-314…316 | after 313; RESERVED |
+| TZ-ORDERS-302 | заказ = cascade |
 | TZD-23 | AI matching |
 
-## Pattern lock
-
-`docs/audits/2026-08-08-composition-cascade-pattern-lock.md`  
-Cost product-line: `docs/audits/2026-08-09-product-line-cost-vs-override.md`
-
-## Checkpoint 2026-08-08 (Cursor COST-304 closeout)
-- DONE: 336, 335, COST-304 docs
-- IN PROGRESS: none (executor: claim **COST-305**, не 304)
-- NOT DONE: COST-305, DICT-313, TZD-21
-- NEXT: TZ-COST-305
+## Checkpoint 2026-08-08T06:20Z
+- DONE: 336, 335, 304(prior), 313
+- IN PROGRESS: none
+- NOT DONE: TZD-21 (map READY)
+- NEXT: TZD-21
 - Blockers: none
-- _active/: empty until 305 claim
-- **Не трогать:** чужой desktop/frontend WIP; не re-open 304
+- _active/: empty after 313 archive
+- Deploy: NO

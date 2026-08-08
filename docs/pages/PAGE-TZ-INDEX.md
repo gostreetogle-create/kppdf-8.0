@@ -116,7 +116,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 
 | Route / surface | Page doc | TZs |
 |-----------------|----------|-----|
-| `/dictionaries/*` (+ future form-profiles) | dictionaries.page.md; DICT-300 | **DICT-313** audit quick-create S/M/L; 314–316 after |
+| `/dictionaries/*` (+ form-profiles) | dictionaries.page.md; DICT-300 | **DICT-313 DONE** audit; **314–316** RESERVED (API / settings / QuickCreate) |
 
 ## Vision / access / sales (2026-08-02)
 

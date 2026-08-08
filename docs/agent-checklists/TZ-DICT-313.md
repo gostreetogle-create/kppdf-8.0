@@ -1,18 +1,23 @@
-# TZ-DICT-313 — Quick-create form profiles (audit)
+# TZ-DICT-313 — Quick-create form profiles (audit) DONE
 
-**TZ:** `tasks/_backlog/dictionaries/TZ-DICT-313-quick-create-form-profiles-audit.md`  
-**Status:** READY (docs-only · завтра)
+**Archive:** `tasks/_archive/2026-08/TZ-DICT-313.done.md`  
+**Status:** DONE (docs-only)
 
-## Checklist
+## Claim slot
 
-- [ ] Read DICT-300 + dictionaries UX audit + live product/module form dialogs
-- [ ] Glossary + D1–D8 decided
-- [ ] Write `docs/audits/2026-08-09-quick-create-form-profiles.md`
-- [ ] Draft DICT-314 / 315 / 316
-- [ ] Update dictionaries README + active-map + handoff
-- [ ] PO-DIARY §2 if IA stable
-- [ ] Archive 313 docs-DONE; **no** product `*.ts`
+- agent_id: continuous-executor-composer
+- claimed_at: 2026-08-08T06:13:56.983Z
+- workspace: D:\kppdf-8.0
+- team_room_claim: unavailable
 
-## Executor report (auto)
+## Acceptance
 
-_(fill on DONE)_
+- [x] Audit D1–D8 chosen
+- [x] FieldKey P0 product + module
+- [x] Drafts 314–316
+- [x] IA: Dictionaries vs appearance
+- [x] No product `*.ts` in commit
+
+## Closeout
+
+- closed_at: 2026-08-08T06:20:00Z

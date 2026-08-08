@@ -1,3 +1,12 @@
+## [2026-08-08] — TZ-DICT-313 DONE: quick-create form profiles audit
+
+**Исполнитель:** continuous-executor-composer (docs PASS → archive)
+**Статус:** DONE on main; deploy НЕ; product code NOT TOUCHED
+**Что сделано кратко:** D1–D8; FieldKey P0 product+module; drafts 314–316; IA Справочники ≠ appearance.
+**Archive:** `tasks/_archive/2026-08/TZ-DICT-313.done.md`
+**Audit:** `docs/audits/2026-08-09-quick-create-form-profiles.md`
+**Cursor Verdict:** PASS
+
 ## [2026-08-08] — TZ-CATALOG-335 DONE: composition-tree dark depth
 
 **Исполнитель:** continuous-executor-composer (self PASS → archive)

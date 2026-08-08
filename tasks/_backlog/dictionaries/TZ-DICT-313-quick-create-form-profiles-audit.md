@@ -17,7 +17,7 @@ TZ-DICT-313: Аудит — профили быстрых форм (S/M/L) в С
 > поверх уже известных сущностей каталога (и позже — других).
 > Полная карточка/редактор остаётся; quick-dialog = укороченный create.
 
-STATUS: READY (Cursor Mode A / аудитор; executor-код — successors)
+STATUS: DONE (docs) → `tasks/_archive/2026-08/TZ-DICT-313.done.md` · successors 314–316
 
 РОЛЬ АГЕНТА: Cursor architect — audit + decision table + wave 314+
 
