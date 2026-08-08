@@ -15,7 +15,7 @@
 - Фото-инфраструктура существует (`POST /photos/upload`, image upload в template block), но `Photo` не знает владельца/организацию/роль; поэтому это ещё не безопасный org vault: `backend/src/modules/photos/*`, `frontend/src/app/pages/doc-constructor/builder/*`.
 
 ## Что поправить в плане до lock (обязательно)
-1. **Ошибка факта в W5.** Line-ready уже есть в BE+UI, `materialsSource` уже есть, снабжение уже умеет explode BOM и статусы draft→confirmed→ordered→received. См. `backend/src/modules/order/*`, `frontend/src/app/pages/orders/order-detail.page.ts`, `backend/src/modules/supply/*`, `frontend/src/app/pages/supply/supply.page.ts`. W5 надо переименовать в residual gap audit; подтверждённая дыра — auto stub-КП для прямого заказа.
+1. **Ошибка факта в W5.** Line-ready уже есть в BE+UI, `materialsSource` уже есть, снабжение уже умеет explode BOM и статусы draft→confirmed→ordered→received. См. `backend/src/modules/order/*`, `frontend/src/app/pages/orders/order-detail.page.ts`, `backend/src/modules/supply/*`, `frontend/src/app/pages/supply/supply.page.ts`. W5 надо переименовать в residual gap audit. Доказанные остатки: auto stub-КП для прямого заказа, module-ready, связь ready→Гант, очередь проектировщика и shipping/частичная отгрузка.
 2. **Опасный INN-stub не описан как миграционная проблема.** Сейчас quick-create создаёт похожий на настоящий 10-значный ИНН из timestamp. Нельзя затем молча «заменить stub lookup-ом»: нужны nullable/unknown ИНН, `innVerificationStatus` (unknown/verified) и миграция существующих stub-записей.
 3. **Multi-org/tenant-контракт не закрыт.** Код поддерживает N `Organization` и family КП по разным бланкам, но Organization API глобальный, а Counterparty scoping неполный. До UI-волн решить: current/default org, видимость, уникальность и право переключения.
 4. **Security gap до W1/W3.** `Counterparty` list частично scoped, но get/update/delete — без org scope; create DTO принимает от клиента `organizationId` и `isSystem`. Organization и Photos CRUD также глобальны, manager может менять/удалять. Сначала ownership/authorization, потом FullEditor/vault.
@@ -24,6 +24,8 @@
 7. **«Реквизиты PDF одной кнопкой» не имеет контракта.** До обещания определить: какой шаблон/renderer используется, какие обязательные поля, как выбирается Organization, где хранится generated document и как проверяется кириллица/печать.
 8. **Смешаны два вида image flow.** Уже есть template-local image/background upload; W3/W4 должны переиспользовать storage/rendering, но добавить entity-backed typed source, а не строить второй загрузчик и не хранить голые URL как бизнес-связь.
 9. **Нет provider failure contract.** W2 обязан предусмотреть timeout/rate limit/cache, ручной ввод, подтверждение человеком, provenance и поведение без ключа; иначе форма клиента зависит от внешнего API.
+10. **Order без цен соблюдается не на всех путях.** КП→Заказ strip-commerce работает, но прямой order form всё ещё передаёт `unitPrice`, а schema хранит цену/total. До lock решить единый канон и убрать асимметрию write-path, иначе «Заказ без цен сделки» — неверное обещание.
+11. **В bindings есть скрытый tech-debt.** Registry публикует source `work-type`, а build bag использует `workType`; такой field binding не резолвится. W4 должен начинаться с contract test всех источников, а не только добавления картинок.
 
 ## Ответы на открытые вопросы плана (1–7)
 1. **Провайдер ИНН:** для первого рабочего lookup рекомендую DaData через backend proxy, с ключом только в env, cache/rate limit и ручным fallback. Не обещать бесплатный гос-API без подтверждённых SLA/ToS. Нужен вердикт PO по бюджету и ключу; без него W2 park, checksum остаётся только валидатором, не lookup.
@@ -42,7 +44,7 @@
 | W0 | оставить параллельно | TZD-30 не смешивать по conflict keys |
 | W1 | первая после lock | Party domain + FullEditor, но вместе с tenant ownership/ACL и INN nullability/index contract |
 | W2 | затем | provider spike/contract → lookup CP/Org → optional lookup в order quick-create |
-| W5R | поднять перед vault | только residual gaps: direct Order→stub-КП, проверка KP vitrina; ready/supply не переизобретать |
+| W5R | поднять перед vault | residual gaps: direct Order→stub-КП, единый no-commerce write-path, module-ready/design/Gantt/shipping; line-ready и supply не переизобретать |
 | W3 | после security contract | typed org assets, owner scope, admin/capability, audit/versioning |
 | W4 | после W3 | requisites PDF + typed image bindings, используя существующий builder/upload |
 | W6 | последней | MCP propose/HITL поверх стабилизированных web API; не прямые записи и не второй vault |
@@ -61,5 +63,5 @@
 - Зафиксирован domain lock: Organization/Counterparty/Site, cardinality N org, default org, адреса и nullable/verified INN.
 - Есть security matrix для Org/CP/Asset: tenant scope на list/get/create/update/delete, admin/capability для печати, audit и запрет mass-assignment.
 - Выбран INN provider либо W2 явно parked; записаны budget/key owner, fallback, timeout/cache/rate-limit и HITL.
-- W5 пересверен с main и сокращён до доказанных gaps с тестовыми сценариями, без повторной реализации ready/supply.
+- W5 пересверен с main и сокращён до доказанных gaps с тестовыми сценариями: stub-КП, no-commerce parity, module-ready/design/Gantt/shipping; без повторной реализации line-ready/supply.
 - У W3/W4 определены asset lifecycle и binding contract, а каждый будущий TZ имеет conflict keys, migration/rollback и измеримые API/UI/test acceptance criteria.
