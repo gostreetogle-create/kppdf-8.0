@@ -4,12 +4,14 @@ import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { ProductBomPanelComponent } from './product-bom-panel.component';
 import { ProductModulesService } from '../../shared/services/pi-product-modules.service';
+import { MaterialsService } from '../../shared/services/materials.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 
 describe('ProductBomPanelComponent', () => {
   let fixture: ComponentFixture<ProductBomPanelComponent>;
   let service: Record<string, jest.Mock>;
+  let materials: Record<string, jest.Mock>;
 
   const tree = {
     _id: 'p1',
@@ -52,12 +54,31 @@ describe('ProductBomPanelComponent', () => {
           data: [{ _id: 'line-mat1', lineType: 'material', refId: 'mat1', quantity: 4 }],
         }),
       ),
+      getCostPreview: jest.fn().mockReturnValue(
+        of({
+          ok: true,
+          data: {
+            materialCost: 100,
+            laborCost: 50,
+            totalCost: 150,
+            currency: 'RUB',
+          },
+        }),
+      ),
       addProductCompositionLine: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
       addModuleCompositionLine: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
       updateProductCompositionLine: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
       updateModuleCompositionLine: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
       removeProductCompositionLine: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
       removeModuleCompositionLine: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
+    };
+    materials = {
+      findById: jest.fn().mockReturnValue(
+        of({
+          ok: true,
+          data: { _id: 'mat1', name: 'Труба', unit: 'м', pricePerUnit: 25 },
+        }),
+      ),
     };
 
     await TestBed.configureTestingModule({
@@ -66,6 +87,7 @@ describe('ProductBomPanelComponent', () => {
       providers: [
         provideRouter([]),
         { provide: ProductModulesService, useValue: service },
+        { provide: MaterialsService, useValue: materials },
         { provide: PiToastService, useValue: { success: jest.fn(), error: jest.fn() } },
         { provide: PiDialogService, useValue: { open: jest.fn() } },
       ],
@@ -83,6 +105,7 @@ describe('ProductBomPanelComponent', () => {
       fixture.nativeElement.querySelector('[data-test="bom-inspector-name"]')?.textContent,
     ).toContain('Изделие');
     expect(fixture.nativeElement.querySelector('[data-test="bom-add-into"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="bom-line-cost"]')).toBeNull();
   });
 
   it('shows compact kind legend above the tree', () => {
@@ -98,25 +121,42 @@ describe('ProductBomPanelComponent', () => {
     expect(legend!.textContent).toContain('Сырьё');
   });
 
-  it('selecting a module shows qty + add-into', () => {
+  it('shows module cost contribution in inspector (preview × qty)', () => {
     fixture.componentRef.setInput('productId', 'p1');
     fixture.detectChanges();
-    const rows = fixture.nativeElement.querySelectorAll(
-      '[data-test="composition-tree-row"]',
-    ) as NodeListOf<HTMLElement>;
-    // expand root already; click module row (index 1 if children visible — root expanded seeds children)
-    const moduleRow = fixture.nativeElement.querySelector(
-      '[data-test="composition-tree-node-m1"] [data-test="composition-tree-row"]',
-    ) as HTMLElement | null;
-    expect(moduleRow).toBeTruthy();
-    moduleRow!.click();
+    const comp = fixture.componentInstance as unknown as {
+      onSelect: (e: {
+        node: (typeof tree.children)[0];
+        parent: typeof tree;
+        depth: number;
+      }) => void;
+    };
+    comp.onSelect({ node: tree.children[0], parent: tree, depth: 1 });
     fixture.detectChanges();
-    expect(
-      fixture.nativeElement.querySelector('[data-test="bom-inspector-name"]')?.textContent,
-    ).toContain('Каркас');
-    expect(fixture.nativeElement.querySelector('[data-test="bom-inspector-qty"]')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('[data-test="bom-add-into"]')).toBeTruthy();
-    expect(service.getModuleComposition).toHaveBeenCalledWith('m1');
-    expect(rows.length).toBeGreaterThan(1);
+    expect(service.getCostPreview).toHaveBeenCalledWith('m1');
+    const total = fixture.nativeElement.querySelector(
+      '[data-test="bom-line-cost-total"]',
+    ) as HTMLElement | null;
+    expect(total?.textContent).toContain('300.00');
+    const formula = fixture.nativeElement.querySelector(
+      '[data-test="bom-line-cost-formula"]',
+    ) as HTMLElement | null;
+    expect(formula?.textContent).toMatch(/150\.00.*×\s*2/);
+  });
+
+  it('shows material cost contribution in inspector (price × qty)', () => {
+    fixture.componentRef.setInput('productId', 'p1');
+    fixture.detectChanges();
+    const mat = tree.children[0].children[0];
+    const comp = fixture.componentInstance as unknown as {
+      onSelect: (e: { node: typeof mat; parent: (typeof tree.children)[0]; depth: number }) => void;
+    };
+    comp.onSelect({ node: mat, parent: tree.children[0], depth: 2 });
+    fixture.detectChanges();
+    expect(materials.findById).toHaveBeenCalledWith('mat1');
+    const total = fixture.nativeElement.querySelector(
+      '[data-test="bom-line-cost-total"]',
+    ) as HTMLElement | null;
+    expect(total?.textContent).toContain('100.00');
   });
 });

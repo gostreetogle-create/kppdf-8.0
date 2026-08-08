@@ -11,6 +11,17 @@
 
 ---
 
+## [2026-08-08] — TZ-COST-303 DONE: cost visibility UI (lists + BOM)
+**Исполнитель:** cursor-composer-cost303 (Cursor PASS → archive)
+**Статус:** DONE on main; deploy НЕ выполнялся
+**Что сделано кратко:** Модули list «Себест.»→«см. карточку»; изделия list/detail/grid `costPrice` рядом с Прайс; BOM inspector вклад строки (мат×qty / preview×qty). Не ручная цена модуля; не desktop/TZD.
+**Gates:** frontend tsc PASS; Jest products + bom-panel + modules PASS
+**Archive:** `tasks/_archive/2026-08/TZ-COST-303.done.md`
+**Lock:** `.mimocode/locks/TZ-COST-303-cost-visibility-ui.lock`
+**Cursor Verdict:** PASS
+
+---
+
 ## [2026-08-08] — TZ-CATALOG-334 DONE: composition nest visual cohesion
 **Исполнитель:** cursor-composer-catalog334 (Cursor PASS → archive)
 **Статус:** DONE on main; deploy НЕ выполнялся
@@ -45,6 +56,14 @@
 **Commits:** implementation `23c47b0c564bfba55cff9619818fb54b63d32239`; closeout `06d74f7e9423d6c879d5bafc2ea4bc8ea62e2565`
 
 ---
+
+## [2026-08-08] — TZ-COST-303 DONE: Cost visibility UI (lists + BOM)
+
+**Что сделано:** колонка Себест. в модулях (hint «см. карточку»); Прайс+Себест. в изделиях;
+BOM inspector — вклад строки material/module read-only.
+**Archive:** `tasks/_archive/2026-08/TZ-COST-303.done.md`
+**Lock:** `.mimocode/locks/TZ-COST-303-cost-visibility-ui.lock`
+**Gates:** FE tsc PASS; bom-panel jest 4/4 PASS; Cursor PASS; deploy NO.
 
 ## [2026-08-08] — TZ-COST-302 DONE: Recursive cost rollup + costPrice sync
 **Исполнитель:** cursor-composer-cost302 (Cursor PASS → archive)

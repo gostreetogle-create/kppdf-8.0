@@ -319,7 +319,9 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
     const fixture = await renderPage();
     const comp = fixture.componentInstance as unknown as { cols: { key: string }[] };
     const keys = comp.cols.map((c) => c.key);
-    expect(keys).toEqual(expect.arrayContaining(['photoIds', 'name', 'unit', 'listPrice']));
+    expect(keys).toEqual(
+      expect.arrayContaining(['photoIds', 'name', 'unit', 'listPrice', 'costPrice']),
+    );
     expect(keys).not.toContain('sku');
     expect(keys).not.toContain('status');
     expect(keys).not.toContain('stockQty');

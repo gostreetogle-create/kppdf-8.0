@@ -22,11 +22,13 @@
      kind-цвета (изд/мод/мат) через `catalogKindOklch` (TZ-330);
      раскрытые дети — в nest-рамках принадлежности (TZ-333), пачки с gap/rail (TZ-334), не в Excel-колонках;
    - легенда kind (точки) над деревом;
-   - инспектор справа: qty, «+ Из каталога» **в выбранный узел**, убрать, ссылка на карточку;
+   - инспектор справа: qty, **вклад в себест.** (материал: `price×qty`; модуль: `cost-preview×qty`, TZ-COST-303),
+     «+ Из каталога» **в выбранный узел**, убрать, ссылка на карточку;
    - add в **product** → product composition API; add в **module** → module composition API;
    - picker с `restrictToModule` скрывает вкладку «изделие» и разрешает сырьё;
    - выбор из каталога: **`app-pi-overflow-select`** ([канон](./ui-overflow-select.md)).
-4. Фото / себестоимость — свёрнутый аккордеон (не конкурируют с деревом).
+4. Паспорт: **Прайс** (`listPrice`) рядом с **Себест.** (`costPrice`); База отдельно.
+5. Фото / себестоимость (журнал расчётов) — свёрнутый аккордеон (не конкурируют с деревом).
 
 ## Бизнес-правила состава (канон)
 
@@ -45,13 +47,16 @@
 | GET/POST/PATCH/DELETE | `/api/products/:id/composition` | Состав изделия |
 | GET | `/api/products/:id/tree` | Дерево |
 | GET/POST/PATCH/DELETE | `/api/modules/:id/composition` | Состав модуля (add-in-context) |
+| GET | `/api/modules/:id/cost-preview` | Read-only rollup модуля (BOM inspector / module detail) |
+| GET | `/api/materials/:id` | Цена материала для вклада строки BOM |
 
 ## Известные ограничения
 
 - Загрузка фото с detail — Phase E.
 - Where-used на изделии — не в UI.
 - Глубокое дерево подгружается по expand (depth +2, max 8).
+- Список модулей: колонка «Себест.» = hint «см. карточку» (нет batch preview; TZ-COST-303 P0).
 
 ---
 
-_Создано: 2026-08-04. Обновлено: 2026-08-08 (TZ-333 nest · TZ-334 cohesion + kind legend)._
+_Создано: 2026-08-04. Обновлено: 2026-08-08 (TZ-COST-303 cost visibility · TZ-333/334)._

@@ -169,20 +169,23 @@ const KIND_LABELS: Record<ProductKind, string> = {
             <dl class="grid grid-cols-2 gap-2 text-sm" data-test="product-hero-prices">
               <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
                 <dt class="eyebrow truncate">Прайс</dt>
-                <dd class="font-mono font-medium text-sm truncate empty-cell">
+                <dd
+                  class="font-mono font-medium text-sm truncate empty-cell"
+                  data-test="product-list-price"
+                >
                   {{ p.listPrice != null ? formatRuble(p.listPrice) : '—' }}
+                </dd>
+              </div>
+              <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
+                <dt class="eyebrow truncate">Себест.</dt>
+                <dd class="font-mono text-sm truncate empty-cell" data-test="product-cost-price">
+                  {{ p.costPrice != null ? formatRuble(p.costPrice) : '—' }}
                 </dd>
               </div>
               <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
                 <dt class="eyebrow truncate">База</dt>
                 <dd class="font-mono text-sm truncate empty-cell">
                   {{ p.basePrice != null ? formatRuble(p.basePrice) : '—' }}
-                </dd>
-              </div>
-              <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
-                <dt class="eyebrow truncate">Себест.</dt>
-                <dd class="font-mono text-sm truncate empty-cell">
-                  {{ p.costPrice != null ? formatRuble(p.costPrice) : '—' }}
                 </dd>
               </div>
               <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">

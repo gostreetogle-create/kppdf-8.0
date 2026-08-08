@@ -349,8 +349,8 @@ const KIND_LABELS: Record<Product['kind'], string> = {
                 >
                   <option value="name:asc">Название ↑</option>
                   <option value="name:desc">Название ↓</option>
-                  <option value="listPrice:asc">Цена ↑</option>
-                  <option value="listPrice:desc">Цена ↓</option>
+                  <option value="listPrice:asc">Прайс ↑</option>
+                  <option value="listPrice:desc">Прайс ↓</option>
                 </select>
                 <button
                   type="button"
@@ -410,8 +410,15 @@ const KIND_LABELS: Record<Product['kind'], string> = {
                         [arrow]="false"
                       >
                         <span sc-actions-md class="flex items-center gap-2 justify-between w-full">
-                          <span class="font-medium" data-test="showcase-price">
-                            {{ gridPrice(row) }}
+                          <span class="flex flex-col gap-0.5 min-w-0">
+                            <span class="font-medium tabular-nums" data-test="showcase-price">
+                              {{ gridPrice(row) }}
+                            </span>
+                            <span
+                              class="text-xs text-muted-foreground tabular-nums"
+                              data-test="showcase-cost"
+                              >Себест. {{ gridCost(row) }}</span
+                            >
                           </span>
                           <span class="text-xs text-muted-foreground">{{ row.unit }}</span>
                         </span>
@@ -674,12 +681,20 @@ export class ProductsPage implements OnInit {
     { key: 'unit', label: 'Ед.', width: '64px' },
     {
       key: 'listPrice',
-      label: 'Цена',
+      label: 'Прайс',
       sortable: true,
       numeric: true,
       align: 'right',
       width: '128px',
       format: (r) => formatPrice(r.listPrice),
+    },
+    {
+      key: 'costPrice',
+      label: 'Себест.',
+      numeric: true,
+      align: 'right',
+      width: '128px',
+      format: (r) => (r.costPrice != null ? formatPrice(r.costPrice) : '—'),
     },
     {
       key: 'productModuleIds',
@@ -872,7 +887,11 @@ export class ProductsPage implements OnInit {
   }
 
   protected gridPrice(row: Product): string {
-    return formatPrice(row.listPrice);
+    return formatPrice(row.listPrice) || '—';
+  }
+
+  protected gridCost(row: Product): string {
+    return row.costPrice != null ? formatPrice(row.costPrice) : '—';
   }
 }
 

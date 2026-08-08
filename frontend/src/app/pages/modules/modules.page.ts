@@ -216,6 +216,16 @@ function moduleDimensions(row: ProductModule): string {
           <app-catalog-kind-marker kind="module">{{ row.name }}</app-catalog-kind-marker>
         </ng-template>
 
+        <!-- TZ-COST-303: no batch cost-preview → hint to detail (302 has preview). -->
+        <ng-template #costTpl>
+          <span
+            class="text-muted-foreground text-xs whitespace-nowrap"
+            title="Расчёт себестоимости на карточке модуля"
+            data-test="module-list-cost-hint"
+            >см. карточку</span
+          >
+        </ng-template>
+
         <!-- ───── Row actions cluster ───── -->
         <ng-template #rowActionsTpl let-row>
           <app-pi-row-actions
@@ -392,6 +402,18 @@ export class ModulesPage implements OnInit {
       cellClass: 'text-muted-foreground',
       format: (r) => String(r.workTypes?.length ?? 0),
     },
+    /**
+     * TZ-COST-303 P0: batch cost-preview endpoint отсутствует → не N+1.
+     * Ключ `weight` не показан в списке; колонка — display-only hint.
+     * Полный rollup: карточка модуля (GET …/cost-preview, TZ-COST-302).
+     */
+    {
+      key: 'weight',
+      label: 'Себест.',
+      align: 'right',
+      cellClass: 'text-muted-foreground',
+      format: () => 'см. карточку',
+    },
   ];
 
   // ─── Template refs (resolved at view init, static:true → BEFORE ngOnInit) ──
@@ -404,6 +426,8 @@ export class ModulesPage implements OnInit {
    */
   @ViewChild('nameTpl', { static: true })
   private readonly nameTplRef!: TemplateRef<{ $implicit: ProductModule }>;
+  @ViewChild('costTpl', { static: true })
+  private readonly costTplRef!: TemplateRef<{ $implicit: ProductModule }>;
   @ViewChild('rowActionsTpl', { static: true })
   private readonly rowActionsTplRef!: TemplateRef<{ $implicit: ProductModule }>;
 
@@ -416,7 +440,7 @@ export class ModulesPage implements OnInit {
     // Build cell-templates map + row-actions binding AFTER static
     // @ViewChild fields resolve. Avoids TemplateRef<C> invariance
     // trap and Angular's signal-binding name-collision.
-    this.cellTemplates = { name: this.nameTplRef };
+    this.cellTemplates = { name: this.nameTplRef, weight: this.costTplRef };
     this.rowActionsTplBinding = this.rowActionsTplRef;
   }
 

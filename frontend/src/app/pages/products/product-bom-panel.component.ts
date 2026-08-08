@@ -11,13 +11,16 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import {
   CompositionLine,
   CompositionLineUpsertDto,
   CompositionTreeNode,
+  ModuleCostPreview,
   ProductModulesService,
 } from '../../shared/services/pi-product-modules.service';
+import { MaterialsService } from '../../shared/services/materials.service';
 import { extractErrorMessage } from '../../core/silent-http';
 import { PiToastService } from '../../shared/ui/toast';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
@@ -32,11 +35,17 @@ import {
   type ProductCompositionPickerResult,
 } from './product-composition-picker-dialog.component';
 import { catalogKindOklch } from '../../shared/ui/catalog/catalog-kind-oklch';
+import { formatPrice } from '../../shared/util/format';
 
-/**
- * Interactive BOM panel (variant A): tree + inspector + add-in-context.
- * Карточка изделия — одно место собрать товар целиком.
- */
+/** TZ-COST-303: read-only line contribution shown in BOM inspector. */
+interface LineCostHint {
+  loading: boolean;
+  /** e.g. «1 200,00 ₽» or «—» */
+  totalLabel: string;
+  /** e.g. «цена × кол-во» */
+  formula: string;
+  error?: string;
+}
 @Component({
   selector: 'app-product-bom-panel',
   standalone: true,
@@ -138,6 +147,38 @@ import { catalogKindOklch } from '../../shared/ui/catalog/catalog-kind-oklch';
             </label>
           }
 
+          @if (lineCostHint(); as hint) {
+            <div
+              class="hairline rounded-sm bg-paper-2 px-2.5 py-2 space-y-0.5"
+              data-test="bom-line-cost"
+            >
+              <p class="eyebrow m-0">Вклад в себест.</p>
+              @if (hint.loading) {
+                <p class="text-xs text-muted-foreground m-0" data-test="bom-line-cost-loading">
+                  Считаем…
+                </p>
+              } @else if (hint.error) {
+                <p
+                  class="text-xs text-destructive m-0"
+                  role="alert"
+                  data-test="bom-line-cost-error"
+                >
+                  {{ hint.error }}
+                </p>
+              } @else {
+                <p
+                  class="font-mono text-sm font-medium m-0 tabular-nums"
+                  data-test="bom-line-cost-total"
+                >
+                  {{ hint.totalLabel }}
+                </p>
+                <p class="text-[11px] text-muted-foreground m-0" data-test="bom-line-cost-formula">
+                  {{ hint.formula }}
+                </p>
+              }
+            </div>
+          }
+
           @if (canAddInto(sel.node)) {
             <div class="space-y-2">
               <p class="eyebrow m-0">Добавить внутрь</p>
@@ -221,6 +262,7 @@ export class ProductBomPanelComponent {
   readonly changed = output<void>();
 
   private readonly service = inject(ProductModulesService);
+  private readonly materials = inject(MaterialsService);
   private readonly toast = inject(PiToastService);
   private readonly dialog = inject(PiDialogService);
   private readonly destroyRef = inject(DestroyRef);
@@ -232,6 +274,9 @@ export class ProductBomPanelComponent {
   protected readonly warning = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly selected = signal<CompositionTreeSelectEvent | null>(null);
+  /** TZ-COST-303: material price×qty / module preview×qty (read-only). */
+  protected readonly lineCostHint = signal<LineCostHint | null>(null);
+  private lineCostSeq = 0;
   private readonly requestedDepth = signal(2);
   private readonly moduleLinesCache = signal(new Map<string, CompositionLine[]>());
 
@@ -264,6 +309,7 @@ export class ProductBomPanelComponent {
     this.selected.set(event);
     if (event.node.kind === 'module') this.ensureModuleLines(event.node._id);
     if (event.parent?.kind === 'module') this.ensureModuleLines(event.parent._id);
+    this.refreshLineCost(event);
   }
 
   protected onExpand(event: { node: CompositionTreeNode; expanded: boolean }): void {
@@ -399,6 +445,7 @@ export class ProductBomPanelComponent {
       req.subscribe((res) => {
         if (res.ok) {
           this.selected.set(null);
+          this.lineCostHint.set(null);
           this.moduleLinesCache.set(new Map());
           this.load();
           this.changed.emit();
@@ -460,6 +507,78 @@ export class ProductBomPanelComponent {
     });
   }
 
+  /**
+   * TZ-COST-303: read-only contribution of the selected BOM line.
+   * material → pricePerUnit × qty; module → cost-preview.totalCost × qty.
+   * Root product / nested product: no hint (product cost is on passport).
+   */
+  private refreshLineCost(sel: CompositionTreeSelectEvent | null): void {
+    const seq = ++this.lineCostSeq;
+    if (!sel || sel.depth === 0 || sel.node.kind === 'product') {
+      this.lineCostHint.set(null);
+      return;
+    }
+
+    const qty = sel.node.quantity;
+    this.lineCostHint.set({
+      loading: true,
+      totalLabel: '—',
+      formula: '',
+    });
+
+    if (sel.node.kind === 'material') {
+      this.materials
+        .findById(sel.node._id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((res) => {
+          if (seq !== this.lineCostSeq) return;
+          if (!res.ok) {
+            this.lineCostHint.set({
+              loading: false,
+              totalLabel: '—',
+              formula: '',
+              error: extractErrorMessage(res.error),
+            });
+            return;
+          }
+          const unit = res.data.pricePerUnit ?? 0;
+          const total = unit * qty;
+          this.lineCostHint.set({
+            loading: false,
+            totalLabel: formatPrice(total) || '—',
+            formula: `${formatPrice(unit) || '0.00 ₽'} × ${qty}`,
+          });
+        });
+      return;
+    }
+
+    if (sel.node.kind === 'module') {
+      this.service
+        .getCostPreview(sel.node._id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((res) => {
+          if (seq !== this.lineCostSeq) return;
+          if (!res.ok) {
+            this.lineCostHint.set({
+              loading: false,
+              totalLabel: '—',
+              formula: '',
+              error: extractErrorMessage(res.error),
+            });
+            return;
+          }
+          const preview: ModuleCostPreview = res.data;
+          const unit = preview.totalCost ?? 0;
+          const total = unit * qty;
+          this.lineCostHint.set({
+            loading: false,
+            totalLabel: formatPrice(total) || '—',
+            formula: `расчёт ${formatPrice(unit) || '0.00 ₽'} × ${qty}`,
+          });
+        });
+    }
+  }
+
   private load(): void {
     const id = this.productId();
     this.loading.set(true);
@@ -474,15 +593,19 @@ export class ProductBomPanelComponent {
       if (res.ok) {
         this.tree.set(res.data);
         const prevId = this.selected()?.node?._id;
+        let nextSel: CompositionTreeSelectEvent;
         if (prevId) {
           const restored = this.findSelectEvent(res.data, prevId);
-          this.selected.set(restored ?? { node: res.data, parent: null, depth: 0 });
+          nextSel = restored ?? { node: res.data, parent: null, depth: 0 };
         } else {
-          this.selected.set({ node: res.data, parent: null, depth: 0 });
+          nextSel = { node: res.data, parent: null, depth: 0 };
         }
+        this.selected.set(nextSel);
+        this.refreshLineCost(nextSel);
       } else {
         this.tree.set(null);
         this.error.set(extractErrorMessage(res.error));
+        this.lineCostHint.set(null);
       }
       finish();
     });
