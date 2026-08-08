@@ -33,4 +33,4 @@
 - Blockers: DICT-315 peer WIP on dictionaries/**
 - _active/: empty
 - Deploy: NO (await PO)
-- HEAD: _(after SUPPLY-301 commit)_
+- HEAD: 12d2d048
