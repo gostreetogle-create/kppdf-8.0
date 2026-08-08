@@ -18,14 +18,19 @@
 
 | ID | Status |
 |----|--------|
-| TZ-SALES-304 | READY stub (UI after PO probes API) — not auto-claim |
+| **TZ-UX-301** | compact icon top nav — **NEXT** |
+| **TZ-ADMIN-301** | roles permissions UX — ∥ 301 (keys ≠ layout) |
+| **TZ-UX-302** | chrome unify (after 301) |
+| TZ-UX-303 | design-system chrome audit (docs) |
+| TZ-SALES-304 | KP family UI after PO probes |
 
 ## PARK
 
 | ID | Why |
 |----|-----|
+| Production deep | PO later session |
 | TZD-23 | PARK |
-| SUPPLY-302 | BOM auto-explode (after 301) |
+| SUPPLY-302 | BOM auto-explode |
 | deploy | только «задеплой» |
 
 ## Checkpoint 2026-08-08T08:25Z

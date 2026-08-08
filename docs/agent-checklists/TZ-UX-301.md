@@ -1,10 +1,10 @@
-# TZ-UX-301 checklist
+# TZ-UX-301 — Compact icon top nav
+
+**TZ:** `tasks/_backlog/TZ-UX-301-compact-icon-top-nav.md`  
+**Status:** RESERVED
 
 ## Acceptance
-- [ ] Warehouse nav group with three routes
-- [ ] PAGE-TZ-INDEX ok
-- [ ] Executor appends `## Executor report (auto)` before archive
 
-## Executor report (auto)
-
-_(executor fills)_
+- [ ] Icon+tooltip nav, no header overflow ~1280
+- [ ] Desktop/logout compact
+- [ ] tsc + nav-order; archive; push

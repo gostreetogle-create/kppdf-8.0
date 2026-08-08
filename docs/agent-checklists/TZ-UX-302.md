@@ -1,9 +1,10 @@
-# TZ-UX-302 checklist
+# TZ-UX-302 — Page chrome unify
+
+**TZ:** `tasks/_backlog/TZ-UX-302-page-chrome-unify.md`  
+**Status:** RESERVED after UX-301
 
 ## Acceptance
-- [ ] Dead docCat code removed from categories.page.ts
-- [ ] Executor appends `## Executor report (auto)` before archive
 
-## Executor report (auto)
-
-_(executor fills)_
+- [ ] ui-page-chrome.md etalon
+- [ ] supply/shipping/design/counterparties/deals/docs aligned
+- [ ] gates; archive; push
