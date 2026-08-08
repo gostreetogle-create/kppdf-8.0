@@ -55,8 +55,7 @@ export type CompositionTreeSelectEvent = {
 
     <ng-template #nodeTemplate let-node let-depth="depth" let-parent="parent">
       <div
-        class="rounded-sm transition-colors border-l-2"
-        [style.border-left-color]="kindBorder(node)"
+        class="rounded-sm transition-colors"
         [attr.data-test]="'composition-tree-node-' + node._id"
         [attr.data-kind]="node.kind"
         role="treeitem"
