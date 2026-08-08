@@ -63,6 +63,15 @@ export interface CompositionTreeNode {
   children: CompositionTreeNode[];
 }
 
+/** TZ-COST-302: read-only recursive cost preview for a module. */
+export interface ModuleCostPreview {
+  materialCost: number;
+  laborCost: number;
+  totalCost: number;
+  currency: 'RUB';
+  infos?: string[];
+}
+
 export interface ProductModule {
   _id: string;
   name: string;
@@ -224,6 +233,11 @@ export class ProductModulesService {
 
   findById(id: string): Observable<SilentResult<ProductModule>> {
     return silentGet<ProductModule>(this.http, `${this.baseUrl}/modules/${id}`);
+  }
+
+  /** TZ-COST-302: GET /modules/:id/cost-preview — read-only rollup, no journal. */
+  getCostPreview(id: string): Observable<SilentResult<ModuleCostPreview>> {
+    return silentGet<ModuleCostPreview>(this.http, `${this.baseUrl}/modules/${id}/cost-preview`);
   }
 
   getProductTree(
