@@ -5,6 +5,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { backendGetJson, BackendError } from './backend.js';
 import type { McpRuntimeConfig } from './config.js';
+import { registerDocTools } from './doc-tools.js';
 import { registerDomainTools } from './domain-tools.js';
 import { registerImportTaskTools } from './import-task-tools.js';
 import { registerInboxTools } from './inbox-tools.js';
@@ -56,6 +57,7 @@ export function createKppdfMcpServer(cfg: McpRuntimeConfig): McpServer {
   registerDomainTools(server, cfg);
   registerInboxTools(server, cfg);
   registerImportTaskTools(server, cfg);
+  registerDocTools(server, cfg);
 
   return server;
 }

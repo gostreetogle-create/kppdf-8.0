@@ -1,3 +1,13 @@
+## [2026-08-08] — TZD-28 DONE: doc-constructor MCP drafts (wave #6)
+
+**Исполнитель:** buffy-desktop-ex (Freebuff desktop executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** NEW `desktop/mcp/src/doc-tools.ts` — `kppdf_doc_types_list`/`kppdf_doc_template_categories_list`/`kppdf_doc_templates_list` (GET) + `kppdf_doc_template_create_draft` (isActive=false, isDefault=false, notes `[AI-DRAFT]…`, **без** set-default); doc-draft protocol в MCP.md (→ id в todo TZD-29).
+**Gates:** MCP tsc PASS; MCP test 60/60 PASS.
+**Archive:** `tasks/_archive/2026-08/TZD-28.done.md`
+**Lock:** `.mimocode/locks/TZD-28-doc-constructor-mcp.lock`
+**Known:** Deploy NO. Next TZD-29 (manager import todos).
+
 ## [2026-08-08] — TZD-27 DONE: journal product.create/update (wave #5)
 
 **Исполнитель:** buffy-desktop-ex (Freebuff desktop executor)

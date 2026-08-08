@@ -159,6 +159,29 @@ Order / коммерческое КП kinds — не этот TZ.
 
 `kppdf_inbox_propose_file` accepts optional `mode`: `propose` (default, SoT-safe proposals) \| `validate` (≡ audit, 0 proposals).
 
+## Tools — doc-constructor (TZD-28)
+
+Печатные формы живут в вебе (`/doc-constructor`); агент при импорте только
+смотрит и создаёт **черновики**. Read/draft only.
+
+| Tool | REST |
+|------|------|
+| `kppdf_doc_types_list` | `GET /api/doc-types` |
+| `kppdf_doc_template_categories_list` | `GET /api/document-template-categories` |
+| `kppdf_doc_templates_list` | `GET /api/document-templates` |
+| `kppdf_doc_template_create_draft` | `POST /api/document-templates` с `isActive=false`, `isDefault=false`, `notes` = `[AI-DRAFT] …` |
+
+### Doc-draft protocol (TZD-28)
+
+1. Нужен печатный тип без шаблона → `kppdf_doc_templates_list` (нет?)
+   + `kppdf_doc_types_list` (есть такой тип?)
+2. `kppdf_doc_template_create_draft` → id черновика.
+3. Id → `kppdf_import_todo_create` (TZD-29): «Доделать шаблон {name}»
+   + `href /doc-constructor/...` → менеджер доводит в вебе.
+
+**Запрет:** `set-default`, publish, silent overwrite production default —
+инструменты никогда не вызывают `/set-default`.
+
 ## Tools — write safety (TZD-13)
 
 **Никогда** не пишем в SoT из «голого» create-tool. Только:
@@ -251,6 +274,7 @@ Inbox-папка настраивается в десктоп-приложени
 
 ## Follow-ups
 
+- **TZD-28** ✅ DONE (2026-08-08, wave #6) — doc-constructor MCP: `kppdf_doc_types_list` / `kppdf_doc_template_categories_list` / `kppdf_doc_templates_list` / `kppdf_doc_template_create_draft` (isActive=false, isDefault=false, notes `[AI-DRAFT]`; никогда set-default); protocol doc-draft → TZD-29 todo.
 - **TZD-27** ✅ DONE (2026-08-08, wave #5) — journal `product.create`/`product.update` (propose→confirm→undo зеркально material; org scope); MCP `kppdf_propose_product_create`/`_update` + `kppdf_validate_product` + domain schema product; `aiReport.rows[].entity` ветка в `apply_plan` (тот же batch).
 - **TZD-19** ✅ DONE (2026-08-08, wave #4) — graph: 5 composition/where_used read tools + `kppdf_run_integrity_suite` (soft smoke, read-only) + `kppdf_list_modules`; graph protocol перед product.update / mass material.update.
 - **TZD-18** ✅ DONE (2026-08-08, wave #3) — batch: `propose-batch` / `confirm-batch` / `cancel-batch` (all-or-nothing + idempotencyKey); MCP `kppdf_propose_material_batch` / `kppdf_confirm_batch` / `kppdf_cancel_batch`; `apply_plan` чанками по 100; ImportTask cap **2000**; `inbox_propose_file` limit/offset.
