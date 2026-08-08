@@ -69,7 +69,7 @@ QuickCreate L — тонкий хост после create, не вторая р�
 | 2 | **TZ-CATALOG-DEDUP-302** | Убрать ModuleMaterials с module-detail | **DONE** 2026-08-08 |
 | 3 | **TZ-CATALOG-DEDUP-303** | Удалить orphan CompositionEditor | **DONE** 2026-08-08 |
 | 4 | **TZ-UX-FORM-306** | Module QuickCreate L + BomPanel (как product FORM-304) | **DONE** 2026-08-08 |
-| 5 | **TZ-CATALOG-DEDUP-304** | «Редактировать» на product/material detail → тот же FullEditor | READY |
+| 5 | **TZ-CATALOG-DEDUP-304** | «Редактировать» на product/material detail → тот же FullEditor | **DONE** 2026-08-08 |
 
 Параллельно с UX-311 (thumb/wrap) — другие conflict keys.
 

@@ -38,7 +38,8 @@ import {
 import { CostCalculationDetailDialogComponent } from './cost-calculation-detail-dialog.component';
 import { Photo } from '../../shared/services/photos.service';
 import { ProductBomPanelComponent } from './product-bom-panel.component';
-import { ProductKind, ProductStatus } from '../../shared/services/products.service';
+import { ProductFormDialogComponent } from './product-form-dialog.component';
+import { Product, ProductKind, ProductStatus } from '../../shared/services/products.service';
 
 const STATUS_LABELS: Record<ProductStatus, string> = {
   new: 'Новый',
@@ -83,7 +84,23 @@ const KIND_LABELS: Record<ProductKind, string> = {
     PiPageChromeComponent,
   ],
   template: `
-    <app-pi-page-chrome [crumbs]="detailCrumbs()" data-test="product-detail-nav" />
+    <app-pi-page-chrome [crumbs]="detailCrumbs()" data-test="product-detail-nav">
+      <span actions>
+        <app-pi-button variant="ghost" type="button" (click)="onBack()" data-test="back-button">
+          ← К каталогу
+        </app-pi-button>
+        @if (product()) {
+          <app-pi-button
+            variant="default"
+            type="button"
+            (click)="openEdit()"
+            data-test="edit-button"
+          >
+            Редактировать
+          </app-pi-button>
+        }
+      </span>
+    </app-pi-page-chrome>
 
     @if (loadError()) {
       <div
@@ -528,6 +545,21 @@ export class ProductDetailPage {
 
   protected onBack(): void {
     this.router.navigate(['/products']);
+  }
+
+  /** TZ-CATALOG-DEDUP-304: same FullEditor as products list. */
+  protected openEdit(): void {
+    const p = this.product();
+    if (!p) return;
+    const ref = this.dialog.open(ProductFormDialogComponent, {
+      data: p as Product,
+      width: 'lg',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, () => {
+      this.productRes.reload();
+      this.costRes.reload();
+    });
   }
 
   protected materialKindLabel(kind: Material['materialKind']): string {

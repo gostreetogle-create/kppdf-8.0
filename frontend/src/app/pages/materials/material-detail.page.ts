@@ -1,10 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  Injector,
+  computed,
+  inject,
+} from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { httpResource } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
 import {
@@ -12,6 +21,7 @@ import {
   MATERIAL_KIND_LABELS,
   type MaterialKind,
 } from '../../shared/services/materials.service';
+import { MaterialFormDialogComponent } from './material-form-dialog.component';
 
 /** Where-used item contract from GET /materials/:id/where-used (TZ-CATALOG-310). */
 interface WhereUsedItem {
@@ -57,6 +67,16 @@ interface WhereUsedPage {
         <app-pi-button variant="ghost" type="button" (click)="onBack()" data-test="back-button">
           ← К материалам
         </app-pi-button>
+        @if (material()) {
+          <app-pi-button
+            variant="default"
+            type="button"
+            (click)="openEdit()"
+            data-test="edit-button"
+          >
+            Редактировать
+          </app-pi-button>
+        }
       </span>
     </app-pi-page-header>
 
@@ -209,6 +229,9 @@ interface WhereUsedPage {
 export class MaterialDetailPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly dialog = inject(PiDialogService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
   private readonly baseUrl = inject(API_BASE_URL);
 
   private readonly id = toSignal(this.route.paramMap, {
@@ -260,6 +283,21 @@ export class MaterialDetailPage {
 
   protected onBack(): void {
     this.router.navigate(['/materials']);
+  }
+
+  /** TZ-CATALOG-DEDUP-304: same MaterialFormDialog as materials list. */
+  protected openEdit(): void {
+    const m = this.material();
+    if (!m) return;
+    const ref = this.dialog.open(MaterialFormDialogComponent, {
+      data: m,
+      width: 'lg',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, () => {
+      this.materialRes.reload();
+      this.whereUsedRes.reload();
+    });
   }
 
   // ── Formatters ────────────────────────────────────────────────────

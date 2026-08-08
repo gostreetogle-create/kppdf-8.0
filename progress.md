@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-CATALOG-DEDUP-304 DONE: detail edit opener
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** product/material detail «Редактировать» → тот же FullEditor/MaterialForm, что список; reload после close.
+**Gates:** FE tsc PASS; Jest material-detail 6/6 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-DEDUP-304.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-DEDUP-304-detail-edit-opener.lock`
+**Known:** Deploy NO. Next UX-309.
+
 ## [2026-08-08] — TZ-UX-FORM-306 DONE: Module QuickCreate L + BomPanel
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor)
