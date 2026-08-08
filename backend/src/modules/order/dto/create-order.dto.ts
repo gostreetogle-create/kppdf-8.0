@@ -27,15 +27,27 @@ export class OrderItemDto {
   })
   @IsOptional() @IsNumber() @Min(0)
   unitPrice?: number;
+
+  @ApiPropertyOptional({ description: 'Ответственный за изделие (User id)' })
+  @IsOptional() @IsObjectId()
+  ownerUserId?: string;
+
+  @ApiPropertyOptional({ description: 'Плановая дата отгрузки позиции (ISO date)' })
+  @IsOptional() @IsDateString()
+  plannedShipDate?: string;
 }
 
 export class CreateOrderDto {
   @ApiPropertyOptional({ description: 'Номер заказа' })
   @IsOptional() @IsString() number?: string;
 
-  @ApiProperty({ description: 'ID контрагента' })
+  @ApiProperty({ description: 'ID контрагента (заказчик)' })
   @IsObjectId()
   counterpartyId!: string;
+
+  @ApiProperty({ description: 'ID площадки/объекта (Site)' })
+  @IsObjectId()
+  siteId!: string;
 
   @ApiPropertyOptional({ description: 'ID коммерческого предложения' })
   @IsOptional() @IsObjectId() quotationId?: string;

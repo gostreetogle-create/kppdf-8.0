@@ -4,6 +4,7 @@ import { OrderService } from './order.service';
 import { OrderStatus } from './order.schema';
 
 const COUNTERPARTY = new Types.ObjectId().toString();
+const SITE = new Types.ObjectId().toString();
 const PRODUCT = new Types.ObjectId().toString();
 
 /** Shape of a stored OrderItem — unitPrice may be absent (strip-commerce). */
@@ -70,12 +71,17 @@ function createService(overrides: Record<string, unknown> = {}) {
   const reservationService = { create: jest.fn(), release: jest.fn() };
   const shipmentService = { create: jest.fn() };
   const sessionRunner = { run: jest.fn() };
+  const sites = {
+    assertBelongsTo: jest.fn().mockResolvedValue({ _id: SITE }),
+    ensureDefaultForCounterparty: jest.fn(),
+  };
   const dependencies = {
     model,
     counter,
     reservationService,
     shipmentService,
     sessionRunner,
+    sites,
     ...overrides,
   };
   return {
@@ -86,6 +92,7 @@ function createService(overrides: Record<string, unknown> = {}) {
       dependencies.reservationService as never,
       dependencies.shipmentService as never,
       dependencies.sessionRunner as never,
+      dependencies.sites as never,
     ),
     model: dependencies.model as jest.Mock & {
       find: jest.Mock;
@@ -94,12 +101,14 @@ function createService(overrides: Record<string, unknown> = {}) {
     },
     counter: dependencies.counter as { next: jest.Mock },
     sessionRunner: dependencies.sessionRunner as { run: jest.Mock },
+    sites: dependencies.sites as { assertBelongsTo: jest.Mock },
   };
 }
 
 function validCreateDto(overrides: Record<string, unknown> = {}) {
   return {
     counterpartyId: COUNTERPARTY,
+    siteId: SITE,
     items: [
       {
         productId: PRODUCT,

@@ -61,6 +61,10 @@ export class Counterparty {
   @Prop()
   directorName?: string;
 
+  /** TZ-ORDERS-303: телефон для quick-create заказчика. */
+  @Prop()
+  phone?: string;
+
   @Prop()
   registrationDate?: Date;
 

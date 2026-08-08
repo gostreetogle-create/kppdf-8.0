@@ -50,6 +50,7 @@ export class CreateCounterpartyDto {
 
   @IsOptional() @IsString() website?: string;
   @IsOptional() @IsString() directorName?: string;
+  @IsOptional() @IsString() @Length(0, 32) phone?: string;
   @IsOptional() @Type(() => Date) @IsDate() registrationDate?: Date;
   @IsOptional() @IsArray() @IsString({ each: true }) partyTypes?: string[];
 

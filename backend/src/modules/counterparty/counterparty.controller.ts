@@ -15,6 +15,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CreateCounterpartyDto } from './dto/create-counterparty.dto';
 import { UpdateCounterpartyDto } from './dto/update-counterparty.dto';
+import { QuickCreatePartyDto } from './dto/quick-create-party.dto';
 import { CounterpartyService } from './counterparty.service';
 import { AuthenticatedUser } from '../../common/decorators/current-user.decorator';
 
@@ -43,6 +44,13 @@ export class CounterpartyController {
   @Roles('admin', 'manager', 'user')
   findOne(@Param('id') id: string) {
     return this.service.findById(id);
+  }
+
+  @Post('quick')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'create', entityType: 'Counterparty' })
+  quickCreate(@Body() dto: QuickCreatePartyDto) {
+    return this.service.quickCreateParty(dto);
   }
 
   @Post()

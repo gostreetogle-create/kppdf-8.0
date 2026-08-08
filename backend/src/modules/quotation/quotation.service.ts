@@ -7,6 +7,7 @@ import { UpdateQuotationDto } from './dto/update-quotation.dto';
 import { CounterService } from '../counter/counter.service';
 import { ContractService } from '../contract/contract.service';
 import { OrderService } from '../order/order.service';
+import { SiteService } from '../site/site.service';
 
 @Injectable()
 export class QuotationService {
@@ -16,6 +17,7 @@ export class QuotationService {
     private readonly counter: CounterService,
     private readonly contractService: ContractService,
     private readonly orderService: OrderService,
+    private readonly sites: SiteService,
   ) {}
 
   async create(dto: CreateQuotationDto): Promise<QuotationDocument> {
@@ -230,8 +232,13 @@ export class QuotationService {
         `Cannot convert quotation in status "${q.status}" to an order — only "accepted" is convertible`,
       );
     }
+    const site = await this.sites.ensureDefaultForCounterparty(
+      q.counterpartyId.toString(),
+      deliveryAddress,
+    );
     const order = await this.orderService.create({
       counterpartyId: q.counterpartyId.toString(),
+      siteId: site._id.toString(),
       quotationId: q._id.toString(),
       status: 'draft',
       deliveryAddress,

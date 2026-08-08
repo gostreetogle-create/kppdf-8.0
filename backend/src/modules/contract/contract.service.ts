@@ -7,6 +7,7 @@ import { UpdateContractDto } from './dto/update-contract.dto';
 import { CounterService } from '../counter/counter.service';
 import { OrderService } from '../order/order.service';
 import { SessionRunner } from '../../common/db/session-runner';
+import { SiteService } from '../site/site.service';
 
 @Injectable()
 export class ContractService {
@@ -16,6 +17,7 @@ export class ContractService {
     private readonly counter: CounterService,
     private readonly orderService: OrderService,
     private readonly sessionRunner: SessionRunner,
+    private readonly sites: SiteService,
   ) {}
 
   async create(dto: CreateContractDto): Promise<ContractDocument> {
@@ -131,9 +133,11 @@ export class ContractService {
       if (doc.status !== 'signed') {
         throw new NotFoundException(`Contract must be signed first (current: ${doc.status})`);
       }
+      const site = await this.sites.ensureDefaultForCounterparty(doc.customerId.toString());
       const order = await this.orderService.create(
         {
           counterpartyId: doc.customerId.toString(),
+          siteId: site._id.toString(),
           contractId: doc._id.toString(),
           status: 'confirmed',
           items: doc.items.map((i) => ({

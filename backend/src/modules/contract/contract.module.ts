@@ -5,6 +5,7 @@ import { ContractService } from './contract.service';
 import { ContractController } from './contract.controller';
 import { CounterModule } from '../counter/counter.module';
 import { OrderModule } from '../order/order.module';
+import { SiteModule } from '../site/site.module';
 import { SessionRunner } from '../../common/db/session-runner';
 
 @Module({
@@ -12,6 +13,7 @@ import { SessionRunner } from '../../common/db/session-runner';
     MongooseModule.forFeature([{ name: Contract.name, schema: ContractSchema }]),
     CounterModule,
     OrderModule,
+    SiteModule,
   ],
   controllers: [ContractController],
   providers: [ContractService, SessionRunner],

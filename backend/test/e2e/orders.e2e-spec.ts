@@ -8,6 +8,7 @@ describe('Orders (e2e)', () => {
   let app: INestApplication;
   let token: string;
   let counterpartyId: string;
+  let siteId: string;
   let productId: string;
   let warehouseId: string;
 
@@ -24,13 +25,25 @@ describe('Orders (e2e)', () => {
 
   beforeEach(async () => {
     await clearCollections(ctx!.connection, [
-      'orders', 'counterparties', 'products', 'warehouses', 'storageitems', 'reservations', 'shipments',
+      'orders',
+      'sites',
+      'counterparties',
+      'products',
+      'warehouses',
+      'storageitems',
+      'reservations',
+      'shipments',
     ]);
     const cp = await request(app.getHttpServer())
       .post('/api/counterparties')
       .set(authHeader(token))
       .send({ name: 'CP', roles: ['customer'], inn: '7710000015' });
     counterpartyId = cp.body._id;
+    const site = await request(app.getHttpServer())
+      .post('/api/sites')
+      .set(authHeader(token))
+      .send({ counterpartyId, name: 'Объект', address: 'ул. Тест 1' });
+    siteId = site.body._id;
     const prod = await request(app.getHttpServer())
       .post('/api/products')
       .set(authHeader(token))
@@ -48,26 +61,28 @@ describe('Orders (e2e)', () => {
       .send({ type: 'in', productId, warehouseId, qty: 100 });
   });
 
+  const orderBody = (extra: Record<string, unknown> = {}) => ({
+    counterpartyId,
+    siteId,
+    items: [{ productId, quantity: 5, unitPrice: 50 }],
+    ...extra,
+  });
+
   it('POST /orders — creates with priceSnapshot', async () => {
     const res = await request(app.getHttpServer())
       .post('/api/orders')
       .set(authHeader(token))
-      .send({
-        counterpartyId,
-        items: [{ productId, quantity: 5, unitPrice: 50 }],
-      });
+      .send(orderBody({ items: [{ productId, quantity: 5, unitPrice: 50 }] }));
     expect([200, 201]).toContain(res.status);
     expect(res.body.total).toBe(250);
+    expect(res.body.siteId).toBeDefined();
   });
 
   it('GET /orders/:id — returns order details', async () => {
     const created = await request(app.getHttpServer())
       .post('/api/orders')
       .set(authHeader(token))
-      .send({
-        counterpartyId,
-        items: [{ productId, quantity: 2, unitPrice: 50 }],
-      });
+      .send(orderBody({ items: [{ productId, quantity: 2, unitPrice: 50 }] }));
     const orderId = created.body._id;
 
     const res = await request(app.getHttpServer())
@@ -82,10 +97,7 @@ describe('Orders (e2e)', () => {
     const created = await request(app.getHttpServer())
       .post('/api/orders')
       .set(authHeader(token))
-      .send({
-        counterpartyId,
-        items: [{ productId, quantity: 1, unitPrice: 50 }],
-      });
+      .send(orderBody({ items: [{ productId, quantity: 1, unitPrice: 50 }] }));
     const orderId = created.body._id;
 
     const res = await request(app.getHttpServer())
@@ -100,7 +112,7 @@ describe('Orders (e2e)', () => {
     const order = await request(app.getHttpServer())
       .post('/api/orders')
       .set(authHeader(token))
-      .send({ counterpartyId, items: [{ productId, quantity: 3, unitPrice: 50 }] });
+      .send(orderBody({ items: [{ productId, quantity: 3, unitPrice: 50 }] }));
     const res = await request(app.getHttpServer())
       .post(`/api/orders/${order.body._id}/reserve-stock`)
       .set(authHeader(token))
@@ -113,7 +125,7 @@ describe('Orders (e2e)', () => {
     const order = await request(app.getHttpServer())
       .post('/api/orders')
       .set(authHeader(token))
-      .send({ counterpartyId, items: [{ productId, quantity: 2, unitPrice: 50 }] });
+      .send(orderBody({ items: [{ productId, quantity: 2, unitPrice: 50 }] }));
     const orderId = order.body._id;
     await request(app.getHttpServer())
       .post(`/api/orders/${orderId}/reserve-stock`)
@@ -130,7 +142,7 @@ describe('Orders (e2e)', () => {
     const order = await request(app.getHttpServer())
       .post('/api/orders')
       .set(authHeader(token))
-      .send({ counterpartyId, items: [{ productId, quantity: 1, unitPrice: 50 }] });
+      .send(orderBody({ items: [{ productId, quantity: 1, unitPrice: 50 }] }));
     const ship = await request(app.getHttpServer())
       .post(`/api/orders/${order.body._id}/ship`)
       .set(authHeader(token))

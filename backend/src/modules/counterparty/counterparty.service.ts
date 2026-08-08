@@ -3,7 +3,20 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { CreateCounterpartyDto } from './dto/create-counterparty.dto';
 import { UpdateCounterpartyDto } from './dto/update-counterparty.dto';
+import { QuickCreatePartyDto } from './dto/quick-create-party.dto';
 import { Counterparty, CounterpartyDocument } from './counterparty.schema';
+import { SiteService } from '../site/site.service';
+import { SiteDocument } from '../site/site.schema';
+
+/** Valid 10-digit INN stub with FNS checksum (unique enough for quick-create). */
+export function generateQuickInnStub(): string {
+  const w = [2, 4, 10, 3, 5, 9, 4, 6, 8];
+  const base = String(Date.now()).slice(-9).padStart(9, '0');
+  let s = 0;
+  for (let i = 0; i < 9; i++) s += Number(base[i]) * w[i]!;
+  const check = (s % 11) % 10;
+  return `${base}${check}`;
+}
 
 @Injectable()
 export class CounterpartyService {
@@ -11,10 +24,38 @@ export class CounterpartyService {
 
   constructor(
     @InjectModel(Counterparty.name) private readonly model: Model<CounterpartyDocument>,
+    private readonly sites: SiteService,
   ) {}
 
   async create(dto: CreateCounterpartyDto): Promise<CounterpartyDocument> {
     return this.model.create(dto);
+  }
+
+  /**
+   * TZ-ORDERS-303: имя+тел+адрес → Counterparty + Site.
+   */
+  async quickCreateParty(
+    dto: QuickCreatePartyDto,
+  ): Promise<{ counterparty: CounterpartyDocument; site: SiteDocument }> {
+    let inn = generateQuickInnStub();
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const clash = await this.model.findOne({ inn }).exec();
+      if (!clash) break;
+      inn = generateQuickInnStub();
+    }
+    const counterparty = await this.model.create({
+      name: dto.name.trim(),
+      phone: dto.phone?.trim() || undefined,
+      roles: ['customer'],
+      inn,
+      isActive: true,
+    });
+    const site = await this.sites.create({
+      counterpartyId: counterparty._id.toString(),
+      name: (dto.siteName ?? 'Объект').trim() || 'Объект',
+      address: dto.address.trim(),
+    });
+    return { counterparty, site };
   }
 
   async findAll(
@@ -36,7 +77,9 @@ export class CounterpartyService {
     if (q.search) {
       const escaped = q.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const re = new RegExp(escaped, 'i');
-      const searchCond = { $or: [{ name: re }, { shortName: re }, { inn: re }] };
+      const searchCond = {
+        $or: [{ name: re }, { shortName: re }, { inn: re }, { phone: re }],
+      };
       if (filter.$or) {
         filter.$or = (filter.$or as Record<string, unknown>[]).map((cond) => ({
           ...cond,

@@ -8,6 +8,15 @@
 **Lock:** `.mimocode/locks/TZ-NAV-301-lifecycle-menu-stubs.lock`
 **Cursor Verdict:** PASS (executor self)
 
+## [2026-08-08] — TZ-ORDERS-303 DONE: заказчик+объект+owner линии
+
+**Исполнитель:** agent-3e757640b7 (self PASS → archive)
+**Статус:** DONE on main; deploy НЕ
+**Что сделано кратко:** Site API; order.siteId; quick-create CP+Site; line ownerUserId + plannedShipDate; convert/activate default site; FE form+detail.
+**Gates:** BE+FE tsc PASS; BE unit zone 36; FE orders/site 12
+**Archive:** `tasks/_archive/2026-08/TZ-ORDERS-303.done.md`
+**Cursor Verdict:** PASS (executor self)
+
 ## [2026-08-08] — TZ-ORDERS-302 DONE: order detail live composition-tree
 
 **Исполнитель:** agent-3e757640b7 (self PASS → archive)

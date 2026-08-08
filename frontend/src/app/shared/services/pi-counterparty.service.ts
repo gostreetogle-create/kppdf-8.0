@@ -43,6 +43,7 @@ export interface Counterparty {
   legalType?: 'ooo' | 'ip' | 'pao' | 'ao' | 'other';
   website?: string;
   directorName?: string;
+  phone?: string;
   registrationDate?: string;
   partyTypes?: string[];
   photoIds?: string[];
@@ -91,6 +92,21 @@ export class CounterpartyService {
 
   create(payload: Partial<Counterparty>): Observable<SilentResult<Counterparty>> {
     return silentPost<Counterparty>(this.http, `${this.baseUrl}/counterparties`, payload);
+  }
+
+  /** TZ-ORDERS-303: имя+тел+адрес → counterparty + site. */
+  quickCreateParty(payload: {
+    name: string;
+    phone?: string;
+    address: string;
+    siteName?: string;
+  }): Observable<
+    SilentResult<{
+      counterparty: Counterparty;
+      site: { _id: string; name: string; address: string };
+    }>
+  > {
+    return silentPost(this.http, `${this.baseUrl}/counterparties/quick`, payload);
   }
 
   update(id: string, payload: Partial<Counterparty>): Observable<SilentResult<Counterparty>> {

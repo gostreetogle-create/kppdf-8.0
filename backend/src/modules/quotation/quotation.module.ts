@@ -6,6 +6,7 @@ import { QuotationController } from './quotation.controller';
 import { CounterModule } from '../counter/counter.module';
 import { ContractModule } from '../contract/contract.module';
 import { OrderModule } from '../order/order.module';
+import { SiteModule } from '../site/site.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { OrderModule } from '../order/order.module';
     CounterModule,
     ContractModule,
     OrderModule,
+    SiteModule,
   ],
   controllers: [QuotationController],
   providers: [QuotationService],

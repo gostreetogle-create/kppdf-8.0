@@ -37,8 +37,12 @@ const ORDER_STATUS_LABELS: Record<Order['status'], string> = {
 const MAX_TREE_DEPTH = 8;
 const INITIAL_TREE_DEPTH = 2;
 
+type PopulatedRef = string | { _id: string; name?: string; address?: string };
+type PopulatedOwner =
+  string | { _id: string; displayName?: string; username?: string; fullName?: string };
+
 /**
- * TZ-ORDERS-302 — карточка заказа с live BOM (тот же `app-composition-tree`).
+ * TZ-ORDERS-302/303 — карточка заказа с live BOM + мета заказчик/объект/линии.
  * Корни = линии заказа (изделия); дети = GET /products/:id/tree.
  * Прайс КП / unitPrice линии в дерево не попадают (rails D4).
  */
@@ -80,7 +84,34 @@ const INITIAL_TREE_DEPTH = 2;
             <span> · {{ d }}</span>
           }
         </p>
+        @if (partyLine(); as party) {
+          <p class="text-sm text-ink m-0 pt-1" data-test="order-detail-party">
+            <span class="text-muted-foreground">Заказчик:</span> {{ party }}
+          </p>
+        }
+        @if (siteLine(); as site) {
+          <p class="text-sm text-ink m-0" data-test="order-detail-site">
+            <span class="text-muted-foreground">Объект:</span> {{ site }}
+          </p>
+        }
       </header>
+
+      @if (lineMetaRows().length > 0) {
+        <section class="mb-5 space-y-1" data-test="order-line-meta">
+          <p class="eyebrow m-0">Позиции</p>
+          @for (row of lineMetaRows(); track row.key) {
+            <p class="text-xs text-muted-foreground m-0">
+              {{ row.title }}
+              @if (row.owner) {
+                <span> · Ответственный: {{ row.owner }}</span>
+              }
+              @if (row.ship) {
+                <span> · Отгрузка: {{ row.ship }}</span>
+              }
+            </p>
+          }
+        </section>
+      }
 
       <section class="space-y-3" data-test="order-composition">
         <div class="flex items-baseline justify-between gap-3">
@@ -136,6 +167,39 @@ export class OrderDetailPage {
 
   protected readonly hasLines = computed(() => (this.order()?.items?.length ?? 0) > 0);
 
+  protected readonly partyLine = computed(() => {
+    const o = this.order();
+    if (!o) return null;
+    const name = this.refName(o.counterpartyId);
+    return name || null;
+  });
+
+  protected readonly siteLine = computed(() => {
+    const o = this.order();
+    if (!o) return null;
+    return this.siteLabel(o.siteId);
+  });
+
+  protected readonly lineMetaRows = computed(() => {
+    const items = this.order()?.items ?? [];
+    return items
+      .map((it, index) => {
+        const owner = this.ownerDisplay(it.ownerUserId);
+        const ship = it.plannedShipDate ? formatDate(it.plannedShipDate) : '';
+        if (!owner && !ship) return null;
+        const title =
+          (it.productName ?? '').trim() ||
+          (it.productId ? `Изделие ${it.productId.slice(0, 8)}…` : `Позиция ${index + 1}`);
+        return {
+          key: `${index}:${it.productId ?? 'x'}`,
+          title,
+          owner,
+          ship,
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => row != null);
+  });
+
   protected readonly crumbs = computed<PageCrumb[]>(() => {
     const o = this.order();
     return [
@@ -172,6 +236,33 @@ export class OrderDetailPage {
         this.order.set(res.data);
         this.reloadForest(res.data);
       });
+  }
+
+  /** Unwrap populated ObjectId ref → id string. */
+  protected refId(value: PopulatedRef | undefined | null): string {
+    if (!value) return '';
+    return typeof value === 'string' ? value : (value._id ?? '');
+  }
+
+  /** Unwrap populated counterparty/site → display name. */
+  protected refName(value: PopulatedRef | undefined | null): string {
+    if (!value || typeof value === 'string') return '';
+    return (value.name ?? '').trim();
+  }
+
+  protected siteLabel(value: PopulatedRef | undefined | null): string | null {
+    if (!value) return null;
+    if (typeof value === 'string') return value ? value : null;
+    const name = (value.name ?? '').trim();
+    const address = (value.address ?? '').trim();
+    if (name && address) return `${name} · ${address}`;
+    return name || address || null;
+  }
+
+  protected ownerDisplay(value: PopulatedOwner | undefined | null): string {
+    if (!value) return '';
+    if (typeof value === 'string') return '';
+    return (value.displayName || value.fullName || value.username || '').trim();
   }
 
   protected statusLabel(status: Order['status']): string {

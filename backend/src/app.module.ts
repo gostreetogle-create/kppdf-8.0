@@ -61,6 +61,7 @@ import { RppModule } from './modules/rpp/rpp.module';
 import { QuotationModule } from './modules/quotation/quotation.module';
 import { ContractModule } from './modules/contract/contract.module';
 import { OrderModule } from './modules/order/order.module';
+import { SiteModule } from './modules/site/site.module';
 import { ShipmentModule } from './modules/shipment/shipment.module';
 import { CartSessionModule } from './modules/cart-session/cart-session.module';
 import { CartItemModule } from './modules/cart-item/cart-item.module';
@@ -173,6 +174,7 @@ import { RequestMethod } from '@nestjs/common';
     AuditModule,
     PersonModule,
     OrganizationModule,
+    SiteModule, // TZ-ORDERS-303: площадки заказчика (до Counterparty/Order)
     CounterpartyModule,
     RoleOrgModule,
     RoleCounterpartyModule,

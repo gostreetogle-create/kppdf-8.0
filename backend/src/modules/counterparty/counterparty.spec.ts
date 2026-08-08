@@ -28,7 +28,7 @@ describe('CounterpartyService (TZ-241 org-scoping)', () => {
 
   it('findAll without user returns all non-deleted counterparties', async () => {
     const mockModel = makeMockModel();
-    service = new CounterpartyService(mockModel as any);
+    service = new CounterpartyService(mockModel as any, { create: jest.fn() } as any);
     mockModel._findExec.mockResolvedValue([]);
     mockModel._countExec.mockResolvedValue(0);
 
@@ -40,7 +40,7 @@ describe('CounterpartyService (TZ-241 org-scoping)', () => {
   it('findAll with org-scoped user filters by organizationId', async () => {
     const orgId = new Types.ObjectId().toString();
     const mockModel = makeMockModel();
-    service = new CounterpartyService(mockModel as any);
+    service = new CounterpartyService(mockModel as any, { create: jest.fn() } as any);
     mockModel._findExec.mockResolvedValue([]);
     mockModel._countExec.mockResolvedValue(0);
 
@@ -59,7 +59,7 @@ describe('CounterpartyService (TZ-241 org-scoping)', () => {
   it('findAll with org-scoped user includes system and legacy records', async () => {
     const orgId = new Types.ObjectId().toString();
     const mockModel = makeMockModel();
-    service = new CounterpartyService(mockModel as any);
+    service = new CounterpartyService(mockModel as any, { create: jest.fn() } as any);
     mockModel._findExec.mockResolvedValue([]);
     mockModel._countExec.mockResolvedValue(0);
 
@@ -79,7 +79,7 @@ describe('CounterpartyService (TZ-241 org-scoping)', () => {
   it('findAll with search and org scope combines both filters', async () => {
     const orgId = new Types.ObjectId().toString();
     const mockModel = makeMockModel();
-    service = new CounterpartyService(mockModel as any);
+    service = new CounterpartyService(mockModel as any, { create: jest.fn() } as any);
     mockModel._findExec.mockResolvedValue([]);
     mockModel._countExec.mockResolvedValue(0);
 
@@ -98,7 +98,7 @@ describe('CounterpartyService (TZ-241 org-scoping)', () => {
 
   it('findAll without org scope does not add org-scoping to $or', async () => {
     const mockModel = makeMockModel();
-    service = new CounterpartyService(mockModel as any);
+    service = new CounterpartyService(mockModel as any, { create: jest.fn() } as any);
     mockModel._findExec.mockResolvedValue([]);
     mockModel._countExec.mockResolvedValue(0);
 

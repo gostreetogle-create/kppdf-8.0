@@ -23,6 +23,10 @@ export interface OrderItem {
   unit?: string;
   unitPrice: number;
   total?: number;
+  /** TZ-ORDERS-303: ответственный за изделие. */
+  ownerUserId?: string | { _id: string; displayName?: string; username?: string };
+  /** TZ-ORDERS-303: плановая дата отгрузки позиции. */
+  plannedShipDate?: string;
 }
 
 export interface Order {
@@ -36,6 +40,8 @@ export interface Order {
    * supplierId in materials.page.ts.
    */
   counterpartyId?: string | { _id: string; name?: string };
+  /** TZ-ORDERS-303: площадка/объект. */
+  siteId?: string | { _id: string; name?: string; address?: string };
   quotationId?: string;
   contractId?: string;
   date?: string;

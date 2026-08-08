@@ -45,13 +45,19 @@ function createService(overrides: Record<string, unknown> = {}) {
   const counter = { next: jest.fn().mockResolvedValue('QTN-0001') };
   const contractService = { create: jest.fn().mockResolvedValue({ _id: new Types.ObjectId() }) };
   const orderService = { create: jest.fn().mockResolvedValue({ _id: new Types.ObjectId() }) };
-  const dependencies = { model, counter, contractService, orderService, ...overrides };
+  const sites = {
+    ensureDefaultForCounterparty: jest
+      .fn()
+      .mockResolvedValue({ _id: new Types.ObjectId() }),
+  };
+  const dependencies = { model, counter, contractService, orderService, sites, ...overrides };
   return {
     service: new QuotationService(
       dependencies.model as never,
       dependencies.counter as never,
       dependencies.contractService as never,
       dependencies.orderService as never,
+      dependencies.sites as never,
     ),
     model: dependencies.model as {
       findOne: jest.Mock;
@@ -63,6 +69,7 @@ function createService(overrides: Record<string, unknown> = {}) {
     counter: dependencies.counter as { next: jest.Mock },
     contractService: dependencies.contractService as { create: jest.Mock },
     orderService: dependencies.orderService as { create: jest.Mock },
+    sites: dependencies.sites as { ensureDefaultForCounterparty: jest.Mock },
   };
 }
 
@@ -316,6 +323,7 @@ describe('QuotationService — ORDERS-301 (quote → order conversion)', () => {
 
       const orderPayload = orderService.create.mock.calls[0][0];
       expect(orderPayload.counterpartyId).toBe(COUNTERPARTY);
+      expect(orderPayload.siteId).toBeDefined();
       expect(orderPayload.status).toBe('draft');
       const item = orderPayload.items[0];
       // COPY: FK is preserved (immutable identifier).

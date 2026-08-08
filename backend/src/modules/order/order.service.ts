@@ -9,6 +9,7 @@ import { CounterService } from '../counter/counter.service';
 import { ReservationService } from '../reservation/reservation.service';
 import { ShipmentService } from '../shipment/shipment.service';
 import { SessionRunner } from '../../common/db/session-runner';
+import { SiteService } from '../site/site.service';
 
 @Injectable()
 export class OrderService {
@@ -23,26 +24,36 @@ export class OrderService {
     private readonly reservationService: ReservationService,
     private readonly shipmentService: ShipmentService,
     private readonly sessionRunner: SessionRunner,
+    private readonly sites: SiteService,
   ) {}
 
-  async create(dto: CreateOrderDto, session?: ClientSession): Promise<OrderDocument> {
-    const number = dto.number ?? (await this.counter.next('Order', 'ORD'));
-    const items: OrderItem[] = dto.items.map((i) => ({
+  private mapItems(dtoItems: CreateOrderDto['items']): OrderItem[] {
+    return dtoItems.map((i) => ({
       productId: new Types.ObjectId(i.productId),
       productName: i.productName,
       productSku: i.productSku,
       quantity: i.quantity,
       unit: i.unit,
-      // TZ-ORDERS-301: unitPrice is OPTIONAL — orders converted from an
-      // accepted quote arrive strip-commerce (no price). Default to 0 so
-      // the schema invariant holds and the total stays stripped.
       unitPrice: i.unitPrice ?? 0,
       total: (i.quantity ?? 0) * (i.unitPrice ?? 0),
+      ownerUserId: i.ownerUserId ? new Types.ObjectId(i.ownerUserId) : undefined,
+      plannedShipDate: i.plannedShipDate ? new Date(i.plannedShipDate) : undefined,
     }));
+  }
+
+  async create(dto: CreateOrderDto, session?: ClientSession): Promise<OrderDocument> {
+    if (!dto.siteId) {
+      throw new BadRequestException('siteId is required');
+    }
+    await this.sites.assertBelongsTo(dto.siteId, dto.counterpartyId);
+
+    const number = dto.number ?? (await this.counter.next('Order', 'ORD'));
+    const items = this.mapItems(dto.items);
     const total = items.reduce((s, i) => s + i.total, 0);
     const doc = new this.model({
       number,
       counterpartyId: new Types.ObjectId(dto.counterpartyId),
+      siteId: new Types.ObjectId(dto.siteId),
       quotationId: dto.quotationId ? new Types.ObjectId(dto.quotationId) : undefined,
       contractId: dto.contractId ? new Types.ObjectId(dto.contractId) : undefined,
       date: dto.date ? new Date(dto.date) : new Date(),
@@ -81,6 +92,7 @@ export class OrderService {
     return this.model
       .find(filter)
       .populate('counterpartyId')
+      .populate('siteId')
       .populate('quotationId')
       .populate('contractId')
       .sort({ date: -1 })
@@ -94,14 +106,15 @@ export class OrderService {
     const doc = await this.model
       .findById(id)
       .populate('counterpartyId')
+      .populate('siteId')
       .populate('quotationId')
       .populate('contractId')
+      .populate('items.ownerUserId', 'displayName username fullName')
       .exec();
     if (!doc) throw new NotFoundException(`Order ${id} not found`);
     return doc;
   }
 
-  /** Find by ID without populate — returns raw ObjectIds for refs. */
   private async findByIdRaw(id: string): Promise<OrderDocument> {
     if (!Types.ObjectId.isValid(id)) {
       throw new NotFoundException(`Order ${id} not found`);
@@ -112,10 +125,7 @@ export class OrderService {
   }
 
   async update(id: string, dto: UpdateOrderDto): Promise<OrderDocument> {
-    const doc = await this.findById(id);
-    // TZ-ORDERS-301: once an order enters production it is FROZEN for
-    // manual edits — corrections flow through dedicated production/workflow
-    // endpoints instead of the generic PATCH.
+    const doc = await this.findByIdRaw(id);
     if (
       doc.status === 'in_production' ||
       doc.status === 'ready' ||
@@ -132,6 +142,24 @@ export class OrderService {
     if (dto.plannedDate !== undefined) doc.plannedDate = new Date(dto.plannedDate);
     if (dto.deliveryAddress !== undefined) doc.deliveryAddress = dto.deliveryAddress;
     if (dto.priority !== undefined) doc.priority = dto.priority;
+
+    const nextCounterparty =
+      dto.counterpartyId !== undefined
+        ? dto.counterpartyId
+        : doc.counterpartyId.toString();
+    if (dto.counterpartyId !== undefined) {
+      doc.counterpartyId = new Types.ObjectId(dto.counterpartyId);
+    }
+    if (dto.siteId !== undefined) {
+      await this.sites.assertBelongsTo(dto.siteId, nextCounterparty);
+      doc.siteId = new Types.ObjectId(dto.siteId);
+    } else if (dto.counterpartyId !== undefined) {
+      await this.sites.assertBelongsTo(doc.siteId.toString(), nextCounterparty);
+    }
+    if (dto.items !== undefined) {
+      doc.items = this.mapItems(dto.items);
+      doc.total = doc.items.reduce((s, i) => s + i.total, 0);
+    }
     return doc.save();
   }
 
@@ -185,8 +213,6 @@ export class OrderService {
       ) {
         throw new NotFoundException(`Cannot ship order in status ${order.status}`);
       }
-      // Write Shipment directly on the same session so a failed order.save
-      // (e.g. validation error) rolls back the shipment too.
       const [shipment] = await this.shipmentModel.create(
         [
           {
@@ -195,9 +221,7 @@ export class OrderService {
             counterpartyId: order.counterpartyId,
             recipient,
             address,
-            warehouseId: warehouseId
-              ? new Types.ObjectId(warehouseId)
-              : undefined,
+            warehouseId: warehouseId ? new Types.ObjectId(warehouseId) : undefined,
             driverInfo,
             status: 'scheduled',
             items: order.items.map((i) => ({

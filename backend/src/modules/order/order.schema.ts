@@ -23,6 +23,14 @@ export class OrderItem {
 
   @Prop({ required: true, default: 0 })
   total!: number;
+
+  /** TZ-ORDERS-303 D18: ответственный за изделие в заказе. */
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  ownerUserId?: Types.ObjectId;
+
+  /** TZ-ORDERS-303 D16: плановая дата отгрузки позиции. */
+  @Prop()
+  plannedShipDate?: Date;
 }
 
 const OrderItemSchema = SchemaFactory.createForClass(OrderItem);
@@ -38,6 +46,10 @@ export class Order {
 
   @Prop({ type: Types.ObjectId, ref: 'Counterparty', required: true, index: true })
   counterpartyId!: Types.ObjectId;
+
+  /** TZ-ORDERS-303 D20: площадка/объект заказчика. */
+  @Prop({ type: Types.ObjectId, ref: 'Site', required: true, index: true })
+  siteId!: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'Quotation', index: true })
   quotationId?: Types.ObjectId;
@@ -91,5 +103,6 @@ export class Order {
 
 export const OrderSchema = SchemaFactory.createForClass(Order);
 OrderSchema.index({ counterpartyId: 1, date: -1 });
+OrderSchema.index({ siteId: 1, date: -1 });
 OrderSchema.index({ status: 1, date: -1 });
 OrderSchema.index({ managerId: 1, status: 1 });

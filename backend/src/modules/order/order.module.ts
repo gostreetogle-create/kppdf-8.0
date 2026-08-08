@@ -7,6 +7,7 @@ import { CounterModule } from '../counter/counter.module';
 import { ReservationModule } from '../reservation/reservation.module';
 import { ShipmentModule } from '../shipment/shipment.module';
 import { SessionRunner } from '../../common/db/session-runner';
+import { SiteModule } from '../site/site.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { SessionRunner } from '../../common/db/session-runner';
     CounterModule,
     ReservationModule,
     ShipmentModule,
+    SiteModule,
   ],
   controllers: [OrderController],
   providers: [OrderService, SessionRunner],

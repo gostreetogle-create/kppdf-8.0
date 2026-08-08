@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import {
   FormArray,
   FormControl,
@@ -15,9 +16,11 @@ import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
-import { extractErrorMessage } from '../../core/silent-http';
+import { API_BASE_URL } from '../../core/api.tokens';
+import { extractErrorMessage, silentGet } from '../../core/silent-http';
 import { Counterparty, CounterpartyService } from '../../shared/services/pi-counterparty.service';
 import { Product, ProductsService } from '../../shared/services/products.service';
+import { Site, SiteService } from '../../shared/services/pi-site.service';
 import { Order, OrderItem, OrdersService, OrderPriority, OrderStatus } from './orders.service';
 
 type Result = Order | null | undefined;
@@ -39,6 +42,13 @@ const PRIORITY_OPTIONS: { value: OrderPriority; label: string }[] = [
   { value: 'urgent', label: 'Срочный' },
 ];
 
+interface OwnerUserOption {
+  _id: string;
+  displayName?: string;
+  username?: string;
+  fullName?: string;
+}
+
 interface ItemFormGroup extends FormGroup {
   controls: {
     productId: FormControl<string>;
@@ -46,24 +56,17 @@ interface ItemFormGroup extends FormGroup {
     quantity: FormControl<number>;
     unit: FormControl<string>;
     unitPrice: FormControl<number>;
+    ownerUserId: FormControl<string>;
+    plannedShipDate: FormControl<string>;
   };
 }
 
 /**
- * OrderFormDialogComponent — create/edit order.
+ * OrderFormDialogComponent — create/edit order (TZ-ORDERS-303).
  *
- * Sections:
- *  1. Header: counterparty (select), priority, status, plannedDate,
- *     deliveryAddress
- *  2. Items: FormArray with productId picker (filled via ProductsService),
- *     quantity, unitPrice, optional unit
- *  3. Notes: textarea
- *
- * Important: orders REQUIRE counterpartyId + items[] per backend
- * CreateOrderDto. Counterparty picker uses CounterpartyService.list
- * loaded on dialog open. Items FormArray supports add/remove with
- * backend-validated fields. productName is stored separately for
- * human-readable display — backend service accepts it on insert.
+ * Header: заказчик + объект (siteId required), quick-create panel,
+ * priority/status/plannedDate. Lines: product, qty, unitPrice, unit,
+ * optional ownerUserId + plannedShipDate.
  *
  * Standalone + OnPush + signal-based.
  */
@@ -91,7 +94,7 @@ interface ItemFormGroup extends FormGroup {
         <!-- ─── Header ─── -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
           <app-pi-form-field
-            label="Контрагент"
+            label="Заказчик"
             htmlFor="ord-cp"
             [required]="true"
             [error]="errorFor('counterpartyId')"
@@ -101,11 +104,35 @@ interface ItemFormGroup extends FormGroup {
               formControlName="counterpartyId"
               class="pi-input w-full"
               [class.border-destructive]="hasError('counterpartyId')"
+              (change)="onCounterpartyChange($any($event.target).value)"
             >
               <option value="" disabled>— выберите —</option>
               @for (cp of counterparties(); track cp._id) {
                 <option [value]="cp._id">
                   {{ cp.name }}{{ cp.inn ? ' · ИНН ' + cp.inn : '' }}
+                </option>
+              }
+            </select>
+          </app-pi-form-field>
+
+          <app-pi-form-field
+            label="Объект"
+            htmlFor="ord-site"
+            [required]="true"
+            [error]="errorFor('siteId')"
+          >
+            <select
+              id="ord-site"
+              formControlName="siteId"
+              class="pi-input w-full"
+              [class.border-destructive]="hasError('siteId')"
+            >
+              <option value="" disabled>
+                {{ form.controls.counterpartyId.value ? '— выберите —' : 'Сначала заказчик' }}
+              </option>
+              @for (s of sites(); track s._id) {
+                <option [value]="s._id">
+                  {{ s.name }}{{ s.address ? ' · ' + s.address : '' }}
                 </option>
               }
             </select>
@@ -144,13 +171,55 @@ interface ItemFormGroup extends FormGroup {
             </select>
           </app-pi-form-field>
 
-          <app-pi-form-field label="Адрес доставки" htmlFor="ord-address">
-            <app-pi-input
-              id="ord-address"
-              formControlName="deliveryAddress"
-              placeholder="Адрес доставки"
-            />
-          </app-pi-form-field>
+          <div class="sm:col-span-2">
+            <app-pi-form-field label="Адрес доставки" htmlFor="ord-address">
+              <app-pi-input
+                id="ord-address"
+                formControlName="deliveryAddress"
+                placeholder="Адрес доставки"
+              />
+            </app-pi-form-field>
+          </div>
+        </div>
+
+        <!-- ─── Quick-create заказчик ─── -->
+        <div
+          class="p-3 hairline rounded-sm bg-paper-2/30 space-y-form-field"
+          data-test="order-quick-party"
+          [formGroup]="quickForm"
+        >
+          <p class="eyebrow m-0">Быстрый заказчик</p>
+          <p class="text-xs text-muted-foreground m-0">
+            Имя, телефон и адрес объекта — создаст заказчика и объект и подставит в заказ.
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-form-field">
+            <app-pi-form-field label="Имя" htmlFor="ord-qc-name" [required]="true">
+              <app-pi-input id="ord-qc-name" formControlName="name" placeholder="ООО … / ИП …" />
+            </app-pi-form-field>
+            <app-pi-form-field label="Телефон" htmlFor="ord-qc-phone">
+              <app-pi-input id="ord-qc-phone" formControlName="phone" placeholder="+7 …" />
+            </app-pi-form-field>
+            <app-pi-form-field label="Адрес объекта" htmlFor="ord-qc-address" [required]="true">
+              <app-pi-input
+                id="ord-qc-address"
+                formControlName="address"
+                placeholder="Город, улица…"
+              />
+            </app-pi-form-field>
+          </div>
+          <app-pi-button
+            type="button"
+            variant="outline"
+            size="sm"
+            [disabled]="quickSubmitting()"
+            (click)="onQuickCreate()"
+            data-test="order-quick-create"
+          >
+            {{ quickSubmitting() ? 'Создание…' : 'Создать и подставить' }}
+          </app-pi-button>
+          @if (quickError()) {
+            <p role="alert" class="text-xs text-destructive m-0">{{ quickError() }}</p>
+          }
         </div>
 
         <!-- ─── Items ─── -->
@@ -240,6 +309,31 @@ interface ItemFormGroup extends FormGroup {
                 >
                   ×
                 </app-pi-button>
+
+                <label class="col-span-12 sm:col-span-6 block">
+                  <span class="eyebrow block mb-1.5">Ответственный</span>
+                  <select
+                    [attr.id]="'ord-item-owner-' + i"
+                    formControlName="ownerUserId"
+                    class="h-8 px-3 text-xs hairline rounded-sm bg-paper pi-focus-ring w-full"
+                    [attr.aria-label]="'Ответственный ' + (i + 1)"
+                  >
+                    <option value="">— не назначен —</option>
+                    @for (u of users(); track u._id) {
+                      <option [value]="u._id">{{ userLabel(u) }}</option>
+                    }
+                  </select>
+                </label>
+
+                <label class="col-span-12 sm:col-span-6 block">
+                  <span class="eyebrow block mb-1.5">Отгрузка</span>
+                  <input
+                    type="date"
+                    formControlName="plannedShipDate"
+                    class="h-8 px-3 text-xs hairline rounded-sm bg-paper pi-focus-ring w-full"
+                    [attr.aria-label]="'Дата отгрузки ' + (i + 1)"
+                  />
+                </label>
               </div>
             }
           </div>
@@ -293,7 +387,10 @@ export class OrderFormDialogComponent {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly service = inject(OrdersService);
   private readonly counterpartyService = inject(CounterpartyService);
+  private readonly siteService = inject(SiteService);
   private readonly productsService = inject(ProductsService);
+  private readonly http = inject(HttpClient);
+  private readonly baseUrl = inject(API_BASE_URL);
   private readonly toast = inject(PiToastService);
   private readonly ref = inject<DialogRef<Result>>(PI_DIALOG_REF);
   private readonly data = inject<Order | null>(PI_DIALOG_DATA);
@@ -301,13 +398,18 @@ export class OrderFormDialogComponent {
   protected readonly isEdit = signal<boolean>(this.data != null);
   protected readonly submitting = signal<boolean>(false);
   protected readonly errorMessage = signal<string | null>(null);
+  protected readonly quickSubmitting = signal<boolean>(false);
+  protected readonly quickError = signal<string | null>(null);
 
   protected readonly counterparties = signal<Counterparty[]>([]);
+  protected readonly sites = signal<Site[]>([]);
   protected readonly products = signal<Product[]>([]);
+  protected readonly users = signal<OwnerUserOption[]>([]);
 
   protected readonly form = this.fb.group({
     number: this.fb.control<string | null>(null),
     counterpartyId: this.fb.control('', [Validators.required]),
+    siteId: this.fb.control('', [Validators.required]),
     plannedDate: this.fb.control<string | null>(null),
     priority: this.fb.control<OrderPriority>('normal'),
     status: this.fb.control<OrderStatus>('draft'),
@@ -316,8 +418,18 @@ export class OrderFormDialogComponent {
     items: this.fb.array<ItemFormGroup>([]),
   });
 
+  protected readonly quickForm = this.fb.group({
+    name: this.fb.control('', [Validators.required]),
+    phone: this.fb.control(''),
+    address: this.fb.control('', [Validators.required]),
+  });
+
   get itemsArray(): FormArray<ItemFormGroup> {
     return this.form.controls.items as FormArray<ItemFormGroup>;
+  }
+
+  protected userLabel(u: OwnerUserOption): string {
+    return (u.displayName || u.fullName || u.username || u._id).trim();
   }
 
   private loadLookups(): void {
@@ -325,7 +437,7 @@ export class OrderFormDialogComponent {
       if (res.ok) {
         this.counterparties.set(res.data.items ?? []);
       } else {
-        this.counterparties.set([]); // empty dropdown on failure (non-critical).
+        this.counterparties.set([]);
       }
     });
     this.productsService.list({ limit: 200 }).subscribe((res) => {
@@ -335,20 +447,66 @@ export class OrderFormDialogComponent {
         this.products.set([]);
       }
     });
+    const params = new HttpParams().set('limit', '100');
+    silentGet<{ items: OwnerUserOption[] } | OwnerUserOption[]>(
+      this.http,
+      `${this.baseUrl}/users`,
+      { params },
+    ).subscribe((res) => {
+      if (!res.ok) {
+        this.users.set([]);
+        return;
+      }
+      const data = res.data;
+      this.users.set(Array.isArray(data) ? data : (data.items ?? []));
+    });
+  }
+
+  private loadSites(counterpartyId: string, preferSiteId?: string): void {
+    if (!counterpartyId) {
+      this.sites.set([]);
+      return;
+    }
+    this.siteService.listByCounterparty(counterpartyId).subscribe((res) => {
+      if (res.ok) {
+        this.sites.set(res.data ?? []);
+        if (preferSiteId) {
+          this.form.controls.siteId.setValue(preferSiteId);
+        }
+      } else {
+        this.sites.set([]);
+      }
+    });
+  }
+
+  protected onCounterpartyChange(counterpartyId: string): void {
+    this.form.controls.siteId.setValue('');
+    this.loadSites(counterpartyId);
+  }
+
+  private unwrapId(value: string | { _id: string } | undefined | null): string {
+    if (!value) return '';
+    return typeof value === 'string' ? value : (value._id ?? '');
+  }
+
+  private unwrapOwnerId(value: string | { _id: string } | undefined | null): string {
+    return this.unwrapId(value);
   }
 
   private patchFromData(o: Order): void {
-    const cpId =
-      typeof o.counterpartyId === 'string' ? o.counterpartyId : (o.counterpartyId?._id ?? '');
+    const cpId = this.unwrapId(o.counterpartyId);
+    const siteId = this.unwrapId(o.siteId);
     this.form.patchValue({
       number: o.number,
       counterpartyId: cpId,
+      siteId,
       plannedDate: o.plannedDate ? o.plannedDate.slice(0, 10) : null,
       priority: o.priority ?? 'normal',
       status: o.status ?? 'draft',
       deliveryAddress: o.deliveryAddress ?? null,
       notes: o.notes ?? null,
     });
+    if (cpId) this.loadSites(cpId, siteId || undefined);
     (o.items ?? []).forEach((it) => this.appendItem(it as Partial<OrderItem>));
   }
 
@@ -376,17 +534,54 @@ export class OrderFormDialogComponent {
   }
 
   private createItemGroup(initial: Partial<OrderItem> = {}): ItemFormGroup {
+    const ship = initial.plannedShipDate ? String(initial.plannedShipDate).slice(0, 10) : '';
     return this.fb.group({
       productId: this.fb.control(initial.productId ?? '', [Validators.required]),
       productName: this.fb.control<string>(initial.productName ?? ''),
       quantity: this.fb.control(initial.quantity ?? 1, [Validators.required, Validators.min(0)]),
       unit: this.fb.control<string>(initial.unit ?? ''),
       unitPrice: this.fb.control(initial.unitPrice ?? 0, [Validators.required, Validators.min(0)]),
+      ownerUserId: this.fb.control(this.unwrapOwnerId(initial.ownerUserId)),
+      plannedShipDate: this.fb.control(ship),
     }) as ItemFormGroup;
   }
 
   private appendItem(initial: Partial<OrderItem>): void {
     this.itemsArray.push(this.createItemGroup(initial));
+  }
+
+  protected onQuickCreate(): void {
+    if (this.quickSubmitting()) return;
+    this.quickForm.markAllAsTouched();
+    if (this.quickForm.invalid) {
+      this.quickError.set('Укажите имя и адрес объекта');
+      return;
+    }
+    const v = this.quickForm.getRawValue();
+    this.quickSubmitting.set(true);
+    this.quickError.set(null);
+    this.counterpartyService
+      .quickCreateParty({
+        name: v.name.trim(),
+        phone: v.phone?.trim() || undefined,
+        address: v.address.trim(),
+      })
+      .subscribe((res) => {
+        this.quickSubmitting.set(false);
+        if (!res.ok) {
+          this.quickError.set(extractErrorMessage(res.error));
+          return;
+        }
+        const { counterparty, site } = res.data;
+        const list = this.counterparties();
+        if (!list.some((c) => c._id === counterparty._id)) {
+          this.counterparties.set([counterparty, ...list]);
+        }
+        this.form.controls.counterpartyId.setValue(counterparty._id);
+        this.loadSites(counterparty._id, site._id);
+        this.quickForm.reset({ name: '', phone: '', address: '' });
+        this.toast.success('Заказчик и объект созданы');
+      });
   }
 
   protected hasError(name: keyof typeof this.form.controls): boolean {
@@ -411,20 +606,28 @@ export class OrderFormDialogComponent {
       this.form.markAllAsTouched();
       if (this.itemsArray.length === 0) {
         this.errorMessage.set('Добавьте хотя бы одну позицию');
+      } else if (!this.form.controls.siteId.value) {
+        this.errorMessage.set('Выберите объект');
       }
       return;
     }
     const v = this.form.getRawValue();
-    const items: OrderItem[] = (v.items ?? []).map((i) => ({
-      productId: i.productId,
-      productName: i.productName || undefined,
-      quantity: Number(i.quantity),
-      unit: i.unit || undefined,
-      unitPrice: Number(i.unitPrice),
-    }));
+    const items: OrderItem[] = (v.items ?? []).map((i) => {
+      const row: OrderItem = {
+        productId: i.productId,
+        productName: i.productName || undefined,
+        quantity: Number(i.quantity),
+        unit: i.unit || undefined,
+        unitPrice: Number(i.unitPrice),
+      };
+      if (i.ownerUserId) row.ownerUserId = i.ownerUserId;
+      if (i.plannedShipDate) row.plannedShipDate = i.plannedShipDate;
+      return row;
+    });
 
     const payload: Partial<Order> = {
       counterpartyId: v.counterpartyId,
+      siteId: v.siteId,
       status: v.status,
       priority: v.priority,
       items,
