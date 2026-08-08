@@ -307,6 +307,37 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     expect(close).toHaveBeenCalled();
   });
 
+  it('edit: listPrice typed as string is coerced to number in the payload', async () => {
+    await setup({
+      _id: 'p-price',
+      name: 'С ценой',
+      kind: 'good',
+      unit: 'шт',
+    });
+    formControls().listPrice.setValue('1500' as unknown as number);
+    instance().onSubmit();
+    expect(productsSvc.update).toHaveBeenCalledWith(
+      'p-price',
+      expect.objectContaining({ listPrice: 1500 }),
+    );
+  });
+
+  it('edit: populated categoryId object is reduced to id string', async () => {
+    await setup({
+      _id: 'p-cat',
+      name: 'С категорией',
+      kind: 'good',
+      unit: 'шт',
+      categoryId: { _id: 'cat-99', name: 'Мебель' } as unknown as string,
+    });
+    expect(formControls().categoryId.value).toBe('cat-99');
+    instance().onSubmit();
+    expect(productsSvc.update).toHaveBeenCalledWith(
+      'p-cat',
+      expect.objectContaining({ categoryId: 'cat-99' }),
+    );
+  });
+
   it('photo: upload adds a thumbnail and the photoIds make it into the payload', async () => {
     photosSvc.upload.mockReturnValue(
       of({

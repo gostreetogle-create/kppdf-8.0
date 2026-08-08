@@ -536,7 +536,8 @@ export class ProductFormDialogComponent implements OnDestroy {
         status: this.data.status ?? 'new',
         listPrice: this.data.listPrice ?? null,
         isActive: this.data.isActive ?? true,
-        categoryId: this.data.categoryId ?? null,
+        // Detail GET populates categoryId as { _id, name } — store only the id.
+        categoryId: this.refId(this.data.categoryId),
         dimLength: this.data.dimensions?.length ?? null,
         dimWidth: this.data.dimensions?.width ?? null,
         dimHeight: this.data.dimensions?.height ?? null,
@@ -820,13 +821,18 @@ export class ProductFormDialogComponent implements OnDestroy {
       return;
     }
     const v = this.form.getRawValue();
+    const listPrice = this.asNumber(v.listPrice);
+    const weightKg = this.asNumber(v.weightKg);
+    const dimLength = this.asNumber(v.dimLength);
+    const dimWidth = this.asNumber(v.dimWidth);
+    const dimHeight = this.asNumber(v.dimHeight);
     const dimensions =
-      v.dimLength != null || v.dimWidth != null || v.dimHeight != null
+      dimLength != null || dimWidth != null || dimHeight != null
         ? {
-            ...(v.dimLength != null ? { length: v.dimLength } : {}),
-            ...(v.dimWidth != null ? { width: v.dimWidth } : {}),
-            ...(v.dimHeight != null ? { height: v.dimHeight } : {}),
-            unit: v.dimUnit,
+            ...(dimLength != null ? { length: dimLength } : {}),
+            ...(dimWidth != null ? { width: dimWidth } : {}),
+            ...(dimHeight != null ? { height: dimHeight } : {}),
+            unit: v.dimUnit || 'mm',
           }
         : undefined;
 
@@ -844,14 +850,15 @@ export class ProductFormDialogComponent implements OnDestroy {
     };
     if (v.sku) payload.sku = v.sku;
     if (v.subcategory) payload.subcategory = v.subcategory;
-    if (v.listPrice != null) payload.listPrice = v.listPrice;
+    if (listPrice != null) payload.listPrice = listPrice;
     // ralCode/categoryId are PATCHED EXPLICITLY (including null) so that
     // choosing «Не выбран» / «— без категории —» on edit actually CLEARS
     // the previously stored value — the backend $set applies the null.
-    payload.ralCode = v.ralCode ?? null;
-    payload.categoryId = v.categoryId ?? null;
+    // Empty string must become null (IsMongoId rejects "").
+    payload.ralCode = v.ralCode?.trim() ? v.ralCode.trim() : null;
+    payload.categoryId = this.refId(v.categoryId);
     if (dimensions) payload.dimensions = dimensions;
-    if (v.weightKg != null) payload.weightKg = v.weightKg;
+    if (weightKg != null) payload.weightKg = weightKg;
     if (v.description) payload.description = v.description;
     if (v.notes) payload.notes = v.notes;
     if (photoIds.length > 0) payload.photoIds = photoIds;
@@ -879,6 +886,26 @@ export class ProductFormDialogComponent implements OnDestroy {
     // Orphan cleanup runs in ngOnDestroy (single source of truth for all
     // close paths). ref.close(null) triggers destroy; cleanup runs there.
     this.ref.close(null);
+  }
+
+  /** Normalize populated `{ _id }` / empty string → id or null. */
+  private refId(value: unknown): string | null {
+    if (value == null || value === '') return null;
+    if (typeof value === 'string') {
+      const t = value.trim();
+      return t.length > 0 ? t : null;
+    }
+    if (typeof value === 'object' && value !== null && '_id' in value) {
+      return this.refId((value as { _id: unknown })._id);
+    }
+    return null;
+  }
+
+  /** Number inputs often yield strings — coerce before API validation. */
+  private asNumber(value: unknown): number | null {
+    if (value == null || value === '') return null;
+    const n = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(n) ? n : null;
   }
 
   /**

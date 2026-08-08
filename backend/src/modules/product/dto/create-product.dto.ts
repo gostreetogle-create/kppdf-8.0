@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -15,64 +15,128 @@ import {
   ValidateNested,
 } from 'class-validator';
 
+/** HTML/select empty string → null so @IsOptional skips MongoId check. */
+const emptyStringToNull = ({ value }: { value: unknown }) =>
+  value === '' ? null : value;
+
 class ProductDimensionsDto {
   @ApiPropertyOptional({ description: 'Длина' })
-  @IsOptional() @IsNumber() @Min(0) length?: number;
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Длина должна быть числом' })
+  @Min(0, { message: 'Длина не может быть отрицательной' })
+  length?: number;
+
   @ApiPropertyOptional({ description: 'Ширина' })
-  @IsOptional() @IsNumber() @Min(0) width?: number;
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Ширина должна быть числом' })
+  @Min(0, { message: 'Ширина не может быть отрицательной' })
+  width?: number;
+
   @ApiPropertyOptional({ description: 'Высота' })
-  @IsOptional() @IsNumber() @Min(0) height?: number;
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Высота должна быть числом' })
+  @Min(0, { message: 'Высота не может быть отрицательной' })
+  height?: number;
+
   @ApiPropertyOptional({ description: 'Единица измерения' })
-  @IsOptional() @IsString() unit?: string;
+  @IsOptional()
+  @IsString()
+  unit?: string;
 }
 
 export class CreateProductDto {
   @ApiProperty({ example: 'Окно ПВХ 1200x1400', description: 'Название продукта' })
-  @IsString()
-  @Length(1, 256)
+  @IsString({ message: 'Название обязательно' })
+  @Length(1, 256, { message: 'Название: от 1 до 256 символов' })
   name!: string;
 
   @ApiPropertyOptional({ example: 'WIN-PVH-1214', description: 'Артикул' })
-  @IsOptional() @IsString() @Length(0, 64) sku?: string;
+  @IsOptional()
+  @IsString()
+  @Length(0, 64)
+  sku?: string;
 
   @ApiProperty({ enum: ['good', 'service', 'work'], description: 'Тип: товар/услуга/работа' })
-  @IsIn(['good', 'service', 'work'])
+  @IsIn(['good', 'service', 'work'], { message: 'Недопустимый тип изделия' })
   kind!: 'good' | 'service' | 'work';
 
   @ApiProperty({ example: 'шт', description: 'Единица измерения' })
-  @IsString()
+  @IsString({ message: 'Единица измерения обязательна' })
   @Length(1, 16)
   unit!: string;
 
-  @ApiPropertyOptional({ description: 'ID категории' })
-  @IsOptional() @IsMongoId() categoryId?: string;
+  @ApiPropertyOptional({ description: 'ID категории (null = без категории)' })
+  @Transform(emptyStringToNull)
+  @IsOptional()
+  @IsMongoId({ message: 'Некорректная категория' })
+  categoryId?: string | null;
+
   @ApiPropertyOptional({ description: 'Подкатегория' })
-  @IsOptional() @IsString() @Length(0, 64) subcategory?: string;
+  @IsOptional()
+  @IsString()
+  @Length(0, 64)
+  subcategory?: string;
 
   @ApiPropertyOptional({ enum: ['new', 'active', 'archived', 'draft'], description: 'Статус' })
-  @IsOptional() @IsIn(['new', 'active', 'archived', 'draft'])
+  @IsOptional()
+  @IsIn(['new', 'active', 'archived', 'draft'], { message: 'Недопустимый статус' })
   status?: 'new' | 'active' | 'archived' | 'draft';
 
   @ApiPropertyOptional({ description: 'Цена по прайсу' })
-  @IsOptional() @IsNumber() @Min(0) listPrice?: number;
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Цена должна быть числом' })
+  @Min(0, { message: 'Цена не может быть отрицательной' })
+  listPrice?: number;
+
   @ApiPropertyOptional({ description: 'Базовая цена' })
-  @IsOptional() @IsNumber() @Min(0) basePrice?: number;
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Базовая цена должна быть числом' })
+  @Min(0)
+  basePrice?: number;
+
   @ApiPropertyOptional({ description: 'Себестоимость' })
-  @IsOptional() @IsNumber() @Min(0) costPrice?: number;
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Себестоимость должна быть числом' })
+  @Min(0)
+  costPrice?: number;
+
   @ApiPropertyOptional({ description: 'Наценка по умолчанию (%)' })
-  @IsOptional() @IsNumber() @Min(0) @Max(1000) defaultMarkupPercent?: number;
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(1000)
+  defaultMarkupPercent?: number;
+
   @ApiPropertyOptional({ description: 'Количество на складе' })
-  @IsOptional() @IsNumber() @Min(0) stockQty?: number;
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  stockQty?: number;
 
   @ApiPropertyOptional({ description: 'Описание продукта' })
-  @IsOptional() @IsString() @Length(0, 4000) description?: string;
+  @IsOptional()
+  @IsString()
+  @Length(0, 4000)
+  description?: string;
+
   @ApiPropertyOptional({ description: 'Заметки' })
-  @IsOptional() @IsString() @Length(0, 4000) notes?: string;
+  @IsOptional()
+  @IsString()
+  @Length(0, 4000)
+  notes?: string;
 
   @ApiPropertyOptional({ type: [String], description: 'ID фотографий' })
   @IsOptional()
   @IsArray()
-  @IsMongoId({ each: true })
+  @IsMongoId({ each: true, message: 'Некорректный ID фото' })
   photoIds?: string[];
 
   @ApiPropertyOptional({ type: ProductDimensionsDto, description: 'Размеры продукта' })
@@ -82,20 +146,45 @@ export class CreateProductDto {
   dimensions?: ProductDimensionsDto;
 
   @ApiPropertyOptional({ description: 'Вес (кг)' })
-  @IsOptional() @IsNumber() @Min(0) weightKg?: number;
-  @ApiPropertyOptional({ description: 'Код RAL' })
-  @IsOptional() @IsString() @Length(0, 16) ralCode?: string;
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Вес должен быть числом' })
+  @Min(0)
+  weightKg?: number;
+
+  @ApiPropertyOptional({ description: 'Код RAL (null = без цвета)' })
+  @Transform(emptyStringToNull)
+  @IsOptional()
+  @IsString()
+  @Length(0, 64)
+  ralCode?: string | null;
 
   @ApiPropertyOptional({ description: 'Есть ли паспорт' })
-  @IsOptional() @IsBoolean() hasPassport?: boolean;
+  @IsOptional()
+  @IsBoolean()
+  hasPassport?: boolean;
+
   @ApiPropertyOptional({ description: 'Есть ли чертёж' })
-  @IsOptional() @IsBoolean() hasDrawing?: boolean;
+  @IsOptional()
+  @IsBoolean()
+  hasDrawing?: boolean;
+
   @ApiPropertyOptional({ description: 'Активен ли продукт' })
-  @IsOptional() @IsBoolean() isActive?: boolean;
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
   @ApiPropertyOptional({ description: 'Назначение' })
-  @IsOptional() @IsString() @Length(0, 256) purpose?: string;
+  @IsOptional()
+  @IsString()
+  @Length(0, 256)
+  purpose?: string;
+
   @ApiPropertyOptional({ description: 'Установка' })
-  @IsOptional() @IsString() @Length(0, 256) installation?: string;
+  @IsOptional()
+  @IsString()
+  @Length(0, 256)
+  installation?: string;
 
   @ApiPropertyOptional({ type: Object, description: 'EAV: { attributeName: value }' })
   @IsOptional()
