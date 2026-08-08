@@ -38,6 +38,7 @@ import {
 } from '../../services/pi-product-modules.service';
 import { CategoriesService, type Category } from '../../services/categories.service';
 import { controlKindFor, type QuickCreateControlKind } from './field-key-registry';
+import { colSpanClass, controlMaxClass } from './field-capacity';
 
 /** Data injected into QuickCreate (create-only). */
 export interface QuickCreateDialogData {
@@ -97,7 +98,7 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'md' | 'lg' | 'xl'> = {
         body
         [formGroup]="form"
         (ngSubmit)="onSubmit()"
-        class="space-y-form-field max-h-[min(70vh,calc(90vh-8rem))] overflow-y-auto min-h-0"
+        class="space-y-2 max-h-[min(70vh,calc(90vh-8rem))] overflow-y-auto min-h-0"
         data-test="quick-create-form"
       >
         <div
@@ -133,137 +134,142 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'md' | 'lg' | 'xl'> = {
         } @else {
           <div [class]="fieldsGridClass()" data-test="qc-fields-grid">
             @for (key of visibleKeys(); track key) {
-              @switch (kindOf(key)) {
-                @case ('select-kind') {
-                  <app-pi-form-field
-                    [label]="labelOf(key)"
-                    [htmlFor]="'qc-' + key"
-                    [required]="isRequired(key)"
-                    [error]="errorFor(key)"
-                  >
-                    <select
-                      [id]="'qc-' + key"
-                      [formControlName]="key"
-                      class="pi-input w-full"
-                      [attr.data-test]="'qc-field-' + key"
+              <div [class]="fieldCellClass(key)" [attr.data-test]="'qc-cell-' + key">
+                @switch (kindOf(key)) {
+                  @case ('select-kind') {
+                    <app-pi-form-field
+                      [label]="labelOf(key)"
+                      [htmlFor]="'qc-' + key"
+                      [required]="isRequired(key)"
+                      [error]="errorFor(key)"
                     >
-                      @for (opt of kindOptions; track opt.value) {
-                        <option [value]="opt.value">{{ opt.label }}</option>
-                      }
-                    </select>
-                  </app-pi-form-field>
-                }
-                @case ('select-status') {
-                  <app-pi-form-field
-                    [label]="labelOf(key)"
-                    [htmlFor]="'qc-' + key"
-                    [required]="isRequired(key)"
-                  >
-                    <select
-                      [id]="'qc-' + key"
-                      [formControlName]="key"
-                      class="pi-input w-full"
-                      [attr.data-test]="'qc-field-' + key"
-                    >
-                      @for (opt of statusOptions; track opt.value) {
-                        <option [value]="opt.value">{{ opt.label }}</option>
-                      }
-                    </select>
-                  </app-pi-form-field>
-                }
-                @case ('select-category') {
-                  <app-pi-form-field
-                    [label]="labelOf(key)"
-                    [htmlFor]="'qc-' + key"
-                    hint="Из справочника категорий"
-                  >
-                    <select
-                      [id]="'qc-' + key"
-                      [formControlName]="key"
-                      class="pi-input w-full"
-                      [attr.data-test]="'qc-field-' + key"
-                    >
-                      <option value="">— без категории —</option>
-                      @for (c of categories(); track c._id) {
-                        <option [value]="c._id">{{ c.name }}</option>
-                      }
-                    </select>
-                  </app-pi-form-field>
-                }
-                @case ('checkbox') {
-                  <app-pi-form-field [label]="labelOf(key)" [htmlFor]="'qc-' + key">
-                    <label
-                      class="inline-flex items-center gap-2 min-h-touch px-control-x py-control-y hairline rounded-sm cursor-pointer"
-                    >
-                      <input
+                      <select
                         [id]="'qc-' + key"
-                        type="checkbox"
                         [formControlName]="key"
-                        class="w-4 h-4"
+                        [class]="controlClass(key)"
                         [attr.data-test]="'qc-field-' + key"
-                      />
-                      <span class="text-sm">Доступен для заказов</span>
-                    </label>
-                  </app-pi-form-field>
-                }
-                @case ('dim-unit') {
-                  <app-pi-form-field [label]="labelOf(key)" [htmlFor]="'qc-' + key">
-                    <select
-                      [id]="'qc-' + key"
-                      [formControlName]="key"
-                      class="pi-input w-full"
-                      [attr.data-test]="'qc-field-' + key"
+                      >
+                        @for (opt of kindOptions; track opt.value) {
+                          <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                      </select>
+                    </app-pi-form-field>
+                  }
+                  @case ('select-status') {
+                    <app-pi-form-field
+                      [label]="labelOf(key)"
+                      [htmlFor]="'qc-' + key"
+                      [required]="isRequired(key)"
                     >
-                      @for (u of dimUnitOptions; track u) {
-                        <option [value]="u">{{ u }}</option>
-                      }
-                    </select>
-                  </app-pi-form-field>
-                }
-                @case ('textarea') {
-                  <div [class]="useTwoCol() ? 'md:col-span-2' : ''">
+                      <select
+                        [id]="'qc-' + key"
+                        [formControlName]="key"
+                        [class]="controlClass(key)"
+                        [attr.data-test]="'qc-field-' + key"
+                      >
+                        @for (opt of statusOptions; track opt.value) {
+                          <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                      </select>
+                    </app-pi-form-field>
+                  }
+                  @case ('select-category') {
+                    <app-pi-form-field [label]="labelOf(key)" [htmlFor]="'qc-' + key">
+                      <select
+                        [id]="'qc-' + key"
+                        [formControlName]="key"
+                        [class]="controlClass(key)"
+                        title="Из справочника категорий"
+                        [attr.data-test]="'qc-field-' + key"
+                      >
+                        <option value="">— без категории —</option>
+                        @for (c of categories(); track c._id) {
+                          <option [value]="c._id">{{ c.name }}</option>
+                        }
+                      </select>
+                    </app-pi-form-field>
+                  }
+                  @case ('checkbox') {
+                    <app-pi-form-field [label]="labelOf(key)" [htmlFor]="'qc-' + key">
+                      <label
+                        class="inline-flex items-center gap-2 h-8 px-control-x hairline rounded-sm cursor-pointer"
+                      >
+                        <input
+                          [id]="'qc-' + key"
+                          type="checkbox"
+                          [formControlName]="key"
+                          class="w-4 h-4"
+                          [attr.data-test]="'qc-field-' + key"
+                        />
+                        <span class="text-sm">Доступен для заказов</span>
+                      </label>
+                    </app-pi-form-field>
+                  }
+                  @case ('dim-unit') {
+                    <app-pi-form-field [label]="labelOf(key)" [htmlFor]="'qc-' + key">
+                      <select
+                        [id]="'qc-' + key"
+                        [formControlName]="key"
+                        [class]="controlClass(key)"
+                        [attr.data-test]="'qc-field-' + key"
+                      >
+                        @for (u of dimUnitOptions; track u) {
+                          <option [value]="u">{{ u }}</option>
+                        }
+                      </select>
+                    </app-pi-form-field>
+                  }
+                  @case ('textarea') {
                     <app-pi-form-field [label]="labelOf(key)" [htmlFor]="'qc-' + key">
                       <app-pi-textarea
                         [id]="'qc-' + key"
-                        [rows]="3"
+                        [rows]="2"
+                        size="sm"
+                        customClass="min-h-0"
                         [formControlName]="key"
                         [attr.data-test]="'qc-field-' + key"
                       />
                     </app-pi-form-field>
-                  </div>
+                  }
+                  @case ('number') {
+                    <app-pi-form-field
+                      [label]="labelOf(key)"
+                      [htmlFor]="'qc-' + key"
+                      [required]="isRequired(key)"
+                      [error]="errorFor(key)"
+                    >
+                      <div [class]="controlMaxClassFor(key) || null">
+                        <app-pi-input
+                          [id]="'qc-' + key"
+                          type="number"
+                          size="sm"
+                          [formControlName]="key"
+                          [invalid]="hasError(key)"
+                          [attr.data-test]="'qc-field-' + key"
+                        />
+                      </div>
+                    </app-pi-form-field>
+                  }
+                  @default {
+                    <app-pi-form-field
+                      [label]="labelOf(key)"
+                      [htmlFor]="'qc-' + key"
+                      [required]="isRequired(key)"
+                      [error]="errorFor(key)"
+                    >
+                      <div [class]="controlMaxClassFor(key) || null">
+                        <app-pi-input
+                          [id]="'qc-' + key"
+                          size="sm"
+                          [formControlName]="key"
+                          [invalid]="hasError(key)"
+                          [attr.data-test]="'qc-field-' + key"
+                        />
+                      </div>
+                    </app-pi-form-field>
+                  }
                 }
-                @case ('number') {
-                  <app-pi-form-field
-                    [label]="labelOf(key)"
-                    [htmlFor]="'qc-' + key"
-                    [required]="isRequired(key)"
-                    [error]="errorFor(key)"
-                  >
-                    <app-pi-input
-                      [id]="'qc-' + key"
-                      type="number"
-                      [formControlName]="key"
-                      [invalid]="hasError(key)"
-                      [attr.data-test]="'qc-field-' + key"
-                    />
-                  </app-pi-form-field>
-                }
-                @default {
-                  <app-pi-form-field
-                    [label]="labelOf(key)"
-                    [htmlFor]="'qc-' + key"
-                    [required]="isRequired(key)"
-                    [error]="errorFor(key)"
-                  >
-                    <app-pi-input
-                      [id]="'qc-' + key"
-                      [formControlName]="key"
-                      [invalid]="hasError(key)"
-                      [attr.data-test]="'qc-field-' + key"
-                    />
-                  </app-pi-form-field>
-                }
-              }
+              </div>
             }
           </div>
         }
@@ -319,17 +325,38 @@ export class QuickCreateDialogComponent {
   protected readonly title = computed(() => `Быстрое создание: ${ENTITY_LABEL_RU[this.entity]}`);
   protected readonly dialogWidth = computed(() => SIZE_TO_WIDTH[this.size()]);
 
-  /** M/L (or ≥4 visible keys) → 2 columns; S stays single column. */
-  protected readonly useTwoCol = computed(() => {
+  /**
+   * M/L (or ≥4 visible keys) → 12-col capacity packing (TZ-UX-FORM-301).
+   * S stays single column; capacity spans ignored below md.
+   */
+  protected readonly useCapacityGrid = computed(() => {
     const sz = this.size();
     return sz === 'M' || sz === 'L' || this.visibleKeys().length >= 4;
   });
 
+  /** @deprecated alias for tests / callers expecting useTwoCol */
+  protected readonly useTwoCol = this.useCapacityGrid;
+
   protected readonly fieldsGridClass = computed(() =>
-    this.useTwoCol()
-      ? 'grid grid-cols-1 md:grid-cols-2 gap-form-field'
-      : 'grid grid-cols-1 gap-form-field',
+    this.useCapacityGrid()
+      ? 'grid grid-cols-1 md:grid-cols-12 gap-x-3 gap-y-2'
+      : 'grid grid-cols-1 gap-y-2',
   );
+
+  protected fieldCellClass(key: string): string {
+    return colSpanClass(key, this.useCapacityGrid());
+  }
+
+  protected controlClass(key: string): string {
+    const max = controlMaxClass(key, this.useCapacityGrid());
+    // Compact control height in QuickCreate (formDensity) — h-8 vs default h-10.
+    const base = 'pi-input w-full h-8 text-xs py-1';
+    return max ? `${base} ${max}` : base;
+  }
+
+  protected controlMaxClassFor(key: string): string {
+    return controlMaxClass(key, this.useCapacityGrid());
+  }
 
   protected readonly form: FormGroup = this.buildForm(this.entity);
 

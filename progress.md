@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-FORM-301 DONE: QuickCreate field capacity packing
+
+**Исполнитель:** agent-3e757640b7 (self PASS → archive)
+**Статус:** DONE on main; deploy НЕ
+**Что:** `field-capacity.ts` (nano…full → 12-col spans); QuickCreate M/L `md:grid-cols-12` + `gap-x-3 gap-y-2`; габариты+вес одна nano-лента (`col-start-1`); textarea rows=2 + min-h-0; controls sm; DIALOG-302 width не откатывали.
+**Gates:** FE tsc PASS; jest quick-create 8/8; browser AC product L — overflowPx=0, contentH 464 < ~504 budget @720p, dimSameRow=true
+**Archive:** `tasks/_archive/2026-08/TZ-UX-FORM-301.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-FORM-301-quickcreate-field-capacity.lock`
+**Known:** FullEditor capacity → FORM-303 successor. Deploy: NO.
+
 ## [2026-08-08] — TZ-UX-307 DONE: nav shortLabel + compact height
 
 **Исполнитель:** agent-3e757640b7 (self PASS → archive)

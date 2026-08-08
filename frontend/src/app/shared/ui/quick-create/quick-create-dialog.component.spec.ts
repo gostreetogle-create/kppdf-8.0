@@ -10,6 +10,8 @@ import {
 import {
   FormProfilesService,
   LOCKED_REQUIRED,
+  PRODUCT_FIELD_KEYS,
+  MODULE_FIELD_KEYS,
   type FormProfile,
   type FormProfileEntity,
 } from '../../services/form-profiles.service';
@@ -20,8 +22,9 @@ import { PiToastService } from '../toast';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../dialog/dialog.tokens';
 import type { SilentResult } from '../../../core/silent-http';
 import { FIELD_KEY_LABEL_RU } from '../../services/form-profiles.service';
+import { FIELD_CAPACITY, spanForKey } from './field-capacity';
 
-describe('QuickCreateDialogComponent (TZ-DICT-316)', () => {
+describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
   const success = jest.fn();
   const error = jest.fn();
   const close = jest.fn();
@@ -39,6 +42,13 @@ describe('QuickCreateDialogComponent (TZ-DICT-316)', () => {
     _id: 'fp-s',
     size: 'S',
     visibleFieldKeys: ['name', 'kind', 'unit'],
+  };
+
+  const productLAll: FormProfile = {
+    ...productM,
+    _id: 'fp-l',
+    size: 'L',
+    visibleFieldKeys: [...PRODUCT_FIELD_KEYS],
   };
 
   const moduleM: FormProfile = {
@@ -107,6 +117,24 @@ describe('QuickCreateDialogComponent (TZ-DICT-316)', () => {
     TestBed.resetTestingModule();
   });
 
+  it('FIELD_CAPACITY covers all product/module allowlisted keys (TZ-UX-FORM-301)', () => {
+    for (const key of PRODUCT_FIELD_KEYS) {
+      expect(FIELD_CAPACITY[key]).toBeDefined();
+    }
+    for (const key of MODULE_FIELD_KEYS) {
+      expect(FIELD_CAPACITY[key]).toBeDefined();
+    }
+    for (const key of Object.keys(FIELD_CAPACITY)) {
+      expect(
+        (PRODUCT_FIELD_KEYS as readonly string[]).includes(key) ||
+          (MODULE_FIELD_KEYS as readonly string[]).includes(key),
+      ).toBe(true);
+    }
+    expect(spanForKey('dimLength')).toBe(2);
+    expect(spanForKey('description')).toBe(12);
+    expect(spanForKey('name')).toBe(8);
+  });
+
   it('loads product M profile and shows locked + optional keys', async () => {
     const c = await setup({ entity: 'product', size: 'M' });
     expect(profiles.getOne).toHaveBeenCalledWith('product', 'M');
@@ -125,39 +153,36 @@ describe('QuickCreateDialogComponent (TZ-DICT-316)', () => {
     }
   });
 
-  it('SIZE_TO_WIDTH maps S→md M→lg L→xl (TZ-UX-DIALOG-302)', async () => {
+  it('SIZE_TO_WIDTH + 12-col packing for M/L; S single col (TZ-UX-DIALOG-302 / FORM-301)', async () => {
     const c = await setup({ entity: 'product', size: 'M' });
     expect(c.dialogWidth()).toBe('lg');
-    expect(c.useTwoCol()).toBe(true);
-    expect(c.fieldsGridClass()).toContain('md:grid-cols-2');
+    expect(c.useCapacityGrid()).toBe(true);
+    expect(c.fieldsGridClass()).toContain('md:grid-cols-12');
+    expect(c.fieldsGridClass()).toContain('gap-x-3');
+    expect(c.fieldsGridClass()).toContain('gap-y-2');
+    expect(c.fieldCellClass('dimLength')).toContain('md:col-span-2');
+    expect(c.fieldCellClass('dimLength')).toContain('md:col-start-1');
+    expect(c.fieldCellClass('description')).toContain('md:col-span-12');
 
     profiles.getOne.mockReturnValue(of(ok(productS)));
     c.onSizeChange('S');
     expect(c.dialogWidth()).toBe('md');
-    expect(c.useTwoCol()).toBe(false);
-    expect(c.fieldsGridClass()).not.toContain('md:grid-cols-2');
+    expect(c.useCapacityGrid()).toBe(false);
+    expect(c.fieldsGridClass()).not.toContain('md:grid-cols-12');
+    expect(c.fieldCellClass('name')).toBe('');
 
-    const productL: FormProfile = {
-      ...productM,
-      _id: 'fp-l',
-      size: 'L',
-      visibleFieldKeys: [
-        'name',
-        'kind',
-        'unit',
-        'sku',
-        'listPrice',
-        'categoryId',
-        'isActive',
-        'status',
-        'description',
-      ],
-    };
-    profiles.getOne.mockReturnValue(of(ok(productL)));
+    profiles.getOne.mockReturnValue(of(ok(productLAll)));
     c.onSizeChange('L');
     expect(c.dialogWidth()).toBe('xl');
-    expect(c.useTwoCol()).toBe(true);
-    expect(c.fieldsGridClass()).toContain('md:grid-cols-2');
+    expect(c.useCapacityGrid()).toBe(true);
+    expect(c.fieldsGridClass()).toContain('md:grid-cols-12');
+    expect(c.visibleKeys()).toEqual([...PRODUCT_FIELD_KEYS]);
+    // dim band: 5× span-2 = 10 ≤ 12 → one visual row
+    const dimBand = ['dimLength', 'dimWidth', 'dimHeight', 'dimUnit', 'weightKg'];
+    expect(dimBand.reduce((sum, k) => sum + spanForKey(k), 0)).toBeLessThanOrEqual(12);
+    for (const k of dimBand) {
+      expect(c.fieldCellClass(k)).toMatch(/md:col-span-2/);
+    }
   });
 
   it('size switch reloads profile and keeps locked required', async () => {

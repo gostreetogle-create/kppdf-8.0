@@ -38,7 +38,7 @@ const ref = dialogs.open<Result, Data>(MyDialogComponent, {
 | Kind | variant | width / maxWidth | Когда |
 |------|---------|------------------|--------|
 | **A confirm** | alert / destructive | sm–md | Удалить? Да/нет |
-| **B quick** | form | S→**md**, M→**lg**, L→**xl** (~920) + 2-col body M/L | QuickCreate S/M/L |
+| **B quick** | form | S→**md**, M→**lg**, L→**xl** (~920) + **12-col field capacity** M/L | QuickCreate S/M/L |
 | **C editor** | content | maxWidth `min(1120px, 100vw-2rem)` | Full product/module/material/role |
 | **D wide** | content / form+maxWidth | `min(1400px, …)` только table-template и явные исключения | Редко |
 

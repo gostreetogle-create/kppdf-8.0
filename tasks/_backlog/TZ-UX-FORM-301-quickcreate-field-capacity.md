@@ -6,7 +6,7 @@ TZ-UX-FORM-301: QuickCreate — ёмкость полей + плотная уп�
 > и огромных ячеек для Д/Ш/В/веса. Shell A–D (DIALOG-302) не откатывать —
 > чинить **внутри** формы.
 
-STATUS: READY
+STATUS: DONE
 
 РОЛЬ: Frontend (QuickCreate / form density)
 

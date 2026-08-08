@@ -1,6 +1,6 @@
 # SESSION QUEUE — continuous executor
 
-**Updated:** 2026-08-08T08:50Z · next **TZ-UX-FORM-301**
+**Updated:** 2026-08-08T09:00Z · next **TZ-UX-302** (or idle / PO)
 
 ## DONE this session
 
@@ -20,12 +20,12 @@
 | **TZ-UX-305** | nav equal width + full RU labels |
 | **TZ-UX-DIALOG-302** | QuickCreate balanced + dialog canon A–D |
 | **TZ-UX-307** | nav shortLabel + compact height (h-14/h-10); PO said «306» |
+| **TZ-UX-FORM-301** | QuickCreate FIELD_CAPACITY + 12-col; dims band; no L body-scroll |
 
 ## READY / NEXT
 
 | ID | Status |
 |----|--------|
-| **TZ-UX-FORM-301** | QuickCreate field capacity packing — **NEXT** (PO scroll/dims) |
 | **TZ-UX-302** | page chrome unify (after form density) |
 | TZ-UX-303 | design-system chrome audit (docs) |
 | TZ-SALES-304 | KP family UI after PO probes |
@@ -38,13 +38,14 @@
 | TZD-23 | PARK |
 | SUPPLY-302 | BOM auto-explode |
 | legacy form→kind C | successors from dialog outliers table |
+| FORM-302/303 | PiFormField compact token / FullEditor capacity |
 | deploy | только «задеплой» |
 
-## Checkpoint 2026-08-08T08:50Z
-- DONE: … + UX-DIALOG-302 + TZ-UX-307
+## Checkpoint 2026-08-08T09:00Z
+- DONE: … + UX-DIALOG-302 + TZ-UX-307 + **TZ-UX-FORM-301**
 - IN PROGRESS: none
-- NEXT: **TZ-UX-FORM-301** (field capacity / no QC scroll)
+- NEXT: **TZ-UX-302** (page chrome) or idle
 - Blockers: none
 - _active/: empty
 - Deploy: NO
-- Note: dialog shell A–D ≠ form field packing — see form-field-capacity audit
+- Note: product L QuickCreate — contentH≈464 < 70vh@720; dim band one row
