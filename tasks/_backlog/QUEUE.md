@@ -9,6 +9,13 @@
 
 Оба только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
+## Idle / next (после текущих волн)
+
+| TZ | Файл | Заметка |
+|----|------|---------|
+| **TZ-PRODUCTS-307** | `tasks/TZ-PRODUCTS-307-products-list-hierarchy-preview.md` | Иерархия в expand списка /products (flat gold tray уже на main) |
+| **TZ-UX-313** | `tasks/TZ-UX-313-catalog-smart-back.md` | Smart back: product→module вернуть откуда пришли (не жёсткий `/modules`) |
+
 ## Не брать
 
 - TZ-GIT-302 CANCELLED · freebuff long-haul merge  
