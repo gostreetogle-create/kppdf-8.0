@@ -1,16 +1,18 @@
 # SESSION QUEUE
 
-**Updated:** 2026-08-08 · continuation wave
+**Updated:** 2026-08-08 · ALERT long-haul not on main
 
-## Agent continuation
+## NEXT
 
-`SESSION-WAVE-2026-08-08-remaining-safe.md`  
-A: finish long-haul → B: DETAIL-301…304 + FACT-302  
+1. **TZ-GIT-302** merge freebuff long-haul → main  
+2. DETAIL-301…304 · FACT-302  
 
-## DONE recent
+## DONE on main
 
-DEDUP-301 · FACT-301 · UX-312 · UX-311 · GIT-301 · FORM-302…305 · NAV-302  
+DEDUP-301 · FACT-301 · UX-312 · UX-311 · FORM-302…305 (earlier merge)
 
-## PARK
+## DONE on branch only (await GIT-302)
 
-SALES-304 · `_park/` · deploy NO
+DEDUP-302/303/304 · FORM-306 · UX-309 · UX-310 → `freebuff/executor-…` @ `5bf1999c`
+
+Deploy: NO

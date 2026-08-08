@@ -1,13 +1,14 @@
 # Очередь
 
-## Continuation wave (один агент до конца)
+## NEXT
 
-`docs/agent-checklists/SESSION-WAVE-2026-08-08-remaining-safe.md`
+1. **TZ-GIT-302** — merge long-haul branch → main  
+   `TZ-GIT-302-merge-long-haul-to-main.md`  
+   (код на freebuff `…5bf1999c`, не на main)
 
-**A** long-haul остаток → **B** DETAIL-301…304 → FACT-302  
+2. Затем фаза B: DETAIL-301 → 302 → 303 → 304 → FACT-302  
+   `SESSION-WAVE-2026-08-08-remaining-safe.md` (фаза B)
 
-Уже DONE: DEDUP-301 · FACT-301 · UX-311 · UX-312 · FORM/GIT/NAV…
+## Не брать
 
-## Не брать без PO
-
-TZ-SALES-304 · `tasks/_park/`
+SALES-304 · `_park/` · deploy
