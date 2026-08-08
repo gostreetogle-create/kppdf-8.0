@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-CATALOG-336 DONE: module detail = product A+ layout
+
+**Исполнитель:** continuous-executor-composer (self PASS → archive)
+**Статус:** DONE on main; deploy НЕ выполнялся
+**Что сделано кратко:** `/modules/:id` split A+ (паспорт+фото+cost-preview слева; BOM справа). `ProductBomPanel.rootKind=module`; без product-линий; legacy showcase убран.
+**Gates:** frontend tsc PASS; Jest module-detail|product-bom-panel 8/8 PASS
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-336.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-336-module-detail-parity.lock`
+**Cursor Verdict:** PASS
+
 ## [2026-08-08] — TZD-24 DONE: Desktop installer ZIP + SPA skip /downloads
 
 **Что сделано:** default кнопка → `.zip`; Nest не отдаёт SPA на `/downloads/*`;

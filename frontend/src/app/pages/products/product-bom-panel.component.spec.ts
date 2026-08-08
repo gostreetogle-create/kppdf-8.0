@@ -42,6 +42,27 @@ describe('ProductBomPanelComponent', () => {
   beforeEach(async () => {
     service = {
       getProductTree: jest.fn().mockReturnValue(of({ ok: true, data: tree })),
+      getModuleTree: jest.fn().mockReturnValue(
+        of({
+          ok: true,
+          data: {
+            _id: 'm1',
+            name: 'Каркас',
+            kind: 'module' as const,
+            quantity: 1,
+            children: [
+              {
+                _id: 'mat1',
+                name: 'Труба',
+                kind: 'material' as const,
+                lineType: 'material' as const,
+                quantity: 4,
+                children: [],
+              },
+            ],
+          },
+        }),
+      ),
       getProductComposition: jest.fn().mockReturnValue(
         of({
           ok: true,
@@ -158,5 +179,23 @@ describe('ProductBomPanelComponent', () => {
       '[data-test="bom-line-cost-total"]',
     ) as HTMLElement | null;
     expect(total?.textContent).toContain('100.00');
+  });
+
+  it('loads module tree when rootKind=module (TZ-CATALOG-336)', () => {
+    fixture.componentRef.setInput('productId', 'm1');
+    fixture.componentRef.setInput('rootKind', 'module');
+    fixture.detectChanges();
+    expect(service.getModuleTree).toHaveBeenCalledWith('m1', 2);
+    expect(service.getModuleComposition).toHaveBeenCalledWith('m1');
+    expect(service.getProductTree).not.toHaveBeenCalled();
+    const legend = fixture.nativeElement.querySelector(
+      '[data-test="bom-kind-legend"]',
+    ) as HTMLElement | null;
+    expect(legend!.textContent).not.toContain('Изделие');
+    expect(legend!.textContent).toContain('Модуль');
+    expect(
+      fixture.nativeElement.querySelector('[data-test="bom-inspector-name"]')?.textContent,
+    ).toContain('Каркас');
+    expect(fixture.nativeElement.querySelector('[data-test="bom-add-into"]')).toBeTruthy();
   });
 });

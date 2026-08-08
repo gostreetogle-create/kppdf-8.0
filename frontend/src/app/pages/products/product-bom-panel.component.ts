@@ -90,7 +90,7 @@ interface LineCostHint {
           data-test="bom-kind-legend"
           aria-label="Легенда видов"
         >
-          @for (item of kindLegend; track item.label) {
+          @for (item of kindLegend(); track item.label) {
             <li class="inline-flex items-center gap-1.5">
               <span
                 class="inline-block w-2 h-2 rounded-full shrink-0"
@@ -241,7 +241,7 @@ interface LineCostHint {
             (click)="selectRootAndAdd()"
             data-test="bom-add-root"
           >
-            + В корень изделия
+            {{ rootAddLabel() }}
           </app-pi-button>
         }
 
@@ -258,7 +258,13 @@ interface LineCostHint {
   `,
 })
 export class ProductBomPanelComponent {
+  /**
+   * Root entity id. Kept as `productId` for product-detail consumers;
+   * for module root pass the module id + rootKind="module" (TZ-CATALOG-336).
+   */
   readonly productId = input.required<string>();
+  /** TZ-CATALOG-336: product | module root for shared BOM panel. */
+  readonly rootKind = input<'product' | 'module'>('product');
   readonly changed = output<void>();
 
   private readonly service = inject(ProductModulesService);
@@ -280,22 +286,34 @@ export class ProductBomPanelComponent {
   private readonly requestedDepth = signal(2);
   private readonly moduleLinesCache = signal(new Map<string, CompositionLine[]>());
 
-  protected readonly isComplex = computed(() =>
-    (this.tree()?.children ?? []).some((c) => c.kind === 'product'),
+  protected readonly isComplex = computed(
+    () =>
+      this.rootKind() === 'product' &&
+      (this.tree()?.children ?? []).some((c) => c.kind === 'product'),
   );
   protected readonly selectedNodeId = computed(() => this.selected()?.node?._id ?? null);
 
+  protected readonly rootAddLabel = computed(() =>
+    this.rootKind() === 'module' ? '+ В корень модуля' : '+ В корень изделия',
+  );
+
   /** Compact kind legend — colors = catalogKindOklch (not sketch hues). */
-  protected readonly kindLegend = [
-    { label: 'Изделие', color: catalogKindOklch('product') },
-    { label: 'Модуль', color: catalogKindOklch('module') },
-    { label: 'Деталь/мат', color: catalogKindOklch('material', 'part') },
-    { label: 'Сырьё', color: catalogKindOklch('material', 'raw') },
-  ] as const;
+  protected readonly kindLegend = computed(() => {
+    const items = [
+      { label: 'Модуль', color: catalogKindOklch('module') },
+      { label: 'Деталь/мат', color: catalogKindOklch('material', 'part') },
+      { label: 'Сырьё', color: catalogKindOklch('material', 'raw') },
+    ];
+    if (this.rootKind() === 'product') {
+      return [{ label: 'Изделие', color: catalogKindOklch('product') }, ...items];
+    }
+    return items;
+  });
 
   constructor() {
     effect(() => {
       const id = this.productId();
+      this.rootKind();
       if (!id) return;
       untracked(() => this.load());
     });
@@ -341,6 +359,7 @@ export class ProductBomPanelComponent {
   }
 
   protected canAddInto(node: CompositionTreeNode): boolean {
+    if (this.rootKind() === 'module') return node.kind === 'module';
     return node.kind === 'product' || node.kind === 'module';
   }
 
@@ -361,15 +380,17 @@ export class ProductBomPanelComponent {
   protected openAddPicker(): void {
     const sel = this.selected();
     if (!sel || !this.canAddInto(sel.node)) return;
-    const parentKind = sel.node.kind === 'module' ? 'module' : 'product';
+    const parentKind: 'product' | 'module' =
+      sel.node.kind === 'module' || this.rootKind() === 'module' ? 'module' : 'product';
     const parentId = sel.node._id;
+    const restrictToModule = parentKind === 'module' || this.rootKind() === 'module';
 
     const ref = this.dialog.open<ProductCompositionPickerResult | null>(
       ProductCompositionPickerDialogComponent,
       {
         data: {
           productId: parentKind === 'product' ? parentId : this.productId(),
-          restrictToModule: parentKind === 'module',
+          restrictToModule,
         },
         width: 'xl',
         parentDestroyRef: this.destroyRef,
@@ -378,7 +399,7 @@ export class ProductBomPanelComponent {
 
     onDialogCloseOnce(ref, this.injector, (result) => {
       if (!result) return;
-      if (parentKind === 'module' && result.lineType === 'product') {
+      if (restrictToModule && result.lineType === 'product') {
         this.toast.error('Изделие нельзя добавить в состав модуля.');
         return;
       }
@@ -581,6 +602,7 @@ export class ProductBomPanelComponent {
 
   private load(): void {
     const id = this.productId();
+    const kind = this.rootKind();
     this.loading.set(true);
     this.error.set(null);
     let treeDone = false;
@@ -588,7 +610,16 @@ export class ProductBomPanelComponent {
     const finish = (): void => {
       if (treeDone && lineDone) this.loading.set(false);
     };
-    this.service.getProductTree(id, this.requestedDepth()).subscribe((res) => {
+    const tree$ =
+      kind === 'module'
+        ? this.service.getModuleTree(id, this.requestedDepth())
+        : this.service.getProductTree(id, this.requestedDepth());
+    const lines$ =
+      kind === 'module'
+        ? this.service.getModuleComposition(id)
+        : this.service.getProductComposition(id);
+
+    tree$.subscribe((res) => {
       treeDone = true;
       if (res.ok) {
         this.tree.set(res.data);
@@ -602,6 +633,7 @@ export class ProductBomPanelComponent {
         }
         this.selected.set(nextSel);
         this.refreshLineCost(nextSel);
+        if (kind === 'module') this.ensureModuleLines(id);
       } else {
         this.tree.set(null);
         this.error.set(extractErrorMessage(res.error));
@@ -609,10 +641,16 @@ export class ProductBomPanelComponent {
       }
       finish();
     });
-    this.service.getProductComposition(id).subscribe((res) => {
+    lines$.subscribe((res) => {
       lineDone = true;
-      if (res.ok) this.rootLines.set(res.data);
-      else this.rootLines.set([]);
+      if (res.ok) {
+        this.rootLines.set(res.data);
+        if (kind === 'module') {
+          const next = new Map(this.moduleLinesCache());
+          next.set(id, res.data);
+          this.moduleLinesCache.set(next);
+        }
+      } else this.rootLines.set([]);
       finish();
     });
   }

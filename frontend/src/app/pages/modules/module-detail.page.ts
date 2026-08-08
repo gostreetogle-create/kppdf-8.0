@@ -6,14 +6,15 @@ import {
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { httpResource } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { PiPageChromeComponent, type PageCrumb } from '../../shared/page/pi-page-chrome.component';
-import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
-import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
+import { AccordionComponent } from '../../shared/ui/pi-accordion.component';
+import { AccordionItemComponent } from '../../shared/ui/pi-accordion-item.component';
 import { PiEmptyTileComponent } from '../../shared/ui/pi-empty-tile/pi-empty-tile.component';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
@@ -25,8 +26,15 @@ import {
   ProductModule,
   ProductModulesService,
 } from '../../shared/services/pi-product-modules.service';
+import {
+  ProductModulePhoto,
+  ProductModulePhotosService,
+} from '../../shared/services/pi-product-module-photos.service';
+import { ModuleFormDialogComponent } from './module-form-dialog.component';
+import { ModuleMaterialsFormDialogComponent } from './module-materials-form-dialog.component';
+import { ProductBomPanelComponent } from '../products/product-bom-panel.component';
 
-/** TZ-COST-302: shape of GET /modules/:id/cost-preview (local; no service dep). */
+/** TZ-COST-302: shape of GET /modules/:id/cost-preview. */
 interface ModuleCostPreview {
   materialCost: number;
   laborCost: number;
@@ -34,48 +42,27 @@ interface ModuleCostPreview {
   currency: 'RUB';
   infos?: string[];
 }
-import {
-  MATERIAL_KIND_LABELS,
-  Material,
-  MaterialsService,
-} from '../../shared/services/materials.service';
-import {
-  ProductModulePhoto,
-  ProductModulePhotosService,
-} from '../../shared/services/pi-product-module-photos.service';
-import { ModuleFormDialogComponent } from './module-form-dialog.component';
-import { ModuleMaterialsFormDialogComponent } from './module-materials-form-dialog.component';
-import { PiShowcaseCardComponent } from '../../shared/ui/card';
-import { CompositionEditorComponent } from '../../shared/ui/composition/composition-editor.component';
 
 /**
- * Полная документация страницы: docs/pages/module-detail.page.md
+ * TZ-CATALOG-336: module detail = product detail A+ layout.
+ * Left: passport + accordion (Фото / Себестоимость / Виды работ).
+ * Right: shared ProductBomPanel with rootKind=module.
  *
- * TZ-83 Phase C: ModuleDetailPage — 4 sections.
- *
- *   I.   Основное       — name/article/dimensions/weight/notes
- *   II.  Фотогалерея    — gallery из ProductModulePhoto, add / setMain / remove
- *   III. Материалы      — table из module.materials[] с override-габаритами;
- *                        кнопка «Изменить состав» → ModuleMaterialsFormDialog
- *   IV.  Виды работ     — table из module.workTypes[]
- *
- * ActivatedRoute id → httpResource GET /product-modules/:id
- * (популятит workTypes.workTypeId + materials.materialId на стороне бэкенда).
+ * Docs: docs/pages/module-detail.page.md
  */
 @Component({
   selector: 'app-module-detail-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     PiPageChromeComponent,
-    PiSectionComponent,
-    PiEmptyStateComponent,
-    PiEmptyTileComponent,
     ButtonComponent,
-    PiShowcaseCardComponent,
-    CompositionEditorComponent,
+    AccordionComponent,
+    AccordionItemComponent,
+    PiEmptyTileComponent,
+    ProductBomPanelComponent,
   ],
   template: `
-    <app-pi-page-chrome [crumbs]="detailCrumbs()" [title]="module()?.name ?? 'Загрузка…'">
+    <app-pi-page-chrome [crumbs]="detailCrumbs()" data-test="module-detail-nav">
       <span actions>
         <app-pi-button variant="ghost" type="button" (click)="onBack()" data-test="back-button">
           ← К модулям
@@ -83,245 +70,274 @@ import { CompositionEditorComponent } from '../../shared/ui/composition/composit
         <app-pi-button variant="default" type="button" (click)="openEdit()" data-test="edit-button">
           Редактировать
         </app-pi-button>
+        <app-pi-button
+          variant="ghost"
+          type="button"
+          (click)="openMaterialsEditor()"
+          data-test="quick-composition-edit"
+        >
+          Быстрое редактирование
+        </app-pi-button>
         <app-pi-button variant="ghost" type="button" (click)="onDelete()" data-test="delete-button">
           Удалить
         </app-pi-button>
       </span>
     </app-pi-page-chrome>
 
-    <app-pi-showcase-card size="lg" data-test="module-showcase">
-      @if (loadError()) {
-        <div
-          role="alert"
-          class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+    @if (loadError()) {
+      <div
+        role="alert"
+        class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+      >
+        {{ loadError() }}
+      </div>
+      <div class="py-8 text-center text-muted-foreground text-sm">
+        Модуль не найден.
+        <button
+          type="button"
+          class="block mt-2 mx-auto text-ink hover:text-sunrise-warm underline"
+          (click)="onBack()"
         >
-          {{ loadError() }}
-        </div>
-      }
+          ← К модулям
+        </button>
+      </div>
+    }
 
-      <!-- I. Основное -->
-      @if (module(); as m) {
-        <app-pi-section title="Основное" eyebrow="I">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
-            <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-              <dt class="eyebrow">Название</dt>
-              <dd class="font-medium">{{ m.name }}</dd>
-              <dt class="eyebrow">Артикул</dt>
-              <dd class="font-mono empty-cell">{{ m.article ?? '—' }}</dd>
-              <dt class="eyebrow">Ширина</dt>
-              <dd class="font-mono empty-cell">
-                {{ m.dimensions?.width ?? '—' }} {{ m.dimensions?.unit ?? '' }}
-              </dd>
-              <dt class="eyebrow">Высота</dt>
-              <dd class="font-mono empty-cell">
-                {{ m.dimensions?.height ?? '—' }} {{ m.dimensions?.unit ?? '' }}
-              </dd>
-              <dt class="eyebrow">Глубина</dt>
-              <dd class="font-mono empty-cell">
-                {{ m.dimensions?.depth ?? '—' }} {{ m.dimensions?.unit ?? '' }}
-              </dd>
-              <dt class="eyebrow">Вес (кг)</dt>
-              <dd class="font-mono empty-cell">{{ m.weight ?? '—' }}</dd>
-              <dt class="eyebrow">Сортировка</dt>
-              <dd class="font-mono empty-cell">{{ m.sortOrder ?? '—' }}</dd>
-            </dl>
-          </div>
-        </app-pi-section>
-
-        <!-- II. Фотогалерея -->
-        <app-pi-section
-          title="Фотогалерея"
-          [hint]="photos().length ? 'главное фото отмечено звёздочкой' : 'пока пусто'"
-          eyebrow="II"
-        >
-          <div class="flex flex-wrap gap-3">
-            @for (p of photos(); track p._id) {
-              <figure class="relative">
-                @if (photoSrc(p); as src) {
-                  <img
-                    [src]="src"
-                    [alt]="p.caption ?? 'фото модуля'"
-                    class="block w-32 h-32 object-cover hairline rounded-sm"
-                    loading="lazy"
-                  />
-                } @else {
-                  <app-pi-empty-tile [sizePx]="128" />
-                }
-                <figcaption class="mt-2 flex items-center gap-2 text-xs">
-                  @if (p.isMain) {
-                    <span class="eyebrow text-sunrise-warm">★ главное</span>
-                  } @else {
-                    <button
-                      type="button"
-                      (click)="setMain(p)"
-                      class="eyebrow text-muted-foreground hover:text-sunrise-warm"
-                      aria-label="Сделать главным"
-                    >
-                      сделать главным
-                    </button>
-                  }
-                  <button
-                    type="button"
-                    (click)="removePhoto(p)"
-                    class="eyebrow text-destructive hover:underline"
-                    aria-label="Удалить фото"
-                  >
-                    удалить
-                  </button>
-                </figcaption>
-              </figure>
-            } @empty {
-              <p class="eyebrow text-muted-foreground">Нет фото. В Phase E добавим upload UI.</p>
-            }
-          </div>
-          <div class="mt-3 flex gap-2">
-            <input #photoUrl placeholder="https://…" class="pi-input w-72 font-mono text-sm" />
-            <app-pi-button
-              variant="default"
-              type="button"
-              (click)="addPhotoByUrl(photoUrl.value); photoUrl.value = ''"
+    @if (module(); as m) {
+      <div
+        class="grid grid-cols-1 xl:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)] gap-5 items-start"
+        data-test="module-detail-layout"
+      >
+        <div class="space-y-4 xl:sticky xl:top-3" data-test="module-detail-aside">
+          <section class="hairline rounded-sm bg-paper overflow-hidden" data-test="module-hero">
+            <div
+              class="bg-paper-2 flex items-center justify-center aspect-[4/3] max-h-52"
+              data-test="module-hero-photo"
             >
-              Добавить по URL
-            </app-pi-button>
-          </div>
-        </app-pi-section>
-
-        <!-- III. Материалы -->
-        <app-pi-section
-          title="Материалы"
-          [hint]="materialRows().length ? 'Override-габариты показаны курсивом' : ''"
-          eyebrow="III"
-        >
-          <app-composition-editor
-            [parentId]="m._id"
-            parentKind="module"
-            data-test="module-composition-editor"
-          />
-          <div class="mt-3 flex justify-end">
-            <app-pi-button
-              variant="ghost"
-              type="button"
-              (click)="openMaterialsEditor()"
-              data-test="quick-composition-edit"
-            >
-              Быстрое редактирование
-            </app-pi-button>
-          </div>
-          <div class="hidden">
-            <table class="w-full text-sm min-w-[640px]">
-              <thead class="hairline-b">
-                <tr>
-                  <th class="pi-cell eyebrow text-left">Материал / kind</th>
-                  <th class="pi-cell-numeric eyebrow w-20">Кол-во</th>
-                  <th class="pi-cell eyebrow w-16">Ед.</th>
-                  <th class="pi-cell eyebrow w-32 text-left">Габариты (override)</th>
-                  <th class="pi-cell eyebrow w-20 text-center">Закупка</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (row of materialRows(); track $index) {
-                  <tr class="pi-table-row pi-table-row-odd last:border-0">
-                    <td class="pi-cell align-top">
-                      {{ materialName(row.materialId) }}
-                      @if (materialKind(row.materialId); as kind) {
-                        <span class="ml-1 text-xs text-muted-foreground">· {{ kind }}</span>
-                      }
-                    </td>
-                    <td class="pi-cell-numeric align-top font-mono">{{ row.quantity }}</td>
-                    <td class="pi-cell align-top">{{ row.unit ?? 'шт' }}</td>
-                    <td class="pi-cell align-top text-xs italic empty-cell">
-                      {{ overrideDims(row) }}
-                    </td>
-                    <td class="pi-cell align-top text-center">{{ row.isPurchased ? '✓' : '—' }}</td>
-                  </tr>
-                } @empty {
-                  <app-pi-empty-state
-                    [colspan]="5"
-                    message="Нет материалов в составе."
-                    state="empty"
-                  />
-                }
-              </tbody>
-            </table>
-          </div>
-        </app-pi-section>
-
-        <!-- IV. Виды работ -->
-        <app-pi-section title="Виды работ" eyebrow="IV">
-          <div class="hairline rounded-sm overflow-x-auto">
-            <table class="w-full text-sm min-w-[480px]">
-              <thead class="hairline-b">
-                <tr>
-                  <th class="pi-cell eyebrow text-left">Вид работы</th>
-                  <th class="pi-cell-numeric eyebrow w-32">Норма (часов)</th>
-                  <th class="pi-cell-numeric eyebrow w-20">Сорт.</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (w of m.workTypes; track $index) {
-                  <tr class="pi-table-row pi-table-row-odd last:border-0">
-                    <td class="pi-cell align-top">{{ workTypeName(w.workTypeId) }}</td>
-                    <td class="pi-cell-numeric align-top font-mono">{{ w.estimatedHours }}</td>
-                    <td class="pi-cell-numeric align-top font-mono">{{ w.sortOrder }}</td>
-                  </tr>
-                } @empty {
-                  <app-pi-empty-state
-                    [colspan]="3"
-                    message="Нет видов работ в составе."
-                    state="empty"
-                  />
-                }
-              </tbody>
-            </table>
-          </div>
-        </app-pi-section>
-
-        <!-- V. Себестоимость (расчёт) — TZ-COST-302 read-only -->
-        <app-pi-section
-          title="Себестоимость (расчёт)"
-          hint="сумма материалов и труда по составу; не прайс"
-          eyebrow="V"
-        >
-          @if (costPreview(); as cp) {
-            <dl
-              class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm max-w-md"
-              data-test="module-cost-preview"
-            >
-              <dt class="eyebrow">Материалы</dt>
-              <dd class="font-mono">{{ formatRuble(cp.materialCost) }}</dd>
-              <dt class="eyebrow">Труд</dt>
-              <dd class="font-mono">{{ formatRuble(cp.laborCost) }}</dd>
-              <dt class="eyebrow">Итого</dt>
-              <dd class="font-mono font-medium">{{ formatRuble(cp.totalCost) }}</dd>
-            </dl>
-            @if (cp.infos; as infos) {
-              @if (infos.length) {
-                <p class="mt-2 text-xs text-muted-foreground" data-test="module-cost-preview-infos">
-                  {{ infos.join(' · ') }}
-                </p>
+              @if (coverPhotoSrc(); as cover) {
+                <img
+                  [src]="cover"
+                  [alt]="m.name"
+                  class="block w-full h-full object-cover"
+                  loading="lazy"
+                />
+              } @else {
+                <span class="text-xs text-muted-foreground px-3 text-center">Нет фото</span>
               }
-            }
-          } @else if (costPreviewError()) {
-            <p class="text-sm text-destructive" role="alert">{{ costPreviewError() }}</p>
-          } @else {
-            <p class="eyebrow text-muted-foreground">Загрузка расчёта…</p>
-          }
-        </app-pi-section>
-      }
-    </app-pi-showcase-card>
+            </div>
+            <div class="p-4 space-y-3">
+              <div class="space-y-1.5">
+                <p class="eyebrow m-0">модуль</p>
+                <h1
+                  class="font-display text-lg sm:text-xl tracking-tight text-ink leading-snug break-words"
+                  data-test="module-title"
+                >
+                  {{ m.name }}
+                </h1>
+                <p class="text-xs text-muted-foreground font-mono m-0">
+                  {{ m.article ? 'арт. ' + m.article : 'без артикула' }}
+                </p>
+              </div>
+
+              <dl class="grid grid-cols-2 gap-2 text-sm" data-test="module-hero-cost">
+                <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0 col-span-2">
+                  <dt class="eyebrow truncate">Себест. (расчёт)</dt>
+                  <dd
+                    class="font-mono font-medium text-sm truncate empty-cell"
+                    data-test="module-cost-total"
+                  >
+                    @if (costPreview(); as cp) {
+                      {{ formatRuble(cp.totalCost) }}
+                    } @else if (costPreviewError()) {
+                      —
+                    } @else {
+                      …
+                    }
+                  </dd>
+                </div>
+                <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
+                  <dt class="eyebrow truncate">Материалы</dt>
+                  <dd
+                    class="font-mono text-sm truncate empty-cell"
+                    data-test="module-cost-material"
+                  >
+                    {{ costPreview() != null ? formatRuble(costPreview()!.materialCost) : '—' }}
+                  </dd>
+                </div>
+                <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
+                  <dt class="eyebrow truncate">Труд</dt>
+                  <dd class="font-mono text-sm truncate empty-cell" data-test="module-cost-labor">
+                    {{ costPreview() != null ? formatRuble(costPreview()!.laborCost) : '—' }}
+                  </dd>
+                </div>
+              </dl>
+
+              <dl
+                class="flex flex-col gap-1 text-xs text-muted-foreground"
+                data-test="module-hero-dims"
+              >
+                <div class="flex justify-between gap-2">
+                  <span class="eyebrow shrink-0">Ш×В×Г</span>
+                  <span class="font-mono text-ink text-right empty-cell">{{
+                    dimensionsLabel(m)
+                  }}</span>
+                </div>
+                <div class="flex justify-between gap-2">
+                  <span class="eyebrow shrink-0">Вес</span>
+                  <span class="font-mono text-ink text-right empty-cell">{{
+                    m.weight != null ? m.weight + ' кг' : '—'
+                  }}</span>
+                </div>
+              </dl>
+            </div>
+          </section>
+
+          <app-pi-accordion [multi]="true" data-test="module-cascade">
+            <app-pi-accordion-item
+              title="Фото"
+              index="01"
+              [meta]="photoMeta()"
+              [expanded]="openPhotos()"
+              (expandedChange)="openPhotos.set($event)"
+            >
+              <div class="flex flex-wrap gap-3" data-test="module-photo-gallery">
+                @for (p of photos(); track p._id) {
+                  <figure class="relative m-0">
+                    @if (photoSrc(p); as src) {
+                      <img
+                        [src]="src"
+                        [alt]="p.caption ?? 'фото модуля'"
+                        class="block w-full max-w-[9rem] aspect-square object-cover hairline rounded-sm bg-paper-2"
+                        loading="lazy"
+                      />
+                    } @else {
+                      <app-pi-empty-tile [sizePx]="144" />
+                    }
+                    <figcaption class="mt-2 flex items-center gap-2 text-xs">
+                      @if (p.isMain) {
+                        <span class="eyebrow text-sunrise-warm">★ главное</span>
+                      } @else {
+                        <button
+                          type="button"
+                          (click)="setMain(p)"
+                          class="eyebrow text-muted-foreground hover:text-sunrise-warm"
+                          aria-label="Сделать главным"
+                        >
+                          сделать главным
+                        </button>
+                      }
+                      <button
+                        type="button"
+                        (click)="removePhoto(p)"
+                        class="eyebrow text-destructive hover:underline"
+                        aria-label="Удалить фото"
+                      >
+                        удалить
+                      </button>
+                    </figcaption>
+                  </figure>
+                } @empty {
+                  <p class="text-sm text-muted-foreground">Нет фото. Добавьте по URL ниже.</p>
+                }
+              </div>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <input
+                  #photoUrl
+                  placeholder="https://…"
+                  class="pi-input w-full sm:w-72 font-mono text-sm"
+                />
+                <app-pi-button
+                  variant="default"
+                  type="button"
+                  (click)="addPhotoByUrl(photoUrl.value); photoUrl.value = ''"
+                >
+                  Добавить по URL
+                </app-pi-button>
+              </div>
+            </app-pi-accordion-item>
+
+            <app-pi-accordion-item
+              title="Себестоимость"
+              index="02"
+              [meta]="costMeta()"
+              [expanded]="openCost()"
+              (expandedChange)="openCost.set($event)"
+            >
+              @if (costPreview(); as cp) {
+                <dl
+                  class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm"
+                  data-test="module-cost-preview"
+                >
+                  <dt class="eyebrow">Материалы</dt>
+                  <dd class="font-mono">{{ formatRuble(cp.materialCost) }}</dd>
+                  <dt class="eyebrow">Труд</dt>
+                  <dd class="font-mono">{{ formatRuble(cp.laborCost) }}</dd>
+                  <dt class="eyebrow">Итого</dt>
+                  <dd class="font-mono font-medium">{{ formatRuble(cp.totalCost) }}</dd>
+                </dl>
+                @if (cp.infos?.length) {
+                  <p
+                    class="mt-2 text-xs text-muted-foreground"
+                    data-test="module-cost-preview-infos"
+                  >
+                    {{ cp.infos.join(' · ') }}
+                  </p>
+                }
+              } @else if (costPreviewError()) {
+                <p class="text-sm text-destructive" role="alert">{{ costPreviewError() }}</p>
+              } @else {
+                <p class="text-sm text-muted-foreground">Загрузка расчёта…</p>
+              }
+            </app-pi-accordion-item>
+
+            <app-pi-accordion-item
+              title="Виды работ"
+              index="03"
+              [meta]="workMeta()"
+              [expanded]="openWork()"
+              (expandedChange)="openWork.set($event)"
+            >
+              <div class="hairline rounded-sm overflow-x-auto">
+                <table class="w-full text-sm min-w-[280px]" data-test="module-work-types">
+                  <thead class="hairline-b">
+                    <tr>
+                      <th class="pi-cell eyebrow text-left">Вид работы</th>
+                      <th class="pi-cell-numeric eyebrow w-24">Норма, ч</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (w of m.workTypes; track $index) {
+                      <tr class="pi-table-row pi-table-row-odd last:border-0">
+                        <td class="pi-cell align-top">{{ workTypeName(w.workTypeId) }}</td>
+                        <td class="pi-cell-numeric align-top font-mono">{{ w.estimatedHours }}</td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="2" class="pi-cell text-sm text-muted-foreground">
+                          Нет видов работ. Добавьте в «Редактировать».
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </app-pi-accordion-item>
+          </app-pi-accordion>
+        </div>
+
+        <div class="min-w-0">
+          <app-product-bom-panel
+            [productId]="m._id"
+            rootKind="module"
+            (changed)="onBomChanged()"
+            data-test="module-composition-panel"
+          />
+        </div>
+      </div>
+    }
   `,
 })
 export class ModuleDetailPage {
-  protected readonly detailCrumbs = computed<PageCrumb[]>(() => [
-    { label: 'Каталог', link: '/modules' },
-    { label: this.module()?.name ?? 'Модуль' },
-  ]);
-  constructor() {
-    this.reloadPhotos();
-    this.materialsSvc.list({ limit: 200 }).subscribe((res) => {
-      if (res.ok) this.materialCatalog.set(res.data.items);
-    });
-  }
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly dialog = inject(PiDialogService);
@@ -329,14 +345,10 @@ export class ModuleDetailPage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly modulesSvc = inject(ProductModulesService);
-  private readonly materialsSvc = inject(MaterialsService);
   private readonly photosSvc = inject(ProductModulePhotosService);
   private readonly baseUrl = inject(API_BASE_URL);
+  private readonly bomPanel = viewChild(ProductBomPanelComponent);
 
-  /**
-   * URL-derived id. ActivatedRoute → toSignal показано в html через :id;
-   * `listRes` срабатывает через computed(() => id-string).
-   */
   private readonly id = toSignal(this.route.paramMap, {
     initialValue: this.route.snapshot.paramMap,
   });
@@ -346,7 +358,6 @@ export class ModuleDetailPage {
     url: `${this.baseUrl}/modules/${this.idString()}`,
   }));
 
-  /** TZ-COST-302: read-only cost preview (same URL as modulesSvc.getCostPreview). */
   protected readonly costPreviewRes = httpResource<ModuleCostPreview>(() => {
     const id = this.idString();
     if (!id) return undefined;
@@ -367,67 +378,60 @@ export class ModuleDetailPage {
       import('@angular/common/http').HttpErrorResponse | undefined;
     return err ? extractErrorMessage(err) : null;
   });
-  protected readonly moduleDescription = computed<string>(() => {
-    const m = this.module();
-    if (!m) return '';
-    const dims = m.dimensions;
-    if (!dims || (dims.width == null && dims.height == null && dims.depth == null)) {
-      return `Модуль — ${m.workTypes?.length ?? 0} работ, ${this.materialRows().length} материалов`;
-    }
-    const parts: string[] = [];
-    if (dims.width != null) parts.push(`W ${dims.width}`);
-    if (dims.height != null) parts.push(`H ${dims.height}`);
-    if (dims.depth != null) parts.push(`D ${dims.depth}`);
-    return `Модуль ${parts.join(' × ')} ${dims.unit ?? ''}`;
-  });
 
-  /**
-   * Dual-read материалов модуля (TZ-CATALOG-317): непустой composition
-   * (lineType=material) имеет приоритет над legacy materials[].
-   */
-  protected readonly materialRows = computed<
-    {
-      materialId: unknown;
-      quantity: number;
-      unit?: string;
-      isPurchased?: boolean;
-      overrideDimensions?: { length?: number; width?: number; height?: number; unit?: string };
-    }[]
-  >(() => {
-    const m = this.module();
-    if (!m) return [];
-    const lines = (m.composition ?? []).filter((l) => l.lineType === 'material');
-    if (lines.length > 0) {
-      return lines.map((l) => ({
-        materialId: l.refId,
-        quantity: l.quantity ?? 1,
-        unit: l.unit,
-        isPurchased: l.lineType === 'material' ? (l.isPurchased ?? true) : true,
-        overrideDimensions: l.lineType === 'material' ? l.overrideDimensions : undefined,
-      }));
-    }
-    return m.materials ?? [];
-  });
-
-  /** photos отдельным сигналом, обновляется через reloadPhotos(). */
+  protected readonly openPhotos = signal(false);
+  protected readonly openCost = signal(false);
+  protected readonly openWork = signal(false);
   protected readonly photos = signal<ProductModulePhoto[]>([]);
-  protected readonly materialCatalog = signal<Material[]>([]);
 
-  private reloadPhotos(): void {
-    const mid = this.idString();
-    if (!mid) return;
-    this.photosSvc.list(mid).subscribe((res) => {
-      if (res.ok) {
-        // server returns isMain desc → sortOrder asc; trust server order
-        this.photos.set(res.data);
-      }
-    });
+  protected readonly detailCrumbs = computed<PageCrumb[]>(() => [
+    { label: 'Каталог', link: '/modules' },
+    { label: 'Модули', link: '/modules' },
+    { label: this.module()?.name ?? 'Модуль' },
+  ]);
+
+  protected readonly photoMeta = computed(() => {
+    const n = this.photos().length;
+    return n ? `${n}` : 'нет';
+  });
+
+  protected readonly costMeta = computed(() => {
+    const cp = this.costPreview();
+    if (!cp) return this.costPreviewError() ? 'ошибка' : '…';
+    return this.formatRuble(cp.totalCost);
+  });
+
+  protected readonly workMeta = computed(() => {
+    const n = this.module()?.workTypes?.length ?? 0;
+    return n ? `${n}` : 'нет';
+  });
+
+  protected readonly coverPhotoSrc = computed(() => {
+    const list = this.photos();
+    const main = list.find((p) => p.isMain) ?? list[0];
+    return main ? this.photoSrc(main) : null;
+  });
+
+  constructor() {
+    this.reloadPhotos();
   }
 
-  // ── Основное ─────────────────────────────────────────────────────
   protected onBack(): void {
     this.router.navigate(['/modules']);
   }
+
+  protected onBomChanged(): void {
+    this.moduleRes.reload();
+    this.costPreviewRes.reload();
+  }
+
+  protected dimensionsLabel(m: ProductModule): string {
+    const d = m.dimensions;
+    if (!d || (d.width == null && d.height == null && d.depth == null)) return '—';
+    const unit = d.unit ? ` ${d.unit}` : '';
+    return `${d.width ?? '—'}×${d.height ?? '—'}×${d.depth ?? '—'}${unit}`;
+  }
+
   protected openEdit(): void {
     const m = this.module();
     if (!m) return;
@@ -438,8 +442,10 @@ export class ModuleDetailPage {
     });
     onDialogCloseOnce(ref, this.injector, () => {
       this.moduleRes.reload();
+      this.costPreviewRes.reload();
     });
   }
+
   protected onDelete(): void {
     const m = this.module();
     if (!m) return;
@@ -466,7 +472,6 @@ export class ModuleDetailPage {
     });
   }
 
-  // ── Фотогалерея ──────────────────────────────────────────────────
   protected photoSrc(p: ProductModulePhoto): string | null {
     if (p.url) return p.url;
     if (typeof p.photoId === 'string') return null;
@@ -475,6 +480,7 @@ export class ModuleDetailPage {
     }
     return null;
   }
+
   protected setMain(p: ProductModulePhoto): void {
     this.photosSvc.setMain(p._id).subscribe((res) => {
       if (res.ok) {
@@ -485,6 +491,7 @@ export class ModuleDetailPage {
       }
     });
   }
+
   protected removePhoto(p: ProductModulePhoto): void {
     this.photosSvc.remove(p._id).subscribe((res) => {
       if (res.ok) {
@@ -495,6 +502,7 @@ export class ModuleDetailPage {
       }
     });
   }
+
   protected addPhotoByUrl(url: string): void {
     const mid = this.idString();
     if (!url?.trim() || !mid) return;
@@ -515,42 +523,6 @@ export class ModuleDetailPage {
       });
   }
 
-  // ── Материалы ────────────────────────────────────────────────────
-  protected materialKind(materialId: unknown): string {
-    const id =
-      typeof materialId === 'string'
-        ? materialId
-        : materialId && typeof materialId === 'object' && '_id' in materialId
-          ? String((materialId as { _id: string })._id)
-          : null;
-    const material = id
-      ? this.materialCatalog().find((item) => item._id === id)
-      : materialId && typeof materialId === 'object' && 'materialKind' in materialId
-        ? (materialId as Material)
-        : undefined;
-    return material?.materialKind
-      ? (MATERIAL_KIND_LABELS[material.materialKind] ?? material.materialKind)
-      : 'тип не указан';
-  }
-
-  protected materialName(materialId: unknown): string {
-    if (typeof materialId === 'string') return `(id ${materialId})`;
-    if (materialId && typeof materialId === 'object' && 'name' in materialId) {
-      return (materialId as { name: string }).name;
-    }
-    return '—';
-  }
-  protected overrideDims(m: {
-    overrideDimensions?: { length?: number; width?: number; height?: number; unit?: string };
-  }): string {
-    const d = m.overrideDimensions;
-    if (!d) return '';
-    const parts: string[] = [];
-    if (d.length != null) parts.push(`L ${d.length}`);
-    if (d.width != null) parts.push(`W ${d.width}`);
-    if (d.height != null) parts.push(`H ${d.height}`);
-    return parts.length ? `${parts.join(' × ')} ${d.unit ?? ''}` : '';
-  }
   protected openMaterialsEditor(): void {
     const m = this.module();
     if (!m) return;
@@ -566,10 +538,10 @@ export class ModuleDetailPage {
     onDialogCloseOnce(ref, this.injector, () => {
       this.moduleRes.reload();
       this.costPreviewRes.reload();
+      this.bomPanel()?.reload();
     });
   }
 
-  // ── Виды работ ───────────────────────────────────────────────────
   protected workTypeName(wtId: unknown): string {
     if (typeof wtId === 'string') return `(id ${wtId})`;
     if (wtId && typeof wtId === 'object' && 'name' in wtId) {
@@ -580,5 +552,13 @@ export class ModuleDetailPage {
 
   protected formatRuble(amount: number): string {
     return amount.toLocaleString('ru-RU', { style: 'currency', currency: 'RUB' });
+  }
+
+  private reloadPhotos(): void {
+    const mid = this.idString();
+    if (!mid) return;
+    this.photosSvc.list(mid).subscribe((res) => {
+      if (res.ok) this.photos.set(res.data);
+    });
   }
 }

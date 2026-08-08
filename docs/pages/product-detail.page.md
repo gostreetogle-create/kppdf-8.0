@@ -6,6 +6,8 @@
 
 **Краткое описание:** интерактивная панель сборки изделия — паспорт + BOM
 (дерево + инспектор) + фото + себестоимость на одной странице.
+**Module parity:** `/modules/:id` копирует этот A+ layout (TZ-CATALOG-336;
+`ProductBomPanel` + `rootKind="module"`).
 
 ## Route
 
