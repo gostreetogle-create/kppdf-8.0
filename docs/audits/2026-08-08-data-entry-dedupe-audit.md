@@ -31,7 +31,7 @@ QuickCreate ≠ FullEditor для полей паспорта — **осозна
 |----------|------------|-------------|--------|------------|
 | Изделие | `products` | Create: QuickCreate · Edit: FullEditor · Состав: detail BomPanel + QC L | Состав в FullEditor лишний | Вырезать состав из FullEditor |
 | Модуль | `productmodules` | Create: QuickCreate · Edit: ModuleForm · Состав: BomPanel | Нет: один путь состава на detail | DONE: убрать ModuleMaterials |
-| Материал | `materials` | Только MaterialFormDialog | Нет | Ок; позже «Редактировать» с detail |
+| Материал | `materials` | MaterialFormDialog; detail «Редактировать» → тот же диалог | Нет | DONE: detail opener добавлен |
 | Вид работ | `worktypes` | WorkTypeForm; на модуле — только привязка часов | Нет (разные глаголы) | Ок |
 | Линия состава | `composition[]` | BomPanel+picker | Нет: единый write-path | Только BomPanel+picker |
 
@@ -69,7 +69,7 @@ QuickCreate L — тонкий хост после create, не вторая р�
 | 2 | **TZ-CATALOG-DEDUP-302** | Убрать ModuleMaterials с module-detail | **DONE** 2026-08-08 |
 | 3 | **TZ-CATALOG-DEDUP-303** | Удалить orphan CompositionEditor | **DONE** 2026-08-08 |
 | 4 | **TZ-UX-FORM-306** | Module QuickCreate L + BomPanel (как product FORM-304) | **DONE** 2026-08-08 |
-| 5 | **TZ-CATALOG-DEDUP-304** | «Редактировать» на product/material detail → тот же FullEditor | READY |
+| 5 | **TZ-CATALOG-DEDUP-304** | «Редактировать» на product/material detail → тот же FullEditor | **DONE** 2026-08-08 |
 
 Параллельно с UX-311 (thumb/wrap) — другие conflict keys.
 

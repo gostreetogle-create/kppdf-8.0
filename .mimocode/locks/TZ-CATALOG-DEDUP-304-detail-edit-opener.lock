@@ -1,0 +1,6 @@
+# Lock file
+Locked as of 2026-08-08 — TZ-CATALOG-DEDUP-304: detail edit openers.
+
+Owner: agent-acfffc1331
+Protected: product/material detail edit actions open existing FullEditor dialogs and reload after save.
+Unlock: successor / PO.

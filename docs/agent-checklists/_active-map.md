@@ -1,15 +1,15 @@
 # SESSION QUEUE
 
-**Updated:** 2026-08-08T10:25Z · **TZ-UX-FORM-306 DONE** · NEXT DEDUP-304
+**Updated:** 2026-08-08T10:46Z · **TZ-CATALOG-DEDUP-304 DONE** · NEXT UX-309
 
 ## NEXT
 
-1. **TZ-CATALOG-DEDUP-304** — detail edit openers
-2. TZ-UX-309 · TZ-UX-310
+1. **TZ-UX-309** — page chrome unify for supply/shipping/design/docs
+2. TZ-UX-310 — design-system chrome audit
 
 ## DONE recent
 
-FORM-306 · DEDUP-303 · DEDUP-302 · DEDUP-301 · UX-312 · UX-311 · GIT-301 · FORM-302…305 · NAV-302 · UX-308
+DEDUP-304 · FORM-306 · DEDUP-303 · DEDUP-302 · DEDUP-301 · UX-312 · UX-311 · GIT-301 · FORM-302…305 · NAV-302 · UX-308
 
 ## Docs
 
@@ -18,11 +18,11 @@ FORM-306 · DEDUP-303 · DEDUP-302 · DEDUP-301 · UX-312 · UX-311 · GIT-301 �
 Deploy: NO  
 Park: `tasks/_park/`
 
-## Checkpoint 2026-08-08T10:25Z
-- DONE: TZ-UX-FORM-306
+## Checkpoint 2026-08-08T10:46Z
+- DONE: TZ-CATALOG-DEDUP-304
 - IN PROGRESS: none
-- NEXT: TZ-CATALOG-DEDUP-304
-- HEAD: merge origin/main (`cec87a5f`) + FORM-306 (`52bf07ea`)
+- NEXT: TZ-UX-309
+- HEAD: `9aa427e7` (before DEDUP-304 commit)
 - Blockers: none
-- _active/: empty
+- _active/: TZ-CATALOG-DEDUP-304 pending closeout commit
 - Deploy: NO

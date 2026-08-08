@@ -39,6 +39,7 @@ import { CostCalculationDetailDialogComponent } from './cost-calculation-detail-
 import { Photo } from '../../shared/services/photos.service';
 import { ProductBomPanelComponent } from './product-bom-panel.component';
 import { ProductKind, ProductStatus } from '../../shared/services/products.service';
+import { ProductFormDialogComponent } from './product-form-dialog.component';
 
 const STATUS_LABELS: Record<ProductStatus, string> = {
   new: 'Новый',
@@ -83,7 +84,13 @@ const KIND_LABELS: Record<ProductKind, string> = {
     PiPageChromeComponent,
   ],
   template: `
-    <app-pi-page-chrome [crumbs]="detailCrumbs()" data-test="product-detail-nav" />
+    <app-pi-page-chrome [crumbs]="detailCrumbs()" data-test="product-detail-nav">
+      <span actions>
+        <app-pi-button variant="default" type="button" (click)="openEdit()" data-test="edit-button">
+          Редактировать
+        </app-pi-button>
+      </span>
+    </app-pi-page-chrome>
 
     @if (loadError()) {
       <div
@@ -528,6 +535,19 @@ export class ProductDetailPage {
 
   protected onBack(): void {
     this.router.navigate(['/products']);
+  }
+
+  protected openEdit(): void {
+    const product = this.product();
+    if (!product) return;
+    const ref = this.dialog.open(ProductFormDialogComponent, {
+      data: product,
+      width: 'lg',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, () => {
+      this.productRes.reload();
+    });
   }
 
   protected materialKindLabel(kind: Material['materialKind']): string {

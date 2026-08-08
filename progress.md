@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-CATALOG-DEDUP-304 DONE: detail edit openers
+
+**Исполнитель:** Buffy / agent-acfffc1331
+**Статус:** DONE on main; deploy НЕ
+**Что:** Product и Material detail получили тонкую кнопку «Редактировать», открывающую существующие `ProductFormDialog` / `MaterialFormDialog` с текущими данными; после сохранения карточка перезагружается.
+**Gates:** FE tsc PASS; material-detail Jest 6/6 PASS; scoped ESLint PASS; diff-check PASS; review PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-DEDUP-304.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-DEDUP-304-detail-edit-opener.lock`
+**Known:** detail opener interaction smoke not separately mocked; deploy NO.
+
 ## [2026-08-08] — TZ-UX-FORM-306 DONE: Module QuickCreate L BOM
 
 **Исполнитель:** Buffy / agent-acfffc1331
