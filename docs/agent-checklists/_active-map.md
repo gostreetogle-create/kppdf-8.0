@@ -1,5 +1,16 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-08T19:40:00Z · WAVE-PRODUCT-EDITOR READY
+- DONE: prior Party/Shop/Catalog waves idle
+- IN PROGRESS: none
+- NOT DONE: TZ-PRODUCTS-308 (dense FullEditor + UI «Изделие») → TZ-PRODUCTS-309 (BomPanel in edit FullEditor)
+- NEXT: `tasks/_backlog/product-editor/TZ-PRODUCTS-308-izdelie-dense-fulleditor.md`
+- Prompt: `tasks/_backlog/product-editor/PROMPT-CONTINUOUS.md`
+- Blockers: none
+- _active/: empty
+- Ban: Product schema rename · second BOM write-path · deploy
+- Deploy: NO
+
 ## Checkpoint 2026-08-08T18:04:00Z
 - DONE: TZ-UX-FORM-307 — contract/work-type dialogs now use shared Material-style form sections; Organization FullEditor already matched the canon. This closes the final Shop-north-B UX batch and makes the wave idle.
 - IN PROGRESS: none
