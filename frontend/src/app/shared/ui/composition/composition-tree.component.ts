@@ -11,6 +11,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { CompositionTreeNode } from '../../services/pi-product-modules.service';
 import { catalogKindBorder, catalogKindOklch } from '../catalog/catalog-kind-oklch';
 import { CatalogAppearanceService } from '../catalog/catalog-appearance.service';
+import { ThemeService } from '../../theme/theme.service';
 
 export type CompositionTreeExpandEvent = { node: CompositionTreeNode; expanded: boolean };
 
@@ -131,8 +132,10 @@ export type CompositionTreeSelectEvent = {
         @if (isExpanded(node) && node.children.length > 0) {
           <div
             class="comp-tree__nest mt-0 space-y-3 border-solid border-l-[5px] pt-2 pr-2.5 pb-2.5 pl-4"
+            [class.comp-tree__nest--dark]="theme.isDark()"
             [style.background]="nestSurface(depth)"
             [style.border-left-color]="kindBorder(node)"
+            [style.box-shadow]="nestShadow(depth)"
             role="group"
             data-test="composition-tree-nest"
             [attr.data-parent-kind]="node.kind"
@@ -162,6 +165,7 @@ export class CompositionTreeComponent {
   private readonly expanded = signal(new Set<string>());
   private lastRootId: string | null = null;
   private readonly appearance = inject(CatalogAppearanceService);
+  protected readonly theme = inject(ThemeService);
 
   constructor() {
     this.appearance.load()?.subscribe();
@@ -202,14 +206,31 @@ export class CompositionTreeComponent {
   /**
    * Nest cascade — gentle paper elevation (site Paper & Ink), not hard gray jumps.
    * Kind hues stay on opaque rows + left rail only.
+   * TZ-CATALOG-335: dark uses larger L steps + slight rule chroma (not kind-wash).
    */
   protected nestSurface(depth: number): string {
     const step = Math.min(Math.max(depth, 0), 3);
+    if (this.theme.isDark()) {
+      // A+B: stronger depth ladder + mild rule chroma so levels aren't gray mush
+      const inkPct = [12, 22, 34, 46] as const;
+      const rulePct = [10, 16, 22, 28] as const;
+      const from = inkPct[step]!;
+      const to = from + 10;
+      const rule = rulePct[step]!;
+      return `linear-gradient(165deg, color-mix(in oklch, var(--color-ink) ${from}%, var(--color-paper)) 0%, color-mix(in oklch, var(--color-rule) ${rule}%, var(--color-paper)) 48%, color-mix(in oklch, var(--color-ink) ${to}%, var(--color-paper)) 100%)`;
+    }
     // Soft ink→paper mixes; step 0 must still read as a tinted tray
     const inkPct = [4, 8, 13, 18] as const;
     const from = inkPct[step]!;
     const to = from + 4;
     return `linear-gradient(165deg, color-mix(in oklch, var(--color-ink) ${from}%, var(--color-paper)) 0%, color-mix(in oklch, var(--color-rule) ${Math.min(from + 6, 22)}%, var(--color-paper)) 55%, color-mix(in oklch, var(--color-ink) ${to}%, var(--color-paper)) 100%)`;
+  }
+
+  /** TZ-CATALOG-335 (C): subtle inset edge between nest levels on dark only. */
+  protected nestShadow(depth: number): string | null {
+    if (!this.theme.isDark()) return null;
+    const a = 0.14 + Math.min(depth, 3) * 0.05;
+    return `inset 0 0 0 1px color-mix(in oklch, var(--color-ink) ${Math.round(a * 100)}%, transparent)`;
   }
 
   protected onRowMouseDown(event: MouseEvent): void {

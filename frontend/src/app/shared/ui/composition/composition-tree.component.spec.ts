@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CompositionTreeComponent } from './composition-tree.component';
 import { CompositionTreeNode } from '../../services/pi-product-modules.service';
 import { CatalogAppearanceService } from '../catalog/catalog-appearance.service';
+import { ThemeService } from '../../theme/theme.service';
 import { of } from 'rxjs';
 
 describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
@@ -214,5 +215,30 @@ describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
       '[data-test="composition-tree-node-m-leaf"] > [data-test="composition-tree-row"]',
     ) as HTMLElement;
     expect(leaf.querySelector('[data-test="composition-tree-toggle"]')).toBeNull();
+  });
+
+  it('TZ-CATALOG-335: dark nestSurface uses stronger depth ladder (not light 4/8/13)', () => {
+    const theme = TestBed.inject(ThemeService);
+    const comp = fixture.componentInstance;
+    theme.set('light');
+    const light0 = comp.nestSurface(0);
+    const light2 = comp.nestSurface(2);
+    expect(light0).toContain('4%');
+    expect(light2).toContain('13%');
+
+    theme.set('dark');
+    fixture.detectChanges();
+    const dark0 = comp.nestSurface(0);
+    const dark2 = comp.nestSurface(2);
+    const dark3 = comp.nestSurface(3);
+    expect(dark0).toContain('12%');
+    expect(dark2).toContain('34%');
+    expect(dark3).toContain('46%');
+    expect(dark0).not.toBe(light0);
+    expect(comp.nestShadow(1)).toContain('inset');
+    expect(comp.nestShadow(1)).not.toBeNull();
+
+    theme.set('light');
+    expect(comp.nestShadow(1)).toBeNull();
   });
 });

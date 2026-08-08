@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-CATALOG-335 DONE: composition-tree dark depth
+
+**Исполнитель:** continuous-executor-composer (self PASS → archive)
+**Статус:** DONE on main; deploy НЕ выполнялся
+**Что сделано кратко:** Dark nest ladder 12/22/34/46% + rule chroma + inset; light 334 без регрессии; без kind-wash.
+**Gates:** frontend tsc PASS; Jest composition-tree 5/5 PASS
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-335.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-335-composition-tree-dark-depth.lock`
+**Cursor Verdict:** PASS
+
 ## [2026-08-08] — TZ-CATALOG-336 DONE: module detail = product A+ layout
 
 **Исполнитель:** continuous-executor-composer (self PASS → archive)

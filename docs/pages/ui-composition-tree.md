@@ -51,11 +51,17 @@
 - Путать с editable-полем: здесь строка — control, не параграф для копирования.
 - Фиксированные 3 колонки «Изделие | Модуль | Материал» (Excel rowspan).
 
-## Тёмная тема (smell → TZ-CATALOG-335)
+## Тёмная тема (TZ-CATALOG-335)
 
-На dark nest `color-mix(ink→paper)` даёт **слабый серый каскад** (мало chroma /
-мало шага L) — PO: «слишком монохромно». Kind rail/бейджи есть, но уровни
-слабее, чем на light. Чинить **только dark depth**, без возврата kind-wash на nest.
+На dark nest `color-mix(ink→paper)` со light-шагами (~4/8/13/18%) давал
+**слабый серый каскад**. Исправление (без kind-wash flood):
+
+| Режим | Стратегия |
+|-------|-----------|
+| **Light** | без изменений 334: ink 4/8/13/18% + мягкий rule mid-stop |
+| **Dark** | (A)+(B)+(C): ink **12/22/34/46%**, rule chroma mid-stop 10–28%, inset edge shadow по depth |
+
+Kind по-прежнему только бейдж + left rail. Строки — `paper`, не tinted wash.
 
 ## Связь с другими канонами
 
@@ -66,7 +72,7 @@
 | Containment outline | [`../audits/2026-08-08-composition-containment-outline.md`](../audits/2026-08-08-composition-containment-outline.md) |
 | Nest cohesion / пачки | [`../audits/2026-08-08-composition-block-cohesion-visual.md`](../audits/2026-08-08-composition-block-cohesion-visual.md) |
 | Pattern → Orders | [`../audits/2026-08-08-composition-cascade-pattern-lock.md`](../audits/2026-08-08-composition-cascade-pattern-lock.md) |
-| Dark depth | **TZ-CATALOG-335** |
+| Dark depth | **TZ-CATALOG-335 DONE** (dark ladder 12/22/34/46 + rule chroma + inset) |
 
 ## Фраза для агента / PO
 
