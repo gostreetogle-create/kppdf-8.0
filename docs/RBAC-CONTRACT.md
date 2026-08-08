@@ -260,28 +260,33 @@ Defined in `backend/src/common/seed/permissions.constants.ts` (1:1 with
 
 | Page key | Nav section | Description |
 |----------|-------------|-------------|
-| `products` | ������� | Products registry |
-| `modules` | ������� | Product modules |
-| `materials` | ������� | Materials dictionary |
-| `work-types` | ������� | Work types |
-| `organizations` | ������ | Counterparty organizations |
-| `proposals` | ������ | Commercial proposals (��) |
-| `contracts` | ������ | Contracts |
-| `orders` | ������ | Orders |
-| `dictionaries` | ����������� | All dictionaries |
-| `categories` | ����������� | Categories |
-| `doc-template-categories` | ����������� | Template categories |
-| `color-references` | ����������� | Color references (RAL) |
-| `doc-templates` | ��������� | Document templates |
-| `doc-texts` | ��������� | Text blocks |
-| `doc-tables` | ��������� | Table templates |
-| `doc-documents` | ��������� | Document archive |
-| `inventory` | ����� | Inventory overview |
-| `storage-items` | ����� | Storage items |
-| `stock-movements` | ����� | Stock movements |
-| `people` | ���� | People directory |
-| `admin-users` | ����������������� | User management |
-| `admin-roles` | ����������������� | Role management |
+| `products` | Catalog | Products registry |
+| `modules` | Catalog | Product modules |
+| `materials` | Catalog | Materials dictionary |
+| `work-types` | Catalog | Work types |
+| `organizations` | Admin | Our legal entities (not customers) |
+| `proposals` | Deals | Commercial proposals (KP) |
+| `contracts` | Deals | Contracts |
+| `orders` | Deals | Orders |
+| `counterparties` | Clients | Customers (TZ-NAV-301) |
+| `design` | Design | Design queue stub (TZ-NAV-301) |
+| `supply` | Supply | Procurement stub (TZ-NAV-301) |
+| `shipping` | Warehouse | Shipping stub (TZ-NAV-301) |
+| `dictionaries` | Reference | All dictionaries |
+| `categories` | Reference | Categories / classification |
+| `doc-template-categories` | Reference | Template categories |
+| `color-references` | Reference | Color references (RAL) |
+| `doc-templates` | Documents | Document templates |
+| `doc-texts` | Documents | Text blocks |
+| `doc-tables` | Documents | Table templates |
+| `doc-documents` | Documents | Document archive |
+| `inventory` | Warehouse | Inventory overview |
+| `storage-items` | Warehouse | Storage items |
+| `stock-movements` | Warehouse | Stock movements |
+| `people` | Production | People / workers directory |
+| `production` | Production | Production cockpit / Gantt |
+| `admin-users` | Admin | User management |
+| `admin-roles` | Admin | Role management |
 
 ### Default page assignments
 

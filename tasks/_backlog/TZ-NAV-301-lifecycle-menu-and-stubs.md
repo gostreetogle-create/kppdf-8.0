@@ -5,7 +5,7 @@ TZ-NAV-301: Меню L→R по потоку + stub-страницы дыр
 > READY · канон: `docs/audits/2026-08-08-nav-ia-lifecycle-audit.md`  
 > Можно ∥ ORDERS-302 (не трогать `orders/**`, composition-tree)
 
-STATUS: READY (RESERVED until claim)
+STATUS: DONE (archived 2026-08-08 → `tasks/_archive/2026-08/TZ-NAV-301.done.md`)
 
 РОЛЬ АГЕНТА: Frontend (layout + thin stub pages + routes)
 

@@ -1,7 +1,7 @@
 # Page ↔ TZ index
 
 **Purpose:** Search by page/route to find which tasks touched or will touch it.  
-**Updated:** 2026-08-07 (PRODUCTION-303.1 hotfix closeout + 308–310 / drawings parked)
+**Updated:** 2026-08-08 (TZ-NAV-301 lifecycle menu + stubs)
 
 How to use: `Ctrl+F` по route или имени страницы. Новые TZ обязаны указывать
 `PAGES:` / `PAGE_DOCS:` в шапке (см. `tz-authoring`).
@@ -38,13 +38,16 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVIEW.md)
 
 
-## Deals / orgs
+## Deals / orgs / lifecycle stubs
 
 | Route | Page doc | TZs |
 |-------|----------|-----|
-| `/organizations` | organizations.page.md | **UX-305 DONE** |
+| `/organizations` | organizations.page.md | **UX-305 DONE**; nav → **Админ** (NAV-301) |
+| `/counterparties` | — | **NAV-301** thin list |
+| `/design`, `/supply`, `/shipping` | — | **NAV-301** stubs |
 | `/contracts` | contracts.page.md | — |
 | `/orders` | orders.page.md | — |
+| top nav L→R | app-layout | **NAV-301** lifecycle IA |
 
 ## Reference
 

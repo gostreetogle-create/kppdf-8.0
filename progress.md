@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-NAV-301 DONE: lifecycle menu L→R + stubs
+
+**Исполнитель:** cursor-composer-nav301 (self PASS → archive)
+**Статус:** DONE on main; deploy НЕ
+**Что сделано кратко:** топ-меню поток L→R; Люди→Производство; Организации→Админ; stubs Клиенты/Проектирование/Снабжение/Отгрузка; PAGE_KEYS seed.
+**Gates:** FE+BE tsc PASS; jest nav-order 1/1
+**Archive:** `tasks/_archive/2026-08/TZ-NAV-301.done.md`
+**Lock:** `.mimocode/locks/TZ-NAV-301-lifecycle-menu-stubs.lock`
+**Cursor Verdict:** PASS (executor self)
+
 ## [2026-08-08] — TZ-ORDERS-302 DONE: order detail live composition-tree
 
 **Исполнитель:** agent-3e757640b7 (self PASS → archive)

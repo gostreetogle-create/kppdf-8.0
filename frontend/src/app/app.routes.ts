@@ -96,6 +96,39 @@ export const routes: Routes = [
         title: 'KPPDF — Организации',
       },
       {
+        // TZ-NAV-301 — Заказчики (Counterparty list). Sites → ORDERS-303.
+        path: 'counterparties',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'counterparties' },
+        loadComponent: () =>
+          import('./pages/counterparties/counterparties.page').then((m) => m.CounterpartiesPage),
+        title: 'KPPDF — Заказчики',
+      },
+      {
+        // TZ-NAV-301 — stub: очередь проектирования.
+        path: 'design',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'design' },
+        loadComponent: () => import('./pages/design/design.page').then((m) => m.DesignPage),
+        title: 'KPPDF — Проектирование',
+      },
+      {
+        // TZ-NAV-301 — stub: снабжение / закупки.
+        path: 'supply',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'supply' },
+        loadComponent: () => import('./pages/supply/supply.page').then((m) => m.SupplyPage),
+        title: 'KPPDF — Снабжение',
+      },
+      {
+        // TZ-NAV-301 — stub: отгрузка (пункт Склада).
+        path: 'shipping',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'shipping' },
+        loadComponent: () => import('./pages/shipping/shipping.page').then((m) => m.ShippingPage),
+        title: 'KPPDF — Отгрузка',
+      },
+      {
         // TZ-DICT-311: hub cards retired — default group = Измерения.
         path: 'dictionaries',
         redirectTo: 'dictionaries/measurements',

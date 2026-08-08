@@ -100,5 +100,5 @@
 
 ## 7. Артефакты
 
-- TZ: `tasks/_backlog/TZ-NAV-301-lifecycle-menu-and-stubs.md`  
-- Checklists / map: RESERVED → после или ∥ ORDERS-302 (keys не пересекаются с orders tree)
+- TZ: `tasks/_backlog/TZ-NAV-301-lifecycle-menu-and-stubs.md` → **DONE** `tasks/_archive/2026-08/TZ-NAV-301.done.md`
+- Checklists / map: closed after executor gates

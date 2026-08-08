@@ -12,6 +12,7 @@ import { PermissionsService } from '../../modules/permissions/permissions.servic
 const ADMIN_PAGES = [
   'products', 'modules', 'materials', 'work-types',
   'organizations', 'proposals', 'contracts', 'orders',
+  'counterparties', 'design', 'supply', 'shipping',
   'dictionaries', 'categories', 'doc-template-categories', 'text-block-categories', 'color-references',
   'doc-templates', 'doc-texts', 'doc-tables', 'doc-documents',
   'inventory', 'storage-items', 'stock-movements',
@@ -23,6 +24,7 @@ const ADMIN_PAGES = [
 const DIRECTOR_PAGES = [
   'products', 'modules', 'materials', 'work-types',
   'organizations', 'proposals', 'contracts', 'orders',
+  'counterparties', 'design', 'supply', 'shipping',
   'dictionaries', 'categories', 'doc-template-categories', 'text-block-categories', 'color-references',
   'doc-templates', 'doc-texts', 'doc-tables', 'doc-documents',
   'inventory', 'storage-items', 'stock-movements',
@@ -34,6 +36,7 @@ const DIRECTOR_PAGES = [
 const MANAGER_PAGES = [
   'products', 'modules', 'materials', 'work-types',
   'organizations', 'proposals', 'contracts', 'orders',
+  'counterparties', 'design', 'supply', 'shipping',
   'dictionaries', 'doc-template-categories', 'text-block-categories',
   'doc-templates', 'doc-texts', 'doc-tables', 'doc-documents',
   'inventory', 'storage-items', 'stock-movements',

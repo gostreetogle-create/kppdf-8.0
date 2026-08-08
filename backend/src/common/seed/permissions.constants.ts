@@ -42,6 +42,8 @@ export const PERMISSIONS = [
 export const PAGE_KEYS = [
   'products', 'modules', 'materials', 'work-types',
   'organizations', 'proposals', 'contracts', 'orders',
+  // TZ-NAV-301 — lifecycle stubs + clients hub
+  'counterparties', 'design', 'supply', 'shipping',
   'dictionaries', 'categories', 'doc-template-categories', 'color-references',
   'doc-templates', 'doc-texts', 'doc-tables', 'doc-documents',
   'inventory', 'storage-items', 'stock-movements',

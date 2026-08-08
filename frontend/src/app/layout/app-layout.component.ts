@@ -18,10 +18,12 @@ import {
   BookOpen,
   FileText,
   ShieldCheck,
-  Palette,
   Warehouse,
   Users,
   Factory,
+  PenLine,
+  ShoppingCart,
+  Truck,
 } from 'lucide-angular';
 
 /**
@@ -71,23 +73,49 @@ interface NavCategory {
 }
 
 /**
- * TZ-CategoriesNav — AppLayout top-panel nav grouped into 4 dropdowns:
+ * TZ-NAV-301 — top nav L→R = sales→shop lifecycle:
  *
- *   Каталог       ← Продукция · Модули · Материалы · Виды работ
- *   Сделки        ← Организации · КП · Договоры · Заказы
- *   Склад         ← Дашборд · Остатки · Движения (TZ-UX-301 — restore if missing)
- *   Справочники   ← …
- *   Документы     ← …
- *   Админ         ← …
- * Active-category algorithm: when ANY sub-route is active (e.g. /products/:id),
- * the parent category trigger is highlighted via bg-sunrise-warm. Boundary
- * matching uses `path === url || url.startsWith(path + '/')` so that
- * /orders does NOT accidentally match /orders-archive (if it ever exists).
+ *   Справочники → Каталог → Клиенты → Сделки → Проектирование →
+ *   Снабжение → Производство → Склад → Документы → Админ
  *
- * Standalone + OnPush + signal-based; signal `currentUrl` from Router
- * NavigationEnd events is the source of truth.
+ * Active-category: when ANY sub-route is active (e.g. /products/:id),
+ * the parent trigger highlights. Boundary match:
+ * `path === url || url.startsWith(path + '/')`.
+ *
+ * Standalone + OnPush; `currentUrl` from Router NavigationEnd.
  */
 const NAV_CATEGORIES: NavCategory[] = [
+  {
+    // Group Chip Workspace: chips on leaf pages; top-nav is entry only.
+    id: 'reference',
+    label: 'Справочники',
+    icon: BookOpen,
+    entryPath: '/dictionaries/classification',
+    items: [
+      { path: '/dictionaries/classification', pageKey: 'categories', label: 'Классификация' },
+      { path: '/dictionaries/measurements', pageKey: 'dictionaries', label: 'Измерения' },
+      { path: '/dictionaries/color-references', pageKey: 'color-references', label: 'Цвета' },
+      {
+        path: '/dictionaries/documents-ref',
+        pageKey: 'doc-template-categories',
+        label: 'Документы',
+      },
+      {
+        path: '/doc-template-categories',
+        pageKey: 'doc-template-categories',
+        label: 'Категории шаблонов',
+      },
+      {
+        path: '/dictionaries/text-block-categories',
+        pageKey: 'text-block-categories',
+        label: 'Категории текстов',
+      },
+      // TODO(TZ-DICT-315): add «Профили быстрых форм» → /dictionaries/form-profiles
+      // when that route exists. Do not invent a dead nav leaf.
+      // Deep-links /categories and /dictionaries/appearance stay routable
+      // (not top-nav leaves — avoids duplicate «Категории» / «Оформление»).
+    ],
+  },
   {
     id: 'catalog',
     label: 'Каталог',
@@ -104,32 +132,55 @@ const NAV_CATEGORIES: NavCategory[] = [
         label: 'Оформление',
         systemRoles: ['admin'],
       },
-      { path: '/people', pageKey: 'people', label: 'Люди', icon: Users },
+    ],
+  },
+  {
+    id: 'clients',
+    label: 'Клиенты',
+    icon: Users,
+    entryPath: '/counterparties',
+    items: [
+      { path: '/counterparties', pageKey: 'counterparties', label: 'Заказчики' },
+      // Sites CRUD → ORDERS-303; keep clients hub on counterparties for now.
     ],
   },
   {
     id: 'deals',
     label: 'Сделки',
     icon: Briefcase,
-    entryPath: '/organizations',
+    entryPath: '/proposals',
     items: [
-      { path: '/organizations', pageKey: 'organizations', label: 'Организации' },
-      // TZ-SALES-301: КП (коммерческие предложения) — thin UI над
-      // QuotationModule, первая волна shop-customer-lifecycle.
+      // TZ-SALES-301: КП → Договоры → Заказы (entry = КП).
       { path: '/proposals', pageKey: 'proposals', label: 'КП' },
       { path: '/contracts', pageKey: 'contracts', label: 'Договоры' },
       { path: '/orders', pageKey: 'orders', label: 'Заказы' },
     ],
   },
   {
+    id: 'design',
+    label: 'Проектирование',
+    icon: PenLine,
+    entryPath: '/design',
+    items: [{ path: '/design', pageKey: 'design', label: 'Очередь' }],
+  },
+  {
+    id: 'supply',
+    label: 'Снабжение',
+    icon: ShoppingCart,
+    entryPath: '/supply',
+    items: [{ path: '/supply', pageKey: 'supply', label: 'Закупки' }],
+  },
+  {
     id: 'production',
     label: 'Производство',
     icon: Factory,
     entryPath: '/production',
-    items: [{ path: '/production', pageKey: 'production', label: 'Производство' }],
+    items: [
+      { path: '/production', pageKey: 'production', label: 'Гант' },
+      { path: '/people', pageKey: 'people', label: 'Люди', icon: Users },
+    ],
   },
   {
-    // TZ-UX-301: warehouse routes existed without menu entry — restore.
     id: 'warehouse',
     label: 'Склад',
     icon: Warehouse,
@@ -139,70 +190,25 @@ const NAV_CATEGORIES: NavCategory[] = [
       { path: '/storage-items', pageKey: 'storage-items', label: 'Остатки' },
       { path: '/stock-movements', pageKey: 'stock-movements', label: 'Движения' },
       { path: '/warehouses', pageKey: 'inventory', label: 'Склады' },
+      { path: '/shipping', pageKey: 'shipping', label: 'Отгрузка', icon: Truck },
     ],
   },
   {
-    // Group Chip Workspace: chips on leaf pages; top-nav is entry only.
-    id: 'reference',
-    label: 'Справочники',
-    icon: BookOpen,
-    entryPath: '/dictionaries/classification',
-    items: [
-      { path: '/dictionaries/classification', pageKey: 'categories', label: 'Классификация' },
-      { path: '/dictionaries/measurements', pageKey: 'dictionaries', label: 'Измерения' },
-      {
-        path: '/dictionaries/appearance',
-        pageKey: 'color-references',
-        label: 'Оформление',
-        icon: Palette,
-      },
-      {
-        path: '/dictionaries/documents-ref',
-        pageKey: 'doc-template-categories',
-        label: 'Документы',
-      },
-      // Leaf paths also match active category when user deep-links.
-      { path: '/categories', pageKey: 'categories', label: 'Категории' },
-      { path: '/dictionaries/color-references', pageKey: 'color-references', label: 'Цвета' },
-      {
-        path: '/doc-template-categories',
-        pageKey: 'doc-template-categories',
-        label: 'Категории шаблонов',
-      },
-      {
-        path: '/dictionaries/text-block-categories',
-        pageKey: 'doc-template-categories',
-        label: 'Категории текстов',
-      },
-    ],
-  },
-  {
-    // TZ-86 Phase D.1 — 4-я категория «Документы»: текстовые блоки,
-    // шаблоны таблиц и 3-pane builder canvas. FileText иконка
-    // (lucide-angular@0.460). Active-category алгоритм в
-    // PiNavDropdownComponent использует path === url || url.startsWith(path + '/'),
-    // Active-category: /doc-constructor/builder/:id still matches templates
-    // via startsWith only if we kept a builder nav item; registry is entry.
     id: 'docs',
     label: 'Документы',
     icon: FileText,
     entryPath: '/doc-constructor/templates',
     items: [
-      // Registry first: create/open a template, then land on /builder/:id.
       { path: '/doc-constructor/templates', pageKey: 'doc-templates', label: 'Шаблоны' },
       { path: '/doc-constructor/texts', pageKey: 'doc-texts', label: 'Текстовые блоки' },
       { path: '/doc-constructor/tables', pageKey: 'doc-tables', label: 'Шаблоны таблиц' },
       { path: '/doc-constructor/documents', pageKey: 'doc-documents', label: 'Архив документов' },
-      // Match-only: keep Docs category active inside builder (no TOC chip).
       { path: '/doc-constructor/builder', pageKey: 'doc-templates', label: 'Конструктор' },
     ],
   },
   {
-    // TZ-256 §ШАГ 3 — admin category, capability-gated.
-    // TZ-256.A remainder — Palette swapped to ShieldCheck to avoid icon
-    // collision with Palette (paint swatch) elsewhere.
     id: 'admin',
-    label: 'Администрирование',
+    label: 'Админ',
     icon: ShieldCheck,
     entryPath: '/admin/users',
     items: [
@@ -210,9 +216,6 @@ const NAV_CATEGORIES: NavCategory[] = [
         path: '/admin/users',
         pageKey: 'admin-users',
         label: 'Пользователи',
-        // TZ-262 (2026-08-02): выровнено с backend GET /api/admin/users
-        // (@Permissions('user:admin')). user:read без user:admin → пункт
-        // скрыт из меню (TZ-256 §0 «FRONTEND VISIBILITY = UX»).
         capabilities: ['user:admin'],
         systemRoles: ['admin'],
       },
@@ -223,9 +226,17 @@ const NAV_CATEGORIES: NavCategory[] = [
         capabilities: ['role:read'],
         systemRoles: ['admin'],
       },
+      {
+        path: '/organizations',
+        pageKey: 'organizations',
+        label: 'Наши организации',
+      },
     ],
   },
 ];
+
+/** TZ-NAV-301 — exported for unit test of L→R category order. */
+export const NAV_CATEGORY_ORDER: readonly string[] = NAV_CATEGORIES.map((c) => c.id);
 
 @Component({
   selector: 'app-app-layout',
