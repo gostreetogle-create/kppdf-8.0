@@ -12,6 +12,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { PiFactCardComponent, PiFactStackComponent } from '../../shared/ui/fact-card';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
@@ -19,6 +20,7 @@ import { API_BASE_URL } from '../../core/api.tokens';
 import {
   Material,
   MATERIAL_KIND_LABELS,
+  type MaterialDimension,
   type MaterialKind,
 } from '../../shared/services/materials.service';
 import { MaterialFormDialogComponent } from './material-form-dialog.component';
@@ -57,7 +59,14 @@ interface WhereUsedPage {
   selector: 'app-material-detail-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiPageHeaderComponent, PiSectionComponent, ButtonComponent, RouterLink],
+  imports: [
+    PiPageHeaderComponent,
+    PiSectionComponent,
+    ButtonComponent,
+    RouterLink,
+    PiFactCardComponent,
+    PiFactStackComponent,
+  ],
   template: `
     <app-pi-page-header
       [eyebrow]="'материал'"
@@ -102,32 +111,80 @@ interface WhereUsedPage {
     }
 
     @if (material(); as m) {
-      <!-- I. Основное -->
-      <app-pi-section title="Основное" eyebrow="I">
-        <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-          <dt class="eyebrow">Название</dt>
-          <dd class="font-medium">{{ m.name }}</dd>
-          <dt class="eyebrow">Артикул</dt>
-          <dd class="font-mono empty-cell">{{ m.article ?? '—' }}</dd>
-          <dt class="eyebrow">Внутренний код</dt>
-          <dd class="font-mono empty-cell">{{ m.sku ?? '—' }}</dd>
-          <dt class="eyebrow">Единица</dt>
-          <dd class="empty-cell">{{ m.unit || '—' }}</dd>
-          <dt class="eyebrow">Тип</dt>
-          <dd class="empty-cell">{{ kindLabel(m.materialKind) }}</dd>
-          <dt class="eyebrow">Профиль</dt>
-          <dd class="empty-cell">{{ m.assortment ?? '—' }}</dd>
-          <dt class="eyebrow">Стандарт</dt>
-          <dd class="empty-cell">{{ m.standardRef ?? '—' }}</dd>
-          <dt class="eyebrow">Марка</dt>
-          <dd class="empty-cell">{{ m.materialGrade ?? '—' }}</dd>
-          <dt class="eyebrow">Цена за ед.</dt>
-          <dd class="font-mono empty-cell">{{ formatPrice(m.pricePerUnit) }}</dd>
-          <dt class="eyebrow">Вес (кг)</dt>
-          <dd class="font-mono empty-cell">{{ m.weightKg ?? '—' }}</dd>
-          <dt class="eyebrow">Описание</dt>
-          <dd class="empty-cell whitespace-pre-wrap">{{ m.description ?? '—' }}</dd>
-        </dl>
+      <!-- Passport: shared FactStack keeps material facts readable without a dense dl. -->
+      <app-pi-section title="Паспорт" eyebrow="I">
+        <div class="space-y-4" data-test="material-passport">
+          <app-pi-fact-stack title="Идентификация" dataTest="material-identity-facts">
+            <app-pi-fact-card label="Название" [value]="m.name" dataTest="material-name" />
+            <app-pi-fact-card
+              label="Артикул"
+              [value]="m.article ?? '—'"
+              [mono]="true"
+              dataTest="material-article"
+            />
+            <app-pi-fact-card
+              label="Внутренний код"
+              [value]="m.sku ?? '—'"
+              [mono]="true"
+              dataTest="material-sku"
+            />
+            <app-pi-fact-card label="Единица" [value]="m.unit || '—'" dataTest="material-unit" />
+            <app-pi-fact-card
+              label="Категория"
+              [value]="m.categoryId ?? '—'"
+              [mono]="true"
+              dataTest="material-category"
+            />
+            <app-pi-fact-card
+              label="Тип"
+              [value]="kindLabel(m.materialKind)"
+              dataTest="material-kind"
+            />
+            <app-pi-fact-card
+              label="Профиль"
+              [value]="m.assortment ?? '—'"
+              dataTest="material-assortment"
+            />
+            <app-pi-fact-card
+              label="Стандарт"
+              [value]="m.standardRef ?? '—'"
+              dataTest="material-standard"
+            />
+            <app-pi-fact-card
+              label="Марка"
+              [value]="m.materialGrade ?? '—'"
+              dataTest="material-grade"
+            />
+          </app-pi-fact-stack>
+
+          <app-pi-fact-stack title="Параметры" dataTest="material-physical-facts">
+            <app-pi-fact-card
+              label="Вес"
+              [value]="m.weightKg != null ? m.weightKg + ' кг' : '—'"
+              [mono]="true"
+              dataTest="material-weight"
+            />
+            <app-pi-fact-card
+              label="Габариты"
+              [value]="dimensionsLabel(m.dimensions)"
+              [mono]="true"
+              dataTest="material-dimensions"
+            />
+          </app-pi-fact-stack>
+
+          <app-pi-fact-stack title="Цена" dataTest="material-price-facts">
+            <app-pi-fact-card
+              label="Цена за ед."
+              [value]="formatPrice(m.pricePerUnit)"
+              caption="Закупочная / учётная цена материала"
+              [mono]="true"
+              variant="emphasis"
+              dataTest="material-price"
+            />
+          </app-pi-fact-stack>
+
+          <p class="text-sm text-ink whitespace-pre-wrap">{{ m.description ?? '—' }}</p>
+        </div>
       </app-pi-section>
 
       <!-- II. Габариты -->
@@ -340,6 +397,16 @@ export class MaterialDetailPage {
       default:
         return t;
     }
+  }
+
+  protected dimensionsLabel(dimensions: MaterialDimension[] | undefined): string {
+    if (!dimensions?.length) return '—';
+    return dimensions
+      .map(
+        (dimension) =>
+          `${this.dimTypeLabel(dimension.type)} ${this.formatDimValue(dimension.value)}`,
+      )
+      .join(' · ');
   }
 
   protected formatDimValue(n: number): string {

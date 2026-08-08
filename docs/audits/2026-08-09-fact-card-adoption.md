@@ -25,7 +25,7 @@
 | `/products` list | price cells in table — **не** FactCard | WARN (tables ≠ fact) | — |
 | `/modules` list | same | WARN | — |
 | doc-constructor tables page | form-ish grids | WARN (demo/tool) | low |
-| material-detail | `dl` passport fields | FAIL (parity with product) | **TZ-UX-FACT-304** (или UX-314 chrome+facts) |
+| material-detail | `PiFactStack` passport facts + price caption | **ADOPTED** (FACT-304) | **TZ-CATALOG-337** chrome + A+ shell |
 | cost-calculation detail dialog | breakdown table | WARN → optional FactStack for totals | **TZ-UX-FACT-305** |
 | inventory dashboards | KPI tiles | FAIL soft | **TZ-UX-FACT-306** if PO wants KPI atom |
 
@@ -33,10 +33,17 @@
 
 ## 3. Prioritized successors
 
-1. **P1 TZ-UX-FACT-303** — order-detail side facts  
-2. **P1 TZ-UX-FACT-304** — material-detail passport FactStack  
+1. **P1 TZ-UX-FACT-303** — order-detail side facts — **ADOPTED**
+2. **P1 TZ-UX-FACT-304** — material-detail passport FactStack — **ADOPTED**
 3. **P2 TZ-UX-FACT-305** — cost breakdown dialog totals  
 4. **P3 TZ-UX-FACT-306** — inventory KPI (only if PO)
+
+### FACT-304 closeout note
+
+Material detail now uses the shared `PiFactStack`/`PiFactCard` atoms for identity,
+category, unit, material kind, physical facts, and price. The existing dimensions
+table, stock link, and where-used API section remain live; the next layout step is
+CATALOG-337. No composition-tree or BOM UI was introduced.
 
 Не кодить в FACT-302. Не трогать composition-tree.
 

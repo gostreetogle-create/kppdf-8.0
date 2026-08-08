@@ -1,3 +1,11 @@
+## [2026-08-08] — TZ-UX-FACT-304 DONE: material-detail passport FactStack
+
+**Что:** material detail passport переведён с плотного `dl` на shared FactStack: идентификация, категория, единица, тип, профиль, стандарт, марка, вес, габариты; цена получила caption «Закупочная / учётная цена материала». Dimensions table, stock link и where-used сохранены; material adoption audit = ADOPTED.
+**Gates:** FE tsc PASS; material-detail 6/6 PASS; targeted ESLint PASS; `git diff --check` PASS. Prettier check отмечен как line-ending-only mismatch: репозиторий CRLF, config требует LF.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-FACT-304.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-FACT-304-material-detail-factstack.lock`
+**Known:** A+ chrome/layout — следующий `TZ-CATALOG-337`; dimensions-normalize utility не найден в materials-зоне и не включён. Desktop/orders/supply/products.page/composition не трогались; deploy NO.
+
 ## [2026-08-08] — TZ-UX-DIALOG-303 DONE: add-and-continue composition pickers
 
 **Что:** composition picker `onAdded` — Add пишет строку и оставляет диалог; session list; BomPanel `applyCompositionLine`; toast «Добавлено»; docs канон.

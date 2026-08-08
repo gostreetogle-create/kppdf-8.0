@@ -21,6 +21,7 @@ const mockMaterial = {
   article: 'STL-001',
   sku: 'SKU-123',
   unit: 'кг',
+  categoryId: 'cat-metals',
   materialKind: 'raw' as const,
   assortment: 'лист',
   standardRef: 'ГОСТ 19903-2015',
@@ -123,6 +124,10 @@ describe('MaterialDetailPage', () => {
     expect(el.textContent).toContain('лист');
     expect(el.textContent).toContain('150');
     expect(el.textContent).toContain('7.85');
+    expect(el.querySelector('[data-test="material-passport"]')).toBeTruthy();
+    expect(el.querySelector('[data-test="material-price"]')).toBeTruthy();
+    expect(el.textContent).toContain('Закупочная / учётная цена материала');
+    expect(el.querySelector('dl')).toBeNull();
     httpMock.verify();
   }));
 

@@ -1,0 +1,10 @@
+task: TZ-UX-FACT-304
+slug: material-detail-factstack
+outcome: DONE
+closed_at: 2026-08-08T14:56:30Z
+closed_by: Buffy
+protected_files:
+  - frontend/src/app/pages/materials/material-detail.page.ts
+  - frontend/src/app/pages/materials/material-detail.page.spec.ts
+  - docs/audits/2026-08-09-fact-card-adoption.md
+  - docs/agent-checklists/TZ-UX-FACT-304.md
