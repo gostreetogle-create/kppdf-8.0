@@ -1,0 +1,8 @@
+task: TZ-CATALOG-DEDUP-302
+slug: retire-module-materials-dialog
+outcome: DONE
+closed_at: 2026-08-08T10:05:00Z
+protected:
+  - frontend/src/app/pages/modules/module-detail.page.ts (no ModuleMaterials opener)
+  - ModuleMaterialsFormDialog removed
+notes: composition via BomPanel only; deploy NO

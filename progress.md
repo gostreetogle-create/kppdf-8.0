@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-CATALOG-DEDUP-302 DONE: retire ModuleMaterials dialog
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** убрана кнопка «Быстрое редактирование» с module-detail; удалён ModuleMaterialsFormDialog (+spec). Состав модуля = только BomPanel.
+**Gates:** FE tsc PASS; Jest modules zone 9/9 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-DEDUP-302.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-DEDUP-302-retire-module-materials-dialog.lock`
+**Known:** Deploy NO. Next DEDUP-303.
+
 ## [2026-08-08] — TZ-UX-FACT-301 DONE: PiFactCard + FactStack UI kit
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor)
