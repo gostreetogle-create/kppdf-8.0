@@ -1,6 +1,6 @@
 # SESSION QUEUE — continuous executor
 
-**Updated:** 2026-08-08T08:42Z · **TZ-UX-307 DONE**
+**Updated:** 2026-08-08T08:50Z · next **TZ-UX-FORM-301**
 
 ## DONE this session
 
@@ -25,7 +25,8 @@
 
 | ID | Status |
 |----|--------|
-| **TZ-UX-302** | page chrome unify — **NEXT** if PO |
+| **TZ-UX-FORM-301** | QuickCreate field capacity packing — **NEXT** (PO scroll/dims) |
+| **TZ-UX-302** | page chrome unify (after form density) |
 | TZ-UX-303 | design-system chrome audit (docs) |
 | TZ-SALES-304 | KP family UI after PO probes |
 
@@ -39,11 +40,11 @@
 | legacy form→kind C | successors from dialog outliers table |
 | deploy | только «задеплой» |
 
-## Checkpoint 2026-08-08T08:45Z
-- DONE: … + UX-DIALOG-302 + **TZ-UX-307** (nav compact; ID ≠ people 306)
+## Checkpoint 2026-08-08T08:50Z
+- DONE: … + UX-DIALOG-302 + TZ-UX-307
 - IN PROGRESS: none
-- NEXT: TZ-UX-302 if PO / idle / deploy command
+- NEXT: **TZ-UX-FORM-301** (field capacity / no QC scroll)
 - Blockers: none
 - _active/: empty
 - Deploy: NO
-- HEAD: a1a45051 (TZ-UX-307)
+- Note: dialog shell A–D ≠ form field packing — see form-field-capacity audit

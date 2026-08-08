@@ -44,6 +44,8 @@ const ref = dialogs.open<Result, Data>(MyDialogComponent, {
 
 **Правило плотности:** для dense forms **prefer width over height** — лучше добавить колонку/ширину, чем небоскрёб без скролла body. Body: `max-h ~70vh` + `overflow-auto`; footer sticky / `shrink-0` (shell).
 
+**Ёмкость полей (внутри kind B):** наивная сетка «всем 50%» запрещена для коротких чисел (Д/Ш/В/вес). Канон span/упаковки: [`pages/ui-form-field-capacity.md`](./pages/ui-form-field-capacity.md) · аудит [`audits/2026-08-08-form-field-capacity-canon.md`](./audits/2026-08-08-form-field-capacity-canon.md) · TZ-UX-FORM-301.
+
 Opener `dialog.open(..., { width })` не должен **перебивать** ширину, которую уже решает компонент (например QuickCreate `SIZE_TO_WIDTH`).
 
 ## Mobile (375px)
