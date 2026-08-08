@@ -111,10 +111,15 @@
 
 ## 5. Лог сессий (новые сверху)
 
+### 2026-08-08 — Desktop wave READY: «умный опт» = 23→29 подряд
+- PO хочет сразу executable волну, не «потом TZD-23».
+- READY: `tasks/_backlog/desktop/WAVE-DESKTOP-BULK-IMPORT.md` (23 match/HITL → 26 reshape → 18 batch → 19 graph → 27 products → 28 doc draft → 29 todos).
+- DoD: Excel→структура→ok человека→SoT; заказы/КП оптом — вне волны.
+- Источник: PO «сделай все TZ + промпт».
+
 ### 2026-08-08 — Desktop = оптовый мост Excel→ERP, не вторая программа
 - Цель: кинуть разрозненные Excel/доки → структура под kppdf → ready vs AI-reshape → HITL → заливка в SoT; при дырках шаблонов — draft в конструкторе + todos менеджеру.
 - Не нужны параллельные таблицы/второй сайт: наполняем существующие сущности.
-- Сейчас фундамент (pairing/MCP/ImportTask/materials propose) ок; мозг (TZD-23+) ещё PARK — направление верное, end-state GAP.
 - Заказы/КП оптом — после каталога; не раздувать expert propose без matching.
 - Источник: PO vision desktop; audit `2026-08-08-desktop-bulk-import-vision-audit.md`.
 

@@ -1,8 +1,9 @@
 # TZD-23 checklist
 
-> Status: **PARK** (unpark on PO «делай TZD-23»)
-> Source: `tasks/_park/desktop/TZD-23-ai-import-matching-hitl.md`
+> Status: **READY**
+> Source: `tasks/_backlog/desktop/TZD-23-ai-import-matching-hitl.md`
 > Audit: `docs/audits/2026-08-08-desktop-bulk-import-vision-audit.md`
+> Wave: #1 of WAVE-DESKTOP-BULK-IMPORT
 
 ## Claim slot
 
@@ -14,7 +15,7 @@
 
 - [ ] Conflict keys vs `_active/`
 - [ ] TZD-22 archive present
-- [ ] Claim + move/copy to `_active` per project rules
+- [ ] Claim + `_active/TZD-23.md` before code
 
 ## Acceptance
 
@@ -22,8 +23,8 @@
 - [ ] MCP `set_report` / `apply_plan` (userOk gate)
 - [ ] Fixture: 2 new + 1 update + skip/doubt → 3 proposes
 - [ ] MCP.md Variant C protocol
-- [ ] Gates PASS (backend tsc, import-task tests, mcp tests)
-- [ ] Archive + lock + park README
+- [ ] Gates PASS
+- [ ] Archive + lock + commit/push → next TZD-26
 
 ## Gates (заполнить при close)
 

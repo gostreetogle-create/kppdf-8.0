@@ -1,17 +1,21 @@
 # SESSION QUEUE
 
-**Updated:** 2026-08-08 · continuation wave **COMPLETE**
+**Updated:** 2026-08-08 · NEXT = Desktop bulk-import wave
 
-## Checkpoint 2026-08-08T11:55Z
+## Checkpoint 2026-08-08T (pre-desktop-wave)
 
-- DONE: Phase A DEDUP-302…304 · FORM-306 · UX-309 · UX-310 · Phase B DETAIL-301…304 · FACT-302
+- DONE: Phase A DEDUP · FORM · UX · Phase B DETAIL-301…304 · FACT-302 · desktop audit+TZ authoring
 - IN PROGRESS: —
-- NOT DONE: —
-- NEXT: idle (await PO queue / deploy command)
-- HEAD: (after FACT-302 push)
+- NOT DONE: TZD-23 → 26 → 18 → 19 → 27 → 28 → 29
+- NEXT: claim **TZD-23** from `tasks/_backlog/desktop/`
+- HEAD: (after docs push)
 - Blockers: none
 - _active/: empty
 
-## PARK
+## READY wave
 
-SALES-304 · `_park/` · deploy NO
+`tasks/_backlog/desktop/WAVE-DESKTOP-BULK-IMPORT.md`
+
+## PARK / не брать
+
+SALES-304 · Order/КП import · deploy NO
