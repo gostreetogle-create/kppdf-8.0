@@ -18,6 +18,7 @@
 **Gates:** frontend tsc PASS; Jest products + bom-panel + modules PASS
 **Archive:** `tasks/_archive/2026-08/TZ-COST-303.done.md`
 **Lock:** `.mimocode/locks/TZ-COST-303-cost-visibility-ui.lock`
+**Commit:** `cec4804`
 **Cursor Verdict:** PASS
 
 ---

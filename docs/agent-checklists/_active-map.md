@@ -12,7 +12,7 @@
 | TZ-CATALOG-330 … **334** | 334 on main |
 | TZ-COST-301 | `79edbea` |
 | **TZ-COST-302** | `9676155` |
-| **TZ-COST-303** | (pending commit) |
+| **TZ-COST-303** | `cec4804` |
 | TZ-PRODUCTION-303.1 / 303.1b | archives |
 
 ## READY (не сделано — выдавать по PO)
@@ -47,7 +47,7 @@ _(empty)_
 - READY FOR REVIEW: _(none)_
 - NOT DONE: TZD-21; TZD-23 park
 - NEXT: idle / TZD-21 по PO; **no deploy**
-- HEAD: (COST-303 commit pending)
+- HEAD: `cec4804` (COST-303); desktop WIP unstaged
 - Blockers: none
 - _active/: _(empty)_
 - Deploy: NO
