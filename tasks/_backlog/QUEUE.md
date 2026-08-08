@@ -4,8 +4,8 @@
 
 | Агент | Волна | Старт |
 |-------|--------|--------|
-| **A — Desktop** | `tasks/_backlog/desktop/WAVE-DESKTOP-BULK-IMPORT.md` | TZD-23→29 |
-| **B — Shop north** | `tasks/_backlog/shop-north-b/WAVE-SHOP-NORTH-B.md` | SUPPLY-302→…→FORM-307 |
+| **A — Desktop** | ~~WAVE-DESKTOP-BULK-IMPORT~~ | **IDLE** (TZD-23…29 DONE) |
+| **B — Shop north** | `tasks/_backlog/shop-north-b/WAVE-SHOP-NORTH-B.md` | SUPPLY-302 DONE → ORDERS-304… |
 
 Оба только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
