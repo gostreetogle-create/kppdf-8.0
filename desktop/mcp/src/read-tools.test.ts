@@ -2,7 +2,12 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { withQuery } from './query.js';
 import { slimProduct, slimProductList, toolFail, toolOk } from './tool-result.js';
-import { READ_TOOL_NAMES } from './read-tools.js';
+import {
+  GRAPH_TOOL_NAMES,
+  READ_TOOL_NAMES,
+  runIntegritySuite,
+  type GraphSampleProvider,
+} from './read-tools.js';
 import { WRITE_TOOL_NAMES } from './write-tools.js';
 
 describe('withQuery', () => {
@@ -54,6 +59,72 @@ describe('read tool registry', () => {
     assert.ok(READ_TOOL_NAMES.length >= 5);
     assert.ok(READ_TOOL_NAMES.includes('kppdf_list_materials'));
     assert.ok(READ_TOOL_NAMES.includes('kppdf_list_warehouses'));
+  });
+});
+
+describe('graph tools (TZD-19)', () => {
+  it('registers 5 graph tools + integrity suite', () => {
+    assert.deepEqual([...GRAPH_TOOL_NAMES], [
+      'kppdf_get_product_composition',
+      'kppdf_get_product_where_used',
+      'kppdf_get_material_where_used',
+      'kppdf_get_module_composition',
+      'kppdf_get_module_where_used',
+      'kppdf_run_integrity_suite',
+    ]);
+    assert.ok(READ_TOOL_NAMES.includes('kppdf_list_modules'));
+  });
+
+  function deps(overrides: Partial<GraphSampleProvider> = {}): GraphSampleProvider {
+    return {
+      listProducts: async () => [{ _id: 'p1' }],
+      listMaterials: async () => [{ _id: 'm1' }],
+      listModules: async () => [{ _id: 'mod1' }],
+      getProductComposition: async () => ({ ok: true }),
+      getProductWhereUsed: async () => ({ ok: true }),
+      getMaterialWhereUsed: async () => ({ ok: true }),
+      getModuleComposition: async () => ({ ok: true }),
+      getModuleWhereUsed: async () => ({ ok: true }),
+      ...overrides,
+    };
+  }
+
+  it('smoke on sample ids returns ok + checks; no write calls', async () => {
+    const result = await runIntegritySuite(deps(), { sample: 2 });
+    assert.equal(result.ok, true);
+    // product × 2 + material × 1 + module × 2
+    assert.equal(result.checks.length, 5);
+    assert.ok(result.checks.every((c) => c.ok));
+    assert.deepEqual(result.warnings, []);
+  });
+
+  it('failed endpoint → check ok:false + warning; suite ok:false', async () => {
+    const result = await runIntegritySuite(
+      deps({
+        getMaterialWhereUsed: async () => {
+          throw new Error('boom');
+        },
+      }),
+    );
+    assert.equal(result.ok, false);
+    const failed = result.checks.find((c) => c.name === 'material.where_used:m1');
+    assert.ok(failed);
+    assert.equal(failed.ok, false);
+    assert.match(failed.detail ?? '', /boom/);
+    assert.ok(result.warnings.some((w) => w.includes('failed')));
+  });
+
+  it('empty catalogs → warnings, ok stays true', async () => {
+    const result = await runIntegritySuite(
+      deps({
+        listProducts: async () => [],
+        listMaterials: async () => [],
+        listModules: async () => [],
+      }),
+    );
+    assert.equal(result.ok, true);
+    assert.equal(result.checks.length, 0);
+    assert.equal(result.warnings.length, 3);
   });
 });
 

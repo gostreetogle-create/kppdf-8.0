@@ -1,3 +1,13 @@
+## [2026-08-08] — TZD-19 DONE: MCP product graph + integrity (wave #4)
+
+**Исполнитель:** buffy-desktop-ex (Freebuff desktop executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** 5 graph read tools (composition/where_used: products/modules/materials) + `kppdf_run_integrity_suite` (read-only smoke, sample ids) + `kppdf_list_modules`; graph protocol в MCP.md перед product.update / mass material.update.
+**Gates:** MCP tsc PASS; MCP test 51/51 PASS.
+**Archive:** `tasks/_archive/2026-08/TZD-19.done.md`
+**Lock:** `.mimocode/locks/TZD-19-mcp-graph-integrity.lock`
+**Known:** Deploy NO. Next TZD-27 (journal product.*).
+
 ## [2026-08-08] — TZD-18 DONE: batch propose/confirm + scaled ImportTask (wave #3)
 
 **Исполнитель:** buffy-desktop-ex (Freebuff desktop executor)

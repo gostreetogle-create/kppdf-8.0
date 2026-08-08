@@ -104,8 +104,34 @@ Stdio: `pnpm start:stdio` (для клиентов, которые спавня�
 | `kppdf_list_materials` | `GET /api/materials?page&limit&search` |
 | `kppdf_get_material` | `GET /api/materials/:id` |
 | `kppdf_list_products` / `kppdf_get_product` | products, minimal fields |
+| `kppdf_list_modules` | TZD-19 — `GET /api/modules` (slim; supporting tool for graph) |
 | `kppdf_list_storage_items` | optional `warehouseId` / `materialId` / `productId` |
 | `kppdf_list_warehouses` | `GET /api/warehouses` |
+
+## Tools — product graph / integrity (TZD-19)
+
+**Read-only.** Никогда не пишут SoT и не сбрасывают ничего (не sandbox_reset).
+
+| Tool | REST |
+|------|------|
+| `kppdf_get_product_composition` | `GET /api/products/:id/composition` |
+| `kppdf_get_product_where_used` | `GET /api/products/:id/where-used` |
+| `kppdf_get_material_where_used` | `GET /api/materials/:id/where-used` |
+| `kppdf_get_module_composition` | `GET /api/modules/:id/composition` |
+| `kppdf_get_module_where_used` | `GET /api/modules/:id/where-used` |
+| `kppdf_run_integrity_suite` | smoke composition/where_used на sample ids → `{ ok, checks[], warnings[] }` |
+
+### Graph protocol (TZD-19) — before destructive-ish propose
+
+1. **Перед `propose product.update`** — `kppdf_get_product_composition` +
+   `kppdf_get_product_where_used`: не ломай BOM родителя, не дублируй вставку.
+2. **Перед массовым `material.update`** (batch из плана) —
+   `kppdf_get_material_where_used` по каждому id из `update`-решений: кто
+   использует материал, с какой ценой/кол-вом — не «тихо 0» себест. у детей.
+3. Сомневаешься в целостности каталога → `kppdf_run_integrity_suite`
+   (read-only smoke) перед apply.
+
+**Запрет:** composition write tools, Gantt, journal kinds — не этот TZ (27).
 
 ## Tools — domain / validate (TZD-17)
 
@@ -210,6 +236,7 @@ Inbox-папка настраивается в десктоп-приложени
 
 ## Follow-ups
 
+- **TZD-19** ✅ DONE (2026-08-08, wave #4) — graph: 5 composition/where_used read tools + `kppdf_run_integrity_suite` (soft smoke, read-only) + `kppdf_list_modules`; graph protocol перед product.update / mass material.update.
 - **TZD-18** ✅ DONE (2026-08-08, wave #3) — batch: `propose-batch` / `confirm-batch` / `cancel-batch` (all-or-nothing + idempotencyKey); MCP `kppdf_propose_material_batch` / `kppdf_confirm_batch` / `kppdf_cancel_batch`; `apply_plan` чанками по 100; ImportTask cap **2000**; `inbox_propose_file` limit/offset.
 - **TZD-26** ✅ DONE (2026-08-08, wave #2) — column ready/unfit: `kppdf_inbox_classify_columns` (canon|unknown|conflict + mapping + sample) + `kppdf_import_task_reshape` (`PATCH /api/import-tasks/:id/rows`, сброс aiReport, 0 journal); protocol Column ready/reshape выше.
 - **TZD-23** ✅ DONE (2026-08-08, wave #1) — matching/HITL brain: `PATCH /api/import-tasks/:id/report` + `/proposals`; MCP `kppdf_import_task_set_report` + `kppdf_import_task_apply_plan` (userOk gate; skip/doubt не propose); Variant C protocol выше.
