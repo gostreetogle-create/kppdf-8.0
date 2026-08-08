@@ -12,7 +12,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import {
   CompositionLine,
   CompositionLineUpsertDto,
@@ -35,6 +35,10 @@ import {
   ProductCompositionPickerDialogComponent,
   type ProductCompositionPickerResult,
 } from './product-composition-picker-dialog.component';
+import { ModuleFormDialogComponent } from '../modules/module-form-dialog.component';
+import { ProductFormDialogComponent } from './product-form-dialog.component';
+import { MaterialFormDialogComponent } from '../materials/material-form-dialog.component';
+import { PiFactCardComponent, PiFactStackComponent } from '../../shared/ui/fact-card';
 import { catalogKindOklch } from '../../shared/ui/catalog/catalog-kind-oklch';
 import { formatPrice } from '../../shared/util/format';
 
@@ -51,7 +55,7 @@ interface LineCostHint {
   selector: 'app-product-bom-panel',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, CompositionTreeComponent, RouterLink],
+  imports: [ButtonComponent, CompositionTreeComponent, PiFactCardComponent, PiFactStackComponent],
   template: `
     <section
       class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(14rem,18rem)] gap-3 items-start"
@@ -118,72 +122,58 @@ interface LineCostHint {
         data-test="bom-inspector"
       >
         @if (selected(); as sel) {
-          <div class="space-y-1">
-            <p class="eyebrow m-0 flex items-center gap-2">
-              <span
-                class="inline-block w-2.5 h-2.5 rounded-full shrink-0"
-                [style.background]="inspectorAccent(sel.node)"
-                aria-hidden="true"
-                data-test="bom-inspector-kind-dot"
-              ></span>
-              Выбрано
-            </p>
-            <p class="font-medium text-sm m-0 break-words" data-test="bom-inspector-name">
-              {{ sel.node.name }}
-            </p>
-            <p class="text-xs text-muted-foreground m-0">{{ kindLabel(sel.node) }}</p>
-          </div>
+          <app-pi-fact-stack title="Что выбрано" dataTest="bom-inspector-what">
+            <app-pi-fact-card
+              label="Узел"
+              [value]="sel.node.name"
+              [caption]="kindLabel(sel.node)"
+              dataTest="bom-inspector-name"
+            />
+          </app-pi-fact-stack>
 
           @if (sel.depth > 0) {
-            <label class="block">
-              <span class="eyebrow block mb-1">Количество</span>
-              <input
-                class="pi-input w-full"
-                type="number"
-                min="0.0001"
-                [value]="sel.node.quantity"
-                (change)="onQtyChange($event)"
-                data-test="bom-inspector-qty"
-              />
-            </label>
+            <app-pi-fact-stack title="Количество" dataTest="bom-inspector-qty-section">
+              <label class="block">
+                <span class="sr-only">Количество</span>
+                <input
+                  class="pi-input w-full"
+                  type="number"
+                  min="0.0001"
+                  [value]="sel.node.quantity"
+                  (change)="onQtyChange($event)"
+                  data-test="bom-inspector-qty"
+                />
+              </label>
+            </app-pi-fact-stack>
           }
 
           @if (lineCostHint(); as hint) {
-            <div
-              class="hairline rounded-sm bg-paper-2 px-2.5 py-2 space-y-0.5"
-              data-test="bom-line-cost"
-            >
-              <p class="eyebrow m-0">Вклад в себест.</p>
+            <app-pi-fact-stack title="Деньги" dataTest="bom-line-cost">
               @if (hint.loading) {
-                <p class="text-xs text-muted-foreground m-0" data-test="bom-line-cost-loading">
-                  Считаем…
-                </p>
+                <app-pi-fact-card label="Вклад в себест." value="Считаем…" />
               } @else if (hint.error) {
-                <p
-                  class="text-xs text-destructive m-0"
-                  role="alert"
-                  data-test="bom-line-cost-error"
-                >
-                  {{ hint.error }}
-                </p>
+                <app-pi-fact-card
+                  label="Вклад в себест."
+                  [value]="hint.error"
+                  variant="danger"
+                  dataTest="bom-line-cost-error"
+                />
               } @else {
-                <p
-                  class="font-mono text-sm font-medium m-0 tabular-nums"
-                  data-test="bom-line-cost-total"
-                >
-                  {{ hint.totalLabel }}
-                </p>
-                <p class="text-[11px] text-muted-foreground m-0" data-test="bom-line-cost-formula">
-                  {{ hint.formula }}
-                </p>
+                <app-pi-fact-card
+                  label="Вклад в себест."
+                  [value]="hint.totalLabel"
+                  [caption]="hint.formula"
+                  mono
+                  variant="emphasis"
+                  dataTest="bom-line-cost-total"
+                />
               }
-            </div>
+            </app-pi-fact-stack>
           }
 
-          @if (canAddInto(sel.node)) {
-            <div class="space-y-2">
-              <p class="eyebrow m-0">Добавить внутрь</p>
-              <p class="text-[11px] text-muted-foreground m-0">{{ addHint(sel.node) }}</p>
+          <app-pi-fact-stack title="Действия" dataTest="bom-inspector-actions">
+            @if (canAddInto(sel.node)) {
+              <p class="text-xs text-muted-foreground m-0">{{ addHint(sel.node) }}</p>
               <app-pi-button
                 variant="default"
                 size="sm"
@@ -194,41 +184,76 @@ interface LineCostHint {
               >
                 + Из каталога
               </app-pi-button>
-            </div>
-          } @else if (sel.node.kind === 'material') {
-            <p class="text-xs text-muted-foreground m-0">
-              Материал — конечный узел. Добавлять внутрь нельзя.
-            </p>
-          }
+            } @else if (sel.node.kind === 'material') {
+              <p class="text-xs text-muted-foreground m-0">
+                Материал — конечный узел. Добавлять внутрь нельзя.
+              </p>
+            }
 
-          <div class="flex flex-col gap-1.5 pt-1 hairline-t">
-            @if (sel.node.kind === 'module') {
-              <a
-                [routerLink]="['/modules', sel.node._id]"
-                class="text-xs text-ink hover:text-sunrise-warm underline decoration-dotted"
-                data-test="bom-open-module"
-                >Открыть карточку модуля</a
+            @if (canEditSelected(sel.node)) {
+              <app-pi-button
+                variant="default"
+                size="sm"
+                type="button"
+                class="w-full"
+                (click)="openEditSelected()"
+                [disabled]="editLoading()"
+                data-test="bom-edit"
               >
+                {{ editLoading() ? 'Загрузка…' : 'Редактировать' }}
+              </app-pi-button>
+            }
+
+            @if (sel.node.kind === 'module') {
+              <app-pi-button
+                variant="outline"
+                size="sm"
+                type="button"
+                class="w-full"
+                (click)="openCard('/modules/' + sel.node._id)"
+                data-test="bom-open-module"
+              >
+                Открыть карточку модуля
+              </app-pi-button>
             }
             @if (sel.node.kind === 'product' && sel.depth > 0) {
-              <a
-                [routerLink]="['/products', sel.node._id]"
-                class="text-xs text-ink hover:text-sunrise-warm underline decoration-dotted"
-                data-test="bom-open-product"
-                >Открыть карточку изделия</a
-              >
-            }
-            @if (sel.depth > 0) {
-              <button
+              <app-pi-button
+                variant="outline"
+                size="sm"
                 type="button"
-                class="text-left text-xs text-destructive hover:underline"
+                class="w-full"
+                (click)="openCard('/products/' + sel.node._id)"
+                data-test="bom-open-product"
+              >
+                Открыть карточку изделия
+              </app-pi-button>
+            }
+            @if (sel.node.kind === 'material') {
+              <app-pi-button
+                variant="outline"
+                size="sm"
+                type="button"
+                class="w-full"
+                (click)="openCard('/materials/' + sel.node._id)"
+                data-test="bom-open-material"
+              >
+                Открыть карточку материала
+              </app-pi-button>
+            }
+
+            @if (sel.depth > 0) {
+              <app-pi-button
+                variant="outline"
+                size="sm"
+                type="button"
+                class="w-full"
                 (click)="removeSelected()"
                 data-test="bom-remove"
               >
                 Убрать из состава
-              </button>
+              </app-pi-button>
             }
-          </div>
+          </app-pi-fact-stack>
         } @else {
           <p class="eyebrow m-0">Инспектор</p>
           <p class="text-sm text-muted-foreground m-0">
@@ -246,14 +271,16 @@ interface LineCostHint {
           </app-pi-button>
         }
 
-        <button
+        <app-pi-button
+          variant="ghost"
+          size="sm"
           type="button"
-          class="text-xs text-muted-foreground hover:text-ink underline decoration-dotted"
+          class="w-full"
           (click)="reload()"
           data-test="bom-reload"
         >
           Обновить дерево
-        </button>
+        </app-pi-button>
       </aside>
     </section>
   `,
@@ -276,10 +303,12 @@ export class ProductBomPanelComponent {
   private readonly dialog = inject(PiDialogService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
+  private readonly router = inject(Router);
 
   protected readonly tree = signal<CompositionTreeNode | null>(null);
   protected readonly rootLines = signal<CompositionLine[]>([]);
   protected readonly loading = signal(false);
+  protected readonly editLoading = signal(false);
   protected readonly warning = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly selected = signal<CompositionTreeSelectEvent | null>(null);
@@ -355,10 +384,6 @@ export class ProductBomPanelComponent {
     if (node.materialKind === 'purchased') return 'Покупное';
     if (node.materialKind === 'raw') return 'Сырьё';
     return 'Материал';
-  }
-
-  protected inspectorAccent(node: CompositionTreeNode): string {
-    return catalogKindOklch(node.kind, node.materialKind);
   }
 
   protected canAddInto(node: CompositionTreeNode): boolean {
@@ -476,6 +501,79 @@ export class ProductBomPanelComponent {
           this.toast.success('Убрано из состава');
         } else this.toast.error(extractErrorMessage(res.error));
       });
+    });
+  }
+
+  /** DETAIL-303: edit available when node has an id and known kind. */
+  protected canEditSelected(node: CompositionTreeNode): boolean {
+    return (
+      !!node._id && (node.kind === 'module' || node.kind === 'product' || node.kind === 'material')
+    );
+  }
+
+  protected openCard(path: string): void {
+    void this.router.navigateByUrl(path);
+  }
+
+  protected openEditSelected(): void {
+    const sel = this.selected();
+    if (!sel || !this.canEditSelected(sel.node) || this.editLoading()) return;
+    const id = sel.node._id;
+    const kind = sel.node.kind;
+    this.editLoading.set(true);
+
+    const afterClose = (): void => {
+      this.moduleLinesCache.set(new Map());
+      this.load();
+      this.changed.emit();
+    };
+
+    if (kind === 'module') {
+      this.service.findById(id).subscribe((res) => {
+        this.editLoading.set(false);
+        if (!res.ok || !res.data) {
+          this.toast.error(res.ok ? 'Модуль не найден' : extractErrorMessage(res.error));
+          return;
+        }
+        const ref = this.dialog.open(ModuleFormDialogComponent, {
+          data: res.data,
+          width: 'lg',
+          parentDestroyRef: this.destroyRef,
+        });
+        onDialogCloseOnce(ref, this.injector, afterClose);
+      });
+      return;
+    }
+
+    if (kind === 'product') {
+      this.products.findById(id).subscribe((res) => {
+        this.editLoading.set(false);
+        if (!res.ok || !res.data) {
+          this.toast.error(res.ok ? 'Изделие не найдено' : extractErrorMessage(res.error));
+          return;
+        }
+        const ref = this.dialog.open(ProductFormDialogComponent, {
+          data: res.data,
+          width: 'lg',
+          parentDestroyRef: this.destroyRef,
+        });
+        onDialogCloseOnce(ref, this.injector, afterClose);
+      });
+      return;
+    }
+
+    this.materials.findById(id).subscribe((res) => {
+      this.editLoading.set(false);
+      if (!res.ok || !res.data) {
+        this.toast.error(res.ok ? 'Материал не найден' : extractErrorMessage(res.error));
+        return;
+      }
+      const ref = this.dialog.open(MaterialFormDialogComponent, {
+        data: res.data,
+        width: 'lg',
+        parentDestroyRef: this.destroyRef,
+      });
+      onDialogCloseOnce(ref, this.injector, afterClose);
     });
   }
 

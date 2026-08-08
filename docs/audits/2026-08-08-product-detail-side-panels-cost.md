@@ -79,7 +79,7 @@ Module detail (`/modules/:id`) — **parity** тем же паттерном (TZ
 | 0 | **TZ-UX-FACT-301** | PiFactCard + stack (+docs) | `shared/ui/fact-card/**` |
 | 1 | **TZ-UX-DETAIL-301** | Левый паспорт: убрать цены; typography/dims | **DONE** 2026-08-08 |
 | 2 | **TZ-UX-DETAIL-302** | Блок денег/себест. вертикально + auto-recalc | **DONE** 2026-08-08 |
-| 3 | **TZ-UX-DETAIL-303** | Inspector: FactCard + PiButton + **Редактировать** (FormDialog по kind) | `product-bom-panel` inspector — **не** tree |
+| 3 | **TZ-UX-DETAIL-303** | Inspector: FactCard + PiButton + **Редактировать** | **DONE** 2026-08-08 |
 | 4 | **TZ-UX-DETAIL-304** | Module detail parity | `module-detail.page.ts` |
 | 5 | **TZ-UX-FACT-302** | Site audit → successors | docs only |
 

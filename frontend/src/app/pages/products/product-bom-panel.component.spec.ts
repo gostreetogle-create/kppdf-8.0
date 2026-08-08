@@ -170,10 +170,7 @@ describe('ProductBomPanelComponent', () => {
       '[data-test="bom-line-cost-total"]',
     ) as HTMLElement | null;
     expect(total?.textContent).toContain('300.00');
-    const formula = fixture.nativeElement.querySelector(
-      '[data-test="bom-line-cost-formula"]',
-    ) as HTMLElement | null;
-    expect(formula?.textContent).toMatch(/150\.00.*×\s*2/);
+    expect(total?.textContent).toMatch(/150\.00.*×\s*2/);
   });
 
   it('shows material cost contribution in inspector (price × qty)', () => {
@@ -208,5 +205,7 @@ describe('ProductBomPanelComponent', () => {
       fixture.nativeElement.querySelector('[data-test="bom-inspector-name"]')?.textContent,
     ).toContain('Каркас');
     expect(fixture.nativeElement.querySelector('[data-test="bom-add-into"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="bom-edit"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="bom-open-module"]')).toBeTruthy();
   });
 });

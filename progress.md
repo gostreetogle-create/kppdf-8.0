@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-DETAIL-303 DONE: bom inspector FactCards
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** inspector FactStack; PiButton Edit/Open/Remove/Reload; FormDialog по kind.
+**Gates:** FE tsc PASS; Jest product-bom-panel 5/5 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-DETAIL-303.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-DETAIL-303-bom-inspector-fact-cards.lock`
+**Known:** Deploy NO. Next DETAIL-304.
+
 ## [2026-08-08] — TZ-UX-DETAIL-302 DONE: cost panel vertical + autorecalc
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor)
