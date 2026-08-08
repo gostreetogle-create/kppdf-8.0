@@ -92,7 +92,9 @@ const SECTION_TO_GROUP: Record<string, string> = {
  *
  * - `permissions` = capability keys (смотреть / менять / полный доступ)
  * - `pages` = nav pageKey ACL (Клиенты, Снабжение, …)
- * - `mode: 'view'` = system role read-only (TZ-ADMIN-301)
+ * - `mode: 'view'` = system role read-only; after catalog load every
+ *   pageKey + capability is shown checked+disabled (TZ-ADMIN-302).
+ *   Stored `permissions: ['*']` alone would leave the matrix empty.
  */
 @Component({
   selector: 'pi-role-form-dialog',
@@ -668,6 +670,10 @@ export class RoleFormDialogComponent {
         this.groups.set(regroupPermissions(res.data.sections));
         this.pageGroups.set(regroupPages(res.data.pages ?? []));
         this.catalogError.set(null);
+        // System view: show effective full access (all ✓), not raw ['*']/sparse pages.
+        if (this.data.mode === 'view') {
+          this.applyFullAccessDisplay();
+        }
       } else {
         this.catalogError.set(this.describe(res.error));
       }
@@ -676,6 +682,20 @@ export class RoleFormDialogComponent {
     } finally {
       this.catalogLoading.set(false);
     }
+  }
+
+  /** Mark every catalog capability + pageKey selected (view/system only). */
+  private applyFullAccessDisplay(): void {
+    const caps = new Set<string>();
+    for (const g of this.groups()) {
+      for (const p of g.permissions) caps.add(p.key);
+    }
+    this.selected.set(caps);
+    const pages = new Set<string>();
+    for (const g of this.pageGroups()) {
+      for (const key of g.keys) pages.add(key);
+    }
+    this.selectedPages.set(pages);
   }
 
   protected readonly selectedCount = (): number => this.selected().size;

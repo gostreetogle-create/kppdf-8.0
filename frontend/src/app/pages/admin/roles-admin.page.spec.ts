@@ -210,6 +210,41 @@ describe('RolesAdminPage capability gating', () => {
     expect(fixture.nativeElement.querySelector('[data-test="roles-admin-delete"]')).toBeNull();
   });
 
+  it('shows Edit for non-system director/manager (TZ-ADMIN-302)', async () => {
+    hasAny.mockImplementation((keys: readonly string[]) => keys.includes('role:write'));
+    const fixture = TestBed.createComponent(RolesAdminPage);
+    httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=50`).flush({
+      items: [
+        {
+          id: 'r-dir',
+          name: 'director',
+          label: 'Директор',
+          permissions: ['product:read'],
+          pages: ['products'],
+          isSystem: false,
+        },
+        {
+          id: 'r-mgr',
+          name: 'manager',
+          label: 'Менеджер',
+          permissions: ['sales:read'],
+          pages: ['proposals'],
+          isSystem: false,
+        },
+      ],
+      total: 2,
+      page: 1,
+      limit: 50,
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('[data-test="roles-admin-edit"]').length).toBe(2);
+    expect(fixture.nativeElement.querySelector('[data-test="roles-admin-view"]')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="roles-admin-system-badge"]'),
+    ).toBeNull();
+  });
+
   it('tracks row loading and clears it after an error', () => {
     const fixture = TestBed.createComponent(RolesAdminPage);
     const comp = fixture.componentInstance as unknown as PageHarness;

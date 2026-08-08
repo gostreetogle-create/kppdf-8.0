@@ -22,6 +22,7 @@ import { ROLE_FORM_COPY } from './permission-labels.ru';
 /**
  * TZ-264 — RoleFormDialogComponent unit spec.
  * TZ-ADMIN-301 — pages ACL picker + system read-only view.
+ * TZ-ADMIN-302 — system view shows full catalog checked+disabled.
  */
 
 const CATALOG: PermissionCatalogResponse = {
@@ -276,6 +277,82 @@ describe('RoleFormDialogComponent', () => {
     expect(
       fixture.nativeElement.querySelector('[data-test="role-form-system-banner"]'),
     ).not.toBeNull();
+    httpMock.verify();
+  });
+
+  it('view mode marks full catalog pages+caps checked and disabled (TZ-ADMIN-302)', async () => {
+    const { comp, fixture, httpMock } = await setup({
+      mode: 'view',
+      role: {
+        id: 'sys1',
+        name: 'admin',
+        label: 'Администратор',
+        // Wildcard alone must not leave the matrix empty.
+        permissions: ['*'],
+        pages: [],
+        isSystem: true,
+      },
+    });
+    httpMock.expectOne('/api/admin/permissions').flush(CATALOG);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(comp.selectedCount()).toBe(4);
+    expect(comp.selectedPagesCount()).toBe(5);
+    expect(comp.isSelected('user:read')).toBe(true);
+    expect(comp.isSelected('material:read')).toBe(true);
+    expect(comp.isPageSelected('counterparties')).toBe(true);
+    expect(comp.isPageSelected('supply')).toBe(true);
+
+    // Toggle is a no-op in view; Save absent.
+    comp.toggleKey('user:read');
+    comp.togglePage('supply');
+    expect(comp.isSelected('user:read')).toBe(true);
+    expect(comp.isPageSelected('supply')).toBe(true);
+    expect(fixture.nativeElement.querySelector('[data-test="role-form-submit"]')).toBeNull();
+
+    const pageBoxes = fixture.nativeElement.querySelectorAll(
+      '[data-test="role-form-page"]',
+    ) as NodeListOf<HTMLInputElement>;
+    const permBoxes = fixture.nativeElement.querySelectorAll(
+      '[data-test="role-form-perm"]',
+    ) as NodeListOf<HTMLInputElement>;
+    expect(pageBoxes.length).toBe(5);
+    expect(permBoxes.length).toBe(4);
+    for (const el of Array.from(pageBoxes)) {
+      expect(el.checked).toBe(true);
+      expect(el.disabled).toBe(true);
+    }
+    for (const el of Array.from(permBoxes)) {
+      expect(el.checked).toBe(true);
+      expect(el.disabled).toBe(true);
+    }
+    httpMock.verify();
+  });
+
+  it('edit mode stays editable for custom roles (TZ-ADMIN-302)', async () => {
+    const { comp, fixture, httpMock } = await setup({
+      mode: 'edit',
+      role: {
+        id: 'c1',
+        name: 'packer',
+        label: 'Упаковщик',
+        permissions: ['material:read'],
+        pages: ['products'],
+        isSystem: false,
+      },
+    });
+    httpMock.expectOne('/api/admin/permissions').flush(CATALOG);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(comp.readOnly()).toBe(false);
+    expect(comp.isSelected('material:read')).toBe(true);
+    expect(comp.isPageSelected('products')).toBe(true);
+    expect(comp.isSelected('user:read')).toBe(false);
+    comp.toggleKey('user:read');
+    expect(comp.isSelected('user:read')).toBe(true);
+    expect(fixture.nativeElement.querySelector('[data-test="role-form-submit"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="role-form-system-banner"]')).toBeNull();
     httpMock.verify();
   });
 });

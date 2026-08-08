@@ -41,9 +41,11 @@ import { ROLE_FORM_COPY, permissionsSummary, roleLabelRu } from './permission-la
  * TZ-256.B — `roles-admin.page` (full CRUD surface).
  * TZ-ADMIN-301 — system roles show RU badge + read-only view; custom
  * roles edit pages[] (nav pageKey ACL) + permissions.
+ * TZ-ADMIN-302 — system «Смотреть» shows full catalog checked (not empty `*`).
  *
  * System roles (`isSystem: true`) are frozen by design —
  * `SystemRoleGuard` returns 403 `SYSTEM_ROLE_FROZEN` / `SYSTEM_ROLE_ESCALATION`.
+ * Non-system (custom / director / manager when `isSystem: false`) keep Edit.
  */
 type ClientRole = AdminRole;
 const PAGE_SIZE = 50;
