@@ -4,6 +4,12 @@
 **Phase:** Canonical cleanup and verification — TZ-261 and TZ-262 are closed; roadmap items remain documented backlog
 **Canonical workspace:** `D:\kppdf-8.0` on `main`; only registered Git worktree; package manager `pnpm`
 **Task truth:** `tasks/` contains only active work. Completed or deferred work belongs in `tasks/_archive/`; this status file also retains historical roadmap notes.
+
+## [2026-08-08] — TZD-30 DONE: MCP text-block drafts
+**Статус:** DONE on main; deploy НЕ
+**Что:** MCP text-block categories/list/create-draft + explicit category create; inactive `ai-draft` blocks, duplicate/409 no-overwrite, and manager todo at `/doc-constructor/texts?editId=`. `notes` is never sent.
+**Archive:** `tasks/_archive/2026-08/TZD-30.done.md`
+**Gates:** MCP test 69/69 PASS; MCP tsc PASS; `git diff --check` PASS
 **Total tasks:** Historical completed work plus documented backlog; see `OrchestratorKit/STATUS.md` for the filesystem-synchronised kit board.
 
 ## Canonical cleanup checkpoint — 2026-08-01

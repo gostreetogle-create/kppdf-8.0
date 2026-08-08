@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-08 · TZD-30 DONE
+- **DONE:** TZD-30 — MCP text-block drafts + category create
+- **Agent:** agent-d782972d63 · workspace `D:\kppdf-8.0`
+- **Conflict keys:** `desktop/mcp/src/text-block-tools.ts`, `desktop/mcp/src/text-block-tools.test.ts`, `desktop/mcp/src/tools.ts`, `docs/agent-checklists/TZD-30.md`, `docs/audits/2026-08-09-org-assets-vs-ai-text-bootstrap.md`, `docs/pages/texts.page.md`
+- **Archive:** `tasks/_archive/2026-08/TZD-30.done.md`; lock `.mimocode/locks/TZD-30-mcp-text-block-drafts.lock`
+- **Team Room:** unavailable; task registry did not contain TZD-30
+- **Ban:** `desktop/mcp-runtime/**`, Organization vault/photos, layout-AI, deploy
+
 **Updated:** 2026-08-08 · WAVE-CATALOG-UX-C READY for free agent
 
 ## Checkpoint 2026-08-08 · Catalog UX wave C

@@ -1,6 +1,6 @@
 # WAVE-DESKTOP-DOC-TEXTS — MCP черновики текстовых блоков
 
-**STATUS:** READY  
+**STATUS:** DONE — TZD-30 archived 2026-08-08
 **SoT:** `D:\kppdf-8.0` на `main`  
 **Параллель OK с:** Catalog / Shop (другие keys)  
 **Deploy:** только по команде PO
@@ -23,3 +23,5 @@
 ## DoD
 
 Менеджер получает неактивный AI-черновик текста в нужной категории + todo с `?editId=`; сам проверяет и включает «Активен».
+
+**Checkpoint:** TZD-30 DONE. Deploy: NO.

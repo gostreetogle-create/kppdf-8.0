@@ -1,3 +1,12 @@
+## [2026-08-08] — TZD-30 DONE: MCP text-block drafts + category shelves
+
+**Исполнитель:** agent-d782972d63 (Freebuff desktop executor)
+**Статус:** DONE; deploy НЕ
+**Что:** Desktop MCP получил list категорий/блоков, явное создание TextBlockCategory и create-draft: `categoryId` обязателен, имя `Черновик ИИ — …`, `isActive=false`, `ai-draft`, pre-check дублей, понятный 409 без overwrite. После создания создаётся todo со ссылкой `/doc-constructor/texts?editId=<id>`; ошибка todo возвращается как `todoError`. Поля `notes` нет.
+**Затронуто:** `desktop/mcp/src/text-block-tools.ts`, `desktop/mcp/src/text-block-tools.test.ts`, `desktop/mcp/src/tools.ts`, `docs/audits/2026-08-09-org-assets-vs-ai-text-bootstrap.md`, checklist/status/active task.
+**Gates:** MCP test 69/69 PASS; MCP tsc PASS; `git diff --check` PASS.
+**Известные ограничения:** TextBlock без `organizationId`; idempotency-key и sync `mcp` → `mcp-runtime` остаются follow-up/packaging gate; deploy NO.
+
 ## [2026-08-08] — TZ-CATALOG-337 DONE: material-detail A+ shell
 
 **Что:** `/materials/:id` получил sibling-каркас product/module: `PiPageChrome` crumbs, sticky left hero + FACT-304 passport + Photo/Price accordion, right where-used + stock. Populated photo cover/gallery и empty state; без `ProductBomPanel`, composition-tree, backend/API и ModuleMaterials.

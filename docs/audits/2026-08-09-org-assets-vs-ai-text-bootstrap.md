@@ -1,25 +1,29 @@
-# Audit: Org assets vs AI text bootstrap (2026-08-09)
+# Audit: organization assets vs AI text bootstrap
 
-## Vision (PO)
+**Date:** 2026-08-09
+**Scope:** TZD-30
+**Decision:** ship text-block drafts through Desktop MCP; keep organization asset vault and layout automation out of this slice.
 
-1. Долгосрочно: у Organization — vault (лого, печать, подписи, фоны) + Desktop MCP грузит материалы → draft КП.
-2. Сейчас реалистично: ИИ готовит **текстовые блоки** по категориям; менеджер раскладывает на холсте.
+## Manager flow
 
-## Slice now — TZD-30
+1. Desktop/MCP lists active `TextBlockCategory` shelves.
+2. If the requested shelf is absent, the agent explicitly creates that category through `category_create`; it never silently falls back to «Общее».
+3. The agent lists blocks in the category, then stores the finished source text as `isActive=false` with the `ai-draft` tag and the name prefix `Черновик ИИ —`.
+4. MCP creates an import todo linking to `/doc-constructor/texts?editId=<id>`.
+5. The manager reviews the source, enables «Активен», and manually places the block on a template canvas.
 
-- MCP: list/create text-block drafts (`isActive=false`, tag `ai-draft`).
-- Агент сам создаёт категорию-полочку при необходимости.
-- Todo → `/doc-constructor/texts?editId=…`.
-- Не автосборка КП, не upload картинок.
+This is not automatic quotation assembly, legal/commercial content generation, a publish operation, or an upload of seals/backgrounds/photos.
 
-## Park
+## API safety boundaries
 
-| ID | Что |
-|----|-----|
-| TZ-ORG-DOC-ASSETS-301 | Typed roles logo/seal/signature/background на Organization |
-| later | MCP photo upload + bind to template |
-| later | Layout-AI на canvas |
+- `categoryId` is required for the draft tool. The backend remains responsible for category ownership and active-category validation.
+- The create payload contains only the TextBlock contract fields (`name`, `categoryId`, `content` and/or `columns`, `tags`, `isActive`). It intentionally does **not** send `notes`; TextBlock has no such field and the backend whitelist would reject it.
+- The pre-create category list prevents same-name duplicates. Backend 409 responses are surfaced as no-overwrite errors.
+- Todo creation is best effort only after the block exists, but a failed todo is returned as `todoError` alongside `textBlockId`; it is never silently discarded.
 
-## Already done
+## Known limitations / follow-up
 
-- TZD-28 empty template draft · TZD-29 manager todos.
+- TextBlock currently has no `organizationId`; multi-organization isolation is a separate backend task.
+- Idempotency keys are not part of this bootstrap; list plus backend uniqueness/409 is the current guard.
+- `desktop/mcp-runtime` remains installer staging. Syncing `desktop/mcp` into it is a packaging gate before MSI, not product logic in TZD-30.
+- Organization photo/seal/background vault and layout-AI remain parked for a separate task.

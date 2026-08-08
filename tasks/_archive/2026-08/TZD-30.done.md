@@ -2,7 +2,7 @@
 TZD-30: MCP text-block drafts (+ category create)
 ═══════════════════════════════════════════════════════════════
 
-STATUS: READY · WAVE-DESKTOP-DOC-TEXTS #1
+STATUS: DONE · WAVE-DESKTOP-DOC-TEXTS #1
 DEPENDS ON: TZD-28 DONE; TZD-29 DONE
 LAYER: 3
 CHECKLIST: docs/agent-checklists/TZD-30.md
@@ -59,7 +59,7 @@ Loose wording: «папка текстов» → TextBlockCategory в БД.
 
 ШАГ 2: Tool descriptions
 
-- Явно: tool **сохраняет** готовый текст из источника агента; не выдумывает юр/цены/гарантию.
+- Явно: tool **сохраняет** готовый текст из источника агента; не выдумывает юртекст/цены/гарантию.
 - Не называть автосборкой КП.
 
 ШАГ 3: Tests + docs
@@ -88,7 +88,6 @@ Loose wording: «папка текстов» → TextBlockCategory в БД.
    cd desktop/mcp && pnpm test
    cd desktop/mcp && pnpm exec tsc --noEmit
    ```
-   (+ BE tests только если трогали backend).
 6. Archive `tasks/_archive/2026-08/TZD-30.done.md`; checklist DONE; commit+push; deploy NO.
 
 ## known_limitation
@@ -97,3 +96,25 @@ Loose wording: «папка текстов» → TextBlockCategory в БД.
 - Idempotency-key API — follow-up; пока list+409.
 - Packaging sync `mcp` → `mcp-runtime` перед MSI — не AC этого TZ.
 - Org vault / MCP photo — park `TZ-ORG-DOC-ASSETS-301`.
+
+## ARCHIVE_MARKER
+outcome: DONE
+closed_at: 2026-08-08
+closed_by: agent-d782972d63
+protected_files:
+  - desktop/mcp/src/text-block-tools.ts
+  - desktop/mcp/src/text-block-tools.test.ts
+  - desktop/mcp/src/tools.ts
+  - docs/audits/2026-08-09-org-assets-vs-ai-text-bootstrap.md
+  - docs/pages/texts.page.md
+verification:
+  - acceptance criteria: PASS
+  - typecheck: PASS (`cd desktop/mcp && pnpm exec tsc --noEmit`)
+  - tests: PASS (69 tests)
+  - lint: PASS (`git diff --check`)
+  - checklist: UPDATED
+  - progress.md: UPDATED
+  - status synchronization: PASS
+  - mcp-runtime: NOT EDITED
+  - deploy: NO
+notes: TextBlock has no notes field. categoryId is explicit; no fallback or overwrite. Todo failure is returned as todoError with textBlockId.

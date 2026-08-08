@@ -915,6 +915,7 @@ Local MCP host for any MCP client (not Cursor-specific):
 - Transports: Streamable HTTP (`127.0.0.1:9743` default) + stdio
 - Auth: same pairing JWT as desktop (`KPPDF_API_KEY`); HTTP requires matching Bearer
 - Tools: reads (TZD-12) + writes propose/confirm/undo Material (TZD-13) via `/api/mutation-journal`
+- Text drafts: TZD-30 tools list/create `TextBlockCategory` shelves and inactive `TextBlock` drafts, then create manager todos linking to `/doc-constructor/texts?editId=`; no publish, overwrite, `notes`, or silent category fallback
 - Docs: `desktop/docs/MCP.md` (manager 3-step connect + safety)
 - Vision: `docs/superpowers/specs/2026-08-05-desktop-mcp-agent-vision.md`
 - **Owner:** Cursor owns desktop/MCP quality end-to-end
