@@ -1,19 +1,11 @@
-# Завтра 2026-08-09 — handoff (updated mid-session 08)
+# SUPERSEDED — не использовать как очередь
 
-## DONE this session (continuous executor)
+**Этот handoff устарел** (2026-08-08 hygiene).
 
-- **TZ-CATALOG-336** module A+ · `ab225fa`
-- **TZ-CATALOG-335** dark nest · `973c6e3`
-- **TZ-COST-304** already archived (skip)
-- **TZ-DICT-313** audit → 314–316 drafts (this closeout)
+Актуальные источники:
+- Очередь: `docs/agent-checklists/_active-map.md`
+- Поток: `docs/audits/2026-08-08-sales-to-shop-flow-canon.md`
+- Меню: `docs/audits/2026-08-08-nav-ia-lifecycle-audit.md`
+- Hygiene: `docs/audits/2026-08-08-docs-hygiene-parallel.md`
 
-## NEXT / PARK
-
-1. **TZD-21** pairing keys — if still READY on map / PO
-2. Deploy — only explicit PO
-3. COST-305 / DICT-314…316 — RESERVED until map slot
-4. ORDERS-302 PARK
-
-## Не терять
-
-- Pattern lock cascade; TZD-24 zip only after deploy
+Исторически DONE в ту сессию: CATALOG-336/335, DICT-313, … — см. archive / progress.md.

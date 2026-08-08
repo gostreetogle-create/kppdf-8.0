@@ -86,7 +86,7 @@ listPrice остаётся коммерческим (не авто=себест.
 | **TZ-COST-302** | Рекурсивный rollup модулей; activate → `costPrice`; module cost-preview; overhead канон | после 301 |
 | **TZ-COST-303** | UI: цена/себест. в списках модуля+изделия; BOM inspector показывает вклад строки | DONE |
 | **TZ-COST-304** | Аудит: `unitPriceOverride` vs CostCalculation (PO: сумма→себест. 0) | **DONE** → [2026-08-09 audit](./2026-08-09-product-line-cost-vs-override.md) |
-| **TZ-COST-305** | Impl: product-line в cost + picker default/copy (D1=b…D5) | READY / RESERVED |
+| **TZ-COST-305** | Impl: product-line в cost + picker default/copy (D1=b…D5) | **DONE** `d9fc115` |
 | later | КП defaults; revisit strip-commerce | PARK |
 
 Скрипт дня: `tasks/_backlog/cost/TZ-DAY-2026-08-08-cost-hierarchy-301-303.md`
