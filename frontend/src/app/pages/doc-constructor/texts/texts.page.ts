@@ -12,9 +12,8 @@ import {
 import { Subject, switchMap, map, filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
-import { PiPageHeaderComponent } from '../../../shared/page/pi-page-header.component';
+import { PiGroupWorkspaceComponent } from '../../../shared/page/pi-group-workspace.component';
 import { PiSectionComponent } from '../../../shared/page/pi-section.component';
-import { PiToolbarComponent } from '../../../shared/page/pi-toolbar.component';
 import { PiEmptyStateComponent } from '../../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { PiRowActionsComponent } from '../../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
@@ -31,6 +30,7 @@ import {
 import { TextBlockEditorComponent } from './text-block-editor.component';
 import { pluralRu, RU_BLOCKS, RU_COLUMNS } from '../../../shared/util/russian-plural';
 import { ColumnDef, TableComponent } from '../../../shared/ui/pi-table.component';
+import { DOCUMENTS_SECTION_CHIPS } from '../documents/documents-group-chips';
 
 type SortDir = 'asc' | 'desc';
 
@@ -42,9 +42,8 @@ type SortDir = 'asc' | 'desc';
   selector: 'app-texts-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    PiPageHeaderComponent,
+    PiGroupWorkspaceComponent,
     PiSectionComponent,
-    PiToolbarComponent,
     PiEmptyStateComponent,
     PiRowActionsComponent,
     ButtonComponent,
@@ -52,65 +51,54 @@ type SortDir = 'asc' | 'desc';
     TableComponent,
   ],
   template: `
-    @if (error()) {
-      <div
-        role="alert"
-        class="mb-4 hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive flex items-center gap-2"
-      >
-        <span>{{ error() }}</span>
-        <button
-          type="button"
-          class="pi-icon-btn pi-focus-ring ml-auto"
-          (click)="error.set(null)"
-          aria-label="Закрыть"
+    <app-pi-group-workspace pathLabel="Документы" [chips]="chips" activeId="texts">
+      @if (error()) {
+        <div
+          tools
+          role="alert"
+          class="mb-0 hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive flex items-center gap-2 w-full"
         >
-          ×
-        </button>
-      </div>
-    }
+          <span>{{ error() }}</span>
+          <button
+            type="button"
+            class="pi-icon-btn pi-focus-ring ml-auto"
+            (click)="error.set(null)"
+            aria-label="Закрыть"
+          >
+            ×
+          </button>
+        </div>
+      } @else if (!editorOpen()) {
+        <div tools class="flex items-center gap-form-field flex-wrap w-full">
+          <input
+            type="search"
+            class="pi-input w-72"
+            placeholder="Поиск…"
+            [value]="searchQuery()"
+            (input)="onSearchInput($event)"
+            aria-label="Поиск текстовых блоков"
+          />
+          <select
+            class="pi-input w-48"
+            [value]="categoryFilter()"
+            (change)="onCategoryFilterChange($event)"
+            aria-label="Фильтр по категории"
+            data-test="texts-category-filter"
+          >
+            <option value="">Все категории</option>
+            @for (cat of categories(); track cat._id) {
+              <option [value]="cat._id">{{ cat.name }}</option>
+            }
+          </select>
+          <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
+            + Новый блок
+          </app-pi-button>
+          <span class="text-xs text-muted-foreground"
+            >{{ data().length }} {{ totalLabel(data().length) }}</span
+          >
+        </div>
+      }
 
-    @if (editorOpen()) {
-      <app-text-block-editor
-        [block]="editingBlock()"
-        (save)="onEditorSaved($event)"
-        (cancel)="onEditorCancel()"
-      />
-    } @else {
-      <app-pi-page-header
-        eyebrow="раздел · конструктор документов"
-        title="Текстовые блоки"
-        description="Сохранённые текстовые блоки для шаблонов: колонки, форматирование, категории. Выберите блок в каталоге или создайте новый."
-      />
-    }
-
-    <app-pi-toolbar>
-      <input
-        type="search"
-        class="pi-input w-72"
-        placeholder="Поиск…"
-        [value]="searchQuery()"
-        (input)="onSearchInput($event)"
-        aria-label="Поиск текстовых блоков"
-      />
-      <select
-        class="pi-input w-48"
-        [value]="categoryFilter()"
-        (change)="onCategoryFilterChange($event)"
-        aria-label="Фильтр по категории"
-        data-test="texts-category-filter"
-      >
-        <option value="">Все категории</option>
-        @for (cat of categories(); track cat._id) {
-          <option [value]="cat._id">{{ cat.name }}</option>
-        }
-      </select>
-      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
-        + Новый блок
-      </app-pi-button>
-      <span hint>{{ data().length }} {{ totalLabel(data().length) }}</span>
-    </app-pi-toolbar>
-
-    <app-pi-section title="Сохранённые блоки" eyebrow="I">
       <ng-template #categoryTpl let-row>
         @if (row.categoryId; as catId) {
           @if (categoryName(catId); as name) {
@@ -144,34 +132,46 @@ type SortDir = 'asc' | 'desc';
           (delete)="onDelete(row)"
         />
       </ng-template>
-      @if (loading() && data().length === 0) {
-        <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
-      } @else if (sortedRows().length === 0 && !loading()) {
-        <app-pi-empty-state
-          [colspan]="1"
-          [message]="
-            searchQuery() || categoryFilter()
-              ? 'Ничего не найдено.'
-              : 'Блоков пока нет. Нажмите «Новый блок».'
-          "
+
+      @if (editorOpen()) {
+        <app-text-block-editor
+          [block]="editingBlock()"
+          (save)="onEditorSaved($event)"
+          (cancel)="onEditorCancel()"
         />
       } @else {
-        <app-pi-table
-          [data]="sortedRows()"
-          [columns]="columns"
-          [cellTemplates]="cellTemplates()"
-          [rowActions]="rowActionsTpl"
-          [total]="sortedRows().length"
-          [loading]="loading()"
-          ariaLabel="Текстовые блоки"
-          data-test="texts-table"
-          (rowClick)="openEdit($event)"
-        />
+        <app-pi-section title="Сохранённые блоки" eyebrow="I">
+          @if (loading() && data().length === 0) {
+            <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
+          } @else if (sortedRows().length === 0 && !loading()) {
+            <app-pi-empty-state
+              [colspan]="1"
+              [message]="
+                searchQuery() || categoryFilter()
+                  ? 'Ничего не найдено.'
+                  : 'Блоков пока нет. Нажмите «Новый блок».'
+              "
+            />
+          } @else {
+            <app-pi-table
+              [data]="sortedRows()"
+              [columns]="columns"
+              [cellTemplates]="cellTemplates()"
+              [rowActions]="rowActionsTpl"
+              [total]="sortedRows().length"
+              [loading]="loading()"
+              ariaLabel="Текстовые блоки"
+              data-test="texts-table"
+              (rowClick)="openEdit($event)"
+            />
+          }
+        </app-pi-section>
       }
-    </app-pi-section>
+    </app-pi-group-workspace>
   `,
 })
 export class TextsPage {
+  protected readonly chips = DOCUMENTS_SECTION_CHIPS;
   private readonly service = inject(TextBlocksService);
   private readonly categoryService = inject(TextBlockCategoriesService);
   private readonly dialog = inject(PiDialogService);

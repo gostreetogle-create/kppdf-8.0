@@ -4,7 +4,7 @@
 
 | Агент | Волна | Статус |
 |-------|--------|--------|
-| **A — Desktop** | ~~WAVE-DESKTOP-BULK-IMPORT~~ | **IDLE** |
+| **A — Desktop** | `desktop/WAVE-DESKTOP-DOC-TEXTS.md` | **READY** TZD-30 (промпт `PROMPT-TZD-30.md`) |
 | **B — Shop north** | `shop-north-b/WAVE-SHOP-NORTH-B.md` | FACT-304 → FORM-307 (не перехватывать) |
 | **C — Catalog UX** | `catalog-ux-c/WAVE-CATALOG-UX-C.md` | **READY** COMPOSE-301 → DIALOG-305 → 337 → 307 → 304 |
 

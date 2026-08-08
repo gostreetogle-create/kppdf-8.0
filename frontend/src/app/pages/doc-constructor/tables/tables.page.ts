@@ -13,9 +13,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse, httpResource } from '@angular/common/http';
 import { filter, map, switchMap } from 'rxjs';
-import { PiPageHeaderComponent } from '../../../shared/page/pi-page-header.component';
+import { PiGroupWorkspaceComponent } from '../../../shared/page/pi-group-workspace.component';
 import { PiSectionComponent } from '../../../shared/page/pi-section.component';
-import { PiToolbarComponent } from '../../../shared/page/pi-toolbar.component';
 import { PiEmptyStateComponent } from '../../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { PiRowActionsComponent } from '../../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
@@ -36,6 +35,7 @@ import {
 } from './table-template-dialog.component';
 import { pluralRu } from '../../../shared/util/russian-plural';
 import { ColumnDef, TableComponent } from '../../../shared/ui/pi-table.component';
+import { DOCUMENTS_SECTION_CHIPS } from '../documents/documents-group-chips';
 
 const RU_TEMPLATES = ['шаблон', 'шаблона', 'шаблонов'] as const;
 
@@ -52,9 +52,8 @@ type SortDir = 'asc' | 'desc';
   selector: 'app-tables-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    PiPageHeaderComponent,
+    PiGroupWorkspaceComponent,
     PiSectionComponent,
-    PiToolbarComponent,
     PiEmptyStateComponent,
     PiRowActionsComponent,
     ButtonComponent,
@@ -62,89 +61,88 @@ type SortDir = 'asc' | 'desc';
     TableComponent,
   ],
   template: `
-    <app-pi-page-header
-      eyebrow="раздел · конструктор документов"
-      title="Таблицы"
-      description="Шаблоны таблиц — колонки, типы данных и форматирование для шаблонов документов."
-    />
-
-    <app-pi-toolbar>
-      <input
-        type="search"
-        class="pi-input w-72"
-        placeholder="Поиск по названию…"
-        [value]="searchQuery()"
-        (input)="onSearchInput($event)"
-        aria-label="Поиск шаблонов таблиц"
-      />
-      <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
-        + Новая таблица
-      </app-pi-button>
-      <app-pi-button variant="ghost" (click)="openFromRegistry()" data-test="registry-button">
-        Из существующих данных
-      </app-pi-button>
-      <span hint>{{ data().length }} {{ totalLabel(data().length) }}</span>
-    </app-pi-toolbar>
-
-    @if (error()) {
-      <div
-        role="alert"
-        class="mb-4 hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
-      >
-        {{ error() }}
-      </div>
-    }
-
-    <ng-template #activeTpl let-row>
-      <app-pi-switch
-        [checked]="row.isActive"
-        [id]="'switch-' + row._id"
-        [ariaLabel]="(row.isActive ? 'Деактивировать ' : 'Активировать ') + row.name"
-        (checkedChange)="onToggleActive(row, $event)"
-      />
-    </ng-template>
-    <ng-template #rowActionsTpl let-row>
-      <app-pi-row-actions
-        [row]="row"
-        [copyLabel]="'Копировать ' + row.name"
-        [editLabel]="'Редактировать ' + row.name"
-        [deleteLabel]="'Удалить ' + row.name"
-        (copy)="onCopy($event)"
-        (edit)="openEdit($event)"
-        (delete)="onDelete($event)"
-      />
-    </ng-template>
-
-    <app-pi-section title="Каталог" eyebrow="I">
-      @if (loading() && sortedRows().length === 0) {
-        <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
-      } @else if (sortedRows().length === 0) {
-        <app-pi-empty-state
-          [colspan]="1"
-          [message]="
-            searchQuery() ? 'Ничего не найдено.' : 'Нет шаблонов таблиц. Нажмите «Новая таблица».'
-          "
+    <app-pi-group-workspace pathLabel="Документы" [chips]="chips" activeId="tables">
+      <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        <input
+          type="search"
+          class="pi-input w-72"
+          placeholder="Поиск по названию…"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          aria-label="Поиск шаблонов таблиц"
         />
-      } @else {
-        <div class="hairline rounded-sm overflow-x-auto">
-          <app-pi-table
-            [data]="sortedRows()"
-            [columns]="columns"
-            [cellTemplates]="cellTemplates()"
-            [rowActions]="rowActionsTpl"
-            [total]="sortedRows().length"
-            [loading]="loading()"
-            [localSort]="false"
-            (sortChange)="onSortChange($event)"
-            ariaLabel="Каталог шаблонов таблиц"
-            data-test="tables-table"
-          />
+        <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
+          + Новая таблица
+        </app-pi-button>
+        <app-pi-button variant="ghost" (click)="openFromRegistry()" data-test="registry-button">
+          Из существующих данных
+        </app-pi-button>
+        <span class="text-xs text-muted-foreground"
+          >{{ data().length }} {{ totalLabel(data().length) }}</span
+        >
+      </div>
+
+      @if (error()) {
+        <div
+          role="alert"
+          class="mb-4 hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+        >
+          {{ error() }}
         </div>
       }
-    </app-pi-section>
+
+      <ng-template #activeTpl let-row>
+        <app-pi-switch
+          [checked]="row.isActive"
+          [id]="'switch-' + row._id"
+          [ariaLabel]="(row.isActive ? 'Деактивировать ' : 'Активировать ') + row.name"
+          (checkedChange)="onToggleActive(row, $event)"
+        />
+      </ng-template>
+      <ng-template #rowActionsTpl let-row>
+        <app-pi-row-actions
+          [row]="row"
+          [copyLabel]="'Копировать ' + row.name"
+          [editLabel]="'Редактировать ' + row.name"
+          [deleteLabel]="'Удалить ' + row.name"
+          (copy)="onCopy($event)"
+          (edit)="openEdit($event)"
+          (delete)="onDelete($event)"
+        />
+      </ng-template>
+
+      <app-pi-section title="Каталог" eyebrow="I">
+        @if (loading() && sortedRows().length === 0) {
+          <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
+        } @else if (sortedRows().length === 0) {
+          <app-pi-empty-state
+            [colspan]="1"
+            [message]="
+              searchQuery() ? 'Ничего не найдено.' : 'Нет шаблонов таблиц. Нажмите «Новая таблица».'
+            "
+          />
+        } @else {
+          <div class="hairline rounded-sm overflow-x-auto">
+            <app-pi-table
+              [data]="sortedRows()"
+              [columns]="columns"
+              [cellTemplates]="cellTemplates()"
+              [rowActions]="rowActionsTpl"
+              [total]="sortedRows().length"
+              [loading]="loading()"
+              [localSort]="false"
+              (sortChange)="onSortChange($event)"
+              ariaLabel="Каталог шаблонов таблиц"
+              data-test="tables-table"
+            />
+          </div>
+        }
+      </app-pi-section>
+    </app-pi-group-workspace>
   `,
 })
 export class TablesPage {
+  protected readonly chips = DOCUMENTS_SECTION_CHIPS;
   private readonly service = inject(TableTemplatesService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);

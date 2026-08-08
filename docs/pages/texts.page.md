@@ -2,11 +2,15 @@
 
 **Краткое описание:** Конструктор текстовых блоков для шаблонов документов. Создание/редактирование multi-column текстовых блоков с TipTap editor, размером шрифта, шириной колонок.
 
+**Chrome:** `PiGroupWorkspace` + `DOCUMENTS_SECTION_CHIPS` (как Архив/Шаблоны).  
+**AI-draft (TZD-30):** MCP может создать неактивный блок (`isActive=false`, tag `ai-draft`);
+todo ведёт сюда с `?editId=`. Менеджер проверяет и включает «Активен» перед picker builder.
+
 ## Route
 
 ```
 /doc-constructor/texts — «KPPDF — Текстовые блоки»
-/doc-constructor/texts?editId=<textBlockId> — auto-open редактора (из builder)
+/doc-constructor/texts?editId=<textBlockId> — auto-open редактора (из builder / import-todo)
 ```
 
 ## Query params

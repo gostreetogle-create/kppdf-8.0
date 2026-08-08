@@ -14,9 +14,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { extractErrorMessage, type SilentResult } from '../../../core/silent-http';
-import { PiPageHeaderComponent } from '../../../shared/page/pi-page-header.component';
+import { PiGroupWorkspaceComponent } from '../../../shared/page/pi-group-workspace.component';
 import { PiSectionComponent } from '../../../shared/page/pi-section.component';
-import { PiToolbarComponent } from '../../../shared/page/pi-toolbar.component';
 import { PiEmptyStateComponent } from '../../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { PiRowActionsComponent } from '../../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
@@ -39,6 +38,7 @@ import {
 } from '../../../shared/services/pi-document-template-categories.service';
 import { pluralRu } from '../../../shared/util/russian-plural';
 import { ColumnDef, TableComponent } from '../../../shared/ui/pi-table.component';
+import { DOCUMENTS_SECTION_CHIPS } from '../documents/documents-group-chips';
 
 const RU_TEMPLATES = ['шаблон', 'шаблона', 'шаблонов'] as const;
 const PAGE_SIZE = 10;
@@ -50,9 +50,8 @@ const PAGE_SIZE = 10;
   selector: 'app-templates-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    PiPageHeaderComponent,
+    PiGroupWorkspaceComponent,
     PiSectionComponent,
-    PiToolbarComponent,
     PiEmptyStateComponent,
     PiRowActionsComponent,
     ButtonComponent,
@@ -60,117 +59,116 @@ const PAGE_SIZE = 10;
     TableComponent,
   ],
   template: `
-    <app-pi-page-header
-      eyebrow="раздел · конструктор документов"
-      title="Реестр шаблонов"
-      description="Шаблоны документов: тип, формат страницы, активность. Откройте конструктор для сборки блоков."
-    />
-
-    <app-pi-toolbar>
-      <input
-        type="search"
-        class="pi-input w-72"
-        placeholder="Поиск по названию или типу…"
-        [value]="searchQuery()"
-        (input)="onSearch($event)"
-        aria-label="Поиск шаблонов"
-      />
-      <select
-        class="pi-input w-48"
-        [value]="categoryFilter()"
-        (change)="onCategoryFilter($event)"
-        aria-label="Фильтр по категории"
-      >
-        <option value="">Все категории</option>
-        @for (cat of categories(); track cat._id) {
-          <option [value]="cat._id">{{ cat.name }}</option>
-        }
-      </select>
-      <app-pi-button
-        variant="default"
-        (click)="onCreate()"
-        [disabled]="creating()"
-        data-test="create-template-button"
-      >
-        {{ creating() ? 'Создание…' : '+ Создать шаблон' }}
-      </app-pi-button>
-      <span hint>{{ filtered().length }} {{ totalLabel(filtered().length) }}</span>
-    </app-pi-toolbar>
-
-    <ng-template #activeTpl let-t>
-      <app-pi-switch [checked]="t.isActive" (checkedChange)="onToggleActive(t, $event)" />
-    </ng-template>
-    <ng-template #defaultTpl let-t>
-      @if (t.isDefault) {
-        <span class="text-sunrise-warm" aria-label="Шаблон по умолчанию">★</span>
-      } @else if (t.isActive) {
-        <button
-          type="button"
-          class="pi-icon-btn pi-focus-ring"
-          aria-label="Сделать шаблоном по умолчанию"
-          (click)="onSetDefault(t)"
-        >
-          ☆
-        </button>
-      } @else {
-        <span class="text-muted-foreground">☆</span>
-      }
-    </ng-template>
-    <ng-template #rowActionsTpl let-t>
-      <app-pi-row-actions
-        [row]="t"
-        copyLabel="Дублировать"
-        editLabel="Конструктор"
-        deleteLabel="Удалить"
-        (copy)="onDuplicate($event)"
-        (edit)="onEdit($event)"
-        (delete)="onDelete($event)"
-      />
-    </ng-template>
-
-    <app-pi-section title="Каталог" eyebrow="I">
-      @if (loading()) {
-        <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
-      } @else if (error()) {
-        <div
-          role="alert"
-          class="hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
-        >
-          <p>{{ error() }}</p>
-          <app-pi-button class="mt-3" variant="outline" size="sm" (click)="reload()">
-            Повторить
-          </app-pi-button>
-        </div>
-      } @else if (filtered().length === 0) {
-        <app-pi-empty-state
-          [colspan]="1"
-          [message]="
-            searchQuery() ? 'Ничего не найдено.' : 'Нет шаблонов. Нажмите «Создать шаблон».'
-          "
+    <app-pi-group-workspace pathLabel="Документы" [chips]="chips" activeId="templates">
+      <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        <input
+          type="search"
+          class="pi-input w-72"
+          placeholder="Поиск по названию или типу…"
+          [value]="searchQuery()"
+          (input)="onSearch($event)"
+          aria-label="Поиск шаблонов"
         />
-      } @else {
-        <div class="hairline rounded-sm overflow-x-auto">
-          <app-pi-table
-            [data]="pageRows()"
-            [columns]="columns"
-            [cellTemplates]="cellTemplates()"
-            [rowActions]="rowActionsTpl"
-            [total]="filtered().length"
-            [page]="pageIndex() + 1"
-            [pageSize]="PAGE_SIZE"
-            (pageChange)="pageIndex.set($event - 1)"
-            [localSort]="true"
-            [loading]="loading()"
-            ariaLabel="Каталог шаблонов"
-            data-test="templates-table"
+        <select
+          class="pi-input w-48"
+          [value]="categoryFilter()"
+          (change)="onCategoryFilter($event)"
+          aria-label="Фильтр по категории"
+        >
+          <option value="">Все категории</option>
+          @for (cat of categories(); track cat._id) {
+            <option [value]="cat._id">{{ cat.name }}</option>
+          }
+        </select>
+        <app-pi-button
+          variant="default"
+          (click)="onCreate()"
+          [disabled]="creating()"
+          data-test="create-template-button"
+        >
+          {{ creating() ? 'Создание…' : '+ Создать шаблон' }}
+        </app-pi-button>
+        <span class="text-xs text-muted-foreground"
+          >{{ filtered().length }} {{ totalLabel(filtered().length) }}</span
+        >
+      </div>
+
+      <ng-template #activeTpl let-t>
+        <app-pi-switch [checked]="t.isActive" (checkedChange)="onToggleActive(t, $event)" />
+      </ng-template>
+      <ng-template #defaultTpl let-t>
+        @if (t.isDefault) {
+          <span class="text-sunrise-warm" aria-label="Шаблон по умолчанию">★</span>
+        } @else if (t.isActive) {
+          <button
+            type="button"
+            class="pi-icon-btn pi-focus-ring"
+            aria-label="Сделать шаблоном по умолчанию"
+            (click)="onSetDefault(t)"
+          >
+            ☆
+          </button>
+        } @else {
+          <span class="text-muted-foreground">☆</span>
+        }
+      </ng-template>
+      <ng-template #rowActionsTpl let-t>
+        <app-pi-row-actions
+          [row]="t"
+          copyLabel="Дублировать"
+          editLabel="Конструктор"
+          deleteLabel="Удалить"
+          (copy)="onDuplicate($event)"
+          (edit)="onEdit($event)"
+          (delete)="onDelete($event)"
+        />
+      </ng-template>
+
+      <app-pi-section title="Каталог" eyebrow="I">
+        @if (loading()) {
+          <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
+        } @else if (error()) {
+          <div
+            role="alert"
+            class="hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+          >
+            <p>{{ error() }}</p>
+            <app-pi-button class="mt-3" variant="outline" size="sm" (click)="reload()">
+              Повторить
+            </app-pi-button>
+          </div>
+        } @else if (filtered().length === 0) {
+          <app-pi-empty-state
+            [colspan]="1"
+            [message]="
+              searchQuery() ? 'Ничего не найдено.' : 'Нет шаблонов. Нажмите «Создать шаблон».'
+            "
           />
-        </div>
-      }
-    </app-pi-section>
+        } @else {
+          <div class="hairline rounded-sm overflow-x-auto">
+            <app-pi-table
+              [data]="pageRows()"
+              [columns]="columns"
+              [cellTemplates]="cellTemplates()"
+              [rowActions]="rowActionsTpl"
+              [total]="filtered().length"
+              [page]="pageIndex() + 1"
+              [pageSize]="PAGE_SIZE"
+              (pageChange)="pageIndex.set($event - 1)"
+              [localSort]="true"
+              [loading]="loading()"
+              ariaLabel="Каталог шаблонов"
+              data-test="templates-table"
+            />
+          </div>
+        }
+      </app-pi-section>
+    </app-pi-group-workspace>
   `,
 })
 export class TemplatesPage {
   protected readonly PAGE_SIZE = PAGE_SIZE;
+  protected readonly chips = DOCUMENTS_SECTION_CHIPS;
 
   private readonly svc = inject(DocumentTemplatesService);
   private readonly categoriesSvc = inject(DocumentTemplateCategoriesService);
