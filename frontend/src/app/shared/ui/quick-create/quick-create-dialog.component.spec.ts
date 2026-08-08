@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
@@ -392,7 +393,7 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
     c.form.patchValue({ name: 'Стол', kind: 'good', unit: 'шт' });
     c.onSubmit();
     fixture.detectChanges();
-    expect(c.createdProduct()?._id).toBe('p1');
+    expect(c.createdEntity()?._id).toBe('p1');
     expect(close).not.toHaveBeenCalled();
     expect(
       fixture.nativeElement.querySelector('[data-test="qc-composition-section"]'),
@@ -405,6 +406,24 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
   it('does not expose photo controls for product M', async () => {
     const product = await setup({ entity: 'product', size: 'M' });
     expect(product.fixture.nativeElement.querySelector('[data-test="photo-dropzone"]')).toBeNull();
+  });
+
+  it('module L stays open after create and uses the module BOM panel', async () => {
+    const { component: c, fixture } = await setup({ entity: 'module', size: 'L' });
+    c.form.patchValue({ name: 'Каркас', article: 'A-1' });
+    c.onSubmit();
+    fixture.detectChanges();
+    expect(c.createdEntity()?._id).toBe('m1');
+    expect(close).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('[data-test="qc-composition-section"]')).not.toBeNull();
+    const panel = fixture.nativeElement.querySelector('[data-test="qc-product-bom-panel"]');
+    expect(panel).not.toBeNull();
+    const panelInstance = fixture.debugElement.query(By.directive(ProductBomPanelComponent))
+      .componentInstance as ProductBomPanelComponent;
+    expect(panelInstance.rootKind()).toBe('module');
+    expect(fixture.nativeElement.querySelector('[data-test="done-button"]')).not.toBeNull();
+    c.onDone();
+    expect(close).toHaveBeenCalledWith(expect.objectContaining({ _id: 'm1' }));
   });
 
   it('does not expose photo controls for module L', async () => {

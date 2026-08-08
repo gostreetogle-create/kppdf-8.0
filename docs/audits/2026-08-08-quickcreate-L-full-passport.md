@@ -16,7 +16,7 @@
 | Меню «Справ.» не жёлтый | **UX-308** | alias `/categories` |
 | Общий стиль секций + QC | **FORM-302** | Material → shared → QuickCreate |
 | Фото в L | **FORM-303** | reuse upload FullEditor |
-| Состав в L | **FORM-304** | reuse ProductBomPanel; create→остаться |
+| Состав в L | **FORM-304 / FORM-306** | reuse ProductBomPanel; product/module create→остаться |
 | Проход по всем диалогам | **FORM-305** | специальный sweep-агент |
 
 ---
@@ -29,8 +29,8 @@ FieldKey-профиль не содержит photo/BOM. Составу нуже
 
 ## 3. Поток L
 
-Поля (+фото) → Создать → секция Состав на живом id → Готово.  
-S/M — без состава; секции по FORM-302.
+Поля (+фото для изделия) → Создать → секция Состав на живом id → Готово.
+S/M — без состава; L для изделия и модуля использует один BomPanel path; секции по FORM-302.
 
 ---
 

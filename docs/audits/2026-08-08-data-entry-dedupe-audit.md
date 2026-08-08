@@ -17,7 +17,7 @@
 | Как надо (канон) | Что ещё торчит |
 |------------------|----------------|
 | `ProductBomPanel` + дерево + «из каталога» на карточке | В FullEditor изделия — **второй** UI состава (карточки модулей + другие пикеры) |
-| Тот же BomPanel в QuickCreate **L** после create (FORM-304) | На карточке модуля был третий UI (`ModuleMaterialsFormDialog`) — удалён в DEDUP-302 |
+| Тот же BomPanel в QuickCreate **L** после create (FORM-304/306) | На карточке модуля был третий UI (`ModuleMaterialsFormDialog`) — удалён в DEDUP-302 |
 | | Ранее мёртвый `CompositionEditor` в shared — удалён в DEDUP-303 |
 
 QuickCreate ≠ FullEditor для полей паспорта — **осознанно** (справочник профилей). Сливать в одну простыню не надо.  
@@ -67,8 +67,8 @@ QuickCreate L — тонкий хост после create, не вторая р�
 |---|-----|------|
 | 1 | **TZ-CATALOG-DEDUP-301** | Вырезать состав из Product FullEditor | **DONE** 2026-08-08 |
 | 2 | **TZ-CATALOG-DEDUP-302** | Убрать ModuleMaterials с module-detail | **DONE** 2026-08-08 |
-| 3 | **TZ-CATALOG-DEDUP-303** | Удалить orphan CompositionEditor | READY |
-| 4 | **TZ-UX-FORM-306** | Module QuickCreate L + BomPanel (как product FORM-304) | READY |
+| 3 | **TZ-CATALOG-DEDUP-303** | Удалить orphan CompositionEditor | **DONE** 2026-08-08 |
+| 4 | **TZ-UX-FORM-306** | Module QuickCreate L + BomPanel (как product FORM-304) | **DONE** 2026-08-08 |
 | 5 | **TZ-CATALOG-DEDUP-304** | «Редактировать» на product/material detail → тот же FullEditor | READY |
 
 Параллельно с UX-311 (thumb/wrap) — другие conflict keys.

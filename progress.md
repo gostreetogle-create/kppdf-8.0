@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-FORM-306 DONE: Module QuickCreate L BOM
+
+**Исполнитель:** Buffy / agent-acfffc1331
+**Статус:** DONE on main; deploy НЕ
+**Что:** Module QuickCreate L после create остаётся в том же диалоге; существующий `ProductBomPanel` получает новый module id и `rootKind="module"`; BOM опционален, «Готово» закрывает. Product L regression сохранён.
+**Gates:** FE tsc PASS; targeted Jest QuickCreate + ProductBomPanel 19/19 PASS; scoped ESLint PASS; diff-check PASS; review PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-FORM-306.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-FORM-306-module-quickcreate-L-bom.lock`
+**Known:** module photos вне scope; deploy NO.
+
 ## [2026-08-08] — TZ-CATALOG-DEDUP-303 DONE: delete orphan CompositionEditor
 
 **Исполнитель:** Buffy / agent-acfffc1331

@@ -1,0 +1,6 @@
+# Lock file
+Locked as of 2026-08-08 — TZ-UX-FORM-306: Module QuickCreate L BOM.
+
+Owner: agent-acfffc1331
+Protected: module L create stays open and reuses ProductBomPanel with rootKind=module.
+Unlock: successor / PO.
