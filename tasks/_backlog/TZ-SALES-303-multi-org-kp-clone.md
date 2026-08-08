@@ -1,93 +1,82 @@
 ═══════════════════════════════════════════════════════════════
-TZ-SALES-303: Семья КП — master + варианты Organization + sync
+TZ-SALES-303: Семья КП — schema + thin API (слой 1)
 ═══════════════════════════════════════════════════════════════
 
-> READY · канон D21 (уточнён PO 2026-08-08): не «мёртвые копии», а **главное КП**  
-> + связанные по фирмам; правка состава в master → sync вариантов.  
-> `docs/audits/2026-08-08-sales-to-shop-flow-canon.md`
+> READY (RESERVED) · **schema-first** · полный UX диалогов/expand — successor 304+  
+> Канон: flow D21 · метод PO: сначала таблицы/поля, кнопки слоями после браузера  
+> Промпт агенту — **только когда PO явно скажет «отдал промпт»**
 
-STATUS: READY — если агент уже CLAIM по старой спеке «независимый clone» → **перечитай этот файл** и доведи до AC ниже (не archive на half-bake).
+STATUS: READY (RESERVED — не CLAIM без явной выдачи PO)
 
-РОЛЬ АГЕНТА: Backend + Frontend (proposals / quotation)
+РОЛЬ АГЕНТА: Backend (+ минимальный FE read, если нужно увидеть поля)
 
 ЗАВИСИМОСТИ: SALES-301 DONE
 
-LAYER: 3
+LAYER: 4 (BE) / тонкий FE optional
 
-PAGES: `/proposals`
-PAGE_DOCS: flow canon D21; proposals page note
+PAGES: `/proposals` (не ломать текущий UI; можно не трогать FE в P0)
+PAGE_DOCS: flow canon D21; этот TZ
 
 CONFLICT KEYS:
 backend/src/modules/quotation/**;
 backend/src/modules/proposal/**;
-frontend/src/app/pages/commercial/proposals/**;
 docs/agent-checklists/TZ-SALES-303.md;
 docs/agent-checklists/_active-map.md;
 docs/audits/2026-08-08-sales-to-shop-flow-canon.md;
+tasks/_backlog/TZ-SALES-304-*.md (создать stub successor);
 
-НЕ трогать: `app.module.ts` / `supply/**` (SUPPLY-301); deploy; dictionaries; orders tree
-
----
-
-## Domain preflight
-
-| Слово PO | Код-канон |
-|----------|-----------|
-| Главное КП | Quotation/Proposal с `familyRole: 'master'` (или `isMaster: true`) |
-| КП других фирм | `familyRole: 'variant'`, `masterId`, `organizationId` |
-| Фирма на бланке | **Organization** ≠ Counterparty |
-| Состав/qty правятся | **только на master** → sync lines на все variant |
-| Цена варианта | пересчёт: строки master × наценка/правила Organization (− скидки линии если есть) |
-| Версия | `familyVersion` (число) на master; при sync после того как семья уже создавалась — +1; UI «v1 / v2» или `.1` в номере — выбрать один формат и задокументировать |
-
-Семья: 1 master → N variant (разные organizationId). Заказчик (counterparty) общий.
-
-**Ещё не в коде** (проверить grep) — реализовать с нуля в этом TZ.
+НЕ: `app.module.ts` если модуль уже зарегистрирован; `supply/**`; deploy; dictionaries; тяжёлый UI multi-select
 
 ---
 
-## ЧТО ДЕЛАТЬ
+## Цель слоя 1 (забетонировать данные)
 
-### 1. Модель семьи
-- Поля на КП: `masterId?`, `familyRole: 'master'|'variant'|'solo'`, `familyVersion` (master), `organizationId` обязателен у variant.  
-- Solo = обычное КП без семьи (как сейчас).
+Хранить семью КП так, чтобы потом без миграционного ада навесить:
+expand в списке, редактор variant, диалог наценок, sync состава.
 
-### 2. API
-- `POST /…/:id/expand-for-organizations` `{ organizationIds[] }` — id должен быть master или solo→становится master; создаёт/обновляет variant на каждую org (idempotent: повторный вызов не плодит дубли той же org).  
-- `PATCH` линий **только master** (variant lines read-only или 400).  
-- При изменении lines master → sync productId+qty (+скидки состава если живут на линии) во все variant + пересчёт сумм + `familyVersion++` (если уже были variant).  
-- `GET` list: для master отдавать `variantCount` / `variants[]` summary (org name, id, total).
+### Поля (на сущности КП / Quotation — как в коде сейчас)
 
-### 3. UI список КП
-- Строка master (или solo): клик/chevron → **раскрытие** связанных variant (фирма, номер, сумма, ссылка открыть).  
-- Variant в плоском списке можно скрыть или показать indented — default: **в основном списке только master/solo**, variant видны в expand (меньше шума).  
-- Действие «Для нескольких фирм…» на master → multi-select Organization → expand-for-organizations.  
-- Редактирование состава — экран/диалог **master**; на variant — баннер «состав с главного КП, правка там» + печать.
+| Поле | Смысл |
+|------|--------|
+| `familyRole` | `'solo' \| 'master' \| 'variant'` (default `solo`) |
+| `masterId?` | ObjectId → master (только у variant) |
+| `organizationId` | наша фирма бланка (уже может быть — проверить; иначе добавить) |
+| `familyVersion` | number, default 1 (на master; variant копирует/отображает) |
+| `orgMarkupPercent?` | наценка именно этого КП/фирмы (override; default из Organization later) |
 
-### 4. Печать
-- Печать variant как сейчас (свой шаблон org).  
-- После sync master — перепечатать variant без пересоздания семьи.
+Индекс: `{ masterId: 1, organizationId: 1 }` unique sparse (один variant на org в семье).
 
-### 5. Tests + docs
-- Sync qty на master → все variant qty совпали; totals могут отличаться (markup).  
-- Expand list API/UI.  
-- Не ломать convert master→order (variant в заказ **не** конвертить без явного — default convert только master/solo).  
-- RU docs short; **commit+push** после PASS.
+Lines (productId, qty, скидки линии) — **как сейчас**; не дублировать новую таблицу lines.
+
+### API (thin, без красивого UI)
+
+1. `POST /:id/family/attach-organizations` `{ items: { organizationId, orgMarkupPercent? }[] }`  
+   - solo → master; создать variant на org (idempotent).  
+2. `POST /:id/family/sync-from-master` — копирует lines master → все variant; bump `familyVersion` на master.  
+3. `GET /:id/family` — master + variants summary (id, org, totals, markup, version).  
+4. Convert→order: как сейчас; **запрет convert variant** (400 + message) — только master/solo.
+
+### Tests
+- attach 2 orgs → 1 master + 2 variant  
+- sync qty → variants match  
+- convert variant → 400  
+- unique org in family  
+
+### FE в этом TZ
+**Не обязателен.** Если трогаешь — только показать family badge в списке (optional). Диалог наценок / expand / полный редактор variant → **TZ-SALES-304** (stub создать пустым READY after 303).
 
 ## НЕ
 
-- Независимые «мёртвые» клоны без sync (старая формулировка — отменена)  
-- Split заказа; Counterparty как «фирма бланка»  
-- Полный архив отправок по почте (достаточно familyVersion + при желании thin versions[] later SALES-302)  
-- SUPPLY / NAV / deploy  
+- Решать A/B «можно ли править состав на variant» в коде жёстко навсегда — sync-from-master есть; ручной edit lines на variant **не строить** в 303 (поле оставить открытым: lines на variant = копия после sync).  
+- Полный print multi UI  
+- Переписывать шаблоны документов  
 
 ## AC
 
-- [ ] Семья master + N variant по Organization  
-- [ ] Список: expand строки → связанные фирмы  
-- [ ] Правка состава/qty на master → sync variant + version bump  
-- [ ] Variant не правит состав сам; печать variant ок  
-- [ ] Convert в заказ — только master/solo (или явно задокументированный выбор)  
-- [ ] tsc + jest зоны PASS; archive; **git push**  
+- [ ] Поля семьи в schema + migration/seed safe  
+- [ ] attach + sync + GET family + запрет convert variant  
+- [ ] jest PASS; tsc BE PASS  
+- [ ] Stub file `TZ-SALES-304-kp-family-ui.md` (1 экран AC: expand+open variant+markup dialog)  
+- [ ] archive 303; **commit+push**  
 
-known_limitation: красивая «точка в номере КП-12.3» может быть display от familyVersion; полная история каждого send — SALES-302 если не влезло.
+known_limitation: визуальный контроль в браузере — слой 304 после того как PO попробует данные/API или thin UI.

@@ -1,22 +1,16 @@
-# TZ-SALES-303 — KP family (master + org variants + sync)
+# TZ-SALES-303 — KP family schema (layer 1)
 
 **TZ:** `tasks/_backlog/TZ-SALES-303-multi-org-kp-clone.md`  
-**Status:** RESERVED / re-read if CLAIMED on old clone-only spec  
-**Canon:** flow D21 (master sync)
-
-## Claim slot
-
-- agent_id: —
-- claimed_at: —
+**Status:** RESERVED — CLAIM only when PO says prompt handed off  
+**Successor UI:** TZ-SALES-304
 
 ## Acceptance
 
-- [ ] master + variants by Organization
-- [ ] list row expand → related firms
-- [ ] edit master lines → sync variants + version bump
-- [ ] variant composition read-only; print ok
-- [ ] convert order = master/solo only
-- [ ] gates + archive + **push**
+- [ ] family fields on quotation/proposal
+- [ ] attach / sync / GET family
+- [ ] convert variant → 400
+- [ ] SALES-304 stub exists
+- [ ] gates + archive + push
 
 ## Executor report (auto)
 
