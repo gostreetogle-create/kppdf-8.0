@@ -63,10 +63,11 @@ const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
 
 const DIM_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
 
-const SIZE_TO_WIDTH: Record<FormProfileSize, 'sm' | 'md' | 'lg'> = {
-  S: 'sm',
-  M: 'md',
-  L: 'lg',
+/** TZ-UX-DIALOG-302 — prefer width over height; kind B from dialog-layout-canon. */
+const SIZE_TO_WIDTH: Record<FormProfileSize, 'md' | 'lg' | 'xl'> = {
+  S: 'md',
+  M: 'lg',
+  L: 'xl',
 };
 
 /**
@@ -96,7 +97,7 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'sm' | 'md' | 'lg'> = {
         body
         [formGroup]="form"
         (ngSubmit)="onSubmit()"
-        class="space-y-form-field"
+        class="space-y-form-field max-h-[min(70vh,calc(90vh-8rem))] overflow-y-auto min-h-0"
         data-test="quick-create-form"
       >
         <div
@@ -130,7 +131,7 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'sm' | 'md' | 'lg'> = {
             </app-pi-button>
           </div>
         } @else {
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
+          <div [class]="fieldsGridClass()" data-test="qc-fields-grid">
             @for (key of visibleKeys(); track key) {
               @switch (kindOf(key)) {
                 @case ('select-kind') {
@@ -220,7 +221,7 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'sm' | 'md' | 'lg'> = {
                   </app-pi-form-field>
                 }
                 @case ('textarea') {
-                  <div class="sm:col-span-2">
+                  <div [class]="useTwoCol() ? 'md:col-span-2' : ''">
                     <app-pi-form-field [label]="labelOf(key)" [htmlFor]="'qc-' + key">
                       <app-pi-textarea
                         [id]="'qc-' + key"
@@ -317,6 +318,18 @@ export class QuickCreateDialogComponent {
 
   protected readonly title = computed(() => `Быстрое создание: ${ENTITY_LABEL_RU[this.entity]}`);
   protected readonly dialogWidth = computed(() => SIZE_TO_WIDTH[this.size()]);
+
+  /** M/L (or ≥4 visible keys) → 2 columns; S stays single column. */
+  protected readonly useTwoCol = computed(() => {
+    const sz = this.size();
+    return sz === 'M' || sz === 'L' || this.visibleKeys().length >= 4;
+  });
+
+  protected readonly fieldsGridClass = computed(() =>
+    this.useTwoCol()
+      ? 'grid grid-cols-1 md:grid-cols-2 gap-form-field'
+      : 'grid grid-cols-1 gap-form-field',
+  );
 
   protected readonly form: FormGroup = this.buildForm(this.entity);
 

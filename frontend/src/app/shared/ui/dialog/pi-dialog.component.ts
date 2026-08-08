@@ -206,7 +206,8 @@ export class PiDialogComponent {
         sm: 'w-[min(360px,calc(100vw-2rem))]',
         md: 'w-[min(480px,calc(100vw-2rem))]',
         lg: 'w-[min(640px,calc(100vw-2rem))]',
-        xl: 'w-[min(800px,calc(100vw-2rem))]',
+        // TZ-UX-DIALOG-302 — form xl bump for balanced QuickCreate L (2-col).
+        xl: 'w-[min(920px,calc(100vw-2rem))]',
       }[w];
     }
 

@@ -1,6 +1,6 @@
 # SESSION QUEUE — continuous executor
 
-**Updated:** 2026-08-08T08:35Z · **TZ-UX-305 DONE**
+**Updated:** 2026-08-08T08:42Z · **TZ-UX-DIALOG-302 DONE**
 
 ## DONE this session
 
@@ -18,14 +18,13 @@
 | **TZ-UX-304** | nav icon+caption + Dictionaries after Docs |
 | **TZ-ADMIN-302** | system role all-checked read-only |
 | **TZ-UX-305** | nav equal width + full RU labels |
+| **TZ-UX-DIALOG-302** | QuickCreate balanced + dialog canon A–D |
 
 ## READY / NEXT
 
 | ID | Status |
 |----|--------|
-| **TZ-UX-306** | nav shorter labels + compact height — **NEXT** |
-| **TZ-UX-DIALOG-302** | QuickCreate balanced + dialog canon |
-| **TZ-UX-302** | page chrome unify |
+| **TZ-UX-302** | page chrome unify — **NEXT** if PO |
 | TZ-UX-303 | design-system chrome audit (docs) |
 | TZ-SALES-304 | KP family UI after PO probes |
 
@@ -36,13 +35,14 @@
 | Production deep | PO later session |
 | TZD-23 | PARK |
 | SUPPLY-302 | BOM auto-explode |
+| legacy form→kind C | successors from dialog outliers table |
 | deploy | только «задеплой» |
 
-## Checkpoint 2026-08-08T08:35Z
-- DONE: … + ADMIN-302 + **TZ-UX-305**
+## Checkpoint 2026-08-08T08:42Z
+- DONE: … + UX-305 + **TZ-UX-DIALOG-302**
 - IN PROGRESS: none
-- NEXT: idle / PO queue or deploy command
+- NEXT: TZ-UX-302 if PO / idle / deploy command
 - Blockers: none
 - _active/: empty
 - Deploy: NO
-- HEAD: e35cae99 (TZ-UX-305)
+- HEAD: (after push)

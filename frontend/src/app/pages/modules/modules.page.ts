@@ -506,9 +506,9 @@ export class ModulesPage implements OnInit {
 
   /** TZ-DICT-316 — list «Создать» → QuickCreate (profile S/M/L); edit stays FullEditor. */
   protected openCreate(): void {
+    // Width comes from QuickCreate SIZE_TO_WIDTH (S/M/L) — do not pin opener to md.
     const ref = this.dialog.open(QuickCreateDialogComponent, {
       data: { entity: 'module', size: 'M' } satisfies QuickCreateDialogData,
-      width: 'md',
     });
     this.refreshOnDialogClose(ref);
   }

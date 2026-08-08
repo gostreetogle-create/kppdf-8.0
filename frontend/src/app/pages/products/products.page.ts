@@ -809,9 +809,9 @@ export class ProductsPage implements OnInit {
 
   /** TZ-DICT-316 — list «Создать» → QuickCreate (profile S/M/L); edit stays FullEditor. */
   protected openCreate(): void {
+    // Width comes from QuickCreate SIZE_TO_WIDTH (S/M/L) — do not pin opener to md.
     const ref = this.dialog.open(QuickCreateDialogComponent, {
       data: { entity: 'product', size: 'M' } satisfies QuickCreateDialogData,
-      width: 'md',
     });
     onDialogCloseOnce(ref, this.injector, () => this.listRes.reload());
   }

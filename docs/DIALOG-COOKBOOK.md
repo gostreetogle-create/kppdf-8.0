@@ -1,7 +1,8 @@
 # Dialog cookbook (Paper & Ink)
 
 > Обязательно для любого агента, который открывает модалки.  
-> Нарушение = откат (как People / WORKERS-302 PiDialog API footgun).
+> Нарушение = откат (как People / WORKERS-302 PiDialog API footgun).  
+> Короткая шпаргалка kinds: [`pages/ui-dialog-canon.md`](./pages/ui-dialog-canon.md) · аудит 2026-08-08: [`audits/2026-08-08-dialog-layout-canon.md`](./audits/2026-08-08-dialog-layout-canon.md).
 
 ## Открытие
 
@@ -32,6 +33,19 @@ const ref = dialogs.open<Result, Data>(MyDialogComponent, {
 - Фиксированный `width: 360px` без viewport clamp на mobile-критичных диалогах
 - Менять payload shape «заодно» в polish-TZ
 
+## Kinds A–D (мало разрешённых)
+
+| Kind | variant | width / maxWidth | Когда |
+|------|---------|------------------|--------|
+| **A confirm** | alert / destructive | sm–md | Удалить? Да/нет |
+| **B quick** | form | S→**md**, M→**lg**, L→**xl** (~920) + 2-col body M/L | QuickCreate S/M/L |
+| **C editor** | content | maxWidth `min(1120px, 100vw-2rem)` | Full product/module/material/role |
+| **D wide** | content / form+maxWidth | `min(1400px, …)` только table-template и явные исключения | Редко |
+
+**Правило плотности:** для dense forms **prefer width over height** — лучше добавить колонку/ширину, чем небоскрёб без скролла body. Body: `max-h ~70vh` + `overflow-auto`; footer sticky / `shrink-0` (shell).
+
+Opener `dialog.open(..., { width })` не должен **перебивать** ширину, которую уже решает компонент (например QuickCreate `SIZE_TO_WIDTH`).
+
 ## Mobile (375px)
 
 - Широкие формы: `maxWidth: 'min(<px>, calc(100vw - 2rem))'` в `DialogConfig` **или** CSS на shell `max-width: min(..., 100vw - 2rem)`
@@ -45,8 +59,10 @@ const ref = dialogs.open<Result, Data>(MyDialogComponent, {
 | Tier | Типичный max | Когда |
 |------|--------------|--------|
 | sm | ~360px | setup chips, confirm |
-| md | ~480–560 | простые формы |
-| lg / xl | ~720–1000 | materials/product/table — **clamp к viewport** |
+| md | ~480–560 | простые формы / QuickCreate S |
+| lg | ~640 | QuickCreate M / средние forms |
+| xl | ~920 (form) | QuickCreate L / широкие forms — **clamp к viewport** |
+| content + maxWidth | 1120 / 1400 | kinds C / D |
 
 ## Sticky footer
 

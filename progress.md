@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-DIALOG-302 DONE: QuickCreate balanced + dialog canon
+
+**Исполнитель:** agent-3e757640b7 (self PASS → archive)
+**Статус:** DONE on main; deploy НЕ
+**Что:** SIZE_TO_WIDTH S/M/L→md/lg/xl (~920); M/L 2-col; body max-h~70vh; openers без width:md; cookbook kinds A–D + ui-dialog-canon + outliers table.
+**Gates:** FE tsc PASS; jest quick-create 7/7
+**Archive:** `tasks/_archive/2026-08/TZ-UX-DIALOG-302.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-DIALOG-302-quickcreate-balanced-panels.lock`
+**Known:** FullEditor legacy→kind C не в scope. Deploy: NO.
+
 ## [2026-08-08] — TZ-UX-305 DONE: nav equal width + full RU labels
 
 **Исполнитель:** agent-3e757640b7 (self PASS → archive)

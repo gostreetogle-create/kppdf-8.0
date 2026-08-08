@@ -125,6 +125,41 @@ describe('QuickCreateDialogComponent (TZ-DICT-316)', () => {
     }
   });
 
+  it('SIZE_TO_WIDTH maps S→md M→lg L→xl (TZ-UX-DIALOG-302)', async () => {
+    const c = await setup({ entity: 'product', size: 'M' });
+    expect(c.dialogWidth()).toBe('lg');
+    expect(c.useTwoCol()).toBe(true);
+    expect(c.fieldsGridClass()).toContain('md:grid-cols-2');
+
+    profiles.getOne.mockReturnValue(of(ok(productS)));
+    c.onSizeChange('S');
+    expect(c.dialogWidth()).toBe('md');
+    expect(c.useTwoCol()).toBe(false);
+    expect(c.fieldsGridClass()).not.toContain('md:grid-cols-2');
+
+    const productL: FormProfile = {
+      ...productM,
+      _id: 'fp-l',
+      size: 'L',
+      visibleFieldKeys: [
+        'name',
+        'kind',
+        'unit',
+        'sku',
+        'listPrice',
+        'categoryId',
+        'isActive',
+        'status',
+        'description',
+      ],
+    };
+    profiles.getOne.mockReturnValue(of(ok(productL)));
+    c.onSizeChange('L');
+    expect(c.dialogWidth()).toBe('xl');
+    expect(c.useTwoCol()).toBe(true);
+    expect(c.fieldsGridClass()).toContain('md:grid-cols-2');
+  });
+
   it('size switch reloads profile and keeps locked required', async () => {
     const c = await setup({ entity: 'product', size: 'M' });
     profiles.getOne.mockReturnValue(of(ok(productS)));
@@ -132,7 +167,7 @@ describe('QuickCreateDialogComponent (TZ-DICT-316)', () => {
     expect(profiles.getOne).toHaveBeenCalledWith('product', 'S');
     expect(c.size()).toBe('S');
     expect(c.visibleKeys()).toEqual(['name', 'kind', 'unit']);
-    expect(c.dialogWidth()).toBe('sm');
+    expect(c.dialogWidth()).toBe('md');
   });
 
   it('creates product with only visible fields; omits empty optional', async () => {
