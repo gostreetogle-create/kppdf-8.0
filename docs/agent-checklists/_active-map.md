@@ -4,9 +4,10 @@
 
 ## NEXT
 
-1. **TZ-UX-309** — page chrome  
-2. **TZ-UX-310** — chrome audit docs  
-3. **TZ-SALES-304** — KP family UI  
+1. **TZ-UX-311** — состав: thumb + wrap имени — **NEXT**  
+2. **TZ-UX-309** — page chrome  
+3. **TZ-UX-310** — chrome audit docs  
+4. **TZ-SALES-304** — KP family UI  
 
 ## DONE
 
