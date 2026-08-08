@@ -33,7 +33,7 @@
 - IN PROGRESS: none
 - NOT DONE: DICT-315, DICT-316
 - NEXT: DICT-315 — wait peer dictionaries WIP clear OR PO carve keys to new-only files
-- HEAD: _(post-314 commit)_
+- HEAD: `26d8570` (TZ-DICT-314)
 - Blockers: peer uncommitted edits in `dictionaries/*.page.ts` (categories, color-references, measurements-group, doc/text-block cats) + many other FE pages
 - _active/: empty
 - Deploy: NO (await PO)
