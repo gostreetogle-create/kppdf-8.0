@@ -102,16 +102,22 @@ export class LocalDemoSeed implements OnModuleInit {
       const sku = `${MARK}-MAT-${i}`;
       const exists = await this.materialModel.findOne({ sku }).exec();
       if (exists) continue;
-      await this.materialModel.create({
-        name: `${PREFIX}Материал ${i}`,
-        article: sku,
-        sku,
-        unit: 'шт',
-        materialKind: ['raw', 'part', 'fastener', 'purchased', 'other'][i - 1],
-        pricePerUnit: 100 * i,
-        description: `Local demo ${MARK}`,
-        isActive: true,
-      });
+      try {
+        await this.materialModel.create({
+          name: `${PREFIX}Материал ${i}`,
+          article: sku,
+          sku,
+          unit: 'шт',
+          materialKind: ['raw', 'part', 'fastener', 'purchased', 'other'][i - 1],
+          pricePerUnit: 100 * i,
+          description: `Local demo ${MARK}`,
+          isActive: true,
+        });
+      } catch (err) {
+        // Parallel nest --watch / double boot: unique sku race — treat as already seeded.
+        if ((err as { code?: number })?.code === 11000) continue;
+        throw err;
+      }
     }
   }
 

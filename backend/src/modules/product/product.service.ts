@@ -59,8 +59,27 @@ export class ProductService {
   }
 
   async update(id: string, dto: UpdateProductDto, organizationId?: string | null): Promise<ProductDocument> {
-    const doc = await this.findActive(id, organizationId); const { attributes, ...rest } = dto; Object.assign(doc, rest); const saved = await doc.save();
-    if (attributes && Object.keys(attributes).length > 0) { const catId = saved.categoryId ? new Types.ObjectId(saved.categoryId as unknown as string) : undefined; await this.eav.resolveAttributes('Product', saved._id, attributes, catId); }
+    const doc = await this.findActive(id, organizationId);
+    const { attributes, ...rest } = dto;
+    Object.assign(doc, rest);
+    let saved: ProductDocument;
+    try {
+      saved = await doc.save();
+    } catch (err) {
+      // Stale __v from parallel tab / composition write → 409, not opaque 500.
+      if ((err as { name?: string })?.name === 'VersionError') {
+        throw new ConflictException(
+          `Изделие уже изменено (обновите карточку и сохраните снова)`,
+        );
+      }
+      throw err;
+    }
+    if (attributes && Object.keys(attributes).length > 0) {
+      const catId = saved.categoryId
+        ? new Types.ObjectId(saved.categoryId as unknown as string)
+        : undefined;
+      await this.eav.resolveAttributes('Product', saved._id, attributes, catId);
+    }
     return saved;
   }
 
