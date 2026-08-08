@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-PRODUCTS-309 DONE: состав изделия в FullEditor через ProductBomPanel
+
+**Исполнитель:** agent-3e757640b7 · WAVE-PRODUCT-EDITOR #2
+**Статус:** DONE; deploy НЕ
+**Что:** В edit FullEditor встроен тот же `ProductBomPanel`, что и на карточке изделия; composition API и единственный write-path переиспользованы без ModuleMaterials. Create mode показывает русскую подсказку «Сначала сохраните изделие — затем откройте редактирование, чтобы собрать состав», а панель ограничена scrollable viewport внутри диалога.
+**Затронуто:** `frontend/src/app/pages/products/product-form-dialog.component.ts` и spec, `docs/pages/products.page.md`, checklist/archive/lock.
+**Gates:** FE tsc PASS; Angular development build PASS; focused Jest form + BOM 32/32 PASS; targeted ESLint PASS; Prettier PASS для изменённых form-файлов; `git diff --check` PASS. `verify-status.sh` сохраняет pre-existing drift 72 legacy kit-era entries.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTS-309.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTS-309-composition-in-fulleditor.lock`
+
 ## [2026-08-08] — TZ-PRODUCTS-308 DONE: FullEditor «Изделие» плотнее и понятнее
 
 **Исполнитель:** agent-3e757640b7 · WAVE-PRODUCT-EDITOR #1

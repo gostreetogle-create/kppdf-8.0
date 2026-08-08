@@ -5,6 +5,13 @@
 **Canonical workspace:** `D:\kppdf-8.0` on `main`; package manager `pnpm`
 **Task truth:** `tasks/_backlog/QUEUE.md` + archives; completed work in `tasks/_archive/`
 
+## [2026-08-08] — TZ-PRODUCTS-309 DONE: composition in Product FullEditor
+**Статус:** DONE on main; deploy НЕ
+**Что:** Edit FullEditor embeds the same `ProductBomPanel` used by the product card, with bounded internal scroll; create mode gives the save-then-edit Russian hint. No duplicate composition UI/write-path, ModuleMaterials, backend, or Product schema changes.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTS-309.done.md`
+**Gates:** FE tsc; Angular development build; focused form+BOM Jest 32/32; targeted ESLint; Prettier; `git diff --check` — PASS. Глобальный `verify-status.sh` сохраняет pre-existing drift 72 legacy kit-era entries.
+**Wave:** WAVE-PRODUCT-EDITOR #1–#2 DONE; READY queue empty; deploy НЕ.
+
 ## [2026-08-08] — TZ-PRODUCTS-308 DONE: FullEditor «Изделие»
 **Статус:** DONE on main; deploy НЕ
 **Что:** FullEditor изделия использует русское UI-имя «Изделие», responsive 3-column dense layout, узкие поля габаритов/веса/единицы/RAL и больше не показывает profile-L composition hint. Product/API schema и composition write-path не менялись; TZ-PRODUCTS-309 — следующий.

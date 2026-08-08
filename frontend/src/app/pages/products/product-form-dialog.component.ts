@@ -36,6 +36,7 @@ import {
 import { PhotosService, type Photo } from '../../shared/services/photos.service';
 import { AuthService } from '../../core/auth.service';
 import { PiOverflowSelectComponent } from '../../shared/ui/overflow-select/pi-overflow-select.component';
+import { ProductBomPanelComponent } from './product-bom-panel.component';
 
 type Result = Product | null | undefined;
 
@@ -71,8 +72,8 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
  *  4. Описание/Заметки: description, notes
  *  5. Изображения: photo upload (PhotosService, TZ-MATERIALS-306 паттерн)
  *
- * Composition is intentionally hosted by ProductBomPanel in TZ-PRODUCTS-309,
- * so this passport editor does not create a second composition write-path.
+ * In edit mode the existing ProductBomPanel is embedded below the passport;
+ * create mode shows a save-then-edit hint. Composition writes remain in the panel.
  *
  * RAL contract (TZ-PRODUCTS-301/302):
  *  - Список грузится из `PiColorReferencesService.list({ activeOnly: true })`
@@ -105,6 +106,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
     TextareaComponent,
     PiFormSectionComponent,
     PiOverflowSelectComponent,
+    ProductBomPanelComponent,
   ],
   template: `
     <app-pi-dialog
@@ -418,7 +420,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
           </app-pi-form-section>
         </div>
 
-        <!-- Composition is intentionally absent until TZ-PRODUCTS-309. -->
+        <!-- Composition is edit-only: the shared ProductBomPanel owns its write-path. -->
 
         <!-- ─── 7. Описание/Заметки ─── -->
         <app-pi-form-section
@@ -506,6 +508,28 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
           </div>
         </app-pi-form-section>
 
+        @if (editProductId(); as productId) {
+          <section
+            class="max-h-[34rem] overflow-y-auto hairline rounded-sm bg-paper-2/30"
+            data-test="product-composition-editor"
+          >
+            <app-product-bom-panel
+              [productId]="productId"
+              (changed)="onCompositionChanged()"
+              data-test="product-bom-panel"
+            />
+          </section>
+        } @else {
+          <section
+            class="hairline rounded-sm bg-paper-2/30 px-3 py-3"
+            data-test="composition-create-hint"
+          >
+            <p class="text-sm text-muted-foreground m-0">
+              Сначала сохраните изделие — затем откройте редактирование, чтобы собрать состав.
+            </p>
+          </section>
+        }
+
         @if (errorMessage()) {
           <p role="alert" class="text-xs text-destructive">
             {{ errorMessage() }}
@@ -573,6 +597,7 @@ export class ProductFormDialogComponent implements OnDestroy {
   private readonly dropdownHost = viewChild<ElementRef<HTMLElement>>('colorDropdownHost');
 
   protected readonly isEdit = signal<boolean>(this.data != null);
+  protected readonly editProductId = computed(() => this.data?._id ?? null);
   protected readonly submitting = signal<boolean>(false);
   protected readonly uploading = signal<boolean>(false);
   protected readonly errorMessage = signal<string | null>(null);
@@ -886,6 +911,11 @@ export class ProductFormDialogComponent implements OnDestroy {
         this.submitting.set(false);
       }
     });
+  }
+
+  protected onCompositionChanged(): void {
+    // BOM writes stay in ProductBomPanel; passport submit remains independent.
+    this.form.markAsDirty();
   }
 
   protected onCancel(): void {

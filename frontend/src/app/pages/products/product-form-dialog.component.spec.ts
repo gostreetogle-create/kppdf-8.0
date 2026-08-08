@@ -472,13 +472,21 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     expect(close).toHaveBeenCalledTimes(1);
   });
 
-  // ── TZ-PRODUCTS-308: composition returns in TZ-PRODUCTS-309 ─────
+  // ── TZ-PRODUCTS-309: composition is edit-only in the shared BOM panel ─────
 
-  it('TZ-PRODUCTS-308: removes the composition/profile hint from FullEditor', async () => {
+  it('TZ-PRODUCTS-309: create shows the save-then-edit composition hint', async () => {
     await setup(null);
-    expect(fixture.nativeElement.querySelector('[data-test="composition-hint"]')).toBeNull();
-    expect(fixture.nativeElement.querySelector('[data-test="add-module"]')).toBeNull();
-    expect(fixture.nativeElement.querySelector('[data-test="add-composition-line"]')).toBeNull();
+    const hint = fixture.nativeElement.querySelector(
+      '[data-test="composition-create-hint"]',
+    ) as HTMLElement | null;
+    expect(hint?.textContent).toContain('Сначала сохраните изделие');
+    expect(fixture.nativeElement.querySelector('[data-test="product-bom-panel"]')).toBeNull();
+  });
+
+  it('TZ-PRODUCTS-309: edit renders the shared ProductBomPanel host', async () => {
+    await setup({ _id: 'p-bom', name: 'Изделие', kind: 'good', unit: 'шт' });
+    expect(fixture.nativeElement.querySelector('[data-test="product-bom-panel"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="composition-create-hint"]')).toBeNull();
   });
 
   it('DEDUP-301: create submit does not touch composition APIs (passport only)', async () => {

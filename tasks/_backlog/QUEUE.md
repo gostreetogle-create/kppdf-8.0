@@ -10,12 +10,12 @@
 | **A — Party-docs** | `party-docs/WAVE-PARTY-DOCS.md` | **DONE** #1–#7 · **INN-301 PARKED** |
 | **B — Shop north** | `shop-north-b/WAVE-SHOP-NORTH-B.md` | **DONE** — #1–#7 DONE; idle |
 | **C — Catalog UX** | `catalog-ux-c/WAVE-CATALOG-UX-C.md` | **DONE** — не воскрешать |
-| **D — Product editor** | `product-editor/WAVE-PRODUCT-EDITOR.md` | **IN PROGRESS** — **308 DONE**; next **309** |
+| **D — Product editor** | `product-editor/WAVE-PRODUCT-EDITOR.md` | **DONE** — **308 + 309**; idle |
 
 Все только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
-**NEXT для universal prompt:** `tasks/_backlog/product-editor/TZ-PRODUCTS-309-composition-in-fulleditor.md`
-(или узкий `product-editor/PROMPT-CONTINUOUS.md`)
+**NEXT для universal prompt:** idle — READY queue empty; await new PO wave or explicit deploy command
+(волна Product Editor закрыта: 308 + 309)
 
 ## Idle / park / done
 
