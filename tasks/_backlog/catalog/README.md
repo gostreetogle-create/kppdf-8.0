@@ -21,7 +21,8 @@ Wave 1 index: `tasks/CATALOG-WAVE1.md` (backend 301–305 **DONE**)
 | **332** | Kind colors on lists + picker | **DONE** |
 | **333** | Containment outlines (рамки состава) | **DONE** · `f2aedfd` |
 | **334** | Block cohesion / nest cascade | **DONE** |
-| **335** | Composition tree **dark** depth (не монохром) | **READY** · завтра |
+| **335** | Composition tree **dark** depth (не монохром) | **READY** |
+| **336** | Module detail = product detail (BOM cascade) | **READY · P0 завтра** |
 | **311** | CompositionTree | defer if conflicts with 330 keys |
 | **315** | Lists polish + a11y | after 332 if overlapping lists |
 | **306** | Coherence audit trail | discussion only |
