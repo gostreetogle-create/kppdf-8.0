@@ -1,22 +1,20 @@
 # Очередь
 
-## HOT done this session
+## IN FLIGHT / long-haul
 
-| ID | Note |
-|----|------|
-| **TZ-UX-312** | DONE — thumb 36px + denser row |
-| **TZ-CATALOG-DEDUP-301** | DONE — FullEditor без состава |
+DEDUP-301 peer · long-haul 302…310 · HOT UX-312  
 
-## Long-haul wave (свободный агент)
+## NEXT после long-haul (карточка изделия)
 
-См. `docs/agent-checklists/SESSION-WAVE-2026-08-08-long-haul.md`
+Wave: `docs/agent-checklists/SESSION-WAVE-2026-08-08-product-detail-panels.md`  
+Аудит: `docs/audits/2026-08-08-product-detail-side-panels-cost.md`
 
-1. DEDUP-302 → 2. DEDUP-303 → 3. FORM-306 → 4. DEDUP-304 → 5. UX-309 → 6. UX-310  
+| # | ID |
+|---|-----|
+| 0 | TZ-UX-FACT-301 (можно ∥ сейчас) |
+| 1–4 | TZ-UX-DETAIL-301…304 |
+| 5 | TZ-UX-FACT-302 audit sweep |
 
-## Потом / PO
+## Потом
 
-| ID | Note |
-|----|------|
-| TZ-SALES-304 | КП UI после проб |
-
-Позже: `tasks/_park/` · Готовое: `tasks/_archive/`
+TZ-SALES-304 · `tasks/_park/`
