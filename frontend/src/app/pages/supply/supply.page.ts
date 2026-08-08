@@ -278,8 +278,10 @@ export class SupplyPage implements AfterViewInit {
   @ViewChild('actionsTpl', { static: true })
   protected readonly actionsTpl!: TemplateRef<{ $implicit: SupplyTask }>;
 
-  protected readonly tpls = computed(() => {
-    if (!this.viewReady()) return {};
+  protected readonly tpls = computed((): Record<string, TemplateRef<{ $implicit: SupplyTask }>> => {
+    if (!this.viewReady()) {
+      return {} as Record<string, TemplateRef<{ $implicit: SupplyTask }>>;
+    }
     return {
       title: this.titleTpl,
       orderId: this.orderTpl,

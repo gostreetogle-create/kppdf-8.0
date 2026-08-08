@@ -280,7 +280,7 @@ interface ModuleCostPreview {
                     class="mt-2 text-xs text-muted-foreground"
                     data-test="module-cost-preview-infos"
                   >
-                    {{ cp.infos.join(' · ') }}
+                    {{ cp.infos?.join(' · ') }}
                   </p>
                 }
               } @else if (costPreviewError()) {

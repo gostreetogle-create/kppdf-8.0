@@ -10,12 +10,13 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { PiPageHeaderComponent } from '../../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../../shared/page/pi-section.component';
+import {
+  PiPageChromeComponent,
+  type PageCrumb,
+} from '../../../shared/page/pi-page-chrome.component';
 import { PiToolbarComponent } from '../../../shared/page/pi-toolbar.component';
 import { PiEmptyStateComponent } from '../../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { PiRowActionsComponent } from '../../../shared/ui/pi-row-actions/pi-row-actions.component';
-import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { PiToastService } from '../../../shared/ui/toast';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../../shared/ui/dialog/pi-alert-dialog.component';
@@ -36,20 +37,14 @@ const PAGE_SIZE = 10;
   selector: 'app-documents-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    PiPageHeaderComponent,
-    PiSectionComponent,
+    PiPageChromeComponent,
     PiToolbarComponent,
     PiEmptyStateComponent,
     PiRowActionsComponent,
-    ButtonComponent,
     TableComponent,
   ],
   template: `
-    <app-pi-page-header
-      eyebrow="раздел · конструктор документов"
-      title="Сформированные документы"
-      description="HTML-снимки документов, сгенерированные из шаблонов. Открывайте предпросмотр или удаляйте устаревшие версии."
-    />
+    <app-pi-page-chrome [crumbs]="crumbs" />
 
     <app-pi-toolbar>
       <input
@@ -91,7 +86,7 @@ const PAGE_SIZE = 10;
       />
     </ng-template>
 
-    <app-pi-section title="Журнал генерации" eyebrow="I">
+    <div class="pi-table-surface hairline rounded-sm overflow-hidden">
       @if (loading()) {
         <app-pi-empty-state [colspan]="1" message="Загрузка…" state="loading" />
       } @else if (error()) {
@@ -128,10 +123,15 @@ const PAGE_SIZE = 10;
           />
         </div>
       }
-    </app-pi-section>
+    </div>
   `,
 })
 export class DocumentsPage {
+  protected readonly crumbs: PageCrumb[] = [
+    { label: 'Документы', link: '/documents' },
+    { label: 'Сформированные' },
+  ];
+
   protected readonly PAGE_SIZE = PAGE_SIZE;
 
   private readonly svc = inject(GeneratedDocumentsService);
