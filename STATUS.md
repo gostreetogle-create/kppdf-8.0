@@ -5,6 +5,12 @@
 **Canonical workspace:** `D:\kppdf-8.0` on `main`; only registered Git worktree; package manager `pnpm`
 **Task truth:** `tasks/` contains only active work. Completed or deferred work belongs in `tasks/_archive/`; this status file also retains historical roadmap notes.
 
+## [2026-08-08] — TZ-DESKTOP-SOT-301 DONE: desktop MCP source of truth
+**Статус:** DONE on main; deploy НЕ
+**Что:** `desktop/mcp/` is the only tracked MCP runtime path; `mcp-runtime` is not reconstructed as a second tree. Root scripts, Desktop host docs, and installer boundary now state the same SoT; stale Desktop shell diagnostics were cleared without changing tools.
+**Archive:** `tasks/_archive/2026-08/TZ-DESKTOP-SOT-301.done.md`
+**Gates:** MCP typecheck + 69/69 tests; desktop typecheck/check/build; `git diff --check`
+
 ## [2026-08-08] — TZ-ORG-ASSETS-302 DONE: print requisites and typed vault bindings
 **Статус:** DONE on main; deploy НЕ
 **Что:** Existing document-template HTML/snapshot pipeline now resolves organization requisites and role-based logo/seal/signature assets, with quotation/invoice sources and order → stub-КП cascade. Missing vault files remain graceful placeholders.

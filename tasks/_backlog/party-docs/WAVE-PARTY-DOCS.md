@@ -1,6 +1,6 @@
 # WAVE-PARTY-DOCS — фирма · клиенты · stub-КП · vault · печать
 
-**Статус волны:** IN WORK — `#1`–`#6` DONE, следующий `#7` TZ-DESKTOP-SOT-301
+**Статус волны:** DONE — `#1`–`#7` DONE; INN-301 PARKED
 **План-источник:** `C:\Users\User\.cursor\plans\firm_clients_sales_docs_mega_a1b2c3d4.plan.md`  
 **Curator:** `docs/audits/plan-reviews/FIRM-MEGA-CURATOR-SUMMARY.md`  
 **Промпт агенту:** [`PROMPT-CONTINUOUS.md`](./PROMPT-CONTINUOUS.md)
@@ -15,7 +15,7 @@
 | 4 | TZ-ORDERS-306 | ✅ DONE → `tasks/_archive/2026-08/TZ-ORDERS-306.done.md` | **301 DONE** | с 302/303; sole `order.service` |
 | 5 | TZ-ORG-ASSETS-301 | ✅ DONE → `tasks/_archive/2026-08/TZ-ORG-ASSETS-301.done.md` | **302 DONE** | нет |
 | 6 | TZ-ORG-ASSETS-302 | ✅ DONE → `tasks/_archive/2026-08/TZ-ORG-ASSETS-302.done.md` | **ASSETS-301 + ORDERS-306** | нет |
-| 7 | TZ-DESKTOP-SOT-301 | `TZ-DESKTOP-SOT-301.md` | после #6 или в конце | не параллелить с новыми MCP |
+| 7 | TZ-DESKTOP-SOT-301 | ✅ DONE → `tasks/_archive/2026-08/TZ-DESKTOP-SOT-301.done.md` | после #6 или в конце | не параллелить с новыми MCP |
 | 8 | TZ-INN-301 | `TZ-INN-301-lookup-PARKED.md` | **PARKED** | skip до ключа PO |
 
 ## Defaults lock (PO не ответил Q1–7 — peers)

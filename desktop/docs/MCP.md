@@ -63,10 +63,9 @@ Local MCP host so **any** MCP-capable client can call KPPDF tools with the same
 > **Cursor / Streamable HTTP:** MCP host отвечает на `GET|DELETE /mcp` кодом
 > **405** (POST-only, без SSE stream). Ответ **404** на GET ломает клиент Cursor
 > («Failed to open SSE stream: Not Found»). LM Studio обычно переживает POST-only
-> мягче; всё равно нужен актуальный Desktop/MCP с этим поведением. Исходники:
-> `desktop/mcp/src/http-server.ts` (staging `desktop/mcp-runtime/` при сборке).
-> Если установленный AppData ещё отдаёт 404 — переустановите setup или скопируйте
-> актуальный `http-server.ts` в runtime.
+> мягче; всё равно нужен актуальный Desktop/MCP с этим поведением. Единственный
+> исходный путь: `desktop/mcp/src/http-server.ts`; `desktop/mcp-runtime/` не является
+> вторым SoT и отсутствует в canonical worktree.
 
 ## Запуск вручную (dev fallback)
 
@@ -79,8 +78,8 @@ pnpm start
 ```
 
 > Dev-стадия: приложение запускает MCP из папки репозитория `desktop/mcp`
-> (Node + tsx). В собранный инсталлятор Node сейчас не бандлится — упаковка
-> рантайма (sidecar) в бэклоге.
+> (Node + tsx). В собранный инсталлятор Node и MCP runtime сейчас не бандлятся —
+> packaging/sidecar остаётся отдельным follow-up, а не второй source tree.
 
 ## Env
 

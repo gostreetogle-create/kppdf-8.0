@@ -9,7 +9,11 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
-    "check": "svelte-check --tsconfig ./tsconfig.json"
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "mcp:typecheck": "pnpm --dir mcp typecheck",
+    "mcp:test": "pnpm --dir mcp test",
+    "mcp:check": "pnpm mcp:typecheck && pnpm mcp:test",
+    "publish-installer": "node scripts/publish-installer.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.5.0",

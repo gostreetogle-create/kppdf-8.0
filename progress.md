@@ -1,3 +1,21 @@
+## [2026-08-08] — TZ-DESKTOP-SOT-301 DONE: canonical desktop/mcp source of truth
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor, WAVE-PARTY-DOCS #7)
+**Статус:** DONE; deploy НЕ
+**Что:** Разобран конфликт `desktop/mcp` vs `desktop/mcp-runtime`: единственным SoT
+оставлен tracked `desktop/mcp`, на который уже указывает Desktop host. В root desktop
+добавлены `mcp:typecheck`, `mcp:test`, `mcp:check`, а README/MCP/INSTALL явно фиксируют,
+что runtime staging отсутствует и installer/sidecar — отдельный follow-up. Чужой
+`mcp-runtime` из другого worktree не восстанавливался и не коммитился. По пути закрытия
+починен stale Desktop shell check без изменения MCP tools.
+**Затронуто:** `desktop/package.json`, `desktop/src/App.svelte`, `desktop/README.md`,
+`desktop/docs/MCP.md`, `desktop/docs/INSTALL.md`, checklist, archive, lock.
+**Gates:** `pnpm mcp:check` (typecheck + 69/69), desktop `pnpm typecheck`, `pnpm check`,
+`pnpm build`, `git diff --check` — PASS. deploy NO.
+**Archive:** `tasks/_archive/2026-08/TZ-DESKTOP-SOT-301.done.md`
+**Lock:** `.mimocode/locks/TZ-DESKTOP-SOT-301-mcp-sot.lock`
+**Known:** installer-sidecar packaging is intentionally not added; INN-301 remains PARKED.
+
 ## [2026-08-08] — TZ-ORG-ASSETS-302 DONE: реквизиты и vault-слоты в печатном pipeline
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor, WAVE-PARTY-DOCS #6)

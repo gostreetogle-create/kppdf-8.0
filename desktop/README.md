@@ -62,12 +62,31 @@ desktop/
 │       └── pdf.ts                   ← stub TODO
 ├── src-tauri/             ← Tauri 2
 ├── ai/system-prompts/     ← entities.md (шире runtime; runtime domain = materials)
-├── mcp/                   ← MCP host: reads, material writes, inbox, import_task_*
+├── mcp/                   ← единственный MCP host: reads, writes, inbox, import_task_*
 └── docs/                  ← PAIRING / MCP / INSTALL / AI-PROVIDERS
 ```
 
 Дальше по PO-vision: matching+HITL (**TZD-23**), reshape колонок, products, doc drafts —
 см. `docs/audits/2026-08-08-desktop-bulk-import-vision-audit.md`.
+
+## MCP source of truth (TZ-DESKTOP-SOT-301)
+
+`desktop/mcp/` — единственный канонический MCP runtime: здесь живут `package.json`,
+`src/http-server.ts`, `src/stdio-server.ts` и все tools от TZD-11 до TZD-30. Desktop
+host (`src/core/mcpHost.ts`) и root scripts запускают именно этот путь.
+
+`desktop/mcp-runtime/` не является вторым исходным деревом: в canonical worktree он
+отсутствует и не должен восстанавливаться или коммититься как копия. Installer-side
+packaging/sidecar остаётся отдельным follow-up: текущий Tauri config не объявляет
+runtime resource, а development host требует Node.js и `desktop/mcp`.
+
+Проверки из `desktop/`:
+
+```bash
+pnpm mcp:check       # typecheck + tests для canonical desktop/mcp
+pnpm typecheck       # Svelte/desktop shell
+pnpm build           # shell production build
+```
 
 ## Паринг (веб ↔ десктоп)
 

@@ -38,8 +38,17 @@ pnpm tauri build
 pnpm run publish-installer
 ```
 
-Перед `tauri build` в бандл попадает `desktop/mcp-runtime` (`tauri.conf.json` → `bundle.resources`).  
-Исходники MCP: `desktop/mcp/`; staging для инсталлятора: `desktop/mcp-runtime/` (синхронизировать `http-server.ts` и deps при изменении MCP).
+`desktop/mcp/` — единственный исходный и dev-runtime путь MCP. `desktop/mcp-runtime/`
+не существует в canonical worktree и не должен создаваться как вторая копия: Tauri config
+сейчас не объявляет MCP resource, поэтому installer packaging/sidecar остаётся отдельным
+follow-up, а не скрытым staging SoT.
+
+Проверки MCP перед сборкой:
+
+```text
+cd desktop
+pnpm mcp:check
+```
 
 Требование на машине клиента: **Node.js** в PATH (MCP host пока не sidecar).
 
@@ -49,7 +58,7 @@ pnpm run publish-installer
 
 | | |
 |--|--|
-| Файлы приложения / `_up_/mcp-runtime` | `%LOCALAPPDATA%\KPPDF Desktop\` |
+| Файлы приложения | `%LOCALAPPDATA%\KPPDF Desktop\` |
 | Конфиг паринга / настройки | `%APPDATA%\ru.kppdf.desktop\` (или эквивалент Tauri app-data) |
 
 Переустановка **поверх** обычно сохраняет Roaming-конфиг (паринг); Local/`_up_` перезаписывается.
@@ -58,41 +67,34 @@ pnpm run publish-installer
 
 ## Обновление: почему раньше ломалось
 
-MCP поднимает `node` + `tsx` внутри `_up_\mcp-runtime\…`. Пока Desktop/MCP запущены, файлы вроде  
-`node_modules\@esbuild\win32-x64\esbuild.exe` **заняты** → NSIS:  
-«Error opening file for writing».
+При будущей упаковке MCP runtime нужно учитывать, что запущенный `node` + `tsx`
+держит файлы вроде `node_modules\@esbuild\win32-x64\esbuild.exe` **занятыми** → NSIS:
+«Error opening file for writing». Текущий dev-host запускается из canonical `desktop/mcp/`.
 
 ### Исправление (обязательно в каждом новом setup)
 
-`desktop/src-tauri/windows/hooks.nsh` подключён в `tauri.conf.json`:
+В текущем `desktop/src-tauri/tauri.conf.json` MCP runtime и NSIS hook не объявлены:
+канонический `desktop/mcp/` работает в dev-раскладке, а installer packaging/sidecar
+остаётся отдельным follow-up. При его выпуске конфигурация должна добавить hook,
+который останавливает только собственный Desktop/MCP процесс.
 
-```json
-"bundle": {
-  "windows": {
-    "nsis": {
-      "installerHooks": "./windows/hooks.nsh"
-    }
-  }
-}
-```
-
-Хуки:
+Будущий hook:
 
 | Макрос | Когда | Действие |
 |--------|--------|----------|
-| `NSIS_HOOK_PREINSTALL` | до копирования файлов | `taskkill` `kppdf-desktop.exe`; остановить **только** `node.exe`, у которых cmdline содержит `KPPDF Desktop` / `mcp-runtime` / `kppdf-desktop`; пауза ~2 с |
+| `NSIS_HOOK_PREINSTALL` | будущая упаковка MCP | `taskkill` `kppdf-desktop.exe`; останавливать только MCP-процессы, идентифицированные по `KPPDF Desktop` / canonical MCP path; пауза ~2 с |
 | `NSIS_HOOK_PREUNINSTALL` | до удаления | то же |
 
 Чужие `node` (Cursor, другие инструменты) **не** трогаем.
 
-Без этого хука в setup — снова риск locked `esbuild` при update.
+Когда MCP будет включён в setup, без такого хука сохранится риск locked `esbuild` при update.
 
 ---
 
 ## Чеклист для PO / поддержки
 
-1. Закрывать Desktop перед ручной заменой файлов не обязательно, если setup **с** hooks.nsh.
-2. После установки: запустить → паринг (если нужно) → MCP «Запущен».
+1. Для текущей dev-раскладки запускать MCP из canonical `desktop/mcp/`; installer-sidecar пока не поставляется.
+2. После установки Desktop: запустить → паринг (если нужно) → MCP «Запущен», когда runtime packaging будет включён.
 3. Для Cursor/LM Studio: кнопка **«Скопировать mcp.json»** (TZD-20) — см. `MCP.md`.
 4. Если setup всё же ругается на запись — «Повтор» после закрытия окна Desktop; при повторе — убить процессы как в hooks (или переустановить свежий setup с хуками).
 

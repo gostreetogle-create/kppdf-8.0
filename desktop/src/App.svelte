@@ -121,10 +121,6 @@
       port,
       allowLan,
       inboxDir,
-      onPortChosen: async (chosen) => {
-        mcpPortInput = String(chosen);
-        await saveConfig({ ...cfg, mcp: { ...cfg.mcp, port: chosen, allowLan } });
-      },
     });
     // Если порт не менялся — всё равно синхронизируем фактический.
     const st = mcp.getState();
@@ -389,7 +385,7 @@
         inboxDir,
         `${file.name} → import-task ${result.id} (${result.rowCount} rows, status=${result.status})`,
       );
-      await refreshInboxLog();
+      await refreshInbox();
     } catch (err) {
       inboxError = err instanceof Error ? err.message : 'Не удалось создать задачу для ИИ.';
     } finally {

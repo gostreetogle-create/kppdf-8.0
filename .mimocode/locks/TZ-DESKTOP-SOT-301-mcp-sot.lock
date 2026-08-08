@@ -1,0 +1,21 @@
+# Lock file
+Locked as of 2026-08-08 — TZ-DESKTOP-SOT-301: Desktop MCP source of truth.
+
+Owner: agent-3e757640b7 (Freebuff executor)
+Protected files:
+- desktop/mcp/** (canonical MCP runtime and all TZD-11…30 tools)
+- desktop/src/core/mcpHost.ts (host path resolution and lifecycle)
+- desktop/package.json (mcp:typecheck / mcp:test / mcp:check scripts)
+- desktop/README.md and desktop/docs/MCP.md (source-of-truth contract)
+- desktop/docs/INSTALL.md (installer/sidecar boundary)
+
+Invariants a successor TZ must not silently break:
+- `desktop/mcp/` is the only MCP source tree and runtime entrypoint.
+- `desktop/mcp-runtime/` is not a second SoT; it is absent from the canonical worktree and must not be recreated from foreign WIP.
+- `McpHostController` resolves the repository/dev host to `desktop/mcp` and starts `src/http-server.ts` through its local `node_modules/tsx`.
+- Root desktop scripts must invoke MCP checks through `pnpm --dir mcp ...`.
+- TZD-30 tools remain in `desktop/mcp/src/` and must stay covered by the MCP test suite.
+- Installer/sidecar packaging is a separate follow-up; do not imply that a runtime resource is currently bundled.
+
+Unlock: only via orchestrator approval / successor TZ.
+Deploy: NO
