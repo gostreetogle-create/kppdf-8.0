@@ -41,4 +41,4 @@
 - Blockers: none
 - _active/: empty
 - Deploy: NO
-- HEAD: (pending push UX-304)
+- HEAD: e9346bbc (TZ-UX-304)
