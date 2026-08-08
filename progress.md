@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-311 DONE: composition-tree thumb + name wrap
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** `TreeNode.photoUrl` в catalog-graph (main/first Photo.storageUrl); в `app-composition-tree` мини-thumb после бейджа + Lucide placeholder; имя `line-clamp-2`/`break-words` вместо `truncate`. Docs §11. Не трогали QuickCreate/chrome/deploy.
+**Gates:** FE tsc PASS; BE tsc PASS; Jest composition-tree 7/7 + catalog-graph 13/13 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-311.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-311-composition-tree-thumb-wrap.lock`
+**Known:** Deploy NO. Org-scope jest expectations aligned with intentional global module parents.
+
 ## [2026-08-08] — TZ-GIT-301 DONE: merge FORM-302…305 → main
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor)

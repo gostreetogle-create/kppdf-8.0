@@ -44,6 +44,10 @@
    `mt-0`; общая hairline-рамка на node). Nest — мягкий каскад Paper & Ink
    (~4/8/13/18%), rail 5px. Kind — бейдж + rail. Свёрнуто → nest нет в DOM.
 10. **Пачки:** sibling gap (`mb-3` на раскрытом node), `space-y-3` внутри nest.
+11. **Thumb + имя (TZ-UX-311):** после бейджа ИЗД/МОД/МАТ — мини-превью
+    ~20px (`photoUrl` → `<img object-cover>`; иначе Lucide Image opacity ~0.45).
+    Имя: `line-clamp-2` + `break-words` (не `truncate`); `title` = полное имя;
+    qty / счётчик детей — `shrink-0` справа.
 
 ## Запрещено
 
@@ -83,4 +87,4 @@ Kind по-прежнему только бейдж + left rail. Строки —
 
 ---
 
-_Создано: 2026-08-07. Обновлено: 2026-08-08 (333/334 · pattern lock Orders · dark 335)._
+_Создано: 2026-08-07. Обновлено: 2026-08-08 (333/334 · pattern lock Orders · dark 335 · UX-311 thumb+wrap)._

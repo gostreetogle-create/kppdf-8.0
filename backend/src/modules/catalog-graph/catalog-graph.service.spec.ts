@@ -23,15 +23,18 @@ function buildService() {
   const productModel = mockModel();
   const moduleModel = mockModel();
   const materialModel = mockModel();
+  const photoModel = mockModel();
   return {
     service: new CatalogGraphService(
       productModel as never,
       moduleModel as never,
       materialModel as never,
+      photoModel as never,
     ),
     productModel,
     moduleModel,
     materialModel,
+    photoModel,
   };
 }
 
@@ -198,22 +201,32 @@ describe('CatalogGraphService (TZ-CATALOG-310)', () => {
       expect.objectContaining({ $and: expect.any(Array) }),
     );
 
+    productModel.find.mockClear();
+    moduleModel.find.mockClear();
     await service.getWhereUsed('module', target, { organizationId });
     expect(productModel.find).toHaveBeenCalledWith(
       expect.objectContaining({ $and: expect.any(Array) }),
     );
+    // ProductModule parents stay global (no organizationId on schema yet)
     expect(moduleModel.find).toHaveBeenCalledWith(
-      expect.objectContaining({ $and: expect.any(Array) }),
+      expect.objectContaining({
+        composition: { $elemMatch: expect.objectContaining({ lineType: 'module' }) },
+      }),
     );
+    expect(moduleModel.find.mock.calls.some((call) => call[0]?.$and)).toBe(false);
 
+    productModel.find.mockClear();
+    moduleModel.find.mockClear();
     await service.getWhereUsed('material', target, { organizationId });
     expect(productModel.find).toHaveBeenCalledWith(
       expect.objectContaining({ $and: expect.any(Array) }),
     );
     expect(moduleModel.find).toHaveBeenCalledWith(
-      expect.objectContaining({ $and: expect.any(Array) }),
+      expect.objectContaining({ $or: expect.any(Array) }),
     );
+    expect(moduleModel.find.mock.calls.some((call) => call[0]?.$and)).toBe(false);
 
+    moduleModel.find.mockClear();
     await service.getWhereUsed('workType', target, { organizationId });
     expect(moduleModel.find).toHaveBeenCalledWith({
       'workTypes.workTypeId': expect.any(Types.ObjectId),
@@ -258,5 +271,76 @@ describe('CatalogGraphService (TZ-CATALOG-310)', () => {
     expect(materialResult.items).toEqual([
       expect.objectContaining({ kind: 'module', quantity: 5, unit: 'кг' }),
     ]);
+  });
+});
+
+describe('CatalogGraphService (TZ-UX-311 photoUrl)', () => {
+  it('attaches photoUrl from mainPhotoId / first photoIds; omits when none', async () => {
+    const { service, productModel, moduleModel, materialModel, photoModel } = buildService();
+    const productId = id();
+    const moduleId = id();
+    const materialId = id();
+    const photoId = id();
+    const mainPhotoId = id();
+
+    setFindById(
+      productModel,
+      new Map([
+        [
+          productId,
+          {
+            name: 'Root product',
+            unit: 'шт',
+            photoIds: [new Types.ObjectId(photoId)],
+            composition: [
+              {
+                _id: new Types.ObjectId(),
+                lineType: 'module',
+                refId: new Types.ObjectId(moduleId),
+                quantity: 1,
+              },
+            ],
+          },
+        ],
+      ]),
+    );
+    setFindById(
+      moduleModel,
+      new Map([
+        [
+          moduleId,
+          {
+            name: 'Child module',
+            photoIds: [],
+            mainPhotoId: new Types.ObjectId(mainPhotoId),
+            composition: [
+              {
+                _id: new Types.ObjectId(),
+                lineType: 'material',
+                refId: new Types.ObjectId(materialId),
+                quantity: 2,
+                unit: 'кг',
+              },
+            ],
+          },
+        ],
+      ]),
+    );
+    setFindById(
+      materialModel,
+      new Map([[materialId, { name: 'Leaf material', unit: 'кг', photoIds: [] }]]),
+    );
+    setFindById(
+      photoModel,
+      new Map([
+        [photoId, { storageUrl: '/uploads/product.jpg' }],
+        [mainPhotoId, { storageUrl: '/uploads/module.jpg' }],
+      ]),
+    );
+
+    const tree = await service.getTree('product', productId);
+    expect(tree.photoUrl).toBe('/uploads/product.jpg');
+    expect(tree.children[0]?.photoUrl).toBe('/uploads/module.jpg');
+    expect(tree.children[0]?.children[0]?.photoUrl).toBeUndefined();
   });
 });

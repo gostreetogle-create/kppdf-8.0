@@ -27,6 +27,7 @@
 
 | № | Название | Closed | Archive |
 |---|----------|--------|---------|
+| TZ-UX-311 | Composition tree thumb + name wrap | 2026-08-08 | `tasks/_archive/2026-08/TZ-UX-311.done.md` |
 | TZ-UX-308 | Nav «Справ.» yellow active on /categories | 2026-08-08 | `tasks/_archive/2026-08/TZ-UX-308-nav-reference-active-highlight.done.md` |
 
 ---

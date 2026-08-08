@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { LucideAngularModule, Image as ImageIcon } from 'lucide-angular';
 import { CompositionTreeNode } from '../../services/pi-product-modules.service';
 import { catalogKindBorder, catalogKindOklch } from '../catalog/catalog-kind-oklch';
 import { CatalogAppearanceService } from '../catalog/catalog-appearance.service';
@@ -27,12 +28,13 @@ export type CompositionTreeSelectEvent = {
  * Kind wash: docs/audits/2026-08-07-catalog-entity-colors-audit.md (TZ-330).
  * Containment nest: docs/audits/2026-08-08-composition-containment-outline.md (TZ-333).
  * Nest cohesion (gap/rail/indent): docs/audits/2026-08-08-composition-block-cohesion-visual.md (TZ-334).
+ * Thumb + wrap name: TZ-UX-311.
  */
 @Component({
   selector: 'app-composition-tree',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgTemplateOutlet],
+  imports: [NgTemplateOutlet, LucideAngularModule],
   template: `
     <div
       class="space-y-0.5"
@@ -110,10 +112,36 @@ export type CompositionTreeSelectEvent = {
             [style.border-color]="kindAccent(node)"
             >{{ kindShort(node) }}</span
           >
-          <span class="min-w-0 flex-1 truncate" [attr.title]="node.name">
-            <span class="font-medium text-sm">{{ node.name }}</span>
+          <span
+            class="shrink-0 w-5 h-5 rounded-sm overflow-hidden inline-flex items-center justify-center bg-muted/40 text-muted-foreground"
+            aria-hidden="true"
+            data-test="composition-tree-thumb"
+          >
+            @if (node.photoUrl) {
+              <img
+                [src]="node.photoUrl"
+                alt=""
+                class="w-full h-full object-cover"
+                data-test="composition-tree-thumb-img"
+              />
+            } @else {
+              <lucide-icon
+                [img]="ImageIconSvg"
+                [size]="12"
+                class="opacity-45"
+                data-test="composition-tree-thumb-placeholder"
+              />
+            }
+          </span>
+          <span class="min-w-0 flex-1 flex items-start gap-1.5">
+            <span
+              class="min-w-0 flex-1 line-clamp-2 break-words font-medium text-sm"
+              [attr.title]="node.name"
+              data-test="composition-tree-name"
+              >{{ node.name }}</span
+            >
             @if (node.quantity !== 1) {
-              <span class="ml-1.5 text-xs font-mono font-medium tabular-nums text-foreground/75"
+              <span class="shrink-0 text-xs font-mono font-medium tabular-nums text-foreground/75"
                 >× {{ node.quantity }}{{ node.unit ? ' ' + node.unit : '' }}</span
               >
             }
@@ -161,6 +189,8 @@ export class CompositionTreeComponent {
   readonly selectedId = input<string | null>(null);
   readonly expandedChange = output<CompositionTreeExpandEvent>();
   readonly selectedChange = output<CompositionTreeSelectEvent>();
+
+  protected readonly ImageIconSvg = ImageIcon;
 
   private readonly expanded = signal(new Set<string>());
   private lastRootId: string | null = null;

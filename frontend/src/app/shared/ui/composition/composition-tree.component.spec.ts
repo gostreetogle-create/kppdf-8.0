@@ -241,4 +241,47 @@ describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
     theme.set('light');
     expect(comp.nestShadow(1)).toBeNull();
   });
+
+  it('TZ-UX-311: name uses line-clamp-2 (not truncate); placeholder thumb without photoUrl', () => {
+    fixture.componentRef.setInput('root', tree);
+    fixture.detectChanges();
+
+    const nameEl = fixture.nativeElement.querySelector(
+      '[data-test="composition-tree-node-p1"] > [data-test="composition-tree-row"] [data-test="composition-tree-name"]',
+    ) as HTMLElement;
+    expect(nameEl).toBeTruthy();
+    expect(nameEl.classList.contains('line-clamp-2')).toBe(true);
+    expect(nameEl.classList.contains('break-words')).toBe(true);
+    expect(nameEl.classList.contains('truncate')).toBe(false);
+
+    const placeholder = fixture.nativeElement.querySelector(
+      '[data-test="composition-tree-node-p1"] > [data-test="composition-tree-row"] [data-test="composition-tree-thumb-placeholder"]',
+    );
+    expect(placeholder).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector(
+        '[data-test="composition-tree-node-p1"] > [data-test="composition-tree-row"] [data-test="composition-tree-thumb-img"]',
+      ),
+    ).toBeNull();
+  });
+
+  it('TZ-UX-311: thumb img when photoUrl present', () => {
+    const withPhoto: CompositionTreeNode = {
+      ...tree,
+      photoUrl: '/uploads/demo-thumb.jpg',
+    };
+    fixture.componentRef.setInput('root', withPhoto);
+    fixture.detectChanges();
+
+    const img = fixture.nativeElement.querySelector(
+      '[data-test="composition-tree-node-p1"] > [data-test="composition-tree-row"] [data-test="composition-tree-thumb-img"]',
+    ) as HTMLImageElement;
+    expect(img).toBeTruthy();
+    expect(img.getAttribute('src')).toBe('/uploads/demo-thumb.jpg');
+    expect(
+      fixture.nativeElement.querySelector(
+        '[data-test="composition-tree-node-p1"] > [data-test="composition-tree-row"] [data-test="composition-tree-thumb-placeholder"]',
+      ),
+    ).toBeNull();
+  });
 });

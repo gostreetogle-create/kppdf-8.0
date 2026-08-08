@@ -60,6 +60,8 @@ export interface CompositionTreeNode {
   materialKind?: Material['materialKind'];
   quantity: number;
   unit?: string;
+  /** TZ-UX-311: main/first photo URL from catalog-graph tree; omit when none. */
+  photoUrl?: string;
   children: CompositionTreeNode[];
 }
 

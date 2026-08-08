@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, UnprocessableEntityException } from '@
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Material, MaterialDocument } from '../material/material.schema';
+import { Photo, PhotoDocument } from '../photos/photo.schema';
 import { Product, ProductDocument } from '../product/product.schema';
 import { ProductModule, ProductModuleDocument } from '../product-module/product-module.schema';
 
@@ -9,7 +10,8 @@ export const MAX_DEPTH = 8;
 export type ParentKind = 'product' | 'module';
 export type LineType = 'module' | 'material' | 'product';
 export interface ProposedEdge { lineType: LineType; refId: string; }
-export interface TreeNode { _id: string; name: string; kind: ParentKind | 'material'; lineType?: LineType; quantity: number; unit?: string; children: TreeNode[]; }
+/** TZ-UX-311: optional photoUrl when entity has photos; omit when absent (no null spam). */
+export interface TreeNode { _id: string; name: string; kind: ParentKind | 'material'; lineType?: LineType; quantity: number; unit?: string; photoUrl?: string; children: TreeNode[]; }
 export type WhereUsedKind = 'product' | 'module' | 'material' | 'workType';
 export interface WhereUsedItem { id: string; kind: ParentKind; name: string; relation: WhereUsedKind; quantity: number; unit?: string; sortOrder?: number; }
 export interface WhereUsedPage { items: WhereUsedItem[]; total: number; page: number; limit: number; }
@@ -24,6 +26,12 @@ type LeanParent = {
   materials?: Array<{ materialId: Types.ObjectId; quantity?: number; unit?: string; sortOrder?: number }>;
   workTypes?: Array<{ workTypeId: Types.ObjectId; estimatedHours?: number; sortOrder?: number }>;
 };
+type EntityPhotoFields = {
+  name?: string;
+  unit?: string;
+  photoIds?: Types.ObjectId[];
+  mainPhotoId?: Types.ObjectId;
+};
 type QueryResult<T> = { select: (fields: string) => QueryResult<T>; lean: () => QueryResult<T>; exec: () => Promise<T> };
 type FindModel = { find: (filter: Record<string, unknown>) => QueryResult<unknown[]> };
 
@@ -33,6 +41,7 @@ export class CatalogGraphService {
     @InjectModel(Product.name) private readonly productModel: Model<ProductDocument>,
     @InjectModel(ProductModule.name) private readonly moduleModel: Model<ProductModuleDocument>,
     @InjectModel(Material.name) private readonly materialModel: Model<MaterialDocument>,
+    @InjectModel(Photo.name) private readonly photoModel: Model<PhotoDocument>,
   ) {}
 
   async assertNoCycleAndDepth(parentId: string, parentKind: ParentKind, edge: ProposedEdge, skipLineId?: string): Promise<void> {
@@ -194,10 +203,10 @@ export class CatalogGraphService {
     if (!Number.isInteger(maxDepth) || maxDepth < 1 || maxDepth > MAX_DEPTH) throw new BadRequestException(`maxDepth must be an integer from 1 to ${MAX_DEPTH}`);
     if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Invalid id');
     const root = kind === 'product'
-      ? await this.productModel.findById(id).select('name unit composition productModuleIds').lean().exec()
-      : await this.moduleModel.findById(id).select('name composition materials').lean().exec();
+      ? await this.productModel.findById(id).select('name unit composition productModuleIds photoIds').lean().exec()
+      : await this.moduleModel.findById(id).select('name composition materials photoIds mainPhotoId').lean().exec();
     if (!root) throw new BadRequestException(`${kind} ${id} not found`);
-    return this.buildNode(id, root.name ?? '', kind, root, maxDepth, 0, new Set());
+    return this.buildNode(id, root.name ?? '', kind, root, maxDepth, 0, new Set(), new Map());
   }
 
   private async maxAncestorDepth(id: string, kind: ParentKind, ignoredEdge?: IgnoredEdge): Promise<number> {
@@ -268,22 +277,73 @@ export class CatalogGraphService {
     return Boolean(ignoredEdge && parentId === ignoredEdge.parentId && parentKind === ignoredEdge.parentKind && String(line._id) === ignoredEdge.lineId);
   }
 
-  private async buildNode(id: string, name: string, kind: ParentKind | 'material', raw: Record<string, unknown> | null, maxDepth: number, currentDepth: number, visited: Set<string>): Promise<TreeNode> {
+  private async buildNode(
+    id: string,
+    name: string,
+    kind: ParentKind | 'material',
+    raw: Record<string, unknown> | null,
+    maxDepth: number,
+    currentDepth: number,
+    visited: Set<string>,
+    photoCache: Map<string, string | undefined>,
+  ): Promise<TreeNode> {
     const quantity = typeof raw?.quantity === 'number' ? raw.quantity : 1;
     const unit = typeof raw?.unit === 'string' ? raw.unit : undefined;
     const node: TreeNode = { _id: id, name, kind, quantity, unit, children: [] };
+    const photoUrl = await this.resolvePhotoUrl(raw, photoCache);
+    if (photoUrl) node.photoUrl = photoUrl;
     if (currentDepth >= maxDepth || visited.has(`${kind}:${id}`)) return node;
     const nextVisited = new Set(visited).add(`${kind}:${id}`);
     for (const child of kind === 'material' ? [] : await this.getChildren(id, kind)) {
       const childKind: ParentKind | 'material' = child.lineType === 'material' ? 'material' : child.lineType;
       const childRaw = childKind === 'material' ? await this.lookupMaterial(child.refId) : await this.lookupEntity(childKind, child.refId);
-      const childNode = await this.buildNode(child.refId, childRaw?.name ?? child.refId, childKind, { ...(childRaw ?? {}), quantity: child.quantity, unit: child.unit }, maxDepth, currentDepth + 1, nextVisited);
+      const childNode = await this.buildNode(
+        child.refId,
+        childRaw?.name ?? child.refId,
+        childKind,
+        { ...(childRaw ?? {}), quantity: child.quantity, unit: child.unit },
+        maxDepth,
+        currentDepth + 1,
+        nextVisited,
+        photoCache,
+      );
       childNode.quantity = child.quantity;
       childNode.unit = child.unit;
       childNode.lineType = child.lineType;
       node.children.push(childNode);
     }
     return node;
+  }
+
+  /** Prefer mainPhotoId, else first photoIds entry; omit field when no storageUrl. */
+  private async resolvePhotoUrl(
+    raw: Record<string, unknown> | null,
+    cache: Map<string, string | undefined>,
+  ): Promise<string | undefined> {
+    if (!raw) return undefined;
+    const candidates: string[] = [];
+    if (raw.mainPhotoId != null) candidates.push(String(raw.mainPhotoId));
+    const photoIds = Array.isArray(raw.photoIds) ? raw.photoIds : [];
+    for (const photoId of photoIds) {
+      const key = String(photoId);
+      if (!candidates.includes(key)) candidates.push(key);
+    }
+    for (const photoId of candidates) {
+      if (!Types.ObjectId.isValid(photoId)) continue;
+      if (cache.has(photoId)) {
+        const cached = cache.get(photoId);
+        if (cached) return cached;
+        continue;
+      }
+      const photo = await this.photoModel.findById(photoId).select('storageUrl').lean().exec();
+      const url =
+        photo && typeof photo.storageUrl === 'string' && photo.storageUrl.trim()
+          ? photo.storageUrl.trim()
+          : undefined;
+      cache.set(photoId, url);
+      if (url) return url;
+    }
+    return undefined;
   }
 
   private async lookupName(kind: ParentKind | 'material', id: string): Promise<string> {
@@ -295,13 +355,24 @@ export class CatalogGraphService {
     return row?.name?.trim() || id;
   }
 
-  private async lookupEntity(kind: ParentKind, id: string): Promise<{ name?: string; unit?: string } | null> {
-    const row = kind === 'product' ? await this.productModel.findById(id).select('name unit').lean().exec() : await this.moduleModel.findById(id).select('name').lean().exec();
-    return row ? { name: row.name, unit: 'unit' in row ? row.unit : undefined } : null;
+  private async lookupEntity(kind: ParentKind, id: string): Promise<EntityPhotoFields | null> {
+    const row =
+      kind === 'product'
+        ? await this.productModel.findById(id).select('name unit photoIds').lean().exec()
+        : await this.moduleModel.findById(id).select('name photoIds mainPhotoId').lean().exec();
+    if (!row) return null;
+    return {
+      name: row.name,
+      unit: 'unit' in row ? row.unit : undefined,
+      photoIds: row.photoIds,
+      mainPhotoId: 'mainPhotoId' in row ? row.mainPhotoId : undefined,
+    };
   }
 
-  private async lookupMaterial(id: string): Promise<{ name?: string; unit?: string } | null> {
-    const row = await this.materialModel.findById(id).select('name unit').lean().exec();
-    return row ? { name: row.name, unit: row.unit } : null;
+  private async lookupMaterial(id: string): Promise<EntityPhotoFields | null> {
+    const row = await this.materialModel.findById(id).select('name unit photoIds mainPhotoId').lean().exec();
+    return row
+      ? { name: row.name, unit: row.unit, photoIds: row.photoIds, mainPhotoId: row.mainPhotoId }
+      : null;
   }
 }
