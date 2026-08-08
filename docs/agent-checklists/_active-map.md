@@ -43,4 +43,4 @@
 - Blockers: none
 - _active/: empty
 - Deploy: NO
-- HEAD: (after push UX-305)
+- HEAD: e35cae99 (TZ-UX-305)
