@@ -22,16 +22,30 @@ docs/agent-checklists/_active-map.md;
 
 ---
 
-## ЧТО ДЕЛАТЬ
+## ЧТО ДЕЛАТЬ (волны — отдельный commit на волну ОК)
 
-1. Grep form-dialogs / PiDialog variant=form|content с полями.
-2. Каждый: обернуть логические группы в `PiFormSection` с канон-заголовками где уместно.
-3. Outliers table в audit (уже сделано / не трогали / known_limitation).
-4. Волны ок (products/modules/orders/…); не один 50-file dump без отчёта по волнам.
-5. tsc + точечные jest; archive; push.
+**Волна A (обязательна в этом TZ):**
+- product-form-dialog
+- product-module form dialog (если есть form-dialog)
+- color-references-form-dialog
+- category / document-template-category / text-block-category form dialogs
+- order-form-dialog, proposal form dialog (если form), people-form-dialog
+- warehouse / stock-movement form dialogs (если простые)
+
+**Волна B (если время после A + gates):** остальные `*form*dialog*.ts` из grep — только visual wrap секциями.
+
+На каждую волну: commit+push с message `feat(ux): TZ-UX-FORM-305 wave A|B …`.
+
+Правила безопасности:
+1. Только обернуть группы в `PiFormSection` / канон-классы — **не** менять FormControl names, submit payload, API calls.
+2. Kind A (confirm/delete) — пропуск.
+3. Если диалог уже на секциях Material-style — skip + строка в outliers.
+4. Сомнительный рефактор «заодно» — **запрещён**; known_limitation в archive.
+5. Grep inventory → таблица в `docs/audits/2026-08-08-dialog-layout-canon.md` или отдельный outliers appendix.
 
 ## AC
 
-- [ ] ≥ основные catalog/sales/inventory form-dialogs на секциях
-- [ ] таблица outliers обновлена
-- [ ] gates PASS; push
+- [ ] Волна A закрыта (файлы выше на секциях или обоснованный skip)
+- [ ] outliers table обновлена
+- [ ] jest точечно + `tsc -p tsconfig.app.json --noEmit` PASS
+- [ ] archive + push; deploy нет

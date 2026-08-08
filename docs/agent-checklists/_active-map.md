@@ -1,6 +1,7 @@
 # SESSION QUEUE — continuous executor
 
-**Updated:** 2026-08-08T08:58Z · next **TZ-UX-FORM-302**
+**Updated:** 2026-08-08T09:20Z · wave **FORM-302→305**  
+**Wave file:** `docs/agent-checklists/SESSION-WAVE-2026-08-08-form-unify.md`
 
 ## DONE this session
 
@@ -12,16 +13,23 @@
 | **TZ-UX-FORM-301** | field capacity packing |
 | **TZ-UX-308** | Справ. yellow on /categories |
 
-## READY / NEXT
+## READY / NEXT (STRICT wave only)
 
 | ID | Status |
 |----|--------|
 | **TZ-UX-FORM-302** | секции = эталон Material → QC — **NEXT** |
 | **TZ-UX-FORM-303** | QC L фото |
 | **TZ-UX-FORM-304** | QC L состав (reuse BOM) |
-| **TZ-UX-FORM-305** | sweep всех form-dialogs → секции |
-| TZ-UX-302 | page chrome (после form stream) |
-| TZ-SALES-304 | KP family UI after PO probes |
+| **TZ-UX-FORM-305** | sweep form-dialogs (wave A required) |
+
+## PARK (не брать в этой волне)
+
+| ID | Why |
+|----|-----|
+| TZ-UX-302 / 303 | chrome — после волны |
+| TZ-SALES-304 | после PO probes |
+| SUPPLY-302 / Production | later |
+| deploy | только «задеплой» |
 
 ## PARK
 
