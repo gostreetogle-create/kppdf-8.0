@@ -5,6 +5,7 @@
 - `firm-mega-terra.md` (GPT-5.6 Terra)
 - `firm-mega-composer.md` (Composer)
 - `firm-mega-sonnet.md` (Claude Sonnet 5)
+- `firm-mega-fable.md` (Fable)
 
 План: `C:\Users\User\.cursor\plans\firm_clients_sales_docs_mega_a1b2c3d4.plan.md`  
 Статус: **ждём ответы PO на 7 вопросов** → потом нарезка TZ.
@@ -25,8 +26,9 @@
 | Stub ИНН в quick-create опасен | Не маскировать под настоящий; HITL; миграция |
 | D7 stub-КП нет в коде | Отдельный ранний кусок sales-wave |
 | Supply / line-ready уже есть | W5 **не** переписывать |
-| Vault ≠ photoIds | Typed roles + ACL admin + audit до PDF |
-| «PDF одной кнопкой» | Отдельная волна после vault, не магическая кнопка |
+| Vault ≠ photoIds | Typed roles + ACL admin + audit; upload pipeline **уже есть** (`POST /photos/upload`) — не строить с нуля (Fable) |
+| «PDF одной кнопкой» | Биндить org-assets в **существующие** image/background шаблона (Fable), не третий пайплайн |
+| CP.inn indexes | Global `unique` + compound `{organizationId,inn}` конфликт — при multi-org нужен TZ миграции (Fable/Sol) |
 | Фото клиентов | После org vault |
 | TZD-30 | Не мешать |
 
@@ -61,9 +63,10 @@ D7 раньше печати (Sol/Terra/Composer). Vault не раньше tenan
 | **1** | **GPT-5.6 Sol** | Шире всех: security/tenant, fake-INN, no-commerce, work-type binding, перестановка волн |
 | **1≈** | **Claude Sonnet 5** | Лучший security-фокус: дырявый Organization CRUD + CP by-id без org-guard → обязал **W1.5** до vault |
 | **3** | **GPT-5.6 Terra** | Сильная hygiene W5 + vault/PDF контракты, ясно и без воды |
-| **4** | **Composer** | Верные факты, практичные советы PO; меньше глубины по tenant |
+| **4** | **Fable** | Чёткие FE-vs-BE границы, reuse photo/image pipeline, мина индексов INN |
+| **5** | **Composer** | Верные факты, практичные советы PO |
 
-Для тяжёлых DISCUSSION: **Sol + Sonnet** (или Terra вместо одного). Composer — быстрый третий взгляд.
+Для тяжёлых DISCUSSION: **Sol + Sonnet** (или Terra). Fable/Composer — сильные дополнительные сверки.
 
 ---
 
