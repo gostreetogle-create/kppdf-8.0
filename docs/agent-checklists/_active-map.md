@@ -1,18 +1,28 @@
 # SESSION QUEUE
 
-**Updated:** 2026-08-08 · long-haul wave
+**Updated:** 2026-08-08T09:45Z · **TZ-CATALOG-DEDUP-301 DONE** · NEXT DEDUP-302
 
-## IN FLIGHT (peer)
+## NEXT
 
-| ID | Note |
-|----|------|
-| **TZ-CATALOG-DEDUP-301** | strip FullEditor composition |
+1. **TZ-CATALOG-DEDUP-302** — убрать ModuleMaterials  
+2. TZ-UX-309 · TZ-UX-310 · TZ-SALES-304  
 
-## Long-haul NEXT (other agent)
+## DONE recent
 
-Wave: `SESSION-WAVE-2026-08-08-long-haul.md`  
-DEDUP-302 → 303 → FORM-306 → DEDUP-304 → UX-309 → UX-310  
+DEDUP-301 · UX-311 · GIT-301 · FORM-302…305 · NAV-302 · UX-308  
 
-## PARK
+## Docs
 
-SALES-304 · `tasks/_park/**` · deploy only on PO command
+`docs/audits/2026-08-08-data-entry-dedupe-audit.md`  
+
+Deploy: NO  
+Park: `tasks/_park/`
+
+## Checkpoint 2026-08-08T09:45Z
+- DONE: TZ-CATALOG-DEDUP-301
+- IN PROGRESS: none
+- NEXT: TZ-CATALOG-DEDUP-302
+- HEAD: (pending)
+- Blockers: none
+- _active/: empty
+- Deploy: NO

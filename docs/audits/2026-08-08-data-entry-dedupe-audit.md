@@ -65,11 +65,11 @@ QuickCreate L — тонкий хост после create, не вторая р�
 
 | # | ID | Суть |
 |---|-----|------|
-| 1 | **TZ-CATALOG-DEDUP-301** | Вырезать состав из Product FullEditor |
-| 2 | **TZ-CATALOG-DEDUP-302** | Убрать ModuleMaterials с module-detail |
-| 3 | **TZ-CATALOG-DEDUP-303** | Удалить orphan CompositionEditor |
-| 4 | **TZ-UX-FORM-306** | Module QuickCreate L + BomPanel (как product FORM-304) |
-| 5 | **TZ-CATALOG-DEDUP-304** | «Редактировать» на product/material detail → тот же FullEditor |
+| 1 | **TZ-CATALOG-DEDUP-301** | Вырезать состав из Product FullEditor | **DONE** 2026-08-08 |
+| 2 | **TZ-CATALOG-DEDUP-302** | Убрать ModuleMaterials с module-detail | READY |
+| 3 | **TZ-CATALOG-DEDUP-303** | Удалить orphan CompositionEditor | READY |
+| 4 | **TZ-UX-FORM-306** | Module QuickCreate L + BomPanel (как product FORM-304) | READY |
+| 5 | **TZ-CATALOG-DEDUP-304** | «Редактировать» на product/material detail → тот же FullEditor | READY |
 
 Параллельно с UX-311 (thumb/wrap) — другие conflict keys.
 

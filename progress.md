@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-CATALOG-DEDUP-301 DONE: strip composition from Product FullEditor
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** FullEditor = паспорт/фото/RAL; BOM UI и composition sync удалены; hint на карточку / QuickCreate L. BomPanel и QC не тронуты.
+**Gates:** FE tsc PASS; Jest product-form-dialog 22/22 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-DEDUP-301.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-DEDUP-301-strip-fulleditor-composition.lock`
+**Known:** Deploy NO. Next DEDUP-302.
+
 ## [2026-08-08] — TZ-UX-311 DONE: composition-tree thumb + name wrap
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor)

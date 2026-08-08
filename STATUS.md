@@ -13,6 +13,11 @@
 - Moved the project passport to `docs/project-passport.md`; `TZ-CLEANUP-R2` is archived as DONE after all cleanup acceptance criteria and verification gates.
 - `tasks/` is intended to contain only real active `TZ-*.md` files. Roadmap prose elsewhere is historical context, not an active task claim.
 
+## [2026-08-08] — TZ-CATALOG-DEDUP-301 DONE: strip FullEditor composition
+**Статус:** DONE on main; deploy НЕ
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-DEDUP-301.done.md`
+**Gates:** FE tsc PASS; Jest product-form-dialog 22/22 PASS
+
 ## [2026-08-08] — TZ-UX-311 DONE: composition-tree thumb + name wrap
 **Статус:** DONE on main; deploy НЕ
 **Что:** TreeNode.photoUrl + composition-tree mini-thumb / line-clamp-2 name

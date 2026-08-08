@@ -23,11 +23,8 @@ import { ProductsService } from '../../shared/services/products.service';
 import { CategoriesService } from '../../shared/services/categories.service';
 import { PiColorReferencesService } from '../../shared/services/pi-color-references.service';
 import { PhotosService } from '../../shared/services/photos.service';
-import { ProductModulesService } from '../../shared/services/pi-product-modules.service';
-import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { AuthService } from '../../core/auth.service';
 import { PiToastService } from '../../shared/ui/toast';
-import { MaterialsService } from '../../shared/services/materials.service';
 
 const ACTIVE_COLORS = [
   {
@@ -59,15 +56,6 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
   let categoriesSvc: { list: jest.Mock };
   let colorsSvc: { list: jest.Mock };
   let photosSvc: { list: jest.Mock; upload: jest.Mock; remove: jest.Mock };
-  let materialsSvc: { list: jest.Mock };
-  let modulesSvc: {
-    list: jest.Mock;
-    getProductComposition: jest.Mock;
-    addProductCompositionLine: jest.Mock;
-    updateProductCompositionLine: jest.Mock;
-    removeProductCompositionLine: jest.Mock;
-  };
-  let dialogSvc: { open: jest.Mock };
 
   function ref<T>(): DialogRef<T> {
     return {
@@ -87,9 +75,6 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
         { provide: CategoriesService, useValue: categoriesSvc },
         { provide: PiColorReferencesService, useValue: colorsSvc },
         { provide: PhotosService, useValue: photosSvc },
-        { provide: ProductModulesService, useValue: modulesSvc },
-        { provide: MaterialsService, useValue: materialsSvc },
-        { provide: PiDialogService, useValue: dialogSvc },
         {
           provide: AuthService,
           useValue: {
@@ -147,17 +132,6 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     removePhoto: (id: string) => void;
     onPhotoSelect: (e: Event) => void;
     ngOnDestroy: () => void;
-    attachedModules: () => unknown[];
-    compositionRows: () => unknown[];
-    isComplex: () => boolean;
-    compositionLabel: (line: unknown) => string;
-    modulesLoading: () => boolean;
-    modulesError: () => string | null;
-    openModulePicker: () => void;
-    addModules: (ids: string[]) => void;
-    removeModule: (id: string) => void;
-    moduleQty: (id: string) => number;
-    setModuleQty: (id: string, e: Event) => void;
     form: { markAsDirty: () => void; dirty: boolean };
   } {
     return fixture.componentInstance as unknown as {
@@ -175,17 +149,6 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
       removePhoto: (id: string) => void;
       onPhotoSelect: (e: Event) => void;
       ngOnDestroy: () => void;
-      attachedModules: () => unknown[];
-      compositionRows: () => unknown[];
-      isComplex: () => boolean;
-      compositionLabel: (line: unknown) => string;
-      modulesLoading: () => boolean;
-      modulesError: () => string | null;
-      openModulePicker: () => void;
-      addModules: (ids: string[]) => void;
-      removeModule: (id: string) => void;
-      moduleQty: (id: string) => number;
-      setModuleQty: (id: string, e: Event) => void;
       form: { markAsDirty: () => void; dirty: boolean };
     };
   }
@@ -232,20 +195,6 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
       list: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
       upload: jest.fn(),
       remove: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
-    };
-    materialsSvc = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [] } })) };
-    modulesSvc = {
-      list: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
-      getProductComposition: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
-      addProductCompositionLine: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
-      updateProductCompositionLine: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
-      removeProductCompositionLine: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
-    };
-    dialogSvc = {
-      open: jest.fn().mockReturnValue({
-        closed: signal(undefined),
-        close: jest.fn(),
-      }),
     };
   });
 
@@ -492,251 +441,29 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     expect(close).toHaveBeenCalledTimes(1);
   });
 
-  // ── TZ-PRODUCTS-303: «Модули в составе» ─────────────────────────────
+  // ── TZ-CATALOG-DEDUP-301: composition stripped from FullEditor ─────
 
-  const MODULES = [
-    {
-      _id: 'm1',
-      name: 'Рама',
-      article: 'R-1',
-      materials: [{ materialId: 'x1' }, { materialId: 'x2' }],
-      workTypes: [],
-    },
-    {
-      _id: 'm2',
-      name: 'Стеклопакет',
-      article: 'SP-2',
-      materials: [{ materialId: 'y1' }],
-      workTypes: [],
-    },
-    { _id: 'm3', name: 'Фурнитура', article: 'F-3', materials: [], workTypes: [] },
-  ] as const;
-
-  it('modules: loads the module catalog on init (loading → loaded)', async () => {
-    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
+  it('DEDUP-301: shows composition hint; no module picker / BOM buttons', async () => {
     await setup(null);
-    expect(modulesSvc.list).toHaveBeenCalled();
-    expect(instance().modulesLoading()).toBe(false);
-    expect(instance().modulesError()).toBeNull();
+    const hint = fixture.nativeElement.querySelector(
+      '[data-test="composition-hint"]',
+    ) as HTMLElement | null;
+    expect(hint).toBeTruthy();
+    expect(hint!.textContent?.includes('L')).toBe(true);
+    expect(hint!.textContent?.trim().length).toBeGreaterThan(10);
+    expect(fixture.nativeElement.querySelector('[data-test="add-module"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="add-composition-line"]')).toBeNull();
   });
 
-  it('modules: surfaces a catalog error (picker loading/error state)', async () => {
-    modulesSvc.list.mockReturnValue(
-      of({ ok: false, error: new HttpErrorResponse({ status: 500, error: { message: 'fail' } }) }),
-    );
+  it('DEDUP-301: create submit does not touch composition APIs (passport only)', async () => {
     await setup(null);
-    expect(instance().modulesError()).toBeTruthy();
-  });
-
-  it('modules: addModules appends cards from the catalog and marks the form dirty', async () => {
-    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
-    await setup(null);
-    expect(instance().attachedModules()).toHaveLength(0);
-
-    instance().addModules(['m1', 'm3']);
-    expect(
-      instance()
-        .attachedModules()
-        .map((m) => (m as { _id: string })._id),
-    ).toEqual(['m1', 'm3']);
-    expect(instance().form.dirty).toBe(true);
-  });
-
-  it('modules: addModules dedupes ids already present', async () => {
-    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
-    await setup(null);
-    instance().addModules(['m1']);
-    instance().addModules(['m1', 'm2']);
-    expect(instance().attachedModules()).toHaveLength(2);
-  });
-
-  it('modules: removeModule removes a card from the draft and marks dirty', async () => {
-    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
-    await setup(null);
-    instance().addModules(['m1', 'm2']);
-    instance().removeModule('m1');
-    expect(
-      instance()
-        .attachedModules()
-        .map((m) => (m as { _id: string })._id),
-    ).toEqual(['m2']);
-    expect(instance().form.dirty).toBe(true);
-  });
-
-  it('modules: edit seeds cards from populated data.productModuleIds', async () => {
-    await setup({
-      _id: 'p-mod',
-      name: 'С модулями',
-      kind: 'good',
-      unit: 'шт',
-      productModuleIds: [MODULES[0], MODULES[1]],
-    });
-    expect(instance().attachedModules()).toHaveLength(2);
-  });
-
-  it('modules: edit with STRING productModuleIds resolves cards from the catalog (async, no silent delete)', async () => {
-    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
-    await setup({
-      _id: 'p-strings',
-      name: 'Строками',
-      kind: 'good',
-      unit: 'шт',
-      productModuleIds: ['m1', 'm3'], // unpopulated (string ids)
-    });
-    // The catalog resolves asynchronously; the pending ids must still land.
-    expect(
-      instance()
-        .attachedModules()
-        .map((m) => (m as { _id: string })._id),
-    ).toEqual(['m1', 'm3']);
-
-    // And on submit they must NOT be treated as removed (no DELETE for unseen modules).
-    instance().onSubmit();
-    expect(modulesSvc.removeProductCompositionLine).not.toHaveBeenCalled();
-    expect(close).toHaveBeenCalled();
-  });
-
-  it('modules: create submit with NO attached modules fires NO module calls', async () => {
-    await setup(null);
-    formControls().name.setValue('Без модулей');
-    formControls().unit.setValue('шт');
+    formControls().name.setValue('No BOM');
+    formControls().unit.setValue('pcs');
     instance().onSubmit();
     expect(productsSvc.create).toHaveBeenCalledTimes(1);
-    expect(modulesSvc.addProductCompositionLine).not.toHaveBeenCalled();
-    expect(modulesSvc.removeProductCompositionLine).not.toHaveBeenCalled();
+    const payload = productsSvc.create.mock.calls[0][0] as Record<string, unknown>;
+    expect(payload.composition).toBeUndefined();
+    expect(payload.productModuleIds).toBeUndefined();
     expect(close).toHaveBeenCalled();
-  });
-
-  it('modules: create submit with one attached module POSTs a composition line after the product save', async () => {
-    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
-    await setup(null);
-    formControls().name.setValue('С модулем');
-    formControls().unit.setValue('шт');
-    instance().addModules(['m1']);
-    instance().onSubmit();
-    expect(productsSvc.create).toHaveBeenCalledTimes(1);
-    // Composition POST /products/:id/composition with the created product id.
-    expect(modulesSvc.addProductCompositionLine).toHaveBeenCalledWith('p1', {
-      lineType: 'module',
-      refId: 'm1',
-      quantity: 1,
-    });
-    expect(modulesSvc.removeProductCompositionLine).not.toHaveBeenCalled();
-    expect(close).toHaveBeenCalled();
-  });
-
-  it('modules: edit submit with a changed set POSTs added modules via composition', async () => {
-    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
-    await setup({
-      _id: 'p-mod-edit',
-      name: 'С модулями',
-      kind: 'good',
-      unit: 'шт',
-      productModuleIds: [MODULES[0], MODULES[1]], // originally m1 + m2 (legacy)
-    });
-    instance().removeModule('m2'); // removed from the draft
-    instance().addModules(['m3']); // added to the draft
-    instance().onSubmit();
-    expect(productsSvc.update).toHaveBeenCalledTimes(1);
-    // legacy-товар (composition пуст): diff по черновику — m3 POST,
-    // m2 legacy-привязка остаётся до миграции 304.
-    expect(modulesSvc.addProductCompositionLine).toHaveBeenCalledWith('p-edit', {
-      lineType: 'module',
-      refId: 'm3',
-      quantity: 1,
-    });
-    expect(modulesSvc.removeProductCompositionLine).not.toHaveBeenCalled();
-    expect(close).toHaveBeenCalled();
-  });
-
-  it('modules: edit with composition data seeds qty and PATCHes changed lines', async () => {
-    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
-    await setup({
-      _id: 'p-comp',
-      name: 'С составом',
-      kind: 'good',
-      unit: 'шт',
-      composition: [
-        { _id: 'cl1', lineType: 'module', refId: 'm1', quantity: 2, sortOrder: 0 },
-        { _id: 'cl2', lineType: 'module', refId: 'm2', quantity: 1, sortOrder: 1 },
-      ],
-    });
-    expect(
-      instance()
-        .attachedModules()
-        .map((m) => (m as { _id: string })._id),
-    ).toEqual(['m1', 'm2']);
-    expect(instance().moduleQty('m1')).toBe(2);
-
-    instance().setModuleQty('m1', { target: { value: '3' } } as unknown as Event);
-    instance().removeModule('m2'); // DELETE
-    instance().addModules(['m3']); // POST
-    instance().onSubmit();
-    expect(productsSvc.update).toHaveBeenCalledTimes(1);
-    // productsSvc.update mock возвращает { _id: 'p-edit' } — именно этот id
-    // идёт в composition-вызовы (как и в legacy attach-тестах).
-    expect(modulesSvc.updateProductCompositionLine).toHaveBeenCalledWith('p-edit', 'cl1', {
-      quantity: 3,
-    });
-    expect(modulesSvc.removeProductCompositionLine).toHaveBeenCalledWith('p-edit', 'cl2');
-    expect(modulesSvc.addProductCompositionLine).toHaveBeenCalledWith('p-edit', {
-      lineType: 'module',
-      refId: 'm3',
-      quantity: 1,
-    });
-    expect(close).toHaveBeenCalled();
-  });
-
-  it('composition: product line derives the Комплекс badge and preserves its price override', async () => {
-    await setup({
-      _id: 'p-parent',
-      name: 'Комплекс',
-      kind: 'good',
-      unit: 'шт',
-      composition: [
-        {
-          _id: 'product-line',
-          lineType: 'product',
-          refId: 'p-child',
-          quantity: 1,
-          sortOrder: 0,
-          unitPriceOverride: 1250,
-        },
-      ],
-    });
-    expect(instance().isComplex()).toBe(true);
-    expect(instance().compositionRows()).toHaveLength(1);
-    expect(
-      (instance().compositionRows()[0] as { unitPriceOverride: number }).unitPriceOverride,
-    ).toBe(1250);
-    expect(instance().compositionLabel({ lineType: 'product', refId: 'p-child' })).toBe('Изделие');
-  });
-
-  it('modules: openModulePicker opens the MULTI picker with excludeIds of the current draft', async () => {
-    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
-    await setup({
-      _id: 'p-pick',
-      name: 'P',
-      kind: 'good',
-      unit: 'шт',
-      productModuleIds: [MODULES[0]],
-    });
-    instance().openModulePicker();
-    expect(dialogSvc.open).toHaveBeenCalledTimes(1);
-    const [component, config] = dialogSvc.open.mock.calls[0];
-    expect(config.data.multi).toBe(true);
-    expect(config.data.excludeIds).toEqual(['m1']);
-    expect(config.data.productId).toBe('p-pick');
-    expect(component).toBeTruthy();
-  });
-
-  it('modules: cancel after adding modules does NOT fire any module mutation', async () => {
-    modulesSvc.list.mockReturnValue(of({ ok: true, data: MODULES }));
-    await setup(null);
-    instance().addModules(['m1']);
-    instance().onCancel();
-    expect(close).toHaveBeenCalledWith(null);
-    expect(modulesSvc.addProductCompositionLine).not.toHaveBeenCalled();
-    expect(productsSvc.create).not.toHaveBeenCalled();
   });
 });
