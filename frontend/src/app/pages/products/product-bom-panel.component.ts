@@ -102,7 +102,7 @@ interface LineCostHint {
           }
         </ul>
 
-        <div class="p-2 max-h-[min(32rem,60vh)] overflow-y-auto">
+        <div class="p-2" data-test="bom-tree-scroll">
           <app-composition-tree
             [root]="tree()"
             [selectedId]="selectedNodeId()"

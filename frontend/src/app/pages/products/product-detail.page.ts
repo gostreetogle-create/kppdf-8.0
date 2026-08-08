@@ -105,128 +105,120 @@ const KIND_LABELS: Record<ProductKind, string> = {
         class="grid grid-cols-1 xl:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)] gap-5 items-start"
         data-test="product-detail-layout"
       >
-        <!-- Левая колонка: карточка товара -->
-        <section
-          class="hairline rounded-sm bg-paper overflow-hidden xl:sticky xl:top-3"
-          data-test="product-hero"
-        >
-          <div
-            class="bg-paper-2 flex items-center justify-center aspect-[4/3] max-h-52"
-            data-test="product-hero-photo"
-          >
-            @if (mainPhotos()[0]; as cover) {
-              <img
-                [src]="cover.storageUrl"
-                [alt]="cover.originalFilename ?? p.name"
-                class="block w-full h-full object-cover"
-                loading="lazy"
-              />
-            } @else {
-              <span class="text-xs text-muted-foreground px-3 text-center">Нет фото</span>
-            }
-          </div>
-          <div class="p-4 space-y-3">
-            <div class="space-y-1.5">
-              <p class="eyebrow m-0">товар</p>
-              <h1
-                class="font-display text-lg sm:text-xl tracking-tight text-ink leading-snug break-words"
-                data-test="product-title"
-              >
-                {{ p.name }}
-              </h1>
-              <p class="text-xs text-muted-foreground font-mono m-0">
-                {{ p.sku ? 'SKU ' + p.sku : 'без SKU' }}
-                · {{ kindLabel(p.kind) }}
-              </p>
-            </div>
-
-            <div class="flex flex-wrap gap-1.5">
-              @if (isComplex()) {
-                <span
-                  class="inline-flex items-center px-2 py-0.5 text-[11px] hairline rounded-sm bg-sunrise-warm/10 text-sunrise-warm"
-                  data-test="complex-badge"
-                  >Комплекс</span
-                >
-              }
-              <span
-                class="inline-flex items-center px-2 py-0.5 text-[11px] hairline rounded-sm"
-                [class.bg-sunrise-warm/10]="p.isActive"
-                [class.text-sunrise-warm]="p.isActive"
-                [class.text-muted-foreground]="!p.isActive"
-                data-test="product-active-badge"
-              >
-                {{ p.isActive ? 'Активен' : 'Неактивен' }}
-              </span>
-              @if (p.status) {
-                <span
-                  class="inline-flex items-center px-2 py-0.5 text-[11px] hairline rounded-sm text-muted-foreground"
-                  data-test="product-status-badge"
-                  >{{ statusLabel(p.status) }}</span
-                >
-              }
-            </div>
-
-            <dl class="grid grid-cols-2 gap-2 text-sm" data-test="product-hero-prices">
-              <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
-                <dt class="eyebrow truncate">Прайс</dt>
-                <dd
-                  class="font-mono font-medium text-sm truncate empty-cell"
-                  data-test="product-list-price"
-                >
-                  {{ p.listPrice != null ? formatRuble(p.listPrice) : '—' }}
-                </dd>
-              </div>
-              <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
-                <dt class="eyebrow truncate">Себест.</dt>
-                <dd class="font-mono text-sm truncate empty-cell" data-test="product-cost-price">
-                  {{ p.costPrice != null ? formatRuble(p.costPrice) : '—' }}
-                </dd>
-              </div>
-              <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
-                <dt class="eyebrow truncate">База</dt>
-                <dd class="font-mono text-sm truncate empty-cell">
-                  {{ p.basePrice != null ? formatRuble(p.basePrice) : '—' }}
-                </dd>
-              </div>
-              <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
-                <dt class="eyebrow truncate">В составе</dt>
-                <dd class="font-mono font-medium text-sm" data-test="product-module-count">
-                  {{ compositionSummary() }}
-                </dd>
-              </div>
-            </dl>
-
-            <dl
-              class="flex flex-col gap-1 text-xs text-muted-foreground"
-              data-test="product-hero-dims"
+        <div class="space-y-4 xl:sticky xl:top-3" data-test="product-detail-aside">
+          <!-- Левая колонка: карточка товара -->
+          <section class="hairline rounded-sm bg-paper overflow-hidden" data-test="product-hero">
+            <div
+              class="bg-paper-2 flex items-center justify-center aspect-[4/3] max-h-52"
+              data-test="product-hero-photo"
             >
-              <div class="flex justify-between gap-2">
-                <span class="eyebrow shrink-0">Д×Ш×В</span>
-                <span class="font-mono text-ink text-right empty-cell">{{
-                  dimensionsLabel(p)
-                }}</span>
+              @if (mainPhotos()[0]; as cover) {
+                <img
+                  [src]="cover.storageUrl"
+                  [alt]="cover.originalFilename ?? p.name"
+                  class="block w-full h-full object-cover"
+                  loading="lazy"
+                />
+              } @else {
+                <span class="text-xs text-muted-foreground px-3 text-center">Нет фото</span>
+              }
+            </div>
+            <div class="p-4 space-y-3">
+              <div class="space-y-1.5">
+                <p class="eyebrow m-0">товар</p>
+                <h1
+                  class="font-display text-lg sm:text-xl tracking-tight text-ink leading-snug break-words"
+                  data-test="product-title"
+                >
+                  {{ p.name }}
+                </h1>
+                <p class="text-xs text-muted-foreground font-mono m-0">
+                  {{ p.sku ? 'SKU ' + p.sku : 'без SKU' }}
+                  · {{ kindLabel(p.kind) }}
+                </p>
               </div>
-              <div class="flex justify-between gap-2">
-                <span class="eyebrow shrink-0">Вес</span>
-                <span class="font-mono text-ink text-right empty-cell">{{
-                  p.weightKg != null ? p.weightKg + ' кг' : '—'
-                }}</span>
-              </div>
-              <div class="flex justify-between gap-2">
-                <span class="eyebrow shrink-0">RAL</span>
-                <span class="font-mono text-ink text-right empty-cell">{{ p.ralCode ?? '—' }}</span>
-              </div>
-            </dl>
-          </div>
-        </section>
 
-        <!-- Правая колонка: состав (BOM) + вторичные блоки -->
-        <div class="min-w-0 space-y-4">
-          <app-product-bom-panel
-            [productId]="p._id"
-            (changed)="onBomChanged()"
-            data-test="product-composition-panel"
-          />
+              <div class="flex flex-wrap gap-1.5">
+                @if (isComplex()) {
+                  <span
+                    class="inline-flex items-center px-2 py-0.5 text-[11px] hairline rounded-sm bg-sunrise-warm/10 text-sunrise-warm"
+                    data-test="complex-badge"
+                    >Комплекс</span
+                  >
+                }
+                <span
+                  class="inline-flex items-center px-2 py-0.5 text-[11px] hairline rounded-sm"
+                  [class.bg-sunrise-warm/10]="p.isActive"
+                  [class.text-sunrise-warm]="p.isActive"
+                  [class.text-muted-foreground]="!p.isActive"
+                  data-test="product-active-badge"
+                >
+                  {{ p.isActive ? 'Активен' : 'Неактивен' }}
+                </span>
+                @if (p.status) {
+                  <span
+                    class="inline-flex items-center px-2 py-0.5 text-[11px] hairline rounded-sm text-muted-foreground"
+                    data-test="product-status-badge"
+                    >{{ statusLabel(p.status) }}</span
+                  >
+                }
+              </div>
+
+              <dl class="grid grid-cols-2 gap-2 text-sm" data-test="product-hero-prices">
+                <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
+                  <dt class="eyebrow truncate">Прайс</dt>
+                  <dd
+                    class="font-mono font-medium text-sm truncate empty-cell"
+                    data-test="product-list-price"
+                  >
+                    {{ p.listPrice != null ? formatRuble(p.listPrice) : '—' }}
+                  </dd>
+                </div>
+                <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
+                  <dt class="eyebrow truncate">Себест.</dt>
+                  <dd class="font-mono text-sm truncate empty-cell" data-test="product-cost-price">
+                    {{ p.costPrice != null ? formatRuble(p.costPrice) : '—' }}
+                  </dd>
+                </div>
+                <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
+                  <dt class="eyebrow truncate">База</dt>
+                  <dd class="font-mono text-sm truncate empty-cell">
+                    {{ p.basePrice != null ? formatRuble(p.basePrice) : '—' }}
+                  </dd>
+                </div>
+                <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
+                  <dt class="eyebrow truncate">В составе</dt>
+                  <dd class="font-mono font-medium text-sm" data-test="product-module-count">
+                    {{ compositionSummary() }}
+                  </dd>
+                </div>
+              </dl>
+
+              <dl
+                class="flex flex-col gap-1 text-xs text-muted-foreground"
+                data-test="product-hero-dims"
+              >
+                <div class="flex justify-between gap-2">
+                  <span class="eyebrow shrink-0">Д×Ш×В</span>
+                  <span class="font-mono text-ink text-right empty-cell">{{
+                    dimensionsLabel(p)
+                  }}</span>
+                </div>
+                <div class="flex justify-between gap-2">
+                  <span class="eyebrow shrink-0">Вес</span>
+                  <span class="font-mono text-ink text-right empty-cell">{{
+                    p.weightKg != null ? p.weightKg + ' кг' : '—'
+                  }}</span>
+                </div>
+                <div class="flex justify-between gap-2">
+                  <span class="eyebrow shrink-0">RAL</span>
+                  <span class="font-mono text-ink text-right empty-cell">{{
+                    p.ralCode ?? '—'
+                  }}</span>
+                </div>
+              </dl>
+            </div>
+          </section>
 
           <app-pi-accordion [multi]="true" data-test="product-cascade">
             <app-pi-accordion-item
@@ -242,7 +234,7 @@ const KIND_LABELS: Record<ProductKind, string> = {
                     <img
                       [src]="ph.storageUrl"
                       [alt]="ph.originalFilename ?? 'фото'"
-                      class="block w-36 h-36 object-cover hairline rounded-sm bg-paper-2"
+                      class="block w-full max-w-[9rem] aspect-square object-cover hairline rounded-sm bg-paper-2"
                       loading="lazy"
                     />
                   </figure>
@@ -355,6 +347,15 @@ const KIND_LABELS: Record<ProductKind, string> = {
               }
             </app-pi-accordion-item>
           </app-pi-accordion>
+        </div>
+
+        <!-- Центр: состав на всю высоту -->
+        <div class="min-w-0">
+          <app-product-bom-panel
+            [productId]="p._id"
+            (changed)="onBomChanged()"
+            data-test="product-composition-panel"
+          />
         </div>
       </div>
     }
