@@ -1,5 +1,8 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
+
+import { AuthService } from '../../core/auth.service';
+import { filterByPageAcl } from '../../core/capabilities/page-acl';
 
 /**
  * PiGroupWorkspace — group chip workspace shell (DICT-308+).
@@ -11,6 +14,8 @@ import { RouterLink } from '@angular/router';
  *   4) Body — table / tree
  *
  * Both chip rows are dense (compact height). TOC is slightly smaller than section chips.
+ * Chips with `pageKey` / `anyPageKeys` are hidden when the role lacks that page ACL
+ * (same rule as top nav) — user never clicks into /forbidden by accident.
  */
 @Component({
   selector: 'app-pi-group-workspace',
@@ -24,13 +29,13 @@ import { RouterLink } from '@angular/router';
           {{ pathLabel() }}
         </p>
       }
-      @if (toc().length > 0) {
+      @if (visibleToc().length > 0) {
         <nav
           class="group-toc flex items-center gap-1 flex-wrap pt-1.5 pb-0.5 min-w-0"
           aria-label="Группы справочников"
           data-test="group-toc"
         >
-          @for (chip of toc(); track chip.id) {
+          @for (chip of visibleToc(); track chip.id) {
             <a
               [routerLink]="chip.route"
               class="group-toc-chip inline-flex items-center px-2 py-0.5
@@ -53,10 +58,10 @@ import { RouterLink } from '@angular/router';
       <div
         class="group-chips flex items-center gap-1 flex-wrap
                pt-0.5 pb-1.5 min-w-0"
-        [class.pt-1.5]="toc().length === 0"
+        [class.pt-1.5]="visibleToc().length === 0"
         data-test="group-chips"
       >
-        @for (chip of chips(); track chip.id) {
+        @for (chip of visibleChips(); track chip.id) {
           <a
             [routerLink]="chip.route"
             class="group-chip inline-flex items-center gap-1 px-2.5 py-0.5
@@ -101,6 +106,8 @@ import { RouterLink } from '@angular/router';
   ],
 })
 export class PiGroupWorkspaceComponent {
+  private readonly auth = inject(AuthService);
+
   /**
    * Optional section path label above chips (e.g. «Каталог», «Справочники»).
    * Complements chips; not a deep path-breadcrumb tree.
@@ -121,6 +128,12 @@ export class PiGroupWorkspaceComponent {
 
   readonly tocClick = output<string>();
   readonly chipClick = output<string>();
+
+  /** Page-ACL filtered TOC (same source as top nav: user.pages). */
+  readonly visibleToc = computed(() => filterByPageAcl(this.toc(), this.auth.user()?.pages));
+
+  /** Page-ACL filtered section chips. */
+  readonly visibleChips = computed(() => filterByPageAcl(this.chips(), this.auth.user()?.pages));
 }
 
 /** Chip configuration for TOC or section row. */
@@ -128,4 +141,8 @@ export interface GroupChip {
   id: string;
   label: string;
   route: string;
+  /** Must be in role `pages` when set (ACCESS page ACL). */
+  pageKey?: string;
+  /** TOC groups spanning several pages — show if any key is granted. */
+  anyPageKeys?: readonly string[];
 }

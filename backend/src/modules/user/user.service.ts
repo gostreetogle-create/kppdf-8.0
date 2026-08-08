@@ -16,6 +16,19 @@ import { userActivityCache } from '../../common/guards/user-activity-cache';
 
 const BCRYPT_ROUNDS = 10;
 
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function isMongoDuplicateKey(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'code' in err &&
+    (err as { code?: number }).code === 11000
+  );
+}
+
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(UserService.name);
@@ -25,26 +38,42 @@ export class UserService {
   ) {}
 
   async create(dto: CreateUserDto): Promise<UserDocument> {
-    const exists = await this.model
-      .findOne({ $or: [{ username: dto.username }, { email: dto.email }] })
-      .exec();
-    if (exists) {
-      throw new ConflictException('Username or email already taken');
+    const username = dto.username.trim().toLowerCase();
+    const email = dto.email?.trim().toLowerCase() || undefined;
+    const displayName = dto.displayName?.trim() || username;
+
+    const byUsername = await this.findByUsername(username);
+    if (byUsername) {
+      throw new ConflictException('Логин уже занят');
     }
+    if (email) {
+      const byEmail = await this.findByEmail(email);
+      if (byEmail) {
+        throw new ConflictException('Email уже занят');
+      }
+    }
+
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
-    const doc = await this.model.create({
-      username: dto.username,
-      email: dto.email,
-      displayName: dto.displayName,
-      passwordHash,
-      role: dto.role,
-      permissions: dto.permissions ?? [],
-      isActive: dto.isActive ?? true,
-      phone: dto.phone,
-      fullName: dto.fullName,
-    });
-    this.logger.log(`User created: ${doc.username}`);
-    return doc;
+    try {
+      const doc = await this.model.create({
+        username,
+        ...(email ? { email } : {}),
+        displayName,
+        passwordHash,
+        role: dto.role,
+        permissions: dto.permissions ?? [],
+        isActive: dto.isActive ?? true,
+        phone: dto.phone,
+        fullName: dto.fullName,
+      });
+      this.logger.log(`User created: ${doc.username}`);
+      return doc;
+    } catch (err: unknown) {
+      if (isMongoDuplicateKey(err)) {
+        throw new ConflictException('Логин или email уже заняты');
+      }
+      throw err;
+    }
   }
 
   async findAll(
@@ -75,17 +104,61 @@ export class UserService {
   }
 
   async findByUsername(username: string): Promise<UserDocument | null> {
-    return this.model.findOne({ username }).exec();
+    const escaped = escapeRegex(username.trim());
+    if (!escaped) return null;
+    return this.model
+      .findOne({ username: { $regex: `^${escaped}$`, $options: 'i' } })
+      .exec();
   }
 
   async findByEmail(email: string): Promise<UserDocument | null> {
-    return this.model.findOne({ email }).exec();
+    const escaped = escapeRegex(email.trim());
+    if (!escaped) return null;
+    return this.model
+      .findOne({ email: { $regex: `^${escaped}$`, $options: 'i' } })
+      .exec();
   }
 
   async update(id: string, dto: UpdateUserDto): Promise<UserDocument> {
     const doc = await this.findById(id);
+
+    if (dto.username !== undefined) {
+      const username = dto.username.trim().toLowerCase();
+      const other = await this.findByUsername(username);
+      if (other && String(other._id) !== String(doc._id)) {
+        throw new ConflictException('Логин уже занят');
+      }
+      dto = { ...dto, username };
+    }
+
+    if (dto.email !== undefined) {
+      const emailRaw = dto.email?.trim() || '';
+      if (!emailRaw) {
+        dto = { ...dto, email: undefined };
+      } else {
+        const email = emailRaw.toLowerCase();
+        const other = await this.findByEmail(email);
+        if (other && String(other._id) !== String(doc._id)) {
+          throw new ConflictException('Email уже занят');
+        }
+        dto = { ...dto, email };
+      }
+    }
+
+    if (dto.displayName !== undefined) {
+      const displayName = dto.displayName?.trim() || doc.username;
+      dto = { ...dto, displayName };
+    }
+
     Object.assign(doc, dto);
-    await doc.save();
+    try {
+      await doc.save();
+    } catch (err: unknown) {
+      if (isMongoDuplicateKey(err)) {
+        throw new ConflictException('Логин или email уже заняты');
+      }
+      throw err;
+    }
     userActivityCache.invalidate(id);
     this.logger.log(`User updated: ${doc.username}`);
     return doc;

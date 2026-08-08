@@ -224,5 +224,11 @@ export function permissionLabelRu(key: string, fallback?: string): string {
   return PERMISSION_LABEL_RU[key] ?? fallback ?? key;
 }
 
-/** Canonical system-role order for the user-form dropdown. */
+/** Canonical system-role order (highest privilege first) — roles admin / docs. */
 export const SYSTEM_ROLE_ORDER: readonly string[] = ['admin', 'director', 'manager', 'user'];
+
+/**
+ * User-create/edit dropdown: lowest privilege first so the safe default
+ * «Пользователь» is both first in the list and the create-mode selection.
+ */
+export const USER_FORM_ROLE_ORDER: readonly string[] = ['user', 'manager', 'director', 'admin'];

@@ -345,24 +345,26 @@ export class UsersAdminPage implements OnInit {
    * map the `LAST_ADMIN_INVARIANT` 403 to the user-visible message.
    */
   private createUser(result: UserFormResult): Observable<SilentResult<ClientUser>> {
-    return silentPost<ClientUser>(this.http, `${this.baseUrl}/admin/users`, {
+    const body: Record<string, unknown> = {
       username: result.username,
-      email: result.email,
-      displayName: result.displayName,
       password: result.password,
       role: result.role,
       isActive: result.isActive,
-    });
+    };
+    if (result.email) body['email'] = result.email;
+    if (result.displayName) body['displayName'] = result.displayName;
+    return silentPost<ClientUser>(this.http, `${this.baseUrl}/admin/users`, body);
   }
 
   private updateUser(id: string, result: UserFormResult): Observable<SilentResult<ClientUser>> {
-    return silentPatch<ClientUser>(this.http, `${this.baseUrl}/admin/users/${id}`, {
+    const body: Record<string, unknown> = {
       username: result.username,
-      email: result.email,
-      displayName: result.displayName,
       role: result.role,
       isActive: result.isActive,
-    });
+    };
+    if (result.email) body['email'] = result.email;
+    if (result.displayName) body['displayName'] = result.displayName;
+    return silentPatch<ClientUser>(this.http, `${this.baseUrl}/admin/users/${id}`, body);
   }
 
   private resetPassword(id: string, newPassword: string): Observable<SilentResult<ClientUser>> {

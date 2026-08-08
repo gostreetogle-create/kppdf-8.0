@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
+import { AuthService } from '../../core/auth.service';
 import { PiGroupWorkspaceComponent } from './pi-group-workspace.component';
 
 @Component({
@@ -38,11 +39,32 @@ class TocHostComponent {
   readonly chips = [{ id: 'first', label: 'Категории', route: '/first' }] as const;
 }
 
+@Component({
+  standalone: true,
+  imports: [PiGroupWorkspaceComponent],
+  template: ` <app-pi-group-workspace [chips]="chips" activeId="products" /> `,
+})
+class AclHostComponent {
+  readonly chips = [
+    { id: 'products', label: 'Продукция', route: '/products', pageKey: 'products' },
+    { id: 'materials', label: 'Материалы', route: '/materials', pageKey: 'materials' },
+  ] as const;
+}
+
 describe('PiGroupWorkspaceComponent (TZ-DICT-312)', () => {
+  const userSignal = signal<{ pages?: string[] } | null>(null);
+
   beforeEach(async () => {
+    userSignal.set(null);
     await TestBed.configureTestingModule({
-      imports: [TestHostComponent, TocHostComponent],
-      providers: [provideRouter([])],
+      imports: [TestHostComponent, TocHostComponent, AclHostComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: AuthService,
+          useValue: { user: userSignal },
+        },
+      ],
     }).compileComponents();
   });
 
@@ -86,5 +108,14 @@ describe('PiGroupWorkspaceComponent (TZ-DICT-312)', () => {
     expect(root.querySelector('[data-test="tools-slot"]')).toBeTruthy();
     expect(root.querySelector('[data-test="create-category-button"]')).toBeTruthy();
     expect(root.querySelector('[data-test="workspace-body"]')).toBeTruthy();
+  });
+
+  it('hides section chips the role cannot open (page ACL)', () => {
+    userSignal.set({ pages: ['products'] });
+    const fixture = TestBed.createComponent(AclHostComponent);
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Продукция');
+    expect(text).not.toContain('Материалы');
   });
 });

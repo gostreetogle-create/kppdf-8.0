@@ -6,7 +6,7 @@ import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tok
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { extractErrorMessage, type SilentResult } from '../../core/silent-http';
 import { PiRolesService, type AdminRole } from '../../shared/services/pi-roles.service';
-import { roleLabelRu, SYSTEM_ROLE_ORDER } from './permission-labels.ru';
+import { roleLabelRu, SYSTEM_ROLE_ORDER, USER_FORM_ROLE_ORDER } from './permission-labels.ru';
 
 export interface RoleOption {
   name: string;
@@ -30,8 +30,8 @@ export interface UserFormData {
 
 export interface UserFormResult {
   username: string;
-  email: string;
-  displayName: string;
+  email?: string;
+  displayName?: string;
   role: string;
   password?: string;
   isActive: boolean;
@@ -61,29 +61,31 @@ export interface UserFormResult {
       <div body>
         <div class="user-form">
           <label class="field">
-            <span class="field__label">Логин</span>
+            <span class="field__label">Логин * (уникальный)</span>
             <input
               class="field__input"
               [value]="username()"
               (input)="onUsernameInput($event)"
               autocomplete="off"
+              placeholder="латиница, без пробелов"
               data-test="user-form-username"
             />
           </label>
 
           <label class="field">
-            <span class="field__label">ФИО</span>
+            <span class="field__label">ФИО (необязательно)</span>
             <input
               class="field__input"
               [value]="displayName()"
               (input)="onDisplayNameInput($event)"
               autocomplete="off"
+              placeholder="Если пусто — покажем логин"
               data-test="user-form-display-name"
             />
           </label>
 
           <label class="field">
-            <span class="field__label">Email</span>
+            <span class="field__label">Email (необязательно)</span>
             <input
               class="field__input"
               type="email"
@@ -96,7 +98,7 @@ export interface UserFormResult {
 
           @if (data.mode === 'create') {
             <label class="field">
-              <span class="field__label">Пароль (мин. 8 символов)</span>
+              <span class="field__label">Пароль * (мин. 8 символов)</span>
               <input
                 class="field__input"
                 type="password"
@@ -118,10 +120,12 @@ export interface UserFormResult {
               data-test="user-form-role"
             >
               @if (rolesLoading()) {
-                <option value="" disabled>Загрузка ролей…</option>
+                <option value="user" selected>Загрузка ролей…</option>
               } @else {
                 @for (opt of roleOptions(); track opt.name) {
-                  <option [value]="opt.name">{{ opt.label }}</option>
+                  <option [value]="opt.name" [selected]="opt.name === role()">
+                    {{ opt.label }}
+                  </option>
                 }
               }
             </select>
@@ -266,13 +270,22 @@ export class UserFormDialogComponent {
       // the canonical system roles so create/edit still works.
       this.roleOptions.set(
         mergeRoles(
-          SYSTEM_ROLE_ORDER.map(
-            (name): AdminRole => ({ id: name, name, label: name, permissions: [], isSystem: true }),
-          ),
+          SYSTEM_ROLE_ORDER.map((name): AdminRole => ({
+            id: name,
+            name,
+            label: name,
+            permissions: [],
+            isSystem: true,
+          })),
           this.role(),
         ),
       );
       this.rolesError.set(extractErrorMessage(res.error));
+    }
+    // Create: always land on the lowest privilege role after options render
+    // (native <select> otherwise often sticks on the first option = admin).
+    if (this.data.mode === 'create') {
+      this.role.set('user');
     }
     this.rolesLoading.set(false);
   }
@@ -303,21 +316,23 @@ export class UserFormDialogComponent {
 
   protected readonly canSubmit = (): boolean => {
     if (this.username().trim().length < 3) return false;
-    if (this.displayName().trim().length < 1) return false;
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email().trim())) return false;
+    const email = this.email().trim();
+    if (email.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return false;
     if (this.data.mode === 'create' && this.password().length < 8) return false;
     return true;
   };
 
   protected onSubmit(): void {
     if (this.submitting()) return;
+    const email = this.email().trim();
+    const displayName = this.displayName().trim();
     const result: UserFormResult = {
-      username: this.username().trim(),
-      displayName: this.displayName().trim(),
-      email: this.email().trim(),
+      username: this.username().trim().toLowerCase(),
       role: this.role(),
       isActive: this.isActive(),
     };
+    if (email) result.email = email;
+    if (displayName) result.displayName = displayName;
     if (this.data.mode === 'create') {
       result.password = this.password();
     }
@@ -346,17 +361,17 @@ export class UserFormDialogComponent {
 /**
  * Build the dropdown option list from the roles API response.
  *
- * - System roles come first in `SYSTEM_ROLE_ORDER`, then custom roles
- *   sorted by RU label.
+ * - System roles come first in `USER_FORM_ROLE_ORDER` (user → … → admin),
+ *   then custom roles sorted by RU label.
  * - The currently selected role is always kept in the list (edit mode
  *   with a deleted/renamed role must still render the current value).
  */
 export function mergeRoles(items: AdminRole[], currentRole: string): RoleOption[] {
-  const system = new Set(SYSTEM_ROLE_ORDER);
+  const system = new Set(USER_FORM_ROLE_ORDER);
   const known = new Set<string>();
   const options: RoleOption[] = [];
 
-  for (const name of SYSTEM_ROLE_ORDER) {
+  for (const name of USER_FORM_ROLE_ORDER) {
     const role = items.find((r) => r.name === name);
     const label = role ? roleLabelRu(role.name, role.label) : roleLabelRu(name);
     options.push({ name, label });

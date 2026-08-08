@@ -94,15 +94,18 @@ async function setup(
     .compileComponents();
   const fixture = TestBed.createComponent(UserFormDialogComponent);
   const httpMock = TestBed.inject(HttpTestingController);
-  httpMock
-    .expectOne(`${BASE_URL}/admin/roles?page=1&limit=200`)
-    .flush(rolesPage(roles));
+  httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=200`).flush(rolesPage(roles));
   fixture.detectChanges();
   // loadRoles() awaits the firstValueFrom promise — flush the microtask queue
   // before assertions (rolesLoading must flip to false).
   await fixture.whenStable();
   fixture.detectChanges();
-  return { comp: fixture.componentInstance as unknown as UserFormHarness, close, httpMock, fixture };
+  return {
+    comp: fixture.componentInstance as unknown as UserFormHarness,
+    close,
+    httpMock,
+    fixture,
+  };
 }
 
 function fillValidCreate(comp: UserFormHarness): void {
@@ -135,6 +138,33 @@ describe('UserFormDialogComponent', () => {
     fillValidCreate(comp);
     comp.email.set('not-an-email');
     expect(comp.canSubmit()).toBe(false);
+  });
+
+  it('canSubmit() is true when displayName and email are empty', async () => {
+    const { comp } = await setup({ mode: 'create' });
+    fillValidCreate(comp);
+    comp.displayName.set('');
+    comp.email.set('');
+    expect(comp.canSubmit()).toBe(true);
+  });
+
+  it('onSubmit() omits empty displayName and email from the result', async () => {
+    const { comp, close } = await setup({ mode: 'create' });
+    fillValidCreate(comp);
+    comp.displayName.set('');
+    comp.email.set('');
+    comp.onSubmit();
+    const result = close.mock.calls[0]?.[0] as UserFormResult;
+    expect(result.displayName).toBeUndefined();
+    expect(result.email).toBeUndefined();
+    expect(result).toEqual(
+      expect.objectContaining({
+        username: 'alice',
+        role: 'user',
+        isActive: true,
+        password: '12345678',
+      }),
+    );
   });
 
   it('canSubmit() is false when password is shorter than 8 chars in create mode', async () => {
@@ -220,14 +250,15 @@ describe('UserFormDialogComponent', () => {
     const { comp } = await setup({ mode: 'create' });
     expect(comp.rolesLoading()).toBe(false);
     expect(comp.rolesError()).toBeNull();
-    // System roles first in canonical order, then custom roles by RU label.
+    // Lowest privilege first (safe create default), then custom roles by RU label.
     expect(comp.roleOptions()).toEqual([
-      { name: 'admin', label: 'Администратор' },
-      { name: 'director', label: 'Директор' },
-      { name: 'manager', label: 'Менеджер' },
       { name: 'user', label: 'Пользователь' },
+      { name: 'manager', label: 'Менеджер' },
+      { name: 'director', label: 'Директор' },
+      { name: 'admin', label: 'Администратор' },
       { name: 'packer', label: 'Упаковщик' },
     ]);
+    expect(comp.role()).toBe('user');
   });
 
   it('renders the custom role as a selectable <option> in the dropdown', async () => {
@@ -275,11 +306,7 @@ describe('UserFormDialogComponent', () => {
     const comp = fixture.componentInstance as unknown as UserFormHarness;
     expect(comp.rolesLoading()).toBe(false);
     expect(comp.rolesError()).toBe('Server exploded');
-    expect(comp.roleOptions().map((o) => o.name)).toEqual([
-      'admin',
-      'director',
-      'manager',
-      'user',
-    ]);
+    expect(comp.roleOptions().map((o) => o.name)).toEqual(['user', 'manager', 'director', 'admin']);
+    expect(comp.role()).toBe('user');
   });
 });

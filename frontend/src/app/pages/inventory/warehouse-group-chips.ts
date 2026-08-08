@@ -11,10 +11,15 @@ export interface QueryGroupChip extends GroupChip {
 }
 
 export const WAREHOUSE_TOC_CHIPS: readonly GroupChip[] = [
-  { id: 'inventory', label: 'Дашборд', route: '/inventory' },
-  { id: 'storage-items', label: 'Остатки', route: '/storage-items' },
-  { id: 'stock-movements', label: 'Движения', route: '/stock-movements' },
-  { id: 'warehouses', label: 'Склады', route: '/warehouses' },
+  { id: 'inventory', label: 'Дашборд', route: '/inventory', pageKey: 'inventory' },
+  { id: 'storage-items', label: 'Остатки', route: '/storage-items', pageKey: 'storage-items' },
+  {
+    id: 'stock-movements',
+    label: 'Движения',
+    route: '/stock-movements',
+    pageKey: 'stock-movements',
+  },
+  { id: 'warehouses', label: 'Склады', route: '/warehouses', pageKey: 'inventory' },
 ];
 
 /** @deprecated empty placeholder — pages build their own section chips */

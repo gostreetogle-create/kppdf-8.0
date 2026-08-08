@@ -13,26 +13,43 @@ import {
 } from 'class-validator';
 
 export class RegisterDto {
-  @ApiProperty({ example: 'ivan_petrov', description: 'Имя пользователя (латиница, цифры, _ . -)' })
-  @IsString()
-  @Length(3, 64)
-  @Matches(/^[a-zA-Z0-9_.-]+$/, {
-    message: 'username may contain only letters, digits, _ . -',
+  @ApiProperty({ example: 'ivan_petrov', description: 'Логин (уникальный)' })
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
+  @IsString({ message: 'Логин обязателен' })
+  @Length(3, 64, { message: 'Логин должен быть от 3 до 64 символов' })
+  @Matches(/^[a-z0-9_.-]+$/, {
+    message: 'Логин: только латиница, цифры и символы _ . -',
   })
   username!: string;
 
-  @ApiProperty({ example: 'ivan@example.com', description: 'Email адрес' })
-  @IsEmail()
-  email!: string;
+  @ApiPropertyOptional({
+    example: 'ivan@example.com',
+    description: 'Email (необязательно)',
+  })
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' && !value.trim() ? undefined : value,
+  )
+  @IsEmail({}, { message: 'Некорректный email' })
+  email?: string;
 
-  @ApiProperty({ example: 'Иван Петров', description: 'Отображаемое имя' })
-  @IsString()
-  @Length(1, 128)
-  displayName!: string;
+  @ApiPropertyOptional({
+    example: 'Иван Петров',
+    description: 'ФИО (необязательно; если пусто — подставится логин)',
+  })
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' && !value.trim() ? undefined : value,
+  )
+  @IsString({ message: 'ФИО должно быть текстом' })
+  @Length(1, 128, { message: 'ФИО: от 1 до 128 символов' })
+  displayName?: string;
 
   @ApiProperty({ description: 'Пароль (минимум 8 символов)' })
-  @IsString()
-  @Length(8, 128)
+  @IsString({ message: 'Пароль обязателен' })
+  @Length(8, 128, { message: 'Пароль должен быть не короче 8 символов' })
   password!: string;
 
   /**

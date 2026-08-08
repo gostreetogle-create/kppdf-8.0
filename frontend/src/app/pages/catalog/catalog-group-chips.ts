@@ -5,7 +5,7 @@
 import type { GroupChip } from '../../shared/page/pi-group-workspace.component';
 
 export const CATALOG_SECTION_CHIPS: readonly GroupChip[] = [
-  { id: 'products', label: 'Продукция', route: '/products' },
-  { id: 'modules', label: 'Модули', route: '/modules' },
-  { id: 'materials', label: 'Материалы', route: '/materials' },
+  { id: 'products', label: 'Продукция', route: '/products', pageKey: 'products' },
+  { id: 'modules', label: 'Модули', route: '/modules', pageKey: 'modules' },
+  { id: 'materials', label: 'Материалы', route: '/materials', pageKey: 'materials' },
 ];
