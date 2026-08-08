@@ -10,7 +10,7 @@
 | TZ-CATALOG-335 | `973c6e3` |
 | TZ-COST-304 | already archived (skipped) |
 | TZ-DICT-313 | docs audit → 314–316 drafts |
-| **TZ-COST-305** | product-line in CostCalculation (pending commit SHA) |
+| **TZ-COST-305** | `d9fc115` |
 
 ## READY
 
