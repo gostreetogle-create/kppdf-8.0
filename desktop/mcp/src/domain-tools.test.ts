@@ -2,10 +2,12 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   DOMAIN_SCHEMA_VERSION,
-  MATERIAL_KINDS,
   getMaterialDomainSchema,
+  getProductDomainSchema,
+  MATERIAL_KINDS,
+  PRODUCT_KINDS,
 } from './domain-schema.js';
-import { DOMAIN_TOOL_NAMES } from './domain-tools.js';
+import { DOMAIN_TOOL_NAMES, validateProduct } from './domain-tools.js';
 import { INBOX_TOOL_NAMES, auditInboxRows } from './inbox-tools.js';
 import {
   createBackendValidateDeps,
@@ -28,6 +30,35 @@ describe('domain schema (TZD-17)', () => {
     assert.ok(DOMAIN_TOOL_NAMES.includes('kppdf_get_domain_schema'));
     assert.ok(DOMAIN_TOOL_NAMES.includes('kppdf_list_categories'));
     assert.ok(DOMAIN_TOOL_NAMES.includes('kppdf_validate_material'));
+    assert.ok(DOMAIN_TOOL_NAMES.includes('kppdf_validate_product'));
+  });
+});
+
+describe('product domain schema (TZD-27)', () => {
+  it('product schema requires name+kind, lists PRODUCT_KINDS', () => {
+    const schema = getProductDomainSchema();
+    assert.equal(schema.entity, 'product');
+    assert.deepEqual([...schema.productKinds], [...PRODUCT_KINDS]);
+    assert.ok(schema.createProposal.required.includes('name'));
+    assert.ok(schema.createProposal.required.includes('kind'));
+  });
+});
+
+describe('validateProduct (TZD-27)', () => {
+  it('valid name+kind → ok, unit default шт', () => {
+    const result = validateProduct({ name: 'Окно ПВХ', kind: 'good' });
+    assert.equal(result.ok, true);
+    assert.equal(result.normalized.unit, 'шт');
+    assert.ok(result.infos.some((i) => i.code === 'UNIT_DEFAULT'));
+  });
+
+  it('missing name / missing or invalid kind → errors', () => {
+    const noName = validateProduct({ kind: 'good' });
+    assert.ok(noName.errors.some((e) => e.code === 'NAME_REQUIRED'));
+    const noKind = validateProduct({ name: 'X' });
+    assert.ok(noKind.errors.some((e) => e.code === 'KIND_REQUIRED'));
+    const badKind = validateProduct({ name: 'X', kind: 'widget' });
+    assert.ok(badKind.errors.some((e) => e.code === 'KIND_INVALID'));
   });
 });
 

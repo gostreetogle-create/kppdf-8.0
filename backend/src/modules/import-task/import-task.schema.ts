@@ -57,11 +57,15 @@ export interface AiReportProposed {
   article?: string;
   sku?: string;
   notes?: string;
+  /** TZD-27 — required for product.new rows (good|service|work). */
+  kind?: 'good' | 'service' | 'work';
 }
 
 export interface AiReportRow {
   rowIndex: number;
   decision: AiReportDecision;
+  /** TZD-27 — row entity; default material. */
+  entity?: 'material' | 'product';
   materialId?: string;
   reason?: string;
   proposed?: AiReportProposed;

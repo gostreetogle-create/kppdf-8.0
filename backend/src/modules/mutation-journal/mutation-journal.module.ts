@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MaterialModule } from '../material/material.module';
+import { ProductModule } from '../product/product.module';
 import {
   MutationJournal,
   MutationJournalSchema,
@@ -11,6 +12,7 @@ import { MutationJournalService } from './mutation-journal.service';
 @Module({
   imports: [
     MaterialModule,
+    ProductModule,
     MongooseModule.forFeature([
       { name: MutationJournal.name, schema: MutationJournalSchema },
     ]),

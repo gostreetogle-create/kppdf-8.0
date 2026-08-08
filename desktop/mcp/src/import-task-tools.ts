@@ -32,6 +32,8 @@ export const IMPORT_TASK_TOOL_NAMES = [
 export interface AiPlanRow {
   rowIndex: number;
   decision: 'new' | 'skip' | 'update' | 'doubt';
+  /** TZD-27: entity for the row — default material. */
+  entity?: 'material' | 'product';
   materialId?: string;
   reason?: string;
   proposed?: {
@@ -40,6 +42,8 @@ export interface AiPlanRow {
     article?: string;
     sku?: string;
     notes?: string;
+    /** TZD-27: required for product.new rows. */
+    kind?: 'good' | 'service' | 'work';
   };
 }
 
@@ -55,13 +59,26 @@ export interface ApplyPlanDeps {
   setProposals(taskId: string, proposalIds: string[]): Promise<unknown>;
 }
 
+export type BatchProposalKind =
+  | 'material.create'
+  | 'material.update'
+  | 'product.create'
+  | 'product.update';
+
 export interface BatchProposalItem {
   rowIndex: number;
-  kind: 'material.create' | 'material.update';
+  kind: BatchProposalKind;
   create?: {
     name: string;
     unit?: string;
     article?: string;
+    sku?: string;
+    notes?: string;
+  };
+  productCreate?: {
+    name: string;
+    kind: 'good' | 'service' | 'work';
+    unit?: string;
     sku?: string;
     notes?: string;
   };
@@ -143,17 +160,35 @@ export async function applyImportTaskPlan(
         skipped += 1;
         continue;
       }
-      items.push({
-        rowIndex: row.rowIndex,
-        kind: 'material.create',
-        create: {
-          name,
-          unit: src.unit?.trim() || 'шт',
-          article: src.article,
-          sku: src.sku,
-          notes: src.notes,
-        },
-      });
+      if (row.entity === 'product') {
+        if (!src.kind) {
+          skipped += 1;
+          continue;
+        }
+        items.push({
+          rowIndex: row.rowIndex,
+          kind: 'product.create',
+          productCreate: {
+            name,
+            kind: src.kind,
+            unit: src.unit?.trim() || 'шт',
+            sku: src.sku,
+            notes: src.notes,
+          },
+        });
+      } else {
+        items.push({
+          rowIndex: row.rowIndex,
+          kind: 'material.create',
+          create: {
+            name,
+            unit: src.unit?.trim() || 'шт',
+            article: src.article,
+            sku: src.sku,
+            notes: src.notes,
+          },
+        });
+      }
       continue;
     }
     if (row.decision === 'update') {
@@ -168,7 +203,7 @@ export async function applyImportTaskPlan(
       }
       items.push({
         rowIndex: row.rowIndex,
-        kind: 'material.update',
+        kind: row.entity === 'product' ? 'product.update' : 'material.update',
         update: { id: row.materialId, patch },
       });
     }
@@ -242,6 +277,20 @@ export function createApplyPlanBackendDeps(
             kind: 'material.update' as const,
             toolName: 'kppdf_import_task_apply_plan',
             update: item.update,
+          };
+        }
+        if (item.kind === 'product.create') {
+          return {
+            kind: 'product.create' as const,
+            toolName: 'kppdf_import_task_apply_plan',
+            productCreate: item.productCreate,
+          };
+        }
+        if (item.kind === 'product.update') {
+          return {
+            kind: 'product.update' as const,
+            toolName: 'kppdf_import_task_apply_plan',
+            productUpdate: item.update,
           };
         }
         return {
@@ -442,7 +491,11 @@ export function registerImportTaskTools(
           z.object({
             rowIndex: z.number().int().min(0),
             decision: z.enum(['new', 'skip', 'update', 'doubt']),
-            materialId: z.string().optional().describe('Existing Material id (update / doubt)'),
+            entity: z
+              .enum(['material', 'product'])
+              .optional()
+              .describe('TZD-27: row entity (default material)'),
+            materialId: z.string().optional().describe('Existing entity id (update / doubt)'),
             reason: z.string().optional(),
             proposed: z
               .object({
@@ -451,6 +504,10 @@ export function registerImportTaskTools(
                 article: z.string().optional(),
                 sku: z.string().optional(),
                 notes: z.string().optional(),
+                kind: z
+                  .enum(['good', 'service', 'work'])
+                  .optional()
+                  .describe('Required for product.new rows'),
               })
               .optional()
               .describe('Canonical values to propose for new/update rows'),

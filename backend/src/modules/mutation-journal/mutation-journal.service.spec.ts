@@ -12,6 +12,10 @@ function buildService(opts: {
   materialsUpdate?: jest.Mock;
   materialsRemove?: jest.Mock;
   materialsFindById?: jest.Mock;
+  productsCreate?: jest.Mock;
+  productsUpdate?: jest.Mock;
+  productsRemove?: jest.Mock;
+  productsFindById?: jest.Mock;
   ringSize?: number;
 } = {}) {
   const create = opts.create ?? jest.fn();
@@ -52,9 +56,16 @@ function buildService(opts: {
     findById: opts.materialsFindById ?? jest.fn(),
   } as any;
 
+  const products = {
+    create: opts.productsCreate ?? jest.fn(),
+    update: opts.productsUpdate ?? jest.fn(),
+    remove: opts.productsRemove ?? jest.fn(),
+    findById: opts.productsFindById ?? jest.fn(),
+  } as any;
+
   process.env.MUTATION_JOURNAL_RING_SIZE = String(opts.ringSize ?? 50);
-  const service = new MutationJournalService(model, materials);
-  return { service, create, findById, findOne, materials, model, leanChain, countDocuments, deleteMany };
+  const service = new MutationJournalService(model, materials, products);
+  return { service, create, findById, findOne, materials, products, model, leanChain, countDocuments, deleteMany };
 }
 
 const user = {
@@ -328,6 +339,134 @@ describe('MutationJournalService (TZD-13)', () => {
     expect(cancelled.cancelled).toBe(1);
     expect(doc3.status).toBe('cancelled');
     expect(materials.create).toHaveBeenCalledTimes(2); // cancel не пишет SoT
+  });
+
+  it('propose product.create → journal row, Product count unchanged (TZD-27)', async () => {
+    const { service, create, products } = buildService({
+      create: jest.fn().mockResolvedValue({
+        _id: '507f1f77bcf86cd799439033',
+        status: 'proposed',
+        kind: 'product.create',
+        toolName: 'kppdf_propose_product_create',
+        entityType: 'Product',
+        payload: { name: 'Окно ПВХ', kind: 'good', unit: 'шт' },
+        expiresAt: new Date(Date.now() + 60_000),
+      }),
+    });
+
+    const view = await service.propose(
+      {
+        kind: 'product.create',
+        productCreate: { name: 'Окно ПВХ', kind: 'good' },
+      },
+      user,
+    );
+    expect(view.proposalId).toBe('507f1f77bcf86cd799439033');
+    expect(view.status).toBe('proposed');
+    expect(products.create).not.toHaveBeenCalled(); // не ProductService.create до confirm
+    expect(create).toHaveBeenCalled();
+  });
+
+  it('propose product.create rejects missing kind (TZD-27)', async () => {
+    const { service } = buildService();
+    await expect(
+      service.propose(
+        { kind: 'product.create', productCreate: { name: 'X' } as any },
+        user,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('confirm product.create → ProductService.create + applied (TZD-27)', async () => {
+    const save = jest.fn().mockResolvedValue(undefined);
+    const doc: any = {
+      _id: '507f1f77bcf86cd799439033',
+      status: 'proposed',
+      kind: 'product.create',
+      toolName: 't',
+      actorUserId: user.id,
+      organizationId: user.organizationId,
+      entityType: 'Product',
+      payload: { name: 'Окно ПВХ', kind: 'good', unit: 'шт' },
+      expiresAt: new Date(Date.now() + 60_000),
+      save,
+    };
+    const { service, products } = buildService({
+      findByIdDoc: doc,
+      productsCreate: jest.fn().mockResolvedValue({
+        _id: '507f1f77bcf86cd799439044',
+        name: 'Окно ПВХ',
+        toObject: () => ({ _id: '507f1f77bcf86cd799439044', name: 'Окно ПВХ' }),
+      }),
+    });
+
+    const view = await service.confirm('507f1f77bcf86cd799439033', user);
+    expect(products.create).toHaveBeenCalledWith(
+      { name: 'Окно ПВХ', kind: 'good', unit: 'шт' },
+      user.organizationId,
+    );
+    expect(doc.status).toBe('applied');
+    expect(view.mutationId).toBe('507f1f77bcf86cd799439033');
+  });
+
+  it('undo product.create → ProductService.remove (TZD-27)', async () => {
+    const save = jest.fn().mockResolvedValue(undefined);
+    const doc: any = {
+      _id: '507f1f77bcf86cd799439033',
+      status: 'applied',
+      kind: 'product.create',
+      toolName: 't',
+      actorUserId: user.id,
+      organizationId: user.organizationId,
+      entityType: 'Product',
+      entityId: '507f1f77bcf86cd799439044',
+      save,
+    };
+    const { service, products } = buildService({
+      findByIdDoc: doc,
+      productsRemove: jest.fn().mockResolvedValue(undefined),
+    });
+
+    await service.undo('507f1f77bcf86cd799439033', user);
+    expect(products.remove).toHaveBeenCalledWith(
+      '507f1f77bcf86cd799439044',
+      user.organizationId,
+    );
+    expect(doc.status).toBe('undone');
+  });
+
+  it('confirm product.update → ProductService.update with before snapshot (TZD-27)', async () => {
+    const save = jest.fn().mockResolvedValue(undefined);
+    const doc: any = {
+      _id: '507f1f77bcf86cd799439033',
+      status: 'proposed',
+      kind: 'product.update',
+      toolName: 't',
+      actorUserId: user.id,
+      organizationId: user.organizationId,
+      entityType: 'Product',
+      entityId: '507f1f77bcf86cd799439044',
+      payload: { id: '507f1f77bcf86cd799439044', patch: { notes: 'updated' } },
+      before: { name: 'Окно', notes: 'old' },
+      expiresAt: new Date(Date.now() + 60_000),
+      save,
+    };
+    const { service, products } = buildService({
+      findByIdDoc: doc,
+      productsUpdate: jest.fn().mockResolvedValue({
+        _id: '507f1f77bcf86cd799439044',
+        notes: 'updated',
+        toObject: () => ({ _id: '507f1f77bcf86cd799439044', notes: 'updated' }),
+      }),
+    });
+
+    await service.confirm('507f1f77bcf86cd799439033', user);
+    expect(products.update).toHaveBeenCalledWith(
+      '507f1f77bcf86cd799439044',
+      { notes: 'updated' },
+      user.organizationId,
+    );
+    expect(doc.status).toBe('applied');
   });
 
   it('enforceRing deletes overflow', async () => {

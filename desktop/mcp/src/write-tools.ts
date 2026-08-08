@@ -18,7 +18,11 @@ export const WRITE_TOOL_NAMES = [
   'kppdf_propose_material_batch',
   'kppdf_confirm_batch',
   'kppdf_cancel_batch',
+  'kppdf_propose_product_create',
+  'kppdf_propose_product_update',
 ] as const;
+
+const PRODUCT_KINDS_ENUM = z.enum(['good', 'service', 'work']);
 
 const batchItemSchema = z.object({
   name: z.string().min(1).describe('Material name'),
@@ -183,6 +187,79 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
         return toolOk({ ok: true, ...((result as object) ?? {}) });
       } catch (err) {
         return toolFail('kppdf_cancel_batch', err);
+      }
+    },
+  );
+
+  server.registerTool(
+    'kppdf_propose_product_create',
+    {
+      title: 'Propose product create',
+      description:
+        'TZD-27: creates a product.create PROPOSAL (name + kind required, unit ' +
+        'defaults to шт). No SoT write — confirm with kppdf_confirm_proposal. ' +
+        'Check kppdf_get_product_where_used / composition before mass updates.',
+      inputSchema: {
+        name: z.string().min(1).describe('Product name'),
+        kind: PRODUCT_KINDS_ENUM.describe('good | service | work'),
+        unit: z.string().optional().describe('Unit (default шт)'),
+        sku: z.string().optional(),
+        notes: z.string().optional(),
+      },
+    },
+    async (args) => {
+      try {
+        const result = await backendPostJson(
+          cfg.apiBaseUrl,
+          cfg.apiKey,
+          '/api/mutation-journal/proposals',
+          {
+            kind: 'product.create',
+            toolName: 'kppdf_propose_product_create',
+            productCreate: {
+              name: args.name,
+              kind: args.kind,
+              unit: args.unit?.trim() || 'шт',
+              sku: args.sku,
+              notes: args.notes,
+            },
+          },
+        );
+        return toolOk({ ok: true, proposal: result });
+      } catch (err) {
+        return toolFail('kppdf_propose_product_create', err);
+      }
+    },
+  );
+
+  server.registerTool(
+    'kppdf_propose_product_update',
+    {
+      title: 'Propose product update',
+      description:
+        'TZD-27: proposes a PATCH on a product passport; stores before snapshot. ' +
+        'Confirm with kppdf_confirm_proposal. Run kppdf_get_product_composition / ' +
+        'kppdf_get_product_where_used first to avoid breaking BOM parents.',
+      inputSchema: {
+        id: z.string().min(1).describe('Product id'),
+        patch: z.record(z.string(), z.unknown()).describe('Partial product passport fields'),
+      },
+    },
+    async ({ id, patch }) => {
+      try {
+        const result = await backendPostJson(
+          cfg.apiBaseUrl,
+          cfg.apiKey,
+          '/api/mutation-journal/proposals',
+          {
+            kind: 'product.update',
+            toolName: 'kppdf_propose_product_update',
+            productUpdate: { id, patch },
+          },
+        );
+        return toolOk({ ok: true, proposal: result });
+      } catch (err) {
+        return toolFail('kppdf_propose_product_update', err);
       }
     },
   );

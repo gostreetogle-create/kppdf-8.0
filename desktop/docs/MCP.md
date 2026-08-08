@@ -121,6 +121,19 @@ Stdio: `pnpm start:stdio` (для клиентов, которые спавня�
 | `kppdf_get_module_where_used` | `GET /api/modules/:id/where-used` |
 | `kppdf_run_integrity_suite` | smoke composition/where_used на sample ids → `{ ok, checks[], warnings[] }` |
 
+### Product path (TZD-27) — паспорт, не BOM
+
+1. `kppdf_get_domain_schema` `entity=product` — обязательные поля (name, kind).
+2. `kppdf_validate_product` — passport dry-run (name/kind/unit; без BOM).
+3. classify/match → HITL → `kppdf_import_task_apply_plan` с `entity='product'`
+   в строках плана (`aiReport.rows[].entity`, default material) — new →
+   product.create proposal, update → product.update proposal (тот же batch).
+4. **Перед update** — where_used/composition (TZD-19).
+5. `kppdf_confirm_batch` → SoT. Undo зеркально material.
+
+**Запрет:** BOM/состав через импорт в этой волне (reuse web BomPanel);
+Order / коммерческое КП kinds — не этот TZ.
+
 ### Graph protocol (TZD-19) — before destructive-ish propose
 
 1. **Перед `propose product.update`** — `kppdf_get_product_composition` +
@@ -154,6 +167,8 @@ Stdio: `pnpm start:stdio` (для клиентов, которые спавня�
 |------|--------|
 | `kppdf_propose_material_create` | Proposal only (`name`, optional `unit` default `шт`) |
 | `kppdf_propose_material_update` | Proposal + before snapshot |
+| `kppdf_propose_product_create` | TZD-27 — product.create proposal (`name`+`kind` required, `unit` default `шт`); **не** ProductService до confirm |
+| `kppdf_propose_product_update` | TZD-27 — product.update proposal + before snapshot |
 | `kppdf_confirm_proposal` | Apply Material POST/PATCH + journal `applied` |
 | `kppdf_cancel_proposal` | Drop proposal, no SoT change |
 | `kppdf_undo_mutation` | Revert last / by id (create→soft-delete; update→restore before) |
@@ -236,6 +251,7 @@ Inbox-папка настраивается в десктоп-приложени
 
 ## Follow-ups
 
+- **TZD-27** ✅ DONE (2026-08-08, wave #5) — journal `product.create`/`product.update` (propose→confirm→undo зеркально material; org scope); MCP `kppdf_propose_product_create`/`_update` + `kppdf_validate_product` + domain schema product; `aiReport.rows[].entity` ветка в `apply_plan` (тот же batch).
 - **TZD-19** ✅ DONE (2026-08-08, wave #4) — graph: 5 composition/where_used read tools + `kppdf_run_integrity_suite` (soft smoke, read-only) + `kppdf_list_modules`; graph protocol перед product.update / mass material.update.
 - **TZD-18** ✅ DONE (2026-08-08, wave #3) — batch: `propose-batch` / `confirm-batch` / `cancel-batch` (all-or-nothing + idempotencyKey); MCP `kppdf_propose_material_batch` / `kppdf_confirm_batch` / `kppdf_cancel_batch`; `apply_plan` чанками по 100; ImportTask cap **2000**; `inbox_propose_file` limit/offset.
 - **TZD-26** ✅ DONE (2026-08-08, wave #2) — column ready/unfit: `kppdf_inbox_classify_columns` (canon|unknown|conflict + mapping + sample) + `kppdf_import_task_reshape` (`PATCH /api/import-tasks/:id/rows`, сброс aiReport, 0 journal); protocol Column ready/reshape выше.

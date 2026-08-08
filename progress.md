@@ -1,3 +1,13 @@
+## [2026-08-08] — TZD-27 DONE: journal product.create/update (wave #5)
+
+**Исполнитель:** buffy-desktop-ex (Freebuff desktop executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** `MUTATION_KINDS` += product.create|product.update (propose→confirm→undo, org scope, **не** ProductService до confirm); MCP `kppdf_propose_product_create|_update`, `kppdf_validate_product`, domain schema product; `aiReport.rows[].entity` ветка в apply_plan (тот же batch); MCP.md product path protocol.
+**Gates:** BE tsc PASS; jest journal+import-task 27/27; MCP test 58/58; MCP tsc PASS.
+**Archive:** `tasks/_archive/2026-08/TZD-27.done.md`
+**Lock:** `.mimocode/locks/TZD-27-journal-product-writes.lock`
+**Known:** Deploy NO. Next TZD-28 (doc-constructor MCP).
+
 ## [2026-08-08] — TZD-19 DONE: MCP product graph + integrity (wave #4)
 
 **Исполнитель:** buffy-desktop-ex (Freebuff desktop executor)

@@ -140,4 +140,9 @@ describe('write tool registry', () => {
     assert.ok(WRITE_TOOL_NAMES.includes('kppdf_confirm_batch'));
     assert.ok(WRITE_TOOL_NAMES.includes('kppdf_cancel_batch'));
   });
+
+  it('exposes product propose tools (TZD-27)', () => {
+    assert.ok(WRITE_TOOL_NAMES.includes('kppdf_propose_product_create'));
+    assert.ok(WRITE_TOOL_NAMES.includes('kppdf_propose_product_update'));
+  });
 });

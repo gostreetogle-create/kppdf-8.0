@@ -385,4 +385,88 @@ describe('applyImportTaskPlan (TZD-23 HITL gate + TZD-18 chunks)', () => {
     assert.equal(calls.chunks.length, 1);
     assert.equal(calls.chunks[0].length, 1);
   });
+
+  it('entity=product new → product.create item with kind (TZD-27)', async () => {
+    const { deps, calls } = makeDeps({
+      getTask: async () => ({
+        status: 'awaiting_user',
+        aiReport: {
+          rows: [
+            {
+              rowIndex: 0,
+              entity: 'product',
+              decision: 'new',
+              proposed: { name: 'Окно ПВХ 1200', kind: 'good', unit: 'шт' },
+            },
+            { rowIndex: 1, decision: 'new', proposed: { name: 'Стекло 4мм' } },
+          ],
+        },
+      }),
+    });
+
+    const result = await applyImportTaskPlan(deps, { id: 't1', userOk: true });
+
+    assert.equal(result.proposed, 2);
+    assert.equal(calls.chunks[0].length, 2);
+    const productItem = calls.chunks[0].find((i) => i.kind === 'product.create');
+    assert.ok(productItem);
+    assert.equal(productItem.productCreate?.name, 'Окно ПВХ 1200');
+    assert.equal(productItem.productCreate?.kind, 'good');
+    assert.equal(productItem.productCreate?.unit, 'шт');
+    assert.ok(calls.chunks[0].some((i) => i.kind === 'material.create'));
+  });
+
+  it('entity=product new without kind → skipped, no product item (TZD-27)', async () => {
+    const { deps, calls } = makeDeps({
+      getTask: async () => ({
+        status: 'awaiting_user',
+        aiReport: {
+          rows: [
+            {
+              rowIndex: 0,
+              entity: 'product',
+              decision: 'new',
+              proposed: { name: 'Без типа' },
+            },
+          ],
+        },
+      }),
+    });
+
+    const result = await applyImportTaskPlan(deps, { id: 't1', userOk: true });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.proposed, 0);
+    assert.equal(result.skipped, 1);
+    assert.equal(calls.chunks.length, 0);
+  });
+
+  it('entity=product update → product.update item (TZD-27)', async () => {
+    const { deps, calls } = makeDeps({
+      getTask: async () => ({
+        status: 'awaiting_user',
+        aiReport: {
+          rows: [
+            {
+              rowIndex: 0,
+              entity: 'product',
+              decision: 'update',
+              materialId: '507f1f77bcf86cd799439044',
+              proposed: { notes: 'updated' },
+            },
+          ],
+        },
+      }),
+    });
+
+    const result = await applyImportTaskPlan(deps, { id: 't1', userOk: true });
+
+    assert.equal(result.proposed, 1);
+    const item = calls.chunks[0][0];
+    assert.equal(item.kind, 'product.update');
+    assert.deepEqual(item.update, {
+      id: '507f1f77bcf86cd799439044',
+      patch: { notes: 'updated' },
+    });
+  });
 });

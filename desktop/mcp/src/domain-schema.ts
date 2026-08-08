@@ -67,3 +67,56 @@ export function getMaterialDomainSchema(): MaterialDomainSchema {
 export function isMaterialKind(value: string): value is MaterialKind {
   return (MATERIAL_KINDS as readonly string[]).includes(value);
 }
+
+// ── TZD-27: product passport domain ──────────────────────────────────────────
+
+/** Canon sync: backend Product.kind enum (good | service | work). */
+export const PRODUCT_KINDS = ['good', 'service', 'work'] as const;
+
+export type ProductKind = (typeof PRODUCT_KINDS)[number];
+
+export interface ProductDomainSchema {
+  version: string;
+  entity: 'product';
+  productKinds: readonly string[];
+  createProposal: {
+    required: readonly string[];
+    optional: readonly string[];
+  };
+  rules: {
+    en: string[];
+    ru: string[];
+  };
+}
+
+export function getProductDomainSchema(): ProductDomainSchema {
+  return {
+    version: 'tzd-27',
+    entity: 'product',
+    productKinds: [...PRODUCT_KINDS],
+    createProposal: {
+      required: ['name', 'kind'],
+      optional: ['unit', 'sku', 'notes'],
+    },
+    rules: {
+      en: [
+        'name and kind (good|service|work) are required.',
+        'unit is a free string; empty unit defaults to шт on propose.',
+        'Passport only — BOM/composition is NOT written via import in this wave (use web BomPanel).',
+        'Before product.update: run kppdf_get_product_composition / kppdf_get_product_where_used (TZD-19).',
+        'Propose creates a mutation-journal proposal only — not a SoT write. Confirm separately.',
+      ],
+      ru: [
+        'name и kind (good|service|work) обязательны.',
+        'unit — произвольная строка; пустой unit → шт при propose.',
+        'Только паспорт — BOM/состав через импорт в этой волне НЕ пишется (reuse web BomPanel).',
+        'Перед product.update: kppdf_get_product_composition / kppdf_get_product_where_used (TZD-19).',
+        'Propose создаёт только proposal в журнале — не запись в SoT. Confirm отдельно.',
+      ],
+    },
+  };
+}
+
+export function isProductKind(value: string): value is ProductKind {
+  return (PRODUCT_KINDS as readonly string[]).includes(value);
+}

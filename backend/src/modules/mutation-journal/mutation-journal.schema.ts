@@ -15,6 +15,8 @@ export type MutationStatus = (typeof MUTATION_STATUSES)[number];
 export const MUTATION_KINDS = [
   'material.create',
   'material.update',
+  'product.create',
+  'product.update',
 ] as const;
 export type MutationKind = (typeof MUTATION_KINDS)[number];
 

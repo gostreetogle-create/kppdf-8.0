@@ -11,6 +11,9 @@ import { AuthenticatedUser } from '../../common/decorators/current-user.decorato
 import { MaterialService } from '../material/material.service';
 import { CreateMaterialDto } from '../material/dto/create-material.dto';
 import { UpdateMaterialDto } from '../material/dto/update-material.dto';
+import { ProductService } from '../product/product.service';
+import { CreateProductDto } from '../product/dto/create-product.dto';
+import { UpdateProductDto } from '../product/dto/update-product.dto';
 import {
   CreateProposalDto,
   ProposeBatchDto,
@@ -41,6 +44,7 @@ export class MutationJournalService {
     @InjectModel(MutationJournal.name)
     private readonly model: Model<MutationJournalDocument>,
     private readonly materials: MaterialService,
+    private readonly products: ProductService,
   ) {
     const raw = Number(process.env.MUTATION_JOURNAL_RING_SIZE ?? DEFAULT_RING);
     this.ringSize = Number.isFinite(raw) && raw >= 1 ? Math.min(200, Math.floor(raw)) : DEFAULT_RING;
@@ -108,6 +112,63 @@ export class MutationJournalService {
         entityType: 'Material',
         entityId: new Types.ObjectId(dto.update.id),
         payload: { id: dto.update.id, patch: dto.update.patch },
+        before,
+        after: null,
+        expiresAt: new Date(Date.now() + PROPOSAL_TTL_MS),
+        ...(idempotencyKey ? { idempotencyKey } : {}),
+      });
+      return this.toProposalView(doc);
+    }
+
+    // ── TZD-27: product passport proposes ────────────────────────────────────
+    if (dto.kind === 'product.create') {
+      const p = dto.productCreate;
+      if (!p?.name?.trim()) {
+        throw new BadRequestException('productCreate.name is required for product.create');
+      }
+      if (!p.kind) {
+        throw new BadRequestException('productCreate.kind is required for product.create (good|service|work)');
+      }
+      const payload = {
+        name: p.name.trim(),
+        kind: p.kind,
+        unit: p.unit?.trim() || 'шт',
+        ...(p.sku ? { sku: p.sku } : {}),
+        ...(p.notes ? { notes: p.notes } : {}),
+      };
+      const doc = await this.model.create({
+        status: 'proposed',
+        kind: dto.kind,
+        toolName,
+        actorUserId: new Types.ObjectId(user.id),
+        organizationId: orgId,
+        entityType: 'Product',
+        payload,
+        before: null,
+        after: null,
+        expiresAt: new Date(Date.now() + PROPOSAL_TTL_MS),
+        ...(idempotencyKey ? { idempotencyKey } : {}),
+      });
+      return this.toProposalView(doc);
+    }
+
+    if (dto.kind === 'product.update') {
+      if (!dto.productUpdate?.id || !dto.productUpdate?.patch || typeof dto.productUpdate.patch !== 'object') {
+        throw new BadRequestException(
+          'productUpdate.id and productUpdate.patch required for product.update',
+        );
+      }
+      const existing = await this.products.findById(dto.productUpdate.id);
+      const before = leanMaterial(existing);
+      const doc = await this.model.create({
+        status: 'proposed',
+        kind: dto.kind,
+        toolName,
+        actorUserId: new Types.ObjectId(user.id),
+        organizationId: orgId,
+        entityType: 'Product',
+        entityId: new Types.ObjectId(dto.productUpdate.id),
+        payload: { id: dto.productUpdate.id, patch: dto.productUpdate.patch },
         before,
         after: null,
         expiresAt: new Date(Date.now() + PROPOSAL_TTL_MS),
@@ -248,6 +309,23 @@ export class MutationJournalService {
       const updated = await this.materials.update(payload.id, payload.patch);
       doc.entityId = updated._id as Types.ObjectId;
       doc.after = leanMaterial(updated);
+    } else if (doc.kind === 'product.create') {
+      const payload = (doc.payload ?? {}) as unknown as CreateProductDto;
+      const org = this.orgIdString(doc);
+      const created = await this.products.create(payload, org);
+      doc.entityId = created._id as Types.ObjectId;
+      doc.after = leanMaterial(created);
+      doc.before = null;
+    } else if (doc.kind === 'product.update') {
+      const payload = doc.payload as unknown as { id: string; patch: UpdateProductDto };
+      if (!doc.before) {
+        const existing = await this.products.findById(payload.id);
+        doc.before = leanMaterial(existing);
+      }
+      const org = this.orgIdString(doc);
+      const updated = await this.products.update(payload.id, payload.patch, org);
+      doc.entityId = updated._id as Types.ObjectId;
+      doc.after = leanMaterial(updated);
     } else {
       throw new BadRequestException(`Unsupported kind: ${doc.kind}`);
     }
@@ -274,6 +352,15 @@ export class MutationJournalService {
       }
       const restore = this.pickRestorable(doc.before);
       await this.materials.update(String(doc.entityId), restore as UpdateMaterialDto);
+    } else if (doc.kind === 'product.create') {
+      if (!doc.entityId) throw new BadRequestException('Missing entityId for create undo');
+      await this.products.remove(String(doc.entityId), this.orgIdString(doc));
+    } else if (doc.kind === 'product.update') {
+      if (!doc.entityId || !doc.before) {
+        throw new BadRequestException('Missing before snapshot for update undo');
+      }
+      const restore = this.pickRestorable(doc.before);
+      await this.products.update(String(doc.entityId), restore as UpdateProductDto, this.orgIdString(doc));
     } else {
       throw new BadRequestException(`Unsupported kind: ${doc.kind}`);
     }
@@ -322,6 +409,11 @@ export class MutationJournalService {
     doc.status = 'cancelled';
     await doc.save();
     return this.toProposalView(doc);
+  }
+
+  private orgIdString(doc: MutationJournalDocument | Record<string, unknown>): string | null {
+    const org = (doc as { organizationId?: Types.ObjectId | string }).organizationId;
+    return org ? String(org) : null;
   }
 
   private async enforceRing(organizationId?: Types.ObjectId) {

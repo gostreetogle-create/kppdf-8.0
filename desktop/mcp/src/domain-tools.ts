@@ -10,6 +10,8 @@ import type { McpRuntimeConfig } from './config.js';
 import {
   DOMAIN_SCHEMA_VERSION,
   getMaterialDomainSchema,
+  getProductDomainSchema,
+  isProductKind,
 } from './domain-schema.js';
 import { withQuery } from './query.js';
 import { toolFail, toolOk } from './tool-result.js';
@@ -24,7 +26,59 @@ export const DOMAIN_TOOL_NAMES = [
   'kppdf_get_domain_schema',
   'kppdf_list_categories',
   'kppdf_validate_material',
+  'kppdf_validate_product',
 ] as const;
+
+export interface ValidateProductResult {
+  ok: boolean;
+  errors: Array<{ code: string; message: string }>;
+  infos: Array<{ code: string; message: string }>;
+  normalized: {
+    name?: string;
+    kind?: string;
+    unit: string;
+  };
+}
+
+/**
+ * TZD-27 — passport-only product dry-run: name + kind обязательны,
+ * unit default шт. НЕ пишет BOM и НЕ трогает SoT.
+ */
+export function validateProduct(args: {
+  name?: string;
+  kind?: string;
+  unit?: string;
+}): ValidateProductResult {
+  const errors: ValidateProductResult['errors'] = [];
+  const infos: ValidateProductResult['infos'] = [];
+  const name = args.name?.trim();
+  const kind = args.kind?.trim();
+
+  if (!name) {
+    errors.push({ code: 'NAME_REQUIRED', message: 'name is required' });
+  }
+  if (!kind) {
+    errors.push({ code: 'KIND_REQUIRED', message: 'kind is required (good|service|work)' });
+  } else if (!isProductKind(kind)) {
+    errors.push({ code: 'KIND_INVALID', message: `kind must be one of good|service|work (got «${kind}»)` });
+  }
+  let unit = args.unit?.trim() ?? '';
+  if (!unit) {
+    infos.push({ code: 'UNIT_DEFAULT', message: 'unit empty → default шт' });
+    unit = 'шт';
+  }
+
+  return {
+    ok: errors.length === 0,
+    errors,
+    infos,
+    normalized: {
+      ...(name ? { name } : {}),
+      ...(kind ? { kind } : {}),
+      unit,
+    },
+  };
+}
 
 function paginateCategories(
   items: CategorySnapshot[],
@@ -52,18 +106,27 @@ export function registerDomainTools(server: McpServer, cfg: McpRuntimeConfig): v
         'Read-only — no SoT write, no proposal. Call before propose/validate.',
       inputSchema: {
         entity: z
-          .enum(['material'])
+          .enum(['material', 'product'])
           .optional()
-          .describe('Entity schema (only material in TZD-17)'),
+          .describe('Entity schema: material (tzd-17) | product (tzd-27)'),
       },
     },
     async ({ entity }) => {
       try {
         const resolved = entity ?? 'material';
+        if (resolved === 'product') {
+          const schema = getProductDomainSchema();
+          return toolOk({
+            ok: true,
+            version: schema.version,
+            entity: resolved,
+            schema,
+          });
+        }
         if (resolved !== 'material') {
           return toolFail(
             'kppdf_get_domain_schema',
-            new Error(`Unsupported entity «${resolved}» — only material in tzd-17.`),
+            new Error(`Unsupported entity «${resolved}» — only material (tzd-17) / product (tzd-27).`),
           );
         }
         const schema = getMaterialDomainSchema();
@@ -75,6 +138,33 @@ export function registerDomainTools(server: McpServer, cfg: McpRuntimeConfig): v
         });
       } catch (err) {
         return toolFail('kppdf_get_domain_schema', err);
+      }
+    },
+  );
+
+  server.registerTool(
+    'kppdf_validate_product',
+    {
+      title: 'Validate product passport (dry-run)',
+      description:
+        'TZD-27: passport-only checks — name and kind (good|service|work) required, ' +
+        'unit default шт. Does NOT validate BOM and does NOT write SoT. ' +
+        'Use before kppdf_propose_product_create.',
+      inputSchema: {
+        name: z.string().optional().describe('Product name (required for ok:true)'),
+        kind: z.enum(['good', 'service', 'work']).optional(),
+        unit: z.string().optional().describe('Unit; empty → default шт (info)'),
+      },
+    },
+    async (args) => {
+      try {
+        const result = validateProduct(args);
+        return toolOk({
+          ...result,
+          note: 'Validate only — no proposal, no SoT write, no BOM.',
+        });
+      } catch (err) {
+        return toolFail('kppdf_validate_product', err);
       }
     },
   );

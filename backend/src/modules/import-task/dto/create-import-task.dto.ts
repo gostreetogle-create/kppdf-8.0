@@ -153,6 +153,11 @@ export class AiReportProposedDto {
   @IsString()
   @Length(0, 512)
   notes?: string;
+
+  @ApiPropertyOptional({ description: 'Required for product.new rows (good|service|work)' })
+  @IsOptional()
+  @IsIn(['good', 'service', 'work'])
+  kind?: 'good' | 'service' | 'work';
 }
 
 export class AiReportRowDto {
@@ -165,7 +170,12 @@ export class AiReportRowDto {
   @IsIn(AI_REPORT_DECISIONS as unknown as string[])
   decision!: AiReportDecisionDto;
 
-  @ApiPropertyOptional({ description: 'Existing Material id for update / doubt refs' })
+  @ApiPropertyOptional({ enum: ['material', 'product'], description: 'Row entity (default material)' })
+  @IsOptional()
+  @IsIn(['material', 'product'])
+  entity?: 'material' | 'product';
+
+  @ApiPropertyOptional({ description: 'Existing entity id for update / doubt refs' })
   @IsOptional()
   @IsMongoId()
   materialId?: string;
