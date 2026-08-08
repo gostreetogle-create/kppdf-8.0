@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-CATALOG-DEDUP-303 DONE: delete orphan CompositionEditor
+
+**Исполнитель:** Buffy / agent-acfffc1331
+**Статус:** DONE on main; deploy НЕ
+**Что:** После grep подтверждено отсутствие runtime-потребителей; удалены orphan `CompositionEditorComponent` и его spec. `composition-tree` и `ProductBomPanel` сохранены. Audit обновлён.
+**Gates:** FE tsc PASS; targeted Jest composition-tree + module-detail + product-bom-panel 15/15 PASS; scoped ESLint PASS; diff-check PASS; review PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-DEDUP-303.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-DEDUP-303-delete-orphan-composition-editor.lock`
+**Known:** stale negative selector text in module-detail spec is harmless; deploy NO.
+
 ## [2026-08-08] — TZ-CATALOG-DEDUP-302 DONE: retire ModuleMaterials dialog
 
 **Исполнитель:** Buffy / agent-acfffc1331

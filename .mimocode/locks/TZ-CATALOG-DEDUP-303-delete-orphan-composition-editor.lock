@@ -1,0 +1,6 @@
+# Lock file
+Locked as of 2026-08-08 — TZ-CATALOG-DEDUP-303: delete orphan CompositionEditor.
+
+Owner: agent-acfffc1331
+Protected: composition editing uses ProductBomPanel + picker; orphan CompositionEditor removed.
+Unlock: successor DEDUP / PO.

@@ -18,7 +18,7 @@
 |------------------|----------------|
 | `ProductBomPanel` + дерево + «из каталога» на карточке | В FullEditor изделия — **второй** UI состава (карточки модулей + другие пикеры) |
 | Тот же BomPanel в QuickCreate **L** после create (FORM-304) | На карточке модуля был третий UI (`ModuleMaterialsFormDialog`) — удалён в DEDUP-302 |
-| | Мёртвый `CompositionEditor` в shared (тесты, страницы не используют) |
+| | Ранее мёртвый `CompositionEditor` в shared — удалён в DEDUP-303 |
 
 QuickCreate ≠ FullEditor для полей паспорта — **осознанно** (справочник профилей). Сливать в одну простыню не надо.  
 Состав — **один** компонент везде (страница / L-диалог / модуль).
@@ -33,7 +33,7 @@ QuickCreate ≠ FullEditor для полей паспорта — **осозна
 | Модуль | `productmodules` | Create: QuickCreate · Edit: ModuleForm · Состав: BomPanel | Нет: один путь состава на detail | DONE: убрать ModuleMaterials |
 | Материал | `materials` | Только MaterialFormDialog | Нет | Ок; позже «Редактировать» с detail |
 | Вид работ | `worktypes` | WorkTypeForm; на модуле — только привязка часов | Нет (разные глаголы) | Ок |
-| Линия состава | `composition[]` | BomPanel+picker · orphan editor | **Да** | Только BomPanel+picker |
+| Линия состава | `composition[]` | BomPanel+picker | Нет: единый write-path | Только BomPanel+picker |
 
 **Канон состава:** `ProductBomPanel` + `ProductCompositionPickerDialog` (+ `app-composition-tree`).  
 QuickCreate L — тонкий хост после create, не вторая реализация BOM.
@@ -91,4 +91,3 @@ QuickCreate L — тонкий хост после create, не вторая р�
 - `frontend/.../products/product-bom-panel.component.ts`
 - `frontend/.../products/product-detail.page.ts`
 - `frontend/.../modules/module-detail.page.ts`
-- `frontend/.../composition/composition-editor.component.ts` (orphan)
