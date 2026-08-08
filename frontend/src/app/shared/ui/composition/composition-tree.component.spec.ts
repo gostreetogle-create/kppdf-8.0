@@ -39,6 +39,14 @@ describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
         ],
       },
       {
+        _id: 'm-leaf',
+        name: 'Пустой модуль',
+        kind: 'module',
+        lineType: 'module',
+        quantity: 1,
+        children: [],
+      },
+      {
         _id: 'm2',
         name: 'Модуль B',
         kind: 'module',
@@ -185,5 +193,22 @@ describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
         .querySelector('[data-test="composition-tree-node-m1"]')
         ?.getAttribute('aria-expanded'),
     ).toBe('true');
+  });
+
+  it('shows larger › only when node has children', () => {
+    fixture.componentRef.setInput('root', tree);
+    fixture.detectChanges();
+
+    const withKids = fixture.nativeElement.querySelector(
+      '[data-test="composition-tree-node-m1"] > [data-test="composition-tree-row"] [data-test="composition-tree-toggle"]',
+    );
+    expect(withKids).toBeTruthy();
+    expect(withKids.textContent?.trim()).toBe('›');
+    expect(withKids.classList.contains('w-7')).toBe(true);
+
+    const leaf = fixture.nativeElement.querySelector(
+      '[data-test="composition-tree-node-m-leaf"] > [data-test="composition-tree-row"]',
+    ) as HTMLElement;
+    expect(leaf.querySelector('[data-test="composition-tree-toggle"]')).toBeNull();
   });
 });

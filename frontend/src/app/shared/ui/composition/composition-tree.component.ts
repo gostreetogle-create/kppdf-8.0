@@ -65,7 +65,9 @@ export type CompositionTreeSelectEvent = {
         [attr.data-kind]="node.kind"
         role="treeitem"
         [attr.aria-level]="depth + 1"
-        [attr.aria-expanded]="node.kind !== 'material' ? isExpanded(node) : null"
+        [attr.aria-expanded]="
+          node.kind !== 'material' && node.children.length > 0 ? isExpanded(node) : null
+        "
         [attr.aria-selected]="selectedId() === node._id"
       >
         <div
@@ -79,20 +81,20 @@ export type CompositionTreeSelectEvent = {
           (click)="onRowClick(node, parent, depth)"
           data-test="composition-tree-row"
         >
-          @if (node.kind !== 'material') {
+          @if (node.kind !== 'material' && node.children.length > 0) {
             <span
-              class="w-6 h-6 shrink-0 inline-flex items-center justify-center rounded-sm text-muted-foreground"
+              class="w-7 h-7 shrink-0 inline-flex items-center justify-center rounded-sm text-muted-foreground"
               [attr.aria-hidden]="true"
               data-test="composition-tree-toggle"
             >
               <span
-                class="inline-block transition-transform text-sm leading-none"
+                class="inline-block transition-transform text-lg font-semibold leading-none"
                 [class.rotate-90]="isExpanded(node)"
                 >›</span
               >
             </span>
           } @else {
-            <span class="w-6 shrink-0" aria-hidden="true"></span>
+            <span class="w-7 shrink-0" aria-hidden="true"></span>
           }
           <span
             class="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-sm hairline font-medium"
@@ -202,7 +204,7 @@ export class CompositionTreeComponent {
   ): void {
     const alreadySelected = this.selectedId() === node._id;
     this.selectedChange.emit({ node, parent, depth });
-    if (node.kind === 'material') return;
+    if (node.kind === 'material' || node.children.length === 0) return;
     if (!this.isExpanded(node)) {
       this.setExpanded(node, true);
     } else if (alreadySelected || this.selectedId() == null) {
