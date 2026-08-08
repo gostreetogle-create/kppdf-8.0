@@ -18,7 +18,7 @@
 |------------------|----------------|
 | `ProductBomPanel` + дерево + «из каталога» на карточке | В FullEditor изделия — **второй** UI состава (карточки модулей + другие пикеры) |
 | Тот же BomPanel в QuickCreate **L** после create (FORM-304) | ~~ModuleMaterials «Быстрое редактирование»~~ — **DONE** DEDUP-302 |
-| | Мёртвый `CompositionEditor` в shared (тесты, страницы не используют) |
+| | ~~orphan CompositionEditor~~ — **DONE** DEDUP-303 |
 
 QuickCreate ≠ FullEditor для полей паспорта — **осознанно** (справочник профилей). Сливать в одну простыню не надо.  
 Состав — **один** компонент везде (страница / L-диалог / модуль).
@@ -33,7 +33,7 @@ QuickCreate ≠ FullEditor для полей паспорта — **осозна
 | Модуль | `productmodules` | Create: QuickCreate · Edit: ModuleForm · Состав: BomPanel only | Нет (DEDUP-302) | — |
 | Материал | `materials` | Только MaterialFormDialog | Нет | Ок; позже «Редактировать» с detail |
 | Вид работ | `worktypes` | WorkTypeForm; на модуле — только привязка часов | Нет (разные глаголы) | Ок |
-| Линия состава | `composition[]` | BomPanel+picker · orphan editor (DEDUP-303) | Orphan остаётся | Только BomPanel+picker |
+| Линия состава | `composition[]` | BomPanel+picker only | Нет (DEDUP-301…303) | — |
 
 **Канон состава:** `ProductBomPanel` + `ProductCompositionPickerDialog` (+ `app-composition-tree`).  
 QuickCreate L — тонкий хост после create, не вторая реализация BOM.
@@ -67,7 +67,7 @@ QuickCreate L — тонкий хост после create, не вторая р�
 |---|-----|------|
 | 1 | **TZ-CATALOG-DEDUP-301** | Вырезать состав из Product FullEditor | **DONE** 2026-08-08 |
 | 2 | **TZ-CATALOG-DEDUP-302** | Убрать ModuleMaterials с module-detail | **DONE** 2026-08-08 |
-| 3 | **TZ-CATALOG-DEDUP-303** | Удалить orphan CompositionEditor | READY |
+| 3 | **TZ-CATALOG-DEDUP-303** | Удалить orphan CompositionEditor | **DONE** 2026-08-08 |
 | 4 | **TZ-UX-FORM-306** | Module QuickCreate L + BomPanel (как product FORM-304) | READY |
 | 5 | **TZ-CATALOG-DEDUP-304** | «Редактировать» на product/material detail → тот же FullEditor | READY |
 

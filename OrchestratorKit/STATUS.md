@@ -27,6 +27,7 @@
 
 | № | Название | Closed | Archive |
 |---|----------|--------|---------|
+| TZ-CATALOG-DEDUP-303 | Delete orphan CompositionEditor | 2026-08-08 | `tasks/_archive/2026-08/TZ-CATALOG-DEDUP-303.done.md` |
 | TZ-CATALOG-DEDUP-302 | Retire ModuleMaterials dialog | 2026-08-08 | `tasks/_archive/2026-08/TZ-CATALOG-DEDUP-302.done.md` |
 | TZ-UX-FACT-301 | PiFactCard + FactStack UI kit | 2026-08-08 | `tasks/_archive/2026-08/TZ-UX-FACT-301.done.md` |
 | TZ-UX-312 | Composition tree larger thumb + denser row | 2026-08-08 | `tasks/_archive/2026-08/TZ-UX-312.done.md` |

@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-CATALOG-DEDUP-303 DONE: delete orphan CompositionEditor
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** удалён unused CompositionEditor (+spec); composition-tree / BomPanel не трогали.
+**Gates:** FE tsc PASS; Jest composition 15/15 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-DEDUP-303.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-DEDUP-303-delete-orphan-composition-editor.lock`
+**Known:** Deploy NO. Next FORM-306.
+
 ## [2026-08-08] — TZ-CATALOG-DEDUP-302 DONE: retire ModuleMaterials dialog
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor)
