@@ -67,3 +67,12 @@ export async function backendPostJson(
 ): Promise<unknown> {
   return backendRequest(apiBaseUrl, apiKey, 'POST', path, body);
 }
+
+export async function backendPatchJson(
+  apiBaseUrl: string,
+  apiKey: string,
+  path: string,
+  body: unknown,
+): Promise<unknown> {
+  return backendRequest(apiBaseUrl, apiKey, 'PATCH', path, body);
+}

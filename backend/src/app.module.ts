@@ -31,6 +31,7 @@ import { ProductModulePhotoModule } from './modules/product-module-photo/product
 import { PhotosModule } from './modules/photos/photos.module';
 import { AttachmentModule } from './modules/attachments/attachment.module';
 import { MutationJournalModule } from './modules/mutation-journal/mutation-journal.module';
+import { ImportTaskModule } from './modules/import-task/import-task.module';
 import { BomModule } from './modules/bom/bom.module';
 import { WorkCenterModule } from './modules/work-center/work-center.module';
 import { WorkTypeModule } from './modules/work-type/work-type.module';
@@ -182,6 +183,7 @@ import { RequestMethod } from '@nestjs/common';
     PhotosModule,
     AttachmentModule,
     MutationJournalModule,
+    ImportTaskModule, // TZD-22: AI Import Task assembly point (no SoT / no journal)
     BomModule,
     WorkCenterModule,
     WorkTypeModule,

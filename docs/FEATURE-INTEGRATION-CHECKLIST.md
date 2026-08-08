@@ -81,6 +81,8 @@
 - [x] Env / connect docs, если меняется порт/auth — **TZD-15**: `KPPDF_INBOX_DIR` в таблице Env (MCP.md) + карточка «Inbox» в десктопе ✅
 - [x] Domain / validate tools → `desktop/mcp/src/domain-tools.ts` + `validate-material.ts` + MCP.md — **TZD-17**: `kppdf_get_domain_schema`, `kppdf_list_categories`, `kppdf_validate_material`, `kppdf_inbox_audit_file` (+ `kppdf_inbox_propose_file` mode=validate). Validate/audit **не** создают proposal и **не** пишут SoT ✅
 - [x] Connect helper (mcp.json clipboard) — **TZD-20**: `buildMcpClientSnippet` + кнопки «Скопировать mcp.json» / «Только фрагмент» в `App.svelte`; docs Cursor/LM Studio = один JSON; **не** автозапись в `~\.cursor\mcp.json` ✅
+- [x] Import Task (AI assembly) — **TZD-22**: BE `backend/src/modules/import-task/**` + `/api/import-tasks`; Desktop «Создать задачу для ИИ»; MCP `kppdf_import_task_list|get|create|set_status`; **не** matching (→ TZD-23); propose path сохранён ✅
+- [x] Windows install/update docs + NSIS preinstall stop Desktop/MCP — `desktop/docs/INSTALL.md` + `src-tauri/windows/hooks.nsh` (нет locked `esbuild.exe` при update) ✅
 - [ ] Ops: демо-данные на стенде — опц. `node scripts/seed-demo-five.mjs --base http://HOST:3000` (префикс «Тест ·»); локально для Ганта/каталога — `node scripts/seed-local-demo.mjs` (маркер `DEMO-LOCAL`, пишет в Mongo через API; boot-seed `LocalDemoSeed`, off: `LOCAL_DEMO_SEED=0`)
 
 ## F. Перед «DONE / archive»

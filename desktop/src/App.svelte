@@ -13,6 +13,7 @@
     auditInboxFile,
     cancelProposals,
     confirmProposals,
+    createImportTaskFromRows,
     ensureInboxLayout,
     moveInboxFile,
     proposeMaterialRows,
@@ -83,7 +84,9 @@
     scanInbox: 'Сейчас перечитает файлы в папке Inbox.',
     audit: 'Только прочитает файл и покажет таблицу. В базу ничего не пишет.',
     propose:
-      'Отправит строки на сервер как черновики (proposals). В справочник материалов ещё НЕ попадёт — нужен «Подтвердить».',
+      'Без сверки с базой — только черновики (proposals). В справочник материалов ещё НЕ попадёт — нужен «Подтвердить».',
+    createAiTask:
+      'Создаст задачу импорта для ИИ (Import Task). Proposals и справочник не трогает — сверка/план позже (TZD-23).',
     confirm: 'Запишет предложенные черновики в справочник материалов на сервере. Это уже реальное создание.',
     cancel: 'Снимет черновики без записи в базу. Файл уйдёт в «отклонённые».',
     discard: 'Переместит файл в папку «отклонённые» без записи на сервер.',
@@ -349,7 +352,51 @@
     }
   }
 
-  /** Propose: строки → proposals (не в SoT). Требует живого подключения. */
+  /** TZD-22: файл → ImportTask (ready_for_ai), 0 journal proposals. */
+  async function createAiTask(file: InboxFileUi) {
+    if (inboxBusy) return;
+    inboxBusy = true;
+    inboxError = '';
+    try {
+      const cfg = await loadConfig();
+      if (!cfg.apiKey || !cfg.apiBaseUrl) {
+        inboxError = 'Задача для ИИ требует подключённого аккаунта.';
+        return;
+      }
+      if (!file.audit) {
+        const audit = await auditInboxFile(inboxDir, file.name);
+        file.audit = audit;
+        if (audit.error) {
+          file.status = 'failed';
+          file.note = audit.error;
+          inboxFiles = [...inboxFiles];
+          return;
+        }
+        file.status = 'audited';
+      }
+      const rows = file.audit?.rows ?? [];
+      if (rows.length === 0) {
+        inboxError = 'Нет строк после разбора — нечего отдавать ИИ.';
+        return;
+      }
+      const result = await createImportTaskFromRows(
+        { baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey },
+        { fileName: file.name, rows, inboxPath: inboxDir },
+      );
+      file.note = `Задача ИИ: ${result.id} · ${result.summary ?? ''} · ${result.status} (0 proposals)`;
+      inboxFiles = [...inboxFiles];
+      await appendInboxLog(
+        inboxDir,
+        `${file.name} → import-task ${result.id} (${result.rowCount} rows, status=${result.status})`,
+      );
+      await refreshInboxLog();
+    } catch (err) {
+      inboxError = err instanceof Error ? err.message : 'Не удалось создать задачу для ИИ.';
+    } finally {
+      inboxBusy = false;
+    }
+  }
+
   async function proposeFile(file: InboxFileUi) {
     if (inboxBusy) return;
     inboxBusy = true;
@@ -881,7 +928,8 @@
     <article class="card card--wide">
       <h2>Inbox — файлы для агента</h2>
       <p class="card__lead">
-        Файл в папку → <strong>Разобрать</strong> → <strong>Предложить</strong> (черновик) →
+        Файл в папку → <strong>Разобрать</strong> → <strong>Создать задачу для ИИ</strong>
+        (точка сборки, без proposals) или <strong>Предложить строки</strong> (expert, без сверки) →
         <strong>Подтвердить</strong> / <strong>Отменить</strong>.
       </p>
 
@@ -973,6 +1021,18 @@
                 {#if file.status === 'audited'}
                   <button
                     class="btn btn--small btn--primary"
+                    type="button"
+                    onclick={() => createAiTask(file)}
+                    disabled={inboxBusy}
+                    onmouseenter={() => showHint(HINTS.createAiTask)}
+                    onmouseleave={clearHint}
+                    onfocus={() => showHint(HINTS.createAiTask)}
+                    onblur={clearHint}
+                  >
+                    Создать задачу для ИИ
+                  </button>
+                  <button
+                    class="btn btn--small"
                     type="button"
                     onclick={() => proposeFile(file)}
                     disabled={inboxBusy}

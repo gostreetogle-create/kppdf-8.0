@@ -6,6 +6,9 @@
 Local MCP host so **any** MCP-capable client can call KPPDF tools with the same
 **pairing JWT** as the desktop app. Source of truth = Nest backend (RBAC unchanged).
 
+Установка / обновление Windows (NSIS, AppData, stop MCP перед update):  
+**[INSTALL.md](./INSTALL.md)**. Паринг-пакет: **[PAIRING.md](./PAIRING.md)**.
+
 ## Как подключить (менеджер) — через приложение, без терминала
 
 1. **Паринг** — в вебе кнопка «Подключить десктоп» (TZD-05) даёт JSON
@@ -130,6 +133,22 @@ Stdio: `pnpm start:stdio` (для клиентов, которые спавня�
 | `kppdf_undo_mutation` | Revert last / by id (create→soft-delete; update→restore before) |
 | `kppdf_list_mutations` | Recent applied/undone (ring) |
 
+## Tools — import task / AI assembly (TZD-22)
+
+**Variant C flow:** `file → ImportTask → (TZD-23: match+plan) → propose → confirm`
+
+TZD-22 stops at **ImportTask**. No matching, no chat UX, no auto-propose.
+Expert path `kppdf_inbox_propose_file` remains (proposals without DB matching).
+
+| Tool | Effect |
+|------|--------|
+| `kppdf_import_task_list` | `GET /api/import-tasks` — summary + rowCount (no full rows dump) |
+| `kppdf_import_task_get` | `GET /api/import-tasks/:id` — full rows |
+| `kppdf_import_task_create` | `POST /api/import-tasks` → status `ready_for_ai`; **0** journal proposals |
+| `kppdf_import_task_set_status` | `PATCH /api/import-tasks/:id/status` (whitelist; no matching logic) |
+
+Desktop UI: after **Разобрать** — button **«Создать задачу для ИИ»** (Import Task) vs **«Предложить строки»** (expert proposals, без сверки с базой).
+
 ## Tools — inbox (TZD-15 + TZD-17)
 
 | Tool | Effect |
@@ -152,6 +171,9 @@ Inbox-папка настраивается в десктоп-приложени
 
 ## Follow-ups
 
+- **TZD-22** ✅ DONE (code) / review — Import Task assembly: BE `/api/import-tasks` +
+  Desktop «Создать задачу для ИИ» + MCP `kppdf_import_task_*`. Matching → **TZD-23**.
+- **TZD-23** PARK — AI matching + HITL plan → propose (after TZD-22 PASS).
 - **TZD-20** ✅ DONE (2026-08-08) — кнопка «Скопировать mcp.json» / фрагмент в Desktop;
   один HTTP-формат для Cursor + LM Studio; clipboard only (не пишет в чужие mcp.json).
 - **TZD-17** ✅ DONE (2026-08-08) — semantic domain layer: `kppdf_get_domain_schema`, `kppdf_list_categories`, `kppdf_validate_material`, `kppdf_inbox_audit_file` (+ propose `mode=validate`). Validate/audit ≠ proposal ≠ SoT.

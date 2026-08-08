@@ -9,7 +9,6 @@
 | ID | File | Notes |
 |----|------|-------|
 | **TZD-21** | `TZD-21-desktop-pairing-keys-ttl.md` | **GO** — pairing keys, TTL, multi-key + revoke. «делай TZD-21». |
-| **TZD-22** | `TZD-22-ai-import-task.md` | **GO** — Import Task (точка сборки): модель + API + Desktop «задача для ИИ» + MCP list/get/create/status. **Без** matching. «делай TZD-22». |
 
 ## Park
 
@@ -32,6 +31,7 @@
 | TZD-16 | `tasks/_archive/2026-08/TZD-16.done.md` |
 | TZD-17 | `tasks/_archive/2026-08/TZD-17.done.md` |
 | TZD-20 | `tasks/_archive/2026-08/TZD-20.done.md` |
+| TZD-22 | `tasks/_archive/2026-08/TZD-22.done.md` |
 
 Import stream TZD-01…04, 06…10 — PARKED (не в этой папке как active stubs).
 

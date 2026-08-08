@@ -1,6 +1,6 @@
 # SESSION QUEUE — 2026-08-08 hygiene
 
-**Updated:** 2026-08-08T00:10:00Z · TZ-CATALOG-334 DONE
+**Updated:** 2026-08-08T00:10:00Z · TZD-22 archived (Cursor PASS); COST-302 still READY FOR REVIEW
 
 ## DONE recently (archive + lock on main)
 
@@ -8,16 +8,17 @@
 |------|------------|
 | TZ-OPS-301 | `f12c2d8` |
 | TZD-17 … TZD-20 | archives |
-| TZ-CATALOG-330 … **334** | 334 · `0f90243` |
+| **TZD-22** | archive `tasks/_archive/2026-08/TZD-22.done.md` (SHA after push) |
+| TZ-CATALOG-330 … **334** | 334 on main |
 | TZ-COST-301 | `79edbea` |
-| TZ-PRODUCTION-303.1 / 303.1b | archives (root copies removed) |
+| TZ-PRODUCTION-303.1 / 303.1b | archives |
 
 ## READY (не сделано — выдавать по PO)
 
 | Priority | ID | Path |
 |----------|-----|------|
 | 1 | **TZ-COST-303** | after 302 archive · UI visibility |
-| 2 | **TZD-21** | `tasks/_backlog/desktop/TZD-21-…` |
+| 2 | **TZD-21** | `tasks/_backlog/desktop/TZD-21-desktop-pairing-keys-ttl.md` |
 
 ## IN PROGRESS (CLAIMED)
 
@@ -28,13 +29,12 @@ _(empty)_
 | ID | agent_id | notes |
 |----|----------|-------|
 | **TZ-COST-302** | cursor-composer-cost302 | gates green; **await Cursor PASS** before archive |
-| **TZD-22** | cursor-composer-tzd22 | Import Task; **await Cursor PASS** before archive |
 
 ## PARK (не трогать без un-park)
 
 | Stream | Items |
 |--------|--------|
-| Desktop | TZD-18, TZD-19, TZD-23 (после 22) |
+| Desktop | TZD-18, TZD-19, **TZD-23** (только по PO, после 22 DONE) |
 | Production | 300–310, DRAWINGS-301, … |
 | Other | SHIPPING-301, INVENTORY-301, PROCUREMENT-301, ARCHIVE-301, DOC-330, RBAC-302/303, … |
 
@@ -43,12 +43,12 @@ _(empty)_
 `tasks/TZ-CATALOG-300.md`, `tasks/TZ-DICT-300.md` — индексы волн, оставить в корне.
 
 ## Checkpoint 2026-08-08T00:10:00Z
-- DONE: TZ-CATALOG-334 (nest cohesion)
+- DONE: TZ-COST-301, **TZD-22** (Cursor PASS → archive)
 - IN PROGRESS: _(none)_
-- READY FOR REVIEW: **TZ-COST-302**, **TZD-22** (archive only after Cursor/PO PASS)
-- NOT DONE: TZ-COST-303, TZD-21; TZD-23 park
-- NEXT: Cursor PASS → archive 302 and/or 22
-- HEAD: `0f90243` (+ uncommitted TZD-22 / COST-302 peer WIP)
-- Blockers: none · Team Room claim 334 unavailable (best-effort send)
-- _active/: TZ-COST-302.md, TZD-22.md
+- READY FOR REVIEW: **TZ-COST-302**
+- NOT DONE: TZ-COST-303, TZD-21; TZD-23 park until PO
+- NEXT: Cursor PASS on COST-302 → archive; TZD-21 only on PO; **no TZD-23 / no deploy**
+- HEAD: (see TZD-22 commit after push)
+- Blockers: none
+- _active/: TZ-COST-302.md
 - Deploy: NO

@@ -1,3 +1,16 @@
+## [2026-08-08] — TZD-22 DONE: AI Import Task (assembly point)
+**Исполнитель:** cursor-composer-tzd22 (Cursor PASS → archive)
+**Статус:** DONE on main; deploy НЕ выполнялся
+**Что сделано кратко:** ImportTask BE `/api/import-tasks` + Desktop «Создать задачу для ИИ» + MCP `kppdf_import_task_*`. Create → `ready_for_ai`, 0 journal proposals. Propose path сохранён. Matching → TZD-23 (только по PO).
+**Gates:** backend tsc PASS; jest import-task 6/6 PASS; desktop/mcp test 33/33 PASS; desktop typecheck PASS
+**Archive:** `tasks/_archive/2026-08/TZD-22.done.md`
+**Lock:** `.mimocode/locks/TZD-22-ai-import-task.lock`
+**Commit:** PENDING
+**Cursor Verdict:** PASS
+**Known limits:** no matching/chat; no web UI task list; TZD-23 park until PO
+
+---
+
 ## [2026-08-08] — TZ-CATALOG-334 DONE: composition nest visual cohesion
 **Исполнитель:** cursor-composer-catalog334 (Cursor PASS → archive)
 **Статус:** DONE on main; deploy НЕ выполнялся

@@ -69,11 +69,22 @@ export interface MaterialRow {
 }
 
 /** Колонки-алиасы для маппинга (RU + EN, регистронезависимо). */
-const NAME_COLUMNS = ['name', 'наименование', 'название', 'материал', 'наименование материала', 'текст'];
+const NAME_COLUMNS = [
+  'name',
+  'наименование',
+  'название',
+  'материал',
+  'наименование материала',
+  'текст',
+  'обозначение',
+  'материал, сортамент',
+  'сортамент',
+  'описание',
+];
 const UNIT_COLUMNS = ['unit', 'ед', 'ед.', 'единица', 'ед. изм.', 'ед.изм', 'единицы'];
-const ARTICLE_COLUMNS = ['article', 'артикул'];
+const ARTICLE_COLUMNS = ['article', 'артикул', 'обозначение'];
 const SKU_COLUMNS = ['sku', 'код', 'код товара', 'штрихкод'];
-const CATEGORY_COLUMNS = ['categoryId', 'категория', 'category'];
+const CATEGORY_COLUMNS = ['categoryId', 'категория', 'category', 'тип элемента', 'тип'];
 
 function firstValue(row: RawRow, aliases: readonly string[]): string | undefined {
   for (const alias of aliases) {
@@ -82,10 +93,16 @@ function firstValue(row: RawRow, aliases: readonly string[]): string | undefined
       return String(raw).trim();
     }
   }
-  // Регистронезависимый поиск по ключам (кириллица может отличаться в регистре).
+  // Регистронезависимый поиск + вхождение алиаса в имя колонки
+  // (напр. «Материал, сортамент» содержит «материал»).
   for (const [key, value] of Object.entries(row)) {
     const k = key.trim().toLowerCase();
-    if (aliases.some((a) => a.toLowerCase() === k)) {
+    if (
+      aliases.some((a) => {
+        const al = a.toLowerCase();
+        return k === al || k.includes(al) || al.includes(k);
+      })
+    ) {
       const s = value === undefined || value === null ? '' : String(value).trim();
       if (s) return s;
     }
@@ -95,7 +112,19 @@ function firstValue(row: RawRow, aliases: readonly string[]): string | undefined
 
 /** Маппинг RawRow → MaterialRow. Без наименования возвращает null (skip). */
 export function mapRowToMaterial(row: RawRow): MaterialRow | null {
-  const name = firstValue(row, NAME_COLUMNS);
+  // Для спецификаций: сначала «материал/наименование», иначе «обозначение».
+  const name =
+    firstValue(row, [
+      'наименование',
+      'название',
+      'материал',
+      'сортамент',
+      'сортамент, гост',
+      'описание',
+      'вид изделия',
+      'текст',
+      'name',
+    ]) ?? firstValue(row, ['обозначение', 'артикул', 'article']);
   if (!name) return null;
   const row_: MaterialRow = { name };
   const unit = firstValue(row, UNIT_COLUMNS);
@@ -182,9 +211,102 @@ export interface ProposeBatchResult {
   failed: Array<{ rowName: string; error: string }>;
 }
 
+/** Тип файла для ImportTask.source.fileType. */
+export function inboxFileType(fileName: string): 'xlsx' | 'xls' | 'csv' | 'tsv' | 'txt' | 'other' {
+  const dot = fileName.lastIndexOf('.');
+  if (dot === -1) return 'other';
+  const ext = fileName.slice(dot + 1).toLowerCase();
+  if (ext === 'xlsx' || ext === 'xls' || ext === 'csv' || ext === 'tsv' || ext === 'txt') {
+    return ext;
+  }
+  return 'other';
+}
+
+/** Строка ImportTask: raw + нормализованные поля (тот же маппинг, что propose). */
+export interface ImportTaskRowPayload {
+  rowIndex: number;
+  raw: Record<string, string | number | null>;
+  name?: string;
+  unit?: string;
+  article?: string;
+  sku?: string;
+  notes?: string;
+}
+
+export interface CreateImportTaskResult {
+  id: string;
+  status: string;
+  summary: string | null;
+  rowCount: number;
+}
+
+/**
+ * TZD-22: создать ImportTask (ready_for_ai) — точка сборки для ИИ.
+ * НЕ создаёт mutation_journal proposals. Matching → TZD-23.
+ */
+export async function createImportTaskFromRows(
+  api: ApiClientOptions,
+  opts: {
+    fileName: string;
+    rows: RawRow[];
+    inboxPath?: string;
+    contentHash?: string;
+  },
+): Promise<CreateImportTaskResult> {
+  if (opts.rows.length < 1 || opts.rows.length > 500) {
+    throw new Error(
+      opts.rows.length > 500
+        ? 'Слишком много строк (>500) — разбейте файл или дождитесь TZD-18.'
+        : 'Нет строк для задачи импорта.',
+    );
+  }
+  const mapped: ImportTaskRowPayload[] = opts.rows.map((raw, rowIndex) => {
+    const material = mapRowToMaterial(raw);
+    const safeRaw: Record<string, string | number | null> = {};
+    for (const [k, v] of Object.entries(raw)) {
+      if (v === null || typeof v === 'string' || typeof v === 'number') {
+        safeRaw[k] = v;
+      } else if (v === undefined) {
+        safeRaw[k] = null;
+      } else {
+        safeRaw[k] = String(v);
+      }
+    }
+    const row: ImportTaskRowPayload = { rowIndex, raw: safeRaw };
+    if (material?.name) row.name = material.name;
+    if (material?.unit) row.unit = material.unit;
+    if (material?.article) row.article = material.article;
+    if (material?.sku) row.sku = material.sku;
+    return row;
+  });
+  const unnamed = mapped.filter((r) => !r.name).length;
+  const summary =
+    `${opts.fileName} · ${mapped.length} строк` +
+    (unnamed > 0 ? ` · без имени: ${unnamed}` : '');
+
+  const resp = (await apiPost(api, '/api/import-tasks', {
+    source: {
+      fileName: opts.fileName,
+      fileType: inboxFileType(opts.fileName),
+      ...(opts.contentHash ? { contentHash: opts.contentHash } : {}),
+      ...(opts.inboxPath ? { inboxPath: opts.inboxPath } : {}),
+    },
+    rows: mapped,
+    summary,
+  })) as CreateImportTaskResult & { id?: string };
+
+  return {
+    id: resp.id,
+    status: resp.status,
+    summary: resp.summary ?? summary,
+    rowCount: resp.rowCount ?? mapped.length,
+  };
+}
+
 /**
  * Предлагает material.create для каждой строки (НЕ пишет в SoT).
  * Подтверждение — отдельный шаг (confirmProposals).
+ * Expert-path без ИИ — не удалять (TZD-22).
  */
 export async function proposeMaterialRows(
   api: ApiClientOptions,
