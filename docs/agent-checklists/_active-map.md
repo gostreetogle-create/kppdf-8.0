@@ -26,6 +26,12 @@
 - Ban cross-touch: desktop/mcp/import-task/journal ↔ shop-north keys
 - Deploy: NO
 
+## READY (new — type/color wave)
+
+- **WAVE-UI-TYPE-COLOR:** TYPE-301 → TYPE-302 → COLOR-301  
+  Audit: `docs/audits/2026-08-08-typography-and-theme-contrast-audit.md`  
+  Start: `tasks/TZ-UI-TYPE-301-type-scale-canon.md`
+
 ## PARK
 
 SALES-304 · SHIPPING · Gantt 308–310

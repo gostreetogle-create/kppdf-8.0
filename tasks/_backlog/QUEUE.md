@@ -13,7 +13,8 @@
 
 | TZ | Файл | Заметка |
 |----|------|---------|
-| **TZ-PRODUCTS-307** | `tasks/TZ-PRODUCTS-307-products-list-hierarchy-preview.md` | Иерархия в expand списка /products (flat gold tray уже на main) |
+| **WAVE UI type+color** | `tasks/_backlog/ui-type-color/WAVE-UI-TYPE-COLOR.md` | **TYPE-301 → 302 → COLOR-301** (аудит текстов/тем) |
+| **TZ-PRODUCTS-307** | `tasks/TZ-PRODUCTS-307-products-list-hierarchy-preview.md` | Иерархия в expand списка /products |
 | ~~TZ-UX-313~~ | archived `tasks/_archive/2026-08/TZ-UX-313.done.md` | Smart back DONE |
 
 ## Не брать
