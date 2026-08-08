@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-312 DONE: composition-tree larger thumb + denser row
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** thumb `w-9 h-9` (36px); row `min-h-11 px-1.5 py-1 gap-1`; line-clamp-2 сохранён. Nest/BomPanel/QC/DEDUP не трогали.
+**Gates:** FE tsc PASS; Jest composition-tree 8/8 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-312.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-312-composition-tree-thumb-density.lock`
+**Known:** Deploy NO.
+
 ## [2026-08-08] — TZ-CATALOG-DEDUP-301 DONE: strip composition from Product FullEditor
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor)

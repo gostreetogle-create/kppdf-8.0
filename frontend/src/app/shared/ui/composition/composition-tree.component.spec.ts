@@ -284,4 +284,31 @@ describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
       ),
     ).toBeNull();
   });
+
+  it('TZ-UX-312: thumb ≥36px (w-9 h-9); denser row (min-h-11, tight pad)', () => {
+    fixture.componentRef.setInput('root', tree);
+    fixture.detectChanges();
+
+    const row = fixture.nativeElement.querySelector(
+      '[data-test="composition-tree-node-p1"] > [data-test="composition-tree-row"]',
+    ) as HTMLElement;
+    expect(row.classList.contains('min-h-11')).toBe(true);
+    expect(row.classList.contains('px-1.5')).toBe(true);
+    expect(row.classList.contains('py-1')).toBe(true);
+    expect(row.classList.contains('gap-1')).toBe(true);
+    expect(row.classList.contains('min-h-9')).toBe(false);
+    expect(row.classList.contains('px-2')).toBe(false);
+
+    const thumb = fixture.nativeElement.querySelector(
+      '[data-test="composition-tree-node-p1"] > [data-test="composition-tree-row"] [data-test="composition-tree-thumb"]',
+    ) as HTMLElement;
+    expect(thumb.classList.contains('w-9')).toBe(true);
+    expect(thumb.classList.contains('h-9')).toBe(true);
+    expect(thumb.classList.contains('w-5')).toBe(false);
+
+    const nameEl = fixture.nativeElement.querySelector(
+      '[data-test="composition-tree-node-p1"] > [data-test="composition-tree-row"] [data-test="composition-tree-name"]',
+    ) as HTMLElement;
+    expect(nameEl.classList.contains('line-clamp-2')).toBe(true);
+  });
 });

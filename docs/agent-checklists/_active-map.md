@@ -1,6 +1,6 @@
 # SESSION QUEUE
 
-**Updated:** 2026-08-08T09:45Z · **TZ-CATALOG-DEDUP-301 DONE** · NEXT DEDUP-302
+**Updated:** 2026-08-08T09:46Z · **TZ-UX-312 DONE** · NEXT DEDUP-302 / UX-309
 
 ## NEXT
 
@@ -9,20 +9,20 @@
 
 ## DONE recent
 
-DEDUP-301 · UX-311 · GIT-301 · FORM-302…305 · NAV-302 · UX-308  
+UX-312 · DEDUP-301 · UX-311 · GIT-301 · FORM-302…305  
 
 ## Docs
 
-`docs/audits/2026-08-08-data-entry-dedupe-audit.md`  
+`docs/pages/ui-composition-tree.md` · dedupe audit  
 
 Deploy: NO  
 Park: `tasks/_park/`
 
-## Checkpoint 2026-08-08T09:45Z
-- DONE: TZ-CATALOG-DEDUP-301
+## Checkpoint 2026-08-08T09:46Z
+- DONE: TZ-UX-312
 - IN PROGRESS: none
-- NEXT: TZ-CATALOG-DEDUP-302
-- HEAD: `c29ce4bb`
+- NEXT: TZ-CATALOG-DEDUP-302 (peer) / UX-309
+- HEAD: (pending)
 - Blockers: none
 - _active/: empty
 - Deploy: NO
