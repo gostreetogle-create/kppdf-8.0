@@ -12,10 +12,9 @@ import {
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { LucideAngularModule, RefreshCw } from 'lucide-angular';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../shared/page/pi-section.component';
+import { PiPageChromeComponent } from '../../shared/page/pi-page-chrome.component';
 import { PiToolbarComponent } from '../../shared/page/pi-toolbar.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
@@ -174,19 +173,15 @@ function counterpartyIdOf(row: Order): string {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     LucideAngularModule,
-    PiPageHeaderComponent,
-    PiSectionComponent,
+    RouterLink,
+    PiPageChromeComponent,
     PiToolbarComponent,
     PiRowActionsComponent,
     ButtonComponent,
     TableComponent,
   ],
   template: `
-    <app-pi-page-header
-      eyebrow="раздел · заказы"
-      title="Заказы"
-      description="Заказы покупателей с привязкой к контрагенту и контракту. Бизнес-действия (отгрузка, резервирование) — в следующей итерации."
-    />
+    <app-pi-page-chrome [crumbs]="crumbs" />
 
     <app-pi-toolbar>
       <input
@@ -209,7 +204,7 @@ function counterpartyIdOf(row: Order): string {
       <span hint>{{ visibleCount() }} {{ totalLabel(visibleCount()) }}</span>
     </app-pi-toolbar>
 
-    <app-pi-section title="Заказы" hint="сортировка · клик по заголовку" eyebrow="I">
+    <div class="pi-table-surface hairline rounded-sm overflow-hidden">
       @if (error()) {
         <div
           role="alert"
@@ -240,6 +235,16 @@ function counterpartyIdOf(row: Order): string {
           (pageChange)="onPageChange($event)"
           (sortChange)="onSortChange($event)"
         >
+          <!-- ───── Number → detail ───── -->
+          <ng-template #numberTpl let-row>
+            <a
+              class="text-ink hover:text-sunrise-warm underline-offset-2 hover:underline font-mono"
+              [routerLink]="['/orders', row._id]"
+              [attr.data-test]="'order-link-' + row._id"
+              >{{ row.number }}</a
+            >
+          </ng-template>
+
           <!-- ───── Counterparty lookup cell ───── -->
           <ng-template #counterpartyTpl let-row>
             {{ counterpartyNameOf(row) ?? '—' }}
@@ -262,10 +267,12 @@ function counterpartyIdOf(row: Order): string {
           </ng-template>
         </app-pi-table>
       </div>
-    </app-pi-section>
+    </div>
   `,
 })
 export class OrdersPage implements OnInit {
+  protected readonly crumbs = [{ label: 'Сделки', link: '/orders' }, { label: 'Заказы' }] as const;
+
   constructor() {
     this.counterpartiesLookup.load();
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
@@ -469,6 +476,8 @@ export class OrdersPage implements OnInit {
   // ─── Template refs (resolved at view init, static:true → BEFORE ngOnInit) ──
   // TZ-104.4.2: strong typing matches pi-table's re-parameterized
   // `[cellTemplates]` input. Pre-TZ-104.4.2 these were `TemplateRef<any>`.
+  @ViewChild('numberTpl', { static: true })
+  private readonly numberTplRef!: TemplateRef<{ $implicit: Order }>;
   @ViewChild('counterpartyTpl', { static: true })
   private readonly counterpartyTplRef!: TemplateRef<{ $implicit: Order }>;
   @ViewChild('rowActionsTpl', { static: true })
@@ -483,7 +492,10 @@ export class OrdersPage implements OnInit {
     // Build cell-template map + row-actions binding AFTER static
     // ViewChild fields resolve. Avoids TemplateRef<C> invariance
     // trap and Angular's signal-binding name-collision.
-    this.cellTemplates = { counterpartyId: this.counterpartyTplRef };
+    this.cellTemplates = {
+      number: this.numberTplRef,
+      counterpartyId: this.counterpartyTplRef,
+    };
     this.rowActionsTplBinding = this.rowActionsTplRef;
   }
 

@@ -19,8 +19,9 @@
 — **образец** для других вложенностей. Первый foreseen consumer:
 
 - **Заказ:** chrome «Заказ №…» вместо «Состав»; корни = изделия заказа;
-  внутри — их состав целиком. Статусы на узлах — later.
-  TZ: `tasks/_backlog/TZ-ORDERS-302-order-detail-composition-tree.md` (PARK).
+  внутри — live BOM каталога (`getProductTree`). Статусы на узлах — later.
+  TZ: `tasks/_archive/2026-08/TZ-ORDERS-302.done.md` (DONE).
+  Страница: `frontend/src/app/pages/orders/order-detail.page.ts` · `/orders/:id`.
 - Pattern lock: [`../audits/2026-08-08-composition-cascade-pattern-lock.md`](../audits/2026-08-08-composition-cascade-pattern-lock.md)
 - Скрин-эталон (dark): [`assets/composition-tree-cascade-dark-2026-08-08.png`](./assets/composition-tree-cascade-dark-2026-08-08.png)
 

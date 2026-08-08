@@ -1,11 +1,12 @@
-# Страница: Заказы (OrdersPage)
+# Страница: Заказы (OrdersPage) + карточка заказа
 
-**Краткое описание:** Реестр заказов покупателей с клиентской пагинацией, поиском, сортировкой по lifecycle статуса. Бизнес-действия (документ из заказа).
+**Краткое описание:** Реестр заказов покупателей с клиентской пагинацией, поиском, сортировкой по lifecycle статуса. Карточка заказа показывает live BOM через тот же `app-composition-tree` (без прайса КП).
 
-## Route
+## Routes
 
 ```
-/orders — «KPPDF — Заказы»
+/orders       — «KPPDF — Заказы» (список)
+/orders/:id   — «KPPDF — Заказ» (карточка + состав) · TZ-ORDERS-302
 ```
 
 ## Query params
@@ -17,9 +18,11 @@
 | Метод | Endpoint | Назначение |
 |-------|----------|-----------|
 | GET | `/api/orders` | Список (flat array) |
+| GET | `/api/orders/:id` | Карточка заказа |
+| GET | `/api/products/:id/tree?maxDepth=` | Live BOM линии (каталог) |
 | DELETE | `/api/orders/:id` | Удаление (soft delete) |
 
-Ответ GET: `Order[]` (flat array, НЕ пагинированный envelope)
+Ответ GET list: `Order[]` (flat array, НЕ пагинированный envelope)
 
 ## Dialogs
 
@@ -34,8 +37,9 @@
 |--------|--------|
 | `OrdersService` | `list()`, `findById(id)`, `create(payload)`, `update(id, payload)`, `remove(id)` |
 | `CounterpartyService` | `list(params)` — для lookup контрагентов |
+| `ProductModulesService` | `getProductTree(id, maxDepth)` — live children на карточке |
 
-## State (signals)
+## State (signals) — список
 
 | Сигнал | Тип | Назначение |
 |--------|-----|-----------|
@@ -45,23 +49,23 @@
 | `search` | `SearchState` | Debounced поиск (300ms) |
 | `listRes` | `HttpResource<Order[]>` | GET /api/orders |
 
-## Computed chain
+## Карточка `/orders/:id` (TZ-ORDERS-302)
+
+- Chrome: «Заказ №…» (`PiPageChrome` + H1).
+- Корни дерева = линии заказа (`productId`, qty, snapshot name); expand = live composition каталога.
+- Empty: «В заказе нет изделий»; 404 каталога — warn на узле, без падения.
+- **Не** показывать unitPrice / прайс КП в дереве (rails D4).
+- Компонент: `order-detail.page.ts` + reuse `app-composition-tree` (не форк).
+
+## Computed chain (список)
 
 ```
 listRes → data → filteredRows → sortedRows → paginatedRows
 ```
 
-| Computed | Трансформация |
-|----------|--------------|
-| `data` | `listRes.value() ?? []` |
-| `filteredRows` | Client-side фильтр по `number`, `deliveryAddress`, `notes`, названиям контрагента/ИНН |
-| `sortedRows` | Custom accessor: status (lifecycle), date (chrono), total (numeric), number (locale) |
-| `paginatedRows` | `sortedRows.slice(start, start + PAGE_SIZE)` |
-| `total` | `sortedRows().length` |
-
 ## Column definitions (7 колонок)
 
-`number` (sticky, sortable) → `date` (sortable, empty-cell) → `counterpartyId` (cellTemplate, lookup) → `status` (sortable, lifecycle labels) → `priority` (labels) → `items` (count) → `total` (sortable, numeric, formatPrice)
+`number` (sticky, link → `/orders/:id`) → `date` → `counterpartyId` → `status` → `priority` → `items` → `total`
 
 ## TZ reference
 
@@ -69,16 +73,16 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 |----|------------|
 | TZ-104.3 | Миграция на pi-table (batch-1) |
 | TZ-104.4.2 | Typed TemplateRef + lockstep sort signals |
+| TZ-ORDERS-301 | Strip commerce → order lines |
+| TZ-ORDERS-302 | Detail + live composition-tree |
 
 ## Особенности
 
-- **Client-side pagination** — backend возвращает flat array (TODO: server-side pagination)
-- **Client-side sort** — custom accessors per key (status lifecycle, date chronological, total numeric)
+- **Client-side pagination** — backend возвращает flat array
 - **Status lifecycle:** draft→confirmed→in_production→ready→shipped→delivered→cancelled
-- **Lockstep sort signals** — seeded to `date`/`desc` (новые заказы первыми)
-- **Counterparty lookup** — одна lookup table (Counterparty), ID extractor handles populated/unpopulated
 - **Document action:** `onCreateDocument()` → `/doc-constructor/builder?source=order&sourceId=:id`
+- **known_limitation (302):** правка каталога после заказа меняет то, что видит цех на detail — осознанно (D1); заморозка BOM = later SPEC
 
 ---
 
-_Создано: 2026-07-19._
+_Обновлено: 2026-08-08 (TZ-ORDERS-302)._

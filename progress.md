@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-ORDERS-302 DONE: order detail live composition-tree
+
+**Исполнитель:** agent-3e757640b7 (self PASS → archive)
+**Статус:** DONE on main; deploy НЕ
+**Что сделано кратко:** `/orders/:id` chrome «Заказ №…»; корни = линии; live `getProductTree`; тот же `app-composition-tree`; без прайса КП; empty/404 warn.
+**Gates:** FE tsc PASS; jest order-detail+orders.page 10/10
+**Archive:** `tasks/_archive/2026-08/TZ-ORDERS-302.done.md`
+**Lock:** `.mimocode/locks/TZ-ORDERS-302-order-detail-composition-tree.lock`
+**Cursor Verdict:** PASS (executor self)
+
 ## [2026-08-08] — TZ-DICT-314 DONE: form profiles BE API (S/M/L)
 
 **Исполнитель:** continuous-executor-composer (self PASS → archive)

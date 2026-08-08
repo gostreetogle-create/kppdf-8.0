@@ -871,7 +871,8 @@ If a future Load Test or SEO need arrives:
 
 - **`PiRowActionsComponent`** extended with optional 3rd slot: `documentLabel: input<string|null>(null)` + `dataTestDocument: input<string|null>(null)` + `document: output<T>()`. Template renders the new `<button>` BEFORE the Edit button (Document → Edit → Delete; destructive-at-edge UX convention). Wrapped in `@if (documentLabel())` so the 5+ existing consumers (Materials/Organizations/Dictionaries/WorkTypes/Modules) see **ZERO visual change** (backwards-compat).
 - **`OrdersPage` + `ContractsPage`** — `Router` inject + `[documentLabel]`/`[dataTestDocument]` bindings + `(document)="onCreateDocument($event)"` handler. Navigation to `/doc-constructor/builder?source=order&sourceId=X` (or `source=contract`).
-- **Simplification from original spec:** Original assumed `/orders/:id` and `/contracts/:id` DETAIL pages; **they do not exist** (only list pages). Per-row action in list pages is the pragmatic pivot.
+- **TZ-ORDERS-302 (2026-08-08):** `/orders/:id` detail — chrome «Заказ №…» + live BOM via shared `app-composition-tree` (line roots → `getProductTree`). No deal prices on tree. List number links to detail.
+- **Simplification note (historical TZ-86E):** originally assumed missing detail pages; ORDERS-302 added order detail; contracts still list-only unless a later TZ.
 
 ### Tests (TZ-86F.1, 5 NEW e2e suites, 34 tests)
 

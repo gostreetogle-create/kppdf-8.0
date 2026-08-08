@@ -249,6 +249,15 @@ export const routes: Routes = [
         title: 'KPPDF — Заказы',
       },
       {
+        // TZ-ORDERS-302 — карточка заказа + live composition-tree.
+        path: 'orders/:id',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'orders' },
+        loadComponent: () =>
+          import('./pages/orders/order-detail.page').then((m) => m.OrderDetailPage),
+        title: 'KPPDF — Заказ',
+      },
+      {
         // TZ-PRODUCTION-303 — Production Cockpit (estimate Gantt).
         path: 'production',
         canMatch: [capabilityRouteGuard],
