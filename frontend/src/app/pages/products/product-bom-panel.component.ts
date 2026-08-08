@@ -118,11 +118,11 @@ interface LineCostHint {
       </div>
 
       <aside
-        class="hairline rounded-sm bg-paper p-3 space-y-3 lg:sticky lg:top-3"
+        class="hairline rounded-sm bg-paper p-4 space-y-4 lg:sticky lg:top-3"
         data-test="bom-inspector"
       >
         @if (selected(); as sel) {
-          <app-pi-fact-stack title="Что выбрано" dataTest="bom-inspector-what">
+          <app-pi-fact-stack title="Выбрано" dataTest="bom-inspector-what">
             <app-pi-fact-card
               label="Узел"
               [value]="sel.node.name"
@@ -132,7 +132,8 @@ interface LineCostHint {
           </app-pi-fact-stack>
 
           @if (sel.depth > 0) {
-            <app-pi-fact-stack title="Количество" dataTest="bom-inspector-qty-section">
+            <div class="space-y-2" data-test="bom-inspector-qty-section">
+              <p class="eyebrow text-ink m-0">Количество</p>
               <label class="block">
                 <span class="sr-only">Количество</span>
                 <input
@@ -144,23 +145,23 @@ interface LineCostHint {
                   data-test="bom-inspector-qty"
                 />
               </label>
-            </app-pi-fact-stack>
+            </div>
           }
 
           @if (lineCostHint(); as hint) {
-            <app-pi-fact-stack title="Деньги" dataTest="bom-line-cost">
+            <app-pi-fact-stack title="Себест." dataTest="bom-line-cost">
               @if (hint.loading) {
-                <app-pi-fact-card label="Вклад в себест." value="Считаем…" />
+                <app-pi-fact-card label="Вклад" value="…" />
               } @else if (hint.error) {
                 <app-pi-fact-card
-                  label="Вклад в себест."
+                  label="Вклад"
                   [value]="hint.error"
                   variant="danger"
                   dataTest="bom-line-cost-error"
                 />
               } @else {
                 <app-pi-fact-card
-                  label="Вклад в себест."
+                  label="Вклад"
                   [value]="hint.totalLabel"
                   [caption]="hint.formula"
                   [mono]="true"
@@ -171,115 +172,114 @@ interface LineCostHint {
             </app-pi-fact-stack>
           }
 
-          <app-pi-fact-stack title="Действия" dataTest="bom-inspector-actions">
-            @if (canAddInto(sel.node)) {
-              <p class="text-xs text-muted-foreground m-0">{{ addHint(sel.node) }}</p>
-              <app-pi-button
-                variant="default"
-                size="sm"
-                type="button"
-                class="w-full"
-                (click)="openAddPicker()"
-                data-test="bom-add-into"
-              >
-                + Из каталога
-              </app-pi-button>
-            } @else if (sel.node.kind === 'material') {
-              <p class="text-xs text-muted-foreground m-0">
-                Материал — конечный узел. Добавлять внутрь нельзя.
-              </p>
-            }
+          <!-- Host app-pi-button is not block by default → stack in a column. -->
+          <div class="space-y-2.5" data-test="bom-inspector-actions">
+            <p class="eyebrow text-ink m-0">Действия</p>
+            <div class="flex flex-col gap-2.5 w-full">
+              @if (canAddInto(sel.node)) {
+                <app-pi-button
+                  variant="default"
+                  size="sm"
+                  type="button"
+                  class="block w-full [&_button]:w-full"
+                  (click)="openAddPicker()"
+                  data-test="bom-add-into"
+                >
+                  + Из каталога
+                </app-pi-button>
+              }
 
-            @if (canEditSelected(sel.node)) {
-              <app-pi-button
-                variant="default"
-                size="sm"
-                type="button"
-                class="w-full"
-                (click)="openEditSelected()"
-                [disabled]="editLoading()"
-                data-test="bom-edit"
-              >
-                {{ editLoading() ? 'Загрузка…' : 'Редактировать' }}
-              </app-pi-button>
-            }
+              @if (canEditSelected(sel.node)) {
+                <app-pi-button
+                  variant="default"
+                  size="sm"
+                  type="button"
+                  class="block w-full [&_button]:w-full"
+                  (click)="openEditSelected()"
+                  [disabled]="editLoading()"
+                  data-test="bom-edit"
+                >
+                  {{ editLoading() ? '…' : 'Редактировать' }}
+                </app-pi-button>
+              }
 
-            @if (sel.node.kind === 'module') {
-              <app-pi-button
-                variant="outline"
-                size="sm"
-                type="button"
-                class="w-full"
-                (click)="openCard('/modules/' + sel.node._id)"
-                data-test="bom-open-module"
-              >
-                Открыть карточку модуля
-              </app-pi-button>
-            }
-            @if (sel.node.kind === 'product' && sel.depth > 0) {
-              <app-pi-button
-                variant="outline"
-                size="sm"
-                type="button"
-                class="w-full"
-                (click)="openCard('/products/' + sel.node._id)"
-                data-test="bom-open-product"
-              >
-                Открыть карточку изделия
-              </app-pi-button>
-            }
-            @if (sel.node.kind === 'material') {
-              <app-pi-button
-                variant="outline"
-                size="sm"
-                type="button"
-                class="w-full"
-                (click)="openCard('/materials/' + sel.node._id)"
-                data-test="bom-open-material"
-              >
-                Открыть карточку материала
-              </app-pi-button>
-            }
+              @if (sel.node.kind === 'module') {
+                <app-pi-button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  class="block w-full [&_button]:w-full"
+                  (click)="openCard('/modules/' + sel.node._id)"
+                  data-test="bom-open-module"
+                >
+                  Карточка
+                </app-pi-button>
+              }
+              @if (sel.node.kind === 'product' && sel.depth > 0) {
+                <app-pi-button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  class="block w-full [&_button]:w-full"
+                  (click)="openCard('/products/' + sel.node._id)"
+                  data-test="bom-open-product"
+                >
+                  Карточка
+                </app-pi-button>
+              }
+              @if (sel.node.kind === 'material') {
+                <app-pi-button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  class="block w-full [&_button]:w-full"
+                  (click)="openCard('/materials/' + sel.node._id)"
+                  data-test="bom-open-material"
+                >
+                  Карточка
+                </app-pi-button>
+              }
 
-            @if (sel.depth > 0) {
-              <app-pi-button
-                variant="outline"
-                size="sm"
-                type="button"
-                class="w-full"
-                (click)="removeSelected()"
-                data-test="bom-remove"
-              >
-                Убрать из состава
-              </app-pi-button>
-            }
-          </app-pi-fact-stack>
+              @if (sel.depth > 0) {
+                <app-pi-button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  class="block w-full [&_button]:w-full"
+                  (click)="removeSelected()"
+                  data-test="bom-remove"
+                >
+                  Убрать
+                </app-pi-button>
+              }
+            </div>
+          </div>
         } @else {
-          <p class="eyebrow m-0">Инспектор</p>
-          <p class="text-sm text-muted-foreground m-0">
-            Выбери узел в дереве — здесь появятся добавление и количество.
-          </p>
-          <app-pi-button
-            variant="default"
-            size="sm"
-            type="button"
-            class="w-full"
-            (click)="selectRootAndAdd()"
-            data-test="bom-add-root"
-          >
-            {{ rootAddLabel() }}
-          </app-pi-button>
+          <div class="space-y-3">
+            <p class="eyebrow m-0">Инспектор</p>
+            <p class="text-sm text-muted-foreground m-0">Выбери узел в дереве.</p>
+            <app-pi-button
+              variant="default"
+              size="sm"
+              type="button"
+              class="block w-full [&_button]:w-full"
+              (click)="selectRootAndAdd()"
+              data-test="bom-add-root"
+            >
+              {{ rootAddLabel() }}
+            </app-pi-button>
+          </div>
         }
 
         <app-pi-button
           variant="ghost"
           size="sm"
           type="button"
-          class="w-full"
+          class="block w-full [&_button]:w-full"
           (click)="reload()"
           data-test="bom-reload"
         >
-          Обновить дерево
+          Обновить
         </app-pi-button>
       </aside>
     </section>
@@ -389,13 +389,6 @@ export class ProductBomPanelComponent {
   protected canAddInto(node: CompositionTreeNode): boolean {
     if (this.rootKind() === 'module') return node.kind === 'module';
     return node.kind === 'product' || node.kind === 'module';
-  }
-
-  protected addHint(node: CompositionTreeNode): string {
-    if (node.kind === 'product') {
-      return 'Модуль, деталь/метиз/покупное или другое изделие (комплекс).';
-    }
-    return 'Дочерний модуль или материал (в т.ч. сырьё).';
   }
 
   protected selectRootAndAdd(): void {

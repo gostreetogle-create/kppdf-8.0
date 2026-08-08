@@ -105,14 +105,14 @@ interface ModuleCostPreview {
         <div class="space-y-4 xl:sticky xl:top-3" data-test="module-detail-aside">
           <section class="hairline rounded-sm bg-paper overflow-hidden" data-test="module-hero">
             <div
-              class="bg-paper-2 flex items-center justify-center aspect-[4/3] max-h-52"
+              class="relative w-full aspect-[4/3] bg-paper-2 flex items-center justify-center"
               data-test="module-hero-photo"
             >
               @if (coverPhotoSrc(); as cover) {
                 <img
                   [src]="cover"
                   [alt]="m.name"
-                  class="block w-full h-full object-cover"
+                  class="absolute inset-0 block w-full h-full object-cover"
                   loading="lazy"
                 />
               } @else {

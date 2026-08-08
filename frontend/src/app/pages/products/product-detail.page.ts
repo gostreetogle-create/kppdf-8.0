@@ -129,14 +129,14 @@ const KIND_LABELS: Record<ProductKind, string> = {
           <!-- Левая колонка: карточка товара -->
           <section class="hairline rounded-sm bg-paper overflow-hidden" data-test="product-hero">
             <div
-              class="bg-paper-2 flex items-center justify-center aspect-[4/3] max-h-52"
+              class="relative w-full aspect-[4/3] bg-paper-2 flex items-center justify-center"
               data-test="product-hero-photo"
             >
               @if (mainPhotos()[0]; as cover) {
                 <img
                   [src]="cover.storageUrl"
                   [alt]="cover.originalFilename ?? p.name"
-                  class="block w-full h-full object-cover"
+                  class="absolute inset-0 block w-full h-full object-cover"
                   loading="lazy"
                 />
               } @else {

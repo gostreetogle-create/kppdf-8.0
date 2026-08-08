@@ -60,6 +60,6 @@ export class PiFactCardComponent {
   readonly dataTest = input<string>('');
 
   protected readonly rootClass = computed(
-    () => `rounded-sm px-2.5 py-2 ${VARIANT_CLASS[this.variant()]}`,
+    () => `rounded-sm px-3 py-2.5 ${VARIANT_CLASS[this.variant()]}`,
   );
 }
