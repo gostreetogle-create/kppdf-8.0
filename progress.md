@@ -1046,3 +1046,13 @@ BOM inspector — вклад строки material/module read-only.
 **Gates:** tsc PASS; targeted Jest 20/20 PASS; полный сьют 129 suites / 1212 tests PASS.
 **Archive:** `tasks/_archive/2026-08/TZ-UX-COMPOSE-301.done.md`
 **Lock:** `.mimocode/locks/TZ-UX-COMPOSE-301.lock`
+
+---
+
+## [2026-08-08] — TZ-UX-DIALOG-305 DONE: Catalog kind-C width parity
+**Исполнитель:** Buffy (freebuff claim worktree)
+**Статус:** DONE; archive + lock + checklist; commit/push в этом closeout
+**Что сделано кратко:** Module FullEditor переведён с form lg (~640) на kind C `variant="content"` + `maxWidth min(1120px, calc(100vw - 2rem))`; composition picker «Добавить в состав» — с form xl (~920) на ту же 1120 clamp (`form` + `maxWidth`). Opener `width` инертен (компонент решает сам). Cookbook kind C + canon дополнены; аудит `docs/audits/2026-08-09-catalog-dialog-width-parity.md`.
+**Gates:** tsc PASS; targeted Jest 15/15 PASS; полный сьют 129 suites / 1214 tests PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-DIALOG-305.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-DIALOG-305.lock`

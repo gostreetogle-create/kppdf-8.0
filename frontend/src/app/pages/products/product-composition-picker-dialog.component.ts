@@ -62,7 +62,12 @@ export interface ProductCompositionPickerData {
     CatalogKindMarkerComponent,
   ],
   template: `
-    <app-pi-dialog [title]="dialogTitle" [width]="'xl'" [variant]="'form'">
+    <!-- TZ-UX-DIALOG-305: picker = kind C width (parity with catalog FullEditors). -->
+    <app-pi-dialog
+      [title]="dialogTitle"
+      [variant]="'form'"
+      [maxWidth]="'min(1120px, calc(100vw - 2rem))'"
+    >
       <div body class="space-y-4">
         <div
           class="grid grid-cols-3 gap-1 hairline rounded-sm p-1"

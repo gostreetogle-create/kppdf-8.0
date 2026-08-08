@@ -1,0 +1,7 @@
+TZ-UX-DIALOG-305
+closed: 2026-08-08
+zone: catalog kind-C dialog width parity (module FullEditor + composition picker)
+checklist: docs/agent-checklists/TZ-UX-DIALOG-305.md
+archive: tasks/_archive/2026-08/TZ-UX-DIALOG-305.done.md
+commit: pending
+known-limitation: none (full FE tsc + 129 suites PASS)

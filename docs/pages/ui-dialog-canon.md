@@ -9,7 +9,7 @@
 |------|-------|--------|----------|
 | **A confirm** | `alert` / `destructive` | sm–md | confirm / delete |
 | **B quick** | `form` | S→md · M→lg · L→xl (~920) + 2-col M/L | QuickCreate |
-| **C editor** | `content` | `maxWidth: min(1120px, 100vw-2rem)` | FullEditor product/material/module/role |
+| **C editor** | `content` | `maxWidth: min(1120px, 100vw-2rem)` | FullEditor product/material/module/role **+ composition picker** (DIALOG-305) |
 | **D wide** | `content` / form+maxWidth | `min(1400px, …)` | table-template и явные исключения |
 
 ## Правила

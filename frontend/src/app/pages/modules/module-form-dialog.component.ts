@@ -45,7 +45,12 @@ import { extractErrorMessage } from '../../core/silent-http';
     PiFormSectionComponent,
   ],
   template: `
-    <app-pi-dialog [title]="isEdit ? 'Редактировать модуль' : 'Создать модуль'" [width]="'lg'">
+    <!-- TZ-UX-DIALOG-305: Module FullEditor = kind C width (parity with material/product). -->
+    <app-pi-dialog
+      [title]="isEdit ? 'Редактировать модуль' : 'Создать модуль'"
+      [variant]="'content'"
+      [maxWidth]="'min(1120px, calc(100vw - 2rem))'"
+    >
       <form
         body
         [formGroup]="form"

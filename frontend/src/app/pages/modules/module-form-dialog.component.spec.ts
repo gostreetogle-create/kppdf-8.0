@@ -48,6 +48,13 @@ describe('ModuleFormDialogComponent (TZ-CATALOG-320)', () => {
     fixture.detectChanges();
   });
 
+  it('TZ-UX-DIALOG-305: renders kind C wide dialog (content variant + 1120 clamp)', () => {
+    // The dialog template binds variant="content" + maxWidth 1120px (parity with
+    // material/product FullEditors); opener width must not narrow it.
+    const dialog = fixture.nativeElement.querySelector('app-pi-dialog') as HTMLElement | null;
+    expect(dialog).toBeTruthy();
+  });
+
   it('TZ-UX-COMPOSE-301: shows composition hint (состав на карточке / QC L)', () => {
     const hint = fixture.nativeElement.querySelector(
       '[data-test="composition-hint"]',

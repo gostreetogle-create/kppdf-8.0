@@ -39,7 +39,7 @@ const ref = dialogs.open<Result, Data>(MyDialogComponent, {
 |------|---------|------------------|--------|
 | **A confirm** | alert / destructive | sm–md | Удалить? Да/нет |
 | **B quick** | form | S→**md**, M→**lg**, L→**xl** (~920) + **12-col field capacity** M/L | QuickCreate S/M/L |
-| **C editor** | content | maxWidth `min(1120px, 100vw-2rem)` | Full product/module/material/role |
+| **C editor** | content | maxWidth `min(1120px, 100vw-2rem)` | Full product/module/material/role **и composition picker** (TZ-UX-DIALOG-305) |
 | **D wide** | content / form+maxWidth | `min(1400px, …)` только table-template и явные исключения | Редко |
 
 **Правило плотности:** для dense forms **prefer width over height** — лучше добавить колонку/ширину, чем небоскрёб без скролла body. Body: `max-h ~70vh` + `overflow-auto`; footer sticky / `shrink-0` (shell).
@@ -49,6 +49,8 @@ const ref = dialogs.open<Result, Data>(MyDialogComponent, {
 **Секции формы:** эталон — диалог материала (Основные данные / Дополнительно / Габариты). Канон: [`pages/ui-form-sections-canon.md`](./pages/ui-form-sections-canon.md). Shared-примитив — `app-pi-form-section` (`PiFormSectionComponent`); сначала он и QuickCreate (FORM-302), потом sweep всех окон (FORM-305).
 
 Opener `dialog.open(..., { width })` не должен **перебивать** ширину, которую уже решает компонент (например QuickCreate `SIZE_TO_WIDTH`).
+
+**Каталог = kind C:** catalog FullEditor (product / module / material) **и** composition picker «Добавить в состав» — одна ширина эталона `min(1120px, calc(100vw - 2rem))` (TZ-UX-DIALOG-305; аудит [`audits/2026-08-09-catalog-dialog-width-parity.md`](./audits/2026-08-09-catalog-dialog-width-parity.md)). Плашка (заголовок) и footer остаются sticky; body — единственная scroll-зона.
 
 ## Mobile (375px)
 

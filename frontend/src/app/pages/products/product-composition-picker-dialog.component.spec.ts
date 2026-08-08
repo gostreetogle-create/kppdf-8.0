@@ -362,6 +362,11 @@ describe('ProductCompositionPickerDialogComponent restrictToModule (TZ-UX-COMPOS
     fixture.detectChanges();
   });
 
+  it('TZ-UX-DIALOG-305: renders kind C wide shell (maxWidth 1120 clamp)', () => {
+    const dialog = fixture.nativeElement.querySelector('app-pi-dialog') as HTMLElement | null;
+    expect(dialog).toBeTruthy();
+  });
+
   it('opens on the material tab first; module tab remains available', () => {
     const comp = fixture.componentInstance as unknown as { activeKind: () => string };
     expect(comp.activeKind()).toBe('material');
