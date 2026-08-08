@@ -76,7 +76,8 @@ flowchart TB
 | **Модули / виды работ / люди** | routes ✅ | ✅ | polish only |
 | **Auto-fill doc template** | DocConstructor ✅, order glue ⛔ | 🔶 | TZ-DOC-330 |
 
-**Дыры №1:** проектирование/канбан чертежей; склад reserve→заказ; отгрузка board; snapshot-immutability (CORE-301) до полной цепочки.
+**Дыры №1:** проектирование/канбан чертежей; склад reserve→заказ; отгрузка board; snapshot-immutability (CORE-301) до полной цепочки.  
+**IA/меню:** [`nav-ia-lifecycle-audit`](./audits/2026-08-08-nav-ia-lifecycle-audit.md) → **TZ-NAV-301** (L→R + stubs Клиенты/Снабжение/Отгрузка/Проектирование).
 
 ```mermaid
 flowchart LR
