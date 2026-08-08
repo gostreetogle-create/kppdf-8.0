@@ -1,3 +1,10 @@
+## [2026-08-08] — TZ-SUPPLY-301 DONE: SupplyTask + confirm + /supply UI
+
+**Что:** скелет снабжения (D9/D18): schema/API confirm audit; `/supply` таблица + manual create; не stub.
+**Gates:** BE+FE tsc PASS; jest BE 6 + FE 2 PASS; eslint supply PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SUPPLY-301.done.md`
+**Known:** BOM auto → SUPPLY-302. Deploy: NO.
+
 ## [2026-08-08] — TZ-NAV-301 DONE: lifecycle menu L→R + stubs
 
 **Исполнитель:** cursor-composer-nav301 (self PASS → archive)
