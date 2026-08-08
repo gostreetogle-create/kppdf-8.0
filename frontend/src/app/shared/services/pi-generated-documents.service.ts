@@ -5,7 +5,7 @@ import { API_BASE_URL } from '../../core/api.tokens';
 import { silentDelete, silentGet, silentPost, SilentResult } from '../../core/silent-http';
 import type { BuildDocumentRequest } from './pi-document-templates.service';
 
-export type GeneratedDocumentSourceType = 'order' | 'contract' | 'manual';
+export type GeneratedDocumentSourceType = 'order' | 'quotation' | 'contract' | 'invoice' | 'manual';
 export type GeneratedDocumentStatus = 'draft' | 'final';
 
 export interface GeneratedDocument {

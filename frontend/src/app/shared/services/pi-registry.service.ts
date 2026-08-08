@@ -29,7 +29,14 @@ export interface FieldDescriptor {
 
 export interface DataSourceDescriptor {
   /** Stable identifier — matches `BuildDocumentDto` suffix (without «Id»). */
-  key: 'organization' | 'counterparty' | 'product' | 'material' | 'work-type';
+  key:
+    | 'organization'
+    | 'counterparty'
+    | 'quotation'
+    | 'invoice'
+    | 'product'
+    | 'material'
+    | 'work-type';
   /** Russian human-readable label for the tool-pane tab. */
   label: string;
   /** Frontend grouping for collapsible tool-pane tab: contacts (orgs/people) | catalog (products/materials) | work (work-types). */
@@ -46,6 +53,10 @@ export interface DataSourcesResponse {
  *
  * Routes:
  *   GET /registry/data-sources → DataSourcesResponse
+ *
+ * Organization fields include `legalAddress` and the typed-vault aliases
+ * `logoUrl`, `sealUrl`, and `signatureUrl`; the backend resolves missing
+ * slots to empty strings for graceful document rendering.
  *
  * No `list/findById/create/update/remove` — registry is a static catalogue
  * served from in-memory constants on the backend (no DB roundtrip, no auth

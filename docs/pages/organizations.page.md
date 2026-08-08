@@ -82,6 +82,25 @@
 - Загрузка идёт через общий image-pipeline (`imageUploadMulterOptions`): те же 10 МБ и
   тот же список mime, что у `POST /photos/upload`, плюс запись `Photo` для уборки файла.
 
+## Печатные слоты (TZ-ORG-ASSETS-302)
+
+Существующий HTML/PDF print pipeline (`POST /document-templates/:id/build` и
+`POST /generated-documents/from-template/:templateId`) получает организацию-эмитента
+из шаблона даже если caller передал только заказ/КП/счёт. Typed vault разворачивается
+в поля registry для дизайнера шаблона:
+
+| Поле в registry | Слот | Поведение без файла |
+|---|---|---|
+| `organization.logoUrl` | Логотип | image-блок остаётся пустым, без crash |
+| `organization.sealUrl` | Печать | пусто |
+| `organization.signatureUrl` | Подпись | signature-блок показывает линию |
+| `organization.legalAddress` | Юридический адрес | пусто |
+
+Печатный payload может быть `quotationId`, `contractId`, `invoiceId` или `orderId`.
+Заказ с уже созданной stub-КП каскадно отдаёт номер КП и сторону-клиента; новый PDF
+engine не добавляется. `/registry/data-sources` показывает эти поля и реквизиты
+(ИНН, КПП, ОГРН/ОГРНИП, банк, подписант) в picker конструктора.
+
 ## Особенности
 
 - **Server-side pagination** — backend возвращает `{ items, total, page, limit }`

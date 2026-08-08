@@ -43,6 +43,8 @@ export class DataBindingDto {
     'work-type',
     'order',
     'contract',
+    'quotation',
+    'invoice',
     'cost-calculation',
     'static',
   ])
@@ -54,6 +56,8 @@ export class DataBindingDto {
     | 'work-type'
     | 'order'
     | 'contract'
+    | 'quotation'
+    | 'invoice'
     | 'cost-calculation'
     | 'static';
 
@@ -117,6 +121,8 @@ export class BlockSourceDto {
     'work-type',
     'order',
     'contract',
+    'quotation',
+    'invoice',
     'cost-calculation',
   ])
   source?: Exclude<DataBindingDto['source'], 'static'>;

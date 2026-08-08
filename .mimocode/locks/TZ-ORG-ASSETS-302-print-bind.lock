@@ -1,0 +1,24 @@
+# Lock file
+Locked as of 2026-08-08 — TZ-ORG-ASSETS-302: requisites print + typed vault bindings.
+
+Owner: agent-3e757640b7 (Freebuff executor)
+Protected files:
+- backend/src/modules/document-template/document-template.service.ts (single existing HTML build path)
+- backend/src/modules/document-template/dto/build-document.dto.ts
+- backend/src/modules/generated-document/generated-document.service.ts
+- backend/src/modules/template-block/template-block.schema.ts
+- backend/src/modules/registry/registry.service.ts
+- frontend/src/app/shared/services/pi-registry.service.ts
+
+Invariants a successor TZ must not silently break:
+- `DocumentTemplateService.build()` remains the render path for preview and generated-document HTML snapshots; do not add a second PDF engine here.
+- Organization bindings expose stable `logoUrl`, `sealUrl`, and `signatureUrl` aliases derived from `Organization.assets[]` roles.
+- Missing vault slots render empty image/seal output or the signature placeholder and never reject generation.
+- Order builds may cascade `order.quotationId` to the linked stub КП and counterparty; the template organization remains the issuer fallback.
+- Build/generated-document payloads support quotation and invoice IDs alongside order and contract IDs.
+- Registry fields and backend DTO source unions must stay aligned with frontend template-builder types.
+- Generated-document source types include `order`, `quotation`, `contract`, `invoice`, and `manual`.
+
+Unlock: only via orchestrator approval / successor TZ.
+Foreign WIP remains excluded: desktop/mcp-runtime/**, .gitignore, .husky/pre-commit, scripts/pre-commit-secrets-check.mjs.
+Deploy: NO

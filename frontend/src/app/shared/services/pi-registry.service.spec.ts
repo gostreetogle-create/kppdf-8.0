@@ -8,7 +8,7 @@ import { RegistryService } from './pi-registry.service';
  * TZ-86 Phase B.5 — RegistryService unit tests.
  *
  * Smoke: getDataSources() returns the canonical { sources: [...] } envelope
- *        with 5 entity types (organization/counterparty/product/material/work-type).
+ *        with organization/counterparty/quotation/invoice/product/material/work-type.
  *
  * Pattern mirrors pi-work-types.service.spec.ts (TZ-83 precedent), simplified
  * since this service exposes only one endpoint.
@@ -32,12 +32,20 @@ describe('RegistryService', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('getDataSources() returns { sources: [...] } with 5 entries', () => {
+  it('getDataSources() returns { sources: [...] } with the document source catalogue', () => {
     svc.getDataSources().subscribe((res) => {
       if (res.ok) {
-        expect(res.data.sources.length).toBe(5);
+        expect(res.data.sources.length).toBe(7);
         const keys = res.data.sources.map((s) => s.key);
-        expect(keys).toEqual(['organization', 'counterparty', 'product', 'material', 'work-type']);
+        expect(keys).toEqual([
+          'organization',
+          'counterparty',
+          'quotation',
+          'invoice',
+          'product',
+          'material',
+          'work-type',
+        ]);
         const organization = res.data.sources.find((s) => s.key === 'organization');
         expect(organization?.label).toBe('Организация');
         expect(organization?.group).toBe('contacts');
@@ -61,6 +69,18 @@ describe('RegistryService', () => {
           label: 'Контрагент',
           group: 'contacts',
           fields: [{ key: 'name', label: 'Наименование', type: 'text' }],
+        },
+        {
+          key: 'quotation',
+          label: 'КП',
+          group: 'contacts',
+          fields: [{ key: 'number', label: 'Номер КП', type: 'text' }],
+        },
+        {
+          key: 'invoice',
+          label: 'Счёт',
+          group: 'contacts',
+          fields: [{ key: 'number', label: 'Номер счёта', type: 'text' }],
         },
         {
           key: 'product',

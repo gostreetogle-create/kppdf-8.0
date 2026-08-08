@@ -23,6 +23,8 @@ export type DataBindingSource =
   | 'work-type'
   | 'order'
   | 'contract'
+  | 'quotation'
+  | 'invoice'
   | 'cost-calculation'
   | 'static';
 
@@ -40,6 +42,8 @@ export class DataBinding {
       'work-type',
       'order',
       'contract',
+      'quotation',
+      'invoice',
       'cost-calculation',
       'static',
     ],

@@ -5,6 +5,12 @@
 **Canonical workspace:** `D:\kppdf-8.0` on `main`; only registered Git worktree; package manager `pnpm`
 **Task truth:** `tasks/` contains only active work. Completed or deferred work belongs in `tasks/_archive/`; this status file also retains historical roadmap notes.
 
+## [2026-08-08] — TZ-ORG-ASSETS-302 DONE: print requisites and typed vault bindings
+**Статус:** DONE on main; deploy НЕ
+**Что:** Existing document-template HTML/snapshot pipeline now resolves organization requisites and role-based logo/seal/signature assets, with quotation/invoice sources and order → stub-КП cascade. Missing vault files remain graceful placeholders.
+**Archive:** `tasks/_archive/2026-08/TZ-ORG-ASSETS-302.done.md`
+**Gates:** BE/FE typecheck; focused document-template/generated-document and registry Jest; targeted lint; `git diff --check`; pre-existing `verify-status.sh` legacy drift disclosed
+
 ## [2026-08-08] — TZD-30 DONE: MCP text-block drafts
 **Статус:** DONE on main; deploy НЕ
 **Что:** MCP text-block categories/list/create-draft + explicit category create; inactive `ai-draft` blocks, duplicate/409 no-overwrite, and manager todo at `/doc-constructor/texts?editId=`. `notes` is never sent.

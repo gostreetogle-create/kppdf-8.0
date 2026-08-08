@@ -7,6 +7,7 @@ import { TemplateBlockModule } from '../template-block/template-block.module';
 import { QuotationModule } from '../quotation/quotation.module';
 import { ContractModule } from '../contract/contract.module';
 import { OrderModule } from '../order/order.module';
+import { InvoiceModule } from '../invoice/invoice.module';
 import { CounterModule } from '../counter/counter.module';
 import { OrganizationModule } from '../organization/organization.module';
 import { CounterpartyModule } from '../counterparty/counterparty.module';
@@ -43,6 +44,7 @@ import { DocumentTemplateCategoryModule } from '../document-template-category/do
     QuotationModule,
     ContractModule,
     OrderModule,
+    InvoiceModule,
     CounterModule,
     // TZ-86 Phase A.4 — data source models for build()
     OrganizationModule,

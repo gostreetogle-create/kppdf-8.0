@@ -92,9 +92,15 @@ export class GeneratedDocumentService {
     if (dto.orderId && Types.ObjectId.isValid(dto.orderId)) {
       sourceType = 'order';
       sourceId = new Types.ObjectId(dto.orderId);
+    } else if (dto.quotationId && Types.ObjectId.isValid(dto.quotationId)) {
+      sourceType = 'quotation';
+      sourceId = new Types.ObjectId(dto.quotationId);
     } else if (dto.contractId && Types.ObjectId.isValid(dto.contractId)) {
       sourceType = 'contract';
       sourceId = new Types.ObjectId(dto.contractId);
+    } else if (dto.invoiceId && Types.ObjectId.isValid(dto.invoiceId)) {
+      sourceType = 'invoice';
+      sourceId = new Types.ObjectId(dto.invoiceId);
     }
 
     const orgId = userOrgId

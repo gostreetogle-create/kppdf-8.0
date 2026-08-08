@@ -80,6 +80,8 @@ export interface BuildDocumentRequest {
   materialId?: string;
   workTypeId?: string;
   orderId?: string;
+  quotationId?: string;
+  invoiceId?: string;
   contractId?: string;
 }
 

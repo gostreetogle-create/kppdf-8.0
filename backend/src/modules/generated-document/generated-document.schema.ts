@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
-export type GeneratedDocumentSourceType = 'order' | 'contract' | 'manual';
+export type GeneratedDocumentSourceType = 'order' | 'quotation' | 'contract' | 'invoice' | 'manual';
 export type GeneratedDocumentStatus = 'draft' | 'final';
 
 export type GeneratedDocumentDocument = HydratedDocument<GeneratedDocument>;
@@ -20,7 +20,7 @@ export class GeneratedDocument {
   @Prop()
   templateName?: string;
 
-  @Prop({ type: String, enum: ['order', 'contract', 'manual'], default: 'manual' })
+  @Prop({ type: String, enum: ['order', 'quotation', 'contract', 'invoice', 'manual'], default: 'manual' })
   sourceType!: GeneratedDocumentSourceType;
 
   @Prop({ type: Types.ObjectId })

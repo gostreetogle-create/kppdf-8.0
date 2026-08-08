@@ -51,9 +51,9 @@ export class RegistryService {
 }
 
 /**
- * Single source of truth for the 5 entity types supported by
- * DocumentBuilder.build() (TZ-86 Фаза A.4). Adding/changing a field
- * here ripples to the entire Document Builder UI.
+ * Single source of truth for the entity types supported by
+ * DocumentBuilder.build() (TZ-86 Фаза A.4 + TZ-ORG-ASSETS-302). Adding/changing
+ * a field here ripples to the entire Document Builder UI.
  */
 const DATA_SOURCES: DataSourceDescriptor[] = [
   {
@@ -66,7 +66,9 @@ const DATA_SOURCES: DataSourceDescriptor[] = [
       { key: 'inn', label: 'ИНН', type: 'text' },
       { key: 'kpp', label: 'КПП', type: 'text' },
       { key: 'ogrn', label: 'ОГРН', type: 'text' },
+      { key: 'ogrnip', label: 'ОГРНИП', type: 'text' },
       { key: 'legalForm', label: 'Организационно-правовая форма', type: 'text' },
+      { key: 'legalAddress', label: 'Юридический адрес', type: 'text' },
       { key: 'legalType', label: 'Тип (ООО/ИП/ПАО/АО)', type: 'text' },
       { key: 'bankName', label: 'Наименование банка', type: 'text' },
       { key: 'bankBik', label: 'БИК', type: 'text' },
@@ -76,6 +78,9 @@ const DATA_SOURCES: DataSourceDescriptor[] = [
       { key: 'signerPosition', label: 'Должность подписанта', type: 'text' },
       { key: 'directorName', label: 'Директор', type: 'text' },
       { key: 'website', label: 'Сайт', type: 'text' },
+      { key: 'logoUrl', label: 'Логотип (слот документа)', type: 'text' },
+      { key: 'sealUrl', label: 'Печать (слот документа)', type: 'text' },
+      { key: 'signatureUrl', label: 'Подпись (слот документа)', type: 'text' },
       { key: 'vatRate', label: 'Ставка НДС, %', type: 'number' },
       { key: 'paymentTermDays', label: 'Срок оплаты, дн.', type: 'number' },
     ],
@@ -96,6 +101,32 @@ const DATA_SOURCES: DataSourceDescriptor[] = [
       { key: 'bankAccount', label: 'Расчётный счёт', type: 'text' },
       { key: 'bankCorrAccount', label: 'Корр. счёт', type: 'text' },
       { key: 'directorName', label: 'Директор', type: 'text' },
+    ],
+  },
+  {
+    key: 'quotation',
+    label: 'КП',
+    group: 'contacts',
+    fields: [
+      { key: 'number', label: 'Номер КП', type: 'text' },
+      { key: 'title', label: 'Название', type: 'text' },
+      { key: 'date', label: 'Дата', type: 'date' },
+      { key: 'validUntil', label: 'Действительно до', type: 'date' },
+      { key: 'total', label: 'Итого', type: 'currency' },
+      { key: 'notes', label: 'Примечания', type: 'text' },
+    ],
+  },
+  {
+    key: 'invoice',
+    label: 'Счёт',
+    group: 'contacts',
+    fields: [
+      { key: 'number', label: 'Номер счёта', type: 'text' },
+      { key: 'invoiceDate', label: 'Дата счёта', type: 'date' },
+      { key: 'dueDate', label: 'Срок оплаты', type: 'date' },
+      { key: 'totalAmount', label: 'Сумма', type: 'currency' },
+      { key: 'paidAmount', label: 'Оплачено', type: 'currency' },
+      { key: 'notes', label: 'Примечания', type: 'text' },
     ],
   },
   {

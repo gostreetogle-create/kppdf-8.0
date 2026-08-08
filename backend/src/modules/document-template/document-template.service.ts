@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -24,6 +25,7 @@ import { Contract, ContractDocument } from '../contract/contract.schema';
 import { Order, OrderDocument } from '../order/order.schema';
 import { Organization, OrganizationDocument } from '../organization/organization.schema';
 import { Counterparty, CounterpartyDocument } from '../counterparty/counterparty.schema';
+import { Invoice, InvoiceDocument } from '../invoice/invoice.schema';
 import { Product, ProductDocument } from '../product/product.schema';
 import { Material, MaterialDocument } from '../material/material.schema';
 import { WorkType, WorkTypeDocument } from '../work-type/work-type.schema';
@@ -109,6 +111,10 @@ export class DocumentTemplateService {
     private readonly counter: CounterService,
     private readonly tableTemplateService: TableTemplateService,
     private readonly categoryService: DocumentTemplateCategoryService,
+    // Optional keeps isolated legacy unit fixtures valid while the Nest module
+    // supplies the model in production (ASSETS-302 invoice bindings).
+    @Optional() @InjectModel(Invoice.name)
+    private readonly invoiceModel?: Model<InvoiceDocument>,
   ) {}
 
   /**
@@ -446,6 +452,34 @@ export class DocumentTemplateService {
         .exec();
       assertSource(counterparty);
     }
+    const quotationId = requireSourceId(dto.quotationId);
+    if (quotationId) {
+      const quotation = await this.quotationModel.findById(quotationId).lean().exec();
+      assertOrganizationSource(quotation);
+      if (quotation?.counterpartyId) {
+        const counterpartyId = requireSourceId(String(quotation.counterpartyId));
+        const counterparty = await this.counterpartyModel
+          .findById(counterpartyId)
+          .lean()
+          .exec();
+        assertOrganizationSource(counterparty);
+      }
+    }
+    const invoiceId = requireSourceId(dto.invoiceId);
+    if (invoiceId) {
+      if (!this.invoiceModel) throw new NotFoundException('Source not found');
+      const invoice = await this.invoiceModel.findById(invoiceId).lean().exec();
+      if (!invoice) throw new NotFoundException('Source not found');
+      if (invoice.supplierOrgId) assertMatch(invoice.supplierOrgId);
+      if (invoice.supplierId) {
+        const supplierId = requireSourceId(String(invoice.supplierId));
+        const supplier = await this.counterpartyModel
+          .findById(supplierId)
+          .lean()
+          .exec();
+        assertOrganizationSource(supplier);
+      }
+    }
     const productId = requireSourceId(dto.productId);
     if (productId) {
       const product = await this.productModel.findById(productId).lean().exec();
@@ -488,6 +522,15 @@ export class DocumentTemplateService {
           .exec();
         assertOrganizationSource(contract);
       }
+      if (order.quotationId) {
+        const quotationId = requireSourceId(String(order.quotationId));
+        const quotation = await this.quotationModel
+          .findById(quotationId)
+          .lean()
+          .exec();
+        assertOrganizationSource(quotation);
+      }
+
       if (order.counterpartyId) {
         const counterpartyId = requireSourceId(String(order.counterpartyId));
         const counterparty = await this.counterpartyModel
@@ -519,6 +562,7 @@ export class DocumentTemplateService {
     }
     const { template, blocks } = await this.findExpanded(templateId);
     const bag = await this.resolveSourceIds(dto);
+    await this.applyIssuerOrganization(template, bag);
     const resolvedBlocks = await Promise.all(
       blocks.map(async (b) => {
         const withBinding = await this.resolveBlockContent(b, bag);
@@ -576,7 +620,7 @@ export class DocumentTemplateService {
           .lean()
           .exec()
           .then((doc) => {
-            if (doc) bag.organization = doc;
+            if (doc) bag.organization = this.organizationRenderData(doc);
           }),
       );
     }
@@ -646,11 +690,43 @@ export class DocumentTemplateService {
           }),
       );
     }
+    if (dto.quotationId && Types.ObjectId.isValid(dto.quotationId)) {
+      lookups.push(
+        this.quotationModel
+          .findById(dto.quotationId)
+          .lean()
+          .exec()
+          .then((doc) => {
+            if (doc) bag.quotation = doc;
+          }),
+      );
+    }
+    if (dto.invoiceId && Types.ObjectId.isValid(dto.invoiceId) && this.invoiceModel) {
+      lookups.push(
+        this.invoiceModel
+          .findById(dto.invoiceId)
+          .lean()
+          .exec()
+          .then((doc) => {
+            if (doc) bag.invoice = doc;
+          }),
+      );
+    }
 
     await Promise.all(lookups);
 
     // Cascade related entities from order/contract so {{counterparty.*}} tokens resolve
-    const order = bag.order as { counterpartyId?: Types.ObjectId | string } | undefined;
+    const order = bag.order as {
+      counterpartyId?: Types.ObjectId | string;
+      quotationId?: Types.ObjectId | string;
+    } | undefined;
+    if (order?.quotationId && !bag.quotation) {
+      const quotationId = String(order.quotationId);
+      if (Types.ObjectId.isValid(quotationId)) {
+        const quotation = await this.quotationModel.findById(quotationId).lean().exec();
+        if (quotation) bag.quotation = quotation;
+      }
+    }
     if (order?.counterpartyId && !bag.counterparty) {
       const cpId = String(order.counterpartyId);
       if (Types.ObjectId.isValid(cpId)) {
@@ -674,11 +750,108 @@ export class DocumentTemplateService {
       const orgId = String(contract.organizationId);
       if (Types.ObjectId.isValid(orgId)) {
         const org = await this.orgModel.findById(orgId).lean().exec();
-        if (org) bag.organization = org;
+        if (org) bag.organization = this.organizationRenderData(org);
+      }
+    }
+
+    const quotation = bag.quotation as {
+      counterpartyId?: Types.ObjectId | string;
+      organizationId?: Types.ObjectId | string;
+    } | undefined;
+    if (quotation?.counterpartyId && !bag.counterparty) {
+      const cpId = String(quotation.counterpartyId);
+      if (Types.ObjectId.isValid(cpId)) {
+        const cp = await this.counterpartyModel.findById(cpId).lean().exec();
+        if (cp) bag.counterparty = cp;
+      }
+    }
+    if (quotation?.organizationId && !bag.organization) {
+      const orgId = String(quotation.organizationId);
+      if (Types.ObjectId.isValid(orgId)) {
+        const org = await this.orgModel.findById(orgId).lean().exec();
+        if (org) bag.organization = this.organizationRenderData(org);
+      }
+    }
+
+    const invoice = bag.invoice as {
+      supplierId?: Types.ObjectId | string;
+      supplierOrgId?: Types.ObjectId | string;
+    } | undefined;
+    if (invoice?.supplierId && !bag.counterparty) {
+      const supplierId = String(invoice.supplierId);
+      if (Types.ObjectId.isValid(supplierId)) {
+        const supplier = await this.counterpartyModel.findById(supplierId).lean().exec();
+        if (supplier) bag.counterparty = supplier;
+      }
+    }
+    if (invoice?.supplierOrgId && !bag.organization) {
+      const orgId = String(invoice.supplierOrgId);
+      if (Types.ObjectId.isValid(orgId)) {
+        const org = await this.orgModel.findById(orgId).lean().exec();
+        if (org) bag.organization = this.organizationRenderData(org);
       }
     }
 
     return bag;
+  }
+
+  /**
+   * Resolve the issuer side for order/quotation/invoice builds. The document
+   * template belongs to the issuing organization, so callers do not need to
+   * duplicate that ID when printing an order or its stub КП.
+   */
+  private async applyIssuerOrganization(
+    template: DocumentTemplateDocument,
+    bag: Record<string, unknown>,
+  ): Promise<void> {
+    if (bag.organization) {
+      bag.organization = this.organizationRenderData(bag.organization);
+      return;
+    }
+    const templateOrgId = this.refId(template.organizationId);
+    if (templateOrgId && typeof this.orgModel.findById === 'function') {
+      const org = await this.orgModel.findById(templateOrgId).lean().exec();
+      if (org) {
+        bag.organization = this.organizationRenderData(org);
+        return;
+      }
+    }
+    if (typeof this.orgModel.findOne === 'function') {
+      const own = await this.orgModel
+        .findOne({ isOurCompany: true, deletedAt: null })
+        .lean()
+        .exec();
+      if (own) bag.organization = this.organizationRenderData(own);
+    }
+  }
+
+  /**
+   * Expose the typed organization vault as stable template fields. Templates
+   * should not know the storage shape (`assets[]`); missing slots deliberately
+   * become empty strings so image blocks render their existing empty state.
+   */
+  private organizationRenderData(value: unknown): Record<string, unknown> {
+    const organization = (value && typeof value === 'object'
+      ? value
+      : {}) as Record<string, unknown>;
+    const assets: unknown[] = Array.isArray(organization['assets'])
+      ? organization['assets'] as unknown[]
+      : [];
+    const urlFor = (role: string): string => {
+      const asset = assets.find((entry) => {
+        if (!entry || typeof entry !== 'object') return false;
+        return (entry as Record<string, unknown>)['role'] === role;
+      });
+      if (!asset || typeof asset !== 'object') return '';
+      const storageUrl = (asset as Record<string, unknown>)['storageUrl'];
+      return typeof storageUrl === 'string' ? storageUrl : '';
+    };
+    return {
+      ...organization,
+      logoUrl: urlFor('logo'),
+      sealUrl: urlFor('seal'),
+      signatureUrl: urlFor('signature'),
+    };
   }
 
   /**
@@ -943,8 +1116,12 @@ export class DocumentTemplateService {
               ? `<div class="${blockClass}"${styleAttr}><img src="${imageContent}" alt="" style="max-width:100%"></div>`
               : `<div class="${blockClass}" style="${[combinedStyle, `height:${b.height ?? 80}px`].filter(Boolean).join(';')}"></div>`;
           }
-          case 'signature':
-            return `<div class="${blockClass}"${styleAttr}><em>Подпись: ___________________</em><br>${content}</div>`;
+          case 'signature': {
+            const signature = imageContent
+              ? `<img src="${imageContent}" alt="Подпись" style="max-width:100%">`
+              : `<em>Подпись: ___________________</em><br>${content}`;
+            return `<div class="${blockClass}"${styleAttr}>${signature}</div>`;
+          }
           case 'table':
             return `<div class="${blockClass}"${styleAttr}>${literalContent || '<p>(таблица без данных)</p>'}</div>`;
           default:

@@ -22,7 +22,7 @@ App layout: **denseMain** — без `pt-page-y` и без site footer (flush п
 
 | Параметр | Тип | Назначение |
 |----------|-----|-----------|
-| `source` | `string` | Источник контекста (order/contract) |
+| `source` | `string` | Источник контекста (order/quotation/contract/invoice) |
 | `sourceId` | `string` | ID источника |
 | `category` | `string` (ObjectId) | Фильтр «Текстов» по `TextBlockCategory._id` в tool-pane picker и в inline toolbar dropdown (TZ-DOC-317). `null`/отсутствие = «Все». Двусторонняя синхронизация с `BuilderTextFilterService.categoryId` через `effect()` + `Router.navigate({ queryParamsHandling: 'merge', replaceUrl: true })` — refresh страницы сохраняет выбор. При смене `:id` шаблона фильтр сбрасывается на «Все». |
 
@@ -65,7 +65,19 @@ App layout: **denseMain** — без `pt-page-y` и без site footer (flush п
 | POST | `/api/document-templates/:id/remove-background` | Удалить фон |
 | POST | `/api/document-templates/:id/set-default-background` | Установить фон по умолчанию |
 
-### Block управления
+### Печатные поля (TZ-ORG-ASSETS-302)
+
+В registry picker доступны поля организации, которые можно использовать в существующих
+field/data bindings: реквизиты (`inn`, `kpp`, `ogrn`, `ogrnip`, `legalAddress`, банк,
+подписант) и typed-vault aliases `logoUrl`, `sealUrl`, `signatureUrl`. Для image-блока
+используйте соответствующее поле организации; для signature-блока — `signatureUrl`.
+
+Build/generate payload принимает `quotationId`, `contractId`, `invoiceId` или `orderId`.
+При `orderId` pipeline каскадно подхватывает связанную stub-КП и сторону-клиента, а
+organization-issuer берётся из самого шаблона. Отсутствующий vault slot даёт пустой
+image-блок или placeholder подписи, но не останавливает генерацию.
+
+## Block управления
 
 | Метод | Endpoint | Назначение |
 |-------|----------|-----------|

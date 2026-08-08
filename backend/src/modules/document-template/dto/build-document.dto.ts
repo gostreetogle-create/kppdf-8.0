@@ -9,9 +9,9 @@ import { IsOptional, IsString } from 'class-validator';
  * Service resolves each in parallel via Mongoose findById and exposes them
  * to the template's blocks via dataBinding source-matching (`bag.source`).
  *
- * MVP scope (TZ-86 A.4): only the 7 main data sources are wired. Sources not
- * yet represented (`cost-calculation`, `table-template`, `text-block`) will
- * resolve to empty render — locked to a planned extension in TZ-86D/E.
+ * The build surface includes organization, counterparty, quotation, invoice,
+ * contract and order sources. Catalog/work sources remain available for the
+ * existing builder bindings; unsupported sources resolve to an empty render.
  *
  * Whitelist-strict (forbidNonWhitelisted) in main.ts ensures unknown fields
  * are stripped before reaching the service.
@@ -28,6 +28,10 @@ export class BuildDocumentDto {
   @IsOptional() @IsString() @IsObjectId() workTypeId?: string;
 
   @IsOptional() @IsString() @IsObjectId() orderId?: string;
+
+  @IsOptional() @IsString() @IsObjectId() quotationId?: string;
+
+  @IsOptional() @IsString() @IsObjectId() invoiceId?: string;
 
   @IsOptional() @IsString() @IsObjectId() contractId?: string;
 }

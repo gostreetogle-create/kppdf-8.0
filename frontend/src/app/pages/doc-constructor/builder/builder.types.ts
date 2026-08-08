@@ -20,6 +20,13 @@ export type AddBlockPayload =
   | { source: 'table-template'; tableTemplate: TableTemplate }
   | {
       source: 'data-binding';
-      dataSource: 'organization' | 'counterparty' | 'product' | 'material' | 'work-type';
+      dataSource:
+        | 'organization'
+        | 'counterparty'
+        | 'quotation'
+        | 'invoice'
+        | 'product'
+        | 'material'
+        | 'work-type';
       field: { key: string; label: string; type: string };
     };

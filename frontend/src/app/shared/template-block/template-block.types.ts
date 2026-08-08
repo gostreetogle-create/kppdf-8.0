@@ -46,6 +46,8 @@ export type DataBindingSource =
   | 'work-type'
   | 'order'
   | 'contract'
+  | 'quotation'
+  | 'invoice'
   | 'cost-calculation'
   | 'static';
 
@@ -57,6 +59,8 @@ export const DATA_BINDING_SOURCES: readonly DataBindingSource[] = [
   'work-type',
   'order',
   'contract',
+  'quotation',
+  'invoice',
   'cost-calculation',
   'static',
 ] as const;

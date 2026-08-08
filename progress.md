@@ -1,3 +1,27 @@
+## [2026-08-08] — TZ-ORG-ASSETS-302 DONE: реквизиты и vault-слоты в печатном pipeline
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor, WAVE-PARTY-DOCS #6)
+**Статус:** DONE; deploy НЕ
+**Что:** Существующий `DocumentTemplateService.build()` теперь принимает КП/счёт как
+источник и каскадирует связанную stub-КП/контрагента для заказа. Организация-эмитент берётся
+из шаблона, а registry получил поля `legalAddress`, `ogrnip`, банковские/подписантские
+реквизиты и typed-vault aliases `logoUrl`/`sealUrl`/`signatureUrl`. На рендере assets[]
+разворачиваются по роли; отсутствующий слот оставляет image/seal пустым, а signature —
+канонический placeholder, без падения. Сгенерированный snapshot сохраняет sourceType
+`quotation`/`invoice` вместе с прежними `order`/`contract`.
+**Затронуто:** `backend/src/modules/document-template/*`, `generated-document/*`,
+`template-block/*`, `registry/registry.service.ts`, FE registry/template types/services,
+`backend/src/modules/document-template/document-template.assets.spec.ts`, docs pages,
+checklist, archive, lock.
+**Gates:** BE `pnpm typecheck`; focused document-template + generated-document Jest PASS;
+FE `pnpm typecheck`; focused registry Jest PASS; targeted ESLint 0 errors;
+`git diff --check` PASS; `verify-status.sh` retains disclosed pre-existing 72 legacy
+kit-era drift. deploy NO.
+**Archive:** `tasks/_archive/2026-08/TZ-ORG-ASSETS-302.done.md`
+**Lock:** `.mimocode/locks/TZ-ORG-ASSETS-302-print-bind.lock`
+**Known:** PDF engine intentionally not added; generated document stores HTML snapshot for
+existing preview/print path. INN/DaData remains PARKED; desktop SOT is next wave slot.
+
 ## [2026-08-08] — TZ-ORG-ASSETS-301 DONE: типизированное хранилище logo/seal/signature
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor, WAVE-PARTY-DOCS #5)

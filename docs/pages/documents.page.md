@@ -13,6 +13,8 @@
 | Метод | Endpoint | Назначение |
 |-------|----------|-----------|
 | GET | `/api/generated-documents` | Список сгенерированных документов |
+| POST | `/api/generated-documents/from-template/:templateId` | Сформировать HTML snapshot из КП/договора/счёта/заказа |
+| GET | `/api/generated-documents/:id` | Получить snapshot документа |
 | GET | `/api/generated-documents/:id/html` | Открыть HTML-предпросмотр |
 | DELETE | `/api/generated-documents/:id` | Удалить документ |
 
@@ -44,6 +46,11 @@
 - **Client-side pagination** — pageSize = 10
 - **Status dots** — cool (final) / warm (draft)
 - **"Открыть" action** — вызывает `openHtml()` (загружает HTML предпросмотр)
+- **Print bindings** — template builder fields `organization.legalAddress`,
+  `organization.logoUrl`, `organization.sealUrl`, `organization.signatureUrl`;
+  source IDs: `quotationId`, `contractId`, `invoiceId`, `orderId`.
+- **Graceful vault fallback** — missing logo/seal/signature never breaks generation;
+  image blocks stay empty and signature blocks keep their placeholder line.
 - **RxJS subscription** — manual subscribe с sort по createdAt desc
 
 ## TZ reference
@@ -54,4 +61,4 @@
 
 ---
 
-_Создано: 2026-07-19._
+_Создано: 2026-07-19. Обновлено: 2026-08-08 (TZ-ORG-ASSETS-302)._

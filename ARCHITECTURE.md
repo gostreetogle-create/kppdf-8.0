@@ -86,6 +86,7 @@
 - **Audit:** AsyncLocalStorage → Mongoose `$locals.userId` → auditPlugin (createdBy/updatedBy)
 - **Replica Set обязателен:** Counter service использует `session.withTransaction`
 - **Validation:** joi для env, ValidationPipe глобальный
+- **Document print bindings (TZ-ORG-ASSETS-302):** `DocumentTemplateService.build()` remains the single HTML render path for preview and generated-document snapshots. Registry field bindings resolve organization requisites and typed `Organization.assets[]` roles through `logoUrl`/`sealUrl`/`signatureUrl`; order builds cascade the linked quotation/counterparty. Missing assets are rendered as empty image/seal output or the signature placeholder, never by introducing a second PDF engine.
 
 ### Cross-cutting
 - **Package manager:** pnpm (НЕ npm/yarn)
