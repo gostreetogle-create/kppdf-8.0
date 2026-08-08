@@ -1,4 +1,4 @@
-﻿# TZ-ORDERS-305 checklist
+# TZ-ORDERS-305 checklist
 
 > Status: **READY** · Wave: SHOP-NORTH-B
 > Source: `tasks/_backlog/shop-north-b/`

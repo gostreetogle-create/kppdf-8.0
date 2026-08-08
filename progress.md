@@ -1,3 +1,11 @@
+## [2026-08-08] — TZ-ORDERS-305 DONE: soft materials source gate
+
+**Что:** `materialsSource=own|customer` persists on Order; order detail selector + non-blocking own-materials warning when ready lines lack confirmed supply.
+**Gates:** BE+FE tsc PASS; BE order 15/15; FE order 9/9; targeted ESLint + diff check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-ORDERS-305.done.md`
+**Lock:** `.mimocode/locks/TZ-ORDERS-305-materials-source.lock`
+**Known:** confirmed supply lookup is best-effort; exact stock remains INVENTORY-301.
+
 ## [2026-08-08] — TZ-ORDERS-304 DONE: line ready-for-work gate
 
 **Что:** line-level `readyForWork` + audit metadata, validated toggle API, and order-detail control; ordinary line updates preserve readiness metadata.
