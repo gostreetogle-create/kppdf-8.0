@@ -5,13 +5,15 @@ import {
   Injector,
   computed,
   inject,
+  signal,
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { httpResource } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
-import { PiSectionComponent } from '../../shared/page/pi-section.component';
+import { PiPageChromeComponent, type PageCrumb } from '../../shared/page/pi-page-chrome.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { AccordionComponent } from '../../shared/ui/pi-accordion.component';
+import { AccordionItemComponent } from '../../shared/ui/pi-accordion-item.component';
 import { PiFactCardComponent, PiFactStackComponent } from '../../shared/ui/fact-card';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
@@ -23,8 +25,15 @@ import {
   type MaterialDimension,
   type MaterialKind,
 } from '../../shared/services/materials.service';
+import { Photo } from '../../shared/services/photos.service';
 import { MaterialFormDialogComponent } from './material-form-dialog.component';
 import { CatalogReturnStore, catalogBackLabel } from '../../shared/navigation/catalog-return.util';
+
+/** GET /materials/:id populates photoIds/mainPhotoId while the shared list contract stays string-based. */
+type MaterialDetail = Omit<Material, 'photoIds' | 'mainPhotoId'> & {
+  photoIds?: Array<string | Photo>;
+  mainPhotoId?: string | Photo;
+};
 
 /** Where-used item contract from GET /materials/:id/where-used (TZ-CATALOG-310). */
 interface WhereUsedItem {
@@ -45,35 +54,27 @@ interface WhereUsedPage {
 }
 
 /**
- * TZ-CATALOG-312: MaterialDetailPage — карточка материала /materials/:id.
+ * TZ-CATALOG-337: MaterialDetailPage — material A+ sibling of product/module detail.
  *
- * Паттерн: product-detail.page.ts / module-detail.page.ts.
- * Структура:
- *   I.   Основное       — name, article, SKU, unit, kind, assortment,
- *                         standardRef, materialGrade, pricePerUnit, weightKg, description
- *   II.  Габариты       — dimensions[]
- *   III. Склад           — ссылка на /storage-items?materialId=:id
- *   IV.  Где используется — where-used backlinks (API 310)
+ * Left: sticky hero, FACT-304 passport, photo/price accordion, dimensions detail.
+ * Right: where-used workspace and the live stock link. Material has no BOM.
  */
 @Component({
   selector: 'app-material-detail-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    PiPageHeaderComponent,
-    PiSectionComponent,
+    PiPageChromeComponent,
     ButtonComponent,
     RouterLink,
+    AccordionComponent,
+    AccordionItemComponent,
     PiFactCardComponent,
     PiFactStackComponent,
   ],
   template: `
-    <app-pi-page-header
-      [eyebrow]="'материал'"
-      [title]="material()?.name ?? 'Загрузка…'"
-      [description]="materialDescription()"
-    >
-      <span header-actions>
+    <app-pi-page-chrome [crumbs]="detailCrumbs()" data-test="material-detail-nav">
+      <span actions>
         <app-pi-button variant="ghost" type="button" (click)="onBack()" data-test="back-button">
           {{ backLabel() }}
         </app-pi-button>
@@ -88,7 +89,7 @@ interface WhereUsedPage {
           </app-pi-button>
         }
       </span>
-    </app-pi-page-header>
+    </app-pi-page-chrome>
 
     @if (loadError()) {
       <div
@@ -97,8 +98,8 @@ interface WhereUsedPage {
       >
         {{ loadError() }}
       </div>
-      <div class="py-12 text-center text-muted-foreground text-sm">
-        Материал не найден. Вернитесь к списку материалов.
+      <div class="py-8 text-center text-muted-foreground text-sm">
+        Материал не найден.
         <button
           type="button"
           (click)="onBack()"
@@ -111,177 +112,271 @@ interface WhereUsedPage {
     }
 
     @if (material(); as m) {
-      <!-- Passport: shared FactStack keeps material facts readable without a dense dl. -->
-      <app-pi-section title="Паспорт" eyebrow="I">
-        <div class="space-y-4" data-test="material-passport">
-          <app-pi-fact-stack title="Идентификация" dataTest="material-identity-facts">
-            <app-pi-fact-card label="Название" [value]="m.name" dataTest="material-name" />
-            <app-pi-fact-card
-              label="Артикул"
-              [value]="m.article ?? '—'"
-              [mono]="true"
-              dataTest="material-article"
-            />
-            <app-pi-fact-card
-              label="Внутренний код"
-              [value]="m.sku ?? '—'"
-              [mono]="true"
-              dataTest="material-sku"
-            />
-            <app-pi-fact-card label="Единица" [value]="m.unit || '—'" dataTest="material-unit" />
-            <app-pi-fact-card
-              label="Категория"
-              [value]="m.categoryId ?? '—'"
-              [mono]="true"
-              dataTest="material-category"
-            />
-            <app-pi-fact-card
-              label="Тип"
-              [value]="kindLabel(m.materialKind)"
-              dataTest="material-kind"
-            />
-            <app-pi-fact-card
-              label="Профиль"
-              [value]="m.assortment ?? '—'"
-              dataTest="material-assortment"
-            />
-            <app-pi-fact-card
-              label="Стандарт"
-              [value]="m.standardRef ?? '—'"
-              dataTest="material-standard"
-            />
-            <app-pi-fact-card
-              label="Марка"
-              [value]="m.materialGrade ?? '—'"
-              dataTest="material-grade"
-            />
-          </app-pi-fact-stack>
-
-          <app-pi-fact-stack title="Параметры" dataTest="material-physical-facts">
-            <app-pi-fact-card
-              label="Вес"
-              [value]="m.weightKg != null ? m.weightKg + ' кг' : '—'"
-              [mono]="true"
-              dataTest="material-weight"
-            />
-            <app-pi-fact-card
-              label="Габариты"
-              [value]="dimensionsLabel(m.dimensions)"
-              [mono]="true"
-              dataTest="material-dimensions"
-            />
-          </app-pi-fact-stack>
-
-          <app-pi-fact-stack title="Цена" dataTest="material-price-facts">
-            <app-pi-fact-card
-              label="Цена за ед."
-              [value]="formatPrice(m.pricePerUnit)"
-              caption="Закупочная / учётная цена материала"
-              [mono]="true"
-              variant="emphasis"
-              dataTest="material-price"
-            />
-          </app-pi-fact-stack>
-
-          <p class="text-sm text-ink whitespace-pre-wrap">{{ m.description ?? '—' }}</p>
-        </div>
-      </app-pi-section>
-
-      <!-- II. Габариты -->
-      <app-pi-section title="Габариты" eyebrow="II">
-        @if (m.dimensions?.length) {
-          <div class="hairline rounded-sm overflow-x-auto">
-            <table class="w-full text-sm min-w-[320px]">
-              <thead class="hairline-b">
-                <tr>
-                  <th class="pi-cell eyebrow text-left">Тип</th>
-                  <th class="pi-cell-numeric eyebrow w-32">Значение</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (d of m.dimensions; track $index) {
-                  <tr class="pi-table-row pi-table-row-odd last:border-0">
-                    <td class="pi-cell">{{ dimTypeLabel(d.type) }}</td>
-                    <td class="pi-cell-numeric font-mono">{{ formatDimValue(d.value) }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        } @else {
-          <p class="eyebrow text-muted-foreground">Габариты не указаны.</p>
-        }
-      </app-pi-section>
-
-      <!-- III. Склад -->
-      <app-pi-section title="Склад" eyebrow="III" hint="остатки и движения по этому материалу">
-        <a
-          [routerLink]="['/storage-items']"
-          [queryParams]="{ materialId: m._id }"
-          class="inline-flex items-center gap-1.5 text-sm text-primary underline decoration-dotted underline-offset-4 hover:text-sunrise-warm transition-colors"
-          data-test="stock-link"
-        >
-          Открыть остатки на складе →
-        </a>
-      </app-pi-section>
-
-      <!-- IV. Где используется -->
-      <app-pi-section
-        title="Где используется"
-        eyebrow="IV"
-        [hint]="whereUsedTotal() ? 'модули и товары, в составе которых есть этот материал' : ''"
+      <div
+        class="grid grid-cols-1 xl:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)] gap-5 items-start"
+        data-test="material-detail-layout"
       >
-        @if (whereUsedLoading()) {
-          <p class="text-sm text-muted-foreground">Загрузка…</p>
-        } @else if (whereUsedError()) {
-          <p class="text-sm text-destructive" role="alert">{{ whereUsedError() }}</p>
-        } @else if (whereUsedItems().length > 0) {
-          <div class="hairline rounded-sm overflow-x-auto">
-            <table class="w-full text-sm min-w-[480px]">
-              <thead class="hairline-b">
-                <tr>
-                  <th class="pi-cell eyebrow text-left">Тип</th>
-                  <th class="pi-cell eyebrow text-left">Название</th>
-                  <th class="pi-cell-numeric eyebrow w-20">Кол-во</th>
-                  <th class="pi-cell eyebrow w-24">Ед.</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (item of whereUsedItems(); track item.id + item.kind) {
-                  <tr class="pi-table-row pi-table-row-odd last:border-0">
-                    <td class="pi-cell">
-                      <span class="inline-flex items-center gap-1 text-xs font-medium">
-                        {{ item.kind === 'product' ? 'Товар' : 'Модуль' }}
-                      </span>
-                    </td>
-                    <td class="pi-cell">
-                      <a
-                        [routerLink]="
-                          item.kind === 'product' ? ['/products', item.id] : ['/modules', item.id]
-                        "
-                        class="text-primary underline decoration-dotted underline-offset-4 hover:text-sunrise-warm"
-                      >
-                        {{ item.name }}
-                      </a>
-                    </td>
-                    <td class="pi-cell-numeric font-mono">{{ item.quantity }}</td>
-                    <td class="pi-cell">{{ item.unit || '—' }}</td>
-                  </tr>
+        <div class="space-y-4 xl:sticky xl:top-3" data-test="material-detail-aside">
+          <section class="hairline rounded-sm bg-paper overflow-hidden" data-test="material-hero">
+            <div
+              class="relative w-full aspect-[4/3] bg-paper-2 flex items-center justify-center"
+              data-test="material-hero-photo"
+            >
+              @if (coverPhoto(); as cover) {
+                <img
+                  [src]="cover.storageUrl"
+                  [alt]="cover.alt ?? cover.originalFilename ?? m.name"
+                  class="absolute inset-0 block w-full h-full object-cover"
+                  loading="lazy"
+                />
+              } @else {
+                <span class="text-xs text-muted-foreground px-3 text-center">Нет фото</span>
+              }
+            </div>
+            <div class="p-4 space-y-3">
+              <div class="space-y-1.5">
+                <p class="eyebrow m-0">материал</p>
+                <h1
+                  class="font-display text-lg sm:text-xl tracking-tight text-ink leading-snug break-words"
+                  data-test="material-title"
+                >
+                  {{ m.name }}
+                </h1>
+                <p class="text-xs text-muted-foreground font-mono m-0">
+                  {{ materialIdentityLine(m) }}
+                </p>
+              </div>
+
+              @if (m.materialKind) {
+                <span
+                  class="inline-flex items-center px-2 py-0.5 text-xs hairline rounded-sm text-muted-foreground"
+                  data-test="material-kind-badge"
+                >
+                  {{ kindLabel(m.materialKind) }}
+                </span>
+              }
+
+              <app-pi-fact-stack title="Паспорт" dataTest="material-passport">
+                <app-pi-fact-card
+                  label="Артикул"
+                  [value]="m.article ?? '—'"
+                  [mono]="true"
+                  dataTest="material-article"
+                />
+                <app-pi-fact-card
+                  label="Внутренний код"
+                  [value]="m.sku ?? '—'"
+                  [mono]="true"
+                  dataTest="material-sku"
+                />
+                <app-pi-fact-card
+                  label="Единица"
+                  [value]="m.unit || '—'"
+                  dataTest="material-unit"
+                />
+                <app-pi-fact-card
+                  label="Категория"
+                  [value]="m.categoryId ?? '—'"
+                  [mono]="true"
+                  dataTest="material-category"
+                />
+                <app-pi-fact-card
+                  label="Тип"
+                  [value]="kindLabel(m.materialKind)"
+                  dataTest="material-kind"
+                />
+                <app-pi-fact-card
+                  label="Профиль"
+                  [value]="m.assortment ?? '—'"
+                  dataTest="material-assortment"
+                />
+                <app-pi-fact-card
+                  label="Стандарт"
+                  [value]="m.standardRef ?? '—'"
+                  dataTest="material-standard"
+                />
+                <app-pi-fact-card
+                  label="Марка"
+                  [value]="m.materialGrade ?? '—'"
+                  dataTest="material-grade"
+                />
+                <app-pi-fact-card
+                  label="Вес"
+                  [value]="m.weightKg != null ? m.weightKg + ' кг' : '—'"
+                  [mono]="true"
+                  dataTest="material-weight"
+                />
+                <app-pi-fact-card
+                  label="Габариты"
+                  [value]="dimensionsLabel(m.dimensions)"
+                  [mono]="true"
+                  dataTest="material-dimensions"
+                />
+              </app-pi-fact-stack>
+
+              @if (m.description) {
+                <p class="text-sm text-muted-foreground whitespace-pre-wrap m-0">
+                  {{ m.description }}
+                </p>
+              }
+            </div>
+          </section>
+
+          <app-pi-accordion [multi]="true" data-test="material-cascade">
+            <app-pi-accordion-item
+              title="Фото"
+              index="01"
+              [meta]="photoMeta()"
+              [expanded]="openPhotos()"
+              (expandedChange)="openPhotos.set($event)"
+            >
+              <div class="flex flex-wrap gap-3" data-test="material-photo-gallery">
+                @for (photo of photos(); track photo._id) {
+                  <figure class="m-0">
+                    <img
+                      [src]="photo.storageUrl"
+                      [alt]="photo.alt ?? photo.originalFilename ?? 'фото материала'"
+                      class="block w-full max-w-[9rem] aspect-square object-cover hairline rounded-sm bg-paper-2"
+                      loading="lazy"
+                    />
+                  </figure>
+                } @empty {
+                  <p class="text-sm text-muted-foreground">Нет фото у этого материала.</p>
                 }
-              </tbody>
-            </table>
-          </div>
-          @if (whereUsedTotal() > whereUsedItems().length) {
-            <p class="mt-2 text-xs text-muted-foreground">
-              Показано {{ whereUsedItems().length }} из {{ whereUsedTotal() }}
-            </p>
+              </div>
+            </app-pi-accordion-item>
+
+            <app-pi-accordion-item
+              title="Цена"
+              index="02"
+              [meta]="priceMeta()"
+              [expanded]="openPrice()"
+              (expandedChange)="openPrice.set($event)"
+            >
+              <app-pi-fact-stack title="Цена материала" dataTest="material-price-facts">
+                <app-pi-fact-card
+                  label="Цена за ед."
+                  [value]="formatPrice(m.pricePerUnit)"
+                  caption="Закупочная / учётная цена материала"
+                  [mono]="true"
+                  variant="emphasis"
+                  dataTest="material-price"
+                />
+              </app-pi-fact-stack>
+            </app-pi-accordion-item>
+          </app-pi-accordion>
+
+          @if (m.dimensions?.length) {
+            <section class="hairline rounded-sm bg-paper" data-test="material-dimensions-detail">
+              <div class="px-3 py-2 hairline-b">
+                <h2 class="pi-label text-ink m-0">Габариты</h2>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm min-w-[320px]">
+                  <thead class="hairline-b">
+                    <tr>
+                      <th class="pi-cell pi-label text-left">Тип</th>
+                      <th class="pi-cell-numeric pi-label w-32">Значение</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (d of m.dimensions; track $index) {
+                      <tr class="pi-table-row pi-table-row-odd last:border-0">
+                        <td class="pi-cell">{{ dimTypeLabel(d.type) }}</td>
+                        <td class="pi-cell-numeric font-mono">{{ formatDimValue(d.value) }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </section>
           }
-        } @else {
-          <p class="eyebrow text-muted-foreground">
-            Этот материал пока не используется ни в одном модуле или товаре.
-          </p>
-        }
-      </app-pi-section>
+        </div>
+
+        <div class="min-w-0 space-y-4" data-test="material-detail-main">
+          <section class="hairline rounded-sm bg-paper" data-test="material-where-used">
+            <div class="flex flex-wrap items-baseline justify-between gap-3 px-4 py-3 hairline-b">
+              <div>
+                <p class="pi-label text-ink m-0">Где используется</p>
+                <p class="text-xs text-muted-foreground m-0 mt-1">
+                  Модули и товары, в составе которых есть этот материал.
+                </p>
+              </div>
+              @if (whereUsedTotal()) {
+                <span class="font-mono text-xs text-muted-foreground">{{ whereUsedTotal() }}</span>
+              }
+            </div>
+
+            @if (whereUsedLoading()) {
+              <p class="px-4 py-6 text-sm text-muted-foreground">Загрузка…</p>
+            } @else if (whereUsedError()) {
+              <p class="px-4 py-6 text-sm text-destructive" role="alert">{{ whereUsedError() }}</p>
+            } @else if (whereUsedItems().length > 0) {
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm min-w-[480px]">
+                  <thead class="hairline-b">
+                    <tr>
+                      <th class="pi-cell pi-label text-left">Тип</th>
+                      <th class="pi-cell pi-label text-left">Название</th>
+                      <th class="pi-cell-numeric pi-label w-20">Кол-во</th>
+                      <th class="pi-cell pi-label w-24">Ед.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of whereUsedItems(); track item.id + item.kind) {
+                      <tr class="pi-table-row pi-table-row-odd last:border-0">
+                        <td class="pi-cell">
+                          {{ item.kind === 'product' ? 'Товар' : 'Модуль' }}
+                        </td>
+                        <td class="pi-cell">
+                          <a
+                            [routerLink]="
+                              item.kind === 'product'
+                                ? ['/products', item.id]
+                                : ['/modules', item.id]
+                            "
+                            class="text-primary underline decoration-dotted underline-offset-4 hover:text-sunrise-warm"
+                          >
+                            {{ item.name }}
+                          </a>
+                        </td>
+                        <td class="pi-cell-numeric font-mono">{{ item.quantity }}</td>
+                        <td class="pi-cell">{{ item.unit || '—' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              @if (whereUsedTotal() > whereUsedItems().length) {
+                <p class="px-4 py-2 text-xs text-muted-foreground">
+                  Показано {{ whereUsedItems().length }} из {{ whereUsedTotal() }}
+                </p>
+              }
+            } @else {
+              <p class="px-4 py-6 text-sm text-muted-foreground">
+                Этот материал пока не используется ни в одном модуле или товаре.
+              </p>
+            }
+          </section>
+
+          <section class="hairline rounded-sm bg-paper" data-test="material-stock">
+            <div class="px-4 py-3">
+              <p class="pi-label text-ink m-0">Склад</p>
+              <p class="text-xs text-muted-foreground m-0 mt-1">
+                Остатки и движения по этому материалу.
+              </p>
+              <a
+                [routerLink]="['/storage-items']"
+                [queryParams]="{ materialId: m._id }"
+                class="inline-flex items-center gap-1.5 mt-3 text-sm text-primary underline decoration-dotted underline-offset-4 hover:text-sunrise-warm transition-colors"
+                data-test="stock-link"
+              >
+                Открыть остатки на складе →
+              </a>
+            </div>
+          </section>
+        </div>
+      </div>
     }
   `,
 })
@@ -298,18 +393,45 @@ export class MaterialDetailPage {
   });
   private readonly idString = computed<string>(() => this.id().get('id') ?? '');
 
-  // ── Material GET ──────────────────────────────────────────────────
-
-  protected readonly materialRes = httpResource<Material>(() => ({
+  protected readonly materialRes = httpResource<MaterialDetail>(() => ({
     url: `${this.baseUrl}/materials/${this.idString()}`,
   }));
 
-  protected readonly material = computed<Material | null>(() => this.materialRes.value() ?? null);
+  protected readonly material = computed<MaterialDetail | null>(
+    () => this.materialRes.value() ?? null,
+  );
   protected readonly loadError = computed<string | null>(() => {
     const err = this.materialRes.error() as
       import('@angular/common/http').HttpErrorResponse | undefined;
     return err ? extractErrorMessage(err) : null;
   });
+
+  protected readonly detailCrumbs = computed<PageCrumb[]>(() => [
+    { label: 'Каталог', link: '/materials' },
+    { label: 'Материалы', link: '/materials' },
+    { label: this.material()?.name ?? 'Материал' },
+  ]);
+
+  protected readonly openPhotos = signal(false);
+  protected readonly openPrice = signal(false);
+
+  protected readonly photos = computed<Photo[]>(() => {
+    const list = this.material()?.photoIds ?? [];
+    return list.filter((photo): photo is Photo => typeof photo !== 'string');
+  });
+
+  protected readonly coverPhoto = computed<Photo | null>(() => {
+    const main = this.material()?.mainPhotoId;
+    if (main && typeof main !== 'string') return main;
+    return this.photos()[0] ?? null;
+  });
+
+  protected readonly photoMeta = computed(() => {
+    const count = this.photos().length;
+    return count ? `${count}` : 'нет';
+  });
+
+  protected readonly priceMeta = computed(() => this.formatPrice(this.material()?.pricePerUnit));
 
   protected readonly materialDescription = computed<string>(() => {
     const m = this.material();
@@ -319,8 +441,6 @@ export class MaterialDetailPage {
     if (m.sku) parts.push(`SKU ${m.sku}`);
     return parts.length ? `Материал · ${parts.join(' · ')}` : 'Материал';
   });
-
-  // ── Where-used ────────────────────────────────────────────────────
 
   protected readonly whereUsedRes = httpResource<WhereUsedPage>(() => ({
     url: `${this.baseUrl}/materials/${this.idString()}/where-used`,
@@ -337,8 +457,6 @@ export class MaterialDetailPage {
       import('@angular/common/http').HttpErrorResponse | undefined;
     return err ? extractErrorMessage(err) : null;
   });
-
-  // ── Actions ───────────────────────────────────────────────────────
 
   /** TZ-UX-313: «← Назад» when referrer known, else list label. */
   protected readonly backLabel = computed(() =>
@@ -368,11 +486,17 @@ export class MaterialDetailPage {
     });
   }
 
-  // ── Formatters ────────────────────────────────────────────────────
+  protected materialIdentityLine(m: MaterialDetail): string {
+    const parts: string[] = [];
+    if (m.article) parts.push(`арт. ${m.article}`);
+    if (m.sku) parts.push(`SKU ${m.sku}`);
+    parts.push(kindLabelFor(m.materialKind));
+    if (m.unit) parts.push(m.unit);
+    return parts.join(' · ');
+  }
 
   protected kindLabel(k: MaterialKind | null | undefined): string {
-    if (!k) return '—';
-    return MATERIAL_KIND_LABELS[k] ?? k;
+    return kindLabelFor(k);
   }
 
   protected formatPrice(n: number | undefined): string {
@@ -413,4 +537,9 @@ export class MaterialDetailPage {
     if (n >= 1) return `${n} мм`;
     return `${(n * 1000).toFixed(0)} мкм`;
   }
+}
+
+function kindLabelFor(k: MaterialKind | null | undefined): string {
+  if (!k) return '—';
+  return MATERIAL_KIND_LABELS[k] ?? k;
 }

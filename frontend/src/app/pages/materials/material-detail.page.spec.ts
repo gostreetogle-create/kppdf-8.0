@@ -103,6 +103,12 @@ describe('MaterialDetailPage', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(el.textContent).toContain('Стальной лист 2мм');
     expect(el.textContent).toContain('STL-001');
+    expect(el.querySelector('[data-test="material-detail-layout"]')).toBeTruthy();
+    expect(el.querySelector('[data-test="material-detail-aside"]')).toBeTruthy();
+    expect(el.querySelector('[data-test="material-detail-main"]')).toBeTruthy();
+    expect(el.querySelector('[data-test="page-crumbs"]')?.textContent).toContain('Каталог');
+    expect(el.querySelector('[data-test="page-crumbs"]')?.textContent).toContain('Материалы');
+    expect(el.querySelector('app-product-bom-panel')).toBeNull();
     httpMock.verify();
   }));
 
@@ -115,6 +121,12 @@ describe('MaterialDetailPage', () => {
     httpMock.expectOne(`${API}/materials/mat-1`).flush(mockMaterial);
     httpMock.expectOne(`${API}/materials/mat-1/where-used?page=1&limit=50`).flush(mockWhereUsed);
     flush();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance as unknown as {
+      openPrice: { set: (value: boolean) => void };
+    };
+    page.openPrice.set(true);
     fixture.detectChanges();
 
     const el = fixture.nativeElement as HTMLElement;

@@ -1,3 +1,11 @@
+## [2026-08-08] — TZ-CATALOG-337 DONE: material-detail A+ shell
+
+**Что:** `/materials/:id` получил sibling-каркас product/module: `PiPageChrome` crumbs, sticky left hero + FACT-304 passport + Photo/Price accordion, right where-used + stock. Populated photo cover/gallery и empty state; без `ProductBomPanel`, composition-tree, backend/API и ModuleMaterials.
+**Gates:** FE tsc PASS; Angular development build PASS; material-detail 6/6 PASS; targeted ESLint/Prettier PASS; `git diff --check` PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-337.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-337-material-detail-a-plus.lock`
+**Known:** dimensions normalization — отдельный thin follow-up; substitute graph вне scope; desktop/orders/supply/products.page не трогались; deploy NO.
+
 ## [2026-08-08] — TZ-UX-FACT-304 DONE: material-detail passport FactStack
 
 **Что:** material detail passport переведён с плотного `dl` на shared FactStack: идентификация, категория, единица, тип, профиль, стандарт, марка, вес, габариты; цена получила caption «Закупочная / учётная цена материала». Dimensions table, stock link и where-used сохранены; material adoption audit = ADOPTED.

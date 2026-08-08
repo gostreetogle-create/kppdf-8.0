@@ -1,0 +1,11 @@
+task: TZ-CATALOG-337
+slug: material-detail-a-plus
+outcome: DONE
+closed_at: 2026-08-08T15:00:30Z
+closed_by: Buffy
+protected_files:
+  - frontend/src/app/pages/materials/material-detail.page.ts
+  - frontend/src/app/pages/materials/material-detail.page.spec.ts
+  - docs/pages/material-detail.page.md
+  - docs/pages/PAGE-TZ-INDEX.md
+  - docs/agent-checklists/TZ-CATALOG-337.md
