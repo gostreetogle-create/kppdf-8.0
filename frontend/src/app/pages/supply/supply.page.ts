@@ -12,7 +12,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { PiPageChromeComponent, type PageCrumb } from '../../shared/page/pi-page-chrome.component';
+import { PiGroupWorkspaceComponent, type GroupChip } from '../../shared/page/pi-group-workspace.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { ColumnDef, TableComponent } from '../../shared/ui/pi-table.component';
 import { PiToastService } from '../../shared/ui/toast';
@@ -40,9 +40,12 @@ const STATUS_LABELS: Record<SupplyTaskStatus, string> = {
   selector: 'app-supply-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, RouterLink, PiPageChromeComponent, ButtonComponent, TableComponent],
+  imports: [FormsModule, RouterLink, PiGroupWorkspaceComponent, ButtonComponent, TableComponent],
   template: `
-    <app-pi-page-chrome [crumbs]="crumbs" />
+    <app-pi-group-workspace pathLabel="Снабжение" [chips]="chips" activeId="supply">
+      <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        <span class="text-sm text-muted-foreground">Задачи снабжения</span>
+      </div>
 
     <div class="flex flex-col gap-6 max-w-6xl mx-auto px-4 pb-10">
       <div class="flex items-center gap-form-field flex-wrap">
@@ -239,6 +242,7 @@ const STATUS_LABELS: Record<SupplyTaskStatus, string> = {
         </div>
       </ng-template>
     </div>
+    </app-pi-group-workspace>
   `,
 })
 export class SupplyPage implements AfterViewInit {
@@ -247,7 +251,10 @@ export class SupplyPage implements AfterViewInit {
   private readonly toast = inject(PiToastService);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly crumbs: PageCrumb[] = [{ label: 'Снабжение' }, { label: 'Закупки' }];
+  protected readonly chips: readonly GroupChip[] = [
+    { id: 'supply', label: 'Закупки', route: '/supply' },
+    { id: 'shipping', label: 'Отгрузка', route: '/shipping' },
+  ];
 
   protected readonly tasks = signal<SupplyTask[]>([]);
   protected readonly orders = signal<Order[]>([]);

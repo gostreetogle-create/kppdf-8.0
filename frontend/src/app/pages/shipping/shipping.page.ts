@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { PiPageChromeComponent, type PageCrumb } from '../../shared/page/pi-page-chrome.component';
+import { PiGroupWorkspaceComponent, type GroupChip } from '../../shared/page/pi-group-workspace.component';
 
 /**
  * TZ-NAV-301 — stub: частичные отгрузки.
@@ -8,9 +8,12 @@ import { PiPageChromeComponent, type PageCrumb } from '../../shared/page/pi-page
   selector: 'app-shipping-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiPageChromeComponent],
+  imports: [PiGroupWorkspaceComponent],
   template: `
-    <app-pi-page-chrome [crumbs]="crumbs" />
+    <app-pi-group-workspace pathLabel="Снабжение" [chips]="chips" activeId="shipping">
+      <div tools class="flex items-center gap-form-field flex-wrap">
+        <span class="text-sm text-muted-foreground">Логистика</span>
+      </div>
     <div
       class="max-w-lg mx-auto mt-8 p-8 pi-dashed-panel flex flex-col items-center gap-2 text-center"
       data-test="shipping-stub"
@@ -22,8 +25,12 @@ import { PiPageChromeComponent, type PageCrumb } from '../../shared/page/pi-page
         чтобы поток L→R в меню был цельным.
       </p>
     </div>
+    </app-pi-group-workspace>
   `,
 })
 export class ShippingPage {
-  protected readonly crumbs: PageCrumb[] = [{ label: 'Склад' }, { label: 'Отгрузка' }];
+  protected readonly chips: readonly GroupChip[] = [
+    { id: 'supply', label: 'Закупки', route: '/supply' },
+    { id: 'shipping', label: 'Отгрузка', route: '/shipping' },
+  ];
 }

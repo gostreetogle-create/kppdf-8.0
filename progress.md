@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-309 DONE: unified page chrome
+
+**Исполнитель:** Buffy / agent-acfffc1331
+**Статус:** DONE on main; deploy НЕ
+**Что:** Supply/shipping share `PiGroupWorkspace` chips; design and generated documents use the same workspace chrome. Added `docs/pages/ui-page-chrome.md`; business logic, app-layout nav and production cockpit unchanged.
+**Gates:** FE tsc PASS; targeted Jest 2 suites / 4 tests PASS; scoped ESLint PASS; diff-check PASS; review PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-309.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-309-page-chrome-unify.lock`
+**Known:** four scoped legacy pages report Prettier drift; no auto-format churn; deploy NO.
+
 ## [2026-08-08] — TZ-CATALOG-DEDUP-304 DONE: detail edit openers
 
 **Исполнитель:** Buffy / agent-acfffc1331

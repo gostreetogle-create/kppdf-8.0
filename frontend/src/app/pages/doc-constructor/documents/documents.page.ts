@@ -10,10 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  PiPageChromeComponent,
-  type PageCrumb,
-} from '../../../shared/page/pi-page-chrome.component';
+import { PiGroupWorkspaceComponent, type GroupChip } from '../../../shared/page/pi-group-workspace.component';
 import { PiToolbarComponent } from '../../../shared/page/pi-toolbar.component';
 import { PiEmptyStateComponent } from '../../../shared/ui/pi-empty-state/pi-empty-state.component';
 import { PiRowActionsComponent } from '../../../shared/ui/pi-row-actions/pi-row-actions.component';
@@ -37,16 +34,15 @@ const PAGE_SIZE = 10;
   selector: 'app-documents-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    PiPageChromeComponent,
+    PiGroupWorkspaceComponent,
     PiToolbarComponent,
     PiEmptyStateComponent,
     PiRowActionsComponent,
     TableComponent,
   ],
   template: `
-    <app-pi-page-chrome [crumbs]="crumbs" />
-
-    <app-pi-toolbar>
+    <app-pi-group-workspace pathLabel="Документы" [chips]="chips" activeId="documents">
+      <app-pi-toolbar tools>
       <input
         type="search"
         class="pi-input w-72"
@@ -63,7 +59,7 @@ const PAGE_SIZE = 10;
         aria-label="Фильтр по периоду"
       />
       <span hint>{{ filtered().length }} записей</span>
-    </app-pi-toolbar>
+      </app-pi-toolbar>
 
     <ng-template #statusTpl let-doc>
       <span class="inline-flex items-center gap-2">
@@ -124,12 +120,15 @@ const PAGE_SIZE = 10;
         </div>
       }
     </div>
+    </app-pi-group-workspace>
   `,
 })
 export class DocumentsPage {
-  protected readonly crumbs: PageCrumb[] = [
-    { label: 'Документы', link: '/documents' },
-    { label: 'Сформированные' },
+  protected readonly chips: readonly GroupChip[] = [
+    { id: 'templates', label: 'Шаблоны', route: '/doc-constructor/templates' },
+    { id: 'documents', label: 'Архив', route: '/doc-constructor/documents' },
+    { id: 'texts', label: 'Тексты', route: '/doc-constructor/texts' },
+    { id: 'tables', label: 'Таблицы', route: '/doc-constructor/tables' },
   ];
 
   protected readonly PAGE_SIZE = PAGE_SIZE;
