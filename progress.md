@@ -1,3 +1,11 @@
+## [2026-08-08] — TZ-UI-COLOR-301 DONE: contrast light+dark P0/P1
+
+**Что:** badge ink+gold-soft / success / paper-2; table selected fill; gantt zebra paper-2; surface dark; docs sync.
+**Gates:** FE tsc PASS; jest badge+pi-table 40/40.
+**Archive:** `tasks/_archive/2026-08/TZ-UI-COLOR-301.done.md`
+**Lock:** `.mimocode/locks/TZ-UI-COLOR-301-contrast-light-dark.lock`
+**Known:** PO eyeball `/modules/:id` + table light/dark; WAVE-UI-TYPE-COLOR complete.
+
 ## [2026-08-08] — TZ-UI-TYPE-302 DONE: type scale hotspots
 
 **Что:** nav 11px; tree badge/depth/chevron on ERP ladder; fact mono text-sm; titles already aligned.

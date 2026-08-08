@@ -4,16 +4,16 @@ import { LucideAngularModule } from 'lucide-angular';
 export type PiBadgeVariant = 'default' | 'secondary' | 'outline' | 'destructive';
 export type PiBadgeSize = 'sm' | 'md';
 
-/* TZ-96: Design Reference alignment — semi-transparent bg + border tint pattern */
+/* TZ-UI-COLOR-301: no gold-as-text on paper; semantic success; paper-2 outline */
 const VARIANT_CLASS: Record<PiBadgeVariant, string> = {
-  default: 'bg-gold/10 border border-gold/20 text-gold',
-  secondary: 'bg-green-500/10 border border-green-500/20 text-green-700',
-  outline: 'bg-surface-container border border-rule text-muted-foreground',
+  default: 'bg-gold-soft border border-gold/30 text-ink',
+  secondary: 'bg-success-soft border border-success/35 text-success',
+  outline: 'bg-paper-2 border border-rule text-muted-foreground',
   destructive: 'bg-destructive/10 border border-destructive/20 text-destructive',
 };
 
 const SIZE_CLASS: Record<PiBadgeSize, string> = {
-  sm: 'px-1.5 py-0.5 text-[10px]',
+  sm: 'px-1.5 py-0.5 text-[11px]',
   md: 'px-2 py-1 text-xs',
 };
 

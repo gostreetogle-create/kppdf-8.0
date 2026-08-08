@@ -1,6 +1,17 @@
 # SESSION QUEUE
 
-**Updated:** 2026-08-08 · TZ-UI-TYPE-302 DONE → next COLOR-301
+**Updated:** 2026-08-08 · WAVE-UI-TYPE-COLOR COMPLETE
+
+## Checkpoint 2026-08-08T11:28:00Z
+- DONE: TZ-UI-TYPE-301 · TZ-UI-TYPE-302 · TZ-UI-COLOR-301 (wave complete)
+- IN PROGRESS: none
+- NOT DONE: none in this wave
+- NEXT: idle — ready to propose deploy only on PO command
+- HEAD: post COLOR-301 commit
+- Blockers: none
+- _active/: empty
+- Ban: supply/** · desktop/** · PRODUCTS-307 peer WIP · orders/** peer — not touched
+- Deploy: NO (queue empty ≠ deploy)
 
 ## Checkpoint 2026-08-08T11:20:00Z
 - DONE: TZ-UI-TYPE-301 · TZ-UI-TYPE-302

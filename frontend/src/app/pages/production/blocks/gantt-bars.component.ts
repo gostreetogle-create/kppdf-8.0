@@ -90,7 +90,7 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
         <div class="flex" [style.minWidth.px]="timelineMinWidth()">
           <div class="sticky left-0 z-[2] w-56 shrink-0 border-r hairline bg-paper">
             <div
-              class="h-7 border-b hairline px-2 flex items-end pb-1 text-[10px] text-muted-foreground"
+              class="h-7 border-b hairline px-2 flex items-end pb-1 text-xs text-muted-foreground"
             >
               Заказ / изделие / работа
             </div>
@@ -98,7 +98,7 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
               <button
                 type="button"
                 class="h-11 w-full px-2 py-1.5 text-xs border-b hairline text-left pi-focus-ring hover:bg-paper-2"
-                [class.bg-black/[0.02]]="row.alt"
+                [class.bg-paper-2]="row.alt"
                 [class.border-t-2]="row.orderBoundary"
                 (click)="selectOrder.emit(row.bar.orderId)"
                 [attr.data-test]="'gantt-label-' + row.bar.id"
@@ -115,7 +115,7 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
                 <div class="text-muted-foreground truncate">
                   {{ row.bar.productName }} · {{ row.bar.moduleName }}
                 </div>
-                <div class="text-[10px] text-muted-foreground truncate">
+                <div class="text-xs text-muted-foreground truncate">
                   {{ row.bar.workTypeName }}
                   @if (row.bar.quantityLabel) {
                     <span class="ml-1 font-mono">{{ row.bar.quantityLabel }}</span>
@@ -127,7 +127,7 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
               @for (ph of emptyPlaceholders; track ph) {
                 <div
                   class="h-11 px-2 py-2 text-xs border-b hairline text-muted-foreground/70"
-                  [class.bg-black/[0.02]]="ph % 2 === 1"
+                  [class.bg-paper-2]="ph % 2 === 1"
                   data-test="gantt-placeholder-row"
                 >
                   <div class="truncate">—</div>
@@ -162,7 +162,7 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
             @for (row of rows(); track row.bar.id) {
               <div
                 class="relative h-11 border-b hairline cursor-pointer"
-                [class.bg-black/[0.02]]="row.alt"
+                [class.bg-paper-2]="row.alt"
                 [class.border-t-2]="row.orderBoundary"
                 [attr.data-test]="'gantt-row-' + row.bar.id"
                 (click)="selectOrder.emit(row.bar.orderId)"
@@ -201,7 +201,7 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
               </div>
             } @empty {
               @for (ph of emptyPlaceholders; track ph) {
-                <div class="relative h-11 border-b hairline" [class.bg-black/[0.02]]="ph % 2 === 1">
+                <div class="relative h-11 border-b hairline" [class.bg-paper-2]="ph % 2 === 1">
                   @for (grid of dayGrid(); track grid.key) {
                     <div
                       class="absolute top-0 bottom-0 border-l hairline opacity-40"

@@ -76,7 +76,7 @@ describe('TableComponent — TZ-104.3 Phase A', () => {
       ];
     }
 
-    it('sticky="left" adds sticky left-0 bg-paper z-10 to <th> and <td>', () => {
+    it('sticky="left" adds sticky left-0 pi-table-sticky-bg z-10 to <th> and <td>', () => {
       const fixture = TestBed.createComponent(StickyHost);
       fixture.detectChanges();
       const ths = fixture.nativeElement.querySelectorAll('thead th');
@@ -84,7 +84,7 @@ describe('TableComponent — TZ-104.3 Phase A', () => {
       // Left column: <th> and <td> both get sticky positioning.
       expect(ths[0].classList.contains('sticky')).toBe(true);
       expect(ths[0].classList.contains('left-0')).toBe(true);
-      expect(ths[0].classList.contains('bg-paper')).toBe(true);
+      expect(ths[0].classList.contains('pi-table-sticky-bg')).toBe(true);
       expect(ths[0].classList.contains('z-10')).toBe(true);
       expect(firstTd.classList.contains('sticky')).toBe(true);
       expect(firstTd.classList.contains('left-0')).toBe(true);

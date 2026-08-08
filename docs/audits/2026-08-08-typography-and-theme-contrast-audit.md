@@ -118,9 +118,9 @@ Cool graphite hue ~260 + gold hue ~86. Dark через `--color-*-override`.
 
 См. `tasks/_backlog/ui-type-color/WAVE-UI-TYPE-COLOR.md`:
 
-1. **TZ-UI-TYPE-301** — канон шкалы в `styles.css` + живой `design-spec` / foundations hint. → **DONE** (executor 2026-08-08).  
-2. **TZ-UI-TYPE-302** — миграция micro + titles на catalog detail / chrome / tree / nav.  
-3. **TZ-UI-COLOR-301** — P0/P1 contrast light+dark (badges, selected row, mute opacity, surface).
+1. **TZ-UI-TYPE-301** — канон шкалы в `styles.css` + живой `design-spec` / foundations hint. → **DONE** (959175c6).  
+2. **TZ-UI-TYPE-302** — миграция micro + titles на catalog detail / chrome / tree / nav. → **DONE** (888f8fe8).  
+3. **TZ-UI-COLOR-301** — P0/P1 contrast light+dark (badges, selected row, mute opacity, surface). → **DONE**.
 
 Acceptance волны: один проход `/modules/:id` + `/products` + nav light **и** dark без прищура на meta; titles одной семьи размеров.
 

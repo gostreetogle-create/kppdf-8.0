@@ -208,7 +208,9 @@
   --color-sunrise-glow: var(--color-sunrise-glow-override, oklch(0.78 0.14 86));
   --color-sunrise-mist: var(--color-sunrise-mist-override, oklch(0.97 0.02 260));
 
-  /* === Surface container hierarchy === */
+  /* === Surface container hierarchy ===
+   * Legacy Material-ish ladder. Prefer paper / paper-2 / paper-3 for new UI
+   * (TZ-UI-COLOR-301). Dark overrides keep orphans readable if still referenced. */
   --color-surface-lowest: oklch(1 0 0);
   --color-surface-low: oklch(0.955 0.005 260);
   --color-surface: oklch(0.942 0.005 260);
@@ -435,6 +437,13 @@
       --color-paper-2-override: oklch(0.26 0.008 260);
       --color-paper-3-override: oklch(0.31 0.009 260);
       --color-paper-4-override: oklch(0.36 0.01 260);
+
+      /* Surface ladder → paper steps (legacy aliases, TZ-UI-COLOR-301) */
+      --color-surface-lowest: oklch(0.18 0.006 260);
+      --color-surface-low: oklch(0.22 0.007 260);
+      --color-surface: oklch(0.26 0.008 260);
+      --color-surface-high: oklch(0.31 0.009 260);
+      --color-surface-highest: oklch(0.36 0.01 260);
 
       --pi-marble-noise: none;
       --pi-marble-veins: none;

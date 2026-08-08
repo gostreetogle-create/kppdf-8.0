@@ -129,9 +129,12 @@ export type SelectionMode = 'none' | 'single' | 'multi';
           } @else {
             @for (row of sortedData(); track rowKeyOf(row, $index)) {
               <tr
-                class="hairline-b hover:bg-paper-2 transition-colors cursor-pointer"
+                class="hairline-b transition-colors cursor-pointer"
+                [class.bg-gold-soft]="isRowSelected(row)"
+                [class.hover:bg-paper-2]="!isRowSelected(row)"
                 (click)="onRowClick(row)"
                 [attr.data-test]="'table-row-' + rowKeyOf(row, $index)"
+                [attr.data-selected]="isRowSelected(row) ? 'true' : null"
                 [attr.aria-expanded]="expandedRow() ? isExpandedRow(row) : null"
                 [attr.tabindex]="expandedRow() ? 0 : null"
                 (keydown)="onRowKeydown(row, $event)"

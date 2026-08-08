@@ -98,12 +98,13 @@ describe('BadgeComponent', () => {
       });
     }
 
-    it('variant="default" uses semi-transparent gold bg + border tint (TZ-96)', async () => {
+    it('variant="default" uses gold soft fill + ink label (TZ-UI-COLOR-301)', async () => {
       const fixture = await createFixture({ variant: 'default' });
       const cls = span(fixture).className;
-      expect(cls).toContain('bg-gold/10');
-      expect(cls).toContain('border-gold/20');
-      expect(cls).toContain('text-gold');
+      expect(cls).toContain('bg-gold-soft');
+      expect(cls).toContain('border-gold/30');
+      expect(cls).toContain('text-ink');
+      expect(cls).not.toContain('text-gold');
     });
 
     it('variant="destructive" uses semi-transparent error bg + border tint (TZ-96)', async () => {
@@ -114,20 +115,20 @@ describe('BadgeComponent', () => {
       expect(cls).toContain('text-destructive');
     });
 
-    it('variant="outline" uses surface-container bg + rule border (TZ-96)', async () => {
+    it('variant="outline" uses paper-2 bg + rule border (TZ-UI-COLOR-301)', async () => {
       const fixture = await createFixture({ variant: 'outline' });
       const cls = span(fixture).className;
-      expect(cls).toContain('bg-surface-container');
+      expect(cls).toContain('bg-paper-2');
       expect(cls).toContain('border-rule');
       expect(cls).toContain('text-muted-foreground');
     });
 
-    it('variant="secondary" uses semi-transparent green bg + border tint (TZ-96)', async () => {
+    it('variant="secondary" uses success tokens with dark override (TZ-UI-COLOR-301)', async () => {
       const fixture = await createFixture({ variant: 'secondary' });
       const cls = span(fixture).className;
-      expect(cls).toContain('bg-green-500/10');
-      expect(cls).toContain('border-green-500/20');
-      expect(cls).toContain('text-green-700');
+      expect(cls).toContain('bg-success-soft');
+      expect(cls).toContain('border-success/35');
+      expect(cls).toContain('text-success');
     });
   });
 

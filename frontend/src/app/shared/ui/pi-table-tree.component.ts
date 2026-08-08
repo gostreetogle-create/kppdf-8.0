@@ -191,7 +191,7 @@ export interface TreeDropEvent<T> {
                 @if (dragReorder()) {
                   <span
                     cdkDragHandle
-                    class="text-muted-foreground/50 hover:text-muted-foreground cursor-grab active:cursor-grabbing select-none"
+                    class="text-muted-foreground/70 hover:text-muted-foreground cursor-grab active:cursor-grabbing select-none"
                     aria-hidden="true"
                     >⋮⋮</span
                   >

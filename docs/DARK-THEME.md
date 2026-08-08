@@ -92,3 +92,7 @@ Dark — только через `--color-*-override` в `@variant dark`.
 - Не возвращать тёплый cream hue 80 как canvas
 - Не заливать UI золотом
 - Не возвращать noise/veins «мрамор» на панелях
+- **Не** `text-gold` как единственный цвет лейбла на светлом paper (badge → ink + gold soft fill / border)
+- Selected table row: видимая заливка (`bg-gold-soft`) light **и** dark — не только checkbox
+- Badge secondary: semantic `success` tokens (с dark override), не raw `green-500/700`
+- Zebra / mute: theme-aware `paper-2` / `muted-foreground/70`, не `bg-black/[0.02]` и не `/50` на tiny text
