@@ -137,13 +137,13 @@ interface ModuleCostPreview {
                 <app-pi-fact-card
                   label="Ш×В×Г"
                   [value]="dimensionsLabel(m)"
-                  mono
+                  [mono]="true"
                   dataTest="module-dim"
                 />
                 <app-pi-fact-card
                   label="Вес"
                   [value]="m.weight != null ? m.weight + ' кг' : '—'"
-                  mono
+                  [mono]="true"
                   dataTest="module-weight"
                 />
               </app-pi-fact-stack>
@@ -228,7 +228,7 @@ interface ModuleCostPreview {
                       label="Итого"
                       [value]="formatRuble(cp.totalCost)"
                       caption="Себестоимость модуля (rollup)"
-                      mono
+                      [mono]="true"
                       variant="emphasis"
                       dataTest="module-cost-total"
                     />
@@ -236,14 +236,14 @@ interface ModuleCostPreview {
                       label="Материалы"
                       [value]="formatRuble(cp.materialCost)"
                       caption="Сумма материалов в составе"
-                      mono
+                      [mono]="true"
                       dataTest="module-cost-material"
                     />
                     <app-pi-fact-card
                       label="Труд"
                       [value]="formatRuble(cp.laborCost)"
                       caption="Часы × ставка видов работ"
-                      mono
+                      [mono]="true"
                       dataTest="module-cost-labor"
                     />
                   </app-pi-fact-stack>

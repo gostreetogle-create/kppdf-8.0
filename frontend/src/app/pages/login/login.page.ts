@@ -140,7 +140,8 @@ export class LoginPage {
    */
   protected fillDemoCredentials(): void {
     this.username = 'admin';
-    this.password = 'AdminPass123';
+    // Must match backend/.env ADMIN_PASSWORD (local seed). Not AdminPass123.
+    this.password = 'admin123';
   }
 
   /**

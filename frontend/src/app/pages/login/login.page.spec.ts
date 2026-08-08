@@ -39,9 +39,9 @@ describe('LoginPage', () => {
       expect(component.username).toBe('admin');
     });
 
-    it('sets password to the seeded AdminPass123', () => {
+    it('sets password to the seeded admin123', () => {
       component.fillDemoCredentials();
-      expect(component.password).toBe('AdminPass123');
+      expect(component.password).toBe('admin123');
     });
 
     it('overwrites any existing username and password values', () => {
@@ -51,7 +51,7 @@ describe('LoginPage', () => {
       component.password = 'wrong-pass';
       component.fillDemoCredentials();
       expect(component.username).toBe('admin');
-      expect(component.password).toBe('AdminPass123');
+      expect(component.password).toBe('admin123');
     });
   });
 });
