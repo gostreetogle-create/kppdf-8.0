@@ -19,6 +19,24 @@ type MockDoc = Record<string, unknown> & {
   visibleFieldKeys: string[];
 };
 
+class FakeOrgModel {
+  orgs: { _id: Types.ObjectId; name: string }[] = [];
+
+  findOne = jest.fn(() => {
+    const first = this.orgs[0] ?? null;
+    const chain = {
+      sort: jest.fn(),
+      select: jest.fn(),
+      lean: jest.fn(),
+      exec: jest.fn(async () => (first ? { _id: first._id } : null)),
+    };
+    chain.sort.mockReturnValue(chain);
+    chain.select.mockReturnValue(chain);
+    chain.lean.mockReturnValue(chain);
+    return chain;
+  });
+}
+
 class FakeFormProfileModel {
   store: MockDoc[] = [];
   uniqueEnforced = true;
@@ -128,11 +146,15 @@ describe('FormProfilesService (TZ-DICT-314)', () => {
   const ORG = new Types.ObjectId().toHexString();
   let service: FormProfilesService;
   let model: FakeFormProfileModel;
+  let orgModel: FakeOrgModel;
 
   beforeEach(() => {
     model = new FakeFormProfileModel();
+    orgModel = new FakeOrgModel();
+    orgModel.orgs = [{ _id: new Types.ObjectId(ORG), name: 'Demo Org' }];
     service = new FormProfilesService(
       model as unknown as ConstructorParameters<typeof FormProfilesService>[0],
+      orgModel as unknown as ConstructorParameters<typeof FormProfilesService>[1],
     );
   });
 
@@ -262,14 +284,24 @@ describe('FormProfilesService (TZ-DICT-314)', () => {
   });
 
   describe('param validation', () => {
-    it('rejects bad entity/size and missing org', async () => {
-      await expect(service.list('')).rejects.toThrow(/organizationId/);
+    it('rejects bad entity/size', async () => {
       await expect(service.getOne(ORG, 'material', 'S')).rejects.toThrow(
         /entity/,
       );
       await expect(service.getOne(ORG, 'product', 'XL')).rejects.toThrow(
         /size/,
       );
+    });
+
+    it('system admin without org falls back to first Organization', async () => {
+      const rows = await service.list(null);
+      expect(rows.length).toBe(6);
+      expect(String(rows[0].organizationId)).toBe(ORG);
+    });
+
+    it('rejects when user has no org and no Organization exists', async () => {
+      orgModel.orgs = [];
+      await expect(service.list(null)).rejects.toThrow(/Нет организации/);
     });
   });
 });

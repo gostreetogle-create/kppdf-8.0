@@ -7,6 +7,10 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { FormProfile, FormProfileDocument } from './form-profile.schema';
 import {
+  Organization,
+  OrganizationDocument,
+} from '../organization/organization.schema';
+import {
   ALLOWED_FIELD_KEYS,
   DEFAULT_VISIBLE,
   FORM_PROFILE_ENTITIES,
@@ -25,13 +29,15 @@ export class FormProfilesService {
   constructor(
     @InjectModel(FormProfile.name)
     private readonly model: Model<FormProfileDocument>,
+    @InjectModel(Organization.name)
+    private readonly orgModel: Model<OrganizationDocument>,
   ) {}
 
   async list(
-    organizationId: string,
+    organizationId: string | null | undefined,
     entityFilter?: string,
   ): Promise<FormProfileDocument[]> {
-    const orgOid = this.requireOrgObjectId(organizationId);
+    const orgOid = await this.resolveOrganizationId(organizationId);
     const entity = entityFilter
       ? this.parseEntity(entityFilter)
       : undefined;
@@ -48,11 +54,11 @@ export class FormProfilesService {
   }
 
   async getOne(
-    organizationId: string,
+    organizationId: string | null | undefined,
     entityRaw: string,
     sizeRaw: string,
   ): Promise<FormProfileDocument> {
-    const orgOid = this.requireOrgObjectId(organizationId);
+    const orgOid = await this.resolveOrganizationId(organizationId);
     const entity = this.parseEntity(entityRaw);
     const size = this.parseSize(sizeRaw);
 
@@ -69,12 +75,12 @@ export class FormProfilesService {
   }
 
   async upsert(
-    organizationId: string,
+    organizationId: string | null | undefined,
     entityRaw: string,
     sizeRaw: string,
     visibleFieldKeys: string[],
   ): Promise<FormProfileDocument> {
-    const orgOid = this.requireOrgObjectId(organizationId);
+    const orgOid = await this.resolveOrganizationId(organizationId);
     const entity = this.parseEntity(entityRaw);
     const size = this.parseSize(sizeRaw);
     const keys = this.validateVisibleKeys(entity, visibleFieldKeys);
@@ -178,13 +184,31 @@ export class FormProfilesService {
     return raw;
   }
 
-  private requireOrgObjectId(organizationId: string | null | undefined): Types.ObjectId {
-    if (!organizationId || !Types.ObjectId.isValid(organizationId)) {
-      throw new BadRequestException(
-        'organizationId is required (form profiles are organization-scoped)',
-      );
+  /**
+   * Form profiles are org-scoped. System admin JWT often has organizationId=null
+   * — fall back to the first Organization so QuickCreate/settings work locally.
+   */
+  private async resolveOrganizationId(
+    organizationId: string | null | undefined,
+  ): Promise<Types.ObjectId> {
+    if (organizationId && Types.ObjectId.isValid(organizationId)) {
+      return new Types.ObjectId(organizationId);
     }
-    return new Types.ObjectId(organizationId);
+    const fallback = await this.orgModel
+      .findOne()
+      .sort({ name: 1 })
+      .select('_id')
+      .lean()
+      .exec();
+    if (fallback?._id) {
+      this.logger.debug(
+        `FormProfile: using default organization ${String(fallback._id)} (user had no org)`,
+      );
+      return fallback._id as Types.ObjectId;
+    }
+    throw new BadRequestException(
+      'Нет организации: создайте фирму в Админ → Наши организации. Профили форм привязаны к организации.',
+    );
   }
 
   private async insertDefault(

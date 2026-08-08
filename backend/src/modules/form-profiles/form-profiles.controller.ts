@@ -31,7 +31,8 @@ export class FormProfilesController {
     @CurrentUser() user: AuthenticatedUser,
     @Query('entity') entity?: string,
   ) {
-    return this.service.list(user.organizationId ?? '', entity);
+    // System admin may have null organizationId — service resolves default org.
+    return this.service.list(user.organizationId, entity);
   }
 
   @Get(':entity/:size')
@@ -44,7 +45,7 @@ export class FormProfilesController {
     @Param('entity') entity: string,
     @Param('size') size: string,
   ) {
-    return this.service.getOne(user.organizationId ?? '', entity, size);
+    return this.service.getOne(user.organizationId, entity, size);
   }
 
   @Put(':entity/:size')
@@ -63,7 +64,7 @@ export class FormProfilesController {
     @Body() dto: UpsertFormProfileDto,
   ) {
     return this.service.upsert(
-      user.organizationId ?? '',
+      user.organizationId,
       entity,
       size,
       dto.visibleFieldKeys,
