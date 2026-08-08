@@ -210,6 +210,15 @@ export const routes: Routes = [
         title: 'KPPDF — Цвета',
       },
       {
+        // TZ-DICT-315 — профили быстрого create (S/M/L). API: DICT-314.
+        path: 'dictionaries/form-profiles',
+        canMatch: [capabilityRouteGuard, adminOnlyRouteGuard],
+        data: { pageKey: 'dictionaries' },
+        loadComponent: () =>
+          import('./pages/dictionaries/form-profiles.page').then((m) => m.FormProfilesPage),
+        title: 'KPPDF — Профили быстрых форм',
+      },
+      {
         path: 'catalog/appearance',
         canMatch: [capabilityRouteGuard, catalogAppearanceAdminGuard],
         data: { pageKey: 'products' },

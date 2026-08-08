@@ -110,8 +110,12 @@ const NAV_CATEGORIES: NavCategory[] = [
         pageKey: 'text-block-categories',
         label: 'Категории текстов',
       },
-      // TODO(TZ-DICT-315): add «Профили быстрых форм» → /dictionaries/form-profiles
-      // when that route exists. Do not invent a dead nav leaf.
+      {
+        // TZ-DICT-315 — settings for QuickCreate field matrix (not catalog appearance).
+        path: '/dictionaries/form-profiles',
+        pageKey: 'dictionaries',
+        label: 'Профили быстрых форм',
+      },
       // Deep-links /categories and /dictionaries/appearance stay routable
       // (not top-nav leaves — avoids duplicate «Категории» / «Оформление»).
     ],
@@ -518,6 +522,7 @@ function isDenseWorkspaceUrl(url: string): boolean {
     '/dictionaries/documents-ref',
     '/categories',
     '/dictionaries/color-references',
+    '/dictionaries/form-profiles',
     '/doc-template-categories',
     '/dictionaries/text-block-categories',
     '/products',

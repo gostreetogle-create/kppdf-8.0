@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-DICT-315 DONE: form profiles settings UI
+
+**Исполнитель:** agent-3e757640b7 (self PASS → archive)
+**Статус:** DONE on main; deploy НЕ
+**Что:** `/dictionaries/form-profiles` — entity overflow-select, S|M|L, checkbox matrix, LockedRequired locked; PUT API; nav+route; docs.
+**Gates:** FE tsc PASS; jest form-profiles service+page 13/13
+**Archive:** `tasks/_archive/2026-08/TZ-DICT-315.done.md`
+**Lock:** `.mimocode/locks/TZ-DICT-315-form-profiles-settings-ui.lock`
+**Known:** QuickCreate wire → DICT-316. Peer dirty dict pages не трогали. Deploy: NO.
+
 ## [2026-08-08] — TZ-SALES-303 DONE: KP family schema + thin API (D21 L1)
 
 **Исполнитель:** continuous-executor-composer (self PASS → archive)
