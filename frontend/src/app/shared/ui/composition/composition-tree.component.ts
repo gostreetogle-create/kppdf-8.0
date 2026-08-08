@@ -196,19 +196,16 @@ export class CompositionTreeComponent {
   }
 
   /**
-   * Nest = magazine card stack by depth (paper → paper-4), not kind flood.
-   * Soft diagonal gradient + rounded frame so the rail “ends” with the card.
+   * Nest panel cascade by depth — each level clearly darker (magazine stack).
+   * Kind hues stay on rows + left rail only (no pink flood).
    */
   protected nestSurface(depth: number): string {
     const step = Math.min(Math.max(depth, 0), 3);
-    const layers: ReadonlyArray<readonly [string, string]> = [
-      ['var(--color-paper)', 'var(--color-paper-2)'],
-      ['var(--color-paper-2)', 'var(--color-paper-3)'],
-      ['var(--color-paper-3)', 'var(--color-paper-4)'],
-      ['var(--color-paper-4)', 'var(--color-paper-3)'],
-    ];
-    const [from, to] = layers[step]!;
-    return `linear-gradient(160deg, ${from} 0%, ${to} 72%, color-mix(in oklch, ${to} 88%, var(--color-rule)) 100%)`;
+    // % of ink mixed into paper — steps must be eye-obvious on light canvas
+    const inkPct = [10, 20, 32, 44] as const;
+    const from = inkPct[step]!;
+    const to = Math.min(from + 12, 56);
+    return `linear-gradient(165deg, color-mix(in oklch, var(--color-ink) ${from}%, var(--color-paper)) 0%, color-mix(in oklch, var(--color-ink) ${to}%, var(--color-paper)) 100%)`;
   }
 
   protected onRowMouseDown(event: MouseEvent): void {
