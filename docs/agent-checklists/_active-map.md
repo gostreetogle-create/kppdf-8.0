@@ -8,7 +8,7 @@
 |------|------------|
 | TZ-DICT-314 | form profiles BE |
 | **TZ-ORDERS-302** | `28918dd` order detail live BOM |
-| **TZ-NAV-301** | lifecycle menu + stubs (pending commit SHA) |
+| **TZ-NAV-301** | `e59d359` lifecycle menu + stubs |
 
 ## READY / NEXT
 
@@ -33,4 +33,4 @@
 - Blockers: none for NAV-301
 - _active/: TZ-ORDERS-303.md
 - Deploy: NO (PO did not say deploy)
-- HEAD: (after push)
+- HEAD: e59d359 (NAV-301); peer ORDERS-303 WIP uncommitted
