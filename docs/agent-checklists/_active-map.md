@@ -8,13 +8,18 @@
 - **Team Room:** unavailable; task registry did not contain TZD-30
 - **Ban:** `desktop/mcp-runtime/**`, Organization vault/photos, layout-AI, deploy
 
-**Updated:** 2026-08-08 · WAVE-CATALOG-UX-C READY for free agent
+**Updated:** 2026-08-08 · WAVE-PARTY-DOCS READY (next executor)
+
+## Checkpoint 2026-08-08 · WAVE-PARTY-DOCS READY
+- **READY A:** `tasks/_backlog/party-docs/WAVE-PARTY-DOCS.md`
+  PARTY-301 → 302 → 303 → ORDERS-306 → ORG-ASSETS-301 → 302 → DESKTOP-SOT-301
+  · INN-301 **PARKED**
+- **Prompt:** `tasks/_backlog/party-docs/PROMPT-CONTINUOUS.md`
+- **Ban:** deploy; claim INN; commit mcp-runtime до SOT
+- Deploy: NO
 
 ## Checkpoint 2026-08-08 · Catalog UX wave C
-- **READY C:** `tasks/_backlog/catalog-ux-c/WAVE-CATALOG-UX-C.md`
-  DEDUP-301 → SELECT-301 → PRODUCTS-307 → DIALOG-304
-- **B shop-north:** FACT-304 → FORM-307 — do not steal
-- **A desktop:** IDLE
+- Catalog COMPOSE/DIALOG/FACT/337 — likely DONE on main; do not resurrect
 - Deploy: NO
 
 ## Checkpoint 2026-08-08T11:30:00Z
