@@ -26,7 +26,7 @@
 | ID | Роль |
 |----|------|
 | **TZ-CATALOG-335** | Dark depth polish |
-| **TZ-ORDERS-302** | Order detail tree (PARK до data preflight) |
-| **TZ-COST-304** | Цена product-line vs себест. (отдельный поток) |
+| **TZ-ORDERS-302** | Order detail tree — **READY** (live BOM, rails audit D1) |
+| **TZ-COST-304/305** | product-line vs cost — **DONE** |
 
 Не изобретать второе дерево «для заказов» без явного отказа от `app-composition-tree`.

@@ -65,7 +65,7 @@ flowchart TB
 | Шаг потока | Страница сейчас | Статус | Successor |
 |------------|-----------------|--------|-----------|
 | **КП** | `/proposals` | ✅ | SALES-301 DONE; polish only |
-| **Заказ** | `/orders` | ✅ | ORDERS-301 DONE (конверсия из КП) |
+| **Заказ** | `/orders` | 🔶 list+convert ✅ / detail BOM ⛔ | ORDERS-301 DONE; **ORDERS-302** READY (live tree) |
 | **Договор** | `/contracts` | ✅ *optional* | Не обязательный stage цепочки; юридический артефакт рядом с КП/заказом (см. lifecycle §10 #1) |
 | **Проектирование / чертежи** | — (каталог `/products` ≠ канбан) | ⛔ | TZ-PRODUCTION-301 / YouGile replacement в cockpit |
 | **Specification** (снимок состава) | — | ⛔ | внутри PRODUCTION-301 / CORE-301 snapshots |

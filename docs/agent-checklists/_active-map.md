@@ -17,14 +17,14 @@
 
 | ID | Status |
 |----|--------|
-| **TZ-DICT-315** | NEXT — **NOT CLAIMED**: peer WIP under `frontend/src/app/pages/dictionaries/**` overlaps conflict keys |
+| **TZ-ORDERS-302** | **READY** — live BOM на заказе (`docs/audits/2026-08-08-business-logic-rails-check.md` D1); keys ≠ dictionaries |
+| **TZ-DICT-315** | blocked: peer WIP `frontend/.../dictionaries/**` |
 | TZ-DICT-316 | after 315 |
 
 ## PARK (не брать без PO)
 
 | ID | Why |
 |----|-----|
-| TZ-ORDERS-302 | PARK |
 | TZD-23 | PARK |
 | deploy | только «задеплой» |
 
