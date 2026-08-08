@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-310 DONE: chrome drift audit
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** docs-only audit path→chrome PASS/FAIL; successors UX-313…315.
+**Gates:** N/A (docs).
+**Archive:** `tasks/_archive/2026-08/TZ-UX-310.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-310-design-system-chrome-audit.lock`
+**Known:** Deploy NO. Phase B → DETAIL-301.
+
 ## [2026-08-08] — TZ-UX-309 DONE: page chrome unify
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor)

@@ -38,4 +38,5 @@
 | Документы | `/doc-constructor/documents` (+ siblings) | Шаблоны, Архив, Тексты, Таблицы · pathLabel «Документы» |
 | Каталог / Сделки / Клиенты / Цех / Склад | existing | NAV-302 / DICT — не ломать |
 
-См. также [`page-chrome.md`](./page-chrome.md).
+См. также [`page-chrome.md`](./page-chrome.md).  
+Chrome drift audit: [`../audits/2026-08-09-design-system-chrome-drift.md`](../audits/2026-08-09-design-system-chrome-drift.md) (UX-310).
