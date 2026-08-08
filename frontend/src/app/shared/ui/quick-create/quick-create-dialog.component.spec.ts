@@ -67,6 +67,13 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
     visibleFieldKeys: ['name', 'article', 'width', 'height', 'depth', 'unit', 'weight'],
   };
 
+  const moduleLAll: FormProfile = {
+    ...moduleM,
+    _id: 'fp-mod-l',
+    size: 'L',
+    visibleFieldKeys: [...MODULE_FIELD_KEYS],
+  };
+
   const ok = <T>(data: T): SilentResult<T> => ({ ok: true, data });
   const fail = <T = never>(message: string): SilentResult<T> => ({
     ok: false,
@@ -400,6 +407,25 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
     expect(fixture.nativeElement.querySelector('[data-test="product-bom-panel"]')).not.toBeNull();
     c.onDone();
     expect(close).toHaveBeenCalledWith(expect.objectContaining({ _id: 'p1' }));
+  });
+
+  it('module L stays open after create and exposes BomPanel with rootKind=module', async () => {
+    const { component: c, fixture } = await setup({ entity: 'module', size: 'M' });
+    profiles.getOne.mockReturnValue(of(ok(moduleLAll)));
+    c.onSizeChange('L');
+    c.form.patchValue({ name: 'Каркас' });
+    c.onSubmit();
+    fixture.detectChanges();
+    expect(c.createdModule()?._id).toBe('m1');
+    expect(c.createdProduct()).toBeNull();
+    expect(close).not.toHaveBeenCalled();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="qc-composition-section"]'),
+    ).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="qc-module-bom-panel"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="product-bom-panel"]')).not.toBeNull();
+    c.onDone();
+    expect(close).toHaveBeenCalledWith(expect.objectContaining({ _id: 'm1' }));
   });
 
   it('does not expose photo controls for product M', async () => {

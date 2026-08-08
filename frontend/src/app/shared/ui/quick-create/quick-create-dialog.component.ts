@@ -149,6 +149,22 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'md' | 'lg' | 'xl'> = {
             </p>
             <app-product-bom-panel [productId]="created._id" data-test="qc-product-bom-panel" />
           </app-pi-form-section>
+        } @else if (createdModule(); as created) {
+          <app-pi-form-section
+            title="Состав"
+            headingId="qc-sec-composition"
+            tone="neutral"
+            data-test="qc-composition-section"
+          >
+            <p class="text-xs text-muted-foreground mb-3">
+              Модуль создан. Состав можно добавить сейчас или позже в карточке модуля.
+            </p>
+            <app-product-bom-panel
+              [productId]="created._id"
+              rootKind="module"
+              data-test="qc-module-bom-panel"
+            />
+          </app-pi-form-section>
         } @else if (loading()) {
           <p class="text-sm text-muted-foreground" data-test="qc-loading">Загрузка профиля…</p>
         } @else if (loadError()) {
@@ -423,7 +439,7 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'md' | 'lg' | 'xl'> = {
           </div>
         }
 
-        @if (createdProduct(); as created) {
+        @if (createdProduct() || createdModule()) {
           <p class="text-xs text-muted-foreground" data-test="qc-created-hint">
             Состав опционален — нажмите «Готово», когда закончите.
           </p>
@@ -435,7 +451,7 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'md' | 'lg' | 'xl'> = {
       </form>
 
       <div footer class="flex gap-3">
-        @if (createdProduct()) {
+        @if (createdProduct() || createdModule()) {
           <app-pi-button variant="default" type="button" (click)="onDone()" data-test="done-button">
             Готово
           </app-pi-button>
@@ -492,6 +508,8 @@ export class QuickCreateDialogComponent implements OnDestroy {
   protected readonly uploadedPhotoIds = signal<string[]>([]);
   protected readonly photosUploading = signal(false);
   protected readonly createdProduct = signal<Product | null>(null);
+  /** TZ-UX-FORM-306: module L stays open with BomPanel after create. */
+  protected readonly createdModule = signal<ProductModule | null>(null);
   private submitted = false;
 
   protected readonly isPhotoCapable = computed(
@@ -536,10 +554,10 @@ export class QuickCreateDialogComponent implements OnDestroy {
   protected readonly title = computed(() => `Быстрое создание: ${ENTITY_LABEL_RU[this.entity]}`);
   protected readonly dialogWidth = computed(() => SIZE_TO_WIDTH[this.size()]);
   protected readonly dialogMaxWidth = computed(() =>
-    this.createdProduct() ? 'min(1100px, calc(100vw - 2rem))' : null,
+    this.createdProduct() || this.createdModule() ? 'min(1100px, calc(100vw - 2rem))' : null,
   );
   protected readonly compositionCapable = computed(
-    () => this.entity === 'product' && this.size() === 'L',
+    () => (this.entity === 'product' || this.entity === 'module') && this.size() === 'L',
   );
 
   /**
@@ -687,8 +705,13 @@ export class QuickCreateDialogComponent implements OnDestroy {
       this.modules.create(this.buildModulePayload()).subscribe((res) => {
         this.submitting.set(false);
         if (res.ok) {
+          this.submitted = true;
           this.toast.success('Модуль создан');
-          this.ref.close(res.data ?? null);
+          if (this.compositionCapable() && res.data) {
+            this.createdModule.set(res.data);
+          } else {
+            this.ref.close(res.data ?? null);
+          }
         } else {
           const msg = extractErrorMessage(res.error);
           this.formError.set(msg);
@@ -699,7 +722,7 @@ export class QuickCreateDialogComponent implements OnDestroy {
   }
 
   protected onDone(): void {
-    this.ref.close(this.createdProduct());
+    this.ref.close(this.createdProduct() ?? this.createdModule());
   }
 
   protected onCancel(): void {

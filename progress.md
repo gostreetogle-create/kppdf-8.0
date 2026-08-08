@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-FORM-306 DONE: Module QuickCreate L + BomPanel
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** module L после create остаётся открытым с ProductBomPanel rootKind=module; «Готово»; product L не сломан.
+**Gates:** FE tsc PASS; Jest quick-create-dialog 14/14 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-FORM-306.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-FORM-306-module-quickcreate-L-bom.lock`
+**Known:** Deploy NO. Next DEDUP-304.
+
 ## [2026-08-08] — TZ-CATALOG-DEDUP-303 DONE: delete orphan CompositionEditor
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor)

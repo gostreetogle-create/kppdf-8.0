@@ -17,6 +17,7 @@
 | Общий стиль секций + QC | **FORM-302** | Material → shared → QuickCreate |
 | Фото в L | **FORM-303** | reuse upload FullEditor |
 | Состав в L | **FORM-304** | reuse ProductBomPanel; create→остаться |
+| Module L состав | **FORM-306** | тот же BomPanel, `rootKind=module`; create→остаться | **DONE** 2026-08-08 |
 | Проход по всем диалогам | **FORM-305** | специальный sweep-агент |
 
 ---
@@ -29,7 +30,8 @@ FieldKey-профиль не содержит photo/BOM. Составу нуже
 
 ## 3. Поток L
 
-Поля (+фото) → Создать → секция Состав на живом id → Готово.  
+Поля (+фото для product) → Создать → секция Состав на живом id → Готово.  
+Product L и Module L — одинаковый stay-open + BomPanel (FORM-304 / FORM-306).  
 S/M — без состава; секции по FORM-302.
 
 ---
