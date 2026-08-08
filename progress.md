@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-CATALOG-DEDUP-302 DONE: retire ModuleMaterials dialog
+
+**Исполнитель:** Buffy / agent-acfffc1331
+**Статус:** DONE on main; deploy НЕ
+**Что:** Удалены кнопка «Быстрое редактирование» и orphan `ModuleMaterialsFormDialog`; состав модуля теперь редактируется только через существующий `ProductBomPanel` + picker. Обновлён dedupe audit.
+**Gates:** FE tsc PASS; targeted Jest module-detail + product-bom-panel 8/8 PASS; scoped ESLint PASS; diff-check PASS; review PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-DEDUP-302.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-DEDUP-302-retire-module-materials-dialog.lock`
+**Known:** orphan `CompositionEditor` остаётся successor TZ-CATALOG-DEDUP-303; deploy NO.
+
 ## [2026-08-08] — TZ-CATALOG-DEDUP-301 DONE: strip composition from Product FullEditor
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor)

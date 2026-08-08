@@ -17,7 +17,7 @@
 | Как надо (канон) | Что ещё торчит |
 |------------------|----------------|
 | `ProductBomPanel` + дерево + «из каталога» на карточке | В FullEditor изделия — **второй** UI состава (карточки модулей + другие пикеры) |
-| Тот же BomPanel в QuickCreate **L** после create (FORM-304) | На карточке модуля кнопка «Быстрое редактирование» → **третий** UI (`ModuleMaterialsFormDialog`) |
+| Тот же BomPanel в QuickCreate **L** после create (FORM-304) | На карточке модуля был третий UI (`ModuleMaterialsFormDialog`) — удалён в DEDUP-302 |
 | | Мёртвый `CompositionEditor` в shared (тесты, страницы не используют) |
 
 QuickCreate ≠ FullEditor для полей паспорта — **осознанно** (справочник профилей). Сливать в одну простыню не надо.  
@@ -30,10 +30,10 @@ QuickCreate ≠ FullEditor для полей паспорта — **осозна
 | Сущность | Куда пишем | Точки входа | Дубль? | Что делать |
 |----------|------------|-------------|--------|------------|
 | Изделие | `products` | Create: QuickCreate · Edit: FullEditor · Состав: detail BomPanel + QC L | Состав в FullEditor лишний | Вырезать состав из FullEditor |
-| Модуль | `productmodules` | Create: QuickCreate · Edit: ModuleForm · Состав: BomPanel + **ModuleMaterials** | Да, два состава на detail | Убрать ModuleMaterials |
+| Модуль | `productmodules` | Create: QuickCreate · Edit: ModuleForm · Состав: BomPanel | Нет: один путь состава на detail | DONE: убрать ModuleMaterials |
 | Материал | `materials` | Только MaterialFormDialog | Нет | Ок; позже «Редактировать» с detail |
 | Вид работ | `worktypes` | WorkTypeForm; на модуле — только привязка часов | Нет (разные глаголы) | Ок |
-| Линия состава | `composition[]` | BomPanel+picker · FullEditor · ModuleMaterials · orphan editor | **Да** | Только BomPanel+picker |
+| Линия состава | `composition[]` | BomPanel+picker · orphan editor | **Да** | Только BomPanel+picker |
 
 **Канон состава:** `ProductBomPanel` + `ProductCompositionPickerDialog` (+ `app-composition-tree`).  
 QuickCreate L — тонкий хост после create, не вторая реализация BOM.
@@ -66,7 +66,7 @@ QuickCreate L — тонкий хост после create, не вторая р�
 | # | ID | Суть |
 |---|-----|------|
 | 1 | **TZ-CATALOG-DEDUP-301** | Вырезать состав из Product FullEditor | **DONE** 2026-08-08 |
-| 2 | **TZ-CATALOG-DEDUP-302** | Убрать ModuleMaterials с module-detail | READY |
+| 2 | **TZ-CATALOG-DEDUP-302** | Убрать ModuleMaterials с module-detail | **DONE** 2026-08-08 |
 | 3 | **TZ-CATALOG-DEDUP-303** | Удалить orphan CompositionEditor | READY |
 | 4 | **TZ-UX-FORM-306** | Module QuickCreate L + BomPanel (как product FORM-304) | READY |
 | 5 | **TZ-CATALOG-DEDUP-304** | «Редактировать» на product/material detail → тот же FullEditor | READY |
@@ -90,6 +90,5 @@ QuickCreate L — тонкий хост после create, не вторая р�
 - `frontend/.../products/product-form-dialog.component.ts`
 - `frontend/.../products/product-bom-panel.component.ts`
 - `frontend/.../products/product-detail.page.ts`
-- `frontend/.../modules/module-materials-form-dialog.component.ts`
 - `frontend/.../modules/module-detail.page.ts`
 - `frontend/.../composition/composition-editor.component.ts` (orphan)

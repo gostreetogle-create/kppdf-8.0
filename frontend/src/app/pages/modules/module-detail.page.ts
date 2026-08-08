@@ -31,7 +31,6 @@ import {
   ProductModulePhotosService,
 } from '../../shared/services/pi-product-module-photos.service';
 import { ModuleFormDialogComponent } from './module-form-dialog.component';
-import { ModuleMaterialsFormDialogComponent } from './module-materials-form-dialog.component';
 import { ProductBomPanelComponent } from '../products/product-bom-panel.component';
 
 /** TZ-COST-302: shape of GET /modules/:id/cost-preview. */
@@ -69,14 +68,6 @@ interface ModuleCostPreview {
         </app-pi-button>
         <app-pi-button variant="default" type="button" (click)="openEdit()" data-test="edit-button">
           Редактировать
-        </app-pi-button>
-        <app-pi-button
-          variant="ghost"
-          type="button"
-          (click)="openMaterialsEditor()"
-          data-test="quick-composition-edit"
-        >
-          Быстрое редактирование
         </app-pi-button>
         <app-pi-button variant="ghost" type="button" (click)="onDelete()" data-test="delete-button">
           Удалить
@@ -521,25 +512,6 @@ export class ModuleDetailPage {
           this.toast.error(extractErrorMessage(res.error));
         }
       });
-  }
-
-  protected openMaterialsEditor(): void {
-    const m = this.module();
-    if (!m) return;
-    const ref = this.dialog.open(ModuleMaterialsFormDialogComponent, {
-      data: {
-        moduleId: m._id,
-        materials: m.materials ?? [],
-        composition: m.composition ?? [],
-      },
-      width: 'xl',
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, () => {
-      this.moduleRes.reload();
-      this.costPreviewRes.reload();
-      this.bomPanel()?.reload();
-    });
   }
 
   protected workTypeName(wtId: unknown): string {

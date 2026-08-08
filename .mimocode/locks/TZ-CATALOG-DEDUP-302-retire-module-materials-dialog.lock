@@ -1,0 +1,6 @@
+# Lock file
+Locked as of 2026-08-08 — TZ-CATALOG-DEDUP-302: retire ModuleMaterials dialog.
+
+Owner: agent-acfffc1331
+Protected: module detail composition uses ProductBomPanel + picker only; ModuleMaterials dialog removed.
+Unlock: successor DEDUP / PO.
