@@ -23,7 +23,8 @@
 
 | ID | Status |
 |----|--------|
-| **TZ-UX-DIALOG-302** | QuickCreate balanced + dialog canon — **NEXT** |
+| **TZ-UX-306** | nav shorter labels + compact height — **NEXT** |
+| **TZ-UX-DIALOG-302** | QuickCreate balanced + dialog canon |
 | **TZ-UX-302** | page chrome unify |
 | TZ-UX-303 | design-system chrome audit (docs) |
 | TZ-SALES-304 | KP family UI after PO probes |

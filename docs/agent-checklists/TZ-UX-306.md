@@ -1,18 +1,10 @@
-# TZ-UX-306 checklist
+# TZ-UX-306 — Nav shorter labels + compact height
 
-> Status: **DONE** · archived 2026-08-04
+**TZ:** `tasks/_backlog/TZ-UX-306-nav-shorter-labels-compact-height.md`  
+**Status:** RESERVED
 
 ## Acceptance
 
-- [x] `/people` route + nav «Люди» (pageKey=people)
-- [x] Service aligned to Worker fields + envelope list
-- [x] Form dialog create/edit/delete
-- [x] jest pi-workers 6/6 PASS; tsc FE PASS
-- [x] Archive + progress
-
-## Executor report (auto) — TZ-UX-306
-
-gates: jest=6/6; fe-tsc=PASS
-archive: tasks/_archive/2026-08/TZ-UX-306.done.md
-lock: .mimocode/locks/TZ-UX-306-people-route.lock
-known: supplier/workType/rate not in Phase-1 form
+- [ ] Lower nav/header height
+- [ ] Short labels per TZ table; full RU in aria/title
+- [ ] Equal width; jest + tsc; archive; push
