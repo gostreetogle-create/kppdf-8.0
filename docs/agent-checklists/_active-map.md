@@ -22,7 +22,7 @@ Park: `tasks/_park/`
 - DONE: TZ-UX-312
 - IN PROGRESS: none
 - NEXT: TZ-CATALOG-DEDUP-302 (peer) / UX-309
-- HEAD: (pending)
+- HEAD: `1b3f843d`
 - Blockers: none
 - _active/: empty
 - Deploy: NO
