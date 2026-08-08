@@ -1,24 +1,21 @@
 # TZ-UX-310 — chrome drift audit
 
-**Status:** DONE (docs-only)
-**Agent:** Buffy / agent-acfffc1331
-**Claimed at:** 2026-08-08T11:20Z
-**Closed at:** 2026-08-08T11:25Z
-**Workspace:** Freebuff isolated worktree
+**Outcome:** DONE
+**Date:** 2026-08-09
+**Source:** `tasks/_backlog/TZ-UX-310-design-system-chrome-audit.md`
 
 ## Delivered
 
 - Created `docs/audits/2026-08-09-design-system-chrome-drift.md`.
-- Audited route chrome, display-heading/custom breadcrumb signals, and the
-  production cockpit exception.
-- Added prioritized successor list only for FAIL findings.
+- Audited route chrome and display/custom markup drift.
+- Added a prioritized FAIL table with successor TZ proposals.
 - No product code changed.
 
 ## Verification
 
 - Source grep completed for page chrome, breadcrumb, chip, and `text-5xl` signals.
-- Audit contains PASS/FAIL table and prioritized successors.
-- Product-code diff: none for this TZ.
+- Audit includes PASS/FAIL route table, accepted production exception, and prioritized successors.
+- Docs-only scope confirmed.
 
 ARCHIVE_MARKER
 outcome: DONE

@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-310 DONE: design-system chrome drift audit
+
+**Исполнитель:** Buffy / agent-acfffc1331
+**Статус:** DONE on main; deploy НЕ
+**Что:** Docs-only source audit of operational chrome, explicit PASS/FAIL table, accepted production exception, and prioritized successor TZs. Product code не изменялся.
+**Gates:** Source grep PASS; audit PASS; docs-only scope PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-310.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-310-design-system-chrome-audit.lock`
+**Known:** static audit only; no authenticated browser visual pass; deploy NO.
+
 ## [2026-08-08] — TZ-UX-309 DONE: unified page chrome
 
 **Исполнитель:** Buffy / agent-acfffc1331
