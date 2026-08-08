@@ -1,33 +1,20 @@
 # SESSION QUEUE
 
-**Updated:** 2026-08-08T09:36Z · **TZ-UX-311 DONE** · NEXT UX-309
+**Updated:** 2026-08-08 · dedupe audit
 
 ## NEXT
 
-1. **TZ-UX-309** — page chrome  
-2. **TZ-UX-310** — chrome audit docs  
-3. **TZ-SALES-304** — KP family UI  
+1. **TZ-CATALOG-DEDUP-301** — убрать состав из Product FullEditor  
+2. **TZ-CATALOG-DEDUP-302** — убрать ModuleMaterials  
+3. TZ-UX-309 · TZ-UX-310 · TZ-SALES-304  
 
-## DONE
+## DONE recent
 
-| Item | Note |
-|------|------|
-| **TZ-UX-311** | composition-tree thumb + line-clamp-2; TreeNode.photoUrl; archive `TZ-UX-311.done.md` |
-| Tasks hygiene | `_backlog` = только NOW; rest → `_park` |
-| **TZ-GIT-301** | FORM-302…305 on main via merge `c4f4d830` |
-| FORM-302…305 | on main; NAV-302 kept |
-| NAV-302 · UX-308 · FORM-301 | earlier |
+UX-311 · GIT-301 · FORM-302…305 · NAV-302 · UX-308  
 
-## Park
+## Docs
 
-`tasks/_park/` — не трогать без PO  
-Deploy: NO
+`docs/audits/2026-08-08-data-entry-dedupe-audit.md`  
 
-## Checkpoint 2026-08-08T09:36Z
-- DONE: TZ-UX-311
-- IN PROGRESS: none
-- NEXT: TZ-UX-309
-- HEAD: `2f90305d`
-- Blockers: none
-- _active/: empty
-- Deploy: NO
+Deploy: NO  
+Park: `tasks/_park/`
