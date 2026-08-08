@@ -20,6 +20,7 @@ import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
 import { InputComponent } from '../../shared/ui/input/input.component';
 import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
+import { PiFormSectionComponent } from '../../shared/ui/form-section';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
@@ -127,6 +128,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
     FormFieldComponent,
     InputComponent,
     TextareaComponent,
+    PiFormSectionComponent,
   ],
   template: `
     <app-pi-dialog
@@ -142,8 +144,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
         data-test="product-form"
       >
         <!-- ─── 1. Основные данные ─── -->
-        <div>
-          <p class="eyebrow mb-form-row">Основные данные</p>
+        <app-pi-form-section title="Основные данные" headingId="product-sec-basics" tone="gold">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
             <app-pi-form-field
               label="Название"
@@ -211,11 +212,10 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
               </select>
             </app-pi-form-field>
           </div>
-        </div>
+        </app-pi-form-section>
 
         <!-- ─── 2. Категория ─── -->
-        <div>
-          <p class="eyebrow mb-form-row">Категория</p>
+        <app-pi-form-section title="Категория" headingId="product-sec-category" tone="neutral">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
             <app-pi-form-field
               label="Категория"
@@ -244,11 +244,10 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
               />
             </app-pi-form-field>
           </div>
-        </div>
+        </app-pi-form-section>
 
         <!-- ─── 3. Цены ─── -->
-        <div>
-          <p class="eyebrow mb-form-row">Цены</p>
+        <app-pi-form-section title="Цены" headingId="product-sec-prices" tone="neutral">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
             <app-pi-form-field
               label="Цена (прайс), ₽"
@@ -278,11 +277,10 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
               </label>
             </app-pi-form-field>
           </div>
-        </div>
+        </app-pi-form-section>
 
         <!-- ─── 4. Габариты ─── -->
-        <div>
-          <p class="eyebrow mb-form-row">Габариты</p>
+        <app-pi-form-section title="Габариты" headingId="product-sec-dimensions" tone="dimensions">
           <div class="grid grid-cols-1 sm:grid-cols-4 gap-form-field items-end">
             <app-pi-form-field label="Длина" htmlFor="prod-len">
               <app-pi-input
@@ -316,11 +314,10 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
               </select>
             </app-pi-form-field>
           </div>
-        </div>
+        </app-pi-form-section>
 
         <!-- ─── 5. Цвет (RAL) ─── -->
-        <div>
-          <p class="eyebrow mb-form-row">Цвет (RAL)</p>
+        <app-pi-form-section title="Цвет (RAL)" headingId="product-sec-color" tone="neutral">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field items-start">
             <app-pi-form-field
               label="Цвет"
@@ -432,13 +429,12 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
               />
             </app-pi-form-field>
           </div>
-        </div>
+        </app-pi-form-section>
 
         <!-- ─── 6. Модули в составе ─── -->
-        <div>
+        <app-pi-form-section title="Состав" headingId="product-sec-composition" tone="neutral">
           <div class="flex items-baseline justify-between mb-form-row">
             <div>
-              <p class="eyebrow">Состав</p>
               <p class="text-sm font-medium">Модули, материалы и изделия</p>
               <p class="text-xs text-muted-foreground">
                 сырьё добавляется только через модуль; детали = Material.materialKind
@@ -542,11 +538,14 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
               </div>
             }
           </div>
-        </div>
+        </app-pi-form-section>
 
         <!-- ─── 7. Описание/Заметки ─── -->
-        <div>
-          <p class="eyebrow mb-form-row">Описание и заметки</p>
+        <app-pi-form-section
+          title="Описание и заметки"
+          headingId="product-sec-description"
+          tone="neutral"
+        >
           <div class="grid grid-cols-1 gap-form-field">
             <app-pi-form-field
               label="Описание"
@@ -572,12 +571,11 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
               />
             </app-pi-form-field>
           </div>
-        </div>
+        </app-pi-form-section>
 
         <!-- ─── 8. Изображения ─── -->
-        <div>
+        <app-pi-form-section title="Изображения" headingId="product-sec-images" tone="neutral">
           <div class="flex items-baseline justify-between mb-form-row">
-            <p class="eyebrow">Изображения</p>
             <label
               class="inline-flex items-center gap-1 min-h-touch px-control-x py-control-y text-xs hairline rounded-sm bg-paper hover:bg-paper-2 cursor-pointer transition-colors"
             >
@@ -626,7 +624,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
               </div>
             }
           </div>
-        </div>
+        </app-pi-form-section>
 
         @if (errorMessage()) {
           <p role="alert" class="text-xs text-destructive">

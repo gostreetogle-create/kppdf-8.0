@@ -5,6 +5,7 @@ import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
 import { InputComponent } from '../../shared/ui/input/input.component';
+import { PiFormSectionComponent } from '../../shared/ui/form-section';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
 import { extractErrorMessage } from '../../core/silent-http';
@@ -42,6 +43,7 @@ interface MaterialsEnvelope {
     ButtonComponent,
     FormFieldComponent,
     InputComponent,
+    PiFormSectionComponent,
   ],
   template: `
     <app-pi-dialog
@@ -56,77 +58,83 @@ interface MaterialsEnvelope {
         class="space-y-form-field"
         data-test="stock-movement-form"
       >
-        <app-pi-form-field
-          label="Склад"
-          htmlFor="mv-warehouse"
-          [required]="true"
-          [error]="errorFor('warehouseId')"
-        >
-          <select
-            id="mv-warehouse"
-            class="pi-input w-full"
-            formControlName="warehouseId"
-            data-test="mv-warehouse"
+        <app-pi-form-section title="Основные данные" headingId="movement-sec-basics" tone="gold">
+          <app-pi-form-field
+            label="Склад"
+            htmlFor="mv-warehouse"
+            [required]="true"
+            [error]="errorFor('warehouseId')"
           >
-            <option value="">Выберите склад…</option>
-            @for (w of warehouses(); track w._id) {
-              <option [value]="w._id">{{ w.name }}</option>
-            }
-          </select>
-        </app-pi-form-field>
-
-        <app-pi-form-field
-          label="Материал"
-          htmlFor="mv-material"
-          [required]="true"
-          [error]="errorFor('materialId')"
-        >
-          <select
-            id="mv-material"
-            class="pi-input w-full"
-            formControlName="materialId"
-            data-test="mv-material"
-          >
-            <option value="">Выберите материал…</option>
-            @for (m of materials(); track m._id) {
-              <option [value]="m._id">{{ m.name }}</option>
-            }
-          </select>
-        </app-pi-form-field>
-
-        @if (zones().length) {
-          <app-pi-form-field label="Зона" htmlFor="mv-zone">
-            <select id="mv-zone" class="pi-input w-full" formControlName="zoneName">
-              <option value="">Без зоны</option>
-              @for (z of zones(); track z) {
-                <option [value]="z">{{ z }}</option>
+            <select
+              id="mv-warehouse"
+              class="pi-input w-full"
+              formControlName="warehouseId"
+              data-test="mv-warehouse"
+            >
+              <option value="">Выберите склад…</option>
+              @for (w of warehouses(); track w._id) {
+                <option [value]="w._id">{{ w.name }}</option>
               }
             </select>
           </app-pi-form-field>
-        }
 
-        <app-pi-form-field
-          label="Количество"
-          htmlFor="mv-qty"
-          [required]="true"
-          [error]="errorFor('qty')"
-        >
-          <app-pi-input
-            id="mv-qty"
-            type="number"
-            formControlName="qty"
-            placeholder="0"
-            [invalid]="hasError('qty')"
-          />
-        </app-pi-form-field>
+          <app-pi-form-field
+            label="Материал"
+            htmlFor="mv-material"
+            [required]="true"
+            [error]="errorFor('materialId')"
+          >
+            <select
+              id="mv-material"
+              class="pi-input w-full"
+              formControlName="materialId"
+              data-test="mv-material"
+            >
+              <option value="">Выберите материал…</option>
+              @for (m of materials(); track m._id) {
+                <option [value]="m._id">{{ m.name }}</option>
+              }
+            </select>
+          </app-pi-form-field>
 
-        <app-pi-form-field label="Документ / примечание" htmlFor="mv-doc">
-          <app-pi-input id="mv-doc" formControlName="documentRef" placeholder="Накладная, заказ…" />
-        </app-pi-form-field>
+          @if (zones().length) {
+            <app-pi-form-field label="Зона" htmlFor="mv-zone">
+              <select id="mv-zone" class="pi-input w-full" formControlName="zoneName">
+                <option value="">Без зоны</option>
+                @for (z of zones(); track z) {
+                  <option [value]="z">{{ z }}</option>
+                }
+              </select>
+            </app-pi-form-field>
+          }
 
-        @if (errorMessage()) {
-          <p class="text-sm text-destructive" role="alert">{{ errorMessage() }}</p>
-        }
+          <app-pi-form-field
+            label="Количество"
+            htmlFor="mv-qty"
+            [required]="true"
+            [error]="errorFor('qty')"
+          >
+            <app-pi-input
+              id="mv-qty"
+              type="number"
+              formControlName="qty"
+              placeholder="0"
+              [invalid]="hasError('qty')"
+            />
+          </app-pi-form-field>
+
+          <app-pi-form-field label="Документ / примечание" htmlFor="mv-doc">
+            <app-pi-input
+              id="mv-doc"
+              formControlName="documentRef"
+              placeholder="Накладная, заказ…"
+            />
+          </app-pi-form-field>
+
+          @if (errorMessage()) {
+            <p class="text-sm text-destructive" role="alert">{{ errorMessage() }}</p>
+          }
+        </app-pi-form-section>
       </form>
 
       <div footer class="flex justify-end gap-2">

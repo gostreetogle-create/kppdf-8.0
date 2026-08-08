@@ -1,75 +1,33 @@
-# Аудит / канон диалогов (Paper & Ink)
+# Dialog layout canon audit — FORM-305
 
-**Дата:** 2026-08-08  
-**Триггер PO:** QuickCreate S/M/L узкий → L уходит в высоту; зоопарк разных окон.  
-**База:** `docs/DIALOG-COOKBOOK.md` + `PiDialogComponent` width tiers.  
-**Шпаргалка:** `docs/pages/ui-dialog-canon.md` · **TZ:** TZ-UX-DIALOG-302.
+**Date:** 2026-08-08
+**Scope:** `TZ-UX-FORM-305` Wave A only
+**Rule:** visual section wrappers only; FormControl names, payloads, API calls, and confirm dialogs unchanged.
 
----
+## Wave A result
 
-## 1. Вердикт
+| Dialog                                                                   | Result   | Sections                                                                                        |
+| ------------------------------------------------------------------------ | -------- | ----------------------------------------------------------------------------------------------- |
+| `pages/products/product-form-dialog.component.ts`                        | migrated | Основные данные, Категория, Цены, Габариты, Цвет (RAL), Состав, Описание и заметки, Изображения |
+| `pages/modules/module-form-dialog.component.ts`                          | migrated | Основные данные, Габариты, Дополнительно                                                        || `pages/dictionaries/color-references-form-dialog.component.ts` | migrated | Основные данные, Дополнительно |
+| `pages/dictionaries/color-reference-form-dialog.component.ts` | outlier | Existing specialized singular color editor; Wave A used the plural dialog path and this file remains unchanged. |
 
-| Проблема | Канон |
-|----------|--------|
-| Много «своих» ширин/футеров | Только `PiDialogService` + `<app-pi-dialog>` |
-| QuickCreate L = `form`/`lg` (~640px) → длинный столбец | **Шире + 2 колонки полей** при M/L; высота с body scroll, не «на весь экран» без нужды |
-| Цель формы | Панель **ближе к квадрату** по контенту: лучше добавить ширину, чем бесконечную высоту |
-| Эталон FullEditor | `variant="content"` + `maxWidth: min(1120px, 100vw-2rem)` (product/material) |
-| Эталон confirm | `alert` / `destructive` + `sm`/`md` |
+| `pages/dictionaries/category-form-dialog.component.ts`                   | migrated | Основные данные                                                                                 |
+| `pages/dictionaries/document-template-category-form-dialog.component.ts` | migrated | Основные данные                                                                                 |
+| `pages/dictionaries/text-block-category-form-dialog.component.ts`        | migrated | Основные данные, Дополнительно                                                                  |
+| `pages/orders/order-form-dialog.component.ts`                            | migrated | Основные данные, Быстрый заказчик, Позиции, Заметки                                             |
+| `pages/commercial/proposals/proposal-form-dialog.component.ts`           | migrated | Основные данные, Позиции, Заметки                                                               |
+| `pages/people/people-form-dialog.component.ts`                           | migrated | Основные данные, Контакты и должность, Виды работ и заметки                                     |
+| `pages/inventory/warehouse-form-dialog.component.ts`                     | migrated | Основные данные                                                                                 |
+| `pages/inventory/stock-movement-form-dialog.component.ts`                | migrated | Основные данные                                                                                 |
 
----
+## Outliers / explicitly not in Wave A
 
-## 2. Разрешённые виды (мало)
+| Dialog                                                                       | Reason                                                                                |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- || `pages/materials/material-form-dialog.component.ts` | Already the canonical Material-style reference; no further visual migration required. |
 
-| Kind | variant | width / maxWidth | Когда |
-|------|---------|------------------|--------|
-| **A confirm** | alert / destructive | sm–md | Удалить? Да/нет |
-| **B quick** | form | S→**md**, M→**lg**, L→**xl** (~920) (+ 2-col body M/L) | QuickCreate S/M/L |
-| **C editor** | content | maxWidth min(1120px, …) | Full product/module/material/role |
-| **D wide** | content | min(1400px, …) только table-template и явные исключения | Редко |
+| `pages/modules/module-materials-form-dialog.component.ts`                    | Specialized nested materials editor; not listed in Wave A.                            |
+| Other `*form*dialog*.ts` (contracts, organizations, work types, admin, etc.) | Wave B / future sweep; no changes in this commit.                                     |
+| Confirm/delete dialogs                                                       | Kind A; explicitly excluded by TZ.                                                    |
 
-Новых ad-hoc `width: 360px` / самодельный Overlay — **запрет** (cookbook).
-
----
-
-## 3. QuickCreate (P0 — TZ-UX-DIALOG-302)
-
-Было: `SIZE_TO_WIDTH = S:sm M:md L:lg` + opener `width:'md'`.  
-Стало:
-
-- S → md (~480) · 1 col (если keys &lt; 4)
-- M → lg (~640) + grid 2 col
-- L → xl (~920 form bump) + grid 2 col
-- body: `max-h-[min(70vh,…)] overflow-auto`; footer sticky (shell)
-- openers products/modules: **без** фиксированного `width:'md'` — решает компонент
-
----
-
-## 4. Outliers vs A–D (grep 2026-08-08)
-
-Не рефакторить в этом TZ. Successors по строкам.
-
-| Opener / shell | width / maxWidth | Kind сейчас | vs A–D | Successor? |
-|----------------|------------------|-------------|--------|------------|
-| QuickCreate (product/module) | S/M/L → md/lg/xl | **B** | OK после 302 | — |
-| ProductFormDialog | content + min(1120px) | **C** | OK | — |
-| MaterialFormDialog | content + min(1120px) | **C** | OK | — |
-| ColorReferenceFormDialog | content + min(1120px) | **C** | OK | — |
-| RoleFormDialog | form + maxWidth 1120 | **C**-ish | variant form vs content | soft: content |
-| TableTemplateDialog | form + min(1400px) | **D** | OK (исключение) | — |
-| products/modules FullEditor open | opener `width:'lg'` | shell C внутри | opener width ignored when maxWidth | optional cleanup |
-| Order / Proposal / Contract / People / Org forms | opener `lg` | form mid | часто ближе к **C** | wave: content+1120 |
-| WorkType / Category / Warehouse / StockMovement | opener `md` | simple form | OK-ish / B-lite | low |
-| TextBlockCategoryForm | content-ish maxWidth 1120 | **C** | OK | — |
-| StoragePutOnStock / Adjust / Pick | maxWidth 520–560 | mid form | OK for pickers | — |
-| AlertDialog deletes | sm + destructive | **A** | OK | — |
-| data-field-picker | content maxWidth 896 | mid-C | OK / clamp | — |
-| product-bom picker / cost detail | content / xl | mid-C | OK | — |
-
-**known_limitation:** полное выравнивание legacy form-dialogs (orders/proposals/contracts/people/org → kind C) — отдельными TZ, не 302.
-
----
-
-## 5. Status
-
-**TZ-UX-DIALOG-302** — cookbook + QuickCreate layout + outliers table (этот файл).
+No business logic, API/DTO, form control names, or submit payloads were changed.

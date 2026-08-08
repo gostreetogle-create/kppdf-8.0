@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-FORM-305 DONE: form-dialog sections sweep Wave A
+
+**Исполнитель:** Buffy / agent-acfffc1331
+**Статус:** DONE on executor branch; deploy НЕ
+**Что:** Wave A form-dialogs получили общий `PiFormSection`: Product, Module, color/category/document/text categories, Order, Proposal, People, Warehouse и Stock Movement. Payload/API/FormControl/business logic не изменялись; outliers вынесены в audit.
+**Gates:** FE tsc PASS; Angular development build PASS; targeted Jest 5 suites / 58 tests PASS; scoped ESLint PASS with one pre-existing order raw-HttpClient warning; scoped Prettier PASS; diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-FORM-305.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-FORM-305-dialog-sections-sweep.lock`
+**Known:** Wave B deferred and listed in `docs/audits/2026-08-08-dialog-layout-canon.md`; Material remains canon reference. Deploy: NO.
+
 ## [2026-08-08] — TZ-UX-FORM-304 DONE: QuickCreate L composition reuse
 
 **Исполнитель:** Buffy / agent-acfffc1331

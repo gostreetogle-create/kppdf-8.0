@@ -5,6 +5,7 @@ import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
 import { InputComponent } from '../../shared/ui/input/input.component';
 import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
+import { PiFormSectionComponent } from '../../shared/ui/form-section';
 import { SwitchComponent } from '../../shared/ui/switch/switch.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
@@ -47,6 +48,7 @@ type Result = DocumentTemplateCategory | null | undefined;
     InputComponent,
     TextareaComponent,
     SwitchComponent,
+    PiFormSectionComponent,
   ],
   template: `
     <app-pi-dialog
@@ -60,72 +62,78 @@ type Result = DocumentTemplateCategory | null | undefined;
         class="space-y-form-field"
         data-test="doc-template-category-form"
       >
-        <app-pi-form-field
-          label="Название"
-          htmlFor="dtc-name"
-          [required]="true"
-          [error]="errorFor('name')"
+        <app-pi-form-section
+          title="Основные данные"
+          headingId="doc-category-sec-basics"
+          tone="gold"
         >
-          <app-pi-input
-            id="dtc-name"
-            formControlName="name"
-            placeholder="Коммерческие предложения"
-            [invalid]="hasError('name')"
-          />
-        </app-pi-form-field>
-
-        <app-pi-form-field
-          label="Slug (ключ)"
-          htmlFor="dtc-slug"
-          hint="Необязательно — сервер сгенерирует из названия. Строчные латинские, цифры, дефис."
-          [error]="errorFor('slug')"
-        >
-          <app-pi-input
-            id="dtc-slug"
-            formControlName="slug"
-            placeholder="commercial-proposals"
-            [invalid]="hasError('slug')"
-          />
-        </app-pi-form-field>
-
-        <app-pi-form-field label="Описание" htmlFor="dtc-description">
-          <app-pi-textarea
-            id="dtc-description"
-            formControlName="description"
-            [rows]="2"
-            [maxLength]="512"
-            ariaLabel="Описание категории шаблона"
-          />
-        </app-pi-form-field>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field items-center">
           <app-pi-form-field
-            label="Категория по умолчанию"
-            htmlFor="dtc-isDefault"
-            hint="Автоподстановка для новых шаблонов"
+            label="Название"
+            htmlFor="dtc-name"
+            [required]="true"
+            [error]="errorFor('name')"
           >
-            <app-pi-switch
-              id="dtc-isDefault"
-              [checked]="form.controls.isDefault.value"
-              (checkedChange)="onIsDefaultChange($event)"
-              ariaLabel="Категория по умолчанию"
+            <app-pi-input
+              id="dtc-name"
+              formControlName="name"
+              placeholder="Коммерческие предложения"
+              [invalid]="hasError('name')"
             />
           </app-pi-form-field>
 
-          <app-pi-form-field label="Порядок сортировки" htmlFor="dtc-sortOrder">
-            <input
-              id="dtc-sortOrder"
-              type="number"
-              formControlName="sortOrder"
-              min="0"
-              class="pi-input w-full mono"
+          <app-pi-form-field
+            label="Slug (ключ)"
+            htmlFor="dtc-slug"
+            hint="Необязательно — сервер сгенерирует из названия. Строчные латинские, цифры, дефис."
+            [error]="errorFor('slug')"
+          >
+            <app-pi-input
+              id="dtc-slug"
+              formControlName="slug"
+              placeholder="commercial-proposals"
+              [invalid]="hasError('slug')"
             />
           </app-pi-form-field>
-        </div>
 
-        @if (errorMessage()) {
-          <p role="alert" class="text-xs text-destructive">{{ errorMessage() }}</p>
-        }
+          <app-pi-form-field label="Описание" htmlFor="dtc-description">
+            <app-pi-textarea
+              id="dtc-description"
+              formControlName="description"
+              [rows]="2"
+              [maxLength]="512"
+              ariaLabel="Описание категории шаблона"
+            />
+          </app-pi-form-field>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field items-center">
+            <app-pi-form-field
+              label="Категория по умолчанию"
+              htmlFor="dtc-isDefault"
+              hint="Автоподстановка для новых шаблонов"
+            >
+              <app-pi-switch
+                id="dtc-isDefault"
+                [checked]="form.controls.isDefault.value"
+                (checkedChange)="onIsDefaultChange($event)"
+                ariaLabel="Категория по умолчанию"
+              />
+            </app-pi-form-field>
+
+            <app-pi-form-field label="Порядок сортировки" htmlFor="dtc-sortOrder">
+              <input
+                id="dtc-sortOrder"
+                type="number"
+                formControlName="sortOrder"
+                min="0"
+                class="pi-input w-full mono"
+              />
+            </app-pi-form-field>
+          </div>
+
+          @if (errorMessage()) {
+            <p role="alert" class="text-xs text-destructive">{{ errorMessage() }}</p>
+          }
+        </app-pi-form-section>
       </form>
 
       <div footer class="flex gap-3">

@@ -5,6 +5,7 @@ import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
 import { InputComponent } from '../../shared/ui/input/input.component';
 import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
+import { PiFormSectionComponent } from '../../shared/ui/form-section';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
 import { extractErrorMessage } from '../../core/silent-http';
@@ -30,6 +31,7 @@ const CATEGORY_TYPES: { value: Category['type']; label: string }[] = [
     FormFieldComponent,
     InputComponent,
     TextareaComponent,
+    PiFormSectionComponent,
   ],
   template: `
     <app-pi-dialog
@@ -43,75 +45,77 @@ const CATEGORY_TYPES: { value: Category['type']; label: string }[] = [
         class="space-y-form-field"
         data-test="category-form"
       >
-        <app-pi-form-field
-          label="Название"
-          htmlFor="cat-name"
-          [required]="true"
-          [error]="errorFor('name')"
-        >
-          <app-pi-input
-            id="cat-name"
-            formControlName="name"
-            placeholder="Название категории"
-            [invalid]="hasError('name')"
-          />
-        </app-pi-form-field>
-
-        <app-pi-form-field
-          label="Slug (URL-ключ)"
-          htmlFor="cat-slug"
-          [required]="true"
-          hint="Строчные латинские буквы, цифры, дефис. Например: metals, wood"
-          [error]="errorFor('slug')"
-        >
-          <app-pi-input
-            id="cat-slug"
-            formControlName="slug"
-            placeholder="category-slug"
-            [invalid]="hasError('slug')"
-          />
-        </app-pi-form-field>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
-          <app-pi-form-field label="Тип" htmlFor="cat-type" [required]="true">
-            <select id="cat-type" formControlName="type" class="pi-input w-full">
-              @for (opt of CATEGORY_TYPES; track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
-              }
-            </select>
+        <app-pi-form-section title="Основные данные" headingId="category-sec-basics" tone="gold">
+          <app-pi-form-field
+            label="Название"
+            htmlFor="cat-name"
+            [required]="true"
+            [error]="errorFor('name')"
+          >
+            <app-pi-input
+              id="cat-name"
+              formControlName="name"
+              placeholder="Название категории"
+              [invalid]="hasError('name')"
+            />
           </app-pi-form-field>
 
           <app-pi-form-field
-            label="Префикс SKU"
-            htmlFor="cat-skuPrefix"
+            label="Slug (URL-ключ)"
+            htmlFor="cat-slug"
             [required]="true"
-            hint="Заглавные A-Z, 0-9, дефис"
-            [error]="errorFor('skuPrefix')"
+            hint="Строчные латинские буквы, цифры, дефис. Например: metals, wood"
+            [error]="errorFor('slug')"
           >
             <app-pi-input
-              id="cat-skuPrefix"
-              formControlName="skuPrefix"
-              placeholder="MAT"
-              [invalid]="hasError('skuPrefix')"
+              id="cat-slug"
+              formControlName="slug"
+              placeholder="category-slug"
+              [invalid]="hasError('slug')"
             />
           </app-pi-form-field>
-        </div>
 
-        <app-pi-form-field label="Описание" htmlFor="cat-description">
-          <app-pi-textarea
-            id="cat-description"
-            formControlName="description"
-            [rows]="2"
-            [maxLength]="512"
-            ariaLabel="Описание категории"
-          />
-        </app-pi-form-field>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
+            <app-pi-form-field label="Тип" htmlFor="cat-type" [required]="true">
+              <select id="cat-type" formControlName="type" class="pi-input w-full">
+                @for (opt of CATEGORY_TYPES; track opt.value) {
+                  <option [value]="opt.value">{{ opt.label }}</option>
+                }
+              </select>
+            </app-pi-form-field>
 
-        @if (errorMessage()) {
-          <p role="alert" class="text-xs text-destructive">
-            {{ errorMessage() }}
-          </p>
-        }
+            <app-pi-form-field
+              label="Префикс SKU"
+              htmlFor="cat-skuPrefix"
+              [required]="true"
+              hint="Заглавные A-Z, 0-9, дефис"
+              [error]="errorFor('skuPrefix')"
+            >
+              <app-pi-input
+                id="cat-skuPrefix"
+                formControlName="skuPrefix"
+                placeholder="MAT"
+                [invalid]="hasError('skuPrefix')"
+              />
+            </app-pi-form-field>
+          </div>
+
+          <app-pi-form-field label="Описание" htmlFor="cat-description">
+            <app-pi-textarea
+              id="cat-description"
+              formControlName="description"
+              [rows]="2"
+              [maxLength]="512"
+              ariaLabel="Описание категории"
+            />
+          </app-pi-form-field>
+
+          @if (errorMessage()) {
+            <p role="alert" class="text-xs text-destructive">
+              {{ errorMessage() }}
+            </p>
+          }
+        </app-pi-form-section>
       </form>
 
       <div footer class="flex gap-3">

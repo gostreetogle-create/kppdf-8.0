@@ -1,6 +1,6 @@
 # SESSION QUEUE — continuous executor
 
-**Updated:** 2026-08-08T09:15Z · wave **FORM-302→305**
+**Updated:** 2026-08-08T09:21Z · wave **FORM-302→305**
 **Wave file:** `docs/agent-checklists/SESSION-WAVE-2026-08-08-form-unify.md`
 
 ## DONE this session
@@ -15,28 +15,28 @@
 | **TZ-UX-FORM-302** | shared PiFormSection + Material/QC sections |
 | **TZ-UX-FORM-303** | shared photo dropzone + product QC L photoIds |
 | **TZ-UX-FORM-304** | Product QuickCreate L composition via reused ProductBomPanel |
+| **TZ-UX-FORM-305** | Wave A form-dialog sections sweep |
 
-## READY / NEXT (STRICT wave only)
+## READY / NEXT
 
 | ID | Status |
 |----|--------|
-| **TZ-UX-FORM-305** | IN PROGRESS — sweep form-dialogs, wave A required |
+| idle | queue empty |
 
 ## PARK (не брать в этой волне)
 
 | ID | Why |
 |----|-----|
+| TZ-UX-FORM-305 Wave B | deferred; outliers audit records remaining dialogs |
 | TZ-UX-302 / 303 | chrome — после волны |
 | TZ-SALES-304 | после PO probes |
 | SUPPLY-302 / Production | later |
 | deploy | только «задеплой» |
 
-## Checkpoint 2026-08-08T09:15Z
-- DONE: **TZ-UX-FORM-302**, **TZ-UX-FORM-303**, **TZ-UX-FORM-304**
-- IN PROGRESS: **TZ-UX-FORM-305**
-- NOT DONE: none after current claim
-- NEXT: **TZ-UX-FORM-305**
-- Deploy: NO
-- _active/: FORM-305 after claim
-- HEAD: pending FORM-304 commit
+## Final checkpoint 2026-08-08T09:21Z
+- DONE: **TZ-UX-FORM-302**, **TZ-UX-FORM-303**, **TZ-UX-FORM-304**, **TZ-UX-FORM-305 Wave A**
+- IN PROGRESS: none
+- NEXT: **idle**
+- Deploy: **NO**
+- _active/: empty after closeout
 - Blockers: none

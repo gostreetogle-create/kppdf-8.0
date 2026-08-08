@@ -13,6 +13,7 @@ import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
 import { InputComponent } from '../../shared/ui/input/input.component';
 import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
+import { PiFormSectionComponent } from '../../shared/ui/form-section';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
@@ -81,6 +82,7 @@ interface ItemFormGroup extends FormGroup {
     FormFieldComponent,
     InputComponent,
     TextareaComponent,
+    PiFormSectionComponent,
   ],
   template: `
     <app-pi-dialog [title]="isEdit() ? 'Редактировать заказ' : 'Создать заказ'" [width]="'lg'">
@@ -92,263 +94,276 @@ interface ItemFormGroup extends FormGroup {
         data-test="order-form"
       >
         <!-- ─── Header ─── -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
-          <app-pi-form-field
-            label="Заказчик"
-            htmlFor="ord-cp"
-            [required]="true"
-            [error]="errorFor('counterpartyId')"
-          >
-            <select
-              id="ord-cp"
-              formControlName="counterpartyId"
-              class="pi-input w-full"
-              [class.border-destructive]="hasError('counterpartyId')"
-              (change)="onCounterpartyChange($any($event.target).value)"
+        <app-pi-form-section title="Основные данные" headingId="order-sec-basics" tone="gold">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
+            <app-pi-form-field
+              label="Заказчик"
+              htmlFor="ord-cp"
+              [required]="true"
+              [error]="errorFor('counterpartyId')"
             >
-              <option value="" disabled>— выберите —</option>
-              @for (cp of counterparties(); track cp._id) {
-                <option [value]="cp._id">
-                  {{ cp.name }}{{ cp.inn ? ' · ИНН ' + cp.inn : '' }}
-                </option>
-              }
-            </select>
-          </app-pi-form-field>
+              <select
+                id="ord-cp"
+                formControlName="counterpartyId"
+                class="pi-input w-full"
+                [class.border-destructive]="hasError('counterpartyId')"
+                (change)="onCounterpartyChange($any($event.target).value)"
+              >
+                <option value="" disabled>— выберите —</option>
+                @for (cp of counterparties(); track cp._id) {
+                  <option [value]="cp._id">
+                    {{ cp.name }}{{ cp.inn ? ' · ИНН ' + cp.inn : '' }}
+                  </option>
+                }
+              </select>
+            </app-pi-form-field>
 
-          <app-pi-form-field
-            label="Объект"
-            htmlFor="ord-site"
-            [required]="true"
-            [error]="errorFor('siteId')"
-          >
-            <select
-              id="ord-site"
-              formControlName="siteId"
-              class="pi-input w-full"
-              [class.border-destructive]="hasError('siteId')"
+            <app-pi-form-field
+              label="Объект"
+              htmlFor="ord-site"
+              [required]="true"
+              [error]="errorFor('siteId')"
             >
-              <option value="" disabled>
-                {{ form.controls.counterpartyId.value ? '— выберите —' : 'Сначала заказчик' }}
-              </option>
-              @for (s of sites(); track s._id) {
-                <option [value]="s._id">
-                  {{ s.name }}{{ s.address ? ' · ' + s.address : '' }}
+              <select
+                id="ord-site"
+                formControlName="siteId"
+                class="pi-input w-full"
+                [class.border-destructive]="hasError('siteId')"
+              >
+                <option value="" disabled>
+                  {{ form.controls.counterpartyId.value ? '— выберите —' : 'Сначала заказчик' }}
                 </option>
-              }
-            </select>
-          </app-pi-form-field>
+                @for (s of sites(); track s._id) {
+                  <option [value]="s._id">
+                    {{ s.name }}{{ s.address ? ' · ' + s.address : '' }}
+                  </option>
+                }
+              </select>
+            </app-pi-form-field>
 
-          <app-pi-form-field
-            label="Номер"
-            htmlFor="ord-number"
-            hint="Если не задан — генерируется автоматически"
-          >
-            <app-pi-input id="ord-number" formControlName="number" placeholder="Номер заказа" />
-          </app-pi-form-field>
+            <app-pi-form-field
+              label="Номер"
+              htmlFor="ord-number"
+              hint="Если не задан — генерируется автоматически"
+            >
+              <app-pi-input id="ord-number" formControlName="number" placeholder="Номер заказа" />
+            </app-pi-form-field>
 
-          <app-pi-form-field label="Планируемая дата" htmlFor="ord-plannedDate">
-            <app-pi-input
-              id="ord-plannedDate"
-              type="text"
-              formControlName="plannedDate"
-              placeholder="ГГГГ-ММ-ДД"
-            />
-          </app-pi-form-field>
-
-          <app-pi-form-field label="Приоритет" htmlFor="ord-priority">
-            <select id="ord-priority" formControlName="priority" class="pi-input w-full">
-              @for (opt of PRIORITY_OPTIONS; track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
-              }
-            </select>
-          </app-pi-form-field>
-
-          <app-pi-form-field label="Статус" htmlFor="ord-status">
-            <select id="ord-status" formControlName="status" class="pi-input w-full">
-              @for (opt of STATUS_OPTIONS; track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
-              }
-            </select>
-          </app-pi-form-field>
-
-          <div class="sm:col-span-2">
-            <app-pi-form-field label="Адрес доставки" htmlFor="ord-address">
+            <app-pi-form-field label="Планируемая дата" htmlFor="ord-plannedDate">
               <app-pi-input
-                id="ord-address"
-                formControlName="deliveryAddress"
-                placeholder="Адрес доставки"
+                id="ord-plannedDate"
+                type="text"
+                formControlName="plannedDate"
+                placeholder="ГГГГ-ММ-ДД"
               />
             </app-pi-form-field>
+
+            <app-pi-form-field label="Приоритет" htmlFor="ord-priority">
+              <select id="ord-priority" formControlName="priority" class="pi-input w-full">
+                @for (opt of PRIORITY_OPTIONS; track opt.value) {
+                  <option [value]="opt.value">{{ opt.label }}</option>
+                }
+              </select>
+            </app-pi-form-field>
+
+            <app-pi-form-field label="Статус" htmlFor="ord-status">
+              <select id="ord-status" formControlName="status" class="pi-input w-full">
+                @for (opt of STATUS_OPTIONS; track opt.value) {
+                  <option [value]="opt.value">{{ opt.label }}</option>
+                }
+              </select>
+            </app-pi-form-field>
+
+            <div class="sm:col-span-2">
+              <app-pi-form-field label="Адрес доставки" htmlFor="ord-address">
+                <app-pi-input
+                  id="ord-address"
+                  formControlName="deliveryAddress"
+                  placeholder="Адрес доставки"
+                />
+              </app-pi-form-field>
+            </div>
           </div>
-        </div>
+        </app-pi-form-section>
 
         <!-- ─── Quick-create заказчик ─── -->
-        <div
-          class="p-3 hairline rounded-sm bg-paper-2/30 space-y-form-field"
-          data-test="order-quick-party"
-          [formGroup]="quickForm"
+        <app-pi-form-section
+          title="Быстрый заказчик"
+          headingId="order-sec-quick-party"
+          tone="neutral"
         >
-          <p class="eyebrow m-0">Быстрый заказчик</p>
-          <p class="text-xs text-muted-foreground m-0">
-            Имя, телефон и адрес объекта — создаст заказчика и объект и подставит в заказ.
-          </p>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-form-field">
-            <app-pi-form-field label="Имя" htmlFor="ord-qc-name" [required]="true">
-              <app-pi-input id="ord-qc-name" formControlName="name" placeholder="ООО … / ИП …" />
-            </app-pi-form-field>
-            <app-pi-form-field label="Телефон" htmlFor="ord-qc-phone">
-              <app-pi-input id="ord-qc-phone" formControlName="phone" placeholder="+7 …" />
-            </app-pi-form-field>
-            <app-pi-form-field label="Адрес объекта" htmlFor="ord-qc-address" [required]="true">
-              <app-pi-input
-                id="ord-qc-address"
-                formControlName="address"
-                placeholder="Город, улица…"
-              />
-            </app-pi-form-field>
-          </div>
-          <app-pi-button
-            type="button"
-            variant="outline"
-            size="sm"
-            [disabled]="quickSubmitting()"
-            (click)="onQuickCreate()"
-            data-test="order-quick-create"
+          <div
+            class="p-3 hairline rounded-sm bg-paper-2/30 space-y-form-field"
+            data-test="order-quick-party"
+            [formGroup]="quickForm"
           >
-            {{ quickSubmitting() ? 'Создание…' : 'Создать и подставить' }}
-          </app-pi-button>
-          @if (quickError()) {
-            <p role="alert" class="text-xs text-destructive m-0">{{ quickError() }}</p>
-          }
-        </div>
-
-        <!-- ─── Items ─── -->
-        <div>
-          <div class="flex items-baseline justify-between mb-form-row">
-            <p class="eyebrow">Позиции <span class="text-destructive">*</span></p>
+            <p class="text-xs text-muted-foreground m-0">
+              Имя, телефон и адрес объекта — создаст заказчика и объект и подставит в заказ.
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-form-field">
+              <app-pi-form-field label="Имя" htmlFor="ord-qc-name" [required]="true">
+                <app-pi-input id="ord-qc-name" formControlName="name" placeholder="ООО … / ИП …" />
+              </app-pi-form-field>
+              <app-pi-form-field label="Телефон" htmlFor="ord-qc-phone">
+                <app-pi-input id="ord-qc-phone" formControlName="phone" placeholder="+7 …" />
+              </app-pi-form-field>
+              <app-pi-form-field label="Адрес объекта" htmlFor="ord-qc-address" [required]="true">
+                <app-pi-input
+                  id="ord-qc-address"
+                  formControlName="address"
+                  placeholder="Город, улица…"
+                />
+              </app-pi-form-field>
+            </div>
             <app-pi-button
               type="button"
               variant="outline"
               size="sm"
-              (click)="addItem()"
-              data-test="add-item"
+              [disabled]="quickSubmitting()"
+              (click)="onQuickCreate()"
+              data-test="order-quick-create"
             >
-              + Добавить позицию
+              {{ quickSubmitting() ? 'Создание…' : 'Создать и подставить' }}
             </app-pi-button>
-          </div>
-
-          @if (itemsArray.length === 0) {
-            <p class="text-xs text-muted-foreground">
-              Нет позиций. Backend требует хотя бы одну. Нажмите «+ Добавить позицию».
-            </p>
-          }
-
-          <div formArrayName="items" class="space-y-2">
-            @for (itemGroup of itemsArray.controls; track $index; let i = $index) {
-              <div
-                [formGroupName]="i"
-                class="grid grid-cols-12 gap-2 items-end p-2 hairline rounded-sm bg-paper-2/30"
-                [attr.data-test]="'item-row-' + i"
-              >
-                <label class="col-span-12 sm:col-span-5 block">
-                  <span class="eyebrow block mb-1.5">Продукт</span>
-                  <select
-                    [attr.id]="'ord-item-product-' + i"
-                    [attr.name]="'item-product-' + i"
-                    formControlName="productId"
-                    (change)="onProductPick(i, $any($event.target).value)"
-                    class="h-8 px-3 text-xs hairline rounded-sm bg-paper pi-focus-ring w-full"
-                    [attr.aria-label]="'Продукт ' + (i + 1)"
-                  >
-                    <option value="" disabled>— выберите —</option>
-                    @for (p of products(); track p._id) {
-                      <option [value]="p._id">{{ p.name }}{{ p.sku ? ' · ' + p.sku : '' }}</option>
-                    }
-                  </select>
-                </label>
-
-                <label class="col-span-6 sm:col-span-2 block">
-                  <span class="eyebrow block mb-1.5">Кол-во</span>
-                  <app-pi-input
-                    type="number"
-                    formControlName="quantity"
-                    size="sm"
-                    placeholder="0"
-                    [attr.aria-label]="'Количество ' + (i + 1)"
-                  />
-                </label>
-
-                <label class="col-span-6 sm:col-span-2 block">
-                  <span class="eyebrow block mb-1.5">Цена ₽</span>
-                  <app-pi-input
-                    type="number"
-                    formControlName="unitPrice"
-                    size="sm"
-                    placeholder="0"
-                    [attr.aria-label]="'Цена за единицу ' + (i + 1)"
-                  />
-                </label>
-
-                <label class="col-span-8 sm:col-span-2 block">
-                  <span class="eyebrow block mb-1.5">Ед.</span>
-                  <app-pi-input
-                    formControlName="unit"
-                    size="sm"
-                    placeholder="шт"
-                    [attr.aria-label]="'Единица ' + (i + 1)"
-                  />
-                </label>
-
-                <app-pi-button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  [attr.aria-label]="'Удалить позицию ' + (i + 1)"
-                  (click)="removeItem(i)"
-                  data-test="remove-item"
-                >
-                  ×
-                </app-pi-button>
-
-                <label class="col-span-12 sm:col-span-6 block">
-                  <span class="eyebrow block mb-1.5">Ответственный</span>
-                  <select
-                    [attr.id]="'ord-item-owner-' + i"
-                    formControlName="ownerUserId"
-                    class="h-8 px-3 text-xs hairline rounded-sm bg-paper pi-focus-ring w-full"
-                    [attr.aria-label]="'Ответственный ' + (i + 1)"
-                  >
-                    <option value="">— не назначен —</option>
-                    @for (u of users(); track u._id) {
-                      <option [value]="u._id">{{ userLabel(u) }}</option>
-                    }
-                  </select>
-                </label>
-
-                <label class="col-span-12 sm:col-span-6 block">
-                  <span class="eyebrow block mb-1.5">Отгрузка</span>
-                  <input
-                    type="date"
-                    formControlName="plannedShipDate"
-                    class="h-8 px-3 text-xs hairline rounded-sm bg-paper pi-focus-ring w-full"
-                    [attr.aria-label]="'Дата отгрузки ' + (i + 1)"
-                  />
-                </label>
-              </div>
+            @if (quickError()) {
+              <p role="alert" class="text-xs text-destructive m-0">{{ quickError() }}</p>
             }
           </div>
-        </div>
+        </app-pi-form-section>
+
+        <!-- ─── Items ─── -->
+        <app-pi-form-section title="Позиции" headingId="order-sec-items" tone="neutral">
+          <div>
+            <div class="flex items-baseline justify-between mb-form-row">
+              <p class="text-sm font-medium">Позиции <span class="text-destructive">*</span></p>
+              <app-pi-button
+                type="button"
+                variant="outline"
+                size="sm"
+                (click)="addItem()"
+                data-test="add-item"
+              >
+                + Добавить позицию
+              </app-pi-button>
+            </div>
+
+            @if (itemsArray.length === 0) {
+              <p class="text-xs text-muted-foreground">
+                Нет позиций. Backend требует хотя бы одну. Нажмите «+ Добавить позицию».
+              </p>
+            }
+
+            <div formArrayName="items" class="space-y-2">
+              @for (itemGroup of itemsArray.controls; track $index; let i = $index) {
+                <div
+                  [formGroupName]="i"
+                  class="grid grid-cols-12 gap-2 items-end p-2 hairline rounded-sm bg-paper-2/30"
+                  [attr.data-test]="'item-row-' + i"
+                >
+                  <label class="col-span-12 sm:col-span-5 block">
+                    <span class="eyebrow block mb-1.5">Продукт</span>
+                    <select
+                      [attr.id]="'ord-item-product-' + i"
+                      [attr.name]="'item-product-' + i"
+                      formControlName="productId"
+                      (change)="onProductPick(i, $any($event.target).value)"
+                      class="h-8 px-3 text-xs hairline rounded-sm bg-paper pi-focus-ring w-full"
+                      [attr.aria-label]="'Продукт ' + (i + 1)"
+                    >
+                      <option value="" disabled>— выберите —</option>
+                      @for (p of products(); track p._id) {
+                        <option [value]="p._id">
+                          {{ p.name }}{{ p.sku ? ' · ' + p.sku : '' }}
+                        </option>
+                      }
+                    </select>
+                  </label>
+
+                  <label class="col-span-6 sm:col-span-2 block">
+                    <span class="eyebrow block mb-1.5">Кол-во</span>
+                    <app-pi-input
+                      type="number"
+                      formControlName="quantity"
+                      size="sm"
+                      placeholder="0"
+                      [attr.aria-label]="'Количество ' + (i + 1)"
+                    />
+                  </label>
+
+                  <label class="col-span-6 sm:col-span-2 block">
+                    <span class="eyebrow block mb-1.5">Цена ₽</span>
+                    <app-pi-input
+                      type="number"
+                      formControlName="unitPrice"
+                      size="sm"
+                      placeholder="0"
+                      [attr.aria-label]="'Цена за единицу ' + (i + 1)"
+                    />
+                  </label>
+
+                  <label class="col-span-8 sm:col-span-2 block">
+                    <span class="eyebrow block mb-1.5">Ед.</span>
+                    <app-pi-input
+                      formControlName="unit"
+                      size="sm"
+                      placeholder="шт"
+                      [attr.aria-label]="'Единица ' + (i + 1)"
+                    />
+                  </label>
+
+                  <app-pi-button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    [attr.aria-label]="'Удалить позицию ' + (i + 1)"
+                    (click)="removeItem(i)"
+                    data-test="remove-item"
+                  >
+                    ×
+                  </app-pi-button>
+
+                  <label class="col-span-12 sm:col-span-6 block">
+                    <span class="eyebrow block mb-1.5">Ответственный</span>
+                    <select
+                      [attr.id]="'ord-item-owner-' + i"
+                      formControlName="ownerUserId"
+                      class="h-8 px-3 text-xs hairline rounded-sm bg-paper pi-focus-ring w-full"
+                      [attr.aria-label]="'Ответственный ' + (i + 1)"
+                    >
+                      <option value="">— не назначен —</option>
+                      @for (u of users(); track u._id) {
+                        <option [value]="u._id">{{ userLabel(u) }}</option>
+                      }
+                    </select>
+                  </label>
+
+                  <label class="col-span-12 sm:col-span-6 block">
+                    <span class="eyebrow block mb-1.5">Отгрузка</span>
+                    <input
+                      type="date"
+                      formControlName="plannedShipDate"
+                      class="h-8 px-3 text-xs hairline rounded-sm bg-paper pi-focus-ring w-full"
+                      [attr.aria-label]="'Дата отгрузки ' + (i + 1)"
+                    />
+                  </label>
+                </div>
+              }
+            </div>
+          </div>
+        </app-pi-form-section>
 
         <!-- ─── Notes ─── -->
-        <app-pi-form-field label="Заметки" htmlFor="ord-notes">
-          <app-pi-textarea
-            id="ord-notes"
-            formControlName="notes"
-            [rows]="2"
-            [maxLength]="2000"
-            ariaLabel="Заметки"
-          />
-        </app-pi-form-field>
+        <app-pi-form-section title="Заметки" headingId="order-sec-notes" tone="neutral">
+          <app-pi-form-field label="Заметки" htmlFor="ord-notes">
+            <app-pi-textarea
+              id="ord-notes"
+              formControlName="notes"
+              [rows]="2"
+              [maxLength]="2000"
+              ariaLabel="Заметки"
+            />
+          </app-pi-form-field>
+        </app-pi-form-section>
 
         @if (errorMessage()) {
           <p role="alert" class="text-xs text-destructive">

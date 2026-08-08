@@ -6,6 +6,7 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field.compon
 import { InputComponent } from '../../shared/ui/input/input.component';
 import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
 import { SwitchComponent } from '../../shared/ui/switch/switch.component';
+import { PiFormSectionComponent } from '../../shared/ui/form-section';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
 import { extractErrorMessage } from '../../core/silent-http';
@@ -37,6 +38,7 @@ const WAREHOUSE_TYPES: { value: WarehouseType; label: string }[] = [
     InputComponent,
     TextareaComponent,
     SwitchComponent,
+    PiFormSectionComponent,
   ],
   template: `
     <app-pi-dialog
@@ -51,63 +53,65 @@ const WAREHOUSE_TYPES: { value: WarehouseType; label: string }[] = [
         class="space-y-form-field"
         data-test="warehouse-form"
       >
-        <app-pi-form-field
-          label="Название"
-          htmlFor="wh-name"
-          [required]="true"
-          [error]="errorFor('name')"
-        >
-          <app-pi-input
-            id="wh-name"
-            formControlName="name"
-            placeholder="Цех окраски"
-            [invalid]="hasError('name')"
-          />
-        </app-pi-form-field>
+        <app-pi-form-section title="Основные данные" headingId="warehouse-sec-basics" tone="gold">
+          <app-pi-form-field
+            label="Название"
+            htmlFor="wh-name"
+            [required]="true"
+            [error]="errorFor('name')"
+          >
+            <app-pi-input
+              id="wh-name"
+              formControlName="name"
+              placeholder="Цех окраски"
+              [invalid]="hasError('name')"
+            />
+          </app-pi-form-field>
 
-        <app-pi-form-field
-          label="Тип"
-          htmlFor="wh-type"
-          hint="Классификация для отчётов и подписей: Основной — главный склад; Производство/цех — запасы в цехе; Транзит — перевалочная точка; Филиал — удалённый склад; Другой — прочее. На движения не влияет."
-        >
-          <select id="wh-type" class="pi-input w-full" formControlName="type" data-test="wh-type">
-            @for (t of types; track t.value) {
-              <option [value]="t.value">{{ t.label }}</option>
-            }
-          </select>
-        </app-pi-form-field>
+          <app-pi-form-field
+            label="Тип"
+            htmlFor="wh-type"
+            hint="Классификация для отчётов и подписей: Основной — главный склад; Производство/цех — запасы в цехе; Транзит — перевалочная точка; Филиал — удалённый склад; Другой — прочее. На движения не влияет."
+          >
+            <select id="wh-type" class="pi-input w-full" formControlName="type" data-test="wh-type">
+              @for (t of types; track t.value) {
+                <option [value]="t.value">{{ t.label }}</option>
+              }
+            </select>
+          </app-pi-form-field>
 
-        <app-pi-form-field label="Адрес" htmlFor="wh-address">
-          <app-pi-input id="wh-address" formControlName="address" placeholder="Опционально" />
-        </app-pi-form-field>
+          <app-pi-form-field label="Адрес" htmlFor="wh-address">
+            <app-pi-input id="wh-address" formControlName="address" placeholder="Опционально" />
+          </app-pi-form-field>
 
-        <app-pi-form-field label="Зоны" htmlFor="wh-zones" hint="Через запятую: А, Б, Стеллаж 1">
-          <app-pi-input id="wh-zones" formControlName="zonesText" placeholder="А, Б" />
-        </app-pi-form-field>
+          <app-pi-form-field label="Зоны" htmlFor="wh-zones" hint="Через запятую: А, Б, Стеллаж 1">
+            <app-pi-input id="wh-zones" formControlName="zonesText" placeholder="А, Б" />
+          </app-pi-form-field>
 
-        <app-pi-form-field label="Описание" htmlFor="wh-description">
-          <app-pi-textarea
-            id="wh-description"
-            formControlName="description"
-            [rows]="2"
-            [maxLength]="512"
-            ariaLabel="Описание склада"
-          />
-        </app-pi-form-field>
+          <app-pi-form-field label="Описание" htmlFor="wh-description">
+            <app-pi-textarea
+              id="wh-description"
+              formControlName="description"
+              [rows]="2"
+              [maxLength]="512"
+              ariaLabel="Описание склада"
+            />
+          </app-pi-form-field>
 
-        <div class="flex items-center gap-3">
-          <app-pi-switch
-            id="wh-active"
-            [checked]="form.controls.isActive.value"
-            (checkedChange)="onActiveChange($event)"
-            ariaLabel="Склад активен"
-          />
-          <label for="wh-active" class="text-sm cursor-pointer">Активен</label>
-        </div>
+          <div class="flex items-center gap-3">
+            <app-pi-switch
+              id="wh-active"
+              [checked]="form.controls.isActive.value"
+              (checkedChange)="onActiveChange($event)"
+              ariaLabel="Склад активен"
+            />
+            <label for="wh-active" class="text-sm cursor-pointer">Активен</label>
+          </div>
 
-        @if (errorMessage()) {
-          <p class="text-sm text-destructive" role="alert">{{ errorMessage() }}</p>
-        }
+          @if (errorMessage()) {
+            <p class="text-sm text-destructive" role="alert">{{ errorMessage() }}</p>
+          }
+        </app-pi-form-section>
       </form>
 
       <div footer class="flex justify-end gap-2">
