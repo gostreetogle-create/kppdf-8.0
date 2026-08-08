@@ -7,7 +7,17 @@
 **Краткое описание:** интерактивная панель сборки изделия — паспорт + BOM
 (дерево + инспектор) + фото + себестоимость на одной странице.
 **Module parity:** `/modules/:id` копирует этот A+ layout (TZ-CATALOG-336;
-`ProductBomPanel` + `rootKind="module"`).
+`ProductBomPanel` + `rootKind="module"`).  
+**Material A+:** `/materials/:id` — TZ-CATALOG-337 (лист: where-used справа, без BOM).
+
+## Включённость (канон PO)
+
+| Родитель | Можно добавить в состав |
+|----------|-------------------------|
+| **Изделие** | изделие **или** модуль (материал/«деталь» в пикере — не убирать) |
+| **Модуль** | модуль **или** материал |
+
+Один write-path: BomPanel на карточке / QC L. FullEditor = passport + hint (DEDUP-301).
 
 ## Route
 

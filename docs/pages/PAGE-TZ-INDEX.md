@@ -22,10 +22,10 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | Route | Page doc | TZs |
 |-------|----------|-----|
 | `/materials` | materials.page.md | MATERIALS-*; **CATALOG-301** BE DONE; **FE поля 301 = TZ-CATALOG-316**; **CATALOG-UI-301** Group Chip |
-| `/materials/:id` | material detail (312) | CATALOG Wave 2; **UX-313** smart back |
+| `/materials/:id` | **material-detail.page.md** | 312 section sheet; **FACT-304** FactStack; **CATALOG-337** A+ shell; **UX-313** smart back |
 | `/products` | products.page.md | PRODUCTS-*; composition **302…305**; expand polish (gold tray); hierarchy preview **307**; FE **317**; gap **320**; tree **311**; **CATALOG-UI-301** |
 | `/products/:id` | **product-detail.page.md** | 319 stub docs; detail UI; **320** complex/cascade; **311** tree; **330–331** kind palette; **UX-313** smart back |
-| `/modules`, `/modules/:id` | modules.page.md, module-detail.page.md | MODULES-*; photos; **320** module→module; **311** tree; **UX-313** smart back |
+| `/modules`, `/modules/:id` | modules.page.md, **module-detail.page.md** | **CATALOG-336** A+; **COMPOSE-301** discoverability; **DIALOG-305** kind-C width; **UX-313** |
 | `/catalog/appearance` | **catalog-appearance.page.md** | **CATALOG-331** kind palette settings (admin) |
 | `/work-types` | work-types.page.md | WORKTYPES-*, **UX-305 DONE**, **PRODUCTION-302 DONE**; **CATALOG-UI-301** |
 | `/people` | people.page.md | **UX-306 DONE**; **CATALOG-UI-301** |

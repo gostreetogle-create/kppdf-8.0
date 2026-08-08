@@ -6,7 +6,7 @@
 |-------|--------|--------|
 | **A — Desktop** | ~~WAVE-DESKTOP-BULK-IMPORT~~ | **IDLE** |
 | **B — Shop north** | `shop-north-b/WAVE-SHOP-NORTH-B.md` | FACT-304 → FORM-307 (не перехватывать) |
-| **C — Catalog UX** | `catalog-ux-c/WAVE-CATALOG-UX-C.md` | **READY** DEDUP-301 → SELECT-301 → PRODUCTS-307 → DIALOG-304 |
+| **C — Catalog UX** | `catalog-ux-c/WAVE-CATALOG-UX-C.md` | **READY** COMPOSE-301 → DIALOG-305 → 337 → 307 → 304 |
 
 Все только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
@@ -14,7 +14,7 @@
 
 | TZ | Заметка |
 |----|---------|
-| ~~TYPE-303~~ · ~~DIALOG-303~~ · ~~UX-313~~ | DONE |
+| ~~TYPE-303~~ · ~~DIALOG-303~~ · ~~UX-313~~ · ~~DEDUP-301~~ · ~~SELECT-301~~ | DONE |
 | SALES-304 | RESERVED |
 | SHIPPING / Gantt 308–310 | park |
 
@@ -24,3 +24,4 @@
 - чужой desktop / journal / import-task  
 - deploy без команды PO  
 - FACT-304 / FORM-307 если агент B жив  
+- воскрешение ModuleMaterials  
