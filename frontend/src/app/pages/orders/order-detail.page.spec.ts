@@ -84,6 +84,15 @@ describe('OrderDetailPage (TZ-ORDERS-302)', () => {
       .compileComponents();
   });
 
+  it('keeps the shared FactStack adoption contract in the page source', () => {
+    const source = require('fs').readFileSync('src/app/pages/orders/order-detail.page.ts', 'utf8');
+    expect(source).toContain('PiFactCardComponent');
+    expect(source).toContain('PiFactStackComponent');
+    expect(source).toContain('order-detail-facts');
+    expect(source).toContain('Паспорт заказа');
+    expect(source).toContain('o.number');
+  });
+
   it('loads order chrome and live BOM roots without deal prices', async () => {
     const fixture = TestBed.createComponent(OrderDetailPage);
     fixture.detectChanges();

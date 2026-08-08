@@ -25,6 +25,7 @@ import { formatDate } from '../../shared/util/format';
 import { Order, OrderItem, OrdersService } from './orders.service';
 import { SupplyTaskService } from '../../shared/services/pi-supply.service';
 import { PiToastService } from '../../shared/ui/toast';
+import { PiFactCardComponent, PiFactStackComponent } from '../../shared/ui/fact-card';
 
 const ORDER_STATUS_LABELS: Record<Order['status'], string> = {
   draft: 'Черновик',
@@ -51,7 +52,14 @@ type PopulatedOwner =
 @Component({
   selector: 'app-order-detail-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, PiPageChromeComponent, ButtonComponent, CompositionTreeComponent],
+  imports: [
+    RouterLink,
+    PiPageChromeComponent,
+    ButtonComponent,
+    CompositionTreeComponent,
+    PiFactCardComponent,
+    PiFactStackComponent,
+  ],
   template: `
     <app-pi-page-chrome [crumbs]="crumbs()" data-test="order-detail-nav" />
 
@@ -72,49 +80,50 @@ type PopulatedOwner =
     }
 
     @if (order(); as o) {
-      <header class="mb-5 space-y-1" data-test="order-detail-header">
-        <p class="eyebrow m-0">заказ</p>
-        <h1
-          class="font-display text-xl sm:text-2xl tracking-tight text-ink leading-snug m-0"
-          data-test="order-detail-title"
-        >
-          Заказ №{{ o.number }}
-        </h1>
-        <p class="text-xs text-muted-foreground m-0" data-test="order-detail-meta">
-          {{ statusLabel(o.status) }}
-          @if (formatOrderDate(o.date); as d) {
-            <span> · {{ d }}</span>
-          }
-        </p>
-        @if (partyLine(); as party) {
-          <p class="text-sm text-ink m-0 pt-1" data-test="order-detail-party">
-            <span class="text-muted-foreground">Заказчик:</span> {{ party }}
-          </p>
-        }
-        @if (siteLine(); as site) {
-          <p class="text-sm text-ink m-0" data-test="order-detail-site">
-            <span class="text-muted-foreground">Объект:</span> {{ site }}
-          </p>
-        }
-
-        <label
-          class="flex items-center gap-2 text-sm text-ink mt-2"
-          data-test="materials-source-field"
-        >
-          <span class="text-muted-foreground">Материалы:</span>
-          <select
-            class="pi-input py-1 text-sm"
-            [value]="o.materialsSource ?? 'own'"
-            (change)="onMaterialsSourceChange($event)"
-            aria-label="Источник материалов"
+      <header class="mb-5 space-y-3" data-test="order-detail-header">
+        <div>
+          <p class="eyebrow m-0">заказ</p>
+          <h1
+            class="font-display text-xl sm:text-2xl tracking-tight text-ink leading-snug m-0"
+            data-test="order-detail-title"
           >
-            <option value="own">Наши</option>
-            <option value="customer">Заказчика</option>
-          </select>
-        </label>
+            Заказ №{{ o.number }}
+          </h1>
+        </div>
+        <app-pi-fact-stack
+          title="Паспорт заказа"
+          headingId="order-facts"
+          dataTest="order-detail-facts"
+        >
+          <app-pi-fact-card label="Номер" [value]="'№' + o.number" [mono]="true" />
+          <app-pi-fact-card label="Клиент" [value]="partyLine() ?? '—'" />
+          <app-pi-fact-card label="Объект" [value]="siteLine() ?? '—'" />
+          <app-pi-fact-card label="Статус" [value]="statusLabel(o.status)" />
+          <app-pi-fact-card
+            label="Дата заказа"
+            [value]="formatOrderDate(o.date) || '—'"
+            [mono]="true"
+          />
+          <app-pi-fact-card
+            label="Источник материалов"
+            [value]="(o.materialsSource ?? 'own') === 'customer' ? 'Заказчика' : 'Наши'"
+          >
+            <span actions>
+              <select
+                class="pi-input py-1 text-xs"
+                [value]="o.materialsSource ?? 'own'"
+                (change)="onMaterialsSourceChange($event)"
+                aria-label="Источник материалов"
+              >
+                <option value="own">Наши</option>
+                <option value="customer">Заказчика</option>
+              </select>
+            </span>
+          </app-pi-fact-card>
+        </app-pi-fact-stack>
         @if (materialsWarning(); as warning) {
           <div
-            class="mt-3 border hairline border-sunrise-warm rounded-sm px-3 py-2 text-sm text-sunrise-warm"
+            class="border hairline border-sunrise-warm rounded-sm px-3 py-2 text-sm text-sunrise-warm"
             role="status"
             data-test="materials-warning"
           >
