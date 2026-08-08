@@ -1,3 +1,11 @@
+## [2026-08-08] — TZ-ORDERS-304 DONE: line ready-for-work gate
+
+**Что:** line-level `readyForWork` + audit metadata, validated toggle API, and order-detail control; ordinary line updates preserve readiness metadata.
+**Gates:** BE+FE tsc PASS; BE order 14/14; FE order 9/9; targeted ESLint + diff check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-ORDERS-304.done.md`
+**Lock:** `.mimocode/locks/TZ-ORDERS-304-line-ready.lock`
+**Known:** readiness is available for order lines; module-specific persisted readiness remains a later refinement.
+
 ## [2026-08-08] — TZ-SUPPLY-302 DONE: BOM explode → SupplyTasks
 
 **Что:** `POST /supply-tasks/explode` recursively expands order/module BOM, aggregates materials, creates idempotent draft tasks; `/supply` gets «Создать из заказа».
