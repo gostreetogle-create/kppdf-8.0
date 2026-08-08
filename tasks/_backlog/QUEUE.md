@@ -1,13 +1,22 @@
-# Очередь NOW
+# Очередь
 
-| # | ID | Файл |
-|---|-----|------|
-| 1 | **TZ-CATALOG-DEDUP-301** | `TZ-CATALOG-DEDUP-301-strip-fulleditor-composition.md` |
-| 2 | **TZ-CATALOG-DEDUP-302** | `TZ-CATALOG-DEDUP-302-retire-module-materials-dialog.md` |
-| 3 | **TZ-UX-309** | `TZ-UX-309-page-chrome-unify.md` |
-| 4 | **TZ-UX-310** | `TZ-UX-310-design-system-chrome-audit.md` |
-| 5 | **TZ-SALES-304** | `TZ-SALES-304-kp-family-ui.md` |
+## Peer (уже отдан)
 
-Аудит дублей: `docs/audits/2026-08-08-data-entry-dedupe-audit.md`  
-UX-311 (фото+wrap в составе) — DONE.  
-Позже: `tasks/_park/`
+| ID | Note |
+|----|------|
+| **TZ-CATALOG-DEDUP-301** | FullEditor без состава — IN FLIGHT |
+
+## Long-haul wave (свободный агент)
+
+См. `docs/agent-checklists/SESSION-WAVE-2026-08-08-long-haul.md`
+
+1. DEDUP-302 → 2. DEDUP-303 → 3. FORM-306 → 4. DEDUP-304 → 5. UX-309 → 6. UX-310  
+
+## Потом / PO
+
+| ID | Note |
+|----|------|
+| TZ-SALES-304 | КП UI после проб |
+| `tasks/_park/` | не брать |
+
+Аудит: `docs/audits/2026-08-08-data-entry-dedupe-audit.md`
