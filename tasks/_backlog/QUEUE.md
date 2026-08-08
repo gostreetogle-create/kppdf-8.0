@@ -1,16 +1,11 @@
 # Очередь
 
-## Peer (уже отдан)
+## HOT done this session
 
 | ID | Note |
 |----|------|
-| **TZ-CATALOG-DEDUP-301** | FullEditor без состава — IN FLIGHT |
-
-## HOT (можно 3-м агентом ∥ long-haul)
-
-| ID | Note |
-|----|------|
-| **TZ-UX-312** | состав: крупнее фото + плотнее строка |
+| **TZ-UX-312** | DONE — thumb 36px + denser row |
+| **TZ-CATALOG-DEDUP-301** | DONE — FullEditor без состава |
 
 ## Long-haul wave (свободный агент)
 
@@ -23,6 +18,5 @@
 | ID | Note |
 |----|------|
 | TZ-SALES-304 | КП UI после проб |
-| `tasks/_park/` | не брать |
 
-Аудит: `docs/audits/2026-08-08-data-entry-dedupe-audit.md`
+Позже: `tasks/_park/` · Готовое: `tasks/_archive/`

@@ -28,7 +28,7 @@ export type CompositionTreeSelectEvent = {
  * Kind wash: docs/audits/2026-08-07-catalog-entity-colors-audit.md (TZ-330).
  * Containment nest: docs/audits/2026-08-08-composition-containment-outline.md (TZ-333).
  * Nest cohesion (gap/rail/indent): docs/audits/2026-08-08-composition-block-cohesion-visual.md (TZ-334).
- * Thumb + wrap name: TZ-UX-311.
+ * Thumb + wrap name: TZ-UX-311. Density (36px thumb, tight row): TZ-UX-312.
  */
 @Component({
   selector: 'app-composition-tree',
@@ -72,7 +72,7 @@ export type CompositionTreeSelectEvent = {
         [attr.aria-selected]="selectedId() === node._id"
       >
         <div
-          class="flex items-center gap-1.5 px-2 py-1.5 min-h-9 cursor-pointer select-none pi-focus-ring"
+          class="flex items-center gap-1 px-1.5 py-1 min-h-11 cursor-pointer select-none pi-focus-ring"
           [class.hairline]="!(isExpanded(node) && node.children.length > 0)"
           [class.rounded-sm]="!(isExpanded(node) && node.children.length > 0)"
           [class.rounded-none]="isExpanded(node) && node.children.length > 0"
@@ -113,7 +113,7 @@ export type CompositionTreeSelectEvent = {
             >{{ kindShort(node) }}</span
           >
           <span
-            class="shrink-0 w-5 h-5 rounded-sm overflow-hidden inline-flex items-center justify-center bg-muted/40 text-muted-foreground"
+            class="shrink-0 w-9 h-9 rounded-sm overflow-hidden inline-flex items-center justify-center bg-muted/40 text-muted-foreground"
             aria-hidden="true"
             data-test="composition-tree-thumb"
           >
@@ -127,7 +127,7 @@ export type CompositionTreeSelectEvent = {
             } @else {
               <lucide-icon
                 [img]="ImageIconSvg"
-                [size]="12"
+                [size]="18"
                 class="opacity-45"
                 data-test="composition-tree-thumb-placeholder"
               />
