@@ -45,6 +45,8 @@ docs/agent-checklists/_active-map.md;
 - Ломать SystemRoleGuard  
 - Desktop pairing; compact nav (UX-301)  
 - Deploy  
+- Не «чистить» и не stage чужой dirty WIP по всему frontend (много локальных правок chrome) — только файлы этой TZ; если conflict merge — минимальный diff  
+
 
 ## AC
 
