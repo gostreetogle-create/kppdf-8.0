@@ -6,7 +6,7 @@ TZ-COST-303: Видимость себестоимости в UI каталог�
 >
 > Показать менеджеру rollup без лезть в API: списки + inspector состава.
 
-STATUS: READY after 302
+STATUS: DONE (archived 2026-08-08)
 
 РОЛЬ АГЕНТА: Frontend
 

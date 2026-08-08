@@ -286,6 +286,7 @@ rg -i '(embedding|vector.?search|cosine|ANN)' backend/src frontend/src
 **Overhead canon A (TZ-COST-302):** `overheadCost = totalMaterialCost × overheadPercent / 100` (только от материалов, не от labor).
 
 Recursive module rollup: nested `composition` lines with `lineType=module` × qty; cycles skip + `infos[]` warn. `activate` → `Product.costPrice = totalCost`. Module read-only: `GET /api/modules/:id/cost-preview`.
+**UI visibility (TZ-COST-303):** product list/detail show Себест. (`costPrice`) next to Прайс (`listPrice`); module list = hint «см. карточку» (no batch preview); BOM inspector = material `price×qty` / module `preview×qty` read-only.
 
 ### Backend (NestJS)
 
