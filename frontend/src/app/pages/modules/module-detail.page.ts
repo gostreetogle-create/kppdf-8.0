@@ -294,10 +294,12 @@ import { CompositionEditorComponent } from '../../shared/ui/composition/composit
               <dt class="eyebrow">Итого</dt>
               <dd class="font-mono font-medium">{{ formatRuble(cp.totalCost) }}</dd>
             </dl>
-            @if (cp.infos?.length) {
-              <p class="mt-2 text-xs text-muted-foreground" data-test="module-cost-preview-infos">
-                {{ cp.infos.join(' · ') }}
-              </p>
+            @if (cp.infos; as infos) {
+              @if (infos.length) {
+                <p class="mt-2 text-xs text-muted-foreground" data-test="module-cost-preview-infos">
+                  {{ infos.join(' · ') }}
+                </p>
+              }
             }
           } @else if (costPreviewError()) {
             <p class="text-sm text-destructive" role="alert">{{ costPreviewError() }}</p>
