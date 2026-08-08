@@ -1,3 +1,29 @@
+## [2026-08-08] — TZ-PARTY-302 DONE: Organization FullEditor (kind C 1120)
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor, WAVE-PARTY-DOCS #2)
+**Статус:** DONE; deploy НЕ
+**Что:** Диалог организации показывал 7 полей из ~25, поэтому реквизиты, без которых не
+сделать документ (банк, БИК, р/с, корр/с, ОГРН/ОГРНИП, подписант, паспорт ИП), из UI были
+недостижимы. Сделан FullEditor по канону material/product: `variant="content"` +
+`min(1120px, calc(100vw - 2rem))`, секции `app-pi-form-section` — Основные / Реквизиты /
+Банк / Подписант / Паспорт ИП. Паспорт появляется **только** при `legalType = ip` и не
+отправляется для ООО. Юридический тип — overflow-select (канон каталожного dropdown), не
+native. «Наша фирма» и «Активна» — switch; в списке у названия бейдж «наша фирма».
+Старый узкий диалог удалён: один write-path на организацию, а не «быстрый» и «полный» с
+разной логикой. Payload не пишет пустые строки в реквизиты (API с `forbidNonWhitelisted`),
+даты уходят ISO.
+**Затронуто:** `frontend/src/app/pages/organizations/organization-full-editor-dialog.component.ts`
+(+ spec), `organizations.page.ts` (+ spec), `organization-form-dialog.component.ts` (удалён),
+`frontend/src/app/shared/services/organizations.service.ts` (`findCurrent()`, паспорт/isOurCompany),
+`docs/pages/organizations.page.md`, `docs/pages/PAGE-TZ-INDEX.md`, checklist, lock.
+**Gates:** FE tsc PASS; Angular development build PASS (поймал `type="date"` вне `PiInputType`
+— заменено нативным input); organizations 13/13 PASS; targeted ESLint 0 errors; `git diff --check` PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-PARTY-302.done.md`
+**Lock:** `.mimocode/locks/TZ-PARTY-302-org-fulleditor.lock`
+**Известные ограничения:** логотип/печать/фото — `TZ-ORG-ASSETS-301` (typed vault), в диалоге
+`photoIds` не трогаем; `contactPersonId` пока без people-picker; ИНН-lookup — `TZ-INN-301` PARKED;
+сортировка списка по-прежнему только по текущей странице. deploy NO.
+
 ## [2026-08-08] — TZ-PARTY-301 DONE: party hygiene (tenant · soft-delete · INN · stub badge)
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor, WAVE-PARTY-DOCS #1)

@@ -1,0 +1,18 @@
+# Lock file
+Locked as of 2026-08-08 — TZ-PARTY-302: Organization FullEditor (kind C 1120).
+
+Owner: agent-3e757640b7 (Cursor executor)
+Protected files:
+- frontend/src/app/pages/organizations/organization-full-editor-dialog.component.ts
+- frontend/src/app/pages/organizations/organization-full-editor-dialog.component.spec.ts
+- frontend/src/app/pages/organizations/organizations.page.ts
+- docs/pages/organizations.page.md
+
+Invariants a successor TZ must not silently break:
+- ONE write-path per organization: no second «quick» org form.
+- Dialog stays kind C: variant="content" + min(1120px, calc(100vw - 2rem)).
+- Passport fields render and submit only for legalType = ip.
+- Payload omits empty strings (API runs forbidNonWhitelisted).
+
+Unlock: only via orchestrator approval (successor TZ-ORG-ASSETS-301 adds the typed vault).
+Deploy: NO

@@ -2,7 +2,7 @@
 TZ-PARTY-302: Organization FullEditor (kind C 1120)
 ═══════════════════════════════════════════════════════════════
 
-STATUS: BLOCKED_UNTIL_301 · WAVE-PARTY-DOCS #2
+STATUS: DONE · WAVE-PARTY-DOCS #2
 DEPENDS ON: TZ-PARTY-301 DONE → тогда READY
 LAYER: 3
 CHECKLIST: docs/agent-checklists/TZ-PARTY-302.md
@@ -45,3 +45,30 @@ Canon dialog: content + maxWidth min(1120px, 100vw-2rem) как material/product
 2. Dialog width = kind C.  
 3. FE tsc + organizations tests.  
 4. Archive + push; deploy NO.
+
+## ARCHIVE_MARKER
+outcome: DONE
+closed_at: 2026-08-08
+closed_by: agent-3e757640b7 (Cursor executor)
+protected_files:
+  - frontend/src/app/pages/organizations/organization-full-editor-dialog.component.ts
+  - frontend/src/app/pages/organizations/organization-full-editor-dialog.component.spec.ts
+  - frontend/src/app/pages/organizations/organizations.page.ts
+  - frontend/src/app/shared/services/organizations.service.ts
+  - docs/pages/organizations.page.md
+verification:
+  - acceptance criteria: PASS (1–4)
+  - frontend typecheck: PASS
+  - frontend development build: PASS (template typecheck)
+  - frontend tests: PASS (13 — full editor 8, page 5)
+  - frontend lint: PASS (0 errors)
+  - checklist: UPDATED (docs/agent-checklists/TZ-PARTY-302.md)
+  - progress.md: UPDATED
+  - docs: organizations.page.md + PAGE-TZ-INDEX UPDATED
+  - photos / typed vault: NOT TOUCHED (→ ASSETS-301)
+  - deploy: NO
+notes: Старый узкий organization-form-dialog.component.ts удалён — один write-path на
+  организацию, а не «быстрый» и «полный» с разной логикой. Паспортные поля показываются и
+  отправляются только для legalType=ip. Payload строится без пустых строк, потому что API
+  работает с forbidNonWhitelisted. `type="date"` пришлось делать нативным input: PiInputType
+  не содержит 'date'.

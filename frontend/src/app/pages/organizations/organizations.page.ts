@@ -32,7 +32,8 @@ import {
   type OrgType,
   type OrganizationsListResponse,
 } from '../../shared/services/organizations.service';
-import { OrganizationFormDialogComponent } from './organization-form-dialog.component';
+import { OrganizationFullEditorDialogComponent } from './organization-full-editor-dialog.component';
+import { BadgeComponent } from '../../shared/ui/badge/badge.component';
 
 type SortKey = 'name' | 'inn' | 'shortName' | null;
 
@@ -57,6 +58,7 @@ const PAGE_SIZE = 50;
     PiRowActionsComponent,
     ButtonComponent,
     TableComponent,
+    BadgeComponent,
   ],
   template: `
     <app-pi-page-header
@@ -136,6 +138,21 @@ const PAGE_SIZE = 50;
               }
             </div>
           </ng-template>
+
+          <ng-template #nameTpl let-row>
+            <span class="inline-flex items-center gap-2 flex-wrap">
+              <span>{{ row.name }}</span>
+              @if (row.isOurCompany) {
+                <app-pi-badge
+                  variant="default"
+                  title="Реквизиты этой организации подставляются в документы"
+                  data-test="org-our-company"
+                >
+                  наша фирма
+                </app-pi-badge>
+              }
+            </span>
+          </ng-template>
         </app-pi-table>
       </div>
     </app-pi-section>
@@ -200,11 +217,14 @@ export class OrganizationsPage implements OnInit {
   @ViewChild('typeTpl', { static: true })
   private readonly typeTplRef!: TemplateRef<{ $implicit: Organization }>;
 
+  @ViewChild('nameTpl', { static: true })
+  private readonly nameTplRef!: TemplateRef<{ $implicit: Organization }>;
+
   protected cellTemplates: Record<string, TemplateRef<{ $implicit: Organization }>> = {};
   protected rowActionsTplBinding: TemplateRef<{ $implicit: Organization }> | null = null;
 
   ngOnInit(): void {
-    this.cellTemplates = { type: this.typeTplRef };
+    this.cellTemplates = { type: this.typeTplRef, name: this.nameTplRef };
     this.rowActionsTplBinding = this.rowActionsTplRef;
   }
 
@@ -231,7 +251,7 @@ export class OrganizationsPage implements OnInit {
   }
 
   protected openCreate(): void {
-    const ref = this.dialog.open(OrganizationFormDialogComponent, {
+    const ref = this.dialog.open(OrganizationFullEditorDialogComponent, {
       data: null,
       width: 'lg',
       parentDestroyRef: this.destroyRef,
@@ -240,7 +260,7 @@ export class OrganizationsPage implements OnInit {
   }
 
   protected openEdit(org: Organization): void {
-    const ref = this.dialog.open(OrganizationFormDialogComponent, {
+    const ref = this.dialog.open(OrganizationFullEditorDialogComponent, {
       data: org,
       width: 'lg',
       parentDestroyRef: this.destroyRef,

@@ -47,6 +47,13 @@ export interface Organization {
   partyTypes?: string[];
   photoIds?: string[];
   contactPersonId?: string;
+  /** TZ-PARTY-301: «наша фирма» — issuer side of documents. */
+  isOurCompany?: boolean;
+  passportSeries?: string;
+  passportNumber?: string;
+  passportIssuedBy?: string;
+  passportIssuedAt?: string;
+  passportDivisionCode?: string;
   notes?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -84,6 +91,11 @@ export class OrganizationsService {
 
   findById(id: string): Observable<SilentResult<Organization>> {
     return silentGet<Organization>(this.http, `${this.baseUrl}/organizations/${id}`);
+  }
+
+  /** TZ-PARTY-301: «наша фирма» for document headers. 404 when not configured. */
+  findCurrent(): Observable<SilentResult<Organization>> {
+    return silentGet<Organization>(this.http, `${this.baseUrl}/organizations/current`);
   }
 
   create(payload: Partial<Organization>): Observable<SilentResult<Organization>> {

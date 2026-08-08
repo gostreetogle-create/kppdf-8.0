@@ -43,8 +43,8 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 
 | Route | Page doc | TZs |
 |-------|----------|-----|
-| `/organizations` | organizations.page.md | **UX-305 DONE**; nav → **Админ** (NAV-301); очередь **PARTY-301→302→ASSETS-301/302** (`party-docs/WAVE-PARTY-DOCS`) |
-| `/counterparties` | counterparties.page.md | **NAV-301** thin list → **PARTY-303** FullEditor CRUD (`WAVE-PARTY-DOCS`) |
+| `/organizations` | organizations.page.md | **UX-305 DONE**; nav → **Админ** (NAV-301); **PARTY-301 DONE** (tenant-scope, soft-delete, `isOurCompany`, `GET /current`); **PARTY-302 DONE** (FullEditor kind C, паспорт ИП, бейдж «наша фирма»); очередь **ASSETS-301/302** (`party-docs/WAVE-PARTY-DOCS`) |
+| `/counterparties` | counterparties.page.md | **NAV-301** thin list; **PARTY-301 DONE** (бейдж «временный» ИНН) → **PARTY-303** FullEditor CRUD (`WAVE-PARTY-DOCS`) |
 | `/design`, `/supply`, `/shipping` | — | **NAV-301** stubs |
 | `/contracts` | contracts.page.md | — |
 | `/orders` | orders.page.md | — |

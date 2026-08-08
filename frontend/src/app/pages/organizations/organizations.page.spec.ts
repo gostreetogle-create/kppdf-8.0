@@ -5,6 +5,7 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of } from 'rxjs';
 
 import { OrganizationsPage } from './organizations.page';
+import { OrganizationFullEditorDialogComponent } from './organization-full-editor-dialog.component';
 import { OrganizationsService, Organization } from '../../shared/services/organizations.service';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../shared/ui/toast';
@@ -134,5 +135,26 @@ describe('OrganizationsPage', () => {
     const comp = fixture.componentInstance as unknown as { openCreate: () => void };
     comp.openCreate();
     expect(dialogSpy.open).toHaveBeenCalled();
+  });
+
+  // TZ-PARTY-302: one write-path — both create and edit open the FullEditor.
+  it('opens the FullEditor for create and for edit', async () => {
+    const fixture = TestBed.createComponent(OrganizationsPage);
+    fixture.detectChanges();
+
+    httpMock.expectOne(matchListGet).flush({ items: fakeOrgs, total: 2 });
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      openCreate: () => void;
+      openEdit: (org: Organization) => void;
+    };
+    comp.openCreate();
+    comp.openEdit(fakeOrgs[0]);
+
+    expect(dialogSpy.open.mock.calls[0][0]).toBe(OrganizationFullEditorDialogComponent);
+    expect(dialogSpy.open.mock.calls[1][0]).toBe(OrganizationFullEditorDialogComponent);
+    expect(dialogSpy.open.mock.calls[1][1]).toMatchObject({ data: fakeOrgs[0] });
   });
 });
