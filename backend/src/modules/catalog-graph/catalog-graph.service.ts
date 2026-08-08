@@ -43,7 +43,28 @@ export class CatalogGraphService {
     const ignoredEdge = skipLineId ? { parentId, parentKind, lineId: skipLineId } : undefined;
     const parentDepth = await this.maxAncestorDepth(parentId, parentKind, ignoredEdge);
     const activePath = new Set<string>([`${parentKind}:${parentId}`]);
-    const maxChildDepth = await this.maxDescendantDepth(edge.refId, edge.lineType, activePath, `${parentKind}:${parentId}`, ignoredEdge);
+    let maxChildDepth: number;
+    try {
+      maxChildDepth = await this.maxDescendantDepth(
+        edge.refId,
+        edge.lineType,
+        activePath,
+        `${parentKind}:${parentId}`,
+        ignoredEdge,
+      );
+    } catch (err) {
+      if (err instanceof BadRequestException && String(err.message).startsWith('CYCLE_HIT:')) {
+        const parentName = await this.lookupName(parentKind, parentId);
+        const childName = await this.lookupName(childKind, edge.refId);
+        throw new BadRequestException(
+          `Цикл в составе каталога: нельзя добавить «${childName}» в «${parentName}». ` +
+            `В карточке модуля «${childName}» уже есть путь к «${parentName}» ` +
+            `(это видно в составе самого модуля, даже если его нет в дереве текущего изделия). ` +
+            `Уберите обратную связь или выберите другой модуль.`,
+        );
+      }
+      throw err;
+    }
     if (parentDepth + 1 + maxChildDepth > MAX_DEPTH) {
       throw new UnprocessableEntityException(`Глубина состава превышает лимит (${MAX_DEPTH}). Текущая глубина родителя: ${parentDepth}, максимальная глубина потомка: ${maxChildDepth}.`);
     }
@@ -198,9 +219,7 @@ export class CatalogGraphService {
     if (lineType === 'material') return 0;
     const key = `${lineType}:${refId}`;
     if (key === cycleCheckKey || activePath.has(key)) {
-      throw new BadRequestException(
-        'Цикл в составе: выбранный элемент уже содержит текущий узел в своём дереве (или наоборот). Например, нельзя вложить «Финиш» в «Панель», если «Панель» уже внутри «Финиш». Выберите другой модуль или материал.',
-      );
+      throw new BadRequestException(`CYCLE_HIT:${key}`);
     }
     const nextPath = new Set(activePath).add(key);
     let maxChild = 0;
@@ -265,6 +284,15 @@ export class CatalogGraphService {
       node.children.push(childNode);
     }
     return node;
+  }
+
+  private async lookupName(kind: ParentKind | 'material', id: string): Promise<string> {
+    if (kind === 'material') {
+      const row = await this.lookupMaterial(id);
+      return row?.name?.trim() || id;
+    }
+    const row = await this.lookupEntity(kind, id);
+    return row?.name?.trim() || id;
   }
 
   private async lookupEntity(kind: ParentKind, id: string): Promise<{ name?: string; unit?: string } | null> {
