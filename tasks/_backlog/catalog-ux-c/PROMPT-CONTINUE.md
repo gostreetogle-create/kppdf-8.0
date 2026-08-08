@@ -1,22 +1,23 @@
-# Continue после rate limit — копируй в тот же чат
+# Continue — копируй в тот же чат (после rate limit)
 
 ```
-Rate limit ок — продолжай в том же workspace, не начинай с нуля.
+Снова rate limit — продолжай СРАЗУ, без пересказа.
 
-1) Добей TZ-UX-COMPOSE-301 до конца:
-   - module-form composition-hint
-   - picker restrictToModule → default activeKind 'material'
-   - bom-panel root-add когда выбран материал
-   - tests PASS; docs
-   - archive + checklist DONE + commit+push на origin/main
-   Файлы: tasks/TZ-UX-COMPOSE-301-*.md
+Состояние: код COMPOSE-301 почти готов, но на origin/main ЕЩЁ НЕТ
+(последний main = docs continue prompt). Нужен commit + rebase на origin/main + push.
 
-2) Сразу TZ-UX-DIALOG-305 (module form + composition picker = 1120 kind C),
-   archive + commit+push.
+1) git status / log — если есть uncommitted COMPOSE-301 изменения:
+   commit (только свои keys: module-form, picker, bom-panel, specs, docs COMPOSE,
+   archive/checklist/progress — НЕ materials/**, НЕ desktop, НЕ FACT-304)
+2) git fetch && rebase origin/main (resolve module-detail/product-detail docs если конфликт)
+3) git push origin HEAD
+4) Докажи: origin/main содержит feat COMPOSE-301; picker default material;
+   module-form composition-hint; archive TZ-UX-COMPOSE-301.done.*
 
-3) FACT-304 в _active не трогай. CATALOG-337 только если FACT-304 уже archived.
+5) Сразу TZ-UX-DIALOG-305 до archive+push
+   (ModuleForm + composition picker maxWidth 1120 как material).
 
-Deploy запрещён. Чужой WIP (materials/**, desktop) не коммить.
-Если локальные правки уже есть — проверь git status, доведи gates, push.
-Если workspace пустой / нет изменений — перечитай TZ и сделай заново на D:\kppdf-8.0 main.
+FACT-304 не трогай. Deploy запрещён.
+Если workspace пустой и изменений нет — перечитай
+tasks/TZ-UX-COMPOSE-301-module-composition-discoverability.md и сделай заново на main.
 ```
