@@ -1,83 +1,81 @@
 # Сводка куратора — firm mega plan (2026-08-08)
 
-Источники (все на main):
-- `firm-mega-sol.md` (GPT-5.6 Sol)
-- `firm-mega-terra.md` (GPT-5.6 Terra)
-- `firm-mega-composer.md` (Composer)
-- `firm-mega-sonnet.md` (Claude Sonnet 5)
-- `firm-mega-fable.md` (Fable)
+Peers на main: **sol · terra · composer · sonnet · fable · opus** (+ краткие дубли по тем же темам).
 
 План: `C:\Users\User\.cursor\plans\firm_clients_sales_docs_mega_a1b2c3d4.plan.md`  
-Статус: **ждём ответы PO на 7 вопросов** → потом нарезка TZ.
+**Статус:** ждать ответы PO → нарезка TZ. Код пока не пишем.
 
 ---
 
-## Вердикт peers
+## Вердикт
 
-Все: **Go с правками**. Направление ок; до lock правим факты и контракты.
+Все: **Go с правками.** Направление верное. **W1 «просто формы» нарезать нельзя** — сначала гигиена party-слоя (Opus **W0.5** / Sonnet **W1.5**).
 
-## Консенсус (все согласны)
+---
 
-| Тема | Lock-предложение |
-|------|------------------|
-| CP backend CRUD уже есть | W1 = **FE FullEditor**, не новый API |
-| Org FE тонкий | W1 = новый kind C FullEditor |
-| INN lookup = ноль | W2 только с ключом/бюджетом PO, иначе park |
-| Stub ИНН в quick-create опасен | Не маскировать под настоящий; HITL; миграция |
-| D7 stub-КП нет в коде | Отдельный ранний кусок sales-wave |
-| Supply / line-ready уже есть | W5 **не** переписывать |
-| Vault ≠ photoIds | Typed roles + ACL admin + audit; upload pipeline **уже есть** (`POST /photos/upload`) — не строить с нуля (Fable) |
-| «PDF одной кнопкой» | Биндить org-assets в **существующие** image/background шаблона (Fable), не третий пайплайн |
-| CP.inn indexes | Global `unique` + compound `{organizationId,inn}` конфликт — при multi-org нужен TZ миграции (Fable/Sol) |
-| Фото клиентов | После org vault |
-| TZD-30 | Не мешать |
+## Консенсус peers → lock-предложение
+
+| Тема | Решение |
+|------|---------|
+| TZD-30 / W0 | **DONE** — не «в полёте» (Opus) |
+| CP backend CRUD | Есть; W1 = **FE FullEditor** |
+| Org FE | Новый **kind C 1120** с нуля (банк/ОГРН/…), не патч 7-полевого диалога |
+| Tenant / IDOR | Org CRUD не scoped; CP get/patch/delete не scoped; quick-create **без organizationId** → **W0.5 hygiene до UI** |
+| Soft-delete | `deletedAt` часто не в схеме → DELETE no-op — в W0.5 |
+| INN indexes | Global `unique` + compound — конфликт; миграция в W0.5 |
+| Stub ИНН | Помечать; не притворяться настоящим |
+| INN lookup | W2 только с ключом PO, иначе park |
+| Supply / line-ready | **Уже есть** — убрать из «дыр» W5 |
+| D7 stub-КП | Отдельный ранний кусок (параллель party-ручью) |
+| Vault | Roles поверх живого `POST /photos/upload`; admin + audit |
+| PDF / image | Reuse template image/background + registry contract-change, не 3-й пайплайн |
+| mcp-runtime WIP | Конфликт с **W6** — выбрать SoT `desktop/mcp` vs staging до W6 |
+| «Чья печать в документе» | Нужен указатель «наша фирма» (`isOurCompany` / current), не только «сколько юрлиц» (Opus) |
+
+---
 
 ## Порядок волн (сводка)
 
 ```
-W0 TZD-30 (уже DONE / отдельно)
-→ W1 Party FE (Org + CP FullEditor)
-→ **W1.5 Org-guard** (Sonnet): findById/update/delete Org+CP проверяют tenant — **до** vault/INN write
-→ W2 INN (если PO дал ключ) ИНАЧЕ park
-→ W5a D7 stub-КП (+ residual design/module-ready — **не** supply/line-ready)
-→ W3 Org vault (logo/seal/signature) только после W1.5
-→ W4 Реквизиты/PDF + image bindings
-→ W6 Desktop MCP поверх стабильных API
+W0     TZD-30 — DONE (снять с параллели)
+W0.5   Party hygiene: tenant-stamp, org-scope IDOR, deletedAt, drop global inn unique, stub badge
+W1     Party UX: Org FullEditor kind C + CP FullEditor/list actions
+W2     INN lookup (park без ключа) + HITL + org-scoped reuse
+W5a    D7 stub-КП (+ позже design/module-ready; НЕ supply rewrite)
+W3     Org vault logo/seal/signature (+ Org legalAddress)
+W4     Реквизиты/PDF + image bindings (contract-change)
+W6     Desktop MCP — после выбора SoT mcp vs mcp-runtime
 ```
 
-D7 раньше печати (Sol/Terra/Composer). Vault не раньше tenant-guard (Sonnet).
-
-## Расхождения peers → рекомендация куратора
-
-| Вопрос | Sol | Terra | Composer | Куратор → PO |
-|--------|-----|-------|----------|--------------|
-| Адреса в Org/CP | да, structured | да, не плоские | park, хватит Site | **Park в W1**; legal address когда lookup/договор потребует |
-| Multi-org | проектировать N | проектировать N | вердикт PO; часто 1 | **Код готов к N; UX default = одна активная** — скажи сколько юрлиц реально |
-| W5 vs W3 | W5R раньше | W5a раньше | D7 в начало W5 | **D7 раньше печати** |
-| Quick-create INN | optional lookup, no fake | не заменять безусловно | W2 + badge stub | **W2: кнопка «Найти по ИНН»; до W2 badge «временный ИНН»** |
-
-## Намёк: какая модель сильнее (для PO)
-
-| Место | Кто | Почему |
-|-------|-----|--------|
-| **1** | **GPT-5.6 Sol** | Шире всех: security/tenant, fake-INN, no-commerce, work-type binding, перестановка волн |
-| **1≈** | **Claude Sonnet 5** | Лучший security-фокус: дырявый Organization CRUD + CP by-id без org-guard → обязал **W1.5** до vault |
-| **3** | **GPT-5.6 Terra** | Сильная hygiene W5 + vault/PDF контракты, ясно и без воды |
-| **4** | **Fable** | Чёткие FE-vs-BE границы, reuse photo/image pipeline, мина индексов INN |
-| **5** | **Composer** | Верные факты, практичные советы PO |
-
-Для тяжёлых DISCUSSION: **Sol + Sonnet** (или Terra). Fable/Composer — сильные дополнительные сверки.
+Параллель после W0.5: **party/vault/doc** ‖ **D7/sales** (кроме одного владельца `order.service.ts`).
 
 ---
 
-## Вопросы PO — ответь номерами (просто)
+## Намёк: модели
 
-1. **ИНН-сервис:** платный ключ (напр. DaData) сейчас / позже / не надо?
-2. **Юрадрес фирмы/клиента в карточке:** нужно сразу / хватит адреса объекта (Site) пока?
-3. **Сколько наших юрлиц** в одной программе: 1 / несколько?
-4. **Печать менять:** только админ / ещё кто-то?
-5. **Фото/сканы клиентов** сразу: да / нет (сначала только печать нашей фирмы)?
-6. Что стыднее на ближайшем показе: **дыра заказ↔КП (D7)** или **КП без печати**?
-7. В быстром заказе: **кнопка «Найти по ИНН»** позже ок / обязательно сразу с формами?
+| Место | Кто | Почему |
+|-------|-----|--------|
+| **1** | **Opus 5** | Самый сильный блокер-анализ: W0.5, soft-delete no-op, quick-create без orgId, «чья фирма в PDF», mcp-runtime vs W6 |
+| **1≈** | **GPT-5.6 Sol** | Широкая глубина: security, fake-INN, no-commerce, work-type binding, волны |
+| **3** | **Claude Sonnet 5** | Жёстко про tenant IDOR → W1.5/W0.5 до vault |
+| **4** | **GPT-5.6 Terra** | W5 hygiene, vault/PDF контракты |
+| **5** | **Fable** | Reuse photo/image pipeline, индексы INN |
+| **6** | **Composer** | Верные факты, практичные defaults |
 
-После ответов — нарезка W1… TZ + промпты.
+Для тяжёлых планов: **Opus и/или Sol + Sonnet**. Остальные — второе/третье мнение.
+
+---
+
+## Вопросы PO — ответь коротко `1=…`
+
+Блокируют нарезку сильнее всего **1, 3, 6** (Opus/Fable). Остальное можно взять default’ами peers.
+
+1. **ИНН-сервис:** платный ключ сейчас / позже / не надо?  
+2. **Юрадрес нашей фирмы** в карточке: сразу с формами / вместе с печатью / пока не надо? (Адрес объекта клиента = Site уже есть.)  
+3. **Сколько наших юрлиц** в одной программе: **1** или **несколько**? (От этого — миграция индексов ИНН и «чья печать».)  
+4. **Печать менять:** только админ? (default peers: да)  
+5. **Фото/сканы клиентов** сразу: да / нет? (default: нет)  
+6. Ближайший показ: важнее **документы с печатью** или **целостность заказ↔КП (D7)**?  
+7. В быстром заказе до lookup: ок **бейдж «ИНН временный»**?  
+
+После ответов — нарезка executable TZ по W0.5 → …
