@@ -8,7 +8,8 @@
 
 | ID | File | Notes |
 |----|------|-------|
-| **TZD-21** | `TZD-21-desktop-pairing-keys-ttl.md` | **GO** — pairing keys, TTL, multi-key + revoke. «делай TZD-21». |
+| **TZD-24** | `TZD-24-desktop-installer-zip-download.md` | **P0** — ZIP download + Nest SPA skip `/downloads` (кнопка «Скачать» сейчас отдаёт HTML) |
+| **TZD-21** | `TZD-21-desktop-pairing-keys-ttl.md` | pairing keys, TTL, multi-key + revoke. «делай TZD-21». |
 
 ## Park
 

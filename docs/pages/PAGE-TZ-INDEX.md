@@ -98,6 +98,13 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | PROC-301 | SESSION + RUNBOOK | post-deploy smoke AC |
 | Canon | [`STABILIZATION-WAVE-2026-08.md`](../STABILIZATION-WAVE-2026-08.md) | DoD vertical path |
 
+## Desktop / pairing
+
+| Route / surface | Page doc | TZs |
+|-----------------|----------|-----|
+| Pairing dialog «Скачать» | `desktop/docs/INSTALL.md`, PAIRING.md | TZD-16 done; **TZD-24** ZIP + `/downloads` SPA skip |
+| Desktop API keys | PAIRING.md | **TZD-21** READY |
+
 ## Vision / access / sales (2026-08-02)
 
 | TZ | Pages | One-liner |

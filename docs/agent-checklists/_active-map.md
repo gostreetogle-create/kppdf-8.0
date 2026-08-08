@@ -1,6 +1,6 @@
 # SESSION QUEUE — 2026-08-08 hygiene
 
-**Updated:** 2026-08-08T00:15:00Z · TZ-COST-303 DONE
+**Updated:** 2026-08-08 · TZD-24 READY (installer ZIP)
 
 ## DONE recently (archive + lock on main)
 
@@ -19,6 +19,7 @@
 
 | Priority | ID | Path |
 |----------|-----|------|
+| 0 | **TZD-24** | `tasks/_backlog/desktop/TZD-24-desktop-installer-zip-download.md` |
 | 1 | **TZD-21** | `tasks/_backlog/desktop/TZD-21-desktop-pairing-keys-ttl.md` |
 
 ## IN PROGRESS (CLAIMED)
@@ -41,13 +42,12 @@ _(empty)_
 
 `tasks/TZ-CATALOG-300.md`, `tasks/TZ-DICT-300.md` — индексы волн, оставить в корне.
 
-## Checkpoint 2026-08-08T00:35:00Z
+## Checkpoint 2026-08-08 (downloads)
 - DONE: TZ-COST-301…**303**, TZD-22, CATALOG-334; composition UX polish
 - IN PROGRESS: _(none)_
 - READY FOR REVIEW: _(none)_
-- NOT DONE: TZD-21; TZD-23 park
-- NEXT: idle / TZD-21 по PO; **no deploy**
-- HEAD: `55b098d` · COST-303 feat `cec4804`
-- Blockers: none
+- NOT DONE: **TZD-24** (кнопка Скачать → HTML вместо installer); TZD-21; TZD-23 park
+- NEXT: **TZD-24** (ZIP + SPA skip `/downloads`); потом TZD-21
+- Blockers: prod `/downloads/*.exe` отдаёт SPA `index.html` (~1.5KB) — CSP-шум
 - _active/: _(empty)_
-- Deploy: NO
+- Deploy: NO until PO + после TZD-24 (нужен zip в browser/downloads)
