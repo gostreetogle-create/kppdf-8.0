@@ -9,11 +9,7 @@ import {
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { CompositionTreeNode } from '../../services/pi-product-modules.service';
-import {
-  catalogKindBorder,
-  catalogKindOklch,
-  catalogKindWash,
-} from '../catalog/catalog-kind-oklch';
+import { catalogKindBorder, catalogKindOklch } from '../catalog/catalog-kind-oklch';
 import { CatalogAppearanceService } from '../catalog/catalog-appearance.service';
 
 export type CompositionTreeExpandEvent = { node: CompositionTreeNode; expanded: boolean };
@@ -181,18 +177,21 @@ export class CompositionTreeComponent {
     return catalogKindOklch(node.kind, node.materialKind, 0.11, 0.62, this.appearance.palette());
   }
 
+  /**
+   * Row strip = opaque kind tint on paper (not translucent wash).
+   * Nest gradient must stay behind the strip, not muddy through it.
+   */
   protected rowWash(node: CompositionTreeNode): string {
-    if (this.selectedId() === node._id) {
-      const solid = catalogKindOklch(
-        node.kind,
-        node.materialKind,
-        0.1,
-        0.72,
-        this.appearance.palette(),
-      );
-      return solid.replace(/\)$/, ' / 0.28)');
-    }
-    return catalogKindWash(node.kind, node.materialKind, this.appearance.palette());
+    const selected = this.selectedId() === node._id;
+    const accent = catalogKindOklch(
+      node.kind,
+      node.materialKind,
+      selected ? 0.11 : 0.1,
+      selected ? 0.7 : 0.72,
+      this.appearance.palette(),
+    );
+    const mixPct = selected ? 46 : 32;
+    return `color-mix(in oklch, ${accent} ${mixPct}%, var(--color-paper))`;
   }
 
   /**
