@@ -36,7 +36,9 @@ function serviceWith(materials: unknown[]) {
     ),
   };
   return {
-    service: new ProductModuleService(model, productModel, materialModel, compositionLines as any, graphStub() as any),
+    service: new ProductModuleService(model, productModel, materialModel, compositionLines as any, graphStub() as any, {
+      previewModuleCost: jest.fn(),
+    } as any),
     model,
     materialModel,
   };

@@ -282,7 +282,10 @@ rg -i '(embedding|vector.?search|cosine|ANN)' backend/src frontend/src
 
 ### Cost formula
 
-`total = Σ(Material.pricePerUnit × ModuleMaterial.quantity) + Σ(WorkType.hourlyRate × WorkType.estimatedHours) × (1 + overheadPercent/100)`
+`totalCost = Σ materials + Σ labor + overhead`  
+**Overhead canon A (TZ-COST-302):** `overheadCost = totalMaterialCost × overheadPercent / 100` (только от материалов, не от labor).
+
+Recursive module rollup: nested `composition` lines with `lineType=module` × qty; cycles skip + `infos[]` warn. `activate` → `Product.costPrice = totalCost`. Module read-only: `GET /api/modules/:id/cost-preview`.
 
 ### Backend (NestJS)
 

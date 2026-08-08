@@ -1,0 +1,6 @@
+TZ-COST-302
+closed: 2026-08-08
+commit: PENDING
+zone: cost-calculation recursive rollup + activate costPrice + module cost-preview
+checklist: docs/agent-checklists/TZ-COST-302.md
+archive: tasks/_archive/2026-08/TZ-COST-302.done.md

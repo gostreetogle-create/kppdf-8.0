@@ -49,6 +49,12 @@ export class ProductModuleController {
   @Roles('admin', 'manager')
   getTree(@Param('id') id: string, @Query('maxDepth') maxDepth?: string) { return this.catalogGraph.getTree('module', id, maxDepth === undefined ? MAX_DEPTH : Number(maxDepth)); }
 
+  @Get(':id/cost-preview')
+  @Roles('admin', 'director', 'manager')
+  @ApiOperation({ summary: 'Read-only recursive cost preview for a module (TZ-COST-302)' })
+  @ApiResponse({ status: 200, description: '{ materialCost, laborCost, totalCost, currency: RUB }' })
+  getCostPreview(@Param('id') id: string) { return this.service.getCostPreview(id); }
+
   @Get(':id')
   @Roles('admin', 'director', 'manager')
   findOne(@Param('id') id: string) { return this.service.findById(id); }

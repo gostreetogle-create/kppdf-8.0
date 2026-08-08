@@ -46,6 +46,18 @@
 
 ---
 
+## [2026-08-08] — TZ-COST-302 DONE: Recursive cost rollup + costPrice sync
+**Исполнитель:** cursor-composer-cost302 (Cursor PASS → archive)
+**Статус:** DONE on main
+**Что сделано кратко:** Рекурсивный rollup nested module×qty; cycle→infos; activate→Product.costPrice; overhead A (materials only); GET /modules/:id/cost-preview; FE module-detail read-only «Себестоимость (расчёт)».
+**Gates:** backend tsc PASS; frontend tsc PASS; jest cost-calculation + product-module 14/14 PASS
+**Archive:** `tasks/_archive/2026-08/TZ-COST-302.done.md`
+**Lock:** `.mimocode/locks/TZ-COST-302-recursive-cost-rollup.lock`
+**Commit:** PENDING
+**Known limits:** COST-303 только по PO; product→product lines PARK; deploy NO
+
+---
+
 ## [2026-08-08] — TZ-COST-301 DONE: WorkType hourlyRate required
 **Исполнитель:** cursor-composer-cost301 (Cursor PASS → archive)
 **Статус:** DONE on main

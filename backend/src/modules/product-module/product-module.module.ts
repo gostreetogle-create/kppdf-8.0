@@ -7,10 +7,12 @@ import { Product, ProductSchema } from '../product/product.schema';
 import { Material, MaterialSchema } from '../material/material.schema';
 import { CompositionLineService } from '../catalog/composition-line.service';
 import { CatalogGraphModule } from '../catalog-graph/catalog-graph.module';
+import { CostCalculationModule } from '../cost-calculation/cost-calculation.module';
 
 /**
  * TZ-83: ProductModuleService uses Product for M:N reverse lookup and
  * Material for TZ-MATERIALS-309 immutable-dimension enforcement.
+ * TZ-COST-302: cost-preview via CostCalculationService (same rollup walk).
  */
 @Module({
   imports: [
@@ -20,6 +22,7 @@ import { CatalogGraphModule } from '../catalog-graph/catalog-graph.module';
       { name: Material.name, schema: MaterialSchema },
     ]),
     CatalogGraphModule,
+    CostCalculationModule,
   ],
   controllers: [ProductModuleController],
   providers: [ProductModuleService, CompositionLineService],

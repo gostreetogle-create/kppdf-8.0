@@ -1,6 +1,6 @@
 # SESSION QUEUE — 2026-08-08 hygiene
 
-**Updated:** 2026-08-08T00:10:00Z · TZD-22 archived (Cursor PASS); COST-302 still READY FOR REVIEW
+**Updated:** 2026-08-08T00:15:00Z · TZ-COST-302 archived (Cursor PASS); _active empty
 
 ## DONE recently (archive + lock on main)
 
@@ -11,13 +11,14 @@
 | **TZD-22** | `e64e81fca6514e0ad2ad9ae6a9b9a8820a7d8871` |
 | TZ-CATALOG-330 … **334** | 334 on main |
 | TZ-COST-301 | `79edbea` |
+| **TZ-COST-302** | PENDING (this closeout) |
 | TZ-PRODUCTION-303.1 / 303.1b | archives |
 
 ## READY (не сделано — выдавать по PO)
 
 | Priority | ID | Path |
 |----------|-----|------|
-| 1 | **TZ-COST-303** | after 302 archive · UI visibility |
+| 1 | **TZ-COST-303** | after 302 · UI visibility — **only on PO** |
 | 2 | **TZD-21** | `tasks/_backlog/desktop/TZD-21-desktop-pairing-keys-ttl.md` |
 
 ## IN PROGRESS (CLAIMED)
@@ -26,9 +27,7 @@ _(empty)_
 
 ## READY FOR REVIEW
 
-| ID | agent_id | notes |
-|----|----------|-------|
-| **TZ-COST-302** | cursor-composer-cost302 | gates green; **await Cursor PASS** before archive |
+_(empty)_
 
 ## PARK (не трогать без un-park)
 
@@ -42,13 +41,13 @@ _(empty)_
 
 `tasks/TZ-CATALOG-300.md`, `tasks/TZ-DICT-300.md` — индексы волн, оставить в корне.
 
-## Checkpoint 2026-08-08T00:10:00Z
-- DONE: TZ-COST-301, **TZD-22** (Cursor PASS → archive)
+## Checkpoint 2026-08-08T00:15:00Z
+- DONE: TZ-COST-301, **TZ-COST-302**, TZD-22
 - IN PROGRESS: _(none)_
-- READY FOR REVIEW: **TZ-COST-302**
-- NOT DONE: TZ-COST-303, TZD-21; TZD-23 park until PO
-- NEXT: Cursor PASS on COST-302 → archive; TZD-21 only on PO; **no TZD-23 / no deploy**
-- HEAD: e64e81fca6514e0ad2ad9ae6a9b9a8820a7d8871 (TZD-22)
+- READY FOR REVIEW: _(none)_
+- NOT DONE: TZ-COST-303 (PO only), TZD-21; TZD-23 park
+- NEXT: idle / wait PO (COST-303 or TZD-21); **no deploy**
+- HEAD: PENDING COST-302 closeout
 - Blockers: none
-- _active/: TZ-COST-302.md
+- _active/: _(empty)_
 - Deploy: NO

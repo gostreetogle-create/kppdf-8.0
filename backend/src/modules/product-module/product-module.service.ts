@@ -8,6 +8,10 @@ import { CompositionLineDocumentShape } from '../catalog/composition-line.schema
 import { CompositionLineService } from '../catalog/composition-line.service';
 import { CreateCompositionLineDto, UpdateCompositionLineDto } from '../catalog/composition-line.dto';
 import { CatalogGraphService } from '../catalog-graph/catalog-graph.service';
+import {
+  CostCalculationService,
+  ModuleCostPreview,
+} from '../cost-calculation/cost-calculation.service';
 
 export interface MaterialInModuleDto { materialId: string; quantity?: number; unit?: string; isPurchased?: boolean; overrideDimensions?: { length?: number; width?: number; height?: number; unit?: string }; sortOrder?: number; }
 export interface WorkTypeInModuleDto { workTypeId: string; estimatedHours?: number; sortOrder?: number; }
@@ -25,6 +29,7 @@ export class ProductModuleService {
     @InjectModel(Material.name) private readonly materialModel: Model<MaterialDocument>,
     @Optional() compositionLines: CompositionLineService | undefined,
     private readonly catalogGraph: CatalogGraphService,
+    private readonly costCalculation: CostCalculationService,
   ) { this.compositionLines = compositionLines ?? new CompositionLineService(); }
 
   async create(dto: UpsertProductModuleDto): Promise<ProductModuleDocument> {
@@ -52,6 +57,12 @@ export class ProductModuleService {
     const doc = await this.model.findById(id).populate('workTypes.workTypeId').populate({ path: 'materials.materialId', select: 'name photoIds unit dimensions materialKind' }).exec();
     if (!doc || doc.deletedAt) throw new NotFoundException(`ProductModule ${id} not found`);
     return doc;
+  }
+
+  /** TZ-COST-302: read-only cost preview (same recursive walk as CostCalculation). */
+  async getCostPreview(id: string): Promise<ModuleCostPreview> {
+    await this.findById(id);
+    return this.costCalculation.previewModuleCost(id);
   }
 
   async update(id: string, dto: Partial<UpsertProductModuleDto>): Promise<ProductModuleDocument> {

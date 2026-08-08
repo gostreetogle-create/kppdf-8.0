@@ -86,6 +86,10 @@ export class CostCalculation {
 
   @Prop()
   notes?: string;
+
+  /** Non-fatal rollup notes (e.g. cycle skips). TZ-COST-302. */
+  @Prop({ type: [String], default: [] })
+  infos?: string[];
 }
 
 export const CostCalculationSchema = SchemaFactory.createForClass(CostCalculation);

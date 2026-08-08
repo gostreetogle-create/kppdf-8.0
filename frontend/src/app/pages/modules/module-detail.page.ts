@@ -10,7 +10,7 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { httpResource } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
+import { PiPageChromeComponent, type PageCrumb } from '../../shared/page/pi-page-chrome.component';
 import { PiSectionComponent } from '../../shared/page/pi-section.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiEmptyStateComponent } from '../../shared/ui/pi-empty-state/pi-empty-state.component';
@@ -25,6 +25,15 @@ import {
   ProductModule,
   ProductModulesService,
 } from '../../shared/services/pi-product-modules.service';
+
+/** TZ-COST-302: shape of GET /modules/:id/cost-preview (local; no service dep). */
+interface ModuleCostPreview {
+  materialCost: number;
+  laborCost: number;
+  totalCost: number;
+  currency: 'RUB';
+  infos?: string[];
+}
 import {
   MATERIAL_KIND_LABELS,
   Material,
@@ -57,7 +66,7 @@ import { CompositionEditorComponent } from '../../shared/ui/composition/composit
   selector: 'app-module-detail-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    PiPageHeaderComponent,
+    PiPageChromeComponent,
     PiSectionComponent,
     PiEmptyStateComponent,
     PiEmptyTileComponent,
@@ -66,35 +75,21 @@ import { CompositionEditorComponent } from '../../shared/ui/composition/composit
     CompositionEditorComponent,
   ],
   template: `
-    <app-pi-showcase-card size="lg" data-test="module-showcase">
-      <app-pi-page-header
-        [eyebrow]="'модуль'"
-        [title]="module()?.name ?? 'Загрузка…'"
-        [description]="moduleDescription()"
-      >
-        <span header-actions>
-          <app-pi-button variant="ghost" type="button" (click)="onBack()" data-test="back-button">
-            ← Назад
-          </app-pi-button>
-          <app-pi-button
-            variant="default"
-            type="button"
-            (click)="openEdit()"
-            data-test="edit-button"
-          >
-            Редактировать
-          </app-pi-button>
-          <app-pi-button
-            variant="ghost"
-            type="button"
-            (click)="onDelete()"
-            data-test="delete-button"
-          >
-            Удалить
-          </app-pi-button>
-        </span>
-      </app-pi-page-header>
+    <app-pi-page-chrome [crumbs]="detailCrumbs()" [title]="module()?.name ?? 'Загрузка…'">
+      <span actions>
+        <app-pi-button variant="ghost" type="button" (click)="onBack()" data-test="back-button">
+          ← К модулям
+        </app-pi-button>
+        <app-pi-button variant="default" type="button" (click)="openEdit()" data-test="edit-button">
+          Редактировать
+        </app-pi-button>
+        <app-pi-button variant="ghost" type="button" (click)="onDelete()" data-test="delete-button">
+          Удалить
+        </app-pi-button>
+      </span>
+    </app-pi-page-chrome>
 
+    <app-pi-showcase-card size="lg" data-test="module-showcase">
       @if (loadError()) {
         <div
           role="alert"
@@ -280,11 +275,45 @@ import { CompositionEditorComponent } from '../../shared/ui/composition/composit
             </table>
           </div>
         </app-pi-section>
+
+        <!-- V. Себестоимость (расчёт) — TZ-COST-302 read-only -->
+        <app-pi-section
+          title="Себестоимость (расчёт)"
+          hint="сумма материалов и труда по составу; не прайс"
+          eyebrow="V"
+        >
+          @if (costPreview(); as cp) {
+            <dl
+              class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm max-w-md"
+              data-test="module-cost-preview"
+            >
+              <dt class="eyebrow">Материалы</dt>
+              <dd class="font-mono">{{ formatRuble(cp.materialCost) }}</dd>
+              <dt class="eyebrow">Труд</dt>
+              <dd class="font-mono">{{ formatRuble(cp.laborCost) }}</dd>
+              <dt class="eyebrow">Итого</dt>
+              <dd class="font-mono font-medium">{{ formatRuble(cp.totalCost) }}</dd>
+            </dl>
+            @if (cp.infos?.length) {
+              <p class="mt-2 text-xs text-muted-foreground" data-test="module-cost-preview-infos">
+                {{ cp.infos.join(' · ') }}
+              </p>
+            }
+          } @else if (costPreviewError()) {
+            <p class="text-sm text-destructive" role="alert">{{ costPreviewError() }}</p>
+          } @else {
+            <p class="eyebrow text-muted-foreground">Загрузка расчёта…</p>
+          }
+        </app-pi-section>
       }
     </app-pi-showcase-card>
   `,
 })
 export class ModuleDetailPage {
+  protected readonly detailCrumbs = computed<PageCrumb[]>(() => [
+    { label: 'Каталог', link: '/modules' },
+    { label: this.module()?.name ?? 'Модуль' },
+  ]);
   constructor() {
     this.reloadPhotos();
     this.materialsSvc.list({ limit: 200 }).subscribe((res) => {
@@ -315,7 +344,22 @@ export class ModuleDetailPage {
     url: `${this.baseUrl}/modules/${this.idString()}`,
   }));
 
+  /** TZ-COST-302: read-only cost preview (same URL as modulesSvc.getCostPreview). */
+  protected readonly costPreviewRes = httpResource<ModuleCostPreview>(() => {
+    const id = this.idString();
+    if (!id) return undefined;
+    return { url: `${this.baseUrl}/modules/${id}/cost-preview` };
+  });
+
   protected readonly module = computed<ProductModule | null>(() => this.moduleRes.value() ?? null);
+  protected readonly costPreview = computed<ModuleCostPreview | null>(
+    () => this.costPreviewRes.value() ?? null,
+  );
+  protected readonly costPreviewError = computed<string | null>(() => {
+    const err = this.costPreviewRes.error() as
+      import('@angular/common/http').HttpErrorResponse | undefined;
+    return err ? extractErrorMessage(err) : null;
+  });
   protected readonly loadError = computed<string | null>(() => {
     const err = this.moduleRes.error() as
       import('@angular/common/http').HttpErrorResponse | undefined;
@@ -519,6 +563,7 @@ export class ModuleDetailPage {
     });
     onDialogCloseOnce(ref, this.injector, () => {
       this.moduleRes.reload();
+      this.costPreviewRes.reload();
     });
   }
 
@@ -529,5 +574,9 @@ export class ModuleDetailPage {
       return (wtId as { name: string }).name;
     }
     return '—';
+  }
+
+  protected formatRuble(amount: number): string {
+    return amount.toLocaleString('ru-RU', { style: 'currency', currency: 'RUB' });
   }
 }
