@@ -1,18 +1,22 @@
-# TZ-SALES-303 — Multi-org KP clone
+# TZ-SALES-303 — KP family (master + org variants + sync)
 
 **TZ:** `tasks/_backlog/TZ-SALES-303-multi-org-kp-clone.md`  
-**Status:** RESERVED  
-**Canon:** flow D21
+**Status:** RESERVED / re-read if CLAIMED on old clone-only spec  
+**Canon:** flow D21 (master sync)
 
 ## Claim slot
 
 - agent_id: —
+- claimed_at: —
 
 ## Acceptance
 
-- [ ] Clone KP → N orgs, same lines
-- [ ] Markup/template per Organization
-- [ ] Gates + archive
+- [ ] master + variants by Organization
+- [ ] list row expand → related firms
+- [ ] edit master lines → sync variants + version bump
+- [ ] variant composition read-only; print ok
+- [ ] convert order = master/solo only
+- [ ] gates + archive + **push**
 
 ## Executor report (auto)
 
