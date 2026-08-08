@@ -2,24 +2,24 @@
 WAVE-SHOP-NORTH-B — цех/снабжение/UX (параллель Desktop)
 ═══════════════════════════════════════════════════════════════
 
-STATUS: READY
-PARALLEL OK с: Desktop TZD-23…29 (другой агент)
+STATUS: READY — #1–#6 DONE; следующий **#7 TZ-UX-FORM-307**
+PARALLEL OK с: idle Desktop (SoT `desktop/mcp`); не параллелить с живым claim на те же CONFLICT KEYS
 SoT: D:\kppdf-8.0 на main
 
 ## Порядок (строго)
 
-| # | ID | Файл |
-|---|-----|------|
-| 1 | TZ-SUPPLY-302 | TZ-SUPPLY-302-bom-explode-tasks.md |
-| 2 | TZ-ORDERS-304 | TZ-ORDERS-304-line-module-ready.md |
-| 3 | TZ-ORDERS-305 | TZ-ORDERS-305-soft-materials-gate.md |
-| 4 | TZ-SALES-302 | TZ-SALES-302-kp-send-versions.md |
-| 5 | TZ-UX-FACT-303 | TZ-UX-FACT-303-order-detail-facts.md |
-| 6 | TZ-UX-FACT-304 | TZ-UX-FACT-304-material-detail-facts.md |
-| 7 | TZ-UX-FORM-307 | TZ-UX-FORM-307-form-wave-b-batch1.md |
+| # | ID | Файл | Статус |
+|---|-----|------|--------|
+| 1 | TZ-SUPPLY-302 | TZ-SUPPLY-302-bom-explode-tasks.md | ✅ DONE → `tasks/_archive/2026-08/TZ-SUPPLY-302.done.md` |
+| 2 | TZ-ORDERS-304 | TZ-ORDERS-304-line-module-ready.md | ✅ DONE → `tasks/_archive/2026-08/TZ-ORDERS-304.done.md` |
+| 3 | TZ-ORDERS-305 | TZ-ORDERS-305-soft-materials-gate.md | ✅ DONE → `tasks/_archive/2026-08/TZ-ORDERS-305.done.md` |
+| 4 | TZ-SALES-302 | TZ-SALES-302-kp-send-versions.md | ✅ DONE → `tasks/_archive/2026-08/TZ-SALES-302.done.md` |
+| 5 | TZ-UX-FACT-303 | TZ-UX-FACT-303-order-detail-facts.md | ✅ DONE → `tasks/_archive/2026-08/TZ-UX-FACT-303.done.md` |
+| 6 | TZ-UX-FACT-304 | TZ-UX-FACT-304-material-detail-facts.md | ✅ DONE → `tasks/_archive/2026-08/TZ-UX-FACT-304.done.md` |
+| 7 | TZ-UX-FORM-307 | TZ-UX-FORM-307-form-wave-b-batch1.md | **READY** — взять сейчас |
 
 Цикл: CLAIM → код → gates → archive → commit+push → следующий. Без «поехали».
-Deploy — только по команде PO.
+После #7 → волна DONE → idle; деплой только по команде PO.
 
 ## Жёсткий BAN (этот агент)
 
@@ -28,6 +28,7 @@ Deploy — только по команде PO.
 - app.routes.ts (Desktop TZD-29)  
 - SALES-304 · SHIPPING-301 · PRODUCTION-308…310 · Gantt drag  
 - composition-tree rewrite · deploy.ps1  
+- claim INN-301 · воскрешение #1–#6  
 
 ## DoD волны
 

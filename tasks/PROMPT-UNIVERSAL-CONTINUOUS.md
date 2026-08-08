@@ -118,7 +118,7 @@ Acceptance = измеримые пункты из файла TZ, не «каже
 5. Не воскрешай DONE-волны. Не бери чужой живой слот из «Не брать».
 
 Текущий пример (может устареть — сверяй QUEUE):  
-`party-docs/WAVE-PARTY-DOCS.md` (#1 PARTY-301 … #7 DESKTOP-SOT; INN PARKED).
+Shop-north **#7 TZ-UX-FORM-307** (Party-docs DONE; Catalog DONE; INN PARKED).
 
 ---
 

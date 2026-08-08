@@ -7,16 +7,19 @@
 
 | Агент | Волна | Статус |
 |-------|--------|--------|
-| **A — Party-docs** | `party-docs/WAVE-PARTY-DOCS.md` | **DONE** #1–#7 · узкий промпт `PROMPT-CONTINUOUS.md` · **INN-301 PARKED** |
-| **B — Shop north** | `shop-north-b/WAVE-SHOP-NORTH-B.md` | проверить живость; не перехватывать FACT/FORM если агент жив |
-| **C — Catalog UX** | `catalog-ux-c/WAVE-CATALOG-UX-C.md` | COMPOSE/DIALOG/337/307/304 — вероятно DONE; не воскрешать |
+| **A — Party-docs** | `party-docs/WAVE-PARTY-DOCS.md` | **DONE** #1–#7 · **INN-301 PARKED** |
+| **B — Shop north** | `shop-north-b/WAVE-SHOP-NORTH-B.md` | **READY** — остался только **#7 TZ-UX-FORM-307** (#1–#6 DONE) |
+| **C — Catalog UX** | `catalog-ux-c/WAVE-CATALOG-UX-C.md` | **DONE** — не воскрешать |
 
 Все только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
+
+**NEXT для universal prompt:** `tasks/_backlog/shop-north-b/TZ-UX-FORM-307-form-wave-b-batch1.md`
 
 ## Idle / park / done
 
 | TZ / wave | Заметка |
 |-----------|---------|
+| ~~WAVE-PARTY-DOCS #1–#7~~ | DONE |
 | ~~WAVE-DESKTOP-DOC-TEXTS / TZD-30~~ | DONE |
 | ~~TYPE-303~~ · ~~DIALOG-303~~ · ~~UX-313~~ · ~~DEDUP-301~~ · ~~SELECT-301~~ | DONE |
 | TZ-INN-301 | PARKED (нужен ключ PO) |
@@ -29,5 +32,5 @@
 - чужой journal / import-task без wave  
 - deploy без команды PO  
 - claim INN-301 пока PARKED  
-- commit `desktop/mcp-runtime` до DESKTOP-SOT-301  
-- воскрешение ModuleMaterials  
+- commit `desktop/mcp-runtime/**` (не SoT; канон = `desktop/mcp`)  
+- воскрешение ModuleMaterials / DONE-волн Catalog / Party-docs  

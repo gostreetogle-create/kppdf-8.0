@@ -1,9 +1,8 @@
 # WAVE-CATALOG-UX-C — каталог: состав + диалоги + карточки (PO P0)
 
-**STATUS:** READY · для свободного агента  
+**STATUS:** DONE — не воскрешать (COMPOSE/DIALOG/337/PRODUCTS/DIALOG-304 в archive)  
 **SoT:** `D:\kppdf-8.0` на `main`  
-**Параллель OK с:** Shop-north FORM-307 (другие keys); Desktop IDLE  
-**Блокер:** FACT-304 IN WORK на `materials/**` → **CATALOG-337** только после archive FACT-304  
+**Параллель:** idle; следующий executor = Shop-north FORM-307  
 **Deploy:** только по команде PO
 
 ## Зачем (одним абзацем)

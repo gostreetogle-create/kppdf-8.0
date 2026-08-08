@@ -1,9 +1,15 @@
 # STATUS — KPPDF ERP Project Status
 
-**Last updated:** 2026-08-02
+**Last updated:** 2026-08-08
 **Phase:** Canonical cleanup and verification — TZ-261 and TZ-262 are closed; roadmap items remain documented backlog
-**Canonical workspace:** `D:\kppdf-8.0` on `main`; only registered Git worktree; package manager `pnpm`
-**Task truth:** `tasks/` contains only active work. Completed or deferred work belongs in `tasks/_archive/`; this status file also retains historical roadmap notes.
+**Canonical workspace:** `D:\kppdf-8.0` on `main`; package manager `pnpm`
+**Task truth:** `tasks/_backlog/QUEUE.md` + archives; completed work in `tasks/_archive/`
+
+## [2026-08-08] — Worktree sync: main == origin/main; NEXT FORM-307
+**Статус:** SoT synced; deploy НЕ
+**Что:** Canonical root fast-forwarded to Party-docs closeout HEAD; foreign WIP quarantined off-tree; QUEUE/WAVE point executor at TZ-UX-FORM-307 only.
+**NEXT:** `tasks/_backlog/shop-north-b/TZ-UX-FORM-307-form-wave-b-batch1.md`
+**Ban:** INN-301 · deploy · `desktop/mcp-runtime` commit
 
 ## [2026-08-08] — TZ-DESKTOP-SOT-301 DONE: desktop MCP source of truth
 **Статус:** DONE on main; deploy НЕ

@@ -1,5 +1,17 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-08T18:00:00Z · worktree sync + queue NEXT=FORM-307
+- DONE (sync): canonical `D:\kppdf-8.0` `main` fast-forwarded to `origin/main` @ `8a317385`; dirty foreign WIP removed from worktree (quarantine `D:\kppdf-8.0-wip-aside\2026-08-08-pre-sync`: `mcp-runtime`, secrets-check script; tracked diffs that regressed ASSETS-302 / weakened `.gitignore` discarded)
+- DONE (product waves already on remote): Party-docs #1–#7; Shop-north #1–#6; Catalog UX wave
+- IN PROGRESS: none
+- NOT DONE: **TZ-UX-FORM-307** (Shop-north #7); INN-301 **PARKED**; SALES-304 RESERVED; Shipping/Gantt park
+- NEXT: `tasks/_backlog/shop-north-b/TZ-UX-FORM-307-form-wave-b-batch1.md` (universal prompt)
+- HEAD: 8a317385 (+ this docs commit) · SoT branch: **main** only for product work
+- Blockers: none for FORM-307; `verify-status.sh` pre-existing FAIL ×72 legacy kit-era — leave alone
+- _active/: empty
+- Ban: deploy · INN · mcp-runtime commit · stash pop чужих · duplicate TZ cleanup in tasks root (PO said leave)
+- Deploy: NO
+
 ## Checkpoint 2026-08-08T17:31:00Z · WAVE-PARTY-DOCS #1–7 DONE
 - DONE: TZ-DESKTOP-SOT-301 — canonical MCP SoT is tracked `desktop/mcp`; package checks and docs agree; stale Desktop shell diagnostics are green; no foreign `mcp-runtime` was reconstructed. This closes the Party-docs product wave from tenant hygiene through desktop handoff.
 - IN PROGRESS: none
