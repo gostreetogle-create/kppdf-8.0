@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-DETAIL-302 DONE: cost panel vertical + autorecalc
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** цены+captions; вертикальный журнал; auto-recalc 400ms на BomPanel.changed.
+**Gates:** FE tsc PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-DETAIL-302.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-DETAIL-302-cost-panel-vertical-autorecalc.lock`
+**Known:** Deploy NO. Next DETAIL-303.
+
 ## [2026-08-08] — TZ-UX-DETAIL-301 DONE: product passport cleanup
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor)

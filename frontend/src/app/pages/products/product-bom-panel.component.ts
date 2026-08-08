@@ -266,6 +266,7 @@ export class ProductBomPanelComponent {
   readonly productId = input.required<string>();
   /** TZ-CATALOG-336: product | module root for shared BOM panel. */
   readonly rootKind = input<'product' | 'module'>('product');
+  /** Emits after successful add/remove/qty mutate (not on select). DETAIL-302 auto-recalc listens. */
   readonly changed = output<void>();
 
   private readonly service = inject(ProductModulesService);

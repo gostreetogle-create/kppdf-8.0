@@ -244,100 +244,107 @@ const KIND_LABELS: Record<ProductKind, string> = {
               [expanded]="openCost()"
               (expandedChange)="openCost.set($event)"
             >
-              <div class="flex justify-end mb-3">
-                <app-pi-button
-                  variant="default"
-                  type="button"
-                  (click)="recalculate()"
-                  [disabled]="recalculating()"
-                  data-test="recalculate-button"
-                >
-                  {{ recalculating() ? 'Расчёт…' : 'Пересчитать' }}
-                </app-pi-button>
-              </div>
+              <div class="space-y-4" data-test="product-cost-panel">
+                <app-pi-fact-stack title="Цены" dataTest="product-price-facts">
+                  <app-pi-fact-card
+                    label="Прайс"
+                    [value]="p.listPrice != null ? formatRuble(p.listPrice) : '—'"
+                    caption="Цена витрины / для КП"
+                    mono
+                    variant="emphasis"
+                    dataTest="product-list-price"
+                  />
+                  <app-pi-fact-card
+                    label="Себест."
+                    [value]="p.costPrice != null ? formatRuble(p.costPrice) : '—'"
+                    caption="Сколько изделие стоит цеху (rollup)"
+                    mono
+                    dataTest="product-cost-price"
+                  />
+                  <app-pi-fact-card
+                    label="База"
+                    [value]="p.basePrice != null ? formatRuble(p.basePrice) : '—'"
+                    caption="Базовая цена учёта (до коммерции)"
+                    mono
+                    dataTest="product-base-price"
+                  />
+                </app-pi-fact-stack>
 
-              @if (costList().length > 0) {
-                <div class="hairline rounded-sm overflow-x-auto">
-                  <table class="w-full text-sm min-w-[640px]">
-                    <thead class="hairline-b">
-                      <tr>
-                        <th class="pi-cell eyebrow text-left">Дата</th>
-                        <th class="pi-cell-numeric eyebrow w-32">Материалы</th>
-                        <th class="pi-cell-numeric eyebrow w-32">Работы</th>
-                        <th class="pi-cell-numeric eyebrow w-32">Накладные</th>
-                        <th class="pi-cell-numeric eyebrow w-40">Итого</th>
-                        <th class="pi-cell eyebrow w-24">Статус</th>
-                        <th class="pi-cell eyebrow w-32 text-right">Действия</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (cc of costList(); track cc._id) {
-                        <tr
-                          class="pi-table-row pi-table-row-odd last:border-0"
-                          [class.bg-sunrise-warm/10]="cc.isActive"
-                        >
-                          <td class="pi-cell align-top">
-                            {{ formatDate(cc.calculatedAt || cc.createdAt) }}
-                          </td>
-                          <td class="pi-cell-numeric align-top font-mono">
-                            {{ formatRuble(cc.totalMaterialCost) }}
-                          </td>
-                          <td class="pi-cell-numeric align-top font-mono">
-                            {{ formatRuble(cc.totalLaborCost) }}
-                          </td>
-                          <td class="pi-cell-numeric align-top font-mono text-muted-foreground">
-                            {{ cc.overheadPercent }}% → {{ formatRuble(cc.overheadCost) }}
-                          </td>
-                          <td class="pi-cell-numeric align-top font-mono font-medium">
-                            {{ formatRuble(cc.totalCost) }}
-                          </td>
-                          <td class="pi-cell align-top">
-                            @if (cc.isActive) {
-                              <span
-                                class="inline-flex items-center gap-1 text-xs font-medium text-sunrise-warm"
-                                >● Активен</span
-                              >
-                            } @else {
-                              <span class="text-xs text-muted-foreground">—</span>
-                            }
-                          </td>
-                          <td class="pi-cell align-top text-right">
-                            <button
-                              type="button"
-                              (click)="openBreakdown(cc)"
-                              class="eyebrow text-ink hover:text-sunrise-warm mr-3"
-                            >
-                              Детали
-                            </button>
-                            @if (!cc.isActive) {
-                              <button
-                                type="button"
-                                (click)="activateSnapshot(cc)"
-                                class="eyebrow text-muted-foreground hover:text-ink mr-3"
-                              >
-                                Активировать
-                              </button>
-                            }
-                            <button
-                              type="button"
-                              (click)="onDeleteCalc(cc)"
-                              class="eyebrow text-destructive hover:underline"
-                            >
-                              Удалить
-                            </button>
-                          </td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
+                <div class="flex justify-end">
+                  <app-pi-button
+                    variant="default"
+                    type="button"
+                    (click)="recalculate()"
+                    [disabled]="recalculating()"
+                    data-test="recalculate-button"
+                  >
+                    {{ recalculating() ? 'Расчёт…' : 'Пересчитать' }}
+                  </app-pi-button>
                 </div>
-              } @else {
-                <app-pi-empty-state
-                  [colspan]="7"
-                  message="Нет расчётов себестоимости. Нажмите «Пересчитать»."
-                  state="empty"
-                />
-              }
+
+                @if (costList().length > 0) {
+                  <div class="space-y-2" data-test="product-cost-snapshots">
+                    @for (cc of costList(); track cc._id) {
+                      <div
+                        class="hairline rounded-sm px-2.5 py-2 space-y-2"
+                        [class.bg-sunrise-warm/10]="cc.isActive"
+                        [attr.data-test]="'cost-snapshot-' + cc._id"
+                      >
+                        <div class="flex flex-wrap items-baseline justify-between gap-2">
+                          <span class="text-sm font-medium font-mono">{{
+                            formatRuble(cc.totalCost)
+                          }}</span>
+                          <span class="text-xs text-muted-foreground">{{
+                            formatDate(cc.calculatedAt || cc.createdAt)
+                          }}</span>
+                        </div>
+                        <p class="text-xs text-muted-foreground m-0">
+                          Материалы {{ formatRuble(cc.totalMaterialCost) }} · Работы
+                          {{ formatRuble(cc.totalLaborCost) }} · Накладные {{ cc.overheadPercent }}%
+                          → {{ formatRuble(cc.overheadCost) }}
+                        </p>
+                        <div class="flex flex-wrap items-center gap-2">
+                          @if (cc.isActive) {
+                            <span class="text-xs font-medium text-sunrise-warm">● Активен</span>
+                          }
+                          <app-pi-button
+                            variant="outline"
+                            size="sm"
+                            type="button"
+                            (click)="openBreakdown(cc)"
+                          >
+                            Детали
+                          </app-pi-button>
+                          @if (!cc.isActive) {
+                            <app-pi-button
+                              variant="ghost"
+                              size="sm"
+                              type="button"
+                              (click)="activateSnapshot(cc)"
+                            >
+                              Активировать
+                            </app-pi-button>
+                          }
+                          <app-pi-button
+                            variant="ghost"
+                            size="sm"
+                            type="button"
+                            (click)="onDeleteCalc(cc)"
+                          >
+                            Удалить
+                          </app-pi-button>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <app-pi-empty-state
+                    [colspan]="1"
+                    message="Нет расчётов себестоимости. Нажмите «Пересчитать»."
+                    state="empty"
+                  />
+                }
+              </div>
             </app-pi-accordion-item>
           </app-pi-accordion>
         </div>
@@ -518,6 +525,8 @@ export class ProductDetailPage {
     return n ? `${n}` : 'нет';
   });
   protected readonly recalculating = signal<boolean>(false);
+  private recalcTimer: ReturnType<typeof setTimeout> | null = null;
+  private recalcDirty = false;
 
   protected onBack(): void {
     this.router.navigate(['/products']);
@@ -557,6 +566,19 @@ export class ProductDetailPage {
 
   protected onBomChanged(): void {
     this.productRes.reload();
+    this.scheduleAutoRecalc();
+  }
+
+  /** DETAIL-302: debounce auto cost recalc after composition mutate. */
+  private scheduleAutoRecalc(): void {
+    this.recalcDirty = true;
+    if (this.recalcTimer) clearTimeout(this.recalcTimer);
+    this.recalcTimer = setTimeout(() => {
+      this.recalcTimer = null;
+      if (!this.recalcDirty) return;
+      this.recalcDirty = false;
+      this.recalculate({ quiet: true });
+    }, 400);
   }
 
   protected openModuleDetail(m: ProductModule): void {
@@ -565,15 +587,23 @@ export class ProductDetailPage {
 
   // ── TZ-85 Phase C: Себестоимость ──────────────────────────────────────
 
-  protected recalculate(): void {
+  protected recalculate(opts?: { quiet?: boolean }): void {
     const pid = this.idString();
-    if (!pid || this.recalculating()) return;
+    if (!pid || this.recalculating()) {
+      if (this.recalculating()) this.recalcDirty = true;
+      return;
+    }
     this.recalculating.set(true);
     this.costSvc.create(pid).subscribe((res) => {
       this.recalculating.set(false);
       if (res.ok) {
-        this.toast.success('Себестоимость рассчитана');
+        if (!opts?.quiet) this.toast.success('Себестоимость рассчитана');
         this.costRes.reload();
+        this.productRes.reload();
+        if (this.recalcDirty) {
+          this.recalcDirty = false;
+          this.scheduleAutoRecalc();
+        }
       } else {
         this.toast.error(extractErrorMessage(res.error));
       }
