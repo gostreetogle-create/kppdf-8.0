@@ -52,5 +52,17 @@ export class SupplyTask {
 }
 
 export const SupplyTaskSchema = SchemaFactory.createForClass(SupplyTask);
+SupplyTaskSchema.index(
+  { orderId: 1, materialId: 1 },
+  {
+    name: 'supplytasks_open_order_material_unique',
+    unique: true,
+    partialFilterExpression: {
+      materialId: { $exists: true },
+      deletedAt: null,
+      status: { $in: ['draft', 'confirmed', 'ordered'] },
+    },
+  },
+);
 SupplyTaskSchema.index({ orderId: 1, status: 1 });
 SupplyTaskSchema.index({ status: 1, createdAt: -1 });

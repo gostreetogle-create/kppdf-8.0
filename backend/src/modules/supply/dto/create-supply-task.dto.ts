@@ -2,6 +2,15 @@ import { Type } from 'class-transformer';
 import { IsNumber, IsOptional, IsString, Length, Min } from 'class-validator';
 import { IsObjectId } from '../../../common/decorators/is-object-id.decorator';
 
+export class ExplodeSupplyTasksDto {
+  @IsObjectId()
+  orderId!: string;
+
+  @IsOptional()
+  @IsObjectId()
+  moduleId?: string;
+}
+
 export class CreateSupplyTaskDto {
   @IsObjectId()
   orderId!: string;

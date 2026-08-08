@@ -7,6 +7,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import {
   CreateSupplyTaskDto,
+  ExplodeSupplyTasksDto,
   UpdateSupplyTaskDto,
 } from './dto/create-supply-task.dto';
 import {
@@ -20,6 +21,13 @@ const STATUS_FLOW: Record<SupplyTaskStatus, SupplyTaskStatus[]> = {
   confirmed: ['ordered'],
   ordered: ['received'],
   received: [],
+};
+
+type MaterialNeed = {
+  materialId: string;
+  moduleId?: string;
+  qty: number;
+  title?: string;
 };
 
 @Injectable()
@@ -59,6 +67,154 @@ export class SupplyTaskService {
     });
   }
 
+  /**
+   * Expand the order's catalog trees into one draft task per material.
+   * Existing open tasks are reused so the operation is safe to repeat.
+   */
+  async explode(
+    dto: ExplodeSupplyTasksDto,
+  ): Promise<{ created: SupplyTaskDocument[]; skipped: number }> {
+    if (!Types.ObjectId.isValid(dto.orderId)) {
+      throw new BadRequestException('Invalid orderId');
+    }
+    if (dto.moduleId && !Types.ObjectId.isValid(dto.moduleId)) {
+      throw new BadRequestException('Invalid moduleId');
+    }
+
+    const order = await this.model.db
+      .collection('orders')
+      .findOne({ _id: new Types.ObjectId(dto.orderId) });
+    if (!order) throw new NotFoundException(`Order ${dto.orderId} not found`);
+
+    const productModel = this.model.db.collection('products');
+    const moduleModel = this.model.db.collection('productmodules');
+    const materialRows = new Map<string, MaterialNeed>();
+    const addMaterial = (
+      materialId: unknown,
+      qty: number,
+      moduleId?: string,
+      title?: string,
+    ) => {
+      const id = String(materialId ?? '');
+      if (!Types.ObjectId.isValid(id)) return;
+      const existing = materialRows.get(id);
+      if (existing) {
+        existing.qty += qty;
+        existing.moduleId ??= moduleId;
+        existing.title ??= title;
+      } else {
+        materialRows.set(id, { materialId: id, moduleId, qty, title });
+      }
+    };
+
+    const walkModule = async (
+      moduleId: string,
+      multiplier: number,
+      modulePath = new Set<string>(),
+    ): Promise<void> => {
+      if (modulePath.has(moduleId)) return;
+      const nextModulePath = new Set(modulePath).add(moduleId);
+      const module = await moduleModel.findOne({
+        _id: new Types.ObjectId(moduleId),
+        deletedAt: null,
+      });
+      if (!module) return;
+      const composition = module.composition ?? [];
+      if (composition.length === 0) {
+        for (const row of module.materials ?? []) {
+          addMaterial(
+            row.materialId,
+            multiplier * Number(row.quantity ?? 1),
+            moduleId,
+          );
+        }
+      }
+      for (const line of composition) {
+        const lineQty = multiplier * Number(line.quantity ?? 1);
+        if (line.lineType === 'material') {
+          addMaterial(line.refId, lineQty, moduleId);
+        }
+        if (line.lineType === 'module') {
+          await walkModule(String(line.refId), lineQty, nextModulePath);
+        }
+      }
+    };
+
+    const walkProduct = async (
+      productId: string,
+      multiplier: number,
+      productPath = new Set<string>(),
+    ): Promise<void> => {
+      if (productPath.has(productId)) return;
+      const nextProductPath = new Set(productPath).add(productId);
+      const product = await productModel.findOne({
+        _id: new Types.ObjectId(productId),
+        deletedAt: null,
+      });
+      if (!product) return;
+      for (const line of product.composition ?? []) {
+        const lineQty = multiplier * Number(line.quantity ?? 1);
+        if (line.lineType === 'material') {
+          addMaterial(line.refId, lineQty, undefined, product.name);
+        }
+        if (line.lineType === 'module') {
+          await walkModule(String(line.refId), lineQty);
+        }
+        if (line.lineType === 'product') {
+          await walkProduct(String(line.refId), lineQty, nextProductPath);
+        }
+      }
+      if ((product.composition ?? []).length === 0) {
+        for (const moduleId of product.productModuleIds ?? []) {
+          await walkModule(String(moduleId), multiplier);
+        }
+      }
+    };
+
+    if (dto.moduleId) {
+      await walkModule(dto.moduleId, 1);
+    } else {
+      for (const item of order.items ?? []) {
+        await walkProduct(String(item.productId), Number(item.quantity ?? 1));
+      }
+    }
+
+    const created: SupplyTaskDocument[] = [];
+    let skipped = 0;
+    for (const row of materialRows.values()) {
+      const open = await this.model
+        .findOne({
+          orderId: new Types.ObjectId(dto.orderId),
+          materialId: new Types.ObjectId(row.materialId),
+          status: { $in: ['draft', 'confirmed', 'ordered'] },
+          deletedAt: null,
+        })
+        .exec();
+      if (open) {
+        skipped += 1;
+        continue;
+      }
+      try {
+        const doc = await this.model.create({
+          orderId: new Types.ObjectId(dto.orderId),
+          materialId: new Types.ObjectId(row.materialId),
+          moduleId: row.moduleId ? new Types.ObjectId(row.moduleId) : undefined,
+          qty: row.qty,
+          title: row.title ?? 'Материал из состава',
+          status: 'draft' as SupplyTaskStatus,
+        });
+        created.push(doc);
+      } catch (error: unknown) {
+        if (this.isDuplicateKeyError(error)) {
+          skipped += 1;
+          continue;
+        }
+        throw error;
+      }
+    }
+    return { created, skipped };
+  }
+
   async findAll(filters: {
     orderId?: string;
     status?: string;
@@ -96,9 +252,7 @@ export class SupplyTaskService {
     return doc.save();
   }
 
-  /**
-   * D18: зелёный флаг «можно заказывать» — кто + когда.
-   */
+  /** D18: зелёный флаг «можно заказывать» — кто + когда. */
   async confirm(
     id: string,
     userId: string,
@@ -133,6 +287,15 @@ export class SupplyTaskService {
     await this.model
       .updateOne({ _id: doc._id }, { $set: { deletedAt: new Date() } })
       .exec();
+  }
+
+  private isDuplicateKeyError(error: unknown): boolean {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code?: unknown }).code === 11000
+    );
   }
 
   private assertTransition(

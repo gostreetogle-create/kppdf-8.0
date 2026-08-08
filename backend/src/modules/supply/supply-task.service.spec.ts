@@ -16,6 +16,9 @@ function createService() {
     find: jest.fn(),
     findOne: jest.fn(),
     updateOne: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue({}) }),
+    db: {
+      collection: jest.fn(),
+    },
   };
   const service = new SupplyTaskService(model as never);
   return { service, model };
@@ -100,6 +103,52 @@ describe('SupplyTaskService (TZ-SUPPLY-301)', () => {
     model.findOne.mockReturnValue(mockQuery(doc));
     const res = await service.markOrdered(id);
     expect(res.status).toBe('ordered');
+  });
+
+  it('explode creates one draft task per BOM material and is idempotent', async () => {
+    const { service, model } = createService();
+    const orderId = new Types.ObjectId();
+    const productId = new Types.ObjectId();
+    const materialA = new Types.ObjectId();
+    const materialB = new Types.ObjectId();
+    const orderCollection = { findOne: jest.fn().mockResolvedValue({
+      _id: orderId,
+      items: [{ productId, quantity: 2 }],
+    }) };
+    const productCollection = { findOne: jest.fn().mockResolvedValue({
+      _id: productId,
+      name: 'Product',
+      composition: [
+        { lineType: 'material', refId: materialA, quantity: 3 },
+        { lineType: 'material', refId: materialB, quantity: 1 },
+      ],
+      productModuleIds: [],
+    }) };
+    const moduleCollection = { findOne: jest.fn() };
+    model.db.collection.mockImplementation((name: string) =>
+      name === 'orders' ? orderCollection : name === 'products' ? productCollection : moduleCollection,
+    );
+    const firstTasks = [{ _id: new Types.ObjectId(), status: 'draft' }];
+    model.findOne.mockReturnValueOnce(mockQuery(null)).mockReturnValueOnce(mockQuery(null));
+    model.create
+      .mockResolvedValueOnce(firstTasks[0])
+      .mockResolvedValueOnce({ _id: new Types.ObjectId(), status: 'draft' });
+
+    const first = await service.explode({ orderId: orderId.toString() });
+    expect(first.created).toHaveLength(2);
+    expect(model.create).toHaveBeenCalledTimes(2);
+    expect(model.create.mock.calls[0][0]).toEqual(expect.objectContaining({
+      orderId,
+      materialId: materialA,
+      qty: 6,
+      status: 'draft',
+    }));
+
+    model.findOne.mockReturnValueOnce(mockQuery(firstTasks[0])).mockReturnValueOnce(mockQuery(firstTasks[0]));
+    const second = await service.explode({ orderId: orderId.toString() });
+    expect(second.created).toHaveLength(0);
+    expect(second.skipped).toBe(2);
+    expect(model.create).toHaveBeenCalledTimes(2);
   });
 
   it('findById 404', async () => {

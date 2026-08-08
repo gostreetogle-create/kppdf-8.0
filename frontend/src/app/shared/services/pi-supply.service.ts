@@ -39,6 +39,11 @@ export interface CreateSupplyTaskDto {
   title?: string;
 }
 
+export interface ExplodeSupplyTasksResult {
+  created: SupplyTask[];
+  skipped: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SupplyTaskService {
   private readonly http = inject(HttpClient);
@@ -58,6 +63,14 @@ export class SupplyTaskService {
 
   create(payload: CreateSupplyTaskDto): Observable<SilentResult<SupplyTask>> {
     return silentPost<SupplyTask>(this.http, `${this.baseUrl}/supply-tasks`, payload);
+  }
+
+  explode(orderId: string, moduleId?: string): Observable<SilentResult<ExplodeSupplyTasksResult>> {
+    return silentPost<ExplodeSupplyTasksResult>(
+      this.http,
+      `${this.baseUrl}/supply-tasks/explode`,
+      moduleId ? { orderId, moduleId } : { orderId },
+    );
   }
 
   update(

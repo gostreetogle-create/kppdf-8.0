@@ -33,6 +33,16 @@ describe('SupplyTaskService (TZ-SUPPLY-301)', () => {
     req.flush([]);
   });
 
+  it('explode() POSTs the selected order to /supply-tasks/explode', () => {
+    svc.explode('o1').subscribe((res) => {
+      if (res.ok) expect(res.data.skipped).toBe(1);
+    });
+    const req = httpMock.expectOne('http://test/api/supply-tasks/explode');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ orderId: 'o1' });
+    req.flush({ created: [], skipped: 1 });
+  });
+
   it('confirm() POSTs /supply-tasks/:id/confirm', () => {
     svc.confirm('t1').subscribe((res) => {
       if (res.ok) expect(res.data.status).toBe('confirmed');

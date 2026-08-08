@@ -1,3 +1,11 @@
+## [2026-08-08] — TZ-SUPPLY-302 DONE: BOM explode → SupplyTasks
+
+**Что:** `POST /supply-tasks/explode` recursively expands order/module BOM, aggregates materials, creates idempotent draft tasks; `/supply` gets «Создать из заказа».
+**Gates:** BE+FE tsc PASS; BE supply 7/7; FE supply 3/3; targeted ESLint + diff check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SUPPLY-302.done.md`
+**Lock:** `.mimocode/locks/TZ-SUPPLY-302-bom-explode-tasks.lock`
+**Known:** no auto-confirm / PO creation; concurrent safety uses unique open-task index.
+
 ## [2026-08-08] — TZD-29 DONE: manager import todos (wave #7 — WAVE COMPLETE)
 
 **Исполнитель:** buffy-desktop-ex (Freebuff desktop executor)

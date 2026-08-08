@@ -18,6 +18,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
 import {
   CreateSupplyTaskDto,
+  ExplodeSupplyTasksDto,
   UpdateSupplyTaskDto,
 } from './dto/create-supply-task.dto';
 import { SupplyTaskService } from './supply-task.service';
@@ -33,6 +34,13 @@ export class SupplyTaskController {
     @Query('status') status?: string,
   ) {
     return this.service.findAll({ orderId, status });
+  }
+
+  @Post('explode')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'explode', entityType: 'SupplyTask' })
+  explode(@Body() dto: ExplodeSupplyTasksDto) {
+    return this.service.explode(dto);
   }
 
   @Get(':id')

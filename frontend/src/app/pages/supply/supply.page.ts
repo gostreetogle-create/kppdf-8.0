@@ -81,8 +81,41 @@ const STATUS_LABELS: Record<SupplyTaskStatus, string> = {
             (submit)="onCreate($event)"
           >
             <p class="text-sm text-muted-foreground m-0">
-              Создать задачу закупки вручную. Авторазнос из состава заказа — в следующей волне.
+              Выберите заказ, чтобы создать задачи снабжения из его состава.
             </p>
+            <div class="flex flex-wrap gap-3 items-end">
+              <label class="flex flex-col gap-1 text-xs min-w-[12rem] flex-1">
+                <span class="text-muted-foreground">Разнести состав заказа</span>
+                <select
+                  class="pi-input"
+                  [ngModel]="explodeOrderId"
+                  (ngModelChange)="explodeOrderId = $event"
+                  name="explodeOrderId"
+                  required
+                  data-test="supply-explode-order"
+                >
+                  <option value="">Выберите заказ…</option>
+                  @for (o of orders(); track o._id) {
+                    <option [value]="o._id">{{ o.number }}</option>
+                  }
+                </select>
+              </label>
+              <app-pi-button
+                type="button"
+                variant="outline"
+                size="sm"
+                (click)="onExplode()"
+                [disabled]="exploding()"
+                data-test="supply-explode-submit"
+              >
+                Создать из заказа
+              </app-pi-button>
+            </div>
+            <div class="flex items-center gap-3 text-xs text-muted-foreground" aria-hidden="true">
+              <span class="h-px bg-border flex-1"></span>
+              <span>или вручную</span>
+              <span class="h-px bg-border flex-1"></span>
+            </div>
             <div class="flex flex-wrap gap-3 items-end">
               <label class="flex flex-col gap-1 text-xs min-w-[12rem] flex-1">
                 <span class="text-muted-foreground">Заказ</span>
@@ -254,6 +287,7 @@ export class SupplyPage implements AfterViewInit {
   protected readonly orders = signal<Order[]>([]);
   protected readonly loading = signal(true);
   protected readonly creating = signal(false);
+  protected readonly exploding = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly busyId = signal<string | null>(null);
   protected readonly statusFilter = signal<SupplyTaskStatus | ''>('');
@@ -261,6 +295,7 @@ export class SupplyPage implements AfterViewInit {
   private readonly viewReady = signal(false);
 
   protected createOrderId = '';
+  protected explodeOrderId = '';
   protected createTitle = '';
   protected createQty = 1;
 
@@ -346,6 +381,33 @@ export class SupplyPage implements AfterViewInit {
           return;
         }
         this.tasks.set(res.data ?? []);
+      });
+  }
+
+  protected onExplode(): void {
+    const orderId = this.explodeOrderId.trim();
+    if (!orderId) {
+      this.toast.error('Выберите заказ');
+      return;
+    }
+    this.exploding.set(true);
+    this.supply
+      .explode(orderId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        this.exploding.set(false);
+        if (!res.ok) {
+          this.toast.error(extractErrorMessage(res.error) || 'Не удалось создать задачи из заказа');
+          return;
+        }
+        const created = res.data?.created.length ?? 0;
+        const skipped = res.data?.skipped ?? 0;
+        this.toast.success(
+          skipped > 0
+            ? `Создано задач: ${created}; уже существовало: ${skipped}`
+            : `Создано задач: ${created}`,
+        );
+        this.reload();
       });
   }
 
