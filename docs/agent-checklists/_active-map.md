@@ -22,7 +22,7 @@ Park: `tasks/_park/`
 - DONE: TZ-CATALOG-DEDUP-301
 - IN PROGRESS: none
 - NEXT: TZ-CATALOG-DEDUP-302
-- HEAD: (pending)
+- HEAD: `c29ce4bb`
 - Blockers: none
 - _active/: empty
 - Deploy: NO
