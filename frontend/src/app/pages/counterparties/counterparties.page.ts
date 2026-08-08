@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  Injector,
   OnInit,
   TemplateRef,
   ViewChild,
@@ -13,24 +14,41 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
 import { CLIENTS_SECTION_CHIPS } from '../clients/clients-group-chips';
 import { BadgeComponent } from '../../shared/ui/badge/badge.component';
+import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ColumnDef, TableComponent } from '../../shared/ui/pi-table.component';
+import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
+import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
+import { PiToastService } from '../../shared/ui/toast';
+import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
 import { Counterparty, CounterpartyService } from '../../shared/services/pi-counterparty.service';
+import { CounterpartyFullEditorDialogComponent } from './counterparty-full-editor-dialog.component';
 
 /**
  * TZ-NAV-301 — thin Заказчики list (Counterparty API).
  * TZ-NAV-302 — Клиенты chips (Заказчики | Люди).
  * TZ-PARTY-301 — badge «временный» on quick-created (stub) INNs.
- * Sites / quick-create live in ORDERS-303 — not this page.
+ * TZ-PARTY-303 — create / edit / delete via the Counterparty FullEditor.
+ * Sites / площадки live in ORDERS-303 — not this page.
  */
 @Component({
   selector: 'app-counterparties-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiGroupWorkspaceComponent, TableComponent, BadgeComponent],
+  imports: [
+    PiGroupWorkspaceComponent,
+    TableComponent,
+    BadgeComponent,
+    ButtonComponent,
+    PiRowActionsComponent,
+  ],
   template: `
     <app-pi-group-workspace pathLabel="Клиенты" [chips]="chips" activeId="counterparties">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        <app-pi-button variant="default" (click)="openCreate()" data-test="counterparty-create">
+          + Создать
+        </app-pi-button>
         <span class="text-xs text-muted-foreground">{{ total() }} заказчик{{ totalLabel() }}</span>
         @if (stubCount() > 0) {
           <span class="text-xs text-muted-foreground" data-test="counterparties-stub-count">
@@ -64,6 +82,18 @@ import { Counterparty, CounterpartyService } from '../../shared/services/pi-coun
         </span>
       </ng-template>
 
+      <ng-template #rowActionsTpl let-row>
+        <app-pi-row-actions
+          [row]="row"
+          [editLabel]="'Редактировать ' + row.name"
+          [deleteLabel]="'Удалить ' + row.name"
+          [dataTestEdit]="'counterparty-edit-' + row._id"
+          [dataTestDelete]="'counterparty-delete-' + row._id"
+          (edit)="openEdit($event)"
+          (delete)="onDelete($event)"
+        />
+      </ng-template>
+
       <div
         class="pi-table-surface hairline rounded-sm overflow-hidden"
         data-test="counterparties-page"
@@ -72,11 +102,12 @@ import { Counterparty, CounterpartyService } from '../../shared/services/pi-coun
           [data]="rows()"
           [columns]="cols"
           [cellTemplates]="cellTemplates()"
+          [rowActions]="rowActionsTplBinding()"
           [loading]="loading()"
           [total]="total()"
           [page]="1"
           [pageSize]="200"
-          emptyMessage="Заказчиков пока нет. API готов — полный CRUD и объекты (площадки) в ORDERS-303."
+          emptyMessage="Заказчиков пока нет. Нажмите «Создать», чтобы добавить первого."
         />
       </div>
 
@@ -88,7 +119,10 @@ import { Counterparty, CounterpartyService } from '../../shared/services/pi-coun
 })
 export class CounterpartiesPage implements OnInit {
   private readonly api = inject(CounterpartyService);
+  private readonly dialog = inject(PiDialogService);
+  private readonly toast = inject(PiToastService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
 
   protected readonly chips = CLIENTS_SECTION_CHIPS;
 
@@ -102,6 +136,13 @@ export class CounterpartiesPage implements OnInit {
     $implicit: Counterparty;
   }>;
   protected readonly cellTemplates = computed(() => ({ inn: this.innTpl }));
+
+  @ViewChild('rowActionsTpl', { static: true }) private readonly rowActionsTpl!: TemplateRef<{
+    $implicit: Counterparty;
+  }>;
+  protected readonly rowActionsTplBinding = signal<TemplateRef<{
+    $implicit: Counterparty;
+  }> | null>(null);
 
   protected readonly rows = signal<Counterparty[]>([]);
   protected readonly total = signal(0);
@@ -120,6 +161,53 @@ export class CounterpartiesPage implements OnInit {
   });
 
   ngOnInit(): void {
+    this.rowActionsTplBinding.set(this.rowActionsTpl);
+    this.reload();
+  }
+
+  protected openCreate(): void {
+    this.openEditor(null);
+  }
+
+  protected openEdit(row: Counterparty): void {
+    this.openEditor(row);
+  }
+
+  protected onDelete(row: Counterparty): void {
+    const ref = this.dialog.open(AlertDialogComponent, {
+      data: {
+        title: 'Удалить заказчика?',
+        description: `Удалить «${row.name}»? Заказчик скроется из списка; связанные заказы останутся.`,
+        confirmLabel: 'Удалить',
+        variant: 'destructive',
+      },
+      width: 'sm',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
+      if (!confirmed) return;
+      this.api.remove(row._id).subscribe((res) => {
+        if (res.ok) {
+          this.toast.success('Заказчик удалён');
+          this.reload();
+          return;
+        }
+        this.toast.error(extractErrorMessage(res.error));
+      });
+    });
+  }
+
+  private openEditor(row: Counterparty | null): void {
+    const ref: DialogRef<Counterparty | null | undefined> = this.dialog.open(
+      CounterpartyFullEditorDialogComponent,
+      { data: row, width: 'lg', parentDestroyRef: this.destroyRef },
+    );
+    onDialogCloseOnce(ref, this.injector, (saved: unknown) => {
+      if (saved) this.reload();
+    });
+  }
+
+  private reload(): void {
     this.loading.set(true);
     this.api
       .list({ page: 1, limit: 200 })

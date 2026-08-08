@@ -1,35 +1,69 @@
 import { TestBed } from '@angular/core/testing';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { of } from 'rxjs';
 
 import { CounterpartiesPage } from './counterparties.page';
+import { CounterpartyFullEditorDialogComponent } from './counterparty-full-editor-dialog.component';
 import { BadgeComponent } from '../../shared/ui/badge/badge.component';
 import { TableComponent } from '../../shared/ui/pi-table.component';
+import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
+import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
+import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
+import { PiToastService } from '../../shared/ui/toast';
 import { Counterparty, CounterpartyService } from '../../shared/services/pi-counterparty.service';
+
+type Page = CounterpartiesPage & {
+  openCreate: () => void;
+  openEdit: (row: Counterparty) => void;
+  onDelete: (row: Counterparty) => void;
+  rows: () => Counterparty[];
+};
 
 /**
  * TZ-PARTY-301 — the «временный» badge is the only signal a manager gets that
  * an INN came from quick-create, so it is covered by a rendering test.
+ * TZ-PARTY-303 — create / edit / delete now live on this page.
  */
-describe('CounterpartiesPage (TZ-PARTY-301 stub INN badge)', () => {
+describe('CounterpartiesPage (TZ-PARTY-301 stub INN · TZ-PARTY-303 CRUD)', () => {
   const rows: Counterparty[] = [
     { _id: 'cp-1', name: 'ООО Ромашка', inn: '7701234567', innIsStub: false },
     { _id: 'cp-2', name: 'Иванов', inn: '1234567894', innIsStub: true },
   ];
 
-  async function render(items: Counterparty[]) {
-    await TestBed.configureTestingModule({
-      providers: [
-        {
-          provide: CounterpartyService,
-          useValue: {
-            list: () => of({ ok: true, data: { items, total: items.length, page: 1, limit: 200 } }),
-          },
-        },
-      ],
-    })
+  let open: jest.Mock;
+  let remove: jest.Mock;
+  let list: jest.Mock;
+
+  function dialogRef<T>(result: T): DialogRef<T> {
+    return { closed: signal<T | undefined>(result), close: jest.fn() } as DialogRef<T>;
+  }
+
+  async function render(items: Counterparty[], deleteConfirmed = true) {
+    list = jest
+      .fn()
+      .mockReturnValue(of({ ok: true, data: { items, total: items.length, page: 1, limit: 200 } }));
+    remove = jest.fn().mockReturnValue(of({ ok: true, data: undefined }));
+    open = jest
+      .fn()
+      .mockImplementation((component: unknown) =>
+        component === AlertDialogComponent
+          ? dialogRef<unknown>(deleteConfirmed)
+          : dialogRef<unknown>(items[0]),
+      );
+
+    await TestBed.resetTestingModule()
+      .configureTestingModule({
+        providers: [
+          { provide: CounterpartyService, useValue: { list, remove, listRoles: () => of([]) } },
+          { provide: PiDialogService, useValue: { open } },
+          { provide: PiToastService, useValue: { success: jest.fn(), error: jest.fn() } },
+        ],
+      })
       .overrideComponent(CounterpartiesPage, {
-        set: { imports: [TableComponent, BadgeComponent], schemas: [NO_ERRORS_SCHEMA] },
+        set: {
+          imports: [TableComponent, BadgeComponent, PiRowActionsComponent],
+          schemas: [NO_ERRORS_SCHEMA],
+        },
       })
       .compileComponents();
 
@@ -65,5 +99,41 @@ describe('CounterpartiesPage (TZ-PARTY-301 stub INN badge)', () => {
     expect(
       fixture.nativeElement.querySelector('[data-test="counterparties-stub-count"]'),
     ).toBeNull();
+  });
+
+  it('opens the FullEditor for create and for edit', async () => {
+    const fixture = await render(rows);
+    const page = fixture.componentInstance as Page;
+
+    page.openCreate();
+    expect(open).toHaveBeenLastCalledWith(
+      CounterpartyFullEditorDialogComponent,
+      expect.objectContaining({ data: null }),
+    );
+
+    page.openEdit(rows[1]);
+    expect(open).toHaveBeenLastCalledWith(
+      CounterpartyFullEditorDialogComponent,
+      expect.objectContaining({ data: rows[1] }),
+    );
+  });
+
+  it('deletes only after the confirm dialog is accepted', async () => {
+    const fixture = await render(rows);
+    (fixture.componentInstance as Page).onDelete(rows[0]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(open).toHaveBeenLastCalledWith(AlertDialogComponent, expect.anything());
+    expect(remove).toHaveBeenCalledWith('cp-1');
+  });
+
+  it('keeps the counterparty when the confirm dialog is dismissed', async () => {
+    const fixture = await render(rows, false);
+    (fixture.componentInstance as Page).onDelete(rows[0]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(remove).not.toHaveBeenCalled();
   });
 });

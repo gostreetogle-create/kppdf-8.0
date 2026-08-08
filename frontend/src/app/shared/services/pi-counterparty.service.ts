@@ -71,6 +71,20 @@ export interface CounterpartiesListParams {
   role?: string;
 }
 
+/**
+ * TZ-PARTY-303: role slugs are seeded (`customer`, `supplier`, `contractor`,
+ * `manufacturer`) but an admin may add more, so the editor reads the catalog
+ * instead of hardcoding a label map. `description` holds the Russian label.
+ */
+export interface CounterpartyRole {
+  _id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  isActive?: boolean;
+  isSystem?: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class CounterpartyService {
   private readonly http = inject(HttpClient);
@@ -91,6 +105,11 @@ export class CounterpartyService {
 
   findById(id: string): Observable<SilentResult<Counterparty>> {
     return silentGet<Counterparty>(this.http, `${this.baseUrl}/counterparties/${id}`);
+  }
+
+  /** TZ-PARTY-303: role catalog for the FullEditor (plain array, not paginated). */
+  listRoles(): Observable<SilentResult<CounterpartyRole[]>> {
+    return silentGet<CounterpartyRole[]>(this.http, `${this.baseUrl}/counterparty-roles`);
   }
 
   create(payload: Partial<Counterparty>): Observable<SilentResult<Counterparty>> {

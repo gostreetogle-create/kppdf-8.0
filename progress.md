@@ -1,3 +1,31 @@
+## [2026-08-08] — TZ-PARTY-303 DONE: Counterparty FullEditor + CRUD со страницы
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor, WAVE-PARTY-DOCS #3)
+**Статус:** DONE; deploy НЕ
+**Что:** Страница «Заказчики» была read-only, поэтому клиент, созданный быстрым созданием
+(имя + телефон + адрес, ИНН-заглушка), нельзя было довести до «годен для документа»: реальный
+ИНН, КПП/ОГРН, банк, подписант не имели UI вообще. Добавлен FullEditor того же канона, что у
+организации: `variant="content"` + `min(1120px, calc(100vw - 2rem))`, секции Основные /
+Реквизиты / Банк / Подписант. На странице — «+ Создать» в tools, `app-pi-row-actions` (✎ / ×),
+удаление через `AlertDialogComponent` (на сервере soft delete, заказы остаются).
+Роли обязательны (их требует create DTO) и читаются из `/counterparty-roles`, чтобы
+добавленная админом роль была выбираема; если справочник недоступен — fallback на посеянный
+набор, иначе упавший GET блокировал бы сохранение. `organizationId` с клиента не уходит —
+тенант штампует сервер после PARTY-301, на это есть тест. При правке заказчика с временным
+ИНН в редакторе висит подсказка; сам флаг снимает сервер.
+**Затронуто:** `frontend/src/app/pages/counterparties/counterparty-full-editor-dialog.component.ts`
+(+ spec), `counterparties.page.ts` (+ spec),
+`frontend/src/app/shared/services/pi-counterparty.service.ts` (`listRoles()`, `CounterpartyRole`),
+`docs/pages/counterparties.page.md` (создан), `docs/pages/PAGE-TZ-INDEX.md`, checklist, lock.
+**Gates:** FE tsc — в зоне чисто; Angular development build PASS; counterparty tests 18/18 PASS;
+targeted ESLint 0 errors; `git diff --check` PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-PARTY-303.done.md`
+**Lock:** `.mimocode/locks/TZ-PARTY-303-counterparty-fulleditor.lock`
+**Известные ограничения:** ИНН-lookup/DaData — `TZ-INN-301` PARKED; фото контрагента —
+`ASSETS-301`; объекты (площадки) и карточка заказчика — `ORDERS-303`; список без поиска и
+пагинации (limit 200), сортировки нет; `contactPersonId` без people-picker. Репо-уровневый
+`tsc` по чужим spec-файлам красный до этой волны — не чинил. deploy NO.
+
 ## [2026-08-08] — TZ-PARTY-302 DONE: Organization FullEditor (kind C 1120)
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor, WAVE-PARTY-DOCS #2)

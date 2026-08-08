@@ -491,6 +491,29 @@ migration; no mega-collection; legacy Proposal/Quotation merge untouched.
   (drop `inn_1`, отчёт коллизий `{organizationId, inn}`, backfill `innIsStub`, разметка
   единственной Org как «наша»). Идемпотентна.
 
+### Party FullEditors (TZ-PARTY-302 / TZ-PARTY-303, 2026-08-08)
+
+Обе стороны сделки (наша Org и заказчик) редактируются одним каноном, потому что до этого
+реквизиты для документов физически не имели UI: у организации было 7 полей из ~25, а страница
+заказчиков была read-only.
+
+- **Kind C оболочка:** `variant="content"` + `maxWidth: min(1120px, calc(100vw - 2rem))`,
+  секции — `app-pi-form-section`. Компоненты:
+  `pages/organizations/organization-full-editor-dialog.component.ts`,
+  `pages/counterparties/counterparty-full-editor-dialog.component.ts`.
+- **Один write-path на сущность:** узкий `organization-form-dialog.component.ts` удалён, а не
+  оставлен рядом как «быстрый» — две формы с разной логикой расходятся молча.
+- **Payload:** только DTO-поля, пустые строки не отправляются (API с `forbidNonWhitelisted`),
+  даты — ISO. Клиент **никогда** не шлёт `organizationId` / `isSystem`: тенант штампует сервер
+  (см. Party hygiene выше).
+- **Условные блоки:** «Паспорт ИП» рендерится и отправляется только при `legalType = ip`.
+- **Справочники, не хардкод:** роли контрагента читаются из `GET /counterparty-roles`
+  (`description` = русская подпись) с fallback на посеянный набор — упавший справочник не должен
+  блокировать сохранение, так как `roles` обязателен в create DTO.
+- **Ограничение UI-кита:** `PiInputType` не содержит `date`, поэтому даты — нативный
+  `<input type="date" class="pi-input">` (как на остальных страницах).
+- Файлы (логотип/печать/фото) сюда не входят — типизированное хранилище `TZ-ORG-ASSETS-301`.
+
 ---
 
 ## Frontend UI Kit (`frontend/src/app/shared/ui/` — current)
