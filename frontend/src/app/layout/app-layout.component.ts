@@ -261,37 +261,47 @@ export const NAV_CATEGORY_ORDER: readonly string[] = NAV_CATEGORIES.map((c) => c
           class="sticky top-0 z-30 pi-marble supports-[backdrop-filter]:backdrop-blur-sm
                  hairline-b pi-edge-bleed shrink-0"
         >
-          <div class="h-14 flex items-center justify-between gap-4">
-            <a routerLink="/" class="flex items-center gap-2 min-w-0" aria-label="На главную">
+          <div class="h-14 flex items-center justify-between gap-2 min-w-0">
+            <a
+              routerLink="/"
+              class="flex items-center gap-2 min-w-0 shrink-0 max-w-[9.5rem] sm:max-w-none"
+              aria-label="На главную"
+              title="На главную"
+            >
               <span class="block w-[10px] h-[10px] bg-ink shrink-0" aria-hidden="true"></span>
               <span class="font-display font-bold tracking-tight truncate"> KPPDF · 8.0 </span>
             </a>
 
             <nav
-              class="flex items-center gap-1 flex-1 justify-center"
+              class="flex items-center gap-0.5 flex-1 justify-center min-w-0 overflow-x-auto
+                     [scrollbar-width:none] [-ms-overflow-style:none]
+                     [&::-webkit-scrollbar]:hidden"
               aria-label="Главная навигация"
             >
               @for (cat of navCategories(); track cat.id) {
                 @if (cat.entryPath) {
                   <a
                     [routerLink]="cat.entryPath"
-                    class="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-sm
-                           transition-colors pi-focus-ring cursor-pointer no-underline"
+                    class="inline-flex items-center justify-center gap-1.5 size-9 shrink-0
+                           rounded-sm hairline transition-colors pi-focus-ring
+                           cursor-pointer no-underline"
                     [class.bg-sunrise-warm]="activeCategoryId() === cat.id"
                     [class.text-paper]="activeCategoryId() === cat.id"
+                    [class.border-sunrise-warm]="activeCategoryId() === cat.id"
                     [class.text-ink]="activeCategoryId() !== cat.id"
                     [class.hover:bg-paper-2]="activeCategoryId() !== cat.id"
                     [attr.aria-current]="activeCategoryId() === cat.id ? 'page' : undefined"
                     [attr.aria-label]="cat.label"
+                    [attr.title]="cat.label"
                     [attr.data-test]="'nav-entry-' + cat.id"
                   >
                     <lucide-angular
                       [img]="cat.icon"
-                      [size]="14"
-                      class="opacity-80"
+                      [size]="15"
+                      class="opacity-90"
                       aria-hidden="true"
                     />
-                    <span>{{ cat.label }}</span>
+                    <span class="sr-only">{{ cat.label }}</span>
                   </a>
                 } @else {
                   <app-pi-nav-dropdown
@@ -300,39 +310,41 @@ export const NAV_CATEGORY_ORDER: readonly string[] = NAV_CATEGORIES.map((c) => c
                     [items]="cat.items"
                     [active]="activeCategoryId() === cat.id"
                     [ariaLabel]="cat.label"
+                    [compact]="true"
                   />
                 }
               }
             </nav>
 
-            <div class="flex items-center gap-3 shrink-0">
+            <div class="flex items-center gap-1.5 shrink-0">
               <app-pi-notification-bell />
               <app-theme-toggle />
               @if (isAuthenticated()) {
                 <button
                   type="button"
-                  class="pi-icon-btn gap-1 px-2 w-auto pi-focus-ring"
+                  class="pi-icon-btn pi-focus-ring"
                   aria-label="Подключить десктоп"
                   title="Подключить десктоп"
                   (click)="onDesktopPairing()"
                   data-test="desktop-pairing-button"
                 >
-                  <lucide-angular [img]="monitorIcon" [size]="12" aria-hidden="true" />
-                  <span class="hidden sm:inline font-mono text-[10px] tracking-wider">
-                    Десктоп
-                  </span>
+                  <lucide-angular [img]="monitorIcon" [size]="14" aria-hidden="true" />
                 </button>
-                <span class="text-sm text-muted-foreground hidden sm:inline">
+                <span
+                  class="text-sm text-muted-foreground hidden md:inline truncate max-w-[7rem]
+                         lg:max-w-[10rem]"
+                  [attr.title]="user()?.displayName || user()?.username || 'Сессия'"
+                >
                   {{ user()?.displayName || user()?.username || 'Сессия' }}
                 </span>
                 <button
                   type="button"
-                  class="pi-icon-btn gap-1 px-2 w-auto pi-focus-ring"
+                  class="pi-icon-btn pi-focus-ring"
                   aria-label="Выйти"
+                  title="Выйти"
                   (click)="onLogout()"
                 >
-                  <lucide-angular [img]="logOutIcon" [size]="12" aria-hidden="true" />
-                  <span class="font-mono text-[10px] tracking-wider"> Выйти </span>
+                  <lucide-angular [img]="logOutIcon" [size]="14" aria-hidden="true" />
                 </button>
               }
             </div>

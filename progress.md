@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-301 DONE: compact icon top nav
+
+**Исполнитель:** agent-3e757640b7 (self PASS → archive)
+**Статус:** DONE on main; deploy НЕ
+**Что:** топ-nav icon-first + tooltip/aria; active wash+border; Десктоп/Выйти icon-only; user truncate md+; dropdown compact input.
+**Gates:** FE tsc PASS; jest app-layout.nav-order 1/1
+**Archive:** `tasks/_archive/2026-08/TZ-UX-301.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-301-compact-icon-top-nav.lock`
+**Known:** mobile hamburger out of P0. Admin/production не трогали. Deploy: NO.
+
 ## [2026-08-08] — TZ-DICT-316 DONE: QuickCreate wire products/modules
 
 **Исполнитель:** agent-3e757640b7 (self PASS → archive)

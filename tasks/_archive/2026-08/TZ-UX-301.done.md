@@ -1,48 +1,32 @@
-﻿═══════════════════════════════════════════════════════════════
-TZ-UX-301: Nav — группа «Склад» для inventory routes
-═══════════════════════════════════════════════════════════════
+﻿# TZ-UX-301 — Compact icon top nav
 
-РОЛЬ АГЕНТА: Frontend Layout / IA
-ЗАВИСИМОСТИ: нет
-LAYER: 3
-PAGES: /inventory ; /storage-items ; /stock-movements
-PAGE_DOCS: inventory-dashboard.page.md ; storage-items.page.md ; stock-movements.page.md
+**Outcome:** DONE  
+**Date:** 2026-08-08  
+**Cursor Verdict:** PASS (executor self / PO continuous claim)  
+**Canon:** `docs/audits/2026-08-08-chrome-nav-admin-smell.md`
 
-CONFLICT KEYS:
-frontend/src/app/layout/app-layout.component.ts;
-docs/pages/PAGE-TZ-INDEX.md;
-docs/agent-checklists/TZ-UX-301.md
+## Delivered
 
-═══════════════════════════════════════════════════════════════
-ИСХОДНОЕ СОСТОЯНИЕ
-═══════════════════════════════════════════════════════════════
+- Top-nav categories: **icon-first** `size-9` + `hairline`; `title` + `aria-label` + `sr-only` label (tooltip on hover/focus)
+- Active category: sunrise wash + `border-sunrise-warm` (not text-only)
+- Right chrome: Desktop / Logout = icon-only `pi-icon-btn`; username `md+` truncate
+- `PiNavDropdownComponent`: optional `[compact]="true"` icon trigger (kit menus unchanged)
+- NAV-301 category order untouched; nav-order jest PASS
 
-Routes существуют (`app.routes.ts` inventory / storage-items / stock-movements),
-но в `NAV_CATEGORIES` (app-layout) **нет** пункта «Склад» — страницы
-недоступны из меню (только прямой URL). Тот же класс бага, что «два
-входа» DOC-324, зеркально: «ноль входов».
+## НЕ (as scoped)
 
-═══════════════════════════════════════════════════════════════
-ЧТО ДЕЛАТЬ
-═══════════════════════════════════════════════════════════════
+- Admin roles / production cockpit / deploy
+- Mobile hamburger (known_limitation out of P0)
 
-ШАГ 1 — Добавить nav category `warehouse` / «Склад» с items:
-  `/inventory` (Дашборд / Остатки — по title страницы),
-  `/storage-items`, `/stock-movements`.
-ШАГ 2 — Согласовать labels с page headers (не «Склад» vs «Inventory»).
-ШАГ 3 — Обновить PAGE-TZ-INDEX + Executor report (auto).
-
-НЕ: удалять routes; не redesign dashboard.
-
-AC: три пункта видны в меню; capability-gate не ломает (если нет caps —
-  как у materials). tsc/layout smoke. Executor report.
-ПРОМПТ: Прочитай GEMINI.md + tasks/TZ-UX-301-warehouse-nav.md. Выполни.
-Checklist docs/agent-checklists/TZ-UX-301.md + Executor report. Push нет.
-
----
 ARCHIVE_MARKER
 outcome: DONE
-date: 2026-08-02
-agent: Cursor (lightweight UX/docs sweep)
-summary: Nav warehouse group
----
+closed_at: 2026-08-08T08:22:00Z
+closed_by: agent-3e757640b7
+verification:
+  - acceptance criteria: PASS
+  - typecheck: PASS (frontend tsc -p tsconfig.app.json --noEmit)
+  - tests: PASS (jest app-layout.nav-order 1/1)
+  - checklist: UPDATED
+  - progress.md: UPDATED
+cursor_verdict: PASS
+agent_id: agent-3e757640b7

@@ -81,23 +81,33 @@ export interface PiNavDropdownItem {
     <button
       type="button"
       piDropdownTrigger
-      class="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-sm
-             transition-colors pi-focus-ring cursor-pointer"
+      class="inline-flex items-center justify-center gap-1 rounded-sm
+             transition-colors pi-focus-ring cursor-pointer hairline"
+      [class.size-9]="compact()"
+      [class.px-3]="!compact()"
+      [class.py-1.5]="!compact()"
+      [class.text-sm]="!compact()"
       [class.bg-sunrise-warm]="active()"
       [class.text-paper]="active()"
+      [class.border-sunrise-warm]="active()"
       [class.text-ink]="!active()"
       [class.hover:bg-paper-2]="!active()"
       [attr.aria-label]="ariaLabel() || label() + ' (открыть меню)'"
+      [attr.title]="label()"
       aria-haspopup="menu"
     >
-      <lucide-angular [img]="icon()" [size]="14" class="opacity-80" aria-hidden="true" />
-      <span>{{ label() }}</span>
-      <lucide-angular
-        [img]="chevronIcon"
-        [size]="11"
-        class="opacity-60 ml-0.5"
-        aria-hidden="true"
-      />
+      <lucide-angular [img]="icon()" [size]="15" class="opacity-90" aria-hidden="true" />
+      @if (!compact()) {
+        <span>{{ label() }}</span>
+        <lucide-angular
+          [img]="chevronIcon"
+          [size]="11"
+          class="opacity-60 ml-0.5"
+          aria-hidden="true"
+        />
+      } @else {
+        <span class="sr-only">{{ label() }}</span>
+      }
       <ng-template #piDropdownContent>
         <!--
           Inline menu chrome — bypasses <app-pi-dropdown-menu> wrapper.
@@ -165,6 +175,11 @@ export class PiNavDropdownComponent {
   /** When true, trigger is highlighted bg-sunrise-warm text-paper. */
   readonly active = input<boolean>(false);
   readonly ariaLabel = input<string>('');
+  /**
+   * TZ-UX-301 — icon-first trigger (title + aria-label); label text hidden.
+   * Default false keeps kit/demo menus with visible labels.
+   */
+  readonly compact = input<boolean>(false);
 
   protected readonly chevronIcon: LucideIcon = ChevronDown;
 

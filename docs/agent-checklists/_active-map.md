@@ -1,6 +1,6 @@
 # SESSION QUEUE — continuous executor
 
-**Updated:** 2026-08-08T08:25Z · **DICT-316 DONE · queue idle**
+**Updated:** 2026-08-08T08:22Z · **TZ-UX-301 DONE**
 
 ## DONE this session
 
@@ -13,13 +13,13 @@
 | **TZ-SALES-303** | KP family schema + thin API (D21 L1) |
 | **TZ-DICT-315** | form-profiles settings UI (STRICT carve) |
 | **TZ-DICT-316** | QuickCreate wire products/modules |
+| **TZ-UX-301** | compact icon top nav |
 
 ## READY / NEXT
 
 | ID | Status |
 |----|--------|
-| **TZ-UX-301** | compact icon top nav — **NEXT** |
-| **TZ-ADMIN-301** | roles permissions UX — ∥ 301 (keys ≠ layout) |
+| **TZ-ADMIN-301** | roles permissions UX — **NEXT** (keys ≠ layout) |
 | **TZ-UX-302** | chrome unify (after 301) |
 | TZ-UX-303 | design-system chrome audit (docs) |
 | TZ-SALES-304 | KP family UI after PO probes |
@@ -33,11 +33,11 @@
 | SUPPLY-302 | BOM auto-explode |
 | deploy | только «задеплой» |
 
-## Checkpoint 2026-08-08T08:25Z
-- DONE: … + DICT-315 + **TZ-DICT-316**
+## Checkpoint 2026-08-08T08:22Z
+- DONE: … + DICT-316 + **TZ-UX-301**
 - IN PROGRESS: none
-- NEXT: idle — готово предложить деплой (не авто)
+- NEXT: TZ-ADMIN-301 (или UX-302)
 - Blockers: none
 - _active/: empty
-- Deploy: NO (await PO «задеплой»)
-- HEAD: 518b8e0 (TZ-DICT-316)
+- Deploy: NO
+- HEAD: (after push UX-301)
