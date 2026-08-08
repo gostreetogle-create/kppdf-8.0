@@ -23,7 +23,7 @@
 
 ## Closeout
 - [x] Archive `tasks/_archive/2026-08/TZD-30.done.md` + lock + progress + wave checkpoint
-- [x] Commit `b76c7ebe` / push to `origin/main`; deploy NO
+- [x] Commit `9fae4a15` / push to `origin/main`; deploy NO
 
 ## Evidence
 - `desktop/mcp/src/text-block-tools.ts` registers four tools and sends only TextBlock contract fields.
