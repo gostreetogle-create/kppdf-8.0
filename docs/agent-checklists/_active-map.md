@@ -1,24 +1,16 @@
 # SESSION QUEUE
 
-**Updated:** 2026-08-08T09:52Z · **TZ-UX-FACT-301 DONE** · NEXT DETAIL-301 / DEDUP-302
+**Updated:** 2026-08-08 · continuation wave
 
-## NEXT
+## Agent continuation
 
-1. **TZ-UX-DETAIL-301+** — wire FactCard on product-detail (separate TZ)  
-2. **TZ-CATALOG-DEDUP-302** — ModuleMaterials  
-3. UX-309 · UX-310 · SALES-304  
+`SESSION-WAVE-2026-08-08-remaining-safe.md`  
+A: finish long-haul → B: DETAIL-301…304 + FACT-302  
 
 ## DONE recent
 
-FACT-301 · UX-312 · DEDUP-301 · UX-311  
+DEDUP-301 · FACT-301 · UX-312 · UX-311 · GIT-301 · FORM-302…305 · NAV-302  
 
-Deploy: NO  
+## PARK
 
-## Checkpoint 2026-08-08T09:52Z
-- DONE: TZ-UX-FACT-301
-- IN PROGRESS: none
-- NEXT: DETAIL-301 (wire) or DEDUP-302
-- HEAD: `f20a2917`
-- Blockers: none
-- _active/: empty
-- Deploy: NO
+SALES-304 · `_park/` · deploy NO

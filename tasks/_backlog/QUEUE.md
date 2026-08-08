@@ -1,26 +1,13 @@
-# Очередь (зафиксировано в git — не в чате)
+# Очередь
 
-## Сейчас у агентов
+## Continuation wave (один агент до конца)
 
-long-haul · UX-312 · DEDUP-301 (peer)
+`docs/agent-checklists/SESSION-WAVE-2026-08-08-remaining-safe.md`
 
-## Готово к запуску (карточка изделия)
+**A** long-haul остаток → **B** DETAIL-301…304 → FACT-302  
 
-Wave: `docs/agent-checklists/SESSION-WAVE-2026-08-08-product-detail-panels.md`  
-Аудит: `docs/audits/2026-08-08-product-detail-side-panels-cost.md`
+Уже DONE: DEDUP-301 · FACT-301 · UX-311 · UX-312 · FORM/GIT/NAV…
 
-| # | ID | Файл |
-|---|-----|------|
-| 1 | TZ-UX-DETAIL-301 | `TZ-UX-DETAIL-301-product-passport-cleanup.md` |
-| 2 | TZ-UX-DETAIL-302 | `TZ-UX-DETAIL-302-cost-panel-vertical-autorecalc.md` |
-| 3 | TZ-UX-DETAIL-303 | `TZ-UX-DETAIL-303-bom-inspector-fact-cards.md` |
-| 4 | TZ-UX-DETAIL-304 | `TZ-UX-DETAIL-304-module-detail-parity.md` |
-| 5 | TZ-UX-FACT-302 | `TZ-UX-FACT-302-fact-card-site-audit.md` |
-
-FACT-301 — DONE (archive).
-
-## Потом
+## Не брать без PO
 
 TZ-SALES-304 · `tasks/_park/`
-
-Правило PO: идеи → сразу TZ в `_backlog`; завтра «проверь очередь и выполни» без восстановления из памяти чата.
