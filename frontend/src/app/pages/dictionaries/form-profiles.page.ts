@@ -87,6 +87,7 @@ import {
               [items]="entityItems"
               [value]="entity()"
               (valueChange)="onEntityChange($event)"
+              searchable="auto"
               ariaLabel="Сущность профиля"
               dataTest="entity-select"
             />

@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, signal, OnDestroy } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+  OnDestroy,
+} from '@angular/core';
 import {
   FormArray,
   FormControl,
@@ -29,6 +36,7 @@ import { PhotosService, type Photo } from '../../shared/services/photos.service'
 import { Organization, OrganizationsService } from '../../shared/services/organizations.service';
 import { Unit, UnitsService } from '../../pages/dictionaries/units.service';
 import { PiFormSectionComponent } from '../../shared/ui/form-section';
+import { PiOverflowSelectComponent } from '../../shared/ui/overflow-select/pi-overflow-select.component';
 
 type Result = Material | null | undefined;
 
@@ -104,6 +112,7 @@ interface DimensionFormGroup extends FormGroup {
     InputComponent,
     TextareaComponent,
     PiFormSectionComponent,
+    PiOverflowSelectComponent,
   ],
   template: `
     <app-pi-dialog
@@ -288,20 +297,15 @@ interface DimensionFormGroup extends FormGroup {
             </div>
 
             <app-pi-form-field label="Поставщик" htmlFor="mat-supplier">
-              <select id="mat-supplier" formControlName="supplierId" class="pi-input w-full">
-                <option [ngValue]="null">— не указан —</option>
-                @if (suppliersLoading()) {
-                  <option [ngValue]="null" disabled>Загрузка…</option>
-                } @else if (suppliersError()) {
-                  <option [ngValue]="null" disabled>Ошибка загрузки</option>
-                } @else {
-                  @for (s of suppliers(); track s._id) {
-                    <option [ngValue]="s._id">
-                      {{ s.name }}{{ s.inn ? ' · ИНН ' + s.inn : '' }}
-                    </option>
-                  }
-                }
-              </select>
+              <app-pi-overflow-select
+                [items]="supplierItems()"
+                [value]="form.controls.supplierId.value ?? ''"
+                (valueChange)="onSupplierChange($event)"
+                searchable="auto"
+                placeholder="— не указан —"
+                ariaLabel="Поставщик"
+                dataTest="mat-supplier"
+              />
             </app-pi-form-field>
 
             <app-pi-form-field
@@ -518,6 +522,13 @@ export class MaterialFormDialogComponent implements OnDestroy {
   protected readonly suppliers = signal<Organization[]>([]);
   protected readonly suppliersLoading = signal<boolean>(false);
   protected readonly suppliersError = signal<string | null>(null);
+  protected readonly supplierItems = computed(() => [
+    { id: '', label: '— не указан —' },
+    ...this.suppliers().map((s) => ({
+      id: s._id,
+      label: `${s.name}${s.inn ? ' · ИНН ' + s.inn : ''}`,
+    })),
+  ]);
   /** Active units from GET /units/active (canonical `key` stored in Material.unit). */
   protected readonly units = signal<Unit[]>([]);
   protected readonly unitsLoading = signal<boolean>(false);
@@ -583,6 +594,11 @@ export class MaterialFormDialogComponent implements OnDestroy {
    */
   ngOnDestroy(): void {
     this.cleanupOrphanUploads();
+  }
+
+  protected onSupplierChange(supplierId: string): void {
+    this.form.controls.supplierId.setValue(supplierId || null);
+    this.form.controls.supplierId.markAsDirty();
   }
 
   private loadSuppliers(): void {

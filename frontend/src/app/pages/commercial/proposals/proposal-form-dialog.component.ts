@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import {
   FormArray,
   FormControl,
@@ -30,6 +30,7 @@ import {
   ProposalStatus,
   ProposalsService,
 } from '../../../shared/services/pi-proposals.service';
+import { PiOverflowSelectComponent } from '../../../shared/ui/overflow-select/pi-overflow-select.component';
 
 type Result = Proposal | null | undefined;
 
@@ -83,6 +84,7 @@ interface ItemFormGroup extends FormGroup {
     InputComponent,
     TextareaComponent,
     PiFormSectionComponent,
+    PiOverflowSelectComponent,
   ],
   template: `
     <app-pi-dialog [title]="isEdit() ? 'Редактировать КП' : 'Создать КП'" [width]="'lg'">
@@ -101,17 +103,15 @@ interface ItemFormGroup extends FormGroup {
               [required]="true"
               [error]="errorFor('organizationId')"
             >
-              <select
-                id="pr-org"
-                formControlName="organizationId"
-                class="pi-input w-full"
-                [class.border-destructive]="hasError('organizationId')"
-              >
-                <option value="" disabled>— выберите —</option>
-                @for (o of organizations(); track o._id) {
-                  <option [value]="o._id">{{ o.name }}{{ o.inn ? ' · ИНН ' + o.inn : '' }}</option>
-                }
-              </select>
+              <app-pi-overflow-select
+                [items]="organizationItems()"
+                [value]="form.controls.organizationId.value"
+                (valueChange)="onOrganizationChange($event)"
+                searchable="auto"
+                placeholder="— выберите —"
+                ariaLabel="Наша организация"
+                dataTest="pr-org"
+              />
             </app-pi-form-field>
 
             <app-pi-form-field
@@ -120,19 +120,15 @@ interface ItemFormGroup extends FormGroup {
               [required]="true"
               [error]="errorFor('counterpartyId')"
             >
-              <select
-                id="pr-cp"
-                formControlName="counterpartyId"
-                class="pi-input w-full"
-                [class.border-destructive]="hasError('counterpartyId')"
-              >
-                <option value="" disabled>— выберите —</option>
-                @for (cp of counterparties(); track cp._id) {
-                  <option [value]="cp._id">
-                    {{ cp.name }}{{ cp.inn ? ' · ИНН ' + cp.inn : '' }}
-                  </option>
-                }
-              </select>
+              <app-pi-overflow-select
+                [items]="counterpartyItems()"
+                [value]="form.controls.counterpartyId.value"
+                (valueChange)="onCounterpartyChange($event)"
+                searchable="auto"
+                placeholder="— выберите —"
+                ariaLabel="Контрагент"
+                dataTest="pr-cp"
+              />
             </app-pi-form-field>
 
             <app-pi-form-field
@@ -232,21 +228,15 @@ interface ItemFormGroup extends FormGroup {
                 >
                   <label class="col-span-12 sm:col-span-5 block">
                     <span class="eyebrow block mb-1.5">Продукт</span>
-                    <select
-                      [attr.id]="'pr-item-product-' + i"
-                      [attr.name]="'item-product-' + i"
-                      formControlName="productId"
-                      (change)="onProductPick(i, $any($event.target).value)"
-                      class="h-8 px-3 text-xs hairline rounded-sm bg-paper pi-focus-ring w-full"
-                      [attr.aria-label]="'Продукт ' + (i + 1)"
-                    >
-                      <option value="" disabled>— выберите —</option>
-                      @for (p of products(); track p._id) {
-                        <option [value]="p._id">
-                          {{ p.name }}{{ p.sku ? ' · ' + p.sku : '' }}
-                        </option>
-                      }
-                    </select>
+                    <app-pi-overflow-select
+                      [items]="productItems()"
+                      [value]="itemGroup.controls.productId.value"
+                      (valueChange)="onProductPick(i, $event)"
+                      searchable="auto"
+                      placeholder="— выберите —"
+                      [ariaLabel]="'Продукт ' + (i + 1)"
+                      [dataTest]="'pr-item-product-' + i"
+                    />
                   </label>
 
                   <label class="col-span-6 sm:col-span-2 block">
@@ -359,6 +349,24 @@ export class ProposalFormDialogComponent {
   protected readonly organizations = signal<Organization[]>([]);
   protected readonly counterparties = signal<Counterparty[]>([]);
   protected readonly products = signal<Product[]>([]);
+  protected readonly organizationItems = computed(() =>
+    this.organizations().map((o) => ({
+      id: o._id,
+      label: `${o.name}${o.inn ? ' · ИНН ' + o.inn : ''}`,
+    })),
+  );
+  protected readonly counterpartyItems = computed(() =>
+    this.counterparties().map((cp) => ({
+      id: cp._id,
+      label: `${cp.name}${cp.inn ? ' · ИНН ' + cp.inn : ''}`,
+    })),
+  );
+  protected readonly productItems = computed(() =>
+    this.products().map((product) => ({
+      id: product._id,
+      label: `${product.name}${product.sku ? ' · ' + product.sku : ''}`,
+    })),
+  );
 
   protected readonly form = this.fb.group({
     organizationId: this.fb.control('', [Validators.required]),
@@ -377,6 +385,16 @@ export class ProposalFormDialogComponent {
 
   get itemsArray(): FormArray<ItemFormGroup> {
     return this.form.controls.items as FormArray<ItemFormGroup>;
+  }
+
+  protected onOrganizationChange(id: string): void {
+    this.form.controls.organizationId.setValue(id);
+    this.form.controls.organizationId.markAsDirty();
+  }
+
+  protected onCounterpartyChange(id: string): void {
+    this.form.controls.counterpartyId.setValue(id);
+    this.form.controls.counterpartyId.markAsDirty();
   }
 
   private loadLookups(): void {

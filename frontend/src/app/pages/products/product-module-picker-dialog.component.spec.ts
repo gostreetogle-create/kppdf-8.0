@@ -2,7 +2,7 @@
  * TZ-PRODUCTS-303 — ProductModulePickerDialogComponent tests.
  *
  * Locks the extended picker contract:
- *   - default (single) mode: classic <select size="10">, excludes already
+ *   - default (single) mode: overflow-select (searchable auto), excludes already
  *     attached modules, submit closes with a single moduleId string;
  *   - multi mode (data.multi=true): checkbox list, submit closes with
  *     string[]; submit disabled while nothing selected;
@@ -17,6 +17,10 @@ import { ProductModulePickerDialogComponent } from './product-module-picker-dial
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { ProductModulesService } from '../../shared/services/pi-product-modules.service';
+import { PiOverflowSelectComponent } from '../../shared/ui/overflow-select/pi-overflow-select.component';
+import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
+import { ReactiveFormsModule } from '@angular/forms';
 
 const MODULES = [
   {
@@ -65,7 +69,15 @@ describe('ProductModulePickerDialogComponent (TZ-PRODUCTS-303)', () => {
       ],
     })
       .overrideComponent(ProductModulePickerDialogComponent, {
-        set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
+        set: {
+          imports: [
+            ReactiveFormsModule,
+            ButtonComponent,
+            PiDialogComponent,
+            PiOverflowSelectComponent,
+          ],
+          schemas: [NO_ERRORS_SCHEMA],
+        },
       })
       .compileComponents();
     fixture = TestBed.createComponent(ProductModulePickerDialogComponent);

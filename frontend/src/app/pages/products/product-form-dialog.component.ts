@@ -35,6 +35,7 @@ import {
 } from '../../shared/services/pi-color-references.service';
 import { PhotosService, type Photo } from '../../shared/services/photos.service';
 import { AuthService } from '../../core/auth.service';
+import { PiOverflowSelectComponent } from '../../shared/ui/overflow-select/pi-overflow-select.component';
 
 type Result = Product | null | undefined;
 
@@ -106,6 +107,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
     InputComponent,
     TextareaComponent,
     PiFormSectionComponent,
+    PiOverflowSelectComponent,
   ],
   template: `
     <app-pi-dialog
@@ -199,18 +201,15 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
               htmlFor="prod-category"
               hint="Из справочника категорий (тип «продукт»). Пусто = «Без категории»."
             >
-              <select id="prod-category" formControlName="categoryId" class="pi-input w-full">
-                <option [ngValue]="null">— без категории —</option>
-                @if (categoriesLoading()) {
-                  <option [ngValue]="null" disabled>Загрузка категорий…</option>
-                } @else if (categoriesError()) {
-                  <option [ngValue]="null" disabled>Ошибка загрузки категорий</option>
-                } @else {
-                  @for (c of categories(); track c._id) {
-                    <option [ngValue]="c._id">{{ c.name }}</option>
-                  }
-                }
-              </select>
+              <app-pi-overflow-select
+                [items]="categoryItems()"
+                [value]="form.controls.categoryId.value ?? ''"
+                (valueChange)="onCategoryChange($event)"
+                searchable="auto"
+                placeholder="— без категории —"
+                ariaLabel="Категория"
+                dataTest="prod-category"
+              />
             </app-pi-form-field>
 
             <app-pi-form-field label="Подкатегория" htmlFor="prod-subcategory">
@@ -575,6 +574,10 @@ export class ProductFormDialogComponent implements OnDestroy {
   protected readonly categories = signal<Category[]>([]);
   protected readonly categoriesLoading = signal(false);
   protected readonly categoriesError = signal<string | null>(null);
+  protected readonly categoryItems = computed(() => [
+    { id: '', label: '— без категории —' },
+    ...this.categories().map((c) => ({ id: c._id, label: c.name })),
+  ]);
 
   // ─── Colors (RAL) ───
   protected readonly colors = signal<ColorReference[]>([]);
@@ -705,6 +708,13 @@ export class ProductFormDialogComponent implements OnDestroy {
         this.toast.error(extractErrorMessage(res.error));
       }
     });
+  }
+
+  // ─── Catalog dropdown handlers ───
+
+  protected onCategoryChange(categoryId: string): void {
+    this.form.controls.categoryId.setValue(categoryId || null);
+    this.form.controls.categoryId.markAsDirty();
   }
 
   // ─── RAL dropdown handlers ───

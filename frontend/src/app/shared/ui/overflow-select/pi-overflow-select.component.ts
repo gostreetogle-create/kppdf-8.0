@@ -21,11 +21,18 @@ export type PiOverflowSelectItem = {
   label: string;
 };
 
+/** When to show in-panel typeahead. Default off — plain overflow-select unchanged. */
+export type PiOverflowSelectSearchable = boolean | 'auto';
+
+/** Canon: show search at ≥10 options (industry 10–15; see ui-overflow-select.md). */
+export const PI_OVERFLOW_SELECT_SEARCH_THRESHOLD = 10;
+
 /**
  * Overflow select — canon catalog dropdown (docs/pages/ui-overflow-select.md).
  *
  * - Closed: single control, label wraps/clamps inside trigger width.
  * - Open: CDK overlay ABOVE dialog/sheet (not clipped); tall panel; wrap labels.
+ * - Optional search (`searchable` / `auto` ≥10): filter by letters/digits; clears on close.
  * - Do NOT use native `<select>` for long catalog names.
  */
 @Component({
@@ -57,28 +64,49 @@ export type PiOverflowSelectItem = {
     </div>
 
     <ng-template #panel>
-      <ul
-        role="listbox"
-        class="hairline rounded-sm bg-paper shadow-lg p-1 space-y-0.5 max-h-[min(70vh,28rem)] overflow-y-auto"
-        data-test="pi-overflow-select-list"
+      <div
+        class="hairline rounded-sm bg-paper shadow-lg flex flex-col max-h-[min(70vh,28rem)] overflow-hidden"
+        data-test="pi-overflow-select-panel"
       >
-        @if (items().length === 0) {
-          <li class="px-2 py-2 text-xs text-muted-foreground">{{ emptyLabel() }}</li>
+        @if (showSearch()) {
+          <div class="shrink-0 p-1.5 hairline-b bg-paper">
+            <input
+              #searchInput
+              type="search"
+              class="pi-input w-full text-sm"
+              [placeholder]="searchPlaceholder()"
+              [value]="query()"
+              (input)="onQueryInput($event)"
+              (keydown)="onSearchKeydown($event)"
+              [attr.aria-label]="searchPlaceholder()"
+              autocomplete="off"
+              data-test="pi-overflow-select-search"
+            />
+          </div>
         }
-        @for (item of items(); track item.id) {
-          <li role="option" [attr.aria-selected]="value() === item.id">
-            <button
-              type="button"
-              class="w-full text-left px-2.5 py-2 text-sm rounded-sm hover:bg-paper-2 whitespace-normal break-words leading-snug"
-              [class.bg-paper-2]="value() === item.id"
-              [class.font-medium]="value() === item.id"
-              (click)="pick(item.id)"
-            >
-              {{ item.label }}
-            </button>
-          </li>
-        }
-      </ul>
+        <ul
+          role="listbox"
+          class="p-1 space-y-0.5 overflow-y-auto min-h-0 flex-1 m-0 list-none"
+          data-test="pi-overflow-select-list"
+        >
+          @if (filteredItems().length === 0) {
+            <li class="px-2 py-2 text-xs text-muted-foreground">{{ emptyLabel() }}</li>
+          }
+          @for (item of filteredItems(); track item.id) {
+            <li role="option" [attr.aria-selected]="value() === item.id">
+              <button
+                type="button"
+                class="w-full text-left px-2.5 py-2 text-sm rounded-sm hover:bg-paper-2 whitespace-normal break-words leading-snug"
+                [class.bg-paper-2]="value() === item.id"
+                [class.font-medium]="value() === item.id"
+                (click)="pick(item.id)"
+              >
+                {{ item.label }}
+              </button>
+            </li>
+          }
+        </ul>
+      </div>
     </ng-template>
   `,
 })
@@ -90,6 +118,14 @@ export class PiOverflowSelectComponent {
   readonly ariaLabel = input('Выбор из списка');
   readonly disabled = input(false);
   readonly dataTest = input('pi-overflow-select');
+  /**
+   * `false` — plain list (default, existing callers unchanged).
+   * `true` — always show search field in panel.
+   * `'auto'` — search when `items.length >= searchThreshold` (default 10).
+   */
+  readonly searchable = input<PiOverflowSelectSearchable>(false);
+  readonly searchThreshold = input(PI_OVERFLOW_SELECT_SEARCH_THRESHOLD);
+  readonly searchPlaceholder = input('Поиск…');
   readonly valueChange = output<string>();
 
   private readonly overlay = inject(Overlay);
@@ -98,9 +134,25 @@ export class PiOverflowSelectComponent {
 
   private readonly triggerEl = viewChild<ElementRef<HTMLButtonElement>>('trigger');
   private readonly panelTpl = viewChild<TemplateRef<unknown>>('panel');
+  private readonly searchInputEl = viewChild<ElementRef<HTMLInputElement>>('searchInput');
   private overlayRef: OverlayRef | null = null;
 
   protected readonly open = signal(false);
+  protected readonly query = signal('');
+
+  protected readonly showSearch = computed(() => {
+    const mode = this.searchable();
+    if (mode === true) return true;
+    if (mode === false) return false;
+    return this.items().length >= this.searchThreshold();
+  });
+
+  protected readonly filteredItems = computed(() => {
+    const list = this.items();
+    const q = this.query().trim().toLowerCase();
+    if (!q || !this.showSearch()) return list;
+    return list.filter((item) => item.label.toLowerCase().includes(q));
+  });
 
   protected readonly selectedLabel = computed(() => {
     const id = this.value();
@@ -123,6 +175,7 @@ export class PiOverflowSelectComponent {
     if (this.disabled()) return;
     if (this.overlayRef) {
       this.open.set(true);
+      this.focusSearchSoon();
       return;
     }
     const origin = this.triggerEl()?.nativeElement;
@@ -167,17 +220,40 @@ export class PiOverflowSelectComponent {
     this.overlayRef.keydownEvents().subscribe((e) => {
       if (e.key === 'Escape') this.close();
     });
+    this.focusSearchSoon();
   }
 
   close(): void {
     this.overlayRef?.dispose();
     this.overlayRef = null;
     this.open.set(false);
+    this.query.set('');
   }
 
   protected pick(id: string): void {
     this.value.set(id);
     this.valueChange.emit(id);
     this.close();
+  }
+
+  protected onQueryInput(event: Event): void {
+    const el = event.target as HTMLInputElement;
+    this.query.set(el.value);
+  }
+
+  /** Esc in search closes panel; stop bubble so dialog doesn't steal it oddly. */
+  protected onSearchKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.close();
+    }
+  }
+
+  private focusSearchSoon(): void {
+    if (!this.showSearch()) return;
+    queueMicrotask(() => {
+      this.searchInputEl()?.nativeElement?.focus();
+    });
   }
 }

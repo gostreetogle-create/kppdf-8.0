@@ -1026,3 +1026,13 @@ BOM inspector — вклад строки material/module read-only.
 **Файлы:** `tasks/TZ-DICT-312.md`, checklist, active-map, PO-DIARY
 **Критерии:** executable TZ
 **Известные ограничения:** не чинить сегодня без запроса PO
+
+---
+
+## [2026-08-08] — TZ-UI-SELECT-301 DONE: Catalog overflow search migration
+**Исполнитель:** Buffy / openai/gpt-5.6-luna
+**Статус:** DONE; archive + lock created; commit/push in this closeout
+**Что сделано кратко:** Растущие selectors категорий, поставщиков, заказчиков, объектов, организаций и продукции переведены на `app-pi-overflow-select` с `searchable=auto`; enum selects сохранены; inventory docs обновлены.
+**Gates:** targeted Jest 35 PASS; scoped ESLint 0 errors (one existing architecture warning); Prettier PASS; diff-check PASS. Full FE tsc has one unrelated baseline error from existing materials list WIP importing untracked `material-dimensions` helper.
+**Archive:** `tasks/_archive/2026-08/TZ-UI-SELECT-301.done.md`
+**Lock:** `.mimocode/locks/TZ-UI-SELECT-301.lock`

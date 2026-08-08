@@ -4,6 +4,7 @@ import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
+import { PiOverflowSelectComponent } from '../../shared/ui/overflow-select/pi-overflow-select.component';
 import {
   ProductModule,
   ProductModulesService,
@@ -13,19 +14,11 @@ import { extractErrorMessage } from '../../core/silent-http';
 /**
  * ProductModulePickerDialog — выбор модулей для товара.
  *
- * TZ-83 Phase D: одиночный выбор (используется product-detail.page.ts).
- * TZ-90 Phase C: мигрирован на полиморфный <app-pi-dialog variant="content">.
- * TZ-PRODUCTS-303: добавлен МУЛЬТИ-режим для секции «Модули в составе»
- *   диалога товара.
- *
  * Режимы (data.multi):
- *   - default (без multi): классический `<select size="10">` — один модуль,
- *     возвращает moduleId строкой (ref.close(id)).
- *   - multi: чекбокс-список доступных модулей, возвращает `string[]`
- *     (ref.close(ids)). Cancel → null в обоих режимах.
+ *   - default: `app-pi-overflow-select` searchable=auto (≥10 → поиск в панели).
+ *   - multi: чекбокс-список, возвращает `string[]`.
  *
- * Уже привязанные модули исключаются через `excludeIds` из data.
- * loading/error/empty — по образцу PiColorReference dropdown (TZ-PRODUCTS-301).
+ * Уже привязанные модули исключаются через `excludeIds`.
  */
 export interface ProductModulePickerData {
   productId: string;
@@ -37,7 +30,7 @@ export interface ProductModulePickerData {
 @Component({
   selector: 'app-product-module-picker-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, ButtonComponent, PiDialogComponent],
+  imports: [ReactiveFormsModule, ButtonComponent, PiDialogComponent, PiOverflowSelectComponent],
   template: `
     <app-pi-dialog
       [title]="multi ? 'Добавить модули в состав' : 'Привязать модуль к товару'"
@@ -46,9 +39,7 @@ export interface ProductModulePickerData {
     >
       <form body [formGroup]="form" (ngSubmit)="onSubmit()" data-test="picker-form">
         <p class="eyebrow text-muted-foreground mb-3">
-          {{
-            multi ? 'Отметьте модули в составе товара' : 'Привязать модуль к товару'
-          }}
+          {{ multi ? 'Отметьте модули в составе товара' : 'Привязать модуль к товару' }}
         </p>
 
         @if (loading()) {
@@ -79,25 +70,20 @@ export interface ProductModulePickerData {
             }
           </div>
         } @else {
-          <label class="block">
+          <div class="block min-w-0">
             <span class="eyebrow block mb-1.5">
               Модуль <span class="text-destructive">*</span>
             </span>
-            <select
-              class="pi-input w-full"
-              formControlName="moduleId"
-              data-test="picker-select"
-              size="10"
-            >
-              @for (m of available(); track m._id) {
-                <option [value]="m._id">
-                  {{ m.name }} · {{ m.article ?? '—' }} · {{ m.materials.length }} материалов
-                </option>
-              } @empty {
-                <option disabled>Нет доступных модулей.</option>
-              }
-            </select>
-          </label>
+            <app-pi-overflow-select
+              [items]="selectItems()"
+              [value]="form.controls.moduleId.value"
+              (valueChange)="onSinglePick($event)"
+              searchable="auto"
+              placeholder="— выбрать модуль —"
+              ariaLabel="Модуль"
+              dataTest="picker-select"
+            />
+          </div>
         }
       </form>
 
@@ -136,6 +122,13 @@ export class ProductModulePickerDialogComponent {
     this.all().filter((m) => !this.data.excludeIds.includes(m._id)),
   );
 
+  protected readonly selectItems = computed(() =>
+    this.available().map((m) => ({
+      id: m._id,
+      label: `${m.name} · ${m.article ?? '—'} · ${m.materials.length} материалов`,
+    })),
+  );
+
   /** Выбранные id в мульти-режиме. */
   protected readonly selected = signal<string[]>([]);
 
@@ -145,6 +138,11 @@ export class ProductModulePickerDialogComponent {
 
   constructor() {
     this.load();
+  }
+
+  protected onSinglePick(id: string): void {
+    this.form.controls.moduleId.setValue(id);
+    this.form.controls.moduleId.markAsDirty();
   }
 
   private load(): void {
@@ -162,9 +160,7 @@ export class ProductModulePickerDialogComponent {
   }
 
   protected toggle(id: string): void {
-    this.selected.update((cur) =>
-      cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id],
-    );
+    this.selected.update((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
   }
 
   protected onSubmit(): void {

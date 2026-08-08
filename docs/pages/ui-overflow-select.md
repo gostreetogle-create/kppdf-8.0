@@ -59,6 +59,19 @@
 
 Компонент: `frontend/src/app/shared/ui/overflow-select/pi-overflow-select.component.ts`
 
+## Catalog selector inventory (TZ-UI-SELECT-301)
+
+| Form / field | Control | Search policy | Value contract |
+|---|---|---|---|
+| Product FullEditor / category | `app-pi-overflow-select` | `searchable="auto"` (10+) | category id or empty |
+| Material FullEditor / supplier | `app-pi-overflow-select` | `searchable="auto"` (10+) | supplier id or empty |
+| Order / counterparty, site, product | `app-pi-overflow-select` | `searchable="auto"` (10+) | existing form ids |
+| Proposal / organization, counterparty, product | `app-pi-overflow-select` | `searchable="auto"` (10+) | existing form ids |
+| QuickCreate L / product category | `app-pi-overflow-select` | `searchable="auto"` (10+) | category id or empty |
+| Fixed enums (status, kind, priority, units) | native `<select>` | not applicable | existing enum values |
+
+Search is intentionally shown at ten or more loaded items; below that threshold the compact panel has no search field.
+
 ## См. также
 
 - Дерево состава (строка = кнопка): [`ui-composition-tree.md`](./ui-composition-tree.md)

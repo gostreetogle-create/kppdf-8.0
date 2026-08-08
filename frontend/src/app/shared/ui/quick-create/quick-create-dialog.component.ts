@@ -50,6 +50,7 @@ import { PiFormSectionComponent } from '../form-section';
 import { PiPhotoDropzoneComponent } from '../photo';
 import { PhotosService, type Photo } from '../../services/photos.service';
 import { ProductBomPanelComponent } from '../../../pages/products/product-bom-panel.component';
+import { PiOverflowSelectComponent } from '../overflow-select/pi-overflow-select.component';
 
 /** Data injected into QuickCreate (create-only). */
 export interface QuickCreateDialogData {
@@ -100,6 +101,7 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'md' | 'lg' | 'xl'> = {
     PiFormSectionComponent,
     PiPhotoDropzoneComponent,
     ProductBomPanelComponent,
+    PiOverflowSelectComponent,
   ],
   template: `
     <app-pi-dialog
@@ -221,18 +223,15 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'md' | 'lg' | 'xl'> = {
                         }
                         @case ('select-category') {
                           <app-pi-form-field [label]="labelOf(key)" [htmlFor]="'qc-' + key">
-                            <select
-                              [id]="'qc-' + key"
-                              [formControlName]="key"
-                              [class]="controlClass(key)"
-                              title="Из справочника категорий"
-                              [attr.data-test]="'qc-field-' + key"
-                            >
-                              <option value="">— без категории —</option>
-                              @for (c of categories(); track c._id) {
-                                <option [value]="c._id">{{ c.name }}</option>
-                              }
-                            </select>
+                            <app-pi-overflow-select
+                              [items]="categoryItems()"
+                              [value]="form.get(key)?.value ?? ''"
+                              (valueChange)="onCategoryChange($event)"
+                              searchable="auto"
+                              placeholder="— без категории —"
+                              ariaLabel="Категория"
+                              [dataTest]="'qc-field-' + key"
+                            />
                           </app-pi-form-field>
                         }
                         @case ('checkbox') {
@@ -504,6 +503,10 @@ export class QuickCreateDialogComponent implements OnDestroy {
   protected readonly formError = signal<string | null>(null);
   protected readonly visibleKeys = signal<string[]>([]);
   protected readonly categories = signal<Category[]>([]);
+  protected readonly categoryItems = computed(() => [
+    { id: '', label: '— без категории —' },
+    ...this.categories().map((c) => ({ id: c._id, label: c.name })),
+  ]);
   protected readonly photos = signal<Photo[]>([]);
   protected readonly uploadedPhotoIds = signal<string[]>([]);
   protected readonly photosUploading = signal(false);
@@ -515,6 +518,11 @@ export class QuickCreateDialogComponent implements OnDestroy {
   protected readonly isPhotoCapable = computed(
     () => this.entity === 'product' && this.size() === 'L',
   );
+
+  protected onCategoryChange(categoryId: string): void {
+    this.form.get('categoryId')?.setValue(categoryId);
+    this.form.get('categoryId')?.markAsDirty();
+  }
 
   private readonly basicFieldKeys = new Set([
     'name',

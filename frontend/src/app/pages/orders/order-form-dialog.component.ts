@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import {
   FormArray,
@@ -23,6 +23,7 @@ import { Counterparty, CounterpartyService } from '../../shared/services/pi-coun
 import { Product, ProductsService } from '../../shared/services/products.service';
 import { Site, SiteService } from '../../shared/services/pi-site.service';
 import { Order, OrderItem, OrdersService, OrderPriority, OrderStatus } from './orders.service';
+import { PiOverflowSelectComponent } from '../../shared/ui/overflow-select/pi-overflow-select.component';
 
 type Result = Order | null | undefined;
 
@@ -83,6 +84,7 @@ interface ItemFormGroup extends FormGroup {
     InputComponent,
     TextareaComponent,
     PiFormSectionComponent,
+    PiOverflowSelectComponent,
   ],
   template: `
     <app-pi-dialog [title]="isEdit() ? 'Редактировать заказ' : 'Создать заказ'" [width]="'lg'">
@@ -102,20 +104,15 @@ interface ItemFormGroup extends FormGroup {
               [required]="true"
               [error]="errorFor('counterpartyId')"
             >
-              <select
-                id="ord-cp"
-                formControlName="counterpartyId"
-                class="pi-input w-full"
-                [class.border-destructive]="hasError('counterpartyId')"
-                (change)="onCounterpartyChange($any($event.target).value)"
-              >
-                <option value="" disabled>— выберите —</option>
-                @for (cp of counterparties(); track cp._id) {
-                  <option [value]="cp._id">
-                    {{ cp.name }}{{ cp.inn ? ' · ИНН ' + cp.inn : '' }}
-                  </option>
-                }
-              </select>
+              <app-pi-overflow-select
+                [items]="counterpartyItems()"
+                [value]="form.controls.counterpartyId.value"
+                (valueChange)="onCounterpartyChange($event)"
+                searchable="auto"
+                placeholder="— выберите —"
+                ariaLabel="Заказчик"
+                dataTest="ord-cp"
+              />
             </app-pi-form-field>
 
             <app-pi-form-field
@@ -124,21 +121,18 @@ interface ItemFormGroup extends FormGroup {
               [required]="true"
               [error]="errorFor('siteId')"
             >
-              <select
-                id="ord-site"
-                formControlName="siteId"
-                class="pi-input w-full"
-                [class.border-destructive]="hasError('siteId')"
-              >
-                <option value="" disabled>
-                  {{ form.controls.counterpartyId.value ? '— выберите —' : 'Сначала заказчик' }}
-                </option>
-                @for (s of sites(); track s._id) {
-                  <option [value]="s._id">
-                    {{ s.name }}{{ s.address ? ' · ' + s.address : '' }}
-                  </option>
-                }
-              </select>
+              <app-pi-overflow-select
+                [items]="siteItems()"
+                [value]="form.controls.siteId.value"
+                (valueChange)="onSiteChange($event)"
+                searchable="auto"
+                [disabled]="!form.controls.counterpartyId.value"
+                [placeholder]="
+                  form.controls.counterpartyId.value ? '— выберите —' : 'Сначала заказчик'
+                "
+                ariaLabel="Объект"
+                dataTest="ord-site"
+              />
             </app-pi-form-field>
 
             <app-pi-form-field
@@ -262,21 +256,15 @@ interface ItemFormGroup extends FormGroup {
                 >
                   <label class="col-span-12 sm:col-span-5 block">
                     <span class="eyebrow block mb-1.5">Продукт</span>
-                    <select
-                      [attr.id]="'ord-item-product-' + i"
-                      [attr.name]="'item-product-' + i"
-                      formControlName="productId"
-                      (change)="onProductPick(i, $any($event.target).value)"
-                      class="h-8 px-3 text-xs hairline rounded-sm bg-paper pi-focus-ring w-full"
-                      [attr.aria-label]="'Продукт ' + (i + 1)"
-                    >
-                      <option value="" disabled>— выберите —</option>
-                      @for (p of products(); track p._id) {
-                        <option [value]="p._id">
-                          {{ p.name }}{{ p.sku ? ' · ' + p.sku : '' }}
-                        </option>
-                      }
-                    </select>
+                    <app-pi-overflow-select
+                      [items]="productItems()"
+                      [value]="itemGroup.controls.productId.value"
+                      (valueChange)="onProductPick(i, $event)"
+                      searchable="auto"
+                      placeholder="— выберите —"
+                      [ariaLabel]="'Продукт ' + (i + 1)"
+                      [dataTest]="'ord-item-product-' + i"
+                    />
                   </label>
 
                   <label class="col-span-6 sm:col-span-2 block">
@@ -420,6 +408,24 @@ export class OrderFormDialogComponent {
   protected readonly sites = signal<Site[]>([]);
   protected readonly products = signal<Product[]>([]);
   protected readonly users = signal<OwnerUserOption[]>([]);
+  protected readonly counterpartyItems = computed(() =>
+    this.counterparties().map((cp) => ({
+      id: cp._id,
+      label: `${cp.name}${cp.inn ? ' · ИНН ' + cp.inn : ''}`,
+    })),
+  );
+  protected readonly siteItems = computed(() =>
+    this.sites().map((site) => ({
+      id: site._id,
+      label: `${site.name}${site.address ? ' · ' + site.address : ''}`,
+    })),
+  );
+  protected readonly productItems = computed(() =>
+    this.products().map((product) => ({
+      id: product._id,
+      label: `${product.name}${product.sku ? ' · ' + product.sku : ''}`,
+    })),
+  );
 
   protected readonly form = this.fb.group({
     number: this.fb.control<string | null>(null),
@@ -495,8 +501,15 @@ export class OrderFormDialogComponent {
   }
 
   protected onCounterpartyChange(counterpartyId: string): void {
+    this.form.controls.counterpartyId.setValue(counterpartyId);
+    this.form.controls.counterpartyId.markAsDirty();
     this.form.controls.siteId.setValue('');
     this.loadSites(counterpartyId);
+  }
+
+  protected onSiteChange(siteId: string): void {
+    this.form.controls.siteId.setValue(siteId);
+    this.form.controls.siteId.markAsDirty();
   }
 
   private unwrapId(value: string | { _id: string } | undefined | null): string {

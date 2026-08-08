@@ -1,0 +1,7 @@
+TZ-UI-SELECT-301
+closed: 2026-08-08
+zone: catalog/reference overflow selectors and searchable threshold
+checklist: docs/agent-checklists/TZ-UI-SELECT-301.md
+archive: tasks/_archive/2026-08/TZ-UI-SELECT-301.done.md
+commit: pending
+known-limitation: full frontend tsc baseline blocked by unrelated materials.page WIP
