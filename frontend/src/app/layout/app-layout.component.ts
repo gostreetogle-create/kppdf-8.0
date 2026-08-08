@@ -191,6 +191,8 @@ const NAV_CATEGORIES: NavCategory[] = [
       { path: '/doc-constructor/tables', pageKey: 'doc-tables', label: 'Шаблоны таблиц' },
       { path: '/doc-constructor/documents', pageKey: 'doc-documents', label: 'Архив документов' },
       { path: '/doc-constructor/builder', pageKey: 'doc-templates', label: 'Конструктор' },
+      // TZD-29: manager import todos — «что доделать после импорта».
+      { path: '/import-todos', pageKey: 'import-todos', label: 'Задачи импорта' },
     ],
   },
   {

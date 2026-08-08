@@ -18,6 +18,7 @@ const ADMIN_PAGES = [
   'inventory', 'storage-items', 'stock-movements',
   'people',
   'production',
+  'import-todos',
   'admin-users', 'admin-roles',
 ] as const;
 
@@ -30,6 +31,7 @@ const DIRECTOR_PAGES = [
   'inventory', 'storage-items', 'stock-movements',
   'people',
   'production',
+  'import-todos',
   // no admin-*
 ] as const;
 
@@ -42,9 +44,10 @@ const MANAGER_PAGES = [
   'inventory', 'storage-items', 'stock-movements',
   'people',
   'production',
+  'import-todos',
 ] as const;
 
-/** TZ-PRODUCTION-303 lock J ù cockpit FE capability gate for director/manager. */
+/** TZ-PRODUCTION-303 lock J ÔøΩ cockpit FE capability gate for director/manager. */
 const DIRECTOR_PERMISSIONS = ['production:read'] as const;
 const MANAGER_PERMISSIONS = ['production:read'] as const;
 
@@ -117,7 +120,7 @@ export class AdminSeed implements OnApplicationBootstrap {
       const existing = await this.roles.findByName(r.name);
       if (existing) {
         // TZ-ACCESS-303: merge newly catalogued pageKeys into system roles
-        // (idempotent ó only adds missing keys, never removes director grants).
+        // (idempotent ÔøΩ only adds missing keys, never removes director grants).
         const desired = [...(r.pages ?? [])];
         const have = new Set(existing.pages ?? []);
         const missing = desired.filter((p) => !have.has(p));
@@ -183,7 +186,7 @@ export class AdminSeed implements OnApplicationBootstrap {
     }
 
     const username = this.config.get<string>('admin.username') ?? 'admin';
-    // TZ-91 ù4 Phase A.4: warn + skip if ADMIN_PASSWORD < 8 chars (avoid weak admin on fresh bootstrap).
+    // TZ-91 ÔøΩ4 Phase A.4: warn + skip if ADMIN_PASSWORD < 8 chars (avoid weak admin on fresh bootstrap).
     const password = this.config.get<string>('admin.password') ?? '';
     if (!password || password.length < 8) {
       this.logger.warn(

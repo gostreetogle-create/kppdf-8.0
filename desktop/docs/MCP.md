@@ -182,6 +182,26 @@ Order / коммерческое КП kinds — не этот TZ.
 **Запрет:** `set-default`, publish, silent overwrite production default —
 инструменты никогда не вызывают `/set-default`.
 
+## Tools — import todos (TZD-29)
+
+«Что доделать после импорта» — todo для менеджера, виден в вебе `/import-todos`
+(тонкая страница, RBAC admin|manager). Не email/push.
+
+| Tool | REST |
+|------|------|
+| `kppdf_import_todo_create` | `POST /api/import-todos` (title, body?, href?, importTaskId?, templateId?) |
+| `kppdf_import_todo_list` | `GET /api/import-todos?status=open|done` |
+| `kppdf_import_todo_set_status` | `PATCH /api/import-todos/:id { status }` |
+
+### Todo protocol (TZD-29)
+
+1. После `kppdf_import_task_apply_plan` если `doubt > 0` →
+   `kppdf_import_todo_create` «Проверить сомнительные строки» (+ importTaskId).
+2. После `kppdf_doc_template_create_draft` (TZD-28) → todo «Доделать шаблон
+   {name}» + `href /doc-constructor/templates` (или builder) + templateId.
+3. Менеджер закрывает в вебе кнопкой «Готово»; агент может `set_status done`
+   только когда его явно попросили (не silent auto-close).
+
 ## Tools — write safety (TZD-13)
 
 **Никогда** не пишем в SoT из «голого» create-tool. Только:
@@ -274,6 +294,7 @@ Inbox-папка настраивается в десктоп-приложени
 
 ## Follow-ups
 
+- **TZD-29** ✅ DONE (2026-08-08, wave #7 — волна завершена) — import todos: BE `import-todo` module (POST/GET/PATCH, admin|manager, org-scope); MCP `kppdf_import_todo_create|list|set_status`; todo protocol выше; FE тонкая `/import-todos` страница.
 - **TZD-28** ✅ DONE (2026-08-08, wave #6) — doc-constructor MCP: `kppdf_doc_types_list` / `kppdf_doc_template_categories_list` / `kppdf_doc_templates_list` / `kppdf_doc_template_create_draft` (isActive=false, isDefault=false, notes `[AI-DRAFT]`; никогда set-default); protocol doc-draft → TZD-29 todo.
 - **TZD-27** ✅ DONE (2026-08-08, wave #5) — journal `product.create`/`product.update` (propose→confirm→undo зеркально material; org scope); MCP `kppdf_propose_product_create`/`_update` + `kppdf_validate_product` + domain schema product; `aiReport.rows[].entity` ветка в `apply_plan` (тот же batch).
 - **TZD-19** ✅ DONE (2026-08-08, wave #4) — graph: 5 composition/where_used read tools + `kppdf_run_integrity_suite` (soft smoke, read-only) + `kppdf_list_modules`; graph protocol перед product.update / mass material.update.
@@ -282,7 +303,6 @@ Inbox-папка настраивается в десктоп-приложени
 - **TZD-23** ✅ DONE (2026-08-08, wave #1) — matching/HITL brain: `PATCH /api/import-tasks/:id/report` + `/proposals`; MCP `kppdf_import_task_set_report` + `kppdf_import_task_apply_plan` (userOk gate; skip/doubt не propose); Variant C protocol выше.
 - **TZD-22** ✅ DONE — Import Task assembly: BE `/api/import-tasks` +
   Desktop «Создать задачу для ИИ» + MCP `kppdf_import_task_*`.
-- **TZD-18 / TZD-19 / TZD-27 / TZD-28 / TZD-29** — следующий порядок волны (см. WAVE-DESKTOP-BULK-IMPORT).
 - **TZD-20** ✅ DONE (2026-08-08) — кнопка «Скопировать mcp.json» / фрагмент в Desktop;
   один HTTP-формат для Cursor + LM Studio; clipboard only (не пишет в чужие mcp.json).
 - **TZD-17** ✅ DONE (2026-08-08) — semantic domain layer: `kppdf_get_domain_schema`, `kppdf_list_categories`, `kppdf_validate_material`, `kppdf_inbox_audit_file` (+ propose `mode=validate`). Validate/audit ≠ proposal ≠ SoT.
