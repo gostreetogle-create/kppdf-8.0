@@ -13,7 +13,9 @@
 
 | TZ | Файл | Заметка |
 |----|------|---------|
-| **WAVE UI type+color** | `tasks/_backlog/ui-type-color/WAVE-UI-TYPE-COLOR.md` | **TYPE-301 → 302 → COLOR-301** (аудит текстов/тем) |
+| ~~WAVE UI type+color~~ | DONE 301–COLOR-301 | successor **TZ-UI-TYPE-303** content label 13px |
+| **TZ-UI-TYPE-303** | `tasks/TZ-UI-TYPE-303-content-label-step.md` | table/passport/fact labels: pi-label 13px (не eyebrow) |
+| **TZ-UI-SELECT-301** | `tasks/TZ-UI-SELECT-301-catalog-overflow-search-migrate.md` | Native catalog `<select>` → overflow+search auto |
 | **TZ-PRODUCTS-307** | `tasks/TZ-PRODUCTS-307-products-list-hierarchy-preview.md` | Иерархия в expand списка /products |
 | ~~TZ-UX-313~~ | archived `tasks/_archive/2026-08/TZ-UX-313.done.md` | Smart back DONE |
 

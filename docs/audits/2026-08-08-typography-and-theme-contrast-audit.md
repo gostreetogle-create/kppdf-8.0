@@ -21,15 +21,19 @@
 | «Прищуриваешься» | Meta на `muted-foreground` + иногда `/50` opacity + размер ≤11px |
 | «На хороших сайтах глаза не устают» | 4–5 ролей текста, один шаг между ролями, контраст ≥ комфортного для secondary |
 
-**Канон шкалы (предложение аудита → TZ-UI-TYPE-301):**
+**Канон шкалы (TYPE-301 на main; уточнение PO → TZ-UI-TYPE-303):**
 
 | Роль | Размер | Utility / token | Где |
 |------|--------|-----------------|-----|
-| micro | **11px** | `.eyebrow` / `pi-tech-label` → unify 11px | ПАСПОРТ, УЗЕЛ, table headers |
-| meta | **12px** | `text-xs` | артикул, подсказки, «N материалов» |
+| micro | **11px** | `.eyebrow` / `pi-tech-label` | **только** компакт: nav, kind-badge, плотные иконки |
+| **label** | **13px** | `.pi-label` (**TYPE-303**) | table th, паспорт Высота/Вес/RAL, fact labels |
+| meta | **12px** | `text-xs` | captions, подсказки, pager |
 | body | **14px** | `text-sm` | строки состава, таблица, кнопки |
 | title | **16–18px** | `text-base` → `text-lg` | имя в chrome / detail card |
 | display | **≤20px** ERP | `text-xl` max | редкий order header; kit demos отдельно |
+
+> PO 2026-08-08: после TYPE-302 информационные подписи всё ещё на micro/eyebrow —
+> глаз щурится там, где место позволяет. Micro не убирать из компактных зон.
 
 **Запрет на ERP:** новые `text-[9px]` / `text-[10px]`; `text-5xl` на рабочих страницах (уже в PO-DIARY).  
 **Шаг:** 11 → 12 → 14 → 16 → 18 ≈ ×1.09–1.17 (глаз читает как «лестницу», не «два разных сайта»).
