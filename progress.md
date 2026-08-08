@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-ADMIN-302 DONE: system role all-checked read-only
+
+**Исполнитель:** agent-3e757640b7 (self PASS → archive)
+**Статус:** DONE on main; deploy НЕ
+**Что:** «Смотреть» системной роли — полный каталог pageKeys+capabilities ✓ disabled; баннер «Системная · нельзя изменить (полный доступ)»; кастом/несистемные Edit без изменений.
+**Gates:** FE tsc PASS; jest role-form+roles-admin+permission-labels 30/30
+**Archive:** `tasks/_archive/2026-08/TZ-ADMIN-302.done.md`
+**Lock:** `.mimocode/locks/TZ-ADMIN-302-system-role-checked-readonly.lock`
+**Known:** peer users-admin/chrome WIP не staged. Deploy: NO. app-layout не трогали.
+
 ## [2026-08-08] — TZ-UX-304 DONE: nav icon+caption + Dictionaries after Docs
 
 **Исполнитель:** agent-3e757640b7 (self PASS → archive)
