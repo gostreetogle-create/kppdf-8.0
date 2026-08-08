@@ -267,3 +267,34 @@ export class PatchImportTaskProposalsDto {
   @IsIn(['applying', 'done', 'failed'])
   status?: 'applying' | 'done' | 'failed';
 }
+
+/**
+ * PATCH /api/import-tasks/:id/rows (TZD-26).
+ * Safe AI reshape: rows + optional columnMap/reshapeNote. Only allowed while
+ * the task is still pre-apply (ready_for_ai | analyzing | awaiting_user | draft).
+ * Resetting aiReport forces re-match after reshape.
+ */
+export class PatchImportTaskRowsDto {
+  @ApiProperty({ type: [ImportTaskRowDto], minItems: 1, maxItems: 500 })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(500, {
+    message: 'rows.length must be ≤500 — split the file or use TZD-18 chunk',
+  })
+  @ValidateNested({ each: true })
+  @Type(() => ImportTaskRowDto)
+  rows!: ImportTaskRowDto[];
+
+  @ApiPropertyOptional({
+    description: 'header → canonical column map (null = unknown/conflict column)',
+  })
+  @IsOptional()
+  @IsObject()
+  columnMap?: Record<string, string | null>;
+
+  @ApiPropertyOptional({ example: '«Наименование» → name; колонка «Цена» удалена' })
+  @IsOptional()
+  @IsString()
+  @Length(0, 1000)
+  reshapeNote?: string;
+}

@@ -7,7 +7,7 @@ import {
 } from './import-task-tools.js';
 
 describe('import-task tools (TZD-22 + TZD-23)', () => {
-  it('registers six tool names', () => {
+  it('registers seven tool names', () => {
     assert.deepEqual([...IMPORT_TASK_TOOL_NAMES], [
       'kppdf_import_task_list',
       'kppdf_import_task_get',
@@ -15,6 +15,7 @@ describe('import-task tools (TZD-22 + TZD-23)', () => {
       'kppdf_import_task_set_status',
       'kppdf_import_task_set_report',
       'kppdf_import_task_apply_plan',
+      'kppdf_import_task_reshape',
     ]);
   });
 
@@ -77,6 +78,19 @@ describe('import-task tools (TZD-22 + TZD-23)', () => {
             status: (body as any)?.status ?? 'awaiting_user',
             aiReport: (body as any)?.aiReport ?? null,
             rows: [{ rowIndex: 0, raw: { name: 'A' }, name: 'A' }],
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (method === 'PATCH' && url.includes('/rows')) {
+        return new Response(
+          JSON.stringify({
+            id: '507f1f77bcf86cd799439033',
+            status: 'ready_for_ai',
+            rows: (body as any)?.rows ?? [],
+            columnMap: (body as any)?.columnMap ?? null,
+            reshapeNote: (body as any)?.reshapeNote ?? null,
+            aiReport: null,
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } },
         );
@@ -151,10 +165,28 @@ describe('import-task tools (TZD-22 + TZD-23)', () => {
       assert.equal(report.status, 'awaiting_user');
       assert.equal(report.aiReport.counts.new, 1);
 
+      const reshaped = (await backendPatchJson(
+        base,
+        key,
+        '/api/import-tasks/507f1f77bcf86cd799439033/rows',
+        {
+          rows: [
+            { rowIndex: 0, raw: { name: 'X' }, name: 'X', unit: 'м' },
+            { rowIndex: 1, raw: { name: 'Y' }, name: 'Y' },
+          ],
+          columnMap: { 'Наименование': 'name', 'Цена': null },
+          reshapeNote: '«Цена» удалена',
+        },
+      )) as { rows: unknown[]; columnMap: Record<string, string | null>; aiReport: unknown };
+      assert.equal(reshaped.rows.length, 2);
+      assert.equal(reshaped.columnMap['Цена'], null);
+      assert.equal(reshaped.aiReport, null);
+
       assert.ok(calls.some((c) => c.method === 'POST' && c.url.includes('/api/import-tasks')));
       assert.ok(calls.some((c) => c.method === 'GET' && c.url.includes('/api/import-tasks?')));
       assert.ok(calls.some((c) => c.method === 'PATCH' && c.url.includes('/status')));
       assert.ok(calls.some((c) => c.method === 'PATCH' && c.url.includes('/report')));
+      assert.ok(calls.some((c) => c.method === 'PATCH' && c.url.includes('/rows')));
     } finally {
       globalThis.fetch = original;
     }

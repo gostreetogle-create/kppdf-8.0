@@ -12,11 +12,13 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { backendGetJson, backendPostJson } from './backend.js';
 import type { McpRuntimeConfig } from './config.js';
 import {
+  classifyColumns,
   inboxDirFromEnv,
   listInboxFiles,
   mapRowToMaterial,
   parseInboxBytes,
   readInboxFile,
+  type ColumnClassifyResult,
   type MaterialRow,
   type RawRow,
 } from './inbox.js';
@@ -32,7 +34,29 @@ export const INBOX_TOOL_NAMES = [
   'kppdf_inbox_list',
   'kppdf_inbox_propose_file',
   'kppdf_inbox_audit_file',
+  'kppdf_inbox_classify_columns',
 ] as const;
+
+export interface ColumnClassifyToolResult extends ColumnClassifyResult {
+  source: string;
+  sampleRows: RawRow[];
+}
+
+/**
+ * TZD-26: headers + sample → ready/unfit classification. Pure — no journal, no SoT.
+ * Exported for unit tests.
+ */
+export function classifyColumnSet(
+  headers: string[],
+  sampleRows: RawRow[],
+): ColumnClassifyToolResult {
+  const classified = classifyColumns(headers);
+  return {
+    source: 'inline',
+    sampleRows,
+    ...classified,
+  };
+}
 
 /** Читает каталог inbox из env (KPPDF_INBOX_DIR, задаёт десктоп). */
 function requireInboxDir(): string | null {
@@ -136,6 +160,26 @@ async function runAuditFile(
   return auditInboxRows(fileName, rows, deps);
 }
 
+async function classifyInboxFile(
+  cfg: McpRuntimeConfig,
+  fileName: string,
+  sampleLimit: number,
+): Promise<ColumnClassifyToolResult> {
+  const dir = requireInboxDir();
+  if (!dir) {
+    throw new Error('KPPDF_INBOX_DIR not set — desktop did not configure inbox for MCP.');
+  }
+  const data = await readInboxFile(dir, fileName);
+  const rows = await parseInboxBytes(fileName, data);
+  const headers = rows.length > 0 ? Object.keys(rows[0]) : [];
+  const classified = classifyColumns(headers);
+  return {
+    source: `inbox:${fileName}`,
+    sampleRows: rows.slice(0, sampleLimit),
+    ...classified,
+  };
+}
+
 export function registerInboxTools(server: McpServer, cfg: McpRuntimeConfig): void {
   server.registerTool(
     'kppdf_inbox_list',
@@ -158,6 +202,62 @@ export function registerInboxTools(server: McpServer, cfg: McpRuntimeConfig): vo
         return toolOk({ ok: true, dir, files });
       } catch (err) {
         return toolFail('kppdf_inbox_list', err);
+      }
+    },
+  );
+
+  server.registerTool(
+    'kppdf_inbox_classify_columns',
+    {
+      title: 'Classify inbox columns ready/unfit',
+      description:
+        'TZD-26: classifies column headers against the material canon ' +
+        '(name/unit/article/sku/notes/categoryId). Returns ready (exactly one ' +
+        'canonical), unfit (unknown/conflict), mapping and sample rows. ' +
+        'Read-only — 0 proposals, 0 SoT. Pass fileName (inbox file) OR headers+sample.',
+      inputSchema: {
+        fileName: z
+          .string()
+          .optional()
+          .describe('Inbox file name — parse and classify its first-row headers'),
+        headers: z
+          .array(z.string())
+          .optional()
+          .describe('Explicit header list (when fileName not available)'),
+        sample: z
+          .array(z.record(z.string(), z.unknown()))
+          .optional()
+          .describe('Sample raw rows to return alongside the classification'),
+        sampleLimit: z
+          .number()
+          .int()
+          .min(1)
+          .max(20)
+          .optional()
+          .describe('How many sample rows to return (default 5)'),
+      },
+    },
+    async ({ fileName, headers, sample, sampleLimit }) => {
+      try {
+        const limit = sampleLimit ?? 5;
+        let result: ColumnClassifyToolResult;
+        if (fileName) {
+          result = await classifyInboxFile(cfg, fileName, limit);
+        } else if (headers?.length) {
+          result = classifyColumnSet(headers, sample ?? []);
+        } else {
+          return toolOk({
+            ok: false,
+            reason: 'Provide fileName OR headers (with optional sample) to classify columns.',
+          });
+        }
+        return toolOk({
+          ok: true,
+          note: 'Classify only — no proposal, no SoT write. Reshape → kppdf_import_task_reshape.',
+          ...result,
+        });
+      } catch (err) {
+        return toolFail('kppdf_inbox_classify_columns', err);
       }
     },
   );

@@ -321,6 +321,74 @@ describe('ImportTaskService (TZD-22)', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  it('patchRows replaces rows + columnMap/reshapeNote and resets aiReport (TZD-26)', async () => {
+    const save = jest.fn().mockResolvedValue(undefined);
+    const doc: any = {
+      _id: '507f1f77bcf86cd799439033',
+      status: 'awaiting_user',
+      createdByUserId: { toString: () => user.id },
+      organizationId: { toString: () => user.organizationId },
+      source: { fileName: 't.xlsx', fileType: 'xlsx' },
+      rows: threeRows,
+      proposalIds: [],
+      aiReport: { version: 1, counts: { new: 3, skip: 0, update: 0, doubt: 0 }, rows: [] },
+      save,
+      toObject() {
+        return { ...this, _id: this._id };
+      },
+    };
+    const { service } = buildService({ findByIdDoc: doc });
+
+    const newRows = [
+      { rowIndex: 0, raw: { name: 'X' }, name: 'X', unit: 'м' },
+      { rowIndex: 1, raw: { name: 'Y' }, name: 'Y' },
+    ];
+    const view = await service.patchRows(
+      '507f1f77bcf86cd799439033',
+      {
+        rows: newRows,
+        columnMap: { 'Наименование': 'name', 'Ед. изм.': 'unit', 'Цена': null },
+        reshapeNote: '«Наименование» → name; «Цена» удалена (не материал)',
+      },
+      user,
+    );
+
+    expect(view.rows).toHaveLength(2);
+    expect(view.rows[0].name).toBe('X');
+    expect(view.columnMap).toEqual({
+      'Наименование': 'name',
+      'Ед. изм.': 'unit',
+      'Цена': null,
+    });
+    expect(view.reshapeNote).toContain('«Цена» удалена');
+    expect(view.aiReport).toBeNull(); // stale plan reset — re-match required
+  });
+
+  it('patchRows rejects reshape after applying/done (TZD-26)', async () => {
+    const doc: any = {
+      _id: '507f1f77bcf86cd799439033',
+      status: 'applying',
+      createdByUserId: { toString: () => user.id },
+      organizationId: { toString: () => user.organizationId },
+      source: { fileName: 't.xlsx', fileType: 'xlsx' },
+      rows: threeRows,
+      proposalIds: [],
+      aiReport: null,
+      save: jest.fn(),
+      toObject() {
+        return this;
+      },
+    };
+    const { service } = buildService({ findByIdDoc: doc });
+    await expect(
+      service.patchRows(
+        '507f1f77bcf86cd799439033',
+        { rows: [{ rowIndex: 0, raw: { name: 'Z' }, name: 'Z' }] },
+        user,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
   it('create does not depend on Material / journal (model.create only)', async () => {
     const { service, create, model } = buildService({
       create: jest.fn().mockResolvedValue({

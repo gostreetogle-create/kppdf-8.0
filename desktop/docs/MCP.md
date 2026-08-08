@@ -148,6 +148,24 @@ Expert path `kppdf_inbox_propose_file` remains (proposals without DB matching).
 | `kppdf_import_task_set_status` | `PATCH /api/import-tasks/:id/status` (whitelist; no matching logic) |
 | `kppdf_import_task_set_report` | TZD-23 — `PATCH /api/import-tasks/:id/report`: matching plan (`counts` + per-row `new/skip/update/doubt`) → `awaiting_user`. **0** journal writes |
 | `kppdf_import_task_apply_plan` | TZD-23 — requires `status=awaiting_user` **and** `userOk:true`; `new`→propose_create, `update`→propose_update, skip/doubt — нет; links `proposalIds` + `status=applying` |
+| `kppdf_import_task_reshape` | TZD-26 — `PATCH /api/import-tasks/:id/rows`: replace rows + `columnMap`/`reshapeNote` (только `draft/ready_for_ai/analyzing/awaiting_user`); сбрасывает `aiReport` → обязателен re-match; **0** journal |
+
+### Column ready / unfit + AI reshape (TZD-26)
+
+1. `kppdf_inbox_classify_columns` (fileName **или** headers+sample) →
+   `{ ready, unfit, mapping, conflicts, sampleRows }` по канону материала
+   (name / unit / article / sku / notes / categoryId).
+2. Колонка в `ready` — можно использовать как есть. `unfit` =
+   unknown (мусор) или conflict (≥2 кандидатов) — человек/агент решает.
+3. При unfit: агент **деформирует колонки, сохраняя смысл** (переименовать
+   заголовок, удалить ценовую колонку, развернуть составное имя) →
+   `kppdf_import_task_reshape` с новыми rows (+ `columnMap` + `reshapeNote`).
+4. После reshape — **обязательно** снова `kppdf_inbox_classify_columns` /
+   re-match (TZD-23 `set_report`). `apply_plan` по старому плану невозможен:
+   reshape сбрасывает `aiReport`.
+
+**Запрет:** не выдумывать EAV-поля / новые колонки схемы; reshape не создаёт
+proposals (0 journal) и не пишет SoT.
 
 ### Variant C protocol (TZD-23) — HITL обязателен
 
@@ -188,10 +206,11 @@ Inbox-папка настраивается в десктоп-приложени
 
 ## Follow-ups
 
-- **TZD-23** ✅ DONE (2026-08-08, wave #1) — matching/HITL brain: `PATCH /api/import-tasks/:id/report` + `/proposals`; MCP `kppdf_import_task_set_report` + `kppdf_import_task_apply_plan` (userOk gate; skip/doubt не propose); Variant C protocol выше. Reshape → **TZD-26**.
+- **TZD-26** ✅ DONE (2026-08-08, wave #2) — column ready/unfit: `kppdf_inbox_classify_columns` (canon|unknown|conflict + mapping + sample) + `kppdf_import_task_reshape` (`PATCH /api/import-tasks/:id/rows`, сброс aiReport, 0 journal); protocol Column ready/reshape выше.
+- **TZD-23** ✅ DONE (2026-08-08, wave #1) — matching/HITL brain: `PATCH /api/import-tasks/:id/report` + `/proposals`; MCP `kppdf_import_task_set_report` + `kppdf_import_task_apply_plan` (userOk gate; skip/doubt не propose); Variant C protocol выше.
 - **TZD-22** ✅ DONE — Import Task assembly: BE `/api/import-tasks` +
   Desktop «Создать задачу для ИИ» + MCP `kppdf_import_task_*`.
-- **TZD-26 / TZD-18 / TZD-19 / TZD-27 / TZD-28 / TZD-29** — следующий порядок волны (см. WAVE-DESKTOP-BULK-IMPORT).
+- **TZD-18 / TZD-19 / TZD-27 / TZD-28 / TZD-29** — следующий порядок волны (см. WAVE-DESKTOP-BULK-IMPORT).
 - **TZD-20** ✅ DONE (2026-08-08) — кнопка «Скопировать mcp.json» / фрагмент в Desktop;
   один HTTP-формат для Cursor + LM Studio; clipboard only (не пишет в чужие mcp.json).
 - **TZD-17** ✅ DONE (2026-08-08) — semantic domain layer: `kppdf_get_domain_schema`, `kppdf_list_categories`, `kppdf_validate_material`, `kppdf_inbox_audit_file` (+ propose `mode=validate`). Validate/audit ≠ proposal ≠ SoT.

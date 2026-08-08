@@ -1,3 +1,13 @@
+## [2026-08-08] — TZD-26 DONE: columns ready/unfit + AI reshape (wave #2)
+
+**Исполнитель:** buffy-desktop-ex (Freebuff desktop executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** `kppdf_inbox_classify_columns` (canonical|unknown|conflict, mapping, sample) + `PATCH /api/import-tasks/:id/rows` (`kppdf_import_task_reshape`; только pre-apply; сброс aiReport → re-match; 0 journal); protocol Column ready/reshape в MCP.md; FEATURE checklist §E.
+**Gates:** BE tsc PASS; jest import-task 12/12; MCP test 44/44; MCP tsc PASS.
+**Archive:** `tasks/_archive/2026-08/TZD-26.done.md`
+**Lock:** `.mimocode/locks/TZD-26-column-ready-reshape.lock`
+**Known:** Deploy NO. Next TZD-18 (batch).
+
 ## [2026-08-08] — TZD-23 DONE: AI matching + HITL plan → propose (wave #1)
 
 **Исполнитель:** buffy-desktop-ex (Freebuff desktop executor)

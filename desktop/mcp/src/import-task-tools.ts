@@ -24,6 +24,7 @@ export const IMPORT_TASK_TOOL_NAMES = [
   'kppdf_import_task_set_status',
   'kppdf_import_task_set_report',
   'kppdf_import_task_apply_plan',
+  'kppdf_import_task_reshape',
 ] as const;
 
 // ── TZD-23 apply_plan core (deps-injected for tests) ─────────────────────────
@@ -458,6 +459,48 @@ export function registerImportTaskTools(
         return toolOk(result);
       } catch (err) {
         return toolFail('kppdf_import_task_apply_plan', err);
+      }
+    },
+  );
+
+  server.registerTool(
+    'kppdf_import_task_reshape',
+    {
+      title: 'Reshape import task rows (AI-safe)',
+      description:
+        'TZD-26: replaces ImportTask rows (+ optional columnMap/reshapeNote) — ' +
+        'only while status is draft/ready_for_ai/analyzing/awaiting_user. ' +
+        'Resets aiReport, so the agent MUST re-audit / re-match ' +
+        '(kppdf_import_task_set_report) before apply_plan. 0 journal writes.',
+      inputSchema: {
+        id: z.string().min(1),
+        rows: z.array(rowSchema).min(1).max(500).describe('Reshaped rows (same shape as create)'),
+        columnMap: z
+          .record(z.string(), z.string().nullable())
+          .optional()
+          .describe('header → canonical (null = dropped column)'),
+        reshapeNote: z.string().optional().describe('Why columns were transformed'),
+      },
+    },
+    async ({ id, rows, columnMap, reshapeNote }) => {
+      try {
+        const result = await backendPatchJson(
+          cfg.apiBaseUrl,
+          cfg.apiKey,
+          `/api/import-tasks/${encodeURIComponent(id)}/rows`,
+          {
+            rows,
+            ...(columnMap !== undefined ? { columnMap } : {}),
+            ...(reshapeNote !== undefined ? { reshapeNote } : {}),
+          },
+        );
+        return toolOk({
+          ok: true,
+          task: result,
+          note: 'Rows replaced — re-audit / re-match (set_report) before apply_plan.',
+        });
+      } catch (err) {
+        return toolFail('kppdf_import_task_reshape', err);
       }
     },
   );

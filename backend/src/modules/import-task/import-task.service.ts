@@ -11,6 +11,7 @@ import {
   CreateImportTaskDto,
   PatchImportTaskProposalsDto,
   PatchImportTaskReportDto,
+  PatchImportTaskRowsDto,
   PatchImportTaskStatusDto,
 } from './dto/create-import-task.dto';
 import {
@@ -190,6 +191,33 @@ export class ImportTaskService {
     return this.toFullView(doc);
   }
 
+  /**
+   * TZD-26 — safe AI reshape: replace rows + columnMap/reshapeNote.
+   * Allowed only pre-apply (draft | ready_for_ai | analyzing | awaiting_user).
+   * Resets aiReport so the agent MUST re-audit / re-match (TZD-23 set_report)
+   * before any apply_plan. Zero journal writes.
+   */
+  async patchRows(
+    id: string,
+    dto: PatchImportTaskRowsDto,
+    user: AuthenticatedUser,
+  ) {
+    const doc = await this.findScoped(id, user);
+    const status = doc.status as ImportTaskStatus;
+    if (status !== 'draft' && status !== 'ready_for_ai' && status !== 'analyzing' && status !== 'awaiting_user') {
+      throw new BadRequestException(
+        `Cannot reshape task in status «${status}» — only draft/ready_for_ai/analyzing/awaiting_user`,
+      );
+    }
+    doc.rows = dto.rows;
+    doc.columnMap = dto.columnMap ?? null;
+    doc.reshapeNote = dto.reshapeNote?.trim() || undefined;
+    // Stale plan — force re-match after reshape.
+    doc.aiReport = null;
+    await doc.save();
+    return this.toFullView(doc);
+  }
+
   /** Soft cancel → status cancelled (preferred over hard delete). */
   async cancel(id: string, user: AuthenticatedUser) {
     return this.patchStatus(id, { status: 'cancelled' }, user);
@@ -277,6 +305,8 @@ export class ImportTaskService {
       rows: d.rows ?? [],
       rowCount: Array.isArray(d.rows) ? d.rows.length : 0,
       aiReport: d.aiReport ?? null,
+      columnMap: d.columnMap ?? null,
+      reshapeNote: d.reshapeNote ?? null,
       proposalIds: (d.proposalIds ?? []).map((x: Types.ObjectId | string) =>
         String(x),
       ),

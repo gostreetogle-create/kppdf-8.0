@@ -127,6 +127,100 @@ const UNIT_COLUMNS = ['unit', 'ед', 'ед.', 'единица', 'ед. изм.'
 const ARTICLE_COLUMNS = ['article', 'артикул'];
 const SKU_COLUMNS = ['sku', 'код', 'код товара', 'штрихкод'];
 const CATEGORY_COLUMNS = ['categoryId', 'категория', 'category'];
+const NOTES_COLUMNS = ['notes', 'примечание', 'примечания', 'комментарий', 'комментарии', 'заметки'];
+
+// ── TZD-26: ready/unfit column classification (material Wave-1 canon) ────────
+
+/** Канонические колонки материала (Wave-1) и их алиасы (RU+EN). */
+export const CANONICAL_COLUMN_ALIASES: Record<string, readonly string[]> = {
+  name: NAME_COLUMNS,
+  unit: UNIT_COLUMNS,
+  article: ARTICLE_COLUMNS,
+  sku: SKU_COLUMNS,
+  notes: NOTES_COLUMNS,
+  categoryId: CATEGORY_COLUMNS,
+};
+
+export const CANONICAL_COLUMNS = Object.keys(CANONICAL_COLUMN_ALIASES) as Array<
+  keyof typeof CANONICAL_COLUMN_ALIASES
+>;
+
+export interface ColumnClassifyResult {
+  /** Header names that map to exactly one canonical column. */
+  ready: string[];
+  /** Header names with no mapping (unknown) or ambiguous (conflict). */
+  unfit: string[];
+  /** header → canonical | null (null = unknown/conflict). */
+  mapping: Record<string, string | null>;
+  /** header → candidate canonicals when ambiguous (subset of unfit). */
+  conflicts: Record<string, string[]>;
+}
+
+function normalizeHeader(h: string): string {
+  return h.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+/**
+ * Классифицирует заголовки колонок против канона материала:
+ * exact-match → canonical; иначе substring (alias ⊂ header или header ⊂ alias);
+ * ≥2 разных канонов → conflict (unfit). Read-only — 0 proposals, 0 SoT.
+ */
+export function classifyColumns(headers: readonly string[]): ColumnClassifyResult {
+  const ready: string[] = [];
+  const unfit: string[] = [];
+  const mapping: Record<string, string | null> = {};
+  const conflicts: Record<string, string[]> = {};
+
+  for (const header of headers) {
+    const h = normalizeHeader(header);
+    if (!h) {
+      unfit.push(header);
+      mapping[header] = null;
+      continue;
+    }
+    const matched: string[] = [];
+    for (const canonical of CANONICAL_COLUMNS) {
+      const aliases = CANONICAL_COLUMN_ALIASES[canonical];
+      const exact = aliases.some((a) => normalizeHeader(a) === h);
+      const sub = aliases.some((a) => {
+        const al = normalizeHeader(a);
+        return al.length > 1 && (h.includes(al) || al.includes(h));
+      });
+      if (exact || sub) matched.push(canonical);
+    }
+    const uniq = [...new Set(matched)];
+    if (uniq.length === 1) {
+      mapping[header] = uniq[0];
+      ready.push(header);
+    } else {
+      mapping[header] = null;
+      unfit.push(header);
+      if (uniq.length > 1) conflicts[header] = uniq;
+    }
+  }
+
+  return { ready, unfit, mapping, conflicts };
+}
+
+/**
+ * Применяет header→canonical map к сырой строке (AI reshape):
+ * колонки с mapping=null (или отсутствующие в map) отбрасываются; при дубле
+ * канона первая колонка побеждает. Смысл данных сохраняется — только имя колонки.
+ */
+export function reshapeRowByMap(
+  row: RawRow,
+  mapping: Record<string, string | null>,
+): RawRow {
+  const out: RawRow = {};
+  for (const [header, value] of Object.entries(row)) {
+    const canonical = mapping[header] ?? null;
+    if (!canonical) continue;
+    if (out[canonical] === undefined) {
+      out[canonical] = value;
+    }
+  }
+  return out;
+}
 
 function firstValue(row: RawRow, aliases: readonly string[]): string | undefined {
   for (const alias of aliases) {

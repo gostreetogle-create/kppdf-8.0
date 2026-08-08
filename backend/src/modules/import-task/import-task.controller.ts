@@ -18,6 +18,7 @@ import {
   CreateImportTaskDto,
   PatchImportTaskProposalsDto,
   PatchImportTaskReportDto,
+  PatchImportTaskRowsDto,
   PatchImportTaskStatusDto,
 } from './dto/create-import-task.dto';
 import { ImportTaskService } from './import-task.service';
@@ -111,6 +112,20 @@ export class ImportTaskController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.service.patchProposals(id, dto, user);
+  }
+
+  @Patch(':id/rows')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'update', entityType: 'ImportTask', idParam: 'id' })
+  @ApiOperation({
+    summary: 'TZD-26 — safe AI reshape: replace rows (+columnMap/reshapeNote), resets aiReport',
+  })
+  patchRows(
+    @Param('id') id: string,
+    @Body() dto: PatchImportTaskRowsDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.patchRows(id, dto, user);
   }
 
   @Post(':id/cancel')

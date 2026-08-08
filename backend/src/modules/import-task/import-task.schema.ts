@@ -111,6 +111,14 @@ export class ImportTask {
   @Prop({ type: Object, default: null })
   aiReport!: AiReport | null;
 
+  /** TZD-26 — header→canonical map after AI reshape (null = unknown/conflict). */
+  @Prop({ type: Object, default: null })
+  columnMap?: Record<string, string | null> | null;
+
+  /** TZD-26 — human-readable reshape note (why columns were transformed). */
+  @Prop()
+  reshapeNote?: string;
+
   /** Links to mutation_journal after apply (TZD-23); empty in this TZ. */
   @Prop({ type: [Types.ObjectId], default: [] })
   proposalIds!: Types.ObjectId[];
