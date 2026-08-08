@@ -1,55 +1,41 @@
 # SESSION QUEUE — continuous executor
 
-**Updated:** 2026-08-08T09:20Z · wave **FORM-302→305**  
-**Wave file:** `docs/agent-checklists/SESSION-WAVE-2026-08-08-form-unify.md`
+**Updated:** 2026-08-08T09:35Z · **ALERT: FORM wave not on main**
 
-## DONE this session
+## DONE on main
 
 | Item | SHA / note |
 |------|------------|
-| … prior stream … | ORDERS/NAV/SUPPLY/SALES/DICT/ADMIN/UX-301…307 |
-| **TZ-UX-DIALOG-302** | QuickCreate shell A–D |
-| **TZ-UX-307** | nav shortLabel + compact height |
-| **TZ-UX-FORM-301** | field capacity packing |
-| **TZ-UX-308** | Справ. yellow on /categories |
+| … prior … | UX-307, FORM-301, UX-308 (`218082a8`) |
+| TZ docs | NAV-302 + FORM wave freeze on `main` @ `ea0fb6c7` |
 
-## READY / NEXT
+## FORM-302→305 — code exists, NOT merged to main
 
-### Lane A — FORM (уже у агента)
+| TZ | SHA | Where |
+|----|-----|--------|
+| FORM-302 | `7bc88e17` | branch `freebuff/executor-kppdf-8-27b6af5d-6e1c-4846-ad15-e1bb83be400c` (+ origin) |
+| FORM-303 | `ca77188c` | same |
+| FORM-304 | `78179591` | same |
+| FORM-305 A | `e485f521` | same · Wave B park |
+
+**Closeout gap:** agent reported «на main / очередь пуста» — фактически `origin/main` = `ea0fb6c7` **без** этих 4 commits. Нужен merge → main после NAV-302 или отдельным merge-агентом.
+
+## IN PROGRESS
 
 | ID | Status |
 |----|--------|
-| **TZ-UX-FORM-302→305** | секции / фото / состав / sweep — **IN FLIGHT elsewhere** |
-
-### Lane B — NAV IA (параллель OK)
-
-| ID | Status |
-|----|--------|
-| **TZ-NAV-302** | people→clients, work-types→цех, chips, заказ виден — **READY parallel** |
-
-Wave: `SESSION-WAVE-2026-08-08-nav-ia.md`
+| **TZ-NAV-302** | local WIP on `main` working tree (`tasks/_active/TZ-NAV-302.md`) |
 
 ## PARK
 
 | ID | Why |
 |----|-----|
-| TZ-UX-302 / 303 | chrome — после FORM |
-| TZ-SALES-304 | KP UX later |
-| SUPPLY-302 / Production deep | later |
+| FORM-305 Wave B | deferred in audit |
+| TZ-UX-302 chrome | after merge + NAV |
 | deploy | только «задеплой» |
 
-## PARK
-
-| ID | Why |
-|----|-----|
-| Production deep | later |
-| SUPPLY-302 | BOM auto-explode |
-| legacy form→kind C | outliers |
-| deploy | только «задеплой» |
-
-## Checkpoint 2026-08-08T08:58Z
-- DONE: **TZ-UX-308** (nav Справ. yellow /categories)
-- NEXT: FORM-302→305
+## Checkpoint 2026-08-08T09:35Z
+- FORM wave: PASS intent on freebuff branch; **FAIL delivery to main**
+- NAV-302: in progress locally
 - Deploy: NO
-- _active/: empty
-- HEAD: `218082a8`
+- Action: finish NAV-302 → merge FORM branch into main → browser check QC L
