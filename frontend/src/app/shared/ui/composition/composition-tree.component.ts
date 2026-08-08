@@ -121,7 +121,7 @@ export type CompositionTreeSelectEvent = {
         </div>
         @if (isExpanded(node) && node.children.length > 0) {
           <div
-            class="comp-tree__nest ml-2.5 mr-1 mt-1.5 mb-3 space-y-3 rounded-md border border-solid border-l-[3px] pt-2.5 pr-2.5 pb-2.5 pl-3"
+            class="comp-tree__nest ml-5 mr-1 mt-2 mb-3 space-y-4 rounded-md border border-solid border-l-[3px] pt-2.5 pr-2.5 pb-2.5 pl-5"
             [style.background]="nestWash(node)"
             [style.border-color]="nestBorder(node)"
             [style.border-left-color]="kindBorder(node)"

@@ -30,9 +30,10 @@
    детей. Свёрнуто → nest нет в DOM. Module-in-module = рамка в рамке.
    Не Excel-колонки. Канон смысла:
    [`docs/audits/2026-08-08-composition-containment-outline.md`](../audits/2026-08-08-composition-containment-outline.md).
-10. **Пачки / cohesion (TZ-334):** соседние nest читаются как отдельные блоки —
-    sibling gap (`space-y-3` / `mb-3`), left rail 3px `catalogKindBorder(parent)`,
-    усиленный wash, indent детей внутри nest (`pl-3`). Expand/клик без изменений.
+10. **Пачки / cohesion (TZ-334+):** соседние nest читаются как отдельные блоки —
+    sibling gap (`space-y-4` / `mb-3`), left rail 3px `catalogKindBorder(parent)`,
+    усиленный wash, сдвиг nest вправо (`ml-5`) + indent внутри (`pl-5`).
+    Expand/клик без изменений.
     Канон:
     [`docs/audits/2026-08-08-composition-block-cohesion-visual.md`](../audits/2026-08-08-composition-block-cohesion-visual.md).
 
