@@ -17,6 +17,8 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
   const listUrl = `${baseUrl}/quotations`;
   const dialogSpy = { open: jest.fn().mockReturnValue({}) };
   /** Reconfigurable per-test (cannot use overrideProvider after compile). */
+  const freezeMock = jest.fn(() => of({ ok: true, data: {} as never }));
+  const listVersionsMock = jest.fn(() => of({ ok: true, data: [] }));
   const convertToOrderMock = jest.fn(() =>
     of({ ok: true, data: { quotation: {}, orderId: 'ord-42' } }),
   );
@@ -56,6 +58,10 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
 
   beforeEach(async () => {
     dialogSpy.open.mockClear();
+    freezeMock.mockReset();
+    listVersionsMock.mockReset();
+    freezeMock.mockReturnValue(of({ ok: true, data: {} as never }));
+    listVersionsMock.mockReturnValue(of({ ok: true, data: [] }));
     convertToOrderMock.mockReset();
     convertToOrderMock.mockReturnValue(
       of({ ok: true, data: { quotation: {}, orderId: 'ord-42' } }),
@@ -74,6 +80,9 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
             update: () => of({ ok: true, data: {} as never }),
             remove: () => of({ ok: true, data: undefined }),
             duplicate: () => of({ ok: true, data: {} as never }),
+            freeze: freezeMock,
+            listVersions: listVersionsMock,
+            getVersion: () => of({ ok: true, data: {} as never }),
             convertToOrder: convertToOrderMock,
           },
         },
@@ -265,7 +274,9 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
     await tickMicrotask();
     fixture.detectChanges();
 
-    const comp = fixture.componentInstance as unknown as { onConvertToOrder: (p: Proposal) => void };
+    const comp = fixture.componentInstance as unknown as {
+      onConvertToOrder: (p: Proposal) => void;
+    };
     comp.onConvertToOrder(fakeProposals[1]); // draft
     expect(dialogSpy.open).not.toHaveBeenCalled();
   });
@@ -277,7 +288,9 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
     await tickMicrotask();
     fixture.detectChanges();
 
-    const comp = fixture.componentInstance as unknown as { onConvertToOrder: (p: Proposal) => void };
+    const comp = fixture.componentInstance as unknown as {
+      onConvertToOrder: (p: Proposal) => void;
+    };
     comp.onConvertToOrder(fakeProposals[0]); // accepted
     expect(dialogSpy.open).toHaveBeenCalled();
     const data = dialogSpy.open.mock.calls[0][1]?.data;
@@ -294,7 +307,9 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
     await tickMicrotask();
     fixture.detectChanges();
 
-    const comp = fixture.componentInstance as unknown as { onConvertToOrder: (p: Proposal) => void };
+    const comp = fixture.componentInstance as unknown as {
+      onConvertToOrder: (p: Proposal) => void;
+    };
     comp.onConvertToOrder(fakeProposals[0]);
     closeSignal.set(true); // user confirms
     await tickMicrotask();
@@ -320,7 +335,9 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
     await tickMicrotask();
     fixture.detectChanges();
 
-    const comp = fixture.componentInstance as unknown as { onConvertToOrder: (p: Proposal) => void };
+    const comp = fixture.componentInstance as unknown as {
+      onConvertToOrder: (p: Proposal) => void;
+    };
     comp.onConvertToOrder(fakeProposals[0]);
     closeSignal.set(true);
     await tickMicrotask();
@@ -329,6 +346,19 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
     expect(convertToOrderMock).toHaveBeenCalledWith('p1');
     // No reload GET on failure — afterEach httpMock.verify() confirms
     // no pending requests remain.
+  });
+
+  it('freezes a quotation and reloads its visible version history', async () => {
+    const fixture = TestBed.createComponent(ProposalsPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush(fakeProposals);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as { onFreeze: (p: Proposal) => void };
+    comp.onFreeze(fakeProposals[0]);
+    expect(freezeMock).toHaveBeenCalledWith('p1');
+    expect(listVersionsMock).toHaveBeenCalledWith('p1');
   });
 
   it('resolves the counterparty name via the lookup (dual-shape id/object)', async () => {

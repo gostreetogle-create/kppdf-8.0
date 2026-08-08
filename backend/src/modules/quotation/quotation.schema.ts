@@ -36,6 +36,24 @@ export class QuotationItem {
 
 const QuotationItemSchema = SchemaFactory.createForClass(QuotationItem);
 
+/** Immutable payload captured when a quotation is frozen/sent (SALES-302). */
+@Schema({ _id: false })
+export class QuotationVersion {
+  @Prop({ required: true })
+  version!: number;
+
+  @Prop({ required: true })
+  frozenAt!: Date;
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  frozenBy?: Types.ObjectId;
+
+  @Prop({ type: Object, required: true })
+  payload!: Record<string, unknown>;
+}
+
+const QuotationVersionSchema = SchemaFactory.createForClass(QuotationVersion);
+
 export type QuotationStatus = 'draft' | 'sent' | 'accepted' | 'rejected' | 'converted' | 'cancelled';
 export type DiscountType = 'none' | 'percent' | 'amount';
 /** D21 / SALES-303: solo = standalone; master = family root; variant = org clone. */
@@ -124,6 +142,14 @@ export class Quotation {
 
   @Prop({ type: [QuotationItemSchema], default: [] })
   items!: QuotationItem[];
+
+  /** Last immutable snapshot number; legacy quotations start at zero. */
+  @Prop({ required: true, default: 0 })
+  currentVersion!: number;
+
+  /** Embedded snapshots are never edited by ordinary quotation PATCH calls. */
+  @Prop({ type: [QuotationVersionSchema], default: [] })
+  versions!: QuotationVersion[];
 
   @Prop()
   convertedContractId?: string;

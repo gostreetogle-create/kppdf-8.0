@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { QuotationService } from './quotation.service';
 import { QuotationStatus } from './quotation.schema';
@@ -22,6 +22,10 @@ function quotationDoc(overrides: Record<string, unknown> = {}) {
     orgMarkupPercent: undefined as number | undefined,
     masterId: undefined as Types.ObjectId | undefined,
     convertedOrderId: undefined as string | undefined,
+    convertedContractId: undefined as string | undefined,
+    isActive: true,
+    currentVersion: 0,
+    versions: [] as Array<{ version: number; frozenAt: Date; frozenBy?: Types.ObjectId; payload: Record<string, unknown> }>,
     save: jest.fn().mockImplementation(function (this: unknown) {
       return Promise.resolve(this);
     }),
@@ -44,7 +48,7 @@ function createService(overrides: Record<string, unknown> = {}) {
     find: jest.fn(),
     findById: jest.fn(),
     create: jest.fn(),
-    updateOne: jest.fn(),
+    updateOne: jest.fn().mockReturnValue(mockQuery({ matchedCount: 1 })),
   };
   const counter = { next: jest.fn().mockResolvedValue('QTN-0001') };
   const contractService = { create: jest.fn().mockResolvedValue({ _id: new Types.ObjectId() }) };
@@ -276,6 +280,70 @@ describe('QuotationService — SALES-301 (КП thin UI)', () => {
         notes: 'Дубликат QTN-0001',
       });
     });
+  });
+});
+
+describe('QuotationService - SALES-302 immutable versions', () => {
+  it('freezes an immutable snapshot with version and actor metadata', async () => {
+    const { service, model } = createService();
+    const doc = quotationDoc({
+      currentVersion: 0,
+      items: [{ productId: new Types.ObjectId(), productName: 'Stand', quantity: 2, unitPrice: 10, total: 20 }],
+      total: 20,
+    });
+    model.findById.mockReturnValue(mockQuery(doc));
+    await service.freeze(doc._id.toString(), new Types.ObjectId().toString());
+
+    expect(doc.currentVersion).toBe(1);
+    expect(doc.versions).toHaveLength(1);
+    expect(doc.versions[0].version).toBe(1);
+    expect(doc.versions[0].frozenBy).toBeInstanceOf(Types.ObjectId);
+    expect(doc.versions[0].payload).toMatchObject({
+      total: 20,
+      familyRole: 'solo',
+      familyVersion: 1,
+      isActive: true,
+    });
+    expect((doc.versions[0].payload.items as Array<Record<string, unknown>>)[0].productName).toBe('Stand');
+    expect(model.updateOne).toHaveBeenCalledWith(
+      { _id: doc._id, currentVersion: 0 },
+      expect.objectContaining({ $set: { currentVersion: 1 }, $push: expect.any(Object) }),
+    );
+  });
+
+  it('does not mutate an old snapshot when the editable quotation changes', async () => {
+    const { service, model } = createService();
+    const snapshot = { version: 1, frozenAt: new Date(), payload: { title: 'Old', items: [{ productName: 'Old name' }] } };
+    const doc = quotationDoc({ currentVersion: 1, versions: [snapshot] });
+    model.findById.mockReturnValue(mockQuery(doc));
+    await service.update(doc._id.toString(), {
+      items: [{ productId: new Types.ObjectId().toString(), productName: 'New name', quantity: 1, unitPrice: 1 }],
+    } as never);
+
+    expect((doc.versions[0].payload.items as Array<Record<string, unknown>>)[0].productName).toBe('Old name');
+  });
+
+  it('retries an optimistic conflict and fails without appending a local snapshot', async () => {
+    const { service, model } = createService();
+    const doc = quotationDoc({ currentVersion: 1, versions: [] });
+    model.findById.mockReturnValue(mockQuery(doc));
+    model.updateOne.mockReturnValue(mockQuery({ matchedCount: 0 }));
+
+    await expect(service.freeze(doc._id.toString())).rejects.toBeInstanceOf(ConflictException);
+    expect(model.updateOne).toHaveBeenCalledTimes(5);
+    expect(doc.versions).toHaveLength(0);
+  });
+
+  it('lists versions and returns one snapshot by number', async () => {
+    const { service, model } = createService();
+    const snapshot = { version: 1, frozenAt: new Date(), payload: { title: 'Old' } };
+    const doc = quotationDoc({ versions: [snapshot], currentVersion: 1 });
+    model.findById.mockReturnValue(mockQuery(doc));
+
+    await expect(service.listVersions(doc._id.toString())).resolves.toEqual([
+      { version: 1, frozenAt: snapshot.frozenAt, frozenBy: undefined },
+    ]);
+    await expect(service.getVersion(doc._id.toString(), 1)).resolves.toBe(snapshot);
   });
 });
 

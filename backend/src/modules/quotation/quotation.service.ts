@@ -166,6 +166,110 @@ export class QuotationService {
     return doc.save();
   }
 
+  /**
+   * Freeze the current editable quotation into an embedded immutable snapshot.
+   * Ordinary PATCH operations never address `versions`, so later line edits
+   * cannot mutate a snapshot already sent to a customer.
+   */
+  async freeze(id: string, frozenBy?: string): Promise<QuotationDocument> {
+    const maxAttempts = 5;
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      const doc = await this.findByIdRaw(id);
+      const existingMax = (doc.versions ?? []).reduce(
+        (max, snapshot) => Math.max(max, snapshot.version),
+        0,
+      );
+      const version = Math.max(doc.currentVersion ?? 0, existingMax) + 1;
+      const frozenAt = new Date();
+      const payload: Record<string, unknown> = {
+        number: doc.number,
+        organizationId: doc.organizationId.toString(),
+        counterpartyId: doc.counterpartyId.toString(),
+        tenderId: doc.tenderId?.toString(),
+        title: doc.title,
+        date: doc.date,
+        validUntil: doc.validUntil,
+        status: doc.status,
+        total: doc.total,
+        discountType: doc.discountType,
+        discountPercent: doc.discountPercent,
+        discountAmount: doc.discountAmount,
+        notes: doc.notes,
+        familyRole: doc.familyRole,
+        masterId: doc.masterId?.toString(),
+        familyVersion: doc.familyVersion,
+        orgMarkupPercent: doc.orgMarkupPercent,
+        isActive: doc.isActive,
+        convertedContractId: doc.convertedContractId,
+        convertedOrderId: doc.convertedOrderId,
+        templateId: doc.templateId?.toString(),
+        designSnapshot: doc.designSnapshot,
+        templateSnapshot: doc.templateSnapshot,
+        items: this.cloneItems(doc.items).map((item) => ({
+          ...item,
+          productId: item.productId.toString(),
+        })),
+      };
+      const snapshot = {
+        version,
+        frozenAt,
+        frozenBy:
+          frozenBy && Types.ObjectId.isValid(frozenBy)
+            ? new Types.ObjectId(frozenBy)
+            : undefined,
+        payload,
+      };
+      const currentVersion = doc.currentVersion ?? 0;
+      const versionFilter =
+        doc.currentVersion == null
+          ? { _id: doc._id, currentVersion: { $exists: false } }
+          : { _id: doc._id, currentVersion };
+      const result = await this.model
+        .updateOne(
+          versionFilter,
+          {
+            $set: { currentVersion: version },
+            $push: { versions: snapshot },
+          },
+        )
+        .exec();
+      if (result.matchedCount === 1) {
+        doc.currentVersion = version;
+        doc.versions = [...(doc.versions ?? []), snapshot];
+        return doc;
+      }
+    }
+    throw new ConflictException('Quotation changed while freezing; please retry');
+  }
+
+  async listVersions(
+    id: string,
+  ): Promise<Array<{ version: number; frozenAt: Date; frozenBy?: Types.ObjectId }>> {
+    const doc = await this.findByIdRaw(id);
+    return (doc.versions ?? []).map(({ version, frozenAt, frozenBy }) => ({
+      version,
+      frozenAt,
+      frozenBy,
+    }));
+  }
+
+  async getVersion(
+    id: string,
+    version: number,
+  ): Promise<{
+    version: number;
+    frozenAt: Date;
+    frozenBy?: Types.ObjectId;
+    payload: Record<string, unknown>;
+  }> {
+    const doc = await this.findByIdRaw(id);
+    const snapshot = (doc.versions ?? []).find((item) => item.version === version);
+    if (!snapshot) {
+      throw new NotFoundException(`Quotation ${id} version ${version} not found`);
+    }
+    return snapshot;
+  }
+
   async duplicate(id: string): Promise<QuotationDocument> {
     const src = await this.findById(id);
     const number = await this.counter.next('Quotation', 'QTN');

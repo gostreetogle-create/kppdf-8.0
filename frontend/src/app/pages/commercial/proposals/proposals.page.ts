@@ -34,6 +34,7 @@ import {
 import {
   Proposal,
   ProposalStatus,
+  ProposalVersionSummary,
   ProposalsService,
 } from '../../../shared/services/pi-proposals.service';
 import { ProposalFormDialogComponent } from './proposal-form-dialog.component';
@@ -215,6 +216,43 @@ function counterpartyIdOf(row: Proposal): string {
               </button>
             </ng-template>
 
+            <ng-template #versionsTpl let-row>
+              <div class="flex flex-col items-end gap-1">
+                <button
+                  type="button"
+                  class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring"
+                  [attr.data-test]="'freeze-button-' + row._id"
+                  [attr.aria-label]="'Зафиксировать версию КП ' + row.number"
+                  (click)="onFreeze(row)"
+                >
+                  {{ (row.currentVersion ?? 0) > 0 ? 'Ещё версия' : 'Зафиксировать' }}
+                </button>
+                @if ((row.currentVersion ?? 0) > 0) {
+                  <button
+                    type="button"
+                    class="text-[10px] underline underline-offset-2 text-muted-foreground pi-focus-ring"
+                    [attr.data-test]="'versions-button-' + row._id"
+                    (click)="toggleVersions(row)"
+                  >
+                    {{
+                      expandedVersionsId() === row._id
+                        ? 'Скрыть версии'
+                        : 'История (' + row.currentVersion + ')'
+                    }}
+                  </button>
+                }
+                @if (expandedVersionsId() === row._id) {
+                  <div class="text-right space-y-0.5" data-test="version-list">
+                    @for (version of versionsFor(row._id); track version.version) {
+                      <span class="block text-[10px] font-mono text-muted-foreground">
+                        v{{ version.version }} · {{ formatVersionDate(version.frozenAt) }}
+                      </span>
+                    }
+                  </div>
+                }
+              </div>
+            </ng-template>
+
             <ng-template #rowActionsTpl let-row>
               <app-pi-row-actions
                 [row]="row"
@@ -250,6 +288,9 @@ export class ProposalsPage implements OnInit {
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+
+  protected readonly expandedVersionsId = signal<string | null>(null);
+  private readonly versionsByProposal = signal<Record<string, ProposalVersionSummary[]>>({});
 
   protected readonly RefreshIcon = RefreshCw;
 
@@ -365,6 +406,12 @@ export class ProposalsPage implements OnInit {
       width: '88px',
       cellClass: 'text-right',
     },
+    {
+      key: 'currentVersion',
+      label: 'Версии',
+      width: '150px',
+      cellClass: 'text-right',
+    },
   ];
 
   // ─── Template refs (resolved at view init, static:true → BEFORE ngOnInit) ──
@@ -374,6 +421,8 @@ export class ProposalsPage implements OnInit {
   private readonly statusTplRef!: TemplateRef<{ $implicit: Proposal }>;
   @ViewChild('convertTpl', { static: true })
   private readonly convertTplRef!: TemplateRef<{ $implicit: Proposal }>;
+  @ViewChild('versionsTpl', { static: true })
+  private readonly versionsTplRef!: TemplateRef<{ $implicit: Proposal }>;
   @ViewChild('rowActionsTpl', { static: true })
   private readonly rowActionsTplRef!: TemplateRef<{ $implicit: Proposal }>;
 
@@ -387,6 +436,7 @@ export class ProposalsPage implements OnInit {
       counterpartyId: this.counterpartyTplRef,
       status: this.statusTplRef,
       convertedOrderId: this.convertTplRef,
+      currentVersion: this.versionsTplRef,
     };
     this.rowActionsTplBinding = this.rowActionsTplRef;
   }
@@ -443,6 +493,45 @@ export class ProposalsPage implements OnInit {
           this.toast.error(extractErrorMessage(res.error));
         }
       });
+    });
+  }
+
+  protected onFreeze(row: Proposal): void {
+    this.service.freeze(row._id).subscribe((res) => {
+      if (res.ok) {
+        this.toast.success(`Версия КП ${row.number} зафиксирована`);
+        this.loadVersions(row._id);
+        this.listRes.reload();
+      } else {
+        this.toast.error(extractErrorMessage(res.error));
+      }
+    });
+  }
+
+  protected toggleVersions(row: Proposal): void {
+    if (this.expandedVersionsId() === row._id) {
+      this.expandedVersionsId.set(null);
+      return;
+    }
+    this.expandedVersionsId.set(row._id);
+    this.loadVersions(row._id);
+  }
+
+  protected versionsFor(id: string): ProposalVersionSummary[] {
+    return this.versionsByProposal()[id] ?? [];
+  }
+
+  protected formatVersionDate(iso: string): string {
+    return new Date(iso).toLocaleDateString('ru-RU');
+  }
+
+  private loadVersions(id: string): void {
+    this.service.listVersions(id).subscribe((res) => {
+      if (res.ok) {
+        this.versionsByProposal.update((all) => ({ ...all, [id]: res.data }));
+      } else {
+        this.toast.error(extractErrorMessage(res.error));
+      }
     });
   }
 

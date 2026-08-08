@@ -1,3 +1,13 @@
+
+## Checkpoint 2026-08-08T14:20:00Z
+- DONE: TZ-SALES-302 — immutable quotation versions
+- IN PROGRESS: none
+- NOT DONE: TZ-UX-FACT-303 → TZ-UX-FACT-304 → TZ-UX-FORM-307
+- NEXT: TZ-UX-FACT-303
+- HEAD: uncommitted SALES-302 WIP pending explicit commit+push
+- Blockers: none for SALES-302; unrelated WIP remains outside scope
+- _active/: empty for SALES-302; other active markers are not touched
+
 # SESSION QUEUE
 
 **Updated:** 2026-08-08 · WAVE-UI-TYPE-COLOR COMPLETE

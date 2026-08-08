@@ -10,13 +10,7 @@ import {
   SilentResult,
 } from '../../core/silent-http';
 
-export type ProposalStatus =
-  | 'draft'
-  | 'sent'
-  | 'accepted'
-  | 'rejected'
-  | 'converted'
-  | 'cancelled';
+export type ProposalStatus = 'draft' | 'sent' | 'accepted' | 'rejected' | 'converted' | 'cancelled';
 
 export type DiscountType = 'none' | 'percent' | 'amount';
 
@@ -31,6 +25,17 @@ export interface ProposalItem {
   unitPrice: number;
   markupPercent?: number;
   total?: number;
+}
+
+export interface ProposalVersionSummary {
+  version: number;
+  frozenAt: string;
+}
+
+export interface ProposalVersion {
+  version: number;
+  frozenAt: string;
+  payload: Record<string, unknown>;
 }
 
 export interface Proposal {
@@ -57,6 +62,7 @@ export interface Proposal {
   convertedOrderId?: string;
   createdAt?: string;
   updatedAt?: string;
+  currentVersion?: number;
 }
 
 /**
@@ -98,6 +104,24 @@ export class ProposalsService {
 
   remove(id: string): Observable<SilentResult<void>> {
     return silentDelete<void>(this.http, `${this.baseUrl}/quotations/${id}`);
+  }
+
+  freeze(id: string): Observable<SilentResult<Proposal>> {
+    return silentPost<Proposal>(this.http, `${this.baseUrl}/quotations/${id}/freeze`, {});
+  }
+
+  listVersions(id: string): Observable<SilentResult<ProposalVersionSummary[]>> {
+    return silentGet<ProposalVersionSummary[]>(
+      this.http,
+      `${this.baseUrl}/quotations/${id}/versions`,
+    );
+  }
+
+  getVersion(id: string, version: number): Observable<SilentResult<ProposalVersion>> {
+    return silentGet<ProposalVersion>(
+      this.http,
+      `${this.baseUrl}/quotations/${id}/versions/${version}`,
+    );
   }
 
   duplicate(id: string): Observable<SilentResult<Proposal>> {

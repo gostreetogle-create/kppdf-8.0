@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -10,6 +11,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { QuotationService } from './quotation.service';
 import { CreateQuotationDto } from './dto/create-quotation.dto';
 import { UpdateQuotationDto } from './dto/update-quotation.dto';
@@ -42,6 +44,27 @@ export class QuotationController {
   @Get(':id/family')
   getFamily(@Param('id') id: string) {
     return this.service.getFamily(id);
+  }
+
+  @Post(':id/freeze')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'freeze', entityType: 'Quotation' })
+  freeze(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.service.freeze(id, user.id);
+  }
+
+  @Get(':id/versions')
+  listVersions(@Param('id') id: string) {
+    return this.service.listVersions(id);
+  }
+
+  @Get(':id/versions/:version')
+  getVersion(@Param('id') id: string, @Param('version') version: string) {
+    const parsedVersion = Number(version);
+    if (!Number.isInteger(parsedVersion) || parsedVersion < 1) {
+      throw new BadRequestException('Version must be a positive integer');
+    }
+    return this.service.getVersion(id, parsedVersion);
   }
 
   @Get(':id')
