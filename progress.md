@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-FORM-304 DONE: QuickCreate L composition reuse
+
+**Исполнитель:** Buffy / agent-acfffc1331
+**Статус:** DONE on executor branch; deploy НЕ
+**Что:** Product QuickCreate L после create остаётся в том же окне с живым `productId`; секция «Состав» напрямую переиспользует `ProductBomPanel`, включая picker/actions; «Готово» закрывает, пустой BOM допустим; max-width состава ограничен `min(1100px, 100vw - 2rem)`.
+**Gates:** FE tsc PASS; Angular development build PASS; targeted Jest QuickCreate + BOM 18/18 PASS; scoped ESLint/Prettier PASS; diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-FORM-304.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-FORM-304-quickcreate-L-composition.lock`
+**Known:** Module L remains product-only and closes after create; extending that flow was outside the required Product L path. Deploy: NO.
+
 ## [2026-08-08] — TZ-UX-FORM-303 DONE: QuickCreate L photo dropzone
 
 **Исполнитель:** Buffy / agent-acfffc1331

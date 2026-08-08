@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -17,15 +18,18 @@ import {
 } from '../../services/form-profiles.service';
 import { ProductsService } from '../../services/products.service';
 import { ProductModulesService } from '../../services/pi-product-modules.service';
+import { MaterialsService } from '../../services/materials.service';
 import { CategoriesService } from '../../services/categories.service';
 import { PiToastService } from '../toast';
 import { PhotosService } from '../../services/photos.service';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../dialog/dialog.tokens';
+import { PiDialogService } from '../dialog/pi-dialog.service';
 import type { SilentResult } from '../../../core/silent-http';
 import { FIELD_KEY_LABEL_RU } from '../../services/form-profiles.service';
 import { FIELD_CAPACITY, spanForKey } from './field-capacity';
 import { PiFormSectionComponent } from '../form-section';
 import { PiPhotoDropzoneComponent } from '../photo';
+import { ProductBomPanelComponent } from '../../../pages/products/product-bom-panel.component';
 import type { Photo } from '../../services/photos.service';
 
 describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
@@ -75,7 +79,7 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
     labelRu: (fieldKey: string) => string;
   };
   let products: { create: jest.Mock };
-  let modules: { create: jest.Mock };
+  let modules: Record<string, jest.Mock>;
 
   async function setup(data: QuickCreateDialogData) {
     profiles = {
@@ -85,11 +89,52 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
     };
     products = {
       create: jest.fn().mockReturnValue(of(ok({ _id: 'p1', name: 'X', kind: 'good', unit: 'шт' }))),
+      findById: jest.fn().mockReturnValue(of(ok({ _id: 'p2', name: 'Child', costPrice: 100 }))),
     };
     modules = {
       create: jest
         .fn()
         .mockReturnValue(of(ok({ _id: 'm1', name: 'Mod', workTypes: [], materials: [] }))),
+      getProductTree: jest.fn().mockReturnValue(
+        of(
+          ok({
+            _id: 'p1',
+            name: 'X',
+            kind: 'product',
+            quantity: 1,
+            children: [],
+          }),
+        ),
+      ),
+      getModuleTree: jest.fn().mockReturnValue(
+        of(
+          ok({
+            _id: 'm1',
+            name: 'Mod',
+            kind: 'module',
+            quantity: 1,
+            children: [],
+          }),
+        ),
+      ),
+      getProductComposition: jest.fn().mockReturnValue(of(ok([]))),
+      getModuleComposition: jest.fn().mockReturnValue(of(ok([]))),
+      getCostPreview: jest.fn().mockReturnValue(
+        of(
+          ok({
+            materialCost: 0,
+            laborCost: 0,
+            totalCost: 0,
+            currency: 'RUB',
+          }),
+        ),
+      ),
+      addProductCompositionLine: jest.fn().mockReturnValue(of(ok([]))),
+      addModuleCompositionLine: jest.fn().mockReturnValue(of(ok([]))),
+      updateProductCompositionLine: jest.fn().mockReturnValue(of(ok([]))),
+      updateModuleCompositionLine: jest.fn().mockReturnValue(of(ok([]))),
+      removeProductCompositionLine: jest.fn().mockReturnValue(of(ok(undefined))),
+      removeModuleCompositionLine: jest.fn().mockReturnValue(of(ok(undefined))),
     };
 
     await TestBed.configureTestingModule({
@@ -97,6 +142,18 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
         { provide: FormProfilesService, useValue: profiles },
         { provide: ProductsService, useValue: products },
         { provide: ProductModulesService, useValue: modules },
+        {
+          provide: MaterialsService,
+          useValue: {
+            findById: jest
+              .fn()
+              .mockReturnValue(
+                of(ok({ _id: 'mat1', name: 'Material', unit: 'шт', pricePerUnit: 0 })),
+              ),
+          },
+        },
+        { provide: PiDialogService, useValue: { open: jest.fn() } },
+        provideRouter([]),
         {
           provide: CategoriesService,
           useValue: { list: jest.fn().mockReturnValue(of(ok([]))) },
@@ -115,7 +172,7 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
     })
       .overrideComponent(QuickCreateDialogComponent, {
         set: {
-          imports: [PiFormSectionComponent, PiPhotoDropzoneComponent],
+          imports: [PiFormSectionComponent, PiPhotoDropzoneComponent, ProductBomPanelComponent],
           schemas: [NO_ERRORS_SCHEMA],
         },
       })
@@ -244,6 +301,18 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
         { provide: ProductsService, useValue: products },
         { provide: ProductModulesService, useValue: modules },
         {
+          provide: MaterialsService,
+          useValue: {
+            findById: jest
+              .fn()
+              .mockReturnValue(
+                of(ok({ _id: 'mat1', name: 'Material', unit: 'шт', pricePerUnit: 0 })),
+              ),
+          },
+        },
+        { provide: PiDialogService, useValue: { open: jest.fn() } },
+        provideRouter([]),
+        {
           provide: CategoriesService,
           useValue: { list: jest.fn().mockReturnValue(of(ok([]))) },
         },
@@ -261,7 +330,7 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
     })
       .overrideComponent(QuickCreateDialogComponent, {
         set: {
-          imports: [PiFormSectionComponent, PiPhotoDropzoneComponent],
+          imports: [PiFormSectionComponent, PiPhotoDropzoneComponent, ProductBomPanelComponent],
           schemas: [NO_ERRORS_SCHEMA],
         },
       })
@@ -311,7 +380,26 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
     c.onPhotosChange(photos);
     c.form.patchValue({ name: 'Стол', kind: 'good', unit: 'шт' });
     c.onSubmit();
-    expect(products.create).toHaveBeenCalledWith(expect.objectContaining({ photoIds: ['photo-1'] }));
+    expect(products.create).toHaveBeenCalledWith(
+      expect.objectContaining({ photoIds: ['photo-1'] }),
+    );
+  });
+
+  it('product L stays open after create and exposes optional composition mode', async () => {
+    const { component: c, fixture } = await setup({ entity: 'product', size: 'M' });
+    profiles.getOne.mockReturnValue(of(ok(productLAll)));
+    c.onSizeChange('L');
+    c.form.patchValue({ name: 'Стол', kind: 'good', unit: 'шт' });
+    c.onSubmit();
+    fixture.detectChanges();
+    expect(c.createdProduct()?._id).toBe('p1');
+    expect(close).not.toHaveBeenCalled();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="qc-composition-section"]'),
+    ).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="product-bom-panel"]')).not.toBeNull();
+    c.onDone();
+    expect(close).toHaveBeenCalledWith(expect.objectContaining({ _id: 'p1' }));
   });
 
   it('does not expose photo controls for product M', async () => {
@@ -353,7 +441,7 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
     })
       .overrideComponent(QuickCreateDialogComponent, {
         set: {
-          imports: [PiFormSectionComponent, PiPhotoDropzoneComponent],
+          imports: [PiFormSectionComponent, PiPhotoDropzoneComponent, ProductBomPanelComponent],
           schemas: [NO_ERRORS_SCHEMA],
         },
       })
