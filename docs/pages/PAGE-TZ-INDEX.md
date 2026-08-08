@@ -102,8 +102,14 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 
 | Route / surface | Page doc | TZs |
 |-----------------|----------|-----|
-| Pairing dialog «Скачать» | `desktop/docs/INSTALL.md`, PAIRING.md | TZD-16 done; **TZD-24** ZIP + `/downloads` SPA skip |
+| Pairing dialog «Скачать» | `desktop/docs/INSTALL.md`, PAIRING.md | TZD-16 done; **TZD-24 done** (ZIP + SPA skip `/downloads`) |
 | Desktop API keys | PAIRING.md | **TZD-21** READY |
+
+## Cost / состав
+
+| Route / surface | Page doc | TZs |
+|-----------------|----------|-----|
+| `/products/:id` BOM + Себест. | product-detail.page.md | COST-301…303 done; **COST-304** audit product-line override vs rollup; 305 after |
 
 ## Vision / access / sales (2026-08-02)
 
