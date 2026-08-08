@@ -1,22 +1,18 @@
 # SESSION QUEUE
 
-**Updated:** 2026-08-08 · NEXT = TZD-26 (reshape) · desktop bulk-import wave
+**Updated:** 2026-08-08 · dual wave
 
-## Checkpoint 2026-08-08T11:10Z (wave #1 TZD-23 DONE)
+## Checkpoint
 
-- DONE: **TZD-23** (matching + HITL → propose) — BE report/proposals PATCH + MCP set_report/apply_plan + MCP.md Variant C · GIT-302 cancelled (main has long-haul equivalents)
-- IN PROGRESS: — (claiming TZD-26 next)
-- NOT DONE: TZD-26 → 18 → 19 → 27 → 28 → 29
-- NEXT: claim **TZD-26** from `tasks/_backlog/desktop/`
-- SoT: `D:\kppdf-8.0` · `main`
-- HEAD: after TZD-23 push
-- Blockers: none
-- _active/: empty (TZD-23 archived)
+- DONE: DETAIL/FACT/long-haul · GIT-302 cancelled · **TZD-23** (desktop wave #1)
+- IN PROGRESS A (desktop): TZD-26 → 18 → 19 → 27 → 28 → 29
+- READY B (shop-north): SUPPLY-302 → ORDERS-304 → 305 → SALES-302 → FACT-303 → 304 → FORM-307
+- NEXT A: claim **TZD-26** · `tasks/_backlog/desktop/`
+- NEXT B: claim **TZ-SUPPLY-302** · `tasks/_backlog/shop-north-b/`
+- SoT: `D:\kppdf-8.0` main
+- Ban cross-touch: desktop/mcp/import-task/journal ↔ shop-north keys
+- Deploy: NO
 
-## READY wave
+## PARK
 
-`tasks/_backlog/desktop/WAVE-DESKTOP-BULK-IMPORT.md`
-
-## PARK / не брать
-
-SALES-304 · freebuff long-haul merge · deploy NO
+SALES-304 · SHIPPING · Gantt 308–310
