@@ -3,7 +3,7 @@ TASK: TZ-UX-FORM-307
 OWNER: agent-e51db87918
 CLOSED_AT: 2026-08-08T18:02:00Z
 OUTCOME: DONE
-COMMIT: closeout commit
+COMMIT: 7aca7fe1
 PROTECTED_FILES:
   - frontend/src/app/pages/contracts/contract-form-dialog.component.ts
   - frontend/src/app/pages/work-types/work-type-form-dialog.component.ts

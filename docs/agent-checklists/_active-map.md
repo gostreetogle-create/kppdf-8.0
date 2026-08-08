@@ -1,5 +1,16 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-08T18:04:00Z
+- DONE: TZ-UX-FORM-307 — contract/work-type dialogs now use shared Material-style form sections; Organization FullEditor already matched the canon. This closes the final Shop-north-B UX batch and makes the wave idle.
+- IN PROGRESS: none
+- NOT DONE: TZ-INN-301 PARKED; SALES-304 RESERVED; SHIPPING/Gantt 308–310 park
+- NEXT: idle — READY queue empty; await new PO wave or explicit deploy command
+- HEAD: 7aca7fe1 pushed: yes (`origin/main`)
+- Blockers: none for FORM-307; `verify-status.sh` retains pre-existing 72 legacy kit-era drift outside this frontend TZ
+- _active/: empty
+- Deploy: NO
+
+
 ## Checkpoint 2026-08-08T18:00:00Z · worktree sync + queue NEXT=FORM-307
 - DONE (sync): canonical `D:\kppdf-8.0` `main` fast-forwarded to `origin/main` @ `8a317385`; dirty foreign WIP removed from worktree (quarantine `D:\kppdf-8.0-wip-aside\2026-08-08-pre-sync`: `mcp-runtime`, secrets-check script; tracked diffs that regressed ASSETS-302 / weakened `.gitignore` discarded)
 - DONE (product waves already on remote): Party-docs #1–#7; Shop-north #1–#6; Catalog UX wave
