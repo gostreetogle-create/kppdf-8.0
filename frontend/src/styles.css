@@ -246,6 +246,19 @@
   --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
+  /*
+   * ERP type scale (TZ-UI-TYPE-301) — short 5-role ladder, step ≈1.09–1.17.
+   * NOT φ=1.618 (too poster-like for workshop UI). Ban new text-[9px]/[10px]
+   * on ERP pages; display-erp-max = 20px (text-xl). See audit 2026-08-08.
+   *   micro  11px  --text-micro / .eyebrow / .pi-tech-label
+   *   meta   12px  text-xs
+   *   body   14px  text-sm / .pi-input
+   *   title  16–18px  text-base → text-lg (--text-title = 18px)
+   *   display-erp-max  20px  text-xl
+   */
+  --text-micro: 0.6875rem; /* 11px */
+  --text-title: 1.125rem; /* 18px */
+
   /* === Shape (Design Reference — TZ-96) === */
   --radius: 0.125rem; /* 2px — design ref DEFAULT */
   --radius-sm: 0.0625rem; /* 1px */
@@ -511,7 +524,7 @@
 
 @utility eyebrow {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--text-micro); /* ERP type scale micro = 11px */
   text-transform: uppercase;
   letter-spacing: 0.08em; /* TZ-210.B: updated from 0.05em per Logomock */
   color: var(--color-muted-foreground);
@@ -1115,7 +1128,8 @@
  * stitch_professional_desktop_crm_refinement, see
  * tasks/_archive/2026-07/TZ-93.md.done + tasks/TZ-93.1.md):
  *
- *   .pi-tech-label     → 10px monospace tech label (REF: 80.4.2, ID: MN-01).
+ *   .pi-tech-label     → 11px monospace tech label (ERP type scale micro;
+ *                        aligned with .eyebrow in TZ-UI-TYPE-301).
  *                        AAA contrast via --color-muted-foreground-strong.
  *   .pi-dashed-panel   → 1px dashed border for empty states and draft-style
  *                        surfaces. Lower perceptual contrast than hairline —
@@ -1140,7 +1154,7 @@
 
 @utility pi-tech-label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: var(--text-micro); /* ERP type scale micro = 11px (was 10) */
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--color-muted-foreground-strong);

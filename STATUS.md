@@ -13,6 +13,12 @@
 - Moved the project passport to `docs/project-passport.md`; `TZ-CLEANUP-R2` is archived as DONE after all cleanup acceptance criteria and verification gates.
 - `tasks/` is intended to contain only real active `TZ-*.md` files. Roadmap prose elsewhere is historical context, not an active task claim.
 
+## [2026-08-08] — TZ-UI-TYPE-301 DONE: ERP type scale canon
+**Статус:** DONE on main; deploy НЕ
+**Что:** ERP type scale tokens + design-spec/foundations fonts sync; micro=11px.
+**Archive:** `tasks/_archive/2026-08/TZ-UI-TYPE-301.done.md`
+**Gates:** FE tsc PASS
+
 ## [2026-08-08] — TZD-29 DONE: manager import todos (desktop wave #7, WAVE COMPLETE)
 **Статус:** DONE on main; deploy НЕ
 **Что:** BE `import-todo` module (POST/GET/PATCH, RBAC admin|manager, org-scope); MCP `kppdf_import_todo_create|list|set_status`; FE thin `/import-todos` page (фильтры, «Готово», href); seed pages; docs. **Волна desktop bulk-import закрыта — checkpoint idle.**

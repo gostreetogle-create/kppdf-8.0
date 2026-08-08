@@ -56,48 +56,33 @@ colors:
   workshop-teal: '#0D9488'
   hairline-border: '#E5E1DB'
 typography:
-  headline-xl:
-    fontFamily: Source Serif 4
-    fontSize: 40px
-    fontWeight: '700'
-    lineHeight: 48px
-    letterSpacing: -0.02em
-  headline-lg:
-    fontFamily: Source Serif 4
-    fontSize: 32px
-    fontWeight: '600'
-    lineHeight: 40px
-  headline-md:
-    fontFamily: Source Serif 4
-    fontSize: 24px
-    fontWeight: '600'
-    lineHeight: 32px
-  body-lg:
-    fontFamily: Work Sans
-    fontSize: 18px
-    fontWeight: '400'
-    lineHeight: 28px
-  body-md:
-    fontFamily: Work Sans
-    fontSize: 16px
-    fontWeight: '400'
-    lineHeight: 24px
-  body-sm:
-    fontFamily: Work Sans
-    fontSize: 14px
-    fontWeight: '400'
-    lineHeight: 20px
-  label-mono:
+  # Shipped stacks (styles.css) — TZ-UI-TYPE-301. Kit demos may use larger display.
+  stacks:
+    display: Hanken Grotesk
+    body: Inter
+    mono: JetBrains Mono
+  # ERP type scale (5 roles; step ≈1.09–1.17 — not φ=1.618)
+  micro:
     fontFamily: JetBrains Mono
-    fontSize: 10px
-    fontWeight: '700'
-    lineHeight: 12px
-    letterSpacing: 0.1em
-  label-data:
-    fontFamily: JetBrains Mono
+    fontSize: 11px
+    utility: '.eyebrow / .pi-tech-label / --text-micro'
+  meta:
+    fontFamily: Inter
     fontSize: 12px
-    fontWeight: '500'
-    lineHeight: 16px
+    utility: text-xs
+  body:
+    fontFamily: Inter
+    fontSize: 14px
+    utility: 'text-sm / .pi-input'
+  title:
+    fontFamily: Hanken Grotesk
+    fontSize: 16-18px
+    utility: 'text-base → text-lg / --text-title'
+  display-erp-max:
+    fontFamily: Hanken Grotesk
+    fontSize: 20px
+    utility: text-xl
+    note: 'Ban above 20px on ERP working pages (kit demos excepted)'
 rounded:
   sm: 0.25rem
   DEFAULT: 0.5rem
@@ -137,11 +122,19 @@ The palette is strictly limited to four functional pillars to ensure visual hier
 
 ## Typography
 
-This design system uses a tri-font strategy to differentiate roles and maximize document legibility:
+Shipped stacks (`frontend/src/styles.css`): **Hanken Grotesk** (display), **Inter** (body), **JetBrains Mono** (meta / eyebrows / tech labels).
 
-1. **Serif (Source Serif 4):** Reserved for page titles, document headers, and significant sections. It evokes the "editorial" and "formal contract" nature of the application.
-2. **Sans (Work Sans):** Used for all body text, input fields, and standard UI controls. It is chosen for its neutral, legible character in Russian Cyrillic.
-3. **Monospace (JetBrains Mono):** Used for metadata, technical specifications, and section "eyebrows." Specifically, `label-mono` should always be displayed in uppercase with increased letter-spacing to act as a clear organizational marker.
+ERP type scale (TZ-UI-TYPE-301 — short ladder, not φ=1.618):
+
+| Role | Size | Utility / token |
+|------|------|-----------------|
+| micro | 11px | `--text-micro`, `.eyebrow`, `.pi-tech-label` |
+| meta | 12px | `text-xs` |
+| body | 14px | `text-sm`, `.pi-input` |
+| title | 16–18px | `text-base` → `text-lg`, `--text-title` |
+| display-erp-max | 20px | `text-xl` max on working pages |
+
+Ban on ERP pages: new `text-[9px]` / `text-[10px]`; `text-5xl` on working screens (kit demos may keep larger display samples).
 
 All UI labels must be in **Russian**, ensuring the terminology reflects standard manufacturing and accounting practices (e.g., "Спецификация", "Договор", "Артикул").
 

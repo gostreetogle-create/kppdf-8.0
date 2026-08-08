@@ -1,3 +1,11 @@
+## [2026-08-08] — TZ-UI-TYPE-301 DONE: ERP type scale canon
+
+**Что:** CSS tokens `--text-micro`/`--text-title`; `.eyebrow`+`.pi-tech-label` = 11px; design-spec + foundations hint = Hanken/Inter/JetBrains + 5 roles.
+**Gates:** FE tsc PASS; docs sync; «ERP type scale» marker in styles.css.
+**Archive:** `tasks/_archive/2026-08/TZ-UI-TYPE-301.done.md`
+**Lock:** `.mimocode/locks/TZ-UI-TYPE-301-type-scale-canon.lock`
+**Known:** page hotspots → TYPE-302; contrast → COLOR-301.
+
 ## [2026-08-08] — TZ-ORDERS-305 DONE: soft materials source gate
 
 **Что:** `materialsSource=own|customer` persists on Order; order detail selector + non-blocking own-materials warning when ready lines lack confirmed supply.

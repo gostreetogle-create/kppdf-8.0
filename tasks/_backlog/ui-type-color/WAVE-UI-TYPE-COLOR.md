@@ -21,7 +21,7 @@
 
 ## Checkpoint
 
-- [ ] TYPE-301 DONE  
+- [x] TYPE-301 DONE  
 - [ ] TYPE-302 DONE  
 - [ ] COLOR-301 DONE  
 - [ ] Manual: `/modules/:id` light+dark — meta читается без прищура  

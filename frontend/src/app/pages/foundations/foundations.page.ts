@@ -19,7 +19,7 @@ import { CardComponent } from '../../shared/ui/card/card.component';
     <app-pi-page-header
       eyebrow="02 · основы"
       title="Основы"
-      subtitle="Палитра paper, ink и акценты. Типографика Syne и Jakarta."
+      subtitle="Палитра paper, ink и акценты. Типографика Hanken и Inter."
       hint="0.1s · getting started"
     />
 
@@ -46,7 +46,7 @@ import { CardComponent } from '../../shared/ui/card/card.component';
     <!-- ───── Section II. Типографика ───── -->
     <app-pi-section
       title="Типографика"
-      hint="Syne display · Jakarta body · mono metadata"
+      hint="Hanken display · Inter body · JetBrains mono"
       eyebrow="II"
     >
       <div class="space-y-8 max-w-3xl">

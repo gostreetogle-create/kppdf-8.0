@@ -1,6 +1,17 @@
 # SESSION QUEUE
 
-**Updated:** 2026-08-08 · TZ-UX-313 closeout
+**Updated:** 2026-08-08 · TZ-UI-TYPE-301 DONE → next TYPE-302
+
+## Checkpoint 2026-08-08T11:12:00Z
+- DONE: TZ-UI-TYPE-301 — ERP type scale tokens + design-spec/foundations
+- IN PROGRESS: none (claiming TYPE-302 next)
+- NOT DONE: TYPE-302 · COLOR-301
+- NEXT: TZ-UI-TYPE-302
+- HEAD: post TYPE-301 commit
+- Blockers: none
+- _active/: empty after TYPE-301 closeout
+- Ban: supply/** · desktop/** · PRODUCTS-307 peer WIP · orders/** peer — not touched
+- Deploy: NO
 
 ## Checkpoint 2026-08-08T11:05:00Z
 - DONE: TZ-UX-313 — catalog detail smart back (previousUrl + Location.back/fallback)
