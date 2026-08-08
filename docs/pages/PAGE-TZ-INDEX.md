@@ -22,7 +22,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | Route | Page doc | TZs |
 |-------|----------|-----|
 | `/materials` | materials.page.md | MATERIALS-*; **CATALOG-301** BE DONE; **FE поля 301 = TZ-CATALOG-316**; **CATALOG-UI-301** Group Chip |
-| `/materials/:id` | material detail (312) | CATALOG Wave 2 |
+| `/materials/:id` | material detail (312) | CATALOG Wave 2; **UX-313** smart back |
 | `/products` | products.page.md | PRODUCTS-*; composition **302…305**; expand polish (gold tray); hierarchy preview **307**; FE **317**; gap **320**; tree **311**; **CATALOG-UI-301** |
 | `/products/:id` | **product-detail.page.md** | 319 stub docs; detail UI; **320** complex/cascade; **311** tree; **330–331** kind palette; **UX-313** smart back |
 | `/modules`, `/modules/:id` | modules.page.md, module-detail.page.md | MODULES-*; photos; **320** module→module; **311** tree; **UX-313** smart back |

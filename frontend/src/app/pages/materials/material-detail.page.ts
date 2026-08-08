@@ -6,7 +6,7 @@ import {
   computed,
   inject,
 } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { httpResource } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { PiPageHeaderComponent } from '../../shared/page/pi-page-header.component';
@@ -22,6 +22,7 @@ import {
   type MaterialKind,
 } from '../../shared/services/materials.service';
 import { MaterialFormDialogComponent } from './material-form-dialog.component';
+import { CatalogReturnStore, catalogBackLabel } from '../../shared/navigation/catalog-return.util';
 
 /** Where-used item contract from GET /materials/:id/where-used (TZ-CATALOG-310). */
 interface WhereUsedItem {
@@ -65,7 +66,7 @@ interface WhereUsedPage {
     >
       <span header-actions>
         <app-pi-button variant="ghost" type="button" (click)="onBack()" data-test="back-button">
-          ← К материалам
+          {{ backLabel() }}
         </app-pi-button>
         @if (material()) {
           <app-pi-button
@@ -93,8 +94,9 @@ interface WhereUsedPage {
           type="button"
           (click)="onBack()"
           class="block mx-auto mt-2 text-ink hover:text-sunrise-warm underline"
+          data-test="back-button-error"
         >
-          ← К материалам
+          {{ backLabel() }}
         </button>
       </div>
     }
@@ -228,7 +230,7 @@ interface WhereUsedPage {
 })
 export class MaterialDetailPage {
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
+  private readonly catalogReturn = inject(CatalogReturnStore);
   private readonly dialog = inject(PiDialogService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
@@ -281,8 +283,17 @@ export class MaterialDetailPage {
 
   // ── Actions ───────────────────────────────────────────────────────
 
+  /** TZ-UX-313: «← Назад» when referrer known, else list label. */
+  protected readonly backLabel = computed(() =>
+    catalogBackLabel(
+      this.catalogReturn.previousUrlSignal(),
+      this.catalogReturn.currentUrlSignal(),
+      '← К материалам',
+    ),
+  );
+
   protected onBack(): void {
-    this.router.navigate(['/materials']);
+    this.catalogReturn.navigateBackOr('/materials');
   }
 
   /** TZ-CATALOG-DEDUP-304: same MaterialFormDialog as materials list. */

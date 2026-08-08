@@ -7,7 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { httpResource } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
@@ -41,6 +41,7 @@ import { ProductBomPanelComponent } from './product-bom-panel.component';
 import { ProductFormDialogComponent } from './product-form-dialog.component';
 import { Product, ProductKind, ProductStatus } from '../../shared/services/products.service';
 import { PiFactCardComponent, PiFactStackComponent } from '../../shared/ui/fact-card';
+import { CatalogReturnStore, catalogBackLabel } from '../../shared/navigation/catalog-return.util';
 
 const STATUS_LABELS: Record<ProductStatus, string> = {
   new: 'Новый',
@@ -76,7 +77,6 @@ const KIND_LABELS: Record<ProductKind, string> = {
   selector: 'app-product-detail-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    RouterLink,
     PiEmptyStateComponent,
     ButtonComponent,
     ProductBomPanelComponent,
@@ -90,7 +90,7 @@ const KIND_LABELS: Record<ProductKind, string> = {
     <app-pi-page-chrome [crumbs]="detailCrumbs()" data-test="product-detail-nav">
       <span actions>
         <app-pi-button variant="ghost" type="button" (click)="onBack()" data-test="back-button">
-          ← К каталогу
+          {{ backLabel() }}
         </app-pi-button>
         @if (product()) {
           <app-pi-button
@@ -114,9 +114,14 @@ const KIND_LABELS: Record<ProductKind, string> = {
       </div>
       <div class="py-8 text-center text-muted-foreground text-sm">
         Товар не найден.
-        <a routerLink="/products" class="block mt-2 text-ink hover:text-sunrise-warm underline"
-          >← К каталогу</a
+        <button
+          type="button"
+          class="block mt-2 mx-auto text-ink hover:text-sunrise-warm underline"
+          (click)="onBack()"
+          data-test="back-button-error"
         >
+          {{ backLabel() }}
+        </button>
       </div>
     }
 
@@ -364,6 +369,7 @@ const KIND_LABELS: Record<ProductKind, string> = {
 export class ProductDetailPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly catalogReturn = inject(CatalogReturnStore);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly destroyRef = inject(DestroyRef);
@@ -528,8 +534,17 @@ export class ProductDetailPage {
   private recalcTimer: ReturnType<typeof setTimeout> | null = null;
   private recalcDirty = false;
 
+  /** TZ-UX-313: «← Назад» when referrer known, else list label. */
+  protected readonly backLabel = computed(() =>
+    catalogBackLabel(
+      this.catalogReturn.previousUrlSignal(),
+      this.catalogReturn.currentUrlSignal(),
+      '← К каталогу',
+    ),
+  );
+
   protected onBack(): void {
-    this.router.navigate(['/products']);
+    this.catalogReturn.navigateBackOr('/products');
   }
 
   /** TZ-CATALOG-DEDUP-304: same FullEditor as products list. */

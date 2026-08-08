@@ -1,6 +1,17 @@
 # SESSION QUEUE
 
-**Updated:** 2026-08-08 · shop-north B continuous queue
+**Updated:** 2026-08-08 · TZ-UX-313 closeout
+
+## Checkpoint 2026-08-08T11:05:00Z
+- DONE: TZ-UX-313 — catalog detail smart back (previousUrl + Location.back/fallback)
+- IN PROGRESS: none (this agent)
+- NOT DONE: TZ-PRODUCTS-307 (peer / separate); shop-north B queue if any
+- NEXT: idle for this agent unless PO queues more
+- HEAD: post UX-313 commit
+- Blockers: none
+- _active/: empty after UX-313 closeout
+- Ban: supply/** · desktop/** · PRODUCTS-307 peer WIP — not touched
+- Deploy: NO
 
 ## Checkpoint (wave A COMPLETE — 2026-08-08)
 
@@ -14,15 +25,6 @@
 - SoT: `D:\kppdf-8.0` main
 - Ban cross-touch: desktop/mcp/import-task/journal ↔ shop-north keys
 - Deploy: NO
-
-## Checkpoint 2026-08-08T11:00:00Z
-- DONE: TZ-SUPPLY-302 — BOM explode → idempotent SupplyTasks, archived/locked
-- IN PROGRESS: none
-- NOT DONE: ORDERS-304 → ORDERS-305 → SALES-302 → FACT-303 → FACT-304 → FORM-307
-- NEXT: claim TZ-ORDERS-304
-- HEAD: pre-commit
-- Blockers: none
-- _active/: empty after closeout
 
 ## PARK
 

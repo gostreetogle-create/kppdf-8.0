@@ -13,6 +13,7 @@ import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { ProductBomPanelComponent } from '../products/product-bom-panel.component';
+import { CatalogReturnStore } from '../../shared/navigation/catalog-return.util';
 
 async function tickMicrotask(): Promise<void> {
   await new Promise<void>((r) => setTimeout(r, 0));
@@ -147,5 +148,17 @@ describe('ModuleDetailPage (TZ-CATALOG-336)', () => {
     const panel = panelDe.componentInstance as ProductBomPanelComponent;
     expect(panel.rootKind()).toBe('module');
     expect(panel.productId()).toBe('mod-1');
+  });
+
+  it('onBack uses CatalogReturnStore (TZ-UX-313)', () => {
+    const store = TestBed.inject(CatalogReturnStore);
+    const spy = jest.spyOn(store, 'navigateBackOr');
+    store.setPreviousUrlForTests('/products');
+    fixture.detectChanges();
+    (fixture.componentInstance as unknown as { onBack: () => void }).onBack();
+    expect(spy).toHaveBeenCalledWith('/modules');
+    expect((fixture.componentInstance as unknown as { backLabel: () => string }).backLabel()).toBe(
+      '← Назад',
+    );
   });
 });

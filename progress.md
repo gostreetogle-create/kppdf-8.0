@@ -196,6 +196,16 @@
 **Lock:** `.mimocode/locks/TZ-UX-FACT-301-pi-fact-card.lock`
 **Known:** Deploy NO. Wiring → DETAIL-301+.
 
+## [2026-08-08] — TZ-UX-313 DONE: catalog detail smart back
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** `CatalogReturnStore` (previousUrl + Location.back/fallback); wire product/module/material detail; label «← Назад» при referrer; docs page-chrome § Возврат. Не трогали supply/desktop/PRODUCTS-307.
+**Gates:** FE tsc PASS; Jest catalog-return + module-detail + material-detail 19/19 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-313.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-313-catalog-smart-back.lock`
+**Known:** Deploy NO. Crumbs remain structural.
+
 ## [2026-08-08] — TZ-UX-312 DONE: composition-tree larger thumb + denser row
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor)

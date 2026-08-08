@@ -53,6 +53,19 @@ Group Chip Workspace **не** дублирует deep path-breadcrumb вмест
 только лёгкий `pathLabel` раздела. Deep path — на detail и на «простынных»
 списках без chips (сделки/документы до cutover на group workspace).
 
+## Возврат (TZ-UX-313)
+
+| Механизм | Роль |
+|----------|------|
+| Browser ← (Alt+← / mouse back) | Полноценная история SPA |
+| Ghost «← …» на catalog detail | Smart back: `Location.back()` если есть same-app `previousUrl`, иначе fallback на список раздела (`/products`, `/modules`, `/materials`) |
+| Крошки (`PiPageChrome`) | **Структурные** IA (`Каталог / Модули / имя`), **не** browser history |
+
+- Label кнопки: «← Назад» при известном referrer, иначе «← К каталогу / модулям / материалам».
+- Прямой заход по закладке (нет previous) → всегда fallback на список.
+- Глобальных ←→ в app shell / top nav **нет** (by design).
+- Helper: `frontend/src/app/shared/navigation/catalog-return.util.ts` (`CatalogReturnStore`).
+
 ## См. также
 
 - Каталожный выпадающий список: [`ui-overflow-select.md`](./ui-overflow-select.md)
@@ -60,4 +73,4 @@ Group Chip Workspace **не** дублирует deep path-breadcrumb вмест
 
 ---
 
-_Создано: 2026-08-07._
+_Создано: 2026-08-07. Обновлено: 2026-08-08 (TZ-UX-313)._

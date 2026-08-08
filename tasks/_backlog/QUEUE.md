@@ -14,7 +14,7 @@
 | TZ | Файл | Заметка |
 |----|------|---------|
 | **TZ-PRODUCTS-307** | `tasks/TZ-PRODUCTS-307-products-list-hierarchy-preview.md` | Иерархия в expand списка /products (flat gold tray уже на main) |
-| **TZ-UX-313** | `tasks/TZ-UX-313-catalog-smart-back.md` | Smart back: product→module вернуть откуда пришли (не жёсткий `/modules`) |
+| ~~TZ-UX-313~~ | archived `tasks/_archive/2026-08/TZ-UX-313.done.md` | Smart back DONE |
 
 ## Не брать
 

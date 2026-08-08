@@ -33,6 +33,7 @@ import {
 import { ModuleFormDialogComponent } from './module-form-dialog.component';
 import { ProductBomPanelComponent } from '../products/product-bom-panel.component';
 import { PiFactCardComponent, PiFactStackComponent } from '../../shared/ui/fact-card';
+import { CatalogReturnStore, catalogBackLabel } from '../../shared/navigation/catalog-return.util';
 
 /** TZ-COST-302: shape of GET /modules/:id/cost-preview. */
 interface ModuleCostPreview {
@@ -67,7 +68,7 @@ interface ModuleCostPreview {
     <app-pi-page-chrome [crumbs]="detailCrumbs()" data-test="module-detail-nav">
       <span actions>
         <app-pi-button variant="ghost" type="button" (click)="onBack()" data-test="back-button">
-          ← К модулям
+          {{ backLabel() }}
         </app-pi-button>
         <app-pi-button variant="default" type="button" (click)="openEdit()" data-test="edit-button">
           Редактировать
@@ -91,8 +92,9 @@ interface ModuleCostPreview {
           type="button"
           class="block mt-2 mx-auto text-ink hover:text-sunrise-warm underline"
           (click)="onBack()"
+          data-test="back-button-error"
         >
-          ← К модулям
+          {{ backLabel() }}
         </button>
       </div>
     }
@@ -313,6 +315,7 @@ interface ModuleCostPreview {
 export class ModuleDetailPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly catalogReturn = inject(CatalogReturnStore);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly destroyRef = inject(DestroyRef);
@@ -389,8 +392,17 @@ export class ModuleDetailPage {
     this.reloadPhotos();
   }
 
+  /** TZ-UX-313: «← Назад» when referrer known, else list label. */
+  protected readonly backLabel = computed(() =>
+    catalogBackLabel(
+      this.catalogReturn.previousUrlSignal(),
+      this.catalogReturn.currentUrlSignal(),
+      '← К модулям',
+    ),
+  );
+
   protected onBack(): void {
-    this.router.navigate(['/modules']);
+    this.catalogReturn.navigateBackOr('/modules');
   }
 
   protected onBomChanged(): void {
