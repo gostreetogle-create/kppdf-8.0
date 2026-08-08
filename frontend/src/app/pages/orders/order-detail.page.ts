@@ -23,6 +23,8 @@ import {
 import { extractErrorMessage } from '../../core/silent-http';
 import { formatDate } from '../../shared/util/format';
 import { Order, OrderItem, OrdersService } from './orders.service';
+import { SupplyTaskService } from '../../shared/services/pi-supply.service';
+import { PiToastService } from '../../shared/ui/toast';
 
 const ORDER_STATUS_LABELS: Record<Order['status'], string> = {
   draft: 'Черновик',
@@ -94,6 +96,31 @@ type PopulatedOwner =
             <span class="text-muted-foreground">Объект:</span> {{ site }}
           </p>
         }
+
+        <label
+          class="flex items-center gap-2 text-sm text-ink mt-2"
+          data-test="materials-source-field"
+        >
+          <span class="text-muted-foreground">Материалы:</span>
+          <select
+            class="pi-input py-1 text-sm"
+            [value]="o.materialsSource ?? 'own'"
+            (change)="onMaterialsSourceChange($event)"
+            aria-label="Источник материалов"
+          >
+            <option value="own">Наши</option>
+            <option value="customer">Заказчика</option>
+          </select>
+        </label>
+        @if (materialsWarning(); as warning) {
+          <div
+            class="mt-3 border hairline border-sunrise-warm rounded-sm px-3 py-2 text-sm text-sunrise-warm"
+            role="status"
+            data-test="materials-warning"
+          >
+            {{ warning }}
+          </div>
+        }
       </header>
 
       @if (lineMetaRows().length > 0) {
@@ -164,6 +191,8 @@ export class OrderDetailPage {
   private readonly route = inject(ActivatedRoute);
   private readonly orders = inject(OrdersService);
   private readonly catalog = inject(ProductModulesService);
+  private readonly supply = inject(SupplyTaskService, { optional: true });
+  private readonly toast = inject(PiToastService, { optional: true });
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly order = signal<Order | null>(null);
@@ -176,6 +205,14 @@ export class OrderDetailPage {
   protected readonly readyBusy = signal<number | null>(null);
 
   protected readonly hasLines = computed(() => (this.order()?.items?.length ?? 0) > 0);
+  protected readonly confirmedSupply = signal(false);
+  protected readonly materialsWarning = computed(() => {
+    const order = this.order();
+    if (!order || (order.materialsSource ?? 'own') !== 'own') return null;
+    return (order.items ?? []).some((item) => item.readyForWork) && !this.confirmedSupply()
+      ? 'Материалы: наши. Для готовых линий нет подтверждённых задач снабжения — это мягкое предупреждение, не блокировка.'
+      : null;
+  });
 
   protected readonly partyLine = computed(() => {
     const o = this.order();
@@ -243,6 +280,7 @@ export class OrderDetailPage {
           return;
         }
         this.order.set(res.data);
+        this.loadConfirmedSupply(res.data._id);
         this.reloadForest(res.data);
       });
   }
@@ -280,6 +318,35 @@ export class OrderDetailPage {
 
   protected formatOrderDate(date: string | undefined): string {
     return formatDate(date);
+  }
+
+  private loadConfirmedSupply(orderId: string): void {
+    this.confirmedSupply.set(false);
+    if (!this.supply) return;
+    this.supply
+      .list({ orderId })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (res.ok) {
+          this.confirmedSupply.set((res.data ?? []).some((task) => task.status === 'confirmed'));
+        }
+      });
+  }
+
+  protected onMaterialsSourceChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value as 'own' | 'customer';
+    const current = this.order();
+    if (!current || !['own', 'customer'].includes(value)) return;
+    this.orders
+      .update(current._id, { materialsSource: value })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (res.ok) {
+          this.order.set(res.data);
+        } else {
+          this.toast?.error('Не удалось сохранить источник материалов');
+        }
+      });
   }
 
   protected toggleLineReady(index: number): void {

@@ -53,6 +53,7 @@ export interface Order {
   status: OrderStatus;
   total?: number;
   notes?: string;
+  materialsSource?: 'own' | 'customer';
   isActive?: boolean;
   items?: OrderItem[];
   deliveryAddress?: string;

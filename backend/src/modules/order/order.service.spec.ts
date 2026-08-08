@@ -33,6 +33,7 @@ function orderDoc(overrides: Record<string, unknown> = {}) {
     items: [] as MockOrderItem[],
     notes: undefined,
     priority: 'normal',
+    materialsSource: 'own' as 'own' | 'customer',
     save: jest.fn().mockImplementation(function (this: unknown) {
       return Promise.resolve(this);
     }),
@@ -269,6 +270,17 @@ describe('OrderService — TZ-ORDERS-301', () => {
       expect(doc.notes).toBe('новая заметка');
       expect(doc.priority).toBe('urgent');
       expect(doc.save).toHaveBeenCalled();
+      expect(result).toBe(doc);
+    });
+  });
+
+  describe('materials source (TZ-ORDERS-305)', () => {
+    it('stores own/customer source and updates it without hard blocking', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({ status: 'confirmed', materialsSource: 'own' });
+      model.findById.mockReturnValue(mockQuery(doc));
+      const result = await service.update(doc._id.toString(), { materialsSource: 'customer' } as never);
+      expect(doc.materialsSource).toBe('customer');
       expect(result).toBe(doc);
     });
   });

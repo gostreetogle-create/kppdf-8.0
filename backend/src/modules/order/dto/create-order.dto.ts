@@ -74,6 +74,10 @@ export class CreateOrderDto {
 
   @ApiPropertyOptional({ description: 'Заметки к заказу' })
   @IsOptional() @IsString() notes?: string;
+
+  @ApiPropertyOptional({ enum: ['own', 'customer'], description: 'Источник материалов' })
+  @IsOptional() @IsIn(['own', 'customer'])
+  materialsSource?: 'own' | 'customer';
   @ApiPropertyOptional({ description: 'Адрес доставки' })
   @IsOptional() @IsString() deliveryAddress?: string;
   @ApiPropertyOptional({ description: 'ID менеджера' })

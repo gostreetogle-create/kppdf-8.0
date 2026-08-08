@@ -77,6 +77,7 @@ export class OrderService {
       status: dto.status ?? 'draft',
       total,
       notes: dto.notes,
+      materialsSource: dto.materialsSource ?? 'own',
       deliveryAddress: dto.deliveryAddress,
       managerId: dto.managerId ? new Types.ObjectId(dto.managerId) : undefined,
       priority: dto.priority ?? 'normal',
@@ -167,18 +168,19 @@ export class OrderService {
 
   async update(id: string, dto: UpdateOrderDto): Promise<OrderDocument> {
     const doc = await this.findByIdRaw(id);
-    if (
-      doc.status === 'in_production' ||
-      doc.status === 'ready' ||
-      doc.status === 'shipped' ||
-      doc.status === 'delivered' ||
-      doc.status === 'cancelled'
-    ) {
+    const frozenStatus = ['in_production', 'ready', 'shipped', 'delivered', 'cancelled'].includes(
+      doc.status,
+    );
+    const hasNonMaterialsSourceChange = Object.keys(dto).some(
+      (key) => key !== 'materialsSource',
+    );
+    if (frozenStatus && hasNonMaterialsSourceChange) {
       throw new BadRequestException(
         `Order in status "${doc.status}" cannot be updated — only draft/confirmed orders are editable`,
       );
     }
     if (dto.notes !== undefined) doc.notes = dto.notes;
+    if (dto.materialsSource !== undefined) doc.materialsSource = dto.materialsSource;
     if (dto.status !== undefined) doc.status = dto.status;
     if (dto.plannedDate !== undefined) doc.plannedDate = new Date(dto.plannedDate);
     if (dto.deliveryAddress !== undefined) doc.deliveryAddress = dto.deliveryAddress;

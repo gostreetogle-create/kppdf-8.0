@@ -89,6 +89,11 @@ export class Order {
   @Prop()
   notes?: string;
 
+
+  /** TZ-ORDERS-305 D19: source of materials for the order. */
+  @Prop({ enum: ['own', 'customer'], default: 'own', index: true })
+  materialsSource!: 'own' | 'customer';
+
   @Prop({ default: true, index: true })
   isActive!: boolean;
 
