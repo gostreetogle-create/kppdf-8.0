@@ -171,12 +171,12 @@ TZ-MODULES-301 (карточки-строки, как material-cards в module-d
   kit создаёт ровно одну detail-row для активного товара, без пустых строк.
 - **A11y:** expandable rows expose `tabindex="0"`, `aria-expanded`, Enter/Space
   activation; detail region is named «Состав товара: {name}».
-- **Развёрнутый контент** (`#expandedTpl`): карточки модулей — инициалы-аватар
-  (у `GET /modules` нет фото — отдельная сущность `ProductModulePhoto`), имя,
-  артикул, «N материалов»; клик по карточке → `routerLink` `/modules/:id`
-  (route существует, app.routes.ts).
-- **Empty state:** «Нет модулей в составе. Откройте товар, чтобы привязать
-  модули.»
+- **Развёрнутый контент** (`#expandedTpl`): tray `var(--color-gold-soft)` +
+  левый gold border; сетка `1 / 2 / 3` колонки; карточка — badge «мод»
+  (`catalogKindOklch`), имя/артикул `line-clamp-2`, «N материалов»;
+  клик → `routerLink` `/modules/:id`. Nested hierarchy (module→children) —
+  **TZ-PRODUCTS-307**.
+- **Empty state:** «Нет модулей в составе.»
 - **Колонка «Модулей»:** count из `productModuleIds.length` (numeric, right).
 - **Row-actions НЕ раскрывают строку:** pi-table сам делает
   `stopPropagation` на actions `<td>`; ссылка-название товара тоже

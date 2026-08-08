@@ -38,6 +38,7 @@ import {
 import {
   ProductModule,
   ProductModulesService,
+  type CompositionTreeNode,
 } from '../../shared/services/pi-product-modules.service';
 import { CategoriesService, type Category } from '../../shared/services/categories.service';
 import type { Photo } from '../../shared/services/photos.service';
@@ -47,6 +48,8 @@ import {
   type QuickCreateDialogData,
 } from '../../shared/ui/quick-create/quick-create-dialog.component';
 import { CatalogKindMarkerComponent } from '../../shared/ui/catalog/catalog-kind-marker.component';
+import { catalogKindOklch } from '../../shared/ui/catalog/catalog-kind-oklch';
+import { CatalogAppearanceService } from '../../shared/ui/catalog/catalog-appearance.service';
 
 /** Server-side pagination page size for /products endpoint. */
 const PAGE_SIZE = 50;
@@ -120,11 +123,9 @@ const KIND_LABELS: Record<Product['kind'], string> = {
  *   pi-table so the strict Product typing now flows through.
  *
  * TZ-PRODUCTS-304 — expandable-строки: клик по строке разворачивает
- * список привязанных модулей (карточки: инициалы-аватар, имя, артикул,
- * «N материалов», ссылка на /modules/:id). `expandedId` сигнал хранит
- * _id развёрнутого товара; повторный клик сворачивает. `[expandedRow]`
- * передаёт `expandedTpl` ТОЛЬКО когда есть развёрнутая строка
- * (свёрнутые строки без пустых `<tr>`).
+ * список привязанных модулей. Quick-preview polish: gold-soft tray,
+ * badge «мод», line-clamp-2, сетка 1/2/3 колонки. Nested hierarchy —
+ * successor TZ-PRODUCTS-307. `expandedId` — _id развёрнутого товара.
  *
  *  Standalone + OnPush + signal-based.
  */
@@ -537,39 +538,157 @@ const KIND_LABELS: Record<Product['kind'], string> = {
       <ng-template #expandedTpl let-row>
         @if (expandedId() === row._id) {
           <div
-            class="px-4 py-3"
+            class="px-4 py-3.5 border-l-[3px] border-l-gold bg-[var(--color-gold-soft)]"
             data-test="expanded-content"
             [attr.aria-label]="'Состав товара: ' + row.name"
           >
             @if (modulesOf(row).length === 0) {
-              <p class="text-xs text-muted-foreground" data-test="expanded-empty">
-                Нет модулей в составе. Откройте товар, чтобы привязать модули.
+              <p class="text-xs text-muted-foreground m-0" data-test="expanded-empty">
+                Нет модулей в составе.
               </p>
             } @else {
-              <div class="flex flex-wrap gap-2">
-                @for (m of modulesOf(row); track m._id) {
-                  <a
-                    [routerLink]="['/modules', m._id]"
-                    class="inline-flex items-center gap-2 min-h-touch px-2 py-1.5 text-sm hairline rounded-sm bg-paper hover:bg-paper-2 hover:shadow-sm transition-all"
-                    [attr.aria-label]="'Открыть модуль ' + m.name"
-                    [attr.data-test]="'module-card-' + m._id"
-                  >
-                    <span
-                      class="w-7 h-7 rounded-sm hairline bg-paper-2 flex items-center justify-center text-muted-foreground text-xs font-medium shrink-0"
-                      aria-hidden="true"
+              @if (!productTree(row._id)) {
+                <div
+                  class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3"
+                  data-test="expanded-modules-grid"
+                >
+                  @for (m of modulesOf(row); track m._id) {
+                    <a
+                      [routerLink]="['/modules', m._id]"
+                      class="flex items-start gap-2.5 min-h-touch p-3 text-sm hairline rounded-sm bg-paper hover:bg-paper-2 transition-colors"
+                      [attr.aria-label]="'Открыть модуль ' + m.name"
+                      [attr.data-test]="'module-card-' + m._id"
                     >
-                      {{ (m.name || 'M').charAt(0).toUpperCase() }}
-                    </span>
-                    <span class="font-medium truncate max-w-40">{{ m.name }}</span>
-                    <span class="font-mono text-xs text-muted-foreground empty-cell">
-                      {{ m.article ?? '—' }}
-                    </span>
-                    <span class="text-xs text-muted-foreground">
-                      {{ m.materials.length }} материалов
-                    </span>
-                  </a>
-                }
-              </div>
+                      <span
+                        class="w-8 h-8 rounded-sm hairline bg-paper-2 flex items-center justify-center text-[10px] font-mono uppercase tracking-wide shrink-0"
+                        [style.color]="moduleAccent()"
+                        [style.border-color]="moduleAccent()"
+                        aria-hidden="true"
+                      >
+                        мод
+                      </span>
+                      <span class="min-w-0 flex-1 space-y-0.5">
+                        <span class="block font-medium text-ink leading-snug line-clamp-2">{{
+                          m.name
+                        }}</span>
+                        @if (m.article) {
+                          <span
+                            class="block font-mono text-xs text-muted-foreground leading-snug line-clamp-2 break-all"
+                            >{{ m.article }}</span
+                          >
+                        }
+                        <span class="block text-xs text-muted-foreground">
+                          {{ m.materials.length }} материалов
+                        </span>
+                      </span>
+                    </a>
+                  }
+                </div>
+              }
+              @if (treeLoading(row._id)) {
+                <p
+                  class="mt-3 text-xs text-muted-foreground"
+                  role="status"
+                  data-test="expanded-tree-loading"
+                >
+                  Загрузка иерархии…
+                </p>
+              } @else if (treeError(row._id)) {
+                <p
+                  class="mt-3 text-xs text-destructive"
+                  role="alert"
+                  data-test="expanded-tree-error"
+                >
+                  Не удалось загрузить иерархию состава.
+                </p>
+              } @else if (productTree(row._id); as tree) {
+                <div class="mt-4 space-y-3" data-test="expanded-tree">
+                  @for (module of moduleNodes(tree); track module._id) {
+                    <div
+                      class="grid grid-cols-1 md:grid-cols-[minmax(12rem,0.8fr)_minmax(0,1.2fr)] gap-3 items-start"
+                      [attr.data-test]="'preview-module-' + module._id"
+                    >
+                      <div class="min-w-0 p-3 hairline rounded-sm bg-paper">
+                        <a
+                          [routerLink]="['/modules', module._id]"
+                          class="block font-medium line-clamp-2 break-words hover:text-sunrise-warm hover:underline"
+                          [attr.data-test]="'module-card-' + module._id"
+                        >
+                          <span
+                            class="mr-2 eyebrow px-1.5 py-0.5 rounded-sm hairline"
+                            [style.color]="moduleAccent()"
+                            >мод</span
+                          >{{ module.name }}
+                          <span class="block mt-1 text-xs text-muted-foreground"
+                            >{{ module.children.length }} материалов</span
+                          >
+                        </a>
+                      </div>
+                      <div
+                        class="min-w-0 space-y-1"
+                        role="list"
+                        [attr.aria-label]="'Состав модуля ' + module.name"
+                      >
+                        @for (child of module.children; track child._id + ':' + $index) {
+                          <div
+                            class="flex items-start gap-2 min-w-0 px-2.5 py-2 hairline rounded-sm bg-paper/70"
+                            [attr.data-test]="'preview-child-' + child._id"
+                          >
+                            @if (child.kind !== 'material' && child.children.length > 0) {
+                              <button
+                                type="button"
+                                class="shrink-0 min-w-6 min-h-6 rounded-sm text-muted-foreground hover:bg-paper-2 pi-focus-ring"
+                                [attr.aria-expanded]="isPreviewExpanded(child)"
+                                [attr.aria-label]="
+                                  (isPreviewExpanded(child) ? 'Свернуть ' : 'Развернуть ') +
+                                  child.name
+                                "
+                                (click)="togglePreviewNode(child)"
+                              >
+                                {{ isPreviewExpanded(child) ? '⌄' : '›' }}
+                              </button>
+                            } @else {
+                              <span class="w-6 shrink-0" aria-hidden="true"></span>
+                            }
+                            <span
+                              class="shrink-0 eyebrow px-1.5 py-0.5 rounded-sm hairline"
+                              [style.color]="childAccent(child)"
+                              >{{ kindShort(child) }}</span
+                            >
+                            <a
+                              [routerLink]="previewLink(child)"
+                              class="min-w-0 flex-1 line-clamp-2 break-words hover:text-sunrise-warm hover:underline"
+                              >{{ child.name }}</a
+                            >
+                          </div>
+                          @if (isPreviewExpanded(child)) {
+                            <div class="ml-8 space-y-1" data-test="preview-child-children">
+                              @for (
+                                grandchild of child.children;
+                                track grandchild._id + ':' + $index
+                              ) {
+                                <a
+                                  [routerLink]="previewLink(grandchild)"
+                                  class="block px-2 py-1 text-xs text-muted-foreground line-clamp-2 break-words hover:text-ink"
+                                  >{{ kindShort(grandchild) }} {{ grandchild.name }}</a
+                                >
+                              }
+                            </div>
+                          }
+                        } @empty {
+                          <p class="px-2 py-2 text-xs text-muted-foreground">
+                            Нет дочерних элементов.
+                          </p>
+                        }
+                      </div>
+                    </div>
+                  } @empty {
+                    <p class="text-xs text-muted-foreground" data-test="expanded-tree-empty">
+                      Нет модулей в иерархии.
+                    </p>
+                  }
+                </div>
+              }
             }
           </div>
         }
@@ -602,6 +721,7 @@ export class ProductsPage implements OnInit {
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly modulesService = inject(ProductModulesService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly appearance = inject(CatalogAppearanceService);
 
   protected readonly RefreshIcon = RefreshCw;
   protected readonly ListIcon = List;
@@ -852,9 +972,82 @@ export class ProductsPage implements OnInit {
   protected readonly expandedId = signal<string | null>(null);
   protected readonly isExpandedRow = (row: Product): boolean => this.expandedId() === row._id;
   protected readonly expandedRowLabel = (row: Product): string => `Состав товара: ${row.name}`;
+  private readonly treeCache = signal(new Map<string, CompositionTreeNode>());
+  private readonly treeLoadingIds = signal(new Set<string>());
+  private readonly treeErrorIds = signal(new Set<string>());
+  private readonly previewExpandedIds = signal(new Set<string>());
 
   protected onRowClick(row: Product): void {
+    const opening = this.expandedId() !== row._id;
     this.expandedId.update((cur) => (cur === row._id ? null : row._id));
+    if (opening) this.ensureProductTree(row._id);
+  }
+
+  protected productTree(productId: string): CompositionTreeNode | null {
+    return this.treeCache().get(productId) ?? null;
+  }
+
+  protected treeLoading(productId: string): boolean {
+    return this.treeLoadingIds().has(productId);
+  }
+
+  protected treeError(productId: string): boolean {
+    return this.treeErrorIds().has(productId);
+  }
+
+  protected moduleNodes(tree: CompositionTreeNode): CompositionTreeNode[] {
+    return tree.children.filter((node) => node.kind === 'module');
+  }
+
+  protected kindShort(node: CompositionTreeNode): string {
+    return node.kind === 'module' ? 'мод' : node.kind === 'product' ? 'изд' : 'мат';
+  }
+
+  protected childAccent(node: CompositionTreeNode): string {
+    return catalogKindOklch(
+      node.kind,
+      node.materialKind ?? null,
+      0.11,
+      0.62,
+      this.appearance.palette(),
+    );
+  }
+
+  protected previewLink(node: CompositionTreeNode): string[] {
+    return node.kind === 'module'
+      ? ['/modules', node._id]
+      : node.kind === 'product'
+        ? ['/products', node._id]
+        : ['/materials', node._id];
+  }
+
+  protected isPreviewExpanded(node: CompositionTreeNode): boolean {
+    return this.previewExpandedIds().has(node._id);
+  }
+
+  protected togglePreviewNode(node: CompositionTreeNode): void {
+    const next = new Set(this.previewExpandedIds());
+    if (next.has(node._id)) next.delete(node._id);
+    else next.add(node._id);
+    this.previewExpandedIds.set(next);
+  }
+
+  private ensureProductTree(productId: string): void {
+    if (this.treeCache().has(productId) || this.treeLoading(productId)) return;
+    this.treeLoadingIds.update((ids) => new Set(ids).add(productId));
+    this.modulesService.getProductTree(productId, 2).subscribe((res) => {
+      this.treeLoadingIds.update((ids) => {
+        const next = new Set(ids);
+        next.delete(productId);
+        return next;
+      });
+      if (res.ok) {
+        this.treeCache.update((cache) => new Map(cache).set(productId, res.data));
+      } else {
+        this.treeErrorIds.update((ids) => new Set(ids).add(productId));
+        this.toast.error('Не удалось загрузить иерархию состава');
+      }
+    });
   }
 
   protected readonly moduleCatalog = signal<ProductModule[]>([]);
@@ -868,6 +1061,11 @@ export class ProductsPage implements OnInit {
     return (row.productModuleIds ?? []).filter(
       (m): m is ProductModule => typeof m === 'object' && m !== null && '_id' in m,
     );
+  }
+
+  /** Kind accent for module badge — same oklch path as composition-tree. */
+  protected moduleAccent(): string {
+    return catalogKindOklch('module', null, 0.12, 0.58, this.appearance.palette());
   }
 
   protected mainPhotoOf(row: Product): Photo | null {

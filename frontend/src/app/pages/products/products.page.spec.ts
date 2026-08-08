@@ -102,7 +102,59 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
         { provide: ProductsService, useValue: productsSvc },
         {
           provide: ProductModulesService,
-          useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) },
+          useValue: {
+            list: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
+            getProductTree: jest.fn().mockReturnValue(
+              of({
+                ok: true,
+                data: {
+                  _id: 'p1',
+                  name: 'Окно ПВХ',
+                  kind: 'product',
+                  quantity: 1,
+                  children: [
+                    {
+                      _id: 'mod1',
+                      name: 'Рама · R-1',
+                      kind: 'module',
+                      quantity: 1,
+                      children: [
+                        {
+                          _id: 'mat1',
+                          name: 'Профиль',
+                          kind: 'material',
+                          quantity: 2,
+                          children: [],
+                        },
+                        {
+                          _id: 'mat1b',
+                          name: 'Уплотнитель',
+                          kind: 'material',
+                          quantity: 1,
+                          children: [],
+                        },
+                      ],
+                    },
+                    {
+                      _id: 'mod2',
+                      name: 'Стеклопакет · SP-2',
+                      kind: 'module',
+                      quantity: 1,
+                      children: [
+                        {
+                          _id: 'mat2',
+                          name: 'Стекло',
+                          kind: 'material',
+                          quantity: 1,
+                          children: [],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              }),
+            ),
+          },
         },
         {
           provide: CategoriesService,
@@ -217,10 +269,19 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
     rowEl.click();
     fixture.detectChanges();
 
+    const tray = fixture.nativeElement.querySelector(
+      '[data-test="expanded-content"]',
+    ) as HTMLElement;
+    expect(tray).toBeTruthy();
+    expect(tray.className).toContain('gold-soft');
+    expect(tray.className).toContain('border-l-gold');
+    expect(fixture.nativeElement.querySelector('[data-test="expanded-tree"]')).toBeTruthy();
+
     const card = fixture.nativeElement.querySelector(
       '[data-test="module-card-mod1"]',
     ) as HTMLElement;
     expect(card).toBeTruthy();
+    expect(card.textContent).toContain('мод');
     expect(card.textContent).toContain('Рама');
     expect(card.textContent).toContain('R-1');
     expect(card.textContent).toContain('2 материалов');
@@ -230,6 +291,21 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
     ) as HTMLElement;
     expect(card2.textContent).toContain('Стеклопакет');
     expect(card2.textContent).toContain('1 материалов');
+  });
+
+  it('loads and renders a cached depth-two hierarchy with child kind badges', async () => {
+    const fixture = await renderPage();
+    const rowEl = fixture.nativeElement.querySelector('[data-test="table-row-p1"]') as HTMLElement;
+    rowEl.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="expanded-tree"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="preview-module-mod1"]')).toBeTruthy();
+    const child = fixture.nativeElement.querySelector(
+      '[data-test="preview-child-mat1"]',
+    ) as HTMLElement;
+    expect(child.textContent).toContain('мат');
+    expect(child.textContent).toContain('Профиль');
   });
 
   it('module card routerLink points to /modules/:id', async () => {
