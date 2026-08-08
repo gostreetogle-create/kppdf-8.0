@@ -1,5 +1,16 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-08T19:51:41Z · WAVE-PRODUCT-EDITOR DONE
+- DONE: TZ-PRODUCTS-309 — Product FullEditor edit mode now reuses the existing `ProductBomPanel` for passport + composition in one dialog; create mode keeps passport-only flow with a clear save-then-edit hint. Single composition API/write-path preserved.
+- IN PROGRESS: none
+- NOT DONE: none in WAVE-PRODUCT-EDITOR; INN-301 PARKED, SALES-304 RESERVED, Shipping/Gantt parked
+- NEXT: idle — READY queue empty; await a new PO wave or explicit deploy command
+- HEAD: 28a47aa1 pushed: yes (`origin/main`)
+- Blockers: none for Product Editor; `verify-status.sh` retains pre-existing 72 legacy kit-era drift outside this wave
+- _active/: empty
+- Ban: Product schema rename · second BOM write-path · ModuleMaterials · deploy
+- Deploy: NO
+
 ## Checkpoint 2026-08-08T19:47:00Z · TZ-PRODUCTS-308 DONE
 - DONE: TZ-PRODUCTS-308 — Product FullEditor now uses «Изделие» in user-facing title/kind/toasts, presents passport fields in three responsive columns with narrow capacity controls, and removes the profile-L composition hint without changing Product/API or composition write-path.
 - IN PROGRESS: none
