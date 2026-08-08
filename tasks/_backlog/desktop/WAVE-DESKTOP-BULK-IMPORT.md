@@ -2,7 +2,8 @@
 WAVE: Desktop bulk-import — «умный опт» Excel → ERP (READY)
 ═══════════════════════════════════════════════════════════════
 
-STATUS: READY · стартовать непрерывным исполнителем без ожидания «поехали»
+STATUS: **DONE — 2026-08-08** (волна закрыта непрерывным исполнителем, все 7 TZ на main)
+<!-- прошлый статус: READY · стартовать непрерывным исполнителем без ожидания «поехали» -->
 AUDIT: docs/audits/2026-08-08-desktop-bulk-import-vision-audit.md
 CHECKLIST: docs/agent-checklists/SESSION-WAVE-2026-08-08-desktop-bulk-import.md
 
@@ -48,3 +49,16 @@ CHECKLIST: docs/agent-checklists/SESSION-WAVE-2026-08-08-desktop-bulk-import.md
 
 Checkpoint `_active-map`: DONE wave desktop bulk-import · NEXT idle ·
 «готово предложить деплой» (desktop ZIP + BE вместе — только если PO скажет задеплой).
+
+## Checkpoint 2026-08-08 (closeout)
+
+- [x] TZD-23 matching+HITL → propose materials · gates ✅ · archive · main
+- [x] TZD-26 column classify + reshape · gates ✅ · archive · main
+- [x] TZD-18 batch + cap 2000 · gates ✅ · archive · main
+- [x] TZD-19 graph read tools + integrity · gates ✅ · archive · main
+- [x] TZD-27 journal product.* + MCP product · gates ✅ · archive · main
+- [x] TZD-28 doc drafts через MCP · gates ✅ · archive · main
+- [x] TZD-29 import-todos BE+MCP+thin page · gates ✅ · archive · main
+- [x] `_active` пуст; `_active-map` = DONE wave desktop bulk-import · NEXT idle
+- [x] `tasks/_backlog/desktop/README.md` status DONE
+- [ ] Deploy — НЕ выполнен (только по команде PO)

@@ -1,3 +1,13 @@
+## [2026-08-08] — TZD-29 DONE: manager import todos (wave #7 — WAVE COMPLETE)
+
+**Исполнитель:** buffy-desktop-ex (Freebuff desktop executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** BE `backend/src/modules/import-todo/**` (NEW) — `import_todos` schema (title/body?/href?/importTaskId?/templateId?/org?/createdByUserId/status open|done), REST POST/GET?status=/PATCH :id, RBAC admin|manager, org-scope как import-tasks; seed pages admin+manager. MCP `kppdf_import_todo_create|list|set_status` (tools.ts). FE thin page `/import-todos` (PiGroupWorkspace chrome, фильтры Все/Открытые/Выполненные, «Готово» PATCH done, href link, DatePipe); nav Документы «Задачи импорта»; docs page.md + PAGE-TZ-INDEX + MCP.md + FEATURE checklist + WAVE checkpoint DONE.
+**Gates:** BE tsc PASS; jest import-todo 3/3; MCP test 62/62; MCP tsc PASS; FE tsc PASS.
+**Archive:** `tasks/_archive/2026-08/TZD-29.done.md`
+**Lock:** `.mimocode/locks/TZD-29-manager-import-todos.lock`
+**Known:** Deploy NO. **Волна desktop bulk-import ЗАКРЫТА (все 7 TZ на main). NEXT idle.**
+
 ## [2026-08-08] — TZD-28 DONE: doc-constructor MCP drafts (wave #6)
 
 **Исполнитель:** buffy-desktop-ex (Freebuff desktop executor)

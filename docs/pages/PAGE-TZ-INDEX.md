@@ -1,7 +1,7 @@
 # Page ↔ TZ index
 
 **Purpose:** Search by page/route to find which tasks touched or will touch it.  
-**Updated:** 2026-08-08 (TZ-NAV-301 lifecycle menu + stubs)
+**Updated:** 2026-08-08 (TZ-NAV-301 lifecycle menu + stubs; TZD-29 /import-todos)
 
 How to use: `Ctrl+F` по route или имени страницы. Новые TZ обязаны указывать
 `PAGES:` / `PAGE_DOCS:` в шапке (см. `tz-authoring`).
@@ -15,6 +15,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | `/doc-constructor/texts` | texts.page.md | DOC-316, DOC-326, **DOC-336 done** (shell+editor polish) |
 | `/doc-constructor/tables` | tables.page.md | **DOC-335** done (editId), **DOC-336 done** (shell+dialog), **UX-DIALOG-301** (375px clamp) |
 | `/doc-constructor/documents` | documents.page.md | **UX-303 DONE** |
+| `/import-todos` | import-todos.page.md | **TZD-29 DONE** (manager finish-list after import) |
 
 ## Catalog / production
 

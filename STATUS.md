@@ -13,6 +13,12 @@
 - Moved the project passport to `docs/project-passport.md`; `TZ-CLEANUP-R2` is archived as DONE after all cleanup acceptance criteria and verification gates.
 - `tasks/` is intended to contain only real active `TZ-*.md` files. Roadmap prose elsewhere is historical context, not an active task claim.
 
+## [2026-08-08] — TZD-29 DONE: manager import todos (desktop wave #7, WAVE COMPLETE)
+**Статус:** DONE on main; deploy НЕ
+**Что:** BE `import-todo` module (POST/GET/PATCH, RBAC admin|manager, org-scope); MCP `kppdf_import_todo_create|list|set_status`; FE thin `/import-todos` page (фильтры, «Готово», href); seed pages; docs. **Волна desktop bulk-import закрыта — checkpoint idle.**
+**Archive:** `tasks/_archive/2026-08/TZD-29.done.md`
+**Gates:** BE tsc PASS; jest import-todo 3/3; MCP test 62/62; FE tsc PASS
+
 ## [2026-08-08] — TZD-28 DONE: doc-constructor MCP drafts (desktop wave #6)
 **Статус:** DONE on main; deploy НЕ
 **Archive:** `tasks/_archive/2026-08/TZD-28.done.md`

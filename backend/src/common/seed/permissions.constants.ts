@@ -49,6 +49,7 @@ export const PAGE_KEYS = [
   'inventory', 'storage-items', 'stock-movements',
   'people',
   'production',
+  'import-todos',
   'admin-users', 'admin-roles',
 ] as const;
 

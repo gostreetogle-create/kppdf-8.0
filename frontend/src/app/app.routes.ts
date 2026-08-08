@@ -276,6 +276,15 @@ export const routes: Routes = [
         title: 'KPPDF — Виды работ',
       },
       {
+        // TZD-29 — менеджер: «что доделать после импорта» (тонкая страница).
+        path: 'import-todos',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'import-todos' },
+        loadComponent: () =>
+          import('./pages/import-todos/import-todos.page').then((m) => m.ImportTodosPage),
+        title: 'KPPDF — Задачи импорта',
+      },
+      {
         // TZ-UX-306 / WORKERS-302.FOLLOWUP — каталог «Люди» (Worker API).
         path: 'people',
         canMatch: [capabilityRouteGuard],

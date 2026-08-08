@@ -8,6 +8,7 @@ import type { McpRuntimeConfig } from './config.js';
 import { registerDocTools } from './doc-tools.js';
 import { registerDomainTools } from './domain-tools.js';
 import { registerImportTaskTools } from './import-task-tools.js';
+import { registerImportTodoTools } from './import-todo-tools.js';
 import { registerInboxTools } from './inbox-tools.js';
 import { registerReadTools } from './read-tools.js';
 import { registerWriteTools } from './write-tools.js';
@@ -57,6 +58,7 @@ export function createKppdfMcpServer(cfg: McpRuntimeConfig): McpServer {
   registerDomainTools(server, cfg);
   registerInboxTools(server, cfg);
   registerImportTaskTools(server, cfg);
+  registerImportTodoTools(server, cfg);
   registerDocTools(server, cfg);
 
   return server;
