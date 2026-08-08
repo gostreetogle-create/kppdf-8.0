@@ -11,7 +11,7 @@
 | **TZD-22** | `e64e81f` |
 | TZ-CATALOG-330 … **334** | 334 on main |
 | TZ-COST-301…**303** | `cec4804` |
-| **TZD-24** | archive ready — commit this wave |
+| **TZD-24** | `1ae611e` |
 | TZ-PRODUCTION-303.1 / 303.1b | archives |
 
 ## READY (не сделано — выдавать по PO)
