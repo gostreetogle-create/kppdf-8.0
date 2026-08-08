@@ -40,7 +40,7 @@
 | Компонент | Режим | Данные |
 |-----------|-------|--------|
 | `QuickCreateDialogComponent` | **create** (TZ-DICT-316) | `{ entity: 'product', size?: 'S'\|'M'\|'L' }` — default M; profile from `/form-profiles` |
-| `ProductFormDialogComponent` | **edit** (FullEditor) | `Product` |
+| `ProductFormDialogComponent` | **create/edit** (FullEditor «Изделие») | `Product` |
 | `AlertDialogComponent` | confirm delete | `{ title, description, confirmLabel, variant }` |
 
 ## Services
@@ -105,17 +105,20 @@
 - **Format functions:** `formatPrice()` для `listPrice`, `KIND_LABELS`/`STATUS_LABELS` для enum-полей
 - **Refresh on dialog close:** `onDialogCloseOnce` → `listRes.reload()`
 
-## ProductFormDialog (TZ-PRODUCTS-302)
+## ProductFormDialog — FullEditor «Изделие» (TZ-PRODUCTS-308)
 
-`ProductFormDialogComponent` переработан из компактного form-variant в широкий
-content-DSL (паттерн TZ-MATERIALS-301): `variant="content"` +
-`[maxWidth]="'1000px'"`, body со скроллом и ВСЕГДА видимый sticky footer
-(«Сохранить» / «Отмена»).
+`ProductFormDialogComponent` — единый FullEditor для создания и редактирования
+изделия: `variant="content"` + `[maxWidth]="'min(1120px, calc(100vw - 2rem))'"`,
+body со скроллом и всегда видимый sticky footer («Сохранить» / «Отмена»).
+Пользовательские заголовки, вид `good` и уведомления используют слово
+«Изделие»; код `Product`, API и `/products` не переименовываются.
 
-**Секции формы (по порядку):** Основные данные (name/sku/kind/unit/status) →
-Категория (dropdown из `CategoriesService.list('product')`) → Цены (listPrice/
-isActive) → Габариты (L/W/H + единица) → **Цвет (RAL)** → **Модули в составе** →
-Вес → Описание и заметки → Изображения (фото-upload, паттерн TZ-MATERIALS-306).
+На desktop основные блоки стоят в три колонки: «Основные» (name/sku/kind/status/
+isActive), «Цена и учёт» (listPrice/category/subcategory), «Габариты и цвет»
+(Д/Ш/В, единицы, вес и RAL). На mobile колонки складываются в стек. Поля
+габаритов, веса, единиц и цвета ограничены по ширине; описание, заметки и фото
+остаются полноширинными ниже. Состав временно отсутствует в FullEditor до
+TZ-PRODUCTS-309 и не меняет паспортный payload.
 
 **RAL contract (TZ-PRODUCTS-301/302):**
 

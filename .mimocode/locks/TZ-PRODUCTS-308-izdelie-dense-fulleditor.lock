@@ -1,0 +1,11 @@
+# Lock file
+Locked as of 2026-08-08T19:46:00Z — TZ-PRODUCTS-308: Изделие — dense FullEditor + RU rename.
+
+Owner: agent-3e757640b7
+Protected files:
+- frontend/src/app/pages/products/product-form-dialog.component.ts
+- frontend/src/app/pages/products/product-form-dialog.component.spec.ts
+- docs/pages/products.page.md
+- docs/agent-checklists/TZ-PRODUCTS-308.md
+
+Unlock: only via orchestrator approval (successor TZ).

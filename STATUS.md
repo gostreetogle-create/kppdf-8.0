@@ -5,6 +5,13 @@
 **Canonical workspace:** `D:\kppdf-8.0` on `main`; package manager `pnpm`
 **Task truth:** `tasks/_backlog/QUEUE.md` + archives; completed work in `tasks/_archive/`
 
+## [2026-08-08] — TZ-PRODUCTS-308 DONE: FullEditor «Изделие»
+**Статус:** DONE on main; deploy НЕ
+**Что:** FullEditor изделия использует русское UI-имя «Изделие», responsive 3-column dense layout, узкие поля габаритов/веса/единицы/RAL и больше не показывает profile-L composition hint. Product/API schema и composition write-path не менялись; TZ-PRODUCTS-309 — следующий.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTS-308.done.md`
+**Gates:** FE tsc; Angular development build; focused Jest 24/24; targeted ESLint; Prettier; `git diff --check` — PASS. Глобальный `verify-status.sh` сохраняет pre-existing drift 72 legacy kit-era entries.
+**Wave:** WAVE-PRODUCT-EDITOR #1 DONE; NEXT TZ-PRODUCTS-309; deploy НЕ.
+
 ## [2026-08-08] — TZ-UX-FORM-307 DONE: Form Wave B batch 1
 **Статус:** DONE on main; deploy НЕ
 **Что:** Contract и WorkType dialogs используют общий `app-pi-form-section` в стиле Material; Organization FullEditor уже соответствовал канону kind-C. Payload/control names и бизнес-логика не менялись.

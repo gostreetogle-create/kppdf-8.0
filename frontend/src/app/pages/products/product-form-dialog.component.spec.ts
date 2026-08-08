@@ -472,16 +472,11 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     expect(close).toHaveBeenCalledTimes(1);
   });
 
-  // ── TZ-CATALOG-DEDUP-301: composition stripped from FullEditor ─────
+  // ── TZ-PRODUCTS-308: composition returns in TZ-PRODUCTS-309 ─────
 
-  it('DEDUP-301: shows composition hint; no module picker / BOM buttons', async () => {
+  it('TZ-PRODUCTS-308: removes the composition/profile hint from FullEditor', async () => {
     await setup(null);
-    const hint = fixture.nativeElement.querySelector(
-      '[data-test="composition-hint"]',
-    ) as HTMLElement | null;
-    expect(hint).toBeTruthy();
-    expect(hint!.textContent?.includes('L')).toBe(true);
-    expect(hint!.textContent?.trim().length).toBeGreaterThan(10);
+    expect(fixture.nativeElement.querySelector('[data-test="composition-hint"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test="add-module"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test="add-composition-line"]')).toBeNull();
   });

@@ -40,7 +40,7 @@ import { PiOverflowSelectComponent } from '../../shared/ui/overflow-select/pi-ov
 type Result = Product | null | undefined;
 
 const KIND_OPTIONS: { value: ProductKind; label: string }[] = [
-  { value: 'good', label: 'Товар' },
+  { value: 'good', label: 'Изделие' },
   { value: 'service', label: 'Услуга' },
   { value: 'work', label: 'Работа' },
 ];
@@ -65,17 +65,14 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
  * footer, so long forms never push «Сохранить» off-screen.
  *
  * Sections (in order):
- *  1. Основные данные: name, sku, kind, unit, status
- *  2. Категория: categoryId (dropdown из CategoriesService) + subcategory
- *  3. Цены: listPrice, isActive
- *  4. Габариты: L/W/H + unit (4 inputs)
- *  5. Цвет (RAL): searchable dropdown из PiColorReferencesService
- *     (активные цвета, swatch + name; свободный ввод НЕ допускается)
- *  6. Состав: только hint (TZ-CATALOG-DEDUP-301) — BOM на карточке /
- *     QuickCreate L через ProductBomPanel, не в FullEditor
- *  7. Дополнительно: weightKg (в секции цвета/габаритов)
- *  8. Описание/Заметки: description, notes
- *  9. Изображения: photo upload (PhotosService, TZ-MATERIALS-306 паттерн)
+ *  1. Основные: name, sku, kind, status, isActive
+ *  2. Цена и учёт: listPrice, categoryId, subcategory
+ *  3. Габариты и цвет: L/W/H, единицы, weightKg, RAL
+ *  4. Описание/Заметки: description, notes
+ *  5. Изображения: photo upload (PhotosService, TZ-MATERIALS-306 паттерн)
+ *
+ * Composition is intentionally hosted by ProductBomPanel in TZ-PRODUCTS-309,
+ * so this passport editor does not create a second composition write-path.
  *
  * RAL contract (TZ-PRODUCTS-301/302):
  *  - Список грузится из `PiColorReferencesService.list({ activeOnly: true })`
@@ -111,7 +108,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
   ],
   template: `
     <app-pi-dialog
-      [title]="isEdit() ? 'Редактировать продукт' : 'Создать продукт'"
+      [title]="isEdit() ? 'Редактировать изделие' : 'Новое изделие'"
       [variant]="'content'"
       [maxWidth]="'min(1120px, calc(100vw - 2rem))'"
     >
@@ -122,297 +119,306 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
         class="space-y-form-field"
         data-test="product-form"
       >
-        <!-- ─── 1. Основные данные ─── -->
-        <app-pi-form-section title="Основные данные" headingId="product-sec-basics" tone="gold">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
-            <app-pi-form-field
-              label="Название"
-              htmlFor="prod-name"
-              [required]="true"
-              [error]="errorFor('name')"
-            >
-              <app-pi-input
-                id="prod-name"
-                formControlName="name"
-                placeholder="Название продукта"
-                [invalid]="hasError('name')"
-              />
-            </app-pi-form-field>
-
-            <app-pi-form-field
-              label="SKU"
-              htmlFor="prod-sku"
-              hint="Если не задан — генерируется автоматически"
-              [error]="errorFor('sku')"
-            >
-              <app-pi-input id="prod-sku" formControlName="sku" placeholder="Артикул" />
-            </app-pi-form-field>
-
-            <app-pi-form-field
-              label="Вид"
-              htmlFor="prod-kind"
-              [required]="true"
-              [error]="errorFor('kind')"
-            >
-              <select
-                id="prod-kind"
-                formControlName="kind"
-                class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors"
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+          <!-- ─── Основные ─── -->
+          <app-pi-form-section title="Основные" headingId="product-sec-basics" tone="gold">
+            <div class="grid grid-cols-1 gap-form-field">
+              <app-pi-form-field
+                label="Название"
+                htmlFor="prod-name"
+                [required]="true"
+                [error]="errorFor('name')"
               >
-                @for (opt of KIND_OPTIONS; track opt.value) {
-                  <option [value]="opt.value">{{ opt.label }}</option>
-                }
-              </select>
-            </app-pi-form-field>
-
-            <app-pi-form-field
-              label="Единица"
-              htmlFor="prod-unit"
-              [required]="true"
-              [error]="errorFor('unit')"
-            >
-              <app-pi-input
-                id="prod-unit"
-                formControlName="unit"
-                placeholder="шт, м, кг"
-                [invalid]="hasError('unit')"
-              />
-            </app-pi-form-field>
-
-            <app-pi-form-field label="Статус" htmlFor="prod-status">
-              <select
-                id="prod-status"
-                formControlName="status"
-                class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors"
-              >
-                @for (opt of STATUS_OPTIONS; track opt.value) {
-                  <option [value]="opt.value">{{ opt.label }}</option>
-                }
-              </select>
-            </app-pi-form-field>
-          </div>
-        </app-pi-form-section>
-
-        <!-- ─── 2. Категория ─── -->
-        <app-pi-form-section title="Категория" headingId="product-sec-category" tone="neutral">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
-            <app-pi-form-field
-              label="Категория"
-              htmlFor="prod-category"
-              hint="Из справочника категорий (тип «продукт»). Пусто = «Без категории»."
-            >
-              <app-pi-overflow-select
-                [items]="categoryItems()"
-                [value]="form.controls.categoryId.value ?? ''"
-                (valueChange)="onCategoryChange($event)"
-                searchable="auto"
-                placeholder="— без категории —"
-                ariaLabel="Категория"
-                dataTest="prod-category"
-              />
-            </app-pi-form-field>
-
-            <app-pi-form-field label="Подкатегория" htmlFor="prod-subcategory">
-              <app-pi-input
-                id="prod-subcategory"
-                formControlName="subcategory"
-                placeholder="Подкатегория"
-              />
-            </app-pi-form-field>
-          </div>
-        </app-pi-form-section>
-
-        <!-- ─── 3. Цены ─── -->
-        <app-pi-form-section title="Цены" headingId="product-sec-prices" tone="neutral">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
-            <app-pi-form-field
-              label="Цена (прайс), ₽"
-              htmlFor="prod-price"
-              [error]="errorFor('listPrice')"
-            >
-              <app-pi-input
-                id="prod-price"
-                type="number"
-                formControlName="listPrice"
-                placeholder="0.00"
-                [invalid]="hasError('listPrice')"
-              />
-            </app-pi-form-field>
-
-            <app-pi-form-field label="Активен" htmlFor="prod-isActive">
-              <label
-                class="inline-flex items-center gap-2 min-h-touch px-control-x py-control-y hairline rounded-sm cursor-pointer"
-              >
-                <input
-                  id="prod-isActive"
-                  type="checkbox"
-                  formControlName="isActive"
-                  class="w-4 h-4"
+                <app-pi-input
+                  id="prod-name"
+                  formControlName="name"
+                  placeholder="Название изделия"
+                  [invalid]="hasError('name')"
                 />
-                <span class="text-sm">Доступен для заказов</span>
-              </label>
-            </app-pi-form-field>
-          </div>
-        </app-pi-form-section>
+              </app-pi-form-field>
 
-        <!-- ─── 4. Габариты ─── -->
-        <app-pi-form-section title="Габариты" headingId="product-sec-dimensions" tone="dimensions">
-          <div class="grid grid-cols-1 sm:grid-cols-4 gap-form-field items-end">
-            <app-pi-form-field label="Длина" htmlFor="prod-len">
-              <app-pi-input
-                id="prod-len"
-                type="number"
-                formControlName="dimLength"
-                placeholder="0"
-              />
-            </app-pi-form-field>
-            <app-pi-form-field label="Ширина" htmlFor="prod-width">
-              <app-pi-input
-                id="prod-width"
-                type="number"
-                formControlName="dimWidth"
-                placeholder="0"
-              />
-            </app-pi-form-field>
-            <app-pi-form-field label="Высота" htmlFor="prod-height">
-              <app-pi-input
-                id="prod-height"
-                type="number"
-                formControlName="dimHeight"
-                placeholder="0"
-              />
-            </app-pi-form-field>
-            <app-pi-form-field label="Единица" htmlFor="prod-dimUnit">
-              <select id="prod-dimUnit" formControlName="dimUnit" class="pi-input w-full">
-                @for (u of DIMENSION_UNIT_OPTIONS; track u) {
-                  <option [value]="u">{{ u }}</option>
-                }
-              </select>
-            </app-pi-form-field>
-          </div>
-        </app-pi-form-section>
+              <app-pi-form-field
+                label="SKU"
+                htmlFor="prod-sku"
+                hint="Если не задан — генерируется автоматически"
+                [error]="errorFor('sku')"
+              >
+                <app-pi-input id="prod-sku" formControlName="sku" placeholder="Артикул" />
+              </app-pi-form-field>
 
-        <!-- ─── 5. Цвет (RAL) ─── -->
-        <app-pi-form-section title="Цвет (RAL)" headingId="product-sec-color" tone="neutral">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field items-start">
-            <app-pi-form-field
-              label="Цвет"
-              htmlFor="prod-ral"
-              hint="Выбор из справочника цветов. Системный «Не выбран» очищает поле."
-            >
-              <div class="relative" #colorDropdownHost>
-                <button
-                  type="button"
-                  id="prod-ral"
-                  class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors flex items-center gap-2"
-                  [attr.aria-expanded]="colorOpen()"
-                  (click)="toggleColor()"
-                  data-test="color-dropdown-trigger"
+              <app-pi-form-field
+                label="Вид"
+                htmlFor="prod-kind"
+                [required]="true"
+                [error]="errorFor('kind')"
+              >
+                <select
+                  id="prod-kind"
+                  formControlName="kind"
+                  class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors"
                 >
-                  @if (selectedColor(); as c) {
-                    <span
-                      class="block w-4 h-4 rounded-full hairline shrink-0"
-                      [style.background]="c.hex || '#9CA3AF'"
-                      [attr.aria-hidden]="true"
-                    ></span>
-                    <span class="truncate">{{ c.name }}</span>
-                  } @else if (colorFallback(); as fb) {
-                    <span class="truncate text-muted-foreground">{{ fb }}</span>
-                  } @else {
-                    <span class="text-muted-foreground">Не выбран</span>
+                  @for (opt of KIND_OPTIONS; track opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
                   }
-                  <span class="ml-auto opacity-60" aria-hidden="true">▾</span>
-                </button>
+                </select>
+              </app-pi-form-field>
 
-                @if (colorOpen()) {
-                  <div
-                    class="absolute left-0 right-0 z-30 mt-1 bg-paper hairline rounded-sm shadow-sm max-h-64 overflow-y-auto"
-                    role="listbox"
-                    [attr.aria-label]="'Выбор цвета RAL'"
-                    data-test="color-dropdown-panel"
+              <app-pi-form-field label="Статус" htmlFor="prod-status">
+                <select
+                  id="prod-status"
+                  formControlName="status"
+                  class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors"
+                >
+                  @for (opt of STATUS_OPTIONS; track opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                  }
+                </select>
+              </app-pi-form-field>
+
+              <app-pi-form-field label="Активен" htmlFor="prod-isActive">
+                <label
+                  class="inline-flex items-center gap-2 min-h-touch px-control-x py-control-y hairline rounded-sm cursor-pointer"
+                >
+                  <input
+                    id="prod-isActive"
+                    type="checkbox"
+                    formControlName="isActive"
+                    class="w-4 h-4"
+                  />
+                  <span class="text-sm">Доступен для заказов</span>
+                </label>
+              </app-pi-form-field>
+            </div>
+          </app-pi-form-section>
+
+          <!-- ─── Цена и учёт ─── -->
+          <app-pi-form-section
+            title="Цена и учёт"
+            headingId="product-sec-accounting"
+            tone="neutral"
+          >
+            <div class="grid grid-cols-1 gap-form-field">
+              <app-pi-form-field
+                label="Цена (прайс), ₽"
+                htmlFor="prod-price"
+                [error]="errorFor('listPrice')"
+              >
+                <app-pi-input
+                  id="prod-price"
+                  type="number"
+                  formControlName="listPrice"
+                  placeholder="0.00"
+                  [invalid]="hasError('listPrice')"
+                />
+              </app-pi-form-field>
+
+              <app-pi-form-field
+                label="Категория"
+                htmlFor="prod-category"
+                hint="Из справочника категорий (тип «изделие»). Пусто = «Без категории»."
+              >
+                <app-pi-overflow-select
+                  [items]="categoryItems()"
+                  [value]="form.controls.categoryId.value ?? ''"
+                  (valueChange)="onCategoryChange($event)"
+                  searchable="auto"
+                  placeholder="— без категории —"
+                  ariaLabel="Категория"
+                  dataTest="prod-category"
+                />
+              </app-pi-form-field>
+
+              <app-pi-form-field label="Подкатегория" htmlFor="prod-subcategory">
+                <app-pi-input
+                  id="prod-subcategory"
+                  formControlName="subcategory"
+                  placeholder="Подкатегория"
+                />
+              </app-pi-form-field>
+            </div>
+          </app-pi-form-section>
+
+          <!-- ─── Габариты и цвет ─── -->
+          <app-pi-form-section
+            title="Габариты и цвет"
+            headingId="product-sec-dimensions"
+            tone="dimensions"
+          >
+            <div class="grid grid-cols-2 gap-form-field items-end">
+              <app-pi-form-field label="Длина" htmlFor="prod-len">
+                <div class="max-w-[8rem]">
+                  <app-pi-input
+                    id="prod-len"
+                    type="number"
+                    formControlName="dimLength"
+                    placeholder="0"
+                  />
+                </div>
+              </app-pi-form-field>
+              <app-pi-form-field label="Ширина" htmlFor="prod-width">
+                <div class="max-w-[8rem]">
+                  <app-pi-input
+                    id="prod-width"
+                    type="number"
+                    formControlName="dimWidth"
+                    placeholder="0"
+                  />
+                </div>
+              </app-pi-form-field>
+              <app-pi-form-field label="Высота" htmlFor="prod-height">
+                <div class="max-w-[8rem]">
+                  <app-pi-input
+                    id="prod-height"
+                    type="number"
+                    formControlName="dimHeight"
+                    placeholder="0"
+                  />
+                </div>
+              </app-pi-form-field>
+              <app-pi-form-field label="Ед. габаритов" htmlFor="prod-dimUnit">
+                <select
+                  id="prod-dimUnit"
+                  formControlName="dimUnit"
+                  class="pi-input w-full max-w-[8rem]"
+                >
+                  @for (u of DIMENSION_UNIT_OPTIONS; track u) {
+                    <option [value]="u">{{ u }}</option>
+                  }
+                </select>
+              </app-pi-form-field>
+              <app-pi-form-field label="Вес, кг" htmlFor="prod-weight">
+                <div class="max-w-[8rem]">
+                  <app-pi-input
+                    id="prod-weight"
+                    type="number"
+                    formControlName="weightKg"
+                    placeholder="0"
+                  />
+                </div>
+              </app-pi-form-field>
+              <app-pi-form-field
+                label="Единица"
+                htmlFor="prod-unit"
+                [required]="true"
+                [error]="errorFor('unit')"
+              >
+                <div class="max-w-[8rem]">
+                  <app-pi-input
+                    id="prod-unit"
+                    formControlName="unit"
+                    placeholder="шт, м, кг"
+                    [invalid]="hasError('unit')"
+                  />
+                </div>
+              </app-pi-form-field>
+            </div>
+
+            <div class="mt-4">
+              <app-pi-form-field
+                label="Цвет"
+                htmlFor="prod-ral"
+                hint="Выбор из справочника цветов. Системный «Не выбран» очищает поле."
+              >
+                <div class="relative max-w-[14rem]" #colorDropdownHost>
+                  <button
+                    type="button"
+                    id="prod-ral"
+                    class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors flex items-center gap-2"
+                    [attr.aria-expanded]="colorOpen()"
+                    (click)="toggleColor()"
+                    data-test="color-dropdown-trigger"
                   >
-                    <div class="p-2 hairline-b">
-                      <input
-                        type="search"
-                        class="pi-input w-full"
-                        placeholder="Поиск цвета…"
-                        [value]="colorSearch()"
-                        (input)="onColorSearch($event)"
-                        aria-label="Поиск цвета"
-                        data-test="color-search-input"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      class="w-full text-left px-3 py-2 text-sm hover:bg-paper-2 transition-colors"
-                      (click)="selectColor(null)"
-                      data-test="color-option-none"
-                    >
-                      Не выбран
-                    </button>
-                    @if (colorsLoading()) {
-                      <p class="px-3 py-2 text-xs text-muted-foreground" role="status">
-                        Загрузка цветов…
-                      </p>
-                    } @else if (colorsError()) {
-                      <p class="px-3 py-2 text-xs text-destructive" role="alert">
-                        {{ colorsError() }}
-                      </p>
-                    } @else if (colors().length === 0) {
-                      <p class="px-3 py-2 text-xs text-muted-foreground">
-                        Добавьте цвета в справочнике.
-                      </p>
-                      @if (canManageColors()) {
-                        <a
-                          [routerLink]="['/dictionaries/color-references']"
-                          class="block px-3 py-2 text-xs text-sunrise-warm hover:underline"
-                          data-test="colors-dictionary-link"
-                        >
-                          Открыть справочник цветов →
-                        </a>
-                      }
-                    } @else if (filteredColors().length === 0) {
-                      <p class="px-3 py-2 text-xs text-muted-foreground">Ничего не найдено.</p>
+                    @if (selectedColor(); as c) {
+                      <span
+                        class="block w-4 h-4 rounded-full hairline shrink-0"
+                        [style.background]="c.hex || '#9CA3AF'"
+                        [attr.aria-hidden]="true"
+                      ></span>
+                      <span class="truncate">{{ c.name }}</span>
+                    } @else if (colorFallback(); as fb) {
+                      <span class="truncate text-muted-foreground">{{ fb }}</span>
                     } @else {
-                      @for (c of filteredColors(); track c._id) {
-                        <button
-                          type="button"
-                          class="w-full text-left px-3 py-2 text-sm hover:bg-paper-2 transition-colors flex items-center gap-2"
-                          [class.bg-paper-2]="form.controls.ralCode.value === c.slug"
-                          (click)="selectColor(c)"
-                          [attr.data-test]="'color-option-' + c.slug"
-                        >
-                          <span
-                            class="block w-4 h-4 rounded-full hairline shrink-0"
-                            [style.background]="c.hex || '#9CA3AF'"
-                            [attr.aria-hidden]="true"
-                          ></span>
-                          <span class="truncate">{{ c.name }}</span>
-                        </button>
-                      }
+                      <span class="text-muted-foreground">Не выбран</span>
                     }
-                  </div>
-                }
-              </div>
-            </app-pi-form-field>
+                    <span class="ml-auto opacity-60" aria-hidden="true">▾</span>
+                  </button>
 
-            <app-pi-form-field label="Вес, кг" htmlFor="prod-weight">
-              <app-pi-input
-                id="prod-weight"
-                type="number"
-                formControlName="weightKg"
-                placeholder="0"
-              />
-            </app-pi-form-field>
-          </div>
-        </app-pi-form-section>
+                  @if (colorOpen()) {
+                    <div
+                      class="absolute left-0 right-0 z-30 mt-1 bg-paper hairline rounded-sm shadow-sm max-h-64 overflow-y-auto"
+                      role="listbox"
+                      [attr.aria-label]="'Выбор цвета RAL'"
+                      data-test="color-dropdown-panel"
+                    >
+                      <div class="p-2 hairline-b">
+                        <input
+                          type="search"
+                          class="pi-input w-full"
+                          placeholder="Поиск цвета…"
+                          [value]="colorSearch()"
+                          (input)="onColorSearch($event)"
+                          aria-label="Поиск цвета"
+                          data-test="color-search-input"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        class="w-full text-left px-3 py-2 text-sm hover:bg-paper-2 transition-colors"
+                        (click)="selectColor(null)"
+                        data-test="color-option-none"
+                      >
+                        Не выбран
+                      </button>
+                      @if (colorsLoading()) {
+                        <p class="px-3 py-2 text-xs text-muted-foreground" role="status">
+                          Загрузка цветов…
+                        </p>
+                      } @else if (colorsError()) {
+                        <p class="px-3 py-2 text-xs text-destructive" role="alert">
+                          {{ colorsError() }}
+                        </p>
+                      } @else if (colors().length === 0) {
+                        <p class="px-3 py-2 text-xs text-muted-foreground">
+                          Добавьте цвета в справочнике.
+                        </p>
+                        @if (canManageColors()) {
+                          <a
+                            [routerLink]="['/dictionaries/color-references']"
+                            class="block px-3 py-2 text-xs text-sunrise-warm hover:underline"
+                            data-test="colors-dictionary-link"
+                          >
+                            Открыть справочник цветов →
+                          </a>
+                        }
+                      } @else if (filteredColors().length === 0) {
+                        <p class="px-3 py-2 text-xs text-muted-foreground">Ничего не найдено.</p>
+                      } @else {
+                        @for (c of filteredColors(); track c._id) {
+                          <button
+                            type="button"
+                            class="w-full text-left px-3 py-2 text-sm hover:bg-paper-2 transition-colors flex items-center gap-2"
+                            [class.bg-paper-2]="form.controls.ralCode.value === c.slug"
+                            (click)="selectColor(c)"
+                            [attr.data-test]="'color-option-' + c.slug"
+                          >
+                            <span
+                              class="block w-4 h-4 rounded-full hairline shrink-0"
+                              [style.background]="c.hex || '#9CA3AF'"
+                              [attr.aria-hidden]="true"
+                            ></span>
+                            <span class="truncate">{{ c.name }}</span>
+                          </button>
+                        }
+                      }
+                    </div>
+                  }
+                </div>
+              </app-pi-form-field>
+            </div>
+          </app-pi-form-section>
+        </div>
 
-        <!-- ─── 6. Состав (hint only — TZ-CATALOG-DEDUP-301) ─── -->
-        <app-pi-form-section title="Состав" headingId="product-sec-composition" tone="neutral">
-          <p class="text-sm text-muted-foreground" data-test="composition-hint">
-            Состав собирается на карточке изделия или в быстром создании (профиль L).
-          </p>
-        </app-pi-form-section>
+        <!-- Composition is intentionally absent until TZ-PRODUCTS-309. -->
 
         <!-- ─── 7. Описание/Заметки ─── -->
         <app-pi-form-section
@@ -470,7 +476,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
           }
           @if (photos().length === 0 && !uploading()) {
             <p class="text-xs text-muted-foreground">
-              Нет фото. Можно загрузить несколько изображений продукта.
+              Нет фото. Можно загрузить несколько изображений изделия.
             </p>
           }
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -481,7 +487,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
               >
                 <img
                   [src]="p.storageUrl"
-                  [alt]="p.originalFilename || 'Фото продукта'"
+                  [alt]="p.originalFilename || 'Фото изделия'"
                   class="block w-full h-24 object-cover"
                 />
                 <div class="flex items-center justify-end p-1 hairline-t">
@@ -873,7 +879,7 @@ export class ProductFormDialogComponent implements OnDestroy {
         this.submitted = true;
         // Atomic: after the product save succeeds, apply pending photo deletions.
         this.applyPendingPhotoDeletions();
-        this.toast.success(this.isEdit() ? 'Продукт обновлён' : 'Продукт создан');
+        this.toast.success(this.isEdit() ? 'Изделие обновлено' : 'Изделие создано');
         this.ref.close(res.data);
       } else {
         this.errorMessage.set(extractErrorMessage(res.error));

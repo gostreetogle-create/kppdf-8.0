@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-PRODUCTS-308 DONE: FullEditor «Изделие» плотнее и понятнее
+
+**Исполнитель:** agent-3e757640b7 · WAVE-PRODUCT-EDITOR #1
+**Статус:** DONE; deploy НЕ
+**Что:** Product FullEditor получил пользовательский канон «Изделие» без переименования `Product`/API, три responsive-колонки «Основные» / «Цена и учёт» / «Габариты и цвет», узкие controls для Д/Ш/В/ед./веса/RAL и полноширинные поля описания/фото. Старый hint про профиль L удалён; composition write-path не трогался и остаётся за TZ-PRODUCTS-309.
+**Затронуто:** `frontend/src/app/pages/products/product-form-dialog.component.ts`, focused spec, `docs/pages/products.page.md`, checklist/archive/lock.
+**Gates:** FE tsc PASS; Angular development build PASS; focused Jest 24/24 PASS; targeted ESLint PASS; Prettier PASS; `git diff --check` PASS. `verify-status.sh` сохраняет pre-existing drift 72 legacy kit-era entries.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTS-308.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTS-308-izdelie-dense-fulleditor.lock`
+
 ## [2026-08-08] — TZ-UX-FORM-307 DONE: секции форм договоров и видов работ
 
 **Исполнитель:** agent-e51db87918 · WAVE-SHOP-NORTH-B #7

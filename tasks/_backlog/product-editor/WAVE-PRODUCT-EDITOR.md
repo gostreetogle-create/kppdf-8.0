@@ -1,6 +1,6 @@
 # WAVE-PRODUCT-EDITOR — FullEditor изделия: имя + плотная вёрстка + состав
 
-**STATUS:** READY  
+**STATUS:** IN PROGRESS — TZ-PRODUCTS-308 DONE; TZ-PRODUCTS-309 READY
 **SoT:** `D:\kppdf-8.0` на `main`  
 **Промпт:** [`PROMPT-CONTINUOUS.md`](./PROMPT-CONTINUOUS.md)  
 **Deploy:** только по команде PO
