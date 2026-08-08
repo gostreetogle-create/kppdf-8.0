@@ -128,10 +128,17 @@ describe('ModuleDetailPage (TZ-CATALOG-336)', () => {
     expect(el.querySelector('[data-test="module-composition-editor"]')).toBeNull();
   });
 
-  it('shows cost-preview in passport (no listPrice)', () => {
+  it('shows cost-preview in Себестоимость accordion (FactCards, not hero tiles)', () => {
+    const page = fixture.componentInstance as unknown as {
+      openCost: { set: (v: boolean) => void };
+    };
+    page.openCost.set(true);
+    fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('[data-test="module-hero-cost"]')).toBeNull();
+    expect(el.querySelector('[data-test="module-hero-dims"]')).toBeTruthy();
     expect(el.querySelector('[data-test="module-cost-total"]')?.textContent).toMatch(/15/);
-    expect(el.querySelector('[data-test="module-hero-cost"]')).toBeTruthy();
+    expect(el.querySelector('[data-test="module-cost-panel"]')).toBeTruthy();
   });
 
   it('passes rootKind=module to BOM panel', () => {

@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-DETAIL-304 DONE: module detail parity
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** passport FactCards; cost в аккордеоне с captions; shared BomPanel inspector.
+**Gates:** FE tsc PASS; Jest module-detail 3/3 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-DETAIL-304.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-DETAIL-304-module-detail-parity.lock`
+**Known:** Deploy NO. Next FACT-302.
+
 ## [2026-08-08] — TZ-UX-DETAIL-303 DONE: bom inspector FactCards
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor)

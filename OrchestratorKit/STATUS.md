@@ -27,6 +27,7 @@
 
 | № | Название | Closed | Archive |
 |---|----------|--------|---------|
+| TZ-UX-DETAIL-304 | Module detail parity | 2026-08-08 | `tasks/_archive/2026-08/TZ-UX-DETAIL-304.done.md` |
 | TZ-UX-DETAIL-303 | BOM inspector FactCards + Edit | 2026-08-08 | `tasks/_archive/2026-08/TZ-UX-DETAIL-303.done.md` |
 | TZ-UX-DETAIL-302 | Cost panel vertical + autorecalc | 2026-08-08 | `tasks/_archive/2026-08/TZ-UX-DETAIL-302.done.md` |
 | TZ-UX-DETAIL-301 | Product passport cleanup | 2026-08-08 | `tasks/_archive/2026-08/TZ-UX-DETAIL-301.done.md` |

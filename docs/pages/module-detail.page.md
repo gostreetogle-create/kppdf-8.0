@@ -17,16 +17,16 @@
 ## UI layout (variant A+, 2026-08-08 · TZ-CATALOG-336)
 
 1. **Nav:** `Каталог / Модули / <имя>` (`PiPageChrome`) + действия
-   (Редактировать / Быстрое редактирование / Удалить).
-2. **Split xl:** слева sticky — паспорт (имя, артикул, габариты Ш×В×Г, вес,
-   **Себест. preview**) + аккордеон **Фото / Себестоимость / Виды работ**;
-   справа **только BOM** на всю высоту (`ProductBomPanel` + `rootKind="module"`).
+   (Редактировать / Удалить). «Быстрое редактирование» снято (DEDUP-302).
+2. **Split xl:** слева sticky — паспорт (имя, артикул, габариты/вес FactCard)
+   + аккордеон **Фото / Себестоимость / Виды работ**;
+   справа **только BOM** (`ProductBomPanel` + `rootKind="module"`; inspector DETAIL-303).
 3. **BOM:** тот же визуальный язык, что у изделия
    ([composition-tree канон](./ui-composition-tree.md); pattern lock cascade).
    Picker с `restrictToModule` — **без вкладки изделия**; сырьё ок.
-4. У модуля **нет** `listPrice` — в паспорте только cost-preview
-   (материалы / труд / итого), не журнал CostCalculation изделия.
-5. `ModuleMaterialsFormDialog` — secondary («Быстрое редактирование»), не центр UX.
+4. У модуля **нет** `listPrice` — cost-preview (материалы / труд / итого) в аккордеоне
+   Себестоимость с captions (DETAIL-304), не в hero.
+5. `ModuleMaterialsFormDialog` удалён (DEDUP-302); состав только BomPanel.
 
 ## Бизнес-правила состава
 

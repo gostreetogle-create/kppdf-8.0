@@ -32,6 +32,7 @@ import {
 } from '../../shared/services/pi-product-module-photos.service';
 import { ModuleFormDialogComponent } from './module-form-dialog.component';
 import { ProductBomPanelComponent } from '../products/product-bom-panel.component';
+import { PiFactCardComponent, PiFactStackComponent } from '../../shared/ui/fact-card';
 
 /** TZ-COST-302: shape of GET /modules/:id/cost-preview. */
 interface ModuleCostPreview {
@@ -59,6 +60,8 @@ interface ModuleCostPreview {
     AccordionItemComponent,
     PiEmptyTileComponent,
     ProductBomPanelComponent,
+    PiFactCardComponent,
+    PiFactStackComponent,
   ],
   template: `
     <app-pi-page-chrome [crumbs]="detailCrumbs()" data-test="module-detail-nav">
@@ -130,56 +133,20 @@ interface ModuleCostPreview {
                 </p>
               </div>
 
-              <dl class="grid grid-cols-2 gap-2 text-sm" data-test="module-hero-cost">
-                <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0 col-span-2">
-                  <dt class="eyebrow truncate">Себест. (расчёт)</dt>
-                  <dd
-                    class="font-mono font-medium text-sm truncate empty-cell"
-                    data-test="module-cost-total"
-                  >
-                    @if (costPreview(); as cp) {
-                      {{ formatRuble(cp.totalCost) }}
-                    } @else if (costPreviewError()) {
-                      —
-                    } @else {
-                      …
-                    }
-                  </dd>
-                </div>
-                <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
-                  <dt class="eyebrow truncate">Материалы</dt>
-                  <dd
-                    class="font-mono text-sm truncate empty-cell"
-                    data-test="module-cost-material"
-                  >
-                    {{ costPreview() != null ? formatRuble(costPreview()!.materialCost) : '—' }}
-                  </dd>
-                </div>
-                <div class="hairline rounded-sm bg-paper-2 px-2.5 py-2 min-w-0">
-                  <dt class="eyebrow truncate">Труд</dt>
-                  <dd class="font-mono text-sm truncate empty-cell" data-test="module-cost-labor">
-                    {{ costPreview() != null ? formatRuble(costPreview()!.laborCost) : '—' }}
-                  </dd>
-                </div>
-              </dl>
-
-              <dl
-                class="flex flex-col gap-1 text-xs text-muted-foreground"
-                data-test="module-hero-dims"
-              >
-                <div class="flex justify-between gap-2">
-                  <span class="eyebrow shrink-0">Ш×В×Г</span>
-                  <span class="font-mono text-ink text-right empty-cell">{{
-                    dimensionsLabel(m)
-                  }}</span>
-                </div>
-                <div class="flex justify-between gap-2">
-                  <span class="eyebrow shrink-0">Вес</span>
-                  <span class="font-mono text-ink text-right empty-cell">{{
-                    m.weight != null ? m.weight + ' кг' : '—'
-                  }}</span>
-                </div>
-              </dl>
+              <app-pi-fact-stack title="Паспорт" dataTest="module-hero-dims">
+                <app-pi-fact-card
+                  label="Ш×В×Г"
+                  [value]="dimensionsLabel(m)"
+                  mono
+                  dataTest="module-dim"
+                />
+                <app-pi-fact-card
+                  label="Вес"
+                  [value]="m.weight != null ? m.weight + ' кг' : '—'"
+                  mono
+                  dataTest="module-weight"
+                />
+              </app-pi-fact-stack>
             </div>
           </section>
 
@@ -254,31 +221,46 @@ interface ModuleCostPreview {
               [expanded]="openCost()"
               (expandedChange)="openCost.set($event)"
             >
-              @if (costPreview(); as cp) {
-                <dl
-                  class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm"
-                  data-test="module-cost-preview"
-                >
-                  <dt class="eyebrow">Материалы</dt>
-                  <dd class="font-mono">{{ formatRuble(cp.materialCost) }}</dd>
-                  <dt class="eyebrow">Труд</dt>
-                  <dd class="font-mono">{{ formatRuble(cp.laborCost) }}</dd>
-                  <dt class="eyebrow">Итого</dt>
-                  <dd class="font-mono font-medium">{{ formatRuble(cp.totalCost) }}</dd>
-                </dl>
-                @if (cp.infos?.length) {
-                  <p
-                    class="mt-2 text-xs text-muted-foreground"
-                    data-test="module-cost-preview-infos"
-                  >
-                    {{ cp.infos?.join(' · ') }}
-                  </p>
+              <div class="space-y-3" data-test="module-cost-panel">
+                @if (costPreview(); as cp) {
+                  <app-pi-fact-stack title="Расчёт" dataTest="module-cost-preview">
+                    <app-pi-fact-card
+                      label="Итого"
+                      [value]="formatRuble(cp.totalCost)"
+                      caption="Себестоимость модуля (rollup)"
+                      mono
+                      variant="emphasis"
+                      dataTest="module-cost-total"
+                    />
+                    <app-pi-fact-card
+                      label="Материалы"
+                      [value]="formatRuble(cp.materialCost)"
+                      caption="Сумма материалов в составе"
+                      mono
+                      dataTest="module-cost-material"
+                    />
+                    <app-pi-fact-card
+                      label="Труд"
+                      [value]="formatRuble(cp.laborCost)"
+                      caption="Часы × ставка видов работ"
+                      mono
+                      dataTest="module-cost-labor"
+                    />
+                  </app-pi-fact-stack>
+                  @if (cp.infos?.length) {
+                    <p
+                      class="text-xs text-muted-foreground m-0"
+                      data-test="module-cost-preview-infos"
+                    >
+                      {{ cp.infos?.join(' · ') }}
+                    </p>
+                  }
+                } @else if (costPreviewError()) {
+                  <p class="text-sm text-destructive" role="alert">{{ costPreviewError() }}</p>
+                } @else {
+                  <p class="text-sm text-muted-foreground">Загрузка расчёта…</p>
                 }
-              } @else if (costPreviewError()) {
-                <p class="text-sm text-destructive" role="alert">{{ costPreviewError() }}</p>
-              } @else {
-                <p class="text-sm text-muted-foreground">Загрузка расчёта…</p>
-              }
+              </div>
             </app-pi-accordion-item>
 
             <app-pi-accordion-item
