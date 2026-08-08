@@ -768,22 +768,45 @@ function spawnDetached(cmd, args, cwd, name, envExtra = {}) {
     if (useTui()) renderStatus();
   }
   const dirName = cwd.split(/[\\/]/).pop();
-  /** TZ-OPS-301: vite proxy race until backend health is ready. */
+  /**
+   * TZ-OPS-301 / boot DX: vite prints multi-line proxy failures while Nest is
+   * still compiling. First line is often only `http proxy error: /api/...`
+   * without ECONNREFUSED on the same line — older filter let those through and
+   * scared PO. Suppress the whole race pattern until backend status=ready;
+   * after that, real proxy errors still show.
+   */
+  let proxyRaceNotePrinted = false;
   const isFrontendProxyRaceNoise = (line) => {
-    if (!line.includes('http proxy error')) return false;
-    return line.includes('ECONNREFUSED') || line.includes('AggregateError');
+    if (name !== 'frontend') return false;
+    if (state.services.backend?.status === 'ready') return false;
+    const t = line.trim();
+    if (!t) return false;
+    if (t.includes('http proxy error')) return true;
+    if (t.includes('ECONNREFUSED')) return true;
+    if (t.includes('AggregateError')) return true;
+    // stack frames that follow vite proxy AggregateError
+    if (/^at\s+/.test(t) && (t.includes('node:net') || t.includes('ConnectMultiple'))) {
+      return true;
+    }
+    return false;
   };
-  const shouldSuppressFrontendProxy = (line) =>
-    name === 'frontend' &&
-    state.services.backend?.status !== 'ready' &&
-    isFrontendProxyRaceNoise(line);
+  const noteProxyRaceOnce = () => {
+    if (proxyRaceNotePrinted) return;
+    proxyRaceNotePrinted = true;
+    log.dim(
+      'frontend→backend proxy ECONNREFUSED до готовности Nest — штатный шум, скрываю (после ✔ backend снова покажу proxy-ошибки)',
+    );
+  };
 
   const onChunk = (b) => {
     const chunk = b.toString();
     if (name) {
       for (const line of chunk.split('\n')) {
         if (!line.trim()) continue;
-        if (shouldSuppressFrontendProxy(line)) continue;
+        if (isFrontendProxyRaceNoise(line)) {
+          noteProxyRaceOnce();
+          continue;
+        }
         pushLog(name, line);
       }
     }
@@ -793,12 +816,15 @@ function spawnDetached(cmd, args, cwd, name, envExtra = {}) {
     } else {
       // Non-TUI: passthrough с префиксом [name]
       const prefix = name ? `[${name}] ` : `[${dirName}] `;
-      if (name === 'frontend' && state.services.backend?.status !== 'ready') {
+      if (name === 'frontend') {
         const parts = chunk.split('\n');
         for (let i = 0; i < parts.length; i++) {
           const line = parts[i];
           const last = i === parts.length - 1;
-          if (isFrontendProxyRaceNoise(line)) continue;
+          if (isFrontendProxyRaceNoise(line)) {
+            noteProxyRaceOnce();
+            continue;
+          }
           if (last && line === '' && parts.length > 1) {
             process.stdout.write('\n');
             continue;
