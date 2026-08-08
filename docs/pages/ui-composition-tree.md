@@ -27,12 +27,10 @@
    (`color-mix` kind→paper) + бейдж/бордер через `catalogKindOklch`.
    Не полупрозрачный wash поверх nest — иначе розовый/синий/зелёный
    впитывают серый каскад. Не RAL. Persist пресетов → TZ-331.
-9. **Containment outlines (TZ-333+):** `.comp-tree__nest` — каскад **светлее→темнее**
-   по глубине (`color-mix` ink→paper: ~10% / 20% / 32% / 44%), градиент + тень +
-   `rounded-lg`. Kind **не** заливает панель — только rail + строки.
-   Свёрнуто → nest нет в DOM. Module-in-module = карточка в карточке.
-10. **Пачки / cohesion:** sibling gap, rail 5px, `ml-5`/`pl-5`. Вложенность —
-    оттенком подложки, не kind-розовым.
+9. **Containment outlines (TZ-333+):** `.comp-tree__nest` — мягкий каскад
+   Paper & Ink (`ink`/`rule` → paper: ~4% / 8% / 13% / 18%), без резкого серого.
+   Kind — непрозрачные строки + rail. Свёрнуто → nest нет в DOM.
+10. **Пачки / cohesion:** sibling gap, rail 5px, `ml-5`/`pl-5`.
 
 ## Запрещено
 

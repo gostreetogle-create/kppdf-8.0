@@ -195,16 +195,16 @@ export class CompositionTreeComponent {
   }
 
   /**
-   * Nest panel cascade by depth — each level clearly darker (magazine stack).
-   * Kind hues stay on rows + left rail only (no pink flood).
+   * Nest cascade — gentle paper elevation (site Paper & Ink), not hard gray jumps.
+   * Kind hues stay on opaque rows + left rail only.
    */
   protected nestSurface(depth: number): string {
     const step = Math.min(Math.max(depth, 0), 3);
-    // % of ink mixed into paper — steps must be eye-obvious on light canvas
-    const inkPct = [10, 20, 32, 44] as const;
+    // Soft ink→paper mixes; step 0 must still read as a tinted tray
+    const inkPct = [4, 8, 13, 18] as const;
     const from = inkPct[step]!;
-    const to = Math.min(from + 12, 56);
-    return `linear-gradient(165deg, color-mix(in oklch, var(--color-ink) ${from}%, var(--color-paper)) 0%, color-mix(in oklch, var(--color-ink) ${to}%, var(--color-paper)) 100%)`;
+    const to = from + 4;
+    return `linear-gradient(165deg, color-mix(in oklch, var(--color-ink) ${from}%, var(--color-paper)) 0%, color-mix(in oklch, var(--color-rule) ${Math.min(from + 6, 22)}%, var(--color-paper)) 55%, color-mix(in oklch, var(--color-ink) ${to}%, var(--color-paper)) 100%)`;
   }
 
   protected onRowMouseDown(event: MouseEvent): void {
