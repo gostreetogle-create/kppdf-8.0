@@ -23,6 +23,7 @@ import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../dialog/dialog.tokens';
 import type { SilentResult } from '../../../core/silent-http';
 import { FIELD_KEY_LABEL_RU } from '../../services/form-profiles.service';
 import { FIELD_CAPACITY, spanForKey } from './field-capacity';
+import { PiFormSectionComponent } from '../form-section';
 
 describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
   const success = jest.fn();
@@ -103,13 +104,13 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
       ],
     })
       .overrideComponent(QuickCreateDialogComponent, {
-        set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
+        set: { imports: [PiFormSectionComponent], schemas: [NO_ERRORS_SCHEMA] },
       })
       .compileComponents();
 
     const fixture = TestBed.createComponent(QuickCreateDialogComponent);
     fixture.detectChanges();
-    return fixture.componentInstance;
+    return { component: fixture.componentInstance, fixture };
   }
 
   beforeEach(() => {
@@ -136,7 +137,7 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
   });
 
   it('loads product M profile and shows locked + optional keys', async () => {
-    const c = await setup({ entity: 'product', size: 'M' });
+    const { component: c } = await setup({ entity: 'product', size: 'M' });
     expect(profiles.getOne).toHaveBeenCalledWith('product', 'M');
     expect(c.loading()).toBe(false);
     expect(c.visibleKeys()).toEqual([
@@ -154,7 +155,7 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
   });
 
   it('SIZE_TO_WIDTH + 12-col packing for M/L; S single col (TZ-UX-DIALOG-302 / FORM-301)', async () => {
-    const c = await setup({ entity: 'product', size: 'M' });
+    const { component: c } = await setup({ entity: 'product', size: 'M' });
     expect(c.dialogWidth()).toBe('lg');
     expect(c.useCapacityGrid()).toBe(true);
     expect(c.fieldsGridClass()).toContain('md:grid-cols-12');
@@ -186,7 +187,7 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
   });
 
   it('size switch reloads profile and keeps locked required', async () => {
-    const c = await setup({ entity: 'product', size: 'M' });
+    const { component: c } = await setup({ entity: 'product', size: 'M' });
     profiles.getOne.mockReturnValue(of(ok(productS)));
     c.onSizeChange('S');
     expect(profiles.getOne).toHaveBeenCalledWith('product', 'S');
@@ -196,7 +197,7 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
   });
 
   it('creates product with only visible fields; omits empty optional', async () => {
-    const c = await setup({ entity: 'product', size: 'M' });
+    const { component: c } = await setup({ entity: 'product', size: 'M' });
     c.form.patchValue({ name: 'Стол', kind: 'good', unit: 'шт', sku: '', listPrice: null });
     c.onSubmit();
     expect(products.create).toHaveBeenCalledTimes(1);
@@ -239,7 +240,7 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
       ],
     })
       .overrideComponent(QuickCreateDialogComponent, {
-        set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
+        set: { imports: [PiFormSectionComponent], schemas: [NO_ERRORS_SCHEMA] },
       })
       .compileComponents();
 
@@ -250,7 +251,7 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
   });
 
   it('creates module via modules.create', async () => {
-    const c = await setup({ entity: 'module', size: 'M' });
+    const { component: c } = await setup({ entity: 'module', size: 'M' });
     expect(profiles.getOne).toHaveBeenCalledWith('module', 'M');
     c.form.patchValue({ name: 'Каркас', article: 'A-1' });
     c.onSubmit();
@@ -258,6 +259,21 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
       expect.objectContaining({ name: 'Каркас', article: 'A-1' }),
     );
     expect(products.create).not.toHaveBeenCalled();
+  });
+
+  it('renders Material-style sections and every product L control', async () => {
+    const { component: c, fixture } = await setup({ entity: 'product', size: 'M' });
+    profiles.getOne.mockReturnValue(of(ok(productLAll)));
+    c.onSizeChange('L');
+    fixture.detectChanges();
+    const sections = fixture.nativeElement.querySelectorAll('app-pi-form-section');
+    const sectionText = Array.from(sections).map((section: Element) => section.textContent ?? '');
+    expect(sectionText.some((text) => text.includes('Основные данные'))).toBe(true);
+    expect(sectionText.some((text) => text.includes('Габариты'))).toBe(true);
+    expect(sectionText.some((text) => text.includes('Дополнительно'))).toBe(true);
+    for (const key of PRODUCT_FIELD_KEYS) {
+      expect(fixture.nativeElement.querySelector(`[data-test="qc-field-${key}"]`)).not.toBeNull();
+    }
   });
 
   it('shows load error when profile GET fails', async () => {
@@ -281,7 +297,7 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
       ],
     })
       .overrideComponent(QuickCreateDialogComponent, {
-        set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
+        set: { imports: [PiFormSectionComponent], schemas: [NO_ERRORS_SCHEMA] },
       })
       .compileComponents();
 

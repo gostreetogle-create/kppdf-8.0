@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-FORM-302 DONE: Shared form sections for Material and QuickCreate
+
+**Исполнитель:** Buffy / agent-acfffc1331
+**Статус:** DONE on executor branch; deploy НЕ
+**Что:** Добавлен shared `app-pi-form-section`; Material dialog переведён на него; QuickCreate M/L получил секции «Основные данные / Габариты / Дополнительно» с пустыми группами hidden. FORM-301 capacity/packing сохранён.
+**Gates:** FE tsc PASS; Angular development build PASS; targeted Jest 2 suites / 49 tests PASS; scoped ESLint PASS; diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-FORM-302.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-FORM-302-form-sections-canon-quickcreate.lock`
+**Known:** FORM-303 photo, FORM-304 BOM, FORM-305 sweep не затрагивались. Deploy: NO.
+
 ## [2026-08-08] — TZ-UX-308 DONE: Nav «Справ.» yellow on /categories
 
 **Исполнитель:** agent-3e757640b7 (self PASS → archive; PO CLAIM)

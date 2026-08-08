@@ -28,6 +28,7 @@ import {
 import { PhotosService, type Photo } from '../../shared/services/photos.service';
 import { Organization, OrganizationsService } from '../../shared/services/organizations.service';
 import { Unit, UnitsService } from '../../pages/dictionaries/units.service';
+import { PiFormSectionComponent } from '../../shared/ui/form-section';
 
 type Result = Material | null | undefined;
 
@@ -102,6 +103,7 @@ interface DimensionFormGroup extends FormGroup {
     FormFieldComponent,
     InputComponent,
     TextareaComponent,
+    PiFormSectionComponent,
   ],
   template: `
     <app-pi-dialog
@@ -119,11 +121,11 @@ interface DimensionFormGroup extends FormGroup {
         <!-- ─── Two-column layout: basics (left) + optional (right) ─── -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
           <!-- ─── LEFT: обязательные основные данные ─── -->
-          <section
-            class="space-y-form-field rounded-sm bg-paper-2/40 p-3 border-l-[3px] border-l-gold"
-            aria-labelledby="mat-sec-basics"
+          <app-pi-form-section
+            title="Основные данные"
+            headingId="mat-sec-basics"
+            tone="gold"
           >
-            <p id="mat-sec-basics" class="eyebrow text-ink">Основные данные</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
               <app-pi-form-field
                 label="Название"
@@ -242,14 +244,14 @@ interface DimensionFormGroup extends FormGroup {
                 Остаток — в разделе «Склад».
               </p>
             </div>
-          </section>
+          </app-pi-form-section>
 
           <!-- ─── RIGHT: необязательные данные ─── -->
-          <section
-            class="space-y-form-field rounded-sm bg-paper p-3 hairline border-l-[3px] border-l-ink/25"
-            aria-labelledby="mat-sec-extra"
+          <app-pi-form-section
+            title="Дополнительно"
+            headingId="mat-sec-extra"
+            tone="neutral"
           >
-            <p id="mat-sec-extra" class="eyebrow text-ink">Дополнительно</p>
 
             <!-- ─── TZ-CATALOG-301 / 316: технические справочные поля ─── -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-form-field">
@@ -398,16 +400,16 @@ interface DimensionFormGroup extends FormGroup {
                 }
               </div>
             </div>
-          </section>
+          </app-pi-form-section>
         </div>
 
         <!-- ─── Dimensions (full-width section) ─── -->
-        <section
-          class="rounded-sm bg-paper-2/30 p-3 border-l-[3px] border-l-sunrise-warm hairline-t"
-          aria-labelledby="mat-sec-dims"
+        <app-pi-form-section
+          title="Габариты"
+          headingId="mat-sec-dims"
+          tone="dimensions"
         >
           <div class="flex items-baseline justify-between mb-form-row">
-            <p id="mat-sec-dims" class="eyebrow text-ink">Габариты</p>
             <app-pi-button
               type="button"
               variant="outline"
@@ -473,7 +475,7 @@ interface DimensionFormGroup extends FormGroup {
               </div>
             }
           </div>
-        </section>
+        </app-pi-form-section>
 
         @if (errorMessage()) {
           <p role="alert" class="text-xs text-destructive">

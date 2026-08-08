@@ -39,6 +39,7 @@ import {
 import { CategoriesService, type Category } from '../../services/categories.service';
 import { controlKindFor, type QuickCreateControlKind } from './field-key-registry';
 import { colSpanClass, controlMaxClass } from './field-capacity';
+import { PiFormSectionComponent } from '../form-section';
 
 /** Data injected into QuickCreate (create-only). */
 export interface QuickCreateDialogData {
@@ -86,6 +87,7 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'md' | 'lg' | 'xl'> = {
     FormFieldComponent,
     InputComponent,
     TextareaComponent,
+    PiFormSectionComponent,
   ],
   template: `
     <app-pi-dialog
@@ -132,10 +134,13 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'md' | 'lg' | 'xl'> = {
             </app-pi-button>
           </div>
         } @else {
-          <div [class]="fieldsGridClass()" data-test="qc-fields-grid">
-            @for (key of visibleKeys(); track key) {
-              <div [class]="fieldCellClass(key)" [attr.data-test]="'qc-cell-' + key">
-                @switch (kindOf(key)) {
+          <div class="space-y-3" data-test="qc-fields-sections">
+            @if (basicKeys().length > 0) {
+              <app-pi-form-section title="Основные данные" headingId="qc-sec-basics" tone="gold">
+                <div [class]="fieldsGridClass()" data-test="qc-fields-grid-basics">
+                  @for (key of basicKeys(); track key) {
+                    <div [class]="fieldCellClass(key)" [attr.data-test]="'qc-cell-' + key">
+                      @switch (kindOf(key)) {
                   @case ('select-kind') {
                     <app-pi-form-field
                       [label]="labelOf(key)"
@@ -268,8 +273,116 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'md' | 'lg' | 'xl'> = {
                       </div>
                     </app-pi-form-field>
                   }
-                }
-              </div>
+                      }
+                    </div>
+                  }
+                </div>
+              </app-pi-form-section>
+            }
+            @if (dimensionKeys().length > 0) {
+              <app-pi-form-section title="Габариты" headingId="qc-sec-dimensions" tone="dimensions">
+                <div [class]="fieldsGridClass()" data-test="qc-fields-grid-dimensions">
+                  @for (key of dimensionKeys(); track key) {
+                    <div [class]="fieldCellClass(key)" [attr.data-test]="'qc-cell-' + key">
+                      @switch (kindOf(key)) {
+                        @case ('number') {
+                          <app-pi-form-field
+                            [label]="labelOf(key)"
+                            [htmlFor]="'qc-' + key"
+                            [required]="isRequired(key)"
+                            [error]="errorFor(key)"
+                          >
+                            <div [class]="controlMaxClassFor(key) || null">
+                              <app-pi-input
+                                [id]="'qc-' + key"
+                                type="number"
+                                size="sm"
+                                [formControlName]="key"
+                                [invalid]="hasError(key)"
+                                [attr.data-test]="'qc-field-' + key"
+                              />
+                            </div>
+                          </app-pi-form-field>
+                        }
+                        @case ('dim-unit') {
+                          <app-pi-form-field [label]="labelOf(key)" [htmlFor]="'qc-' + key">
+                            <select
+                              [id]="'qc-' + key"
+                              [formControlName]="key"
+                              [class]="controlClass(key)"
+                              [attr.data-test]="'qc-field-' + key"
+                            >
+                              @for (u of dimUnitOptions; track u) {
+                                <option [value]="u">{{ u }}</option>
+                              }
+                            </select>
+                          </app-pi-form-field>
+                        }
+                        @default {
+                          <app-pi-form-field
+                            [label]="labelOf(key)"
+                            [htmlFor]="'qc-' + key"
+                            [required]="isRequired(key)"
+                            [error]="errorFor(key)"
+                          >
+                            <div [class]="controlMaxClassFor(key) || null">
+                              <app-pi-input
+                                [id]="'qc-' + key"
+                                size="sm"
+                                [formControlName]="key"
+                                [invalid]="hasError(key)"
+                                [attr.data-test]="'qc-field-' + key"
+                              />
+                            </div>
+                          </app-pi-form-field>
+                        }
+                      }
+                    </div>
+                  }
+                </div>
+              </app-pi-form-section>
+            }
+            @if (extraKeys().length > 0) {
+              <app-pi-form-section title="Дополнительно" headingId="qc-sec-extra" tone="neutral">
+                <div [class]="fieldsGridClass()" data-test="qc-fields-grid-extra">
+                  @for (key of extraKeys(); track key) {
+                    <div [class]="fieldCellClass(key)" [attr.data-test]="'qc-cell-' + key">
+                      @switch (kindOf(key)) {
+                        @case ('textarea') {
+                          <app-pi-form-field [label]="labelOf(key)" [htmlFor]="'qc-' + key">
+                            <app-pi-textarea
+                              [id]="'qc-' + key"
+                              [rows]="2"
+                              size="sm"
+                              customClass="min-h-0"
+                              [formControlName]="key"
+                              [attr.data-test]="'qc-field-' + key"
+                            />
+                          </app-pi-form-field>
+                        }
+                        @default {
+                          <app-pi-form-field
+                            [label]="labelOf(key)"
+                            [htmlFor]="'qc-' + key"
+                            [required]="isRequired(key)"
+                            [error]="errorFor(key)"
+                          >
+                            <div [class]="controlMaxClassFor(key) || null">
+                              <app-pi-input
+                                [id]="'qc-' + key"
+                                size="sm"
+                                [formControlName]="key"
+                                [invalid]="hasError(key)"
+                                [attr.data-test]="'qc-field-' + key"
+                              />
+                            </div>
+                          </app-pi-form-field>
+                        }
+                      }
+                    </div>
+                  }
+                </div>
+              </app-pi-form-section>
             }
           </div>
         }
@@ -321,6 +434,41 @@ export class QuickCreateDialogComponent {
   protected readonly formError = signal<string | null>(null);
   protected readonly visibleKeys = signal<string[]>([]);
   protected readonly categories = signal<Category[]>([]);
+
+  private readonly basicFieldKeys = new Set([
+    'name',
+    'kind',
+    'unit',
+    'sku',
+    'article',
+    'listPrice',
+    'categoryId',
+    'isActive',
+    'status',
+  ]);
+  private readonly dimensionFieldKeys = new Set([
+    'dimLength',
+    'dimWidth',
+    'dimHeight',
+    'dimUnit',
+    'width',
+    'height',
+    'depth',
+    'weightKg',
+    'weight',
+  ]);
+
+  protected readonly basicKeys = computed(() =>
+    this.visibleKeys().filter((key) => this.basicFieldKeys.has(key)),
+  );
+  protected readonly dimensionKeys = computed(() =>
+    this.visibleKeys().filter((key) => this.dimensionFieldKeys.has(key)),
+  );
+  protected readonly extraKeys = computed(() =>
+    this.visibleKeys().filter(
+      (key) => !this.basicFieldKeys.has(key) && !this.dimensionFieldKeys.has(key),
+    ),
+  );
 
   protected readonly title = computed(() => `Быстрое создание: ${ENTITY_LABEL_RU[this.entity]}`);
   protected readonly dialogWidth = computed(() => SIZE_TO_WIDTH[this.size()]);
