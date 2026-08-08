@@ -1,6 +1,6 @@
 # SESSION QUEUE
 
-**Updated:** 2026-08-08 · backlog slim · FORM code on main
+**Updated:** 2026-08-08T09:40Z · **TZ-GIT-301 DONE** · NEXT UX-309
 
 ## NEXT
 
@@ -13,11 +13,21 @@
 | Item | Note |
 |------|------|
 | Tasks hygiene | `_backlog` = только NOW; rest → `_park` |
-| FORM-302…305 | код на `main` (вошёл в `c4f4d830` вместе с hygiene) |
-| TZ-GIT-301 | по сути выполнен merge’ом; дозакрыть archive/checklist если агент не добил |
+| **TZ-GIT-301** | FORM-302…305 on main via merge `c4f4d830` (parents `b4146581` + `e485f521`); archive+lock closed |
+| FORM-302…305 | on main; NAV-302 kept |
 | NAV-302 · UX-308 · FORM-301 | earlier |
 
 ## Park
 
 `tasks/_park/` — не брать без PO  
 Deploy: NO
+
+## Checkpoint 2026-08-08T09:40Z
+- DONE: TZ-GIT-301
+- IN PROGRESS: none
+- NEXT: TZ-UX-309
+- HEAD: _(after push)_
+- Blockers: none
+- _active/: empty
+- Stash: `wip-before-TZ-GIT-301` (desktop/chrome) — restore separately
+- Deploy: NO

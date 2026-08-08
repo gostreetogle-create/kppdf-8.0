@@ -1,0 +1,16 @@
+# Lock file
+Locked as of 2026-08-08 — TZ-UX-FORM-305: Wave A form-dialog sections sweep.
+
+Owner: Buffy / agent-acfffc1331 (landed main via TZ-GIT-301)
+Protected files:
+- frontend/src/app/pages/products/product-form-dialog.component.ts
+- frontend/src/app/pages/modules/module-form-dialog.component.ts
+- frontend/src/app/pages/dictionaries/*-form-dialog.component.ts (Wave A)
+- frontend/src/app/pages/orders/order-form-dialog.component.ts
+- frontend/src/app/pages/commercial/proposals/proposal-form-dialog.component.ts
+- frontend/src/app/pages/people/people-form-dialog.component.ts
+- frontend/src/app/pages/inventory/warehouse-form-dialog.component.ts
+- frontend/src/app/pages/inventory/stock-movement-form-dialog.component.ts
+- docs/audits/2026-08-08-dialog-layout-canon.md
+
+Unlock: only via orchestrator approval (successor TZ / Wave B).

@@ -13,6 +13,13 @@
 - Moved the project passport to `docs/project-passport.md`; `TZ-CLEANUP-R2` is archived as DONE after all cleanup acceptance criteria and verification gates.
 - `tasks/` is intended to contain only real active `TZ-*.md` files. Roadmap prose elsewhere is historical context, not an active task claim.
 
+## [2026-08-08] — TZ-GIT-301 DONE: merge FORM-302…305 → main
+**Статус:** DONE on main; deploy НЕ
+**Что:** merge freebuff FORM wave (`7bc88e17…e485f521`); NAV-302 preserved; backlog stubs FORM-302…305 removed
+**Archive:** `tasks/_archive/2026-08/TZ-GIT-301.done.md`
+**Lock:** `.mimocode/locks/TZ-GIT-301-merge-form-wave-to-main.lock`
+**Gates:** FE tsc PASS; Jest quick-create/photo/material-form 55/55 PASS
+
 ## [2026-08-08] — TZ-CATALOG-331 DONE: catalog appearance settings
 **Статус:** DONE on main; deploy НЕ выполнялся
 **Route:** `/catalog/appearance`

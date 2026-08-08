@@ -1,0 +1,10 @@
+# Lock file
+Locked as of 2026-08-08 — TZ-UX-FORM-304: QuickCreate L composition reuse.
+
+Owner: Buffy / agent-acfffc1331 (landed main via TZ-GIT-301)
+Protected files:
+- frontend/src/app/shared/ui/quick-create/quick-create-dialog.component.ts
+- frontend/src/app/shared/ui/quick-create/quick-create-dialog.component.spec.ts
+- frontend/src/app/pages/products/product-bom-panel.component.ts (reuse-only)
+
+Unlock: only via orchestrator approval (successor TZ).

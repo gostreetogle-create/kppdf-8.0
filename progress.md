@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-GIT-301 DONE: merge FORM-302…305 → main
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** FORM wave `7bc88e17…e485f521` landed on main as merge commit `c4f4d830` (parents `b4146581` + `e485f521`). NAV-302 IA preserved (`b3f6948b` ancestor). Closeout: archive/lock/checklist; backlog stub GIT-301 removed; FORM-304/305 locks restored.
+**Gates:** FE tsc PASS; Jest quick-create + photo-dropzone + material-form-dialog 3/3 suites, 55/55 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-GIT-301.done.md`
+**Lock:** `.mimocode/locks/TZ-GIT-301-merge-form-wave-to-main.lock`
+**Known:** Deploy NO. Unrelated desktop/chrome WIP was stashed as `wip-before-TZ-GIT-301`.
+
 ## [2026-08-08] — TZ-UX-FORM-305 DONE: form-dialog sections sweep Wave A
 
 **Исполнитель:** Buffy / agent-acfffc1331 (landed main via TZ-GIT-301)

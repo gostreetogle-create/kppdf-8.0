@@ -1,0 +1,10 @@
+# Lock file
+Locked as of 2026-08-08 — TZ-GIT-301: FORM-302…305 merge onto main.
+
+Owner: agent-3e757640b7 (Cursor executor)
+Protected outcome:
+- FORM-302…305 commits are ancestors of main
+- NAV-302 IA (`b3f6948b`) retained on main
+- Shared FORM surfaces: form-section / photo / quick-create
+
+Unlock: only via orchestrator approval (successor git/TZ).
