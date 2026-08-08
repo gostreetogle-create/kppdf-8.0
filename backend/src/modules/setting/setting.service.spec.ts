@@ -24,4 +24,15 @@ describe('SettingService catalog appearance', () => {
     });
     expect(findOne).toHaveBeenCalledTimes(1);
   });
+
+  it('returns null value (not 404) when no catalog appearance setting exists', async () => {
+    const findOne = jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+    const service = new SettingService(makeModel(findOne));
+
+    await expect(service.findCatalogAppearance('org-a')).resolves.toEqual({
+      key: 'catalog.appearance',
+      value: null,
+    });
+    expect(findOne).toHaveBeenCalledTimes(2);
+  });
 });

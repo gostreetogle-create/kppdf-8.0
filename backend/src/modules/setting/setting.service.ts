@@ -53,18 +53,21 @@ export class SettingService {
   /**
    * Catalog appearance is organization-scoped without changing the legacy
    * settings schema/index: organization ids are part of the namespaced key.
-   * A system setting remains the fallback for organizations without an
-   * override, and system administrators use that global key directly.
+   * Missing setting → empty value (FE applies code defaults), never 404 —
+   * otherwise every BOM open logs red Network noise (TZ-331 + composition-tree).
    */
-  async findCatalogAppearance(organizationId?: string | null): Promise<SettingDocument> {
+  async findCatalogAppearance(organizationId?: string | null): Promise<{
+    key: string;
+    value: unknown;
+  }> {
     const scopedKey = catalogAppearanceKey(organizationId);
     if (scopedKey !== CATALOG_APPEARANCE_GLOBAL_KEY) {
       const scoped = await this.model.findOne({ key: scopedKey }).exec();
       if (scoped) return scoped;
     }
     const global = await this.model.findOne({ key: CATALOG_APPEARANCE_GLOBAL_KEY }).exec();
-    if (!global) throw new NotFoundException('Catalog appearance setting not found');
-    return global;
+    if (global) return global;
+    return { key: CATALOG_APPEARANCE_GLOBAL_KEY, value: null };
   }
 
   async setCatalogAppearance(

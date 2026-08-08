@@ -68,6 +68,12 @@ export function normalizeError(err: unknown): HttpErrorResponse {
 export function extractErrorMessage(err: HttpErrorResponse): string {
   const fromBody = (err.error as { message?: unknown } | null)?.message;
   if (typeof fromBody === 'string' && fromBody.length > 0) return fromBody;
+  if (Array.isArray(fromBody) && fromBody.length > 0) {
+    const parts = fromBody
+      .map((item) => (typeof item === 'string' ? item : null))
+      .filter((item): item is string => !!item && item.length > 0);
+    if (parts.length > 0) return parts.join('; ');
+  }
   if (err.message && err.message.length > 0) return err.message;
   return 'Неизвестная ошибка';
 }

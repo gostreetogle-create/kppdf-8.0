@@ -40,6 +40,7 @@ export class CreateCompositionLineDto {
   refId!: string;
 
   @ApiProperty({ minimum: 0.000001 })
+  @Type(() => Number)
   @IsNumber()
   @Min(0.000001)
   quantity!: number;
