@@ -47,37 +47,27 @@ desktop/
 ├── svelte.config.js
 ├── src/
 │   ├── main.ts            ← точка входа Svelte
-│   ├── App.svelte         ← окно-заглушка (Подключение / AI-импорт, disabled)
+│   ├── App.svelte         ← pairing / MCP card / Inbox / ImportTask (TZD-15/22)
 │   ├── core/
-│   │   ├── config.ts      ← конфиг (apiBaseUrl, apiKey, aiProvider, mcp{port,allowLan}, inbox{dir}), load/save в app-data (v3)
-│   │   ├── api.ts         ← fetch-обёртка: Bearer + idempotencyKey()
-│   │   ├── pairing.ts     ← parsePairing(): валидация JSON-пакета паринга
-│   │   ├── mcpHost.ts     ← TZD-14: жизненный цикл MCP host (spawn/stop/restart, статус)
-│   │   ├── inbox.ts       ← TZD-15: scan/audit/propose/confirm/cancel/move + лог inbox
-│   │   ├── pipeline.ts    ← стаб: parse → normalize → confirm → batchPost
-│   │   └── ai/
-│   │       ├── types.ts   ← ChatMessage/ChatRequest/ChatResponse (OpenAI-совм.)
-│   │       ├── client.ts  ← chatCompletion(): POST {baseUrl}/v1/chat/completions
-│   │       ├── providers.ts ← LocalOllama (default) / Remote; селектор
-│   │       ├── prompts.ts ← buildSystemPrompt(entitySchema)
-│   │       └── index.ts
+│   │   ├── config.ts      ← apiBaseUrl, pairing key, mcp{port,allowLan}, inbox{dir}
+│   │   ├── api.ts         ← Bearer + idempotencyKey()
+│   │   ├── pairing.ts     ← parsePairing()
+│   │   ├── mcpHost.ts     ← TZD-14: spawn/stop MCP host
+│   │   ├── mcpClientSnippet.ts ← TZD-20: mcp.json fragment
+│   │   ├── inbox.ts       ← scan/audit/propose/confirm + ImportTask create
+│   │   ├── pipeline.ts    ← STUB in-app AI (не блокер при Cursor/LM Studio)
+│   │   └── ai/            ← OpenAI-совм. клиент (для будущего in-app)
 │   └── importers/
-│       ├── index.ts       ← реестр импортёров (excel/csv/text/pdf)
-│       ├── excel.ts csv.ts text.ts pdf.ts  ← стабы parse(file) → RawRow[], TODO
-├── src-tauri/             ← Rust-оболочка Tauri 2 (dialog + fs + shell плагины)
-├── ai/
-│   └── system-prompts/
-│       ├── general.md     ← черновик системного промпта AI
-│       └── entities.md    ← карта полей сущностей (по реальным схемам backend)
-├── mcp/                   ← MCP socket host (TZD-11): HTTP + stdio, pairing JWT
-│   ├── package.json       ← @kppdf/desktop-mcp (+ @modelcontextprotocol/sdk)
-│   └── src/               ← http-server / stdio-server / tools (kppdf_ping)
-└── docs/
-    ├── PAIRING.md         ← контракт связи веб↔десктоп
-    ├── MCP.md             ← connect string, env, tools, mcp.json
-    ├── INSTALL.md         ← установка/обновление Windows, NSIS hooks, пути артефактов
-    └── AI-PROVIDERS.md    ← Ollama локально / удалённый endpoint
+│       ├── excel.ts csv.ts text.ts  ← working parse
+│       └── pdf.ts                   ← stub TODO
+├── src-tauri/             ← Tauri 2
+├── ai/system-prompts/     ← entities.md (шире runtime; runtime domain = materials)
+├── mcp/                   ← MCP host: reads, material writes, inbox, import_task_*
+└── docs/                  ← PAIRING / MCP / INSTALL / AI-PROVIDERS
 ```
+
+Дальше по PO-vision: matching+HITL (**TZD-23**), reshape колонок, products, doc drafts —
+см. `docs/audits/2026-08-08-desktop-bulk-import-vision-audit.md`.
 
 ## Паринг (веб ↔ десктоп)
 

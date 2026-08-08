@@ -65,7 +65,9 @@ This is closer to «server-side commit / undo stack» than GitHub commits or nig
 
 Already in archive `TZD-00`: import skeleton v0.1–v0.3; planned **TZD-01…10** (AI pipeline, batch, pairing button, etc.).
 
-**New MCP stream (this doc): TZD-11…15** — can proceed in parallel where conflict keys don’t overlap, but **pairing (TZD-05) + stable JWT** should exist before write tools hit production data.
+> **Update 2026-08-08:** MCP stream **TZD-11…17, 20–22, 24 DONE**. Next brain = **TZD-23** (matching+HITL). PO bulk-migrate audit: `docs/audits/2026-08-08-desktop-bulk-import-vision-audit.md`. Park succession: 23→26→18→19→27→28→29.
+
+**New MCP stream (this doc): TZD-11…15** — historically phased below; most items now archived DONE.
 
 | ID | Title | Depends |
 |----|-------|---------|
