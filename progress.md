@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-FACT-302 DONE: FactCard site adoption audit
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** docs-only adoption audit; successors FACT-303…306.
+**Gates:** N/A (docs).
+**Archive:** `tasks/_archive/2026-08/TZ-UX-FACT-302.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-FACT-302-fact-card-site-audit.lock`
+**Known:** Deploy NO. Wave complete · idle.
+
 ## [2026-08-08] — TZ-UX-DETAIL-304 DONE: module detail parity
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor)

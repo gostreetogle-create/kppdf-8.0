@@ -34,4 +34,5 @@ PO: боковые панели «каша текста». Один визуал
 2. Caption ≤ 1–2 коротких предложения; не роман.  
 3. Кнопки не смешивать с value в одну строку без stack.  
 4. Не использовать для composition-tree строк.
-5. Wiring на product-detail — **отдельные** TZ-UX-DETAIL-*; этот kit сам по себе.
+5. Wiring: product/module detail + BomPanel inspector — DETAIL-301…304 **DONE**.  
+   Site adoption audit: [`../audits/2026-08-09-fact-card-adoption.md`](../audits/2026-08-09-fact-card-adoption.md) (FACT-302).

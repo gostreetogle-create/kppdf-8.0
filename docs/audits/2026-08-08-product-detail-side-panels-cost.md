@@ -81,7 +81,7 @@ Module detail (`/modules/:id`) — **parity** тем же паттерном (TZ
 | 2 | **TZ-UX-DETAIL-302** | Блок денег/себест. вертикально + auto-recalc | **DONE** 2026-08-08 |
 | 3 | **TZ-UX-DETAIL-303** | Inspector: FactCard + PiButton + **Редактировать** | **DONE** 2026-08-08 |
 | 4 | **TZ-UX-DETAIL-304** | Module detail parity | **DONE** 2026-08-08 |
-| 5 | **TZ-UX-FACT-302** | Site audit → successors | docs only |
+| 5 | **TZ-UX-FACT-302** | Site audit → successors | **DONE** 2026-08-08 |
 
 **Старт волны:** после long-haul (DEDUP-304 тоже трогает product-detail) **или** FACT-301 можно ∥ сразу.
 
