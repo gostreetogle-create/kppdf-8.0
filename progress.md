@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-305 DONE: nav equal width + full RU labels
+
+**Исполнитель:** agent-3e757640b7 (self PASS → archive)
+**Статус:** DONE on main; deploy НЕ
+**Что:** полные RU подписи под иконкой; колонки одной ширины (grid auto-cols-fr от longest); shortLabel убран; dropdown compact = host contents; caption 9px→10px @1280+.
+**Gates:** FE tsc PASS (peer admin WIP isolated); jest app-layout.nav-order 2/2
+**Archive:** `tasks/_archive/2026-08/TZ-UX-305-nav-equal-width.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-305-nav-equal-width-full-labels.lock`
+**Known:** admin/** не трогали. Deploy: NO.
+
 ## [2026-08-08] — TZ-ADMIN-302 DONE: system role all-checked read-only
 
 **Исполнитель:** agent-3e757640b7 (self PASS → archive)

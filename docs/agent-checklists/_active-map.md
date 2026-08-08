@@ -1,6 +1,6 @@
 # SESSION QUEUE — continuous executor
 
-**Updated:** 2026-08-08T08:32Z · **TZ-ADMIN-302 DONE**
+**Updated:** 2026-08-08T08:35Z · **TZ-UX-305 DONE**
 
 ## DONE this session
 
@@ -17,13 +17,13 @@
 | **TZ-ADMIN-301** | roles permissions UX + pageKey ACL |
 | **TZ-UX-304** | nav icon+caption + Dictionaries after Docs |
 | **TZ-ADMIN-302** | system role all-checked read-only |
+| **TZ-UX-305** | nav equal width + full RU labels |
 
 ## READY / NEXT
 
 | ID | Status |
 |----|--------|
-| **TZ-UX-305** | nav equal width + full labels — **NEXT** (∥ was with ADMIN-302) |
-| **TZ-UX-302** | chrome unify (after 305) |
+| **TZ-UX-302** | chrome unify — only if PO says so |
 | TZ-UX-303 | design-system chrome audit (docs) |
 | TZ-SALES-304 | KP family UI after PO probes |
 
@@ -36,11 +36,11 @@
 | SUPPLY-302 | BOM auto-explode |
 | deploy | только «задеплой» |
 
-## Checkpoint 2026-08-08T08:32Z
-- DONE: … + ADMIN-301 + UX-304 + **TZ-ADMIN-302**
+## Checkpoint 2026-08-08T08:35Z
+- DONE: … + ADMIN-302 + **TZ-UX-305**
 - IN PROGRESS: none
-- NEXT: TZ-UX-305 (nav equal width) if PO queue; else idle / deploy command
+- NEXT: idle / PO queue or deploy command
 - Blockers: none
 - _active/: empty
 - Deploy: NO
-- HEAD: (pending push ADMIN-302)
+- HEAD: (after push UX-305)

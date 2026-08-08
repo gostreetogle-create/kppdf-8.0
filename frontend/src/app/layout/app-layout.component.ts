@@ -62,13 +62,8 @@ interface AppNavItem extends Omit<PiNavDropdownItem, 'pageKey'> {
 
 interface NavCategory {
   id: string;
-  /** Full RU name — aria-label / title. */
+  /** Full RU name — visible caption + aria-label / title (TZ-UX-305). */
   label: string;
-  /**
-   * TZ-UX-304 — optional short caption under the icon (truncate otherwise).
-   * Full `label` stays in aria-label/title.
-   */
-  shortLabel?: string;
   icon: LucideIcon;
   items: AppNavItem[];
   /**
@@ -134,7 +129,6 @@ const NAV_CATEGORIES: NavCategory[] = [
   {
     id: 'design',
     label: 'Проектирование',
-    shortLabel: 'Проект.',
     icon: PenLine,
     entryPath: '/design',
     items: [{ path: '/design', pageKey: 'design', label: 'Очередь' }],
@@ -142,7 +136,6 @@ const NAV_CATEGORIES: NavCategory[] = [
   {
     id: 'supply',
     label: 'Снабжение',
-    shortLabel: 'Снабж.',
     icon: ShoppingCart,
     entryPath: '/supply',
     items: [{ path: '/supply', pageKey: 'supply', label: 'Закупки' }],
@@ -150,7 +143,6 @@ const NAV_CATEGORIES: NavCategory[] = [
   {
     id: 'production',
     label: 'Производство',
-    shortLabel: 'Произв.',
     icon: Factory,
     entryPath: '/production',
     items: [
@@ -174,7 +166,6 @@ const NAV_CATEGORIES: NavCategory[] = [
   {
     id: 'docs',
     label: 'Документы',
-    shortLabel: 'Докум.',
     icon: FileText,
     entryPath: '/doc-constructor/templates',
     items: [
@@ -190,7 +181,6 @@ const NAV_CATEGORIES: NavCategory[] = [
     // TZ-UX-304: after Docs (settings last, before Admin).
     id: 'reference',
     label: 'Справочники',
-    shortLabel: 'Справ.',
     icon: BookOpen,
     entryPath: '/dictionaries/classification',
     items: [
@@ -254,6 +244,9 @@ const NAV_CATEGORIES: NavCategory[] = [
 /** TZ-UX-304 — exported for unit test of L→R category order. */
 export const NAV_CATEGORY_ORDER: readonly string[] = NAV_CATEGORIES.map((c) => c.id);
 
+/** TZ-UX-305 — full RU captions (no abbreviated shortLabel). */
+export const NAV_CATEGORY_LABELS: readonly string[] = NAV_CATEGORIES.map((c) => c.label);
+
 @Component({
   selector: 'app-app-layout',
   standalone: true,
@@ -284,57 +277,62 @@ export const NAV_CATEGORY_ORDER: readonly string[] = NAV_CATEGORIES.map((c) => c
               <span class="font-display font-bold tracking-tight truncate"> KPPDF · 8.0 </span>
             </a>
 
+            <!--
+              TZ-UX-305: equal-width columns from longest label (grid 1fr + w-max).
+              Right cluster stays outside this grid (shrink-0).
+            -->
             <nav
-              class="flex items-center gap-0.5 flex-1 justify-center min-w-0 overflow-x-auto
+              class="flex-1 min-w-0 flex justify-center overflow-x-auto
                      [scrollbar-width:none] [-ms-overflow-style:none]
                      [&::-webkit-scrollbar]:hidden"
               aria-label="Главная навигация"
             >
-              @for (cat of navCategories(); track cat.id) {
-                @if (cat.entryPath) {
-                  <!-- TZ-UX-304: rect + icon top + caption bottom (not square icon-only). -->
-                  <a
-                    [routerLink]="cat.entryPath"
-                    class="inline-flex flex-col items-center justify-center gap-0.5 shrink-0
-                           min-w-[2.75rem] max-w-[3.25rem] h-12 px-1.5 py-1
-                           rounded-sm hairline transition-colors pi-focus-ring
-                           cursor-pointer no-underline"
-                    [class.bg-sunrise-warm]="activeCategoryId() === cat.id"
-                    [class.text-paper]="activeCategoryId() === cat.id"
-                    [class.border-sunrise-warm]="activeCategoryId() === cat.id"
-                    [class.text-ink]="activeCategoryId() !== cat.id"
-                    [class.hover:bg-paper-2]="activeCategoryId() !== cat.id"
-                    [attr.aria-current]="activeCategoryId() === cat.id ? 'page' : undefined"
-                    [attr.aria-label]="cat.label"
-                    [attr.title]="cat.label"
-                    [attr.data-test]="'nav-entry-' + cat.id"
-                  >
-                    <lucide-angular
-                      [img]="cat.icon"
-                      [size]="14"
-                      class="opacity-90 shrink-0"
-                      aria-hidden="true"
-                    />
-                    <span
-                      class="block w-full text-center text-[10px] leading-tight truncate
-                             font-medium"
-                      aria-hidden="true"
+              <div class="grid grid-flow-col auto-cols-fr gap-1 w-max max-w-full items-stretch">
+                @for (cat of navCategories(); track cat.id) {
+                  @if (cat.entryPath) {
+                    <!-- TZ-UX-304/305: rect + icon top + full caption; equal column width. -->
+                    <a
+                      [routerLink]="cat.entryPath"
+                      class="inline-flex flex-col items-center justify-center gap-0.5 w-full
+                             h-12 px-2 py-1.5
+                             rounded-sm hairline transition-colors pi-focus-ring
+                             cursor-pointer no-underline"
+                      [class.bg-sunrise-warm]="activeCategoryId() === cat.id"
+                      [class.text-paper]="activeCategoryId() === cat.id"
+                      [class.border-sunrise-warm]="activeCategoryId() === cat.id"
+                      [class.text-ink]="activeCategoryId() !== cat.id"
+                      [class.hover:bg-paper-2]="activeCategoryId() !== cat.id"
+                      [attr.aria-current]="activeCategoryId() === cat.id ? 'page' : undefined"
+                      [attr.aria-label]="cat.label"
+                      [attr.title]="cat.label"
+                      [attr.data-test]="'nav-entry-' + cat.id"
                     >
-                      {{ cat.shortLabel || cat.label }}
-                    </span>
-                  </a>
-                } @else {
-                  <app-pi-nav-dropdown
-                    [label]="cat.label"
-                    [shortLabel]="cat.shortLabel || ''"
-                    [icon]="cat.icon"
-                    [items]="cat.items"
-                    [active]="activeCategoryId() === cat.id"
-                    [ariaLabel]="cat.label"
-                    [compact]="true"
-                  />
+                      <lucide-angular
+                        [img]="cat.icon"
+                        [size]="14"
+                        class="opacity-90 shrink-0"
+                        aria-hidden="true"
+                      />
+                      <span
+                        class="block w-full text-center text-[9px] min-[1280px]:text-[10px]
+                               leading-tight font-medium whitespace-nowrap"
+                        aria-hidden="true"
+                      >
+                        {{ cat.label }}
+                      </span>
+                    </a>
+                  } @else {
+                    <app-pi-nav-dropdown
+                      [label]="cat.label"
+                      [icon]="cat.icon"
+                      [items]="cat.items"
+                      [active]="activeCategoryId() === cat.id"
+                      [ariaLabel]="cat.label"
+                      [compact]="true"
+                    />
+                  }
                 }
-              }
+              </div>
             </nav>
 
             <div class="flex items-center gap-1.5 shrink-0">
