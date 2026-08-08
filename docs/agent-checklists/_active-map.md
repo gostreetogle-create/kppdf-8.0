@@ -19,8 +19,9 @@
 
 | ID | Status |
 |----|--------|
-| **TZ-ADMIN-301** | roles permissions UX — **NEXT** (keys ≠ layout) |
-| **TZ-UX-302** | chrome unify (after 301) |
+| **TZ-ADMIN-301** | roles — claim / in flight (не layout) |
+| **TZ-UX-304** | nav caption + Справочники в конец — **∥ ADMIN** |
+| **TZ-UX-302** | chrome unify (after 304) |
 | TZ-UX-303 | design-system chrome audit (docs) |
 | TZ-SALES-304 | KP family UI after PO probes |
 
