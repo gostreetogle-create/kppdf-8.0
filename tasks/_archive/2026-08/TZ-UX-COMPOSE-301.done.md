@@ -46,3 +46,18 @@ pnpm test (полный)                                 → 129 suites / 1212 t
 - `docs/pages/module-detail.page.md`, `docs/pages/product-detail.page.md`
 
 Deploy: **NO**.
+
+ARCHIVE_MARKER
+outcome: DONE
+closed_at: 2026-08-08
+closed_by: Buffy / agent-3e757640b7
+verification:
+  - acceptance criteria: PASS
+  - typecheck: PASS
+  - focused tests: PASS (20/20 at closeout; 36/36 reverified after fast-forward)
+  - lint: PASS
+  - checklist: PRESENT and DONE
+  - progress.md: UPDATED in commit 61975a99
+  - status synchronization: PASS via wave checkpoint
+  - forbidden scopes: FACT-304/materials, FORM-307, products.page, supply/**, desktop/** untouched
+  - deploy: NOT RUN

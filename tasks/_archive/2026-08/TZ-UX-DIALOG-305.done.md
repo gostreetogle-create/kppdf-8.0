@@ -46,3 +46,18 @@ pnpm test (полный)                          → 129 suites / 1214 tests PA
 
 Tiny inventory dialogs (560/640), table-template (1400), FORM-307 — не менялись.
 Deploy: **NO**.
+
+ARCHIVE_MARKER
+outcome: DONE
+closed_at: 2026-08-09
+closed_by: Buffy / agent-3e757640b7
+verification:
+  - acceptance criteria: PASS
+  - typecheck: PASS
+  - focused tests: PASS (15/15 at closeout; 36/36 COMPOSE/DIALOG reverified after fast-forward)
+  - lint: PASS
+  - checklist: PRESENT and DONE
+  - audit and cookbook: PRESENT
+  - status synchronization: PASS via wave checkpoint
+  - forbidden scopes: FACT-304/materials, FORM-307, products.page, supply/**, desktop/** untouched
+  - deploy: NOT RUN
