@@ -13,6 +13,11 @@
 - Moved the project passport to `docs/project-passport.md`; `TZ-CLEANUP-R2` is archived as DONE after all cleanup acceptance criteria and verification gates.
 - `tasks/` is intended to contain only real active `TZ-*.md` files. Roadmap prose elsewhere is historical context, not an active task claim.
 
+## [2026-08-08] — TZD-23 DONE: AI matching + HITL plan → propose (desktop wave #1)
+**Статус:** DONE on main; deploy НЕ
+**Archive:** `tasks/_archive/2026-08/TZD-23.done.md`
+**Gates:** BE tsc PASS; jest import-task 10/10; MCP test 38/38; MCP tsc PASS
+
 ## [2026-08-08] — TZ-UX-FACT-302 DONE: FactCard site adoption audit
 **Статус:** DONE on main; deploy НЕ
 **Archive:** `tasks/_archive/2026-08/TZ-UX-FACT-302.done.md`

@@ -9,9 +9,12 @@ import { Model, Types } from 'mongoose';
 import { AuthenticatedUser } from '../../common/decorators/current-user.decorator';
 import {
   CreateImportTaskDto,
+  PatchImportTaskProposalsDto,
+  PatchImportTaskReportDto,
   PatchImportTaskStatusDto,
 } from './dto/create-import-task.dto';
 import {
+  AiReport,
   IMPORT_TASK_TERMINAL,
   ImportTask,
   ImportTaskDocument,
@@ -130,6 +133,58 @@ export class ImportTaskService {
       doc.errorMessage = undefined;
     } else if (dto.errorMessage !== undefined) {
       doc.errorMessage = dto.errorMessage?.trim() || undefined;
+    }
+    await doc.save();
+    return this.toFullView(doc);
+  }
+
+  /**
+   * TZD-23 — persist the AI matching plan + move to analyzing/awaiting_user.
+   * Only aiReport/summary/status are touched; rows and source stay intact
+   * (the DTO whitelist rejects any attempt to patch rows).
+   */
+  async patchReport(
+    id: string,
+    dto: PatchImportTaskReportDto,
+    user: AuthenticatedUser,
+  ) {
+    const doc = await this.findScoped(id, user);
+    const to = dto.status as ImportTaskStatus;
+    this.assertTransition(doc.status as ImportTaskStatus, to);
+
+    const report: AiReport = {
+      version: dto.aiReport?.version ?? 1,
+      matchedAt: dto.aiReport?.matchedAt ?? new Date().toISOString(),
+      counts: dto.aiReport?.counts ?? { new: 0, skip: 0, update: 0, doubt: 0 },
+      rows: dto.aiReport?.rows ?? [],
+    };
+    doc.aiReport = report;
+    if (dto.summary !== undefined) {
+      doc.summary = dto.summary.trim() || doc.summary;
+    }
+    doc.status = to;
+    await doc.save();
+    return this.toFullView(doc);
+  }
+
+  /**
+   * TZD-23 — link created proposal ids + move to applying/done/failed.
+   * Called by apply_plan after HITL ok. No Material writes here.
+   */
+  async patchProposals(
+    id: string,
+    dto: PatchImportTaskProposalsDto,
+    user: AuthenticatedUser,
+  ) {
+    const doc = await this.findScoped(id, user);
+    if (dto.proposalIds.some((p) => !Types.ObjectId.isValid(p))) {
+      throw new BadRequestException('proposalIds must be valid ObjectIds');
+    }
+    doc.proposalIds = dto.proposalIds.map((p) => new Types.ObjectId(p));
+    if (dto.status) {
+      const to = dto.status as ImportTaskStatus;
+      this.assertTransition(doc.status as ImportTaskStatus, to);
+      doc.status = to;
     }
     await doc.save();
     return this.toFullView(doc);

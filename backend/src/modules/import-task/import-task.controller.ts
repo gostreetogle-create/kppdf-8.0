@@ -16,6 +16,8 @@ import {
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
 import {
   CreateImportTaskDto,
+  PatchImportTaskProposalsDto,
+  PatchImportTaskReportDto,
   PatchImportTaskStatusDto,
 } from './dto/create-import-task.dto';
 import { ImportTaskService } from './import-task.service';
@@ -81,6 +83,34 @@ export class ImportTaskController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.service.patchStatus(id, dto, user);
+  }
+
+  @Patch(':id/report')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'update', entityType: 'ImportTask', idParam: 'id' })
+  @ApiOperation({
+    summary: 'TZD-23 — write AI matching report + move to analyzing/awaiting_user',
+  })
+  patchReport(
+    @Param('id') id: string,
+    @Body() dto: PatchImportTaskReportDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.patchReport(id, dto, user);
+  }
+
+  @Patch(':id/proposals')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'update', entityType: 'ImportTask', idParam: 'id' })
+  @ApiOperation({
+    summary: 'TZD-23 — link proposal ids + move to applying/done/failed',
+  })
+  patchProposals(
+    @Param('id') id: string,
+    @Body() dto: PatchImportTaskProposalsDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.patchProposals(id, dto, user);
   }
 
   @Post(':id/cancel')

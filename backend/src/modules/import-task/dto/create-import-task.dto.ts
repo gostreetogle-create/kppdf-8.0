@@ -6,6 +6,7 @@ import {
   IsArray,
   IsIn,
   IsInt,
+  IsMongoId,
   IsObject,
   IsOptional,
   IsString,
@@ -115,4 +116,154 @@ export class PatchImportTaskStatusDto {
   @IsString()
   @Length(0, 2000)
   errorMessage?: string;
+}
+
+// ── TZD-23: AI matching report + proposals patch ─────────────────────────────
+
+export const AI_REPORT_DECISIONS = ['new', 'skip', 'update', 'doubt'] as const;
+export type AiReportDecisionDto = (typeof AI_REPORT_DECISIONS)[number];
+
+export class AiReportProposedDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @Length(0, 256)
+  name?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @Length(0, 64)
+  unit?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @Length(0, 64)
+  article?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @Length(0, 64)
+  sku?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @Length(0, 512)
+  notes?: string;
+}
+
+export class AiReportRowDto {
+  @ApiProperty({ example: 0 })
+  @IsInt()
+  @Min(0)
+  rowIndex!: number;
+
+  @ApiProperty({ enum: AI_REPORT_DECISIONS })
+  @IsIn(AI_REPORT_DECISIONS as unknown as string[])
+  decision!: AiReportDecisionDto;
+
+  @ApiPropertyOptional({ description: 'Existing Material id for update / doubt refs' })
+  @IsOptional()
+  @IsMongoId()
+  materialId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @Length(0, 512)
+  reason?: string;
+
+  @ApiPropertyOptional({ type: AiReportProposedDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AiReportProposedDto)
+  proposed?: AiReportProposedDto;
+}
+
+export class AiReportCountsDto {
+  @ApiProperty({ example: 5 })
+  @IsInt()
+  @Min(0)
+  new!: number;
+
+  @ApiProperty({ example: 2 })
+  @IsInt()
+  @Min(0)
+  skip!: number;
+
+  @ApiProperty({ example: 1 })
+  @IsInt()
+  @Min(0)
+  update!: number;
+
+  @ApiProperty({ example: 1 })
+  @IsInt()
+  @Min(0)
+  doubt!: number;
+}
+
+export class AiReportDto {
+  @ApiPropertyOptional({ default: 1 })
+  @IsOptional()
+  @IsInt()
+  version?: number;
+
+  @ApiPropertyOptional({ description: 'ISO-8601; defaults to now' })
+  @IsOptional()
+  @IsString()
+  matchedAt?: string;
+
+  @ApiPropertyOptional({ type: AiReportCountsDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AiReportCountsDto)
+  counts?: AiReportCountsDto;
+
+  @ApiPropertyOptional({ type: [AiReportRowDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AiReportRowDto)
+  rows?: AiReportRowDto[];
+}
+
+/**
+ * PATCH /api/import-tasks/:id/report (TZD-23).
+ * Whitelist: summary + aiReport + status only — rows/source cannot be patched
+ * (forbidNonWhitelisted rejects any stray field, e.g. rows).
+ */
+export class PatchImportTaskReportDto {
+  @ApiPropertyOptional({ example: 't.xlsx · 2 new / 1 skip / 1 update / 1 doubt' })
+  @IsOptional()
+  @IsString()
+  @Length(0, 512)
+  summary?: string;
+
+  @ApiProperty({ type: AiReportDto })
+  @ValidateNested()
+  @Type(() => AiReportDto)
+  aiReport!: AiReportDto;
+
+  @ApiProperty({ enum: ['analyzing', 'awaiting_user'] })
+  @IsIn(['analyzing', 'awaiting_user'])
+  status!: 'analyzing' | 'awaiting_user';
+}
+
+/**
+ * PATCH /api/import-tasks/:id/proposals (TZD-23).
+ * Links created proposal ids to the task and moves it to applying/done/failed.
+ */
+export class PatchImportTaskProposalsDto {
+  @ApiProperty({ type: [String] })
+  @IsArray()
+  @IsMongoId({ each: true })
+  proposalIds!: string[];
+
+  @ApiPropertyOptional({ enum: ['applying', 'done', 'failed'] })
+  @IsOptional()
+  @IsIn(['applying', 'done', 'failed'])
+  status?: 'applying' | 'done' | 'failed';
 }

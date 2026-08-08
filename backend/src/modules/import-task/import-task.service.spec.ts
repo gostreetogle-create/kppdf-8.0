@@ -178,6 +178,149 @@ describe('ImportTaskService (TZD-22)', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  it('patchReport persists aiReport + awaiting_user, rows intact (TZD-23)', async () => {
+    const save = jest.fn().mockResolvedValue(undefined);
+    const doc: any = {
+      _id: '507f1f77bcf86cd799439033',
+      status: 'analyzing',
+      createdByUserId: { toString: () => user.id },
+      organizationId: { toString: () => user.organizationId },
+      source: { fileName: 't.xlsx', fileType: 'xlsx' },
+      rows: threeRows,
+      proposalIds: [],
+      aiReport: null,
+      save,
+      toObject() {
+        return { ...this, _id: this._id };
+      },
+    };
+    const { service } = buildService({ findByIdDoc: doc });
+
+    const view = await service.patchReport(
+      '507f1f77bcf86cd799439033',
+      {
+        status: 'awaiting_user',
+        summary: 't.xlsx · 2 new / 1 skip / 1 update / 1 doubt',
+        aiReport: {
+          version: 1,
+          counts: { new: 2, skip: 1, update: 1, doubt: 1 },
+          rows: [
+            { rowIndex: 0, decision: 'new', proposed: { name: 'A' } },
+            { rowIndex: 1, decision: 'skip', reason: 'dup' },
+            {
+              rowIndex: 2,
+              decision: 'update',
+              materialId: '507f1f77bcf86cd799439044',
+              proposed: { unit: 'м' },
+            },
+            { rowIndex: 3, decision: 'doubt', reason: 'ambiguous' },
+          ],
+        },
+      },
+      user,
+    );
+
+    expect(view.status).toBe('awaiting_user');
+    expect(view.aiReport.counts.new).toBe(2);
+    expect(view.aiReport.rows).toHaveLength(4);
+    expect(view.rowCount).toBe(3);
+    expect(view.rows).toHaveLength(3); // rows/source intact
+    expect(doc.aiReport.version).toBe(1);
+    expect(doc.aiReport.matchedAt).toBeDefined();
+    expect(doc.proposalIds).toEqual([]);
+  });
+
+  it('patchReport fills default counts when omitted (TZD-23)', async () => {
+    const save = jest.fn().mockResolvedValue(undefined);
+    const doc: any = {
+      _id: '507f1f77bcf86cd799439033',
+      status: 'ready_for_ai',
+      createdByUserId: { toString: () => user.id },
+      organizationId: { toString: () => user.organizationId },
+      source: { fileName: 't.xlsx', fileType: 'xlsx' },
+      rows: threeRows,
+      proposalIds: [],
+      aiReport: null,
+      save,
+      toObject() {
+        return this;
+      },
+    };
+    const { service } = buildService({ findByIdDoc: doc });
+    await service.patchReport(
+      '507f1f77bcf86cd799439033',
+      { status: 'analyzing', aiReport: { rows: [] } },
+      user,
+    );
+    expect(doc.status).toBe('analyzing');
+    expect(doc.aiReport.counts).toEqual({ new: 0, skip: 0, update: 0, doubt: 0 });
+  });
+
+  it('patchProposals links ids + applying; rejects bad ObjectId (TZD-23)', async () => {
+    const save = jest.fn().mockResolvedValue(undefined);
+    const doc: any = {
+      _id: '507f1f77bcf86cd799439033',
+      status: 'awaiting_user',
+      createdByUserId: { toString: () => user.id },
+      organizationId: { toString: () => user.organizationId },
+      source: { fileName: 't.xlsx', fileType: 'xlsx' },
+      rows: threeRows,
+      proposalIds: [],
+      aiReport: null,
+      save,
+      toObject() {
+        return { ...this, _id: this._id };
+      },
+    };
+    const { service } = buildService({ findByIdDoc: doc });
+
+    const ids = [
+      '507f1f77bcf86cd799439101',
+      '507f1f77bcf86cd799439102',
+      '507f1f77bcf86cd799439103',
+    ];
+    const view = await service.patchProposals(
+      '507f1f77bcf86cd799439033',
+      { proposalIds: ids, status: 'applying' },
+      user,
+    );
+    expect(view.status).toBe('applying');
+    expect(view.proposalIds).toEqual(ids);
+
+    await expect(
+      service.patchProposals(
+        '507f1f77bcf86cd799439033',
+        { proposalIds: ['not-an-id'] },
+        user,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('patchReport rejects transition from terminal done (TZD-23)', async () => {
+    const doc: any = {
+      _id: '507f1f77bcf86cd799439033',
+      status: 'done',
+      createdByUserId: { toString: () => user.id },
+      organizationId: { toString: () => user.organizationId },
+      source: { fileName: 't.xlsx', fileType: 'xlsx' },
+      rows: [],
+      proposalIds: [],
+      aiReport: null,
+      save: jest.fn(),
+      toObject() {
+        return this;
+      },
+    };
+    const { service } = buildService({ findByIdDoc: doc });
+    await expect(
+      service.patchReport(
+        '507f1f77bcf86cd799439033',
+        { status: 'awaiting_user', aiReport: { rows: [] } },
+        user,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
   it('create does not depend on Material / journal (model.create only)', async () => {
     const { service, create, model } = buildService({
       create: jest.fn().mockResolvedValue({

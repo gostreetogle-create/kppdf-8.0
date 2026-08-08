@@ -1,9 +1,10 @@
 /**
- * Import Task MCP tools (TZD-22).
+ * Import Task MCP tools (TZD-22 + TZD-23).
  *
  * Assembly point: file rows → ImportTask (ready_for_ai).
- * Does NOT write SoT and does NOT create mutation-journal proposals.
- * Matching / HITL plan / propose-from-plan → TZD-23.
+ * Does NOT write SoT. TZD-23 adds the HITL brain: set_report writes the
+ * matching plan (0 journal) and apply_plan converts new/update rows to
+ * mutation-journal proposals ONLY after userOk (human said ok).
  */
 
 import { z } from 'zod';
@@ -21,7 +22,205 @@ export const IMPORT_TASK_TOOL_NAMES = [
   'kppdf_import_task_get',
   'kppdf_import_task_create',
   'kppdf_import_task_set_status',
+  'kppdf_import_task_set_report',
+  'kppdf_import_task_apply_plan',
 ] as const;
+
+// ── TZD-23 apply_plan core (deps-injected for tests) ─────────────────────────
+
+export interface AiPlanRow {
+  rowIndex: number;
+  decision: 'new' | 'skip' | 'update' | 'doubt';
+  materialId?: string;
+  reason?: string;
+  proposed?: {
+    name?: string;
+    unit?: string;
+    article?: string;
+    sku?: string;
+    notes?: string;
+  };
+}
+
+export interface ApplyPlanDeps {
+  getTask(id: string): Promise<{
+    status?: string;
+    aiReport?: { rows?: AiPlanRow[] } | null;
+  }>;
+  proposeCreate(payload: {
+    name: string;
+    unit?: string;
+    article?: string;
+    sku?: string;
+    notes?: string;
+  }): Promise<{ proposalId?: string }>;
+  proposeUpdate(payload: {
+    id: string;
+    patch: Record<string, unknown>;
+  }): Promise<{ proposalId?: string }>;
+  setProposals(taskId: string, proposalIds: string[]): Promise<unknown>;
+}
+
+export interface ApplyPlanResult {
+  ok: boolean;
+  proposed: number;
+  skipped: number;
+  doubts: number;
+  proposalIds?: string[];
+  note?: string;
+  task?: unknown;
+}
+
+function pickPatch(src?: AiPlanRow['proposed']): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (!src) return out;
+  for (const k of ['name', 'unit', 'article', 'sku', 'notes'] as const) {
+    const v = src[k];
+    if (v !== undefined && v !== null && String(v).trim() !== '') out[k] = v;
+  }
+  return out;
+}
+
+/**
+ * TZD-23 HITL apply: only awaiting_user + userOk:true may propose.
+ * new→propose_create, update→propose_update, skip/doubt→none.
+ */
+export async function applyImportTaskPlan(
+  deps: ApplyPlanDeps,
+  args: { id: string; userOk: boolean },
+): Promise<ApplyPlanResult> {
+  if (args.userOk !== true) {
+    return {
+      ok: false,
+      proposed: 0,
+      skipped: 0,
+      doubts: 0,
+      note: 'apply_plan requires userOk=true (human said ok) — no proposals created',
+    };
+  }
+
+  const task = await deps.getTask(args.id);
+  if (task?.status !== 'awaiting_user') {
+    return {
+      ok: false,
+      proposed: 0,
+      skipped: 0,
+      doubts: 0,
+      note: `ImportTask ${args.id} is «${task?.status ?? 'unknown'}» — apply_plan only allowed from awaiting_user`,
+    };
+  }
+
+  const rows = Array.isArray(task?.aiReport?.rows) ? task.aiReport!.rows! : [];
+  const proposalIds: string[] = [];
+  let skipped = 0;
+  let doubts = 0;
+
+  for (const row of rows) {
+    if (row.decision === 'skip') {
+      skipped += 1;
+      continue;
+    }
+    if (row.decision === 'doubt') {
+      doubts += 1;
+      continue;
+    }
+    if (row.decision === 'new') {
+      const src = row.proposed ?? {};
+      const name = src.name?.trim();
+      if (!name) {
+        skipped += 1;
+        continue;
+      }
+      const created = await deps.proposeCreate({
+        name,
+        unit: src.unit?.trim() || 'шт',
+        article: src.article,
+        sku: src.sku,
+        notes: src.notes,
+      });
+      if (created?.proposalId) proposalIds.push(created.proposalId);
+      continue;
+    }
+    if (row.decision === 'update') {
+      if (!row.materialId) {
+        skipped += 1;
+        continue;
+      }
+      const patch = pickPatch(row.proposed);
+      if (!Object.keys(patch).length) {
+        skipped += 1;
+        continue;
+      }
+      const updated = await deps.proposeUpdate({
+        id: row.materialId,
+        patch,
+      });
+      if (updated?.proposalId) proposalIds.push(updated.proposalId);
+    }
+  }
+
+  if (!proposalIds.length) {
+    return {
+      ok: true,
+      proposed: 0,
+      skipped,
+      doubts,
+      note: 'No proposals to create (all skip/doubt/empty) — status unchanged',
+    };
+  }
+
+  const taskAfter = await deps.setProposals(args.id, proposalIds);
+  return {
+    ok: true,
+    proposed: proposalIds.length,
+    skipped,
+    doubts,
+    proposalIds,
+    task: taskAfter,
+  };
+}
+
+export function createApplyPlanBackendDeps(
+  cfg: McpRuntimeConfig,
+): ApplyPlanDeps {
+  return {
+    getTask: async (id) =>
+      backendGetJson(
+        cfg.apiBaseUrl,
+        cfg.apiKey,
+        `/api/import-tasks/${encodeURIComponent(id)}`,
+      ) as Promise<{ status?: string; aiReport?: { rows?: AiPlanRow[] } | null }>,
+    proposeCreate: async (payload) =>
+      backendPostJson(
+        cfg.apiBaseUrl,
+        cfg.apiKey,
+        '/api/mutation-journal/proposals',
+        {
+          kind: 'material.create',
+          toolName: 'kppdf_import_task_apply_plan',
+          create: payload,
+        },
+      ) as Promise<{ proposalId?: string }>,
+    proposeUpdate: async (payload) =>
+      backendPostJson(
+        cfg.apiBaseUrl,
+        cfg.apiKey,
+        '/api/mutation-journal/proposals',
+        {
+          kind: 'material.update',
+          toolName: 'kppdf_import_task_apply_plan',
+          update: payload,
+        },
+      ) as Promise<{ proposalId?: string }>,
+    setProposals: async (taskId, proposalIds) =>
+      backendPatchJson(
+        cfg.apiBaseUrl,
+        cfg.apiKey,
+        `/api/import-tasks/${encodeURIComponent(taskId)}/proposals`,
+        { proposalIds, status: 'applying' },
+      ),
+  };
+}
 
 const STATUS_ENUM = z.enum([
   'draft',
@@ -172,6 +371,93 @@ export function registerImportTaskTools(
         return toolOk({ ok: true, task: result });
       } catch (err) {
         return toolFail('kppdf_import_task_set_status', err);
+      }
+    },
+  );
+
+  server.registerTool(
+    'kppdf_import_task_set_report',
+    {
+      title: 'Set AI matching report (→ awaiting_user)',
+      description:
+        'TZD-23: persists the AI matching plan (counts + per-row decisions) ' +
+        'and moves the task to awaiting_user. Creates ZERO journal proposals — ' +
+        'the human must approve before kppdf_import_task_apply_plan.',
+      inputSchema: {
+        id: z.string().min(1),
+        summary: z.string().optional().describe('Short chat summary, e.g. «2 new / 1 skip / 1 update / 1 doubt»'),
+        counts: z.object({
+          new: z.number().int().min(0),
+          skip: z.number().int().min(0),
+          update: z.number().int().min(0),
+          doubt: z.number().int().min(0),
+        }),
+        rows: z.array(
+          z.object({
+            rowIndex: z.number().int().min(0),
+            decision: z.enum(['new', 'skip', 'update', 'doubt']),
+            materialId: z.string().optional().describe('Existing Material id (update / doubt)'),
+            reason: z.string().optional(),
+            proposed: z
+              .object({
+                name: z.string().optional(),
+                unit: z.string().optional(),
+                article: z.string().optional(),
+                sku: z.string().optional(),
+                notes: z.string().optional(),
+              })
+              .optional()
+              .describe('Canonical values to propose for new/update rows'),
+          }),
+        ),
+      },
+    },
+    async ({ id, summary, counts, rows }) => {
+      try {
+        const result = await backendPatchJson(
+          cfg.apiBaseUrl,
+          cfg.apiKey,
+          `/api/import-tasks/${encodeURIComponent(id)}/report`,
+          {
+            ...(summary !== undefined ? { summary } : {}),
+            aiReport: {
+              version: 1,
+              matchedAt: new Date().toISOString(),
+              counts,
+              rows,
+            },
+            status: 'awaiting_user',
+          },
+        );
+        return toolOk({ ok: true, task: result });
+      } catch (err) {
+        return toolFail('kppdf_import_task_set_report', err);
+      }
+    },
+  );
+
+  server.registerTool(
+    'kppdf_import_task_apply_plan',
+    {
+      title: 'Apply AI plan → proposes (HITL ok required)',
+      description:
+        'TZD-23: only when status=awaiting_user AND userOk=true. ' +
+        'new→propose_create, update→propose_update, skip/doubt→none. ' +
+        'Links proposal ids + moves task to applying. No SoT write until confirm.',
+      inputSchema: {
+        id: z.string().min(1),
+        userOk: z.boolean().describe('Human approval — must be true to create proposals'),
+      },
+    },
+    async ({ id, userOk }) => {
+      try {
+        const result = await applyImportTaskPlan(
+          createApplyPlanBackendDeps(cfg),
+          { id, userOk },
+        );
+        return toolOk(result);
+      } catch (err) {
+        return toolFail('kppdf_import_task_apply_plan', err);
       }
     },
   );

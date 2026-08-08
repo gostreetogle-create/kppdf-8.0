@@ -1,16 +1,16 @@
 # SESSION QUEUE
 
-**Updated:** 2026-08-08 · NEXT = Desktop bulk-import wave
+**Updated:** 2026-08-08 · NEXT = TZD-26 (reshape) · desktop bulk-import wave
 
-## Checkpoint 2026-08-08T (pre-desktop-wave)
+## Checkpoint 2026-08-08T11:10Z (wave #1 TZD-23 DONE)
 
-- DONE: Phase A DEDUP · FORM · UX · Phase B DETAIL-301…304 · FACT-302 · desktop audit+TZ authoring
-- IN PROGRESS: —
-- NOT DONE: TZD-23 → 26 → 18 → 19 → 27 → 28 → 29
-- NEXT: claim **TZD-23** from `tasks/_backlog/desktop/`
-- HEAD: (after docs push)
+- DONE: **TZD-23** (matching + HITL → propose) — BE report/proposals PATCH + MCP set_report/apply_plan + MCP.md Variant C
+- IN PROGRESS: — (claiming TZD-26 next)
+- NOT DONE: TZD-26 → 18 → 19 → 27 → 28 → 29
+- NEXT: claim **TZD-26** from `tasks/_backlog/desktop/`
+- HEAD: after TZD-23 push
 - Blockers: none
-- _active/: empty
+- _active/: empty (TZD-23 archived)
 
 ## READY wave
 

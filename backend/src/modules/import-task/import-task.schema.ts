@@ -49,6 +49,35 @@ export interface ImportTaskRow {
   notes?: string;
 }
 
+export type AiReportDecision = 'new' | 'skip' | 'update' | 'doubt';
+
+export interface AiReportProposed {
+  name?: string;
+  unit?: string;
+  article?: string;
+  sku?: string;
+  notes?: string;
+}
+
+export interface AiReportRow {
+  rowIndex: number;
+  decision: AiReportDecision;
+  materialId?: string;
+  reason?: string;
+  proposed?: AiReportProposed;
+}
+
+/**
+ * TZD-23 — AI matching report persisted on ImportTask.
+ * Pure plan data: rows stay untouched; proposals are created on apply_plan.
+ */
+export interface AiReport {
+  version: number;
+  matchedAt: string;
+  counts: { new: number; skip: number; update: number; doubt: number };
+  rows: AiReportRow[];
+}
+
 /**
  * TZD-22 — Import Task: assembly point between inbox parse and propose.
  * Does NOT write Material / mutation journal. Matching → TZD-23.
@@ -78,9 +107,9 @@ export class ImportTask {
   @Prop()
   summary?: string;
 
-  /** Reserved for TZD-23 AI matching report — always null/omit in TZD-22. */
+  /** TZD-23 AI matching report — pure plan (never writes SoT itself). */
   @Prop({ type: Object, default: null })
-  aiReport!: Record<string, unknown> | null;
+  aiReport!: AiReport | null;
 
   /** Links to mutation_journal after apply (TZD-23); empty in this TZ. */
   @Prop({ type: [Types.ObjectId], default: [] })

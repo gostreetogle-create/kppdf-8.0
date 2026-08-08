@@ -1,3 +1,13 @@
+## [2026-08-08] — TZD-23 DONE: AI matching + HITL plan → propose (wave #1)
+
+**Исполнитель:** buffy-desktop-ex (Freebuff desktop executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** BE `PATCH /api/import-tasks/:id/report` (aiReport+awaiting_user; whitelist — rows intact) + `/proposals` (proposalIds+applying); MCP `kppdf_import_task_set_report` (0 journal) + `kppdf_import_task_apply_plan` (userOk gate; new/update→propose, skip/doubt—нет); MCP.md Variant C protocol; FEATURE checklist §E.
+**Gates:** BE tsc PASS; jest import-task 10/10; MCP test 38/38; MCP tsc PASS.
+**Archive:** `tasks/_archive/2026-08/TZD-23.done.md`
+**Lock:** `.mimocode/locks/TZD-23-ai-import-matching-hitl.lock`
+**Known:** Deploy NO. Next TZD-26 (reshape).
+
 ## [2026-08-08] — TZ-UX-FACT-302 DONE: FactCard site adoption audit
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor)

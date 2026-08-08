@@ -133,11 +133,11 @@ Stdio: `pnpm start:stdio` (для клиентов, которые спавня�
 | `kppdf_undo_mutation` | Revert last / by id (create→soft-delete; update→restore before) |
 | `kppdf_list_mutations` | Recent applied/undone (ring) |
 
-## Tools — import task / AI assembly (TZD-22)
+## Tools — import task / AI assembly (TZD-22 + TZD-23)
 
-**Variant C flow:** `file → ImportTask → (TZD-23: match+plan) → propose → confirm`
+**Variant C flow:** `file → ImportTask → match+plan (TZD-23) → ok → propose → confirm`
 
-TZD-22 stops at **ImportTask**. No matching, no chat UX, no auto-propose.
+TZD-22 stops at **ImportTask**. TZD-23 adds the HITL brain: report + apply.
 Expert path `kppdf_inbox_propose_file` remains (proposals without DB matching).
 
 | Tool | Effect |
@@ -146,6 +146,23 @@ Expert path `kppdf_inbox_propose_file` remains (proposals without DB matching).
 | `kppdf_import_task_get` | `GET /api/import-tasks/:id` — full rows |
 | `kppdf_import_task_create` | `POST /api/import-tasks` → status `ready_for_ai`; **0** journal proposals |
 | `kppdf_import_task_set_status` | `PATCH /api/import-tasks/:id/status` (whitelist; no matching logic) |
+| `kppdf_import_task_set_report` | TZD-23 — `PATCH /api/import-tasks/:id/report`: matching plan (`counts` + per-row `new/skip/update/doubt`) → `awaiting_user`. **0** journal writes |
+| `kppdf_import_task_apply_plan` | TZD-23 — requires `status=awaiting_user` **and** `userOk:true`; `new`→propose_create, `update`→propose_update, skip/doubt — нет; links `proposalIds` + `status=applying` |
+
+### Variant C protocol (TZD-23) — HITL обязателен
+
+1. `kppdf_import_task_get` — получи строки.
+2. Агент сопоставляет (best-effort по name/article/sku против `kppdf_list_materials`),
+   классифицирует каждую строку: `new | skip | update | doubt`.
+3. `kppdf_import_task_set_report` — пишет план + счётчики → статус `awaiting_user`.
+4. В чат: **«N new / M skip / K update / D doubt — ок?»** и **ждём «ok»**. Человек смотрит план.
+5. После ok → `kppdf_import_task_apply_plan` с `userOk:true` → propose (журнал, не SoT).
+6. Подтверждение в Desktop (`kppdf_confirm_proposal` per id) → SoT;
+   затем `kppdf_import_task_set_status` → `done`.
+
+**Запрет:** `apply_plan` без `userOk:true` → error, 0 proposes. Пропуски/сомнения
+не порождают proposals. `set_report` сам ничего не пишет в журнал.
+Ограничение: matching best-effort; reshape (TZD-26), batch (TZD-18), products (TZD-27) — следующие TZ волны.
 
 Desktop UI: after **Разобрать** — button **«Создать задачу для ИИ»** (Import Task) vs **«Предложить строки»** (expert proposals, без сверки с базой).
 
@@ -171,9 +188,10 @@ Inbox-папка настраивается в десктоп-приложени
 
 ## Follow-ups
 
-- **TZD-22** ✅ DONE (code) / review — Import Task assembly: BE `/api/import-tasks` +
-  Desktop «Создать задачу для ИИ» + MCP `kppdf_import_task_*`. Matching → **TZD-23**.
-- **TZD-23** PARK — AI matching + HITL plan → propose (after TZD-22 PASS).
+- **TZD-23** ✅ DONE (2026-08-08, wave #1) — matching/HITL brain: `PATCH /api/import-tasks/:id/report` + `/proposals`; MCP `kppdf_import_task_set_report` + `kppdf_import_task_apply_plan` (userOk gate; skip/doubt не propose); Variant C protocol выше. Reshape → **TZD-26**.
+- **TZD-22** ✅ DONE — Import Task assembly: BE `/api/import-tasks` +
+  Desktop «Создать задачу для ИИ» + MCP `kppdf_import_task_*`.
+- **TZD-26 / TZD-18 / TZD-19 / TZD-27 / TZD-28 / TZD-29** — следующий порядок волны (см. WAVE-DESKTOP-BULK-IMPORT).
 - **TZD-20** ✅ DONE (2026-08-08) — кнопка «Скопировать mcp.json» / фрагмент в Desktop;
   один HTTP-формат для Cursor + LM Studio; clipboard only (не пишет в чужие mcp.json).
 - **TZD-17** ✅ DONE (2026-08-08) — semantic domain layer: `kppdf_get_domain_schema`, `kppdf_list_categories`, `kppdf_validate_material`, `kppdf_inbox_audit_file` (+ propose `mode=validate`). Validate/audit ≠ proposal ≠ SoT.
