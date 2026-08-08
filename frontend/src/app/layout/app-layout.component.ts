@@ -362,7 +362,7 @@ export function matchActiveCategoryId(
                         aria-hidden="true"
                       />
                       <span
-                        class="block w-full text-center text-[9px] leading-none
+                        class="block w-full text-center text-[11px] leading-none
                                font-medium whitespace-nowrap"
                         aria-hidden="true"
                       >
@@ -430,7 +430,7 @@ export function matchActiveCategoryId(
         @if (!denseMain()) {
           <footer
             class="border-t hairline border-sunrise-warm py-2 px-page-x
-                   font-mono text-[10px] uppercase tracking-[0.12em]
+                   eyebrow leading-none
                    text-muted-foreground flex flex-wrap justify-between gap-2 shrink-0"
           >
             <span>© 2026 KPPDF · 8.0</span>

@@ -2,6 +2,7 @@
 
 **Канон PO (2026-08-07):** без `text-5xl` «простыней»; единые хлебные крошки
 `Раздел / страница`; на group-workspace — метка раздела над chips.
+H1 ERP: `font-display text-lg`. Catalog detail имя (passport): `text-lg sm:text-xl` max (TYPE-302).
 
 ## Компоненты
 

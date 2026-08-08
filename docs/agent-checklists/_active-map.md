@@ -1,6 +1,17 @@
 # SESSION QUEUE
 
-**Updated:** 2026-08-08 · TZ-UI-TYPE-301 DONE → next TYPE-302
+**Updated:** 2026-08-08 · TZ-UI-TYPE-302 DONE → next COLOR-301
+
+## Checkpoint 2026-08-08T11:20:00Z
+- DONE: TZ-UI-TYPE-301 · TZ-UI-TYPE-302
+- IN PROGRESS: none (claiming COLOR-301 next)
+- NOT DONE: COLOR-301
+- NEXT: TZ-UI-COLOR-301
+- HEAD: post TYPE-302 commit
+- Blockers: none
+- _active/: empty after TYPE-302 closeout
+- Ban: supply/** · desktop/** · PRODUCTS-307 peer WIP · orders/** peer — not touched
+- Deploy: NO
 
 ## Checkpoint 2026-08-08T11:12:00Z
 - DONE: TZ-UI-TYPE-301 — ERP type scale tokens + design-spec/foundations

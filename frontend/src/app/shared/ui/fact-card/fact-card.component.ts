@@ -29,7 +29,9 @@ const VARIANT_CLASS: Record<PiFactCardVariant, string> = {
         </p>
       }
       <p
-        class="mt-1 text-base font-medium text-ink leading-snug"
+        class="mt-1 font-medium text-ink leading-snug"
+        [class.text-base]="!mono()"
+        [class.text-sm]="mono()"
         [class.font-mono]="mono()"
         [class.tabular-nums]="mono()"
         data-test="pi-fact-card-value"

@@ -13,6 +13,12 @@
 - Moved the project passport to `docs/project-passport.md`; `TZ-CLEANUP-R2` is archived as DONE after all cleanup acceptance criteria and verification gates.
 - `tasks/` is intended to contain only real active `TZ-*.md` files. Roadmap prose elsewhere is historical context, not an active task claim.
 
+## [2026-08-08] — TZ-UI-TYPE-302 DONE: type scale hotspots
+**Статус:** DONE on main; deploy НЕ
+**Что:** nav/tree/fact micro+title ladder on catalog hotspots.
+**Archive:** `tasks/_archive/2026-08/TZ-UI-TYPE-302.done.md`
+**Gates:** FE tsc PASS; jest 22/22
+
 ## [2026-08-08] — TZ-UI-TYPE-301 DONE: ERP type scale canon
 **Статус:** DONE on main; deploy НЕ
 **Что:** ERP type scale tokens + design-spec/foundations fonts sync; micro=11px.

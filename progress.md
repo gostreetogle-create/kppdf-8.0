@@ -1,3 +1,11 @@
+## [2026-08-08] — TZ-UI-TYPE-302 DONE: type scale hotspots
+
+**Что:** nav 11px; tree badge/depth/chevron on ERP ladder; fact mono text-sm; titles already aligned.
+**Gates:** FE tsc PASS; jest 22/22 (tree/fact/nav/module-detail).
+**Archive:** `tasks/_archive/2026-08/TZ-UI-TYPE-302.done.md`
+**Lock:** `.mimocode/locks/TZ-UI-TYPE-302-type-scale-hotspots.lock`
+**Known:** order-detail title → successor; next COLOR-301.
+
 ## [2026-08-08] — TZ-UI-TYPE-301 DONE: ERP type scale canon
 
 **Что:** CSS tokens `--text-micro`/`--text-title`; `.eyebrow`+`.pi-tech-label` = 11px; design-spec + foundations hint = Hanken/Inter/JetBrains + 5 roles.

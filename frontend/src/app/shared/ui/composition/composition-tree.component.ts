@@ -98,7 +98,7 @@ export type CompositionTreeSelectEvent = {
               data-test="composition-tree-toggle"
             >
               <span
-                class="inline-block transition-transform text-lg font-semibold leading-none"
+                class="inline-block transition-transform text-base font-semibold leading-none"
                 [class.rotate-90]="isExpanded(node)"
                 >›</span
               >
@@ -107,7 +107,7 @@ export type CompositionTreeSelectEvent = {
             <span class="w-7 shrink-0" aria-hidden="true"></span>
           }
           <span
-            class="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-sm hairline font-medium"
+            class="shrink-0 eyebrow leading-none px-1.5 py-0.5 rounded-sm hairline font-medium"
             [style.color]="kindAccent(node)"
             [style.border-color]="kindAccent(node)"
             >{{ kindShort(node) }}</span
@@ -154,7 +154,7 @@ export type CompositionTreeSelectEvent = {
             >
           }
           @if (depth > 5) {
-            <span class="text-[10px] text-sunrise-warm shrink-0" role="note">глуб.</span>
+            <span class="text-xs text-sunrise-warm shrink-0" role="note">глуб.</span>
           }
         </div>
         @if (isExpanded(node) && node.children.length > 0) {

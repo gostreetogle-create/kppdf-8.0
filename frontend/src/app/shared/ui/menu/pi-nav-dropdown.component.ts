@@ -123,7 +123,7 @@ export interface PiNavDropdownItem {
       } @else {
         <!-- TZ-UX-307: shortLabel caption; full RU in aria/title. -->
         <span
-          class="block w-full text-center text-[9px] leading-none
+          class="block w-full text-center text-[11px] leading-none
                  font-medium whitespace-nowrap"
           aria-hidden="true"
         >
