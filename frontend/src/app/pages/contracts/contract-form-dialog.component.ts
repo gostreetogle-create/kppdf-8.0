@@ -12,6 +12,7 @@ import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
 import { InputComponent } from '../../shared/ui/input/input.component';
 import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
+import { PiFormSectionComponent } from '../../shared/ui/form-section';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
@@ -68,6 +69,7 @@ interface ItemFormGroup extends FormGroup {
     FormFieldComponent,
     InputComponent,
     TextareaComponent,
+    PiFormSectionComponent,
   ],
   template: `
     <app-pi-dialog [title]="isEdit() ? 'Редактировать договор' : 'Создать договор'" [width]="'lg'">
@@ -78,7 +80,8 @@ interface ItemFormGroup extends FormGroup {
         class="space-y-form-field overflow-y-auto min-h-0"
         data-test="contract-form"
       >
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
+        <app-pi-form-section title="Основные данные" headingId="contract-sec-basics" tone="gold">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
           <app-pi-form-field
             label="Наша организация"
             htmlFor="ct-org"
@@ -151,11 +154,13 @@ interface ItemFormGroup extends FormGroup {
           <app-pi-form-field label="Пакет / тег" htmlFor="ct-packageTag">
             <app-pi-input id="ct-packageTag" formControlName="packageTag" placeholder="Тег" />
           </app-pi-form-field>
-        </div>
+          </div>
+        </app-pi-form-section>
 
         <!-- ─── Items ─── -->
-        <div>
-          <div class="flex items-baseline justify-between mb-form-row">
+        <app-pi-form-section title="Позиции" headingId="contract-sec-items" tone="neutral">
+          <div>
+            <div class="flex items-baseline justify-between mb-form-row">
             <p class="eyebrow">Позиции <span class="text-destructive">*</span></p>
             <app-pi-button
               type="button"
@@ -242,10 +247,12 @@ interface ItemFormGroup extends FormGroup {
               </div>
             }
           </div>
-        </div>
+          </div>
+        </app-pi-form-section>
 
         <!-- ─── Notes ─── -->
-        <app-pi-form-field label="Заметки" htmlFor="ct-notes">
+        <app-pi-form-section title="Дополнительно" headingId="contract-sec-extra" tone="neutral">
+          <app-pi-form-field label="Заметки" htmlFor="ct-notes">
           <app-pi-textarea
             id="ct-notes"
             formControlName="notes"
@@ -253,7 +260,8 @@ interface ItemFormGroup extends FormGroup {
             [maxLength]="2000"
             ariaLabel="Заметки"
           />
-        </app-pi-form-field>
+          </app-pi-form-field>
+        </app-pi-form-section>
 
         @if (errorMessage()) {
           <p role="alert" class="text-xs text-destructive">

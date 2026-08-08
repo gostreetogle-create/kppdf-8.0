@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-FORM-307 DONE: секции форм договоров и видов работ
+
+**Исполнитель:** agent-e51db87918 · WAVE-SHOP-NORTH-B #7
+**Статус:** DONE; deploy НЕ
+**Что:** Плоские формы договора и вида работ переведены на общий `app-pi-form-section` в стиле материала: «Основные данные», «Позиции»/«Дополнительно». Organization FullEditor уже имел тот же примитив и kind-C 1120 после Party wave, поэтому не дублировался и не менялся. Control names, DTO/payload и бизнес-логика сохранены.
+**Gates:** FE tsc PASS; Angular production build PASS (только существующие budget warnings); targeted ESLint PASS; Jest 132 suites / 1247 tests PASS; `git diff --check` PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-FORM-307.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-FORM-307-form-sections.lock`
+**Known:** глобальный `verify-status.sh` сохраняет pre-existing drift 72 legacy kit-era entries; вне frontend TZ. Wave Shop-north B закрыта, idle; deploy NO.
+
 ## [2026-08-08] — TZ-DESKTOP-SOT-301 DONE: canonical desktop/mcp source of truth
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor, WAVE-PARTY-DOCS #7)

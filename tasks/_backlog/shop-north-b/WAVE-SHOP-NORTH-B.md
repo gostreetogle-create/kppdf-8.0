@@ -2,7 +2,7 @@
 WAVE-SHOP-NORTH-B — цех/снабжение/UX (параллель Desktop)
 ═══════════════════════════════════════════════════════════════
 
-STATUS: READY — #1–#6 DONE; следующий **#7 TZ-UX-FORM-307**
+STATUS: DONE — #1–#7 DONE; idle (deploy только по команде PO)
 PARALLEL OK с: idle Desktop (SoT `desktop/mcp`); не параллелить с живым claim на те же CONFLICT KEYS
 SoT: D:\kppdf-8.0 на main
 
@@ -16,7 +16,7 @@ SoT: D:\kppdf-8.0 на main
 | 4 | TZ-SALES-302 | TZ-SALES-302-kp-send-versions.md | ✅ DONE → `tasks/_archive/2026-08/TZ-SALES-302.done.md` |
 | 5 | TZ-UX-FACT-303 | TZ-UX-FACT-303-order-detail-facts.md | ✅ DONE → `tasks/_archive/2026-08/TZ-UX-FACT-303.done.md` |
 | 6 | TZ-UX-FACT-304 | TZ-UX-FACT-304-material-detail-facts.md | ✅ DONE → `tasks/_archive/2026-08/TZ-UX-FACT-304.done.md` |
-| 7 | TZ-UX-FORM-307 | TZ-UX-FORM-307-form-wave-b-batch1.md | **READY** — взять сейчас |
+| 7 | TZ-UX-FORM-307 | TZ-UX-FORM-307-form-wave-b-batch1.md | ✅ DONE → `tasks/_archive/2026-08/TZ-UX-FORM-307.done.md` |
 
 Цикл: CLAIM → код → gates → archive → commit+push → следующий. Без «поехали».
 После #7 → волна DONE → idle; деплой только по команде PO.

@@ -5,6 +5,7 @@ import { CheckboxComponent } from '../../shared/ui/checkbox/checkbox.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
 import { InputComponent } from '../../shared/ui/input/input.component';
 import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
+import { PiFormSectionComponent } from '../../shared/ui/form-section';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
@@ -36,6 +37,7 @@ function daysValidator(c: { value: number | null }): { invalidDays: true } | nul
     FormFieldComponent,
     InputComponent,
     TextareaComponent,
+    PiFormSectionComponent,
     PiDialogComponent,
   ],
   template: `
@@ -50,7 +52,8 @@ function daysValidator(c: { value: number | null }): { invalidDays: true } | nul
         class="space-y-form-field"
         data-test="work-type-form"
       >
-        <app-pi-form-field
+        <app-pi-form-section title="Основные данные" headingId="work-type-sec-basics" tone="gold">
+          <app-pi-form-field
           label="Название"
           htmlFor="wt-name"
           [required]="true"
@@ -84,9 +87,11 @@ function daysValidator(c: { value: number | null }): { invalidDays: true } | nul
               data-test="department-input"
             />
           </app-pi-form-field>
-        </div>
+          </div>
+        </app-pi-form-section>
 
-        <app-pi-form-field label="Описание" htmlFor="wt-description">
+        <app-pi-form-section title="Дополнительно" headingId="work-type-sec-extra" tone="neutral">
+          <app-pi-form-field label="Описание" htmlFor="wt-description">
           <app-pi-textarea
             id="wt-description"
             [rows]="3"
@@ -185,7 +190,8 @@ function daysValidator(c: { value: number | null }): { invalidDays: true } | nul
             data-test="active-checkbox"
           />
           <span class="text-sm">Активен</span>
-        </div>
+          </div>
+        </app-pi-form-section>
 
         @if (formError()) {
           <p role="alert" class="text-xs text-destructive">

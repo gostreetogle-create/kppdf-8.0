@@ -1,0 +1,10 @@
+# TZ-UX-FORM-307 — DONE lock
+TASK: TZ-UX-FORM-307
+OWNER: agent-e51db87918
+CLOSED_AT: 2026-08-08T18:02:00Z
+OUTCOME: DONE
+COMMIT: closeout commit
+PROTECTED_FILES:
+  - frontend/src/app/pages/contracts/contract-form-dialog.component.ts
+  - frontend/src/app/pages/work-types/work-type-form-dialog.component.ts
+  - frontend/src/app/pages/organizations/organization-full-editor-dialog.component.ts (existing section canon; not changed by this TZ)

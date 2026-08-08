@@ -5,6 +5,13 @@
 **Canonical workspace:** `D:\kppdf-8.0` on `main`; package manager `pnpm`
 **Task truth:** `tasks/_backlog/QUEUE.md` + archives; completed work in `tasks/_archive/`
 
+## [2026-08-08] — TZ-UX-FORM-307 DONE: Form Wave B batch 1
+**Статус:** DONE on main; deploy НЕ
+**Что:** Contract и WorkType dialogs используют общий `app-pi-form-section` в стиле Material; Organization FullEditor уже соответствовал канону kind-C. Payload/control names и бизнес-логика не менялись.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-FORM-307.done.md`
+**Gates:** FE tsc; Angular production build; targeted ESLint; Jest 132 suites / 1247 tests; `git diff --check` — PASS. Глобальный `verify-status.sh` сохраняет pre-existing drift 72 legacy kit-era entries.
+**Wave:** WAVE-SHOP-NORTH-B DONE; очередь READY пуста; idle, deploy НЕ.
+
 ## [2026-08-08] — Worktree sync: main == origin/main; NEXT FORM-307
 **Статус:** SoT synced; deploy НЕ
 **Что:** Canonical root fast-forwarded to Party-docs closeout HEAD; foreign WIP quarantined off-tree; QUEUE/WAVE point executor at TZ-UX-FORM-307 only.
