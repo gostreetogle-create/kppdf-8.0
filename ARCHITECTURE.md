@@ -98,7 +98,7 @@
 
 | Зона | Файлы | Описание |
 |------|-------|----------|
-| Backend API | `backend/src/modules/` | Feature modules, CRUD endpoints. Modules route: `/modules`. **TZ-DICT-314:** `form-profiles` — org-scoped QuickCreate field matrices (product\|module × S\|M\|L), LockedRequired enforced on PUT. **TZ-DICT-315:** FE settings `/dictionaries/form-profiles` (overflow-select + chips + checkbox matrix). |
+| Backend API | `backend/src/modules/` | Feature modules, CRUD endpoints. Modules route: `/modules`. **TZ-DICT-314:** `form-profiles` — org-scoped QuickCreate field matrices (product\|module × S\|M\|L), LockedRequired enforced on PUT. **TZ-DICT-315:** FE settings `/dictionaries/form-profiles` (overflow-select + chips + checkbox matrix). **TZ-DICT-316:** `QuickCreateDialog` wired to `/products` + `/modules` «Создать»; edit stays FullEditor. |
 | Backend common | `backend/src/common/` | Guards, interceptors, decorators, seeds. **CurrenciesSeed (TZ-102):** idempotent RUB/USD/EUR seed. |
 | Backend database | `backend/src/database/` | Connection, plugins (softDelete, audit, userContext) |
 | Backend scripts | `backend/scripts/` | `audit-di.ts` — DI cascade analyzer |

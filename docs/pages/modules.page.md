@@ -40,7 +40,8 @@
 
 | Компонент | Режим | Данные |
 |-----------|-------|--------|
-| `ModuleFormDialogComponent` | create / edit | `null` / `ProductModule` |
+| `QuickCreateDialogComponent` | **create** (TZ-DICT-316) | `{ entity: 'module', size?: 'S'\|'M'\|'L' }` — default M; profile from `/form-profiles` |
+| `ModuleFormDialogComponent` | **edit** (FullEditor) | `ProductModule` |
 | `AlertDialogComponent` | confirm delete | `{ title, description, confirmLabel, variant }` |
 
 ## Services

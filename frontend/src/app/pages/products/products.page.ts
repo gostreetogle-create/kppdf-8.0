@@ -42,6 +42,10 @@ import {
 import { CategoriesService, type Category } from '../../shared/services/categories.service';
 import type { Photo } from '../../shared/services/photos.service';
 import { ProductFormDialogComponent } from './product-form-dialog.component';
+import {
+  QuickCreateDialogComponent,
+  type QuickCreateDialogData,
+} from '../../shared/ui/quick-create/quick-create-dialog.component';
 import { CatalogKindMarkerComponent } from '../../shared/ui/catalog/catalog-kind-marker.component';
 
 /** Server-side pagination page size for /products endpoint. */
@@ -803,8 +807,12 @@ export class ProductsPage implements OnInit {
     this.pageSig.set(1);
   }
 
+  /** TZ-DICT-316 — list «Создать» → QuickCreate (profile S/M/L); edit stays FullEditor. */
   protected openCreate(): void {
-    const ref = this.dialog.open(ProductFormDialogComponent, { data: null, width: 'lg' });
+    const ref = this.dialog.open(QuickCreateDialogComponent, {
+      data: { entity: 'product', size: 'M' } satisfies QuickCreateDialogData,
+      width: 'md',
+    });
     onDialogCloseOnce(ref, this.injector, () => this.listRes.reload());
   }
 

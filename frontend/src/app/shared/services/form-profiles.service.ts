@@ -98,8 +98,8 @@ export interface FormProfile {
 }
 
 /**
- * TZ-DICT-315 — client for GET/PUT `/form-profiles` (DICT-314 API).
- * Settings UI only; QuickCreate wire → DICT-316.
+ * TZ-DICT-315/316 — client for GET/PUT `/form-profiles` (DICT-314 API).
+ * Settings UI (315) + QuickCreate profile load (316).
  */
 @Injectable({ providedIn: 'root' })
 export class FormProfilesService {

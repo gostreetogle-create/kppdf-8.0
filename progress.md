@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-DICT-316 DONE: QuickCreate wire products/modules
+
+**Исполнитель:** agent-3e757640b7 (self PASS → archive)
+**Статус:** DONE on main; deploy НЕ
+**Что:** `QuickCreateDialog` (S/M/L profiles, LockedRequired); «Создать» на `/products`+`/modules`; edit → FullEditor.
+**Gates:** FE tsc PASS; jest quick-create 6/6 (+ form-profiles 13 green)
+**Archive:** `tasks/_archive/2026-08/TZ-DICT-316.done.md`
+**Lock:** `.mimocode/locks/TZ-DICT-316-quick-create-wire.lock`
+**Known:** module notes UI-only (BE upsert без notes, как FullEditor). Deploy: NO.
+
 ## [2026-08-08] — TZ-DICT-315 DONE: form profiles settings UI
 
 **Исполнитель:** agent-3e757640b7 (self PASS → archive)

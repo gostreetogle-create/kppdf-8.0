@@ -30,6 +30,10 @@ import {
   ProductModulesService,
 } from '../../shared/services/pi-product-modules.service';
 import { ModuleFormDialogComponent } from './module-form-dialog.component';
+import {
+  QuickCreateDialogComponent,
+  type QuickCreateDialogData,
+} from '../../shared/ui/quick-create/quick-create-dialog.component';
 import { CatalogKindMarkerComponent } from '../../shared/ui/catalog/catalog-kind-marker.component';
 
 /**
@@ -500,10 +504,11 @@ export class ModulesPage implements OnInit {
     this.router.navigate(['/modules', row._id]);
   }
 
+  /** TZ-DICT-316 — list «Создать» → QuickCreate (profile S/M/L); edit stays FullEditor. */
   protected openCreate(): void {
-    const ref = this.dialog.open(ModuleFormDialogComponent, {
-      data: null,
-      width: 'lg',
+    const ref = this.dialog.open(QuickCreateDialogComponent, {
+      data: { entity: 'module', size: 'M' } satisfies QuickCreateDialogData,
+      width: 'md',
     });
     this.refreshOnDialogClose(ref);
   }
