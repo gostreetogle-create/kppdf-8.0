@@ -17,8 +17,9 @@
 
 | ID | Status |
 |----|--------|
-| **TZ-ORDERS-302** | **READY** — live BOM на заказе (`docs/audits/2026-08-08-business-logic-rails-check.md` D1); keys ≠ dictionaries |
-| **TZ-DICT-315** | blocked: peer WIP `frontend/.../dictionaries/**` |
+| **TZ-ORDERS-302** | **NEXT code** — live BOM на заказе |
+| **TZ-ORDERS-303** | RESERVED after 302 — party+site+line owner |
+| **TZ-DICT-315** | blocked / after dictionaries WIP clear |
 | TZ-DICT-316 | after 315 |
 
 ## PARK (не брать без PO)
@@ -28,12 +29,10 @@
 | TZD-23 | PARK |
 | deploy | только «задеплой» |
 
-## Checkpoint 2026-08-08T06:40Z
-- DONE: …prior… + **TZ-DICT-314** (form-profiles BE API)
+## Checkpoint 2026-08-08 (flow canon closed)
+- DONE: … + DICT-314; flow Q&A locked in sales-to-shop-flow-canon
 - IN PROGRESS: none
-- NOT DONE: DICT-315, DICT-316
-- NEXT: DICT-315 — wait peer dictionaries WIP clear OR PO carve keys to new-only files
-- HEAD: `26d8570` (TZ-DICT-314)
-- Blockers: peer uncommitted edits in `dictionaries/*.page.ts` (categories, color-references, measurements-group, doc/text-block cats) + many other FE pages
-- _active/: empty
+- NEXT code: **TZ-ORDERS-302** → then 303
+- DICT-315: still blocked by dictionaries WIP (parallel only if keys carve)
+- _active/: empty until 302 claim
 - Deploy: NO (await PO)
