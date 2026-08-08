@@ -178,20 +178,14 @@ export class CompositionTreeComponent {
   }
 
   /**
-   * Row strip = opaque kind tint on paper (not translucent wash).
-   * Nest gradient must stay behind the strip, not muddy through it.
+   * Row strip = plain paper. Kind color lives only on badge text/border
+   * (and nest left rail) — not a tinted card wash.
    */
   protected rowWash(node: CompositionTreeNode): string {
-    const selected = this.selectedId() === node._id;
-    const accent = catalogKindOklch(
-      node.kind,
-      node.materialKind,
-      selected ? 0.11 : 0.1,
-      selected ? 0.7 : 0.72,
-      this.appearance.palette(),
-    );
-    const mixPct = selected ? 46 : 32;
-    return `color-mix(in oklch, ${accent} ${mixPct}%, var(--color-paper))`;
+    if (this.selectedId() === node._id) {
+      return 'color-mix(in oklch, var(--color-rule) 22%, var(--color-paper))';
+    }
+    return 'var(--color-paper)';
   }
 
   /**
