@@ -1,8 +1,8 @@
 # TZ-ORG-ASSETS-302 checklist
 
-> Status: **CLAIMED / IN PROGRESS** · Wave: PARTY-DOCS #6 · Depends: ASSETS-301 + ORDERS-306
+> Status: **DONE** · Wave: PARTY-DOCS #6 · Depends: ASSETS-301 + ORDERS-306
 > Source: `tasks/_backlog/party-docs/TZ-ORG-ASSETS-302-print-bind.md`
-> Marker: `tasks/_active/TZ-ORG-ASSETS-302.md`
+> Marker: archived in `tasks/_archive/2026-08/TZ-ORG-ASSETS-302.done.md`
 > Commit/push: **REQUIRED** per continuous executor canon.
 
 ## Claim slot

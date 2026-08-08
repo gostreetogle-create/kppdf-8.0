@@ -1,5 +1,18 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-08T17:18:00Z · TZ-ORG-ASSETS-302 DONE
+- DONE: TZ-ORG-ASSETS-302 — existing document-template HTML/snapshot path now binds organization requisites and typed vault `logo|seal|signature`; order cascades stub-КП/counterparty; missing vault remains graceful. This makes the next product demo able to print tenant requisites without a new PDF engine.
+- IN PROGRESS: none
+- NOT DONE: #7 TZ-DESKTOP-SOT-301; INN-301 **PARKED**
+- NEXT: `tasks/_backlog/party-docs/TZ-DESKTOP-SOT-301.md`
+- HEAD: d314718a pushed? yes (`origin/main`)
+- Blockers: none for Party-docs; `verify-status.sh` still reports pre-existing 72 legacy kit-era entries
+- _active/: empty
+- Foreign WIP remains untouched: `desktop/mcp-runtime/**` · `.gitignore` + `.husky/pre-commit` + `scripts/pre-commit-secrets-check.mjs`
+- Archive: `tasks/_archive/2026-08/TZ-ORG-ASSETS-302.done.md`
+- Lock: `.mimocode/locks/TZ-ORG-ASSETS-302-print-bind.lock`
+- Deploy: NO
+
 ## Checkpoint 2026-08-08T16:55:00Z · WAVE-PARTY-DOCS #1–5 DONE
 - DONE: + TZ-ORG-ASSETS-301 (слоты `logo|seal|signature` на организации, замена вытесняет старый файл, печать admin-only и на upload и на remove, общий multer-конфиг с `/photos/upload`, `legalAddress`, секция «Файлы для документов» в Org FullEditor)
 - IN PROGRESS: none
