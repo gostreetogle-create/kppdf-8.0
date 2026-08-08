@@ -1,3 +1,12 @@
+## Checkpoint 2026-08-08T14:35:00Z
+- DONE: TZ-SALES-302, TZ-UX-FACT-303
+- IN PROGRESS: none
+- NOT DONE: TZ-UX-FACT-304 → TZ-UX-FORM-307
+- NEXT: TZ-UX-FACT-304
+- HEAD: 8430d1b8 pushed to origin/main; FACT-303 closeout pending commit
+- Blockers: none; unrelated WIP remains outside scope
+- _active/: empty for FACT-303
+
 
 # SESSION QUEUE
 

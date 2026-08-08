@@ -1,3 +1,10 @@
+## [2026-08-08] — TZ-UX-FACT-303 DONE: order-detail FactStack
+
+**Что:** order passport migrated to shared FactStack facts; materials selector remains in actions slot; order money stays absent.
+**Gates:** FE tsc PASS; order-detail 4/4; targeted ESLint/Prettier + diff check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-FACT-303.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-FACT-303-order-detail-factstack.lock`
+
 ## [2026-08-08] — TZ-SALES-302 DONE: immutable quotation versions
 
 **Что:** atomic freeze with immutable embedded snapshots (lines, totals, family/template metadata, actor), version list/detail APIs, and proposals-page freeze/history UI.

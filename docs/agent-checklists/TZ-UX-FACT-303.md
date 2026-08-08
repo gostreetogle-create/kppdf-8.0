@@ -1,6 +1,6 @@
 # TZ-UX-FACT-303 checklist
 
-> Status: **READY FOR REVIEW** · Wave: SHOP-NORTH-B
+> Status: **DONE** · Wave: SHOP-NORTH-B
 > Source: `tasks/_backlog/shop-north-b/TZ-UX-FACT-303-order-detail-facts.md`
 > Conflict keys: `frontend/src/app/pages/orders/**`, `frontend/src/app/shared/ui/fact-card/**`, `docs/pages/ui-fact-card.md`
 
@@ -26,5 +26,5 @@
 - [x] Review PASS: shared FactStack wiring, actions slot selector, no money restoration, scope guard.
 
 ## Closeout
-- [ ] Archive + lock + progress/checkpoint
+- [x] Archive + lock + progress/checkpoint
 - [ ] Commit and push main
