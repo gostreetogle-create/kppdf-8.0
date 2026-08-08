@@ -1,5 +1,18 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-08T17:31:00Z · WAVE-PARTY-DOCS #1–7 DONE
+- DONE: TZ-DESKTOP-SOT-301 — canonical MCP SoT is tracked `desktop/mcp`; package checks and docs agree; stale Desktop shell diagnostics are green; no foreign `mcp-runtime` was reconstructed. This closes the Party-docs product wave from tenant hygiene through desktop handoff.
+- IN PROGRESS: none
+- NOT DONE: INN-301 **PARKED**; other queue rows are peer/legacy rows and must be checked before claiming
+- NEXT: idle — WAVE-PARTY-DOCS #1–7 is complete; offer deploy only on explicit PO command, or await an unpark/new READY wave
+- HEAD: b91dcc5f pushed? yes (`origin/main`)
+- Blockers: none in this wave; `verify-status.sh` pre-existing FAIL remains for 72 legacy kit-era entries
+- _active/: empty
+- Foreign WIP remains untouched: `desktop/mcp-runtime/**` · `.gitignore` + `.husky/pre-commit` + `scripts/pre-commit-secrets-check.mjs`
+- Archive: `tasks/_archive/2026-08/TZ-DESKTOP-SOT-301.done.md`
+- Lock: `.mimocode/locks/TZ-DESKTOP-SOT-301-mcp-sot.lock`
+- Deploy: NO
+
 ## Checkpoint 2026-08-08T17:18:00Z · TZ-ORG-ASSETS-302 DONE
 - DONE: TZ-ORG-ASSETS-302 — existing document-template HTML/snapshot path now binds organization requisites and typed vault `logo|seal|signature`; order cascades stub-КП/counterparty; missing vault remains graceful. This makes the next product demo able to print tenant requisites without a new PDF engine.
 - IN PROGRESS: none

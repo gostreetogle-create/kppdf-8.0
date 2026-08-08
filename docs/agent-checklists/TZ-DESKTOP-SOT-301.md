@@ -1,8 +1,8 @@
 # TZ-DESKTOP-SOT-301 checklist
 
-> Status: **CLAIMED / IN PROGRESS** · Wave: PARTY-DOCS #7 · Depends: TZ-ORG-ASSETS-302
+> Status: **DONE** · Wave: PARTY-DOCS #7 · Depends: TZ-ORG-ASSETS-302
 > Source: `tasks/_backlog/party-docs/TZ-DESKTOP-SOT-301.md`
-> Marker: `tasks/_active/TZ-DESKTOP-SOT-301.md`
+> Marker: archived in `tasks/_archive/2026-08/TZ-DESKTOP-SOT-301.done.md`
 > Commit/push: **REQUIRED** per continuous executor canon.
 
 ## Claim slot
