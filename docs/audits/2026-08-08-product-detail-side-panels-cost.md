@@ -13,7 +13,7 @@
 | Левый паспорт | Прайс / Себест / База / «В составе» без смысла; мелкий текст | Цены → блок **Себестоимость**; слева фото + имя + статусы + **габариты/вес/RAL** крупнее |
 | Аккордеон «Себестоимость» | Широкая таблица → гориз. скролл | Вертикальный **стек фактов** / карточки снимков, без h-scroll |
 | Пересчёт | Только кнопка | Авто **после успешного add/remove/qty** состава (debounce); кнопку оставить |
-| Правый «Выбрано» | Текст и кнопки вразнобой | Секции: Что · Количество · Деньги · Действия — на **FactCard** |
+| Правый «Выбрано» | Текст и кнопки вразнобой; «Открыть карточку» строкой; **нет Редактировать** | Секции FactCard; все действия = **PiButton**; **Редактировать** → тот же FullEditor (модуль/изделие/материал); «Открыть карточку» отдельно |
 | Состав (центр) | — | **НЕ в этой волне** (UX-312 отдельно) |
 
 Канон переиспользования: общий примитив **Fact / Metric card** (`PiFactCard`) — потом sweep по сайту.
@@ -79,7 +79,7 @@ Module detail (`/modules/:id`) — **parity** тем же паттерном (TZ
 | 0 | **TZ-UX-FACT-301** | PiFactCard + stack (+docs) | `shared/ui/fact-card/**` |
 | 1 | **TZ-UX-DETAIL-301** | Левый паспорт: убрать цены; typography/dims | `product-detail.page.ts` |
 | 2 | **TZ-UX-DETAIL-302** | Блок денег/себест. вертикально + auto-recalc | `product-detail` + cost services hooks via BomPanel events |
-| 3 | **TZ-UX-DETAIL-303** | Правый inspector на FactCard секциях | `product-bom-panel` inspector only — **не** tree |
+| 3 | **TZ-UX-DETAIL-303** | Inspector: FactCard + PiButton + **Редактировать** (FormDialog по kind) | `product-bom-panel` inspector — **не** tree |
 | 4 | **TZ-UX-DETAIL-304** | Module detail parity | `module-detail.page.ts` |
 | 5 | **TZ-UX-FACT-302** | Site audit → successors | docs only |
 
