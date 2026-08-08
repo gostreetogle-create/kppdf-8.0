@@ -1,6 +1,13 @@
 # SESSION QUEUE
 
-**Updated:** 2026-08-08 · TZ-UX-DIALOG-303 DONE
+**Updated:** 2026-08-08 · WAVE-CATALOG-UX-C READY for free agent
+
+## Checkpoint 2026-08-08 · Catalog UX wave C
+- **READY C:** `tasks/_backlog/catalog-ux-c/WAVE-CATALOG-UX-C.md`
+  DEDUP-301 → SELECT-301 → PRODUCTS-307 → DIALOG-304
+- **B shop-north:** FACT-304 → FORM-307 — do not steal
+- **A desktop:** IDLE
+- Deploy: NO
 
 ## Checkpoint 2026-08-08T11:30:00Z
 - DONE: TZ-UX-DIALOG-303 — add-and-continue composition pickers (WIP closeout)

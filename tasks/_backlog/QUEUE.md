@@ -1,28 +1,26 @@
 # Очередь
 
-## Параллель (два агента)
+## Параллель
 
-| Агент | Волна | Старт |
+| Агент | Волна | Статус |
 |-------|--------|--------|
-| **A — Desktop** | ~~WAVE-DESKTOP-BULK-IMPORT~~ | **IDLE** (TZD-23…29 DONE) |
-| **B — Shop north** | `tasks/_backlog/shop-north-b/WAVE-SHOP-NORTH-B.md` | SUPPLY-302 DONE → ORDERS-304… |
+| **A — Desktop** | ~~WAVE-DESKTOP-BULK-IMPORT~~ | **IDLE** |
+| **B — Shop north** | `shop-north-b/WAVE-SHOP-NORTH-B.md` | FACT-304 → FORM-307 (не перехватывать) |
+| **C — Catalog UX** | `catalog-ux-c/WAVE-CATALOG-UX-C.md` | **READY** DEDUP-301 → SELECT-301 → PRODUCTS-307 → DIALOG-304 |
 
-Оба только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
+Все только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
-## Idle / next (после текущих волн)
+## Idle / park
 
-| TZ | Файл | Заметка |
-|----|------|---------|
-| ~~WAVE UI type+color~~ | DONE 301–COLOR-301 | successor **TZ-UI-TYPE-303** content label 13px |
-| **TZ-UI-TYPE-303** | `tasks/TZ-UI-TYPE-303-content-label-step.md` | table/passport/fact labels: pi-label 13px (не eyebrow) |
-| **TZ-UX-DIALOG-303** | `tasks/TZ-UX-DIALOG-303-add-and-continue-pickers.md` | Состав: Добавить без закрытия диалога (+ session list) |
-| **TZ-UI-SELECT-301** | `tasks/TZ-UI-SELECT-301-catalog-overflow-search-migrate.md` | Native catalog `<select>` → overflow+search auto |
-| **TZ-PRODUCTS-307** | `tasks/TZ-PRODUCTS-307-products-list-hierarchy-preview.md` | Иерархия в expand списка /products |
-| ~~TZ-UX-313~~ | archived `tasks/_archive/2026-08/TZ-UX-313.done.md` | Smart back DONE |
+| TZ | Заметка |
+|----|---------|
+| ~~TYPE-303~~ · ~~DIALOG-303~~ · ~~UX-313~~ | DONE |
+| SALES-304 | RESERVED |
+| SHIPPING / Gantt 308–310 | park |
 
 ## Не брать
 
-- TZ-GIT-302 CANCELLED · freebuff long-haul merge  
-- SALES-304 (RESERVED) · SHIPPING-301 · PRODUCTION-308…310  
-- чужой desktop / journal / import-task (агент B)  
-- deploy без команды PO
+- TZ-GIT-302 CANCELLED  
+- чужой desktop / journal / import-task  
+- deploy без команды PO  
+- FACT-304 / FORM-307 если агент B жив  
