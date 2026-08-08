@@ -10,7 +10,7 @@
 
 | Наблюдение PO | Канон / действие |
 |---------------|------------------|
-| Верхнее меню + «Десктоп»/админ вылезают | **TZ-UX-301** — компактные icon-btn + tooltip по hover |
+| Верхнее меню + «Десктоп»/админ вылезают | **TZ-UX-301** compact → **TZ-UX-304** icon+caption rect + порядок lifecycle |
 | Роли: список прав не кликабелен / не редактируется | Система «Администратор» = **read-only by design**; UX плохой. **TZ-ADMIN-301** — явный hint + edit кастомных ролей через диалог (права галочками pageKey) |
 | Все ли pageKey в ролях | Аудит seed vs NAV pageKeys в ADMIN-301 |
 | Хлебные крошки разные | **TZ-UX-302** — выровнять под эталон Справочники |
@@ -39,10 +39,11 @@
 
 ## 3. Очередь
 
-1. **UX-301** compact nav (P0 показ)  
-2. **ADMIN-301** roles permissions UX + pageKey audit  
-3. **UX-302** chrome unify (supply, shipping, design, docs, deals…)  
-4. **UX-303** design-system audit (docs)  
-5. Production deep — later  
+1. **UX-301** compact nav — DONE  
+2. **UX-304** icon+caption + order (Dictionaries after Docs) — IN WORK / next DONE  
+3. **ADMIN-301** roles permissions UX + pageKey audit (параллельно, не layout)  
+4. **UX-302** chrome unify (supply, shipping, design, docs, deals…)  
+5. **UX-303** design-system audit (docs)  
+6. Production deep — later  
 
 Deploy — не из этой волны.

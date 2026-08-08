@@ -1,12 +1,11 @@
 import { NAV_CATEGORY_ORDER } from './app-layout.component';
 
 /**
- * TZ-NAV-301 — lifecycle menu order (L→R) must match audit canon.
+ * TZ-UX-304 — L→R order = product cycle + frequency; Dictionaries after Docs.
  */
-describe('NAV_CATEGORY_ORDER (TZ-NAV-301)', () => {
-  it('lists top categories left→right as lifecycle flow', () => {
+describe('NAV_CATEGORY_ORDER (TZ-UX-304)', () => {
+  it('lists top categories left→right as lifecycle / usage flow', () => {
     expect([...NAV_CATEGORY_ORDER]).toEqual([
-      'reference',
       'catalog',
       'clients',
       'deals',
@@ -15,6 +14,7 @@ describe('NAV_CATEGORY_ORDER (TZ-NAV-301)', () => {
       'production',
       'warehouse',
       'docs',
+      'reference',
       'admin',
     ]);
   });

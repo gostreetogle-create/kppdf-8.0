@@ -81,12 +81,19 @@ export interface PiNavDropdownItem {
     <button
       type="button"
       piDropdownTrigger
-      class="inline-flex items-center justify-center gap-1 rounded-sm
+      class="inline-flex items-center justify-center rounded-sm
              transition-colors pi-focus-ring cursor-pointer hairline"
-      [class.size-9]="compact()"
+      [class.flex-col]="compact()"
+      [class.gap-0.5]="compact()"
+      [class.gap-1]="!compact()"
+      [class.h-12]="compact()"
+      [class.px-1.5]="compact()"
+      [class.py-1]="compact()"
       [class.px-3]="!compact()"
       [class.py-1.5]="!compact()"
       [class.text-sm]="!compact()"
+      [style.min-width]="compact() ? '2.75rem' : null"
+      [style.max-width]="compact() ? '3.25rem' : null"
       [class.bg-sunrise-warm]="active()"
       [class.text-paper]="active()"
       [class.border-sunrise-warm]="active()"
@@ -96,7 +103,12 @@ export interface PiNavDropdownItem {
       [attr.title]="label()"
       aria-haspopup="menu"
     >
-      <lucide-angular [img]="icon()" [size]="15" class="opacity-90" aria-hidden="true" />
+      <lucide-angular
+        [img]="icon()"
+        [size]="compact() ? 14 : 15"
+        class="opacity-90 shrink-0"
+        aria-hidden="true"
+      />
       @if (!compact()) {
         <span>{{ label() }}</span>
         <lucide-angular
@@ -106,6 +118,13 @@ export interface PiNavDropdownItem {
           aria-hidden="true"
         />
       } @else {
+        <!-- TZ-UX-304: caption under icon (same language as entry links). -->
+        <span
+          class="block w-full text-center text-[10px] leading-tight truncate font-medium"
+          aria-hidden="true"
+        >
+          {{ shortLabel() || label() }}
+        </span>
         <span class="sr-only">{{ label() }}</span>
       }
       <ng-template #piDropdownContent>
@@ -169,6 +188,11 @@ export interface PiNavDropdownItem {
 })
 export class PiNavDropdownComponent {
   readonly label = input.required<string>();
+  /**
+   * TZ-UX-304 — short caption under icon when `compact`; falls back to `label`.
+   * Full name stays in aria-label / title.
+   */
+  readonly shortLabel = input<string>('');
   /** Lucide icon reference — passed in by the layout (e.g. `Package`, `Briefcase`). */
   readonly icon = input.required<LucideIcon>();
   readonly items = input.required<readonly PiNavDropdownItem[]>();
@@ -176,8 +200,8 @@ export class PiNavDropdownComponent {
   readonly active = input<boolean>(false);
   readonly ariaLabel = input<string>('');
   /**
-   * TZ-UX-301 — icon-first trigger (title + aria-label); label text hidden.
-   * Default false keeps kit/demo menus with visible labels.
+   * TZ-UX-304 — icon + caption under (rect); kit/demo menus keep `compact=false`.
+   * Default false keeps kit/demo menus with horizontal labels.
    */
   readonly compact = input<boolean>(false);
 

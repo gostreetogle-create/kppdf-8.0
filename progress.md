@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-304 DONE: nav icon+caption + Dictionaries after Docs
+
+**Исполнитель:** agent-3e757640b7 (self PASS → archive)
+**Статус:** DONE on main; deploy НЕ
+**Что:** топ-nav rect + иконка сверху + подпись снизу; порядок Каталог…Документы → Справочники → Админ; shortLabel для длинных; dropdown compact тот же язык.
+**Gates:** FE tsc PASS; jest app-layout.nav-order 1/1
+**Archive:** `tasks/_archive/2026-08/TZ-UX-304.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-304-nav-icon-caption-and-order.lock`
+**Known:** admin/** не трогали. Deploy: NO.
+
 ## [2026-08-08] — TZ-ADMIN-301 DONE: roles permissions UX + pageKey ACL
 
 **Исполнитель:** agent-3e757640b7 (self PASS → archive)

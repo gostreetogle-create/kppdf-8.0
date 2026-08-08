@@ -62,7 +62,13 @@ interface AppNavItem extends Omit<PiNavDropdownItem, 'pageKey'> {
 
 interface NavCategory {
   id: string;
+  /** Full RU name — aria-label / title. */
   label: string;
+  /**
+   * TZ-UX-304 — optional short caption under the icon (truncate otherwise).
+   * Full `label` stays in aria-label/title.
+   */
+  shortLabel?: string;
   icon: LucideIcon;
   items: AppNavItem[];
   /**
@@ -73,10 +79,10 @@ interface NavCategory {
 }
 
 /**
- * TZ-NAV-301 — top nav L→R = sales→shop lifecycle:
+ * TZ-UX-304 — top nav L→R = product cycle + frequency (settings last):
  *
- *   Справочники → Каталог → Клиенты → Сделки → Проектирование →
- *   Снабжение → Производство → Склад → Документы → Админ
+ *   Каталог → Клиенты → Сделки → Проектирование → Снабжение →
+ *   Производство → Склад → Документы → Справочники → Админ
  *
  * Active-category: when ANY sub-route is active (e.g. /products/:id),
  * the parent trigger highlights. Boundary match:
@@ -85,41 +91,6 @@ interface NavCategory {
  * Standalone + OnPush; `currentUrl` from Router NavigationEnd.
  */
 const NAV_CATEGORIES: NavCategory[] = [
-  {
-    // Group Chip Workspace: chips on leaf pages; top-nav is entry only.
-    id: 'reference',
-    label: 'Справочники',
-    icon: BookOpen,
-    entryPath: '/dictionaries/classification',
-    items: [
-      { path: '/dictionaries/classification', pageKey: 'categories', label: 'Классификация' },
-      { path: '/dictionaries/measurements', pageKey: 'dictionaries', label: 'Измерения' },
-      { path: '/dictionaries/color-references', pageKey: 'color-references', label: 'Цвета' },
-      {
-        path: '/dictionaries/documents-ref',
-        pageKey: 'doc-template-categories',
-        label: 'Документы',
-      },
-      {
-        path: '/doc-template-categories',
-        pageKey: 'doc-template-categories',
-        label: 'Категории шаблонов',
-      },
-      {
-        path: '/dictionaries/text-block-categories',
-        pageKey: 'text-block-categories',
-        label: 'Категории текстов',
-      },
-      {
-        // TZ-DICT-315 — settings for QuickCreate field matrix (not catalog appearance).
-        path: '/dictionaries/form-profiles',
-        pageKey: 'dictionaries',
-        label: 'Профили быстрых форм',
-      },
-      // Deep-links /categories and /dictionaries/appearance stay routable
-      // (not top-nav leaves — avoids duplicate «Категории» / «Оформление»).
-    ],
-  },
   {
     id: 'catalog',
     label: 'Каталог',
@@ -163,6 +134,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   {
     id: 'design',
     label: 'Проектирование',
+    shortLabel: 'Проект.',
     icon: PenLine,
     entryPath: '/design',
     items: [{ path: '/design', pageKey: 'design', label: 'Очередь' }],
@@ -170,6 +142,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   {
     id: 'supply',
     label: 'Снабжение',
+    shortLabel: 'Снабж.',
     icon: ShoppingCart,
     entryPath: '/supply',
     items: [{ path: '/supply', pageKey: 'supply', label: 'Закупки' }],
@@ -177,6 +150,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   {
     id: 'production',
     label: 'Производство',
+    shortLabel: 'Произв.',
     icon: Factory,
     entryPath: '/production',
     items: [
@@ -200,6 +174,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   {
     id: 'docs',
     label: 'Документы',
+    shortLabel: 'Докум.',
     icon: FileText,
     entryPath: '/doc-constructor/templates',
     items: [
@@ -208,6 +183,43 @@ const NAV_CATEGORIES: NavCategory[] = [
       { path: '/doc-constructor/tables', pageKey: 'doc-tables', label: 'Шаблоны таблиц' },
       { path: '/doc-constructor/documents', pageKey: 'doc-documents', label: 'Архив документов' },
       { path: '/doc-constructor/builder', pageKey: 'doc-templates', label: 'Конструктор' },
+    ],
+  },
+  {
+    // Group Chip Workspace: chips on leaf pages; top-nav is entry only.
+    // TZ-UX-304: after Docs (settings last, before Admin).
+    id: 'reference',
+    label: 'Справочники',
+    shortLabel: 'Справ.',
+    icon: BookOpen,
+    entryPath: '/dictionaries/classification',
+    items: [
+      { path: '/dictionaries/classification', pageKey: 'categories', label: 'Классификация' },
+      { path: '/dictionaries/measurements', pageKey: 'dictionaries', label: 'Измерения' },
+      { path: '/dictionaries/color-references', pageKey: 'color-references', label: 'Цвета' },
+      {
+        path: '/dictionaries/documents-ref',
+        pageKey: 'doc-template-categories',
+        label: 'Документы',
+      },
+      {
+        path: '/doc-template-categories',
+        pageKey: 'doc-template-categories',
+        label: 'Категории шаблонов',
+      },
+      {
+        path: '/dictionaries/text-block-categories',
+        pageKey: 'text-block-categories',
+        label: 'Категории текстов',
+      },
+      {
+        // TZ-DICT-315 — settings for QuickCreate field matrix (not catalog appearance).
+        path: '/dictionaries/form-profiles',
+        pageKey: 'dictionaries',
+        label: 'Профили быстрых форм',
+      },
+      // Deep-links /categories and /dictionaries/appearance stay routable
+      // (not top-nav leaves — avoids duplicate «Категории» / «Оформление»).
     ],
   },
   {
@@ -239,7 +251,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   },
 ];
 
-/** TZ-NAV-301 — exported for unit test of L→R category order. */
+/** TZ-UX-304 — exported for unit test of L→R category order. */
 export const NAV_CATEGORY_ORDER: readonly string[] = NAV_CATEGORIES.map((c) => c.id);
 
 @Component({
@@ -261,7 +273,7 @@ export const NAV_CATEGORY_ORDER: readonly string[] = NAV_CATEGORIES.map((c) => c
           class="sticky top-0 z-30 pi-marble supports-[backdrop-filter]:backdrop-blur-sm
                  hairline-b pi-edge-bleed shrink-0"
         >
-          <div class="h-14 flex items-center justify-between gap-2 min-w-0">
+          <div class="h-16 flex items-center justify-between gap-2 min-w-0">
             <a
               routerLink="/"
               class="flex items-center gap-2 min-w-0 shrink-0 max-w-[9.5rem] sm:max-w-none"
@@ -280,9 +292,11 @@ export const NAV_CATEGORY_ORDER: readonly string[] = NAV_CATEGORIES.map((c) => c
             >
               @for (cat of navCategories(); track cat.id) {
                 @if (cat.entryPath) {
+                  <!-- TZ-UX-304: rect + icon top + caption bottom (not square icon-only). -->
                   <a
                     [routerLink]="cat.entryPath"
-                    class="inline-flex items-center justify-center gap-1.5 size-9 shrink-0
+                    class="inline-flex flex-col items-center justify-center gap-0.5 shrink-0
+                           min-w-[2.75rem] max-w-[3.25rem] h-12 px-1.5 py-1
                            rounded-sm hairline transition-colors pi-focus-ring
                            cursor-pointer no-underline"
                     [class.bg-sunrise-warm]="activeCategoryId() === cat.id"
@@ -297,15 +311,22 @@ export const NAV_CATEGORY_ORDER: readonly string[] = NAV_CATEGORIES.map((c) => c
                   >
                     <lucide-angular
                       [img]="cat.icon"
-                      [size]="15"
-                      class="opacity-90"
+                      [size]="14"
+                      class="opacity-90 shrink-0"
                       aria-hidden="true"
                     />
-                    <span class="sr-only">{{ cat.label }}</span>
+                    <span
+                      class="block w-full text-center text-[10px] leading-tight truncate
+                             font-medium"
+                      aria-hidden="true"
+                    >
+                      {{ cat.shortLabel || cat.label }}
+                    </span>
                   </a>
                 } @else {
                   <app-pi-nav-dropdown
                     [label]="cat.label"
+                    [shortLabel]="cat.shortLabel || ''"
                     [icon]="cat.icon"
                     [items]="cat.items"
                     [active]="activeCategoryId() === cat.id"
