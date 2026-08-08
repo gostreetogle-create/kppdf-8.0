@@ -1,3 +1,18 @@
+# SESSION QUEUE
+
+**Updated:** 2026-08-08 · TZ-UX-DIALOG-303 DONE
+
+## Checkpoint 2026-08-08T11:30:00Z
+- DONE: TZ-UX-DIALOG-303 — add-and-continue composition pickers (WIP closeout)
+- IN PROGRESS: none (this agent)
+- NOT DONE: peer FACT-304 / SELECT-301 if queued
+- NEXT: idle unless PO queues more
+- HEAD: post DIALOG-303 commit
+- Blockers: none
+- _active/: FACT-304 peer only — not touched
+- Ban: FACT/orders · supply/** · desktop/** — not touched
+- Deploy: NO
+
 ## Checkpoint 2026-08-08T14:35:00Z
 - DONE: TZ-SALES-302, TZ-UX-FACT-303
 - IN PROGRESS: none
@@ -6,22 +21,6 @@
 - HEAD: 8430d1b8 pushed to origin/main; FACT-303 closeout pending commit
 - Blockers: none; unrelated WIP remains outside scope
 - _active/: empty for FACT-303
-
-
-# SESSION QUEUE
-
-**Updated:** 2026-08-08 · TZ-UX-DIALOG-303 DONE
-
-## Checkpoint 2026-08-08T11:22:19Z
-- DONE: TZ-UX-DIALOG-303 — add-and-continue composition pickers
-- IN PROGRESS: none (this agent)
-- NOT DONE: peer FACT-303 closeout if any; SELECT-301 if queued
-- NEXT: idle unless PO queues more (no deploy)
-- HEAD: post DIALOG-303 commit
-- Blockers: none
-- _active/: peer FACT-303 only (orders) — not touched
-- Ban: FACT-303/orders · supply/** · desktop/** — not touched
-- Deploy: NO
 
 ## Checkpoint 2026-08-08T11:20:00Z
 - DONE: (prior waves)

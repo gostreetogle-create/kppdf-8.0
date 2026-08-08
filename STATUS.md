@@ -13,6 +13,12 @@
 - Moved the project passport to `docs/project-passport.md`; `TZ-CLEANUP-R2` is archived as DONE after all cleanup acceptance criteria and verification gates.
 - `tasks/` is intended to contain only real active `TZ-*.md` files. Roadmap prose elsewhere is historical context, not an active task claim.
 
+## [2026-08-08] — TZ-UX-DIALOG-303 DONE: add-and-continue pickers
+**Статус:** DONE on main; deploy НЕ
+**Что:** composition picker stays open on Add; BomPanel writes per onAdded.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-DIALOG-303.done.md`
+**Gates:** FE tsc PASS; jest 15/15
+
 ## [2026-08-08] — TZ-UI-TYPE-303 DONE: content label 13px
 **Статус:** DONE on main; deploy НЕ
 **Что:** pi-label for informational th/fact/passport; eyebrow stays compact chrome.
