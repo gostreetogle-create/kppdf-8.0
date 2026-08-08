@@ -1,28 +1,24 @@
 # SESSION QUEUE
 
-**Updated:** 2026-08-08T09:46Z · **TZ-UX-312 DONE** · NEXT DEDUP-302 / UX-309
+**Updated:** 2026-08-08T09:52Z · **TZ-UX-FACT-301 DONE** · NEXT DETAIL-301 / DEDUP-302
 
 ## NEXT
 
-1. **TZ-CATALOG-DEDUP-302** — убрать ModuleMaterials  
-2. TZ-UX-309 · TZ-UX-310 · TZ-SALES-304  
+1. **TZ-UX-DETAIL-301+** — wire FactCard on product-detail (separate TZ)  
+2. **TZ-CATALOG-DEDUP-302** — ModuleMaterials  
+3. UX-309 · UX-310 · SALES-304  
 
 ## DONE recent
 
-UX-312 · DEDUP-301 · UX-311 · GIT-301 · FORM-302…305  
-
-## Docs
-
-`docs/pages/ui-composition-tree.md` · dedupe audit  
+FACT-301 · UX-312 · DEDUP-301 · UX-311  
 
 Deploy: NO  
-Park: `tasks/_park/`
 
-## Checkpoint 2026-08-08T09:46Z
-- DONE: TZ-UX-312
+## Checkpoint 2026-08-08T09:52Z
+- DONE: TZ-UX-FACT-301
 - IN PROGRESS: none
-- NEXT: TZ-CATALOG-DEDUP-302 (peer) / UX-309
-- HEAD: `1b3f843d`
+- NEXT: DETAIL-301 (wire) or DEDUP-302
+- HEAD: (pending)
 - Blockers: none
 - _active/: empty
 - Deploy: NO

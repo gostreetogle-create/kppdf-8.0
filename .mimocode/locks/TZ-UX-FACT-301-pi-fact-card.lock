@@ -1,0 +1,7 @@
+# Lock file
+Locked as of 2026-08-08 — TZ-UX-FACT-301: PiFactCard + FactStack.
+
+Owner: agent-3e757640b7
+Protected: frontend/src/app/shared/ui/fact-card/**
+
+Unlock: DETAIL wiring TZ / PO.

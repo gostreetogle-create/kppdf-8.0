@@ -479,6 +479,7 @@ UI держится на собственном Paper & Ink kit без Material/
 
 - **`<app-pi-page-header>`** — `frontend/src/app/shared/page/pi-page-header.component.ts`. Общий заголовок страницы с title, subtitle, back-link и actions slot.
 - **`<app-pi-empty-state>`** — `frontend/src/app/shared/ui/pi-empty-state/pi-empty-state.component.ts`. Единое empty-state представление с описанием и CTA slot.
+- **`<app-pi-fact-card>` / `<app-pi-fact-stack>`** — `frontend/src/app/shared/ui/fact-card/` (TZ-UX-FACT-301). Label · value · caption · `[actions]`; variants default|emphasis|danger; stack with section title. Canon `docs/pages/ui-fact-card.md`. Detail wiring → DETAIL-301+.
 - **`<app-pi-badge>`** — `frontend/src/app/shared/ui/badge/badge.component.ts`. Status/isActive/isSystem indicator с семантическими вариантами и token-driven цветами.
 - **`<app-pi-row-actions>`** — `frontend/src/app/shared/ui/pi-row-actions/pi-row-actions.component.ts`. Доступные row actions с hover/focus-visible состояниями и persistent visibility для выбранной строки.
 

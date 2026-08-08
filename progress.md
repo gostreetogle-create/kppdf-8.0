@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-FACT-301 DONE: PiFactCard + FactStack UI kit
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor)
+**Статус:** DONE on main; deploy НЕ
+**Что:** shared `app-pi-fact-card` / `app-pi-fact-stack` (label·value·caption·actions; variants). Docs + jest. Product-detail **не** подключали.
+**Gates:** FE tsc PASS; Jest fact-card 3/3 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-FACT-301.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-FACT-301-pi-fact-card.lock`
+**Known:** Deploy NO. Wiring → DETAIL-301+.
+
 ## [2026-08-08] — TZ-UX-312 DONE: composition-tree larger thumb + denser row
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor)

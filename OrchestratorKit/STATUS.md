@@ -27,6 +27,7 @@
 
 | № | Название | Closed | Archive |
 |---|----------|--------|---------|
+| TZ-UX-FACT-301 | PiFactCard + FactStack UI kit | 2026-08-08 | `tasks/_archive/2026-08/TZ-UX-FACT-301.done.md` |
 | TZ-UX-312 | Composition tree larger thumb + denser row | 2026-08-08 | `tasks/_archive/2026-08/TZ-UX-312.done.md` |
 | TZ-CATALOG-DEDUP-301 | Strip composition from Product FullEditor | 2026-08-08 | `tasks/_archive/2026-08/TZ-CATALOG-DEDUP-301.done.md` |
 | TZ-UX-311 | Composition tree thumb + name wrap | 2026-08-08 | `tasks/_archive/2026-08/TZ-UX-311.done.md` |
