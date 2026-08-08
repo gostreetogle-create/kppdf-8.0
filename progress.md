@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-308 DONE: Nav «Справ.» yellow on /categories
+
+**Исполнитель:** agent-3e757640b7 (self PASS → archive; PO CLAIM)
+**Статус:** DONE on main; deploy НЕ
+**Что:** reference `entryPath`+item → `/categories`; `activeAliases` classification/appearance/documents-ref; `matchActiveCategoryId()` + jest; docs-ref leaf дубль убран (alias → doc-template-categories).
+**Gates:** FE tsc PASS; jest app-layout.nav-order 4/4
+**Archive:** `tasks/_archive/2026-08/TZ-UX-308-nav-reference-active-highlight.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-308-nav-reference-active-highlight.lock`
+**Known:** dialogs/QuickCreate/admin/deploy не трогали. Deploy: NO.
+
 ## [2026-08-08] — TZ-UX-FORM-301 DONE: QuickCreate field capacity packing
 
 **Исполнитель:** agent-3e757640b7 (self PASS → archive)

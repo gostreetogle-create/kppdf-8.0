@@ -73,6 +73,11 @@ interface NavCategory {
    * `items` still drive ACL filtering + active-category matching.
    */
   entryPath?: string;
+  /**
+   * Extra URL prefixes that count as this category active
+   * (redirect aliases / deep-links not listed as leaves).
+   */
+  activeAliases?: readonly string[];
 }
 
 /**
@@ -193,16 +198,17 @@ const NAV_CATEGORIES: NavCategory[] = [
     label: 'Справочники',
     shortLabel: 'Справ.',
     icon: BookOpen,
-    entryPath: '/dictionaries/classification',
+    // TZ-UX-308: canon URL is /categories (classification redirects there).
+    entryPath: '/categories',
+    activeAliases: [
+      '/dictionaries/classification',
+      '/dictionaries/appearance',
+      '/dictionaries/documents-ref',
+    ],
     items: [
-      { path: '/dictionaries/classification', pageKey: 'categories', label: 'Классификация' },
+      { path: '/categories', pageKey: 'categories', label: 'Классификация' },
       { path: '/dictionaries/measurements', pageKey: 'dictionaries', label: 'Измерения' },
       { path: '/dictionaries/color-references', pageKey: 'color-references', label: 'Цвета' },
-      {
-        path: '/dictionaries/documents-ref',
-        pageKey: 'doc-template-categories',
-        label: 'Документы',
-      },
       {
         path: '/doc-template-categories',
         pageKey: 'doc-template-categories',
@@ -219,8 +225,6 @@ const NAV_CATEGORIES: NavCategory[] = [
         pageKey: 'dictionaries',
         label: 'Профили быстрых форм',
       },
-      // Deep-links /categories and /dictionaries/appearance stay routable
-      // (not top-nav leaves — avoids duplicate «Категории» / «Оформление»).
     ],
   },
   {
@@ -261,6 +265,31 @@ export const NAV_CATEGORY_LABELS: readonly string[] = NAV_CATEGORIES.map((c) => 
 
 /** TZ-UX-307 — visible short captions under icon. */
 export const NAV_CATEGORY_SHORT_LABELS: readonly string[] = NAV_CATEGORIES.map((c) => c.shortLabel);
+
+/**
+ * TZ-UX-308 — pure active-category matcher (items + activeAliases, `/` boundary).
+ * Exported for Jest; AppLayout.activeCategoryId delegates here.
+ */
+export function matchActiveCategoryId(
+  url: string,
+  categories: ReadonlyArray<{
+    id: string;
+    items: ReadonlyArray<{ path: string }>;
+    activeAliases?: readonly string[];
+  }> = NAV_CATEGORIES,
+): string | null {
+  if (!url) return null;
+  const pathOnly = url.split('?')[0] ?? url;
+  for (const cat of categories) {
+    const paths = [...cat.items.map((i) => i.path), ...(cat.activeAliases ?? [])];
+    for (const path of paths) {
+      if (pathOnly === path || pathOnly.startsWith(path + '/')) {
+        return cat.id;
+      }
+    }
+  }
+  return null;
+}
 
 @Component({
   selector: 'app-app-layout',
@@ -493,18 +522,9 @@ export class AppLayoutComponent {
    * Iterates the (post-filter) `navCategories()` signal so URL
    * matching is consistent with what the user can actually see.
    */
-  protected readonly activeCategoryId = computed<string | null>(() => {
-    const url = this.currentUrl();
-    if (!url) return null;
-    for (const cat of this.navCategories()) {
-      for (const item of cat.items) {
-        if (url === item.path || url.startsWith(item.path + '/')) {
-          return cat.id;
-        }
-      }
-    }
-    return null;
-  });
+  protected readonly activeCategoryId = computed<string | null>(() =>
+    matchActiveCategoryId(this.currentUrl(), this.navCategories()),
+  );
 
   protected async onLogout(): Promise<void> {
     await this.auth.logout();

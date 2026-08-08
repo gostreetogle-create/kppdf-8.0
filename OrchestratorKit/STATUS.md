@@ -23,6 +23,12 @@
 
 *Пусто — никаких TZ в работе.*
 
+## ✅ DONE (recent)
+
+| № | Название | Closed | Archive |
+|---|----------|--------|---------|
+| TZ-UX-308 | Nav «Справ.» yellow active on /categories | 2026-08-08 | `tasks/_archive/2026-08/TZ-UX-308-nav-reference-active-highlight.done.md` |
+
 ---
 
 ## ⏳ READY (готовы к выдаче агенту; файл лежит в `tasks/TZ-NN.md`)
