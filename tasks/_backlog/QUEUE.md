@@ -6,6 +6,12 @@
 |----|------|
 | **TZ-CATALOG-DEDUP-301** | FullEditor без состава — IN FLIGHT |
 
+## HOT (можно 3-м агентом ∥ long-haul)
+
+| ID | Note |
+|----|------|
+| **TZ-UX-312** | состав: крупнее фото + плотнее строка |
+
 ## Long-haul wave (свободный агент)
 
 См. `docs/agent-checklists/SESSION-WAVE-2026-08-08-long-haul.md`
