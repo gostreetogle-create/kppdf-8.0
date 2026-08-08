@@ -194,19 +194,19 @@ const KIND_LABELS: Record<ProductKind, string> = {
                 <app-pi-fact-card
                   label="Д×Ш×В"
                   [value]="dimensionsLabel(p)"
-                  mono
+                  [mono]="true"
                   dataTest="product-dim-hwl"
                 />
                 <app-pi-fact-card
                   label="Вес"
                   [value]="p.weightKg != null ? p.weightKg + ' кг' : '—'"
-                  mono
+                  [mono]="true"
                   dataTest="product-weight"
                 />
                 <app-pi-fact-card
                   label="RAL"
                   [value]="p.ralCode ?? '—'"
-                  mono
+                  [mono]="true"
                   dataTest="product-ral"
                 />
               </app-pi-fact-stack>
@@ -250,7 +250,7 @@ const KIND_LABELS: Record<ProductKind, string> = {
                     label="Прайс"
                     [value]="p.listPrice != null ? formatRuble(p.listPrice) : '—'"
                     caption="Цена витрины / для КП"
-                    mono
+                    [mono]="true"
                     variant="emphasis"
                     dataTest="product-list-price"
                   />
@@ -258,14 +258,14 @@ const KIND_LABELS: Record<ProductKind, string> = {
                     label="Себест."
                     [value]="p.costPrice != null ? formatRuble(p.costPrice) : '—'"
                     caption="Сколько изделие стоит цеху (rollup)"
-                    mono
+                    [mono]="true"
                     dataTest="product-cost-price"
                   />
                   <app-pi-fact-card
                     label="База"
                     [value]="p.basePrice != null ? formatRuble(p.basePrice) : '—'"
                     caption="Базовая цена учёта (до коммерции)"
-                    mono
+                    [mono]="true"
                     dataTest="product-base-price"
                   />
                 </app-pi-fact-stack>

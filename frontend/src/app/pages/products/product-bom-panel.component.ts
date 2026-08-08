@@ -163,7 +163,7 @@ interface LineCostHint {
                   label="Вклад в себест."
                   [value]="hint.totalLabel"
                   [caption]="hint.formula"
-                  mono
+                  [mono]="true"
                   variant="emphasis"
                   dataTest="bom-line-cost-total"
                 />
