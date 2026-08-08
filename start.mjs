@@ -22,6 +22,7 @@
  *   node start.mjs --stop         # остановить запущенные процессы
  *   node start.mjs --reset        # полный сброс: docker down -v + pkill + удалить node_modules
  *   node start.mjs --no-browser   # не открывать браузер
+ *   node start.mjs --verbose      # полные HTTP/Nest INFO логи (по умолчанию тихо)
  *   node start.mjs --help         # показать usage
  *
  * TUI-режим (--tail):
@@ -65,6 +66,8 @@ const flags = {
   tail: args.includes('--tail'),
   prod: args.includes('--prod'),
   noBuild: args.includes('--no-build'),
+  /** Full Nest/pino INFO (каждый request). Default: quiet WARN+ for PO. */
+  verbose: args.includes('--verbose') || args.includes('-v'),
   help: args.includes('--help') || args.includes('-h'),
 };
 
@@ -90,6 +93,7 @@ start.mjs — единый кросс-платформенный запуск kp
   node start.mjs --stop         # остановить запущенные процессы
   node start.mjs --reset        # полный сброс (down -v + pkill + rm node_modules)
   node start.mjs --no-browser   # не открывать браузер
+  node start.mjs --verbose      # подробные логи (каждый HTTP request) — по умолчанию тихо
   node start.mjs --prod         # PRODUCTION mode: pnpm build + node dist/main.js + static server
   node start.mjs --prod --no-build  # skip rebuild (use existing dist/)
   node start.mjs --help         # показать эту справку
@@ -1140,7 +1144,18 @@ async function main() {
       NODE_ENV: 'production',
     });
   } else {
-    backend = spawnDetached('pnpm', ['start:dev'], BACKEND_DIR, 'backend');
+    // Quiet by default (PO diary): WARN/ERROR only. Escape: --verbose or LOG_LEVEL=…
+    const logLevel = flags.verbose
+      ? env.LOG_LEVEL || 'info'
+      : env.LOG_LEVEL || 'warn';
+    backend = spawnDetached('pnpm', ['start:dev'], BACKEND_DIR, 'backend', {
+      LOG_LEVEL: logLevel,
+    });
+    if (!flags.verbose) {
+      log.dim(
+        `backend логи: тихо (LOG_LEVEL=${logLevel}). Полный поток: npm run start:all -- --verbose`,
+      );
+    }
   }
 
   // Frontend

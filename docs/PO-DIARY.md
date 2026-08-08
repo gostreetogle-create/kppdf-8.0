@@ -111,6 +111,11 @@
 
 ## 5. Лог сессий (новые сверху)
 
+### 2026-08-08 — Консоль старта: по умолчанию тихо
+- Простыня Mongo/Nest/request completed PO не читает — пугает.
+- Нужны: Ready (URL/health) + WARN/ERROR; детали — `start:verbose` / `--verbose`.
+- Источник: PO про «строки после запуска».
+
 ### 2026-08-08 — Два агента: Desktop + Shop-north-B
 - Один агент = desktop TZD-23…29; второй (сильнее) = параллельная волна без пересечения keys.
 - Shop-north-B: SUPPLY-302 → ORDERS-304/305 → SALES-302 → FACT-303/304 → FORM-307.

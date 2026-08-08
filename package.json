@@ -10,6 +10,7 @@
   "scripts": {
     "start": "node start.mjs --check",
     "start:all": "node start.mjs",
+    "start:verbose": "node start.mjs --verbose",
     "start:tail": "node start.mjs --tail",
     "check:start": "node start.mjs --check",
     "stop:start": "node start.mjs --stop",
