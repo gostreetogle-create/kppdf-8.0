@@ -23,6 +23,14 @@
 | Много **однородных** id без per-line полей | checkbox multi + одно «Добавить» (module multi) |
 | Создание сущности с id после save | create→остаться (FORM-304/306) |
 
+## Реализация (composition picker)
+
+- Data: `onAdded?: (result) => void | Promise<void>` в `ProductCompositionPickerData`
+- UI: session list `data-test="picker-session-added"`; footer «Закрыть»; primary
+  не закрывает при успехе
+- Parent: `ProductBomPanel.openAddPicker` → `applyCompositionLine` на каждый Add
+- Legacy без `onAdded`: close(result) как раньше
+
 ## Не делать
 
 - Открывать диалог заново на каждый пункт.

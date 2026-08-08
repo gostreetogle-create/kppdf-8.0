@@ -10,7 +10,29 @@
 
 # SESSION QUEUE
 
-**Updated:** 2026-08-08 · TZ-UI-TYPE-303 DONE
+**Updated:** 2026-08-08 · TZ-UX-DIALOG-303 DONE
+
+## Checkpoint 2026-08-08T11:22:19Z
+- DONE: TZ-UX-DIALOG-303 — add-and-continue composition pickers
+- IN PROGRESS: none (this agent)
+- NOT DONE: peer FACT-303 closeout if any; SELECT-301 if queued
+- NEXT: idle unless PO queues more (no deploy)
+- HEAD: post DIALOG-303 commit
+- Blockers: none
+- _active/: peer FACT-303 only (orders) — not touched
+- Ban: FACT-303/orders · supply/** · desktop/** — not touched
+- Deploy: NO
+
+## Checkpoint 2026-08-08T11:20:00Z
+- DONE: (prior waves)
+- IN PROGRESS: TZ-UX-DIALOG-303 — add-and-continue composition pickers
+- NOT DONE: peer FACT-303 closeout (orders) — not touching
+- NEXT: implement picker onAdded → BomPanel wire → gates → archive
+- HEAD: main + peer WIP outside scope
+- Blockers: none
+- _active/: TZ-UX-DIALOG-303.md + peer FACT-303.md
+- Ban: FACT-303/orders · supply/** · desktop/** — not touched
+- Deploy: NO
 
 ## Checkpoint 2026-08-08T11:25:00Z
 - DONE: TZ-UI-TYPE-303 — pi-label 13px for info labels (th/fact/passport)

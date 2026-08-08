@@ -25,6 +25,8 @@
 3. **BOM:** тот же визуальный язык, что у изделия
    ([composition-tree канон](./ui-composition-tree.md); pattern lock cascade).
    Picker с `restrictToModule` — **без вкладки изделия**; сырьё ок.
+   **Add & continue** ([канон](./ui-add-and-continue.md)): несколько строк подряд
+   без повторного открытия диалога.
 4. У модуля **нет** `listPrice` — cost-preview (материалы / труд / итого) в аккордеоне
    Себестоимость с captions (DETAIL-304), не в hero.
 5. `ModuleMaterialsFormDialog` удалён (DEDUP-302); состав только BomPanel.

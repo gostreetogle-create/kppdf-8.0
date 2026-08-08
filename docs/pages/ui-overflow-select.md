@@ -62,6 +62,7 @@
 ## См. также
 
 - Дерево состава (строка = кнопка): [`ui-composition-tree.md`](./ui-composition-tree.md)
+- Пикер «несколько подряд»: [`ui-add-and-continue.md`](./ui-add-and-continue.md)
 
 ## Фраза для агента / PO
 

@@ -1,3 +1,11 @@
+## [2026-08-08] — TZ-UX-DIALOG-303 DONE: add-and-continue composition pickers
+
+**Что:** composition picker `onAdded` — Add пишет строку и оставляет диалог; session list; BomPanel `applyCompositionLine`; toast «Добавлено»; docs канон.
+**Gates:** FE tsc PASS; composition-picker + bom-panel 15/15; ESLint/Prettier PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-DIALOG-303.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-DIALOG-303-add-and-continue.lock`
+**Known:** photo multi-add → DIALOG-304; FACT-303/orders/desktop/supply не трогались.
+
 ## [2026-08-08] — TZ-UX-FACT-303 DONE: order-detail FactStack
 
 **Что:** order passport migrated to shared FactStack facts; materials selector remains in actions slot; order money stays absent.

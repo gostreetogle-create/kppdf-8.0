@@ -23,13 +23,27 @@ export type ProductCompositionPickerResult =
   | { lineType: 'material'; refId: string; material: Material }
   | { lineType: 'product'; refId: string; product: Product; unitPriceOverride?: number };
 
+type PickerKind = 'product' | 'module' | 'material';
+
+/** Close payload when add-and-continue was used (writes already happened via onAdded). */
+export type ProductCompositionPickerCloseResult =
+  ProductCompositionPickerResult | { done: true } | null;
+
+export interface ProductCompositionPickerSessionItem {
+  label: string;
+  kind: PickerKind;
+}
+
 export interface ProductCompositionPickerData {
   productId: string;
   /** When true: only module + material (incl. raw); no product-complex tab. */
   restrictToModule?: boolean;
+  /**
+   * Called on each successful Add; dialog stays open (TZ-UX-DIALOG-303).
+   * Parent writes the composition line; picker clears selection after resolve.
+   */
+  onAdded?: (result: ProductCompositionPickerResult) => void | Promise<void>;
 }
-
-type PickerKind = 'product' | 'module' | 'material';
 
 /**
  * Catalog picker for composition lines.
@@ -106,6 +120,7 @@ type PickerKind = 'product' | 'module' | 'material';
                 [items]="available()"
                 [value]="selectedId()"
                 (valueChange)="onSelectItem($event)"
+                searchable="auto"
                 placeholder="— выбрать —"
                 ariaLabel="Что добавить"
                 dataTest="composition-picker-select"
@@ -143,23 +158,42 @@ type PickerKind = 'product' | 'module' | 'material';
               </label>
             }
           </div>
+
+          @if (sessionAdded().length > 0) {
+            <div class="space-y-1.5" data-test="picker-session-added">
+              <p class="pi-label m-0">Добавлено сейчас</p>
+              <ul
+                class="m-0 max-h-28 overflow-y-auto space-y-1 list-none p-0"
+                aria-label="Добавлено в этой сессии"
+              >
+                @for (item of sessionAdded(); track $index) {
+                  <li class="text-sm text-ink leading-snug">
+                    {{ item.label }}
+                    <span class="text-muted-foreground">· {{ kindSessionLabel(item.kind) }}</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
         }
       </div>
       <div footer class="flex gap-3 justify-end">
-        <app-pi-button variant="ghost" type="button" (click)="onCancel()">Отмена</app-pi-button>
+        <app-pi-button variant="ghost" type="button" (click)="onCancel()">{{
+          closeLabel
+        }}</app-pi-button>
         <app-pi-button
           variant="default"
           type="button"
-          [disabled]="!selectedId()"
+          [disabled]="!selectedId() || adding()"
           (click)="onSubmit()"
-          >Добавить</app-pi-button
+          >{{ adding() ? '…' : 'Добавить' }}</app-pi-button
         >
       </div>
     </app-pi-dialog>
   `,
 })
 export class ProductCompositionPickerDialogComponent {
-  protected readonly ref = inject<DialogRef<ProductCompositionPickerResult | null>>(PI_DIALOG_REF);
+  protected readonly ref = inject<DialogRef<ProductCompositionPickerCloseResult>>(PI_DIALOG_REF);
   protected readonly data = inject<ProductCompositionPickerData>(PI_DIALOG_DATA);
   private readonly modulesSvc = inject(ProductModulesService);
   private readonly materialsSvc = inject(MaterialsService);
@@ -186,6 +220,9 @@ export class ProductCompositionPickerDialogComponent {
     ? 'Добавить в состав модуля'
     : 'Добавить в состав изделия';
 
+  /** Ghost footer: «Закрыть» when add-and-continue; legacy «Отмена» otherwise. */
+  protected readonly closeLabel = this.data.onAdded ? 'Закрыть' : 'Отмена';
+
   protected readonly activeKind = signal<PickerKind>(
     this.data.restrictToModule ? 'module' : 'product',
   );
@@ -198,6 +235,10 @@ export class ProductCompositionPickerDialogComponent {
   protected readonly products = signal<Product[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
+  protected readonly adding = signal(false);
+  protected readonly sessionAdded = signal<ProductCompositionPickerSessionItem[]>([]);
+  /** True after at least one successful onAdded in this open session. */
+  private usedAddAndContinue = false;
 
   protected readonly available = computed(() => {
     const q = this.query().trim().toLowerCase();
@@ -303,29 +344,78 @@ export class ProductCompositionPickerDialogComponent {
     this.unitPriceOverride.set((event.target as HTMLInputElement).value);
   }
 
+  protected kindSessionLabel(kind: PickerKind): string {
+    if (kind === 'product') return 'изделие';
+    if (kind === 'module') return 'модуль';
+    return this.data.restrictToModule ? 'материал' : 'деталь';
+  }
+
   protected onSubmit(): void {
+    if (this.adding()) return;
+    const result = this.buildResult();
+    if (!result) return;
+
+    const onAdded = this.data.onAdded;
+    if (!onAdded) {
+      this.ref.close(result);
+      return;
+    }
+
+    this.adding.set(true);
+    this.validationError.set(null);
+    void Promise.resolve(onAdded(result))
+      .then(() => {
+        this.usedAddAndContinue = true;
+        this.sessionAdded.update((list) => [
+          ...list,
+          { label: this.sessionLabel(result), kind: result.lineType as PickerKind },
+        ]);
+        this.selectedId.set('');
+        this.unitPriceOverride.set('');
+        this.validationError.set(null);
+      })
+      .catch((err: unknown) => {
+        const message =
+          err instanceof Error && err.message
+            ? err.message
+            : 'Не удалось добавить. Попробуйте ещё раз.';
+        this.validationError.set(message);
+      })
+      .finally(() => {
+        this.adding.set(false);
+      });
+  }
+
+  protected onCancel(): void {
+    this.ref.close(this.usedAddAndContinue ? { done: true } : null);
+  }
+
+  private buildResult(): ProductCompositionPickerResult | null {
     const id = this.selectedId();
-    if (!id) return;
+    if (!id) return null;
     if (this.activeKind() === 'product') {
       const rawPrice = this.unitPriceOverride().trim();
       const unitPriceOverride = rawPrice === '' ? undefined : Number(rawPrice);
       if (!isValidProductUnitPriceOverride(unitPriceOverride)) {
         this.validationError.set('Цена в составе не может быть отрицательной.');
-        return;
+        return null;
       }
       const product = this.products().find((item) => item._id === id);
-      if (product) this.ref.close({ lineType: 'product', refId: id, product, unitPriceOverride });
-      return;
+      if (!product) return null;
+      return { lineType: 'product', refId: id, product, unitPriceOverride };
     }
-    if (this.activeKind() === 'module') this.ref.close({ lineType: 'module', refId: id });
-    else if (this.activeKind() === 'material') {
-      const material = this.materials().find((item) => item._id === id);
-      if (material) this.ref.close({ lineType: 'material', refId: id, material });
+    if (this.activeKind() === 'module') {
+      return { lineType: 'module', refId: id };
     }
+    const material = this.materials().find((item) => item._id === id);
+    if (!material) return null;
+    return { lineType: 'material', refId: id, material };
   }
 
-  protected onCancel(): void {
-    this.ref.close(null);
+  private sessionLabel(result: ProductCompositionPickerResult): string {
+    if (result.lineType === 'product') return result.product.name;
+    if (result.lineType === 'material') return result.material.name;
+    return this.modules().find((item) => item._id === result.refId)?.name ?? result.refId;
   }
 }
 

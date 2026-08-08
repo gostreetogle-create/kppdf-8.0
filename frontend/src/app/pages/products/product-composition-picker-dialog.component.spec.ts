@@ -90,19 +90,29 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)
     fixture.detectChanges();
   });
 
-  function instance(): Record<string, (...args: never[]) => unknown> & {
+  function instance(): {
     available: () => unknown[];
     activeKind: () => string;
-    selectedId: () => string;
-    unitPriceOverride: () => string;
+    selectedId: { (): string; set: (v: string) => void };
+    unitPriceOverride: { (): string; set: (v: string) => void };
+    sessionAdded: () => { label: string; kind: string }[];
+    adding: () => boolean;
     onSelectItem: (id: string) => void;
+    selectKind: (kind: unknown) => void;
+    onSubmit: () => void;
+    onCancel: () => void;
   } {
-    return fixture.componentInstance as unknown as Record<string, (...args: never[]) => unknown> & {
+    return fixture.componentInstance as unknown as {
       available: () => unknown[];
       activeKind: () => string;
-      selectedId: () => string;
-      unitPriceOverride: () => string;
+      selectedId: { (): string; set: (v: string) => void };
+      unitPriceOverride: { (): string; set: (v: string) => void };
+      sessionAdded: () => { label: string; kind: string }[];
+      adding: () => boolean;
       onSelectItem: (id: string) => void;
+      selectKind: (kind: unknown) => void;
+      onSubmit: () => void;
+      onCancel: () => void;
     };
   }
 
@@ -166,5 +176,145 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)
     component.unitPriceOverride.set('-1');
     component.onSubmit();
     expect(close).not.toHaveBeenCalled();
+  });
+
+  it('add-and-continue: onAdded twice keeps dialog open and fills session list (TZ-UX-DIALOG-303)', async () => {
+    const onAdded = jest.fn().mockResolvedValue(undefined);
+    TestBed.resetTestingModule();
+    close = jest.fn();
+    await TestBed.configureTestingModule({
+      imports: [ProductCompositionPickerDialogComponent],
+      schemas: [NO_ERRORS_SCHEMA],
+      providers: [
+        { provide: PI_DIALOG_DATA, useValue: { productId: 'p1', onAdded } },
+        { provide: PI_DIALOG_REF, useValue: ref() },
+        {
+          provide: ProductModulesService,
+          useValue: {
+            list: jest.fn().mockReturnValue(
+              of({
+                ok: true,
+                data: [
+                  { _id: 'm1', name: 'Модуль A', materials: [], workTypes: [] },
+                  { _id: 'm2', name: 'Модуль B', materials: [], workTypes: [] },
+                ],
+              }),
+            ),
+          },
+        },
+        {
+          provide: MaterialsService,
+          useValue: {
+            list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [] } })),
+          },
+        },
+        {
+          provide: ProductsService,
+          useValue: {
+            list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [] } })),
+          },
+        },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(ProductCompositionPickerDialogComponent);
+    fixture.detectChanges();
+
+    const component = instance();
+
+    component.selectKind('module' as never);
+    component.selectedId.set('m1');
+    component.onSubmit();
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    expect(onAdded).toHaveBeenCalledTimes(1);
+    expect(onAdded).toHaveBeenCalledWith(
+      expect.objectContaining({ lineType: 'module', refId: 'm1' }),
+    );
+    expect(close).not.toHaveBeenCalled();
+    expect(component.selectedId()).toBe('');
+    expect(component.sessionAdded().map((s) => s.label)).toEqual(['Модуль A']);
+
+    component.selectedId.set('m2');
+    component.onSubmit();
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    expect(onAdded).toHaveBeenCalledTimes(2);
+    expect(close).not.toHaveBeenCalled();
+    expect(component.sessionAdded().map((s) => s.label)).toEqual(['Модуль A', 'Модуль B']);
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[data-test="picker-session-added"]')
+        ?.textContent,
+    ).toContain('Модуль B');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Закрыть');
+
+    component.onCancel();
+    expect(close).toHaveBeenCalledWith({ done: true });
+  });
+
+  it('add-and-continue: clears price after product add so next pick is clean', async () => {
+    const onAdded = jest.fn().mockResolvedValue(undefined);
+    TestBed.resetTestingModule();
+    close = jest.fn();
+    await TestBed.configureTestingModule({
+      imports: [ProductCompositionPickerDialogComponent],
+      schemas: [NO_ERRORS_SCHEMA],
+      providers: [
+        { provide: PI_DIALOG_DATA, useValue: { productId: 'p1', onAdded } },
+        { provide: PI_DIALOG_REF, useValue: ref() },
+        {
+          provide: ProductModulesService,
+          useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) },
+        },
+        {
+          provide: MaterialsService,
+          useValue: {
+            list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [] } })),
+          },
+        },
+        {
+          provide: ProductsService,
+          useValue: {
+            list: jest.fn().mockReturnValue(
+              of({
+                ok: true,
+                data: {
+                  items: [
+                    {
+                      _id: 'p2',
+                      name: 'Дочернее изделие',
+                      kind: 'good',
+                      unit: 'шт',
+                      costPrice: 800,
+                      listPrice: 1200,
+                    },
+                  ],
+                },
+              }),
+            ),
+          },
+        },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(ProductCompositionPickerDialogComponent);
+    fixture.detectChanges();
+
+    const component = instance();
+    component.selectKind('product' as never);
+    component.onSelectItem('p2');
+    component.unitPriceOverride.set('1250');
+    component.onSubmit();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(onAdded).toHaveBeenCalledWith(
+      expect.objectContaining({ lineType: 'product', refId: 'p2', unitPriceOverride: 1250 }),
+    );
+    expect(close).not.toHaveBeenCalled();
+    expect(component.selectedId()).toBe('');
+    expect(component.unitPriceOverride()).toBe('');
   });
 });

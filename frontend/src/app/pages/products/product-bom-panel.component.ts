@@ -118,38 +118,42 @@ interface LineCostHint {
       </div>
 
       <aside
-        class="hairline rounded-sm bg-paper p-4 space-y-4 lg:sticky lg:top-3"
+        class="hairline rounded-sm bg-paper p-3 flex flex-col gap-4 lg:sticky lg:top-3"
         data-test="bom-inspector"
       >
         @if (selected(); as sel) {
-          <app-pi-fact-stack title="Выбрано" dataTest="bom-inspector-what">
-            <app-pi-fact-card
-              label="Узел"
-              [value]="sel.node.name"
-              [caption]="kindLabel(sel.node)"
-              dataTest="bom-inspector-name"
-            />
-          </app-pi-fact-stack>
+          <!-- One selection card: kind → name (no «Выбрано/Узел» double stack). -->
+          <div class="rounded-sm hairline bg-paper-2/40 px-3 py-3" data-test="bom-inspector-what">
+            <p class="text-xs text-muted-foreground m-0 leading-none">
+              {{ kindLabel(sel.node) }}
+            </p>
+            <p
+              class="mt-1.5 font-display text-base font-medium text-ink leading-snug m-0 break-words"
+              data-test="bom-inspector-name"
+            >
+              {{ sel.node.name }}
+            </p>
+          </div>
 
           @if (sel.depth > 0) {
-            <div class="space-y-2" data-test="bom-inspector-qty-section">
-              <p class="eyebrow text-ink m-0">Количество</p>
-              <label class="block">
-                <span class="sr-only">Количество</span>
-                <input
-                  class="pi-input w-full"
-                  type="number"
-                  min="0.0001"
-                  [value]="sel.node.quantity"
-                  (change)="onQtyChange($event)"
-                  data-test="bom-inspector-qty"
-                />
-              </label>
+            <div class="flex flex-col gap-1.5" data-test="bom-inspector-qty-section">
+              <label class="text-xs text-muted-foreground m-0" for="bom-inspector-qty-input"
+                >Количество</label
+              >
+              <input
+                id="bom-inspector-qty-input"
+                class="pi-input w-full"
+                type="number"
+                min="0.0001"
+                [value]="sel.node.quantity"
+                (change)="onQtyChange($event)"
+                data-test="bom-inspector-qty"
+              />
             </div>
           }
 
           @if (lineCostHint(); as hint) {
-            <app-pi-fact-stack title="Себест." dataTest="bom-line-cost">
+            <app-pi-fact-stack title="Себестоимость" dataTest="bom-line-cost">
               @if (hint.loading) {
                 <app-pi-fact-card label="Вклад" value="…" />
               } @else if (hint.error) {
@@ -172,16 +176,16 @@ interface LineCostHint {
             </app-pi-fact-stack>
           }
 
-          <!-- Host app-pi-button is not block by default → stack in a column. -->
-          <div class="space-y-2.5" data-test="bom-inspector-actions">
-            <p class="eyebrow text-ink m-0">Действия</p>
-            <div class="flex flex-col gap-2.5 w-full">
+          <!-- Left-aligned full-width actions (labels + buttons share one edge). -->
+          <div class="flex flex-col gap-2" data-test="bom-inspector-actions">
+            <p class="text-xs text-muted-foreground m-0 leading-none">Действия</p>
+            <div class="flex flex-col gap-2 w-full">
               @if (canAddInto(sel.node)) {
                 <app-pi-button
                   variant="default"
                   size="sm"
                   type="button"
-                  class="block w-full [&_button]:w-full"
+                  class="block w-full [&_button]:w-full [&_button]:justify-start [&_button]:px-3"
                   (click)="openAddPicker()"
                   data-test="bom-add-into"
                 >
@@ -194,7 +198,7 @@ interface LineCostHint {
                   variant="default"
                   size="sm"
                   type="button"
-                  class="block w-full [&_button]:w-full"
+                  class="block w-full [&_button]:w-full [&_button]:justify-start [&_button]:px-3"
                   (click)="openEditSelected()"
                   [disabled]="editLoading()"
                   data-test="bom-edit"
@@ -208,11 +212,11 @@ interface LineCostHint {
                   variant="outline"
                   size="sm"
                   type="button"
-                  class="block w-full [&_button]:w-full"
+                  class="block w-full [&_button]:w-full [&_button]:justify-start [&_button]:px-3"
                   (click)="openCard('/modules/' + sel.node._id)"
                   data-test="bom-open-module"
                 >
-                  Карточка
+                  Открыть карточку
                 </app-pi-button>
               }
               @if (sel.node.kind === 'product' && sel.depth > 0) {
@@ -220,11 +224,11 @@ interface LineCostHint {
                   variant="outline"
                   size="sm"
                   type="button"
-                  class="block w-full [&_button]:w-full"
+                  class="block w-full [&_button]:w-full [&_button]:justify-start [&_button]:px-3"
                   (click)="openCard('/products/' + sel.node._id)"
                   data-test="bom-open-product"
                 >
-                  Карточка
+                  Открыть карточку
                 </app-pi-button>
               }
               @if (sel.node.kind === 'material') {
@@ -232,11 +236,11 @@ interface LineCostHint {
                   variant="outline"
                   size="sm"
                   type="button"
-                  class="block w-full [&_button]:w-full"
+                  class="block w-full [&_button]:w-full [&_button]:justify-start [&_button]:px-3"
                   (click)="openCard('/materials/' + sel.node._id)"
                   data-test="bom-open-material"
                 >
-                  Карточка
+                  Открыть карточку
                 </app-pi-button>
               }
 
@@ -245,24 +249,26 @@ interface LineCostHint {
                   variant="outline"
                   size="sm"
                   type="button"
-                  class="block w-full [&_button]:w-full"
+                  class="block w-full [&_button]:w-full [&_button]:justify-start [&_button]:px-3"
                   (click)="removeSelected()"
                   data-test="bom-remove"
                 >
-                  Убрать
+                  Убрать из состава
                 </app-pi-button>
               }
             </div>
           </div>
         } @else {
-          <div class="space-y-3">
-            <p class="eyebrow m-0">Инспектор</p>
-            <p class="text-sm text-muted-foreground m-0">Выбери узел в дереве.</p>
+          <div class="flex flex-col gap-2">
+            <p class="text-xs text-muted-foreground m-0 leading-none">Инспектор</p>
+            <p class="text-sm text-muted-foreground m-0 leading-snug">
+              Выбери строку в составе слева.
+            </p>
             <app-pi-button
               variant="default"
               size="sm"
               type="button"
-              class="block w-full [&_button]:w-full"
+              class="block w-full [&_button]:w-full [&_button]:justify-start [&_button]:px-3"
               (click)="selectRootAndAdd()"
               data-test="bom-add-root"
             >
@@ -271,16 +277,18 @@ interface LineCostHint {
           </div>
         }
 
-        <app-pi-button
-          variant="ghost"
-          size="sm"
-          type="button"
-          class="block w-full [&_button]:w-full"
-          (click)="reload()"
-          data-test="bom-reload"
-        >
-          Обновить
-        </app-pi-button>
+        <div class="mt-auto pt-3 hairline-t flex flex-col gap-2">
+          <app-pi-button
+            variant="ghost"
+            size="sm"
+            type="button"
+            class="block w-full [&_button]:w-full [&_button]:justify-start [&_button]:px-3"
+            (click)="reload()"
+            data-test="bom-reload"
+          >
+            Обновить дерево
+          </app-pi-button>
+        </div>
       </aside>
     </section>
   `,
@@ -405,50 +413,68 @@ export class ProductBomPanelComponent {
       sel.node.kind === 'module' || this.rootKind() === 'module' ? 'module' : 'product';
     const parentId = sel.node._id;
     const restrictToModule = parentKind === 'module' || this.rootKind() === 'module';
+    /** Capture parent at open — selection may move while dialog stays open. */
+    const addParentKind = parentKind;
+    const addParentId = parentId;
 
-    const ref = this.dialog.open<ProductCompositionPickerResult | null>(
-      ProductCompositionPickerDialogComponent,
-      {
-        data: {
-          productId: parentKind === 'product' ? parentId : this.productId(),
-          restrictToModule,
-        },
-        width: 'xl',
-        parentDestroyRef: this.destroyRef,
+    const ref = this.dialog.open(ProductCompositionPickerDialogComponent, {
+      data: {
+        productId: parentKind === 'product' ? parentId : this.productId(),
+        restrictToModule,
+        onAdded: (result: ProductCompositionPickerResult) =>
+          this.applyCompositionLine(result, addParentKind, addParentId, restrictToModule),
       },
-    );
+      width: 'xl',
+      parentDestroyRef: this.destroyRef,
+    });
 
-    onDialogCloseOnce(ref, this.injector, (result) => {
-      if (!result) return;
-      if (restrictToModule && result.lineType === 'product') {
-        this.toast.error('Изделие нельзя добавить в состав модуля.');
-        return;
-      }
-      const dto: CompositionLineUpsertDto =
-        result.lineType === 'product'
-          ? {
-              lineType: 'product',
-              refId: result.refId,
-              quantity: 1,
-              ...(result.unitPriceOverride != null
-                ? { unitPriceOverride: result.unitPriceOverride }
-                : {}),
-            }
-          : { lineType: result.lineType, refId: result.refId, quantity: 1 };
+    // Writes already happened via onAdded; close only dismisses UI.
+    onDialogCloseOnce(ref, this.injector, () => undefined);
+  }
 
-      const req =
-        parentKind === 'product'
-          ? this.service.addProductCompositionLine(parentId, dto)
-          : this.service.addModuleCompositionLine(parentId, dto);
+  /**
+   * POST one composition line + reload tree. Used by add-and-continue (onAdded)
+   * and kept as a single write path (TZ-UX-DIALOG-303).
+   */
+  private applyCompositionLine(
+    result: ProductCompositionPickerResult,
+    parentKind: 'product' | 'module',
+    parentId: string,
+    restrictToModule: boolean,
+  ): Promise<void> {
+    if (restrictToModule && result.lineType === 'product') {
+      this.toast.error('Изделие нельзя добавить в состав модуля.');
+      return Promise.reject(new Error('Изделие нельзя добавить в состав модуля.'));
+    }
+    const dto: CompositionLineUpsertDto =
+      result.lineType === 'product'
+        ? {
+            lineType: 'product',
+            refId: result.refId,
+            quantity: 1,
+            ...(result.unitPriceOverride != null
+              ? { unitPriceOverride: result.unitPriceOverride }
+              : {}),
+          }
+        : { lineType: result.lineType, refId: result.refId, quantity: 1 };
 
+    const req =
+      parentKind === 'product'
+        ? this.service.addProductCompositionLine(parentId, dto)
+        : this.service.addModuleCompositionLine(parentId, dto);
+
+    return new Promise<void>((resolve, reject) => {
       req.subscribe((res) => {
         if (res.ok) {
-          this.toast.success('Добавлено в состав');
+          this.toast.success('Добавлено');
           this.moduleLinesCache.set(new Map());
           this.load();
           this.changed.emit();
+          resolve();
         } else {
-          this.toast.error(extractErrorMessage(res.error));
+          const message = extractErrorMessage(res.error);
+          this.toast.error(message);
+          reject(new Error(message));
         }
       });
     });

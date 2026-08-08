@@ -31,6 +31,8 @@
    - add в **product** → product composition API; add в **module** → module composition API;
    - picker с `restrictToModule` скрывает вкладку «изделие» и разрешает сырьё;
    - выбор из каталога: **`app-pi-overflow-select`** ([канон](./ui-overflow-select.md));
+   - **Add & continue** ([канон](./ui-add-and-continue.md)): «Добавить» пишет строку и
+     оставляет диалог открытым; «Закрыть»/✕ — выход; список «Добавлено сейчас»;
    - product-line picker: лейбл **«Цена в составе, ₽»**; default = `costPrice` → `listPrice`;
      пишет только `composition[].unitPriceOverride` (не карточку ребёнка).
 4. Паспорт (DETAIL-301): фото, имя (`font-display text-lg sm:text-xl`, TYPE-302), badges, **В составе** (count); габариты/вес/RAL через FactCard. Цены — в блоке Себестоимость (DETAIL-302).

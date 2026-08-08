@@ -1,4 +1,4 @@
-import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
@@ -207,5 +207,33 @@ describe('ProductBomPanelComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-test="bom-add-into"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="bom-edit"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="bom-open-module"]')).toBeTruthy();
+  });
+
+  it('openAddPicker wires onAdded and POSTs without waiting for dialog close (TZ-UX-DIALOG-303)', async () => {
+    const dialog = TestBed.inject(PiDialogService) as unknown as { open: jest.Mock };
+    dialog.open.mockReturnValue({ closed: signal(undefined), close: jest.fn() });
+
+    fixture.componentRef.setInput('productId', 'p1');
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as { openAddPicker: () => void };
+    comp.openAddPicker();
+
+    expect(dialog.open).toHaveBeenCalled();
+    const openArgs = dialog.open.mock.calls[0][1] as {
+      data: {
+        onAdded?: (r: { lineType: string; refId: string }) => Promise<void>;
+      };
+    };
+    expect(typeof openArgs.data.onAdded).toBe('function');
+
+    await openArgs.data.onAdded!({ lineType: 'module', refId: 'm1' });
+
+    expect(service.addProductCompositionLine).toHaveBeenCalledWith('p1', {
+      lineType: 'module',
+      refId: 'm1',
+      quantity: 1,
+    });
+    expect(service.getProductTree).toHaveBeenCalled();
   });
 });
