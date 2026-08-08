@@ -38,6 +38,8 @@ const QuotationItemSchema = SchemaFactory.createForClass(QuotationItem);
 
 export type QuotationStatus = 'draft' | 'sent' | 'accepted' | 'rejected' | 'converted' | 'cancelled';
 export type DiscountType = 'none' | 'percent' | 'amount';
+/** D21 / SALES-303: solo = standalone; master = family root; variant = org clone. */
+export type QuotationFamilyRole = 'solo' | 'master' | 'variant';
 export type QuotationDocument = HydratedDocument<Quotation>;
 
 @Schema({ collection: 'quotations', timestamps: true })
@@ -47,6 +49,26 @@ export class Quotation {
 
   @Prop({ type: Types.ObjectId, ref: 'Organization', required: true, index: true })
   organizationId!: Types.ObjectId;
+
+  /** Family role (default solo — existing docs stay valid without migration). */
+  @Prop({
+    enum: ['solo', 'master', 'variant'],
+    default: 'solo',
+    index: true,
+  })
+  familyRole!: QuotationFamilyRole;
+
+  /** Set only on variant — points at the master quotation. */
+  @Prop({ type: Types.ObjectId, ref: 'Quotation', index: true })
+  masterId?: Types.ObjectId;
+
+  /** Bumped on master when sync-from-master copies lines to variants. */
+  @Prop({ required: true, default: 1 })
+  familyVersion!: number;
+
+  /** Per-KP org markup override (%). Default applied later from Organization. */
+  @Prop({ default: undefined })
+  orgMarkupPercent?: number;
 
   @Prop({ type: Types.ObjectId, ref: 'Counterparty', required: true, index: true })
   counterpartyId!: Types.ObjectId;
@@ -113,3 +135,8 @@ export class Quotation {
 export const QuotationSchema = SchemaFactory.createForClass(Quotation);
 QuotationSchema.index({ counterpartyId: 1, date: -1 });
 QuotationSchema.index({ status: 1, date: -1 });
+/** One variant per org inside a family (sparse: solo/master have no masterId). */
+QuotationSchema.index(
+  { masterId: 1, organizationId: 1 },
+  { unique: true, sparse: true },
+);

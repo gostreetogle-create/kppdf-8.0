@@ -13,6 +13,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { QuotationService } from './quotation.service';
 import { CreateQuotationDto } from './dto/create-quotation.dto';
 import { UpdateQuotationDto } from './dto/update-quotation.dto';
+import { AttachOrganizationsDto } from './dto/attach-organizations.dto';
 import { AuditAction } from '../../common/decorators/audit-action.decorator';
 import { RequireOrgScope } from '../../common/decorators/require-org-scope.decorator';
 import { OrgScopeGuardInterceptor } from '../../common/interceptors/org-scope.interceptor';
@@ -36,6 +37,11 @@ export class QuotationController {
       from ? new Date(from) : undefined,
       to ? new Date(to) : undefined,
     );
+  }
+
+  @Get(':id/family')
+  getFamily(@Param('id') id: string) {
+    return this.service.getFamily(id);
   }
 
   @Get(':id')
@@ -62,6 +68,20 @@ export class QuotationController {
   @AuditAction({ action: 'duplicate', entityType: 'Quotation' })
   duplicate(@Param('id') id: string) {
     return this.service.duplicate(id);
+  }
+
+  @Post(':id/family/attach-organizations')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'family_attach', entityType: 'Quotation' })
+  attachOrganizations(@Param('id') id: string, @Body() dto: AttachOrganizationsDto) {
+    return this.service.attachOrganizations(id, dto);
+  }
+
+  @Post(':id/family/sync-from-master')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'family_sync', entityType: 'Quotation' })
+  syncFromMaster(@Param('id') id: string) {
+    return this.service.syncFromMaster(id);
   }
 
   @Post(':id/convert-to-contract')

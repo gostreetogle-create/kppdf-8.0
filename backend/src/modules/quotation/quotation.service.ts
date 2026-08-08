@@ -1,13 +1,37 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Quotation, QuotationDocument, QuotationItem } from './quotation.schema';
 import { CreateQuotationDto } from './dto/create-quotation.dto';
 import { UpdateQuotationDto } from './dto/update-quotation.dto';
+import { AttachOrganizationsDto } from './dto/attach-organizations.dto';
 import { CounterService } from '../counter/counter.service';
 import { ContractService } from '../contract/contract.service';
 import { OrderService } from '../order/order.service';
 import { SiteService } from '../site/site.service';
+
+/** Thin family summary for GET /:id/family (D21 / SALES-303). */
+export interface QuotationFamilyMemberSummary {
+  id: string;
+  number: string;
+  organizationId: string;
+  familyRole: string;
+  familyVersion: number;
+  orgMarkupPercent?: number;
+  total: number;
+  status: string;
+}
+
+export interface QuotationFamilyResponse {
+  master: QuotationFamilyMemberSummary;
+  variants: QuotationFamilyMemberSummary[];
+  familyVersion: number;
+}
 
 @Injectable()
 export class QuotationService {
@@ -61,6 +85,8 @@ export class QuotationService {
       designSnapshot: dto.designSnapshot,
       templateSnapshot: dto.templateSnapshot,
       items,
+      familyRole: 'solo',
+      familyVersion: 1,
     });
   }
 
@@ -184,6 +210,186 @@ export class QuotationService {
     return doc;
   }
 
+  private cloneItems(items: QuotationItem[]): QuotationItem[] {
+    return (items ?? []).map((i) => ({
+      productId: i.productId,
+      productName: i.productName,
+      productSku: i.productSku,
+      sourceItemId: i.sourceItemId,
+      quantity: i.quantity,
+      unit: i.unit,
+      unitPrice: i.unitPrice,
+      markupPercent: i.markupPercent,
+      total: i.total,
+      sortOrder: i.sortOrder,
+    }));
+  }
+
+  private toFamilySummary(doc: QuotationDocument): QuotationFamilyMemberSummary {
+    return {
+      id: doc._id.toString(),
+      number: doc.number,
+      organizationId: doc.organizationId.toString(),
+      familyRole: doc.familyRole ?? 'solo',
+      familyVersion: doc.familyVersion ?? 1,
+      orgMarkupPercent: doc.orgMarkupPercent,
+      total: doc.total ?? 0,
+      status: doc.status,
+    };
+  }
+
+  /** Resolve master for any family member (solo/master → self; variant → master). */
+  private async resolveMaster(doc: QuotationDocument): Promise<QuotationDocument> {
+    const role = doc.familyRole ?? 'solo';
+    if (role !== 'variant') return doc;
+    if (!doc.masterId) {
+      throw new BadRequestException(
+        `Quotation ${doc._id} is a variant without masterId`,
+      );
+    }
+    const master = await this.model.findById(doc.masterId).exec();
+    if (!master) {
+      throw new NotFoundException(`Master quotation ${doc.masterId} not found`);
+    }
+    return master;
+  }
+
+  private assertConvertibleFamilyRole(q: QuotationDocument): void {
+    if ((q.familyRole ?? 'solo') === 'variant') {
+      throw new BadRequestException(
+        'Cannot convert a family variant — convert the master (or solo) quotation instead',
+      );
+    }
+  }
+
+  /**
+   * Attach organizations as variants of this КП family (idempotent per org).
+   * solo → master; creates one variant per org with copied lines.
+   */
+  async attachOrganizations(
+    id: string,
+    dto: AttachOrganizationsDto,
+  ): Promise<QuotationFamilyResponse> {
+    const root = await this.findByIdRaw(id);
+    const master = await this.resolveMaster(root);
+
+    if ((master.familyRole ?? 'solo') === 'solo') {
+      master.familyRole = 'master';
+      if (master.familyVersion == null) master.familyVersion = 1;
+      await master.save();
+    }
+
+    const masterOrg = master.organizationId.toString();
+    const version = master.familyVersion ?? 1;
+
+    for (const item of dto.items) {
+      if (!Types.ObjectId.isValid(item.organizationId)) {
+        throw new BadRequestException(`Invalid organizationId: ${item.organizationId}`);
+      }
+      // Master's own org is already the blank root — skip (idempotent).
+      if (item.organizationId === masterOrg) {
+        if (item.orgMarkupPercent !== undefined) {
+          master.orgMarkupPercent = item.orgMarkupPercent;
+          await master.save();
+        }
+        continue;
+      }
+
+      const orgOid = new Types.ObjectId(item.organizationId);
+      const existing = await this.model
+        .findOne({ masterId: master._id, organizationId: orgOid })
+        .exec();
+
+      if (existing) {
+        if (item.orgMarkupPercent !== undefined) {
+          existing.orgMarkupPercent = item.orgMarkupPercent;
+          await existing.save();
+        }
+        continue;
+      }
+
+      const number = await this.counter.next('Quotation', 'QTN');
+      try {
+        await this.model.create({
+          number,
+          organizationId: orgOid,
+          counterpartyId: master.counterpartyId,
+          tenderId: master.tenderId,
+          title: master.title,
+          date: new Date(),
+          validUntil: master.validUntil,
+          status: 'draft',
+          total: master.total,
+          discountType: master.discountType,
+          discountPercent: master.discountPercent,
+          discountAmount: master.discountAmount,
+          notes: master.notes,
+          templateId: master.templateId,
+          designSnapshot: master.designSnapshot,
+          templateSnapshot: master.templateSnapshot,
+          items: this.cloneItems(master.items),
+          familyRole: 'variant',
+          masterId: master._id,
+          familyVersion: version,
+          orgMarkupPercent: item.orgMarkupPercent,
+          isActive: true,
+        });
+      } catch (err) {
+        if ((err as { code?: number })?.code === 11000) {
+          throw new ConflictException(
+            `Variant for organization ${item.organizationId} already exists in this family`,
+          );
+        }
+        throw err;
+      }
+    }
+
+    return this.getFamily(master._id.toString());
+  }
+
+  /** Copy master lines → all variants; bump familyVersion. */
+  async syncFromMaster(id: string): Promise<QuotationFamilyResponse> {
+    const root = await this.findByIdRaw(id);
+    const master = await this.resolveMaster(root);
+
+    if ((master.familyRole ?? 'solo') === 'solo') {
+      // No family yet — nothing to sync; keep solo intact.
+      return this.getFamily(master._id.toString());
+    }
+
+    master.familyVersion = (master.familyVersion ?? 1) + 1;
+    await master.save();
+
+    const variants = await this.model.find({ masterId: master._id }).exec();
+    const items = this.cloneItems(master.items);
+    for (const v of variants) {
+      v.items = items;
+      v.total = master.total;
+      v.discountType = master.discountType;
+      v.discountPercent = master.discountPercent;
+      v.discountAmount = master.discountAmount;
+      v.familyVersion = master.familyVersion;
+      await v.save();
+    }
+
+    return this.getFamily(master._id.toString());
+  }
+
+  async getFamily(id: string): Promise<QuotationFamilyResponse> {
+    const root = await this.findByIdRaw(id);
+    const master = await this.resolveMaster(root);
+    const variants = await this.model
+      .find({ masterId: master._id })
+      .sort({ organizationId: 1 })
+      .exec();
+
+    return {
+      master: this.toFamilySummary(master),
+      variants: variants.map((v) => this.toFamilySummary(v)),
+      familyVersion: master.familyVersion ?? 1,
+    };
+  }
+
   async convertToContract(
     id: string,
     title?: string,
@@ -191,6 +397,7 @@ export class QuotationService {
     // Use unpopulated query so organizationId / counterpartyId are raw
     // ObjectIds (populate can set them to null if the ref was deleted).
     const q = await this.findByIdRaw(id);
+    this.assertConvertibleFamilyRole(q);
     if (q.status === 'converted') {
       throw new NotFoundException(`Quotation already converted`);
     }
@@ -222,6 +429,7 @@ export class QuotationService {
   ): Promise<{ quotation: QuotationDocument; orderId: string }> {
     // Use unpopulated query so counterpartyId is a raw ObjectId.
     const q = await this.findByIdRaw(id);
+    this.assertConvertibleFamilyRole(q);
     if (q.status === 'converted') {
       throw new NotFoundException(`Quotation already converted`);
     }

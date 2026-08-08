@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-SALES-303 DONE: KP family schema + thin API (D21 L1)
+
+**Исполнитель:** continuous-executor-composer (self PASS → archive)
+**Статус:** DONE on main; deploy НЕ
+**Что:** `familyRole`/`masterId`/`familyVersion`/`orgMarkupPercent` + attach/sync/GET family; convert variant → 400; FE skip; stub 304 READY.
+**Gates:** BE tsc PASS; jest quotation 21/21 PASS
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-303.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-303-kp-family-schema.lock`
+**Known:** UI семья → TZ-SALES-304. Deploy: NO.
+
 ## [2026-08-08] — TZ-SUPPLY-301 DONE: SupplyTask + confirm + /supply UI
 
 **Что:** скелет снабжения (D9/D18): schema/API confirm audit; `/supply` таблица + manual create; не stub.

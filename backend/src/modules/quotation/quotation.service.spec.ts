@@ -16,8 +16,12 @@ function quotationDoc(overrides: Record<string, unknown> = {}) {
     date: new Date(),
     status: 'draft',
     total: 0,
-    items: [],
-    convertedOrderId: undefined,
+    items: [] as Array<Record<string, unknown>>,
+    familyRole: 'solo' as string,
+    familyVersion: 1,
+    orgMarkupPercent: undefined as number | undefined,
+    masterId: undefined as Types.ObjectId | undefined,
+    convertedOrderId: undefined as string | undefined,
     save: jest.fn().mockImplementation(function (this: unknown) {
       return Promise.resolve(this);
     }),
@@ -349,6 +353,195 @@ describe('QuotationService — ORDERS-301 (quote → order conversion)', () => {
       expect(doc.status).toBe('converted');
       expect(doc.convertedOrderId).toBe(orderId.toString());
       expect(doc.save).toHaveBeenCalled();
+    });
+
+    it('REJECTS convert of a family variant (400)', async () => {
+      const { service, model, orderService } = createService();
+      model.findById.mockReturnValue(
+        mockQuery(
+          quotationDoc({
+            status: 'accepted',
+            familyRole: 'variant',
+            masterId: new Types.ObjectId(),
+          }),
+        ),
+      );
+
+      await expect(
+        service.convertToOrder(new Types.ObjectId().toString()),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(orderService.create).not.toHaveBeenCalled();
+    });
+  });
+});
+
+describe('QuotationService — SALES-303 (KP family)', () => {
+  const ORG_B = new Types.ObjectId().toString();
+  const ORG_C = new Types.ObjectId().toString();
+
+  describe('attachOrganizations', () => {
+    it('promotes solo → master and creates 2 variants (1 master + 2 variant)', async () => {
+      const { service, model, counter } = createService();
+      const master = quotationDoc({
+        familyRole: 'solo',
+        familyVersion: 1,
+        total: 1000,
+        items: [
+          {
+            productId: new Types.ObjectId(),
+            productName: 'Стенд',
+            quantity: 2,
+            unitPrice: 500,
+            total: 1000,
+          },
+        ],
+      });
+      const created: unknown[] = [];
+
+      model.findById.mockImplementation((id: Types.ObjectId | string) => {
+        const sid = id.toString();
+        if (sid === master._id.toString()) return mockQuery(master);
+        return mockQuery(null);
+      });
+      model.findOne.mockReturnValue(mockQuery(null));
+      counter.next
+        .mockResolvedValueOnce('QTN-0002')
+        .mockResolvedValueOnce('QTN-0003');
+      model.create.mockImplementation(async (payload: Record<string, unknown>) => {
+        const doc = quotationDoc({
+          ...payload,
+          _id: new Types.ObjectId(),
+          save: jest.fn().mockResolvedValue(undefined),
+        });
+        created.push(doc);
+        return doc;
+      });
+      // getFamily after attach: findById master + find variants
+      model.find.mockReturnValue({
+        sort: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue(created),
+      });
+
+      const result = await service.attachOrganizations(master._id.toString(), {
+        items: [
+          { organizationId: ORG_B, orgMarkupPercent: 5 },
+          { organizationId: ORG_C, orgMarkupPercent: 10 },
+        ],
+      });
+
+      expect(master.familyRole).toBe('master');
+      expect(master.save).toHaveBeenCalled();
+      expect(model.create).toHaveBeenCalledTimes(2);
+      expect(created).toHaveLength(2);
+      expect((created[0] as { familyRole: string }).familyRole).toBe('variant');
+      expect((created[1] as { familyRole: string }).familyRole).toBe('variant');
+      expect(result.master.familyRole).toBe('master');
+      expect(result.variants).toHaveLength(2);
+    });
+
+    it('is idempotent: second attach of same org does not create another variant', async () => {
+      const { service, model } = createService();
+      const master = quotationDoc({ familyRole: 'master', familyVersion: 1 });
+      const existingVariant = quotationDoc({
+        familyRole: 'variant',
+        masterId: master._id,
+        organizationId: new Types.ObjectId(ORG_B),
+        orgMarkupPercent: 5,
+      });
+
+      model.findById.mockReturnValue(mockQuery(master));
+      model.findOne.mockReturnValue(mockQuery(existingVariant));
+      model.find.mockReturnValue({
+        sort: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([existingVariant]),
+      });
+
+      await service.attachOrganizations(master._id.toString(), {
+        items: [{ organizationId: ORG_B, orgMarkupPercent: 12 }],
+      });
+
+      expect(model.create).not.toHaveBeenCalled();
+      expect(existingVariant.orgMarkupPercent).toBe(12);
+      expect(existingVariant.save).toHaveBeenCalled();
+    });
+  });
+
+  describe('syncFromMaster', () => {
+    it('copies master qty/lines to variants and bumps familyVersion', async () => {
+      const { service, model } = createService();
+      const master = quotationDoc({
+        familyRole: 'master',
+        familyVersion: 1,
+        total: 2000,
+        items: [
+          {
+            productId: new Types.ObjectId(),
+            productName: 'Стенд',
+            quantity: 4,
+            unitPrice: 500,
+            total: 2000,
+          },
+        ],
+      });
+      const variant = quotationDoc({
+        familyRole: 'variant',
+        masterId: master._id,
+        organizationId: new Types.ObjectId(ORG_B),
+        familyVersion: 1,
+        total: 1000,
+        items: [
+          {
+            productId: new Types.ObjectId(),
+            productName: 'Стенд',
+            quantity: 2,
+            unitPrice: 500,
+            total: 1000,
+          },
+        ],
+      });
+
+      model.findById.mockReturnValue(mockQuery(master));
+      // First find = variants for sync; second find (via getFamily) = same
+      model.find.mockReturnValue({
+        sort: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([variant]),
+      });
+
+      const result = await service.syncFromMaster(master._id.toString());
+
+      expect(master.familyVersion).toBe(2);
+      expect(master.save).toHaveBeenCalled();
+      expect(variant.items[0].quantity).toBe(4);
+      expect(variant.total).toBe(2000);
+      expect(variant.familyVersion).toBe(2);
+      expect(variant.save).toHaveBeenCalled();
+      expect(result.familyVersion).toBe(2);
+    });
+  });
+
+  describe('getFamily', () => {
+    it('returns master + variants summary', async () => {
+      const { service, model } = createService();
+      const master = quotationDoc({ familyRole: 'master', familyVersion: 3, total: 500 });
+      const variant = quotationDoc({
+        familyRole: 'variant',
+        masterId: master._id,
+        organizationId: new Types.ObjectId(ORG_B),
+        familyVersion: 3,
+        orgMarkupPercent: 8,
+        total: 500,
+      });
+      model.findById.mockReturnValue(mockQuery(master));
+      model.find.mockReturnValue({
+        sort: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([variant]),
+      });
+
+      const family = await service.getFamily(master._id.toString());
+      expect(family.master.id).toBe(master._id.toString());
+      expect(family.variants).toHaveLength(1);
+      expect(family.variants[0].orgMarkupPercent).toBe(8);
+      expect(family.familyVersion).toBe(3);
     });
   });
 });

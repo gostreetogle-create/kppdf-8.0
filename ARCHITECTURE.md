@@ -933,3 +933,14 @@ delta at zero by emitting a complementary movement in the same transaction.
 Subordinate services (`StockMovementService.create`, `ReservationService.fulfill`)
 honor an optional `externalSession` so the caller can run them on its own
 transaction. See `docs/data-model.md` § Concurrency & Transactions.
+
+## Quotation family — multi-org КП (TZ-SALES-303 / D21 layer 1)
+
+`backend/src/modules/quotation/` — schema-first family on existing Quotation
+(no separate proposal module):
+
+- Fields: `familyRole` (`solo`|`master`|`variant`), `masterId?`, `familyVersion`
+  (default 1), `orgMarkupPercent?`; unique sparse `{ masterId, organizationId }`.
+- Thin API: `POST :id/family/attach-organizations`, `POST :id/family/sync-from-master`,
+  `GET :id/family`. Convert of a **variant** → 400 (master/solo only).
+- UI expand / markup dialog / variant editor → **TZ-SALES-304** (stub READY).
