@@ -7,6 +7,7 @@ import * as Sentry from '@sentry/node';
 import helmet from 'helmet';
 import compression from 'compression';
 import { join } from 'path';
+import { existsSync } from 'fs';
 import type { NextFunction, Request, Response } from 'express';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -236,6 +237,20 @@ async function bootstrap() {
   app.useGlobalFilters(new VersionConflictFilter(), new MulterExceptionFilter(), new HttpExceptionFilter());
   app.setGlobalPrefix('api');
 
+  // Desktop installer (TZD-16/24) under /downloads/*. Prefer built SPA tree,
+  // then staging folder used by `pnpm --dir desktop publish-installer`.
+  // Never SPA-fallback these paths (see production middleware below).
+  const downloadDirs = [
+    process.env.FRONTEND_PATH ? join(process.env.FRONTEND_PATH, 'downloads') : '',
+    join(process.cwd(), '..', 'frontend', 'browser', 'downloads'),
+    join(process.cwd(), '..', 'frontend', 'downloads'),
+  ].filter((d) => d && existsSync(d));
+  if (downloadDirs.length > 0) {
+    const dir = downloadDirs[0];
+    app.useStaticAssets(dir, { prefix: '/downloads/' });
+    Logger.log(`📥 Desktop downloads: ${dir}`, 'Bootstrap');
+  }
+
   // Production: serve built Angular SPA from FRONTEND_PATH (Synology/docker deploy).
   const frontendPath = process.env.FRONTEND_PATH;
   if (process.env.NODE_ENV === 'production' && frontendPath) {
@@ -244,6 +259,9 @@ async function bootstrap() {
       if (req.method !== 'GET' && req.method !== 'HEAD') return next();
       const p = req.path;
       if (p.startsWith('/api') || p.startsWith('/uploads')) return next();
+      // TZD-24: installer ZIP/exe — never fall back to SPA index.html
+      // (prod bug: GET /downloads/*.exe returned ~1.5KB HTML → CSP noise).
+      if (p.startsWith('/downloads')) return next();
       res.sendFile(join(frontendPath, 'index.html'), (err: Error | null) => {
         if (err) next(err);
       });

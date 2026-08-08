@@ -19,7 +19,7 @@ TZD-24: Desktop installer — раздача ZIP + не отдавать SPA н�
 > - Staging: `frontend/downloads/kppdf-desktop-setup.exe` ~9.5MB (gitignored)
 > - Angular assets: `angular.json` `input: downloads` → `/downloads`
 
-STATUS: READY (выдавать сразу — ломает кнопку «Скачать» в pairing)
+STATUS: DONE (archived 2026-08-08)
 
 РОЛЬ АГЕНТА: Backend Nest bootstrap + deploy/publish scripts + FE default URL + docs.
 

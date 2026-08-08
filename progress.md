@@ -1,3 +1,12 @@
+## [2026-08-08] — TZD-24 DONE: Desktop installer ZIP + SPA skip /downloads
+
+**Что сделано:** default кнопка → `.zip`; Nest не отдаёт SPA на `/downloads/*`;
+publish-installer + deploy.py кладут zip рядом с exe.
+**Archive:** `tasks/_archive/2026-08/TZD-24.done.md`
+**Lock:** `.mimocode/locks/TZD-24-desktop-installer-zip-download.lock`
+**Gates:** BE+FE tsc PASS; Jest download/pairing 14/14; smoke zip 200 / missing 404
+**Deploy:** NO
+
 ## [2026-08-08] — TZD-22 DONE: AI Import Task (assembly point)
 **Исполнитель:** cursor-composer-tzd22 (Cursor PASS → archive)
 **Статус:** DONE on main; deploy НЕ выполнялся

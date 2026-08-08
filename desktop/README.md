@@ -3,12 +3,13 @@
 Десктоп-компаньон kppdf-8.0: **массовый ввод данных через AI** с сохранением
 единого backend (multi-device — актуальные данные везде: веб, десктоп, телефон).
 
-> **Статус: v0.5 (2026-08-06).** Готово: скелет (v0.1), паринг + конфиг (v0.2),
+> **Статус: v0.5+ (2026-08-08).** Готово: скелет (v0.1), паринг + конфиг (v0.2),
 > Excel/CSV-импорт + UI (v0.3), **MCP host в приложении (TZD-14)**: автозапуск при
 > подключении, статус/URL/копирование, порт и LAN в config.ts, stop on quit,
 > **Inbox для агента (TZD-15)**: каталог-капельница → аудит → propose (без записи
 > в SoT) → confirm/cancel через журнал; MCP `kppdf_inbox_list` / `kppdf_inbox_propose_file`;
-> файл → processed/ или failed/ + лог. Дальше — AI-pipeline и батч+прогресс.
+> **Import Task (TZD-22)**: кнопка «Создать задачу для ИИ» → `/api/import-tasks`
+> (точка сборки; matching — TZD-23). Expert «Предложить строки» сохранён.
 > Задачи десктопа ведутся с префиксом `TZD-NN` (см. `tasks/TZD-00.md`).
 
 ---
@@ -73,7 +74,8 @@ desktop/
 │   └── src/               ← http-server / stdio-server / tools (kppdf_ping)
 └── docs/
     ├── PAIRING.md         ← контракт связи веб↔десктоп
-    ├── MCP.md             ← connect string, env, tools
+    ├── MCP.md             ← connect string, env, tools, mcp.json
+    ├── INSTALL.md         ← установка/обновление Windows, NSIS hooks, пути артефактов
     └── AI-PROVIDERS.md    ← Ollama локально / удалённый endpoint
 ```
 
@@ -89,11 +91,14 @@ desktop/
 Ссылка на установщик задаётся `DESKTOP_DOWNLOAD_URL` в `deploy/synology/config.env`;
 `deploy.py` записывает её в runtime `window.__DESKTOP_DOWNLOAD_URL__`. По умолчанию
 используется same-origin
-`/downloads/kppdf-desktop-setup.exe`; явно пустое значение отключает кнопку до
-публикации файла. Сборочные `.exe`/`.msi` из `src-tauri/target/release/bundle/`
-не коммитятся.
+`/downloads/kppdf-desktop-setup.zip` (внутри — setup.exe); явно пустое значение отключает кнопку до
+публикации файла. Сборочные `.exe`/`.msi`/`.zip` **не** коммитятся.
 
-Полный контракт (формат, скачивание, эндпоинты, смена сервера, безопасность): **[docs/PAIRING.md](docs/PAIRING.md)**.
+Установка / обновление / NSIS (остановка MCP перед копированием файлов):  
+**[docs/INSTALL.md](docs/INSTALL.md)**.
+
+Полный контракт паринга: **[docs/PAIRING.md](docs/PAIRING.md)**.  
+MCP и mcp.json для Cursor/LM Studio: **[docs/MCP.md](docs/MCP.md)**.
 
 ## AI-провайдеры
 
@@ -161,8 +166,11 @@ pnpm check            # svelte-check (проверка .svelte-файлов)
 pnpm tauri build      # сборочный инсталлятор (нужны иконки в src-tauri/icons/)
 ```
 
+Детали артефактов, AppData и хуков установщика — **[docs/INSTALL.md](docs/INSTALL.md)**  
+(`src-tauri/windows/hooks.nsh`: stop Desktop + MCP перед update).
+
 Установщик раздаётся из `frontend/browser/downloads/` (backend публикует
-собранный frontend на `/downloads/`), например
-`https://<host>/downloads/kppdf-desktop-setup.exe`. Размещение файла и URL
-настраиваются отдельно от git; Node.js для MCP host должен быть установлен на
-машине, пока sidecar не бандлится.
+каталог на `/downloads/` **без** SPA fallback), например
+`https://<host>/downloads/kppdf-desktop-setup.zip`. Рядом может лежать `.exe`.
+Размещение файла и URL настраиваются отдельно от git; Node.js для MCP host
+должен быть установлен на машине, пока sidecar не бандлится.

@@ -105,18 +105,19 @@ python -u deploy/synology/deploy.py --wipe --seed         # чистая БД
 
 ---
 
-## Desktop installer (TZD-16)
+## Desktop installer (TZD-16 / TZD-24)
 
-Windows installer files are published separately from the application bundle. Copy
-`kppdf-desktop-setup.exe` from `desktop/src-tauri/target/release/bundle/nsis/`
-to `frontend/browser/downloads/` before packaging (the backend serves that
-built frontend directory at `/downloads/`), so it is available at
-`https://<host>/downloads/kppdf-desktop-setup.exe`. Set `DESKTOP_DOWNLOAD_URL` in
-`deploy/synology/config.env` (or the `DESKTOP_DOWNLOAD_URL` process environment
-variable); `deploy.py` injects it into the built SPA. Leave it unset for the
-same-origin default, or set it explicitly empty to disable the button. Do not
-commit the `.exe`/`.msi` artifact. The desktop MCP host still requires Node.js on the user's
-machine until a separate sidecar-bundling task lands.
+Windows installer is published as **ZIP** (preferred) plus optional `.exe` alongside.
+After `cd desktop && pnpm tauri build`, run `pnpm run publish-installer` (copies
+`.exe` and builds `kppdf-desktop-setup.zip` with a single `kppdf-desktop-setup.exe`
+entry into `frontend/downloads/` and `frontend/browser/downloads/`). Deploy
+`build_frontend` does the same via `zipfile`. Backend mounts that folder at
+`/downloads/` and **never** SPA-falls back those paths. Default pairing button:
+`/downloads/kppdf-desktop-setup.zip`. Set `DESKTOP_DOWNLOAD_URL` in
+`deploy/synology/config.env` (or the process environment); `deploy.py` injects it
+into the SPA. Leave unset for the same-origin default, or set explicitly empty to
+disable the button. Do not commit the `.exe`/`.msi`/`.zip`. MCP host still needs
+Node.js on the client until sidecar bundling lands.
 
 ## После деплоя — проверка
 

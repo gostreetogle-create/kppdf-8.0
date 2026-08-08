@@ -84,7 +84,7 @@ URL сервера и токеном доступа — и сохраняет е
 (чистый FE — новый backend-эндпоинт не создаётся). URL берётся из runtime
 `window.__DESKTOP_DOWNLOAD_URL__`, который `deploy/synology/deploy.py`
 заполняет из `DESKTOP_DOWNLOAD_URL`; если значение отсутствует, используется
-`/downloads/kppdf-desktop-setup.exe`, а если явно пустое — кнопка отключена.
+`/downloads/kppdf-desktop-setup.zip`, а если явно пустое — кнопка отключена.
 
 `apiBaseUrl` в пакете:
 - **production**: `window.location.origin` (фронтенд и бэкенд на одном origin).
@@ -104,25 +104,26 @@ URL сервера и токеном доступа — и сохраняет е
 
 ## Скачать и опубликовать установщик
 
-Локальная проверка сборки выполняется из корня репозитория:
+Полный канон сборки, путей, AppData и **обновления без locked esbuild**:  
+**[INSTALL.md](./INSTALL.md)**.
+
+Кратко:
 
 ```text
 cd desktop
 pnpm tauri build
 ```
 
-Windows-артефакты появляются в `desktop/src-tauri/target/release/bundle/nsis/`
-и/или `msi/`. Их не коммитим; для публикации копируем выбранный `.exe` в
-каталог `frontend/browser/downloads/` на сервере (он раздаётся backend как
-`/downloads/`), например:
+Артефакт: `desktop/src-tauri/target/release/bundle/nsis/*.exe`  
+(копия для выдачи: `desktop/dist-installers/kppdf-desktop-setup.exe`).  
+На сервер: `frontend/browser/downloads/kppdf-desktop-setup.zip` (+ `.exe`) →  
+кнопка → `/downloads/kppdf-desktop-setup.zip` (внутри ZIP — setup.exe).
 
-```text
-https://<host>/downloads/kppdf-desktop-setup.exe
-```
+Перед копированием файлов NSIS останавливает Desktop + MCP (`src-tauri/windows/hooks.nsh`) —
+иначе update падает на занятом `mcp-runtime\…\esbuild.exe`.
 
-В продакшене значение `DESKTOP_DOWNLOAD_URL` должно указывать на этот путь
-(или на абсолютный URL). Без bundled Node MCP host требует установленный Node.js;
-встраивание Node в MSI — отдельная задача.
+В продакшене `DESKTOP_DOWNLOAD_URL` указывает на этот путь. Без bundled Node MCP
+требует Node.js на машине клиента.
 
 ## Безопасность
 

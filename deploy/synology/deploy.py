@@ -342,6 +342,53 @@ def build_frontend(project_root):
             shutil.copy2(item, dest)
     ok("Frontend copied to frontend/browser/")
 
+    # Desktop installer (TZD-16/24): ensure /downloads/*.exe + .zip exist
+    # even if Angular assets folder was empty during build.
+    publish_desktop_installer(project_root, frontend_dir)
+
+
+def publish_desktop_installer(project_root, frontend_dir):
+    """Copy setup.exe + ZIP into frontend/browser/downloads/ for Nest /downloads/."""
+    import zipfile
+
+    candidates = [
+        project_root / "frontend" / "downloads" / "kppdf-desktop-setup.exe",
+        project_root / "desktop" / "dist-installers" / "kppdf-desktop-setup.exe",
+        project_root
+        / "desktop"
+        / "src-tauri"
+        / "target"
+        / "release"
+        / "bundle"
+        / "nsis"
+        / "KPPDF Desktop_0.1.0_x64-setup.exe",
+    ]
+    src = next((p for p in candidates if p.is_file()), None)
+    downloads = frontend_dir / "downloads"
+    downloads.mkdir(parents=True, exist_ok=True)
+    dest_exe = downloads / "kppdf-desktop-setup.exe"
+    dest_zip = downloads / "kppdf-desktop-setup.zip"
+    if src is None:
+        warn(
+            "Desktop installer .exe not found — "
+            "pair dialog /downloads/kppdf-desktop-setup.zip will 404 until you run "
+            "`cd desktop && pnpm tauri build && pnpm run publish-installer`"
+        )
+        return
+    shutil.copy2(src, dest_exe)
+    with zipfile.ZipFile(dest_zip, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.write(dest_exe, arcname="kppdf-desktop-setup.exe")
+    ok(
+        "Desktop installer → frontend/browser/downloads/kppdf-desktop-setup.exe ("
+        + str(dest_exe.stat().st_size)
+        + " bytes)"
+    )
+    ok(
+        "Desktop installer ZIP → frontend/browser/downloads/kppdf-desktop-setup.zip ("
+        + str(dest_zip.stat().st_size)
+        + " bytes)"
+    )
+
 
 # -- Archive creation ---------------------------------------------------
 

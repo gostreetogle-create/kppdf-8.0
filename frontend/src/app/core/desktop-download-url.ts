@@ -1,7 +1,7 @@
 import { InjectionToken } from '@angular/core';
 
 /** Same-origin installer path used when deployment does not configure a URL. */
-export const DEFAULT_DESKTOP_DOWNLOAD_URL = '/downloads/kppdf-desktop-setup.exe';
+export const DEFAULT_DESKTOP_DOWNLOAD_URL = '/downloads/kppdf-desktop-setup.zip';
 
 declare global {
   interface Window {

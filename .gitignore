@@ -31,6 +31,11 @@ deploy/synology/CREDENTIALS.md
 # Deploy build artifacts
 frontend/browser/
 
+# Desktop installer binary (staging for Angular assets / deploy publish)
+frontend/downloads/*.exe
+frontend/downloads/*.zip
+desktop/dist-installers/
+
 # Stitch mockup extracts — raw source artifacts from D:\kppdf-8.0 (no longer)
 # VALUABLE CONTENT MIGRATED TO docs/ (2026-07-19, TZ-141 batch):
 #   _stitch_ref/DESIGN.md        → docs/design-spec.md
