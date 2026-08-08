@@ -2,7 +2,7 @@
 TZ-UX-FORM-302: Единые секции формы (эталон Material) → QuickCreate
 ═══════════════════════════════════════════════════════════════
 
-STATUS: READY
+STATUS: PENDING MERGE � code on freebuff/executor-� branch; see TZ-GIT-301
 
 РОЛЬ: Frontend (shared form + QuickCreate)
 

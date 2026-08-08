@@ -2,7 +2,7 @@
 TZ-UX-FORM-303: QuickCreate L — фото (reuse FullEditor upload)
 ═══════════════════════════════════════════════════════════════
 
-STATUS: READY
+STATUS: PENDING MERGE � code on freebuff/executor-� branch; see TZ-GIT-301
 
 РОЛЬ: Frontend
 

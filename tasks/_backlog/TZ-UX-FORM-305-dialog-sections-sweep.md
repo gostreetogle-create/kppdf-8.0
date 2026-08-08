@@ -2,7 +2,7 @@
 TZ-UX-FORM-305: Sweep — все form-dialogs → единые секции (Material style)
 ═══════════════════════════════════════════════════════════════
 
-STATUS: READY (стартовать **после** FORM-302 primitive стабилен)
+STATUS: PENDING MERGE � code on freebuff/executor-� branch; see TZ-GIT-301 (стартовать **после** FORM-302 primitive стабилен)
 
 РОЛЬ: Frontend
 

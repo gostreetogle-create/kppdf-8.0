@@ -2,7 +2,7 @@
 TZ-UX-FORM-304: QuickCreate L — блок Состав (reuse ProductBomPanel)
 ═══════════════════════════════════════════════════════════════
 
-STATUS: READY
+STATUS: PENDING MERGE � code on freebuff/executor-� branch; see TZ-GIT-301
 
 РОЛЬ: Frontend
 

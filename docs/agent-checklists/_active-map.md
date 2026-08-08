@@ -1,46 +1,30 @@
 # SESSION QUEUE — continuous executor
 
-**Updated:** 2026-08-08T09:24Z · wave **NAV-IA parallel** + FORM elsewhere  
-**Wave file:** `docs/agent-checklists/SESSION-WAVE-2026-08-08-nav-ia.md`
+**Updated:** 2026-08-08T09:45Z · hygiene + next **TZ-GIT-301**
 
-## DONE this session
+## DONE (recent on main)
 
-| Item | SHA / note |
-|------|------------|
-| … prior stream … | ORDERS/NAV-301/SUPPLY/DICT/ADMIN/UX-301…308 |
-| **TZ-NAV-302** | people→Клиенты, work-types→Цех, chips, заказ виден |
+| Item | Note |
+|------|------|
+| TZ-UX-308 | Справ. yellow |
+| TZ-NAV-302 | people→clients, work-types→цех, chips · `b3f6948b` |
+| TZ-UX-FORM-301 | capacity (on main) |
+| FORM-302…305 | **code on freebuff branch only** — merge via GIT-301 |
 
 ## READY / NEXT
 
-### Lane A — FORM (уже у агента)
+| # | ID | Status |
+|---|-----|--------|
+| 1 | **TZ-GIT-301** | merge FORM wave → main — **NEXT** |
+| 2 | **TZ-UX-309** | page chrome unify (was misnumbered UX-302) |
+| 3 | **TZ-UX-310** | chrome audit docs (was misnumbered UX-303) |
+| 4 | **TZ-SALES-304** | KP family UI |
 
-| ID | Status |
-|----|--------|
-| **TZ-UX-FORM-302→305** | секции / фото / состав / sweep — **IN FLIGHT elsewhere** |
+Full park list: `tasks/_backlog/QUEUE.md`
 
-### Lane B — NAV IA
-
-| ID | Status |
-|----|--------|
-| **TZ-NAV-302** | **DONE** archived |
-
-Wave: `SESSION-WAVE-2026-08-08-nav-ia.md` — queue empty after NAV-302
-
-## PARK
-
-| ID | Why |
-|----|-----|
-| TZ-UX-302 / 303 | chrome — после FORM |
-| TZ-SALES-304 | KP UX later |
-| SUPPLY-302 / Production deep | later |
-| deploy | только «задеплой» |
-
-## Checkpoint 2026-08-08T09:24Z
-- DONE: **TZ-NAV-302** (IA people/work-types + chips + order discoverability)
-- IN PROGRESS: FORM-302→305 (peer, other keys)
-- NOT DONE: deploy
-- NEXT: idle on NAV lane; wait FORM or PO
-- HEAD: `b3f6948b`
-- Blockers: none
-- _active/: empty (NAV)
+## Checkpoint 2026-08-08T09:45Z
+- FORM agent: **close** (work on branch; not lost)
+- NAV-302: DONE on main
+- Hygiene: DONE stubs purged from `_backlog`
+- NEXT: TZ-GIT-301
 - Deploy: NO
